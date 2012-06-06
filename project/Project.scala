@@ -17,7 +17,7 @@ object Zipkin extends Build {
     base = file("zipkin-hadoop"),
     settings = Project.defaultSettings ++ StandardProject.newSettings ++ assemblySettings).settings(
       name := "zipkin-hadoop",
-      version := "0.1.0-SNAPSHOT",
+      version := "0.2.0-SNAPSHOT",
       libraryDependencies ++= Seq(
         "com.twitter" % "scalding_2.9.1"       % "0.5.3",
         "com.twitter.elephantbird" % "elephant-bird-cascading2"       % "3.0.0",
@@ -56,7 +56,7 @@ object Zipkin extends Build {
       SubversionPublisher.newSettings ++
       CompileThrift.newSettings).settings(
     name := "zipkin-test",
-    version := "0.1.0-SNAPSHOT",
+    version := "0.2.0-SNAPSHOT",
     libraryDependencies ++= Seq(
       /* Test dependencies */
       "org.scala-tools.testing" % "specs_2.9.1"  % "1.6.9" % "test",
@@ -77,7 +77,7 @@ object Zipkin extends Build {
         SubversionPublisher.newSettings ++
         CompileThrift.newSettings).settings(
       name := "zipkin-thrift",
-      version := "0.1.0-SNAPSHOT",
+      version := "0.2.0-SNAPSHOT",
 
       libraryDependencies ++= Seq(
         "org.apache.thrift" % "libthrift" % "0.5.0",
@@ -100,7 +100,7 @@ object Zipkin extends Build {
         SubversionPublisher.newSettings ++
         CompileThriftScrooge.newSettings).settings(
       name := "zipkin-server",
-      version := "0.1.0-SNAPSHOT",
+      version := "0.2.0-SNAPSHOT",
 
       libraryDependencies ++= Seq(
         "com.twitter" % "cassie-core"       % CASSIE_VERSION intransitive(),
