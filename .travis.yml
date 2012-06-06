@@ -1,4 +1,5 @@
 language: scala
+script: bin/sbt test
 scala:
   - 2.9.1
 jdk:
