@@ -182,19 +182,19 @@ We intend to use the <a href="http://semver.org/">semver</a> style versioning.
 Thanks to everyone below for making Zipkin happen!
 
 Zipkin server
- * Johan Oskarsson: @skr
- * Franklin Hu: @thisisfranklin
- * Ian Ownbey: @iano
+ * Johan Oskarsson: <a href="https://twitter.com/skr">@skr</a>
+ * Franklin Hu: <a href="https://twitter.com/thisisfranklin">@thisisfranklin</a>
+ * Ian Ownbey: <a href="https://twitter.com/iano">@iano</a>
 
 Zipkin UI
- * Franklin Hu: @thisisfranklin
- * Bill Couch: @couch
- * David McLaughlin: @dmcg
- * Chad Rosen: @zed
+ * Franklin Hu: <a href="https://twitter.com/thisisfranklin">@thisisfranklin</a>
+ * Bill Couch: <a href="https://twitter.com/couch">@couch</a>
+ * David McLaughlin: <a href="https://twitter.com/dmcg">@dmcg</a>
+ * Chad Rosen: <a href="https://twitter.com/zed">@zed</a>
 
 Instrumentation
- * Marius Eriksen: @marius
- * Arya Asemanfar: @a_a
+ * Marius Eriksen: <a href="https://twitter.com/marius">@marius</a>
+ * Arya Asemanfar: <a href="https://twitter.com/a_a">@a_a</a>
 
 ## License
 Copyright 2012 Twitter, Inc.
