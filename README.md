@@ -1,7 +1,7 @@
-# Zipkin
+![Zipkin (doc/zipkin-logo-200x119.jpg)](https://github.com/twitter/zipkin/raw/master/doc/zipkin-logo-200x119.jpg)
 Zipkin is a distributed tracing system that helps us gather timing data for all the disparate services at Twitter.
 It manages both the collection and lookup of this data through a Collector and a Query service.
-We closely modelled Zipkin after the <a href="http://research.google.com/pubs/pub36356.html">Google Dapper</a> paper.
+We closely modelled Zipkin after the <a href="http://research.google.com/pubs/pub36356.html">Google Dapper</a> paper. Follow <a href="https://twitter.com/zipkinproject">@zipkinproject</a> for updates.
 
 ## Why distributed tracing?
 Collecting traces helps developers gain deeper knowledge about how certain requests perform in a distributed system.
@@ -171,6 +171,8 @@ Contributions are very welcome! Please create a pull request on github and we'll
 Try to make the code in the pull request as focused and clean as possible, stick as close to our code style as you can.
 
 If the pull request is becoming too big we ask that you split it into smaller ones.
+
+Areas where we'd love to see contributions include: adding tracing to more libraries and protocols, interesting reports generated with Hadoop from the trace data, extending collector to support more transports and storage systems and other ways of visualizing the data in the web ui.
 
 ## Versioning
 We intend to use the <a href="http://semver.org/">semver</a> style versioning.
