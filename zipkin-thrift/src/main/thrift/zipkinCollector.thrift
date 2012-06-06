@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-namespace java com.twitter.zipkin.gen.collector
+namespace java com.twitter.zipkin.gen
 
 include "scribe.thrift"
 
@@ -19,10 +19,7 @@ exception AdjustableRateException {
   1: string msg
 }
 
-service ZipkinCollector {
-
-    // Implement the Scribe interface
-    scribe.ResultCode Log(1: list<scribe.LogEntry> messages);
+service ZipkinCollector extends scribe.scribe {
 
     //************** ZK config changes **************
 

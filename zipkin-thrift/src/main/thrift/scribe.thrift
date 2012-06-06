@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-namespace java com.twitter.zipkin.gen.scribe
+namespace java com.twitter.zipkin.gen
 
 enum ResultCode
 {
@@ -23,4 +23,9 @@ struct LogEntry
 {
   1:  string category,
   2:  string message
+}
+
+service scribe
+{
+  ResultCode Log(1: list<LogEntry> messages);
 }
