@@ -1,6 +1,4 @@
-name := "Zipkin"
-
-version := "0.1.0"
+name := "zipkin"
 
 organization := "com.twitter"
 
