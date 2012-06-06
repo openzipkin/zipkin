@@ -25,7 +25,6 @@ import com.twitter.util.Future
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.query.adjusters.Adjuster
 import com.twitter.zipkin.storage.{TraceIdDuration, Index, Storage}
-import gen.Adjust
 import java.nio.ByteBuffer
 import org.apache.thrift.TException
 import scala.collection.Set
@@ -234,7 +233,7 @@ class QueryService(storage: Storage, index: Index, adjusterMap: Map[gen.Adjust, 
     }
   }
 
-  def getTraceCombosByIds(traceIds: Seq[Long], adjust: Seq[Adjust]): Future[Seq[gen.TraceCombo]] = {
+  def getTraceCombosByIds(traceIds: Seq[Long], adjust: Seq[gen.Adjust]): Future[Seq[gen.TraceCombo]] = {
     checkIfRunning
     Stats.incr("query.get_trace_combo_by_ids")
     log.debug("getTraceComboByIds. traceIds: " + traceIds + " adjust " + adjust)
