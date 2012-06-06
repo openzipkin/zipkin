@@ -1,0 +1,9 @@
+source "http://rubygems.org"
+
+gem 'rails', '3.2.3'
+gem 'thrift', "0.6.0"
+gem 'thrift_client', "0.6.3"
+gem 'zookeeper', "1.2.4"
+gem 'finagle-thrift', '1.2.0'
+gem 'scribe', '0.2.4'
+

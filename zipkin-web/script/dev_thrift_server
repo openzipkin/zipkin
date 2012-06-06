@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+
+require File.expand_path('../../config/environment',  __FILE__)
+Zipkin::Application.initialize!
+
+require 'thrift'
+require 'mocks'
+require 'zipkin_query'
+
+# setup handler (implementation) with the processor (interface)
+handler = Mocks::ZipkinQuery.new()
+processor = Zipkin::ZipkinQuery::Processor.new(handler)
+
+# Setup a transport factory running on port 9149
+transport = Thrift::ServerSocket.new(9149)
+transportFactory = Thrift::BufferedTransportFactory.new()
+
+# Create the server object
+server = Thrift::SimpleServer.new(processor, transport, transportFactory)
+
+puts "starting server..."
+server.serve
+puts "done.."
