@@ -23,8 +23,8 @@ Gem::Specification.new do |s|
   s.authors                   = ["Franklin Hu"]
   s.email                     = ["franklin@twitter.com"]
   s.homepage                  = "https://github.com/twitter/zipkin"
-  s.summary                   = "Zipkin"
-  s.description               = "Sends trace data to Zipkin"
+  s.summary                   = "Ruby tracing via Zipkin"
+  s.description               = "Adds tracing instrumentation for ruby applications"
 
   s.required_rubygems_version = ">= 1.3.5"
 
