@@ -295,6 +295,19 @@ div.infobar {
   padding-right: 14px;
 }
 
+div.infobar .selector select {
+  background-color: transparent;
+  background-image: none;
+  border: 0;
+  line-height: 14px;
+  height: 14px;
+  margin: -3px 0 0 0;
+  outline: 0;
+  padding: 0;
+  width: 100px;
+  -webkit-appearance: none;
+}
+
 ul.traces {
   list-style: none;
   margin: 10px 0 0 0;
