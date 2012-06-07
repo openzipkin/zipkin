@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'zipkin_client'
-require 'zipkin_types'
 require 'ipaddr'
 
 class TraceTimeline
@@ -46,7 +44,7 @@ class TraceTimeline
   end
 
   def self.get_trace_timelines_by_ids(trace_ids, opts = {})
-    ZipkinClient.with_transport(Rails.configuration.zookeeper) do |client|
+    Zipkin::ZipkinClient.with_transport(Rails.configuration.zookeeper) do |client|
       adjusters = [] # [Zipkin::Adjust::TIME_SKEW] #TODO config
       ids = trace_ids.collect { |id| id.to_i }
       timelines = client.getTraceTimelinesByIds(ids, adjusters)

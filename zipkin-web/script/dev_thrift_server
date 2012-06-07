@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require File.expand_path('../../config/environment',  __FILE__)
-Zipkin::Application.initialize!
+ZipkinUI::Application.initialize!
 
 require 'thrift'
 require 'mocks'
