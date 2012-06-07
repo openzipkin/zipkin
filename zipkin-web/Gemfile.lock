@@ -88,6 +88,7 @@ GEM
       polyglot
       polyglot (>= 0.3.1)
     tzinfo (0.3.33)
+    zipkin (0.0.1)
     zookeeper (1.2.4)
       backports (~> 2.5.1)
       logging (~> 1.7.2)
@@ -101,4 +102,5 @@ DEPENDENCIES
   scribe (= 0.2.4)
   thrift (= 0.6.0)
   thrift_client (= 0.6.3)
+  zipkin (= 0.0.1)
   zookeeper (= 1.2.4)

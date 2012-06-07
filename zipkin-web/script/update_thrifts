@@ -2,7 +2,7 @@
 
 # Require Rails
 require File.expand_path('../../config/environment',  __FILE__)
-Zipkin::Application.initialize!
+ZipkinUI::Application.initialize!
 
 # Some common paths
 LIB_PATH = Rails.root.join("lib")
@@ -20,7 +20,7 @@ thrift_files.each do |tf|
 
   # Run the thrift command on the new files
   system("thrift --gen rb -o #{LIB_PATH} #{out_file}")
-        
+
 end
 
 # Copy gen-rb up a directory

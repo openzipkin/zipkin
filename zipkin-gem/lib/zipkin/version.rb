@@ -11,12 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+module Zipkin
+  VERSION = "0.0.1"
+end
 
-# Be sure to restart your server when you modify this file.
-
-ZipkinUI::Application.config.session_store :cookie_store, :key => '_zipkin_admin_session'
-
-# Use the database for sessions instead of the cookie-based default,
-# which shouldn't be used to store highly confidential information
-# (create the session table with "rails generate session_migration")
-# ZipkinUI::Application.config.session_store :active_record_store
