@@ -7,10 +7,10 @@ We closely modelled Zipkin after the <a href="http://research.google.com/pubs/pu
 ## Why distributed tracing?
 Collecting traces helps developers gain deeper knowledge about how certain requests perform in a distributed system.
 Let's say we're having problems with user requests timing out. We can look up traced requests that timed out and display
-it in the web ui. We'll be able to quickly find the service responsible for adding the unexpected response time.
+it in the web UI. We'll be able to quickly find the service responsible for adding the unexpected response time.
 If the service has been annotated adequately we can also find out where in that service the issue is happening.
 
-![Screnshot of the Zipkin web ui (doc/web-screenshot.png)](https://github.com/twitter/zipkin/raw/master/doc/web-screenshot.png)
+![Screnshot of the Zipkin web UI (doc/web-screenshot.png)](https://github.com/twitter/zipkin/raw/master/doc/web-screenshot.png)
 
 ## Architecture
 These are the components that make up a fully fledged tracing system.
@@ -173,7 +173,7 @@ Try to make the code in the pull request as focused and clean as possible, stick
 
 If the pull request is becoming too big we ask that you split it into smaller ones.
 
-Areas where we'd love to see contributions include: adding tracing to more libraries and protocols, interesting reports generated with Hadoop from the trace data, extending collector to support more transports and storage systems and other ways of visualizing the data in the web ui.
+Areas where we'd love to see contributions include: adding tracing to more libraries and protocols, interesting reports generated with Hadoop from the trace data, extending collector to support more transports and storage systems and other ways of visualizing the data in the web UI.
 
 ## Versioning
 We intend to use the <a href="http://semver.org/">semver</a> style versioning.
