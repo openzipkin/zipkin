@@ -168,12 +168,13 @@ The above is used to send the tracing data to Zipkin. You can find these and mor
 Another important part of the tracing is the light weight header we use to pass information between the traced services.
 The tracing header consists of the following:
 
-* Trace id - identifies the whole trace
-* Span id - identifies the current request
-* Optional Parent Span id - Added if this request was made as part of another request
+* Trace Id - identifies the whole trace
+* Span Id - identifies an individual request
+* Optional Parent Span Id - Added if this request was made as part of another request
 * Sampled boolean - tells us if we should log the tracing data or not
 
-Now that we know a bit about the data types, let's take a step by step look at how the instrumentation works. The example below will describe how the Http tracing in Finagle works. Other libraries and protocols will of course be different, but the general principle should be the same.
+Now that we know a bit about the data types, let's take a step by step look at how the instrumentation works. 
+The example below will describe how the Http tracing in Finagle works. Other libraries and protocols will of course be different, but the general principle should be the same.
 
 ### Server side
 1. Check if there are any tracing headers in the incoming request. If there is, we adopt ids associated with that for this request. If not, we generate a new trace id, span id and decide if we should sample or not. See <a href="https://github.com/twitter/finagle/blob/master/finagle-http/src/main/scala/com/twitter/finagle/http/Codec.scala">HttpServerTracingFilter</a> for an example of this.
