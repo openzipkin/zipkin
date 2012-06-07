@@ -101,7 +101,14 @@
         <span>Showing: <span class="filter-current"></span> of <span class="filter-total"></span> traces over <span class="filter-duration"></span></span>
       </div>
       <div class="pull-right">
-        <span>Sorted by: Trace Duration <i class="icon-arrow-down"></i></span>
+        <span class="selector">Sorted by:
+          <select class="sort-order js-sort-order">
+            <option selected value="duration-desc">Duration Desc</i></span>
+            <option value="duration-asc">Duration Asc</span>
+            <option value="timestamp-desc">Timestamp Desc</span>
+            <option value="timestamp-asc">Timestamp Asc</span>
+          </select>
+        </span>
       </div>
       <div class="clearfix"></div>
     </div>
