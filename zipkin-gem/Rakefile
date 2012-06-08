@@ -11,9 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+require 'rubygems'
 
-# This file is used by Rack-based servers to start the application.
-
-require ::File.expand_path('../config/environment',  __FILE__)
-use ZipkinTracer::RackHandler
-run Zipkin::Application
+desc 'Build the gem'
+task :build do
+  system "gem build zipkin-tracer.gemspec"
+end
