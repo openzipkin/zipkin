@@ -23,7 +23,7 @@ Zipkin.Application.Index = (function() {
   var ORDER_DURATION_DESC = 0
     , ORDER_DURATION_ASC = 1
     , ORDER_TIMESTAMP_DESC = 2
-    , ORDER_TIMSTAMP_ASC = 3
+    , ORDER_TIMESTAMP_ASC = 3
     ;
 
   var templatize = Zipkin.Util.templatize
@@ -141,6 +141,10 @@ Zipkin.Application.Index = (function() {
       return services;
     };
 
+    var getSortOrder = function() {
+      return $(".js-sort-order").val();
+    };
+
     /* Filter the query results based on service tag list */
     var filterQueryResults = function (services) {
       if (!services) {
@@ -161,13 +165,16 @@ Zipkin.Application.Index = (function() {
       });
     };
 
-    var sortQueryResults = function(data, sortOrder) {
+    var sortQueryResults = function(data) {
+      /* Option index directly maps to the correct sort order */
+      var sortOrder = getSortOrder();
+
       data.sort(function(a, b) {
-        if (sortOrder === ORDER_TIMSTAMP_ASC) {
+        if (sortOrder == ORDER_TIMESTAMP_ASC) {
           return new Date(a.start_time) - new Date(b.start_time);
-        } else if (sortOrder === ORDER_TIMESTAMP_DESC) {
+        } else if (sortOrder == ORDER_TIMESTAMP_DESC) {
           return new Date(b.start_time) - new Date(a.start_time);
-        } else if (sortOrder === ORDER_DURATION_ASC) {
+        } else if (sortOrder == ORDER_DURATION_ASC) {
           return a.duration - b.duration;
         } else {
           /* ORDER_DURATION_DESC */
@@ -350,6 +357,8 @@ Zipkin.Application.Index = (function() {
           });
           traces = updateFilteredServices(traces);
 
+          sortQueryResults(traces);
+
           templatize(TEMPLATES.QUERY, function(template) {
             var context = { traces: traces };
             var content = template.render(context);
@@ -431,12 +440,9 @@ Zipkin.Application.Index = (function() {
     });
 
     $(".js-sort-order").change(function (e) {
-      /* Option index directly maps to the correct sort order */
-      var sortOrder = e.target.selectedIndex;
-
       var services = getFilteredServices();
       var newData = updateFilteredServices(filterQueryResults(services));
-      sortQueryResults(newData, sortOrder);
+      sortQueryResults(newData);
 
       templatize(TEMPLATES.QUERY, function(template) {
         var context = { traces: newData };
