@@ -87,5 +87,15 @@ module Zipkin
     #   :skip_zookeeper      => true
     #}
 
+    config.zipkin_tracer = {
+        # Scribe settings that can be overwritten
+        #:scribe_server => "HOST:PORT",
+        #:scribe_max_buff => 10
+
+        # Required settings
+        :service_name => "ZipkinUI",
+        :service_port => 80
+    }
+
   end
 end

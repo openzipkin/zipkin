@@ -13,6 +13,7 @@
 # limitations under the License.
 require 'finagle-thrift'
 require 'finagle-thrift/trace'
+require 'scribe'
 
 require 'zipkin-tracer/careless_scribe'
 
@@ -22,12 +23,31 @@ module ZipkinTracer extend self
     def initialize(app)
       @app = app
       @lock = Mutex.new
-      ::Trace.tracer = ::Trace::ZipkinTracer.new(CarelessScribe.new(Scribe.new()), 10)
+
+      config = app.config.zipkin_tracer
+      @service_name = config[:service_name]
+      @service_port = config[:service_port]
+
+      scribe =
+        if config[:scribe_server] then
+          Scribe.new(config[:scribe_server])
+        else
+          Scribe.new()
+        end
+
+      scribe_max_buffer =
+        if config[:scribe_max_buffer] then
+          config[:scribe_max_buffer]
+        else
+          10
+        end
+
+      ::Trace.tracer = ::Trace::ZipkinTracer.new(CarelessScribe.new(scribe), scribe_max_buffer)
     end
 
     def call(env)
       id = ::Trace::TraceId.new(::Trace.generate_id, nil, ::Trace.generate_id, true)
-      ::Trace.default_endpoint = ::Trace.default_endpoint.with_service_name("zipkinui").with_port(0) #TODO any way to get the port?
+      ::Trace.default_endpoint = ::Trace.default_endpoint.with_service_name(@service_name).with_port(@service_port)
       ::Trace.sample_rate=(1)
       tracing_filter(id, env) { @app.call(env) }
     end
