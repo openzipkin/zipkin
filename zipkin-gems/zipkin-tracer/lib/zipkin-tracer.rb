@@ -26,13 +26,6 @@ module ZipkinTracer extend self
     end
 
     def call(env)
-      # TODO HERE BE HACK. Chad made me do it!
-      # this is due to our setup where statics are served through the ruby app, but we don't want to trace that.
-      rp = env["REQUEST_PATH"]
-      if !rp.blank? && (rp.starts_with?("/stylesheets") || rp.starts_with?("/javascripts") || rp.starts_with?("/images"))
-        return @app.call(env)
-      end
-
       id = ::Trace::TraceId.new(::Trace.generate_id, nil, ::Trace.generate_id, true)
       ::Trace.default_endpoint = ::Trace.default_endpoint.with_service_name("zipkinui").with_port(0) #TODO any way to get the port?
       ::Trace.sample_rate=(1)
