@@ -27,7 +27,7 @@ object Zipkin extends Build {
       ),
       resolvers ++= (proxyRepo match {
         case None => Seq(
-          "elephant-bird repo" at "http://oss.sonatype.org/content/repositories/comtwitter-105",
+          "elephant-bird repo" at "http://oss.sonatype.org/content/repositories/comtwitter-286",
           "Concurrent Maven Repo" at "http://conjars.org/repo")
         case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
       }),
