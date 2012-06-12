@@ -15,8 +15,10 @@
 gen_rb_path = File.expand_path(File.dirname(__FILE__) + "/../vendor/gen-rb")
 $LOAD_PATH.unshift gen_rb_path
 $LOAD_PATH.unshift "#{gen_rb_path}/zipkin-query"
+$LOAD_PATH.unshift "#{gen_rb_path}/endpoint"
 
 require "#{gen_rb_path}/zipkin-query"
+require "#{gen_rb_path}/endpoint/endpoint_types"
 
 module ZipkinQuery extend self
 
