@@ -91,6 +91,39 @@ object Zipkin extends Build {
   val OSTRICH_VERSION = "8.0.1"
   val UTIL_VERSION    = "5.0.3"
 
+  lazy val common =
+    Project(
+      id = "zipkin-common",
+      base = file("zipkin-common"),
+      settings = Project.defaultSettings ++
+        StandardProject.newSettings ++
+        SubversionPublisher.newSettings ++
+        CompileThriftScrooge.newSettings
+    ).settings(
+      version := "0.2.0-SNAPSHOT",
+
+      libraryDependencies ++= Seq(
+        "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
+        "com.twitter" % "finagle-zipkin"    % FINAGLE_VERSION,
+        "com.twitter" % "ostrich"           % OSTRICH_VERSION,
+        "com.twitter" % "util-core"         % UTIL_VERSION,
+
+        "com.twitter" % "scrooge"               % "3.0.1" intransitive(),
+        "com.twitter" % "scrooge-runtime_2.9.2" % "3.0.1" intransitive(),
+
+        /* Test dependencies */
+        "org.scala-tools.testing" % "specs_2.9.1"  % "1.6.9" % "test",
+        "org.jmock"               % "jmock"        % "2.4.0" % "test",
+        "org.hamcrest"            % "hamcrest-all" % "1.1"   % "test",
+        "cglib"                   % "cglib"        % "2.2.2" % "test",
+        "asm"                     % "asm"          % "1.5.3" % "test",
+        "org.objenesis"           % "objenesis"    % "1.1"   % "test"
+      ),
+
+      CompileThriftScrooge.scroogeVersion := "3.0.1"
+    )
+
+
   lazy val server =
     Project(
       id = "zipkin-server",
@@ -99,7 +132,6 @@ object Zipkin extends Build {
         StandardProject.newSettings ++
         SubversionPublisher.newSettings ++
         CompileThriftScrooge.newSettings).settings(
-      name := "zipkin-server",
       version := "0.2.0-SNAPSHOT",
 
       libraryDependencies ++= Seq(
@@ -145,5 +177,5 @@ object Zipkin extends Build {
         base =>
           (base / "config" +++ base / "src" / "test" / "resources").get
       }
-    )
+    ).dependsOn(common)
 }
