@@ -143,6 +143,17 @@ The UI is a standard Rails 3 app.
   bundle exec rails server.
 ```
 
+#### zipkin-tracer gem
+The `zipkin-tracer` gem adds tracing to a Rails application through the use of a Rack Handler.
+In `config.ru`:
+
+```
+  use ZipkinTracer::RackHandler
+  run <YOUR_APPLICATION>
+```
+
+If the application's static assets are served through Rails, those requests will be traced.
+
 ## Running a Hadoop job
 It's possible to setup Scribe to log into Hadoop. If you do this you can generate various reports from the data
 that is not easy to do on the fly in Zipkin itself.
