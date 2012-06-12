@@ -21,7 +21,6 @@ require "action_controller/railtie"
 require "action_mailer/railtie"
 require "active_resource/railtie"
 require "rails/test_unit/railtie"
-require 'lib/careless_scribe'
 require 'sprockets/railtie'
 
 # If you have a Gemfile, require the gems listed there, including any gems
@@ -88,43 +87,17 @@ module Zipkin
     #   :skip_zookeeper      => true
     #}
 
-  end
-end
+    config.zipkin_tracer = {
+        # Scribe settings that can be overwritten
+        #:scribe_server => "HOST:PORT",
+        #:scribe_max_buff => 10
 
-class ZipkinRackHandler
-  def initialize(app)
-    @app = app
-    @lock = Mutex.new
-    Trace.tracer = Trace::ZipkinTracer.new(CarelessScribe.new(Scribe.new()), 10)
-  end
+        # Required settings
+        :service_name => "ZipkinUI",
+        :service_port => 80,
 
-  def call(env)
-    # TODO HERE BE HACK. Chad made me do it!
-    # this is due to our setup where statics are served through the ruby app, but we don't want to trace that.
-    rp = env["REQUEST_PATH"]
-    if !rp.blank? && (rp.starts_with?("/stylesheets") || rp.starts_with?("/javascripts") || rp.starts_with?("/images"))
-      return @app.call(env)
-    end
+        :sample_rate => 1
+    }
 
-    id = Trace::TraceId.new(Trace.generate_id, nil, Trace.generate_id, true)
-    Trace.default_endpoint = Trace.default_endpoint.with_service_name("zipkinui").with_port(0) #TODO any way to get the port?
-    Trace.sample_rate=(1)
-    tracing_filter(id, env) { @app.call(env) }
-  end
-
-  private
-  def tracing_filter(trace_id, env)
-    @lock.synchronize do
-      Trace.push(trace_id)
-      Trace.set_rpc_name(env["REQUEST_METHOD"]) # get/post and all that jazz
-      Trace.record(Trace::BinaryAnnotation.new("http.uri", env["PATH_INFO"], "STRING", Trace.default_endpoint))
-      Trace.record(Trace::Annotation.new(Trace::Annotation::SERVER_RECV, Trace.default_endpoint))
-    end
-    yield if block_given?
-  ensure
-    @lock.synchronize do
-      Trace.record(Trace::Annotation.new(Trace::Annotation::SERVER_SEND, Trace.default_endpoint))
-      Trace.pop
-    end
   end
 end
