@@ -42,13 +42,20 @@ module ZipkinTracer extend self
           10
         end
 
+      @sample_rate =
+        if config[:sample_rate] then
+          config[:sample_rate]
+        else
+          0.1
+        end
+
       ::Trace.tracer = ::Trace::ZipkinTracer.new(CarelessScribe.new(scribe), scribe_max_buffer)
     end
 
     def call(env)
       id = ::Trace::TraceId.new(::Trace.generate_id, nil, ::Trace.generate_id, true)
       ::Trace.default_endpoint = ::Trace.default_endpoint.with_service_name(@service_name).with_port(@service_port)
-      ::Trace.sample_rate=(1)
+      ::Trace.sample_rate=(@sample_rate)
       tracing_filter(id, env) { @app.call(env) }
     end
 

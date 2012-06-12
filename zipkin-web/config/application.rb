@@ -94,7 +94,9 @@ module Zipkin
 
         # Required settings
         :service_name => "ZipkinUI",
-        :service_port => 80
+        :service_port => 80,
+
+        :sample_rate => 1
     }
 
   end
