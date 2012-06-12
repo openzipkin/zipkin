@@ -163,8 +163,9 @@ We use a library called <a href="http://github.com/twitter/scalding">Scalding</a
 1. To run a Hadoop job first make the fat jar.
     `sbt 'project zipkin-hadoop' compile assembly`
 2. Change scald.rb to point to the hostname you want to copy the jar to and run the job from.
+3. Update the version of the jarfile in scald.rb if needed.
 3. You can then run the job using our scald.rb script.
-    `./scald.rb --hdfs com.twitter.zipkin.hadoop.[classname] --date yyyy-mm-ddThh:mm yyyy-mm-ddThh:mm`
+    `./scald.rb --hdfs com.twitter.zipkin.hadoop.[classname] --date yyyy-mm-ddThh:mm yyyy-mm-ddThh:mm --output [dir]`
 
 ## How to instrument a library
 We have instrumented a few libraries and protocols, but we hope to get some help instrumenting a few more. 
