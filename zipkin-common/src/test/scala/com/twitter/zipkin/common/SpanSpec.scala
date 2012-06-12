@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,7 @@ class SpanSpec extends Specification {
   val annotationValue = "NONSENSE"
   val expectedAnnotation = Annotation(1, annotationValue, Some(Endpoint(1, 2, "service")))
   val expectedSpan = Span(12345, "methodcall", 666, None,
-        List(expectedAnnotation), Nil)
+    List(expectedAnnotation), Nil)
 
   val annotation1 = Annotation(1, "value1", Some(Endpoint(1, 2, "service")))
   val annotation2 = Annotation(2, "value2", Some(Endpoint(3, 4, "service")))
