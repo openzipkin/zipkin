@@ -11,21 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-require 'ipaddr'
-
-class Names
-
-  def self.get_service_names
-    ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
-      client.getServiceNames().sort
-    end
-  end
-
-  def self.get_span_names(service_name)
-    ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
-      client.getSpanNames(service_name).sort
-    end
-  end
-
+module ZipkinQuery
+  VERSION = "0.0.1"
 end

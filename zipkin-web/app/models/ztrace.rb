@@ -1,19 +1,17 @@
 # Copyright 2012 Twitter Inc.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #      http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'zipkin_client'
-require 'zipkin_types'
 require 'ipaddr'
 
 class ZTrace
@@ -125,7 +123,7 @@ class ZTrace
   end
 
   def self.get_traces_by_ids(trace_ids, opts = {})
-    ZipkinClient.with_transport(Rails.configuration.zookeeper) do |client|
+    ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
       adjusters = [] #[Zipkin::Adjust::TIME_SKEW] #TODO config
       traces = client.getTracesByIds(trace_ids.collect { |id| id.to_i }, adjusters)
       traces.collect { |trace| ZTrace.from_thrift(trace) }
@@ -134,19 +132,19 @@ class ZTrace
 
   # what is the default ttl we set traces to?
   def self.get_default_ttl_sec(opts = {})
-    ZipkinClient.with_transport(Rails.configuration.zookeeper) do |client|
+    ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
       client.getDataTimeToLive()
     end
   end
 
   def self.get_ttl(trace_id, opts = {})
-    ZipkinClient.with_transport(Rails.configuration.zookeeper) do |client|
+    ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
       client.getTraceTimeToLive(trace_id) # returns seconds
     end
   end
 
   def self.set_ttl(trace_id, ttl_seconds, opts = {})
-    ZipkinClient.with_transport(Rails.configuration.zookeeper) do |client|
+    ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
       client.setTraceTimeToLive(trace_id.to_i, ttl_seconds.to_i)
     end
   end

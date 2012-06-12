@@ -16,8 +16,6 @@ include ActionView::Helpers::DateHelper
 
 require 'base64'
 
-require 'zipkin_client'
-
 require 'endpoint'
 require 'annotation'
 require 'names'
@@ -25,7 +23,6 @@ require 'trace_summary'
 require 'ztrace'
 require 'index'
 require 'timeline_annotation'
-
 
 class TracesController < ApplicationController
 
