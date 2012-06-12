@@ -15,7 +15,7 @@
 require 'fileutils'
 require 'thread'
 
-JAR_VERSION="0.1.3-SNAPSHOT"
+JAR_VERSION="0.2.0-SNAPSHOT"
 
 #Usage : scald.rb [--hdfs|--local|--print] job <job args>
 # --hdfs: if job ends in ".scala" or ".java" and the file exists, link it against JARFILE (below) and then run it on HOST.
@@ -178,7 +178,7 @@ def hadoop_command
 end
 
 def jar_mode_command
-  "hadoop jar #{JARBASE} com.twitter.scalding.Tool -Dmapred.reduce.tasks=#{REDUCERS} #{JOB} --hdfs " + ARGV.join(" ")
+  "hadoop jar #{JARBASE} -Dmapred.reduce.tasks=#{REDUCERS} #{JOB} --hdfs " + ARGV.join(" ")
 end
 
 #Always sync the remote JARFILE
