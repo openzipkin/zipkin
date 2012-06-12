@@ -7,4 +7,5 @@ gem 'zookeeper', "1.2.4"
 gem 'finagle-thrift', '1.2.0'
 gem 'scribe', '0.2.4'
 gem 'zipkin-tracer', '0.0.1'
+gem 'zipkin-query', '0.0.1'
 
