@@ -70,7 +70,7 @@ class SpanSpec extends Specification {
     }
 
     "know this is not a client side span" in {
-      val spanSr = Span(1, "n", 2, None, List(Annotation(1, Constants.SERVER_RECV, None)), Nil)
+      val spanSr = Span(1, "n", 2, None, List(Annotation(1, Constants.ServerRecv, None)), Nil)
       spanSr.isClientSide mustEqual false
     }
 
@@ -84,12 +84,12 @@ class SpanSpec extends Specification {
     }
 
     "validate span" in {
-      val cs = Annotation(1, Constants.CLIENT_SEND, None)
-      val sr = Annotation(2, Constants.SERVER_RECV, None)
-      val ss = Annotation(3, Constants.SERVER_SEND, None)
-      val cr = Annotation(4, Constants.CLIENT_RECV, None)
+      val cs = Annotation(1, Constants.ClientSend, None)
+      val sr = Annotation(2, Constants.ServerRecv, None)
+      val ss = Annotation(3, Constants.ServerSend, None)
+      val cr = Annotation(4, Constants.ClientRecv, None)
 
-      val cs2 = Annotation(5, Constants.CLIENT_SEND, None)
+      val cs2 = Annotation(5, Constants.ClientSend, None)
 
       val s1 = Span(1, "i", 123, None, List(cs, sr, ss, cr), Nil)
       s1.isValid mustEqual true

@@ -1,13 +1,13 @@
 package com.twitter.zipkin
 
 object Constants {
-  val CLIENT_SEND: String = "cs"
-  val CLIENT_RECV: String = "cr"
-  val SERVER_SEND: String = "ss"
-  val SERVER_RECV: String = "sr"
+  val ClientSend: String = "cs"
+  val ClientRecv: String = "cr"
+  val ServerSend: String = "ss"
+  val ServerRecv: String = "sr"
 
-  val CoreClient: Seq[String] = Seq(CLIENT_SEND, CLIENT_RECV)
-  val CoreServer: Seq[String] = Seq(SERVER_RECV, SERVER_SEND)
+  val CoreClient: Seq[String] = Seq(ClientSend, ClientRecv)
+  val CoreServer: Seq[String] = Seq(ServerRecv, ServerSend)
 
   val CoreAnnotations: Seq[String] = CoreClient ++ CoreServer
 }

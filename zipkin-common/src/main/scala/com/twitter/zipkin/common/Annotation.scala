@@ -16,22 +16,6 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.zipkin.Constants
-
-/**
- * An annotation is a point in time with a string describing
- * what happened. For example one of the expected framework
- * generated annotations is "client send", when the client
- * initiated the request.
- */
-object Annotation {
-  val CoreClient = Seq(Constants.CLIENT_SEND, Constants.CLIENT_RECV)
-  val CoreServer = Seq(Constants.SERVER_SEND, Constants.SERVER_RECV)
-
-  // these annotations should always be present in a fully formed span
-  val CoreAnnotations: Seq[String] = CoreClient ++ CoreServer
-}
-
 /**
  * @param timestamp when was this annotation created? microseconds from epoch
  * @param value description of what happened at the timestamp could for example be "cache miss for key: x"

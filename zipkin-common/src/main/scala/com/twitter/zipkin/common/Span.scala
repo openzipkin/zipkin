@@ -133,7 +133,7 @@ case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
    */
   def isClientSide(): Boolean = {
     annotations.exists(a => {
-      a.value.equals(Constants.CLIENT_SEND) || a.value.equals(Constants.CLIENT_RECV)
+      a.value.equals(Constants.ClientSend) || a.value.equals(Constants.ClientRecv)
     })
   }
 
@@ -141,14 +141,14 @@ case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
    * Pick out the core client side annotations
    */
   def clientSideAnnotations: Seq[Annotation] = {
-    annotations.filter(a => Annotation.CoreClient.contains(a.value))
+    annotations.filter(a => Constants.CoreClient.contains(a.value))
   }
 
   /**
    * Pick out the core server side annotations
    */
   def serverSideAnnotations: Seq[Annotation] = {
-    annotations.filter(a => Annotation.CoreServer.contains(a.value))
+    annotations.filter(a => Constants.CoreServer.contains(a.value))
   }
 
   /**
@@ -164,7 +164,7 @@ case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
    *         false otherwise
    */
   def isValid: Boolean = {
-    Annotation.CoreAnnotations.map { c =>
+    Constants.CoreAnnotations.map { c =>
       annotations.filter { _.value == c }.length > 1
     }.count {b => b} == 0
   }
