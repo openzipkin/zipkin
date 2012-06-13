@@ -17,16 +17,9 @@
 package com.twitter.zipkin.common
 
 import org.specs.Specification
-import com.twitter.zipkin.gen
 
 class AnnotationSpec extends Specification {
   "Annotation" should {
-    "convert to thrift and back" in {
-      val expectedAnn = Annotation(123, "value", Some(Endpoint(123, 123, "service")))
-      val thriftAnn = expectedAnn.toThrift
-      val actualAnn = Annotation.fromThrift(thriftAnn)
-      expectedAnn mustEqual actualAnn
-    }
 
     "get min of two annotations" in {
       val ann1 = Annotation(1, "one", None)

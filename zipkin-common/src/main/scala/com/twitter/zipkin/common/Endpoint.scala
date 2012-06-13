@@ -16,26 +16,12 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.zipkin.gen
-
 /**
  * Represents the client or server machine we traced.
  */
 object Endpoint {
   val Unknown = Endpoint(0, 0, "")
   val UnknownServiceName = "Unknown service name"
-
-  def fromThrift(endpoint: gen.Endpoint): Endpoint = {
-
-    val serviceName = endpoint.serviceName match {
-      case null => UnknownServiceName
-      case "" => UnknownServiceName
-      case _ => endpoint.serviceName
-    }
-
-    new Endpoint(endpoint.ipv4, endpoint.port, serviceName)
-  }
-
 }
 
 /**
@@ -45,10 +31,6 @@ object Endpoint {
  */
 case class Endpoint(ipv4: Int, port: Short, serviceName: String)
   extends Ordered[Endpoint] {
-
-  def toThrift: gen.Endpoint = {
-    gen.Endpoint(ipv4, port, serviceName)
-  }
 
   override def compare(that: Endpoint) = {
     if (serviceName != that.serviceName)

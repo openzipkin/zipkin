@@ -19,6 +19,7 @@ import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.common.{Span, Endpoint, Annotation}
 import collection.mutable.ArrayBuffer
+import com.twitter.zipkin.adapter.ThriftAdapter
 
 class SnappyCodecSpec extends Specification {
 
@@ -33,7 +34,7 @@ class SnappyCodecSpec extends Specification {
         new Annotation(2, gen.Constants.CLIENT_SEND, Some(Endpoint(23567, 345, "service"))),
         new Annotation(3, gen.Constants.CLIENT_RECV, Some(Endpoint(23567, 345, "service")))),
         ArrayBuffer())
-      val actual = Span.fromThrift(snappyCodec.decode(snappyCodec.encode(expected.toThrift)))
+      val actual = ThriftAdapter(snappyCodec.decode(snappyCodec.encode(ThriftAdapter(expected))))
 
       expected mustEqual actual
     }
