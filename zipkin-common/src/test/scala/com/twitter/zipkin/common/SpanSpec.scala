@@ -27,7 +27,7 @@ class SpanSpec extends Specification {
     List(expectedAnnotation), Nil)
 
   val annotation1 = Annotation(1, "value1", Some(Endpoint(1, 2, "service")))
-  val annotation2 = Annotation(2, "value2", Some(Endpoint(3, 4, "service")))
+  val annotation2 = Annotation(2, "value2", Some(Endpoint(3, 4, "Service"))) // upper case service name
   val annotation3 = Annotation(3, "value3", Some(Endpoint(5, 6, "service")))
 
   val spanWith3Annotations = Span(12345, "methodcall", 666, None,
@@ -52,7 +52,13 @@ class SpanSpec extends Specification {
       Span.fromThrift(noBinaryAnnotationsSpan) mustEqual Span(0, "name", 0, None, List(), Seq())
     }
 
-    "getAnnotationsAsMap" in {
+    "serviceNames is lowercase" in {
+      val names = spanWith3Annotations.serviceNames
+      names.size mustBe 1
+      names(0) mustBe "service"
+    }
+
+    "serviceNames" in {
       val map = expectedSpan.getAnnotationsAsMap
       val actualAnnotation = map.get(annotationValue).get
       expectedAnnotation mustEqual actualAnnotation
