@@ -14,24 +14,16 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.common
+package com.twitter.zipkin
 
-import org.specs.Specification
+object Constants {
+  val ClientSend: String = "cs"
+  val ClientRecv: String = "cr"
+  val ServerSend: String = "ss"
+  val ServerRecv: String = "sr"
 
-class EndpointSpec extends Specification {
-  "Endpoint" should {
+  val CoreClient: Seq[String] = Seq(ClientSend, ClientRecv)
+  val CoreServer: Seq[String] = Seq(ServerRecv, ServerSend)
 
-    "compare correctly" in {
-      val e1 = Endpoint(123, 456, "a")
-      val e2 = Endpoint(123, 457, "a")
-      val e3 = Endpoint(124, 456, "a")
-      val e4 = Endpoint(123, 456, "b")
-
-      e1.compare(e1) mustEqual 0
-      e1.compare(e2) must beLessThan(0)
-      e1.compare(e3) must beLessThan(0)
-      e1.compare(e4) must beLessThan(0)
-
-    }
-  }
+  val CoreAnnotations: Seq[String] = CoreClient ++ CoreServer
 }

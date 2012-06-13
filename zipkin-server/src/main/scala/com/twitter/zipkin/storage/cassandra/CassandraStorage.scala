@@ -24,6 +24,7 @@ import com.twitter.zipkin.common.{Trace, Span}
 import com.twitter.conversions.time._
 import scala.collection.JavaConverters._
 import com.twitter.zipkin.config.{CassandraConfig, CassandraStorageConfig}
+import com.twitter.zipkin.adapter.ThriftAdapter
 
 trait CassandraStorage extends Storage with Cassandra {
 
@@ -55,7 +56,7 @@ trait CassandraStorage extends Storage with Cassandra {
     CASSANDRA_STORE_SPAN.incr
     WRITE_REQUEST_COUNTER.incr()
     val traceKey = span.traceId
-    val traceCol = Column[String, gen.Span](createSpanColumnName(span), span.toThrift).ttl(cassandraConfig.tracesTimeToLive)
+    val traceCol = Column[String, gen.Span](createSpanColumnName(span), ThriftAdapter(span)).ttl(cassandraConfig.tracesTimeToLive)
     Future.join {
       Seq(traces.insert(traceKey, traceCol))
     }
@@ -107,7 +108,7 @@ trait CassandraStorage extends Storage with Cassandra {
         traces.multigetRows(ids.toSet.asJava, None, None, Order.Normal, TRACE_MAX_COLS).map { rowSet =>
           ids.flatMap { id =>
             val spans = rowSet.asScala(id).asScala.map {
-              case (colName, col) => Span.fromThrift(col.value)
+              case (colName, col) => ThriftAdapter(col.value)
             }
 
             if (spans.isEmpty) {

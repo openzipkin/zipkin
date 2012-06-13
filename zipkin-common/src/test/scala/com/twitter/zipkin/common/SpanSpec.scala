@@ -17,7 +17,7 @@
 package com.twitter.zipkin.common
 
 import org.specs.Specification
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.Constants
 
 class SpanSpec extends Specification {
 
@@ -35,27 +35,11 @@ class SpanSpec extends Specification {
 
 
   "Span" should {
-    "convert to thrift and back" in {
-      val thriftSpan = expectedSpan.toThrift
-      val actualSpan = Span.fromThrift(thriftSpan)
-      expectedSpan mustEqual actualSpan
-    }
-
-    "handle incomplete thrift span" in {
-      val noNameSpan = gen.Span(0, null, 0, None, Seq(), Seq())
-      Span.fromThrift(noNameSpan) must throwA[IncompleteTraceDataException]
-
-      val noAnnotationsSpan = gen.Span(0, "name", 0, None, null, Seq())
-      Span.fromThrift(noAnnotationsSpan) mustEqual Span(0, "name", 0, None, List(), Seq())
-
-      val noBinaryAnnotationsSpan = gen.Span(0, "name", 0, None, Seq(), null)
-      Span.fromThrift(noBinaryAnnotationsSpan) mustEqual Span(0, "name", 0, None, List(), Seq())
-    }
 
     "serviceNames is lowercase" in {
       val names = spanWith3Annotations.serviceNames
       names.size mustBe 1
-      names(0) mustBe "service"
+      names.toSeq(0) mustBe "service"
     }
 
     "serviceNames" in {
@@ -92,7 +76,7 @@ class SpanSpec extends Specification {
     }
 
     "know this is not a client side span" in {
-      val spanSr = Span(1, "n", 2, None, List(Annotation(1, gen.Constants.SERVER_RECV, None)), Nil)
+      val spanSr = Span(1, "n", 2, None, List(Annotation(1, Constants.ServerRecv, None)), Nil)
       spanSr.isClientSide mustEqual false
     }
 
@@ -106,12 +90,12 @@ class SpanSpec extends Specification {
     }
 
     "validate span" in {
-      val cs = Annotation(1, gen.Constants.CLIENT_SEND, None)
-      val sr = Annotation(2, gen.Constants.SERVER_RECV, None)
-      val ss = Annotation(3, gen.Constants.SERVER_SEND, None)
-      val cr = Annotation(4, gen.Constants.CLIENT_RECV, None)
+      val cs = Annotation(1, Constants.ClientSend, None)
+      val sr = Annotation(2, Constants.ServerRecv, None)
+      val ss = Annotation(3, Constants.ServerSend, None)
+      val cr = Annotation(4, Constants.ClientRecv, None)
 
-      val cs2 = Annotation(5, gen.Constants.CLIENT_SEND, None)
+      val cs2 = Annotation(5, Constants.ClientSend, None)
 
       val s1 = Span(1, "i", 123, None, List(cs, sr, ss, cr), Nil)
       s1.isValid mustEqual true

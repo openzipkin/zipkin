@@ -16,22 +16,11 @@
  */
 package com.twitter.zipkin.common
 
-import org.specs.Specification
+import java.nio.ByteBuffer
 
-class EndpointSpec extends Specification {
-  "Endpoint" should {
-
-    "compare correctly" in {
-      val e1 = Endpoint(123, 456, "a")
-      val e2 = Endpoint(123, 457, "a")
-      val e3 = Endpoint(124, 456, "a")
-      val e4 = Endpoint(123, 456, "b")
-
-      e1.compare(e1) mustEqual 0
-      e1.compare(e2) must beLessThan(0)
-      e1.compare(e3) must beLessThan(0)
-      e1.compare(e4) must beLessThan(0)
-
-    }
-  }
-}
+case class BinaryAnnotation(
+  key: String,
+  value: ByteBuffer,
+  annotationType: AnnotationType,
+  host: Option[Endpoint]
+)

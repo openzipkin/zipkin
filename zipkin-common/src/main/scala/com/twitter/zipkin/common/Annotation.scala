@@ -16,35 +16,6 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.zipkin.gen
-
-/**
- * An annotation is a point in time with a string describing
- * what happened. For example one of the expected framework
- * generated annotations is "client send", when the client
- * initiated the request.
- */
-object Annotation {
-  val CoreClient = Seq(gen.Constants.CLIENT_SEND, gen.Constants.CLIENT_RECV)
-  val CoreServer = Seq(gen.Constants.SERVER_SEND, gen.Constants.SERVER_RECV)
-
-  // these annotations should always be present in a fully formed span
-  val CoreAnnotations: Seq[String] = CoreClient ++ CoreServer
-
-  def fromThrift(annotation: gen.Annotation): Annotation = {
-
-    if (annotation.timestamp <= 0)
-      throw new IllegalArgumentException("Annotation must have a timestamp: %s".format(annotation.toString))
-
-    if ("".equals(annotation.value))
-      throw new IllegalArgumentException("Annotation must have a value: %s".format(annotation.toString))
-
-    new Annotation(annotation.timestamp, annotation.value,
-      annotation.host.map(Endpoint.fromThrift(_)))
-  }
-
-}
-
 /**
  * @param timestamp when was this annotation created? microseconds from epoch
  * @param value description of what happened at the timestamp could for example be "cache miss for key: x"
@@ -53,10 +24,6 @@ object Annotation {
 case class Annotation(timestamp: Long, value: String, host: Option[Endpoint])
   extends Ordered[Annotation]{
   def serviceName = host.map(_.serviceName).getOrElse("Unknown service name")
-
-  def toThrift: gen.Annotation = {
-    gen.Annotation(timestamp, value, host.map(_.toThrift))
-  }
 
   /**
    * @return diff between timestamps of the two annotations.

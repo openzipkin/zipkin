@@ -18,6 +18,7 @@ package com.twitter.zipkin.common
 
 import com.twitter.zipkin.gen
 import scala.collection.Map
+import com.twitter.zipkin.adapter.ThriftAdapter
 
 /**
  * Represents the summary of a trace.
@@ -29,7 +30,7 @@ object TraceSummary {
   def fromThrift(summary: gen.TraceSummary): TraceSummary = {
     new TraceSummary(summary.traceId, summary.startTimestamp, summary.endTimestamp,
       summary.durationMicro, summary.serviceCounts,
-      summary.endpoints.map(Endpoint.fromThrift(_)).toList)
+      summary.endpoints.map(ThriftAdapter(_)).toList)
   }
 
 }
@@ -48,6 +49,6 @@ case class TraceSummary(traceId: Long, startTimestamp: Long, endTimestamp: Long,
 
   def toThrift: gen.TraceSummary = {
     gen.TraceSummary(traceId, startTimestamp, endTimestamp,
-      durationMicro, serviceCounts, endpoints.map(e => e.toThrift))
+      durationMicro, serviceCounts, endpoints.map(ThriftAdapter(_)))
   }
 }
