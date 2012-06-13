@@ -20,6 +20,7 @@ import org.specs.Specification
 import com.twitter.zipkin.gen
 import collection.mutable
 import java.nio.ByteBuffer
+import com.twitter.zipkin.adapter.ThriftAdapter
 
 class TraceSpec extends Specification {
 
@@ -119,9 +120,9 @@ class TraceSpec extends Specification {
 
     "getBinaryAnnotations" in {
       val ba1 = gen.BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), gen.AnnotationType.String)
-      val span1 = Span(1L, "", 1L, None, List(), List(ba1))
+      val span1 = Span(1L, "", 1L, None, List(), List(ThriftAdapter(ba1)))
       val ba2 = gen.BinaryAnnotation("key2", ByteBuffer.wrap("value2".getBytes), gen.AnnotationType.String)
-      val span2 = Span(1L, "", 2L, None, List(), List(ba2))
+      val span2 = Span(1L, "", 2L, None, List(), List(ThriftAdapter(ba2)))
 
       val trace = Trace(List[Span](span1, span2))
       Seq(ba1, ba2) mustEqual trace.getBinaryAnnotations

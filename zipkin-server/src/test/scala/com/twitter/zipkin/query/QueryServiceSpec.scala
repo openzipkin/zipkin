@@ -26,6 +26,7 @@ import java.nio.ByteBuffer
 import com.twitter.util.Future
 import com.twitter.zipkin.storage.{TraceIdDuration, Storage, Index}
 import com.twitter.scrooge.BinaryThriftStructSerializer
+import com.twitter.zipkin.adapter.ThriftAdapter
 
 class QueryServiceSpec extends Specification with JMocker with ClassMocker {
   val ep1 = Endpoint(123, 123, "service1")
@@ -253,13 +254,13 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
       }
 
       val ann1 = gen.TimelineAnnotation(100, gen.Constants.CLIENT_SEND,
-        ep1.toThrift, 666, None, "service1", "methodcall")
+        ThriftAdapter(ep1), 666, None, "service1", "methodcall")
       val ann2 = gen.TimelineAnnotation(150, gen.Constants.CLIENT_RECV,
-        ep1.toThrift, 666, None, "service1", "methodcall")
+        ThriftAdapter(ep1), 666, None, "service1", "methodcall")
       val ann3 = gen.TimelineAnnotation(110, gen.Constants.SERVER_RECV,
-        ep2.toThrift, 666, None, "service2", "methodcall")
+        ThriftAdapter(ep2), 666, None, "service2", "methodcall")
       val ann4 = gen.TimelineAnnotation(140, gen.Constants.SERVER_SEND,
-        ep2.toThrift, 666, None, "service2", "methodcall")
+        ThriftAdapter(ep2), 666, None, "service2", "methodcall")
 
       val expected = List(gen.TraceTimeline(1L, 666, List(ann1, ann3, ann4, ann2), List()))
       val actual = qs.getTraceTimelinesByIds(List(1L), List(gen.Adjust.Nothing, gen.Adjust.TimeSkew))()
@@ -275,11 +276,11 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
       // these are real traces, except for timestap that has been chopped down to make easier to spot
       // differences
       val epKoalabird = Some(Endpoint(170024040, -26945, "koalabird-cuckoo"))
-      val epKoalabirdT = epKoalabird.get.toThrift
+      val epKoalabirdT = ThriftAdapter(epKoalabird.get)
       val epCuckoo = Some(Endpoint(170061954, 9149, "cuckoo.thrift"))
-      val epCuckooT = epCuckoo.get.toThrift
+      val epCuckooT = ThriftAdapter(epCuckoo.get)
       val epCuckooCassie = Some(Endpoint(170061954, -24936, "client"))
-      val epCuckooCassieT = epCuckooCassie.get.toThrift
+      val epCuckooCassieT = ThriftAdapter(epCuckooCassie.get)
 
       val rs1 = Span(4488677265848750007L, "ValuesFromSource", 4488677265848750007L, None, List(
         Annotation(6712580L, "cs", epKoalabird),
@@ -337,11 +338,11 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
       // these are real traces, except for timestap that has been chopped down to make easier to spot
       // differences
       val epKoalabird = Some(Endpoint(170021254, -24672, "koalabird-cuckoo"))
-      val epKoalabirdT = epKoalabird.get.toThrift
+      val epKoalabirdT = ThriftAdapter(epKoalabird.get)
       val epCuckoo = Some(Endpoint(170062191, 9149, "cuckoo.thrift"))
-      val epCuckooT = epCuckoo.get.toThrift
+      val epCuckooT = ThriftAdapter(epCuckoo.get)
       val epCuckooCassie = Some(Endpoint(170062191, -8985, "client"))
-      val epCuckooCassieT = epCuckooCassie.get.toThrift
+      val epCuckooCassieT = ThriftAdapter(epCuckooCassie.get)
 
       val rs1 = Span(-6120267009876080004L, "ValuesFromSource", -6120267009876080004L, None, List(
         Annotation(630715L, "cs", epKoalabird),

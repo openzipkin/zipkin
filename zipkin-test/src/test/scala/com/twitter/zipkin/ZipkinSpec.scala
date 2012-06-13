@@ -47,6 +47,8 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
   var collectorTransport: Service[ThriftClientRequest, Array[Byte]] = null
   var query: ZipkinQuery = null
   var queryTransport: Service[ThriftClientRequest, Array[Byte]] = null
+  var zooKeeperServer: ZooKeeperServer = null
+  var connectionFactory: NIOServerCnxn.Factory = null
 
   "ZipkinCollector and ZipkinQuery" should {
     doBefore {
@@ -56,9 +58,9 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
       // start a temporary zookeeper server
       val zkPort = 2181 // TODO pick another port?
       val tmpDir = FileUtils.createTempDir()
-      val zooKeeperServer =
+      zooKeeperServer =
         new ZooKeeperServer(new FileTxnSnapLog(tmpDir, tmpDir), new BasicDataTreeBuilder())
-      val connectionFactory = new NIOServerCnxn.Factory(new InetSocketAddress(zkPort))
+      connectionFactory = new NIOServerCnxn.Factory(new InetSocketAddress(zkPort))
       connectionFactory.startup(zooKeeperServer)
 
       // no need to register in serversets
@@ -105,6 +107,9 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
       collector.shutdown()
       queryTransport.release()
       query.shutdown()
+
+      zooKeeperServer.shutdown()
+      connectionFactory.shutdown()
 
       FakeServer.stop()
     }

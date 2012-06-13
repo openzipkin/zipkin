@@ -26,6 +26,7 @@ import com.twitter.zipkin.util.Util
 import com.twitter.zipkin.storage.{TraceIdDuration, Index}
 import com.twitter.util.Future
 import com.twitter.zipkin.config.CassandraConfig
+import com.twitter.zipkin.Constants
 
 /**
  * An index for the spans and traces using Cassandra with the Cassie client.
@@ -245,7 +246,7 @@ trait CassandraIndex extends Index with Cassandra {
 
     span.annotations.filter { a =>
       // skip core annotations since that query can be done by service name/span name anyway
-      !Annotation.CoreAnnotations.contains(a.value)
+      !Constants.CoreAnnotations.contains(a.value)
     } groupBy {
       _.value
     } foreach { m: (String, List[Annotation]) =>

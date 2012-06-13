@@ -16,10 +16,7 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.zipkin.gen
-import scala.collection.JavaConversions._
-import scala.collection.Map
-import java.nio.ByteBuffer
+import com.twitter.zipkin.Constants
 
 /**
  * A span represents one RPC request. A trace is made up of many spans.
@@ -34,26 +31,6 @@ object Span {
 
   def apply(span: Span): Span = Span(span.traceId, span.name, span.id,
     span.parentId, span.annotations, span.binaryAnnotations)
-
-  def fromThrift(span: gen.Span): Span = {
-    span.`name` match {
-      case null => throw new IncompleteTraceDataException("No name set in Span")
-      case _ => ()
-    }
-
-    val annotations = span.annotations match {
-      case null => List[Annotation]()
-      case as => as.map { annotation => Annotation.fromThrift(annotation) }.toList
-    }
-
-    val binaryAnnotations = span.binaryAnnotations match {
-      case null => Seq[gen.BinaryAnnotation]()
-      case b => b
-    }
-
-    new Span(span.traceId, span.name, span.id, span.parentId, annotations, binaryAnnotations)
-  }
-
 }
 
 /**
@@ -67,17 +44,12 @@ object Span {
  * serialized objects
  */
 case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
-                 annotations: List[Annotation], binaryAnnotations: Seq[gen.BinaryAnnotation]) {
+                 annotations: List[Annotation], binaryAnnotations: Seq[BinaryAnnotation]) {
   /**
    * Order annotations by timestamp.
    */
   val timestampOrdering = new Ordering[Annotation] {
       def compare(a: Annotation, b: Annotation) = {a.timestamp.compare(b.timestamp)}
-  }
-
-  def toThrift: gen.Span = {
-    gen.Span(traceId, name, id, parentId, annotations.map(a => a.toThrift),
-      binaryAnnotations)
   }
 
   def serviceNames: Set[String] = {
@@ -161,7 +133,7 @@ case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
    */
   def isClientSide(): Boolean = {
     annotations.exists(a => {
-      a.value.equals(gen.Constants.CLIENT_SEND) || a.value.equals(gen.Constants.CLIENT_RECV)
+      a.value.equals(Constants.ClientSend) || a.value.equals(Constants.ClientRecv)
     })
   }
 
@@ -169,14 +141,14 @@ case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
    * Pick out the core client side annotations
    */
   def clientSideAnnotations: Seq[Annotation] = {
-    annotations.filter(a => Annotation.CoreClient.contains(a.value))
+    annotations.filter(a => Constants.CoreClient.contains(a.value))
   }
 
   /**
    * Pick out the core server side annotations
    */
   def serverSideAnnotations: Seq[Annotation] = {
-    annotations.filter(a => Annotation.CoreServer.contains(a.value))
+    annotations.filter(a => Constants.CoreServer.contains(a.value))
   }
 
   /**
@@ -192,7 +164,7 @@ case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
    *         false otherwise
    */
   def isValid: Boolean = {
-    Annotation.CoreAnnotations.map { c =>
+    Constants.CoreAnnotations.map { c =>
       annotations.filter { _.value == c }.length > 1
     }.count {b => b} == 0
   }
