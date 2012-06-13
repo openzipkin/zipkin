@@ -22,6 +22,7 @@ import com.twitter.zipkin.common.{Trace, Span, Annotation, Endpoint}
 
 import scala.collection.JavaConversions._
 import java.nio.ByteBuffer
+import com.twitter.zipkin.adapter.ThriftAdapter
 
 class TraceToTimelineSpec extends Specification with JMocker with ClassMocker {
 
@@ -59,9 +60,9 @@ class TraceToTimelineSpec extends Specification with JMocker with ClassMocker {
   val endpoint2 = Some(Endpoint(2, 2, cassieName)) //54147
   val endpoint3 = Some(Endpoint(3, 3, koalabirdName)) //36516
 
-  val et1 = endpoint1.get.toThrift
-  val et2 = endpoint2.get.toThrift
-  val et3 = endpoint3.get.toThrift
+  val et1 = ThriftAdapter(endpoint1.get)
+  val et2 = ThriftAdapter(endpoint2.get)
+  val et3 = ThriftAdapter(endpoint3.get)
 
   // This is from a real trace, at least what the data would look like
   // after being run through the TimeSkewAdjuster
@@ -75,7 +76,7 @@ class TraceToTimelineSpec extends Specification with JMocker with ClassMocker {
   val ba1 = gen.BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), gen.AnnotationType.String)
 
   val span1 = Span(1, "ValuesFromSource", 2209720933601260005L, None,
-    List(ann3, ann6), List(ba1))
+    List(ann3, ann6), List(ThriftAdapter(ba1)))
   val span2 = Span(1, "ValuesFromSource", 2209720933601260005L, None,
     List(ann4, ann1), Nil)
   // the above two spans are part of the same actual span

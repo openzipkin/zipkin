@@ -17,6 +17,7 @@ package com.twitter.zipkin.query.conversions
 
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.common.{IncompleteTraceDataException, Endpoint, Trace}
+import com.twitter.zipkin.adapter.ThriftAdapter
 
 class TraceToTimeline {
 
@@ -31,8 +32,8 @@ class TraceToTimeline {
       s.annotations.map{ a =>
         gen.TimelineAnnotation(a.timestamp, a.value,
           a.host match {
-            case Some(s) => s.toThrift
-            case None => Endpoint.Unknown.toThrift
+            case Some(s) => ThriftAdapter(s)
+            case None => ThriftAdapter(Endpoint.Unknown)
           },
           s.id,
           s.parentId,

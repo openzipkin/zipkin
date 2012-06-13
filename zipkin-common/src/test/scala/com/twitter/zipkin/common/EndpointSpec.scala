@@ -17,23 +17,9 @@
 package com.twitter.zipkin.common
 
 import org.specs.Specification
-import com.twitter.zipkin.gen
 
 class EndpointSpec extends Specification {
   "Endpoint" should {
-    "convert to thrift and back" in {
-      val expectedEndpoint = Endpoint(123, 456, "service")
-      val thriftEndpoint = expectedEndpoint.toThrift
-      val actualEndpoint = Endpoint.fromThrift(thriftEndpoint)
-      expectedEndpoint mustEqual actualEndpoint
-    }
-
-    "convert to thrift and back, with null service" in {
-      // TODO this could happen if we deserialize an old style struct
-      val actualEndpoint = Endpoint.fromThrift(gen.Endpoint(123, 456, null))
-      val expectedEndpoint = Endpoint(123, 456, Endpoint.UnknownServiceName)
-      expectedEndpoint mustEqual actualEndpoint
-    }
 
     "compare correctly" in {
       val e1 = Endpoint(123, 456, "a")

@@ -16,7 +16,7 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.Constants
 
 /**
  * An annotation is a point in time with a string describing
@@ -25,24 +25,11 @@ import com.twitter.zipkin.gen
  * initiated the request.
  */
 object Annotation {
-  val CoreClient = Seq(gen.Constants.CLIENT_SEND, gen.Constants.CLIENT_RECV)
-  val CoreServer = Seq(gen.Constants.SERVER_SEND, gen.Constants.SERVER_RECV)
+  val CoreClient = Seq(Constants.CLIENT_SEND, Constants.CLIENT_RECV)
+  val CoreServer = Seq(Constants.SERVER_SEND, Constants.SERVER_RECV)
 
   // these annotations should always be present in a fully formed span
   val CoreAnnotations: Seq[String] = CoreClient ++ CoreServer
-
-  def fromThrift(annotation: gen.Annotation): Annotation = {
-
-    if (annotation.timestamp <= 0)
-      throw new IllegalArgumentException("Annotation must have a timestamp: %s".format(annotation.toString))
-
-    if ("".equals(annotation.value))
-      throw new IllegalArgumentException("Annotation must have a value: %s".format(annotation.toString))
-
-    new Annotation(annotation.timestamp, annotation.value,
-      annotation.host.map(Endpoint.fromThrift(_)))
-  }
-
 }
 
 /**
@@ -53,10 +40,6 @@ object Annotation {
 case class Annotation(timestamp: Long, value: String, host: Option[Endpoint])
   extends Ordered[Annotation]{
   def serviceName = host.map(_.serviceName).getOrElse("Unknown service name")
-
-  def toThrift: gen.Annotation = {
-    gen.Annotation(timestamp, value, host.map(_.toThrift))
-  }
 
   /**
    * @return diff between timestamps of the two annotations.

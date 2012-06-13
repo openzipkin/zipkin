@@ -17,12 +17,12 @@
 package com.twitter.zipkin.common
 
 import com.twitter.zipkin.gen
-import scala.collection.JavaConversions._
 import collection.mutable
 import mutable.HashMap
 import com.twitter.zipkin.query.conversions.TraceToTimeline
 import com.twitter.logging.Logger
 import java.nio.ByteBuffer
+import com.twitter.zipkin.adapter.ThriftAdapter
 
 /**
  * Represents a trace, a bundle of spans.
@@ -32,7 +32,7 @@ object Trace {
   def apply(spanTree: SpanTreeEntry): Trace = Trace(spanTree.toList)
 
   def fromThrift(trace: gen.Trace): Trace = {
-    new Trace(trace.spans.map(Span.fromThrift(_)).toList)
+    new Trace(trace.spans.map(ThriftAdapter(_)).toList)
   }
 
 }
@@ -134,7 +134,7 @@ case class Trace(spans: Seq[Span]) {
   }
 
   def toThrift: gen.Trace = {
-    gen.Trace(spans.map(s => s.toThrift))
+    gen.Trace(spans.map { ThriftAdapter(_) })
   }
 
   /**
@@ -184,7 +184,11 @@ case class Trace(spans: Seq[Span]) {
    * Get all the binary annotations in this trace.
    */
   def getBinaryAnnotations: Seq[gen.BinaryAnnotation] = {
-    spans.map(_.binaryAnnotations).flatten
+    spans.map {
+      _.binaryAnnotations.map {
+        ThriftAdapter(_)
+      }
+    }.flatten
   }
 
   /**

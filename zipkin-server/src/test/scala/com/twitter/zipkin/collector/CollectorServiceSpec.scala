@@ -24,14 +24,15 @@ import com.twitter.zipkin.config.ZipkinCollectorConfig
 import com.twitter.zipkin.gen
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
+import com.twitter.zipkin.adapter.ThriftAdapter
 
 class CollectorServiceSpec extends Specification with JMocker with ClassMocker {
   val serializer = new BinaryThriftStructSerializer[gen.Span] { def codec = gen.Span }
 
   val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
-  val validList = List(gen.LogEntry("b3", serializer.toString(validSpan.toThrift)))
+  val validList = List(gen.LogEntry("b3", serializer.toString(ThriftAdapter(validSpan))))
 
-  val wrongCatList = List(gen.LogEntry("wrongcat", serializer.toString(validSpan.toThrift)))
+  val wrongCatList = List(gen.LogEntry("wrongcat", serializer.toString(ThriftAdapter(validSpan))))
 
   val base64 = "CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA="
 
