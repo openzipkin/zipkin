@@ -1,9 +1,26 @@
+/*
+ * Copyright 2012 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
 package com.twitter.zipkin.adapter
 
+import com.twitter.zipkin.common._
 import com.twitter.zipkin.gen
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
-import com.twitter.zipkin.common.{IncompleteTraceDataException, Span, Endpoint, Annotation}
+import java.nio.ByteBuffer
 
 class ThriftAdapterSpec extends Specification with JMocker with ClassMocker {
 
@@ -18,14 +35,26 @@ class ThriftAdapterSpec extends Specification with JMocker with ClassMocker {
     }
 
     "convert AnnotationType" in {
+      val types = Seq("Bool", "Bytes", "I16", "I32", "I64", "Double", "String")
       "to thrift and back" in {
-
+        types.zipWithIndex.foreach { case (value: String, index: Int) =>
+          val expectedAnnType: AnnotationType = AnnotationType(index, value)
+          val thriftAnnType: gen.AnnotationType = ThriftAdapter(expectedAnnType)
+          val actualAnnType: AnnotationType = ThriftAdapter(thriftAnnType)
+          actualAnnType mustEqual expectedAnnType
+        }
       }
     }
 
     "convert BinaryAnnotation" in {
       "to thrift and back" in {
-
+        val expectedAnnType = AnnotationType(3, "I32")
+        val expectedHost = Some(Endpoint(123, 456, "service"))
+        val expectedBA: BinaryAnnotation =
+          BinaryAnnotation("something", ByteBuffer.wrap("else".getBytes), expectedAnnType, expectedHost)
+        val thriftBA: gen.BinaryAnnotation = ThriftAdapter(expectedBA)
+        val actualBA: BinaryAnnotation = ThriftAdapter(thriftBA)
+        actualBA mustEqual expectedBA
       }
     }
 
