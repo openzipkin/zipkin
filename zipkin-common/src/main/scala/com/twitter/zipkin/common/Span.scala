@@ -80,9 +80,10 @@ case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
       binaryAnnotations)
   }
 
-  def serviceNames: Set[String] = {
-    annotations.flatMap(a => a.host.map(h => h.serviceName.toLowerCase)).toSet
-  }
+  /**
+   * @return the unique set of service names as lower case
+   */
+  lazy val serviceNames: Set[String] = annotations.flatMap(a => a.host.map(h => h.serviceName.toLowerCase)).toSet
 
   /**
    * Tries to extract the best possible service name
