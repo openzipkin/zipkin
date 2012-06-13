@@ -220,14 +220,13 @@ trait CassandraIndex extends Index with Cassandra {
 
     val futures = serviceNames.map(serviceName => {
       WRITE_REQUEST_COUNTER.incr()
-      val serviceSpanIndexKey = serviceName.toLowerCase + "." + span.name.toLowerCase
+      val serviceSpanIndexKey = serviceName + "." + span.name.toLowerCase
       val serviceSpanIndexCol = Column[Long, Long](timestamp, span.traceId).ttl(config.tracesTimeToLive)
       val serviceSpanNameFuture = serviceSpanNameIndex.insert(serviceSpanIndexKey, serviceSpanIndexCol)
 
       WRITE_REQUEST_COUNTER.incr()
-      val serviceIndexKey = serviceName.toLowerCase
       val serviceIndexCol = Column[Long, Long](timestamp, span.traceId).ttl(config.tracesTimeToLive)
-      val serviceNameFuture = serviceNameIndex.insert(serviceIndexKey, serviceIndexCol)
+      val serviceNameFuture = serviceNameIndex.insert(serviceName, serviceIndexCol)
       List(serviceSpanNameFuture, serviceNameFuture)
     }).toList.flatten
     Future.join(futures)
@@ -264,9 +263,10 @@ trait CassandraIndex extends Index with Cassandra {
       ba.host match {
         case Some(endpoint) => {
           WRITE_REQUEST_COUNTER.incr(2)
+          val key = encode(endpoint.serviceName, ba.key).getBytes
           val col = Column[Long, Long](timestamp, span.traceId).ttl(config.tracesTimeToLive)
-          batch.insert(ByteBuffer.wrap(encode(endpoint.serviceName, ba.key).getBytes ++ INDEX_DELIMITER.getBytes ++ Util.getArrayFromBuffer(ba.value)), col)
-          batch.insert(ByteBuffer.wrap(encode(endpoint.serviceName, ba.key).getBytes), col)
+          batch.insert(ByteBuffer.wrap(key ++ INDEX_DELIMITER.getBytes ++ Util.getArrayFromBuffer(ba.value)), col)
+          batch.insert(ByteBuffer.wrap(key), col)
         }
         case None =>
       }
