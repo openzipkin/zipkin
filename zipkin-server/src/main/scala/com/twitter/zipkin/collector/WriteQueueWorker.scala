@@ -45,7 +45,7 @@ class WriteQueueWorker(queue: BlockingQueue[List[String]],
   def processScribeMessage(msg: String) {
     try {
       val span = Stats.time("deserializeSpan") { deserializer.fromString(msg) }
-      log.debug("Processing span: " + span + " from " + msg)
+      log.ifDebug("Processing span: " + span + " from " + msg)
       processSpan(Span.fromThrift(span))
     } catch {
       case e: Exception => {
