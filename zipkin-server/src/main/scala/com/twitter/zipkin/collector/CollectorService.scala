@@ -17,4 +17,19 @@ package com.twitter.zipkin.collector
 
 import com.twitter.ostrich.admin.Service
 
-trait CollectorService extends Service
+trait CollectorService extends Service {
+
+  val writeQueue: WriteQueue
+
+  @volatile var running = false
+
+  def start() {
+    running = true
+  }
+
+  def shutdown() {
+    running = false
+    writeQueue.flushAll()
+    writeQueue.shutdown()
+  }
+}
