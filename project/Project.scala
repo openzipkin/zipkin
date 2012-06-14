@@ -1,6 +1,6 @@
 import sbt._
-import Keys._
 import com.twitter.sbt._
+import sbt.Keys._
 import sbtassembly.Plugin._
 import AssemblyKeys._
 import java.io.File
@@ -8,7 +8,7 @@ import java.io.File
 object Zipkin extends Build {
 
   lazy val zipkin = Project(id = "zipkin",
-                            base = file(".")) aggregate(hadoop, test, thrift, server, common, scrooge)
+                            base = file(".")) aggregate(hadoop, test, thrift, server, common, scrooge, scribe)
   
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
 
@@ -66,7 +66,7 @@ object Zipkin extends Build {
       "asm"                     % "asm"          % "1.5.3" % "test",
       "org.objenesis"           % "objenesis"    % "1.1"   % "test"
     )
-  ) dependsOn(server)
+  ) dependsOn(server, scribe)
 
   lazy val thrift =
     Project(
@@ -202,4 +202,31 @@ object Zipkin extends Build {
           (base / "config" +++ base / "src" / "test" / "resources").get
       }
     ).dependsOn(common, scrooge)
+
+  lazy val scribe =
+    Project(
+      id = "zipkin-scribe",
+      base = file("zipkin-scribe"),
+      settings = Project.defaultSettings ++
+        StandardProject.newSettings ++
+        SubversionPublisher.newSettings
+    ).settings(
+      version := "0.2.0-SNAPSHOT",
+
+      libraryDependencies ++= Seq(
+        /* Test dependencies */
+        "org.scala-tools.testing" % "specs_2.9.1"  % "1.6.9" % "test",
+        "org.jmock"               % "jmock"        % "2.4.0" % "test",
+        "org.hamcrest"            % "hamcrest-all" % "1.1"   % "test",
+        "cglib"                   % "cglib"        % "2.2.2" % "test",
+        "asm"                     % "asm"          % "1.5.3" % "test",
+        "org.objenesis"           % "objenesis"    % "1.1"   % "test"
+      ),
+
+      /* Add configs to resource path for ConfigSpec */
+      unmanagedResourceDirectories in Test <<= baseDirectory {
+        base =>
+          (base / "config" +++ base / "src" / "test" / "resources").get
+      }
+    ).dependsOn(server, scrooge)
 }

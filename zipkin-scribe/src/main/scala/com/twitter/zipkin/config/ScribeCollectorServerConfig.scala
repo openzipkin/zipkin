@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.zipkin.config.collector
+package com.twitter.zipkin.config
 
 import com.twitter.finagle.builder.{ServerBuilder, Server}
 import com.twitter.finagle.thrift.ThriftServerFramedCodec
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.ServiceTracker
 import com.twitter.zipkin.collector.ScribeCollectorService
-import com.twitter.zipkin.config.ZipkinCollectorConfig
 import com.twitter.zipkin.gen
 import org.apache.thrift.protocol.TBinaryProtocol
+import com.twitter.zipkin.config.collector.CollectorServerConfig
 
-class ScribeCollectorServerConfig(config: ZipkinCollectorConfig) extends CollectorServerConfig {
+class ScribeCollectorServerConfig(config: ScribeZipkinCollectorConfig) extends CollectorServerConfig {
 
   val log = Logger.get(Logger.getClass)
 
@@ -35,7 +35,7 @@ class ScribeCollectorServerConfig(config: ZipkinCollectorConfig) extends Collect
     log.info("Starting collector service on addr " + config.serverAddr)
 
     /* Start the service */
-    val service = new ScribeCollectorService(config, categories)
+    val service = new ScribeCollectorService(config, config.writeQueue, categories)
     service.start()
     ServiceTracker.register(service)
 
