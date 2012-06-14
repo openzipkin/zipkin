@@ -22,7 +22,7 @@ import com.twitter.logging.config._
 import com.twitter.ostrich.admin.{TimeSeriesCollectorFactory, JsonStatsLoggerFactory, StatsFactory}
 
 // development mode.
-new ZipkinCollectorConfig {
+new ScribeZipkinCollectorConfig {
 
   serverPort = 9410
   adminPort  = 9900
