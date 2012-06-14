@@ -236,7 +236,7 @@ module PullRequest
   def merge_commit_msg(pull_request, issue)
     output = "#{pull_request['title']}\n\n"
     output += "#{word_wrap(pull_request['body'])}\n\n" if pull_request['body'] && !pull_request['body'].empty?
-    output += "Author: #{issue['user']['login']}\nPull Request: \##{pull_request['number']}\nURL: #{pull_request['html_url']}"
+    output += "Author: @#{issue['user']['login']}\nPull Request: \##{pull_request['number']}\nURL: #{pull_request['html_url']}"
   end
 
   def word_wrap(str, len = 80)
