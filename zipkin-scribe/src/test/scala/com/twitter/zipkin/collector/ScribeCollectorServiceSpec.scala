@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,14 +20,16 @@ import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.Future
 import com.twitter.zipkin.common.{Span, Annotation}
 import com.twitter.zipkin.config.sampler.AdjustableRateConfig
-import com.twitter.zipkin.config.ZipkinCollectorConfig
 import com.twitter.zipkin.gen
+import com.twitter.zipkin.adapter.ThriftAdapter
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
-import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.config.{ScribeZipkinCollectorConfig}
 
-class CollectorServiceSpec extends Specification with JMocker with ClassMocker {
-  val serializer = new BinaryThriftStructSerializer[gen.Span] { def codec = gen.Span }
+class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMocker {
+  val serializer = new BinaryThriftStructSerializer[gen.Span] {
+    def codec = gen.Span
+  }
 
   val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
   val validList = List(gen.LogEntry("b3", serializer.toString(ThriftAdapter(validSpan))))
@@ -39,18 +41,22 @@ class CollectorServiceSpec extends Specification with JMocker with ClassMocker {
   val queue = mock[WriteQueue]
   val zkSampleRateConfig = mock[AdjustableRateConfig]
 
-  val config = new ZipkinCollectorConfig {
+  val config = new ScribeZipkinCollectorConfig {
     def writeQueueConfig = null
+
     def zkConfig = null
+
     def indexConfig = null
+
     def storageConfig = null
+
     def methodConfig = null
 
     override lazy val writeQueue = queue
     override lazy val sampleRateConfig = zkSampleRateConfig
   }
 
-  def scribeCollectorService = new ScribeCollectorService(config, Set("b3")) {
+  def scribeCollectorService = new ScribeCollectorService(config, config.writeQueue, Set("b3")) {
     running = true
   }
 
@@ -59,7 +65,7 @@ class CollectorServiceSpec extends Specification with JMocker with ClassMocker {
       val cs = scribeCollectorService
 
       expect {
-        one(queue).add(List(base64)) willReturn(true)
+        one(queue).add(List(base64)) willReturn (true)
       }
 
       gen.ResultCode.Ok mustEqual cs.log(validList)()
@@ -69,7 +75,7 @@ class CollectorServiceSpec extends Specification with JMocker with ClassMocker {
       val cs = scribeCollectorService
 
       expect {
-        one(queue).add(List(base64)) willReturn(false)
+        one(queue).add(List(base64)) willReturn (false)
       }
 
       gen.ResultCode.TryLater mustEqual cs.log(validList)()

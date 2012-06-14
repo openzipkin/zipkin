@@ -27,11 +27,9 @@ import org.apache.zookeeper.KeeperException
 /**
  * This class implements the log method from the Scribe Thrift interface.
  */
-class ScribeCollectorService(config: ZipkinCollectorConfig, categories: Set[String])
+class ScribeCollectorService(config: ZipkinCollectorConfig, val writeQueue: WriteQueue, categories: Set[String])
   extends gen.ZipkinCollector.FutureIface with CollectorService {
   private val log = Logger.get
-
-  @volatile var running = false
 
   private var zkNodes: Seq[ResilientZKNode] = Seq.empty
 
@@ -40,29 +38,29 @@ class ScribeCollectorService(config: ZipkinCollectorConfig, categories: Set[Stri
   val TryLater = Future(gen.ResultCode.TryLater)
   val Ok = Future(gen.ResultCode.Ok)
 
-  def start() {
+  override def start() {
     /* Register a node in ZooKeeper for Scribe to pick up */
     val serverSet = new ServerSetImpl(config.zkClient, config.zkServerSetPath)
     val cluster = new ZookeeperServerSetCluster(serverSet)
-    zkNodes = config.zkScribePaths.map { path =>
-      new ResilientZKNode(path, config.serverAddr.getHostName + ":" + config.serverAddr.getPort,
-        config.zkClient, config.timer, config.statsReceiver)
+    zkNodes = config.zkScribePaths.map {
+      path =>
+        new ResilientZKNode(path, config.serverAddr.getHostName + ":" + config.serverAddr.getPort,
+          config.zkClient, config.timer, config.statsReceiver)
     }.toSeq
     zkNodes foreach (_.register())
     cluster.join(config.serverAddr)
 
-    running = true
+    super.start()
   }
 
-  def shutdown() {
+  override def shutdown() {
     try {
       zkNodes foreach (_.unregister())
     } catch {
       case e: KeeperException => log.error("Could not unregister scribe zk node. Will continue shut down anyway", e)
     }
-    running = false
-    config.writeQueue.flushAll
-    config.writeQueue.shutdown
+
+    super.shutdown()
   }
 
   /**
@@ -76,25 +74,26 @@ class ScribeCollectorService(config: ZipkinCollectorConfig, categories: Set[Stri
       return TryLater
     }
 
-    Stats.addMetric("scribe_size", logEntries.map(_.message).foldLeft(0)((size,str) => size + str.size))
+    Stats.addMetric("scribe_size", logEntries.map(_.message).foldLeft(0)((size, str) => size + str.size))
 
     if (logEntries.isEmpty) {
       Stats.incr("collector.empty_logentry")
       return Ok
     }
 
-    val scribeMessages = logEntries.flatMap { entry =>
-      if (!categories.contains(entry.category.toLowerCase())) {
-        Stats.incr("collector.invalid_category")
-        None
-      } else {
-        Some(entry.message)
-      }
+    val scribeMessages = logEntries.flatMap {
+      entry =>
+        if (!categories.contains(entry.category.toLowerCase())) {
+          Stats.incr("collector.invalid_category")
+          None
+        } else {
+          Some(entry.message)
+        }
     }.toList
 
     if (scribeMessages.isEmpty) {
       Ok
-    } else if (config.writeQueue.add(scribeMessages)) {
+    } else if (writeQueue.add(scribeMessages)) {
       Stats.incr("collector.batches_added_to_queue")
       Ok
     } else {

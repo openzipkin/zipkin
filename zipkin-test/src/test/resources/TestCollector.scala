@@ -21,9 +21,10 @@ import com.twitter.conversions.time._
 import com.twitter.logging.LoggerFactory
 import com.twitter.logging.config._
 import com.twitter.ostrich.admin.{TimeSeriesCollectorFactory, JsonStatsLoggerFactory, StatsFactory}
+import com.twitter.zipkin.config.ScribeZipkinCollectorConfig
 
 // test mode.
-new ZipkinCollectorConfig {
+new ScribeZipkinCollectorConfig {
 
   serverPort = 9410
   adminPort  = 9900
