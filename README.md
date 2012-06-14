@@ -133,7 +133,8 @@ We've developed Zipkin with <a href="http://www.scala-lang.org/downloads">Scala 
 1. `ssh [server]`
 1. `unzip zipkin*.zip`
 1. `mkdir -p /var/log/zipkin`
-1. Start the collector and query daemon.
+1. `zipkin-scribe/scripts/collector.sh -f zipkin-scribe/config/collector-prod.scala`
+1. `zipkin-server/scripts/query.sh -f zipkin-scribe/config/query-prod.scala`
 
 You can also run the collector and query services through SBT.
 
