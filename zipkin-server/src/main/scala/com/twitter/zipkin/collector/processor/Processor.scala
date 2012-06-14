@@ -54,6 +54,11 @@ class NullProcessor[T] extends Processor[T] {
   def shutdown() {}
 }
 
+/**
+ * Processes a sequence of items
+ * @param processor
+ * @tparam T
+ */
 class SequenceProcessor[T](processor: Processor[T]) extends Processor[Seq[T]] {
   def process(items: Seq[T]): Future[Unit] = {
     Future.join {

@@ -18,6 +18,11 @@ package com.twitter.zipkin.collector.processor
 
 import com.twitter.util.Future
 
+/**
+ * Fans out a single item to a set of `Processor`s
+ * @param processors
+ * @tparam T
+ */
 class FanoutProcessor[T](processors: Seq[Processor[T]]) extends Processor[T] {
   def process(item: T): Future[Unit] = {
     Future.join {

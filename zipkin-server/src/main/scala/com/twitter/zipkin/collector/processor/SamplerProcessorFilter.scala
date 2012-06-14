@@ -20,6 +20,10 @@ import com.twitter.ostrich.stats.Stats
 import com.twitter.zipkin.collector.sampler.GlobalSampler
 import com.twitter.zipkin.common.Span
 
+/**
+ * Filters out `Span`s that do not meet a `GlobalSampler`'s criteria
+ * @param sampler
+ */
 class SamplerProcessorFilter(sampler: GlobalSampler) extends ProcessorFilter[Seq[Span], Seq[Span]] {
   def apply(spans: Seq[Span]): Seq[Span] = {
     spans.flatMap { span =>
