@@ -23,14 +23,14 @@ class ConfigSpec extends Specification {
   "/config" should {
     val eval = new Eval
 
-    "validate query configs" in {
-      val queryConfigFiles = Seq(
-        "/query-dev.scala"
+    "validate collector configs" in {
+      val configFiles = Seq(
+        "/collector-dev.scala"
       ) map { TempFile.fromResourcePath(_) }
 
-      for (file <- queryConfigFiles) {
+      for (file <- configFiles) {
         file.getName() in {
-          val config = eval[ZipkinQueryConfig](file)
+          val config = eval[ScribeZipkinCollectorConfig](file)
           config must notBeNull
           config.validate() //must not(throwA[Exception])
           val service = config()
