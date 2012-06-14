@@ -20,11 +20,11 @@ import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.Future
 import com.twitter.zipkin.common.{Span, Annotation}
 import com.twitter.zipkin.config.sampler.AdjustableRateConfig
+import com.twitter.zipkin.config.ScribeZipkinCollectorConfig
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.adapter.ThriftAdapter
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
-import com.twitter.zipkin.config.{ScribeZipkinCollectorConfig}
 
 class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMocker {
   val serializer = new BinaryThriftStructSerializer[gen.Span] {
@@ -43,13 +43,9 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
 
   val config = new ScribeZipkinCollectorConfig {
     def writeQueueConfig = null
-
     def zkConfig = null
-
     def indexConfig = null
-
     def storageConfig = null
-
     def methodConfig = null
 
     override lazy val writeQueue = queue
@@ -65,7 +61,7 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
       val cs = scribeCollectorService
 
       expect {
-        one(queue).add(List(base64)) willReturn (true)
+        one(queue).add(List(base64)) willReturn(true)
       }
 
       gen.ResultCode.Ok mustEqual cs.log(validList)()
@@ -75,7 +71,7 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
       val cs = scribeCollectorService
 
       expect {
-        one(queue).add(List(base64)) willReturn (false)
+        one(queue).add(List(base64)) willReturn(false)
       }
 
       gen.ResultCode.TryLater mustEqual cs.log(validList)()
