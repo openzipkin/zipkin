@@ -14,15 +14,22 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.config
+package com.twitter.zipkin.collector.processor
 
-import com.twitter.zipkin.collector.processor.ScribeProcessorFilter
-import com.twitter.zipkin.config.collector.CollectorServerConfig
-import com.twitter.zipkin.gen
+import com.twitter.ostrich.stats.Stats
+import com.twitter.zipkin.collector.sampler.GlobalSampler
+import com.twitter.zipkin.common.Span
 
-trait ScribeZipkinCollectorConfig extends ZipkinCollectorConfig {
-  type T = Seq[gen.LogEntry]
-  val serverConfig: CollectorServerConfig = new ScribeCollectorServerConfig(this)
+class SamplerProcessorFilter(sampler: GlobalSampler) extends ProcessorFilter[Seq[Span], Seq[Span]] {
+  def apply(spans: Seq[Span]): Seq[Span] = {
+    spans.flatMap { span =>
+      span.serviceNames.foreach { name => Stats.incr("received_" + name) }
 
-  def rawDataFilter = new ScribeProcessorFilter
+      if (sampler(span.traceId)) {
+        Some(span)
+      } else {
+        None
+      }
+    }
+  }
 }

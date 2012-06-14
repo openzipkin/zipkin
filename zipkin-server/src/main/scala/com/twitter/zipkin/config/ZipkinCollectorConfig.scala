@@ -94,14 +94,27 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
 
   def globalSampler: GlobalSampler = new ZooKeeperGlobalSampler(sampleRateConfig)
 
-  lazy val processor: Processor[Span] = new FanoutProcessor[Span]({
-    new StorageProcessor(storage) ::
-    new IndexProcessor(index, indexingFilter) ::
-    new OstrichProcessor(serviceStatsPrefix)
-  })
+  /**
+   * To accommodate a particular input type `T`, define a `rawDataFilter` that
+   * converts the input data type (ex: Scrooge-generated Thrift) into a
+   * sequence of `com.twitter.zipkin.common.Span`s
+   */
+  type T
+  def rawDataFilter: ProcessorFilter[T, Seq[Span]]
 
-  def writeQueueConfig: WriteQueueConfig
-  lazy val writeQueue: WriteQueue = writeQueueConfig.apply(processor, globalSampler)
+  lazy val processor: Processor[T] =
+    rawDataFilter andThen
+    new SamplerProcessorFilter(globalSampler) andThen
+    new SequenceProcessor[Span](
+      new FanoutProcessor[Span]({
+        new StorageProcessor(storage) ::
+        new IndexProcessor(index, indexingFilter) ::
+        new OstrichProcessor(serviceStatsPrefix)
+      })
+    )
+
+  def writeQueueConfig: WriteQueueConfig[T]
+  lazy val writeQueue: WriteQueue[T] = writeQueueConfig.apply(processor, globalSampler)
 
   lazy val indexingFilter: IndexingFilter = new DefaultClientIndexingFilter
 
@@ -114,20 +127,20 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
   }
 }
 
-trait WriteQueueConfig extends Config[WriteQueue] {
+trait WriteQueueConfig[T] extends Config[WriteQueue[T]] {
 
   var writeQueueMaxSize: Int = 500
   var flusherPoolSize: Int = 10
 
-  def apply(processor: Processor[Span], sampler: GlobalSampler): WriteQueue = {
-    val wq = new WriteQueue(writeQueueMaxSize, flusherPoolSize, processor, sampler)
+  def apply(processor: Processor[T], sampler: GlobalSampler): WriteQueue[T] = {
+    val wq = new WriteQueue[T](writeQueueMaxSize, flusherPoolSize, processor, sampler)
     wq.start()
     ServiceTracker.register(wq)
     wq
   }
 
-  def apply(): WriteQueue = {
-    val wq = new WriteQueue(writeQueueMaxSize, flusherPoolSize, new NullProcessor[Span], new GlobalSampler{})
+  def apply(): WriteQueue[T] = {
+    val wq = new WriteQueue[T](writeQueueMaxSize, flusherPoolSize, new NullProcessor[T], new GlobalSampler{})
     wq.start()
     ServiceTracker.register(wq)
     wq

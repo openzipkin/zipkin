@@ -35,7 +35,7 @@ new ScribeZipkinCollectorConfig {
       ) :: new TimeSeriesCollectorFactory
     )
 
-  def writeQueueConfig = new WriteQueueConfig {
+  def writeQueueConfig = new WriteQueueConfig[T] {
     writeQueueMaxSize = 500
     flusherPoolSize = 10
   }

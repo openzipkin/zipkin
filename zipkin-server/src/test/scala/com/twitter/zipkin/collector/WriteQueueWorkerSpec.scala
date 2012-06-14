@@ -16,44 +16,27 @@
  */
 package com.twitter.zipkin.collector
 
+import com.twitter.zipkin.collector.processor.Processor
+import com.twitter.zipkin.collector.sampler.GlobalSampler
+import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
-import processor.Processor
-import sampler.GlobalSampler
-import scala.collection._
-import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
 import java.util.concurrent.BlockingQueue
 
 class WriteQueueWorkerSpec extends Specification with JMocker with ClassMocker {
   "WriteQueueWorker" should {
-    "sample" in {
-      val sampler = mock[GlobalSampler]
+    "hand off to processor" in {
       val processor = mock[Processor[Span]]
-      val queue = mock[BlockingQueue[List[String]]]
+      val queue = mock[BlockingQueue[Span]]
+      val sampler = mock[GlobalSampler]
 
-      val w = new WriteQueueWorker(queue, processor, sampler)
+      val w = new WriteQueueWorker[Span](queue, processor, sampler)
       val span = Span(123, "boo", 456, None, List(Annotation(123, "value", Some(Endpoint(1,2,"service")))), Nil)
 
       expect {
-        one(sampler).apply(123L) willReturn(true)
         one(processor).process(span)
       }
-
-      w.processSpan(span)
-    }
-
-    "deserialize garbage" in {
-      val garbage = "garbage!"
-      val sampler = mock[GlobalSampler]
-      val processor = mock[Processor[Span]]
-
-      val w = new WriteQueueWorker(null, processor, sampler)
-
-      expect {
-        never(processor).process(any)
-      }
-
-      w.processScribeMessage(garbage)
+      w.process(span)
     }
   }
 }

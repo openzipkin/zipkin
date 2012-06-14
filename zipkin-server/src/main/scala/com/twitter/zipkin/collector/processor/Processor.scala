@@ -53,3 +53,15 @@ class NullProcessor[T] extends Processor[T] {
   def process(item: T): Future[Unit] = Future.Unit
   def shutdown() {}
 }
+
+class SequenceProcessor[T](processor: Processor[T]) extends Processor[Seq[T]] {
+  def process(items: Seq[T]): Future[Unit] = {
+    Future.join {
+      items.map {
+        processor.process(_)
+      }
+    }
+  }
+
+  def shutdown() { processor.shutdown() }
+}
