@@ -28,15 +28,15 @@ class WriteQueueWorkerSpec extends Specification with JMocker with ClassMocker {
   "WriteQueueWorker" should {
     "sample" in {
       val sampler = mock[GlobalSampler]
-      val processor = mock[Processor]
+      val processor = mock[Processor[Span]]
       val queue = mock[BlockingQueue[List[String]]]
 
-      val w = new WriteQueueWorker(queue, Seq(processor), sampler)
+      val w = new WriteQueueWorker(queue, processor, sampler)
       val span = Span(123, "boo", 456, None, List(Annotation(123, "value", Some(Endpoint(1,2,"service")))), Nil)
 
       expect {
         one(sampler).apply(123L) willReturn(true)
-        one(processor).processSpan(span)
+        one(processor).process(span)
       }
 
       w.processSpan(span)
@@ -45,12 +45,12 @@ class WriteQueueWorkerSpec extends Specification with JMocker with ClassMocker {
     "deserialize garbage" in {
       val garbage = "garbage!"
       val sampler = mock[GlobalSampler]
-      val processor = mock[Processor]
+      val processor = mock[Processor[Span]]
 
-      val w = new WriteQueueWorker(null, Seq(processor), sampler)
+      val w = new WriteQueueWorker(null, processor, sampler)
 
       expect {
-        never(processor).processSpan(any)
+        never(processor).process(any)
       }
 
       w.processScribeMessage(garbage)

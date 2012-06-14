@@ -29,7 +29,7 @@ import java.util.concurrent.{TimeUnit, BlockingQueue}
 import com.twitter.zipkin.adapter.ThriftAdapter
 
 class WriteQueueWorker(queue: BlockingQueue[List[String]],
-                       processors: Seq[Processor],
+                       processor: Processor[Span],
                        sample: GlobalSampler) extends BackgroundProcess("WriteQueueWorker", false) {
 
   private val log = Logger.get
@@ -66,9 +66,7 @@ class WriteQueueWorker(queue: BlockingQueue[List[String]],
       if (sample(span.traceId)) {
         Stats.time("processSpan") {
           span.serviceNames.foreach { name => Stats.incr("process_" + name) }
-          Future.join {
-            processors map { _.processSpan(span) }
-          } onSuccess { e =>
+          processor.process(span) onSuccess { e =>
             Stats.incr("collector.processSpan_success")
           } onFailure { e =>
             Stats.incr("collector.processSpan_failed")

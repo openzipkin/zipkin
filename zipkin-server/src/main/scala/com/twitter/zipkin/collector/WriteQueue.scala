@@ -21,10 +21,11 @@ import java.util.concurrent.{Executors, ArrayBlockingQueue}
 import com.twitter.ostrich.stats.Stats
 import processor.Processor
 import sampler.GlobalSampler
+import com.twitter.zipkin.common.Span
 
 class WriteQueue(writeQueueMaxSize: Int,
                  flusherPoolSize: Int,
-                 processors: Seq[Processor],
+                 processor: Processor[Span],
                  sampler: GlobalSampler) extends Service {
 
   private val queue = new ArrayBlockingQueue[List[String]](writeQueueMaxSize)
@@ -33,7 +34,7 @@ class WriteQueue(writeQueueMaxSize: Int,
 
   def start() {
     workers = (0 until flusherPoolSize).toSeq map { i: Int =>
-      val worker = new WriteQueueWorker(queue, processors, sampler)
+      val worker = new WriteQueueWorker(queue, processor, sampler)
       worker.start()
       worker
     }
@@ -52,7 +53,7 @@ class WriteQueue(writeQueueMaxSize: Int,
   def shutdown() {
     workers foreach { _.stop() }
     workers foreach { _.shutdown() }
-    processors.foreach {_.shutdown()}
+    processor.shutdown()
   }
 
   def add(messages: List[String]): Boolean = {

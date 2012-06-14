@@ -17,24 +17,23 @@ package com.twitter.zipkin.collector.processor
  *
  */
 
-import com.twitter.zipkin.common.Span
 import com.twitter.finagle.TooManyWaitersException
 import com.twitter.logging.Logger
 import com.twitter.ostrich.stats.Stats
 import com.twitter.util.Future
 
 /**
- * A processor that takes a span and processes it some way.
+ * A processor that takes an item (Span) and processes it some way.
  * Could be: storing it or aggregating the data in some way for example.
  */
-trait Processor {
+trait Processor[T] {
 
   private val log = Logger.get
 
   /**
-   * Process the span.
+   * Process the item.
    */
-  def processSpan(span: Span): Future[Unit]
+  def process(item: T): Future[Unit]
 
   /**
    * Shut down this processor
@@ -48,4 +47,9 @@ trait Processor {
       log.error(e, method)
     }
   }
+}
+
+class NullProcessor[T] extends Processor[T] {
+  def process(item: T): Future[Unit] = Future.Unit
+  def shutdown() {}
 }
