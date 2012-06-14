@@ -23,6 +23,13 @@ import com.twitter.zipkin.adapter.ThriftAdapter
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.gen
 
+/**
+ * Transforms a `Seq[gen.LogEntry]` to `Seq[Span]` for a collector service to consume.
+ * Assumes:
+ *   - the Scribe struct contains a `message` that is the Base64 encoded Thrift Span struct.
+ *   - the sequence of `LogEntry`s only contains messages we want to pass on (already filtered
+ *     by category)
+ */
 class ScribeProcessorFilter extends ProcessorFilter[Seq[gen.LogEntry], Seq[Span]] {
 
   private val log = Logger.get

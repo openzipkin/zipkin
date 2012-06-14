@@ -18,6 +18,12 @@ package com.twitter.zipkin.collector.processor
 
 import com.twitter.util.Future
 
+/**
+ * `ProcessFilter`s are filters that can be composed on top of `Processor`s to transform
+ * items between data types.
+ * @tparam T input data type
+ * @tparam U output data type
+ */
 trait ProcessorFilter[T,U] {
 
   def andThen[V](next: ProcessorFilter[U,V]): ProcessorFilter[T,V] =
