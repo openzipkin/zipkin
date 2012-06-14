@@ -16,69 +16,30 @@
  */
 package com.twitter.zipkin.collector
 
-import com.twitter.zipkin.gen
-import com.twitter.zipkin.common.Span
 import com.twitter.logging.Logger
-import com.twitter.util.Future
-import processor.Processor
-import sampler.GlobalSampler
-import com.twitter.ostrich.stats.Stats
-import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.ostrich.admin.BackgroundProcess
+import com.twitter.scrooge.BinaryThriftStructSerializer
+import com.twitter.zipkin.gen
+import com.twitter.zipkin.collector.processor.Processor
+import com.twitter.zipkin.collector.sampler.GlobalSampler
 import java.util.concurrent.{TimeUnit, BlockingQueue}
-import com.twitter.zipkin.adapter.ThriftAdapter
 
-class WriteQueueWorker(queue: BlockingQueue[List[String]],
-                       processors: Seq[Processor],
+class WriteQueueWorker[T](queue: BlockingQueue[T],
+                       processor: Processor[T],
                        sample: GlobalSampler) extends BackgroundProcess("WriteQueueWorker", false) {
 
   private val log = Logger.get
 
   val deserializer = new BinaryThriftStructSerializer[gen.Span] { def codec = gen.Span }
 
-  def runLoop() = {
+  def runLoop() {
     val item = queue.poll(500, TimeUnit.MILLISECONDS)
-    if (item ne null) {
-      item foreach (processScribeMessage(_))
+    if (item != null) {
+      process(item)
     }
   }
 
-  def processScribeMessage(msg: String) {
-    try {
-      val span = Stats.time("deserializeSpan") { deserializer.fromString(msg) }
-      log.ifDebug("Processing span: " + span + " from " + msg)
-      processSpan(ThriftAdapter(span))
-    } catch {
-      case e: Exception => {
-        // scribe doesn't have any ResultCode.ERROR or similar
-        // let's just swallow this invalid msg
-        log.warning(e, "Invalid msg: %s", msg)
-        Stats.incr("collector.invalid_msg")
-      }
-    }
-  }
-
-  def processSpan(span: Span) {
-    try {
-      span.serviceNames.foreach { name => Stats.incr("received_" + name) }
-
-      // check if we want to store this particular trace or not
-      if (sample(span.traceId)) {
-        Stats.time("processSpan") {
-          span.serviceNames.foreach { name => Stats.incr("process_" + name) }
-          Future.join {
-            processors map { _.processSpan(span) }
-          } onSuccess { e =>
-            Stats.incr("collector.processSpan_success")
-          } onFailure { e =>
-            Stats.incr("collector.processSpan_failed")
-          }
-        }
-      }
-    } catch {
-      case e: Exception =>
-        log.error(e, "Processing of " + span + " failed %s", e)
-        Stats.incr("collector.invalid_msg")
-    }
+  private[collector] def process(item: T) {
+    processor.process(item)
   }
 }
