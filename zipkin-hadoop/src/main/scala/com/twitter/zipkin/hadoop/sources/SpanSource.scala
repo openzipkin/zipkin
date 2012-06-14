@@ -20,9 +20,9 @@ import cascading.scheme.local.{TextLine => CLTextLine}
 import com.twitter.elephantbird.cascading2.scheme.LzoThriftScheme
 import cascading.scheme.Scheme
 import cascading.flow.FlowProcess
-import com.twitter.scalding.{DateOps, TimePathedSource, DateRange, Mappable}
 import com.twitter.zipkin.gen.Span
 import org.apache.hadoop.mapred.{JobConf, RecordReader, OutputCollector}
+import com.twitter.scalding._
 
 // Scala is pickier than Java about type parameters, and Cascading's Scheme
 // declaration leaves some type parameters underspecified.  Fill in the type
@@ -43,9 +43,8 @@ abstract class HourlySuffixSource(prefixTemplate : String, dateRange : DateRange
 trait LzoThrift[T <: TBase[_, _]] extends Mappable[T] {
   def column: Class[_]
 
-  override def localScheme = {
-    println("This does not work yet"); new CLTextLine
-  }
+  // TODO this won't actually work locally, but we need something here for the tests
+  override def localScheme = new CLTextLine()
 
   override def hdfsScheme = HadoopSchemeInstance(new LzoThriftScheme[T](column))
 }
