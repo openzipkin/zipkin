@@ -15,7 +15,6 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
-import com.twitter.zipkin.common.{Endpoint, Annotation, Span}
 import com.twitter.zipkin.config.CassandraStorageConfig
 import com.twitter.zipkin.gen
 import com.twitter.cassie.tests.util.FakeCassandra
@@ -26,6 +25,8 @@ import java.nio.ByteBuffer
 import org.specs.mock.{ClassMocker, JMocker}
 import org.specs.Specification
 import com.twitter.io.TempFile
+import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.common.{BinaryAnnotation, Endpoint, Annotation, Span}
 
 class CassandraStorageSpec extends Specification with JMocker with ClassMocker {
   object FakeServer extends FakeCassandra
@@ -33,7 +34,7 @@ class CassandraStorageSpec extends Specification with JMocker with ClassMocker {
   var cassandraStorage: CassandraStorage = null
 
   def binaryAnnotation(key: String, value: String) =
-    gen.BinaryAnnotation(key, ByteBuffer.wrap(value.getBytes), gen.AnnotationType.String, Some(ep.toThrift))
+    BinaryAnnotation(key, ByteBuffer.wrap(value.getBytes), ThriftAdapter(gen.AnnotationType.String), Some(ep))
 
   val ep = Endpoint(123, 123, "service")
 

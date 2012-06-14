@@ -26,6 +26,7 @@ import com.twitter.ostrich.stats.Stats
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.ostrich.admin.BackgroundProcess
 import java.util.concurrent.{TimeUnit, BlockingQueue}
+import com.twitter.zipkin.adapter.ThriftAdapter
 
 class WriteQueueWorker(queue: BlockingQueue[List[String]],
                        processors: Seq[Processor],
@@ -45,8 +46,8 @@ class WriteQueueWorker(queue: BlockingQueue[List[String]],
   def processScribeMessage(msg: String) {
     try {
       val span = Stats.time("deserializeSpan") { deserializer.fromString(msg) }
-      log.debug("Processing span: " + span + " from " + msg)
-      processSpan(Span.fromThrift(span))
+      log.ifDebug("Processing span: " + span + " from " + msg)
+      processSpan(ThriftAdapter(span))
     } catch {
       case e: Exception => {
         // scribe doesn't have any ResultCode.ERROR or similar

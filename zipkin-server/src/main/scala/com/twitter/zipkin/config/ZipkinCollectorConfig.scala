@@ -20,7 +20,7 @@ import com.twitter.zipkin.collector.{WriteQueue, ZipkinCollector}
 import com.twitter.zipkin.collector.filter.{DefaultClientIndexingFilter, IndexingFilter}
 import com.twitter.zipkin.collector.processor.{OstrichProcessor, IndexProcessor, StorageProcessor, Processor}
 import com.twitter.zipkin.collector.sampler.{AdaptiveSampler, ZooKeeperGlobalSampler, GlobalSampler}
-import com.twitter.zipkin.config.collector.{ScribeCollectorServerConfig, CollectorServerConfig}
+import com.twitter.zipkin.config.collector.CollectorServerConfig
 import com.twitter.zipkin.config.sampler._
 import com.twitter.zipkin.config.zookeeper.{ZooKeeperClientConfig, ZooKeeperConfig}
 import com.twitter.common.zookeeper.ZooKeeperClient
@@ -106,7 +106,7 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
 
   lazy val serverAddr = new InetSocketAddress(InetAddress.getLocalHost, serverPort)
 
-  val serverConfig: CollectorServerConfig = new ScribeCollectorServerConfig(this)
+  val serverConfig: CollectorServerConfig
 
   def apply(runtime: RuntimeEnvironment): ZipkinCollector = {
     new ZipkinCollector(this)

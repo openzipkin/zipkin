@@ -37,20 +37,5 @@ class ConfigSpec extends Specification {
         }
       }
     }
-
-    "validate collector configs" in {
-      val configFiles = Seq(
-        "/collector-dev.scala"
-      ) map { TempFile.fromResourcePath(_) }
-
-      for (file <- configFiles) {
-        file.getName() in {
-          val config = eval[ZipkinCollectorConfig](file)
-          config must notBeNull
-          config.validate() //must not(throwA[Exception])
-          val service = config()
-        }
-      }
-    }
   }
 }

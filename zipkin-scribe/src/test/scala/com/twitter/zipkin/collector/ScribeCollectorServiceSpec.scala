@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,25 +20,28 @@ import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.Future
 import com.twitter.zipkin.common.{Span, Annotation}
 import com.twitter.zipkin.config.sampler.AdjustableRateConfig
-import com.twitter.zipkin.config.ZipkinCollectorConfig
+import com.twitter.zipkin.config.ScribeZipkinCollectorConfig
 import com.twitter.zipkin.gen
+import com.twitter.zipkin.adapter.ThriftAdapter
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
 
-class CollectorServiceSpec extends Specification with JMocker with ClassMocker {
-  val serializer = new BinaryThriftStructSerializer[gen.Span] { def codec = gen.Span }
+class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMocker {
+  val serializer = new BinaryThriftStructSerializer[gen.Span] {
+    def codec = gen.Span
+  }
 
   val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
-  val validList = List(gen.LogEntry("b3", serializer.toString(validSpan.toThrift)))
+  val validList = List(gen.LogEntry("b3", serializer.toString(ThriftAdapter(validSpan))))
 
-  val wrongCatList = List(gen.LogEntry("wrongcat", serializer.toString(validSpan.toThrift)))
+  val wrongCatList = List(gen.LogEntry("wrongcat", serializer.toString(ThriftAdapter(validSpan))))
 
   val base64 = "CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA="
 
   val queue = mock[WriteQueue]
   val zkSampleRateConfig = mock[AdjustableRateConfig]
 
-  val config = new ZipkinCollectorConfig {
+  val config = new ScribeZipkinCollectorConfig {
     def writeQueueConfig = null
     def zkConfig = null
     def indexConfig = null
@@ -49,7 +52,7 @@ class CollectorServiceSpec extends Specification with JMocker with ClassMocker {
     override lazy val sampleRateConfig = zkSampleRateConfig
   }
 
-  def scribeCollectorService = new ScribeCollectorService(config, Set("b3")) {
+  def scribeCollectorService = new ScribeCollectorService(config, config.writeQueue, Set("b3")) {
     running = true
   }
 
