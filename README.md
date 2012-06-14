@@ -84,6 +84,8 @@ Once the data is stored and indexed we need a way to extract it. This is where t
 ### UI
 Most of our users access the data via our UI. It's a Rails app that uses <a href="http://d3js.org/">D3</a> to visualize the trace data. Note that there is no built in authentication in the UI.
 
+## Modules
+![Modules (doc/modules.png)](https://github.com/twitter/zipkin/raw/master/doc/modules.png)
 
 ## Installation
 
@@ -122,9 +124,9 @@ Note that the above uses the Twitter version of Scribe with support for using Zo
 We've developed Zipkin with <a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>, <a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>, and JDK6.
 
 1. `git clone https://github.com/twitter/zipkin.git`
-1. `cd zipkin/zipkin-server`
-1. `cp config/collector-dev.scala config/collector-prod.scala`
-1. `cp config/query-dev.scala config/query-prod.scala`
+1. `cd zipkin`
+1. `cp zipkin-scribe/config/collector-dev.scala zipkin-scribe/config/collector-prod.scala`
+1. `cp zipkin-server/config/query-dev.scala zipkin-server/config/query-prod.scala`
 1. Modify the configs above as needed. Pay particular attention to ZooKeeper and Cassandra server entries.
 1. `bin/sbt update package-dist` (This downloads SBT 0.11.2 if it doesn't already exist)
 1. `scp dist/zipkin*.zip [server]`
@@ -132,6 +134,12 @@ We've developed Zipkin with <a href="http://www.scala-lang.org/downloads">Scala 
 1. `unzip zipkin*.zip`
 1. `mkdir -p /var/log/zipkin`
 1. Start the collector and query daemon.
+
+You can also run the collector and query services through SBT.
+
+To run the Scribe collector service: `bin/sbt 'project zipkin-scribe' 'run -f zipkin-scribe/config/collector-dev.scala'`
+
+To run the query service: `bin/sbt 'project zipkin-server' 'run -f zipkin-server/config/query-dev.scala'`
 
 ### Zipkin UI
 The UI is a standard Rails 3 app.

@@ -18,8 +18,7 @@ package com.twitter.zipkin.collector
 import com.twitter.ostrich.admin.Service
 
 trait CollectorService extends Service {
-
-  val writeQueue: WriteQueue
+  val writeQueue: WriteQueue[_ <: AnyRef]
 
   @volatile var running = false
 
@@ -29,7 +28,6 @@ trait CollectorService extends Service {
 
   def shutdown() {
     running = false
-    writeQueue.flushAll()
     writeQueue.shutdown()
   }
 }

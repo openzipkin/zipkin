@@ -27,7 +27,7 @@ import org.apache.zookeeper.KeeperException
 /**
  * This class implements the log method from the Scribe Thrift interface.
  */
-class ScribeCollectorService(config: ZipkinCollectorConfig, val writeQueue: WriteQueue, categories: Set[String])
+class ScribeCollectorService(config: ZipkinCollectorConfig, val writeQueue: WriteQueue[Seq[_ <: gen.LogEntry]], categories: Set[String])
   extends gen.ZipkinCollector.FutureIface with CollectorService {
   private val log = Logger.get
 
@@ -81,15 +81,15 @@ class ScribeCollectorService(config: ZipkinCollectorConfig, val writeQueue: Writ
       return Ok
     }
 
-    val scribeMessages = logEntries.flatMap {
+    val scribeMessages = logEntries.filter {
       entry =>
         if (!categories.contains(entry.category.toLowerCase())) {
           Stats.incr("collector.invalid_category")
-          None
+          false
         } else {
-          Some(entry.message)
+          true
         }
-    }.toList
+    }
 
     if (scribeMessages.isEmpty) {
       Ok
