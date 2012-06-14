@@ -1,12 +1,12 @@
 /*
  * Copyright 2012 Twitter Inc.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,13 +25,12 @@ import scala.collection.JavaConversions._
 
 // TODO this was stolen straight up from ostrich-aggregator. we should switch to use the scribe library
 final class ResilientZKNode(
-                             path: String,
-                             nodeName: String,
-                             zkClient: ZooKeeperClient,
-                             timer: Timer,
-                             statsReceiver: StatsReceiver = NullStatsReceiver
-                             ) {
-  self =>
+  path: String,
+  nodeName: String,
+  zkClient: ZooKeeperClient,
+  timer: Timer,
+  statsReceiver: StatsReceiver = NullStatsReceiver
+) { self =>
 
   require(path.startsWith("/"), "zookeeper path must start with '/'")
 
@@ -107,10 +106,9 @@ final class ResilientZKNode(
     val parts = path.slice(1, path.size).split("/")
     var currentPath = ""
 
-    parts foreach {
-      part =>
-        currentPath = currentPath + "/" + part
-        createNode(currentPath, true)
+    parts foreach { part =>
+      currentPath = currentPath + "/" + part
+      createNode(currentPath, true)
     }
   }
 
