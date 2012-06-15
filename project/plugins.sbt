@@ -13,6 +13,7 @@ resolvers <<= (resolvers) { r =>
       "scala-tools" at "http://scala-tools.org/repo-releases/",
       "maven" at "http://repo1.maven.org/maven2/",
       "freemarker" at "http://freemarker.sourceforge.net/maven2/",
+      "travisci" at "http://maven.travis-ci.org/",
       Resolver.url("artifactory", url("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns)
     )
   }) ++ Seq("local" at ("file:" + System.getProperty("user.home") + "/.m2/repository/"))

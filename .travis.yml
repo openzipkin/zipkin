@@ -5,4 +5,3 @@ jdk:
   - openjdk6
   - openjdk7
   - oraclejdk7
-script: "env SBT_PROXY_REPO=http://maven.travis-ci.org bin/sbt"
