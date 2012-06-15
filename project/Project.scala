@@ -223,6 +223,8 @@ object Zipkin extends Build {
         "org.objenesis"           % "objenesis"    % "1.1"   % "test"
       ),
 
+      PackageDist.packageDistZipName := "zipkin-scribe.zip",
+
       /* Add configs to resource path for ConfigSpec */
       unmanagedResourceDirectories in Test <<= baseDirectory {
         base =>
