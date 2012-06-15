@@ -27,6 +27,8 @@ object Zipkin extends Build {
       ),
       resolvers ++= (proxyRepo match {
         case None => Seq(
+          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
+          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype",
           "elephant-bird repo" at "http://oss.sonatype.org/content/repositories/comtwitter-286",
           "Concurrent Maven Repo" at "http://conjars.org/repo")
         case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
@@ -57,6 +59,12 @@ object Zipkin extends Build {
       CompileThrift.newSettings).settings(
     name := "zipkin-test",
     version := "0.2.0-SNAPSHOT",
+    resolvers ++= (proxyRepo match {
+      case None => Seq(
+        "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
+        "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype")
+      case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
+    }),
     libraryDependencies ++= Seq(
       /* Test dependencies */
       "org.scala-tools.testing" % "specs_2.9.1"  % "1.6.9" % "test",
@@ -78,7 +86,12 @@ object Zipkin extends Build {
         CompileThrift.newSettings).settings(
       name := "zipkin-thrift",
       version := "0.2.0-SNAPSHOT",
-
+      resolvers ++= (proxyRepo match {
+        case None => Seq(
+          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
+          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype")
+        case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
+      }),
       libraryDependencies ++= Seq(
         "org.apache.thrift" % "libthrift" % "0.5.0",
         "org.slf4j" % "slf4j-api" % "1.5.8"
@@ -100,7 +113,12 @@ object Zipkin extends Build {
         SubversionPublisher.newSettings
     ).settings(
       version := "0.2.0-SNAPSHOT",
-
+      resolvers ++= (proxyRepo match {
+        case None => Seq(
+          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
+          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype")
+        case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
+      }),
       libraryDependencies ++= Seq(
         "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
         "com.twitter" % "finagle-zipkin"    % FINAGLE_VERSION,
@@ -127,7 +145,12 @@ object Zipkin extends Build {
         CompileThriftScrooge.newSettings
     ).settings(
       version := "0.2.0-SNAPSHOT",
-
+      resolvers ++= (proxyRepo match {
+        case None => Seq(
+          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
+          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype")
+        case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
+      }),
       libraryDependencies ++= Seq(
         "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
         "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
@@ -165,7 +188,12 @@ object Zipkin extends Build {
         SubversionPublisher.newSettings
     ).settings(
       version := "0.2.0-SNAPSHOT",
-
+      resolvers ++= (proxyRepo match {
+        case None => Seq(
+          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
+          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype")
+        case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
+      }),
       libraryDependencies ++= Seq(
         "com.twitter" % "cassie-core"       % CASSIE_VERSION intransitive(),
         "com.twitter" % "cassie-serversets" % CASSIE_VERSION intransitive(),
@@ -212,7 +240,12 @@ object Zipkin extends Build {
         SubversionPublisher.newSettings
     ).settings(
       version := "0.2.0-SNAPSHOT",
-
+      resolvers ++= (proxyRepo match {
+        case None => Seq(
+          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
+          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype")
+        case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
+      }),
       libraryDependencies ++= Seq(
         /* Test dependencies */
         "org.scala-tools.testing" % "specs_2.9.1"  % "1.6.9" % "test",

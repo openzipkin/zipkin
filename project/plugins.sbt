@@ -9,11 +9,12 @@ resolvers <<= (resolvers) { r =>
     Seq("proxy-repo" at url)
   } getOrElse {
     r ++ Seq(
+      "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
+      "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype",
       "twitter.com" at "http://maven.twttr.com/",
       "scala-tools" at "http://scala-tools.org/repo-releases/",
       "maven" at "http://repo1.maven.org/maven2/",
       "freemarker" at "http://freemarker.sourceforge.net/maven2/",
-      "travisci" at "http://maven.travis-ci.org/",
       Resolver.url("artifactory", url("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns)
     )
   }) ++ Seq("local" at ("file:" + System.getProperty("user.home") + "/.m2/repository/"))

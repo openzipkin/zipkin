@@ -4,4 +4,4 @@ scala:
 jdk:
   - openjdk6
   - openjdk7
-  - oraclejdk7
+script: "bin/sbt"
