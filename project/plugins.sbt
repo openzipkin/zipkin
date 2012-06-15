@@ -9,8 +9,8 @@ resolvers <<= (resolvers) { r =>
     Seq("proxy-repo" at url)
   } getOrElse {
     r ++ Seq(
-      "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
-      "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype",
+      "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central/",
+      "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype/",
       "twitter.com" at "http://maven.twttr.com/",
       "scala-tools" at "http://scala-tools.org/repo-releases/",
       "maven" at "http://repo1.maven.org/maven2/",

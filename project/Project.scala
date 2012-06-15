@@ -27,8 +27,8 @@ object Zipkin extends Build {
       ),
       resolvers ++= (proxyRepo match {
         case None => Seq(
-          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
-          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype",
+          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central/",
+          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype/",
           "elephant-bird repo" at "http://oss.sonatype.org/content/repositories/comtwitter-286",
           "Concurrent Maven Repo" at "http://conjars.org/repo")
         case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
@@ -61,8 +61,8 @@ object Zipkin extends Build {
     version := "0.2.0-SNAPSHOT",
     resolvers ++= (proxyRepo match {
       case None => Seq(
-        "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
-        "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype")
+        "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central/",
+        "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype/")
       case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
     }),
     libraryDependencies ++= Seq(
@@ -88,8 +88,8 @@ object Zipkin extends Build {
       version := "0.2.0-SNAPSHOT",
       resolvers ++= (proxyRepo match {
         case None => Seq(
-          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
-          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype")
+          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central/",
+          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype/")
         case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
       }),
       libraryDependencies ++= Seq(
@@ -115,8 +115,8 @@ object Zipkin extends Build {
       version := "0.2.0-SNAPSHOT",
       resolvers ++= (proxyRepo match {
         case None => Seq(
-          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
-          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype")
+          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central/",
+          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype/")
         case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
       }),
       libraryDependencies ++= Seq(
@@ -147,8 +147,8 @@ object Zipkin extends Build {
       version := "0.2.0-SNAPSHOT",
       resolvers ++= (proxyRepo match {
         case None => Seq(
-          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
-          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype")
+          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central/",
+          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype/")
         case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
       }),
       libraryDependencies ++= Seq(
@@ -190,8 +190,8 @@ object Zipkin extends Build {
       version := "0.2.0-SNAPSHOT",
       resolvers ++= (proxyRepo match {
         case None => Seq(
-          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
-          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype")
+          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central/",
+          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype/")
         case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
       }),
       libraryDependencies ++= Seq(
@@ -242,8 +242,8 @@ object Zipkin extends Build {
       version := "0.2.0-SNAPSHOT",
       resolvers ++= (proxyRepo match {
         case None => Seq(
-          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central",
-          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype")
+          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central/",
+          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype/")
         case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
       }),
       libraryDependencies ++= Seq(
