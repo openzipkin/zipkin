@@ -29,27 +29,24 @@ class ScribeProcessorFilterSpec extends Specification {
   "ScribeProcessorFilter" should {
     val category = "zipkin"
 
-    val base64 = "CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA="
+    val base64 = Seq("CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA=")
 
     val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
-    val serialized = serializer.toString(ThriftAdapter(validSpan))
+    val serialized = Seq(serializer.toString(ThriftAdapter(validSpan)))
+    val bad = Seq("garbage!")
 
-    val base64LogEntries = Seq(gen.LogEntry(category, base64))
-    val serializedLogEntries = Seq(gen.LogEntry(category, serialized))
-
-    val badLogEntries = Seq(gen.LogEntry(category, "garbage!"))
     val filter = new ScribeProcessorFilter
 
     "convert gen.LogEntry to Span" in {
-      filter.apply(base64LogEntries) mustEqual Seq(validSpan)
+      filter.apply(base64) mustEqual Seq(validSpan)
     }
 
     "convert serialized thrift to Span" in {
-      filter.apply(serializedLogEntries) mustEqual Seq(validSpan)
+      filter.apply(serialized) mustEqual Seq(validSpan)
     }
 
     "deal with garbage" in {
-      filter.apply(badLogEntries) mustEqual Seq.empty[Span]
+      filter.apply(bad) mustEqual Seq.empty[Span]
     }
   }
 }
