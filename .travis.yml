@@ -4,4 +4,4 @@ scala:
 jdk:
   - openjdk6
   - openjdk7
-script: "bin/sbt"
+script: "bin/sbt test"
