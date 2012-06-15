@@ -30,7 +30,7 @@ import com.twitter.zipkin.gen
  *   - the sequence of `LogEntry`s only contains messages we want to pass on (already filtered
  *     by category)
  */
-class ScribeProcessorFilter extends ProcessorFilter[Seq[gen.LogEntry], Seq[Span]] {
+class ScribeProcessorFilter extends ProcessorFilter[Seq[String], Seq[Span]] {
 
   private val log = Logger.get
 
@@ -38,10 +38,8 @@ class ScribeProcessorFilter extends ProcessorFilter[Seq[gen.LogEntry], Seq[Span]
     def codec = gen.Span
   }
 
-  def apply(logEntries: Seq[gen.LogEntry]): Seq[Span] = {
-    logEntries.map {
-      _.`message`
-    }.flatMap {
+  def apply(logEntries: Seq[String]): Seq[Span] = {
+    logEntries.flatMap {
       msg =>
         try {
           val span = Stats.time("deserializeSpan") {
