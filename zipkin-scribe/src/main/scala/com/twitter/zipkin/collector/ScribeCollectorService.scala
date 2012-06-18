@@ -95,6 +95,7 @@ class ScribeCollectorService(config: ZipkinCollectorConfig, val writeQueue: Writ
       Ok
     } else if (writeQueue.add(scribeMessages)) {
       Stats.incr("collector.batches_added_to_queue")
+      Stats.addMetric("collector.batch_size", scribeMessages.size)
       Ok
     } else {
       Stats.incr("collector.pushback")
