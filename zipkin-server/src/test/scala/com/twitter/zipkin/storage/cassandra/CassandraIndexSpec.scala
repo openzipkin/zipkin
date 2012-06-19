@@ -94,7 +94,6 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
 
       val cs = new CassandraIndex() {
         val config = _config
-        val keyspace = null
         val serviceSpanNameIndex = null
         val serviceNameIndex = null
         val annotationsIndex = _annotationsIndex
@@ -144,7 +143,6 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
 
       val cass = new CassandraIndex() {
         val config = new CassandraConfig{}
-        val keyspace = null
         val serviceSpanNameIndex = null
         val serviceNameIndex = null
         val annotationsIndex = null
@@ -174,7 +172,6 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
 
       val cass = new CassandraIndex() {
         val config = new CassandraConfig{}
-        val keyspace = null
         val serviceSpanNameIndex = null
         val serviceNameIndex = null
         val annotationsIndex = null

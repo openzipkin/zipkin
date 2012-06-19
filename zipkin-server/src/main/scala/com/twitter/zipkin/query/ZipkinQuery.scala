@@ -16,7 +16,6 @@ package com.twitter.zipkin.query
  *  limitations under the License.
  *
  */
-import adjusters.Adjuster
 import com.twitter.logging.Logger
 import org.apache.thrift.protocol.TBinaryProtocol
 import com.twitter.zipkin.storage.{Index, Storage}
