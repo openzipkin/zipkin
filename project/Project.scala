@@ -38,7 +38,7 @@ object Zipkin extends Build {
 
       // configure resolvers for the build
       resolvers <<= (resolvers, travisCiResolvers) { (resolvers, travisCiResolvers) =>
-        travisCiResolvers ++ resolvers
+        resolvers ++ travisCiResolvers
       },
 
       // don't add any special resolvers.
