@@ -49,7 +49,7 @@ trait CassandraStorageConfig extends StorageConfig {
     new CassandraStorage() {
       val cassandraConfig = _storageConfig.cassandraConfig
       val storageConfig = _storageConfig
-      val keyspace = _keyspace
+      keyspace = _keyspace
       val traces = _traces
     }
   }
