@@ -37,7 +37,9 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
 
   val wrongCatList = List(gen.LogEntry("wrongcat", serializer.toString(ThriftAdapter(validSpan))))
 
-  val queue = mock[WriteQueue[Seq[gen.LogEntry]]]
+  val base64 = "CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA="
+
+  val queue = mock[WriteQueue[Seq[String]]]
   val zkSampleRateConfig = mock[AdjustableRateConfig]
 
   val config = new ScribeZipkinCollectorConfig {
@@ -60,7 +62,7 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
       val cs = scribeCollectorService
 
       expect {
-        one(queue).add(validList) willReturn(true)
+        one(queue).add(List(base64)) willReturn(true)
       }
 
       gen.ResultCode.Ok mustEqual cs.log(validList)()
@@ -70,7 +72,7 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
       val cs = scribeCollectorService
 
       expect {
-        one(queue).add(validList) willReturn(false)
+        one(queue).add(List(base64)) willReturn(false)
       }
 
       gen.ResultCode.TryLater mustEqual cs.log(validList)()
