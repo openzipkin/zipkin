@@ -21,12 +21,9 @@ import sources.SpanSource
 import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
 
 /**
- * Obtain the IDs and the durations of the one hundred service calls which take the longest per service
+ * Find out how often each service does memcache accesses
  */
-
-class WorstRuntimes(args: Args) extends Job(args) with DefaultDateRangeJob {
-
-  val clientAnnotations = Seq(Constants.CLIENT_RECV, Constants.CLIENT_SEND)
+class MemcacheRequest(args : Args) extends Job(args) with DefaultDateRangeJob {
 
   val preprocessed = SpanSource()
     .read
@@ -39,21 +36,22 @@ class WorstRuntimes(args: Args) extends Job(args) with DefaultDateRangeJob {
   }
 
   val result = preprocessed
-    .project('id, 'annotations)
-    // let's find those client annotations and convert into service name and duration
-    .flatMap('annotations -> ('service, 'duration)) { annotations: List[Annotation] =>
-    var clientSend: Option[Annotation] = None
-    var clientReceived: Option[Annotation] = None
-    annotations.foreach { a =>
-      if (Constants.CLIENT_SEND.equals(a.getValue)) clientSend = Some(a)
-      if (Constants.CLIENT_RECV.equals(a.getValue)) clientReceived = Some(a)
+    .project('annotations, 'binary_annotations)
+    // from the annotations, find the service name
+    .flatMap(('annotations, 'binary_annotations) -> ('service, 'memcacheNames)){ al : (List[Annotation], List[BinaryAnnotation]) =>
+      var clientSent: Option[Annotation] = None
+      al._1.foreach { a : Annotation =>
+        if (Constants.CLIENT_SEND.equals(a.getValue)) clientSent = Some(a)
+      }
+      // from the binary annotations, find the value of the memcache visits if there are any
+    var memcachedKeys : Option[BinaryAnnotation] = None
+    al._2.foreach {ba : BinaryAnnotation =>
+      if (ba.key == "memcached.keys") memcachedKeys = Some(ba)
     }
-    // only return a value if we have both annotations
-    for (cs <- clientSend; cr <- clientReceived)
-      yield (cs.getHost.service_name, (cr.timestamp - cs.timestamp) / 1000)
-    }.discard('annotations)
-    //sort by duration, find the 100 largest
-    .groupBy('service) { _.sortBy('duration).reverse.take(100)}
+    for (cs <- clientSent; key <- memcachedKeys)
+      yield (cs.getHost.service_name, key.value) //Util.getArrayFromBuffer(key.value))
+    }
+    .project('service, 'memcacheNames)
+    .groupBy('service, 'memcacheNames){ _.size('count) }
     .write(Tsv(args("output")))
-
 }

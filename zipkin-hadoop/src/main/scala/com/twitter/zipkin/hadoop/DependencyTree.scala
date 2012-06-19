@@ -1,33 +1,46 @@
+/*
+ * Copyright 2012 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
 import sources.SpanSource
-import com.twitter.zipkin.gen.{Span, Constants, Annotation}
+import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
 
 /**
- * Created with IntelliJ IDEA.
- * User: jli
- * Date: 6/12/12
- * Time: 4:55 PM
- * To change this template use File | Settings | File Templates.
+ * Find out how often services call each other throughout the entire system
  */
 
 class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
-  //(ID, ParentID, Service, Duration)
-  val spanInfo = SpanSource()
+  val preprocessed = SpanSource()
     .read
-    // only need id and annotations for this
-    .mapTo(0 -> ('id, 'parent_id, 'annotations)) { s: Span => (s.id, s.parent_id, s.annotations.toList) }
-    .groupBy('id, 'parent_id) { data =>
-  // merge annotations from all span objects into one list
-    data.reduce('annotations) {
-      (annotations: List[Annotation], serverAnnotations: List[Annotation]) =>
-      //we only care about server annotations
-        val filtered = annotations.filter((a) => serverAnnotations.contains(a.getValue))
-        filtered ++ serverAnnotations
-      }
+    .mapTo(0 -> ('trace_id, 'id, 'parent_id, 'annotations, 'binary_annotations))
+      { s: Span => (s.trace_id, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList) }
+    .groupBy('trace_id, 'id, 'parent_id) { _.reduce('annotations, 'binary_annotations) {
+      (left: (List[Annotation], List[BinaryAnnotation]), right: (List[Annotation], List[BinaryAnnotation])) =>
+      (left._1 ++ right._1, left._2 ++ right._2)
+    }
   }
+
+  /**
+   * From the preprocessed data, get the id, parent_id, and service name
+   */
+  val spanInfo = preprocessed
+    .project('id, 'parent_id, 'annotations)
+    // TODO: account for possible differences between sent and received service names
     .flatMap('annotations -> ('cService, 'sService)) { annotations: List[Annotation] =>
       var clientSend: Option[Annotation] = None
       var serverReceived: Option[Annotation] = None
@@ -37,18 +50,19 @@ class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
       }
       // only return a value if we have both annotations
       for (cs <- clientSend; sr <- serverReceived)
-      yield (cs.getHost.service_name, sr.getHost.service_name)
-    }
+        yield (cs.getHost.service_name, sr.getHost.service_name)
+    }.discard('annotations)
 
     // get (ID, ServiceName)
-    val idName = spanInfo
+/*    val idName = spanInfo
       .project('id, 'sService)
       .unique('id, 'sService)
       .rename('id, 'id1)
       .rename('sService, 'parentService)
 
+    // Join with the original on parent ID to get the parent's service name
     val spanInfoWithParent = spanInfo
       .joinWithSmaller('parent_id -> 'id1, idName)
-      .groupBy('sService, 'parentService){ _.size('count) }
+      .groupBy('sService, 'parentService){ _.size('count) }  */
       .write(Tsv(args("output")))
 }

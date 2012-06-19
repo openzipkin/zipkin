@@ -52,4 +52,4 @@ trait LzoThrift[T <: TBase[_, _]] extends Mappable[T] {
 /**
  * This is the source for trace data. Directories are like so: /logs/zipkin/yyyy/mm/dd/hh
  */
-case class SpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("/logs/zipkin", dateRange)
+case class SpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("/logs/zipkin/", dateRange)

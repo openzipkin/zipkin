@@ -3,18 +3,10 @@ package com.twitter.zipkin.hadoop
 import com.twitter.scalding._
 import com.twitter.zipkin.hadoop.sources
 import sources.SpanSource
-import com.twitter.zipkin.gen.{Span, Constants, Annotation}
 import scala.collection.JavaConverters._
 import java.nio.ByteBuffer
 import java.net.{Inet4Address, Inet6Address, InetAddress}
-
-/**
- * Created with IntelliJ IDEA.
- * User: jli
- * Date: 6/13/12
- * Time: 5:03 PM
- * To change this template use File | Settings | File Templates.
- */
+import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
 
 class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
 
@@ -22,16 +14,17 @@ class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
 
   val serverAnnotations = Seq(Constants.SERVER_RECV, Constants.SERVER_SEND)
 
-  SpanSource()
+  val preprocessed = SpanSource()
     .read
-    .mapTo(0 -> ('id, 'parent_id, 'annotations)) { s: Span => (s.id, s.parent_id, s.annotations.toList) }
-    .groupBy('id, 'parent_id) { data =>
-    // merge annotations from all span objects into one list
-      data.reduce('annotations) {
-        (annotations: List[Annotation], annotations1: List[Annotation]) =>
-          annotations ++ annotations1
+    .mapTo(0 -> ('trace_id, 'id, 'parent_id, 'annotations, 'binary_annotations))
+     { s: Span => (s.trace_id, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList) }
+      .groupBy('trace_id, 'id, 'parent_id) { _.reduce('annotations, 'binary_annotations) {
+        (left: (List[Annotation], List[BinaryAnnotation]), right: (List[Annotation], List[BinaryAnnotation])) =>
+        (left._1 ++ right._1, left._2 ++ right._2)
       }
     }
+
+  val result = preprocessed
     .filter('annotations){annotations : List[Annotation] => annotations.exists({a : Annotation =>  a.value == "finagle.timeout"})}
     .flatMap('annotations -> ('cService, 'sService)) { annotations: List[Annotation] =>
       var clientSend: Option[Annotation] = None
@@ -42,7 +35,8 @@ class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
       }
       // only return a value if we have both annotations
       for (cs <- clientSend; sr <- serverReceived)
-      yield (cs.getHost.service_name, sr.getHost.service_name)
-    }.groupBy('cService, 'sService){ _.size('numTimeouts) }
+        yield (cs.getHost.service_name, sr.getHost.service_name)
+    }.project('cService, 'sService)
+    .groupBy('cService, 'sService){ _.size('numTimeouts) }
     .write(Tsv(args("output")))
 }
