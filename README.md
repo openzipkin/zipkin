@@ -121,7 +121,7 @@ A Scribe store for Zipkin might look something like this.
 Note that the above uses the Twitter version of Scribe with support for using ZooKeeper to find the hosts to send the category to. You can also use a DNS entry for the collectors or something similar.
 
 ### Zipkin servers
-We've developed Zipkin with <a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>, <a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>, and JDK6.
+We've developed Zipkin with <a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>, <a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>, and JDK7.
 
 1. `git clone https://github.com/twitter/zipkin.git`
 1. `cd zipkin`
