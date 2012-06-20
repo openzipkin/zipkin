@@ -4,4 +4,4 @@ scala:
 jdk:
   - openjdk6
   - openjdk7
-script: "bin/sbt test"
+script: "env SBT_TRAVIS_CI=true bin/sbt test"
