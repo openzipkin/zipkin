@@ -29,11 +29,11 @@ java -ea                          \
        -XX:+UseConcMarkSweepGC         \
        -XX:+CMSParallelRemarkEnabled   \
        -XX:+CMSClassUnloadingEnabled   \
-       -XX:MaxPermSize=1024m           \
+       -XX:MaxPermSize=512M            \
        -XX:SurvivorRatio=128           \
        -XX:MaxTenuringThreshold=0      \
        -Xss8M                          \
-       -Xms512M                        \
-       -Xmx3G                          \
+       -Xms225M                        \
+       -Xmx512M                        \
        -server                         \
        -jar $sbtjar "$@"
