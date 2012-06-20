@@ -2,6 +2,5 @@ language: scala
 scala:
   - 2.9.1
 jdk:
-  - openjdk6
   - openjdk7
-  - oraclejdk7
+script: "env SBT_TRAVIS_CI=true bin/sbt test"
