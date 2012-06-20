@@ -21,12 +21,13 @@ import com.twitter.logging.Logger
 trait Cassandra {
   val log = Logger.get
 
-  val keyspace: Keyspace
+  var keyspace: Keyspace = null
 
   def close() {
     if (keyspace != null) {
       log.info("Closing CassandraStorage connections")
       keyspace.close()
+      keyspace = null
     }
   }
 }

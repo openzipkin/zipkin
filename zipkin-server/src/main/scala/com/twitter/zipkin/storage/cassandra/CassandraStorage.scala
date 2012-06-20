@@ -32,8 +32,6 @@ trait CassandraStorage extends Storage with Cassandra {
 
   val storageConfig: CassandraStorageConfig
 
-  val keyspace: Keyspace
-
   val traces: ColumnFamily[Long, String, gen.Span]
 
   // storing the span in the traces cf
