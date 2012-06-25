@@ -46,18 +46,22 @@ The tracing setup for clients is similar. When you've specified the Zipkin trace
 
 In case you want to record additional information you can add a custom annotation in your code.
 
-    Trace.record("starting that extremely expensive computation")
+```scala
+Trace.record("starting that extremely expensive computation")
+```
 
 The line above will add an annotation with the string attached to the point in time when it happened. You can also add a key value annotation. It could look like this:
 
-    Trace.recordBinary("http.response.code", "500")
+```scala
+Trace.recordBinary("http.response.code", "500")
+```
 
 ##### Ruby Thrift
 There's a <a href="https://rubygems.org/gems/finagle-thrift">gem</a> we use to trace requests. In order to push the tracer and generate a trace id on a request you can use that gem in a RackHandler. See <a href="https://github.com/twitter/zipkin/blob/master/zipkin-web/config/application.rb">zipkin-web</a> for an example of where we trace the tracers.
 
 For tracing client calls from Ruby we rely on the Twitter <a href="https://github.com/twitter/thrift_client">Ruby Thrift client</a>. See below for an example on how to wrap the client.
 
-```scala
+```ruby
 client = ThriftClient.new(SomeService::Client, "127.0.0.1:1234")
 client_id = FinagleThrift::ClientId.new(:name => "service_example.sample_environment")
 FinagleThrift.enable_tracing!(client, client_id), "service_name")
