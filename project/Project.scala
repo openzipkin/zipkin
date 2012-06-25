@@ -201,6 +201,7 @@ object Zipkin extends Build {
       ),
 
       PackageDist.packageDistZipName := "zipkin-server.zip",
+      BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
 
       /* Add configs to resource path for ConfigSpec */
       unmanagedResourceDirectories in Test <<= baseDirectory {
@@ -230,6 +231,7 @@ object Zipkin extends Build {
       ),
 
       PackageDist.packageDistZipName := "zipkin-scribe.zip",
+      BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
 
       /* Add configs to resource path for ConfigSpec */
       unmanagedResourceDirectories in Test <<= baseDirectory {
