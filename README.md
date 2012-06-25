@@ -58,7 +58,7 @@ There's a <a href="https://rubygems.org/gems/finagle-thrift">gem</a> we use to t
 For tracing client calls from Ruby we rely on the Twitter <a href="https://github.com/twitter/thrift_client">Ruby Thrift client</a>. See below for an example on how to wrap the client.
 
 ```scala
-client = ThriftClient.new(SomeService::Client, '127.0.0.1:1234')
+client = ThriftClient.new(SomeService::Client, "127.0.0.1:1234")
 client_id = FinagleThrift::ClientId.new(:name => "service_example.sample_environment")
 FinagleThrift.enable_tracing!(client, client_id), "service_name")
 ```
