@@ -33,31 +33,39 @@ We have instrumented the libraries below to trace requests and to pass the requi
 To set up a Finagle server in Scala, just do the following.
 Adding tracing is as simple as adding <a href="https://github.com/twitter/finagle/tree/master/finagle-zipkin">finagle-zipkin</a> as a dependency and a `tracerFactory` to the ServerBuilder. 
 
-    ServerBuilder()
-      .codec(ThriftServerFramedCodec())
-      .bindTo(serverAddr)
-      .name("servicename")
-      .tracerFactory(ZipkinTracer())
-      .build(new SomeService.FinagledService(queryService, new TBinaryProtocol.Factory()))
+```scala
+ServerBuilder()
+  .codec(ThriftServerFramedCodec())
+  .bindTo(serverAddr)
+  .name("servicename")
+  .tracerFactory(ZipkinTracer())
+  .build(new SomeService.FinagledService(queryService, new TBinaryProtocol.Factory()))
+```
 
 The tracing setup for clients is similar. When you've specified the Zipkin tracer as above a small sample of your requests will be traced automatically. We'll record when the request started and ended, services and hosts involved.
 
 In case you want to record additional information you can add a custom annotation in your code.
 
-    Trace.record("starting that extremely expensive computation")
+```scala
+Trace.record("starting that extremely expensive computation")
+```
 
 The line above will add an annotation with the string attached to the point in time when it happened. You can also add a key value annotation. It could look like this:
 
-    Trace.recordBinary("http.response.code", "500")
+```scala
+Trace.recordBinary("http.response.code", "500")
+```
 
 ##### Ruby Thrift
 There's a <a href="https://rubygems.org/gems/finagle-thrift">gem</a> we use to trace requests. In order to push the tracer and generate a trace id on a request you can use that gem in a RackHandler. See <a href="https://github.com/twitter/zipkin/blob/master/zipkin-web/config/application.rb">zipkin-web</a> for an example of where we trace the tracers.
 
 For tracing client calls from Ruby we rely on the Twitter <a href="https://github.com/twitter/thrift_client">Ruby Thrift client</a>. See below for an example on how to wrap the client.
 
-    client = ThriftClient.new(SomeService::Client, '127.0.0.1:1234')
-    client_id = FinagleThrift::ClientId.new(:name => "service_example.sample_environment")
-    FinagleThrift.enable_tracing!(client, client_id), "service_name")
+```ruby
+client = ThriftClient.new(SomeService::Client, "127.0.0.1:1234")
+client_id = FinagleThrift::ClientId.new(:name => "service_example.sample_environment")
+FinagleThrift.enable_tracing!(client, client_id), "service_name")
+```
 
 ##### Querulous
 <a href="https://github.com/twitter/querulous">Querulous</a> is a Scala library for interfacing with SQL databases. The tracing includes the timings of the request and the SQL query performed.
@@ -65,7 +73,9 @@ For tracing client calls from Ruby we rely on the Twitter <a href="https://githu
 ##### Cassie
 <a href="https://github.com/twitter/cassie">Cassie</a> is a Finagle based Cassandra client library. You set the tracer in Cassie pretty much like you would in Finagle, but in Cassie you set it on the KeyspaceBuilder.
 
-    cluster.keyspace(keyspace).tracerFactory(ZipkinTracer())
+```scala
+cluster.keyspace(keyspace).tracerFactory(ZipkinTracer())
+```
 
 ### Transport
 We use Scribe to transport all the traces from the different services to Zipkin and Hadoop.
@@ -156,7 +166,7 @@ The UI is a standard Rails 3 app.
 The `zipkin-tracer` gem adds tracing to a Rails application through the use of a Rack Handler.
 In `config.ru`:
 
-```
+```ruby
   use ZipkinTracer::RackHandler
   run <YOUR_APPLICATION>
 ```
