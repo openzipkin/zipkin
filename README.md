@@ -73,7 +73,9 @@ FinagleThrift.enable_tracing!(client, client_id), "service_name")
 ##### Cassie
 <a href="https://github.com/twitter/cassie">Cassie</a> is a Finagle based Cassandra client library. You set the tracer in Cassie pretty much like you would in Finagle, but in Cassie you set it on the KeyspaceBuilder.
 
-    cluster.keyspace(keyspace).tracerFactory(ZipkinTracer())
+```scala
+cluster.keyspace(keyspace).tracerFactory(ZipkinTracer())
+```
 
 ### Transport
 We use Scribe to transport all the traces from the different services to Zipkin and Hadoop.
@@ -155,7 +157,7 @@ The UI is a standard Rails 3 app.
 
 1. Update config with your ZooKeeper server. This is used to find the query daemons.
 2. Deploy to a suitable Rails 3 app server. For testing you can simply do
-```sh
+```
   bundle install &&
   bundle exec rails server.
 ```
