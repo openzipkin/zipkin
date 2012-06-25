@@ -33,12 +33,14 @@ We have instrumented the libraries below to trace requests and to pass the requi
 To set up a Finagle server in Scala, just do the following.
 Adding tracing is as simple as adding <a href="https://github.com/twitter/finagle/tree/master/finagle-zipkin">finagle-zipkin</a> as a dependency and a `tracerFactory` to the ServerBuilder. 
 
-    ServerBuilder()
-      .codec(ThriftServerFramedCodec())
-      .bindTo(serverAddr)
-      .name("servicename")
-      .tracerFactory(ZipkinTracer())
-      .build(new SomeService.FinagledService(queryService, new TBinaryProtocol.Factory()))
+```scala
+ServerBuilder()
+  .codec(ThriftServerFramedCodec())
+  .bindTo(serverAddr)
+  .name("servicename")
+  .tracerFactory(ZipkinTracer())
+  .build(new SomeService.FinagledService(queryService, new TBinaryProtocol.Factory()))
+```
 
 The tracing setup for clients is similar. When you've specified the Zipkin tracer as above a small sample of your requests will be traced automatically. We'll record when the request started and ended, services and hosts involved.
 
@@ -55,9 +57,11 @@ There's a <a href="https://rubygems.org/gems/finagle-thrift">gem</a> we use to t
 
 For tracing client calls from Ruby we rely on the Twitter <a href="https://github.com/twitter/thrift_client">Ruby Thrift client</a>. See below for an example on how to wrap the client.
 
-    client = ThriftClient.new(SomeService::Client, '127.0.0.1:1234')
-    client_id = FinagleThrift::ClientId.new(:name => "service_example.sample_environment")
-    FinagleThrift.enable_tracing!(client, client_id), "service_name")
+```scala
+client = ThriftClient.new(SomeService::Client, '127.0.0.1:1234')
+client_id = FinagleThrift::ClientId.new(:name => "service_example.sample_environment")
+FinagleThrift.enable_tracing!(client, client_id), "service_name")
+```
 
 ##### Querulous
 <a href="https://github.com/twitter/querulous">Querulous</a> is a Scala library for interfacing with SQL databases. The tracing includes the timings of the request and the SQL query performed.
@@ -147,7 +151,7 @@ The UI is a standard Rails 3 app.
 
 1. Update config with your ZooKeeper server. This is used to find the query daemons.
 2. Deploy to a suitable Rails 3 app server. For testing you can simply do
-```
+```sh
   bundle install &&
   bundle exec rails server.
 ```
@@ -156,7 +160,7 @@ The UI is a standard Rails 3 app.
 The `zipkin-tracer` gem adds tracing to a Rails application through the use of a Rack Handler.
 In `config.ru`:
 
-```
+```ruby
   use ZipkinTracer::RackHandler
   run <YOUR_APPLICATION>
 ```
