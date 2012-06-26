@@ -18,7 +18,7 @@ package com.twitter.zipkin.query
  */
 import com.twitter.logging.Logger
 import org.apache.thrift.protocol.TBinaryProtocol
-import com.twitter.zipkin.storage.{Index, Storage}
+import com.twitter.zipkin.storage.{Aggregates, Index, Storage}
 import com.twitter.zipkin.gen
 import com.twitter.finagle.thrift.ThriftServerFramedCodec
 import com.twitter.finagle.zookeeper.ZookeeperServerSetCluster
@@ -29,7 +29,7 @@ import com.twitter.zipkin.config.ZipkinQueryConfig
 import com.twitter.common.zookeeper.ServerSet
 
 class ZipkinQuery(
-  config: ZipkinQueryConfig, serverSet: ServerSet, storage: Storage, index: Index
+  config: ZipkinQueryConfig, serverSet: ServerSet, storage: Storage, index: Index, aggregates: Aggregates
 ) extends Service {
 
   val log = Logger.get(getClass.getName)
@@ -41,7 +41,7 @@ class ZipkinQuery(
     log.info("Starting query thrift service on addr " + serverAddr)
     val cluster = new ZookeeperServerSetCluster(serverSet)
 
-    val queryService = new QueryService(storage, index, config.adjusterMap)
+    val queryService = new QueryService(storage, index, aggregates, config.adjusterMap)
     queryService.start()
     ServiceTracker.register(queryService)
 

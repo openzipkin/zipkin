@@ -103,6 +103,34 @@ class ScribeCollectorService(config: ZipkinCollectorConfig, val writeQueue: Writ
     }
   }
 
+  def storeTopAnnotations(serviceName: String, annotations: Seq[String]): Future[Unit] = {
+    Stats.incr("collector.storeTopAnnotations")
+    log.info("storeTopAnnotations: " + serviceName + "; " + annotations)
+
+    Stats.timeFutureMillis("collector.storeTopAnnotations") {
+      config.aggregates.storeTopAnnotations(serviceName, annotations)
+    } rescue {
+      case e: Exception =>
+        log.error(e, "storeTopAnnotations failed")
+        Stats.incr("collector.storeTopAnnotations")
+        Future.exception(gen.AdjustableRateException(e.toString))
+    }
+  }
+
+  def storeTopKeyValueAnnotations(serviceName: String, annotations: Seq[String]): Future[Unit] = {
+    Stats.incr("collector.storeTopKeyValueAnnotations")
+    log.info("storeTopKeyValueAnnotations: " + serviceName + ";" + annotations)
+
+    Stats.timeFutureMillis("collector.storeTopKeyValueAnnotations") {
+      config.aggregates.storeTopKeyValueAnnotations(serviceName, annotations)
+    } rescue {
+      case e: Exception =>
+        log.error(e, "storeTopKeyValueAnnotations failed")
+        Stats.incr("collector.storeTopKeyValueAnnotations")
+        Future.exception(gen.AdjustableRateException(e.toString))
+    }
+  }
+
   @throws(classOf[gen.AdjustableRateException])
   def setSampleRate(sampleRate: Double): Future[Unit] = {
     Stats.incr("collector.set_sample_rate")
