@@ -74,7 +74,7 @@ class ScribeCollectorService(config: ZipkinCollectorConfig, val writeQueue: Writ
       return TryLater
     }
 
-    Stats.addMetric("scribe_size", logEntries.map(_.message).foldLeft(0)((size,str) => size + str.size))
+    Stats.addMetric("scribe_size", logEntries.map(_.message.size).sum)
 
     if (logEntries.isEmpty) {
       Stats.incr("collector.empty_logentry")

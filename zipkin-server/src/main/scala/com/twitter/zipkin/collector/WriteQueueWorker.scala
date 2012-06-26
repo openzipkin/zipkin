@@ -21,12 +21,10 @@ import com.twitter.ostrich.admin.BackgroundProcess
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.collector.processor.Processor
-import com.twitter.zipkin.collector.sampler.GlobalSampler
 import java.util.concurrent.{TimeUnit, BlockingQueue}
 
 class WriteQueueWorker[T](queue: BlockingQueue[T],
-                       processor: Processor[T],
-                       sample: GlobalSampler) extends BackgroundProcess("WriteQueueWorker", false) {
+                       processor: Processor[T]) extends BackgroundProcess("WriteQueueWorker", false) {
 
   private val log = Logger.get
 

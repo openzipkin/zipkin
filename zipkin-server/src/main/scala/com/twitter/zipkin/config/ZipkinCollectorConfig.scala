@@ -113,7 +113,7 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
     )
 
   def writeQueueConfig: WriteQueueConfig[T]
-  lazy val writeQueue: WriteQueue[T] = writeQueueConfig.apply(processor, globalSampler)
+  lazy val writeQueue: WriteQueue[T] = writeQueueConfig.apply(processor)
 
   lazy val indexingFilter: IndexingFilter = new DefaultClientIndexingFilter
 
@@ -131,15 +131,15 @@ trait WriteQueueConfig[T] extends Config[WriteQueue[T]] {
   var writeQueueMaxSize: Int = 500
   var flusherPoolSize: Int = 10
 
-  def apply(processor: Processor[T], sampler: GlobalSampler): WriteQueue[T] = {
-    val wq = new WriteQueue[T](writeQueueMaxSize, flusherPoolSize, processor, sampler)
+  def apply(processor: Processor[T]): WriteQueue[T] = {
+    val wq = new WriteQueue[T](writeQueueMaxSize, flusherPoolSize, processor)
     wq.start()
     ServiceTracker.register(wq)
     wq
   }
 
   def apply(): WriteQueue[T] = {
-    val wq = new WriteQueue[T](writeQueueMaxSize, flusherPoolSize, new NullProcessor[T], new GlobalSampler{})
+    val wq = new WriteQueue[T](writeQueueMaxSize, flusherPoolSize, new NullProcessor[T])
     wq.start()
     ServiceTracker.register(wq)
     wq

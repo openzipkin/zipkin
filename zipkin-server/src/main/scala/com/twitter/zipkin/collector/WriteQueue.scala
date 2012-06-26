@@ -19,13 +19,11 @@ package com.twitter.zipkin.collector
 import com.twitter.ostrich.admin.Service
 import com.twitter.ostrich.stats.Stats
 import com.twitter.zipkin.collector.processor.Processor
-import com.twitter.zipkin.collector.sampler.GlobalSampler
 import java.util.concurrent.ArrayBlockingQueue
 
 class WriteQueue[T](writeQueueMaxSize: Int,
                  flusherPoolSize: Int,
-                 processor: Processor[T],
-                 sampler: GlobalSampler) extends Service {
+                 processor: Processor[T]) extends Service {
 
   private val queue = new ArrayBlockingQueue[T](writeQueueMaxSize)
   Stats.addGauge("write_queue_qsize") { queue.size }
@@ -34,7 +32,7 @@ class WriteQueue[T](writeQueueMaxSize: Int,
 
   def start() {
     workers = (0 until flusherPoolSize).toSeq map { i: Int =>
-      val worker = new WriteQueueWorker[T](queue, processor, sampler)
+      val worker = new WriteQueueWorker[T](queue, processor)
       worker.start()
       worker
     }
