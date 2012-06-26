@@ -15,7 +15,7 @@
  */
 package com.twitter.zipkin.config
 
-import com.twitter.zipkin.storage.{Index, Storage}
+import com.twitter.zipkin.storage.{Aggregates, Index, Storage}
 import com.twitter.zipkin.collector.{WriteQueue, ZipkinCollector}
 import com.twitter.zipkin.collector.filter.{DefaultClientIndexingFilter, IndexingFilter}
 import com.twitter.zipkin.collector.sampler.{AdaptiveSampler, ZooKeeperGlobalSampler, GlobalSampler}
@@ -61,6 +61,10 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
   /* Index */
   def indexConfig: IndexConfig
   lazy val index: Index = indexConfig.apply()
+
+  /* Aggregates */
+  def aggregatesConfig: AggregatesConfig
+  lazy val aggregates: Aggregates = aggregatesConfig.apply()
 
   /* ZooKeeper */
   def zkConfig: ZooKeeperConfig

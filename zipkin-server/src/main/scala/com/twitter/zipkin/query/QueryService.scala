@@ -24,7 +24,7 @@ import com.twitter.finagle.tracing.Trace
 import com.twitter.util.Future
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.query.adjusters.Adjuster
-import com.twitter.zipkin.storage.{TraceIdDuration, Index, Storage}
+import com.twitter.zipkin.storage.{Aggregates, TraceIdDuration, Index, Storage}
 import java.nio.ByteBuffer
 import org.apache.thrift.TException
 import scala.collection.Set
@@ -34,7 +34,7 @@ import scala.collection.Set
  * by lookup the information in the index and then fetch the required trace data
  * from the storage.
  */
-class QueryService(storage: Storage, index: Index, adjusterMap: Map[gen.Adjust, Adjuster])
+class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjusterMap: Map[gen.Adjust, Adjuster])
   extends gen.ZipkinQuery.FutureIface with Service {
   private val log = Logger.get
   private var running = false
@@ -335,6 +335,34 @@ class QueryService(storage: Storage, index: Index, adjusterMap: Map[gen.Adjust, 
           log.error(e, "getTimeToLive failed")
           Stats.getCounter("query.error_get_ttl_exception").incr()
           Future.exception(gen.QueryException(e.toString))
+      }
+    }
+  }
+
+  def getTopAnnotations(serviceName: String): Future[Seq[String]] = {
+    checkIfRunning()
+    Stats.getCounter("query.get_top_annotations").incr()
+    log.debug("getTopAnnotations: " + serviceName)
+
+    Stats.timeFutureMillis("query.getTopAnnotations") {
+      aggregates.getTopAnnotations(serviceName) onFailure { e =>
+        log.error(e, "getTopAnnotations failed")
+        Stats.getCounter("query.error_get_top_annotations").incr()
+        Future.exception(gen.QueryException(e.toString))
+      }
+    }
+  }
+
+  def getTopKeyValueAnnotations(serviceName: String): Future[Seq[String]] = {
+    checkIfRunning()
+    Stats.getCounter("query.get_top_key_value_annotations").incr()
+    log.debug("getTopKeyValueAnnotations: " + serviceName)
+
+    Stats.timeFutureMillis("query.getTopKeyValueAnnotations") {
+      aggregates.getTopKeyValueAnnotations(serviceName) onFailure { e =>
+        log.error(e, "getTopKeyValueAnnotations failed")
+        Stats.getCounter("query.error_get_top_key_value_annotations").incr()
+        Future.exception(gen.QueryException(e.toString))
       }
     }
   }
