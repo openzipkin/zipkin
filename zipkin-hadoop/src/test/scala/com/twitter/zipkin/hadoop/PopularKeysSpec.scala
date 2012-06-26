@@ -1,13 +1,4 @@
-
 package com.twitter.zipkin.hadoop
-
-/**
- * Created with IntelliJ IDEA.
- * User: jli
- * Date: 6/14/12
- * Time: 4:09 PM
- * To change this template use File | Settcings | File Templates.
- */
 
 import org.specs.Specification
 import com.twitter.zipkin.gen
@@ -35,16 +26,20 @@ class PopularKeysSpec extends Specification with TupleConversions {
 
 
   "PopularKeys" should {
-    "return a map with correct entries" in {
+    "return a map with correct entries for each key" in {
       JobTest("com.twitter.zipkin.hadoop.PopularKeys").
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
         source(SpanSource(), repeatSpan(span, 101, 0) ::: repeatSpan(span1, 50, 200)).
         sink[(String, String, Int)](Tsv("outputFile")) {
+        val map = new HashMap[String, Int]()
         outputBuffer => outputBuffer foreach { e =>
           println(e)
+          map(e._1 + e._2) = e._3
         }
+        map("servicebye") mustEqual 51
+        map("servicehi") mustEqual 102
       }.run.finish
     }
 

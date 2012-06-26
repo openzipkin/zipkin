@@ -18,7 +18,12 @@ package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
 import sources.SpanSource
+import java.nio.ByteBuffer
+import java.util.Arrays
+
+//import com.twitter.zipkin.util.Util
 import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
+import sources.Util
 
 /**
  * Find out how often each service does memcache accesses
@@ -49,9 +54,25 @@ class MemcacheRequest(args : Args) extends Job(args) with DefaultDateRangeJob {
       if (ba.key == "memcached.keys") memcachedKeys = Some(ba)
     }
     for (cs <- clientSent; key <- memcachedKeys)
-      yield (cs.getHost.service_name, key.value) //Util.getArrayFromBuffer(key.value))
+      yield (cs.getHost.service_name, new String(Util.getArrayFromBuffer(key.value)))
     }
     .project('service, 'memcacheNames)
     .groupBy('service, 'memcacheNames){ _.size('count) }
     .write(Tsv(args("output")))
+
+  def getArrayFromBuffer(buf: ByteBuffer): Array[Byte] = {
+    val length = buf.remaining
+    if (buf.hasArray()) {
+      val boff = buf.arrayOffset() + buf.position()
+      if (boff == 0 && length == buf.array().length) {
+        buf.array()
+      } else {
+        Arrays.copyOfRange(buf.array(), boff, boff + length)
+      }
+    } else {
+      val bytes = new Array[Byte](length)
+      buf.duplicate.get(bytes)
+      bytes
+    }
+  }
 }

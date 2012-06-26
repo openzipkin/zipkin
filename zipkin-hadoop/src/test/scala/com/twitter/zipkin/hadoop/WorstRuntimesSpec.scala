@@ -7,9 +7,12 @@ import gen.AnnotationType
 import sources.SpanSource
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
+import com.twitter.zipkin.gen.AnnotationType
+
 
 class WorstRuntimesSpec extends Specification with TupleConversions {
   noDetailedDiffs()
+  import RichPipe._
 
   implicit val dateRange = DateRange(RichDate(123), RichDate(321))
 
@@ -29,12 +32,12 @@ class WorstRuntimesSpec extends Specification with TupleConversions {
 
   "WorstRuntimes" should {
     "return 100 entries with runtimes 1" in {
-      JobTest("com.twitter.zipkin.hadoop.WorstRuntimes").
-        arg("input", "inputFile").
-        arg("output", "outputFile").
-        arg("date", "2012-01-01T01:00").
-        source(SpanSource(), (repeatSpan(span, 20, 0) ++ repeatSpan(span1, 20, 100))).
-        sink[(Long, String, Long)](Tsv("outputFile")) {
+      JobTest("com.twitter.zipkin.hadoop.WorstRuntimes")
+        .arg("input", "inputFile")
+        .arg("output", "outputFile")
+        .arg("date", "2012-01-01T01:00")
+        .source(SpanSource(), (repeatSpan(span, 20, 0) ++ repeatSpan(span1, 20, 100)))
+        .sink[(Long, String, Long)](Tsv("outputFile")) {
         var counts = new HashMap[String, Long]()
         counts += ("service" -> 0)
         counts += ("service1" -> 0)

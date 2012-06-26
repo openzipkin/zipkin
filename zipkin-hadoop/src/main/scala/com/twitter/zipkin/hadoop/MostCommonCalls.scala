@@ -1,8 +1,9 @@
 package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
-import sources.SpanSource
 import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
+import cascading.pipe.joiner.LeftJoin
+import sources.{Util, SpanSource}
 
 class MostCommonCalls(args : Args) extends Job(args) with DefaultDateRangeJob {
   val preprocessed = SpanSource()
@@ -15,19 +16,26 @@ class MostCommonCalls(args : Args) extends Job(args) with DefaultDateRangeJob {
       }
     }
 
-  val result = preprocessed
-    .project('annotations)
-    .flatMap('annotations -> ('called, 'callee)){ al : List[Annotation] =>
-    var clientSent: Option[Annotation] = None
-    var serverReceived : Option[Annotation] = None
+  val spanInfo = preprocessed
+    .project('id, 'parent_id, 'annotations)
+    .flatMap('annotations -> ('cService, 'service)){ Util.getClientAndServiceName }
+    .project('id, 'parent_id, 'cService, 'service)
 
-    al.foreach { a : Annotation =>
-      if (Constants.CLIENT_SEND.equals(a.getValue)) clientSent = Some(a)
-      if (Constants.SERVER_RECV.equals(a.getValue)) serverReceived = Some(a)
+  val idName = spanInfo
+    .project('id, 'service)
+    .filter('service) {n : String => n != null }
+    .unique('id, 'service)
+    .rename('id, 'id1)
+    .rename('service, 'parentService)
+
+  val result = spanInfo
+    .joinWithSmaller('parent_id -> 'id1, idName, joiner = new LeftJoin) // dep_test_3
+    .map(('cService, 'parentService) -> ('cService, 'parentService)){ n : (String, String) =>
+      if (n._2 == null) {
+        (n._1, n._1)
+      } else n
     }
-    for (cs <- clientSent; sr <- serverReceived)
-    yield (sr.getHost.service_name,cs.getHost.service_name)
-  }.groupBy('called, 'callee){ _.size('count) }
-   .groupBy('called){ _.sortBy('count) }
+   .groupBy('service, 'parentService){ _.size('count) }
+   .groupBy('service){ _.sortBy('count) }
     .write(Tsv(args("output")))
 }
