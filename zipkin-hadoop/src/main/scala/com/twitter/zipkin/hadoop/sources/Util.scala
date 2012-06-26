@@ -2,15 +2,7 @@ package com.twitter.zipkin.hadoop.sources
 
 import java.nio.ByteBuffer
 import java.util.Arrays
-import com.twitter.zipkin.gen.{Constants, Annotation, BinaryAnnotation}
-
-/**
- * Created with IntelliJ IDEA.
- * User: jli
- * Date: 6/25/12
- * Time: 4:21 PM
- * To change this template use File | Settings | File Templates.
- */
+import com.twitter.zipkin.gen.{Constants, Annotation}
 
 object Util {
 
