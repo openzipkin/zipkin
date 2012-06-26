@@ -23,6 +23,7 @@ import com.twitter.zipkin.config.sampler.AdjustableRateConfig
 import com.twitter.zipkin.config.ScribeZipkinCollectorConfig
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.storage.Aggregates
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
 
@@ -41,16 +42,19 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
 
   val queue = mock[WriteQueue[Seq[String]]]
   val zkSampleRateConfig = mock[AdjustableRateConfig]
+  val mockAggregates = mock[Aggregates]
 
   val config = new ScribeZipkinCollectorConfig {
     def writeQueueConfig = null
     def zkConfig = null
     def indexConfig = null
     def storageConfig = null
+    def aggregatesConfig = null
     def methodConfig = null
 
     override lazy val writeQueue = queue
     override lazy val sampleRateConfig = zkSampleRateConfig
+    override lazy val aggregates = mockAggregates
   }
 
   def scribeCollectorService = new ScribeCollectorService(config, config.writeQueue, Set(category)) {
@@ -113,6 +117,31 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
 
       val actual = cs.setSampleRate(sampleRate)
       actual() mustEqual expected()
+    }
+
+    "store aggregates" in {
+      val serviceName = "mockingbird"
+      val annotations = Seq("a" , "b", "c")
+
+      "store top annotations" in {
+        val cs = scribeCollectorService
+
+        expect {
+          one(mockAggregates).storeTopAnnotations(serviceName, annotations)
+        }
+
+        cs.storeTopAnnotations(serviceName, annotations)
+      }
+
+      "store top key value annotations" in {
+        val cs = scribeCollectorService
+
+        expect {
+          one(mockAggregates).storeTopKeyValueAnnotations(serviceName, annotations)
+        }
+
+        cs.storeTopKeyValueAnnotations(serviceName, annotations)
+      }
     }
   }
 }
