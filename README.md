@@ -120,7 +120,7 @@ A Scribe store for Zipkin might look something like this.
     <store>
       category=zipkin
       type=network
-      remote_host=zk://zookeeper-hostname:2181/scribe/zipkin
+      remote_host=123.123.123.123
       remote_port=9410
       use_conn_pool=yes
       default_max_msg_before_reconnect=50000
@@ -128,7 +128,13 @@ A Scribe store for Zipkin might look something like this.
       must_succeed=no
     </store>
 
-Note that the above uses the Twitter version of Scribe with support for using ZooKeeper to find the hosts to send the category to. You can also use a DNS entry for the collectors or something similar.
+If you don't want to hardcode the IP address of your collector there are a few options. 
+
+You can use an internal DNS entry for the collectors, that way you only have one place to change the addresses when you add or remove collectors. 
+
+If you want to get all fancy you can use a modified version of <a href="Scribe">https://github.com/traviscrawford/scribe</a> that picks up the collectors via ZooKeeper. When each collector starts up it adds itself to ZooKeeper and when a collector shuts down it is automatically removed. The modified Scribe gets notified when the set of collectors change. To use this mode you change remote_host in the configuration to zk://zookeeper-hostname:2181/scribe/zipkin or something similar.
+
+We're hoping that others might add non-Scribe transports for the tracing data; there is no reason why Scribe has to be the only one.
 
 ### Zipkin servers
 We've developed Zipkin with <a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>, <a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>, and JDK7.
