@@ -1,4 +1,3 @@
-/*
 package com.twitter.zipkin.hadoop
 
 import org.specs.Specification
@@ -29,15 +28,23 @@ class DependencyTreeSpec extends Specification with TupleConversions {
 
   "DependencyTree" should {
     "Print shit" in {
-      JobTest("com.twitter.zipkin.hadoop.DependencyTree").
-        arg("input", "inputFile").
-        arg("output", "outputFile").
-        arg("date", "2012-01-01T01:00").
-        source(SpanSource(), (repeatSpan(span, 29, 30, 0) ++ repeatSpan(span1, 30, 100, 29))).
-        sink[(String, String, Long)](Tsv("outputFile")) {
+      JobTest("com.twitter.zipkin.hadoop.DependencyTree")
+        .arg("input", "inputFile")
+        .arg("output", "outputFile")
+        .arg("date", "2012-01-01T01:00")
+        .source(SpanSource(), (repeatSpan(span, 30, 40, 0) ++ repeatSpan(span1, 50, 100, 40)))
+        .sink[(String, String, Long)](Tsv("outputFile")) {
+        val map = new HashMap[String, Long]()
+        map("serviceservice") = 0
+        map("service1service") = 0
+        map("service1service1") = 0
         outputBuffer => outputBuffer foreach { e =>
           println(e)
+          map(e._1 + e._2) = e._3
         }
+        map("serviceservice") mustEqual 31
+        map("service1service") mustEqual 31
+        map("service1service1") mustEqual 20
       }.run.finish
     }
 
@@ -47,4 +54,4 @@ class DependencyTreeSpec extends Specification with TupleConversions {
     ((0 to count).toSeq map { i: Int => span.deepCopy().setId(i + offset).setParent_id(i + parentOffset) -> (i + offset)}).toList
   }
 }
-*/
+

@@ -17,14 +17,17 @@
 package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
-import sources.SpanSource
-import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
+import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Annotation}
+import cascading.pipe.joiner._
+import sources.{Util, SpanSource}
 
 /**
  * Find out how often services call each other throughout the entire system
  */
 
 class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
+
+
   val preprocessed = SpanSource()
     .read
     .mapTo(0 -> ('trace_id, 'id, 'parent_id, 'annotations, 'binary_annotations))
@@ -34,35 +37,31 @@ class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
       (left._1 ++ right._1, left._2 ++ right._2)
     }
   }
-
   /**
    * From the preprocessed data, get the id, parent_id, and service name
    */
   val spanInfo = preprocessed
-    .project('id, 'parent_id, 'annotations)
+    .project('trace_id, 'id, 'parent_id, 'annotations)
     // TODO: account for possible differences between sent and received service names
-    .flatMap('annotations -> ('cService, 'sService)) { annotations: List[Annotation] =>
-      var clientSend: Option[Annotation] = None
-      var serverReceived: Option[Annotation] = None
-      annotations.foreach { a =>
-        if (Constants.CLIENT_SEND.equals(a.getValue)) clientSend = Some(a)
-        if (Constants.SERVER_RECV.equals(a.getValue)) serverReceived = Some(a)
-      }
-      // only return a value if we have both annotations
-      for (cs <- clientSend; sr <- serverReceived)
-        yield (cs.getHost.service_name, sr.getHost.service_name)
-    }.discard('annotations)
+    .flatMap('annotations -> ('cService, 'service)) { Util.getClientAndServiceName }
+    .discard('annotations)
 
     // get (ID, ServiceName)
-/*    val idName = spanInfo
-      .project('id, 'sService)
-      .unique('id, 'sService)
+    val idName = spanInfo
+      .project('id, 'service)
+      .filter('service) {n : String => n != null }
+      .unique('id, 'service)
       .rename('id, 'id1)
-      .rename('sService, 'parentService)
+      .rename('service, 'parentService)
 
-    // Join with the original on parent ID to get the parent's service name
+    /* Join with the original on parent ID to get the parent's service name */
     val spanInfoWithParent = spanInfo
-      .joinWithSmaller('parent_id -> 'id1, idName)
-      .groupBy('sService, 'parentService){ _.size('count) }  */
+      .joinWithSmaller('parent_id -> 'id1, idName, joiner = new LeftJoin)
+      .map(('cService, 'parentService) -> ('cService, 'parentService)){ n : (String, String) =>
+        if (n._2 == null) {
+            (n._1, n._1)
+        } else n
+      }
+      .groupBy('service, 'parentService){ _.size('count) }
       .write(Tsv(args("output")))
 }
