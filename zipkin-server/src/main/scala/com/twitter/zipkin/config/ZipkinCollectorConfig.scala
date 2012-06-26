@@ -112,7 +112,8 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
     new SequenceProcessor[Span](
       new FanoutProcessor[Span]({
         new StorageProcessor(storage) ::
-        new IndexProcessor(index, indexingFilter)
+        new IndexProcessor(index, indexingFilter) ::
+        new StatsProcessor
       })
     )
 
