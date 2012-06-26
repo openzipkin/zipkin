@@ -17,7 +17,6 @@
 package com.twitter.zipkin.collector
 
 import com.twitter.zipkin.collector.processor.Processor
-import com.twitter.zipkin.collector.sampler.GlobalSampler
 import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
@@ -28,9 +27,8 @@ class WriteQueueWorkerSpec extends Specification with JMocker with ClassMocker {
     "hand off to processor" in {
       val processor = mock[Processor[Span]]
       val queue = mock[BlockingQueue[Span]]
-      val sampler = mock[GlobalSampler]
 
-      val w = new WriteQueueWorker[Span](queue, processor, sampler)
+      val w = new WriteQueueWorker[Span](queue, processor)
       val span = Span(123, "boo", 456, None, List(Annotation(123, "value", Some(Endpoint(1,2,"service")))), Nil)
 
       expect {
