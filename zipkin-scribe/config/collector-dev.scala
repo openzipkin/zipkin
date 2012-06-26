@@ -54,6 +54,10 @@ new ScribeZipkinCollectorConfig {
     def cassandraConfig = _cassandraConfig
   }
 
+  def aggregatesConfig = new CassandraAggregatesConfig {
+    def cassandraConfig = _cassandraConfig
+  }
+
   override def adaptiveSamplerConfig = new NullAdaptiveSamplerConfig {}
 
   def zkConfig = new ZooKeeperConfig {

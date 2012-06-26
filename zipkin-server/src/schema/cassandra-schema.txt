@@ -12,3 +12,5 @@ create column family ServiceSpanNameIndex with comparator = LongType;
 create column family ServiceNameIndex with comparator = LongType;
 create column family AnnotationsIndex with comparator = LongType;
 create column family DurationIndex with comparator = LongType;
+
+create column family TopAnnotations with comparator = LongType;
