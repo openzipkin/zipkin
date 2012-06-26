@@ -138,7 +138,7 @@ trait CassandraIndexConfig extends IndexConfig {
     log.info("Connected to Cassandra")
     new CassandraIndex() {
       val config               = cassandraConfig
-      val keyspace             = _keyspace
+      keyspace                 = _keyspace
       val serviceSpanNameIndex = _serviceSpanNameIndex
       val serviceNameIndex     = _serviceNameIndex
       val annotationsIndex     = _annotationsIndex

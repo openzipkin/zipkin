@@ -17,45 +17,53 @@
 package com.twitter.zipkin.collector
 
 import com.twitter.ostrich.admin.Service
-import java.util.concurrent.{Executors, ArrayBlockingQueue}
 import com.twitter.ostrich.stats.Stats
-import processor.Processor
-import sampler.GlobalSampler
+import com.twitter.zipkin.collector.processor.Processor
+import com.twitter.zipkin.collector.sampler.GlobalSampler
+import java.util.concurrent.ArrayBlockingQueue
 
-class WriteQueue(writeQueueMaxSize: Int,
+class WriteQueue[T](writeQueueMaxSize: Int,
                  flusherPoolSize: Int,
-                 processors: Seq[Processor],
+                 processor: Processor[T],
                  sampler: GlobalSampler) extends Service {
 
-  private val queue = new ArrayBlockingQueue[List[String]](writeQueueMaxSize)
+  private val queue = new ArrayBlockingQueue[T](writeQueueMaxSize)
   Stats.addGauge("write_queue_qsize") { queue.size }
-  private var workers: Seq[WriteQueueWorker] = Seq()
+  private var workers: Seq[WriteQueueWorker[T]] = Seq()
+  @volatile var running: Boolean = false
 
   def start() {
     workers = (0 until flusherPoolSize).toSeq map { i: Int =>
-      val worker = new WriteQueueWorker(queue, processors, sampler)
+      val worker = new WriteQueueWorker[T](queue, processor, sampler)
       worker.start()
       worker
     }
+    running = true
   }
 
   /**
    * Will block until all entries in queue have been flushed.
    * Assumes now new entries will be added to queue.
    */
-  def flushAll() {
+  private def flushAll() {
     while(!queue.isEmpty) {
       Thread.sleep(100)
     }
   }
 
   def shutdown() {
+    running = false
+    flushAll()
     workers foreach { _.stop() }
     workers foreach { _.shutdown() }
-    processors.foreach {_.shutdown()}
+    processor.shutdown()
   }
 
-  def add(messages: List[String]): Boolean = {
-    queue.offer(messages)
+  def add(messages: T): Boolean = {
+    if (running) {
+      queue.offer(messages)
+    } else {
+      false
+    }
   }
 }

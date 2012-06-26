@@ -14,15 +14,23 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.config
+package com.twitter.zipkin.collector.processor
 
-import com.twitter.zipkin.collector.processor.ScribeProcessorFilter
-import com.twitter.zipkin.config.collector.CollectorServerConfig
-import com.twitter.zipkin.gen
+import com.twitter.util.Future
 
-trait ScribeZipkinCollectorConfig extends ZipkinCollectorConfig {
-  type T = Seq[String]
-  val serverConfig: CollectorServerConfig = new ScribeCollectorServerConfig(this)
+/**
+ * Fans out a single item to a set of `Processor`s
+ * @param processors
+ * @tparam T
+ */
+class FanoutProcessor[T](processors: Seq[Processor[T]]) extends Processor[T] {
+  def process(item: T): Future[Unit] = {
+    Future.join {
+      processors map { _.process(item) }
+    }
+  }
 
-  def rawDataFilter = new ScribeProcessorFilter
+  def shutdown() {
+    processors.foreach { _.shutdown() }
+  }
 }

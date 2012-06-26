@@ -14,15 +14,26 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.config
+package com.twitter.zipkin.collector.processor
 
-import com.twitter.zipkin.collector.processor.ScribeProcessorFilter
-import com.twitter.zipkin.config.collector.CollectorServerConfig
-import com.twitter.zipkin.gen
+import org.specs.Specification
+import org.specs.mock.{JMocker, ClassMocker}
 
-trait ScribeZipkinCollectorConfig extends ZipkinCollectorConfig {
-  type T = Seq[String]
-  val serverConfig: CollectorServerConfig = new ScribeCollectorServerConfig(this)
+class FanoutProcessorSpec extends Specification with JMocker with ClassMocker {
+  "FanoutProcessor" should {
+    "fanout" in {
+      val proc1 = mock[Processor[Int]]
+      val proc2 = mock[Processor[Int]]
 
-  def rawDataFilter = new ScribeProcessorFilter
+      val fanout = new FanoutProcessor[Int](Seq(proc1, proc2))
+      val item = 1
+
+      expect {
+        one(proc1).process(item)
+        one(proc2).process(item)
+      }
+
+      fanout.process(item)
+    }
+  }
 }

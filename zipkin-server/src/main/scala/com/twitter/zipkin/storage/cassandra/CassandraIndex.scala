@@ -34,7 +34,6 @@ import com.twitter.zipkin.Constants
 trait CassandraIndex extends Index with Cassandra {
 
   val config: CassandraConfig
-  val keyspace: Keyspace
 
   /* Index `ColumnFamily`s */
   val serviceSpanNameIndex : ColumnFamily[String, Long, Long]

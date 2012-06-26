@@ -2,7 +2,7 @@
 
 Zipkin is a distributed tracing system that helps us gather timing data for all the disparate services at Twitter.
 It manages both the collection and lookup of this data through a Collector and a Query service.
-We closely modelled Zipkin after the <a href="http://research.google.com/pubs/pub36356.html">Google Dapper</a> paper. Follow <a href="https://twitter.com/zipkinproject">@zipkinproject</a> for updates.
+We closely modelled Zipkin after the <a href="http://research.google.com/pubs/pub36356.html">Google Dapper</a> paper. Follow <a href="https://twitter.com/zipkinproject">@zipkinproject</a> for updates. [![Build Status](https://secure.travis-ci.org/twitter/zipkin.png)](http://travis-ci.org/twitter/zipkin)
 
 ## Why distributed tracing?
 Collecting traces helps developers gain deeper knowledge about how certain requests perform in a distributed system.
@@ -33,31 +33,39 @@ We have instrumented the libraries below to trace requests and to pass the requi
 To set up a Finagle server in Scala, just do the following.
 Adding tracing is as simple as adding <a href="https://github.com/twitter/finagle/tree/master/finagle-zipkin">finagle-zipkin</a> as a dependency and a `tracerFactory` to the ServerBuilder. 
 
-    ServerBuilder()
-      .codec(ThriftServerFramedCodec())
-      .bindTo(serverAddr)
-      .name("servicename")
-      .tracerFactory(ZipkinTracer())
-      .build(new SomeService.FinagledService(queryService, new TBinaryProtocol.Factory()))
+```scala
+ServerBuilder()
+  .codec(ThriftServerFramedCodec())
+  .bindTo(serverAddr)
+  .name("servicename")
+  .tracerFactory(ZipkinTracer())
+  .build(new SomeService.FinagledService(queryService, new TBinaryProtocol.Factory()))
+```
 
 The tracing setup for clients is similar. When you've specified the Zipkin tracer as above a small sample of your requests will be traced automatically. We'll record when the request started and ended, services and hosts involved.
 
 In case you want to record additional information you can add a custom annotation in your code.
 
-    Trace.record("starting that extremely expensive computation")
+```scala
+Trace.record("starting that extremely expensive computation")
+```
 
 The line above will add an annotation with the string attached to the point in time when it happened. You can also add a key value annotation. It could look like this:
 
-    Trace.recordBinary("http.response.code", "500")
+```scala
+Trace.recordBinary("http.response.code", "500")
+```
 
 ##### Ruby Thrift
 There's a <a href="https://rubygems.org/gems/finagle-thrift">gem</a> we use to trace requests. In order to push the tracer and generate a trace id on a request you can use that gem in a RackHandler. See <a href="https://github.com/twitter/zipkin/blob/master/zipkin-web/config/application.rb">zipkin-web</a> for an example of where we trace the tracers.
 
 For tracing client calls from Ruby we rely on the Twitter <a href="https://github.com/twitter/thrift_client">Ruby Thrift client</a>. See below for an example on how to wrap the client.
 
-    client = ThriftClient.new(SomeService::Client, '127.0.0.1:1234')
-    client_id = FinagleThrift::ClientId.new(:name => "service_example.sample_environment")
-    FinagleThrift.enable_tracing!(client, client_id), "service_name")
+```ruby
+client = ThriftClient.new(SomeService::Client, "127.0.0.1:1234")
+client_id = FinagleThrift::ClientId.new(:name => "service_example.sample_environment")
+FinagleThrift.enable_tracing!(client, client_id), "service_name")
+```
 
 ##### Querulous
 <a href="https://github.com/twitter/querulous">Querulous</a> is a Scala library for interfacing with SQL databases. The tracing includes the timings of the request and the SQL query performed.
@@ -65,7 +73,9 @@ For tracing client calls from Ruby we rely on the Twitter <a href="https://githu
 ##### Cassie
 <a href="https://github.com/twitter/cassie">Cassie</a> is a Finagle based Cassandra client library. You set the tracer in Cassie pretty much like you would in Finagle, but in Cassie you set it on the KeyspaceBuilder.
 
-    cluster.keyspace(keyspace).tracerFactory(ZipkinTracer())
+```scala
+cluster.keyspace(keyspace).tracerFactory(ZipkinTracer())
+```
 
 ### Transport
 We use Scribe to transport all the traces from the different services to Zipkin and Hadoop.
@@ -84,6 +94,8 @@ Once the data is stored and indexed we need a way to extract it. This is where t
 ### UI
 Most of our users access the data via our UI. It's a Rails app that uses <a href="http://d3js.org/">D3</a> to visualize the trace data. Note that there is no built in authentication in the UI.
 
+## Modules
+![Modules (doc/modules.png)](https://github.com/twitter/zipkin/raw/master/doc/modules.png)
 
 ## Installation
 
@@ -119,19 +131,26 @@ A Scribe store for Zipkin might look something like this.
 Note that the above uses the Twitter version of Scribe with support for using ZooKeeper to find the hosts to send the category to. You can also use a DNS entry for the collectors or something similar.
 
 ### Zipkin servers
-We've developed Zipkin with <a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>, <a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>, and JDK6.
+We've developed Zipkin with <a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>, <a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>, and JDK7.
 
 1. `git clone https://github.com/twitter/zipkin.git`
-1. `cd zipkin/zipkin-server`
-1. `cp config/collector-dev.scala config/collector-prod.scala`
-1. `cp config/query-dev.scala config/query-prod.scala`
+1. `cd zipkin`
+1. `cp zipkin-scribe/config/collector-dev.scala zipkin-scribe/config/collector-prod.scala`
+1. `cp zipkin-server/config/query-dev.scala zipkin-server/config/query-prod.scala`
 1. Modify the configs above as needed. Pay particular attention to ZooKeeper and Cassandra server entries.
 1. `bin/sbt update package-dist` (This downloads SBT 0.11.2 if it doesn't already exist)
 1. `scp dist/zipkin*.zip [server]`
 1. `ssh [server]`
 1. `unzip zipkin*.zip`
 1. `mkdir -p /var/log/zipkin`
-1. Start the collector and query daemon.
+1. `zipkin-scribe/scripts/collector.sh -f zipkin-scribe/config/collector-prod.scala`
+1. `zipkin-server/scripts/query.sh -f zipkin-server/config/query-prod.scala`
+
+You can also run the collector and query services through SBT.
+
+To run the Scribe collector service: `bin/sbt 'project zipkin-scribe' 'run -f zipkin-scribe/config/collector-dev.scala'`
+
+To run the query service: `bin/sbt 'project zipkin-server' 'run -f zipkin-server/config/query-dev.scala'`
 
 ### Zipkin UI
 The UI is a standard Rails 3 app.
@@ -147,7 +166,7 @@ The UI is a standard Rails 3 app.
 The `zipkin-tracer` gem adds tracing to a Rails application through the use of a Rack Handler.
 In `config.ru`:
 
-```
+```ruby
   use ZipkinTracer::RackHandler
   run <YOUR_APPLICATION>
 ```

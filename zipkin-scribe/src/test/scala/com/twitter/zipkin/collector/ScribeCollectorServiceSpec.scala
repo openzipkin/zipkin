@@ -30,15 +30,16 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
   val serializer = new BinaryThriftStructSerializer[gen.Span] {
     def codec = gen.Span
   }
+  val category = "zipkin"
 
   val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
-  val validList = List(gen.LogEntry("b3", serializer.toString(ThriftAdapter(validSpan))))
+  val validList = List(gen.LogEntry(category, serializer.toString(ThriftAdapter(validSpan))))
 
   val wrongCatList = List(gen.LogEntry("wrongcat", serializer.toString(ThriftAdapter(validSpan))))
 
   val base64 = "CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA="
 
-  val queue = mock[WriteQueue]
+  val queue = mock[WriteQueue[Seq[String]]]
   val zkSampleRateConfig = mock[AdjustableRateConfig]
 
   val config = new ScribeZipkinCollectorConfig {
@@ -52,7 +53,7 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
     override lazy val sampleRateConfig = zkSampleRateConfig
   }
 
-  def scribeCollectorService = new ScribeCollectorService(config, config.writeQueue, Set("b3")) {
+  def scribeCollectorService = new ScribeCollectorService(config, config.writeQueue, Set(category)) {
     running = true
   }
 
