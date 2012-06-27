@@ -107,6 +107,30 @@ Zipkin.Application.Index = (function() {
         $('#error-box').show();
       }
     });
+
+    /* Fetch top annotations for this service */
+    $.ajax({
+      type: 'GET',
+      url: root_url + 'traces/top_annotations',
+      data: selected_service,
+      success: function(data) {
+        if (data.length > 0) {
+          $("#time_annotation").autocomplete({source: data});
+        }
+      }
+    });
+
+    /* Fetch top key value annotations for this service */
+    $.ajax({
+      type: 'GET',
+      url: root_url + 'traces/top_kv_annotations',
+      data: selected_service,
+      success: function(data) {
+        if (data.length > 0) {
+          $("#annotation_key").autocomplete({source: data});
+        }
+      }
+    });
   };
 
   var initialize = function() {
