@@ -17,9 +17,9 @@
 package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
-import sources.SpanSource
-import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
+import com.twitter.zipkin.gen.{Span, Annotation}
 import cascading.pipe.joiner.LeftJoin
+import sources.{PrepSpanSource, Util}
 
 /**
  * Find which services timeout the most
@@ -31,45 +31,15 @@ class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
   val ERROR_TYPE = List("finagle.timeout", "finagle.retry")
 
   // Preprocess the data into (trace_id, id, parent_id, annotations, binary_annotations)
-  val preprocessed = SpanSource()
+  val preprocessed = PrepSpanSource()
     .read
-    .mapTo(0 -> ('trace_id, 'id, 'parent_id, 'annotations, 'binary_annotations))
-     { s: Span => (s.trace_id, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList) }
-      .groupBy('trace_id, 'id, 'parent_id) { _.reduce('annotations, 'binary_annotations) {
-        (left: (List[Annotation], List[BinaryAnnotation]), right: (List[Annotation], List[BinaryAnnotation])) =>
-        (left._1 ++ right._1, left._2 ++ right._2)
-      }
-    }
+    .mapTo(0 -> ('id, 'parent_id, 'annotations) )
+      { s: Span => (s.id, s.parent_id, s.annotations.toList) }
+
 
   // Find the client service name, if it is there, and the best service name we can get
   val spanInfo = preprocessed
-    .flatMap('annotations -> ('cService, 'service)) { annotations: List[Annotation] =>
-      var clientSend: Annotation = null
-      var serviceName: Option[Annotation] = None
-      var hasServRecv = false
-      annotations.foreach { a =>
-        if (Constants.CLIENT_SEND.equals(a.getValue) || Constants.CLIENT_RECV.equals(a.getValue)) {
-          if (!hasServRecv) {
-            serviceName = Some(a)
-          }
-          clientSend = a
-        } else if (Constants.SERVER_RECV.equals(a.getValue) || Constants.SERVER_SEND.equals(a.getValue)) {
-          serviceName = Some(a)
-          hasServRecv = true
-        }
-      }
-      for (s <- serviceName)
-      yield {
-        val name = if (s.getHost == null) "Unknown Service Name" else s.getHost.service_name
-        if (clientSend == null) {
-          (null, name)
-        } else {
-          val cName = if (clientSend.getHost == null) "Unknown Service Name" else clientSend.getHost.service_name
-          (cName, name)
-        }
-      }
-  }
-
+    .flatMap('annotations -> ('cService, 'service)) { Util.getClientAndServiceName }
   // Project to (id, service name)
   val idName = spanInfo
     .project('id, 'service)

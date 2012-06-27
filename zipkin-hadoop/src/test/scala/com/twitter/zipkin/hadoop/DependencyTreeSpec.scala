@@ -1,12 +1,33 @@
+/*
+ * Copyright 2012 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.twitter.zipkin.hadoop
 
 import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
 import gen.AnnotationType
-import sources.SpanSource
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
+import sources.{PrepSpanSource}
+
+/**
+ * Tests that DependencyTree finds all service calls and how often per pair
+ * of endpoints
+ */
 
 class DependencyTreeSpec extends Specification with TupleConversions {
   noDetailedDiffs()
@@ -32,7 +53,7 @@ class DependencyTreeSpec extends Specification with TupleConversions {
         .arg("input", "inputFile")
         .arg("output", "outputFile")
         .arg("date", "2012-01-01T01:00")
-        .source(SpanSource(), (repeatSpan(span, 30, 40, 0) ++ repeatSpan(span1, 50, 100, 40)))
+        .source(PrepSpanSource(), (repeatSpan(span, 30, 40, 0) ++ repeatSpan(span1, 50, 100, 40)))
         .sink[(String, String, Long)](Tsv("outputFile")) {
         val map = new HashMap[String, Long]()
         map("serviceservice") = 0

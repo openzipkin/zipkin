@@ -1,20 +1,34 @@
+/*
+ * Copyright 2012 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.twitter.zipkin.hadoop
 
-/**
-* Created with IntelliJ IDEA.
-* User: jli
-* Date: 6/14/12
-* Time: 6:10 PM
-* To change this template use File | Settings | File Templates.
-*/
 
 import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
 import gen.AnnotationType
-import sources.SpanSource
+import sources.PrepSpanSource
 import scala.collection.JavaConverters._
 import scala.collection.mutable._
+
+/**
+ * Tests that Timeouts finds the service calls where timeouts occur and how often
+ * the timeouts occur per type of service
+ */
 
 class TimeoutsSpec extends Specification with TupleConversions {
   noDetailedDiffs()
@@ -46,7 +60,7 @@ class TimeoutsSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(SpanSource(), (repeatSpan(span, 101, 102, 0) ::: (repeatSpan(span1, 20, 300, 102)) ::: (repeatSpan(span2, 30, 400, 300)))).
+        source(PrepSpanSource(), (repeatSpan(span, 101, 102, 0) ::: (repeatSpan(span1, 20, 300, 102)) ::: (repeatSpan(span2, 30, 400, 300)))).
         sink[(String, String, Long)](Tsv("outputFile")) {
         val map = new HashMap[String, Long]()
         map("serviceservice") = 0

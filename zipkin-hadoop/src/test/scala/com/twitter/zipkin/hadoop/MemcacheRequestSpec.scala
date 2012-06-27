@@ -1,22 +1,34 @@
+/*
+ * Copyright 2012 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.twitter.zipkin.hadoop
-
-/**
-* Created with IntelliJ IDEA.
-* User: jli
-* Date: 6/18/12
-* Time: 10:08 AM
-* To change this template use File | Settings | File Templates.
-*/
 
 import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
 import gen.AnnotationType
-import sources.SpanSource
+import sources.PrepSpanSource
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
 import java.nio.ByteBuffer
+
+/**
+ * Tests that MemcacheRequest finds, per service and memcache request type, the number
+ * of memcache requests
+ */
 
 class MemcacheRequestSpec extends Specification with TupleConversions {
 
@@ -44,7 +56,7 @@ class MemcacheRequestSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(SpanSource(), (repeatSpan(span, 100, 1000) ++ repeatSpan(span2, 10, 0) ++ repeatSpan(span1, 20, 100))).
+        source(PrepSpanSource(), (repeatSpan(span, 100, 1000) ++ repeatSpan(span2, 10, 0) ++ repeatSpan(span1, 20, 100))).
         sink[(String, String, Long)](Tsv("outputFile")) {
         val counts = new HashMap[String, Long]()
         counts("service") = 0

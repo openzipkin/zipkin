@@ -1,14 +1,32 @@
+/*
+ * Copyright 2012 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.twitter.zipkin.hadoop
 
 import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
 import gen.AnnotationType
-import sources.SpanSource
+import sources.PrepSpanSource
 import scala.collection.JavaConverters._
-import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
 import scala.collection.mutable._
-import java.nio._
+
+/**
+ * Tests that PopularKeys finds the most popular keys per service
+ */
 
 class PopularKeysSpec extends Specification with TupleConversions {
 
@@ -31,7 +49,7 @@ class PopularKeysSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(SpanSource(), repeatSpan(span, 101, 0) ::: repeatSpan(span1, 50, 200)).
+        source(PrepSpanSource(), repeatSpan(span, 101, 0) ::: repeatSpan(span1, 50, 200)).
         sink[(String, String, Int)](Tsv("outputFile")) {
         val map = new HashMap[String, Int]()
         outputBuffer => outputBuffer foreach { e =>

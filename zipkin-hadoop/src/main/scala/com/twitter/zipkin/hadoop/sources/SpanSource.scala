@@ -23,6 +23,7 @@ import cascading.flow.FlowProcess
 import com.twitter.zipkin.gen.Span
 import org.apache.hadoop.mapred.{JobConf, RecordReader, OutputCollector}
 import com.twitter.scalding._
+import cascading.tuple.Fields
 
 // Scala is pickier than Java about type parameters, and Cascading's Scheme
 // declaration leaves some type parameters underspecified.  Fill in the type
@@ -40,6 +41,7 @@ abstract class HourlySuffixLzoThrift[T <: TBase[_,_] : Manifest](prefix : String
 abstract class HourlySuffixSource(prefixTemplate : String, dateRange : DateRange) extends
   TimePathedSource(prefixTemplate + TimePathedSource.YEAR_MONTH_DAY_HOUR + "/*", dateRange, DateOps.UTC)
 
+
 trait LzoThrift[T <: TBase[_, _]] extends Mappable[T] {
   def column: Class[_]
 
@@ -53,3 +55,9 @@ trait LzoThrift[T <: TBase[_, _]] extends Mappable[T] {
  * This is the source for trace data. Directories are like so: /logs/zipkin/yyyy/mm/dd/hh
  */
 case class SpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("/logs/zipkin/", dateRange)
+
+case class PrepSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("test", dateRange)
+
+case class FixedSpanSource(p : String) extends FixedPathSource(p) with LzoThrift[Span] {
+  def column = classOf[Span]
+}

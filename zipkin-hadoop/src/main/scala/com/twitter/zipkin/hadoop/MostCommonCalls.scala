@@ -1,23 +1,38 @@
+/*
+ * Copyright 2012 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
-import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
+import com.twitter.zipkin.gen.Span
 import cascading.pipe.joiner.LeftJoin
-import sources.{Util, SpanSource}
+import sources.{PrepSpanSource, Util}
+
+/**
+ * For each service finds the services that it most commonly calls
+ */
 
 class MostCommonCalls(args : Args) extends Job(args) with DefaultDateRangeJob {
-  val preprocessed = SpanSource()
+  val preprocessed = PrepSpanSource()
     .read
-    .mapTo(0 -> ('trace_id, 'id, 'parent_id, 'annotations, 'binary_annotations))
-      { s: Span => (s.trace_id, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList) }
-      .groupBy('trace_id, 'id, 'parent_id) { _.reduce('annotations, 'binary_annotations) {
-        (left: (List[Annotation], List[BinaryAnnotation]), right: (List[Annotation], List[BinaryAnnotation])) =>
-        (left._1 ++ right._1, left._2 ++ right._2)
-      }
-    }
+    .mapTo(0 -> ('id, 'parent_id, 'annotations))
+  { s: Span => (s.id, s.parent_id, s.annotations.toList) }
+
 
   val spanInfo = preprocessed
-    .project('id, 'parent_id, 'annotations)
     .flatMap('annotations -> ('cService, 'service)){ Util.getClientAndServiceName }
     .project('id, 'parent_id, 'cService, 'service)
 

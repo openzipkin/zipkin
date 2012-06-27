@@ -17,31 +17,23 @@
 package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
-import sources.SpanSource
 import java.nio.ByteBuffer
 import java.util.Arrays
-
-//import com.twitter.zipkin.util.Util
 import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
-import sources.Util
+import sources.{PrepSpanSource, SpanSource, Util}
 
 /**
  * Find out how often each service does memcache accesses
  */
 class MemcacheRequest(args : Args) extends Job(args) with DefaultDateRangeJob {
 
-  val preprocessed = SpanSource()
+  val preprocessed = PrepSpanSource()
     .read
-    .mapTo(0 -> ('trace_id, 'id, 'parent_id, 'annotations, 'binary_annotations))
-      { s: Span => (s.trace_id, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList) }
-    .groupBy('trace_id, 'id, 'parent_id) { _.reduce('annotations, 'binary_annotations) {
-      (left: (List[Annotation], List[BinaryAnnotation]), right: (List[Annotation], List[BinaryAnnotation])) =>
-      (left._1 ++ right._1, left._2 ++ right._2)
-    }
-  }
+    .mapTo(0 -> ('annotations, 'binary_annotations))
+      { s: Span => (s.annotations.toList, s.binary_annotations.toList) }
+
 
   val result = preprocessed
-    .project('annotations, 'binary_annotations)
     // from the annotations, find the service name
     .flatMap(('annotations, 'binary_annotations) -> ('service, 'memcacheNames)){ al : (List[Annotation], List[BinaryAnnotation]) =>
       var clientSent: Option[Annotation] = None
