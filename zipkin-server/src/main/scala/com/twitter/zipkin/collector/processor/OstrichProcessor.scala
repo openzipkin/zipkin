@@ -26,9 +26,9 @@ import com.twitter.util.Future
  * Adds server side duration data to ostrich, which
  * in turn can be sent to a monitoring system where it can be queried.
  */
-class OstrichProcessor(serviceStatsPrefix: String) extends Processor {
+class OstrichProcessor(serviceStatsPrefix: String) extends Processor[Span] {
 
-  def processSpan(span: Span): Future[Unit] = {
+  def process(span: Span): Future[Unit] = {
     for {
       start <- span.getAnnotation(gen.Constants.SERVER_RECV)
       end <- span.getAnnotation(gen.Constants.SERVER_SEND)

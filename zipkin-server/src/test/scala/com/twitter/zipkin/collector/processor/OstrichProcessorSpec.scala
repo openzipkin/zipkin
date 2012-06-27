@@ -39,7 +39,7 @@ class OstrichProcessorSpec extends Specification {
 
       val span = Span(12345, "methodcall", 666, None, List(annotation1, annotation2, annotation3), Nil)
 
-      agg.processSpan(span)
+      agg.process(span)
 
 
       Stats.getMetrics()(prefix + "service") mustEqual distribution
@@ -55,7 +55,7 @@ class OstrichProcessorSpec extends Specification {
 
       val span = Span(12345, "methodcall", 666, None, List(annotation1, annotation2, annotation3), Nil)
 
-      agg.processSpan(span)
+      agg.process(span)
 
       Stats.getMetrics()(prefix + "service") mustNotBe distribution
       Stats.getMetrics()(prefix + "service.methodcall") mustNotBe distribution

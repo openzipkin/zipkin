@@ -23,9 +23,9 @@ import com.twitter.util.Future
 /**
  * Index the incoming spans.
  */
-class IndexProcessor(index: Index, indexFilter: IndexingFilter) extends Processor {
+class IndexProcessor(index: Index, indexFilter: IndexingFilter) extends Processor[Span] {
 
-  def processSpan(span: Span) = {
+  def process(span: Span) = {
     if (indexFilter.shouldIndex(span)) {
       Future.join(Seq {
         index.indexTraceIdByServiceAndName(span) onFailure failureHandler("indexTraceIdByServiceAndName")

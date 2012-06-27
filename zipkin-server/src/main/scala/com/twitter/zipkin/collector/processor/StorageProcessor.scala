@@ -17,14 +17,13 @@ package com.twitter.zipkin.collector.processor
 
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.Storage
-import com.twitter.logging.Logger
 
 /**
  * Store the incoming span in the storage system.
  */
-class StorageProcessor(storage: Storage) extends Processor {
+class StorageProcessor(storage: Storage) extends Processor[Span] {
 
-  def processSpan(span: Span) =
+  def process(span: Span) =
     storage.storeSpan(span) onFailure failureHandler("storeSpan")
 
   def shutdown() = storage.close()
