@@ -33,6 +33,8 @@ Zipkin::Application.routes.draw do
     collection do
       get "spans_json"
       get "services_json"
+      get "top_annotations"
+      get "top_kv_annotations"
       get "query"
       get "get_trace"
       get "is_pinned_json"

@@ -88,7 +88,7 @@ GEM
       polyglot
       polyglot (>= 0.3.1)
     tzinfo (0.3.33)
-    zipkin-query (0.0.2)
+    zipkin-query (0.0.3)
       thrift (= 0.6.0)
     zipkin-tracer (0.0.1)
       finagle-thrift (~> 1.2.0)
@@ -106,6 +106,6 @@ DEPENDENCIES
   scribe (= 0.2.4)
   thrift (= 0.6.0)
   thrift_client (= 0.6.3)
-  zipkin-query (= 0.0.2)
+  zipkin-query (= 0.0.3)
   zipkin-tracer (= 0.0.1)
   zookeeper (= 1.2.4)
