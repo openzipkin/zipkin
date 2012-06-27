@@ -46,6 +46,10 @@ new ZipkinQueryConfig {
     def cassandraConfig = _cassandraConfig
   }
 
+  def aggregatesConfig = new CassandraAggregatesConfig {
+    def cassandraConfig = _cassandraConfig
+  }
+
   def zkConfig = new ZooKeeperConfig {
     servers = List("localhost:2181")
   }

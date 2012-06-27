@@ -186,4 +186,8 @@ service ZipkinQuery {
      * Get the data ttl. This is the number of seconds we keep the data around before deleting it.
      */
     i32 getDataTimeToLive() throws (1: QueryException qe);
+
+    /** Aggregates related */
+    list<string> getTopAnnotations(1: string service_name) throws (1: QueryException qe);
+    list<string> getTopKeyValueAnnotations(1: string service_name) throws (1: QueryException qe);
 }

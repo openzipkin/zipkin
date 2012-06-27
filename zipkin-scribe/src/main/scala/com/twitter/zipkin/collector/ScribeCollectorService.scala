@@ -74,7 +74,7 @@ class ScribeCollectorService(config: ZipkinCollectorConfig, val writeQueue: Writ
       return TryLater
     }
 
-    Stats.addMetric("scribe_size", logEntries.map(_.message).foldLeft(0)((size,str) => size + str.size))
+    Stats.addMetric("scribe_size", logEntries.map(_.message.size).sum)
 
     if (logEntries.isEmpty) {
       Stats.incr("collector.empty_logentry")
@@ -100,6 +100,34 @@ class ScribeCollectorService(config: ZipkinCollectorConfig, val writeQueue: Writ
     } else {
       Stats.incr("collector.pushback")
       TryLater
+    }
+  }
+
+  def storeTopAnnotations(serviceName: String, annotations: Seq[String]): Future[Unit] = {
+    Stats.incr("collector.storeTopAnnotations")
+    log.info("storeTopAnnotations: " + serviceName + "; " + annotations)
+
+    Stats.timeFutureMillis("collector.storeTopAnnotations") {
+      config.aggregates.storeTopAnnotations(serviceName, annotations)
+    } rescue {
+      case e: Exception =>
+        log.error(e, "storeTopAnnotations failed")
+        Stats.incr("collector.storeTopAnnotations")
+        Future.exception(gen.AdjustableRateException(e.toString))
+    }
+  }
+
+  def storeTopKeyValueAnnotations(serviceName: String, annotations: Seq[String]): Future[Unit] = {
+    Stats.incr("collector.storeTopKeyValueAnnotations")
+    log.info("storeTopKeyValueAnnotations: " + serviceName + ";" + annotations)
+
+    Stats.timeFutureMillis("collector.storeTopKeyValueAnnotations") {
+      config.aggregates.storeTopKeyValueAnnotations(serviceName, annotations)
+    } rescue {
+      case e: Exception =>
+        log.error(e, "storeTopKeyValueAnnotations failed")
+        Stats.incr("collector.storeTopKeyValueAnnotations")
+        Future.exception(gen.AdjustableRateException(e.toString))
     }
   }
 

@@ -203,6 +203,38 @@ require 'zipkin_query_types'
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getDataTimeToLive failed: unknown result')
           end
 
+          def getTopAnnotations(service_name)
+            send_getTopAnnotations(service_name)
+            return recv_getTopAnnotations()
+          end
+
+          def send_getTopAnnotations(service_name)
+            send_message('getTopAnnotations', GetTopAnnotations_args, :service_name => service_name)
+          end
+
+          def recv_getTopAnnotations()
+            result = receive_message(GetTopAnnotations_result)
+            return result.success unless result.success.nil?
+            raise result.qe unless result.qe.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getTopAnnotations failed: unknown result')
+          end
+
+          def getTopKeyValueAnnotations(service_name)
+            send_getTopKeyValueAnnotations(service_name)
+            return recv_getTopKeyValueAnnotations()
+          end
+
+          def send_getTopKeyValueAnnotations(service_name)
+            send_message('getTopKeyValueAnnotations', GetTopKeyValueAnnotations_args, :service_name => service_name)
+          end
+
+          def recv_getTopKeyValueAnnotations()
+            result = receive_message(GetTopKeyValueAnnotations_result)
+            return result.success unless result.success.nil?
+            raise result.qe unless result.qe.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getTopKeyValueAnnotations failed: unknown result')
+          end
+
         end
 
         class Processor
@@ -338,6 +370,28 @@ require 'zipkin_query_types'
               result.qe = qe
             end
             write_result(result, oprot, 'getDataTimeToLive', seqid)
+          end
+
+          def process_getTopAnnotations(seqid, iprot, oprot)
+            args = read_args(iprot, GetTopAnnotations_args)
+            result = GetTopAnnotations_result.new()
+            begin
+              result.success = @handler.getTopAnnotations(args.service_name)
+            rescue Zipkin::QueryException => qe
+              result.qe = qe
+            end
+            write_result(result, oprot, 'getTopAnnotations', seqid)
+          end
+
+          def process_getTopKeyValueAnnotations(seqid, iprot, oprot)
+            args = read_args(iprot, GetTopKeyValueAnnotations_args)
+            result = GetTopKeyValueAnnotations_result.new()
+            begin
+              result.success = @handler.getTopKeyValueAnnotations(args.service_name)
+            rescue Zipkin::QueryException => qe
+              result.qe = qe
+            end
+            write_result(result, oprot, 'getTopKeyValueAnnotations', seqid)
           end
 
         end
@@ -780,6 +834,74 @@ require 'zipkin_query_types'
 
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::I32, :name => 'success'},
+            QE => {:type => ::Thrift::Types::STRUCT, :name => 'qe', :class => Zipkin::QueryException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class GetTopAnnotations_args
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          SERVICE_NAME = 1
+
+          FIELDS = {
+            SERVICE_NAME => {:type => ::Thrift::Types::STRING, :name => 'service_name'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class GetTopAnnotations_result
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          SUCCESS = 0
+          QE = 1
+
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRING}},
+            QE => {:type => ::Thrift::Types::STRUCT, :name => 'qe', :class => Zipkin::QueryException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class GetTopKeyValueAnnotations_args
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          SERVICE_NAME = 1
+
+          FIELDS = {
+            SERVICE_NAME => {:type => ::Thrift::Types::STRING, :name => 'service_name'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class GetTopKeyValueAnnotations_result
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          SUCCESS = 0
+          QE = 1
+
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRING}},
             QE => {:type => ::Thrift::Types::STRUCT, :name => 'qe', :class => Zipkin::QueryException}
           }
 

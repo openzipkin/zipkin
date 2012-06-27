@@ -86,7 +86,7 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
       collector = new ZipkinCollector(collectorConfig)
       collector.start()
 
-      query = new ZipkinQuery(queryConfig, nullServerSetsImpl, queryConfig.storage, queryConfig.index)
+      query = new ZipkinQuery(queryConfig, nullServerSetsImpl, queryConfig.storage, queryConfig.index, queryConfig.aggregates)
       query.start()
 
       queryTransport = ClientBuilder()
