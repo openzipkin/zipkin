@@ -66,14 +66,16 @@ Zipkin.Application.Show = (function() {
 
             $.each(data.kv_annotations, function(spanId, kvAs) {
               var span = spanMap[spanId];
-              $.each(kvAs, function(i, kvA) {
-                var annotation = Zipkin.fromRawKvAnnotation(kvA);
-                span.addKvAnnotation(annotation);
-                annotation.setSpan(span);
+              if (span !== undefined) {
+                $.each(kvAs, function(i, kvA) {
+                  var annotation = Zipkin.fromRawKvAnnotation(kvA);
+                  span.addKvAnnotation(annotation);
+                  annotation.setSpan(span);
 
-                kvAnnotations.push(annotation);
-              });
-              kvAnnotationsMap[spanId] = kvAs
+                  kvAnnotations.push(annotation);
+                });
+                kvAnnotationsMap[spanId] = kvAs
+              }
             });
 
             $.each(data.annotations, function(i, val) {
