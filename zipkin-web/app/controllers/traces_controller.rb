@@ -117,6 +117,22 @@ class TracesController < ApplicationController
     render :json => Names.get_span_names(service_name).to_a
   end
 
+  def top_annotations
+    service_name = params[:service_name] || ""
+    top_annotations = ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
+      client.getTopAnnotations(service_name)
+    end
+    render :json => top_annotations || []
+  end
+
+  def top_kv_annotations
+    service_name = params[:service_name] || ""
+    top_annotations = ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
+      client.getTopKeyValueAnnotations(service_name)
+    end
+    render :json => top_annotations || []
+  end
+
   def query
     begin
       request = QueryRequest.new(params)
