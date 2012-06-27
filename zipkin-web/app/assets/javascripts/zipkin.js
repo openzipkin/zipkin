@@ -52,6 +52,22 @@ Zipkin.Util = (function(Zipkin) {
   };
 
   /**
+   * Parses the page query params and stuffs them into an object
+   */
+  var queryParams = function() {
+    var arr = [];
+    var str = location.search.substring(1);
+    str = decodeURIComponent(str);
+    $.each(str.split("&"), function(i, pair) {
+      var index = pair.indexOf("=");
+      if (index !== -1) {
+        arr.push([pair.substring(0, index), pair.substring(index+1)]);
+      }
+    });
+    return arr;
+  };
+
+  /**
    * Convenience method for using Hogan templates. If we have already
    * fetched the template, initiate the callback. Otherwise, fetch it
    * before invoking the callback.
@@ -86,6 +102,7 @@ Zipkin.Util = (function(Zipkin) {
     shallowCopy: shallowCopy,
     defaultDictPush: defaultDictPush,
     defaultDictGet: defaultDictGet,
+    queryParams: queryParams,
     templatize: templatize,
     TEMPLATES: TEMPLATES
   };
