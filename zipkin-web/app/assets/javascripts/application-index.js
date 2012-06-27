@@ -33,6 +33,11 @@ Zipkin.Application.Index = (function() {
   /* Data retrieved for a particular query */
   var traceData;
 
+  var useQueryParams = false;
+  var searchQuery = "";
+
+  var filter_submit;
+
   /* Makes ajax call to get and populate the service names field */
   var fetchServiceNames = function() {
     $.ajax({
@@ -100,6 +105,44 @@ Zipkin.Application.Index = (function() {
 
         spanSelector.change();
         $(".filter-submit button").removeAttr('disabled');
+
+        if (useQueryParams) {
+          /* Push any query params to the form and submit if they exist */
+          var selectSelector = function(name) { return 'select[name=' + name + ']'; };
+          var inputSelector = function(name) { return 'input[name=' + name + ']'; };
+
+          var formFields = {
+            "service_name"     : selectSelector('service_name'),
+            "span_name"        : selectSelector('span_name'),
+            "end_date"         : inputSelector('end_date'),
+            "end_time"         : inputSelector('end_time'),
+            "limit"            : inputSelector('limit'),
+            "time_annotation"  : inputSelector('time_annotation'),
+            "annotation_key"   : inputSelector('annotation_key'),
+            "annotation_value" : inputSelector('annotation_value')
+          };
+          var any = false;
+          $.each(useQueryParams, function(i, pair) {
+            var k = pair[0]
+              , v = pair[1]
+              ;
+            if (k === "adjust_clock_skew") {
+              if (v == "true") {
+                Zipkin.Base.enableClockSkewBtn();
+              } else if (v == "false") {
+                Zipkin.Base.disableClockSkewBtn();
+              }
+            } else if (k in formFields) {
+              var selector = formFields[k];
+              $(selector).val(v);
+              any = true;
+            }
+          });
+          if (any) {
+            filter_submit();
+          }
+          useQueryParams = false;
+        }
       },
       error: function(xhr, status, error) {
         $('#help-msg').hide();
@@ -134,13 +177,6 @@ Zipkin.Application.Index = (function() {
   };
 
   var initialize = function() {
-    Zipkin.Base.initialize();
-
-    fetchServiceNames();
-
-    /* Populate span selector after a service has been selected */
-    $('#service_name').change(serviceNameChange);
-
     /**
      * Helper functions for trace query results
      */
@@ -306,7 +342,7 @@ Zipkin.Application.Index = (function() {
     $(".service-tags").on("click", "li span.service-tag-close", labelRemove);
 
     /* Search for traces */
-    var filter_submit = function(adjust_clock_skew) {
+    filter_submit = function(adjust_clock_skew) {
 
       // Show some loading stuff while we wait for the query
       $('#help-msg').hide();
@@ -395,6 +431,10 @@ Zipkin.Application.Index = (function() {
           updateFilterTotalCount(data.length);
           updateFilterDuration(minStartTime, maxStartTime);
 
+          /* Shove the query string into the static link */
+          searchQuery = this.url.split("?")[1];
+          $("#static-search-link").attr("href", root_url + "?" + searchQuery).show();
+
           $(".infobar").show();
           $(".service-tag-list").show();
         },
@@ -474,6 +514,23 @@ Zipkin.Application.Index = (function() {
         refreshQueryResults(content);
       });
     });
+
+    $(document).on("click", "li.trace", function(e) {
+      history.pushState({}, "Zipkin", root_url + "?" + searchQuery);
+    });
+
+    Zipkin.Base.initialize();
+
+    var params = Zipkin.Util.queryParams();
+    if (params.length > 0) {
+      useQueryParams = params;
+    }
+
+    fetchServiceNames();
+
+    /* Populate span selector after a service has been selected */
+    $('#service_name').change(serviceNameChange);
+
   };
 
   return {
