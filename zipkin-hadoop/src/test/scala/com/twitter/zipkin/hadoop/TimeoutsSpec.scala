@@ -60,6 +60,7 @@ class TimeoutsSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
+        arg("error_type", "finagle.timeout").
         source(PreprocessedSpanSource(), (Util.repeatSpan(span, 101, 120, 1) ::: (Util.repeatSpan(span1, 20, 300, 102)) ::: (Util.repeatSpan(span2, 30, 400, 300)))).
         sink[(String, String, Long)](Tsv("outputFile")) {
         val map = new HashMap[String, Long]()
