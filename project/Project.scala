@@ -23,6 +23,7 @@ object Zipkin extends Build {
 
       name := "zipkin-hadoop",
       version := "0.2.0-SNAPSHOT",
+      parallelExecution in Test := false,
       libraryDependencies ++= Seq(
         "com.twitter" % "scalding_2.9.1"       % "0.5.3",
         "com.twitter.elephantbird" % "elephant-bird-cascading2"       % "3.0.0",
