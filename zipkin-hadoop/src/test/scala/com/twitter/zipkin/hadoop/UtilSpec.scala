@@ -53,16 +53,38 @@ class UtilSpec extends Specification {
 
       Util.repeatSpan(span, 1, 666, 0) must beEqualTo(List((span, 666),(span1, 667)))
     }
-  }
-  "repeat a Span correctly" in {
-    val endpoint = new gen.Endpoint(123, 666, "service")
-    val span = new gen.Span(12345, "methodcall", 666,
-      List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
-      List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava).setParent_id(0)
-    val span1 = new gen.Span(12345, "methodcall", 667,
-      List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
-      List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava).setParent_id(1)
+    "repeat a Span correctly" in {
+      val endpoint = new gen.Endpoint(123, 666, "service")
+      val span = new gen.Span(12345, "methodcall", 666,
+        List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
+        List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava).setParent_id(0)
+      val span1 = new gen.Span(12345, "methodcall", 667,
+        List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
+        List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava).setParent_id(1)
 
-    Util.repeatSpan(span, 1, 666, 0) must beEqualTo(List((span, 666),(span1, 667)))
+      Util.repeatSpan(span, 1, 666, 0) must beEqualTo(List((span, 666),(span1, 667)))
+    }
+  }
+  "Util.getLevenshteinDistance" should {
+    "get correct edit distance when a string is empty" in {
+      Util.getLevenshteinDistance("whee", "") must be_==(4)
+      Util.getLevenshteinDistance("", "pie") must be_==(3)
+    }
+    "get correct edit distance when deletions are necessary" in {
+      Util.getLevenshteinDistance("hi", "h") must be_==(1)
+      Util.getLevenshteinDistance("hihi", "hh") must be_==(2)
+    }
+    "get correct edit distance when substitutions are necessary" in {
+      Util.getLevenshteinDistance("hi", "ho") must be_==(1)
+      Util.getLevenshteinDistance("hihi", "heha") must be_==(2)
+    }
+    "get correct edit distance when additions are necessary" in {
+      Util.getLevenshteinDistance("h", "ho") must be_==(1)
+      Util.getLevenshteinDistance("hh", "heha") must be_==(2)
+    }
+    "get correct edit distance in general case" in {
+      Util.getLevenshteinDistance("aloha", "BoCa") must be_==(3)
+      Util.getLevenshteinDistance("all", "lK") must be_==(2)
+    }
   }
 }
