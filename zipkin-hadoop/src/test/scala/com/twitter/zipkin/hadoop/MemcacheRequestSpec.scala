@@ -63,7 +63,6 @@ class MemcacheRequestSpec extends Specification with TupleConversions {
         counts("service1") = 0
         counts("service2") = 0
         outputBuffer => outputBuffer foreach { e =>
-//          println(e)
           counts(e._1) += e._3
         }
         counts("service") mustEqual 0

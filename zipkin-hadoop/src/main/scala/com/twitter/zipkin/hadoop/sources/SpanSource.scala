@@ -80,8 +80,15 @@ trait SuccessFileSource extends FileSource {
  */
 case class SpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("/logs/zipkin/", dateRange)
 
+/**
+ * This is the source for trace data that has been merged. Directories are like in SpanSource
+ */
 case class PrepSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("test", dateRange)
 
+/**
+ * This is the source for trace data that has been merged and for which we've found
+ * the best possible client side and service names. Directories are like in SpanSource
+ */
 case class PreprocessedSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[SpanServiceName]("testagain", dateRange)
 
 
@@ -95,11 +102,8 @@ TimePathedSource(prefixTemplate + TimePathedSource.YEAR_MONTH_DAY + "/*", dateRa
 case class PrepTsvSource()(implicit dateRange : DateRange)
   extends DailySuffixSource("prep", dateRange)
   with LzoTsv
-//  with Mappable[(Long, String, Long, Long, List[Annotation], List[BinaryAnnotation])]
   with Mappable[(String, String)]
   with SuccessFileSource {
-//  override val fields = new Fields("trace_id", "name", "id", "parent_id", "annotations", "binary_annotations")
-//  override val types : Array[Class[_]] = Array(classOf[Long], classOf[String], classOf[Long], classOf[Long], classOf[List[Annotation]], classOf[List[BinaryAnnotation]])
   override val fields = new Fields("word", "letters")
   override val types : Array[Class[_]] = Array(classOf[String], classOf[String])
   override val columnNums = (0 until types.size)

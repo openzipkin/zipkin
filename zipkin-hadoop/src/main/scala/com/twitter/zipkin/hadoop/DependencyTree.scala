@@ -32,16 +32,7 @@ class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
     .mapTo(0 -> ('id, 'parent_id, 'cService, 'service))
       { s: SpanServiceName => (s.id, s.parent_id, s.client_service, s.service_name ) }
 
-//  /**
-//   * From the preprocessed data, get the id, parent_id, and service name
-//   */
-//  val spanInfo = preprocessed
-//    .project('trace_id, 'id, 'parent_id, 'annotations)
-//    // TODO: account for possible differences between sent and received service names
-//    .flatMap('annotations -> ('cService, 'service)) { Util.getClientAndServiceName }
-//    .discard('annotations)
-
-    // get (ID, ServiceName)
+    // TODO: account for possible differences between sent and received service names
     val idName = spanInfo
       .project('id, 'service)
       .filter('service) {n : String => n != null }

@@ -67,7 +67,6 @@ class TimeoutsSpec extends Specification with TupleConversions {
         map("service2, service1") = 0
         map("service2, Unknown Service Name") = 0
         outputBuffer => outputBuffer foreach { e =>
-          println(e)
           map(e._1 + ", " + e._2) = e._3
         }
         map("service, Unknown Service Name") mustEqual 102

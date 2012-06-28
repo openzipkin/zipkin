@@ -53,7 +53,6 @@ class PopularKeysSpec extends Specification with TupleConversions {
         sink[(String, String, Int)](Tsv("outputFile")) {
         val map = new HashMap[String, Int]()
         outputBuffer => outputBuffer foreach { e =>
-//          println(e)
           map(e._1 + e._2) = e._3
         }
         map("servicebye") mustEqual 51

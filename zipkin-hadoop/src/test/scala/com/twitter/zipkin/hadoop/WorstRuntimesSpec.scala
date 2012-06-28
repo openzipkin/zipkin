@@ -61,7 +61,6 @@ class WorstRuntimesSpec extends Specification with TupleConversions {
         counts += ("service1" -> 0)
         counts += ("service2" -> 0)
         outputBuffer => outputBuffer foreach { e =>
-//          println(e)
           if (e._2 == "service") {
             e._3 mustEqual 1
           } else if (e._2 == "service1") {

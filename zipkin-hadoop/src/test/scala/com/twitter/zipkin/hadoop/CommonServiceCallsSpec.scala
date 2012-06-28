@@ -60,7 +60,6 @@ class CommonServiceCallsSpec extends Specification with TupleConversions {
         result("service2, Unknown Service Name") = 0
         result("service2, service1") = 0
         outputBuffer => outputBuffer foreach { e =>
-          println(e)
           result(e._1 + ", " + e._2) = e._3
         }
         result("service, Unknown Service Name") mustEqual 31

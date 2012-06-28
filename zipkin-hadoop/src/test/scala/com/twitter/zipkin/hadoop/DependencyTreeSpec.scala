@@ -54,14 +54,12 @@ class DependencyTreeSpec extends Specification with TupleConversions {
         .arg("output", "outputFile")
         .arg("date", "2012-01-01T01:00")
         .source(PreprocessedSpanSource(), (repeatSpan(span, 30, 40, 1) ++ repeatSpan(span1, 50, 200, 40)))
-//        .source(PreprocessedSpanSource(), ((0 to 10).toSeq map { i: Int => span }).toList )
         .sink[(String, String, Long)](Tsv("outputFile")) {
         val map = new HashMap[String, Long]()
         map("service, Unknown Service Name") = 0
         map("service1, service") = 0
         map("service1, Unknown Service Name") = 0
         outputBuffer => outputBuffer foreach { e =>
-//          println(e)
           map(e._1 + ", " + e._2) = e._3
         }
         map("service, Unknown Service Name") mustEqual 31
