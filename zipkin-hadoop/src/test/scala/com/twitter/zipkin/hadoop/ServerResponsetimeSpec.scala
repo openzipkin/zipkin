@@ -1,9 +1,11 @@
+
 package com.twitter.zipkin.hadoop
 
 import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
-import sources.SpanSource
+import gen.AnnotationType
+import sources.{SpanSource, Util}
 import scala.collection.JavaConverters._
 
 class ServerResponsetimeSpec extends Specification with TupleConversions {
@@ -15,7 +17,6 @@ class ServerResponsetimeSpec extends Specification with TupleConversions {
   val span = new gen.Span(12345, "methodcall", 666,
     List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "ss").setHost(endpoint)).asJava,
     List[gen.BinaryAnnotation]().asJava)
-
 
   "ServerResponsetime" should {
     "have no output if input is < 100 entries" in {
@@ -33,17 +34,13 @@ class ServerResponsetimeSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(SpanSource(), repeatSpan(span, 101)).
+        source(SpanSource(), Util.repeatSpan(span, 101, 0, 0)).
         sink[(String, String, Double, Double, Double)](Tsv("outputFile")) {
         outputBuffer => outputBuffer foreach { e =>
           e mustEqual ("0.0.0.123", "service", 102d, 1d, 0d)
         }
       }.run.finish
     }
-
-  }
-
-  def repeatSpan(span: gen.Span, count: Int): List[(gen.Span, Int)] = {
-    ((0 to count).toSeq map { i: Int => span.deepCopy().setId(i) -> i }).toList
   }
 }
+
