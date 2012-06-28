@@ -30,6 +30,11 @@ class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
   // TODO: Support retry as well in a way that doesn't involve messing with the code
   val ERROR_TYPE = List("finagle.timeout", "finagle.retry")
 
+  val input = args.required("error_type")
+  if (!ERROR_TYPE.contains(input)) {
+    throw new IllegalArgumentException("Invalid error type : " + input)
+  }
+
   // Preprocess the data into (trace_id, id, parent_id, annotations, client service name, service name)
   val spanInfo = PreprocessedSpanSource()
     .read
@@ -47,7 +52,7 @@ class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
 
   // Left join with idName to find the parent's service name, if applicable
   val result = spanInfo
-    .filter('annotations){annotations : List[Annotation] => annotations.exists({a : Annotation =>  a.value == ERROR_TYPE(0)})}
+    .filter('annotations){annotations : List[Annotation] => annotations.exists({a : Annotation =>  a.value == input})}
     .project('id, 'parent_id, 'cService, 'service)
     .joinWithSmaller('parent_id -> 'id1, idName, joiner = new LeftJoin)
     .map(('parent_id, 'cService, 'parentService) -> 'parentService){ Util.getBestClientSideName }
