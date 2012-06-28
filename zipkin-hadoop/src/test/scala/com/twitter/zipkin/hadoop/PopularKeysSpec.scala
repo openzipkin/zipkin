@@ -20,7 +20,7 @@ import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
 import gen.AnnotationType
-import sources.PrepSpanSource
+import sources.{PreprocessedSpanSource, Util}
 import scala.collection.JavaConverters._
 import scala.collection.mutable._
 
@@ -35,12 +35,12 @@ class PopularKeysSpec extends Specification with TupleConversions {
   implicit val dateRange = DateRange(RichDate(123), RichDate(321))
 
   val endpoint = new gen.Endpoint(123, 666, "service")
-  val span = new gen.Span(12345, "methodcall", 666,
+  val span = new gen.SpanServiceName(12345, "methodcall", 666,
     List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
-    List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava)
-  val span1 = new gen.Span(12345, "methodcall", 666,
+    List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service", "service")
+  val span1 = new gen.SpanServiceName(12345, "methodcall", 666,
     List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
-    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava)
+    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service", "service")
 
 
   "PopularKeys" should {
@@ -49,11 +49,11 @@ class PopularKeysSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(PrepSpanSource(), repeatSpan(span, 101, 0) ::: repeatSpan(span1, 50, 200)).
+        source(PreprocessedSpanSource(), Util.repeatSpan(span, 101, 0, 0) ::: Util.repeatSpan(span1, 50, 200, 0)).
         sink[(String, String, Int)](Tsv("outputFile")) {
         val map = new HashMap[String, Int]()
         outputBuffer => outputBuffer foreach { e =>
-          println(e)
+//          println(e)
           map(e._1 + e._2) = e._3
         }
         map("servicebye") mustEqual 51
@@ -62,10 +62,5 @@ class PopularKeysSpec extends Specification with TupleConversions {
     }
 
   }
-
-  def repeatSpan(span: gen.Span, count: Int, offset : Int): List[(gen.Span, Int)] = {
-    ((0 to count).toSeq map { i: Int => span.deepCopy().setId(i + offset) -> (i + offset)}).toList
-  }
-
 }
 

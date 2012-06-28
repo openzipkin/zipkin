@@ -17,24 +17,19 @@
 package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
-import com.twitter.zipkin.gen.Span
 import cascading.pipe.joiner.LeftJoin
-import sources.{PrepSpanSource, Util}
+import com.twitter.zipkin.gen.{SpanServiceName}
+import sources.{PreprocessedSpanSource, Util}
 
 /**
  * For each service finds the services that it most commonly calls
  */
 
 class MostCommonCalls(args : Args) extends Job(args) with DefaultDateRangeJob {
-  val preprocessed = PrepSpanSource()
+  val spanInfo = PreprocessedSpanSource()
     .read
-    .mapTo(0 -> ('id, 'parent_id, 'annotations))
-  { s: Span => (s.id, s.parent_id, s.annotations.toList) }
-
-
-  val spanInfo = preprocessed
-    .flatMap('annotations -> ('cService, 'service)){ Util.getClientAndServiceName }
-    .project('id, 'parent_id, 'cService, 'service)
+    .mapTo(0 -> ('id, 'parent_id, 'cService, 'service))
+  { s: SpanServiceName => (s.id, s.parent_id, s.client_service, s.service_name) }
 
   val idName = spanInfo
     .project('id, 'service)
@@ -44,13 +39,9 @@ class MostCommonCalls(args : Args) extends Job(args) with DefaultDateRangeJob {
     .rename('service, 'parentService)
 
   val result = spanInfo
-    .joinWithSmaller('parent_id -> 'id1, idName, joiner = new LeftJoin) // dep_test_3
-    .map(('cService, 'parentService) -> ('cService, 'parentService)){ n : (String, String) =>
-      if (n._2 == null) {
-        (n._1, n._1)
-      } else n
-    }
-   .groupBy('service, 'parentService){ _.size('count) }
-   .groupBy('service){ _.sortBy('count) }
+    .joinWithSmaller('parent_id -> 'id1, idName, joiner = new LeftJoin)
+    .map(('parent_id, 'cService, 'parentService) -> 'parentService){ Util.getBestClientSideName }
+    .groupBy('service, 'parentService){ _.size('count) }
+    .groupBy('service){ _.sortBy('count) }
     .write(Tsv(args("output")))
 }

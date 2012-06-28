@@ -20,7 +20,7 @@ import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
 import gen.AnnotationType
-import sources.PrepSpanSource
+import sources.{PrepSpanSource, Util}
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
 import java.nio.ByteBuffer
@@ -56,14 +56,14 @@ class MemcacheRequestSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(PrepSpanSource(), (repeatSpan(span, 100, 1000) ++ repeatSpan(span2, 10, 0) ++ repeatSpan(span1, 20, 100))).
+        source(PrepSpanSource(), (Util.repeatSpan(span, 100, 1000, 0) ++ Util.repeatSpan(span2, 10, 0, 0) ++ Util.repeatSpan(span1, 20, 100, 0))).
         sink[(String, String, Long)](Tsv("outputFile")) {
         val counts = new HashMap[String, Long]()
         counts("service") = 0
         counts("service1") = 0
         counts("service2") = 0
         outputBuffer => outputBuffer foreach { e =>
-          println(e)
+//          println(e)
           counts(e._1) += e._3
         }
         counts("service") mustEqual 0
@@ -71,10 +71,6 @@ class MemcacheRequestSpec extends Specification with TupleConversions {
         counts("service2") mustEqual 11
       }.run.finish
     }
-  }
-
-  def repeatSpan(span: gen.Span, count: Int, offset : Int): List[(gen.Span, Int)] = {
-    ((0 to count).toSeq map { i: Int => span.deepCopy().setId(i + offset) -> (i + offset)}).toList
   }
 }
 

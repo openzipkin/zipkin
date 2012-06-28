@@ -17,9 +17,9 @@
 package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
-import com.twitter.zipkin.gen.{Span, Annotation}
 import cascading.pipe.joiner.LeftJoin
-import sources.{PrepSpanSource, Util}
+import sources.{PreprocessedSpanSource, Util}
+import com.twitter.zipkin.gen.{SpanServiceName, Span, Annotation}
 
 /**
  * Find which services timeout the most
@@ -27,19 +27,16 @@ import sources.{PrepSpanSource, Util}
 
 class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
 
-  // TODO: Support retry as well in a way that doesn't involve messing with teh code
+  // TODO: Support retry as well in a way that doesn't involve messing with the code
   val ERROR_TYPE = List("finagle.timeout", "finagle.retry")
 
-  // Preprocess the data into (trace_id, id, parent_id, annotations, binary_annotations)
-  val preprocessed = PrepSpanSource()
+  // Preprocess the data into (trace_id, id, parent_id, annotations, client service name, service name)
+  val spanInfo = PreprocessedSpanSource()
     .read
-    .mapTo(0 -> ('id, 'parent_id, 'annotations) )
-      { s: Span => (s.id, s.parent_id, s.annotations.toList) }
+    .mapTo(0 -> ('id, 'parent_id, 'annotations, 'cService, 'service) )
+      { s: SpanServiceName => (s.id, s.parent_id, s.annotations.toList, s.client_service, s.service_name) }
 
 
-  // Find the client service name, if it is there, and the best service name we can get
-  val spanInfo = preprocessed
-    .flatMap('annotations -> ('cService, 'service)) { Util.getClientAndServiceName }
   // Project to (id, service name)
   val idName = spanInfo
     .project('id, 'service)
@@ -53,11 +50,7 @@ class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
     .filter('annotations){annotations : List[Annotation] => annotations.exists({a : Annotation =>  a.value == ERROR_TYPE(0)})}
     .project('id, 'parent_id, 'cService, 'service) // test_3
     .joinWithSmaller('parent_id -> 'id1, idName, joiner = new LeftJoin)
-    .map(('cService, 'parentService) -> ('cService, 'parentService)){ n : (String, String) =>
-      if (n._2 == null) {
-        (n._1, n._1)
-      } else n
-    }
+    .map(('parent_id, 'cService, 'parentService) -> 'parentService){ Util.getBestClientSideName }
     .project('service, 'parentService)
     .groupBy('service, 'parentService){ _.size('numTimeouts) }
     .write(Tsv(args("output")))

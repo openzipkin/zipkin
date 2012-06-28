@@ -1,18 +1,18 @@
 /*
- * Copyright 2012 Twitter Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright 2012 Twitter Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 package com.twitter.zipkin.hadoop
 
@@ -22,12 +22,12 @@ import com.twitter.scalding._
 import gen.AnnotationType
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
-import sources.{PrepSpanSource}
+import sources.{PreprocessedSpanSource}
 
 /**
- * Tests that DependencyTree finds all service calls and how often per pair
- * of endpoints
- */
+* Tests that DependencyTree finds all service calls and how often per pair
+* of endpoints
+*/
 
 class DependencyTreeSpec extends Specification with TupleConversions {
   noDetailedDiffs()
@@ -37,15 +37,15 @@ class DependencyTreeSpec extends Specification with TupleConversions {
   val endpoint = new gen.Endpoint(123, 666, "service")
   val endpoint1 = new gen.Endpoint(123, 666, "service1")
   val endpoint2 = new gen.Endpoint(123, 666, "service2")
-  val span = new gen.Span(12345, "methodcall", 666,
+  val span = new gen.SpanServiceName(12345, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint), new gen.Annotation(2000, "sr").setHost(endpoint)).asJava,
-    List[gen.BinaryAnnotation]().asJava)
-  val span1 = new gen.Span(123456, "methodcall", 666,
+    List[gen.BinaryAnnotation]().asJava, "service", "service")
+  val span1 = new gen.SpanServiceName(123456, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint1), new gen.Annotation(4000, "sr").setHost(endpoint1)).asJava,
-    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava)
-  val span2 = new gen.Span(1234567, "methodcall", 666,
+    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service1", "service1")
+  val span2 = new gen.SpanServiceName(1234567, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint2), new gen.Annotation(3000, "cr").setHost(endpoint2)).asJava,
-    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava)
+    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service2", "service2")
 
   "DependencyTree" should {
     "Print shit" in {
@@ -53,25 +53,26 @@ class DependencyTreeSpec extends Specification with TupleConversions {
         .arg("input", "inputFile")
         .arg("output", "outputFile")
         .arg("date", "2012-01-01T01:00")
-        .source(PrepSpanSource(), (repeatSpan(span, 30, 40, 0) ++ repeatSpan(span1, 50, 100, 40)))
+        .source(PreprocessedSpanSource(), (repeatSpan(span, 30, 40, 1) ++ repeatSpan(span1, 50, 200, 40)))
+//        .source(PreprocessedSpanSource(), ((0 to 10).toSeq map { i: Int => span }).toList )
         .sink[(String, String, Long)](Tsv("outputFile")) {
         val map = new HashMap[String, Long]()
-        map("serviceservice") = 0
-        map("service1service") = 0
-        map("service1service1") = 0
+        map("service, Unknown Service Name") = 0
+        map("service1, service") = 0
+        map("service1, Unknown Service Name") = 0
         outputBuffer => outputBuffer foreach { e =>
-          println(e)
-          map(e._1 + e._2) = e._3
+//          println(e)
+          map(e._1 + ", " + e._2) = e._3
         }
-        map("serviceservice") mustEqual 31
-        map("service1service") mustEqual 31
-        map("service1service1") mustEqual 20
+        map("service, Unknown Service Name") mustEqual 31
+        map("service1, service") mustEqual 31
+        map("service1, Unknown Service Name") mustEqual 20
       }.run.finish
     }
 
   }
 
-  def repeatSpan(span: gen.Span, count: Int, offset : Int, parentOffset : Int): List[(gen.Span, Int)] = {
+  def repeatSpan(span: gen.SpanServiceName, count: Int, offset : Int, parentOffset : Int): List[(gen.SpanServiceName, Int)] = {
     ((0 to count).toSeq map { i: Int => span.deepCopy().setId(i + offset).setParent_id(i + parentOffset) -> (i + offset)}).toList
   }
 }

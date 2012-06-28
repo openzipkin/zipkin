@@ -17,9 +17,9 @@
 package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
-import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Annotation}
 import cascading.pipe.joiner._
-import sources.{PrepSpanSource, Util}
+import sources.{PreprocessedSpanSource, PrepSpanSource, Util}
+import com.twitter.zipkin.gen.{SpanServiceName, BinaryAnnotation, Span, Annotation}
 
 /**
 * Find out how often services call each other throughout the entire system
@@ -27,19 +27,19 @@ import sources.{PrepSpanSource, Util}
 
 class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
 
-  val preprocessed = PrepSpanSource()
+  val spanInfo = PreprocessedSpanSource()
     .read
-    .mapTo(0 -> ('trace_id, 'id, 'parent_id, 'annotations))
-      { s: Span => (s.trace_id, s.id, s.parent_id, s.annotations.toList) }
+    .mapTo(0 -> ('id, 'parent_id, 'cService, 'service))
+      { s: SpanServiceName => (s.id, s.parent_id, s.client_service, s.service_name ) }
 
-  /**
-   * From the preprocessed data, get the id, parent_id, and service name
-   */
-  val spanInfo = preprocessed
-    .project('trace_id, 'id, 'parent_id, 'annotations)
-    // TODO: account for possible differences between sent and received service names
-    .flatMap('annotations -> ('cService, 'service)) { Util.getClientAndServiceName }
-    .discard('annotations)
+//  /**
+//   * From the preprocessed data, get the id, parent_id, and service name
+//   */
+//  val spanInfo = preprocessed
+//    .project('trace_id, 'id, 'parent_id, 'annotations)
+//    // TODO: account for possible differences between sent and received service names
+//    .flatMap('annotations -> ('cService, 'service)) { Util.getClientAndServiceName }
+//    .discard('annotations)
 
     // get (ID, ServiceName)
     val idName = spanInfo
@@ -52,11 +52,7 @@ class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
     /* Join with the original on parent ID to get the parent's service name */
     val spanInfoWithParent = spanInfo
       .joinWithSmaller('parent_id -> 'id1, idName, joiner = new LeftJoin)
-      .map(('cService, 'parentService) -> ('cService, 'parentService)){ n : (String, String) =>
-        if (n._2 == null) {
-            (n._1, n._1)
-        } else n
-      }
+      .map(('parent_id, 'cService, 'parentService) -> 'parentService){ Util.getBestClientSideName }
       .groupBy('service, 'parentService){ _.size('count) }
       .write(Tsv(args("output")))
 }

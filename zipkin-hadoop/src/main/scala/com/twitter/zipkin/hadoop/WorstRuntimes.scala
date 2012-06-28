@@ -17,8 +17,8 @@
 package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
-import sources.SpanSource
-import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
+import com.twitter.zipkin.gen.{Span, Constants, Annotation}
+import sources.{PrepSpanSource}
 
 /**
  * Obtain the IDs and the durations of the one hundred service calls which take the longest per service
@@ -28,15 +28,11 @@ class WorstRuntimes(args: Args) extends Job(args) with DefaultDateRangeJob {
 
   val clientAnnotations = Seq(Constants.CLIENT_RECV, Constants.CLIENT_SEND)
 
-  val preprocessed = SpanSource()
+  val preprocessed = PrepSpanSource()
     .read
-    .mapTo(0 -> ('trace_id, 'id, 'parent_id, 'annotations, 'binary_annotations))
-      { s: Span => (s.trace_id, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList) }
-    .groupBy('trace_id, 'id, 'parent_id) { _.reduce('annotations, 'binary_annotations) {
-      (left: (List[Annotation], List[BinaryAnnotation]), right: (List[Annotation], List[BinaryAnnotation])) =>
-      (left._1 ++ right._1, left._2 ++ right._2)
+    .mapTo(0 -> ('id, 'annotations)) {
+      s : Span => (s.id, s.annotations.toList)
     }
-  }
 
   val result = preprocessed
     .project('id, 'annotations)

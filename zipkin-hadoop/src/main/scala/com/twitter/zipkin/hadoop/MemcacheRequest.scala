@@ -51,20 +51,4 @@ class MemcacheRequest(args : Args) extends Job(args) with DefaultDateRangeJob {
     .project('service, 'memcacheNames)
     .groupBy('service, 'memcacheNames){ _.size('count) }
     .write(Tsv(args("output")))
-
-  def getArrayFromBuffer(buf: ByteBuffer): Array[Byte] = {
-    val length = buf.remaining
-    if (buf.hasArray()) {
-      val boff = buf.arrayOffset() + buf.position()
-      if (boff == 0 && length == buf.array().length) {
-        buf.array()
-      } else {
-        Arrays.copyOfRange(buf.array(), boff, boff + length)
-      }
-    } else {
-      val bytes = new Array[Byte](length)
-      buf.duplicate.get(bytes)
-      bytes
-    }
-  }
 }

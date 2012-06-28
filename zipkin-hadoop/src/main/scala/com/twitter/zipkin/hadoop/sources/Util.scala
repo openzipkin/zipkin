@@ -19,6 +19,7 @@ package com.twitter.zipkin.hadoop.sources
 import java.nio.ByteBuffer
 import java.util.Arrays
 import com.twitter.zipkin.gen.{Constants, Annotation}
+import com.twitter.zipkin.gen
 
 /**
  * A collection of useful functions used throughout the library
@@ -104,4 +105,22 @@ object Util {
     for (s <- service)
       yield if (clientSend == null) (null, s.getHost.service_name) else (clientSend.getHost.service_name, s.getHost.service_name)
   }
+
+  def getBestClientSideName(parentInfo : (Long, String, String)) : String = {
+    parentInfo match {
+      case (0, cName, _) => cName
+      case (_, _, null) => "Unknown Service Name"
+      case (_, _, pName) => pName
+      case _ => "Unknown Service Name"
+    }
+  }
+
+  def repeatSpan(span: gen.SpanServiceName, count: Int, offset : Int, parentOffset : Int): List[(gen.SpanServiceName, Int)] = {
+    ((0 to count).toSeq map { i: Int => span.deepCopy().setId(i + offset).setParent_id(i + parentOffset) -> (i + offset)}).toList
+  }
+
+  def repeatSpan(span: gen.Span, count: Int, offset : Int, parentOffset : Int): List[(gen.Span, Int)] = {
+    ((0 to count).toSeq map { i: Int => span.deepCopy().setId(i + offset).setParent_id(i + parentOffset) -> (i + offset)}).toList
+  }
+
 }

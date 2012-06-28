@@ -15,15 +15,17 @@
  */
 package com.twitter.zipkin.hadoop.sources
 
+import com.twitter.zipkin.gen.{BinaryAnnotation, Annotation}
 import org.apache.thrift.TBase
-import cascading.scheme.local.{TextLine => CLTextLine}
-import com.twitter.elephantbird.cascading2.scheme.LzoThriftScheme
 import cascading.scheme.Scheme
-import cascading.flow.FlowProcess
-import com.twitter.zipkin.gen.Span
+import com.twitter.zipkin.gen.{Span, SpanServiceName}
 import org.apache.hadoop.mapred.{JobConf, RecordReader, OutputCollector}
 import com.twitter.scalding._
 import cascading.tuple.Fields
+import com.twitter.elephantbird.cascading2.scheme.{LzoTextDelimited, LzoThriftScheme}
+import cascading.scheme.local.{TextDelimited, TextLine => CLTextLine}
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileStatus, Path}
 
 // Scala is pickier than Java about type parameters, and Cascading's Scheme
 // declaration leaves some type parameters underspecified.  Fill in the type
@@ -51,6 +53,28 @@ trait LzoThrift[T <: TBase[_, _]] extends Mappable[T] {
   override def hdfsScheme = HadoopSchemeInstance(new LzoThriftScheme[T](column))
 }
 
+trait LzoTsv extends DelimitedScheme {
+  override def localScheme = { println("This does not work yet"); new TextDelimited(fields, separator, types) }
+  override def hdfsScheme = HadoopSchemeInstance(new LzoTextDelimited(fields, separator, types))
+}
+
+/**
+ * Ensures that a _SUCCESS file is present in the Source path.
+ */
+trait SuccessFileSource extends FileSource {
+  override protected def pathIsGood(p : String, conf : Configuration) = {
+    val path = new Path(p)
+    Option(path.getFileSystem(conf).globStatus(path)).
+      map{ statuses : Array[FileStatus] =>
+    // Must have a file that is called "_SUCCESS"
+      statuses.exists { fs : FileStatus  =>
+        fs.getPath.getName == "_SUCCESS"
+      }
+    }.
+      getOrElse(false)
+  }
+}
+
 /**
  * This is the source for trace data. Directories are like so: /logs/zipkin/yyyy/mm/dd/hh
  */
@@ -58,6 +82,25 @@ case class SpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThri
 
 case class PrepSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("test", dateRange)
 
+case class PreprocessedSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[SpanServiceName]("testagain", dateRange)
+
+
 case class FixedSpanSource(p : String) extends FixedPathSource(p) with LzoThrift[Span] {
   def column = classOf[Span]
+}
+
+abstract class DailySuffixSource(prefixTemplate : String, dateRange : DateRange) extends
+TimePathedSource(prefixTemplate + TimePathedSource.YEAR_MONTH_DAY + "/*", dateRange, DateOps.UTC)
+
+case class PrepTsvSource()(implicit dateRange : DateRange)
+  extends DailySuffixSource("prep", dateRange)
+  with LzoTsv
+//  with Mappable[(Long, String, Long, Long, List[Annotation], List[BinaryAnnotation])]
+  with Mappable[(String, String)]
+  with SuccessFileSource {
+//  override val fields = new Fields("trace_id", "name", "id", "parent_id", "annotations", "binary_annotations")
+//  override val types : Array[Class[_]] = Array(classOf[Long], classOf[String], classOf[Long], classOf[Long], classOf[List[Annotation]], classOf[List[BinaryAnnotation]])
+  override val fields = new Fields("word", "letters")
+  override val types : Array[Class[_]] = Array(classOf[String], classOf[String])
+  override val columnNums = (0 until types.size)
 }

@@ -18,25 +18,23 @@ package com.twitter.zipkin.hadoop
 
 
 import com.twitter.scalding._
-import com.twitter.zipkin.gen.{BinaryAnnotation, Span}
-import sources.{PrepSpanSource, Util}
+import sources.{PreprocessedSpanSource, PrepSpanSource, Util}
+import com.twitter.zipkin.gen.{SpanServiceName, BinaryAnnotation, Span}
 
 /**
  * Per service, find the 100 most common keys used to annotate spans involving that service
  */
 class PopularKeys(args : Args) extends Job(args) with DefaultDateRangeJob {
 
-  val preprocessed = PrepSpanSource()
+  val preprocessed = PreprocessedSpanSource()
     .read
-    .mapTo(0 -> ('annotations, 'binary_annotations))
-      { s: Span => (s.annotations.toList, s.binary_annotations.toList) }
+    .mapTo(0 -> ('service, 'binary_annotations))
+      { s: SpanServiceName => (s.service_name, s.binary_annotations.toList) }
 
 
   val result = preprocessed
-    .project('annotations, 'binary_annotations)
     .filter('binary_annotations){ ba : List[BinaryAnnotation] => (ba != null) && (ba.size > 0)  }
     .flatMap('binary_annotations -> 'key) { ba : List[BinaryAnnotation]  => ba.map{b: BinaryAnnotation => b.key} }
-   .flatMap('annotations -> ('service)) { Util.getServiceName }
     .groupBy('service, 'key){ _.size('keyCount) }
     .groupBy('service) { _.sortBy('keyCount).reverse.take(100) }
     .write(Tsv(args("output")))

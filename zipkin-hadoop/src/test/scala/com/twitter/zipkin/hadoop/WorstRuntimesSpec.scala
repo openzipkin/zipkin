@@ -1,33 +1,33 @@
 /*
- * Copyright 2012 Twitter Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright 2012 Twitter Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 package com.twitter.zipkin.hadoop
 
 import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
-import sources.SpanSource
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
 import com.twitter.zipkin.gen.AnnotationType
+import sources.{Util, PrepSpanSource}
 
 /**
- * Tests that WorstRuntimes finds the spans which take the longest to run
- * per service
- */
+* Tests that WorstRuntimes finds the spans which take the longest to run
+* per service
+*/
 
 class WorstRuntimesSpec extends Specification with TupleConversions {
   noDetailedDiffs()
@@ -54,14 +54,14 @@ class WorstRuntimesSpec extends Specification with TupleConversions {
         .arg("input", "inputFile")
         .arg("output", "outputFile")
         .arg("date", "2012-01-01T01:00")
-        .source(SpanSource(), (repeatSpan(span, 20, 0) ++ repeatSpan(span1, 20, 100)))
+        .source(PrepSpanSource(), (Util.repeatSpan(span, 20, 0, 0) ++ Util.repeatSpan(span1, 20, 100, 0)))
         .sink[(Long, String, Long)](Tsv("outputFile")) {
         var counts = new HashMap[String, Long]()
         counts += ("service" -> 0)
         counts += ("service1" -> 0)
         counts += ("service2" -> 0)
         outputBuffer => outputBuffer foreach { e =>
-          println(e)
+//          println(e)
           if (e._2 == "service") {
             e._3 mustEqual 1
           } else if (e._2 == "service1") {
@@ -73,10 +73,5 @@ class WorstRuntimesSpec extends Specification with TupleConversions {
         counts("service1") mustEqual 21
       }.run.finish
     }
-
-  }
-
-  def repeatSpan(span: gen.Span, count: Int, offset : Int): List[(gen.Span, Int)] = {
-    ((0 to count).toSeq map { i: Int => span.deepCopy().setId(i + offset) -> (i + offset)}).toList
   }
 }

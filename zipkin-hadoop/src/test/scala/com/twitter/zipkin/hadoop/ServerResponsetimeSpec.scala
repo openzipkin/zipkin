@@ -1,3 +1,4 @@
+
 package com.twitter.zipkin.hadoop
 
 import org.specs.Specification
@@ -52,3 +53,4 @@ class ServerResponsetimeSpec extends Specification with TupleConversions {
     ((0 to count).toSeq map { i: Int => span.deepCopy().setId(i) -> i }).toList
   }
 }
+
