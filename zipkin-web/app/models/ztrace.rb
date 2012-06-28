@@ -33,8 +33,6 @@ class ZTrace
 
   def initialize(spans)
     @spans = spans
-    #TODO we have a bug somewhere that sends empty spans. this is to filter those out to avoid breakages
-    @filtered_spans = spans.find_all {|s| s.annotations.any?}
   end
 
   def start_timestamp
@@ -108,7 +106,7 @@ class ZTrace
 
   def as_json(opts={})
     trace_start_time = self.start_timestamp
-    @filtered_spans.map do |s|
+    spans.map do |s|
       {
          :id => s.id,
          :name => s.name,
