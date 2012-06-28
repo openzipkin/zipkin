@@ -20,14 +20,14 @@ import com.twitter.scalding._
 import java.nio.ByteBuffer
 import java.util.Arrays
 import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
-import sources.{PrepSpanSource, SpanSource, Util}
+import sources.{PrepNoMergeSpanSource, Util}
 
 /**
  * Find out how often each service does memcache accesses
  */
 class MemcacheRequest(args : Args) extends Job(args) with DefaultDateRangeJob {
 
-  val preprocessed = PrepSpanSource()
+  val preprocessed = PrepNoMergeSpanSource()
     .read
     .mapTo(0 -> ('annotations, 'binary_annotations))
       { s: Span => (s.annotations.toList, s.binary_annotations.toList) }
@@ -35,18 +35,18 @@ class MemcacheRequest(args : Args) extends Job(args) with DefaultDateRangeJob {
 
   val result = preprocessed
     // from the annotations, find the service name
-    .flatMap(('annotations, 'binary_annotations) -> ('service, 'memcacheNames)){ al : (List[Annotation], List[BinaryAnnotation]) =>
+    .flatMap(('annotations, 'binary_annotations) -> ('service, 'memcacheNames)){ abl : (List[Annotation], List[BinaryAnnotation]) =>
       var clientSent: Option[Annotation] = None
-      al._1.foreach { a : Annotation =>
-        if (Constants.CLIENT_SEND.equals(a.getValue)) clientSent = Some(a)
+      abl match { case (al, bl) =>
+        al.foreach { a : Annotation =>
+          if (Constants.CLIENT_SEND.equals(a.getValue)) clientSent = Some(a)
+        }
+        // from the binary annotations, find the value of the memcache visits if there are any
+        var memcachedKeys : Option[BinaryAnnotation] = None
+        bl.foreach { ba : BinaryAnnotation => if (ba.key == "memcached.keys") memcachedKeys = Some(ba) }
+        for (cs <- clientSent; key <- memcachedKeys)
+          yield (cs.getHost.service_name, new String(Util.getArrayFromBuffer(key.value)))
       }
-      // from the binary annotations, find the value of the memcache visits if there are any
-    var memcachedKeys : Option[BinaryAnnotation] = None
-    al._2.foreach {ba : BinaryAnnotation =>
-      if (ba.key == "memcached.keys") memcachedKeys = Some(ba)
-    }
-    for (cs <- clientSent; key <- memcachedKeys)
-      yield (cs.getHost.service_name, new String(Util.getArrayFromBuffer(key.value)))
     }
     .project('service, 'memcacheNames)
     .groupBy('service, 'memcacheNames){ _.size('count) }

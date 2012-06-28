@@ -16,6 +16,9 @@ namespace rb Zipkin
 
 include "zipkinCore.thrift"
 
+//************** Structs used for hadoop jobs**************
+
+// Stores span information, as well as extracted client name and service name
 struct SpanServiceName {
   1: i64 trace_id                  // unique trace id, use for all spans in trace
   3: string name,                  // span name, rpc method for example

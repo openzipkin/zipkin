@@ -18,7 +18,7 @@ package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
 import com.twitter.zipkin.gen.{Span, Constants, Annotation}
-import sources.{PrepSpanSource}
+import sources.{PrepNoMergeSpanSource}
 
 /**
  * Obtain the IDs and the durations of the one hundred service calls which take the longest per service
@@ -28,7 +28,7 @@ class WorstRuntimes(args: Args) extends Job(args) with DefaultDateRangeJob {
 
   val clientAnnotations = Seq(Constants.CLIENT_RECV, Constants.CLIENT_SEND)
 
-  val preprocessed = PrepSpanSource()
+  val preprocessed = PrepNoMergeSpanSource()
     .read
     .mapTo(0 -> ('id, 'annotations)) {
       s : Span => (s.id, s.annotations.toList)
@@ -38,15 +38,15 @@ class WorstRuntimes(args: Args) extends Job(args) with DefaultDateRangeJob {
     .project('id, 'annotations)
     // let's find those client annotations and convert into service name and duration
     .flatMap('annotations -> ('service, 'duration)) { annotations: List[Annotation] =>
-    var clientSend: Option[Annotation] = None
-    var clientReceived: Option[Annotation] = None
-    annotations.foreach { a =>
-      if (Constants.CLIENT_SEND.equals(a.getValue)) clientSend = Some(a)
-      if (Constants.CLIENT_RECV.equals(a.getValue)) clientReceived = Some(a)
-    }
-    // only return a value if we have both annotations
-    for (cs <- clientSend; cr <- clientReceived)
-      yield (cs.getHost.service_name, (cr.timestamp - cs.timestamp) / 1000)
+     var clientSend: Option[Annotation] = None
+     var clientReceived: Option[Annotation] = None
+      annotations.foreach { a =>
+        if (Constants.CLIENT_SEND.equals(a.getValue)) clientSend = Some(a)
+        if (Constants.CLIENT_RECV.equals(a.getValue)) clientReceived = Some(a)
+      }
+      // only return a value if we have both annotations
+      for (cs <- clientSend; cr <- clientReceived)
+        yield (cs.getHost.service_name, (cr.timestamp - cs.timestamp) / 1000)
     }.discard('annotations)
     //sort by duration, find the 100 largest
     .groupBy('service) { _.sortBy('duration).reverse.take(100)}
