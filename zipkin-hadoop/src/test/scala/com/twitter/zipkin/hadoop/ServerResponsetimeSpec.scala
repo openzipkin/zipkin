@@ -41,7 +41,6 @@ class ServerResponsetimeSpec extends Specification with TupleConversions {
         source(SpanSource(), repeatSpan(span, 101)).
         sink[(String, String, Double, Double, Double)](Tsv("outputFile")) {
         outputBuffer => outputBuffer foreach { e =>
-          println(e);
           e mustEqual ("0.0.0.123", "service", 102d, 1d, 0d)
         }
       }.run.finish
