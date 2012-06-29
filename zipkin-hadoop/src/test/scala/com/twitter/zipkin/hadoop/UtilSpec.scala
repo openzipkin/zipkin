@@ -65,6 +65,21 @@ class UtilSpec extends Specification {
       Util.repeatSpan(span, 1, 666, 0) must beEqualTo(List((span, 666),(span1, 667)))
     }
   }
+
+  "Util.getSpanIDtoNames" should {
+    "Get correct (id, service name) pairs" in {
+      val endpoint = new gen.Endpoint(123, 666, "service")
+      val endpoint1 = new gen.Endpoint(123, 666, "service1")
+      val span = new gen.SpanServiceName(12345, "methodcall", 666,
+        List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
+        List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service", "service").setParent_id(0)
+      val span1 = new gen.SpanServiceName(12345, "methodcall", 667,
+        List(new gen.Annotation(1000, "sr").setHost(endpoint1), new gen.Annotation(2000, "cr").setHost(endpoint1)).asJava,
+        List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service1", "service1").setParent_id(1)
+      Util.getSpanIDtoNames(List((span, 666), (span1, 667))) must beEqualTo(List((666, "service"), (667, "service1")))
+    }
+  }
+
   "Util.getLevenshteinDistance" should {
     "get correct edit distance when a string is empty" in {
       Util.getLevenshteinDistance("whee", "") must be_==(4)

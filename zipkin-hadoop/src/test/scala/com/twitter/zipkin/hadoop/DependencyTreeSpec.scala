@@ -22,7 +22,7 @@ import com.twitter.scalding._
 import gen.AnnotationType
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
-import sources.{PreprocessedSpanSource, Util}
+import sources.{PrepTsvSource, PreprocessedSpanSource, Util}
 
 /**
 * Tests that DependencyTree finds all service calls and how often per pair
@@ -47,13 +47,16 @@ class DependencyTreeSpec extends Specification with TupleConversions {
     List(new gen.Annotation(1000, "cs").setHost(endpoint2), new gen.Annotation(3000, "cr").setHost(endpoint2)).asJava,
     List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service2", "service2")
 
+  val spans = Util.repeatSpan(span, 30, 40, 1) ++ Util.repeatSpan(span1, 50, 200, 40)
+
   "DependencyTree" should {
     "Find the number of calls between endpoints" in {
       JobTest("com.twitter.zipkin.hadoop.DependencyTree")
         .arg("input", "inputFile")
         .arg("output", "outputFile")
         .arg("date", "2012-01-01T01:00")
-        .source(PreprocessedSpanSource(), (Util.repeatSpan(span, 30, 40, 1) ++ Util.repeatSpan(span1, 50, 200, 40)))
+        .source(PreprocessedSpanSource(), spans)
+        .source(PrepTsvSource(), Util.getSpanIDtoNames(spans))
         .sink[(String, String, Long)](Tsv("outputFile")) {
         val map = new HashMap[String, Long]()
         map("service, Unknown Service Name") = 0

@@ -20,14 +20,14 @@ import com.twitter.scalding._
 import java.nio.ByteBuffer
 import java.util.Arrays
 import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
-import sources.{PrepNoMergeSpanSource, Util}
+import sources.{PrepNoNamesSpanSource, Util}
 
 /**
  * Find out how often each service does memcache accesses
  */
 class MemcacheRequest(args : Args) extends Job(args) with DefaultDateRangeJob {
 
-  val preprocessed = PrepNoMergeSpanSource()
+  val preprocessed = PrepNoNamesSpanSource()
     .read
     .mapTo(0 -> ('annotations, 'binary_annotations))
       { s: Span => (s.annotations.toList, s.binary_annotations.toList) }

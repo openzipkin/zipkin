@@ -125,6 +125,19 @@ object Util {
   }
 
   /**
+   * Given a list of spans and their IDs, creates a list of (id, service name)
+   * @param spans a list of (Span, SpanID)
+   * @return a list of (SpanID, service name)
+   */
+  def getSpanIDtoNames(spans : List[(gen.SpanServiceName, Int)]) : List[(Long, String)] = {
+    spans.map { s : (gen.SpanServiceName, Int) => {
+        val (span, _) = s
+        (span.id, span.service_name)
+      }
+    }
+  }
+
+  /**
    * Given two strings, finds the minimum edit distance between them given only substitutions, deletions, and additions with the
    * Levenshtein algorithm.
    * @param s1 a String
