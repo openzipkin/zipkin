@@ -30,7 +30,6 @@ import com.twitter.zk._
 import java.net.{InetAddress, InetSocketAddress}
 import org.apache.zookeeper.ZooDefs.Ids
 import scala.collection.JavaConverters._
-import scala.collection.Set
 import com.twitter.zipkin.collector.processor._
 import com.twitter.zipkin.common.Span
 
@@ -42,7 +41,6 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
   /* ZooKeeper paths */
   var zkConfigPath            : String = "/twitter/service/zipkin/config"
   var zkServerSetPath         : String = "/twitter/service/zipkin/collector"
-  var zkScribePaths           : Set[String] = Set("/twitter/scribe/zipkin")
 
   /* ZooKeeper key for `AdjustableRateConfig`s */
   var zkSampleRateKey         : String = "samplerate"

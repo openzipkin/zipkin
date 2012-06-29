@@ -28,14 +28,11 @@ class ScribeCollectorServerConfig(config: ScribeZipkinCollectorConfig) extends C
 
   val log = Logger.get(Logger.getClass)
 
-  /* Categories of incoming scribe messages. Let these through, drop any others */
-  var categories: Set[String] = Set("zipkin")
-
   def apply(): Server = {
     log.info("Starting collector service on addr " + config.serverAddr)
 
     /* Start the service */
-    val service = new ScribeCollectorService(config, config.writeQueue, categories)
+    val service = new ScribeCollectorService(config, config.writeQueue, config.categories)
     service.start()
     ServiceTracker.register(service)
 
