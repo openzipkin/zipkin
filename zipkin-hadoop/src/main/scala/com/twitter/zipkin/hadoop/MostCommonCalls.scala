@@ -19,7 +19,7 @@ package com.twitter.zipkin.hadoop
 import com.twitter.scalding._
 import cascading.pipe.joiner.LeftJoin
 import com.twitter.zipkin.gen.{SpanServiceName}
-import sources.{PreprocessedSpanSource, Util}
+import sources.{PrepTsvSource, PreprocessedSpanSource, Util}
 
 /**
  * For each service finds the services that it most commonly calls
@@ -31,17 +31,13 @@ class MostCommonCalls(args : Args) extends Job(args) with DefaultDateRangeJob {
     .mapTo(0 -> ('id, 'parent_id, 'cService, 'service))
   { s: SpanServiceName => (s.id, s.parent_id, s.client_service, s.service_name) }
 
-  val idName = spanInfo
-    .project('id, 'service)
-    .filter('service) {n : String => n != null }
-    .unique('id, 'service)
-    .rename('id, 'id1)
-    .rename('service, 'parentService)
+  val idName = PrepTsvSource()
+    .read
 
   val result = spanInfo
-    .joinWithSmaller('parent_id -> 'id1, idName, joiner = new LeftJoin)
-    .map(('parent_id, 'cService, 'parentService) -> 'parentService){ Util.getBestClientSideName }
-    .groupBy('service, 'parentService){ _.size('count) }
+    .joinWithSmaller('parent_id -> 'id_1, idName, joiner = new LeftJoin)
+    .map(('parent_id, 'cService, 'name_1) -> 'name_1){ Util.getBestClientSideName }
+    .groupBy('service, 'name_1){ _.size('count) }
     .groupBy('service){ _.sortBy('count) }
     .write(Tsv(args("output")))
 }

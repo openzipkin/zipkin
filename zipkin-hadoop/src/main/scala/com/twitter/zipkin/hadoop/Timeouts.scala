@@ -18,8 +18,8 @@ package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
 import cascading.pipe.joiner.LeftJoin
-import sources.{PreprocessedSpanSource, Util}
 import com.twitter.zipkin.gen.{SpanServiceName, Annotation}
+import sources.{PrepTsvSource, PreprocessedSpanSource, Util}
 
 /**
  * Find which services timeout the most
@@ -43,20 +43,16 @@ class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
 
 
   // Project to (id, service name)
-  val idName = spanInfo
-    .project('id, 'service)
-    .filter('service) {n : String => n != null }
-    .unique('id, 'service)
-    .rename('id, 'id1)
-    .rename('service, 'parentService)
+  val idName = PrepTsvSource()
+    .read
 
   // Left join with idName to find the parent's service name, if applicable
   val result = spanInfo
     .filter('annotations){annotations : List[Annotation] => annotations.exists({a : Annotation =>  a.value == input})}
     .project('id, 'parent_id, 'cService, 'service)
-    .joinWithSmaller('parent_id -> 'id1, idName, joiner = new LeftJoin)
-    .map(('parent_id, 'cService, 'parentService) -> 'parentService){ Util.getBestClientSideName }
-    .project('service, 'parentService)
-    .groupBy('service, 'parentService){ _.size('numTimeouts) }
+    .joinWithSmaller('parent_id -> 'id_1, idName, joiner = new LeftJoin)
+    .map(('parent_id, 'cService, 'name_1) -> 'name_1){ Util.getBestClientSideName }
+    .project('service, 'name_1)
+    .groupBy('service, 'name_1){ _.size('numTimeouts) }
     .write(Tsv(args("output")))
 }

@@ -17,17 +17,17 @@
 
 package com.twitter.zipkin.hadoop.sources
 
-import com.twitter.zipkin.gen.{BinaryAnnotation, Span, SpanServiceName, Annotation}
+import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Annotation}
 import com.twitter.scalding._
 import com.twitter.zipkin.gen
 import scala.collection.JavaConverters._
 
 /**
- * Preprocesses the data by merging different pieces of the same span and finds the best client side
- * and service names possible, if any exist
+ * Preprocesses the data by merging different pieces of the same span
  */
 class Preprocessed(args : Args) extends Job(args) with DefaultDateRangeJob {
   val preprocessed = SpanSource()
+//  val preprocessed = FixedSpanSource("file.lzo")
     .read
     .mapTo(0 ->('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations)) {
       s: Span => (s.trace_id, s.name, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList)
@@ -38,15 +38,13 @@ class Preprocessed(args : Args) extends Job(args) with DefaultDateRangeJob {
         (left._1 ++ right._1, left._2 ++ right._2)
       }
     }
-    .flatMap('annotations -> ('cService, 'service)) { Util.getClientAndServiceName }
-    .mapTo(('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations, 'cService, 'service) -> 'spanWithServiceNames) {
-      a : (Long, String, Long, Long, List[Annotation], List[BinaryAnnotation], String, String) =>
-        a match {
-          case (tid, name, id, pid, annotations, binary_annotations, cService, service) =>
-          {
-            val s = new gen.SpanServiceName(tid, name, id, annotations.asJava, binary_annotations.asJava, cService, service)
-            s.setParent_id(pid)
-          }
-        }
-    }.write(PreprocessedSpanSource())
+
+  val onlyMerge = preprocessed
+    .mapTo(('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations) -> 'span) {
+    a : (Long, String, Long, Long, List[Annotation], List[BinaryAnnotation]) =>
+      a match {
+        case (tid, name, id, pid, annotations, binary_annotations) =>
+          new gen.Span(tid, name, id, annotations.asJava, binary_annotations.asJava).setParent_id(pid)
+      }
+    }.write(PrepNoNamesSpanSource())
 }
