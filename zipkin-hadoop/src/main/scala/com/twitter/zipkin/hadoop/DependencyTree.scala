@@ -18,8 +18,8 @@ package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
 import cascading.pipe.joiner._
-import sources.{PreprocessedSpanSource, Util}
 import com.twitter.zipkin.gen.{SpanServiceName, BinaryAnnotation, Span, Annotation}
+import sources.{PrepTsvSource, PreprocessedSpanSourceTest, PreprocessedSpanSource, Util}
 
 /**
 * Find out how often services call each other throughout the entire system
@@ -28,22 +28,17 @@ import com.twitter.zipkin.gen.{SpanServiceName, BinaryAnnotation, Span, Annotati
 class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
 
   val spanInfo = PreprocessedSpanSource()
-    .read
+  .read
     .mapTo(0 -> ('id, 'parent_id, 'cService, 'service))
       { s: SpanServiceName => (s.id, s.parent_id, s.client_service, s.service_name ) }
 
     // TODO: account for possible differences between sent and received service names
-    val idName = spanInfo
-      .project('id, 'service)
-      .filter('service) {n : String => n != null }
-      .unique('id, 'service)
-      .rename('id, 'id1)
-      .rename('service, 'parentService)
-
+    val idName = PrepTsvSource()
+      .read
     /* Join with the original on parent ID to get the parent's service name */
     val spanInfoWithParent = spanInfo
-      .joinWithSmaller('parent_id -> 'id1, idName, joiner = new LeftJoin)
-      .map(('parent_id, 'cService, 'parentService) -> 'parentService){ Util.getBestClientSideName }
-      .groupBy('service, 'parentService){ _.size('count) }
+      .joinWithSmaller('parent_id -> 'id_1, idName, joiner = new LeftJoin)
+      .map(('parent_id, 'cService, 'name_1) -> 'name_1){ Util.getBestClientSideName }
+      .groupBy('service, 'name_1){ _.size('count) }
       .write(Tsv(args("output")))
 }

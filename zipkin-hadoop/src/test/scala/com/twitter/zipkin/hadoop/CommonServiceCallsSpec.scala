@@ -22,7 +22,7 @@ import com.twitter.scalding._
 import gen.AnnotationType
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
-import sources.{PreprocessedSpanSource, Util}
+import sources.{PrepTsvSource, PreprocessedSpanSource, Util}
 
 /**
 * Tests that MostCommonCalls finds the most commonly called services per service
@@ -46,6 +46,7 @@ class CommonServiceCallsSpec extends Specification with TupleConversions {
     List(new gen.Annotation(1000, "cs").setHost(endpoint2), new gen.Annotation(3000, "cr").setHost(endpoint2)).asJava,
     List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service2", "service2")
 
+  val spans = (Util.repeatSpan(span, 30, 32, 1) ++ Util.repeatSpan(span1, 50, 100, 32))
 
   "MostCommonCalls" should {
     "Return the most common service calls" in {
@@ -53,7 +54,8 @@ class CommonServiceCallsSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(PreprocessedSpanSource(), (Util.repeatSpan(span, 30, 32, 1) ++ Util.repeatSpan(span1, 50, 100, 32))).
+        source(PreprocessedSpanSource(), spans).
+        source(PrepTsvSource(), Util.getSpanIDtoNames(spans)).
         sink[(String, String, Long)](Tsv("outputFile")) {
         val result = new HashMap[String, Long]()
         result("service, Unknown Service Name") = 0

@@ -20,7 +20,7 @@ import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
 import gen.AnnotationType
-import sources.{PrepNoMergeSpanSource, Util}
+import sources.{PrepNoNamesSpanSource, Util}
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
 import java.nio.ByteBuffer
@@ -56,7 +56,7 @@ class MemcacheRequestSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(PrepNoMergeSpanSource(), (Util.repeatSpan(span, 100, 1000, 0) ++ Util.repeatSpan(span2, 10, 0, 0) ++ Util.repeatSpan(span1, 20, 100, 0))).
+        source(PrepNoNamesSpanSource(), (Util.repeatSpan(span, 100, 1000, 0) ++ Util.repeatSpan(span2, 10, 0, 0) ++ Util.repeatSpan(span1, 20, 100, 0))).
         sink[(String, String, Long)](Tsv("outputFile")) {
         val counts = new HashMap[String, Long]()
         counts("service") = 0

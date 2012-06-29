@@ -23,7 +23,7 @@ import com.twitter.scalding._
 import gen.AnnotationType
 import scala.collection.JavaConverters._
 import scala.collection.mutable._
-import sources.{PreprocessedSpanSource, Util}
+import sources.{PrepTsvSource, PreprocessedSpanSource, Util}
 
 /**
 * Tests that Timeouts finds the service calls where timeouts occur and how often
@@ -53,6 +53,7 @@ class TimeoutsSpec extends Specification with TupleConversions {
       new gen.Annotation(2001, "finagle.timeout")).asJava,
     List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service2", "service2")
 
+  val spans = Util.repeatSpan(span, 101, 120, 1) ::: Util.repeatSpan(span1, 20, 300, 102) ::: Util.repeatSpan(span2, 30, 400, 300)
 
   "Timeouts" should {
     "find service calls with timeouts" in {
@@ -61,7 +62,8 @@ class TimeoutsSpec extends Specification with TupleConversions {
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
         arg("error_type", "finagle.timeout").
-        source(PreprocessedSpanSource(), (Util.repeatSpan(span, 101, 120, 1) ::: (Util.repeatSpan(span1, 20, 300, 102)) ::: (Util.repeatSpan(span2, 30, 400, 300)))).
+        source(PreprocessedSpanSource(), spans).
+        source(PrepTsvSource(), Util.getSpanIDtoNames(spans)).
         sink[(String, String, Long)](Tsv("outputFile")) {
         val map = new HashMap[String, Long]()
         map("service, Unknown Service Name") = 0
