@@ -113,7 +113,7 @@ Zipkin uses ZooKeeper for coordination. That's where we store the server side sa
 
 ### Scribe
 <a href="https://github.com/facebook/scribe">Scribe</a> is the logging framework we use to transport the trace data.
-You need to set up a network store that points to the Zipkin collector daemon.
+You need to set up a network store that points to the Zipkin collector daemon. If you are just trying out Zipkin you can skip this step entirely and point the ZipkinTracer directly at the collector.
 
 A Scribe store for Zipkin might look something like this.
 
