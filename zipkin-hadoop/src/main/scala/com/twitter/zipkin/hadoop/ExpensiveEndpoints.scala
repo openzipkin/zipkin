@@ -28,16 +28,15 @@ class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob
 
   val spanInfo = PreprocessedSpanSource()
     .read
+    .filter(0) { s : SpanServiceName => s.isSetParent_id() }
     .mapTo(0 -> ('id, 'parent_id, 'cService, 'service, 'annotations))
       { s: SpanServiceName => (s.id, s.parent_id, s.client_service, s.service_name, s.annotations.toList) }
-    .flatMap('annotations -> 'duration) {
-      al : List[Annotation] => {
+    .flatMap('annotations -> 'duration) { al : List[Annotation] => {
         var clientSend : Option[Annotation] = None
         var clientReceive : Option[Annotation] = None
         var serverReceive : Option[Annotation] = None
         var serverSend : Option[Annotation] = None
-        al.foreach( {
-          a : Annotation => {
+        al.foreach( { a : Annotation => {
             if (a.getHost != null) {
               if (Constants.CLIENT_SEND.equals(a.value)) clientSend = Some(a)
               else if (Constants.CLIENT_RECV.equals(a.value)) clientReceive = Some(a)
@@ -57,7 +56,6 @@ class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob
     .read
   /* Join with the original on parent ID to get the parent's service name */
   val spanInfoWithParent = spanInfo
-    .filter('parent_id){ id : Long => id != 0 }
     .joinWithSmaller('parent_id -> 'id_1, idName)
     .groupBy('name_1, 'service){ _.average('duration) }
     .write(Tsv(args("output")))
