@@ -7,11 +7,20 @@ import java.io.File
 
 object Zipkin extends Build {
 
-  lazy val zipkin = Project(id = "zipkin",
-                            base = file(".")) aggregate(hadoop, test, thrift, server, common, scrooge, scribe)
-  
+  val CASSIE_VERSION  = "0.22.0"
+  val FINAGLE_VERSION = "5.1.0"
+  val OSTRICH_VERSION = "8.1.0"
+  val UTIL_VERSION    = "5.2.0"
+
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
   val travisCi = Option(System.getenv("SBT_TRAVIS_CI")) // for adding travis ci maven repos before others
+
+  lazy val zipkin =
+    Project(
+      id = "zipkin",
+      base = file(".")
+    ) aggregate(hadoop, test, thrift, server, common, scrooge, scribe, web)
+  
 
   lazy val hadoop = Project(
     id = "zipkin-hadoop",
@@ -93,11 +102,6 @@ object Zipkin extends Build {
       sources in (Compile, doc) ~= (_ filter (_.getName contains "src_managed"))
     )
 
-  val CASSIE_VERSION  = "0.22.0"
-  val FINAGLE_VERSION = "5.1.0"
-  val OSTRICH_VERSION = "8.1.0"
-  val UTIL_VERSION    = "5.2.0"
-
   lazy val common =
     Project(
       id = "zipkin-common",
@@ -108,6 +112,7 @@ object Zipkin extends Build {
         TravisCiRepos.newSettings).settings(
       version := "0.2.0-SNAPSHOT",
       libraryDependencies ++= Seq(
+        "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
         "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
         "com.twitter" % "finagle-zipkin"    % FINAGLE_VERSION,
         "com.twitter" % "ostrich"           % OSTRICH_VERSION,
@@ -240,6 +245,28 @@ object Zipkin extends Build {
           (base / "config" +++ base / "src" / "test" / "resources").get
       }
     ).dependsOn(server, scrooge)
+
+  lazy val web =
+    Project(
+      id = "zipkin-finatra",
+      base = file("zipkin-finatra"),
+      settings = Project.defaultSettings ++
+        StandardProject.newSettings ++
+        TravisCiRepos.newSettings
+    ).settings(
+      version := "0.2.0-SNAPSHOT",
+      resolvers += "finatra" at "http://repo.juliocapote.com",
+      resolvers += "codahale" at "http://repo.codahale.com",
+
+      libraryDependencies ++= Seq(
+        "com.posterous" % "finatra" % "4.2.0",
+
+        "com.twitter" % "finagle-zipkin" % "5.0.0" // finatra pulls in finagle-core 5.0.0
+      ),
+
+      PackageDist.packageDistZipName := "zipkin-finatra.zip",
+      BuildProperties.buildPropertiesPackage := "com.twitter.zipkin"
+  ).dependsOn(common, scrooge)
 }
 
 /*
