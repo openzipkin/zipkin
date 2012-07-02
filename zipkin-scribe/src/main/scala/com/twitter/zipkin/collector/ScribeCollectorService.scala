@@ -20,14 +20,14 @@ import com.twitter.finagle.zookeeper.ZookeeperServerSetCluster
 import com.twitter.logging.Logger
 import com.twitter.ostrich.stats.Stats
 import com.twitter.util.{FuturePool, Future}
-import com.twitter.zipkin.config.ZipkinCollectorConfig
+import com.twitter.zipkin.config.ScribeZipkinCollectorConfig
 import com.twitter.zipkin.gen
 import org.apache.zookeeper.KeeperException
 
 /**
  * This class implements the log method from the Scribe Thrift interface.
  */
-class ScribeCollectorService(config: ZipkinCollectorConfig, val writeQueue: WriteQueue[Seq[_ <: String]], categories: Set[String])
+class ScribeCollectorService(config: ScribeZipkinCollectorConfig, val writeQueue: WriteQueue[Seq[_ <: String]], categories: Set[String])
   extends gen.ZipkinCollector.FutureIface with CollectorService {
   private val log = Logger.get
 

@@ -18,11 +18,15 @@ package com.twitter.zipkin.config
 
 import com.twitter.zipkin.collector.processor.ScribeProcessorFilter
 import com.twitter.zipkin.config.collector.CollectorServerConfig
-import com.twitter.zipkin.gen
 
 trait ScribeZipkinCollectorConfig extends ZipkinCollectorConfig {
   type T = Seq[String]
   val serverConfig: CollectorServerConfig = new ScribeCollectorServerConfig(this)
+
+  var zkScribePaths: Set[String] = Set("/twitter/scribe/zipkin")
+
+  /* Categories of incoming scribe messages. Let these through, drop any others */
+  var categories: Set[String] = Set("zipkin")
 
   def rawDataFilter = new ScribeProcessorFilter
 }
