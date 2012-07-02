@@ -7,16 +7,18 @@ import com.twitter.finagle.builder.{ServerBuilder, Server}
 import com.twitter.finagle.http.Http
 import java.net.InetSocketAddress
 import com.twitter.ostrich.admin.{ServiceTracker, Service}
+import com.twitter.logging.Logger
 
 class ZipkinWeb(config: ZipkinWebConfig) extends Service {
 
+  val log = Logger.get()
   var server: Option[Server] = None
 
   def start() {
     val app = config.app
 
     FinatraServer.register(app)
-    FinatraServer.docroot = config.docroot
+    FinatraServer.layoutHelperFactory = new ZipkinLayoutHelperFactory
 
     val finatraService = new FinatraService
     val fileHandler = new FileHandler

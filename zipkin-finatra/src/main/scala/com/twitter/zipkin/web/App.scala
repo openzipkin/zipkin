@@ -21,6 +21,6 @@ import com.posterous.finatra.FinatraApp
 class App extends FinatraApp {
 
   get("/") { request =>
-    response(body = "Hey")
+    render(path="test.mustache")
   }
 }
