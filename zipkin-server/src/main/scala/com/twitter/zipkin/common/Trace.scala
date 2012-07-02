@@ -23,6 +23,7 @@ import com.twitter.zipkin.query.conversions.TraceToTimeline
 import com.twitter.logging.Logger
 import java.nio.ByteBuffer
 import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.finagle.tracing.{Trace => FTrace}
 
 /**
  * Represents a trace, a bundle of spans.
@@ -69,7 +70,7 @@ case class Trace(spans: Seq[Span]) {
    * from the root service, then we want the one just below that.
    * FIXME if there are holes in the trace this might not return the correct span
    */
-  def getRootMostSpan: Option[Span] = {
+  lazy val getRootMostSpan: Option[Span] = {
     getRootSpan.orElse {
       val idSpan = getIdToSpanMap
       spans.headOption.map { s =>
@@ -134,6 +135,7 @@ case class Trace(spans: Seq[Span]) {
   }
 
   def toThrift: gen.Trace = {
+    FTrace.record("toThrift")
     gen.Trace(spans.map { ThriftAdapter(_) })
   }
 
@@ -142,12 +144,14 @@ case class Trace(spans: Seq[Span]) {
    * cannot construct a trace summary. Could be that we have no spans.
    */
   def toTraceSummary: Option[TraceSummary] = {
+    FTrace.record("toTraceSummary")
     for (traceId <- id; startEnd <- getStartAndEndTimestamp)
       yield TraceSummary(traceId, startEnd.start, startEnd.end, (startEnd.end - startEnd.start).toInt,
         serviceCounts, endpoints.toList)
   }
 
   def toTimeline: Option[gen.TraceTimeline] = {
+    FTrace.record("toTimeline")
     traceToTimeline.toTraceTimeline(this)
   }
 
@@ -161,10 +165,10 @@ case class Trace(spans: Seq[Span]) {
    * @return span id -> depth in the tree
    */
   def toSpanDepths: Option[Map[Long, Int]] = {
+    FTrace.record("toSpanDepths")
     getRootMostSpan match {
       case None => return None
       case Some(s) => {
-        // TODO we should cache this rootmost span tree between operations
         val spanTree = getSpanTree(s, getIdToChildrenMap)
         Some(spanTree.depths(1))
       }
