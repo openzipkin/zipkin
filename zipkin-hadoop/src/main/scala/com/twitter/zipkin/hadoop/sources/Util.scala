@@ -121,7 +121,7 @@ object Util {
    *         second element is the span ID of the copy.
    */
   def repeatSpan(span: gen.Span, count: Int, offset : Int, parentOffset : Int): List[(gen.Span, Int)] = {
-    ((0 to count).toSeq map { i: Int => span.deepCopy().setId(i + offset).setParent_id(i + parentOffset) -> (i + offset)}).toList
+    ((0 to count).toSeq map { i: Int => span.deepCopy().setId(i + offset).setParent_id(if (parentOffset == -1) 0 else i + parentOffset) -> (i + offset)}).toList
   }
 
   /**
