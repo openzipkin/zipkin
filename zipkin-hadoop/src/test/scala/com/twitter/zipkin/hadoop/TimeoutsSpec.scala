@@ -42,16 +42,16 @@ class TimeoutsSpec extends Specification with TupleConversions {
   val span = new gen.SpanServiceName(12345, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint), new gen.Annotation(2000, "sr").setHost(endpoint),
       new gen.Annotation(2001, "finagle.timeout")).asJava,
-    List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service", "service")
+    List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service")
 
   val span1 = new gen.SpanServiceName(12345, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint1), new gen.Annotation(2000, "sr").setHost(endpoint1)).asJava,
-    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service1", "service1")
+    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service1")
 
   val span2 = new gen.SpanServiceName(12345, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint2), new gen.Annotation(2000, "sr").setHost(endpoint2),
       new gen.Annotation(2001, "finagle.timeout")).asJava,
-    List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service2", "service2")
+    List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service2")
 
   val spans = Util.repeatSpan(span, 101, 120, 1) ::: Util.repeatSpan(span1, 20, 300, 102) ::: Util.repeatSpan(span2, 30, 400, 300)
 
@@ -66,15 +66,15 @@ class TimeoutsSpec extends Specification with TupleConversions {
         source(PrepTsvSource(), Util.getSpanIDtoNames(spans)).
         sink[(String, String, Long)](Tsv("outputFile")) {
         val map = new HashMap[String, Long]()
-        map("service, Unknown Service Name") = 0
+        map("service, null") = 0
         map("service2, service1") = 0
-        map("service2, Unknown Service Name") = 0
+        map("service2, null") = 0
         outputBuffer => outputBuffer foreach { e =>
           map(e._1 + ", " + e._2) = e._3
         }
-        map("service, Unknown Service Name") mustEqual 102
+        map("service, null") mustEqual 102
         map("service2, service1") mustEqual 21
-        map("service2, Unknown Service Name") mustEqual 10
+        map("service2, null") mustEqual 10
       }.run.finish
     }
   }

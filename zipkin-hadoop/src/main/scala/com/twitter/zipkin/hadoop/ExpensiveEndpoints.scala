@@ -29,8 +29,8 @@ class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob
   val spanInfo = PreprocessedSpanSource()
     .read
     .filter(0) { s : SpanServiceName => s.isSetParent_id() }
-    .mapTo(0 -> ('id, 'parent_id, 'cService, 'service, 'annotations))
-      { s: SpanServiceName => (s.id, s.parent_id, s.client_service, s.service_name, s.annotations.toList) }
+    .mapTo(0 -> ('id, 'parent_id, 'service, 'annotations))
+      { s: SpanServiceName => (s.id, s.parent_id, s.service_name, s.annotations.toList) }
     .flatMap('annotations -> 'duration) { al : List[Annotation] => {
         var clientSend : Option[Annotation] = None
         var clientReceive : Option[Annotation] = None
@@ -47,7 +47,7 @@ class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob
         })
         val clientDuration = for (cs <- clientSend; cr <- clientReceive) yield (cr.timestamp - cs.timestamp)
         val serverDuration = for (sr <- serverReceive; ss <- serverSend) yield (ss.timestamp - sr.timestamp)
-          // to deal with the case where there is no server duration
+          // to deal with the case where there is no client duration
         if (clientDuration == None) serverDuration else clientDuration
       }
     }
