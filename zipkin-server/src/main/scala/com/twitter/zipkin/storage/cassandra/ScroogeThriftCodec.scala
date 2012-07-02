@@ -19,12 +19,14 @@ import java.nio.ByteBuffer
 import com.twitter.cassie.codecs.Codec
 import com.twitter.scrooge.{ThriftStructCodec, BinaryThriftStructSerializer, ThriftStruct}
 import com.twitter.ostrich.stats.Stats
+import com.twitter.finagle.tracing.Trace
 
 class ScroogeThriftCodec[T <: ThriftStruct](structCodec: ThriftStructCodec[T]) extends Codec[T] {
   val serializer = new BinaryThriftStructSerializer[T] { def codec = structCodec }
 
   def encode(t: T): ByteBuffer = {
     Stats.time("scroogecodec.serialize") {
+      Trace.record("scroogecodec.serialize")
       val serialized = serializer.toBytes(t)
       Stats.addMetric("scroogecodec.serialized", serialized.size)
       b2b(serialized)
@@ -33,6 +35,7 @@ class ScroogeThriftCodec[T <: ThriftStruct](structCodec: ThriftStructCodec[T]) e
 
   def decode(ary: ByteBuffer): T = {
     Stats.time("scroogecodec.deserialize") {
+      Trace.record("scroogecodec.deserialize")
       serializer.fromBytes(b2b(ary))
     }
   }
