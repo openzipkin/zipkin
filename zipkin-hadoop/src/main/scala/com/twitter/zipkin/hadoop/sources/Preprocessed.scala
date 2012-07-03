@@ -27,7 +27,6 @@ import scala.collection.JavaConverters._
  */
 class Preprocessed(args : Args) extends Job(args) with DefaultDateRangeJob {
   val preprocessed = SpanSource()
-//  val preprocessed = FixedSpanSource("file.lzo")
     .read
     .mapTo(0 ->('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations)) {
       s: Span => (s.trace_id, s.name, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList)

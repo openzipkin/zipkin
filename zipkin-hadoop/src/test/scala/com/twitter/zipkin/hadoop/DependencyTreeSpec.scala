@@ -39,13 +39,13 @@ class DependencyTreeSpec extends Specification with TupleConversions {
   val endpoint2 = new gen.Endpoint(123, 666, "service2")
   val span = new gen.SpanServiceName(12345, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint), new gen.Annotation(2000, "sr").setHost(endpoint)).asJava,
-    List[gen.BinaryAnnotation]().asJava, "service", "service")
+    List[gen.BinaryAnnotation]().asJava, "service")
   val span1 = new gen.SpanServiceName(123456, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint1), new gen.Annotation(4000, "sr").setHost(endpoint1)).asJava,
-    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service1", "service1")
+    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service1")
   val span2 = new gen.SpanServiceName(1234567, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint2), new gen.Annotation(3000, "cr").setHost(endpoint2)).asJava,
-    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service2", "service2")
+    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service2")
 
   val spans = Util.repeatSpan(span, 30, 40, 1) ++ Util.repeatSpan(span1, 50, 200, 40)
 
@@ -59,15 +59,15 @@ class DependencyTreeSpec extends Specification with TupleConversions {
         .source(PrepTsvSource(), Util.getSpanIDtoNames(spans))
         .sink[(String, String, Long)](Tsv("outputFile")) {
         val map = new HashMap[String, Long]()
-        map("service, Unknown Service Name") = 0
+        map("service, null") = 0
         map("service1, service") = 0
-        map("service1, Unknown Service Name") = 0
+        map("service1, null") = 0
         outputBuffer => outputBuffer foreach { e =>
           map(e._1 + ", " + e._2) = e._3
         }
-        map("service, Unknown Service Name") mustEqual 31
+        map("service, null") mustEqual 31
         map("service1, service") mustEqual 31
-        map("service1, Unknown Service Name") mustEqual 20
+        map("service1, null") mustEqual 20
       }.run.finish
     }
   }

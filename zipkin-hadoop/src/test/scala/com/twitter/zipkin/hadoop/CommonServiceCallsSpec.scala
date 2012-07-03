@@ -38,13 +38,13 @@ class CommonServiceCallsSpec extends Specification with TupleConversions {
   val endpoint2 = new gen.Endpoint(123, 666, "service2")
   val span = new gen.SpanServiceName(12345, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint), new gen.Annotation(2000, "sr").setHost(endpoint), new gen.Annotation(3000, "ss").setHost(endpoint), new gen.Annotation(4000, "cr").setHost(endpoint)).asJava,
-    List[gen.BinaryAnnotation]().asJava, "service", "service")
+    List[gen.BinaryAnnotation]().asJava, "service")
   val span1 = new gen.SpanServiceName(123456, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint2), new gen.Annotation(2000, "sr").setHost(endpoint2), new gen.Annotation(4000, "ss").setHost(endpoint2), new gen.Annotation(5000, "cr").setHost(endpoint2)).asJava,
-    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service2", "service2")
+    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service2")
   val span2 = new gen.SpanServiceName(1234567, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint2), new gen.Annotation(3000, "cr").setHost(endpoint2)).asJava,
-    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service2", "service2")
+    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service2")
 
   val spans = (Util.repeatSpan(span, 30, 32, 1) ++ Util.repeatSpan(span1, 50, 100, 32))
 
@@ -58,14 +58,14 @@ class CommonServiceCallsSpec extends Specification with TupleConversions {
         source(PrepTsvSource(), Util.getSpanIDtoNames(spans)).
         sink[(String, String, Long)](Tsv("outputFile")) {
         val result = new HashMap[String, Long]()
-        result("service, Unknown Service Name") = 0
-        result("service2, Unknown Service Name") = 0
+        result("service, null") = 0
+        result("service2, null") = 0
         result("service2, service1") = 0
         outputBuffer => outputBuffer foreach { e =>
           result(e._1 + ", " + e._2) = e._3
         }
-        result("service, Unknown Service Name") mustEqual 31
-        result("service2, Unknown Service Name") mustEqual 20
+        result("service, null") mustEqual 31
+        result("service2, null") mustEqual 20
         result("service2, service") mustEqual 31
       }
     }.run.finish

@@ -45,10 +45,10 @@ class ExpensiveEndpointsSpec extends Specification with TupleConversions {
   val endpoint2 = new gen.Endpoint(123, 666, "service2")
   val span = new gen.SpanServiceName(12345, "methodcall", 666,
     List(new gen.Annotation(2000, "sr").setHost(endpoint), new gen.Annotation(3000, "ss").setHost(endpoint)).asJava,
-    List[gen.BinaryAnnotation]().asJava, "service", "service")
+    List[gen.BinaryAnnotation]().asJava, "service")
   val span1 = new gen.SpanServiceName(123456, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint2), new gen.Annotation(1500, "sr").setHost(endpoint2), new gen.Annotation(4500, "ss").setHost(endpoint2), new gen.Annotation(5000, "cr").setHost(endpoint2)).asJava,
-    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service2", "service2")
+    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service2")
 
   val spans = Util.repeatSpan(span, 30, 40, -1) ++ Util.repeatSpan(span1, 30, 100, 40)
 

@@ -26,6 +26,5 @@ struct SpanServiceName {
   5: optional i64 parent_id,                // parent span id
   6: list<zipkinCore.Annotation> annotations, // list of all annotations/events that occured
   8: list<zipkinCore.BinaryAnnotation> binary_annotations, // any binary annotations
-  9: string client_service,          // client Service's name
-  10: string service_name              // service's name
+  9: string service_name              // service's name
 }
