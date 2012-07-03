@@ -17,6 +17,8 @@
 package com.twitter.zipkin.web
 
 import com.posterous.finatra.FinatraApp
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
 class App extends FinatraApp {
 
@@ -27,16 +29,22 @@ class App extends FinatraApp {
 
 trait Attribute
 trait ExportObject {
-  val rootUrl = Globals.rootUrl
   def environment: Attribute = new Attribute { def production = false }
   def flash: Option[Attribute] = None
   val clockSkew: Boolean = true
 }
 
 class IndexObject extends ExportObject {
-  def inlineJs = "$(Zipkin.Application.Index.initialize());"
+  val inlineJs = "$(Zipkin.Application.Index.initialize());"
+  val endDate = Globals.getDate
+  val endTime = Globals.getTime
 }
 
 object Globals {
-  var rootUrl: String = "localhost"
+  var rootUrl = "localhost"
+  val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
+  val timeFormat = new SimpleDateFormat("HH:mm:ss")
+
+  def getDate = dateFormat.format(Calendar.getInstance().getTime)
+  def getTime = timeFormat.format(Calendar.getInstance().getTime)
 }

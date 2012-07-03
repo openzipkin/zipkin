@@ -9,5 +9,6 @@ class ZipkinLayoutHelperFactory extends LayoutHelperFactory {
 }
 
 class ZipkinLayoutHelper(yld: String) extends LayoutHelper(yld) {
-  val something = "HELLO!!!"
+
+  def rootUrl = Globals.rootUrl
 }
