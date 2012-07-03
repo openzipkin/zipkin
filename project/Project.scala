@@ -259,8 +259,11 @@ object Zipkin extends Build {
       resolvers += "codahale" at "http://repo.codahale.com",
 
       libraryDependencies ++= Seq(
-        "com.posterous" % "finatra" % "4.2.0",
+        "com.posterous" % "finatra" % "4.2.1-SNAPSHOT",
 
+        "com.twitter.common.zookeeper" % "server-set" % "1.0.7",
+
+        "com.twitter" % "finagle-serversets" % "5.0.0",
         "com.twitter" % "finagle-zipkin" % "5.0.0" // finatra pulls in finagle-core 5.0.0
       ),
 

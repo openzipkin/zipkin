@@ -2,13 +2,17 @@ package com.twitter.zipkin.web
 
 import com.twitter.zipkin.config.ZipkinWebConfig
 import com.posterous.finatra.FinatraServer.FinatraService
-import com.twitter.finagle.builder.{ServerBuilder, Server}
 import com.twitter.finagle.http.Http
 import java.net.InetSocketAddress
 import com.twitter.ostrich.admin.{ServiceTracker, Service}
 import com.twitter.logging.Logger
 import com.posterous.finatra.{FinatraResponse, FinatraApp, FileHandler, FinatraServer}
 import com.twitter.io.{Files, TempFile}
+import com.twitter.zipkin.gen
+import com.twitter.finagle.builder.{ClientBuilder, ServerBuilder, Server}
+import com.twitter.finagle.thrift.ThriftClientFramedCodec
+import com.twitter.common.zookeeper.ServerSetImpl
+import com.twitter.finagle.zookeeper.ZookeeperServerSetCluster
 
 class ZipkinWeb(config: ZipkinWebConfig) extends Service {
 
@@ -16,8 +20,19 @@ class ZipkinWeb(config: ZipkinWebConfig) extends Service {
   var server: Option[Server] = None
 
   def start() {
+    val serverSet = new ServerSetImpl(config.zkClient, config.queryServerSetPath)
+    val cluster = new ZookeeperServerSetCluster(serverSet)
+
+    /* ZipkinQuery client */
+    val clientService = ClientBuilder()
+      .hosts(cluster)
+      .codec(ThriftClientFramedCodec())
+      .build()
+
+    val client = gen.ZipkinQuery.FinagledClient(clientService)
+
     val resource = config.resource
-    val app = config.app
+    val app = config.appConfig(client)
 
     FinatraServer.register(resource)
     FinatraServer.register(app)

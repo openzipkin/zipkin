@@ -1,6 +1,7 @@
 package com.twitter.zipkin.config
 
 import com.twitter.ostrich.admin.RuntimeEnvironment
+import com.twitter.zipkin.gen
 import com.twitter.zipkin.web.{Resource, ZipkinWeb, App}
 
 trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
@@ -10,6 +11,8 @@ trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
 
   var rootUrl: String = ""
 
+  var queryServerSetPath = "/twitter/service/zipkin/query"
+
   /* Map dirname to content type */
   var resourceDirs: Map[String, String] = Map[String, String](
     "css" -> "text/css",
@@ -18,8 +21,8 @@ trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
     "templates" -> "text/plain"
   )
 
-  def appConfig: () => App = () => new App
-  lazy val app = appConfig()
+  def appConfig: (gen.ZipkinQuery.FinagledClient) => App =
+    (client) => new App(client)
 
   def resourceConfig: () => Resource = () => new Resource(resourceDirs)
   lazy val resource = resourceConfig()

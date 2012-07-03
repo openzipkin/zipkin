@@ -19,11 +19,49 @@ package com.twitter.zipkin.web
 import com.posterous.finatra.FinatraApp
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import com.twitter.zipkin.gen
 
-class App extends FinatraApp {
+class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
 
   get("/") { request =>
     render(path="index.mustache", exports = new IndexObject)
+  }
+
+  post("/query") { request =>
+    println(request.params.get("span_name"))
+    toJson(Seq())
+  }
+
+  get("/services") { request =>
+    toJson()
+  }
+
+  get("/spans") { request =>
+    toJson()
+  }
+
+  get("/top_annotations") { request =>
+
+  }
+
+  get("/top_kv_annotations") { request =>
+
+  }
+
+  get("show") { request =>
+
+  }
+
+  get("/get_trace") { request =>
+
+  }
+
+  get("/is_pinned") { request =>
+
+  }
+
+  post("/pin") { request =>
+
   }
 }
 
@@ -38,6 +76,10 @@ class IndexObject extends ExportObject {
   val inlineJs = "$(Zipkin.Application.Index.initialize());"
   val endDate = Globals.getDate
   val endTime = Globals.getTime
+}
+
+class QueryObject extends ExportObject {
+
 }
 
 object Globals {
