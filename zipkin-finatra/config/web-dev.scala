@@ -17,5 +17,5 @@
 import com.twitter.zipkin.config.ZipkinWebConfig
 
 new ZipkinWebConfig {
-  rootUrl = "localhost" + serverPort
+  rootUrl = "localhost:" + serverPort
 }
