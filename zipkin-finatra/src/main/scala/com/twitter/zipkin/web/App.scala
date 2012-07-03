@@ -41,7 +41,7 @@ class IndexObject extends ExportObject {
 }
 
 object Globals {
-  var rootUrl = "localhost"
+  var rootUrl = "http://localhost/"
   val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
   val timeFormat = new SimpleDateFormat("HH:mm:ss")
 
