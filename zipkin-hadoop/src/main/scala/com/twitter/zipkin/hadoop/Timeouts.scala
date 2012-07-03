@@ -27,7 +27,6 @@ import sources.{PrepTsvSource, PreprocessedSpanSource, Util}
 
 class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
 
-  // TODO: Support retry as well in a way that doesn't involve messing with the code
   val ERROR_TYPE = List("finagle.timeout", "finagle.retry")
 
   val input = args.required("error_type")
@@ -38,20 +37,19 @@ class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
   // Preprocess the data into (trace_id, id, parent_id, annotations, client service name, service name)
   val spanInfo = PreprocessedSpanSource()
     .read
-    .mapTo(0 -> ('id, 'parent_id, 'annotations, 'cService, 'service) )
-      { s: SpanServiceName => (s.id, s.parent_id, s.annotations.toList, s.client_service, s.service_name) }
+    .mapTo(0 -> ('id, 'parent_id, 'annotations, 'service) )
+      { s: SpanServiceName => (s.id, s.parent_id, s.annotations.toList, s.service_name) }
 
 
-  // Project to (id, service name)
+//  Project to (id, service name)
   val idName = PrepTsvSource()
     .read
 
   // Left join with idName to find the parent's service name, if applicable
   val result = spanInfo
     .filter('annotations){annotations : List[Annotation] => annotations.exists({a : Annotation =>  a.value == input})}
-    .project('id, 'parent_id, 'cService, 'service)
+    .project('id, 'parent_id, 'service)
     .joinWithSmaller('parent_id -> 'id_1, idName, joiner = new LeftJoin)
-    .map(('parent_id, 'cService, 'name_1) -> 'name_1){ Util.getBestClientSideName }
     .project('service, 'name_1)
     .groupBy('service, 'name_1){ _.size('numTimeouts) }
     .write(Tsv(args("output")))

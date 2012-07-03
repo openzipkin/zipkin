@@ -29,8 +29,9 @@ class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
 
   val spanInfo = PreprocessedSpanSource()
   .read
-    .mapTo(0 -> ('id, 'parent_id, 'cService, 'service))
-      { s: SpanServiceName => (s.id, s.parent_id, s.client_service, s.service_name ) }
+    .filter(0) { s : SpanServiceName => s.isSetParent_id() }
+    .mapTo(0 -> ('id, 'parent_id, 'service))
+      { s: SpanServiceName => (s.id, s.parent_id, s.service_name ) }
 
     // TODO: account for possible differences between sent and received service names
     val idName = PrepTsvSource()
@@ -38,7 +39,6 @@ class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
     /* Join with the original on parent ID to get the parent's service name */
     val spanInfoWithParent = spanInfo
       .joinWithSmaller('parent_id -> 'id_1, idName, joiner = new LeftJoin)
-      .map(('parent_id, 'cService, 'name_1) -> 'name_1){ Util.getBestClientSideName }
       .groupBy('service, 'name_1){ _.size('count) }
       .write(Tsv(args("output")))
 }

@@ -17,7 +17,7 @@
 package com.twitter.zipkin.hadoop.sources
 
 import com.twitter.scalding._
-import com.twitter.zipkin.gen.{Annotation, BinaryAnnotation, Span, SpanServiceName}
+import com.twitter.zipkin.gen._
 import scala.collection.JavaConverters._
 
 /**
@@ -33,12 +33,12 @@ class FindNames(args : Args) extends Job(args) with DefaultDateRangeJob {
     }
 
   val findNames = preprocessed
-    .flatMap('annotations -> ('cService, 'service)) { Util.getClientAndServiceName }
-    .mapTo(('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations, 'cService, 'service) -> 'spanWithServiceNames) {
-      a : (Long, String, Long, Long, List[Annotation], List[BinaryAnnotation], String, String) =>
+    .flatMap('annotations -> 'service) { Util.getServiceName }
+    .mapTo(('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations, 'service) -> 'spanWithServiceNames) {
+      a : (Long, String, Long, Long, List[Annotation], List[BinaryAnnotation], String) =>
       a match {
-        case (tid, name, id, pid, annotations, binary_annotations, cService, service) =>
-          new SpanServiceName(tid, name, id, annotations.asJava, binary_annotations.asJava, cService, service).setParent_id(pid)
+        case (tid, name, id, pid, annotations, binary_annotations, service) =>
+          new SpanServiceName(tid, name, id, annotations.asJava, binary_annotations.asJava, service).setParent_id(pid)
       }
     }.write(PreprocessedSpanSource())
 

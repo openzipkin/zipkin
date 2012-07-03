@@ -8,22 +8,16 @@ import scala.collection.JavaConverters._
 
 class UtilSpec extends Specification {
 
-  "Util.getClientAndServiceName" should {
+  "Util.getServiceName" should {
     "yield None if the list is empty" in {
       val l : List[Annotation] = List()
-      Util.getClientAndServiceName(l) must be_==(None)
+      Util.getServiceName(l) must be_==(None)
     }
-    "yield (null, service name) if there is no client side name" in {
-      val endpoint = new gen.Endpoint(123, 666, "service")
-      val l : List[Annotation] = List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "ss").setHost(endpoint))
-      Util.getClientAndServiceName(l) must be_==(Some(null, "service"))
-
-    }
-    "yield (client name, service name) if both are present" in {
+    "yield Some(service name) if present" in {
       val endpoint = new gen.Endpoint(123, 666, "service")
       val endpoint1 = new gen.Endpoint(123, 666, "service1")
       val l : List[Annotation] = List(new gen.Annotation(1000, "cr").setHost(endpoint), new gen.Annotation(2000, "ss").setHost(endpoint1))
-      Util.getClientAndServiceName(l) must be_==(Some("service", "service1"))
+      Util.getServiceName(l) must be_==(Some("service1"))
     }
   }
 
@@ -46,10 +40,10 @@ class UtilSpec extends Specification {
       val endpoint = new gen.Endpoint(123, 666, "service")
       val span = new gen.SpanServiceName(12345, "methodcall", 666,
         List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
-        List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service", "service").setParent_id(0)
+        List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service").setParent_id(0)
       val span1 = new gen.SpanServiceName(12345, "methodcall", 667,
         List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
-        List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service", "service").setParent_id(1)
+        List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service").setParent_id(1)
 
       Util.repeatSpan(span, 1, 666, 0) must beEqualTo(List((span, 666),(span1, 667)))
     }
@@ -72,10 +66,10 @@ class UtilSpec extends Specification {
       val endpoint1 = new gen.Endpoint(123, 666, "service1")
       val span = new gen.SpanServiceName(12345, "methodcall", 666,
         List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
-        List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service", "service").setParent_id(0)
+        List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava,  "service").setParent_id(0)
       val span1 = new gen.SpanServiceName(12345, "methodcall", 667,
         List(new gen.Annotation(1000, "sr").setHost(endpoint1), new gen.Annotation(2000, "cr").setHost(endpoint1)).asJava,
-        List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service1", "service1").setParent_id(1)
+        List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service1").setParent_id(1)
       Util.getSpanIDtoNames(List((span, 666), (span1, 667))) must beEqualTo(List((666, "service"), (667, "service1")))
     }
   }
