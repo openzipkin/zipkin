@@ -2,16 +2,23 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
   <head>
       <link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/ui-lightness/jquery-ui.css" media="screen" rel="stylesheet" />
-      <%= stylesheet_link_tag "application" %>
+      <link href="public/css/bootstrap.css" media="screen" rel="stylesheet" />
+      <link href="public/css/bootstrap-responsive.css" media="screen" rel="stylesheet" />
+      <link href="public/css/application.css" media="screen" rel="stylesheet" />
 
       <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
       <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
-      <%= javascript_include_tag "application" %>
+
+      <script type="text/javascript" src="public/js/bootstrap.js"></script>
+      <script type="text/javascript" src="public/js/d3-2.9.1.js"></script>
+      <script type="text/javascript" src="public/js/hogan-2.0.0.js"></script>
+      <script type="text/javascript" src="public/js/application.js"></script>
       <script>
-        var root_url="<%=root_url%>";
+        var root_url="{{rootUrl}}";
       </script>
 
-      <% if Rails.env == "production" %>
+      {{#environment}}
+      {{#production}}
       <script type="text/javascript">
         var _gaq = _gaq || [];
         _gaq.push(['_setAccount', 'UA-30739707-1']);
@@ -22,24 +29,25 @@
           var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
         })();
       </script>
-      <% end %>
+      {{/production}}
+      {{/environment}}
 
       <title>Zipkin</title>
   </head>
-  <body id="<%= controller.controller_name %>_<%= action_name %>">
+  <body id="{{controllerName}}_{{actionName}}">
     <div class="navbar navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container">
-          <%= content_tag :a, :href => root_url, :class => "brand" do %>
+          <a href="{{rootUrl}}" class="brand">
              Zipkin<span class="muted" style="font-size: .75em; padding-left: 10px;">Investigate system behavior</span>
-          <%- end -%>
+          </a>
           <ul class="nav nav-bar js-zipkin-navbar">
             <li class="active"><a href="#"><i class="icon-search icon-white"></i> Find a trace</a><li>
           </ul>
           <div class="pull-right">
             <div class="">
-              <a class="adjust-clock-skew-tooltip" href="#" rel="tooltip" data-original-title="Clock skew adjustment: <%= @adjust_clock_skew ? "Enabled" : "Disabled" %>">
-                <button class="btn adjust-clock-skew-btn <%= @adjust_clock_skew ? "btn-info" : "btn-danger" %>" value="<%= @adjust_clock_skew ? :true : :false %>"><i class="icon-time"></i></button>
+              <a class="adjust-clock-skew-tooltip" href="#" rel="tooltip" data-original-title="Clock skew adjustment: "{{#clockSkew}}"Enabled"{{/clockSkew}} {{^clockSkew}}"Disabled"{{/clockSkew}}"">
+                <button class="btn adjust-clock-skew-btn {{#clockSkew}}btn-info{{/clockSkew}} {{^clockSkew}}btn-danger{{/clockSkew}}" value="{{clockSkew}}"><i class="icon-time"></i></button>
               </a>
             </div>
           </div>
@@ -48,25 +56,29 @@
     </div>
     <div class="container">
       <div class="content">
-        <%- if flash[:message] -%>
+        {{#flash}}
+          {{#message}}
           <div class="alert alert-success high-visibility">
             <a class="close" data-dismiss="alert" href="#">x</a>
-            <p><strong><%= flash[:message] %></strong></p>
+            <p><strong>{{body}}</strong></p>
           </div>
-        <% elsif flash[:error] %>
+          {{/message}}
+
+          {{#error}}
           <div class="alert alert-error high-visibility">
             <a class="close" data-dismiss="alert" href="#">x</a>
-            <p><strong><%= flash[:error] %></strong></p>
+            <p><strong>{{body}}</strong></p>
           </div>
-        <%- end -%>
+          {{/error}}
+        {{/flash}}
+
         {{render}}
-        {{something}}
       </div>
     </div>
 
     <script type="text/javascript">
       $(document).ready(function() {
-        <%= yield :javascript_inline %>
+        {{inlineJs}}
       });
     </script>
   </body>
