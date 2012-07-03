@@ -14,7 +14,8 @@ trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
   var resourceDirs: Map[String, String] = Map[String, String](
     "css" -> "text/css",
     "img" -> "image/png",
-    "js" -> "application/javascript"
+    "js" -> "application/javascript",
+    "templates" -> "text/plain"
   )
 
   def appConfig: () => App = () => new App

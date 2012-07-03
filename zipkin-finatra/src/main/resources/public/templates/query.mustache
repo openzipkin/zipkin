@@ -1,0 +1,21 @@
+<ul class="traces">
+{{#traces}}
+  <li class="trace" data-href="{{url}}">
+    <a class="undecorated" href="{{url}}">
+      <div class="bar-block">
+        <span class="bar-graphic" style="width:{{width}}%;"></span>
+        <span class="bar-label">{{duration}} ms</span>
+      </div>
+      <div class="trace-details services">
+        {{#service_counts}}
+          <span class="label {{labelColor}} service-tag-label" value="{{0}}">{{0}}<span class="label {{labelColor}}">x{{1}}</span>
+          </span>
+        {{/service_counts}}
+      </div>
+      <div class="trace-details timestamp">
+        <span class="label">{{start_time}}</span>
+      </div>
+    </a>
+  </li>
+{{/traces}}
+</ul>
