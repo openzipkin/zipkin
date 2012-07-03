@@ -21,6 +21,22 @@ import com.posterous.finatra.FinatraApp
 class App extends FinatraApp {
 
   get("/") { request =>
-    render(path="test.mustache")
+    render(path="index.mustache", exports = new IndexObject)
   }
+}
+
+trait Attribute
+trait ExportObject {
+  val rootUrl = Globals.rootUrl
+  def environment: Attribute = new Attribute { def production = false }
+  def flash: Option[Attribute] = None
+  val clockSkew: Boolean = true
+}
+
+class IndexObject extends ExportObject {
+  def inlineJs = "$(Zipkin.Application.Index.initialize());"
+}
+
+object Globals {
+  var rootUrl: String = "localhost"
 }
