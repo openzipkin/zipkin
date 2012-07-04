@@ -23,4 +23,6 @@ new ZipkinWebConfig {
   def zkConfig = new ZooKeeperConfig {
     servers = List("localhost:3003")
   }
+
+  override lazy val zkClient = None
 }

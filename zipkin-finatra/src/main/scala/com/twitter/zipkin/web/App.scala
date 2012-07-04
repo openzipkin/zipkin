@@ -33,8 +33,10 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
 //  }
 
   get("/api/services") { request =>
-    client.getServiceNames().map {
-      toJson(_)
+    toJson{
+      client.getServiceNames().map {
+        _.toSeq.sorted
+      }.apply()
     }
   }
 

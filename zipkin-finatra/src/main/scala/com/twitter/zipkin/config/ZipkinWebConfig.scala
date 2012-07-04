@@ -28,7 +28,7 @@ trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
   def zkClientConfig = new ZooKeeperClientConfig {
     var config = zkConfig
   }
-  lazy val zkClient: ZooKeeperClient = zkClientConfig.apply()
+  lazy val zkClient: Option[ZooKeeperClient] = Some { zkClientConfig.apply() }
 
   def appConfig: (gen.ZipkinQuery.FinagledClient) => App =
     (client) => new App(client)
