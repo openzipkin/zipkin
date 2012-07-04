@@ -28,15 +28,14 @@ import sources.{PrepTsvSource, PreprocessedSpanSource, Util}
 class MostCommonCalls(args : Args) extends Job(args) with DefaultDateRangeJob {
   val spanInfo = PreprocessedSpanSource()
     .read
-    .mapTo(0 -> ('id, 'parent_id, 'cService, 'service))
-  { s: SpanServiceName => (s.id, s.parent_id, s.client_service, s.service_name) }
+    .mapTo(0 -> ('id, 'parent_id, 'service))
+  { s: SpanServiceName => (s.id, s.parent_id, s.service_name) }
 
   val idName = PrepTsvSource()
     .read
 
   val result = spanInfo
     .joinWithSmaller('parent_id -> 'id_1, idName, joiner = new LeftJoin)
-    .map(('parent_id, 'cService, 'name_1) -> 'name_1){ Util.getBestClientSideName }
     .groupBy('service, 'name_1){ _.size('count) }
     .groupBy('service){ _.sortBy('count) }
     .write(Tsv(args("output")))

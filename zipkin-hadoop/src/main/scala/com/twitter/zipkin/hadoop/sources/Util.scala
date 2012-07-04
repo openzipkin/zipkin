@@ -52,22 +52,17 @@ object Util {
   }
 
   /**
-   * Given a list of annotations, finds the client's name if present and the best possible service name by the
-   * same semantics as in getServiceName.
+   * Given a list of annotations, finds the best possible service name
    * @param annotations a list of Annotations
-   * @return Some(client's service name, service name) if a service name exists, None otherwise
+   * @return Some(service name) if a service name exists, None otherwise
    */
-  def getClientAndServiceName(annotations : List[Annotation]) : Option[(String, String)] = {
+  def getServiceName(annotations : List[Annotation]) : Option[String] = {
     var service: Option[Annotation] = None
-    var clientSend : Annotation = null
     var hasServerRecv = false
     annotations.foreach { a : Annotation =>
       if ((Constants.CLIENT_SEND.equals(a.getValue) || Constants.CLIENT_RECV.equals(a.getValue))) {
-        if (a.getHost != null) {
-          if (!hasServerRecv) {
-            service = Some(a)
-          }
-          clientSend = a
+        if ((a.getHost != null) && !hasServerRecv) {
+          service = Some(a)
         }
       }
       if ((Constants.SERVER_RECV.equals(a.getValue) || Constants.SERVER_SEND.equals(a.getValue))) {
@@ -78,7 +73,7 @@ object Util {
       }
     }
     for (s <- service)
-      yield if (clientSend == null) (null, s.getHost.service_name) else (clientSend.getHost.service_name, s.getHost.service_name)
+      yield s.getHost.service_name
   }
 
   /**
@@ -121,7 +116,7 @@ object Util {
    *         second element is the span ID of the copy.
    */
   def repeatSpan(span: gen.Span, count: Int, offset : Int, parentOffset : Int): List[(gen.Span, Int)] = {
-    ((0 to count).toSeq map { i: Int => span.deepCopy().setId(i + offset).setParent_id(i + parentOffset) -> (i + offset)}).toList
+    ((0 to count).toSeq map { i: Int => span.deepCopy().setId(i + offset).setParent_id(if (parentOffset == -1) 0 else i + parentOffset) -> (i + offset)}).toList
   }
 
   /**

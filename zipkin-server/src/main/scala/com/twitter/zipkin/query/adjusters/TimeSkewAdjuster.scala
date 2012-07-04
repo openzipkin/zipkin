@@ -19,6 +19,7 @@ package com.twitter.zipkin.query.adjusters
 import com.twitter.zipkin.gen
 import scala.collection.Map
 import com.twitter.zipkin.common._
+import com.twitter.finagle.tracing.{Trace => FTrace}
 
 
 class TimeSkewAdjuster extends Adjuster {
@@ -30,7 +31,8 @@ class TimeSkewAdjuster extends Adjuster {
    * Adjusts Spans timestamps so that each child happens after their parents.
    * This is to counteract clock skew on servers, we want the Trace to happen in order.
    */
-  def adjust(trace: Trace) : Trace = {
+  def adjust(trace: Trace): Trace = {
+    FTrace.record("timeskew.adjust")
     trace.getRootSpan match {
       case None => return trace // no root span found, returning as is
       case Some(s) => {

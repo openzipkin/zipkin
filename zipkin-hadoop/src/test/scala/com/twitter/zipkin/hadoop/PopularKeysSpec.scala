@@ -37,10 +37,10 @@ class PopularKeysSpec extends Specification with TupleConversions {
   val endpoint = new gen.Endpoint(123, 666, "service")
   val span = new gen.SpanServiceName(12345, "methodcall", 666,
     List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
-    List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service", "service")
+    List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service")
   val span1 = new gen.SpanServiceName(12345, "methodcall", 666,
     List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
-    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service", "service")
+    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service")
 
 
   "PopularKeys" should {
