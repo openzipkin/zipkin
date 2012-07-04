@@ -27,28 +27,30 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
     render(path="index.mustache", exports = new IndexObject)
   }
 
-  post("/query") { request =>
-    println(request.params.get("span_name"))
-    toJson(Seq())
+//  post("/query") { request =>
+//    println(request.params.get("span_name"))
+//    toJson(Seq())
+//  }
+
+  get("/api/services") { request =>
+    client.getServiceNames().map {
+      toJson(_)
+    }
   }
 
-  get("/services") { request =>
+  get("/api/spans") { request =>
     toJson()
   }
 
-  get("/spans") { request =>
-    toJson()
-  }
-
-  get("/top_annotations") { request =>
+  get("/api/top_annotations/:serviceName") { request =>
 
   }
 
-  get("/top_kv_annotations") { request =>
+  get("/api/top_kv_annotations/:serviceName") { request =>
 
   }
 
-  get("show") { request =>
+  get("/show") { request =>
 
   }
 

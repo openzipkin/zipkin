@@ -21,15 +21,18 @@ class ZipkinWeb(config: ZipkinWebConfig) extends Service {
 
   def start() {
     val serverSet = new ServerSetImpl(config.zkClient, config.queryServerSetPath)
-    val cluster = new ZookeeperServerSetCluster(serverSet)
+    val cluster = new ZookeeperServerSetCluster(serverSet) {
+      override def ready() = super.ready
+    }
 
     /* ZipkinQuery client */
     val clientService = ClientBuilder()
-      .hosts(cluster)
+      .cluster(cluster)
       .codec(ThriftClientFramedCodec())
+      .hostConnectionLimit(1)
       .build()
 
-    val client = gen.ZipkinQuery.FinagledClient(clientService)
+    val client = new gen.ZipkinQuery.FinagledClient(clientService)
 
     val resource = config.resource
     val app = config.appConfig(client)

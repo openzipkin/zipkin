@@ -15,7 +15,12 @@
 */
 
 import com.twitter.zipkin.config.ZipkinWebConfig
+import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
 
 new ZipkinWebConfig {
   rootUrl = "http://localhost:" + serverPort + "/"
+
+  def zkConfig = new ZooKeeperConfig {
+    servers = List("localhost:3003")
+  }
 }

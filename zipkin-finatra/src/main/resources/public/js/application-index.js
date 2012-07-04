@@ -42,7 +42,7 @@ Zipkin.Application.Index = (function() {
   var fetchServiceNames = function() {
     $.ajax({
       type: 'GET',
-      url: root_url + 'traces/services_json/',
+      url: root_url + 'api/services',
       success: function(data){
         var select = $("#service_name");
 

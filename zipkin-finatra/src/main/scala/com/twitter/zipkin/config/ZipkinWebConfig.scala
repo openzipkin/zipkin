@@ -1,8 +1,10 @@
 package com.twitter.zipkin.config
 
+import com.twitter.common.zookeeper.ZooKeeperClient
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.web.{Resource, ZipkinWeb, App}
+import zookeeper.{ZooKeeperClientConfig, ZooKeeperConfig}
 
 trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
 
@@ -20,6 +22,13 @@ trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
     "js" -> "application/javascript",
     "templates" -> "text/plain"
   )
+
+  def zkConfig: ZooKeeperConfig
+
+  def zkClientConfig = new ZooKeeperClientConfig {
+    var config = zkConfig
+  }
+  lazy val zkClient: ZooKeeperClient = zkClientConfig.apply()
 
   def appConfig: (gen.ZipkinQuery.FinagledClient) => App =
     (client) => new App(client)
