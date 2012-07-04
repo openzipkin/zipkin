@@ -113,6 +113,8 @@ object Zipkin extends Build {
         "com.twitter" % "ostrich"           % OSTRICH_VERSION,
         "com.twitter" % "util-core"         % UTIL_VERSION,
 
+        "com.twitter.common.zookeeper" % "client"    % "0.0.6",
+
         /* Test dependencies */
         "org.scala-tools.testing" % "specs_2.9.1"  % "1.6.9" % "test",
         "org.jmock"               % "jmock"        % "2.4.0" % "test",
@@ -185,7 +187,6 @@ object Zipkin extends Build {
         "com.twitter" % "util-zk"           % UTIL_VERSION,
         "com.twitter" % "util-zk-common"    % UTIL_VERSION,
 
-        "com.twitter.common.zookeeper" % "client"    % "0.0.6",
         "com.twitter.common.zookeeper" % "candidate" % "0.0.9",
         "com.twitter.common.zookeeper" % "group"     % "0.0.9",
 
