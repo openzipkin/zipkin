@@ -32,16 +32,13 @@ Zipkin.Application.Show = (function() {
       $('#trace-content').hide();
       $('#loading-data').show();
 
-      var url_method = "traces/get_trace.json";
-
       var query_data = {
         adjust_clock_skew: Zipkin.Base.clockSkewState() ? 'true' : 'false',
-        id: traceId
       };
 
       $.ajax({
         type: 'GET',
-        url: root_url + url_method,
+        url: root_url + "api/get/" + traceId,
         data: query_data,
         success: function(data){
           data.has_filtered_spans = data.spans.length > Zipkin.Config.MIN_SPANS_TO_FILTER;

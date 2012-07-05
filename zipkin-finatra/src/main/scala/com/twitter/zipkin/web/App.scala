@@ -23,6 +23,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import com.twitter.util.Future
 import java.nio.ByteBuffer
+import com.capotej.finatra_core.FinatraRequest
+import com.twitter.zipkin.common.{TraceSummary, Endpoint}
 
 class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
 
@@ -57,23 +59,13 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
         client.getTraceIdsByServiceName(r.serviceName, r.endTimestamp, r.limit, r.order)
       }
     }
-    val adjusters = request.params.get("adjust_clock_skew") match {
-      case Some(flag) => {
-        flag match {
-          case "false" => Seq.empty[gen.Adjust]
-          case _ => Seq(gen.Adjust.TimeSkew)
-        }
-      }
-      case _ => {
-        Seq.empty[gen.Adjust]
-      }
-    }
+    val adjusters = getAdjusters(request)
 
     toJson{
       traceIds.map { ids =>
         ids match {
           case Nil => Future.value(Seq.empty)
-          case _ => client.getTraceSummariesByIds(ids, adjusters)
+          case _ => client.getTraceSummariesByIds(ids, adjusters).map { _.map { JsonTraceSummary(_) }}
         }
       }.flatten.apply()
     }
@@ -113,8 +105,15 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
     }
   }
 
-  get("/get_trace") { request =>
+  get("/api/get/:id") { request =>
+    log.info("/api/get")
+    val adjusters = getAdjusters(request)
+    val ids = Seq(request.params("id").toLong)
+    log.debug(ids.toString())
 
+    toJson {
+      client.getTraceCombosByIds(ids, adjusters).apply()
+    }
   }
 
   get("/is_pinned") { request =>
@@ -123,6 +122,20 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
 
   post("/pin") { request =>
 
+  }
+
+  def getAdjusters(request: FinatraRequest) = {
+    request.params.get("adjust_clock_skew") match {
+      case Some(flag) => {
+        flag match {
+          case "false" => Seq.empty[gen.Adjust]
+          case _ => Seq(gen.Adjust.TimeSkew)
+        }
+      }
+      case _ => {
+        Seq.empty[gen.Adjust]
+      }
+    }
   }
 }
 
@@ -155,3 +168,11 @@ object Globals {
   def getDate = dateFormat.format(Calendar.getInstance().getTime)
   def getTime = timeFormat.format(Calendar.getInstance().getTime)
 }
+
+
+object JsonTraceSummary {
+  def apply(t: TraceSummary) =
+    JsonTraceSummary(t.traceId, t.startTimestamp, t.endTimestamp, t.durationMicro, t.serviceCounts, t.endpoints)
+}
+case class JsonTraceSummary(traceId: String, startTimestamp: Long, endTimestamp: Long, durationMicro: Int,
+                            serviceCounts: Map[String, Int], endpoints: List[Endpoint])
