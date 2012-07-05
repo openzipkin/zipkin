@@ -17,20 +17,64 @@
 package com.twitter.zipkin.web
 
 import com.posterous.finatra.FinatraApp
+import com.twitter.logging.Logger
+import com.twitter.zipkin.gen
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import com.twitter.zipkin.gen
+import com.twitter.util.Future
+import java.nio.ByteBuffer
 
 class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
+
+  val log = Logger.get()
 
   get("/") { request =>
     render(path="index.mustache", exports = new IndexObject)
   }
 
-//  post("/query") { request =>
-//    println(request.params.get("span_name"))
-//    toJson(Seq())
-//  }
+  get("/api/query") { request =>
+    /* Get trace ids */
+    val traceIds = QueryRequest(request) match {
+      case r: SpanQueryRequest => {
+        log.debug(r.toString)
+        client.getTraceIdsBySpanName(r.serviceName, r.spanName, r.endTimestamp, r.limit, r.order)
+      }
+      case r: AnnotationQueryRequest => {
+        log.debug(r.toString)
+        client.getTraceIdsByAnnotation(r.serviceName, r.annotation, null, r.endTimestamp, r.limit, r.order)
+      }
+      case r: KeyValueAnnotationQueryRequest => {
+        log.debug(r.toString)
+        client.getTraceIdsByAnnotation(r.serviceName, r.key, ByteBuffer.wrap(r.value.getBytes), r.endTimestamp, r.limit, r.order)
+      }
+      case r: ServiceQueryRequest => {
+        log.debug(r.toString)
+        client.getTraceIdsByServiceName(r.serviceName, r.endTimestamp, r.limit, r.order)
+      }
+    }
+    val adjusters = request.params.get("adjust_clock_skew") match {
+      case Some(flag) => {
+        flag match {
+          case "false" => Seq.empty[gen.Adjust]
+          case _ => Seq(gen.Adjust.TimeSkew)
+        }
+      }
+      case _ => {
+        Seq.empty[gen.Adjust]
+      }
+    }
+
+    toJson{
+      traceIds.map { ids =>
+        ids match {
+          case Nil => Future.value(Seq.empty)
+          case _ => client.getTraceSummariesByIds(ids, adjusters)
+        }
+      }.flatten.map {
+        _.sortWith((a, b) => a.`durationMicro` < b.`durationMicro`)
+      }.apply()
+    }
+  }
 
   get("/api/services") { request =>
     toJson{
@@ -40,16 +84,28 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
     }
   }
 
-  get("/api/spans") { request =>
-    toJson()
+  get("/api/spans/:serviceName") { request =>
+    toJson {
+      client.getSpanNames(request.params("serviceName")).map {
+        _.toSeq.sorted
+      }.apply()
+    }
   }
 
   get("/api/top_annotations/:serviceName") { request =>
-
+    toJson {
+      client.getTopAnnotations(request.params("serviceName")).map {
+        _.toSeq.sorted
+      }.apply()
+    }
   }
 
   get("/api/top_kv_annotations/:serviceName") { request =>
-
+    toJson {
+      client.getTopKeyValueAnnotations(request.params("serviceName")).map {
+        _.toSeq.sorted
+      }.apply()
+    }
   }
 
   get("/show") { request =>

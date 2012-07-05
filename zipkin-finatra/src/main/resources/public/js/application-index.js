@@ -80,8 +80,7 @@ Zipkin.Application.Index = (function() {
 
     $.ajax({
       type: 'GET',
-      url: root_url + 'traces/spans_json/',
-      data: selected_service,
+      url: root_url + 'api/spans/' + service_name,
       success: function(data){
         var spanSelector = $('#span_name');
 
@@ -154,8 +153,7 @@ Zipkin.Application.Index = (function() {
     /* Fetch top annotations for this service */
     $.ajax({
       type: 'GET',
-      url: root_url + 'traces/top_annotations',
-      data: selected_service,
+      url: root_url + 'api/top_annotations/' + service_name,
       success: function(data) {
         if (data.length > 0) {
           $("#time_annotation").autocomplete({source: data});
@@ -166,8 +164,7 @@ Zipkin.Application.Index = (function() {
     /* Fetch top key value annotations for this service */
     $.ajax({
       type: 'GET',
-      url: root_url + 'traces/top_kv_annotations',
-      data: selected_service,
+      url: root_url + 'api/top_kv_annotations/' + service_name,
       success: function(data) {
         if (data.length > 0) {
           $("#annotation_key").autocomplete({source: data});
@@ -372,6 +369,7 @@ Zipkin.Application.Index = (function() {
       // Let's fetch the prerendered results
       var query = {
         "service_name"      : service_name,
+        "end_datetime"      : $('input[name=end_date]').val() + " " + $('input[name=end_time]').val(),
         "end_date"          : $('input[name=end_date]').val(),
         "end_time"          : $('input[name=end_time]').val(),
         "limit"             : $('input[name=limit]').val(),
@@ -382,7 +380,7 @@ Zipkin.Application.Index = (function() {
         "adjust_clock_skew" : Zipkin.Base.clockSkewState() ? 'true' : 'false'
       };
 
-      var url_method = 'traces/query';
+      var url_method = 'api/query';
 
       $.ajax({
         type: 'GET',
