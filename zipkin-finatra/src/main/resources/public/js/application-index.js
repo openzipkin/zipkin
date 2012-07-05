@@ -113,8 +113,7 @@ Zipkin.Application.Index = (function() {
           var formFields = {
             "service_name"     : selectSelector('service_name'),
             "span_name"        : selectSelector('span_name'),
-            "end_date"         : inputSelector('end_date'),
-            "end_time"         : inputSelector('end_time'),
+            "end_datetime"      : $('input[name=end_date]').val() + " " + $('input[name=end_time]').val(),
             "limit"            : inputSelector('limit'),
             "time_annotation"  : inputSelector('time_annotation'),
             "annotation_key"   : inputSelector('annotation_key'),
@@ -211,8 +210,8 @@ Zipkin.Application.Index = (function() {
         var satisfied = true;
         $.each(services, function (key, value) {
           var service_satisfied = false;
-          $.each(e.service_counts, function (i, e) {
-            if (key == e[0]) {
+          $.each(e.serviceCounts, function (i, serviceObj) {
+            if (key == serviceObj.name) {
               service_satisfied = true;
             }
           });
@@ -244,7 +243,7 @@ Zipkin.Application.Index = (function() {
     var updateFilteredServices = function (traces) {
       var services = getFilteredServices();
       return $.map(traces, function(t) {
-        $.each(t.service_counts, function (i, s) {
+        $.each(t.serviceCounts, function (i, s) {
           if (services && services.hasOwnProperty(s[0])) {
             s.labelColor = "service-tag-filtered";
           } else {
@@ -292,7 +291,7 @@ Zipkin.Application.Index = (function() {
         }
       }
 
-      $(".filter-duration").text(delta + " " + suffix);
+      $(".filter-duration").text(delta.toFixed(3) + " " + suffix);
     };
 
     /* Click handler for adding a service filter */
@@ -370,8 +369,6 @@ Zipkin.Application.Index = (function() {
       var query = {
         "service_name"      : service_name,
         "end_datetime"      : $('input[name=end_date]').val() + " " + $('input[name=end_time]').val(),
-        "end_date"          : $('input[name=end_date]').val(),
-        "end_time"          : $('input[name=end_time]').val(),
         "limit"             : $('input[name=limit]').val(),
         "span_name"         : spanName,
         "time_annotation"   : $('input[name=time_annotation]').val(),
@@ -405,12 +402,17 @@ Zipkin.Application.Index = (function() {
           var minStartTime = Number.MAX_VALUE
             , maxStartTime = Number.MIN_VALUE
             ;
-          var maxTime = data[0].duration;
+          var maxTime = data[0].durationMicro / 1000;
           var traces = $.map(data, function(e) {
-            minStartTime = minStartTime < e.start_time ? minStartTime : e.start_time;
-            maxStartTime = maxStartTime > e.start_time ? maxStartTime : e.start_time;
+            minStartTime = minStartTime < e.startTimestamp ? minStartTime : e.startTimestamp;
+            maxStartTime = maxStartTime > e.startTimestamp ? maxStartTime : e.startTimestamp;
 
+            e.duration = e.durationMicro / 1000;
             e.width = (e.duration / maxTime) * 100;
+            e.serviceCounts = $.map(e.serviceCounts, function(count, key) {
+              return { name: key, count: count };
+            });
+            e.url = root_url + "show/" + e.traceId;
             return e;
           });
           traces = updateFilteredServices(traces);

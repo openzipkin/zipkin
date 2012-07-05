@@ -22,6 +22,9 @@ object QueryRequest {
     val order = gen.Order.DurationDesc
 
     request.params.get("span_name") match {
+      case Some("all") => {
+        SpanQueryRequest(serviceName, "", endTimestamp, limit, order)
+      }
       case Some(spanName) => {
         SpanQueryRequest(serviceName, spanName, endTimestamp, limit, order)
       }

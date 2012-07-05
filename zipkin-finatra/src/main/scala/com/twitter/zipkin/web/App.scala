@@ -28,8 +28,13 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
 
   val log = Logger.get()
 
+
   get("/") { request =>
-    render(path="index.mustache", exports = new IndexObject)
+    render(path = "index.mustache", exports = new IndexObject)
+  }
+
+  get("/show/:id") { request =>
+    render(path = "show.mustache", exports = new ShowObject(request.params("id").toLong))
   }
 
   get("/api/query") { request =>
@@ -70,13 +75,12 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
           case Nil => Future.value(Seq.empty)
           case _ => client.getTraceSummariesByIds(ids, adjusters)
         }
-      }.flatten.map {
-        _.sortWith((a, b) => a.`durationMicro` < b.`durationMicro`)
-      }.apply()
+      }.flatten.apply()
     }
   }
 
   get("/api/services") { request =>
+    log.debug("/api/services")
     toJson{
       client.getServiceNames().map {
         _.toSeq.sorted
@@ -85,6 +89,7 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
   }
 
   get("/api/spans/:serviceName") { request =>
+    log.debug("/api/spans/")
     toJson {
       client.getSpanNames(request.params("serviceName")).map {
         _.toSeq.sorted
@@ -106,10 +111,6 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
         _.toSeq.sorted
       }.apply()
     }
-  }
-
-  get("/show") { request =>
-
   }
 
   get("/get_trace") { request =>
@@ -136,6 +137,10 @@ class IndexObject extends ExportObject {
   val inlineJs = "$(Zipkin.Application.Index.initialize());"
   val endDate = Globals.getDate
   val endTime = Globals.getTime
+}
+
+class ShowObject(traceId: Long) extends ExportObject {
+  val inlineJs = "$(Zipkin.Application.Show.initialize(" + traceId + "));"
 }
 
 class QueryObject extends ExportObject {

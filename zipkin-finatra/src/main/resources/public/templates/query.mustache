@@ -7,13 +7,13 @@
         <span class="bar-label">{{duration}} ms</span>
       </div>
       <div class="trace-details services">
-        {{#service_counts}}
-          <span class="label {{labelColor}} service-tag-label" value="{{0}}">{{0}}<span class="label {{labelColor}}">x{{1}}</span>
+        {{#serviceCounts}}
+          <span class="label {{labelColor}} service-tag-label" value="{{name}}">{{name}}<span class="label {{labelColor}}">x{{count}}</span>
           </span>
-        {{/service_counts}}
+        {{/serviceCounts}}
       </div>
       <div class="trace-details timestamp">
-        <span class="label">{{start_time}}</span>
+        <span class="label">{{startTime}}</span>
       </div>
     </a>
   </li>
