@@ -17,5 +17,13 @@ package com.twitter.zipkin.query
 
 import com.twitter.zipkin.common.BinaryAnnotation
 
+/**
+ * Query side struct that contains
+ * - trace ID
+ * - root span (or span closest to the root
+ * - sorted list of `TimelineAnnotation`s
+ * - binary annotations
+ * for a particular trace
+ */
 case class TraceTimeline(traceId: Long, rootSpanId: Long, annotations: Seq[TimelineAnnotation],
                          binaryAnnotations: Seq[BinaryAnnotation])
