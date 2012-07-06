@@ -28,7 +28,7 @@ import com.twitter.zipkin.storage.{Aggregates, TraceIdDuration, Index, Storage}
 import java.nio.ByteBuffer
 import org.apache.thrift.TException
 import scala.collection.Set
-import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
 
 /**
  * Able to respond to users queries regarding the traces. Usually does so
@@ -202,7 +202,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
 
     Stats.timeFutureMillis("query.getTraceTimelinesByIds") {
       storage.getTracesByIds(traceIds).map { id =>
-        id.flatMap(adjusters.foldLeft(_)((trace, adjuster) => adjuster.adjust(trace)).toTimeline)
+        id.flatMap(adjusters.foldLeft(_)((trace, adjuster) => adjuster.adjust(trace)).toTimeline.map(ThriftQueryAdapter(_)))
       } rescue {
         case e: Exception =>
           log.error(e, "getTraceTimelinesByIds query failed")

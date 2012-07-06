@@ -19,11 +19,12 @@ package com.twitter.zipkin.common
 import com.twitter.zipkin.gen
 import collection.mutable
 import mutable.HashMap
-import com.twitter.zipkin.query.conversions.TraceToTimeline
 import com.twitter.logging.Logger
 import java.nio.ByteBuffer
-import com.twitter.zipkin.adapter.ThriftAdapter
 import com.twitter.finagle.tracing.{Trace => FTrace}
+import com.twitter.zipkin.query.conversions.TraceToTimeline
+import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
+import com.twitter.zipkin.query.TraceTimeline
 
 /**
  * Represents a trace, a bundle of spans.
@@ -48,8 +49,6 @@ case class Timespan(start: Long, end: Long)
 case class Trace(spans: Seq[Span]) {
 
   val log = Logger.get(getClass.getName)
-
-  private[this] val traceToTimeline = new TraceToTimeline
 
   /**
    * Find the trace id for this trace.
@@ -150,13 +149,13 @@ case class Trace(spans: Seq[Span]) {
         serviceCounts, endpoints.toList)
   }
 
-  def toTimeline: Option[gen.TraceTimeline] = {
+  def toTimeline: Option[TraceTimeline] = {
     FTrace.record("toTimeline")
-    traceToTimeline.toTraceTimeline(this)
+    TraceToTimeline(this)
   }
 
   def toTraceCombo: gen.TraceCombo = {
-    gen.TraceCombo(toThrift, toTraceSummary.map(ThriftAdapter(_)), toTimeline, toSpanDepths)
+    gen.TraceCombo(toThrift, toTraceSummary.map(ThriftAdapter(_)), toTimeline.map(ThriftQueryAdapter(_)), toSpanDepths)
   }
 
   /**
@@ -187,11 +186,9 @@ case class Trace(spans: Seq[Span]) {
   /**
    * Get all the binary annotations in this trace.
    */
-  def getBinaryAnnotations: Seq[gen.BinaryAnnotation] = {
+  def getBinaryAnnotations: Seq[BinaryAnnotation] = {
     spans.map {
-      _.binaryAnnotations.map {
-        ThriftAdapter(_)
-      }
+      _.binaryAnnotations
     }.flatten
   }
 
