@@ -156,7 +156,7 @@ case class Trace(spans: Seq[Span]) {
   }
 
   def toTraceCombo: gen.TraceCombo = {
-    gen.TraceCombo(toThrift, toTraceSummary.map(_.toThrift), toTimeline, toSpanDepths)
+    gen.TraceCombo(toThrift, toTraceSummary.map(ThriftAdapter(_)), toTimeline, toSpanDepths)
   }
 
   /**
