@@ -18,11 +18,12 @@ package com.twitter.zipkin.query.conversions
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
 import com.twitter.zipkin.gen
-import com.twitter.zipkin.common.{Trace, Span, Annotation, Endpoint}
 
 import scala.collection.JavaConversions._
 import java.nio.ByteBuffer
 import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.query.{TimelineAnnotation, TraceTimeline}
+import com.twitter.zipkin.common._
 
 class TraceToTimelineSpec extends Specification with JMocker with ClassMocker {
 
@@ -60,9 +61,9 @@ class TraceToTimelineSpec extends Specification with JMocker with ClassMocker {
   val endpoint2 = Some(Endpoint(2, 2, cassieName)) //54147
   val endpoint3 = Some(Endpoint(3, 3, koalabirdName)) //36516
 
-  val et1 = ThriftAdapter(endpoint1.get)
-  val et2 = ThriftAdapter(endpoint2.get)
-  val et3 = ThriftAdapter(endpoint3.get)
+  val et1 = endpoint1.get
+  val et2 = endpoint2.get
+  val et3 = endpoint3.get
 
   // This is from a real trace, at least what the data would look like
   // after being run through the TimeSkewAdjuster
@@ -73,10 +74,10 @@ class TraceToTimelineSpec extends Specification with JMocker with ClassMocker {
   val ann5 = Annotation(85, gen.Constants.CLIENT_RECV, endpoint2)
   val ann6 = Annotation(87, gen.Constants.CLIENT_RECV, endpoint3)
 
-  val ba1 = gen.BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), gen.AnnotationType.String)
+  val ba1 = BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), ThriftAdapter(gen.AnnotationType.String), None)
 
   val span1 = Span(1, "ValuesFromSource", 2209720933601260005L, None,
-    List(ann3, ann6), List(ThriftAdapter(ba1)))
+    List(ann3, ann6), List(ba1))
   val span2 = Span(1, "ValuesFromSource", 2209720933601260005L, None,
     List(ann4, ann1), Nil)
   // the above two spans are part of the same actual span
@@ -86,32 +87,30 @@ class TraceToTimelineSpec extends Specification with JMocker with ClassMocker {
   val trace = new Trace(List(span1, span2, span3))
 
   // annotation numbers match those above, order in list should not though
-  val tAnn1 = gen.TimelineAnnotation(1, gen.Constants.SERVER_RECV, et1,
+  val tAnn1 = TimelineAnnotation(1, gen.Constants.SERVER_RECV, et1,
     2209720933601260005L, None, cuckooName, "ValuesFromSource")
-  val tAnn2 = gen.TimelineAnnotation(1, gen.Constants.CLIENT_SEND, et2,
+  val tAnn2 = TimelineAnnotation(1, gen.Constants.CLIENT_SEND, et2,
     -855543208864892776L, Some(2209720933601260005L), cassieName, "multiget_slice")
-  val tAnn3 = gen.TimelineAnnotation(1, gen.Constants.CLIENT_SEND, et3,
+  val tAnn3 = TimelineAnnotation(1, gen.Constants.CLIENT_SEND, et3,
     2209720933601260005L, None, koalabirdName, "ValuesFromSource")
-  val tAnn4 = gen.TimelineAnnotation(86, gen.Constants.SERVER_SEND, et1,
+  val tAnn4 = TimelineAnnotation(86, gen.Constants.SERVER_SEND, et1,
     2209720933601260005L, None, cuckooName, "ValuesFromSource")
-  val tAnn5 = gen.TimelineAnnotation(85, gen.Constants.CLIENT_RECV, et2,
+  val tAnn5 = TimelineAnnotation(85, gen.Constants.CLIENT_RECV, et2,
     -855543208864892776L, Some(2209720933601260005L), cassieName, "multiget_slice")
-  val tAnn6 = gen.TimelineAnnotation(87, gen.Constants.CLIENT_RECV, et3,
+  val tAnn6 = TimelineAnnotation(87, gen.Constants.CLIENT_RECV, et3,
     2209720933601260005L, None, koalabirdName, "ValuesFromSource")
 
-  val expectedTimeline = gen.TraceTimeline(1, 2209720933601260005L, List(tAnn3, tAnn1, tAnn2,
+  val expectedTimeline = TraceTimeline(1, 2209720933601260005L, List(tAnn3, tAnn1, tAnn2,
     tAnn5, tAnn4, tAnn6), List(ba1))
-
-  val traceToTimeline = new TraceToTimeline
 
   "TraceToTimelineSpec" should {
     "convert to timeline with correct annotations ordering" in {
-      val actualTimeline = traceToTimeline.toTraceTimeline(trace)
+      val actualTimeline = TraceToTimeline(trace)
       Some(expectedTimeline) mustEqual actualTimeline
     }
 
     "return none if empty trace" in {
-      val actualTimeline = traceToTimeline.toTraceTimeline(new Trace(List()))
+      val actualTimeline = TraceToTimeline(new Trace(List()))
       None mustEqual actualTimeline
     }
   }
