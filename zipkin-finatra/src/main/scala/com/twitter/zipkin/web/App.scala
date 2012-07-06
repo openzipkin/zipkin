@@ -25,6 +25,7 @@ import com.twitter.util.Future
 import java.nio.ByteBuffer
 import com.capotej.finatra_core.FinatraRequest
 import com.twitter.zipkin.common.{TraceSummary, Endpoint}
+import com.twitter.zipkin.adapter.ThriftAdapter
 
 class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
 
@@ -36,7 +37,7 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
   }
 
   get("/show/:id") { request =>
-    render(path = "show.mustache", exports = new ShowObject(request.params("id").toLong))
+    render(path = "show.mustache", exports = new ShowObject(request.params("id")))
   }
 
   get("/api/query") { request =>
@@ -64,8 +65,16 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
     toJson{
       traceIds.map { ids =>
         ids match {
-          case Nil => Future.value(Seq.empty)
-          case _ => client.getTraceSummariesByIds(ids, adjusters).map { _.map { JsonTraceSummary(_) }}
+          case Nil => {
+            Future.value(Seq.empty)
+          }
+          case _ => {
+            client.getTraceSummariesByIds(ids, adjusters).map {
+              _.map { summary =>
+                JsonTraceSummary(ThriftAdapter(summary))
+              }
+            }
+          }
         }
       }.flatten.apply()
     }
@@ -111,8 +120,17 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
     val ids = Seq(request.params("id").toLong)
     log.debug(ids.toString())
 
-    toJson {
-      client.getTraceCombosByIds(ids, adjusters).apply()
+    try {
+      toJson {
+        client.getTraceCombosByIds(ids, adjusters).map { _.map { _.`trace`}}.apply()
+      }
+    } catch {
+      case e: Exception => {
+        e.getStackTrace.map { elem =>
+          log.info(elem.toString)
+        }
+        toJson { Seq()}
+      }
     }
   }
 
@@ -152,8 +170,8 @@ class IndexObject extends ExportObject {
   val endTime = Globals.getTime
 }
 
-class ShowObject(traceId: Long) extends ExportObject {
-  val inlineJs = "$(Zipkin.Application.Show.initialize(" + traceId + "));"
+class ShowObject(traceId: String) extends ExportObject {
+  val inlineJs = "$(Zipkin.Application.Show.initialize(\"" + traceId + "\"));"
 }
 
 class QueryObject extends ExportObject {
@@ -171,8 +189,8 @@ object Globals {
 
 
 object JsonTraceSummary {
-  def apply(t: TraceSummary) =
-    JsonTraceSummary(t.traceId, t.startTimestamp, t.endTimestamp, t.durationMicro, t.serviceCounts, t.endpoints)
+  def apply(t: TraceSummary): JsonTraceSummary =
+    JsonTraceSummary(t.traceId.toString, t.startTimestamp, t.endTimestamp, t.durationMicro, t.serviceCounts.toMap, t.endpoints)
 }
 case class JsonTraceSummary(traceId: String, startTimestamp: Long, endTimestamp: Long, durationMicro: Int,
                             serviceCounts: Map[String, Int], endpoints: List[Endpoint])
