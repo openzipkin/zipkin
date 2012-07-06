@@ -8,7 +8,7 @@ import java.io.File
 object Zipkin extends Build {
 
   lazy val zipkin = Project(id = "zipkin",
-                            base = file(".")) aggregate(hadoop, test, thrift, server, common, scrooge, scribe)
+                            base = file(".")) aggregate(hadoop, hadoop_job_runner, test, thrift, server, common, scrooge, scribe)
   
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
   val travisCi = Option(System.getenv("SBT_TRAVIS_CI")) // for adding travis ci maven repos before others
@@ -26,8 +26,12 @@ object Zipkin extends Build {
       parallelExecution in Test := false,
       libraryDependencies ++= Seq(
         "com.twitter" % "scalding_2.9.1"       % "0.5.3",
-        "com.twitter.elephantbird" % "elephant-bird-cascading2"       % "3.0.0",
-
+        "com.twitter.elephantbird" % "elephant-bird-cascading2"       % "3.0.0" intransitive(),
+        "com.twitter.elephantbird" % "elephant-bird-core"       % "3.0.0" intransitive(),
+        "org.slf4j" % "slf4j-log4j12"          % "1.6.4" % "runtime",
+        "com.google.protobuf" % "protobuf-java" % "2.3.0",
+        "org.apache.thrift" % "libthrift" % "0.5.0",
+        "cascading" % "cascading-hadoop" % "2.0.0-wip-288",
         /* Test dependencies */
         "org.scala-tools.testing" % "specs_2.9.1" % "1.6.9" % "test"
       ),
@@ -37,7 +41,13 @@ object Zipkin extends Build {
           "Concurrent Maven Repo" at "http://conjars.org/repo")
         case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
       }),
+
+      mainClass in (Compile, packageBin) := Some("com.twitter.scalding.Tool"),
+
+      mainClass in (Compile, run) := Some("com.twitter.scalding.Tool"),
+
       mainClass in assembly := Some("com.twitter.scalding.Tool"),
+
       ivyXML := // slim down the jar
         <dependencies>
             <exclude module="jms"/>
@@ -53,6 +63,56 @@ object Zipkin extends Build {
         case _ => MergeStrategy.deduplicate
       }
     ).dependsOn(thrift)
+
+  lazy val hadoop_job_runner = Project(
+  id = "zipkin-hadoop_job_runner",
+  base = file("zipkin-hadoop_job_runner"),
+  settings = Project.defaultSettings ++
+    StandardProject.newSettings ++
+    assemblySettings ++
+    TravisCiRepos.newSettings).settings(
+
+    name := "zipkin-hadoop_job_runner",
+    version := "0.2.0-SNAPSHOT",
+    parallelExecution in Test := false,
+    libraryDependencies ++= Seq(
+      "com.twitter" % "scalding_2.9.1"       % "0.5.3",
+      "com.twitter.elephantbird" % "elephant-bird-cascading2"       % "3.0.0" intransitive(),
+      "com.twitter.elephantbird" % "elephant-bird-core"       % "3.0.0" intransitive(),
+      "org.slf4j" % "slf4j-log4j12"          % "1.6.4" % "runtime",
+      "com.google.protobuf" % "protobuf-java" % "2.3.0",
+      "org.apache.thrift" % "libthrift" % "0.5.0",
+      "cascading" % "cascading-hadoop" % "2.0.0-wip-288",
+      /* Test dependencies */
+      "org.scala-tools.testing" % "specs_2.9.1" % "1.6.9" % "test"
+    ),
+    resolvers ++= (proxyRepo match {
+      case None => Seq(
+        "elephant-bird repo" at "http://oss.sonatype.org/content/repositories/comtwitter-286",
+        "Concurrent Maven Repo" at "http://conjars.org/repo")
+      case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
+    }),
+
+    mainClass in (Compile, run) := Some("com.twitter.zipkin.hadoop.ProcessPopularKeys"),
+
+    mainClass in assembly := Some("com.twitter.zipkin.hadoop.ProcessPopularKeys"),
+
+    ivyXML := // slim down the jar
+      <dependencies>
+          <exclude module="jms"/>
+          <exclude module="jmxri"/>
+          <exclude module="jmxtools"/>
+          <exclude org="com.sun.jdmk"/>
+          <exclude org="com.sun.jmx"/>
+          <exclude org="javax.jms"/>
+          <exclude org="org.mortbay.jetty"/>
+      </dependencies>,
+    mergeStrategy in assembly := {
+      case inf if inf.startsWith("META-INF/") || inf.startsWith("project.clj") => MergeStrategy.discard
+      case _ => MergeStrategy.deduplicate
+    }
+  ).dependsOn(thrift)
+
 
   lazy val test   = Project(
     id = "zipkin-test",

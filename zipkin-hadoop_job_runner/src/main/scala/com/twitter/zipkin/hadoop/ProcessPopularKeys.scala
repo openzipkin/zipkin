@@ -1,0 +1,91 @@
+/*
+* Copyright 2012 Twitter Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+package com.twitter.zipkin.hadoop
+
+import org.apache.thrift.TException
+import org.apache.thrift.protocol.TBinaryProtocol
+import scala.collection.JavaConverters._
+import org.apache.thrift.transport.{TFramedTransport, TSocket, TTransport, TTransportException}
+import java.io.{FileNotFoundException, File}
+import com.twitter.zipkin.gen
+import java.net.SocketException
+import java.util.Scanner
+
+/**
+ * Runs the PopularKeysClient on the input
+ */
+object ProcessPopularKeys {
+  def main(args : Array[String]) {
+    val c = new PopularKeysClient()
+    val portNumber = augmentString(args(2)).toLong
+    c.start(args(0), args(1), portNumber)
+  }
+}
+
+/**
+ * Connects to the server, then processes data from PopularKeys and sends it there
+ */
+class PopularKeysClient {
+  /**
+   * Given a file name, the server name and port number, connects to the server, then writes to it
+   * the top 100 key values per service name given the data in filename
+   * @param filename
+   * @param serverName
+   * @param portNumber
+   */
+  def start(filename : String, serverName : String, portNumber : Long) {
+    var transport : TTransport = null
+    try {
+      // establish connection to the server
+      transport = new TFramedTransport(new TSocket(serverName, portNumber))
+      val protocol = new TBinaryProtocol(transport)
+      val client = new gen.ZipkinCollector.Client(protocol)
+      transport.open()
+      // Read file
+      val s = new Scanner(new File(filename))
+      var line : Scanner = new Scanner(s.nextLine())
+      if (!s.hasNextLine()) return
+      var oldService : String = line.next()
+      var keys : List[String] = List(line.next())
+      while (s.hasNextLine()) {
+        line = new Scanner(s.nextLine())
+        val currentString = line.next()
+        // Keep adding the keys to the current service's list until we are done with that service
+        if (oldService != currentString) {
+          // when we are, write that list to the server
+          client.storeTopKeyValueAnnotations(oldService, keys.asJava)
+          // and start processing the new one
+          keys = List(line.next())
+          oldService = currentString
+        } else {
+          keys = line.next() :: keys
+        }
+      }
+      // Write the last service in the file and its keys as well
+      client.storeTopKeyValueAnnotations(oldService, keys.asJava)
+    } catch {
+      case se: SocketException => se.printStackTrace()
+      case tte : TTransportException => tte.printStackTrace()
+      case te : TException => te.printStackTrace()
+      case e : Exception => e.printStackTrace()
+    } finally {
+      if (transport != null)
+        transport.close()
+    }
+  }
+}
+
