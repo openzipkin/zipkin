@@ -23,7 +23,7 @@ import org.apache.thrift.transport.{TFramedTransport, TSocket, TTransport, TTran
 import java.io.{FileNotFoundException, File}
 import com.twitter.zipkin.gen
 import java.net.SocketException
-import java.util.Scanner
+import java.util.{Arrays, Scanner}
 
 /**
  * Runs the PopularKeysClient on the input
@@ -31,13 +31,15 @@ import java.util.Scanner
 object ProcessPopularKeys {
   def main(args : Array[String]) {
     val c = new PopularKeysClient()
-    val portNumber = augmentString(args(2)).toLong
-    c.start(args(0), args(1), portNumber)
+    val portNumber = augmentString(args(2)).toInt
+    val isKeyData = augmentString(args(3)).toBoolean
+    c.start(args(0), args(1), portNumber, isKeyData)
   }
 }
 
 /**
- * Connects to the server, then processes data from PopularKeys and sends it there
+ * Connects to the Zipkin Collector, then processes data from PopularKeys and sends it there. This powers the
+ * typeahead functionality for annotations
  */
 class PopularKeysClient {
   /**
@@ -47,7 +49,7 @@ class PopularKeysClient {
    * @param serverName
    * @param portNumber
    */
-  def start(filename : String, serverName : String, portNumber : Long) {
+  def start(filename : String, serverName : String, portNumber : Int, isKeyData : Boolean) {
     var transport : TTransport = null
     try {
       // establish connection to the server
@@ -64,19 +66,31 @@ class PopularKeysClient {
       while (s.hasNextLine()) {
         line = new Scanner(s.nextLine())
         val currentString = line.next()
+        var value = ""
+        while (line.hasNext()) {
+          value += " " + line.next()
+        }
         // Keep adding the keys to the current service's list until we are done with that service
         if (oldService != currentString) {
           // when we are, write that list to the server
-          client.storeTopKeyValueAnnotations(oldService, keys.asJava)
+          if (isKeyData)
+            client.storeTopKeyValueAnnotations(oldService, keys.asJava)
+          else
+            client.storeTopAnnotations(oldService, keys.asJava)
+          println("Writing " + keys.toString + " to service " + oldService)
           // and start processing the new one
-          keys = List(line.next())
+          keys = List(value)
           oldService = currentString
         } else {
-          keys = line.next() :: keys
+          keys = keys ::: List(value)
         }
       }
       // Write the last service in the file and its keys as well
-      client.storeTopKeyValueAnnotations(oldService, keys.asJava)
+      if (isKeyData)
+        client.storeTopKeyValueAnnotations(oldService, keys.asJava)
+      else
+        client.storeTopAnnotations(oldService, keys.asJava)
+      println("Writing " + keys.toString + " to service " + oldService)
     } catch {
       case se: SocketException => se.printStackTrace()
       case tte : TTransportException => tte.printStackTrace()

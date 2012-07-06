@@ -19,12 +19,13 @@ HOSTNAME=$1
 HDFSFILENAME=$2 
 SERVERNAME=$3
 PORTNUMBER=$4
+ISKEYDATA=$5
 
 #Get the file location for the jar file with all the dependencies and moves it to where the job is being run  
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DIR="$(dirname "$DIR")"
 DIR="$(dirname "$DIR")"
-scp $DIR/target/zipkin-hadoop_job_runner-assembly-0.2.0-SNAPSHOT.jar $HOSTNAME:.
+scp $DIR/target/zipkin-hadoop-job-runner-assembly-0.2.0-SNAPSHOT.jar $HOSTNAME:.
 
 #Reads the input into the server
-ssh -C $HOSTNAME "java -cp zipkin-hadoop_job_runner-assembly-0.2.0-SNAPSHOT.jar com.twitter.zipkin.hadoop.ProcessPopularKeys "$HDFSFILENAME" "$SERVERNAME" "$PORTNUMBER
+ssh -C $HOSTNAME "java -cp zipkin-hadoop-job-runner-assembly-0.2.0-SNAPSHOT.jar com.twitter.zipkin.hadoop.ProcessPopularKeys "$HDFSFILENAME" "$SERVERNAME" "$PORTNUMBER" "$ISKEYDATA
