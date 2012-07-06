@@ -15,13 +15,12 @@
  */
 package com.twitter.zipkin.query.conversions
 
-import com.twitter.zipkin.gen
-import com.twitter.zipkin.common.{IncompleteTraceDataException, Endpoint, Trace}
-import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.common._
+import com.twitter.zipkin.query.{TraceTimeline, TimelineAnnotation}
 
-class TraceToTimeline {
+object TraceToTimeline {
 
-  def toTraceTimeline(trace: Trace): Option[gen.TraceTimeline] = {
+  def apply(trace: Trace): Option[TraceTimeline] = {
 
     if (trace.spans.isEmpty) {
       return None
@@ -30,16 +29,18 @@ class TraceToTimeline {
     // convert span and annotation to timeline annotation
     val annotations = trace.spans.flatMap(s =>
       s.annotations.map{ a =>
-        gen.TimelineAnnotation(a.timestamp, a.value,
+        TimelineAnnotation(
+          a.timestamp,
+          a.value,
           a.host match {
-            case Some(s) => ThriftAdapter(s)
-            case None => ThriftAdapter(Endpoint.Unknown)
+            case Some(s) => s
+            case None => Endpoint.Unknown
           },
           s.id,
           s.parentId,
           a.host match {
             case Some(s) => s.serviceName
-             case None => "Unknown"
+            case None => "Unknown"
           },
           s.name)
       }
@@ -53,7 +54,7 @@ class TraceToTimeline {
     val rootSpanId = trace.getRootMostSpan.getOrElse(return None).id
     val id = trace.id.getOrElse(return None)
 
-    Some(gen.TraceTimeline(id, rootSpanId, annotations, trace.getBinaryAnnotations))
+    Some(TraceTimeline(id, rootSpanId, annotations, trace.getBinaryAnnotations))
   }
 
 }
