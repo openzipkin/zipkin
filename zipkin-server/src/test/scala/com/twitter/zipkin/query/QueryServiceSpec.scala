@@ -25,8 +25,8 @@ import com.twitter.zipkin.common._
 import java.nio.ByteBuffer
 import com.twitter.util.Future
 import com.twitter.scrooge.BinaryThriftStructSerializer
-import com.twitter.zipkin.adapter.ThriftAdapter
 import com.twitter.zipkin.storage.{Aggregates, TraceIdDuration, Storage, Index}
+import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
 
 class QueryServiceSpec extends Specification with JMocker with ClassMocker {
   val ep1 = Endpoint(123, 123, "service1")
@@ -181,7 +181,7 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
       }
       val trace = trace1.toThrift
       val summary = ThriftAdapter(TraceSummary(1, 100, 150, 50, Map("service1" -> 1), List(ep1)))
-      val timeline = trace1.toTimeline
+      val timeline = trace1.toTimeline.map(ThriftQueryAdapter(_))
       val combo = gen.TraceCombo(trace, Some(summary), timeline, Some(Map(666L -> 1)))
       Seq(combo) mustEqual qs.getTraceCombosByIds(List(traceId), List())()
     }
