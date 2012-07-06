@@ -32,6 +32,7 @@ trait Adapter {
   type binaryAnnotationType  /* corresponds to com.twitter.zipkin.common.BinaryAnnotation */
   type endpointType          /* corresponds to com.twitter.zipkin.common.Endpoint         */
   type spanType              /* corresponds to com.twitter.zipkin.common.Span             */
+  type traceSummaryType      /* corresponds to com.twitter.zipkin.common.TraceSummary     */
 
   def apply(a: annotationType): Annotation
   def apply(a: Annotation): annotationType
@@ -47,4 +48,7 @@ trait Adapter {
 
   def apply(s: spanType): Span
   def apply(s: Span): spanType
+
+  def apply(t: traceSummaryType): TraceSummary
+  def apply(t: TraceSummary): traceSummaryType
 }
