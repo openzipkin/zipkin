@@ -67,6 +67,7 @@ class PopularKeysClient {
         line = new Scanner(s.nextLine())
         val currentString = line.next()
         var value = ""
+        if (line.hasNext()) value = line.next()
         while (line.hasNext()) {
           value += " " + line.next()
         }
@@ -90,7 +91,6 @@ class PopularKeysClient {
         client.storeTopKeyValueAnnotations(oldService, keys.asJava)
       else
         client.storeTopAnnotations(oldService, keys.asJava)
-      println("Writing " + keys.toString + " to service " + oldService)
     } catch {
       case se: SocketException => se.printStackTrace()
       case tte : TTransportException => tte.printStackTrace()
