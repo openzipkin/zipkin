@@ -18,24 +18,26 @@ package com.twitter.zipkin.hadoop
 
 
 import com.twitter.scalding._
-import sources.{PreprocessedSpanSource, Util}
-import com.twitter.zipkin.gen.{SpanServiceName, BinaryAnnotation, Span}
+import sources.PreprocessedSpanSource
+import com.twitter.zipkin.gen.{SpanServiceName, Annotation}
 
 /**
- * Per service, find the 100 most common keys used to annotate spans involving that service
+ * Per service, find the 100 most common annotations used to annotate spans involving that service
  */
-class PopularKeys(args : Args) extends Job(args) with DefaultDateRangeJob {
+class PopularAnnotations(args : Args) extends Job(args) with DefaultDateRangeJob {
 
   val preprocessed = PreprocessedSpanSource()
     .read
-    .mapTo(0 -> ('service, 'binary_annotations))
-      { s: SpanServiceName => (s.service_name, s.binary_annotations.toList) }
+    .mapTo(0 -> ('service, 'annotations))
+  { s: SpanServiceName => (s.service_name, s.annotations.toList) }
 
 
   val result = preprocessed
-    .filter('binary_annotations){ ba : List[BinaryAnnotation] => (ba != null) && (ba.size > 0)  }
-    .flatMap('binary_annotations -> 'key) { ba : List[BinaryAnnotation]  => ba.map{b: BinaryAnnotation => b.key} }
-    .groupBy('service, 'key){ _.size('keyCount) }
+    .filter('annotations){ al : List[Annotation] => (al != null) && (al.size > 0)  }
+    .flatMap('annotations -> 'value) { ba : List[Annotation]  => ba.map{b: Annotation => b.value} }
+    .groupBy('service, 'value){ _.size('keyCount) }
+    // TODO Kinda hacky
+    .filter('keyCount) { count : Int => count > 1 }
     .groupBy('service) { _.sortBy('keyCount).reverse.take(100) }
     .discard('keyCount)
     .write(Tsv(args("output")))
