@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#Usage : find_data.sh hostname input_file_name server_name port_number
+#Usage : find_data.sh hostname input_file_name server_name port_number is_key_data
 
 HOSTNAME=$1
 HDFSFILENAME=$2 
