@@ -18,7 +18,9 @@ package com.twitter.zipkin.adapter
 import com.twitter.zipkin.common.Trace
 import com.twitter.zipkin.query.{TraceCombo, TraceTimeline, TimelineAnnotation}
 
-
+/**
+ * Adapter for query related structs
+ */
 trait QueryAdapter {
   type timelineAnnotationType /* corresponds to com.twitter.zipkin.query.TimelineAnnotation */
   type traceTimelineType      /* corresponds to com.twitter.zipkin.query.TraceTimeline */
