@@ -28,6 +28,7 @@ import com.twitter.zipkin.storage.{Aggregates, TraceIdDuration, Index, Storage}
 import java.nio.ByteBuffer
 import org.apache.thrift.TException
 import scala.collection.Set
+import com.twitter.zipkin.common.TraceSummary
 import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
 
 /**
@@ -179,8 +180,10 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     FTrace.recordBinary("numIds", traceIds.length)
 
     Stats.timeFutureMillis("query.getTracesByIds") {
-      storage.getTracesByIds(traceIds).map { id =>
-        id.map(adjusters.foldLeft(_)((trace, adjuster) => adjuster.adjust(trace)).toThrift)
+      storage.getTracesByIds(traceIds).map { traces =>
+        traces.map { trace =>
+          ThriftQueryAdapter(adjusters.foldLeft(trace)((t, adjuster) => adjuster.adjust(t)))
+        }
       } rescue {
         case e: Exception =>
           log.error(e, "getTracesByIds query failed")
@@ -201,8 +204,10 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     FTrace.recordBinary("numIds", traceIds.length)
 
     Stats.timeFutureMillis("query.getTraceTimelinesByIds") {
-      storage.getTracesByIds(traceIds).map { id =>
-        id.flatMap(adjusters.foldLeft(_)((trace, adjuster) => adjuster.adjust(trace)).toTimeline.map(ThriftQueryAdapter(_)))
+      storage.getTracesByIds(traceIds).map { traces =>
+        traces.flatMap { trace =>
+          TraceTimeline(adjusters.foldLeft(trace)((t, adjuster) => adjuster.adjust(t))).map(ThriftQueryAdapter(_))
+        }
       } rescue {
         case e: Exception =>
           log.error(e, "getTraceTimelinesByIds query failed")
@@ -223,8 +228,10 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     FTrace.recordBinary("numIds", traceIds.length)
 
     Stats.timeFutureMillis("query.getTraceSummariesByIds") {
-      storage.getTracesByIds(traceIds.toList).map { id =>
-        id.flatMap(adjusters.foldLeft(_)((trace, adjuster) => adjuster.adjust(trace)).toTraceSummary.map(ThriftAdapter(_)))
+      storage.getTracesByIds(traceIds.toList).map { traces =>
+        traces.flatMap { trace =>
+          TraceSummary(adjusters.foldLeft(trace)((t, adjuster) => adjuster.adjust(t))).map(ThriftAdapter(_))
+        }
       } rescue {
         case e: Exception =>
           log.error(e, "getTraceSummariesByIds query failed")
@@ -244,8 +251,10 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     FTrace.recordBinary("numIds", traceIds.length)
 
     Stats.timeFutureMillis("query.getTraceComboByIds") {
-      storage.getTracesByIds(traceIds).map { id =>
-        id.map(adjusters.foldLeft(_)((trace, adjuster) => adjuster.adjust(trace)).toTraceCombo.map(ThriftQueryAdapter(_)))
+      storage.getTracesByIds(traceIds).map { traces =>
+        traces.map { trace =>
+          ThriftQueryAdapter(TraceCombo(adjusters.foldLeft(trace)((t, adjuster) => adjuster.adjust(t))))
+        }
       } rescue {
         case e: Exception =>
           log.error(e, "getTraceCombosByIds query failed")

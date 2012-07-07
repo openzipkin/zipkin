@@ -3,7 +3,7 @@ package com.twitter.zipkin.query
 import com.twitter.zipkin.common.{Trace, TraceSummary}
 
 object TraceCombo {
-  def apply(trace: Trace) {
+  def apply(trace: Trace): TraceCombo = {
     TraceCombo(trace, TraceSummary(trace), TraceTimeline(trace), trace.toSpanDepths)
   }
 }
