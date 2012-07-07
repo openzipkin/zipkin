@@ -15,6 +15,7 @@
  */
 package com.twitter.zipkin.query.adjusters
 
+import com.twitter.zipkin.query.SpanTreeEntry
 import com.twitter.zipkin.common.{Span, SpanTreeEntry}
 
 trait AdjusterMessage

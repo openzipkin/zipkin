@@ -16,11 +16,13 @@
 package com.twitter.zipkin.adapter
 
 import com.twitter.zipkin.gen
-import com.twitter.zipkin.query.{TraceTimeline, TimelineAnnotation}
+import com.twitter.zipkin.query.{Trace, TraceCombo, TraceTimeline, TimelineAnnotation}
 
 object ThriftQueryAdapter extends QueryAdapter {
   type timelineAnnotationType = gen.TimelineAnnotation
   type traceTimelineType = gen.TraceTimeline
+  type traceComboType = gen.TraceCombo
+  type traceType = gen.Trace
 
   /* TimelineAnnotation from Thrift */
   def apply(t: timelineAnnotationType): TimelineAnnotation = {
@@ -62,5 +64,33 @@ object ThriftQueryAdapter extends QueryAdapter {
       t.rootSpanId,
       t.annotations.map { ThriftQueryAdapter(_) },
       t.binaryAnnotations.map { ThriftAdapter(_) })
+  }
+
+  /* TraceCombo from Thrift */
+  def apply(t: traceComboType): TraceCombo = {
+    TraceCombo(
+      ThriftQueryAdapter(t.`trace`),
+      t.`summary`.map(ThriftAdapter(_)),
+      t.`timeline`.map(ThriftQueryAdapter(_)),
+      t.`spanDepths`.map(_.toMap))
+  }
+
+  /* TraceCombo to Thrift */
+  def apply(t: TraceCombo): traceComboType = {
+    gen.TraceCombo(
+      ThriftQueryAdapter(t.trace),
+      t.traceSummary.map(ThriftAdapter(_)),
+      t.traceTimeline.map(ThriftQueryAdapter(_)),
+      t.spanDepths)
+  }
+
+  /* Trace from Thrift */
+  def apply(t: traceType): Trace = {
+    Trace(t.`spans`.map(ThriftAdapter(_)))
+  }
+
+  /* Trace to Thrift */
+  def apply(t: Trace): traceType = {
+    gen.Trace(t.spans.map(ThriftAdapter(_)))
   }
 }

@@ -20,7 +20,7 @@ import com.twitter.conversions.time._
 import com.twitter.logging.Logger
 import com.twitter.ostrich.stats.Stats
 import com.twitter.ostrich.admin.Service
-import com.twitter.finagle.tracing.Trace
+import com.twitter.finagle.tracing.{Trace => FTrace}
 import com.twitter.util.Future
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.query.adjusters.Adjuster
@@ -82,11 +82,11 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     // do we have a valid span name to query indexes by?
     val span = convertToOption(spanName)
 
-    Trace.recordBinary("serviceName", serviceName)
-    Trace.recordBinary("spanName", spanName)
-    Trace.recordBinary("endTs", endTs)
-    Trace.recordBinary("limit", limit)
-    Trace.recordBinary("order", order)
+    FTrace.recordBinary("serviceName", serviceName)
+    FTrace.recordBinary("spanName", spanName)
+    FTrace.recordBinary("endTs", endTs)
+    FTrace.recordBinary("limit", limit)
+    FTrace.recordBinary("order", order)
 
     Stats.timeFutureMillis("query.getTraceIdsByName") {
       {
@@ -115,10 +115,10 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       return Future.exception(gen.QueryException("No service name provided, we need one"))
     }
 
-    Trace.recordBinary("serviceName", serviceName)
-    Trace.recordBinary("endTs", endTs)
-    Trace.recordBinary("limit", limit)
-    Trace.recordBinary("order", order)
+    FTrace.recordBinary("serviceName", serviceName)
+    FTrace.recordBinary("endTs", endTs)
+    FTrace.recordBinary("limit", limit)
+    FTrace.recordBinary("order", order)
 
     Stats.timeFutureMillis("query.getTraceIdsByServiceName") {
       {
@@ -150,11 +150,11 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     // do we have a valid annotation value to query indexes by?
     val valueOption = convertToOption(value)
 
-    Trace.recordBinary("serviceName", serviceName)
-    Trace.recordBinary("annotation", annotation)
-    Trace.recordBinary("endTs", endTs)
-    Trace.recordBinary("limit", limit)
-    Trace.recordBinary("order", order)
+    FTrace.recordBinary("serviceName", serviceName)
+    FTrace.recordBinary("annotation", annotation)
+    FTrace.recordBinary("endTs", endTs)
+    FTrace.recordBinary("limit", limit)
+    FTrace.recordBinary("order", order)
 
     Stats.timeFutureMillis("query.getTraceIdsByAnnotation") {
       {
@@ -176,7 +176,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
 
     val adjusters = getAdjusters(adjust)
 
-    Trace.recordBinary("numIds", traceIds.length)
+    FTrace.recordBinary("numIds", traceIds.length)
 
     Stats.timeFutureMillis("query.getTracesByIds") {
       storage.getTracesByIds(traceIds).map { id =>
@@ -198,7 +198,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
 
     val adjusters = getAdjusters(adjust)
 
-    Trace.recordBinary("numIds", traceIds.length)
+    FTrace.recordBinary("numIds", traceIds.length)
 
     Stats.timeFutureMillis("query.getTraceTimelinesByIds") {
       storage.getTracesByIds(traceIds).map { id =>
@@ -220,7 +220,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
 
     val adjusters = getAdjusters(adjust)
 
-    Trace.recordBinary("numIds", traceIds.length)
+    FTrace.recordBinary("numIds", traceIds.length)
 
     Stats.timeFutureMillis("query.getTraceSummariesByIds") {
       storage.getTracesByIds(traceIds.toList).map { id =>
@@ -241,11 +241,11 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
 
     val adjusters = getAdjusters(adjust)
 
-    Trace.recordBinary("numIds", traceIds.length)
+    FTrace.recordBinary("numIds", traceIds.length)
 
     Stats.timeFutureMillis("query.getTraceComboByIds") {
       storage.getTracesByIds(traceIds).map { id =>
-        id.map(adjusters.foldLeft(_)((trace, adjuster) => adjuster.adjust(trace)).toTraceCombo)
+        id.map(adjusters.foldLeft(_)((trace, adjuster) => adjuster.adjust(trace)).toTraceCombo.map(ThriftQueryAdapter(_)))
       } rescue {
         case e: Exception =>
           log.error(e, "getTraceCombosByIds query failed")

@@ -21,6 +21,7 @@ import com.twitter.zipkin.gen
 import collection.mutable
 import java.nio.ByteBuffer
 import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.query.SpanTreeEntry
 
 class TraceSpec extends Specification {
 

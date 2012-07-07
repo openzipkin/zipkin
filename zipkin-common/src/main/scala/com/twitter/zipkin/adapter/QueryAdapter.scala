@@ -15,15 +15,24 @@
  */
 package com.twitter.zipkin.adapter
 
-import com.twitter.zipkin.query.{TraceTimeline, TimelineAnnotation}
+import com.twitter.zipkin.query.{Trace, TraceCombo, TraceTimeline, TimelineAnnotation}
+
 
 trait QueryAdapter {
   type timelineAnnotationType /* corresponds to com.twitter.zipkin.query.TimelineAnnotation */
   type traceTimelineType      /* corresponds to com.twitter.zipkin.query.TraceTimeline */
+  type traceComboType         /* corresponds to com.twitter.zipkin.query.TraceCombo */
+  type traceType              /* corresponds to com.twitter.zipkin.query.Trace */
 
   def apply(t: timelineAnnotationType): TimelineAnnotation
   def apply(t: TimelineAnnotation): timelineAnnotationType
 
   def apply(t: traceTimelineType): TraceTimeline
   def apply(t: TraceTimeline): traceTimelineType
+
+  def apply(t: traceComboType): TraceCombo
+  def apply(t: TraceCombo): traceComboType
+
+  def apply(t: traceType): Trace
+  def apply(t: Trace): traceType
 }

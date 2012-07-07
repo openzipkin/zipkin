@@ -15,7 +15,45 @@
  */
 package com.twitter.zipkin.query
 
-import com.twitter.zipkin.common.BinaryAnnotation
+import com.twitter.zipkin.common.{Endpoint, BinaryAnnotation}
+
+object TraceTimeline {
+  def apply(trace: Trace): Option[TraceTimeline] = {
+    if (trace.spans.isEmpty) {
+      return None
+    }
+
+    // convert span and annotation to timeline annotation
+    val annotations = trace.spans.flatMap(s =>
+      s.annotations.map{ a =>
+        TimelineAnnotation(
+          a.timestamp,
+          a.value,
+          a.host match {
+            case Some(s) => s
+            case None => Endpoint.Unknown
+          },
+          s.id,
+          s.parentId,
+          a.host match {
+            case Some(s) => s.serviceName
+            case None => "Unknown"
+          },
+          s.name)
+      }
+    ).sortWith((a, b) => {
+      a.timestamp < b.timestamp
+
+      // TODO also sort so that events that must have happened first (cs before sr for example)
+      // end up in the right order
+    })
+
+    val rootSpanId = trace.getRootMostSpan.getOrElse(return None).id
+    val id = trace.id.getOrElse(return None)
+
+    Some(TraceTimeline(id, rootSpanId, annotations, trace.getBinaryAnnotations))
+  }
+}
 
 /**
  * Query side struct that contains
