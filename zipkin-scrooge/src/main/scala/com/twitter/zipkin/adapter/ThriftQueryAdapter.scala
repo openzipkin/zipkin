@@ -16,7 +16,8 @@
 package com.twitter.zipkin.adapter
 
 import com.twitter.zipkin.gen
-import com.twitter.zipkin.query.{Trace, TraceCombo, TraceTimeline, TimelineAnnotation}
+import com.twitter.zipkin.query.{TraceCombo, TraceTimeline, TimelineAnnotation}
+import com.twitter.zipkin.common.Trace
 
 object ThriftQueryAdapter extends QueryAdapter {
   type timelineAnnotationType = gen.TimelineAnnotation

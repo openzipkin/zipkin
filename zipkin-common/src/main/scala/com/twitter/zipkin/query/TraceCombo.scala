@@ -1,6 +1,6 @@
 package com.twitter.zipkin.query
 
-import com.twitter.zipkin.common.TraceSummary
+import com.twitter.zipkin.common.{Trace, TraceSummary}
 
 object TraceCombo {
   def apply(trace: Trace) {

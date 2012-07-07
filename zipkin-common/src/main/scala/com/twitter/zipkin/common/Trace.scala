@@ -1,10 +1,10 @@
-package com.twitter.zipkin.query
+package com.twitter.zipkin.common
 
 import com.twitter.logging.Logger
 import java.nio.ByteBuffer
-import com.twitter.zipkin.common.{BinaryAnnotation, Endpoint, Span}
 import scala.collection.mutable
 import com.twitter.finagle.tracing.{Trace => FTrace}
+import com.twitter.zipkin.query.SpanTreeEntry
 
 /**
  * A chunk of time, between a start and an end.

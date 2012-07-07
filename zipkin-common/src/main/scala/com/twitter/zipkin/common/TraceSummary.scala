@@ -17,7 +17,6 @@
 package com.twitter.zipkin.common
 
 import scala.collection.Map
-import com.twitter.zipkin.query.Trace
 
 object TraceSummary {
 

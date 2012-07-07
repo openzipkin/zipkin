@@ -15,7 +15,8 @@
  */
 package com.twitter.zipkin.adapter
 
-import com.twitter.zipkin.query.{Trace, TraceCombo, TraceTimeline, TimelineAnnotation}
+import com.twitter.zipkin.common.Trace
+import com.twitter.zipkin.query.{TraceCombo, TraceTimeline, TimelineAnnotation}
 
 
 trait QueryAdapter {
