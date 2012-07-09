@@ -15,7 +15,8 @@
  */
 package com.twitter.zipkin.query.adjusters
 
-import com.twitter.zipkin.common.{Span, SpanTreeEntry}
+import com.twitter.zipkin.query.SpanTreeEntry
+import com.twitter.zipkin.common.Span
 
 trait AdjusterMessage
 case class AdjusterWarning(msg: String) extends AdjusterMessage

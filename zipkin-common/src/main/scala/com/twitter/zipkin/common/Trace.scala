@@ -1,50 +1,37 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.twitter.zipkin.common
 
-import com.twitter.zipkin.gen
-import collection.mutable
-import mutable.HashMap
 import com.twitter.logging.Logger
 import java.nio.ByteBuffer
+import scala.collection.mutable
 import com.twitter.finagle.tracing.{Trace => FTrace}
-import com.twitter.zipkin.query.conversions.TraceToTimeline
-import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
-import com.twitter.zipkin.query.TraceTimeline
-
-/**
- * Represents a trace, a bundle of spans.
- */
-object Trace {
-
-  def apply(spanTree: SpanTreeEntry): Trace = Trace(spanTree.toList)
-
-  def fromThrift(trace: gen.Trace): Trace = {
-    new Trace(trace.spans.map(ThriftAdapter(_)).toList)
-  }
-
-}
-
+import com.twitter.zipkin.query.SpanTreeEntry
 
 /**
  * A chunk of time, between a start and an end.
  */
 case class Timespan(start: Long, end: Long)
 
+/**
+ * Represents a trace, a bundle of spans.
+ */
+object Trace {
+  def apply(spanTree: SpanTreeEntry): Trace = Trace(spanTree.toList)
+}
 
 case class Trace(spans: Seq[Span]) {
 
@@ -61,7 +48,9 @@ case class Trace(spans: Seq[Span]) {
   /**
    * Find the root span of this trace and return
    */
-  def getRootSpan: Option[Span] = spans.find { s => s.parentId == None }
+  def getRootSpan: Option[Span] = spans.find {
+    s => s.parentId == None
+  }
 
   /**
    * In some cases we don't care if it's the actual root span or just the span
@@ -72,8 +61,9 @@ case class Trace(spans: Seq[Span]) {
   lazy val getRootMostSpan: Option[Span] = {
     getRootSpan.orElse {
       val idSpan = getIdToSpanMap
-      spans.headOption.map { s =>
-        recursiveGetRootMostSpan(idSpan, s)
+      spans.headOption.map {
+        s =>
+          recursiveGetRootMostSpan(idSpan, s)
       }
     }
   }
@@ -95,8 +85,8 @@ case class Trace(spans: Seq[Span]) {
         a => a.timestamp
       }
     } match {
-      case Nil   => None // No annotations
-      case s @ _ => Some(Timespan(s.min, s.max))
+      case Nil => None // No annotations
+      case s@_ => Some(Timespan(s.min, s.max))
     }
   }
 
@@ -133,31 +123,6 @@ case class Trace(spans: Seq[Span]) {
     }
   }
 
-  def toThrift: gen.Trace = {
-    FTrace.record("toThrift")
-    gen.Trace(spans.map { ThriftAdapter(_) })
-  }
-
-  /**
-   * Return a summary of this trace or none if we
-   * cannot construct a trace summary. Could be that we have no spans.
-   */
-  def toTraceSummary: Option[TraceSummary] = {
-    FTrace.record("toTraceSummary")
-    for (traceId <- id; startEnd <- getStartAndEndTimestamp)
-      yield TraceSummary(traceId, startEnd.start, startEnd.end, (startEnd.end - startEnd.start).toInt,
-        serviceCounts, endpoints.toList)
-  }
-
-  def toTimeline: Option[TraceTimeline] = {
-    FTrace.record("toTimeline")
-    TraceToTimeline(this)
-  }
-
-  def toTraceCombo: gen.TraceCombo = {
-    gen.TraceCombo(toThrift, toTraceSummary.map(ThriftAdapter(_)), toTimeline.map(ThriftQueryAdapter(_)), toSpanDepths)
-  }
-
   /**
    * Figures out the "span depth". This is used in the ui
    * to figure out how to lay out the spans in the visualization.
@@ -179,7 +144,7 @@ case class Trace(spans: Seq[Span]) {
    */
   def getBinaryAnnotationsByKey(key: String): Seq[ByteBuffer] = {
     spans.flatMap(_.binaryAnnotations.collect {
-      case gen.BinaryAnnotation(bKey, bValue, _, _) if (bKey == key) => bValue
+      case BinaryAnnotation(bKey, bValue, _, _) if (bKey == key) => bValue
     }.toSeq)
   }
 
@@ -202,13 +167,13 @@ case class Trace(spans: Seq[Span]) {
     new Trace(mergeBySpanId(spans).toList)
   }
 
-    /**
+  /**
    * Merge all the spans objects with the same span ids into one per id.
    * We store parts of spans in different columns in order to make writes
    * faster and simpler. This means we have to merge them correctly on read.
    */
-  private def mergeBySpanId(spans: Iterable[Span]) : Iterable[Span] = {
-    val spanMap = new HashMap[Long, Span]
+  private def mergeBySpanId(spans: Iterable[Span]): Iterable[Span] = {
+    val spanMap = new mutable.HashMap[Long, Span]
     spans.foreach(s => {
       val oldSpan = spanMap.get(s.id)
       oldSpan match {
@@ -239,7 +204,9 @@ case class Trace(spans: Seq[Span]) {
   /*
    * Turn the Trace into a map of Span Id -> Span
    */
-  def getIdToSpanMap: Map[Long, Span] = spans.map{ s => (s.id, s)}.toMap
+  def getIdToSpanMap: Map[Long, Span] = spans.map {
+    s => (s.id, s)
+  }.toMap
 
   /**
    * Get the spans of this trace in a tree form. SpanTreeEntry wraps a Span and it's children.
@@ -262,10 +229,11 @@ case class Trace(spans: Seq[Span]) {
    */
   def sortedByTimestamp: Trace = {
     Trace {
-      spans.sortWith{(a, b) =>
-        val aTimestamp = a.firstAnnotation.map(_.timestamp).getOrElse(Long.MaxValue)
-        val bTimestamp = b.firstAnnotation.map(_.timestamp).getOrElse(Long.MaxValue)
-        aTimestamp < bTimestamp
+      spans.sortWith {
+        (a, b) =>
+          val aTimestamp = a.firstAnnotation.map(_.timestamp).getOrElse(Long.MaxValue)
+          val bTimestamp = b.firstAnnotation.map(_.timestamp).getOrElse(Long.MaxValue)
+          aTimestamp < bTimestamp
       }
     }
   }
@@ -279,5 +247,4 @@ case class Trace(spans: Seq[Span]) {
       case None => println("No root node found")
     }
   }
-
 }

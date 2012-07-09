@@ -20,7 +20,8 @@ import org.specs.Specification
 import com.twitter.zipkin.gen
 import collection.mutable
 import java.nio.ByteBuffer
-import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.query.SpanTreeEntry
+import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
 
 class TraceSpec extends Specification {
 
@@ -52,8 +53,8 @@ class TraceSpec extends Specification {
       val span = Span(12345, "methodcall", 666, None,
         List(Annotation(1, "boaoo", None)), Nil)
       val expectedTrace = Trace(List[Span](span))
-      val thriftTrace = expectedTrace.toThrift
-      val actualTrace = Trace.fromThrift(thriftTrace)
+      val thriftTrace = ThriftQueryAdapter(expectedTrace)
+      val actualTrace = ThriftQueryAdapter(thriftTrace)
       expectedTrace mustEqual actualTrace
     }
 
@@ -90,7 +91,7 @@ class TraceSpec extends Specification {
       val span2 = Span(123, "method_2", 200, Some(100), ann2, Nil)
 
       val trace = new Trace(Seq(span1, span2))
-      val duration = trace.toTraceSummary.get.durationMicro
+      val duration = TraceSummary(trace).get.durationMicro
       duration mustEqual 12
     }
 
