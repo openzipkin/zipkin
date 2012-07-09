@@ -17,15 +17,19 @@ require 'ipaddr'
 class Names
 
   def self.get_service_names
+    tmp = nil
     ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
-      client.getServiceNames().sort
+      tmp = client.getServiceNames().sort
     end
+    tmp
   end
 
   def self.get_span_names(service_name)
+    tmp = nil
     ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
-      client.getSpanNames(service_name).sort
+      tmp = client.getSpanNames(service_name).sort
     end
+    tmp
   end
 
 end

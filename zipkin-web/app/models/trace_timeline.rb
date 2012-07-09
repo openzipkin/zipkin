@@ -44,12 +44,14 @@ class TraceTimeline
   end
 
   def self.get_trace_timelines_by_ids(trace_ids, opts = {})
+    tmp = nil
     ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
       adjusters = [] # [Zipkin::Adjust::TIME_SKEW] #TODO config
       ids = trace_ids.collect { |id| id.to_i }
       timelines = client.getTraceTimelinesByIds(ids, adjusters)
-      timelines.collect { |timeline| TraceTimeline.from_thrift(timeline) }
+      tmp = timelines.collect { |timeline| TraceTimeline.from_thrift(timeline) }
     end
+    tmp
   end
 
   def start_timestamp
