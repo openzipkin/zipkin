@@ -25,7 +25,7 @@ import com.twitter.zipkin.adapter.ThriftAdapter
 import com.twitter.zipkin.query.{TimelineAnnotation, TraceTimeline}
 import com.twitter.zipkin.common._
 
-class TraceToTimelineSpec extends Specification with JMocker with ClassMocker {
+class TraceTimelineSpec extends Specification with JMocker with ClassMocker {
 
 
 //T = 0	 koalabird-cuckoo	 ValuesFromSource	 Server receive	 10.34.238.111 ():9149
@@ -103,14 +103,14 @@ class TraceToTimelineSpec extends Specification with JMocker with ClassMocker {
   val expectedTimeline = TraceTimeline(1, 2209720933601260005L, List(tAnn3, tAnn1, tAnn2,
     tAnn5, tAnn4, tAnn6), List(ba1))
 
-  "TraceToTimelineSpec" should {
+  "TraceTimelineSpec" should {
     "convert to timeline with correct annotations ordering" in {
-      val actualTimeline = TraceToTimeline(trace)
+      val actualTimeline = TraceTimeline(trace)
       Some(expectedTimeline) mustEqual actualTimeline
     }
 
     "return none if empty trace" in {
-      val actualTimeline = TraceToTimeline(new Trace(List()))
+      val actualTimeline = TraceTimeline(new Trace(List()))
       None mustEqual actualTimeline
     }
   }
