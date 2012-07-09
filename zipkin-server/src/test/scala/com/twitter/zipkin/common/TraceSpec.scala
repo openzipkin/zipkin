@@ -20,7 +20,8 @@ import org.specs.Specification
 import com.twitter.zipkin.gen
 import collection.mutable
 import java.nio.ByteBuffer
-import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.query.SpanTreeEntry
+import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
 
 class TraceSpec extends Specification {
 
@@ -52,8 +53,8 @@ class TraceSpec extends Specification {
       val span = Span(12345, "methodcall", 666, None,
         List(Annotation(1, "boaoo", None)), Nil)
       val expectedTrace = Trace(List[Span](span))
-      val thriftTrace = expectedTrace.toThrift
-      val actualTrace = Trace.fromThrift(thriftTrace)
+      val thriftTrace = ThriftQueryAdapter(expectedTrace)
+      val actualTrace = ThriftQueryAdapter(thriftTrace)
       expectedTrace mustEqual actualTrace
     }
 
@@ -90,7 +91,7 @@ class TraceSpec extends Specification {
       val span2 = Span(123, "method_2", 200, Some(100), ann2, Nil)
 
       val trace = new Trace(Seq(span1, span2))
-      val duration = trace.toTraceSummary.get.durationMicro
+      val duration = TraceSummary(trace).get.durationMicro
       duration mustEqual 12
     }
 
@@ -119,10 +120,10 @@ class TraceSpec extends Specification {
     }
 
     "getBinaryAnnotations" in {
-      val ba1 = gen.BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), gen.AnnotationType.String)
-      val span1 = Span(1L, "", 1L, None, List(), List(ThriftAdapter(ba1)))
-      val ba2 = gen.BinaryAnnotation("key2", ByteBuffer.wrap("value2".getBytes), gen.AnnotationType.String)
-      val span2 = Span(1L, "", 2L, None, List(), List(ThriftAdapter(ba2)))
+      val ba1 = BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), ThriftAdapter(gen.AnnotationType.String), None)
+      val span1 = Span(1L, "", 1L, None, List(), List(ba1))
+      val ba2 = BinaryAnnotation("key2", ByteBuffer.wrap("value2".getBytes), ThriftAdapter(gen.AnnotationType.String), None)
+      val span2 = Span(1L, "", 2L, None, List(), List(ba2))
 
       val trace = Trace(List[Span](span1, span2))
       Seq(ba1, ba2) mustEqual trace.getBinaryAnnotations

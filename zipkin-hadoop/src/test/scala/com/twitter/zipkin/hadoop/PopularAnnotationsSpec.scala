@@ -28,38 +28,43 @@ import scala.collection.mutable._
  * Tests that PopularKeys finds the most popular keys per service
  */
 
-class PopularKeysSpec extends Specification with TupleConversions {
+class PopularAnnotationsSpec extends Specification with TupleConversions {
 
   noDetailedDiffs()
 
   implicit val dateRange = DateRange(RichDate(123), RichDate(321))
 
   val endpoint = new gen.Endpoint(123, 666, "service")
+  val endpoint1 = new gen.Endpoint(123, 666, "service1")
   val span = new gen.SpanServiceName(12345, "methodcall", 666,
-    List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
+    List(new gen.Annotation(1000, "sr").setHost(endpoint)).asJava,
     List(new gen.BinaryAnnotation("hi", null, AnnotationType.BOOL)).asJava, "service")
   val span1 = new gen.SpanServiceName(12345, "methodcall", 666,
     List(new gen.Annotation(1000, "sr").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
-    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service")
+    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service1")
+  val span2 = new gen.SpanServiceName(12345, "methodcall", 666,
+    List(new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
+    List(new gen.BinaryAnnotation("bye", null, AnnotationType.BOOL)).asJava, "service1")
 
 
-  "PopularKeys" should {
-    "return a map with correct entries for each key" in {
-      JobTest("com.twitter.zipkin.hadoop.PopularKeys").
+  "PopularAnnotations" should {
+    "return a map with correct entries for each service" in {
+      JobTest("com.twitter.zipkin.hadoop.PopularAnnotations").
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(PreprocessedSpanSource(), Util.repeatSpan(span, 101, 0, 0) ::: Util.repeatSpan(span1, 50, 200, 0)).
+        source(PreprocessedSpanSource(), Util.repeatSpan(span, 101, 0, 0) ::: Util.repeatSpan(span1, 50, 200, 0) ::: Util.repeatSpan(span2, 10, 500, 0)).
         sink[(String, String)](Tsv("outputFile")) {
         val map = new HashMap[String, List[String]]()
         map("service") = Nil
+        map("service1") = Nil
         outputBuffer => outputBuffer foreach { e =>
           map(e._1) ::= e._2
         }
-        map("service") mustEqual List("bye", "hi")
+        map("service") mustEqual List("sr")
+        map("service1") mustEqual List("sr", "cr")
       }.run.finish
     }
-
   }
 }
 

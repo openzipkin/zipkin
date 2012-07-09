@@ -18,6 +18,19 @@ package com.twitter.zipkin.common
 
 import scala.collection.Map
 
+object TraceSummary {
+
+  /**
+   * Return a summary of this trace or none if we
+   * cannot construct a trace summary. Could be that we have no spans.
+   */
+  def apply(trace: Trace): Option[TraceSummary] = {
+    for (traceId <- trace.id; startEnd <- trace.getStartAndEndTimestamp)
+    yield TraceSummary(traceId, startEnd.start, startEnd.end, (startEnd.end - startEnd.start).toInt,
+      trace.serviceCounts, trace.endpoints.toList)
+  }
+}
+
 /**
  * @param traceId id of this trace
  * @param startTimestamp when did the trace start?

@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,18 +14,20 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.common
+package com.twitter.zipkin.query
+
+import com.twitter.zipkin.common.Span
 
 /**
  * This represents a tree version of a Trace.
  */
 case class SpanTreeEntry(span: Span, children: List[SpanTreeEntry]) {
 
-  def toList : List[Span] = {
+  def toList: List[Span] = {
     childrenToList(this)
   }
 
-  private def childrenToList(span: SpanTreeEntry) : List[Span] = {
+  private def childrenToList(span: SpanTreeEntry): List[Span] = {
     if (span.children.isEmpty) {
       List[Span](span.span)
     } else {
@@ -43,7 +45,7 @@ case class SpanTreeEntry(span: Span, children: List[SpanTreeEntry]) {
     // start out with this span's depth (at startDepth)
     // fold in the childrens depth (increase the current one by 1)
     children.foldLeft(Map(span.id -> startDepth))((prevMap, child) =>
-      prevMap ++ child.depths(startDepth+1)
+      prevMap ++ child.depths(startDepth + 1)
     )
   }
 
@@ -53,7 +55,7 @@ case class SpanTreeEntry(span: Span, children: List[SpanTreeEntry]) {
    */
   def printTree(indent: Int) {
     println("%s%s".format(" " * indent, span.toString))
-    children foreach(s => {
+    children foreach (s => {
       s.printTree(indent + 2)
     })
   }
