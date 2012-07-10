@@ -42,10 +42,12 @@ class TraceCombo
   end
 
   def self.get_trace_combos_by_ids(trace_ids, adjusters, opts = {})
+    tmp = nil
     ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
       combos = client.getTraceCombosByIds(trace_ids.collect { |id| id.to_i }, adjusters)
-      combos.collect { |combo| TraceCombo.from_thrift(combo) }
+      tmp = combos.collect { |combo| TraceCombo.from_thrift(combo) }
     end
+    tmp
   end
 
 end

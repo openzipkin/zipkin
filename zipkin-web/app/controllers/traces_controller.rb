@@ -119,16 +119,18 @@ class TracesController < ApplicationController
 
   def top_annotations
     service_name = params[:service_name] || ""
-    top_annotations = ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
-      client.getTopAnnotations(service_name)
+    top_annotations = nil
+    ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
+      top_annotations = client.getTopAnnotations(service_name)
     end
     render :json => top_annotations || []
   end
 
   def top_kv_annotations
     service_name = params[:service_name] || ""
-    top_annotations = ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
-      client.getTopKeyValueAnnotations(service_name)
+    top_annotations = nil
+    ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
+      top_annotations = client.getTopKeyValueAnnotations(service_name)
     end
     render :json => top_annotations || []
   end
