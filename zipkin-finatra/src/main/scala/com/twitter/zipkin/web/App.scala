@@ -24,8 +24,9 @@ import java.util.Calendar
 import com.twitter.util.Future
 import java.nio.ByteBuffer
 import com.capotej.finatra_core.FinatraRequest
-import com.twitter.zipkin.common.{TraceSummary, Endpoint}
-import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
+import com.twitter.zipkin.query.{TimelineAnnotation, TraceCombo, TraceTimeline}
+import com.twitter.zipkin.common._
 
 class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
 
@@ -122,7 +123,9 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
 
     try {
       toJson {
-        client.getTraceCombosByIds(ids, adjusters).map { _.map { _.`trace`}}.apply()
+        client.getTraceCombosByIds(ids, adjusters).map { _.map { ThriftQueryAdapter(_) }.head }.map{
+            JsonTraceCombo(_)
+        }.apply()
       }
     } catch {
       case e: Exception => {
@@ -194,3 +197,21 @@ object JsonTraceSummary {
 }
 case class JsonTraceSummary(traceId: String, startTimestamp: Long, endTimestamp: Long, durationMicro: Int,
                             serviceCounts: Map[String, Int], endpoints: List[Endpoint])
+
+case class JsonTrace(traceId: String, startTimestamp: Long, endTimestamp: Long, duration: Long, serviceCounts: Map[String, Int])
+
+object JsonTraceCombo {
+  def apply(combo: TraceCombo): JsonTraceCombo = {
+    val t = combo.trace
+    val jsonTrace = t.getStartAndEndTimestamp match {
+      case None =>
+        JsonTrace(t.id.map(_.toString).getOrElse(""), 0, 0, 0, t.serviceCounts)
+      case Some(Timespan(start, end)) =>{
+        JsonTrace(t.id.map(_.toString).getOrElse(""), start, end, end - start, t.serviceCounts)
+      }
+    }
+    JsonTraceCombo(jsonTrace, combo.traceSummary.map(JsonTraceSummary(_)), null, combo.spanDepths) //combo.traceSummary, combo.traceTimeline, combo.spanDepths)
+  }
+}
+case class JsonTraceCombo(trace: JsonTrace, traceSummary: Option[JsonTraceSummary], traceTimeline: Option[TraceTimeline],
+                      spanDepths: Option[Map[Long, Int]])
