@@ -177,10 +177,6 @@ class ShowObject(traceId: String) extends ExportObject {
   val inlineJs = "$(Zipkin.Application.Show.initialize(\"" + traceId + "\"));"
 }
 
-class QueryObject extends ExportObject {
-
-}
-
 object Globals {
   var rootUrl = "http://localhost/"
   val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
@@ -210,7 +206,7 @@ object JsonTraceCombo {
         JsonTrace(t.id.map(_.toString).getOrElse(""), start, end, end - start, t.serviceCounts)
       }
     }
-    JsonTraceCombo(jsonTrace, combo.traceSummary.map(JsonTraceSummary(_)), null, combo.spanDepths) //combo.traceSummary, combo.traceTimeline, combo.spanDepths)
+    JsonTraceCombo(jsonTrace, combo.traceSummary.map(JsonTraceSummary(_)), null, combo.spanDepths)
   }
 }
 case class JsonTraceCombo(trace: JsonTrace, traceSummary: Option[JsonTraceSummary], traceTimeline: Option[TraceTimeline],
