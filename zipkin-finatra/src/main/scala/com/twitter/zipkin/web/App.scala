@@ -16,22 +16,19 @@
  */
 package com.twitter.zipkin.web
 
+import com.capotej.finatra_core.FinatraRequest
 import com.posterous.finatra.FinatraApp
 import com.twitter.logging.Logger
+import com.twitter.util.Future
+import com.twitter.zipkin.adapter.{JsonQueryAdapter, JsonAdapter, ThriftQueryAdapter, ThriftAdapter}
 import com.twitter.zipkin.gen
+import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import com.twitter.util.Future
-import java.nio.ByteBuffer
-import com.capotej.finatra_core.FinatraRequest
-import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
-import com.twitter.zipkin.query.{TimelineAnnotation, TraceCombo, TraceTimeline}
-import com.twitter.zipkin.common._
 
 class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
 
   val log = Logger.get()
-
 
   get("/") { request =>
     render(path = "index.mustache", exports = new IndexObject)
@@ -72,7 +69,7 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
           case _ => {
             client.getTraceSummariesByIds(ids, adjusters).map {
               _.map { summary =>
-                JsonTraceSummary(ThriftAdapter(summary))
+                JsonAdapter(ThriftAdapter(summary))
               }
             }
           }
@@ -121,27 +118,18 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
     val ids = Seq(request.params("id").toLong)
     log.debug(ids.toString())
 
-    try {
-      toJson {
-        client.getTraceCombosByIds(ids, adjusters).map { _.map { ThriftQueryAdapter(_) }.head }.map{
-            JsonTraceCombo(_)
-        }.apply()
-      }
-    } catch {
-      case e: Exception => {
-        e.getStackTrace.map { elem =>
-          log.info(elem.toString)
-        }
-        toJson { Seq()}
-      }
+    toJson {
+      client.getTraceCombosByIds(ids, adjusters).map { _.map { ThriftQueryAdapter(_) }.head }.map{
+        JsonQueryAdapter(_)
+      }.apply()
     }
   }
 
-  get("/is_pinned") { request =>
+  get("/api/is_pinned") { request =>
 
   }
 
-  post("/pin") { request =>
+  post("/api/pin") { request =>
 
   }
 
@@ -185,29 +173,3 @@ object Globals {
   def getDate = dateFormat.format(Calendar.getInstance().getTime)
   def getTime = timeFormat.format(Calendar.getInstance().getTime)
 }
-
-
-object JsonTraceSummary {
-  def apply(t: TraceSummary): JsonTraceSummary =
-    JsonTraceSummary(t.traceId.toString, t.startTimestamp, t.endTimestamp, t.durationMicro, t.serviceCounts.toMap, t.endpoints)
-}
-case class JsonTraceSummary(traceId: String, startTimestamp: Long, endTimestamp: Long, durationMicro: Int,
-                            serviceCounts: Map[String, Int], endpoints: List[Endpoint])
-
-case class JsonTrace(traceId: String, startTimestamp: Long, endTimestamp: Long, duration: Long, serviceCounts: Map[String, Int])
-
-object JsonTraceCombo {
-  def apply(combo: TraceCombo): JsonTraceCombo = {
-    val t = combo.trace
-    val jsonTrace = t.getStartAndEndTimestamp match {
-      case None =>
-        JsonTrace(t.id.map(_.toString).getOrElse(""), 0, 0, 0, t.serviceCounts)
-      case Some(Timespan(start, end)) =>{
-        JsonTrace(t.id.map(_.toString).getOrElse(""), start, end, end - start, t.serviceCounts)
-      }
-    }
-    JsonTraceCombo(jsonTrace, combo.traceSummary.map(JsonTraceSummary(_)), null, combo.spanDepths)
-  }
-}
-case class JsonTraceCombo(trace: JsonTrace, traceSummary: Option[JsonTraceSummary], traceTimeline: Option[TraceTimeline],
-                      spanDepths: Option[Map[Long, Int]])
