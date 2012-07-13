@@ -16,25 +16,40 @@
 
 var Zipkin = Zipkin || {};
 Zipkin.Annotation = (function() {
+  var coreAnnotations = {
+    "cs": "Client send",
+    "cr": "Client receive",
+    "ss": "Server send",
+    "sr": "Server receive"
+  }
 
   var Annotation = function(config) {
     this.value     = config.value;
     this.timestamp = config.timestamp;
     this.host      = config.host;
-    this.hostName  = config.hostName;
     this.span      = config.span;
   };
 
-  Annotation.prototype.getValue     = function() { return this.value; };
+  Annotation.prototype.getValue     = function() {
+    if (coreAnnotations.hasOwnProperty(this.value)) {
+      return coreAnnotations[this.value];
+    }
+    return this.value;
+  };
   Annotation.prototype.getTimestamp = function() { return this.timestamp; };
   Annotation.prototype.getHost      = function() { return this.host; };
-  Annotation.prototype.getHostName  = function() { return this.hostName; };
+  Annotation.prototype.getHostName  = function() {
+    return [
+      (this.host.ipv4 >> 24) & 0xFF,
+      (this.host.ipv4 >> 16) & 0xFF,
+      (this.host.ipv4 >> 8) & 0xFF,
+      this.host.ipv4 & 0xFF].join(".");
+  };
   Annotation.prototype.getSpan      = function() { return this.span; };
 
   Annotation.prototype.setValue     = function(v) { this.value = v; };
   Annotation.prototype.setTimestamp = function(t) { this.timestamp = t; };
   Annotation.prototype.setHost      = function(h) { this.host = h; };
-  Annotation.prototype.setHostName  = function(h) { this.hostName = h; };
   Annotation.prototype.setSpan      = function(s) { this.span = s; };
 
   return Annotation;
@@ -44,7 +59,6 @@ Zipkin.fromRawAnnotation = function(rawAnnotation) {
   return new Zipkin.Annotation({
     value: rawAnnotation.value,
     timestamp: rawAnnotation.timestamp,
-    host: rawAnnotation.host,
-    hostName: rawAnnotation.hostname
+    host: rawAnnotation.host
   });
 };
