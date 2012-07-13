@@ -372,7 +372,7 @@ Zipkin.GetTrace = (function() {
         };
 
         var hoverCallback = function(span) {
-          spanDetails(span);
+          //spanDetails(span);
         };
 
         var spanDetails = function(span) {
@@ -381,7 +381,7 @@ Zipkin.GetTrace = (function() {
 
           var anns = $.map(span.getAnnotations(), function (a) {
             return {
-              startTime: (a.timestamp - start) / 1000,
+              startTime: (a.timestamp - start).toFixed(1),
               service: a.getSpan().getServiceName(),
               name: a.getSpan().getName(),
               annotation: a.getValue(),
