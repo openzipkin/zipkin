@@ -504,7 +504,7 @@ Zipkin.TraceSummary = (function(Zipkin) {
         if (a.getTimestamp() < min) {
           min = a.getTimestamp();
         }
-        if ($.inArray(a.getValue(), ["Client send", "Client receive", "Server send", "Server receive"]) == -1) {
+        if ($.inArray(a.getValue(), ["cs", "cr", "ss", "sr"]) == -1) {
           a.services = d.services;
           a.annotations = d.annotations;
           annotation_data.push(a);
@@ -514,7 +514,7 @@ Zipkin.TraceSummary = (function(Zipkin) {
     });
     var x = this.x, y = this.y;
 
-    var annotationsCx = function(d) { return x((d.getTimestamp()-min)/1000); };
+    var annotationsCx = function(d) { return x(d.getTimestamp()-min); };
     var annotationsCy = function(d, i) { return y(annotation_to_row[d.getValue() + d.getTimestamp()]) + y.rangeBand(); };
 
     /* Update */

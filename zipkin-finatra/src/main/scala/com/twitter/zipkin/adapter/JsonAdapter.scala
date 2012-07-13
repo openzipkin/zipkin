@@ -32,7 +32,7 @@ object JsonAdapter extends Adapter {
       case AnnotationType(3, _) => b.value.getInt              // i32
       case AnnotationType(4, _) => b.value.getLong             // i64
       case AnnotationType(5, _) => b.value.getDouble           // double
-      case AnnotationType(6, _) => new String(b.value.array()) // string
+      case AnnotationType(6, _) => new String(b.value.array(), b.value.position(), b.value.remaining()) // string
       case _ => {
         throw new Exception("Uh oh")
       }

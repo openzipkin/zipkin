@@ -41,6 +41,6 @@
   return new Zipkin.KvAnnotation({
     key: rawKvAnnotation.key,
     value: rawKvAnnotation.value,
-    annotationType: rawKvAnnotation.annotation_type
+    annotationType: rawKvAnnotation.annotationType
   });
  };

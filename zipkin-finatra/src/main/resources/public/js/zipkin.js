@@ -68,6 +68,55 @@ Zipkin.Util = (function(Zipkin) {
   };
 
   /**
+   * Takes a timestamp in milliseconds and returns a string describing
+   * the timestamp in relation to now
+   */
+  var timeAgoInWords = function(timestamp) {
+    var mapping = [
+      [60, "second"],
+      [60, "minute"],
+      [24, "hour"],
+      [7, "day"],
+      [52, "week"],
+      [0, "year"]
+    ];
+    var plural = function(word, value) {
+      if (value == 1) {
+        return word;
+      } else {
+        return word + "s";
+      }
+    };
+    var timeUnit = function(value, m) {
+      if (m.length == 1) {
+        return value[0][1];
+      }
+      if (value < m[0][0]) {
+        return [value, m[0][1]];
+      }
+      return timeUnit(value / m[0][0], m.slice(1));
+    };
+
+    var now = new Date().getTime()
+      , delta = Math.abs(now - timestamp) / 1000 // to seconds
+      , prefix = "about"
+      , timeValue = 1
+      , unit = "minute"
+      , suffix = "ago"
+      ;
+
+    if (now < timestamp) {
+      suffix = "in the future";
+    }
+
+    var pair = timeUnit(delta, mapping);
+    timeValue = pair[0].toFixed(0);
+    unit = pair[1];
+
+    return [prefix, timeValue, plural(unit, timeValue), suffix].join(" ");
+  };
+
+  /**
    * Convenience method for using Hogan templates. If we have already
    * fetched the template, initiate the callback. Otherwise, fetch it
    * before invoking the callback.
@@ -103,6 +152,7 @@ Zipkin.Util = (function(Zipkin) {
     defaultDictPush: defaultDictPush,
     defaultDictGet: defaultDictGet,
     queryParams: queryParams,
+    timeAgoInWords: timeAgoInWords,
     templatize: templatize,
     TEMPLATES: TEMPLATES
   };

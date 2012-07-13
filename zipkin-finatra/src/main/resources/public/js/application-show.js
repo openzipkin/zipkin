@@ -41,7 +41,38 @@ Zipkin.Application.Show = (function() {
         url: root_url + "api/get/" + traceId,
         data: query_data,
         success: function(data){
-          data.has_filtered_spans = data.spans.length > Zipkin.Config.MIN_SPANS_TO_FILTER;
+          data.has_filtered_spans = data.trace.spans.length > Zipkin.Config.MIN_SPANS_TO_FILTER;
+
+          /* Data comes in with microsecond timestamp/durations, so we have to sanitize it first */
+          data.traceSummary.duration = data.traceSummary.durationMicro / 1000;
+          data.traceSummary.startTimestamp /= 1000;
+          data.traceSummary.endTimestamp /= 1000;
+          data.trace.startTimestamp /= 1000;
+          data.trace.endTimestamp /= 1000;
+          data.trace.duration /= 1000;
+
+          $.each(data.trace.spans, function(i, span) {
+            span.startTimestamp /= 1000;
+            span.duration /= 1000;
+
+            $.each(span.annotations, function(j, ann) {
+              ann.timestamp /= 1000;
+            });
+          });
+
+          $.each(data.traceTimeline.annotations, function(i, ann) {
+            ann.timestamp /= 1000;
+          });
+
+          /* Some fields for the template */
+          data.timeAgoInWords = Zipkin.Util.timeAgoInWords(data.trace.startTimestamp);
+          var date = new Date(data.trace.startTimestamp);
+          data.date = [date.getMonth() + 1, date.getDate(), date.getFullYear()].join("-");
+          data.time = [
+            date.getHours(), 
+            date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes(), 
+            date.getSeconds() < 10 ? "0" + date.getSeconds() : date.getSeconds()].join(":");
+          data.duration = data.trace.duration;
 
           templatize(TEMPLATES.GET_TRACE, function(template) {
 
@@ -55,41 +86,18 @@ Zipkin.Application.Show = (function() {
               , kvAnnotationsMap = {}
               ;
 
-            $.each(data.spans, function(i, span) {
+            var traceStartTime = data.trace.startTimestamp;
+
+            $.each(data.trace.spans, function(i, span) {
+              span.startTime = span.startTimestamp - traceStartTime;
+              span.endTime = span.endTimestamp - traceStartTime;
+
               var s = Zipkin.fromRawSpan(span);
               spanMap[s.id] = s;
               spans.push(s);
-            });
 
-            $.each(data.kv_annotations, function(spanId, kvAs) {
-              var span = spanMap[spanId];
-              $.each(kvAs, function(i, kvA) {
-                var annotation = Zipkin.fromRawKvAnnotation(kvA);
-                span.addKvAnnotation(annotation);
-                annotation.setSpan(span);
-
-                kvAnnotations.push(annotation);
-              });
-              kvAnnotationsMap[spanId] = kvAs
-            });
-
-            $.each(data.annotations, function(i, val) {
-              var spanId = val.id;
-              var span = spanMap[spanId];
-              var a = Zipkin.fromRawAnnotation(val);
-
-              span.addAnnotation(a);
-              a.setSpan(span);
-              annotations.push(a);
-
-              // Attach the kv annotations for trace timeline
-              if (kvAnnotationsMap.hasOwnProperty(spanId)) {
-                var kvAs = kvAnnotationsMap[spanId];
-                val.binary_annotations = kvAs;
-                val.has_binary_annotations = true;
-              } else {
-                val.has_binary_annotations = false;
-              }
+              annotations = s.getAnnotations();
+              kvAnnotations = s.getKvAnnotations();
             });
 
             var content = template.render(data);
@@ -151,7 +159,7 @@ Zipkin.GetTrace = (function() {
     var updatePinStatus = function() {
       $.ajax({
         type: 'GET',
-        url: root_url + 'traces/is_pinned_json?trace_id=' + trace.trace_id,
+        url: root_url + 'api/is_pinned/' + trace.traceId,
         success: function(data){
           pinned = data.pinned === true;
           updatePinButton();
@@ -169,7 +177,7 @@ Zipkin.GetTrace = (function() {
     $('.pin-trace-btn').click(function (e) {
       $.ajax({
         type: 'GET',
-        url: root_url + 'traces/pin_json?trace_id=' + trace.trace_id + '&pinned=' + !pinned, // toggled the pinned status
+        url: root_url + 'api/pin/' + trace.traceId + '/' + !pinned, // toggled the pinned status
         success: function(data){
           pinned = data.pinned === true;
           updatePinButton();
