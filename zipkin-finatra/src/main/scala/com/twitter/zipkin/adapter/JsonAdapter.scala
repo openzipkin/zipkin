@@ -59,6 +59,9 @@ object JsonAdapter extends Adapter {
       s.name,
       s.id.toString,
       s.parentId.map(_.toString),
+      s.serviceNames,
+      s.firstAnnotation.get.timestamp,
+      s.duration.get,
       s.annotations,
       s.binaryAnnotations.map(JsonAdapter(_)))
   }

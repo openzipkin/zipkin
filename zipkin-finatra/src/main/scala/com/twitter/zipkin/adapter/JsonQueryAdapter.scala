@@ -1,29 +1,33 @@
 package com.twitter.zipkin.adapter
 
 import com.twitter.zipkin.common.Trace
-import com.twitter.zipkin.common.json.{JsonTrace, JsonTraceCombo, JsonTraceTimeline}
+import com.twitter.zipkin.common.json.{JsonTimelineAnnotation, JsonTrace, JsonTraceCombo, JsonTraceTimeline}
 import com.twitter.zipkin.query.{TraceCombo, TraceTimeline, TimelineAnnotation}
 
 /**
  * JS doesn't like Longs so we need to convert them to strings
  */
 object JsonQueryAdapter extends QueryAdapter {
-  type timelineAnnotationType = TimelineAnnotation
+  type timelineAnnotationType = JsonTimelineAnnotation
   type traceTimelineType = JsonTraceTimeline
   type traceComboType = JsonTraceCombo
   type traceType = JsonTrace
 
   /* no change between json and common */
-  def apply(t: timelineAnnotationType): TimelineAnnotation = t
+  def apply(t: timelineAnnotationType): TimelineAnnotation = {
+    TimelineAnnotation(t.timestamp, t.value, t.host, t.spanId.toLong, t.parentId.map(_.toLong), t.serviceName, t.spanName)
+  }
 
-  //def apply(t: TimelineAnnotation): timelineAnnotationType
+  def apply(t: TimelineAnnotation): timelineAnnotationType = {
+    JsonTimelineAnnotation(t.timestamp, t.value, t.host, t.spanId.toString, t.parentId.map(_.toString), t.serviceName, t.spanName)
+  }
 
   /* json to common */
   def apply(t: traceTimelineType): TraceTimeline = {
     TraceTimeline(
       t.traceId.toLong,
       t.rootSpanId.toLong,
-      t.annotations,
+      t.annotations.map(JsonQueryAdapter(_)),
       t.binaryAnnotations.map(JsonAdapter(_)))
   }
 
@@ -32,7 +36,7 @@ object JsonQueryAdapter extends QueryAdapter {
     JsonTraceTimeline(
       t.traceId.toString,
       t.rootSpanId.toString,
-      t.annotations,
+      t.annotations.map(JsonQueryAdapter(_)),
       t.binaryAnnotations.map(JsonAdapter(_)))
   }
 

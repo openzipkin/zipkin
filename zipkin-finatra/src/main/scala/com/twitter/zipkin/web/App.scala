@@ -16,15 +16,15 @@
  */
 package com.twitter.zipkin.web
 
-import com.capotej.finatra_core.FinatraRequest
-import com.posterous.finatra.FinatraApp
 import com.twitter.logging.Logger
-import com.twitter.util.Future
 import com.twitter.zipkin.adapter.{JsonQueryAdapter, JsonAdapter, ThriftQueryAdapter, ThriftAdapter}
 import com.twitter.zipkin.gen
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import com.posterous.finatra.{Request, FinatraApp}
+import com.twitter.util.{Duration, Future}
+import com.twitter.conversions.time._
 
 class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
 
@@ -60,56 +60,46 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
     }
     val adjusters = getAdjusters(request)
 
-    toJson{
-      traceIds.map { ids =>
-        ids match {
-          case Nil => {
-            Future.value(Seq.empty)
-          }
-          case _ => {
-            client.getTraceSummariesByIds(ids, adjusters).map {
-              _.map { summary =>
-                JsonAdapter(ThriftAdapter(summary))
-              }
+    traceIds.map { ids =>
+      ids match {
+        case Nil => {
+          Future.value(Seq.empty)
+        }
+        case _ => {
+          client.getTraceSummariesByIds(ids, adjusters).map {
+            _.map { summary =>
+              JsonAdapter(ThriftAdapter(summary))
             }
           }
         }
-      }.flatten.apply()
-    }
+      }
+    }.flatten.map(toJson(_)).flatten
   }
 
   get("/api/services") { request =>
     log.debug("/api/services")
-    toJson{
-      client.getServiceNames().map {
-        _.toSeq.sorted
-      }.apply()
-    }
+    client.getServiceNames().map { services =>
+      toJson(services.toSeq.sorted)
+    }.flatten
   }
 
   get("/api/spans/:serviceName") { request =>
     log.debug("/api/spans/")
-    toJson {
-      client.getSpanNames(request.params("serviceName")).map {
-        _.toSeq.sorted
-      }.apply()
-    }
+    client.getSpanNames(request.params("serviceName")).map { spans =>
+      toJson(spans.toSeq.sorted)
+    }.flatten
   }
 
   get("/api/top_annotations/:serviceName") { request =>
-    toJson {
-      client.getTopAnnotations(request.params("serviceName")).map {
-        _.toSeq.sorted
-      }.apply()
-    }
+    client.getTopAnnotations(request.params("serviceName")).map { anns =>
+      toJson(anns.toSeq.sorted)
+    }.flatten
   }
 
   get("/api/top_kv_annotations/:serviceName") { request =>
-    toJson {
-      client.getTopKeyValueAnnotations(request.params("serviceName")).map {
-        _.toSeq.sorted
-      }.apply()
-    }
+    client.getTopKeyValueAnnotations(request.params("serviceName")).map { anns =>
+      toJson(anns.toSeq.sorted)
+    }.flatten
   }
 
   get("/api/get/:id") { request =>
@@ -118,22 +108,46 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
     val ids = Seq(request.params("id").toLong)
     log.debug(ids.toString())
 
-    toJson {
-      client.getTraceCombosByIds(ids, adjusters).map { _.map { ThriftQueryAdapter(_) }.head }.map{
-        JsonQueryAdapter(_)
-      }.apply()
+    client.getTraceCombosByIds(ids, adjusters).map { _.map { ThriftQueryAdapter(_) }.head }.map { combo =>
+      toJson(JsonQueryAdapter(combo))
+    }.flatten
+  }
+
+  get("/api/is_pinned/:id") { request =>
+    val id = request.params("id").toLong
+    client.getTraceTimeToLive(id).map(toJson(_)).flatten
+  }
+
+  post("/api/pin/:id/:state") { request =>
+    val id = request.params("id").toLong
+    request.params("state").toLowerCase match {
+      case "true" => {
+        togglePinState(id, true).map(toJson(_)).flatten
+      }
+      case "false" => {
+        togglePinState(id, false).map(toJson(_)).flatten
+      }
+      case _ => {
+        render(400, "Must be true or false")
+      }
     }
   }
 
-  get("/api/is_pinned") { request =>
-
+  private def togglePinState(traceId: Long, state: Boolean): Future[Boolean] = {
+    val ttl = state match {
+      case true => {
+        Future.value(Globals.pinTtl)
+      }
+      case false => {
+        client.getDataTimeToLive()
+      }
+    }
+    ttl.map { t =>
+      client.setTraceTimeToLive(traceId, t).map(Unit => state)
+    }.flatten
   }
 
-  post("/api/pin") { request =>
-
-  }
-
-  def getAdjusters(request: FinatraRequest) = {
+  private def getAdjusters(request: Request) = {
     request.params.get("adjust_clock_skew") match {
       case Some(flag) => {
         flag match {
@@ -169,7 +183,9 @@ object Globals {
   var rootUrl = "http://localhost/"
   val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
   val timeFormat = new SimpleDateFormat("HH:mm:ss")
+  val ttl: Duration = 30.days
 
   def getDate = dateFormat.format(Calendar.getInstance().getTime)
   def getTime = timeFormat.format(Calendar.getInstance().getTime)
+  def pinTtl: Int = ttl.inSeconds
 }

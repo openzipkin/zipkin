@@ -1,14 +1,14 @@
 package com.twitter.zipkin.web
 
-import com.capotej.finatra_core.FinatraRequest
 import com.twitter.zipkin.gen
 import java.text.SimpleDateFormat
 import com.twitter.util.Time
+import com.posterous.finatra.Request
 
 object QueryRequest {
   val fmt = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss")
 
-  def apply(request: FinatraRequest): QueryRequest = {
+  def apply(request: Request): QueryRequest = {
     val serviceName = request.params("service_name")
     val endTimestamp = request.params.get("end_datetime") match {
       case Some(str) => {
