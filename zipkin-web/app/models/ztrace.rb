@@ -121,11 +121,13 @@ class ZTrace
   end
 
   def self.get_traces_by_ids(trace_ids, opts = {})
+    tmp = nil
     ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
       adjusters = [] #[Zipkin::Adjust::TIME_SKEW] #TODO config
       traces = client.getTracesByIds(trace_ids.collect { |id| id.to_i }, adjusters)
-      traces.collect { |trace| ZTrace.from_thrift(trace) }
+      tmp = traces.collect { |trace| ZTrace.from_thrift(trace) }
     end
+    tmp
   end
 
   # what is the default ttl we set traces to?
