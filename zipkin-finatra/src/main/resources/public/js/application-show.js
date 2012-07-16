@@ -377,7 +377,7 @@ Zipkin.GetTrace = (function() {
 
         var spanDetails = function(span) {
           var title = span.getServiceName() + ": " + span.getDuration().toFixed(3) + "ms";
-          var start = annotations[0].timestamp;
+          var start = trace.startTimestamp;
 
           var anns = $.map(span.getAnnotations(), function (a) {
             return {
