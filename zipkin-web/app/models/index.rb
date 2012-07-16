@@ -23,27 +23,33 @@ class Index
     end_ts = secondsToMicroseconds(end_ts)
     order = opts[:order] || ORDER_DEFAULT
 
+    tmp = nil
     ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
-      client.getTraceIdsBySpanName(service_name, span_name, end_ts, limit, order)
+      tmp = client.getTraceIdsBySpanName(service_name, span_name, end_ts, limit, order)
     end
+    tmp
   end
 
   def self.get_trace_ids_by_service_name(service_name, end_ts, limit, opts = {})
     end_ts = secondsToMicroseconds(end_ts)
     order = opts[:order] || ORDER_DEFAULT
 
+    tmp = nil
     ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
-      client.getTraceIdsByServiceName(service_name, end_ts, limit, order)
+      tmp = client.getTraceIdsByServiceName(service_name, end_ts, limit, order)
     end
+    tmp
   end
 
   def self.get_trace_ids_by_annotation(service_name, annotation, value, end_ts, limit, opts = {})
     end_ts = secondsToMicroseconds(end_ts)
     order = opts[:order] || ORDER_DEFAULT
 
+    tmp = nil
     ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
-      client.getTraceIdsByAnnotation(service_name, annotation, value, end_ts, limit, order)
+      tmp = client.getTraceIdsByAnnotation(service_name, annotation, value, end_ts, limit, order)
     end
+    tmp
   end
 
   private
