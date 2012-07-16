@@ -25,6 +25,7 @@ import java.util.Calendar
 import com.posterous.finatra.{Request, FinatraApp}
 import com.twitter.util.{Duration, Future}
 import com.twitter.conversions.time._
+import org.jboss.netty.handler.codec.http.HttpResponse
 
 class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
 
@@ -83,23 +84,38 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
     }.flatten
   }
 
-  get("/api/spans/:serviceName") { request =>
-    log.debug("/api/spans/")
-    client.getSpanNames(request.params("serviceName")).map { spans =>
-      toJson(spans.toSeq.sorted)
-    }.flatten
+  /**
+   * Requires: ?serviceName=<...>
+   */
+  get("/api/spans") { request =>
+    log.debug("/api/spans")
+    withServiceName(request) { serviceName =>
+      client.getSpanNames(serviceName).map { spans =>
+        toJson(spans.toSeq.sorted)
+      }.flatten
+    }
   }
 
-  get("/api/top_annotations/:serviceName") { request =>
-    client.getTopAnnotations(request.params("serviceName")).map { anns =>
-      toJson(anns.toSeq.sorted)
-    }.flatten
+  /**
+   * Requires: ?serviceName=<...>
+   */
+  get("/api/top_annotations") { request =>
+    withServiceName(request) { serviceName =>
+      client.getTopAnnotations(serviceName).map { anns =>
+        toJson(anns.toSeq.sorted)
+      }.flatten
+    }
   }
 
-  get("/api/top_kv_annotations/:serviceName") { request =>
-    client.getTopKeyValueAnnotations(request.params("serviceName")).map { anns =>
-      toJson(anns.toSeq.sorted)
-    }.flatten
+  /**
+   * Requires: ?serviceName=<...>
+   */
+  get("/api/top_kv_annotations") { request =>
+    withServiceName(request) { serviceName =>
+      client.getTopKeyValueAnnotations(serviceName).map { anns =>
+        toJson(anns.toSeq.sorted)
+      }.flatten
+    }
   }
 
   get("/api/get/:id") { request =>
@@ -129,6 +145,17 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
       }
       case _ => {
         render(400, "Must be true or false")
+      }
+    }
+  }
+
+  private def withServiceName(request: Request)(f: String => Future[HttpResponse]): Future[HttpResponse] = {
+    request.params.get("serviceName") match {
+      case Some(s) => {
+        f(s)
+      }
+      case None => {
+        render(401, "Invalid service name")
       }
     }
   }

@@ -27,7 +27,7 @@ object JsonAdapter extends Adapter {
   def apply(b: BinaryAnnotation): binaryAnnotationType = {
     val value = b.annotationType match {
       case AnnotationType(0, _) => b.value.getInt              // bool
-      case AnnotationType(1, _) => new String(b.value.array()) // bytes
+      case AnnotationType(1, _) => new String(b.value.array(), b.value.position(), b.value.remaining()) // bytes
       case AnnotationType(2, _) => b.value.getShort            // i16
       case AnnotationType(3, _) => b.value.getInt              // i32
       case AnnotationType(4, _) => b.value.getLong             // i64

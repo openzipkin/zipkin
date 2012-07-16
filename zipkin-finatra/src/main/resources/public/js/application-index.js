@@ -80,7 +80,7 @@ Zipkin.Application.Index = (function() {
 
     $.ajax({
       type: 'GET',
-      url: root_url + 'api/spans/' + service_name,
+      url: root_url + 'api/spans?serviceName=' + service_name,
       success: function(data){
         var spanSelector = $('#span_name');
 
@@ -152,7 +152,7 @@ Zipkin.Application.Index = (function() {
     /* Fetch top annotations for this service */
     $.ajax({
       type: 'GET',
-      url: root_url + 'api/top_annotations/' + service_name,
+      url: root_url + 'api/top_annotations?serviceName=' + service_name,
       success: function(data) {
         if (data.length > 0) {
           $("#time_annotation").autocomplete({source: data});
@@ -163,7 +163,7 @@ Zipkin.Application.Index = (function() {
     /* Fetch top key value annotations for this service */
     $.ajax({
       type: 'GET',
-      url: root_url + 'api/top_kv_annotations/' + service_name,
+      url: root_url + 'api/top_kv_annotations?serviceName=' + service_name,
       success: function(data) {
         if (data.length > 0) {
           $("#annotation_key").autocomplete({source: data});
