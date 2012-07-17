@@ -57,7 +57,10 @@ Zipkin.Base = (function() {
   };
 
   var clockSkewState = function () {
-    return $('.adjust-clock-skew-btn').attr('value') == "true";
+    if (getCookie("clockSkewState") == null) {
+      setCookie("clockSkewState", true);
+    }
+    return getCookie("clockSkewState") == "true";
   };
 
   var enableClockSkewBtn = function () {
@@ -82,6 +85,19 @@ Zipkin.Base = (function() {
     return false;
   };
 
+  var setClockSkewBtnState = function(state) {
+    setCookie("clockSkewState", state);
+    if (state) {
+      $('.adjust-clock-skew-btn').attr('value', 'true');
+      $('.adjust-clock-skew-btn').removeClass('btn-danger').addClass('btn-info');
+      return "Enabled";
+    } else {
+      $('.adjust-clock-skew-btn').attr('value', 'false');
+      $('.adjust-clock-skew-btn').removeClass('btn-info').addClass('btn-danger');
+      return "Disabled";
+    }
+  };
+
   /* Click callback for clock skew button */
   var clockSkewClick = function (e) {
     // Disable the button to prevent multiple requests
@@ -92,16 +108,7 @@ Zipkin.Base = (function() {
     $('.adjust-clock-skew-tooltip').tooltip('hide');
 
     // Toggle the button state
-    var tooltip_text = "Clock skew adjustment: ";
-    if (clockSkewState()) {
-      $('.adjust-clock-skew-btn').attr('value', 'false');
-      $('.adjust-clock-skew-btn').removeClass('btn-info').addClass('btn-danger');
-      tooltip_text += "Disabled";
-    } else {
-      $('.adjust-clock-skew-btn').attr('value', 'true');
-      $('.adjust-clock-skew-btn').removeClass('btn-danger').addClass('btn-info');
-      tooltip_text += "Enabled";
-    }
+    var tooltip_text = "Clock skew adjustment: " + setClockSkewBtnState(!clockSkewState());
 
     // Fire the listeners
     $.each(clockSkewListeners, function (i, e) {
@@ -121,7 +128,11 @@ Zipkin.Base = (function() {
     // Bind click handler for brand button
     $(".brand").click(brandClick);
 
-    // Bind click handlerf for clock skew button
+    // Set clock skew button to whatever the cookie says
+    var tooltip_text = "Clock skew adjustment: " + setClockSkewBtnState(clockSkewState());
+    $('.adjust-clock-skew-tooltip').attr('data-original-title', tooltip_text);
+
+    // Bind click handler for clock skew button
     $('.adjust-clock-skew-btn').click(clockSkewClick);
 
     // Bind tooltip for clock skew button
