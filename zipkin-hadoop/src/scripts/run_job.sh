@@ -1,14 +1,33 @@
 #! /bin/bash
 
+usage() {
+cat << EOF
+usage: $0 options
+
+This script runs the hadoop queries
+
+OPTIONS:
+   -h      Show this message
+   -j      Name of the job
+   -p      Flag to denote if the job being run is a preprocessor
+   -s      Any settings you want to pass along
+   -d      Date
+   -o      Output directory
+EOF
+}
+
 JOBNAME=
 ISPREPROCESSOR=
 DATE=
 SETTINGS=
 OUTPUTDIR=
-HOST=
-while getopts “j:ps:d:n:o:” OPTION
+while getopts “hj:ps:d:n:o:” OPTION
 do
     case $OPTION in
+	h)
+	    usage()
+	    exit 1
+	    ;;
         j)
             JOBNAME=$OPTARG
             ;;
@@ -20,9 +39,6 @@ do
             ;;
 	d)
 	    DATE=$OPTARG
-	    ;;
-	n)
-	    HOST=$OPTARG
 	    ;;
         o)
             OUTPUTDIR=$OPTARG

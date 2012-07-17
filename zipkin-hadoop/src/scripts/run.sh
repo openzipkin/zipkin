@@ -8,7 +8,7 @@ This script runs the hadoop queries
 
 OPTIONS:
    -h      Show this message
-   -d      Date, either as one date, or start date and end date, separated by commos
+   -d      Date, either as one date, or start date and end date, separated by commas
    -o      Output directory
 EOF
 }
