@@ -60,11 +60,13 @@ class TraceSummary
   end
 
   def self.get_trace_summaries_by_ids(trace_ids, adjusters, opts={})
+    tmp = nil
     ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
       ids = trace_ids.collect { |id| id.to_i }
       summaries = client.getTraceSummariesByIds(ids, adjusters)
-      summaries.collect { |summary| TraceSummary.from_thrift(summary) }
+      tmp = summaries.collect { |summary| TraceSummary.from_thrift(summary) }
     end
+    tmp
   end
 
   def start_timestamp_ms
