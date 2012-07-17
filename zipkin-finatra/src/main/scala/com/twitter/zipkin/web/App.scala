@@ -16,23 +16,27 @@
  */
 package com.twitter.zipkin.web
 
+import com.posterous.finatra.{Request, FinatraApp}
 import com.twitter.logging.Logger
+import com.twitter.util.Future
 import com.twitter.zipkin.adapter.{JsonQueryAdapter, JsonAdapter, ThriftQueryAdapter, ThriftAdapter}
 import com.twitter.zipkin.gen
+import com.twitter.zipkin.config.ZipkinWebConfig
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import com.posterous.finatra.{Request, FinatraApp}
-import com.twitter.util.{Duration, Future}
-import com.twitter.conversions.time._
 import org.jboss.netty.handler.codec.http.HttpResponse
 
-class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
+class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
 
   val log = Logger.get()
+  val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
+  val timeFormat = new SimpleDateFormat("HH:mm:ss")
+  def getDate = dateFormat.format(Calendar.getInstance().getTime)
+  def getTime = timeFormat.format(Calendar.getInstance().getTime)
 
   get("/") { request =>
-    render(path = "index.mustache", exports = new IndexObject)
+    render(path = "index.mustache", exports = new IndexObject(getDate, getTime))
   }
 
   get("/show/:id") { request =>
@@ -163,7 +167,7 @@ class App(client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
   private def togglePinState(traceId: Long, state: Boolean): Future[Boolean] = {
     val ttl = state match {
       case true => {
-        Future.value(Globals.pinTtl)
+        Future.value(config.pinTtl.inSeconds)
       }
       case false => {
         client.getDataTimeToLive()
@@ -196,23 +200,10 @@ trait ExportObject {
   val clockSkew: Boolean = true
 }
 
-class IndexObject extends ExportObject {
+class IndexObject(val endDate: String, val endTime: String) extends ExportObject {
   val inlineJs = "$(Zipkin.Application.Index.initialize());"
-  val endDate = Globals.getDate
-  val endTime = Globals.getTime
 }
 
 class ShowObject(traceId: String) extends ExportObject {
   val inlineJs = "$(Zipkin.Application.Show.initialize(\"" + traceId + "\"));"
-}
-
-object Globals {
-  var rootUrl = "http://localhost/"
-  val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
-  val timeFormat = new SimpleDateFormat("HH:mm:ss")
-  val ttl: Duration = 30.days
-
-  def getDate = dateFormat.format(Calendar.getInstance().getTime)
-  def getTime = timeFormat.format(Calendar.getInstance().getTime)
-  def pinTtl: Int = ttl.inSeconds
 }

@@ -46,9 +46,7 @@ class ZipkinWeb(config: ZipkinWebConfig) extends Service {
 
     FinatraServer.register(resource)
     FinatraServer.register(app)
-    FinatraServer.layoutHelperFactory = new ZipkinLayoutHelperFactory
-
-    Globals.rootUrl = config.rootUrl
+    FinatraServer.layoutHelperFactory = new ZipkinLayoutHelperFactory(config)
 
     val finatraService = new FinatraService
     val fileHandler = new FileHandler
