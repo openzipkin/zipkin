@@ -18,10 +18,18 @@ package com.twitter.zipkin.collector.sampler
  */
 
 import com.twitter.zipkin.config.sampler.AdjustableRateConfig
+import com.twitter.zipkin.common.Span
 import org.specs.mock.{ClassMocker, JMocker}
 import org.specs.Specification
 
 class ZooKeeperGlobalSamplerSpec extends Specification with JMocker with ClassMocker {
+
+  def span(traceId: Long): Span = span(traceId, false)
+
+  def span(traceId: Long, debug: Boolean): Span = {
+    Span(traceId, "bah", 0L, None, List(), Seq(), debug)
+  }
+
   "Sample" should {
 
     "keep 10% of traces" in {
@@ -32,11 +40,26 @@ class ZooKeeperGlobalSamplerSpec extends Specification with JMocker with ClassMo
       }
       val sampler = new ZooKeeperGlobalSampler(zkConfig)
 
-      sampler(Long.MinValue) mustEqual false
-      sampler(-1) mustEqual true
-      sampler(0) mustEqual true
-      sampler(1) mustEqual true
-      sampler(Long.MaxValue) mustEqual false
+      sampler(span(Long.MinValue)) mustEqual false
+      sampler(span(-1)) mustEqual true
+      sampler(span(0)) mustEqual true
+      sampler(span(1)) mustEqual true
+      sampler(span(Long.MaxValue)) mustEqual false
+    }
+
+    "let pass if debug flag is set" in {
+      val sampleRate = 0
+      val zkConfig = mock[AdjustableRateConfig]
+      expect {
+        allowing(zkConfig).get willReturn sampleRate
+      }
+      val sampler = new ZooKeeperGlobalSampler(zkConfig)
+
+      sampler(span(Long.MinValue, true)) mustEqual true
+      sampler(span(-1, true)) mustEqual true
+      sampler(span(0, true)) mustEqual true
+      sampler(span(1, true)) mustEqual true
+      sampler(span(Long.MaxValue, true)) mustEqual true
     }
 
     "drop all traces" in {
@@ -46,12 +69,12 @@ class ZooKeeperGlobalSamplerSpec extends Specification with JMocker with ClassMo
       }
       val sampler = new ZooKeeperGlobalSampler(zkConfig)
 
-      sampler(Long.MinValue) mustEqual false
-      sampler(Long.MinValue + 1)
+      sampler(span(Long.MinValue)) mustEqual false
+      sampler(span(Long.MinValue + 1))
       -5000 to 5000 foreach { i =>
-        sampler(i) mustEqual false
+        sampler(span(i)) mustEqual false
       }
-      sampler(Long.MaxValue) mustEqual false
+      sampler(span(Long.MaxValue)) mustEqual false
     }
 
     "keep all traces" in {
@@ -61,11 +84,11 @@ class ZooKeeperGlobalSamplerSpec extends Specification with JMocker with ClassMo
       }
       val sampler = new ZooKeeperGlobalSampler(zkConfig)
 
-      sampler(Long.MinValue) mustEqual true
+      sampler(span(Long.MinValue)) mustEqual true
       -5000 to 5000 foreach { i =>
-        sampler(i) mustEqual true
+        sampler(span(i)) mustEqual true
       }
-      sampler(Long.MinValue) mustEqual true
+      sampler(span(Long.MinValue)) mustEqual true
     }
 
   }

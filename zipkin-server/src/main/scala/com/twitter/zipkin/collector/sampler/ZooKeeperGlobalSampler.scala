@@ -17,6 +17,7 @@
 package com.twitter.zipkin.collector.sampler
 
 import com.twitter.zipkin.config.sampler.AdjustableRateConfig
+import com.twitter.zipkin.common.Span
 
 /**
  * Get the rate of sample from ZooKeeper so that
@@ -28,8 +29,8 @@ class ZooKeeperGlobalSampler(sampleRateConfig: AdjustableRateConfig) extends Glo
    * True: process trace
    * False: drop trace on the floor
    */
-  override def apply(traceId: Long) : Boolean = {
-    if (sample(traceId, sampleRateConfig.get)) {
+  override def apply(span: Span): Boolean = {
+    if (sample(span, sampleRateConfig.get)) {
       SAMPLER_PASSED.incr
       true
     } else {
@@ -47,14 +48,16 @@ class ZooKeeperGlobalSampler(sampleRateConfig: AdjustableRateConfig) extends Glo
    *
    * In addition, math.abs(Long.MinValue) = Long.MinValue due to overflow,
    * so we treat Long.MinValue as Long.MaxValue
+   *
+   * If the span is marked as debug we let it through, no questions asked.
    */
-  def sample(traceId: Long, sampleRate: Double) : Boolean = {
-    if (sampleRate == 1) {
+  def sample(span: Span, sampleRate: Double): Boolean = {
+    if (span.debug || sampleRate == 1) {
       true
     } else {
       val t =
-        if (traceId == Long.MinValue) Long.MaxValue
-        else                          math.abs(traceId)
+        if (span.traceId == Long.MinValue) Long.MaxValue
+        else                          math.abs(span.traceId)
       t < Long.MaxValue * sampleRate
     }
   }

@@ -16,9 +16,11 @@
  */
 package com.twitter.zipkin.collector.sampler
 
+import com.twitter.zipkin.common.Span
+
 /**
  * Let through everything.
  */
 object EverythingGlobalSampler extends GlobalSampler {
-  override def apply(traceId: Long): Boolean = true
+  override def apply(span: Span): Boolean = true
 }

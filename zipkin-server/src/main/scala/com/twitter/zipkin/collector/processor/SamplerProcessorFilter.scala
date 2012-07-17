@@ -29,7 +29,7 @@ class SamplerProcessorFilter(sampler: GlobalSampler) extends ProcessorFilter[Seq
     spans.flatMap { span =>
       span.serviceNames.foreach { name => Stats.incr("received_" + name) }
 
-      if (sampler(span.traceId)) {
+      if (sampler(span)) {
         Some(span)
       } else {
         None

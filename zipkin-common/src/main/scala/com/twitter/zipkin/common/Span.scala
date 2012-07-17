@@ -30,7 +30,7 @@ import com.twitter.zipkin.Constants
 object Span {
 
   def apply(span: Span): Span = Span(span.traceId, span.name, span.id,
-    span.parentId, span.annotations, span.binaryAnnotations)
+    span.parentId, span.annotations, span.binaryAnnotations, span.debug)
 }
 
 /**
@@ -44,7 +44,7 @@ object Span {
  * serialized objects
  */
 case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
-                 annotations: List[Annotation], binaryAnnotations: Seq[BinaryAnnotation]) {
+                 annotations: List[Annotation], binaryAnnotations: Seq[BinaryAnnotation], debug: Boolean = false) {
   /**
    * Order annotations by timestamp.
    */
@@ -96,7 +96,7 @@ case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
 
     new Span(traceId, selectedName, id, parentId,
       annotations ++ mergeFrom.annotations,
-      binaryAnnotations ++ mergeFrom.binaryAnnotations)
+      binaryAnnotations ++ mergeFrom.binaryAnnotations, debug | mergeFrom.debug)
   }
 
   /**

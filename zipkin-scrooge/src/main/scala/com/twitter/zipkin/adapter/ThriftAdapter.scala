@@ -106,13 +106,13 @@ object ThriftAdapter extends Adapter {
       case b => b.map { this(_) }
     }
 
-    new Span(s.traceId, s.name, s.id, s.parentId, annotations, binaryAnnotations)
+    new Span(s.traceId, s.name, s.id, s.parentId, annotations, binaryAnnotations, s.debug)
   }
 
   /* Span to Thrift */
   def apply(s: Span): spanType = {
     gen.Span(s.traceId, s.name, s.id, s.parentId, s.annotations.map { this(_) },
-      s.binaryAnnotations.map { this(_) })
+      s.binaryAnnotations.map { this(_) }, s.debug)
   }
 
   /* TraceSummary from Thrift */
