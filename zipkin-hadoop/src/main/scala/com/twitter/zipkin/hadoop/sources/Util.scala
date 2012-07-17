@@ -28,6 +28,7 @@ import com.twitter.zipkin.gen
 object Util {
 
   val UNKNOWN_SERVICE_NAME = "Unknown Service Name"
+  val ERROR_MESSAGE = "500 Internal Server Error"
 
   /**
    * Given a byte buffer, produces the array of bytes it represents
