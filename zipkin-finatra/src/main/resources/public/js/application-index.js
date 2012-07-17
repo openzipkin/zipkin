@@ -401,14 +401,20 @@ Zipkin.Application.Index = (function() {
 
           var minStartTime = Number.MAX_VALUE
             , maxStartTime = Number.MIN_VALUE
+            , maxDuration  = Number.MIN_VALUE
             ;
-          var maxTime = data[0].durationMicro / 1000;
+
+          /* Find the longest one */
+          $.each(data, function(i, d) {
+            maxDuration = Math.max(d.durationMicro / 1000, maxDuration);
+          });
+
           var traces = $.map(data, function(e) {
             minStartTime = minStartTime < e.startTimestamp ? minStartTime : e.startTimestamp;
             maxStartTime = maxStartTime > e.startTimestamp ? maxStartTime : e.startTimestamp;
 
             e.duration = e.durationMicro / 1000;
-            e.width = (e.duration / maxTime) * 100;
+            e.width = (e.duration / maxDuration) * 100;
             e.serviceCounts = $.map(e.serviceCounts, function(count, key) {
               return { name: key, count: count };
             });
