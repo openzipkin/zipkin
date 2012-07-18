@@ -27,6 +27,11 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import org.jboss.netty.handler.codec.http.HttpResponse
 
+/**
+ * Application that handles ZipkinWeb routes
+ * @param config ZipkinWebConfig
+ * @param client Thrift client to ZipkinQuery
+ */
 class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
 
   val log = Logger.get()
@@ -35,35 +40,49 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   def getDate = dateFormat.format(Calendar.getInstance().getTime)
   def getTime = timeFormat.format(Calendar.getInstance().getTime)
 
+  /* Index page */
   get("/") { request =>
     render(path = "index.mustache", exports = new IndexObject(getDate, getTime))
   }
 
+  /* Trace page */
   get("/show/:id") { request =>
     render(path = "show.mustache", exports = new ShowObject(request.params("id")))
   }
 
+  /* Static page for render trace from JSON */
   get("/static") { request =>
     render(path = "static.mustache", exports = new StaticObject)
   }
 
+  /**
+   * API: query
+   * Returns query results that satisfy the request parameters in order of descending duration
+   *
+   * Required GET params:
+   * - service_name: String
+   * - end_date: date String formatted to `QueryRequest.fmt`
+   *
+   * Optional GET params:
+   * - limit: Int, default 100
+   * - span_name: String
+   * - time_annotation: String
+   * - annotation_key, annotation_value: String
+   * - adjust_clock_skew = (true|false), default true
+   */
   get("/api/query") { request =>
     /* Get trace ids */
     val traceIds = QueryRequest(request) match {
       case r: SpanQueryRequest => {
-        log.debug(r.toString)
         client.getTraceIdsBySpanName(r.serviceName, r.spanName, r.endTimestamp, r.limit, r.order)
       }
       case r: AnnotationQueryRequest => {
-        log.debug(r.toString)
         client.getTraceIdsByAnnotation(r.serviceName, r.annotation, null, r.endTimestamp, r.limit, r.order)
       }
       case r: KeyValueAnnotationQueryRequest => {
-        log.debug(r.toString)
         client.getTraceIdsByAnnotation(r.serviceName, r.key, ByteBuffer.wrap(r.value.getBytes), r.endTimestamp, r.limit, r.order)
       }
       case r: ServiceQueryRequest => {
-        log.debug(r.toString)
         client.getTraceIdsByServiceName(r.serviceName, r.endTimestamp, r.limit, r.order)
       }
     }
@@ -85,6 +104,10 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     }.flatten.map(toJson(_)).flatten
   }
 
+  /**
+   * API: services
+   * Returns the total list of services Zipkin is aware of
+   */
   get("/api/services") { request =>
     log.debug("/api/services")
     client.getServiceNames().map { services =>
@@ -93,7 +116,11 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   }
 
   /**
-   * Requires: ?serviceName=<...>
+   * API: spans
+   * Returns a list of spans for a particular service
+   *
+   * Required GET params:
+   * - serviceName: String
    */
   get("/api/spans") { request =>
     log.debug("/api/spans")
@@ -105,7 +132,11 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   }
 
   /**
-   * Requires: ?serviceName=<...>
+   * API: top_annotations
+   * Returns a list of top/popular time-based annotations for a particular service
+   *
+   * Required GET params:
+   * - serviceName: string
    */
   get("/api/top_annotations") { request =>
     withServiceName(request) { serviceName =>
@@ -116,7 +147,11 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   }
 
   /**
-   * Requires: ?serviceName=<...>
+   * API: top_kv_annotations
+   * Returns a list of the top/popular keys for key-value annotations for a particular service
+   *
+   * Required GET params:
+   * - serviceName: String
    */
   get("/api/top_kv_annotations") { request =>
     withServiceName(request) { serviceName =>
@@ -126,6 +161,16 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     }
   }
 
+  /**
+   * API: get
+   * Returns the data for a particular trace
+   *
+   * Required GET params:
+   * - id: Long
+   *
+   * Optional GET params:
+   * - adjust_clock_skew: (true|false), default true
+   */
   get("/api/get/:id") { request =>
     log.info("/api/get")
     val adjusters = getAdjusters(request)
@@ -137,11 +182,26 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     }.flatten
   }
 
+  /**
+   * API: is_pinned
+   * Returns whether a trace has been pinned
+   *
+   * Required GET params:
+   * - id: Long
+   */
   get("/api/is_pinned/:id") { request =>
     val id = request.params("id").toLong
     client.getTraceTimeToLive(id).map(toJson(_)).flatten
   }
 
+  /**
+   * API: pin
+   * Pins a trace (sets its TTL)
+   *
+   * Required GET params:
+   * - id: Long
+   * - state: Boolean (true|false)
+   */
   post("/api/pin/:id/:state") { request =>
     val id = request.params("id").toLong
     request.params("state").toLowerCase match {
@@ -182,6 +242,9 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     }.flatten
   }
 
+  /**
+   * Returns a sequence of adjusters based on the params for a request. Default is TimeSkewAdjuster
+   */
   private def getAdjusters(request: Request) = {
     request.params.get("adjust_clock_skew") match {
       case Some(flag) => {
@@ -191,7 +254,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
         }
       }
       case _ => {
-        Seq.empty[gen.Adjust]
+        Seq(gen.Adjust.TimeSkew)
       }
     }
   }
