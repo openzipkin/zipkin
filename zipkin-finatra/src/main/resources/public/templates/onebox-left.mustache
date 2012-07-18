@@ -1,0 +1,34 @@
+{{#hasDuplicates}}
+<div class="onebox-section">
+  <div class="onebox-section-title">
+    <h4><i class="icon-minus"></i> Duplicate key/value annotations ({{duplicateCount}})</h4>
+  </div>
+  <div class="onebox-section-body">
+      <table class="table table-condensed table-sortable">
+        <thead>
+          <th>Key</th>
+          <th>Value</th>
+          <th class="onebox-tooltip" rel="tooltip" data-original-title="Number of time this key is accessed"># <i class="icon-arrow-down"></i></th>
+          <th class="onebox-tooltip" rel="tooltip" data-original-title="Spans (methods) this key is associated with">Spans</th>
+        </thead>
+        <tbody>
+        {{#duplicates}}
+        <tr>
+          <td><span class="label">{{key}}</span></td>
+          <td><span class="duplicates-value">{{value}}</span></td>
+          <td><span class="label">{{count}}</span></td>
+          <td>{{#spans}}<span class="label">{{name}} x{{count}}</span> {{/spans}}</td>
+        </tr>
+        {{/duplicates}}
+        </tbody>
+      </table>
+  </div>
+</div>
+{{/hasDuplicates}}
+{{^hasDuplicates}}
+<div class="onebox-section">
+  <div class="onebox-section-title">
+    <h4><i class="icon-minus hide"></i> No Duplicates :)</h4>
+  </div>
+</div>
+{{/hasDuplicates}}
