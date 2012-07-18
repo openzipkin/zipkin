@@ -14,11 +14,10 @@ object JsonAdapter extends Adapter {
   type spanType = JsonSpan
   type traceSummaryType = JsonTraceSummary
 
+  /* No change between JSON and common types */
   def apply(a: annotationType): Annotation = a
-  //def apply(a: Annotation): annotationType = a
-
   def apply(a: annotationTypeType): AnnotationType = a
-  //def apply(a: AnnotationType): annotationTypeType = a
+  def apply(e: endpointType): Endpoint = e
 
   def apply(b: binaryAnnotationType): BinaryAnnotation = {
     throw new Exception("Not implemented")
@@ -39,9 +38,6 @@ object JsonAdapter extends Adapter {
     }
     JsonBinaryAnnotation(b.key, value, b.annotationType, b.host)
   }
-
-  def apply(e: endpointType): Endpoint = e
-  //def apply(e: Endpoint): endpointType = e
 
   def apply(s: spanType): Span = {
     Span(
