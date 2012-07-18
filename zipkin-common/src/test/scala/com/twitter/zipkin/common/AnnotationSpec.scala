@@ -17,6 +17,7 @@
 package com.twitter.zipkin.common
 
 import org.specs.Specification
+import com.twitter.conversions.time._
 
 class AnnotationSpec extends Specification {
   "Annotation" should {
@@ -30,15 +31,17 @@ class AnnotationSpec extends Specification {
     }
 
     "compare correctly" in {
-      val ann1 = Annotation(1, "a", None)
+      val ann1 = Annotation(1, "a", None, None)
       val ann2 = Annotation(2, "a", None)
       val ann3 = Annotation(1, "b", None)
       val ann4 = Annotation(1, "a", Some(Endpoint(1, 2, "service")))
+      val ann5 = Annotation(1, "a", None, Some(1.second))
 
       ann1.compare(ann1) mustEqual 0
       ann1.compare(ann2) must beLessThan(0)
       ann1.compare(ann3) must beLessThan(0)
       ann1.compare(ann4) must beLessThan(0)
+      ann1.compare(ann5) must beLessThan(0)
     }
   }
 }
