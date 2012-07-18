@@ -32,8 +32,8 @@ class WhaleReport(args: Args) extends Job(args) with DefaultDateRangeJob {
 
   val spanInfo = PreprocessedSpanSource()
     .read
-    .mapTo(0 ->('trace_id, 'id, 'service, 'annotations, 'binary_annotations)) {
-    s: SpanServiceName => (s.trace_id, s.id, s.service_name, s.annotations.toList, s.binary_annotations.toList)
+    .mapTo(0 ->('trace_id, 'id, 'service, 'annotations, 'binary_annotations))
+    { s: SpanServiceName => (s.trace_id, s.id, s.service_name, s.annotations.toList, s.binary_annotations.toList)
   }
 
   val errorTraces = spanInfo
@@ -50,14 +50,7 @@ class WhaleReport(args: Args) extends Job(args) with DefaultDateRangeJob {
     .rename('trace_id -> 'trace_id_1)
 
   val filtered = spanInfo
-    .flatMap('annotations -> 'error) { al : List[Annotation] => {
-        var error : Option[String] = None
-        al.foreach { a : Annotation =>
-          if (ERRORS.contains(a.value)) error = Some(a.value)
-        }
-        error
-      }
-    }
+    .flatMap('annotations -> 'error) { al : List[Annotation] => { al.find { a : Annotation => ERRORS.contains(a.value) } } }
     .joinWithSmaller('trace_id -> 'trace_id_1, errorTraces)
     .discard('trace_id_1)
     .groupBy('trace_id) { _.toList[String]('service -> 'serviceList) }
