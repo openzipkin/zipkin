@@ -20,7 +20,7 @@ import com.twitter.scalding._
 import java.nio.ByteBuffer
 import java.util.Arrays
 import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
-import sources.{PrepNoNamesSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources.{PrepNoNamesSpanSource, Util}
 
 /**
  * Find out how often each service does memcache accesses

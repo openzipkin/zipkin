@@ -1,7 +1,7 @@
 package com.twitter.zipkin.hadoop
 
 import org.specs.Specification
-import sources.Util
+import com.twitter.zipkin.hadoop.sources.Util
 import com.twitter.zipkin.gen
 import gen.{AnnotationType, Annotation}
 import scala.collection.JavaConverters._

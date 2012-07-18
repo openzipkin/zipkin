@@ -66,6 +66,5 @@ $DIR/run_job.sh -j PopularKeys  -d $ENDTIME -o $OUTPUT/PopularKeys &
 $DIR/run_job.sh -j PopularAnnotations  -d $ENDTIME -o $OUTPUT/PopularAnnotations  &
 $DIR/run_job.sh -j FindIDtoName -p  -d $ENDTIME
 $DIR/run_job.sh -j DependencyTree -d $ENDTIME -o $OUTPUT/DependencyTree  &
-$DIR/run_job.sh -j MostCommonCalls -d $ENDTIME -o $OUTPUT/MostCommonCalls &
 $DIR/run_job.sh -j Timeouts -s "--error_type finagle.timeout" -o $OUTPUT/Timeouts -d $ENDTIME &
 $DIR/run_job.sh -j Timeouts -s "--error_type finagle.retry" -o $OUTPUT/Retries -d $ENDTIME &

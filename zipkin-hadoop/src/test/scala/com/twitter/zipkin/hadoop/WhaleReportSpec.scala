@@ -22,7 +22,7 @@ import com.twitter.scalding._
 import gen.AnnotationType
 import scala.collection.JavaConverters._
 import collection.mutable.{HashMap, HashSet}
-import sources.{PrepTsvSource, PreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, PreprocessedSpanSource, Util}
 import java.nio.ByteBuffer
 import java.util.Arrays
 

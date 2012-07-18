@@ -18,7 +18,7 @@ package com.twitter.zipkin.hadoop
 
 import com.twitter.zipkin.gen.{BinaryAnnotation, Constants, SpanServiceName, Annotation}
 import com.twitter.scalding.{Tsv, DefaultDateRangeJob, Job, Args}
-import sources.{Util, PreprocessedSpanSource}
+import com.twitter.zipkin.hadoop.sources.{Util, PreprocessedSpanSource}
 import java.nio.ByteBuffer
 
 

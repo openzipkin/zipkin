@@ -19,7 +19,7 @@ package com.twitter.zipkin.hadoop
 import com.twitter.zipkin.gen.{Constants, SpanServiceName, Annotation}
 import cascading.pipe.joiner.LeftJoin
 import com.twitter.scalding.{Tsv, DefaultDateRangeJob, Job, Args}
-import sources.{PrepTsvSource, Util, PreprocessedSpanSource}
+import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, Util, PreprocessedSpanSource}
 
 /**
  * Per service call (i.e. pair of services), finds the average run time (in microseconds) of that service call

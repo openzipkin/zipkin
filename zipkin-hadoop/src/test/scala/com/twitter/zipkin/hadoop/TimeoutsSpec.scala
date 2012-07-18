@@ -23,7 +23,7 @@ import com.twitter.scalding._
 import gen.AnnotationType
 import scala.collection.JavaConverters._
 import scala.collection.mutable._
-import sources.{PrepTsvSource, PreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, PreprocessedSpanSource, Util}
 
 /**
 * Tests that Timeouts finds the service calls where timeouts occur and how often
