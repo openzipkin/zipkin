@@ -8,6 +8,25 @@ import com.posterous.finatra.Request
 object QueryRequest {
   val fmt = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss")
 
+  /**
+   * Takes a Finatra `Request` and produce the correct `QueryRequest` depending
+   * on the GET parameters present
+   *
+   * Required parameters:
+   * - service_name: String
+   * - end_datetime: dateString that matches `fmt`
+   *
+   * Optional parameters:
+   * - limit: Int, default 100
+   *
+   * Mapping (excluding above parameters):
+   * (span_name)                        => SpanQueryRequest
+   * (time_annotation)                  => AnnotationQueryRequest
+   * (annotation_key, annotation_value) => KeyValueAnnotationQueryRequest
+   *
+   * (annotation_key)                   => ServiceQueryRequest
+   * ()                                 => ServiceQueryRequest
+   */
   def apply(request: Request): QueryRequest = {
     val serviceName = request.params("service_name")
     val endTimestamp = request.params.get("end_datetime") match {
