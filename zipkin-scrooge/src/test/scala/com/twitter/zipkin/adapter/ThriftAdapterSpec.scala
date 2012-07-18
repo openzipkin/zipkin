@@ -18,6 +18,8 @@ package com.twitter.zipkin.adapter
 
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.gen
+import com.twitter.conversions.time._
+
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
 import java.nio.ByteBuffer
@@ -28,6 +30,12 @@ class ThriftAdapterSpec extends Specification with JMocker with ClassMocker {
     "convert Annotation" in {
       "to thrift and back" in {
         val expectedAnn: Annotation = Annotation(123, "value", Some(Endpoint(123, 123, "service")))
+        val thriftAnn: gen.Annotation = ThriftAdapter(expectedAnn)
+        val actualAnn: Annotation = ThriftAdapter(thriftAnn)
+        expectedAnn mustEqual actualAnn
+      }
+      "to thrift and back, with duration" in {
+        val expectedAnn: Annotation = Annotation(123, "value", Some(Endpoint(123, 123, "service")), Some(1.seconds))
         val thriftAnn: gen.Annotation = ThriftAdapter(expectedAnn)
         val actualAnn: Annotation = ThriftAdapter(thriftAnn)
         expectedAnn mustEqual actualAnn
