@@ -33,7 +33,6 @@ class SnappyCodec[T](codec: Codec[T]) extends Codec[T] {
 
   def encode(t: T): ByteBuffer = {
     Stats.time("snappycodec.compress") {
-      Trace.record("snappycodec.compress")
       val arr = Util.getArrayFromBuffer(codec.encode(t))
       val compressArr = new Array[Byte](Snappy.maxCompressedLength(arr.length))
       val compressLen = Snappy.compress(arr, 0, arr.length, compressArr, 0)
@@ -44,7 +43,6 @@ class SnappyCodec[T](codec: Codec[T]) extends Codec[T] {
 
   def decode(ary: ByteBuffer): T = {
     Stats.time("snappycodec.decompress") {
-      Trace.record("snappycodec.decompress")
       val arr = Util.getArrayFromBuffer(ary)
       val uncompressedArr = Snappy.uncompress(arr, 0, arr.length)
       codec.decode(ByteBuffer.wrap(uncompressedArr))
