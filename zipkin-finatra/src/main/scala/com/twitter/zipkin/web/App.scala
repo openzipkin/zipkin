@@ -43,6 +43,10 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     render(path = "show.mustache", exports = new ShowObject(request.params("id")))
   }
 
+  get("/static") { request =>
+    render(path = "static.mustache", exports = new StaticObject)
+  }
+
   get("/api/query") { request =>
     /* Get trace ids */
     val traceIds = QueryRequest(request) match {
@@ -206,4 +210,8 @@ class IndexObject(val endDate: String, val endTime: String) extends ExportObject
 
 class ShowObject(traceId: String) extends ExportObject {
   val inlineJs = "$(Zipkin.Application.Show.initialize(\"" + traceId + "\"));"
+}
+
+class StaticObject extends ExportObject {
+  val inlineJs = "$(Zipkin.Application.Static.initialize());"
 }
