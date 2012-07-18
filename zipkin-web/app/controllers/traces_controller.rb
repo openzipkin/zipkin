@@ -39,9 +39,6 @@ class TracesController < ApplicationController
     @trace_id = params[:id]
   end
 
-  def static
-  end
-
   def get_trace
     trace_id = params[:id]
 
