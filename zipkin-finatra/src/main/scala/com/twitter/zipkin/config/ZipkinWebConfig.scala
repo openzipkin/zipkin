@@ -7,6 +7,7 @@ import com.twitter.util.Duration
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.web.{Resource, ZipkinWeb, App}
 import com.twitter.zipkin.config.zookeeper.{ZooKeeperClientConfig, ZooKeeperConfig}
+import java.net.InetSocketAddress
 
 trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
 
@@ -15,8 +16,10 @@ trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
 
   var rootUrl: String = "http://localhost/"
   var pinTtl: Duration = 30.days
+  var hostConnectionLimit: Int = 1
 
   var queryServerSetPath = "/twitter/service/zipkin/query"
+  def queryClient: Either[InetSocketAddress, ZooKeeperClient] = Right(zkClient)
 
   /* Map dirname to content type */
   var resourceDirs: Map[String, String] = Map[String, String](
@@ -31,7 +34,7 @@ trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
   def zkClientConfig = new ZooKeeperClientConfig {
     var config = zkConfig
   }
-  lazy val zkClient: Option[ZooKeeperClient] = Some { zkClientConfig.apply() }
+  lazy val zkClient: ZooKeeperClient = zkClientConfig.apply()
 
   def appConfig: (gen.ZipkinQuery.FinagledClient) => App =
     (client) => new App(this, client)

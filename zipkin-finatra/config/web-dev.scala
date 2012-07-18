@@ -16,6 +16,7 @@
 
 import com.twitter.zipkin.config.ZipkinWebConfig
 import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
+import java.net.InetSocketAddress
 
 new ZipkinWebConfig {
   rootUrl = "http://localhost:" + serverPort + "/"
@@ -24,5 +25,5 @@ new ZipkinWebConfig {
     servers = List("localhost:3003")
   }
 
-  override lazy val zkClient = None
+  override def queryClient = Left(new InetSocketAddress("localhost", 3002))
 }

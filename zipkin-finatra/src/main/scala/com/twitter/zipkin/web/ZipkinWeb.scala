@@ -22,20 +22,20 @@ class ZipkinWeb(config: ZipkinWebConfig) extends Service {
   def start() {
     val clientBuilder = ClientBuilder()
       .codec(ThriftClientFramedCodec())
-      .hostConnectionLimit(1)
+      .hostConnectionLimit(config.hostConnectionLimit)
 
-    val clientService = config.zkClient match {
-      case None => {
-        clientBuilder.hosts(new InetSocketAddress("localhost", 3002))
-        .build()
+    val clientService = config.queryClient match {
+      case Left(address) => {
+        clientBuilder.hosts(address)
+          .build()
       }
-      case Some(zk) => {
+      case Right(zk) => {
         val serverSet = new ServerSetImpl(zk, config.queryServerSetPath)
         val cluster = new ZookeeperServerSetCluster(serverSet) {
           override def ready() = super.ready
         }
         clientBuilder.cluster(cluster)
-        .build()
+          .build()
       }
     }
 
