@@ -190,8 +190,14 @@ module PullRequest
     puts "   into " + color(base['ref'] + ": " + base['sha'], :green)
 
     with_temporary_branch(base) do |tmp|
-      puts "Merging head to temporary branch"
-      Git.run("merge --squash #{head['sha']}")
+      if head['repo']['fork']:
+        remote = head['repo']['git_url']
+        ref = head['ref']
+        Git.run("pull --squash #{remote} #{ref}")
+      else:
+        puts "Merging head to temporary branch"
+        Git.run("merge --squash #{head['sha']}")
+      end
 
       commit_msg = merge_commit_msg(pull_request, issue)
 
