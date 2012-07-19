@@ -89,7 +89,7 @@ Once the trace data arrives at the Zipkin collector daemon we check that it's va
 We settled on Cassandra for storage. It's scalable, has a flexible schema and is heavily used within Twitter. We did try to make this component pluggable though, so should not be hard to put in something else here.
 
 ### Zipkin query daemon
-Once the data is stored and indexed we need a way to extract it. This is where the query daemon comes in, providing the users with a simple Thrift api for finding and retrieving traces. See <a href="https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkin.thrift">the Thrift file</a>.
+Once the data is stored and indexed we need a way to extract it. This is where the query daemon comes in, providing the users with a simple Thrift api for finding and retrieving traces. See <a href="https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinQuery.thrift">the Thrift file</a>.
 
 ### UI
 Most of our users access the data via our UI. It's a Rails app that uses <a href="http://d3js.org/">D3</a> to visualize the trace data. Note that there is no built in authentication in the UI.
