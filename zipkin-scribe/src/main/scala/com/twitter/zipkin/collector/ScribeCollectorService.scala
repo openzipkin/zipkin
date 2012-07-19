@@ -83,10 +83,12 @@ class ScribeCollectorService(config: ScribeZipkinCollectorConfig, val writeQueue
 
     val scribeMessages = logEntries.flatMap {
       entry =>
-        if (!categories.contains(entry.category.toLowerCase())) {
+        val category = entry.category.toLowerCase()
+        if (!categories.contains(category)) {
           Stats.incr("collector.invalid_category")
           None
         } else {
+          Stats.incr("category." + category)
           Some(entry.`message`)
         }
     }
