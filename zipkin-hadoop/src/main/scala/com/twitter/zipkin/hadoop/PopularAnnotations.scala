@@ -18,7 +18,7 @@ package com.twitter.zipkin.hadoop
 
 
 import com.twitter.scalding._
-import sources.PreprocessedSpanSource
+import com.twitter.zipkin.hadoop.sources.PreprocessedSpanSource
 import com.twitter.zipkin.gen.{SpanServiceName, Annotation}
 
 /**

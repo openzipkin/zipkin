@@ -22,7 +22,7 @@ import com.twitter.scalding._
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
 import com.twitter.zipkin.gen.AnnotationType
-import sources.{Util, PrepNoNamesSpanSource}
+import com.twitter.zipkin.hadoop.sources.{Util, PrepNoNamesSpanSource}
 
 /**
 * Tests that WorstRuntimes finds the spans which take the longest to run

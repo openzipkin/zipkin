@@ -18,7 +18,7 @@ package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
 import com.twitter.zipkin.gen.{Span, Constants, Annotation}
-import sources.{PrepNoNamesSpanSource}
+import com.twitter.zipkin.hadoop.sources.{PrepNoNamesSpanSource}
 
 /**
  * Obtain the IDs and the durations of the one hundred service calls which take the longest per service

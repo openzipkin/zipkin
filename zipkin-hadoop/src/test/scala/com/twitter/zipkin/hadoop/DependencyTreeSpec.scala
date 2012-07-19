@@ -22,7 +22,7 @@ import com.twitter.scalding._
 import gen.AnnotationType
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
-import sources.{PrepTsvSource, PreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, PreprocessedSpanSource, Util}
 
 /**
 * Tests that DependencyTree finds all service calls and how often per pair
