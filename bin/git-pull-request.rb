@@ -190,7 +190,9 @@ module PullRequest
     puts "   into " + color(base['ref'] + ": " + base['sha'], :green)
 
     with_temporary_branch(base) do |tmp|
-      if head['repo']['fork']:
+      is_fork = head['repo']['fork']
+
+      if is_fork:
         remote = head['repo']['git_url']
         ref = head['ref']
         Git.run("pull --squash #{remote} #{ref}")
@@ -211,9 +213,11 @@ module PullRequest
       puts "Pushing to origin"
       Git.run("push origin master")
 
-      puts "Deleting local and remote branches"
-      Git.run("push origin :#{head['ref']}")
-      Git.run("branch -D #{head['ref']}")
+      if !is_fork:
+        puts "Deleting local and remote branches"
+        Git.run("push origin :#{head['ref']}")
+        Git.run("branch -D #{head['ref']}")
+      end
     end
   end
 
