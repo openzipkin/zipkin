@@ -29,7 +29,7 @@ import com.twitter.scalding.RichDate
 import com.twitter.zipkin.gen.AnnotationType
 import com.twitter.scalding.JobTest
 import com.twitter.scalding.Tsv
-import sources.{PrepTsvSource, PreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, PreprocessedSpanSource, Util}
 
 /**
 * Tests that ExpensiveEndpointSpec finds the average run time of each service
