@@ -17,7 +17,7 @@ package com.twitter.zipkin.hadoop
 
 
 import com.twitter.scalding._
-import sources.SpanSource
+import com.twitter.zipkin.hadoop.sources.SpanSource
 import com.twitter.zipkin.gen.{Span, Constants, Annotation}
 import scala.collection.JavaConverters._
 import java.nio.ByteBuffer
