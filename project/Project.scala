@@ -294,7 +294,7 @@ object Zipkin extends Build {
       resolvers += "codahale" at "http://repo.codahale.com",
 
       libraryDependencies ++= Seq(
-        "com.posterous" % "finatra" % "4.3.2",
+        "com.twitter" % "finatra" % "0.1.9",
 
         "com.twitter.common.zookeeper" % "server-set" % "1.0.7",
 
