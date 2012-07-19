@@ -40,8 +40,7 @@ class WhaleReport(args: Args) extends Job(args) with DefaultDateRangeJob {
     .project('trace_id, 'binary_annotations)
     .filter('binary_annotations) {
     bal: List[BinaryAnnotation] =>
-      bal.exists({
-        ba: BinaryAnnotation => {
+      bal.exists({ ba: BinaryAnnotation => {
             ba != null && ba.value != null && cleanString(ba.value) == WhaleReport.ERROR_MESSAGE
         }
       })

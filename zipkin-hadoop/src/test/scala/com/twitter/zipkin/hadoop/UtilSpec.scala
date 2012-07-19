@@ -3,7 +3,7 @@ package com.twitter.zipkin.hadoop
 import org.specs.Specification
 import com.twitter.zipkin.hadoop.sources.Util
 import com.twitter.zipkin.gen
-import gen.{AnnotationType, Annotation}
+import com.twitter.zipkin.gen.{AnnotationType, Annotation}
 import scala.collection.JavaConverters._
 
 class UtilSpec extends Specification {

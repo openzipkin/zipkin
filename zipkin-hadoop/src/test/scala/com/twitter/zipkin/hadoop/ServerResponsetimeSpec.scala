@@ -4,8 +4,7 @@ package com.twitter.zipkin.hadoop
 import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
-import gen.AnnotationType
-import sources.{SpanSource, Util}
+import com.twitter.zipkin.hadoop.sources.{SpanSource, Util}
 import scala.collection.JavaConverters._
 
 class ServerResponsetimeSpec extends Specification with TupleConversions {
