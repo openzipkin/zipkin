@@ -71,9 +71,9 @@ class Resource(resourceDirs: Map[String, String]) extends Controller {
     get("/public/" + dir + "/:id") { request =>
       val file = TempFile.fromResourcePath("/public/" + dir + "/" + request.params("id"))
       if (file.exists()) {
-        render.status(200).body(Files.readBytes(file)).header("Content-Type", contentType)
+        render.status(200).body(Files.readBytes(file)).header("Content-Type", contentType).toFuture
       } else {
-        render.status(404).body("Not Found")
+        render.status(404).body("Not Found").toFuture
       }
     }
   }

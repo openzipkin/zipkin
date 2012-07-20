@@ -16,7 +16,6 @@
  */
 package com.twitter.zipkin.web
 
-import com.twitter.finatra.{View, Request}
 import com.twitter.logging.Logger
 import com.twitter.util.Future
 import com.twitter.zipkin.adapter.{JsonQueryAdapter, JsonAdapter, ThriftQueryAdapter, ThriftAdapter}
@@ -25,14 +24,14 @@ import com.twitter.zipkin.config.ZipkinWebConfig
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import org.jboss.netty.handler.codec.http.HttpResponse
+import com.twitter.finatra.{Response, Controller, View, Request}
 
 /**
  * Application that handles ZipkinWeb routes
  * @param config ZipkinWebConfig
  * @param client Thrift client to ZipkinQuery
  */
-class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) extends ZipkinController {
+class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) extends Controller {
 
   val log = Logger.get()
   val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
@@ -42,17 +41,17 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
 
   /* Index page */
   get("/") { request =>
-    render.view(ApplicationView(new IndexView(getDate, getTime))).build
+    render.view(ApplicationView(new IndexView(getDate, getTime))).toFuture
   }
 
   /* Trace page */
   get("/show/:id") { request =>
-    render.view(ApplicationView(new ShowView(request.params("id")))).build
+    render.view(ApplicationView(new ShowView(request.params("id")))).toFuture
   }
 
   /* Static page for render trace from JSON */
   get("/static") { request =>
-    render.view(ApplicationView(new StaticView)).build
+    render.view(ApplicationView(new StaticView)).toFuture
   }
 
   /**
@@ -101,7 +100,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
           }
         }
       }
-    }.map(render.json(_).build).flatten
+    }.map(render.json(_))
   }
 
   /**
@@ -111,8 +110,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   get("/api/services") { request =>
     log.debug("/api/services")
     client.getServiceNames().map { services =>
-      render.json(services.toSeq.sorted).build
-    }.flatten
+      render.json(services.toSeq.sorted)
+    }
   }
 
   /**
@@ -126,8 +125,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     log.debug("/api/spans")
     withServiceName(request) { serviceName =>
       client.getSpanNames(serviceName).map { spans =>
-        render.json(spans.toSeq.sorted).build
-      }.flatten
+        render.json(spans.toSeq.sorted)
+      }
     }
   }
 
@@ -141,8 +140,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   get("/api/top_annotations") { request =>
     withServiceName(request) { serviceName =>
       client.getTopAnnotations(serviceName).map { anns =>
-        render.json(anns.toSeq.sorted).build
-      }.flatten
+        render.json(anns.toSeq.sorted)
+      }
     }
   }
 
@@ -156,8 +155,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   get("/api/top_kv_annotations") { request =>
     withServiceName(request) { serviceName =>
       client.getTopKeyValueAnnotations(serviceName).map { anns =>
-        render.json(anns.toSeq.sorted).build
-      }.flatten
+        render.json(anns.toSeq.sorted)
+      }
     }
   }
 
@@ -178,8 +177,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     log.debug(ids.toString())
 
     client.getTraceCombosByIds(ids, adjusters).map { _.map { ThriftQueryAdapter(_) }.head }.map { combo =>
-      render.json(JsonQueryAdapter(combo)).build
-    }.flatten
+      render.json(JsonQueryAdapter(combo))
+    }
   }
 
   /**
@@ -191,7 +190,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
    */
   get("/api/is_pinned/:id") { request =>
     val id = request.params("id").toLong
-    client.getTraceTimeToLive(id).map(render.json(_).build).flatten
+    client.getTraceTimeToLive(id).map(render.json(_))
   }
 
   /**
@@ -206,24 +205,24 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     val id = request.params("id").toLong
     request.params("state").toLowerCase match {
       case "true" => {
-        togglePinState(id, true).map(render.json(_).build).flatten
+        togglePinState(id, true).map(render.json(_))
       }
       case "false" => {
-        togglePinState(id, false).map(render.json(_).build).flatten
+        togglePinState(id, false).map(render.json(_))
       }
       case _ => {
-        render.status(400).body("Must be true or false").build
+        render.status(400).body("Must be true or false").toFuture
       }
     }
   }
 
-  private def withServiceName(request: Request)(f: String => Future[HttpResponse]): Future[HttpResponse] = {
+  private def withServiceName(request: Request)(f: String => Future[Response]): Future[Response] = {
     request.params.get("serviceName") match {
       case Some(s) => {
         f(s)
       }
       case None => {
-        render.status(401).body("Invalid service name").build
+        render.status(401).body("Invalid service name").toFuture
       }
     }
   }
