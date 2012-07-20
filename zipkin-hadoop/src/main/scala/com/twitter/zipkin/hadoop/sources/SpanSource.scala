@@ -83,8 +83,6 @@ trait LzoTsv extends DelimitedScheme {
  */
 case class SpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("/logs/zipkin/", dateRange)
 
-case class SpanSource1(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("good_data", dateRange)
-
 case class FixedSpanSource(p : String) extends FixedPathSource(p) with LzoThrift[Span] {
   def column = classOf[Span]
 }
@@ -92,22 +90,22 @@ case class FixedSpanSource(p : String) extends FixedPathSource(p) with LzoThrift
 /**
  * This is the source for trace data that has been merged. Directories are like in SpanSource
  */
-case class PrepNoNamesSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("test", dateRange)
+case class PrepNoNamesSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("Preprocessed", dateRange)
 
 /**
  * This is the source for trace data that has been merged and for which we've found
  * the best possible client side and service names. Directories are like in SpanSource
  */
-case class PreprocessedSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[SpanServiceName]("testagain", dateRange)
+case class PreprocessedSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[SpanServiceName]("FindNames", dateRange)
 
-case class PreprocessedSpanSourceTest(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[SpanServiceName]("testalpha", dateRange)
+case class PreprocessedSpanSourceTest(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[SpanServiceName]("FindIDtoNames", dateRange)
 
 /**
  * This is the source for data of the form (id, service name)
  */
 
 case class PrepTsvSource()(implicit dateRange : DateRange)
-  extends DailySuffixSource("id_names", dateRange)
+  extends HourlySuffixSource("id_names", dateRange)
   with LzoTsv
   with Mappable[(Long, String)]
   with SuccessFileSource {

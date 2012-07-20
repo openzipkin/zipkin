@@ -21,11 +21,11 @@ ISPREPROCESSOR=
 DATE=
 SETTINGS=
 OUTPUTDIR=
-while getopts “hj:ps:d:n:o:” OPTION
+while getopts "hj:ps:d:o:" OPTION
 do
     case $OPTION in
 	h)
-	    usage()
+	    usage
 	    exit 1
 	    ;;
         j)
@@ -53,6 +53,8 @@ echo "Date: $DATE"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+echo "From run_job.sh $DIR"
+
 if [ "$ISPREPROCESSOR" == "1" ]; then
     $DIR/scald.rb --hdfs com.twitter.zipkin.hadoop.sources.$JOBNAME $SETTINGS --date $DATE
     if [ "$?" != 0 ]; then
@@ -60,7 +62,7 @@ if [ "$ISPREPROCESSOR" == "1" ]; then
         exit 1
     fi
 else
-    $DIR/scald.rb --hdfs com.twitter.zipkin.hadoop.$JOBNAME $SETTINGS --date $DATE --output $OUTPUTDIR
+    $DIR/scald.rb --hdfs com.twitter.zipkin.hadoop.$JOBNAME $SETTINGS --date $DATE $DATE --output $OUTPUTDIR
     if [ "$?" == "0" ]; then
         echo "Job $JOBNAME succesfully completed"
     else
@@ -68,4 +70,3 @@ else
         exit 1
     fi
 fi
-
