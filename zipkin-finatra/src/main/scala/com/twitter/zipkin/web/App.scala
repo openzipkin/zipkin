@@ -273,7 +273,7 @@ class ApplicationView extends View {
 object ApplicationView {
   def apply(v: View): View = {
     new ApplicationView {
-      def render = v.render
+      def body = v.render
     }
   }
 }
