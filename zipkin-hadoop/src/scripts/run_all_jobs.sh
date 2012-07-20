@@ -59,18 +59,20 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo "From run.sh $DIR"
 
 #ENDTIME="2012-07-19T01:00"
+FAIL=0
 
 $DIR/scald.rb --hdfs com.twitter.zipkin.hadoop.sources.Preprocessed --date $ENDTIME $ENDTIME
-$DIR/scald.rb --hdfs com.twitter.zipkin.hadoop.WorstRuntimes --date $ENDTIME $ENDTIME --output $OUTPUT/WorstRuntimes
 
 $DIR/run_job.sh -j WorstRuntimes -d $ENDTIME -o $OUTPUT/WorstRuntimes &
-$DIR/run_job.sh -j MemcacheRequest -d $ENDTIME -o $OUTPUT/MemcacheRequest &#$DIR/run_job.sh -j FindNames -p -d $ENDTIME
+$DIR/run_job.sh -j MemcacheRequest -d $ENDTIME -o $OUTPUT/MemcacheRequest &
+
+$DIR/run_job.sh -j FindNames -p -d $ENDTIME
+
 $DIR/run_job.sh -j PopularKeys  -d $ENDTIME -o $OUTPUT/PopularKeys &
-
-$DIR/run_job.sh -j DependencyTree  -d $ENDTIME -o $OUTPUT/DependencyTree &
-
 $DIR/run_job.sh -j PopularAnnotations  -d $ENDTIME -o $OUTPUT/PopularAnnotations  &
+
 $DIR/run_job.sh -j FindIDtoName -p  -d $ENDTIME
+
 $DIR/run_job.sh -j DependencyTree -d $ENDTIME -o $OUTPUT/DependencyTree  &
 $DIR/run_job.sh -j Timeouts -s "--error_type finagle.timeout" -o $OUTPUT/Timeouts -d $ENDTIME &
 $DIR/run_job.sh -j Timeouts -s "--error_type finagle.retry" -o $OUTPUT/Retries -d $ENDTIME &
