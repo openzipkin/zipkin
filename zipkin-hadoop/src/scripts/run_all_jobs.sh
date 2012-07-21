@@ -70,6 +70,7 @@ $DIR/run_job.sh -j FindNames -p -d $ENDTIME
 
 $DIR/run_job.sh -j PopularKeys  -d $ENDTIME -o $OUTPUT/PopularKeys &
 $DIR/run_job.sh -j PopularAnnotations  -d $ENDTIME -o $OUTPUT/PopularAnnotations  &
+$DIR/run_job.sh -j WhaleReport -d $ENDTIME -o $OUTPUT/WhaleReport &
 
 $DIR/run_job.sh -j FindIDtoName -p  -d $ENDTIME
 
