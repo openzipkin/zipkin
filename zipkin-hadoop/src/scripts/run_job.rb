@@ -1,4 +1,5 @@
 #!/usr/bash/env ruby
+# Script that rxuns a single scalding job 
 
 require 'optparse'
 require 'ostruct'

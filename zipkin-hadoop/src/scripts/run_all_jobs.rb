@@ -1,4 +1,5 @@
 #!/usr/bash/env ruby
+# Runs all scalding jobs in package com.twitter.zipkin.hadoop
 
 require 'optparse'
 require 'ostruct'
