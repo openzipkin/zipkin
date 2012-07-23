@@ -58,7 +58,7 @@ object JsonAdapter extends Adapter {
       s.serviceNames,
       s.firstAnnotation.get.timestamp,
       s.duration.get,
-      s.annotations,
+      s.annotations.sortWith((a,b) => a.timestamp < b.timestamp),
       s.binaryAnnotations.map(JsonAdapter(_)))
   }
 
