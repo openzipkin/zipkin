@@ -1,0 +1,11 @@
+# Steps for releasing
+* Update the changelog on master
+* Cut the release branch
+  * bump to stable
+  * package the jars
+  * tag
+  * bump the patch version
+  * bump to SNAPSHOT
+* Back on master
+  * bump the minor/major version
+
