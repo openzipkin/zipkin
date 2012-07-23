@@ -267,27 +267,29 @@ trait ExportObject {
 }
 
 class ApplicationView extends View {
-  val template = "layouts/application.mustache"
+  val template = "templates/layouts/application.mustache"
 }
 
 object ApplicationView {
   def apply(v: View): View = {
     new ApplicationView {
-      def body = v.render
+      def body = {
+        v.render
+      }
     }
   }
 }
 class IndexView(val endDate: String, val endTime: String) extends View {
-  val template = "index.mustache"
+  val template = "templates/index.mustache"
   val inlineJs = "$(Zipkin.Application.Index.initialize());"
 }
 
 class ShowView(traceId: String) extends View {
-  val template = "show.mustache"
+  val template = "templates/show.mustache"
   val inlineJs = "$(Zipkin.Application.Show.initialize(\"" + traceId + "\"));"
 }
 
 class StaticView extends View {
-  val template = "static.mustache"
+  val template = "templates/static.mustache"
   val inlineJs = "$(Zipkin.Application.Static.initialize());"
 }
