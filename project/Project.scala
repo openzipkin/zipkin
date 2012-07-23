@@ -7,6 +7,8 @@ import java.io.File
 
 object Zipkin extends Build {
 
+  val ZIPKIN_VERSION = "0.2.0-SNAPSHOT"
+
   val CASSIE_VERSION  = "0.22.0"
   val FINAGLE_VERSION = "5.1.0"
   val OSTRICH_VERSION = "8.1.0"
@@ -31,7 +33,7 @@ object Zipkin extends Build {
       TravisCiRepos.newSettings).settings(
 
       name := "zipkin-hadoop",
-      version := "0.2.0-SNAPSHOT",
+      version := ZIPKIN_VERSION,
       parallelExecution in Test := false,
       libraryDependencies ++= Seq(
         "com.twitter" % "scalding_2.9.1"       % "0.5.3",
@@ -82,7 +84,7 @@ object Zipkin extends Build {
     TravisCiRepos.newSettings).settings(
 
     name := "zipkin-hadoop-job-runner",
-    version := "0.2.0-SNAPSHOT",
+    version := ZIPKIN_VERSION,
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
       "org.slf4j" % "slf4j-log4j12"          % "1.6.4" % "runtime",
@@ -106,7 +108,7 @@ object Zipkin extends Build {
       CompileThrift.newSettings ++
       TravisCiRepos.newSettings).settings(
     name := "zipkin-test",
-    version := "0.2.0-SNAPSHOT",
+    version := ZIPKIN_VERSION,
     libraryDependencies ++= Seq(
       /* Test dependencies */
       "org.scala-tools.testing" % "specs_2.9.1"  % "1.6.9" % "test",
@@ -128,7 +130,7 @@ object Zipkin extends Build {
         CompileThrift.newSettings ++
         TravisCiRepos.newSettings).settings(
       name := "zipkin-thrift",
-      version := "0.2.0-SNAPSHOT",
+      version := ZIPKIN_VERSION,
       libraryDependencies ++= Seq(
         "org.apache.thrift" % "libthrift" % "0.5.0",
         "org.slf4j" % "slf4j-api" % "1.5.8"
@@ -144,7 +146,7 @@ object Zipkin extends Build {
         StandardProject.newSettings ++
         SubversionPublisher.newSettings ++
         TravisCiRepos.newSettings).settings(
-      version := "0.2.0-SNAPSHOT",
+      version := ZIPKIN_VERSION,
       libraryDependencies ++= Seq(
         "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
         "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
@@ -174,7 +176,7 @@ object Zipkin extends Build {
         CompileThriftScrooge.newSettings ++
         TravisCiRepos.newSettings
     ).settings(
-      version := "0.2.0-SNAPSHOT",
+      version := ZIPKIN_VERSION,
       libraryDependencies ++= Seq(
         "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
         "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
@@ -212,7 +214,7 @@ object Zipkin extends Build {
         SubversionPublisher.newSettings ++
         TravisCiRepos.newSettings
     ).settings(
-      version := "0.2.0-SNAPSHOT",
+      version := ZIPKIN_VERSION,
 
       libraryDependencies ++= Seq(
         "com.twitter" % "cassie-core"       % CASSIE_VERSION intransitive(),
@@ -260,7 +262,7 @@ object Zipkin extends Build {
         SubversionPublisher.newSettings ++
         TravisCiRepos.newSettings
     ).settings(
-      version := "0.2.0-SNAPSHOT",
+      version := ZIPKIN_VERSION,
       libraryDependencies ++= Seq(
         /* Test dependencies */
         "org.scala-tools.testing" % "specs_2.9.1"  % "1.6.9" % "test",
@@ -289,7 +291,7 @@ object Zipkin extends Build {
         StandardProject.newSettings ++
         TravisCiRepos.newSettings
     ).settings(
-      version := "0.2.0-SNAPSHOT",
+      version := ZIPKIN_VERSION,
       resolvers += "finatra" at "http://repo.juliocapote.com",
       resolvers += "codahale" at "http://repo.codahale.com",
 
