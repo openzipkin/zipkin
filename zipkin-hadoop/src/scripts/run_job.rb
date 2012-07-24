@@ -6,7 +6,7 @@ require 'ostruct'
 require 'pp'
 require 'date'
 
-$HOST = "hadoopnest1.smf1.twitter.com"
+$HOST = "my.remote.host"
 
 class OptparseJobArguments
 
