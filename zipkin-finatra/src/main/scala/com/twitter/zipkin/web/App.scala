@@ -41,17 +41,17 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
 
   /* Index page */
   get("/") { request =>
-    render.view(ApplicationView(new IndexView(getDate, getTime))).toFuture
+    render.view(wrapView(new IndexView(getDate, getTime))).toFuture
   }
 
   /* Trace page */
   get("/show/:id") { request =>
-    render.view(ApplicationView(new ShowView(request.params("id")))).toFuture
+    render.view(wrapView(new ShowView(request.params("id")))).toFuture
   }
 
   /* Static page for render trace from JSON */
   get("/static") { request =>
-    render.view(ApplicationView(new StaticView)).toFuture
+    render.view(wrapView(new StaticView)).toFuture
   }
 
   /**
@@ -257,28 +257,15 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
       }
     }
   }
-}
 
-trait Attribute
-trait ExportObject {
-  def environment: Attribute = new Attribute { def production = false }
-  def flash: Option[Attribute] = None
-  val clockSkew: Boolean = true
-}
-
-class ApplicationView extends View {
-  val template = "templates/layouts/application.mustache"
-}
-
-object ApplicationView {
-  def apply(v: View): View = {
-    new ApplicationView {
-      def body = {
-        v.render
-      }
-    }
+  private def wrapView(v: View) = new View {
+    val template = "templates/layouts/application.mustache"
+    val rootUrl = config.rootUrl
+    val innerView: View = v
+    lazy val body = innerView.render
   }
 }
+
 class IndexView(val endDate: String, val endTime: String) extends View {
   val template = "templates/index.mustache"
   val inlineJs = "$(Zipkin.Application.Index.initialize());"
