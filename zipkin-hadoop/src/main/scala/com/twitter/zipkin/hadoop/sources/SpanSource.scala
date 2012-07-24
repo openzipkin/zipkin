@@ -98,14 +98,12 @@ case class PrepNoNamesSpanSource(implicit dateRange: DateRange) extends HourlySu
  */
 case class PreprocessedSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[SpanServiceName]("FindNames", dateRange)
 
-case class PreprocessedSpanSourceTest(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[SpanServiceName]("FindIDtoNames", dateRange)
-
 /**
  * This is the source for data of the form (id, service name)
  */
 
 case class PrepTsvSource()(implicit dateRange : DateRange)
-  extends HourlySuffixSource("id_names", dateRange)
+  extends HourlySuffixSource("FindIDtoName", dateRange)
   with LzoTsv
   with Mappable[(Long, String)]
   with SuccessFileSource {

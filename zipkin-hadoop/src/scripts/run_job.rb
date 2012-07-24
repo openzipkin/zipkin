@@ -99,7 +99,8 @@ def remote_file_exists?(pathname, options)
   cmd += options.uses_hadoop_config ? " --config " + options.hadoop_config : ""
   cmd += " dfs -test -e " + pathname
   result = system(cmd)
-  puts "In run_job, remote_file_exists: " + result.to_s()
+  puts "In run_job, remote_file_exists for " + pathname + ": " + result.to_s()
+  return result
 end
 
 def date_to_cmd(date)
@@ -109,21 +110,16 @@ end
 cmd_head = File.dirname(__FILE__) + "/scald.rb --hdfs com.twitter.zipkin.hadoop."
 settings_string = options.uses_settings ? " " + options.settings : ""
 cmd_date = date_to_cmd(start_date) + " " + date_to_cmd(end_date)
-cmd_args = options.job + settings_string  + " --date " + cmd_date
+cmd_args = options.job + settings_string  + " --date " + cmd_date + " --tz UTC"
 
 if options.preprocessor
-#  puts time_to_remote_file(end_date, options.job + "/")
   if not remote_file_exists?(time_to_remote_file(end_date, options.job + "/") + "/_SUCCESS", options)
     cmd = cmd_head + "sources." + cmd_args
-    puts cmd 
     system(cmd)
   end
 else
-#  puts time_to_remote_file(end_date, "all_jobs/")
-  if not remote_file_exists?(time_to_remote_file(end_date, "all_jobs/") + "/" + options.job + "/_SUCCESS", options)
+  if not remote_file_exists?(options.output + "/_SUCCESS", options)
     cmd = cmd_head + cmd_args + " --output " + options.output
-    puts cmd
     system(cmd)
-#    %x( cmd )
   end
 end
