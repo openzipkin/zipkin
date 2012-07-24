@@ -10,8 +10,8 @@
 * Query
   * Add top annotations query endpoints
 * Web
-  * Add Scala UI (zipkin-finatra), Rails UI (zipkin-web) is deprecated
-    and will be removed in the next release
+  * Add Scala UI (zipkin-finatra), not entirely stable yet. Rails UI
+    (zipkin-web) is deprecated and will be removed in the next release.
   * Add static trace rendering page
   * Add top annotations suggestions on search page
   * Add link to static search page
