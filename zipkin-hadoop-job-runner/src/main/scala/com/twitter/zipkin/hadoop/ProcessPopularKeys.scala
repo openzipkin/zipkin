@@ -43,6 +43,7 @@ abstract class HadoopJobClient {
   def processFile(s: Scanner, client: gen.ZipkinCollector.Client)
 
   def start(filename : String, serverName : String, portNumber : Int) {
+    println("In HadoopJobClient start")
     var transport : TTransport = null
     try {
       // establish connection to the server
@@ -71,6 +72,7 @@ abstract class PerServiceClient extends HadoopJobClient {
   def processService(service: String, values: List[String], client: gen.ZipkinCollector.Client)
 
   def processFile(s: Scanner, client: gen.ZipkinCollector.Client) {
+    println("In PerServiceClient processFile")
     if (!s.hasNextLine()) return
     var line : Scanner = new Scanner(s.nextLine())
     var oldService : String = line.next()
@@ -126,6 +128,7 @@ class PopularAnnotationsClient extends PerServiceClient {
 class PopularKeyValuesClient extends PerServiceClient {
 
   def processService(service: String, values: List[String], client: gen.ZipkinCollector.Client) {
+    println("In PopularKeyValues processService")
     client.storeTopKeyValueAnnotations(service, values.asJava)
   }
 
