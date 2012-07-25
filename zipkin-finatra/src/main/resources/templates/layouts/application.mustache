@@ -76,23 +76,7 @@
     </div>
     <div class="container">
       <div class="content">
-        {{#flash}}
-          {{#message}}
-          <div class="alert alert-success high-visibility">
-            <a class="close" data-dismiss="alert" href="#">x</a>
-            <p><strong>{{body}}</strong></p>
-          </div>
-          {{/message}}
-
-          {{#error}}
-          <div class="alert alert-error high-visibility">
-            <a class="close" data-dismiss="alert" href="#">x</a>
-            <p><strong>{{body}}</strong></p>
-          </div>
-          {{/error}}
-        {{/flash}}
-
-        {{render}}
+        {{body}}
       </div>
     </div>
   </body>

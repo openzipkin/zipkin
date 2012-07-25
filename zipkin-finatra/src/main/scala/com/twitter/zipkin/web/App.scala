@@ -16,7 +16,7 @@
  */
 package com.twitter.zipkin.web
 
-import com.posterous.finatra.{Request, FinatraApp}
+import com.twitter.finatra.{Response, Controller, View, Request}
 import com.twitter.logging.Logger
 import com.twitter.util.Future
 import com.twitter.zipkin.adapter.{JsonQueryAdapter, JsonAdapter, ThriftQueryAdapter, ThriftAdapter}
@@ -25,14 +25,13 @@ import com.twitter.zipkin.config.ZipkinWebConfig
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import org.jboss.netty.handler.codec.http.HttpResponse
 
 /**
  * Application that handles ZipkinWeb routes
  * @param config ZipkinWebConfig
  * @param client Thrift client to ZipkinQuery
  */
-class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) extends FinatraApp {
+class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) extends Controller {
 
   val log = Logger.get()
   val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
@@ -42,17 +41,17 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
 
   /* Index page */
   get("/") { request =>
-    render(path = "index.mustache", exports = new IndexObject(getDate, getTime))
+    render.view(wrapView(new IndexView(getDate, getTime))).toFuture
   }
 
   /* Trace page */
   get("/show/:id") { request =>
-    render(path = "show.mustache", exports = new ShowObject(request.params("id")))
+    render.view(wrapView(new ShowView(request.params("id")))).toFuture
   }
 
   /* Static page for render trace from JSON */
   get("/static") { request =>
-    render(path = "static.mustache", exports = new StaticObject)
+    render.view(wrapView(new StaticView)).toFuture
   }
 
   /**
@@ -101,7 +100,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
           }
         }
       }
-    }.flatten.map(toJson(_)).flatten
+    }.map(render.json(_))
   }
 
   /**
@@ -111,8 +110,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   get("/api/services") { request =>
     log.debug("/api/services")
     client.getServiceNames().map { services =>
-      toJson(services.toSeq.sorted)
-    }.flatten
+      render.json(services.toSeq.sorted)
+    }
   }
 
   /**
@@ -126,8 +125,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     log.debug("/api/spans")
     withServiceName(request) { serviceName =>
       client.getSpanNames(serviceName).map { spans =>
-        toJson(spans.toSeq.sorted)
-      }.flatten
+        render.json(spans.toSeq.sorted)
+      }
     }
   }
 
@@ -141,8 +140,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   get("/api/top_annotations") { request =>
     withServiceName(request) { serviceName =>
       client.getTopAnnotations(serviceName).map { anns =>
-        toJson(anns.toSeq.sorted)
-      }.flatten
+        render.json(anns.toSeq.sorted)
+      }
     }
   }
 
@@ -156,8 +155,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   get("/api/top_kv_annotations") { request =>
     withServiceName(request) { serviceName =>
       client.getTopKeyValueAnnotations(serviceName).map { anns =>
-        toJson(anns.toSeq.sorted)
-      }.flatten
+        render.json(anns.toSeq.sorted)
+      }
     }
   }
 
@@ -178,8 +177,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     log.debug(ids.toString())
 
     client.getTraceCombosByIds(ids, adjusters).map { _.map { ThriftQueryAdapter(_) }.head }.map { combo =>
-      toJson(JsonQueryAdapter(combo))
-    }.flatten
+      render.json(JsonQueryAdapter(combo))
+    }
   }
 
   /**
@@ -191,7 +190,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
    */
   get("/api/is_pinned/:id") { request =>
     val id = request.params("id").toLong
-    client.getTraceTimeToLive(id).map(toJson(_)).flatten
+    client.getTraceTimeToLive(id).map(render.json(_))
   }
 
   /**
@@ -206,24 +205,24 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     val id = request.params("id").toLong
     request.params("state").toLowerCase match {
       case "true" => {
-        togglePinState(id, true).map(toJson(_)).flatten
+        togglePinState(id, true).map(render.json(_))
       }
       case "false" => {
-        togglePinState(id, false).map(toJson(_)).flatten
+        togglePinState(id, false).map(render.json(_))
       }
       case _ => {
-        render(400, "Must be true or false")
+        render.status(400).body("Must be true or false").toFuture
       }
     }
   }
 
-  private def withServiceName(request: Request)(f: String => Future[HttpResponse]): Future[HttpResponse] = {
+  private def withServiceName(request: Request)(f: String => Future[Response]): Future[Response] = {
     request.params.get("serviceName") match {
       case Some(s) => {
         f(s)
       }
       case None => {
-        render(401, "Invalid service name")
+        render.status(401).body("Invalid service name").toFuture
       }
     }
   }
@@ -258,23 +257,26 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
       }
     }
   }
+
+  private def wrapView(v: View) = new View {
+    val template = "templates/layouts/application.mustache"
+    val rootUrl = config.rootUrl
+    val innerView: View = v
+    lazy val body = innerView.render
+  }
 }
 
-trait Attribute
-trait ExportObject {
-  def environment: Attribute = new Attribute { def production = false }
-  def flash: Option[Attribute] = None
-  val clockSkew: Boolean = true
-}
-
-class IndexObject(val endDate: String, val endTime: String) extends ExportObject {
+class IndexView(val endDate: String, val endTime: String) extends View {
+  val template = "templates/index.mustache"
   val inlineJs = "$(Zipkin.Application.Index.initialize());"
 }
 
-class ShowObject(traceId: String) extends ExportObject {
+class ShowView(traceId: String) extends View {
+  val template = "templates/show.mustache"
   val inlineJs = "$(Zipkin.Application.Show.initialize(\"" + traceId + "\"));"
 }
 
-class StaticObject extends ExportObject {
+class StaticView extends View {
+  val template = "templates/static.mustache"
   val inlineJs = "$(Zipkin.Application.Static.initialize());"
 }
