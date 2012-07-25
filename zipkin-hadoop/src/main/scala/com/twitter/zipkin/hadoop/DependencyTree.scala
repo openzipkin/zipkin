@@ -19,7 +19,7 @@ package com.twitter.zipkin.hadoop
 import com.twitter.scalding._
 import cascading.pipe.joiner._
 import com.twitter.zipkin.gen.{SpanServiceName, BinaryAnnotation, Span, Annotation}
-import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, PreprocessedSpanSourceTest, PreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, PreprocessedSpanSource, Util}
 
 /**
 * Find out how often services call each other throughout the entire system
