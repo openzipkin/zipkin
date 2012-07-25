@@ -28,28 +28,21 @@ import java.util.{Arrays, Scanner}
 /**
  * Runs the PopularKeysClient on the input
  */
-object ProcessPopularKeys {
+object Postprocess {
   def main(args : Array[String]) {
-    val c = new PopularKeysClient()
+    val c = new PopularKeyValuesClient()
     val portNumber = augmentString(args(2)).toInt
-    val isKeyData = augmentString(args(3)).toBoolean
-    c.start(args(0), args(1), portNumber, isKeyData)
+    c.start(args(0), args(1), portNumber)
   }
 }
 
-/**
- * Connects to the Zipkin Collector, then processes data from PopularKeys and sends it there. This powers the
- * typeahead functionality for annotations
- */
-class PopularKeysClient {
-  /**
-   * Given a file name, the server name and port number, connects to the server, then writes to it
-   * the top 100 key values per service name given the data in filename
-   * @param filename
-   * @param serverName
-   * @param portNumber
-   */
-  def start(filename : String, serverName : String, portNumber : Int, isKeyData : Boolean) {
+abstract class HadoopJobClient {
+
+  protected val DELIMITER = ":"
+
+  def processFile(s: Scanner, client: gen.ZipkinCollector.Client)
+
+  def start(filename : String, serverName : String, portNumber : Int) {
     var transport : TTransport = null
     try {
       // establish connection to the server
@@ -59,38 +52,7 @@ class PopularKeysClient {
       transport.open()
       // Read file
       val s = new Scanner(new File(filename))
-      var line : Scanner = new Scanner(s.nextLine())
-      if (!s.hasNextLine()) return
-      var oldService : String = line.next()
-      var keys : List[String] = List(line.next())
-      while (s.hasNextLine()) {
-        line = new Scanner(s.nextLine())
-        val currentString = line.next()
-        var value = ""
-        if (line.hasNext()) value = line.next()
-        while (line.hasNext()) {
-          value += " " + line.next()
-        }
-        // Keep adding the keys to the current service's list until we are done with that service
-        if (oldService != currentString) {
-          // when we are, write that list to the server
-          if (isKeyData)
-            client.storeTopKeyValueAnnotations(oldService, keys.asJava)
-          else
-            client.storeTopAnnotations(oldService, keys.asJava)
-          println("Writing " + keys.toString + " to service " + oldService)
-          // and start processing the new one
-          keys = List(value)
-          oldService = currentString
-        } else {
-          keys = keys ::: List(value)
-        }
-      }
-      // Write the last service in the file and its keys as well
-      if (isKeyData)
-        client.storeTopKeyValueAnnotations(oldService, keys.asJava)
-      else
-        client.storeTopAnnotations(oldService, keys.asJava)
+      processFile(s, client)
     } catch {
       case se: SocketException => se.printStackTrace()
       case tte : TTransportException => tte.printStackTrace()
@@ -101,5 +63,71 @@ class PopularKeysClient {
         transport.close()
     }
   }
+
+}
+
+abstract class PerServiceClient extends HadoopJobClient {
+
+  def processService(service: String, values: List[String], client: gen.ZipkinCollector.Client)
+
+  def processFile(s: Scanner, client: gen.ZipkinCollector.Client) {
+    if (!s.hasNextLine()) return
+    var line : Scanner = new Scanner(s.nextLine())
+    var oldService : String = line.next()
+    var keys : List[String] = List(line.next())
+    while (s.hasNextLine()) {
+      line = new Scanner(s.nextLine())
+      val currentString = line.next()
+      var value = ""
+      if (line.hasNext()) value = line.next()
+      while (line.hasNext()) {
+        value += " " + line.next()
+      }
+      // Keep adding the keys to the current service's list until we are done with that service
+      if (oldService != currentString) {
+        // when we are, write that list to the server
+          processService(oldService, keys, client)
+        keys = List(value)
+        oldService = currentString
+      } else {
+        keys = keys ::: List(value)
+      }
+    }
+    // Write the last service in the file and its keys as well
+      processService(oldService, keys, client)
+  }
+
+}
+
+abstract class PerServicePairClient extends HadoopJobClient {
+  def processServicePair(servicePair: String, value: String)
+
+  def processFile(s: Scanner, client: gen.ZipkinCollector.Client) {
+    while(s.hasNextLine()) {
+      val line = new Scanner(s.nextLine())
+      processServicePair(line.next() + DELIMITER + line.next(), line.next())
+    }
+  }
+}
+
+/**
+ * Connects to the Zipkin Collector, then processes data from PopularKeys and sends it there. This powers the
+ * typeahead functionality for annotations
+ */
+
+class PopularAnnotationsClient extends PerServiceClient {
+
+  def processService(service: String, values: List[String], client: gen.ZipkinCollector.Client) {
+    client.storeTopAnnotations(service, values.asJava)
+  }
+
+}
+
+class PopularKeyValuesClient extends PerServiceClient {
+
+  def processService(service: String, values: List[String], client: gen.ZipkinCollector.Client) {
+    client.storeTopKeyValueAnnotations(service, values.asJava)
+  }
+
 }
 
