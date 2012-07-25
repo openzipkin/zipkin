@@ -16,6 +16,7 @@
  */
 package com.twitter.zipkin.web
 
+import com.twitter.finatra.{Response, Controller, View, Request}
 import com.twitter.logging.Logger
 import com.twitter.util.Future
 import com.twitter.zipkin.adapter.{JsonQueryAdapter, JsonAdapter, ThriftQueryAdapter, ThriftAdapter}
@@ -24,7 +25,6 @@ import com.twitter.zipkin.config.ZipkinWebConfig
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import com.twitter.finatra.{Response, Controller, View, Request}
 
 /**
  * Application that handles ZipkinWeb routes

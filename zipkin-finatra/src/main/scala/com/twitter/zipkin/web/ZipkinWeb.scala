@@ -1,17 +1,17 @@
 package com.twitter.zipkin.web
 
-import com.twitter.zipkin.config.ZipkinWebConfig
+import com.twitter.common.zookeeper.ServerSetImpl
 import com.twitter.finagle.http.Http
-import java.net.InetSocketAddress
+import com.twitter.finagle.builder.{ClientBuilder, ServerBuilder, Server}
+import com.twitter.finagle.thrift.ThriftClientFramedCodec
+import com.twitter.finagle.zookeeper.ZookeeperServerSetCluster
+import com.twitter.finatra.{AppService, Controller, FinatraServer}
 import com.twitter.ostrich.admin.{ServiceTracker, Service}
 import com.twitter.logging.Logger
 import com.twitter.io.{Files, TempFile}
+import com.twitter.zipkin.config.ZipkinWebConfig
 import com.twitter.zipkin.gen
-import com.twitter.finagle.builder.{ClientBuilder, ServerBuilder, Server}
-import com.twitter.finagle.thrift.ThriftClientFramedCodec
-import com.twitter.common.zookeeper.ServerSetImpl
-import com.twitter.finagle.zookeeper.ZookeeperServerSetCluster
-import com.twitter.finatra.{AppService, Response, Controller, FinatraServer}
+import java.net.InetSocketAddress
 
 class ZipkinWeb(config: ZipkinWebConfig) extends Service {
 
@@ -47,8 +47,7 @@ class ZipkinWeb(config: ZipkinWebConfig) extends Service {
     FinatraServer.register(app)
 
     val finatraService = new AppService
-    //val fileHandler = new FileHandler
-    val service = finatraService //fileHandler andThen finatraService
+    val service = finatraService
 
     server = Some {
       ServerBuilder()
