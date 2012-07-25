@@ -1,18 +1,17 @@
 package com.twitter.zipkin.web
 
-import com.twitter.zipkin.config.ZipkinWebConfig
-import com.posterous.finatra.FinatraServer.FinatraService
+import com.twitter.common.zookeeper.ServerSetImpl
 import com.twitter.finagle.http.Http
-import java.net.InetSocketAddress
-import com.twitter.ostrich.admin.{ServiceTracker, Service}
-import com.twitter.logging.Logger
-import com.posterous.finatra.{FinatraResponse, FinatraApp, FileHandler, FinatraServer}
-import com.twitter.io.{Files, TempFile}
-import com.twitter.zipkin.gen
 import com.twitter.finagle.builder.{ClientBuilder, ServerBuilder, Server}
 import com.twitter.finagle.thrift.ThriftClientFramedCodec
-import com.twitter.common.zookeeper.ServerSetImpl
 import com.twitter.finagle.zookeeper.ZookeeperServerSetCluster
+import com.twitter.finatra.{AppService, Controller, FinatraServer}
+import com.twitter.ostrich.admin.{ServiceTracker, Service}
+import com.twitter.logging.Logger
+import com.twitter.io.{Files, TempFile}
+import com.twitter.zipkin.config.ZipkinWebConfig
+import com.twitter.zipkin.gen
+import java.net.InetSocketAddress
 
 class ZipkinWeb(config: ZipkinWebConfig) extends Service {
 
@@ -46,11 +45,9 @@ class ZipkinWeb(config: ZipkinWebConfig) extends Service {
 
     FinatraServer.register(resource)
     FinatraServer.register(app)
-    FinatraServer.layoutHelperFactory = new ZipkinLayoutHelperFactory(config)
 
-    val finatraService = new FinatraService
-    val fileHandler = new FileHandler
-    val service = fileHandler andThen finatraService
+    val finatraService = new AppService
+    val service = finatraService
 
     server = Some {
       ServerBuilder()
@@ -68,19 +65,14 @@ class ZipkinWeb(config: ZipkinWebConfig) extends Service {
   }
 }
 
-class Resource(resourceDirs: Map[String, String]) extends FinatraApp {
+class Resource(resourceDirs: Map[String, String]) extends Controller {
   resourceDirs.foreach { case (dir, contentType) =>
     get("/public/" + dir + "/:id") { request =>
       val file = TempFile.fromResourcePath("/public/" + dir + "/" + request.params("id"))
       if (file.exists()) {
-        val resp = new FinatraResponse
-        resp.status = 200
-        resp.binBody = Some(Files.readBytes(file))
-        resp.headers += ("Content-Type" -> contentType)
-        resp.layout = None
-        resp.build
+        render.status(200).body(Files.readBytes(file)).header("Content-Type", contentType).toFuture
       } else {
-        response(status = 404, body = "Not Found")
+        render.status(404).body("Not Found").toFuture
       }
     }
   }

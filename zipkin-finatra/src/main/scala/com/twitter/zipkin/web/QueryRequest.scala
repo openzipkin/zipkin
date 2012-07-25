@@ -1,9 +1,9 @@
 package com.twitter.zipkin.web
 
+import com.twitter.finatra.Request
+import com.twitter.util.Time
 import com.twitter.zipkin.gen
 import java.text.SimpleDateFormat
-import com.twitter.util.Time
-import com.posterous.finatra.Request
 
 object QueryRequest {
   val fmt = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss")
