@@ -7,10 +7,10 @@ import java.io.File
 
 object Zipkin extends Build {
 
-  val CASSIE_VERSION  = "0.22.0"
-  val FINAGLE_VERSION = "5.1.0"
-  val OSTRICH_VERSION = "8.1.0"
-  val UTIL_VERSION    = "5.2.0"
+  val CASSIE_VERSION  = "0.22.1"
+  val FINAGLE_VERSION = "5.3.1"
+  val OSTRICH_VERSION = "8.2.1"
+  val UTIL_VERSION    = "5.3.1"
 
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
   val travisCi = Option(System.getenv("SBT_TRAVIS_CI")) // for adding travis ci maven repos before others
