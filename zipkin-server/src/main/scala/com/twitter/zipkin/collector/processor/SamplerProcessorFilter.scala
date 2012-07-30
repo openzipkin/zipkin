@@ -29,7 +29,14 @@ class SamplerProcessorFilter(sampler: GlobalSampler) extends ProcessorFilter[Seq
     spans.flatMap { span =>
       span.serviceNames.foreach { name => Stats.incr("received_" + name) }
 
-      if (sampler(span.traceId)) {
+      /**
+       * If the span was created with debug mode on we guarantee that it will be
+       * stored no matter what our sampler tells us
+       */
+      if (span.debug) {
+        Stats.incr("debugflag")
+        Some(span)
+      } else if (sampler(span.traceId)) {
         Some(span)
       } else {
         None

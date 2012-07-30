@@ -52,9 +52,9 @@ class SpanSpec extends Specification {
       val ann1 = Annotation(1, "value1", Some(Endpoint(1, 2, "service")))
       val ann2 = Annotation(2, "value2", Some(Endpoint(3, 4, "service")))
 
-      val span1 = Span(12345, "", 666, None, List(ann1), Nil)
-      val span2 = Span(12345, "methodcall", 666, None, List(ann2), Nil)
-      val expectedSpan = Span(12345, "methodcall", 666, None, List(ann1, ann2), Nil)
+      val span1 = Span(12345, "", 666, None, List(ann1), Nil, true)
+      val span2 = Span(12345, "methodcall", 666, None, List(ann2), Nil, false)
+      val expectedSpan = Span(12345, "methodcall", 666, None, List(ann1, ann2), Nil, true)
       val actualSpan = span1.mergeSpan(span2)
       actualSpan mustEqual expectedSpan
     }

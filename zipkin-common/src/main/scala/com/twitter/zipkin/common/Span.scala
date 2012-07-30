@@ -21,7 +21,7 @@ import com.twitter.zipkin.Constants
 /**
  * A span represents one RPC request. A trace is made up of many spans.
  *
- * A span can contain multiple annotations, some are always incuded such as
+ * A span can contain multiple annotations, some are always included such as
  * Client send -> Server received -> Server send -> Client receive.
  *
  * Some are created by users, describing application specific information,
@@ -30,7 +30,7 @@ import com.twitter.zipkin.Constants
 object Span {
 
   def apply(span: Span): Span = Span(span.traceId, span.name, span.id,
-    span.parentId, span.annotations, span.binaryAnnotations)
+    span.parentId, span.annotations, span.binaryAnnotations, span.debug)
 }
 
 /**
@@ -42,9 +42,10 @@ object Span {
  * some fixed ones from the tracing framework
  * @param binaryAnnotations  binary annotations, can contain more detailed information such as
  * serialized objects
+ * @param debug if this is set we will make sure this span is stored, no matter what the samplers want
  */
 case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
-                 annotations: List[Annotation], binaryAnnotations: Seq[BinaryAnnotation]) {
+                 annotations: List[Annotation], binaryAnnotations: Seq[BinaryAnnotation], debug: Boolean = false) {
   /**
    * Order annotations by timestamp.
    */
@@ -96,7 +97,7 @@ case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
 
     new Span(traceId, selectedName, id, parentId,
       annotations ++ mergeFrom.annotations,
-      binaryAnnotations ++ mergeFrom.binaryAnnotations)
+      binaryAnnotations ++ mergeFrom.binaryAnnotations, debug | mergeFrom.debug)
   }
 
   /**
