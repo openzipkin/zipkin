@@ -1,0 +1,164 @@
+<div class="clearfix row">
+  <div class="span3 sidebar fixed-pos">
+    <form class="twitter-form">
+      <div class="sidebar-block filter-block-contents">
+        <div class="clearfix">
+          <label>Choose a service</label>
+          <div class="inline-form-elt">
+            <div class="input">
+              <!-- this will be populated ajax stylee -->
+              <select class="" name="service_name" id="service_name"></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-block filter-options">
+        <ul class="nav nav-tabs" data-tabs="tabs">
+          <li class="active">
+            <a href="#filter-span" data-toggle="tab">Span</a>
+          </li>
+          <li>
+            <a href="#filter-annotation" data-toggle="tab">Annotation</a>
+          </li>
+          <li>
+            <a href="#filter-key-value" data-toggle="tab">Key / value</a>
+          </li>
+        </ul>
+        <div class="tab-content filter-block-contents">
+          <div class="tab-pane active" id="filter-span">
+            <div class="input">
+              <select class="" name="span_name" id="span_name">
+              </select>
+            </div>
+          </div>
+          <div class="tab-pane" id="filter-annotation">
+              <input class="" id="time_annotation" name="time_annotation" placeholder="String name" type="text" value="">
+          </div>
+          <div class="tab-pane" id="filter-key-value">
+              <input class="" id="annotation_key" name="annotation_key" placeholder="Annotation key" type="text" value="">
+              <input class="" id="annotation_value" name="annotation_value" placeholder="Annotation value" type="text" value="">
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-block filter-block-contents">
+        <div class="clearfix">
+          <label for="end_time">End time</label>
+          <input class="span2 date-input" id="end_date" name="end_date" type="text" value="{{endDate}}">
+          <input class="span2 time-input" id="end_time" name="end_time" type="text" value="{{endTime}}">
+          <div class="inline-form-elt">
+              <label>Limit</label>
+              <div class="input">
+                <input class="span1" id="limit" name="limit" type="text" value="100">
+              </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="sidebar-block filter-block-contents filter-submit">
+        <button class="btn primary" disabled>Find traces</button>
+        <a data-toggle="modal" href="#lookup-help-modal" class="btn"><i class="icon-info-sign"></i></a>
+        <a id="static-search-link" class="hide pull-right">link</a>
+      </div>
+    </form>
+
+    <div class="sidebar-block filter-block-contents service-tag-list hide">
+      <span>Filter</span>
+      <span>Showing: <span class="filter-current"></span> of <span class="filter-total"></span> Results</span>
+      <ul class="service-tags"></ul>
+    </div>
+  </div>
+
+
+  <div class="main-content span9 offset3">
+    <div class="alert alert-info" id="help-msg">
+      <p>Please select the criteria for your trace lookup on the left.</p>
+    </div>
+
+    <div class="alert alert-error hide" id="error-box">
+      <p id="error-msg"></p>
+    </div>
+
+    <div class="span5 offset1 hide" id="loading-data">
+      <br/><br/>
+      <strong>Looking up the traces</strong>
+      <div class="progress progress-striped active">
+        <div class="bar" style="width: 100%;"></div>
+      </div>
+    </div>
+    <div class="alert alert-info infobar hide">
+      <div class="pull-left">
+        <span>Showing: <span class="filter-current"></span> of <span class="filter-total"></span> traces over <span class="filter-duration"></span></span>
+      </div>
+      <div class="pull-right">
+        <span class="selector">Sorted by:
+          <select class="sort-order js-sort-order">
+            <option selected value="0">Duration Desc</i></span>
+            <option value="1">Duration Asc</span>
+            <option value="2">Timestamp Desc</span>
+            <option value="3">Timestamp Asc</span>
+          </select>
+        </span>
+      </div>
+      <div class="clearfix"></div>
+    </div>
+    <div id="query-results">
+    </div>
+  </div>
+</div>
+
+<!-- help panel for different lookup options -->
+<div class="modal hide" id="lookup-help-modal">
+  <div class="modal-header">
+    <a class="close" data-dismiss="modal" href="#lookup-help-modal">×</a>
+    <h3>How to find a trace</h3>
+  </div>
+  <div class="modal-body">
+    <p>So you want to find some traces, huh? You've come to the right place!</p>
+
+    <h4>Service names</h4>
+    <p>First off you have select a service to lookup by. All traces are indexed by service names.</p>
+    <p>Once that is done you have three options to pick from. See notes on each below.</p>
+
+    <h4>1. Lookups by span name</h4>
+    <p>Span names are generally thrift method names or Rails endpoints. This allows you to look up traces
+      that accessed a particular part of the service.</p>
+
+    <h4>2. Lookups by annotation</h4>
+    <p>An annotation is a point in time in the trace. It is assigned a string value, this is what you can look up
+      by in this field. Could be things like <strong>finagle.retry</strong></p>
+
+    <h4>3. Lookups by key/value</h4>
+    <p>Key / value annotations are just extra metadata attached to a trace. This could be things like the url hit,
+      response codes or exceptions. See below for a few examples.</p>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <td><strong>Key</strong></td><td><strong>Value</strong></td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>tfe.uri</td><td>/1/trends/available.json?lang=en</td>
+        </tr>
+        <tr>
+          <td>http.responsecode</td><td>500 Internal Server Error</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h4>Dates and limits</h4>
+    <p>Zipkin allows you to pick a point in time to help us guide the selection of traces. When doing a lookup
+      we return traces before that point in time up until the limit number of results.</p>
+  </div>
+  <div class="modal-footer">
+    <a data-dismiss="modal" href="#lookup-help-modal" class="btn">Close</a>
+  </div>
+</div>
+<script type="text/javascript">
+  $(document).ready(function() {
+    {{inlineJs}}
+  });
+</script>

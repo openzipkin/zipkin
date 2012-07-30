@@ -28,6 +28,7 @@ Zipkin::Application.routes.draw do
   #   resources :products
 
   match 'hex/:id' => 'traces#hex'
+  match 'static' => 'traces#static'
 
   resources :traces, :only => [:index, :show] do
     collection do

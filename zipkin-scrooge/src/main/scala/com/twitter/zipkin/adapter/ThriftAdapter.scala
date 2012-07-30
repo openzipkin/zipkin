@@ -18,6 +18,8 @@ package com.twitter.zipkin.adapter
 
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.common._
+import com.twitter.util.Duration
+import java.util.concurrent.TimeUnit
 
 object ThriftAdapter extends Adapter {
   type annotationType = gen.Annotation
@@ -35,12 +37,12 @@ object ThriftAdapter extends Adapter {
     if ("".equals(a.value))
       throw new IllegalArgumentException("Annotation must have a value: %s".format(a.toString))
 
-    new Annotation(a.timestamp, a.value, a.host.map { this(_) })
+    new Annotation(a.timestamp, a.value, a.host.map { this(_) }, a.duration.map(Duration(_, TimeUnit.MICROSECONDS)))
   }
 
   /* Annotation to Thrift */
   def apply(a: Annotation): annotationType = {
-    gen.Annotation(a.timestamp, a.value, a.host.map { this(_) })
+    gen.Annotation(a.timestamp, a.value, a.host.map { this(_) }, a.duration.map(_.inMicroseconds.toInt))
   }
 
   /* AnnotationType from Thrift */

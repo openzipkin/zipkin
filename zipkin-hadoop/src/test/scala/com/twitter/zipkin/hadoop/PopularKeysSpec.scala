@@ -20,7 +20,7 @@ import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
 import gen.AnnotationType
-import sources.{PreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources.{PreprocessedSpanSource, Util}
 import scala.collection.JavaConverters._
 import scala.collection.mutable._
 

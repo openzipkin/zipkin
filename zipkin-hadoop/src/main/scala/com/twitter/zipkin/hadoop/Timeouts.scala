@@ -19,7 +19,7 @@ package com.twitter.zipkin.hadoop
 import com.twitter.scalding._
 import cascading.pipe.joiner.LeftJoin
 import com.twitter.zipkin.gen.{SpanServiceName, Annotation}
-import sources.{PrepTsvSource, PreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, PreprocessedSpanSource, Util}
 
 /**
  * Find which services timeout the most
