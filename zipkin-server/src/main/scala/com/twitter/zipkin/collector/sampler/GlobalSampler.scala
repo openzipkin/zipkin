@@ -36,6 +36,20 @@ trait GlobalSampler {
    * True: drop trace on the floor
    * False: process trace
    */
-  def apply(traceId: Long) : Boolean = false
+  def apply(traceId: Long): Boolean = false
 
+}
+
+/**
+ * None shall pass! Drop all the trace data.
+ */
+object NullGlobalSampler extends GlobalSampler {
+  override def apply(traceId: Long) = false
+}
+
+/**
+ * Let everything through.
+ */
+object EverythingGlobalSampler extends GlobalSampler {
+  override def apply(traceId: Long) = true
 }

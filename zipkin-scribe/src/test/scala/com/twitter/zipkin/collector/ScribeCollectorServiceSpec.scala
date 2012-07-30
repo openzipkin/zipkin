@@ -38,7 +38,7 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
 
   val wrongCatList = List(gen.LogEntry("wrongcat", serializer.toString(ThriftAdapter(validSpan))))
 
-  val base64 = "CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA="
+  val base64 = "CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAIACQAA"
 
   val queue = mock[WriteQueue[Seq[String]]]
   val zkSampleRateConfig = mock[AdjustableRateConfig]
