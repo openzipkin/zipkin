@@ -53,4 +53,6 @@ struct Span {
   5: optional i64 parent_id,                // parent span id
   6: list<Annotation> annotations, // list of all annotations/events that occured
   8: list<BinaryAnnotation> binary_annotations // any binary annotations
+  9: optional bool debug = 0       // if true, we DEMAND that this span passes all samplers
 }
+

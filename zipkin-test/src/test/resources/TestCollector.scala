@@ -16,7 +16,7 @@
 import com.twitter.zipkin.config._
 import com.twitter.zipkin.config.sampler.NullAdaptiveSamplerConfig
 import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
-import com.twitter.zipkin.collector.sampler.GlobalSampler
+import com.twitter.zipkin.collector.sampler.{GlobalSampler, EverythingGlobalSampler}
 import com.twitter.conversions.time._
 import com.twitter.logging.LoggerFactory
 import com.twitter.logging.config._
@@ -64,9 +64,7 @@ new ScribeZipkinCollectorConfig {
   override def adaptiveSamplerConfig = new NullAdaptiveSamplerConfig {}
   
   // sample it all
-  override def globalSampler: GlobalSampler = new GlobalSampler() {
-    override def apply(traceId: Long) : Boolean = true
-  }
+  override def globalSampler: GlobalSampler = EverythingGlobalSampler
 
   def zkConfig = new ZooKeeperConfig {
     servers = List("localhost:2181")
