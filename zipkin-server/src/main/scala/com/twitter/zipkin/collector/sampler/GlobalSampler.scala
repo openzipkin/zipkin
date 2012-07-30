@@ -17,7 +17,6 @@
 package com.twitter.zipkin.collector.sampler
 
 import com.twitter.ostrich.stats.Stats
-import com.twitter.zipkin.common.Span
 
 /**
  * Even after the traces have been created and transported to the
@@ -37,6 +36,20 @@ trait GlobalSampler {
    * True: drop trace on the floor
    * False: process trace
    */
-  def apply(span: Span): Boolean = false
+  def apply(traceId: Long): Boolean = false
 
+}
+
+/**
+ * None shall pass! Drop all the trace data.
+ */
+object NullGlobalSampler extends GlobalSampler {
+  override def apply(traceId: Long) = false
+}
+
+/**
+ * Let everything through.
+ */
+object EverythingGlobalSampler extends GlobalSampler {
+  override def apply(traceId: Long) = true
 }
