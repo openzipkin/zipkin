@@ -23,14 +23,13 @@ import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.Service
 import com.twitter.util.Future
 import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
-import com.twitter.zipkin.common.TraceSummary
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.query.adjusters.Adjuster
 import com.twitter.zipkin.storage.{Aggregates, TraceIdDuration, Index, Storage}
 import java.nio.ByteBuffer
+import java.util.concurrent.atomic.AtomicBoolean
 import org.apache.thrift.TException
 import scala.collection.Set
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Able to respond to users queries regarding the traces. Usually does so
@@ -183,7 +182,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
 
       storage.getTracesByIds(traceIds.toList).map { traces =>
         traces.flatMap { trace =>
-          TraceSummary(adjusters.foldLeft(trace)((t, adjuster) => adjuster.adjust(t))).map(ThriftAdapter(_))
+          TraceSummary(adjusters.foldLeft(trace)((t, adjuster) => adjuster.adjust(t))).map(ThriftQueryAdapter(_))
         }
       }
     }

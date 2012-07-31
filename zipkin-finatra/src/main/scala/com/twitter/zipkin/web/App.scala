@@ -95,7 +95,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
         case _ => {
           client.getTraceSummariesByIds(ids, adjusters).map {
             _.map { summary =>
-              JsonAdapter(ThriftAdapter(summary))
+              JsonQueryAdapter(ThriftQueryAdapter(summary))
             }
           }
         }

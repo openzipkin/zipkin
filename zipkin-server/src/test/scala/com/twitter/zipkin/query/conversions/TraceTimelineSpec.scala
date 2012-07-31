@@ -15,15 +15,13 @@
  */
 package com.twitter.zipkin.query.conversions
 
+import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.common._
+import com.twitter.zipkin.gen
+import com.twitter.zipkin.query.{Trace, TimelineAnnotation, TraceTimeline}
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
-import com.twitter.zipkin.gen
-
-import scala.collection.JavaConversions._
 import java.nio.ByteBuffer
-import com.twitter.zipkin.adapter.ThriftAdapter
-import com.twitter.zipkin.query.{TimelineAnnotation, TraceTimeline}
-import com.twitter.zipkin.common._
 
 class TraceTimelineSpec extends Specification with JMocker with ClassMocker {
 

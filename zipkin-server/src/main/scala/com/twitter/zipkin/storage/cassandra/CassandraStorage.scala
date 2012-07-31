@@ -19,12 +19,13 @@ import com.twitter.zipkin.storage.Storage
 import com.twitter.util.{Duration, Future}
 import com.twitter.zipkin.gen
 import com.twitter.ostrich.stats.Stats
-import com.twitter.cassie.{Order, Column, ColumnFamily, Keyspace}
-import com.twitter.zipkin.common.{Trace, Span}
+import com.twitter.cassie.{Order, Column, ColumnFamily}
+import com.twitter.zipkin.common.Span
 import com.twitter.conversions.time._
 import scala.collection.JavaConverters._
 import com.twitter.zipkin.config.{CassandraConfig, CassandraStorageConfig}
 import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.query.Trace
 
 trait CassandraStorage extends Storage with Cassandra {
 
