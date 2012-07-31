@@ -41,7 +41,7 @@ class ZipkinQuery(
     log.info("Starting query thrift service on addr " + serverAddr)
     val cluster = new ZookeeperServerSetCluster(serverSet)
 
-    val queryService = new QueryService(storage, index, aggregates, config.adjusterMap)
+    val queryService = new QueryService(storage, index, aggregates, config.adjusterMap, config.statsReceiver)
     queryService.start()
     ServiceTracker.register(queryService)
 
