@@ -105,16 +105,5 @@ class ThriftAdapterSpec extends Specification with JMocker with ClassMocker {
         ThriftAdapter(noBinaryAnnotationsSpan) mustEqual Span(0, "name", 0, None, List(), Seq())
       }
     }
-
-    "convert TraceSummary" in {
-      "to thrift and back" in {
-        val expectedTraceSummary = TraceSummary(123, 10000, 10300, 300, Map("service1" -> 1),
-          List(Endpoint(123, 123, "service1")))
-        val thriftTraceSummary = ThriftAdapter(expectedTraceSummary)
-        val actualTraceSummary = ThriftAdapter(thriftTraceSummary)
-        expectedTraceSummary mustEqual actualTraceSummary
-      }
-    }
   }
-
 }
