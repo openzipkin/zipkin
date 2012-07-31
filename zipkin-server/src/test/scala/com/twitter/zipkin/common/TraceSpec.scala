@@ -20,7 +20,7 @@ import org.specs.Specification
 import com.twitter.zipkin.gen
 import collection.mutable
 import java.nio.ByteBuffer
-import com.twitter.zipkin.query.SpanTreeEntry
+import com.twitter.zipkin.query.{TraceSummary, SpanTreeEntry}
 import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
 
 class TraceSpec extends Specification {

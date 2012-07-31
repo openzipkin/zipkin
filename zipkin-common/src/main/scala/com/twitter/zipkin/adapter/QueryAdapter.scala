@@ -15,8 +15,7 @@
  */
 package com.twitter.zipkin.adapter
 
-import com.twitter.zipkin.common.Trace
-import com.twitter.zipkin.query.{TraceCombo, TraceTimeline, TimelineAnnotation}
+import com.twitter.zipkin.query._
 
 /**
  * Adapter for query related structs
@@ -25,6 +24,7 @@ trait QueryAdapter {
   type timelineAnnotationType /* corresponds to com.twitter.zipkin.query.TimelineAnnotation */
   type traceTimelineType      /* corresponds to com.twitter.zipkin.query.TraceTimeline */
   type traceComboType         /* corresponds to com.twitter.zipkin.query.TraceCombo */
+  type traceSummaryType      /* corresponds to com.twitter.zipkin.common.TraceSummary     */
   type traceType              /* corresponds to com.twitter.zipkin.query.Trace */
 
   def apply(t: timelineAnnotationType): TimelineAnnotation
@@ -35,6 +35,9 @@ trait QueryAdapter {
 
   def apply(t: traceComboType): TraceCombo
   def apply(t: TraceCombo): traceComboType
+
+  def apply(t: traceSummaryType): TraceSummary
+  def apply(t: TraceSummary): traceSummaryType
 
   def apply(t: traceType): Trace
   def apply(t: Trace): traceType

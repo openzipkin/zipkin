@@ -16,8 +16,9 @@
  */
 package com.twitter.zipkin.storage
 
-import com.twitter.zipkin.common.{Trace, Span}
 import com.twitter.util.{Duration, Future}
+import com.twitter.zipkin.common.Span
+import com.twitter.zipkin.query.Trace
 
 trait Storage {
 

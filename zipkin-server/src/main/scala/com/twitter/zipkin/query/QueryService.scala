@@ -28,7 +28,6 @@ import com.twitter.zipkin.storage.{Aggregates, TraceIdDuration, Index, Storage}
 import java.nio.ByteBuffer
 import org.apache.thrift.TException
 import scala.collection.Set
-import com.twitter.zipkin.common.TraceSummary
 import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
 
 /**

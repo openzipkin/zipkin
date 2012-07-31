@@ -1,8 +1,7 @@
 package com.twitter.zipkin.adapter
 
-import com.twitter.zipkin.common.Trace
-import com.twitter.zipkin.common.json.{JsonTimelineAnnotation, JsonTrace, JsonTraceCombo, JsonTraceTimeline}
-import com.twitter.zipkin.query.{TraceCombo, TraceTimeline, TimelineAnnotation}
+import com.twitter.zipkin.common.json._
+import com.twitter.zipkin.query._
 
 /**
  * JS doesn't like Longs so we need to convert them to strings
@@ -11,6 +10,7 @@ object JsonQueryAdapter extends QueryAdapter {
   type timelineAnnotationType = JsonTimelineAnnotation
   type traceTimelineType = JsonTraceTimeline
   type traceComboType = JsonTraceCombo
+  type traceSummaryType = JsonTraceSummary
   type traceType = JsonTrace
 
   /* no change between json and common */
@@ -44,7 +44,7 @@ object JsonQueryAdapter extends QueryAdapter {
   def apply(t: traceComboType): TraceCombo = {
     TraceCombo(
       JsonQueryAdapter(t.trace),
-      t.traceSummary.map(JsonAdapter(_)),
+      t.traceSummary.map(JsonQueryAdapter(_)),
       t.traceTimeline.map(JsonQueryAdapter(_)),
       t.spanDepths)
   }
@@ -53,9 +53,17 @@ object JsonQueryAdapter extends QueryAdapter {
   def apply(t: TraceCombo): traceComboType = {
     JsonTraceCombo(
       JsonQueryAdapter(t.trace),
-      t.traceSummary.map(JsonAdapter(_)),
+      t.traceSummary.map(JsonQueryAdapter(_)),
       t.traceTimeline.map(JsonQueryAdapter(_)),
       t.spanDepths)
+  }
+
+  def apply(t: traceSummaryType): TraceSummary = {
+    TraceSummary(t.traceId.toLong, t.startTimestamp, t.endTimestamp, t.durationMicro, t.serviceCounts, t.endpoints)
+  }
+
+  def apply(t: TraceSummary): traceSummaryType =  {
+    JsonTraceSummary(t.traceId.toString, t.startTimestamp, t.endTimestamp, t.durationMicro, t.serviceCounts.toMap, t.endpoints)
   }
 
   /* json to common */

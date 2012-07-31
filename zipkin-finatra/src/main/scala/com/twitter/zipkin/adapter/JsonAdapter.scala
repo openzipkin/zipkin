@@ -1,7 +1,7 @@
 package com.twitter.zipkin.adapter
 
 import com.twitter.zipkin.common._
-import com.twitter.zipkin.common.json.{JsonTraceSummary, JsonBinaryAnnotation, JsonSpan}
+import com.twitter.zipkin.common.json.{JsonBinaryAnnotation, JsonSpan}
 
 /**
  * Adapter to make common classes compatible with Jackson/Jerkson JSON generation
@@ -12,7 +12,6 @@ object JsonAdapter extends Adapter {
   type binaryAnnotationType = JsonBinaryAnnotation
   type endpointType = Endpoint
   type spanType = JsonSpan
-  type traceSummaryType = JsonTraceSummary
 
   /* No change between JSON and common types */
   def apply(a: annotationType): Annotation = a
@@ -60,14 +59,6 @@ object JsonAdapter extends Adapter {
       s.duration.get,
       s.annotations.sortWith((a,b) => a.timestamp < b.timestamp),
       s.binaryAnnotations.map(JsonAdapter(_)))
-  }
-
-  def apply(t: traceSummaryType): TraceSummary = {
-    TraceSummary(t.traceId.toLong, t.startTimestamp, t.endTimestamp, t.durationMicro, t.serviceCounts, t.endpoints)
-  }
-
-  def apply(t: TraceSummary): traceSummaryType =  {
-    JsonTraceSummary(t.traceId.toString, t.startTimestamp, t.endTimestamp, t.durationMicro, t.serviceCounts.toMap, t.endpoints)
   }
 }
 

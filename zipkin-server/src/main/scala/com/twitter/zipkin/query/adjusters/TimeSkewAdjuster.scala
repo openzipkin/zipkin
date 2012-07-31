@@ -16,12 +16,11 @@
  */
 package com.twitter.zipkin.query.adjusters
 
-import com.twitter.zipkin.gen
-import scala.collection.Map
-import com.twitter.zipkin.common._
 import com.twitter.finagle.tracing.{Trace => FTrace}
-import com.twitter.zipkin.query.SpanTreeEntry
-
+import com.twitter.zipkin.common._
+import com.twitter.zipkin.gen
+import com.twitter.zipkin.query.{Trace, SpanTreeEntry}
+import scala.collection.Map
 
 class TimeSkewAdjuster extends Adjuster {
 
