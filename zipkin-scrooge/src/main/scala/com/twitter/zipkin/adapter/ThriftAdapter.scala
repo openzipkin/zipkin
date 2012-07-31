@@ -16,9 +16,9 @@
  */
 package com.twitter.zipkin.adapter
 
+import com.twitter.util.Duration
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.common._
-import com.twitter.util.Duration
 import java.util.concurrent.TimeUnit
 
 object ThriftAdapter extends Adapter {
@@ -27,7 +27,6 @@ object ThriftAdapter extends Adapter {
   type binaryAnnotationType = gen.BinaryAnnotation
   type endpointType = gen.Endpoint
   type spanType = gen.Span
-  type traceSummaryType = gen.TraceSummary
 
   /* Annotation from Thrift */
   def apply(a: annotationType): Annotation = {
@@ -115,18 +114,5 @@ object ThriftAdapter extends Adapter {
   def apply(s: Span): spanType = {
     gen.Span(s.traceId, s.name, s.id, s.parentId, s.annotations.map { this(_) },
       s.binaryAnnotations.map { this(_) }, s.debug)
-  }
-
-  /* TraceSummary from Thrift */
-  def apply(t: traceSummaryType): TraceSummary = {
-    new TraceSummary(t.traceId, t.startTimestamp, t.endTimestamp,
-      t.durationMicro, t.serviceCounts,
-      t.endpoints.map(ThriftAdapter(_)).toList)
-  }
-
-  /* TraceSummary to Thrift */
-  def apply(t: TraceSummary): traceSummaryType = {
-    gen.TraceSummary(t.traceId, t.startTimestamp, t.endTimestamp,
-      t.durationMicro, t.serviceCounts, t.endpoints.map(ThriftAdapter(_)))
   }
 }

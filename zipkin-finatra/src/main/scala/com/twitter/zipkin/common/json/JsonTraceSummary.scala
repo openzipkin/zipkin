@@ -1,6 +1,7 @@
 package com.twitter.zipkin.common.json
 
-import com.twitter.zipkin.common.{Endpoint, TraceSummary}
+import com.twitter.zipkin.common.Endpoint
+import com.twitter.zipkin.query.TraceSummary
 
 object JsonTraceSummary {
   def apply(t: TraceSummary): JsonTraceSummary =

@@ -14,9 +14,10 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.common
+package com.twitter.zipkin.query
 
 import scala.collection.Map
+import com.twitter.zipkin.common.Endpoint
 
 object TraceSummary {
 

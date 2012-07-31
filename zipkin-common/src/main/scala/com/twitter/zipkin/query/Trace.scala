@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.zipkin.common
+package com.twitter.zipkin.query
 
+import com.twitter.finagle.tracing.{Trace => FTrace}
 import com.twitter.logging.Logger
+import com.twitter.zipkin.common.{BinaryAnnotation, Endpoint, Span}
 import java.nio.ByteBuffer
 import scala.collection.mutable
-import com.twitter.finagle.tracing.{Trace => FTrace}
-import com.twitter.zipkin.query.SpanTreeEntry
 
 /**
  * A chunk of time, between a start and an end.
