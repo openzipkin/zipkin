@@ -162,7 +162,7 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
         one(storage).getTracesByIds(List(traceId)) willReturn Future(List(trace1))
       }
 
-      val ts = List(ThriftAdapter(TraceSummary(1, 100, 150, 50, Map("service1" -> 1), List(ep1))))
+      val ts = List(ThriftQueryAdapter(TraceSummary(1, 100, 150, 50, Map("service1" -> 1), List(ep1))))
       ts mustEqual qs.getTraceSummariesByIds(List(traceId), List())()
     }
 
@@ -178,7 +178,7 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
         one(storage).getTracesByIds(List(traceId)) willReturn Future(List(trace1))
       }
       val trace = ThriftQueryAdapter(trace1)
-      val summary = ThriftAdapter(TraceSummary(1, 100, 150, 50, Map("service1" -> 1), List(ep1)))
+      val summary = ThriftQueryAdapter(TraceSummary(1, 100, 150, 50, Map("service1" -> 1), List(ep1)))
       val timeline = TraceTimeline(trace1).map(ThriftQueryAdapter(_))
       val combo = gen.TraceCombo(trace, Some(summary), timeline, Some(Map(666L -> 1)))
       Seq(combo) mustEqual qs.getTraceCombosByIds(List(traceId), List())()

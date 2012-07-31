@@ -15,7 +15,7 @@
  */
 package com.twitter.zipkin.query
 
-import com.twitter.zipkin.common.{Trace, Endpoint, BinaryAnnotation}
+import com.twitter.zipkin.common.{Endpoint, BinaryAnnotation}
 
 object TraceTimeline {
   def apply(trace: Trace): Option[TraceTimeline] = {

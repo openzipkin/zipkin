@@ -20,7 +20,8 @@ import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
 import scala.collection._
 import com.twitter.zipkin.gen
-import com.twitter.zipkin.common.{Endpoint, Trace, Annotation, Span}
+import com.twitter.zipkin.common.{Endpoint, Annotation, Span}
+import com.twitter.zipkin.query.Trace
 
 class TimeSkewAdjusterSpec extends Specification with JMocker with ClassMocker {
   val endpoint1 = Some(Endpoint(123, 123, "service"))
