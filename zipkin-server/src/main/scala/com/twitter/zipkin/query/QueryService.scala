@@ -22,7 +22,7 @@ import com.twitter.finagle.tracing.{Trace => FTrace}
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.Service
 import com.twitter.util.Future
-import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
+import com.twitter.zipkin.adapter.ThriftQueryAdapter
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.query.adjusters.Adjuster
 import com.twitter.zipkin.storage.{Aggregates, TraceIdDuration, Index, Storage}

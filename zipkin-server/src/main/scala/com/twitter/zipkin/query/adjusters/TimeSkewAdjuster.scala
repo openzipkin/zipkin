@@ -37,7 +37,7 @@ class TimeSkewAdjuster extends Adjuster {
       case None => return trace // no root span found, returning as is
       case Some(s) => {
         val spans = adjust(trace.getSpanTree(s, trace.getIdToChildrenMap), None)
-        Trace(spans).sortedByTimestamp
+        Trace(spans)
       }
     }
   }

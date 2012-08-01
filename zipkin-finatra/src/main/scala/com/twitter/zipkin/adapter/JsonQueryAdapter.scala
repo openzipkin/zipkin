@@ -80,7 +80,7 @@ object JsonQueryAdapter extends QueryAdapter {
     val startAndEnd = t.getStartAndEndTimestamp.get
     JsonTrace(
       t.id.map(_.toString).getOrElse(""),
-      t.mergeSpans.spans.map(JsonAdapter(_)),
+      t.spans.map(JsonAdapter(_)),
       startAndEnd.start,
       startAndEnd.end,
       startAndEnd.end - startAndEnd.start,
