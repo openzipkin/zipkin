@@ -117,7 +117,7 @@ trait CassandraStorage extends Storage with Cassandra {
               CASSANDRA_GET_TRACE_TOO_BIG.incr()
               None
             } else {
-              Some(Trace(spans.toSeq).mergeSpans.sortedByTimestamp)
+              Some(Trace(spans.toSeq))
             }
           }
         }

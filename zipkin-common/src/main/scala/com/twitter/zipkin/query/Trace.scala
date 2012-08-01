@@ -33,9 +33,16 @@ object Trace {
   def apply(spanTree: SpanTreeEntry): Trace = Trace(spanTree.toList)
 }
 
-case class Trace(spans: Seq[Span]) {
+case class Trace(private val s: Seq[Span]) {
 
   val log = Logger.get(getClass.getName)
+
+  lazy val spans = mergeBySpanId(s).toSeq.sortWith {
+    (a, b) =>
+      val aTimestamp = a.firstAnnotation.map(_.timestamp).getOrElse(Long.MaxValue)
+      val bTimestamp = b.firstAnnotation.map(_.timestamp).getOrElse(Long.MaxValue)
+      aTimestamp < bTimestamp
+  }
 
   /**
    * Find the trace id for this trace.
@@ -158,16 +165,6 @@ case class Trace(spans: Seq[Span]) {
   }
 
   /**
-   * Incoming data can have multiple entries for the same Span, for example
-   * data sent from client as one span and data from the server as one span.
-   *
-   * This method merges them by span id into one object per id.
-   */
-  def mergeSpans: Trace = {
-    new Trace(mergeBySpanId(spans).toList)
-  }
-
-  /**
    * Merge all the spans objects with the same span ids into one per id.
    * We store parts of spans in different columns in order to make writes
    * faster and simpler. This means we have to merge them correctly on read.
@@ -220,20 +217,6 @@ case class Trace(spans: Seq[Span]) {
       }
       case None => {
         SpanTreeEntry(span, List[SpanTreeEntry]())
-      }
-    }
-  }
-
-  /**
-   * Return a Trace sorted by the first annotation in each span.
-   */
-  def sortedByTimestamp: Trace = {
-    Trace {
-      spans.sortWith {
-        (a, b) =>
-          val aTimestamp = a.firstAnnotation.map(_.timestamp).getOrElse(Long.MaxValue)
-          val bTimestamp = b.firstAnnotation.map(_.timestamp).getOrElse(Long.MaxValue)
-          aTimestamp < bTimestamp
       }
     }
   }

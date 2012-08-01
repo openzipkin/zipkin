@@ -136,8 +136,8 @@ class TimeSkewAdjusterSpec extends Specification with JMocker with ClassMocker {
   val span2 = Span(1, "multiget_slice", -855543208864892776L, Some(2209720933601260005L),
     List(ann2, ann5), Nil)
 
-  val realTrace = new Trace(List(span1a, span1b, span2)).mergeSpans
-  val expectedRealTrace = new Trace(List(span1aFixed, span1b, span2)).mergeSpans
+  val realTrace = new Trace(List(span1a, span1b, span2))
+  val expectedRealTrace = new Trace(List(span1aFixed, span1b, span2))
 
   val adjuster = new TimeSkewAdjuster
 
@@ -167,7 +167,7 @@ class TimeSkewAdjusterSpec extends Specification with JMocker with ClassMocker {
       val monorailSs = Annotation(3L, gen.Constants.SERVER_SEND, epMonorail)
       val unicornCr  = Annotation(4L, gen.Constants.CLIENT_RECV, epTfe)
       val goodSpan = Span(1, "friendships/create", 12345L, None, List(unicornCs, monorailSr, monorailSs, unicornCr), Nil)
-      val goodTrace = new Trace(Seq(goodSpan)).mergeSpans
+      val goodTrace = new Trace(Seq(goodSpan))
 
       val actualTrace = adjuster.adjust(goodTrace)
       goodTrace mustEqual actualTrace
@@ -191,8 +191,8 @@ class TimeSkewAdjusterSpec extends Specification with JMocker with ClassMocker {
       val adjustedMonorailSs = Annotation(1330539327145012L, gen.Constants.SERVER_SEND, epMonorail)
       val spanAdjustedMonorail = Span(1, "friendships/create", 6379677665629798877L, Some(7264365917420400007L), List(unicornCs, adjustedMonorailSr, adjustedMonorailSs, unicornCr), Nil)
 
-      val realTrace = new Trace(Seq(spanTfe, spanMonorailUnicorn)).mergeSpans
-      val expectedAdjustedTrace = new Trace(Seq(spanTfe, spanAdjustedMonorail)).mergeSpans
+      val realTrace = new Trace(Seq(spanTfe, spanMonorailUnicorn))
+      val expectedAdjustedTrace = new Trace(Seq(spanTfe, spanAdjustedMonorail))
 
       val adjusted = adjuster.adjust(realTrace)
 
@@ -236,7 +236,7 @@ class TimeSkewAdjusterSpec extends Specification with JMocker with ClassMocker {
       val spanAdjustedGizmoduck = Span(1, "get_by_auth_token", 119310086840195752L, Some(7625434200987291951L), List(passbirdCs, passbirdCr, createdGizmoduckSr, createdGizmoduckSs), Nil)
       val spanAdjustedMemcache = Span(1, "Get", 3983355768376203472L, Some(119310086840195752L), List(adjustedGizmoduckCs, adjustedGizmoduckCr), Nil)
 
-      val realTrace = new Trace(Seq(spanTfe, spanPassbird, spanGizmoduck, spanMemcache)).mergeSpans
+      val realTrace = new Trace(Seq(spanTfe, spanPassbird, spanGizmoduck, spanMemcache))
       val adjustedTrace = new Trace(Seq(spanTfe, spanPassbird, spanAdjustedGizmoduck, spanAdjustedMemcache))
 
       adjuster.adjust(realTrace) mustEqual adjustedTrace
