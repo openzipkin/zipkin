@@ -185,12 +185,11 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
     }
 
     "getTraceIdsByAnnotation" in {
-      //cassandra.storeSpan(span1)()
       cassandraIndex.indexSpanByAnnotations(span1)()
 
       // fetch by time based annotation, find trace
       var seq = cassandraIndex.getTraceIdsByAnnotation("service", "custom", None, 0, 3)()
-      //seq mustEqual Seq(span1.traceId)
+      seq mustEqual Seq(span1.traceId)
 
       // should not find any traces since the core annotation doesn't exist in index
       seq = cassandraIndex.getTraceIdsByAnnotation("service", "cs", None, 0, 3)()
