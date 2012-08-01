@@ -16,6 +16,8 @@
 
 package com.twitter.zipkin.hadoop
 
+//TODO: Replace (or supplement) this with one main method that runs all jobs
+
 /**
  * Runs the PopularKeysClient on the input
  */
@@ -27,6 +29,10 @@ object ProcessPopularKeys {
   }
 }
 
+/**
+ * Runs the PopularAnnotationsClient on the input
+ */
+
 object ProcessPopularAnnotations {
   def main(args : Array[String]) {
     val portNumber = augmentString(args(2)).toInt
@@ -36,6 +42,11 @@ object ProcessPopularAnnotations {
   }
 }
 
+
+/**
+ * Runs the MemcacheRequestClient on the input
+ */
+
 object ProcessMemcacheRequest {
   def main(args : Array[String]) {
     val c = new MemcacheRequestClient()
@@ -44,6 +55,11 @@ object ProcessMemcacheRequest {
   }
 }
 
+
+/**
+ * Runs the TimeoutsClient on the input
+ */
+
 object ProcessTimeouts {
   def main(args : Array[String]) {
     val c = new TimeoutsClient()
@@ -51,6 +67,11 @@ object ProcessTimeouts {
     WriteToFileClient.closeAllWriters()
   }
 }
+
+
+/**
+ * Runs the ExpensiveEndpointsClient on the input
+ */
 
 object ProcessExpensiveEndpoints {
 
