@@ -50,6 +50,7 @@ class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
     .filter('annotations){annotations : List[Annotation] => annotations.exists({a : Annotation =>  a.value == input})}
     .project('id, 'parent_id, 'service)
     .joinWithSmaller('parent_id -> 'id_1, idName, joiner = new LeftJoin)
+    .map('name_1 -> 'name_1){ s: String => if (s == null) Util.UNKNOWN_SERVICE_NAME else s }
     .project('service, 'name_1)
     .groupBy('service, 'name_1){ _.size('numTimeouts) }
     .write(Tsv(args("output")))

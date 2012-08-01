@@ -66,15 +66,15 @@ class TimeoutsSpec extends Specification with TupleConversions {
         source(PrepTsvSource(), Util.getSpanIDtoNames(spans)).
         sink[(String, String, Long)](Tsv("outputFile")) {
         val map = new HashMap[String, Long]()
-        map("service, null") = 0
+        map("service, " + Util.UNKNOWN_SERVICE_NAME) = 0
         map("service2, service1") = 0
-        map("service2, null") = 0
+        map("service2, " + Util.UNKNOWN_SERVICE_NAME) = 0
         outputBuffer => outputBuffer foreach { e =>
           map(e._1 + ", " + e._2) = e._3
         }
-        map("service, null") mustEqual 102
+        map("service, " + Util.UNKNOWN_SERVICE_NAME) mustEqual 102
         map("service2, service1") mustEqual 21
-        map("service2, null") mustEqual 10
+        map("service2, " + Util.UNKNOWN_SERVICE_NAME) mustEqual 10
       }.run.finish
     }
   }

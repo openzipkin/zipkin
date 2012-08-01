@@ -38,6 +38,7 @@ class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
     /* Join with the original on parent ID to get the parent's service name */
     val spanInfoWithParent = spanInfo
       .joinWithSmaller('parent_id -> 'id_1, idName, joiner = new LeftJoin)
+      .map('name_1 -> 'name_1){ s: String => if (s == null) Util.UNKNOWN_SERVICE_NAME else s }
       .groupBy('service, 'name_1){ _.size('count) }
       .groupBy('service){ _.sortBy('count) }
       .write(Tsv(args("output")))
