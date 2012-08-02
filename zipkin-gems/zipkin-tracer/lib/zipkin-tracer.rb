@@ -53,7 +53,7 @@ module ZipkinTracer extend self
     end
 
     def call(env)
-      id = ::Trace::TraceId.new(::Trace.generate_id, nil, ::Trace.generate_id, true)
+      id = ::Trace::TraceId.new(::Trace.generate_id, nil, ::Trace.generate_id, true, ::Trace::Flags::EMPTY)
       ::Trace.default_endpoint = ::Trace.default_endpoint.with_service_name(@service_name).with_port(@service_port)
       ::Trace.sample_rate=(@sample_rate)
       tracing_filter(id, env) { @app.call(env) }

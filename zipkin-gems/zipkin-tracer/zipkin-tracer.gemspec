@@ -31,6 +31,6 @@ Gem::Specification.new do |s|
   s.files                     = Dir.glob("{bin,lib}/**/*")
   s.require_path              = 'lib'
 
-  s.add_dependency "finagle-thrift", "~> 1.2.0"
+  s.add_dependency "finagle-thrift", "~> 1.3.0"
   s.add_dependency "scribe", "~> 0.2.4"
 end
