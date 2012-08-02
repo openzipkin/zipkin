@@ -110,8 +110,16 @@ trait CassandraStorage extends Storage with Cassandra {
             }
 
             spans.toSeq match {
-              case Nil => None
-              case s   => Some(s)
+              case Nil => {
+                None
+              }
+              case s if s.length > TRACE_MAX_COLS => {
+                CASSANDRA_GET_TRACE_TOO_BIG.incr()
+                None
+              }
+              case s => {
+                Some(s)
+              }
             }
           }
         }
