@@ -38,7 +38,7 @@ abstract class WriteToServerClient(combineSimilarNames: Boolean, portNumber: Int
       transport.open()
       // Read file
       println("Connected to server...populating ssnm")
-      populateSsnm(new Scanner(new File(filename)))
+      populateServiceNameList(new Scanner(new File(filename)))
       println("Finished populating ssnm...beginning processFile")
       processFile(new Scanner(new File(filename)))
     } catch {

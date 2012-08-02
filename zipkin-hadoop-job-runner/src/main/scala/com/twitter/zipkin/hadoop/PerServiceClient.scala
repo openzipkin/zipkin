@@ -28,11 +28,11 @@ import scala.collection.JavaConverters._
 abstract class PerServiceClient(combineSimilarNames: Boolean, portNumber: Int) extends
   WriteToServerClient(combineSimilarNames, portNumber) {
 
-  def populateSsnm(s: Scanner) {
+  def populateServiceNameList(s: Scanner) {
     if (!combineSimilarNames) return
     while (s.hasNextLine()) {
       val line = new Scanner(s.nextLine())
-      ssnm.add(line.next())
+      serviceNameList.add(line.next())
     }
   }
 

@@ -22,20 +22,20 @@ import java.util.Scanner
 
 /**
  * Basic client for postprocessing hadoop jobs
- * @param whether or not we should differentiate between similar names
+ * @param combineSimilarNames whether or not we should differentiate between similar names
  */
 
 abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
 
   protected val DELIMITER = ":"
-  val ssnm = if (combineSimilarNames) new StandardizedServiceNameList else new ServiceNameList
+  val serviceNameList = if (combineSimilarNames) new StandardizedServiceNameList else new ServiceNameList
 
   /**
    * Populate the name list
    * @param s Scanner representing the name list
    */
 
-  def populateSsnm(s: Scanner)
+  def populateServiceNameList(s: Scanner)
 
   /**
    * Returns the key value of a line
@@ -59,7 +59,7 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
   def start(filename : String, output : String)
 
   /**
-   * Processes a single file
+   * Processes a single file, expected in TSV format, with key being the first value on each row
    * @param s a Scanner representing a file
    */
   def processFile(s: Scanner) {
@@ -73,7 +73,7 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
       while (line.hasNext()) {
         value += " " + line.next()
       }
-      val serviceName = ssnm.getName(currentString)
+      val serviceName = serviceNameList.getName(currentString)
       if (serviceToValues.contains(serviceName)) {
         serviceToValues(serviceName) ::= value
       } else {

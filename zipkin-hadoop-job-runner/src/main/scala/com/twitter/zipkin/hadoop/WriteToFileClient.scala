@@ -31,11 +31,11 @@ abstract class WriteToFileClient(combineSimilarNames: Boolean, jobname: String) 
 
   protected var outputDir = ""
 
-  def populateSsnm(s: Scanner) {
+  def populateServiceNameList(s: Scanner) {
     if (!combineSimilarNames) return
     while (s.hasNextLine()) {
       val line = new Scanner(s.nextLine())
-      ssnm.add(getKeyValue(line))
+      serviceNameList.add(getKeyValue(line))
     }
   }
 
@@ -45,7 +45,7 @@ abstract class WriteToFileClient(combineSimilarNames: Boolean, jobname: String) 
 
   def start(input: String, outputDir: String) {
     this.outputDir = outputDir
-    populateSsnm(new Scanner(new File(input)))
+    populateServiceNameList(new Scanner(new File(input)))
     processFile(new Scanner(new File(input)))
   }
 }
