@@ -25,7 +25,6 @@ import com.twitter.conversions.time._
 import scala.collection.JavaConverters._
 import com.twitter.zipkin.config.{CassandraConfig, CassandraStorageConfig}
 import com.twitter.zipkin.adapter.ThriftAdapter
-import com.twitter.zipkin.query.Trace
 
 trait CassandraStorage extends Storage with Cassandra {
 
@@ -94,13 +93,13 @@ trait CassandraStorage extends Storage with Cassandra {
    * Fetches traces from the underlying storage. Note that there might be multiple
    * entries per span.
    */
-  def getTraceById(traceId: Long): Future[Trace] = {
-    getTracesByIds(Seq(traceId)).map {
+  def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = {
+    getSpansByTraceIds(Seq(traceId)).map {
       _.head
     }
   }
 
-  def getTracesByIds(traceIds: Seq[Long]): Future[Seq[Trace]] = {
+  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
     CASSANDRA_GET_TRACE.incr
     Future.collect {
       traceIds.grouped(storageConfig.traceFetchBatchSize).toSeq.map { ids =>
@@ -110,14 +109,17 @@ trait CassandraStorage extends Storage with Cassandra {
               case (colName, col) => ThriftAdapter(col.value)
             }
 
-            if (spans.isEmpty) {
-              None
-            } else if (spans.size >= TRACE_MAX_COLS) {
-              log.error("Could not fetch the whole trace: " + id + " due to it being too big. Should not happen!")
-              CASSANDRA_GET_TRACE_TOO_BIG.incr()
-              None
-            } else {
-              Some(Trace(spans.toSeq))
+            spans.toSeq match {
+              case Nil => {
+                None
+              }
+              case s if s.length > TRACE_MAX_COLS => {
+                CASSANDRA_GET_TRACE_TOO_BIG.incr()
+                None
+              }
+              case s => {
+                Some(s)
+              }
             }
           }
         }

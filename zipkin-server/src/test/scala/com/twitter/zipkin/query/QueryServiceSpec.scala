@@ -32,25 +32,29 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
   val ep3 = Endpoint(345, 345, "service3")
   val ann1 = Annotation(100, gen.Constants.CLIENT_SEND, Some(ep1))
   val ann2 = Annotation(150, gen.Constants.CLIENT_RECV, Some(ep1))
-  val trace1 = Trace(List(Span(1, "methodcall", 666, None, List(ann1, ann2), Nil)))
+  val spans1 = List(Span(1, "methodcall", 666, None, List(ann1, ann2), Nil))
+  val trace1 = Trace(spans1)
   // duration 50
 
   val ann3 = Annotation(101, gen.Constants.CLIENT_SEND, Some(ep2))
   val ann4 = Annotation(501, gen.Constants.CLIENT_RECV, Some(ep2))
-  val trace2 = Trace(List(Span(2, "methodcall", 667, None, List(ann3, ann4), Nil)))
+  val spans2 = List(Span(2, "methodcall", 667, None, List(ann3, ann4), Nil))
+  val trace2 = Trace(spans2)
   // duration 400
 
   val ann5 = Annotation(99, gen.Constants.CLIENT_SEND, Some(ep3))
   val ann6 = Annotation(199, gen.Constants.CLIENT_RECV, Some(ep3))
-  val trace3 = Trace(List(Span(3, "methodcall", 668, None, List(ann5, ann6), Nil)))
+  val spans3 = List(Span(3, "methodcall", 668, None, List(ann5, ann6), Nil))
+  val trace3 = Trace(spans3)
   // duration 100
 
   // get some server action going on
   val ann7 = Annotation(110, gen.Constants.SERVER_RECV, Some(ep2))
   val ann8 = Annotation(140, gen.Constants.SERVER_SEND, Some(ep2))
 
-  val trace4 = Trace(List(Span(1, "methodcall", 666, None, List(ann1, ann2), Nil),
-    Span(1, "methodcall", 666, None, List(ann7, ann8), Nil)))
+  val spans4 = List(Span(1, "methodcall", 666, None, List(ann1, ann2), Nil),
+    Span(1, "methodcall", 666, None, List(ann7, ann8), Nil))
+  val trace4 = Trace(spans4)
 
   // no spans
   val trace5 = Trace(List())
@@ -159,7 +163,7 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
       val traceId = 123L
 
       expect {
-        one(storage).getTracesByIds(List(traceId)) willReturn Future(List(trace1))
+        one(storage).getSpansByTraceIds(List(traceId)) willReturn Future(List(spans1))
       }
 
       val ts = List(ThriftQueryAdapter(TraceSummary(1, 100, 150, 50, Map("service1" -> 1), List(ep1))))
@@ -175,7 +179,7 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
       val traceId = 123L
 
       expect {
-        one(storage).getTracesByIds(List(traceId)) willReturn Future(List(trace1))
+        one(storage).getSpansByTraceIds(List(traceId)) willReturn Future(List(spans1))
       }
       val trace = ThriftQueryAdapter(trace1)
       val summary = ThriftQueryAdapter(TraceSummary(1, 100, 150, 50, Map("service1" -> 1), List(ep1)))
@@ -232,7 +236,7 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
       qs.start()
 
       expect {
-        1.of(storage).getTracesByIds(List(1L)) willReturn Future(List(trace1))
+        1.of(storage).getSpansByTraceIds(List(1L)) willReturn Future(List(spans1))
       }
 
       val expected = List(ThriftQueryAdapter(trace1))
@@ -248,7 +252,7 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
       qs.start()
 
       expect {
-        1.of(storage).getTracesByIds(List(1L)) willReturn Future(List(trace4))
+        1.of(storage).getSpansByTraceIds(List(1L)) willReturn Future(List(spans4))
       }
 
       val ann1 = gen.TimelineAnnotation(100, gen.Constants.CLIENT_SEND,
@@ -292,10 +296,11 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
           Annotation(6871825L, "cr", epCuckooCassie)
         ), Nil)
 
-      val realTrace = Trace(List(rs1, rs2))
+      val realSpans = List(rs1, rs2)
+      val realTrace = Trace(realSpans)
 
       expect {
-        1.of(storage).getTracesByIds(List(4488677265848750007L)) willReturn Future(List(realTrace))
+        1.of(storage).getSpansByTraceIds(List(4488677265848750007L)) willReturn Future(List(realSpans))
       }
 
       val actual = qs.getTraceTimelinesByIds(List(4488677265848750007L), List(gen.Adjust.TimeSkew))()
@@ -354,10 +359,11 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
           Annotation(832872L, "cr", epCuckooCassie)
         ), Nil)
 
-      val realTrace = Trace(List(rs1, rs2))
+      val realSpans = List(rs1, rs2)
+      val realTrace = Trace(realSpans)
 
       expect {
-        1.of(storage).getTracesByIds(List(-6120267009876080004L)) willReturn Future(List(realTrace))
+        1.of(storage).getSpansByTraceIds(List(-6120267009876080004L)) willReturn Future(List(realSpans))
       }
 
       val actual = qs.getTraceTimelinesByIds(List(-6120267009876080004L), List(gen.Adjust.TimeSkew))()
