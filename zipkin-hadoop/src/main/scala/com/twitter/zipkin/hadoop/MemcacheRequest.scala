@@ -36,9 +36,7 @@ class MemcacheRequest(args : Args) extends Job(args) with DefaultDateRangeJob {
   val memcacheNames = preprocessed
     .flatMap('binary_annotations -> 'memcacheNames){ bal : List[BinaryAnnotation] =>
         // from the binary annotations, find the value of the memcache visits if there are any
-        var memcachedKeys : Option[BinaryAnnotation] = None
-        bal.foreach { ba : BinaryAnnotation => if (ba.key == "memcached.keys") memcachedKeys = Some(ba) }
-        memcachedKeys
+        bal.find { ba : BinaryAnnotation => ba.key == "memcached.keys" }
     }
     .project('parent_id, 'memcacheNames)
 

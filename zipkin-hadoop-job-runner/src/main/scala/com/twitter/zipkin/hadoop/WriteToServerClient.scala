@@ -42,10 +42,8 @@ abstract class WriteToServerClient(combineSimilarNames: Boolean, portNumber: Int
       println("Finished populating ssnm...beginning processFile")
       processFile(new Scanner(new File(filename)))
     } catch {
-      case se: SocketException => se.printStackTrace()
-      case tte : TTransportException => tte.printStackTrace()
-      case te : TException => te.printStackTrace()
-      case e : Exception => e.printStackTrace()
+      // TODO: Investigate using logging
+      case t: Throwable => t.printStackTrace()
     } finally {
       if (transport != null)
         transport.close()

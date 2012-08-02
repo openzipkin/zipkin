@@ -32,7 +32,7 @@ ORIGINAL_FILE=File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
 ZIPKIN_HADOOP_ROOT=File.expand_path(File.dirname(ORIGINAL_FILE)+"/../../")
 JARFILE=ZIPKIN_HADOOP_ROOT + "/target/zipkin-hadoop-assembly-#{JAR_VERSION}.jar" #what jar has all the depencies for this job
 puts JARFILE
-HOST="hadoopnest1.smf1.twitter.com" #where the job is rsynced to and run
+HOST="my.remote.host" #where the job is rsynced to and run
 TMPDIR="/tmp"
 BUILDDIR=TMPDIR+"/script-build"
 LOCALMEM="3g" #how much memory for java to use when running in local mode

@@ -28,6 +28,8 @@ import java.nio.ByteBuffer
 
 class FindDuplicateTraces(args: Args) extends Job(args) with DefaultDateRangeJob {
 
+  val maxDuration = augmentString(args.required("maximum_duration")).toInt
+
   val result = PreprocessedSpanSource()
     .read
     .mapTo(0 ->('trace_id, 'annotations)) { s: SpanServiceName =>
@@ -48,8 +50,8 @@ class FindDuplicateTraces(args: Args) extends Job(args) with DefaultDateRangeJob
       }
     }
     .filter('first_and_last_timestamps) { timestamps : List[Long] =>
-      val dur = (timestamps(1) - timestamps(0)) / 1000000
-      dur >= 10 * 60
+      val durationInSeconds = (timestamps(1) - timestamps(0)) / 1000000
+      durationInSeconds >= maxDuration
     }.project('trace_id)
     .write(Tsv(args("output")))
 }

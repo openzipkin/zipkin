@@ -31,22 +31,22 @@ class WorstRuntimesPerTrace(args: Args) extends Job(args) with DefaultDateRangeJ
   val preprocessed = PreprocessedSpanSource()
     .read
     .mapTo(0 -> ('service, 'trace_id, 'annotations)) {
-    s : SpanServiceName => (s.service_name, s.trace_id, s.annotations.toList)
-  }
+      s : SpanServiceName => (s.service_name, s.trace_id, s.annotations.toList)
+    }
 
   val result = preprocessed
     // let's find those client annotations and convert into service name and duration
     .flatMap('annotations -> 'duration) { annotations: List[Annotation] =>
-    var clientSend: Option[Annotation] = None
-    var clientReceived: Option[Annotation] = None
-    annotations.foreach { a =>
-      if (Constants.CLIENT_SEND.equals(a.getValue)) clientSend = Some(a)
-      if (Constants.CLIENT_RECV.equals(a.getValue)) clientReceived = Some(a)
-    }
-    // only return a value if we have both annotations
-    for (cs <- clientSend; cr <- clientReceived)
-    yield (cr.timestamp - cs.timestamp) / 1000
-  }.discard('annotations)
+      var clientSend: Option[Annotation] = None
+      var clientReceived: Option[Annotation] = None
+      annotations.foreach { a =>
+        if (Constants.CLIENT_SEND.equals(a.getValue)) clientSend = Some(a)
+        if (Constants.CLIENT_RECV.equals(a.getValue)) clientReceived = Some(a)
+      }
+      // only return a value if we have both annotations
+      for (cs <- clientSend; cr <- clientReceived)
+        yield (cr.timestamp - cs.timestamp) / 1000
+    }.discard('annotations)
     //sort by duration, find the 100 largest
     .groupBy('service, 'trace_id) { _.sum('duration) }
     .groupBy('service) { _.sortBy('duration).reverse.take(100)}

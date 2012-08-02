@@ -17,9 +17,9 @@
 package com.twitter.zipkin.hadoop
 
 import collection.mutable.{HashMap, HashSet}
-import com.twitter.zipkin.hadoop.sources.Util
 import java.util.{ArrayList}
 import scala.math.Ordering.String
+import org.apache.commons.lang.StringUtils
 
 /**
  * A basic data structure used to store service names
@@ -60,7 +60,7 @@ class StandardizedServiceNameList() extends ServiceNameList {
     for (index <- 0 until serviceNames.size()) {
       val key = serviceNames.get(index)
       // If these are actually just near spellings of the same service
-      if (Util.getLevenshteinDistance(key.toLowerCase, trimmed.toLowerCase) <= DISTANCE) {
+      if (StringUtils.getLevenshteinDistance(key.toLowerCase, trimmed.toLowerCase) <= DISTANCE) {
         foundMatch = true
         if (String.lteq(trimmed, key)) {
           serviceNames.set(index, trimmed)

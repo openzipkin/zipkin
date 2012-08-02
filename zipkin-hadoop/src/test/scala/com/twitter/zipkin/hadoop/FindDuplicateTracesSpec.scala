@@ -55,6 +55,7 @@ class FindDuplicateTracesSpec extends Specification with TupleConversions {
         .arg("input", "inputFile")
         .arg("output", "outputFile")
         .arg("date", "2012-01-01T01:00")
+        .arg("maximum_duration", "600")
         .source(PreprocessedSpanSource(), spans)
         .sink[Long](Tsv("outputFile")) {
         outputBuffer => outputBuffer foreach { e =>
