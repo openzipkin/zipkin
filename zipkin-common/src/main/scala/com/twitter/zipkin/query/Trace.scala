@@ -60,6 +60,11 @@ case class Trace(private val s: Seq[Span]) {
   }
 
   /**
+   * Find a span by the id. Note that this iterates through all the spans.
+   */
+  def getSpanById(spanId: Long): Option[Span] = spans.find { s => s.id == spanId }
+
+  /**
    * In some cases we don't care if it's the actual root span or just the span
    * that is closes to the root. For example it could be that we don't yet log spans
    * from the root service, then we want the one just below that.
