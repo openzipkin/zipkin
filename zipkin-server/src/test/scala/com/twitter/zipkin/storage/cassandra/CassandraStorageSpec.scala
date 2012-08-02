@@ -27,6 +27,7 @@ import org.specs.Specification
 import com.twitter.io.TempFile
 import com.twitter.zipkin.adapter.ThriftAdapter
 import com.twitter.zipkin.common.{BinaryAnnotation, Endpoint, Annotation, Span}
+import com.twitter.zipkin.query.Trace
 
 class CassandraStorageSpec extends Specification with JMocker with ClassMocker {
   object FakeServer extends FakeCassandra
@@ -62,33 +63,38 @@ class CassandraStorageSpec extends Specification with JMocker with ClassMocker {
       FakeServer.stop()
     }
 
-    "getTraceById" in {
+    "getSpansByTraceId" in {
       cassandraStorage.storeSpan(span1)()
-      val trace = cassandraStorage.getTraceById(span1.traceId)()
-      trace.spans.isEmpty mustEqual false
-      trace.spans(0) mustEqual span1
+      val spans = cassandraStorage.getSpansByTraceId(span1.traceId)()
+      spans.isEmpty mustEqual false
+      spans(0) mustEqual span1
     }
 
-    "getTracesByIds" in {
+    "getSpansByTraceIds" in {
       cassandraStorage.storeSpan(span1)()
-      val actual1 = cassandraStorage.getTracesByIds(List(span1.traceId))()
+      val actual1 = cassandraStorage.getSpansByTraceIds(List(span1.traceId))()
       actual1.isEmpty mustEqual false
-      actual1(0).spans.isEmpty mustEqual false
-      actual1(0).spans(0) mustEqual span1
+
+      val trace1 = Trace(actual1(0))
+      trace1.spans.isEmpty mustEqual false
+      trace1.spans(0) mustEqual span1
 
       val span2 = Span(666, "methodcall2", spanId, None, List(ann2),
         List(binaryAnnotation("BAH2", "BEH2")))
       cassandraStorage.storeSpan(span2)()
-      val actual2 = cassandraStorage.getTracesByIds(List(span1.traceId, span2.traceId))()
+      val actual2 = cassandraStorage.getSpansByTraceIds(List(span1.traceId, span2.traceId))()
       actual2.isEmpty mustEqual false
-      actual2(0).spans.isEmpty mustEqual false
-      actual2(0).spans(0) mustEqual span1
-      actual2(1).spans.isEmpty mustEqual false
-      actual2(1).spans(0) mustEqual span2
+
+      val trace2 = Trace(actual2(0))
+      val trace3 = Trace(actual2(1))
+      trace2.spans.isEmpty mustEqual false
+      trace2.spans(0) mustEqual span1
+      trace3.spans.isEmpty mustEqual false
+      trace3.spans(0) mustEqual span2
     }
 
-    "getTracesByIds should return empty list if no trace exists" in {
-      val actual1 = cassandraStorage.getTracesByIds(List(span1.traceId))()
+    "getSpansByTraceIds should return empty list if no trace exists" in {
+      val actual1 = cassandraStorage.getSpansByTraceIds(List(span1.traceId))()
       actual1.isEmpty mustEqual true
     }
 

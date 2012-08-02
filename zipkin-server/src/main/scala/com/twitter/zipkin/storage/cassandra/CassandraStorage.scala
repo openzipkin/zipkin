@@ -104,12 +104,15 @@ trait CassandraStorage extends Storage with Cassandra {
     Future.collect {
       traceIds.grouped(storageConfig.traceFetchBatchSize).toSeq.map { ids =>
         traces.multigetRows(ids.toSet.asJava, None, None, Order.Normal, TRACE_MAX_COLS).map { rowSet =>
-          ids.map { id =>
+          ids.flatMap { id =>
             val spans = rowSet.asScala(id).asScala.map {
               case (colName, col) => ThriftAdapter(col.value)
             }
 
-            spans.toSeq
+            spans.toSeq match {
+              case Nil => None
+              case s   => Some(s)
+            }
           }
         }
       }
