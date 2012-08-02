@@ -150,8 +150,9 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       val adjusters = getAdjusters(adjust)
       FTrace.recordBinary("numIds", traceIds.length)
 
-      storage.getTracesByIds(traceIds).map { traces =>
-        traces.map { trace =>
+      storage.getSpansByTraceIds(traceIds).map { traces =>
+        traces.map { spans =>
+          val trace = Trace(spans)
           ThriftQueryAdapter(adjusters.foldLeft(trace)((t, adjuster) => adjuster.adjust(t)))
         }
       }
@@ -165,8 +166,9 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       val adjusters = getAdjusters(adjust)
       FTrace.recordBinary("numIds", traceIds.length)
 
-      storage.getTracesByIds(traceIds).map { traces =>
-        traces.flatMap { trace =>
+      storage.getSpansByTraceIds(traceIds).map { traces =>
+        traces.flatMap { spans =>
+          val trace = Trace(spans)
           TraceTimeline(adjusters.foldLeft(trace)((t, adjuster) => adjuster.adjust(t))).map(ThriftQueryAdapter(_))
         }
       }
@@ -180,8 +182,9 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       val adjusters = getAdjusters(adjust)
       FTrace.recordBinary("numIds", traceIds.length)
 
-      storage.getTracesByIds(traceIds.toList).map { traces =>
-        traces.flatMap { trace =>
+      storage.getSpansByTraceIds(traceIds.toList).map { traces =>
+        traces.flatMap { spans =>
+          val trace = Trace(spans)
           TraceSummary(adjusters.foldLeft(trace)((t, adjuster) => adjuster.adjust(t))).map(ThriftQueryAdapter(_))
         }
       }
@@ -194,8 +197,9 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       val adjusters = getAdjusters(adjust)
       FTrace.recordBinary("numIds", traceIds.length)
 
-      storage.getTracesByIds(traceIds).map { traces =>
-        traces.map { trace =>
+      storage.getSpansByTraceIds(traceIds).map { traces =>
+        traces.map { spans =>
+          val trace = Trace(spans)
           ThriftQueryAdapter(TraceCombo(adjusters.foldLeft(trace)((t, adjuster) => adjuster.adjust(t))))
         }
       }

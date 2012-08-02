@@ -18,7 +18,6 @@ package com.twitter.zipkin.storage
 
 import com.twitter.util.{Duration, Future}
 import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.query.Trace
 
 trait Storage {
 
@@ -50,13 +49,8 @@ trait Storage {
    * Spans in trace should be sorted by the first annotation timestamp
    * in that span. First event should be first in the spans list.
    */
-  def getTraceById(traceId: Long) : Future[Trace]
-
-  /**
-   * Fetch multiple traces.
-   */
-  def getTracesByIds(traceIds : Seq[Long]) : Future[Seq[Trace]]
-
+  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]]
+  def getSpansByTraceId(traceId: Long): Future[Seq[Span]]
   /**
    * How long do we store the data before we delete it? In seconds.
    */
