@@ -273,5 +273,53 @@ class TimeSkewAdjusterSpec extends Specification with JMocker with ClassMocker {
       val trace1 = new Trace(Seq(span))
       adjuster.adjust(trace1) mustEqual trace1
     }
+
+    "adjust even if we only have client send" in {
+      val tfeService = Endpoint(123, 9455, "api.twitter.com-ssl")
+
+      val tfe = Span(142224153997690008L, "GET", 142224153997690008L, None, List(
+        Annotation(60498165L, gen.Constants.SERVER_RECV, Some(tfeService)),
+        Annotation(61031100L, gen.Constants.SERVER_SEND, Some(tfeService))
+      ), Nil)
+
+      val monorailService = Endpoint(456, 8000, "monorail")
+      val clusterTwitterweb = Endpoint(123, -13145, "cluster_twitterweb_unicorn")
+
+      val monorail = Span(142224153997690008L, "following/index", 7899774722699781565L, Some(142224153997690008L), List(
+        Annotation(59501663L, gen.Constants.SERVER_RECV, Some(monorailService)),
+        Annotation(59934508L, gen.Constants.SERVER_SEND, Some(monorailService)),
+        Annotation(60499730L, gen.Constants.CLIENT_SEND, Some(clusterTwitterweb)),
+        Annotation(61030844L, gen.Constants.CLIENT_RECV, Some(clusterTwitterweb))
+      ), Nil)
+
+      val tflockService = Endpoint(456, -14238, "tflock")
+      val flockdbEdgesService = Endpoint(789, 6915, "flockdb_edges")
+
+      val tflock = Span(142224153997690008L, "select", 6924056367845423617L, Some(7899774722699781565L), List(
+        Annotation(59541848L, gen.Constants.CLIENT_SEND, Some(tflockService)),
+        Annotation(59544889L, gen.Constants.CLIENT_RECV, Some(tflockService)),
+        Annotation(59541031L, gen.Constants.SERVER_RECV, Some(flockdbEdgesService)),
+        Annotation(59542894L, gen.Constants.SERVER_SEND, Some(flockdbEdgesService))
+      ), Nil)
+
+      val flockService = Endpoint(2130706433, 0, "flock")
+
+      val flock = Span(142224153997690008L, "select", 7330066031642813936L, Some(6924056367845423617L), List(
+        Annotation(59541299L, gen.Constants.CLIENT_SEND, Some(flockService)),
+        Annotation(59542778L, gen.Constants.CLIENT_RECV, Some(flockService))
+      ), Nil)
+
+      val trace = new Trace(Seq(monorail, tflock, tfe, flock))
+      val adjusted = adjuster.adjust(trace)
+
+      // let's see how we did
+      val adjustedFlock = adjusted.getSpanById(7330066031642813936L).get
+      val adjustedTflock = adjusted.getSpanById(6924056367845423617L).get
+      val flockCs = adjustedFlock.getAnnotation(gen.Constants.CLIENT_SEND).get
+      val tflockSr = adjustedTflock.getAnnotation(gen.Constants.SERVER_RECV).get
+
+      // tflock must receive the request before it send a request to flock
+      flockCs.timestamp must be_>(tflockSr.timestamp)
+    }
   }
 }

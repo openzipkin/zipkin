@@ -26,4 +26,7 @@ object Constants {
   val CoreServer: Seq[String] = Seq(ServerRecv, ServerSend)
 
   val CoreAnnotations: Seq[String] = CoreClient ++ CoreServer
+
+  /* 127.0.0.1 */
+  val LocalhostLoopBackIP = (127 << 24) | 1
 }
