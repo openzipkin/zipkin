@@ -83,7 +83,7 @@ object Zipkin extends Build {
     ).dependsOn(thrift)
 
   lazy val hadoopjobrunner = Project(
-  id = "zipkinhadoopjobrunner",
+  id = "zipkin-hadoop-job-runner",
   base = file("zipkin-hadoop-job-runner"),
   settings = Project.defaultSettings ++
     StandardProject.newSettings ++

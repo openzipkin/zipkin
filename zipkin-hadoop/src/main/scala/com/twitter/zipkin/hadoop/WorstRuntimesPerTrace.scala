@@ -24,21 +24,21 @@ import com.twitter.zipkin.gen.{SpanServiceName, Span, Constants, Annotation}
  * Obtain the IDs and the durations of the one hundred service calls which take the longest per service
  */
 
-class WorstRuntimes(args: Args) extends Job(args) with DefaultDateRangeJob {
+class WorstRuntimesPerTrace(args: Args) extends Job(args) with DefaultDateRangeJob {
 
   val clientAnnotations = Seq(Constants.CLIENT_RECV, Constants.CLIENT_SEND)
 
   val preprocessed = PreprocessedSpanSource()
     .read
-    .mapTo(0 -> ('service, 'id, 'annotations)) {
-      s : SpanServiceName => (s.service_name, s.id, s.annotations.toList)
+    .mapTo(0 -> ('service, 'trace_id, 'annotations)) {
+      s : SpanServiceName => (s.service_name, s.trace_id, s.annotations.toList)
     }
 
   val result = preprocessed
     // let's find those client annotations and convert into service name and duration
     .flatMap('annotations -> 'duration) { annotations: List[Annotation] =>
-     var clientSend: Option[Annotation] = None
-     var clientReceived: Option[Annotation] = None
+      var clientSend: Option[Annotation] = None
+      var clientReceived: Option[Annotation] = None
       annotations.foreach { a =>
         if (Constants.CLIENT_SEND.equals(a.getValue)) clientSend = Some(a)
         if (Constants.CLIENT_RECV.equals(a.getValue)) clientReceived = Some(a)
@@ -48,6 +48,7 @@ class WorstRuntimes(args: Args) extends Job(args) with DefaultDateRangeJob {
         yield (cr.timestamp - cs.timestamp) / 1000
     }.discard('annotations)
     //sort by duration, find the 100 largest
+    .groupBy('service, 'trace_id) { _.sum('duration) }
     .groupBy('service) { _.sortBy('duration).reverse.take(100)}
     .write(Tsv(args("output")))
 
