@@ -20,12 +20,13 @@ class OptparseJobArguments
     options.job = nil
     options.uses_settings = false
     options.uses_hadoop_config = false
+    options.set_timezone = false
     options.dates = []
     options.output = ""
     options.preprocessor = false
 
     opts = OptionParser.new do |opts|
-      opts.banner = "Usage: run_job.rb -j JOB -d DATE -o OUTPUT -p -s SETTINGS -c CONFIG"
+      opts.banner = "Usage: run_job.rb -j JOB -d DATE -o OUTPUT -p -t TIMEZONE -s SETTINGS -c CONFIG"
 
       opts.separator ""
       opts.separator "Specific options:"
@@ -47,6 +48,11 @@ class OptparseJobArguments
       
       opts.on("-p", "--[no-]prep", "Run as preprocessor") do |v|
         options.preprocessor = true
+      end
+
+      opts.on("-t", "--tz [TIMEZONE]", "Specify timezone for job. Default is local time") do |timezone|
+        options.set_timezone = true
+        options.timezone = timezone || ''
       end
 
       opts.on("-s", "--settings [SETTINGS]", "Optional settings for the job") do |settings|
@@ -110,7 +116,8 @@ end
 cmd_head = File.dirname(__FILE__) + "/scald.rb --hdfs com.twitter.zipkin.hadoop."
 settings_string = options.uses_settings ? " " + options.settings : ""
 cmd_date = date_to_cmd(start_date) + " " + date_to_cmd(end_date)
-cmd_args = options.job + settings_string  + " --date " + cmd_date + " --tz UTC"
+timezone_cmd = options.set_timezone ? " --tz " + options.timezone : ""
+cmd_args = options.job + settings_string  + " --date " + cmd_date + timezone_cmd
 
 if options.preprocessor
   if not remote_file_exists?(time_to_remote_file(end_date, options.job + "/") + "/_SUCCESS", options)

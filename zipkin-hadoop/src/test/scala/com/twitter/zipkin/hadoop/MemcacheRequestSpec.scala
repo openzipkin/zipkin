@@ -20,10 +20,10 @@ import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
 import gen.AnnotationType
-import com.twitter.zipkin.hadoop.sources.{PrepNoNamesSpanSource, Util}
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
 import java.nio.ByteBuffer
+import sources.{PreprocessedSpanSource, PrepNoNamesSpanSource, Util}
 
 /**
  * Tests that MemcacheRequest finds, per service and memcache request type, the number
@@ -39,15 +39,22 @@ class MemcacheRequestSpec extends Specification with TupleConversions {
   val endpoint = new gen.Endpoint(123, 666, "service")
   val endpoint1 = new gen.Endpoint(123, 666, "service1")
   val endpoint2 = new gen.Endpoint(123, 666, "service2")
-  val span = new gen.Span(12345, "methodcall", 666,
-    List(new gen.Annotation(1000, "cs").setHost(endpoint), new gen.Annotation(2000, "cr").setHost(endpoint)).asJava,
-    List[gen.BinaryAnnotation]().asJava)
-  val span1 = new gen.Span(123456, "methodcall", 666,
+  val span = new gen.SpanServiceName(12345, "methodcall", 666,
+    List(new gen.Annotation(1000, "cs").setHost(endpoint), new gen.Annotation(2000, "sr").setHost(endpoint)).asJava,
+    List[gen.BinaryAnnotation]().asJava, "service")
+  val span1 = new gen.Span(12345, "methodcall", 666,
     List(new gen.Annotation(1000, "cs").setHost(endpoint1), new gen.Annotation(4000, "cr").setHost(endpoint1)).asJava,
     List(new gen.BinaryAnnotation("memcached.keys", ByteBuffer.allocate(4).putInt(0, 10), AnnotationType.BOOL)).asJava)
-  val span2 = new gen.Span(1234567, "methodcall", 666,
-    List(new gen.Annotation(1000, "cs").setHost(endpoint2), new gen.Annotation(3000, "cr").setHost(endpoint2)).asJava,
+  val span2 = new gen.SpanServiceName(12346, "methodcall", 666,
+    List(new gen.Annotation(1000, "cs").setHost(endpoint), new gen.Annotation(2000, "sr").setHost(endpoint)).asJava,
+    List[gen.BinaryAnnotation]().asJava, "service")
+  val span3 = new gen.Span(123456, "methodcall", 666,
+    List(new gen.Annotation(1000, "cs").setHost(endpoint1), new gen.Annotation(4000, "cr").setHost(endpoint1)).asJava,
     List(new gen.BinaryAnnotation("memcached.keys", ByteBuffer.allocate(4).putInt(0, 10), AnnotationType.BOOL)).asJava)
+  val span4 = new gen.Span(123456, "methodcall", 666,
+    List(new gen.Annotation(1000, "cs").setHost(endpoint1), new gen.Annotation(4000, "cr").setHost(endpoint1)).asJava,
+    List(new gen.BinaryAnnotation("foobar", ByteBuffer.allocate(4).putInt(0, 10), AnnotationType.BOOL)).asJava)
+
 
 
   "MemcacheRequest" should {
@@ -56,18 +63,18 @@ class MemcacheRequestSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(PrepNoNamesSpanSource(), (Util.repeatSpan(span, 100, 1000, 0) ++ Util.repeatSpan(span2, 10, 0, 0) ++ Util.repeatSpan(span1, 20, 100, 0))).
-        sink[(String, String, Long)](Tsv("outputFile")) {
+        source(PrepNoNamesSpanSource(), Util.repeatSpan(span1, 10, 100, 0) ++ Util.repeatSpan(span3, 2, 200, 300) ++ Util.repeatSpan(span3, 0, 1000, 500) ++ Util.repeatSpan(span4, 2, 1000, 11) ).
+        source(PreprocessedSpanSource(), Util.repeatSpan(span, 12, 0, 20) ++ Util.repeatSpan(span2, 2, 300, 400) ++ Util.repeatSpan(span2, 0, 500, 100000)).
+        sink[(String, Long)](Tsv("outputFile")) {
         val counts = new HashMap[String, Long]()
         counts("service") = 0
         counts("service1") = 0
-        counts("service2") = 0
         outputBuffer => outputBuffer foreach { e =>
-          counts(e._1) += e._3
+          counts(e._1) += e._2
+            println(e)
         }
-        counts("service") mustEqual 0
-        counts("service1") mustEqual 21
-        counts("service2") mustEqual 11
+        counts("service") mustEqual 2
+        counts("service1") mustEqual 0
       }.run.finish
     }
   }

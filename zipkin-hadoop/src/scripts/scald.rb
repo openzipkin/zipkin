@@ -15,7 +15,7 @@
 require 'fileutils'
 require 'thread'
 
-JAR_VERSION="0.2.0-SNAPSHOT"
+JAR_VERSION="0.3.0-SNAPSHOT"
 
 #Usage : scald.rb [--hdfs|--local|--print] job <job args>
 # --hdfs: if job ends in ".scala" or ".java" and the file exists, link it against JARFILE (below) and then run it on HOST.
