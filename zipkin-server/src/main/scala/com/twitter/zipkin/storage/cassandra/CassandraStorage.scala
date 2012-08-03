@@ -89,6 +89,24 @@ trait CassandraStorage extends Storage with Cassandra {
     }
   }
 
+  def getTracesExist(traceIds: Seq[Long]): Future[Seq[Boolean]] = {
+    CASSANDRA_GET_TRACE.incr
+    Future.collect {
+      traceIds.grouped(storageConfig.traceFetchBatchSize).toSeq.map { ids =>
+        traces.multigetRows(ids.toSet.asJava, None, None, Order.Normal, 1).map { rowSet =>
+          ids.flatMap { id =>
+            val spans = rowSet.asScala(id).asScala.map {
+              case (colName, col) => ThriftAdapter(col.value)
+            }
+            Some(!spans.isEmpty)
+          }
+        }
+      }
+    }.map {
+      _.flatten
+    }
+  }
+
   /**
    * Fetches traces from the underlying storage. Note that there might be multiple
    * entries per span.

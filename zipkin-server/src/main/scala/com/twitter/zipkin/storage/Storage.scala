@@ -44,6 +44,8 @@ trait Storage {
    */
   def getTimeToLive(traceId: Long): Future[Duration]
 
+  def getTracesExist(traceIds: Seq[Long]): Future[Seq[Boolean]]
+
   /**
    * Get the available trace information from the storage system.
    * Spans in trace should be sorted by the first annotation timestamp

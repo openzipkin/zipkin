@@ -120,6 +120,8 @@ service ZipkinQuery {
 
     //************** Fetch traces from id **************
 
+    list<bool> getTracesExist(1: list<i64> trace_ids) throws (1: QueryException qe);
+
     /**
      * Get the full traces associated with the given trace ids.
      *
