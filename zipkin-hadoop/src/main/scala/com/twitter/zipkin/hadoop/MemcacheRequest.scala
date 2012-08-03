@@ -19,8 +19,8 @@ package com.twitter.zipkin.hadoop
 import com.twitter.scalding._
 import java.nio.ByteBuffer
 import java.util.Arrays
-import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Constants, Annotation}
-import com.twitter.zipkin.hadoop.sources.{PrepNoNamesSpanSource, Util}
+import sources.{PreprocessedSpanSource, PrepNoNamesSpanSource, Util}
+import com.twitter.zipkin.gen._
 
 /**
  * Find out how often each service does memcache accesses
@@ -29,26 +29,24 @@ class MemcacheRequest(args : Args) extends Job(args) with DefaultDateRangeJob {
 
   val preprocessed = PrepNoNamesSpanSource()
     .read
-    .mapTo(0 -> ('annotations, 'binary_annotations))
-      { s: Span => (s.annotations.toList, s.binary_annotations.toList) }
+    .mapTo(0 -> ('parent_id, 'binary_annotations))
+      { s: Span => (s.parent_id, s.binary_annotations.toList) }
 
 
-  val result = preprocessed
-    // from the annotations, find the service name
-    .flatMap(('annotations, 'binary_annotations) -> ('service, 'memcacheNames)){ abl : (List[Annotation], List[BinaryAnnotation]) =>
-      var clientSent: Option[Annotation] = None
-      abl match { case (al, bl) =>
-        al.foreach { a : Annotation =>
-          if (Constants.CLIENT_SEND.equals(a.getValue)) clientSent = Some(a)
-        }
+  val memcacheNames = preprocessed
+    .flatMap('binary_annotations -> 'memcacheNames){ bal : List[BinaryAnnotation] =>
         // from the binary annotations, find the value of the memcache visits if there are any
-        var memcachedKeys : Option[BinaryAnnotation] = None
-        bl.foreach { ba : BinaryAnnotation => if (ba.key == "memcached.keys") memcachedKeys = Some(ba) }
-        for (cs <- clientSent; key <- memcachedKeys)
-          yield (cs.getHost.service_name, new String(Util.getArrayFromBuffer(key.value)))
-      }
+        bal.find { ba : BinaryAnnotation => ba.key == "memcached.keys" }
     }
-    .project('service, 'memcacheNames)
-    .groupBy('service, 'memcacheNames){ _.size('count) }
+    .project('parent_id, 'memcacheNames)
+
+  val memcacheRequesters = PreprocessedSpanSource()
+    .read
+    .mapTo(0 -> ('trace_id, 'id, 'service))
+      { s: SpanServiceName => (s.trace_id, s.id, s.service_name)}
+    .joinWithSmaller('id -> 'parent_id, memcacheNames)
+    .groupBy('trace_id, 'service, 'memcacheNames){ _.size('count) }
+    .filter('count) { count: Int => count > 1 }
+    .groupBy('service){ _.size('count) }
     .write(Tsv(args("output")))
 }

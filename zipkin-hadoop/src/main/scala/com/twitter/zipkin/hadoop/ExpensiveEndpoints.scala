@@ -57,6 +57,8 @@ class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob
   /* Join with the original on parent ID to get the parent's service name */
   val spanInfoWithParent = spanInfo
     .joinWithSmaller('parent_id -> 'id_1, idName)
+    .map('name_1 -> 'name_1){ s: String => if (s == null) Util.UNKNOWN_SERVICE_NAME else s }
     .groupBy('name_1, 'service){ _.average('duration) }
+    .groupBy('name_1, 'service){ _.sortBy('duration).reverse}
     .write(Tsv(args("output")))
 }
