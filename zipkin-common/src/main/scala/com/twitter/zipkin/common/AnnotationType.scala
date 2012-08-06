@@ -16,4 +16,14 @@
  */
 package com.twitter.zipkin.common
 
+object AnnotationType {
+  case object Bool extends AnnotationType(0, "Bool")
+  case object Bytes extends AnnotationType(1, "Bytes")
+  case object I16 extends AnnotationType(2, "I16")
+  case object I32 extends AnnotationType(3, "I32")
+  case object I64 extends AnnotationType(4, "I64")
+  case object Double extends AnnotationType(5, "Double")
+  case object String extends AnnotationType(6, "String")
+}
+
 case class AnnotationType(value: Int, name: String)
