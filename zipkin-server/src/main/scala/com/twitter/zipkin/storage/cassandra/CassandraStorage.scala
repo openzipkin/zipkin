@@ -40,6 +40,9 @@ trait CassandraStorage extends Storage with Cassandra {
   // read the trace
   private val CASSANDRA_GET_TRACE = Stats.getCounter("cassandra_gettrace")
 
+  // trace exist call
+  private val CASSANDRA_TRACE_EXISTS = Stats.getCounter("cassandra_traceexists")
+
   // trace is too big!
   private val CASSANDRA_GET_TRACE_TOO_BIG = Stats.getCounter("cassandra_gettrace_too_big")
 
@@ -86,6 +89,35 @@ trait CassandraStorage extends Storage with Cassandra {
         throw new IllegalArgumentException("The trace " + traceId + " does not have any ttl set!")
       }
       minTtlSec.seconds
+    }
+  }
+
+  /**
+   * Finds traces that have been stored from a list of trace IDs
+   *
+   * @param traceIds a List of trace IDs
+   * @return a Set of those trace IDs from the list which are stored
+   */
+
+  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
+    CASSANDRA_TRACE_EXISTS.incr
+    Future.collect {
+      traceIds.grouped(storageConfig.traceFetchBatchSize).toSeq.map { ids =>
+        traces.multigetRows(ids.toSet.asJava, None, None, Order.Normal, 1).map { rowSet =>
+          ids.flatMap { id =>
+            val spans = rowSet.asScala(id).asScala.map {
+              case (colName, col) => ThriftAdapter(col.value)
+            }
+            if (spans.isEmpty) {
+              None
+            } else {
+              Some(spans.head.traceId)
+            }
+          }.toSet
+        }
+      }
+    }.map {
+      _.reduce { (left, right) => left ++ right }
     }
   }
 
