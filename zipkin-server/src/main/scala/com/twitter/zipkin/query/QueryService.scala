@@ -144,6 +144,15 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     }
   }
 
+  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
+    log.debug("tracesExist. " + traceIds)
+    call("tracesExist") {
+      FTrace.recordBinary("numIds", traceIds.length)
+
+      storage.tracesExist(traceIds)
+    }
+  }
+
   def getTracesByIds(traceIds: Seq[Long], adjust: Seq[gen.Adjust]): Future[Seq[gen.Trace]] = {
     log.debug("getTracesByIds. " + traceIds + " adjust " + adjust)
     call("getTracesByIds") {
