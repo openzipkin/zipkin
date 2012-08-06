@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,24 +16,23 @@
  */
 package com.twitter.zipkin.common
 
-import org.specs.Specification
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.Constants
+import com.twitter.zipkin.query.{Timespan, Trace, TraceSummary, SpanTreeEntry}
 import collection.mutable
 import java.nio.ByteBuffer
-import com.twitter.zipkin.query.{Timespan, Trace, TraceSummary, SpanTreeEntry}
-import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
+import org.specs.Specification
 
 class TraceSpec extends Specification {
 
   // TODO these don't actually make any sense
-  val annotations1 = List(Annotation(100, gen.Constants.CLIENT_SEND, Some(Endpoint(123, 123, "service1"))),
-    Annotation(150, gen.Constants.CLIENT_RECV, Some(Endpoint(456, 456, "service1"))))
-  val annotations2 = List(Annotation(200, gen.Constants.CLIENT_SEND, Some(Endpoint(456, 456, "service2"))),
-    Annotation(250, gen.Constants.CLIENT_RECV, Some(Endpoint(123, 123, "service2"))))
-  val annotations3 = List(Annotation(300, gen.Constants.CLIENT_SEND, Some(Endpoint(456, 456, "service2"))),
-    Annotation(350, gen.Constants.CLIENT_RECV, Some(Endpoint(666, 666, "service2"))))
-  val annotations4 = List(Annotation(400, gen.Constants.CLIENT_SEND, Some(Endpoint(777, 777, "service3"))),
-    Annotation(500, gen.Constants.CLIENT_RECV, Some(Endpoint(888, 888, "service3"))))
+  val annotations1 = List(Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
+    Annotation(150, Constants.ClientRecv, Some(Endpoint(456, 456, "service1"))))
+  val annotations2 = List(Annotation(200, Constants.ClientSend, Some(Endpoint(456, 456, "service2"))),
+    Annotation(250, Constants.ClientRecv, Some(Endpoint(123, 123, "service2"))))
+  val annotations3 = List(Annotation(300, Constants.ClientSend, Some(Endpoint(456, 456, "service2"))),
+    Annotation(350, Constants.ClientRecv, Some(Endpoint(666, 666, "service2"))))
+  val annotations4 = List(Annotation(400, Constants.ClientSend, Some(Endpoint(777, 777, "service3"))),
+    Annotation(500, Constants.ClientRecv, Some(Endpoint(888, 888, "service3"))))
 
   val span1Id = 666L
   val span2Id = 777L
@@ -49,30 +48,21 @@ class TraceSpec extends Specification {
   val trace = Trace(List[Span](span1, span2, span3, span4))
 
   "Trace" should {
-    "convert to thrift and back" in {
-      val span = Span(12345, "methodcall", 666, None,
-        List(Annotation(1, "boaoo", None)), Nil)
-      val expectedTrace = Trace(List[Span](span))
-      val thriftTrace = ThriftQueryAdapter(expectedTrace)
-      val actualTrace = ThriftQueryAdapter(thriftTrace)
-      expectedTrace mustEqual actualTrace
-    }
-
     "get duration of trace" in {
-      val annotations = List(Annotation(100, gen.Constants.CLIENT_SEND, Some(Endpoint(123, 123, "service1"))),
-        Annotation(200, gen.Constants.CLIENT_RECV, Some(Endpoint(123, 123, "service1"))))
+      val annotations = List(Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
+        Annotation(200, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
       val span = Span(12345, "methodcall", 666, None,
         annotations, Nil)
       100 mustEqual Trace(List(span)).duration
     }
 
     "get duration of trace without root span" in {
-      val annotations = List(Annotation(100, gen.Constants.CLIENT_SEND, Some(Endpoint(123, 123, "service1"))),
-        Annotation(200, gen.Constants.CLIENT_RECV, Some(Endpoint(123, 123, "service1"))))
+      val annotations = List(Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
+        Annotation(200, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
       val span = Span(12345, "methodcall", 666, Some(123),
         annotations, Nil)
-      val annotations2 = List(Annotation(150, gen.Constants.CLIENT_SEND, Some(Endpoint(123, 123, "service1"))),
-        Annotation(160, gen.Constants.CLIENT_RECV, Some(Endpoint(123, 123, "service1"))))
+      val annotations2 = List(Annotation(150, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
+        Annotation(160, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
       val span2 = Span(12345, "methodcall", 666, Some(123),
         annotations2, Nil)
       100 mustEqual Trace(List(span, span2)).duration
@@ -120,9 +110,9 @@ class TraceSpec extends Specification {
     }
 
     "getBinaryAnnotations" in {
-      val ba1 = BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), ThriftAdapter(gen.AnnotationType.String), None)
+      val ba1 = BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), AnnotationType.String, None)
       val span1 = Span(1L, "", 1L, None, List(), List(ba1))
-      val ba2 = BinaryAnnotation("key2", ByteBuffer.wrap("value2".getBytes), ThriftAdapter(gen.AnnotationType.String), None)
+      val ba2 = BinaryAnnotation("key2", ByteBuffer.wrap("value2".getBytes), AnnotationType.String, None)
       val span2 = Span(1L, "", 2L, None, List(), List(ba2))
 
       val trace = Trace(List[Span](span1, span2))
@@ -159,17 +149,17 @@ class TraceSpec extends Specification {
     }
 
     "merge spans" in {
-      val ann1 = List(Annotation(100, gen.Constants.CLIENT_SEND, Some(Endpoint(123, 123, "service1"))),
-        Annotation(300, gen.Constants.CLIENT_RECV, Some(Endpoint(123, 123, "service1"))))
-      val ann2 = List(Annotation(150, gen.Constants.SERVER_RECV, Some(Endpoint(456, 456, "service2"))),
-        Annotation(200, gen.Constants.SERVER_SEND, Some(Endpoint(456, 456, "service2"))))
+      val ann1 = List(Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
+        Annotation(300, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
+      val ann2 = List(Annotation(150, Constants.ServerRecv, Some(Endpoint(456, 456, "service2"))),
+        Annotation(200, Constants.ServerSend, Some(Endpoint(456, 456, "service2"))))
 
       val annMerged = List(
-        Annotation(100, gen.Constants.CLIENT_SEND, Some(Endpoint(123, 123, "service1"))),
-        Annotation(300, gen.Constants.CLIENT_RECV, Some(Endpoint(123, 123, "service1"))),
-        Annotation(150, gen.Constants.SERVER_RECV, Some(Endpoint(456, 456, "service2"))),
-        Annotation(200, gen.Constants.SERVER_SEND, Some(Endpoint(456, 456, "service2")))
-        )
+        Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
+        Annotation(300, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))),
+        Annotation(150, Constants.ServerRecv, Some(Endpoint(456, 456, "service2"))),
+        Annotation(200, Constants.ServerSend, Some(Endpoint(456, 456, "service2")))
+      )
 
       val spanToMerge1 = Span(12345, "methodcall2", span2Id, Some(span1Id), ann1, Nil)
       val spanToMerge2 = Span(12345, "methodcall2", span2Id, Some(span1Id), ann2, Nil)
