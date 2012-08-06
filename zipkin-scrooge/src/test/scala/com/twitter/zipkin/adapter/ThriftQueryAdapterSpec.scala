@@ -16,14 +16,26 @@
  */
 package com.twitter.zipkin.adapter
 
-import com.twitter.zipkin.common.Endpoint
-import com.twitter.zipkin.query.TraceSummary
+import com.twitter.zipkin.common.{Annotation, Span, Endpoint}
+import com.twitter.zipkin.query.{Trace, TraceSummary}
 import org.specs.mock.{JMocker, ClassMocker}
 import org.specs.Specification
 
 class ThriftQueryAdapterSpec extends Specification with JMocker with ClassMocker {
 
   "ThriftQueryAdapter" should {
+
+    "convert Trace" in {
+      "to thrift and back" in {
+        val span = Span(12345, "methodcall", 666, None,
+          List(Annotation(1, "boaoo", None)), Nil)
+        val expectedTrace = Trace(List[Span](span))
+        val thriftTrace = ThriftQueryAdapter(expectedTrace)
+        val actualTrace = ThriftQueryAdapter(thriftTrace)
+        expectedTrace mustEqual actualTrace
+      }
+    }
+
     "convert TraceSummary" in {
       "to thrift and back" in {
         val expectedTraceSummary = TraceSummary(123, 10000, 10300, 300, Map("service1" -> 1),

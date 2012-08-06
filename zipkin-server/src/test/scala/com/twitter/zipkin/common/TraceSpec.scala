@@ -16,12 +16,11 @@
  */
 package com.twitter.zipkin.common
 
-import org.specs.Specification
 import com.twitter.zipkin.gen
+import com.twitter.zipkin.query.{Timespan, Trace, TraceSummary, SpanTreeEntry}
 import collection.mutable
 import java.nio.ByteBuffer
-import com.twitter.zipkin.query.{Timespan, Trace, TraceSummary, SpanTreeEntry}
-import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
+import org.specs.Specification
 
 class TraceSpec extends Specification {
 
@@ -49,15 +48,6 @@ class TraceSpec extends Specification {
   val trace = Trace(List[Span](span1, span2, span3, span4))
 
   "Trace" should {
-    "convert to thrift and back" in {
-      val span = Span(12345, "methodcall", 666, None,
-        List(Annotation(1, "boaoo", None)), Nil)
-      val expectedTrace = Trace(List[Span](span))
-      val thriftTrace = ThriftQueryAdapter(expectedTrace)
-      val actualTrace = ThriftQueryAdapter(thriftTrace)
-      expectedTrace mustEqual actualTrace
-    }
-
     "get duration of trace" in {
       val annotations = List(Annotation(100, gen.Constants.CLIENT_SEND, Some(Endpoint(123, 123, "service1"))),
         Annotation(200, gen.Constants.CLIENT_RECV, Some(Endpoint(123, 123, "service1"))))
@@ -120,9 +110,9 @@ class TraceSpec extends Specification {
     }
 
     "getBinaryAnnotations" in {
-      val ba1 = BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), ThriftAdapter(gen.AnnotationType.String), None)
+      val ba1 = BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), AnnotationType.String, None)
       val span1 = Span(1L, "", 1L, None, List(), List(ba1))
-      val ba2 = BinaryAnnotation("key2", ByteBuffer.wrap("value2".getBytes), ThriftAdapter(gen.AnnotationType.String), None)
+      val ba2 = BinaryAnnotation("key2", ByteBuffer.wrap("value2".getBytes), AnnotationType.String, None)
       val span2 = Span(1L, "", 2L, None, List(), List(ba2))
 
       val trace = Trace(List[Span](span1, span2))
