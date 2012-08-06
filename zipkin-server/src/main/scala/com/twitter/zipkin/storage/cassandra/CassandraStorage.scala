@@ -25,7 +25,6 @@ import com.twitter.conversions.time._
 import scala.collection.JavaConverters._
 import com.twitter.zipkin.config.{CassandraConfig, CassandraStorageConfig}
 import com.twitter.zipkin.adapter.ThriftAdapter
-import collection.immutable.{HashSet, HashMap}
 
 trait CassandraStorage extends Storage with Cassandra {
 
@@ -109,7 +108,11 @@ trait CassandraStorage extends Storage with Cassandra {
             val spans = rowSet.asScala(id).asScala.map {
               case (colName, col) => ThriftAdapter(col.value)
             }
-            if (spans.isEmpty) None else Some(spans.head.traceId)
+            if (spans.isEmpty) {
+              None
+            } else {
+              Some(spans.head.traceId)
+            }
           }.toSet
         }
       }
