@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -159,7 +159,7 @@ class TraceSpec extends Specification {
         Annotation(300, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))),
         Annotation(150, Constants.ServerRecv, Some(Endpoint(456, 456, "service2"))),
         Annotation(200, Constants.ServerSend, Some(Endpoint(456, 456, "service2")))
-        )
+      )
 
       val spanToMerge1 = Span(12345, "methodcall2", span2Id, Some(span1Id), ann1, Nil)
       val spanToMerge2 = Span(12345, "methodcall2", span2Id, Some(span1Id), ann2, Nil)
