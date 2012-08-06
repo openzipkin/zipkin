@@ -44,7 +44,7 @@ trait Storage {
    */
   def getTimeToLive(traceId: Long): Future[Duration]
 
-  def getTracesExist(traceIds: Seq[Long]): Future[Seq[Boolean]]
+  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]]
 
   /**
    * Get the available trace information from the storage system.

@@ -25,6 +25,7 @@ import com.twitter.conversions.time._
 import scala.collection.JavaConverters._
 import com.twitter.zipkin.config.{CassandraConfig, CassandraStorageConfig}
 import com.twitter.zipkin.adapter.ThriftAdapter
+import collection.immutable.{HashSet, HashMap}
 
 trait CassandraStorage extends Storage with Cassandra {
 
@@ -89,21 +90,32 @@ trait CassandraStorage extends Storage with Cassandra {
     }
   }
 
-  def getTracesExist(traceIds: Seq[Long]): Future[Seq[Boolean]] = {
-    CASSANDRA_GET_TRACE.incr
+  /**
+   * Finds traces that have been stored from a list of trace IDs
+   *
+   * @param traceIds a List of trace IDs
+   * @return a Set of those trace IDs from the list which are stored
+   */
+
+  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
+//    CASSANDRA_GET_TRACE.incr
     Future.collect {
       traceIds.grouped(storageConfig.traceFetchBatchSize).toSeq.map { ids =>
         traces.multigetRows(ids.toSet.asJava, None, None, Order.Normal, 1).map { rowSet =>
-          ids.flatMap { id =>
+          var traceSet = new HashSet[Long]()
+          ids.foreach { id =>
             val spans = rowSet.asScala(id).asScala.map {
               case (colName, col) => ThriftAdapter(col.value)
             }
-            Some(!spans.isEmpty)
+            if (!spans.isEmpty) {
+              traceSet += spans.head.traceId
+            }
           }
+          traceSet
         }
       }
     }.map {
-      _.flatten
+      _.reduce { (left, right) => left ++ right }
     }
   }
 
