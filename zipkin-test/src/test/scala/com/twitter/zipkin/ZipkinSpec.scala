@@ -130,10 +130,14 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
       // let's check that the trace we just sent has been stored and indexed properly
       val queryClient = new gen.ZipkinQuery.FinagledClient(queryTransport, protocol)
       val traces = queryClient.getTracesByIds(Seq(123), Seq())()
+      val existSet = queryClient.tracesExist(Seq(123, 5))()
 
       traces.isEmpty mustEqual false
       traces(0).spans.isEmpty mustEqual false
       traces(0).spans(0).traceId mustEqual 123
+
+      existSet.contains(123) mustEqual true
+      existSet.contains(5) mustEqual false
     }
 
   }
