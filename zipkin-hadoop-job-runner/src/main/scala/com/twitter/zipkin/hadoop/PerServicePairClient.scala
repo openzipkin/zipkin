@@ -18,6 +18,7 @@ package com.twitter.zipkin.hadoop
 
 import java.util.Scanner
 import com.twitter.zipkin.gen
+import sources.Util
 
 /**
  * Client which writes to a server, and per service pair
@@ -28,13 +29,13 @@ abstract class PerServicePairClient(combineSimilarNames: Boolean, portNumber: In
   WriteToServerClient(combineSimilarNames, portNumber) {
 
   override def getKeyValue(line: List[String]) = {
-    line.head + HadoopJobClient.DELIMITER + line.tail.head
+    getServiceName(Util.toServiceName(line.head)) + HadoopJobClient.DELIMITER + getServiceName(Util.toServiceName(line.tail.head))
   }
 
-  override def addKey(key: String) = {
-    val pairAsList = key.split(HadoopJobClient.DELIMITER)
-    HadoopJobClient.serviceNameSet.addServiceNamePair(pairAsList(0), pairAsList(1))
-  }
+//  override def addKey(key: String) = {
+//    val pairAsList = key.split(HadoopJobClient.DELIMITER)
+//    HadoopJobClient.serviceNameSet.addServiceNamePair(pairAsList(0), pairAsList(1))
+//  }
 
   override def getValue(line: List[String]) = {
     line.tail.tail

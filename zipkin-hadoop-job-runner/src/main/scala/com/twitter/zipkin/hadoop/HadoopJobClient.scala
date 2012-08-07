@@ -42,44 +42,39 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
    */
   def start(filename : String, output : String)
 
+  def getServiceName(service: String) = {
+    if (combineSimilarNames) HadoopJobClient.serviceNames(service) else service
+  }
+
   /**
    * Returns the key value of a line
    * @param line a single line
    * @return the key value returned
    */
   def getKeyValue(line: List[String]) = {
-    line.head.replace("/", ".")
-  }
-
-  def addKey(key: String) = {
-    HadoopJobClient.serviceNameSet.addServiceName(key)
+    getServiceName(Util.toServiceName(line.head))
   }
 
   def getValue(line: List[String]) = {
     line.tail
   }
 
-  /**
-   * Populate the name list
-   * @param file a file representing a directory where the data is stored
-   */
-
-  def populateServiceNameList(file: File) {
-    val populateOneFile = {f: File =>
-      val s = new Scanner(f)
-      if (!combineSimilarNames) return
-      while (s.hasNextLine()) {
-        val line = s.nextLine().split("\t").toList
-        addKey(getKeyValue(line))
-      }
-    }
-    Util.traverseFileTree(populateOneFile, file)
-  }
-
-  def populateAndStart(filename: String, output: String) = {
-    populateServiceNameList(new File(filename))
-    start(filename, output)
-  }
+//  /**
+//   * Populate the name list
+//   * @param file a file representing a directory where the data is stored
+//   */
+//
+//  def populateServiceNameList(file: File) {
+//    val populateOneFile = {f: File =>
+//      val s = new Scanner(f)
+//      if (!combineSimilarNames) return
+//      while (s.hasNextLine()) {
+//        val line = s.nextLine().split("\t").toList
+//        addKey(getKeyValue(line))
+//      }
+//    }
+//    Util.traverseFileTree(populateOneFile, file)
+//  }
 
   /**
    * Processes a single directory, with data files expected in TSV format, with key being the first value on each row
@@ -91,9 +86,8 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
       val s = new Scanner(f)
       while (s.hasNextLine()) {
         val line = s.nextLine.split("\t").toList.map({_.trim()})
-        val currentString = getKeyValue(line)
+        val serviceName = getKeyValue(line)
         var value = getValue(line)
-        val serviceName = if (combineSimilarNames) HadoopJobClient.serviceNameSet.getStandardizedName(currentString) else currentString
         if (serviceToValues.contains(serviceName)) {
           serviceToValues(serviceName) ::= value
         } else {
@@ -104,7 +98,6 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
     Util.traverseFileTree(processFile, file)
     for (t <- serviceToValues) {
       val (service, values) = t
-      println(service + ", " + values)
       processKey(service, values)
     }
   }
@@ -113,6 +106,22 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
 object HadoopJobClient {
 
   val DELIMITER = ":"
-  val serviceNameSet = new ServiceNameSet()
+  var serviceNames = new HashMap[String, String]()
+
+  def populateServiceNames(dirname: String) = {
+    val populateOneFromOneFile = {f: File =>
+      val s = new Scanner(f)
+      while (s.hasNextLine()) {
+        val line = new Scanner(s.nextLine())
+        val serviceName = Util.toServiceName(line.next())
+        val standardized = if (line.hasNext) line.next else serviceName
+        if (!serviceNames.contains(serviceName)) {
+          serviceNames += serviceName -> standardized
+          println(serviceName)
+        }
+      }
+    }
+    Util.traverseFileTree(populateOneFromOneFile, new File(dirname))
+  }
 
 }

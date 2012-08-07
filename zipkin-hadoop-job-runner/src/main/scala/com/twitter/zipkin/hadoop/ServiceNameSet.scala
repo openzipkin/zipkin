@@ -47,7 +47,7 @@ class ServiceNameSet() {
     serviceNamesSet.contains(name)
   }
 
-  def containsServiceNamePair(name1: String, name2: String) = {
+  def containsServiceNamePair(name1: String, name2: String) =  {
     serviceNamePairsSet.contains((name1, name2))
   }
 

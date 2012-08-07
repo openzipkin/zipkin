@@ -20,6 +20,7 @@ import java.io._
 import java.util.Scanner
 import com.twitter.zipkin.gen
 import collection.mutable.HashMap
+import sources.Util
 
 /**
  * A client which writes to a file. This is intended for use mainly to format emails
@@ -45,6 +46,8 @@ object WriteToFileClient {
 
   protected var pws : HashMap[String, PrintWriter] = new HashMap[String, PrintWriter]()
 
+  def toHtmlName(s: String) = s + ".html"
+
   def getWriter(s: String) = {
     if (pws.contains(s)) pws(s)
     else {
@@ -61,15 +64,13 @@ object WriteToFileClient {
   }
 
   def writeHtmlHeader(s: String) = {
-    if (!pws.contains(s)) {
-      throw new IllegalArgumentException("Service " + s + " not found")
-    }
     val pw = getWriter(s)
 
     pw.println("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n" +
       "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">" +
       "\n<html>" +
       "\n<body>")
+    pw.flush()
   }
 
   def writeHtmlClosing(s: String) = {
@@ -80,7 +81,23 @@ object WriteToFileClient {
 
     pw.println("\n</body>" +
       "\n</html>")
+    pw.flush()
   }
+
+  def writeAllHtmlHeaders(output: String) = {
+    for (tuple <- HadoopJobClient.serviceNames) {
+      val (name, standard) = tuple
+      writeHtmlHeader(output + "/" + toHtmlName(Util.toServiceName(standard)))
+    }
+  }
+
+  def writeAllHtmlClosings(output: String) = {
+    for (tuple <- HadoopJobClient.serviceNames) {
+      val (name, standard) = tuple
+      writeHtmlClosing(toHtmlName(output + "/" + Util.toServiceName(standard)))
+    }
+  }
+
 }
 
 /**
@@ -94,7 +111,7 @@ class MemcacheRequestClient extends WriteToFileClient(true, "MemcacheRequest") {
       val valuesToInt = values.flatten.map({ s: String => augmentString(s).toInt })
       valuesToInt.foldLeft(0) ((left: Int, right: Int) => left + right )
     }
-    val pw = WriteToFileClient.getWriter(outputDir + "/" + service)
+    val pw = WriteToFileClient.getWriter(WriteToFileClient.toHtmlName(outputDir + "/" + Util.toServiceName(service)))
     pw.println(service + " made " + numberMemcacheRequests + " redundant memcache requests")
     pw.flush()
   }
@@ -120,7 +137,7 @@ abstract class WriteToFilePerServicePairClient(jobname: String) extends WriteToF
   }
 
   def writeTableHeader(pw: PrintWriter) {
-    pw.println(toHtmlHeader(getTableHeader()))
+    pw.println(toHtmlListRow(getTableHeader()))
   }
 
   def writeValue(value: List[String], pw: PrintWriter) {
@@ -128,10 +145,12 @@ abstract class WriteToFilePerServicePairClient(jobname: String) extends WriteToF
   }
 
   def processKey(service: String, values: List[List[String]]) {
-    val pw = WriteToFileClient.getWriter(outputDir + "/" + service)
+    val pw = WriteToFileClient.getWriter(WriteToFileClient.toHtmlName(outputDir + "/" + Util.toServiceName(service)))
     writeHeader(service, pw)
-    pw.println("<table>\n")
+    pw.println("<table border = 1 cellpadding=3 cellspacing=1 rules=groups frame=box> \n")
+    pw.println("<thead>")
     writeTableHeader(pw)
+    pw.println("</thead>")
     values.foreach {value: List[String] => writeValue(value, pw)}
     pw.println("\n</table>")
     pw.flush()

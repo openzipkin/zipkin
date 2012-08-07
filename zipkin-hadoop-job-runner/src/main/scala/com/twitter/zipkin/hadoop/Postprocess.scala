@@ -16,19 +16,30 @@
 
 package com.twitter.zipkin.hadoop
 
+import sources.Util
+import java.io.File
+
 object PostprocessWriteToFile {
 
   val jobList = List(("WorstRuntimesPerTrace", new WorstRuntimesPerTraceClient("https://zipkin.smf1.twitter.com")),
                       ("Timeouts", new TimeoutsClient()),
                       ("Retries", new RetriesClient()),
-                      ("ProcessMemcacheRequest", new MemcacheRequestClient()),
-                      ("ProcessExpensiveEndpoints", new ExpensiveEndpointsClient()))
+                      ("MemcacheRequest", new MemcacheRequestClient()),
+                      ("ExpensiveEndpoints", new ExpensiveEndpointsClient()))
 
   def main(args: Array[String]) {
     val input = args(0)
     val output = args(1)
+    val serviceNames = args(2)
 
-
+    HadoopJobClient.populateServiceNames(serviceNames)
+    WriteToFileClient.writeAllHtmlHeaders(output)
+    for (jobTuple <- jobList) {
+      val (jobName, jobClient) = jobTuple
+      jobClient.start(input + "/" + jobName, output)
+    }
+    WriteToFileClient.writeAllHtmlClosings(output)
+    WriteToFileClient.closeAllWriters()
   }
 }
 
@@ -40,8 +51,9 @@ object PostprocessWriteToFile {
 object ProcessPopularKeys {
   def main(args : Array[String]) {
     val portNumber = augmentString(args(2)).toInt
+    HadoopJobClient.populateServiceNames(args(0))
     val c = new PopularKeyValuesClient(portNumber)
-    c.populateAndStart(args(0), args(1))
+    c.start(args(0), args(1))
   }
 }
 
@@ -52,9 +64,9 @@ object ProcessPopularKeys {
 object ProcessPopularAnnotations {
   def main(args : Array[String]) {
     val portNumber = augmentString(args(2)).toInt
-    println("Arguments: " + args.mkString(", "))
+    HadoopJobClient.populateServiceNames(args(0))
     val c = new PopularAnnotationsClient(portNumber)
-    c.populateAndStart(args(0), args(1))
+    c.start(args(0), args(1))
   }
 }
 
@@ -65,8 +77,9 @@ object ProcessPopularAnnotations {
 
 object ProcessMemcacheRequest {
   def main(args : Array[String]) {
+    HadoopJobClient.populateServiceNames(args(0))
     val c = new MemcacheRequestClient()
-    c.populateAndStart(args(0), args(1))
+    c.start(args(0), args(1))
     WriteToFileClient.closeAllWriters()
   }
 }
@@ -78,8 +91,9 @@ object ProcessMemcacheRequest {
 
 object ProcessTimeouts {
   def main(args : Array[String]) {
+    HadoopJobClient.populateServiceNames(args(0))
     val c = new TimeoutsClient()
-    c.populateAndStart(args(0), args(1))
+    c.start(args(0), args(1))
     WriteToFileClient.closeAllWriters()
   }
 }
@@ -92,8 +106,9 @@ object ProcessTimeouts {
 object ProcessExpensiveEndpoints {
 
   def main(args: Array[String]) {
+    HadoopJobClient.populateServiceNames(args(0))
     val c = new ExpensiveEndpointsClient()
-    c.populateAndStart(args(0), args(1))
+    c.start(args(0), args(1))
     WriteToFileClient.closeAllWriters()
   }
 
@@ -102,8 +117,9 @@ object ProcessExpensiveEndpoints {
 object ProcessWorstRuntimesPerTrace {
 
   def main(args: Array[String]) {
+    HadoopJobClient.populateServiceNames(args(0))
     val c = new WorstRuntimesPerTraceClient("https://zipkin.smf1.twitter.com")
-    c.populateAndStart(args(0), args(1))
+    c.start(args(0), args(1))
     WriteToFileClient.closeAllWriters()
   }
 

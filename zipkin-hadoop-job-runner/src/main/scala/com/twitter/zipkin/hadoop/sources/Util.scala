@@ -12,12 +12,15 @@ object Util {
       if (f.isDirectory) {
         val children = f.listFiles()
         for (child <- children) {
-          println(child)
           traverseFileTree(func, child)
         }
       } else {
         func(f)
       }
     }
+  }
+
+  def toServiceName(s: String) = {
+    s.trim().replace("/", "-")
   }
 }
