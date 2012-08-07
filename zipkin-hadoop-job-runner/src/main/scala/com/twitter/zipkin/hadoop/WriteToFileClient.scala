@@ -185,7 +185,7 @@ class RetriesClient extends WriteToFilePerServicePairClient("Retries") {
   }
 
   def getTableHeader() = {
-    List("Service Called", "# of Timeouts")
+    List("Service Called", "# of Retries")
   }
 }
 
