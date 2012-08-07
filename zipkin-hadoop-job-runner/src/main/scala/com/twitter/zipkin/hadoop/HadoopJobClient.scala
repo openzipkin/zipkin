@@ -59,23 +59,6 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
     line.tail
   }
 
-//  /**
-//   * Populate the name list
-//   * @param file a file representing a directory where the data is stored
-//   */
-//
-//  def populateServiceNameList(file: File) {
-//    val populateOneFile = {f: File =>
-//      val s = new Scanner(f)
-//      if (!combineSimilarNames) return
-//      while (s.hasNextLine()) {
-//        val line = s.nextLine().split("\t").toList
-//        addKey(getKeyValue(line))
-//      }
-//    }
-//    Util.traverseFileTree(populateOneFile, file)
-//  }
-
   /**
    * Processes a single directory, with data files expected in TSV format, with key being the first value on each row
    * @param file a file representing a directory where the data is stored
@@ -117,7 +100,6 @@ object HadoopJobClient {
         val standardized = if (line.hasNext) line.next else serviceName
         if (!serviceNames.contains(serviceName)) {
           serviceNames += serviceName -> standardized
-          println(serviceName)
         }
       }
     }

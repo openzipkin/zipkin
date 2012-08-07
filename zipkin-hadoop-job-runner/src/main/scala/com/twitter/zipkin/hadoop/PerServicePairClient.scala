@@ -32,11 +32,6 @@ abstract class PerServicePairClient(combineSimilarNames: Boolean, portNumber: In
     getServiceName(Util.toServiceName(line.head)) + HadoopJobClient.DELIMITER + getServiceName(Util.toServiceName(line.tail.head))
   }
 
-//  override def addKey(key: String) = {
-//    val pairAsList = key.split(HadoopJobClient.DELIMITER)
-//    HadoopJobClient.serviceNameSet.addServiceNamePair(pairAsList(0), pairAsList(1))
-//  }
-
   override def getValue(line: List[String]) = {
     line.tail.tail
   }
