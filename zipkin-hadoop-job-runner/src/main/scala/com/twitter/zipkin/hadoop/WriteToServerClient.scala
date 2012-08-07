@@ -28,7 +28,7 @@ abstract class WriteToServerClient(combineSimilarNames: Boolean, portNumber: Int
 
   protected var client : gen.ZipkinCollector.Client = null
 
-  def start(filename: String, serverName: String) {
+  def start(dirname: String, serverName: String) {
     var transport : TTransport = null
     try {
       // establish connection to the server
@@ -38,9 +38,8 @@ abstract class WriteToServerClient(combineSimilarNames: Boolean, portNumber: Int
       transport.open()
       // Read file
       println("Connected to server...populating ssnm")
-      populateServiceNameList(new Scanner(new File(filename)))
       println("Finished populating ssnm...beginning processFile")
-      processFile(new Scanner(new File(filename)))
+      processDir(new File(dirname))
     } catch {
       // TODO: Investigate using logging
       case t: Throwable => t.printStackTrace()

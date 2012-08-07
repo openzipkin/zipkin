@@ -27,15 +27,16 @@ import com.twitter.zipkin.gen
 abstract class PerServicePairClient(combineSimilarNames: Boolean, portNumber: Int) extends
   WriteToServerClient(combineSimilarNames, portNumber) {
 
-  def populateServiceNameList(s: Scanner) {
-    if (!combineSimilarNames) return
-    while (s.hasNextLine()) {
-      val line = new Scanner(s.nextLine())
-      serviceNameList.add(line.next() + DELIMITER + line.next())
-    }
+  override def getKeyValue(line: List[String]) = {
+    line.head + HadoopJobClient.DELIMITER + line.tail.head
   }
 
-  def getKeyValue(lineScanner: Scanner) = {
-    lineScanner.next() + DELIMITER + lineScanner.next()
+  override def addKey(key: String) = {
+    val pairAsList = key.split(HadoopJobClient.DELIMITER)
+    HadoopJobClient.serviceNameSet.addServiceNamePair(pairAsList(0), pairAsList(1))
+  }
+
+  override def getValue(line: List[String]) = {
+    line.tail.tail
   }
 }

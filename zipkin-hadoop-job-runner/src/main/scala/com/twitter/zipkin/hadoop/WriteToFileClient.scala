@@ -31,22 +31,9 @@ abstract class WriteToFileClient(combineSimilarNames: Boolean, jobname: String) 
 
   protected var outputDir = ""
 
-  def populateServiceNameList(s: Scanner) {
-    if (!combineSimilarNames) return
-    while (s.hasNextLine()) {
-      val line = new Scanner(s.nextLine())
-      serviceNameList.add(getKeyValue(line))
-    }
-  }
-
-  def getKeyValue(lineScanner: Scanner) = {
-    lineScanner.next().replace('/', '.')
-  }
-
   def start(input: String, outputDir: String) {
     this.outputDir = outputDir
-    populateServiceNameList(new Scanner(new File(input)))
-    processFile(new Scanner(new File(input)))
+    processDir(new File(input))
   }
 }
 
@@ -73,6 +60,27 @@ object WriteToFileClient {
     }
   }
 
+  def writeHtmlHeader(s: String) = {
+    if (!pws.contains(s)) {
+      throw new IllegalArgumentException("Service " + s + " not found")
+    }
+    val pw = getWriter(s)
+
+    pw.println("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n" +
+      "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">" +
+      "\n<html>" +
+      "\n<body>")
+  }
+
+  def writeHtmlClosing(s: String) = {
+    if (!pws.contains(s)) {
+      throw new IllegalArgumentException("Service " + s + " not found")
+    }
+    val pw = getWriter(s)
+
+    pw.println("\n</body>" +
+      "\n</html>")
+  }
 }
 
 /**
@@ -81,9 +89,9 @@ object WriteToFileClient {
 
 class MemcacheRequestClient extends WriteToFileClient(true, "MemcacheRequest") {
 
-  def processKey(service: String, values: List[String]) {
+  def processKey(service: String, values: List[List[String]]) {
     val numberMemcacheRequests = {
-      val valuesToInt = values map ({ s: String => augmentString(s).toInt })
+      val valuesToInt = values.flatten.map({ s: String => augmentString(s).toInt })
       valuesToInt.foldLeft(0) ((left: Int, right: Int) => left + right )
     }
     val pw = WriteToFileClient.getWriter(outputDir + "/" + service)
@@ -101,12 +109,31 @@ abstract class WriteToFilePerServicePairClient(jobname: String) extends WriteToF
 
   def writeHeader(service: String, pw: PrintWriter)
 
-  def writeValue(value: String, pw: PrintWriter)
+  def getTableHeader(): List[String]
 
-  def processKey(service: String, values: List[String]) {
+  def toHtmlHeader(header: List[String]) = {
+    "<tr>" + (header.map({s: String => "<th=\"col\">" + s + "</th>"}).mkString("\n")) + "</tr>"
+  }
+
+  def toHtmlListRow(sl: List[String]) = {
+    "<tr>" + (sl.map({s => "<td>" + s + "</td>"}).mkString("\n")) + "</tr>"
+  }
+
+  def writeTableHeader(pw: PrintWriter) {
+    pw.println(toHtmlHeader(getTableHeader()))
+  }
+
+  def writeValue(value: List[String], pw: PrintWriter) {
+    pw.println(toHtmlListRow(value))
+  }
+
+  def processKey(service: String, values: List[List[String]]) {
     val pw = WriteToFileClient.getWriter(outputDir + "/" + service)
     writeHeader(service, pw)
-    values.foreach {value: String => writeValue(value, pw)}
+    pw.println("<table>\n")
+    writeTableHeader(pw)
+    values.foreach {value: List[String] => writeValue(value, pw)}
+    pw.println("\n</table>")
     pw.flush()
   }
 }
@@ -119,13 +146,12 @@ abstract class WriteToFilePerServicePairClient(jobname: String) extends WriteToF
 class TimeoutsClient extends WriteToFilePerServicePairClient("Timeouts") {
 
   def writeHeader(service: String, pw: PrintWriter) {
-    pw.println(service + " timed out in calls to the following services:")
+    pw.println("<p>" + service + " timed out in calls to the following services:</p>")
   }
 
-  def writeValue(value: String, pw: PrintWriter) {
-    pw.println(value)
+  def getTableHeader() = {
+    List("Service Called", "# of Timeouts")
   }
-
 }
 
 
@@ -136,13 +162,12 @@ class TimeoutsClient extends WriteToFilePerServicePairClient("Timeouts") {
 class RetriesClient extends WriteToFilePerServicePairClient("Retries") {
 
   def writeHeader(service: String, pw: PrintWriter) {
-    pw.println(service + " retried in calls to the following services:")
+    pw.println("<p>" + service + " retried in calls to the following services:</p>")
   }
 
-  def writeValue(value: String, pw: PrintWriter) {
-    pw.println(value)
+  def getTableHeader() = {
+    List("Service Called", "# of Timeouts")
   }
-
 }
 
 
@@ -153,13 +178,12 @@ class RetriesClient extends WriteToFilePerServicePairClient("Retries") {
 class WorstRuntimesClient extends WriteToFilePerServicePairClient("WorstRuntimes") {
 
   def writeHeader(service: String, pw: PrintWriter) {
-    pw.println("Service " + service + " took the longest for these spans:")
+    pw.println("<p>Service " + service + " took the longest for these spans:</p>")
   }
 
-  def writeValue(value: String, pw: PrintWriter) {
-    pw.println(value)
+  def getTableHeader() = {
+    List("Span ID", "Duration")
   }
-
 }
 
 
@@ -170,12 +194,19 @@ class WorstRuntimesClient extends WriteToFilePerServicePairClient("WorstRuntimes
 class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToFilePerServicePairClient("WorstRuntimesPerTrace") {
 
   def writeHeader(service: String, pw: PrintWriter) {
-    pw.println("Service " + service + " took the longest for these traces:")
+    pw.println("<p>Service " + service + " took the longest for these traces:</p>")
   }
 
   // TODO: Use script to determine which traces are sampled, then wrap in pretty HTML
-  def writeValue(value: String, pw: PrintWriter) {
-    pw.println("<a href=\"" + zipkinUrl + "/traces/" + value + "\">" + value + "</a>")
+
+  def getTableHeader() = {
+    List("Trace ID", "Duration")
+  }
+
+  override def writeValue(value: List[String], pw: PrintWriter) {
+    val traceId = value(0)
+    val duration = value(1)
+    pw.println(toHtmlListRow(List("<a href=\"" + zipkinUrl + "/traces/" + traceId + "\">" + traceId + "</a>", duration)))
   }
 
 }
@@ -188,11 +219,10 @@ class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToFilePerServi
 class ExpensiveEndpointsClient extends WriteToFilePerServicePairClient("ExpensiveEndpoints") {
 
   def writeHeader(service: String, pw: PrintWriter) {
-    pw.println("The most expensive calls for " + service + " were:")
+    pw.println("<p>The most expensive calls for " + service + " were:</p>")
   }
 
-  def writeValue(value: String, pw: PrintWriter) {
-    pw.println(value)
+  def getTableHeader() = {
+    List("Service Called", "Duration")
   }
-
 }

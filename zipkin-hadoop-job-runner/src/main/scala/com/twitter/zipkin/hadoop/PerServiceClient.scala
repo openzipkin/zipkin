@@ -27,18 +27,6 @@ import scala.collection.JavaConverters._
 
 abstract class PerServiceClient(combineSimilarNames: Boolean, portNumber: Int) extends
   WriteToServerClient(combineSimilarNames, portNumber) {
-
-  def populateServiceNameList(s: Scanner) {
-    if (!combineSimilarNames) return
-    while (s.hasNextLine()) {
-      val line = new Scanner(s.nextLine())
-      serviceNameList.add(line.next())
-    }
-  }
-
-  def getKeyValue(lineScanner: Scanner) = {
-    lineScanner.next()
-  }
 }
 
 /**
@@ -48,9 +36,9 @@ abstract class PerServiceClient(combineSimilarNames: Boolean, portNumber: Int) e
 
 class PopularAnnotationsClient(portNumber: Int) extends PerServiceClient(false, portNumber) {
 
-  def processKey(service: String, values: List[String]) {
-    println("Writing " + values.mkString(", ") + " to " + service)
-    client.storeTopAnnotations(service, values.asJava)
+  def processKey(service: String, values: List[List[String]]) {
+    println("Writing " + values.flatten.mkString(", ") + " to " + service)
+    client.storeTopAnnotations(service, values.flatten.asJava)
   }
 
 }
@@ -62,8 +50,8 @@ class PopularAnnotationsClient(portNumber: Int) extends PerServiceClient(false, 
 
 class PopularKeyValuesClient(portNumber: Int) extends PerServiceClient(false, portNumber) {
 
-  def processKey(service: String, values: List[String]) {
-    client.storeTopKeyValueAnnotations(service, values.asJava)
+  def processKey(service: String, values: List[List[String]]) {
+    client.storeTopKeyValueAnnotations(service, values.flatten.asJava)
   }
 
 }
