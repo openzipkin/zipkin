@@ -18,7 +18,8 @@ package com.twitter.zipkin.hadoop
 
 import java.io._
 import collection.mutable.HashMap
-import sources.Util
+import com.twitter.zipkin.hadoop.sources.Util
+import mustache.MustacheTemplate
 
 /**
  * A client which writes to a file. This is intended for use mainly to format emails
@@ -29,6 +30,8 @@ import sources.Util
 abstract class WriteToFileClient(combineSimilarNames: Boolean, jobname: String) extends HadoopJobClient(combineSimilarNames) {
 
   protected var outputDir = ""
+
+  def toHtmlName(s: String) = outputDir + "/" + s + ".html"
 
   def start(input: String, outputDir: String) {
     this.outputDir = outputDir
@@ -42,60 +45,12 @@ abstract class WriteToFileClient(combineSimilarNames: Boolean, jobname: String) 
 
 object WriteToFileClient {
 
-  protected var pws : HashMap[String, PrintWriter] = new HashMap[String, PrintWriter]()
-
-  def toHtmlName(s: String) = s + ".html"
-
-  def getWriter(s: String) = {
-    if (pws.contains(s)) pws(s)
-    else {
-      val pw = new PrintWriter((new FileOutputStream(s, true)))
-      pws += s -> pw
-      pw
+  def finish() = {
+    for (service <- MustacheTemplate.services()) {
+      val mt = MustacheTemplate.getTemplate(service)
+      mt.write(new PrintWriter((new FileOutputStream(service, true))))
     }
   }
-
-  def closeAllWriters() {
-    for (s <- pws.keys) {
-      pws(s).close()
-    }
-  }
-
-  def writeHtmlHeader(s: String) = {
-    val pw = getWriter(s)
-
-    pw.println("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n" +
-      "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">" +
-      "\n<html>" +
-      "\n<body>")
-    pw.flush()
-  }
-
-  def writeHtmlClosing(s: String) = {
-    if (!pws.contains(s)) {
-      throw new IllegalArgumentException("Service " + s + " not found")
-    }
-    val pw = getWriter(s)
-
-    pw.println("\n</body>" +
-      "\n</html>")
-    pw.flush()
-  }
-
-  def writeAllHtmlHeaders(output: String) = {
-    for (tuple <- HadoopJobClient.serviceNames) {
-      val (name, standard) = tuple
-      writeHtmlHeader(output + "/" + toHtmlName(Util.toHtmlServiceName(standard)))
-    }
-  }
-
-  def writeAllHtmlClosings(output: String) = {
-    for (tuple <- HadoopJobClient.serviceNames) {
-      val (name, standard) = tuple
-      writeHtmlClosing(toHtmlName(output + "/" + Util.toHtmlServiceName(standard)))
-    }
-  }
-
 }
 
 /**
@@ -109,9 +64,8 @@ class MemcacheRequestClient extends WriteToFileClient(true, "MemcacheRequest") {
       val valuesToInt = values.flatten.map({ s: String => augmentString(s).toInt })
       valuesToInt.foldLeft(0) ((left: Int, right: Int) => left + right )
     }
-    val pw = WriteToFileClient.getWriter(WriteToFileClient.toHtmlName(outputDir + "/" + Util.toHtmlServiceName(service)))
-    pw.println(service + " made " + numberMemcacheRequests + " redundant memcache requests")
-    pw.flush()
+    val mt = MustacheTemplate.getTemplate(toHtmlName(service))
+    mt.addOneLineResult("Service " + service + " made " + numberMemcacheRequests + " redundant memcache requests")
   }
 
 }
@@ -122,36 +76,17 @@ class MemcacheRequestClient extends WriteToFileClient(true, "MemcacheRequest") {
 
 abstract class WriteToFilePerServicePairClient(jobname: String) extends WriteToFileClient(false, jobname) {
 
-  def writeHeader(service: String, pw: PrintWriter)
+  def getTableResultHeader(service: String): String
 
   def getTableHeader(): List[String]
 
-  def toHtmlHeader(header: List[String]) = {
-    "<tr>" + (header.map({s: String => "<th=\"col\">" + s + "</th>"}).mkString("\n")) + "</tr>"
-  }
-
-  def toHtmlListRow(sl: List[String]) = {
-    "<tr>" + (sl.map({s => "<td>" + s + "</td>"}).mkString("\n")) + "</tr>"
-  }
-
-  def writeTableHeader(pw: PrintWriter) {
-    pw.println(toHtmlListRow(getTableHeader()))
-  }
-
-  def writeValue(value: List[String], pw: PrintWriter) {
-    pw.println(toHtmlListRow(value))
+  def addTable(service: String, values: List[List[String]], mt: MustacheTemplate) = {
+    mt.addTableResult(getTableResultHeader(service), getTableHeader(), values)
   }
 
   def processKey(service: String, values: List[List[String]]) {
-    val pw = WriteToFileClient.getWriter(WriteToFileClient.toHtmlName(outputDir + "/" + Util.toHtmlServiceName(service)))
-    writeHeader(service, pw)
-    pw.println("<table border = 1 cellpadding=3 cellspacing=1 rules=groups frame=box> \n")
-    pw.println("<thead>")
-    writeTableHeader(pw)
-    pw.println("</thead>")
-    values.foreach {value: List[String] => writeValue(value, pw)}
-    pw.println("\n</table>")
-    pw.flush()
+    val mt = MustacheTemplate.getTemplate(toHtmlName(service))
+    addTable(service, values, mt)
   }
 }
 
@@ -162,8 +97,8 @@ abstract class WriteToFilePerServicePairClient(jobname: String) extends WriteToF
 
 class TimeoutsClient extends WriteToFilePerServicePairClient("Timeouts") {
 
-  def writeHeader(service: String, pw: PrintWriter) {
-    pw.println("<p>" + service + " timed out in calls to the following services:</p>")
+  def getTableResultHeader(service: String) = {
+    service + " timed out in calls to the following services"
   }
 
   def getTableHeader() = {
@@ -178,8 +113,8 @@ class TimeoutsClient extends WriteToFilePerServicePairClient("Timeouts") {
 
 class RetriesClient extends WriteToFilePerServicePairClient("Retries") {
 
-  def writeHeader(service: String, pw: PrintWriter) {
-    pw.println("<p>" + service + " retried in calls to the following services:</p>")
+  def getTableResultHeader(service: String) = {
+    service + " retried in calls to the following services:"
   }
 
   def getTableHeader() = {
@@ -194,8 +129,8 @@ class RetriesClient extends WriteToFilePerServicePairClient("Retries") {
 
 class WorstRuntimesClient extends WriteToFilePerServicePairClient("WorstRuntimes") {
 
-  def writeHeader(service: String, pw: PrintWriter) {
-    pw.println("<p>Service " + service + " took the longest for these spans:</p>")
+  def getTableResultHeader(service: String) = {
+    "Service " + service + " took the longest for these spans:"
   }
 
   def getTableHeader() = {
@@ -210,20 +145,16 @@ class WorstRuntimesClient extends WriteToFilePerServicePairClient("WorstRuntimes
 
 class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToFilePerServicePairClient("WorstRuntimesPerTrace") {
 
-  def writeHeader(service: String, pw: PrintWriter) {
-    pw.println("<p>Service " + service + " took the longest for these traces:</p>")
+  def getTableResultHeader(service: String) = {
+    "Service " + service + " took the longest for these traces:"
   }
-
-  // TODO: Use script to determine which traces are sampled, then wrap in pretty HTML
 
   def getTableHeader() = {
     List("Trace ID", "Duration")
   }
 
-  override def writeValue(value: List[String], pw: PrintWriter) {
-    val traceId = value(0)
-    val duration = value(1)
-    pw.println(toHtmlListRow(List("<a href=\"" + zipkinUrl + "/traces/" + traceId + "\">" + traceId + "</a>", duration)))
+  override def addTable(service: String, values: List[List[String]], mt: MustacheTemplate) = {
+    mt.addUrlTableResult(getTableResultHeader(service), getTableHeader(), values)
   }
 
 }
@@ -235,8 +166,8 @@ class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToFilePerServi
 
 class ExpensiveEndpointsClient extends WriteToFilePerServicePairClient("ExpensiveEndpoints") {
 
-  def writeHeader(service: String, pw: PrintWriter) {
-    pw.println("<p>The most expensive calls for " + service + " were:</p>")
+  def getTableResultHeader(service: String) = {
+    "The most expensive calls for " + service + " were:"
   }
 
   def getTableHeader() = {

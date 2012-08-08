@@ -77,7 +77,7 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
         val serviceName = getKeyValue(line)
         var value = getValue(line)
         if (serviceToValues.contains(serviceName)) {
-          serviceToValues(serviceName) ::= value
+          serviceToValues(serviceName) ++= List(value)
         } else {
           serviceToValues += serviceName -> List(value)
         }
@@ -86,6 +86,7 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
     Util.traverseFileTree(processFile, file)
     for (t <- serviceToValues) {
       val (service, values) = t
+      println(service)
       processKey(service, values)
     }
   }

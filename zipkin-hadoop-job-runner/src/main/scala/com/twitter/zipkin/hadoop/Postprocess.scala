@@ -33,13 +33,11 @@ object PostprocessWriteToFile {
     val serviceNames = args(2)
 
     HadoopJobClient.populateServiceNames(serviceNames)
-    WriteToFileClient.writeAllHtmlHeaders(output)
     for (jobTuple <- jobList) {
       val (jobName, jobClient) = jobTuple
       jobClient.start(input + "/" + jobName, output)
     }
-    WriteToFileClient.writeAllHtmlClosings(output)
-    WriteToFileClient.closeAllWriters()
+    WriteToFileClient.finish()
   }
 }
 
@@ -80,7 +78,7 @@ object ProcessMemcacheRequest {
     HadoopJobClient.populateServiceNames(args(0))
     val c = new MemcacheRequestClient()
     c.start(args(0), args(1))
-    WriteToFileClient.closeAllWriters()
+    WriteToFileClient.finish()
   }
 }
 
@@ -94,7 +92,7 @@ object ProcessTimeouts {
     HadoopJobClient.populateServiceNames(args(0))
     val c = new TimeoutsClient()
     c.start(args(0), args(1))
-    WriteToFileClient.closeAllWriters()
+    WriteToFileClient.finish()
   }
 }
 
@@ -109,7 +107,7 @@ object ProcessExpensiveEndpoints {
     HadoopJobClient.populateServiceNames(args(0))
     val c = new ExpensiveEndpointsClient()
     c.start(args(0), args(1))
-    WriteToFileClient.closeAllWriters()
+    WriteToFileClient.finish()
   }
 
 }
@@ -120,7 +118,7 @@ object ProcessWorstRuntimesPerTrace {
     HadoopJobClient.populateServiceNames(args(0))
     val c = new WorstRuntimesPerTraceClient("https://zipkin.smf1.twitter.com")
     c.start(args(0), args(1))
-    WriteToFileClient.closeAllWriters()
+    WriteToFileClient.finish()
   }
 
 }
