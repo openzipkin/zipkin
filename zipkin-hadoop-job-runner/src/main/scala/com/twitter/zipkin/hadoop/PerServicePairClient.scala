@@ -29,7 +29,7 @@ abstract class PerServicePairClient(combineSimilarNames: Boolean, portNumber: In
   WriteToServerClient(combineSimilarNames, portNumber) {
 
   override def getKeyValue(line: List[String]) = {
-    getServiceName(Util.toServiceName(line.head)) + HadoopJobClient.DELIMITER + getServiceName(Util.toServiceName(line.tail.head))
+    getServiceName(Util.toHtmlServiceName(line.head)) + HadoopJobClient.DELIMITER + getServiceName(Util.toHtmlServiceName(line.tail.head))
   }
 
   override def getValue(line: List[String]) = {

@@ -17,8 +17,6 @@
 package com.twitter.zipkin.hadoop
 
 import java.io._
-import java.util.Scanner
-import com.twitter.zipkin.gen
 import collection.mutable.HashMap
 import sources.Util
 
@@ -87,14 +85,14 @@ object WriteToFileClient {
   def writeAllHtmlHeaders(output: String) = {
     for (tuple <- HadoopJobClient.serviceNames) {
       val (name, standard) = tuple
-      writeHtmlHeader(output + "/" + toHtmlName(Util.toServiceName(standard)))
+      writeHtmlHeader(output + "/" + toHtmlName(Util.toHtmlServiceName(standard)))
     }
   }
 
   def writeAllHtmlClosings(output: String) = {
     for (tuple <- HadoopJobClient.serviceNames) {
       val (name, standard) = tuple
-      writeHtmlClosing(toHtmlName(output + "/" + Util.toServiceName(standard)))
+      writeHtmlClosing(toHtmlName(output + "/" + Util.toHtmlServiceName(standard)))
     }
   }
 
@@ -111,7 +109,7 @@ class MemcacheRequestClient extends WriteToFileClient(true, "MemcacheRequest") {
       val valuesToInt = values.flatten.map({ s: String => augmentString(s).toInt })
       valuesToInt.foldLeft(0) ((left: Int, right: Int) => left + right )
     }
-    val pw = WriteToFileClient.getWriter(WriteToFileClient.toHtmlName(outputDir + "/" + Util.toServiceName(service)))
+    val pw = WriteToFileClient.getWriter(WriteToFileClient.toHtmlName(outputDir + "/" + Util.toHtmlServiceName(service)))
     pw.println(service + " made " + numberMemcacheRequests + " redundant memcache requests")
     pw.flush()
   }
@@ -145,7 +143,7 @@ abstract class WriteToFilePerServicePairClient(jobname: String) extends WriteToF
   }
 
   def processKey(service: String, values: List[List[String]]) {
-    val pw = WriteToFileClient.getWriter(WriteToFileClient.toHtmlName(outputDir + "/" + Util.toServiceName(service)))
+    val pw = WriteToFileClient.getWriter(WriteToFileClient.toHtmlName(outputDir + "/" + Util.toHtmlServiceName(service)))
     writeHeader(service, pw)
     pw.println("<table border = 1 cellpadding=3 cellspacing=1 rules=groups frame=box> \n")
     pw.println("<thead>")

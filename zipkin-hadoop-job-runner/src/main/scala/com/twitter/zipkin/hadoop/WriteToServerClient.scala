@@ -18,11 +18,8 @@ package com.twitter.zipkin.hadoop
 
 import org.apache.thrift.protocol.TBinaryProtocol
 import com.twitter.zipkin.gen
-import java.util.Scanner
 import java.io.File
-import java.net.SocketException
-import org.apache.thrift.transport.{TTransportException, TSocket, TFramedTransport, TTransport}
-import org.apache.thrift.TException
+import org.apache.thrift.transport.{TSocket, TFramedTransport, TTransport}
 
 abstract class WriteToServerClient(combineSimilarNames: Boolean, portNumber: Int) extends HadoopJobClient(combineSimilarNames) {
 

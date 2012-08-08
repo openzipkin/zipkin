@@ -52,9 +52,14 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
    * @return the key value returned
    */
   def getKeyValue(line: List[String]) = {
-    getServiceName(Util.toServiceName(line.head))
+    getServiceName(Util.toHtmlServiceName(line.head))
   }
 
+  /**
+   * Returns the value of a line
+   * @param line a single line of data
+   * @return the value of that line
+   */
   def getValue(line: List[String]) = {
     line.tail
   }
@@ -91,12 +96,18 @@ object HadoopJobClient {
   val DELIMITER = ":"
   var serviceNames = new HashMap[String, String]()
 
+  /**
+   * Given a directory of files formatted in TSV format with each line being of the form
+   * servicename  standardizedservicename
+   * reads that information into a map
+   * @param dirname the name of a directory containing all the service name information
+   */
   def populateServiceNames(dirname: String) = {
     val populateOneFromOneFile = {f: File =>
       val s = new Scanner(f)
       while (s.hasNextLine()) {
         val line = new Scanner(s.nextLine())
-        val serviceName = Util.toServiceName(line.next())
+        val serviceName = Util.toHtmlServiceName(line.next())
         val standardized = if (line.hasNext) line.next else serviceName
         if (!serviceNames.contains(serviceName)) {
           serviceNames += serviceName -> standardized

@@ -16,8 +16,6 @@
 
 package com.twitter.zipkin.hadoop
 
-import java.util.Scanner
-import com.twitter.zipkin.gen
 import scala.collection.JavaConverters._
 
 /**

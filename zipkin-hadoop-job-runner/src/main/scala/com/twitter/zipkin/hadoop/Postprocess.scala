@@ -16,9 +16,9 @@
 
 package com.twitter.zipkin.hadoop
 
-import sources.Util
-import java.io.File
-
+/**
+ * Runs all the jobs which write to file on the input. The arguments are expected to be inputdirname outputdirname servicenamefile
+ */
 object PostprocessWriteToFile {
 
   val jobList = List(("WorstRuntimesPerTrace", new WorstRuntimesPerTraceClient("https://zipkin.smf1.twitter.com")),
