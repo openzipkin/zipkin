@@ -426,11 +426,11 @@ ul.traces li .trace-details {
 }
 
 ul.traces li .services {
-  width: 79.7%;
+  width: 80%;
 }
 
 ul.traces li .timestamp {
-  width: 20%;
+  width: 19%;
   text-align: right;
 }
 
