@@ -227,9 +227,9 @@ Zipkin.Application.Index = (function() {
 
       data.sort(function(a, b) {
         if (sortOrder == ORDER_TIMESTAMP_ASC) {
-          return new Date(a.start_time) - new Date(b.start_time);
+          return new Date(a.startTimestamp) - new Date(b.startTimestamp);
         } else if (sortOrder == ORDER_TIMESTAMP_DESC) {
-          return new Date(b.start_time) - new Date(a.start_time);
+          return new Date(b.startTimestamp) - new Date(a.startTimestamp);
         } else if (sortOrder == ORDER_DURATION_ASC) {
           return a.duration - b.duration;
         } else {
@@ -419,6 +419,7 @@ Zipkin.Application.Index = (function() {
               return { name: key, count: count };
             });
             e.url = root_url + "show/" + e.traceId;
+            e.startTime = Zipkin.Util.timeAgoInWords(e.startTimestamp / 1000);
             return e;
           });
           traces = updateFilteredServices(traces);

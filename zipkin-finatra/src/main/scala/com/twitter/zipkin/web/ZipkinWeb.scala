@@ -5,18 +5,27 @@ import com.twitter.finagle.http.Http
 import com.twitter.finagle.builder.{ClientBuilder, ServerBuilder, Server}
 import com.twitter.finagle.thrift.ThriftClientFramedCodec
 import com.twitter.finagle.zookeeper.ZookeeperServerSetCluster
-import com.twitter.finatra.{AppService, Controller, FinatraServer}
-import com.twitter.ostrich.admin.{ServiceTracker, Service}
+import com.twitter.finatra_core.{AbstractFinatraController, ControllerCollection}
+import com.twitter.finatra._
+import com.twitter.ostrich.admin.ServiceTracker
+import com.twitter.ostrich.admin
 import com.twitter.logging.Logger
 import com.twitter.io.{Files, TempFile}
 import com.twitter.zipkin.config.ZipkinWebConfig
 import com.twitter.zipkin.gen
+import com.twitter.util.Future
 import java.net.InetSocketAddress
+import org.jboss.netty.handler.codec.http.HttpResponse
+import scala.Left
+import scala.Right
+import scala.Some
 
-class ZipkinWeb(config: ZipkinWebConfig) extends Service {
+class ZipkinWeb(config: ZipkinWebConfig) extends admin.Service {
 
   val log = Logger.get()
   var server: Option[Server] = None
+
+  val controllers = new ControllerCollection[Request, Future[Response], Future[HttpResponse]]
 
   def start() {
     val clientBuilder = ClientBuilder()
@@ -43,10 +52,10 @@ class ZipkinWeb(config: ZipkinWebConfig) extends Service {
     val resource = config.resource
     val app = config.appConfig(client)
 
-    FinatraServer.register(resource)
-    FinatraServer.register(app)
+    register(resource)
+    register(app)
 
-    val finatraService = new AppService
+    val finatraService = new AppService(controllers)
     val service = finatraService
 
     server = Some {
@@ -62,6 +71,10 @@ class ZipkinWeb(config: ZipkinWebConfig) extends Service {
 
   def shutdown() {
     server.foreach { _.close() }
+  }
+
+  def register(app: AbstractFinatraController[Request, Future[Response], Future[HttpResponse]]) {
+    controllers.add(app)
   }
 }
 

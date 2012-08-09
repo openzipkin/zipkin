@@ -100,7 +100,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
           }
         }
       }
-    }.map(render.json(_))
+    }.flatten.map(render.json(_))
   }
 
   /**
