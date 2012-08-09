@@ -140,7 +140,7 @@ class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToFilePerServi
   }
 
   override def addTable(service: String, values: List[List[String]], mt: ZipkinEmailMustacheTemplate) = {
-    val formattedAsUrl = values.map( value => (Util.ZIPKIN_TRACE_URL + value(0))::value.tail )
+    val formattedAsUrl = values.map( value => (Util.ZIPKIN_TRACE_URL + value(0), value(0), value.tail ))
     mt.addUrlTableResult(getTableResultHeader(service), getTableHeader(), formattedAsUrl)
   }
 

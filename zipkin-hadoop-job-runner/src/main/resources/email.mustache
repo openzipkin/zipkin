@@ -4,24 +4,24 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
     <head>
-    Service Report for {{serviceName}}
+    <h2>Service Report for {{serviceName}}</h2>
     </head>
     {{/header}}
 
     {{#body}}
     <body>
         {{#oneLineResults}}
-        <p>{{result}}<\p>
+        <p>{{result}}</p> <br />
         {{/oneLineResults}}
 
         {{#tableResults}}
-        </p>{{tableResultHeader}}</p>
+        <h4></p>{{tableResultHeader}}</p></h4>
         <table border = 1 cellpadding=3 cellspacing=1 rules=groups frame=box>
             <thead>
             {{#tableHeader}}
             <tr>
             {{#tableHeaderTokens}}
-            <td>{{tableHeaderToken}}</td>
+            <td><strong>{{tableHeaderToken}}</strong></td>
             {{/tableHeaderTokens}}
             </tr>
             {{/tableHeader}}

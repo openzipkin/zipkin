@@ -87,9 +87,12 @@ class ZipkinEmailMustacheTemplate(serviceName: String) {
    * @param tableHeader the header of the table
    * @param tableUrlRows the rows of the table, where the first element is a URL
    */
-  def addUrlTableResult(tableResultHeader: String, tableHeader: List[String], tableUrlRows: List[List[String]]) {
+  def addUrlTableResult(tableResultHeader: String, tableHeader: List[String], tableUrlRows: List[(String, String, List[String])]) {
     val header = new TableHeader(tableHeader.map(s => new TableHeaderToken(s)).asJava)
-    val rowUrlList = tableUrlRows.map ( row => new TableUrlRow(row(0), row(0), row.tail.map(s => new TableUrlRowToken((s))).asJava) ).asJava
+    val rowUrlList = tableUrlRows.map ({ row =>
+      val (url, linkText, value) = row
+      new TableUrlRow(url, linkText, value.map(s => new TableUrlRowToken((s))).asJava)
+    }).asJava
     tableResults ::= new TableResults(tableResultHeader, header, null, rowUrlList)
   }
 
