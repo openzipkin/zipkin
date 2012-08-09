@@ -19,7 +19,7 @@ package com.twitter.zipkin.hadoop
 import java.io._
 import collection.mutable.HashMap
 import com.twitter.zipkin.hadoop.sources.Util
-import mustache.MustacheTemplate
+import mustache.ZipkinEmailMustacheTemplate
 
 /**
  * A client which writes to a file. This is intended for use mainly to format emails
@@ -40,20 +40,6 @@ abstract class WriteToFileClient(combineSimilarNames: Boolean, jobname: String) 
 }
 
 /**
- * A companion object to the WriteToFileClient which ensures that only one writer is ever open per service
- */
-
-object WriteToFileClient {
-
-  def finish() = {
-    for (service <- MustacheTemplate.services()) {
-      val mt = MustacheTemplate.getTemplate(service)
-      mt.write(new PrintWriter((new FileOutputStream(service, true))))
-    }
-  }
-}
-
-/**
  * A client which writes MemcacheRequest data to the file specified
  */
 
@@ -64,7 +50,7 @@ class MemcacheRequestClient extends WriteToFileClient(true, "MemcacheRequest") {
       val valuesToInt = values.flatten.map({ s: String => augmentString(s).toInt })
       valuesToInt.foldLeft(0) ((left: Int, right: Int) => left + right )
     }
-    val mt = MustacheTemplate.getTemplate(toHtmlName(service))
+    val mt = ZipkinEmailMustacheTemplate.getTemplate(service, toHtmlName(service))
     mt.addOneLineResult("Service " + service + " made " + numberMemcacheRequests + " redundant memcache requests")
   }
 
@@ -80,12 +66,12 @@ abstract class WriteToFilePerServicePairClient(jobname: String) extends WriteToF
 
   def getTableHeader(): List[String]
 
-  def addTable(service: String, values: List[List[String]], mt: MustacheTemplate) = {
+  def addTable(service: String, values: List[List[String]], mt: ZipkinEmailMustacheTemplate) = {
     mt.addTableResult(getTableResultHeader(service), getTableHeader(), values)
   }
 
   def processKey(service: String, values: List[List[String]]) {
-    val mt = MustacheTemplate.getTemplate(toHtmlName(service))
+    val mt = ZipkinEmailMustacheTemplate.getTemplate(service, toHtmlName(service))
     addTable(service, values, mt)
   }
 }
@@ -153,8 +139,9 @@ class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToFilePerServi
     List("Trace ID", "Duration")
   }
 
-  override def addTable(service: String, values: List[List[String]], mt: MustacheTemplate) = {
-    mt.addUrlTableResult(getTableResultHeader(service), getTableHeader(), values)
+  override def addTable(service: String, values: List[List[String]], mt: ZipkinEmailMustacheTemplate) = {
+    val formattedAsUrl = values.map( value => (Util.ZIPKIN_TRACE_URL + value(0))::value.tail )
+    mt.addUrlTableResult(getTableResultHeader(service), getTableHeader(), formattedAsUrl)
   }
 
 }

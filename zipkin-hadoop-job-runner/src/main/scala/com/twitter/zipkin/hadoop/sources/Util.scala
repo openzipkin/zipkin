@@ -24,6 +24,8 @@ import java.io.File
 
 object Util {
 
+  val ZIPKIN_TRACE_URL = "your.zipkin.url"
+
   /**
    * Returns whether or not a directory will contain data. A directory contains data if its first character is not '_'
    * @param f a File

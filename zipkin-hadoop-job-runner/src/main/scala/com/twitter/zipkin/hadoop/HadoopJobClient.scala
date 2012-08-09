@@ -86,7 +86,6 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
     Util.traverseFileTree(processFile, file)
     for (t <- serviceToValues) {
       val (service, values) = t
-      println(service)
       processKey(service, values)
     }
   }

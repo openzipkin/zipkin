@@ -16,16 +16,20 @@
 
 package com.twitter.zipkin.hadoop
 
+import com.twitter.zipkin.hadoop.sources.Util
+import mustache.ZipkinEmailMustacheTemplate
+
 /**
  * Runs all the jobs which write to file on the input. The arguments are expected to be inputdirname outputdirname servicenamefile
  */
 object PostprocessWriteToFile {
 
-  val jobList = List(("WorstRuntimesPerTrace", new WorstRuntimesPerTraceClient("https://zipkin.smf1.twitter.com")),
+  val jobList = List(("WorstRuntimesPerTrace", new WorstRuntimesPerTraceClient(Util.ZIPKIN_TRACE_URL)),
                       ("Timeouts", new TimeoutsClient()),
                       ("Retries", new RetriesClient()),
                       ("MemcacheRequest", new MemcacheRequestClient()),
                       ("ExpensiveEndpoints", new ExpensiveEndpointsClient()))
+
 
   def main(args: Array[String]) {
     val input = args(0)
@@ -37,7 +41,7 @@ object PostprocessWriteToFile {
       val (jobName, jobClient) = jobTuple
       jobClient.start(input + "/" + jobName, output)
     }
-    WriteToFileClient.finish()
+    ZipkinEmailMustacheTemplate.writeAll()
   }
 }
 
@@ -78,7 +82,7 @@ object ProcessMemcacheRequest {
     HadoopJobClient.populateServiceNames(args(0))
     val c = new MemcacheRequestClient()
     c.start(args(0), args(1))
-    WriteToFileClient.finish()
+    ZipkinEmailMustacheTemplate.writeAll()
   }
 }
 
@@ -92,7 +96,7 @@ object ProcessTimeouts {
     HadoopJobClient.populateServiceNames(args(0))
     val c = new TimeoutsClient()
     c.start(args(0), args(1))
-    WriteToFileClient.finish()
+    ZipkinEmailMustacheTemplate.writeAll()
   }
 }
 
@@ -107,7 +111,7 @@ object ProcessExpensiveEndpoints {
     HadoopJobClient.populateServiceNames(args(0))
     val c = new ExpensiveEndpointsClient()
     c.start(args(0), args(1))
-    WriteToFileClient.finish()
+    ZipkinEmailMustacheTemplate.writeAll()
   }
 
 }
@@ -116,9 +120,9 @@ object ProcessWorstRuntimesPerTrace {
 
   def main(args: Array[String]) {
     HadoopJobClient.populateServiceNames(args(0))
-    val c = new WorstRuntimesPerTraceClient("https://zipkin.smf1.twitter.com")
+    val c = new WorstRuntimesPerTraceClient(Util.ZIPKIN_TRACE_URL)
     c.start(args(0), args(1))
-    WriteToFileClient.finish()
+    ZipkinEmailMustacheTemplate.writeAll()
   }
 
 }
