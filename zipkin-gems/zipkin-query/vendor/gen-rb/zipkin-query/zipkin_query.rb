@@ -60,6 +60,22 @@ require 'zipkin_query_types'
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getTraceIdsByAnnotation failed: unknown result')
           end
 
+          def tracesExist(trace_ids)
+            send_tracesExist(trace_ids)
+            return recv_tracesExist()
+          end
+
+          def send_tracesExist(trace_ids)
+            send_message('tracesExist', TracesExist_args, :trace_ids => trace_ids)
+          end
+
+          def recv_tracesExist()
+            result = receive_message(TracesExist_result)
+            return result.success unless result.success.nil?
+            raise result.qe unless result.qe.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'tracesExist failed: unknown result')
+          end
+
           def getTracesByIds(trace_ids, adjust)
             send_getTracesByIds(trace_ids, adjust)
             return recv_getTracesByIds()
@@ -271,6 +287,17 @@ require 'zipkin_query_types'
               result.qe = qe
             end
             write_result(result, oprot, 'getTraceIdsByAnnotation', seqid)
+          end
+
+          def process_tracesExist(seqid, iprot, oprot)
+            args = read_args(iprot, TracesExist_args)
+            result = TracesExist_result.new()
+            begin
+              result.success = @handler.tracesExist(args.trace_ids)
+            rescue Zipkin::QueryException => qe
+              result.qe = qe
+            end
+            write_result(result, oprot, 'tracesExist', seqid)
           end
 
           def process_getTracesByIds(seqid, iprot, oprot)
@@ -522,6 +549,40 @@ require 'zipkin_query_types'
 
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::I64}},
+            QE => {:type => ::Thrift::Types::STRUCT, :name => 'qe', :class => Zipkin::QueryException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class TracesExist_args
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          TRACE_IDS = 1
+
+          FIELDS = {
+            TRACE_IDS => {:type => ::Thrift::Types::LIST, :name => 'trace_ids', :element => {:type => ::Thrift::Types::I64}}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class TracesExist_result
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          SUCCESS = 0
+          QE = 1
+
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::SET, :name => 'success', :element => {:type => ::Thrift::Types::I64}},
             QE => {:type => ::Thrift::Types::STRUCT, :name => 'qe', :class => Zipkin::QueryException}
           }
 
