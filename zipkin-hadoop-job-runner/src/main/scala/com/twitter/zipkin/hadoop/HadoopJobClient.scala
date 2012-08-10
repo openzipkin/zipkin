@@ -57,7 +57,7 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
    */
   def processDir(file: File) {
     var serviceToValues = new mutable.HashMap[String, List[LineResult]]()
-    val processFile = { f: File =>
+    Util.traverseFileTree(file)({ f: File =>
       val s = new Scanner(f)
       while (s.hasNextLine()) {
         val line = getLineResult(s.nextLine.split("\t").toList.map({_.trim()}))
@@ -68,8 +68,7 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
           serviceToValues += serviceName -> List(line)
         }
       }
-    }
-    Util.traverseFileTree(processFile, file)
+    })
     for (t <- serviceToValues) {
       val (service, values) = t
       processKey(service, values)
@@ -89,7 +88,7 @@ object HadoopJobClient {
    * @param dirname the name of a directory containing all the service name information
    */
   def populateServiceNames(dirname: String) = {
-    val populateOneFromOneFile = {f: File =>
+    Util.traverseFileTree(new File(dirname))({f: File =>
       val s = new Scanner(f)
       while (s.hasNextLine()) {
         val line = new Scanner(s.nextLine())
@@ -99,8 +98,7 @@ object HadoopJobClient {
           serviceNames += serviceName -> standardized
         }
       }
-    }
-    Util.traverseFileTree(populateOneFromOneFile, new File(dirname))
+    })
   }
 
 }

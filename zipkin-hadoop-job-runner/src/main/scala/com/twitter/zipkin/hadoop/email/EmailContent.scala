@@ -38,28 +38,28 @@ class EmailContent(serviceName: String) {
     document.asJava
   }
 
-  class Html(var header: java.util.List[Header], var body: java.util.List[Body] ) {}
+  case class Html(var header: java.util.List[Header], var body: java.util.List[Body] ) {}
 
-  class Header(var serviceName: String) {}
+  case class Header(var serviceName: String) {}
 
-  class Body(var oneLineResults: java.util.List[OneLineResults], var tableResults: java.util.List[TableResults]){}
+  case class Body(var oneLineResults: java.util.List[OneLineResults], var tableResults: java.util.List[TableResults]){}
 
-  class OneLineResults(var result: String) {}
+  case class OneLineResults(var result: String) {}
 
-  class TableResults(var tableResultHeader: String, var tableHeader: TableHeader,
+  case class TableResults(var tableResultHeader: String, var tableHeader: TableHeader,
                      var tableRows: java.util.List[TableRow], var tableUrlRows: java.util.List[TableUrlRow]) {}
 
-  class TableHeader(var tableHeaderTokens: java.util.List[TableHeaderToken]) {}
+  case class TableHeader(var tableHeaderTokens: java.util.List[TableHeaderToken]) {}
 
-  class TableRow(var tableRowTokens: java.util.List[TableRowToken]) {}
+  case class TableRow(var tableRowTokens: java.util.List[TableRowToken]) {}
 
-  class TableHeaderToken(var tableHeaderToken: String) {}
+  case class TableHeaderToken(var tableHeaderToken: String) {}
 
-  class TableRowToken(var tableRowToken: String) {}
+  case class TableRowToken(var tableRowToken: String) {}
 
-  class TableUrlRow(var urlToken1: String, var urlToken2: String, var tableUrlRowTokens: java.util.List[TableUrlRowToken]) {}
+  case class TableUrlRow(var urlToken1: String, var urlToken2: String, var tableUrlRowTokens: java.util.List[TableUrlRowToken]) {}
 
-  class TableUrlRowToken(var tableUrlRowToken: String) {}
+  case class TableUrlRowToken(var tableUrlRowToken: String) {}
 
   /**
    * Adds a single line format result
@@ -127,8 +127,8 @@ class EmailContent(serviceName: String) {
 object EmailContent {
 
   // Ensure that we never make a different EmailContent for the same service
-  private var templates = HashMap[String, EmailContent]()
-  private var serviceToHtml = HashMap[String, String]()
+  private var templates = Map[String, EmailContent]()
+  private var serviceToHtml = Map[String, String]()
 
   /**
    * Gets a EmailContent for a service. If another such template already exists, we use that one.

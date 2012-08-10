@@ -40,12 +40,12 @@ object Util {
    * @param func a function which takes a File and returns a Unit
    * @param f a File representing a directory and which we want to apply func on
    */
-  def traverseFileTree(func: File => Unit, f: File): Unit = {
+  def traverseFileTree(f: File)(func: File => Unit): Unit = {
     if (isDataDir(f)) {
       if (f.isDirectory) {
         val children = f.listFiles()
         for (child <- children) {
-          traverseFileTree(func, child)
+          traverseFileTree(child)(func)
         }
       } else {
         func(f)
