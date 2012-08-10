@@ -19,8 +19,8 @@ package com.twitter.zipkin.hadoop.email
 import com.github.mustachejava._
 import scala.collection.JavaConverters._
 import collection.immutable.HashMap
-import java.io.{FileOutputStream, PrintWriter}
 import com.twitter.zipkin.hadoop.LineResult
+import java.io.{StringWriter, FileOutputStream, PrintWriter}
 
 /**
  * A basic mustache template for formatting zipkin service reports as emails
@@ -161,5 +161,16 @@ object EmailContent {
       val pw = new PrintWriter(new FileOutputStream(serviceToHtml(service), true))
       templates(service).write(pw)
     }
+  }
+
+  def writeAllAsStrings() = {
+    var serviceToEmail = Map[String, String]()
+    for (service <- services()) {
+      val sw = new StringWriter()
+      val pw = new PrintWriter(sw)
+      templates(service).write(pw)
+      serviceToEmail += service -> sw.toString()
+    }
+    serviceToEmail
   }
 }

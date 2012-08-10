@@ -85,7 +85,6 @@ class Email(adminFrom: String, testTo: String, bcc: String,
       true
     } catch {
       case e =>
-        log.error(e, "Could not send notification email to "+toMap)
         false
     }
   }
