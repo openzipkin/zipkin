@@ -17,7 +17,7 @@
 package com.twitter.zipkin.hadoop
 
 import com.twitter.zipkin.hadoop.sources.Util
-import email.EmailContent
+import email.{MailConfig, EmailContent}
 
 /**
  * Runs all the jobs which write to file on the input. The arguments are expected to be inputdirname outputdirname servicenamefile
@@ -33,15 +33,19 @@ object PostprocessWriteToFile {
 
   def main(args: Array[String]) {
     val input = args(0)
-    val output = args(1)
-    val serviceNames = args(2)
+    val serviceNames = args(1)
 
     HadoopJobClient.populateServiceNames(serviceNames)
     for (jobTuple <- jobList) {
       val (jobName, jobClient) = jobTuple
-      jobClient.start(input + "/" + jobName, output)
+      jobClient.start(input + "/" + jobName, null)
     }
-    EmailContent.writeAll()
+    val serviceToEmail = EmailContent.writeAllAsStrings()
+    for (tuple <- serviceToEmail) {
+      val (service, content) = tuple
+      // TODO: Figure out who to send these to
+      new MailConfig().apply().send("test@abc.xyz", "Service report for " + service, content)
+    }
   }
 }
 

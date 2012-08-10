@@ -39,7 +39,6 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
   /**
    * Starts the postprocessing for the client
    * @param filename the input filename
-   * @param output the output filename
    */
   def start(filename : String, output : String)
 
