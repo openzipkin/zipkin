@@ -120,7 +120,7 @@ class WorstRuntimesClient extends WriteToTableClient("WorstRuntimes") {
   }
 
   def getTableHeader() = {
-    List("Span ID", "Duration")
+    List("Span ID", "Duration (ms)")
   }
 }
 
@@ -136,7 +136,7 @@ class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToTableClient(
   }
 
   def getTableHeader() = {
-    List("Trace ID", "Duration")
+    List("Trace ID", "Duration (ms)")
   }
 
   override def addTable(service: String, lines: List[LineResult], mt: EmailContent) = {
@@ -164,6 +164,6 @@ class ExpensiveEndpointsClient extends WriteToTableClient("ExpensiveEndpoints") 
   }
 
   def getTableHeader() = {
-    List("Service Called", "Duration")
+    List("Service Called", "Duration (ms)")
   }
 }
