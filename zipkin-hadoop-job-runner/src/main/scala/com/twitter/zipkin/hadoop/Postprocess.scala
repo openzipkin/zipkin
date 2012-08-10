@@ -16,6 +16,35 @@
 
 package com.twitter.zipkin.hadoop
 
+import com.twitter.zipkin.hadoop.sources.Util
+import email.EmailContent
+
+/**
+ * Runs all the jobs which write to file on the input. The arguments are expected to be inputdirname outputdirname servicenamefile
+ */
+object PostprocessWriteToFile {
+
+  val jobList = List(("WorstRuntimesPerTrace", new WorstRuntimesPerTraceClient(Util.ZIPKIN_TRACE_URL)),
+                      ("Timeouts", new TimeoutsClient()),
+                      ("Retries", new RetriesClient()),
+                      ("MemcacheRequest", new MemcacheRequestClient()),
+                      ("ExpensiveEndpoints", new ExpensiveEndpointsClient()))
+
+
+  def main(args: Array[String]) {
+    val input = args(0)
+    val output = args(1)
+    val serviceNames = args(2)
+
+    HadoopJobClient.populateServiceNames(serviceNames)
+    for (jobTuple <- jobList) {
+      val (jobName, jobClient) = jobTuple
+      jobClient.start(input + "/" + jobName, output)
+    }
+    EmailContent.writeAll()
+  }
+}
+
 //TODO: Replace (or supplement) this with one main method that runs all jobs
 
 /**
@@ -24,6 +53,7 @@ package com.twitter.zipkin.hadoop
 object ProcessPopularKeys {
   def main(args : Array[String]) {
     val portNumber = augmentString(args(2)).toInt
+    HadoopJobClient.populateServiceNames(args(0))
     val c = new PopularKeyValuesClient(portNumber)
     c.start(args(0), args(1))
   }
@@ -36,7 +66,7 @@ object ProcessPopularKeys {
 object ProcessPopularAnnotations {
   def main(args : Array[String]) {
     val portNumber = augmentString(args(2)).toInt
-    println("Arguments: " + args.mkString(", "))
+    HadoopJobClient.populateServiceNames(args(0))
     val c = new PopularAnnotationsClient(portNumber)
     c.start(args(0), args(1))
   }
@@ -49,9 +79,10 @@ object ProcessPopularAnnotations {
 
 object ProcessMemcacheRequest {
   def main(args : Array[String]) {
+    HadoopJobClient.populateServiceNames(args(0))
     val c = new MemcacheRequestClient()
     c.start(args(0), args(1))
-    WriteToFileClient.closeAllWriters()
+    EmailContent.writeAll()
   }
 }
 
@@ -62,9 +93,10 @@ object ProcessMemcacheRequest {
 
 object ProcessTimeouts {
   def main(args : Array[String]) {
+    HadoopJobClient.populateServiceNames(args(0))
     val c = new TimeoutsClient()
     c.start(args(0), args(1))
-    WriteToFileClient.closeAllWriters()
+    EmailContent.writeAll()
   }
 }
 
@@ -76,10 +108,21 @@ object ProcessTimeouts {
 object ProcessExpensiveEndpoints {
 
   def main(args: Array[String]) {
+    HadoopJobClient.populateServiceNames(args(0))
     val c = new ExpensiveEndpointsClient()
     c.start(args(0), args(1))
-    WriteToFileClient.closeAllWriters()
+    EmailContent.writeAll()
   }
 
 }
 
+object ProcessWorstRuntimesPerTrace {
+
+  def main(args: Array[String]) {
+    HadoopJobClient.populateServiceNames(args(0))
+    val c = new WorstRuntimesPerTraceClient(Util.ZIPKIN_TRACE_URL)
+    c.start(args(0), args(1))
+    EmailContent.writeAll()
+  }
+
+}
