@@ -18,9 +18,10 @@ package com.twitter.zipkin.hadoop
 
 import com.twitter.zipkin.hadoop.sources.Util
 import email.{MailConfig, EmailContent}
+import javax.mail.Message.RecipientType
 
 /**
- * Runs all the jobs which write to file on the input. The arguments are expected to be inputdirname outputdirname servicenamefile
+ * Runs all the jobs which write to file on the input, and sends those as emails. The arguments are expected to be inputdirname servicenamefile
  */
 object PostprocessWriteToFile {
 
@@ -38,13 +39,15 @@ object PostprocessWriteToFile {
     HadoopJobClient.populateServiceNames(serviceNames)
     for (jobTuple <- jobList) {
       val (jobName, jobClient) = jobTuple
-      jobClient.start(input + "/" + jobName, null)
+      jobClient.start(input + "/" + jobName, args(2))
     }
     val serviceToEmail = EmailContent.writeAllAsStrings()
     for (tuple <- serviceToEmail) {
       val (service, content) = tuple
       // TODO: Figure out who to send these to
-      new MailConfig().apply().send("test@abc.xyz", "Service report for " + service, content)
+//      val sendees = Map(RecipientType.TO -> "jli@twitter.com", RecipientType.TO -> "franklin@twitter.com")
+      new MailConfig().apply().send("abc@def.com", "Service report for " + service, content)
+      new MailConfig().apply().send("def@ghi.com", "Service report for " + service, content)
     }
   }
 }
