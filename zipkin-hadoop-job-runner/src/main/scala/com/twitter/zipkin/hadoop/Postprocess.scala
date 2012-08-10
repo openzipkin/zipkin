@@ -17,7 +17,7 @@
 package com.twitter.zipkin.hadoop
 
 import com.twitter.zipkin.hadoop.sources.Util
-import mustache.ZipkinEmailMustacheTemplate
+import email.EmailContent
 
 /**
  * Runs all the jobs which write to file on the input. The arguments are expected to be inputdirname outputdirname servicenamefile
@@ -41,7 +41,7 @@ object PostprocessWriteToFile {
       val (jobName, jobClient) = jobTuple
       jobClient.start(input + "/" + jobName, output)
     }
-    ZipkinEmailMustacheTemplate.writeAll()
+    EmailContent.writeAll()
   }
 }
 
@@ -82,7 +82,7 @@ object ProcessMemcacheRequest {
     HadoopJobClient.populateServiceNames(args(0))
     val c = new MemcacheRequestClient()
     c.start(args(0), args(1))
-    ZipkinEmailMustacheTemplate.writeAll()
+    EmailContent.writeAll()
   }
 }
 
@@ -96,7 +96,7 @@ object ProcessTimeouts {
     HadoopJobClient.populateServiceNames(args(0))
     val c = new TimeoutsClient()
     c.start(args(0), args(1))
-    ZipkinEmailMustacheTemplate.writeAll()
+    EmailContent.writeAll()
   }
 }
 
@@ -111,7 +111,7 @@ object ProcessExpensiveEndpoints {
     HadoopJobClient.populateServiceNames(args(0))
     val c = new ExpensiveEndpointsClient()
     c.start(args(0), args(1))
-    ZipkinEmailMustacheTemplate.writeAll()
+    EmailContent.writeAll()
   }
 
 }
@@ -122,7 +122,7 @@ object ProcessWorstRuntimesPerTrace {
     HadoopJobClient.populateServiceNames(args(0))
     val c = new WorstRuntimesPerTraceClient(Util.ZIPKIN_TRACE_URL)
     c.start(args(0), args(1))
-    ZipkinEmailMustacheTemplate.writeAll()
+    EmailContent.writeAll()
   }
 
 }

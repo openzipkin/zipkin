@@ -19,7 +19,7 @@ package com.twitter.zipkin.hadoop
 import java.io._
 import collection.mutable.HashMap
 import com.twitter.zipkin.hadoop.sources.Util
-import mustache.ZipkinEmailMustacheTemplate
+import email.EmailContent
 
 /**
  * A client which writes to a file. This is intended for use mainly to format emails
@@ -31,7 +31,7 @@ abstract class WriteToFileClient(combineSimilarNames: Boolean, jobname: String) 
 
   protected var outputDir = ""
 
-  def toHtmlName(s: String) = outputDir + "/" + s + ".html"
+  def toHtmlName(s: String) = outputDir + "/" + Util.toSafeHtmlName(s) + ".html"
 
   def start(input: String, outputDir: String) {
     this.outputDir = outputDir
@@ -45,12 +45,12 @@ abstract class WriteToFileClient(combineSimilarNames: Boolean, jobname: String) 
 
 class MemcacheRequestClient extends WriteToFileClient(true, "MemcacheRequest") {
 
-  def processKey(service: String, values: List[List[String]]) {
+  def processKey(service: String, lines: List[LineResult]) {
     val numberMemcacheRequests = {
-      val valuesToInt = values.flatten.map({ s: String => augmentString(s).toInt })
+      val valuesToInt = lines.map({ line: LineResult => augmentString(line.getValueAsString()).toInt })
       valuesToInt.foldLeft(0) ((left: Int, right: Int) => left + right )
     }
-    val mt = ZipkinEmailMustacheTemplate.getTemplate(service, toHtmlName(service))
+    val mt = EmailContent.getTemplate(service, toHtmlName(service))
     mt.addOneLineResult("Service " + service + " made " + numberMemcacheRequests + " redundant memcache requests")
   }
 
@@ -60,19 +60,19 @@ class MemcacheRequestClient extends WriteToFileClient(true, "MemcacheRequest") {
  * A client which writes to a file, per each service pair
  */
 
-abstract class WriteToFilePerServicePairClient(jobname: String) extends WriteToFileClient(false, jobname) {
+abstract class WriteToTableClient(jobname: String) extends WriteToFileClient(false, jobname) {
 
   def getTableResultHeader(service: String): String
 
   def getTableHeader(): List[String]
 
-  def addTable(service: String, values: List[List[String]], mt: ZipkinEmailMustacheTemplate) = {
-    mt.addTableResult(getTableResultHeader(service), getTableHeader(), values)
+  def addTable(service: String, lines: List[LineResult], mt: EmailContent) = {
+    mt.addTableResult(getTableResultHeader(service), getTableHeader(), lines)
   }
 
-  def processKey(service: String, values: List[List[String]]) {
-    val mt = ZipkinEmailMustacheTemplate.getTemplate(service, toHtmlName(service))
-    addTable(service, values, mt)
+  def processKey(service: String, lines: List[LineResult]) {
+    val mt = EmailContent.getTemplate(service, toHtmlName(service))
+    addTable(service, lines, mt)
   }
 }
 
@@ -81,7 +81,7 @@ abstract class WriteToFilePerServicePairClient(jobname: String) extends WriteToF
  * A client which writes Timeouts data to the file specified
  */
 
-class TimeoutsClient extends WriteToFilePerServicePairClient("Timeouts") {
+class TimeoutsClient extends WriteToTableClient("Timeouts") {
 
   def getTableResultHeader(service: String) = {
     service + " timed out in calls to the following services"
@@ -97,7 +97,7 @@ class TimeoutsClient extends WriteToFilePerServicePairClient("Timeouts") {
  * A client which writes Retries data to the file specified
  */
 
-class RetriesClient extends WriteToFilePerServicePairClient("Retries") {
+class RetriesClient extends WriteToTableClient("Retries") {
 
   def getTableResultHeader(service: String) = {
     service + " retried in calls to the following services:"
@@ -113,7 +113,7 @@ class RetriesClient extends WriteToFilePerServicePairClient("Retries") {
  * A client which writes WorstRuntimes data to the file specified
  */
 
-class WorstRuntimesClient extends WriteToFilePerServicePairClient("WorstRuntimes") {
+class WorstRuntimesClient extends WriteToTableClient("WorstRuntimes") {
 
   def getTableResultHeader(service: String) = {
     "Service " + service + " took the longest for these spans:"
@@ -129,7 +129,7 @@ class WorstRuntimesClient extends WriteToFilePerServicePairClient("WorstRuntimes
  * A client which writes WorstRuntimesPerTrace data to the file specified. Formats it as a HTML url
  */
 
-class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToFilePerServicePairClient("WorstRuntimesPerTrace") {
+class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToTableClient("WorstRuntimesPerTrace") {
 
   def getTableResultHeader(service: String) = {
     "Service " + service + " took the longest for these traces:"
@@ -139,8 +139,14 @@ class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToFilePerServi
     List("Trace ID", "Duration")
   }
 
-  override def addTable(service: String, values: List[List[String]], mt: ZipkinEmailMustacheTemplate) = {
-    val formattedAsUrl = values.map( value => (Util.ZIPKIN_TRACE_URL + value(0), value(0), value.tail ))
+  override def addTable(service: String, lines: List[LineResult], mt: EmailContent) = {
+    val formattedAsUrl = lines.map {line =>
+      if (line.getValue().length < 2) {
+        throw new IllegalArgumentException("Malformed line: " + line)
+      }
+      val hypertext = line.getValue().head
+      (Util.ZIPKIN_TRACE_URL + hypertext, hypertext, line)
+    }
     mt.addUrlTableResult(getTableResultHeader(service), getTableHeader(), formattedAsUrl)
   }
 
@@ -151,7 +157,7 @@ class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToFilePerServi
  * A client which writes ExpensiveEndpoints data to the file specified
  */
 
-class ExpensiveEndpointsClient extends WriteToFilePerServicePairClient("ExpensiveEndpoints") {
+class ExpensiveEndpointsClient extends WriteToTableClient("ExpensiveEndpoints") {
 
   def getTableResultHeader(service: String) = {
     "The most expensive calls for " + service + " were:"

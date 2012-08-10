@@ -14,18 +14,19 @@
 * limitations under the License.
 */
 
-package com.twitter.zipkin.hadoop.mustache
+package com.twitter.zipkin.hadoop.email
 
 import com.github.mustachejava._
 import scala.collection.JavaConverters._
 import collection.immutable.HashMap
 import java.io.{FileOutputStream, PrintWriter}
+import com.twitter.zipkin.hadoop.LineResult
 
 /**
  * A basic mustache template for formatting zipkin service reports as emails
  * @param serviceName the name of a service
  */
-class ZipkinEmailMustacheTemplate(serviceName: String) {
+class EmailContent(serviceName: String) {
 
   private var tableResults = List[TableResults]()
   private var oneLineResults = List[OneLineResults]()
@@ -75,9 +76,12 @@ class ZipkinEmailMustacheTemplate(serviceName: String) {
    * @param tableHeader the header of the table
    * @param tableRows the rows of the table
    */
-  def addTableResult(tableResultHeader: String, tableHeader: List[String], tableRows: List[List[String]]) {
+  def addTableResult(tableResultHeader: String, tableHeader: List[String], tableRows: List[LineResult]) {
     val header = new TableHeader(tableHeader.map(s => new TableHeaderToken(s)).asJava)
-    val rowList = tableRows.map ( row => new TableRow(row.map(s => new TableRowToken((s))).asJava) ).asJava
+    val rowList = tableRows.map ( line => {
+      val values = line.getValue().map(token => new TableRowToken(token))
+      new TableRow(values.asJava)
+    }).asJava
     tableResults ::= new TableResults(tableResultHeader, header, rowList, null)
   }
 
@@ -87,11 +91,14 @@ class ZipkinEmailMustacheTemplate(serviceName: String) {
    * @param tableHeader the header of the table
    * @param tableUrlRows the rows of the table, where the first element is a URL
    */
-  def addUrlTableResult(tableResultHeader: String, tableHeader: List[String], tableUrlRows: List[(String, String, List[String])]) {
+  def addUrlTableResult(tableResultHeader: String, tableHeader: List[String], tableUrlRows: List[(String, String, LineResult)]) {
     val header = new TableHeader(tableHeader.map(s => new TableHeaderToken(s)).asJava)
     val rowUrlList = tableUrlRows.map ({ row =>
-      val (url, linkText, value) = row
-      new TableUrlRow(url, linkText, value.map(s => new TableUrlRowToken((s))).asJava)
+      val (url, hypertext, line) = row
+      if (line.getValue().length < 2) {
+        throw new IllegalArgumentException("Malformed line: " + line)
+      }
+      new TableUrlRow(url, hypertext, line.getValue().tail.map(token => new TableUrlRowToken(token)).asJava)
     }).asJava
     tableResults ::= new TableResults(tableResultHeader, header, null, rowUrlList)
   }
@@ -117,14 +124,14 @@ class ZipkinEmailMustacheTemplate(serviceName: String) {
 
 }
 
-object ZipkinEmailMustacheTemplate {
+object EmailContent {
 
-  // Ensure that we never make a different ZipkinEmailMustacheTemplate for the same service
-  private var templates = HashMap[String, ZipkinEmailMustacheTemplate]()
+  // Ensure that we never make a different EmailContent for the same service
+  private var templates = HashMap[String, EmailContent]()
   private var serviceToHtml = HashMap[String, String]()
 
   /**
-   * Gets a ZipkinEmailMustacheTemplate for a service. If another such template already exists, we use that one.
+   * Gets a EmailContent for a service. If another such template already exists, we use that one.
    * The user also specifes the name of the html file he/she wants to write to. If the template already exists,
    * we don't modify the html file.
    *
@@ -137,7 +144,7 @@ object ZipkinEmailMustacheTemplate {
       templates(service)
     } else {
       serviceToHtml += service -> html
-      val s = new ZipkinEmailMustacheTemplate(service)
+      val s = new EmailContent(service)
       templates += service -> s
       s
     }

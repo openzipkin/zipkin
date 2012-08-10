@@ -34,9 +34,8 @@ abstract class PerServiceClient(combineSimilarNames: Boolean, portNumber: Int) e
 
 class PopularAnnotationsClient(portNumber: Int) extends PerServiceClient(false, portNumber) {
 
-  def processKey(service: String, values: List[List[String]]) {
-    println("Writing " + values.flatten.mkString(", ") + " to " + service)
-    client.storeTopAnnotations(service, values.flatten.asJava)
+  def processKey(service: String, lines: List[LineResult]) {
+    client.storeTopAnnotations(service, lines.map(line => line.getValueAsString()).asJava)
   }
 
 }
@@ -48,8 +47,8 @@ class PopularAnnotationsClient(portNumber: Int) extends PerServiceClient(false, 
 
 class PopularKeyValuesClient(portNumber: Int) extends PerServiceClient(false, portNumber) {
 
-  def processKey(service: String, values: List[List[String]]) {
-    client.storeTopKeyValueAnnotations(service, values.flatten.asJava)
+  def processKey(service: String, values: List[LineResult]) {
+    client.storeTopKeyValueAnnotations(service, values.map(line => line.getValueAsString()).asJava)
   }
 
 }

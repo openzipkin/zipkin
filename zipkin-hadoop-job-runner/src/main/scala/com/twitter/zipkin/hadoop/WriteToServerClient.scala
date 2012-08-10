@@ -34,8 +34,6 @@ abstract class WriteToServerClient(combineSimilarNames: Boolean, portNumber: Int
       client = new gen.ZipkinCollector.Client(protocol)
       transport.open()
       // Read file
-      println("Connected to server...populating ssnm")
-      println("Finished populating ssnm...beginning processFile")
       processDir(new File(dirname))
     } catch {
       // TODO: Investigate using logging

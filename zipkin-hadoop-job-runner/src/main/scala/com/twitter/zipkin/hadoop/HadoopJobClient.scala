@@ -16,7 +16,8 @@
 
 package com.twitter.zipkin.hadoop
 
-import collection.mutable.HashMap
+import collection.mutable
+import collection.immutable.HashMap
 import java.util.Scanner
 import java.io.File
 import com.twitter.zipkin.hadoop.sources._
@@ -31,9 +32,9 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
   /**
    * Process a key and its value
    * @param s the key passed
-   * @param value values associated with the key
+   * @param lines values associated with the key
    */
-  def processKey(s: String, value: List[List[String]])
+  def processKey(s: String, lines: List[LineResult])
 
   /**
    * Starts the postprocessing for the client
@@ -46,22 +47,8 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
     if (combineSimilarNames) HadoopJobClient.serviceNames(service) else service
   }
 
-  /**
-   * Returns the key value of a line
-   * @param line a single line
-   * @return the key value returned
-   */
-  def getKeyValue(line: List[String]) = {
-    getServiceName(Util.toHtmlServiceName(line.head))
-  }
-
-  /**
-   * Returns the value of a line
-   * @param line a single line of data
-   * @return the value of that line
-   */
-  def getValue(line: List[String]) = {
-    line.tail
+  def getLineResult(line: List[String]): LineResult = {
+    new PerServiceLineResult(line)
   }
 
   /**
@@ -69,17 +56,16 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
    * @param file a file representing a directory where the data is stored
    */
   def processDir(file: File) {
-    val serviceToValues = new HashMap[String, List[List[String]]]()
+    var serviceToValues = new mutable.HashMap[String, List[LineResult]]()
     val processFile = { f: File =>
       val s = new Scanner(f)
       while (s.hasNextLine()) {
-        val line = s.nextLine.split("\t").toList.map({_.trim()})
-        val serviceName = getKeyValue(line)
-        var value = getValue(line)
+        val line = getLineResult(s.nextLine.split("\t").toList.map({_.trim()}))
+        val serviceName = line.getKey()
         if (serviceToValues.contains(serviceName)) {
-          serviceToValues(serviceName) ++= List(value)
+          serviceToValues(serviceName) ++= List(line)
         } else {
-          serviceToValues += serviceName -> List(value)
+          serviceToValues += serviceName -> List(line)
         }
       }
     }
@@ -107,7 +93,7 @@ object HadoopJobClient {
       val s = new Scanner(f)
       while (s.hasNextLine()) {
         val line = new Scanner(s.nextLine())
-        val serviceName = Util.toHtmlServiceName(line.next())
+        val serviceName = Util.toSafeHtmlName(line.next())
         val standardized = if (line.hasNext) line.next else serviceName
         if (!serviceNames.contains(serviceName)) {
           serviceNames += serviceName -> standardized

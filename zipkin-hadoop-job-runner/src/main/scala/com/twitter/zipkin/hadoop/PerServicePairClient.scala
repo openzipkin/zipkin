@@ -28,11 +28,7 @@ import sources.Util
 abstract class PerServicePairClient(combineSimilarNames: Boolean, portNumber: Int) extends
   WriteToServerClient(combineSimilarNames, portNumber) {
 
-  override def getKeyValue(line: List[String]) = {
-    getServiceName(Util.toHtmlServiceName(line.head)) + HadoopJobClient.DELIMITER + getServiceName(Util.toHtmlServiceName(line.tail.head))
-  }
-
-  override def getValue(line: List[String]) = {
-    line.tail.tail
+  override def getLineResult(line: List[String]) = {
+    new PerServicePairLineResult(line)
   }
 }

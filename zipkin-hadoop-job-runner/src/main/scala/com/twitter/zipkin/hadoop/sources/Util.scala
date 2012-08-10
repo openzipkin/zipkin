@@ -58,7 +58,7 @@ object Util {
    * @param s a service name
    * @return the string as a service name in HTML
    */
-  def toHtmlServiceName(s: String) = {
+  def toSafeHtmlName(s: String) = {
     s.trim().replace("/", "-")
   }
 }
