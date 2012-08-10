@@ -18,6 +18,7 @@ package com.twitter.zipkin.hadoop
 
 import java.util.Scanner
 import com.twitter.zipkin.gen
+import sources.Util
 
 /**
  * Client which writes to a server, and per service pair
@@ -27,15 +28,7 @@ import com.twitter.zipkin.gen
 abstract class PerServicePairClient(combineSimilarNames: Boolean, portNumber: Int) extends
   WriteToServerClient(combineSimilarNames, portNumber) {
 
-  def populateServiceNameList(s: Scanner) {
-    if (!combineSimilarNames) return
-    while (s.hasNextLine()) {
-      val line = new Scanner(s.nextLine())
-      serviceNameList.add(line.next() + DELIMITER + line.next())
-    }
-  }
-
-  def getKeyValue(lineScanner: Scanner) = {
-    lineScanner.next() + DELIMITER + lineScanner.next()
+  override def getLineResult(line: List[String]) = {
+    new PerServicePairLineResult(line)
   }
 }

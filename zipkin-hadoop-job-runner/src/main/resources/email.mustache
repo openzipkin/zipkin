@@ -1,0 +1,53 @@
+{{#html}}
+{{#header}}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+    <head>
+    <h2>Service Report for {{serviceName}}</h2>
+    </head>
+    {{/header}}
+
+    {{#body}}
+    <body>
+        {{#oneLineResults}}
+        <p>{{result}}</p> <br />
+        {{/oneLineResults}}
+
+        {{#tableResults}}
+        <h4></p>{{tableResultHeader}}</p></h4>
+        <table border = 1 cellpadding=3 cellspacing=1 rules=groups frame=box>
+            <thead>
+            {{#tableHeader}}
+            <tr>
+            {{#tableHeaderTokens}}
+            <td><strong>{{tableHeaderToken}}</strong></td>
+            {{/tableHeaderTokens}}
+            </tr>
+            {{/tableHeader}}
+            </thead>
+
+            {{#tableRows}}
+            <tr>
+            {{#tableRowTokens}}
+            <td>{{tableRowToken}}</td>
+            {{/tableRowTokens}}
+            </tr>
+            {{/tableRows}}
+
+            {{#tableUrlRows}}
+            <tr>
+            <td><a href="{{urlToken1}}">{{urlToken2}}</td>
+            {{#tableUrlRowTokens}}
+            <td>{{tableUrlRowToken}}</td>
+            {{/tableUrlRowTokens}}
+            </tr>
+            {{/tableUrlRows}}
+        </table>
+        {{/tableResults}}
+    </body>
+    {{/body}}
+</html>
+{{/html}}
+
+

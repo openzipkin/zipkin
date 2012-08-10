@@ -18,17 +18,14 @@ package com.twitter.zipkin.hadoop
 
 import org.apache.thrift.protocol.TBinaryProtocol
 import com.twitter.zipkin.gen
-import java.util.Scanner
 import java.io.File
-import java.net.SocketException
-import org.apache.thrift.transport.{TTransportException, TSocket, TFramedTransport, TTransport}
-import org.apache.thrift.TException
+import org.apache.thrift.transport.{TSocket, TFramedTransport, TTransport}
 
 abstract class WriteToServerClient(combineSimilarNames: Boolean, portNumber: Int) extends HadoopJobClient(combineSimilarNames) {
 
   protected var client : gen.ZipkinCollector.Client = null
 
-  def start(filename: String, serverName: String) {
+  def start(dirname: String, serverName: String) {
     var transport : TTransport = null
     try {
       // establish connection to the server
@@ -37,10 +34,7 @@ abstract class WriteToServerClient(combineSimilarNames: Boolean, portNumber: Int
       client = new gen.ZipkinCollector.Client(protocol)
       transport.open()
       // Read file
-      println("Connected to server...populating ssnm")
-      populateServiceNameList(new Scanner(new File(filename)))
-      println("Finished populating ssnm...beginning processFile")
-      processFile(new Scanner(new File(filename)))
+      processDir(new File(dirname))
     } catch {
       // TODO: Investigate using logging
       case t: Throwable => t.printStackTrace()
