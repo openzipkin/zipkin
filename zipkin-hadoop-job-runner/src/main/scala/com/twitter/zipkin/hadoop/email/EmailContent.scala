@@ -156,6 +156,9 @@ object EmailContent {
    */
   def services() = templates.keys
 
+  /**
+   * Writes all the email contents to files
+   */
   def writeAll() = {
     for (service <- services()) {
       val pw = new PrintWriter(new FileOutputStream(serviceToHtml(service), true))
@@ -163,6 +166,10 @@ object EmailContent {
     }
   }
 
+  /**
+   * Writes all the email contents to Strings
+   * @return a Map from service name to the email contents as a String
+   */
   def writeAllAsStrings() = {
     var serviceToEmail = Map[String, String]()
     for (service <- services()) {
