@@ -14,12 +14,27 @@
 * limitations under the License.
 */
 
-import com.twitter.zipkin.config.ZipkinWebConfig
+import com.twitter.zipkin.config.{CssConfig, JsConfig, ZipkinWebConfig}
 import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
 import java.net.InetSocketAddress
 
 new ZipkinWebConfig {
   rootUrl = "http://localhost:" + serverPort + "/"
+
+  /**
+   * Making changes to js/css can be painful with a packaged jar since a compilation is needed to
+   * repackage any new changes. `resourcePathPrefix` can be hacked to point to the directory
+   * on your local file system so the browser resolves it outside of the jar. Example:
+   *
+   * `val resourcePathPrefix = "file:///Users/username/path/to/zipkin-finatra/src/main/resources/public"`
+   */
+  val resourcePathPrefix = "/public"
+  jsConfig = new JsConfig {
+    override val pathPrefix = resourcePathPrefix
+  }
+  cssConfig = new CssConfig {
+    override val pathPrefix = resourcePathPrefix
+  }
 
   def zkConfig = new ZooKeeperConfig {
     servers = List("localhost:3003")
