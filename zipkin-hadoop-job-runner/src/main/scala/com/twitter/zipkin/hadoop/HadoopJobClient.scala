@@ -16,9 +16,11 @@
 
 package com.twitter.zipkin.hadoop
 
-import collection.mutable.HashMap
-import com.twitter.zipkin.gen
+import collection.mutable
+import collection.immutable.HashMap
 import java.util.Scanner
+import java.io.File
+import com.twitter.zipkin.hadoop.sources._
 
 /**
  * Basic client for postprocessing hadoop jobs
@@ -27,29 +29,12 @@ import java.util.Scanner
 
 abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
 
-  protected val DELIMITER = ":"
-  val serviceNameList = if (combineSimilarNames) new StandardizedServiceNameList else new ServiceNameList
-
-  /**
-   * Populate the name list
-   * @param s Scanner representing the name list
-   */
-
-  def populateServiceNameList(s: Scanner)
-
-  /**
-   * Returns the key value of a line
-   * @param lineScanner Scanner for a single line
-   * @return the key value returned
-   */
-  def getKeyValue(lineScanner: Scanner): String
-
   /**
    * Process a key and its value
    * @param s the key passed
-   * @param value values associated with the key
+   * @param lines values associated with the key
    */
-  def processKey(s: String, value: List[String])
+  def processKey(s: String, lines: List[LineResult])
 
   /**
    * Starts the postprocessing for the client
@@ -58,33 +43,62 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
    */
   def start(filename : String, output : String)
 
+  def getServiceName(service: String) = {
+    if (combineSimilarNames) HadoopJobClient.serviceNames(service) else service
+  }
+
+  def getLineResult(line: List[String]): LineResult = {
+    new PerServiceLineResult(line)
+  }
+
   /**
-   * Processes a single file, expected in TSV format, with key being the first value on each row
-   * @param s a Scanner representing a file
+   * Processes a single directory, with data files expected in TSV format, with key being the first value on each row
+   * @param file a file representing a directory where the data is stored
    */
-  def processFile(s: Scanner) {
-    println("Started processFile")
-    var serviceToValues = new HashMap[String, List[String]]()
-    while (s.hasNextLine()) {
-      val line = new Scanner(s.nextLine())
-      val currentString = getKeyValue(line).trim()
-      var value = ""
-      if (line.hasNext()) value = line.next()
-      while (line.hasNext()) {
-        value += " " + line.next()
+  def processDir(file: File) {
+    var serviceToValues = new mutable.HashMap[String, List[LineResult]]()
+    Util.traverseFileTree(file)({ f: File =>
+      val s = new Scanner(f)
+      while (s.hasNextLine()) {
+        val line = getLineResult(s.nextLine.split("\t").toList.map({_.trim()}))
+        val serviceName = line.getKey()
+        if (serviceToValues.contains(serviceName)) {
+          serviceToValues(serviceName) ++= List(line)
+        } else {
+          serviceToValues += serviceName -> List(line)
+        }
       }
-      val serviceName = serviceNameList.getName(currentString)
-      if (serviceToValues.contains(serviceName)) {
-        serviceToValues(serviceName) ::= value
-      } else {
-        serviceToValues += serviceName -> List(value)
-      }
-    }
-    println(serviceToValues)
+    })
     for (t <- serviceToValues) {
       val (service, values) = t
-      println(service + ", " + values)
       processKey(service, values)
     }
   }
+}
+
+object HadoopJobClient {
+
+  val DELIMITER = ":"
+  var serviceNames = new HashMap[String, String]()
+
+  /**
+   * Given a directory of files formatted in TSV format with each line being of the form
+   * servicename  standardizedservicename
+   * reads that information into a map
+   * @param dirname the name of a directory containing all the service name information
+   */
+  def populateServiceNames(dirname: String) = {
+    Util.traverseFileTree(new File(dirname))({f: File =>
+      val s = new Scanner(f)
+      while (s.hasNextLine()) {
+        val line = new Scanner(s.nextLine())
+        val serviceName = Util.toSafeHtmlName(line.next())
+        val standardized = if (line.hasNext) line.next else serviceName
+        if (!serviceNames.contains(serviceName)) {
+          serviceNames += serviceName -> standardized
+        }
+      }
+    })
+  }
+
 }

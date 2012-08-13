@@ -14,21 +14,18 @@
 * limitations under the License.
 */
 
-package com.twitter.zipkin.hadoop
+import com.twitter.zipkin.config.ZipkinWebConfig
+import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
+import java.net.InetSocketAddress
 
-import java.util.Scanner
-import com.twitter.zipkin.gen
-import sources.Util
+new ZipkinWebConfig {
+  // Change the hostname below to allow the Zipkin JS code to talk to the Zipkin API Scala code
+  // Suspect this should be marked as a bug really...
+  rootUrl = "http://localhost:" + serverPort + "/"
 
-/**
- * Client which writes to a server, and per service pair
- * @param combineSimilarNames
- * @param portNumber
- */
-abstract class PerServicePairClient(combineSimilarNames: Boolean, portNumber: Int) extends
-  WriteToServerClient(combineSimilarNames, portNumber) {
-
-  override def getLineResult(line: List[String]) = {
-    new PerServicePairLineResult(line)
+  def zkConfig = new ZooKeeperConfig {
+    servers = List("localhost:2181")
   }
+
 }
+
