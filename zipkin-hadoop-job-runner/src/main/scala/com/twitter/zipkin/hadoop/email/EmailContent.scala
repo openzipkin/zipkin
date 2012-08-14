@@ -201,7 +201,9 @@ object EmailContent {
   def writeAll() = {
     for (service <- services()) {
       val pw = new PrintWriter(new FileOutputStream(serviceToHtml(service), true))
-      templates(service).write(pw)
+      if (templates.contains(service)) {
+        templates(service).write(pw)
+      }
     }
   }
 
@@ -214,8 +216,10 @@ object EmailContent {
     for (service <- services()) {
       val sw = new StringWriter()
       val pw = new PrintWriter(sw)
-      templates(service).write(pw)
-      serviceToEmail += service -> sw.toString()
+      if (templates.contains(service))  {
+        templates(service).write(pw)
+        serviceToEmail += service -> sw.toString()
+      }
     }
     serviceToEmail
   }

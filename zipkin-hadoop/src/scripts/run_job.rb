@@ -6,7 +6,7 @@ require 'ostruct'
 require 'pp'
 require 'date'
 
-$HOST = "my.remote.host"
+$HOST = "hadoopnest1.smf1.twitter.com"
 
 class OptparseJobArguments
 
@@ -111,10 +111,15 @@ def is_hadoop_local_machine?()
   return system("hadoop dfs -test -e .")
 end
 
-def remote_file_exists?(pathname, hadoop_config)
+def hadoop_cmd_head(hadoop_config)
   cmd = is_hadoop_local_machine?() ? "" : "ssh -C " + $HOST + " "
   cmd += "hadoop "
   cmd += (hadoop_config == nil) ? "" : hadoop_config
+  return cmd
+end
+
+def remote_file_exists?(pathname, hadoop_config)
+  cmd = hadoop_cmd_head(hadoop_config)
   cmd += " dfs -test -e " + pathname
   result = system(cmd)
   puts "In run_job, remote_file_exists for " + pathname + ": " + result.to_s()

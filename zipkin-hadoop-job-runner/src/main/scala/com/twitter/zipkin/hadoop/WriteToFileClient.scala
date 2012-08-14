@@ -71,7 +71,11 @@ abstract class WriteToTableClient(jobname: String) extends WriteToFileClient(fal
   }
 
   def processKey(service: String, lines: List[LineResult]) {
-    val stdName = HadoopJobClient.serviceNames(service)
+    val stdName = if (HadoopJobClient.serviceNames.contains(service)) {
+      HadoopJobClient.serviceNames(service)
+    } else {
+      service
+    }
     val mt = EmailContent.getTemplate(stdName, toHtmlName(stdName))
     addTable(service, lines, mt)
   }
