@@ -114,7 +114,7 @@ end
 def remote_file_exists?(pathname, hadoop_config)
   cmd = is_hadoop_local_machine?() ? "" : "ssh -C " + $HOST + " "
   cmd += "hadoop "
-  cmd += hadoop_config
+  cmd += (hadoop_config == nil) ? "" : hadoop_config
   cmd += " dfs -test -e " + pathname
   result = system(cmd)
   puts "In run_job, remote_file_exists for " + pathname + ": " + result.to_s()
@@ -133,11 +133,12 @@ def run_job(args)
   set_timezone = args.timezone != nil
   start_date = args.dates.at(0)
   end_date = args.dates.length > 1 ? args.dates.at(1) : args.dates.at(0)
+  hadoop_config_cmd = (args.hadoop_config == nil) ? "" : args.hadoop_config
   cmd_head = File.dirname(__FILE__) + "/scald.rb --hdfs com.twitter.zipkin.hadoop."
   settings_string = uses_settings ? " " + args.settings : ""
   cmd_date = date_to_cmd(start_date) + " " + date_to_cmd(end_date)
   timezone_cmd = set_timezone ? " --tz " + args.timezone : ""
-  cmd_args = args.job + settings_string  + " " + args.hadoop_config + " --date " + cmd_date + timezone_cmd
+  cmd_args = args.job + settings_string  + " " + hadoop_config_cmd + " --date " + cmd_date + timezone_cmd
   
   if args.prep
     if not remote_file_exists?(time_to_remote_file(end_date, args.job + "/") + "/_SUCCESS", args.hadoop_config)

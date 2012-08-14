@@ -27,7 +27,7 @@ class OptparseAllJobArguments
       opts.separator "Specific options:"
 
      opts.on("-d", "--date STARTDATE,ENDDATE", Array, "The DATES to run the jobs over.  Expected format for dates are is %Y-%m-%dT%H:%M") do |list|
-        options.dates = list
+        options.dates = list.map{|date| DateTime.strptime(date, '%Y-%m-%dT%H:%M')}
       end
 
       opts.on("-o", "--output OUTPUT",
@@ -65,7 +65,6 @@ def run_jobs_in_parallel(prep, jobs)
 end
 
 def run_all_jobs(dates, output, hadoop_config)
-  puts ("Hadoop_confgs: " + hadoop_config)
   uses_hadoop_config = hadoop_config != nil
   config_string = uses_hadoop_config ? " --config " + hadoop_config : nil
 
