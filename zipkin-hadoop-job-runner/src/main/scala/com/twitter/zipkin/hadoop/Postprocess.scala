@@ -51,8 +51,10 @@ object PostprocessWriteToFile {
     val serviceToEmail = EmailContent.writeAllAsStrings()
     for (tuple <- serviceToEmail) {
       val (service, content) = tuple
-      if (EmailContent.getEmailAddress(service) != null)
-        EmailContent.getEmailAddress(service).foreach {email => (new MailConfig()).apply().send(email, "Service Report for " + service, content)}
+      EmailContent.getEmailAddress(service) match {
+        case Some(addresses) => addresses.foreach {address => (new MailConfig()).apply().send(address, "Service Report for " + service, content)}
+        case None => println("Nobody to send service report for " + service + "to! :(")
+      }
     }
   }
 }

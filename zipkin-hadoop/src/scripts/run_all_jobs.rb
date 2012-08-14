@@ -5,7 +5,7 @@ require 'optparse'
 require 'ostruct'
 require 'pp'
 require 'date'
-require 'run_job.rb'
+require 'run_job'
 
 class OptparseAllJobArguments
 
