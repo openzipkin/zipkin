@@ -262,6 +262,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     val template = "templates/layouts/application.mustache"
     val rootUrl = config.rootUrl
     val innerView: View = v
+    val javascripts = config.jsConfig.resources
+    val stylesheets = config.cssConfig.resources
     lazy val body = innerView.render
   }
 }

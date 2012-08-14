@@ -29,6 +29,9 @@ trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
     "templates" -> "text/plain"
   )
 
+  var jsConfig = new JsConfig
+  var cssConfig = new CssConfig
+
   def zkConfig: ZooKeeperConfig
 
   def zkClientConfig = new ZooKeeperClientConfig {
