@@ -162,7 +162,11 @@ object EmailContent {
   }
 
   def getEmailAddress(service: String) = {
-    emailAddresses(service)
+    if (emailAddresses.contains(service)) {
+      emailAddresses(service)
+    } else {
+      null
+    }
   }
 
   /**
