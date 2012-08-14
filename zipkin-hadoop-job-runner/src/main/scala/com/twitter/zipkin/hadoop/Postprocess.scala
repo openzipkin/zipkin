@@ -21,7 +21,8 @@ import email.{MailConfig, EmailContent}
 import javax.mail.Message.RecipientType
 
 /**
- * Runs all the jobs which write to file on the input, and sends those as emails. The arguments are expected to be inputdirname servicenamefile
+ * Runs all the jobs which write to file on the input, and sends those as emails.
+ * The arguments are expected to be inputdirname servicenamefile
  */
 object PostprocessWriteToFile {
 

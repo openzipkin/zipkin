@@ -59,7 +59,11 @@ class Email(adminFrom: String, testTo: String, bcc: String,
       } else {
         _toMap
       }
-    val subject = if (testMode) "[TEST] %s [TEST]".format(_subject) else _subject
+    val subject = if (testMode) {
+      "[TEST] %s [TEST]".format(_subject)
+    } else {
+      _subject
+    }
 
     try {
       val auth = new SMTPAuthenticator()
