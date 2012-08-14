@@ -50,8 +50,8 @@ class MemcacheRequestClient extends WriteToFileClient(true, "MemcacheRequest") {
       val valuesToInt = lines.map({ line: LineResult => augmentString(line.getValueAsString()).toInt })
       valuesToInt.foldLeft(0) ((left: Int, right: Int) => left + right )
     }
-    val mt = EmailContent.getTemplate(service, toHtmlName(service))
-    mt.addOneLineResult("Service " + service + " made " + numberMemcacheRequests + " redundant memcache requests")
+    val mt = EmailContent.getTemplate(HadoopJobClient.serviceNames(service), toHtmlName(HadoopJobClient.serviceNames(service)))
+    mt.addOneLineResult(service, "Service " + service + " made " + numberMemcacheRequests + " redundant memcache requests")
   }
 
 }
@@ -67,11 +67,12 @@ abstract class WriteToTableClient(jobname: String) extends WriteToFileClient(fal
   def getTableHeader(): List[String]
 
   def addTable(service: String, lines: List[LineResult], mt: EmailContent) = {
-    mt.addTableResult(getTableResultHeader(service), getTableHeader(), lines)
+    mt.addTableResult(service, getTableResultHeader(service), getTableHeader(), lines)
   }
 
   def processKey(service: String, lines: List[LineResult]) {
-    val mt = EmailContent.getTemplate(service, toHtmlName(service))
+    val stdName = HadoopJobClient.serviceNames(service)
+    val mt = EmailContent.getTemplate(stdName, toHtmlName(stdName))
     addTable(service, lines, mt)
   }
 }
@@ -147,7 +148,7 @@ class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToTableClient(
       val hypertext = line.getValue().head
       (Util.ZIPKIN_TRACE_URL + hypertext, hypertext, line)
     }
-    mt.addUrlTableResult(getTableResultHeader(service), getTableHeader(), formattedAsUrl)
+    mt.addUrlTableResult(service, getTableResultHeader(service), getTableHeader(), formattedAsUrl)
   }
 
 }

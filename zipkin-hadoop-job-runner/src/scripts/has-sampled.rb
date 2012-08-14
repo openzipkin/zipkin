@@ -50,14 +50,13 @@ class OptparseHasSampledArguments
   end
 end
 
-options = OptparseHasSampledArguments.parse(ARGV)
-
 $config = {
-  :zipkin_query_host   => "smf1-aal-15-sr4.prod.twitter.com", #You'll need to change this to whatever your actual host is
+  :zipkin_query_host   => "localhost", #You'll need to change this to whatever your actual host is
   :zipkin_query_port   => 9411,
   :skip_zookeeper      => true
 }
 
+# Queries the client to ask whether the trace is stored
 def sampled_traces(trace_ids)
   result = false
   traces = nil
@@ -67,20 +66,28 @@ def sampled_traces(trace_ids)
   return traces
 end
 
+# Gets trace id from input line
 def get_trace_id(line)
   return line.split("\t")[1].to_i
 end
 
-File.open(options.output, 'w') do |out_file|
-  trace_list = []
-  File.open(options.input, 'r').each do |line|
-    trace_list = trace_list << get_trace_id(line)
-  end
-  sampled = sampled_traces(trace_list)
-  File.open(options.input, 'r').each do |line|
-    if (sampled.include?(get_trace_id(line)))
-      puts line
-      out_file.print line
+# Reads the input from the first file, and then outputs the lines from the input which are sampled to the outputfile
+def sample(inputfile, outputfile)
+  File.open(outputfile, 'w') do |out_file|
+    trace_list = []
+    File.open(inputfile, 'r').each do |line|
+      trace_list = trace_list << get_trace_id(line)
     end
-  end  
+    sampled = sampled_traces(trace_list)
+    File.open(inputfile, 'r').each do |line|
+      if (sampled.include?(get_trace_id(line)))
+        out_file.print line
+      end
+    end  
+  end
+end
+
+if __FILE__ == $0
+  options = OptparseHasSampledArguments.parse(ARGV)
+  sample(options.input, options.output)
 end
