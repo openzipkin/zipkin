@@ -35,19 +35,22 @@ object PostprocessWriteToFile {
   def main(args: Array[String]) {
     val input = args(0)
     val serviceNames = args(1)
+    val output = if (args.length < 3) null else args(2)
 
     HadoopJobClient.populateServiceNames(serviceNames)
     for (jobTuple <- jobList) {
       val (jobName, jobClient) = jobTuple
-      jobClient.start(input + "/" + jobName, args(2))
+      println("Started " + jobName)
+      jobClient.start(input + "/" + jobName, output)
     }
+    if (output != null) {
+      EmailContent.writeAll()
+    }
+    EmailContent.populateEmailAddresses(serviceNames)
     val serviceToEmail = EmailContent.writeAllAsStrings()
     for (tuple <- serviceToEmail) {
       val (service, content) = tuple
-      // TODO: Figure out who to send these to
-//      val sendees = Map(RecipientType.TO -> "jli@twitter.com", RecipientType.TO -> "franklin@twitter.com")
-      new MailConfig().apply().send("abc@def.com", "Service report for " + service, content)
-      new MailConfig().apply().send("def@ghi.com", "Service report for " + service, content)
+      EmailContent.getEmailAddress(service).foreach {email => (new MailConfig()).apply().send(email, "Service Report for " + service, content)}
     }
   }
 }

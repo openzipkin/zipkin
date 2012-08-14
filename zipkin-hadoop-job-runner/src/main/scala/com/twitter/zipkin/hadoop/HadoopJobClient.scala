@@ -91,7 +91,7 @@ object HadoopJobClient {
       val s = new Scanner(f)
       while (s.hasNextLine()) {
         val line = new Scanner(s.nextLine())
-        val serviceName = Util.toSafeHtmlName(line.next())
+        val serviceName = line.next()
         val standardized = if (line.hasNext) line.next else serviceName
         if (!serviceNames.contains(serviceName)) {
           serviceNames += serviceName -> standardized
