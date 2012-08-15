@@ -98,7 +98,7 @@ Zipkin.LazyTree = (function() {
         parent.addChild(node);
         node.setParent(parent);
       } else {
-        console.error("Parent not found: " + node.getParentId());
+        // console.error("Parent not found: " + node.getParentId());
       }
     });
 

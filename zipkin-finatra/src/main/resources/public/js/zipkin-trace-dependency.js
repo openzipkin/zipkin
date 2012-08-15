@@ -143,7 +143,7 @@ Zipkin.TraceDependencies = (function() {
     });
 
     $.each(nodes, function(i, n) {
-      n.r = calculateRadius(n.duration);
+      n.r = 10;
     });
 
     var project = function(d) {
@@ -156,7 +156,7 @@ Zipkin.TraceDependencies = (function() {
       var vecX = tx - sx
         , vecY = ty - sy
         , len = Math.sqrt(Math.pow(vecX, 2) + Math.pow(vecY, 2)) || 1
-        , newLen = len - calculateRadius(d.target.duration)
+        , newLen = len - 10
         ;
 
       return {
