@@ -32,8 +32,16 @@ import com.twitter.cassie.{Column, ColumnFamily}
 trait CassandraAggregates extends Aggregates with Cassandra {
 
   val topAnnotations: ColumnFamily[String, Long, String]
+  val dependencies: ColumnFamily[String, Long, String]
 
   val Delimiter: String = ":"
+
+  /**
+   * Get the top annotations for a service name
+   */
+  def getDependencies(serviceName: String): Future[Seq[String]] = {
+    getDependencies(serviceName)
+  }
 
   /**
    * Get the top annotations for a service name
@@ -67,6 +75,17 @@ trait CassandraAggregates extends Aggregates with Cassandra {
     topAnnotations.getRow(key).map {
       _.values().asScala.map { _.value }.toSeq
     }
+  }
+
+  /** Synchronize these so we don't do concurrent writes from the same box */
+  def storeDependencies(serviceName: String, endpoints: Seq[String]): Future[Unit] = synchronized {
+    val remove = dependencies.removeRow(serviceName)
+    val batch = dependencies.batch()
+    endpoints.zipWithIndex.foreach { case (endpoint: String, index: Int) =>
+      batch.insert(serviceName, new Column[Long, String](index, endpoint))
+    }
+    remove()
+    Future.join(Seq(batch.execute()))
   }
 
   /** Synchronize these so we don't do concurrent writes from the same box */

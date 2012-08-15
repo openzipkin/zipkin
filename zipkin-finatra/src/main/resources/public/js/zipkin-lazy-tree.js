@@ -94,7 +94,7 @@ Zipkin.LazyTree = (function() {
 
     $.each(this.nodes, function(nodeId, node) {
       var parent = that.nodes[node.getParentId()];
-      if (parent) {
+      if ((nodeId != that.rootId) && parent) {
         parent.addChild(node);
         node.setParent(parent);
       } else {
