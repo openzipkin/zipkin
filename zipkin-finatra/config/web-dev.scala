@@ -23,10 +23,14 @@ new ZipkinWebConfig {
 
   /**
    * Making changes to js/css can be painful with a packaged jar since a compilation is needed to
-   * repackage any new changes. `resourcePathPrefix` can be hacked to point to the directory
-   * on your local file system so the browser resolves it outside of the jar. Example:
+   * repackage any new changes.
+   * A simple hack is to stand up a simple Python HTTP server and point `resourcePathPrefix` it.
+   * Example:
    *
-   * `val resourcePathPrefix = "file:///Users/username/path/to/zipkin-finatra/src/main/resources/public"`
+   * `cd zipkin-finatra/src/main/resources/public && python -m SimpleHTTPServer`
+   *
+   * Then, set:
+   * `val resourcePathPrefix = "http://localhost:8000"`
    */
   val resourcePathPrefix = "/public"
   jsConfig = new JsConfig {
