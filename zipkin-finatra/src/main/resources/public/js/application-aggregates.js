@@ -50,12 +50,12 @@ Zipkin.Application.Aggregates = (function() {
 //
 //        }
       Zipkin.GetDependencyTree.initialize();
-      getDependencyTree();
     };
+    getDependencyTree();
   };
 
   return {
-    initialize: initialize,
+    initialize: initialize
 //    getTraceSuccess: getTraceSuccess
   };
 })();
@@ -73,120 +73,36 @@ Zipkin.GetDependencyTree = (function() {
   var DependencyTree = (function DependencyTree() {
 
     return {
-      _init: (function() {
-        var lazyTree = new Zipkin.LazyTree(0);
-
-        var Node = function(server, city, id, parentId, depth) {
-            this.server = server;
-            this.city = city;
-            this.id = id;
-            this.parentId = parentId;
-            this.depth = depth;
-            this.children = [];
-            this.parent = null;
-
-            this.getId = function() {
-                return this.id;
-            };
-
-            this.getParentId = function() {
-                return this.parentId;
-            };
-
-            this.addChild = function(node) {
-                this.children.push(node);
-            };
-
-            this.setParent = function(p) {
-                this.parent = p;
-            };
-
-            this.getParent = function() {
-                return this.parent;
-            };
-
-            this.setDepth = function(depth) {
-                this.depth = depth;
-            };
-
-            this.getChildren = function() {
-                return this.children;
-            };
-
-            this.setChildren = function(children) {
-                this.children = children;
-            }
-
-            this.clone = function() {
-                n = new Node(this.server, this.client, this.id, this.parentId);
-                n.setParent(this.parent);
-                n.setDepth(this.depth);
-                n.children = this.children;
-                return n;
-            };
-
-        }
+      _init: function() {
 
         /* TraceDependency */
-        var linkMap = [
-            new Node("city", "state", 6, 4, 3),
-            new Node("town", "state", 5, 4, 3),
-            new Node("state", "country", 4, 2),
-            new Node("province", "country", 3, 2, 2),
-            new Node("country", "continent", 2, 1, 1),
-            new Node("continent", "planet", 1, 0, 0)
+        var linkList = [
+            {target: "city", source: "state", depth: 4, count: 1, duration: 10},
+            {target: "town", source: "state", depth: 4, count: 1, duration: 10},
+            {target: "state", source: "country", depth: 3, count: 1, duration: 10},
+            {target: "province", source: "country", depth: 3, count: 1, duration: 10},
+            {target: "country", source: "continent",depth: 2, count: 1, duration: 10},
+            {target: "province", source: "continent",depth: 2, count: 1, duration: 10},
+            {target: "continent", source: "planet", depth: 1, count: 1, duration: 10},
+            {target: "continent", source: "Earth", depth: 1, count: 1, duration: 10}
         ];
 
-        $.each(linkMap, function(index, entry) {
-            lazyTree.addNode(entry)
-        })
-
-        var tree = lazyTree.build();
-
-        var addLink = function(source, target, depth) {
-          var key = [source, target];
-          if (linkMap.hasOwnProperty(key)) {
-            var obj = linkMap[key];
-            obj.depth = Math.max(obj.depth, depth);
-            obj.count += 1;
-          } else {
-            linkMap[key] = {
-              source: source,
-              target: target,
-              depth: depth,
-              count: 1
-            };
-          }
-        };
-
-        var dependencyMapper = function(node) {
-          var parent = node.getParent();
-          if (node.getParent()) {
-            addLink(node.client, node.server, node.depth);
-          }
-        };
-
-        tree.clone().map(dependencyMapper);
-
         var links = [];
-        $.each(linkMap, function(k, v) {
-          if (v.source != v.target) {
+        $.each(linkList, function(k, v) {
             links.push(v);
-          }
         });
 
-        var dependencyList = { links: links, root: tree.getRoot().client() };
+        var dependencyList = { links: links, root: "planet" };
 
         var dependencyOptions = {
           width: ($(window).width() > Zipkin.Config.MAX_WINDOW_SIZE ? Zipkin.Config.MAX_GRAPHIC_WIDTH: Zipkin.Config.MIN_GRAPHIC_WIDTH) + 200
         };
 
         try {
-//          traceSummary = new Zipkin.TraceSummary(traceSummaryTreeList, traceSummaryTree.getRoot(), trace.duration, summaryOptions);
-//          traceSummary.render();
-
-          var traceDependencies = new Zipkin.TraceDependencies(dependencyList, dependencyOptions);
-          traceDependencies.render();
+          globalDependencies = new Zipkin.GlobalDependencies(dependencyList, dependencyOptions);
+          $('#loading-data').hide();
+          $('#global-dependency').html(globalDependencies.chart.el);
+          $('#global-dependency').show();
         } catch (e) {
           console.log(e);
           $("#error-msg").text("Something went wrong rendering this trace :\\");
@@ -205,7 +121,7 @@ Zipkin.GetDependencyTree = (function() {
             }
            });
         })();
-      })()
+      }
     };
   })();
 

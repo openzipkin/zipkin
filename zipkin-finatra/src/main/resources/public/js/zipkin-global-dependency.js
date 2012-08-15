@@ -85,17 +85,17 @@ Zipkin.GlobalDependencies = (function() {
     this.redraw();
   };
 
-  TraceDependencies.prototype.resize = function(width) {
+  GlobalDependencies.prototype.resize = function(width) {
     this.width = width;
     this.chart.attr("width", this.width);
   };
 
-  TraceDependencies.prototype.redraw = function() {
+  GlobalDependencies.prototype.redraw = function() {
     var that = this;
-    var svg = d3.select("#trace-dependency");
+    var svg = d3.select("#global-dependency");
   };
 
-  TraceDependencies.prototype.render = function() {
+  GlobalDependencies.prototype.render = function() {
     var that = this
       , width = this.width
       , height = this.height
@@ -197,7 +197,7 @@ Zipkin.GlobalDependencies = (function() {
       .gravity(FORCE_GRAVITY)
       .start();
 
-    var svg = d3.select("#trace-dependency").append("svg")
+    var svg = d3.select("#global-dependency").append("svg")
       .attr("width", width)
       .attr("height", height);
 
