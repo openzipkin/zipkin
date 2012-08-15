@@ -23,14 +23,20 @@ trait CassandraAggregatesConfig extends AggregatesConfig { self =>
 
   def cassandraConfig: CassandraConfig
   var topAnnotationsCf: String = "TopAnnotations"
+  var dependenciesCf: String = "Dependencies"
 
   def apply(): CassandraAggregates = {
     val _topAnnotations = cassandraConfig.keyspace.columnFamily[String, Long, String](
       topAnnotationsCf,Utf8Codec, LongCodec, Utf8Codec
     ).consistency(WriteConsistency.One).consistency(ReadConsistency.One)
+    val _dependencies = cassandraConfig.keyspace.columnFamily[String, Long, String](
+      dependenciesCf,Utf8Codec, LongCodec, Utf8Codec
+    ).consistency(WriteConsistency.One).consistency(ReadConsistency.One)
+
 
     new CassandraAggregates {
       val topAnnotations: ColumnFamily[String, Long, String] = _topAnnotations
+      val dependencies: ColumnFamily[String, Long, String] = _dependencies
     }
   }
 }

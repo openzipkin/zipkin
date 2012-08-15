@@ -24,15 +24,19 @@ import com.twitter.util.Future
 trait Aggregates {
   def getTopAnnotations(serviceName: String): Future[Seq[String]]
   def getTopKeyValueAnnotations(serviceName: String): Future[Seq[String]]
+  def getDependencies(serviceName: String): Future[Seq[String]]
 
+  def storeDependencies(serviceName: String, endpoints: Seq[String]): Future[Unit]
   def storeTopAnnotations(serviceName: String, a: Seq[String]): Future[Unit]
   def storeTopKeyValueAnnotations(serviceName: String, a: Seq[String]): Future[Unit]
 }
 
 class NullAggregates extends Aggregates {
+  def getDependencies(serviceName: String)         = Future(Seq.empty[String])
   def getTopAnnotations(serviceName: String)         = Future(Seq.empty[String])
   def getTopKeyValueAnnotations(serviceName: String) = Future(Seq.empty[String])
 
+  def storeDependencies(serviceName: String, endpoints: Seq[String]): Future[Unit]         = Future.Unit
   def storeTopAnnotations(serviceName: String, a: Seq[String]): Future[Unit]         = Future.Unit
   def storeTopKeyValueAnnotations(serviceName: String, a: Seq[String]): Future[Unit] = Future.Unit
 }

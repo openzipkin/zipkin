@@ -54,6 +54,11 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     render.view(wrapView(new StaticView)).toFuture
   }
 
+  /* Static page for render trace from JSON */
+  get("/aggregates") { request =>
+    render.view(wrapView(new AggregatesView)).toFuture
+  }
+
   /**
    * API: query
    * Returns query results that satisfy the request parameters in order of descending duration
@@ -274,6 +279,11 @@ class IndexView(val endDate: String, val endTime: String) extends View {
 class ShowView(traceId: String) extends View {
   val template = "templates/show.mustache"
   val inlineJs = "$(Zipkin.Application.Show.initialize(\"" + traceId + "\"));"
+}
+
+class AggregatesView() extends View {
+  val template = "templates/aggregates.mustache"
+  val inlineJs = "$(Zipkin.Application.Aggregates.initialize());"
 }
 
 class StaticView extends View {

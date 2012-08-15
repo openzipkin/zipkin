@@ -14,3 +14,4 @@ create column family AnnotationsIndex with comparator = LongType;
 create column family DurationIndex with comparator = LongType;
 
 create column family TopAnnotations with comparator = LongType;
+create column family Dependencies with comparator = LongType;

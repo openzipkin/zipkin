@@ -105,6 +105,20 @@ class ScribeCollectorService(config: ScribeZipkinCollectorConfig, val writeQueue
     }
   }
 
+  def storeDependencies(serviceName: String, endpoints: Seq[String]): Future[Unit] = {
+    Stats.incr("collector.storeDependencies")
+    log.info("storeDependencies: " + serviceName + "; " + endpoints)
+
+    Stats.timeFutureMillis("collector.storeDependencies") {
+      config.aggregates.storeDependencies(serviceName, endpoints)
+    } rescue {
+      case e: Exception =>
+        log.error(e, "storeDependencies failed")
+        Stats.incr("collector.storeDependencies")
+        Future.exception(gen.AdjustableRateException(e.toString))
+    }
+  }
+
   def storeTopAnnotations(serviceName: String, annotations: Seq[String]): Future[Unit] = {
     Stats.incr("collector.storeTopAnnotations")
     log.info("storeTopAnnotations: " + serviceName + "; " + annotations)
