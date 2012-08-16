@@ -77,14 +77,14 @@ Zipkin.GetDependencyTree = (function() {
 
         /* TraceDependency */
         var linkList = [
-            {target: "city", source: "state", depth: 4, count: 1, duration: 10},
-            {target: "town", source: "state", depth: 4, count: 1, duration: 10},
-            {target: "state", source: "country", depth: 3, count: 1, duration: 10},
-            {target: "province", source: "country", depth: 3, count: 1, duration: 10},
-            {target: "country", source: "continent",depth: 2, count: 1, duration: 10},
-            {target: "province", source: "continent",depth: 2, count: 1, duration: 10},
-            {target: "continent", source: "planet", depth: 1, count: 1, duration: 10},
-            {target: "continent", source: "Earth", depth: 1, count: 1, duration: 10}
+            {target: "city", source: "state", depth: 4, count: 2},
+            {target: "town", source: "state", depth: 4, count: 1},
+            {target: "state", source: "country", depth: 3, count: 1},
+            {target: "province", source: "country", depth: 3, count: 1},
+            {target: "country", source: "continent",depth: 2, count: 1},
+            {target: "province", source: "continent",depth: 2, count: 1},
+            {target: "continent", source: "planet", depth: 1, count: 1},
+            {target: "continent", source: "Earth", depth: 1, count: 1}
         ];
 
         var links = [];

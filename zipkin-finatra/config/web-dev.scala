@@ -25,5 +25,5 @@ new ZipkinWebConfig {
     servers = List("localhost:3003")
   }
 
-  override def queryClient = Left(new InetSocketAddress("localhost", 3002))
+  override def queryClient = Left(new InetSocketAddress("localhost", 9411))
 }
