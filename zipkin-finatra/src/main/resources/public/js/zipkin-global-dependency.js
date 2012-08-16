@@ -51,10 +51,20 @@ Zipkin.GlobalDependencies = (function() {
     this.currentTarget = null;
 
     this.chart         = this.render();
+    this.linkedByIndex = {};
+
+    var that = this;
+    $.each(that.data.links, function(index, d) {
+        that.linkedByIndex[d.source.name + "," + d.target.name] = d.count;
+    });
   };
 
   var circleSelector = function(name) {
     return $("circle[id*='circle-id-" + name + "']");
+  };
+
+  var neighboring = function(a, b) {
+    return globalDependencies.linkedByIndex[a + "," + b];
   };
 
   var hoverEvent = function(d) {
@@ -62,6 +72,9 @@ Zipkin.GlobalDependencies = (function() {
     this.currentTarget = d;
 
     circleSelector(d.name)
+      .attr("data-content", function(e) {
+        return "Calls: " + d.count;
+      })
       .popover({
         placement: function() {
           if (d.x < this.leftGutter) {
@@ -74,6 +87,42 @@ Zipkin.GlobalDependencies = (function() {
       })
       .popover('show');
 
+      $.each(globalDependencies.data.links, function(index, link) {
+        if (neighboring(d.name, link.target.name)) {
+        circleSelector(link.target.name)
+          .attr("data-content", function(e) {
+            return "Calls from " + d.name + " : " + neighboring(d.name, link.target.name);
+          })
+          .popover({
+            placement: function() {
+              if (d.x < this.leftGutter) {
+                return "right";
+              } else {
+                return "top";
+              }
+            },
+            trigger: "manual"
+          })
+          .popover('show');
+        } else if (neighboring(link.source.name, d.name)) {
+          circleSelector(link.source.name)
+            .attr("data-content", function(e) {
+              return "Calls to " + d.name + " : " + neighboring(link.source.name, d.name);
+            })
+            .popover({
+              placement: function() {
+                if (d.x < this.leftGutter) {
+                  return "right";
+                } else {
+                  return "top";
+                }
+              },
+              trigger: "manual"
+            })
+            .popover('show');
+          }
+      });
+
     this.redraw();
   };
 
@@ -82,7 +131,18 @@ Zipkin.GlobalDependencies = (function() {
     this.currentTarget = null;
 
     circleSelector(d.name).popover('hide');
+
+    $.each(globalDependencies.data.links, function(index, link) {
+      if (neighboring(d.name, link.target.name)) {
+        circleSelector(link.target.name).popover('hide');
+      } else if (neighboring(link.source.name, d.name)) {
+        circleSelector(link.source.name).popover('hide');
+      }
+    });
+
     this.redraw();
+
+
   };
 
   GlobalDependencies.prototype.resize = function(width) {
@@ -101,26 +161,24 @@ Zipkin.GlobalDependencies = (function() {
       , height = this.height
       , border = this.border
       ;
+
     var nodes = {};
-    var maxDuration = Number.MIN_VALUE;
+    var totalCalls = 0;
     var maxDepth = 0;
 
-    var calculateRadius = function(value) {
-      return Math.max(value / maxDuration * 30, 2);
-    };
-
     $.each(this.data.links, function(i, l) {
+      totalCalls += l.count;
+
       if (!nodes.hasOwnProperty(l.source)) {
-        nodes[l.source] = {name: l.source, duration: l.duration, depth: 0, count: 0};
+        nodes[l.source] = {name: l.source, depth: 0, count: l.count};
       }
       l.source = nodes[l.source];
 
       if (nodes.hasOwnProperty(l.target)) {
-        nodes[l.target].duration += l.duration;
         nodes[l.target].count += l.count;
         nodes[l.target].depth = Math.max(nodes[l.target].depth, l.depth);
       } else {
-        nodes[l.target] = {name: l.target, duration: l.duration, depth: l.depth, count: l.count};
+        nodes[l.target] = {name: l.target, depth: l.depth, count: l.count};
       }
 
       l.target = nodes[l.target];
@@ -133,17 +191,17 @@ Zipkin.GlobalDependencies = (function() {
         n.y = height / 2;
       }
 
-      if (n.duration > maxDuration) {
-        maxDuration = n.duration;
-      }
-
       if (n.depth > maxDepth) {
         maxDepth = n.depth;
       }
     });
 
+    var calculateRadius = function(value) {
+      return Math.max((value / totalCalls) * 40, 2);
+    };
+
     $.each(nodes, function(i, n) {
-      n.r = calculateRadius(n.duration);
+      n.r = calculateRadius(n.count);
     });
 
     var project = function(d) {
@@ -156,7 +214,7 @@ Zipkin.GlobalDependencies = (function() {
       var vecX = tx - sx
         , vecY = ty - sy
         , len = Math.sqrt(Math.pow(vecX, 2) + Math.pow(vecY, 2)) || 1
-        , newLen = len - calculateRadius(d.target.duration)
+        , newLen = len - calculateRadius(d.target.count)
         ;
 
       return {
@@ -180,7 +238,8 @@ Zipkin.GlobalDependencies = (function() {
         .attr("x1", function(d) { return d.source.x; })
         .attr("y1", function(d) { return d.source.y; })
         .attr("x2", function(d) { return projectX(d); })
-        .attr("y2", function(d) { return projectY(d); });
+        .attr("y2", function(d) { return projectY(d); })
+        .style("stroke-width", function(d) {return Math.max(d.source.count / totalCalls * 10, 1); });
 
       text.attr("transform", function(d) {
         return "translate(" + d.x + "," + d.y + ")";
@@ -231,7 +290,6 @@ Zipkin.GlobalDependencies = (function() {
         .on("mouseout", Zipkin.Util.bind(this, blurEvent))
         .attr("rel", "popover")
         .attr("data-original-title", function(d) { return d.name; })
-        .attr("data-content", function(d) { return "Duration: " + d.duration.toFixed(3) + " ms<br />Calls: " + d.count; })
         .call(force.drag);
 
     var text = svg.append("svg:g").selectAll("g")
