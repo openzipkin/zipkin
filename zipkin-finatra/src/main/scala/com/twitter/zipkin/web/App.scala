@@ -181,6 +181,21 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     }
   }
 
+  get("/api/trace/:id") { request =>
+    log.info("/api/trace")
+    val adjusters = getAdjusters(request)
+    val ids = Seq(request.params("id").toLong)
+    log.debug(ids.toString())
+
+    client.getTraceCombosByIds(ids, adjusters).map {
+      _.map {
+        ThriftQueryAdapter(_).trace
+      }.head
+    }.map { trace =>
+      render.json(JsonQueryAdapter(trace))
+    }
+  }
+
   /**
    * API: is_pinned
    * Returns whether a trace has been pinned

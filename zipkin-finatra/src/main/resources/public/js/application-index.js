@@ -18,6 +18,38 @@
 //= require zipkin
 var Zipkin = Zipkin || {};
 Zipkin.Application = Zipkin.Application || {};
+Zipkin.Application.Models = (function() {
+  var Service = Backbone.Model.extend({
+
+  });
+
+  var ServiceList = Backbone.Collection.extend({
+    model: Service,
+
+    url: function() {
+      return "/api/services";
+    }
+  });
+
+  var Trace = Backbone.Model.extend({
+    defaults: function() {
+      return {
+        id: 0
+      };
+    },
+
+    initialize: function() {
+      if (!this.get("id")) {
+        this.set({"id": this.defaults.id})
+      }
+    },
+
+    url: function() {
+      return "/api/trace/944690799309474105";
+    }
+  });
+})();
+
 Zipkin.Application.Index = (function() {
 
   var ORDER_DURATION_DESC = 0
