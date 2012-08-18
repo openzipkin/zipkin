@@ -114,6 +114,17 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     }
   }
 
+  get("/api/service") { request =>
+    log.debug("/api/service")
+    client.getServiceNames().map { services =>
+      render.json{
+        services.toSeq.sorted.map { s =>
+          Map("name" -> s)
+        }
+      }
+    }
+  }
+
   /**
    * API: spans
    * Returns a list of spans for a particular service
@@ -285,15 +296,12 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
 
 class IndexView(val endDate: String, val endTime: String) extends View {
   val template = "templates/index.mustache"
-  val inlineJs = "$(Zipkin.Application.Index.initialize());"
 }
 
-class ShowView(traceId: String) extends View {
+class ShowView(val traceId: String) extends View {
   val template = "templates/show.mustache"
-  val inlineJs = "$(Zipkin.Application.Show.initialize(\"" + traceId + "\"));"
 }
 
 class StaticView extends View {
   val template = "templates/static.mustache"
-  val inlineJs = "$(Zipkin.Application.Static.initialize());"
 }
