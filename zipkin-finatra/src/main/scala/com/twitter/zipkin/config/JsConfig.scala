@@ -45,6 +45,9 @@ class JsConfig extends StaticResourceConfig {
     "zipkin-trace-summary.js",
 
     "application.js",
+    "application-models.js",
+    "application-views.js",
+
     "application-index.js",
     "application-show.js",
     "application-static.js"
