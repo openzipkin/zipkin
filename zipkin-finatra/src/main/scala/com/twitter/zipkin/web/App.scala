@@ -19,7 +19,7 @@ package com.twitter.zipkin.web
 import com.twitter.finatra.{Response, Controller, View, Request}
 import com.twitter.logging.Logger
 import com.twitter.util.Future
-import com.twitter.zipkin.adapter.{JsonQueryAdapter, JsonAdapter, ThriftQueryAdapter, ThriftAdapter}
+import com.twitter.zipkin.adapter.{JsonQueryAdapter, ThriftQueryAdapter}
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.config.ZipkinWebConfig
 import java.nio.ByteBuffer
@@ -31,7 +31,7 @@ import java.util.Calendar
  * @param config ZipkinWebConfig
  * @param client Thrift client to ZipkinQuery
  */
-class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) extends Controller {
+class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) extends Controller(config.statsReceiver) {
 
   val log = Logger.get()
   val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
