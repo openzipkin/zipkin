@@ -67,7 +67,7 @@ trait CassandraConfig {
       if (useServerSets) {
         new ServerSetsCluster(zkHosts, zkPath, zkTimeoutMillis, statsReceiver)
       } else {
-        var cluster = new Cluster(nodes, port, statsReceiver)
+        var cluster = new Cluster(nodes, port, statsReceiver, tracerFactory)
         if (!mapHosts) cluster = cluster.mapHostsEvery(0.seconds)
         cluster
       }
@@ -78,7 +78,6 @@ trait CassandraConfig {
       .timeout(timeout)
       .requestTimeout(requestTimeout)
       .maxConnectionsPerHost(maxConnectionsPerHost)
-      .tracerFactory(tracerFactory)
       .hostConnectionMaxWaiters(hostConnectionMaxWaiters)
       .connect()
   }
