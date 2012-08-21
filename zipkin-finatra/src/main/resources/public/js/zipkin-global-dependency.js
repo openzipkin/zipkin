@@ -28,16 +28,16 @@ Zipkin.GlobalDependencies = (function() {
 
   /* Constants */
   /** Chart **/
-  var WIDTH        = 900
-    , HEIGHT       = 600
+  var WIDTH        = 6000
+    , HEIGHT       = 3000
     , BORDER       = 5
     , LEFT_GUTTER  = 100
     , RIGHT_GUTTER = 150
     ;
   /** d3 Forces **/
-  var FORCE_CHARGE        = -2000
+  var FORCE_CHARGE        = -3000
     , FORCE_LINK_DISTANCE = 60
-    , FORCE_GRAVITY       = 0.1
+    , FORCE_GRAVITY       = 0.07
     ;
 
   var GlobalDependencies = function(data, options) {
@@ -60,66 +60,88 @@ Zipkin.GlobalDependencies = (function() {
   };
 
   var circleSelector = function(name) {
-    return $("circle[id*='circle-id-" + name + "']");
+    return $("circle[id='circle-id-" + name + "']");
+  };
+
+  var textSelector = function(name) {
+    return $("text[id='text-id-" + name + "']");
+  };
+
+  var lineSelector = function(sName, tName) {
+    return $("line[id='line-id-" + sName + "-" + tName + "']");
   };
 
   var neighboring = function(a, b) {
     return globalDependencies.linkedByIndex[a + "," + b];
   };
 
+  var hoverRadius = function(name) {
+      newRad = Math.min(Math.max(6, 3 * circleSelector(name).attr("r")), 180);
+    circleSelector(name).attr("r", function(d) {return newRad; });
+  }
+
+  var blurRadius = function(name) {
+    var newRad = Math.max(1, circleSelector(name).attr("r") / 3);
+    circleSelector(name).attr("r", function(d) {return newRad; });
+  }
+
+
   var hoverEvent = function(d) {
     d.selected = true;
     this.currentTarget = d;
+    hoverRadius(d.name);
+//    textSelector(d.name)
+//      .attr("data-content", function(e) {
+//        return "Calls: " + d.count;
+//      })
 
-    circleSelector(d.name)
-      .attr("data-content", function(e) {
-        return "Calls: " + d.count;
-      })
-      .popover({
-        placement: function() {
-          if (d.x < this.leftGutter) {
-            return "right";
-          } else {
-            return "top";
-          }
-        },
-        trigger: "manual"
-      })
-      .popover('show');
+//      .popover({
+//        placement: function() {
+//          if (d.x < this.leftGutter) {
+//            return "right";
+//          } else {
+//            return "top";
+//          }
+//        },
+//        trigger: "manual"
+//      })
+//      .popover('show');
 
       $.each(globalDependencies.data.links, function(index, link) {
-        if (neighboring(d.name, link.target.name)) {
-        circleSelector(link.target.name)
-          .attr("data-content", function(e) {
-            return "Calls from " + d.name + " : " + neighboring(d.name, link.target.name);
-          })
-          .popover({
-            placement: function() {
-              if (d.x < this.leftGutter) {
-                return "right";
-              } else {
-                return "top";
-              }
-            },
-            trigger: "manual"
-          })
-          .popover('show');
-        } else if (neighboring(link.source.name, d.name)) {
-          circleSelector(link.source.name)
-            .attr("data-content", function(e) {
-              return "Calls to " + d.name + " : " + neighboring(link.source.name, d.name);
-            })
-            .popover({
-              placement: function() {
-                if (d.x < this.leftGutter) {
-                  return "right";
-                } else {
-                  return "top";
-                }
-              },
-              trigger: "manual"
-            })
-            .popover('show');
+        if (link.source.name == d.name) {
+          hoverRadius(link.target.name);
+//        circleSelector(link.target.name)
+//          .attr("data-content", function(e) {
+//            return "Calls from " + d.name + " : " + neighboring(d.name, link.target.name);
+//          })
+//          .popover({
+//            placement: function() {
+//              if (d.x < this.leftGutter) {
+//                return "right";
+//              } else {
+//                return "top";
+//              }
+//            },
+//            trigger: "manual"
+//          })
+//          .popover('show');
+        } else if (link.target.name == d.name) {
+          hoverRadius(link.source.name);
+//          circleSelector(link.source.name)
+//            .attr("data-content", function(e) {
+//              return "Calls to " + d.name + " : " + neighboring(link.source.name, d.name);
+//            })
+//            .popover({
+//              placement: function() {
+//                if (d.x < this.leftGutter) {
+//                  return "right";
+//                } else {
+//                  return "top";
+//                }
+//              },
+//              trigger: "manual"
+//            })
+//            .popover('show');
           }
       });
 
@@ -130,13 +152,17 @@ Zipkin.GlobalDependencies = (function() {
     d.selected = false;
     this.currentTarget = null;
 
-    circleSelector(d.name).popover('hide');
+    blurRadius(d.name)
+//    circleSelector(d.name)
+//        .popover('hide');
 
     $.each(globalDependencies.data.links, function(index, link) {
-      if (neighboring(d.name, link.target.name)) {
-        circleSelector(link.target.name).popover('hide');
-      } else if (neighboring(link.source.name, d.name)) {
-        circleSelector(link.source.name).popover('hide');
+      if (link.source.name == d.name) {
+            blurRadius(link.target.name);
+//        circleSelector(link.target.name).popover('hide');
+      } else if (link.target.name == d.name) {
+          blurRadius(link.source.name);
+//        circleSelector(link.source.name).popover('hide');
       }
     });
 
@@ -171,6 +197,8 @@ Zipkin.GlobalDependencies = (function() {
 
       if (!nodes.hasOwnProperty(l.source)) {
         nodes[l.source] = {name: l.source, depth: 0, count: l.count};
+      } else {
+        nodes[l.source].count += l.count;
       }
       l.source = nodes[l.source];
 
@@ -197,7 +225,7 @@ Zipkin.GlobalDependencies = (function() {
     });
 
     var calculateRadius = function(value) {
-      return Math.max((value / totalCalls) * 40, 2);
+      return Math.max((value / totalCalls) * 60, 3);
     };
 
     $.each(nodes, function(i, n) {
@@ -228,18 +256,19 @@ Zipkin.GlobalDependencies = (function() {
 
     var tick = function(e) {
       circle
-        .attr("cx", function(d) {
+            .attr("cx", function(d) {
           d.x = d.depth * ((that.width - (that.leftGutter + that.rightGutter)) / maxDepth) + that.leftGutter;
           return d.x;
         })
         .attr("cy", function(d) { return d.y = Math.max(d.r + border, Math.min(height - d.r - border, d.y)); });
 
       line
+        .attr("id", function(d) {return "line-id-" + d.source.name + "-" + d.target.name})
         .attr("x1", function(d) { return d.source.x; })
         .attr("y1", function(d) { return d.source.y; })
         .attr("x2", function(d) { return projectX(d); })
         .attr("y2", function(d) { return projectY(d); })
-        .style("stroke-width", function(d) {return Math.max(d.source.count / totalCalls * 10, 1); });
+        .style("stroke-width", function(d) {return Math.max(globalDependencies.linkedByIndex[d.source.name + "," + d.target.name] / totalCalls * 10, 1); });
 
       text.attr("transform", function(d) {
         return "translate(" + d.x + "," + d.y + ")";
@@ -278,8 +307,7 @@ Zipkin.GlobalDependencies = (function() {
         .data(force.links())
       .enter().append("svg:line")
         .attr("class", function(d) { return "link directed"; })
-        .style("stroke", "grey")
-        .attr("marker-end", function(d) { return "url(#directed)"; });
+        .style("stroke", "grey");
 
     var circle = svg.append("svg:g").selectAll("circle")
         .data(force.nodes())
@@ -292,9 +320,10 @@ Zipkin.GlobalDependencies = (function() {
         .attr("data-original-title", function(d) { return d.name; })
         .call(force.drag);
 
-    var text = svg.append("svg:g").selectAll("g")
+    var text = svg.append("svg:g").selectAll("text")
         .data(force.nodes())
-      .enter().append("svg:g");
+      .enter().append("svg:text")
+      .attr("id", function(d) {"text-id-" + d.name; });
 
     /* Service name text shadow for better readability */
     text.append("svg:text")
@@ -309,6 +338,7 @@ Zipkin.GlobalDependencies = (function() {
     /* Service name */
     text.append("svg:text")
       .attr("class", "text-label")
+      .attr("id", function(d) {"text-id-" + d.name; })
       .on("mouseover", Zipkin.Util.bind(this, hoverEvent))
       .on("mouseout", Zipkin.Util.bind(this, blurEvent))
       .attr("x", 8)
