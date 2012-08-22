@@ -56,7 +56,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
 
   /* Static page for render trace from JSON */
   get("/aggregates") { request =>
-    render.view(wrapView(new AggregatesView)).toFuture
+    render.view(wrapAggregatesView(new AggregatesView)).toFuture
   }
 
   /**
@@ -270,6 +270,15 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     val javascripts = config.jsConfig.resources
     val stylesheets = config.cssConfig.resources
     lazy val body = innerView.render
+  }
+
+  private def wrapAggregatesView(v: View) = new View {
+  val template = "templates/layouts/application.mustache"
+  val rootUrl = config.rootUrl
+  val innerView: View = v
+  val javascripts = config.jsConfig.aggregatesResources
+  val stylesheets = config.cssConfig.aggregatesResources
+  lazy val body = innerView.render
   }
 }
 

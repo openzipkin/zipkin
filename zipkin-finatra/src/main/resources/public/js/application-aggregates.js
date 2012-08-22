@@ -649,7 +649,7 @@ Zipkin.GetDependencyTree = (function() {
         //var dependencyList = { links: links, root: "planet" };
 
         var dependencyOptions = {
-          width: ($(window).width() > Zipkin.Config.MAX_WINDOW_SIZE ? Zipkin.Config.MAX_GRAPHIC_WIDTH: Zipkin.Config.MIN_GRAPHIC_WIDTH) + 200
+          width: ($(window).width() > Zipkin.Config.MAX_AGG_WINDOW_SIZE ? Zipkin.Config.MAX_AGG_GRAPHIC_WIDTH: Zipkin.Config.MIN_AGG_GRAPHIC_WIDTH) + 200
         };
 
         try {
@@ -670,7 +670,7 @@ Zipkin.GetDependencyTree = (function() {
           $(window).resize(function () {
             var newWidth = $(window).width();
             if (Zipkin.Base.windowResized(prevWidth, newWidth)) {
-              var w = newWidth >= Zipkin.Config.MAX_WINDOW_SIZE ? Zipkin.Config.MAX_GRAPHIC_WIDTH : Zipkin.Config.MIN_GRAPHIC_WIDTH;
+              var w = newWidth >= Zipkin.Config.MAX_AGG_WINDOW_SIZE ? Zipkin.Config.MAX_AGG_GRAPHIC_WIDTH : Zipkin.Config.MIN_AGG_GRAPHIC_WIDTH;
               globalDependencies.resize(w + 200);
               prevWidth = newWidth;
             }
