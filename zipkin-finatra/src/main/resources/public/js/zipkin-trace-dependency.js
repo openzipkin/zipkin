@@ -28,7 +28,7 @@ Zipkin.TraceDependencies = (function() {
 
   /* Constants */
   /** Chart **/
-  var WIDTH        = 900
+  var WIDTH        = 800
     , HEIGHT       = 600
     , BORDER       = 5
     , LEFT_GUTTER  = 100

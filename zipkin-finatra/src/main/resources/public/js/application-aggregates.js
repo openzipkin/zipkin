@@ -670,8 +670,8 @@ Zipkin.GetDependencyTree = (function() {
           $(window).resize(function () {
             var newWidth = $(window).width();
             if (Zipkin.Base.windowResized(prevWidth, newWidth)) {
-              var w = newWidth > Zipkin.Config.MAX_WINDOW_SIZE ? Zipkin.Config.MAX_GRAPHIC_WIDTH : Zipkin.Config.MIN_GRAPHIC_WIDTH;
-              traceDependencies.resize(w + 200);
+              var w = newWidth >= Zipkin.Config.MAX_WINDOW_SIZE ? Zipkin.Config.MAX_GRAPHIC_WIDTH : Zipkin.Config.MIN_GRAPHIC_WIDTH;
+              globalDependencies.resize(w + 200);
               prevWidth = newWidth;
             }
            });

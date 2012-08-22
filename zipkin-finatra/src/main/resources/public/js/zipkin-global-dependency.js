@@ -28,7 +28,7 @@ Zipkin.GlobalDependencies = (function() {
 
   /* Constants */
   /** Chart **/
-  var WIDTH        = 1300
+  var WIDTH        = 1700
     , HEIGHT       = 2000
     , BORDER       = 5
     , LEFT_GUTTER  = 100
@@ -46,38 +46,6 @@ Zipkin.GlobalDependencies = (function() {
     this.links = links;
 
     this.chart         = this.render();
-  };
-
-  var nodeSelector = function(name) {
-    return $("node[id='node-id-" + name + "']");
-  };
-
-  var hoverEvent = function(d) {
-    d.selected = true;
-    this.currentTarget = d;
-
-    nodeSelector(d.name)
-      .popover({
-        placement: function() {
-          if (d.x < this.leftGutter) {
-            return "right";
-          } else {
-            return "top";
-          }
-        },
-        trigger: "manual"
-      })
-      .popover('show');
-
-    this.redraw();
-  };
-
-  var blurEvent = function(d) {
-    d.selected = false;
-    this.currentTarget = null;
-
-    node(d.name).popover('hide');
-    this.redraw();
   };
 
   GlobalDependencies.prototype.resize = function(width) {
@@ -137,9 +105,6 @@ Zipkin.GlobalDependencies = (function() {
           .attr("id", function(d) { return "node-id-" + d.name; })
           .attr("class", "node")
           .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-          .on("mouseover", Zipkin.Util.bind(this, hoverEvent))
-          .on("mouseout", Zipkin.Util.bind(this, blurEvent))
-          .attr("rel", "popover")
         .call(d3.behavior.drag()
           .origin(function(d) { return d; })
           .on("dragstart", function() { this.parentNode.appendChild(this); })
