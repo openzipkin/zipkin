@@ -13,22 +13,19 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+package com.twitter.zipkin.config
 
-package com.twitter.zipkin.hadoop
+class CssConfig extends StaticResourceConfig {
+  val resourceType = "css"
 
-import java.util.Scanner
-import com.twitter.zipkin.gen
-import sources.Util
+  val remoteResources = Seq(
+    "https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/ui-lightness/jquery-ui.css"
+  )
 
-/**
- * Client which writes to a server, and per service pair
- * @param combineSimilarNames
- * @param portNumber
- */
-abstract class PerServicePairClient(combineSimilarNames: Boolean, portNumber: Int) extends
-  WriteToServerClient(combineSimilarNames, portNumber) {
-
-  override def getLineResult(line: List[String]) = {
-    new PerServicePairLineResult(line)
-  }
+  val localResources = Seq(
+    "bootstrap.css",
+    "bootstrap-responsive.css",
+    "datepicker.css",
+    "application.css"
+  )
 }

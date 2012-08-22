@@ -16,8 +16,6 @@
 
 package com.twitter.zipkin.hadoop
 
-import java.util.Scanner
-import com.twitter.zipkin.gen
 import scala.collection.JavaConverters._
 
 /**
@@ -27,18 +25,6 @@ import scala.collection.JavaConverters._
 
 abstract class PerServiceClient(combineSimilarNames: Boolean, portNumber: Int) extends
   WriteToServerClient(combineSimilarNames, portNumber) {
-
-  def populateServiceNameList(s: Scanner) {
-    if (!combineSimilarNames) return
-    while (s.hasNextLine()) {
-      val line = new Scanner(s.nextLine())
-      serviceNameList.add(line.next())
-    }
-  }
-
-  def getKeyValue(lineScanner: Scanner) = {
-    lineScanner.next()
-  }
 }
 
 /**
@@ -48,9 +34,8 @@ abstract class PerServiceClient(combineSimilarNames: Boolean, portNumber: Int) e
 
 class PopularAnnotationsClient(portNumber: Int) extends PerServiceClient(false, portNumber) {
 
-  def processKey(service: String, values: List[String]) {
-    println("Writing " + values.mkString(", ") + " to " + service)
-    client.storeTopAnnotations(service, values.asJava)
+  def processKey(service: String, lines: List[LineResult]) {
+    client.storeTopAnnotations(service, lines.map(line => line.getValueAsString()).asJava)
   }
 
 }
@@ -62,8 +47,8 @@ class PopularAnnotationsClient(portNumber: Int) extends PerServiceClient(false, 
 
 class PopularKeyValuesClient(portNumber: Int) extends PerServiceClient(false, portNumber) {
 
-  def processKey(service: String, values: List[String]) {
-    client.storeTopKeyValueAnnotations(service, values.asJava)
+  def processKey(service: String, values: List[LineResult]) {
+    client.storeTopKeyValueAnnotations(service, values.map(line => line.getValueAsString()).asJava)
   }
 
 }

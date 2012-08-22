@@ -13,22 +13,19 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+package com.twitter.zipkin.config
 
-package com.twitter.zipkin.hadoop
+trait StaticResourceConfig {
+  val pathPrefix: String = "/public"
 
-import java.util.Scanner
-import com.twitter.zipkin.gen
-import sources.Util
+  val resourceType: String
 
-/**
- * Client which writes to a server, and per service pair
- * @param combineSimilarNames
- * @param portNumber
- */
-abstract class PerServicePairClient(combineSimilarNames: Boolean, portNumber: Int) extends
-  WriteToServerClient(combineSimilarNames, portNumber) {
+  val remoteResources: Seq[String]
 
-  override def getLineResult(line: List[String]) = {
-    new PerServicePairLineResult(line)
-  }
+  val localResources: Seq[String]
+
+  lazy val resources = remoteResources ++
+    localResources.map { r =>
+      "%s/%s/%s".format(pathPrefix, resourceType, r)
+    }
 }

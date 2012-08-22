@@ -7,10 +7,10 @@ import java.io.File
 
 object Zipkin extends Build {
 
-  val CASSIE_VERSION  = "0.22.1"
-  val FINAGLE_VERSION = "5.3.1"
-  val OSTRICH_VERSION = "8.2.1"
-  val UTIL_VERSION    = "5.3.1"
+  val CASSIE_VERSION  = "0.23.0"
+  val FINAGLE_VERSION = "5.3.5"
+  val OSTRICH_VERSION = "8.2.3"
+  val UTIL_VERSION    = "5.3.6"
 
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
   val travisCi = Option(System.getenv("SBT_TRAVIS_CI")) // for adding travis ci maven repos before others
@@ -95,6 +95,8 @@ object Zipkin extends Build {
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
       "org.slf4j" % "slf4j-log4j12"          % "1.6.4" % "runtime",
+      "javax.mail" % "mail" % "1.4.3",
+      "com.github.spullara.mustache.java" % "compiler" % "0.8.2",
       /* Test dependencies */
       "org.scala-tools.testing" % "specs_2.9.1" % "1.6.9" % "test"
     ),
@@ -263,7 +265,7 @@ object Zipkin extends Build {
       resolvers += "codahale" at "http://repo.codahale.com",
 
       libraryDependencies ++= Seq(
-        "com.twitter" % "finatra" % "0.2.3",
+        "com.twitter" % "finatra" % "0.2.4",
 
         "com.twitter.common.zookeeper" % "server-set" % "1.0.7",
 

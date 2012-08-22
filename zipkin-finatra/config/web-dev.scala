@@ -14,12 +14,31 @@
 * limitations under the License.
 */
 
-import com.twitter.zipkin.config.ZipkinWebConfig
+import com.twitter.zipkin.config.{CssConfig, JsConfig, ZipkinWebConfig}
 import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
 import java.net.InetSocketAddress
 
 new ZipkinWebConfig {
   rootUrl = "http://localhost:" + serverPort + "/"
+
+  /**
+   * Making changes to js/css can be painful with a packaged jar since a compilation is needed to
+   * repackage any new changes.
+   * A simple hack is to stand up a simple Python HTTP server and point `resourcePathPrefix` it.
+   * Example:
+   *
+   * `cd zipkin-finatra/src/main/resources/public && python -m SimpleHTTPServer`
+   *
+   * Then, set:
+   * `val resourcePathPrefix = "http://localhost:8000"`
+   */
+  val resourcePathPrefix = "/public"
+  jsConfig = new JsConfig {
+    override val pathPrefix = resourcePathPrefix
+  }
+  cssConfig = new CssConfig {
+    override val pathPrefix = resourcePathPrefix
+  }
 
   def zkConfig = new ZooKeeperConfig {
     servers = List("localhost:3003")
