@@ -39,23 +39,22 @@ class ScribeProcessorFilter extends ProcessorFilter[Seq[String], Seq[Span]] {
   }
 
   def apply(logEntries: Seq[String]): Seq[Span] = {
-    logEntries.flatMap {
-      msg =>
-        try {
-          val span = Stats.time("deserializeSpan") {
-            deserializer.fromString(msg)
-          }
-          log.ifDebug("Processing span: " + span + " from " + msg)
-          Some(ThriftAdapter(span))
-        } catch {
-          case e: Exception => {
-            // scribe doesn't have any ResultCode.ERROR or similar
-            // let's just swallow this invalid msg
-            log.warning(e, "Invalid msg: %s", msg)
-            Stats.incr("collector.invalid_msg")
-            None
-          }
+    logEntries.flatMap { msg =>
+      try {
+        val span = Stats.time("deserializeSpan") {
+          deserializer.fromString(msg)
         }
+        log.ifDebug("Processing span: " + span + " from " + msg)
+        Some(ThriftAdapter(span))
+      } catch {
+        case e: Exception => {
+          // scribe doesn't have any ResultCode.ERROR or similar
+          // let's just swallow this invalid msg
+          log.warning(e, "Invalid msg: %s", msg)
+          Stats.incr("collector.invalid_msg")
+          None
+        }
+      }
     }
   }
 }

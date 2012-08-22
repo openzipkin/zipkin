@@ -30,6 +30,7 @@ class ScribeProcessorFilterSpec extends Specification {
     val category = "zipkin"
 
     val base64 = Seq("CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA=")
+    val endline = Seq("CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA=\n")
 
     val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
     val serialized = Seq(serializer.toString(ThriftAdapter(validSpan)))
@@ -39,6 +40,10 @@ class ScribeProcessorFilterSpec extends Specification {
 
     "convert gen.LogEntry to Span" in {
       filter.apply(base64) mustEqual Seq(validSpan)
+    }
+
+    "convert gen.LogEntry with endline to Span" in {
+      filter.apply(endline) mustEqual Seq(validSpan)
     }
 
     "convert serialized thrift to Span" in {
