@@ -28,8 +28,8 @@ Zipkin.GlobalDependencies = (function() {
 
   /* Constants */
   /** Chart **/
-  var WIDTH        = 1700
-    , HEIGHT       = 2000
+  var WIDTH        = 1300
+    , HEIGHT       = 1000
     , BORDER       = 5
     , LEFT_GUTTER  = 100
     , RIGHT_GUTTER = 150
@@ -46,6 +46,68 @@ Zipkin.GlobalDependencies = (function() {
     this.links = links;
 
     this.chart         = this.render();
+  };
+
+  var nodeSelector = function(name) {
+    return $("g[id='node-id-" + name + "']");
+  }
+
+//  var hoverEvent = function(d) {
+////    d.selected = true;
+////    this.currentTarget = d;
+//
+//    nodeSelector(d.name)
+//      .tooltip({
+//        placement: function() {
+//          if (d.x < this.leftGutter) {
+//            return "right";
+//          } else {
+//            return "top";
+//          }
+//        },
+//        trigger: "manual"
+//      })
+//      .tooltip('show');
+//
+//    for (var i = 0; i < d.sourceLinks.length; i++) {
+//      nodeSelector(d.sourceLinks[i].target.name)
+//        .tooltip({
+//          placement: function() {
+//            if (d.x < this.leftGutter) {
+//              return "right";
+//            } else {
+//              return "top";
+//            }
+//          },
+//          trigger: "manual"
+//        })
+//        .tooltip('show');
+//    }
+//
+//    this.redraw();
+//  };
+
+//  var blurEvent = function(d) {
+//    d.selected = false;
+//    this.currentTarget = null;
+//
+//    nodeSelector(d.name).tooltip('hide');
+//
+//    for (var i = 0; i < d.sourceLinks.length; i++) {
+//      nodeSelector(d.sourceLinks[i].target.name)
+//        .tooltip('hide');
+//    }
+//
+//    this.redraw();
+//  };
+
+
+  var getText = function(d) {
+    var s = d.name + "made calls to:\n";
+    for (var i = 0; i < d.sourceLinks.length; i++) {
+      s +=  d.sourceLinks[i].target.name + ": " + d.sourceLinks[i].count + "\n";
+    }
+    return s;
   };
 
   GlobalDependencies.prototype.resize = function(width) {
@@ -105,6 +167,11 @@ Zipkin.GlobalDependencies = (function() {
           .attr("id", function(d) { return "node-id-" + d.name; })
           .attr("class", "node")
           .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+//          .on("mouseover", Zipkin.Util.bind(this, hoverEvent))
+//          .on("mouseout", Zipkin.Util.bind(this, blurEvent))
+//          .attr("rel", "tooltip")
+          .attr("data-original-title", function(d) { return d.name; })
+          .attr("data-content", function(d) { return getText(d); })
         .call(d3.behavior.drag()
           .origin(function(d) { return d; })
           .on("dragstart", function() { this.parentNode.appendChild(this); })

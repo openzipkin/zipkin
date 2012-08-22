@@ -1,5 +1,5 @@
 #global-dependency {
-  height: 2000px;
+  height: 1000px;
 }
 
 .node rect {
@@ -43,6 +43,6 @@
   .container,
   .navbar-fixed-top .container,
   .navbar-fixed-bottom .container {
-    width: 2000px;
+    width: 1500px;
   }
 }
