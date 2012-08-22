@@ -22,8 +22,8 @@ var Zipkin = Zipkin || {};
 Zipkin.Config = {
 
   /* Responsive grid */
-  MAX_WINDOW_SIZE                : 1200,
-  MAX_GRAPHIC_WIDTH              : 940,
+  MAX_WINDOW_SIZE                : 1400,
+  MAX_GRAPHIC_WIDTH              : 1400,
   MIN_GRAPHIC_WIDTH              : 720,
 
   /* d3 Visualization variables */
