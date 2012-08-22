@@ -22,3 +22,27 @@
 .link:hover {
   stroke-opacity: .7;
 }
+
+@media (min-width: 1200px) {
+/*  .row {
+    margin-left: -30px;
+    *zoom: 1;
+  }
+  .row:before,
+  .row:after {
+    display: table;
+    content: "";
+  }
+  .row:after {
+    clear: both;
+  }*/
+  [class*="span"] {
+    float: left;
+    margin-left: 30px;
+  }
+  .container,
+  .navbar-fixed-top .container,
+  .navbar-fixed-bottom .container {
+    width: 2000px;
+  }
+}
