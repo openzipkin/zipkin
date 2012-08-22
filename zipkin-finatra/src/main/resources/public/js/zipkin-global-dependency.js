@@ -28,8 +28,8 @@ Zipkin.GlobalDependencies = (function() {
 
   /* Constants */
   /** Chart **/
-  var WIDTH        = 6000
-    , HEIGHT       = 3000
+  var WIDTH        = 1300
+    , HEIGHT       = 2000
     , BORDER       = 5
     , LEFT_GUTTER  = 100
     , RIGHT_GUTTER = 150
@@ -40,135 +40,17 @@ Zipkin.GlobalDependencies = (function() {
     , FORCE_GRAVITY       = 0.07
     ;
 
-  var GlobalDependencies = function(data, options) {
+  var GlobalDependencies = function(nodes, links, options) {
     this.width         = options.width       || WIDTH;
     this.height        = options.height      || HEIGHT;
     this.border        = options.border      || BORDER;
     this.leftGutter    = options.leftGutter  || LEFT_GUTTER;
     this.rightGutter   = options.rightGutter || RIGHT_GUTTER;
 
-    this.data          = data;
-    this.currentTarget = null;
+    this.nodes = nodes;
+    this.links = links;
 
     this.chart         = this.render();
-    this.linkedByIndex = {};
-
-    var that = this;
-    $.each(that.data.links, function(index, d) {
-        that.linkedByIndex[d.source.name + "," + d.target.name] = d.count;
-    });
-  };
-
-  var circleSelector = function(name) {
-    return $("circle[id='circle-id-" + name + "']");
-  };
-
-  var textSelector = function(name) {
-    return $("text[id='text-id-" + name + "']");
-  };
-
-  var lineSelector = function(sName, tName) {
-    return $("line[id='line-id-" + sName + "-" + tName + "']");
-  };
-
-  var neighboring = function(a, b) {
-    return globalDependencies.linkedByIndex[a + "," + b];
-  };
-
-  var hoverRadius = function(name) {
-      newRad = Math.min(Math.max(6, 3 * circleSelector(name).attr("r")), 180);
-    circleSelector(name).attr("r", function(d) {return newRad; });
-  }
-
-  var blurRadius = function(name) {
-    var newRad = Math.max(1, circleSelector(name).attr("r") / 3);
-    circleSelector(name).attr("r", function(d) {return newRad; });
-  }
-
-
-  var hoverEvent = function(d) {
-    d.selected = true;
-    this.currentTarget = d;
-    hoverRadius(d.name);
-//    textSelector(d.name)
-//      .attr("data-content", function(e) {
-//        return "Calls: " + d.count;
-//      })
-
-//      .popover({
-//        placement: function() {
-//          if (d.x < this.leftGutter) {
-//            return "right";
-//          } else {
-//            return "top";
-//          }
-//        },
-//        trigger: "manual"
-//      })
-//      .popover('show');
-
-      $.each(globalDependencies.data.links, function(index, link) {
-        if (link.source.name == d.name) {
-          hoverRadius(link.target.name);
-//        circleSelector(link.target.name)
-//          .attr("data-content", function(e) {
-//            return "Calls from " + d.name + " : " + neighboring(d.name, link.target.name);
-//          })
-//          .popover({
-//            placement: function() {
-//              if (d.x < this.leftGutter) {
-//                return "right";
-//              } else {
-//                return "top";
-//              }
-//            },
-//            trigger: "manual"
-//          })
-//          .popover('show');
-        } else if (link.target.name == d.name) {
-          hoverRadius(link.source.name);
-//          circleSelector(link.source.name)
-//            .attr("data-content", function(e) {
-//              return "Calls to " + d.name + " : " + neighboring(link.source.name, d.name);
-//            })
-//            .popover({
-//              placement: function() {
-//                if (d.x < this.leftGutter) {
-//                  return "right";
-//                } else {
-//                  return "top";
-//                }
-//              },
-//              trigger: "manual"
-//            })
-//            .popover('show');
-          }
-      });
-
-    this.redraw();
-  };
-
-  var blurEvent = function(d) {
-    d.selected = false;
-    this.currentTarget = null;
-
-    blurRadius(d.name)
-//    circleSelector(d.name)
-//        .popover('hide');
-
-    $.each(globalDependencies.data.links, function(index, link) {
-      if (link.source.name == d.name) {
-            blurRadius(link.target.name);
-//        circleSelector(link.target.name).popover('hide');
-      } else if (link.target.name == d.name) {
-          blurRadius(link.source.name);
-//        circleSelector(link.source.name).popover('hide');
-      }
-    });
-
-    this.redraw();
-
-
   };
 
   GlobalDependencies.prototype.resize = function(width) {
@@ -188,163 +70,74 @@ Zipkin.GlobalDependencies = (function() {
       , border = this.border
       ;
 
-    var nodes = {};
-    var totalCalls = 0;
-    var maxDepth = 0;
-
-    $.each(this.data.links, function(i, l) {
-      totalCalls += l.count;
-
-      if (!nodes.hasOwnProperty(l.source)) {
-        nodes[l.source] = {name: l.source, depth: 0, count: l.count};
-      } else {
-        nodes[l.source].count += l.count;
-      }
-      l.source = nodes[l.source];
-
-      if (nodes.hasOwnProperty(l.target)) {
-        nodes[l.target].count += l.count;
-        nodes[l.target].depth = Math.max(nodes[l.target].depth, l.depth);
-      } else {
-        nodes[l.target] = {name: l.target, depth: l.depth, count: l.count};
-      }
-
-      l.target = nodes[l.target];
-    });
-
-    $.each(nodes, function(i, n) {
-      if (n.name === that.data.root) {
-        n.fixed = true;
-        n.x = 120;
-        n.y = height / 2;
-      }
-
-      if (n.depth > maxDepth) {
-        maxDepth = n.depth;
-      }
-    });
-
-    var calculateRadius = function(value) {
-      return Math.max((value / totalCalls) * 60, 3);
-    };
-
-    $.each(nodes, function(i, n) {
-      n.r = calculateRadius(n.count);
-    });
-
-    var project = function(d) {
-      var sx = d.source.x
-        , sy = d.source.y
-        , tx = d.target.x
-        , ty = d.target.y
-        ;
-
-      var vecX = tx - sx
-        , vecY = ty - sy
-        , len = Math.sqrt(Math.pow(vecX, 2) + Math.pow(vecY, 2)) || 1
-        , newLen = len - calculateRadius(d.target.count)
-        ;
-
-      return {
-        x: sx + (vecX * newLen / len),
-        y: sy + (vecY * newLen / len)
-      };
-    };
-
-    var projectX = function(d) { return project(d).x; };
-    var projectY = function(d) { return project(d).y; };
-
-    var tick = function(e) {
-      circle
-            .attr("cx", function(d) {
-          d.x = d.depth * ((that.width - (that.leftGutter + that.rightGutter)) / maxDepth) + that.leftGutter;
-          return d.x;
-        })
-        .attr("cy", function(d) { return d.y = Math.max(d.r + border, Math.min(height - d.r - border, d.y)); });
-
-      line
-        .attr("id", function(d) {return "line-id-" + d.source.name + "-" + d.target.name})
-        .attr("x1", function(d) { return d.source.x; })
-        .attr("y1", function(d) { return d.source.y; })
-        .attr("x2", function(d) { return projectX(d); })
-        .attr("y2", function(d) { return projectY(d); })
-        .style("stroke-width", function(d) {return Math.max(globalDependencies.linkedByIndex[d.source.name + "," + d.target.name] / totalCalls * 10, 1); });
-
-      text.attr("transform", function(d) {
-        return "translate(" + d.x + "," + d.y + ")";
-      });
-    };
-
-    var force = d3.layout.force()
-      .charge(FORCE_CHARGE)
-      .linkDistance(FORCE_LINK_DISTANCE)
-      .size([width, height])
-      .nodes(d3.values(nodes))
-      .links(this.data.links)
-      .on("tick", tick)
-      .gravity(FORCE_GRAVITY)
-      .start();
+    var formatNumber = d3.format(",.0f"),
+        format = function(d) { return formatNumber(d) + " TWh"; },
+        color = d3.scale.category20();
 
     var svg = d3.select("#global-dependency").append("svg")
-      .attr("width", width)
-      .attr("height", height);
+        .attr("width", width)
+        .attr("height", height)
+      .append("g");
 
-    /* Arrow markers on links */
-    svg.append("svg:defs").selectAll("marker")
-        .data(["directed"])
-      .enter().append("svg:marker")
-        .attr("id", String)
-        .attr("viewBox", "0 -5 10 10")
-        .attr("refX", 10)
-        .attr("refY", 0)
-        .attr("markerWidth", 6)
-        .attr("markerHeight", 6)
-        .attr("orient", "auto")
-      .append("svg:path")
-        .attr("d", "M 0,-5 L 10,0 L 0,5 z");
+    var sankey = d3.sankey()
+        .width(width)
+        .nodeWidth(15)
+        .nodePadding(8)
+        .size([width, height]);
 
-    var line = svg.append("svg:g").selectAll("line.link")
-        .data(force.links())
-      .enter().append("svg:line")
-        .attr("class", function(d) { return "link directed"; })
-        .style("stroke", "grey");
+    var path = sankey.link();
 
-    var circle = svg.append("svg:g").selectAll("circle")
-        .data(force.nodes())
-      .enter().append("svg:circle")
-        .attr("id", function(d) { return "circle-id-" + d.name; })
-        .attr("r", function(d) { return d.r; })
-        .on("mouseover", Zipkin.Util.bind(this, hoverEvent))
-        .on("mouseout", Zipkin.Util.bind(this, blurEvent))
-        .attr("rel", "popover")
-        .attr("data-original-title", function(d) { return d.name; })
-        .call(force.drag);
+    sankey
+      .nodes(this.nodes)
+      .links(this.links)
+      .layout(32);
 
-    var text = svg.append("svg:g").selectAll("text")
-        .data(force.nodes())
-      .enter().append("svg:text")
-      .attr("id", function(d) {"text-id-" + d.name; });
 
-    /* Service name text shadow for better readability */
-    text.append("svg:text")
-      .attr("class", "text-label")
-      .attr("class", "shadow")
-      .on("mouseover", Zipkin.Util.bind(this, hoverEvent))
-      .on("mouseout", Zipkin.Util.bind(this, blurEvent))
-      .attr("x", 8)
-      .attr("y", ".31em")
-      .text(function(d) { return d.name; });
+     var link = svg.append("g").selectAll(".link")
+          .data(this.links)
+        .enter().append("path")
+          .attr("class", "link")
+          .attr("d", path)
+          .style("stroke-width", function(d) { return Math.max(1, d.dy); })
+          .sort(function(a, b) { return b.dy - a.dy; });
 
-    /* Service name */
-    text.append("svg:text")
-      .attr("class", "text-label")
-      .attr("id", function(d) {"text-id-" + d.name; })
-      .on("mouseover", Zipkin.Util.bind(this, hoverEvent))
-      .on("mouseout", Zipkin.Util.bind(this, blurEvent))
-      .attr("x", 8)
-      .attr("y", ".31em")
-      .text(function(d) { return d.name; });
+      link.append("title")
+          .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
 
+      var node = svg.append("g").selectAll(".node")
+          .data(this.nodes)
+        .enter().append("g")
+          .attr("class", "node")
+          .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+        .call(d3.behavior.drag()
+          .origin(function(d) { return d; })
+          .on("dragstart", function() { this.parentNode.appendChild(this); })
+          .on("drag", dragmove));
+
+      node.append("rect")
+          .attr("height", function(d) { return d.dy; })
+          .attr("width", sankey.nodeWidth())
+          .style("fill", function(d) { return d.color = color(d.name.replace(/ .*/, "")); })
+          .style("stroke", function(d) { return d3.rgb(d.color).darker(2); })
+        .append("title")
+          .text(function(d) { return d.name + "\n" + format(d.value); });
+
+      node.append("text")
+          .attr("x", -6)
+          .attr("y", function(d) { return d.dy / 2; })
+          .attr("dy", ".35em")
+          .attr("text-anchor", "end")
+          .attr("transform", null)
+          .text(function(d) { return d.name; })
+        .filter(function(d) { return d.x < width / 2; })
+          .attr("x", 6 + sankey.nodeWidth())
+          .attr("text-anchor", "start");
+
+      function dragmove(d) {
+        d3.select(this).attr("transform", "translate(" + d.x + "," + (d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))) + ")");
+        sankey.relayout();
+        link.attr("d", path);
+      }
     return svg;
   };
 

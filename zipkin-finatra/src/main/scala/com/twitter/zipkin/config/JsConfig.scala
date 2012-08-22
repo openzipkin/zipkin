@@ -27,6 +27,7 @@ class JsConfig extends StaticResourceConfig {
     "bootstrap.js",
     "datepicker.js",
     "d3-2.9.1.js",
+    "sankey.js",
     "hogan-2.0.0.js",
 
     "zipkin.js",
