@@ -23,6 +23,12 @@
   stroke-opacity: .7;
 }
 
+.popover {
+  max-height: 200px !important;
+  max-width: 1000px;
+  overflow: scroll;
+}
+
 @media (min-width: 1200px) {
 /*  .row {
     margin-left: -30px;
