@@ -26,8 +26,8 @@ Zipkin.Config = {
   MAX_GRAPHIC_WIDTH              : 940,
   MIN_GRAPHIC_WIDTH              : 720,
 
-  MAX_AGG_WINDOW_SIZE            : 1700,
-  MAX_AGG_GRAPHIC_WIDTH          : 1700,
+  MAX_AGG_WINDOW_SIZE            : 1300,
+  MAX_AGG_GRAPHIC_WIDTH          : 1300,
   MIN_AGG_GRAPHIC_WIDTH              : 720,
 
   /* d3 Visualization variables */
