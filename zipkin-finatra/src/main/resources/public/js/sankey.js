@@ -243,7 +243,7 @@ d3.sankey = function() {
         // If the bottommost node goes outside the bounds, push it back up.
         dy = y0 - nodePadding - size[1];
         if (dy > 0) {
-          y0 = node.y -= dy + 5;
+          y0 = node.y -= dy + 10;
 
           // Push any overlapping nodes back up.
           for (i = n - 2; i >= 0; --i) {

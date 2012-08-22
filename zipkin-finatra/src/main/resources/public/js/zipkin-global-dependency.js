@@ -34,11 +34,6 @@ Zipkin.GlobalDependencies = (function() {
     , LEFT_GUTTER  = 100
     , RIGHT_GUTTER = 150
     ;
-  /** d3 Forces **/
-  var FORCE_CHARGE        = -3000
-    , FORCE_LINK_DISTANCE = 60
-    , FORCE_GRAVITY       = 0.07
-    ;
 
   var GlobalDependencies = function(nodes, links, options) {
     this.width         = options.width       || WIDTH;
@@ -51,6 +46,38 @@ Zipkin.GlobalDependencies = (function() {
     this.links = links;
 
     this.chart         = this.render();
+  };
+
+  var nodeSelector = function(name) {
+    return $("node[id='node-id-" + name + "']");
+  };
+
+  var hoverEvent = function(d) {
+    d.selected = true;
+    this.currentTarget = d;
+
+    nodeSelector(d.name)
+      .popover({
+        placement: function() {
+          if (d.x < this.leftGutter) {
+            return "right";
+          } else {
+            return "top";
+          }
+        },
+        trigger: "manual"
+      })
+      .popover('show');
+
+    this.redraw();
+  };
+
+  var blurEvent = function(d) {
+    d.selected = false;
+    this.currentTarget = null;
+
+    node(d.name).popover('hide');
+    this.redraw();
   };
 
   GlobalDependencies.prototype.resize = function(width) {
@@ -82,7 +109,7 @@ Zipkin.GlobalDependencies = (function() {
     var sankey = d3.sankey()
         .width(width)
         .nodeWidth(15)
-        .nodePadding(8)
+        .nodePadding(10)
         .size([width, height]);
 
     var path = sankey.link();
@@ -107,8 +134,12 @@ Zipkin.GlobalDependencies = (function() {
       var node = svg.append("g").selectAll(".node")
           .data(this.nodes)
         .enter().append("g")
+          .attr("id", function(d) { return "node-id-" + d.name; })
           .attr("class", "node")
           .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+          .on("mouseover", Zipkin.Util.bind(this, hoverEvent))
+          .on("mouseout", Zipkin.Util.bind(this, blurEvent))
+          .attr("rel", "popover")
         .call(d3.behavior.drag()
           .origin(function(d) { return d; })
           .on("dragstart", function() { this.parentNode.appendChild(this); })
