@@ -26,7 +26,8 @@ class CssConfig extends StaticResourceConfig {
     "bootstrap.css",
     "bootstrap-responsive.css",
     "datepicker.css",
-    "application.css",
-    "aggregates.css"
+    "application.css"
   )
+
+  val localAggregatesResources = localResources ++ Seq("aggregates.css")
 }

@@ -27,7 +27,6 @@ class JsConfig extends StaticResourceConfig {
     "bootstrap.js",
     "datepicker.js",
     "d3-2.9.1.js",
-    "sankey.js",
     "hogan-2.0.0.js",
 
     "zipkin.js",
@@ -42,13 +41,16 @@ class JsConfig extends StaticResourceConfig {
     "zipkin-onebox.js",
     "zipkin-trace-dependency.js",
     "zipkin-trace-summary.js",
-    "zipkin-global-dependency.js",
 
     "application.js",
     "application-index.js",
     "application-show.js",
-    "application-static.js",
-    "application-aggregates.js"
+    "application-static.js"
+  )
 
+  lazy val localAggregatesResources = localResources ++ Seq(
+    "sankey.js",
+    "zipkin-global-dependency.js",
+    "application-aggregates.js"
   )
 }

@@ -22,9 +22,13 @@ var Zipkin = Zipkin || {};
 Zipkin.Config = {
 
   /* Responsive grid */
-  MAX_WINDOW_SIZE                : 1000,
-  MAX_GRAPHIC_WIDTH              : 1700,
+  MAX_WINDOW_SIZE                : 1200,
+  MAX_GRAPHIC_WIDTH              : 940,
   MIN_GRAPHIC_WIDTH              : 720,
+
+  MAX_AGG_WINDOW_SIZE            : 1700,
+  MAX_AGG_GRAPHIC_WIDTH          : 1700,
+  MIN_AGG_GRAPHIC_WIDTH              : 720,
 
   /* d3 Visualization variables */
   MIN_SPANS_TO_FILTER            : 40, /* Minimum number of spans in trace to enable filtering */
