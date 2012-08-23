@@ -43,13 +43,13 @@ object QueryRequest {
    * ()                                 => None
    */
   def apply(request: Request): Option[QueryRequest] = {
-    val serviceName = request.params.get("service_name")
-    val spanName = request.params.get("span_name")
-    val timeAnnotation = request.params.get("time_annotation")
-    val annotationKey = request.params.get("annotation_key")
-    val annotationValue = request.params.get("annotation_value")
+    val serviceName = request.params.get("serviceName")
+    val spanName = request.params.get("spanName")
+    val timeAnnotation = request.params.get("timeAnnotation")
+    val annotationKey = request.params.get("annotationKey")
+    val annotationValue = request.params.get("annotationValue")
 
-    val endTimestamp = request.params.get("end_datetime") match {
+    val endTimestamp = request.params.get("endDatetime") match {
       case Some(str) => {
         fmt.parse(str).getTime * 1000
       }
