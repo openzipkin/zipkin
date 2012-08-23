@@ -17,43 +17,58 @@ var Zipkin = Zipkin || {};
 Zipkin.Application = Zipkin.Application || {};
 Zipkin.Application.Views = (function() {
 
-  /* Takes a Service model */
-  var ServiceOptionView = Backbone.View.extend({
-
+  var OptionView = Backbone.View.extend({
     tagName: "option",
-    className: "service-select",
-    events: {
-
-    },
-
     render: function() {
       var name = this.model.get("name");
       this.$el.html(name).val(name)
       return this;
     }
-
   });
 
-  var ServiceSelectView = Backbone.View.extend({
+  /*
+   * @param cookie: string
+   */
+  var CookiedOptionView = OptionView.extend({
 
+    render: function() {
+      CookiedOptionView.__super__.render.apply(this);
+      var name = this.model.get("name");
+      var cookieName = Zipkin.Base.getCookie(this.cookieName);
+      if (name === cookieName) {
+        this.$el.attr("selected", "selected");
+      }
+      return this;
+    }
+  })
+
+  /*
+   * @param optionView: subclass of OptionView
+   */
+  var SelectView = Backbone.View.extend({
     tagName: "select",
-    id: "service_name",
 
     render: function() {
       var that = this;
       this.collection.each(function(item) {
-        var view = new ServiceOptionView({model: item});
+        var view = new that.optionView({model: item});
         that.$el.append(view.render().el);
       });
+
+      var elems = $("#" + this.id);
+      if (!(elems.length !== 1 || elems[0] == this.el)) {
+        $("#" + this.id).replaceWith(this.el);
+      }
       return this;
     }
   });
 
-  s = new Zipkin.Application.Models.ServiceList();
-  s.on("change", function() {
-    v = new ServiceSelectView({collection: s})
-  });
-  s.fetch();
   
   
+  return {
+    OptionView: OptionView,
+    CookiedOptionView: CookiedOptionView,
+    SelectView: SelectView
+  };
+
 })();

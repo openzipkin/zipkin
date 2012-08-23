@@ -16,19 +16,28 @@
 var Zipkin = Zipkin || {};
 Zipkin.Application = Zipkin.Application || {};
 Zipkin.Application.Models = (function() {
-  var Service = Backbone.Model.extend({
-    defaults: function() {
-      return {
-        name: "unknown"
-      };
+  var Service = Backbone.Model.extend();
+  var ServiceList = Backbone.Collection.extend({
+    model: Service,
+    url: function() {
+      return "/api/services";
     }
   });
 
-  var ServiceList = Backbone.Collection.extend({
-    model: Service,
+  var Span = Backbone.Model.extend();
+
+  /*
+   * @param serviceName: string
+   */
+  var SpanList = Backbone.Collection.extend({
+    model: Span,
+
+    initialize: function(models, options) {
+      this.serviceName = options.serviceName;
+    },
 
     url: function() {
-      return "/api/service";
+      return "/api/spans?serviceName=" + this.serviceName;
     }
   });
 
@@ -53,6 +62,10 @@ Zipkin.Application.Models = (function() {
   return {
     Service: Service,
     ServiceList: ServiceList,
+
+    Span: Span,
+    SpanList: SpanList,
+
     Trace: Trace
   }
 })();
