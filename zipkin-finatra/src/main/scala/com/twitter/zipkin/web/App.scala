@@ -92,12 +92,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
 
   def query(request: Request): Future[Seq[JsonTraceSummary]] = {
     QueryRequest(request) match {
-      case None => {
-        Future(Seq.empty)
-      }
-      case Some(qr) => {
-        query(qr, request)
-      }
+      case Some(qr) => query(qr, request)
+      case None     => Future(Seq.empty)
     }
   }
 
@@ -140,7 +136,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
    * Returns the total list of services Zipkin is aware of
    */
   get("/api/services") { request =>
-    log.debug("/api/service")
+    log.debug("/api/services")
     getServices.map {
       render.json(_)
     }
