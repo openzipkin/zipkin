@@ -16,19 +16,12 @@
  */
 package com.twitter.zipkin.collector
 
-import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.BackgroundProcess
-import com.twitter.scrooge.BinaryThriftStructSerializer
-import com.twitter.zipkin.gen
 import com.twitter.zipkin.collector.processor.Processor
 import java.util.concurrent.{TimeUnit, BlockingQueue}
 
 class WriteQueueWorker[T](queue: BlockingQueue[T],
                        processor: Processor[T]) extends BackgroundProcess("WriteQueueWorker", false) {
-
-  private val log = Logger.get
-
-  val deserializer = new BinaryThriftStructSerializer[gen.Span] { def codec = gen.Span }
 
   def runLoop() {
     val item = queue.poll(500, TimeUnit.MILLISECONDS)
