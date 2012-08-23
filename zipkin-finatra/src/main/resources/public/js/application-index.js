@@ -38,141 +38,173 @@ Zipkin.Application.Index = (function() {
 
   var filter_submit;
 
-  /* Makes ajax call to get and populate the service names field */
-  var fetchServiceNames = function() {
-    $.ajax({
-      type: 'GET',
-      url: root_url + 'api/services',
-      success: function(data){
-        var select = $("#service_name");
+  /**
+   * Views
+   */
+  var AllSelectView = Zipkin.Application.Views.SelectView.extend({
+    render: function() {
+      var view = new this.optionView({model: new Zipkin.Application.Models.Span({name: "all"})});
+      this.$el.append(view.render().el)
+      AllSelectView.__super__.render.apply(this);
+    }
+  });
 
-        /* Use service name from cookie if exists */
-        var lastServiceName = Zipkin.Base.getCookie("lastServiceName");
+  var SpanOptionView = Zipkin.Application.Views.CookiedOptionView.extend({
+    cookieName: "lastSpanName"
+  });
 
-        for (var i = 0; i < data.length; i++) {
-          var d = data[i];
-          var option = $('<option>').val(d).text(d);
-          if (lastServiceName === d) {
-            option.attr('selected', 'selected');
+  /*
+   * @param collection: Zipkin.Application.Models.SpanList
+   */
+  var SpanSelectView = AllSelectView.extend({
+    id: "span_name",
+    attributes: {
+      name: "span_name"
+    },
+    optionView: SpanOptionView,
+
+    initialize: function() {
+      this.collection.bind("all", this.render, this);
+    }
+  });
+
+  /*
+   * @param model: Zipkin.Application.Models.Service
+   */
+  var ServiceOptionView = Zipkin.Application.Views.CookiedOptionView.extend({
+    cookieName: "lastServiceName",
+    className: "service-select"
+  });
+
+  /*
+   * @param collection: Zipkin.Application.Models.ServiceList,
+   */
+  var ServiceSelectView = Zipkin.Application.Views.SelectView.extend({
+    id: "service_name",
+    attributes: {
+      name: "service_name"
+    },
+    optionView: ServiceOptionView,
+
+    events: {
+      "add": "renderAndChange",
+      "change": "serviceNameChange",
+      "reset": "renderAndChange"
+    },
+
+    initialize: function() {
+      ServiceSelectView.__super__.initialize.apply(this);
+      this.collection.bind("all", this.renderAndChange, this);
+    },
+
+    renderAndChange: function() {
+      this.render();
+      this.serviceNameChange();
+    },
+
+    serviceNameChange: function() {
+      var selected = this.$el.children(":selected").val();
+      this.spanList = new Zipkin.Application.Models.SpanList([], {
+        serviceName: selected
+      });
+
+      this.spanList.fetch();
+      this.spanSelectView = new SpanSelectView({
+        collection: this.spanList
+      });
+
+      // FIXME this is really ugly, need to figure out a more Backboney way to do this
+      /* Fetch top annotations for this service */
+      $.ajax({
+        type: 'GET',
+        url: root_url + 'api/top_annotations?serviceName=' + selected,
+        success: function(data) {
+          if (data.length > 0) {
+            $("#time_annotation").autocomplete({source: data});
           }
-          select.append(option);
         }
+      });
 
-        $("select#service_name").change(); // To trigger the span loading below
-        $(".filter-submit button").attr('disabled', true);
-      },
-      error: function(xhr, status, error) {
-        $('#help-msg').hide();
-        $('#error-msg').text('Could not fetch service names. Query daemon might be down.');
-        $('#error-box').show();
+      /* Fetch top key value annotations for this service */
+      $.ajax({
+        type: 'GET',
+        url: root_url + 'api/top_kv_annotations?serviceName=' + selected,
+        success: function(data) {
+          if (data.length > 0) {
+            $("#annotation_key").autocomplete({source: data});
+          }
+        }
+      });
+    }
+
+  });
+
+  /*
+   * @param serviceList: Zipkin.Application.Models.ServiceList
+   */
+  var IndexView = Backbone.View.extend({
+    el: $("#index-view"),
+
+    initialize: function() {
+      var that = this;
+      this.serviceList = this.options.serviceList;
+      this.serviceSelectView = new ServiceSelectView({
+        collection: this.serviceList
+      });
+      this.serviceSelectView.on("change", function() {
+        this.spanSelectView.trigger("change");
+      });
+      if (this.serviceList.length === 0) {
+        this.serviceList.fetch({
+          success: function() {
+            that.render();
+          }
+        });
+      } else {
+        this.serviceSelectView.renderAndChange();
       }
-    });
-  };
+    },
 
-  var serviceNameChange = function(){
-    // We don't want to display the previous service's spans
-    // So we wipe it and just put "all" in there while we wait for the response
-    $('#span_name').text('');
+    render: function() {
+      this.serviceSelectView.render();
+      return this;
+    }
+  });
 
-    var service_name = $(this).val()
-      , selected_service = { 'service_name': service_name }
+  var parseQueryResults = function(queryResults) {
+    var minStartTime = Number.MAX_VALUE
+      , maxStartTime = Number.MIN_VALUE
+      , maxDuration  = Number.MIN_VALUE
       ;
 
-    $.ajax({
-      type: 'GET',
-      url: root_url + 'api/spans?serviceName=' + service_name,
-      success: function(data){
-        var spanSelector = $('#span_name');
-
-        /* Use span name from cookie if exists */
-        var lastSpanName = Zipkin.Base.getCookie("lastSpanName");
-
-        var allOption = $('<option>').val("all").text("all");
-        if (lastSpanName === "all") {
-          allOption.attr('selected', 'selected');
-        }
-        spanSelector.append(allOption);
-
-        for(var i = 0; i < data.length; i++) {
-          var d = data[i];
-          var option = $('<option>').val(d).text(d);
-          if (lastSpanName === d) {
-            option.attr('selected', 'selected');
-          }
-          spanSelector.append(option);
-        }
-
-        spanSelector.change();
-        $(".filter-submit button").removeAttr('disabled');
-
-        if (useQueryParams) {
-          /* Push any query params to the form and submit if they exist */
-          var selectSelector = function(name) { return 'select[name=' + name + ']'; };
-          var inputSelector = function(name) { return 'input[name=' + name + ']'; };
-
-          var formFields = {
-            "service_name"     : selectSelector('service_name'),
-            "span_name"        : selectSelector('span_name'),
-            "end_datetime"      : $('input[name=end_date]').val() + " " + $('input[name=end_time]').val(),
-            "limit"            : inputSelector('limit'),
-            "time_annotation"  : inputSelector('time_annotation'),
-            "annotation_key"   : inputSelector('annotation_key'),
-            "annotation_value" : inputSelector('annotation_value')
-          };
-          var any = false;
-          $.each(useQueryParams, function(i, pair) {
-            var k = pair[0]
-              , v = pair[1]
-              ;
-            if (k === "adjust_clock_skew") {
-              if (v == "true") {
-                Zipkin.Base.enableClockSkewBtn();
-              } else if (v == "false") {
-                Zipkin.Base.disableClockSkewBtn();
-              }
-            } else if (k in formFields) {
-              var selector = formFields[k];
-              $(selector).val(v);
-              any = true;
-            }
-          });
-          if (any) {
-            filter_submit();
-          }
-          useQueryParams = false;
-        }
-      },
-      error: function(xhr, status, error) {
-        $('#help-msg').hide();
-        $('#error-msg').text('Could not fetch span names. Query daemon might be down.');
-        $('#error-box').show();
-      }
+    /* Find the longest one */
+    $.each(queryResults, function(i, d) {
+      maxDuration = Math.max(d.durationMicro / 1000, maxDuration);
     });
 
-    /* Fetch top annotations for this service */
-    $.ajax({
-      type: 'GET',
-      url: root_url + 'api/top_annotations?serviceName=' + service_name,
-      success: function(data) {
-        if (data.length > 0) {
-          $("#time_annotation").autocomplete({source: data});
-        }
-      }
+    var parsed = $.map(queryResults, function(e) {
+      minStartTime = minStartTime < e.startTimestamp ? minStartTime : e.startTimestamp;
+      maxStartTime = maxStartTime > e.startTimestamp ? maxStartTime : e.startTimestamp;
+
+      e.duration = e.durationMicro / 1000;
+      e.width = (e.duration / maxDuration) * 100;
+      e.serviceCounts = $.map(e.serviceCounts, function(count, key) {
+        return { name: key, count: count };
+      });
+      e.url = root_url + "show/" + e.traceId;
+      e.startTime = Zipkin.Util.timeAgoInWords(e.startTimestamp / 1000);
+      return e;
     });
 
-    /* Fetch top key value annotations for this service */
-    $.ajax({
-      type: 'GET',
-      url: root_url + 'api/top_kv_annotations?serviceName=' + service_name,
-      success: function(data) {
-        if (data.length > 0) {
-          $("#annotation_key").autocomplete({source: data});
-        }
-      }
-    });
+    return {
+      data: parsed,
+      minStartTime: minStartTime,
+      maxStartTime: maxStartTime,
+      maxDuration: maxDuration
+    };
   };
 
-  var initialize = function() {
+  var initialize = function(services, queryResults) {
     /**
      * Helper functions for trace query results
      */
@@ -398,30 +430,8 @@ Zipkin.Application.Index = (function() {
           $(".service-tags").empty();
           addServiceTag(service_name);
 
-
-          var minStartTime = Number.MAX_VALUE
-            , maxStartTime = Number.MIN_VALUE
-            , maxDuration  = Number.MIN_VALUE
-            ;
-
-          /* Find the longest one */
-          $.each(data, function(i, d) {
-            maxDuration = Math.max(d.durationMicro / 1000, maxDuration);
-          });
-
-          var traces = $.map(data, function(e) {
-            minStartTime = minStartTime < e.startTimestamp ? minStartTime : e.startTimestamp;
-            maxStartTime = maxStartTime > e.startTimestamp ? maxStartTime : e.startTimestamp;
-
-            e.duration = e.durationMicro / 1000;
-            e.width = (e.duration / maxDuration) * 100;
-            e.serviceCounts = $.map(e.serviceCounts, function(count, key) {
-              return { name: key, count: count };
-            });
-            e.url = root_url + "show/" + e.traceId;
-            e.startTime = Zipkin.Util.timeAgoInWords(e.startTimestamp / 1000);
-            return e;
-          });
+          var parsed = parseQueryResults(data);
+          var traces = parsed.data;
           traces = updateFilteredServices(traces);
 
           sortQueryResults(traces);
@@ -436,7 +446,7 @@ Zipkin.Application.Index = (function() {
 
           updateFilterCurrentCount(data.length);
           updateFilterTotalCount(data.length);
-          updateFilterDuration(minStartTime, maxStartTime);
+          updateFilterDuration(parsed.minStartTime, parsed.maxStartTime);
 
           /* Shove the query string into the static link */
           searchQuery = this.url.split("?")[1];
@@ -533,11 +543,39 @@ Zipkin.Application.Index = (function() {
       useQueryParams = params;
     }
 
-    fetchServiceNames();
+    var serviceList = new Zipkin.Application.Models.ServiceList(services);
+    var indexView = new IndexView({
+      serviceList: serviceList
+    });
 
-    /* Populate span selector after a service has been selected */
-    $('#service_name').change(serviceNameChange);
+    if (queryResults !== undefined && queryResults.length > 0) {
+      var parsed = parseQueryResults(queryResults);
+      var traces = parsed.data
+      var serviceName = $("#service_name option:selected").val();
+      addServiceTag(serviceName);
 
+      traces = updateFilteredServices(traces);
+      sortQueryResults(traces);
+
+      templatize(TEMPLATES.QUERY, function(template) {
+        var context = { traces: traces };
+        var content = template.render(context);
+        $('#loading-data').hide();
+        refreshQueryResults(content);
+        Zipkin.Base.enableClockSkewBtn();
+      });
+
+      updateFilterCurrentCount(traces.length);
+      updateFilterTotalCount(traces.length);
+      updateFilterDuration(parsed.minStartTime, parsed.maxStartTime);
+
+      $('#help-msg').hide();
+      $('#error-box').hide();
+      $(".infobar").show();
+      $(".service-tag-list").show();
+    }
+
+    $(".filter-submit button").removeAttr('disabled');
   };
 
   return {
