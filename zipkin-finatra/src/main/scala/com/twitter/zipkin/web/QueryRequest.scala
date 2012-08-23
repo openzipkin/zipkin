@@ -35,15 +35,20 @@ object QueryRequest {
    * - limit: Int, default 100
    *
    * Mapping (excluding above parameters):
-   * (span_name)                        => SpanQueryRequest
-   * (time_annotation)                  => AnnotationQueryRequest
-   * (annotation_key, annotation_value) => KeyValueAnnotationQueryRequest
+   * (span_name)                        => Some(SpanQueryRequest)
+   * (time_annotation)                  => Some(AnnotationQueryRequest)
+   * (annotation_key, annotation_value) => Some(KeyValueAnnotationQueryRequest)
    *
-   * (annotation_key)                   => ServiceQueryRequest
-   * ()                                 => ServiceQueryRequest
+   * (annotation_key)                   => Some(ServiceQueryRequest)
+   * ()                                 => None
    */
-  def apply(request: Request): QueryRequest = {
-    val serviceName = request.params("service_name")
+  def apply(request: Request): Option[QueryRequest] = {
+    val serviceName = request.params.get("service_name")
+    val spanName = request.params.get("span_name")
+    val timeAnnotation = request.params.get("time_annotation")
+    val annotationKey = request.params.get("annotation_key")
+    val annotationValue = request.params.get("annotation_value")
+
     val endTimestamp = request.params.get("end_datetime") match {
       case Some(str) => {
         fmt.parse(str).getTime * 1000
@@ -55,38 +60,23 @@ object QueryRequest {
     val limit = request.params.get("limit").map{ _.toInt }.getOrElse(100)
     val order = gen.Order.DurationDesc
 
-    request.params.get("span_name") match {
-      case Some("all") => {
-        SpanQueryRequest(serviceName, "", endTimestamp, limit, order)
-      }
-      case Some(spanName) => {
-        SpanQueryRequest(serviceName, spanName, endTimestamp, limit, order)
-      }
-      case None => {
-        request.params.get("time_annotation") match {
-          case Some(ann) => {
-            AnnotationQueryRequest(serviceName, ann, endTimestamp, limit, order)
-          }
-          case None => {
-            request.params.get("annotation_key") match {
-              case Some(key) => {
-                request.params.get("annotation_value") match {
-                  case Some(value) => {
-                    KeyValueAnnotationQueryRequest(serviceName, key, value, endTimestamp, limit, order)
-                  }
-                  case None => {
-                    ServiceQueryRequest(serviceName, endTimestamp, limit, order)
-                  }
-                }
-              }
-              case None => {
-                ServiceQueryRequest(serviceName, endTimestamp, limit, order)
-              }
-            }
-          }
+    val spanQueryRequest = for (service <- serviceName; span <- spanName)
+      yield span match {
+        case "all" => {
+          SpanQueryRequest(service, "", endTimestamp, limit, order)
+        }
+        case _ => {
+          SpanQueryRequest(service, span, endTimestamp, limit, order)
         }
       }
-    }
+
+    val timeAnnotationQueryRequest = for (service <- serviceName; ann <- timeAnnotation)
+      yield AnnotationQueryRequest(service, ann, endTimestamp, limit, order)
+
+    val keyValueQueryRequest = for (service <- serviceName; key <- annotationKey; value <- annotationValue)
+      yield KeyValueAnnotationQueryRequest(service, key, value, endTimestamp, limit, order)
+
+    spanQueryRequest orElse timeAnnotationQueryRequest orElse keyValueQueryRequest
   }
 }
 
