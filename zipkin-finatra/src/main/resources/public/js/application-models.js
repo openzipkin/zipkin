@@ -41,24 +41,6 @@ Zipkin.Application.Models = (function() {
     }
   });
 
-  var Trace = Backbone.Model.extend({
-    defaults: function() {
-      return {
-        id: 0
-      };
-    },
-
-    initialize: function() {
-      if (!this.get("id")) {
-        this.set({"id": this.defaults.id})
-      }
-    },
-
-    url: function() {
-      return "/api/trace/944690799309474105";
-    }
-  });
-
   return {
     Service: Service,
     ServiceList: ServiceList,
