@@ -15,7 +15,6 @@
  */
 
 /*global root_url:false */
-//= require zipkin
 var Zipkin = Zipkin || {};
 Zipkin.Application = Zipkin.Application || {};
 Zipkin.Application.Index = (function() {
