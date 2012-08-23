@@ -41,11 +41,82 @@ Zipkin.Application.Models = (function() {
     }
   });
 
+  /*
+   * @param serviceName: string
+   * @param endTime: string
+   * @param limit: int
+   */
+  var Query = Backbone.Model.extend({
+    execute: function() {
+      var params = this.params();
+      var results = new (QueryResults.extend({
+        url: function() {
+          return "/api/query?" + $.param(params)
+        }
+      }));
+      results.fetch();
+      return results;
+    },
+
+    params: function() {
+      return {
+        serviceName: this.get("serviceName"),
+        endDatetime: this.get("endDatetime"),
+        limit: this.get("limit")
+      };
+    }
+  });
+
+  /*
+   * @param spanName: string
+   */
+  var SpanQuery = Query.extend({
+    params: function() {
+      return $.extend({}, SpanQuery.__super__.params.apply(this), {
+        spanName: this.get("spanName")
+      });
+    }
+  });
+
+  /*
+   * @param timeAnnotation: string
+   */
+  var AnnotationQuery = Query.extend({
+    params: function() {
+      return $.extend({}, AnnotationQuery.__super__.params.apply(this), {
+        timeAnnotation: this.get("timeAnnotation")
+      });
+    }
+  });
+
+  /*
+   * @param annotationKey: string
+   * @param annotationValue: string
+   */
+  var KeyValueQuery = Query.extend({
+    params: function() {
+      return $.extend({}, KeyValueQuery.__super__.params.apply(this), {
+        annotationKey: this.get("annotationKey"),
+        annotationValue: this.get("annotationValue")
+      });
+    }
+  });
+
+  var TraceSummary = Backbone.Model.extend();
+  var QueryResults = Backbone.Collection.extend({
+    model: TraceSummary
+  });
+
   return {
     Service: Service,
     ServiceList: ServiceList,
 
     Span: Span,
-    SpanList: SpanList
+    SpanList: SpanList,
+
+    Query: Query,
+    SpanQuery: SpanQuery,
+    AnnotationQuery: AnnotationQuery,
+    KeyValueQuery: KeyValueQuery
   }
 })();
