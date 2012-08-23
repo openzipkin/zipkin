@@ -46,8 +46,6 @@ Zipkin.Application.Models = (function() {
     ServiceList: ServiceList,
 
     Span: Span,
-    SpanList: SpanList,
-
-    Trace: Trace
+    SpanList: SpanList
   }
 })();
