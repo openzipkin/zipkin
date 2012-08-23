@@ -138,6 +138,43 @@ Zipkin.Application.Index = (function() {
 
   });
 
+  var QueryResultsView = Backbone.View.extend({
+    initialize: function() {
+      this.collection.bind("all", this.render, this);
+    },
+
+    render: function() {
+      var data = this.collection.toJSON();
+
+      // FIXME more backbony
+      var parsed = parseQueryResults(data);
+      var traces = parsed.data
+      var serviceName = $("#service_name option:selected").val();
+      addServiceTag(serviceName);
+
+      traces = updateFilteredServices(traces);
+      sortQueryResults(traces);
+
+      templatize(TEMPLATES.QUERY, function(template) {
+        var context = { traces: traces };
+        var content = template.render(context);
+        $('#loading-data').hide();
+        refreshQueryResults(content);
+        Zipkin.Base.enableClockSkewBtn();
+      });
+
+      updateFilterCurrentCount(traces.length);
+      updateFilterTotalCount(traces.length);
+      updateFilterDuration(parsed.minStartTime, parsed.maxStartTime);
+
+      $('#help-msg').hide();
+      $('#error-box').hide();
+      $(".infobar").show();
+      $(".service-tag-list").show();
+      return this;
+    }
+  });
+
   /*
    * @param serviceList: Zipkin.Application.Models.ServiceList
    */
@@ -203,34 +240,104 @@ Zipkin.Application.Index = (function() {
     };
   };
 
-  var initialize = function(services, queryResults) {
-    /**
-     * Helper functions for trace query results
-     */
-
-    /* Adds a service tag to the service tag list */
-    var addServiceTag = function(service_name, closeable) {
-      if ($("span[id*='service-tag-" + service_name + "']").length === 0) {
-        templatize(TEMPLATES.SERVICE_TAG, function(template) {
-          var context = { name : service_name, closeable: closeable };
-          var content = template.render(context);
-          $(".service-tags").append(content);
-        });
-      }
-    };
-
-    /* Gets the services that are current in the service tag list */
-    var getFilteredServices = function () {
-      var services = {};
-      $(".service-tag").each(function (i, e) {
-        services[$(e).text()] = 1;
+  /* Adds a service tag to the service tag list */
+  var addServiceTag = function(service_name, closeable) {
+    if ($("span[id*='service-tag-" + service_name + "']").length === 0) {
+      templatize(TEMPLATES.SERVICE_TAG, function(template) {
+        var context = { name : service_name, closeable: closeable };
+        var content = template.render(context);
+        $(".service-tags").append(content);
       });
-      return services;
-    };
+    }
+  };
 
-    var getSortOrder = function() {
-      return $(".js-sort-order").val();
-    };
+  /* Gets the services that are current in the service tag list */
+  var getFilteredServices = function () {
+    var services = {};
+    $(".service-tag").each(function (i, e) {
+      services[$(e).text()] = 1;
+    });
+    return services;
+  };
+
+  var getSortOrder = function() {
+    return $(".js-sort-order").val();
+  };
+
+  var sortQueryResults = function(data) {
+    /* Option index directly maps to the correct sort order */
+    var sortOrder = getSortOrder();
+
+    data.sort(function(a, b) {
+      if (sortOrder == ORDER_TIMESTAMP_ASC) {
+        return new Date(a.startTimestamp) - new Date(b.startTimestamp);
+      } else if (sortOrder == ORDER_TIMESTAMP_DESC) {
+        return new Date(b.startTimestamp) - new Date(a.startTimestamp);
+      } else if (sortOrder == ORDER_DURATION_ASC) {
+        return a.duration - b.duration;
+      } else {
+        /* ORDER_DURATION_DESC */
+        return b.duration - a.duration;
+      }
+    });
+  };
+
+  /* Change the label colors of query results to reflect those that are filtered */
+  var updateFilteredServices = function (traces) {
+    var services = getFilteredServices();
+    return $.map(traces, function(t) {
+      $.each(t.serviceCounts, function (i, s) {
+        if (services && services.hasOwnProperty(s[0])) {
+          s.labelColor = "service-tag-filtered";
+        } else {
+          s.labelColor = "";
+        }
+      });
+      return t;
+    });
+  };
+
+  /* Plug in the new data */
+  var refreshQueryResults = function (content) {
+    $('#query-results').hide();
+    $('#query-results').html(content);
+    $('#query-results').show();
+  };
+
+  /* Update the counter for number of traces displayed on the page */
+  var updateFilterCurrentCount = function(n) {
+    $(".filter-current").text(n);
+  };
+
+  /* Update the counter for number of traces we have data for */
+  var updateFilterTotalCount = function(n) {
+    $(".filter-total").text(n);
+  };
+
+  var updateFilterDuration = function(minStartStr, maxStartStr) {
+    var min = new Date(minStartStr)
+      , max = new Date(maxStartStr)
+      , delta = max.getTime() - min.getTime()
+      , suffix
+      ;
+
+
+    if (delta < 1000) {
+      suffix = "ms";
+    } else {
+      delta = delta / 1000;
+      if (delta < 60) {
+        suffix = "seconds";
+      } else {
+        delta = delta / 60;
+        suffix = "minutes";
+      }
+    }
+
+    $(".filter-duration").text(delta.toFixed(3) + " " + suffix);
+  };
+
+  var initialize = function(services, queryResults) {
 
     /* Filter the query results based on service tag list */
     var filterQueryResults = function (services) {
@@ -250,79 +357,6 @@ Zipkin.Application.Index = (function() {
         });
         return satisfied;
       });
-    };
-
-    var sortQueryResults = function(data) {
-      /* Option index directly maps to the correct sort order */
-      var sortOrder = getSortOrder();
-
-      data.sort(function(a, b) {
-        if (sortOrder == ORDER_TIMESTAMP_ASC) {
-          return new Date(a.startTimestamp) - new Date(b.startTimestamp);
-        } else if (sortOrder == ORDER_TIMESTAMP_DESC) {
-          return new Date(b.startTimestamp) - new Date(a.startTimestamp);
-        } else if (sortOrder == ORDER_DURATION_ASC) {
-          return a.duration - b.duration;
-        } else {
-          /* ORDER_DURATION_DESC */
-          return b.duration - a.duration;
-        }
-      });
-    };
-
-    /* Change the label colors of query results to reflect those that are filtered */
-    var updateFilteredServices = function (traces) {
-      var services = getFilteredServices();
-      return $.map(traces, function(t) {
-        $.each(t.serviceCounts, function (i, s) {
-          if (services && services.hasOwnProperty(s[0])) {
-            s.labelColor = "service-tag-filtered";
-          } else {
-            s.labelColor = "";
-          }
-        });
-        return t;
-      });
-    };
-
-    /* Plug in the new data */
-    var refreshQueryResults = function (content) {
-      $('#query-results').hide();
-      $('#query-results').html(content);
-      $('#query-results').show();
-    };
-
-    /* Update the counter for number of traces displayed on the page */
-    var updateFilterCurrentCount = function(n) {
-      $(".filter-current").text(n);
-    };
-
-    /* Update the counter for number of traces we have data for */
-    var updateFilterTotalCount = function(n) {
-      $(".filter-total").text(n);
-    };
-
-    var updateFilterDuration = function(minStartStr, maxStartStr) {
-      var min = new Date(minStartStr)
-        , max = new Date(maxStartStr)
-        , delta = max.getTime() - min.getTime()
-        , suffix
-        ;
-
-
-      if (delta < 1000) {
-        suffix = "ms";
-      } else {
-        delta = delta / 1000;
-        if (delta < 60) {
-          suffix = "seconds";
-        } else {
-          delta = delta / 60;
-          suffix = "minutes";
-        }
-      }
-
-      $(".filter-duration").text(delta.toFixed(3) + " " + suffix);
     };
 
     /* Click handler for adding a service filter */
@@ -376,92 +410,66 @@ Zipkin.Application.Index = (function() {
       $('#error-box').hide();
       $(".infobar").hide();
       $('#query-results').hide();
+
+      var baseParams = {
+        serviceName: $('select[name=service_name]').val(),
+        endDatetime: $('input[name=end_date]').val() + " " + $('input[name=end_time]').val(),
+        limit: $('input[name=limit]').val()
+      }
+
+      Zipkin.Base.setCookie("lastServiceName", baseParams.serviceName);
+
+      var tabType = $("li.active > a.filter-tab").attr("id")
+      var query = null;
+      var error = false;
+      if (tabType == "filter-span-tab") {
+        var spanName = $('select[name=span_name]').val();
+        if (spanName === "") {
+          error = true;
+        } else {
+          query = new Zipkin.Application.Models.SpanQuery($.extend({}, baseParams, {
+            spanName: spanName
+          }));
+          Zipkin.Base.setCookie("lastSpanName", spanName);
+        }
+      } else if (tabType == "filter-annotation-tab") {
+        var timeAnnotation = $('input[name=time_annotation]').val();
+        if (timeAnnotation === "") {
+          error = true;
+        } else {
+          query = new Zipkin.Application.Models.AnnotationQuery($.extend({}, baseParams, {
+            timeAnnotation: timeAnnotation
+          }));
+        }
+      } else if (tabType == "filter-key-value-tab") {
+        var key = $('input[name=annotation_key]').val();
+        var value = $('input[name=annotation_value]').val();
+        if (key === "" || value === "") {
+          error = true;
+        } else {
+          query = new Zipkin.Application.Models.KeyValueQuery($.extend({}, baseParams, {
+            annotationKey    : key,
+            annotationValue  : value
+          }));
+        }
+      } else {
+        $('#error-box').text("Invalid query").show();
+        return false;
+      }
+
+      if (error) {
+        $('#error-box').text("Invalid query").show();
+        return false;
+      }
+
       $('#loading-data').show();
 
-      $('.tab-content > div').each(function(){
-        // Clear fields in inactive tabs before submission so server processes the field of the user's intent
-        if(!$(this).hasClass('active')) {
-          if($(this).find('input').length !== 0) {
-            $(this).find('input').val('');
-          } else {
-            $(this).find('select').val('all');
-          }
-        }
-      });
+      var queryResults = query.execute();
+      queryResultsView = new QueryResultsView({collection: queryResults});
 
-      var service_name = $('select[name=service_name]').val();
-      var spanName = $('select[name=span_name]').val()
-
-      /* Cookie this service */
-      Zipkin.Base.setCookie("lastServiceName", service_name);
-      Zipkin.Base.setCookie("lastSpanName", spanName);
-
-      // Let's fetch the prerendered results
-      var query = {
-        "service_name"      : service_name,
-        "end_datetime"      : $('input[name=end_date]').val() + " " + $('input[name=end_time]').val(),
-        "limit"             : $('input[name=limit]').val(),
-        "span_name"         : spanName,
-        "time_annotation"   : $('input[name=time_annotation]').val(),
-        "annotation_key"    : $('input[name=annotation_key]').val(),
-        "annotation_value"  : $('input[name=annotation_value]').val(),
-        "adjust_clock_skew" : Zipkin.Base.clockSkewState() ? 'true' : 'false'
-      };
-
-      var url_method = 'api/query';
-
-      $.ajax({
-        type: 'GET',
-        url: root_url + url_method,
-        data: query,
-        success: function(data){
-          if (data.length === 0) {
-            $('#loading-data').hide();
-            $('#error-msg').text("Didn't find any traces for this search :(");
-            $('#error-box').show();
-            return;
-          } else {
-            $("#error-box").hide();
-          }
-
-          traceData = data;
-
-          $(".service-tags").empty();
-          addServiceTag(service_name);
-
-          var parsed = parseQueryResults(data);
-          var traces = parsed.data;
-          traces = updateFilteredServices(traces);
-
-          sortQueryResults(traces);
-
-          templatize(TEMPLATES.QUERY, function(template) {
-            var context = { traces: traces };
-            var content = template.render(context);
-            $('#loading-data').hide();
-            refreshQueryResults(content);
-            Zipkin.Base.enableClockSkewBtn();
-          });
-
-          updateFilterCurrentCount(data.length);
-          updateFilterTotalCount(data.length);
-          updateFilterDuration(parsed.minStartTime, parsed.maxStartTime);
-
-          /* Shove the query string into the static link */
-          searchQuery = this.url.split("?")[1];
-          $("#static-search-link").attr("href", root_url + "?" + searchQuery).show();
-
-          $(".infobar").show();
-          $(".service-tag-list").show();
-        },
-        error: function(xhr, status, error) {
-          $('#query-results').hide();
-          $('#loading-data').hide();
-          $('#error-msg').text('Could not fetch trace data. Sorry buddy.');
-          $('#error-box').show();
-          Zipkin.Base.enableClockSkewBtn();
-        }
-      });
+      /* Shove the query string into the static link */
+      searchQuery = queryResults.url().split("?")[1];
+      $("#static-search-link").attr("href", root_url + "?" + searchQuery).show();
 
       return false;
     };
