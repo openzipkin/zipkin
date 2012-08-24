@@ -104,7 +104,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
         client.getTraceIdsBySpanName(r.serviceName, r.spanName, r.endTimestamp, r.limit, r.order)
       }
       case r: AnnotationQueryRequest => {
-        client.getTraceIdsByAnnotation(r.serviceName, r.annotation, null, r.endTimestamp, r.limit, r.order)
+        client.getTraceIdsByAnnotation(r.serviceName, r.annotation, ByteBuffer.wrap("".getBytes), r.endTimestamp, r.limit, r.order)
       }
       case r: KeyValueAnnotationQueryRequest => {
         client.getTraceIdsByAnnotation(r.serviceName, r.key, ByteBuffer.wrap(r.value.getBytes), r.endTimestamp, r.limit, r.order)
