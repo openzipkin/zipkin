@@ -30,7 +30,7 @@ trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
   var serverPort : Int = 8080
   var adminPort  : Int = 9902
 
-  override val tracerFactory = ZipkinTracer(statsReceiver)
+  override lazy val tracerFactory = ZipkinTracer(statsReceiver)
 
   var rootUrl: String = "http://localhost/"
   var pinTtl: Duration = 30.days
