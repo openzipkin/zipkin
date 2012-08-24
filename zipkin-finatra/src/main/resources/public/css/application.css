@@ -19,7 +19,7 @@ body {
   background: none;
   padding-top: 40px;
   height: 100%;
-  font: 12px sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 /* modifiers */
@@ -571,7 +571,6 @@ ul.traces li:hover .timestamp .label {
 /** Span text */
 .bar-text {
   fill: #000000;
-  font-family: arial;
   font-size: 10px;
   text-anchor: start;
 }
