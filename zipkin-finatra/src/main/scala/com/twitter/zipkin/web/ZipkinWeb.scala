@@ -78,6 +78,7 @@ class ZipkinWeb(config: ZipkinWebConfig) extends admin.Service {
         .codec(Http())
         .bindTo(new InetSocketAddress(config.serverPort))
         .name("ZipkinWeb")
+        .tracerFactory(config.tracerFactory)
         .build(service)
     }
     log.info("Finatra service started in port: " + config.serverPort)
