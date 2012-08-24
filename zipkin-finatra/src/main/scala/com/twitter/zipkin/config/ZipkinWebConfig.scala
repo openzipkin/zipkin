@@ -17,6 +17,7 @@ package com.twitter.zipkin.config
 
 import com.twitter.common.zookeeper.ZooKeeperClient
 import com.twitter.conversions.time._
+import com.twitter.finagle.zipkin.thrift.ZipkinTracer
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.Duration
 import com.twitter.zipkin.gen
@@ -28,6 +29,8 @@ trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
 
   var serverPort : Int = 8080
   var adminPort  : Int = 9902
+
+  override val tracerFactory = ZipkinTracer(statsReceiver)
 
   var rootUrl: String = "http://localhost/"
   var pinTtl: Duration = 30.days
