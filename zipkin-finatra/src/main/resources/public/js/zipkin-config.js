@@ -26,9 +26,9 @@ Zipkin.Config = {
   MAX_GRAPHIC_WIDTH              : 940,
   MIN_GRAPHIC_WIDTH              : 720,
 
-  MAX_AGG_WINDOW_SIZE            : 1300,
+  MAX_AGG_WINDOW_SIZE            : 1000,
   MAX_AGG_GRAPHIC_WIDTH          : 1300,
-  MIN_AGG_GRAPHIC_WIDTH              : 720,
+  MIN_AGG_GRAPHIC_WIDTH              : 740,
 
   /* d3 Visualization variables */
   MIN_SPANS_TO_FILTER            : 40, /* Minimum number of spans in trace to enable filtering */

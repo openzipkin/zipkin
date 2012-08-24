@@ -28,7 +28,7 @@ Zipkin.GlobalDependencies = (function() {
 
   /* Constants */
   /** Chart **/
-  var WIDTH        = 1300
+  var WIDTH        = 1800
     , HEIGHT       = 1000
     , BORDER       = 5
     , LEFT_GUTTER  = 100
@@ -86,11 +86,12 @@ Zipkin.GlobalDependencies = (function() {
   var getText = function(d) {
     var s = "<table><thead><tr><th>Service Called</th><th># of calls</th></thead>";
     var count = 0;
-    for (var i = 0; i < d.sourceLinks.length; i++) {
-      var targetName = d.sourceLinks[i].target.name;
+    sorted = d.sourceLinks.sort(function(l1, l2) { return -(l1.count - l2.count) });
+    for (var i = 0; i < sorted.length; i++) {
+      var targetName = sorted[i].target.name;
       var truncated = targetName.length > 30 ? targetName.substring(0, 27) + "..." : targetName;
-      s +=  "<tr><td>" + truncated + "</td><td>" + d.sourceLinks[i].count + "</td></tr>";
-      count += d.sourceLinks[i].count;
+      s +=  "<tr><td>" + truncated + "</td><td>" + sorted[i].count + "</td></tr>";
+      count += sorted[i].count;
     }
     s += "<tr><td><strong>Total</strong></td><td>" + count + "</td></tr></table>";
     return s;
@@ -142,6 +143,7 @@ Zipkin.GlobalDependencies = (function() {
           .attr("class", "link")
           .attr("d", path)
           .style("stroke-width", function(d) { return Math.max(1, d.dy); })
+          .style("z-index", -1)
           .sort(function(a, b) { return b.dy - a.dy; });
 
       link.append("title")
@@ -158,10 +160,11 @@ Zipkin.GlobalDependencies = (function() {
           .attr("rel", "popover")
           .attr("data-original-title", function(d) { return d.name; })
           .attr("data-content", function(d) { return getText(d); })
+          .style("z-index", 5)
         .call(d3.behavior.drag()
-          .origin(function(d) { return d; })
-          .on("dragstart", function() { this.parentNode.appendChild(this); })
-          .on("drag", dragmove));
+           .origin(function(d) { return d; })
+           .on("dragstart", function() { this.parentNode.appendChild(this); })
+           .on("drag", dragmove));
 
       node.append("rect")
           .attr("height", function(d) { return d.dy; })
@@ -170,6 +173,18 @@ Zipkin.GlobalDependencies = (function() {
           .style("stroke", function(d) { return d3.rgb(d.color).darker(2); })
         .append("title")
           .text(function(d) { return d.name + "\n" + format(d.value); });
+
+
+      // This is quite janky but for some reason the text won't drag, so we create a rectangle that exactly covers the text
+      // and make it invisible so we can drag and click the text
+      node.append("rect")
+          .attr("x", function(d) {return -6 - 6 *  d.name.length - 5; } )
+          .attr("y", function(d) { return d.dy / 2 - 10; })
+          .attr("width", function(d) {return 6 * d.name.length + 5; } )
+          .attr("height", function(d) { return 19; })
+          .style("opacity", 0)
+        .filter(function(d) { return d.x < width / 2; })
+          .attr("x", 6 + sankey.nodeWidth())
 
       node.append("text")
           .attr("x", -6)

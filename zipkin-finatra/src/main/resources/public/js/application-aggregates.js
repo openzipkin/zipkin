@@ -25,6 +25,76 @@ Zipkin.Application.Aggregates = (function() {
   var initialize = function () {
     Zipkin.Base.initialize();
 
+    var href = window.location.href;
+
+    $(".js-zipkin-navbar > li > a").each(function (index, elem) {
+      var parent = $(elem).parent();
+      if ($(elem).attr("href") == href ) {
+        parent.addClass("active");
+      } else if (parent.hasClass("active")) {
+        parent.removeClass("active");
+      }
+    });
+
+    var pillSelector = function(name) {
+      return $("[id=" + name + "-pill]").parent();
+    }
+
+    pillSelector("dependencies").on('click', function(event) {
+      pillSelector("service-report").removeClass("active");
+      pillSelector("dependencies").addClass("active");
+      $(".container").width(1500);
+      $("#service-report").hide();
+      $("#global-dependency").show();
+    });
+
+    pillSelector("service-report").on('click', function(event) {
+      pillSelector("dependencies").removeClass("active");
+      pillSelector("service-report").addClass("active");
+      $(".container").width(1210);
+      $("#global-dependency").hide();
+      $("#service-report").show();
+    });
+
+
+    $('.date-input').each(function() {
+      var self = $(this)
+        , self_val = self.val();
+
+      $(this).DatePicker({
+        eventName: 'focus',
+        format:'m-d-Y',
+        date: self_val,
+        current: self_val,
+        starts: 0,
+        // calendars: 2,
+        // mode: "range",
+        onBeforeShow: function(){
+          self.DatePickerSetDate(self_val, true);
+        },
+        onChange: function(formated, dates){
+          self.val(formated);
+          // self.DatePickerHide();
+        }
+      }).blur(function(){
+        // $(this).DatePickerHide();
+      });
+    });
+
+    $(".nav-dropdowns > li > ul > li").each(function(index, elem) {
+      $(elem).on('mouseover', function (event) {
+        $(".nav-dropdowns > li > ul > li").each(function (i, e) {
+          $(e).removeClass("active");
+        });
+      }).on('click', function(event) {
+        $(elem).addClass("active");
+        s = $("#global-dependency > div");
+        $("#global-dependency").empty();
+        $("#global-dependency").append(s);
+        getDependencyTree();
+      });
+    })
+
     var getDependencyTree = function () {
       // Show some loading stuff while we wait for the query
       $('#help-msg').hide();
@@ -75,17 +145,14 @@ Zipkin.GetDependencyTree = (function() {
     return {
       _init: function() {
 
-	var nodes = [];
-	var links = [];
+    var nodes = [{name: "foo"},
+                    {name: "bar"},
+                    {name: "baz"}];
 
+	var links = [{source: 0, target: 1, value: 0.1, count: 1.3},
+	                {source: 1, target: 2, value: 0.2, count: 0.33},
+	                {source: 0, target: 2, value: 0.8, count: 0.44}];
 
-
-/*        var links = [];
-        $.each(linkList, function(k, v) {
-            links.push(v);
-        });*/
-
-        //var dependencyList = { links: links, root: "planet" };
 
         var dependencyOptions = {
           width: ($(window).width() > Zipkin.Config.MAX_AGG_WINDOW_SIZE ? Zipkin.Config.MAX_AGG_GRAPHIC_WIDTH: Zipkin.Config.MIN_AGG_GRAPHIC_WIDTH) + 200
@@ -95,10 +162,11 @@ Zipkin.GetDependencyTree = (function() {
           $('#loading-data').hide();
           var globalDependencies = new Zipkin.GlobalDependencies(nodes, links, dependencyOptions);
           globalDependencies.chart;
-//          $('#global-dependency').html(globalDependencies.chart());
+          $('#service-report').show();
           $('#global-dependency').show();
         } catch (e) {
           console.log(e);
+          $('#loading-data').hide();
           $("#error-msg").text("Something went wrong rendering the dependency tree :(");
           $(".error-box").show();
           return;
