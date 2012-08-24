@@ -24,7 +24,7 @@ import java.io.File
 
 object Util {
 
-  val ZIPKIN_TRACE_URL = "https://zipkin.smf1.twitter.com/traces/"
+  val ZIPKIN_TRACE_URL = "your.zipkin.url"
 
   /**
    * Returns whether or not a directory will contain data. A directory contains data if its first character is not '_'
