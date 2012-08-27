@@ -118,6 +118,10 @@ Zipkin.GlobalDependencies = (function() {
         format = function(d) { return formatNumber(d) + " TWh"; },
         color = d3.scale.category20();
 
+    var findCircularDependencies = function(links) {
+
+    }
+
     var svg = d3.select("#global-dependency").append("svg")
         .attr("width", width)
         .attr("height", height)
@@ -129,22 +133,22 @@ Zipkin.GlobalDependencies = (function() {
         .nodePadding(10)
         .size([width, height]);
 
-    var path = sankey.link();
-
     sankey
       .nodes(this.nodes)
       .links(this.links)
       .layout(32);
 
+    var path = sankey.link();
 
-     var link = svg.append("g").selectAll(".link")
-          .data(this.links)
-        .enter().append("path")
-          .attr("class", "link")
-          .attr("d", path)
-          .style("stroke-width", function(d) { return Math.max(1, d.dy); })
-          .style("z-index", -1)
-          .sort(function(a, b) { return b.dy - a.dy; });
+     var link = svg.append("g")
+               .selectAll(".link")
+               .data(sankey.links())
+            .enter().append("path")
+               .attr("class", "link")
+               .attr("d", path)
+               .style("stroke-width", function(d) { return Math.max(1, d.dy); })
+               .style("z-index", -1)
+               .sort(function(a, b) { return b.dy - a.dy; })
 
       link.append("title")
           .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
