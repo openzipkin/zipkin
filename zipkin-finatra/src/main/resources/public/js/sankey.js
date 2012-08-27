@@ -112,32 +112,24 @@ d3.sankey = function() {
     return link;
   };
 
-  var reverseLink = function(link) {
-    var target = link.target;
-    var source = link.source;
-    var found = false;
-    target.sourceLinks.forEach(function(targetLink) {
-      if (targetLink.target.name == source.name) {
-        found = true;
-        targetLink.count += link.count;
-        targetLink.value = Math.min(1, targetLink.value + link.value);
-      }
-    });
-    if (!found) {
-      var tmpSource = link.source;
-      link.source = link.target;
-      link.target = link.source;
-      target.sourceLinks.push(link);
-      source.targetLinks.push(link);
-    }
-  }
-
-  var removeLinkFromList = function(list, source, target) {
-    for (var i = 0; i < list.length; i++) {
-      var current = list[i];
-      if (current.source.name == source.name && current.target.name == target.name) {
-        list.splice(i, 1);
-      }
+  function removeCircularities(root, processedNodes, processedInTreeNodes, currentNodes) {
+    if (!processedInTreeNodes[root.name]) {
+      processedNodes[root.name] = true;
+      processedInTreeNodes[root.name] = true;
+      currentNodes[root.name] = true;
+      var safeSourceLinks = [];
+      root.sourceLinks.forEach(function(link) {
+        var target = link.target;
+        // TODO: Some simple combining stuff for circularities.
+        if (!currentNodes[target.name]) {
+          // otherwise, circularity!
+          safeSourceLinks.push(link);
+          removeCircularities(target, processedNodes, processedInTreeNodes, currentNodes);
+        }
+      });
+      root.unsafeSourceLinks = root.sourceLinks;
+      root.sourceLinks = safeSourceLinks;
+      delete currentNodes[root.name];
     }
   }
 
@@ -182,29 +174,7 @@ d3.sankey = function() {
       var top = nodes[i];
 
       if (!processedNodes[top.name]) {
-
-        var stack = [top];
-        var currentSearchTree = {};
-
-        while(stack.length) {
-          var root = stack.pop();
-          if (!currentSearchTree[root.name]) {
-            currentSearchTree[root.name] = true;
-            processedNodes[root.name] = true;
-            var safeSourceLinks = [];
-            root.sourceLinks.forEach(function(link) {
-              var target = link.target;
-              // TODO: Some simple combining stuff for circularities.
-              if (!currentSearchTree[target.name]) {
-                // otherwise, circularity!
-                safeSourceLinks.push(link);
-                stack.push(target);
-              }
-            });
-            root.unsafeSourceLinks = root.sourceLinks;
-            root.sourceLinks = safeSourceLinks;
-          }
-        }
+        removeCircularities(top, processedNodes, [], []);
       }
     }
 
