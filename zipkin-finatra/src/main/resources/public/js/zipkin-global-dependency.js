@@ -57,7 +57,7 @@ Zipkin.GlobalDependencies = (function() {
     if (!d.selected && d.sourceLinks.length > 0) {
       node.popover({
         placement: function() {
-          if (d.x < this.leftGutter) {
+          if (d.x < LEFT_GUTTER) {
             return "right";
           } else {
             return "top";
@@ -160,7 +160,6 @@ Zipkin.GlobalDependencies = (function() {
           .attr("class", "node")
           .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
           .on("click", Zipkin.Util.bind(this, hoverEvent))
-//          .on("mouseout", Zipkin.Util.bind(this, blurEvent))
           .attr("rel", "popover")
           .attr("data-original-title", function(d) { return d.name; })
           .attr("data-content", function(d) { return getText(d); })

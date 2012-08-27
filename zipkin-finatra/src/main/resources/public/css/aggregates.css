@@ -23,7 +23,7 @@
   stroke-opacity: .7;
 }
 
-.popover {
+.popover-content {
   max-height: 200px !important;
   max-width: 1000px;
   overflow: scroll;

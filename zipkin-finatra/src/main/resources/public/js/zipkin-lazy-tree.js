@@ -94,11 +94,11 @@ Zipkin.LazyTree = (function() {
 
     $.each(this.nodes, function(nodeId, node) {
       var parent = that.nodes[node.getParentId()];
-      if ((nodeId != that.rootId) && parent) {
+      if (parent) {
         parent.addChild(node);
         node.setParent(parent);
       } else {
-        // console.error("Parent not found: " + node.getParentId());
+        console.error("Parent not found: " + node.getParentId());
       }
     });
 
