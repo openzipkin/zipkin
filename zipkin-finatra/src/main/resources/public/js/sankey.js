@@ -171,53 +171,68 @@ d3.sankey = function() {
       }
     }
 
-    var remainingNodes = rootNodes,
-        processedNodes = {},
-        nextNodes,
-        x = 0;
+    // We use the simple property that depth-first search creates a search tree with no
+    // back edges to remove all circularities from the graph.
 
-    var safeLinks = {};
+    var processedNodes = {};
 
-    for (var i = 0; i < links.length; i++) {
-      var source = links[i].source;
-      var target = links[i].target;
+    remainingNodes = nodes;
 
-      var isCircle = false;
-      target.sourceLinks.forEach(function(link) {
-        if ((link.target.name == source.name) && safeLinks[link.source.name + "," + link.target.name]) {
-          isCircle = true;
+    for (var i = 0; i < nodes.length; i++) {
+      var top = nodes[i];
+
+      if (!processedNodes[top.name]) {
+
+        var stack = [top];
+        var currentSearchTree = {};
+
+        while(stack.length) {
+          var root = stack.pop();
+          if (!currentSearchTree[root.name]) {
+            currentSearchTree[root.name] = true;
+            processedNodes[root.name] = true;
+            var safeSourceLinks = [];
+            root.sourceLinks.forEach(function(link) {
+              var target = link.target;
+              // TODO: Some simple combining stuff for circularities.
+              if (!currentSearchTree[target.name]) {
+                // otherwise, circularity!
+                safeSourceLinks.push(link);
+                stack.push(target);
+              }
+            });
+            root.unsafeSourceLinks = root.sourceLinks;
+            root.sourceLinks = safeSourceLinks;
+          }
+        }
+      }
+    }
+
+    // Now that the sourceLinks are all safe, we repopulate links and targetLinks per node.
+
+    var linkMap = {};
+
+    nodes.forEach(function(node) {
+      node.sourceLinks.forEach(function(link) {
+        linkMap[link.source.name + "," + link.target.name] = link;
+      });
+    });
+
+    nodes.forEach(function(node) {
+      var safeTargetLinks = [];
+      node.targetLinks.forEach(function(link) {
+        if (linkMap[link.source.name + "," + link.target.name]) {
+          safeTargetLinks.push(link);
         }
       });
-
-      var safeSourceLinks = [];
-      var safeTargetLinks = [];
-      if (isCircle) {
-        source.sourceLinks.forEach(function(link) {
-          if (!(link.source.name == source.name && link.target.name == target.name)) {
-            safeSourceLinks.push(link);
-          }
-        });
-        target.targetLinks.forEach(function(link) {
-          if (!(link.source.name == source.name && link.target.name == target.name)) {
-            safeTargetLinks.push(link);
-          }
-        });
-      } else {
-        safeLinks[source.name + "," + target.name] = links[i];
-        safeSourceLinks = source.sourceLinks;
-        safeTargetLinks = target.targetLinks;
-      }
-
-      source.unsafeSourceLinks = source.sourceLinks;
-      source.sourceLinks = safeSourceLinks;
-      target.unsafeTargetLinks = target.targetLinks;
-      target.targetLinks = safeTargetLinks;
-    }
+      node.unsafeTargetLinks = node.targetLinks;
+      node.targetLinks = safeTargetLinks;
+    });
 
     var safeLinkList = [];
 
-    Object.keys(safeLinks).forEach(function(key) {
-      safeLinkList.push(safeLinks[key]);
+    Object.keys(linkMap).forEach(function(key) {
+      safeLinkList.push(linkMap[key]);
     })
 
     links = safeLinkList;
