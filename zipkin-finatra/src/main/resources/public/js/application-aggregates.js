@@ -146,13 +146,13 @@ Zipkin.GetDependencyTree = (function() {
       _init: function() {
 
     var nodes = [{name: "foo"},
-                    {name: "bar"},
-                    {name: "baz"}];
+                 {name: "bar"},
+                 {name: "baz"}];
 
-	var links = [{source: 0, target: 1, value: 0.1, count: 1.3},
-	                {source: 1, target: 2, value: 0.2, count: 0.33},
-	                {source: 0, target: 2, value: 0.8, count: 0.44}];
-
+	var links = [{source: 0, target: 1, value: 0.1, count: 0.1},
+	             {source: 0, target: 2, value: 0.1, count: 0.1},
+	             {source: 1, target: 2, value: 0.1, count: 0.1},
+	             {source: 2, target:1, value: 0.1, count: 1}];
 
         var dependencyOptions = {
           width: ($(window).width() > Zipkin.Config.MAX_AGG_WINDOW_SIZE ? Zipkin.Config.MAX_AGG_GRAPHIC_WIDTH: Zipkin.Config.MIN_AGG_GRAPHIC_WIDTH) + 200

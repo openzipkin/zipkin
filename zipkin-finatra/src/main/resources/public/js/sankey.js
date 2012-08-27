@@ -90,6 +90,7 @@ d3.sankey = function() {
     var curvature = .5;
 
     function link(d) {
+      debugger;
       var x0 = d.source.x + d.source.dx,
           x1 = d.target.x,
           xi = d3.interpolateNumber(x0, x1),
@@ -112,6 +113,35 @@ d3.sankey = function() {
     return link;
   };
 
+  var reverseLink = function(link) {
+    var target = link.target;
+    var source = link.source;
+    var found = false;
+    target.sourceLinks.forEach(function(targetLink) {
+      if (targetLink.target.name == source.name) {
+        found = true;
+        targetLink.count += link.count;
+        targetLink.value = Math.min(1, targetLink.value + link.value);
+      }
+    });
+    if (!found) {
+      var tmpSource = link.source;
+      link.source = link.target;
+      link.target = link.source;
+      target.sourceLinks.push(link);
+      source.targetLinks.push(link);
+    }
+  }
+
+  var removeLinkFromList = function(list, source, target) {
+    for (var i = 0; i < list.length; i++) {
+      var current = list[i];
+      if (current.source.name == source.name && current.target.name == target.name) {
+        list.splice(i, 1);
+      }
+    }
+  }
+
   // Populate the sourceLinks and targetLinks for each node.
   // Also, if the source and target are not objects, assume they are indices.
   function computeNodeLinks() {
@@ -127,6 +157,71 @@ d3.sankey = function() {
       source.sourceLinks.push(link);
       target.targetLinks.push(link);
     });
+
+    var nodesWhichAreChildren = {};
+    for (var i = 0; i < nodes.length; i++) {
+      for (var j = 0; j < nodes[i].sourceLinks.length; j++) {
+        nodesWhichAreChildren[nodes[i].sourceLinks[j].target.name] = true;
+      }
+    }
+
+    var rootNodes = [];
+    for (var i = 0; i < nodes.length; i++) {
+      if (!(nodes[i].name in nodesWhichAreChildren)) {
+        rootNodes.push(nodes[i]);
+      }
+    }
+
+    var remainingNodes = rootNodes,
+        processedNodes = {},
+        nextNodes,
+        x = 0;
+
+    var safeLinks = {};
+
+    for (var i = 0; i < links.length; i++) {
+      var source = links[i].source;
+      var target = links[i].target;
+
+      var isCircle = false;
+      target.sourceLinks.forEach(function(link) {
+        if ((link.target.name == source.name) && safeLinks[link.source.name + "," + link.target.name]) {
+          isCircle = true;
+        }
+      });
+
+      var safeSourceLinks = [];
+      var safeTargetLinks = [];
+      if (isCircle) {
+        source.sourceLinks.forEach(function(link) {
+          if (!(link.source.name == source.name && link.target.name == target.name)) {
+            safeSourceLinks.push(link);
+          }
+        });
+        target.targetLinks.forEach(function(link) {
+          if (!(link.source.name == source.name && link.target.name == target.name)) {
+            safeTargetLinks.push(link);
+          }
+        });
+      } else {
+        safeLinks[source.name + "," + target.name] = links[i];
+        safeSourceLinks = source.sourceLinks;
+        safeTargetLinks = target.targetLinks;
+      }
+
+      source.unsafeSourceLinks = source.sourceLinks;
+      source.sourceLinks = safeSourceLinks;
+      target.unsafeTargetLinks = target.targetLinks;
+      target.targetLinks = safeTargetLinks;
+    }
+
+    var safeLinkList = [];
+
+    Object.keys(safeLinks).forEach(function(key) {
+      safeLinkList.push(safeLinks[key]);
+    })
+
+    links = safeLinkList;
   }
 
   // Compute the value (size) of each node by summing the associated links.
@@ -139,31 +234,38 @@ d3.sankey = function() {
     });
   }
 
+  function removeLink(link) {
+    var index = $.inArray(link, links);
+    if (index != -1) {
+      links.splice(index, 1);
+    }
+  }
+
   // Iteratively assign the breadth (x-position) for each node.
   // Nodes are assigned the maximum breadth of incoming neighbors plus one;
   // nodes with no incoming links are assigned breadth zero, while
   // nodes with no outgoing links are assigned the maximum breadth.
   function computeNodeBreadths() {
-    var remainingNodes = nodes,
-        nextNodes,
-        x = 0;
+      var remainingNodes = nodes,
+          nextNodes,
+          x = 0;
 
-    while (remainingNodes.length) {
-      nextNodes = [];
-      remainingNodes.forEach(function(node) {
-        node.x = x;
-        node.dx = nodeWidth;
-        node.sourceLinks.forEach(function(link) {
-          nextNodes.push(link.target);
+      while (remainingNodes.length) {
+        nextNodes = [];
+        remainingNodes.forEach(function(node) {
+          node.x = x;
+          node.dx = nodeWidth;
+          node.sourceLinks.forEach(function(link) {
+            nextNodes.push(link.target);
+          });
         });
-      });
-      remainingNodes = nextNodes;
-      ++x;
-    }
+        remainingNodes = nextNodes;
+        ++x;
+      }
 
-    //
-    moveSinksRight(x);
-    scaleNodeBreadths((width - nodeWidth) / (x - 1));
+      //
+      moveSinksRight(x);
+      scaleNodeBreadths((width - nodeWidth) / (x - 1));
   }
 
   function moveSourcesRight() {
