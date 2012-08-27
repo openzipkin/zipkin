@@ -19,30 +19,30 @@ package com.twitter.zipkin.hadoop.email
 import com.github.mustachejava._
 import scala.collection.JavaConverters._
 import collection.immutable.HashMap
+import java.io.{FileOutputStream, PrintWriter}
 import com.twitter.zipkin.hadoop.LineResult
-import com.twitter.zipkin.hadoop.sources.Util
-import java.io.{File, StringWriter, FileOutputStream, PrintWriter}
-import java.util.Scanner
 
 /**
  * A basic mustache template for formatting zipkin service reports as emails
- * @param standardServiceName the name of a service
+ * @param serviceName the name of a service
  */
-class EmailContent(standardServiceName: String) {
+class EmailContent(serviceName: String) {
 
-  private var results = Map[String, (List[OneLineResults], List[TableResults])]()
-  private var header = List(new Header(standardServiceName))
+  private var tableResults = List[TableResults]()
+  private var oneLineResults = List[OneLineResults]()
+  private var body = List[Body]()
+  private var header = List(new Header(serviceName))
   private var document = List[Html]()
 
   def html() = {
     document.asJava
   }
 
-  case class Html(var header: java.util.List[Header], var services: java.util.List[Service] ) {}
+  case class Html(var header: java.util.List[Header], var body: java.util.List[Body] ) {}
 
-  case class Header(var standardServiceName: String) {}
+  case class Header(var serviceName: String) {}
 
-  case class Service(var serviceName: String, var oneLineResults: java.util.List[OneLineResults], var tableResults: java.util.List[TableResults]){}
+  case class Body(var oneLineResults: java.util.List[OneLineResults], var tableResults: java.util.List[TableResults]){}
 
   case class OneLineResults(var result: String) {}
 
@@ -61,21 +61,13 @@ class EmailContent(standardServiceName: String) {
 
   case class TableUrlRowToken(var tableUrlRowToken: String) {}
 
-  def getResult(service: String) = {
-    if (!results.contains(service)) {
-      results += service -> (Nil, Nil)
-    }
-    results(service)
-  }
-
   /**
    * Adds a single line format result
    * @param result a single line result
    */
 
-  def addOneLineResult(service: String, result: String) {
-    val (oneliners, tablers) = getResult(service)
-    results += service -> ((new OneLineResults(result))::oneliners, tablers)
+  def addOneLineResult(result: String) {
+    oneLineResults ::= new OneLineResults(result)
   }
 
   /**
@@ -84,14 +76,13 @@ class EmailContent(standardServiceName: String) {
    * @param tableHeader the header of the table
    * @param tableRows the rows of the table
    */
-  def addTableResult(service: String, tableResultHeader: String, tableHeader: List[String], tableRows: List[LineResult]) {
+  def addTableResult(tableResultHeader: String, tableHeader: List[String], tableRows: List[LineResult]) {
     val header = new TableHeader(tableHeader.map(s => new TableHeaderToken(s)).asJava)
     val rowList = tableRows.map ( line => {
       val values = line.getValue().map(token => new TableRowToken(token))
       new TableRow(values.asJava)
     }).asJava
-    val (oneliners, tablers) = getResult(service)
-    results += service -> (oneliners, (new TableResults(tableResultHeader, header, rowList, null))::tablers)
+    tableResults ::= new TableResults(tableResultHeader, header, rowList, null)
   }
 
   /**
@@ -100,7 +91,7 @@ class EmailContent(standardServiceName: String) {
    * @param tableHeader the header of the table
    * @param tableUrlRows the rows of the table, where the first element is a URL
    */
-  def addUrlTableResult(service: String, tableResultHeader: String, tableHeader: List[String], tableUrlRows: List[(String, String, LineResult)]) {
+  def addUrlTableResult(tableResultHeader: String, tableHeader: List[String], tableUrlRows: List[(String, String, LineResult)]) {
     val header = new TableHeader(tableHeader.map(s => new TableHeaderToken(s)).asJava)
     val rowUrlList = tableUrlRows.map ({ row =>
       val (url, hypertext, line) = row
@@ -109,20 +100,14 @@ class EmailContent(standardServiceName: String) {
       }
       new TableUrlRow(url, hypertext, line.getValue().tail.map(token => new TableUrlRowToken(token)).asJava)
     }).asJava
-    val (oneliners, tablers) = getResult(service)
-    val newTablers = (new TableResults(tableResultHeader, header, null, rowUrlList))::tablers
-    results += service -> (oneliners, newTablers)
+    tableResults ::= new TableResults(tableResultHeader, header, null, rowUrlList)
   }
 
   /**
    * Apply all changes made to the body of the HTML document
    */
   def apply() {
-    var body = List[Service]()
-    for (result <- results) {
-      val (service, (oneliners, tablers)) = result
-      body ::= new Service(service, oneliners.asJava, tablers.asJava)
-    }
+    body = List(new Body(oneLineResults.asJava, tableResults.asJava))
     document = List(new Html(header.asJava, body.asJava))
   }
 
@@ -144,30 +129,6 @@ object EmailContent {
   // Ensure that we never make a different EmailContent for the same service
   private var templates = Map[String, EmailContent]()
   private var serviceToHtml = Map[String, String]()
-  private var emailAddresses = Map[String, List[String]]()
-
-  def populateEmailAddresses(dirname: String) = {
-    Util.traverseFileTree(new File(dirname))({f: File =>
-      val s = new Scanner(f)
-      while (s.hasNextLine()) {
-        val line = new Scanner(s.nextLine())
-        line.next()
-        val standardized = line.next()
-        emailAddresses += standardized -> Nil
-        while (line.hasNext()) {
-          emailAddresses += standardized -> (line.next()::emailAddresses(standardized))
-        }
-      }
-    })
-  }
-
-  def getEmailAddress(service: String) = {
-    if (emailAddresses.contains(service)) {
-      emailAddresses(service)
-    } else {
-      null
-    }
-  }
 
   /**
    * Gets a EmailContent for a service. If another such template already exists, we use that one.
@@ -195,28 +156,10 @@ object EmailContent {
    */
   def services() = templates.keys
 
-  /**
-   * Writes all the email contents to files
-   */
   def writeAll() = {
     for (service <- services()) {
       val pw = new PrintWriter(new FileOutputStream(serviceToHtml(service), true))
       templates(service).write(pw)
     }
-  }
-
-  /**
-   * Writes all the email contents to Strings
-   * @return a Map from service name to the email contents as a String
-   */
-  def writeAllAsStrings() = {
-    var serviceToEmail = Map[String, String]()
-    for (service <- services()) {
-      val sw = new StringWriter()
-      val pw = new PrintWriter(sw)
-      templates(service).write(pw)
-      serviceToEmail += service -> sw.toString()
-    }
-    serviceToEmail
   }
 }

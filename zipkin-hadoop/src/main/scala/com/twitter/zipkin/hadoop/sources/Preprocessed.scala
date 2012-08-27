@@ -28,8 +28,8 @@ import scala.collection.JavaConverters._
 class Preprocessed(args : Args) extends Job(args) with DefaultDateRangeJob {
   val preprocessed = SpanSource()
     .read
-    .mapTo(0 ->('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations)) {
-      s: Span => (s.trace_id, s.name, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList)
+    .mapTo(0 ->('trace_id, 'id, 'parent_id, 'annotations, 'binary_annotations)) {
+      s: Span => (s.trace_id, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList)
     }
     .groupBy('trace_id, 'id, 'parent_id) {
       _.reduce('annotations, 'binary_annotations) {
@@ -43,7 +43,7 @@ class Preprocessed(args : Args) extends Job(args) with DefaultDateRangeJob {
     a : (Long, Long, Long, List[Annotation], List[BinaryAnnotation]) =>
       a match {
         case (tid, id, pid, annotations, binary_annotations) =>
-          new gen.Span(tid, "ITS ALL USELESS :(", id, annotations.asJava, binary_annotations.asJava).setParent_id(pid)
+          new gen.Span(tid, "", id, annotations.asJava, binary_annotations.asJava).setParent_id(pid)
       }
     }.write(PrepNoNamesSpanSource())
 }

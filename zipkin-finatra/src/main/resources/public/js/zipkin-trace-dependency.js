@@ -28,7 +28,7 @@ Zipkin.TraceDependencies = (function() {
 
   /* Constants */
   /** Chart **/
-  var WIDTH        = 800
+  var WIDTH        = 900
     , HEIGHT       = 600
     , BORDER       = 5
     , LEFT_GUTTER  = 100
@@ -156,7 +156,7 @@ Zipkin.TraceDependencies = (function() {
       var vecX = tx - sx
         , vecY = ty - sy
         , len = Math.sqrt(Math.pow(vecX, 2) + Math.pow(vecY, 2)) || 1
-        , newLen = len - calculateRadius(d.target.duration);
+        , newLen = len - calculateRadius(d.target.duration)
         ;
 
       return {
