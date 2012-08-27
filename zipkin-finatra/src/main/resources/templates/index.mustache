@@ -1,15 +1,34 @@
 <div class="clearfix row">
   <div class="span3 sidebar fixed-pos">
-    <form class="twitter-form">
-      <div class="sidebar-block filter-block-contents">
-        <div class="clearfix">
-          <label>Choose a service</label>
-          <div class="input">
-            <!-- this will be populated ajax stylee -->
-            <select class="" name="service_name" id="service_name"></select>
+
+    <form class="form-horizontal">
+      <div class="sidebar-block">
+        <div class="control-group">
+          <label class="control-label index-control-label" for="serviceName">Service</label>
+          <div class="controls index-controls">
+            <select class="" name="serviceName" id="serviceName"></select>
           </div>
         </div>
+
+        <div class="control-group">
+          <label class="control-label index-control-label" for="spanName">Span</label>
+          <div class="controls index-controls">
+            <select class="" name="spanName" id="spanName"></select>
+          </div>
+        </div>
+
+        <!-- Holds any additional filters that are added to the query -->
+        <div class="additional-filter-group"></div>
+
+        <div class="btn-group add-filter-group">
+          <button class="btn js-add-annotation-filter"><i class="icon-plus"></i>&nbsp;Annotation</button>
+          <button class="btn js-add-kv-filter"><i class="icon-plus"></i>&nbsp;Key-Value</button>
+        </div>
       </div>
+    </form>
+
+
+    <form class="twitter-form">
 
       <div class="sidebar-block filter-options">
         <ul class="nav nav-tabs" data-tabs="tabs">

@@ -539,6 +539,21 @@ Zipkin.Application.Index = (function() {
       });
     });
 
+    /* Bind click handler for additional annotation/kv filters */
+    $(".js-add-annotation-filter").click(function(e) {
+      templatize(TEMPLATES.QUERY_ADD_ANNOATION, function(template) {
+
+      });
+      return false;
+    });
+    $(".js-add-kv-filter").click(function(e) {
+      templatize(TEMPLATES.QUERY_ADD_KV, function(template) {
+
+      });
+      return false;
+    });
+
+
     $(document).on("click", "li.trace", function(e) {
       history.pushState({}, "Zipkin", root_url + "?" + searchQuery);
     });

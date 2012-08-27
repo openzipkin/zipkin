@@ -117,6 +117,16 @@ form .clearfix {
   margin-bottom: 0px;
 }
 
+.form-horizontal .index-control-label {
+  width: 40px;
+}
+
+.form-horizontal .index-controls {
+  margin-left: 60px;
+}
+
+/* end bootstrap edits */
+
 .trace-data-tab {
 }
 
@@ -218,7 +228,7 @@ body > .container {
 /* START index.html.erb */
 
 .sidebar-block {
-  padding: 4px 10px;
+  padding: 10px;
   margin-bottom: 10px;
   border: 1px solid #DDD;
   -webkit-border-radius: 4px;
@@ -257,6 +267,10 @@ body > .container {
   padding: 0px;
   border: none;
   background: none;;
+}
+
+.add-filter-group > button {
+  width: 50%;
 }
 
 .service-tag-list {
