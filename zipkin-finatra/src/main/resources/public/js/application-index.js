@@ -56,9 +56,9 @@ Zipkin.Application.Index = (function() {
    * @param collection: Zipkin.Application.Models.SpanList
    */
   var SpanSelectView = AllSelectView.extend({
-    id: "span_name",
+    id: "spanName",
     attributes: {
-      name: "span_name"
+      name: "spanName"
     },
     optionView: SpanOptionView,
 
@@ -79,9 +79,9 @@ Zipkin.Application.Index = (function() {
    * @param collection: Zipkin.Application.Models.ServiceList,
    */
   var ServiceSelectView = Zipkin.Application.Views.SelectView.extend({
-    id: "service_name",
+    id: "serviceName",
     attributes: {
-      name: "service_name"
+      name: "serviceName"
     },
     optionView: ServiceOptionView,
 
@@ -149,7 +149,7 @@ Zipkin.Application.Index = (function() {
       // FIXME more backbony
       var parsed = parseQueryResults(data);
       var traces = parsed.data
-      var serviceName = $("#service_name option:selected").val();
+      var serviceName = $("#serviceName option:selected").val();
       addServiceTag(serviceName);
 
       traces = updateFilteredServices(traces);
@@ -241,10 +241,10 @@ Zipkin.Application.Index = (function() {
   };
 
   /* Adds a service tag to the service tag list */
-  var addServiceTag = function(service_name, closeable) {
-    if ($("span[id*='service-tag-" + service_name + "']").length === 0) {
+  var addServiceTag = function(serviceName, closeable) {
+    if ($("span[id*='service-tag-" + serviceName + "']").length === 0) {
       templatize(TEMPLATES.SERVICE_TAG, function(template) {
-        var context = { name : service_name, closeable: closeable };
+        var context = { name : serviceName, closeable: closeable };
         var content = template.render(context);
         $(".service-tags").append(content);
       });
@@ -363,8 +363,8 @@ Zipkin.Application.Index = (function() {
     var labelClick = function (event) {
       event.stopPropagation();
       var target = $(event.target);
-      var service_name = target.attr("value");
-      addServiceTag(service_name, true);
+      var serviceName = target.attr("value");
+      addServiceTag(serviceName, true);
 
       var services = getFilteredServices();
       var newData = updateFilteredServices(filterQueryResults(services));
@@ -382,9 +382,9 @@ Zipkin.Application.Index = (function() {
     var labelRemove = function (event) {
       $('#query-results').hide();
       var target = $(event.target);
-      var service_name = target.attr('id').slice("service-tag-close-".length);
+      var serviceName = target.attr('id').slice("service-tag-close-".length);
 
-      $("li[id*='service-tag-li-" + service_name + "']").remove();
+      $("li[id*='service-tag-li-" + serviceName + "']").remove();
 
       var services = getFilteredServices();
       var newData = updateFilteredServices(filterQueryResults(services));
@@ -412,7 +412,7 @@ Zipkin.Application.Index = (function() {
       $('#query-results').hide();
 
       var baseParams = {
-        serviceName: $('select[name=service_name]').val(),
+        serviceName: $('select[name=serviceName]').val(),
         endDatetime: $('input[name=end_date]').val() + " " + $('input[name=end_time]').val(),
         limit: $('input[name=limit]').val()
       }
@@ -423,7 +423,7 @@ Zipkin.Application.Index = (function() {
       var query = null;
       var error = false;
       if (tabType == "filter-span-tab") {
-        var spanName = $('select[name=span_name]').val();
+        var spanName = $('select[name=spanName]').val();
         if (spanName === "") {
           error = true;
         } else {
@@ -558,7 +558,7 @@ Zipkin.Application.Index = (function() {
     if (queryResults !== undefined && queryResults.length > 0) {
       var parsed = parseQueryResults(queryResults);
       var traces = parsed.data
-      var serviceName = $("#service_name option:selected").val();
+      var serviceName = $("#serviceName option:selected").val();
       addServiceTag(serviceName);
 
       traces = updateFilteredServices(traces);

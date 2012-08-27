@@ -28,18 +28,18 @@ object QueryRequest {
    * on the GET parameters present
    *
    * Required parameters:
-   * - service_name: String
-   * - end_datetime: dateString that matches `fmt`
+   * - serviceName: String
+   * - endDatetime: dateString that matches `fmt`
    *
    * Optional parameters:
    * - limit: Int, default 100
    *
    * Mapping (excluding above parameters):
-   * (span_name)                        => Some(SpanQueryRequest)
-   * (time_annotation)                  => Some(AnnotationQueryRequest)
-   * (annotation_key, annotation_value) => Some(KeyValueAnnotationQueryRequest)
+   * (spanName)                        => Some(SpanQueryRequest)
+   * (timeAnnotation)                  => Some(AnnotationQueryRequest)
+   * (annotationKey, annotationValue) => Some(KeyValueAnnotationQueryRequest)
    *
-   * (annotation_key)                   => Some(ServiceQueryRequest)
+   * (annotationKey)                   => Some(ServiceQueryRequest)
    * ()                                 => None
    */
   def apply(request: Request): Option[QueryRequest] = {

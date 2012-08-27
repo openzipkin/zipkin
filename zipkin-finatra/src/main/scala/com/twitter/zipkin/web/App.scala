@@ -76,14 +76,14 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
    * Returns query results that satisfy the request parameters in order of descending duration
    *
    * Required GET params:
-   * - service_name: String
-   * - end_date: date String formatted to `QueryRequest.fmt`
+   * - serviceName: String
+   * - endDate: date String formatted to `QueryRequest.fmt`
    *
    * Optional GET params:
    * - limit: Int, default 100
-   * - span_name: String
-   * - time_annotation: String
-   * - annotation_key, annotation_value: String
+   * - spanName: String
+   * - timeAnnotation: String
+   * - annotationKey, annotation_value: String
    * - adjust_clock_skew = (true|false), default true
    */
   get("/api/query") { request =>
