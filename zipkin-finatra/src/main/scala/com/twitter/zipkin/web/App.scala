@@ -19,7 +19,7 @@ package com.twitter.zipkin.web
 import com.twitter.finatra.{Response, Controller, View, Request}
 import com.twitter.logging.Logger
 import com.twitter.util.Future
-import com.twitter.zipkin.adapter.{JsonQueryAdapter, JsonAdapter, ThriftQueryAdapter, ThriftAdapter}
+import com.twitter.zipkin.adapter.{JsonQueryAdapter, ThriftQueryAdapter}
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.config.ZipkinWebConfig
 import java.nio.ByteBuffer
@@ -31,7 +31,7 @@ import java.util.Calendar
  * @param config ZipkinWebConfig
  * @param client Thrift client to ZipkinQuery
  */
-class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) extends Controller {
+class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) extends Controller(config.statsReceiver) {
 
   val log = Logger.get()
   val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
@@ -52,6 +52,11 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   /* Static page for render trace from JSON */
   get("/static") { request =>
     render.view(wrapView(new StaticView)).toFuture
+  }
+
+  /* Static page for render trace from JSON */
+  get("/aggregates") { request =>
+    render.view(wrapAggregatesView(new AggregatesView)).toFuture
   }
 
   /**
@@ -262,7 +267,18 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     val template = "templates/layouts/application.mustache"
     val rootUrl = config.rootUrl
     val innerView: View = v
+    val javascripts = config.jsConfig.resources
+    val stylesheets = config.cssConfig.resources
     lazy val body = innerView.render
+  }
+
+  private def wrapAggregatesView(v: View) = new View {
+  val template = "templates/layouts/application.mustache"
+  val rootUrl = config.rootUrl
+  val innerView: View = v
+  val javascripts = config.jsConfig.aggregatesResources
+  val stylesheets = config.cssConfig.aggregatesResources
+  lazy val body = innerView.render
   }
 }
 
@@ -274,6 +290,11 @@ class IndexView(val endDate: String, val endTime: String) extends View {
 class ShowView(traceId: String) extends View {
   val template = "templates/show.mustache"
   val inlineJs = "$(Zipkin.Application.Show.initialize(\"" + traceId + "\"));"
+}
+
+class AggregatesView() extends View {
+  val template = "templates/aggregates.mustache"
+  val inlineJs = "$(Zipkin.Application.Aggregates.initialize());"
 }
 
 class StaticView extends View {

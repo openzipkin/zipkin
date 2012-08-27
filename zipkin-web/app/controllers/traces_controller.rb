@@ -117,6 +117,15 @@ class TracesController < ApplicationController
     render :json => Names.get_span_names(service_name).to_a
   end
 
+  def dependencies
+    service_name = params[:service_name] || ""
+    dependencies = nil
+    ZipkinQuery::Client.with_transport(Rails.configuration.zookeeper) do |client|
+      dependencies = client.getDependencies(service_name)
+    end
+    render :json => dependencies || []
+  end
+
   def top_annotations
     service_name = params[:service_name] || ""
     top_annotations = nil

@@ -622,6 +622,11 @@ div#trace-dependency circle {
   fill: #0084B4;
 }
 
+/** Trace Dependency SVG classes */
+div#global-dependency circle {
+  fill: #0084B4;
+}
+
 text.shadow {
   stroke: #fff;
   stroke-width: 3px;
