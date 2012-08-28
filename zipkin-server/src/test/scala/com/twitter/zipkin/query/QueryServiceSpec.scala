@@ -16,15 +16,15 @@
  */
 package com.twitter.zipkin.query
 
-import com.twitter.util.Future
-import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
-import com.twitter.zipkin.common._
-import com.twitter.zipkin.gen
-import com.twitter.zipkin.query.adjusters.{TimeSkewAdjuster, NullAdjuster}
-import com.twitter.zipkin.storage._
-import java.nio.ByteBuffer
+import adjusters.{TimeSkewAdjuster, NullAdjuster}
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
+import com.twitter.zipkin.gen
+import com.twitter.zipkin.common._
+import java.nio.ByteBuffer
+import com.twitter.util.Future
+import com.twitter.zipkin.storage.{Aggregates, TraceIdDuration, Storage, Index}
+import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
 
 class QueryServiceSpec extends Specification with JMocker with ClassMocker {
   val ep1 = Endpoint(123, 123, "service1")
@@ -80,20 +80,20 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
     }
 
     class MockIndex extends Index {
-      def ids = Seq(IndexedTraceId(1, 1), IndexedTraceId(2, 2), IndexedTraceId(3, 3))
+      def ids: Seq[Long] = Seq(1, 2, 3)
       def mockSpanName: Option[String] = Some("methodcall")
       def mockValue: Option[ByteBuffer] = None
 
       def close() = null
       def getTraceIdsByName(serviceName: String, spanName: Option[String],
-                            endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
+                            endTs: Long, limit: Int): Future[Seq[Long]] = {
         serviceName mustEqual "service"
         spanName mustEqual mockSpanName
         endTs mustEqual 100L
         Future(ids)
       }
       def getTraceIdsByAnnotation(service: String, annotation: String, value: Option[ByteBuffer], endTs: Long,
-                                  limit: Int): Future[Seq[IndexedTraceId]] = {
+                                  limit: Int): Future[Seq[Long]] = {
         service mustEqual "service"
         annotation mustEqual "annotation"
         value mustEqual mockValue
@@ -409,7 +409,7 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
     "fail to find traces by name in index, return empty" in {
       val storage = mock[Storage]
       val index = new MockIndex {
-        override def ids: Seq[IndexedTraceId] = Seq()
+        override def ids: Seq[Long] = Seq()
         override def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = Future(Seq())
       }
       val qs = new QueryService(storage, index, null, Map())
@@ -421,7 +421,7 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
     "fail to find traces by annotation in index, return empty" in {
       val storage = mock[Storage]
       val index = new MockIndex {
-        override def ids: Seq[IndexedTraceId] = Seq()
+        override def ids: Seq[Long] = Seq()
         override def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = Future(Seq())
       }
       val qs = new QueryService(storage, index, null, Map())

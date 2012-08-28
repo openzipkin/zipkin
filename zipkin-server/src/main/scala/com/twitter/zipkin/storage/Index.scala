@@ -19,14 +19,13 @@ import com.twitter.zipkin.common.Span
 import com.twitter.util.Future
 import scala.collection.Set
 import java.nio.ByteBuffer
+import com.twitter.logging.Logger
+import com.twitter.ostrich.stats.Stats
 
 /**
  * Duration of the trace in question in microseconds.
  */
 case class TraceIdDuration(traceId: Long, duration: Long, startTimestamp: Long)
-
-/* A trace ID and its associated timestamp */
-case class IndexedTraceId(traceId: Long, timestamp: Long)
 
 trait Index {
 
@@ -40,7 +39,7 @@ trait Index {
    * Only return maximum of limit trace ids from before the endTs.
    */
   def getTraceIdsByName(serviceName: String, spanName: Option[String],
-                        endTs: Long, limit: Int): Future[Seq[IndexedTraceId]]
+                        endTs: Long, limit: Int): Future[Seq[Long]]
 
   /**
    * Get the trace ids for this annotation between the two timestamps. If value is also passed we expect
@@ -48,7 +47,7 @@ trait Index {
    * Only return maximum of limit trace ids from before the endTs.
    */
   def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
-                              endTs: Long, limit: Int): Future[Seq[IndexedTraceId]]
+                              endTs: Long, limit: Int): Future[Seq[Long]]
 
   /**
    * Fetch the duration or an estimate thereof from the traces.

@@ -23,7 +23,7 @@ import java.nio.ByteBuffer
 import java.util.{Map => JMap}
 import com.twitter.zipkin.common.{Annotation, Span}
 import com.twitter.zipkin.util.Util
-import com.twitter.zipkin.storage.{IndexedTraceId, TraceIdDuration, Index}
+import com.twitter.zipkin.storage.{TraceIdDuration, Index}
 import com.twitter.util.Future
 import com.twitter.zipkin.config.CassandraConfig
 import com.twitter.zipkin.Constants
@@ -134,7 +134,7 @@ trait CassandraIndex extends Index with Cassandra {
    */
 
   def getTraceIdsByName(serviceName: String, spanName: Option[String],
-                        endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
+                        endTs: Long, limit: Int): Future[Seq[Long]] = {
     CASSANDRA_GET_TRACE_IDS_BY_NAME.incr
     // if we have a span name, look up in the service + span name index
     // if not, look up by service name only
@@ -147,17 +147,15 @@ trait CassandraIndex extends Index with Cassandra {
         serviceNameIndex.getRowSlice(key, Some(endTs), None, limit, Order.Reversed)
     }
 
-    // Future[Seq[Column[Long, Long]]] => Future[Seq[IndexedTraceId]]
-    row map {
-      _.map { column =>
-        IndexedTraceId(traceId = column.value, timestamp = column.name)
-      }
+    // Future[Seq[Column[Long, Long]]] => Future[Seq[Long]]
+    row map {s =>
+      (s map {_.value}).distinct
     }
   }
 
 
   def getTraceIdsByAnnotation(service: String, annotation: String, value: Option[ByteBuffer],
-                              endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
+                              endTs: Long, limit: Int): Future[Seq[Long]] = {
     CASSANDRA_GET_TRACE_IDS_BY_ANN.incr
     val row = value match {
       case Some(v) => {
@@ -169,10 +167,8 @@ trait CassandraIndex extends Index with Cassandra {
         annotationsIndex.getRowSlice(key, Some(endTs), None, limit, Order.Reversed)
     }
 
-    row map {
-      _.map { column =>
-        IndexedTraceId(traceId = column.value, timestamp = column.name)
-      }
+    row map { s =>
+      (s map {_.value}).distinct
     }
   }
 

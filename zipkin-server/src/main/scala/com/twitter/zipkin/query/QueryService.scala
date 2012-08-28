@@ -93,9 +93,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       FTrace.recordBinary("limit", limit)
       FTrace.recordBinary("order", order)
 
-      val traceIds = index.getTraceIdsByName(serviceName, span, endTs, limit).map {
-        _.map { _.traceId }
-      }
+      val traceIds = index.getTraceIdsByName(serviceName, span, endTs, limit)
       sortTraceIds(traceIds, limit, order)
     }
   }
@@ -115,9 +113,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       FTrace.recordBinary("limit", limit)
       FTrace.recordBinary("order", order)
 
-      val traceIds = index.getTraceIdsByName(serviceName, None, endTs, limit).map {
-        _.map { _.traceId }
-      }
+      val traceIds = index.getTraceIdsByName(serviceName, None, endTs, limit)
       sortTraceIds(traceIds, limit, order)
     }
   }
@@ -143,9 +139,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       FTrace.recordBinary("limit", limit)
       FTrace.recordBinary("order", order)
 
-      val traceIds = index.getTraceIdsByAnnotation(serviceName, annotation, valueOption, endTs, limit).map {
-        _.map { _.traceId }
-      }
+      val traceIds = index.getTraceIdsByAnnotation(serviceName, annotation, valueOption, endTs, limit)
       sortTraceIds(traceIds, limit, order)
     }
   }
@@ -324,7 +318,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
    */
   private def getTraceIdDurations(
     traceIds: Future[Seq[Long]]
-  ): Future[Seq[TraceIdDuration]] = {
+   ): Future[Seq[TraceIdDuration]] = {
     traceIds.map { t =>
       Future.collect {
         t.grouped(traceDurationFetchBatchSize)
