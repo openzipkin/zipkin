@@ -1,4 +1,4 @@
-#!/usr/bash/env ruby
+#!/usr/bin/env ruby
 # Copyright 2012 Twitter Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,7 @@ require 'optparse'
 require 'ostruct'
 require 'pp'
 require 'date'
+require 'run_job.rb'
 
 class OptparseAllJobArguments
 
@@ -40,6 +41,7 @@ class OptparseAllJobArguments
       opts.separator "Specific options:"
 
      opts.on("-d", "--date STARTDATE,ENDDATE", Array, "The DATES to run the jobs over.  Expected format for dates are is %Y-%m-%dT%H:%M") do |list|
+        options.dates = list.map{|date| DateTime.strptime(date, '%Y-%m-%dT%H:%M')}
         options.dates = list
       end
 
@@ -65,51 +67,47 @@ class OptparseAllJobArguments
   end
 end
 
-options = OptparseAllJobArguments.parse(ARGV)
-
-date_cmd_UTC = options.dates.join(" ") + " -t UTC"
-end_date_cmd = options.dates.length > 1 ? options.dates.at(1) : options.dates.at(0)
-end_date_cmd_UTC = end_date_cmd + " -t UTC"
-config_string = options.uses_hadoop_config ? " --config " + options.hadoop_config : ""
-run_job_cmd = "ruby " + File.dirname(__FILE__) + "/run_job.rb" + config_string
-
-puts "Run_job_command = " + run_job_cmd
-puts "Date = " + date_cmd_UTC
+#Run the commands
 
 def run_jobs_in_parallel(prep, jobs)
   threads = []
-  prepThread = Thread.new(prep) { |prep| system(prep) }
+  prepThread = Thread.new(prep) { |prep| run_job(prep) }
   for job in jobs 
-    threads << Thread.new(job) { |job| system(job) }
+    threads << Thread.new(job) { |job| run_job(job) }
   end
   prepThread.join
   return threads
-#  threads.each { |aThread| aThread.join }
 end
 
-#Run the commands
-system(run_job_cmd + " -j Preprocessed -p -d " + date_cmd_UTC)
+def run_all_jobs(dates, output, hadoop_config)
+  uses_hadoop_config = hadoop_config != nil
+  config_string = uses_hadoop_config ? " --config " + hadoop_config : nil
 
-jobs_set_1 = Array[ ]
+  jobs_set_1 = []
 
-jobs_set_2 = Array[ run_job_cmd + " -j PopularKeys -o " + options.output + "/PopularKeys -d " + end_date_cmd_UTC,
-                 run_job_cmd + " -j PopularAnnotations -o " + options.output + "/PopularAnnotations -d " + end_date_cmd_UTC,
-                 run_job_cmd + " -j MemcacheRequest -o " + options.output + "/MemcacheRequest -d " + end_date_cmd_UTC,
-                 run_job_cmd + " -j WorstRuntimes -o " + options.output + "/WorstRuntimes -d " + end_date_cmd_UTC,
-                 run_job_cmd + " -j WorstRuntimesPerTrace -o " + options.output + "/WorstRuntimesPerTrace -d " + end_date_cmd_UTC,
-                 run_job_cmd + " -j WhaleReport -o " + options.output + "/WhaleReport -d " + end_date_cmd_UTC
-                 ]
+  jobs_set_2 = Array[JobArguments.new(dates, nil, config_string, "UTC", "PopularKeys", output + "/PopularKeys", false),
+       JobArguments.new(dates, nil, config_string, "UTC", "PopularAnnotations", output + "/PopularAnnotations", false),
+       JobArguments.new(dates, nil, config_string, "UTC", "MemcacheRequest", output + "/MemcacheRequest",false),
+       JobArguments.new(dates, nil, config_string, "UTC", "WorstRuntimes", output + "/WorstRuntimes", false),
+       JobArguments.new(dates, nil, config_string, "UTC", "WorstRuntimesPerTrace", output + "/WorstRuntimesPerTrace", false),
+       JobArguments.new(dates, nil, config_string, "UTC", "WhaleReport", output + "/WhaleReport", false)]
 
-jobs_set_3 = Array[ run_job_cmd + " -j DependencyTree -o " + options.output + "/DependencyTree -d " + end_date_cmd_UTC,
-                 run_job_cmd + " -j ExpensiveEndpoints -o " + options.output + "/ExpensiveEndpoints -d " + end_date_cmd_UTC,
-                 run_job_cmd + " -j Timeouts -s \" --error_type finagle.timeout \" -o " + options.output + "/Timeouts -d " + end_date_cmd_UTC,
-                 run_job_cmd + " -j Timeouts -s \" --error_type finagle.retry \" -o " + options.output + "/Retries -d " + end_date_cmd_UTC ]
+  jobs_set_3 = Array[JobArguments.new(dates, nil, config_string, "UTC", "DependencyTree", output + "/DependencyTree", false),
+       JobArguments.new(dates, nil, config_string, "UTC", "ExpensiveEndpoints", output + "/ExpensiveEndpoints", false),
+       JobArguments.new(dates, "\" --error_type finagle.timeout \"", config_string, "UTC", "Timeouts", output + "/Timeouts", false),
+       JobArguments.new(dates, " \" --error_type finagle.retry \"", config_string, "UTC", "Timeouts", output + "/Retries", false),]
+  
+  run_job(JobArguments.new(dates, nil, config_string, "UTC", "Preprocessed", nil, true))
+  jobs = run_jobs_in_parallel(JobArguments.new(dates, nil, config_string, "UTC", "FindNames", nil, true), jobs_set_1)
+  jobs += run_jobs_in_parallel(JobArguments.new(dates, nil, config_string, "UTC", "FindIDtoName", nil, true), jobs_set_2)
+  jobs += run_jobs_in_parallel(nil, jobs_set_3)
+  
+  jobs.each { |aThread| aThread.join }
 
-jobs = run_jobs_in_parallel(run_job_cmd + " -j FindNames -p -d " + end_date_cmd_UTC, jobs_set_1)
-jobs += run_jobs_in_parallel(run_job_cmd + " -j FindIDtoName -p -d " + end_date_cmd_UTC, jobs_set_2)
-jobs += run_jobs_in_parallel("", jobs_set_3)
+  puts "All jobs finished!"
+end
 
-jobs.each { |aThread| aThread.join }
-
-puts "All jobs finished!"
-
+if __FILE__ == $0
+  options = OptparseAllJobArguments.parse(ARGV)
+  run_all_jobs(options.dates, options.output, options.hadoop_config)
+end

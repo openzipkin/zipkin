@@ -27,10 +27,12 @@ import scala.collection.JavaConverters._
 
 class CassandraAggregatesSpec extends Specification with JMocker with ClassMocker {
 
-  val mockCf = mock[ColumnFamily[String, Long, String]]
+  val mockAnnotationsCf = mock[ColumnFamily[String, Long, String]]
+  val mockDependenciesCf = mock[ColumnFamily[String, Long, String]]
 
   def cassandraAggregates = new CassandraAggregates {
-    val topAnnotations = mockCf
+    val topAnnotations = mockAnnotationsCf
+    val dependencies = mockDependenciesCf
   }
 
   def column(name: Long, value: String) = new Column[Long, String](name, value)
@@ -41,6 +43,11 @@ class CassandraAggregatesSpec extends Specification with JMocker with ClassMocke
       index.toLong -> column(index, ann)
     }.toMap.asJava
 
+    val serviceCallsSeq = Seq("parent1:10, parent2:20")
+    val serviceCalls = serviceCallsSeq.zipWithIndex.map {case (ann, index) =>
+      index.toLong -> column(index, ann)
+    }.toMap.asJava
+
     "retrieval" in {
       "getTopAnnotations" in {
         val agg = cassandraAggregates
@@ -48,7 +55,7 @@ class CassandraAggregatesSpec extends Specification with JMocker with ClassMocke
         val rowKey = agg.topAnnotationRowKey(serviceName)
 
         expect {
-          one(mockCf).getRow(rowKey) willReturn Future.value(topAnns)
+          one(mockAnnotationsCf).getRow(rowKey) willReturn Future.value(topAnns)
         }
 
         agg.getTopAnnotations(serviceName)() mustEqual topAnnsSeq
@@ -60,10 +67,19 @@ class CassandraAggregatesSpec extends Specification with JMocker with ClassMocke
         val rowKey = agg.topKeyValueRowKey(serviceName)
 
         expect {
-          one(mockCf).getRow(rowKey) willReturn Future.value(topAnns)
+          one(mockAnnotationsCf).getRow(rowKey) willReturn Future.value(topAnns)
         }
 
         agg.getTopKeyValueAnnotations(serviceName)() mustEqual topAnnsSeq
+      }
+
+      "getDependencies" in {
+        val agg = cassandraAggregates
+        val serviceName = "mockingbird"
+        expect {
+          one(mockDependenciesCf).getRow(serviceName) willReturn Future.value(serviceCalls)
+        }
+        agg.getDependencies(serviceName)() mustEqual serviceCallsSeq
       }
     }
 
@@ -96,15 +112,24 @@ class CassandraAggregatesSpec extends Specification with JMocker with ClassMocke
         agg.getTopKeyValueAnnotations(serviceName).apply() mustEqual topAnnsSeq
       }
 
+      "storeDependencies" in {
+        agg.storeDependencies(serviceName, serviceCallsSeq).apply()
+        agg.getDependencies(serviceName).apply() mustEqual serviceCallsSeq
+      }
+
       "clobber old entries" in {
         val anns1 = Seq("a1", "a2", "a3", "a4")
         val anns2 = Seq("a5", "a6")
+        val calls1 = Seq("sc1", "sc2")
 
         agg.storeTopAnnotations(serviceName, anns1).apply()
         agg.getTopAnnotations(serviceName).apply() mustEqual anns1
 
         agg.storeTopAnnotations(serviceName, anns2).apply()
         agg.getTopAnnotations(serviceName).apply() mustEqual anns2
+
+        agg.storeDependencies(serviceName, calls1).apply()
+        agg.getDependencies(serviceName).apply() mustEqual calls1
       }
     }
   }

@@ -256,6 +256,13 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     }
   }
 
+  def getDependencies(serviceName: String): Future[Seq[String]] = {
+    log.debug("getDependencies: " + serviceName)
+    call("getDependencies") {
+      aggregates.getDependencies(serviceName)
+    }
+  }
+
   def getTopAnnotations(serviceName: String): Future[Seq[String]] = {
     log.debug("getTopAnnotations: " + serviceName)
     call("getTopAnnotations") {

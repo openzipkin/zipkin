@@ -29,6 +29,7 @@ service ZipkinCollector extends scribe.scribe {
     /** Aggregates methods */
     void storeTopAnnotations(1: string service_name, 2: list<string> annotations) throws (1: StoreAggregatesException e);
     void storeTopKeyValueAnnotations(1: string service_name, 2: list<string> annotations) throws (1: StoreAggregatesException e);
+    void storeDependencies(1: string service_name, 2: list<string> endpoints) throws (1: StoreAggregatesException e);
 
     //************** ZK config changes **************
 
