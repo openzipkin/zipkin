@@ -73,6 +73,18 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     storage.close
   }
 
+  def getTraceIds(queryRequest: gen.QueryRequest): Future[gen.QueryResponse] = {
+    val method = "getTraceIds"
+    call(method) {
+      val serviceName = queryRequest.`serviceName`
+      val spanName = queryRequest.`spanName`
+      val endTs = queryRequest.`endTs`
+      val limit = queryRequest.`limit`
+      index.getTraceIdsByName(serviceName, spanName, endTs, limit)
+
+    }
+  }
+
   def getTraceIdsBySpanName(serviceName: String, spanName: String, endTs: Long,
                         limit: Int, order: gen.Order): Future[Seq[Long]] = {
     val method = "getTraceIdsBySpanName"

@@ -118,11 +118,15 @@ form .clearfix {
 }
 
 .form-horizontal .index-control-label {
-  width: 40px;
+  width: 60px;
 }
 
 .form-horizontal .index-controls {
-  margin-left: 60px;
+  margin-left: 80px;
+}
+
+.form-horizontal .index-controls input {
+  width: 94%%;
 }
 
 /* end bootstrap edits */
@@ -260,13 +264,17 @@ body > .container {
 .sidebar-block input {
   margin: 0;
   margin-bottom: 5px;
-  width: 95%;
+  /*width: 95%;*/
 }
 
 .filter-options {
   padding: 0px;
   border: none;
   background: none;;
+}
+
+.additional-filter-group > .control-group {
+  margin-bottom: 5px;
 }
 
 .add-filter-group > button {

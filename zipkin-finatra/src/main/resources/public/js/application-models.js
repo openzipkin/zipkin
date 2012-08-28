@@ -47,6 +47,20 @@ Zipkin.Application.Models = (function() {
    * @param limit: int
    */
   var Query = Backbone.Model.extend({
+
+    initialize: function() {
+      this.set("annotations", []);
+      this.set("keyValueAnnotations", []);
+    },
+
+    addTimeAnnotation: function(annotation) {
+      this.get("annotations").push(annotation)
+    },
+
+    addKeyValueAnnotation: function(key, value) {
+      this.get("keyValueAnnotations").push([key, value])
+    },
+
     execute: function() {
       var params = this.params();
       var results = new (QueryResults.extend({

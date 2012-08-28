@@ -411,56 +411,78 @@ Zipkin.Application.Index = (function() {
       $(".infobar").hide();
       $('#query-results').hide();
 
+      var spanName = $('select[name=spanName]').val();
+      
+      if (spanName == "") {
+        $('#error-box').text("Invalid query: no span name").show();
+        return false;
+      }
+
       var baseParams = {
         serviceName: $('select[name=serviceName]').val(),
         endDatetime: $('input[name=end_date]').val() + " " + $('input[name=end_time]').val(),
         limit: $('input[name=limit]').val()
       }
 
+      var query = new Zipkin.Application.Models.Query(baseParams);
+
+      $(".additional-filter-group > .js-time-annotation > .controls > input").each(function(i, elem) {
+        query.addTimeAnnotation($(elem).val());
+      });
+
+      $(".additional-filter-group > .js-kv-annotation").each(function(i, elem) {
+        query.addKeyValueAnnotation(
+          $("input[name=annotation_key]", elem).val(),
+          $("input[name=annotation_value]", elem).val()
+        );
+      });
+
       Zipkin.Base.setCookie("lastServiceName", baseParams.serviceName);
 
-      var tabType = $("li.active > a.filter-tab").attr("id")
-      var query = null;
-      var error = false;
-      if (tabType == "filter-span-tab") {
-        var spanName = $('select[name=spanName]').val();
-        if (spanName === "") {
-          error = true;
-        } else {
-          query = new Zipkin.Application.Models.SpanQuery($.extend({}, baseParams, {
-            spanName: spanName
-          }));
-          Zipkin.Base.setCookie("lastSpanName", spanName);
-        }
-      } else if (tabType == "filter-annotation-tab") {
-        var timeAnnotation = $('input[name=time_annotation]').val();
-        if (timeAnnotation === "") {
-          error = true;
-        } else {
-          query = new Zipkin.Application.Models.AnnotationQuery($.extend({}, baseParams, {
-            timeAnnotation: timeAnnotation
-          }));
-        }
-      } else if (tabType == "filter-key-value-tab") {
-        var key = $('input[name=annotation_key]').val();
-        var value = $('input[name=annotation_value]').val();
-        if (key === "" || value === "") {
-          error = true;
-        } else {
-          query = new Zipkin.Application.Models.KeyValueQuery($.extend({}, baseParams, {
-            annotationKey    : key,
-            annotationValue  : value
-          }));
-        }
-      } else {
-        $('#error-box').text("Invalid query").show();
-        return false;
-      }
+      console.log(query)
+      return false;
 
-      if (error) {
-        $('#error-box').text("Invalid query").show();
-        return false;
-      }
+
+
+      // if (tabType == "filter-span-tab") {
+      //   var spanName = $('select[name=spanName]').val();
+      //   if (spanName === "") {
+      //     error = true;
+      //   } else {
+      //     query = new Zipkin.Application.Models.SpanQuery($.extend({}, baseParams, {
+      //       spanName: spanName
+      //     }));
+      //     Zipkin.Base.setCookie("lastSpanName", spanName);
+      //   }
+      // } else if (tabType == "filter-annotation-tab") {
+      //   var timeAnnotation = $('input[name=time_annotation]').val();
+      //   if (timeAnnotation === "") {
+      //     error = true;
+      //   } else {
+      //     query = new Zipkin.Application.Models.AnnotationQuery($.extend({}, baseParams, {
+      //       timeAnnotation: timeAnnotation
+      //     }));
+      //   }
+      // } else if (tabType == "filter-key-value-tab") {
+      //   var key = $('input[name=annotation_key]').val();
+      //   var value = $('input[name=annotation_value]').val();
+      //   if (key === "" || value === "") {
+      //     error = true;
+      //   } else {
+      //     query = new Zipkin.Application.Models.KeyValueQuery($.extend({}, baseParams, {
+      //       annotationKey    : key,
+      //       annotationValue  : value
+      //     }));
+      //   }
+      // } else {
+      //   $('#error-box').text("Invalid query").show();
+      //   return false;
+      // }
+
+      // if (error) {
+      //   $('#error-box').text("Invalid query").show();
+      //   return false;
+      // }
 
       $('#loading-data').show();
 
@@ -541,14 +563,22 @@ Zipkin.Application.Index = (function() {
 
     /* Bind click handler for additional annotation/kv filters */
     $(".js-add-annotation-filter").click(function(e) {
-      templatize(TEMPLATES.QUERY_ADD_ANNOATION, function(template) {
-
+      e.stopPropagation();
+      templatize(TEMPLATES.QUERY_ADD_ANNOTATION, function(template) {
+        var content = template.render({});
+        $(".additional-filter-group").append(content);
+        $(".additional-filter-group > .hide").slideDown('fast');
+        $(".additional-filter-group > .control-group:last-child > .controls > input").focus();
       });
+
       return false;
     });
     $(".js-add-kv-filter").click(function(e) {
       templatize(TEMPLATES.QUERY_ADD_KV, function(template) {
-
+        var content = template.render({});
+        $(".additional-filter-group").append(content);
+        $(".additional-filter-group > .hide").slideDown('fast');
+        $(".additional-filter-group > .control-group:last-child > .controls:nth-child(2) > input").focus();
       });
       return false;
     });

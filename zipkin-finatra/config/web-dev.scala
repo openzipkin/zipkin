@@ -32,7 +32,7 @@ new ZipkinWebConfig {
    * Then, set:
    * `val resourcePathPrefix = "http://localhost:8000"`
    */
-  val resourcePathPrefix = "/public"
+  val resourcePathPrefix = "http://localhost:8000"
   jsConfig = new JsConfig {
     override val pathPrefix = resourcePathPrefix
   }
