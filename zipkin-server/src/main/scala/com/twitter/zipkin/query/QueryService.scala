@@ -93,7 +93,9 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       FTrace.recordBinary("limit", limit)
       FTrace.recordBinary("order", order)
 
-      val traceIds = index.getTraceIdsByName(serviceName, span, endTs, limit)
+      val traceIds = index.getTraceIdsByName(serviceName, span, endTs, limit).map {
+        _.map { _.traceId }
+      }
       sortTraceIds(traceIds, limit, order)
     }
   }
@@ -113,7 +115,9 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       FTrace.recordBinary("limit", limit)
       FTrace.recordBinary("order", order)
 
-      val traceIds = index.getTraceIdsByName(serviceName, None, endTs, limit)
+      val traceIds = index.getTraceIdsByName(serviceName, None, endTs, limit).map {
+        _.map { _.traceId }
+      }
       sortTraceIds(traceIds, limit, order)
     }
   }
@@ -139,7 +143,9 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       FTrace.recordBinary("limit", limit)
       FTrace.recordBinary("order", order)
 
-      val traceIds = index.getTraceIdsByAnnotation(serviceName, annotation, valueOption, endTs, limit)
+      val traceIds = index.getTraceIdsByAnnotation(serviceName, annotation, valueOption, endTs, limit).map {
+        _.map { _.traceId }
+      }
       sortTraceIds(traceIds, limit, order)
     }
   }
