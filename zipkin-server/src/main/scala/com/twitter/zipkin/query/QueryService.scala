@@ -25,7 +25,7 @@ import com.twitter.util.Future
 import com.twitter.zipkin.adapter.ThriftQueryAdapter
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.query.adjusters.Adjuster
-import com.twitter.zipkin.storage.{Aggregates, TraceIdDuration, Index, Storage}
+import com.twitter.zipkin.storage._
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
 import org.apache.thrift.TException
@@ -71,6 +71,93 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
   def shutdown() {
     running.set(false)
     storage.close
+  }
+
+  def getTraceIds(queryRequest: gen.QueryRequest): Future[gen.QueryResponse] = {
+    val method = "getTraceIds"
+    call(method) {
+      val serviceName = queryRequest.`serviceName`
+      val spanName = queryRequest.`spanName`
+      val endTs = queryRequest.`endTs`
+      val limit = queryRequest.`limit`
+      val order = queryRequest.`order`
+
+      val spanNameTraceIds = index.getTraceIdsByName(serviceName, spanName, endTs, limit)
+
+      /* Get the Trace IDs for any annotations requested */
+      val annotationTraceIds = queryRequest.`annotations` match {
+        case Some(anns) => {
+          Future.collect {
+            anns.map { ann =>
+              index.getTraceIdsByAnnotation(serviceName, ann.`value`, None, endTs, limit)
+            }
+          }.map { Some(_) }
+        }
+        case None => Future.None
+      }
+      /* Count the number of trace IDs found for each annotation */
+      val annotationsCounts = annotationTraceIds.map { _.map { _.map { _.length } } }
+
+      /* Get the Trace IDs for any binary annotations requested */
+      val binaryAnnotationTraceIds = queryRequest.`binaryAnnotations` match {
+        case Some(anns) => {
+          Future.collect {
+            anns.map { ann =>
+              index.getTraceIdsByAnnotation(serviceName, ann.`key`, Some(ann.`value`), endTs, limit)
+            }
+          }.map { Some(_) }
+        }
+        case None => Future.None
+      }
+      val binaryAnnotationsCounts = binaryAnnotationTraceIds.map { _.map { _.map { _.length } } }
+
+      /* Find the intersection of all trace ID sets */
+      val idIntersection = spanNameTraceIds.map { sIds =>
+        annotationTraceIds.map { aIds =>
+          binaryAnnotationTraceIds.map { bIds =>
+            val ids = Seq(sIds) ++ (aIds getOrElse Seq.empty) ++ (bIds getOrElse Seq.empty)
+            traceIdsIntersect(ids)
+          }
+        }
+      }.flatten.flatten
+
+      annotationsCounts.map { ac =>
+        binaryAnnotationsCounts.map { bc =>
+          idIntersection.map { idObjs =>
+            val ids = idObjs.map { _.traceId }
+            val ts = idObjs.map { _.timestamp }
+
+            sortTraceIds(Future(ids), limit, order).map { sortedIds =>
+              gen.QueryResponse(sortedIds, ac, bc, ts.min, ts.max)
+            }
+          }
+        }
+      }.flatten.flatten.flatten
+    }
+  }
+
+  private[query] def traceIdsIntersect(idSeqs: Seq[Seq[IndexedTraceId]]): Seq[IndexedTraceId] = {
+    /* Find the trace IDs present in all the Seqs */
+    val idMaps = idSeqs.map {
+      _.groupBy {
+        _.traceId
+      }
+    }
+    val traceIds = idMaps.map {
+      _.keys.toSeq
+    }
+    val commonTraceIds = traceIds.fold(traceIds(0)) { _.intersect(_) }
+
+    /*
+     * Find the timestamps associated with each trace ID and construct a new IndexedTraceId
+     * that has the trace ID's maximum timestamp (ending) as the timestamp
+     */
+    commonTraceIds.map { id =>
+      val maxTime = idMaps.map { m =>
+        m(id).map { _.timestamp }
+      }.flatten.max
+      IndexedTraceId(id, maxTime)
+    }
   }
 
   def getTraceIdsBySpanName(serviceName: String, spanName: String, endTs: Long,
@@ -357,5 +444,4 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       }
     }
   }
-
 }

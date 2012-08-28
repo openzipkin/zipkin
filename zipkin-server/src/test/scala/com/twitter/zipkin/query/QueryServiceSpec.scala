@@ -471,5 +471,74 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
         qs.getTopKeyValueAnnotations(serviceName)() mustEqual annotations
       }
     }
+
+    "getTraceIds" in {
+      val mockIndex = mock[Index]
+      val qs = new QueryService(null, mockIndex, null, null)
+      qs.start()
+
+      val serviceName = "service"
+      val spanName = Some("span")
+      val annotations = Some(Seq(gen.QueryAnnotation("ann1")))
+      val binaryAnnotations = Some(Seq(gen.BinaryAnnotation("key", ByteBuffer.wrap("value".getBytes), gen.AnnotationType.String)))
+      val endTs = 100
+      val limit = 10
+      val order = gen.Order.DurationDesc
+
+      def id(id: Long, time: Long) = IndexedTraceId(id, time)
+
+      "get intersection of different filters" in {
+        val request = gen.QueryRequest(serviceName, spanName, annotations, binaryAnnotations, endTs, limit, order)
+
+        expect {
+          one(mockIndex).getTraceIdsByName(serviceName, spanName, endTs, limit) willReturn Future(Seq(id(1, 1), id(2, 2), id(3, 3)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, endTs, limit) willReturn Future(Seq(id(4, 4), id(1, 5), id(3, 4)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "key", Some(ByteBuffer.wrap("value".getBytes)), endTs, limit) willReturn Future(Seq(id(2, 3), id(4, 9), id(1, 9)))
+
+          one(mockIndex).getTracesDuration(Seq(1)) willReturn Future(Seq(TraceIdDuration(1, 100, 1)))
+        }
+
+        val response = qs.getTraceIds(request).apply()
+        response.`traceIds`.length mustEqual 1
+        response.`traceIds`(0) mustEqual 1
+
+        response.`annotationsCounts` mustEqual Some(Seq(3))
+        response.`binaryAnnotationsCounts` mustEqual Some(Seq(3))
+        response.`endTs` mustEqual 9
+        response.`startTs` mustEqual 9
+      }
+
+      "find intersection" in {
+        "one id" in {
+          val ids = Seq(
+            Seq(IndexedTraceId(1, 100), IndexedTraceId(2, 140)),
+            Seq(IndexedTraceId(1, 100))
+          )
+          qs.traceIdsIntersect(ids) mustEqual Seq(IndexedTraceId(1, 100))
+        }
+
+        "multiple ids" in {
+          val ids = Seq(
+            Seq(IndexedTraceId(1, 100), IndexedTraceId(2, 200), IndexedTraceId(3, 300)),
+            Seq(IndexedTraceId(2, 200), IndexedTraceId(4, 200), IndexedTraceId(7, 300), IndexedTraceId(3, 300))
+          )
+          val actual = qs.traceIdsIntersect(ids)
+          actual.length mustEqual 2
+          actual mustContain IndexedTraceId(2, 200)
+          actual mustContain IndexedTraceId(3, 300)
+        }
+
+        "take max time for each id" in {
+          val ids = Seq(
+            Seq(IndexedTraceId(1, 100), IndexedTraceId(2, 200), IndexedTraceId(3, 300)),
+            Seq(IndexedTraceId(1, 101), IndexedTraceId(2, 202))
+          )
+          val actual = qs.traceIdsIntersect(ids)
+          actual.length mustEqual 2
+          actual mustContain IndexedTraceId(1, 101)
+          actual mustContain IndexedTraceId(2, 202)
+        }
+      }
+    }
   }
 }
