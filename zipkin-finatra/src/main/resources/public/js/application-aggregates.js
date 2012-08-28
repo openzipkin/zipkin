@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 /*global root_url:false */
-//= require zipkin
 var Zipkin = Zipkin || {};
 Zipkin.Application = Zipkin.Application || {};
 Zipkin.Application.Aggregates = (function() {
@@ -67,17 +66,13 @@ Zipkin.Application.Aggregates = (function() {
         date: self_val,
         current: self_val,
         starts: 0,
-        // calendars: 2,
-        // mode: "range",
         onBeforeShow: function(){
           self.DatePickerSetDate(self_val, true);
         },
         onChange: function(formated, dates){
           self.val(formated);
-          // self.DatePickerHide();
         }
       }).blur(function(){
-        // $(this).DatePickerHide();
       });
     });
 
@@ -105,20 +100,8 @@ Zipkin.Application.Aggregates = (function() {
         adjust_clock_skew: Zipkin.Base.clockSkewState() ? 'true' : 'false',
       };
 
-//      $.ajax({
-//        type: 'GET',
-//        url: root_url + "aggregates/dependency_tree",
-////        url: root_url + "api/get/" + traceId,
-//        data: query_data,
-//        success: getTraceSuccess(traceId),
-////        success: getTraceSuccess(traceId),
-//        error: function(xhr, status, error) {
-//          $('#trace-content').hide();
-//          $('#loading-data').hide();
-//          $('#error-msg').text(error);
-//          $('.error-box').show();
-//
-//        }
+//   TODO: Use AJAX request to get data
+
       Zipkin.GetDependencyTree.initialize();
     };
     getDependencyTree();
@@ -126,7 +109,6 @@ Zipkin.Application.Aggregates = (function() {
 
   return {
     initialize: initialize
-//    getTraceSuccess: getTraceSuccess
   };
 })();
 
