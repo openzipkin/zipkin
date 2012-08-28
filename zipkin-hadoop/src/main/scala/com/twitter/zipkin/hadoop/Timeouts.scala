@@ -19,7 +19,7 @@ package com.twitter.zipkin.hadoop
 import com.twitter.scalding._
 import cascading.pipe.joiner.LeftJoin
 import com.twitter.zipkin.gen.{SpanServiceName, Annotation}
-import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, PreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources._
 
 /**
  * Find which services timeout the most
@@ -35,14 +35,14 @@ class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
   }
 
   // Preprocess the data into (trace_id, id, parent_id, annotations, client service name, service name)
-  val spanInfo = PreprocessedSpanSource()
+  val spanInfo = DailyPreprocessedSpanSource()
     .read
     .mapTo(0 -> ('id, 'parent_id, 'annotations, 'service) )
       { s: SpanServiceName => (s.id, s.parent_id, s.annotations.toList, s.service_name) }
 
 
 //  Project to (id, service name)
-  val idName = PrepTsvSource()
+  val idName = DailyPrepTsvSource()
     .read
 
   // Left join with idName to find the parent's service name, if applicable

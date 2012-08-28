@@ -18,15 +18,15 @@ package com.twitter.zipkin.hadoop
 
 
 import com.twitter.scalding._
-import com.twitter.zipkin.hadoop.sources.{PreprocessedSpanSource, Util}
-import com.twitter.zipkin.gen.{SpanServiceName, BinaryAnnotation, Span}
+import com.twitter.zipkin.hadoop.sources.DailyPreprocessedSpanSource
+import com.twitter.zipkin.gen.{SpanServiceName, BinaryAnnotation}
 
 /**
  * Per service, find the 100 most common keys used to annotate spans involving that service
  */
 class PopularKeys(args : Args) extends Job(args) with DefaultDateRangeJob {
 
-  val preprocessed = PreprocessedSpanSource()
+  val preprocessed = DailyPreprocessedSpanSource()
     .read
     .mapTo(0 -> ('service, 'binary_annotations))
       { s: SpanServiceName => (s.service_name, s.binary_annotations.toList) }
