@@ -120,10 +120,10 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
       //cassandra.storeSpan(span1)()
       cassandraIndex.indexTraceIdByServiceAndName(span1)()
       cassandraIndex.getTraceIdsByName("service", None, 0, 3)() foreach {
-        _ mustEqual span1.traceId
+        _.traceId mustEqual span1.traceId
       }
       cassandraIndex.getTraceIdsByName("service", Some("methodname"), 0, 3)() foreach {
-        _ mustEqual span1.traceId
+        _.traceId mustEqual span1.traceId
       }
     }
 
@@ -188,17 +188,21 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
       cassandraIndex.indexSpanByAnnotations(span1)()
 
       // fetch by time based annotation, find trace
-      var seq = cassandraIndex.getTraceIdsByAnnotation("service", "custom", None, 0, 3)()
-      seq mustEqual Seq(span1.traceId)
+      val map1 = cassandraIndex.getTraceIdsByAnnotation("service", "custom", None, 0, 3)()
+      map1.foreach {
+        _.traceId mustEqual span1.traceId
+      }
 
       // should not find any traces since the core annotation doesn't exist in index
-      seq = cassandraIndex.getTraceIdsByAnnotation("service", "cs", None, 0, 3)()
-      seq.isEmpty mustBe true
+      val map2 = cassandraIndex.getTraceIdsByAnnotation("service", "cs", None, 0, 3)()
+      map2.isEmpty mustBe true
 
       // should find traces by the key and value annotation
-      seq = cassandraIndex.getTraceIdsByAnnotation("service", "BAH",
+      val map3 = cassandraIndex.getTraceIdsByAnnotation("service", "BAH",
         Some(ByteBuffer.wrap("BEH".getBytes)), 0, 3)()
-      seq mustEqual Seq(span1.traceId)
+      map3.foreach {
+        _.traceId mustEqual span1.traceId
+      }
     }
 
     "not index empty service name" in {
