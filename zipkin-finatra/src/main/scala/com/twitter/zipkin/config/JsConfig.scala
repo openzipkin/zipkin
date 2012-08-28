@@ -47,9 +47,14 @@ class JsConfig extends StaticResourceConfig {
     "application.js",
     "application-models.js",
     "application-views.js",
-
     "application-index.js",
     "application-show.js",
     "application-static.js"
+  )
+
+  lazy val localAggregatesResources = localResources ++ Seq(
+    "application-aggregates.js",
+    "sankey.js",
+    "zipkin-global-dependency.js"
   )
 }
