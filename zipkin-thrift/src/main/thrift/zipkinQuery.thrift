@@ -194,6 +194,7 @@ service ZipkinQuery {
     i32 getDataTimeToLive() throws (1: QueryException qe);
 
     /** Aggregates related */
+    list<string> getDependencies(1: string service_name) throws (1: QueryException qe);
     list<string> getTopAnnotations(1: string service_name) throws (1: QueryException qe);
     list<string> getTopKeyValueAnnotations(1: string service_name) throws (1: QueryException qe);
 }

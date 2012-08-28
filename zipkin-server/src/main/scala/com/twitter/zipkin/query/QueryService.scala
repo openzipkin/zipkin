@@ -126,7 +126,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       annotation, value, endTs, limit, order))
     call(method) {
       if (annotation == null || "".equals(annotation)) {
-        errorStats.counter("%s_no_annotation").incr()
+        errorStats.counter("%s_no_annotation".format(method)).incr()
         return Future.exception(gen.QueryException("No annotation provided"))
       }
 
@@ -318,7 +318,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
    */
   private def getTraceIdDurations(
     traceIds: Future[Seq[Long]]
-  ): Future[Seq[TraceIdDuration]] = {
+   ): Future[Seq[TraceIdDuration]] = {
     traceIds.map { t =>
       Future.collect {
         t.grouped(traceDurationFetchBatchSize)
