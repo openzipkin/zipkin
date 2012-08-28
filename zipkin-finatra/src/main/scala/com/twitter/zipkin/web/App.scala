@@ -43,7 +43,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
 
   /* Index page */
   get("/") { request =>
-    /* If valid query params passed, run the query and push the data down with the page */
+  /* If valid query params passed, run the query and push the data down with the page */
     val queryResults = QueryRequest(request) match {
       case None => {
         /* Not valid params, load the normal landing page */
@@ -69,6 +69,10 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   /* Static page for render trace from JSON */
   get("/static") { request =>
     render.view(wrapView(new StaticView)).toFuture
+  }
+
+  get("/aggregates") {request =>
+    render.view(wrapAggregatesView(new AggregatesView)).toFuture
   }
 
   /**
@@ -312,6 +316,15 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     }
   }
 
+  private def wrapAggregatesView(v: View) = new View {
+    val template = "templates/layouts/application.mustache"
+    val rootUrl = config.rootUrl
+    val innerView: View = v
+    val javascripts = config.jsConfig.aggregatesResources
+    val stylesheets = config.cssConfig.aggregatesResources
+    lazy val body = innerView.render
+  }
+
   private def wrapView(v: View) = new View {
     val template = "templates/layouts/application.mustache"
     val rootUrl = config.rootUrl
@@ -334,4 +347,8 @@ class ShowView(val traceId: String) extends View {
 
 class StaticView extends View {
   val template = "templates/static.mustache"
+}
+
+class AggregatesView extends View {
+  val template = "templates/aggregates.mustache"
 }

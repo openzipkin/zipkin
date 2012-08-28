@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 /*global root_url:false */
+//= require zipkin
 var Zipkin = Zipkin || {};
 Zipkin.Application = Zipkin.Application || {};
 Zipkin.Application.Show = (function() {

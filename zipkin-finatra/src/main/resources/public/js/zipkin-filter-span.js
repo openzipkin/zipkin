@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+//= require zipkin-span
+
 var Zipkin = Zipkin || {};
 Zipkin.FilterSpan = (function(superClass) {
 

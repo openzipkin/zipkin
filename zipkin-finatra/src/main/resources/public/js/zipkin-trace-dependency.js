@@ -15,6 +15,9 @@
  */
 
 /*global d3:false */
+
+//= require d3-2.9.1
+
 var Zipkin = Zipkin || {};
 
 /*

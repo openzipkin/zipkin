@@ -18,6 +18,14 @@
 // This file is automatically included by javascript_include_tag :defaults
 
 /*global root_url:false Trace:false */
+
+//= require bootstrap
+//= require hogan-2.0.0
+
+//= require datepicker
+
+//= require_tree .
+
 var Zipkin = Zipkin || {};
 
 Zipkin.Base = (function() {
@@ -119,6 +127,27 @@ Zipkin.Base = (function() {
 
     // Bind click handler for brand button
     $(".brand").click(brandClick);
+
+    // Hook up trace nav buttons
+    $(".js-zipkin-navbar > li").each(function (index, elem) {
+      $(elem).on('click', function (event) {
+        if (!$(elem).hasClass("active")) {
+          $(".js-zipkin-navbar > li").each(function (i, e) {
+            $(e).removeClass("active");
+          });
+          $(elem).addClass("active");
+        }
+        var hash = event.target.hash;
+
+        $(".js-zipkin-navbar > li > a").each(function (i, e) {
+          if (e.hash != hash) {
+            $(e.hash).hide();
+          }
+        });
+        $(hash).show();
+        $("html body").animate({scrollTop: 0}, "slow");
+      });
+    });
 
     // Set clock skew button to whatever the cookie says
     var tooltip_text = "Clock skew adjustment: " + setClockSkewBtnState(clockSkewState());

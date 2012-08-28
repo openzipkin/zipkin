@@ -15,6 +15,12 @@
  */
 
 /*global d3:false */
+
+//= require d3-2.9.1
+
+//= require zipkin
+//= require zipkin-node
+
 var Zipkin = Zipkin || {};
 Zipkin.TraceSummary = (function(Zipkin) {
 
