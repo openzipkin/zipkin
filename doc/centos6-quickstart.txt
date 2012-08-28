@@ -1,0 +1,130 @@
+This doc describes a quickstart to running the basic Zipkin/Finatra service, with everything running on one machine
+It presumes you have a clean-ish Centos 6 install, and a user with sudo capabilities (eg user is in wheel group and wheel group is allowed in /etc/sudoers)
+
+This includes building Zipkin from the current master branch from Github.
+Glyn Davies - 22/8/2012
+glyn@snax.net
+
+--------------------------------
+Groundwork - perform this as ROOT
+--------------------------------
+
+
+1. Add the Datastax REPO, from http://www.datastax.com/docs/1.1/install/install_rpm
+
+vi /etc/yum.repos.d/datastax.repo
+
+8<---------8<---------8<---------8<---------8<---------8<---------
+[datastax]
+name= DataStax Repo for Apache Cassandra
+baseurl=http://rpm.datastax.com/community
+enabled=1
+gpgcheck=0
+8<---------8<---------8<---------8<---------8<---------8<---------
+
+2. Install Cassandra
+yum install dsc1.1 
+
+
+3. Add the Cloudera Repo
+
+cd /etc/yum.repos.d/
+wget http://archive.cloudera.com/cdh4/redhat/6/x86_64/cdh/cloudera-cdh4.repo
+
+4. Install Zookeeper
+yum install zookeeper-server
+
+
+5. Install Java 7 JDK
+
+Download RPM from: http://www.oracle.com/technetwork/java/javase/downloads/jdk-7u3-download-1501626.html
+
+6. Install Java RPM: 
+rpm -i jdk-7u3-linux-x64.rpm
+
+7. Set Sun JVM as the operative JVM
+
+alternatives --install /usr/bin/java java /usr/java/jdk1.7.0_03/bin/java 20000
+alternatives --set java /usr/java/jdk1.7.0_03/bin/java
+
+
+8. Add Casssandra to the startup system, then start it
+ chkconfig --add cassandra
+ service cassandra start
+
+
+9. Initialise Zookeeper install (different if you are doing a multi node cluster) 
+/etc/init.d/zookeeper-server init
+/sbin/service zookeeper-server start
+See: https://ccp.cloudera.com/display/CDH4DOC/ZooKeeper+Installation#ZooKeeperInstallation-InstallingtheZooKeeperPackages
+
+
+10. Install GIT
+yum install git
+
+11. Install screen
+yum install screen
+
+12. Disable IPtables (WARNING - THIS IS A SECURITY RISK IF YOU ARE NOT IN A CONTROLLED ENVIRONMENT)
+
+service iptables stop
+chkconfig iptables off
+
+
+
+--------------------------------
+Zipkin time - perform as your user (glynd in my case)
+--------------------------------
+
+13. Obtain Zipkin
+
+cd 
+mkdir github
+cd github
+
+Follow instructions from: https://github.com/twitter/zipkin/
+
+git clone https://github.com/twitter/zipkin.git
+
+
+14. Become root / sudo to stop zookeeper (otherwise the zipkin tests fail)
+
+sudo service zookeeper-server stop
+
+
+15. Build Zipkin
+
+cd zipkin
+bin/sbt update package-dist
+
+Note: This can take a while, and also relies on certain mirrors being up to provide required libraries
+
+16. Restart zookeeper (assuming build was successful)
+
+sudo service zookeeper-server start
+
+17. Create somewhere to install to:
+
+sudo mkdir /usr/local/zipkin
+sudo chown **MYUSERNAME** /usr/local/zipkin
+
+18. Expand out the required components (here collector, query and finatra)
+unzip -d /usr/local/zipkin/zipkin-server zipkin-server/dist/zipkin-server.zip
+unzip -d /usr/local/zipkin/zipkin-scribe  zipkin-scribe/dist/zipkin-scribe.zip
+unzip -d /usr/local/zipkin/zipkin-finatra zipkin-finatra/dist/zipkin-finatra.zip
+
+19. Set scripts to be executable...
+cd /usr/local/zipkin/
+chmod +x zipkin-server/scripts/*
+chmod +x zipkin-scribe/scripts/*
+chmod +x zipkin-finatra/scripts/*
+
+20. Run it up!
+
+zipkin-server/scripts/query.sh -f zipkin-server/config/query-dev.scala &
+zipkin-scribe/scripts/collector.sh -f zipkin-scribe/config/collector-dev.scala &
+zipkin-finatra/scripts/finatra.sh -f zipkin-finatra/config/web-localhost.scala &
+
+
+
+

@@ -13,7 +13,8 @@ if [ ! -f $sbtjar ]; then
 fi
 
 test -f $sbtjar || exit 1
-if [ $(openssl md5 < $sbtjar) != 2886cc391e38fa233b3e6c0ec9adfa1e ]; then
+sbtchksum=`openssl md5 <$sbtjar | cut -d" " -f2`
+if [ $sbtchksum != 2886cc391e38fa233b3e6c0ec9adfa1e ]; then
   echo 'bad sbtjar!' 1>&2
   exit 1
 fi

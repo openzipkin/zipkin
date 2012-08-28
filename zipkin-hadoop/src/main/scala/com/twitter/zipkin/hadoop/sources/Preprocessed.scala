@@ -31,7 +31,7 @@ class Preprocessed(args : Args) extends Job(args) with DefaultDateRangeJob {
     .mapTo(0 ->('trace_id, 'id, 'parent_id, 'annotations, 'binary_annotations)) {
       s: Span => (s.trace_id, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList)
     }
-    .groupBy('trace_id, 'id, 'parent_id) {
+    .groupBy('trace_id, 'name, 'id, 'parent_id) {
       _.reduce('annotations, 'binary_annotations) {
         (left: (List[Annotation], List[BinaryAnnotation]), right: (List[Annotation], List[BinaryAnnotation])) =>
         (left._1 ++ right._1, left._2 ++ right._2)

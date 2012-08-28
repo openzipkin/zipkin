@@ -74,7 +74,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
   }
 
   def getTraceIdsBySpanName(serviceName: String, spanName: String, endTs: Long,
-                        limit: Int, order: gen.Order): Future[Seq[Long]] = {
+                            limit: Int, order: gen.Order): Future[Seq[Long]] = {
     val method = "getTraceIdsBySpanName"
     log.debug("%s. serviceName: %s spanName: %s endTs: %s limit: %s order: %s".format(method, serviceName, spanName,
       endTs, limit, order))
@@ -126,7 +126,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       annotation, value, endTs, limit, order))
     call(method) {
       if (annotation == null || "".equals(annotation)) {
-        errorStats.counter("%s_no_annotation").incr()
+        errorStats.counter("%s_no_annotation".format(method)).incr()
         return Future.exception(gen.QueryException("No annotation provided"))
       }
 
@@ -250,13 +250,6 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     }
   }
 
-  def getDependencies(serviceName: String): Future[Seq[String]] = {
-    log.debug("getDependencies: " + serviceName)
-    call("getDependencies") {
-      aggregates.getDependencies(serviceName)
-    }
-  }
-
   def getTopAnnotations(serviceName: String): Future[Seq[String]] = {
     log.debug("getTopAnnotations: " + serviceName)
     call("getTopAnnotations") {
@@ -324,22 +317,22 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
    * Given a sequence of traceIds get their durations
    */
   private def getTraceIdDurations(
-    traceIds: Future[Seq[Long]]
-  ): Future[Seq[TraceIdDuration]] = {
+                                   traceIds: Future[Seq[Long]]
+                                   ): Future[Seq[TraceIdDuration]] = {
     traceIds.map { t =>
       Future.collect {
         t.grouped(traceDurationFetchBatchSize)
-        .toSeq
-        .map {index.getTracesDuration(_)}
+          .toSeq
+          .map {index.getTracesDuration(_)}
       }
     }.flatten.map {_.flatten}
   }
 
   private def sortTraceIds(
-    traceIds: Future[Seq[Long]],
-    limit: Int,
-    order: gen.Order
-  ): Future[Seq[Long]] = {
+                            traceIds: Future[Seq[Long]],
+                            limit: Int,
+                            order: gen.Order
+                            ): Future[Seq[Long]] = {
 
     // No sorting wanted
     if (order == gen.Order.None) {

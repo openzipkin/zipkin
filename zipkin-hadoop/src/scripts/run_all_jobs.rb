@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/bash/env ruby
 # Copyright 2012 Twitter Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,6 +42,7 @@ class OptparseAllJobArguments
 
      opts.on("-d", "--date STARTDATE,ENDDATE", Array, "The DATES to run the jobs over.  Expected format for dates are is %Y-%m-%dT%H:%M") do |list|
         options.dates = list.map{|date| DateTime.strptime(date, '%Y-%m-%dT%H:%M')}
+        options.dates = list
       end
 
       opts.on("-o", "--output OUTPUT",
