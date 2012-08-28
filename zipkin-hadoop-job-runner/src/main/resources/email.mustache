@@ -4,12 +4,13 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
     <head>
-    <h2>Service Report for {{serviceName}}</h2>
+    <h2>Service Report for {{standardServiceName}}</h2>
     </head>
     {{/header}}
 
-    {{#body}}
     <body>
+    {{#services}}
+    <h3>{{serviceName}}</h3>
         {{#oneLineResults}}
         <p>{{result}}</p> <br />
         {{/oneLineResults}}
@@ -45,8 +46,8 @@
             {{/tableUrlRows}}
         </table>
         {{/tableResults}}
+    {{/services}}
     </body>
-    {{/body}}
 </html>
 {{/html}}
 
