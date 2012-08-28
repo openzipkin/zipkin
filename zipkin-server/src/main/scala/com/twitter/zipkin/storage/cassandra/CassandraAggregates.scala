@@ -40,7 +40,9 @@ trait CassandraAggregates extends Aggregates with Cassandra {
    * Get the top annotations for a service name
    */
   def getDependencies(serviceName: String): Future[Seq[String]] = {
-    getDependencies(serviceName)
+    dependencies.getRow(serviceName).map {
+      _.values().asScala.map { _.value }.toSeq
+    }
   }
 
   /**
