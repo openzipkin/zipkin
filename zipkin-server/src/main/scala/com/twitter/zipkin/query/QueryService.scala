@@ -331,7 +331,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
    */
   private def getTraceIdDurations(
     traceIds: Future[Seq[Long]]
-   ): Future[Seq[TraceIdDuration]] = {
+  ): Future[Seq[TraceIdDuration]] = {
     traceIds.map { t =>
       Future.collect {
         t.grouped(traceDurationFetchBatchSize)
