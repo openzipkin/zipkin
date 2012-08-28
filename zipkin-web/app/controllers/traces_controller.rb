@@ -115,7 +115,7 @@ class TracesController < ApplicationController
     # Get all of the spans for a service_name
     service_name = params[:service_name] || ""
     render :json => Names.get_span_names(service_name).to_a
-  end                                                                         g
+  end
 
   def dependencies
     service_name = params[:service_name] || ""

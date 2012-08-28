@@ -28,6 +28,4 @@ class CssConfig extends StaticResourceConfig {
     "datepicker.css",
     "application.css"
   )
-
-  val localAggregatesResources = localResources ++ Seq("aggregates.css")
 }

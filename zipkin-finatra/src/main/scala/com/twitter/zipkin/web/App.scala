@@ -43,7 +43,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
 
   /* Index page */
   get("/") { request =>
-  /* If valid query params passed, run the query and push the data down with the page */
+    /* If valid query params passed, run the query and push the data down with the page */
     val queryResults = QueryRequest(request) match {
       case None => {
         /* Not valid params, load the normal landing page */

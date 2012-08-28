@@ -74,7 +74,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
   }
 
   def getTraceIdsBySpanName(serviceName: String, spanName: String, endTs: Long,
-                            limit: Int, order: gen.Order): Future[Seq[Long]] = {
+                        limit: Int, order: gen.Order): Future[Seq[Long]] = {
     val method = "getTraceIdsBySpanName"
     log.debug("%s. serviceName: %s spanName: %s endTs: %s limit: %s order: %s".format(method, serviceName, spanName,
       endTs, limit, order))
@@ -317,22 +317,22 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
    * Given a sequence of traceIds get their durations
    */
   private def getTraceIdDurations(
-                                   traceIds: Future[Seq[Long]]
-                                   ): Future[Seq[TraceIdDuration]] = {
+    traceIds: Future[Seq[Long]]
+   ): Future[Seq[TraceIdDuration]] = {
     traceIds.map { t =>
       Future.collect {
         t.grouped(traceDurationFetchBatchSize)
-          .toSeq
-          .map {index.getTracesDuration(_)}
+        .toSeq
+        .map {index.getTracesDuration(_)}
       }
     }.flatten.map {_.flatten}
   }
 
   private def sortTraceIds(
-                            traceIds: Future[Seq[Long]],
-                            limit: Int,
-                            order: gen.Order
-                            ): Future[Seq[Long]] = {
+    traceIds: Future[Seq[Long]],
+    limit: Int,
+    order: gen.Order
+  ): Future[Seq[Long]] = {
 
     // No sorting wanted
     if (order == gen.Order.None) {

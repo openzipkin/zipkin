@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 /*
  * Copyright 2012 Twitter Inc.
  *
@@ -15,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
->>>>>>> 7ed569a9b4d0279e6c59cb38d5b1bcc9344d755d
 package com.twitter.zipkin.common.json
 
 case class JsonTrace(traceId: String, spans: Seq[JsonSpan], startTimestamp: Long, endTimestamp: Long, duration: Long, serviceCounts: Map[String, Int])

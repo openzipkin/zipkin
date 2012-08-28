@@ -21,7 +21,7 @@ import com.twitter.zipkin.collector.processor.Processor
 import java.util.concurrent.{TimeUnit, BlockingQueue}
 
 class WriteQueueWorker[T](queue: BlockingQueue[T],
-                          processor: Processor[T]) extends BackgroundProcess("WriteQueueWorker", false) {
+                       processor: Processor[T]) extends BackgroundProcess("WriteQueueWorker", false) {
 
   def runLoop() {
     val item = queue.poll(500, TimeUnit.MILLISECONDS)
