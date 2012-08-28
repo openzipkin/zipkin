@@ -24,6 +24,8 @@ class JsConfig extends StaticResourceConfig {
   )
 
   lazy val localResources = Seq(
+    "underscore-1.3.3.js",
+    "backbone-0.9.2.js",
     "bootstrap.js",
     "datepicker.js",
     "d3-2.9.1.js",
@@ -43,6 +45,9 @@ class JsConfig extends StaticResourceConfig {
     "zipkin-trace-summary.js",
 
     "application.js",
+    "application-models.js",
+    "application-views.js",
+
     "application-index.js",
     "application-show.js",
     "application-static.js"

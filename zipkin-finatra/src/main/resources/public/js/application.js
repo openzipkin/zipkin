@@ -18,14 +18,6 @@
 // This file is automatically included by javascript_include_tag :defaults
 
 /*global root_url:false Trace:false */
-
-//= require bootstrap
-//= require hogan-2.0.0
-
-//= require datepicker
-
-//= require_tree .
-
 var Zipkin = Zipkin || {};
 
 Zipkin.Base = (function() {
