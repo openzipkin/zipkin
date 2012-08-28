@@ -61,7 +61,7 @@ object QueryRequest {
     val order = gen.Order.DurationDesc
 
     val spanQueryRequest = for (service <- serviceName; span <- spanName)
-    yield span match {
+      yield span match {
         case "all" => {
           SpanQueryRequest(service, "", endTimestamp, limit, order)
         }
@@ -71,10 +71,10 @@ object QueryRequest {
       }
 
     val timeAnnotationQueryRequest = for (service <- serviceName; ann <- timeAnnotation)
-    yield AnnotationQueryRequest(service, ann, endTimestamp, limit, order)
+      yield AnnotationQueryRequest(service, ann, endTimestamp, limit, order)
 
     val keyValueQueryRequest = for (service <- serviceName; key <- annotationKey; value <- annotationValue)
-    yield KeyValueAnnotationQueryRequest(service, key, value, endTimestamp, limit, order)
+      yield KeyValueAnnotationQueryRequest(service, key, value, endTimestamp, limit, order)
 
     spanQueryRequest orElse timeAnnotationQueryRequest orElse keyValueQueryRequest
   }
