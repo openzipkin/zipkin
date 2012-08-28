@@ -92,9 +92,21 @@ class OptparseJobArguments
   end
 end
 
-options = OptparseJobArguments.parse(ARGV)
-start_date = options.dates.at(0)
-end_date = options.dates.length > 1 ? options.dates.at(1) : options.dates.at(0)
+class JobArguments
+  attr_accessor :dates, :settings, :hadoop_config, :timezone, :job, :output, :prep
+  
+  def initialize(dates, settings, hadoop_config, timezone, job, output, prep)
+    @dates = dates
+    @settings = settings
+    @hadoop_config = hadoop_config
+    @timezone = timezone
+    @job = job
+    @output = output
+    @prep = prep
+  end
+
+end
+
 
 def time_to_remote_file(time, prefix)
   return prefix + time.year.to_s() + "/" + append_zero(time.month) + "/" + append_zero(time.day) + "/" + append_zero(time.hour)
@@ -113,34 +125,56 @@ def is_hadoop_local_machine?()
   return system("hadoop dfs -test -e .")
 end
 
-def remote_file_exists?(pathname, options)
+def hadoop_cmd_head(hadoop_config)
   cmd = is_hadoop_local_machine?() ? "" : "ssh -C " + $HOST + " "
-  cmd += "hadoop"
-  cmd += options.uses_hadoop_config ? " --config " + options.hadoop_config : ""
+  cmd += "hadoop "
+  cmd += (hadoop_config == nil) ? "" : hadoop_config
+  return cmd
+end
+
+def remote_file_exists?(pathname, hadoop_config)
+  cmd = hadoop_cmd_head(hadoop_config)
   cmd += " dfs -test -e " + pathname
   result = system(cmd)
   puts "In run_job, remote_file_exists for " + pathname + ": " + result.to_s()
   return result
 end
 
-def date_to_cmd(date)
-  return date.to_s()[0..18]
+def date_to_cmd(time)
+  return time.year.to_s() + "-" + append_zero(time.month) + "-" + append_zero(time.day) + "T" + append_zero(time.hour) + ":00"
 end
 
-cmd_head = File.dirname(__FILE__) + "/scald.rb --hdfs com.twitter.zipkin.hadoop."
-settings_string = options.uses_settings ? " " + options.settings : ""
-cmd_date = date_to_cmd(start_date) + " " + date_to_cmd(end_date)
-timezone_cmd = options.set_timezone ? " --tz " + options.timezone : ""
-cmd_args = options.job + settings_string  + " --date " + cmd_date + timezone_cmd
+def run_job(args)
+  if (args == nil)
+    return
+  end
+  uses_settings = args.settings != nil
+  set_timezone = args.timezone != nil
+  start_date = args.dates.at(0)
+  end_date = args.dates.length > 1 ? args.dates.at(1) : args.dates.at(0)
+  hadoop_config_cmd = (args.hadoop_config == nil) ? "" : args.hadoop_config
+  cmd_head = File.dirname(__FILE__) + "/scald.rb --hdfs com.twitter.zipkin.hadoop."
+  settings_string = uses_settings ? " " + args.settings : ""
+  cmd_date = date_to_cmd(start_date) + " " + date_to_cmd(end_date)
+  timezone_cmd = set_timezone ? " --tz " + args.timezone : ""
+  cmd_args = args.job + settings_string  + " " + hadoop_config_cmd + " --date " + cmd_date + timezone_cmd
+  
+  if args.prep
+    if not remote_file_exists?(time_to_remote_file(end_date, args.job + "/") + "/_SUCCESS", args.hadoop_config)
+      cmd = cmd_head + "sources." + cmd_args
+      puts cmd
+      system(cmd)
+    end
+  else
+    if not remote_file_exists?(args.output + "/_SUCCESS", args.hadoop_config)
+      cmd = cmd_head + cmd_args + " --output " + args.output
+      puts cmd
+      system(cmd)
+    end
+  end
+end
 
-if options.preprocessor
-  if not remote_file_exists?(time_to_remote_file(end_date, options.job + "/") + "/_SUCCESS", options)
-    cmd = cmd_head + "sources." + cmd_args
-    system(cmd)
-  end
-else
-  if not remote_file_exists?(options.output + "/_SUCCESS", options)
-    cmd = cmd_head + cmd_args + " --output " + options.output
-    system(cmd)
-  end
+if __FILE__ == $0
+  options = OptparseJobArguments.parse(ARGV)
+  run_job(options.dates, options.settings, options.hadoop_config, options.timezone, options.job, options.output, options.preprocessor)
 end

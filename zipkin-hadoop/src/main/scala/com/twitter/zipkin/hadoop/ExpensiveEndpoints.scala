@@ -19,14 +19,14 @@ package com.twitter.zipkin.hadoop
 import com.twitter.zipkin.gen.{Constants, SpanServiceName, Annotation}
 import cascading.pipe.joiner.LeftJoin
 import com.twitter.scalding.{Tsv, DefaultDateRangeJob, Job, Args}
-import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, Util, PreprocessedSpanSource}
+import com.twitter.zipkin.hadoop.sources._
 
 /**
  * Per service call (i.e. pair of services), finds the average run time (in microseconds) of that service call
  */
 class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob {
 
-  val spanInfo = PreprocessedSpanSource()
+  val spanInfo = DailyPreprocessedSpanSource()
     .read
     .filter(0) { s : SpanServiceName => s.isSetParent_id() }
     .mapTo(0 -> ('id, 'parent_id, 'service, 'annotations))
@@ -52,7 +52,7 @@ class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob
       }
     }
 
-  val idName = PrepTsvSource()
+  val idName = DailyPrepTsvSource()
     .read
   /* Join with the original on parent ID to get the parent's service name */
   val spanInfoWithParent = spanInfo

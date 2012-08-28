@@ -1,17 +1,4 @@
 #!/usr/bin/env ruby
-# Copyright 2012 Twitter Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 require 'rubygems'
 require 'zipkin-query'
@@ -63,14 +50,13 @@ class OptparseHasSampledArguments
   end
 end
 
-options = OptparseHasSampledArguments.parse(ARGV)
-
 $config = {
-  :zipkin_query_host   => "localhost", #whatever the collector is
+  :zipkin_query_host   => "localhost", #You'll need to change this to whatever your actual host is
   :zipkin_query_port   => 9411,
   :skip_zookeeper      => true
 }
 
+# Queries the client to ask whether the trace is stored
 def sampled_traces(trace_ids)
   result = false
   traces = nil
@@ -80,39 +66,28 @@ def sampled_traces(trace_ids)
   return traces
 end
 
+# Gets trace id from input line
 def get_trace_id(line)
   return line.split("\t")[1].to_i
 end
 
-File.open(options.output, 'w') do |out_file|
-  trace_list = []
-  File.open(options.input, 'r').each do |line|
-    trace_list = trace_list << get_trace_id(line)
-  end
-  sampled = sampled_traces(trace_list)
-  File.open(options.input, 'r').each do |line|
-    if (sampled.include?(get_trace_id(line)))
-      out_file.print line
-      puts line
+# Reads the input from the first file, and then outputs the lines from the input which are sampled to the outputfile
+def sample(inputfile, outputfile)
+  File.open(outputfile, 'w') do |out_file|
+    trace_list = []
+    File.open(inputfile, 'r').each do |line|
+      trace_list = trace_list << get_trace_id(line)
     end
-  end  
-end
-
-=begin
-h = Hash.new
-
-File.open(options.input, 'r').each do |line|
-  ary = line.split("\t")
-  if h[ary[0]] == nil
-   h[ary[0]] = Array.new(1, ary[1].to_i)
-  else
-    h[ary[0]] = h[ary[0]] << ary[1].to_i
+    sampled = sampled_traces(trace_list)
+    File.open(inputfile, 'r').each do |line|
+      if (sampled.include?(get_trace_id(line)))
+        out_file.print line
+      end
+    end  
   end
 end
 
-ary = Array.new()
-
-h.each do |service, traces|
-  p sampled_traces(traces)
+if __FILE__ == $0
+  options = OptparseHasSampledArguments.parse(ARGV)
+  sample(options.input, options.output)
 end
-=end
