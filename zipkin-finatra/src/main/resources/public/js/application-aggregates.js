@@ -24,6 +24,9 @@ Zipkin.Application.Aggregates = (function() {
   var initialize = function () {
     Zipkin.Base.initialize();
 
+    $("[class*=span]").addClass("span-aggregates");
+    $(".container").addClass("container-aggregates");
+
     var href = window.location.href;
 
     $(".js-zipkin-navbar > li > a").each(function (index, elem) {
@@ -153,17 +156,15 @@ Zipkin.GetDependencyTree = (function() {
           return;
         }
 
-        (function () {
-          var prevWidth = $(window).width();
-          $(window).resize(function () {
-            var newWidth = $(window).width();
-            if (Zipkin.Base.windowResized(prevWidth, newWidth)) {
-              var w = newWidth >= Zipkin.Config.MAX_AGG_WINDOW_SIZE ? Zipkin.Config.MAX_AGG_GRAPHIC_WIDTH : Zipkin.Config.MIN_AGG_GRAPHIC_WIDTH;
-              globalDependencies.resize(w + 200);
-              prevWidth = newWidth;
-            }
-           });
-        })();
+        var prevWidth = $(window).width();
+        $(window).resize(function () {
+          var newWidth = $(window).width();
+          if (Zipkin.Base.windowResized(prevWidth, newWidth)) {
+            var w = newWidth >= Zipkin.Config.MAX_AGG_WINDOW_SIZE ? Zipkin.Config.MAX_AGG_GRAPHIC_WIDTH : Zipkin.Config.MIN_AGG_GRAPHIC_WIDTH;
+            globalDependencies.resize(w + 200);
+            prevWidth = newWidth;
+          }
+        });
       }
     };
   })();

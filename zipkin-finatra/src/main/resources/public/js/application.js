@@ -121,24 +121,13 @@ Zipkin.Base = (function() {
     $(".brand").click(brandClick);
 
     // Hook up trace nav buttons
-    $(".js-zipkin-navbar > li").each(function (index, elem) {
-      $(elem).on('click', function (event) {
-        if (!$(elem).hasClass("active")) {
-          $(".js-zipkin-navbar > li").each(function (i, e) {
-            $(e).removeClass("active");
+    $(".js-zipkin-navbar > li").click(function () {
+        if (!$(this).hasClass("active")) {
+          $(".js-zipkin-navbar > li").each(function (i, el) {
+            $(el).removeClass("active");
           });
-          $(elem).addClass("active");
+          $(this).addClass("active");
         }
-        var hash = event.target.hash;
-
-        $(".js-zipkin-navbar > li > a").each(function (i, e) {
-          if (e.hash != hash) {
-            $(e.hash).hide();
-          }
-        });
-        $(hash).show();
-        $("html body").animate({scrollTop: 0}, "slow");
-      });
     });
 
     // Set clock skew button to whatever the cookie says

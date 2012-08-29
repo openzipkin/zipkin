@@ -24,15 +24,8 @@ trait StaticResourceConfig {
 
   val localResources: Seq[String]
 
-  val localAggregatesResources: Seq[String]
-
   lazy val resources = remoteResources ++
     localResources.map { r =>
-      "%s/%s/%s".format(pathPrefix, resourceType, r)
-    }
-
-  lazy val aggregatesResources = remoteResources ++
-    localAggregatesResources.map { r =>
       "%s/%s/%s".format(pathPrefix, resourceType, r)
     }
 }

@@ -172,6 +172,7 @@ Zipkin.GlobalDependencies = (function() {
           .on("click", Zipkin.Util.bind(this, hoverEvent))
           .attr("rel", "popover")
           .attr("data-original-title", function(d) { return d.name; })
+//          .attr("data-content", function(d) { return getText(d); })
           .style("z-index", 5)
         .call(d3.behavior.drag()
            .origin(function(d) { return d; })
