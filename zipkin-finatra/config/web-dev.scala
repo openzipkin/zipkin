@@ -30,7 +30,7 @@ new ZipkinWebConfig {
    * `cd zipkin-finatra/src/main/resources/public && python -m SimpleHTTPServer`
    *
    * Then, set:
-   * `val resourcePathPrefix = "http://localhost:8000"`
+   * `val resourcePathPrefix = "/public"`
    */
   val resourcePathPrefix = "http://localhost:8000"
   jsConfig = new JsConfig {
@@ -44,5 +44,5 @@ new ZipkinWebConfig {
     servers = List("localhost:3003")
   }
 
-  override def queryClient = Left(new InetSocketAddress("localhost", 9411))
+  override def queryClient = Left(new InetSocketAddress("localhost", 3002))
 }
