@@ -122,7 +122,7 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
     "store aggregates" in {
       val serviceName = "mockingbird"
       val annotations = Seq("a" , "b", "c")
-      val dependencies = Seq("service1:10, service2:5")
+      val dependencies = Seq("service1:10", "service2:5")
 
       "store top annotations" in {
         val cs = scribeCollectorService
