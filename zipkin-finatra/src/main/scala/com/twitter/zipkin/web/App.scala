@@ -23,10 +23,10 @@ import com.twitter.util.Future
 import com.twitter.zipkin.adapter.{JsonQueryAdapter, ThriftQueryAdapter}
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.config.ZipkinWebConfig
-import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import com.twitter.zipkin.common.json.JsonTraceSummary
+import com.twitter.zipkin.query.QueryRequest
 
 /**
  * Application that handles ZipkinWeb routes
@@ -44,7 +44,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   /* Index page */
   get("/") { request =>
     /* If valid query params passed, run the query and push the data down with the page */
-    val queryResults = QueryRequest(request) match {
+    val queryResults = QueryExtractor(request) match {
       case None => {
         /* Not valid params, load the normal landing page */
         Future(Seq.empty[JsonTraceSummary])
@@ -91,42 +91,37 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   }
 
   def query(request: Request): Future[Seq[JsonTraceSummary]] = {
-    QueryRequest(request) match {
+    QueryExtractor(request) match {
       case Some(qr) => query(qr, request)
       case None     => Future(Seq.empty)
     }
   }
 
-  def query(queryRequest: QueryRequest, request: Request): Future[Seq[JsonTraceSummary]] = {
+  def query(queryRequest: QueryRequest, request: Request, retryLimit: Int = 10): Future[Seq[JsonTraceSummary]] = {
+    log.debug(queryRequest.toString)
     /* Get trace ids */
-    val traceIds = queryRequest match {
-      case r: SpanQueryRequest => {
-        client.getTraceIdsBySpanName(r.serviceName, r.spanName, r.endTimestamp, r.limit, r.order)
-      }
-      case r: AnnotationQueryRequest => {
-        client.getTraceIdsByAnnotation(r.serviceName, r.annotation, ByteBuffer.wrap("".getBytes), r.endTimestamp, r.limit, r.order)
-      }
-      case r: KeyValueAnnotationQueryRequest => {
-        client.getTraceIdsByAnnotation(r.serviceName, r.key, ByteBuffer.wrap(r.value.getBytes), r.endTimestamp, r.limit, r.order)
-      }
-      case r: ServiceQueryRequest => {
-        client.getTraceIdsByServiceName(r.serviceName, r.endTimestamp, r.limit, r.order)
-      }
-    }
+    val response = client.getTraceIds(ThriftQueryAdapter(queryRequest)).map { ThriftQueryAdapter(_) }
     val adjusters = getAdjusters(request)
 
-    traceIds.map { ids =>
-      ids match {
+    response.map { resp =>
+      resp.traceIds match {
         case Nil => {
-          Future.value(Seq.empty)
+          if ((queryRequest.annotations.map { _.length } getOrElse 0) +
+              (queryRequest.binaryAnnotations.map { _.length } getOrElse 0) > 0 && retryLimit > 0) {
+            /* Complex query, so retry */
+            query(queryRequest.copy(endTs = resp.endTs), request, retryLimit - 1)
+          } else {
+            Future.value(Seq.empty)
+          }
         }
-        case _ => {
+        case ids @ _ => {
           client.getTraceSummariesByIds(ids, adjusters).map {
             _.map { summary =>
               JsonQueryAdapter(ThriftQueryAdapter(summary))
             }
           }
         }
+
       }
     }.flatten
   }
