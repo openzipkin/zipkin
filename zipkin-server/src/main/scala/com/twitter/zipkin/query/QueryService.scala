@@ -73,8 +73,22 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     storage.close
   }
 
+  private def constructQueryResponse(indexedIds: Seq[IndexedTraceId], limit: Int, order: gen.Order, defaultEndTs: Long = -1): Future[gen.QueryResponse] = {
+    val ids = indexedIds.map { _.traceId }
+    val ts = indexedIds.map { _.timestamp }
+
+    sortTraceIds(Future(ids), limit, order).map { sortedIds =>
+      val (min, max) = sortedIds match {
+        case Nil => (-1L, defaultEndTs)
+        case _   => (ts.min, ts.max)
+      }
+      gen.QueryResponse(sortedIds, None, None, min, max)
+    }
+  }
+
   def getTraceIds(queryRequest: gen.QueryRequest): Future[gen.QueryResponse] = {
     val method = "getTraceIds"
+    log.debug("%s: %s".format(method, queryRequest.toString))
     call(method) {
       val serviceName = queryRequest.`serviceName`
       val spanName = queryRequest.`spanName`
@@ -82,57 +96,74 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       val limit = queryRequest.`limit`
       val order = queryRequest.`order`
 
-      val spanNameTraceIds = index.getTraceIdsByName(serviceName, spanName, endTs, limit)
-
-      /* Get the Trace IDs for any annotations requested */
-      val annotationTraceIds = queryRequest.`annotations` match {
-        case Some(anns) => {
-          Future.collect {
-            anns.map { ann =>
-              index.getTraceIdsByAnnotation(serviceName, ann.`value`, None, endTs, limit)
-            }
-          }.map { Some(_) }
-        }
-        case None => Future.None
-      }
-      /* Count the number of trace IDs found for each annotation */
-      val annotationsCounts = annotationTraceIds.map { _.map { _.map { _.length } } }
-
-      /* Get the Trace IDs for any binary annotations requested */
-      val binaryAnnotationTraceIds = queryRequest.`binaryAnnotations` match {
-        case Some(anns) => {
-          Future.collect {
-            anns.map { ann =>
-              index.getTraceIdsByAnnotation(serviceName, ann.`key`, Some(ann.`value`), endTs, limit)
-            }
-          }.map { Some(_) }
-        }
-        case None => Future.None
-      }
-      val binaryAnnotationsCounts = binaryAnnotationTraceIds.map { _.map { _.map { _.length } } }
-
-      /* Find the intersection of all trace ID sets */
-      val idIntersection = spanNameTraceIds.map { sIds =>
-        annotationTraceIds.map { aIds =>
-          binaryAnnotationTraceIds.map { bIds =>
-            val ids = Seq(sIds) ++ (aIds getOrElse Seq.empty) ++ (bIds getOrElse Seq.empty)
-            traceIdsIntersect(ids)
+      val sliceQueries = Seq(
+        spanName.map { name =>
+          Seq(SpanSliceQuery(serviceName, name, endTs, 1))
+        },
+        queryRequest.`annotations`.map {
+          _.map { a =>
+            AnnotationSliceQuery(serviceName, a.`value`, None, endTs, 1)
+          }
+        },
+        queryRequest.`binaryAnnotations`.map {
+          _.map { b =>
+            AnnotationSliceQuery(serviceName, b.`key`, Some(b.`value`), endTs, 1)
           }
         }
-      }.flatten.flatten
+      ).collect {
+        case Some(q: Seq[SliceQuery]) => q
+      }.flatten
 
-      annotationsCounts.map { ac =>
-        binaryAnnotationsCounts.map { bc =>
-          idIntersection.map { idObjs =>
-            val ids = idObjs.map { _.traceId }
-            val ts = idObjs.map { _.timestamp }
+      log.debug(sliceQueries.toString())
 
-            sortTraceIds(Future(ids), limit, order).map { sortedIds =>
-              gen.QueryResponse(sortedIds, ac, bc, ts.min, ts.max)
-            }
-          }
+      sliceQueries match {
+        case Nil => {
+          /* No queries: return a default empty response */
+          Future.exception(gen.QueryException("Invalid query"))
         }
-      }.flatten.flatten.flatten
+        case head :: Nil => {
+          /* One query: just run it */
+          head.execute(index).map {
+            constructQueryResponse(_, limit, order)
+          }.flatten
+        }
+        case queries => {
+          /* Multiple: Fetch a single column from each to reconcile non-overlapping portions
+             then fetch the entire slice */
+          Future.collect {
+            queries.map {
+              _.execute(index)
+            }
+          }.map {
+            _.flatten.map {
+              _.timestamp
+            }.min
+          }.map { alignedTimestamp =>
+            /* Pad the aligned timestamp by a minute */
+            val ts = alignedTimestamp + 1.minute.inMicroseconds
+
+            Future.collect {
+              queries.map {
+                case s: SpanSliceQuery => s.copy(endTs = ts, limit = limit).execute(index)
+                case a: AnnotationSliceQuery => a.copy(endTs = ts, limit = limit).execute(index)
+              }
+            }.map { ids =>
+              traceIdsIntersect(ids) match {
+                case Nil => {
+                  val endTimestamp = ids.map {
+                    _.map { _.timestamp }.min
+                  }.max
+                  constructQueryResponse(Nil, limit, order, endTimestamp)
+                }
+                case seq => {
+                  constructQueryResponse(seq, limit, order)
+                }
+              }
+
+            }
+          }.flatten.flatten
+        }
+      }
     }
   }
 
@@ -146,7 +177,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     val traceIds = idMaps.map {
       _.keys.toSeq
     }
-    val commonTraceIds = traceIds.fold(traceIds(0)) { _.intersect(_) }
+    val commonTraceIds = traceIds.tail.fold(traceIds(0)) { _.intersect(_) }
 
     /*
      * Find the timestamps associated with each trace ID and construct a new IndexedTraceId
