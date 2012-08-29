@@ -72,14 +72,13 @@ Zipkin.Application.Aggregates = (function() {
         onChange: function(formated, dates){
           self.val(formated);
         }
-      }).blur(function(){
       });
     });
 
     $(".nav-dropdowns > li > ul > li").each(function(index, elem) {
       $(elem).on('mouseover', function (event) {
-        $(".nav-dropdowns > li > ul > li").each(function (i, e) {
-          $(e).removeClass("active");
+        $(".nav-dropdowns > li > ul > li").each(function (i, el) {
+          $(el).removeClass("active");
         });
       }).on('click', function(event) {
         $(elem).addClass("active");

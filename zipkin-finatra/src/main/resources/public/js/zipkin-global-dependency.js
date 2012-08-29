@@ -15,9 +15,6 @@
  */
 
 /*global d3:false */
-
-//= require d3-2.9.1
-
 var Zipkin = Zipkin || {};
 
 /*
@@ -33,6 +30,8 @@ Zipkin.GlobalDependencies = (function() {
     , BORDER       = 5
     , LEFT_GUTTER  = 100
     , RIGHT_GUTTER = 150
+    , templatize = Zipkin.Util.templatize
+    , TEMPLATES = Zipkin.Util.TEMPLATES
     ;
 
   var GlobalDependencies = function(nodes, links, options) {
@@ -83,19 +82,34 @@ Zipkin.GlobalDependencies = (function() {
   };
 
 
-  var getText = function(d) {
-    var s = "<table><thead><tr><th>Service Called</th><th># of calls</th></thead>";
+  var getTableView = function(d) {
+
+    var tableView = {
+      "headRow": [
+        { "headRowElem": "Service Called" },
+        { "headRowElem": "Number of Calls" }],
+      "body": []
+    }
     var count = 0;
-    sorted = d.sourceLinks.sort(function(l1, l2) { return -(l1.count - l2.count) });
+    sorted = d.sourceLinks.sort(function(l1, l2) { return l2.count - l1.count });
     for (var i = 0; i < sorted.length; i++) {
       var targetName = sorted[i].target.name;
       var truncated = targetName.length > 30 ? targetName.substring(0, 27) + "..." : targetName;
-      s +=  "<tr><td>" + truncated + "</td><td>" + sorted[i].count + "</td></tr>";
+      var row = [{"tableRowElem": truncated}, {"tableRowElem": sorted[i].count}];
+      tableView.body.push({"tableRow": row});
       count += sorted[i].count;
     }
-    s += "<tr><td><strong>Total</strong></td><td>" + count + "</td></tr></table>";
-    return s;
+    var row = [{"tableRowElem": "<strong>Total</strong>"}, {"tableRowElem": count}]
+    tableView.body.push({"tableRow": row});
+    return tableView;
   };
+
+  var setText = function(node) {
+    var data = {node: node};
+    templatize(TEMPLATES.SIMPLE_TABLE, function(template) {
+      data.node.attr("data-content", function(d) {return template.render(getTableView(d))});
+    });
+  }
 
   GlobalDependencies.prototype.resize = function(width) {
     this.width = width;
@@ -117,10 +131,6 @@ Zipkin.GlobalDependencies = (function() {
     var formatNumber = d3.format(",.0f"),
         format = function(d) { return formatNumber(d) + " TWh"; },
         color = d3.scale.category20();
-
-    var findCircularDependencies = function(links) {
-
-    }
 
     var svg = d3.select("#global-dependency").append("svg")
         .attr("width", width)
@@ -162,12 +172,14 @@ Zipkin.GlobalDependencies = (function() {
           .on("click", Zipkin.Util.bind(this, hoverEvent))
           .attr("rel", "popover")
           .attr("data-original-title", function(d) { return d.name; })
-          .attr("data-content", function(d) { return getText(d); })
+//          .attr("data-content", function(d) { return getText(d); })
           .style("z-index", 5)
         .call(d3.behavior.drag()
            .origin(function(d) { return d; })
            .on("dragstart", function() { this.parentNode.appendChild(this); })
            .on("drag", dragmove));
+
+      setText(node);
 
       node.append("rect")
           .attr("height", function(d) { return d.dy; })

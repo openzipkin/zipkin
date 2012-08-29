@@ -1,3 +1,11 @@
+/*!
+ * Zipkin aggregates view css
+ *
+ * Copyright 2012 Twitter, Inc
+ * Licensed under the Apache License v2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ */
 #global-dependency {
   height: 1000px;
 }
@@ -30,18 +38,6 @@
 }
 
 @media (min-width: 1200px) {
-/*  .row {
-    margin-left: -30px;
-    *zoom: 1;
-  }
-  .row:before,
-  .row:after {
-    display: table;
-    content: "";
-  }
-  .row:after {
-    clear: both;
-  }*/
   [class*="span"] {
     float: left;
     margin-left: 30px;
