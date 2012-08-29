@@ -420,6 +420,7 @@ Zipkin.Application.Index = (function() {
 
       var baseParams = {
         serviceName: $('select[name=serviceName]').val(),
+        spanName: spanName,
         endDatetime: $('input[name=end_date]').val() + " " + $('input[name=end_time]').val(),
         limit: $('input[name=limit]').val()
       }
@@ -438,11 +439,6 @@ Zipkin.Application.Index = (function() {
       });
 
       Zipkin.Base.setCookie("lastServiceName", baseParams.serviceName);
-
-      console.log(query)
-      return false;
-
-
 
       // if (tabType == "filter-span-tab") {
       //   var spanName = $('select[name=spanName]').val();
