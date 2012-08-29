@@ -30,9 +30,9 @@ new ZipkinWebConfig {
    * `cd zipkin-finatra/src/main/resources/public && python -m SimpleHTTPServer`
    *
    * Then, set:
-   * `val resourcePathPrefix = "/public"`
+   * `val resourcePathPrefix = "http://localhost:8000"`
    */
-  val resourcePathPrefix = "http://localhost:8000"
+  val resourcePathPrefix = "/public"
   jsConfig = new JsConfig {
     override val pathPrefix = resourcePathPrefix
   }
