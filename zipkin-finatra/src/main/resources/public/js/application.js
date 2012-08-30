@@ -120,6 +120,14 @@ Zipkin.Base = (function() {
     // Bind click handler for brand button
     $(".brand").click(brandClick);
 
+    // Hook up trace nav buttons
+    $(".js-zipkin-navbar > li").click(function () {
+        if (!$(this).hasClass("active")) {
+          $(".js-zipkin-navbar > li.active").removeClass("active");
+          $(this).addClass("active");
+        }
+    });
+
     // Set clock skew button to whatever the cookie says
     var tooltip_text = "Clock skew adjustment: " + setClockSkewBtnState(clockSkewState());
     $('.adjust-clock-skew-tooltip').attr('data-original-title', tooltip_text);

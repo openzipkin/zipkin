@@ -71,6 +71,10 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     render.view(wrapView(new StaticView)).toFuture
   }
 
+  get("/aggregates") {request =>
+    render.view(wrapView(new AggregatesView(getDate))).toFuture
+  }
+
   /**
    * API: query
    * Returns query results that satisfy the request parameters in order of descending duration
@@ -334,4 +338,8 @@ class ShowView(val traceId: String) extends View {
 
 class StaticView extends View {
   val template = "templates/static.mustache"
+}
+
+class AggregatesView(val endDate: String) extends View {
+  val template = "templates/aggregates.mustache"
 }
