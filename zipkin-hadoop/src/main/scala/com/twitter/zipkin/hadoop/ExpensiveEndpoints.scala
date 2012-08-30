@@ -65,5 +65,6 @@ class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob
 }
 
 object ExpensiveEndpoints {
-  val THRESHOLD = 0.001
+  // We only display service endpoints which took more than 1000 microseconds (or one millisecond)
+  val THRESHOLD = 1000
 }

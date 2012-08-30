@@ -38,16 +38,16 @@ class EmailContent(standardServiceName: String) {
     document.asJava
   }
 
-  case class Html(var header: java.util.List[Header], var services: java.util.List[Service] ) {}
+  case class Html(var header: java.util.List[Header], var services: java.util.List[Service]) {}
 
   case class Header(var standardServiceName: String) {}
 
-  case class Service(var serviceName: String, var oneLineResults: java.util.List[OneLineResults], var tableResults: java.util.List[TableResults]){}
+  case class Service(var serviceName: String, var oneLineResults: java.util.List[OneLineResults], var tableResults: java.util.List[TableResults]) {}
 
   case class OneLineResults(var result: String) {}
 
   case class TableResults(var tableResultHeader: String, var tableHeader: TableHeader,
-                     var tableRows: java.util.List[TableRow], var tableUrlRows: java.util.List[TableUrlRow]) {}
+                          var tableRows: java.util.List[TableRow], var tableUrlRows: java.util.List[TableUrlRow]) {}
 
   case class TableHeader(var tableHeaderTokens: java.util.List[TableHeaderToken]) {}
 
@@ -63,7 +63,7 @@ class EmailContent(standardServiceName: String) {
 
   def getResult(service: String) = {
     if (!results.contains(service)) {
-      results += service -> (Nil, Nil)
+      results += service ->(Nil, Nil)
     }
     results(service)
   }
@@ -75,7 +75,7 @@ class EmailContent(standardServiceName: String) {
 
   def addOneLineResult(service: String, result: String) {
     val (oneliners, tablers) = getResult(service)
-    results += service -> ((new OneLineResults(result))::oneliners, tablers)
+    results += service ->((new OneLineResults(result)) :: oneliners, tablers)
   }
 
   /**
@@ -86,12 +86,12 @@ class EmailContent(standardServiceName: String) {
    */
   def addTableResult(service: String, tableResultHeader: String, tableHeader: List[String], tableRows: List[LineResult]) {
     val header = new TableHeader(tableHeader.map(s => new TableHeaderToken(s)).asJava)
-    val rowList = tableRows.map ( line => {
+    val rowList = tableRows.map(line => {
       val values = line.getValue().map(token => new TableRowToken(token))
       new TableRow(values.asJava)
     }).asJava
     val (oneliners, tablers) = getResult(service)
-    results += service -> (oneliners, (new TableResults(tableResultHeader, header, rowList, null))::tablers)
+    results += service ->(oneliners, (new TableResults(tableResultHeader, header, rowList, null)) :: tablers)
   }
 
   /**
@@ -102,16 +102,17 @@ class EmailContent(standardServiceName: String) {
    */
   def addUrlTableResult(service: String, tableResultHeader: String, tableHeader: List[String], tableUrlRows: List[(String, String, LineResult)]) {
     val header = new TableHeader(tableHeader.map(s => new TableHeaderToken(s)).asJava)
-    val rowUrlList = tableUrlRows.map ({ row =>
-      val (url, hypertext, line) = row
-      if (line.getValue().length < 2) {
-        throw new IllegalArgumentException("Malformed line: " + line)
-      }
-      new TableUrlRow(url, hypertext, line.getValue().tail.map(token => new TableUrlRowToken(token)).asJava)
+    val rowUrlList = tableUrlRows.map({
+      row =>
+        val (url, hypertext, line) = row
+        if (line.getValue().length < 2) {
+          throw new IllegalArgumentException("Malformed line: " + line)
+        }
+        new TableUrlRow(url, hypertext, line.getValue().tail.map(token => new TableUrlRowToken(token)).asJava)
     }).asJava
     val (oneliners, tablers) = getResult(service)
-    val newTablers = (new TableResults(tableResultHeader, header, null, rowUrlList))::tablers
-    results += service -> (oneliners, newTablers)
+    val newTablers = (new TableResults(tableResultHeader, header, null, rowUrlList)) :: tablers
+    results += service ->(oneliners, newTablers)
   }
 
   /**
@@ -148,18 +149,19 @@ object EmailContent {
   private var outputDir = ""
 
   def populateServiceNames(dirname: String) = {
-    Util.traverseFileTree(new File(dirname))({f: File =>
-      val s = new Scanner(f)
-      while (s.hasNextLine()) {
-        val line = new Scanner(s.nextLine())
-        val name = line.next()
-        val standardized = line.next()
-        serviceNames += name -> standardized
-        emailAddresses += standardized -> Nil
-        while (line.hasNext()) {
-          emailAddresses += standardized -> (line.next()::emailAddresses(standardized))
+    Util.traverseFileTree(new File(dirname))({
+      f: File =>
+        val s = new Scanner(f)
+        while (s.hasNextLine()) {
+          val line = new Scanner(s.nextLine())
+          val name = line.next()
+          val standardized = line.next()
+          serviceNames += name -> standardized
+          emailAddresses += standardized -> Nil
+          while (line.hasNext()) {
+            emailAddresses += standardized -> (line.next() :: emailAddresses(standardized))
+          }
         }
-      }
     })
   }
 
@@ -213,7 +215,11 @@ object EmailContent {
     for (service <- services()) {
       if (templates.contains(service)) {
         val pw = new PrintWriter(new FileOutputStream(outputDir + "/" + Util.toSafeHtmlName(service), true))
-        templates(service).write(pw)
+        try {
+          templates(service).write(pw)
+        } finally {
+          pw.close()
+        }
       }
     }
   }
@@ -227,9 +233,14 @@ object EmailContent {
     for (service <- services()) {
       val sw = new StringWriter()
       val pw = new PrintWriter(sw)
-      if (templates.contains(service))  {
-        templates(service).write(pw)
-        serviceToEmail += service -> sw.toString()
+      try {
+        if (templates.contains(service)) {
+          templates(service).write(pw)
+          serviceToEmail += service -> sw.toString()
+        }
+      } finally {
+        sw.close()
+        pw.close()
       }
     }
     serviceToEmail

@@ -16,10 +16,10 @@
 
 package com.twitter.zipkin.hadoop
 
+import email.EmailContent
 import java.io._
 import collection.mutable.HashMap
 import com.twitter.zipkin.hadoop.sources.Util
-import email.EmailContent
 
 /**
  * A client which writes to a file. This is intended for use mainly to format emails
@@ -149,12 +149,14 @@ class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToTableClient(
       if (duration > 1000) {
         val inMilliseconds = scala.math.round(duration * 100 / 1000.0) / 100.0
         val formatted = new PerServiceLineResult((List(line.getKey(), hypertext, inMilliseconds.toString)))
-        Some((Util.ZIPKIN_TRACE_URL + hypertext, hypertext, formatted))
+        Some((zipkinUrl + hypertext, hypertext, formatted))
       } else {
         None
       }
     }
-    mt.addUrlTableResult(service, getTableResultHeader(service), getTableHeader(), formattedAsUrl)
+    if (formattedAsUrl.length > 0) {
+      mt.addUrlTableResult(service, getTableResultHeader(service), getTableHeader(), formattedAsUrl)
+    }
   }
 }
 
@@ -181,9 +183,10 @@ class ExpensiveEndpointsClient extends WriteToTableClient("ExpensiveEndpoints") 
       val service = line.getValue().head
       val duration = augmentString(line.getValue().tail.head).toFloat
       val rounded = scala.math.round(duration * 100) / 100.0
-      println(rounded)
       new PerServiceLineResult((List(line.getKey(), service, rounded.toString)))
     }
-    mt.addTableResult(service, getTableResultHeader(service), getTableHeader(), formatted)
+    if (formatted.length > 0) {
+      mt.addTableResult(service, getTableResultHeader(service), getTableHeader(), formatted)
+    }
   }
 }

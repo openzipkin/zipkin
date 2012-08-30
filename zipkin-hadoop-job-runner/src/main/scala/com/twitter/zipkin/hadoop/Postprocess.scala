@@ -16,9 +16,9 @@
 
 package com.twitter.zipkin.hadoop
 
-import com.twitter.zipkin.hadoop.sources.Util
-import email.{MailConfig, EmailContent}
-import javax.mail.Message.RecipientType
+import config.{MailConfig, WorstRuntimesPerTraceClientConfig}
+import email.{Email, EmailContent}
+import com.twitter.logging.Logger
 
 /**
  * Runs all the jobs which write to file on the input, and sends those as emails.
@@ -26,7 +26,7 @@ import javax.mail.Message.RecipientType
  */
 object PostprocessWriteToFile {
 
-  val jobList = List(("WorstRuntimesPerTrace", new WorstRuntimesPerTraceClient(Util.ZIPKIN_TRACE_URL)),
+  val jobList = List(("WorstRuntimesPerTrace", (new WorstRuntimesPerTraceClientConfig()).apply()),
                       ("Timeouts", new TimeoutsClient()),
                       ("Retries", new RetriesClient()),
                       ("MemcacheRequest", new MemcacheRequestClient()),
@@ -41,7 +41,6 @@ object PostprocessWriteToFile {
     EmailContent.populateServiceNames(serviceNames)
     for (jobTuple <- jobList) {
       val (jobName, jobClient) = jobTuple
-      println("Started " + jobName)
       jobClient.start(input + "/" + jobName, output)
     }
     if (output != null) {
@@ -52,8 +51,7 @@ object PostprocessWriteToFile {
     for (tuple <- serviceToEmail) {
       val (service, content) = tuple
       EmailContent.getEmailAddress(service) match {
-        case Some(addresses) => addresses.foreach {address => (new MailConfig()).apply().send(address, "Service Report for " + service, content)}
-        case None => println("Nobody to send service report for " + service + " to! :(")
+        case Some(addresses) => addresses.foreach {address => (new MailConfig()).apply().send(new Email(address, "Service Report for " + service, content))}
       }
     }
   }
@@ -134,7 +132,7 @@ object ProcessWorstRuntimesPerTrace {
 
   def main(args: Array[String]) {
     EmailContent.populateServiceNames(args(0))
-    val c = new WorstRuntimesPerTraceClient(Util.ZIPKIN_TRACE_URL)
+    val c = (new WorstRuntimesPerTraceClientConfig()).apply()
     c.start(args(0), args(1))
     EmailContent.writeAll()
   }

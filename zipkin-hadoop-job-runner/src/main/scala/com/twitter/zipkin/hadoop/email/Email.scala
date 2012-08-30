@@ -27,7 +27,7 @@ import javax.mail.Message.RecipientType
 
 // TODO: Implement logging
 
-class Email(adminFrom: String, testTo: String, bcc: String,
+class SMTPClient(adminFrom: String, testTo: String, bcc: String,
             testMode: Boolean,
             smtpServer: String, smtpPort: Int,
             smtpAuth: Boolean, smtpUser: String, smtpPassword: String) {
@@ -43,28 +43,9 @@ class Email(adminFrom: String, testTo: String, bcc: String,
   /**
    * Sends a message with the given subject and body to the specified to list.
    *
-   * @param to non-null list of addresses
-   * @param subject non-null subject line
-   * @param body non-null body of the message
+   * @param email the email content
    */
-  def send(to: String, subject: String, body: String): Boolean = {
-    send(Map(RecipientType.TO -> to), subject, body)
-  }
-
-  def send(_toMap: Map[RecipientType, String], _subject: String, _body: String): Boolean = {
-    // Allow obs-related alerts to be delivered
-    val toMap =
-      if (testMode) {
-        Map(RecipientType.TO -> testTo)
-      } else {
-        _toMap
-      }
-    val subject = if (testMode) {
-      "[TEST] %s [TEST]".format(_subject)
-    } else {
-      _subject
-    }
-
+  def send(email: Email): Boolean = {
     try {
       val auth = new SMTPAuthenticator()
       val session = Session.getDefaultInstance(sessionProps, auth)
@@ -74,16 +55,10 @@ class Email(adminFrom: String, testTo: String, bcc: String,
       // Create a new message
       val msg = new MimeMessage(session);
       msg.setFrom(new InternetAddress(adminFrom));
-      toMap foreach {
-        case (k, v) =>
-          msg.addHeader(k.toString, v)
-      }
+      msg.addHeader(RecipientType.TO.toString(), email.to)
       msg.addHeader("bcc", bcc)
-      toMap.get(RecipientType.TO).foreach {
-        msg.addHeader("in-reply-to", _)
-      }
-      msg.setSubject(subject)
-      msg.setContent(_body, if (_body.indexOf("<html>") >= 0) "text/html" else "text/plain")
+      msg.setSubject(email.subject)
+      msg.setContent(email.body, if (email.body.indexOf("<html>") >= 0) "text/html" else "text/plain")
       msg.setSentDate(new java.util.Date())
       transport.sendMessage(msg, msg.getAllRecipients())
       true
@@ -98,7 +73,8 @@ class Email(adminFrom: String, testTo: String, bcc: String,
       new PasswordAuthentication(smtpUser, smtpPassword);
     }
   }
-
 }
+
+case class Email(to: String, subject: String, body: String)
 
 

@@ -79,7 +79,7 @@ class PerServiceLineResult(line: List[String]) extends LineResult(line) {
   }
 
   def getKey() = {
-   line.head
+    line.head
   }
 
   def getValue() = {
