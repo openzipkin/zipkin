@@ -142,7 +142,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
             }.min
           }.map { alignedTimestamp =>
             /* Pad the aligned timestamp by a minute */
-            val ts = alignedTimestamp + Constants.TraceTimestampPadding.inMicroseconds
+            val ts = padTimestamp(alignedTimestamp)
 
             Future.collect {
               queries.map {
@@ -168,6 +168,8 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       }
     }
   }
+
+  private[query] def padTimestamp(timestamp: Long): Long = timestamp + Constants.TraceTimestampPadding.inMicroseconds
 
   private[query] def traceIdsIntersect(idSeqs: Seq[Seq[IndexedTraceId]]): Seq[IndexedTraceId] = {
     /* Find the trace IDs present in all the Seqs */
