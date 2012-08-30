@@ -81,14 +81,10 @@ enum Order { TIMESTAMP_DESC, TIMESTAMP_ASC, DURATION_ASC, DURATION_DESC, NONE }
  */
 enum Adjust { NOTHING, TIME_SKEW }
 
-struct QueryAnnotation {
-  1: string value
-}
-
 struct QueryRequest {
   1: string service_name
   2: optional string span_name
-  3: optional list<QueryAnnotation> annotations
+  3: optional list<string> annotations
   4: optional list<zipkinCore.BinaryAnnotation> binary_annotations
   5: i64 end_ts
   6: i32 limit

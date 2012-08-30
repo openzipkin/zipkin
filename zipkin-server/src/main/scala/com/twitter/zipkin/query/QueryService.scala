@@ -102,7 +102,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
         },
         queryRequest.`annotations`.map {
           _.map { a =>
-            AnnotationSliceQuery(serviceName, a.`value`, None, endTs, 1)
+            AnnotationSliceQuery(serviceName, a, None, endTs, 1)
           }
         },
         queryRequest.`binaryAnnotations`.map {
