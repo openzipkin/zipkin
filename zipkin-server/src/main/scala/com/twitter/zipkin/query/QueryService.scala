@@ -142,7 +142,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
             }.min
           }.map { alignedTimestamp =>
             /* Pad the aligned timestamp by a minute */
-            val ts = alignedTimestamp + 1.minute.inMicroseconds
+            val ts = alignedTimestamp + Constants.TraceTimestampPadding.inMicroseconds
 
             Future.collect {
               queries.map {
