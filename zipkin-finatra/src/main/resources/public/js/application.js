@@ -123,9 +123,7 @@ Zipkin.Base = (function() {
     // Hook up trace nav buttons
     $(".js-zipkin-navbar > li").click(function () {
         if (!$(this).hasClass("active")) {
-          $(".js-zipkin-navbar > li").each(function (i, el) {
-            $(el).removeClass("active");
-          });
+          $(".js-zipkin-navbar > li.active").removeClass("active");
           $(this).addClass("active");
         }
     });

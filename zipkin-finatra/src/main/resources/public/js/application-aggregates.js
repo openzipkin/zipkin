@@ -33,7 +33,7 @@ Zipkin.Application.Aggregates = (function() {
       var parent = $(elem).parent();
       if ($(elem).attr("href") == href ) {
         parent.addClass("active");
-      } else if (parent.hasClass("active")) {
+      } else {
         parent.removeClass("active");
       }
     });
@@ -129,11 +129,11 @@ Zipkin.GetDependencyTree = (function() {
     return {
       _init: function() {
 
-    var nodes = [{name: "foo"},
+        var nodes = [{name: "foo"},
                  {name: "bar"},
                  {name: "baz"}];
 
-	var links = [{source: 0, target: 1, value: 0.1, count: 0.1},
+	    var links = [{source: 0, target: 1, value: 0.1, count: 0.1},
 	             {source: 0, target: 2, value: 0.1, count: 0.1},
 	             {source: 1, target: 2, value: 0.1, count: 0.1},
 	             {source: 2, target: 1, value: 0.1, count: 0.1}];
