@@ -479,11 +479,13 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
 
       val serviceName = "service"
       val spanName = Some("span")
-      val annotations = Some(Seq(gen.QueryAnnotation("ann1")))
+      val annotations = Some(Seq("ann1"))
       val binaryAnnotations = Some(Seq(gen.BinaryAnnotation("key", ByteBuffer.wrap("value".getBytes), gen.AnnotationType.String)))
       val endTs = 100
       val limit = 10
       val order = gen.Order.DurationDesc
+
+      val paddedTs = qs.padTimestamp(endTs)
 
       def id(id: Long, time: Long) = IndexedTraceId(id, time)
 
@@ -491,9 +493,13 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
         val request = gen.QueryRequest(serviceName, spanName, annotations, binaryAnnotations, endTs, limit, order)
 
         expect {
-          one(mockIndex).getTraceIdsByName(serviceName, spanName, endTs, limit) willReturn Future(Seq(id(1, 1), id(2, 2), id(3, 3)))
-          one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, endTs, limit) willReturn Future(Seq(id(4, 4), id(1, 5), id(3, 4)))
-          one(mockIndex).getTraceIdsByAnnotation(serviceName, "key", Some(ByteBuffer.wrap("value".getBytes)), endTs, limit) willReturn Future(Seq(id(2, 3), id(4, 9), id(1, 9)))
+          one(mockIndex).getTraceIdsByName(serviceName, spanName, endTs, 1) willReturn Future(Seq(id(1, endTs)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, endTs, 1) willReturn Future(Seq(id(1, endTs)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "key", Some(ByteBuffer.wrap("value".getBytes)), endTs, 1) willReturn Future(Seq(id(1, endTs)))
+
+          one(mockIndex).getTraceIdsByName(serviceName, spanName, paddedTs, limit) willReturn Future(Seq(id(1, 1), id(2, 2), id(3, 3)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, paddedTs, limit) willReturn Future(Seq(id(4, 4), id(1, 5), id(3, 4)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "key", Some(ByteBuffer.wrap("value".getBytes)), paddedTs, limit) willReturn Future(Seq(id(2, 3), id(4, 9), id(1, 9)))
 
           one(mockIndex).getTracesDuration(Seq(1)) willReturn Future(Seq(TraceIdDuration(1, 100, 1)))
         }
@@ -502,8 +508,6 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
         response.`traceIds`.length mustEqual 1
         response.`traceIds`(0) mustEqual 1
 
-        response.`annotationsCounts` mustEqual Some(Seq(3))
-        response.`binaryAnnotationsCounts` mustEqual Some(Seq(3))
         response.`endTs` mustEqual 9
         response.`startTs` mustEqual 9
       }
