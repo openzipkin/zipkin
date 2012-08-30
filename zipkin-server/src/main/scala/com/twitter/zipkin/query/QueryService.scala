@@ -82,7 +82,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
         case Nil => (-1L, defaultEndTs)
         case _   => (ts.min, ts.max)
       }
-      gen.QueryResponse(sortedIds, None, None, min, max)
+      gen.QueryResponse(sortedIds, min, max)
     }
   }
 

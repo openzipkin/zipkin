@@ -93,10 +93,8 @@ struct QueryRequest {
 
 struct QueryResponse {
   1: list<i64> trace_ids
-  2: optional list<i32> annotations_counts
-  3: optional list<i32> binary_annotations_counts
-  4: i64 start_ts
-  5: i64 end_ts
+  2: i64 start_ts
+  3: i64 end_ts
 }
 
 service ZipkinQuery {
