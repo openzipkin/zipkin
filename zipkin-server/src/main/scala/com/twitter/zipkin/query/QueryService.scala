@@ -25,7 +25,7 @@ import com.twitter.util.Future
 import com.twitter.zipkin.adapter.ThriftQueryAdapter
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.query.adjusters.Adjuster
-import com.twitter.zipkin.storage.{Aggregates, TraceIdDuration, Index, Storage}
+import com.twitter.zipkin.storage._
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
 import org.apache.thrift.TException
@@ -73,15 +73,125 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     storage.close
   }
 
+  private def constructQueryResponse(indexedIds: Seq[IndexedTraceId], limit: Int, order: gen.Order, defaultEndTs: Long = -1): Future[gen.QueryResponse] = {
+    val ids = indexedIds.map { _.traceId }
+    val ts = indexedIds.map { _.timestamp }
+
+    sortTraceIds(Future(ids), limit, order).map { sortedIds =>
+      val (min, max) = sortedIds match {
+        case Nil => (-1L, defaultEndTs)
+        case _   => (ts.min, ts.max)
+      }
+      gen.QueryResponse(sortedIds, min, max)
+    }
+  }
+
   def getTraceIds(queryRequest: gen.QueryRequest): Future[gen.QueryResponse] = {
     val method = "getTraceIds"
+    log.debug("%s: %s".format(method, queryRequest.toString))
     call(method) {
       val serviceName = queryRequest.`serviceName`
       val spanName = queryRequest.`spanName`
       val endTs = queryRequest.`endTs`
       val limit = queryRequest.`limit`
-      index.getTraceIdsByName(serviceName, spanName, endTs, limit)
+      val order = queryRequest.`order`
 
+      val sliceQueries = Seq(
+        spanName.map { name =>
+          Seq(SpanSliceQuery(serviceName, name, endTs, 1))
+        },
+        queryRequest.`annotations`.map {
+          _.map { a =>
+            AnnotationSliceQuery(serviceName, a, None, endTs, 1)
+          }
+        },
+        queryRequest.`binaryAnnotations`.map {
+          _.map { b =>
+            AnnotationSliceQuery(serviceName, b.`key`, Some(b.`value`), endTs, 1)
+          }
+        }
+      ).collect {
+        case Some(q: Seq[SliceQuery]) => q
+      }.flatten
+
+      log.debug(sliceQueries.toString())
+
+      sliceQueries match {
+        case Nil => {
+          /* No queries: get service level traces */
+          index.getTraceIdsByName(serviceName, None, endTs, limit).map {
+            constructQueryResponse(_, limit, order)
+          }.flatten
+        }
+        case head :: Nil => {
+          /* One query: just run it */
+          head.execute(index).map {
+            constructQueryResponse(_, limit, order)
+          }.flatten
+        }
+        case queries => {
+          /* Multiple: Fetch a single column from each to reconcile non-overlapping portions
+             then fetch the entire slice */
+          Future.collect {
+            queries.map {
+              _.execute(index)
+            }
+          }.map {
+            _.flatten.map {
+              _.timestamp
+            }.min
+          }.map { alignedTimestamp =>
+            /* Pad the aligned timestamp by a minute */
+            val ts = padTimestamp(alignedTimestamp)
+
+            Future.collect {
+              queries.map {
+                case s: SpanSliceQuery => s.copy(endTs = ts, limit = limit).execute(index)
+                case a: AnnotationSliceQuery => a.copy(endTs = ts, limit = limit).execute(index)
+              }
+            }.map { ids =>
+              traceIdsIntersect(ids) match {
+                case Nil => {
+                  val endTimestamp = ids.map {
+                    _.map { _.timestamp }.min
+                  }.max
+                  constructQueryResponse(Nil, limit, order, endTimestamp)
+                }
+                case seq => {
+                  constructQueryResponse(seq, limit, order)
+                }
+              }
+
+            }
+          }.flatten.flatten
+        }
+      }
+    }
+  }
+
+  private[query] def padTimestamp(timestamp: Long): Long = timestamp + Constants.TraceTimestampPadding.inMicroseconds
+
+  private[query] def traceIdsIntersect(idSeqs: Seq[Seq[IndexedTraceId]]): Seq[IndexedTraceId] = {
+    /* Find the trace IDs present in all the Seqs */
+    val idMaps = idSeqs.map {
+      _.groupBy {
+        _.traceId
+      }
+    }
+    val traceIds = idMaps.map {
+      _.keys.toSeq
+    }
+    val commonTraceIds = traceIds.tail.fold(traceIds(0)) { _.intersect(_) }
+
+    /*
+     * Find the timestamps associated with each trace ID and construct a new IndexedTraceId
+     * that has the trace ID's maximum timestamp (ending) as the timestamp
+     */
+    commonTraceIds.map { id =>
+      val maxTime = idMaps.map { m =>
+        m(id).map { _.timestamp }
+      }.flatten.max
+      IndexedTraceId(id, maxTime)
     }
   }
 
@@ -268,6 +378,13 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     }
   }
 
+  def getDependencies(serviceName: String): Future[Seq[String]] = {
+    log.debug("getDependencies: " + serviceName)
+    call("getDependencies") {
+      aggregates.getDependencies(serviceName)
+    }
+  }
+
   def getTopAnnotations(serviceName: String): Future[Seq[String]] = {
     log.debug("getTopAnnotations: " + serviceName)
     call("getTopAnnotations") {
@@ -362,5 +479,4 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       }
     }
   }
-
 }

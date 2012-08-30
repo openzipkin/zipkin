@@ -81,9 +81,27 @@ enum Order { TIMESTAMP_DESC, TIMESTAMP_ASC, DURATION_ASC, DURATION_DESC, NONE }
  */
 enum Adjust { NOTHING, TIME_SKEW }
 
+struct QueryRequest {
+  1: string service_name
+  2: optional string span_name
+  3: optional list<string> annotations
+  4: optional list<zipkinCore.BinaryAnnotation> binary_annotations
+  5: i64 end_ts
+  6: i32 limit
+  7: Order order
+}
+
+struct QueryResponse {
+  1: list<i64> trace_ids
+  2: i64 start_ts
+  3: i64 end_ts
+}
+
 service ZipkinQuery {
 
     //************** Index lookups **************
+
+    QueryResponse getTraceIds(1: QueryRequest request) throws (1: QueryException qe);
 
     /**
      * Fetch trace ids by service and span name.
@@ -194,6 +212,7 @@ service ZipkinQuery {
     i32 getDataTimeToLive() throws (1: QueryException qe);
 
     /** Aggregates related */
+    list<string> getDependencies(1: string service_name) throws (1: QueryException qe);
     list<string> getTopAnnotations(1: string service_name) throws (1: QueryException qe);
     list<string> getTopKeyValueAnnotations(1: string service_name) throws (1: QueryException qe);
 }
