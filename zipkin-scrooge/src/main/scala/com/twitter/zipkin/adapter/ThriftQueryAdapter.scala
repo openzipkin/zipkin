@@ -25,7 +25,6 @@ object ThriftQueryAdapter extends QueryAdapter {
   type traceSummaryType = gen.TraceSummary
   type traceType = gen.Trace
 
-  type queryAnnotationType = gen.QueryAnnotation
   type queryRequestType = gen.QueryRequest
   type queryResponseType = gen.QueryResponse
 
@@ -114,18 +113,12 @@ object ThriftQueryAdapter extends QueryAdapter {
     gen.Trace(t.spans.map(ThriftAdapter(_)))
   }
 
-  /* QueryAnnotation */
-  def apply(q: queryAnnotationType): QueryAnnotation = QueryAnnotation(q.`value`)
-  def apply(q: QueryAnnotation): queryAnnotationType = gen.QueryAnnotation(q.value)
-
   /* QueryRequest */
   def apply(q: queryRequestType): QueryRequest = {
     QueryRequest(
       q.`serviceName`,
       q.`spanName`,
-      q.`annotations`.map {
-        _.map { ThriftQueryAdapter(_) }
-      },
+      q.`annotations`,
       q.`binaryAnnotations`.map {
         _.map { ThriftAdapter(_) }
       },
@@ -137,9 +130,7 @@ object ThriftQueryAdapter extends QueryAdapter {
     gen.QueryRequest(
       q.serviceName,
       q.spanName,
-      q.annotations.map {
-        _.map { ThriftQueryAdapter(_) }
-      },
+      q.annotations,
       q.binaryAnnotations.map {
         _.map { ThriftAdapter(_) }
       },

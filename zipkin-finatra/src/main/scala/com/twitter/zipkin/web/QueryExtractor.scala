@@ -19,7 +19,7 @@ import com.twitter.finatra.Request
 import com.twitter.logging.Logger
 import com.twitter.util.Time
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
-import com.twitter.zipkin.query.{QueryAnnotation, Order, QueryRequest}
+import com.twitter.zipkin.query.{Order, QueryRequest}
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 
@@ -41,9 +41,7 @@ object QueryExtractor {
     /* Pull out the annotations */
     val annotations = extractParams(request, "annotations[%d]") match {
       case Nil     => None
-      case seq @ _ => Some {
-        seq.map { QueryAnnotation(_) }
-      }
+      case seq @ _ => Some(seq)
     }
 
     /* Pull out the kv annotations */

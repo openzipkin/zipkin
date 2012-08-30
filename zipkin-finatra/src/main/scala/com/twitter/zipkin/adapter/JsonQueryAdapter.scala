@@ -13,7 +13,6 @@ object JsonQueryAdapter extends QueryAdapter {
   type traceSummaryType = JsonTraceSummary
   type traceType = JsonTrace
 
-  type queryAnnotationType = QueryAnnotation
   type queryRequestType    = QueryRequest
   type queryResponseType   = QueryResponse
 
@@ -94,9 +93,6 @@ object JsonQueryAdapter extends QueryAdapter {
   }
 
   /* No-ops since not used */
-  def apply(q: queryAnnotationType): QueryAnnotation = q
-  //def apply(q: QueryAnnotation): queryAnnotationType = q
-
   def apply(q: queryRequestType): QueryRequest = q
   //def apply(q: QueryRequest): queryRequestType = q
 

@@ -20,7 +20,7 @@ import com.twitter.zipkin.common.BinaryAnnotation
 
 case class QueryRequest(serviceName: String,
                         spanName: Option[String],
-                        annotations: Option[Seq[QueryAnnotation]],
+                        annotations: Option[Seq[String]],
                         binaryAnnotations: Option[Seq[BinaryAnnotation]],
                         endTs: Long,
                         limit: Int,

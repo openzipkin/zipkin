@@ -27,7 +27,6 @@ trait QueryAdapter {
   type traceSummaryType      /* corresponds to com.twitter.zipkin.common.TraceSummary     */
   type traceType              /* corresponds to com.twitter.zipkin.query.Trace */
 
-  type queryAnnotationType /* corresponds to com.twitter.zipkin.query.QueryAnnotation */
   type queryRequestType    /* corresponds to com.twitter.zipkin.query.QueryRequest    */
   type queryResponseType   /* corresponds to com.twitter.zipkin.query.QueryResponse   */
 
@@ -47,9 +46,6 @@ trait QueryAdapter {
 
   def apply(t: traceType): Trace
   def apply(t: Trace): traceType
-
-  def apply(q: queryAnnotationType): QueryAnnotation
-  def apply(q: QueryAnnotation): queryAnnotationType
 
   def apply(q: queryRequestType): QueryRequest
   def apply(q: QueryRequest): queryRequestType
