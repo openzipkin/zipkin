@@ -22,7 +22,7 @@ import com.twitter.scalding._
 import gen.AnnotationType
 import scala.collection.JavaConverters._
 import collection.mutable.{HashMap, HashSet}
-import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, PreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources._
 import java.nio.ByteBuffer
 import java.util.Arrays
 
@@ -64,8 +64,7 @@ class WhaleReportSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(PreprocessedSpanSource(), spans).
-        source(PrepTsvSource(), Util.getSpanIDtoNames(spans)).
+        source(DailyPreprocessedSpanSource(), spans).
         sink[(Long, List[String])](Tsv("outputFile")) {
         var result = new HashSet[String]()
         var actual = new HashSet[String]()

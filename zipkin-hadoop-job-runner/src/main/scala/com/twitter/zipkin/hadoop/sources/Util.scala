@@ -59,6 +59,6 @@ object Util {
    * @return the string as a service name in HTML
    */
   def toSafeHtmlName(s: String) = {
-    s.trim().replace("/", "-")
+    s.trim().replace("/", "-") + ".html"
   }
 }

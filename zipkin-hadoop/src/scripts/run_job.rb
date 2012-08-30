@@ -51,8 +51,8 @@ class OptparseJobArguments
       end
 
       opts.on("-d", "--date DATES", Array,
-              "The DATES to run the job over. Expected format is %Y-%m-%dT%H:%M") do |dates|
-        options.dates = dates.map{|date| DateTime.strptime(date, '%Y-%m-%dT%H:%M')}
+              "The DATES to run the job over. Expected format is %Y-%m-%d") do |dates|
+        options.dates = dates.map{|date| DateTime.strptime(date, '%Y-%m-%d')}
       end
 
       opts.on("-o", "--output OUTPUT",
@@ -104,12 +104,10 @@ class JobArguments
     @output = output
     @prep = prep
   end
-
 end
 
-
 def time_to_remote_file(time, prefix)
-  return prefix + time.year.to_s() + "/" + append_zero(time.month) + "/" + append_zero(time.day) + "/" + append_zero(time.hour)
+  return prefix + time.year.to_s() + "/" + append_zero(time.month) + "/" + append_zero(time.day)
 end
 
 def append_zero(x)
@@ -125,18 +123,23 @@ def is_hadoop_local_machine?()
   return system("hadoop dfs -test -e .")
 end
 
-def remote_file_exists?(pathname, hadoop_config)
+def hadoop_cmd_head(hadoop_config)
   cmd = is_hadoop_local_machine?() ? "" : "ssh -C " + $HOST + " "
   cmd += "hadoop "
   cmd += (hadoop_config == nil) ? "" : hadoop_config
+  return cmd
+end
+
+def remote_file_exists?(pathname, hadoop_config)
+  cmd = hadoop_cmd_head(hadoop_config)
   cmd += " dfs -test -e " + pathname
   result = system(cmd)
-  puts "In run_job, remote_file_exists for " + pathname + ": " + result.to_s()
+  puts "Remote_file_exists for " + pathname + ": " + result.to_s()
   return result
 end
 
 def date_to_cmd(time)
-  return time.year.to_s() + "-" + append_zero(time.month) + "-" + append_zero(time.day) + "T" + append_zero(time.hour) + ":00"
+  return time.year.to_s() + "-" + append_zero(time.month) + "-" + append_zero(time.day)
 end
 
 def run_job(args)

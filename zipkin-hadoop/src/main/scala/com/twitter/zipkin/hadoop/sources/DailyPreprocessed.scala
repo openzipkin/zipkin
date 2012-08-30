@@ -25,18 +25,18 @@ import scala.collection.JavaConverters._
 /**
  * Preprocesses the data by merging different pieces of the same span
  */
-class Preprocessed(args : Args) extends Job(args) with DefaultDateRangeJob {
-  val preprocessed = SpanSource()
+class DailyPreprocessed(args : Args) extends Job(args) with DefaultDateRangeJob {
+  val preprocessed = DailySpanSource()
     .read
-    .mapTo(0 ->('trace_id, 'id, 'parent_id, 'annotations, 'binary_annotations)) {
-      s: Span => (s.trace_id, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList)
-    }
+    .mapTo(0 ->('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations)) {
+    s: Span => (s.trace_id, s.name, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList)
+  }
     .groupBy('trace_id, 'id, 'parent_id) {
-      _.reduce('annotations, 'binary_annotations) {
-        (left: (List[Annotation], List[BinaryAnnotation]), right: (List[Annotation], List[BinaryAnnotation])) =>
+    _.reduce('annotations, 'binary_annotations) {
+      (left: (List[Annotation], List[BinaryAnnotation]), right: (List[Annotation], List[BinaryAnnotation])) =>
         (left._1 ++ right._1, left._2 ++ right._2)
-      }
     }
+  }
 
   val onlyMerge = preprocessed
     .mapTo(('trace_id, 'id, 'parent_id, 'annotations, 'binary_annotations) -> 'span) {
@@ -49,5 +49,5 @@ class Preprocessed(args : Args) extends Job(args) with DefaultDateRangeJob {
           }
           span
       }
-    }.write(PrepNoNamesSpanSource())
+  }.write(DailyPrepNoNamesSpanSource())
 }
