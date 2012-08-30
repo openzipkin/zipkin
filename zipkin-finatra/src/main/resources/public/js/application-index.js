@@ -440,46 +440,6 @@ Zipkin.Application.Index = (function() {
 
       Zipkin.Base.setCookie("lastServiceName", baseParams.serviceName);
 
-      // if (tabType == "filter-span-tab") {
-      //   var spanName = $('select[name=spanName]').val();
-      //   if (spanName === "") {
-      //     error = true;
-      //   } else {
-      //     query = new Zipkin.Application.Models.SpanQuery($.extend({}, baseParams, {
-      //       spanName: spanName
-      //     }));
-      //     Zipkin.Base.setCookie("lastSpanName", spanName);
-      //   }
-      // } else if (tabType == "filter-annotation-tab") {
-      //   var timeAnnotation = $('input[name=time_annotation]').val();
-      //   if (timeAnnotation === "") {
-      //     error = true;
-      //   } else {
-      //     query = new Zipkin.Application.Models.AnnotationQuery($.extend({}, baseParams, {
-      //       timeAnnotation: timeAnnotation
-      //     }));
-      //   }
-      // } else if (tabType == "filter-key-value-tab") {
-      //   var key = $('input[name=annotation_key]').val();
-      //   var value = $('input[name=annotation_value]').val();
-      //   if (key === "" || value === "") {
-      //     error = true;
-      //   } else {
-      //     query = new Zipkin.Application.Models.KeyValueQuery($.extend({}, baseParams, {
-      //       annotationKey    : key,
-      //       annotationValue  : value
-      //     }));
-      //   }
-      // } else {
-      //   $('#error-box').text("Invalid query").show();
-      //   return false;
-      // }
-
-      // if (error) {
-      //   $('#error-box').text("Invalid query").show();
-      //   return false;
-      // }
-
       $('#loading-data').show();
 
       var queryResults = query.execute();
