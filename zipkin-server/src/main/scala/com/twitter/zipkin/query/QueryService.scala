@@ -118,8 +118,10 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
 
       sliceQueries match {
         case Nil => {
-          /* No queries: return a default empty response */
-          Future.exception(gen.QueryException("Invalid query"))
+          /* No queries: get service level traces */
+          index.getTraceIdsByName(serviceName, None, endTs, limit).map {
+            constructQueryResponse(_, limit, order)
+          }.flatten
         }
         case head :: Nil => {
           /* One query: just run it */
