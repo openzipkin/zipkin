@@ -17,7 +17,5 @@
 package com.twitter.zipkin.query
 
 case class QueryResponse(traceIds: Seq[Long],
-                         annotationsCounts: Option[Seq[Int]],
-                         binaryAnnotationsCounts: Option[Seq[Int]],
                          startTs: Long,
                          endTs: Long)

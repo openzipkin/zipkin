@@ -141,9 +141,9 @@ object ThriftQueryAdapter extends QueryAdapter {
 
   /* QueryResponse */
   def apply(q: queryResponseType): QueryResponse =
-    QueryResponse(q.`traceIds`, q.`annotationsCounts`, q.`binaryAnnotationsCounts`, q.`startTs`, q.`endTs`)
+    QueryResponse(q.`traceIds`, q.`startTs`, q.`endTs`)
   def apply(q: QueryResponse): queryResponseType =
-    gen.QueryResponse(q.traceIds, q.annotationsCounts, q.binaryAnnotationsCounts, q.startTs, q.endTs)
+    gen.QueryResponse(q.traceIds, q.startTs, q.endTs)
 
   /* Order */
   def apply(o: orderType): Order = {
