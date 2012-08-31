@@ -176,4 +176,3 @@ if __FILE__ == $0
   options = OptparseJobArguments.parse(ARGV)
   run_job(options.dates, options.settings, options.hadoop_config, options.timezone, options.job, options.output, options.preprocessor)
 end
-
