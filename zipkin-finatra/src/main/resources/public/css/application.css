@@ -117,14 +117,17 @@ form .clearfix {
   margin-bottom: 0px;
 }
 
+/* end bootstrap edits */
+
 .form-horizontal .index-control-label {
   width: 60px;
 }
 
 .additional-filter-group > .control-group {
-  margin-top: -5px;
-  padding-top: 5px;
   border-top: 1px solid #DDD;
+  margin-top: -5px;
+  margin-bottom: 5px;
+  padding-top: 5px;
 }
 
 .additional-filter-group > .control-group:first-child {
@@ -159,6 +162,10 @@ form .clearfix {
   opacity: 1.0;
 }
 
+.add-filter-group > button {
+  width: 50%;
+}
+
 .form-horizontal .index-controls {
   margin-left: 70px;
 }
@@ -166,8 +173,6 @@ form .clearfix {
 .form-horizontal .index-controls input {
   width: 101%;
 }
-
-/* end bootstrap edits */
 
 .trace-data-tab {
 }
@@ -302,21 +307,12 @@ body > .container {
 .sidebar-block input {
   margin: 0;
   margin-bottom: 5px;
-  /*width: 95%;*/
 }
 
 .filter-options {
   padding: 0px;
   border: none;
   background: none;;
-}
-
-.additional-filter-group > .control-group {
-  margin-bottom: 5px;
-}
-
-.add-filter-group > button {
-  width: 50%;
 }
 
 .service-tag-list {
