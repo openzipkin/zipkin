@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8">
     <title>Zipkin, from Twitter</title>
-    <link href="css/bootstrap-2.0.4.min.css" rel="stylesheet">
+    <link href="css/bootstrap-2.1.0.min.css" rel="stylesheet">
     <link href="css/docs.css" rel="stylesheet">
     <!--<link href="css/bootstrap-responsive-2.0.4.min.css" rel="stylesheet">-->
   </head>
   <body>
-    <div class="navbar navbar-fixed-top">
+    <div class="navbar navbar-inverse navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container">
           <a class="brand" href="#">Zipkin</a>
@@ -32,14 +32,330 @@
 
       <div class="container">
         <section id="examples">
-          <div class="row">
-            <div class="span3">
-              <h3>Overview</h3>
-            </div>
-            <div class="span9">
-              <p>Zipkin is a tracing system that makes it simple for developers to extract and view performance information about their distributed systems.</p>
-            </div>
-          </div>
+<p><img src="https://github.com/twitter/zipkin/raw/master/doc/zipkin-logo-200x119.jpg" alt="Zipkin (doc/zipkin-logo-200x119.jpg)"></p>
+
+<p>Zipkin is a distributed tracing system that helps us gather timing data for all the disparate services at Twitter.
+It manages both the collection and lookup of this data through a Collector and a Query service.
+We closely modelled Zipkin after the <a href="http://research.google.com/pubs/pub36356.html">Google Dapper</a> paper. Follow <a href="https://twitter.com/zipkinproject">@zipkinproject</a> for updates. <a href="http://travis-ci.org/twitter/zipkin"><img src="https://secure.travis-ci.org/twitter/zipkin.png" alt="Build Status"></a></p>
+
+<h2>Why distributed tracing?</h2>
+
+<p>Collecting traces helps developers gain deeper knowledge about how certain requests perform in a distributed system.
+Let&#39;s say we&#39;re having problems with user requests timing out. We can look up traced requests that timed out and display
+it in the web UI. We&#39;ll be able to quickly find the service responsible for adding the unexpected response time.
+If the service has been annotated adequately we can also find out where in that service the issue is happening.</p>
+
+<p><img src="https://github.com/twitter/zipkin/raw/master/doc/web-screenshot.png" alt="Screnshot of the Zipkin web UI (doc/web-screenshot.png)"></p>
+
+<h2>Architecture</h2>
+
+<p>These are the components that make up a fully fledged tracing system.</p>
+
+<p><img src="https://github.com/twitter/zipkin/raw/master/doc/architecture-0.png" alt="Zipkin Architecture (doc/architecture-0.png)"></p>
+
+<h3>Instrumented libraries</h3>
+
+<p>Tracing information is collected on each host using the instrumented libraries and sent to Zipkin. 
+When the host makes a request to another service, it passes a few tracing identifers along with the request so we can later tie the data together.</p>
+
+<p><img src="https://github.com/twitter/zipkin/raw/master/doc/architecture-1.png" alt="Zipkin Instrumentation architecture (doc/architecture-1.png)"></p>
+
+<p>We have instrumented the libraries below to trace requests and to pass the required identifiers to the other services called in the request.</p>
+
+<h5>Finagle</h5>
+
+<blockquote>
+<p>Finagle is an asynchronous network stack for the JVM that you can use to build asynchronous Remote Procedure Call (RPC) clients and servers in Java, Scala, or any JVM-hosted language.</p>
+</blockquote>
+
+<p><a href="https://github.com/twitter/finagle">Finagle</a> is used heavily inside of Twitter and it was a natural point to include tracing support. So far we have client/server support for Thrift and HTTP as well as client only support for Memcache and Redis.</p>
+
+<p>To set up a Finagle server in Scala, just do the following.
+Adding tracing is as simple as adding <a href="https://github.com/twitter/finagle/tree/master/finagle-zipkin">finagle-zipkin</a> as a dependency and a <code>tracerFactory</code> to the ServerBuilder. </p>
+
+<pre><code class="scala">ServerBuilder()
+  .codec(ThriftServerFramedCodec())
+  .bindTo(serverAddr)
+  .name(&quot;servicename&quot;)
+  .tracerFactory(ZipkinTracer())
+  .build(new SomeService.FinagledService(queryService, new TBinaryProtocol.Factory()))
+</code></pre>
+
+<p>The tracing setup for clients is similar. When you&#39;ve specified the Zipkin tracer as above a small sample of your requests will be traced automatically. We&#39;ll record when the request started and ended, services and hosts involved.</p>
+
+<p>In case you want to record additional information you can add a custom annotation in your code.</p>
+
+<pre><code class="scala">Trace.record(&quot;starting that extremely expensive computation&quot;)
+</code></pre>
+
+<p>The line above will add an annotation with the string attached to the point in time when it happened. You can also add a key value annotation. It could look like this:</p>
+
+<pre><code class="scala">Trace.recordBinary(&quot;http.response.code&quot;, &quot;500&quot;)
+</code></pre>
+
+<h5>Ruby Thrift</h5>
+
+<p>There&#39;s a <a href="https://rubygems.org/gems/finagle-thrift">gem</a> we use to trace requests. In order to push the tracer and generate a trace id on a request you can use that gem in a RackHandler. See <a href="https://github.com/twitter/zipkin/blob/master/zipkin-web/config/application.rb">zipkin-web</a> for an example of where we trace the tracers.</p>
+
+<p>For tracing client calls from Ruby we rely on the Twitter <a href="https://github.com/twitter/thrift_client">Ruby Thrift client</a>. See below for an example on how to wrap the client.</p>
+
+<pre><code class="ruby">client = ThriftClient.new(SomeService::Client, &quot;127.0.0.1:1234&quot;)
+client_id = FinagleThrift::ClientId.new(:name =&gt; &quot;service_example.sample_environment&quot;)
+FinagleThrift.enable_tracing!(client, client_id), &quot;service_name&quot;)
+</code></pre>
+
+<h5>Querulous</h5>
+
+<p><a href="https://github.com/twitter/querulous">Querulous</a> is a Scala library for interfacing with SQL databases. The tracing includes the timings of the request and the SQL query performed.</p>
+
+<h5>Cassie</h5>
+
+<p><a href="https://github.com/twitter/cassie">Cassie</a> is a Finagle based Cassandra client library. You set the tracer in Cassie pretty much like you would in Finagle, but in Cassie you set it on the KeyspaceBuilder.</p>
+
+<pre><code class="scala">cluster.keyspace(keyspace).tracerFactory(ZipkinTracer())
+</code></pre>
+
+<h3>Transport</h3>
+
+<p>We use Scribe to transport all the traces from the different services to Zipkin and Hadoop.
+Scribe was developed by Facebook and it&#39;s made up of a daemon that can run on each server in your system.
+It listens for log messages and routes them to the correct receiver depending on the category.</p>
+
+<h3>Zipkin collector daemon</h3>
+
+<p>Once the trace data arrives at the Zipkin collector daemon we check that it&#39;s valid, store it and the index it for lookups.</p>
+
+<h3>Storage</h3>
+
+<p>We settled on Cassandra for storage. It&#39;s scalable, has a flexible schema and is heavily used within Twitter. We did try to make this component pluggable though, so should not be hard to put in something else here.</p>
+
+<h3>Zipkin query daemon</h3>
+
+<p>Once the data is stored and indexed we need a way to extract it. This is where the query daemon comes in, providing the users with a simple Thrift api for finding and retrieving traces. See <a href="https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinQuery.thrift">the Thrift file</a>.</p>
+
+<h3>UI</h3>
+
+<p>Most of our users access the data via our UI. It&#39;s a Rails app that uses <a href="http://d3js.org/">D3</a> to visualize the trace data. Note that there is no built in authentication in the UI.</p>
+
+<h2>Modules</h2>
+
+<p><img src="https://github.com/twitter/zipkin/raw/master/doc/modules.png" alt="Modules (doc/modules.png)"></p>
+
+<h2>Installation</h2>
+
+<h3>Cassandra</h3>
+
+<p>Zipkin relies on Cassandra for storage. So you will need to bring up a Cassandra cluster.</p>
+
+<ol>
+<li>See Cassandra&#39;s <a href="http://cassandra.apache.org/">site</a> for instructions on how to start a cluster.</li>
+<li>Use the Zipkin Cassandra schema attached to this project. You can create the schema with the following command.
+<code>bin/cassandra-cli -host localhost -port 9160 -f zipkin-server/src/schema/cassandra-schema.txt</code></li>
+</ol>
+
+<h3>ZooKeeper</h3>
+
+<p>Zipkin uses ZooKeeper for coordination. That&#39;s where we store the server side sample rate and register the servers.</p>
+
+<ol>
+<li>See ZooKeeper&#39;s <a href="http://zookeeper.apache.org/">site</a> for instructions on how to install it.</li>
+</ol>
+
+<h3>Scribe</h3>
+
+<p><a href="https://github.com/facebook/scribe">Scribe</a> is the logging framework we use to transport the trace data.
+You need to set up a network store that points to the Zipkin collector daemon. If you are just trying out Zipkin you can skip this step entirely and point the ZipkinTracer directly at the collector.</p>
+
+<p>A Scribe store for Zipkin might look something like this.</p>
+
+<pre><code>&lt;store&gt;
+  category=zipkin
+  type=network
+  remote_host=123.123.123.123
+  remote_port=9410
+  use_conn_pool=yes
+  default_max_msg_before_reconnect=50000
+  allowable_delta_before_reconnect=12500
+  must_succeed=no
+&lt;/store&gt;
+</code></pre>
+
+<p>If you don&#39;t want to hardcode the IP address of your collector there are a few options. </p>
+
+<p>You can use an internal DNS entry for the collectors, that way you only have one place to change the addresses when you add or remove collectors. </p>
+
+<p>If you want to get all fancy you can use a modified version of <a href="Scribe">https://github.com/traviscrawford/scribe</a> that picks up the collectors via ZooKeeper. When each collector starts up it adds itself to ZooKeeper and when a collector shuts down it is automatically removed. The modified Scribe gets notified when the set of collectors change. To use this mode you change remote_host in the configuration to zk://zookeeper-hostname:2181/scribe/zipkin or something similar.</p>
+
+<p>We&#39;re hoping that others might add non-Scribe transports for the tracing data; there is no reason why Scribe has to be the only one.</p>
+
+<h3>Zipkin servers</h3>
+
+<p>We&#39;ve developed Zipkin with <a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>, <a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>, and JDK7.</p>
+
+<ol>
+<li><code>git clone https://github.com/twitter/zipkin.git</code></li>
+<li><code>cd zipkin</code></li>
+<li><code>cp zipkin-scribe/config/collector-dev.scala zipkin-scribe/config/collector-prod.scala</code></li>
+<li><code>cp zipkin-server/config/query-dev.scala zipkin-server/config/query-prod.scala</code></li>
+<li>Modify the configs above as needed. Pay particular attention to ZooKeeper and Cassandra server entries.</li>
+<li><code>bin/sbt update package-dist</code> (This downloads SBT 0.11.2 if it doesn&#39;t already exist)</li>
+<li><code>scp dist/zipkin*.zip [server]</code></li>
+<li><code>ssh [server]</code></li>
+<li><code>unzip zipkin*.zip</code></li>
+<li><code>mkdir -p /var/log/zipkin</code></li>
+<li><code>zipkin-scribe/scripts/collector.sh -f zipkin-scribe/config/collector-prod.scala</code></li>
+<li><code>zipkin-server/scripts/query.sh -f zipkin-server/config/query-prod.scala</code></li>
+</ol>
+
+<p>You can also run the collector and query services through SBT.</p>
+
+<p>To run the Scribe collector service: <code>bin/sbt &#39;project zipkin-scribe&#39; &#39;run -f zipkin-scribe/config/collector-dev.scala&#39;</code></p>
+
+<p>To run the query service: <code>bin/sbt &#39;project zipkin-server&#39; &#39;run -f zipkin-server/config/query-dev.scala&#39;</code></p>
+
+<h3>Zipkin UI</h3>
+
+<p>The UI is a standard Rails 3 app.</p>
+
+<ol>
+<li>Update config with your ZooKeeper server. This is used to find the query daemons.</li>
+<li>Deploy to a suitable Rails 3 app server. For testing you can simply do
+<code>
+bundle install &amp;&amp;
+bundle exec rails server.
+</code></li>
+</ol>
+
+<h4>zipkin-tracer gem</h4>
+
+<p>The <code>zipkin-tracer</code> gem adds tracing to a Rails application through the use of a Rack Handler.
+In <code>config.ru</code>:</p>
+
+<pre><code class="ruby">  use ZipkinTracer::RackHandler
+  run &lt;YOUR_APPLICATION&gt;
+</code></pre>
+
+<p>If the application&#39;s static assets are served through Rails, those requests will be traced.</p>
+
+<h2>Running a Hadoop job</h2>
+
+<p>It&#39;s possible to setup Scribe to log into Hadoop. If you do this you can generate various reports from the data
+that is not easy to do on the fly in Zipkin itself.</p>
+
+<p>We use a library called <a href="http://github.com/twitter/scalding">Scalding</a> to write Hadoop jobs in Scala.</p>
+
+<ol>
+<li>To run a Hadoop job first make the fat jar.
+<code>sbt &#39;project zipkin-hadoop&#39; compile assembly</code></li>
+<li>Change scald.rb to point to the hostname you want to copy the jar to and run the job from.</li>
+<li>Update the version of the jarfile in scald.rb if needed.</li>
+<li>You can then run the job using our scald.rb script.
+<code>./scald.rb --hdfs com.twitter.zipkin.hadoop.[classname] --date yyyy-mm-ddThh:mm yyyy-mm-ddThh:mm --output [dir]</code></li>
+</ol>
+
+<h2>How to instrument a library</h2>
+
+<p>We have instrumented a few libraries and protocols, but we hope to get some help instrumenting a few more. 
+Before we start we need to know a few things about how we structure the tracing data.</p>
+
+<ul>
+<li>Annotation - includes a value, timestamp, and host</li>
+<li>Span - a set of annotations that correspond to a particular RPC</li>
+<li>Trace - a set of spans that share a single root span</li>
+</ul>
+
+<p>The above is used to send the tracing data to Zipkin. You can find these and more described <a href="https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinCore.thrift">here</a></p>
+
+<p>Another important part of the tracing is the light weight header we use to pass information between the traced services.
+The tracing header consists of the following:</p>
+
+<ul>
+<li>Trace Id - identifies the whole trace</li>
+<li>Span Id - identifies an individual request</li>
+<li>Optional Parent Span Id - Added if this request was made as part of another request</li>
+<li>Sampled boolean - tells us if we should log the tracing data or not</li>
+</ul>
+
+<p>Now that we know a bit about the data types, let&#39;s take a step by step look at how the instrumentation works. 
+The example below will describe how the Http tracing in Finagle works. Other libraries and protocols will of course be different, but the general principle should be the same.</p>
+
+<h3>Server side</h3>
+
+<ol>
+<li><p>Check if there are any tracing headers in the incoming request. If there is, we adopt ids associated with that for this request. If not, we generate a new trace id, span id and decide if we should sample or not. See <a href="https://github.com/twitter/finagle/blob/master/finagle-http/src/main/scala/com/twitter/finagle/http/Codec.scala">HttpServerTracingFilter</a> for an example of this.</p></li>
+<li><p>If the current request is to be sampled we gather information such as service name, hostname, span name (http get/put for example) and the actual annotations. We create a &quot;server received&quot; annotation when we get the request and a &quot;server send&quot; one when we are done processing and are just about to send the result. Again, you can see this in <a href="https://github.com/twitter/finagle/blob/master/finagle-http/src/main/scala/com/twitter/finagle/http/Codec.scala">HttpServerTracingFilter</a>.</p></li>
+<li><p>The tracing data created is passed to whatever tracer was set on the ServerBuilder. This could be ConsoleTracer for debugging for example, but in our case we&#39;ll assume it&#39;s <a href="https://github.com/twitter/finagle/tree/master/finagle-zipkin">ZipkinTracer</a>. When tracing data is received by the ZipkinTracer it aggregates them by span id.</p></li>
+<li><p>Once the ZipkinTracer receives an &quot;end of span&quot; event, something like a &quot;server received&quot; annotation or a timeout it will send the aggregated data as a Thrift struct to Scribe. If no such event happens it will eventually send the data anyway. We&#39;re open to adding other ways of transporting the data, for us Thrift and Scribe made sense but perhaps JSON and Http will work better for some.</p></li>
+</ol>
+
+<h3>Client side</h3>
+
+<ol>
+<li><p>Before making the request, figure out if we are part of a trace already. It could be that this client is used within a server for example. That server could be processing a request and therefore already has a trace id assigned. We reuse that trace id, but we generate a new span id for this new request. We also set the parent span id to the previous span id, if available. You can see some of this <a href="https://github.com/twitter/finagle/blob/master/finagle-core/src/main/scala/com/twitter/finagle/tracing/TracingFilter.scala">here</a> and <a href="https://github.com/twitter/finagle/blob/master/finagle-core/src/main/scala/com/twitter/finagle/tracing/Trace.scala">here</a>.</p></li>
+<li><p>Similar to on the server side we have a <a href="https://github.com/twitter/finagle/blob/master/finagle-http/src/main/scala/com/twitter/finagle/http/Codec.scala">HttpClientTracingFilter</a> that adds the tracing headers to the outgoing http request.</p></li>
+<li><p>We also generate the appropriate annotations, such as &quot;client send&quot; before the request and &quot;client receive&quot; after we receive a reply from the server.</p></li>
+<li><p>Similar to the server side the data reaches the ZipkinTracer that sends it off to Zipkin.</p></li>
+</ol>
+
+<h2>Mailing lists</h2>
+
+<p>There are two mailing lists you can use to get in touch with other users and developers.</p>
+
+<p>Users: https://groups.google.com/group/zipkin-user</p>
+
+<p>Developers: https://groups.google.com/group/zipkin-dev</p>
+
+<h2>Issues</h2>
+
+<p>Noticed a bug? Please add an issue here. https://github.com/twitter/zipkin/issues</p>
+
+<h2>Contributions</h2>
+
+<p>Contributions are very welcome! Please create a pull request on github and we&#39;ll look at it as soon as possible.</p>
+
+<p>Try to make the code in the pull request as focused and clean as possible, stick as close to our code style as you can.</p>
+
+<p>If the pull request is becoming too big we ask that you split it into smaller ones.</p>
+
+<p>Areas where we&#39;d love to see contributions include: adding tracing to more libraries and protocols, interesting reports generated with Hadoop from the trace data, extending collector to support more transports and storage systems and other ways of visualizing the data in the web UI.</p>
+
+<h2>Versioning</h2>
+
+<p>We intend to use the <a href="http://semver.org/">semver</a> style versioning.</p>
+
+<h2>Authors</h2>
+
+<p>Thanks to everyone below for making Zipkin happen!</p>
+
+<p>Zipkin server</p>
+
+<ul>
+<li>Johan Oskarsson: <a href="https://twitter.com/skr">@skr</a></li>
+<li>Franklin Hu: <a href="https://twitter.com/thisisfranklin">@thisisfranklin</a></li>
+<li>Ian Ownbey: <a href="https://twitter.com/iano">@iano</a></li>
+</ul>
+
+<p>Zipkin UI</p>
+
+<ul>
+<li>Franklin Hu: <a href="https://twitter.com/thisisfranklin">@thisisfranklin</a></li>
+<li>Bill Couch: <a href="https://twitter.com/couch">@couch</a></li>
+<li>David McLaughlin: <a href="https://twitter.com/dmcg">@dmcg</a></li>
+<li>Chad Rosen: <a href="https://twitter.com/zed">@zed</a></li>
+</ul>
+
+<p>Instrumentation</p>
+
+<ul>
+<li>Marius Eriksen: <a href="https://twitter.com/marius">@marius</a></li>
+<li>Arya Asemanfar: <a href="https://twitter.com/a_a">@a_a</a></li>
+</ul>
+
+<h2>License</h2>
+
+<p>Copyright 2012 Twitter, Inc.</p>
+
+<p>Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0</p>
         </section>
       </div>
   </body>
