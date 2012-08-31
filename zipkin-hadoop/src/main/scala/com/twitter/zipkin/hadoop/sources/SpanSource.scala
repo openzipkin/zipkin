@@ -40,6 +40,12 @@ abstract class HourlySuffixLzoThrift[T <: TBase[_,_] : Manifest](prefix : String
   def column = manifest[T].erasure
 }
 
+abstract class DailySuffixLzoThrift[T <: TBase[_,_] : Manifest](prefix : String, dateRange : DateRange) extends
+  DailySuffixSource(prefix, dateRange) with LzoThrift[T] {
+  def column = manifest[T].erasure
+}
+
+
 abstract class HourlySuffixSource(prefixTemplate : String, dateRange : DateRange) extends
   TimePathedSource(prefixTemplate + TimePathedSource.YEAR_MONTH_DAY_HOUR + "/*", dateRange, DateOps.UTC)
 
@@ -83,6 +89,8 @@ trait LzoTsv extends DelimitedScheme {
  */
 case class SpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("/logs/zipkin/", dateRange)
 
+case class DailySpanSource(implicit dateRange: DateRange) extends DailySuffixLzoThrift[Span]("/logs/zipkin/", dateRange)
+
 case class FixedSpanSource(p : String) extends FixedPathSource(p) with LzoThrift[Span] {
   def column = classOf[Span]
 }
@@ -92,11 +100,15 @@ case class FixedSpanSource(p : String) extends FixedPathSource(p) with LzoThrift
  */
 case class PrepNoNamesSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("Preprocessed", dateRange)
 
+case class DailyPrepNoNamesSpanSource(implicit dateRange: DateRange) extends DailySuffixLzoThrift[Span]("DailyPreprocessed", dateRange)
+
 /**
  * This is the source for trace data that has been merged and for which we've found
  * the best possible client side and service names. Directories are like in SpanSource
  */
 case class PreprocessedSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[SpanServiceName]("FindNames", dateRange)
+
+case class DailyPreprocessedSpanSource(implicit dateRange: DateRange) extends DailySuffixLzoThrift[SpanServiceName]("DailyFindNames", dateRange)
 
 /**
  * This is the source for data of the form (id, service name)
@@ -112,3 +124,12 @@ case class PrepTsvSource()(implicit dateRange : DateRange)
   override val columnNums = (0 until types.size)
 }
 
+case class DailyPrepTsvSource()(implicit dateRange : DateRange)
+  extends DailySuffixSource("DailyFindIDtoName", dateRange)
+  with LzoTsv
+  with Mappable[(Long, String)]
+  with SuccessFileSource {
+  override val fields = new Fields("id_1", "name_1")
+  override val types : Array[Class[_]] = Array(classOf[Long], classOf[String])
+  override val columnNums = (0 until types.size)
+}

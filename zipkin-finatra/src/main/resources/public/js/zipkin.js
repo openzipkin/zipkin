@@ -145,7 +145,8 @@ Zipkin.Util = (function(Zipkin) {
     QUERY_ADD_ANNOTATION: "query-add-annotation",
     QUERY_ADD_KV       : "query-add-kv",
     SERVICE_TAG        : "service-tag",
-    SPAN_DETAILS       : "span-details"
+    SPAN_DETAILS       : "span-details",
+    SIMPLE_TABLE       : "simple-table"
   };
 
   return {

@@ -24,18 +24,18 @@ import scala.collection.JavaConverters._
  * Finds the best client side and service names for each span, if any exist
  */
 
-class FindNames(args : Args) extends Job(args) with DefaultDateRangeJob {
+class DailyFindNames(args : Args) extends Job(args) with DefaultDateRangeJob {
 
-  val preprocessed = PrepNoNamesSpanSource()
+  val preprocessed = DailyPrepNoNamesSpanSource()
     .read
     .mapTo(0 ->('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations)) {
-      s: Span => (s.trace_id, s.name, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList)
-    }
+    s: Span => (s.trace_id, s.name, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList)
+  }
 
   val findNames = preprocessed
     .flatMap('annotations -> 'service) { Util.getServiceName }
     .mapTo(('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations, 'service) -> 'spanWithServiceNames) {
-      a : (Long, String, Long, Long, List[Annotation], List[BinaryAnnotation], String) =>
+    a : (Long, String, Long, Long, List[Annotation], List[BinaryAnnotation], String) =>
       a match {
         case (tid, name, id, pid, annotations, binary_annotations, service) =>
           val spanSN = new SpanServiceName(tid, name, id, annotations.asJava, binary_annotations.asJava, service)
@@ -44,7 +44,7 @@ class FindNames(args : Args) extends Job(args) with DefaultDateRangeJob {
           }
           spanSN
       }
-    }.write(PreprocessedSpanSource())
+  }.write(DailyPreprocessedSpanSource())
 
 
 }

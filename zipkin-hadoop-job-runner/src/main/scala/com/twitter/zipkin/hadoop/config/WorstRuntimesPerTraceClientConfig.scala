@@ -13,20 +13,18 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package com.twitter.zipkin.config
 
-class CssConfig extends StaticResourceConfig {
-  val resourceType = "css"
+package com.twitter.zipkin.hadoop.config
 
-  val remoteResources = Seq(
-    "https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/ui-lightness/jquery-ui.css"
-  )
+import com.twitter.util.Config
+import com.twitter.zipkin.hadoop.WorstRuntimesPerTraceClient
 
-  val localResources = Seq(
-    "bootstrap.css",
-    "bootstrap-responsive.css",
-    "datepicker.css",
-    "application.css",
-    "aggregates.css"
-  )
+class WorstRuntimesPerTraceClientConfig extends Config[WorstRuntimesPerTraceClient] {
+
+  val zipkinTraceUrl = "your.zipkin.url/traces"
+
+  def apply() = {
+    new WorstRuntimesPerTraceClient(zipkinTraceUrl)
+  }
+
 }
