@@ -26,7 +26,7 @@ import com.twitter.logging.Logger
  */
 object PostprocessWriteToFile {
 
-  val jobList = List(("WorstRuntimesPerTrace", (new WorstRuntimesPerTraceClientConfig()).apply()),
+  val jobList = List(("WorstRuntimesPerTrace", (new WorstRuntimesPerTraceClientConfig())()),
                       ("Timeouts", new TimeoutsClient()),
                       ("Retries", new RetriesClient()),
                       ("MemcacheRequest", new MemcacheRequestClient()),
@@ -51,7 +51,7 @@ object PostprocessWriteToFile {
     for (tuple <- serviceToEmail) {
       val (service, content) = tuple
       EmailContent.getEmailAddress(service) match {
-        case Some(addresses) => addresses.foreach {address => (new MailConfig()).apply().send(new Email(address, "Service Report for " + service, content))}
+        case Some(addresses) => addresses.foreach {address => (new MailConfig())().send(new Email(address, "Service Report for " + service, content))}
       }
     }
   }
