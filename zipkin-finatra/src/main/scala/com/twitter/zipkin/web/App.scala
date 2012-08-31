@@ -44,7 +44,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   /* Index page */
   get("/") { request =>
     /* If valid query params passed, run the query and push the data down with the page */
-    val queryResults = QueryExtractor(request) match {
+    val queryRequest = QueryExtractor(request)
+    val queryResults = queryRequest match {
       case None => {
         /* Not valid params, load the normal landing page */
         Future(Seq.empty[JsonTraceSummary])
@@ -55,8 +56,24 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
       }
     }
     getServices.map { services =>
-      queryResults.map { qr =>
-        render.view(wrapView(new IndexView(getDate, getTime, services, qr)))
+      queryResults.map { results =>
+        queryRequest match {
+          case None => render.view(wrapView(new IndexView(getDate, getTime, services, results)))
+          case Some(qRequest) => {
+            render.view(wrapView(
+              new IndexView(
+                getDate,
+                getTime,
+                services,
+                results,
+                qRequest.annotations,
+                qRequest.binaryAnnotations.map {
+                  _.map { b =>
+                    (b.key, new String(b.value.array, b.value.position, b.value.remaining))
+                  }
+                })))
+          }
+        }
       }
     }.flatten
   }
@@ -317,10 +334,38 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   }
 }
 
-class IndexView(val endDate: String, val endTime: String, services: Seq[TracedService] = Seq.empty, queryResults: Seq[JsonTraceSummary] = Seq.empty) extends View {
+class IndexView(
+  val endDate: String,
+  val endTime: String,
+  services: Seq[TracedService] = Nil,
+  queryResults: Seq[JsonTraceSummary] = Nil,
+  annotations: Option[Seq[String]] = None,
+  kvAnnotations: Option[Seq[(String, String)]] = None
+) extends View {
   val template = "templates/index.mustache"
   val jsonServices = Json.generate(services)
   val jsonQueryResults = Json.generate(queryResults)
+
+  lazy val annotationsPartial = annotations.map {
+    _.map { a =>
+      new View {
+        val template = "public/templates/query-add-annotation.mustache"
+        val visible = true
+        val value = a
+      }.render
+    }.fold("") { _ + _ }
+  }
+
+  lazy val kvAnnotationsPartial = kvAnnotations.map {
+    _.map { b =>
+      new View {
+        val template = "public/templates/query-add-kv.mustache"
+        val visible = true
+        val key = b._1
+        val value = b._2
+      }.render
+    }
+  }
 }
 
 class ShowView(val traceId: String) extends View {
