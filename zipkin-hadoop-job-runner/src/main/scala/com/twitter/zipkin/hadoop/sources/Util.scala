@@ -24,8 +24,6 @@ import java.io.File
 
 object Util {
 
-  val ZIPKIN_TRACE_URL = "your.zipkin.url"
-
   /**
    * Returns whether or not a directory will contain data. A directory contains data if its first character is not '_'
    * @param f a File
@@ -59,6 +57,6 @@ object Util {
    * @return the string as a service name in HTML
    */
   def toSafeHtmlName(s: String) = {
-    s.trim().replace("/", "-")
+    s.trim().replace("/", "-") + ".html"
   }
 }

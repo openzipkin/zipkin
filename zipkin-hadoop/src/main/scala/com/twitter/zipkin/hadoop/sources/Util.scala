@@ -20,6 +20,7 @@ import java.nio.ByteBuffer
 import java.util.Arrays
 import com.twitter.zipkin.gen.{Constants, Annotation}
 import com.twitter.zipkin.gen
+import com.twitter.scalding.Args
 
 /**
  * A collection of useful functions used throughout the library

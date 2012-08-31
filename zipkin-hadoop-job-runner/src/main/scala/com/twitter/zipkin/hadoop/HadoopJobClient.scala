@@ -18,6 +18,7 @@ package com.twitter.zipkin.hadoop
 
 import collection.mutable
 import collection.immutable.HashMap
+import email.EmailContent
 import java.util.Scanner
 import java.io.File
 import com.twitter.zipkin.hadoop.sources._
@@ -39,12 +40,11 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
   /**
    * Starts the postprocessing for the client
    * @param filename the input filename
-   * @param output the output filename
    */
   def start(filename : String, output : String)
 
   def getServiceName(service: String) = {
-    if (combineSimilarNames) HadoopJobClient.serviceNames(service) else service
+    service
   }
 
   def getLineResult(line: List[String]): LineResult = {
@@ -79,26 +79,5 @@ abstract class HadoopJobClient(val combineSimilarNames: Boolean) {
 object HadoopJobClient {
 
   val DELIMITER = ":"
-  var serviceNames = new HashMap[String, String]()
-
-  /**
-   * Given a directory of files formatted in TSV format with each line being of the form
-   * servicename  standardizedservicename
-   * reads that information into a map
-   * @param dirname the name of a directory containing all the service name information
-   */
-  def populateServiceNames(dirname: String) = {
-    Util.traverseFileTree(new File(dirname))({f: File =>
-      val s = new Scanner(f)
-      while (s.hasNextLine()) {
-        val line = new Scanner(s.nextLine())
-        val serviceName = Util.toSafeHtmlName(line.next())
-        val standardized = if (line.hasNext) line.next else serviceName
-        if (!serviceNames.contains(serviceName)) {
-          serviceNames += serviceName -> standardized
-        }
-      }
-    })
-  }
 
 }

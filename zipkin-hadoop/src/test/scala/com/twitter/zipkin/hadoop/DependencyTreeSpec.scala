@@ -22,7 +22,7 @@ import com.twitter.scalding._
 import gen.AnnotationType
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
-import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, PreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources._
 
 /**
 * Tests that DependencyTree finds all service calls and how often per pair
@@ -55,8 +55,8 @@ class DependencyTreeSpec extends Specification with TupleConversions {
         .arg("input", "inputFile")
         .arg("output", "outputFile")
         .arg("date", "2012-01-01T01:00")
-        .source(PreprocessedSpanSource(), spans)
-        .source(PrepTsvSource(), Util.getSpanIDtoNames(spans))
+        .source(DailyPreprocessedSpanSource(), spans)
+        .source(DailyPrepTsvSource(), Util.getSpanIDtoNames(spans))
         .sink[(String, String, Long)](Tsv("outputFile")) {
         val map = new HashMap[String, Long]()
         map("service, " + Util.UNKNOWN_SERVICE_NAME) = 0

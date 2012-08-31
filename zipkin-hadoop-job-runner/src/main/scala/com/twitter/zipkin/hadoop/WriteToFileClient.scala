@@ -16,10 +16,10 @@
 
 package com.twitter.zipkin.hadoop
 
+import email.EmailContent
 import java.io._
 import collection.mutable.HashMap
 import com.twitter.zipkin.hadoop.sources.Util
-import email.EmailContent
 
 /**
  * A client which writes to a file. This is intended for use mainly to format emails
@@ -50,8 +50,8 @@ class MemcacheRequestClient extends WriteToFileClient(true, "MemcacheRequest") {
       val valuesToInt = lines.map({ line: LineResult => augmentString(line.getValueAsString()).toInt })
       valuesToInt.foldLeft(0) ((left: Int, right: Int) => left + right )
     }
-    val mt = EmailContent.getTemplate(service, toHtmlName(service))
-    mt.addOneLineResult("Service " + service + " made " + numberMemcacheRequests + " redundant memcache requests")
+    val mt = EmailContent.getTemplate(service)
+    mt.addOneLineResult(service, "Service " + service + " made " + numberMemcacheRequests + " redundant memcache requests")
   }
 
 }
@@ -67,11 +67,11 @@ abstract class WriteToTableClient(jobname: String) extends WriteToFileClient(fal
   def getTableHeader(): List[String]
 
   def addTable(service: String, lines: List[LineResult], mt: EmailContent) = {
-    mt.addTableResult(getTableResultHeader(service), getTableHeader(), lines)
+    mt.addTableResult(service, getTableResultHeader(service), getTableHeader(), lines)
   }
 
   def processKey(service: String, lines: List[LineResult]) {
-    val mt = EmailContent.getTemplate(service, toHtmlName(service))
+    val mt = EmailContent.getTemplate(service)
     addTable(service, lines, mt)
   }
 }
@@ -120,7 +120,7 @@ class WorstRuntimesClient extends WriteToTableClient("WorstRuntimes") {
   }
 
   def getTableHeader() = {
-    List("Span ID", "Duration")
+    List("Span ID", "Duration (ms)")
   }
 }
 
@@ -136,20 +136,28 @@ class WorstRuntimesPerTraceClient(zipkinUrl: String) extends WriteToTableClient(
   }
 
   def getTableHeader() = {
-    List("Trace ID", "Duration")
+    List("Trace ID", "Duration (ms)")
   }
 
   override def addTable(service: String, lines: List[LineResult], mt: EmailContent) = {
-    val formattedAsUrl = lines.map {line =>
+    val formattedAsUrl = lines.flatMap {line =>
       if (line.getValue().length < 2) {
         throw new IllegalArgumentException("Malformed line: " + line)
       }
       val hypertext = line.getValue().head
-      (Util.ZIPKIN_TRACE_URL + hypertext, hypertext, line)
+      val duration = augmentString(line.getValue().tail.head).toFloat
+      if (duration > 1000) {
+        val inMilliseconds = scala.math.round(duration * 100 / 1000.0) / 100.0
+        val formatted = new PerServiceLineResult((List(line.getKey(), hypertext, inMilliseconds.toString)))
+        Some((zipkinUrl + hypertext, hypertext, formatted))
+      } else {
+        None
+      }
     }
-    mt.addUrlTableResult(getTableResultHeader(service), getTableHeader(), formattedAsUrl)
+    if (formattedAsUrl.length > 0) {
+      mt.addUrlTableResult(service, getTableResultHeader(service), getTableHeader(), formattedAsUrl)
+    }
   }
-
 }
 
 
@@ -164,6 +172,21 @@ class ExpensiveEndpointsClient extends WriteToTableClient("ExpensiveEndpoints") 
   }
 
   def getTableHeader() = {
-    List("Service Called", "Duration")
+    List("Service Called", "Duration (ms)")
+  }
+
+  override def addTable(service: String, lines: List[LineResult], mt: EmailContent) = {
+    val formatted = lines.map {line =>
+      if (line.getValue().length < 2) {
+        throw new IllegalArgumentException("Malformed line: " + line)
+      }
+      val service = line.getValue().head
+      val duration = augmentString(line.getValue().tail.head).toFloat
+      val rounded = scala.math.round(duration * 100) / 100.0
+      new PerServiceLineResult((List(line.getKey(), service, rounded.toString)))
+    }
+    if (formatted.length > 0) {
+      mt.addTableResult(service, getTableResultHeader(service), getTableHeader(), formatted)
+    }
   }
 }

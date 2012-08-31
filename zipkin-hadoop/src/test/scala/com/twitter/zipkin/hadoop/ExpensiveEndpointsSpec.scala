@@ -29,7 +29,7 @@ import com.twitter.scalding.RichDate
 import com.twitter.zipkin.gen.AnnotationType
 import com.twitter.scalding.JobTest
 import com.twitter.scalding.Tsv
-import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, PreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources._
 
 /**
 * Tests that ExpensiveEndpointSpec finds the average run time of each service
@@ -58,8 +58,8 @@ class ExpensiveEndpointsSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(PreprocessedSpanSource(), spans).
-        source(PrepTsvSource(), Util.getSpanIDtoNames(spans)).
+        source(DailyPreprocessedSpanSource(), spans).
+        source(DailyPrepTsvSource(), Util.getSpanIDtoNames(spans)).
         sink[(String, String, Long)](Tsv("outputFile")) {
         val result = new HashMap[String, Long]()
         result("service, service2") = 0

@@ -16,15 +16,17 @@
 
 package com.twitter.zipkin.hadoop
 
-import com.twitter.zipkin.hadoop.sources.Util
-import email.EmailContent
+import config.{MailConfig, WorstRuntimesPerTraceClientConfig}
+import email.{Email, EmailContent}
+import com.twitter.logging.Logger
 
 /**
- * Runs all the jobs which write to file on the input. The arguments are expected to be inputdirname outputdirname servicenamefile
+ * Runs all the jobs which write to file on the input, and sends those as emails.
+ * The arguments are expected to be inputdirname servicenamefile
  */
 object PostprocessWriteToFile {
 
-  val jobList = List(("WorstRuntimesPerTrace", new WorstRuntimesPerTraceClient(Util.ZIPKIN_TRACE_URL)),
+  val jobList = List(("WorstRuntimesPerTrace", (new WorstRuntimesPerTraceClientConfig())()),
                       ("Timeouts", new TimeoutsClient()),
                       ("Retries", new RetriesClient()),
                       ("MemcacheRequest", new MemcacheRequestClient()),
@@ -33,15 +35,25 @@ object PostprocessWriteToFile {
 
   def main(args: Array[String]) {
     val input = args(0)
-    val output = args(1)
-    val serviceNames = args(2)
+    val serviceNames = args(1)
+    val output = if (args.length < 3) null else args(2)
 
-    HadoopJobClient.populateServiceNames(serviceNames)
+    EmailContent.populateServiceNames(serviceNames)
     for (jobTuple <- jobList) {
       val (jobName, jobClient) = jobTuple
       jobClient.start(input + "/" + jobName, output)
     }
-    EmailContent.writeAll()
+    if (output != null) {
+      EmailContent.setOutputDir(output)
+      EmailContent.writeAll()
+    }
+    val serviceToEmail = EmailContent.writeAllAsStrings()
+    for (tuple <- serviceToEmail) {
+      val (service, content) = tuple
+      EmailContent.getEmailAddress(service) match {
+        case Some(addresses) => addresses.foreach {address => (new MailConfig())().send(new Email(address, "Service Report for " + service, content))}
+      }
+    }
   }
 }
 
@@ -53,7 +65,7 @@ object PostprocessWriteToFile {
 object ProcessPopularKeys {
   def main(args : Array[String]) {
     val portNumber = augmentString(args(2)).toInt
-    HadoopJobClient.populateServiceNames(args(0))
+    EmailContent.populateServiceNames(args(0))
     val c = new PopularKeyValuesClient(portNumber)
     c.start(args(0), args(1))
   }
@@ -66,7 +78,7 @@ object ProcessPopularKeys {
 object ProcessPopularAnnotations {
   def main(args : Array[String]) {
     val portNumber = augmentString(args(2)).toInt
-    HadoopJobClient.populateServiceNames(args(0))
+    EmailContent.populateServiceNames(args(0))
     val c = new PopularAnnotationsClient(portNumber)
     c.start(args(0), args(1))
   }
@@ -79,7 +91,7 @@ object ProcessPopularAnnotations {
 
 object ProcessMemcacheRequest {
   def main(args : Array[String]) {
-    HadoopJobClient.populateServiceNames(args(0))
+    EmailContent.populateServiceNames(args(0))
     val c = new MemcacheRequestClient()
     c.start(args(0), args(1))
     EmailContent.writeAll()
@@ -93,7 +105,7 @@ object ProcessMemcacheRequest {
 
 object ProcessTimeouts {
   def main(args : Array[String]) {
-    HadoopJobClient.populateServiceNames(args(0))
+    EmailContent.populateServiceNames(args(0))
     val c = new TimeoutsClient()
     c.start(args(0), args(1))
     EmailContent.writeAll()
@@ -108,7 +120,7 @@ object ProcessTimeouts {
 object ProcessExpensiveEndpoints {
 
   def main(args: Array[String]) {
-    HadoopJobClient.populateServiceNames(args(0))
+    EmailContent.populateServiceNames(args(0))
     val c = new ExpensiveEndpointsClient()
     c.start(args(0), args(1))
     EmailContent.writeAll()
@@ -119,8 +131,8 @@ object ProcessExpensiveEndpoints {
 object ProcessWorstRuntimesPerTrace {
 
   def main(args: Array[String]) {
-    HadoopJobClient.populateServiceNames(args(0))
-    val c = new WorstRuntimesPerTraceClient(Util.ZIPKIN_TRACE_URL)
+    EmailContent.populateServiceNames(args(0))
+    val c = (new WorstRuntimesPerTraceClientConfig()).apply()
     c.start(args(0), args(1))
     EmailContent.writeAll()
   }

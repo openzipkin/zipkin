@@ -97,6 +97,8 @@ object Zipkin extends Build {
       "org.slf4j" % "slf4j-log4j12"          % "1.6.4" % "runtime",
       "javax.mail" % "mail" % "1.4.3",
       "com.github.spullara.mustache.java" % "compiler" % "0.8.2",
+      "com.twitter" % "util-core" % UTIL_VERSION,
+      "com.twitter" % "util-logging" % UTIL_VERSION,
       /* Test dependencies */
       "org.scala-tools.testing" % "specs_2.9.1" % "1.6.9" % "test"
     ),
