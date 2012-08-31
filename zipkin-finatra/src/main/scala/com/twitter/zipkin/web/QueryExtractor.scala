@@ -55,12 +55,6 @@ object QueryExtractor {
       case seq @ _ => Some(seq)
     }
 
-    Logger.get.info(request.params.toString)
-    Logger.get().info(annotations.toString)
-    Logger.get().info(keys.toString)
-    Logger.get().info(values.toString)
-    Logger.get().info(binaryAnnotations.toString)
-
     val endTimestamp = request.params.get("endDatetime") match {
       case Some(str) => {
         fmt.parse(str).getTime * 1000
@@ -73,9 +67,7 @@ object QueryExtractor {
     val order = Order.DurationDesc
 
     serviceName.map { name =>
-      val q = QueryRequest(name, spanName, annotations, binaryAnnotations, endTimestamp, limit, order)
-      println(q)
-      q
+      QueryRequest(name, spanName, annotations, binaryAnnotations, endTimestamp, limit, order)
     }
   }
 
