@@ -1,0 +1,62 @@
+<div class="page-header fill tabbable">
+  <div class="clearfix">
+    <div class="trace-nav pull-left">
+      <ul class="nav nav-pills">
+        <li class="active"><a id="dependencies-pill" href="#dependency">Dependencies</a></li>
+        <li><a id="service-report-pill" href="#service-report">Service Reports</a></li>
+      </ul>
+    </div>
+    <div class="trace-nav pull-right">
+      <ul class="nav nav-dropdowns" role="navigation">
+        <li class="dropdown">
+          <a id="drop1" href="#" role="button" class="dropdown-toggle" data-toggle="dropdown">Metric Type<b class="caret"></b>
+          </a>
+          <ul class="dropdown-menu" role="menu" aria-labelled-by="drop1">
+            <li><a tabindex="-1" id="dropdown-by-count" class="active">By Number of Calls</a></li>
+            <li><a tabindex="-1" id="dropdown-by-duration">By Duration</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <div class="clearfix pull-right">
+      Aggregates For <input class="span2 date-input" id="date" name="date" type="text" value="{{endDate}}">
+    </div>
+  </div>
+</div>
+
+<div class="span5 offset3" id="loading-data">
+  <strong>Populating Dependency Tree</strong>
+  <div class="progress progress-striped active">
+    <div class="bar" style="width: 100%;"></div>
+  </div>
+</div>
+<div class="error-box alert alert-error hide">
+  <strong>Error:</strong>
+  <span id="error-msg"></span>
+</div>
+
+<!-- error modal in case the "pinned" status cannot be set -->
+<div class="modal hide" id="pinned-modal">
+  <div class="modal-header">
+    <a class="close" data-dismiss="modal" href="#pinned-modal">×</a>
+    <h3>Failed to pin trace</h3>
+  </div>
+  <div class="modal-body">
+    <p id="pinned-modal-error"></p>
+  </div>
+  <div class="modal-footer">
+    <a data-dismiss="modal" href="#pinned-modal" class="btn">Close</a>
+  </div>
+</div>
+
+<div class="trace-data-tab row hide" id="global-dependency">
+  <div class="span14">
+    <div id="global-dependency"></div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $(Zipkin.Application.Aggregates.initialize());
+  });
+</script>
