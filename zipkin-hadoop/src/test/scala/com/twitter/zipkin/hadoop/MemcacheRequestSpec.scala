@@ -23,7 +23,7 @@ import gen.AnnotationType
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
 import java.nio.ByteBuffer
-import sources.{PreprocessedSpanSource, PrepNoNamesSpanSource, Util}
+import sources._
 
 /**
  * Tests that MemcacheRequest finds, per service and memcache request type, the number
@@ -63,8 +63,8 @@ class MemcacheRequestSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(PrepNoNamesSpanSource(), Util.repeatSpan(span1, 10, 100, 0) ++ Util.repeatSpan(span3, 2, 200, 300) ++ Util.repeatSpan(span3, 0, 1000, 500) ++ Util.repeatSpan(span4, 2, 1000, 11) ).
-        source(PreprocessedSpanSource(), Util.repeatSpan(span, 12, 0, 20) ++ Util.repeatSpan(span2, 2, 300, 400) ++ Util.repeatSpan(span2, 0, 500, 100000)).
+        source(DailyPrepNoNamesSpanSource(), Util.repeatSpan(span1, 10, 100, 0) ++ Util.repeatSpan(span3, 2, 200, 300) ++ Util.repeatSpan(span3, 0, 1000, 500) ++ Util.repeatSpan(span4, 2, 1000, 11) ).
+        source(DailyPreprocessedSpanSource(), Util.repeatSpan(span, 12, 0, 20) ++ Util.repeatSpan(span2, 2, 300, 400) ++ Util.repeatSpan(span2, 0, 500, 100000)).
         sink[(String, Long)](Tsv("outputFile")) {
         val counts = new HashMap[String, Long]()
         counts("service") = 0

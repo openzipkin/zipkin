@@ -63,12 +63,6 @@ class OptparseHasSampledArguments
   end
 end
 
-$config = {
-  :zipkin_query_host   => "localhost", #whatever the collector is
-  :zipkin_query_port   => 9411,
-  :skip_zookeeper      => true
-}
-
 # Queries the client to ask whether the trace is stored
 def sampled_traces(trace_ids)
   result = false

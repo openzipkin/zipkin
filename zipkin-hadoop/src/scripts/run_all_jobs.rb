@@ -19,7 +19,7 @@ require 'optparse'
 require 'ostruct'
 require 'pp'
 require 'date'
-require 'run_job.rb'
+require 'run_job'
 
 class OptparseAllJobArguments
 
@@ -40,9 +40,8 @@ class OptparseAllJobArguments
       opts.separator ""
       opts.separator "Specific options:"
 
-     opts.on("-d", "--date STARTDATE,ENDDATE", Array, "The DATES to run the jobs over.  Expected format for dates are is %Y-%m-%dT%H:%M") do |list|
-        options.dates = list.map{|date| DateTime.strptime(date, '%Y-%m-%dT%H:%M')}
-        options.dates = list
+     opts.on("-d", "--date STARTDATE,ENDDATE", Array, "The DATES to run the jobs over.  Expected format for dates are is %Y-%m-%d") do |list|
+        options.dates = list.map{|date| DateTime.strptime(date, '%Y-%m-%d')}
       end
 
       opts.on("-o", "--output OUTPUT",
@@ -97,9 +96,10 @@ def run_all_jobs(dates, output, hadoop_config)
        JobArguments.new(dates, "\" --error_type finagle.timeout \"", config_string, "UTC", "Timeouts", output + "/Timeouts", false),
        JobArguments.new(dates, " \" --error_type finagle.retry \"", config_string, "UTC", "Timeouts", output + "/Retries", false),]
   
-  run_job(JobArguments.new(dates, nil, config_string, "UTC", "Preprocessed", nil, true))
-  jobs = run_jobs_in_parallel(JobArguments.new(dates, nil, config_string, "UTC", "FindNames", nil, true), jobs_set_1)
-  jobs += run_jobs_in_parallel(JobArguments.new(dates, nil, config_string, "UTC", "FindIDtoName", nil, true), jobs_set_2)
+  run_job(JobArguments.new(dates, nil, config_string, "UTC", "DailyPreprocessed", nil, true))
+
+  jobs = run_jobs_in_parallel(JobArguments.new(dates, nil, config_string, "UTC", "DailyFindNames", nil, true), jobs_set_1)
+  jobs += run_jobs_in_parallel(JobArguments.new(dates, nil, config_string, "UTC", "DailyFindIDtoName", nil, true), jobs_set_2)
   jobs += run_jobs_in_parallel(nil, jobs_set_3)
   
   jobs.each { |aThread| aThread.join }

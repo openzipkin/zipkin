@@ -19,21 +19,21 @@ package com.twitter.zipkin.hadoop
 import com.twitter.scalding._
 import cascading.pipe.joiner._
 import com.twitter.zipkin.gen.{SpanServiceName, BinaryAnnotation, Span, Annotation}
-import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, PreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources._
 
 /**
 * Find out how often services call each other throughout the entire system
 */
 
 class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
-  val spanInfo = PreprocessedSpanSource()
+  val spanInfo = DailyPreprocessedSpanSource()
   .read
     .filter(0) { s : SpanServiceName => s.isSetParent_id() }
     .mapTo(0 -> ('id, 'parent_id, 'service))
       { s: SpanServiceName => (s.id, s.parent_id, s.service_name ) }
 
     // TODO: account for possible differences between sent and received service names
-    val idName = PrepTsvSource()
+    val idName = DailyPrepTsvSource()
       .read
     /* Join with the original on parent ID to get the parent's service name */
     val spanInfoWithParent = spanInfo

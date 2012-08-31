@@ -19,14 +19,14 @@ package com.twitter.zipkin.hadoop
 import com.twitter.zipkin.gen.{Constants, SpanServiceName, Annotation}
 import cascading.pipe.joiner.LeftJoin
 import com.twitter.scalding.{Tsv, DefaultDateRangeJob, Job, Args}
-import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, Util, PreprocessedSpanSource}
+import com.twitter.zipkin.hadoop.sources._
 
 /**
  * Per service call (i.e. pair of services), finds the average run time (in microseconds) of that service call
  */
 class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob {
 
-  val spanInfo = PreprocessedSpanSource()
+  val spanInfo = DailyPreprocessedSpanSource()
     .read
     .filter(0) { s : SpanServiceName => s.isSetParent_id() }
     .mapTo(0 -> ('id, 'parent_id, 'service, 'annotations))
@@ -52,7 +52,7 @@ class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob
       }
     }
 
-  val idName = PrepTsvSource()
+  val idName = DailyPrepTsvSource()
     .read
   /* Join with the original on parent ID to get the parent's service name */
   val spanInfoWithParent = spanInfo
@@ -60,5 +60,11 @@ class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob
     .map('name_1 -> 'name_1){ s: String => if (s == null) Util.UNKNOWN_SERVICE_NAME else s }
     .groupBy('name_1, 'service){ _.average('duration) }
     .groupBy('name_1, 'service){ _.sortBy('duration).reverse}
+    .filter('duration){ dur: Float => dur > ExpensiveEndpoints.THRESHOLD }
     .write(Tsv(args("output")))
+}
+
+object ExpensiveEndpoints {
+  // We only display service endpoints which took more than 1000 microseconds (or one millisecond)
+  val THRESHOLD = 1000
 }

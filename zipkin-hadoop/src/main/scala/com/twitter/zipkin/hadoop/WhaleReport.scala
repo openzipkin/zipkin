@@ -18,7 +18,7 @@ package com.twitter.zipkin.hadoop
 
 import com.twitter.zipkin.gen.{BinaryAnnotation, Constants, SpanServiceName, Annotation}
 import com.twitter.scalding.{Tsv, DefaultDateRangeJob, Job, Args}
-import com.twitter.zipkin.hadoop.sources.{Util, PreprocessedSpanSource}
+import com.twitter.zipkin.hadoop.sources.{Util, DailyPreprocessedSpanSource}
 import java.nio.ByteBuffer
 
 
@@ -30,7 +30,7 @@ class WhaleReport(args: Args) extends Job(args) with DefaultDateRangeJob {
 
   val ERRORS = List("finagle.timeout", "finagle.retry")
 
-  val spanInfo = PreprocessedSpanSource()
+  val spanInfo = DailyPreprocessedSpanSource()
     .read
     .mapTo(0 ->('trace_id, 'id, 'service, 'annotations, 'binary_annotations))
     { s: SpanServiceName => (s.trace_id, s.id, s.service_name, s.annotations.toList, s.binary_annotations.toList)
