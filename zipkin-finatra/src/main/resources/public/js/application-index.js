@@ -432,7 +432,6 @@ Zipkin.Application.Index = (function() {
       });
 
       $(".additional-filter-group > .js-kv-annotation").each(function(i, elem) {
-        console.log(elem)
         query.addKeyValueAnnotation(
           $("input[name=annotation_key]", elem).val(),
           $("input[name=annotation_value]", elem).val()
