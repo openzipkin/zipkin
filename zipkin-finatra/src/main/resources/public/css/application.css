@@ -121,12 +121,50 @@ form .clearfix {
   width: 60px;
 }
 
+.additional-filter-group > .control-group {
+  margin-top: -5px;
+  padding-top: 5px;
+  border-top: 1px solid #DDD;
+}
+
+.additional-filter-group > .control-group:first-child {
+  margin-top: -10px;
+}
+
+.additional-filter-group > .removable > div {
+  float: left;
+}
+
+.additional-filter-group > .removable > .index-control-label {
+  width: 60px;
+}
+
+.additional-filter-group > .removable > .remove {
+  float: left;
+  margin-left: 14px;
+  padding-top: 5px;
+  vertical-align: middle;
+  width: 14px;
+}
+
+.additional-filter-group > .js-kv-annotation.removable > .remove {
+  margin-top: 18px;
+}
+
+.additional-filter-group > .removable > .remove > i {
+  opacity: 0.5;
+}
+
+.additional-filter-group > .removable > .remove > i:hover {
+  opacity: 1.0;
+}
+
 .form-horizontal .index-controls {
-  margin-left: 80px;
+  margin-left: 70px;
 }
 
 .form-horizontal .index-controls input {
-  width: 94%%;
+  width: 101%;
 }
 
 /* end bootstrap edits */

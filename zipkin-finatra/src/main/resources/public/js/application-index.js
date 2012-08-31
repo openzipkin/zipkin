@@ -427,11 +427,12 @@ Zipkin.Application.Index = (function() {
 
       var query = new Zipkin.Application.Models.Query(baseParams);
 
-      $(".additional-filter-group > .js-time-annotation > .controls > input").each(function(i, elem) {
+      $(".additional-filter-group > .js-time-annotation > div > .controls > input").each(function(i, elem) {
         query.addTimeAnnotation($(elem).val());
       });
 
       $(".additional-filter-group > .js-kv-annotation").each(function(i, elem) {
+        console.log(elem)
         query.addKeyValueAnnotation(
           $("input[name=annotation_key]", elem).val(),
           $("input[name=annotation_value]", elem).val()
@@ -539,6 +540,12 @@ Zipkin.Application.Index = (function() {
       return false;
     });
 
+    /* Bind click handler for removing additional annotation/kv filter */
+    $(".additional-filter-group").on("click", ".control-group > .remove > i", function(e) {
+      e.stopPropagation();
+      $(e.target).parents(".control-group").remove();
+      return false;
+    });
 
     $(document).on("click", "li.trace", function(e) {
       history.pushState({}, "Zipkin", root_url + "?" + searchQuery);
