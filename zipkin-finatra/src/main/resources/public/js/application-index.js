@@ -412,7 +412,7 @@ Zipkin.Application.Index = (function() {
       $('#query-results').hide();
 
       var spanName = $('select[name=spanName]').val();
-      
+
       if (spanName == "") {
         $('#error-box').text("Invalid query: no span name").show();
         return false;
