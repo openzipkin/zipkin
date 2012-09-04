@@ -23,10 +23,10 @@ import com.twitter.util.Future
 import com.twitter.zipkin.adapter.{JsonQueryAdapter, ThriftQueryAdapter}
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.config.ZipkinWebConfig
-import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import com.twitter.zipkin.common.json.JsonTraceSummary
+import com.twitter.zipkin.query.QueryRequest
 
 /**
  * Application that handles ZipkinWeb routes
@@ -44,7 +44,8 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   /* Index page */
   get("/") { request =>
     /* If valid query params passed, run the query and push the data down with the page */
-    val queryResults = QueryRequest(request) match {
+    val queryRequest = QueryExtractor(request)
+    val queryResults = queryRequest match {
       case None => {
         /* Not valid params, load the normal landing page */
         Future(Seq.empty[JsonTraceSummary])
@@ -55,8 +56,24 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
       }
     }
     getServices.map { services =>
-      queryResults.map { qr =>
-        render.view(wrapView(new IndexView(getDate, getTime, services, qr)))
+      queryResults.map { results =>
+        queryRequest match {
+          case None => render.view(wrapView(new IndexView(getDate, getTime, services, results)))
+          case Some(qRequest) => {
+            render.view(wrapView(
+              new IndexView(
+                getDate,
+                getTime,
+                services,
+                results,
+                qRequest.annotations,
+                qRequest.binaryAnnotations.map {
+                  _.map { b =>
+                    (b.key, new String(b.value.array, b.value.position, b.value.remaining))
+                  }
+                })))
+          }
+        }
       }
     }.flatten
   }
@@ -80,14 +97,14 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
    * Returns query results that satisfy the request parameters in order of descending duration
    *
    * Required GET params:
-   * - service_name: String
-   * - end_date: date String formatted to `QueryRequest.fmt`
+   * - serviceName: String
+   * - endDate: date String formatted to `QueryRequest.fmt`
    *
    * Optional GET params:
    * - limit: Int, default 100
-   * - span_name: String
-   * - time_annotation: String
-   * - annotation_key, annotation_value: String
+   * - spanName: String
+   * - timeAnnotation: String
+   * - annotationKey, annotation_value: String
    * - adjust_clock_skew = (true|false), default true
    */
   get("/api/query") { request =>
@@ -95,42 +112,37 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   }
 
   def query(request: Request): Future[Seq[JsonTraceSummary]] = {
-    QueryRequest(request) match {
+    QueryExtractor(request) match {
       case Some(qr) => query(qr, request)
       case None     => Future(Seq.empty)
     }
   }
 
-  def query(queryRequest: QueryRequest, request: Request): Future[Seq[JsonTraceSummary]] = {
+  def query(queryRequest: QueryRequest, request: Request, retryLimit: Int = 10): Future[Seq[JsonTraceSummary]] = {
+    log.debug(queryRequest.toString)
     /* Get trace ids */
-    val traceIds = queryRequest match {
-      case r: SpanQueryRequest => {
-        client.getTraceIdsBySpanName(r.serviceName, r.spanName, r.endTimestamp, r.limit, r.order)
-      }
-      case r: AnnotationQueryRequest => {
-        client.getTraceIdsByAnnotation(r.serviceName, r.annotation, ByteBuffer.wrap("".getBytes), r.endTimestamp, r.limit, r.order)
-      }
-      case r: KeyValueAnnotationQueryRequest => {
-        client.getTraceIdsByAnnotation(r.serviceName, r.key, ByteBuffer.wrap(r.value.getBytes), r.endTimestamp, r.limit, r.order)
-      }
-      case r: ServiceQueryRequest => {
-        client.getTraceIdsByServiceName(r.serviceName, r.endTimestamp, r.limit, r.order)
-      }
-    }
+    val response = client.getTraceIds(ThriftQueryAdapter(queryRequest)).map { ThriftQueryAdapter(_) }
     val adjusters = getAdjusters(request)
 
-    traceIds.map { ids =>
-      ids match {
+    response.map { resp =>
+      resp.traceIds match {
         case Nil => {
-          Future.value(Seq.empty)
+          if ((queryRequest.annotations.map { _.length } getOrElse 0) +
+              (queryRequest.binaryAnnotations.map { _.length } getOrElse 0) > 0 && retryLimit > 0) {
+            /* Complex query, so retry */
+            query(queryRequest.copy(endTs = resp.endTs), request, retryLimit - 1)
+          } else {
+            Future.value(Seq.empty)
+          }
         }
-        case _ => {
+        case ids @ _ => {
           client.getTraceSummariesByIds(ids, adjusters).map {
             _.map { summary =>
               JsonQueryAdapter(ThriftQueryAdapter(summary))
             }
           }
         }
+
       }
     }.flatten
   }
@@ -326,10 +338,38 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   }
 }
 
-class IndexView(val endDate: String, val endTime: String, services: Seq[TracedService] = Seq.empty, queryResults: Seq[JsonTraceSummary] = Seq.empty) extends View {
+class IndexView(
+  val endDate: String,
+  val endTime: String,
+  services: Seq[TracedService] = Nil,
+  queryResults: Seq[JsonTraceSummary] = Nil,
+  annotations: Option[Seq[String]] = None,
+  kvAnnotations: Option[Seq[(String, String)]] = None
+) extends View {
   val template = "templates/index.mustache"
   val jsonServices = Json.generate(services)
   val jsonQueryResults = Json.generate(queryResults)
+
+  lazy val annotationsPartial = annotations.map {
+    _.map { a =>
+      new View {
+        val template = "public/templates/query-add-annotation.mustache"
+        val visible = true
+        val value = a
+      }.render
+    }.fold("") { _ + _ }
+  }
+
+  lazy val kvAnnotationsPartial = kvAnnotations.map {
+    _.map { b =>
+      new View {
+        val template = "public/templates/query-add-kv.mustache"
+        val visible = true
+        val key = b._1
+        val value = b._2
+      }.render
+    }
+  }
 }
 
 class ShowView(val traceId: String) extends View {
