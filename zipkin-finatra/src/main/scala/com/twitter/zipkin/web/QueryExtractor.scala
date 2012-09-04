@@ -16,7 +16,6 @@
 package com.twitter.zipkin.web
 
 import com.twitter.finatra.Request
-import com.twitter.logging.Logger
 import com.twitter.util.Time
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
 import com.twitter.zipkin.query.{Order, QueryRequest}
@@ -63,7 +62,7 @@ object QueryExtractor {
         Time.now.inMicroseconds
       }
     }
-    val limit = request.params.get("limit").map{ _.toInt }.getOrElse(100)
+    val limit = request.params.get("limit").map { _.toInt }.getOrElse(Constants.DefaultQueryLimit)
     val order = Order.DurationDesc
 
     serviceName.map { name =>
