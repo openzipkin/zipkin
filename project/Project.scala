@@ -273,7 +273,7 @@ object Zipkin extends Build {
 
         "com.twitter" % "finagle-serversets" % FINAGLE_VERSION,
         "com.twitter" % "finagle-zipkin"     % FINAGLE_VERSION
-      ),
+      ) ++ testDependencies,
 
       PackageDist.packageDistZipName := "zipkin-finatra.zip",
       BuildProperties.buildPropertiesPackage := "com.twitter.zipkin"
