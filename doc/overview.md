@@ -38,17 +38,20 @@ We intend to use the [Semantic Versioning](http://semver.org/) style versioning.
 Thanks to everyone below for making Zipkin happen!
 
 Zipkin server
+
 * Johan Oskarsson: [@skr](https://twitter.com/skr)
 * Franklin Hu: [@thisisfranklin](https://twitter.com/thisisfranklin)
 * Ian Ownbey: [@iano](https://twitter.com/iano)
 
 Zipkin UI
+
 * Franklin Hu: [@thisisfranklin](https://twitter.com/thisisfranklin)
 * Bill Couch: [@couch](https://twitter.com/couch)
 * David McLaughlin: [@dmcg](https://twitter.com/dmcg)
 * Chad Rosen: [@zed](https://twitter.com/zed)
 
 Instrumentation
+
 * Marius Eriksen: [@marius](https://twitter.com/marius)
 * Arya Asemanfar: [@a_a](https://twitter.com/a_a)
 
