@@ -25,6 +25,11 @@ object ThriftQueryAdapter extends QueryAdapter {
   type traceSummaryType = gen.TraceSummary
   type traceType = gen.Trace
 
+  type queryRequestType = gen.QueryRequest
+  type queryResponseType = gen.QueryResponse
+
+  type orderType = gen.Order
+
   /* TimelineAnnotation from Thrift */
   def apply(t: timelineAnnotationType): TimelineAnnotation = {
     TimelineAnnotation(
@@ -106,5 +111,57 @@ object ThriftQueryAdapter extends QueryAdapter {
   /* Trace to Thrift */
   def apply(t: Trace): traceType = {
     gen.Trace(t.spans.map(ThriftAdapter(_)))
+  }
+
+  /* QueryRequest */
+  def apply(q: queryRequestType): QueryRequest = {
+    QueryRequest(
+      q.`serviceName`,
+      q.`spanName`,
+      q.`annotations`,
+      q.`binaryAnnotations`.map {
+        _.map { ThriftAdapter(_) }
+      },
+      q.`endTs`,
+      q.`limit`,
+      ThriftQueryAdapter(q.`order`))
+  }
+  def apply(q: QueryRequest): queryRequestType = {
+    gen.QueryRequest(
+      q.serviceName,
+      q.spanName,
+      q.annotations,
+      q.binaryAnnotations.map {
+        _.map { ThriftAdapter(_) }
+      },
+      q.endTs,
+      q.limit,
+      ThriftQueryAdapter(q.order))
+  }
+
+  /* QueryResponse */
+  def apply(q: queryResponseType): QueryResponse =
+    QueryResponse(q.`traceIds`, q.`startTs`, q.`endTs`)
+  def apply(q: QueryResponse): queryResponseType =
+    gen.QueryResponse(q.traceIds, q.startTs, q.endTs)
+
+  /* Order */
+  def apply(o: orderType): Order = {
+    o match {
+      case gen.Order.DurationDesc  => Order.DurationDesc
+      case gen.Order.DurationAsc   => Order.DurationAsc
+      case gen.Order.TimestampDesc => Order.TimestampDesc
+      case gen.Order.TimestampAsc  => Order.TimestampAsc
+      case gen.Order.None          => Order.None
+    }
+  }
+  def apply(o: Order): orderType = {
+    o match {
+      case Order.DurationDesc  => gen.Order.DurationDesc
+      case Order.DurationAsc   => gen.Order.DurationAsc
+      case Order.TimestampDesc => gen.Order.TimestampDesc
+      case Order.TimestampAsc  => gen.Order.TimestampAsc
+      case Order.None          => gen.Order.None
+    }
   }
 }

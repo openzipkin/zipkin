@@ -1,44 +1,31 @@
 <div class="clearfix row">
   <div class="span3 sidebar fixed-pos">
-    <form class="twitter-form">
-      <div class="sidebar-block filter-block-contents">
-        <div class="clearfix">
-          <label>Choose a service</label>
-          <div class="inline-form-elt">
-            <div class="input">
-              <!-- this will be populated ajax stylee -->
-              <select class="" name="service_name" id="service_name"></select>
-            </div>
+
+    <form class="form-horizontal">
+      <div class="sidebar-block">
+        <div class="control-group">
+          <label class="control-label index-control-label" for="serviceName">Service</label>
+          <div class="controls index-controls">
+            <select class="" name="serviceName" id="serviceName"></select>
           </div>
         </div>
-      </div>
 
-      <div class="sidebar-block filter-options">
-        <ul class="nav nav-tabs" data-tabs="tabs">
-          <li class="active">
-            <a id="filter-span-tab" class="filter-tab" href="#filter-span" data-toggle="tab">Span</a>
-          </li>
-          <li>
-            <a id="filter-annotation-tab" class="filter-tab" href="#filter-annotation" data-toggle="tab">Annotation</a>
-          </li>
-          <li>
-            <a id="filter-key-value-tab" class="filter-tab" href="#filter-key-value" data-toggle="tab">Key / value</a>
-          </li>
-        </ul>
-        <div class="tab-content filter-block-contents">
-          <div class="tab-pane active" id="filter-span">
-            <div class="input">
-              <select class="" name="span_name" id="span_name">
-              </select>
-            </div>
+        <div class="control-group">
+          <label class="control-label index-control-label" for="spanName">Span</label>
+          <div class="controls index-controls">
+            <select class="" name="spanName" id="spanName"></select>
           </div>
-          <div class="tab-pane" id="filter-annotation">
-              <input class="" id="time_annotation" name="time_annotation" placeholder="String name" type="text" value="">
-          </div>
-          <div class="tab-pane" id="filter-key-value">
-              <input class="" id="annotation_key" name="annotation_key" placeholder="Annotation key" type="text" value="">
-              <input class="" id="annotation_value" name="annotation_value" placeholder="Annotation value" type="text" value="">
-          </div>
+        </div>
+
+        <!-- Holds any additional filters that are added to the query -->
+        <div class="additional-filter-group">
+          {{annotationsPartial}}
+          {{kvAnnotationsPartial}}
+        </div>
+
+        <div class="btn-group add-filter-group">
+          <button class="btn js-add-annotation-filter"><i class="icon-plus"></i>&nbsp;Annotation</button>
+          <button class="btn js-add-kv-filter"><i class="icon-plus"></i>&nbsp;Key-Value</button>
         </div>
       </div>
 
@@ -47,7 +34,7 @@
           <label for="end_time">End time</label>
           <input class="span2 date-input" id="end_date" name="end_date" type="text" value="{{endDate}}">
           <input class="span2 time-input" id="end_time" name="end_time" type="text" value="{{endTime}}">
-          <div class="inline-form-elt">
+          <div>
               <label>Limit</label>
               <div class="input">
                 <input class="span1" id="limit" name="limit" type="text" value="100">

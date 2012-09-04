@@ -273,10 +273,16 @@ object Zipkin extends Build {
 
         "com.twitter" % "finagle-serversets" % FINAGLE_VERSION,
         "com.twitter" % "finagle-zipkin"     % FINAGLE_VERSION
-      ),
+      ) ++ testDependencies,
 
       PackageDist.packageDistZipName := "zipkin-finatra.zip",
-      BuildProperties.buildPropertiesPackage := "com.twitter.zipkin"
+      BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
+
+      /* Add configs to resource path for ConfigSpec */
+      unmanagedResourceDirectories in Test <<= baseDirectory {
+        base =>
+          (base / "config" +++ base / "src" / "test" / "resources").get
+      }
   ).dependsOn(common, scrooge)
 }
 
