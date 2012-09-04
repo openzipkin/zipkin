@@ -13,6 +13,11 @@ object JsonQueryAdapter extends QueryAdapter {
   type traceSummaryType = JsonTraceSummary
   type traceType = JsonTrace
 
+  type queryRequestType    = QueryRequest
+  type queryResponseType   = QueryResponse
+
+  type orderType           = Order
+
   /* no change between json and common */
   def apply(t: timelineAnnotationType): TimelineAnnotation = {
     TimelineAnnotation(t.timestamp, t.value, t.host, t.spanId.toLong, t.parentId.map(_.toLong), t.serviceName, t.spanName)
@@ -86,4 +91,14 @@ object JsonQueryAdapter extends QueryAdapter {
       startAndEnd.end - startAndEnd.start,
       t.serviceCounts)
   }
+
+  /* No-ops since not used */
+  def apply(q: queryRequestType): QueryRequest = q
+  //def apply(q: QueryRequest): queryRequestType = q
+
+  def apply(q: queryResponseType): QueryResponse = q
+  //def apply(q: QueryResponse): queryResponseType = q
+
+  def apply(o: orderType): Order = o
+  //def apply(o: Order): orderType = o
 }

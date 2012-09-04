@@ -142,6 +142,8 @@ Zipkin.Util = (function(Zipkin) {
     ONEBOX_LEFT        : "onebox-left",
     ONEBOX_RIGHT       : "onebox-right",
     QUERY              : "query",
+    QUERY_ADD_ANNOTATION: "query-add-annotation",
+    QUERY_ADD_KV       : "query-add-kv",
     SERVICE_TAG        : "service-tag",
     SPAN_DETAILS       : "span-details",
     SIMPLE_TABLE       : "simple-table"

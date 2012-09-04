@@ -56,9 +56,9 @@ Zipkin.Application.Index = (function() {
    * @param collection: Zipkin.Application.Models.SpanList
    */
   var SpanSelectView = AllSelectView.extend({
-    id: "span_name",
+    id: "spanName",
     attributes: {
-      name: "span_name"
+      name: "spanName"
     },
     optionView: SpanOptionView,
 
@@ -79,9 +79,9 @@ Zipkin.Application.Index = (function() {
    * @param collection: Zipkin.Application.Models.ServiceList,
    */
   var ServiceSelectView = Zipkin.Application.Views.SelectView.extend({
-    id: "service_name",
+    id: "serviceName",
     attributes: {
-      name: "service_name"
+      name: "serviceName"
     },
     optionView: ServiceOptionView,
 
@@ -149,7 +149,7 @@ Zipkin.Application.Index = (function() {
       // FIXME more backbony
       var parsed = parseQueryResults(data);
       var traces = parsed.data
-      var serviceName = $("#service_name option:selected").val();
+      var serviceName = $("#serviceName option:selected").val();
       addServiceTag(serviceName);
 
       traces = updateFilteredServices(traces);
@@ -241,10 +241,10 @@ Zipkin.Application.Index = (function() {
   };
 
   /* Adds a service tag to the service tag list */
-  var addServiceTag = function(service_name, closeable) {
-    if ($("span[id*='service-tag-" + service_name + "']").length === 0) {
+  var addServiceTag = function(serviceName, closeable) {
+    if ($("span[id*='service-tag-" + serviceName + "']").length === 0) {
       templatize(TEMPLATES.SERVICE_TAG, function(template) {
-        var context = { name : service_name, closeable: closeable };
+        var context = { name : serviceName, closeable: closeable };
         var content = template.render(context);
         $(".service-tags").append(content);
       });
@@ -363,8 +363,8 @@ Zipkin.Application.Index = (function() {
     var labelClick = function (event) {
       event.stopPropagation();
       var target = $(event.target);
-      var service_name = target.attr("value");
-      addServiceTag(service_name, true);
+      var serviceName = target.attr("value");
+      addServiceTag(serviceName, true);
 
       var services = getFilteredServices();
       var newData = updateFilteredServices(filterQueryResults(services));
@@ -382,9 +382,9 @@ Zipkin.Application.Index = (function() {
     var labelRemove = function (event) {
       $('#query-results').hide();
       var target = $(event.target);
-      var service_name = target.attr('id').slice("service-tag-close-".length);
+      var serviceName = target.attr('id').slice("service-tag-close-".length);
 
-      $("li[id*='service-tag-li-" + service_name + "']").remove();
+      $("li[id*='service-tag-li-" + serviceName + "']").remove();
 
       var services = getFilteredServices();
       var newData = updateFilteredServices(filterQueryResults(services));
@@ -411,56 +411,34 @@ Zipkin.Application.Index = (function() {
       $(".infobar").hide();
       $('#query-results').hide();
 
+      var spanName = $('select[name=spanName]').val();
+
+      if (spanName == "") {
+        $('#error-box').text("Invalid query: no span name").show();
+        return false;
+      }
+
       var baseParams = {
-        serviceName: $('select[name=service_name]').val(),
+        serviceName: $('select[name=serviceName]').val(),
+        spanName: spanName,
         endDatetime: $('input[name=end_date]').val() + " " + $('input[name=end_time]').val(),
         limit: $('input[name=limit]').val()
       }
 
+      var query = new Zipkin.Application.Models.Query(baseParams);
+
+      $(".additional-filter-group > .js-time-annotation > div > .controls > input").each(function(i, elem) {
+        query.addTimeAnnotation($(elem).val());
+      });
+
+      $(".additional-filter-group > .js-kv-annotation").each(function(i, elem) {
+        query.addKeyValueAnnotation(
+          $("input[name=annotation_key]", elem).val(),
+          $("input[name=annotation_value]", elem).val()
+        );
+      });
+
       Zipkin.Base.setCookie("lastServiceName", baseParams.serviceName);
-
-      var tabType = $("li.active > a.filter-tab").attr("id")
-      var query = null;
-      var error = false;
-      if (tabType == "filter-span-tab") {
-        var spanName = $('select[name=span_name]').val();
-        if (spanName === "") {
-          error = true;
-        } else {
-          query = new Zipkin.Application.Models.SpanQuery($.extend({}, baseParams, {
-            spanName: spanName
-          }));
-          Zipkin.Base.setCookie("lastSpanName", spanName);
-        }
-      } else if (tabType == "filter-annotation-tab") {
-        var timeAnnotation = $('input[name=time_annotation]').val();
-        if (timeAnnotation === "") {
-          error = true;
-        } else {
-          query = new Zipkin.Application.Models.AnnotationQuery($.extend({}, baseParams, {
-            timeAnnotation: timeAnnotation
-          }));
-        }
-      } else if (tabType == "filter-key-value-tab") {
-        var key = $('input[name=annotation_key]').val();
-        var value = $('input[name=annotation_value]').val();
-        if (key === "" || value === "") {
-          error = true;
-        } else {
-          query = new Zipkin.Application.Models.KeyValueQuery($.extend({}, baseParams, {
-            annotationKey    : key,
-            annotationValue  : value
-          }));
-        }
-      } else {
-        $('#error-box').text("Invalid query").show();
-        return false;
-      }
-
-      if (error) {
-        $('#error-box').text("Invalid query").show();
-        return false;
-      }
 
       $('#loading-data').show();
 
@@ -539,6 +517,35 @@ Zipkin.Application.Index = (function() {
       });
     });
 
+    /* Bind click handler for additional annotation/kv filters */
+    $(".js-add-annotation-filter").click(function(e) {
+      e.stopPropagation();
+      templatize(TEMPLATES.QUERY_ADD_ANNOTATION, function(template) {
+        var content = template.render({});
+        $(".additional-filter-group").append(content);
+        $(".additional-filter-group > .hide").slideDown('fast');
+        $(".additional-filter-group > .control-group:last-child > .controls > input").focus();
+      });
+
+      return false;
+    });
+    $(".js-add-kv-filter").click(function(e) {
+      templatize(TEMPLATES.QUERY_ADD_KV, function(template) {
+        var content = template.render({});
+        $(".additional-filter-group").append(content);
+        $(".additional-filter-group > .hide").slideDown('fast');
+        $(".additional-filter-group > .control-group:last-child > .controls:nth-child(2) > input").focus();
+      });
+      return false;
+    });
+
+    /* Bind click handler for removing additional annotation/kv filter */
+    $(".additional-filter-group").on("click", ".control-group > .remove > i", function(e) {
+      e.stopPropagation();
+      $(e.target).parents(".control-group").remove();
+      return false;
+    });
+
     $(document).on("click", "li.trace", function(e) {
       history.pushState({}, "Zipkin", root_url + "?" + searchQuery);
     });
@@ -558,7 +565,7 @@ Zipkin.Application.Index = (function() {
     if (queryResults !== undefined && queryResults.length > 0) {
       var parsed = parseQueryResults(queryResults);
       var traces = parsed.data
-      var serviceName = $("#service_name option:selected").val();
+      var serviceName = $("#serviceName option:selected").val();
       addServiceTag(serviceName);
 
       traces = updateFilteredServices(traces);

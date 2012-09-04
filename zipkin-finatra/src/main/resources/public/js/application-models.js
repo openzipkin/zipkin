@@ -47,6 +47,20 @@ Zipkin.Application.Models = (function() {
    * @param limit: int
    */
   var Query = Backbone.Model.extend({
+
+    initialize: function() {
+      this.set("annotations", []);
+      this.set("keyValueAnnotations", []);
+    },
+
+    addTimeAnnotation: function(annotation) {
+      this.get("annotations").push(annotation)
+    },
+
+    addKeyValueAnnotation: function(key, value) {
+      this.get("keyValueAnnotations").push([key, value])
+    },
+
     execute: function() {
       var params = this.params();
       var results = new (QueryResults.extend({
@@ -59,11 +73,25 @@ Zipkin.Application.Models = (function() {
     },
 
     params: function() {
-      return {
+      var params = {
         serviceName: this.get("serviceName"),
+        spanName: this.get("spanName"),
+        keyValueAnnotations: this.get("keyValueAnnotations"),
         endDatetime: this.get("endDatetime"),
         limit: this.get("limit")
       };
+      var annotations = this.get("annotations");
+      for(var i=0; i<annotations.length; i++) {
+        params["annotations[" + i + "]"] = annotations[i];
+      }
+
+      var keyValueAnnotations = this.get("keyValueAnnotations");
+      for(var i=0; i<keyValueAnnotations.length; i++) {
+        var elem = keyValueAnnotations[i];
+        params["keyValueAnnotations[" + i + "][key]"] = elem[0];
+        params["keyValueAnnotations[" + i + "][val]"] = elem[1];
+      }
+      return params;
     }
   });
 
