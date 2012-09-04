@@ -276,7 +276,13 @@ object Zipkin extends Build {
       ) ++ testDependencies,
 
       PackageDist.packageDistZipName := "zipkin-finatra.zip",
-      BuildProperties.buildPropertiesPackage := "com.twitter.zipkin"
+      BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
+
+      /* Add configs to resource path for ConfigSpec */
+      unmanagedResourceDirectories in Test <<= baseDirectory {
+        base =>
+          (base / "config" +++ base / "src" / "test" / "resources").get
+      }
   ).dependsOn(common, scrooge)
 }
 
