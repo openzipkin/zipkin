@@ -18,11 +18,11 @@ package com.twitter.zipkin.web
 
 import com.twitter.finatra.Request
 import com.twitter.util.Time
+import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
+import java.nio.ByteBuffer
 import org.specs.mock.{ClassMocker, JMocker}
 import org.specs.Specification
 import scala.collection.mutable
-import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
-import java.nio.ByteBuffer
 
 class QueryExtractorSpec extends Specification with JMocker with ClassMocker {
 
