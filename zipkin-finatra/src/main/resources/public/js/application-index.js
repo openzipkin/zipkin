@@ -227,7 +227,7 @@ Zipkin.Application.Index = (function() {
       e.serviceCounts = $.map(e.serviceCounts, function(count, key) {
         return { name: key, count: count };
       });
-      e.url = root_url + "show/" + e.traceId;
+      e.url = root_url + "traces/" + e.traceId;
       e.startTime = Zipkin.Util.timeAgoInWords(e.startTimestamp / 1000);
       return e;
     });
