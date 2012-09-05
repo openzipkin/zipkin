@@ -10,6 +10,10 @@ section {
 section > .row {
   margin-bottom: 10px;
 }
+.footer {
+  background-color: whiteSmoke;
+  padding: 50px 0;
+}
 
 /* Jumbotrons
 -------------------------------------------------- */

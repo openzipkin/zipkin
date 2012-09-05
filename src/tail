@@ -1,4 +1,10 @@
         </section>
       </div>
+      <footer class="footer">
+        <div class="container">
+          <p>Copyright 2012 Twitter, Inc.</p>
+          <p>Licensed under the Apache License, Version 2.0: <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a>
+        </div>
+      </footer>
   </body>
 </html>
