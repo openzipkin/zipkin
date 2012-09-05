@@ -2,8 +2,7 @@
 import subprocess
 
 COUNTER = 0
-#PATH = "https://raw.github.com/twitter/zipkin/master/doc/%s.md"
-PATH = "https://raw.github.com/twitter/zipkin/breakup_docs/doc/%s.md"
+PATH = "https://raw.github.com/twitter/zipkin/master/doc/%s.md"
 SRC_LIST = [
   ["overview", "index"],
   ["architecture", None],
