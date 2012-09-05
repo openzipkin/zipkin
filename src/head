@@ -15,6 +15,7 @@
           <ul class="nav">
             <li><a href="architecture.html">Architecture</a></li>
             <li><a href="install.html">Install</a></li>
+            <li><a href="hadoop.html">Hadoop</a></li>
             <li><a href="instrument.html">Instrumenting a library</a></li>
           </ul>
           <ul class="nav pull-right">
