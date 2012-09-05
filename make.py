@@ -7,6 +7,7 @@ SRC_LIST = [
   ["overview", "index"],
   ["architecture", None],
   ["install", None],
+  ["hadoop", None],
   ["instrument", None]
 ]
 
