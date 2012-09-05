@@ -20,6 +20,7 @@ import com.twitter.finatra.Request
 import com.twitter.util.Time
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
 import java.nio.ByteBuffer
+import java.text.SimpleDateFormat
 import org.specs.mock.{ClassMocker, JMocker}
 import org.specs.Specification
 import scala.collection.mutable
@@ -39,11 +40,13 @@ class QueryExtractorSpec extends Specification with JMocker with ClassMocker {
     }
 
     "parse params" in {
+      val fmt = "MM-dd-yyyy HH:mm:ss"
       val t = Time.now
+      val formatted = t.format(fmt)
       val r = request(mutable.Map(
         "serviceName" -> "myService",
         "spanName" -> "mySpan",
-        "endDatetime" -> "08-01-2012 00:11:22",
+        "endDatetime" -> formatted,
         "limit" -> "1000"))
       val actual = QueryExtractor(r)
       actual mustNotBe None
@@ -51,7 +54,7 @@ class QueryExtractorSpec extends Specification with JMocker with ClassMocker {
       actual.get.serviceName mustBe "myService"
       actual.get.spanName mustNotBe None
       actual.get.spanName.get mustBe "mySpan"
-      actual.get.endTs must_== 1343805082000000L
+      actual.get.endTs must_== new SimpleDateFormat(fmt).parse(formatted).getTime * 1000
       actual.get.limit must_== 1000
     }
 
