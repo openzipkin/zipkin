@@ -79,7 +79,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   }
 
   /* Trace page */
-  get("/show/:id") { request =>
+  get("/traces/:id") { request =>
     render.view(wrapView(new ShowView(request.params("id")))).toFuture
   }
 
