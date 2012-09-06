@@ -4,9 +4,6 @@ body {
   background-color: #fff;
   position: relative;
 }
-section {
-  padding-top: 60px;
-}
 section > .row {
   margin-bottom: 10px;
 }
