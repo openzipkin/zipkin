@@ -18,7 +18,7 @@ package com.twitter.zipkin.hadoop
 
 
 import com.twitter.scalding._
-import com.twitter.zipkin.hadoop.sources.DailyPreprocessedSpanSource
+import com.twitter.zipkin.hadoop.sources.{PreprocessedSpanSource, TimeGranularity}
 import com.twitter.zipkin.gen.{SpanServiceName, Annotation}
 
 /**
@@ -26,7 +26,7 @@ import com.twitter.zipkin.gen.{SpanServiceName, Annotation}
  */
 class PopularAnnotations(args : Args) extends Job(args) with DefaultDateRangeJob {
 
-  val preprocessed = DailyPreprocessedSpanSource()
+  val preprocessed = PreprocessedSpanSource(TimeGranularity.Day)
     .read
     .mapTo(0 -> ('service, 'annotations))
   { s: SpanServiceName => (s.service_name, s.annotations.toList) }

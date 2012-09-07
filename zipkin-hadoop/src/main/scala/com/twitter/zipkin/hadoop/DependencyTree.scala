@@ -13,12 +13,11 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
 package com.twitter.zipkin.hadoop
 
-import com.twitter.scalding._
 import cascading.pipe.joiner._
-import com.twitter.zipkin.gen.{SpanServiceName, BinaryAnnotation, Span, Annotation}
+import com.twitter.scalding._
+import com.twitter.zipkin.gen.SpanServiceName
 import com.twitter.zipkin.hadoop.sources._
 
 /**
@@ -26,7 +25,7 @@ import com.twitter.zipkin.hadoop.sources._
 */
 
 class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
-  val spanInfo = DailyPreprocessedSpanSource()
+  val spanInfo = PreprocessedSpanSource(TimeGranularity.Day)
   .read
     .filter(0) { s : SpanServiceName => s.isSetParent_id() }
     .mapTo(0 -> ('id, 'parent_id, 'service))

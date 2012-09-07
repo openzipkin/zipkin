@@ -35,7 +35,7 @@ class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
   }
 
   // Preprocess the data into (trace_id, id, parent_id, annotations, client service name, service name)
-  val spanInfo = DailyPreprocessedSpanSource()
+  val spanInfo = PreprocessedSpanSource(TimeGranularity.Day)
     .read
     .mapTo(0 -> ('id, 'parent_id, 'annotations, 'service) )
       { s: SpanServiceName => (s.id, s.parent_id, s.annotations.toList, s.service_name) }

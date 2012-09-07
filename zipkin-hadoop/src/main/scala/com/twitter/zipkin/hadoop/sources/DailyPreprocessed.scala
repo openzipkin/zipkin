@@ -13,41 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
 package com.twitter.zipkin.hadoop.sources
 
-import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Annotation}
-import com.twitter.scalding._
-import com.twitter.zipkin.gen
-import scala.collection.JavaConverters._
+import com.twitter.scalding.Args
 
 /**
  * Preprocesses the data by merging different pieces of the same span
  */
-class DailyPreprocessed(args : Args) extends Job(args) with DefaultDateRangeJob {
-  val preprocessed = DailySpanSource()
-    .read
-    .mapTo(0 ->('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations)) {
-    s: Span => (s.trace_id, s.name, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList)
-  }
-    .groupBy('trace_id, 'id, 'parent_id) {
-    _.reduce('annotations, 'binary_annotations) {
-      (left: (List[Annotation], List[BinaryAnnotation]), right: (List[Annotation], List[BinaryAnnotation])) =>
-        (left._1 ++ right._1, left._2 ++ right._2)
-    }
-  }
-
-  val onlyMerge = preprocessed
-    .mapTo(('trace_id, 'id, 'parent_id, 'annotations, 'binary_annotations) -> 'span) {
-    a : (Long, Long, Long, List[Annotation], List[BinaryAnnotation]) =>
-      a match {
-        case (tid, id, pid, annotations, binary_annotations) =>
-          val span = new gen.Span(tid, "", id, annotations.asJava, binary_annotations.asJava)
-          if (pid != 0) {
-            span.setParent_id(pid)
-          }
-          span
-      }
-  }.write(DailyPrepNoNamesSpanSource())
+class DailyPreprocessed(args: Args) extends Preprocessed(args) {
+  override val timeGranularity = TimeGranularity.Day
 }

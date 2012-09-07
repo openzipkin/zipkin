@@ -13,23 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.twitter.zipkin.hadoop.sources
 
-import com.twitter.scalding.{DefaultDateRangeJob, Job, Args}
-import com.twitter.zipkin.gen.SpanServiceName
+import com.twitter.scalding.Args
 
 /**
  * Finds the mapping from span ID to service name
  */
-
-class DailyFindIDtoName(args : Args) extends Job(args) with DefaultDateRangeJob {
-
-  val spanInfo = DailyPreprocessedSpanSource()
-    .read
-    .mapTo(0 -> ('id_1, 'name_1))
-  { s: SpanServiceName => (s.id, s.service_name ) }
-    .filter('name_1) {n : String => n != null }
-    .unique('id_1, 'name_1)
-    .write(DailyPrepTsvSource())
+class DailyFindIDtoName(args: Args) extends FindIDtoName(args) {
+  override val timeGranularity = TimeGranularity.Day
 }

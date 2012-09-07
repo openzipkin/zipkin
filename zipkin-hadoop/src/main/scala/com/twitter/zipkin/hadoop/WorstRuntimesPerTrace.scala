@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
-import sources.{DailyPreprocessedSpanSource}
+import com.twitter.zipkin.hadoop.sources.{PreprocessedSpanSource, TimeGranularity}
 import com.twitter.zipkin.gen.{SpanServiceName, Constants, Annotation}
 
 /**
  * Obtain the IDs and the durations of the one hundred service calls which take the longest per service
  */
-
 class WorstRuntimesPerTrace(args: Args) extends Job(args) with DefaultDateRangeJob {
 
   val clientAnnotations = Seq(Constants.CLIENT_RECV, Constants.CLIENT_SEND)
 
-  val preprocessed = DailyPreprocessedSpanSource()
+  val preprocessed = PreprocessedSpanSource(TimeGranularity.Day)
     .read
     .mapTo(0 -> ('service, 'trace_id, 'annotations)) {
       s : SpanServiceName => (s.service_name, s.trace_id, s.annotations.toList)

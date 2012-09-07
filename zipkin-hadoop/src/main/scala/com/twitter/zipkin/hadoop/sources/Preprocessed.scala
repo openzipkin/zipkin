@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
 package com.twitter.zipkin.hadoop.sources
 
 import com.twitter.zipkin.gen.{BinaryAnnotation, Span, Annotation}
@@ -26,7 +24,9 @@ import scala.collection.JavaConverters._
  * Preprocesses the data by merging different pieces of the same span
  */
 class Preprocessed(args : Args) extends Job(args) with DefaultDateRangeJob {
-  val preprocessed = SpanSource()
+  val timeGranularity: TimeGranularity = TimeGranularity.Hour
+
+  val preprocessed = SpanSource(timeGranularity)
     .read
     .mapTo(0 ->('trace_id, 'id, 'parent_id, 'annotations, 'binary_annotations)) {
       s: Span => (s.trace_id, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList)
@@ -49,5 +49,5 @@ class Preprocessed(args : Args) extends Job(args) with DefaultDateRangeJob {
           }
           span
       }
-    }.write(PrepNoNamesSpanSource())
+    }.write(PrepNoNamesSpanSource(timeGranularity))
 }
