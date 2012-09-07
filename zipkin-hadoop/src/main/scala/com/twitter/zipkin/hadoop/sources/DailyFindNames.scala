@@ -13,38 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.twitter.zipkin.hadoop.sources
 
-import com.twitter.scalding._
-import com.twitter.zipkin.gen._
-import scala.collection.JavaConverters._
+import com.twitter.scalding.Args
 
 /**
  * Finds the best client side and service names for each span, if any exist
  */
-
-class DailyFindNames(args : Args) extends Job(args) with DefaultDateRangeJob {
-
-  val preprocessed = DailyPrepNoNamesSpanSource()
-    .read
-    .mapTo(0 ->('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations)) {
-    s: Span => (s.trace_id, s.name, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList)
-  }
-
-  val findNames = preprocessed
-    .flatMap('annotations -> 'service) { Util.getServiceName }
-    .mapTo(('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations, 'service) -> 'spanWithServiceNames) {
-    a : (Long, String, Long, Long, List[Annotation], List[BinaryAnnotation], String) =>
-      a match {
-        case (tid, name, id, pid, annotations, binary_annotations, service) =>
-          val spanSN = new SpanServiceName(tid, name, id, annotations.asJava, binary_annotations.asJava, service)
-          if (pid != 0) {
-            spanSN.setParent_id(pid)
-          }
-          spanSN
-      }
-  }.write(DailyPreprocessedSpanSource())
-
-
+class DailyFindNames(args: Args) extends FindNames(args) {
+  override val timeGranularity = TimeGranularity.Day
 }

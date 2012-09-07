@@ -15,11 +15,11 @@
  */
 package com.twitter.zipkin.hadoop.sources
 
-import com.twitter.scalding.Args
+import com.twitter.scalding.TimePathedSource
 
-/**
- * Preprocesses the data by merging different pieces of the same span
- */
-class DailyPreprocessed(args: Args) extends Preprocessed(args) {
-  override val timeGranularity = TimeGranularity.Day
+object TimeGranularity {
+  case object Hour extends TimeGranularity("Hour", TimePathedSource.YEAR_MONTH_DAY_HOUR)
+  case object Day extends TimeGranularity("Day", TimePathedSource.YEAR_MONTH_DAY)
 }
+
+abstract class TimeGranularity(val name: String, val timePath: String)

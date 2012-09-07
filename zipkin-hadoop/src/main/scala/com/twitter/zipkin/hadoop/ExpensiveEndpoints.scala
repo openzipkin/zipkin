@@ -17,7 +17,6 @@
 package com.twitter.zipkin.hadoop
 
 import com.twitter.zipkin.gen.{Constants, SpanServiceName, Annotation}
-import cascading.pipe.joiner.LeftJoin
 import com.twitter.scalding.{Tsv, DefaultDateRangeJob, Job, Args}
 import com.twitter.zipkin.hadoop.sources._
 
@@ -26,7 +25,9 @@ import com.twitter.zipkin.hadoop.sources._
  */
 class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob {
 
-  val spanInfo = DailyPreprocessedSpanSource()
+  val timeGranularity = TimeGranularity.Day
+
+  val spanInfo = PreprocessedSpanSource(timeGranularity)
     .read
     .filter(0) { s : SpanServiceName => s.isSetParent_id() }
     .mapTo(0 -> ('id, 'parent_id, 'service, 'annotations))
@@ -52,7 +53,7 @@ class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob
       }
     }
 
-  val idName = DailyPrepTsvSource()
+  val idName = PrepTsvSource(timeGranularity)
     .read
   /* Join with the original on parent ID to get the parent's service name */
   val spanInfoWithParent = spanInfo
