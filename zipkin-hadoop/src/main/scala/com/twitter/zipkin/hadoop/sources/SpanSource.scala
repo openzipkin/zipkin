@@ -15,7 +15,6 @@
  */
 package com.twitter.zipkin.hadoop.sources
 
-import com.twitter.zipkin.gen.{BinaryAnnotation, Annotation}
 import org.apache.thrift.TBase
 import cascading.scheme.Scheme
 import com.twitter.zipkin.gen.{Span, SpanServiceName}
@@ -35,23 +34,6 @@ object HadoopSchemeInstance {
     scheme.asInstanceOf[Scheme[JobConf,RecordReader[_,_],OutputCollector[_,_],_,_]]
 }
 
-abstract class HourlySuffixLzoThrift[T <: TBase[_,_] : Manifest](prefix : String, dateRange : DateRange) extends
-  HourlySuffixSource(prefix, dateRange) with LzoThrift[T] {
-  def column = manifest[T].erasure
-}
-
-abstract class DailySuffixLzoThrift[T <: TBase[_,_] : Manifest](prefix : String, dateRange : DateRange) extends
-  DailySuffixSource(prefix, dateRange) with LzoThrift[T] {
-  def column = manifest[T].erasure
-}
-
-
-abstract class HourlySuffixSource(prefixTemplate : String, dateRange : DateRange) extends
-  TimePathedSource(prefixTemplate + TimePathedSource.YEAR_MONTH_DAY_HOUR + "/*", dateRange, DateOps.UTC)
-
-abstract class DailySuffixSource(prefixTemplate : String, dateRange : DateRange) extends
-TimePathedSource(prefixTemplate + TimePathedSource.YEAR_MONTH_DAY + "/*", dateRange, DateOps.UTC)
-
 trait LzoThrift[T <: TBase[_, _]] extends Mappable[T] {
   def column: Class[_]
 
@@ -59,6 +41,15 @@ trait LzoThrift[T <: TBase[_, _]] extends Mappable[T] {
   override def localScheme = new CLTextLine()
 
   override def hdfsScheme = HadoopSchemeInstance(new LzoThriftScheme[T](column))
+}
+
+abstract class TimeSuffixSource(prefix: String, granularity: TimeGranularity, dateRange: DateRange)
+  extends TimePathedSource(prefix + granularity.timePath + "/*", dateRange, DateOps.UTC)
+
+
+abstract class LzoThriftTimeSuffixSource[T <: TBase[_,_] : Manifest](prefix: String, granularity: TimeGranularity, dateRange: DateRange)
+  extends TimeSuffixSource(prefix, granularity, dateRange) with LzoThrift[T] {
+  def column = manifest[T].erasure
 }
 
 /**
@@ -87,9 +78,8 @@ trait LzoTsv extends DelimitedScheme {
   /**
  * This is the source for trace data. Directories are like so: /logs/zipkin/yyyy/mm/dd/hh
  */
-case class SpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("/logs/zipkin/", dateRange)
-
-case class DailySpanSource(implicit dateRange: DateRange) extends DailySuffixLzoThrift[Span]("/logs/zipkin/", dateRange)
+case class SpanSource(granularity: TimeGranularity)(implicit dateRange: DateRange)
+  extends LzoThriftTimeSuffixSource[Span]("/logs/zipkin/", granularity, dateRange)
 
 case class FixedSpanSource(p : String) extends FixedPathSource(p) with LzoThrift[Span] {
   def column = classOf[Span]
@@ -98,24 +88,21 @@ case class FixedSpanSource(p : String) extends FixedPathSource(p) with LzoThrift
 /**
  * This is the source for trace data that has been merged. Directories are like in SpanSource
  */
-case class PrepNoNamesSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[Span]("Preprocessed", dateRange)
-
-case class DailyPrepNoNamesSpanSource(implicit dateRange: DateRange) extends DailySuffixLzoThrift[Span]("DailyPreprocessed", dateRange)
+case class PrepNoNamesSpanSource(granularity: TimeGranularity)(implicit dateRange: DateRange)
+  extends LzoThriftTimeSuffixSource[Span]("Preprocessed_%s".format(granularity.name), granularity, dateRange)
 
 /**
  * This is the source for trace data that has been merged and for which we've found
  * the best possible client side and service names. Directories are like in SpanSource
  */
-case class PreprocessedSpanSource(implicit dateRange: DateRange) extends HourlySuffixLzoThrift[SpanServiceName]("FindNames", dateRange)
-
-case class DailyPreprocessedSpanSource(implicit dateRange: DateRange) extends DailySuffixLzoThrift[SpanServiceName]("DailyFindNames", dateRange)
+case class PreprocessedSpanSource(granularity: TimeGranularity)(implicit dateRange: DateRange)
+  extends LzoThriftTimeSuffixSource[SpanServiceName]("FindNames_%s".format(granularity.name), granularity, dateRange)
 
 /**
  * This is the source for data of the form (id, service name)
  */
-
 case class PrepTsvSource()(implicit dateRange : DateRange)
-  extends HourlySuffixSource("FindIDtoName", dateRange)
+  extends TimeSuffixSource("FindIDtoName", TimeGranularity.Hour, dateRange)
   with LzoTsv
   with Mappable[(Long, String)]
   with SuccessFileSource {
@@ -125,7 +112,7 @@ case class PrepTsvSource()(implicit dateRange : DateRange)
 }
 
 case class DailyPrepTsvSource()(implicit dateRange : DateRange)
-  extends DailySuffixSource("DailyFindIDtoName", dateRange)
+  extends TimeSuffixSource("DailyFindIDtoName", TimeGranularity.Day, dateRange)
   with LzoTsv
   with Mappable[(Long, String)]
   with SuccessFileSource {
