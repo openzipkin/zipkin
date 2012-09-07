@@ -34,6 +34,7 @@ import com.twitter.zipkin.hadoop.sources._
 class ExpensiveEndpointsSpec extends Specification with TupleConversions {
   noDetailedDiffs()
 
+  val timeGranularity = TimeGranularity.Day
   implicit val dateRange = DateRange(RichDate(123), RichDate(321))
 
   val endpoint = new gen.Endpoint(123, 666, "service")
@@ -54,8 +55,8 @@ class ExpensiveEndpointsSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(PreprocessedSpanSource(TimeGranularity.Day), spans).
-        source(DailyPrepTsvSource(), Util.getSpanIDtoNames(spans)).
+        source(PreprocessedSpanSource(timeGranularity), spans).
+        source(PrepTsvSource(timeGranularity), Util.getSpanIDtoNames(spans)).
         sink[(String, String, Long)](Tsv("outputFile")) {
         val result = new HashMap[String, Long]()
         result("service, service2") = 0

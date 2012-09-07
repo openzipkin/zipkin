@@ -31,5 +31,5 @@ class FindIDtoName(args: Args) extends Job(args) with DefaultDateRangeJob {
       { s: SpanServiceName => (s.id, s.service_name ) }
     .filter('name_1) {n : String => n != null }
     .unique('id_1, 'name_1)
-    .write(PrepTsvSource())
+    .write(PrepTsvSource(timeGranularity))
 }

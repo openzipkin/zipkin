@@ -101,18 +101,8 @@ case class PreprocessedSpanSource(granularity: TimeGranularity)(implicit dateRan
 /**
  * This is the source for data of the form (id, service name)
  */
-case class PrepTsvSource()(implicit dateRange : DateRange)
-  extends TimeSuffixSource("FindIDtoName", TimeGranularity.Hour, dateRange)
-  with LzoTsv
-  with Mappable[(Long, String)]
-  with SuccessFileSource {
-  override val fields = new Fields("id_1", "name_1")
-  override val types : Array[Class[_]] = Array(classOf[Long], classOf[String])
-  override val columnNums = (0 until types.size)
-}
-
-case class DailyPrepTsvSource()(implicit dateRange : DateRange)
-  extends TimeSuffixSource("DailyFindIDtoName", TimeGranularity.Day, dateRange)
+case class PrepTsvSource(granularity: TimeGranularity)(implicit dateRange : DateRange)
+  extends TimeSuffixSource("FindIDtoName_%s".format(granularity.name), granularity, dateRange)
   with LzoTsv
   with Mappable[(Long, String)]
   with SuccessFileSource {

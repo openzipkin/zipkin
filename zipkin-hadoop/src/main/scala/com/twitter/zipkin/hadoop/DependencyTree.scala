@@ -25,14 +25,17 @@ import com.twitter.zipkin.hadoop.sources._
 */
 
 class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
-  val spanInfo = PreprocessedSpanSource(TimeGranularity.Day)
+
+  val timeGranularity = TimeGranularity.Day
+
+  val spanInfo = PreprocessedSpanSource(timeGranularity)
   .read
     .filter(0) { s : SpanServiceName => s.isSetParent_id() }
     .mapTo(0 -> ('id, 'parent_id, 'service))
       { s: SpanServiceName => (s.id, s.parent_id, s.service_name ) }
 
     // TODO: account for possible differences between sent and received service names
-    val idName = DailyPrepTsvSource()
+    val idName = PrepTsvSource(timeGranularity)
       .read
     /* Join with the original on parent ID to get the parent's service name */
     val spanInfoWithParent = spanInfo
