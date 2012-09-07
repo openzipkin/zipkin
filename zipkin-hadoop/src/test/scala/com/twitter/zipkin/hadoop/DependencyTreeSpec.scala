@@ -13,7 +13,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
 package com.twitter.zipkin.hadoop
 
 import org.specs.Specification
@@ -55,7 +54,7 @@ class DependencyTreeSpec extends Specification with TupleConversions {
         .arg("input", "inputFile")
         .arg("output", "outputFile")
         .arg("date", "2012-01-01T01:00")
-        .source(DailyPreprocessedSpanSource(), spans)
+        .source(PreprocessedSpanSource(TimeGranularity.Day), spans)
         .source(DailyPrepTsvSource(), Util.getSpanIDtoNames(spans))
         .sink[(String, String, Long)](Tsv("outputFile")) {
         val map = new HashMap[String, Long]()
