@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.twitter.zipkin.hadoop
 
-import com.twitter.zipkin.gen.{BinaryAnnotation, Constants, SpanServiceName, Annotation}
 import com.twitter.scalding.{Tsv, DefaultDateRangeJob, Job, Args}
-import com.twitter.zipkin.hadoop.sources.{Util, PreprocessedSpanSource}
-import java.nio.ByteBuffer
-
+import com.twitter.zipkin.gen.{SpanServiceName, Annotation}
+import com.twitter.zipkin.hadoop.sources.{TimeGranularity, PreprocessedSpanSource}
 
 /**
  * Finds traces with duplicate trace IDs
@@ -30,7 +27,7 @@ class FindDuplicateTraces(args: Args) extends Job(args) with DefaultDateRangeJob
 
   val maxDuration = augmentString(args.required("maximum_duration")).toInt
 
-  val result = PreprocessedSpanSource()
+  val result = PreprocessedSpanSource(TimeGranularity.Hour)
     .read
     .mapTo(0 ->('trace_id, 'annotations)) { s: SpanServiceName =>
       (s.trace_id, s.annotations.toList)

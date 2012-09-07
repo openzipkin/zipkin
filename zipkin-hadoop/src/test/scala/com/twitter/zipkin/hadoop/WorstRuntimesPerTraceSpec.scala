@@ -22,7 +22,7 @@ import com.twitter.scalding._
 import gen.AnnotationType
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
-import com.twitter.zipkin.hadoop.sources.{DailyPreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources.{PreprocessedSpanSource, TimeGranularity, Util}
 
 /**
  * Tests that DependencyTree finds all service calls and how often per pair
@@ -55,7 +55,7 @@ class WorstRuntimesPerTraceSpec extends Specification with TupleConversions {
         .arg("input", "inputFile")
         .arg("output", "outputFile")
         .arg("date", "2012-01-01T01:00")
-        .source(DailyPreprocessedSpanSource(), spans)
+        .source(PreprocessedSpanSource(TimeGranularity.Day), spans)
         .sink[(String, Long, Int)](Tsv("outputFile")) {
         val map = new HashMap[String, Int]()
         outputBuffer => outputBuffer foreach { e =>

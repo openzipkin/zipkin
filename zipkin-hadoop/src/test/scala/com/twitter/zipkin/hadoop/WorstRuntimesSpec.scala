@@ -22,7 +22,7 @@ import com.twitter.scalding._
 import scala.collection.JavaConverters._
 import collection.mutable.HashMap
 import com.twitter.zipkin.gen.AnnotationType
-import sources.{PreprocessedSpanSource, Util, PrepNoNamesSpanSource}
+import com.twitter.zipkin.hadoop.sources.{PreprocessedSpanSource, TimeGranularity, Util}
 
 /**
 * Tests that WorstRuntimes finds the spans which take the longest to run
@@ -54,7 +54,7 @@ class WorstRuntimesSpec extends Specification with TupleConversions {
         .arg("input", "inputFile")
         .arg("output", "outputFile")
         .arg("date", "2012-01-01T01:00")
-        .source(PreprocessedSpanSource(), (Util.repeatSpan(span, 20, 0, 0) ++ Util.repeatSpan(span1, 20, 100, 0)))
+        .source(PreprocessedSpanSource(TimeGranularity.Hour), (Util.repeatSpan(span, 20, 0, 0) ++ Util.repeatSpan(span1, 20, 100, 0)))
         .sink[(String, Long, Long)](Tsv("outputFile")) {
         var counts = new HashMap[String, Long]()
         counts += ("service" -> 0)

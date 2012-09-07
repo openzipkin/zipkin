@@ -15,9 +15,8 @@
  */
 package com.twitter.zipkin.hadoop
 
-
 import com.twitter.scalding._
-import com.twitter.zipkin.hadoop.sources.SpanSource
+import com.twitter.zipkin.hadoop.sources.{TimeGranularity, SpanSource}
 import com.twitter.zipkin.gen.{Span, Constants, Annotation}
 import scala.collection.JavaConverters._
 import java.nio.ByteBuffer
@@ -31,7 +30,7 @@ class ServerResponsetime(args: Args) extends Job(args) with DefaultDateRangeJob 
 
   val serverAnnotations = Seq(Constants.SERVER_RECV, Constants.SERVER_SEND)
 
-  SpanSource()
+  SpanSource(TimeGranularity.Hour)
     .read
     // only need id and annotations for this
     .mapTo(0 -> ('id, 'annotations)) { s: Span => (s.id, s.annotations.toList) }

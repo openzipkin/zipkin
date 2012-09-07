@@ -20,7 +20,7 @@ import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
 import gen.AnnotationType
-import com.twitter.zipkin.hadoop.sources.{DailyPreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources.{PreprocessedSpanSource, TimeGranularity, Util}
 import scala.collection.JavaConverters._
 import scala.collection.mutable._
 
@@ -49,7 +49,7 @@ class PopularKeysSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(DailyPreprocessedSpanSource(), Util.repeatSpan(span, 101, 0, 0) ::: Util.repeatSpan(span1, 50, 200, 0)).
+        source(PreprocessedSpanSource(TimeGranularity.Day), Util.repeatSpan(span, 101, 0, 0) ::: Util.repeatSpan(span1, 50, 200, 0)).
         sink[(String, String)](Tsv("outputFile")) {
         val map = new HashMap[String, List[String]]()
         map("service") = Nil
