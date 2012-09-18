@@ -99,8 +99,7 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
 
   /**
    * To accommodate a particular input type `T`, define a `rawDataFilter` that
-   * converts the input data type (ex: Scrooge-generated Thrift) into a
-   * sequence of `com.twitter.zipkin.common.Span`s
+   * converts the input data type (ex: Scrooge-generated Thrift) into a `com.twitter.zipkin.common.Span`
    */
   type T
   def rawDataFilter: Filter[T, Unit, Span, Unit]
