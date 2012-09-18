@@ -42,7 +42,6 @@ class IndexService(index: Index, indexFilter: IndexingFilter) extends Service[Sp
   }
 
   protected def failureHandler(method: String): (Throwable) => Unit = {
-    case t: TooManyWaitersException =>
     case e => {
       Stats.getCounter("exception_%s_%s".format(method, e.getClass)).incr()
       log.error(e, method)
