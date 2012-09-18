@@ -16,8 +16,8 @@
  */
 package com.twitter.zipkin.config
 
-import com.twitter.zipkin.config.collector.CollectorServerConfig
 import com.twitter.zipkin.collector.processor.ScribeFilter
+import com.twitter.zipkin.config.collector.CollectorServerConfig
 
 trait ScribeZipkinCollectorConfig extends ZipkinCollectorConfig {
   type T = Seq[String]

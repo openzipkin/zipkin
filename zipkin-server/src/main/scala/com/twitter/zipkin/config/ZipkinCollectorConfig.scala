@@ -114,17 +114,6 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
       new StatsService
     )
 
-//  lazy val processor: Processor[T] =
-//    rawDataFilter andThen
-//    new SamplerProcessorFilter(globalSampler) andThen
-//    new SequenceProcessor[Span](
-//      new FanoutProcessor[Span]({
-//        new StorageProcessor(storage) ::
-//        new IndexProcessor(index, indexingFilter) ::
-//        new StatsProcessor
-//      })
-//    )
-
   def writeQueueConfig: WriteQueueConfig[T]
   lazy val writeQueue: WriteQueue[T] = writeQueueConfig.apply(processor)
 

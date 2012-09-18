@@ -15,13 +15,13 @@
  */
 package com.twitter.zipkin.collector.processor
 
+import com.twitter.finagle.Service
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.zipkin.adapter.ThriftAdapter
 import com.twitter.zipkin.common.{Annotation, Span}
 import com.twitter.zipkin.gen
 import org.specs.Specification
 import org.specs.mock.{JMocker, ClassMocker}
-import com.twitter.finagle.Service
 
 class ScribeFilterSpec extends Specification with JMocker with ClassMocker {
   val serializer = new BinaryThriftStructSerializer[gen.Span] {
