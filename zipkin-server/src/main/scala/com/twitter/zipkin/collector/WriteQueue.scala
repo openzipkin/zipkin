@@ -16,14 +16,14 @@
  */
 package com.twitter.zipkin.collector
 
-import com.twitter.ostrich.admin.Service
+import com.twitter.ostrich.admin.{Service => OService}
 import com.twitter.ostrich.stats.Stats
-import com.twitter.zipkin.collector.processor.Processor
 import java.util.concurrent.ArrayBlockingQueue
+import com.twitter.finagle.Service
 
 class WriteQueue[T](writeQueueMaxSize: Int,
                  flusherPoolSize: Int,
-                 processor: Processor[T]) extends Service {
+                 service: Service[T, _]) extends OService {
 
   private val queue = new ArrayBlockingQueue[T](writeQueueMaxSize)
   Stats.addGauge("write_queue_qsize") { queue.size }
@@ -32,7 +32,7 @@ class WriteQueue[T](writeQueueMaxSize: Int,
 
   def start() {
     workers = (0 until flusherPoolSize).toSeq map { i: Int =>
-      val worker = new WriteQueueWorker[T](queue, processor)
+      val worker = new WriteQueueWorker[T](queue, service)
       worker.start()
       worker
     }
@@ -54,7 +54,7 @@ class WriteQueue[T](writeQueueMaxSize: Int,
     flushAll()
     workers foreach { _.stop() }
     workers foreach { _.shutdown() }
-    processor.shutdown()
+    service.release()
   }
 
   def add(messages: T): Boolean = {

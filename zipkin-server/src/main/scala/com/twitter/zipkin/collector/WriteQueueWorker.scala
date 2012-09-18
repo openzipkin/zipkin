@@ -16,21 +16,17 @@
  */
 package com.twitter.zipkin.collector
 
+import com.twitter.finagle.Service
 import com.twitter.ostrich.admin.BackgroundProcess
-import com.twitter.zipkin.collector.processor.Processor
 import java.util.concurrent.{TimeUnit, BlockingQueue}
 
 class WriteQueueWorker[T](queue: BlockingQueue[T],
-                       processor: Processor[T]) extends BackgroundProcess("WriteQueueWorker", false) {
+                       service: Service[T, _]) extends BackgroundProcess("WriteQueueWorker", false) {
 
   def runLoop() {
     val item = queue.poll(500, TimeUnit.MILLISECONDS)
     if (item != null) {
-      process(item)
+      service(item)
     }
-  }
-
-  private[collector] def process(item: T) {
-    processor.process(item)
   }
 }
