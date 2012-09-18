@@ -20,13 +20,17 @@ import com.twitter.zipkin.adapter.ThriftAdapter
 import com.twitter.zipkin.common.{Annotation, Span}
 import com.twitter.zipkin.gen
 import org.specs.Specification
+import org.specs.mock.{JMocker, ClassMocker}
+import com.twitter.finagle.Service
 
-class ScribeProcessorFilterSpec extends Specification {
+class ScribeFilterSpec extends Specification with JMocker with ClassMocker {
   val serializer = new BinaryThriftStructSerializer[gen.Span] {
     def codec = gen.Span
   }
 
-  "ScribeProcessorFilter" should {
+  val mockService = mock[Service[Span, Unit]]
+
+  "ScribeFilter" should {
     val category = "zipkin"
 
     val base64 = Seq("CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA=")
@@ -36,22 +40,32 @@ class ScribeProcessorFilterSpec extends Specification {
     val serialized = Seq(serializer.toString(ThriftAdapter(validSpan)))
     val bad = Seq("garbage!")
 
-    val filter = new ScribeProcessorFilter
+    val filter = new ScribeFilter
 
     "convert gen.LogEntry to Span" in {
-      filter.apply(base64) mustEqual Seq(validSpan)
+      expect {
+        one(mockService).apply(validSpan)
+      }
+      filter.apply(base64, mockService)
     }
 
     "convert gen.LogEntry with endline to Span" in {
-      filter.apply(endline) mustEqual Seq(validSpan)
+      expect {
+        one(mockService).apply(validSpan)
+      }
+      filter.apply(endline, mockService)
     }
 
     "convert serialized thrift to Span" in {
-      filter.apply(serialized) mustEqual Seq(validSpan)
+      expect {
+        one(mockService).apply(validSpan)
+      }
+      filter.apply(serialized, mockService)
     }
 
     "deal with garbage" in {
-      filter.apply(bad) mustEqual Seq.empty[Span]
+      expect {}
+      filter.apply(bad, mockService)
     }
   }
 }

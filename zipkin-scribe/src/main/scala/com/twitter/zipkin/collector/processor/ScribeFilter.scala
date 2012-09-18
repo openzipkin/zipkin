@@ -26,13 +26,13 @@ class ScribeFilter extends Filter[Seq[String], Unit, Span, Unit] {
   def apply(logEntries: Seq[String], service: Service[Span, Unit]): Future[Unit] = {
     Future.join {
       logEntries.map { msg =>
-        {
+        try {
           val span = Stats.time("deserializeSpan") {
             deserializer.fromString(msg)
           }
           log.ifDebug("Processing span: " + span + " from " + msg)
           service(ThriftAdapter(span))
-        } rescue {
+        } catch {
           case e: Exception => {
             // scribe doesn't have any ResultCode.ERROR or similar
             // let's just swallow this invalid msg

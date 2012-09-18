@@ -26,7 +26,11 @@ class WriteQueueWorker[T](queue: BlockingQueue[T],
   def runLoop() {
     val item = queue.poll(500, TimeUnit.MILLISECONDS)
     if (item != null) {
-      service(item)
+      process(item)
     }
+  }
+
+  private[collector] def process(t: T) {
+    service(t)
   }
 }
