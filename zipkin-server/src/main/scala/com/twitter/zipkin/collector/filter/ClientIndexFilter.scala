@@ -29,6 +29,13 @@ class ClientIndexFilter extends Filter[Span, Unit, Span, Unit] {
     }
   }
 
+  /**
+   * We do not want to index spans from clients with the Finagle default
+   * service name of "client".
+   *
+   * Having them indexed will not help the users find the data they want,
+   * instead we rely on the server name.
+   */
   private[filter] def shouldIndex(span: Span): Boolean = {
     !(span.isClientSide() && span.serviceNames.contains("client"))
   }
