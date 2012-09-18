@@ -16,34 +16,27 @@
  */
 package com.twitter.zipkin.collector.processor
 
+import com.twitter.finagle.Service
+import com.twitter.logging.Logger
+import com.twitter.ostrich.stats.Stats
 import com.twitter.util.Future
+import com.twitter.zipkin.common.Span
+import com.twitter.zipkin.storage.Storage
 
-/**
- * `ProcessFilter`s are filters that can be composed on top of `Processor`s to transform
- * items between data types.
- * @tparam T input data type
- * @tparam U output data type
- */
-trait ProcessorFilter[T,U] {
+class StorageService(storage: Storage) extends Service[Span, Unit] {
 
-  def andThen[V](next: ProcessorFilter[U,V]): ProcessorFilter[T,V] =
-    new ProcessorFilter[T,V] {
-      def apply(item: T): V = {
-        next.apply {
-          ProcessorFilter.this.apply(item)
-        }
+  private[this] val log = Logger.get()
+
+  def apply(span: Span): Future[Unit] = {
+    storage.storeSpan(span) onFailure {
+      case e => {
+        Stats.getCounter("exception_%s_%s".format("storeSpan", e.getClass)).incr()
+        log.error(e, "storeSpan")
       }
     }
-
-  def andThen(processor: Processor[U]): Processor[T] = new Processor[T] {
-    def process(item: T): Future[Unit] = {
-      processor.process {
-        ProcessorFilter.this.apply(item)
-      }
-    }
-
-    def shutdown() { processor.shutdown() }
   }
 
-  def apply(item: T): U
+  override def release() {
+    storage.close()
+  }
 }

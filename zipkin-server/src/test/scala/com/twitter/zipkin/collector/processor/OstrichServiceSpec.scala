@@ -16,22 +16,21 @@ package com.twitter.zipkin.collector.processor
  *  limitations under the License.
  *
  */
-
-import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.common.{Span, Endpoint, Annotation}
-import com.twitter.ostrich.stats.{Metric, Histogram, Distribution, Stats}
+import com.twitter.ostrich.stats.{Histogram, Distribution, Stats}
+import org.specs.Specification
 
-class OstrichProcessorSpec extends Specification {
+class OstrichServiceSpec extends Specification {
   val histogram = Histogram()
   histogram.add(10)
   val distribution = new Distribution(histogram)
 
   val prefix = "agg."
 
-  "OstrichProcessor" should {
+  "OstrichService" should {
     "add two metrics if server span" in {
-      val agg = new OstrichProcessor(prefix)
+      val agg = new OstrichService(prefix)
 
       val annotation1 = Annotation(10, gen.Constants.SERVER_RECV, Some(Endpoint(1, 2, "service")))
       val annotation2 = Annotation(20, gen.Constants.SERVER_SEND, Some(Endpoint(3, 4, "service")))
@@ -39,7 +38,7 @@ class OstrichProcessorSpec extends Specification {
 
       val span = Span(12345, "methodcall", 666, None, List(annotation1, annotation2, annotation3), Nil)
 
-      agg.process(span)
+      agg.apply(span)
 
 
       Stats.getMetrics()(prefix + "service") mustEqual distribution
@@ -47,7 +46,7 @@ class OstrichProcessorSpec extends Specification {
     }
 
     "add no metrics since not server span" in {
-      val agg = new OstrichProcessor(prefix)
+      val agg = new OstrichService(prefix)
 
       val annotation1 = Annotation(10, gen.Constants.CLIENT_SEND, Some(Endpoint(1, 2, "service")))
       val annotation2 = Annotation(20, gen.Constants.CLIENT_RECV, Some(Endpoint(3, 4, "service")))
@@ -55,7 +54,7 @@ class OstrichProcessorSpec extends Specification {
 
       val span = Span(12345, "methodcall", 666, None, List(annotation1, annotation2, annotation3), Nil)
 
-      agg.process(span)
+      agg.apply(span)
 
       Stats.getMetrics()(prefix + "service") mustNotBe distribution
       Stats.getMetrics()(prefix + "service.methodcall") mustNotBe distribution

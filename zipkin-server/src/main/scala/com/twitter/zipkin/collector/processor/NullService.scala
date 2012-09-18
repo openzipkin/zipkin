@@ -16,24 +16,9 @@
  */
 package com.twitter.zipkin.collector.processor
 
-import org.specs.Specification
-import org.specs.mock.{JMocker, ClassMocker}
+import com.twitter.finagle.Service
+import com.twitter.util.Future
 
-class FanoutProcessorSpec extends Specification with JMocker with ClassMocker {
-  "FanoutProcessor" should {
-    "fanout" in {
-      val proc1 = mock[Processor[Int]]
-      val proc2 = mock[Processor[Int]]
-
-      val fanout = new FanoutProcessor[Int](Seq(proc1, proc2))
-      val item = 1
-
-      expect {
-        one(proc1).process(item)
-        one(proc2).process(item)
-      }
-
-      fanout.process(item)
-    }
-  }
+class NullService[T] extends Service[T, Unit] {
+  def apply(t: T): Future[Unit] = Future.Unit
 }

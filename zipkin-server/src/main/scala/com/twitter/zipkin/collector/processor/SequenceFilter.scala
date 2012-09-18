@@ -16,21 +16,13 @@
  */
 package com.twitter.zipkin.collector.processor
 
+import com.twitter.finagle.{Service, Filter}
 import com.twitter.util.Future
 
-/**
- * Fans out a single item to a set of `Processor`s
- * @param processors
- * @tparam T
- */
-class FanoutProcessor[T](processors: Seq[Processor[T]]) extends Processor[T] {
-  def process(item: T): Future[Unit] = {
+class SequenceFilter[T] extends Filter[Seq[T], Unit, T, Unit] {
+  def apply(req: Seq[T], service: Service[T, Unit]): Future[Unit] = {
     Future.join {
-      processors map { _.process(item) }
+      req map { service(_) }
     }
-  }
-
-  def shutdown() {
-    processors.foreach { _.shutdown() }
   }
 }

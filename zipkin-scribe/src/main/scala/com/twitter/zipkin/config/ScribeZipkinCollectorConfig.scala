@@ -16,7 +16,7 @@
  */
 package com.twitter.zipkin.config
 
-import com.twitter.zipkin.collector.processor.ScribeProcessorFilter
+import com.twitter.zipkin.collector.processor.ScribeFilter
 import com.twitter.zipkin.config.collector.CollectorServerConfig
 
 trait ScribeZipkinCollectorConfig extends ZipkinCollectorConfig {
@@ -28,5 +28,5 @@ trait ScribeZipkinCollectorConfig extends ZipkinCollectorConfig {
   /* Categories of incoming scribe messages. Let these through, drop any others */
   var categories: Set[String] = Set("zipkin")
 
-  def rawDataFilter = new ScribeProcessorFilter
+  def rawDataFilter = new ScribeFilter
 }

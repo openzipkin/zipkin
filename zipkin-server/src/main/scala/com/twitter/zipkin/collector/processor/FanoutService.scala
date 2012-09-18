@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,23 +14,19 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.collector
+package com.twitter.zipkin.collector.processor
 
 import com.twitter.finagle.Service
-import com.twitter.ostrich.admin.BackgroundProcess
-import java.util.concurrent.{TimeUnit, BlockingQueue}
+import com.twitter.util.Future
 
-class WriteQueueWorker[T](queue: BlockingQueue[T],
-                       service: Service[T, _]) extends BackgroundProcess("WriteQueueWorker", false) {
-
-  def runLoop() {
-    val item = queue.poll(500, TimeUnit.MILLISECONDS)
-    if (item != null) {
-      process(item)
+class FanoutService[-Req](services: Seq[Service[Req, Unit]]) extends Service[Req, Unit] {
+  def apply(req: Req): Future[Unit] = {
+    Future.join {
+      services map { _.apply(req) }
     }
   }
 
-  private[collector] def process(t: T) {
-    service(t)
+  override def release() {
+    services foreach { _.release() }
   }
 }

@@ -16,35 +16,46 @@ package com.twitter.zipkin.collector.processor
  *  limitations under the License.
  *
  */
-
-import org.specs.Specification
-import com.twitter.zipkin.gen
-import com.twitter.zipkin.common.{Span, Endpoint, Annotation}
-import com.twitter.ostrich.stats.{Histogram, Distribution, Stats}
+import com.twitter.finagle.Service
+import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.collector.sampler.{EverythingGlobalSampler, NullGlobalSampler}
+import org.specs.Specification
+import org.specs.mock.{JMocker, ClassMocker}
 
-class SamplerProcessorFilterSpec extends Specification {
+class SamplerFilterSpec extends Specification with JMocker with ClassMocker {
 
-  "SamplerProcessorFilter" should {
+  "SamplerFilter" should {
+    val mockService = mock[Service[Span, Unit]]
+
     "let the span pass if debug flag is set" in {
       val span = Span(12345, "methodcall", 666, None, List(), Nil, true)
-      val spans = Seq(span)
-      val samplerProcessor = new SamplerProcessorFilter(NullGlobalSampler)
-      samplerProcessor(spans) mustEqual spans
+      val samplerProcessor = new SamplerFilter(NullGlobalSampler)
+
+      expect {
+        one(mockService).apply(span)
+      }
+
+      samplerProcessor(span, mockService)
     }
 
     "let the span pass if debug flag false and sampler says yes" in {
       val span = Span(12345, "methodcall", 666, None, List(), Nil, false)
-      val spans = Seq(span)
-      val samplerProcessor = new SamplerProcessorFilter(EverythingGlobalSampler)
-      samplerProcessor(spans) mustEqual spans
+      val samplerProcessor = new SamplerFilter(EverythingGlobalSampler)
+
+      expect {
+        one(mockService).apply(span)
+      }
+
+      samplerProcessor(span, mockService)
     }
 
     "don't let the span pass if debug flag false and sampler says no" in {
       val span = Span(12345, "methodcall", 666, None, List(), Nil, false)
-      val spans = Seq(span)
-      val samplerProcessor = new SamplerProcessorFilter(NullGlobalSampler)
-      samplerProcessor(spans) mustEqual Seq()
+      val samplerProcessor = new SamplerFilter(NullGlobalSampler)
+
+      expect {}
+
+      samplerProcessor(span, mockService)
     }
   }
 }

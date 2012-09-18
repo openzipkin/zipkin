@@ -16,16 +16,25 @@
  */
 package com.twitter.zipkin.collector.processor
 
-import com.twitter.ostrich.stats.Stats
-import com.twitter.util.Future
-import com.twitter.zipkin.common.Span
+import com.twitter.finagle.Service
+import org.specs.Specification
+import org.specs.mock.{JMocker, ClassMocker}
 
-class StatsProcessor extends Processor[Span] {
+class FanoutServiceSpec extends Specification with JMocker with ClassMocker {
+  "FanoutService" should {
+    "fanout" in {
+      val serv1 = mock[Service[Int, Unit]]
+      val serv2 = mock[Service[Int, Unit]]
 
-  def process(span: Span): Future[Unit] = {
-    span.serviceNames.foreach { name => Stats.incr("process_" + name) }
-    Future.Unit
+      val fanout = new FanoutService[Int](Seq(serv1, serv2))
+      val item = 1
+
+      expect {
+        one(serv1).apply(item)
+        one(serv2).apply(item)
+      }
+
+      fanout.apply(item)
+    }
   }
-
-  def shutdown() {}
 }
