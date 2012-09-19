@@ -191,6 +191,22 @@ object Zipkin extends Build {
 
     ).dependsOn(common)
 
+  lazy val cassandra = Project(
+    id = "zipkin-cassandra",
+    base = file("zipkin-cassandra"),
+    settings = Project.defaultSettings ++
+      StandardProject.newSettings ++
+      SubversionPublisher.newSettings ++
+      TravisCiRepos.newSettings
+  ).settings(
+    version := "0.3.0-SNAPSHOT",
+    libraryDependencies ++= Seq(
+      "com.twitter"     % "cassie-core"       % CASSIE_VERSION intransitive(),
+      "com.twitter"     % "cassie-serversets" % CASSIE_VERSION intransitive(),
+      "com.twitter"     % "util-logging"      % UTIL_VERSION,
+      "org.iq80.snappy" % "snappy"            % "0.1"
+    ) ++ testDependencies
+  ).dependsOn(scrooge)
 
   lazy val server =
     Project(
@@ -204,8 +220,6 @@ object Zipkin extends Build {
       version := "0.3.0-SNAPSHOT",
 
       libraryDependencies ++= Seq(
-        "com.twitter" % "cassie-core"       % CASSIE_VERSION intransitive(),
-        "com.twitter" % "cassie-serversets" % CASSIE_VERSION intransitive(),
         "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
         "com.twitter" % "finagle-serversets"% FINAGLE_VERSION,
         "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
@@ -216,10 +230,9 @@ object Zipkin extends Build {
         "com.twitter" % "util-zk-common"    % UTIL_VERSION,
 
         "com.twitter.common.zookeeper" % "candidate" % "0.0.9",
-        "com.twitter.common.zookeeper" % "group"     % "0.0.9",
+        "com.twitter.common.zookeeper" % "group"     % "0.0.9"
 
-        "commons-codec" % "commons-codec" % "1.5",
-        "org.iq80.snappy" % "snappy" % "0.1"
+        //"commons-codec" % "commons-codec" % "1.5"
       ) ++ testDependencies,
 
       PackageDist.packageDistZipName := "zipkin-server.zip",
@@ -230,7 +243,7 @@ object Zipkin extends Build {
         base =>
           (base / "config" +++ base / "src" / "test" / "resources").get
       }
-    ).dependsOn(common, scrooge)
+    ).dependsOn(common, scrooge, cassandra)
 
   lazy val scribe =
     Project(
