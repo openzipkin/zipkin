@@ -14,7 +14,7 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.collector.processor
+package com.twitter.zipkin.collector.filter
 
 import com.twitter.finagle.{Service, Filter}
 import com.twitter.ostrich.stats.Stats
@@ -24,7 +24,9 @@ import com.twitter.zipkin.common.Span
 
 class SamplerFilter(sampler: GlobalSampler) extends Filter[Span, Unit, Span, Unit] {
   def apply(span: Span, service: Service[Span, Unit]): Future[Unit] = {
-    span.serviceNames.foreach { name => Stats.incr("received_" + name) }
+    span.serviceNames.foreach {
+      name => Stats.incr("received_" + name)
+    }
 
     /**
      * If the span was created with debug mode on we guarantee that it will be

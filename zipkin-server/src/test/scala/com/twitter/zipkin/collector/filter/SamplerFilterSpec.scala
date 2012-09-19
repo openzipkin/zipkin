@@ -1,4 +1,4 @@
-package com.twitter.zipkin.collector.processor
+package com.twitter.zipkin.collector.filter
 
 /*
  * Copyright 2012 Twitter Inc.
@@ -16,6 +16,7 @@ package com.twitter.zipkin.collector.processor
  *  limitations under the License.
  *
  */
+
 import com.twitter.finagle.Service
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.collector.sampler.{EverythingGlobalSampler, NullGlobalSampler}

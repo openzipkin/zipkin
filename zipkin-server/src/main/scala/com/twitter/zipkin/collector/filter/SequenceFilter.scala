@@ -14,7 +14,7 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.collector.processor
+package com.twitter.zipkin.collector.filter
 
 import com.twitter.finagle.{Service, Filter}
 import com.twitter.util.Future
@@ -22,7 +22,9 @@ import com.twitter.util.Future
 class SequenceFilter[T] extends Filter[Seq[T], Unit, T, Unit] {
   def apply(req: Seq[T], service: Service[T, Unit]): Future[Unit] = {
     Future.join {
-      req map { service(_) }
+      req map {
+        service(_)
+      }
     }
   }
 }
