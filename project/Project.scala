@@ -231,8 +231,6 @@ object Zipkin extends Build {
 
         "com.twitter.common.zookeeper" % "candidate" % "0.0.9",
         "com.twitter.common.zookeeper" % "group"     % "0.0.9"
-
-        //"commons-codec" % "commons-codec" % "1.5"
       ) ++ testDependencies,
 
       PackageDist.packageDistZipName := "zipkin-server.zip",
