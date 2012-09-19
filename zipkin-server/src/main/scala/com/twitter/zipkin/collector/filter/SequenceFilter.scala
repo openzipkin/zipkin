@@ -14,7 +14,7 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.collector.processor
+package com.twitter.zipkin.collector.filter
 
 import com.twitter.finagle.{Service, Filter}
 import com.twitter.util.Future

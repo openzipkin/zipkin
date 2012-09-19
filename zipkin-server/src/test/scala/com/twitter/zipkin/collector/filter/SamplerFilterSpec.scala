@@ -1,4 +1,4 @@
-package com.twitter.zipkin.collector.processor
+package com.twitter.zipkin.collector.filter
 
 /*
  * Copyright 2012 Twitter Inc.
