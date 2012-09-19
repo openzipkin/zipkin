@@ -191,6 +191,35 @@ object Zipkin extends Build {
 
     ).dependsOn(common)
 
+  lazy val collectorCore = Project(
+    id = "zipkin-collector-core",
+    base = file("zipkin-collector-core"),
+    settings = Project.defaultSettings ++
+      StandardProject.newSettings ++
+      SubversionPublisher.newSettings ++
+      TravisCiRepos.newSettings
+  ).settings(
+    version := "0.3.0-SNAPSHOT",
+
+    libraryDependencies ++= Seq(
+      "com.twitter" % "cassie-core"       % CASSIE_VERSION intransitive(),
+      "com.twitter" % "cassie-serversets" % CASSIE_VERSION intransitive(),
+      "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
+      "com.twitter" % "finagle-serversets"% FINAGLE_VERSION,
+      "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
+      "com.twitter" % "finagle-zipkin"    % FINAGLE_VERSION,
+      "com.twitter" % "ostrich"           % OSTRICH_VERSION,
+      "com.twitter" % "util-core"         % UTIL_VERSION,
+      "com.twitter" % "util-zk"           % UTIL_VERSION,
+      "com.twitter" % "util-zk-common"    % UTIL_VERSION,
+
+      "com.twitter.common.zookeeper" % "candidate" % "0.0.9",
+      "com.twitter.common.zookeeper" % "group"     % "0.0.9",
+
+      "commons-codec" % "commons-codec" % "1.5",
+      "org.iq80.snappy" % "snappy" % "0.1"
+    ) ++ testDependencies
+  ).dependsOn(common, scrooge)
 
   lazy val server =
     Project(
@@ -252,7 +281,7 @@ object Zipkin extends Build {
         base =>
           (base / "config" +++ base / "src" / "test" / "resources").get
       }
-    ).dependsOn(server, scrooge)
+    ).dependsOn(collectorCore, scrooge)
 
   lazy val web =
     Project(
