@@ -219,7 +219,7 @@ object Zipkin extends Build {
       "commons-codec" % "commons-codec" % "1.5",
       "org.iq80.snappy" % "snappy" % "0.1"
     ) ++ testDependencies
-  ).dependsOn(common, scrooge)
+  ).dependsOn(common, scrooge, server)
 
   lazy val server =
     Project(
