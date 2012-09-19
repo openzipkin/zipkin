@@ -20,6 +20,11 @@ import com.twitter.finagle.{Service, Filter}
 import com.twitter.util.Future
 import com.twitter.zipkin.common.Span
 
+/**
+ * Filter that determines whether to index a span.
+ * Spans with the Finagle default service name "client" should not be indexed
+ * since they are unhelpful. Instead, rely on indexed server-side span names.
+ */
 class ClientIndexFilter extends Filter[Span, Unit, Span, Unit] {
   def apply(req: Span, service: Service[Span, Unit]): Future[Unit] = {
     if (shouldIndex(req)) {
@@ -29,13 +34,6 @@ class ClientIndexFilter extends Filter[Span, Unit, Span, Unit] {
     }
   }
 
-  /**
-   * We do not want to index spans from clients with the Finagle default
-   * service name of "client".
-   *
-   * Having them indexed will not help the users find the data they want,
-   * instead we rely on the server name.
-   */
   private[filter] def shouldIndex(span: Span): Boolean = {
     !(span.isClientSide() && span.serviceNames.contains("client"))
   }
