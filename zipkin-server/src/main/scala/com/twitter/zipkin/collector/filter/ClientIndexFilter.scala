@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,15 +16,25 @@
  */
 package com.twitter.zipkin.collector.filter
 
+import com.twitter.finagle.{Service, Filter}
+import com.twitter.util.Future
 import com.twitter.zipkin.common.Span
 
-trait IndexingFilter {
+/**
+ * Filter that determines whether to index a span.
+ * Spans with the Finagle default service name "client" should not be indexed
+ * since they are unhelpful. Instead, rely on indexed server-side span names.
+ */
+class ClientIndexFilter extends Filter[Span, Unit, Span, Unit] {
+  def apply(req: Span, service: Service[Span, Unit]): Future[Unit] = {
+    if (shouldIndex(req)) {
+      service(req)
+    } else {
+      Future.Unit
+    }
+  }
 
-  /**
-   * Should we index this span or not?
-   */
-  def shouldIndex(span: Span): Boolean
-
-  def apply(span: Span): Boolean = shouldIndex(span)
-
+  private[filter] def shouldIndex(span: Span): Boolean = {
+    !(span.isClientSide() && span.serviceNames.contains("client"))
+  }
 }

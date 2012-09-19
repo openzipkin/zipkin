@@ -14,17 +14,17 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.collector.filter;
+package com.twitter.zipkin.collector.filter
 
-import org.specs.Specification
-import com.twitter.zipkin.gen
 import com.twitter.zipkin.common.{Endpoint, Annotation, Span}
+import com.twitter.zipkin.gen
+import org.specs.Specification
 
-class DefaultClientIndexingFilterSpec extends Specification {
+class ClientIndexFilterSpec extends Specification {
 
-  val filter = new DefaultClientIndexingFilter
+  val filter = new ClientIndexFilter
 
-  "DefaultClientIndexingFilter" should {
+  "ClientIndexFilter" should {
     "not index span" in {
       // server side, with default name
       val spanCs = Span(1, "n", 2, None, List(Annotation(1, gen.Constants.CLIENT_SEND, Some(Endpoint(1,1,"client")))), Nil)
