@@ -16,7 +16,6 @@ package com.twitter.zipkin.collector.filter
  *  limitations under the License.
  *
  */
-
 import com.twitter.finagle.Service
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.collector.sampler.{EverythingGlobalSampler, NullGlobalSampler}

@@ -22,9 +22,7 @@ import com.twitter.util.Future
 class SequenceFilter[T] extends Filter[Seq[T], Unit, T, Unit] {
   def apply(req: Seq[T], service: Service[T, Unit]): Future[Unit] = {
     Future.join {
-      req map {
-        service(_)
-      }
+      req map { service(_) }
     }
   }
 }
