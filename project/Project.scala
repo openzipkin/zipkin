@@ -213,7 +213,7 @@ object Zipkin extends Build {
       "com.twitter.common.zookeeper" % "candidate" % "0.0.9",
       "com.twitter.common.zookeeper" % "group"     % "0.0.9"
     ) ++ testDependencies
-  ).dependsOn(common, scrooge, server)
+  ).dependsOn(common, scrooge, cassandra)
 
   lazy val cassandra = Project(
     id = "zipkin-cassandra",
