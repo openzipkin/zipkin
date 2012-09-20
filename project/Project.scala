@@ -213,7 +213,7 @@ object Zipkin extends Build {
       "com.twitter.common.zookeeper" % "candidate" % "0.0.9",
       "com.twitter.common.zookeeper" % "group"     % "0.0.9"
     ) ++ testDependencies
-  ).dependsOn(common, scrooge, cassandra)
+  ).dependsOn(common, scrooge)
 
   lazy val cassandra = Project(
     id = "zipkin-cassandra",
@@ -225,11 +225,17 @@ object Zipkin extends Build {
   ).settings(
     version := "0.3.0-SNAPSHOT",
     libraryDependencies ++= Seq(
-      "com.twitter"     % "cassie-core"       % CASSIE_VERSION intransitive(),
-      "com.twitter"     % "cassie-serversets" % CASSIE_VERSION intransitive(),
+      "com.twitter"     % "cassie-core"       % CASSIE_VERSION,
+      "com.twitter"     % "cassie-serversets" % CASSIE_VERSION,
       "com.twitter"     % "util-logging"      % UTIL_VERSION,
       "org.iq80.snappy" % "snappy"            % "0.1"
-    ) ++ testDependencies
+    ) ++ testDependencies,
+
+    /* Add configs to resource path for ConfigSpec */
+    unmanagedResourceDirectories in Test <<= baseDirectory {
+      base =>
+        (base / "config" +++ base / "src" / "test" / "resources").get
+    }
   ).dependsOn(scrooge)
 
   lazy val server =
@@ -287,7 +293,7 @@ object Zipkin extends Build {
         base =>
           (base / "config" +++ base / "src" / "test" / "resources").get
       }
-    ).dependsOn(collectorCore, scrooge)
+    ).dependsOn(collectorCore, scrooge, cassandra)
 
   lazy val web =
     Project(
