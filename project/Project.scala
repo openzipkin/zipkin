@@ -28,7 +28,7 @@ object Zipkin extends Build {
     Project(
       id = "zipkin",
       base = file(".")
-    ) aggregate(hadoop, hadoopjobrunner, test, thrift, server, common, scrooge, scribe, web, cassandra, collectorCore)
+    ) aggregate(hadoop, hadoopjobrunner, test, thrift, server, common, scrooge, collectorScribe, web, cassandra, collectorCore)
   
 
   lazy val hadoop = Project(
@@ -121,7 +121,7 @@ object Zipkin extends Build {
     name := "zipkin-test",
     version := "0.3.0-SNAPSHOT",
     libraryDependencies ++= testDependencies
-  ) dependsOn(server, scribe)
+  ) dependsOn(server, collectorScribe)
 
   lazy val thrift =
     Project(
@@ -267,10 +267,10 @@ object Zipkin extends Build {
       }
     ).dependsOn(common, scrooge, cassandra)
 
-  lazy val scribe =
+  lazy val collectorScribe =
     Project(
-      id = "zipkin-scribe",
-      base = file("zipkin-scribe"),
+      id = "zipkin-collector-scribe",
+      base = file("zipkin-collector-scribe"),
       settings = Project.defaultSettings ++
         StandardProject.newSettings ++
         SubversionPublisher.newSettings ++
