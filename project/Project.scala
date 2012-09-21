@@ -240,8 +240,8 @@ object Zipkin extends Build {
 
   lazy val queryCore =
     Project(
-      id = "zipkin-server",
-      base = file("zipkin-server"),
+      id = "zipkin-query-core",
+      base = file("zipkin-query-core"),
       settings = Project.defaultSettings ++
         StandardProject.newSettings ++
         SubversionPublisher.newSettings ++
