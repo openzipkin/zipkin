@@ -276,7 +276,7 @@ object Zipkin extends Build {
 
     libraryDependencies ++= testDependencies,
 
-    PackageDist.packageDistZipName := "zipkin-server.zip",
+    PackageDist.packageDistZipName := "zipkin-query-service.zip",
     BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
 
     /* Add configs to resource path for ConfigSpec */
