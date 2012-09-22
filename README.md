@@ -1,6 +1,7 @@
 ![Zipkin (doc/zipkin-logo-200x119.jpg)](https://github.com/twitter/zipkin/raw/master/doc/zipkin-logo-200x119.jpg)
 
 [Zipkin](http://twitter.github.com/zipkin) is a distributed tracing system that helps us gather timing data for all the disparate services at Twitter.
+You can find the full length documentation at: [http://twitter.github.com/zipkin](http://twitter.github.com/zipkin)
 
 ## Quick start
 You'll need Scala 2.9.1
