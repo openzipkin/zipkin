@@ -7,9 +7,9 @@ You'll need Scala 2.9.1
 
 Clone the repo, `git clone git://github.com/twitter/zipkin`, or [download a release](https://github.com/twitter/zipkin/downloads)
 
-To run a collector daemon: `bin/sbt 'project zipkin-scribe' 'run -f zipkin-scribe/config/collector-dev.scala'`
+To run a collector daemon: `bin/collector`
 
-To run a query daemon: `bin/sbt 'project zipkin-server' 'run -f zipkin-server/config/query-dev.scala'`
+To run a query daemon: `bin/query`
 
-To run a UI daemon: `bin/sbt 'project zipkin-finatra' 'run -f zipkin-finatra/config/web-dev.scala'`
+To run a UI daemon: `bin/ui`
 
