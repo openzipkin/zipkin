@@ -89,23 +89,23 @@ You need to set up a network store that points to the Zipkin collector daemon. I
 <ol>
 <li><code>git clone https://github.com/twitter/zipkin.git</code></li>
 <li><code>cd zipkin</code></li>
-<li><code>cp zipkin-scribe/config/collector-dev.scala zipkin-scribe/config/collector-prod.scala</code></li>
-<li><code>cp zipkin-server/config/query-dev.scala zipkin-server/config/query-prod.scala</code></li>
+<li><code>cp zipkin-collector-service/config/collector-dev.scala zipkin-collector-service/config/collector-prod.scala</code></li>
+<li><code>cp zipkin-query-service/config/query-dev.scala zipkin-query-service/config/query-prod.scala</code></li>
 <li>Modify the configs above as needed. Pay particular attention to ZooKeeper and Cassandra server entries.</li>
 <li><code>bin/sbt update package-dist</code> (This downloads SBT 0.11.2 if it doesn&#39;t already exist)</li>
 <li><code>scp dist/zipkin*.zip [server]</code></li>
 <li><code>ssh [server]</code></li>
 <li><code>unzip zipkin*.zip</code></li>
 <li><code>mkdir -p /var/log/zipkin</code></li>
-<li><code>zipkin-scribe/scripts/collector.sh -f zipkin-scribe/config/collector-prod.scala</code></li>
-<li><code>zipkin-server/scripts/query.sh -f zipkin-server/config/query-prod.scala</code></li>
+<li><code>zipkin-collector-service/src/scripts/collector.sh -f zipkin-collector-service/config/collector-prod.scala</code></li>
+<li><code>zipkin-query-service/src/scripts/query.sh -f zipkin-query-service/config/query-prod.scala</code></li>
 </ol>
 
 <p>You can also run the collector and query services through SBT.</p>
 
-<p>To run the Scribe collector service: <code>bin/sbt &#39;project zipkin-scribe&#39; &#39;run -f zipkin-scribe/config/collector-dev.scala&#39;</code></p>
+<p>To run the Scribe collector service: <code>bin/sbt &#39;project zipkin-collector-service&#39; &#39;run -f zipkin-collector-service/config/collector-dev.scala&#39;</code> or <code>bin/collector</code></p>
 
-<p>To run the query service: <code>bin/sbt &#39;project zipkin-server&#39; &#39;run -f zipkin-server/config/query-dev.scala&#39;</code></p>
+<p>To run the query service: <code>bin/sbt &#39;project zipkin-query-service&#39; &#39;run -f zipkin-query-service/config/query-dev.scala&#39;</code> or <code>bin/query</code></p>
 
 <h3>Zipkin UI</h3>
 
