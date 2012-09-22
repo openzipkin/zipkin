@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.twitter.zipkin.hadoop.sources
 
 import com.twitter.scalding._
@@ -23,10 +22,10 @@ import scala.collection.JavaConverters._
 /**
  * Finds the best client side and service names for each span, if any exist
  */
+class FindNames(args: Args) extends Job(args) with DefaultDateRangeJob {
+  val timeGranularity: TimeGranularity = TimeGranularity.Hour
 
-class FindNames(args : Args) extends Job(args) with DefaultDateRangeJob {
-
-  val preprocessed = PrepNoNamesSpanSource()
+  val preprocessed = PrepNoNamesSpanSource(timeGranularity)
     .read
     .mapTo(0 ->('trace_id, 'name, 'id, 'parent_id, 'annotations, 'binary_annotations)) {
       s: Span => (s.trace_id, s.name, s.id, s.parent_id, s.annotations.toList, s.binary_annotations.toList)
@@ -44,7 +43,7 @@ class FindNames(args : Args) extends Job(args) with DefaultDateRangeJob {
           }
           spanSN
       }
-    }.write(PreprocessedSpanSource())
+    }.write(PreprocessedSpanSource(timeGranularity))
 
 
 }

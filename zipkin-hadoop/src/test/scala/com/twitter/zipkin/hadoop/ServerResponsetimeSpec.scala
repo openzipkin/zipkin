@@ -4,7 +4,7 @@ package com.twitter.zipkin.hadoop
 import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.scalding._
-import com.twitter.zipkin.hadoop.sources.{SpanSource, Util}
+import com.twitter.zipkin.hadoop.sources.{SpanSource, TimeGranularity, Util}
 import scala.collection.JavaConverters._
 
 class ServerResponsetimeSpec extends Specification with TupleConversions {
@@ -23,7 +23,7 @@ class ServerResponsetimeSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(SpanSource(), List(span -> 0)).
+        source(SpanSource(TimeGranularity.Hour), List(span -> 0)).
         sink[(String, Int)](Tsv("outputFile")) {
         outputBuffer => outputBuffer.toMap mustEqual Map()
       }.run.finish
@@ -33,7 +33,7 @@ class ServerResponsetimeSpec extends Specification with TupleConversions {
         arg("input", "inputFile").
         arg("output", "outputFile").
         arg("date", "2012-01-01T01:00").
-        source(SpanSource(), Util.repeatSpan(span, 101, 0, 0)).
+        source(SpanSource(TimeGranularity.Hour), Util.repeatSpan(span, 101, 0, 0)).
         sink[(String, String, Double, Double, Double)](Tsv("outputFile")) {
         outputBuffer => outputBuffer foreach { e =>
           e mustEqual ("0.0.0.123", "service", 102d, 1d, 0d)

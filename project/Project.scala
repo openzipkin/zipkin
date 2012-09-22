@@ -28,7 +28,7 @@ object Zipkin extends Build {
     Project(
       id = "zipkin",
       base = file(".")
-    ) aggregate(hadoop, hadoopjobrunner, test, thrift, server, common, scrooge, scribe, web)
+    ) aggregate(hadoop, hadoopjobrunner, test, thrift, queryService, common, scrooge, collectorScribe, web, cassandra, collectorCore, collectorService)
   
 
   lazy val hadoop = Project(
@@ -121,7 +121,7 @@ object Zipkin extends Build {
     name := "zipkin-test",
     version := "0.3.0-SNAPSHOT",
     libraryDependencies ++= testDependencies
-  ) dependsOn(server, scribe)
+  ) dependsOn(queryService, collectorService)
 
   lazy val thrift =
     Project(
@@ -191,11 +191,57 @@ object Zipkin extends Build {
 
     ).dependsOn(common)
 
+  lazy val collectorCore = Project(
+    id = "zipkin-collector-core",
+    base = file("zipkin-collector-core"),
+    settings = Project.defaultSettings ++
+      StandardProject.newSettings ++
+      SubversionPublisher.newSettings ++
+      TravisCiRepos.newSettings
+  ).settings(
+    version := "0.3.0-SNAPSHOT",
+    libraryDependencies ++= Seq(
+      "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
+      "com.twitter" % "finagle-serversets"% FINAGLE_VERSION,
+      "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
+      "com.twitter" % "finagle-zipkin"    % FINAGLE_VERSION,
+      "com.twitter" % "ostrich"           % OSTRICH_VERSION,
+      "com.twitter" % "util-core"         % UTIL_VERSION,
+      "com.twitter" % "util-zk"           % UTIL_VERSION,
+      "com.twitter" % "util-zk-common"    % UTIL_VERSION,
 
-  lazy val server =
+      "com.twitter.common.zookeeper" % "candidate" % "0.0.9",
+      "com.twitter.common.zookeeper" % "group"     % "0.0.9"
+    ) ++ testDependencies
+  ).dependsOn(common, scrooge)
+
+  lazy val cassandra = Project(
+    id = "zipkin-cassandra",
+    base = file("zipkin-cassandra"),
+    settings = Project.defaultSettings ++
+      StandardProject.newSettings ++
+      SubversionPublisher.newSettings ++
+      TravisCiRepos.newSettings
+  ).settings(
+    version := "0.3.0-SNAPSHOT",
+    libraryDependencies ++= Seq(
+      "com.twitter"     % "cassie-core"       % CASSIE_VERSION,
+      "com.twitter"     % "cassie-serversets" % CASSIE_VERSION,
+      "com.twitter"     % "util-logging"      % UTIL_VERSION,
+      "org.iq80.snappy" % "snappy"            % "0.1"
+    ) ++ testDependencies,
+
+    /* Add configs to resource path for ConfigSpec */
+    unmanagedResourceDirectories in Test <<= baseDirectory {
+      base =>
+        (base / "config" +++ base / "src" / "test" / "resources").get
+    }
+  ).dependsOn(scrooge)
+
+  lazy val queryCore =
     Project(
-      id = "zipkin-server",
-      base = file("zipkin-server"),
+      id = "zipkin-query-core",
+      base = file("zipkin-query-core"),
       settings = Project.defaultSettings ++
         StandardProject.newSettings ++
         SubversionPublisher.newSettings ++
@@ -204,8 +250,6 @@ object Zipkin extends Build {
       version := "0.3.0-SNAPSHOT",
 
       libraryDependencies ++= Seq(
-        "com.twitter" % "cassie-core"       % CASSIE_VERSION intransitive(),
-        "com.twitter" % "cassie-serversets" % CASSIE_VERSION intransitive(),
         "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
         "com.twitter" % "finagle-serversets"% FINAGLE_VERSION,
         "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
@@ -216,43 +260,65 @@ object Zipkin extends Build {
         "com.twitter" % "util-zk-common"    % UTIL_VERSION,
 
         "com.twitter.common.zookeeper" % "candidate" % "0.0.9",
-        "com.twitter.common.zookeeper" % "group"     % "0.0.9",
-
-        "commons-codec" % "commons-codec" % "1.5",
-        "org.iq80.snappy" % "snappy" % "0.1"
-      ) ++ testDependencies,
-
-      PackageDist.packageDistZipName := "zipkin-server.zip",
-      BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
-
-      /* Add configs to resource path for ConfigSpec */
-      unmanagedResourceDirectories in Test <<= baseDirectory {
-        base =>
-          (base / "config" +++ base / "src" / "test" / "resources").get
-      }
+        "com.twitter.common.zookeeper" % "group"     % "0.0.9"
+      ) ++ testDependencies
     ).dependsOn(common, scrooge)
 
-  lazy val scribe =
+  lazy val queryService = Project(
+    id = "zipkin-query-service",
+    base = file("zipkin-query-service"),
+    settings = Project.defaultSettings ++
+      StandardProject.newSettings ++
+      SubversionPublisher.newSettings ++
+      TravisCiRepos.newSettings
+  ).settings(
+    version := "0.3.0-SNAPSHOT",
+
+    libraryDependencies ++= testDependencies,
+
+    PackageDist.packageDistZipName := "zipkin-query-service.zip",
+    BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
+
+    /* Add configs to resource path for ConfigSpec */
+    unmanagedResourceDirectories in Test <<= baseDirectory {
+      base =>
+        (base / "config" +++ base / "src" / "test" / "resources").get
+    }
+  ).dependsOn(queryCore, cassandra)
+
+  lazy val collectorScribe =
     Project(
-      id = "zipkin-scribe",
-      base = file("zipkin-scribe"),
+      id = "zipkin-collector-scribe",
+      base = file("zipkin-collector-scribe"),
       settings = Project.defaultSettings ++
         StandardProject.newSettings ++
         SubversionPublisher.newSettings ++
         TravisCiRepos.newSettings
     ).settings(
       version := "0.3.0-SNAPSHOT",
-      libraryDependencies ++= testDependencies,
+      libraryDependencies ++= testDependencies
+    ).dependsOn(collectorCore, scrooge)
 
-      PackageDist.packageDistZipName := "zipkin-scribe.zip",
-      BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
+  lazy val collectorService = Project(
+    id = "zipkin-collector-service",
+    base = file("zipkin-collector-service"),
+    settings = Project.defaultSettings ++
+      StandardProject.newSettings ++
+      SubversionPublisher.newSettings ++
+      TravisCiRepos.newSettings
+  ).settings(
+    version := "0.3.0-SNAPSHOT",
+    libraryDependencies ++= testDependencies,
 
-      /* Add configs to resource path for ConfigSpec */
-      unmanagedResourceDirectories in Test <<= baseDirectory {
-        base =>
-          (base / "config" +++ base / "src" / "test" / "resources").get
-      }
-    ).dependsOn(server, scrooge)
+    PackageDist.packageDistZipName := "zipkin-collector-service.zip",
+    BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
+
+    /* Add configs to resource path for ConfigSpec */
+    unmanagedResourceDirectories in Test <<= baseDirectory {
+      base =>
+        (base / "config" +++ base / "src" / "test" / "resources").get
+    }
+  ).dependsOn(collectorCore, collectorScribe, cassandra)
 
   lazy val web =
     Project(

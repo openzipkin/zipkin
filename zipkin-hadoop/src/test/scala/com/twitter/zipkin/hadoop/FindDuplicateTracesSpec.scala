@@ -21,8 +21,7 @@ import com.twitter.zipkin.gen
 import com.twitter.scalding._
 import gen.AnnotationType
 import scala.collection.JavaConverters._
-import collection.mutable.HashMap
-import com.twitter.zipkin.hadoop.sources.{PrepTsvSource, PreprocessedSpanSource, Util}
+import com.twitter.zipkin.hadoop.sources.{PreprocessedSpanSource, TimeGranularity, Util}
 
 /**
  * Tests that DependencyTree finds all service calls and how often per pair
@@ -56,7 +55,7 @@ class FindDuplicateTracesSpec extends Specification with TupleConversions {
         .arg("output", "outputFile")
         .arg("date", "2012-01-01T01:00")
         .arg("maximum_duration", "600")
-        .source(PreprocessedSpanSource(), spans)
+        .source(PreprocessedSpanSource(TimeGranularity.Hour), spans)
         .sink[Long](Tsv("outputFile")) {
         outputBuffer => outputBuffer foreach { e =>
           e mustEqual 12345

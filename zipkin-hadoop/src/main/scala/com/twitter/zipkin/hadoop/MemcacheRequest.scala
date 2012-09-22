@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.twitter.zipkin.hadoop
 
 import com.twitter.scalding._
-import java.nio.ByteBuffer
-import java.util.Arrays
-import sources._
 import com.twitter.zipkin.gen._
+import com.twitter.zipkin.hadoop.sources.{PreprocessedSpanSource, TimeGranularity, PrepNoNamesSpanSource}
 
 /**
  * Find out how often each service does memcache accesses
  */
 class MemcacheRequest(args : Args) extends Job(args) with DefaultDateRangeJob {
 
-  val preprocessed = DailyPrepNoNamesSpanSource()
+  val preprocessed = PrepNoNamesSpanSource(TimeGranularity.Day)
     .read
     .mapTo(0 -> ('parent_id, 'binary_annotations))
       { s: Span => (s.parent_id, s.binary_annotations.toList) }
@@ -40,7 +37,7 @@ class MemcacheRequest(args : Args) extends Job(args) with DefaultDateRangeJob {
     }
     .project('parent_id, 'memcacheNames)
 
-  val memcacheRequesters = DailyPreprocessedSpanSource()
+  val memcacheRequesters = PreprocessedSpanSource(TimeGranularity.Day)
     .read
     .mapTo(0 -> ('trace_id, 'id, 'service))
       { s: SpanServiceName => (s.trace_id, s.id, s.service_name)}

@@ -27,6 +27,7 @@ import com.twitter.zipkin.hadoop.sources._
 
 class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
 
+  val timeGranularity = TimeGranularity.Day
   val ERROR_TYPE = List("finagle.timeout", "finagle.retry")
 
   val input = args.required("error_type")
@@ -35,14 +36,14 @@ class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
   }
 
   // Preprocess the data into (trace_id, id, parent_id, annotations, client service name, service name)
-  val spanInfo = DailyPreprocessedSpanSource()
+  val spanInfo = PreprocessedSpanSource(timeGranularity)
     .read
     .mapTo(0 -> ('id, 'parent_id, 'annotations, 'service) )
       { s: SpanServiceName => (s.id, s.parent_id, s.annotations.toList, s.service_name) }
 
 
 //  Project to (id, service name)
-  val idName = DailyPrepTsvSource()
+  val idName = PrepTsvSource(timeGranularity)
     .read
 
   // Left join with idName to find the parent's service name, if applicable
