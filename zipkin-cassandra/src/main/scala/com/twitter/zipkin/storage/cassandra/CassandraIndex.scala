@@ -277,7 +277,7 @@ trait CassandraIndex extends Index with Cassandra {
     }
     val annFuture = batch.execute()
 
-    Future.join(Seq(annFuture))
+    annFuture.unit
   }
 
   def indexSpanDuration(span: Span): Future[Void] = {
