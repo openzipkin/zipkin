@@ -95,7 +95,7 @@ trait CassandraAggregates extends Aggregates with Cassandra {
     }
     remove transform {
       case Return(r) => {
-        Future.join(Seq(batch.execute()))
+        batch.execute().unit
       }
       case Throw(e) => {
         Future.exception(e)
