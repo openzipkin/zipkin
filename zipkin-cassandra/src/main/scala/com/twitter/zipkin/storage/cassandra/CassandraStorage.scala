@@ -58,9 +58,7 @@ trait CassandraStorage extends Storage with Cassandra {
     WRITE_REQUEST_COUNTER.incr()
     val traceKey = span.traceId
     val traceCol = Column[String, gen.Span](createSpanColumnName(span), ThriftAdapter(span)).ttl(cassandraConfig.tracesTimeToLive)
-    Future.join {
-      Seq(traces.insert(traceKey, traceCol))
-    }
+    traces.insert(traceKey, traceCol).unit
   }
 
   def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = {
@@ -75,8 +73,7 @@ trait CassandraStorage extends Storage with Cassandra {
       batch.insert(traceId, col)
     }
 
-    // convert to Future[Unit]. Sigh.
-    Future.join(Seq(batch.execute()))
+    batch.execute().unit
   }
 
   def getTimeToLive(traceId: Long): Future[Duration] = {
