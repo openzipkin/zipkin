@@ -36,7 +36,7 @@ If the pull request is becoming too big we ask that you split it into smaller on
 Areas where we'd love to see contributions include: adding tracing to more libraries and protocols, interesting reports generated with Hadoop from the trace data, extending collector to support more transports and storage systems and other ways of visualizing the data in the web UI.
 
 ## Versioning
-We intend to use the [Semantic Versioning](http://semver.org/) style versioning.
+We use [SemVer](http://semver.org/) style versioning.
 
 ## Authors
 Thanks to everyone below for making Zipkin happen!
