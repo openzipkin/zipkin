@@ -2,6 +2,9 @@
 
 [Zipkin](http://twitter.github.com/zipkin) is a distributed tracing system that helps us gather timing data for all the disparate services at Twitter.
 
+## Full documentation
+See [http://twitter.github.com/zipkin](http://twitter.github.com/zipkin)
+
 ## Quick start
 You'll need Scala 2.9.1
 
@@ -13,8 +16,7 @@ To run a query daemon: `bin/query`
 
 To run a UI daemon: `bin/ui`
 
-## Full documentation
-See [http://twitter.github.com/zipkin](http://twitter.github.com/zipkin)
+For a more in-depth installation guide, see: [http://twitter.github.com/zipkin/install.html](http://twitter.github.com/zipkin/install.html)
 
 ## Mailing lists
 There are two mailing lists you can use to get in touch with other users and developers.
