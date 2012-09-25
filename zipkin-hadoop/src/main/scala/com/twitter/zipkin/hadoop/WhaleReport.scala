@@ -16,7 +16,7 @@
 
 package com.twitter.zipkin.hadoop
 
-import com.twitter.scalding.{Tsv, DefaultDateRangeJob, Job, Args}
+import com.twitter.scalding.{Tsv, UtcDateRangeJob, Job, Args}
 import com.twitter.zipkin.gen.{BinaryAnnotation, SpanServiceName, Annotation}
 import com.twitter.zipkin.hadoop.sources.{TimeGranularity, PreprocessedSpanSource, Util}
 import java.nio.ByteBuffer
@@ -26,7 +26,7 @@ import java.nio.ByteBuffer
  * Finds traces that have 500 Internal Service Errors and finds the spans in those traces that have retries or timeouts
  */
 
-class WhaleReport(args: Args) extends Job(args) with DefaultDateRangeJob {
+class WhaleReport(args: Args) extends Job(args) with UtcDateRangeJob {
 
   val ERRORS = List("finagle.timeout", "finagle.retry")
 

@@ -17,13 +17,13 @@
 package com.twitter.zipkin.hadoop
 
 import com.twitter.zipkin.gen.{Constants, SpanServiceName, Annotation}
-import com.twitter.scalding.{Tsv, DefaultDateRangeJob, Job, Args}
+import com.twitter.scalding.{Tsv, UtcDateRangeJob, Job, Args}
 import com.twitter.zipkin.hadoop.sources._
 
 /**
  * Per service call (i.e. pair of services), finds the average run time (in microseconds) of that service call
  */
-class ExpensiveEndpoints(args : Args) extends Job(args) with DefaultDateRangeJob {
+class ExpensiveEndpoints(args : Args) extends Job(args) with UtcDateRangeJob {
 
   val timeGranularity = TimeGranularity.Day
 
