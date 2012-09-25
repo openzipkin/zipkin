@@ -5,7 +5,7 @@ Zipkin relies on Cassandra for storage. So you will need to bring up a Cassandra
 
 1. See Cassandra's <a href="http://cassandra.apache.org/">site</a> for instructions on how to start a cluster.
 2. Use the Zipkin Cassandra schema attached to this project. You can create the schema with the following command.
-`bin/cassandra-cli -host localhost -port 9160 -f zipkin-server/src/schema/cassandra-schema.txt`
+`bin/cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt`
 
 ### ZooKeeper
 Zipkin uses ZooKeeper for coordination. That's where we store the server side sample rate and register the servers.
