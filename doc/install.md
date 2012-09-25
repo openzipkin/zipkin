@@ -5,7 +5,7 @@ Zipkin relies on Cassandra for storage. So you will need to bring up a Cassandra
 
 1. See Cassandra's <a href="http://cassandra.apache.org/">site</a> for instructions on how to start a cluster.
 2. Use the Zipkin Cassandra schema attached to this project. You can create the schema with the following command.
-`bin/cassandra-cli -host localhost -port 9160 -f zipkin-server/src/schema/cassandra-schema.txt`
+`bin/cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt`
 
 ### ZooKeeper
 Zipkin uses ZooKeeper for coordination. That's where we store the server side sample rate and register the servers.
@@ -42,22 +42,22 @@ We've developed Zipkin with <a href="http://www.scala-lang.org/downloads">Scala 
 
 1. `git clone https://github.com/twitter/zipkin.git`
 1. `cd zipkin`
-1. `cp zipkin-scribe/config/collector-dev.scala zipkin-scribe/config/collector-prod.scala`
-1. `cp zipkin-server/config/query-dev.scala zipkin-server/config/query-prod.scala`
+1. `cp zipkin-collector-service/config/collector-dev.scala zipkin-collector-service/config/collector-prod.scala`
+1. `cp zipkin-query-service/config/query-dev.scala zipkin-query-service/config/query-prod.scala`
 1. Modify the configs above as needed. Pay particular attention to ZooKeeper and Cassandra server entries.
 1. `bin/sbt update package-dist` (This downloads SBT 0.11.2 if it doesn't already exist)
 1. `scp dist/zipkin*.zip [server]`
 1. `ssh [server]`
 1. `unzip zipkin*.zip`
 1. `mkdir -p /var/log/zipkin`
-1. `zipkin-scribe/scripts/collector.sh -f zipkin-scribe/config/collector-prod.scala`
-1. `zipkin-server/scripts/query.sh -f zipkin-server/config/query-prod.scala`
+1. `zipkin-collector-service/src/scripts/collector.sh -f zipkin-collector-service/config/collector-prod.scala`
+1. `zipkin-query-service/src/scripts/query.sh -f zipkin-query-service/config/query-prod.scala`
 
 You can also run the collector and query services through SBT.
 
-To run the Scribe collector service: `bin/sbt 'project zipkin-scribe' 'run -f zipkin-scribe/config/collector-dev.scala'`
+To run the Scribe collector service: `bin/sbt 'project zipkin-collector-service' 'run -f zipkin-collector-service/config/collector-dev.scala'` or `bin/collector`
 
-To run the query service: `bin/sbt 'project zipkin-server' 'run -f zipkin-server/config/query-dev.scala'`
+To run the query service: `bin/sbt 'project zipkin-query-service' 'run -f zipkin-query-service/config/query-dev.scala'` or `bin/query`
 
 ### Zipkin UI
 The UI is a standard Rails 3 app.
