@@ -18,8 +18,8 @@ package com.twitter.zipkin.hadoop.sources
 import com.twitter.scalding.TimePathedSource
 
 object TimeGranularity {
-  case object Hour extends TimeGranularity("Hour", TimePathedSource.YEAR_MONTH_DAY_HOUR)
-  case object Day extends TimeGranularity("Day", TimePathedSource.YEAR_MONTH_DAY)
+  val Hour = TimeGranularity("Hour", TimePathedSource.YEAR_MONTH_DAY_HOUR)
+  val Day = TimeGranularity("Day", TimePathedSource.YEAR_MONTH_DAY)
 }
 
-abstract class TimeGranularity(val name: String, val timePath: String)
+case class TimeGranularity(name: String, timePath: String)
