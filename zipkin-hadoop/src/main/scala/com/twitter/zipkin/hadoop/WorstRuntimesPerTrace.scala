@@ -22,7 +22,7 @@ import com.twitter.zipkin.gen.{SpanServiceName, Constants, Annotation}
 /**
  * Obtain the IDs and the durations of the one hundred service calls which take the longest per service
  */
-class WorstRuntimesPerTrace(args: Args) extends Job(args) with DefaultDateRangeJob {
+class WorstRuntimesPerTrace(args: Args) extends Job(args) with UtcDateRangeJob {
 
   val clientAnnotations = Seq(Constants.CLIENT_RECV, Constants.CLIENT_SEND)
 

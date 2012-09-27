@@ -16,10 +16,12 @@
 package com.twitter.zipkin.hadoop
 
 import com.twitter.zipkin.gen.{Annotation, Span}
-import com.twitter.scalding.{Tsv, DefaultDateRangeJob, Job, Args}
+import com.twitter.scalding._
 import com.twitter.zipkin.hadoop.sources.{TimeGranularity, SpanSource}
+import com.twitter.scalding.Tsv
+import sources.SpanSource
 
-class GrepByAnnotation(args: Args) extends Job(args) with DefaultDateRangeJob {
+class GrepByAnnotation(args: Args) extends Job(args) with UtcDateRangeJob {
 
   val grepByWord = args.required("word")
 

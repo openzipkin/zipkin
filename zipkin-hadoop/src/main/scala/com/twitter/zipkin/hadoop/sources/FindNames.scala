@@ -22,7 +22,7 @@ import scala.collection.JavaConverters._
 /**
  * Finds the best client side and service names for each span, if any exist
  */
-class FindNames(args: Args) extends Job(args) with DefaultDateRangeJob {
+class FindNames(args: Args) extends Job(args) with UtcDateRangeJob {
   val timeGranularity: TimeGranularity = TimeGranularity.Hour
 
   val preprocessed = PrepNoNamesSpanSource(timeGranularity)

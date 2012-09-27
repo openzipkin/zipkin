@@ -24,7 +24,7 @@ import com.twitter.zipkin.gen.{SpanServiceName, Annotation}
 /**
  * Per service, find the 100 most common annotations used to annotate spans involving that service
  */
-class PopularAnnotations(args : Args) extends Job(args) with DefaultDateRangeJob {
+class PopularAnnotations(args : Args) extends Job(args) with UtcDateRangeJob {
 
   val preprocessed = PreprocessedSpanSource(TimeGranularity.Day)
     .read

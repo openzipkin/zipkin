@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 /**
  * Preprocesses the data by merging different pieces of the same span
  */
-class Preprocessed(args : Args) extends Job(args) with DefaultDateRangeJob {
+class Preprocessed(args : Args) extends Job(args) with UtcDateRangeJob {
   val timeGranularity: TimeGranularity = TimeGranularity.Hour
 
   val preprocessed = SpanSource(timeGranularity)

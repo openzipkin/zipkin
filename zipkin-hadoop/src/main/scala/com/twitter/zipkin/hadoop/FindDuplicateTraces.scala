@@ -15,15 +15,18 @@
  */
 package com.twitter.zipkin.hadoop
 
-import com.twitter.scalding.{Tsv, DefaultDateRangeJob, Job, Args}
+import com.twitter.scalding._
 import com.twitter.zipkin.gen.{SpanServiceName, Annotation}
 import com.twitter.zipkin.hadoop.sources.{TimeGranularity, PreprocessedSpanSource}
+import com.twitter.scalding.Tsv
+import sources.PreprocessedSpanSource
+import scala.Some
 
 /**
  * Finds traces with duplicate trace IDs
  */
 
-class FindDuplicateTraces(args: Args) extends Job(args) with DefaultDateRangeJob {
+class FindDuplicateTraces(args: Args) extends Job(args) with UtcDateRangeJob {
 
   val maxDuration = augmentString(args.required("maximum_duration")).toInt
 
