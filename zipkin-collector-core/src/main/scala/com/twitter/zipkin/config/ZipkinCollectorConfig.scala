@@ -17,7 +17,7 @@ package com.twitter.zipkin.config
 
 import com.twitter.zipkin.storage.{Aggregates, Index, Storage}
 import com.twitter.zipkin.collector.{WriteQueue, ZipkinCollector}
-import com.twitter.zipkin.collector.filter.{SamplerFilter, ClientIndexFilter}
+import com.twitter.zipkin.collector.filter.{ServiceStatsFilter, SamplerFilter, ClientIndexFilter}
 import com.twitter.zipkin.collector.sampler.{AdaptiveSampler, ZooKeeperGlobalSampler, GlobalSampler}
 import com.twitter.zipkin.config.collector.CollectorServerConfig
 import com.twitter.zipkin.config.sampler._
@@ -107,10 +107,10 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
   lazy val processor: Service[T, Unit] =
     rawDataFilter andThen
     new SamplerFilter(globalSampler) andThen
+    new ServiceStatsFilter andThen
     new FanoutService[Span](
       new StorageService(storage) ::
-      (new ClientIndexFilter andThen new IndexService(index)) ::
-      new StatsService
+      (new ClientIndexFilter andThen new IndexService(index))
     )
 
   def writeQueueConfig: WriteQueueConfig[T]

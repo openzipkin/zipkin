@@ -14,16 +14,19 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.collector.processor
+package com.twitter.zipkin.collector.filter
 
-import com.twitter.finagle.Service
-import com.twitter.ostrich.stats.Stats
+import com.twitter.finagle.{Service, Filter}
 import com.twitter.util.Future
 import com.twitter.zipkin.common.Span
+import com.twitter.ostrich.stats.Stats
 
-class StatsService extends Service[Span, Unit] {
-  def apply(span: Span): Future[Unit] = {
+/**
+ * Filter that increments a counter for each service present in the Span
+ */
+class ServiceStatsFilter extends Filter[Span, Unit, Span, Unit] {
+  def apply(span: Span, service: Service[Span, Unit]): Future[Unit] = {
     span.serviceNames.foreach { name => Stats.incr("process_" + name) }
-    Future.Unit
+    service(span)
   }
 }
