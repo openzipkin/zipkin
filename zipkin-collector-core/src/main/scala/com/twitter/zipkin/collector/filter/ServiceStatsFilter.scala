@@ -17,9 +17,9 @@
 package com.twitter.zipkin.collector.filter
 
 import com.twitter.finagle.{Service, Filter}
+import com.twitter.ostrich.stats.Stats
 import com.twitter.util.Future
 import com.twitter.zipkin.common.Span
-import com.twitter.ostrich.stats.Stats
 
 /**
  * Filter that increments a counter for each service present in the Span
