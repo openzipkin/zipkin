@@ -24,7 +24,7 @@ import com.twitter.zipkin.hadoop.sources._
 * Find out how often services call each other throughout the entire system
 */
 
-class DependencyTree(args: Args) extends Job(args) with DefaultDateRangeJob {
+class DependencyTree(args: Args) extends Job(args) with UtcDateRangeJob {
 
   val timeGranularity = TimeGranularity.Day
 

@@ -22,7 +22,7 @@ import com.twitter.zipkin.hadoop.sources.{TimeGranularity, PreprocessedSpanSourc
 /**
  * Obtain the IDs and the durations of the one hundred service calls which take the longest per service
  */
-class WorstRuntimes(args: Args) extends Job(args) with DefaultDateRangeJob {
+class WorstRuntimes(args: Args) extends Job(args) with UtcDateRangeJob {
 
   val clientAnnotations = Seq(Constants.CLIENT_RECV, Constants.CLIENT_SEND)
 

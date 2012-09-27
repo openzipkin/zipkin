@@ -26,7 +26,7 @@ import java.net.{Inet4Address, Inet6Address, InetAddress}
  * Let's calculate how long it takes for a server to respond. The idea being
  * that we can find servers that are unusually slow compared to others running the same service.
  */
-class ServerResponsetime(args: Args) extends Job(args) with DefaultDateRangeJob {
+class ServerResponsetime(args: Args) extends Job(args) with UtcDateRangeJob {
 
   val serverAnnotations = Seq(Constants.SERVER_RECV, Constants.SERVER_SEND)
 

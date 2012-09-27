@@ -25,7 +25,7 @@ import com.twitter.zipkin.hadoop.sources._
  * Find which services timeout the most
  */
 
-class Timeouts(args: Args) extends Job(args) with DefaultDateRangeJob {
+class Timeouts(args: Args) extends Job(args) with UtcDateRangeJob {
 
   val timeGranularity = TimeGranularity.Day
   val ERROR_TYPE = List("finagle.timeout", "finagle.retry")

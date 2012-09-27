@@ -15,13 +15,13 @@
  */
 package com.twitter.zipkin.hadoop.sources
 
-import com.twitter.scalding.{DefaultDateRangeJob, Job, Args}
+import com.twitter.scalding.{UtcDateRangeJob, Job, Args}
 import com.twitter.zipkin.gen.SpanServiceName
 
 /**
  * Finds the mapping from span ID to service name
  */
-class FindIDtoName(args: Args) extends Job(args) with DefaultDateRangeJob {
+class FindIDtoName(args: Args) extends Job(args) with UtcDateRangeJob {
 
   val timeGranularity: TimeGranularity = TimeGranularity.Hour
 

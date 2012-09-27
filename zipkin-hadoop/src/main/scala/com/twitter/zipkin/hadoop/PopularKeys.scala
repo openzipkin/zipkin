@@ -22,7 +22,7 @@ import com.twitter.zipkin.gen.{SpanServiceName, BinaryAnnotation}
 /**
  * Per service, find the 100 most common keys used to annotate spans involving that service
  */
-class PopularKeys(args : Args) extends Job(args) with DefaultDateRangeJob {
+class PopularKeys(args : Args) extends Job(args) with UtcDateRangeJob {
 
   val preprocessed = PreprocessedSpanSource(TimeGranularity.Day)
     .read

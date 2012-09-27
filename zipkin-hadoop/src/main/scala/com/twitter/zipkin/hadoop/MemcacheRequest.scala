@@ -22,7 +22,7 @@ import com.twitter.zipkin.hadoop.sources.{PreprocessedSpanSource, TimeGranularit
 /**
  * Find out how often each service does memcache accesses
  */
-class MemcacheRequest(args : Args) extends Job(args) with DefaultDateRangeJob {
+class MemcacheRequest(args : Args) extends Job(args) with UtcDateRangeJob {
 
   val preprocessed = PrepNoNamesSpanSource(TimeGranularity.Day)
     .read
