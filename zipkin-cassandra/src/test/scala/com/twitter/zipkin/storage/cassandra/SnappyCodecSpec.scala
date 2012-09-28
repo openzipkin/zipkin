@@ -19,7 +19,6 @@ import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.common.{Span, Endpoint, Annotation}
 import collection.mutable.ArrayBuffer
-import com.twitter.zipkin.adapter.ThriftAdapter
 
 class SnappyCodecSpec extends Specification {
 

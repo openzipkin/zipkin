@@ -15,7 +15,6 @@
  */
 package com.twitter.zipkin.query.conversions
 
-import com.twitter.zipkin.adapter.ThriftAdapter
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.query.{Trace, TimelineAnnotation, TraceTimeline}

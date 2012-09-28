@@ -25,7 +25,6 @@ import java.nio.ByteBuffer
 import org.specs.mock.{ClassMocker, JMocker}
 import org.specs.Specification
 import com.twitter.io.TempFile
-import com.twitter.zipkin.adapter.ThriftAdapter
 import com.twitter.zipkin.common.{BinaryAnnotation, Endpoint, Annotation, Span}
 import com.twitter.zipkin.query.Trace
 

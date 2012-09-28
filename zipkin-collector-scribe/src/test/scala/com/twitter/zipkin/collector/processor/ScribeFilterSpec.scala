@@ -17,7 +17,6 @@ package com.twitter.zipkin.collector.processor
 
 import com.twitter.finagle.Service
 import com.twitter.scrooge.BinaryThriftStructSerializer
-import com.twitter.zipkin.adapter.ThriftAdapter
 import com.twitter.zipkin.common.{Annotation, Span}
 import com.twitter.zipkin.gen
 import org.specs.Specification

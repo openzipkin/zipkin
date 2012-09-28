@@ -22,7 +22,6 @@ import com.twitter.zipkin.common.{Span, Annotation}
 import com.twitter.zipkin.config.sampler.AdjustableRateConfig
 import com.twitter.zipkin.config.ScribeZipkinCollectorConfig
 import com.twitter.zipkin.gen
-import com.twitter.zipkin.adapter.ThriftAdapter
 import com.twitter.zipkin.storage.Aggregates
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}

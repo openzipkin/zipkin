@@ -17,7 +17,7 @@
 package com.twitter.zipkin.query
 
 import com.twitter.util.Future
-import com.twitter.zipkin.adapter.{ThriftQueryAdapter, ThriftAdapter}
+import com.twitter.zipkin.adapter.{ThriftQueryAdapter}
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.query.adjusters.{TimeSkewAdjuster, NullAdjuster}

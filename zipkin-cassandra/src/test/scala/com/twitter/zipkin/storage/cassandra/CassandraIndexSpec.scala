@@ -32,7 +32,6 @@ import com.twitter.cassie.{BatchMutationBuilder, Column, Order, ColumnFamily}
 import com.twitter.zipkin.config.{CassandraConfig, CassandraIndexConfig}
 import com.twitter.io.TempFile
 import com.twitter.zipkin.common.{BinaryAnnotation, Annotation, Span, Endpoint}
-import com.twitter.zipkin.adapter.ThriftAdapter
 
 class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
   object FakeServer extends FakeCassandra

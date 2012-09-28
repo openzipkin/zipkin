@@ -21,7 +21,7 @@ import com.twitter.logging.Logger
 import com.twitter.ostrich.stats.Stats
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.Future
-import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.gen
 
@@ -47,7 +47,7 @@ class ScribeFilter extends Filter[Seq[String], Unit, Span, Unit] {
             deserializer.fromString(msg)
           }
           log.ifDebug("Processing span: " + span + " from " + msg)
-          service(ThriftAdapter(span))
+          service(span.toSpan)
         } catch {
           case e: Exception => {
             // scribe doesn't have any ResultCode.ERROR or similar
