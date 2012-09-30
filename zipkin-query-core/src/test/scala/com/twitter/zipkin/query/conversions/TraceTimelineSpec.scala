@@ -71,7 +71,7 @@ class TraceTimelineSpec extends Specification with JMocker with ClassMocker {
   val ann5 = Annotation(85, gen.Constants.CLIENT_RECV, endpoint2)
   val ann6 = Annotation(87, gen.Constants.CLIENT_RECV, endpoint3)
 
-  val ba1 = BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), ThriftAdapter(gen.AnnotationType.String), None)
+  val ba1 = BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), AnnotationType.String, None)
 
   val span1 = Span(1, "ValuesFromSource", 2209720933601260005L, None,
     List(ann3, ann6), List(ba1))

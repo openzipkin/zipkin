@@ -18,6 +18,7 @@ package com.twitter.zipkin.storage.cassandra
 import org.specs.Specification
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.common.{Span, Endpoint, Annotation}
+import com.twitter.zipkin.conversions.thrift._
 import collection.mutable.ArrayBuffer
 
 class SnappyCodecSpec extends Specification {
@@ -33,7 +34,7 @@ class SnappyCodecSpec extends Specification {
         new Annotation(2, gen.Constants.CLIENT_SEND, Some(Endpoint(23567, 345, "service"))),
         new Annotation(3, gen.Constants.CLIENT_RECV, Some(Endpoint(23567, 345, "service")))),
         ArrayBuffer())
-      val actual = ThriftAdapter(snappyCodec.decode(snappyCodec.encode(ThriftAdapter(expected))))
+      val actual = snappyCodec.decode(snappyCodec.encode(expected.toThrift)).toSpan
 
       expected mustEqual actual
     }

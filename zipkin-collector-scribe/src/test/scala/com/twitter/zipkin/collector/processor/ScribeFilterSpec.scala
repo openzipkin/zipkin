@@ -18,6 +18,7 @@ package com.twitter.zipkin.collector.processor
 import com.twitter.finagle.Service
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.zipkin.common.{Annotation, Span}
+import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
 import org.specs.Specification
 import org.specs.mock.{JMocker, ClassMocker}
@@ -36,7 +37,7 @@ class ScribeFilterSpec extends Specification with JMocker with ClassMocker {
     val endline = Seq("CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA=\n")
 
     val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
-    val serialized = Seq(serializer.toString(ThriftAdapter(validSpan)))
+    val serialized = Seq(serializer.toString(validSpan.toThrift))
     val bad = Seq("garbage!")
 
     val filter = new ScribeFilter

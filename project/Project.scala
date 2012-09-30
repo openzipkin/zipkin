@@ -28,7 +28,7 @@ object Zipkin extends Build {
     Project(
       id = "zipkin",
       base = file(".")
-    ) aggregate(hadoop, hadoopjobrunner, test, thrift, queryService, common, scrooge, collectorScribe, web, cassandra, collectorCore, collectorService)
+    ) aggregate(hadoop, hadoopjobrunner, test, thrift, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, collectorCore, collectorService)
   
 
   lazy val hadoop = Project(

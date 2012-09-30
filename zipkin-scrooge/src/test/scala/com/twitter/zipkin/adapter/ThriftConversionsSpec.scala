@@ -26,7 +26,7 @@ import java.nio.ByteBuffer
 
 class ThriftConversionsSpec extends Specification with JMocker with ClassMocker {
 
-  "ThriftAdapter" should {
+  "ThriftConversions" should {
     "convert Annotation" in {
       "to thrift and back" in {
         val expectedAnn: Annotation = Annotation(123, "value", Some(Endpoint(123, 123, "service")))
