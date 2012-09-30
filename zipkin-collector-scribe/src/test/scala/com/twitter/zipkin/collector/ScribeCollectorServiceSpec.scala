@@ -21,8 +21,8 @@ import com.twitter.util.Future
 import com.twitter.zipkin.common.{Span, Annotation}
 import com.twitter.zipkin.config.sampler.AdjustableRateConfig
 import com.twitter.zipkin.config.ScribeZipkinCollectorConfig
+import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
-import com.twitter.zipkin.adapter.ThriftAdapter
 import com.twitter.zipkin.storage.Aggregates
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
@@ -34,9 +34,9 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
   val category = "zipkin"
 
   val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
-  val validList = List(gen.LogEntry(category, serializer.toString(ThriftAdapter(validSpan))))
+  val validList = List(gen.LogEntry(category, serializer.toString(validSpan.toThrift)))
 
-  val wrongCatList = List(gen.LogEntry("wrongcat", serializer.toString(ThriftAdapter(validSpan))))
+  val wrongCatList = List(gen.LogEntry("wrongcat", serializer.toString(validSpan.toThrift)))
 
   val base64 = "CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAIACQAA"
 

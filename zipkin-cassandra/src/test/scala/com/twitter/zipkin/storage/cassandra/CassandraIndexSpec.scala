@@ -23,16 +23,14 @@ import org.specs.mock.{JMocker, ClassMocker}
 import com.twitter.conversions.time._
 import scala.collection.JavaConverters._
 
-import com.twitter.zipkin.gen
 import com.twitter.cassie.tests.util.FakeCassandra
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.{Eval, Future}
 import java.util.{Set => JSet}
 import com.twitter.cassie.{BatchMutationBuilder, Column, Order, ColumnFamily}
-import com.twitter.zipkin.config.{CassandraConfig, CassandraIndexConfig}
 import com.twitter.io.TempFile
-import com.twitter.zipkin.common.{BinaryAnnotation, Annotation, Span, Endpoint}
-import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.config.{CassandraConfig, CassandraIndexConfig}
+import com.twitter.zipkin.common._
 
 class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
   object FakeServer extends FakeCassandra
@@ -41,7 +39,7 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
   val ep = Endpoint(123, 123, "service")
 
   def binaryAnnotation(key: String, value: String) =
-    BinaryAnnotation(key, ByteBuffer.wrap(value.getBytes), ThriftAdapter(gen.AnnotationType.String), Some(ep))
+    BinaryAnnotation(key, ByteBuffer.wrap(value.getBytes), AnnotationType.String, Some(ep))
 
   val spanId = 456
   val ann1 = Annotation(1, "cs", Some(ep))

@@ -15,6 +15,7 @@
  */
 package com.twitter.zipkin.adapter
 
+import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.query._
 
@@ -35,7 +36,7 @@ object ThriftQueryAdapter extends QueryAdapter {
     TimelineAnnotation(
       t.`timestamp`,
       t.`value`,
-      ThriftAdapter(t.`host`),
+      t.`host`.toEndpoint,
       t.`spanId`,
       t.`parentId`,
       t.`serviceName`,
@@ -47,7 +48,7 @@ object ThriftQueryAdapter extends QueryAdapter {
     gen.TimelineAnnotation(
       t.timestamp,
       t.value,
-      ThriftAdapter(t.host),
+      t.host.toThrift,
       t.spanId,
       t.parentId,
       t.serviceName,
@@ -60,7 +61,7 @@ object ThriftQueryAdapter extends QueryAdapter {
       t.`traceId`,
       t.`rootMostSpanId`,
       t.`annotations`.map { ThriftQueryAdapter(_) },
-      t.`binaryAnnotations`.map { ThriftAdapter(_) })
+      t.`binaryAnnotations`.map { _.toBinaryAnnotation })
   }
 
   /* TraceTimeline to Thrift */
@@ -69,7 +70,7 @@ object ThriftQueryAdapter extends QueryAdapter {
       t.traceId,
       t.rootSpanId,
       t.annotations.map { ThriftQueryAdapter(_) },
-      t.binaryAnnotations.map { ThriftAdapter(_) })
+      t.binaryAnnotations.map { _.toThrift })
   }
 
   /* TraceCombo from Thrift */
@@ -94,23 +95,23 @@ object ThriftQueryAdapter extends QueryAdapter {
   def apply(t: traceSummaryType): TraceSummary = {
     new TraceSummary(t.traceId, t.startTimestamp, t.endTimestamp,
       t.durationMicro, t.serviceCounts,
-      t.endpoints.map(ThriftAdapter(_)).toList)
+      t.endpoints.map { _.toEndpoint }.toList)
   }
 
   /* TraceSummary to Thrift */
   def apply(t: TraceSummary): traceSummaryType = {
     gen.TraceSummary(t.traceId, t.startTimestamp, t.endTimestamp,
-      t.durationMicro, t.serviceCounts, t.endpoints.map(ThriftAdapter(_)))
+      t.durationMicro, t.serviceCounts, t.endpoints.map { _.toThrift })
   }
 
   /* Trace from Thrift */
   def apply(t: traceType): Trace = {
-    Trace(t.`spans`.map(ThriftAdapter(_)))
+    Trace(t.spans.map { _.toSpan })
   }
 
   /* Trace to Thrift */
   def apply(t: Trace): traceType = {
-    gen.Trace(t.spans.map(ThriftAdapter(_)))
+    gen.Trace(t.spans.map{ _.toThrift })
   }
 
   /* QueryRequest */
@@ -120,7 +121,7 @@ object ThriftQueryAdapter extends QueryAdapter {
       q.`spanName`,
       q.`annotations`,
       q.`binaryAnnotations`.map {
-        _.map { ThriftAdapter(_) }
+        _.map { _.toBinaryAnnotation }
       },
       q.`endTs`,
       q.`limit`,
@@ -132,7 +133,7 @@ object ThriftQueryAdapter extends QueryAdapter {
       q.spanName,
       q.annotations,
       q.binaryAnnotations.map {
-        _.map { ThriftAdapter(_) }
+        _.map { _.toThrift }
       },
       q.endTs,
       q.limit,

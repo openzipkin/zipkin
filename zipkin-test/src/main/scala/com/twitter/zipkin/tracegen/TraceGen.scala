@@ -22,7 +22,7 @@ import java.nio.ByteBuffer
 import collection.mutable.ListBuffer
 import scala.util.Random
 import com.twitter.zipkin.common._
-import com.twitter.zipkin.adapter.ThriftAdapter
+import com.twitter.zipkin.conversions.thrift._
 
 /**
  * Here be dragons. Not terribly nice dragons.
@@ -112,12 +112,12 @@ class TraceGen {
 
     val clientAnnotations = List(cs, cr)
     val spanClient = Span(traceId, spanName, spanId, parentSpanId, clientAnnotations,
-      Seq(ThriftAdapter(gen.BinaryAnnotation("key", ByteBuffer.wrap("value".getBytes), gen.AnnotationType.String, None))))
+      Seq(gen.BinaryAnnotation("key", ByteBuffer.wrap("value".getBytes), gen.AnnotationType.String, None).toBinaryAnnotation))
 
     val serverAnnotations = List(sr, ss) ::: customAnnotations
     val spanServer = Span(traceId, spanName, spanId, parentSpanId, serverAnnotations, Nil)
 
-    (ThriftAdapter(spanClient), ThriftAdapter(spanServer), rvStartTimestamp, timestamp)
+    (spanClient.toThrift, spanServer.toThrift, rvStartTimestamp, timestamp)
   }
 
 }
