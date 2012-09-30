@@ -16,29 +16,25 @@
  */
 package com.twitter.zipkin.adapter
 
-import com.twitter.zipkin.common._
-import com.twitter.zipkin.gen
 import com.twitter.conversions.time._
-
+import com.twitter.zipkin.common._
+import com.twitter.zipkin.conversions.thrift._
+import com.twitter.zipkin.gen
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
 import java.nio.ByteBuffer
 
-class ThriftAdapterSpec extends Specification with JMocker with ClassMocker {
+class ThriftConversionsSpec extends Specification with JMocker with ClassMocker {
 
-  "ThriftAdapter" should {
+  "ThriftConversions" should {
     "convert Annotation" in {
       "to thrift and back" in {
         val expectedAnn: Annotation = Annotation(123, "value", Some(Endpoint(123, 123, "service")))
-        val thriftAnn: gen.Annotation = ThriftAdapter(expectedAnn)
-        val actualAnn: Annotation = ThriftAdapter(thriftAnn)
-        expectedAnn mustEqual actualAnn
+        expectedAnn.toThrift.toAnnotation mustEqual expectedAnn
       }
       "to thrift and back, with duration" in {
         val expectedAnn: Annotation = Annotation(123, "value", Some(Endpoint(123, 123, "service")), Some(1.seconds))
-        val thriftAnn: gen.Annotation = ThriftAdapter(expectedAnn)
-        val actualAnn: Annotation = ThriftAdapter(thriftAnn)
-        expectedAnn mustEqual actualAnn
+        expectedAnn.toThrift.toAnnotation mustEqual expectedAnn
       }
     }
 
@@ -47,9 +43,7 @@ class ThriftAdapterSpec extends Specification with JMocker with ClassMocker {
       "to thrift and back" in {
         types.zipWithIndex.foreach { case (value: String, index: Int) =>
           val expectedAnnType: AnnotationType = AnnotationType(index, value)
-          val thriftAnnType: gen.AnnotationType = ThriftAdapter(expectedAnnType)
-          val actualAnnType: AnnotationType = ThriftAdapter(thriftAnnType)
-          actualAnnType mustEqual expectedAnnType
+          expectedAnnType.toThrift.toAnnotationType mustEqual expectedAnnType
         }
       }
     }
@@ -60,25 +54,21 @@ class ThriftAdapterSpec extends Specification with JMocker with ClassMocker {
         val expectedHost = Some(Endpoint(123, 456, "service"))
         val expectedBA: BinaryAnnotation =
           BinaryAnnotation("something", ByteBuffer.wrap("else".getBytes), expectedAnnType, expectedHost)
-        val thriftBA: gen.BinaryAnnotation = ThriftAdapter(expectedBA)
-        val actualBA: BinaryAnnotation = ThriftAdapter(thriftBA)
-        actualBA mustEqual expectedBA
+        expectedBA.toThrift.toBinaryAnnotation mustEqual expectedBA
       }
     }
 
     "convert Endpoint" in {
       "to thrift and back" in {
         val expectedEndpoint: Endpoint = Endpoint(123, 456, "service")
-        val thriftEndpoint: gen.Endpoint = ThriftAdapter(expectedEndpoint)
-        val actualEndpoint: Endpoint = ThriftAdapter(thriftEndpoint)
-        expectedEndpoint mustEqual actualEndpoint
+        expectedEndpoint.toThrift.toEndpoint mustEqual expectedEndpoint
       }
 
       "to thrift and back, with null service" in {
         // TODO this could happen if we deserialize an old style struct
-        val actualEndpoint = ThriftAdapter(gen.Endpoint(123, 456, null))
+        val actualEndpoint = gen.Endpoint(123, 456, null)
         val expectedEndpoint = Endpoint(123, 456, Endpoint.UnknownServiceName)
-        expectedEndpoint mustEqual actualEndpoint
+        actualEndpoint.toEndpoint mustEqual expectedEndpoint
       }
     }
 
@@ -89,20 +79,18 @@ class ThriftAdapterSpec extends Specification with JMocker with ClassMocker {
         List(expectedAnnotation), Nil)
 
       "to thrift and back" in {
-        val thriftSpan: gen.Span = ThriftAdapter(expectedSpan)
-        val actualSpan: Span = ThriftAdapter(thriftSpan)
-        expectedSpan mustEqual actualSpan
+        expectedSpan.toThrift.toSpan mustEqual expectedSpan
       }
 
       "handle incomplete thrift span" in {
         val noNameSpan = gen.Span(0, null, 0, None, Seq(), Seq())
-        ThriftAdapter(noNameSpan) must throwA[IncompleteTraceDataException]
+        noNameSpan.toSpan must throwA[IncompleteTraceDataException]
 
         val noAnnotationsSpan = gen.Span(0, "name", 0, None, null, Seq())
-        ThriftAdapter(noAnnotationsSpan) mustEqual Span(0, "name", 0, None, List(), Seq())
+        noAnnotationsSpan.toSpan mustEqual Span(0, "name", 0, None, List(), Seq())
 
         val noBinaryAnnotationsSpan = gen.Span(0, "name", 0, None, Seq(), null)
-        ThriftAdapter(noBinaryAnnotationsSpan) mustEqual Span(0, "name", 0, None, List(), Seq())
+        noBinaryAnnotationsSpan.toSpan mustEqual Span(0, "name", 0, None, List(), Seq())
       }
     }
   }
