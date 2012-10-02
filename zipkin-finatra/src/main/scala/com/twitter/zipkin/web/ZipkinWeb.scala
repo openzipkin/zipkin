@@ -44,6 +44,7 @@ class ZipkinWeb(config: ZipkinWebConfig) extends admin.Service {
 
   def start() {
     val clientBuilder = ClientBuilder()
+      .name("ZipkinQuery")
       .codec(ThriftClientFramedCodec())
       .hostConnectionLimit(config.hostConnectionLimit)
       .tracerFactory(config.tracerFactory)
