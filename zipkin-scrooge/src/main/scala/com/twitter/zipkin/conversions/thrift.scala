@@ -27,10 +27,10 @@ import com.twitter.zipkin.common.Annotation
 object thrift {
   /* Endpoint */
   class ThriftEndpoint(e: Endpoint) {
-    def toThrift = gen.Endpoint(e.ipv4, e.port, e.serviceName)
+    lazy val toThrift = gen.Endpoint(e.ipv4, e.port, e.serviceName)
   }
   class WrappedEndpoint(e: gen.Endpoint) {
-    def toEndpoint = {
+    lazy val toEndpoint = {
       val serviceName = e.serviceName match {
         case (null | "") => Endpoint.UnknownServiceName
         case _ => e.serviceName
@@ -43,22 +43,22 @@ object thrift {
 
   /* AnnotationType */
   class ThriftAnnotationType(a: AnnotationType) {
-    def toThrift = gen.AnnotationType(a.value)
+    lazy val toThrift = gen.AnnotationType(a.value)
   }
   class WrappedAnnotationType(a: gen.AnnotationType) {
-    def toAnnotationType = AnnotationType(a.value, a.name)
+    lazy val toAnnotationType = AnnotationType(a.value, a.name)
   }
   implicit def annotationTypeToThriftAnnotationType(a: AnnotationType) = new ThriftAnnotationType(a)
   implicit def thriftAnnotationTypeToAnnotationType(a: gen.AnnotationType) = new WrappedAnnotationType(a)
 
   /* Annotation */
   class ThriftAnnotation(a: Annotation) {
-    def toThrift = {
+    lazy val toThrift = {
       gen.Annotation(a.timestamp, a.value, a.host.map { _.toThrift }, a.duration.map(_.inMicroseconds.toInt))
     }
   }
   class WrappedAnnotation(a: gen.Annotation) {
-    def toAnnotation = {
+    lazy val toAnnotation = {
       if (a.timestamp <= 0)
         throw new IllegalArgumentException("Annotation must have a timestamp: %s".format(a.toString))
 
@@ -73,12 +73,12 @@ object thrift {
 
   /* BinaryAnnotation */
   class ThriftBinaryAnnotation(b: BinaryAnnotation) {
-    def toThrift = {
+    lazy val toThrift = {
       gen.BinaryAnnotation(b.key, b.value, b.annotationType.toThrift, b.host.map { _.toThrift })
     }
   }
   class WrappedBinaryAnnotation(b: gen.BinaryAnnotation) {
-    def toBinaryAnnotation = {
+    lazy val toBinaryAnnotation = {
       BinaryAnnotation(b.key, b.value, b.annotationType.toAnnotationType, b.host.map { _.toEndpoint })
     }
   }
@@ -87,13 +87,13 @@ object thrift {
 
   /* Span */
   class ThriftSpan(s: Span) {
-    def toThrift = {
+    lazy val toThrift = {
       gen.Span(s.traceId, s.name, s.id, s.parentId, s.annotations.map { _.toThrift },
         s.binaryAnnotations.map { _.toThrift }, s.debug)
     }
   }
   class WrappedSpan(s: gen.Span) {
-    def toSpan = {
+    lazy val toSpan = {
       s.name match {
         case null => throw new IncompleteTraceDataException("No name set in Span")
         case _ => ()
