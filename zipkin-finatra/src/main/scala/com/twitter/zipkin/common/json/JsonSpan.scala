@@ -23,7 +23,7 @@ case class JsonSpan(
   id: String,
   parentId: Option[String],
   services: Set[String],
-  startTimestamp: Long,
-  duration: Long,
+  startTimestamp: Option[Long],
+  duration: Option[Long],
   annotations: List[Annotation],
   binaryAnnotations: Seq[JsonBinaryAnnotation])
