@@ -32,7 +32,7 @@ object ZooKeeperSampleRateConfig {
 
   val Min     = 0.0
   val Max     = 1.0
-  val Default = 0.01
+  val Default = 1.0
 
   def apply(client: ZkClient, configPath: String, key: String) =
     BoundedZooKeeperAdjustableRateConfig(client, configPath, key, Min, Max, Default)
