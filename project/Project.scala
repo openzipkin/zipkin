@@ -28,8 +28,7 @@ object Zipkin extends Build {
     Project(
       id = "zipkin",
       base = file(".")
-    ) aggregate(hadoop, hadoopjobrunner, test, thrift, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, collectorCore, collectorService)
-  
+    ) aggregate(hadoop, hadoopjobrunner, test, thrift, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, collectorCore, collectorService, kafka)
 
   lazy val hadoop = Project(
     id = "zipkin-hadoop",
@@ -299,6 +298,26 @@ object Zipkin extends Build {
       libraryDependencies ++= testDependencies
     ).dependsOn(collectorCore, scrooge)
 
+  lazy val kafka =
+    Project(
+      id = "zipkin-kafka",
+      base = file("zipkin-kafka"),
+      settings = Project.defaultSettings ++
+        StandardProject.newSettings ++
+        SubversionPublisher.newSettings ++
+        TravisCiRepos.newSettings
+    ).settings(
+      version := "0.3.0-SNAPSHOT",
+      libraryDependencies ++= Seq(
+        "org.clojars.jasonjckn"      % "kafka_2.9.1"    % "0.7.0"
+      ) ++ testDependencies,
+      resolvers ++= (proxyRepo match {
+        case None => Seq(
+          "clojars" at "http://clojars.org/repo")
+        case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
+      })
+    ).dependsOn(collectorCore, scrooge)
+
   lazy val collectorService = Project(
     id = "zipkin-collector-service",
     base = file("zipkin-collector-service"),
@@ -318,7 +337,7 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
-  ).dependsOn(collectorCore, collectorScribe, cassandra)
+  ).dependsOn(collectorCore, collectorScribe, cassandra, kafka)
 
   lazy val web =
     Project(
