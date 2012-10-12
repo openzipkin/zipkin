@@ -494,9 +494,9 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
         val request = gen.QueryRequest(serviceName, spanName, annotations, binaryAnnotations, endTs, limit, order)
 
         expect {
-          one(mockIndex).getTraceIdsByName(serviceName, spanName, endTs, limit) willReturn Future(Seq(id(1, endTs)))
-          one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, endTs, limit) willReturn Future(Seq(id(1, endTs)))
-          one(mockIndex).getTraceIdsByAnnotation(serviceName, "key", Some(ByteBuffer.wrap("value".getBytes)), endTs, limit) willReturn Future(Seq(id(1, endTs)))
+          one(mockIndex).getTraceIdsByName(serviceName, spanName, endTs, 1) willReturn Future(Seq(id(1, endTs)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, endTs, 1) willReturn Future(Seq(id(1, endTs)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "key", Some(ByteBuffer.wrap("value".getBytes)), endTs, 1) willReturn Future(Seq(id(1, endTs)))
 
           one(mockIndex).getTraceIdsByName(serviceName, spanName, paddedTs, limit) willReturn Future(Seq(id(1, 1), id(2, 2), id(3, 3)))
           one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, paddedTs, limit) willReturn Future(Seq(id(4, 4), id(1, 5), id(3, 4)))

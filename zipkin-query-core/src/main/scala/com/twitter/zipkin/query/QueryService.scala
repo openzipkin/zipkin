@@ -98,16 +98,16 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
 
       val sliceQueries = Seq(
         spanName.map { name =>
-          Seq(SpanSliceQuery(serviceName, name, endTs, limit))
+          Seq(SpanSliceQuery(serviceName, name, endTs, 1))
         },
         queryRequest.`annotations`.map {
           _.map { a =>
-            AnnotationSliceQuery(serviceName, a, None, endTs, limit)
+            AnnotationSliceQuery(serviceName, a, None, endTs, 1)
           }
         },
         queryRequest.`binaryAnnotations`.map {
           _.map { b =>
-            AnnotationSliceQuery(serviceName, b.`key`, Some(b.`value`), endTs, limit)
+            AnnotationSliceQuery(serviceName, b.`key`, Some(b.`value`), endTs, 1)
           }
         }
       ).collect {
@@ -125,7 +125,10 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
         }
         case head :: Nil => {
           /* One query: just run it */
-          head.execute(index).map {
+          (head match {
+            case s: SpanSliceQuery => s.copy(limit = limit)
+            case a: AnnotationSliceQuery => a.copy(limit = limit)
+          }).execute(index).map {
             constructQueryResponse(_, limit, order)
           }.flatten
         }
