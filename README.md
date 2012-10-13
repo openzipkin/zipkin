@@ -18,7 +18,7 @@ To run a UI daemon: `bin/ui`
 
 For a more in-depth installation guide, see: [http://twitter.github.com/zipkin/install.html](http://twitter.github.com/zipkin/install.html)
 
-## Contact
+## Get involved
 
 Check out the #zipkin IRC channel on chat.freenode.com to see if any
 developers are there for questions or live debugging tips. Otherwise,
