@@ -18,8 +18,12 @@ To run a UI daemon: `bin/ui`
 
 For a more in-depth installation guide, see: [http://twitter.github.com/zipkin/install.html](http://twitter.github.com/zipkin/install.html)
 
-## Mailing lists
-There are two mailing lists you can use to get in touch with other users and developers.
+## Contact
+
+Check out the #zipkin IRC channel on chat.freenode.com to see if any
+developers are there for questions or live debugging tips. Otherwise,
+there are two mailing lists you can use to get in touch with other
+users and developers.
 
 Users: [https://groups.google.com/group/zipkin-user](https://groups.google.com/group/zipkin-user)
 
@@ -65,3 +69,4 @@ Instrumentation
 Copyright 2012 Twitter, Inc.
 
 Licensed under the Apache License, Version 2.0: [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
