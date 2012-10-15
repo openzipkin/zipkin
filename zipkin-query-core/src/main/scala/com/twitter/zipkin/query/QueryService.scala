@@ -125,7 +125,10 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
         }
         case head :: Nil => {
           /* One query: just run it */
-          head.execute(index).map {
+          (head match {
+            case s: SpanSliceQuery => s.copy(limit = limit)
+            case a: AnnotationSliceQuery => a.copy(limit = limit)
+          }).execute(index).map {
             constructQueryResponse(_, limit, order)
           }.flatten
         }
