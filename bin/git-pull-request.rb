@@ -203,8 +203,14 @@ module PullRequest
 
       commit_msg = merge_commit_msg(pull_request, issue)
 
+      # Use the correct author
+      user_login = head['user']['login']
+      user_obj = Github.get("users/#{user_login}")
+      user_name = user_obj['name']
+      user_email = user_obj['email']
+
       puts "Committing"
-      Git.commit("-m #{Shellwords.escape(commit_msg)} -e")
+      Git.commit("--author=\"#{user_name} <#{user_email}>\" -m #{Shellwords.escape(commit_msg)} -e")
 
       puts "Merging temporary branch to master"
       Git.run("checkout master")
