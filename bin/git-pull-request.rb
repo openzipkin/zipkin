@@ -210,7 +210,7 @@ module PullRequest
       user_email = user_obj['email']
 
       puts "Committing"
-      Git.commit("--author=\"#{user_name} <#{user_email}>\"-m #{Shellwords.escape(commit_msg)} -e")
+      Git.commit("--author=\"#{user_name} <#{user_email}>\" -m #{Shellwords.escape(commit_msg)} -e")
 
       puts "Merging temporary branch to master"
       Git.run("checkout master")
