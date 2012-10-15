@@ -204,7 +204,7 @@ module PullRequest
       commit_msg = merge_commit_msg(pull_request, issue)
 
       # Use the correct author
-      user_login = head['user']['login']
+      user_login = pull_request['user']['login']
       user_obj = Github.get("users/#{user_login}")
       user_name = user_obj['name']
       user_email = user_obj['email']
