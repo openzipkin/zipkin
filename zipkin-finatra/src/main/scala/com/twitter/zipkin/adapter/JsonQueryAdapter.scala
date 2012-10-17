@@ -1,6 +1,7 @@
 package com.twitter.zipkin.adapter
 
 import com.twitter.zipkin.common.json._
+import com.twitter.zipkin.conversions.json._
 import com.twitter.zipkin.query._
 
 /**
@@ -29,11 +30,12 @@ object JsonQueryAdapter extends QueryAdapter {
 
   /* json to common */
   def apply(t: traceTimelineType): TraceTimeline = {
-    TraceTimeline(
-      t.traceId.toLong,
-      t.rootSpanId.toLong,
-      t.annotations.map(JsonQueryAdapter(_)),
-      t.binaryAnnotations.map(JsonAdapter(_)))
+    throw new RuntimeException("Cannot convert JSON TraceTimeline to TraceTimeline")
+//    TraceTimeline(
+//      t.traceId.toLong,
+//      t.rootSpanId.toLong,
+//      t.annotations.map(JsonQueryAdapter(_)),
+//      t.binaryAnnotations.map(_.to))
   }
 
   /* common to json */
@@ -42,7 +44,7 @@ object JsonQueryAdapter extends QueryAdapter {
       t.traceId.toString,
       t.rootSpanId.toString,
       t.annotations.map(JsonQueryAdapter(_)),
-      t.binaryAnnotations.map(JsonAdapter(_)))
+      t.binaryAnnotations.map(_.toJson))
   }
 
   /* json to common */
@@ -85,7 +87,7 @@ object JsonQueryAdapter extends QueryAdapter {
     val startAndEnd = t.getStartAndEndTimestamp.get
     JsonTrace(
       t.id.map(_.toString).getOrElse(""),
-      t.spans.map(JsonAdapter(_)),
+      t.spans.map(_.toJson),
       startAndEnd.start,
       startAndEnd.end,
       startAndEnd.end - startAndEnd.start,
