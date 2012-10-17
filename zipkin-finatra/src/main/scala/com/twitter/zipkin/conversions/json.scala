@@ -1,8 +1,12 @@
 package com.twitter.zipkin.conversions
 
-import com.twitter.zipkin.common.json.{JsonSpan, JsonBinaryAnnotation}
-import com.twitter.zipkin.common.{Span, AnnotationType, BinaryAnnotation}
+import com.twitter.zipkin.common.json._
+import com.twitter.zipkin.common._
+import com.twitter.zipkin.query._
 
+/**
+ * json doesn't like Longs, so we need to convert them to strings
+ */
 object json {
 
   /* BinaryAnnotation */
@@ -41,4 +45,55 @@ object json {
     }
   }
   implicit def spanToJson(s: Span) = new WrappedSpan(s)
+
+  /* TimelineAnnotation */
+  class WrappedTimelineAnnotation(t: TimelineAnnotation) {
+    lazy val toJson = {
+      JsonTimelineAnnotation(t.timestamp.toString, t.value, t.host, t.spanId.toString, t.parentId map { _.toString }, t.serviceName, t.spanName)
+    }
+  }
+  implicit def timelineAnnotationToJson(t: TimelineAnnotation) = new WrappedTimelineAnnotation(t)
+
+  /* Trace */
+  class WrappedTrace(t: Trace) {
+    lazy val toJson = {
+      /**
+       *  TODO this is a pain in the ass, we need to fix common.Trace so the case class has the
+       *  necessary fields in the constructor
+       */
+      val startAndEnd = t.getStartAndEndTimestamp.get
+      JsonTrace(
+        t.id map { _.toString } getOrElse "",
+        t.spans map { _.toJson },
+        startAndEnd.start,
+        startAndEnd.end,
+        startAndEnd.end - startAndEnd.start,
+        t.serviceCounts)
+    }
+  }
+  implicit def traceToJson(t: Trace) = new WrappedTrace(t)
+
+  /* TraceTimeline */
+  class WrappedTraceTimeline(t: TraceTimeline) {
+    lazy val toJson = {
+      JsonTraceTimeline(t.traceId.toString, t.rootSpanId.toString, t.annotations map { _.toJson }, t.binaryAnnotations map { _.toJson })
+    }
+  }
+  implicit def traceTimelineToJson(t: TraceTimeline) = new WrappedTraceTimeline(t)
+
+  /* TraceSummary */
+  class WrappedTraceSummary(t: TraceSummary) {
+    lazy val toJson = {
+      JsonTraceSummary(t.traceId.toString, t.startTimestamp, t.endTimestamp, t.durationMicro, t.serviceCounts.toMap, t.endpoints)
+    }
+  }
+  implicit def traceSummaryToJson(t: TraceSummary) = new WrappedTraceSummary(t)
+
+  /* TraceCombo */
+  class WrappedTraceCombo(t: TraceCombo) {
+    lazy val toJson = {
+      JsonTraceCombo(t.trace.toJson, t.traceSummary map { _.toJson }, t.traceTimeline map { _.toJson }, t.spanDepths)
+    }
+  }
+  implicit def traceComboToJson(t: TraceCombo) = new WrappedTraceCombo(t)
 }
