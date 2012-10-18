@@ -445,9 +445,9 @@ Zipkin.Application.Index = (function() {
       var queryResults = query.execute();
       queryResultsView = new QueryResultsView({collection: queryResults});
 
-      /* Shove the query string into the static link */
+      /* Update the URL to reflect the search */
       searchQuery = queryResults.url().split("?")[1];
-      $("#static-search-link").attr("href", root_url + "?" + searchQuery).show();
+      history.pushState({}, "Zipkin", root_url + "?" + searchQuery);
 
       return false;
     };
@@ -544,10 +544,6 @@ Zipkin.Application.Index = (function() {
       e.stopPropagation();
       $(e.target).parents(".control-group").remove();
       return false;
-    });
-
-    $(document).on("click", "li.trace", function(e) {
-      history.pushState({}, "Zipkin", root_url + "?" + searchQuery);
     });
 
     Zipkin.Base.initialize();
