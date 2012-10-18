@@ -21,7 +21,7 @@ object json {
         case AnnotationType(5, _) => b.value.getDouble           // double
         case AnnotationType(6, _) => new String(b.value.array(), b.value.position(), b.value.remaining()) // string
         case _ => {
-          throw new Exception("Uh oh")
+          throw new Exception("Unsupported annotation type: %s".format(b))
         }
       }
       JsonBinaryAnnotation(b.key, value, b.annotationType, b.host)
