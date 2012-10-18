@@ -20,11 +20,12 @@ import com.codahale.jerkson.Json
 import com.twitter.finatra.{Response, Controller, View, Request}
 import com.twitter.logging.Logger
 import com.twitter.util.Future
-import com.twitter.zipkin.adapter.{JsonQueryAdapter, ThriftQueryAdapter}
+import com.twitter.zipkin.adapter.ThriftQueryAdapter
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.config.ZipkinWebConfig
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import com.twitter.zipkin.conversions.json._
 import com.twitter.zipkin.common.json.JsonTraceSummary
 import com.twitter.zipkin.query.QueryRequest
 
@@ -138,7 +139,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
         case ids @ _ => {
           client.getTraceSummariesByIds(ids, adjusters).map {
             _.map { summary =>
-              JsonQueryAdapter(ThriftQueryAdapter(summary))
+              ThriftQueryAdapter(summary).toJson
             }
           }
         }
@@ -232,7 +233,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     log.debug(ids.toString())
 
     client.getTraceCombosByIds(ids, adjusters).map { _.map { ThriftQueryAdapter(_) }.head }.map { combo =>
-      render.json(JsonQueryAdapter(combo))
+      render.json(combo.toJson)
     }
   }
 
@@ -247,7 +248,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
         ThriftQueryAdapter(_).trace
       }.head
     }.map { trace =>
-      render.json(JsonQueryAdapter(trace))
+      render.json(trace.toJson)
     }
   }
 
