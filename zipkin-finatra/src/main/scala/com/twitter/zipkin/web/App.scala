@@ -20,12 +20,12 @@ import com.codahale.jerkson.Json
 import com.twitter.finatra.{Response, Controller, View, Request}
 import com.twitter.logging.Logger
 import com.twitter.util.Future
-import com.twitter.zipkin.adapter.ThriftQueryAdapter
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.config.ZipkinWebConfig
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import com.twitter.zipkin.conversions.json._
+import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.common.json.JsonTraceSummary
 import com.twitter.zipkin.query.QueryRequest
 
@@ -122,7 +122,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   def query(queryRequest: QueryRequest, request: Request, retryLimit: Int = 10): Future[Seq[JsonTraceSummary]] = {
     log.debug(queryRequest.toString)
     /* Get trace ids */
-    val response = client.getTraceIds(ThriftQueryAdapter(queryRequest)).map { ThriftQueryAdapter(_) }
+    val response = client.getTraceIds(queryRequest.toThrift).map { _.toQueryResponse }
     val adjusters = getAdjusters(request)
 
     response.map { resp =>
@@ -139,7 +139,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
         case ids @ _ => {
           client.getTraceSummariesByIds(ids, adjusters).map {
             _.map { summary =>
-              ThriftQueryAdapter(summary).toJson
+              summary.toTraceSummary.toJson
             }
           }
         }
@@ -232,7 +232,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
     val ids = Seq(request.params("id").toLong)
     log.debug(ids.toString())
 
-    client.getTraceCombosByIds(ids, adjusters).map { _.map { ThriftQueryAdapter(_) }.head }.map { combo =>
+    client.getTraceCombosByIds(ids, adjusters).map { _.map { _.toTraceCombo }.head }.map { combo =>
       render.json(combo.toJson)
     }
   }
@@ -245,7 +245,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
 
     client.getTraceCombosByIds(ids, adjusters).map {
       _.map {
-        ThriftQueryAdapter(_).trace
+        _.toTraceCombo.trace
       }.head
     }.map { trace =>
       render.json(trace.toJson)

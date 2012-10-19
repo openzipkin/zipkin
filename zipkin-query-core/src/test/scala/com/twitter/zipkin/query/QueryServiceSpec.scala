@@ -17,7 +17,6 @@
 package com.twitter.zipkin.query
 
 import com.twitter.util.Future
-import com.twitter.zipkin.adapter.{ThriftQueryAdapter}
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
@@ -167,7 +166,7 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
         one(storage).getSpansByTraceIds(List(traceId)) willReturn Future(List(spans1))
       }
 
-      val ts = List(ThriftQueryAdapter(TraceSummary(1, 100, 150, 50, Map("service1" -> 1), List(ep1))))
+      val ts = List(TraceSummary(1, 100, 150, 50, Map("service1" -> 1), List(ep1)).toThrift)
       ts mustEqual qs.getTraceSummariesByIds(List(traceId), List())()
     }
 
@@ -182,9 +181,9 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
       expect {
         one(storage).getSpansByTraceIds(List(traceId)) willReturn Future(List(spans1))
       }
-      val trace = ThriftQueryAdapter(trace1)
-      val summary = ThriftQueryAdapter(TraceSummary(1, 100, 150, 50, Map("service1" -> 1), List(ep1)))
-      val timeline = TraceTimeline(trace1).map(ThriftQueryAdapter(_))
+      val trace = trace1.toThrift
+      val summary = TraceSummary(1, 100, 150, 50, Map("service1" -> 1), List(ep1)).toThrift
+      val timeline = TraceTimeline(trace1) map { _.toThrift }
       val combo = gen.TraceCombo(trace, Some(summary), timeline, Some(Map(666L -> 1)))
       Seq(combo) mustEqual qs.getTraceCombosByIds(List(traceId), List())()
     }
@@ -240,7 +239,7 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
         1.of(storage).getSpansByTraceIds(List(1L)) willReturn Future(List(spans1))
       }
 
-      val expected = List(ThriftQueryAdapter(trace1))
+      val expected = List(trace1.toThrift)
       val actual = qs.getTracesByIds(List(1L), List())()
       expected mustEqual actual
     }
