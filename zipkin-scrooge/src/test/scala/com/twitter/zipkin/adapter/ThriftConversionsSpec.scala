@@ -20,6 +20,7 @@ import com.twitter.conversions.time._
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
+import com.twitter.zipkin.query._
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
 import java.nio.ByteBuffer
@@ -91,6 +92,27 @@ class ThriftConversionsSpec extends Specification with JMocker with ClassMocker 
 
         val noBinaryAnnotationsSpan = gen.Span(0, "name", 0, None, Seq(), null)
         noBinaryAnnotationsSpan.toSpan mustEqual Span(0, "name", 0, None, List(), Seq())
+      }
+    }
+
+    "convert Trace" in {
+      "to thrift and back" in {
+        val span = Span(12345, "methodcall", 666, None,
+          List(Annotation(1, "boaoo", None)), Nil)
+        val expectedTrace = Trace(List[Span](span))
+        val thriftTrace = expectedTrace.toThrift
+        val actualTrace = thriftTrace.toTrace
+        expectedTrace mustEqual actualTrace
+      }
+    }
+
+    "convert TraceSummary" in {
+      "to thrift and back" in {
+        val expectedTraceSummary = TraceSummary(123, 10000, 10300, 300, Map("service1" -> 1),
+          List(Endpoint(123, 123, "service1")))
+        val thriftTraceSummary = expectedTraceSummary.toThrift
+        val actualTraceSummary = thriftTraceSummary.toTraceSummary
+        expectedTraceSummary mustEqual actualTraceSummary
       }
     }
   }

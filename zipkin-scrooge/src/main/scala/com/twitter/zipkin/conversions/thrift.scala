@@ -18,8 +18,7 @@ package com.twitter.zipkin.conversions
 import com.twitter.conversions.time._
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.gen
-import com.twitter.zipkin.common.BinaryAnnotation
-import com.twitter.zipkin.common.Annotation
+import com.twitter.zipkin.query._
 
 /**
  * Convenience implicits for converting between common classes and Thrift.
@@ -114,4 +113,171 @@ object thrift {
   }
   implicit def spanToThriftSpan(s: Span) = new ThriftSpan(s)
   implicit def thriftSpanToSpan(s: gen.Span) = new WrappedSpan(s)
+
+  /* Order */
+  class WrappedOrder(o: Order) {
+    lazy val toThrift = {
+      o match {
+        case Order.DurationDesc  => gen.Order.DurationDesc
+        case Order.DurationAsc   => gen.Order.DurationAsc
+        case Order.TimestampDesc => gen.Order.TimestampDesc
+        case Order.TimestampAsc  => gen.Order.TimestampAsc
+        case Order.None          => gen.Order.None
+      }
+    }
+  }
+  class ThriftOrder(o: gen.Order) {
+    lazy val toOrder = {
+      o match {
+        case gen.Order.DurationDesc  => Order.DurationDesc
+        case gen.Order.DurationAsc   => Order.DurationAsc
+        case gen.Order.TimestampDesc => Order.TimestampDesc
+        case gen.Order.TimestampAsc  => Order.TimestampAsc
+        case gen.Order.None          => Order.None
+      }
+    }
+  }
+  implicit def orderToThrift(o: Order) = new WrappedOrder(o)
+  implicit def thriftToOrder(o: gen.Order) = new ThriftOrder(o)
+
+  /* TimelineAnnotation */
+  class WrappedTimelineAnnotation(t: TimelineAnnotation) {
+    lazy val toThrift = {
+      gen.TimelineAnnotation(
+        t.timestamp,
+        t.value,
+        t.host.toThrift,
+        t.spanId,
+        t.parentId,
+        t.serviceName,
+        t.spanName)
+    }
+  }
+  class ThriftTimelineAnnotation(t: gen.TimelineAnnotation) {
+    lazy val toTimelineAnnotation = {
+      TimelineAnnotation(
+        t.timestamp,
+        t.value,
+        t.host.toEndpoint,
+        t.spanId,
+        t.parentId,
+        t.serviceName,
+        t.spanName)
+    }
+  }
+  implicit def timelineAnnotationToThrift(t: TimelineAnnotation) = new WrappedTimelineAnnotation(t)
+  implicit def thriftToTimelineAnnotation(t: gen.TimelineAnnotation) = new ThriftTimelineAnnotation(t)
+
+  /* Trace */
+  class WrappedTrace(t: Trace) {
+    lazy val toThrift = gen.Trace(t.spans.map{ _.toThrift })
+  }
+  class ThriftTrace(t: gen.Trace) {
+    lazy val toTrace = Trace(t.spans.map { _.toSpan })
+  }
+  implicit def traceToThrift(t: Trace) = new WrappedTrace(t)
+  implicit def thriftToTrace(t: gen.Trace) = new ThriftTrace(t)
+
+  /* TraceTimeline */
+  class WrappedTraceTimeline(t: TraceTimeline) {
+    lazy val toThrift = {
+      gen.TraceTimeline(
+        t.traceId,
+        t.rootSpanId,
+        t.annotations.map { _.toThrift },
+        t.binaryAnnotations.map { _.toThrift })
+    }
+  }
+  class ThriftTraceTimeline(t: gen.TraceTimeline) {
+    lazy val toTraceTimeline = {
+      TraceTimeline(
+        t.traceId,
+        t.rootMostSpanId,
+        t.annotations.map { _.toTimelineAnnotation },
+        t.binaryAnnotations.map { _.toBinaryAnnotation })
+    }
+  }
+  implicit def traceTimelineToThrift(t: TraceTimeline) = new WrappedTraceTimeline(t)
+  implicit def thriftToTraceTimeline(t: gen.TraceTimeline) = new ThriftTraceTimeline(t)
+
+  /* TraceSummary */
+  class WrappedTraceSummary(t: TraceSummary) {
+    lazy val toThrift = {
+      gen.TraceSummary(t.traceId, t.startTimestamp, t.endTimestamp,
+        t.durationMicro, t.serviceCounts, t.endpoints.map { _.toThrift })
+    }
+  }
+  class ThriftTraceSummary(t: gen.TraceSummary) {
+    lazy val toTraceSummary = {
+      new TraceSummary(t.traceId, t.startTimestamp, t.endTimestamp,
+        t.durationMicro, t.serviceCounts,
+        t.endpoints.map { _.toEndpoint }.toList)
+    }
+  }
+  implicit def traceSummaryToThrift(t: TraceSummary) = new WrappedTraceSummary(t)
+  implicit def thriftToTraceSummary(t: gen.TraceSummary) = new ThriftTraceSummary(t)
+
+  /* TraceCombo */
+  class WrappedTraceCombo(t: TraceCombo) {
+    lazy val toThrift = {
+      gen.TraceCombo(
+        t.trace.toThrift,
+        t.traceSummary map { _.toThrift },
+        t.traceTimeline map { _.toThrift },
+        t.spanDepths)
+    }
+  }
+  class ThriftTraceCombo(t: gen.TraceCombo) {
+    lazy val toTraceCombo = {
+      TraceCombo(
+        t.trace.toTrace,
+        t.summary map { _.toTraceSummary },
+        t.timeline map { _.toTraceTimeline },
+        t.spanDepths map {_.toMap })
+    }
+  }
+  implicit def traceComboToThrift(t: TraceCombo) = new WrappedTraceCombo(t)
+  implicit def thriftToTraceCombo(t: gen.TraceCombo) = new ThriftTraceCombo(t)
+
+  /* QueryRequest */
+  class WrappedQueryRequest(q: QueryRequest) {
+    lazy val toThrift = {
+      gen.QueryRequest(
+        q.serviceName,
+        q.spanName,
+        q.annotations,
+        q.binaryAnnotations.map {
+          _.map { _.toThrift }
+        },
+        q.endTs,
+        q.limit,
+        q.order.toThrift)
+    }
+  }
+  class ThriftQueryRequest(q: gen.QueryRequest) {
+    lazy val toQueryRequest = {
+      QueryRequest(
+        q.serviceName,
+        q.spanName,
+        q.annotations,
+        q.binaryAnnotations map {
+          _ map { _.toBinaryAnnotation }
+        },
+        q.endTs,
+        q.limit,
+        q.order.toOrder)
+    }
+  }
+  implicit def queryRequestToThrift(q: QueryRequest) = new WrappedQueryRequest(q)
+  implicit def thriftToQueryRequest(q: gen.QueryRequest) = new ThriftQueryRequest(q)
+
+  /* QueryResponse */
+  class WrappedQueryResponse(q: QueryResponse) {
+    lazy val toThrift = gen.QueryResponse(q.traceIds, q.startTs, q.endTs)
+  }
+  class ThriftQueryResponse(q: gen.QueryResponse) {
+    lazy val toQueryResponse = QueryResponse(q.traceIds, q.startTs, q.endTs)
+  }
+  implicit def queryResponseToThrift(q: QueryResponse) = new WrappedQueryResponse(q)
+  implicit def thriftToQueryResponse(q: gen.QueryResponse) = new ThriftQueryResponse(q)
 }
