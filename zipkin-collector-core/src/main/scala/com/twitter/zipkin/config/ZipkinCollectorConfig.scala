@@ -116,8 +116,6 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
   def writeQueueConfig: WriteQueueConfig[T]
   lazy val writeQueue: WriteQueue[T] = writeQueueConfig.apply(processor)
 
-  lazy val serverAddr = new InetSocketAddress(InetAddress.getLocalHost, serverPort)
-
   val serverConfig: CollectorServerConfig
 
   def apply(runtime: RuntimeEnvironment): ZipkinCollector = {
