@@ -23,13 +23,16 @@ import com.twitter.zipkin.collector.ScribeCollectorService
 import com.twitter.zipkin.gen
 import org.apache.thrift.protocol.TBinaryProtocol
 import com.twitter.zipkin.config.collector.CollectorServerConfig
+import java.net.InetSocketAddress
 
 class ScribeCollectorServerConfig(config: ScribeZipkinCollectorConfig) extends CollectorServerConfig {
 
   val log = Logger.get(Logger.getClass)
 
   def apply(): Server = {
-    log.info("Starting collector service on addr " + config.serverAddr)
+    val serverAddress = new InetSocketAddress(config.serverAddress, config.serverPort)
+
+    log.info("Starting collector service on addr " + serverAddress)
 
     /* Start the service */
     val service = new ScribeCollectorService(config, config.writeQueue, config.categories)
@@ -39,7 +42,7 @@ class ScribeCollectorServerConfig(config: ScribeZipkinCollectorConfig) extends C
     /* Start the server */
     ServerBuilder()
       .codec(ThriftServerFramedCodec())
-      .bindTo(config.serverAddr)
+      .bindTo(serverAddress)
       .name("ZipkinCollector")
       .reportTo(config.statsReceiver)
       .build(new gen.ZipkinCollector.FinagledService(service, new TBinaryProtocol.Factory()))

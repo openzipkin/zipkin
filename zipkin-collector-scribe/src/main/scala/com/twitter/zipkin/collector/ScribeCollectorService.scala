@@ -23,6 +23,7 @@ import com.twitter.util.{FuturePool, Future}
 import com.twitter.zipkin.config.ScribeZipkinCollectorConfig
 import com.twitter.zipkin.gen
 import org.apache.zookeeper.KeeperException
+import java.net.InetSocketAddress
 
 /**
  * This class implements the log method from the Scribe Thrift interface.
@@ -40,15 +41,16 @@ class ScribeCollectorService(config: ScribeZipkinCollectorConfig, val writeQueue
 
   override def start() {
     /* Register a node in ZooKeeper for Scribe to pick up */
+    val serverAddress = new InetSocketAddress(config.serverAddress, config.serverPort)
     val serverSet = new ServerSetImpl(config.zkClient, config.zkServerSetPath)
     val cluster = new ZookeeperServerSetCluster(serverSet)
     zkNodes = config.zkScribePaths.map {
       path =>
-        new ResilientZKNode(path, config.serverAddr.getHostName + ":" + config.serverAddr.getPort,
+        new ResilientZKNode(path, serverAddress.getHostName + ":" + serverAddress.getPort,
           config.zkClient, config.timer, config.statsReceiver)
     }.toSeq
     zkNodes foreach (_.register())
-    cluster.join(config.serverAddr)
+    cluster.join(serverAddress)
 
     super.start()
   }

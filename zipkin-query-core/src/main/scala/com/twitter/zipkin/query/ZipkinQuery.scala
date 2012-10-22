@@ -17,16 +17,16 @@ package com.twitter.zipkin.query
  *
  */
 import com.twitter.logging.Logger
-import org.apache.thrift.protocol.TBinaryProtocol
 import com.twitter.zipkin.storage.{Aggregates, Index, Storage}
 import com.twitter.zipkin.gen
 import com.twitter.finagle.thrift.ThriftServerFramedCodec
 import com.twitter.finagle.zookeeper.ZookeeperServerSetCluster
 import com.twitter.finagle.builder.{ServerBuilder, Server}
-import java.net.{InetAddress, InetSocketAddress}
 import com.twitter.ostrich.admin.{ServiceTracker, Service}
 import com.twitter.zipkin.config.ZipkinQueryConfig
 import com.twitter.common.zookeeper.ServerSet
+import java.net.InetSocketAddress
+import org.apache.thrift.protocol.TBinaryProtocol
 
 class ZipkinQuery(
   config: ZipkinQueryConfig, serverSet: ServerSet, storage: Storage, index: Index, aggregates: Aggregates
@@ -35,7 +35,7 @@ class ZipkinQuery(
   val log = Logger.get(getClass.getName)
   var thriftServer: Server = null
 
-  val serverAddr = new InetSocketAddress(InetAddress.getLocalHost, config.serverPort)
+  val serverAddr = new InetSocketAddress(config.serverAddress, config.serverPort)
 
   def start() {
     log.info("Starting query thrift service on addr " + serverAddr)
