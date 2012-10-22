@@ -23,8 +23,11 @@ import com.twitter.logging.{ConsoleHandler, LoggerFactory, Logger}
 import com.twitter.util.{JavaTimer, Timer, Config}
 import com.twitter.ostrich.admin._
 import scala.util.matching.Regex
+import java.net.{InetAddress, InetSocketAddress}
 
 trait ZipkinConfig[T <: Service] extends Config[RuntimeEnvironment => T] {
+
+  var serverAddress: InetAddress = InetAddress.getLocalHost
 
   /* The port on which the server runs */
   var serverPort: Int
