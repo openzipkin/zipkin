@@ -24,22 +24,27 @@ object Zipkin extends Build {
     "org.objenesis"           % "objenesis"    % "1.1"   % "test"
   )
 
+  def zipkinSettings = Seq(
+    organization := "com.twitter",
+    version := "0.3.0-SNAPSHOT",
+    crossPaths := false            /* Removes Scala version from artifact name */
+  )
+  def defaultSettings = Project.defaultSettings ++ StandardProject.newSettings ++ TravisCiRepos.newSettings ++ zipkinSettings
+
   lazy val zipkin =
     Project(
       id = "zipkin",
       base = file(".")
+    ) settings(
+      crossPaths := false
     ) aggregate(hadoop, hadoopjobrunner, test, thrift, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, collectorCore, collectorService, kafka)
 
   lazy val hadoop = Project(
     id = "zipkin-hadoop",
     base = file("zipkin-hadoop"),
-    settings = Project.defaultSettings ++
-      StandardProject.newSettings ++
-      assemblySettings ++
-      TravisCiRepos.newSettings).settings(
-
+    settings = defaultSettings ++ assemblySettings
+  ).settings(
       name := "zipkin-hadoop",
-      version := "0.3.0-SNAPSHOT",
       parallelExecution in Test := false,
       libraryDependencies ++= Seq(
         "com.twitter" % "scalding_2.9.1"       % "0.5.3",
@@ -82,15 +87,11 @@ object Zipkin extends Build {
     ).dependsOn(thrift)
 
   lazy val hadoopjobrunner = Project(
-  id = "zipkin-hadoop-job-runner",
-  base = file("zipkin-hadoop-job-runner"),
-  settings = Project.defaultSettings ++
-    StandardProject.newSettings ++
-    assemblySettings ++
-    TravisCiRepos.newSettings).settings(
-
+    id = "zipkin-hadoop-job-runner",
+    base = file("zipkin-hadoop-job-runner"),
+    settings = defaultSettings ++ assemblySettings
+  ).settings(
     name := "zipkin-hadoop-job-runner",
-    version := "0.3.0-SNAPSHOT",
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
       "org.slf4j" % "slf4j-log4j12"          % "1.6.4" % "runtime",
@@ -112,13 +113,9 @@ object Zipkin extends Build {
   lazy val test   = Project(
     id = "zipkin-test",
     base = file("zipkin-test"),
-    settings = Project.defaultSettings ++
-      StandardProject.newSettings ++
-      SubversionPublisher.newSettings ++
-      CompileThrift.newSettings ++
-      TravisCiRepos.newSettings).settings(
+    settings = defaultSettings ++ CompileThrift.newSettings
+  ).settings(
     name := "zipkin-test",
-    version := "0.3.0-SNAPSHOT",
     libraryDependencies ++= testDependencies
   ) dependsOn(queryService, collectorService)
 
@@ -126,13 +123,9 @@ object Zipkin extends Build {
     Project(
       id = "zipkin-thrift",
       base = file("zipkin-thrift"),
-      settings = Project.defaultSettings ++ 
-        StandardProject.newSettings ++
-        SubversionPublisher.newSettings ++
-        CompileThrift.newSettings ++
-        TravisCiRepos.newSettings).settings(
+      settings = defaultSettings ++ SubversionPublisher.newSettings ++ CompileThrift.newSettings
+    ).settings(
       name := "zipkin-thrift",
-      version := "0.3.0-SNAPSHOT",
       libraryDependencies ++= Seq(
         "org.apache.thrift" % "libthrift" % "0.5.0",
         "org.slf4j" % "slf4j-api" % "1.5.8"
@@ -144,11 +137,8 @@ object Zipkin extends Build {
     Project(
       id = "zipkin-common",
       base = file("zipkin-common"),
-      settings = Project.defaultSettings ++
-        StandardProject.newSettings ++
-        SubversionPublisher.newSettings ++
-        TravisCiRepos.newSettings).settings(
-      version := "0.3.0-SNAPSHOT",
+      settings = defaultSettings ++ SubversionPublisher.newSettings
+    ).settings(
       libraryDependencies ++= Seq(
         "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
         "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
@@ -164,13 +154,8 @@ object Zipkin extends Build {
     Project(
       id = "zipkin-scrooge",
       base = file("zipkin-scrooge"),
-      settings = Project.defaultSettings ++
-        StandardProject.newSettings ++
-        SubversionPublisher.newSettings ++
-        CompileThriftScrooge.newSettings ++
-        TravisCiRepos.newSettings
+      settings = defaultSettings ++ SubversionPublisher.newSettings ++ CompileThriftScrooge.newSettings
     ).settings(
-      version := "0.3.0-SNAPSHOT",
       libraryDependencies ++= Seq(
         "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
         "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
@@ -193,12 +178,8 @@ object Zipkin extends Build {
   lazy val collectorCore = Project(
     id = "zipkin-collector-core",
     base = file("zipkin-collector-core"),
-    settings = Project.defaultSettings ++
-      StandardProject.newSettings ++
-      SubversionPublisher.newSettings ++
-      TravisCiRepos.newSettings
+    settings = defaultSettings ++ SubversionPublisher.newSettings
   ).settings(
-    version := "0.3.0-SNAPSHOT",
     libraryDependencies ++= Seq(
       "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
       "com.twitter" % "finagle-serversets"% FINAGLE_VERSION,
@@ -217,12 +198,8 @@ object Zipkin extends Build {
   lazy val cassandra = Project(
     id = "zipkin-cassandra",
     base = file("zipkin-cassandra"),
-    settings = Project.defaultSettings ++
-      StandardProject.newSettings ++
-      SubversionPublisher.newSettings ++
-      TravisCiRepos.newSettings
+    settings = defaultSettings ++ SubversionPublisher.newSettings
   ).settings(
-    version := "0.3.0-SNAPSHOT",
     libraryDependencies ++= Seq(
       "com.twitter"     % "cassie-core"       % CASSIE_VERSION,
       "com.twitter"     % "cassie-serversets" % CASSIE_VERSION,
@@ -241,13 +218,8 @@ object Zipkin extends Build {
     Project(
       id = "zipkin-query-core",
       base = file("zipkin-query-core"),
-      settings = Project.defaultSettings ++
-        StandardProject.newSettings ++
-        SubversionPublisher.newSettings ++
-        TravisCiRepos.newSettings
+      settings = defaultSettings ++ SubversionPublisher.newSettings
     ).settings(
-      version := "0.3.0-SNAPSHOT",
-
       libraryDependencies ++= Seq(
         "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
         "com.twitter" % "finagle-serversets"% FINAGLE_VERSION,
@@ -266,13 +238,8 @@ object Zipkin extends Build {
   lazy val queryService = Project(
     id = "zipkin-query-service",
     base = file("zipkin-query-service"),
-    settings = Project.defaultSettings ++
-      StandardProject.newSettings ++
-      SubversionPublisher.newSettings ++
-      TravisCiRepos.newSettings
+    settings = defaultSettings ++ SubversionPublisher.newSettings
   ).settings(
-    version := "0.3.0-SNAPSHOT",
-
     libraryDependencies ++= testDependencies,
 
     PackageDist.packageDistZipName := "zipkin-query-service.zip",
@@ -289,12 +256,8 @@ object Zipkin extends Build {
     Project(
       id = "zipkin-collector-scribe",
       base = file("zipkin-collector-scribe"),
-      settings = Project.defaultSettings ++
-        StandardProject.newSettings ++
-        SubversionPublisher.newSettings ++
-        TravisCiRepos.newSettings
+      settings = defaultSettings ++ SubversionPublisher.newSettings
     ).settings(
-      version := "0.3.0-SNAPSHOT",
       libraryDependencies ++= testDependencies
     ).dependsOn(collectorCore, scrooge)
 
@@ -302,12 +265,8 @@ object Zipkin extends Build {
     Project(
       id = "zipkin-kafka",
       base = file("zipkin-kafka"),
-      settings = Project.defaultSettings ++
-        StandardProject.newSettings ++
-        SubversionPublisher.newSettings ++
-        TravisCiRepos.newSettings
+      settings = defaultSettings ++ SubversionPublisher.newSettings
     ).settings(
-      version := "0.3.0-SNAPSHOT",
       libraryDependencies ++= Seq(
         "org.clojars.jasonjckn"      % "kafka_2.9.1"    % "0.7.0"
       ) ++ testDependencies,
@@ -321,12 +280,8 @@ object Zipkin extends Build {
   lazy val collectorService = Project(
     id = "zipkin-collector-service",
     base = file("zipkin-collector-service"),
-    settings = Project.defaultSettings ++
-      StandardProject.newSettings ++
-      SubversionPublisher.newSettings ++
-      TravisCiRepos.newSettings
+    settings = defaultSettings ++ SubversionPublisher.newSettings
   ).settings(
-    version := "0.3.0-SNAPSHOT",
     libraryDependencies ++= testDependencies,
 
     PackageDist.packageDistZipName := "zipkin-collector-service.zip",
@@ -343,11 +298,8 @@ object Zipkin extends Build {
     Project(
       id = "zipkin-finatra",
       base = file("zipkin-finatra"),
-      settings = Project.defaultSettings ++
-        StandardProject.newSettings ++
-        TravisCiRepos.newSettings
+      settings = defaultSettings
     ).settings(
-      version := "0.3.0-SNAPSHOT",
       resolvers += "finatra" at "http://repo.juliocapote.com",
       resolvers += "codahale" at "http://repo.codahale.com",
 
