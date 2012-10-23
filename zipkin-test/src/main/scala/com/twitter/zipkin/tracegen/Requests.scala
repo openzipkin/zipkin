@@ -50,6 +50,8 @@ class Requests(collectorHost: String, collectorPort: Int, queryHost: String, que
         println("Sending: " + s + ". Response: " + client.log(entries)())
       })
     })
+
+    service.release()
   }
 
   def printTrace(traceIds: Seq[Long], client: gen.ZipkinQuery.FinagledClient) {
@@ -99,6 +101,8 @@ class Requests(collectorHost: String, collectorPort: Int, queryHost: String, que
     println("Data ttl: " + client.getDataTimeToLive()())
     println("Service names: " + client.getServiceNames()())
     println("Span names for : " + service + " " + client.getSpanNames(service)())
+
+    serviceClient.release()
   }
 
 
