@@ -78,11 +78,11 @@ class Requests(collectorHost: String, collectorPort: Int, queryHost: String, que
     printTrace(ts1, client)
 
     println("Querying for service name: " + service)
-    val ts2 = client.getTraceIdsBySpanName(service, null, Long.MaxValue, maxTraces, gen.Order.DurationDesc)()
+    val ts2 = client.getTraceIdsBySpanName(service, "", Long.MaxValue, maxTraces, gen.Order.DurationDesc)()
     printTrace(ts2, client)
 
     println("Querying for annotation: " + annotation)
-    val ts3 = client.getTraceIdsByAnnotation(service, annotation, null, Long.MaxValue, maxTraces, gen.Order.DurationDesc)()
+    val ts3 = client.getTraceIdsByAnnotation(service, annotation, ByteBuffer.wrap("".getBytes), Long.MaxValue, maxTraces, gen.Order.DurationDesc)()
     printTrace(ts3, client)
 
     println("Querying for kv annotation: " + kvAnnotation)

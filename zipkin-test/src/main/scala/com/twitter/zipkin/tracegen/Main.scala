@@ -16,12 +16,9 @@ package com.twitter.zipkin.tracegen
  *  limitations under the License.
  *
  */
-
+import com.twitter.logging.Logger
 import java.net.InetAddress
 import java.nio.ByteBuffer
-import com.twitter.logging.Logger
-import scala.Array
-
 
 /**
  * Generates a couple of semi-realistic traces and
@@ -31,20 +28,14 @@ object Main {
   val log = Logger.get(getClass.getName)
 
   def main(args: Array[String]) {
-    var collectorHost = InetAddress.getLocalHost.getHostName
-    var collectorPort = 9410
-    var queryHost = InetAddress.getLocalHost.getHostName
-    var queryPort = 9411
-
-    if (args.length < 4) {
-      println("Expected args: [collectorhost] [collectorport] [queryhost] [queryport]")
-      println("Falling back to defaults of localhost, collectorport 9410 and queryport 9411")
-    } else {
-      collectorHost = args(0)
-      collectorPort = args(1).toInt
-      queryHost = args(2)
-      queryPort = args(3).toInt
-    }
+    val (collectorHost, collectorPort, queryHost, queryPort) =
+      if (args.length < 4) {
+        // Default to localhost:9410, localhost:9411
+        (InetAddress.getLocalHost.getHostAddress, 9410, InetAddress.getLocalHost.getHostAddress, 9411)
+      } else {
+        (args(0), args(1).toInt, args(2), args(3).toInt)
+      }
+    println("Collector: %s:%d; Query: %s:%d".format(collectorHost, collectorPort, queryHost, queryPort))
 
     val traceGen = new TraceGen
     val traces = traceGen.generate(1, 7)
