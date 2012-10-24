@@ -296,8 +296,8 @@ object Zipkin extends Build {
 
   lazy val web =
     Project(
-      id = "zipkin-finatra",
-      base = file("zipkin-finatra"),
+      id = "zipkin-web",
+      base = file("zipkin-web"),
       settings = defaultSettings
     ).settings(
       resolvers += "finatra" at "http://repo.juliocapote.com",
@@ -312,7 +312,7 @@ object Zipkin extends Build {
         "com.twitter" % "finagle-zipkin"     % FINAGLE_VERSION
       ) ++ testDependencies,
 
-      PackageDist.packageDistZipName := "zipkin-finatra.zip",
+      PackageDist.packageDistZipName := "zipkin-web.zip",
       BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
 
       /* Add configs to resource path for ConfigSpec */
