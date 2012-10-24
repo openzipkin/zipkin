@@ -27,7 +27,7 @@ new ZipkinWebConfig {
    * A simple hack is to stand up a simple Python HTTP server and point `resourcePathPrefix` it.
    * Example:
    *
-   * `cd zipkin-finatra/src/main/resources/public && python -m SimpleHTTPServer`
+   * `cd zipkin-web/src/main/resources/public && python -m SimpleHTTPServer`
    *
    * Then, set:
    * `val resourcePathPrefix = "http://localhost:8000"`

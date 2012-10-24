@@ -1,4 +1,4 @@
-This doc describes a quickstart to running the basic Zipkin/Finatra service, with everything running on one machine
+This doc describes a quickstart to running the basic Zipkin service, with everything running on one machine
 It presumes you have a clean-ish Centos 6 install, and a user with sudo capabilities (eg user is in wheel group and wheel group is allowed in /etc/sudoers)
 
 This includes building Zipkin from the current master branch from Github.
@@ -108,22 +108,22 @@ sudo service zookeeper-server start
 sudo mkdir /usr/local/zipkin
 sudo chown **MYUSERNAME** /usr/local/zipkin
 
-18. Expand out the required components (here collector, query and finatra)
+18. Expand out the required components (here collector, query and web)
 unzip -d /usr/local/zipkin/zipkin-server zipkin-server/dist/zipkin-server.zip
 unzip -d /usr/local/zipkin/zipkin-scribe  zipkin-scribe/dist/zipkin-scribe.zip
-unzip -d /usr/local/zipkin/zipkin-finatra zipkin-finatra/dist/zipkin-finatra.zip
+unzip -d /usr/local/zipkin/zipkin-web zipkin-web/dist/zipkin-web.zip
 
 19. Set scripts to be executable...
 cd /usr/local/zipkin/
 chmod +x zipkin-server/scripts/*
 chmod +x zipkin-scribe/scripts/*
-chmod +x zipkin-finatra/scripts/*
+chmod +x zipkin-web/scripts/*
 
 20. Run it up!
 
 zipkin-server/scripts/query.sh -f zipkin-server/config/query-dev.scala &
 zipkin-scribe/scripts/collector.sh -f zipkin-scribe/config/collector-dev.scala &
-zipkin-finatra/scripts/finatra.sh -f zipkin-finatra/config/web-localhost.scala &
+zipkin-web/scripts/web.sh -f zipkin-web/config/web-localhost.scala &
 
 
 
