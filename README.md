@@ -14,7 +14,7 @@ To run a collector daemon: `bin/collector`
 
 To run a query daemon: `bin/query`
 
-To run a UI daemon: `bin/ui`
+To run a UI daemon: `bin/web`
 
 For a more in-depth installation guide, see: [http://twitter.github.com/zipkin/install.html](http://twitter.github.com/zipkin/install.html)
 
