@@ -1,2 +1,2 @@
 #!/usr/bin/env sh
-bin/sbt 'project zipkin-finatra' 'run -f zipkin-finatra/config/web-dev.scala'
+bin/sbt 'project zipkin-web' 'run -f zipkin-web/config/web-dev.scala'
