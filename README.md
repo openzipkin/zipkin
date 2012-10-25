@@ -32,14 +32,15 @@ Developers: [https://groups.google.com/group/zipkin-dev](https://groups.google.c
 ## Issues
 Noticed a bug? [https://github.com/twitter/zipkin/issues](https://github.com/twitter/zipkin/issues)
 
-## Contributions
-Contributions are very welcome! Please create a pull request on github and we'll look at it as soon as possible.
+## Contributing
+See [CONTRIBUTING.md](https://github.com/twitter/zipkin/blob/master/CONTRIBUTING.md) for guidelines.
 
-Try to make the code in the pull request as focused and clean as possible, stick as close to our code style as you can.
+Areas where we'd love to see contributions: 
 
-If the pull request is becoming too big we ask that you split it into smaller ones.
-
-Areas where we'd love to see contributions include: adding tracing to more libraries and protocols, interesting reports generated with Hadoop from the trace data, extending collector to support more transports and storage systems and other ways of visualizing the data in the web UI.
+* adding tracing to more libraries and protocols
+* interesting reports generated with Hadoop from the trace data
+* extending collector to support more transports and storage systems
+* trace data visualizations in the web UI
 
 ## Versioning
 We use [SemVer](http://semver.org/) style versioning.
