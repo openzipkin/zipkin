@@ -1,4 +1,4 @@
-# Guidelines for contribution to Zipkin.
+# Guidelines for contributing to Zipkin.
 
 Please create a pull request against `master`.
 
