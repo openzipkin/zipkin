@@ -1,3 +1,12 @@
+# 1.0.0
+* Collector
+  * Refactor into collector-core, collector-scribe, collector-service
+* Query
+  * Refactor into query-core, query-service
+* Web
+  * Replace Rails with Scala Finatra app
+  * Rename zipkin-finatra to zipkin-web
+
 # 0.2.0
 * Collector
   * Refactor scrooge specific code to zipkin-scrooge

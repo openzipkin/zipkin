@@ -26,7 +26,7 @@ object Zipkin extends Build {
 
   def zipkinSettings = Seq(
     organization := "com.twitter",
-    version := "0.3.0-SNAPSHOT",
+    version := "1.0.1-SNAPSHOT",
     crossPaths := false            /* Removes Scala version from artifact name */
   )
   def defaultSettings = Project.defaultSettings ++ StandardProject.newSettings ++ TravisCiRepos.newSettings ++ zipkinSettings
