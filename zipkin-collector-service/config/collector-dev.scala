@@ -62,7 +62,7 @@ new ScribeZipkinCollectorConfig {
 
   override def adaptiveSamplerConfig = new NullAdaptiveSamplerConfig {}
 
-  /*  */
+  /* Default to sample everything */
   override def globalSampler = EverythingGlobalSampler
 
   def zkConfig = new ZooKeeperConfig {
