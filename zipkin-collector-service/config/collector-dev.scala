@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import com.twitter.zipkin.collector.sampler.EverythingGlobalSampler
 import com.twitter.zipkin.config._
 import com.twitter.zipkin.config.sampler.NullAdaptiveSamplerConfig
 import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
@@ -59,6 +61,9 @@ new ScribeZipkinCollectorConfig {
   }
 
   override def adaptiveSamplerConfig = new NullAdaptiveSamplerConfig {}
+
+  /*  */
+  override def globalSampler = EverythingGlobalSampler
 
   def zkConfig = new ZooKeeperConfig {
     servers = List("localhost:2181")
