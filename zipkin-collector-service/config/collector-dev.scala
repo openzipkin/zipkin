@@ -62,7 +62,15 @@ new ScribeZipkinCollectorConfig {
 
   override def adaptiveSamplerConfig = new NullAdaptiveSamplerConfig {}
 
-  /* Default to sample everything */
+  /**
+   * The default `globalSampler` uses a sample rate to modulate how much
+   * traffic is written out to underlying stores. We override this with
+   * the `EverythingGlobalSampler` to make the process of getting a
+   * collector up and running easier for new users.
+   *
+   * Remove this to default back to a fixed percentage-based sampling
+   * model.
+   */
   override def globalSampler = EverythingGlobalSampler
 
   def zkConfig = new ZooKeeperConfig {
