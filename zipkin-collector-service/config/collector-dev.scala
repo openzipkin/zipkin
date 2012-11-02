@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import com.twitter.zipkin.collector.sampler.EverythingGlobalSampler
 import com.twitter.zipkin.config._
 import com.twitter.zipkin.config.sampler.NullAdaptiveSamplerConfig
 import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
@@ -59,6 +61,17 @@ new ScribeZipkinCollectorConfig {
   }
 
   override def adaptiveSamplerConfig = new NullAdaptiveSamplerConfig {}
+
+  /**
+   * The default `globalSampler` uses a sample rate to modulate how much
+   * traffic is written out to underlying stores. We override this with
+   * the `EverythingGlobalSampler` to make the process of getting a
+   * collector up and running easier for new users.
+   *
+   * Remove this to default back to a fixed percentage-based sampling
+   * model.
+   */
+  override def globalSampler = EverythingGlobalSampler
 
   def zkConfig = new ZooKeeperConfig {
     servers = List("localhost:2181")
