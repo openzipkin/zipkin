@@ -88,10 +88,7 @@ Zipkin.Util = (function(Zipkin) {
       }
     };
     var timeUnit = function(value, m) {
-      if (m.length == 1) {
-        return value[0][1];
-      }
-      if (value < m[0][0]) {
+      if (m.length == 1 || value < m[0][0]) {
         return [value, m[0][1]];
       }
       return timeUnit(value / m[0][0], m.slice(1));
