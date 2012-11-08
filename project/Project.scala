@@ -37,7 +37,7 @@ object Zipkin extends Build {
       base = file(".")
     ) settings(
       crossPaths := false
-    ) aggregate(hadoop, hadoopjobrunner, test, thrift, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, collectorCore, collectorService, kafka)
+    ) aggregate(hadoop, hadoopjobrunner, test, thrift, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, collectorCore, collectorService, kafka, redis)
 
   lazy val hadoop = Project(
     id = "zipkin-hadoop",
@@ -321,6 +321,25 @@ object Zipkin extends Build {
           (base / "config" +++ base / "src" / "test" / "resources").get
       }
   ).dependsOn(common, scrooge)
+
+  lazy val redis = Project(
+    id = "zipkin-redis",
+    base = file("zipkin-redis"),
+    settings = defaultSettings ++ SubversionPublisher.newSettings
+  ).settings(
+    parallelExecution in Test := false,
+    libraryDependencies ++= Seq(
+      "com.twitter" % "finagle-redis"     % FINAGLE_VERSION,
+      "org.slf4j" % "slf4j-log4j12"          % "1.6.4" % "runtime",
+      "com.twitter"     % "util-logging"      % UTIL_VERSION
+    ) ++ testDependencies,
+
+    /* Add configs to resource path for ConfigSpec */
+    unmanagedResourceDirectories in Test <<= baseDirectory {
+      base =>
+        (base / "config" +++ base / "src" / "test" / "resources").get
+    }
+  ).dependsOn(scrooge)
 }
 
 /*
