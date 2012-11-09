@@ -17,21 +17,31 @@
 package com.twitter.zipkin.storage.redis
 
 import com.twitter.finagle.redis.Client
-import com.twitter.finagle.redis.protocol.ZRangeResults
-import com.twitter.util.Future
+import com.twitter.util.{Duration, Future}
 import org.jboss.netty.buffer.ChannelBuffer
-import com.twitter.util.Duration
 
+/**
+ * RedisSetMap is a map from strings to sets.
+ * @database the redis client to use
+ * @prefix the namespace of the set
+ * @defaultTTL the timeout on the set
+ */
 class RedisSetMap(database: Client, prefix: String, defaultTTL: Option[Duration]) {
   private[this] def preface(key: String) = "%s:%s".format(prefix, key)
 
+  /**
+   * Adds an item to the specified set.
+   */
   def add(key: String, buf: ChannelBuffer): Future[Unit] = database.sAdd(preface(key), List(buf)) flatMap { _ =>
     defaultTTL match {
-      case Some(ttl) => database.expire(preface(key), ttl.inSeconds) flatMap (_ => Future.Unit)
+      case Some(ttl) => database.expire(preface(key), ttl.inSeconds).unit
       case None => Future.Unit
     }
   }
 
+  /**
+   * Gets all of the items in a set.
+   */
   def get(key: String): Future[Set[ChannelBuffer]] = {
     database.sMembers(preface(key)) map (_.toSet)
   }

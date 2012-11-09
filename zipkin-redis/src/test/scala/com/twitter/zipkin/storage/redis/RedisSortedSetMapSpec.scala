@@ -16,17 +16,14 @@
 
 package com.twitter.zipkin.storage.redis
 
-import java.nio.ByteBuffer
-import scala.util.Random
 import com.twitter.finagle.redis.protocol.ZRangeResults
-import com.twitter.zipkin.common.Annotation
-import com.twitter.zipkin.common.BinaryAnnotation
-import com.twitter.zipkin.common.Endpoint
-import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.conversions.thrift._
+import com.twitter.zipkin.common.{Annotation, BinaryAnnotation, Endpoint, Span}
+import com.twitter.zipkin.conversions.thrift.thriftAnnotationTypeToAnnotationType
 import com.twitter.zipkin.gen
-import org.jboss.netty.buffer.ChannelBuffers
+import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import org.jboss.netty.buffer.ChannelBuffers
+import scala.util.Random
 
 class RedisSortedSetMapSpec extends RedisSpecification {
   val ep = Endpoint(123, 123, "service")

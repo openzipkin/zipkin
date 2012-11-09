@@ -18,18 +18,31 @@ package com.twitter.zipkin.storage.redis
 
 import com.twitter.finagle.redis.Client
 import com.twitter.util.Future
-import java.nio.ByteBuffer
 import org.jboss.netty.buffer.ChannelBuffer
 
+/**
+ * RedisHash is a map.
+ * @database the redis client to use
+ * @prefix the namespace of the map
+ */
 class RedisHash(database: Client, name: String) {
 
+  /**
+   * Makes the key refer to the value.
+   */
   def put(key: ChannelBuffer, value: ChannelBuffer) = {
     database.hSet(name, key, value)
   }
 
+  /**
+   * Gets the referred to value.
+   */
   def get(key: ChannelBuffer): Future[Option[ChannelBuffer]] =
     database.hGet(name, key)
 
+  /**
+   * Increments the value of the value referred to by key by the specified amount.
+   */
   def incrBy(key: ChannelBuffer, incrValue: Long): Future[Long] = database.hGet(name, key) map {
     _ match {
       case Some(curValue) => {
@@ -44,6 +57,9 @@ class RedisHash(database: Client, name: String) {
     }
   }
 
+  /**
+   * Removes the key/value pairs which have the specified keys.
+   */
   def remove(keys: Seq[ChannelBuffer]): Future[Long] = {
     database.hDel(name, keys) map (_.longValue)
   }

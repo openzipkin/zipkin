@@ -17,24 +17,37 @@
 package com.twitter.zipkin.storage.redis
 
 import com.twitter.finagle.redis.Client
-import com.twitter.util.Future
+import com.twitter.finagle.redis.protocol.{Limit, ZInterval, ZRangeResults}
+import com.twitter.util.{Duration, Future}
 import org.jboss.netty.buffer.ChannelBuffer
-import com.twitter.finagle.redis.protocol.ZInterval
-import com.twitter.finagle.redis.protocol.Limit
-import com.twitter.finagle.redis.protocol.ZRangeResults
-import com.twitter.util.Duration
 
+/**
+ * RedisSortedSetMap is a map from strings to sorted sets.
+ * @database the redis client to use
+ * @prefix the namespace of the sorted set
+ * @defaultTTL the timeout on the sorted set
+ */
 class RedisSortedSetMap(database: Client, prefix: String, defaultTTL: Option[Duration]) {
-  def preface(key: String) = "%s:%s".format(prefix, key)
+  private[this] def preface(key: String) = "%s:%s".format(prefix, key)
 
+  /**
+   * Adds a buffer with a score to the sorted set specified by key.
+   */
   def add(key: String, score: Double, buffer: ChannelBuffer): Future[Unit] =
     database.zAdd(preface(key), score, buffer) flatMap { _ =>
       defaultTTL match {
-        case Some(ttl) => database.expire(preface(key), ttl.inSeconds) flatMap { _ => Future.Unit }
+        case Some(ttl) => database.expire(preface(key), ttl.inSeconds).unit
         case None => Future.Unit
       }
     }
 
+  /**
+   * Gets elements from a sorted set, in reverse order.
+   * @key specifies which sorted set
+   * @start items must have a score bigger than this
+   * @stop items must have a score smaller than this
+   * @count number of items to return
+   */
   def get(key: String, start: Double, stop: Double, count: Long): Future[ZRangeResults] =
     database.zRevRangeByScore(preface(key), ZInterval(stop), ZInterval(start), true, Some(Limit(0, count)))
 

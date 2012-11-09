@@ -16,15 +16,43 @@
 
 package com.twitter.zipkin.storage.redis
 
+import com.twitter.zipkin.common.Span
 import org.specs.Specification
 import scala.util.Random
 
 class RedisConversionsSpec extends Specification {
   "RedisConversions" should {
+    val rand = new Random
+
     "convert from a TraceLog and back" in {
-      val rand = new Random
       val value = ExpiringValue(rand.nextLong(), rand.nextLong())
       chanBuf2ExpiringValue[Long](expiringValue2ChanBuf[Long](value)) mustEqual value
+    }
+
+    "convert from TimeRange and back" in {
+      val range = TimeRange(rand.nextLong(), rand.nextLong())
+      decodeStartEnd(encodeStartEnd(range)) mustEqual range
+    }
+
+    "convert from long and back" in {
+      val long = rand.nextLong()
+      chanBuf2Long(long2ChanBuf(long)) mustEqual long
+    }
+
+    "convert from double and back" in {
+      val double = rand.nextDouble()
+      chanBuf2Double(double2ChanBuf(double)) mustEqual double
+    }
+
+    "convert from string and back" in {
+      val string = ((0 until (rand.nextInt(10) + 5)) map (_ => rand.nextPrintableChar())).mkString
+      chanBuf2String(string2ChanBuf(string)) mustEqual string
+    }
+
+    "convert from span and back" in {
+      val span = Span(rand.nextLong(), rand.nextString(8), rand.nextLong(),
+        Some(rand.nextLong()), List(), List())
+      deserializeSpan(serializeSpan(span)) mustEqual span
     }
   }
 }

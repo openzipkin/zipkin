@@ -16,31 +16,51 @@
 
 package com.twitter.zipkin.storage.redis
 
-import org.jboss.netty.buffer.ChannelBuffer
-import com.twitter.finagle.redis.Client
-import com.twitter.util.Future
-import org.jboss.netty.buffer.ChannelBuffers
-import java.nio.charset.Charset
-import com.twitter.util.Duration
 import com.twitter.conversions.time.longToTimeableNumber
+import com.twitter.finagle.redis.Client
+import com.twitter.util.{Duration, Future}
+import org.jboss.netty.buffer.ChannelBuffer
 
-class RedisArrayMap(database: Client, prefix: String, defaultTTL: Option[Duration]) {
+/**
+ * RedisListMap is a map from strings to lists.
+ * @database the redis client to use
+ * @prefix the namespace of the list
+ * @defaultTTL the timeout on the list
+ */
+class RedisListMap(database: Client, prefix: String, defaultTTL: Option[Duration]) {
 
-  def preface(key: String): String = "%s:%s".format(prefix, key)
+  private[this] def preface(key: String): String = "%s:%s".format(prefix, key)
 
+  /**
+   * Gets every item in the list
+   */
   def get(key: String): Future[Seq[ChannelBuffer]] =
     database.lRange(preface(key), 0, -1)
 
+  /**
+   * Obliterates the list stored at this key.
+   */
   def delete(key: String): Future[Long] = database.del(Seq(preface(key))) map (_.longValue)
 
+  /**
+   * Removes items from the list, not atomic.
+   * @key which list to retrieve
+   * @members the items to be removed
+   */
   def remove(key: String, members: Seq[ChannelBuffer]): Future[Unit] = {
     Future.join(members map { buffer =>
       database.lRem(preface(key), 1, buffer)
     })
   }
 
+  /**
+   * Returns whether following key refers to a data structure
+   */
   def exists(key: String): Future[Boolean] = database.exists(preface(key)) map (_.booleanValue)
 
+  /**
+   * Inserts an item into a list
+   */
   def put(key: String, value: ChannelBuffer): Future[Unit] = {
     val string = preface(key)
     Future.join(Seq(database.lPush(string, List(value)),
@@ -50,9 +70,15 @@ class RedisArrayMap(database: Client, prefix: String, defaultTTL: Option[Duratio
     }))
   }
 
+  /**
+   * Sets the time to live on a data structure
+   */
   def setTTL(key: String, ttl: Duration): Future[Boolean] =
     database.expire(preface(key), ttl.inSeconds) map (_.booleanValue)
 
+  /**
+   * Gets the time to live on a data structure
+   */
   def getTTL(key: String): Future[Option[Duration]] =
     database.ttl(preface(key)) map (opt => opt map (_.longValue.seconds))
 }

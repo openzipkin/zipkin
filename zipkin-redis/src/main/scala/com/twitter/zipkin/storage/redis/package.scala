@@ -16,16 +16,13 @@
 
 package com.twitter.zipkin.storage
 
-import com.twitter.zipkin.conversions.thrift._
-import java.nio.ByteBuffer
-import com.twitter.zipkin.gen
-import com.twitter.zipkin.common.Span
 import com.twitter.scrooge.BinaryThriftStructSerializer
-import com.twitter.util.Time
-import org.jboss.netty.buffer.ChannelBuffers
-import org.jboss.netty.util.CharsetUtil
+import com.twitter.zipkin.common.Span
+import com.twitter.zipkin.conversions.thrift.{spanToThriftSpan,thriftSpanToSpan}
+import com.twitter.zipkin.gen
+import com.twitter.zipkin.storage.redis.{ExpiringValue, TimeRange}
 import java.nio.charset.Charset
-import org.jboss.netty.buffer.ChannelBuffer
+import org.jboss.netty.buffer.{ChannelBuffer, ChannelBuffers}
 
 /**
  * Useful conversions for encoding/decoding.
@@ -58,19 +55,25 @@ package object redis {
 
   private[redis] implicit def longToString(long: Long) = long.toString
 
+  private[redis] implicit def chanBuf2Long(buf: ChannelBuffer): Long =
+    buf.copy().readLong()
+
+  private[redis] implicit def long2ChanBuf(long: Long): ChannelBuffer = {
+    val buf = ChannelBuffers.buffer(8)
+    buf.writeLong(long)
+    buf
+  }
+
   private[redis] implicit def double2ChanBuf(double: Double): ChannelBuffer = {
     val buf = ChannelBuffers.buffer(8)
     buf.writeDouble(double)
     buf
   }
 
-  private[redis] implicit def string2ChanBuf(string: String): ChannelBuffer = ChannelBuffers.copiedBuffer(string, Charset.defaultCharset)
-
-  private[redis] implicit def chanBuf2Long(buf: ChannelBuffer): Long =
-    buf.copy().readLong()
-
   private[redis] implicit def chanBuf2Double(buf: ChannelBuffer): Double =
     buf.copy().readDouble()
+
+  private[redis] implicit def string2ChanBuf(string: String): ChannelBuffer = ChannelBuffers.copiedBuffer(string, Charset.defaultCharset)
 
   private[redis] implicit def chanBuf2String(buf: ChannelBuffer) = buf.toString(Charset.defaultCharset)
 
@@ -86,11 +89,5 @@ package object redis {
 
   private[redis] implicit def deserializeSpan(buf: ChannelBuffer): Span =
     serializer.fromBytes(buf.copy().array).toSpan
-
-  private[redis] implicit def long2ChanBuf(long: Long): ChannelBuffer = {
-    val buf = ChannelBuffers.buffer(8)
-    buf.writeLong(long)
-    buf
-  }
 
 }

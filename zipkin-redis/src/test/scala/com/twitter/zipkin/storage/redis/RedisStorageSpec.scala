@@ -15,18 +15,13 @@
  */
 package com.twitter.zipkin.storage.redis
 
-import java.nio.ByteBuffer
-import org.specs.mock.ClassMocker
-import org.specs.mock.JMocker
-import com.twitter.conversions.time._
-import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.common.Annotation
-import com.twitter.zipkin.common.BinaryAnnotation
-import com.twitter.zipkin.common.Endpoint
-import com.twitter.zipkin.common.Span
+import com.twitter.conversions.time.intToTimeableNumber
+import com.twitter.zipkin.common.{Annotation, BinaryAnnotation, Endpoint, Span}
+import com.twitter.zipkin.conversions.thrift.thriftAnnotationTypeToAnnotationType
 import com.twitter.zipkin.gen
+import java.nio.ByteBuffer
 
-class RedisStorageSpec extends RedisSpecification with JMocker with ClassMocker {
+class RedisStorageSpec extends RedisSpecification {
 
   var redisStorage: RedisStorage = null
 

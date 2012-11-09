@@ -16,9 +16,9 @@
 
 package com.twitter.zipkin.storage.redis
 
-import org.specs.Specification
-import com.twitter.finagle.redis.util.RedisCluster
 import com.twitter.finagle.redis.Client
+import com.twitter.finagle.redis.util.RedisCluster
+import org.specs.Specification
 
 trait RedisSpecification extends Specification {
   lazy val _client = Client(RedisCluster.hostAddresses)

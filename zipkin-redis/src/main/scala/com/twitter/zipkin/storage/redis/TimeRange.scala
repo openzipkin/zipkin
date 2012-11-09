@@ -18,13 +18,22 @@ package com.twitter.zipkin.storage.redis
 
 import com.twitter.zipkin.common.Span
 
+/**
+ * Represents a range of time
+ */
 case class TimeRange(first: Long, last: Long) {
+  /**
+   * Takes the union of the time ranges.
+   */
   def widen(other: TimeRange) =
     TimeRange(if (first < other.first) first else other.first,
       if (last < other.last) other.last else last)
 }
 
 object TimeRange {
+  /**
+   * Takes the time range from the start of the first annotation to the end of the last.
+   */
   def fromSpan(span: Span): Option[TimeRange] = for (firstAnno <- span.firstAnnotation;
     lastAnno <- span.lastAnnotation)
     yield TimeRange(firstAnno.timestamp, lastAnno.timestamp)

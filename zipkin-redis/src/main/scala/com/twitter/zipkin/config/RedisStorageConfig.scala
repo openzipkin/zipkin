@@ -16,17 +16,24 @@
 
 package com.twitter.zipkin.config
 
-import com.twitter.zipkin.storage.redis.RedisStorage
+import com.twitter.conversions.time.intToTimeableNumber
 import com.twitter.finagle.redis.Client
 import com.twitter.util.Duration
-import com.twitter.conversions.time.intToTimeableNumber
+import com.twitter.zipkin.storage.redis.RedisStorage
 
+/**
+ * RedisStorageConfig has sane defaults, except you must specify your host and port.
+ */
 trait RedisStorageConfig extends StorageConfig {
-  lazy val _client: Client = Client("0.0.0.0:%d".format(port))
+  lazy val _client: Client = Client("%s:%d".format(host, port))
 
   val port: Int
+  val host: String
   val tracesTimeToLive: Duration = 7.days
 
+  /**
+   * The canonical way of making a new RedisStorage
+   */
   def apply(): RedisStorage = new RedisStorage {
     val database = _client
     val ttl = Some(tracesTimeToLive)

@@ -16,26 +16,14 @@
 
 package com.twitter.zipkin.storage.redis
 
-import java.nio.ByteBuffer
-import java.util.{Set => JSet}
-import scala.collection._
-import scala.collection.JavaConverters._
-import org.specs.Specification
-import org.specs.mock.ClassMocker
-import org.specs.mock.JMocker
-import com.twitter.conversions.time._
-import com.twitter.finagle.redis.Client
-import com.twitter.finagle.redis.util.RedisCluster
-import com.twitter.util.Future
-import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.common.Annotation
-import com.twitter.zipkin.common.BinaryAnnotation
-import com.twitter.zipkin.common.Endpoint
-import com.twitter.zipkin.common.Span
+import com.twitter.conversions.time.intToTimeableNumber
+import com.twitter.zipkin.common.{Annotation, BinaryAnnotation, Endpoint, Span}
+import com.twitter.zipkin.conversions.thrift.thriftAnnotationTypeToAnnotationType
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.storage.IndexedTraceId
+import java.nio.ByteBuffer
 
-class RedisIndexSpec extends RedisSpecification with JMocker with ClassMocker {
+class RedisIndexSpec extends RedisSpecification {
   var redisIndex: RedisIndex = null
 
   val ep = Endpoint(123, 123, "service")
@@ -90,35 +78,6 @@ class RedisIndexSpec extends RedisSpecification with JMocker with ClassMocker {
       redisIndex.getServiceNames() mustEqual Set(span1.serviceNames.head)
     }
 
-    /*
-    "index only on annotation in each span with the same value" in {
-      val _annotationsIndex = mock[ColumnFamily[ByteBuffer, Long, Long]]
-      val batch = mock[BatchMutationBuilder[ByteBuffer, Long, Long]]
-      val _config = mock[CassandraConfig]
-
-      val cs = new CassandraIndex() {
-        val config = _config
-        val serviceSpanNameIndex = null
-        val serviceNameIndex = null
-        val annotationsIndex = _annotationsIndex
-        val durationIndex = null
-        val serviceNames = null
-        val spanNames = null
-      }
-      val col = Column[Long, Long](ann3.timestamp, span3.traceId)
-
-      expect {
-        2.of(_config).tracesTimeToLive willReturn 20.days
-
-        one(_annotationsIndex).batch willReturn batch
-        one(batch).insert(a[ByteBuffer], a[Column[Long, Long]])
-        allowingMatch(batch, "insert")
-        one(batch).execute
-      }
-
-      cs.indexSpanByAnnotations(span3)
-    }
-    */
     "index only on annotation in each span with the same value" in {
       redisIndex.indexSpanByAnnotations(span3)
     }
@@ -134,68 +93,7 @@ class RedisIndexSpec extends RedisSpecification with JMocker with ClassMocker {
       }
     }
 
-    /*
-    "getTracesDuration" in {
-      // no support in FakeCassandra for order and limit and it seems tricky to add
-      // so will mock the index instead
-
-      val _durationIndex = new ColumnFamily[Long, Long, String] {
-        override def multigetRows(keys: JSet[Long], startColumnName: Option[Long], endColumnName: Option[Long], order: Order, count: Int) = {
-          if (!order.reversed) {
-            Future.value(Map(321L -> Map(100L -> Column(100L, "")).asJava).asJava)
-          } else {
-            Future.value(Map(321L -> Map(120L -> Column(120L, "")).asJava).asJava)
-          }
-        }
-      }
-
-      val cass = new CassandraIndex() {
-        val config = new CassandraConfig{}
-        val serviceSpanNameIndex = null
-        val serviceNameIndex = null
-        val annotationsIndex = null
-        val durationIndex = _durationIndex
-        val serviceNames = null
-        val spanNames = null
-      }
-
-      val duration = cass.getTracesDuration(Seq(321L))()
-      duration(0).traceId mustEqual 321L
-      duration(0).duration mustEqual 20
-    }
-
-    "get no trace durations due to missing data" in {
-      // no support in FakeCassandra for order and limit and it seems tricky to add
-      // so will mock the index instead
-
-      val _durationIndex = new ColumnFamily[Long, Long, String] {
-        override def multigetRows(keys: JSet[Long], startColumnName: Option[Long], endColumnName: Option[Long], order: Order, count: Int) = {
-          if (!order.reversed) {
-            Future.value(Map(321L -> Map(100L -> Column(100L, "")).asJava).asJava)
-          } else {
-            Future.value(Map(321L -> Map[Long, Column[Long,String]]().asJava).asJava)
-          }
-        }
-      }
-      
-
-      val cass = new CassandraIndex() {
-        val config = new CassandraConfig{}
-        val serviceSpanNameIndex = null
-        val serviceNameIndex = null
-        val annotationsIndex = null
-        val durationIndex = _durationIndex
-        val serviceNames = null
-        val spanNames = null
-      }
-
-      val duration = cass.getTracesDuration(Seq(321L))()
-      duration.isEmpty mustEqual true
-    }
-    */
-
     "getTraceIdsByAnnotation" in {
-      //cassandra.storeSpan(span1)()
       redisIndex.indexSpanByAnnotations(span1)()
 
       // fetch by time based annotation, find trace

@@ -16,20 +16,11 @@
 
 package com.twitter.zipkin.storage.redis
 
-import java.util.concurrent.TimeUnit
-import scala.Array.canBuildFrom
-import scala.Option.option2Iterable
 import com.twitter.finagle.redis.Client
-import com.twitter.util.Duration
-import com.twitter.util.Future
-import com.twitter.util.Time
-import com.twitter.conversions.time.intToTimeableNumber
+import com.twitter.util.{Duration, Future}
 import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.query.Trace
 import com.twitter.zipkin.storage.Storage
-import scala.util.Sorting
 import org.jboss.netty.buffer.ChannelBuffer
-
 
 trait RedisStorage extends Storage {
 
@@ -37,47 +28,25 @@ trait RedisStorage extends Storage {
 
   override def close() = database.release()
 
-  private[this] lazy val spanListMap = new RedisArrayMap(database, "full_span", ttl)
+  private[this] lazy val spanListMap = new RedisListMap(database, "full_span", ttl)
 
   val ttl: Option[Duration]
 
-  /**
-   * Stores spans
-   */
-  override def storeSpan(span: Span): Future[Unit] =
-    spanListMap.put(span.traceId, span) flatMap (_ => Future.Unit)
+  override def storeSpan(span: Span): Future[Unit] = spanListMap.put(span.traceId, span).unit
 
-  /**
-   * Sets the time to live based on when the server receives the duration.
-   */
   override def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] =
-    spanListMap.setTTL(traceId, ttl) flatMap (_ => Future.Unit)
+    spanListMap.setTTL(traceId, ttl).unit
 
-  /**
-   * Gets the time to live as a duration.  May be out of date by the time you get it.
-   */
   override def getTimeToLive(traceId: Long): Future[Duration] = spanListMap.getTTL(traceId) map (_.getOrElse(Duration.eternity))
 
-  /**
-   * Will always get trace by id, if it exists
-   */
   override def getSpansByTraceId(traceId: Long) : Future[Seq[Span]] =
     fetchTraceById(traceId) map (_.get)
 
-  /**
-   * Will always get traces by id, if they exist
-   */
   override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] =
     Future.collect(traceIds map (traceId => fetchTraceById(traceId))) map (_ flatten)
 
-  /**
-   * Forever, by default.
-   */
   override def getDataTimeToLive: Int = (ttl map (_.inSeconds)).getOrElse(Int.MaxValue)
 
-  /**
-   * Fetches a trace if it exists and hasn't timed out, destroys it if it's timed out.
-   */
   private[this] def fetchTraceById(traceId: Long): Future[Option[Seq[Span]]] =
     spanListMap.get(traceId) map (buf => optionify(sortedTrace(buf)))
 
