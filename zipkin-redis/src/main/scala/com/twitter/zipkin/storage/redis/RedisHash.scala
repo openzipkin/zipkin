@@ -22,8 +22,8 @@ import org.jboss.netty.buffer.ChannelBuffer
 
 /**
  * RedisHash is a map.
- * @database the redis client to use
- * @prefix the namespace of the map
+ * @param database the redis client to use
+ * @param prefix the namespace of the map
  */
 class RedisHash(database: Client, name: String) {
 

@@ -23,9 +23,9 @@ import org.jboss.netty.buffer.ChannelBuffer
 
 /**
  * RedisListMap is a map from strings to lists.
- * @database the redis client to use
- * @prefix the namespace of the list
- * @defaultTTL the timeout on the list
+ * @param database the redis client to use
+ * @param prefix the namespace of the list
+ * @param defaultTTL the timeout on the list
  */
 class RedisListMap(database: Client, prefix: String, defaultTTL: Option[Duration]) {
 
@@ -44,8 +44,8 @@ class RedisListMap(database: Client, prefix: String, defaultTTL: Option[Duration
 
   /**
    * Removes items from the list, not atomic.
-   * @key which list to retrieve
-   * @members the items to be removed
+   * @param key which list to retrieve
+   * @param members the items to be removed
    */
   def remove(key: String, members: Seq[ChannelBuffer]): Future[Unit] = {
     Future.join(members map { buffer =>
@@ -63,11 +63,12 @@ class RedisListMap(database: Client, prefix: String, defaultTTL: Option[Duration
    */
   def put(key: String, value: ChannelBuffer): Future[Unit] = {
     val string = preface(key)
-    Future.join(Seq(database.lPush(string, List(value)),
-    defaultTTL match {
-      case Some(ttl) => database.expire(string, ttl.inSeconds)
-      case None => Future.Unit
-    }))
+    database.lPush(string, List(value)) flatMap { _ =>
+      defaultTTL match {
+        case Some(ttl) => database.expire(string, ttl.inSeconds).unit
+        case None => Future.Unit
+      }
+    }
   }
 
   /**

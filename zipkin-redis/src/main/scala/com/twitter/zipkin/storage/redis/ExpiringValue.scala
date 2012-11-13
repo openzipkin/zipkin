@@ -20,14 +20,16 @@ import com.twitter.util.Time
 
 /**
  * ExpiringValue represents a value with a time to live.
- * expiresAt is the time when ExpiringValue will expire.
- * value is the value that will expire.
+ * @param expiresAt is the time when ExpiringValue will expire.
+ * @param value is the value that will expire.
  */
 case class ExpiringValue[A](expiresAt: Time, value: A)
 
 object ExpiringValue {
 
-  // expiresAt is a long value in seconds from the epoch.
+  /**
+   * @param expiresAt is a long value in seconds from the epoch.
+   */
   def apply[A](expiresAt: Long, value: A): ExpiringValue[A] =
     ExpiringValue(Time.fromSeconds(expiresAt.toInt), value)
 }

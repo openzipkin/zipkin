@@ -23,9 +23,9 @@ import org.jboss.netty.buffer.ChannelBuffer
 
 /**
  * RedisSortedSetMap is a map from strings to sorted sets.
- * @database the redis client to use
- * @prefix the namespace of the sorted set
- * @defaultTTL the timeout on the sorted set
+ * @param database the redis client to use
+ * @param prefix the namespace of the sorted set
+ * @param defaultTTL the timeout on the sorted set
  */
 class RedisSortedSetMap(database: Client, prefix: String, defaultTTL: Option[Duration]) {
   private[this] def preface(key: String) = "%s:%s".format(prefix, key)
@@ -43,10 +43,10 @@ class RedisSortedSetMap(database: Client, prefix: String, defaultTTL: Option[Dur
 
   /**
    * Gets elements from a sorted set, in reverse order.
-   * @key specifies which sorted set
-   * @start items must have a score bigger than this
-   * @stop items must have a score smaller than this
-   * @count number of items to return
+   * @param key specifies which sorted set
+   * @param start items must have a score bigger than this
+   * @param stop items must have a score smaller than this
+   * @param count number of items to return
    */
   def get(key: String, start: Double, stop: Double, count: Long): Future[ZRangeResults] =
     database.zRevRangeByScore(preface(key), ZInterval(stop), ZInterval(start), true, Some(Limit(0, count)))

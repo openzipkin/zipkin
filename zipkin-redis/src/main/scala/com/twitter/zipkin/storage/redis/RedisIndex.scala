@@ -170,21 +170,21 @@ trait RedisIndex extends Index {
   )
 
   override def indexSpanNameByService(span: Span): Future[Unit] =
-    if (span.name != "") Future.join(
-      for (serviceName <- span.serviceNames.toSeq
-        if serviceName != "")
-        yield spanMap.add(serviceName, span.name)
-    ) else Future.Unit
+    if (span.name != "")
+      Future.join(
+        for (serviceName <- span.serviceNames.toSeq
+          if serviceName != "")
+          yield spanMap.add(serviceName, span.name)
+      )
+    else
+      Future.Unit
 
-  override def indexSpanDuration(span: Span): Future[Void] = {
-    traceHash.get(span.traceId) map {
-      case None => TimeRange.fromSpan(span) map { timeRange =>
-        traceHash.put(span.traceId, timeRange)
-      }
-      case Some(bytes) => indexNewStartAndEnd(span, bytes)
+  override def indexSpanDuration(span: Span): Future[Void] = (traceHash.get(span.traceId) map {
+    case None => TimeRange.fromSpan(span) map { timeRange =>
+      traceHash.put(span.traceId, timeRange)
     }
-    Future.Void
-  }
+    case Some(bytes) => indexNewStartAndEnd(span, bytes)
+  }).voided
 
   private[this] def indexNewStartAndEnd(span: Span, buf: ChannelBuffer) =
     TimeRange.fromSpan(span) map { timeRange =>
