@@ -16,7 +16,7 @@
 package com.twitter.zipkin.storage.redis
 
 import com.twitter.conversions.time.intToTimeableNumber
-import com.twitter.zipkin.common.{Annotation, BinaryAnnotation, Endpoint, Span}
+import com.twitter.zipkin.common.{Annotation, AnnotationType, BinaryAnnotation, Endpoint, Span}
 import com.twitter.zipkin.conversions.thrift.thriftAnnotationTypeToAnnotationType
 import com.twitter.zipkin.gen
 import java.nio.ByteBuffer
@@ -29,7 +29,7 @@ class RedisStorageSpec extends RedisSpecification {
     BinaryAnnotation(
       key,
       ByteBuffer.wrap(value.getBytes),
-      gen.AnnotationType.String.toAnnotationType,
+      AnnotationType.String,
       Some(ep)
     )
 
