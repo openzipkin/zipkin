@@ -22,9 +22,9 @@ import org.jboss.netty.buffer.ChannelBuffer
 
 /**
  * RedisSetMap is a map from strings to sets.
- * @database the redis client to use
- * @prefix the namespace of the set
- * @defaultTTL the timeout on the set
+ * @param database the redis client to use
+ * @param prefix the namespace of the set
+ * @param defaultTTL the timeout on the set
  */
 class RedisSetMap(database: Client, prefix: String, defaultTTL: Option[Duration]) {
   private[this] def preface(key: String) = "%s:%s".format(prefix, key)
