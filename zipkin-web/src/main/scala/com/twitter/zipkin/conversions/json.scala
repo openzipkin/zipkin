@@ -9,6 +9,14 @@ import com.twitter.zipkin.query._
  */
 object json {
 
+  /* Annotation */
+  class WrappedAnnotation(a: Annotation) {
+    lazy val toJson = {
+      JsonAnnotation(a.timestamp.toString, a.value, a.host, a.duration map { _.inMicroseconds.toString })
+    }
+  }
+  implicit def annotationToJson(a: Annotation) = new WrappedAnnotation(a)
+
   /* BinaryAnnotation */
   class WrappedBinaryAnnotation(b: BinaryAnnotation) {
     lazy val toJson = {
@@ -44,7 +52,7 @@ object json {
         s.serviceNames,
         s.firstAnnotation.map(_.timestamp),
         s.duration,
-        s.annotations.sortWith((a,b) => a.timestamp < b.timestamp),
+        s.annotations.sortWith((a,b) => a.timestamp < b.timestamp).map { _.toJson },
         s.binaryAnnotations.map(_.toJson))
     }
   }

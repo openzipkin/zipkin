@@ -15,13 +15,10 @@
  */
 package com.twitter.zipkin.common.json
 
-case class JsonSpan(
-  traceId: String,
-  name: String,
-  id: String,
-  parentId: Option[String],
-  services: Set[String],
-  startTimestamp: Option[Long],
-  duration: Option[Long],
-  annotations: List[JsonAnnotation],
-  binaryAnnotations: Seq[JsonBinaryAnnotation])
+import com.twitter.zipkin.common.Endpoint
+
+case class JsonAnnotation(
+  timestamp: String,
+  value: String,
+  host: Option[Endpoint],
+  duration: Option[String]) // Duration in microseconds
