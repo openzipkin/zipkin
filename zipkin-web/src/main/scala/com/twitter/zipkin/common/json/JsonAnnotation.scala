@@ -22,3 +22,4 @@ case class JsonAnnotation(
   value: String,
   host: Option[Endpoint],
   duration: Option[String]) // Duration in microseconds
+
