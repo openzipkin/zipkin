@@ -52,18 +52,17 @@ object Zipkin extends Build {
           FIXME ElephantBird 3.0.0 picks up libthrift 0.7.0, which is currently
           incompatible with sbt-thrift so made these intransitive
         */
-        "com.twitter.elephantbird" % "elephant-bird-cascading2"       % "3.0.0" intransitive(),
-        "com.twitter.elephantbird" % "elephant-bird-core"       % "3.0.0" intransitive(),
+        "com.twitter.elephantbird" % "elephant-bird-cascading2"       % "3.0.5" intransitive(),
+        "com.twitter.elephantbird" % "elephant-bird-core"       % "3.0.5" intransitive(),
         "org.slf4j" % "slf4j-log4j12"          % "1.6.4" % "runtime",
         "com.google.protobuf" % "protobuf-java" % "2.3.0",
         "org.apache.thrift" % "libthrift" % "0.5.0",
-        "cascading" % "cascading-hadoop" % "2.0.0-wip-288",
+        "cascading" % "cascading-hadoop" % "2.0.7",
         /* Test dependencies */
         "org.scala-tools.testing" % "specs_2.9.1" % "1.6.9" % "test"
       ),
       resolvers ++= (proxyRepo match {
         case None => Seq(
-          "elephant-bird repo" at "http://oss.sonatype.org/content/repositories/comtwitter-286",
           "Concurrent Maven Repo" at "http://conjars.org/repo")
         case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
       }),
