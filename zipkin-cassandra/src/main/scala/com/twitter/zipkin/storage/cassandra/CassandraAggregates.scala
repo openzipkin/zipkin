@@ -18,7 +18,10 @@ package com.twitter.zipkin.storage.cassandra
 import com.twitter.util.{Throw, Return, Future}
 import com.twitter.zipkin.storage.Aggregates
 import scala.collection.JavaConverters._
-import com.twitter.cassie.{Column, ColumnFamily}
+import com.twitter.cassie._
+import com.twitter.cassie.codecs.{LongCodec, Utf8Codec}
+import com.twitter.util.Throw
+import com.twitter.util.Return
 
 /**
  * Cassandra backed aggregates store
@@ -29,10 +32,25 @@ import com.twitter.cassie.{Column, ColumnFamily}
  * Top annotations are a sequence of the most popular time-based annotation strings
  * Top key value annotations are a sequence of the most popular _keys_ among key value annotations
  */
-trait CassandraAggregates extends Aggregates with Cassandra {
+case class CassandraAggregates(
+  keyspace: Keyspace,
+  topAnnotationsCf: String,
+  dependenciesCf: String,
+  writeConsistency: WriteConsistency,
+  readConsistency: ReadConsistency
+) extends Aggregates {
 
-  val topAnnotations: ColumnFamily[String, Long, String]
-  val dependencies: ColumnFamily[String, Long, String]
+  def close() {
+    keyspace.close()
+  }
+
+  lazy val topAnnotations = keyspace.columnFamily(topAnnotationsCf,Utf8Codec, LongCodec, Utf8Codec)
+    .consistency(writeConsistency)
+    .consistency(readConsistency)
+
+  lazy val dependencies = keyspace.columnFamily(dependenciesCf, Utf8Codec, LongCodec, Utf8Codec)
+    .consistency(writeConsistency)
+    .consistency(readConsistency)
 
   val Delimiter: String = ":"
 

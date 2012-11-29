@@ -15,24 +15,39 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
-import com.twitter.zipkin.storage.Storage
-import com.twitter.util.{Duration, Future}
-import com.twitter.zipkin.gen
-import com.twitter.ostrich.stats.Stats
-import com.twitter.cassie.{Order, Column, ColumnFamily}
-import com.twitter.zipkin.common.Span
+import com.twitter.cassie.codecs.{Codec, Utf8Codec, LongCodec}
+import com.twitter.cassie._
 import com.twitter.conversions.time._
-import scala.collection.JavaConverters._
-import com.twitter.zipkin.config.{CassandraConfig, CassandraStorageConfig}
+import com.twitter.ostrich.stats.Stats
+import com.twitter.util.{Duration, Future}
+import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
+import com.twitter.zipkin.gen
+import com.twitter.zipkin.storage.Storage
+import scala.collection.JavaConverters._
 
-trait CassandraStorage extends Storage with Cassandra {
+case class CassandraStorage(
+  keyspace: Keyspace,
+  columnFamily: String,
+  writeConsistency: WriteConsistency,
+  readConsistency: ReadConsistency,
+  readBatchSize: Int,
+  dataTimeToLive: Duration,
+  spanCodec: Codec[gen.Span] = new SnappyCodec(new ScroogeThriftCodec[gen.Span](gen.Span))
+) extends Storage {
 
-  val cassandraConfig: CassandraConfig
+  def close() {
+    keyspace.close()
+  }
 
-  val storageConfig: CassandraStorageConfig
-
-  val traces: ColumnFamily[Long, String, gen.Span]
+  /**
+   * Row key is the trace id.
+   * Column name is the span identifier.
+   * Value is a Thrift serialized Span.
+   */
+  val traces = keyspace.columnFamily(columnFamily, LongCodec, Utf8Codec, spanCodec)
+    .consistency(writeConsistency)
+    .consistency(readConsistency)
 
   // storing the span in the traces cf
   private val CASSANDRA_STORE_SPAN = Stats.getCounter("cassandra_storespan")
@@ -57,7 +72,7 @@ trait CassandraStorage extends Storage with Cassandra {
     CASSANDRA_STORE_SPAN.incr
     WRITE_REQUEST_COUNTER.incr()
     val traceKey = span.traceId
-    val traceCol = Column[String, gen.Span](createSpanColumnName(span), span.toThrift).ttl(cassandraConfig.tracesTimeToLive)
+    val traceCol = Column[String, gen.Span](createSpanColumnName(span), span.toThrift).ttl(dataTimeToLive)
     traces.insert(traceKey, traceCol).unit
   }
 
@@ -99,7 +114,7 @@ trait CassandraStorage extends Storage with Cassandra {
   def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
     CASSANDRA_TRACE_EXISTS.incr
     Future.collect {
-      traceIds.grouped(storageConfig.traceFetchBatchSize).toSeq.map { ids =>
+      traceIds.grouped(readBatchSize).toSeq.map { ids =>
         traces.multigetRows(ids.toSet.asJava, None, None, Order.Normal, 1).map { rowSet =>
           ids.flatMap { id =>
             val spans = rowSet.asScala(id).asScala.map {
@@ -131,7 +146,7 @@ trait CassandraStorage extends Storage with Cassandra {
   def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
     CASSANDRA_GET_TRACE.incr
     Future.collect {
-      traceIds.grouped(storageConfig.traceFetchBatchSize).toSeq.map { ids =>
+      traceIds.grouped(readBatchSize).toSeq.map { ids =>
         traces.multigetRows(ids.toSet.asJava, None, None, Order.Normal, TRACE_MAX_COLS).map { rowSet =>
           ids.flatMap { id =>
             val spans = rowSet.asScala(id).asScala.map {
@@ -158,7 +173,7 @@ trait CassandraStorage extends Storage with Cassandra {
     }
   }
 
-  def getDataTimeToLive: Int = cassandraConfig.tracesTimeToLive.inSeconds
+  def getDataTimeToLive: Int = dataTimeToLive.inSeconds
 
   /*
   * Helper methods

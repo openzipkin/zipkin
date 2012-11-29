@@ -27,13 +27,16 @@ import com.twitter.cassie.tests.util.FakeCassandra
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.{Eval, Future}
 import java.util.{Set => JSet}
-import com.twitter.cassie.{BatchMutationBuilder, Column, Order, ColumnFamily}
+import com.twitter.cassie._
 import com.twitter.io.TempFile
 import com.twitter.zipkin.config.{CassandraConfig, CassandraIndexConfig}
 import com.twitter.zipkin.common._
+import com.twitter.zipkin.storage.cassandra.CassandraIndex
 
 class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
   object FakeServer extends FakeCassandra
+
+  val mockKeyspace = mock[Keyspace]
   var cassandraIndex: CassandraIndex = null
 
   val ep = Endpoint(123, 123, "service")
@@ -90,7 +93,9 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
       val batch = mock[BatchMutationBuilder[ByteBuffer, Long, Long]]
       val _config = mock[CassandraConfig]
 
-      val cs = new CassandraIndex() {
+      val cs = CassandraIndex(
+        keyspace, "", "", "", ""
+      ) {
         val config = _config
         val serviceSpanNameIndex = null
         val serviceNameIndex = null
