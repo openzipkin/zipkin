@@ -17,16 +17,17 @@ package com.twitter.zipkin.storage.cassandra
  */
 import com.twitter.cassie.codecs.{LongCodec, Utf8Codec}
 import com.twitter.cassie._
-import scala.collection.JavaConverters._
+import com.twitter.conversions.time._
 import com.twitter.ostrich.stats.Stats
-import collection.Set
-import java.nio.ByteBuffer
-import java.util.{Map => JMap}
 import com.twitter.zipkin.common.{Annotation, Span}
-import com.twitter.zipkin.util.Util
 import com.twitter.zipkin.storage.{IndexedTraceId, TraceIdDuration, Index}
+import com.twitter.zipkin.util.Util
 import com.twitter.util.{Duration, Future}
 import com.twitter.zipkin.Constants
+import java.nio.ByteBuffer
+import java.util.{Map => JMap}
+import scala.collection.JavaConverters._
+import scala.collection.Set
 
 /**
  * An index for the spans and traces using Cassandra with the Cassie client.
@@ -41,10 +42,10 @@ case class CassandraIndex(
   serviceSpanNameIndexCf: String,
   annotationsIndexCf: String,
   durationIndexCf: String,
-  dataTimeToLive: Duration,
-  numBuckets: Int,
-  writeConsistency: WriteConsistency,
-  readConsistency: ReadConsistency
+  dataTimeToLive: Duration = 3.days,
+  numBuckets: Int = 10,
+  writeConsistency: WriteConsistency = WriteConsistency.One,
+  readConsistency: ReadConsistency = ReadConsistency.One
 ) extends Index {
 
   def close() {

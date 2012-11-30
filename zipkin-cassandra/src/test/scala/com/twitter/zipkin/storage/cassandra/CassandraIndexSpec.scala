@@ -16,22 +16,19 @@ package com.twitter.zipkin.storage.cassandra
  *  limitations under the License.
  *
  */
-import scala.collection._
-import java.nio.ByteBuffer
-import org.specs.Specification
-import org.specs.mock.{JMocker, ClassMocker}
-import com.twitter.conversions.time._
-import scala.collection.JavaConverters._
-
+import com.twitter.cassie.codecs.{ByteArrayCodec, LongCodec, Utf8Codec}
 import com.twitter.cassie.tests.util.FakeCassandra
+import com.twitter.cassie._
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.{Eval, Future}
-import java.util.{Set => JSet}
-import com.twitter.cassie._
 import com.twitter.io.TempFile
-import com.twitter.zipkin.config.{CassandraConfig, CassandraIndexConfig}
 import com.twitter.zipkin.common._
-import com.twitter.zipkin.storage.cassandra.CassandraIndex
+import com.twitter.zipkin.config.CassandraIndexConfig
+import java.nio.ByteBuffer
+import java.util.{Set => JSet}
+import org.specs.Specification
+import org.specs.mock.{JMocker, ClassMocker}
+import scala.collection.JavaConverters._
 
 class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
   object FakeServer extends FakeCassandra
@@ -89,30 +86,22 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
     }
 
     "index only on annotation in each span with the same value" in {
-      val _annotationsIndex = mock[ColumnFamily[ByteBuffer, Long, Long]]
+      val annotationsIndex = mock[ColumnFamily[ByteBuffer, Long, Long]]
       val batch = mock[BatchMutationBuilder[ByteBuffer, Long, Long]]
-      val _config = mock[CassandraConfig]
 
-      val cs = CassandraIndex(
-        keyspace, "", "", "", ""
-      ) {
-        val config = _config
-        val serviceSpanNameIndex = null
-        val serviceNameIndex = null
-        val annotationsIndex = _annotationsIndex
-        val durationIndex = null
-        val serviceNames = null
-        val spanNames = null
+      expect {
+        one(mockKeyspace).columnFamily("annotations", ByteArrayCodec, LongCodec, LongCodec) willReturn annotationsIndex
+        one(annotationsIndex).consistency(WriteConsistency.One)
       }
+
+      val cs = CassandraIndex(mockKeyspace, "", "", "", "", "annotations", "")
       val col = Column[Long, Long](ann3.timestamp, span3.traceId)
 
       expect {
-        2.of(_config).tracesTimeToLive willReturn 20.days
-
-        one(_annotationsIndex).batch willReturn batch
+        one(annotationsIndex).batch willReturn batch
         one(batch).insert(a[ByteBuffer], a[Column[Long, Long]])
         allowingMatch(batch, "insert")
-        one(batch).execute
+        one(batch).execute()
       }
 
       cs.indexSpanByAnnotations(span3)
@@ -134,7 +123,7 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
       // no support in FakeCassandra for order and limit and it seems tricky to add
       // so will mock the index instead
 
-      val _durationIndex = new ColumnFamily[Long, Long, String] {
+      val durationIndex = new ColumnFamily[Long, Long, String] {
         override def multigetRows(keys: JSet[Long], startColumnName: Option[Long], endColumnName: Option[Long], order: Order, count: Int) = {
           if (!order.reversed) {
             Future.value(Map(321L -> Map(100L -> Column(100L, "")).asJava).asJava)
@@ -144,15 +133,10 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
         }
       }
 
-      val cass = new CassandraIndex() {
-        val config = new CassandraConfig{}
-        val serviceSpanNameIndex = null
-        val serviceNameIndex = null
-        val annotationsIndex = null
-        val durationIndex = _durationIndex
-        val serviceNames = null
-        val spanNames = null
+      expect {
+        one(mockKeyspace).columnFamily("duration", LongCodec, LongCodec, Utf8Codec) willReturn durationIndex
       }
+      val cass = CassandraIndex(mockKeyspace, "", "", "", "", "", "duration")
 
       val duration = cass.getTracesDuration(Seq(321L))()
       duration(0).traceId mustEqual 321L
@@ -163,7 +147,7 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
       // no support in FakeCassandra for order and limit and it seems tricky to add
       // so will mock the index instead
 
-      val _durationIndex = new ColumnFamily[Long, Long, String] {
+      val durationIndex = new ColumnFamily[Long, Long, String] {
         override def multigetRows(keys: JSet[Long], startColumnName: Option[Long], endColumnName: Option[Long], order: Order, count: Int) = {
           if (!order.reversed) {
             Future.value(Map(321L -> Map(100L -> Column(100L, "")).asJava).asJava)
@@ -173,15 +157,10 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
         }
       }
 
-      val cass = new CassandraIndex() {
-        val config = new CassandraConfig{}
-        val serviceSpanNameIndex = null
-        val serviceNameIndex = null
-        val annotationsIndex = null
-        val durationIndex = _durationIndex
-        val serviceNames = null
-        val spanNames = null
+      expect {
+        one(mockKeyspace).columnFamily("duration", LongCodec, LongCodec, Utf8Codec) willReturn durationIndex
       }
+      val cass = CassandraIndex(mockKeyspace, "", "", "", "", "", "duration")
 
       val duration = cass.getTracesDuration(Seq(321L))()
       duration.isEmpty mustEqual true
