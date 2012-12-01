@@ -15,12 +15,10 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
-import com.twitter.util.Future
+import com.twitter.cassie._
+import com.twitter.util.{Future, Return, Throw}
 import com.twitter.zipkin.storage.Aggregates
 import scala.collection.JavaConverters._
-import com.twitter.cassie._
-import com.twitter.util.Throw
-import com.twitter.util.Return
 
 /**
  * Cassandra backed aggregates store
