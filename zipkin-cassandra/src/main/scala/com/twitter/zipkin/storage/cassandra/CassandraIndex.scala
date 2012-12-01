@@ -36,12 +36,12 @@ import scala.collection.Set
  */
 case class CassandraIndex(
   keyspace: Keyspace,
-  serviceNamesCf: String,
-  spanNamesCf: String,
-  serviceNameIndexCf: String,
-  serviceSpanNameIndexCf: String,
-  annotationsIndexCf: String,
-  durationIndexCf: String,
+  serviceNames: ColumnFamily[String, String, String],
+  spanNames: ColumnFamily[String, String, String],
+  serviceNameIndex: ColumnFamily[String, Long, Long],
+  serviceSpanNameIndex: ColumnFamily[String, Long, Long],
+  annotationsIndex: ColumnFamily[ByteBuffer, Long, Long],
+  durationIndex: ColumnFamily[Long, Long, String],
   dataTimeToLive: Duration = 3.days,
   numBuckets: Int = 10,
   writeConsistency: WriteConsistency = WriteConsistency.One,
@@ -51,93 +51,6 @@ case class CassandraIndex(
   def close() {
     keyspace.close()
   }
-
-  /**
-   * Row key is the service.spanname.
-   * Column name is the timestamp.
-   * Value is the trace id.
-   */
-  lazy val serviceSpanNameIndex = keyspace.columnFamily(serviceSpanNameIndexCf, Utf8Codec, LongCodec, LongCodec)
-    .consistency(writeConsistency)
-    .consistency(readConsistency)
-
-  /**
-   * Row key is the service.
-   * Column name is the timestamp.
-   * Value is the trace id.
-   */
-  lazy val serviceNameIndex = new StringBucketedColumnFamily(
-    BucketedColumnFamily(
-      keyspace,
-      serviceNameIndexCf,
-      LongCodec,
-      LongCodec,
-      writeConsistency,
-      readConsistency
-    ),
-    numBuckets
-  )
-
-
-  /**
-   * Row key is "annotation value" (for time based annotations) or "annotation key:annotation value" for key value
-   * based annotations.
-   * Column name is the timestamp.
-   * Value is the trace id.
-   */
-  lazy val annotationsIndex = new ByteBufferBucketedColumnFamily(
-    BucketedColumnFamily(
-      keyspace,
-      annotationsIndexCf,
-      LongCodec,
-      LongCodec,
-      writeConsistency,
-      readConsistency
-    ),
-    numBuckets
-  )
-
-  /**
-   * Row key is trace id
-   * Column name is the timestamp of the span.
-   * Value is not used
-   */
-  lazy val durationIndex = keyspace.columnFamily(durationIndexCf, LongCodec, LongCodec, Utf8Codec)
-    .consistency(writeConsistency)
-    .consistency(readConsistency)
-
-  /**
-   * Key is hardcoded string to look up by
-   * Column is service names
-   * Value is not used
-   */
-  lazy val serviceNames = new StringBucketedColumnFamily(
-    BucketedColumnFamily(
-      keyspace,
-      serviceNamesCf,
-      Utf8Codec,
-      Utf8Codec,
-      writeConsistency,
-      readConsistency
-    ),
-    numBuckets
-  )
-
-  /**
-   * Row key is service name.
-   * Column name is span name (that is connected to the service).
-   * Value is not used.
-   */
-  lazy val spanNames = new StringBucketedColumnFamily(
-    BucketedColumnFamily(
-      keyspace,
-      spanNamesCf,
-      Utf8Codec,
-      Utf8Codec,
-      writeConsistency,
-      readConsistency
-    ),
-    numBuckets)
 
   // store the span name used in this service
   private val CASSANDRA_STORE_SPAN_NAME = Stats.getCounter("cassandra_storespanname")

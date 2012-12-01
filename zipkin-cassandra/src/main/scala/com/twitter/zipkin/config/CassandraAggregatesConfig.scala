@@ -15,6 +15,7 @@
  */
 package com.twitter.zipkin.config
 
+import com.twitter.cassie.codecs.{LongCodec, Utf8Codec}
 import com.twitter.cassie.{ReadConsistency, WriteConsistency}
 import com.twitter.zipkin.storage.cassandra.CassandraAggregates
 
@@ -30,6 +31,14 @@ trait CassandraAggregatesConfig extends AggregatesConfig { self =>
   def apply(): CassandraAggregates = {
     val keyspace = cassandraConfig.keyspace
 
-    CassandraAggregates(keyspace, topAnnotationsCf, dependenciesCf, writeConsistency, readConsistency)
+    val topAnnotations = keyspace.columnFamily(topAnnotationsCf,Utf8Codec, LongCodec, Utf8Codec)
+      .consistency(writeConsistency)
+      .consistency(readConsistency)
+
+    val dependencies = keyspace.columnFamily(dependenciesCf, Utf8Codec, LongCodec, Utf8Codec)
+      .consistency(writeConsistency)
+      .consistency(readConsistency)
+
+    CassandraAggregates(keyspace, topAnnotations, dependencies)
   }
 }

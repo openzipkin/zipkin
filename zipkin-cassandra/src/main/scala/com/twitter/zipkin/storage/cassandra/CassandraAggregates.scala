@@ -15,11 +15,10 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
-import com.twitter.util.{Throw, Return, Future}
+import com.twitter.util.Future
 import com.twitter.zipkin.storage.Aggregates
 import scala.collection.JavaConverters._
 import com.twitter.cassie._
-import com.twitter.cassie.codecs.{LongCodec, Utf8Codec}
 import com.twitter.util.Throw
 import com.twitter.util.Return
 
@@ -34,23 +33,13 @@ import com.twitter.util.Return
  */
 case class CassandraAggregates(
   keyspace: Keyspace,
-  topAnnotationsCf: String,
-  dependenciesCf: String,
-  writeConsistency: WriteConsistency,
-  readConsistency: ReadConsistency
+  topAnnotations: ColumnFamily[String, Long, String],
+  dependencies: ColumnFamily[String, Long, String]
 ) extends Aggregates {
 
   def close() {
     keyspace.close()
   }
-
-  lazy val topAnnotations = keyspace.columnFamily(topAnnotationsCf,Utf8Codec, LongCodec, Utf8Codec)
-    .consistency(writeConsistency)
-    .consistency(readConsistency)
-
-  lazy val dependencies = keyspace.columnFamily(dependenciesCf, Utf8Codec, LongCodec, Utf8Codec)
-    .consistency(writeConsistency)
-    .consistency(readConsistency)
 
   val Delimiter: String = ":"
 

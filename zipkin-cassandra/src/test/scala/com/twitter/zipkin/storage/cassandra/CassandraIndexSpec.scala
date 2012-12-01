@@ -86,19 +86,14 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
     }
 
     "index only on annotation in each span with the same value" in {
-      val annotationsIndex = mock[ColumnFamily[ByteBuffer, Long, Long]]
+      val mockAnnotationsIndex = mock[ColumnFamily[ByteBuffer, Long, Long]]
       val batch = mock[BatchMutationBuilder[ByteBuffer, Long, Long]]
 
-      expect {
-        one(mockKeyspace).columnFamily("annotations", ByteArrayCodec, LongCodec, LongCodec) willReturn annotationsIndex
-        one(annotationsIndex).consistency(WriteConsistency.One)
-      }
-
-      val cs = CassandraIndex(mockKeyspace, "", "", "", "", "annotations", "")
+      val cs = new CassandraIndex(mockKeyspace, null, null, null, null, mockAnnotationsIndex, null)
       val col = Column[Long, Long](ann3.timestamp, span3.traceId)
 
       expect {
-        one(annotationsIndex).batch willReturn batch
+        one(mockAnnotationsIndex).batch willReturn batch
         one(batch).insert(a[ByteBuffer], a[Column[Long, Long]])
         allowingMatch(batch, "insert")
         one(batch).execute()
@@ -133,10 +128,7 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
         }
       }
 
-      expect {
-        one(mockKeyspace).columnFamily("duration", LongCodec, LongCodec, Utf8Codec) willReturn durationIndex
-      }
-      val cass = CassandraIndex(mockKeyspace, "", "", "", "", "", "duration")
+      val cass = CassandraIndex(mockKeyspace, null, null, null, null, null, durationIndex)
 
       val duration = cass.getTracesDuration(Seq(321L))()
       duration(0).traceId mustEqual 321L
@@ -157,10 +149,7 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
         }
       }
 
-      expect {
-        one(mockKeyspace).columnFamily("duration", LongCodec, LongCodec, Utf8Codec) willReturn durationIndex
-      }
-      val cass = CassandraIndex(mockKeyspace, "", "", "", "", "", "duration")
+      val cass = CassandraIndex(mockKeyspace, null, null, null, null, null, durationIndex)
 
       val duration = cass.getTracesDuration(Seq(321L))()
       duration.isEmpty mustEqual true

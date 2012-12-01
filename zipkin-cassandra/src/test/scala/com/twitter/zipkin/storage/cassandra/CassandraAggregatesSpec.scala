@@ -24,30 +24,16 @@ import com.twitter.zipkin.config.CassandraAggregatesConfig
 import org.specs.mock.{ClassMocker, JMocker}
 import org.specs.Specification
 import scala.collection.JavaConverters._
-import com.twitter.cassie.codecs.Codec
 
 class CassandraAggregatesSpec extends Specification with JMocker with ClassMocker {
 
   val mockKeyspace = mock[Keyspace]
   val mockAnnotationsCf = mock[ColumnFamily[String, Long, String]]
   val mockDependenciesCf = mock[ColumnFamily[String, Long, String]]
-  val writeConsistency = WriteConsistency.One
-  val readConsistency = ReadConsistency.One
 
-  def cassandraAggregates = CassandraAggregates(mockKeyspace, "annotations", "dependencies", writeConsistency, readConsistency)
+  def cassandraAggregates = CassandraAggregates(mockKeyspace, mockAnnotationsCf, mockDependenciesCf)
 
   def column(name: Long, value: String) = new Column[Long, String](name, value)
-
-  doBefore {
-    expect {
-      one(mockKeyspace).columnFamily("annotations", any[Codec[String]], any[Codec[Long]], any[Codec[String]]) willReturn mockAnnotationsCf
-      one(mockKeyspace).columnFamily("dependencies", any[Codec[String]], any[Codec[Long]], any[Codec[String]]) willReturn mockDependenciesCf
-      one(mockAnnotationsCf).consistency(writeConsistency) willReturn mockAnnotationsCf
-      one(mockAnnotationsCf).consistency(readConsistency) willReturn mockAnnotationsCf
-      one(mockDependenciesCf).consistency(writeConsistency) willReturn mockDependenciesCf
-      one(mockDependenciesCf).consistency(readConsistency) willReturn mockDependenciesCf
-    }
-  }
 
   "CassandraAggregates" should {
     val topAnnsSeq = Seq("finagle.retry", "finagle.timeout", "annotation1", "annotation2")
