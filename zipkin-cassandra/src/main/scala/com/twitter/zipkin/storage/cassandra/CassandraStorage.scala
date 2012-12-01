@@ -15,7 +15,6 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
-import com.twitter.cassie.codecs.{Codec, Utf8Codec, LongCodec}
 import com.twitter.cassie._
 import com.twitter.conversions.time._
 import com.twitter.ostrich.stats.Stats
@@ -28,26 +27,14 @@ import scala.collection.JavaConverters._
 
 case class CassandraStorage(
   keyspace: Keyspace,
-  columnFamily: String,
-  writeConsistency: WriteConsistency,
-  readConsistency: ReadConsistency,
+  traces: ColumnFamily[Long, String, gen.Span],
   readBatchSize: Int,
-  dataTimeToLive: Duration,
-  spanCodec: Codec[gen.Span] = new SnappyCodec(new ScroogeThriftCodec[gen.Span](gen.Span))
+  dataTimeToLive: Duration
 ) extends Storage {
 
   def close() {
     keyspace.close()
   }
-
-  /**
-   * Row key is the trace id.
-   * Column name is the span identifier.
-   * Value is a Thrift serialized Span.
-   */
-  val traces = keyspace.columnFamily(columnFamily, LongCodec, Utf8Codec, spanCodec)
-    .consistency(writeConsistency)
-    .consistency(readConsistency)
 
   // storing the span in the traces cf
   private val CASSANDRA_STORE_SPAN = Stats.getCounter("cassandra_storespan")
