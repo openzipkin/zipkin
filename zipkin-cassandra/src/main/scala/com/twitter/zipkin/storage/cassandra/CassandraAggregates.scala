@@ -15,10 +15,10 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
-import com.twitter.util.{Throw, Return, Future}
+import com.twitter.cassie._
+import com.twitter.util.{Future, Return, Throw}
 import com.twitter.zipkin.storage.Aggregates
 import scala.collection.JavaConverters._
-import com.twitter.cassie.{Column, ColumnFamily}
 
 /**
  * Cassandra backed aggregates store
@@ -29,10 +29,15 @@ import com.twitter.cassie.{Column, ColumnFamily}
  * Top annotations are a sequence of the most popular time-based annotation strings
  * Top key value annotations are a sequence of the most popular _keys_ among key value annotations
  */
-trait CassandraAggregates extends Aggregates with Cassandra {
+case class CassandraAggregates(
+  keyspace: Keyspace,
+  topAnnotations: ColumnFamily[String, Long, String],
+  dependencies: ColumnFamily[String, Long, String]
+) extends Aggregates {
 
-  val topAnnotations: ColumnFamily[String, Long, String]
-  val dependencies: ColumnFamily[String, Long, String]
+  def close() {
+    keyspace.close()
+  }
 
   val Delimiter: String = ":"
 

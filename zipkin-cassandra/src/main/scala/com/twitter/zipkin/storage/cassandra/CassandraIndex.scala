@@ -15,33 +15,42 @@ package com.twitter.zipkin.storage.cassandra
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import com.twitter.cassie.codecs.{LongCodec, Utf8Codec}
 import com.twitter.cassie._
-import scala.collection.JavaConverters._
+import com.twitter.conversions.time._
 import com.twitter.ostrich.stats.Stats
-import collection.Set
+import com.twitter.zipkin.common.{Annotation, Span}
+import com.twitter.zipkin.storage.{IndexedTraceId, TraceIdDuration, Index}
+import com.twitter.zipkin.util.Util
+import com.twitter.util.{Duration, Future}
+import com.twitter.zipkin.Constants
 import java.nio.ByteBuffer
 import java.util.{Map => JMap}
-import com.twitter.zipkin.common.{Annotation, Span}
-import com.twitter.zipkin.util.Util
-import com.twitter.zipkin.storage.{IndexedTraceId, TraceIdDuration, Index}
-import com.twitter.util.Future
-import com.twitter.zipkin.config.CassandraConfig
-import com.twitter.zipkin.Constants
+import scala.collection.JavaConverters._
+import scala.collection.Set
 
 /**
  * An index for the spans and traces using Cassandra with the Cassie client.
+ *
+ * @param numBuckets maximum number of buckets for BucketedColumnFamily
  */
-trait CassandraIndex extends Index with Cassandra {
+case class CassandraIndex(
+  keyspace: Keyspace,
+  serviceNames: ColumnFamily[String, String, String],
+  spanNames: ColumnFamily[String, String, String],
+  serviceNameIndex: ColumnFamily[String, Long, Long],
+  serviceSpanNameIndex: ColumnFamily[String, Long, Long],
+  annotationsIndex: ColumnFamily[ByteBuffer, Long, Long],
+  durationIndex: ColumnFamily[Long, Long, String],
+  dataTimeToLive: Duration = 3.days,
+  numBuckets: Int = 10,
+  writeConsistency: WriteConsistency = WriteConsistency.One,
+  readConsistency: ReadConsistency = ReadConsistency.One
+) extends Index {
 
-  val config: CassandraConfig
-
-  /* Index `ColumnFamily`s */
-  val serviceSpanNameIndex : ColumnFamily[String, Long, Long]
-  val serviceNameIndex     : ColumnFamily[String, Long, Long]
-  val annotationsIndex     : ColumnFamily[ByteBuffer, Long, Long]
-  val durationIndex        : ColumnFamily[Long, Long, String]
-  val serviceNames         : ColumnFamily[String, String, String]
-  val spanNames            : ColumnFamily[String, String, String]
+  def close() {
+    keyspace.close()
+  }
 
   // store the span name used in this service
   private val CASSANDRA_STORE_SPAN_NAME = Stats.getCounter("cassandra_storespanname")
@@ -74,7 +83,7 @@ trait CassandraIndex extends Index with Cassandra {
   // used to delimit the key value annotation parts in the index
   private val INDEX_DELIMITER = ":"
 
-  Stats.addGauge("cassandra_ttl_days") { config.tracesTimeToLive.inDays }
+  Stats.addGauge("cassandra_ttl_days") { dataTimeToLive.inDays }
 
   private def encode(serviceName: String, index: String) = {
     Array(serviceName, index).mkString(INDEX_DELIMITER)
@@ -105,7 +114,7 @@ trait CassandraIndex extends Index with Cassandra {
             Future.Unit
           case s @ _ =>
             WRITE_REQUEST_COUNTER.incr()
-            val serviceNameCol = Column[String, String](s.toLowerCase, "").ttl(config.tracesTimeToLive)
+            val serviceNameCol = Column[String, String](s.toLowerCase, "").ttl(dataTimeToLive)
             serviceNames.insert(SERVICE_NAMES_KEY, serviceNameCol)
         }
       }.toSeq
@@ -118,7 +127,7 @@ trait CassandraIndex extends Index with Cassandra {
       CASSANDRA_STORE_SPAN_NAME_NO_SPAN_NAME.incr()
       Future.Unit
     } else {
-      val spanNameCol = Column[String, String](span.name.toLowerCase, "").ttl(config.tracesTimeToLive)
+      val spanNameCol = Column[String, String](span.name.toLowerCase, "").ttl(dataTimeToLive)
       Future.join {
         span.serviceNames.map {
           WRITE_REQUEST_COUNTER.incr()
@@ -225,11 +234,11 @@ trait CassandraIndex extends Index with Cassandra {
     val futures = serviceNames.map(serviceName => {
       WRITE_REQUEST_COUNTER.incr()
       val serviceSpanIndexKey = serviceName + "." + span.name.toLowerCase
-      val serviceSpanIndexCol = Column[Long, Long](timestamp, span.traceId).ttl(config.tracesTimeToLive)
+      val serviceSpanIndexCol = Column[Long, Long](timestamp, span.traceId).ttl(dataTimeToLive)
       val serviceSpanNameFuture = serviceSpanNameIndex.insert(serviceSpanIndexKey, serviceSpanIndexCol)
 
       WRITE_REQUEST_COUNTER.incr()
-      val serviceIndexCol = Column[Long, Long](timestamp, span.traceId).ttl(config.tracesTimeToLive)
+      val serviceIndexCol = Column[Long, Long](timestamp, span.traceId).ttl(dataTimeToLive)
       val serviceNameFuture = serviceNameIndex.insert(serviceName, serviceIndexCol)
       List(serviceSpanNameFuture, serviceNameFuture)
     }).toList.flatten
@@ -256,7 +265,7 @@ trait CassandraIndex extends Index with Cassandra {
       a.host match {
         case Some(endpoint) => {
           WRITE_REQUEST_COUNTER.incr()
-          val col = Column[Long, Long](a.timestamp, span.traceId).ttl(config.tracesTimeToLive)
+          val col = Column[Long, Long](a.timestamp, span.traceId).ttl(dataTimeToLive)
           batch.insert(ByteBuffer.wrap(encode(endpoint.serviceName, a.value).getBytes), col)
         }
         case None => // Nothin
@@ -268,7 +277,7 @@ trait CassandraIndex extends Index with Cassandra {
         case Some(endpoint) => {
           WRITE_REQUEST_COUNTER.incr(2)
           val key = encode(endpoint.serviceName, ba.key).getBytes
-          val col = Column[Long, Long](timestamp, span.traceId).ttl(config.tracesTimeToLive)
+          val col = Column[Long, Long](timestamp, span.traceId).ttl(dataTimeToLive)
           batch.insert(ByteBuffer.wrap(key ++ INDEX_DELIMITER.getBytes ++ Util.getArrayFromBuffer(ba.value)), col)
           batch.insert(ByteBuffer.wrap(key), col)
         }
@@ -287,11 +296,11 @@ trait CassandraIndex extends Index with Cassandra {
     val batch = durationIndex.batch()
     first foreach {
       WRITE_REQUEST_COUNTER.incr()
-      t => batch.insert(span.traceId, Column[Long, String](t, "").ttl(config.tracesTimeToLive))
+      t => batch.insert(span.traceId, Column[Long, String](t, "").ttl(dataTimeToLive))
     }
     last foreach {
       WRITE_REQUEST_COUNTER.incr()
-      t => batch.insert(span.traceId, Column[Long, String](t, "").ttl(config.tracesTimeToLive))
+      t => batch.insert(span.traceId, Column[Long, String](t, "").ttl(dataTimeToLive))
     }
     batch.execute()
   }

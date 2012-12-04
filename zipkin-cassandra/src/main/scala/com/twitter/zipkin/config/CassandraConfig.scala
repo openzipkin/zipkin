@@ -26,9 +26,6 @@ import com.twitter.zipkin.gen
 
 trait CassandraConfig {
 
-  /* Data TTL */
-  var tracesTimeToLive: Duration = 3.days
-
   /* Should we pick up hosts from ZooKeeper */
   var useServerSets: Boolean = true
 

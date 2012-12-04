@@ -15,11 +15,13 @@
  */
 package com.twitter.zipkin.config
 
-import com.twitter.zipkin.storage.cassandra.CassandraStorage
-import com.twitter.zipkin.gen
-import com.twitter.cassie.codecs.{Utf8Codec, LongCodec}
+import com.twitter.cassie.codecs.{Codec, Utf8Codec, LongCodec}
 import com.twitter.cassie.{ReadConsistency, WriteConsistency}
+import com.twitter.conversions.time._
 import com.twitter.logging.Logger
+import com.twitter.util.Duration
+import com.twitter.zipkin.gen
+import com.twitter.zipkin.storage.cassandra.{ScroogeThriftCodec, SnappyCodec, CassandraStorage}
 
 trait CassandraStorageConfig extends StorageConfig {
 
@@ -31,26 +33,23 @@ trait CassandraStorageConfig extends StorageConfig {
   var traceFetchBatchSize = 500
 
   var tracesCf               : String = "Traces"
+  var writeConsistency = WriteConsistency.One
+  var readConsistency = ReadConsistency.One
+  var dataTimeToLive: Duration = 3.days
+  var spanCodec: Codec[gen.Span] = new SnappyCodec(new ScroogeThriftCodec[gen.Span](gen.Span))
 
   def apply(): CassandraStorage = {
-    val _storageConfig = this
-    val _keyspace = cassandraConfig.keyspace
+    val keyspace = cassandraConfig.keyspace
 
     /**
      * Row key is the trace id.
      * Column name is the span identifier.
      * Value is a Thrift serialized Span.
      */
-    val _traces = _keyspace.columnFamily[Long, String, gen.Span](tracesCf,
-      LongCodec, Utf8Codec, cassandraConfig.spanCodec)
-      .consistency(WriteConsistency.One)
-      .consistency(ReadConsistency.One)
+    val traces = keyspace.columnFamily(tracesCf, LongCodec, Utf8Codec, spanCodec)
+      .consistency(writeConsistency)
+      .consistency(readConsistency)
 
-    new CassandraStorage() {
-      val cassandraConfig = _storageConfig.cassandraConfig
-      val storageConfig = _storageConfig
-      keyspace = _keyspace
-      val traces = _traces
-    }
+    CassandraStorage(keyspace, traces, traceFetchBatchSize, dataTimeToLive)
   }
 }

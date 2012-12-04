@@ -90,13 +90,13 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
       query.start()
 
       queryTransport = ClientBuilder()
-        .hosts("localhost:" + queryPort)
+        .hosts(InetAddress.getLocalHost.getHostName + ":" + queryPort)
         .hostConnectionLimit(1)
         .codec(ThriftClientFramedCodec())
         .build()
 
       collectorTransport = ClientBuilder()
-        .hosts("localhost:" + collectorPort)
+        .hosts(InetAddress.getLocalHost.getHostName + ":" + collectorPort)
         .hostConnectionLimit(1)
         .codec(ThriftClientFramedCodec())
         .build()

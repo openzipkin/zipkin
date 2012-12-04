@@ -31,7 +31,7 @@ object Main {
     val (collectorHost, collectorPort, queryHost, queryPort) =
       if (args.length < 4) {
         // Default to localhost:9410, localhost:9411
-        ("localhost", 9410, "localhost", 9411)
+        (InetAddress.getLocalHost.getHostAddress, 9410, InetAddress.getLocalHost.getHostAddress, 9411)
       } else {
         (args(0), args(1).toInt, args(2), args(3).toInt)
       }

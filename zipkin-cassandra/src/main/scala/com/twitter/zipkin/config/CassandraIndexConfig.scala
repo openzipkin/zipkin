@@ -15,10 +15,13 @@
  */
 package com.twitter.zipkin.config
 
-import com.twitter.zipkin.storage.cassandra._
-import com.twitter.cassie.codecs.{Utf8Codec, LongCodec}
-import com.twitter.cassie.{ReadConsistency, WriteConsistency}
+import com.twitter.conversions.time._
+import com.twitter.cassie.codecs.{LongCodec, Utf8Codec}
+import com.twitter.cassie.{ColumnFamily, ReadConsistency, WriteConsistency}
 import com.twitter.logging.Logger
+import com.twitter.util.Duration
+import com.twitter.zipkin.storage.cassandra._
+import java.nio.ByteBuffer
 
 trait CassandraIndexConfig extends IndexConfig {
 
@@ -27,6 +30,7 @@ trait CassandraIndexConfig extends IndexConfig {
   def cassandraConfig: CassandraConfig
 
   // this is how many entries we fetch from cassandra in one call using the iterator
+  var dataTimeToLive: Duration = 3.days
   var indexIteratorBatchSize = 500
 
   /* Cassandra keyspace and column family names */
@@ -41,34 +45,35 @@ trait CassandraIndexConfig extends IndexConfig {
   /* Max buckets for BucketedColumnFamily */
   var numBuckets: Int = 10
 
+  var writeConsistency = WriteConsistency.One
+  var readConsistency = ReadConsistency.One
 
   def apply(): CassandraIndex = {
 
-    val _keyspace = cassandraConfig.keyspace
+    val keyspace = cassandraConfig.keyspace
 
     /**
      * Row key is the service.spanname.
      * Column name is the timestamp.
      * Value is the trace id.
      */
-    val _serviceSpanNameIndex = _keyspace.columnFamily[String, Long, Long](serviceSpanNameIndexCf,
-      Utf8Codec, LongCodec, LongCodec)
-      .consistency(WriteConsistency.One)
-      .consistency(ReadConsistency.One)
+    lazy val serviceSpanNameIndex = keyspace.columnFamily(serviceSpanNameIndexCf, Utf8Codec, LongCodec, LongCodec)
+      .consistency(writeConsistency)
+      .consistency(readConsistency)
 
     /**
      * Row key is the service.
      * Column name is the timestamp.
      * Value is the trace id.
      */
-    val _serviceNameIndex = new StringBucketedColumnFamily(
+    lazy val serviceNameIndex: ColumnFamily[String, Long, Long] = new StringBucketedColumnFamily(
       BucketedColumnFamily(
-        _keyspace,
+        keyspace,
         serviceNameIndexCf,
         LongCodec,
         LongCodec,
-        WriteConsistency.One,
-        ReadConsistency.One
+        writeConsistency,
+        readConsistency
       ),
       numBuckets
     )
@@ -80,14 +85,14 @@ trait CassandraIndexConfig extends IndexConfig {
      * Column name is the timestamp.
      * Value is the trace id.
      */
-    val _annotationsIndex = new ByteBufferBucketedColumnFamily(
+    lazy val annotationsIndex: ColumnFamily[ByteBuffer, Long, Long] = new ByteBufferBucketedColumnFamily(
       BucketedColumnFamily(
-        _keyspace,
+        keyspace,
         annotationsIndexCf,
         LongCodec,
         LongCodec,
-        WriteConsistency.One,
-        ReadConsistency.One
+        writeConsistency,
+        readConsistency
       ),
       numBuckets
     )
@@ -97,24 +102,23 @@ trait CassandraIndexConfig extends IndexConfig {
      * Column name is the timestamp of the span.
      * Value is not used
      */
-    val _durationIndex = _keyspace.columnFamily[Long, Long, String](durationIndexCf,
-      LongCodec, LongCodec, Utf8Codec)
-      .consistency(WriteConsistency.One)
-      .consistency(ReadConsistency.One)
+    lazy val durationIndex = keyspace.columnFamily(durationIndexCf, LongCodec, LongCodec, Utf8Codec)
+      .consistency(writeConsistency)
+      .consistency(readConsistency)
 
     /**
      * Key is hardcoded string to look up by
      * Column is service names
      * Value is not used
      */
-    val _serviceNames = new StringBucketedColumnFamily(
+    lazy val serviceNames: ColumnFamily[String, String, String] = new StringBucketedColumnFamily(
       BucketedColumnFamily(
-        _keyspace,
+        keyspace,
         serviceNamesCf,
         Utf8Codec,
         Utf8Codec,
-        WriteConsistency.One,
-        ReadConsistency.One
+        writeConsistency,
+        readConsistency
       ),
       numBuckets
     )
@@ -124,27 +128,24 @@ trait CassandraIndexConfig extends IndexConfig {
      * Column name is span name (that is connected to the service).
      * Value is not used.
      */
-    val _spanNames = new StringBucketedColumnFamily(
+    lazy val spanNames: ColumnFamily[String, String, String] = new StringBucketedColumnFamily(
       BucketedColumnFamily(
-        _keyspace,
+        keyspace,
         spanNamesCf,
         Utf8Codec,
         Utf8Codec,
-        WriteConsistency.One,
-        ReadConsistency.One
+        writeConsistency,
+        readConsistency
       ),
       numBuckets)
 
     log.info("Connected to Cassandra")
-    new CassandraIndex() {
-      val config               = cassandraConfig
-      keyspace                 = _keyspace
-      val serviceSpanNameIndex = _serviceSpanNameIndex
-      val serviceNameIndex     = _serviceNameIndex
-      val annotationsIndex     = _annotationsIndex
-      val durationIndex        = _durationIndex
-      val serviceNames         = _serviceNames
-      val spanNames            = _spanNames
-    }
+    CassandraIndex(
+      keyspace,
+      serviceNames, spanNames, serviceNameIndex, serviceSpanNameIndex, annotationsIndex, durationIndex,
+      dataTimeToLive,
+      numBuckets,
+      writeConsistency,
+      readConsistency)
   }
 }
