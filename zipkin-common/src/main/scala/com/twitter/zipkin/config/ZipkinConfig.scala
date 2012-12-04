@@ -27,7 +27,7 @@ import java.net.{InetAddress, InetSocketAddress}
 
 trait ZipkinConfig[T <: Service] extends Config[RuntimeEnvironment => T] {
 
-  var serverAddress: InetAddress = InetAddress.getByName("localhost")
+  var serverAddress: InetAddress = InetAddress.getLocalHost
 
   /* The port on which the server runs */
   var serverPort: Int
