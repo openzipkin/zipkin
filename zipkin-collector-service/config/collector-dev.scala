@@ -45,7 +45,6 @@ new ScribeZipkinCollectorConfig {
   val _cassandraConfig = new CassandraConfig {
     useServerSets = false
     mapHosts = false
-    tracesTimeToLive = 3.days
   }
 
   def storageConfig = new CassandraStorageConfig {

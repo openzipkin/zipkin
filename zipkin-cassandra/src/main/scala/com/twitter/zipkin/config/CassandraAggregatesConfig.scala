@@ -15,9 +15,9 @@
  */
 package com.twitter.zipkin.config
 
-import com.twitter.zipkin.storage.cassandra.CassandraAggregates
 import com.twitter.cassie.codecs.{LongCodec, Utf8Codec}
-import com.twitter.cassie.{ColumnFamily, ReadConsistency, WriteConsistency}
+import com.twitter.cassie.{ReadConsistency, WriteConsistency}
+import com.twitter.zipkin.storage.cassandra.CassandraAggregates
 
 trait CassandraAggregatesConfig extends AggregatesConfig { self =>
 
@@ -25,18 +25,20 @@ trait CassandraAggregatesConfig extends AggregatesConfig { self =>
   var topAnnotationsCf: String = "TopAnnotations"
   var dependenciesCf: String = "Dependencies"
 
+  var writeConsistency: WriteConsistency = WriteConsistency.One
+  var readConsistency: ReadConsistency = ReadConsistency.One
+
   def apply(): CassandraAggregates = {
-    val _topAnnotations = cassandraConfig.keyspace.columnFamily[String, Long, String](
-      topAnnotationsCf,Utf8Codec, LongCodec, Utf8Codec
-    ).consistency(WriteConsistency.One).consistency(ReadConsistency.One)
+    val keyspace = cassandraConfig.keyspace
 
-    val _dependencies = cassandraConfig.keyspace.columnFamily[String, Long, String](
-      dependenciesCf, Utf8Codec, LongCodec, Utf8Codec
-    ).consistency(WriteConsistency.One).consistency(ReadConsistency.One)
+    val topAnnotations = keyspace.columnFamily(topAnnotationsCf,Utf8Codec, LongCodec, Utf8Codec)
+      .consistency(writeConsistency)
+      .consistency(readConsistency)
 
-    new CassandraAggregates {
-      val topAnnotations: ColumnFamily[String, Long, String] = _topAnnotations
-      val dependencies: ColumnFamily[String, Long, String] = _dependencies
-    }
+    val dependencies = keyspace.columnFamily(dependenciesCf, Utf8Codec, LongCodec, Utf8Codec)
+      .consistency(writeConsistency)
+      .consistency(readConsistency)
+
+    CassandraAggregates(keyspace, topAnnotations, dependencies)
   }
 }
