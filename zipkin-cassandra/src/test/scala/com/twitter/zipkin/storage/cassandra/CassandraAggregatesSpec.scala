@@ -15,7 +15,7 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
-import com.twitter.cassie.{Column, ColumnFamily}
+import com.twitter.cassie._
 import com.twitter.cassie.tests.util.FakeCassandra
 import com.twitter.io.TempFile
 import com.twitter.ostrich.admin.RuntimeEnvironment
@@ -27,13 +27,11 @@ import scala.collection.JavaConverters._
 
 class CassandraAggregatesSpec extends Specification with JMocker with ClassMocker {
 
+  val mockKeyspace = mock[Keyspace]
   val mockAnnotationsCf = mock[ColumnFamily[String, Long, String]]
   val mockDependenciesCf = mock[ColumnFamily[String, Long, String]]
 
-  def cassandraAggregates = new CassandraAggregates {
-    val topAnnotations = mockAnnotationsCf
-    val dependencies = mockDependenciesCf
-  }
+  def cassandraAggregates = CassandraAggregates(mockKeyspace, mockAnnotationsCf, mockDependenciesCf)
 
   def column(name: Long, value: String) = new Column[Long, String](name, value)
 
