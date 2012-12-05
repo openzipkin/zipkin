@@ -20,10 +20,8 @@ import collector.ZipkinCollector
 import gen.LogEntry
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
-import com.twitter.io.TempFile
 import com.twitter.finagle.builder.ClientBuilder
 import org.apache.thrift.protocol.TBinaryProtocol
-import com.twitter.util.Eval
 import com.twitter.cassie.tests.util.FakeCassandra
 import com.twitter.zipkin.query.ZipkinQuery
 import com.twitter.common.zookeeper.ServerSet
@@ -31,7 +29,6 @@ import com.twitter.common.net.pool.DynamicHostSet.HostChangeMonitor
 import java.net.{InetSocketAddress, InetAddress}
 import java.util.Map
 import com.twitter.thrift.{Status, ServiceInstance}
-import com.twitter.zipkin.config.{ZipkinQueryConfig, CassandraStorageConfig, ZipkinCollectorConfig}
 import org.apache.zookeeper.server.persistence.FileTxnSnapLog
 import org.apache.zookeeper.server.ZooKeeperServer.BasicDataTreeBuilder
 import org.apache.zookeeper.server.{NIOServerCnxn, ZooKeeperServer}
@@ -70,18 +67,10 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
       }
 
       // start a collector that uses the local zookeeper and fake cassandra
-      val collectorConfigFile = TempFile.fromResourcePath("/TestCollector.scala")
-      val collectorConfig = new Eval().apply[ZipkinCollectorConfig](collectorConfigFile)
-      collectorConfig.zkConfig.servers = List("localhost:" + zkPort)
-      collectorConfig.storageConfig.asInstanceOf[CassandraStorageConfig].cassandraConfig.port = FakeServer.port.get
-      val collectorPort = collectorConfig.serverPort
+      val collectorConfig = Configs.collector(FakeServer.port.get)
 
       // start a query service that uses the local zookeeper and fake cassandra
-      val queryFile = TempFile.fromResourcePath("/TestQuery.scala")
-      val queryConfig = new Eval().apply[ZipkinQueryConfig](queryFile)
-      queryConfig.zkConfig.servers = List("localhost:" + zkPort)
-      queryConfig.storageConfig.asInstanceOf[CassandraStorageConfig].cassandraConfig.port = FakeServer.port.get
-      val queryPort = queryConfig.serverPort
+      val queryConfig = Configs.query(FakeServer.port.get)
 
       collector = new ZipkinCollector(collectorConfig)
       collector.start()
@@ -90,13 +79,13 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
       query.start()
 
       queryTransport = ClientBuilder()
-        .hosts(InetAddress.getLocalHost.getHostName + ":" + queryPort)
+        .hosts(InetAddress.getLocalHost.getHostName + ":" + queryConfig.serverPort)
         .hostConnectionLimit(1)
         .codec(ThriftClientFramedCodec())
         .build()
 
       collectorTransport = ClientBuilder()
-        .hosts(InetAddress.getLocalHost.getHostName + ":" + collectorPort)
+        .hosts(InetAddress.getLocalHost.getHostName + ":" + collectorConfig.serverPort)
         .hostConnectionLimit(1)
         .codec(ThriftClientFramedCodec())
         .build()

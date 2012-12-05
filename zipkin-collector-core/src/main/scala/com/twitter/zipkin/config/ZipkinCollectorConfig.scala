@@ -54,15 +54,15 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
   adminStatsFilters = (serviceStatsPrefix + """.*\.p([0-9]*)""").r :: adminStatsFilters
 
   /* Storage */
-  def storageConfig: StorageConfig
+  def storageConfig: Config[Storage]
   lazy val storage: Storage = storageConfig.apply()
 
   /* Index */
-  def indexConfig: IndexConfig
+  def indexConfig: Config[Index]
   lazy val index: Index = indexConfig.apply()
 
   /* Aggregates */
-  def aggregatesConfig: AggregatesConfig
+  def aggregatesConfig: Config[Aggregates]
   lazy val aggregates: Aggregates = aggregatesConfig.apply()
 
   /* ZooKeeper */

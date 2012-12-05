@@ -15,12 +15,10 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
-import com.twitter.cassie._
 import com.twitter.cassie.tests.util.FakeCassandra
-import com.twitter.io.TempFile
-import com.twitter.ostrich.admin.RuntimeEnvironment
-import com.twitter.util.{Eval, Future}
-import com.twitter.zipkin.config.CassandraAggregatesConfig
+import com.twitter.cassie._
+import com.twitter.util.Future
+import com.twitter.zipkin.cassandra.{AggregatesBuilder, Keyspace}
 import org.specs.mock.{ClassMocker, JMocker}
 import org.specs.Specification
 import scala.collection.JavaConverters._
@@ -88,11 +86,9 @@ class CassandraAggregatesSpec extends Specification with JMocker with ClassMocke
 
       doBefore {
         FakeServer.start()
-        val test = TempFile.fromResourcePath("/CassandraAggregatesConfig.scala")
-        val env = RuntimeEnvironment(this, Array("-f", test.toString))
-        val config = new Eval().apply[CassandraAggregatesConfig](env.configFile)
-        config.cassandraConfig.port = FakeServer.port.get
-        agg = config.apply()
+        val keyspaceBuilder = Keyspace.static(port = FakeServer.port.get)
+        val builder = AggregatesBuilder(keyspaceBuilder)
+        agg = builder.apply()
       }
 
       doAfter {

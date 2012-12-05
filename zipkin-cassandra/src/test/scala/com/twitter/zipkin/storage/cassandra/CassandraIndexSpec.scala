@@ -16,18 +16,15 @@ package com.twitter.zipkin.storage.cassandra
  *  limitations under the License.
  *
  */
-import com.twitter.cassie.codecs.{ByteArrayCodec, LongCodec, Utf8Codec}
 import com.twitter.cassie.tests.util.FakeCassandra
 import com.twitter.cassie._
-import com.twitter.ostrich.admin.RuntimeEnvironment
-import com.twitter.util.{Eval, Future}
-import com.twitter.io.TempFile
+import com.twitter.util.Future
+import com.twitter.zipkin.cassandra.{IndexBuilder, Keyspace}
 import com.twitter.zipkin.common._
-import com.twitter.zipkin.config.CassandraIndexConfig
 import java.nio.ByteBuffer
 import java.util.{Set => JSet}
-import org.specs.Specification
 import org.specs.mock.{JMocker, ClassMocker}
+import org.specs.Specification
 import scala.collection.JavaConverters._
 
 class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
@@ -63,11 +60,9 @@ class CassandraIndexSpec extends Specification with JMocker with ClassMocker {
   "CassandraIndex" should {
     doBefore {
       FakeServer.start()
-      val test = TempFile.fromResourcePath("/CassandraIndexConfig.scala")
-      val env = RuntimeEnvironment(this, Array("-f", test.toString))
-      val config = new Eval().apply[CassandraIndexConfig](env.configFile)
-      config.cassandraConfig.port = FakeServer.port.get
-      cassandraIndex = config.apply()
+      val keyspaceBuilder = Keyspace.static(port = FakeServer.port.get)
+      val builder = IndexBuilder(keyspaceBuilder)
+      cassandraIndex = builder.apply()
     }
 
     doAfter {
