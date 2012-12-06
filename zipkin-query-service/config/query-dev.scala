@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import com.twitter.zipkin.cassandra
 import com.twitter.zipkin.config._
 import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
 import com.twitter.logging.LoggerFactory
@@ -33,22 +35,11 @@ new ZipkinQueryConfig {
       ) :: new TimeSeriesCollectorFactory
     )
 
-  val _cassandraConfig = new CassandraConfig {
-    useServerSets = false
-    mapHosts = false
-  }
+  val keyspaceBuilder = cassandra.Keyspace.static()
 
-  def storageConfig = new CassandraStorageConfig {
-    def cassandraConfig = _cassandraConfig
-  }
-
-  def indexConfig = new CassandraIndexConfig {
-    def cassandraConfig = _cassandraConfig
-  }
-
-  def aggregatesConfig = new CassandraAggregatesConfig {
-    def cassandraConfig = _cassandraConfig
-  }
+  def storageConfig = cassandra.StorageBuilder(keyspaceBuilder)
+  def indexConfig = cassandra.IndexBuilder(keyspaceBuilder)
+  def aggregatesConfig = cassandra.AggregatesBuilder(keyspaceBuilder)
 
   def zkConfig = new ZooKeeperConfig {
     servers = List("localhost:2181")

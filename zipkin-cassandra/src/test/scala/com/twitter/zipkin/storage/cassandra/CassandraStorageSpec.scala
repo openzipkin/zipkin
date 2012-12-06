@@ -15,17 +15,14 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
-import com.twitter.zipkin.config.CassandraStorageConfig
 import com.twitter.cassie.tests.util.FakeCassandra
 import com.twitter.conversions.time._
-import com.twitter.ostrich.admin.RuntimeEnvironment
-import com.twitter.util.Eval
 import java.nio.ByteBuffer
 import org.specs.mock.{ClassMocker, JMocker}
 import org.specs.Specification
-import com.twitter.io.TempFile
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query.Trace
+import com.twitter.zipkin.cassandra.{Keyspace, StorageBuilder}
 
 class CassandraStorageSpec extends Specification with JMocker with ClassMocker {
   object FakeServer extends FakeCassandra
@@ -49,11 +46,9 @@ class CassandraStorageSpec extends Specification with JMocker with ClassMocker {
   "CassandraStorage" should {
     doBefore {
       FakeServer.start()
-      val test = TempFile.fromResourcePath("/CassandraStorageConfig.scala")
-      val env = RuntimeEnvironment(this, Array("-f", test.toString))
-      val config = new Eval().apply[CassandraStorageConfig](env.configFile)
-      config.cassandraConfig.port = FakeServer.port.get
-      cassandraStorage = config.apply()
+      val keyspaceBuilder = Keyspace.static(port = FakeServer.port.get)
+      val builder = StorageBuilder(keyspaceBuilder)
+      cassandraStorage = builder.apply()
     }
 
     doAfter {

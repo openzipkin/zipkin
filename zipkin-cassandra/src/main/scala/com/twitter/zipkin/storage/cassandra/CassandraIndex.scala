@@ -15,7 +15,6 @@ package com.twitter.zipkin.storage.cassandra
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import com.twitter.cassie.codecs.{LongCodec, Utf8Codec}
 import com.twitter.cassie._
 import com.twitter.conversions.time._
 import com.twitter.ostrich.stats.Stats
@@ -31,8 +30,6 @@ import scala.collection.Set
 
 /**
  * An index for the spans and traces using Cassandra with the Cassie client.
- *
- * @param numBuckets maximum number of buckets for BucketedColumnFamily
  */
 case class CassandraIndex(
   keyspace: Keyspace,
@@ -42,10 +39,7 @@ case class CassandraIndex(
   serviceSpanNameIndex: ColumnFamily[String, Long, Long],
   annotationsIndex: ColumnFamily[ByteBuffer, Long, Long],
   durationIndex: ColumnFamily[Long, Long, String],
-  dataTimeToLive: Duration = 3.days,
-  numBuckets: Int = 10,
-  writeConsistency: WriteConsistency = WriteConsistency.One,
-  readConsistency: ReadConsistency = ReadConsistency.One
+  dataTimeToLive: Duration = 3.days
 ) extends Index {
 
   def close() {

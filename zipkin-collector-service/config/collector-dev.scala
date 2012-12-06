@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import com.twitter.zipkin.cassandra
 import com.twitter.zipkin.collector.sampler.EverythingGlobalSampler
 import com.twitter.zipkin.config._
 import com.twitter.zipkin.config.sampler.NullAdaptiveSamplerConfig
@@ -42,22 +43,11 @@ new ScribeZipkinCollectorConfig {
     flusherPoolSize = 10
   }
 
-  val _cassandraConfig = new CassandraConfig {
-    useServerSets = false
-    mapHosts = false
-  }
+  val keyspaceBuilder = cassandra.Keyspace.static(nodes = Set("localhost"))
 
-  def storageConfig = new CassandraStorageConfig {
-    def cassandraConfig = _cassandraConfig
-  }
-
-  def indexConfig = new CassandraIndexConfig {
-    def cassandraConfig = _cassandraConfig
-  }
-
-  def aggregatesConfig = new CassandraAggregatesConfig {
-    def cassandraConfig = _cassandraConfig
-  }
+  def storageConfig = cassandra.StorageBuilder(keyspaceBuilder)
+  def indexConfig = cassandra.IndexBuilder(keyspaceBuilder)
+  def aggregatesConfig = cassandra.AggregatesBuilder(keyspaceBuilder)
 
   override def adaptiveSamplerConfig = new NullAdaptiveSamplerConfig {}
 

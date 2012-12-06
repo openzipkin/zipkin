@@ -13,23 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.zipkin.config
+package com.twitter.zipkin.cassandra
 
 import com.twitter.cassie.codecs.{LongCodec, Utf8Codec}
-import com.twitter.cassie.{ReadConsistency, WriteConsistency}
+import com.twitter.cassie.{ReadConsistency, WriteConsistency, KeyspaceBuilder}
 import com.twitter.zipkin.storage.cassandra.CassandraAggregates
+import com.twitter.zipkin.storage.Aggregates
+import com.twitter.util.Config
 
-trait CassandraAggregatesConfig extends AggregatesConfig { self =>
+case class AggregatesBuilder(
+  keyspaceBuilder: KeyspaceBuilder,
+  topAnnotationsCf: String = "TopAnnotations",
+  dependenciesCf: String = "Dependencies",
+  writeConsistency: WriteConsistency = WriteConsistency.One,
+  readConsistency: ReadConsistency = ReadConsistency.One
+) extends Config[Aggregates] {
 
-  def cassandraConfig: CassandraConfig
-  var topAnnotationsCf: String = "TopAnnotations"
-  var dependenciesCf: String = "Dependencies"
+  def topAnnotationsCf(t: String):            AggregatesBuilder = copy(topAnnotationsCf = t)
+  def dependenciesCf(d: String):              AggregatesBuilder = copy(dependenciesCf = d)
+  def writeConsistency(wc: WriteConsistency): AggregatesBuilder = copy(writeConsistency = wc)
+  def readConsistency(rc: ReadConsistency):   AggregatesBuilder = copy(readConsistency = rc)
 
-  var writeConsistency: WriteConsistency = WriteConsistency.One
-  var readConsistency: ReadConsistency = ReadConsistency.One
-
-  def apply(): CassandraAggregates = {
-    val keyspace = cassandraConfig.keyspace
+  def apply() = {
+    val keyspace = keyspaceBuilder.connect()
 
     val topAnnotations = keyspace.columnFamily(topAnnotationsCf,Utf8Codec, LongCodec, Utf8Codec)
       .consistency(writeConsistency)
