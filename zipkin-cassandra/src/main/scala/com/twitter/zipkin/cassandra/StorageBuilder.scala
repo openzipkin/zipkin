@@ -18,7 +18,8 @@ package com.twitter.zipkin.cassandra
 import com.twitter.cassie.codecs.{Utf8Codec, LongCodec, Codec}
 import com.twitter.cassie.{ReadConsistency, WriteConsistency, KeyspaceBuilder}
 import com.twitter.conversions.time._
-import com.twitter.util.{Config, Duration}
+import com.twitter.util.Duration
+import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.storage.cassandra.{CassandraStorage, ScroogeThriftCodec, SnappyCodec}
 import com.twitter.zipkin.storage.Storage
@@ -31,7 +32,7 @@ case class StorageBuilder(
   dataTimeToLive: Duration = 7.days,
   readBatchSize: Int = 500,
   spanCodec: Codec[gen.Span] = new SnappyCodec(new ScroogeThriftCodec[gen.Span](gen.Span))
-) extends Config[Storage] {
+) extends Builder[Storage] {
 
   def columnFamily(c: String):                StorageBuilder = copy(columnFamily = c)
   def writeConsistency(wc: WriteConsistency): StorageBuilder = copy(writeConsistency = wc)

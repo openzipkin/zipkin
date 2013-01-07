@@ -17,13 +17,13 @@ package com.twitter.zipkin.config
 
 import com.twitter.zipkin.query.ZipkinQuery
 import com.twitter.zipkin.gen
-import com.twitter.zipkin.storage.{Store, Aggregates, Index, Storage}
+import com.twitter.zipkin.storage.Store
 import com.twitter.common.zookeeper.{ServerSetImpl, ZooKeeperClient}
 import com.twitter.finagle.zipkin.thrift.ZipkinTracer
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.zipkin.query.adjusters.{NullAdjuster, TimeSkewAdjuster, Adjuster}
 import com.twitter.zipkin.config.zookeeper.{ZooKeeperClientConfig, ZooKeeperConfig}
-import com.twitter.util.Config
+import com.twitter.zipkin.builder.Builder
 
 trait ZipkinQueryConfig extends ZipkinConfig[ZipkinQuery] {
 
@@ -37,7 +37,7 @@ trait ZipkinQueryConfig extends ZipkinConfig[ZipkinQuery] {
     gen.Adjust.TimeSkew -> new TimeSkewAdjuster()
   )
 
-  def storeBuilder: Config[Store]
+  def storeBuilder: Builder[Store]
   lazy val store: Store = storeBuilder.apply()
 
   def zkConfig: ZooKeeperConfig

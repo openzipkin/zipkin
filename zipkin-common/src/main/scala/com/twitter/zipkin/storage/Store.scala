@@ -15,19 +15,19 @@
  */
 package com.twitter.zipkin.storage
 
-import com.twitter.util.Config
+import com.twitter.zipkin.builder.{Builder => ZBuilder}
 
 object Store {
 
-  private val nullAggregatesBuilder = new Config[Aggregates] {
+  private val nullAggregatesBuilder = new ZBuilder[Aggregates] {
     def apply() = new NullAggregates
   }
 
   case class Builder(
-    storageBuilder: Config[Storage],
-    indexBuilder: Config[Index],
-    aggregatesBuilder: Config[Aggregates] = nullAggregatesBuilder
-  ) extends Config[Store] {
+    storageBuilder: ZBuilder[Storage],
+    indexBuilder: ZBuilder[Index],
+    aggregatesBuilder: ZBuilder[Aggregates] = nullAggregatesBuilder
+  ) extends ZBuilder[Store] {
     def apply() = Store(storageBuilder.apply(), indexBuilder.apply(), aggregatesBuilder.apply())
   }
 }
