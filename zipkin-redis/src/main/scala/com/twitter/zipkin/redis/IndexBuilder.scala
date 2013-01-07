@@ -13,29 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.twitter.zipkin.redis
 
-package com.twitter.zipkin.config
-
-import com.twitter.conversions.time.intToTimeableNumber
+import com.twitter.conversions.time._
 import com.twitter.finagle.redis.Client
-import com.twitter.util.Duration
+import com.twitter.util.{Duration, Config}
 import com.twitter.zipkin.storage.redis.RedisIndex
+import com.twitter.zipkin.storage.Index
 
-/**
- * RedisIndexConfig has sane defaults, except you must specify your host and port.
- */
-trait RedisIndexConfig extends IndexConfig {
-  lazy val _client: Client = Client("%s:%d".format(host, port))
+case class IndexBuilder(
+  host: String,
+  port: Int,
+  ttl: Duration = 7.days
+) extends Config[Index] { self =>
 
-  val tracesTimeToLive: Duration = 7.days
-  val port: Int
-  val host: String
+  def ttl(t: Duration): IndexBuilder = copy(ttl = t)
 
-  /**
-   * The canonical way to make a new RedisIndex
-   */
-  def apply(): RedisIndex = new RedisIndex {
-    val database = _client
-    val ttl = Some(tracesTimeToLive)
+  def apply() = {
+    val client = Client("%s:%d".format(host, port))
+    new RedisIndex {
+      val database = client
+      val ttl = Some(self.ttl)
+    }
   }
 }

@@ -27,15 +27,14 @@ with
 
 ```scala
   def storeBuilder = Store.Builder(
-    new RedisStorageConfig {
-      val host = "0.0.0.0"
-      val port = 6379
-    },
-    new RedisIndexConfig {
-      val host = "0.0.0.0"
-      val port = 6379
-    }
+    redis.StorageBuilder("0.0.0.0", 6379),
+    redis.IndexBuilder("0.0.0.0", 6379)
   )
+```
+
+You'll also need to add an import
+```scala
+  import com.twitter.zipkin.redis
 ```
 Then do the same in zipkin/zipkin-query-service/config/query-dev.scala.  Host and port should be the host and port your redis-server is listening on.
 
