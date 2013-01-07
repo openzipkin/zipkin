@@ -91,10 +91,7 @@ object Configs {
       )
 
     val keyspaceBuilder = Keyspace.static(port = cassandraPort)
-
-    def storageConfig = StorageBuilder(keyspaceBuilder)
-    def indexConfig = IndexBuilder(keyspaceBuilder)
-    def aggregatesConfig = AggregatesBuilder(keyspaceBuilder)
+    def storeBuilder = Store.Builder(StorageBuilder(keyspaceBuilder), IndexBuilder(keyspaceBuilder), AggregatesBuilder(keyspaceBuilder))
 
     def zkConfig = new ZooKeeperConfig {
       servers = List("localhost:2181")

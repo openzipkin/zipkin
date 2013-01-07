@@ -20,6 +20,7 @@ import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
 import com.twitter.logging.LoggerFactory
 import com.twitter.logging.config._
 import com.twitter.ostrich.admin.{TimeSeriesCollectorFactory, JsonStatsLoggerFactory, StatsFactory}
+import com.twitter.zipkin.storage.Store
 
 // development mode.
 new ZipkinQueryConfig {
@@ -36,10 +37,7 @@ new ZipkinQueryConfig {
     )
 
   val keyspaceBuilder = cassandra.Keyspace.static()
-
-  def storageConfig = cassandra.StorageBuilder(keyspaceBuilder)
-  def indexConfig = cassandra.IndexBuilder(keyspaceBuilder)
-  def aggregatesConfig = cassandra.AggregatesBuilder(keyspaceBuilder)
+  def storeBuilder = Store.Builder(cassandra.StorageBuilder(keyspaceBuilder), cassandra.IndexBuilder(keyspaceBuilder), cassandra.AggregatesBuilder(keyspaceBuilder))
 
   def zkConfig = new ZooKeeperConfig {
     servers = List("localhost:2181")
