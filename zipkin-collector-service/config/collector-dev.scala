@@ -23,6 +23,7 @@ import com.twitter.conversions.time._
 import com.twitter.logging.LoggerFactory
 import com.twitter.logging.config._
 import com.twitter.ostrich.admin.{TimeSeriesCollectorFactory, JsonStatsLoggerFactory, StatsFactory}
+import com.twitter.zipkin.storage.Store
 
 // development mode.
 new ScribeZipkinCollectorConfig {
@@ -45,9 +46,11 @@ new ScribeZipkinCollectorConfig {
 
   val keyspaceBuilder = cassandra.Keyspace.static(nodes = Set("localhost"))
 
-  def storageConfig = cassandra.StorageBuilder(keyspaceBuilder)
-  def indexConfig = cassandra.IndexBuilder(keyspaceBuilder)
-  def aggregatesConfig = cassandra.AggregatesBuilder(keyspaceBuilder)
+  def storeBuilder = Store.Builder(
+    cassandra.StorageBuilder(keyspaceBuilder),
+    cassandra.IndexBuilder(keyspaceBuilder),
+    cassandra.AggregatesBuilder(keyspaceBuilder)
+  )
 
   override def adaptiveSamplerConfig = new NullAdaptiveSamplerConfig {}
 

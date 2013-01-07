@@ -23,6 +23,7 @@ import com.twitter.zipkin.collector.sampler.{EverythingGlobalSampler, GlobalSamp
 import com.twitter.zipkin.config.sampler.NullAdaptiveSamplerConfig
 import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
 import com.twitter.zipkin.config.{ZipkinQueryConfig, WriteQueueConfig, ScribeZipkinCollectorConfig}
+import com.twitter.zipkin.storage.Store
 
 object Configs {
   def collector(cassandraPort: Int) = new ScribeZipkinCollectorConfig {
@@ -45,9 +46,7 @@ object Configs {
 
     var keyspaceBuilder = Keyspace.static(port = cassandraPort)
 
-    def storageConfig = StorageBuilder(keyspaceBuilder)
-    def indexConfig = IndexBuilder(keyspaceBuilder)
-    def aggregatesConfig = AggregatesBuilder(keyspaceBuilder)
+    def storeBuilder = Store.Builder(StorageBuilder(keyspaceBuilder), IndexBuilder(keyspaceBuilder), AggregatesBuilder(keyspaceBuilder))
 
     override def adaptiveSamplerConfig = new NullAdaptiveSamplerConfig {}
 
@@ -92,10 +91,7 @@ object Configs {
       )
 
     val keyspaceBuilder = Keyspace.static(port = cassandraPort)
-
-    def storageConfig = StorageBuilder(keyspaceBuilder)
-    def indexConfig = IndexBuilder(keyspaceBuilder)
-    def aggregatesConfig = AggregatesBuilder(keyspaceBuilder)
+    def storeBuilder = Store.Builder(StorageBuilder(keyspaceBuilder), IndexBuilder(keyspaceBuilder), AggregatesBuilder(keyspaceBuilder))
 
     def zkConfig = new ZooKeeperConfig {
       servers = List("localhost:2181")
