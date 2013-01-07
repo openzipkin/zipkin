@@ -3,10 +3,15 @@ package com.twitter.zipkin.storage
 import com.twitter.util.Config
 
 object Store {
+
+  private val nullAggregatesBuilder = new Config[Aggregates] {
+    def apply() = new NullAggregates
+  }
+
   case class Builder(
     storageBuilder: Config[Storage],
     indexBuilder: Config[Index],
-    aggregatesBuilder: Config[Aggregates]
+    aggregatesBuilder: Config[Aggregates] = nullAggregatesBuilder
   ) extends Config[Store] {
     def apply() = Store(storageBuilder.apply(), indexBuilder.apply(), aggregatesBuilder.apply())
   }
