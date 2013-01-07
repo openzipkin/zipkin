@@ -15,7 +15,7 @@
  */
 package com.twitter.zipkin.config
 
-import com.twitter.zipkin.storage.{Store, Aggregates, Index, Storage}
+import com.twitter.zipkin.storage.Store
 import com.twitter.zipkin.collector.{WriteQueue, ZipkinCollector}
 import com.twitter.zipkin.collector.filter.{ServiceStatsFilter, SamplerFilter, ClientIndexFilter}
 import com.twitter.zipkin.collector.sampler.{AdaptiveSampler, ZooKeeperGlobalSampler, GlobalSampler}
