@@ -15,7 +15,7 @@
  */
 package com.twitter.zipkin.config
 
-import com.twitter.zipkin.storage.{Aggregates, Index, Storage}
+import com.twitter.zipkin.storage.{Store, Aggregates, Index, Storage}
 import com.twitter.zipkin.collector.{WriteQueue, ZipkinCollector}
 import com.twitter.zipkin.collector.filter.{ServiceStatsFilter, SamplerFilter, ClientIndexFilter}
 import com.twitter.zipkin.collector.sampler.{AdaptiveSampler, ZooKeeperGlobalSampler, GlobalSampler}
@@ -53,17 +53,8 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
   /* Do not publish .p<percent> stats */
   adminStatsFilters = (serviceStatsPrefix + """.*\.p([0-9]*)""").r :: adminStatsFilters
 
-  /* Storage */
-  def storageConfig: Config[Storage]
-  lazy val storage: Storage = storageConfig.apply()
-
-  /* Index */
-  def indexConfig: Config[Index]
-  lazy val index: Index = indexConfig.apply()
-
-  /* Aggregates */
-  def aggregatesConfig: Config[Aggregates]
-  lazy val aggregates: Aggregates = aggregatesConfig.apply()
+  def storeBuilder: Config[Store]
+  lazy val store: Store = storeBuilder.apply()
 
   /* ZooKeeper */
   def zkConfig: ZooKeeperConfig
@@ -109,8 +100,8 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
     new SamplerFilter(globalSampler) andThen
     new ServiceStatsFilter andThen
     new FanoutService[Span](
-      new StorageService(storage) ::
-      (new ClientIndexFilter andThen new IndexService(index))
+      new StorageService(store.storage) ::
+      (new ClientIndexFilter andThen new IndexService(store.index))
     )
 
   def writeQueueConfig: WriteQueueConfig[T]
