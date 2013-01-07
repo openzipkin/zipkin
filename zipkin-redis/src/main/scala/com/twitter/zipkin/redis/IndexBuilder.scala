@@ -37,4 +37,3 @@ case class IndexBuilder(
     }
   }
 }
-  
