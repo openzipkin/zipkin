@@ -17,7 +17,8 @@ package com.twitter.zipkin.redis
 
 import com.twitter.conversions.time._
 import com.twitter.finagle.redis.Client
-import com.twitter.util.{Duration, Config}
+import com.twitter.util.Duration
+import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.redis.RedisStorage
 import com.twitter.zipkin.storage.Storage
 
@@ -25,7 +26,7 @@ case class StorageBuilder(
   host: String,
   port: Int,
   ttl: Duration = 7.days
-) extends Config[Storage] { self =>
+) extends Builder[Storage] { self =>
 
   def ttl(t: Duration): StorageBuilder = copy(ttl = t)
 

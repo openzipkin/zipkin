@@ -18,7 +18,8 @@ package com.twitter.zipkin.cassandra
 import com.twitter.cassie.codecs.{LongCodec, Utf8Codec}
 import com.twitter.cassie.{ColumnFamily, ReadConsistency, WriteConsistency, KeyspaceBuilder}
 import com.twitter.conversions.time._
-import com.twitter.util.{Config, Duration}
+import com.twitter.util.Duration
+import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.cassandra.{ByteBufferBucketedColumnFamily, BucketedColumnFamily, StringBucketedColumnFamily, CassandraIndex}
 import com.twitter.zipkin.storage.Index
 import java.nio.ByteBuffer
@@ -35,7 +36,7 @@ case class IndexBuilder(
   numBuckets: Int = 10,
   writeConsistency: WriteConsistency = WriteConsistency.One,
   readConsistency: ReadConsistency = ReadConsistency.One
-) extends Config[Index] {
+) extends Builder[Index] {
 
   def serviceNamesCf(s: String):              IndexBuilder = copy(serviceNamesCf = s)
   def spanNamesCf(s: String):                 IndexBuilder = copy(spanNamesCf = s)

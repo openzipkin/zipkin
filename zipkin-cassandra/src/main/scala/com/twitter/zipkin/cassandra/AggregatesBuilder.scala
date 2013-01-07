@@ -17,9 +17,9 @@ package com.twitter.zipkin.cassandra
 
 import com.twitter.cassie.codecs.{LongCodec, Utf8Codec}
 import com.twitter.cassie.{ReadConsistency, WriteConsistency, KeyspaceBuilder}
+import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.cassandra.CassandraAggregates
 import com.twitter.zipkin.storage.Aggregates
-import com.twitter.util.Config
 
 case class AggregatesBuilder(
   keyspaceBuilder: KeyspaceBuilder,
@@ -27,7 +27,7 @@ case class AggregatesBuilder(
   dependenciesCf: String = "Dependencies",
   writeConsistency: WriteConsistency = WriteConsistency.One,
   readConsistency: ReadConsistency = ReadConsistency.One
-) extends Config[Aggregates] {
+) extends Builder[Aggregates] {
 
   def topAnnotationsCf(t: String):            AggregatesBuilder = copy(topAnnotationsCf = t)
   def dependenciesCf(d: String):              AggregatesBuilder = copy(dependenciesCf = d)

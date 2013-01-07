@@ -33,6 +33,7 @@ import scala.collection.JavaConverters._
 import com.twitter.zipkin.collector.processor._
 import com.twitter.zipkin.common.Span
 import com.twitter.finagle.{Filter, Service}
+import com.twitter.zipkin.builder.Builder
 
 trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
 
@@ -53,7 +54,7 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
   /* Do not publish .p<percent> stats */
   adminStatsFilters = (serviceStatsPrefix + """.*\.p([0-9]*)""").r :: adminStatsFilters
 
-  def storeBuilder: Config[Store]
+  def storeBuilder: Builder[Store]
   lazy val store: Store = storeBuilder.apply()
 
   /* ZooKeeper */
