@@ -16,27 +16,26 @@ There are a few configuration changes that must be made before you can use zipki
 #### Config Changes
 Go into zipkin/zipkin-collector-service/config/collector-dev.scala, and replace the lines which say:
 ```scala
-  def storageConfig = new CassandraStorageConfig {
-    def cassandraConfig = _cassandraConfig
-  }
-
-  def indexConfig = new CassandraIndexConfig {
-    def cassandraConfig = _cassandraConfig
-  }
+  def storeBuilder = Store.Builder(
+    cassandra.StorageBuilder(keyspaceBuilder),
+    cassandra.IndexBuilder(keyspaceBuilder),
+    cassandra.AggregatesBuilder(keyspaceBuilder)
+  )
 ```
 
 with
 
 ```scala
-  def storageConfig = new RedisStorageConfig {
-    val host = "0.0.0.0"
-    val port = 6379
-  }
-
-  def indexConfig = new RedisIndexConfig {
-    val host = "0.0.0.0"
-    val port = 6379
-  }
+  def storeBuilder = Store.Builder(
+    new RedisStorageConfig {
+      val host = "0.0.0.0"
+      val port = 6379
+    },
+    new RedisIndexConfig {
+      val host = "0.0.0.0"
+      val port = 6379
+    }
+  )
 ```
 Then do the same in zipkin/zipkin-query-service/config/query-dev.scala.  Host and port should be the host and port your redis-server is listening on.
 

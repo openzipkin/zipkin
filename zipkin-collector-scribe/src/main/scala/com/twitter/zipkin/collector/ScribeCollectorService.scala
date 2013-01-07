@@ -112,7 +112,7 @@ class ScribeCollectorService(config: ScribeZipkinCollectorConfig, val writeQueue
     log.info("storeDependencies: " + serviceName + "; " + endpoints)
 
     Stats.timeFutureMillis("collector.storeDependencies") {
-      config.aggregates.storeDependencies(serviceName, endpoints)
+      config.store.aggregates.storeDependencies(serviceName, endpoints)
     } rescue {
       case e: Exception =>
         log.error(e, "storeDependencies failed")
@@ -126,7 +126,7 @@ class ScribeCollectorService(config: ScribeZipkinCollectorConfig, val writeQueue
     log.info("storeTopAnnotations: " + serviceName + "; " + annotations)
 
     Stats.timeFutureMillis("collector.storeTopAnnotations") {
-      config.aggregates.storeTopAnnotations(serviceName, annotations)
+      config.store.aggregates.storeTopAnnotations(serviceName, annotations)
     } rescue {
       case e: Exception =>
         log.error(e, "storeTopAnnotations failed")
@@ -140,7 +140,7 @@ class ScribeCollectorService(config: ScribeZipkinCollectorConfig, val writeQueue
     log.info("storeTopKeyValueAnnotations: " + serviceName + ";" + annotations)
 
     Stats.timeFutureMillis("collector.storeTopKeyValueAnnotations") {
-      config.aggregates.storeTopKeyValueAnnotations(serviceName, annotations)
+      config.store.aggregates.storeTopKeyValueAnnotations(serviceName, annotations)
     } rescue {
       case e: Exception =>
         log.error(e, "storeTopKeyValueAnnotations failed")

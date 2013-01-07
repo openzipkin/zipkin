@@ -23,7 +23,7 @@ import com.twitter.zipkin.config.sampler.AdjustableRateConfig
 import com.twitter.zipkin.config.ScribeZipkinCollectorConfig
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
-import com.twitter.zipkin.storage.Aggregates
+import com.twitter.zipkin.storage.{Store, Aggregates}
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
 
@@ -47,14 +47,12 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
   val config = new ScribeZipkinCollectorConfig {
     def writeQueueConfig = null
     def zkConfig = null
-    def indexConfig = null
-    def storageConfig = null
-    def aggregatesConfig = null
     def methodConfig = null
+    def storeBuilder = null
 
     override lazy val writeQueue = queue
     override lazy val sampleRateConfig = zkSampleRateConfig
-    override lazy val aggregates = mockAggregates
+    override lazy val store = Store(null, null, mockAggregates)
   }
 
   def scribeCollectorService = new ScribeCollectorService(config, config.writeQueue, Set(category)) {

@@ -17,7 +17,7 @@ package com.twitter.zipkin.config
 
 import com.twitter.zipkin.query.ZipkinQuery
 import com.twitter.zipkin.gen
-import com.twitter.zipkin.storage.{Aggregates, Index, Storage}
+import com.twitter.zipkin.storage.{Store, Aggregates, Index, Storage}
 import com.twitter.common.zookeeper.{ServerSetImpl, ZooKeeperClient}
 import com.twitter.finagle.zipkin.thrift.ZipkinTracer
 import com.twitter.ostrich.admin.RuntimeEnvironment
@@ -37,14 +37,8 @@ trait ZipkinQueryConfig extends ZipkinConfig[ZipkinQuery] {
     gen.Adjust.TimeSkew -> new TimeSkewAdjuster()
   )
 
-  def storageConfig: Config[Storage]
-  lazy val storage: Storage = storageConfig.apply()
-
-  def indexConfig: Config[Index]
-  lazy val index: Index = indexConfig.apply()
-
-  def aggregatesConfig: Config[Aggregates]
-  lazy val aggregates: Aggregates = aggregatesConfig.apply()
+  def storeBuilder: Config[Store]
+  lazy val store: Store = storeBuilder.apply()
 
   def zkConfig: ZooKeeperConfig
 
@@ -59,6 +53,6 @@ trait ZipkinQueryConfig extends ZipkinConfig[ZipkinQuery] {
     ZipkinTracer(statsReceiver = statsReceiver, sampleRate = 1f)
 
   def apply(runtime: RuntimeEnvironment) = {
-    new ZipkinQuery(this, serverSet, storage, index, aggregates)
+    new ZipkinQuery(this, serverSet, store.storage, store.index, store.aggregates)
   }
 }
