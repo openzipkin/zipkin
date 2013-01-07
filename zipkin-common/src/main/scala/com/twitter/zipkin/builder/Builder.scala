@@ -13,13 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.zipkin
+package com.twitter.zipkin.builder
 
-import com.twitter.util.Config
-import com.twitter.zipkin.storage.{Index, Aggregates, Storage}
-
-package object config {
-  type StorageConfig = Config[Storage]
-  type IndexConfig = Config[Index]
-  type AggregatesConfig = Config[Aggregates]
-}
+trait Builder[+T] extends (() => T)

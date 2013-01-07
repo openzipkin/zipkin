@@ -17,7 +17,8 @@ package com.twitter.zipkin.redis
 
 import com.twitter.conversions.time._
 import com.twitter.finagle.redis.Client
-import com.twitter.util.{Duration, Config}
+import com.twitter.util.Duration
+import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.redis.RedisIndex
 import com.twitter.zipkin.storage.Index
 
@@ -25,7 +26,7 @@ case class IndexBuilder(
   host: String,
   port: Int,
   ttl: Duration = 7.days
-) extends Config[Index] { self =>
+) extends Builder[Index] { self =>
 
   def ttl(t: Duration): IndexBuilder = copy(ttl = t)
 
