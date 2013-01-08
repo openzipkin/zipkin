@@ -14,8 +14,8 @@
 * limitations under the License.
 */
 
+import com.twitter.zipkin.builder.ZooKeeperClientBuilder
 import com.twitter.zipkin.config.{CssConfig, JsConfig, ZipkinWebConfig}
-import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
 import java.net.InetSocketAddress
 
 new ZipkinWebConfig {
@@ -40,9 +40,7 @@ new ZipkinWebConfig {
     override val pathPrefix = resourcePathPrefix
   }
 
-  def zkConfig = new ZooKeeperConfig {
-    servers = List("localhost:3003")
-  }
+  def zkClientBuilder = ZooKeeperClientBuilder(hosts = Seq("localhost"), port = 3003)
 
   override def queryClient = Left(new InetSocketAddress("localhost", 9411))
 }

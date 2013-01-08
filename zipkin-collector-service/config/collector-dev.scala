@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
+import com.twitter.zipkin.builder.ZooKeeperClientBuilder
 import com.twitter.zipkin.cassandra
 import com.twitter.zipkin.collector.sampler.EverythingGlobalSampler
 import com.twitter.zipkin.config._
 import com.twitter.zipkin.config.sampler.NullAdaptiveSamplerConfig
-import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
-import com.twitter.conversions.time._
 import com.twitter.logging.LoggerFactory
 import com.twitter.logging.config._
 import com.twitter.ostrich.admin.{TimeSeriesCollectorFactory, JsonStatsLoggerFactory, StatsFactory}
@@ -65,9 +64,7 @@ new ScribeZipkinCollectorConfig {
    */
   override def globalSampler = EverythingGlobalSampler
 
-  def zkConfig = new ZooKeeperConfig {
-    servers = List("localhost:2181")
-  }
+  def zkClientBuilder = ZooKeeperClientBuilder(Seq("localhost"))
 
   loggers =
     LoggerFactory (

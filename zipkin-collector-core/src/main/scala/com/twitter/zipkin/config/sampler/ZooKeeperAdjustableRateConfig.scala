@@ -15,18 +15,12 @@
  */
 package com.twitter.zipkin.config.sampler
 
-import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
 import com.twitter.zipkin.gen.AdjustableRateException
-import com.twitter.common.zookeeper.ZooKeeperClient
-import com.twitter.conversions.time._
 import com.twitter.ostrich.stats.Stats
 import com.twitter.logging.Logger
-import com.twitter.util.{Timer, JavaTimer, FuturePool}
 import com.twitter.zk._
 import org.apache.zookeeper.KeeperException
 import org.apache.zookeeper.Watcher.Event
-import org.apache.zookeeper.ZooDefs.Ids
-import scala.collection.JavaConverters._
 
 object ZooKeeperSampleRateConfig {
 
