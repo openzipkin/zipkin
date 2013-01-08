@@ -22,6 +22,6 @@ new ZipkinWebConfig {
   // Suspect this should be marked as a bug really...
   rootUrl = "http://localhost:" + serverPort + "/"
 
-  def zkClientBuilder = ZooKeeperClientBuilder(hosts = Seq("localhost"), port = 3003)
+  def zkClientBuilder = ZooKeeperClientBuilder(Seq("localhost"))
 }
 
