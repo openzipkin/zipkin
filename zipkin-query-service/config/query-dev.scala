@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+import com.twitter.zipkin.builder.ZooKeeperClientBuilder
 import com.twitter.zipkin.cassandra
 import com.twitter.zipkin.config._
-import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
 import com.twitter.logging.LoggerFactory
 import com.twitter.logging.config._
 import com.twitter.ostrich.admin.{TimeSeriesCollectorFactory, JsonStatsLoggerFactory, StatsFactory}
@@ -39,9 +39,7 @@ new ZipkinQueryConfig {
   val keyspaceBuilder = cassandra.Keyspace.static()
   def storeBuilder = Store.Builder(cassandra.StorageBuilder(keyspaceBuilder), cassandra.IndexBuilder(keyspaceBuilder), cassandra.AggregatesBuilder(keyspaceBuilder))
 
-  def zkConfig = new ZooKeeperConfig {
-    servers = List("localhost:2181")
-  }
+  def zkClientBuilder = ZooKeeperClientBuilder(Seq("localhost"))
 
   loggers =
     LoggerFactory (

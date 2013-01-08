@@ -14,18 +14,14 @@
 * limitations under the License.
 */
 
+import com.twitter.zipkin.builder.ZooKeeperClientBuilder
 import com.twitter.zipkin.config.ZipkinWebConfig
-import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
-import java.net.InetSocketAddress
 
 new ZipkinWebConfig {
   // Change the hostname below to allow the Zipkin JS code to talk to the Zipkin API Scala code
   // Suspect this should be marked as a bug really...
   rootUrl = "http://localhost:" + serverPort + "/"
 
-  def zkConfig = new ZooKeeperConfig {
-    servers = List("localhost:2181")
-  }
-
+  def zkClientBuilder = ZooKeeperClientBuilder(Seq("localhost"))
 }
 

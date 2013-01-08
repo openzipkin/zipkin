@@ -22,8 +22,7 @@ import com.twitter.common.zookeeper.{ServerSetImpl, ZooKeeperClient}
 import com.twitter.finagle.zipkin.thrift.ZipkinTracer
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.zipkin.query.adjusters.{NullAdjuster, TimeSkewAdjuster, Adjuster}
-import com.twitter.zipkin.config.zookeeper.{ZooKeeperClientConfig, ZooKeeperConfig}
-import com.twitter.zipkin.builder.Builder
+import com.twitter.zipkin.builder.{ZooKeeperClientBuilder, Builder}
 
 trait ZipkinQueryConfig extends ZipkinConfig[ZipkinQuery] {
 
@@ -40,12 +39,8 @@ trait ZipkinQueryConfig extends ZipkinConfig[ZipkinQuery] {
   def storeBuilder: Builder[Store]
   lazy val store: Store = storeBuilder.apply()
 
-  def zkConfig: ZooKeeperConfig
-
-  def zkClientConfig = new ZooKeeperClientConfig {
-    var config = zkConfig
-  }
-  lazy val zkClient: ZooKeeperClient = zkClientConfig.apply()
+  def zkClientBuilder: ZooKeeperClientBuilder
+  lazy val zkClient: ZooKeeperClient = zkClientBuilder.apply()
 
   lazy val serverSet: ServerSetImpl = new ServerSetImpl(zkClient, serverSetPath)
 

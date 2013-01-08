@@ -20,9 +20,9 @@ import com.twitter.conversions.time._
 import com.twitter.finagle.zipkin.thrift.ZipkinTracer
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.Duration
+import com.twitter.zipkin.builder.ZooKeeperClientBuilder
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.web.{Resource, ZipkinWeb, App}
-import com.twitter.zipkin.config.zookeeper.{ZooKeeperClientConfig, ZooKeeperConfig}
 import java.net.InetSocketAddress
 
 trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
@@ -50,12 +50,8 @@ trait ZipkinWebConfig extends ZipkinConfig[ZipkinWeb] {
   var jsConfig = new JsConfig
   var cssConfig = new CssConfig
 
-  def zkConfig: ZooKeeperConfig
-
-  def zkClientConfig = new ZooKeeperClientConfig {
-    var config = zkConfig
-  }
-  lazy val zkClient: ZooKeeperClient = zkClientConfig.apply()
+  def zkClientBuilder: ZooKeeperClientBuilder
+  lazy val zkClient: ZooKeeperClient = zkClientBuilder.apply()
 
   def appConfig: (gen.ZipkinQuery.FinagledClient) => App =
     (client) => new App(this, client)
