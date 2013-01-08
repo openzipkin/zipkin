@@ -18,10 +18,10 @@ package com.twitter.zipkin
 import com.twitter.logging.config._
 import com.twitter.logging.LoggerFactory
 import com.twitter.ostrich.admin._
+import com.twitter.zipkin.builder.ZooKeeperClientBuilder
 import com.twitter.zipkin.cassandra.{Keyspace, StorageBuilder, IndexBuilder, AggregatesBuilder}
 import com.twitter.zipkin.collector.sampler.{EverythingGlobalSampler, GlobalSampler}
 import com.twitter.zipkin.config.sampler.NullAdaptiveSamplerConfig
-import com.twitter.zipkin.config.zookeeper.ZooKeeperConfig
 import com.twitter.zipkin.config.{ZipkinQueryConfig, WriteQueueConfig, ScribeZipkinCollectorConfig}
 import com.twitter.zipkin.storage.Store
 
@@ -53,9 +53,7 @@ object Configs {
     // sample it all
     override def globalSampler: GlobalSampler = EverythingGlobalSampler
 
-    def zkConfig = new ZooKeeperConfig {
-      servers = List("localhost:2181")
-    }
+    def zkClientBuilder = ZooKeeperClientBuilder(Seq("localhost"))
 
     loggers =
       LoggerFactory (
@@ -93,9 +91,7 @@ object Configs {
     val keyspaceBuilder = Keyspace.static(port = cassandraPort)
     def storeBuilder = Store.Builder(StorageBuilder(keyspaceBuilder), IndexBuilder(keyspaceBuilder), AggregatesBuilder(keyspaceBuilder))
 
-    def zkConfig = new ZooKeeperConfig {
-      servers = List("localhost:2181")
-    }
+    def zkClientBuilder = ZooKeeperClientBuilder(Seq("localhost"))
 
     loggers =
       LoggerFactory (

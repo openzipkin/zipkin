@@ -21,7 +21,6 @@ import com.twitter.zipkin.collector.filter.{ServiceStatsFilter, SamplerFilter, C
 import com.twitter.zipkin.collector.sampler.{AdaptiveSampler, ZooKeeperGlobalSampler, GlobalSampler}
 import com.twitter.zipkin.config.collector.CollectorServerConfig
 import com.twitter.zipkin.config.sampler._
-import com.twitter.zipkin.config.zookeeper.{ZooKeeperClientConfig, ZooKeeperConfig}
 import com.twitter.common.zookeeper.ZooKeeperClient
 import com.twitter.conversions.time._
 import com.twitter.ostrich.admin.{ServiceTracker, RuntimeEnvironment}
@@ -33,7 +32,7 @@ import scala.collection.JavaConverters._
 import com.twitter.zipkin.collector.processor._
 import com.twitter.zipkin.common.Span
 import com.twitter.finagle.{Filter, Service}
-import com.twitter.zipkin.builder.Builder
+import com.twitter.zipkin.builder.{ZooKeeperClientBuilder, Builder}
 
 trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
 
@@ -58,12 +57,8 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
   lazy val store: Store = storeBuilder.apply()
 
   /* ZooKeeper */
-  def zkConfig: ZooKeeperConfig
-
-  def zkClientConfig: ZooKeeperClientConfig = new ZooKeeperClientConfig {
-    var config = zkConfig
-  }
-  lazy val zkClient: ZooKeeperClient = zkClientConfig.apply()
+  def zkClientBuilder: ZooKeeperClientBuilder
+  lazy val zkClient: ZooKeeperClient = zkClientBuilder.apply()
 
   lazy val connector: Connector =
     CommonConnector(zkClient)(FuturePool.defaultPool)

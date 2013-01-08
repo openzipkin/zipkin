@@ -46,7 +46,7 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
 
   val config = new ScribeZipkinCollectorConfig {
     def writeQueueConfig = null
-    def zkConfig = null
+    def zkClientBuilder = null
     def methodConfig = null
     def storeBuilder = null
 
