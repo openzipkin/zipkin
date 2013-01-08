@@ -26,7 +26,7 @@ class WebBuilderSpec extends Specification {
 
     "compile" in {
       val builders = Seq(
-        "/web-builder.scala",
+        "/web-dev.scala",
         "/web-zk.scala"
       ) map { TempFile.fromResourcePath(_) }
 
