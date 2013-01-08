@@ -22,6 +22,9 @@ import com.twitter.ostrich.admin._
 import com.twitter.util.{Timer, JavaTimer}
 import scala.util.matching.Regex
 
+/**
+ * Base builder for a Zipkin service
+ */
 case class ZipkinServerBuilder(
   serverPort       : Int,
   adminPort        : Int,
