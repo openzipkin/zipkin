@@ -12,7 +12,8 @@ case class ZooKeeperClientBuilder(
   sessionTimeout: Amount[java.lang.Integer, Time] = ZooKeeperUtils.DEFAULT_ZK_SESSION_TIMEOUT
 ) extends Builder[ZooKeeperClient] {
 
-  def sessionTimeout(s: Amount[java.lang.Integer, Time]) = copy(sessionTimeout = s)
+  def port(p: Int)                                      : ZooKeeperClientBuilder = copy(port = p)
+  def sessionTimeout(s: Amount[java.lang.Integer, Time]): ZooKeeperClientBuilder = copy(sessionTimeout = s)
 
   def apply() = {
     val hostPorts = hosts map { "%s:%d".format(_, port) }
