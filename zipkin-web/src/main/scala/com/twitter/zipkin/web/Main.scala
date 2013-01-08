@@ -16,7 +16,9 @@
 package com.twitter.zipkin.web
 
 import com.twitter.logging.Logger
-import com.twitter.ostrich.admin.RuntimeEnvironment
+import com.twitter.ostrich.admin.{ServiceTracker, RuntimeEnvironment}
+import com.twitter.util.Eval
+import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.BuildProperties
 
 object Main {
@@ -25,9 +27,12 @@ object Main {
   def main(args: Array[String]) {
     log.info("Loading configuration")
     val runtime = RuntimeEnvironment(BuildProperties, args)
-    val server = runtime.loadRuntimeConfig[ZipkinWeb]()
+    val builder = (new Eval).apply[Builder[ZipkinWeb]](runtime.configFile)
+
     try {
+      val server = builder.apply()
       server.start()
+      ServiceTracker.register(server)
     } catch {
       case e: Exception =>
         e.printStackTrace()

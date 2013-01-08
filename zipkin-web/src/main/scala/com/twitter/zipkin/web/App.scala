@@ -17,24 +17,30 @@
 package com.twitter.zipkin.web
 
 import com.codahale.jerkson.Json
+import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finatra.{Response, Controller, View, Request}
 import com.twitter.logging.Logger
-import com.twitter.util.Future
-import com.twitter.zipkin.gen
-import com.twitter.zipkin.config.ZipkinWebConfig
-import java.text.SimpleDateFormat
-import java.util.Calendar
+import com.twitter.util.{Duration, Future}
+import com.twitter.zipkin.config.{JsConfig, CssConfig}
 import com.twitter.zipkin.conversions.json._
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.common.json.JsonTraceSummary
+import com.twitter.zipkin.gen
 import com.twitter.zipkin.query.QueryRequest
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
 /**
  * Application that handles ZipkinWeb routes
- * @param config ZipkinWebConfig
  * @param client Thrift client to ZipkinQuery
  */
-class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) extends Controller(config.statsReceiver) {
+class App(
+  rootUrl: String,
+  pinTtl: Duration,
+  jsConfig: JsConfig,
+  cssConfig: CssConfig,
+  client: gen.ZipkinQuery.FinagledClient,
+  statsReceiver: StatsReceiver) extends Controller(statsReceiver) { self =>
 
   val log = Logger.get()
   val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
@@ -301,7 +307,7 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
   private def togglePinState(traceId: Long, state: Boolean): Future[Boolean] = {
     val ttl = state match {
       case true => {
-        Future.value(config.pinTtl.inSeconds)
+        Future.value(pinTtl.inSeconds)
       }
       case false => {
         client.getDataTimeToLive()
@@ -331,10 +337,10 @@ class App(config: ZipkinWebConfig, client: gen.ZipkinQuery.FinagledClient) exten
 
   private def wrapView(v: View) = new View {
     val template = "templates/layouts/application.mustache"
-    val rootUrl = config.rootUrl
+    val rootUrl = self.rootUrl
     val innerView: View = v
-    val javascripts = config.jsConfig.resources
-    val stylesheets = config.cssConfig.resources
+    val javascripts = jsConfig.resources
+    val stylesheets = cssConfig.resources
     lazy val body = innerView.render
   }
 }
