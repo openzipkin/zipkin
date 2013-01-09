@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.zipkin.config
+package com.twitter.zipkin.builder
 
 import com.twitter.io.TempFile
+import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.Eval
+import com.twitter.zipkin.web.ZipkinWeb
 import org.specs.Specification
 
-class ZipkinWebConfigSpec extends Specification {
-  "config" should {
+class WebBuilderSpec extends Specification {
+  "web builders" should {
     val eval = new Eval
 
-    "validate web config" in {
-      val configFiles = Seq(
+    "compile" in {
+      val builders = Seq(
         "/web-dev.scala",
-        "/web-localhost.scala"
+        "/web-zk.scala"
       ) map { TempFile.fromResourcePath(_) }
 
-      for (file <- configFiles) {
+      for (file <- builders) {
         file.getName() in {
-          val config = eval[ZipkinWebConfig](file)
-          config must notBeNull
-          config.validate() //must not(throwA[Exception])
-          val service = config()
+          val b = eval[Builder[RuntimeEnvironment => ZipkinWeb]](file)
+          b.apply()
         }
       }
     }
