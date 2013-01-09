@@ -15,6 +15,7 @@
  */
 package com.twitter.zipkin.config
 
+import com.sun.net.httpserver.HttpExchange
 import com.twitter.zipkin.storage.Store
 import com.twitter.zipkin.collector.{WriteQueue, ZipkinCollector}
 import com.twitter.zipkin.collector.filter.{ServiceStatsFilter, SamplerFilter, ClientIndexFilter}
@@ -23,7 +24,7 @@ import com.twitter.zipkin.config.collector.CollectorServerConfig
 import com.twitter.zipkin.config.sampler._
 import com.twitter.common.zookeeper.ZooKeeperClient
 import com.twitter.conversions.time._
-import com.twitter.ostrich.admin.{ServiceTracker, RuntimeEnvironment}
+import com.twitter.ostrich.admin.{UnknownCommandError, CgiRequestHandler, ServiceTracker, RuntimeEnvironment}
 import com.twitter.util.{FuturePool, Config}
 import com.twitter.zk._
 import java.net.{InetAddress, InetSocketAddress}
@@ -106,7 +107,57 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
   val serverConfig: CollectorServerConfig
 
   def apply(runtime: RuntimeEnvironment): ZipkinCollector = {
+    addConfigEndpoint()
     new ZipkinCollector(this)
+  }
+
+  /**
+   * Add endpoints to the Ostrich admin service for configuring the adjustable values
+   *
+   * Methods:
+   *   /config/get/sampleRate
+   *   /config/set/sampleRate?value=0.1
+   *   /config/get/storageRequestRate
+   *   /config/set/storageRequestRate?value=100
+   */
+  private[this] def addConfigEndpoint() {
+    adminHttpService map {
+      _.addContext("/config", new CgiRequestHandler {
+        def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
+          if (path.length != 3) {
+            render("invalid command", exchange, 404)
+          }
+
+          val paramMap = Map(parameters:_*)
+
+          path(2) match {
+            case "sampleRate"         => handleAction(exchange, path(1), paramMap, sampleRateConfig)
+            case "storageRequestRate" => handleAction(exchange, path(1), paramMap, storageRequestRateConfig)
+            case _                    => render("invalid command\n", exchange, 404)
+          }
+        }
+
+        private def handleAction(exchange: HttpExchange, method: String, paramMap: Map[String, String], a: AdjustableRateConfig) {
+          method match {
+            case "get" =>
+              render(a.get.toString, exchange, 200)
+            case "set" =>
+              paramMap.get("value") match {
+                case Some(value) =>
+                  try {
+                    a.set(value.toDouble)
+                    render("success", exchange, 200)
+                  } catch {
+                    case e =>
+                      render("invalid input", exchange, 500)
+                  }
+                case None =>
+                  render("invalid command", exchange, 404)
+              }
+          }
+        }
+      })
+    }
   }
 }
 

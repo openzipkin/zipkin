@@ -90,33 +90,6 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
       gen.ResultCode.Ok mustEqual cs.log(wrongCatList)()
     }
 
-    "get sample rate" in {
-      val cs = scribeCollectorService
-
-      val sampleRate = 0.3
-
-      expect {
-        one(zkSampleRateConfig).get willReturn sampleRate
-      }
-
-      val result = cs.getSampleRate
-      result() mustEqual sampleRate
-    }
-
-    "set sample rate" in {
-      val cs = scribeCollectorService
-
-      val sampleRate = 0.4
-      val expected = Future.Unit
-
-      expect {
-        one(zkSampleRateConfig).set(sampleRate)
-      }
-
-      val actual = cs.setSampleRate(sampleRate)
-      actual() mustEqual expected()
-    }
-
     "store aggregates" in {
       val serviceName = "mockingbird"
       val annotations = Seq("a" , "b", "c")
