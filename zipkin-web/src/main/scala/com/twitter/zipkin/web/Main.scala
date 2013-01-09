@@ -27,10 +27,10 @@ object Main {
   def main(args: Array[String]) {
     log.info("Loading configuration")
     val runtime = RuntimeEnvironment(BuildProperties, args)
-    val builder = (new Eval).apply[Builder[ZipkinWeb]](runtime.configFile)
+    val builder = (new Eval).apply[Builder[RuntimeEnvironment => ZipkinWeb]](runtime.configFile)
 
     try {
-      val server = builder.apply()
+      val server = builder.apply().apply(runtime)
       server.start()
       ServiceTracker.register(server)
     } catch {

@@ -16,6 +16,7 @@
 package com.twitter.zipkin.builder
 
 import com.twitter.io.TempFile
+import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.Eval
 import com.twitter.zipkin.web.ZipkinWeb
 import org.specs.Specification
@@ -32,7 +33,7 @@ class WebBuilderSpec extends Specification {
 
       for (file <- builders) {
         file.getName() in {
-          val b = eval[Builder[ZipkinWeb]](file)
+          val b = eval[Builder[RuntimeEnvironment => ZipkinWeb]](file)
           b.apply()
         }
       }
