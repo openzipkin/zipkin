@@ -15,4 +15,11 @@
  */
 package com.twitter.zipkin.builder
 
-trait Builder[+T] extends (() => T)
+trait Builder[+T] extends (() => T) { self =>
+
+  def map[U](f: T => U): Builder[U] = new Builder[U] {
+    def apply(): U = {
+      f(self.apply())
+    }
+  }
+}

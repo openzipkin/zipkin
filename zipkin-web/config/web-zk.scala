@@ -13,11 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import com.twitter.finagle.zipkin.thrift.ZipkinTracer
-import com.twitter.zipkin.builder.{QueryClient, WebBuilder}
-import java.net.InetSocketAddress
+import com.twitter.zipkin.builder.{WebBuilder, ZooKeeperClientBuilder, QueryClient}
 
-val queryClient = QueryClient.static(new InetSocketAddress("localhost", 3002)) map {
-  _.tracerFactory(ZipkinTracer())
-}
+val zkClientBuilder = ZooKeeperClientBuilder(Seq("ZOOKEEPER_HOSTS"))
+val queryClient = QueryClient.zookeeper(zkClientBuilder, "/path/to/server/set")
 WebBuilder("http://localhost:8080/", queryClient)

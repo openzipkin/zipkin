@@ -15,27 +15,24 @@
  */
 package com.twitter.zipkin.web
 
-import com.twitter.common.zookeeper.ServerSetImpl
 import com.twitter.finagle.http.Http
-import com.twitter.finagle.builder.{ClientBuilder, ServerBuilder, Server}
-import com.twitter.finagle.thrift.ThriftClientFramedCodec
-import com.twitter.finagle.zookeeper.ZookeeperServerSetCluster
+import com.twitter.finagle.builder.{ServerBuilder, Server}
 import com.twitter.finatra_core.{AbstractFinatraController, ControllerCollection}
 import com.twitter.finatra._
-import com.twitter.ostrich.admin.ServiceTracker
 import com.twitter.ostrich.admin
 import com.twitter.logging.Logger
 import com.twitter.io.{Files, TempFile}
-import com.twitter.zipkin.config.ZipkinWebConfig
-import com.twitter.zipkin.gen
 import com.twitter.util.Future
 import java.net.InetSocketAddress
 import org.jboss.netty.handler.codec.http.HttpResponse
-import scala.Left
-import scala.Right
-import scala.Some
+import com.twitter.finagle.tracing.Tracer
 
-class ZipkinWeb(config: ZipkinWebConfig) extends admin.Service {
+class ZipkinWeb(
+  app: App,
+  resource: Resource,
+  serverPort: Int,
+  tracerFactory: Tracer.Factory
+) extends admin.Service {
 
   val log = Logger.get()
   var server: Option[Server] = None
@@ -43,31 +40,6 @@ class ZipkinWeb(config: ZipkinWebConfig) extends admin.Service {
   val controllers = new ControllerCollection[Request, Future[Response], Future[HttpResponse]]
 
   def start() {
-    val clientBuilder = ClientBuilder()
-      .name("ZipkinQuery")
-      .codec(ThriftClientFramedCodec())
-      .hostConnectionLimit(config.hostConnectionLimit)
-      .tracerFactory(config.tracerFactory)
-
-    val clientService = config.queryClient match {
-      case Left(address) => {
-        clientBuilder.hosts(address)
-          .build()
-      }
-      case Right(zk) => {
-        val serverSet = new ServerSetImpl(zk, config.queryServerSetPath)
-        val cluster = new ZookeeperServerSetCluster(serverSet) {
-          override def ready() = super.ready
-        }
-        clientBuilder.cluster(cluster)
-          .build()
-      }
-    }
-
-    val client = new gen.ZipkinQuery.FinagledClient(clientService)
-
-    val resource = config.resource
-    val app = config.appConfig(client)
 
     register(resource)
     register(app)
@@ -78,13 +50,12 @@ class ZipkinWeb(config: ZipkinWebConfig) extends admin.Service {
     server = Some {
       ServerBuilder()
         .codec(Http())
-        .bindTo(new InetSocketAddress(config.serverPort))
+        .bindTo(new InetSocketAddress(serverPort))
         .name("ZipkinWeb")
-        .tracerFactory(config.tracerFactory)
+        .tracerFactory(tracerFactory)
         .build(service)
     }
-    log.info("Finatra service started in port: " + config.serverPort)
-    ServiceTracker.register(this)
+    log.info("Finatra service started in port: " + serverPort)
   }
 
   def shutdown() {
