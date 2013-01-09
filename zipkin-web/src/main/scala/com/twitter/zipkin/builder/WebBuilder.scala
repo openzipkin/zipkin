@@ -18,6 +18,7 @@ package com.twitter.zipkin.builder
 import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.thrift.ThriftClientRequest
+import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.Duration
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.config.{CssConfig, JsConfig}
@@ -29,7 +30,7 @@ case class WebBuilder(
   pinTtl: Duration = 30.days,
   resourcePathPrefix: String = "/public",
   serverBuilder: ZipkinServerBuilder = ZipkinServerBuilder(8080, 9902)
-) extends Builder[ZipkinWeb] {
+) extends Builder[RuntimeEnvironment => ZipkinWeb] {
 
   /* Map dirname to content type */
   private val resourceDirs: Map[String, String] = Map[String, String](
@@ -42,7 +43,9 @@ case class WebBuilder(
   def pinTtl(ttl: Duration)        : WebBuilder = copy(pinTtl = ttl)
   def resourcePathPrefix(p: String): WebBuilder = copy(resourcePathPrefix = p)
 
-  def apply(): ZipkinWeb = {
+  def apply(): (RuntimeEnvironment) => ZipkinWeb = (runtime: RuntimeEnvironment) => {
+    serverBuilder.apply().apply(runtime)
+
     val jsConfig = new JsConfig {
       override val pathPrefix = resourcePathPrefix
     }
