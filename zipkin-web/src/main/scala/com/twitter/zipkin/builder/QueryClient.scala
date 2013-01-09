@@ -46,8 +46,7 @@ object QueryClient {
       val cluster = new ZookeeperServerSetCluster(serverSet) {
         override def ready() = super.ready
       }
-      val a = default.cluster(cluster)
-      a
+      default.cluster(cluster)
     }
   }
 }
