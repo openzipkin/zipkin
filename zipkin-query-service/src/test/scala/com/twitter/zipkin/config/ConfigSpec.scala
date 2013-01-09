@@ -16,7 +16,10 @@
 package com.twitter.zipkin.config
 
 import com.twitter.io.TempFile
+import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.Eval
+import com.twitter.zipkin.builder.Builder
+import com.twitter.zipkin.query.ZipkinQuery
 import org.specs.Specification
 
 class ConfigSpec extends Specification {
@@ -30,10 +33,9 @@ class ConfigSpec extends Specification {
 
       for (file <- queryConfigFiles) {
         file.getName() in {
-          val config = eval[ZipkinQueryConfig](file)
+          val config = eval[Builder[RuntimeEnvironment => ZipkinQuery]](file)
           config must notBeNull
-          config.validate() //must not(throwA[Exception])
-          val service = config()
+          config.apply()
         }
       }
     }
