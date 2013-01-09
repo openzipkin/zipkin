@@ -42,12 +42,14 @@ case class ZipkinServerBuilder(
   def serverPort(p: Int)                : ZipkinServerBuilder = copy(serverPort        = p)
   def adminPort(p: Int)                 : ZipkinServerBuilder = copy(adminPort         = p)
   def serverAddress(a: InetAddress)     : ZipkinServerBuilder = copy(serverAddress     = a)
-  def addLogger(l: LoggerFactory)       : ZipkinServerBuilder = copy(loggers           = loggers :+ l)
-  def addAdminStatsNode(n: StatsFactory): ZipkinServerBuilder = copy(adminStatsNodes   = adminStatsNodes :+ n)
-  def addAdminStatsFilter(f: Regex)     : ZipkinServerBuilder = copy(adminStatsFilters = adminStatsFilters :+ f)
+  def loggers(l: List[LoggerFactory])   : ZipkinServerBuilder = copy(loggers           = l)
   def statsReceiver(s: StatsReceiver)   : ZipkinServerBuilder = copy(statsReceiver     = s)
   def tracerFactory(t: Tracer.Factory)  : ZipkinServerBuilder = copy(tracerFactory     = t)
   def timer(t: Timer)                   : ZipkinServerBuilder = copy(timer             = t)
+
+  def addLogger(l: LoggerFactory)       : ZipkinServerBuilder = copy(loggers           = loggers :+ l)
+  def addAdminStatsNode(n: StatsFactory): ZipkinServerBuilder = copy(adminStatsNodes   = adminStatsNodes :+ n)
+  def addAdminStatsFilter(f: Regex)     : ZipkinServerBuilder = copy(adminStatsFilters = adminStatsFilters :+ f)
 
   private def adminServiceFactory: AdminServiceFactory =
     AdminServiceFactory(
