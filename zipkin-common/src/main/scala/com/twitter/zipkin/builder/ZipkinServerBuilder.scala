@@ -54,6 +54,6 @@ case class ZipkinServerBuilder(
 
   def apply(): (RuntimeEnvironment) => Unit = (runtime: RuntimeEnvironment) => {
     Logger.configure(loggers)
-    adminServiceFactory(runtime)
+    adminServiceFactory(runtime).start()
   }
 }
