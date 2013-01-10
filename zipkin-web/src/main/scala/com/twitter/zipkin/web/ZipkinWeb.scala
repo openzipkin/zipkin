@@ -17,7 +17,6 @@ package com.twitter.zipkin.web
 
 import com.twitter.finagle.http.Http
 import com.twitter.finagle.builder.{ServerBuilder, Server}
-import com.twitter.finatra_core.{AbstractFinatraController, ControllerCollection}
 import com.twitter.finatra._
 import com.twitter.ostrich.admin
 import com.twitter.logging.Logger
@@ -35,36 +34,19 @@ class ZipkinWeb(
 ) extends admin.Service {
 
   val log = Logger.get()
-  var server: Option[Server] = None
-
-  val controllers = new ControllerCollection[Request, Future[Response], Future[HttpResponse]]
 
   def start() {
 
-    register(resource)
-    register(app)
+    /* Finatra uses System properties for configuration */
+    System.setProperty("name", "ZipkinWeb")
+    System.setProperty("port", serverPort.toString)
+    val s = new FinatraServer()
+    s.register(app)
+    s.start(tracerFactory)
 
-    val finatraService = new AppService(controllers)
-    val service = finatraService
-
-    server = Some {
-      ServerBuilder()
-        .codec(Http())
-        .bindTo(new InetSocketAddress(serverPort))
-        .name("ZipkinWeb")
-        .tracerFactory(tracerFactory)
-        .build(service)
-    }
-    log.info("Finatra service started in port: " + serverPort)
   }
 
-  def shutdown() {
-    server.foreach { _.close() }
-  }
-
-  def register(app: AbstractFinatraController[Request, Future[Response], Future[HttpResponse]]) {
-    controllers.add(app)
-  }
+  def shutdown() {}
 }
 
 class Resource(resourceDirs: Map[String, String]) extends Controller {

@@ -299,11 +299,8 @@ object Zipkin extends Build {
       base = file("zipkin-web"),
       settings = defaultSettings
     ).settings(
-      resolvers += "finatra" at "http://repo.juliocapote.com",
-      resolvers += "codahale" at "http://repo.codahale.com",
-
       libraryDependencies ++= Seq(
-        "com.twitter" % "finatra" % "0.2.4",
+        "com.twitter" % "finatra" % "1.1.1",
 
         "com.twitter.common.zookeeper" % "server-set" % "1.0.7",
 
