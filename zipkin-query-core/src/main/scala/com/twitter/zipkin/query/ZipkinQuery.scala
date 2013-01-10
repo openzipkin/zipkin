@@ -1,5 +1,3 @@
-package com.twitter.zipkin.query
-
 /*
  * Copyright 2012 Twitter Inc.
  * 
@@ -16,43 +14,46 @@ package com.twitter.zipkin.query
  *  limitations under the License.
  *
  */
-import com.twitter.logging.Logger
-import com.twitter.zipkin.storage.{Aggregates, Index, Storage}
-import com.twitter.zipkin.gen
-import com.twitter.finagle.thrift.ThriftServerFramedCodec
-import com.twitter.finagle.zookeeper.ZookeeperServerSetCluster
+package com.twitter.zipkin.query
+
+import com.twitter.zipkin.query.adjusters.Adjuster
 import com.twitter.finagle.builder.{ServerBuilder, Server}
+import com.twitter.finagle.stats.{NullStatsReceiver, StatsReceiver}
+import com.twitter.finagle.thrift.ThriftServerFramedCodec
+import com.twitter.finagle.tracing.{NullTracer, Tracer}
+import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.{ServiceTracker, Service}
-import com.twitter.zipkin.config.ZipkinQueryConfig
-import com.twitter.common.zookeeper.ServerSet
+import com.twitter.zipkin.gen
+import com.twitter.zipkin.storage.{Aggregates, Index, Storage}
 import java.net.InetSocketAddress
 import org.apache.thrift.protocol.TBinaryProtocol
 
 class ZipkinQuery(
-  config: ZipkinQueryConfig, serverSet: ServerSet, storage: Storage, index: Index, aggregates: Aggregates
+  serverAddress: InetSocketAddress,
+  storage: Storage,
+  index: Index,
+  aggregates: Aggregates,
+  adjusterMap: Map[gen.Adjust, Adjuster] = Map.empty,
+  statsReceiver: StatsReceiver = NullStatsReceiver,
+  tracerFactory: Tracer.Factory = NullTracer.factory
 ) extends Service {
 
   val log = Logger.get(getClass.getName)
   var thriftServer: Server = null
 
-  val serverAddr = new InetSocketAddress(config.serverAddress, config.serverPort)
-
   def start() {
-    log.info("Starting query thrift service on addr " + serverAddr)
-    val cluster = new ZookeeperServerSetCluster(serverSet)
+    log.info("Starting query thrift service on addr " + serverAddress)
 
-    val queryService = new QueryService(storage, index, aggregates, config.adjusterMap, config.statsReceiver)
+    val queryService = new QueryService(storage, index, aggregates, adjusterMap, statsReceiver)
     queryService.start()
     ServiceTracker.register(queryService)
 
     thriftServer = ServerBuilder()
       .codec(ThriftServerFramedCodec())
-      .bindTo(serverAddr)
+      .bindTo(serverAddress)
       .name("ZipkinQuery")
-      .tracerFactory(config.tracerFactory)
+      .tracerFactory(tracerFactory)
       .build(new gen.ZipkinQuery.FinagledService(queryService, new TBinaryProtocol.Factory()))
-
-    cluster.join(serverAddr)
   }
 
   def shutdown() {

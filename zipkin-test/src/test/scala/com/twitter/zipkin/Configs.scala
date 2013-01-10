@@ -18,11 +18,11 @@ package com.twitter.zipkin
 import com.twitter.logging.config._
 import com.twitter.logging.LoggerFactory
 import com.twitter.ostrich.admin._
-import com.twitter.zipkin.builder.ZooKeeperClientBuilder
+import builder.{QueryServiceBuilder, ZooKeeperClientBuilder}
 import com.twitter.zipkin.cassandra.{Keyspace, StorageBuilder, IndexBuilder, AggregatesBuilder}
 import com.twitter.zipkin.collector.sampler.{EverythingGlobalSampler, GlobalSampler}
 import com.twitter.zipkin.config.sampler.NullAdaptiveSamplerConfig
-import com.twitter.zipkin.config.{ZipkinQueryConfig, WriteQueueConfig, ScribeZipkinCollectorConfig}
+import com.twitter.zipkin.config.{WriteQueueConfig, ScribeZipkinCollectorConfig}
 import com.twitter.zipkin.storage.Store
 
 object Configs {
@@ -76,40 +76,9 @@ object Configs {
       )
   }
 
-  def query(cassandraPort: Int) = new ZipkinQueryConfig {
-    serverPort = 9411
-    adminPort  = 9901
-
-    adminStatsNodes =
-      StatsFactory(
-        reporters = JsonStatsLoggerFactory(
-          loggerName = "stats",
-          serviceName = "zipkin-query"
-        ) :: new TimeSeriesCollectorFactory
-      )
-
+  def query(cassandraPort: Int) = {
     val keyspaceBuilder = Keyspace.static(port = cassandraPort)
     def storeBuilder = Store.Builder(StorageBuilder(keyspaceBuilder), IndexBuilder(keyspaceBuilder), AggregatesBuilder(keyspaceBuilder))
-
-    def zkClientBuilder = ZooKeeperClientBuilder(Seq("localhost"))
-
-    loggers =
-      LoggerFactory (
-        level = Level.DEBUG,
-        handlers =
-          new FileHandlerConfig {
-            filename = "zipkin-query.log"
-            roll = Policy.SigHup
-          } ::
-            new ConsoleHandlerConfig
-      ) :: LoggerFactory (
-        node = "stats",
-        level = Level.INFO,
-        useParents = false,
-        handlers = new FileHandlerConfig {
-          filename = "stats.log"
-          formatter = BareFormatterConfig
-        }
-      )
+    QueryServiceBuilder(storeBuilder)
   }
 }
