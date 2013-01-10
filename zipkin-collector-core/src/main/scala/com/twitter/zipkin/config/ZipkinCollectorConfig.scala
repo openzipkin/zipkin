@@ -122,41 +122,46 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
    */
   private[config] def addConfigEndpoint() {
     adminHttpService map {
-      _.addContext("/config", new CgiRequestHandler {
-        def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
-          if (path.length != 2) {
+      _.addContext("/config", new ConfigRequestHandler(sampleRateConfig, storageRequestRateConfig))
+    }
+  }
+}
+
+class ConfigRequestHandler(
+  sampleRateConfig: AdjustableRateConfig,
+  storageRequestRateConfig: AdjustableRateConfig
+) extends CgiRequestHandler {
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
+    if (path.length != 2) {
+      render("invalid command", exchange, 404)
+    }
+
+    val paramMap = Map(parameters:_*)
+
+    path(1) match {
+      case "sampleRate"         => handleAction(exchange, paramMap, sampleRateConfig)
+      case "storageRequestRate" => handleAction(exchange, paramMap, storageRequestRateConfig)
+      case _                    => render("invalid command\n", exchange, 404)
+    }
+  }
+
+  private def handleAction(exchange: HttpExchange, paramMap: Map[String, String], a: AdjustableRateConfig) {
+    exchange.getRequestMethod match {
+      case "GET" =>
+        render(a.get.toString, exchange, 200)
+      case "POST" =>
+        paramMap.get("value") match {
+          case Some(value) =>
+            try {
+              a.set(value.toDouble)
+              render("success", exchange, 200)
+            } catch {
+              case e =>
+                render("invalid input", exchange, 500)
+            }
+          case None =>
             render("invalid command", exchange, 404)
-          }
-
-          val paramMap = Map(parameters:_*)
-
-          path(1) match {
-            case "sampleRate"         => handleAction(exchange, paramMap, sampleRateConfig)
-            case "storageRequestRate" => handleAction(exchange, paramMap, storageRequestRateConfig)
-            case _                    => render("invalid command\n", exchange, 404)
-          }
         }
-
-        private def handleAction(exchange: HttpExchange, paramMap: Map[String, String], a: AdjustableRateConfig) {
-          exchange.getRequestMethod match {
-            case "GET" =>
-              render(a.get.toString, exchange, 200)
-            case "POST" =>
-              paramMap.get("value") match {
-                case Some(value) =>
-                  try {
-                    a.set(value.toDouble)
-                    render("success", exchange, 200)
-                  } catch {
-                    case e =>
-                      render("invalid input", exchange, 500)
-                  }
-                case None =>
-                  render("invalid command", exchange, 404)
-              }
-          }
-        }
-      })
     }
   }
 }
