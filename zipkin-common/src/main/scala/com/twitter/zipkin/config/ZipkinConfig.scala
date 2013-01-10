@@ -60,13 +60,15 @@ trait ZipkinConfig[T <: Service] extends Config[RuntimeEnvironment => T] {
       statsNodes = adminStatsNodes,
       statsFilters = adminStatsFilters
     )
+  var adminHttpService: Option[AdminHttpService] = None
 
   def initializeLoggers() {
     Logger.configure(loggers)
   }
 
-  def initializeAdminService(runtime: RuntimeEnvironment) =
-    adminServiceFactory(runtime)
+  def initializeAdminService(runtime: RuntimeEnvironment) = {
+    adminHttpService = Some(adminServiceFactory(runtime))
+  }
 
   def apply(): (RuntimeEnvironment) => T = (runtime: RuntimeEnvironment) => {
     initializeLoggers()
