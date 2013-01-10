@@ -17,9 +17,11 @@ package com.twitter.zipkin.builder
 
 import com.twitter.finagle.stats.{StatsReceiver, OstrichStatsReceiver}
 import com.twitter.finagle.tracing.{Tracer, NullTracer}
-import com.twitter.logging.{Logger, LoggerFactory}
+import com.twitter.logging.config._
+import com.twitter.logging.{ConsoleHandler, Logger, LoggerFactory}
 import com.twitter.ostrich.admin._
 import com.twitter.util.{Timer, JavaTimer}
+import java.net.InetAddress
 import scala.util.matching.Regex
 
 /**
@@ -28,7 +30,8 @@ import scala.util.matching.Regex
 case class ZipkinServerBuilder(
   serverPort       : Int,
   adminPort        : Int,
-  loggers          : List[LoggerFactory] = List.empty,
+  serverAddress    : InetAddress         = InetAddress.getLocalHost,
+  loggers          : List[LoggerFactory] = List(LoggerFactory(level = Some(Level.DEBUG), handlers = List(ConsoleHandler()))),
   adminStatsNodes  : List[StatsFactory]  = List(StatsFactory(reporters = List(TimeSeriesCollectorFactory()))),
   adminStatsFilters: List[Regex]         = List.empty,
   statsReceiver    : StatsReceiver       = new OstrichStatsReceiver,
@@ -38,12 +41,15 @@ case class ZipkinServerBuilder(
 
   def serverPort(p: Int)                : ZipkinServerBuilder = copy(serverPort        = p)
   def adminPort(p: Int)                 : ZipkinServerBuilder = copy(adminPort         = p)
-  def addLogger(l: LoggerFactory)       : ZipkinServerBuilder = copy(loggers           = loggers :+ l)
-  def addAdminStatsNode(n: StatsFactory): ZipkinServerBuilder = copy(adminStatsNodes   = adminStatsNodes :+ n)
-  def addAdminStatsFilter(f: Regex)     : ZipkinServerBuilder = copy(adminStatsFilters = adminStatsFilters :+ f)
+  def serverAddress(a: InetAddress)     : ZipkinServerBuilder = copy(serverAddress     = a)
+  def loggers(l: List[LoggerFactory])   : ZipkinServerBuilder = copy(loggers           = l)
   def statsReceiver(s: StatsReceiver)   : ZipkinServerBuilder = copy(statsReceiver     = s)
   def tracerFactory(t: Tracer.Factory)  : ZipkinServerBuilder = copy(tracerFactory     = t)
   def timer(t: Timer)                   : ZipkinServerBuilder = copy(timer             = t)
+
+  def addLogger(l: LoggerFactory)       : ZipkinServerBuilder = copy(loggers           = loggers :+ l)
+  def addAdminStatsNode(n: StatsFactory): ZipkinServerBuilder = copy(adminStatsNodes   = adminStatsNodes :+ n)
+  def addAdminStatsFilter(f: Regex)     : ZipkinServerBuilder = copy(adminStatsFilters = adminStatsFilters :+ f)
 
   private def adminServiceFactory: AdminServiceFactory =
     AdminServiceFactory(

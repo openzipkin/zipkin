@@ -13,50 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import com.twitter.zipkin.builder.ZooKeeperClientBuilder
+import com.twitter.zipkin.builder.QueryServiceBuilder
 import com.twitter.zipkin.cassandra
-import com.twitter.zipkin.config._
-import com.twitter.logging.LoggerFactory
-import com.twitter.logging.config._
-import com.twitter.ostrich.admin.{TimeSeriesCollectorFactory, JsonStatsLoggerFactory, StatsFactory}
 import com.twitter.zipkin.storage.Store
 
 // development mode.
-new ZipkinQueryConfig {
+val keyspaceBuilder = cassandra.Keyspace.static()
+val storeBuilder = Store.Builder(
+  cassandra.StorageBuilder(keyspaceBuilder),
+  cassandra.IndexBuilder(keyspaceBuilder),
+  cassandra.AggregatesBuilder(keyspaceBuilder))
 
-  serverPort = 9411
-  adminPort  = 9901
-
-  adminStatsNodes =
-    StatsFactory(
-      reporters = JsonStatsLoggerFactory(
-        loggerName = "stats",
-        serviceName = "zipkin-query"
-      ) :: new TimeSeriesCollectorFactory
-    )
-
-  val keyspaceBuilder = cassandra.Keyspace.static()
-  def storeBuilder = Store.Builder(cassandra.StorageBuilder(keyspaceBuilder), cassandra.IndexBuilder(keyspaceBuilder), cassandra.AggregatesBuilder(keyspaceBuilder))
-
-  def zkClientBuilder = ZooKeeperClientBuilder(Seq("localhost"))
-
-  loggers =
-    LoggerFactory (
-      level = Level.DEBUG,
-      handlers =
-        new FileHandlerConfig {
-          filename = "zipkin-query.log"
-          roll = Policy.SigHup
-        } ::
-          new ConsoleHandlerConfig
-    ) :: LoggerFactory (
-      node = "stats",
-      level = Level.INFO,
-      useParents = false,
-      handlers = new FileHandlerConfig {
-        filename = "stats.log"
-        formatter = BareFormatterConfig
-      }
-    )
-}
+QueryServiceBuilder(storeBuilder)

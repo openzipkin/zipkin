@@ -60,12 +60,6 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
       connectionFactory = new NIOServerCnxn.Factory(new InetSocketAddress(zkPort))
       connectionFactory.startup(zooKeeperServer)
 
-      // no need to register in serversets
-      val nullServerSetsImpl = new ServerSet() {
-        def join(p1: InetSocketAddress, p2: Map[String, InetSocketAddress], p3: Status) = null
-        def monitor(p1: HostChangeMonitor[ServiceInstance]) {}
-      }
-
       // start a collector that uses the local zookeeper and fake cassandra
       val collectorConfig = Configs.collector(FakeServer.port.get)
 
@@ -75,11 +69,16 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
       collector = new ZipkinCollector(collectorConfig)
       collector.start()
 
-      query = new ZipkinQuery(queryConfig, nullServerSetsImpl, queryConfig.store.storage, queryConfig.store.index, queryConfig.store.aggregates)
+      val queryStore = queryConfig.storeBuilder()
+      query = new ZipkinQuery(
+        new InetSocketAddress(queryConfig.serverBuilder.serverAddress, queryConfig.serverBuilder.serverPort),
+        queryStore.storage,
+        queryStore.index,
+        queryStore.aggregates)
       query.start()
 
       queryTransport = ClientBuilder()
-        .hosts(InetAddress.getLocalHost.getHostName + ":" + queryConfig.serverPort)
+        .hosts(InetAddress.getLocalHost.getHostName + ":" + queryConfig.serverBuilder.serverPort)
         .hostConnectionLimit(1)
         .codec(ThriftClientFramedCodec())
         .build()
