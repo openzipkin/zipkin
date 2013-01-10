@@ -15,17 +15,14 @@
  */
 package com.twitter.zipkin.web
 
-import com.twitter.finagle.http.Http
+import com.twitter.finagle.http.{RichHttp, Http, Request => FinagleRequest}
 import com.twitter.finagle.builder.{ServerBuilder, Server}
-import com.twitter.finatra_core.{AbstractFinatraController, ControllerCollection}
+import com.twitter.finagle.tracing.Tracer
 import com.twitter.finatra._
 import com.twitter.ostrich.admin
 import com.twitter.logging.Logger
 import com.twitter.io.{Files, TempFile}
-import com.twitter.util.Future
 import java.net.InetSocketAddress
-import org.jboss.netty.handler.codec.http.HttpResponse
-import com.twitter.finagle.tracing.Tracer
 
 class ZipkinWeb(
   app: App,
@@ -37,19 +34,18 @@ class ZipkinWeb(
   val log = Logger.get()
   var server: Option[Server] = None
 
-  val controllers = new ControllerCollection[Request, Future[Response], Future[HttpResponse]]
-
   def start() {
+    val controllers = new ControllerCollection
+    controllers.add(app)
 
-    register(resource)
-    register(app)
+    val appService = new AppService(controllers)
+    val fileService = new FileService
 
-    val finatraService = new AppService(controllers)
-    val service = finatraService
+    val service = fileService andThen appService
 
     server = Some {
       ServerBuilder()
-        .codec(Http())
+        .codec(new RichHttp[FinagleRequest](Http()))
         .bindTo(new InetSocketAddress(serverPort))
         .name("ZipkinWeb")
         .tracerFactory(tracerFactory)
@@ -60,10 +56,6 @@ class ZipkinWeb(
 
   def shutdown() {
     server.foreach { _.close() }
-  }
-
-  def register(app: AbstractFinatraController[Request, Future[Response], Future[HttpResponse]]) {
-    controllers.add(app)
   }
 }
 
