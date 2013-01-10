@@ -54,7 +54,7 @@ trait ZipkinConfig[T <: Service] extends Config[RuntimeEnvironment => T] {
 
   var adminStatsFilters: List[Regex] = List.empty
 
-  lazy val adminServiceFactory: AdminServiceFactory =
+  def adminServiceFactory: AdminServiceFactory =
     AdminServiceFactory(
       httpPort = adminPort,
       statsNodes = adminStatsNodes,
