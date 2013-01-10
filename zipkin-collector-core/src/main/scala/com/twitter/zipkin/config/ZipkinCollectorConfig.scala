@@ -115,33 +115,33 @@ trait ZipkinCollectorConfig extends ZipkinConfig[ZipkinCollector] {
    * Add endpoints to the Ostrich admin service for configuring the adjustable values
    *
    * Methods:
-   *   /config/get/sampleRate
-   *   /config/set/sampleRate?value=0.1
-   *   /config/get/storageRequestRate
-   *   /config/set/storageRequestRate?value=100
+   *   GET  /config/sampleRate
+   *   POST /config/sampleRate?value=0.1
+   *   GET  /config/storageRequestRate
+   *   POST /config/storageRequestRate?value=100
    */
-  private[this] def addConfigEndpoint() {
+  private[config] def addConfigEndpoint() {
     adminHttpService map {
       _.addContext("/config", new CgiRequestHandler {
         def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
-          if (path.length != 3) {
+          if (path.length != 2) {
             render("invalid command", exchange, 404)
           }
 
           val paramMap = Map(parameters:_*)
 
-          path(2) match {
-            case "sampleRate"         => handleAction(exchange, path(1), paramMap, sampleRateConfig)
-            case "storageRequestRate" => handleAction(exchange, path(1), paramMap, storageRequestRateConfig)
+          path(1) match {
+            case "sampleRate"         => handleAction(exchange, paramMap, sampleRateConfig)
+            case "storageRequestRate" => handleAction(exchange, paramMap, storageRequestRateConfig)
             case _                    => render("invalid command\n", exchange, 404)
           }
         }
 
-        private def handleAction(exchange: HttpExchange, method: String, paramMap: Map[String, String], a: AdjustableRateConfig) {
-          method match {
-            case "get" =>
+        private def handleAction(exchange: HttpExchange, paramMap: Map[String, String], a: AdjustableRateConfig) {
+          exchange.getRequestMethod match {
+            case "GET" =>
               render(a.get.toString, exchange, 200)
-            case "set" =>
+            case "POST" =>
               paramMap.get("value") match {
                 case Some(value) =>
                   try {
