@@ -24,12 +24,29 @@ import org.apache.zookeeper.ZooDefs.Ids
 import scala.collection.JavaConverters._
 
 object Adjustable {
+
+  /**
+   * Builder for a locally adjustable rate
+   *
+   * @param default default value
+   * @return
+   */
   def local(default: Double) = new Builder[AdjustableRateConfig] {
     def apply() = {
       new MutableAdjustableRateConfig(default)
     }
   }
 
+  /**
+   * Builder for an adjustable rate stored in ZooKeeper
+   *
+   * @param zkClientBuilder ZooKeeperClient builder
+   * @param configPath path in ZooKeeper to store the value
+   * @param key name of the value in ZooKeeper
+   * @param defaultValue default value
+   * @param timer
+   * @return
+   */
   def zookeeper(
     zkClientBuilder: ZooKeeperClientBuilder,
     configPath: String,

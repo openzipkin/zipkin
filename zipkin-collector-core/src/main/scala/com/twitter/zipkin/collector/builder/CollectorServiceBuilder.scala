@@ -32,7 +32,7 @@ import com.twitter.zipkin.storage.Store
 import java.net.InetSocketAddress
 
 /**
- * Builder for ZipkinCollector
+ * Immutable builder for ZipkinCollector
  *
  * CollectorInterface[T] stands up the actual server, and its filter is used to process the object
  * of type T into a Span in a worker thread.
@@ -62,12 +62,37 @@ case class CollectorServiceBuilder[T](
 
   val log = Logger.get()
 
+  /**
+   * Add a storage backend (Cassandra, Redis, etc.) to the builder
+   * All Spans are stored and indexed in all the `Store`s given
+   *
+   * @param sb store builder
+   * @return a new CollectorServiceBuilder
+   */
   def writeTo(sb: Builder[Store]) =
     copy(storeBuilders = storeBuilders :+ sb)
 
+  /**
+   * Add a configuration endpoint to control `AdjustableRateConfig`s
+   * Endpoints are available via
+   *   GET  /config/<name>
+   *   POST /config/<name>?value=<value>
+   *
+   * to get and set the values
+   *
+   * @param name name of the endpoint
+   * @param builder AdjustableRateConfig builder
+   * @return a new CollectorServiceBuilder
+   */
   def addConfigEndpoint(name: String, builder: Builder[AdjustableRateConfig]) =
     copy(additionalConfigEndpoints = additionalConfigEndpoints :+ (name, builder))
 
+  /**
+   * Register builders for registering ServerSets
+   *
+   * @param s server set builder
+   * @return a new CollectorServiceBuilder
+   */
   def register(s: Builder[(InetSocketAddress, StatsReceiver, Timer) => OstrichService]) =
     copy(additionalServices = additionalServices :+ s)
 

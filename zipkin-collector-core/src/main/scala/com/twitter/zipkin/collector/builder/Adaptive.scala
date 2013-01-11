@@ -26,7 +26,10 @@ import com.twitter.zipkin.config.sampler.adaptive.ZooKeeperAdaptiveSamplerConfig
 object Adaptive {
 
   /**
-   * TODO this can be combined with ZooKeeperAdaptiveSamplerConfig
+   * Builder for a ZooKeeper based adaptive sampler
+   * Assumes `sampleRateBuilder` and `storageRequestRateBuilder` are also ZooKeeper backed
+   *
+   * TODO combine with ZooKeeperAdaptiveSamplerConfig
    */
   def zookeeper(
     zkClientBuilder: ZooKeeperClientBuilder,
