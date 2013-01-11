@@ -125,6 +125,13 @@ case class CollectorServiceBuilder[T](
       ServiceTracker.register(s)
     }
 
+    adaptiveSamplerBuilder foreach { builder =>
+      val config = builder.apply()
+      val service = config.apply()
+      service.start()
+      ServiceTracker.register(service)
+    }
+
     new ZipkinCollector(server)
   }
 }
