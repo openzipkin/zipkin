@@ -15,55 +15,26 @@
  */
 package com.twitter.zipkin.collector
 
-import com.twitter.common.zookeeper.ServerSetImpl
-import com.twitter.finagle.zookeeper.ZookeeperServerSetCluster
 import com.twitter.logging.Logger
 import com.twitter.ostrich.stats.Stats
 import com.twitter.util.{FuturePool, Future}
-import com.twitter.zipkin.config.ScribeZipkinCollectorConfig
 import com.twitter.zipkin.gen
-import org.apache.zookeeper.KeeperException
-import java.net.InetSocketAddress
+import com.twitter.zipkin.storage.Store
 
 /**
  * This class implements the log method from the Scribe Thrift interface.
  */
-class ScribeCollectorService(config: ScribeZipkinCollectorConfig, val writeQueue: WriteQueue[Seq[_ <: String]], categories: Set[String])
-  extends gen.ZipkinCollector.FutureIface with CollectorService {
+class ScribeCollectorService(
+  val writeQueue: WriteQueue[Seq[_ <: String]],
+  stores: Seq[Store],
+  categories: Set[String]
+) extends gen.ZipkinCollector.FutureIface with CollectorService {
   private val log = Logger.get
-
-  private var zkNodes: Seq[ResilientZKNode] = Seq.empty
 
   val futurePool = FuturePool.defaultPool
 
   val TryLater = Future(gen.ResultCode.TryLater)
   val Ok = Future(gen.ResultCode.Ok)
-
-  override def start() {
-    /* Register a node in ZooKeeper for Scribe to pick up */
-    val serverAddress = new InetSocketAddress(config.serverAddress, config.serverPort)
-    val serverSet = new ServerSetImpl(config.zkClient, config.zkServerSetPath)
-    val cluster = new ZookeeperServerSetCluster(serverSet)
-    zkNodes = config.zkScribePaths.map {
-      path =>
-        new ResilientZKNode(path, serverAddress.getHostName + ":" + serverAddress.getPort,
-          config.zkClient, config.timer, config.statsReceiver)
-    }.toSeq
-    zkNodes foreach (_.register())
-    cluster.join(serverAddress)
-
-    super.start()
-  }
-
-  override def shutdown() {
-    try {
-      zkNodes foreach (_.unregister())
-    } catch {
-      case e: KeeperException => log.error("Could not unregister scribe zk node. Will continue shut down anyway", e)
-    }
-
-    super.shutdown()
-  }
 
   /**
    * Accept lists of LogEntries.
@@ -112,7 +83,9 @@ class ScribeCollectorService(config: ScribeZipkinCollectorConfig, val writeQueue
     log.info("storeDependencies: " + serviceName + "; " + endpoints)
 
     Stats.timeFutureMillis("collector.storeDependencies") {
-      config.store.aggregates.storeDependencies(serviceName, endpoints)
+      Future.join {
+        stores map { _.aggregates.storeDependencies(serviceName, endpoints) }
+      }
     } rescue {
       case e: Exception =>
         log.error(e, "storeDependencies failed")
@@ -126,7 +99,9 @@ class ScribeCollectorService(config: ScribeZipkinCollectorConfig, val writeQueue
     log.info("storeTopAnnotations: " + serviceName + "; " + annotations)
 
     Stats.timeFutureMillis("collector.storeTopAnnotations") {
-      config.store.aggregates.storeTopAnnotations(serviceName, annotations)
+      Future.join {
+        stores map { _.aggregates.storeTopAnnotations(serviceName, annotations) }
+      }
     } rescue {
       case e: Exception =>
         log.error(e, "storeTopAnnotations failed")
@@ -140,7 +115,9 @@ class ScribeCollectorService(config: ScribeZipkinCollectorConfig, val writeQueue
     log.info("storeTopKeyValueAnnotations: " + serviceName + ";" + annotations)
 
     Stats.timeFutureMillis("collector.storeTopKeyValueAnnotations") {
-      config.store.aggregates.storeTopKeyValueAnnotations(serviceName, annotations)
+      Future.join {
+        stores map { _.aggregates.storeTopKeyValueAnnotations(serviceName, annotations) }
+      }
     } rescue {
       case e: Exception =>
         log.error(e, "storeTopKeyValueAnnotations failed")

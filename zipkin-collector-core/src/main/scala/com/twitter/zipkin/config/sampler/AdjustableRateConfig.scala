@@ -15,6 +15,8 @@
  */
 package com.twitter.zipkin.config.sampler
 
+import com.google.common.util.concurrent.AtomicDouble
+
 trait AdjustableRateConfig {
 
   def get: Double
@@ -27,6 +29,14 @@ class NullAdjustableRateConfig extends AdjustableRateConfig {
   def get: Double = 0.0
 
   def set(rate: Double) {}
+}
+
+class MutableAdjustableRateConfig(default: Double) extends AdjustableRateConfig {
+  val value = new AtomicDouble(default)
+
+  def get: Double = value.get()
+
+  def set(rate: Double) = value.set(rate)
 }
 
 /**

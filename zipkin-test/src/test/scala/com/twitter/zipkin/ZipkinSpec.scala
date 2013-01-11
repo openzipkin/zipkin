@@ -24,17 +24,10 @@ import com.twitter.finagle.builder.ClientBuilder
 import org.apache.thrift.protocol.TBinaryProtocol
 import com.twitter.cassie.tests.util.FakeCassandra
 import com.twitter.zipkin.query.ZipkinQuery
-import com.twitter.common.zookeeper.ServerSet
-import com.twitter.common.net.pool.DynamicHostSet.HostChangeMonitor
 import java.net.{InetSocketAddress, InetAddress}
-import java.util.Map
-import com.twitter.thrift.{Status, ServiceInstance}
-import org.apache.zookeeper.server.persistence.FileTxnSnapLog
-import org.apache.zookeeper.server.ZooKeeperServer.BasicDataTreeBuilder
-import org.apache.zookeeper.server.{NIOServerCnxn, ZooKeeperServer}
-import com.twitter.common.io.FileUtils
 import com.twitter.finagle.Service
 import com.twitter.finagle.thrift.{ThriftClientRequest, ThriftClientFramedCodec}
+import com.twitter.ostrich.admin.RuntimeEnvironment
 
 class ZipkinSpec extends Specification with JMocker with ClassMocker {
 
@@ -44,21 +37,13 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
   var collectorTransport: Service[ThriftClientRequest, Array[Byte]] = null
   var query: ZipkinQuery = null
   var queryTransport: Service[ThriftClientRequest, Array[Byte]] = null
-  var zooKeeperServer: ZooKeeperServer = null
-  var connectionFactory: NIOServerCnxn.Factory = null
+
+  val mockRuntimeEnv = mock[RuntimeEnvironment]
 
   "ZipkinCollector and ZipkinQuery" should {
     doBefore {
       // fake cassandra node
       FakeServer.start()
-
-      // start a temporary zookeeper server
-      val zkPort = 2181 // TODO pick another port?
-      val tmpDir = FileUtils.createTempDir()
-      zooKeeperServer =
-        new ZooKeeperServer(new FileTxnSnapLog(tmpDir, tmpDir), new BasicDataTreeBuilder())
-      connectionFactory = new NIOServerCnxn.Factory(new InetSocketAddress(zkPort))
-      connectionFactory.startup(zooKeeperServer)
 
       // start a collector that uses the local zookeeper and fake cassandra
       val collectorConfig = Configs.collector(FakeServer.port.get)
@@ -66,7 +51,7 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
       // start a query service that uses the local zookeeper and fake cassandra
       val queryConfig = Configs.query(FakeServer.port.get)
 
-      collector = new ZipkinCollector(collectorConfig)
+      collector = collectorConfig.apply().apply(mockRuntimeEnv)
       collector.start()
 
       val queryStore = queryConfig.storeBuilder()
@@ -84,7 +69,7 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
         .build()
 
       collectorTransport = ClientBuilder()
-        .hosts(InetAddress.getLocalHost.getHostName + ":" + collectorConfig.serverPort)
+        .hosts(InetAddress.getLocalHost.getHostName + ":" + collectorConfig.serverBuilder.serverPort)
         .hostConnectionLimit(1)
         .codec(ThriftClientFramedCodec())
         .build()
@@ -95,9 +80,6 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
       collector.shutdown()
       queryTransport.release()
       query.shutdown()
-
-      zooKeeperServer.shutdown()
-      connectionFactory.shutdown()
 
       FakeServer.stop()
     }
