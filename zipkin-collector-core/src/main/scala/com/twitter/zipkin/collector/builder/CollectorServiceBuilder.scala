@@ -31,6 +31,22 @@ import com.twitter.zipkin.config.ConfigRequestHandler
 import com.twitter.zipkin.storage.Store
 import java.net.InetSocketAddress
 
+/**
+ * Builder for ZipkinCollector
+ *
+ * CollectorInterface[T] stands up the actual server, and its filter is used to process the object
+ * of type T into a Span in a worker thread.
+ *
+ * @param interface
+ * @param storeBuilders
+ * @param sampleRateBuilder
+ * @param additionalConfigEndpoints
+ * @param additionalServices
+ * @param queueMaxSize
+ * @param queueNumWorkers
+ * @param serverBuilder
+ * @tparam T type of object added to write queue
+ */
 case class CollectorServiceBuilder[T](
   interface: CollectorInterface[T],
   storeBuilders: Seq[Builder[Store]] = Seq.empty,
@@ -44,9 +60,14 @@ case class CollectorServiceBuilder[T](
 
   val log = Logger.get()
 
-  def writeTo(sb: Builder[Store]) = copy(storeBuilders = storeBuilders :+ sb)
-  def addConfigEndpoint(name: String, builder: Builder[AdjustableRateConfig]) = copy(additionalConfigEndpoints = additionalConfigEndpoints :+ (name, builder))
-  def register(s: Builder[(InetSocketAddress, StatsReceiver, Timer) => OstrichService]) = copy(additionalServices = additionalServices :+ s)
+  def writeTo(sb: Builder[Store]) =
+    copy(storeBuilders = storeBuilders :+ sb)
+
+  def addConfigEndpoint(name: String, builder: Builder[AdjustableRateConfig]) =
+    copy(additionalConfigEndpoints = additionalConfigEndpoints :+ (name, builder))
+
+  def register(s: Builder[(InetSocketAddress, StatsReceiver, Timer) => OstrichService]) =
+    copy(additionalServices = additionalServices :+ s)
 
   def sampleRate(c: Builder[AdjustableRateConfig]): CollectorServiceBuilder[T] = copy(sampleRateBuilder = c)
   def queueMaxSize(s: Int): CollectorServiceBuilder[T] = copy(queueMaxSize = s)

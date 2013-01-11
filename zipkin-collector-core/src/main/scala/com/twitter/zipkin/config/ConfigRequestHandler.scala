@@ -19,6 +19,10 @@ import com.sun.net.httpserver.HttpExchange
 import com.twitter.ostrich.admin.CgiRequestHandler
 import com.twitter.zipkin.config.sampler.AdjustableRateConfig
 
+/**
+ * Handles getting and setting values to an AdjustableRateConfig
+ * @param adjustable
+ */
 class ConfigRequestHandler(
   adjustable: AdjustableRateConfig
 ) extends CgiRequestHandler {

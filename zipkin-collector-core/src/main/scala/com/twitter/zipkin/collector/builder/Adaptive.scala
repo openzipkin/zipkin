@@ -20,6 +20,9 @@ import com.twitter.zipkin.builder.{ZooKeeperClientBuilder, Builder}
 import com.twitter.zipkin.config.sampler.{AdaptiveSamplerConfig, AdjustableRateConfig}
 import com.twitter.zipkin.config.sampler.adaptive.ZooKeeperAdaptiveSamplerConfig
 
+/**
+ * Builder for a ZooKeeper based adaptive sampler
+ */
 object Adaptive {
 
   /**

@@ -33,6 +33,9 @@ import org.apache.zookeeper.KeeperException
 
 object Scribe {
 
+  /**
+   * Builder for a Zipkin collector that exposes a Thrift Scribe interface as defined in zipkin-thrift
+   */
   object Interface {
     def apply(categories: Set[String] = Set("zipkin")) = {
       type T = Seq[String]
@@ -61,6 +64,11 @@ object Scribe {
     }
   }
 
+  /**
+   * Builder for Service that registers Scribe-style server sets
+   * @param zkClientBuilder
+   * @param paths registers Scribe server sets at these paths in ZooKeeper
+   */
   def serverSets(zkClientBuilder: ZooKeeperClientBuilder, paths: Set[String]) = new Builder[(InetSocketAddress, StatsReceiver, Timer) => OstrichService] {
     def apply() = (address: InetSocketAddress, statsReceiver: StatsReceiver, timer: Timer) => {
       new OstrichService {

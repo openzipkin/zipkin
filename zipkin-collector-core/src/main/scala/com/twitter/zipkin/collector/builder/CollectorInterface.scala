@@ -25,7 +25,15 @@ import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.Store
 import java.net.InetSocketAddress
 
+/**
+ * Specifies a builder for the input interface of a Zipkin collector
+ * @tparam T
+ */
 trait CollectorInterface[T]
   extends Builder[(WriteQueue[T], Seq[Store], InetSocketAddress, StatsReceiver, Tracer.Factory) => Server] {
+
+  /**
+   * Finagle Filter that converts the server's input type to a Span
+   */
   val filter: Filter[T, Unit, Span, Unit]
 }
