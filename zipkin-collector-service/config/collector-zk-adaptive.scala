@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import com.twitter.util.JavaTimer
 import com.twitter.zipkin.builder.{ZooKeeperClientBuilder, Scribe}
 import com.twitter.zipkin.cassandra
 import com.twitter.zipkin.collector.builder.{Adaptive, Adjustable, CollectorServiceBuilder}
 import com.twitter.zipkin.storage.Store
+
+implicit val timer = new JavaTimer(true)
 
 val keyspaceBuilder = cassandra.Keyspace.static(nodes = Set("localhost"))
 val cassandraBuilder = Store.Builder(
@@ -30,9 +34,9 @@ val sampleRate = Adjustable.zookeeper(zkBuilder, "/twitter/service/zipkin/config
 val storageRequestRate = Adjustable.zookeeper(zkBuilder, "/twitter/service/zipkin/config", "storagerequestrate", 300000)
 val adaptiveSampler = Adaptive.zookeeper(zkBuilder, sampleRate, storageRequestRate)
 
-CollectorServiceBuilder(Scribe())
+CollectorServiceBuilder(Scribe.Interface())
   .writeTo(cassandraBuilder)
   .sampleRate(sampleRate)
+  .adaptiveSampler(adaptiveSampler)
   .addConfigEndpoint("storageRequestRate", storageRequestRate)
   .register(Scribe.serverSets(zkBuilder, Set("/twitter/scribe/zipkin")))
-

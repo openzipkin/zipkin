@@ -26,7 +26,7 @@ import com.twitter.zipkin.collector.processor.{IndexService, StorageService, Fan
 import com.twitter.zipkin.collector.sampler.ZooKeeperGlobalSampler
 import com.twitter.zipkin.collector.{WriteQueue, ZipkinCollector}
 import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.config.sampler.AdjustableRateConfig
+import com.twitter.zipkin.config.sampler.{AdaptiveSamplerConfig, AdjustableRateConfig}
 import com.twitter.zipkin.config.ConfigRequestHandler
 import com.twitter.zipkin.storage.Store
 import java.net.InetSocketAddress
@@ -40,6 +40,7 @@ import java.net.InetSocketAddress
  * @param interface
  * @param storeBuilders
  * @param sampleRateBuilder
+ * @param adaptiveSamplerBuilder
  * @param additionalConfigEndpoints
  * @param additionalServices
  * @param queueMaxSize
@@ -51,6 +52,7 @@ case class CollectorServiceBuilder[T](
   interface: CollectorInterface[T],
   storeBuilders: Seq[Builder[Store]] = Seq.empty,
   sampleRateBuilder: Builder[AdjustableRateConfig] = Adjustable.local(1.0),
+  adaptiveSamplerBuilder: Option[Builder[AdaptiveSamplerConfig]] = None,
   additionalConfigEndpoints: Seq[(String, Builder[AdjustableRateConfig])] = Seq.empty,
   additionalServices: Seq[Builder[(InetSocketAddress, StatsReceiver, Timer) => OstrichService]] = Seq.empty,
   queueMaxSize: Int = 500,
@@ -70,6 +72,7 @@ case class CollectorServiceBuilder[T](
     copy(additionalServices = additionalServices :+ s)
 
   def sampleRate(c: Builder[AdjustableRateConfig]): CollectorServiceBuilder[T] = copy(sampleRateBuilder = c)
+  def adaptiveSampler(b: Builder[AdaptiveSamplerConfig]) = copy(adaptiveSamplerBuilder = Some(b))
   def queueMaxSize(s: Int): CollectorServiceBuilder[T] = copy(queueMaxSize = s)
   def queueNumWorkers(w: Int): CollectorServiceBuilder[T] = copy(queueNumWorkers = w)
 
