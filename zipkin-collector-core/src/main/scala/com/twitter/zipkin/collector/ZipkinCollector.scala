@@ -18,25 +18,17 @@ package com.twitter.zipkin.collector
 import com.twitter.finagle.builder.Server
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.{ServiceTracker, Service}
-import com.twitter.zipkin.config.ZipkinCollectorConfig
 
-class ZipkinCollector(config: ZipkinCollectorConfig) extends Service {
+class ZipkinCollector(server: Server) extends Service {
 
   val log = Logger.get(getClass.getName)
-  var thriftServer: Server = null
 
-  def start() {
-    thriftServer = config.serverConfig()
-
-    // Start up adaptive sampler
-    config.adaptiveSampler.start()
-    ServiceTracker.register(config.adaptiveSampler)
-  }
+  def start() {}
 
   def shutdown() {
     log.info("Shutting down collector thrift service.")
 
-    thriftServer.close()
+    server.close()
     ServiceTracker.shutdown()
   }
 }

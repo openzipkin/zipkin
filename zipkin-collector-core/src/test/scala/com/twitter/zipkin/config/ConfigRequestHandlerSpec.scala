@@ -13,11 +13,10 @@ class ConfigRequestHandlerSpec extends Specification with JMocker with ClassMock
   "ConfigRequestHandler" should {
 
     val sampleRateConfig = mock[AdjustableRateConfig]
-    val storageRequestRateConfig = mock[AdjustableRateConfig]
     val exchange = mock[HttpExchange]
     val customHttpHandler = mock[CustomHttpHandler]
 
-    val handler = new ConfigRequestHandler(sampleRateConfig, storageRequestRateConfig) {
+    val handler = new ConfigRequestHandler(sampleRateConfig) {
       override def render(body: String, exchange: HttpExchange, code: Int) {
         customHttpHandler.render(body, exchange, code)
       }
@@ -42,28 +41,6 @@ class ConfigRequestHandlerSpec extends Specification with JMocker with ClassMock
         }
 
         handler.handle(exchange, List("config", "sampleRate"), List(("value", "0.3")))
-      }
-    }
-
-    "storageRequestRate" in {
-      "get" in {
-        expect {
-          one(exchange).getRequestMethod willReturn "GET"
-          one(storageRequestRateConfig).get willReturn 0.5
-          one(customHttpHandler).render("0.5", exchange, 200)
-        }
-
-        handler.handle(exchange, List("config", "storageRequestRate"), List.empty[(String, String)])
-      }
-
-      "set" in {
-        expect {
-          one(exchange).getRequestMethod willReturn "POST"
-          one(storageRequestRateConfig).set(0.3)
-          one(customHttpHandler).render("success", exchange, 200)
-        }
-
-        handler.handle(exchange, List("config", "storageRequestRate"), List(("value", "0.3")))
       }
     }
   }
