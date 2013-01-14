@@ -15,65 +15,18 @@
  */
 package com.twitter.zipkin
 
-import com.twitter.logging.config._
-import com.twitter.logging.LoggerFactory
-import com.twitter.ostrich.admin._
-import builder.{QueryServiceBuilder, ZooKeeperClientBuilder}
+import com.twitter.zipkin.builder.{Scribe, QueryServiceBuilder}
 import com.twitter.zipkin.cassandra.{Keyspace, StorageBuilder, IndexBuilder, AggregatesBuilder}
-import com.twitter.zipkin.collector.sampler.{EverythingGlobalSampler, GlobalSampler}
-import com.twitter.zipkin.config.sampler.NullAdaptiveSamplerConfig
-import com.twitter.zipkin.config.{WriteQueueConfig, ScribeZipkinCollectorConfig}
+import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
 import com.twitter.zipkin.storage.Store
 
 object Configs {
-  def collector(cassandraPort: Int) = new ScribeZipkinCollectorConfig {
 
-    serverPort = 9410
-    adminPort  = 9900
-
-    adminStatsNodes =
-      StatsFactory(
-        reporters = JsonStatsLoggerFactory (
-          loggerName = "stats",
-          serviceName = Some("zipkin-collector")
-        ) :: new TimeSeriesCollectorFactory
-      )
-
-    def writeQueueConfig = new WriteQueueConfig[T] {
-      writeQueueMaxSize = 500
-      flusherPoolSize = 10
-    }
-
-    var keyspaceBuilder = Keyspace.static(port = cassandraPort)
-
+  def collector(cassandraPort: Int) = {
+    val keyspaceBuilder = Keyspace.static(port = cassandraPort)
     def storeBuilder = Store.Builder(StorageBuilder(keyspaceBuilder), IndexBuilder(keyspaceBuilder), AggregatesBuilder(keyspaceBuilder))
-
-    override def adaptiveSamplerConfig = new NullAdaptiveSamplerConfig {}
-
-    // sample it all
-    override def globalSampler: GlobalSampler = EverythingGlobalSampler
-
-    def zkClientBuilder = ZooKeeperClientBuilder(Seq("localhost"))
-
-    loggers =
-      LoggerFactory (
-        level = Level.DEBUG,
-        handlers =
-          new FileHandlerConfig {
-            filename = "zipkin-collector.log"
-            roll = Policy.SigHup
-          } ::
-            new ConsoleHandlerConfig() :: Nil
-      ) :: LoggerFactory (
-        node = "stats",
-        level = Level.INFO,
-        useParents = false,
-        handlers =
-          new FileHandlerConfig {
-            filename = "stats.log"
-            formatter = BareFormatterConfig
-          }
-      )
+    CollectorServiceBuilder(Scribe.Interface())
+      .writeTo(storeBuilder)
   }
 
   def query(cassandraPort: Int) = {

@@ -21,7 +21,7 @@ import com.twitter.logging.config._
 import com.twitter.logging.{ConsoleHandler, Logger, LoggerFactory}
 import com.twitter.ostrich.admin._
 import com.twitter.util.{Timer, JavaTimer}
-import java.net.InetAddress
+import java.net.{InetSocketAddress, InetAddress}
 import scala.util.matching.Regex
 
 /**
@@ -37,7 +37,7 @@ case class ZipkinServerBuilder(
   statsReceiver    : StatsReceiver       = new OstrichStatsReceiver,
   tracerFactory    : Tracer.Factory      = NullTracer.factory,
   timer            : Timer               = new JavaTimer(true)
-) extends Builder[RuntimeEnvironment => Unit] {
+) extends Builder[(RuntimeEnvironment) => Unit] {
 
   def serverPort(p: Int)                : ZipkinServerBuilder = copy(serverPort        = p)
   def adminPort(p: Int)                 : ZipkinServerBuilder = copy(adminPort         = p)
@@ -51,15 +51,19 @@ case class ZipkinServerBuilder(
   def addAdminStatsNode(n: StatsFactory): ZipkinServerBuilder = copy(adminStatsNodes   = adminStatsNodes :+ n)
   def addAdminStatsFilter(f: Regex)     : ZipkinServerBuilder = copy(adminStatsFilters = adminStatsFilters :+ f)
 
-  private def adminServiceFactory: AdminServiceFactory =
+  private lazy val adminServiceFactory: AdminServiceFactory =
     AdminServiceFactory(
       httpPort = adminPort,
       statsNodes = adminStatsNodes,
       statsFilters = adminStatsFilters
     )
 
-  def apply(): (RuntimeEnvironment) => Unit = (runtime: RuntimeEnvironment) => {
+  lazy val socketAddress = new InetSocketAddress(serverAddress, serverPort)
+
+  var adminHttpService: Option[AdminHttpService] = None
+
+  def apply() = (runtime: RuntimeEnvironment) => {
     Logger.configure(loggers)
-    adminServiceFactory(runtime)
+    adminHttpService = Some(adminServiceFactory(runtime))
   }
 }

@@ -18,6 +18,8 @@ package com.twitter.zipkin.collector
 
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.RuntimeEnvironment
+import com.twitter.util.Eval
+import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
 import com.twitter.zipkin.BuildProperties
 
 
@@ -27,8 +29,9 @@ object Main {
   def main(args: Array[String]) {
     log.info("Loading configuration")
     val runtime = RuntimeEnvironment(BuildProperties, args)
-    val server = runtime.loadRuntimeConfig[ZipkinCollector]()
+    val builder = (new Eval).apply[CollectorServiceBuilder[Seq[String]]](runtime.configFile)
     try {
+      val server = builder.apply().apply(runtime)
       server.start()
     } catch {
       case e: Exception =>
