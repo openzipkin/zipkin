@@ -87,7 +87,7 @@ class App(
 
   /* Trace page */
   get("/traces/:id") { request =>
-    render.view(wrapView(new ShowView(request.params("id")))).toFuture
+    render.view(wrapView(new ShowView(request.routeParams("id")))).toFuture
   }
 
   /* Static page for render trace from JSON */
@@ -235,7 +235,7 @@ class App(
   get("/api/get/:id") { request =>
     log.info("/api/get")
     val adjusters = getAdjusters(request)
-    val ids = Seq(request.params("id").toLong)
+    val ids = Seq(request.routeParams("id").toLong)
     log.debug(ids.toString())
 
     client.getTraceCombosByIds(ids, adjusters).map { _.map { _.toTraceCombo }.head }.map { combo =>
@@ -246,7 +246,7 @@ class App(
   get("/api/trace/:id") { request =>
     log.info("/api/trace")
     val adjusters = getAdjusters(request)
-    val ids = Seq(request.params("id").toLong)
+    val ids = Seq(request.routeParams("id").toLong)
     log.debug(ids.toString())
 
     client.getTraceCombosByIds(ids, adjusters).map {
@@ -266,7 +266,7 @@ class App(
    * - id: Long
    */
   get("/api/is_pinned/:id") { request =>
-    val id = request.params("id").toLong
+    val id = request.routeParams("id").toLong
     client.getTraceTimeToLive(id).map(render.json(_))
   }
 
@@ -279,8 +279,8 @@ class App(
    * - state: Boolean (true|false)
    */
   post("/api/pin/:id/:state") { request =>
-    val id = request.params("id").toLong
-    request.params("state").toLowerCase match {
+    val id = request.routeParams("id").toLong
+    request.routeParams("state").toLowerCase match {
       case "true" => {
         togglePinState(id, true).map(render.json(_))
       }
@@ -294,7 +294,7 @@ class App(
   }
 
   private def withServiceName(request: Request)(f: String => Future[Response]): Future[Response] = {
-    request.params.get("serviceName") match {
+    request.routeParams.get("serviceName") match {
       case Some(s) => {
         f(s)
       }
@@ -322,7 +322,7 @@ class App(
    * Returns a sequence of adjusters based on the params for a request. Default is TimeSkewAdjuster
    */
   private def getAdjusters(request: Request) = {
-    request.params.get("adjust_clock_skew") match {
+    request.routeParams.get("adjust_clock_skew") match {
       case Some(flag) => {
         flag match {
           case "false" => Seq.empty[gen.Adjust]
