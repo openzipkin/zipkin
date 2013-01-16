@@ -15,9 +15,9 @@
  */
 import com.twitter.finagle.zipkin.thrift.ZipkinTracer
 import com.twitter.zipkin.builder.{QueryClient, WebBuilder}
-import java.net.InetSocketAddress
+import java.net.{InetSocketAddress, InetAddress}
 
-val queryClient = QueryClient.static(new InetSocketAddress("localhost", 3002)) map {
+val queryClient = QueryClient.static(new InetSocketAddress(InetAddress.getLocalHost, 9411)) map {
   _.tracerFactory(ZipkinTracer())
 }
 WebBuilder("http://localhost:8080/", queryClient)
