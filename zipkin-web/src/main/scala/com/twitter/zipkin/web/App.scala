@@ -294,7 +294,7 @@ class App(
   }
 
   private def withServiceName(request: Request)(f: String => Future[Response]): Future[Response] = {
-    request.routeParams.get("serviceName") match {
+    request.params.get("serviceName") match {
       case Some(s) => {
         f(s)
       }
