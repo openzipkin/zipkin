@@ -32,6 +32,11 @@ class SamplerFilter(sampler: GlobalSampler) extends Filter[Span, Unit, Span, Uni
      */
     if (span.debug) {
       Stats.incr("debugflag")
+      (span.parentId, span.serviceName) match {
+        case (None, Some(serviceName)) =>
+          Stats.incr("debugflag_" + serviceName)
+        case _ =>
+      }
       service(span)
     } else if (sampler(span.traceId)) {
       service(span)
