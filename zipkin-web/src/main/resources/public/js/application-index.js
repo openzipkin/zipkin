@@ -116,7 +116,7 @@ Zipkin.Application.Index = (function() {
       /* Fetch top annotations for this service */
       $.ajax({
         type: 'GET',
-        url: root_url + 'api/top_annotations?serviceName=' + selected,
+        url: '/api/top_annotations?serviceName=' + selected,
         success: function(data) {
           if (data.length > 0) {
             $("#time_annotation").autocomplete({source: data});
@@ -127,7 +127,7 @@ Zipkin.Application.Index = (function() {
       /* Fetch top key value annotations for this service */
       $.ajax({
         type: 'GET',
-        url: root_url + 'api/top_kv_annotations?serviceName=' + selected,
+        url: '/api/top_kv_annotations?serviceName=' + selected,
         success: function(data) {
           if (data.length > 0) {
             $("#annotation_key").autocomplete({source: data});
@@ -227,7 +227,7 @@ Zipkin.Application.Index = (function() {
       e.serviceCounts = $.map(e.serviceCounts, function(count, key) {
         return { name: key, count: count };
       });
-      e.url = root_url + "traces/" + e.traceId;
+      e.url = "/traces/" + e.traceId;
       e.startTime = Zipkin.Util.timeAgoInWords(e.startTimestamp / 1000);
       return e;
     });
@@ -447,7 +447,7 @@ Zipkin.Application.Index = (function() {
 
       /* Update the URL to reflect the search */
       searchQuery = queryResults.url().split("?")[1];
-      history.pushState({}, "Zipkin", root_url + "?" + searchQuery);
+      history.pushState({}, "Zipkin", "/?" + searchQuery);
 
       return false;
     };
