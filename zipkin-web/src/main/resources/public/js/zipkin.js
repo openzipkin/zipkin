@@ -125,7 +125,7 @@ Zipkin.Util = (function(Zipkin) {
     } else {
       $.ajax({
         type: 'GET',
-        url: root_url + 'public/templates/' + name + '.mustache',
+        url: '/public/templates/' + name + '.mustache',
         success: function(data){
           templates[name] = Hogan.compile(data);
           callback(templates[name]);

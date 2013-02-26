@@ -22,7 +22,7 @@ Zipkin.Application.Show = (function() {
     ;
 
   var exportTrace = function(traceId, clockSkew) {
-    window.open(root_url + "api/get/" + traceId + "?adjust_clock_skew=" + clockSkew)
+    window.open("/api/get/" + traceId + "?adjust_clock_skew=" + clockSkew)
   };
 
   var getTraceSuccess = function(traceId) {
@@ -120,7 +120,7 @@ Zipkin.Application.Show = (function() {
 
       $.ajax({
         type: 'GET',
-        url: root_url + "api/get/" + traceId,
+        url: "/api/get/" + traceId,
         data: query_data,
         success: getTraceSuccess(traceId),
         error: function(xhr, status, error) {
@@ -174,7 +174,7 @@ Zipkin.GetTrace = (function() {
     var updatePinStatus = function() {
       $.ajax({
         type: 'GET',
-        url: root_url + 'api/is_pinned/' + trace.traceId,
+        url: '/api/is_pinned/' + trace.traceId,
         success: function(data){
           pinned = data.pinned === true;
           updatePinButton();
@@ -192,7 +192,7 @@ Zipkin.GetTrace = (function() {
     $('.pin-trace-btn').click(function (e) {
       $.ajax({
         type: 'GET',
-        url: root_url + 'api/pin/' + trace.traceId + '/' + !pinned, // toggled the pinned status
+        url: '/api/pin/' + trace.traceId + '/' + !pinned, // toggled the pinned status
         success: function(data){
           pinned = data.pinned === true;
           updatePinButton();

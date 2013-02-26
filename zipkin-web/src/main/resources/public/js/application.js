@@ -66,7 +66,7 @@ Zipkin.Base = (function() {
 
   /* Click callback for brand button */
   var brandClick = function (e) {
-    var url = root_url + (clockSkewState() ? "" : "?adjust_clock_skew=false");
+    var url = '/' + (clockSkewState() ? "" : "?adjust_clock_skew=false");
     if (e.which == 1) {
       // Left click
       window.location.assign(url);
