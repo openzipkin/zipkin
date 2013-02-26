@@ -8,7 +8,7 @@ import java.io.File
 object Zipkin extends Build {
 
   val CASSIE_VERSION  = "0.23.0"
-  val FINAGLE_VERSION = "5.3.20"
+  val FINAGLE_VERSION = "5.3.22"
   val OSTRICH_VERSION = "8.2.9"
   val UTIL_VERSION    = "5.3.13"
 
@@ -142,6 +142,7 @@ object Zipkin extends Build {
         "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
         "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
         "com.twitter" % "finagle-zipkin"    % FINAGLE_VERSION,
+        "com.twitter" % "finagle-exception" % FINAGLE_VERSION intransitive(),
         "com.twitter" % "ostrich"           % OSTRICH_VERSION,
         "com.twitter" % "util-core"         % UTIL_VERSION,
 
@@ -305,7 +306,8 @@ object Zipkin extends Build {
         "com.twitter.common.zookeeper" % "server-set" % "1.0.7",
 
         "com.twitter" % "finagle-serversets" % FINAGLE_VERSION,
-        "com.twitter" % "finagle-zipkin"     % FINAGLE_VERSION
+        "com.twitter" % "finagle-zipkin"     % FINAGLE_VERSION,
+        "com.twitter" % "finagle-exception"  % FINAGLE_VERSION intransitive()
       ) ++ testDependencies,
 
       PackageDist.packageDistZipName := "zipkin-web.zip",

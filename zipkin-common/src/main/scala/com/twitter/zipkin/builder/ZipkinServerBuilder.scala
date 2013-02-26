@@ -17,6 +17,7 @@ package com.twitter.zipkin.builder
 
 import com.twitter.finagle.stats.{StatsReceiver, OstrichStatsReceiver}
 import com.twitter.finagle.tracing.{Tracer, NullTracer}
+import com.twitter.finagle.exception
 import com.twitter.logging.config._
 import com.twitter.logging.{ConsoleHandler, Logger, LoggerFactory}
 import com.twitter.ostrich.admin._
@@ -28,15 +29,16 @@ import scala.util.matching.Regex
  * Base builder for a Zipkin service
  */
 case class ZipkinServerBuilder(
-  serverPort       : Int,
-  adminPort        : Int,
-  serverAddress    : InetAddress         = InetAddress.getLocalHost,
-  loggers          : List[LoggerFactory] = List(LoggerFactory(level = Some(Level.DEBUG), handlers = List(ConsoleHandler()))),
-  adminStatsNodes  : List[StatsFactory]  = List(StatsFactory(reporters = List(TimeSeriesCollectorFactory()))),
-  adminStatsFilters: List[Regex]         = List.empty,
-  statsReceiver    : StatsReceiver       = new OstrichStatsReceiver,
-  tracerFactory    : Tracer.Factory      = NullTracer.factory,
-  timer            : Timer               = new JavaTimer(true)
+  serverPort              : Int,
+  adminPort               : Int,
+  serverAddress           : InetAddress              = InetAddress.getLocalHost,
+  loggers                 : List[LoggerFactory]      = List(LoggerFactory(level = Some(Level.DEBUG), handlers = List(ConsoleHandler()))),
+  adminStatsNodes         : List[StatsFactory]       = List(StatsFactory(reporters = List(TimeSeriesCollectorFactory()))),
+  adminStatsFilters       : List[Regex]              = List.empty,
+  statsReceiver           : StatsReceiver            = new OstrichStatsReceiver,
+  tracerFactory           : Tracer.Factory           = NullTracer.factory,
+  timer                   : Timer                    = new JavaTimer(true),
+  exceptionMonitorFactory : exception.MonitorFactory = exception.NullMonitorFactory
 ) extends Builder[(RuntimeEnvironment) => Unit] {
 
   def serverPort(p: Int)                : ZipkinServerBuilder = copy(serverPort        = p)
@@ -45,6 +47,8 @@ case class ZipkinServerBuilder(
   def loggers(l: List[LoggerFactory])   : ZipkinServerBuilder = copy(loggers           = l)
   def statsReceiver(s: StatsReceiver)   : ZipkinServerBuilder = copy(statsReceiver     = s)
   def tracerFactory(t: Tracer.Factory)  : ZipkinServerBuilder = copy(tracerFactory     = t)
+  def exceptionMonitorFactory(h: exception.MonitorFactory) : ZipkinServerBuilder
+                                                              = copy(exceptionMonitorFactory = h)
   def timer(t: Timer)                   : ZipkinServerBuilder = copy(timer             = t)
 
   def addLogger(l: LoggerFactory)       : ZipkinServerBuilder = copy(loggers           = loggers :+ l)
