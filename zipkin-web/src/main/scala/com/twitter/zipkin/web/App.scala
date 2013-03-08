@@ -29,6 +29,7 @@ import com.twitter.zipkin.gen
 import com.twitter.zipkin.query.QueryRequest
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.lang.Throwable
 
 /**
  * Application that handles ZipkinWeb routes
@@ -293,6 +294,19 @@ class App(
     }
   }
 
+
+  error { request =>
+    request.error match {
+      case Some(thrown:Throwable) =>
+        val errorMsg = Option(thrown.getMessage).getOrElse("Unknown error")
+        val stacktrace = Option(thrown.getStackTraceString).getOrElse("")
+        render.status(500).view(wrapView(new ErrorView(errorMsg + "\n\n\n" + stacktrace))).toFuture
+      case _ =>
+        render.status(500).body("Unknown error in finatra").toFuture
+    }
+  }
+
+
   private def withServiceName(request: Request)(f: String => Future[Response]): Future[Response] = {
     request.params.get("serviceName") match {
       case Some(s) => {
@@ -389,4 +403,8 @@ class StaticView extends View {
 
 class AggregatesView(val endDate: String) extends View {
   val template = "templates/aggregates.mustache"
+}
+
+class ErrorView(val errorMsg: String) extends View {
+  val template = "templates/error.mustache"
 }
