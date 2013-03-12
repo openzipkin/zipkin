@@ -26,7 +26,7 @@ object QueryExtractor {
   val fmt = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss")
 
   /**
-   * Takes a Finatra `Request` and produce the correct `QueryResponse` depending
+   * Takes a Finatra `Request` and produce the correct `QueryRequest` depending
    * on the GET parameters present
    */
   def apply(request: Request): Option[QueryRequest] = {
