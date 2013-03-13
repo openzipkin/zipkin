@@ -15,11 +15,9 @@
  */
 package com.twitter.zipkin.common.json
 
-import com.twitter.zipkin.common.Endpoint
-
 case class JsonAnnotation(
   timestamp: String,
   value: String,
-  host: Option[Endpoint],
+  host: Option[JsonEndpoint],
   duration: Option[String]) // Duration in microseconds
 
