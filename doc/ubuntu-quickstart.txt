@@ -1,0 +1,84 @@
+This doc describes a quickstart to running zipkin with zookeeper and
+cassandra, which is the configuration most commonly used.  All of
+these services are running on one machine in the setup described here.
+It presumes you have a clean-ish Ubuntu 12.04 install, and a user with
+sudo capabilities (eg user is in wheel group and wheel group is
+allowed in /etc/sudoers)
+
+This includes building Zipkin from the current master branch from Github.
+Aaron Gooch March 11, 2013 - heavily based on the centos6-quickstart.txt (now deleted)
+
+--------------------------------
+Groundwork - perform this as ROOT
+--------------------------------
+
+1. Download and install Cassandra
+#Add the Datastax REPO, http://www.datastax.com/docs/quick_start/cassandra_quickstart#
+
+vi /etc/apt/sources.list
+#add
+deb http://debian.datastax.com/community stable main
+#save, then get the key
+curl -L http://debian.datastax.com/debian/repo_key | sudo apt-key add -
+
+2. Install Cassandra
+sudo apt-get update
+sudo apt-get install dsc12
+
+3. Install Java 7 JDK
+#we aren't a java shop so openjdk is fine for us
+sudo apt-get install openjdk-6-jre-headless
+
+4. Set up JAVA_HOME path var
+#in .bashrc or equivalent 
+export JAVA_HOME=/etc/alternatives/java
+export PATH=JAVA_HOME/bin:$PATH
+
+5. Start cassandra 
+sudo service cassandra start
+
+6. Install Zookeeper (optional)
+#I installed to /opt/zookeeper, follow the instructions
+http://zookeeper.apache.org/doc/trunk/zookeeperStarted.html
+
+8. Install GIT
+sudo apt-get install git
+
+--------------------------------
+Zipkin
+--------------------------------
+
+9. Install Zipkin
+
+mkdir -p ~/apps/
+git clone https://github.com/twitter/zipkin.git
+
+cd zipkin
+
+# note the 4gig memory usage. You can use less but your build may fail.
+export SBT_OPTS='-Xms512m -Xmx4096m -XX:MaxPermSize=1024m'
+#start a sbt shell and compile the 3 projects we need to run
+bin/sbt <enter>
+> project zipkin-web
+> compile
+#and wait, then repeat for zipkin-collector and zipkin-query ie project zipkin-collector <enter> compile <enter>
+> project zipkin-collector
+> compile
+#wait
+> project zipkin-query
+> compile
+#wait
+
+10. Start zookeeper (optional)
+
+cd <zookeeper install location>
+bin/zkServer.sh start
+
+11. Run it! (note that the default configs don't use zookeeper)
+
+bin/collector
+bin/query
+bin/web
+
+12. browse to http://localhost:8080/
+
