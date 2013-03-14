@@ -17,6 +17,7 @@
 package com.twitter.zipkin.web
 
 import com.codahale.jerkson.Json
+import com.twitter.finagle.tracing.SpanId
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finatra.{Response, Controller, View, Request}
 import com.twitter.logging.Logger
@@ -236,6 +237,18 @@ class App(
   }
 
   /**
+   * Get the id param from the http request (which is a hex string) and convert it
+   * to it's numerical value.
+   */
+
+  def getParamTraceId(request: Request) : Long = {
+    val paramStr = request.routeParams("id")
+
+    /* purposely throw an exception if the span is malformed and cannot be converted */
+    SpanId.fromString(paramStr).map(_.toLong).get
+  }
+
+  /**
    * API: get
    * Returns the data for a particular trace
    *
@@ -248,7 +261,7 @@ class App(
   getWithErrorHandler("/api/get/:id") { request =>
     log.info("/api/get")
     val adjusters = getAdjusters(request)
-    val ids = Seq(request.routeParams("id").toLong)
+    val ids = Seq(getParamTraceId(request))
     log.debug(ids.toString())
 
     client.getTraceCombosByIds(ids, adjusters).map { _.map { _.toTraceCombo }.head }.map { combo =>
@@ -259,7 +272,7 @@ class App(
   getWithErrorHandler("/api/trace/:id") { request =>
     log.info("/api/trace")
     val adjusters = getAdjusters(request)
-    val ids = Seq(request.routeParams("id").toLong)
+    val ids = Seq(getParamTraceId(request))
     log.debug(ids.toString())
 
     client.getTraceCombosByIds(ids, adjusters).map {
@@ -279,7 +292,7 @@ class App(
    * - id: Long
    */
   getWithErrorHandler("/api/is_pinned/:id") { request =>
-    val id = request.routeParams("id").toLong
+    val id = getParamTraceId(request)
     client.getTraceTimeToLive(id).map(render.json(_))
   }
 
@@ -292,7 +305,7 @@ class App(
    * - state: Boolean (true|false)
    */
   post("/api/pin/:id/:state") { request =>
-    val id = request.routeParams("id").toLong
+    val id = getParamTraceId(request)
     request.routeParams("state").toLowerCase match {
       case "true" => {
         togglePinState(id, true).map(render.json(_))

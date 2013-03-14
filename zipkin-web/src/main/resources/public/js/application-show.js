@@ -400,7 +400,7 @@ Zipkin.GetTrace = (function() {
               service: a.getSpan().getServiceName(),
               name: a.getSpan().getName(),
               annotation: a.getValue(),
-              hostname: a.getHostName(),
+              hostAddress: a.getHostAddress(),
               host: a.getHost()
             };
           });
