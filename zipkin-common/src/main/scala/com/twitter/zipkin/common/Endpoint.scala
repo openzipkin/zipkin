@@ -16,6 +16,9 @@
  */
 package com.twitter.zipkin.common
 
+import java.nio.ByteBuffer
+import java.net.{InetAddress, InetSocketAddress}
+
 /**
  * Represents the client or server machine we traced.
  */
@@ -31,6 +34,25 @@ object Endpoint {
  */
 case class Endpoint(ipv4: Int, port: Short, serviceName: String)
   extends Ordered[Endpoint] {
+
+  /**
+   * Return the java.net.InetSocketAddress which contains host/port
+   */
+  def getInetSocketAddress: InetSocketAddress = {
+    val bytes = ByteBuffer.allocate(4).putInt(this.ipv4).array()
+    new InetSocketAddress(InetAddress.getByAddress(bytes), this.getUnsignedPort)
+  }
+
+  /**
+   * Convenience function to get the string-based ip-address
+   */
+  def getHostAddress: String = {
+    this.getInetSocketAddress.getAddress.getHostAddress
+  }
+
+  def getUnsignedPort: Int = {
+    port & 0xFFFF
+  }
 
   override def compare(that: Endpoint) = {
     if (serviceName != that.serviceName)

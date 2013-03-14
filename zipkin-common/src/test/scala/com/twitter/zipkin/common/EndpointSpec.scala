@@ -17,9 +17,14 @@
 package com.twitter.zipkin.common
 
 import org.specs.Specification
+import java.net.InetSocketAddress
 
 class EndpointSpec extends Specification {
   "Endpoint" should {
+
+    val google  = Endpoint(  134744072, -80, "google")
+    val example = Endpoint(-1073730806,  21, "example")
+    val twitter = Endpoint( -952396249, 443, "twitter")
 
     "compare correctly" in {
       val e1 = Endpoint(123, 456, "a")
@@ -31,7 +36,28 @@ class EndpointSpec extends Specification {
       e1.compare(e2) must beLessThan(0)
       e1.compare(e3) must beLessThan(0)
       e1.compare(e4) must beLessThan(0)
+    }
 
+    "convert to dotted-quad strings" in {
+      google.getHostAddress  mustEqual       "8.8.8.8"
+      example.getHostAddress mustEqual   "192.0.43.10"
+      twitter.getHostAddress mustEqual "199.59.150.39"
+    }
+
+    "provide unsigned port" in {
+      google.getUnsignedPort  mustEqual 65456
+      example.getUnsignedPort mustEqual    21
+      twitter.getUnsignedPort mustEqual   443
+    }
+
+    "convert to java.net.InetSocketAddress" in {
+      val gAddr = new InetSocketAddress(      "8.8.8.8", 65456)
+      val eAddr = new InetSocketAddress(  "192.0.43.10",    21)
+      val tAddr = new InetSocketAddress("199.59.150.39",   443)
+
+      google.getInetSocketAddress  mustEqual gAddr
+      example.getInetSocketAddress mustEqual eAddr
+      twitter.getInetSocketAddress mustEqual tAddr
     }
   }
 }

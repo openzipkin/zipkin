@@ -240,7 +240,6 @@ class App(
    * Get the id param from the http request (which is a hex string) and convert it
    * to it's numerical value.
    */
-
   def getParamTraceId(request: Request) : Long = {
     val paramStr = request.routeParams("id")
 
