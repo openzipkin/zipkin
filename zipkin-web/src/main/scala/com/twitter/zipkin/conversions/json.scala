@@ -3,6 +3,7 @@ package com.twitter.zipkin.conversions
 import com.twitter.zipkin.common.json._
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query._
+import com.twitter.finagle.tracing.SpanId
 
 /**
  * json doesn't like Longs, so we need to convert them to strings
@@ -12,7 +13,7 @@ object json {
   /* Annotation */
   class WrappedAnnotation(a: Annotation) {
     lazy val toJson = {
-      JsonAnnotation(a.timestamp.toString, a.value, a.host, a.duration map { _.inMicroseconds.toString })
+      JsonAnnotation(a.timestamp.toString, a.value, a.host.map(JsonEndpoint(_)), a.duration map { _.inMicroseconds.toString })
     }
   }
   implicit def annotationToJson(a: Annotation) = new WrappedAnnotation(a)
@@ -24,10 +25,10 @@ object json {
         b.annotationType match {
           case AnnotationType(0, _) => if (b.value.get() != 0) true else false  // bool
           case AnnotationType(1, _) => new String(b.value.array(), b.value.position(), b.value.remaining()) // bytes
-          case AnnotationType(2, _) => b.value.getShort            // i16
-          case AnnotationType(3, _) => b.value.getInt              // i32
-          case AnnotationType(4, _) => b.value.getLong             // i64
-          case AnnotationType(5, _) => b.value.getDouble           // double
+          case AnnotationType(2, _) => b.value.getShort & Short.MaxValue  // bitwise-and converts to unsigned i16
+          case AnnotationType(3, _) => b.value.getInt   & Int.MaxValue    // unsigned i32
+          case AnnotationType(4, _) => b.value.getLong  & Long.MaxValue   // unsigned i64
+          case AnnotationType(5, _) => b.value.getDouble                  // double
           case AnnotationType(6, _) => new String(b.value.array(), b.value.position(), b.value.remaining()) // string
           case _ => {
             throw new Exception("Unsupported annotation type: %s".format(b))
@@ -45,10 +46,10 @@ object json {
   class WrappedSpan(s: Span) {
     lazy val toJson = {
       JsonSpan(
-        s.traceId.toString,
+        SpanId(s.traceId).toString, // not a bug, SpanId converts Long to hex string
         s.name,
-        s.id.toString,
-        s.parentId.map(_.toString),
+        SpanId(s.id).toString,
+        s.parentId.map(SpanId(_).toString),
         s.serviceNames,
         s.firstAnnotation.map(_.timestamp),
         s.duration,
@@ -61,7 +62,7 @@ object json {
   /* TimelineAnnotation */
   class WrappedTimelineAnnotation(t: TimelineAnnotation) {
     lazy val toJson = {
-      JsonTimelineAnnotation(t.timestamp.toString, t.value, t.host, t.spanId.toString, t.parentId map { _.toString }, t.serviceName, t.spanName)
+      JsonTimelineAnnotation(t.timestamp.toString, t.value, t.host, SpanId(t.spanId).toString, t.parentId map { SpanId(_).toString }, t.serviceName, t.spanName)
     }
   }
   implicit def timelineAnnotationToJson(t: TimelineAnnotation) = new WrappedTimelineAnnotation(t)
@@ -75,7 +76,7 @@ object json {
        */
       val startAndEnd = t.getStartAndEndTimestamp.get
       JsonTrace(
-        t.id map { _.toString } getOrElse "",
+        t.id map { SpanId(_).toString } getOrElse "",
         t.spans map { _.toJson },
         startAndEnd.start,
         startAndEnd.end,
@@ -88,7 +89,7 @@ object json {
   /* TraceTimeline */
   class WrappedTraceTimeline(t: TraceTimeline) {
     lazy val toJson = {
-      JsonTraceTimeline(t.traceId.toString, t.rootSpanId.toString, t.annotations map { _.toJson }, t.binaryAnnotations map { _.toJson })
+      JsonTraceTimeline(SpanId(t.traceId).toString, SpanId(t.rootSpanId).toString, t.annotations map { _.toJson }, t.binaryAnnotations map { _.toJson })
     }
   }
   implicit def traceTimelineToJson(t: TraceTimeline) = new WrappedTraceTimeline(t)
@@ -96,7 +97,7 @@ object json {
   /* TraceSummary */
   class WrappedTraceSummary(t: TraceSummary) {
     lazy val toJson = {
-      JsonTraceSummary(t.traceId.toString, t.startTimestamp, t.endTimestamp, t.durationMicro, t.serviceCounts.toMap, t.endpoints)
+      JsonTraceSummary(SpanId(t.traceId).toString, t.startTimestamp, t.endTimestamp, t.durationMicro, t.serviceCounts.toMap, t.endpoints)
     }
   }
   implicit def traceSummaryToJson(t: TraceSummary) = new WrappedTraceSummary(t)

@@ -36,15 +36,11 @@ Zipkin.Annotation = (function() {
     }
     return this.value;
   };
-  Annotation.prototype.getTimestamp = function() { return this.timestamp; };
-  Annotation.prototype.getHost      = function() { return this.host; };
-  Annotation.prototype.getHostName  = function() {
+  Annotation.prototype.getTimestamp    = function() { return this.timestamp; };
+  Annotation.prototype.getHost         = function() { return this.host; };
+  Annotation.prototype.getHostAddress  = function() {
     if (this.host !== undefined) {
-      return [
-        (this.host.ipv4 >> 24) & 0xFF,
-        (this.host.ipv4 >> 16) & 0xFF,
-        (this.host.ipv4 >> 8) & 0xFF,
-        this.host.ipv4 & 0xFF].join(".");
+      return this.host.ipv4
     } else {
       return "0.0.0.0"
     }
