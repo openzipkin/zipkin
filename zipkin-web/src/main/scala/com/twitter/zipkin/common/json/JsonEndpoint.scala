@@ -26,15 +26,9 @@ import java.net.InetAddress
  */
 case class JsonEndpoint(ipv4: String, port: Int, serviceName: String)
 
-
 object JsonEndpoint {
   def apply(host: Endpoint) = {
-    val bytes = ByteBuffer.allocate(4).putInt(host.ipv4).array()
-    val inet = InetAddress.getByAddress(bytes)
-
-    // make port number unsigned so we don't get negative ports in the json,
-    // and convert the numerical address to a dotted quad
-    new JsonEndpoint(inet.getHostAddress, host.port & Short.MaxValue, host.serviceName)
+    new JsonEndpoint(host.getHostAddress, host.getUnsignedPort, host.serviceName)
   }
 }
 

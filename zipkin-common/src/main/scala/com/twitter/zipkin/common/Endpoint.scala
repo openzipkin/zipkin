@@ -16,6 +16,9 @@
  */
 package com.twitter.zipkin.common
 
+import java.nio.ByteBuffer
+import java.net.InetAddress
+
 /**
  * Represents the client or server machine we traced.
  */
@@ -31,6 +34,15 @@ object Endpoint {
  */
 case class Endpoint(ipv4: Int, port: Short, serviceName: String)
   extends Ordered[Endpoint] {
+
+  def getHostAddress = {
+    val bytes = ByteBuffer.allocate(4).putInt(this.ipv4).array()
+    InetAddress.getByAddress(bytes).getHostAddress
+  }
+
+  def getUnsignedPort = {
+    port & Short.MaxValue
+  }
 
   override def compare(that: Endpoint) = {
     if (serviceName != that.serviceName)
