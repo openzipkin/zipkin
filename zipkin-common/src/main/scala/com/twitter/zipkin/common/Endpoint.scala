@@ -38,7 +38,7 @@ case class Endpoint(ipv4: Int, port: Short, serviceName: String)
   /**
    * Return the java.net.InetSocketAddress which contains host/port
    */
-  def getInetSocketAddress = {
+  def getInetSocketAddress: InetSocketAddress = {
     val bytes = ByteBuffer.allocate(4).putInt(this.ipv4).array()
     new InetSocketAddress(InetAddress.getByAddress(bytes), this.getUnsignedPort)
   }
@@ -46,11 +46,11 @@ case class Endpoint(ipv4: Int, port: Short, serviceName: String)
   /**
    * Convenience function to get the string-based ip-address
    */
-  def getHostAddress = {
+  def getHostAddress: String = {
     this.getInetSocketAddress.getAddress.getHostAddress
   }
 
-  def getUnsignedPort = {
+  def getUnsignedPort: Int = {
     port & Short.MaxValue
   }
 
