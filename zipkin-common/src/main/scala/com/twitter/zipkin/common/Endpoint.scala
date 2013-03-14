@@ -51,7 +51,7 @@ case class Endpoint(ipv4: Int, port: Short, serviceName: String)
   }
 
   def getUnsignedPort: Int = {
-    port & Short.MaxValue
+    port & 0xFFFF
   }
 
   override def compare(that: Endpoint) = {
