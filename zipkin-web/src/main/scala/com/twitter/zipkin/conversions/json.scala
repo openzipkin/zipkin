@@ -25,10 +25,10 @@ object json {
         b.annotationType match {
           case AnnotationType(0, _) => if (b.value.get() != 0) true else false  // bool
           case AnnotationType(1, _) => new String(b.value.array(), b.value.position(), b.value.remaining()) // bytes
-          case AnnotationType(2, _) => b.value.getShort & Short.MaxValue  // bitwise-and converts to unsigned i16
-          case AnnotationType(3, _) => b.value.getInt   & Int.MaxValue    // unsigned i32
-          case AnnotationType(4, _) => b.value.getLong  & Long.MaxValue   // unsigned i64
-          case AnnotationType(5, _) => b.value.getDouble                  // double
+          case AnnotationType(2, _) => b.value.getShort            // i16
+          case AnnotationType(3, _) => b.value.getInt              // i32
+          case AnnotationType(4, _) => b.value.getLong             // i64
+          case AnnotationType(5, _) => b.value.getDouble           // double
           case AnnotationType(6, _) => new String(b.value.array(), b.value.position(), b.value.remaining()) // string
           case _ => {
             throw new Exception("Unsupported annotation type: %s".format(b))

@@ -130,6 +130,13 @@ case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
   }
 
   /**
+   * Endpoint that is likely the owner of this span
+   */
+  def clientSideEndpoint: Option[Endpoint] = {
+    clientSideAnnotations.map(_.host).flatten.headOption
+  }
+
+  /**
    * Assuming this is an RPC span, is it from the client side?
    */
   def isClientSide(): Boolean = {
