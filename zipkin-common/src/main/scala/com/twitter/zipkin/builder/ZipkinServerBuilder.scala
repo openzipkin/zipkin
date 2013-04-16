@@ -22,7 +22,7 @@ import com.twitter.logging.config._
 import com.twitter.logging.{ConsoleHandler, Logger, LoggerFactory}
 import com.twitter.ostrich.admin._
 import com.twitter.util.{Timer, JavaTimer}
-import java.net.{InetSocketAddress, InetAddress}
+import java.net.{InetAddress, InetSocketAddress}
 import scala.util.matching.Regex
 
 /**
@@ -31,7 +31,7 @@ import scala.util.matching.Regex
 case class ZipkinServerBuilder(
   serverPort              : Int,
   adminPort               : Int,
-  serverAddress           : InetAddress              = InetAddress.getLocalHost,
+  serverAddress           : InetAddress              = InetAddress.getByAddress(Array[Byte](0,0,0,0)),
   loggers                 : List[LoggerFactory]      = List(LoggerFactory(level = Some(Level.DEBUG), handlers = List(ConsoleHandler()))),
   adminStatsNodes         : List[StatsFactory]       = List(StatsFactory(reporters = List(TimeSeriesCollectorFactory()))),
   adminStatsFilters       : List[Regex]              = List.empty,
