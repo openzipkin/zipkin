@@ -374,7 +374,7 @@ class App(
     }
   }
 
-  private def wrapView(v: ZipkinView) = new View {
+  private def wrapView(v: TitledView) = new TitledView  {
     val pageTitle = v.pageTitle
     val template = "templates/layouts/application.mustache"
     val rootUrl = self.rootUrl
@@ -385,17 +385,19 @@ class App(
   }
 }
 
-abstract class ZipkinView(val pageTitle:String) extends View
+trait TitledView extends View {
+  val pageTitle:String
+}
 
 class IndexView(
-  override val pageTitle: String,
+  val pageTitle: String,
   val endDate: String,
   val endTime: String,
   services: Seq[TracedService] = Nil,
   queryResults: Seq[JsonTraceSummary] = Nil,
   annotations: Option[Seq[String]] = None,
   kvAnnotations: Option[Seq[(String, String)]] = None
-) extends ZipkinView(pageTitle) {
+) extends TitledView {
   val template = "templates/index.mustache"
   val jsonServices = Json.generate(services)
   val jsonQueryResults = Json.generate(queryResults)
@@ -422,18 +424,22 @@ class IndexView(
   }
 }
 
-class ShowView(val traceId: String) extends ZipkinView("Trace %s".format(traceId)) {
+class ShowView(val traceId: String) extends TitledView {
+  val pageTitle = "Trace %s".format(traceId)
   val template = "templates/show.mustache"
 }
 
-class StaticView extends ZipkinView("Static") {
+class StaticView extends TitledView {
+  val pageTitle = "Static"
   val template = "templates/static.mustache"
 }
 
-class AggregatesView(val endDate: String) extends ZipkinView("Aggregates") {
+class AggregatesView(val endDate: String) extends TitledView {
+  val pageTitle = "Aggregates"
   val template = "templates/aggregates.mustache"
 }
 
-class ErrorView(val errorMsg: String) extends ZipkinView("ERROR") {
+class ErrorView(val errorMsg: String) extends TitledView {
+  val pageTitle = "ERROR"
   val template = "templates/error.mustache"
 }
