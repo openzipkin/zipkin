@@ -206,8 +206,8 @@ Zipkin.TraceDependencies = (function() {
         .attr("viewBox", "0 -5 10 10")
         .attr("refX", 10)
         .attr("refY", 0)
-        .attr("markerWidth", 6)
-        .attr("markerHeight", 6)
+        .attr("markerWidth", 4)
+        .attr("markerHeight", 4)
         .attr("orient", "auto")
       .append("svg:path")
         .attr("d", "M 0,-5 L 10,0 L 0,5 z");
@@ -216,7 +216,6 @@ Zipkin.TraceDependencies = (function() {
         .data(force.links())
       .enter().append("svg:line")
         .attr("class", function(d) { return "link directed"; })
-        .style("stroke", "grey")
         .attr("marker-end", function(d) { return "url(#directed)"; });
 
     var circle = svg.append("svg:g").selectAll("circle")

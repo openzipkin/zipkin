@@ -669,12 +669,25 @@ svg g line {
 
 svg g circle {
   fill: #fff;
-  stroke: #ab2920;
+  stroke: #000000;
 }
 
 /** Trace Dependency SVG classes */
 div#trace-dependency circle {
-  fill: #0084B4;
+    fill: #0084B4;
+    stroke-width: 2;
+}
+
+div#trace-dependency line {
+    stroke: #808080;
+    stroke-width: 2;
+    stroke-opacity: 0.4;
+}
+
+div#trace-dependency #directed {
+    stroke-width: 1;
+    fill: #808080;
+    stroke: #303030;
 }
 
 /** Trace Dependency SVG classes */

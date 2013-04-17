@@ -79,10 +79,11 @@ class App(
     getServices.map { services =>
       queryResults.map { results =>
         queryRequest match {
-          case None => render.view(wrapView(new IndexView(getDate, getTime, services, results)))
+          case None => render.view(wrapView(new IndexView("Index", getDate, getTime, services, results)))
           case Some(qRequest) => {
             render.view(wrapView(
               new IndexView(
+                qRequest.serviceName,
                 getDate,
                 getTime,
                 services,
@@ -373,7 +374,8 @@ class App(
     }
   }
 
-  private def wrapView(v: View) = new View {
+  private def wrapView(v: TitledView) = new TitledView  {
+    val pageTitle = v.pageTitle
     val template = "templates/layouts/application.mustache"
     val rootUrl = self.rootUrl
     val innerView: View = v
@@ -383,14 +385,19 @@ class App(
   }
 }
 
+trait TitledView extends View {
+  val pageTitle:String
+}
+
 class IndexView(
+  val pageTitle: String,
   val endDate: String,
   val endTime: String,
   services: Seq[TracedService] = Nil,
   queryResults: Seq[JsonTraceSummary] = Nil,
   annotations: Option[Seq[String]] = None,
   kvAnnotations: Option[Seq[(String, String)]] = None
-) extends View {
+) extends TitledView {
   val template = "templates/index.mustache"
   val jsonServices = Json.generate(services)
   val jsonQueryResults = Json.generate(queryResults)
@@ -417,18 +424,22 @@ class IndexView(
   }
 }
 
-class ShowView(val traceId: String) extends View {
+class ShowView(val traceId: String) extends TitledView {
+  val pageTitle = "Trace %s".format(traceId)
   val template = "templates/show.mustache"
 }
 
-class StaticView extends View {
+class StaticView extends TitledView {
+  val pageTitle = "Static"
   val template = "templates/static.mustache"
 }
 
-class AggregatesView(val endDate: String) extends View {
+class AggregatesView(val endDate: String) extends TitledView {
+  val pageTitle = "Aggregates"
   val template = "templates/aggregates.mustache"
 }
 
-class ErrorView(val errorMsg: String) extends View {
+class ErrorView(val errorMsg: String) extends TitledView {
+  val pageTitle = "ERROR"
   val template = "templates/error.mustache"
 }
