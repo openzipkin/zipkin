@@ -20,14 +20,12 @@ resolvers <<= (resolvers) { r =>
   }) ++ Seq("local" at ("file:" + System.getProperty("user.home") + "/.m2/repository/"))
 }
 
+libraryDependencies ++= Seq(
+		    "com.google.collections" % "google-collections" % "0.8",
+		    "org.codehaus.plexus"    % "plexus-utils"       % "1.5.4",
+		    "org.slf4j"              % "slf4j-api"          % "1.6.1",
+		    "org.slf4j"              % "slf4j-simple"       % "1.6.1",
+		    "com.twitter"            % "scrooge-generator"  % "3.1.1")
+
 externalResolvers <<= (resolvers) map identity
 
-addSbtPlugin("com.twitter" % "sbt-package-dist" % "1.0.5")
-
-addSbtPlugin("com.twitter" % "sbt11-scrooge" % "3.0.0")
-
-addSbtPlugin("com.twitter" % "sbt-thrift2" % "0.0.1")
-
-//addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.0.0")
-
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.8.2")

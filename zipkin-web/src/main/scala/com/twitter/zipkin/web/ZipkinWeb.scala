@@ -17,8 +17,9 @@ package com.twitter.zipkin.web
 
 import com.twitter.finagle.http.{RichHttp, Http, Request => FinagleRequest}
 import com.twitter.finagle.builder.{ServerBuilder, Server}
+import com.twitter.finagle.thrift.ThriftClientRequest
 import com.twitter.finagle.tracing.Tracer
-import com.twitter.finagle.exception
+import com.twitter.finagle.{Service, exception}
 import com.twitter.finatra._
 import com.twitter.ostrich.admin
 import com.twitter.logging.Logger
@@ -29,8 +30,9 @@ class ZipkinWeb(
   app: App,
   resource: Resource,
   serverPort: Int,
-  tracerFactory: Tracer.Factory,
-  exceptionMonitorFactory: exception.MonitorFactory
+  tracer: Tracer,
+  exceptionMonitorFactory: exception.MonitorFactory,
+  queryClient: Service[_,_]
 ) extends admin.Service {
 
   val log = Logger.get()
@@ -50,7 +52,7 @@ class ZipkinWeb(
         .codec(new RichHttp[FinagleRequest](Http()))
         .bindTo(new InetSocketAddress(serverPort))
         .name("ZipkinWeb")
-        .tracerFactory(tracerFactory)
+        .tracer(tracer)
         .monitor(exceptionMonitorFactory)
         .build(service)
     }
@@ -59,6 +61,7 @@ class ZipkinWeb(
 
   def shutdown() {
     server.foreach { _.close() }
+    queryClient.close()
   }
 }
 

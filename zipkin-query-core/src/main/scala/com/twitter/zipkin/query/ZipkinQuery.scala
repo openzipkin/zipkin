@@ -35,7 +35,7 @@ class ZipkinQuery(
   aggregates: Aggregates,
   adjusterMap: Map[gen.Adjust, Adjuster] = Map.empty,
   statsReceiver: StatsReceiver = NullStatsReceiver,
-  tracerFactory: Tracer.Factory = NullTracer.factory
+  tracer: Tracer = NullTracer
 ) extends Service {
 
   val log = Logger.get(getClass.getName)
@@ -52,14 +52,13 @@ class ZipkinQuery(
       .codec(ThriftServerFramedCodec())
       .bindTo(serverAddress)
       .name("ZipkinQuery")
-      .tracerFactory(tracerFactory)
+      .tracer(tracer)
       .build(new gen.ZipkinQuery.FinagledService(queryService, new TBinaryProtocol.Factory()))
   }
 
   def shutdown() {
     log.info("Shutting down query thrift service.")
     thriftServer.close()
-    ServiceTracker.shutdown
   }
 }
 

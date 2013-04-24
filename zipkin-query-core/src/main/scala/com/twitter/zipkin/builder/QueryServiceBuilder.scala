@@ -54,6 +54,6 @@ case class QueryServiceBuilder(
       cluster.join(address)
     }
 
-    new ZipkinQuery(address, store.storage, store.index, store.aggregates, adjusterMap, serverBuilder.statsReceiver, serverBuilder.tracerFactory)
+    new ZipkinQuery(address, store.storage, store.index, store.aggregates, adjusterMap, serverBuilder.statsReceiver, serverBuilder.tracer)
   }
 }

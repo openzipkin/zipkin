@@ -19,7 +19,7 @@ package com.twitter.zipkin.collector.processor
 import com.twitter.finagle.Service
 import com.twitter.logging.Logger
 import com.twitter.ostrich.stats.Stats
-import com.twitter.util.Future
+import com.twitter.util.{Time, Future}
 import com.twitter.zipkin.storage.Index
 import com.twitter.zipkin.common.Span
 
@@ -41,5 +41,10 @@ class IndexService(index: Index) extends Service[Span, Unit] {
       Stats.getCounter("exception_%s_%s".format(method, e.getClass)).incr()
       log.error(e, method)
     }
+  }
+
+  override def close(deadline: Time) = {
+    index.close()
+    super.close(deadline)
   }
 }

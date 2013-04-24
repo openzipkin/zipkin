@@ -50,20 +50,8 @@ class App(
   def getDate = dateFormat.format(Calendar.getInstance().getTime)
   def getTime = timeFormat.format(Calendar.getInstance().getTime)
 
-  /* FIXME - delete this when we upgrade to Finatra > 1.3.0.  We can't upgrade now because
-   * cassie can't support finagle 6 and Finatra depends on it. */
-  def getWithErrorHandler(uri: String)(callback: Request => Future[Response]) {
-    get(uri){ request =>
-      callback(request).handle { case e:Exception =>
-        request.error = Some(e)
-        val handler = this.errorHandler.get // this is ensured to succeed because of error{} below
-        handler(request).get()
-      }
-    }
-  }
-
   /* Index page */
-  getWithErrorHandler("/") { request =>
+  get("/") { request =>
     /* If valid query params passed, run the query and push the data down with the page */
     val queryRequest = QueryExtractor(request)
     val queryResults = queryRequest match {
@@ -101,7 +89,7 @@ class App(
   }
 
   /* Trace page */
-  getWithErrorHandler("/traces/:id") { request =>
+  get("/traces/:id") { request =>
     render.view(wrapView(new ShowView(request.routeParams("id")))).toFuture
   }
 
@@ -129,7 +117,7 @@ class App(
    * - annotationKey, annotation_value: String
    * - adjust_clock_skew = (true|false), default true
    */
-  getWithErrorHandler("/api/query") { request =>
+  get("/api/query") { request =>
     query(request).map(render.json(_))
   }
 
@@ -173,7 +161,7 @@ class App(
    * API: services
    * Returns the total list of services Zipkin is aware of
    */
-  getWithErrorHandler("/api/services") { request =>
+  get("/api/services") { request =>
     log.debug("/api/services")
     getServices.map {
       render.json(_)
@@ -195,7 +183,7 @@ class App(
    * Required GET params:
    * - serviceName: String
    */
-  getWithErrorHandler("/api/spans") { request =>
+  get("/api/spans") { request =>
     withServiceName(request) { serviceName =>
       client.getSpanNames(serviceName).map { spans =>
         render.json {
@@ -214,7 +202,7 @@ class App(
    * Required GET params:
    * - serviceName: string
    */
-  getWithErrorHandler("/api/top_annotations") { request =>
+  get("/api/top_annotations") { request =>
     withServiceName(request) { serviceName =>
       client.getTopAnnotations(serviceName).map { anns =>
         render.json(anns.toSeq.sorted)
@@ -229,7 +217,7 @@ class App(
    * Required GET params:
    * - serviceName: String
    */
-  getWithErrorHandler("/api/top_kv_annotations") { request =>
+  get("/api/top_kv_annotations") { request =>
     withServiceName(request) { serviceName =>
       client.getTopKeyValueAnnotations(serviceName).map { anns =>
         render.json(anns.toSeq.sorted)
@@ -258,7 +246,7 @@ class App(
    * Optional GET params:
    * - adjust_clock_skew: (true|false), default true
    */
-  getWithErrorHandler("/api/get/:id") { request =>
+  get("/api/get/:id") { request =>
     log.info("/api/get")
     val adjusters = getAdjusters(request)
     val ids = Seq(getParamTraceId(request))
@@ -269,7 +257,7 @@ class App(
     }
   }
 
-  getWithErrorHandler("/api/trace/:id") { request =>
+  get("/api/trace/:id") { request =>
     log.info("/api/trace")
     val adjusters = getAdjusters(request)
     val ids = Seq(getParamTraceId(request))
@@ -291,7 +279,7 @@ class App(
    * Required GET params:
    * - id: Long
    */
-  getWithErrorHandler("/api/is_pinned/:id") { request =>
+  get("/api/is_pinned/:id") { request =>
     val id = getParamTraceId(request)
     client.getTraceTimeToLive(id).map(render.json(_))
   }

@@ -1,4 +1,3 @@
-#! usr/bin/env ruby
 # Copyright 2012 Twitter Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,9 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+namespace java com.twitter.zipkin.gen
 
-$config = {
-  :zipkin_query_host   => "localhost", #You'll need to change this to whatever your actual host is
-  :zipkin_query_port   => 9411,
-  :skip_zookeeper      => true
+enum ResultCode
+{
+  OK,
+  TRY_LATER
+}
+
+struct LogEntry
+{
+  1:  string category,
+  2:  string message
+}
+
+service Scribe
+{
+  ResultCode Log(1: list<LogEntry> messages);
 }

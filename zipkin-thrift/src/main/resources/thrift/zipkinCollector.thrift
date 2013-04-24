@@ -24,7 +24,7 @@ exception StoreAggregatesException {
   1: string msg
 }
 
-service ZipkinCollector extends scribe.scribe {
+service ZipkinCollector extends scribe.Scribe {
 
     /** Aggregates methods */
     void storeTopAnnotations(1: string service_name, 2: list<string> annotations) throws (1: StoreAggregatesException e);

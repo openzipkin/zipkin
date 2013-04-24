@@ -36,7 +36,7 @@ case class ZipkinServerBuilder(
   adminStatsNodes         : List[StatsFactory]       = List(StatsFactory(reporters = List(TimeSeriesCollectorFactory()))),
   adminStatsFilters       : List[Regex]              = List.empty,
   statsReceiver           : StatsReceiver            = new OstrichStatsReceiver,
-  tracerFactory           : Tracer.Factory           = NullTracer.factory,
+  tracer                  : Tracer                   = NullTracer,
   timer                   : Timer                    = new JavaTimer(true),
   exceptionMonitorFactory : exception.MonitorFactory = exception.NullMonitorFactory
 ) extends Builder[(RuntimeEnvironment) => Unit] {
@@ -46,7 +46,7 @@ case class ZipkinServerBuilder(
   def serverAddress(a: InetAddress)     : ZipkinServerBuilder = copy(serverAddress     = a)
   def loggers(l: List[LoggerFactory])   : ZipkinServerBuilder = copy(loggers           = l)
   def statsReceiver(s: StatsReceiver)   : ZipkinServerBuilder = copy(statsReceiver     = s)
-  def tracerFactory(t: Tracer.Factory)  : ZipkinServerBuilder = copy(tracerFactory     = t)
+  def tracer(t: Tracer)                 : ZipkinServerBuilder = copy(tracer            = t)
   def exceptionMonitorFactory(h: exception.MonitorFactory) : ZipkinServerBuilder
                                                               = copy(exceptionMonitorFactory = h)
   def timer(t: Timer)                   : ZipkinServerBuilder = copy(timer             = t)

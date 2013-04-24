@@ -19,7 +19,7 @@ package com.twitter.zipkin.collector.processor
 import com.twitter.finagle.Service
 import com.twitter.logging.Logger
 import com.twitter.ostrich.stats.Stats
-import com.twitter.util.Future
+import com.twitter.util.{Time, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.Storage
 
@@ -36,7 +36,8 @@ class StorageService(storage: Storage) extends Service[Span, Unit] {
     }
   }
 
-  override def release() {
+  override def close(deadline: Time) = {
     storage.close()
+    super.close(deadline)
   }
 }

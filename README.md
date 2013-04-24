@@ -53,6 +53,7 @@ Zipkin server
 * Johan Oskarsson: [@skr](https://twitter.com/skr)
 * Franklin Hu: [@thisisfranklin](https://twitter.com/thisisfranklin)
 * Ian Ownbey: [@iano](https://twitter.com/iano)
+* Brian Degenhardt [@bmdhacks](https://twitter.com/bmdhacks)
 
 Zipkin UI
 
@@ -60,11 +61,13 @@ Zipkin UI
 * Bill Couch: [@couch](https://twitter.com/couch)
 * David McLaughlin: [@dmcg](https://twitter.com/dmcg)
 * Chad Rosen: [@zed](https://twitter.com/zed)
+* Brian Degenhardt [@bmdhacks](https://twitter.com/bmdhacks)
 
 Instrumentation
 
 * Marius Eriksen: [@marius](https://twitter.com/marius)
 * Arya Asemanfar: [@a_a](https://twitter.com/a_a)
+* Brian Degenhardt [@bmdhacks](https://twitter.com/bmdhacks)
 
 ## License
 Copyright 2012 Twitter, Inc.

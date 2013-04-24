@@ -1,1 +1,1 @@
-../../../../zipkin-thrift/src/main/thrift/scribe.thrift
+../../../../zipkin-thrift/src/main/resources/thrift/scribe.thrift
