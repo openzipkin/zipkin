@@ -78,7 +78,7 @@ You need to set up a network store that points to the Zipkin collector daemon. I
 
 <p>You can use an internal DNS entry for the collectors, that way you only have one place to change the addresses when you add or remove collectors. </p>
 
-<p>If you want to get all fancy you can use a modified version of <a href="Scribe">https://github.com/traviscrawford/scribe</a> that picks up the collectors via ZooKeeper. When each collector starts up it adds itself to ZooKeeper and when a collector shuts down it is automatically removed. The modified Scribe gets notified when the set of collectors change. To use this mode you change remote_host in the configuration to zk://zookeeper-hostname:2181/scribe/zipkin or something similar.</p>
+<p>If you want to get all fancy you can use a modified version of <a href="https://github.com/traviscrawford/scribe">Scribe</a> that picks up the collectors via ZooKeeper. When each collector starts up it adds itself to ZooKeeper and when a collector shuts down it is automatically removed. The modified Scribe gets notified when the set of collectors change. To use this mode you change remote_host in the configuration to zk://zookeeper-hostname:2181/scribe/zipkin or something similar.</p>
 
 <p>We&#39;re hoping that others might add non-Scribe transports for the tracing data; there is no reason why Scribe has to be the only one.</p>
 
