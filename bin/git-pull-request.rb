@@ -83,7 +83,7 @@ module Github extend self
     end
     uri = URI.parse(path)
 
-    req = action.new(uri.to_s)
+    req = action.new(uri.to_s, {'User-Agent' => 'git-pull-request.rb'})
     req.basic_auth options[:username], options[:password] if basic_auth
     req.body = options[:body].to_json if options[:body]
 
