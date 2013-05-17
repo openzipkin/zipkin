@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 import com.twitter.finagle.zipkin.thrift.ZipkinTracer
-import com.twitter.zipkin.builder.{ZipkinServerBuilder, QueryClient, WebBuilder}
+import com.twitter.zipkin.builder.{QueryClient, WebBuilder}
 import java.net.{InetSocketAddress, InetAddress}
 
 val queryClient = QueryClient.static(new InetSocketAddress(InetAddress.getLocalHost, 9411)) map {
   _.tracer(ZipkinTracer.mk())
 }
-WebBuilder("http://localhost:8080/", queryClient, serverBuilder = ZipkinServerBuilder(8081,9990))
+WebBuilder("http://localhost:8080/", queryClient)

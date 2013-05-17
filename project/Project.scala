@@ -6,9 +6,9 @@ import sbt.Keys._
 object Zipkin extends Build {
 
   val CASSIE_VERSION  = "0.25.2"
-  val FINAGLE_VERSION = "6.3.1-SNAPSHOT"
-  val OSTRICH_VERSION = "9.1.1-SNAPSHOT"
-  val UTIL_VERSION    = "6.3.1-SNAPSHOT"
+  val FINAGLE_VERSION = "6.4.0"
+  val OSTRICH_VERSION = "9.1.1"
+  val UTIL_VERSION    = "6.3.4"
   val SCROOGE_VERSION = "3.1.1"
   val ZOOKEEPER_VERSION = "0.0.30"
 
@@ -53,11 +53,11 @@ object Zipkin extends Build {
   ).flatten
 
   def defaultSettings = Seq(
-      zipkinSettings,
-      inlineSettings,
-      Project.defaultSettings,
-      ZipkinResolver.newSettings
-    ).flatten
+    zipkinSettings,
+    inlineSettings,
+    Project.defaultSettings,
+    ZipkinResolver.newSettings
+  ).flatten
 
   lazy val zipkin =
     Project(
@@ -174,8 +174,8 @@ object Zipkin extends Build {
         "com.twitter" % "util-zk"           % UTIL_VERSION,
         "com.twitter" % "util-zk-common"    % UTIL_VERSION,
 
-        "com.twitter.common.zookeeper" % "candidate" % "0.0.36",
-        "com.twitter.common.zookeeper" % "group"     % "0.0.36"
+        "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION,
+        "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION
       ) ++ testDependencies
     ).dependsOn(common, scrooge)
 
