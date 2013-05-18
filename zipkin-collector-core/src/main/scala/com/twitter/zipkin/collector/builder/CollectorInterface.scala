@@ -30,7 +30,7 @@ import java.net.InetSocketAddress
  * @tparam T
  */
 trait CollectorInterface[T]
-  extends Builder[(WriteQueue[T], Seq[Store], InetSocketAddress, StatsReceiver, Tracer.Factory) => Server] {
+  extends Builder[(WriteQueue[T], Seq[Store], InetSocketAddress, StatsReceiver, Tracer) => Server] {
 
   /**
    * Finagle Filter that converts the server's input type to a Span

@@ -71,6 +71,8 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
   def shutdown() {
     running.set(false)
     storage.close
+    index.close
+    aggregates.close
   }
 
   private def constructQueryResponse(indexedIds: Seq[IndexedTraceId], limit: Int, order: gen.Order, defaultEndTs: Long = -1): Future[gen.QueryResponse] = {
@@ -429,6 +431,7 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
    */
   private def getOrderBy(order: gen.Order) = {
     order match {
+      case gen.Order.None => OrderByDurationDesc
       case gen.Order.DurationDesc => OrderByDurationDesc
       case gen.Order.DurationAsc => OrderByDurationAsc
       case gen.Order.TimestampDesc => OrderByTimestampDesc

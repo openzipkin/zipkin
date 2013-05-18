@@ -17,7 +17,7 @@
 package com.twitter.zipkin.collector
 
 import com.twitter.logging.Logger
-import com.twitter.ostrich.admin.RuntimeEnvironment
+import com.twitter.ostrich.admin.{ServiceTracker, RuntimeEnvironment}
 import com.twitter.util.Eval
 import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
 import com.twitter.zipkin.BuildProperties
@@ -33,6 +33,7 @@ object Main {
     try {
       val server = builder.apply().apply(runtime)
       server.start()
+      ServiceTracker.register(server)
     } catch {
       case e: Exception =>
         e.printStackTrace()

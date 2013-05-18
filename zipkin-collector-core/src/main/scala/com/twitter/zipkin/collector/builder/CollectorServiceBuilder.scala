@@ -109,6 +109,9 @@ case class CollectorServiceBuilder[T](
       _.apply()
     }
     val storeProcessors = stores flatMap { store =>
+      // TODO - do something with aggregate store apart from close it
+      store.aggregates.close()
+
       Seq(new StorageService(store.storage), new ClientIndexFilter andThen new IndexService(store.index))
     }
 
@@ -123,13 +126,12 @@ case class CollectorServiceBuilder[T](
 
     val queue = new WriteQueue(queueMaxSize, queueNumWorkers, processor)
     queue.start()
-    ServiceTracker.register(queue)
 
     val server = interface.apply().apply(queue,
       stores,
       new InetSocketAddress(serverBuilder.serverAddress, serverBuilder.serverPort),
       serverBuilder.statsReceiver,
-      serverBuilder.tracerFactory)
+      serverBuilder.tracer)
 
     /**
      * Add config endpoints with the sampleRate endpoint. Available via:

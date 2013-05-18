@@ -54,7 +54,7 @@ class WriteQueue[T](writeQueueMaxSize: Int,
     flushAll()
     workers foreach { _.stop() }
     workers foreach { _.shutdown() }
-    service.release()
+    service.close()
   }
 
   def add(messages: T): Boolean = {

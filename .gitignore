@@ -10,6 +10,7 @@ zipkin-server/lib_managed/
 zipkin-thrift/target/
 zipkin-thrift/dist/
 zipkin-thrift/lib_managed/
+project/lib
 project/boot/
 project/plugins/project/
 project/plugins/src_managed/

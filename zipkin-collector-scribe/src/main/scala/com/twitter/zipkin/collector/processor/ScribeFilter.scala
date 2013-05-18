@@ -46,7 +46,7 @@ class ScribeFilter extends Filter[Seq[String], Unit, Span, Unit] {
           val span = Stats.time("deserializeSpan") {
             deserializer.fromString(msg)
           }
-          log.ifDebug("Processing span: " + span + " from " + msg)
+          log.ifDebug("Processing span: " + span.toSpan + " from " + msg)
           service(span.toSpan)
         } catch {
           case e: Exception => {

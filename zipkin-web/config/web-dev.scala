@@ -18,6 +18,6 @@ import com.twitter.zipkin.builder.{QueryClient, WebBuilder}
 import java.net.{InetSocketAddress, InetAddress}
 
 val queryClient = QueryClient.static(new InetSocketAddress(InetAddress.getLocalHost, 9411)) map {
-  _.tracerFactory(ZipkinTracer())
+  _.tracer(ZipkinTracer.mk())
 }
 WebBuilder("http://localhost:8080/", queryClient)
