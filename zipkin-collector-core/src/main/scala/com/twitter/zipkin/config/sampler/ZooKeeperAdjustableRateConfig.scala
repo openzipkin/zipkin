@@ -21,6 +21,7 @@ import com.twitter.logging.Logger
 import com.twitter.zk._
 import org.apache.zookeeper.KeeperException
 import org.apache.zookeeper.Watcher.Event
+import com.twitter.util.Await
 
 object ZooKeeperSampleRateConfig {
 
@@ -131,8 +132,8 @@ class ZooKeeperAdjustableRateConfig(
 
     try {
       data match {
-        case Some(d) => client(nodePath).create(d).apply()
-        case None => client(nodePath).create(null).apply()
+        case Some(d) => Await.result(client(nodePath).create(d))
+        case None => Await.result(client(nodePath).create(null))
       }
     } catch {
       case e: KeeperException.NodeExistsException => log.info("Node exists: " + nodePath)
@@ -141,7 +142,7 @@ class ZooKeeperAdjustableRateConfig(
 
   private[sampler] def initialize() = {
     try {
-      zNode.create(default.toString.getBytes).apply()
+      Await.result(zNode.create(default.toString.getBytes))
     } catch {
       case e: KeeperException.NoNodeException =>
         /* Parent path does not exist */

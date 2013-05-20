@@ -18,7 +18,7 @@ package com.twitter.zipkin.storage.cassandra
 import com.twitter.cassie._
 import com.twitter.conversions.time._
 import com.twitter.ostrich.stats.Stats
-import com.twitter.util.{Duration, Future}
+import com.twitter.util.{Await, Duration, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
@@ -69,7 +69,7 @@ case class CassandraStorage(
 
     // fetch each col for trace, change ttl and reinsert
     // note that we block here
-    rowFuture().values().asScala.foreach { value =>
+    Await.result(rowFuture).values().asScala.foreach { value =>
     // creating a new column in order to set timestamp to None
       val col = Column[String, gen.Span](value.name, value.value).ttl(ttl)
       batch.insert(traceId, col)

@@ -28,6 +28,7 @@ import java.net.{InetSocketAddress, InetAddress}
 import com.twitter.finagle.Service
 import com.twitter.finagle.thrift.{ThriftClientRequest, ThriftClientFramedCodec}
 import com.twitter.ostrich.admin.RuntimeEnvironment
+import com.twitter.util.Await
 
 class ZipkinSpec extends Specification with JMocker with ClassMocker {
 
@@ -76,9 +77,9 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
     }
 
     doAfter {
-      collectorTransport.release()
+      collectorTransport.close()
       collector.shutdown()
-      queryTransport.release()
+      queryTransport.close()
       query.shutdown()
 
       FakeServer.stop()
@@ -95,12 +96,12 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
 
       // let's send off a tracing span to the collector
       val collectorClient = new gen.ZipkinCollector.FinagledClient(collectorTransport, protocol)
-      collectorClient.log(Seq(LogEntry("zipkin", span)))()
+      Await.result(collectorClient.log(Seq(LogEntry("zipkin", span))))
 
       // let's check that the trace we just sent has been stored and indexed properly
       val queryClient = new gen.ZipkinQuery.FinagledClient(queryTransport, protocol)
-      val traces = queryClient.getTracesByIds(Seq(123), Seq())()
-      val existSet = queryClient.tracesExist(Seq(123, 5))()
+      val traces = Await.result(queryClient.getTracesByIds(Seq(123), Seq()))
+      val existSet = Await.result(queryClient.tracesExist(Seq(123, 5)))
 
       traces.isEmpty mustEqual false
       traces(0).spans.isEmpty mustEqual false
