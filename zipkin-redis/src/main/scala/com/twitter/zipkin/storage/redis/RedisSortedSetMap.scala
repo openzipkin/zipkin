@@ -19,7 +19,7 @@ package com.twitter.zipkin.storage.redis
 import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.protocol.{Limit, ZInterval, ZRangeResults}
 import com.twitter.util.{Duration, Future}
-import org.jboss.netty.buffer.ChannelBuffer
+import org.jboss.netty.buffer.{ChannelBuffers, ChannelBuffer}
 
 /**
  * RedisSortedSetMap is a map from strings to sorted sets.
@@ -28,7 +28,10 @@ import org.jboss.netty.buffer.ChannelBuffer
  * @param defaultTTL the timeout on the sorted set
  */
 class RedisSortedSetMap(database: Client, prefix: String, defaultTTL: Option[Duration]) {
-  private[this] def preface(key: String) = "%s:%s".format(prefix, key)
+  private[this] def preface(key: String) = {
+    val str = "%s:%s".format(prefix, key)
+    ChannelBuffers.copiedBuffer(str)
+  }
 
   /**
    * Adds a buffer with a score to the sorted set specified by key.
@@ -48,7 +51,8 @@ class RedisSortedSetMap(database: Client, prefix: String, defaultTTL: Option[Dur
    * @param stop items must have a score smaller than this
    * @param count number of items to return
    */
-  def get(key: String, start: Double, stop: Double, count: Long): Future[ZRangeResults] =
+  def get(key: String, start: Double, stop: Double, count: Long): Future[ZRangeResults] = {
     database.zRevRangeByScore(preface(key), ZInterval(stop), ZInterval(start), true, Some(Limit(0, count)))
+  }
 
 }

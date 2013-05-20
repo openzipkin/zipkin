@@ -42,7 +42,7 @@ object Scribe {
       new CollectorInterface[T] {
         val filter = new ScribeFilter
 
-        def apply() = (writeQueue: WriteQueue[T], stores: Seq[Store], address: InetSocketAddress, statsReceiver: StatsReceiver, tracerFactory: Tracer.Factory) => {
+        def apply() = (writeQueue: WriteQueue[T], stores: Seq[Store], address: InetSocketAddress, statsReceiver: StatsReceiver, tracer: Tracer) => {
 
           Logger.get().info("Starting collector service on addr " + address)
 
@@ -57,7 +57,7 @@ object Scribe {
             .bindTo(address)
             .name("ZipkinCollector")
             .reportTo(statsReceiver)
-            .tracerFactory(tracerFactory)
+            .tracer(tracer)
             .build(new gen.ZipkinCollector.FinagledService(service, new TBinaryProtocol.Factory()))
         }
       }

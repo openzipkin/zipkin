@@ -58,6 +58,6 @@ case class WebBuilder(
 
     val resource = new Resource(resourceDirs)
 
-    new ZipkinWeb(app, resource, serverBuilder.serverPort, serverBuilder.tracerFactory, serverBuilder.exceptionMonitorFactory)
+    new ZipkinWeb(app, resource, serverBuilder.serverPort, serverBuilder.tracer, serverBuilder.exceptionMonitorFactory, queryClient)
   }
 }

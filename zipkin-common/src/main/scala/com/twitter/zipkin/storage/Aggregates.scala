@@ -22,6 +22,9 @@ import com.twitter.util.Future
  * online storage
  */
 trait Aggregates {
+
+  def close()
+
   def getTopAnnotations(serviceName: String): Future[Seq[String]]
   def getTopKeyValueAnnotations(serviceName: String): Future[Seq[String]]
   def getDependencies(serviceName: String): Future[Seq[String]]
@@ -32,6 +35,9 @@ trait Aggregates {
 }
 
 class NullAggregates extends Aggregates {
+
+  def close() {}
+
   def getDependencies(serviceName: String)         = Future(Seq.empty[String])
   def getTopAnnotations(serviceName: String)         = Future(Seq.empty[String])
   def getTopKeyValueAnnotations(serviceName: String) = Future(Seq.empty[String])

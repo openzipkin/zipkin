@@ -1,1 +1,1 @@
-../../../zipkin-thrift/src/main/thrift/zipkinCore.thrift
+../../../zipkin-scrooge/src/main/thrift/zipkinCore.thrift

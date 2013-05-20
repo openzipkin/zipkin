@@ -19,7 +19,7 @@ package com.twitter.zipkin.collector
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finagle.Service
 import com.twitter.logging.Logger
-import com.twitter.util.Future
+import com.twitter.util.{Time, Future}
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
@@ -46,8 +46,9 @@ class Kafka(
     }
   }
 
-  override def release() {
+  override def close(deadline: Time) = {
     kafka.close()
+    super.close(deadline)
   }
 }
 

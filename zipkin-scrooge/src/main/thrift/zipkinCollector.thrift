@@ -1,1 +1,1 @@
-../../../../zipkin-thrift/src/main/thrift/zipkinCollector.thrift
+../../../../zipkin-thrift/src/main/resources/thrift/zipkinCollector.thrift
