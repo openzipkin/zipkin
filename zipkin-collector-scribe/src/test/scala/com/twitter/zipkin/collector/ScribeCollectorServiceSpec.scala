@@ -24,6 +24,7 @@ import com.twitter.zipkin.gen
 import com.twitter.zipkin.storage.{Store, Aggregates}
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
+import com.twitter.util.Await
 
 class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMocker {
   val serializer = new BinaryThriftStructSerializer[gen.Span] {
@@ -54,7 +55,7 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
         one(queue).add(List(base64)) willReturn(true)
       }
 
-      gen.ResultCode.Ok mustEqual cs.log(validList)()
+      gen.ResultCode.Ok mustEqual Await.result(cs.log(validList))
     }
 
     "push back" in {
@@ -64,7 +65,7 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
         one(queue).add(List(base64)) willReturn(false)
       }
 
-      gen.ResultCode.TryLater mustEqual cs.log(validList)()
+      gen.ResultCode.TryLater mustEqual Await.result(cs.log(validList))
     }
 
     "ignore wrong category" in {
@@ -74,7 +75,7 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
         never(queue).add(any)
       }
 
-      gen.ResultCode.Ok mustEqual cs.log(wrongCatList)()
+      gen.ResultCode.Ok mustEqual Await.result(cs.log(wrongCatList))
     }
 
     "store aggregates" in {

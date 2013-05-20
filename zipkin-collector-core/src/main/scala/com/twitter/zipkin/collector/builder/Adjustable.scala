@@ -55,7 +55,7 @@ object Adjustable {
 
     def apply() = {
       val zkClient = zkClientBuilder.apply()
-      val connector = CommonConnector(zkClient)(FuturePool.defaultPool)
+      val connector = CommonConnector(zkClient)(FuturePool.unboundedPool)
 
       val zClient = ZkClient(connector)
         .withAcl(Ids.OPEN_ACL_UNSAFE.asScala)
