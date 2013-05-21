@@ -23,6 +23,7 @@ import org.specs.Specification
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query.Trace
 import com.twitter.zipkin.cassandra.{Keyspace, StorageBuilder}
+import com.twitter.util.Await
 
 class CassandraStorageSpec extends Specification with JMocker with ClassMocker {
   object FakeServer extends FakeCassandra
@@ -57,15 +58,15 @@ class CassandraStorageSpec extends Specification with JMocker with ClassMocker {
     }
 
     "getSpansByTraceId" in {
-      cassandraStorage.storeSpan(span1)()
-      val spans = cassandraStorage.getSpansByTraceId(span1.traceId)()
+      Await.result(cassandraStorage.storeSpan(span1))
+      val spans = Await.result(cassandraStorage.getSpansByTraceId(span1.traceId))
       spans.isEmpty mustEqual false
       spans(0) mustEqual span1
     }
 
     "getSpansByTraceIds" in {
-      cassandraStorage.storeSpan(span1)()
-      val actual1 = cassandraStorage.getSpansByTraceIds(List(span1.traceId))()
+      Await.result(cassandraStorage.storeSpan(span1))
+      val actual1 = Await.result(cassandraStorage.getSpansByTraceIds(List(span1.traceId)))
       actual1.isEmpty mustEqual false
 
       val trace1 = Trace(actual1(0))
@@ -74,8 +75,8 @@ class CassandraStorageSpec extends Specification with JMocker with ClassMocker {
 
       val span2 = Span(666, "methodcall2", spanId, None, List(ann2),
         List(binaryAnnotation("BAH2", "BEH2")))
-      cassandraStorage.storeSpan(span2)()
-      val actual2 = cassandraStorage.getSpansByTraceIds(List(span1.traceId, span2.traceId))()
+      Await.result(cassandraStorage.storeSpan(span2))
+      val actual2 = Await.result(cassandraStorage.getSpansByTraceIds(List(span1.traceId, span2.traceId)))
       actual2.isEmpty mustEqual false
 
       val trace2 = Trace(actual2(0))
@@ -87,14 +88,14 @@ class CassandraStorageSpec extends Specification with JMocker with ClassMocker {
     }
 
     "getSpansByTraceIds should return empty list if no trace exists" in {
-      val actual1 = cassandraStorage.getSpansByTraceIds(List(span1.traceId))()
+      val actual1 = Await.result(cassandraStorage.getSpansByTraceIds(List(span1.traceId)))
       actual1.isEmpty mustEqual true
     }
 
     "set time to live on a trace and then get it" in {
-      cassandraStorage.storeSpan(span1)()
-      cassandraStorage.setTimeToLive(span1.traceId, 1234.seconds)()
-      cassandraStorage.getTimeToLive(span1.traceId)() mustEqual 1234.seconds
+      Await.result(cassandraStorage.storeSpan(span1))
+      Await.result(cassandraStorage.setTimeToLive(span1.traceId, 1234.seconds))
+      Await.result(cassandraStorage.getTimeToLive(span1.traceId)) mustEqual 1234.seconds
     }
   }
 }

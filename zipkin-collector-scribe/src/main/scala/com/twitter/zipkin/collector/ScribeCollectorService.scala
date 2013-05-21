@@ -31,7 +31,7 @@ class ScribeCollectorService(
 ) extends gen.ZipkinCollector.FutureIface with CollectorService {
   private val log = Logger.get
 
-  val futurePool = FuturePool.defaultPool
+  val futurePool = FuturePool.unboundedPool
 
   val TryLater = Future(gen.ResultCode.TryLater)
   val Ok = Future(gen.ResultCode.Ok)

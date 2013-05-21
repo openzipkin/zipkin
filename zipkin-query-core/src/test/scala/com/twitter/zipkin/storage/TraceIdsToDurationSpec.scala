@@ -18,7 +18,7 @@ package com.twitter.zipkin.storage
 import com.twitter.zipkin.query.{QueryService, adjusters}
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
-import com.twitter.util.Future
+import com.twitter.util.{Await, Future}
 
 class TraceIdsToDurationSpec extends Specification with JMocker with ClassMocker {
 
@@ -40,7 +40,7 @@ class TraceIdsToDurationSpec extends Specification with JMocker with ClassMocker
       td.append(2)
       td.append(3)
 
-      val durations = td.getDurations()()
+      val durations = Await.result(td.getDurations())
       durations(0) mustEqual duration1
       durations(1) mustEqual duration2
       durations(2) mustEqual duration3

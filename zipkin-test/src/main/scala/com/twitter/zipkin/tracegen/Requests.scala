@@ -25,6 +25,7 @@ import org.apache.thrift.protocol.TBinaryProtocol
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.thrift.ThriftClientFramedCodec
 import scala.{List, Seq}
+import com.twitter.util.Await
 
 class Requests(collectorHost: String, collectorPort: Int, queryHost: String, queryPort: Int) {
 
@@ -47,15 +48,15 @@ class Requests(collectorHost: String, collectorPort: Int, queryHost: String, que
     traces.foreach(t => {
       t.spans.foreach(s => {
         val entries = List(gen.LogEntry("zipkin", serializer.toString(s)))
-        println("Sending: " + s + ". Response: " + client.log(entries)())
+        println("Sending: " + s + ". Response: " + Await.result(client.log(entries)))
       })
     })
 
-    service.release()
+    service.close()
   }
 
   def printTrace(traceIds: Seq[Long], client: gen.ZipkinQuery.FinagledClient) {
-    val traces = client.getTracesByIds(traceIds, List(gen.Adjust.TimeSkew))()
+    val traces = Await.result(client.getTracesByIds(traceIds, List(gen.Adjust.TimeSkew)))
     traces.foreach {
       trace =>
         trace.spans.foreach {
@@ -76,33 +77,33 @@ class Requests(collectorHost: String, collectorPort: Int, queryHost: String, que
     val client = new gen.ZipkinQuery.FinagledClient(serviceClient, protocol)
 
     println("Querying for service name: " + service + " and span name " + span)
-    val ts1 = client.getTraceIdsBySpanName(service, span, Long.MaxValue, maxTraces, gen.Order.DurationDesc)()
+    val ts1 = Await.result(client.getTraceIdsBySpanName(service, span, Long.MaxValue, maxTraces, gen.Order.DurationDesc))
     printTrace(ts1, client)
 
     println("Querying for service name: " + service)
-    val ts2 = client.getTraceIdsBySpanName(service, "", Long.MaxValue, maxTraces, gen.Order.DurationDesc)()
+    val ts2 = Await.result(client.getTraceIdsBySpanName(service, "", Long.MaxValue, maxTraces, gen.Order.DurationDesc))
     printTrace(ts2, client)
 
     println("Querying for annotation: " + annotation)
-    val ts3 = client.getTraceIdsByAnnotation(service, annotation, ByteBuffer.wrap("".getBytes), Long.MaxValue, maxTraces, gen.Order.DurationDesc)()
+    val ts3 = Await.result(client.getTraceIdsByAnnotation(service, annotation, ByteBuffer.wrap("".getBytes), Long.MaxValue, maxTraces, gen.Order.DurationDesc))
     printTrace(ts3, client)
 
     println("Querying for kv annotation: " + kvAnnotation)
-    val ts4 = client.getTraceIdsByAnnotation(service, kvAnnotation._1, kvAnnotation._2, Long.MaxValue, maxTraces, gen.Order.DurationDesc)()
+    val ts4 = Await.result(client.getTraceIdsByAnnotation(service, kvAnnotation._1, kvAnnotation._2, Long.MaxValue, maxTraces, gen.Order.DurationDesc))
     printTrace(ts4, client)
 
-    val traces = client.getTracesByIds(ts4, List(gen.Adjust.TimeSkew))()
+    val traces = Await.result(client.getTracesByIds(ts4, List(gen.Adjust.TimeSkew)))
     println(traces.toString)
 
-    val traceTimeline = client.getTraceTimelinesByIds(ts4, List(gen.Adjust.TimeSkew))()
+    val traceTimeline = Await.result(client.getTraceTimelinesByIds(ts4, List(gen.Adjust.TimeSkew)))
 
     println(traceTimeline.toString)
 
-    println("Data ttl: " + client.getDataTimeToLive()())
-    println("Service names: " + client.getServiceNames()())
-    println("Span names for : " + service + " " + client.getSpanNames(service)())
+    println("Data ttl: " + Await.result(client.getDataTimeToLive()))
+    println("Service names: " + Await.result(client.getServiceNames()))
+    println("Span names for : " + service + " " + Await.result(client.getSpanNames(service)))
 
-    serviceClient.release()
+    serviceClient.close()
   }
 
 
