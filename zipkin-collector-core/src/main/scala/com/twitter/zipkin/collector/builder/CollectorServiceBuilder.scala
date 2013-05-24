@@ -109,9 +109,6 @@ case class CollectorServiceBuilder[T](
       _.apply()
     }
     val storeProcessors = stores flatMap { store =>
-      // TODO - do something with aggregate store apart from close it
-      store.aggregates.close()
-
       Seq(new StorageService(store.storage), new ClientIndexFilter andThen new IndexService(store.index))
     }
 

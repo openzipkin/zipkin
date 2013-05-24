@@ -27,7 +27,7 @@ import com.twitter.zipkin.conversions.thrift._
  */
 class ScribeCollectorService(
   val writeQueue: WriteQueue[Seq[_ <: String]],
-  stores: Seq[Store],
+  val stores: Seq[Store],
   categories: Set[String]
 ) extends gen.ZipkinCollector.FutureIface with CollectorService {
   private val log = Logger.get
