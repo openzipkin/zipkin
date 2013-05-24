@@ -15,7 +15,9 @@
  */
 package com.twitter.zipkin.storage
 
-import com.twitter.util.Future
+import com.twitter.util.{Time, Future}
+import com.twitter.zipkin.common.Dependencies
+import com.twitter.algebird.Monoid
 
 /**
  * Storage and retrieval interface for aggregates that may be computed offline and reloaded into
@@ -25,11 +27,11 @@ trait Aggregates {
 
   def close()
 
+  def getDependencies(startDate: Time, endDate: Option[Time]=None): Future[Dependencies]
+  def storeDependencies(dependencies: Dependencies): Future[Unit]
+
   def getTopAnnotations(serviceName: String): Future[Seq[String]]
   def getTopKeyValueAnnotations(serviceName: String): Future[Seq[String]]
-  def getDependencies(serviceName: String): Future[Seq[String]]
-
-  def storeDependencies(serviceName: String, endpoints: Seq[String]): Future[Unit]
   def storeTopAnnotations(serviceName: String, a: Seq[String]): Future[Unit]
   def storeTopKeyValueAnnotations(serviceName: String, a: Seq[String]): Future[Unit]
 }
@@ -38,11 +40,11 @@ class NullAggregates extends Aggregates {
 
   def close() {}
 
-  def getDependencies(serviceName: String)         = Future(Seq.empty[String])
+  def getDependencies(startDate: Time, endDate: Option[Time] = None) = Future(Monoid.zero[Dependencies])
+  def storeDependencies(dependencies: Dependencies): Future[Unit]                    = Future.Unit
+
   def getTopAnnotations(serviceName: String)         = Future(Seq.empty[String])
   def getTopKeyValueAnnotations(serviceName: String) = Future(Seq.empty[String])
-
-  def storeDependencies(serviceName: String, endpoints: Seq[String]): Future[Unit]         = Future.Unit
   def storeTopAnnotations(serviceName: String, a: Seq[String]): Future[Unit]         = Future.Unit
   def storeTopKeyValueAnnotations(serviceName: String, a: Seq[String]): Future[Unit] = Future.Unit
 }

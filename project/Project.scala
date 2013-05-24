@@ -11,6 +11,7 @@ object Zipkin extends Build {
   val UTIL_VERSION    = "6.3.4"
   val SCROOGE_VERSION = "3.1.1"
   val ZOOKEEPER_VERSION = "0.0.30"
+  val ALGEBIRD_VERSION  = "0.1.13"
 
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
   val travisCi = Option(System.getenv("SBT_TRAVIS_CI")) // for adding travis ci maven repos before others
@@ -22,7 +23,8 @@ object Zipkin extends Build {
     "org.hamcrest"            %  "hamcrest-all" % "1.1"   % "test",
     "cglib"                   %  "cglib"        % "2.2.2" % "test",
     "asm"                     %  "asm"          % "1.5.3" % "test",
-    "org.objenesis"           %  "objenesis"    % "1.1"   % "test"
+    "org.objenesis"           %  "objenesis"    % "1.1"   % "test",
+    "junit"                   %  "junit"        % "4.7"   % "test"
   )
 
   def zipkinSettings = Seq(
@@ -87,6 +89,7 @@ object Zipkin extends Build {
         "com.twitter" % "finagle-exception" % FINAGLE_VERSION,
         "com.twitter" % "ostrich"           % OSTRICH_VERSION,
         "com.twitter" % "util-core"         % UTIL_VERSION,
+        "com.twitter" %% "algebird-core"    % ALGEBIRD_VERSION,
 
         "com.twitter.common.zookeeper" % "client"    % ZOOKEEPER_VERSION
       ) ++ testDependencies
@@ -115,6 +118,7 @@ object Zipkin extends Build {
         "com.twitter" %  "finagle-zipkin"    % FINAGLE_VERSION,
         "com.twitter" %  "ostrich"           % OSTRICH_VERSION,
         "com.twitter" %  "util-core"         % UTIL_VERSION,
+        "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
         "com.twitter" %  "scrooge-runtime"   % SCROOGE_VERSION
       ) ++ testDependencies
     ).dependsOn(common)
@@ -130,6 +134,7 @@ object Zipkin extends Build {
       "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
       "com.twitter" % "finagle-zipkin"    % FINAGLE_VERSION,
       "com.twitter" % "ostrich"           % OSTRICH_VERSION,
+      "com.twitter" %% "algebird-core"    % ALGEBIRD_VERSION,
       "com.twitter" % "util-core"         % UTIL_VERSION,
       "com.twitter" % "util-zk"           % UTIL_VERSION,
       "com.twitter" % "util-zk-common"    % UTIL_VERSION,
@@ -170,6 +175,7 @@ object Zipkin extends Build {
         "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
         "com.twitter" % "finagle-zipkin"    % FINAGLE_VERSION,
         "com.twitter" % "ostrich"           % OSTRICH_VERSION,
+        "com.twitter" %% "algebird-core"    % ALGEBIRD_VERSION,
         "com.twitter" % "util-core"         % UTIL_VERSION,
         "com.twitter" % "util-zk"           % UTIL_VERSION,
         "com.twitter" % "util-zk-common"    % UTIL_VERSION,
@@ -251,7 +257,8 @@ object Zipkin extends Build {
 
         "com.twitter" % "finagle-serversets" % FINAGLE_VERSION,
         "com.twitter" % "finagle-zipkin"     % FINAGLE_VERSION,
-        "com.twitter" % "finagle-exception"  % FINAGLE_VERSION
+        "com.twitter" % "finagle-exception"  % FINAGLE_VERSION,
+        "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION
       ) ++ testDependencies,
 
       PackageDist.packageDistZipName := "zipkin-web.zip",

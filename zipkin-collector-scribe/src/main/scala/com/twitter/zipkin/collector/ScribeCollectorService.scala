@@ -20,6 +20,7 @@ import com.twitter.ostrich.stats.Stats
 import com.twitter.util.{FuturePool, Future}
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.storage.Store
+import com.twitter.zipkin.conversions.thrift._
 
 /**
  * This class implements the log method from the Scribe Thrift interface.
@@ -78,19 +79,17 @@ class ScribeCollectorService(
     }
   }
 
-  def storeDependencies(serviceName: String, endpoints:Seq[String]): Future[Unit] = {
-    Stats.incr("collector.storeTopAnnotations")
-    log.info("storeDependencies: " + serviceName + "; " + endpoints)
+  def storeDependencies(dependencies: gen.Dependencies) : Future[Unit] = {
 
     Stats.timeFutureMillis("collector.storeDependencies") {
       Future.join {
-        stores map { _.aggregates.storeDependencies(serviceName, endpoints) }
+        stores map { _.aggregates.storeDependencies(dependencies.toDependencies) }
       }
     } rescue {
       case e: Exception =>
         log.error(e, "storeDependencies failed")
         Stats.incr("collector.storeDependencies")
-        Future.exception(gen.AdjustableRateException(e.toString))
+        Future.exception(gen.StoreAggregatesException(e.toString))
     }
   }
 

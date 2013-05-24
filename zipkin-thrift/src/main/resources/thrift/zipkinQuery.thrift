@@ -15,6 +15,7 @@ namespace java com.twitter.zipkin.gen
 namespace rb Zipkin
 
 include "zipkinCore.thrift"
+include "zipkinDependencies.thrift"
 
 struct Trace {
   1: list<zipkinCore.Span> spans
@@ -212,7 +213,7 @@ service ZipkinQuery {
     i32 getDataTimeToLive() throws (1: QueryException qe);
 
     /** Aggregates related */
-    list<string> getDependencies(1: string service_name) throws (1: QueryException qe);
+    zipkinDependencies.Dependencies getDependencies(1: i64 start_time, 2: optional i64 end_time) throws (1: QueryException qe);
     list<string> getTopAnnotations(1: string service_name) throws (1: QueryException qe);
     list<string> getTopKeyValueAnnotations(1: string service_name) throws (1: QueryException qe);
 }
