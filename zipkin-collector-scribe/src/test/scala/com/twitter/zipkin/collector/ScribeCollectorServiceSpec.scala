@@ -17,16 +17,23 @@
 package com.twitter.zipkin.collector
 
 import com.twitter.scrooge.BinaryThriftStructSerializer
-import com.twitter.zipkin.common.{Span, Annotation}
+import com.twitter.zipkin.common._
 import com.twitter.zipkin.config.sampler.AdjustableRateConfig
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.storage.{Store, Aggregates}
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 import org.specs.mock.{ClassMocker, JMocker}
-import com.twitter.util.Await
+import com.twitter.util.{Time, Await}
+import com.twitter.conversions.time._
+import org.junit.runner.RunWith
+import org.specs.runner.JUnitSuiteRunner
+import com.twitter.algebird.Moments
+import com.twitter.zipkin.common.Service
+import com.twitter.zipkin.common.Annotation
 
-class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMocker {
+@RunWith(classOf[JUnitSuiteRunner])
+class ScribeCollectorServiceSpec extends SpecificationWithJUnit with JMocker with ClassMocker {
   val serializer = new BinaryThriftStructSerializer[gen.Span] {
     def codec = gen.Span
   }
@@ -78,10 +85,27 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
       gen.ResultCode.Ok mustEqual Await.result(cs.log(wrongCatList))
     }
 
+    "store dependencies" in {
+
+      "store dependencies" in {
+        val cs = scribeCollectorService
+        val m1 = Moments(2)
+        val m2 = Moments(4)
+        val dl1 = DependencyLink(Service("tfe"), Service("mobileweb"), m1)
+        val dl3 = DependencyLink(Service("Gizmoduck"), Service("tflock"), m2)
+        val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
+
+        expect {
+          one(mockAggregates).storeDependencies(deps1)
+        }
+
+        cs.storeDependencies(deps1.toThrift)
+      }
+    }
+
     "store aggregates" in {
       val serviceName = "mockingbird"
       val annotations = Seq("a" , "b", "c")
-      val dependencies = Seq("service1:10", "service2:5")
 
       "store top annotations" in {
         val cs = scribeCollectorService
@@ -101,15 +125,6 @@ class ScribeCollectorServiceSpec extends Specification with JMocker with ClassMo
         }
 
         cs.storeTopKeyValueAnnotations(serviceName, annotations)
-      }
-
-      "store dependencies" in {
-        val cs = scribeCollectorService
-        expect {
-          one(mockAggregates).storeDependencies(serviceName, dependencies)
-        }
-
-        cs.storeDependencies(serviceName, dependencies)
       }
     }
   }

@@ -61,7 +61,7 @@ case class CassandraAggregates(
     val realStart = floorTime(startDate)
     val realEnd = floorTime(endDate.getOrElse(startDate))
 
-    val rows = NumericRange[Long](realEnd, realStart, 1.days.inMicroseconds)
+    val rows = new NumericRange.Inclusive[Long](realEnd, realStart, 1.days.inMicroseconds)
 
     val result: Future[Iterable[gen.Dependencies]] =
       dependenciesCF.multigetRows(rows.toSet.asJava, None, None, Order.Normal, Int.MaxValue)
