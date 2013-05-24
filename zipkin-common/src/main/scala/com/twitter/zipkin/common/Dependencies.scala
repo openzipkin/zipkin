@@ -21,7 +21,6 @@ import com.twitter.algebird.{Monoid, Semigroup, Moments}
 
 /**
  * Abstraction of a service
- * TODO - use svcsvc
  */
 case class Service(name: String)
 

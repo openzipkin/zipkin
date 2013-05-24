@@ -86,21 +86,18 @@ class ScribeCollectorServiceSpec extends SpecificationWithJUnit with JMocker wit
     }
 
     "store dependencies" in {
+      val cs = scribeCollectorService
+      val m1 = Moments(2)
+      val m2 = Moments(4)
+      val dl1 = DependencyLink(Service("tfe"), Service("mobileweb"), m1)
+      val dl3 = DependencyLink(Service("Gizmoduck"), Service("tflock"), m2)
+      val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
 
-      "store dependencies" in {
-        val cs = scribeCollectorService
-        val m1 = Moments(2)
-        val m2 = Moments(4)
-        val dl1 = DependencyLink(Service("tfe"), Service("mobileweb"), m1)
-        val dl3 = DependencyLink(Service("Gizmoduck"), Service("tflock"), m2)
-        val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
-
-        expect {
-          one(mockAggregates).storeDependencies(deps1)
-        }
-
-        cs.storeDependencies(deps1.toThrift)
+      expect {
+        one(mockAggregates).storeDependencies(deps1)
       }
+
+      cs.storeDependencies(deps1.toThrift)
     }
 
     "store aggregates" in {
