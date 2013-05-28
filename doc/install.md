@@ -1,11 +1,23 @@
 ## Installation
 
+To get going quickly, see the
+[Ubuntu Quickstart](https://github.com/twitter/zipkin/blob/master/doc/ubuntu-quickstart.txt) and
+[Mac Quickstart](https://github.com/twitter/zipkin/blob/master/doc/mac-quickstart.md) guides.
+These will help you get Zipkin running on a single machine so that you can experiment with it.
+
+This document explains the services and dependencies with which Zipkin
+interacts, and more advanced configuration.
+
+
 ### Cassandra
-Zipkin relies on Cassandra for storage. So you will need to bring up a Cassandra cluster.
+
+Zipkin currently relies on [Cassandra](http://cassandra.apache.org/) for the
+collector's storage, although the storage system is pluggable and we'd like to
+see support for other databases.
 
 1. See Cassandra's <a href="http://cassandra.apache.org/">site</a> for instructions on how to start a cluster.
-2. Use the Zipkin Cassandra schema attached to this project. You can create the schema with the following command.
-`bin/cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt`
+2. Use the Zipkin Cassandra schema attached to this project. You can create the schema with the following command:
+`cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt`
 
 ### ZooKeeper
 Zipkin uses ZooKeeper for coordination. That's where we store the server side sample rate and register the servers.
@@ -38,8 +50,9 @@ If you want to get all fancy you can use a modified version of <a href="Scribe">
 We're hoping that others might add non-Scribe transports for the tracing data; there is no reason why Scribe has to be the only one.
 
 ### Zipkin servers
-We've developed Zipkin with <a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>, <a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>, and JDK7.
+We developed Zipkin with <a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>, <a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>, and JDK7.
 
+TODO: I don't know how much of this is still relevant
 1. `git clone https://github.com/twitter/zipkin.git`
 1. `cd zipkin`
 1. `cp zipkin-collector-service/config/collector-dev.scala zipkin-collector-service/config/collector-prod.scala`
