@@ -136,21 +136,12 @@ class CassandraAggregatesSpec extends SpecificationWithJUnit with JMocker with C
       "clobber old entries" in {
         val anns1 = Seq("a1", "a2", "a3", "a4")
         val anns2 = Seq("a5", "a6")
-        val m1 = Moments(4)
-        val m2 = Moments(8)
-        val dl1 = DependencyLink(Service("tfe-router"), Service("mobileweb"), m1)
-        val dl3 = DependencyLink(Service("Gizmoduck"), Service("tflock"), m2)
-        val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
 
         agg.storeTopAnnotations(serviceName, anns1).apply()
         agg.getTopAnnotations(serviceName).apply() mustEqual anns1
 
         agg.storeTopAnnotations(serviceName, anns2).apply()
         agg.getTopAnnotations(serviceName).apply() mustEqual anns2
-
-        // FIXME - probably shouldn't clobber non-overlapping deps
-        Await.result(agg.storeDependencies(deps1))
-        Await.result(agg.getDependencies(Time.fromSeconds(0))) mustEqual deps1
       }
     }
   }
