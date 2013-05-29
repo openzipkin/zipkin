@@ -3,7 +3,6 @@ resolvers ++= Seq(
   "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central/",
   "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype/",
   "twitter.com" at "http://maven.twttr.com/",
-  "scala-tools" at "http://scala-tools.org/repo-releases/",
   "maven" at "http://repo1.maven.org/maven2/",
   "freemarker" at "http://freemarker.sourceforge.net/maven2/",
   "local" at ("file:" + System.getProperty("user.home") + "/.m2/repository/"))
