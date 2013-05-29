@@ -12,11 +12,6 @@ Zipkin's dependencies (you can skip dependencies you already have installed):
     # Start Cassandra on login
     ln -sfv /opt/twitter/opt/cassandra/*.plist ~/Library/LaunchAgents
     launchctl load ~/Library/LaunchAgents/homebrew.mxcl.cassandra.plist
-    # Python is required for pip, which is required to get CQL
-    brew install python
-    pip install cql
-    # Zookeeper helps Zipkin sample data
-    brew install zookeeper
     # Scala Build Tool
     brew install sbt
     # VCS
@@ -31,17 +26,11 @@ Now we can install Zipkin itself:
     cd WORKSPACE
     git clone https://github.com/twitter/zipkin.git
     cd zipkin
-    # TODO are these next 3 lines necessary?
-    cp zipkin-collector-service/config/collector-dev.scala zipkin-collector-service/config/collector-prod.scala
-    cp zipkin-query-service/config/query-dev.scala zipkin-query-service/config/query-prod.scala
-    bin/sbt update package-dist
     # Install the Zipkin schema
     cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt
-    # TODO not sure this is necessary either
-    sudo mkdir -p /var/log/zipkin
 
-Zipkin is installed now. To run it (you'll need to leave these processes
-running, so use separate bash windows if you're doing it that way):
+Now you can run Zipkin (you'll need to leave these processes running, so use
+separate bash windows if you're doing it that way):
 
     # Collect data
     bin/collector
