@@ -21,6 +21,7 @@ import com.twitter.zipkin.query.{Timespan, Trace, TraceSummary, SpanTreeEntry}
 import collection.mutable
 import java.nio.ByteBuffer
 import org.specs.Specification
+import com.twitter.algebird.Monoid
 
 class TraceSpec extends Specification {
 
@@ -229,6 +230,40 @@ class TraceSpec extends Specification {
 
       val expected = Map("ep1" -> 1, "ep2" -> 2, "ep3" -> 1)
       trace1.serviceCounts mustEqual expected
+    }
+
+    "express identity when added to zero" in {
+      val result = Monoid.plus(trace, Monoid.zero[Trace])
+      result.spans must haveTheSameElementsAs(trace.spans)
+    }
+
+    "add via Monoid operations" in {
+
+      val ann1 = List(
+        Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
+        Annotation(300, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
+      val ann2 = List(
+        Annotation(150, Constants.ServerRecv, Some(Endpoint(456, 456, "service2"))),
+        Annotation(200, Constants.ServerSend, Some(Endpoint(456, 456, "service2"))))
+
+      val annMerged = List(
+        Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
+        Annotation(300, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))),
+        Annotation(150, Constants.ServerRecv, Some(Endpoint(456, 456, "service2"))),
+        Annotation(200, Constants.ServerSend, Some(Endpoint(456, 456, "service2")))
+      )
+
+      val span1 = Span(1234, "method1", 5678, None, ann1, Nil)
+      val span2 = Span(1234, "method2", 3333, Some(5678), ann2, Nil)
+      val span3 = Span(1234, "method1", 5678, None, ann2, Nil)
+      val spanCombined = Span(1234, "method1", 5678, None, ann1++ann2, Nil)
+
+      val trace1 = new Trace(Seq(span1, span2))
+      val trace2 = new Trace(Seq(span3))
+
+      val result = Monoid.plus(trace1, trace2)
+
+      result.spans must haveTheSameElementsAs(List(span2, spanCombined))
     }
   }
 }

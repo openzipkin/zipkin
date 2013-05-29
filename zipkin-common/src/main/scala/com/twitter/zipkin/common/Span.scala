@@ -17,6 +17,7 @@
 package com.twitter.zipkin.common
 
 import com.twitter.zipkin.Constants
+import com.twitter.algebird.{Monoid, Semigroup}
 
 /**
  * A span represents one RPC request. A trace is made up of many spans.
@@ -31,6 +32,34 @@ object Span {
 
   def apply(span: Span): Span = Span(span.traceId, span.name, span.id,
     span.parentId, span.annotations, span.binaryAnnotations, span.debug)
+
+  val invalid = new Span(0, "invalid", 0, None, Nil, Nil, true)
+  val zero = new Span(0, "zero", 0, None, Nil, Nil, true)
+
+  implicit val sg:Monoid[Span] = new Monoid[Span] {
+    def plus(l: Span, r:Span) = {
+      if (l == zero || r == invalid) r
+      else if (r == zero || l == invalid) l
+      else {
+        // This is a test for duplicate annotations in a span.  When we merge spans and we find
+        // duplicates, the span becomes invalid and we just ignore any further entries.  This is useful
+        // for filtering out rogue clients logging bogus data into the system.
+        val duplicates = for {
+          annotation <- Seq("cs", "cr", "ss", "sr")
+          lann <- l.annotations
+          rann <- r.annotations
+          if (lann.value == rann.value && rann.value == annotation)
+        } yield annotation
+
+        if (duplicates.isEmpty)
+          l.mergeSpan(r)
+        else
+          invalid
+      }
+    }
+
+    val zero = Span.zero
+  }
 }
 
 /**

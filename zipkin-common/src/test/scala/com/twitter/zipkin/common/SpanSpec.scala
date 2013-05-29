@@ -18,6 +18,7 @@ package com.twitter.zipkin.common
 
 import org.specs.Specification
 import com.twitter.zipkin.Constants
+import com.twitter.algebird.Semigroup
 
 class SpanSpec extends Specification {
 
@@ -56,7 +57,9 @@ class SpanSpec extends Specification {
       val span2 = Span(12345, "methodcall", 666, None, List(ann2), Nil, false)
       val expectedSpan = Span(12345, "methodcall", 666, None, List(ann1, ann2), Nil, true)
       val actualSpan = span1.mergeSpan(span2)
+      val algebirdSpan = Semigroup.plus(span1, span2)
       actualSpan mustEqual expectedSpan
+      expectedSpan mustEqual algebirdSpan
     }
 
     "merge span with Unknown span name with known span name" in {

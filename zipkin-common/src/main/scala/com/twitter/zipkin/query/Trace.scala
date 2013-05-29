@@ -16,10 +16,10 @@
 package com.twitter.zipkin.query
 
 import com.twitter.finagle.tracing.{Trace => FTrace}
-import com.twitter.logging.Logger
 import com.twitter.zipkin.common.{BinaryAnnotation, Endpoint, Span}
 import java.nio.ByteBuffer
 import scala.collection.mutable
+import com.twitter.algebird.Monoid
 
 /**
  * A chunk of time, between a start and an end.
@@ -31,6 +31,41 @@ case class Timespan(start: Long, end: Long)
  */
 object Trace {
   def apply(spanTree: SpanTreeEntry): Trace = Trace(spanTree.toList)
+
+  def invalid = Trace(Seq(Span.invalid))
+
+  def zero = Trace(Seq.empty[Span])
+
+  val MAX_SPANS = 10000 // any trace with more spans becomes invalid
+
+  implicit val monoid:Monoid[Trace] = new Monoid[Trace] {
+    def plus(l: Trace, r: Trace) = {
+      for (lId <- l.s.headOption.map(_.traceId);
+           rId <- r.s.headOption.map(_.traceId)) {
+        if (lId != rId) throw new IllegalArgumentException("Trace Ids must match")
+      }
+
+      if (l == Trace.invalid || r == Trace.invalid ||
+          l.s.size + r.s.size > MAX_SPANS ||
+          l.s.contains(Span.invalid) || r.s.contains(Span.invalid))  // any trace with an invalid span is invalid
+        Trace.invalid
+      else {
+        // merge span lists by combining spans with matching ids
+        val newspans = (l.s ++ r.s) // combine both lists
+          .map { span => (span.id -> span )}  // make tuples of span ids
+          .groupBy(_._1) // group by span id
+          .map(_._2) // take just the tuples
+          .map { tuples =>
+            tuples.map(_._2) // take just the spans
+              .foldLeft(Span.zero) { (a,b) => Monoid.plus(a,b) } // sum them up
+          }
+
+        new Trace(newspans.toSeq)
+      }
+    }
+
+    val zero = Trace.zero
+  }
 }
 
 case class Trace(private val s: Seq[Span]) {
@@ -67,6 +102,7 @@ case class Trace(private val s: Seq[Span]) {
    * that is closes to the root. For example it could be that we don't yet log spans
    * from the root service, then we want the one just below that.
    * FIXME if there are holes in the trace this might not return the correct span
+   * Span holes are impossible afaik.  TraceId is handed down with parent id.
    */
   lazy val getRootMostSpan: Option[Span] = {
     getRootSpan.orElse {
