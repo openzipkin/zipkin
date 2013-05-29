@@ -17,7 +17,9 @@ namespace rb Zipkin
 //********* Zipkin Aggregate Dependency Related Structs ***********
 
 
-// hold statistical information about stuff.  Maps to algebird Moments
+// This is a 1-to-1 translation of algebird Moments structure for holding
+// count/mean/variance(stdDev)/skewness/etc about a set of values.  It's
+// used below to represent span time duration ranges.
 struct Moments {
   1: i64 m0,    // count
   2: double m1, // mean
@@ -34,7 +36,7 @@ struct DependencyLink {
 }
 
 struct Dependencies {
-  1: i64 startTime  // microseconds from epoch
-  2: i64 endTime    // microseconds from epoch
+  1: i64 start_time  // microseconds from epoch
+  2: i64 end_time    // microseconds from epoch
   3: list<DependencyLink> links // our data
 }

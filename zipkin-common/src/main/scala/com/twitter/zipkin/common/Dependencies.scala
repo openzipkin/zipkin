@@ -60,8 +60,8 @@ object Dependencies {
   implicit val monoid:Monoid[Dependencies] = new Monoid[Dependencies] {
     def plus(l: Dependencies, r: Dependencies) = {
       // new start/end should be the inclusive time span of both items
-      val newStart = Seq(r.startTime, l.startTime).min
-      val newEnd = Seq(r.endTime, l.endTime).max
+      val newStart = r.startTime min l.startTime
+      val newEnd = r.endTime max l.endTime
 
       // links are merged by mapping to parent/child and summing corresponding links
       val lLinkMap = l.links.map { link => (link.parent, link.child) -> link }.toMap

@@ -79,7 +79,7 @@ class ScribeCollectorService(
     }
   }
 
-  def storeDependencies(dependencies: gen.Dependencies) : Future[Unit] = {
+  def storeDependencies(dependencies: gen.Dependencies): Future[Unit] = {
 
     Stats.timeFutureMillis("collector.storeDependencies") {
       Future.join {

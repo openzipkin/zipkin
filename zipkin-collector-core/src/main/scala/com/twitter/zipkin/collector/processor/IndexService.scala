@@ -44,7 +44,6 @@ class IndexService(index: Index) extends Service[Span, Unit] {
   }
 
   override def close(deadline: Time) = {
-    index.close()
     super.close(deadline)
   }
 }
