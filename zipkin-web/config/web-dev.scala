@@ -17,9 +17,6 @@ import com.twitter.finagle.zipkin.thrift.ZipkinTracer
 import com.twitter.zipkin.builder.{QueryClient, WebBuilder}
 import java.net.{InetSocketAddress, InetAddress}
 
-// We'd rather use InetAddress.getLoopbackAddress than 127.0.0.1 but it's JDK
-// 1.7+. Previously we used InetAddress.getLocalHost, but that doesn't let us
-// do SSH port forwarding.
 val queryClient = QueryClient.static(new InetSocketAddress("127.0.0.1", 9411)) map {
   _.tracer(ZipkinTracer.mk())
 }
