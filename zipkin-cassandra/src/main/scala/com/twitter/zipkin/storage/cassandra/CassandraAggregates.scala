@@ -48,18 +48,13 @@ case class CassandraAggregates(
   val Delimiter: String = ":"
 
   /**
-   * floor the time to day in milliseconds
-   */
-  private[this] def floorTime(t: Time) = { (t.inMicroseconds / 1.days.inMicroseconds) * 1.days.inMicroseconds }
-
-  /**
    * Get the top annotations for a service name
    */
   def getDependencies(startDate: Time, endDate: Option[Time]) : Future[Dependencies] = {
 
     // floor to nearest day in microseconds
-    val realStart = floorTime(startDate)
-    val realEnd = floorTime(endDate.getOrElse(startDate))
+    val realStart = startDate.floor(1.day).inMicroseconds
+    val realEnd = endDate.getOrElse(startDate).floor(1.day).inMicroseconds
 
     val rows = new NumericRange.Inclusive[Long](realEnd, realStart, 1.days.inMicroseconds)
 
@@ -113,7 +108,7 @@ case class CassandraAggregates(
 
   /** Synchronize these so we don't do concurrent writes from the same box */
   def storeDependencies(deps: Dependencies): Future[Unit] = {
-    store[Long,gen.Dependencies](dependenciesCF, floorTime(deps.startTime), Seq(deps.toThrift))
+    store[Long,gen.Dependencies](dependenciesCF, deps.startTime.floor(1.day).inMicroseconds, Seq(deps.toThrift))
   }
 
   /** Synchronize these so we don't do concurrent writes from the same box */
