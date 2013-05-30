@@ -265,5 +265,14 @@ class TraceSpec extends Specification {
 
       result.spans must haveTheSameElementsAs(List(span2, spanCombined))
     }
+
+    "fail when instructed to add differing traces" in {
+      val trace2 = Trace(trace.spans.map(_.copy(traceId = 31414)))
+      Monoid.plus(trace2, trace) must throwA[IllegalArgumentException]
+    }
+
+    "return invalid when combined with an invalid trace" in {
+      Monoid.plus(trace, Trace.invalid) mustEqual Trace.invalid
+    }
   }
 }

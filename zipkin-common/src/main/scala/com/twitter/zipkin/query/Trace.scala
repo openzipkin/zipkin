@@ -40,27 +40,26 @@ object Trace {
 
   implicit val monoid:Monoid[Trace] = new Monoid[Trace] {
     def plus(l: Trace, r: Trace) = {
-      for (lId <- l.s.headOption.map(_.traceId);
-           rId <- r.s.headOption.map(_.traceId)) {
-        if (lId != rId) throw new IllegalArgumentException("Trace Ids must match")
-      }
+      for {
+        lId <- l.s.headOption.map(_.traceId)
+        rId <- r.s.headOption.map(_.traceId)
+        if (l != Trace.invalid && r != Trace.invalid && lId != rId)
+      } throw new IllegalArgumentException("Trace Ids must match")
 
-      if (l == Trace.invalid || r == Trace.invalid ||
-          l.s.size + r.s.size > MAX_SPANS ||
-          l.s.contains(Span.invalid) || r.s.contains(Span.invalid))  // any trace with an invalid span is invalid
+      if (l.s.size + r.s.size > MAX_SPANS)
         Trace.invalid
       else {
         // merge span lists by combining spans with matching ids
         val newspans = (l.s ++ r.s) // combine both lists
-          .map { span => (span.id -> span )}  // make tuples of span ids
-          .groupBy(_._1) // group by span id
-          .map(_._2) // take just the tuples
-          .map { tuples =>
-            tuples.map(_._2) // take just the spans
-              .foldLeft(Span.zero) { (a,b) => Monoid.plus(a,b) } // sum them up
-          }
+          .groupBy(_.id) // group by span id
+          .values // ditch the id key
+          .map { Monoid.sum(_) } // combine resulting spans
+          .toSeq
 
-        new Trace(newspans.toSeq)
+        if (newspans.contains(Span.invalid))
+          Trace.invalid
+        else
+          new Trace(newspans.toSeq)
       }
     }
 

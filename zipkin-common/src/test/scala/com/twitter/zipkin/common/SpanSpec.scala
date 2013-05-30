@@ -18,7 +18,7 @@ package com.twitter.zipkin.common
 
 import org.specs.Specification
 import com.twitter.zipkin.Constants
-import com.twitter.algebird.Semigroup
+import com.twitter.algebird.{Monoid, Semigroup}
 
 class SpanSpec extends Specification {
 
@@ -57,7 +57,7 @@ class SpanSpec extends Specification {
       val span2 = Span(12345, "methodcall", 666, None, List(ann2), Nil, false)
       val expectedSpan = Span(12345, "methodcall", 666, None, List(ann1, ann2), Nil, true)
       val actualSpan = span1.mergeSpan(span2)
-      val algebirdSpan = Semigroup.plus(span1, span2)
+      val algebirdSpan = Monoid.plus(span1, span2)
       actualSpan mustEqual expectedSpan
       expectedSpan mustEqual algebirdSpan
     }
@@ -68,6 +68,11 @@ class SpanSpec extends Specification {
 
       span1.mergeSpan(span2).name mustEqual "get"
       span2.mergeSpan(span1).name mustEqual "get"
+    }
+
+    "merge invalid span with valid span" in {
+      val span1 = Span(1, "Unknown", 2, None, List(), Seq())
+      Monoid.plus(span1, Span.invalid) mustEqual Span.invalid
     }
 
     "return the first annotation" in {
