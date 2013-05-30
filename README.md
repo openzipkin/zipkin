@@ -23,10 +23,13 @@ Zipkin itself provides three services:
 If all three of these daemons are running, you should be able to visit
 http://localhost:8080 to view the Zipkin UI.
 
-The next step is to collect trace data to view in Zipkin. For testing and
-development purposes, it is possible to use SSH port forwarding to run a remote
-query daemon behind a local Zipkin instance. In production, interface with the
-collector (e.g. with Scribe) to record trace data.
+The next step is to collect trace data to view in Zipkin. To do this, interface
+with the collector (e.g. by using Scribe) to record trace data. There are
+several libraries to make this easier to do in different environments. Twitter
+uses [Finagle](https://github.com/twitter/finagle/tree/master/finagle-zipkin);
+external libraries (currently for Python, REST, node, and Java) are listed in the
+[wiki](https://github.com/twitter/zipkin/wiki#external-projects-that-use-zipkin);
+and there is also a Ruby gem.
 
 See the [in-depth installation guide](https://github.com/twitter/zipkin/blob/master/doc/install.md) for more information.
 

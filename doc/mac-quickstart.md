@@ -42,9 +42,6 @@ separate bash windows if you're doing it that way):
 Zipkin should now be running and you can access the UI at http://localhost:8080/
 
 The next step is to have your existing services record data to the collector.
-If you are testing or developing Zipkin locally and you already have data being
-recorded in production, you can use SSH port forwarding to run a remote query
-daemon behind a local Zipkin instance. In production, Twitter records data by
-connecting Scribe to the Collector daemon and writing to Scribe from its other
-services as described in
+The most common way to do this is to connect Scribe to the Collector daemon and
+write to Scribe from your other services as described in
 [install.md](https://github.com/twitter/zipkin/blob/master/doc/install.md).
