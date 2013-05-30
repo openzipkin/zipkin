@@ -309,14 +309,10 @@ object thrift {
   implicit def dependencyLinkToThrift(dl: DependencyLink) = new WrappedDependencyLink(dl)
   implicit def thriftToDependencyLink(dl: gen.DependencyLink) = new ThriftDependencyLink(dl)
   class WrappedDependencies(d: Dependencies) {
-    lazy val toThrift = gen.Dependencies(d.startTime.inMicroseconds, d.endTime.inMicroseconds, d.links.map {_.toThrift}.toSeq )
+    lazy val toThrift = gen.Dependencies(d.startTime, d.endTime, d.links.map {_.toThrift}.toSeq )
   }
   class ThriftDependencies(d: gen.Dependencies) {
-    lazy val toDependencies = Dependencies(
-      Time.fromMicroseconds(d.startTime),
-      Time.fromMicroseconds(d.endTime),
-      d.links.map {_.toDependencyLink}
-    )
+    lazy val toDependencies = Dependencies(d.startTime, d.endTime, d.links.map {_.toDependencyLink})
   }
   implicit def dependenciesToThrift(d: Dependencies) = new WrappedDependencies(d)
   implicit def thriftToDependencies(d: gen.Dependencies) = new ThriftDependencies(d)
