@@ -41,7 +41,13 @@ separate bash windows if you're doing it that way):
 
 Zipkin should now be running and you can access the UI at http://localhost:8080/
 
-The next step is to have your existing services record data to the collector.
-The most common way to do this is to connect Scribe to the Collector daemon and
-write to Scribe from your other services as described in
+The next step is to collect trace data to view in Zipkin. To do this, interface
+with the collector (e.g. by using Scribe) to record trace data. There are
+several libraries to make this easier to do in different environments. Twitter
+uses [Finagle](https://github.com/twitter/finagle/tree/master/finagle-zipkin);
+external libraries (currently for Python, REST, node, and Java) are listed in the
+[wiki](https://github.com/twitter/zipkin/wiki#external-projects-that-use-zipkin);
+and there is also a [Ruby gem](https://rubygems.org/gems/finagle-thrift) and
+[Ruby Thrift client](https://github.com/twitter/thrift_client). Additional
+information is available in
 [install.md](https://github.com/twitter/zipkin/blob/master/doc/install.md).

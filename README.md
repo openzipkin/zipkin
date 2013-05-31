@@ -29,7 +29,8 @@ several libraries to make this easier to do in different environments. Twitter
 uses [Finagle](https://github.com/twitter/finagle/tree/master/finagle-zipkin);
 external libraries (currently for Python, REST, node, and Java) are listed in the
 [wiki](https://github.com/twitter/zipkin/wiki#external-projects-that-use-zipkin);
-and there is also a Ruby gem.
+and there is also a [Ruby gem](https://rubygems.org/gems/finagle-thrift) and
+[Ruby Thrift client](https://github.com/twitter/thrift_client).
 
 See the [in-depth installation guide](https://github.com/twitter/zipkin/blob/master/doc/install.md) for more information.
 
