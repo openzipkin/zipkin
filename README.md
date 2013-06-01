@@ -6,17 +6,33 @@
 See [http://twitter.github.com/zipkin](http://twitter.github.com/zipkin)
 
 ## Quick start
-You'll need Scala 2.9.1
 
-Clone the repo, `git clone git://github.com/twitter/zipkin`, or [download a release](https://github.com/twitter/zipkin/downloads)
+To install Zipkin on a single machine, see the
+[Ubuntu Quickstart](https://github.com/twitter/zipkin/blob/master/doc/ubuntu-quickstart.txt) and
+[Mac Quickstart](https://github.com/twitter/zipkin/blob/master/doc/mac-quickstart.md) guides.
+For more in-depth installation instructions with an explanation of the
+dependencies and related services, see
+[install.md](https://github.com/twitter/zipkin/blob/master/doc/install.md).
 
-To run a collector daemon: `bin/collector`
+Zipkin itself provides three services:
 
-To run a query daemon: `bin/query`
+ - To collect data: `bin/collector`
+ - To extract data: `bin/query`
+ - To display data: `bin/web`
 
-To run a UI daemon: `bin/web`
+If all three of these daemons are running, you should be able to visit
+http://localhost:8080 to view the Zipkin UI.
 
-For a more in-depth installation guide, see: [http://twitter.github.com/zipkin/install.html](http://twitter.github.com/zipkin/install.html)
+The next step is to collect trace data to view in Zipkin. To do this, interface
+with the collector (e.g. by using Scribe) to record trace data. There are
+several libraries to make this easier to do in different environments. Twitter
+uses [Finagle](https://github.com/twitter/finagle/tree/master/finagle-zipkin);
+external libraries (currently for Python, REST, node, and Java) are listed in the
+[wiki](https://github.com/twitter/zipkin/wiki#external-projects-that-use-zipkin);
+and there is also a [Ruby gem](https://rubygems.org/gems/finagle-thrift) and
+[Ruby Thrift client](https://github.com/twitter/thrift_client).
+
+See the [in-depth installation guide](https://github.com/twitter/zipkin/blob/master/doc/install.md) for more information.
 
 ## Get involved
 
