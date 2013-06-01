@@ -21,7 +21,8 @@ import com.twitter.finagle.tracing.SpanId
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finatra.{Response, Controller, View, Request}
 import com.twitter.logging.Logger
-import com.twitter.util.{Duration, Future}
+import com.twitter.util.{Time, Duration, Future}
+import com.twitter.conversions.time._
 import com.twitter.zipkin.config.{JsConfig, CssConfig}
 import com.twitter.zipkin.conversions.json._
 import com.twitter.zipkin.conversions.thrift._
@@ -207,6 +208,24 @@ class App(
       client.getTopAnnotations(serviceName).map { anns =>
         render.json(anns.toSeq.sorted)
       }
+    }
+  }
+
+
+  /**
+   * API: dependencies
+   * Returns all services paired with every service they call in to
+   *
+   * Required GET params:
+   * - startTime: Date in epoch seconds (this will be rounded to the nearest day)
+   * - endTime: Optional date in epoch seconds (rounded to the nearest day)
+   */
+  get("/api/dependencies/?:startTime?/?:endTime?") { request =>
+    val startTime = request.routeParams.getOrElse("startTime", Time.now.inSeconds.toString).toLong
+    val endTime = request.routeParams.get("endTime").map(_.toLong)
+
+    client.getDependencies(startTime, endTime).map { deps =>
+      render.json(deps)
     }
   }
 

@@ -19,6 +19,9 @@ import com.twitter.conversions.time._
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.query._
+import com.twitter.util.{Duration, Time}
+import java.util.concurrent.TimeUnit
+import com.twitter.algebird.Moments
 
 /**
  * Convenience implicits for converting between common classes and Thrift.
@@ -280,4 +283,41 @@ object thrift {
   }
   implicit def queryResponseToThrift(q: QueryResponse) = new WrappedQueryResponse(q)
   implicit def thriftToQueryResponse(q: gen.QueryResponse) = new ThriftQueryResponse(q)
+
+  /* Dependencies */
+  class WrappedMoments(m: Moments) {
+    lazy val toThrift = gen.Moments(m.m0, m.m1, m.m2, m.m3, m.m4)
+  }
+  class ThriftMoments(m: gen.Moments) {
+    lazy val toMoments = Moments(m.m0, m.m1, m.m2, m.m3, m.m4)
+  }
+  implicit def momentsToThrift(m: Moments) = new WrappedMoments(m)
+  implicit def thriftToMoments(m: gen.Moments) = new ThriftMoments(m)
+
+  class WrappedDependencyLink(dl: DependencyLink) {
+    lazy val toThrift = {
+      gen.DependencyLink(dl.parent.name, dl.child.name, dl.durationMoments.toThrift)
+    }
+  }
+  class ThriftDependencyLink(dl: gen.DependencyLink) {
+    lazy val toDependencyLink = DependencyLink(
+      Service(dl.parent),
+      Service(dl.child),
+      dl.durationMoments.toMoments
+    )
+  }
+  implicit def dependencyLinkToThrift(dl: DependencyLink) = new WrappedDependencyLink(dl)
+  implicit def thriftToDependencyLink(dl: gen.DependencyLink) = new ThriftDependencyLink(dl)
+  class WrappedDependencies(d: Dependencies) {
+    lazy val toThrift = gen.Dependencies(d.startTime.inMicroseconds, d.endTime.inMicroseconds, d.links.map {_.toThrift}.toSeq )
+  }
+  class ThriftDependencies(d: gen.Dependencies) {
+    lazy val toDependencies = Dependencies(
+      Time.fromNanoseconds(d.startTime*1000L),
+      Time.fromNanoseconds(d.endTime*1000L),
+      d.links.map {_.toDependencyLink}
+    )
+  }
+  implicit def dependenciesToThrift(d: Dependencies) = new WrappedDependencies(d)
+  implicit def thriftToDependencies(d: gen.Dependencies) = new ThriftDependencies(d)
 }

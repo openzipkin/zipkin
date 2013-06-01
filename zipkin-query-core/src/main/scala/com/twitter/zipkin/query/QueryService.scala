@@ -21,7 +21,7 @@ import com.twitter.finagle.stats.{StatsReceiver, NullStatsReceiver}
 import com.twitter.finagle.tracing.{Trace => FTrace}
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.Service
-import com.twitter.util.Future
+import com.twitter.util.{Time, Future}
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.query.adjusters.Adjuster
@@ -383,10 +383,13 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
     }
   }
 
-  def getDependencies(serviceName: String): Future[Seq[String]] = {
-    log.debug("getDependencies: " + serviceName)
+  /** Aggregates related */
+  def getDependencies(startTime: Long, endTime: Option[Long]) : Future[gen.Dependencies] = {
+    log.debug("getDependencies: " + startTime + " - " + endTime)
     call("getDependencies") {
-      aggregates.getDependencies(serviceName)
+      val start = Time.fromNanoseconds(startTime*1000)
+      val end = endTime.map { t => Time.fromNanoseconds(t*1000) }
+      aggregates.getDependencies(start, end) map {_.toThrift}
     }
   }
 
