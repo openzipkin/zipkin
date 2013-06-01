@@ -37,7 +37,6 @@ class StorageService(storage: Storage) extends Service[Span, Unit] {
   }
 
   override def close(deadline: Time) = {
-    storage.close()
     super.close(deadline)
   }
 }

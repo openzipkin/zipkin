@@ -17,17 +17,25 @@ package com.twitter.zipkin.storage.cassandra
 
 import com.twitter.cassie.tests.util.FakeCassandra
 import com.twitter.cassie._
-import com.twitter.util.Future
+import com.twitter.util.{Await, Future, Time}
+import com.twitter.conversions.time._
 import com.twitter.zipkin.cassandra.{AggregatesBuilder, Keyspace}
 import org.specs.mock.{ClassMocker, JMocker}
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 import scala.collection.JavaConverters._
+import com.twitter.zipkin.conversions.thrift._
+import com.twitter.zipkin.gen
+import com.twitter.algebird.Moments
+import com.twitter.zipkin.common.{Dependencies, Service, DependencyLink}
+import org.junit.runner.RunWith
+import org.specs.runner.JUnitSuiteRunner
 
-class CassandraAggregatesSpec extends Specification with JMocker with ClassMocker {
+@RunWith(classOf[JUnitSuiteRunner])
+class CassandraAggregatesSpec extends SpecificationWithJUnit with JMocker with ClassMocker {
 
   val mockKeyspace = mock[Keyspace]
   val mockAnnotationsCf = mock[ColumnFamily[String, Long, String]]
-  val mockDependenciesCf = mock[ColumnFamily[String, Long, String]]
+  val mockDependenciesCf = mock[ColumnFamily[Long, Long, gen.Dependencies]]
 
   def cassandraAggregates = CassandraAggregates(mockKeyspace, mockAnnotationsCf, mockDependenciesCf)
 
@@ -44,8 +52,8 @@ class CassandraAggregatesSpec extends Specification with JMocker with ClassMocke
       index.toLong -> column(index, ann)
     }.toMap.asJava
 
-    "retrieval" in {
-      "getTopAnnotations" in {
+    "retrieve" in {
+      "Top Annotations" in {
         val agg = cassandraAggregates
         val serviceName = "mockingbird"
         val rowKey = agg.topAnnotationRowKey(serviceName)
@@ -57,7 +65,7 @@ class CassandraAggregatesSpec extends Specification with JMocker with ClassMocke
         agg.getTopAnnotations(serviceName)() mustEqual topAnnsSeq
       }
 
-      "getTopKeyValueAnnotations" in {
+      "Top KeyValue Annotations" in {
         val agg = cassandraAggregates
         val serviceName = "mockingbird"
         val rowKey = agg.topKeyValueRowKey(serviceName)
@@ -69,13 +77,21 @@ class CassandraAggregatesSpec extends Specification with JMocker with ClassMocke
         agg.getTopKeyValueAnnotations(serviceName)() mustEqual topAnnsSeq
       }
 
-      "getDependencies" in {
+      "Dependencies" in {
         val agg = cassandraAggregates
-        val serviceName = "mockingbird"
+        val m1 = Moments(2)
+        val m2 = Moments(4)
+        val dl1 = DependencyLink(Service("tfe"), Service("mobileweb"), m1)
+        val dl3 = DependencyLink(Service("Gizmoduck"), Service("tflock"), m2)
+        val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
+        val col = new Column[Long, gen.Dependencies](0L, deps1.toThrift)
+
         expect {
-          one(mockDependenciesCf).getRow(serviceName) willReturn Future.value(serviceCalls)
+          one(mockDependenciesCf).multigetRows(Set(0L).asJava, None, None, Order.Normal, Int.MaxValue) willReturn Future.value(Map(0L -> Map(0L -> col).asJava).asJava)
         }
-        agg.getDependencies(serviceName)() mustEqual serviceCallsSeq
+
+        val result = Await.result(agg.getDependencies(Time.fromSeconds(0)))
+        result mustEqual deps1
       }
     }
 
@@ -107,23 +123,25 @@ class CassandraAggregatesSpec extends Specification with JMocker with ClassMocke
       }
 
       "storeDependencies" in {
-        agg.storeDependencies(serviceName, serviceCallsSeq).apply()
-        agg.getDependencies(serviceName).apply() mustEqual serviceCallsSeq
+        val m1 = Moments(2)
+        val m2 = Moments(4)
+        val dl1 = DependencyLink(Service("tfe"), Service("mobileweb"), m1)
+        val dl3 = DependencyLink(Service("Gizmoduck"), Service("tflock"), m2)
+        val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
+
+        Await.result(agg.storeDependencies(deps1))
+        Await.result(agg.getDependencies(Time.fromSeconds(0))) mustEqual deps1
       }
 
       "clobber old entries" in {
         val anns1 = Seq("a1", "a2", "a3", "a4")
         val anns2 = Seq("a5", "a6")
-        val calls1 = Seq("sc1", "sc2")
 
         agg.storeTopAnnotations(serviceName, anns1).apply()
         agg.getTopAnnotations(serviceName).apply() mustEqual anns1
 
         agg.storeTopAnnotations(serviceName, anns2).apply()
         agg.getTopAnnotations(serviceName).apply() mustEqual anns2
-
-        agg.storeDependencies(serviceName, calls1).apply()
-        agg.getDependencies(serviceName).apply() mustEqual calls1
       }
     }
   }

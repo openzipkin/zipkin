@@ -16,9 +16,15 @@
 package com.twitter.zipkin.storage.cassandra
 
 import com.twitter.cassie._
-import com.twitter.util.{Future, Return, Throw}
+import com.twitter.util.{Time, Future, Return, Throw}
+import com.twitter.conversions.time._
 import com.twitter.zipkin.storage.Aggregates
+import com.twitter.zipkin.conversions.thrift._
 import scala.collection.JavaConverters._
+import com.twitter.zipkin.gen
+import scala.collection.immutable.NumericRange
+import com.twitter.zipkin.common.Dependencies
+import com.twitter.algebird.Monoid
 
 /**
  * Cassandra backed aggregates store
@@ -32,7 +38,7 @@ import scala.collection.JavaConverters._
 case class CassandraAggregates(
   keyspace: Keyspace,
   topAnnotations: ColumnFamily[String, Long, String],
-  dependencies: ColumnFamily[String, Long, String]
+  dependenciesCF: ColumnFamily[Long, Long, gen.Dependencies]
 ) extends Aggregates {
 
   def close() {
@@ -44,9 +50,25 @@ case class CassandraAggregates(
   /**
    * Get the top annotations for a service name
    */
-  def getDependencies(serviceName: String): Future[Seq[String]] = {
-    dependencies.getRow(serviceName).map {
-      _.values().asScala.map { _.value }.toSeq
+  def getDependencies(startDate: Time, endDate: Option[Time]) : Future[Dependencies] = {
+
+    // floor to nearest day in microseconds
+    val realStart = startDate.floor(1.day).inMicroseconds
+    val realEnd = endDate.getOrElse(startDate).floor(1.day).inMicroseconds
+
+    val rows = new NumericRange.Inclusive[Long](realEnd, realStart, 1.days.inMicroseconds)
+
+    val result: Future[Iterable[gen.Dependencies]] =
+      dependenciesCF.multigetRows(rows.toSet.asJava, None, None, Order.Normal, Int.MaxValue)
+        .map { rowMap =>
+          rowMap.asScala.values.flatMap { columnMap =>
+            columnMap.asScala.values.map { _.value }
+          }
+        }
+
+    result.map { genList =>
+      val depList = genList.map { _.toDependencies }
+      Monoid.sum(depList) // reduce to one instance containing all values
     }
   }
 
@@ -85,18 +107,19 @@ case class CassandraAggregates(
   }
 
   /** Synchronize these so we don't do concurrent writes from the same box */
-  def storeDependencies(serviceName: String, endpoints: Seq[String]): Future[Unit] =
-    store(dependencies, serviceName, endpoints)
+  def storeDependencies(deps: Dependencies): Future[Unit] = {
+    store[Long,gen.Dependencies](dependenciesCF, deps.startTime.floor(1.day).inMicroseconds, Seq(deps.toThrift))
+  }
 
   /** Synchronize these so we don't do concurrent writes from the same box */
   private[cassandra] def storeAnnotations(key: String, annotations: Seq[String]): Future[Unit] =
-    store(topAnnotations, key, annotations)
+    store[String,String](topAnnotations, key, annotations)
 
-  private[cassandra] def store(cf: ColumnFamily[String, Long, String], key: String, values: Seq[String]): Future[Unit] = synchronized {
+  private[cassandra] def store[Key,Val](cf: ColumnFamily[Key, Long, Val], key: Key, values: Seq[Val]): Future[Unit] = synchronized {
     val remove = cf.removeRow(key)
     val batch = cf.batch()
-    values.zipWithIndex.foreach { case (value: String, index: Int) =>
-      batch.insert(key, new Column[Long, String](index, value))
+    values.zipWithIndex.foreach { case (value: Val, index: Int) =>
+      batch.insert(key, new Column[Long, Val](index, value))
     }
     remove transform {
       case Return(r) => {

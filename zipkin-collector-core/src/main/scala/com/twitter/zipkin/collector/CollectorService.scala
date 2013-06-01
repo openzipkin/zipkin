@@ -16,9 +16,11 @@
 package com.twitter.zipkin.collector
 
 import com.twitter.ostrich.admin.Service
+import com.twitter.zipkin.storage.Store
 
 trait CollectorService extends Service {
   val writeQueue: WriteQueue[_ <: AnyRef]
+  val stores: Seq[Store]
 
   @volatile var running = false
 
@@ -29,5 +31,10 @@ trait CollectorService extends Service {
   def shutdown() {
     running = false
     writeQueue.shutdown()
+    stores.foreach { store =>
+      store.aggregates.close()
+      store.index.close()
+      store.storage.close()
+    }
   }
 }
