@@ -31,7 +31,7 @@ struct Moments {
 struct DependencyLink {
   1: string parent,  // parent service name (caller)
   2: string child,   // child service name (callee)
-  3: Moments durationMoments
+  3: Moments duration_moments
   // histogram?
 }
 
