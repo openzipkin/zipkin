@@ -65,7 +65,7 @@ object Zipkin extends Build {
     Project(
       id = "zipkin",
       base = file(".")
-    ) aggregate(test, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, collectorCore, collectorService, kafka) // TODO - add redis back in
+    ) aggregate(test, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, collectorCore, collectorService, kafka, redis)
 
   lazy val test   = Project(
     id = "zipkin-test",
@@ -201,7 +201,7 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
-  ).dependsOn(queryCore, cassandra)
+  ).dependsOn(queryCore, cassandra, redis)
 
   lazy val collectorScribe =
     Project(
@@ -244,7 +244,7 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
-  ).dependsOn(collectorCore, collectorScribe, cassandra, kafka)
+  ).dependsOn(collectorCore, collectorScribe, cassandra, kafka, redis)
 
   lazy val web =
     Project(
