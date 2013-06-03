@@ -1,12 +1,12 @@
 /*
  * Copyright 2012 Tumblr Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,13 +46,17 @@ class RedisSortedSetMap(database: Client, prefix: String, defaultTTL: Option[Dur
 
   /**
    * Gets elements from a sorted set, in reverse order.
+   *
+   * Because this get method always asks for a sorted set from redis, it will never return a Seq[ChannelBuffer]. Thus,
+   * when zRevRangeByScore returns Either[ZRangeResults, Seq[ChannelBuffer], we can simply return Either[ZRangeResults].
+   *
    * @param key specifies which sorted set
    * @param start items must have a score bigger than this
    * @param stop items must have a score smaller than this
    * @param count number of items to return
    */
   def get(key: String, start: Double, stop: Double, count: Long): Future[ZRangeResults] = {
-    database.zRevRangeByScore(preface(key), ZInterval(stop), ZInterval(start), true, Some(Limit(0, count)))
+    database.zRevRangeByScore(preface(key), ZInterval(stop), ZInterval(start), true, Some(Limit(0, count))).map(_.left.get)
   }
 
 }
