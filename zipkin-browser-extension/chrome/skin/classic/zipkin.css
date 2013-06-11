@@ -1,0 +1,58 @@
+/* Firebug Tracing Console customization. All messages from this example use this color.
+   This helps to distinguish logs from those coming from Firebug
+   Rule syntax: .DBG_<ext-id>
+   See: http://getfirebug.com/wiki/index.php/FBTrace for more details */
+.DBG_ZIPKIN {
+    color: #1376D3;
+    font-size: 110%;
+}
+
+.zipkin-empty {
+    font-size: 20px;
+    padding: 20px;
+    text-align: center;
+}
+
+#zipkin-data {
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* Add the Zipkin logo as a partially transparent background. */
+/*
+#zipkin-data:after {
+    background: url("icon64.png") transparent no-repeat right top;
+    bottom: 0;
+    content: "";
+    left: 0;
+    opacity: 0.3;
+    pointer-events: none;
+    position: absolute;
+    right: 10px;
+    top: 30px;
+}
+*/
+
+#zipkin-data thead {
+    font-size: 110%;
+    font-weight: bold;
+}
+
+#zipkin-data tr:nth-child(2n+1) td {
+    background-color: #F3F3F3;
+}
+
+#zipkin-data th,
+#zipkin-data td {
+    border: 1px solid #CCCCCC;
+    max-width: 384px;
+    padding: 2px 4px;
+}
+
+#zipkin-data th {
+    background-color: #CFCFCF;
+    border-bottom-width: 2px;
+    padding: 4px;
+}

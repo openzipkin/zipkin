@@ -1,0 +1,47 @@
+<?xml version="1.0" ?>
+
+<!-- Run ant in the extension's directory and look for: zipkin-VERSION.xpi -->
+<project name="zipkin" basedir="." default="build">
+
+    <!-- Properties -->
+    <property file="ant.properties"/>
+    <property name="build.dir" value="./release"/>
+    <property name="file-name" value="zipkin-${VERSION}.xpi"/>
+
+    <!-- Clean -->
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+    </target>
+
+    <!-- Build -->
+    <target name="build" depends="clean">
+
+        <!-- Copy files -->
+        <copy todir="${build.dir}">
+            <fileset dir=".">
+                <include name="**/*.js"/>
+                <include name="**/*.xul"/>
+                <include name="**/*.properties"/>
+                <include name="**/*.css"/>
+                <include name="**/*.manifest"/>
+                <include name="**/*.rdf"/>
+                <include name="**/*.txt"/>
+                <include name="**/*.md"/>
+                <include name="**/*.png"/>
+            </fileset>
+        </copy>
+
+        <!-- Copy install.rdf with updated release version info -->
+        <replace file="${build.dir}/install.rdf" propertyFile="ant.properties">
+            <replacefilter token="@VERSION@" property="VERSION"/>
+        </replace>
+
+        <!-- Compress files (ZIP) -->
+        <zip destfile="${file-name}" basedir="${build.dir}" update="true" />
+
+        <delete dir="${build.dir}"/>
+
+        <echo message="Zipkin version ${VERSION} created!"/>
+    </target>
+
+</project>
