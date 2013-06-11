@@ -6,7 +6,7 @@
     <!-- Properties -->
     <property file="ant.properties"/>
     <property name="build.dir" value="./release"/>
-    <property name="file-name" value="zipkin-${VERSION}.xpi"/>
+    <property name="file-name" value="zipkin.xpi"/>
 
     <!-- Clean -->
     <target name="clean">
