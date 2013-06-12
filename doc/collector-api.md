@@ -58,7 +58,7 @@ display of the data.  Here are some good rules to follow:
 * The topmost span in a trace has its span id equal to trace id and
   parent span id is 0
 
-* Annotate "cr","cs","sr","ss" for every leg of a trace.  For
+* Annotate `cr`,`cs`,`sr`,`ss` for every leg of a trace.  For
   extremely protocol-sensitive operations such as memcache requests,
   it is acceptable to only annotate the client-side send/recieve pair.
 
@@ -67,8 +67,8 @@ display of the data.  Here are some good rules to follow:
   the local host.  Service-names in cs/cr annotations refers to the
   remote service, in case the remote service does not annotate.
 
-* There are two additional binary annotations that are helpful: "ca" and
-  "sa".  These refer to the client-address and server-address
+* There are two additional binary annotations that are helpful: `ca` and
+  `sa`.  These refer to the client-address and server-address
   respectively, and they are always boolean types with the value of
   true.  The host in these annotations refers to the host/port of the
   client or server calling the current span's service.  IE: if the
@@ -78,8 +78,8 @@ display of the data.  Here are some good rules to follow:
 * There are a number of other common annotations that have become a
   loose convention.  Here are some annotations that are common:
 
-  * http.uri - The current uri sent to an http server
-  * http.responsecode - The response code the http server returned
+  * `http.uri` - The current uri sent to an http server
+  * `http.responsecode` - The response code the http server returned
 
 ## TraceId Propagation
 The final thing to consider when implementing zipkin on the
@@ -91,18 +91,18 @@ being used, and currently there are two implementations for this.
 
 ### HTTP
 All HTTP implementations of zipkin use the following X-Headers to
-propagate the trace information: X-B3-SpanId, X-B3-TraceId,
-X-B3-ParentSpanId, X-B3-Flags, X-B3-Sampled.  The id headers are
-hex-encoded trace ids as used by zipkin elsewhere.  X-B3-Sampled is
-either "true" or "false" if the current trace is being actively
-sampled.  X-B3-Flags contains the debug flag, and is 0 if debugging
+propagate the trace information: `X-B3-SpanId`, `X-B3-TraceId`,
+`X-B3-ParentSpanId`, `X-B3-Flags`, `X-B3-Sampled`.  The id headers are
+hex-encoded trace ids as used by zipkin elsewhere.  `X-B3-Sampled` is
+either `true` or `false` if the current trace is being actively
+sampled.  `X-B3-Flags` contains the debug flag, and is 0 if debugging
 is off, and 1 if debugging (which forces sampling by the collector) is
 enabled.
 
 ### Thrift
 The finagle library also implements a mechanism for passing tracing
 information over thrift.  This is done by calling a special method
-name, __can__finagle__trace__v3__ when a connection is established to
+name, `__can__finagle__trace__v3__` when a connection is established to
 a thrift service.  If the service responds to this method, then the
 original rpc is wrapped with additional data as defined in [this
 thrift file](https://github.com/twitter/finagle/blob/master/finagle-thrift/src/main/thrift/tracing.thrift)
