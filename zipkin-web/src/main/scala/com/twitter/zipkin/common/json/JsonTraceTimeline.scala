@@ -15,5 +15,15 @@
  */
 package com.twitter.zipkin.common.json
 
+import com.twitter.zipkin.query.TraceTimeline
+import com.twitter.finagle.tracing.SpanId
+
 case class JsonTraceTimeline(traceId: String, rootSpanId: String, annotations: Seq[JsonTimelineAnnotation],
                              binaryAnnotations: Seq[JsonBinaryAnnotation])
+  extends WrappedJson
+
+/* TraceTimeline */
+object JsonTraceTimeline extends JsonWrapper[TraceTimeline] {
+  def wrap(t: TraceTimeline) =
+    new JsonTraceTimeline(SpanId(t.traceId).toString, SpanId(t.rootSpanId).toString, t.annotations map { JsonTimelineAnnotation.wrap(_) }, t.binaryAnnotations map { JsonBinaryAnnotation.wrap(_) })
+}

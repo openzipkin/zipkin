@@ -15,6 +15,9 @@
  */
 package com.twitter.zipkin.common.json
 
+import com.twitter.zipkin.common.Span
+import com.twitter.finagle.tracing.SpanId
+
 case class JsonSpan(
   traceId: String,
   name: String,
@@ -24,4 +27,21 @@ case class JsonSpan(
   startTimestamp: Option[Long],
   duration: Option[Long],
   annotations: List[JsonAnnotation],
-  binaryAnnotations: Seq[JsonBinaryAnnotation])
+  binaryAnnotations: Seq[JsonBinaryAnnotation])  extends WrappedJson
+
+
+/* Span */
+object JsonSpan extends JsonWrapper[Span] {
+  def wrap(s: Span) = {
+    new JsonSpan(
+      SpanId(s.traceId).toString, // not a bug, SpanId converts Long to hex string
+      s.name,
+      SpanId(s.id).toString,
+      s.parentId.map(SpanId(_).toString),
+      s.serviceNames,
+      s.firstAnnotation.map {_.timestamp},
+      s.duration,
+      s.annotations.sortWith((a,b) => a.timestamp < b.timestamp).map { JsonAnnotation.wrap(_) },
+      s.binaryAnnotations.map { JsonBinaryAnnotation.wrap(_) })
+  }
+}

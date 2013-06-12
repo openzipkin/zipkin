@@ -1,7 +1,6 @@
 package com.twitter.zipkin.web
 
 import com.twitter.zipkin.common.{Annotation, BinaryAnnotation, Span}
-import com.twitter.zipkin.conversions.json._
 import com.codahale.jerkson.Json
 import org.specs.Specification
 

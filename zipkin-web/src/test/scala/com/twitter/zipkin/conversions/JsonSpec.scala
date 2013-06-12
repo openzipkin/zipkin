@@ -1,7 +1,6 @@
 package com.twitter.zipkin.conversions
 
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
-import com.twitter.zipkin.conversions.json._
 import java.nio.ByteBuffer
 import org.specs.Specification
 

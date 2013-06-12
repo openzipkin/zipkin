@@ -17,6 +17,7 @@
 package com.twitter.zipkin.common
 
 import com.twitter.zipkin.Constants
+import com.fasterxml.jackson.annotation.JsonIgnore
 
 /**
  * A span represents one RPC request. A trace is made up of many spans.
@@ -49,6 +50,7 @@ case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
   /**
    * Order annotations by timestamp.
    */
+  @JsonIgnore
   val timestampOrdering = new Ordering[Annotation] {
       def compare(a: Annotation, b: Annotation) = {a.timestamp.compare(b.timestamp)}
   }
