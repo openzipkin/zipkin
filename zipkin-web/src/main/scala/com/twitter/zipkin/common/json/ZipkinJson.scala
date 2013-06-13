@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.{SerializerProvider, JsonSerializer}
 import com.fasterxml.jackson.core.{JsonGenerator=>JacksonGenerator}
 import com.fasterxml.jackson.databind.module.SimpleModule
 
-import com.twitter.zipkin.query.Trace
+import com.twitter.zipkin.query.{TraceTimeline, TraceSummary, Trace}
 
 /**
  * Custom json generator that knows about zipkin datatypes
@@ -15,8 +15,9 @@ import com.twitter.zipkin.query.Trace
 object ZipkinJson extends Json {
   val module = new SimpleModule("ZipkinJson")
   // --- (SERIALIZERS) ---
-  module.addSerializer(classOf[BinaryAnnotation], new ZipkinJsonSerializer[BinaryAnnotation])
   module.addSerializer(classOf[Trace], new ZipkinJsonSerializer[Trace])
+  module.addSerializer(classOf[TraceSummary], new ZipkinJsonSerializer[TraceSummary])
+  module.addSerializer(classOf[TraceTimeline], new ZipkinJsonSerializer[TraceTimeline])
 
   mapper.registerModule(module)
 
