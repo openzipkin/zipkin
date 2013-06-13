@@ -33,7 +33,7 @@ define([
 
             refresh: function() {
                 log("Refreshing Zipkin panel");
-                this.panelNode.innerHTML = buildPanel();
+                this.panelNode.innerHTML = buildPanel(this.panelNode);
             },
             clear: function() {
                 Traces.clear();
@@ -47,6 +47,15 @@ define([
                     checked: Options.enable_tracing,
                     command: function() {
                         Options.toggleEnabled();
+                    }
+                }, {
+                    label: t("collapse_waterfalls"),
+                    nol10n: true,
+                    type: "checkbox",
+                    checked: Options.collapse_waterfalls,
+                    command: function() {
+                        Options.toggleCollapseWaterfalls();
+                        this.refresh();
                     }
                 }, {
                     label: t("trace_zipkin_ui"),

@@ -10,6 +10,7 @@ define([
             this.requestURL = requestURL;
             this.referer = referer;
             this.timestamp = Date.now();
+            this.visualization = '';
         }
 
         /**

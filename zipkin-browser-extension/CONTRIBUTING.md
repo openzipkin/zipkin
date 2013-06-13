@@ -38,15 +38,18 @@ Add-On SDK or Add-On Builder.
          matches the profile_site regex.
    - mainOverlay.js and mainOverlay.xul are superfluous, only present for
      backwards-compatibility to make sure main.js gets loaded.
-   - log.js, translate.js, and getTraceId.js provide utility methods that make
-     other code easier to read. They are structured as
+   - log.js, translate.js, getTraceId.js, and http.js provide utility methods
+     that make other code easier to read. They are structured as
      [AMD](https://github.com/amdjs/amdjs-api/wiki/AMD) modules that get
      imported into other code with the define() function. log.js allows logging
      to the FBTrace console for debugging; translate.js makes it easier to use
-     localization features; and getTraceId.js generates Zipkin trace IDs.
+     localization features; getTraceId.js generates Zipkin trace IDs; and
+     http.js provides a utility for making HTTP requests.
    - generateOutput.js is also an AMD module, but a more important one: it
      builds the HTML representing Zipkin trace information to display in the
      Firebug panel.
+   - traces.js is an AMD module that stores information about the requests
+     that this extension asks Zipkin to trace.
    - When the extension is loaded, the files run in this order: bootstrap.js,
      main.js, zipkinModule.js, zipkinPanel.js. zipkinModule.js is just a
      container for the panel. main.js includes the code to force Zipkin to

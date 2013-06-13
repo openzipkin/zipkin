@@ -8,6 +8,7 @@ define([], function () {
         zipkin_site: "", // Preference value
         enable_tracing: true, // Preference value
         trace_zipkin_ui: false, // Preference value
+        collapse_waterfalls: false, // Preference value
         _interval: null, // Track the refresh interval so we can clear it on shutdown
         // Run on load to initialize preference values
         startup: function() {
@@ -20,6 +21,7 @@ define([], function () {
             this.zipkin_site = this.prefs.getCharPref("zipkin_site");
             this.enable_tracing = this.prefs.getBoolPref("enable_tracing");
             this.trace_zipkin_ui = this.prefs.getBoolPref("trace_zipkin_ui");
+            this.collapse_waterfalls = this.prefs.getBoolPref("collapse_waterfalls");
             this.refreshInformation();
             // Refresh every 10 minutes
             try {
@@ -57,6 +59,10 @@ define([], function () {
                     this.trace_zipkin_ui = this.prefs.getBoolPref("trace_zipkin_ui");
                     this.refreshInformation();
                 }
+                else if (data == "collapse_waterfalls") {
+                    this.collapse_waterfalls = this.prefs.getBoolPref("collapse_waterfalls");
+                    this.refreshInformation();
+                }
             }
         },
         // Utility
@@ -68,6 +74,11 @@ define([], function () {
         toggleTraceZipkinUI: function() {
             this.trace_zipkin_ui = !this.trace_zipkin_ui;
             this.prefs.setBoolPref("trace_zipkin_ui", this.trace_zipkin_ui);
+        },
+        // Utility
+        toggleCollapseWaterfalls: function() {
+            this.collapse_waterfalls = !this.collapse_waterfalls;
+            this.prefs.setBoolPref("collapse_waterfalls", this.collapse_waterfalls);
         },
         // Utility
         refreshInformation: function() {

@@ -23,6 +23,13 @@ define([
                                 !Options.trace_zipkin_ui) {
                                 return;
                             }
+                            // Don't trace the request if we initiated it!
+                            // Otherwise we could create a loop.
+                            try {
+                                if (channel.getRequestHeader('X-Zipkin-Extension')) {
+                                    return;
+                                }
+                            } catch(e) {}
 
                             // Tell the request to use a known trace ID so we can get the data back later.
                             // Because the ID space is so large it's extremely unlikely that we'll have a conflict.
