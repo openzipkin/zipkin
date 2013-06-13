@@ -24,8 +24,7 @@ import com.twitter.zipkin.common.Endpoint
  */
 case class JsonEndpoint(ipv4: String, port: Int, serviceName: String)  extends WrappedJson
 
-
-object JsonEndpoint extends JsonWrapper[Endpoint] {
+object JsonEndpoint {
   def wrap(host: Endpoint) = {
     new JsonEndpoint(host.getHostAddress, host.getUnsignedPort, host.serviceName)
   }

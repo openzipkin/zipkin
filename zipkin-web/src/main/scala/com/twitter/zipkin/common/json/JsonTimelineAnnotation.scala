@@ -23,8 +23,7 @@ case class JsonTimelineAnnotation(timestamp: String, value: String, host: Endpoi
                                   serviceName: String, spanName: String)
   extends WrappedJson
 
-
-object JsonTimelineAnnotation extends JsonWrapper[TimelineAnnotation] {
+object JsonTimelineAnnotation {
   def wrap(t: TimelineAnnotation) = {
     JsonTimelineAnnotation(t.timestamp.toString, t.value, t.host, SpanId(t.spanId).toString, t.parentId map { SpanId(_).toString }, t.serviceName, t.spanName)
   }

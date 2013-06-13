@@ -21,7 +21,7 @@ import com.twitter.finagle.tracing.SpanId
 case class JsonTrace(traceId: String, spans: Seq[JsonSpan], startTimestamp: Long, endTimestamp: Long, duration: Long, serviceCounts: Map[String, Int])
   extends WrappedJson
 
-object JsonTrace extends JsonWrapper[Trace] {
+object JsonTrace {
   def wrap(t: Trace) = {
     /**
      *  TODO this is a pain in the ass, we need to fix common.Trace so the case class has the

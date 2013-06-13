@@ -48,6 +48,10 @@ class App(
   def getDate = dateFormat.format(Calendar.getInstance().getTime)
   def getTime = timeFormat.format(Calendar.getInstance().getTime)
 
+  override def render = new Response {
+    override val jsonGenerator = ZipkinJson
+  }
+
   /* Index page */
   get("/") { request =>
     /* If valid query params passed, run the query and push the data down with the page */
@@ -116,8 +120,7 @@ class App(
    * - adjust_clock_skew = (true|false), default true
    */
   get("/api/query") { request =>
-    render.header("Content-Type", "application/json")
-    query(request).map(response => render.body(ZipkinJson.generate(response)))
+    query(request).map(render.json(_))
   }
 
   def query(request: Request): Future[Seq[TraceSummary]] = {
@@ -223,8 +226,7 @@ class App(
     val endTime = request.routeParams.get("endTime").map(_.toLong)
 
     client.getDependencies(startTime, endTime).map { deps =>
-      render.header("Content-Type", "application/json")
-      render.body(ZipkinJson.generate(deps))
+      render.json(deps)
     }
   }
 
@@ -271,8 +273,7 @@ class App(
     log.debug(ids.toString())
 
     client.getTraceCombosByIds(ids, adjusters).map { _.map { _.toTraceCombo }.head }.map { combo =>
-      render.header("Content-Type", "application/json")
-      render.body(ZipkinJson.generate(combo))
+      render.json(combo)
     }
   }
 
@@ -287,8 +288,7 @@ class App(
         _.toTraceCombo.trace
       }.head
     }.map { trace =>
-      render.header("Content-Type", "application/json")
-      render.body(ZipkinJson.generate(trace))
+      render.json(trace)
     }
   }
 

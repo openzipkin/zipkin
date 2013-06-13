@@ -22,8 +22,7 @@ case class JsonTraceTimeline(traceId: String, rootSpanId: String, annotations: S
                              binaryAnnotations: Seq[JsonBinaryAnnotation])
   extends WrappedJson
 
-/* TraceTimeline */
-object JsonTraceTimeline extends JsonWrapper[TraceTimeline] {
+object JsonTraceTimeline {
   def wrap(t: TraceTimeline) =
     new JsonTraceTimeline(SpanId(t.traceId).toString, SpanId(t.rootSpanId).toString, t.annotations map { JsonTimelineAnnotation.wrap(_) }, t.binaryAnnotations map { JsonBinaryAnnotation.wrap(_) })
 }

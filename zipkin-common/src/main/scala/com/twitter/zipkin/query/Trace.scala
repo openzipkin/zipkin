@@ -20,7 +20,6 @@ import com.twitter.logging.Logger
 import com.twitter.zipkin.common.{BinaryAnnotation, Endpoint, Span}
 import java.nio.ByteBuffer
 import scala.collection.mutable
-import com.fasterxml.jackson.annotation.JsonIgnore
 
 /**
  * A chunk of time, between a start and an end.
@@ -36,7 +35,6 @@ object Trace {
 
 case class Trace(private val s: Seq[Span]) {
 
-  @JsonIgnore
   lazy val spans = mergeBySpanId(s).toSeq.sortWith {
     (a, b) =>
       val aTimestamp = a.firstAnnotation.map(_.timestamp).getOrElse(Long.MaxValue)
@@ -70,7 +68,6 @@ case class Trace(private val s: Seq[Span]) {
    * from the root service, then we want the one just below that.
    * FIXME if there are holes in the trace this might not return the correct span
    */
-  @JsonIgnore
   lazy val getRootMostSpan: Option[Span] = {
     getRootSpan.orElse {
       val idSpan = getIdToSpanMap

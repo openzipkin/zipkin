@@ -23,7 +23,7 @@ case class JsonTraceSummary(traceId: String, startTimestamp: Long, endTimestamp:
                             serviceCounts: Map[String, Int], endpoints: List[Endpoint])
   extends WrappedJson
 
-object JsonTraceSummary extends JsonWrapper[TraceSummary] {
+object JsonTraceSummary {
   def wrap(t: TraceSummary) =
     JsonTraceSummary(SpanId(t.traceId).toString, t.startTimestamp, t.endTimestamp, t.durationMicro, t.serviceCounts.toMap, t.endpoints)
 }

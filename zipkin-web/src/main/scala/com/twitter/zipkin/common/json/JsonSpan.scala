@@ -29,9 +29,7 @@ case class JsonSpan(
   annotations: List[JsonAnnotation],
   binaryAnnotations: Seq[JsonBinaryAnnotation])  extends WrappedJson
 
-
-/* Span */
-object JsonSpan extends JsonWrapper[Span] {
+object JsonSpan {
   def wrap(s: Span) = {
     new JsonSpan(
       SpanId(s.traceId).toString, // not a bug, SpanId converts Long to hex string

@@ -23,7 +23,7 @@ case class JsonBinaryAnnotation(key: String,
                                 host: Option[JsonEndpoint])
   extends WrappedJson
 
-object JsonBinaryAnnotation extends JsonWrapper[BinaryAnnotation] {
+object JsonBinaryAnnotation {
    def wrap(b: BinaryAnnotation) : JsonBinaryAnnotation = {
     val value = try {
       b.annotationType match {

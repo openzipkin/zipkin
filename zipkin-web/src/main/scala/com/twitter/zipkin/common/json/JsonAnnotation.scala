@@ -23,8 +23,7 @@ case class JsonAnnotation (timestamp: String,
                            duration: Option[String]) // Duration in microseconds
   extends WrappedJson
 
-
-object JsonAnnotation extends JsonWrapper[Annotation] {
+object JsonAnnotation {
   def wrap(a: Annotation) = {
     JsonAnnotation(a.timestamp.toString, a.value, a.host.map(JsonEndpoint.wrap(_)), a.duration map { _.inMicroseconds.toString })
   }

@@ -21,8 +21,7 @@ case class JsonTraceCombo(trace: JsonTrace, traceSummary: Option[JsonTraceSummar
                           spanDepths: Option[Map[Long, Int]])
   extends WrappedJson
 
-
-object JsonTraceCombo extends JsonWrapper[TraceCombo] {
+object JsonTraceCombo {
   def wrap(t: TraceCombo) = {
     JsonTraceCombo(JsonTrace.wrap(t.trace), t.traceSummary map { JsonTraceSummary.wrap(_) }, t.traceTimeline map { JsonTraceTimeline.wrap(_) }, t.spanDepths)
   }
