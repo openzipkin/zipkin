@@ -29,6 +29,5 @@
         <em:optionsType>2</em:optionsType>
         <em:iconURL>chrome://zipkin/skin/icon.png</em:iconURL>
         <em:icon64URL>chrome://zipkin/skin/icon64.png</em:icon64URL>
-        <!-- TODO: updateURL -->
     </Description>
 </RDF>
