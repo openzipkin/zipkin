@@ -11,6 +11,7 @@ define([
             this.referer = referer;
             this.timestamp = Date.now();
             this.visualization = '';
+            this.rendered = false;
         }
 
         /**

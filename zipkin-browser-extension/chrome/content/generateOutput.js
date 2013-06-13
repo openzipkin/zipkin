@@ -33,6 +33,20 @@ define([
                 m + tz;
         };
 
+        function escapeHTML(string) {
+            return String(string).replace(/[&<>"'\/]/g, function (s) {
+                return escapeHtml.entityMap[s];
+            });
+        }
+        escapeHTML.entityMap = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': '&quot;',
+            "'": '&#39;',
+            "/": '&#x2F;'
+        };
+
         // Track timers across refreshes and don't repeat the same requests.
         var timers = {};
 
@@ -47,7 +61,7 @@ define([
                 var it = Traces.getIterator(), n, i = 0;
                 while (n = it.next()) {
                     var zebra = ++i % 2 == 0 ? 'even' : 'odd';
-                    output += '<tr id="zipkin-trace-' + n.traceID + '" class="zipkin-info ' + zebra + '"><td>' + msToTime(n.timestamp) + '</td><td>' + n.traceID + '</td><td><a href="' + zipkin_base_url + n.traceID + '" target="_blank">' + zipkin_base_url + n.traceID + '</a></td><td>' + n.requestURL + '</td><td>' + n.referer + '</td></tr>';
+                    output += '<tr id="zipkin-trace-' + n.traceID + '" class="zipkin-info ' + zebra + '"><td>' + msToTime(n.timestamp) + '</td><td>' + n.traceID + '</td><td><a href="' + zipkin_base_url + n.traceID + '" target="_blank">' + zipkin_base_url + n.traceID + '</a></td><td class="check-loading">' + n.requestURL + '</td><td>' + n.referer + '</td></tr>';
                     // If waterfalls are collapsed, hide them completely.
                     if (Options.collapse_waterfalls) {
                         continue;
@@ -57,6 +71,8 @@ define([
                         output += n.visualization;
                         continue;
                     }
+                    var regex = new RegExp('(<tr id="zipkin-trace-' + n.traceID + '".*?<td class=")(check-loading)(".*?</tr>)');
+                    output = output.replace(regex, '$1zipkin-loading$3');
                     // Request the information we need to build the visualization.
                     // Wrapped in a closure so we can capture the information we need per iteration.
                     (function(traceID, traceObj) {
@@ -114,20 +130,15 @@ define([
                                         }
                                     }
                                     out += '</td></tr>';
-                                    try {
-                                        // Only cache the results if we successfully retrieved data.
-                                        if (hasTraceData) {
-                                            traceObj.visualization = out;
-                                        }
-                                        else {
-                                            out = out.replace('</td></tr>', '$&' + t('no_trace_data'));
-                                        }
-                                        var regex = new RegExp('<tr id="zipkin-trace-' + traceID + '".*?</tr>');
-                                        panelNode.innerHTML = panelNode.innerHTML.replace(regex, '$&' + out);
+                                    if (!hasTraceData) {
+                                        out = out.replace('</td></tr>', '<div class="zipkin-no-data">' + t('no_trace_data') + '</div>$&');
                                     }
-                                    catch(e) {
-                                        log("Error rendering trace data: " + e);
-                                    }
+                                    // We cache even if there's no trace data
+                                    // because it's more likely the resource isn't traced than that the request failed.
+                                    traceObj.visualization = out;
+                                    // Render the trace visualization
+                                    var regex = new RegExp('(<tr id="zipkin-trace-' + traceID + '".*?<td class=")(zipkin-loading)(".*?</tr>)');
+                                    panelNode.innerHTML = panelNode.innerHTML.replace(regex, '$1zipkin-loaded$3' + out);
                                 });
                             }
                             catch(e) {

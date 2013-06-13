@@ -44,6 +44,18 @@
     padding: 4px;
 }
 
+.zipkin-no-data {
+    opacity: 0.6;
+    text-align: center;
+}
+.zipkin-no-data:hover {
+    opacity: 1;
+}
+
+.zipkin-loading {
+    background: url('loader.gif') transparent no-repeat right top;
+}
+
 /** Visualizations **/
 
 .zipkin-panel-viz-wrapper {

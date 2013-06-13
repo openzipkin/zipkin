@@ -55,7 +55,7 @@ define([
                     checked: Options.collapse_waterfalls,
                     command: function() {
                         Options.toggleCollapseWaterfalls();
-                        this.refresh();
+                        Firebug.MyZipkinPanel.refresh();
                     }
                 }, {
                     label: t("trace_zipkin_ui"),
