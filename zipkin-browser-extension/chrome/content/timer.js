@@ -6,7 +6,7 @@ function(log) {
     function removeArrayItem(arr, it) {
         for (var i = arr.length-1; i >= 0; i--) {
             if (arr[i] == it) {
-                arr.splice(i, 1);
+                return arr.splice(i, 1);
             }
         }
     }
@@ -31,6 +31,11 @@ function(log) {
         clearTimeout: function(timer) {
             timer.cancel();
             removeArrayItem(timers, timer);
+        },
+        clearAllTimers: function() {
+            for (var i = timers.length-1; i >= 0; i--) {
+                this.clearTimeout(timers[i]);
+            }
         }
     };
 });

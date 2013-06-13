@@ -4,9 +4,10 @@ define([
         "zipkin/translate",
         "zipkin/generateOutput",
         "zipkin/options",
-        "zipkin/traces"
+        "zipkin/traces",
+        "zipkin/timer"
     ],
-    function(Obj, log, t, buildPanel, Options, Traces) {
+    function(Obj, log, t, buildPanel, Options, Traces, Timer) {
         Firebug.ZipkinPanel = function ZipkinPanel() {};
         Firebug.ZipkinPanel.prototype = Obj.extend(Firebug.Panel, {
             name: "zipkin",
@@ -24,6 +25,7 @@ define([
             destroy: function(state) {
                 Firebug.Panel.destroy.apply(this, arguments);
                 delete Firebug.MyZipkinPanel;
+                //Timer.clearAllTimers();
                 log("ZipkinPanel has been destroy()d");
             },
 

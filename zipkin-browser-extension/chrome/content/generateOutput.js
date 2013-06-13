@@ -35,7 +35,7 @@ define([
 
         function escapeHTML(string) {
             return String(string).replace(/[&<>"'\/]/g, function (s) {
-                return escapeHtml.entityMap[s];
+                return escapeHTML.entityMap[s];
             });
         }
         escapeHTML.entityMap = {
@@ -61,7 +61,7 @@ define([
                 var it = Traces.getIterator(), n, i = 0;
                 while (n = it.next()) {
                     var zebra = ++i % 2 == 0 ? 'even' : 'odd';
-                    output += '<tr id="zipkin-trace-' + n.traceID + '" class="zipkin-info ' + zebra + '"><td>' + msToTime(n.timestamp) + '</td><td>' + n.traceID + '</td><td><a href="' + zipkin_base_url + n.traceID + '" target="_blank">' + zipkin_base_url + n.traceID + '</a></td><td class="check-loading">' + n.requestURL + '</td><td>' + n.referer + '</td></tr>';
+                    output += '<tr id="zipkin-trace-' + n.traceID + '" class="zipkin-info ' + zebra + '"><td>' + msToTime(n.timestamp) + '</td><td>' + n.traceID + '</td><td><a href="' + zipkin_base_url + n.traceID + '" target="_blank">' + zipkin_base_url + n.traceID + '</a></td><td class="check-loading">' + escapeHTML(n.requestURL) + '</td><td>' + escapeHTML(n.referer) + '</td></tr>';
                     // If waterfalls are collapsed, hide them completely.
                     if (Options.collapse_waterfalls) {
                         continue;
@@ -126,7 +126,7 @@ define([
                                         var left = percentAcross(ts), right = percentAcross(ts + s.duration);
                                         if (right - left > 0) {
                                             hasTraceData = true;
-                                            out += '<div class="zipkin-panel-viz-span-wrapper"><div class="zipkin-panel-viz-span" data-span="' + s.services.join(', ') + '" style="margin-left: ' + left + '%; margin-right: ' + (100 - right) + '%;"></div></div>'
+                                            out += '<div class="zipkin-panel-viz-span-wrapper"><div class="zipkin-panel-viz-span" data-span="' + escapeHTML(s.services.join(', ')) + '" style="margin-left: ' + left + '%; margin-right: ' + (100 - right) + '%;"></div></div>'
                                         }
                                     }
                                     out += '</td></tr>';
