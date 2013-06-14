@@ -2,11 +2,9 @@ package com.twitter.zipkin.common.json
 
 import com.codahale.jerkson.Json
 import org.codehaus.jackson.map.annotate.JsonCachable
-import com.twitter.zipkin.common.BinaryAnnotation
 import com.fasterxml.jackson.databind.{SerializerProvider, JsonSerializer}
 import com.fasterxml.jackson.core.{JsonGenerator=>JacksonGenerator}
 import com.fasterxml.jackson.databind.module.SimpleModule
-
 import com.twitter.zipkin.query.{TraceTimeline, TraceSummary, Trace}
 
 /**
