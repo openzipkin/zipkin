@@ -1,0 +1,60 @@
+<?xml version="1.0" ?>
+
+<!-- Run ant in the extension's directory and look for: zipkin-VERSION.xpi -->
+<project name="zipkin" basedir="." default="build">
+
+    <!-- Properties -->
+    <property file="ant.properties"/>
+    <property name="build.dir" value="./release"/>
+    <property name="file-name" value="zipkin.xpi"/>
+
+    <!-- Timestamp macro. Requires Ant 1.8+ -->
+    <macrodef name="timestamp.echo">
+        <attribute name="message"/>
+        <sequential>
+            <local name="current.time" />
+            <tstamp>
+                <format property="current.time" pattern="MM/dd/yyyy hh:mm:ss"/>
+            </tstamp>
+            <echo message="${current.time} - @{message}" />
+        </sequential>
+    </macrodef>
+
+    <!-- Clean -->
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+    </target>
+
+    <!-- Build -->
+    <target name="build" depends="clean">
+
+        <!-- Copy files -->
+        <copy todir="${build.dir}">
+            <fileset dir=".">
+                <include name="**/*.js"/>
+                <include name="**/*.xul"/>
+                <include name="**/*.properties"/>
+                <include name="**/*.css"/>
+                <include name="**/*.manifest"/>
+                <include name="**/*.rdf"/>
+                <include name="**/*.txt"/>
+                <include name="**/*.md"/>
+                <include name="**/*.png"/>
+                <include name="**/*.gif"/>
+            </fileset>
+        </copy>
+
+        <!-- Copy install.rdf with updated release version info -->
+        <replace file="${build.dir}/install.rdf" propertyFile="ant.properties">
+            <replacefilter token="@VERSION@" property="VERSION"/>
+        </replace>
+
+        <!-- Compress files (ZIP) -->
+        <zip destfile="${file-name}" basedir="${build.dir}" update="true" />
+
+        <delete dir="${build.dir}"/>
+
+        <timestamp.echo message="Zipkin version ${VERSION} created!" />
+    </target>
+
+</project>

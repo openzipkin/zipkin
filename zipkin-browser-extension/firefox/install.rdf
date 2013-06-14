@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+    <!-- Reference: https://developer.mozilla.org/en-US/docs/Install_Manifests -->
+
+    <Description about="urn:mozilla:install-manifest">
+        <em:id>zipkin-extension@twitter.com</em:id>
+        <em:version>@VERSION@</em:version>
+        <!-- 2 represents Extensions -->
+        <em:type>2</em:type>
+        <em:bootstrap>true</em:bootstrap>
+
+        <!-- Firefox -->
+        <em:targetApplication>
+            <Description>
+                <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+                <em:minVersion>16.0</em:minVersion>
+                <em:maxVersion>22.*</em:maxVersion>
+            </Description>
+        </em:targetApplication>
+
+        <!-- Extension -->
+        <em:name>Zipkin</em:name>
+        <em:description>The Zipkin Firefox extension traces requests and displays information about the traces.</em:description>
+        <em:creator>Twitter, Inc.</em:creator>
+        <em:developer>Isaac Sukin</em:developer>
+        <em:homepageURL>https://www.twitter.com</em:homepageURL>
+
+        <em:optionsURL>chrome://zipkin/content/options.xul</em:optionsURL>
+        <em:optionsType>2</em:optionsType>
+        <em:iconURL>chrome://zipkin/skin/icon.png</em:iconURL>
+        <em:icon64URL>chrome://zipkin/skin/icon64.png</em:icon64URL>
+    </Description>
+</RDF>
