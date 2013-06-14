@@ -16,22 +16,19 @@
  */
 package com.twitter.zipkin.web
 
-import com.codahale.jerkson.Json
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finatra.{Response, Controller, View, Request}
 import com.twitter.logging.Logger
 import com.twitter.util.{Time, Duration, Future}
-import com.twitter.conversions.time._
 import com.twitter.zipkin.config.{JsConfig, CssConfig}
-import com.twitter.zipkin.conversions.json._
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.common.json.JsonTraceSummary
 import com.twitter.zipkin.gen
-import com.twitter.zipkin.query.QueryRequest
+import com.twitter.zipkin.query.{TraceSummary, QueryRequest}
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.lang.Throwable
+import com.twitter.zipkin.common.json.ZipkinJson
 
 /**
  * Application that handles ZipkinWeb routes
@@ -51,6 +48,10 @@ class App(
   def getDate = dateFormat.format(Calendar.getInstance().getTime)
   def getTime = timeFormat.format(Calendar.getInstance().getTime)
 
+  override def render = new Response {
+    override val jsonGenerator = ZipkinJson
+  }
+
   /* Index page */
   get("/") { request =>
     /* If valid query params passed, run the query and push the data down with the page */
@@ -58,7 +59,7 @@ class App(
     val queryResults = queryRequest match {
       case None => {
         /* Not valid params, load the normal landing page */
-        Future(Seq.empty[JsonTraceSummary])
+        Future(Seq.empty[TraceSummary])
       }
       case Some(qr) => {
         /* Valid params */
@@ -122,14 +123,14 @@ class App(
     query(request).map(render.json(_))
   }
 
-  def query(request: Request): Future[Seq[JsonTraceSummary]] = {
+  def query(request: Request): Future[Seq[TraceSummary]] = {
     QueryExtractor(request) match {
       case Some(qr) => query(qr, request)
       case None     => Future(Seq.empty)
     }
   }
 
-  def query(queryRequest: QueryRequest, request: Request, retryLimit: Int = 10): Future[Seq[JsonTraceSummary]] = {
+  def query(queryRequest: QueryRequest, request: Request, retryLimit: Int = 10): Future[Seq[TraceSummary]] = {
     log.debug(queryRequest.toString)
     /* Get trace ids */
     val response = client.getTraceIds(queryRequest.toThrift).map { _.toQueryResponse }
@@ -149,7 +150,7 @@ class App(
         case ids @ _ => {
           client.getTraceSummariesByIds(ids, adjusters).map {
             _.map { summary =>
-              summary.toTraceSummary.toJson
+              summary.toTraceSummary
             }
           }
         }
@@ -272,7 +273,7 @@ class App(
     log.debug(ids.toString())
 
     client.getTraceCombosByIds(ids, adjusters).map { _.map { _.toTraceCombo }.head }.map { combo =>
-      render.json(combo.toJson)
+      render.json(combo)
     }
   }
 
@@ -287,7 +288,7 @@ class App(
         _.toTraceCombo.trace
       }.head
     }.map { trace =>
-      render.json(trace.toJson)
+      render.json(trace)
     }
   }
 
@@ -401,13 +402,13 @@ class IndexView(
   val endDate: String,
   val endTime: String,
   services: Seq[TracedService] = Nil,
-  queryResults: Seq[JsonTraceSummary] = Nil,
+  queryResults: Seq[TraceSummary] = Nil,
   annotations: Option[Seq[String]] = None,
   kvAnnotations: Option[Seq[(String, String)]] = None
 ) extends TitledView {
   val template = "templates/index.mustache"
-  val jsonServices = Json.generate(services)
-  val jsonQueryResults = Json.generate(queryResults)
+  val jsonServices = ZipkinJson.generate(services)
+  val jsonQueryResults = ZipkinJson.generate(queryResults)
 
   lazy val annotationsPartial = annotations.map {
     _.map { a =>

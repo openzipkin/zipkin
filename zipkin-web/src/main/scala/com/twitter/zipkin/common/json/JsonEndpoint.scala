@@ -16,18 +16,16 @@
 package com.twitter.zipkin.common.json
 
 import com.twitter.zipkin.common.Endpoint
-import java.nio.ByteBuffer
-import java.net.InetAddress
 
 /**
  * Container for sanitized endpoint data.
  * This differs from thrift endpoint in that port is unsigned
  * and the address is a dotted quad string.
  */
-case class JsonEndpoint(ipv4: String, port: Int, serviceName: String)
+case class JsonEndpoint(ipv4: String, port: Int, serviceName: String)  extends WrappedJson
 
 object JsonEndpoint {
-  def apply(host: Endpoint) = {
+  def wrap(host: Endpoint) = {
     new JsonEndpoint(host.getHostAddress, host.getUnsignedPort, host.serviceName)
   }
 }

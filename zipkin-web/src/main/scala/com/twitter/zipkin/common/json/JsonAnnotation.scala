@@ -15,9 +15,16 @@
  */
 package com.twitter.zipkin.common.json
 
-case class JsonAnnotation(
-  timestamp: String,
-  value: String,
-  host: Option[JsonEndpoint],
-  duration: Option[String]) // Duration in microseconds
+import com.twitter.zipkin.common.Annotation
 
+case class JsonAnnotation (timestamp: String,
+                           value: String,
+                           host: Option[JsonEndpoint],
+                           duration: Option[String]) // Duration in microseconds
+  extends WrappedJson
+
+object JsonAnnotation {
+  def wrap(a: Annotation) = {
+    JsonAnnotation(a.timestamp.toString, a.value, a.host.map(JsonEndpoint.wrap(_)), a.duration map { _.inMicroseconds.toString })
+  }
+}
