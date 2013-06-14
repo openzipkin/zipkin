@@ -33,3 +33,5 @@ the "Tools > Add-Ons" dialog and navigate to the XPI file. The new version of
 the extension will overwrite the existing one. If you have had Firebug open in
 your current browsing session, you will need to reload Firebug. The easiest way
 to do so is to restart Firefox.
+
+![Zipkin browser extension screenshot](https://f.cloud.github.com/assets/203177/651191/7df48586-d46e-11e2-8738-6727b7eda926.png)
