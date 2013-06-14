@@ -32,9 +32,9 @@
   KvAnnotation.prototype.getHost           = function() { return this.host; };
   KvAnnotation.prototype.getHostAddress    = function() {
     if (this.host !== undefined) {
-     return this.host.ipv4
+     return this.host.ipv4;
     } else {
-     return "0.0.0.0"
+     return "0.0.0.0";
     }
   };
 
