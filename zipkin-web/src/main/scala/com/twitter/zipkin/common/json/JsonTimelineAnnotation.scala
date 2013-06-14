@@ -16,6 +16,15 @@
 package com.twitter.zipkin.common.json
 
 import com.twitter.zipkin.common.Endpoint
+import com.twitter.zipkin.query.TimelineAnnotation
+import com.twitter.finagle.tracing.SpanId
 
 case class JsonTimelineAnnotation(timestamp: String, value: String, host: Endpoint, spanId: String, parentId: Option[String],
                                   serviceName: String, spanName: String)
+  extends WrappedJson
+
+object JsonTimelineAnnotation {
+  def wrap(t: TimelineAnnotation) = {
+    JsonTimelineAnnotation(t.timestamp.toString, t.value, t.host, SpanId(t.spanId).toString, t.parentId map { SpanId(_).toString }, t.serviceName, t.spanName)
+  }
+}

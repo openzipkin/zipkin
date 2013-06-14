@@ -35,8 +35,6 @@ object Trace {
 
 case class Trace(private val s: Seq[Span]) {
 
-  val log = Logger.get(getClass.getName)
-
   lazy val spans = mergeBySpanId(s).toSeq.sortWith {
     (a, b) =>
       val aTimestamp = a.firstAnnotation.map(_.timestamp).getOrElse(Long.MaxValue)

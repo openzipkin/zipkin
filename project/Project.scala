@@ -251,7 +251,7 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "com.twitter" % "finatra" % "1.3.1",
+        "com.twitter" % "finatra" % "1.3.3",
 
         "com.twitter.common.zookeeper" % "server-set" % "1.0.36",
 
