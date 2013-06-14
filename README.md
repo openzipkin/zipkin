@@ -23,7 +23,7 @@ Zipkin itself provides three services:
 If all three of these daemons are running, you should be able to visit
 http://localhost:8080 to view the Zipkin UI. There is also a
 [browser extension](https://github.com/twitter/zipkin/tree/master/zipkin-browser-extension)
-which allows seeing traces of each page as you browse your website.
+which shows visualizations of traces of each page as you browse your website.
 
 The next step is to collect trace data to view in Zipkin. To do this, interface
 with the collector (e.g. by using Scribe) to record trace data. There are
