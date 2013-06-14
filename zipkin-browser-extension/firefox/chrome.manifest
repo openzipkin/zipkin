@@ -1,0 +1,3 @@
+content   zipkin                 chrome/content/
+skin      zipkin   classic/1.0   chrome/skin/classic/
+locale    zipkin   en-US         chrome/locale/en-US/
