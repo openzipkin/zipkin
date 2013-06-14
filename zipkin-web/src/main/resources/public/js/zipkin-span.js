@@ -97,6 +97,12 @@ Zipkin.fromRawSpan = function(rawSpan) {
   });
   var kvAnnotations = $.map(rawSpan.binaryAnnotations, function(b) {
     var ann =  Zipkin.fromRawKvAnnotation(b);
+    // convert ca/sa annotations to a more readable format
+    if (ann.key == "ca" || ann.key == "sa") {
+      ann.key = (ann.key == "ca") ? "Client Address" : "Server Address";
+      ann.setAnnotationType(6); // string
+      ann.setValue(ann.host.ipv4 + ":" + ann.host.port);
+    }
     ann.setSpan(span);
     return ann;
   });

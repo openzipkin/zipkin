@@ -22,17 +22,27 @@
     this.value          = config.value;
     this.annotationType = config.annotationType;
     this.span           = config.span;
+    this.host           = config.host;
   };
 
   KvAnnotation.prototype.getKey            = function() { return this.key; };
   KvAnnotation.prototype.getValue          = function() { return this.value; };
   KvAnnotation.prototype.getAnnotationType = function() { return this.annotationType; };
   KvAnnotation.prototype.getSpan           = function() { return this.span; };
+  KvAnnotation.prototype.getHost           = function() { return this.host; };
+  KvAnnotation.prototype.getHostAddress    = function() {
+    if (this.host !== undefined) {
+     return this.host.ipv4;
+    } else {
+     return "0.0.0.0";
+    }
+  };
 
   KvAnnotation.prototype.setKey            = function(k) { this.key = k; };
   KvAnnotation.prototype.setValue          = function(v) { this.value = v; };
   KvAnnotation.prototype.setAnnotationType = function(t) { this.annotationType = t; };
   KvAnnotation.prototype.setSpan           = function(s) { this.span = s; };
+  KvAnnotation.prototype.setHost           = function(h) { this.host = h; };
 
   return KvAnnotation;
  })();
@@ -41,6 +51,7 @@
   return new Zipkin.KvAnnotation({
     key: rawKvAnnotation.key,
     value: rawKvAnnotation.value,
-    annotationType: rawKvAnnotation.annotationType
+    annotationType: rawKvAnnotation.annotationType,
+    host: rawKvAnnotation.host
   });
  };
