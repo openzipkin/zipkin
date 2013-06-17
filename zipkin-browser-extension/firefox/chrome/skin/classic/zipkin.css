@@ -131,3 +131,20 @@
 .zipkin-panel-viz-span-wrapper:nth-of-type(5n+5) .zipkin-panel-viz-span {
     background-color: #BB66DD;
 }
+
+.zipkin-panel-duration {
+    background-color: #FAFAFA;
+    border: 1px solid #333333;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.7), 0 0 4px 2px rgba(160, 200, 220, 0.5);
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    opacity: 0.35;
+    padding: 0 2px;
+    position: absolute;
+    right: 10px;
+    text-align: right;
+    top: 0;
+}
+.zipkin-panel-viz:hover .zipkin-panel-duration {
+    opacity: 0.9;
+}
