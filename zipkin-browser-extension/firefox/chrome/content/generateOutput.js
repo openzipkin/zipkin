@@ -120,7 +120,7 @@ define([
                                         return Math.round(((n - min) / (max - min)) * 100);
                                     }
                                     var hasTraceData = false;
-                                    var out = '<tr class="zipkin-panel-viz"><td colspan="5" class="zipkin-panel-viz-wrapper">';
+                                    var out = '<tr class="zipkin-panel-viz"><td colspan="5" class="zipkin-panel-viz-wrapper"><div style="position: relative;">';
                                     for (var i = 0, l = spans.length; i < l; i++) {
                                         var s = spans[i], ts = s.startTimestamp;
                                         var left = percentAcross(ts), right = percentAcross(ts + s.duration);
@@ -129,7 +129,10 @@ define([
                                             out += '<div class="zipkin-panel-viz-span-wrapper"><div class="zipkin-panel-viz-span" data-span="' + escapeHTML(s.services.join(', ')) + '" style="margin-left: ' + left + '%; margin-right: ' + (100 - right) + '%;"></div></div>'
                                         }
                                     }
-                                    out += '</td></tr>';
+                                    if (hasTraceData) {
+                                        out += '<div class="zipkin-panel-duration">' + Math.round((max - min) / 1000) + 'ms</div>';
+                                    }
+                                    out += '</div></td></tr>';
                                     if (!hasTraceData) {
                                         out = out.replace('</td></tr>', '<div class="zipkin-no-data">' + t('no_trace_data') + '</div>$&');
                                     }
