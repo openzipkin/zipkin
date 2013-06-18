@@ -194,6 +194,7 @@ object Zipkin extends Build {
 
     PackageDist.packageDistZipName := "zipkin-query-service.zip",
     BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
+    resourceGenerators in Compile <+= BuildProperties.buildPropertiesWrite,
 
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
@@ -236,6 +237,7 @@ object Zipkin extends Build {
 
     PackageDist.packageDistZipName := "zipkin-collector-service.zip",
     BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
+    resourceGenerators in Compile <+= BuildProperties.buildPropertiesWrite,
 
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
@@ -263,6 +265,7 @@ object Zipkin extends Build {
 
       PackageDist.packageDistZipName := "zipkin-web.zip",
       BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
+      resourceGenerators in Compile <+= BuildProperties.buildPropertiesWrite,
 
       /* Add configs to resource path for ConfigSpec */
       unmanagedResourceDirectories in Test <<= baseDirectory {
