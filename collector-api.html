@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Zipkin, from Twitter</title>
+    <link href="css/bootstrap-2.1.0.min.css" rel="stylesheet">
+    <link href="css/docs.css" rel="stylesheet">
+    <!--<link href="css/bootstrap-responsive-2.0.4.min.css" rel="stylesheet">-->
+  </head>
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="brand" href="index.html">Zipkin</a>
+          <ul class="nav">
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="install.html">Install</a></li>
+            <li><a href="hadoop.html">Hadoop</a></li>
+            <li><a href="instrument.html">Instrumenting a library</a></li>
+          </ul>
+          <ul class="nav pull-right">
+            <li><a href="https://github.com/twitter/zipkin">Github</a></li>
+            <li><a href="https://twitter.com/zipkinproject">@ZipkinProject</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+      <header class="jumbotron masthead">
+        <div class="inner">
+          <h1>Zipkin, from Twitter</h1>
+          <p class="lead">A distributed tracing system</p>
+        </div>
+      </header>
+
+      <div class="container">
+        <section id="examples">
+<h1>Zipkin Collection API</h1>
+
+<p>This document is an attempt to describe how tracing data gets
+submitted and collected by zipkin.  It&#39;s meant to provide a high-level
+architectural overview for implementers of client-side tracing
+libraries, as well as new zipkin collection modules.</p>
+
+<h2>Zipkin Collector</h2>
+
+<p>The zipkin collector is a generic interface for getting traces into
+zipkin.  There are currently two concrete implementations included in
+the zipkin distribution: zipkin-collector-scribe which is the
+production version used by twitter, and zipkin-kafka, which is an
+experimental collector that uses kafka.  Additionally there are a few
+third-party proxies for collecting zipkin traces such as
+<a href="https://github.com/kristofa/brave-zipkin-spancollector">brave-zipkin-spancollector</a>
+and <a href="https://github.com/racker/restkin">RESTkin</a>.</p>
+
+<h2>Thrift</h2>
+
+<p>Zipkin primarily uses <a href="http://thrift.apache.org">thrift</a> as it&#39;s RPC
+and serialization format.  All currently implemented collectors accept
+data as binary thrift objects encapsulating individual spans. See 
+<a href="https://github.com/twitter/zipkin/tree/master/zipkin-thrift/src/main/resources/thrift">the zipkin thrift idl definitions</a>
+for more information.</p>
+
+<h2>Zipkin Scribe Collector</h2>
+
+<p>The primary mechanism for getting data into zipkin is using the scribe
+collector.  <a href="http://github.com/facebook/scribe">Scribe</a> is a
+store-and-forward logging aggregator developed by facebook.  Scribe
+also uses thrift as a binary encoding mechanism, which means that
+zipkin scribe messages are doubly wrapped.  The scribe-compatible
+thrift structure is just two strings: category and message.  The
+message data is then a base64 encoded binary thrift structure
+representing an individual span.  </p>
+
+<p>There are a few client-side implementations of tracing that log to the
+zipkin scribe collector.  The reference implementation is Twitter&#39;s
+<a href="https://github.com/twitter/finagle/tree/master/finagle-zipkin">finagle library</a>
+in Scala.  Finagle also provides a <a href="https://github.com/twitter/finagle/blob/master/finagle-thrift/src/main/ruby/lib/finagle-thrift/tracer.rb">Ruby</a>
+implementation of a zipkin tracer.  <a href="https://github.com/racker/tryfer">Rackspace&#39;s Tryfer</a> 
+is a good example of a scribe tracer written in python.</p>
+
+<p>If you are looking to add zipkin support to your favorite language,
+writing a scribe/thrift implementation is a good place to start.  The
+only downside is that it requires you to run the scribe daemon on all
+systems actively tracing, but for testing you can point the scribe
+code directly at the zipkin collector.</p>
+
+<h2>Non-Scribe Collectors</h2>
+
+<p>The zipkin-kafka collector was written in a week as an experiment, but
+it works quite well.  For organizations looking to use zipkin but
+prefer another store-and-forward technology, writing a zipkin
+collector for it should be quite straightforward.</p>
+
+<h2>Span Convention</h2>
+
+<p>On top of the actual mechanism of logging spans to zipkin, there is a
+preferred format of the spans being logged that will result in optimal
+display of the data.  Here are some good rules to follow:</p>
+
+<ul>
+<li><p>The topmost span in a trace has its span id equal to trace id and
+parent span id is 0</p></li>
+<li><p>Annotate <code>cr</code>,<code>cs</code>,<code>sr</code>,<code>ss</code> for every leg of a trace.  For
+extremely protocol-sensitive operations such as memcache requests,
+it is acceptable to only annotate the client-side send/recieve pair.</p></li>
+<li><p>Include valid hosts in every annotation, along with service-specific
+service names.  The host in all cs,cr,ss,sr annotations are always
+the local host.  Service-names in cs/cr annotations refers to the
+remote service, in case the remote service does not annotate.</p></li>
+<li><p>There are two additional binary annotations that are helpful: <code>ca</code> and
+<code>sa</code>.  These refer to the client-address and server-address
+respectively, and they are always boolean types with the value of
+true.  The host in these annotations refers to the host/port of the
+client or server calling the current span&#39;s service.  IE: if the
+server is annotating a call, ca is the remote host and sa is the
+local host.  If a client is annotating a call, ca is the local host.</p></li>
+<li><p>There are a number of other common annotations that have become a
+loose convention.  Here are some annotations that are common:</p>
+
+<ul>
+<li><code>http.uri</code> - The current uri sent to an http server</li>
+<li><code>http.responsecode</code> - The response code the http server returned</li>
+</ul></li>
+</ul>
+
+<h2>TraceId Propagation</h2>
+
+<p>The final thing to consider when implementing zipkin on the
+client-side is a mechanism to propagate trace id to downstream
+services.  In order to properly reassamble traces, each service needs
+to submit spans with trace ids and parent span ids that match up and
+form an unbroken tree.  This is dependent on the client RPC protocol
+being used, and currently there are two implementations for this.</p>
+
+<h3>HTTP</h3>
+
+<p>All HTTP implementations of zipkin use the following X-Headers to
+propagate the trace information: <code>X-B3-SpanId</code>, <code>X-B3-TraceId</code>,
+<code>X-B3-ParentSpanId</code>, <code>X-B3-Flags</code>, <code>X-B3-Sampled</code>.  The id headers are
+hex-encoded trace ids as used by zipkin elsewhere.  <code>X-B3-Sampled</code> is
+either <code>true</code> or <code>false</code> if the current trace is being actively
+sampled.  <code>X-B3-Flags</code> contains the debug flag, and is 0 if debugging
+is off, and 1 if debugging (which forces sampling by the collector) is
+enabled.</p>
+
+<h3>Thrift</h3>
+
+<p>The finagle library also implements a mechanism for passing tracing
+information over thrift.  This is done by calling a special method
+name, <code>__can__finagle__trace__v3__</code> when a connection is established to
+a thrift service.  If the service responds to this method, then the
+original rpc is wrapped with additional data as defined in <a href="https://github.com/twitter/finagle/blob/master/finagle-thrift/src/main/thrift/tracing.thrift">this
+thrift file</a></p>
+
+<h2>Future</h2>
+
+<p>This is a description of the current behavior of zipkin&#39;s collector
+and clients.  However, zipkin is a very modular piece of software and
+it is quite likely that new pathways for span collection will be
+implemented in the future, as well as new encapsulation mechanisms for
+span data.</p>
+        </section>
+      </div>
+      <footer class="footer">
+        <div class="container">
+          <p>Copyright 2012 Twitter, Inc.</p>
+          <p>Licensed under the Apache License, Version 2.0: <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a>
+        </div>
+      </footer>
+  </body>
+</html>

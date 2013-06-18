@@ -59,13 +59,13 @@ When the host makes a request to another service, it passes a few tracing identi
 <p><a href="https://github.com/twitter/finagle">Finagle</a> is used heavily inside of Twitter and it was a natural point to include tracing support. So far we have client/server support for Thrift and HTTP as well as client only support for Memcache and Redis.</p>
 
 <p>To set up a Finagle server in Scala, just do the following.
-Adding tracing is as simple as adding <a href="https://github.com/twitter/finagle/tree/master/finagle-zipkin">finagle-zipkin</a> as a dependency and a <code>tracerFactory</code> to the ServerBuilder. </p>
+Adding tracing is as simple as adding <a href="https://github.com/twitter/finagle/tree/master/finagle-zipkin">finagle-zipkin</a> as a dependency and a <code>tracer</code> to the ServerBuilder.</p>
 
 <pre><code class="scala">ServerBuilder()
   .codec(ThriftServerFramedCodec())
   .bindTo(serverAddr)
   .name(&quot;servicename&quot;)
-  .tracerFactory(ZipkinTracer())
+  .tracer(ZipkinTracer.mk())
   .build(new SomeService.FinagledService(queryService, new TBinaryProtocol.Factory()))
 </code></pre>
 
@@ -100,7 +100,7 @@ FinagleThrift.enable_tracing!(client, client_id), &quot;service_name&quot;)
 
 <p><a href="https://github.com/twitter/cassie">Cassie</a> is a Finagle based Cassandra client library. You set the tracer in Cassie pretty much like you would in Finagle, but in Cassie you set it on the KeyspaceBuilder.</p>
 
-<pre><code class="scala">cluster.keyspace(keyspace).tracerFactory(ZipkinTracer())
+<pre><code class="scala">cluster.keyspace(keyspace).tracer(ZipkinTracer.mk())
 </code></pre>
 
 <h3>Transport</h3>
