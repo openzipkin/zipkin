@@ -6,6 +6,7 @@ PATH = "https://raw.github.com/twitter/zipkin/master/doc/%s.md"
 SRC_LIST = [
   ["overview", "index"],
   ["architecture", None],
+  ["collector-api", None],
   ["install", None],
   ["hadoop", None],
   ["instrument", None]
