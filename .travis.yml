@@ -1,4 +1,6 @@
 language: scala
+services:
+  - redis
 scala:
   - 2.9.1
 jdk:
