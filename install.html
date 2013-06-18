@@ -37,19 +37,30 @@
         <section id="examples">
 <h2>Installation</h2>
 
+<p>To get going quickly, see the
+<a href="https://github.com/twitter/zipkin/blob/master/doc/ubuntu-quickstart.txt">Ubuntu Quickstart</a> and
+<a href="https://github.com/twitter/zipkin/blob/master/doc/mac-quickstart.md">Mac Quickstart</a> guides.
+These will help you get Zipkin running on a single machine so that you can experiment with it.</p>
+
+<p>This document explains the services and dependencies with which Zipkin
+interacts, and more advanced configuration.</p>
+
 <h3>Cassandra</h3>
 
-<p>Zipkin relies on Cassandra for storage. So you will need to bring up a Cassandra cluster.</p>
+<p>Zipkin is most commonly used with <a href="http://cassandra.apache.org/">Cassandra</a> for
+the collector&#39;s storage. There is also a
+<a href="https://github.com/twitter/zipkin/blob/master/doc/redis.md">Redis plugin</a> and
+we&#39;d like to see support for other databases.</p>
 
 <ol>
 <li>See Cassandra&#39;s <a href="http://cassandra.apache.org/">site</a> for instructions on how to start a cluster.</li>
-<li>Use the Zipkin Cassandra schema attached to this project. You can create the schema with the following command.
-<code>bin/cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt</code></li>
+<li>Use the Zipkin Cassandra schema attached to this project. You can create the schema with the following command:
+<code>cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt</code></li>
 </ol>
 
 <h3>ZooKeeper</h3>
 
-<p>Zipkin uses ZooKeeper for coordination. That&#39;s where we store the server side sample rate and register the servers.</p>
+<p>Zipkin can use ZooKeeper for coordination. That&#39;s where we store the server side sample rate and register the servers.</p>
 
 <ol>
 <li>See ZooKeeper&#39;s <a href="http://zookeeper.apache.org/">site</a> for instructions on how to install it.</li>
@@ -57,10 +68,15 @@
 
 <h3>Scribe</h3>
 
-<p><a href="https://github.com/facebook/scribe">Scribe</a> is the logging framework we use to transport the trace data.
-You need to set up a network store that points to the Zipkin collector daemon. If you are just trying out Zipkin you can skip this step entirely and point the ZipkinTracer directly at the collector.</p>
+<p><a href="https://github.com/facebook/scribe">Scribe</a> is the logging
+framework we use at Twitter to transport the trace data. There are several other
+ways to tell Zipkin what trace data to collect; in particular, if you are just
+trying out Zipkin you can skip this step entirely and point the ZipkinTracer
+directly at the collector.</p>
 
-<p>A Scribe store for Zipkin might look something like this.</p>
+<p>To use Scribe with Zipkin, you need to set up a network store that points to
+the Zipkin collector daemon. A Scribe store for Zipkin might look something
+like this:</p>
 
 <pre><code>&lt;store&gt;
   category=zipkin
@@ -74,38 +90,29 @@ You need to set up a network store that points to the Zipkin collector daemon. I
 &lt;/store&gt;
 </code></pre>
 
-<p>If you don&#39;t want to hardcode the IP address of your collector there are a few options. </p>
+<p>If you don&#39;t want to hardcode the IP address of your collector there are a few
+options. One is to use an internal DNS entry for the collectors so that you only
+have one place to change the addresses when you add or remove collectors.
+Alternatively, if you want to get all fancy you can use a
+<a href="https://github.com/traviscrawford/scribe">modified version of Scribe</a> that
+picks up the collectors via ZooKeeper. When each collector starts up it adds
+itself to ZooKeeper and when a collector shuts down it is automatically
+removed. The modified Scribe gets notified when the set of collectors change.
+To use this mode you change <code>remote_host</code> in the configuration to
+<code>zk://zookeeper-hostname:2181/scribe/zipkin</code> or something similar.</p>
 
-<p>You can use an internal DNS entry for the collectors, that way you only have one place to change the addresses when you add or remove collectors. </p>
-
-<p>If you want to get all fancy you can use a modified version of <a href="https://github.com/traviscrawford/scribe">Scribe</a> that picks up the collectors via ZooKeeper. When each collector starts up it adds itself to ZooKeeper and when a collector shuts down it is automatically removed. The modified Scribe gets notified when the set of collectors change. To use this mode you change remote_host in the configuration to zk://zookeeper-hostname:2181/scribe/zipkin or something similar.</p>
-
-<p>We&#39;re hoping that others might add non-Scribe transports for the tracing data; there is no reason why Scribe has to be the only one.</p>
+<p>We&#39;re hoping that others might add non-Scribe transports for the tracing data;
+there is no reason why Scribe has to be the only one.</p>
 
 <h3>Zipkin servers</h3>
 
-<p>We&#39;ve developed Zipkin with <a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>, <a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>, and JDK7.</p>
+<p>We developed Zipkin with
+<a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>,
+<a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>, and JDK7.</p>
 
-<ol>
-<li><code>git clone https://github.com/twitter/zipkin.git</code></li>
-<li><code>cd zipkin</code></li>
-<li><code>cp zipkin-collector-service/config/collector-dev.scala zipkin-collector-service/config/collector-prod.scala</code></li>
-<li><code>cp zipkin-query-service/config/query-dev.scala zipkin-query-service/config/query-prod.scala</code></li>
-<li>Modify the configs above as needed. Pay particular attention to ZooKeeper and Cassandra server entries.</li>
-<li><code>bin/sbt update package-dist</code> (This downloads SBT 0.11.2 if it doesn&#39;t already exist)</li>
-<li><code>scp dist/zipkin*.zip [server]</code></li>
-<li><code>ssh [server]</code></li>
-<li><code>unzip zipkin*.zip</code></li>
-<li><code>mkdir -p /var/log/zipkin</code></li>
-<li><code>zipkin-collector-service/src/scripts/collector.sh -f zipkin-collector-service/config/collector-prod.scala</code></li>
-<li><code>zipkin-query-service/src/scripts/query.sh -f zipkin-query-service/config/query-prod.scala</code></li>
-</ol>
-
-<p>You can also run the collector and query services through SBT.</p>
-
-<p>To run the Scribe collector service: <code>bin/sbt &#39;project zipkin-collector-service&#39; &#39;run -f zipkin-collector-service/config/collector-dev.scala&#39;</code> or <code>bin/collector</code></p>
-
-<p>To run the query service: <code>bin/sbt &#39;project zipkin-query-service&#39; &#39;run -f zipkin-query-service/config/query-dev.scala&#39;</code> or <code>bin/query</code></p>
+<p>The <a href="https://github.com/twitter/zipkin/blob/master/doc/ubuntu-quickstart.txt">Ubuntu Quickstart</a>
+and <a href="https://github.com/twitter/zipkin/blob/master/doc/mac-quickstart.md">Mac Quickstart</a>
+guides explain how to set up and run the collector and query services.</p>
 
 <h3>Zipkin UI</h3>
 
