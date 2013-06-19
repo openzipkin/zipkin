@@ -10,7 +10,7 @@ object Zipkin extends Build {
   val OSTRICH_VERSION = "9.1.1"
   val UTIL_VERSION    = "6.3.4"
   val SCROOGE_VERSION = "3.1.1"
-  val ZOOKEEPER_VERSION = "0.0.30"
+  val ZOOKEEPER_VERSION = Map("candidate" -> "0.0.41", "group" -> "0.0.44", "client" -> "0.0.35")
   val ALGEBIRD_VERSION  = "0.1.13"
 
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
@@ -91,7 +91,7 @@ object Zipkin extends Build {
         "com.twitter" % "util-core"         % UTIL_VERSION,
         "com.twitter" %% "algebird-core"    % ALGEBIRD_VERSION,
 
-        "com.twitter.common.zookeeper" % "client"    % ZOOKEEPER_VERSION
+        "com.twitter.common.zookeeper" % "client"    % ZOOKEEPER_VERSION("client")
       ) ++ testDependencies
     )
 
@@ -139,8 +139,8 @@ object Zipkin extends Build {
       "com.twitter" % "util-zk"           % UTIL_VERSION,
       "com.twitter" % "util-zk-common"    % UTIL_VERSION,
 
-      "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION,
-      "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION
+      "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION("candidate"),
+      "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION("group")
     ) ++ testDependencies
   ).dependsOn(common, scrooge)
 
@@ -180,8 +180,8 @@ object Zipkin extends Build {
         "com.twitter" % "util-zk"           % UTIL_VERSION,
         "com.twitter" % "util-zk-common"    % UTIL_VERSION,
 
-        "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION,
-        "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION
+        "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION("candidate"),
+        "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION("group")
       ) ++ testDependencies
     ).dependsOn(common, scrooge)
 

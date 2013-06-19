@@ -27,7 +27,7 @@ import com.twitter.zipkin.collector.processor.ScribeFilter
 import com.twitter.zipkin.collector.{ResilientZKNode, WriteQueue, ScribeCollectorService}
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.storage.Store
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.zookeeper.KeeperException
 
@@ -72,13 +72,18 @@ object Scribe {
   def serverSets(zkClientBuilder: ZooKeeperClientBuilder, paths: Set[String]) = new Builder[(InetSocketAddress, StatsReceiver, Timer) => OstrichService] {
     def apply() = (address: InetSocketAddress, statsReceiver: StatsReceiver, timer: Timer) => {
       new OstrichService {
+        // make sure we register with zookeeper using a reasonable address
+        var boundAddr = if (address.getHostString == "0.0.0.0" || address.getHostString == "127.0.0.1")
+          new InetSocketAddress(InetAddress.getLocalHost, address.getPort)
+        else
+          address
 
         var zkNodes: Set[ResilientZKNode] = Set.empty
 
         def start() {
           val zkClient = zkClientBuilder.apply()
           zkNodes = paths map { path =>
-            new ResilientZKNode(path, address.getHostName + ":" + address.getPort, zkClient, timer, statsReceiver)
+            new ResilientZKNode(path, boundAddr.getHostName + ":" + boundAddr.getPort, zkClient, timer, statsReceiver)
           }
           zkNodes foreach { _.register() }
         }
