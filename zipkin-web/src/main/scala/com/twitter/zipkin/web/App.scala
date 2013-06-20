@@ -21,6 +21,7 @@ import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finatra.{Response, Controller, View, Request}
 import com.twitter.logging.Logger
 import com.twitter.util.{Time, Duration, Future}
+import com.twitter.conversions.time._
 import com.twitter.zipkin.config.{JsConfig, CssConfig}
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
@@ -222,7 +223,8 @@ class App(
    * - endTime: Optional date in epoch seconds (rounded to the nearest day)
    */
   get("/api/dependencies/?:startTime?/?:endTime?") { request =>
-    val startTime = request.routeParams.getOrElse("startTime", Time.now.inSeconds.toString).toLong
+    val defaultStart = (Time.now - 7.days).inMicroseconds.toString
+    val startTime = request.routeParams.getOrElse("startTime", defaultStart).toLong
     val endTime = request.routeParams.get("endTime").map(_.toLong)
 
     client.getDependencies(startTime, endTime).map { deps =>

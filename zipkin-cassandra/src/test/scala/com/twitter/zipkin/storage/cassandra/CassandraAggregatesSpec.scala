@@ -29,13 +29,14 @@ import com.twitter.algebird.Moments
 import com.twitter.zipkin.common.{Dependencies, Service, DependencyLink}
 import org.junit.runner.RunWith
 import org.specs.runner.JUnitSuiteRunner
+import java.nio.ByteBuffer
 
 @RunWith(classOf[JUnitSuiteRunner])
 class CassandraAggregatesSpec extends SpecificationWithJUnit with JMocker with ClassMocker {
 
   val mockKeyspace = mock[Keyspace]
   val mockAnnotationsCf = mock[ColumnFamily[String, Long, String]]
-  val mockDependenciesCf = mock[ColumnFamily[Long, Long, gen.Dependencies]]
+  val mockDependenciesCf = mock[ColumnFamily[ByteBuffer, Long, gen.Dependencies]]
 
   def cassandraAggregates = CassandraAggregates(mockKeyspace, mockAnnotationsCf, mockDependenciesCf)
 
@@ -85,9 +86,10 @@ class CassandraAggregatesSpec extends SpecificationWithJUnit with JMocker with C
         val dl3 = DependencyLink(Service("Gizmoduck"), Service("tflock"), m2)
         val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
         val col = new Column[Long, gen.Dependencies](0L, deps1.toThrift)
+        val bb = ByteBuffer.allocate(8).putLong(0L)
 
         expect {
-          one(mockDependenciesCf).multigetRows(Set(0L).asJava, None, None, Order.Normal, Int.MaxValue) willReturn Future.value(Map(0L -> Map(0L -> col).asJava).asJava)
+          one(mockDependenciesCf).multigetRows(Set(bb).asJava, None, None, Order.Normal, Int.MaxValue) willReturn Future.value(Map(bb -> Map(0L -> col).asJava).asJava)
         }
 
         val result = Await.result(agg.getDependencies(Time.fromSeconds(0)))
