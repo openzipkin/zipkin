@@ -65,7 +65,7 @@ object Zipkin extends Build {
     Project(
       id = "zipkin",
       base = file(".")
-    ) aggregate(test, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, collectorCore, collectorService, kafka, redis)
+    ) aggregate(test, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, anormDB, collectorCore, collectorService, kafka, redis)
 
   lazy val test   = Project(
     id = "zipkin-test",
@@ -163,6 +163,22 @@ object Zipkin extends Build {
     }
   ).dependsOn(scrooge)
 
+  lazy val anormDB = Project(
+    id = "zipkin-anormdb",
+    base = file("zipkin-anormdb"),
+    settings = defaultSettings
+  ).settings(
+    libraryDependencies ++= Seq(
+      "anorm" %% "anorm" % "0.1"
+    ) ++ testDependencies,
+
+    /* Add configs to resource path for ConfigSpec */
+    unmanagedResourceDirectories in Test <<= baseDirectory {
+      base =>
+        (base / "config" +++ base / "src" / "test" / "resources").get
+    }
+  ).dependsOn(scrooge)
+
   lazy val queryCore =
     Project(
       id = "zipkin-query-core",
@@ -201,7 +217,11 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
+<<<<<<< HEAD
   ).dependsOn(queryCore, cassandra, redis)
+=======
+  ).dependsOn(queryCore, cassandra, anormDB)
+>>>>>>> Scaffolding for anorm integration. We're opting for anorm instead of Slick because util.Eval is not planned to be ported to Scala 2.10 and we rely on it too much to refactor quickly for this
 
   lazy val collectorScribe =
     Project(
@@ -244,7 +264,11 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
+<<<<<<< HEAD
   ).dependsOn(collectorCore, collectorScribe, cassandra, kafka, redis)
+=======
+  ).dependsOn(collectorCore, collectorScribe, cassandra, kafka, anormDB)
+>>>>>>> Scaffolding for anorm integration. We're opting for anorm instead of Slick because util.Eval is not planned to be ported to Scala 2.10 and we rely on it too much to refactor quickly for this
 
   lazy val web =
     Project(
