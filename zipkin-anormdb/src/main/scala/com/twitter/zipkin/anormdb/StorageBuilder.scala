@@ -15,12 +15,11 @@
  */
 package com.twitter.zipkin.anormdb
 
-import com.twitter.util.Duration
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.Storage
 import com.twitter.zipkin.storage.anormdb.AnormStorage
 
-case class StorageBuilder extends Builder[Storage] {
+case class StorageBuilder() extends Builder[Storage] {
   def apply() = {
     AnormStorage()
   }

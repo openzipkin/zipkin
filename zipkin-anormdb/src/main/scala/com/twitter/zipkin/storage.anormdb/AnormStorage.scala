@@ -18,8 +18,6 @@ package com.twitter.zipkin.storage.anormdb
 import com.twitter.zipkin.storage.Storage
 import com.twitter.zipkin.common.Span
 import com.twitter.util.{Await, Duration, Future}
-import scala._
-import scala.Predef._
 
 case class AnormStorage extends Storage {
 

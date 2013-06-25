@@ -178,7 +178,7 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
-  ).dependsOn(scrooge)
+  ).dependsOn(common, collectorCore, queryCore, scrooge)
 
   lazy val queryCore =
     Project(

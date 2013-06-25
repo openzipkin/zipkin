@@ -17,12 +17,7 @@ package com.twitter.zipkin.storage.anormdb
 
 import com.twitter.zipkin.common.{Span, Annotation}
 import com.twitter.zipkin.storage.{Index, IndexedTraceId, TraceIdDuration}
-import com.twitter.zipkin.util.Util
 import com.twitter.util.{Future, Duration}
-import com.twitter.zipkin.Constants
-import scala._
-import scala.collection.Set
-import scala.Predef._
 import java.nio.ByteBuffer
 
 case class AnormIndex extends Index {

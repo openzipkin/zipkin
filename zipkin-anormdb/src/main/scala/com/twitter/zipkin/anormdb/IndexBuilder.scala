@@ -15,12 +15,11 @@
  */
 package com.twitter.zipkin.anormdb
 
-import com.twitter.util.Duration
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.Index
 import com.twitter.zipkin.storage.anormdb.AnormIndex
 
-case class IndexBuilder extends Builder[Index] {
+case class IndexBuilder() extends Builder[Index] {
   def apply() = {
     AnormIndex()
   }
