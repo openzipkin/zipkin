@@ -170,7 +170,7 @@ object Zipkin extends Build {
   ).settings(
     libraryDependencies ++= Seq(
       "play"        %% "anorm"        % "2.1-09142012",
-      "org.xerial"  %  "sqlite-jdbc"  % "3.7.2"
+      "org.xerial"  %  "sqlite-jdbc"  % "3.7.15"
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */
