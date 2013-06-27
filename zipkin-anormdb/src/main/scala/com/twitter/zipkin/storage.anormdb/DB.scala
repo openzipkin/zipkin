@@ -39,7 +39,7 @@ object DB {
    * dependencies in project/Project.scala under the definition of the
    * lazy val anormdb.
    *
-   * SQLite:     "org.xerial"     % "sqlite-jdbc"          % "3.7.15"
+   * SQLite:     "org.xerial"     % "sqlite-jdbc"          % "3.7.2"
    * H2:         "com.h2database" % "h2"                   % "1.3.172"
    * PostgreSQL: "postgresql"     % "postgresql"           % "8.4-702.jdbc4" // or "9.1-901.jdbc4"
    * MySQL:      "mysql"          % "mysql-connector-java" % "5.1.25"
