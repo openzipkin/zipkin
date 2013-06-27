@@ -77,8 +77,6 @@ case class AnormIndex() extends Index {
    * passed we expect both the annotation key and value to be present in index
    * for a match to be returned.
    * Only return maximum of limit trace ids from before the endTs.
-   *
-   * INVESTIGATE: ANORM 2.1+ should support binary
    */
   def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
                               endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
@@ -98,7 +96,7 @@ case class AnormIndex() extends Index {
           """.stripMargin)
           .on("service_name" -> serviceName)
           .on("annotation" -> annotation)
-          .on("value" -> valueByteArray)
+          .on("value" -> valueByteArray) // TODO Confirm that ANORM 2.1+ supports BLOBs
           .on("end_ts" -> endTs)
           .on("limit" -> limit)
           .as((long("trace_id") ~ long("end_ts") map flatten) *)
