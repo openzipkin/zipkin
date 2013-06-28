@@ -22,6 +22,7 @@ import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import anorm._
 import anorm.SqlParser._
+import com.twitter.zipkin.Constants
 
 /**
  * Retrieve and store trace and span information.
@@ -80,44 +81,25 @@ case class AnormIndex() extends Index {
    */
   def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
                               endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
-    // TODO
-    val result:List[(Long, Long)] = value match {
-      case Some(v) => {
-        val valueByteArray = Util.getArrayFromBuffer(v)
-        SQL(
-          """SELECT trace_id, end_ts
-            |FROM traces
-            |WHERE service = {service_name}
-            |  AND annotation_key = {annotation}
-            |  AND annotation_value = {value}
-            |  AND end_ts < {end_ts}
-            |ORDER BY end_ts DESC
-            |LIMIT {limit}
-          """.stripMargin)
-          .on("service_name" -> serviceName)
-          .on("annotation" -> annotation)
-          .on("value" -> valueByteArray) // TODO Confirm that ANORM 2.1+ supports BLOBs
-          .on("end_ts" -> endTs)
-          .on("limit" -> limit)
-          .as((long("trace_id") ~ long("end_ts") map flatten) *)
-      }
-      case None => {
-        SQL(
-          """SELECT trace_id, end_ts
-            |FROM traces
-            |WHERE service = {service_name}
-            |  AND annotation_key = {annotation}
-            |  AND end_ts < {end_ts}
-            |ORDER BY end_ts DESC
-            |LIMIT {limit}
-          """.stripMargin)
-          .on("service_name" -> serviceName)
-          .on("annotation" -> annotation)
-          .on("end_ts" -> endTs)
-          .on("limit" -> limit)
-          .as((long("trace_id") ~ long("end_ts") map flatten) *)
-      }
-    }
+    // TODO need to figure out what gets inserted before we know how to get it out;
+    // right now this query doesn't match the table definition at the top of this file
+    val valueByteArray = if (value.isEmpty) "" else Util.getArrayFromBuffer(value.get)
+    val result:List[(Long, Long)] = SQL(
+      """SELECT trace_id, end_ts
+        |FROM traces
+        |WHERE service = {service_name}
+        |  AND annotation_key = {annotation}
+        |  AND (annotation_value = {value} OR annotation_value = '')
+        |  AND end_ts < {end_ts}
+        |ORDER BY end_ts DESC
+        |LIMIT {limit}
+      """.stripMargin)
+      .on("service_name" -> serviceName)
+      .on("annotation" -> annotation)
+      .on("value" -> valueByteArray) // TODO Confirm that ANORM 2.1+ supports BLOBs
+      .on("end_ts" -> endTs)
+      .on("limit" -> limit)
+      .as((long("trace_id") ~ long("end_ts") map flatten) *)
     Future(result map { row =>
       IndexedTraceId(traceId = row._1, timestamp = row._2)
     })
@@ -191,9 +173,27 @@ case class AnormIndex() extends Index {
    */
   def indexSpanByAnnotations(span: Span) : Future[Unit] = {
     // TODO
-    // INSERT INTO annotations (trace_id, annotation)
-    // VALUES ({trace_id}, {annotation})
-    Future.Unit // Seriously, what's supposed to go here?
+    // Annotations' value is binary-encoded servicename and timestamp?
+    // What needs to get inserted?
+    // INSERT INTO annotations (trace_id, annotation_key, annotation_value)
+    // VALUES ({trace_id}, {annotation_key}, {annotation_value})
+
+    val filteredAndGroupedAnnotations = span.annotations.filter { a =>
+      !Constants.CoreAnnotations.contains(a.value)
+    } groupBy {
+      _.value
+    }
+    for ((v, al) <- filteredAndGroupedAnnotations) {
+      val a = al.min
+      a.host foreach { endpoint =>
+        // What do I insert here?
+      }
+    }
+
+    span.binaryAnnotations foreach { ba => ba.host foreach { endpoint =>
+      // What do I insert here?
+    }}
+    Future.Unit
   }
 
   /**
