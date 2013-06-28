@@ -73,7 +73,12 @@ object Scribe {
     def apply() = (address: InetSocketAddress, statsReceiver: StatsReceiver, timer: Timer) => {
       new OstrichService {
         // make sure we register with zookeeper using a reasonable address
-        var boundAddr = if (address.getHostString == "0.0.0.0" || address.getHostString == "127.0.0.1")
+        def getIP(addr: InetSocketAddress): String = Option(addr.getAddress) match {
+          case Some(inet) => inet.getHostAddress
+          case None => ""  // TODO: this is a hack
+        }
+
+        var boundAddr = if (getIP(address) == "0.0.0.0" || getIP(address) == "127.0.0.1")
           new InetSocketAddress(InetAddress.getLocalHost, address.getPort)
         else
           address
