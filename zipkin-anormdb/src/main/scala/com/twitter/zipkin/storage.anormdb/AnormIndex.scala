@@ -43,6 +43,9 @@ case class AnormIndex() extends Index {
   // Database connection object
   private val conn = DB.getConnection()
 
+  // TODO A lot of this needs to be reworked due to the new structure of AnormStorage.
+  // Indexing probably isn't necessary at all since that's really just a NoSQL concept.
+
   /**
    * Close the index
    */
@@ -175,6 +178,8 @@ case class AnormIndex() extends Index {
     // TODO
     // Annotations' value is binary-encoded servicename and timestamp?
     // What needs to get inserted?
+    // Also, this information seems to never be retrieved, so how does the web
+    // UI get it?
     // INSERT INTO annotations (trace_id, annotation_key, annotation_value)
     // VALUES ({trace_id}, {annotation_key}, {annotation_value})
 
