@@ -24,6 +24,27 @@ object AnnotationType {
   val I64     = AnnotationType(4, "I64")
   val Double  = AnnotationType(5, "Double")
   val String  = AnnotationType(6, "String")
+
+  def fromInt(v:Int) = v match {
+    case Bool.value   => Bool
+    case Bytes.value  => Bytes
+    case I16.value    => I16
+    case I32.value    => I32
+    case I64.value    => I64
+    case Double.value => Double
+    case String.value => String
+    case _            => String /* Uh... */
+  }
+  def fromString(v:Int) = v match {
+    case Bool.name   => Bool
+    case Bytes.name  => Bytes
+    case I16.name    => I16
+    case I32.name    => I32
+    case I64.name    => I64
+    case Double.name => Double
+    case String.name => String
+    case _           => String /* Uh... */
+  }
 }
 
 case class AnnotationType(value: Int, name: String)

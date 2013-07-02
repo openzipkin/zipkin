@@ -16,11 +16,15 @@
 package com.twitter.zipkin.storage.anormdb
 
 import com.twitter.zipkin.storage.Storage
-import com.twitter.zipkin.common.Span
+import com.twitter.zipkin.common._
+import com.twitter.zipkin.util.Util
 import com.twitter.util.{Duration, Future}
 import anorm._
 import anorm.SqlParser._
-import com.twitter.zipkin.storage.anormdb.DB
+import java.nio.ByteBuffer
+import com.twitter.zipkin.common.BinaryAnnotation
+import scala.Some
+import com.twitter.zipkin.common.Annotation
 
 /**
  * Retrieve and store span information.
@@ -28,12 +32,22 @@ import com.twitter.zipkin.storage.anormdb.DB
  * This is one of two places where Zipkin interacts directly with the database,
  * the other one being AnormIndex.
  *
+ * TABLES:
+ * spans:
+ *   span_id, parent_id, trace_id, span_name, debug, duration, created_ts
+ * annotations
+ *   span_id, trace_id, span_name, service_name, value, ipv4, port, timestamp,
+ *   duration
+ * binary_annotations
+ *   span_id, trace_id, span_name, service_name, key, value,
+ *   annotation_type_value, ipv4, port
+ *
  * NOTE: We're ignoring TTL for now since unlike Cassandra and Redis, SQL
  * databases don't have that built in and it shouldn't be a big deal for most
  * sites. Several methods in this class deal with TTL and we just assume that
  * all spans will live forever.
  */
-case class AnormStorage extends Storage {
+case class AnormStorage() extends Storage {
   // Database connection object
   private val conn = DB.getConnection()
 
@@ -47,13 +61,6 @@ case class AnormStorage extends Storage {
    * @return a future for the operation
    */
   def storeSpan(span: Span): Future[Unit] = {
-    // TODO What goes in the binary annotation annotation_key?
-    // spans:
-    //   span_id, parent_id, trace_id, span_name, debug, duration, created_ts
-    // annotations:
-    //   span_id, trace_id, span_name, service_name, annotation_key,
-    //   annotation_value, annotation_type
-
     SQL(
       """INSERT INTO spans
         |  (span_id, parent_id, trace_id, span_name, debug, duration, created_ts)
@@ -61,39 +68,52 @@ case class AnormStorage extends Storage {
         |  ({span_id}, {parent_id}, {trace_id}, {span_name}, {debug}, {duration}, {created_ts})
       """.stripMargin)
       .on("span_id" -> span.id)
-      .on("parent_id" -> span.parentId) // note: nullable, so this is an Option
+      .on("parent_id" -> span.parentId)
       .on("trace_id" -> span.traceId)
       .on("span_name" -> span.name)
       .on("debug" -> span.debug)
-      .on("duration" -> span.duration) // note: nullable, so this is an Option
-      .on("end_ts" -> span.firstAnnotation.map(_.timestamp).head)
+      .on("duration" -> span.duration)
+      .on("created_ts" -> span.firstAnnotation.map(_.timestamp).head)
     .execute()
 
-    // Services are part of annotations and annotations are many-to-one per span
-    // Also, there are two types of annotations: normal and binary. Binary
-    // annotations are normally passed around as arbitrary thrift-encoded
-    // structures with a string key, whereas normal annotations have a specific
-    // structure that includes a string value. Normal annotations are stored
-    // with the value as the annotation_key and the object serialized as the
-    // annotation_value. Binary annotations are stored with (TODO what?) as the
-    // annotation_key and the serialized annotation as the annotation_value.
     span.annotations.foreach(a =>
       SQL(
         """INSERT INTO annotations
-          |  (span_id, trace_id, span_name, service_name, annotation_key, annotation_value, annotation_type)
+          |  (span_id, trace_id, span_name, service_name, value, ipv4, port,
+          |    timestamp, duration)
           |VALUES
-          |  ({span_id}, {trace_id}, {span_name}, {service_name}, {annotation_key}, {annotation_value}, {annotation_type})
+          |  ({span_id}, {trace_id}, {span_name}, {service_name}, {value},
+          |    {ipv4}, {port}, {timestamp}, {duration})
         """.stripMargin)
+        .on("span_id" -> span.id)
+        .on("trace_id" -> span.traceId)
+        .on("span_name" -> span.name)
+        .on("service_name" -> a.serviceName)
+        .on("value" -> a.value)
+        .on("ipv4" -> a.host.map(_.ipv4).head)
+        .on("port" -> a.host.map(_.port).head)
+        .on("timestamp" -> a.timestamp)
+        .on("duration" -> a.duration)
         .execute()
     )
-    // TODO see the TODOs above
-    span.binaryAnnotations.foreach(a =>
+    span.binaryAnnotations.foreach(b =>
       SQL(
         """INSERT INTO annotations
-          |  (span_id, trace_id, span_name, service_name, annotation_key, annotation_value, annotation_type)
+          |  (span_id, trace_id, span_name, service_name, key, value,
+          |    annotation_type_value, ipv4, port)
           |VALUES
-          |  ({span_id}, {trace_id}, {span_name}, {service_name}, {annotation_key}, {annotation_value}, {annotation_type})
+          |  ({span_id}, {trace_id}, {span_name}, {service_name}, {key}, {value},
+          |    {annotation_type_value}, {ipv4}, {port})
         """.stripMargin)
+        .on("span_id" -> span.id)
+        .on("trace_id" -> span.traceId)
+        .on("span_name" -> span.name)
+        .on("service_name" -> None)
+        .on("key" -> b.key)
+        .on("value" -> Util.getArrayFromBuffer(b.value))
+        .on("annotation_type_value" -> b.annotationType.value)
+        .on("ipv4" -> b.host.map(_.ipv4).head)
+        .on("port" -> b.host.map(_.ipv4).head)
         .execute()
     )
     Future.Unit
@@ -133,10 +153,57 @@ case class AnormStorage extends Storage {
    * in that span. First event should be first in the spans list.
    */
   def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
-    // TODO
-    // SELECT * FROM spans WHERE trace_id IN (%s)
-    // And then for each of those, get the annotations
-    // Or we could do some sort of nasty join, then aggregate in Scala
+    val traceIdsString:String = traceIds.mkString(",")
+    val spans:List[(Long, Option[Long], Long, String, Boolean, Long, Long)] =
+      SQL(
+        """SELECT span_id, parent_id, trace_id, span_name, debug, duration, created_ts
+          |FROM spans
+          |WHERE trace_id IN (%s)
+        """.stripMargin.format(traceIdsString))
+        .as((
+          long("span_id") ~ long("parent_id") ~ long("trace_id") ~
+            str("span_name") ~ bool("debug") ~ long("duration") ~
+            long("created_ts") map flatten) *)
+    // TODO Make nullable columns into Options
+    val annos:List[(Long, Long, String, String, String, Int, Int, Long, Option[Long])] =
+      SQL(
+        """SELECT span_id, trace_id, span_name, service_name, value, ipv4,
+          |  port, timestamp, duration
+          |FROM annotations
+          |WHERE trace_id IN (%s)
+        """.stripMargin.format(traceIdsString))
+        .as((long("span_id") ~ long("trace_id") ~ str("span_name") ~
+          str("service_name") ~ str("value") ~ int("ipv4") ~ int("port") ~
+          long("timestamp") ~ long("duration") map flatten) *)
+    val binAnnos:List[(Long, Long, String, String, String, Array[Byte], Int, Int, Int)] =
+      SQL(
+        """SELECT span_id, trace_id, span_name, service_name, key, value,
+          |  annotation_type_value, ipv4, port
+          |FROM binary_annotations
+          |WHERE trace_id IN (%s)
+        """.stripMargin.format(traceIdsString))
+        .as((long("span_id") ~ long("trace_id") ~ str("span_name") ~
+          str("service_name") ~ str("key") ~ get[Array[Byte]]("value") ~
+          int("annotation_type_value") ~ int("ipv4") ~ int("port") map flatten) *)
+    Future(traceIds.map(traceId =>
+      spans.filter(_._3 == traceId).map({span =>
+        val spanAnnos = annos.filter(_._1 == span._1).map({anno =>
+          val host = Some(Endpoint(anno._6, anno._7.toShort, anno._4))
+          val duration:Option[Duration] = anno._9 match {
+            case Some(nanos) => Some(Duration.fromNanoseconds(nanos))
+            case None => None
+          }
+          Annotation(anno._8, anno._5, host, duration)
+        })
+        val spanBinAnnos = binAnnos.filter(_._1 == span._1).map({binAnno =>
+          val host = Some(Endpoint(binAnno._8, binAnno._9.toShort, binAnno._4))
+          val value = ByteBuffer.wrap(binAnno._6)
+          val annotationType = AnnotationType.fromInt(binAnno._7)
+          BinaryAnnotation(binAnno._5, value, annotationType, host)
+        })
+        Span(traceId, span._4, span._1, span._2, spanAnnos, spanBinAnnos, span._5)
+      })
+    ))
   }
   def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = {
     getSpansByTraceIds(Seq(traceId)).map {
@@ -150,5 +217,4 @@ case class AnormStorage extends Storage {
   def getDataTimeToLive: Int = {
     Int.MaxValue
   }
-
 }
