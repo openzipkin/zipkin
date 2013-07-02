@@ -22,7 +22,6 @@ import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import anorm._
 import anorm.SqlParser._
-import com.twitter.zipkin.Constants
 
 /**
  * Retrieve and store trace and span information.
@@ -33,18 +32,12 @@ import com.twitter.zipkin.Constants
  * We're ignoring TTL for now since unlike Cassandra and Redis, SQL databases
  * don't have that built in and it shouldn't be a big deal for most sites.
  *
- * Tables:
- *  - traces: trace_id, duration, end_ts
- *  - spans: trace_id, span_name, service
- *  - services: service
- *  - annotations: trace_id, annotation
+ * The index methods are stubs since SQL databases don't use NoSQL-style
+ * indexing.
  */
 case class AnormIndex() extends Index {
   // Database connection object
   private val conn = DB.getConnection()
-
-  // TODO A lot of this needs to be reworked due to the new structure of AnormStorage.
-  // Indexing probably isn't necessary at all since that's really just a NoSQL concept.
 
   /**
    * Close the index
@@ -58,12 +51,13 @@ case class AnormIndex() extends Index {
   def getTraceIdsByName(serviceName: String, spanName: Option[String],
                         endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
     val result:List[(Long, Long)] = SQL(
-      """SELECT trace_id, end_ts
-        |FROM traces
-        |WHERE service = {service_name}
+      """SELECT trace_id, MAX(created_ts)
+        |FROM zipkin_annotations
+        |WHERE service_name = {service_name}
         |  AND (span_name = {span_name} OR span_name = '')
-        |  AND end_ts < {end_ts}
-        |ORDER BY end_ts DESC
+        |  AND timestamp < {end_ts}
+        |GROUP BY trace_id
+        |ORDER BY timestamp DESC
         |LIMIT {limit}
       """.stripMargin)
       .on("service_name" -> serviceName)
@@ -84,25 +78,45 @@ case class AnormIndex() extends Index {
    */
   def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
                               endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
-    // TODO need to figure out what gets inserted before we know how to get it out;
-    // right now this query doesn't match the table definition at the top of this file
-    val valueByteArray = if (value.isEmpty) "" else Util.getArrayFromBuffer(value.get)
-    val result:List[(Long, Long)] = SQL(
-      """SELECT trace_id, end_ts
-        |FROM traces
-        |WHERE service = {service_name}
-        |  AND annotation_key = {annotation}
-        |  AND (annotation_value = {value} OR annotation_value = '')
-        |  AND end_ts < {end_ts}
-        |ORDER BY end_ts DESC
-        |LIMIT {limit}
-      """.stripMargin)
-      .on("service_name" -> serviceName)
-      .on("annotation" -> annotation)
-      .on("value" -> valueByteArray) // TODO Confirm that ANORM 2.1+ supports BLOBs
-      .on("end_ts" -> endTs)
-      .on("limit" -> limit)
-      .as((long("trace_id") ~ long("end_ts") map flatten) *)
+    val result:List[(Long, Long)] = value match {
+      // Binary annotations
+      case Some(bytes) => {
+        SQL(
+          """SELECT trace_id, 0 # TODO What is the timestamp here?
+            |FROM zipkin_binary_annotations
+            |WHERE service_name = {service_name}
+            |  AND key = {annotation}
+            |  AND value = {value}
+            |  # AND end_ts < {end_ts} # TODO
+            |GROUP BY trace_id
+            |# ORDER BY end_ts DESC # TODO
+            |LIMIT {limit}
+          """.stripMargin)
+          .on("service_name" -> serviceName)
+          .on("annotation" -> annotation)
+          .on("value" -> Util.getArrayFromBuffer(bytes))
+          .on("end_ts" -> endTs)
+          .on("limit" -> limit)
+          .as((long("trace_id") ~ long("end_ts") map flatten) *)
+      }
+      // Normal annotations
+      case None => {
+        SQL(
+          """SELECT trace_id, MAX(timestamp)
+            |FROM zipkin_annotations
+            |WHERE service_name = {service_name}
+            |  AND value = {annotation}
+            |  AND timestamp < {end_ts}
+            |ORDER BY timestamp DESC
+            |LIMIT {limit}
+          """.stripMargin)
+          .on("service_name" -> serviceName)
+          .on("annotation" -> annotation)
+          .on("end_ts" -> endTs)
+          .on("limit" -> limit)
+          .as((long("trace_id") ~ long("end_ts") map flatten) *)
+      }
+    }
     Future(result map { row =>
       IndexedTraceId(traceId = row._1, timestamp = row._2)
     })
@@ -115,15 +129,16 @@ case class AnormIndex() extends Index {
    */
   def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = {
     val result:List[(Long, Long, Long)] = SQL(
-      """SELECT trace_id, duration, end_ts
-        |FROM traces
+      """SELECT trace_id, duration, created_ts
+        |FROM zipkin_spans
         |WHERE trace_id IN (%s)
-        |ORDER BY end_ts DESC
+        |GROUP BY trace_id
+        |ORDER BY created_ts DESC
       """.stripMargin.format(traceIds.mkString(",")))
-      .as((long("trace_id") ~ long("duration") ~ long("end_ts") map flatten) *)
+      .as((long("trace_id") ~ long("duration") ~ long("created_ts") map flatten) *)
     Future(result map { row =>
       // trace ID, duration, start TS
-      TraceIdDuration(row._1, row._2, row._3 - row._2)
+      TraceIdDuration(row._1, row._2, row._3)
     })
   }
 
@@ -132,8 +147,12 @@ case class AnormIndex() extends Index {
    */
   def getServiceNames: Future[Set[String]] = {
     Future(SQL(
-      "SELECT service FROM spans GROUP BY service ORDER BY service ASC"
-    ).as(str("service") *).toSet)
+      """SELECT service_name
+        |FROM zipkin_annotations
+        |GROUP BY service_name
+        |ORDER BY service_name ASC
+      """.stripMargin)
+      .as(str("service") *).toSet)
   }
 
   /**
@@ -142,8 +161,8 @@ case class AnormIndex() extends Index {
   def getSpanNames(service: String): Future[Set[String]] = {
     Future(SQL(
       """SELECT span_name
-        |FROM spans
-        |WHERE service = {service}
+        |FROM zipkin_annotations
+        |WHERE service_name = {service}
         |GROUP BY span_name
         |ORDER BY span_name ASC
       """.stripMargin)
@@ -157,17 +176,6 @@ case class AnormIndex() extends Index {
    * Index a trace id on the service and name of a specific Span
    */
   def indexTraceIdByServiceAndName(span: Span) : Future[Unit] = {
-    span.serviceNames.foreach(serviceName => {
-      if (serviceName != "") SQL(
-        """INSERT INTO spans (trace_id, service, span_name)
-          |VALUES ({trace_id}, {service}, {span_name})
-        """.stripMargin)
-        .on("trace_id" -> span.traceId)
-        .on("service" -> serviceName)
-        .on("span_name" -> span.name.toLowerCase)
-        .execute()
-      else false
-    })
     Future.Unit
   }
 
@@ -175,29 +183,6 @@ case class AnormIndex() extends Index {
    * Index the span by the annotations attached
    */
   def indexSpanByAnnotations(span: Span) : Future[Unit] = {
-    // TODO
-    // Annotations' value is binary-encoded servicename and timestamp?
-    // What needs to get inserted?
-    // Also, this information seems to never be retrieved, so how does the web
-    // UI get it?
-    // INSERT INTO annotations (trace_id, annotation_key, annotation_value)
-    // VALUES ({trace_id}, {annotation_key}, {annotation_value})
-
-    val filteredAndGroupedAnnotations = span.annotations.filter { a =>
-      !Constants.CoreAnnotations.contains(a.value)
-    } groupBy {
-      _.value
-    }
-    for ((v, al) <- filteredAndGroupedAnnotations) {
-      val a = al.min
-      a.host foreach { endpoint =>
-        // What do I insert here?
-      }
-    }
-
-    span.binaryAnnotations foreach { ba => ba.host foreach { endpoint =>
-      // What do I insert here?
-    }}
     Future.Unit
   }
 
@@ -206,15 +191,6 @@ case class AnormIndex() extends Index {
    * been called.
    */
   def indexServiceName(span: Span) : Future[Unit] = {
-    span.serviceNames.foreach(serviceName => {
-      if (serviceName != "") SQL(
-        """INSERT INTO services (service)
-          |VALUES ({service})
-        """.stripMargin)
-        .on("service" -> serviceName)
-        .execute()
-      else false
-    })
     Future.Unit
   }
 
@@ -225,9 +201,6 @@ case class AnormIndex() extends Index {
    * Mainly for UI purposes
    */
   def indexSpanNameByService(span: Span) : Future[Unit] = {
-    // The functionality this method provides is already provided by
-    //this.indexTraceIdByServiceAndName(span)
-    // and the two functions will always be called together.
     Future.Unit
   }
 
@@ -235,18 +208,6 @@ case class AnormIndex() extends Index {
    * Index a span's duration. This is so we can look up the trace duration.
    */
   def indexSpanDuration(span: Span): Future[Void] = {
-    span.duration foreach { duration =>
-      span.lastAnnotation.map(_.timestamp) foreach { t =>
-        SQL(
-          """INSERT INTO traces (trace_id, duration, end_ts)
-            |VALUES ({trace_id}, {duration}, {end_ts})
-          """.stripMargin)
-          .on("trace_id" -> span.traceId)
-          .on("duration" -> duration)
-          .on("end_ts" -> t)
-          .execute()
-      }
-    }
     Future.Void
   }
 }
