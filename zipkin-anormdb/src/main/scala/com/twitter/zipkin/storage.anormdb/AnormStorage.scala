@@ -17,30 +17,19 @@ package com.twitter.zipkin.storage.anormdb
 
 import com.twitter.zipkin.storage.Storage
 import com.twitter.zipkin.common._
+import com.twitter.zipkin.common.Annotation
+import com.twitter.zipkin.common.BinaryAnnotation
 import com.twitter.zipkin.util.Util
 import com.twitter.util.{Duration, Future}
 import anorm._
 import anorm.SqlParser._
 import java.nio.ByteBuffer
-import com.twitter.zipkin.common.BinaryAnnotation
-import scala.Some
-import com.twitter.zipkin.common.Annotation
 
 /**
  * Retrieve and store span information.
  *
  * This is one of two places where Zipkin interacts directly with the database,
  * the other one being AnormIndex.
- *
- * TABLES:
- * spans:
- *   span_id, parent_id, trace_id, span_name, debug, duration, created_ts
- * annotations
- *   span_id, trace_id, span_name, service_name, value, ipv4, port, timestamp,
- *   duration
- * binary_annotations
- *   span_id, trace_id, span_name, service_name, key, value,
- *   annotation_type_value, ipv4, port
  *
  * NOTE: We're ignoring TTL for now since unlike Cassandra and Redis, SQL
  * databases don't have that built in and it shouldn't be a big deal for most
@@ -62,7 +51,7 @@ case class AnormStorage() extends Storage {
    */
   def storeSpan(span: Span): Future[Unit] = {
     SQL(
-      """INSERT INTO spans
+      """INSERT INTO zipkin_spans
         |  (span_id, parent_id, trace_id, span_name, debug, duration, created_ts)
         |VALUES
         |  ({span_id}, {parent_id}, {trace_id}, {span_name}, {debug}, {duration}, {created_ts})
@@ -73,12 +62,12 @@ case class AnormStorage() extends Storage {
       .on("span_name" -> span.name)
       .on("debug" -> span.debug)
       .on("duration" -> span.duration)
-      .on("created_ts" -> span.firstAnnotation.map(_.timestamp).head)
+      .on("created_ts" -> span.firstAnnotation.map(_.timestamp).headOption)
     .execute()
 
     span.annotations.foreach(a =>
       SQL(
-        """INSERT INTO annotations
+        """INSERT INTO zipkin_annotations
           |  (span_id, trace_id, span_name, service_name, value, ipv4, port,
           |    timestamp, duration)
           |VALUES
@@ -90,15 +79,15 @@ case class AnormStorage() extends Storage {
         .on("span_name" -> span.name)
         .on("service_name" -> a.serviceName)
         .on("value" -> a.value)
-        .on("ipv4" -> a.host.map(_.ipv4).head)
-        .on("port" -> a.host.map(_.port).head)
+        .on("ipv4" -> a.host.map(_.ipv4).headOption)
+        .on("port" -> a.host.map(_.port).headOption)
         .on("timestamp" -> a.timestamp)
         .on("duration" -> a.duration)
         .execute()
     )
     span.binaryAnnotations.foreach(b =>
       SQL(
-        """INSERT INTO annotations
+        """INSERT INTO zipkin_binary_annotations
           |  (span_id, trace_id, span_name, service_name, key, value,
           |    annotation_type_value, ipv4, port)
           |VALUES
@@ -108,12 +97,12 @@ case class AnormStorage() extends Storage {
         .on("span_id" -> span.id)
         .on("trace_id" -> span.traceId)
         .on("span_name" -> span.name)
-        .on("service_name" -> None)
+        .on("service_name" -> b.host.map(_.serviceName).getOrElse("Unknown service name")) // from Annotation
         .on("key" -> b.key)
         .on("value" -> Util.getArrayFromBuffer(b.value))
         .on("annotation_type_value" -> b.annotationType.value)
-        .on("ipv4" -> b.host.map(_.ipv4).head)
-        .on("port" -> b.host.map(_.ipv4).head)
+        .on("ipv4" -> b.host.map(_.ipv4).headOption)
+        .on("port" -> b.host.map(_.ipv4).headOption)
         .execute()
     )
     Future.Unit
@@ -143,7 +132,7 @@ case class AnormStorage() extends Storage {
    */
   def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
     Future(SQL(
-      "SELECT trace_id FROM spans WHERE trace_id IN (%s)".format(traceIds.mkString(","))
+      "SELECT trace_id FROM zipkin_spans WHERE trace_id IN (%s)".format(traceIds.mkString(","))
     )().toSet.map(row => row[Long]("trace_id")))
   }
 
@@ -154,32 +143,36 @@ case class AnormStorage() extends Storage {
    */
   def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
     val traceIdsString:String = traceIds.mkString(",")
-    val spans:List[(Long, Option[Long], Long, String, Boolean, Long, Long)] =
+    /*
+     * No need to pull duration (Option[Long]) or created_ts (Option[Long])
+     * because they're derived from the annotations and just stored in the spans
+     * table for straightforward lookups.
+     */
+    val spans:List[(Long, Option[Long], Long, String, Boolean)] =
       SQL(
-        """SELECT span_id, parent_id, trace_id, span_name, debug, duration, created_ts
-          |FROM spans
+        """SELECT span_id, parent_id, trace_id, span_name, debug
+          |FROM zipkin_spans
           |WHERE trace_id IN (%s)
         """.stripMargin.format(traceIdsString))
         .as((
           long("span_id") ~ long("parent_id") ~ long("trace_id") ~
             str("span_name") ~ bool("debug") ~ long("duration") ~
             long("created_ts") map flatten) *)
-    // TODO Make nullable columns into Options
-    val annos:List[(Long, Long, String, String, String, Int, Int, Long, Option[Long])] =
+    val annos:List[(Long, Long, String, String, String, Option[Int], Option[Int], Long, Option[Long])] =
       SQL(
         """SELECT span_id, trace_id, span_name, service_name, value, ipv4,
           |  port, timestamp, duration
-          |FROM annotations
+          |FROM zipkin_annotations
           |WHERE trace_id IN (%s)
         """.stripMargin.format(traceIdsString))
         .as((long("span_id") ~ long("trace_id") ~ str("span_name") ~
           str("service_name") ~ str("value") ~ int("ipv4") ~ int("port") ~
           long("timestamp") ~ long("duration") map flatten) *)
-    val binAnnos:List[(Long, Long, String, String, String, Array[Byte], Int, Int, Int)] =
+    val binAnnos:List[(Long, Long, String, String, String, Array[Byte], Int, Option[Int], Option[Int])] =
       SQL(
         """SELECT span_id, trace_id, span_name, service_name, key, value,
           |  annotation_type_value, ipv4, port
-          |FROM binary_annotations
+          |FROM zipkin_binary_annotations
           |WHERE trace_id IN (%s)
         """.stripMargin.format(traceIdsString))
         .as((long("span_id") ~ long("trace_id") ~ str("span_name") ~
@@ -188,7 +181,10 @@ case class AnormStorage() extends Storage {
     Future(traceIds.map(traceId =>
       spans.filter(_._3 == traceId).map({span =>
         val spanAnnos = annos.filter(_._1 == span._1).map({anno =>
-          val host = Some(Endpoint(anno._6, anno._7.toShort, anno._4))
+          val host:Option[Endpoint] = (anno._6, anno._7) match {
+            case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, anno._4))
+            case _ => None
+          }
           val duration:Option[Duration] = anno._9 match {
             case Some(nanos) => Some(Duration.fromNanoseconds(nanos))
             case None => None
@@ -196,7 +192,10 @@ case class AnormStorage() extends Storage {
           Annotation(anno._8, anno._5, host, duration)
         })
         val spanBinAnnos = binAnnos.filter(_._1 == span._1).map({binAnno =>
-          val host = Some(Endpoint(binAnno._8, binAnno._9.toShort, binAnno._4))
+          val host:Option[Endpoint] = (binAnno._8, binAnno._9) match {
+            case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, binAnno._4))
+            case _ => None
+          }
           val value = ByteBuffer.wrap(binAnno._6)
           val annotationType = AnnotationType.fromInt(binAnno._7)
           BinaryAnnotation(binAnno._5, value, annotationType, host)
