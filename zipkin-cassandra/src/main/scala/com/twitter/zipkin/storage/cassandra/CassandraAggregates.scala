@@ -51,14 +51,14 @@ case class CassandraAggregates(
   /**
    * Get the top annotations for a service name
    */
-  def getDependencies(startDate: Time, endDate: Option[Time]) : Future[Dependencies] = {
+  def getDependencies(startDate: Option[Time], endDate: Option[Time]) : Future[Dependencies] = {
 
     val result = {
       val iteratee = dependenciesCF.rowsIteratee(100)
       def collapse(key:ByteBuffer, columns:java.util.List[Column[Long, gen.Dependencies]]) : Seq[Dependencies]= {
         columns.asScala.filter { column =>
           !endDate.exists { column.name > _.inMicroseconds } &&
-            column.name > startDate.inMicroseconds
+          !startDate.exists { column.name > _.inMicroseconds }
         }.map { _.value.toDependencies }
       }
 

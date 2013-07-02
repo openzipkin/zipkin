@@ -92,7 +92,7 @@ class CassandraAggregatesSpec extends SpecificationWithJUnit with JMocker with C
           one(mockDependenciesCf).multigetRows(Set(bb).asJava, None, None, Order.Normal, Int.MaxValue) willReturn Future.value(Map(bb -> Map(0L -> col).asJava).asJava)
         }
 
-        val result = Await.result(agg.getDependencies(Time.fromSeconds(0)))
+        val result = Await.result(agg.getDependencies(None))
         result mustEqual deps1
       }
     }
@@ -132,7 +132,7 @@ class CassandraAggregatesSpec extends SpecificationWithJUnit with JMocker with C
         val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
 
         Await.result(agg.storeDependencies(deps1))
-        Await.result(agg.getDependencies(Time.fromSeconds(0))) mustEqual deps1
+        Await.result(agg.getDependencies(Some(Time.fromSeconds(0)))) mustEqual deps1
       }
 
       "clobber old entries" in {

@@ -52,7 +52,6 @@ class JsConfig extends StaticResourceConfig {
     "application-static.js",
 
     "application-aggregates.js",
-    "sankey.js",
-    "zipkin-global-dependency.js"
+    "zipkin-dependencies.js"
   )
 }

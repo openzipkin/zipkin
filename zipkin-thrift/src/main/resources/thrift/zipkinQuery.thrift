@@ -218,7 +218,7 @@ service ZipkinQuery {
      * specify epoch time in microseconds and describe the an inclusive day range to pull the data from.
      * For example, requesting the current time will pull all data from today.
      */
-    zipkinDependencies.Dependencies getDependencies(1: i64 start_time, 2: optional i64 end_time) throws (1: QueryException qe);
+    zipkinDependencies.Dependencies getDependencies(1: optional i64 start_time, 2: optional i64 end_time) throws (1: QueryException qe);
 
     list<string> getTopAnnotations(1: string service_name) throws (1: QueryException qe);
     list<string> getTopKeyValueAnnotations(1: string service_name) throws (1: QueryException qe);

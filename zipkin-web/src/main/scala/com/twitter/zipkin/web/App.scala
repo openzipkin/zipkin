@@ -224,7 +224,7 @@ class App(
    */
   get("/api/dependencies/?:startTime?/?:endTime?") { request =>
     val defaultStart = (Time.now - 7.days).inMicroseconds.toString
-    val startTime = request.routeParams.getOrElse("startTime", defaultStart).toLong
+    val startTime = request.routeParams.get("startTime").map(_.toLong)
     val endTime = request.routeParams.get("endTime").map(_.toLong)
 
     client.getDependencies(startTime, endTime).map { deps =>
