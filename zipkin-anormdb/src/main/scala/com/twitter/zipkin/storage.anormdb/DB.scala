@@ -1,7 +1,6 @@
 package com.twitter.zipkin.storage.anormdb
 
-//import anorm._
-//import anorm.SqlParser._
+import anorm._
 import java.sql.Connection
 import java.sql.DriverManager
 
@@ -13,28 +12,14 @@ import java.sql.DriverManager
  */
 object DB {
   /**
-   * Tell JDBC where to find the database.
+   * Database information.
    *
-   * SQLite in-memory:  "jdbc:sqlite::memory:"
-   * SQLite persistent: "jdbc:sqlite:DB_NAME"
-   * H2 in-memory:      "jdbc:h2:mem:DB_NAME"
-   * H2 persistent:     "jdbc:h2:DB_NAME"
-   * PostgreSQL:        "jdbc:postgresql://localhost:PORT/DB_NAME"
-   * MySQL:             "jdbc:mysql://localhost:PORT/DB_NAME?user=USERNAME&password=PASSWORD"
-   */
-  private val dbname = "jdbc:sqlite:zipkin.db"
-
-  /**
-   * Tell JDBC which database driver to use.
+   * The key of the outer map and the descriptions are arbitrary. The location
+   * is the name of the database and where to find it. The driver is the JDBC
+   * interface to the database type.
    *
-   * SQLite:     "org.sqlite.JDBC"
-   * H2:         "org.h2.Driver"
-   * PostgreSQL: "org.postgresql.Driver"
-   * MySQL:      "com.mysql.jdbc.Driver"
-   */
-  private val drivername = "org.sqlite.JDBC"
-
-  /**
+   * Anorm supports any SQL database, so more databases can be added here.
+   *
    * The other place the database driver needs to be set is in the project
    * dependencies in project/Project.scala under the definition of the
    * lazy val anormdb.
@@ -44,14 +29,79 @@ object DB {
    * PostgreSQL: "postgresql"     % "postgresql"           % "8.4-702.jdbc4" // or "9.1-901.jdbc4"
    * MySQL:      "mysql"          % "mysql-connector-java" % "5.1.25"
    *
-   * Also, there's the caveat that some database drivers (notably PostgreSQL)
-   * require passing an explicit Properties() object to
-   * DriverManager.getConnection() instead of just passing the URL.
-   * TODO: Figure out how to deal with that.
+   * TODO: Figure out the easiest way for someone to set up the schema the first time, e.g. by running DB.install().
    */
+  private val dbmap = Map(
+    "sqlite-memory" -> Map(
+      "description" -> "SQLite in-memory",
+      "location" -> "jdbc:sqlite::memory:",
+      "driver" -> "org.sqlite.JDBC"
+    ),
+    "sqlite-persistent" -> Map(
+      "description" -> "SQLite persistent",
+      "location" -> "jdbc:sqlite:[DB_NAME].db",
+      "driver" -> "org.sqlite.JDBC"
+    ),
+    "h2-memory" -> Map(
+      "description" -> "H2 in-memory",
+      "location" -> "jdbc:h2:mem:zipkin",
+      "driver" -> "org.h2.Driver"
+    ),
+    "h2-persistent" -> Map(
+      "description" -> "H2 persistent",
+      "location" -> "jdbc:h2:[DB_NAME]",
+      "driver" -> "org.h2.Driver"
+    ),
+    "postgresql" -> Map(
+      "description" -> "PostgreSQL",
+      "location" -> "jdbc:postgresql://[HOST][PORT]/[DB_NAME]?user=[USERNAME]&password=[PASSWORD]&ssl=[SSL]",
+      "driver" -> "org.postgresql.Driver"
+    ),
+    "mysql" -> Map(
+      "description" -> "MySQL",
+      "location" -> "jdbc:mysql://[HOST][PORT]/[DB_NAME]?user=[USERNAME]&password=[PASSWORD]",
+      "driver" -> "com.mysql.jdbc.Driver"
+    )
+  )
 
-  // Load the SQLite driver
-  Class.forName(drivername)
+  /**
+   * Configuration variables.
+   *
+   * TODO: The config we want to use should be loaded from configuration.
+   */
+  private val dbconfig = Map(
+    "info" -> Map(
+      "type" -> "sqlite-persistent"
+    ),
+    "params" -> Map(
+      "SSL" -> "false",
+      "PASSWORD" -> "",
+      "USERNAME" -> "",
+      "DB_NAME" -> "zipkin",
+      "HOST" -> "localhost",
+      "PORT" -> ""
+    )
+  )
+
+  /**
+   * The database type we want to use.
+   *
+   * This must correspond to an outer key of the dbmap Map.
+   */
+  private val dbinfo = dbmap(dbconfig("info")("type"))
+
+  // Load the driver
+  Class.forName(dbinfo("driver"))
+
+  /**
+   * Return a description of the database type in use.
+   *
+   * This can be used for statements that use syntax specific to a certain
+   * database.
+   */
+  def getName() = {
+    dbinfo("description")
+  }
 
   /**
    * Gets a java.sql.Connection to the SQL database.
@@ -68,7 +118,7 @@ object DB {
    * connection open for a single block of code, see withConnection().
    */
   def getConnection() = {
-    DriverManager.getConnection(dbname)
+    DriverManager.getConnection(parseLocation())
   }
 
   /**
@@ -97,5 +147,73 @@ object DB {
     finally {
       conn.close()
     }
+  }
+
+  /**
+   * Set up the database tables.
+   *
+   * Ideally this should only be run once.
+   */
+  def install() = this.withConnection { implicit con =>
+    SQL(
+      """CREATE TABLE IF NOT EXISTS zipkin_spans (
+        |  span_id BIGINT NOT NULL,
+        |  parent_id BIGINT,
+        |  trace_id BIGINT NOT NULL,
+        |  span_name VARCHAR(255) NOT NULL,
+        |  debug BOOLEAN NOT NULL,
+        |  duration BIGINT,
+        |  created_ts BIGINT
+        |)
+      """.stripMargin).execute()
+    SQL("CREATE INDEX trace_id ON zipkin_spans (trace_id)").execute()
+    SQL(
+      """CREATE TABLE IF NOT EXISTS zipkin_annotations (
+        |  span_id BIGINT NOT NULL,
+        |  trace_id BIGINT NOT NULL,
+        |  span_name VARCHAR(255) NOT NULL,
+        |  service_name VARCHAR(255) NOT NULL,
+        |  value TEXT,
+        |  ipv4 INT,
+        |  port INT,
+        |  timestamp BIGINT NOT NULL,
+        |  duration BIGINT
+        |)
+      """.stripMargin).execute()
+    SQL("CREATE INDEX trace_id ON zipkin_annotations (trace_id)").execute()
+    SQL(
+      """CREATE TABLE IF NOT EXISTS zipkin_binary_annotations (
+        |  span_id BIGINT NOT NULL,
+        |  trace_id BIGINT NOT NULL,
+        |  span_name VARCHAR(255) NOT NULL,
+        |  service_name VARCHAR(255) NOT NULL,
+        |  key VARCHAR(255) NOT NULL,
+        |  value %s,
+        |  annotation_type_value INT NOT NULL,
+        |  ipv4 INT,
+        |  port INT
+        |)
+      """.stripMargin.format(this.getBlobType)).execute()
+    SQL("CREATE INDEX trace_id ON zipkin_binary_annotations (trace_id)").execute()
+  }
+
+  // Get the column the current database type uses for BLOBs.
+  private def getBlobType = this.getName match {
+    case "PostgreSQL" => "BYTEA" /* As usual PostgreSQL has to be different */
+    case "MySQL" => "MEDIUMBLOB" /* MySQL has length limits, in this case 16MB */
+    case _ => "BLOB"
+  }
+
+  // Substitute the database configuration into the location string.
+  // This allows storing things like the database password in config.
+  private def parseLocation():String = {
+    var loc = dbinfo("location")
+    for ((k:String, v:String) <- dbconfig("params")) {
+      if (k == "PORT" && v != "")
+        loc = loc.replaceFirst("[" + k + "]", ":" + v)
+      else
+        loc = loc.replaceFirst("[" + k + "]", v)
+    }
+    loc
   }
 }
