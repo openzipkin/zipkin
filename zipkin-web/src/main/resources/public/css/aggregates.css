@@ -14,50 +14,34 @@
  * limitations under the License.
  */
 
-#global-dependency {
-  height: 1000px;
+.radialNode {
+    font: 10px sans-serif;
+    fill: #808080;
 }
 
-.node rect {
-  cursor: move;
-  fill-opacity: .9;
-  shape-rendering: crispEdges;
+.radialLink {
+    stroke: #808080;
+    stroke-opacity: .4;
+    fill: none;
 }
 
-.node text {
-  pointer-events: none;
-  text-shadow: 0 1px 0 #fff;
+.radialInbound {
+    stroke: #006600;
+    stroke-opacity: 1;
+    stroke-width: 2px;
 }
 
-.link {
-  fill: none;
-  stroke: #000;
-  stroke-opacity: .2;
+.radialOutbound {
+    stroke: #990000;
+    stroke-opacity: 1;
+    stroke-width: 2px;
 }
 
-.link:hover {
-  stroke-opacity: .7;
+.radialUnfocused {
+    fill: #a0a0a0;
 }
 
-.popover-content {
-  max-height: 200px !important;
-  max-width: 1000px;
-  overflow: scroll;
-}
-
-@media (min-width: 1200px) {
-  [class*="span-aggregates"] {
-    float: left;
-    margin-left: 30px;
-  }
-
-  .span5 {
-    vertical-align: 50%;
-  }
-
-  .container-aggregates,
-  .navbar-fixed-top .container-aggregates,
-  .navbar-fixed-bottom .container-aggregates {
-    width: 1500px;
-  }
+.radialFocused {
+    font: 20px sans-serif;
+    fill: #303030;
 }

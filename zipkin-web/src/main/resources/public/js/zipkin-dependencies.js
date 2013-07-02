@@ -94,7 +94,7 @@ Zipkin.RadialDependencies = (function () {
           .append("g")
           .on("mouseover", on_mouse_over)
           .on("mouseout", on_mouse_out)
-          .attr("class", "node")
+          .attr("class", "radialNode")
           .attr("transform", function (d) {
             return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")";
           })
@@ -118,46 +118,58 @@ Zipkin.RadialDependencies = (function () {
           .data(graph.links)
           .enter()
           .append("svg:path")
-          .classed("link", true)
+          .classed("radialLink", true)
           .attr("d", line);
     });
 
     function on_mouse_over(moused_node) {
-      d3.select(this).classed("focused", true);
+      d3.select(this).classed("radialFocused", true);
       svg
-          .selectAll("path.link")
-          .filter(function (d) {
-            return d[0].name == moused_node.name;
-          })
-          .classed("outbound", true);
+        .selectAll("g.radialNode")
+        .filter(function (d) {
+          return d.name != moused_node.name;
+        })
+        .classed("radialUnfocused", true);
       svg
-          .selectAll("path.link")
-          .filter(function (d) {
-            return d[2].name == moused_node.name;
-          })
-          .classed("inbound", true);
+        .selectAll("path.radialLink")
+        .filter(function (d) {
+          return d[0].name == moused_node.name;
+        })
+        .classed("radialOutbound", true);
+      svg
+        .selectAll("path.radialLink")
+        .filter(function (d) {
+          return d[2].name == moused_node.name;
+        })
+        .classed("radialInbound", true);
     }
 
     function on_mouse_out(moused_node) {
-      d3.select(this).classed("focused", false);
+      d3.select(this).classed("radialFocused", false);
       svg
-          .selectAll("path.link")
+          .selectAll("g.radialNode")
+          .filter(function (d) {
+            return d.name != moused_node.name;
+          })
+          .classed("radialUnfocused", false);
+      svg
+          .selectAll("path.radialLink")
           .filter(function (d) {
             return d[0].name == moused_node.name;
           })
-          .classed("focused", false);
+          .classed("radialFocused", false);
       svg
-          .selectAll("path.link")
+          .selectAll("path.radialLink")
           .filter(function (d) {
             return d[0].name == moused_node.name;
           })
-          .classed("outbound", false);
+          .classed("radialOutbound", false);
       svg
-          .selectAll("path.link")
+          .selectAll("path.radialLink")
           .filter(function (d) {
             return d[2].name == moused_node.name;
           })
-          .classed("inbound", false);
+          .classed("radialInbound", false);
     }
 
     function newNode(name) {
