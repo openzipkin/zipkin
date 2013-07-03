@@ -37,7 +37,7 @@ import anorm.SqlParser._
  */
 case class AnormIndex() extends Index {
   // Database connection object
-  private val conn = DB.getConnection()
+  private implicit val conn = DB.getConnection()
 
   /**
    * Close the index
@@ -128,17 +128,17 @@ case class AnormIndex() extends Index {
    * Duration returned in microseconds.
    */
   def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = {
-    val result:List[(Long, Long, Long)] = SQL(
+    val result:List[(Long, Option[Long], Long)] = SQL(
       """SELECT trace_id, duration, created_ts
         |FROM zipkin_spans
         |WHERE trace_id IN (%s)
         |GROUP BY trace_id
         |ORDER BY created_ts DESC
       """.stripMargin.format(traceIds.mkString(",")))
-      .as((long("trace_id") ~ long("duration") ~ long("created_ts") map flatten) *)
+      .as((long("trace_id") ~ get[Option[Long]]("duration") ~ long("created_ts") map flatten) *)
     Future(result map { row =>
       // trace ID, duration, start TS
-      TraceIdDuration(row._1, row._2, row._3)
+      TraceIdDuration(row._1, row._2.getOrElse(0), row._3)
     })
   }
 

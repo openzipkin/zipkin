@@ -1,8 +1,8 @@
 package com.twitter.zipkin.storage.anormdb
 
 import anorm._
-import java.sql.Connection
-import java.sql.DriverManager
+import anorm.SqlParser._
+import java.sql.{Blob, Connection, DriverManager}
 
 /**
  * Provides SQL database access via ANORM from the Play framework.
@@ -163,7 +163,7 @@ object DB {
         |  span_name VARCHAR(255) NOT NULL,
         |  debug BOOLEAN NOT NULL,
         |  duration BIGINT,
-        |  created_ts BIGINT
+        |  created_ts BIGINT NOT NULL
         |)
       """.stripMargin).execute()
     SQL("CREATE INDEX trace_id ON zipkin_spans (trace_id)").execute()
@@ -215,5 +215,44 @@ object DB {
         loc = loc.replaceFirst("[" + k + "]", v)
     }
     loc
+  }
+
+  // Provide Anorm with the ability to handle BLOBs.
+  // The documentation says it can do it in 2.1.1, but it's wrong.
+
+  /**
+   * Attempt to convert a SQL value into a byte array.
+   */
+  private def valueToByteArrayOption(value: Any): Option[Array[Byte]] = {
+    try {
+      value match {
+        case bytes: Array[Byte] => Some(bytes)
+        case blob: Blob => Some(blob.getBytes(1, blob.length.asInstanceOf[Int]))
+        case _ => None
+      }
+    }
+    catch {
+      case e: Exception => None
+    }
+  }
+
+  /**
+   * Implicitly convert an ANORM row to a byte array.
+   */
+  implicit def rowToByteArray: Column[Array[Byte]] = {
+    Column.nonNull[Array[Byte]] { (value, meta) =>
+      val MetaDataItem(qualified, nullable, clazz) = meta
+      valueToByteArrayOption(value) match {
+        case Some(bytes) => Right(bytes)
+        case _ => Left(TypeDoesNotMatch("Cannot convert " + value + ":" + value.asInstanceOf[AnyRef].getClass + " to Byte Array for column " + qualified))
+      }
+    }
+  }
+
+  /**
+   * Build a RowParser factory for a byte array column.
+   */
+  def bytes(columnName: String): RowParser[Array[Byte]] = {
+    get[Array[Byte]](columnName)(implicitly[Column[Array[Byte]]])
   }
 }

@@ -35,7 +35,7 @@ object AnnotationType {
     case String.value => String
     case _            => String /* Uh... */
   }
-  def fromString(v:Int) = v match {
+  def fromString(v:String) = v match {
     case Bool.name   => Bool
     case Bytes.name  => Bytes
     case I16.name    => I16

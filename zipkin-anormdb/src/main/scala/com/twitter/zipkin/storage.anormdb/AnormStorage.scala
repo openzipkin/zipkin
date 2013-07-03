@@ -38,7 +38,7 @@ import java.nio.ByteBuffer
  */
 case class AnormStorage() extends Storage {
   // Database connection object
-  private val conn = DB.getConnection()
+  private implicit val conn = DB.getConnection()
 
   /**
    * Close the storage
@@ -62,7 +62,7 @@ case class AnormStorage() extends Storage {
       .on("span_name" -> span.name)
       .on("debug" -> span.debug)
       .on("duration" -> span.duration)
-      .on("created_ts" -> span.firstAnnotation.map(_.timestamp).headOption)
+      .on("created_ts" -> span.firstAnnotation.map(_.timestamp).head)
     .execute()
 
     span.annotations.foreach(a =>
@@ -133,7 +133,7 @@ case class AnormStorage() extends Storage {
   def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
     Future(SQL(
       "SELECT trace_id FROM zipkin_spans WHERE trace_id IN (%s)".format(traceIds.mkString(","))
-    )().toSet.map(row => row[Long]("trace_id")))
+    ).as(long("trace_id") *).toSet)
   }
 
   /**
@@ -155,9 +155,8 @@ case class AnormStorage() extends Storage {
           |WHERE trace_id IN (%s)
         """.stripMargin.format(traceIdsString))
         .as((
-          long("span_id") ~ long("parent_id") ~ long("trace_id") ~
-            str("span_name") ~ bool("debug") ~ long("duration") ~
-            long("created_ts") map flatten) *)
+          long("span_id") ~ get[Option[Long]]("parent_id") ~ long("trace_id") ~
+            str("span_name") ~ bool("debug") map flatten) *)
     val annos:List[(Long, Long, String, String, String, Option[Int], Option[Int], Long, Option[Long])] =
       SQL(
         """SELECT span_id, trace_id, span_name, service_name, value, ipv4,
@@ -166,8 +165,9 @@ case class AnormStorage() extends Storage {
           |WHERE trace_id IN (%s)
         """.stripMargin.format(traceIdsString))
         .as((long("span_id") ~ long("trace_id") ~ str("span_name") ~
-          str("service_name") ~ str("value") ~ int("ipv4") ~ int("port") ~
-          long("timestamp") ~ long("duration") map flatten) *)
+          str("service_name") ~ str("value") ~ get[Option[Int]]("ipv4") ~
+          get[Option[Int]]("port") ~ long("timestamp") ~
+          get[Option[Long]]("duration") map flatten) *)
     val binAnnos:List[(Long, Long, String, String, String, Array[Byte], Int, Option[Int], Option[Int])] =
       SQL(
         """SELECT span_id, trace_id, span_name, service_name, key, value,
@@ -176,8 +176,9 @@ case class AnormStorage() extends Storage {
           |WHERE trace_id IN (%s)
         """.stripMargin.format(traceIdsString))
         .as((long("span_id") ~ long("trace_id") ~ str("span_name") ~
-          str("service_name") ~ str("key") ~ get[Array[Byte]]("value") ~
-          int("annotation_type_value") ~ int("ipv4") ~ int("port") map flatten) *)
+          str("service_name") ~ str("key") ~ DB.bytes("value") ~
+          int("annotation_type_value") ~ get[Option[Int]]("ipv4") ~
+          get[Option[Int]]("port") map flatten) *)
     Future(traceIds.map(traceId =>
       spans.filter(_._3 == traceId).map({span =>
         val spanAnnos = annos.filter(_._1 == span._1).map({anno =>
