@@ -82,14 +82,16 @@ case class AnormIndex() extends Index {
       // Binary annotations
       case Some(bytes) => {
         SQL(
-          """SELECT trace_id, 0 # TODO What is the timestamp here?
-            |FROM zipkin_binary_annotations
-            |WHERE service_name = {service_name}
-            |  AND key = {annotation}
-            |  AND value = {value}
-            |  # AND end_ts < {end_ts} # TODO
-            |GROUP BY trace_id
-            |# ORDER BY end_ts DESC # TODO
+          """SELECT zba.trace_id, s.created_ts
+            |FROM zipkin_binary_annotations AS zba
+            |LEFT JOIN zipkin_spans AS s
+            |  ON zba.trace_id = s.trace_id
+            |WHERE zba.service_name = {service_name}
+            |  AND zba.key = {annotation}
+            |  AND zba.value = {value}
+            |  AND s.created_ts < {end_ts}
+            |GROUP BY zba.trace_id
+            |ORDER BY s.created_ts DESC
             |LIMIT {limit}
           """.stripMargin)
           .on("service_name" -> serviceName)
@@ -97,7 +99,7 @@ case class AnormIndex() extends Index {
           .on("value" -> Util.getArrayFromBuffer(bytes))
           .on("end_ts" -> endTs)
           .on("limit" -> limit)
-          .as((long("trace_id") ~ long("end_ts") map flatten) *)
+          .as((long("trace_id") ~ long("created_ts") map flatten) *)
       }
       // Normal annotations
       case None => {
