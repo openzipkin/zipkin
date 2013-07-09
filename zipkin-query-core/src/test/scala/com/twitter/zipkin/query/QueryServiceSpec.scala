@@ -111,7 +111,7 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
       def indexSpanByAnnotations(span: Span) = null
       def indexServiceName(span: Span) = null
       def indexSpanNameByService(span: Span) = null
-      def indexSpanDuration(span: Span): Future[Void] = null
+      def indexSpanDuration(span: Span): Future[Unit] = null
     }
 
     "find traces in service span name index, fetch from storage" in {

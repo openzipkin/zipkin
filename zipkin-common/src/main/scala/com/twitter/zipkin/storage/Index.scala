@@ -93,5 +93,5 @@ trait Index {
   /**
    * Index a span's duration. This is so we can look up the trace duration.
    */
-  def indexSpanDuration(span: Span): Future[Void]
+  def indexSpanDuration(span: Span): Future[Unit]
 }
