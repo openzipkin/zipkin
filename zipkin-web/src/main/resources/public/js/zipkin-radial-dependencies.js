@@ -22,38 +22,6 @@ var Zipkin = Zipkin || {};
  */
 Zipkin.RadialDependencies = (function () {
 
-  var Moments = {};
-  Moments.empty = { "m0":0, "m1":0, "m2":0, "m3":0, "m4":0 };
-
-  /**
-   * cribbed from algebird.  Probably should do this server-side
-   */
-  Moments.merge = function(a, b) {
-    var delta = b.m1 - a.m1;
-    var countCombined = a.m0 + b.m0
-    if(countCombined == 0) {
-      return Moments.empty;
-    }
-
-    var meanCombined = (a.m0*a.m1 + b.m0*b.m1) / countCombined
-
-    var m2 = a.m2 + b.m2 +
-        Math.pow(delta, 2) * a.m0 * b.m0 / countCombined;
-
-    var m3 = a.m3 + b.m3 +
-        Math.pow(delta, 3) * a.m0 * b.m0 * (a.m0 - b.m0) / Math.pow(countCombined, 2) +
-        3 * delta * (a.m0 * b.m2 - b.m0 * a.m2) / countCombined;
-
-    var m4 = a.m4 + b.m4 +
-        Math.pow(delta, 4) * a.m0 * b.m0 * (Math.pow(a.m0, 2) -
-            a.m0 * b.m0 + Math.pow(b.m0, 2)) / Math.pow(countCombined, 3) +
-        6 * Math.pow(delta, 2) * (Math.pow(a.m0, 2) * b.m2 +
-            Math.pow(b.m0, 2) * a.m2) / Math.pow(countCombined, 2) +
-        4 * delta * (a.m0 * b.m3 - b.m0 * a.m3) / countCombined;
-
-    return { "m0":countCombined, "m1":meanCombined, "m2":m2, "m3":m3, "m4":m4 };
-  }
-
   var RadialDependencies = function (startTime, endTime) {
     this.startTime = startTime;
     this.endTime = endTime;
@@ -75,7 +43,7 @@ Zipkin.RadialDependencies = (function () {
           return d.x / 180 * Math.PI;
         });
 
-    var svg = d3.select(".dependencies").append("svg")
+    var svg = d3.select("#dependencies").append("svg")
         .attr("width", this.diameter)
         .attr("height", this.diameter)
         .append("g")
@@ -83,10 +51,22 @@ Zipkin.RadialDependencies = (function () {
 
     d3.select(self.frameElement).style("height", this.diameter + "px");
 
-    // chunk through the data
-    d3.json("/api/dependencies", function (json) {
-      var graph = process_data(json);
-      console.log(graph);
+    Zipkin.Aggregates.loadJson(function(graph) {
+
+      // fill in values needed for layout
+      _.each(graph.nodes, function (node, index) {
+        node.x = index / graph.nodes.length * 360
+        node.y = 350
+      });
+
+      graph.links = _.map(graph.links, function (link, index) {
+        var middle = {
+          x: (link[0].x + link[1].x) / 2,
+          y: link[0].y / 2
+        };
+
+        return [link[0], middle, link[1]];
+      });
 
       svg.selectAll(".node")
           .data(graph.nodes)
@@ -94,6 +74,7 @@ Zipkin.RadialDependencies = (function () {
           .append("g")
           .on("mouseover", on_mouse_over)
           .on("mouseout", on_mouse_out)
+          .on("click", click_node)
           .attr("class", "radialNode")
           .attr("transform", function (d) {
             return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")";
@@ -172,72 +153,9 @@ Zipkin.RadialDependencies = (function () {
           .classed("radialInbound", false);
     }
 
-    function newNode(name) {
-      return {
-        name: name,
-        inboundMoments: Moments.empty,
-        outboundMoments: Moments.empty,
-        inboundLinks: 0,
-        outboundLinks: 0,
-        linksFrom: [],
-        linksTo: []
-      };
-    }
-
-    function process_data(json) {
-
-      var nodeMap = {};
-      var graph = {"nodes": [], "links": []};
-
-      // build a map of each node
-      _.each(json.links, function (pairing) {
-        nodeMap[pairing.parent] = newNode(pairing.parent);
-        nodeMap[pairing.child] = newNode(pairing.child);
-      });
-
-      // build up each link and calculate node count totals for inbound and outbound
-      _.each(json.links, function (pairing) {
-        if (pairing.parent != pairing.child) {
-          var sourceNode = nodeMap[pairing.parent];
-          var targetNode = nodeMap[pairing.child];
-
-          // count the total inbound and outbound calls
-          sourceNode.outboundMoments = Moments.merge(sourceNode.outboundMoments, pairing.durationMoments);
-          targetNode.inboundMoments = Moments.merge(targetNode.inboundMoments, pairing.durationMoments);
-
-          // and count the links between unique services
-          sourceNode.outboundLinks += 1;
-          targetNode.inboundLinks += 1;
-
-          var link = {source: sourceNode, target: targetNode, moments: pairing.durationMoments};
-          graph.links.push([sourceNode, targetNode]);
-
-          // finally record these links in each node
-          sourceNode.linksFrom.push(link);
-          targetNode.linksTo.push(link);
-        }
-      });
-
-      graph.nodes = _.sortBy(_.values(nodeMap), function (node) {
-        return node.name
-      });
-
-      // fill in values needed for layout
-      _.each(graph.nodes, function (node, index) {
-        node.x = index / graph.nodes.length * 360
-        node.y = 350
-      });
-
-      graph.links = _.map(graph.links, function (link, index) {
-        var middle = {
-          x: (link[0].x + link[1].x) / 2,
-          y: link[0].y / 2
-        };
-
-        return [link[0], middle, link[1]];
-      });
-
-      return graph;
+    function click_node(node) {
+      d3.select("svg").remove();
+      var block = new Zipkin.BlockDependencies(node.name);
     }
   };
 

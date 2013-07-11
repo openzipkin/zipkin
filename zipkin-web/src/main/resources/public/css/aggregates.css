@@ -17,6 +17,7 @@
 .radialNode {
     font: 10px sans-serif;
     fill: #808080;
+    cursor: default;
 }
 
 .radialLink {
@@ -45,3 +46,28 @@
     font: 20px sans-serif;
     fill: #303030;
 }
+
+/** block deps **/
+
+.blockNode text {
+    font: 12px sans-serif;
+    fill: #ffffff;
+}
+
+.blockParent rect {
+    fill: #387338;
+}
+
+.blockChild rect {
+    fill: #733737;
+}
+
+.blockTarget rect {
+    fill: #565e73;
+}
+
+.blockLink {
+    stroke: #cccccc;
+    fill: #aaaaaa;
+}
+
