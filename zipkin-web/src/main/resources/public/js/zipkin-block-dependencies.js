@@ -154,7 +154,7 @@ Zipkin.BlockDependencies = (function () {
     function render(graph) {
 
       svg.selectAll("g.blockNode")
-        .data(self.nodes, function (d) { return d.name; })
+        .data(graph.nodes, function (d) { return d.name; })
         .call(drawNode)
         ;
 
@@ -223,8 +223,16 @@ Zipkin.BlockDependencies = (function () {
         parents.push(node);
       });
 
+      // calculate the total duration of all children, which is not the same as the
+      // selected node's duration because of parallelism.  This is used to size the
+      // link curves proportionally.
+      var childDurationTotal = 0;
+      _.each(selected.linksFrom, function (link, index) {
+        childDurationTotal += link.moments.mean() * link.moments.count();
+      });
+
       var sortedChildren = selected.linksFrom.sort(function(a,b) {
-        return b.mean - a.mean;
+        return b.moments.mean() * b.moments.count() - a.moments.mean() * a.moments.count();
       });
 
       var children = [];
@@ -236,7 +244,7 @@ Zipkin.BlockDependencies = (function () {
           node.name = node.name + " (loop)";
         }
 
-        node.ratio = link.moments.mean() / selected.moments.mean();
+        node.ratio = link.moments.mean() * link.moments.count() / childDurationTotal;
 
         if (node.generation < currGeneration - 1 || node.class != "blockTarget") {
           // nodes not currently visible slide in from off screen
