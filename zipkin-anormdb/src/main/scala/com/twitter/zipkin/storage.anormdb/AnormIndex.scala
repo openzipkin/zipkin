@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 Twitter Inc.
+ * Copyright 2013 Twitter Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.twitter.zipkin.storage.anormdb
 
 import com.twitter.zipkin.common.Span
@@ -35,9 +36,9 @@ import anorm.SqlParser._
  * The index methods are stubs since SQL databases don't use NoSQL-style
  * indexing.
  */
-case class AnormIndex() extends Index {
+case class AnormIndex(db:DB) extends Index {
   // Database connection object
-  private implicit val conn = DB.getConnection()
+  private implicit val conn = db.getConnection()
 
   /**
    * Close the index
@@ -65,8 +66,8 @@ case class AnormIndex() extends Index {
       .on("end_ts" -> endTs)
       .on("limit" -> limit)
       .as((long("trace_id") ~ long("end_ts") map flatten) *)
-    Future(result map { row =>
-      IndexedTraceId(traceId = row._1, timestamp = row._2)
+    Future(result map { case (tId, ts) =>
+      IndexedTraceId(traceId = tId, timestamp = ts)
     })
   }
 
@@ -119,8 +120,8 @@ case class AnormIndex() extends Index {
           .as((long("trace_id") ~ long("end_ts") map flatten) *)
       }
     }
-    Future(result map { row =>
-      IndexedTraceId(traceId = row._1, timestamp = row._2)
+    Future(result map { case (tId, ts) =>
+      IndexedTraceId(traceId = tId, timestamp = ts)
     })
   }
 
@@ -138,9 +139,9 @@ case class AnormIndex() extends Index {
         |ORDER BY created_ts DESC
       """.stripMargin.format(traceIds.mkString(",")))
       .as((long("trace_id") ~ get[Option[Long]]("duration") ~ long("created_ts") map flatten) *)
-    Future(result map { row =>
+    Future(result map { case (traceId, duration, startTs) =>
       // trace ID, duration, start TS
-      TraceIdDuration(row._1, row._2.getOrElse(0), row._3)
+      TraceIdDuration(traceId, duration.getOrElse(0), startTs)
     })
   }
 

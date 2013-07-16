@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 Twitter Inc.
+ * Copyright 2013 Twitter Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.twitter.zipkin.storage.anormdb
 
 import com.twitter.zipkin.storage.Storage
@@ -36,9 +37,9 @@ import java.nio.ByteBuffer
  * sites. Several methods in this class deal with TTL and we just assume that
  * all spans will live forever.
  */
-case class AnormStorage() extends Storage {
+case class AnormStorage(db:DB) extends Storage {
   // Database connection object
-  private implicit val conn = DB.getConnection()
+  private implicit val conn = db.getConnection()
 
   /**
    * Close the storage
@@ -121,7 +122,7 @@ case class AnormStorage() extends Storage {
    * If there are multiple ttl entries for one trace, pick the lowest one.
    */
   def getTimeToLive(traceId: Long): Future[Duration] = {
-    Future(Duration.Top)
+    Future.value(Duration.Top)
   }
 
   /**
@@ -143,65 +144,63 @@ case class AnormStorage() extends Storage {
    */
   def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
     val traceIdsString:String = traceIds.mkString(",")
-    /*
-     * No need to pull duration (Option[Long]) or created_ts (Option[Long])
-     * because they're derived from the annotations and just stored in the spans
-     * table for straightforward lookups.
-     */
-    val spans:List[(Long, Option[Long], Long, String, Boolean)] =
+    val spans:List[DBSpan] =
       SQL(
         """SELECT span_id, parent_id, trace_id, span_name, debug
           |FROM zipkin_spans
           |WHERE trace_id IN (%s)
         """.stripMargin.format(traceIdsString))
-        .as((
-          long("span_id") ~ get[Option[Long]]("parent_id") ~ long("trace_id") ~
-            str("span_name") ~ bool("debug") map flatten) *)
-    val annos:List[(Long, Long, String, String, String, Option[Int], Option[Int], Long, Option[Long])] =
+        .as((long("span_id") ~ get[Option[Long]]("parent_id") ~
+          long("trace_id") ~ str("span_name") ~ bool("debug") map {
+            case a~b~c~d~e => DBSpan(a, b, c, d, e)
+          }) *)
+    val annos:List[DBAnnotation] =
       SQL(
-        """SELECT span_id, trace_id, span_name, service_name, value, ipv4,
-          |  port, timestamp, duration
+        """SELECT span_id, service_name, value, ipv4, port, timestamp, duration
           |FROM zipkin_annotations
           |WHERE trace_id IN (%s)
         """.stripMargin.format(traceIdsString))
-        .as((long("span_id") ~ long("trace_id") ~ str("span_name") ~
-          str("service_name") ~ str("value") ~ get[Option[Int]]("ipv4") ~
-          get[Option[Int]]("port") ~ long("timestamp") ~
-          get[Option[Long]]("duration") map flatten) *)
-    val binAnnos:List[(Long, Long, String, String, String, Array[Byte], Int, Option[Int], Option[Int])] =
+        .as((long("span_id") ~ str("service_name") ~ str("value") ~
+          get[Option[Int]]("ipv4") ~ get[Option[Int]]("port") ~
+          long("timestamp") ~ get[Option[Long]]("duration") map {
+            case a~b~c~d~e~f~g => DBAnnotation(a, b, c, d, e, f, g)
+          }) *)
+    val binAnnos:List[DBBinaryAnnotation] =
       SQL(
-        """SELECT span_id, trace_id, span_name, service_name, key, value,
-          |  annotation_type_value, ipv4, port
+        """SELECT span_id, service_name, key, value, annotation_type_value,
+          |  ipv4, port
           |FROM zipkin_binary_annotations
           |WHERE trace_id IN (%s)
         """.stripMargin.format(traceIdsString))
-        .as((long("span_id") ~ long("trace_id") ~ str("span_name") ~
-          str("service_name") ~ str("key") ~ DB.bytes("value") ~
-          int("annotation_type_value") ~ get[Option[Int]]("ipv4") ~
-          get[Option[Int]]("port") map flatten) *)
+        .as((long("span_id") ~ str("service_name") ~ str("key") ~
+          db.bytes("value") ~ int("annotation_type_value") ~
+          get[Option[Int]]("ipv4") ~ get[Option[Int]]("port") map {
+            case a~b~c~d~e~f~g => DBBinaryAnnotation(a, b, c, d, e, f, g)
+          }) *)
+
     Future(traceIds.map(traceId =>
-      spans.filter(_._3 == traceId).map({span =>
-        val spanAnnos = annos.filter(_._1 == span._1).map({anno =>
-          val host:Option[Endpoint] = (anno._6, anno._7) match {
-            case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, anno._4))
+      spans.filter(_.traceId == traceId).map({span =>
+        val spanAnnos = annos.filter(_.spanId == span.spanId).map({anno =>
+          val host:Option[Endpoint] = (anno.ipv4, anno.port) match {
+            case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, anno.serviceName))
             case _ => None
           }
-          val duration:Option[Duration] = anno._9 match {
+          val duration:Option[Duration] = anno.duration match {
             case Some(nanos) => Some(Duration.fromNanoseconds(nanos))
             case None => None
           }
-          Annotation(anno._8, anno._5, host, duration)
+          Annotation(anno.timestamp, anno.value, host, duration)
         })
-        val spanBinAnnos = binAnnos.filter(_._1 == span._1).map({binAnno =>
-          val host:Option[Endpoint] = (binAnno._8, binAnno._9) match {
-            case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, binAnno._4))
+        val spanBinAnnos = binAnnos.filter(_.spanId == span.spanId).map({binAnno =>
+          val host:Option[Endpoint] = (binAnno.ipv4, binAnno.port) match {
+            case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, binAnno.serviceName))
             case _ => None
           }
-          val value = ByteBuffer.wrap(binAnno._6)
-          val annotationType = AnnotationType.fromInt(binAnno._7)
-          BinaryAnnotation(binAnno._5, value, annotationType, host)
+          val value = ByteBuffer.wrap(binAnno.value)
+          val annotationType = AnnotationType.fromInt(binAnno.annotationTypeValue)
+          BinaryAnnotation(binAnno.key, value, annotationType, host)
         })
-        Span(traceId, span._4, span._1, span._2, spanAnnos, spanBinAnnos, span._5)
+        Span(traceId, span.spanName, span.spanId, span.parentId, spanAnnos, spanBinAnnos, span.debug)
       })
     ))
   }
@@ -217,4 +216,8 @@ case class AnormStorage() extends Storage {
   def getDataTimeToLive: Int = {
     Int.MaxValue
   }
+
+  case class DBSpan(spanId: Long, parentId: Option[Long], traceId: Long, spanName: String, debug: Boolean)
+  case class DBAnnotation(spanId: Long, serviceName: String, value: String, ipv4: Option[Int], port: Option[Int], timestamp: Long, duration: Option[Long])
+  case class DBBinaryAnnotation(spanId: Long, serviceName: String, key: String, value: Array[Byte], annotationTypeValue: Int, ipv4: Option[Int], port: Option[Int])
 }

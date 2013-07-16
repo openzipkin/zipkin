@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 Twitter Inc.
+ * Copyright 2013 Twitter Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.twitter.zipkin.anormdb
 
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.Index
+import com.twitter.zipkin.storage.anormdb.DB
 import com.twitter.zipkin.storage.anormdb.AnormIndex
 
-case class IndexBuilder() extends Builder[Index] {
+object IndexBuilder {
+  def apply(db:DB) = {
+    new IndexBuilder(db)
+  }
+}
+class IndexBuilder(db: DB) extends Builder[Index] {
   def apply() = {
-    AnormIndex()
+    AnormIndex(db)
   }
 }

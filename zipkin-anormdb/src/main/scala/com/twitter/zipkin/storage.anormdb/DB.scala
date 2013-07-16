@@ -1,16 +1,39 @@
+/*
+ * Copyright 2013 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.twitter.zipkin.storage.anormdb
 
 import anorm._
 import anorm.SqlParser._
+import com.twitter.util.Eval
+import java.io.File
 import java.sql.{Blob, Connection, DriverManager}
 
+object DB {
+  def apply() = {
+    new DB(None)
+  }
+}
 /**
  * Provides SQL database access via ANORM from the Play framework.
  *
  * See http://www.playframework.com/documentation/2.1.1/ScalaAnorm for
  * documentation on using ANORM.
  */
-object DB {
+class DB(dbc: Option[Map[String, Map[String, String]]]) {
   /**
    * Database information.
    *
@@ -66,22 +89,25 @@ object DB {
 
   /**
    * Configuration variables.
-   *
-   * TODO: The config we want to use should be loaded from configuration.
    */
-  private val dbconfig = Map(
-    "info" -> Map(
-      "type" -> "sqlite-persistent"
-    ),
-    "params" -> Map(
-      "SSL" -> "false",
-      "PASSWORD" -> "",
-      "USERNAME" -> "",
-      "DB_NAME" -> "zipkin",
-      "HOST" -> "localhost",
-      "PORT" -> ""
+  private val dbconfig = dbc getOrElse {
+    // TODO: How do we know this file is actually at the correct location?
+    val f = new File("../../../../../../../../config/dbconfig.scala")
+    if (f.exists) Eval[Map[String, Map[String, String]]](f)
+    else Map(
+      "info" -> Map(
+        "type" -> "sqlite-persistent"
+      ),
+      "params" -> Map(
+        "SSL" -> "false",
+        "PASSWORD" -> "",
+        "USERNAME" -> "",
+        "DB_NAME" -> "zipkin",
+        "HOST" -> "localhost",
+        "PORT" -> ""
+      )
     )
-  )
+  }
 
   /**
    * The database type we want to use.
@@ -99,7 +125,7 @@ object DB {
    * This can be used for statements that use syntax specific to a certain
    * database.
    */
-  def getName() = {
+  def getName = {
     dbinfo("description")
   }
 
@@ -166,7 +192,7 @@ object DB {
         |  created_ts BIGINT NOT NULL
         |)
       """.stripMargin).execute()
-    SQL("CREATE INDEX trace_id ON zipkin_spans (trace_id)").execute()
+    //SQL("CREATE INDEX trace_id ON zipkin_spans (trace_id)").execute()
     SQL(
       """CREATE TABLE IF NOT EXISTS zipkin_annotations (
         |  span_id BIGINT NOT NULL,
@@ -180,7 +206,7 @@ object DB {
         |  duration BIGINT
         |)
       """.stripMargin).execute()
-    SQL("CREATE INDEX trace_id ON zipkin_annotations (trace_id)").execute()
+    //SQL("CREATE INDEX trace_id ON zipkin_annotations (trace_id)").execute()
     SQL(
       """CREATE TABLE IF NOT EXISTS zipkin_binary_annotations (
         |  span_id BIGINT NOT NULL,
@@ -194,7 +220,7 @@ object DB {
         |  port INT
         |)
       """.stripMargin.format(this.getBlobType)).execute()
-    SQL("CREATE INDEX trace_id ON zipkin_binary_annotations (trace_id)").execute()
+    //SQL("CREATE INDEX trace_id ON zipkin_binary_annotations (trace_id)").execute()
   }
 
   // Get the column the current database type uses for BLOBs.

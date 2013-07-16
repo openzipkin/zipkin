@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 Twitter Inc.
+ * Copyright 2013 Twitter Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.twitter.zipkin.anormdb
 
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.Storage
+import com.twitter.zipkin.storage.anormdb.DB
 import com.twitter.zipkin.storage.anormdb.AnormStorage
 
-case class StorageBuilder() extends Builder[Storage] {
+object StorageBuilder {
+  def apply(db:DB) = {
+    new StorageBuilder(db)
+  }
+}
+class StorageBuilder(db: DB) extends Builder[Storage] {
   def apply() = {
-    AnormStorage()
+    AnormStorage(db)
   }
 }
