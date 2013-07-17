@@ -37,6 +37,7 @@ class CassandraAggregatesSpec extends SpecificationWithJUnit with JMocker with C
   val mockKeyspace = mock[Keyspace]
   val mockAnnotationsCf = mock[ColumnFamily[String, Long, String]]
   val mockDependenciesCf = mock[ColumnFamily[ByteBuffer, Long, gen.Dependencies]]
+  val mockRowsIteratee = mock[RowsIteratee[ByteBuffer, Long, gen.Dependencies]]
 
   def cassandraAggregates = CassandraAggregates(mockKeyspace, mockAnnotationsCf, mockDependenciesCf)
 
@@ -89,7 +90,8 @@ class CassandraAggregatesSpec extends SpecificationWithJUnit with JMocker with C
         val bb = ByteBuffer.allocate(8).putLong(0L)
 
         expect {
-          one(mockDependenciesCf).multigetRows(Set(bb).asJava, None, None, Order.Normal, Int.MaxValue) willReturn Future.value(Map(bb -> Map(0L -> col).asJava).asJava)
+          one(mockDependenciesCf).rowsIteratee(100) willReturn mockRowsIteratee
+          one(mockRowsIteratee).map(any) willReturn Future.value(Seq(Seq(deps1)))
         }
 
         val result = Await.result(agg.getDependencies(None))
@@ -132,7 +134,7 @@ class CassandraAggregatesSpec extends SpecificationWithJUnit with JMocker with C
         val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
 
         Await.result(agg.storeDependencies(deps1))
-        Await.result(agg.getDependencies(Some(Time.fromSeconds(0)))) mustEqual deps1
+        Await.result(agg.getDependencies(None)) mustEqual deps1
       }
 
       "clobber old entries" in {
