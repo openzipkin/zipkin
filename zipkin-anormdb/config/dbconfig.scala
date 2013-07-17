@@ -16,7 +16,7 @@
 
 import com.twitter.zipkin.storage.anormdb.DB
 
-DB(Map(
+Map(
   "info" -> Map(
     "type" -> "sqlite-persistent"
   ),
@@ -28,4 +28,4 @@ DB(Map(
     "HOST" -> "localhost",
     "PORT" -> ""
   )
-))
+)

@@ -61,6 +61,16 @@ object Zipkin extends Build {
     ZipkinResolver.newSettings
   ).flatten
 
+  // Database drivers
+  val anormDriverDependencies = Map(
+    "sqlite-memory"     -> "org.xerial"     % "sqlite-jdbc"          % "3.7.2",
+    "sqlite-persistent" -> "org.xerial"     % "sqlite-jdbc"          % "3.7.2",
+    "h2-memory"         -> "com.h2database" % "h2"                   % "1.3.172",
+    "h2-persistent"     -> "com.h2database" % "h2"                   % "1.3.172",
+    "postgresql"        -> "postgresql"     % "postgresql"           % "8.4-702.jdbc4", // or "9.1-901.jdbc4",
+    "mysql"             -> "mysql"          % "mysql-connector-java" % "5.1.25"
+  )
+
   lazy val zipkin =
     Project(
       id = "zipkin",
@@ -170,7 +180,8 @@ object Zipkin extends Build {
   ).settings(
     libraryDependencies ++= Seq(
       "play"        %% "anorm"        % "2.1-09142012",
-      "org.xerial"  %  "sqlite-jdbc"  % "3.7.2"
+      "org.xerial"  % "sqlite-jdbc"   % "3.7.2"
+      //anormDriverDependencies(com.twitter.util.Eval[Map[String, Map[String, String]]](new File(cwd + "/../zipkin-anormdb/config/dbconfig.scala")))
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */

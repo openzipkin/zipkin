@@ -44,15 +44,9 @@ class DB(dbc: Option[Map[String, Map[String, String]]]) {
    * Anorm supports any SQL database, so more databases can be added here.
    *
    * The other place the database driver needs to be set is in the project
-   * dependencies in project/Project.scala under the definition of the
-   * lazy val anormdb.
+   * dependencies in project/Project.scala.
    *
-   * SQLite:     "org.xerial"     % "sqlite-jdbc"          % "3.7.2"
-   * H2:         "com.h2database" % "h2"                   % "1.3.172"
-   * PostgreSQL: "postgresql"     % "postgresql"           % "8.4-702.jdbc4" // or "9.1-901.jdbc4"
-   * MySQL:      "mysql"          % "mysql-connector-java" % "5.1.25"
-   *
-   * TODO: Figure out the easiest way for someone to set up the schema the first time, e.g. by running DB.install().
+   * TODO: Figure out the easiest way to get these dependencies loaded for anything other than SQLite
    */
   private val dbmap = Map(
     "sqlite-memory" -> Map(
