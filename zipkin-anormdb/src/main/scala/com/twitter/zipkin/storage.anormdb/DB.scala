@@ -34,6 +34,7 @@ object DB {
  * documentation on using ANORM.
  */
 class DB(dbc: Option[Map[String, Map[String, String]]]) {
+  case class DBInfo(driver: String, location: String, description: String)
   /**
    * Database information.
    *
@@ -49,35 +50,35 @@ class DB(dbc: Option[Map[String, Map[String, String]]]) {
    * TODO: Figure out the easiest way to get these dependencies loaded for anything other than SQLite
    */
   private val dbmap = Map(
-    "sqlite-memory" -> Map(
-      "description" -> "SQLite in-memory",
-      "location" -> "jdbc:sqlite::memory:",
-      "driver" -> "org.sqlite.JDBC"
+    "sqlite-memory" -> DBInfo(
+      description = "SQLite in-memory",
+      driver = "org.sqlite.JDBC",
+      location = "jdbc:sqlite::memory:"
     ),
-    "sqlite-persistent" -> Map(
-      "description" -> "SQLite persistent",
-      "location" -> "jdbc:sqlite:[DB_NAME].db",
-      "driver" -> "org.sqlite.JDBC"
+    "sqlite-persistent" -> DBInfo(
+      description = "SQLite persistent",
+      driver = "org.sqlite.JDBC",
+      location = "jdbc:sqlite:[DB_NAME].db"
     ),
-    "h2-memory" -> Map(
-      "description" -> "H2 in-memory",
-      "location" -> "jdbc:h2:mem:zipkin",
-      "driver" -> "org.h2.Driver"
+    "h2-memory" -> DBInfo(
+      description = "H2 in-memory",
+      driver = "org.h2.Driver",
+      location = "jdbc:h2:mem:zipkin"
     ),
-    "h2-persistent" -> Map(
-      "description" -> "H2 persistent",
-      "location" -> "jdbc:h2:[DB_NAME]",
-      "driver" -> "org.h2.Driver"
+    "h2-persistent" -> DBInfo(
+      description = "H2 persistent",
+      driver = "org.h2.Driver",
+      location = "jdbc:h2:[DB_NAME]"
     ),
-    "postgresql" -> Map(
-      "description" -> "PostgreSQL",
-      "location" -> "jdbc:postgresql://[HOST][PORT]/[DB_NAME]?user=[USERNAME]&password=[PASSWORD]&ssl=[SSL]",
-      "driver" -> "org.postgresql.Driver"
+    "postgresql" -> DBInfo(
+      description = "PostgreSQL",
+      driver = "org.postgresql.Driver",
+      location = "jdbc:postgresql://[HOST][PORT]/[DB_NAME]?user=[USERNAME]&password=[PASSWORD]&ssl=[SSL]"
     ),
-    "mysql" -> Map(
-      "description" -> "MySQL",
-      "location" -> "jdbc:mysql://[HOST][PORT]/[DB_NAME]?user=[USERNAME]&password=[PASSWORD]",
-      "driver" -> "com.mysql.jdbc.Driver"
+    "mysql" -> DBInfo(
+      description = "MySQL",
+      driver = "com.mysql.jdbc.Driver",
+      location = "jdbc:mysql://[HOST][PORT]/[DB_NAME]?user=[USERNAME]&password=[PASSWORD]"
     )
   )
 
@@ -111,7 +112,7 @@ class DB(dbc: Option[Map[String, Map[String, String]]]) {
   private val dbinfo = dbmap(dbconfig("info")("type"))
 
   // Load the driver
-  Class.forName(dbinfo("driver"))
+  Class.forName(dbinfo.driver)
 
   /**
    * Return a description of the database type in use.
@@ -120,7 +121,7 @@ class DB(dbc: Option[Map[String, Map[String, String]]]) {
    * database.
    */
   def getName = {
-    dbinfo("description")
+    dbinfo.description
   }
 
   /**
@@ -227,7 +228,7 @@ class DB(dbc: Option[Map[String, Map[String, String]]]) {
   // Substitute the database configuration into the location string.
   // This allows storing things like the database password in config.
   private def parseLocation():String = {
-    var loc = dbinfo("location")
+    var loc = dbinfo.location
     for ((k:String, v:String) <- dbconfig("params")) {
       if (k == "PORT" && v != "")
         loc = loc.replaceFirst("[" + k + "]", ":" + v)
