@@ -18,9 +18,15 @@ import com.twitter.zipkin.storage.anormdb.DB
 
 Map(
   "info" -> Map(
+    /*
+     * Valid database types are defined in DB.scala and currently include
+     * sqlite-persistent, sqlite-memory, h2-persistent, h2-memory, postgresql,
+     * and mysql
+     */
     "type" -> "sqlite-persistent"
   ),
   "params" -> Map(
+    // Not all of these are relevant for all databases
     "SSL" -> "false",
     "PASSWORD" -> "",
     "USERNAME" -> "",
