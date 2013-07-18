@@ -179,9 +179,8 @@ object Zipkin extends Build {
     settings = defaultSettings
   ).settings(
     libraryDependencies ++= Seq(
-      "play"        %% "anorm"        % "2.1-09142012",
-      "org.xerial"  % "sqlite-jdbc"   % "3.7.2"
-      //anormDriverDependencies(com.twitter.util.Eval[Map[String, Map[String, String]]](new File(cwd + "/../zipkin-anormdb/config/dbconfig.scala")))
+      "play" %% "anorm" % "2.1-09142012",
+      anormDriverDependencies("sqlite-persistent")
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */

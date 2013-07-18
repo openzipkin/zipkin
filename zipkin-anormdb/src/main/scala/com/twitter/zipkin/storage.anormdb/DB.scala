@@ -18,13 +18,11 @@ package com.twitter.zipkin.storage.anormdb
 
 import anorm._
 import anorm.SqlParser._
-import com.twitter.util.Eval
-import java.io.File
 import java.sql.{Blob, Connection, DriverManager}
 
 object DB {
   def apply() = {
-    new DB(None)
+    new DB()
   }
 }
 /**
@@ -33,96 +31,10 @@ object DB {
  * See http://www.playframework.com/documentation/2.1.1/ScalaAnorm for
  * documentation on using ANORM.
  */
-class DB(dbc: Option[Map[String, Map[String, String]]]) {
-  case class DBInfo(driver: String, location: String, description: String)
-  /**
-   * Database information.
-   *
-   * The key of the outer map and the descriptions are arbitrary. The location
-   * is the name of the database and where to find it. The driver is the JDBC
-   * interface to the database type.
-   *
-   * Anorm supports any SQL database, so more databases can be added here.
-   *
-   * The other place the database driver needs to be set is in the project
-   * dependencies in project/Project.scala.
-   *
-   * TODO: Figure out the easiest way to get these dependencies loaded for anything other than SQLite
-   */
-  private val dbmap = Map(
-    "sqlite-memory" -> DBInfo(
-      description = "SQLite in-memory",
-      driver = "org.sqlite.JDBC",
-      location = "jdbc:sqlite::memory:"
-    ),
-    "sqlite-persistent" -> DBInfo(
-      description = "SQLite persistent",
-      driver = "org.sqlite.JDBC",
-      location = "jdbc:sqlite:[DB_NAME].db"
-    ),
-    "h2-memory" -> DBInfo(
-      description = "H2 in-memory",
-      driver = "org.h2.Driver",
-      location = "jdbc:h2:mem:zipkin"
-    ),
-    "h2-persistent" -> DBInfo(
-      description = "H2 persistent",
-      driver = "org.h2.Driver",
-      location = "jdbc:h2:[DB_NAME]"
-    ),
-    "postgresql" -> DBInfo(
-      description = "PostgreSQL",
-      driver = "org.postgresql.Driver",
-      location = "jdbc:postgresql://[HOST][PORT]/[DB_NAME]?user=[USERNAME]&password=[PASSWORD]&ssl=[SSL]"
-    ),
-    "mysql" -> DBInfo(
-      description = "MySQL",
-      driver = "com.mysql.jdbc.Driver",
-      location = "jdbc:mysql://[HOST][PORT]/[DB_NAME]?user=[USERNAME]&password=[PASSWORD]"
-    )
-  )
-
-  /**
-   * Configuration variables.
-   */
-  private val dbconfig = dbc getOrElse {
-    // TODO: How do we know this file is actually at the correct location?
-    val f = new File("../../../../../../../../config/dbconfig.scala")
-    if (f.exists) Eval[Map[String, Map[String, String]]](f)
-    else Map(
-      "info" -> Map(
-        "type" -> "sqlite-persistent"
-      ),
-      "params" -> Map(
-        "SSL" -> "false",
-        "PASSWORD" -> "",
-        "USERNAME" -> "",
-        "DB_NAME" -> "zipkin",
-        "HOST" -> "localhost",
-        "PORT" -> ""
-      )
-    )
-  }
-
-  /**
-   * The database type we want to use.
-   *
-   * This must correspond to an outer key of the dbmap Map.
-   */
-  private val dbinfo = dbmap(dbconfig("info")("type"))
+case class DB(dbconfig: DBConfig = new DBConfig()) {
 
   // Load the driver
-  Class.forName(dbinfo.driver)
-
-  /**
-   * Return a description of the database type in use.
-   *
-   * This can be used for statements that use syntax specific to a certain
-   * database.
-   */
-  def getName = {
-    dbinfo.description
-  }
+  Class.forName(dbconfig.driver)
 
   /**
    * Gets a java.sql.Connection to the SQL database.
@@ -139,7 +51,7 @@ class DB(dbc: Option[Map[String, Map[String, String]]]) {
    * connection open for a single block of code, see withConnection().
    */
   def getConnection() = {
-    DriverManager.getConnection(parseLocation())
+    DriverManager.getConnection(dbconfig.location)
   }
 
   /**
@@ -219,23 +131,10 @@ class DB(dbc: Option[Map[String, Map[String, String]]]) {
   }
 
   // Get the column the current database type uses for BLOBs.
-  private def getBlobType = this.getName match {
+  private def getBlobType = dbconfig.description match {
     case "PostgreSQL" => "BYTEA" /* As usual PostgreSQL has to be different */
     case "MySQL" => "MEDIUMBLOB" /* MySQL has length limits, in this case 16MB */
     case _ => "BLOB"
-  }
-
-  // Substitute the database configuration into the location string.
-  // This allows storing things like the database password in config.
-  private def parseLocation():String = {
-    var loc = dbinfo.location
-    for ((k:String, v:String) <- dbconfig("params")) {
-      if (k == "PORT" && v != "")
-        loc = loc.replaceFirst("[" + k + "]", ":" + v)
-      else
-        loc = loc.replaceFirst("[" + k + "]", v)
-    }
-    loc
   }
 
   // Provide Anorm with the ability to handle BLOBs.
