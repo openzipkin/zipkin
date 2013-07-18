@@ -1,6 +1,6 @@
 language: scala
 services:
-  - redis
+  - redis-server
 scala:
   - 2.9.1
 jdk:
