@@ -103,7 +103,7 @@ case class DBConfig(name: String = "sqlite-persistent", params: DBParams = new D
   )
   private val dbinfo = dbmap(name)
 
-  def description = dbinfo.description
-  def driver = dbinfo.driver
-  def location = dbinfo.location(params)
+  def description: String = dbinfo.description
+  def driver: String = dbinfo.driver
+  def location: String = dbinfo.location(params)
 }

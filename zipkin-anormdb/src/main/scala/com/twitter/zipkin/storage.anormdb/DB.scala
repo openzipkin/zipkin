@@ -86,15 +86,20 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
    * Set up the database tables.
    *
    * Ideally this should only be run once.
+   *
+   * Takes a boolean indicating whether to keep the connection open after the
+   * installation completes. Pass true for in-memory databases or they will
+   * disappear immediately.
    */
-  def install() = this.withConnection { implicit con =>
+  def install(keepAlive: Boolean = false): Connection = {
+    implicit val con = this.getConnection()
     SQL(
       """CREATE TABLE IF NOT EXISTS zipkin_spans (
         |  span_id BIGINT NOT NULL,
         |  parent_id BIGINT,
         |  trace_id BIGINT NOT NULL,
         |  span_name VARCHAR(255) NOT NULL,
-        |  debug BOOLEAN NOT NULL,
+        |  debug SMALLINT NOT NULL,
         |  duration BIGINT,
         |  created_ts BIGINT NOT NULL
         |)
@@ -128,6 +133,8 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
         |)
       """.stripMargin.format(this.getBlobType)).execute()
     //SQL("CREATE INDEX trace_id ON zipkin_binary_annotations (trace_id)").execute()
+    if (!keepAlive) con.close() else ()
+    con
   }
 
   // Get the column the current database type uses for BLOBs.

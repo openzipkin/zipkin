@@ -61,7 +61,7 @@ case class AnormStorage(db:DB) extends Storage {
       .on("parent_id" -> span.parentId)
       .on("trace_id" -> span.traceId)
       .on("span_name" -> span.name)
-      .on("debug" -> span.debug)
+      .on("debug" -> (if (span.debug) 1 else 0))
       .on("duration" -> span.duration)
       .on("created_ts" -> span.firstAnnotation.map(_.timestamp).head)
     .execute()
@@ -151,8 +151,8 @@ case class AnormStorage(db:DB) extends Storage {
           |WHERE trace_id IN (%s)
         """.stripMargin.format(traceIdsString))
         .as((long("span_id") ~ get[Option[Long]]("parent_id") ~
-          long("trace_id") ~ str("span_name") ~ bool("debug") map {
-            case a~b~c~d~e => DBSpan(a, b, c, d, e)
+          long("trace_id") ~ str("span_name") ~ int("debug") map {
+            case a~b~c~d~e => DBSpan(a, b, c, d, e > 0)
           }) *)
     val annos:List[DBAnnotation] =
       SQL(

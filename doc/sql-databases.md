@@ -43,9 +43,15 @@ To set up the appropriate schema, simply run these commands in the Zipkin
 directory after installation:
 
     sbt "project zipkin-anormdb" console
-    com.twitter.zipkin.storage.anormdb.DB().install
+    com.twitter.zipkin.storage.anormdb.DB().install(false)
 
-This will create new tables (prefixed by `zipkin_`) in your database.
+As above, pass appropriate parameters to `DB()` if necessary so that it
+connects to your database. This will create new tables (prefixed by `zipkin_`)
+in your database.
+
+Zipkin technically supports in-memory databases, but they can only be used for
+testing because there is currently no way to keep open a connection to an
+in-memory database between installation and running Zipkin.
 
 ### Adding a new database type
 
