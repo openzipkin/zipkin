@@ -21,7 +21,7 @@ import com.twitter.finagle.redis.util.RedisCluster
 import org.specs.Specification
 
 trait RedisSpecification extends Specification {
-  lazy val _client = Client(RedisCluster.hostAddresses)
+  lazy val _client = Client("127.0.0.1:6379")
 
   doBeforeSpec {
     RedisCluster.start(1)
