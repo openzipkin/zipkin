@@ -18,13 +18,91 @@ package com.twitter.zipkin.storage.anormdb
  */
 
 import org.specs.Specification
+import com.twitter.zipkin.common._
+import java.nio.ByteBuffer
+import java.sql.Connection
+import com.twitter.util.Await
+import com.twitter.zipkin.query.Trace
 
 class AnormStorageSpec extends Specification {
-/*
-	storeSpan
-	tracesExist
-	getSpansByTraceId
-	getSpansByTraceIds
-	getSpansByTraceIds should be empty if there are no traces
- */
+
+  val dbType = "sqlite-memory"
+
+  def binaryAnnotation(key: String, value: String) =
+    BinaryAnnotation(key, ByteBuffer.wrap(value.getBytes), AnnotationType.String, Some(ep))
+
+  val ep = Endpoint(123, 123, "service")
+
+  val spanId = 456
+  val traceIdDNE = 456
+  val ann1 = Annotation(1, "cs", Some(ep))
+  val ann2 = Annotation(2, "sr", None)
+  val ann3 = Annotation(2, "custom", Some(ep))
+
+  val span1 = Span(123, "methodcall", spanId, None, List(ann1, ann3),
+    List(binaryAnnotation("BAH", "BEH")))
+  val span2 = Span(667, "methodcall2", spanId, None, List(ann2),
+    List(binaryAnnotation("BAH2", "BEH2")))
+
+  "AnormStorage" should {
+    "tracesExist" in {
+      val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinTest1")))
+      val con = db.install(true)
+      val storage = new AnormStorage(db, Some(con))
+
+      Await.result(storage.storeSpan(span1))
+      Await.result(storage.storeSpan(span2))
+
+      Await.result(storage.tracesExist(List(span1.traceId, span2.traceId, traceIdDNE))) must haveTheSameElementsAs(Set(span1.traceId, span2.traceId))
+      Await.result(storage.tracesExist(List(span2.traceId))) must haveTheSameElementsAs(Set(span2.traceId))
+      Await.result(storage.tracesExist(List(traceIdDNE))).isEmpty mustEqual true
+
+      con.close()
+    }
+
+    "getSpansByTraceId" in {
+      val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinTest2")))
+      val con = db.install(true)
+      val storage = new AnormStorage(db, Some(con))
+
+      Await.result(storage.storeSpan(span1))
+      Await.result(storage.storeSpan(span2))
+
+      val spans = Await.result(storage.getSpansByTraceId(span1.traceId))
+      spans.isEmpty mustEqual false
+      spans(0) mustEqual span1
+      spans.size mustEqual 1
+
+      con.close()
+    }
+
+    "getSpansByTraceIds" in {
+      val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinTest3")))
+      val con = db.install(true)
+      val storage = new AnormStorage(db, Some(con))
+
+      Await.result(storage.storeSpan(span1))
+      Await.result(storage.storeSpan(span2))
+
+      val emptySpans = Await.result(storage.getSpansByTraceIds(List(traceIdDNE)))
+      emptySpans.isEmpty mustEqual true
+
+      val oneSpan = Await.result(storage.getSpansByTraceIds(List(span1.traceId)))
+      oneSpan.isEmpty mustEqual false
+      val trace1 = Trace(oneSpan(0))
+      trace1.spans.isEmpty mustEqual false
+      trace1.spans(0) mustEqual span1
+
+      val twoSpans = Await.result(storage.getSpansByTraceIds(List(span1.traceId, span2.traceId)))
+      twoSpans.isEmpty mustEqual false
+      val trace2a = Trace(twoSpans(0))
+      val trace2b = Trace(twoSpans(1))
+      trace2a.spans.isEmpty mustEqual false
+      trace2a.spans(0) mustEqual span1
+      trace2b.spans.isEmpty mustEqual false
+      trace2b.spans(0) mustEqual span2
+
+      con.close()
+    }
+  }
 }

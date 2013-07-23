@@ -20,6 +20,9 @@ import anorm._
 import anorm.SqlParser._
 import java.sql.{Blob, Connection, DriverManager}
 
+/**
+ * The companion object is mainly to make installation easier.
+ */
 object DB {
   def apply() = {
     new DB()

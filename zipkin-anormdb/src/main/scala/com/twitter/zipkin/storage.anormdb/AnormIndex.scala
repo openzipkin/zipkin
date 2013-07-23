@@ -23,6 +23,7 @@ import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import anorm._
 import anorm.SqlParser._
+import java.sql.Connection
 
 /**
  * Retrieve and store trace and span information.
@@ -36,9 +37,12 @@ import anorm.SqlParser._
  * The index methods are stubs since SQL databases don't use NoSQL-style
  * indexing.
  */
-case class AnormIndex(db:DB) extends Index {
+case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index {
   // Database connection object
-  private implicit val conn = db.getConnection()
+  private implicit val conn = openCon match {
+    case None => db.getConnection()
+    case Some(con) => con
+  }
 
   /**
    * Close the index
