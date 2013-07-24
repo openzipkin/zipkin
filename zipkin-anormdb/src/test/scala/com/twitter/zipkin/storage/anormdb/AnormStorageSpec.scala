@@ -20,12 +20,16 @@ package com.twitter.zipkin.storage.anormdb
 import org.specs.Specification
 import com.twitter.zipkin.common._
 import java.nio.ByteBuffer
-import java.sql.Connection
 import com.twitter.util.Await
 import com.twitter.zipkin.query.Trace
 
 class AnormStorageSpec extends Specification {
 
+  /*
+   * We should be able to switch out the database type and have all the tests
+   * still work. However, for most database engines we would need to explicitly
+   * create the databases first, or at least mock them.
+   */
   val dbType = "sqlite-memory"
 
   def binaryAnnotation(key: String, value: String) =
@@ -46,8 +50,12 @@ class AnormStorageSpec extends Specification {
 
   "AnormStorage" should {
     "tracesExist" in {
-      val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinTest1")))
-      val con = db.install(true)
+      /*
+       * Database names are irrelevant for the SQLite-memory engine, but for
+       * all other engines we want the tests to be isolated.
+       */
+      val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinStorageTest1")))
+      val con = db.install(keepAlive = true)
       val storage = new AnormStorage(db, Some(con))
 
       Await.result(storage.storeSpan(span1))
@@ -61,8 +69,8 @@ class AnormStorageSpec extends Specification {
     }
 
     "getSpansByTraceId" in {
-      val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinTest2")))
-      val con = db.install(true)
+      val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinStorageTest2")))
+      val con = db.install(keepAlive = true)
       val storage = new AnormStorage(db, Some(con))
 
       Await.result(storage.storeSpan(span1))
@@ -77,8 +85,8 @@ class AnormStorageSpec extends Specification {
     }
 
     "getSpansByTraceIds" in {
-      val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinTest3")))
-      val con = db.install(true)
+      val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinStorageTest3")))
+      val con = db.install(keepAlive = true)
       val storage = new AnormStorage(db, Some(con))
 
       Await.result(storage.storeSpan(span1))

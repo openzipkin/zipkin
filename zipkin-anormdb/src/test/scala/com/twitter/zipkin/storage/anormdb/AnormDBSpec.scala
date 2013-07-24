@@ -25,7 +25,7 @@ class AnormDBSpec extends Specification {
 
   "AnormDB" should {
     "have the correct schema" in {
-      implicit val con = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest"))).install(true)
+      implicit val con = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest"))).install(keepAlive = true)
       val expectedTables = List("zipkin_annotations", "zipkin_binary_annotations", "zipkin_spans")
       // The right tables are present
       val tables: List[String] = SQL(
@@ -40,7 +40,7 @@ class AnormDBSpec extends Specification {
         ("span_name", "VARCHAR(255)", 1),
         ("debug", "SMALLINT", 1),
         ("duration", "BIGINT", 0),
-        ("created_ts", "BIGINT", 1)
+        ("created_ts", "BIGINT", 0)
       )
       println(expectedCols)
       // The right columns are present
@@ -56,7 +56,7 @@ class AnormDBSpec extends Specification {
     }
 
     "insert and get rows" in {
-      implicit val con = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest"))).install(true)
+      implicit val con = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest"))).install(keepAlive = true)
       // Insert
       val numRowsInserted: Int = SQL(
         "INSERT INTO zipkin_spans VALUES (2, 1, 1, 'mySpan', 1, 1000, 0)"

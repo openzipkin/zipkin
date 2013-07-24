@@ -55,6 +55,10 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
    * @return a future for the operation
    */
   def storeSpan(span: Span): Future[Unit] = {
+    val createdTs: Option[Long] = span.firstAnnotation match {
+      case Some(anno) => Some(anno.timestamp)
+      case None => None
+    }
     SQL(
       """INSERT INTO zipkin_spans
         |  (span_id, parent_id, trace_id, span_name, debug, duration, created_ts)
@@ -67,14 +71,14 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
       .on("span_name" -> span.name)
       .on("debug" -> (if (span.debug) 1 else 0))
       .on("duration" -> span.duration)
-      .on("created_ts" -> span.firstAnnotation.map(_.timestamp).head)
-    .execute()
+      .on("created_ts" -> createdTs)
+      .execute()
 
     span.annotations.foreach(a =>
       SQL(
         """INSERT INTO zipkin_annotations
           |  (span_id, trace_id, span_name, service_name, value, ipv4, port,
-          |    timestamp, duration)
+          |    a_timestamp, duration)
           |VALUES
           |  ({span_id}, {trace_id}, {span_name}, {service_name}, {value},
           |    {ipv4}, {port}, {timestamp}, {duration})
@@ -84,8 +88,8 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
         .on("span_name" -> span.name)
         .on("service_name" -> a.serviceName)
         .on("value" -> a.value)
-        .on("ipv4" -> a.host.map(_.ipv4).headOption)
-        .on("port" -> a.host.map(_.port).headOption)
+        .on("ipv4" -> a.host.map(_.ipv4))
+        .on("port" -> a.host.map(_.port))
         .on("timestamp" -> a.timestamp)
         .on("duration" -> a.duration)
         .execute()
@@ -106,8 +110,8 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
         .on("key" -> b.key)
         .on("value" -> Util.getArrayFromBuffer(b.value))
         .on("annotation_type_value" -> b.annotationType.value)
-        .on("ipv4" -> b.host.map(_.ipv4).headOption)
-        .on("port" -> b.host.map(_.ipv4).headOption)
+        .on("ipv4" -> b.host.map(_.ipv4))
+        .on("port" -> b.host.map(_.ipv4))
         .execute()
     )
     Future.Unit
@@ -160,13 +164,13 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
           }) *)
     val annos:List[DBAnnotation] =
       SQL(
-        """SELECT span_id, trace_id, service_name, value, ipv4, port, timestamp, duration
+        """SELECT span_id, trace_id, service_name, value, ipv4, port, a_timestamp, duration
           |FROM zipkin_annotations
           |WHERE trace_id IN (%s)
         """.stripMargin.format(traceIdsString))
         .as((long("span_id") ~ long("trace_id") ~ str("service_name") ~ str("value") ~
           get[Option[Int]]("ipv4") ~ get[Option[Int]]("port") ~
-          long("timestamp") ~ get[Option[Long]]("duration") map {
+          long("a_timestamp") ~ get[Option[Long]]("duration") map {
             case a~b~c~d~e~f~g~h => DBAnnotation(a, b, c, d, e, f, g, h)
           }) *)
     val binAnnos:List[DBBinaryAnnotation] =

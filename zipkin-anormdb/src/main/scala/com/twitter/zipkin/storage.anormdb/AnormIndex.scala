@@ -55,21 +55,23 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    */
   def getTraceIdsByName(serviceName: String, spanName: Option[String],
                         endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
+    // This seems to be the expectation, though it's not well-documented.
+    val tsCutoff = System.currentTimeMillis() - endTs
     val result:List[(Long, Long)] = SQL(
-      """SELECT trace_id, MAX(created_ts)
+      """SELECT trace_id, MAX(a_timestamp)
         |FROM zipkin_annotations
         |WHERE service_name = {service_name}
-        |  AND (span_name = {span_name} OR span_name = '')
-        |  AND timestamp < {end_ts}
+        |  AND (span_name = {span_name} OR {span_name} = '')
+        |  AND a_timestamp < {end_ts}
         |GROUP BY trace_id
-        |ORDER BY timestamp DESC
+        |ORDER BY a_timestamp DESC
         |LIMIT {limit}
       """.stripMargin)
       .on("service_name" -> serviceName)
       .on("span_name" -> (if (spanName.isEmpty) "" else spanName.get))
-      .on("end_ts" -> endTs)
+      .on("end_ts" -> tsCutoff)
       .on("limit" -> limit)
-      .as((long("trace_id") ~ long("end_ts") map flatten) *)
+      .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
     Future(result map { case (tId, ts) =>
       IndexedTraceId(traceId = tId, timestamp = ts)
     })
@@ -83,6 +85,12 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    */
   def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
                               endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
+    // Ignore core annotations. Yay magic names!
+    if (List("cs", "cr", "ss", "sr", "ca", "sa").contains(annotation))
+      return Future.value[Seq[IndexedTraceId]](Seq());
+
+    // This seems to be the expectation, though it's not well-documented.
+    val tsCutoff = System.currentTimeMillis() - endTs
     val result:List[(Long, Long)] = value match {
       // Binary annotations
       case Some(bytes) => {
@@ -95,6 +103,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
             |  AND zba.key = {annotation}
             |  AND zba.value = {value}
             |  AND s.created_ts < {end_ts}
+            |  AND s.created_ts IS NOT NULL
             |GROUP BY zba.trace_id
             |ORDER BY s.created_ts DESC
             |LIMIT {limit}
@@ -102,26 +111,27 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
           .on("service_name" -> serviceName)
           .on("annotation" -> annotation)
           .on("value" -> Util.getArrayFromBuffer(bytes))
-          .on("end_ts" -> endTs)
+          .on("end_ts" -> tsCutoff)
           .on("limit" -> limit)
           .as((long("trace_id") ~ long("created_ts") map flatten) *)
       }
       // Normal annotations
       case None => {
         SQL(
-          """SELECT trace_id, MAX(timestamp)
+          """SELECT trace_id, MAX(a_timestamp)
             |FROM zipkin_annotations
             |WHERE service_name = {service_name}
             |  AND value = {annotation}
-            |  AND timestamp < {end_ts}
-            |ORDER BY timestamp DESC
+            |  AND a_timestamp < {end_ts}
+            |GROUP BY trace_id
+            |ORDER BY a_timestamp DESC
             |LIMIT {limit}
           """.stripMargin)
           .on("service_name" -> serviceName)
           .on("annotation" -> annotation)
-          .on("end_ts" -> endTs)
+          .on("end_ts" -> tsCutoff)
           .on("limit" -> limit)
-          .as((long("trace_id") ~ long("end_ts") map flatten) *)
+          .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
       }
     }
     Future(result map { case (tId, ts) =>
@@ -138,7 +148,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
     val result:List[(Long, Option[Long], Long)] = SQL(
       """SELECT trace_id, duration, created_ts
         |FROM zipkin_spans
-        |WHERE trace_id IN (%s)
+        |WHERE trace_id IN (%s) AND created_ts IS NOT NULL
         |GROUP BY trace_id
         |ORDER BY created_ts DESC
       """.stripMargin.format(traceIds.mkString(",")))
@@ -159,7 +169,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
         |GROUP BY service_name
         |ORDER BY service_name ASC
       """.stripMargin)
-      .as(str("service") *).toSet)
+      .as(str("service_name") *).toSet)
   }
 
   /**
@@ -169,12 +179,12 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
     Future(SQL(
       """SELECT span_name
         |FROM zipkin_annotations
-        |WHERE service_name = {service}
+        |WHERE service_name = {service} AND span_name <> ''
         |GROUP BY span_name
         |ORDER BY span_name ASC
       """.stripMargin)
       .on("service" -> service)
-      .as(str("service") *)
+      .as(str("span_name") *)
       .toSet
     )
   }

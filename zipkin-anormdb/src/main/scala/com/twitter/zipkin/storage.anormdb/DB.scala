@@ -104,7 +104,7 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
         |  span_name VARCHAR(255) NOT NULL,
         |  debug SMALLINT NOT NULL,
         |  duration BIGINT,
-        |  created_ts BIGINT NOT NULL
+        |  created_ts BIGINT
         |)
       """.stripMargin).execute()
     //SQL("CREATE INDEX trace_id ON zipkin_spans (trace_id)").execute()
@@ -117,7 +117,7 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
         |  value TEXT,
         |  ipv4 INT,
         |  port INT,
-        |  timestamp BIGINT NOT NULL,
+        |  a_timestamp BIGINT NOT NULL,
         |  duration BIGINT
         |)
       """.stripMargin).execute()
