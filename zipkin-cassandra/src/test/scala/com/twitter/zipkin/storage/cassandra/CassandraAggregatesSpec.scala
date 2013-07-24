@@ -29,15 +29,13 @@ import com.twitter.algebird.Moments
 import com.twitter.zipkin.common.{Dependencies, Service, DependencyLink}
 import org.junit.runner.RunWith
 import org.specs.runner.JUnitSuiteRunner
-import java.nio.ByteBuffer
 
 @RunWith(classOf[JUnitSuiteRunner])
 class CassandraAggregatesSpec extends SpecificationWithJUnit with JMocker with ClassMocker {
 
   val mockKeyspace = mock[Keyspace]
   val mockAnnotationsCf = mock[ColumnFamily[String, Long, String]]
-  val mockDependenciesCf = mock[ColumnFamily[ByteBuffer, Long, gen.Dependencies]]
-  val mockRowsIteratee = mock[RowsIteratee[ByteBuffer, Long, gen.Dependencies]]
+  val mockDependenciesCf = mock[ColumnFamily[Long, Long, gen.Dependencies]]
 
   def cassandraAggregates = CassandraAggregates(mockKeyspace, mockAnnotationsCf, mockDependenciesCf)
 
