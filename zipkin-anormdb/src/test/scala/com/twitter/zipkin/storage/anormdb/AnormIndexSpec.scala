@@ -67,12 +67,12 @@ class AnormIndexSpec extends Specification {
       val index = new AnormIndex(db, Some(con))
 
       storage.storeSpan(span1)
-      val traces = Await.result(index.getTraceIdsByName("service", None, 0, 3))
+      val traces = Await.result(index.getTraceIdsByName("service", None, 3, 3))
       traces foreach {
         _.traceId mustEqual span1.traceId
       }
       traces.isEmpty mustBe false
-      val tracesWithSpanName = Await.result(index.getTraceIdsByName("service", Some("methodcall"), 0, 3))
+      val tracesWithSpanName = Await.result(index.getTraceIdsByName("service", Some("methodcall"), 3, 3))
       tracesWithSpanName foreach {
         _.traceId mustEqual span1.traceId
       }
@@ -89,16 +89,16 @@ class AnormIndexSpec extends Specification {
 
       storage.storeSpan(span1)
 
-      val normalTraces = Await.result(index.getTraceIdsByAnnotation("service", "custom", None, 0, 3))
+      val normalTraces = Await.result(index.getTraceIdsByAnnotation("service", "custom", None, 3, 3))
       normalTraces.foreach {
         _.traceId mustEqual span1.traceId
       }
       normalTraces.isEmpty mustBe false
 
-      Await.result(index.getTraceIdsByAnnotation("service", "cs", None, 0, 3)).isEmpty mustBe true
+      Await.result(index.getTraceIdsByAnnotation("service", "cs", None, 3, 3)).isEmpty mustBe true
 
       val result = Await.result(index.getTraceIdsByAnnotation("service", "BAH",
-        Some(ByteBuffer.wrap("BEH".getBytes)), 0, 3))
+        Some(ByteBuffer.wrap("BEH".getBytes)), 3, 3))
       result.foreach {
         _.traceId mustEqual span1.traceId
       }

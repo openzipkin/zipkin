@@ -42,15 +42,12 @@ class AnormDBSpec extends Specification {
         ("duration", "BIGINT", 0),
         ("created_ts", "BIGINT", 0)
       )
-      println(expectedCols)
       // The right columns are present
       val cols_spans: List[(Int, String, String, Int, Option[String], Int)] =
         SQL("PRAGMA table_info(zipkin_spans)").as((
           int("cid") ~ str("name") ~ str("type") ~ int("notnull") ~
             get[Option[String]]("dflt_value") ~ int("pk") map flatten) *)
-      println(cols_spans)
       val better_cols = cols_spans.map(col => (col._2, col._3, col._4))
-      println(better_cols)
       better_cols must containAll(expectedCols)
       con.close()
     }

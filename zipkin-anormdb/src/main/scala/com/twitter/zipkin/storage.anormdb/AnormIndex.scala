@@ -55,8 +55,6 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    */
   def getTraceIdsByName(serviceName: String, spanName: Option[String],
                         endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
-    // This seems to be the expectation, though it's not well-documented.
-    val tsCutoff = System.currentTimeMillis() - endTs
     val result:List[(Long, Long)] = SQL(
       """SELECT trace_id, MAX(a_timestamp)
         |FROM zipkin_annotations
@@ -69,7 +67,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
       """.stripMargin)
       .on("service_name" -> serviceName)
       .on("span_name" -> (if (spanName.isEmpty) "" else spanName.get))
-      .on("end_ts" -> tsCutoff)
+      .on("end_ts" -> endTs)
       .on("limit" -> limit)
       .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
     Future(result map { case (tId, ts) =>
@@ -89,8 +87,6 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
     if (List("cs", "cr", "ss", "sr", "ca", "sa").contains(annotation))
       return Future.value[Seq[IndexedTraceId]](Seq());
 
-    // This seems to be the expectation, though it's not well-documented.
-    val tsCutoff = System.currentTimeMillis() - endTs
     val result:List[(Long, Long)] = value match {
       // Binary annotations
       case Some(bytes) => {
@@ -111,7 +107,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
           .on("service_name" -> serviceName)
           .on("annotation" -> annotation)
           .on("value" -> Util.getArrayFromBuffer(bytes))
-          .on("end_ts" -> tsCutoff)
+          .on("end_ts" -> endTs)
           .on("limit" -> limit)
           .as((long("trace_id") ~ long("created_ts") map flatten) *)
       }
@@ -129,7 +125,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
           """.stripMargin)
           .on("service_name" -> serviceName)
           .on("annotation" -> annotation)
-          .on("end_ts" -> tsCutoff)
+          .on("end_ts" -> endTs)
           .on("limit" -> limit)
           .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
       }
