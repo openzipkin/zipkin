@@ -39,14 +39,14 @@
 
 <p>These are the components that make up a fully fledged tracing system.</p>
 
-<p><img src="https://github.com/twitter/zipkin/raw/master/doc/architecture-0.png" alt="Zipkin Architecture (doc/architecture-0.png)"></p>
+<p><img src="images/architecture-0.png" alt="Zipkin Architecture (doc/architecture-0.png)"></p>
 
 <h3>Instrumented libraries</h3>
 
-<p>Tracing information is collected on each host using the instrumented libraries and sent to Zipkin. 
+<p>Tracing information is collected on each host using the instrumented libraries and sent to Zipkin.
 When the host makes a request to another service, it passes a few tracing identifers along with the request so we can later tie the data together.</p>
 
-<p><img src="https://github.com/twitter/zipkin/raw/master/doc/architecture-1.png" alt="Zipkin Instrumentation architecture (doc/architecture-1.png)"></p>
+<p><img src="images/architecture-1.png" alt="Zipkin Instrumentation architecture (doc/architecture-1.png)"></p>
 
 <p>We have instrumented the libraries below to trace requests and to pass the required identifiers to the other services called in the request.</p>
 
