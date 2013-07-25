@@ -25,11 +25,9 @@ Zipkin.RadialDependencies = (function () {
   var RadialDependencies = function (startTime, endTime) {
     this.startTime = startTime;
     this.endTime = endTime;
-
-    this.diameter = 1024;
-    this.radius = this.diameter / 2;
-    this.innerRadius = this.radius - 120;
   };
+
+  RadialDependencies.diameter = 1024;
 
   RadialDependencies.prototype.render = function () {
 
@@ -44,12 +42,12 @@ Zipkin.RadialDependencies = (function () {
         });
 
     var svg = d3.select("#dependencies").append("svg")
-        .attr("width", this.diameter)
-        .attr("height", this.diameter)
+        .attr("width", RadialDependencies.diameter)
+        .attr("height", RadialDependencies.diameter)
         .append("g")
-        .attr("transform", "translate(" + this.radius + "," + this.radius + ")");
+        .attr("transform", "translate(" + RadialDependencies.diameter/2 + "," + RadialDependencies.diameter/2 + ")");
 
-    d3.select(self.frameElement).style("height", this.diameter + "px");
+    d3.select(self.frameElement).style("height", RadialDependencies.diameter + "px");
 
     Zipkin.Aggregates.loadJson(function(graph) {
 
