@@ -47,7 +47,7 @@ class AnormDBSpec extends Specification {
         SQL("PRAGMA table_info(zipkin_spans)").as((
           int("cid") ~ str("name") ~ str("type") ~ int("notnull") ~
             get[Option[String]]("dflt_value") ~ int("pk") map flatten) *)
-      val better_cols = cols_spans.map(col => (col._2, col._3, col._4))
+      val better_cols = cols_spans.map { col => (col._2, col._3, col._4) }
       better_cols must containAll(expectedCols)
       con.close()
     }

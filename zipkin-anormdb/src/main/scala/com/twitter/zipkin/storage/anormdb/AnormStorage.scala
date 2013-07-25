@@ -188,9 +188,9 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
             case a~b~c~d~e~f~g~h => DBBinaryAnnotation(a, b, c, d, e, f, g, h)
           }) *)
 
-    val results: Seq[Seq[Span]] = traceIds.map(traceId =>
-      spans.filter(_.traceId == traceId).map({span =>
-        val spanAnnos = annos.filter(_.traceId == span.traceId).map({anno =>
+    val results: Seq[Seq[Span]] = traceIds.map { traceId =>
+      spans.filter(_.traceId == traceId).map { span =>
+        val spanAnnos = annos.filter(_.traceId == span.traceId).map { anno =>
           val host:Option[Endpoint] = (anno.ipv4, anno.port) match {
             case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, anno.serviceName))
             case _ => None
@@ -200,8 +200,8 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
             case None => None
           }
           Annotation(anno.timestamp, anno.value, host, duration)
-        })
-        val spanBinAnnos = binAnnos.filter(_.traceId == span.traceId).map({binAnno =>
+        }
+        val spanBinAnnos = binAnnos.filter(_.traceId == span.traceId).map { binAnno =>
           val host:Option[Endpoint] = (binAnno.ipv4, binAnno.port) match {
             case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, binAnno.serviceName))
             case _ => None
@@ -209,10 +209,10 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
           val value = ByteBuffer.wrap(binAnno.value)
           val annotationType = AnnotationType.fromInt(binAnno.annotationTypeValue)
           BinaryAnnotation(binAnno.key, value, annotationType, host)
-        })
+        }
         Span(traceId, span.spanName, span.spanId, span.parentId, spanAnnos, spanBinAnnos, span.debug)
-      })
-    )
+      }
+    }
     Future {
       results.filter(!_.isEmpty)
     }
