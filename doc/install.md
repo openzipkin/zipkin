@@ -1,31 +1,88 @@
 ## Installation
 
-To get going quickly, see the
+### Quickstart
+
+[Scala 2.9](http://www.scala-lang.org/downloads) (JDK6 or JDK7) is required.
+
+Install with `git clone https://github.com/twitter/zipkin.git && cd zipkin` or
+[download](https://github.com/twitter/zipkin/archive/master.zip) Zipkin to your
+preferred directory and unzip.
+
+Run (in separate bash windows):
+
+    bin/collector
+    bin/query
+    bin/web
+
+Now you can access the Zipkin UI at http://localhost:8080/
+
+### Advanced Setup
+
+By default, Zipkin runs on SQLite because it doesn't require additional setup.
+However, Zipkin is typically used with other databases (most often Cassandra)
+in production. For a quickstart with Cassandra, see the
 [Ubuntu Quickstart](https://github.com/twitter/zipkin/blob/master/doc/ubuntu-quickstart.txt) and
 [Mac Quickstart](https://github.com/twitter/zipkin/blob/master/doc/mac-quickstart.md) guides.
-These will help you get Zipkin running on a single machine so that you can experiment with it.
+These will help you get a somewhat more advanced Zipkin installation running on
+a single machine so that you can experiment with it.
 
-This document explains the services and dependencies with which Zipkin
-interacts, and more advanced configuration.
+For larger deployments, Zipkin works with several other services, and you may
+want to apply additional configuration. Some of those services and
+configurations are described below.
 
+### Feeding trace data to Zipkin
 
-### Cassandra
+The next step after installation is to collect trace data to view in Zipkin. To
+do this, you must interface with the collector daemon to record trace data.
+There are several libraries to make this easier to do in different
+environments. Twitter uses
+[Finagle](https://github.com/twitter/finagle/tree/master/finagle-zipkin);
+external libraries (currently for Python, REST, node, and Java) are listed in the
+[wiki](https://github.com/twitter/zipkin/wiki#external-projects-that-use-zipkin);
+and there is also a [Ruby gem](https://rubygems.org/gems/finagle-thrift) and
+[Ruby Thrift client](https://github.com/twitter/thrift_client).
 
+### Running the Daemons with Other Databases
+
+The default Zipkin collector configuration is
+`zipkin-collector-service/config/collector-dev.scala` and the default Zipkin
+query configuration is `zipkin-query-service/config/query-dev.scala`. These
+are set up to work with SQLite by default. To use Zipkin with a different SQL
+database, we recommend changing those configurations as described in the
+[SQL guide](https://github.com/twitter/zipkin/blob/master/doc/sql-databases.md).
+
+For NoSQL databases, you have a few options. To run Zipkin with Cassandra for
+example, you can copy the Cassandra configuration into the default
+configuration, change the `bin` scripts to run the Cassandra configuration, or
+run the full daemon commands that the `bin` scripts are invoking:
+
+    bin/sbt 'project zipkin-collector-service' 'run -f zipkin-collector-service/config/collector-cassandra.scala'
+    bin/sbt 'project zipkin-query-service' 'run -f zipkin-query-service/config/query-cassandra.scala'
+
+The `bin/web` script does not access the database so you do not need to change
+anything there.
+
+### Storage: Cassandra
+
+Zipkin runs on SQLite by default to make it easier to test out of the box.
+Running Zipkin on SQLite requires no additional setup. However, in production,
 Zipkin is most commonly used with [Cassandra](http://cassandra.apache.org/) for
-the collector's storage. There is also a
-[Redis plugin](https://github.com/twitter/zipkin/blob/master/doc/redis.md) and
-we'd like to see support for other databases.
+the collector's storage. There are also plugins for
+[Redis](https://github.com/twitter/zipkin/blob/master/doc/redis.md), HBase, and
+[other SQL databases](https://github.com/twitter/zipkin/blob/master/doc/sql-databases.md).
 
 1. See Cassandra's <a href="http://cassandra.apache.org/">site</a> for instructions on how to start a cluster.
 2. Use the Zipkin Cassandra schema attached to this project. You can create the schema with the following command:
 `cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt`
 
-### ZooKeeper
+### Coordination: ZooKeeper
+
 Zipkin can use ZooKeeper for coordination. That's where we store the server side sample rate and register the servers.
 
 1. See ZooKeeper's <a href="http://zookeeper.apache.org/">site</a> for instructions on how to install it.
 
-### Scribe
+### Collecting Data: Scribe
+
 <a href="https://github.com/facebook/scribe">Scribe</a> is the logging
 framework we use at Twitter to transport the trace data. There are several other
 ways to tell Zipkin what trace data to collect; in particular, if you are just
@@ -61,16 +118,8 @@ To use this mode you change `remote_host` in the configuration to
 We're hoping that others might add non-Scribe transports for the tracing data;
 there is no reason why Scribe has to be the only one.
 
-### Zipkin servers
-We developed Zipkin with
-[Scala 2.9.1](http://www.scala-lang.org/downloads),
-[SBT 0.11.2](http://www.scala-sbt.org/download.html), and JDK7.
-
-The [Ubuntu Quickstart](https://github.com/twitter/zipkin/blob/master/doc/ubuntu-quickstart.txt)
-and [Mac Quickstart](https://github.com/twitter/zipkin/blob/master/doc/mac-quickstart.md)
-guides explain how to set up and run the collector and query services.
-
 ### Zipkin UI
+
 The UI is a standard Rails 3 app.
 
 1. Update config with your ZooKeeper server. This is used to find the query daemons.

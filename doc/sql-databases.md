@@ -1,5 +1,5 @@
 This file describes how to use Zipkin with a SQL database, assuming you've
-followed the other installation steps (minus setting up Cassandra).
+already downloaded Zipkin.
 
 ## One-time database setup
 
@@ -14,14 +14,19 @@ dependencies.
 
 By default, Zipkin is configured to use a persistent SQLite database. SQLite
 does not require any additional setup and the database will be created
-on-demand. To use a different database, edit
-`zipkin-query-service/config/query-anorm.scala` and
-`zipkin-collector-service/config/collector-anorm.scala` to replace this line:
+on-demand.
+
+To use a different database, you need to change the collector and query
+configurations. The configurations are located at
+`zipkin-collector-service/config/collector-dev.scala` and
+`zipkin-query-service/config/query-dev.scala`, respectively. They both
+instantiate a `DB`, which looks something like this:
 
     val db = DB()
 
-With one that matches your database configuration. For example, to run Zipkin
-on a MySQL database named _production_, you might write something like this:
+You need to pass in parameters to `DB()` that match your database
+configuration. For example, to run Zipkin on a MySQL database named
+*production*, you might write something like this:
 
     val db = DB(new DBConfig("mysql", new DBParams("production", "127.0.0.1")))
 
@@ -37,21 +42,26 @@ Change "sqlite-persistent" to the name of the database you want to use (valid
 names are specified in the definition of `anormDriverDependencies` near the top
 of the file).
 
+Note that although Zipkin technically supports in-memory SQL databases, they
+can only be used effectively in the tests for now. This is because in-memory
+databases disappear once their connection is closed, and the collector and
+query daemons open different connections. However, we would like to combine
+all three daemons (including the web one) into a single thread that could share
+one connection.
+
 ### Setting up the schema
 
-To set up the appropriate schema, simply run these commands in the Zipkin
-directory after installation:
+With the default configuration, the Zipkin collector automatically sets up the
+schema if necessary. It does not add any indexes. If you are going to use
+Zipkin with a SQL database in production, you may want to add indexes manually.
 
-    sbt "project zipkin-anormdb" console
-    com.twitter.zipkin.storage.anormdb.DB().install(false)
+Zipkin knows to set up the schema through the `install` flag of a `DBConfig`
+instance that is passed to the `DB` class. Once the schema has been set up, you
+can turn off the flag, though the effect of keeping it on is just a slightly
+slower startup.
 
-As above, pass appropriate parameters to `DB()` if necessary so that it
-connects to your database. This will create new tables (prefixed by `zipkin_`)
-in your database.
-
-Zipkin technically supports in-memory databases, but they can only be used for
-testing because there is currently no way to keep open a connection to an
-in-memory database between installation and running Zipkin.
+You can also manually install the schema by running the `install()` method of
+a `DB` instance.
 
 ### Adding a new database type
 
@@ -65,8 +75,9 @@ continue with the connection and schema setup processes described above.
 
 ## Usage
 
-Run these commands in order to start the Zipkin daemons:
+Zipkin uses the Anorm configuration by default, so you can run Zipkin with a
+SQL database like normal:
 
-    sbt 'project zipkin-collector-service' 'run -f zipkin-collector-service/config/collector-anorm.scala'
-    sbt 'project zipkin-query-service' 'run -f zipkin-query-service/config/query-anorm.scala'
-    sbt 'project zipkin-web' 'run -f zipkin-web/config/web-dev.scala -D local_docroot=zipkin-web/src/main/resources'
+    bin/collector
+    bin/query
+    bin/web

@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 import com.twitter.zipkin.builder.Scribe
-import com.twitter.zipkin.cassandra
+import com.twitter.zipkin.anormdb.{StorageBuilder, IndexBuilder}
+import com.twitter.zipkin.storage.anormdb.{DB, DBConfig, DBParams}
 import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
 import com.twitter.zipkin.storage.Store
 
-val keyspaceBuilder = cassandra.Keyspace.static(nodes = Set("localhost"))
-val cassandraBuilder = Store.Builder(
-  cassandra.StorageBuilder(keyspaceBuilder),
-  cassandra.IndexBuilder(keyspaceBuilder),
-  cassandra.AggregatesBuilder(keyspaceBuilder)
+val db = DB(new DBConfig(install = true))
+val anormBuilder = Store.Builder(
+  StorageBuilder(db),
+  IndexBuilder(db)
 )
 
 CollectorServiceBuilder(Scribe.Interface(categories = Set("zipkin")))
-  .writeTo(cassandraBuilder)
+  .writeTo(anormBuilder)

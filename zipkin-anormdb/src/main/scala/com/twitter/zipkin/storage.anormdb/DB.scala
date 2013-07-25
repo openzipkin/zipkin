@@ -39,6 +39,9 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
   // Load the driver
   Class.forName(dbconfig.driver)
 
+  // Install the schema if requested
+  if (dbconfig.install) this.install()
+
   /**
    * Gets a java.sql.Connection to the SQL database.
    *

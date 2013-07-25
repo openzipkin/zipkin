@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 import com.twitter.zipkin.builder.QueryServiceBuilder
-import com.twitter.zipkin.anormdb.{StorageBuilder, IndexBuilder}
-import com.twitter.zipkin.storage.anormdb.DB
+import com.twitter.zipkin.cassandra
 import com.twitter.zipkin.storage.Store
 
-
-val db = DB()
+// development mode.
+val keyspaceBuilder = cassandra.Keyspace.static()
 val storeBuilder = Store.Builder(
-  StorageBuilder(db),
-  IndexBuilder(db)
-)
+  cassandra.StorageBuilder(keyspaceBuilder),
+  cassandra.IndexBuilder(keyspaceBuilder),
+  cassandra.AggregatesBuilder(keyspaceBuilder))
 
 QueryServiceBuilder(storeBuilder)

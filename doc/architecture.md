@@ -72,7 +72,10 @@ It listens for log messages and routes them to the correct receiver depending on
 Once the trace data arrives at the Zipkin collector daemon we check that it's valid, store it and the index it for lookups.
 
 ### Storage
-We settled on Cassandra for storage. It's scalable, has a flexible schema and is heavily used within Twitter. We did try to make this component pluggable though, so should not be hard to put in something else here.
+We originally built Zipkin on Cassandra for storage. It's scalable, has a
+flexible schema, and is heavily used within Twitter. However, we made this
+component pluggable, and we now have support for Redis, HBase, MySQL,
+PostgreSQL, SQLite, and H2.
 
 ### Zipkin query daemon
 Once the data is stored and indexed we need a way to extract it. This is where the query daemon comes in, providing the users with a simple Thrift api for finding and retrieving traces. See <a href="https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinQuery.thrift">the Thrift file</a>.

@@ -48,8 +48,12 @@ case class DBParams(
  *
  * @param name The database type. Must match a key of the dbmap property
  * @param params Connection information
+ * @param install Whether to set up the database schema.
+ *                The schema can be installed multiple times with no problems.
  */
-case class DBConfig(name: String = "sqlite-persistent", params: DBParams = new DBParams()) {
+case class DBConfig(name: String = "sqlite-persistent",
+                    params: DBParams = new DBParams(),
+                    install: Boolean = false) {
 
   case class DBInfo(driver: String, description: String, location: DBParams => String)
 
