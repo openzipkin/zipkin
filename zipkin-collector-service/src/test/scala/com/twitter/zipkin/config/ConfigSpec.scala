@@ -28,7 +28,8 @@ class ConfigSpec extends Specification {
 
     "validate collector configs" in {
       val configFiles = Seq(
-        "/collector-dev.scala"
+        "/collector-dev.scala",
+        "/collector-cassandra.scala"
       ) map { TempFile.fromResourcePath(_) }
 
       for (file <- configFiles) {

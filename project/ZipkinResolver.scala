@@ -37,6 +37,7 @@ object ZipkinResolver extends Plugin {
           "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype/",
 
           // standard resolvers
+          "typesafe" at "http://repo.typesafe.com/typesafe/releases",
           "ibiblio" at "http://mirrors.ibiblio.org/pub/mirrors/maven2/",
           "twitter.com" at "http://maven.twttr.com/",
           "powermock-api" at "http://powermock.googlecode.com/svn/repo/",
