@@ -22,28 +22,38 @@ var Zipkin = Zipkin || {};
  */
 Zipkin.BlockDependencies = (function () {
 
-  var topMargin = 20; // spacing from the top
-  var boxSpacing = 5;
-  var boxHeight = 17;
-  var selectedHeight = 600; // how tall is the middle box
-  var boxWidth = 200;
-  var firstColumn = 0;
-  var secondColumn = 400;
-  var thirdColumn = 800;
-  var fourthColumn = 1200; // only used for animation starting point
+	// various constants used to position and size graph elements
+	var STYLE = {
+		width: $(".content").width(),
+		height: 1600,
 
-  var transitionDuration = 750;
+		topMargin: 20, // spacing from the top
+		boxSpacing: 5, // vertical distance between boxes
+		boxHeight: 17,
+		boxWidth: 200,
+		selectedHeight: 600, // how tall is the middle box
+		firstColumn: 0,
+		secondColumn: 400,
+		thirdColumn: 800,
+		fourthColumn: 1200, // only used for animation starting point
 
-  var width = $(".content").width();
-  var height = 1600;
+		transitionDuration: 750
+	};
+
+  /**
+   * routines for dealing with selected nodes that are bound to data
+   */
+  function BlockNode(selection) {
+    self.prototype = selection;
+  }
 
   var BlockDependencies = function(start) {
 
     var self = this;
 
     var svg = d3.select("#dependencies").append("svg")
-        .attr("width", width)
-        .attr("height", height);
+        .attr("width", STYLE.width)
+        .attr("height", STYLE.height);
 
     var currGeneration = 0; // every time we click, this gets incremented.  Used to track who's in and out of the scene.
 
@@ -57,16 +67,18 @@ Zipkin.BlockDependencies = (function () {
         node.y=0;
         node.x0=0;
         node.y0=0;
-        node.height = boxHeight;
+        node.height = STYLE.boxHeight;
         node.id = id;
         id += 1;
+				
+				if (node.name == start) {
+					self.selected = node;
+				}
+
         return node;
       });
 
-      self.selected = _.find(self.nodes, function (node) {
-        return node.name == start
-      });
-      var zoomed = zoom_data(self.selected);
+      var zoomed = zoomData(self.selected);
       render(zoomed);
     });
 
@@ -97,10 +109,10 @@ Zipkin.BlockDependencies = (function () {
         .classed("blockChild", function (d) { return d.class == "blockChild"; })
         .classed("blockParent", function (d) { return d.class == "blockParent"; })
         .classed("blockTarget", function (d) { return d.class == "blockTarget"; })
-        .on("click", click_node)
+        .on("click", clickNode)
         .attr("transform", function (d) { return "translate(" + d.x0 + "," + d.y0 + ")"; })
         .transition()
-        .duration(transitionDuration)
+        .duration(STYLE.transitionDuration)
         .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; })
         .call(drawNodeBox)
         ;
@@ -110,11 +122,11 @@ Zipkin.BlockDependencies = (function () {
 
       group
         .select("rect")
-        .attr("y", -boxHeight / 2)
+        .attr("y", -STYLE.boxHeight / 2)
         .attr("rx", 5)
         .attr("ry", 5)
         .attr("height", function (d) { return d.height; })
-        .attr("width", boxWidth)
+        .attr("width", STYLE.boxWidth)
         ;
 
       group
@@ -146,7 +158,7 @@ Zipkin.BlockDependencies = (function () {
         })
         .transition()
         .attr("d", function (d) { return diagonalChord(d); })
-        .duration(transitionDuration)
+        .duration(STYLE.transitionDuration)
         .style("stroke-opacity", 1)
         ;
     }
@@ -165,8 +177,8 @@ Zipkin.BlockDependencies = (function () {
         ;
     }
 
-    function click_node(node) {
-      var graph = zoom_data(node);
+    function clickNode(node) {
+      var graph = zoomData(node);
       render(graph);
     }
 
@@ -190,7 +202,7 @@ Zipkin.BlockDependencies = (function () {
      * a data structure enumerating all nodes connected to our selection,
      * and all links to connect them.
      */
-    function zoom_data(selected) {
+    function zoomData(selected) {
 
       currGeneration += 1; // each zoom is a new generation
 
@@ -207,16 +219,16 @@ Zipkin.BlockDependencies = (function () {
         if (node.generation < currGeneration - 1 || node.class != "blockTarget") {
           // nodes not currently visible slide in from off screen
           // depending on which way we're shifting
-          node.y0 = topMargin;
-          node.x0 = (selected.class == "blockParent") ? -firstColumn : secondColumn;
+          node.y0 = STYLE.topMargin;
+          node.x0 = (selected.class == "blockParent") ? -STYLE.firstColumn : STYLE.secondColumn;
         }
         else {
           node.x0 = node.x;
           node.y0 = node.y;
         }
-        node.y = topMargin + index * (boxHeight + boxSpacing);
-        node.x = firstColumn;
-        node.height = boxHeight;
+        node.y = STYLE.topMargin + index * (STYLE.boxHeight + STYLE.boxSpacing);
+        node.x = STYLE.firstColumn;
+        node.height = STYLE.boxHeight;
         node.class = "blockParent";
         node.generation = currGeneration;
 
@@ -250,16 +262,16 @@ Zipkin.BlockDependencies = (function () {
           // nodes not currently visible slide in from off screen
           // depending on which way we're shifting
           node.y0 = 0;
-          node.x0 = (selected.class == "blockChild") ? fourthColumn : secondColumn;
+          node.x0 = (selected.class == "blockChild") ? STYLE.fourthColumn : STYLE.secondColumn;
         }
         else {
           // visible nodes just slide from their old position
           node.x0 = node.x;
           node.y0 = node.y;
         }
-        node.y = topMargin + index * (boxSpacing + boxHeight);
-        node.x = thirdColumn;
-        node.height = boxHeight;
+        node.y = STYLE.topMargin + index * (STYLE.boxSpacing + STYLE.boxHeight);
+        node.x = STYLE.thirdColumn;
+        node.height = STYLE.boxHeight;
         node.class = "blockChild";
         node.generation = currGeneration;
 
@@ -269,9 +281,9 @@ Zipkin.BlockDependencies = (function () {
       selected.x0 = selected.x;
       selected.y0 = selected.y;
       selected.class = "blockTarget"
-      selected.y = topMargin; // somewhere in the middle
-      selected.x = secondColumn;
-      selected.height = selectedHeight;
+      selected.y = STYLE.topMargin; // somewhere in the middle
+      selected.x = STYLE.secondColumn;
+      selected.height = STYLE.selectedHeight;
       selected.generation = currGeneration;
 
       graph.nodes = _.flatten([children, parents, [selected]]);
@@ -283,15 +295,15 @@ Zipkin.BlockDependencies = (function () {
           offset: chordPos,
           source: node,
           target: {
-            x: selected.x + boxWidth,
+            x: selected.x + STYLE.boxWidth,
             y: selected.y,
-            x0: selected.x0 + boxWidth,
+            x0: selected.x0 + STYLE.boxWidth,
             y0: selected.y0,
             id: selected.id
           },
-          height: (selected.height - boxHeight) * node.ratio
+          height: (selected.height - STYLE.boxHeight) * node.ratio
         };
-        chordPos += (selectedHeight - boxHeight) * node.ratio;
+        chordPos += (STYLE.selectedHeight - STYLE.boxHeight) * node.ratio;
         return link;
       });
       chordPos = 0
@@ -300,9 +312,9 @@ Zipkin.BlockDependencies = (function () {
           id: "parentlink" + node.id + selected.id,
           offset: chordPos,
           source: {
-            x: node.x + boxWidth,
+            x: node.x + STYLE.boxWidth,
             y: node.y,
-            x0: node.x0 + boxWidth,
+            x0: node.x0 + STYLE.boxWidth,
             y0: node.y0
           },
           target: {
@@ -311,9 +323,9 @@ Zipkin.BlockDependencies = (function () {
             x0: selected.x0,
             y0: selected.y0
           },
-          height: (selected.height - boxHeight) * node.ratio
+          height: (selected.height - STYLE.boxHeight) * node.ratio
         };
-        chordPos += (selectedHeight - boxHeight) * node.ratio;
+        chordPos += (STYLE.selectedHeight - STYLE.boxHeight) * node.ratio;
         return link;
       });
 

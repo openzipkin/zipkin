@@ -21,6 +21,19 @@ var Zipkin = Zipkin || {};
  */
 Zipkin.Aggregates = {};
 
+
+/**
+ * Base class for nodes
+ */
+Zipkin.Aggregates.NodeData = function (name) {
+  this.name = name;
+  this.moments = Zipkin.Moments.empty();
+  this.inboundLinks = 0;
+  this.outboundLinks = 0;
+  this.linksFrom = [];
+  this.linksTo = [];
+}
+
 /**
  * Load json from the aggregates api, massage it for d3, and then call the given callback
  * @param callback
@@ -29,20 +42,6 @@ Zipkin.Aggregates.loadJson = function (callback) {
 
   var nodeMap = {};
   var graph = {};
-
-  /**
-   * create an empty node
-   */
-  function newNode(name) {
-    return {
-      name: name,
-      moments: Zipkin.Moments.empty(),
-      inboundLinks: 0,
-      outboundLinks: 0,
-      linksFrom: [],
-      linksTo: []
-    };
-  }
 
   /**
    * process a link between two services and update each service's aggregate statistics
@@ -73,8 +72,8 @@ Zipkin.Aggregates.loadJson = function (callback) {
 
     // build a map of each node
     _.each(json.links, function (pairing) {
-      nodeMap[pairing.parent] = newNode(pairing.parent);
-      nodeMap[pairing.child] = newNode(pairing.child);
+      nodeMap[pairing.parent] = new Zipkin.Aggregates.NodeData(pairing.parent);
+      nodeMap[pairing.child] = new Zipkin.Aggregates.NodeData(pairing.child);
     });
 
     // build up each link and calculate node count totals for inbound and outbound
