@@ -55,7 +55,7 @@ class AnormStorageSpec extends Specification {
        * all other engines we want the tests to be isolated.
        */
       val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinStorageTest1")))
-      val con = db.install(keepAlive = true)
+      val con = db.install()
       val storage = new AnormStorage(db, Some(con))
 
       Await.result(storage.storeSpan(span1))
@@ -70,7 +70,7 @@ class AnormStorageSpec extends Specification {
 
     "getSpansByTraceId" in {
       val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinStorageTest2")))
-      val con = db.install(keepAlive = true)
+      val con = db.install()
       val storage = new AnormStorage(db, Some(con))
 
       Await.result(storage.storeSpan(span1))
@@ -86,7 +86,7 @@ class AnormStorageSpec extends Specification {
 
     "getSpansByTraceIds" in {
       val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinStorageTest3")))
-      val con = db.install(keepAlive = true)
+      val con = db.install()
       val storage = new AnormStorage(db, Some(con))
 
       Await.result(storage.storeSpan(span1))

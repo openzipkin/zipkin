@@ -22,13 +22,13 @@ configurations. The configurations are located at
 `zipkin-query-service/config/query-dev.scala`, respectively. They both
 instantiate a `DB`, which looks something like this:
 
-    val db = DB()
+    val db = new DB()
 
 You need to pass in parameters to `DB()` that match your database
 configuration. For example, to run Zipkin on a MySQL database named
 *production*, you might write something like this:
 
-    val db = DB(new DBConfig("mysql", new DBParams("production", "127.0.0.1")))
+    val db = new DB(new DBConfig("mysql", new DBParams("production", "127.0.0.1")))
 
 The connection parameters you can specify are defined in `DBConfig.scala` in
 the Anorm module.

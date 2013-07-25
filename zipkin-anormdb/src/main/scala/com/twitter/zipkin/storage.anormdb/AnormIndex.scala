@@ -70,9 +70,11 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
       .on("end_ts" -> endTs)
       .on("limit" -> limit)
       .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
-    Future(result map { case (tId, ts) =>
-      IndexedTraceId(traceId = tId, timestamp = ts)
-    })
+    Future {
+      result map { case (tId, ts) =>
+        IndexedTraceId(traceId = tId, timestamp = ts)
+      }
+    }
   }
 
   /**
@@ -85,7 +87,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
                               endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
     // Ignore core annotations. Yay magic names!
     if (List("cs", "cr", "ss", "sr", "ca", "sa").contains(annotation))
-      return Future.value[Seq[IndexedTraceId]](Seq());
+      return Future.value[Seq[IndexedTraceId]](Seq())
 
     val result:List[(Long, Long)] = value match {
       // Binary annotations
@@ -130,9 +132,11 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
           .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
       }
     }
-    Future(result map { case (tId, ts) =>
-      IndexedTraceId(traceId = tId, timestamp = ts)
-    })
+    Future {
+      result map { case (tId, ts) =>
+        IndexedTraceId(traceId = tId, timestamp = ts)
+      }
+    }
   }
 
   /**
@@ -149,10 +153,12 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
         |ORDER BY created_ts DESC
       """.stripMargin.format(traceIds.mkString(",")))
       .as((long("trace_id") ~ get[Option[Long]]("duration") ~ long("created_ts") map flatten) *)
-    Future(result map { case (traceId, duration, startTs) =>
-      // trace ID, duration, start TS
-      TraceIdDuration(traceId, duration.getOrElse(0), startTs)
-    })
+    Future {
+      result map { case (traceId, duration, startTs) =>
+        // trace ID, duration, start TS
+        TraceIdDuration(traceId, duration.getOrElse(0), startTs)
+      }
+    }
   }
 
   /**

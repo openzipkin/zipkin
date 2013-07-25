@@ -211,7 +211,9 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
         Span(traceId, span.spanName, span.spanId, span.parentId, spanAnnos, spanBinAnnos, span.debug)
       })
     )
-    Future(results.filter(!_.isEmpty))
+    Future {
+      results.filter(!_.isEmpty)
+    }
   }
   def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = {
     getSpansByTraceIds(Seq(traceId)).map {

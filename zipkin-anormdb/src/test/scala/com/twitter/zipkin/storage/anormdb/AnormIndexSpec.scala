@@ -62,7 +62,7 @@ class AnormIndexSpec extends Specification {
        * all other engines we want the tests to be isolated.
        */
       val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinIndexTest1")))
-      val con = db.install(keepAlive = true)
+      val con = db.install()
       val storage = new AnormStorage(db, Some(con))
       val index = new AnormIndex(db, Some(con))
 
@@ -83,7 +83,7 @@ class AnormIndexSpec extends Specification {
 
     "getTraceIdsByAnnotation" in {
       val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinIndexTest2")))
-      val con = db.install(keepAlive = true)
+      val con = db.install()
       val storage = new AnormStorage(db, Some(con))
       val index = new AnormIndex(db, Some(con))
 
@@ -109,7 +109,7 @@ class AnormIndexSpec extends Specification {
 
     "getTracesDuration" in {
       val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinIndexTest3")))
-      val con = db.install(keepAlive = true)
+      val con = db.install()
       val storage = new AnormStorage(db, Some(con))
       val index = new AnormIndex(db, Some(con))
 
@@ -126,7 +126,7 @@ class AnormIndexSpec extends Specification {
 
     "getServiceNames" in {
       val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinIndexTest4")))
-      val con = db.install(keepAlive = true)
+      val con = db.install()
       val storage = new AnormStorage(db, Some(con))
       val index = new AnormIndex(db, Some(con))
 
@@ -143,7 +143,7 @@ class AnormIndexSpec extends Specification {
 
     "getSpanNames" in {
       val db = new DB(new DBConfig(dbType, new DBParams(dbName = "zipkinIndexTest5")))
-      val con = db.install(keepAlive = true)
+      val con = db.install()
       val storage = new AnormStorage(db, Some(con))
       val index = new AnormIndex(db, Some(con))
 
