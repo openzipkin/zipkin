@@ -29,6 +29,16 @@ Now we can install Zipkin itself:
     # Install the Zipkin schema
     cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt
 
+Zipkin runs three daemons: collector, query, and web. The collector and query
+daemons access the database. The default configuration for those two daemons is
+to run a SQLite database. To make them connect to Cassandra instead, you can
+either copy the Cassandra configuration into the default configuration or
+change the `bin/collector` and `bin/query` scripts to run the Cassandra
+configuration. The configuration files are located at
+`zipkin-collector-service/config' and `zipkin-query-service/config`,
+respectively. The default configurations end in `-dev.scala` and the Cassandra
+configurations end in `-cassandra.scala`.
+
 Now you can run Zipkin (you'll need to leave these processes running, so use
 separate bash windows if you're doing it that way):
 

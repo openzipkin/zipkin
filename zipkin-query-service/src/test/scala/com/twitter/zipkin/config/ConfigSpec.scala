@@ -28,7 +28,8 @@ class ConfigSpec extends Specification {
 
     "validate query configs" in {
       val queryConfigFiles = Seq(
-        "/query-dev.scala"
+        "/query-dev.scala",
+        "/query-cassandra.scala"
       ) map { TempFile.fromResourcePath(_) }
 
       for (file <- queryConfigFiles) {
