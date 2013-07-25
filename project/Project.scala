@@ -228,11 +228,7 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
-<<<<<<< HEAD
-  ).dependsOn(queryCore, cassandra, redis)
-=======
-  ).dependsOn(queryCore, cassandra, anormDB)
->>>>>>> Scaffolding for anorm integration. We're opting for anorm instead of Slick because util.Eval is not planned to be ported to Scala 2.10 and we rely on it too much to refactor quickly for this
+  ).dependsOn(queryCore, cassandra, redis, anormDB)
 
   lazy val collectorScribe =
     Project(
@@ -275,11 +271,7 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
-<<<<<<< HEAD
-  ).dependsOn(collectorCore, collectorScribe, cassandra, kafka, redis)
-=======
-  ).dependsOn(collectorCore, collectorScribe, cassandra, kafka, anormDB)
->>>>>>> Scaffolding for anorm integration. We're opting for anorm instead of Slick because util.Eval is not planned to be ported to Scala 2.10 and we rely on it too much to refactor quickly for this
+  ).dependsOn(collectorCore, collectorScribe, cassandra, kafka, redis, anormDB)
 
   lazy val web =
     Project(
