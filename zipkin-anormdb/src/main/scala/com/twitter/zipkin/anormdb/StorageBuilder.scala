@@ -18,8 +18,7 @@ package com.twitter.zipkin.anormdb
 
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.Storage
-import com.twitter.zipkin.storage.anormdb.DB
-import com.twitter.zipkin.storage.anormdb.AnormStorage
+import com.twitter.zipkin.storage.anormdb.{AnormStorage, DB}
 
 object StorageBuilder {
   def apply(db:DB) = {

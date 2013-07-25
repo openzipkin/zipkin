@@ -18,8 +18,7 @@ package com.twitter.zipkin.anormdb
 
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.Index
-import com.twitter.zipkin.storage.anormdb.DB
-import com.twitter.zipkin.storage.anormdb.AnormIndex
+import com.twitter.zipkin.storage.anormdb.{AnormIndex, DB}
 
 object IndexBuilder {
   def apply(db:DB) = {

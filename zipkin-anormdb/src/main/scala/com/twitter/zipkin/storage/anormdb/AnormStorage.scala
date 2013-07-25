@@ -140,9 +140,11 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
    * @return a Set of those trace IDs from the list which are stored
    */
   def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
-    Future(SQL(
-      "SELECT trace_id FROM zipkin_spans WHERE trace_id IN (%s)".format(traceIds.mkString(","))
-    ).as(long("trace_id") *).toSet)
+    Future {
+      SQL(
+        "SELECT trace_id FROM zipkin_spans WHERE trace_id IN (%s)".format(traceIds.mkString(","))
+      ).as(long("trace_id") *).toSet
+    }
   }
 
   /**

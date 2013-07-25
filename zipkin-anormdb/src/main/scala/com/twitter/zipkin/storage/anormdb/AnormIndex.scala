@@ -165,30 +165,33 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Get all the service names.
    */
   def getServiceNames: Future[Set[String]] = {
-    Future(SQL(
-      """SELECT service_name
-        |FROM zipkin_annotations
-        |GROUP BY service_name
-        |ORDER BY service_name ASC
-      """.stripMargin)
-      .as(str("service_name") *).toSet)
+    Future {
+      SQL(
+        """SELECT service_name
+          |FROM zipkin_annotations
+          |GROUP BY service_name
+          |ORDER BY service_name ASC
+        """.stripMargin)
+        .as(str("service_name") *).toSet
+    }
   }
 
   /**
    * Get all the span names for a particular service.
    */
   def getSpanNames(service: String): Future[Set[String]] = {
-    Future(SQL(
-      """SELECT span_name
-        |FROM zipkin_annotations
-        |WHERE service_name = {service} AND span_name <> ''
-        |GROUP BY span_name
-        |ORDER BY span_name ASC
-      """.stripMargin)
-      .on("service" -> service)
-      .as(str("span_name") *)
-      .toSet
-    )
+    Future {
+      SQL(
+        """SELECT span_name
+          |FROM zipkin_annotations
+          |WHERE service_name = {service} AND span_name <> ''
+          |GROUP BY span_name
+          |ORDER BY span_name ASC
+        """.stripMargin)
+        .on("service" -> service)
+        .as(str("span_name") *)
+        .toSet
+    }
   }
 
   /**
