@@ -21,7 +21,7 @@ define([
             var d = new Date(ms);
             var h = d.getHours(), m = h < 12 ? 'am' : 'pm';
             h = h % 12;
-            if (h == 0) h = 12;
+            if (h === 0) h = 12;
             var tz = '';
             try { tz = ' ' + d.toString().match(/\(([A-Z]+)\)/)[1]; } catch(e) {}
             return (d.getMonth()+1) + '/' +
@@ -60,7 +60,7 @@ define([
                 output = '<table id="zipkin-data"><thead><tr><th>' + t("time") + '</th><th>' + t("traceid") + '</th><th>' + t("zipkinurl") + '</th><th>' + t("requesturl") + '</th><th>' + t("parenturl") + '</th></tr></thead><tbody>';
                 var it = Traces.getIterator(), n, i = 0;
                 while (n = it.next()) {
-                    var zebra = ++i % 2 == 0 ? 'even' : 'odd';
+                    var zebra = ++i % 2 === 0 ? 'even' : 'odd';
                     output += '<tr id="zipkin-trace-' + n.traceID + '" class="zipkin-info ' + zebra + '"><td>' + msToTime(n.timestamp) + '</td><td>' + n.traceID + '</td><td><a href="' + zipkin_base_url + n.traceID + '" target="_blank">' + zipkin_base_url + n.traceID + '</a></td><td class="check-loading">' + escapeHTML(n.requestURL) + '</td><td>' + escapeHTML(n.referer) + '</td></tr>';
                     // If waterfalls are collapsed, hide them completely.
                     if (Options.collapse_waterfalls) {
@@ -126,7 +126,7 @@ define([
                                         var left = percentAcross(ts), right = percentAcross(ts + s.duration);
                                         if (right - left > 0) {
                                             hasTraceData = true;
-                                            out += '<div class="zipkin-panel-viz-span-wrapper"><div class="zipkin-panel-viz-span" data-span="' + escapeHTML(s.services.join(', ')) + '" style="margin-left: ' + left + '%; margin-right: ' + (100 - right) + '%;"></div></div>'
+                                            out += '<div class="zipkin-panel-viz-span-wrapper"><div class="zipkin-panel-viz-span" data-span="' + escapeHTML(s.services.join(', ')) + '" style="margin-left: ' + left + '%; margin-right: ' + (100 - right) + '%;"></div></div>';
                                         }
                                     }
                                     if (hasTraceData) {
