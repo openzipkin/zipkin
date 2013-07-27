@@ -21,7 +21,7 @@ Zipkin.Annotation = (function() {
     "cr": "Client receive",
     "ss": "Server send",
     "sr": "Server receive"
-  }
+  };
 
   var Annotation = function(config) {
     this.value     = config.value;
@@ -40,9 +40,9 @@ Zipkin.Annotation = (function() {
   Annotation.prototype.getHost         = function() { return this.host; };
   Annotation.prototype.getHostAddress  = function() {
     if (this.host !== undefined) {
-      return this.host.ipv4
+      return this.host.ipv4;
     } else {
-      return "0.0.0.0"
+      return "0.0.0.0";
     }
   };
   Annotation.prototype.getSpan      = function() { return this.span; };

@@ -43,7 +43,7 @@ Zipkin.Application.Index = (function() {
   var AllSelectView = Zipkin.Application.Views.SelectView.extend({
     render: function() {
       var view = new this.optionView({model: new Zipkin.Application.Models.Span({name: "all"})});
-      this.$el.append(view.render().el)
+      this.$el.append(view.render().el);
       AllSelectView.__super__.render.apply(this);
     }
   });
@@ -148,7 +148,7 @@ Zipkin.Application.Index = (function() {
 
       // FIXME more backbony
       var parsed = parseQueryResults(data);
-      var traces = parsed.data
+      var traces = parsed.data;
       var serviceName = $("#serviceName option:selected").val();
       addServiceTag(serviceName);
 
@@ -413,7 +413,7 @@ Zipkin.Application.Index = (function() {
 
       var spanName = $('select[name=spanName]').val();
 
-      if (spanName == "") {
+      if (spanName === "") {
         $('#error-box').text("Invalid query: no span name").show();
         return false;
       }
@@ -560,7 +560,7 @@ Zipkin.Application.Index = (function() {
 
     if (queryResults !== undefined && queryResults.length > 0) {
       var parsed = parseQueryResults(queryResults);
-      var traces = parsed.data
+      var traces = parsed.data;
       var serviceName = $("#serviceName option:selected").val();
       addServiceTag(serviceName);
 
