@@ -26,7 +26,7 @@ class AnormDBSpec extends Specification {
   "AnormDB" should {
     "have the correct schema" in {
       implicit val con = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest"))).install()
-      val expectedTables = List("zipkin_annotations", "zipkin_binary_annotations", "zipkin_spans")
+      val expectedTables = List("zipkin_annotations", "zipkin_binary_annotations", "zipkin_spans", "zipkin_dependencies", "zipkin_dependency_links")
       // The right tables are present
       val tables: List[String] = SQL(
         "SELECT name FROM sqlite_master WHERE type='table'"
