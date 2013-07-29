@@ -44,14 +44,6 @@ class AnormAggregatesSpec extends Specification {
       val agg5 = Await.result(aggregates.getDependencies(Time.fromSeconds(1) + 1.millisecond, Some(Time.fromSeconds(2) - 1.millisecond))) // start and end inside the dependency
       val agg6 = Await.result(aggregates.getDependencies(Time.fromSeconds(1) + 1.millisecond, Some(Time.fromSeconds(3)))) // start inside the dependency
 
-      println("[DEBUG] dep1: " + dep1)
-      println("[DEBUG] agg1: " + agg1)
-      println("[DEBUG] agg2: " + agg2)
-      println("[DEBUG] agg3: " + agg3)
-      println("[DEBUG] agg4: " + agg4)
-      println("[DEBUG] agg5: " + agg5)
-      println("[DEBUG] agg6: " + agg6)
-
       agg1.links mustEqual dep1.links
       agg2.links mustEqual dep1.links
       agg3.links mustEqual dep1.links
