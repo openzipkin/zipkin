@@ -87,7 +87,7 @@ class CassandraAggregatesSpec extends SpecificationWithJUnit with JMocker with C
         val col = new Column[Long, gen.Dependencies](0L, deps1.toThrift)
 
         expect {
-          one(mockDependenciesCf).multigetRows(Set(0L).asJava, None, None, Order.Normal, Int.MaxValue) willReturn Future.value(Map(0L -> Map(0L -> col).asJava).asJava)
+          one(mockDependenciesCf).multigetRows(Set(0L, 1.day.inMicroseconds).asJava, None, None, Order.Normal, Int.MaxValue) willReturn Future.value(Map(0L -> Map(0L -> col).asJava).asJava)
         }
 
         val result = Await.result(agg.getDependencies(Time.fromSeconds(0)))

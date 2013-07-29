@@ -217,12 +217,13 @@ class App(
    * API: dependencies
    * Returns all services paired with every service they call in to
    *
-   * Required GET params:
-   * - startTime: Date in epoch seconds (this will be rounded to the nearest day)
-   * - endTime: Optional date in epoch seconds (rounded to the nearest day)
+   * Optional GET params:
+   * - startTime: Start date in epoch microseconds. Defaults to 1 day ago
+   * - endTime: End date in epoch microseconds. Defaults to now
    */
   get("/api/dependencies/?:startTime?/?:endTime?") { request =>
-    val startTime = request.routeParams.getOrElse("startTime", Time.now.inSeconds.toString).toLong
+    import com.twitter.conversions.time._
+    val startTime = request.routeParams.getOrElse("startTime", (Time.now - 1.day).inMicroseconds.toString).toLong
     val endTime = request.routeParams.get("endTime").map(_.toLong)
 
     client.getDependencies(startTime, endTime).map { deps =>
