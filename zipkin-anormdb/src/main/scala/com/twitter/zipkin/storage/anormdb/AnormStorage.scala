@@ -91,7 +91,7 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
         .on("ipv4" -> a.host.map(_.ipv4))
         .on("port" -> a.host.map(_.port))
         .on("timestamp" -> a.timestamp)
-        .on("duration" -> a.duration)
+        .on("duration" -> a.duration.map(_.inNanoseconds))
         .execute()
     )
     span.binaryAnnotations.foreach(b =>
