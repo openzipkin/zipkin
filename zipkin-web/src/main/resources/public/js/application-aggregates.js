@@ -40,7 +40,7 @@ Zipkin.Application.Aggregates = (function() {
 
     var pillSelector = function(name) {
       return $("[id=" + name + "-pill]").parent();
-    }
+    };
 
     pillSelector("dependencies").on('click', function(event) {
       pillSelector("service-report").removeClass("active");
@@ -90,7 +90,7 @@ Zipkin.Application.Aggregates = (function() {
         $("#global-dependency").append(s);
         getDependencyTree();
       });
-    })
+    });
 
     var getDependencyTree = function () {
       // Show some loading stuff while we wait for the query

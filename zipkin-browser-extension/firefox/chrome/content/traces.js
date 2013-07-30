@@ -58,7 +58,7 @@ define([
                     Firebug.MyZipkinPanel.refresh();
                 }
                 else {
-                    log("The Zipkin panel has not yet been initialized.")
+                    log("The Zipkin panel has not yet been initialized.");
                 }
             };
             // Clear all traces.

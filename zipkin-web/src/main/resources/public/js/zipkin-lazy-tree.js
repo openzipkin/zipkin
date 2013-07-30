@@ -60,7 +60,7 @@ Zipkin.LazyTree = (function() {
     if (this.nodes.hasOwnProperty(this.rootId)) {
       this.root = this.nodes[this.rootId];
     } else {
-      console.error("No root, creating fake")
+      console.error("No root, creating fake");
       var rootId = this.rootId;
       var startTime = Number.MAX_VALUE
         , endTime = Number.MIN_VALUE

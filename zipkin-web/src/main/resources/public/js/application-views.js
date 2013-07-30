@@ -21,7 +21,7 @@ Zipkin.Application.Views = (function() {
     tagName: "option",
     render: function() {
       var name = this.model.get("name");
-      this.$el.html(name).val(name)
+      this.$el.html(name).val(name);
       return this;
     }
   });
@@ -40,7 +40,7 @@ Zipkin.Application.Views = (function() {
       }
       return this;
     }
-  })
+  });
 
   /*
    * @param optionView: subclass of OptionView

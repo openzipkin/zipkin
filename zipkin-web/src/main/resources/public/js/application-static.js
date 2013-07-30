@@ -19,12 +19,12 @@ Zipkin.Application = Zipkin.Application || {};
 Zipkin.Application.Static = (function() {
 
   var hideError = function() {
-    $("#input-json-error").hide()
+    $("#input-json-error").hide();
   };
 
   var showError = function(msg) {
     $("#input-json-error-body").text(msg);
-    $("#input-json-error").show()
+    $("#input-json-error").show();
   };
 
   var initialize = function() {

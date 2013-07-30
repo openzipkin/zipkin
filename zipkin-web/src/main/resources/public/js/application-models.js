@@ -54,18 +54,18 @@ Zipkin.Application.Models = (function() {
     },
 
     addTimeAnnotation: function(annotation) {
-      this.get("annotations").push(annotation)
+      this.get("annotations").push(annotation);
     },
 
     addKeyValueAnnotation: function(key, value) {
-      this.get("keyValueAnnotations").push([key, value])
+      this.get("keyValueAnnotations").push([key, value]);
     },
 
     execute: function() {
       var params = this.params();
       var results = new (QueryResults.extend({
         url: function() {
-          return "/api/query?" + $.param(params)
+          return "/api/query?" + $.param(params);
         }
       }));
       results.fetch();
@@ -146,5 +146,5 @@ Zipkin.Application.Models = (function() {
     SpanQuery: SpanQuery,
     AnnotationQuery: AnnotationQuery,
     KeyValueQuery: KeyValueQuery
-  }
+  };
 })();

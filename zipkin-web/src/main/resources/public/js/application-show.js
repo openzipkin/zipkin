@@ -22,7 +22,7 @@ Zipkin.Application.Show = (function() {
     ;
 
   var exportTrace = function(traceId, clockSkew) {
-    window.open("/api/get/" + traceId + "?adjust_clock_skew=" + clockSkew)
+    window.open("/api/get/" + traceId + "?adjust_clock_skew=" + clockSkew);
   };
 
   var getTraceSuccess = function(traceId) {
@@ -473,7 +473,7 @@ Zipkin.GetTrace = (function() {
         var traceSummaryTreeList = traceSummaryTree.toList();
 
         /* Unwrap all the filtered nodes with only one child */
-        var traceSummaryTreeList = $.map(traceSummaryTreeList, function(elem) {
+        traceSummaryTreeList = $.map(traceSummaryTreeList, function(elem) {
           if (elem.isFilter && elem.isFilter()) {
             var spans = elem.getSpans();
             if (spans.length == 1) {
