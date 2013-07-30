@@ -16,7 +16,7 @@
 
 package com.twitter.zipkin.storage.anormdb
 
-import com.twitter.util.{Future, Time}
+import com.twitter.util.{FuturePool, Future, Time}
 import com.twitter.conversions.time._
 import com.twitter.zipkin.common.{Service, DependencyLink, Dependencies}
 import com.twitter.zipkin.storage.Aggregates
@@ -24,6 +24,7 @@ import java.sql.Connection
 import anorm._
 import anorm.SqlParser._
 import com.twitter.algebird.Moments
+import java.util.concurrent.Executors
 
 /**
  * Retrieve and store aggregate dependency information.
@@ -38,6 +39,11 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
     case Some(con) => con
   }
 
+  // Cached pools automatically close threads after 60 seconds
+  private val threadPool = Executors.newCachedThreadPool()
+  // FuturePool for asynchronous DB access
+  private val sqlFuturePool = FuturePool(threadPool)
+
   /**
    * Close the index
    */
@@ -48,7 +54,7 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
    *
    * endDate is optional and if not passed defaults to startDate plus one day.
    */
-  def getDependencies(startDate: Time, endDate: Option[Time]=None): Future[Dependencies] = {
+  def getDependencies(startDate: Time, endDate: Option[Time]=None): Future[Dependencies] = sqlFuturePool[Dependencies] {
     val startMs = startDate.inMicroseconds
     val endMs = endDate.getOrElse(startDate + 1.day).inMicroseconds
 
@@ -71,9 +77,7 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
       )
     }) *)
 
-    Future {
-      new Dependencies(startDate, Time.fromNanoseconds(endMs*1000), links)
-    }
+    new Dependencies(startDate, Time.fromNanoseconds(endMs*1000), links)
   }
 
   /**
@@ -81,7 +85,7 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
    *
    * Synchronize these so we don't do concurrent writes from the same box
    */
-  def storeDependencies(dependencies: Dependencies): Future[Unit] = {
+  def storeDependencies(dependencies: Dependencies): Future[Unit] = sqlFuturePool {
     val dlid = SQL("""INSERT INTO zipkin_dependencies
           |  (start_ts, end_ts)
           |VALUES ({startTs}, {endTs})
@@ -105,8 +109,6 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
         .on("m4" -> link.durationMoments.m4)
       .execute()
     }
-
-    Future.Unit
   }
 
   /**

@@ -18,12 +18,13 @@ package com.twitter.zipkin.storage.anormdb
 
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.{Index, IndexedTraceId, TraceIdDuration}
-import com.twitter.util.Future
+import com.twitter.util.{FuturePool, Future}
 import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
+import java.util.concurrent.Executors
 
 /**
  * Retrieve and store trace and span information.
@@ -44,6 +45,11 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
     case Some(con) => con
   }
 
+  // Cached pools automatically close threads after 60 seconds
+  private val threadPool = Executors.newCachedThreadPool()
+  // FuturePool for asynchronous DB access
+  private val sqlFuturePool = FuturePool(threadPool)
+
   /**
    * Close the index
    */
@@ -54,7 +60,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Only return maximum of limit trace ids from before the endTs.
    */
   def getTraceIdsByName(serviceName: String, spanName: Option[String],
-                        endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
+                        endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = sqlFuturePool[Seq[IndexedTraceId]] {
     val result:List[(Long, Long)] = SQL(
       """SELECT trace_id, MAX(a_timestamp)
         |FROM zipkin_annotations
@@ -70,10 +76,8 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
       .on("end_ts" -> endTs)
       .on("limit" -> limit)
       .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
-    Future {
-      result map { case (tId, ts) =>
-        IndexedTraceId(traceId = tId, timestamp = ts)
-      }
+    result map { case (tId, ts) =>
+      IndexedTraceId(traceId = tId, timestamp = ts)
     }
   }
 
@@ -84,7 +88,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Only return maximum of limit trace ids from before the endTs.
    */
   def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
-                              endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
+                              endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = sqlFuturePool[Seq[IndexedTraceId]] {
     // Ignore core annotations. Yay magic names!
     if (List("cs", "cr", "ss", "sr", "ca", "sa").contains(annotation))
       return Future.value[Seq[IndexedTraceId]](Seq())
@@ -132,10 +136,8 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
           .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
       }
     }
-    Future {
-      result map { case (tId, ts) =>
-        IndexedTraceId(traceId = tId, timestamp = ts)
-      }
+    result map { case (tId, ts) =>
+      IndexedTraceId(traceId = tId, timestamp = ts)
     }
   }
 
@@ -144,7 +146,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    *
    * Duration returned in microseconds.
    */
-  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = {
+  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = sqlFuturePool[Seq[TraceIdDuration]] {
     val result:List[(Long, Option[Long], Long)] = SQL(
       """SELECT trace_id, duration, created_ts
         |FROM zipkin_spans
@@ -153,45 +155,39 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
         |ORDER BY created_ts DESC
       """.stripMargin.format(traceIds.mkString(",")))
       .as((long("trace_id") ~ get[Option[Long]]("duration") ~ long("created_ts") map flatten) *)
-    Future {
-      result map { case (traceId, duration, startTs) =>
-        // trace ID, duration, start TS
-        TraceIdDuration(traceId, duration.getOrElse(0), startTs)
-      }
+    result map { case (traceId, duration, startTs) =>
+      // trace ID, duration, start TS
+      TraceIdDuration(traceId, duration.getOrElse(0), startTs)
     }
   }
 
   /**
    * Get all the service names.
    */
-  def getServiceNames: Future[Set[String]] = {
-    Future {
-      SQL(
-        """SELECT service_name
-          |FROM zipkin_annotations
-          |GROUP BY service_name
-          |ORDER BY service_name ASC
-        """.stripMargin)
-        .as(str("service_name") *).toSet
-    }
+  def getServiceNames: Future[Set[String]] = sqlFuturePool[Set[String]] {
+    SQL(
+      """SELECT service_name
+        |FROM zipkin_annotations
+        |GROUP BY service_name
+        |ORDER BY service_name ASC
+      """.stripMargin)
+      .as(str("service_name") *).toSet
   }
 
   /**
    * Get all the span names for a particular service.
    */
-  def getSpanNames(service: String): Future[Set[String]] = {
-    Future {
-      SQL(
-        """SELECT span_name
-          |FROM zipkin_annotations
-          |WHERE service_name = {service} AND span_name <> ''
-          |GROUP BY span_name
-          |ORDER BY span_name ASC
-        """.stripMargin)
-        .on("service" -> service)
-        .as(str("span_name") *)
-        .toSet
-    }
+  def getSpanNames(service: String): Future[Set[String]] = sqlFuturePool[Set[String]] {
+    SQL(
+      """SELECT span_name
+        |FROM zipkin_annotations
+        |WHERE service_name = {service} AND span_name <> ''
+        |GROUP BY span_name
+        |ORDER BY span_name ASC
+      """.stripMargin)
+      .on("service" -> service)
+      .as(str("span_name") *)
+      .toSet
   }
 
   /**
