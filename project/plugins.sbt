@@ -1,6 +1,4 @@
 
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.4")
-
 resolvers ++= Seq(
   "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central/",
   "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype/",

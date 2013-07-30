@@ -42,7 +42,6 @@ object Zipkin extends Build {
     GitProject.gitSettings,
     BuildProperties.newSettings,
     PackageDist.newSettings,
-    net.virtualvoid.sbt.graph.Plugin.graphSettings,
 
     // modifications and additions
     Seq(
