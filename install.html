@@ -37,20 +37,78 @@
         <section id="examples">
 <h2>Installation</h2>
 
-<p>To get going quickly, see the
+<h3>Quickstart</h3>
+
+<p><a href="http://www.scala-lang.org/downloads">Scala 2.9</a> (JDK6 or JDK7) is required.</p>
+
+<p>Install with <code>git clone https://github.com/twitter/zipkin.git &amp;&amp; cd zipkin</code> or
+<a href="https://github.com/twitter/zipkin/archive/master.zip">download</a> Zipkin to your
+preferred directory and unzip.</p>
+
+<p>Run (in separate bash windows):</p>
+
+<pre><code>bin/collector
+bin/query
+bin/web
+</code></pre>
+
+<p>Now you can access the Zipkin UI at http://localhost:8080/</p>
+
+<h3>Advanced Setup</h3>
+
+<p>By default, Zipkin runs on SQLite because it doesn&#39;t require additional setup.
+However, Zipkin is typically used with other databases (most often Cassandra)
+in production. For a quickstart with Cassandra, see the
 <a href="https://github.com/twitter/zipkin/blob/master/doc/ubuntu-quickstart.txt">Ubuntu Quickstart</a> and
 <a href="https://github.com/twitter/zipkin/blob/master/doc/mac-quickstart.md">Mac Quickstart</a> guides.
-These will help you get Zipkin running on a single machine so that you can experiment with it.</p>
+These will help you get a somewhat more advanced Zipkin installation running on
+a single machine so that you can experiment with it.</p>
 
-<p>This document explains the services and dependencies with which Zipkin
-interacts, and more advanced configuration.</p>
+<p>For larger deployments, Zipkin works with several other services, and you may
+want to apply additional configuration. Some of those services and
+configurations are described below.</p>
 
-<h3>Cassandra</h3>
+<h3>Feeding trace data to Zipkin</h3>
 
-<p>Zipkin is most commonly used with <a href="http://cassandra.apache.org/">Cassandra</a> for
-the collector&#39;s storage. There is also a
-<a href="https://github.com/twitter/zipkin/blob/master/doc/redis.md">Redis plugin</a> and
-we&#39;d like to see support for other databases.</p>
+<p>The next step after installation is to collect trace data to view in Zipkin. To
+do this, you must interface with the collector daemon to record trace data.
+There are several libraries to make this easier to do in different
+environments. Twitter uses
+<a href="https://github.com/twitter/finagle/tree/master/finagle-zipkin">Finagle</a>;
+external libraries (currently for Python, REST, node, and Java) are listed in the
+<a href="https://github.com/twitter/zipkin/wiki#external-projects-that-use-zipkin">wiki</a>;
+and there is also a <a href="https://rubygems.org/gems/finagle-thrift">Ruby gem</a> and
+<a href="https://github.com/twitter/thrift_client">Ruby Thrift client</a>.</p>
+
+<h3>Running the Daemons with Other Databases</h3>
+
+<p>The default Zipkin collector configuration is
+<code>zipkin-collector-service/config/collector-dev.scala</code> and the default Zipkin
+query configuration is <code>zipkin-query-service/config/query-dev.scala</code>. These
+are set up to work with SQLite by default. To use Zipkin with a different SQL
+database, we recommend changing those configurations as described in the
+<a href="https://github.com/twitter/zipkin/blob/master/doc/sql-databases.md">SQL guide</a>.</p>
+
+<p>For NoSQL databases, you have a few options. To run Zipkin with Cassandra for
+example, you can copy the Cassandra configuration into the default
+configuration, change the <code>bin</code> scripts to run the Cassandra configuration, or
+run the full daemon commands that the <code>bin</code> scripts are invoking:</p>
+
+<pre><code>bin/sbt &#39;project zipkin-collector-service&#39; &#39;run -f zipkin-collector-service/config/collector-cassandra.scala&#39;
+bin/sbt &#39;project zipkin-query-service&#39; &#39;run -f zipkin-query-service/config/query-cassandra.scala&#39;
+</code></pre>
+
+<p>The <code>bin/web</code> script does not access the database so you do not need to change
+anything there.</p>
+
+<h3>Storage: Cassandra</h3>
+
+<p>Zipkin runs on SQLite by default to make it easier to test out of the box.
+Running Zipkin on SQLite requires no additional setup. However, in production,
+Zipkin is most commonly used with <a href="http://cassandra.apache.org/">Cassandra</a> for
+the collector&#39;s storage. There are also plugins for
+<a href="https://github.com/twitter/zipkin/blob/master/doc/redis.md">Redis</a>, HBase, and
+<a href="https://github.com/twitter/zipkin/blob/master/doc/sql-databases.md">other SQL databases</a>.</p>
 
 <ol>
 <li>See Cassandra&#39;s <a href="http://cassandra.apache.org/">site</a> for instructions on how to start a cluster.</li>
@@ -58,7 +116,7 @@ we&#39;d like to see support for other databases.</p>
 <code>cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt</code></li>
 </ol>
 
-<h3>ZooKeeper</h3>
+<h3>Coordination: ZooKeeper</h3>
 
 <p>Zipkin can use ZooKeeper for coordination. That&#39;s where we store the server side sample rate and register the servers.</p>
 
@@ -66,7 +124,7 @@ we&#39;d like to see support for other databases.</p>
 <li>See ZooKeeper&#39;s <a href="http://zookeeper.apache.org/">site</a> for instructions on how to install it.</li>
 </ol>
 
-<h3>Scribe</h3>
+<h3>Collecting Data: Scribe</h3>
 
 <p><a href="https://github.com/facebook/scribe">Scribe</a> is the logging
 framework we use at Twitter to transport the trace data. There are several other
@@ -103,16 +161,6 @@ To use this mode you change <code>remote_host</code> in the configuration to
 
 <p>We&#39;re hoping that others might add non-Scribe transports for the tracing data;
 there is no reason why Scribe has to be the only one.</p>
-
-<h3>Zipkin servers</h3>
-
-<p>We developed Zipkin with
-<a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>,
-<a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>, and JDK7.</p>
-
-<p>The <a href="https://github.com/twitter/zipkin/blob/master/doc/ubuntu-quickstart.txt">Ubuntu Quickstart</a>
-and <a href="https://github.com/twitter/zipkin/blob/master/doc/mac-quickstart.md">Mac Quickstart</a>
-guides explain how to set up and run the collector and query services.</p>
 
 <h3>Zipkin UI</h3>
 
