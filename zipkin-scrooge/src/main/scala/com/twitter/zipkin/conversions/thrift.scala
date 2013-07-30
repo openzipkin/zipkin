@@ -313,8 +313,8 @@ object thrift {
   }
   class ThriftDependencies(d: gen.Dependencies) {
     lazy val toDependencies = Dependencies(
-      Time.fromNanoseconds(d.startTime*1000L),
-      Time.fromNanoseconds(d.endTime*1000L),
+      Time.fromMicroseconds(d.startTime),
+      Time.fromMicroseconds(d.endTime),
       d.links.map {_.toDependencyLink}
     )
   }

@@ -13,5 +13,5 @@ libraryDependencies ++= Seq(
     "org.codehaus.plexus"    % "plexus-utils"       % "1.5.4",
     "org.slf4j"              % "slf4j-api"          % "1.6.1",
     "org.slf4j"              % "slf4j-simple"       % "1.6.1",
-    "com.twitter"            % "scrooge-generator"  % "3.1.1")
+    "com.twitter"           %% "scrooge-generator"  % "3.3.2")
 
