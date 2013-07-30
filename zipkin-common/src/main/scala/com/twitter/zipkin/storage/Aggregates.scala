@@ -27,7 +27,7 @@ trait Aggregates {
 
   def close()
 
-  def getDependencies(startDate: Time, endDate: Option[Time]=None): Future[Dependencies]
+  def getDependencies(startDate: Option[Time], endDate: Option[Time]=None): Future[Dependencies]
   def storeDependencies(dependencies: Dependencies): Future[Unit]
 
   def getTopAnnotations(serviceName: String): Future[Seq[String]]
@@ -40,7 +40,7 @@ class NullAggregates extends Aggregates {
 
   def close() {}
 
-  def getDependencies(startDate: Time, endDate: Option[Time] = None) = Future(Monoid.zero[Dependencies])
+  def getDependencies(startDate: Option[Time], endDate: Option[Time] = None) = Future(Monoid.zero[Dependencies])
   def storeDependencies(dependencies: Dependencies): Future[Unit]                    = Future.Unit
 
   def getTopAnnotations(serviceName: String)         = Future(Seq.empty[String])

@@ -22,9 +22,9 @@ import com.twitter.zipkin.storage.Aggregates
 import com.twitter.zipkin.conversions.thrift._
 import scala.collection.JavaConverters._
 import com.twitter.zipkin.gen
-import scala.collection.immutable.NumericRange
 import com.twitter.zipkin.common.Dependencies
 import com.twitter.algebird.Monoid
+import java.nio.ByteBuffer
 
 /**
  * Cassandra backed aggregates store
@@ -38,7 +38,8 @@ import com.twitter.algebird.Monoid
 case class CassandraAggregates(
   keyspace: Keyspace,
   topAnnotations: ColumnFamily[String, Long, String],
-  dependenciesCF: ColumnFamily[Long, Long, gen.Dependencies]
+  // Use ByteBuffer as key to get around a bug in cassie with rowsIteratee and Long
+  dependenciesCF: ColumnFamily[ByteBuffer, Long, gen.Dependencies]
 ) extends Aggregates {
 
   def close() {
@@ -50,24 +51,24 @@ case class CassandraAggregates(
   /**
    * Get the top annotations for a service name
    */
-  def getDependencies(startDate: Time, endDate: Option[Time]) : Future[Dependencies] = {
+  def getDependencies(startDate: Option[Time], endDate: Option[Time]) : Future[Dependencies] = {
 
-    // floor to nearest day in microseconds
-    val realStart = startDate.floor(1.day).inMicroseconds
-    val realEnd = endDate.getOrElse(startDate).floor(1.day).inMicroseconds
+    val result = {
+      val iteratee = dependenciesCF.rowsIteratee(100)
+      def collapse(key:ByteBuffer, columns:java.util.List[Column[Long, gen.Dependencies]]) : Seq[Dependencies]= {
+        columns.asScala.filter { column =>
+          !endDate.exists { column.name > _.inMicroseconds } &&
+          !startDate.exists { column.name > _.inMicroseconds }
+        }.map { _.value.toDependencies }
+      }
 
-    val rows = new NumericRange.Inclusive[Long](realEnd, realStart, 1.days.inMicroseconds)
+      val intermediate = iteratee map collapse
 
-    val result: Future[Iterable[gen.Dependencies]] =
-      dependenciesCF.multigetRows(rows.toSet.asJava, None, None, Order.Normal, Int.MaxValue)
-        .map { rowMap =>
-          rowMap.asScala.values.flatMap { columnMap =>
-            columnMap.asScala.values.map { _.value }
-          }
-        }
+      // list of columns by list of rows into just a list of deps
+      intermediate.map { _.flatten }
+    }
 
-    result.map { genList =>
-      val depList = genList.map { _.toDependencies }
+    result.map { depList =>
       Monoid.sum(depList) // reduce to one instance containing all values
     }
   }
@@ -108,7 +109,9 @@ case class CassandraAggregates(
 
   /** Synchronize these so we don't do concurrent writes from the same box */
   def storeDependencies(deps: Dependencies): Future[Unit] = {
-    store[Long,gen.Dependencies](dependenciesCF, deps.startTime.floor(1.day).inMicroseconds, Seq(deps.toThrift))
+    val keyBB = ByteBuffer.allocate(8)
+    keyBB.putLong(deps.startTime.floor(1.day).inMicroseconds)
+    store[ByteBuffer,gen.Dependencies](dependenciesCF, keyBB, Seq(deps.toThrift))
   }
 
   /** Synchronize these so we don't do concurrent writes from the same box */
@@ -130,7 +133,6 @@ case class CassandraAggregates(
       }
     }
   }
-
 
   private[cassandra] def topAnnotationRowKey(serviceName: String) =
     serviceName + Delimiter + "annotation"

@@ -15,7 +15,7 @@
  */
 package com.twitter.zipkin.cassandra
 
-import com.twitter.cassie.codecs.{Codec, LongCodec, Utf8Codec}
+import com.twitter.cassie.codecs.{ByteArrayCodec, Codec, LongCodec, Utf8Codec}
 import com.twitter.cassie.{ReadConsistency, WriteConsistency, KeyspaceBuilder}
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.cassandra.{ScroogeThriftCodec, CassandraAggregates}
@@ -44,7 +44,7 @@ case class AggregatesBuilder(
       .consistency(writeConsistency)
       .consistency(readConsistency)
 
-    val dependencies = keyspace.columnFamily(dependenciesCf, LongCodec, LongCodec, dependenciesCodec)
+    val dependencies = keyspace.columnFamily(dependenciesCf, ByteArrayCodec, LongCodec, dependenciesCodec)
       .consistency(writeConsistency)
       .consistency(readConsistency)
 
