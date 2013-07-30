@@ -6,10 +6,10 @@ import sbt.Keys._
 object Zipkin extends Build {
 
   val CASSIE_VERSION  = "0.25.2"
-  val FINAGLE_VERSION = "6.4.0"
-  val OSTRICH_VERSION = "9.1.1"
-  val UTIL_VERSION    = "6.3.4"
-  val SCROOGE_VERSION = "3.1.1"
+  val FINAGLE_VERSION = "6.5.2"
+  val OSTRICH_VERSION = "9.1.2"
+  val UTIL_VERSION    = "6.3.8"
+  val SCROOGE_VERSION = "3.3.2"
   val ZOOKEEPER_VERSION = Map("candidate" -> "0.0.41", "group" -> "0.0.44", "client" -> "0.0.35")
   val ALGEBIRD_VERSION  = "0.1.13"
 
@@ -42,6 +42,7 @@ object Zipkin extends Build {
     GitProject.gitSettings,
     BuildProperties.newSettings,
     PackageDist.newSettings,
+    net.virtualvoid.sbt.graph.Plugin.graphSettings,
 
     // modifications and additions
     Seq(
@@ -93,12 +94,12 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
-        "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
-        "com.twitter" % "finagle-zipkin"    % FINAGLE_VERSION,
-        "com.twitter" % "finagle-exception" % FINAGLE_VERSION,
-        "com.twitter" % "ostrich"           % OSTRICH_VERSION,
-        "com.twitter" % "util-core"         % UTIL_VERSION,
+        "com.twitter" %% "finagle-ostrich4"  % FINAGLE_VERSION,
+        "com.twitter" %% "finagle-thrift"    % FINAGLE_VERSION,
+        "com.twitter" %% "finagle-zipkin"    % FINAGLE_VERSION,
+        "com.twitter" %% "finagle-exception" % FINAGLE_VERSION,
+        "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
+        "com.twitter" %% "util-core"         % UTIL_VERSION,
         "com.twitter" %% "algebird-core"    % ALGEBIRD_VERSION,
 
         "com.twitter.common.zookeeper" % "client"    % ZOOKEEPER_VERSION("client")
@@ -123,13 +124,13 @@ object Zipkin extends Build {
       settings = defaultSettings ++ ScroogeSBT.newSettings
     ).settings(
         libraryDependencies ++= Seq(
-        "com.twitter" %  "finagle-ostrich4"  % FINAGLE_VERSION,
-        "com.twitter" %  "finagle-thrift"    % FINAGLE_VERSION,
-        "com.twitter" %  "finagle-zipkin"    % FINAGLE_VERSION,
-        "com.twitter" %  "ostrich"           % OSTRICH_VERSION,
-        "com.twitter" %  "util-core"         % UTIL_VERSION,
+        "com.twitter" %% "finagle-ostrich4"  % FINAGLE_VERSION,
+        "com.twitter" %% "finagle-thrift"    % FINAGLE_VERSION,
+        "com.twitter" %% "finagle-zipkin"    % FINAGLE_VERSION,
+        "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
+        "com.twitter" %% "util-core"         % UTIL_VERSION,
         "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
-        "com.twitter" %  "scrooge-runtime"   % SCROOGE_VERSION
+        "com.twitter" %% "scrooge-runtime"   % SCROOGE_VERSION
       ) ++ testDependencies
     ).dependsOn(common)
 
@@ -139,15 +140,15 @@ object Zipkin extends Build {
     settings = defaultSettings
   ).settings(
     libraryDependencies ++= Seq(
-      "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
-      "com.twitter" % "finagle-serversets"% FINAGLE_VERSION,
-      "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
-      "com.twitter" % "finagle-zipkin"    % FINAGLE_VERSION,
-      "com.twitter" % "ostrich"           % OSTRICH_VERSION,
+      "com.twitter" %% "finagle-ostrich4"  % FINAGLE_VERSION,
+      "com.twitter" %% "finagle-serversets"% FINAGLE_VERSION,
+      "com.twitter" %% "finagle-thrift"    % FINAGLE_VERSION,
+      "com.twitter" %% "finagle-zipkin"    % FINAGLE_VERSION,
+      "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
       "com.twitter" %% "algebird-core"    % ALGEBIRD_VERSION,
-      "com.twitter" % "util-core"         % UTIL_VERSION,
-      "com.twitter" % "util-zk"           % UTIL_VERSION,
-      "com.twitter" % "util-zk-common"    % UTIL_VERSION,
+      "com.twitter" %% "util-core"         % UTIL_VERSION,
+      "com.twitter" %% "util-zk"           % UTIL_VERSION,
+      "com.twitter" %% "util-zk-common"    % UTIL_VERSION,
 
       "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION("candidate"),
       "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION("group")
@@ -197,15 +198,15 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "com.twitter" % "finagle-ostrich4"  % FINAGLE_VERSION,
-        "com.twitter" % "finagle-serversets"% FINAGLE_VERSION,
-        "com.twitter" % "finagle-thrift"    % FINAGLE_VERSION,
-        "com.twitter" % "finagle-zipkin"    % FINAGLE_VERSION,
-        "com.twitter" % "ostrich"           % OSTRICH_VERSION,
+        "com.twitter" %% "finagle-ostrich4"  % FINAGLE_VERSION,
+        "com.twitter" %% "finagle-serversets"% FINAGLE_VERSION,
+        "com.twitter" %% "finagle-thrift"    % FINAGLE_VERSION,
+        "com.twitter" %% "finagle-zipkin"    % FINAGLE_VERSION,
+        "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
         "com.twitter" %% "algebird-core"    % ALGEBIRD_VERSION,
-        "com.twitter" % "util-core"         % UTIL_VERSION,
-        "com.twitter" % "util-zk"           % UTIL_VERSION,
-        "com.twitter" % "util-zk-common"    % UTIL_VERSION,
+        "com.twitter" %% "util-core"         % UTIL_VERSION,
+        "com.twitter" %% "util-zk"           % UTIL_VERSION,
+        "com.twitter" %% "util-zk-common"    % UTIL_VERSION,
 
         "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION("candidate"),
         "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION("group")
@@ -280,14 +281,14 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "com.twitter" % "finatra" % "1.3.3",
+        "com.twitter" % "finatra" % "1.3.7",
 
         "com.twitter.common.zookeeper" % "server-set" % "1.0.36",
 
-        "com.twitter" % "finagle-serversets" % FINAGLE_VERSION,
-        "com.twitter" % "finagle-zipkin"     % FINAGLE_VERSION,
-        "com.twitter" % "finagle-exception"  % FINAGLE_VERSION,
-        "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION
+        "com.twitter" %% "finagle-serversets" % FINAGLE_VERSION,
+        "com.twitter" %% "finagle-zipkin"     % FINAGLE_VERSION,
+        "com.twitter" %% "finagle-exception"  % FINAGLE_VERSION,
+        "com.twitter" %% "algebird-core"      % ALGEBIRD_VERSION
       ) ++ testDependencies,
 
       PackageDist.packageDistZipName := "zipkin-web.zip",
@@ -308,9 +309,9 @@ object Zipkin extends Build {
   ).settings(
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-      "com.twitter" % "finagle-redis"     % FINAGLE_VERSION,
+      "com.twitter" %% "finagle-redis"     % FINAGLE_VERSION,
       "org.slf4j" % "slf4j-log4j12"          % "1.6.4" % "runtime",
-      "com.twitter"     % "util-logging"      % UTIL_VERSION
+      "com.twitter"     %% "util-logging"      % UTIL_VERSION
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */

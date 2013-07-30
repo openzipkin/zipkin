@@ -1,7 +1,6 @@
 package com.twitter.zipkin.common.json
 
 import com.codahale.jerkson.Json
-import org.codehaus.jackson.map.annotate.JsonCachable
 import com.fasterxml.jackson.databind.{SerializerProvider, JsonSerializer}
 import com.fasterxml.jackson.core.{JsonGenerator=>JacksonGenerator}
 import com.fasterxml.jackson.databind.module.SimpleModule
@@ -26,7 +25,6 @@ object ZipkinJson extends Json {
   mapper.registerModule(module)
 }
 
-@JsonCachable
 class ZipkinJsonSerializer[T](wrap: T => WrappedJson) extends JsonSerializer[T]
 {
   def serialize(value: T, jgen: JacksonGenerator, provider: SerializerProvider) {
