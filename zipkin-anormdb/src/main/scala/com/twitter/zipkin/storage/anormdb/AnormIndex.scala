@@ -16,6 +16,7 @@
 
 package com.twitter.zipkin.storage.anormdb
 
+import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.{Index, IndexedTraceId, TraceIdDuration}
 import com.twitter.util.{FuturePool, Future}
@@ -89,8 +90,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    */
   def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
                               endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = sqlFuturePool[Seq[IndexedTraceId]] {
-    // Ignore core annotations. Yay magic names!
-    if (List("cs", "cr", "ss", "sr", "ca", "sa").contains(annotation)) {
+    if ((Constants.CoreAnnotations ++ Constants.CoreAddress).contains(annotation)) {
       Seq.empty
     }
     else {
