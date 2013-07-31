@@ -19,6 +19,7 @@ package com.twitter.zipkin.storage.anormdb
 import anorm._
 import anorm.SqlParser._
 import java.sql.{Blob, Connection, DriverManager, SQLException}
+import com.twitter.util.{Try, Return, Throw}
 
 /**
  * Provides SQL database access via Anorm from the Play framework.
@@ -56,17 +57,19 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
    *   // Do database updates
    * })
    */
-  def withTransaction[A](conn: Connection, code: Connection => A): Either[String, A] = {
+  def withTransaction[A](conn: Connection, code: Connection => A): Try[A] = {
     val autoCommit = conn.getAutoCommit
     try {
       conn.setAutoCommit(false)
       val result = code(conn)
       conn.commit()
-      Right(result)
+      Return(result)
     }
     catch {
-      case e: Throwable => conn.rollback()
-      Left("Error. Rolling back transaction: " + e.getMessage)
+      case e: Throwable => {
+        conn.rollback()
+        Throw(e)
+      }
     }
     finally {
       conn.setAutoCommit(autoCommit)

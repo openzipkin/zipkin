@@ -54,7 +54,7 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
    *
    * endDate is optional and if not passed defaults to startDate plus one day.
    */
-  def getDependencies(startDate: Time, endDate: Option[Time]=None): Future[Dependencies] = sqlFuturePool[Dependencies] {
+  def getDependencies(startDate: Time, endDate: Option[Time]=None): Future[Dependencies] = sqlFuturePool {
     val startMs = startDate.inMicroseconds
     val endMs = endDate.getOrElse(startDate + 1.day).inMicroseconds
 
@@ -117,14 +117,14 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
    * Get the top annotations for a service name
    */
   def getTopAnnotations(serviceName: String): Future[Seq[String]] = {
-    Future.value(Seq[String]())
+    Future.value(Seq.empty[String])
   }
 
   /**
    * Get the top key value annotation keys for a service name
    */
   def getTopKeyValueAnnotations(serviceName: String): Future[Seq[String]] = {
-    Future.value(Seq[String]())
+    Future.value(Seq.empty[String])
   }
 
   /**

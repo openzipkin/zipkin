@@ -122,14 +122,14 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
         case None => {
           SQL(
             """SELECT trace_id, MAX(a_timestamp)
-            |FROM zipkin_annotations
-            |WHERE service_name = {service_name}
-            |  AND value = {annotation}
-            |  AND a_timestamp < {end_ts}
-            |GROUP BY trace_id
-            |ORDER BY a_timestamp DESC
-            |LIMIT {limit}
-          """.stripMargin)
+              |FROM zipkin_annotations
+              |WHERE service_name = {service_name}
+              |  AND value = {annotation}
+              |  AND a_timestamp < {end_ts}
+              |GROUP BY trace_id
+              |ORDER BY a_timestamp DESC
+              |LIMIT {limit}
+            """.stripMargin)
             .on("service_name" -> serviceName)
             .on("annotation" -> annotation)
             .on("end_ts" -> endTs)
@@ -138,7 +138,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
         }
       }
       result map { case (tId, ts) =>
-          IndexedTraceId(traceId = tId, timestamp = ts)
+        IndexedTraceId(traceId = tId, timestamp = ts)
       }
     }
   }
