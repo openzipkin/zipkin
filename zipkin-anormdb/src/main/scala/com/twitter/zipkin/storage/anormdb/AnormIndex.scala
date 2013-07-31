@@ -16,6 +16,7 @@
 
 package com.twitter.zipkin.storage.anormdb
 
+import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.{Index, IndexedTraceId, TraceIdDuration}
 import com.twitter.util.{FuturePool, Future}
@@ -89,15 +90,15 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    */
   def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
                               endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = sqlFuturePool[Seq[IndexedTraceId]] {
-    // Ignore core annotations. Yay magic names!
-    if (List("cs", "cr", "ss", "sr", "ca", "sa").contains(annotation))
-      return Future.value[Seq[IndexedTraceId]](Seq())
-
-    val result:List[(Long, Long)] = value match {
-      // Binary annotations
-      case Some(bytes) => {
-        SQL(
-          """SELECT zba.trace_id, s.created_ts
+    if ((Constants.CoreAnnotations ++ Constants.CoreAddress).contains(annotation)) {
+      Seq.empty
+    }
+    else {
+      val result:List[(Long, Long)] = value match {
+        // Binary annotations
+        case Some(bytes) => {
+          SQL(
+            """SELECT zba.trace_id, s.created_ts
             |FROM zipkin_binary_annotations AS zba
             |LEFT JOIN zipkin_spans AS s
             |  ON zba.trace_id = s.trace_id
@@ -110,17 +111,17 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
             |ORDER BY s.created_ts DESC
             |LIMIT {limit}
           """.stripMargin)
-          .on("service_name" -> serviceName)
-          .on("annotation" -> annotation)
-          .on("value" -> Util.getArrayFromBuffer(bytes))
-          .on("end_ts" -> endTs)
-          .on("limit" -> limit)
-          .as((long("trace_id") ~ long("created_ts") map flatten) *)
-      }
-      // Normal annotations
-      case None => {
-        SQL(
-          """SELECT trace_id, MAX(a_timestamp)
+            .on("service_name" -> serviceName)
+            .on("annotation" -> annotation)
+            .on("value" -> Util.getArrayFromBuffer(bytes))
+            .on("end_ts" -> endTs)
+            .on("limit" -> limit)
+            .as((long("trace_id") ~ long("created_ts") map flatten) *)
+        }
+        // Normal annotations
+        case None => {
+          SQL(
+            """SELECT trace_id, MAX(a_timestamp)
             |FROM zipkin_annotations
             |WHERE service_name = {service_name}
             |  AND value = {annotation}
@@ -129,15 +130,16 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
             |ORDER BY a_timestamp DESC
             |LIMIT {limit}
           """.stripMargin)
-          .on("service_name" -> serviceName)
-          .on("annotation" -> annotation)
-          .on("end_ts" -> endTs)
-          .on("limit" -> limit)
-          .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
+            .on("service_name" -> serviceName)
+            .on("annotation" -> annotation)
+            .on("end_ts" -> endTs)
+            .on("limit" -> limit)
+            .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
+        }
       }
-    }
-    result map { case (tId, ts) =>
-      IndexedTraceId(traceId = tId, timestamp = ts)
+      result map { case (tId, ts) =>
+          IndexedTraceId(traceId = tId, timestamp = ts)
+      }
     }
   }
 
