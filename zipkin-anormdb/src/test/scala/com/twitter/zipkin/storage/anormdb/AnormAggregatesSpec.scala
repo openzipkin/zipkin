@@ -36,13 +36,13 @@ class AnormAggregatesSpec extends Specification {
 
       Await.result(aggregates.storeDependencies(dep1))
 
-      val agg1 = Await.result(aggregates.getDependencies(dep1.startTime, Some(dep1.endTime))) // Inclusive, start to end
-      val agg2 = Await.result(aggregates.getDependencies(Time.fromSeconds(0), Some(Time.now))) // All time
-      val agg3 = Await.result(aggregates.getDependencies(Time.fromSeconds(0), None)) // 0 to +1.day
+      val agg1 = Await.result(aggregates.getDependencies(Some(dep1.startTime), Some(dep1.endTime))) // Inclusive, start to end
+      val agg2 = Await.result(aggregates.getDependencies(Some(Time.fromSeconds(0)), Some(Time.now))) // All time
+      val agg3 = Await.result(aggregates.getDependencies(Some(Time.fromSeconds(0)), None)) // 0 to +1.day
 
-      val agg4 = Await.result(aggregates.getDependencies(Time.fromSeconds(0), Some(Time.fromSeconds(1) + 1.millisecond))) // end inside the dependency
-      val agg5 = Await.result(aggregates.getDependencies(Time.fromSeconds(1) + 1.millisecond, Some(Time.fromSeconds(2) - 1.millisecond))) // start and end inside the dependency
-      val agg6 = Await.result(aggregates.getDependencies(Time.fromSeconds(1) + 1.millisecond, Some(Time.fromSeconds(3)))) // start inside the dependency
+      val agg4 = Await.result(aggregates.getDependencies(Some(Time.fromSeconds(0)), Some(Time.fromSeconds(1) + 1.millisecond))) // end inside the dependency
+      val agg5 = Await.result(aggregates.getDependencies(Some(Time.fromSeconds(1) + 1.millisecond), Some(Time.fromSeconds(2) - 1.millisecond))) // start and end inside the dependency
+      val agg6 = Await.result(aggregates.getDependencies(Some(Time.fromSeconds(1) + 1.millisecond), Some(Time.fromSeconds(3)))) // start inside the dependency
 
       agg1.links mustEqual dep1.links
       agg2.links mustEqual dep1.links

@@ -54,9 +54,9 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
    *
    * endDate is optional and if not passed defaults to startDate plus one day.
    */
-  def getDependencies(startDate: Time, endDate: Option[Time]=None): Future[Dependencies] = sqlFuturePool {
-    val startMs = startDate.inMicroseconds
-    val endMs = endDate.getOrElse(startDate + 1.day).inMicroseconds
+  def getDependencies(startDate: Option[Time], endDate: Option[Time]=None): Future[Dependencies] = sqlFuturePool {
+    val startMs = startDate.getOrElse(Time.now - 1.day).inMicroseconds
+    val endMs = endDate.getOrElse(Time.now).inMicroseconds
 
     val links: List[DependencyLink] = SQL(
       """SELECT parent, child, m0, m1, m2, m3, m4
@@ -77,7 +77,7 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
       )
     }) *)
 
-    new Dependencies(startDate, Time.fromNanoseconds(endMs*1000), links)
+    new Dependencies(Time.fromNanoseconds(startMs*1000), Time.fromNanoseconds(endMs*1000), links)
   }
 
   /**
