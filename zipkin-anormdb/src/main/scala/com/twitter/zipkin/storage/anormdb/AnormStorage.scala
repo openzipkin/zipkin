@@ -65,61 +65,63 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
       case Some(anno) => Some(anno.timestamp)
       case None => None
     }
-    SQL(
-      """INSERT INTO zipkin_spans
-        |  (span_id, parent_id, trace_id, span_name, debug, duration, created_ts)
-        |VALUES
-        |  ({span_id}, {parent_id}, {trace_id}, {span_name}, {debug}, {duration}, {created_ts})
-      """.stripMargin)
-      .on("span_id" -> span.id)
-      .on("parent_id" -> span.parentId)
-      .on("trace_id" -> span.traceId)
-      .on("span_name" -> span.name)
-      .on("debug" -> (if (span.debug) 1 else 0))
-      .on("duration" -> span.duration)
-      .on("created_ts" -> createdTs)
-      .execute()
+    db.withTransaction(conn, { implicit conn: Connection =>
+      SQL(
+        """INSERT INTO zipkin_spans
+          |  (span_id, parent_id, trace_id, span_name, debug, duration, created_ts)
+          |VALUES
+          |  ({span_id}, {parent_id}, {trace_id}, {span_name}, {debug}, {duration}, {created_ts})
+        """.stripMargin)
+        .on("span_id" -> span.id)
+        .on("parent_id" -> span.parentId)
+        .on("trace_id" -> span.traceId)
+        .on("span_name" -> span.name)
+        .on("debug" -> (if (span.debug) 1 else 0))
+        .on("duration" -> span.duration)
+        .on("created_ts" -> createdTs)
+        .execute()
 
-    span.annotations.foreach(a =>
-      SQL(
-        """INSERT INTO zipkin_annotations
-          |  (span_id, trace_id, span_name, service_name, value, ipv4, port,
-          |    a_timestamp, duration)
-          |VALUES
-          |  ({span_id}, {trace_id}, {span_name}, {service_name}, {value},
-          |    {ipv4}, {port}, {timestamp}, {duration})
-        """.stripMargin)
-        .on("span_id" -> span.id)
-        .on("trace_id" -> span.traceId)
-        .on("span_name" -> span.name)
-        .on("service_name" -> a.serviceName)
-        .on("value" -> a.value)
-        .on("ipv4" -> a.host.map(_.ipv4))
-        .on("port" -> a.host.map(_.port))
-        .on("timestamp" -> a.timestamp)
-        .on("duration" -> a.duration.map(_.inNanoseconds))
-        .execute()
-    )
-    span.binaryAnnotations.foreach(b =>
-      SQL(
-        """INSERT INTO zipkin_binary_annotations
-          |  (span_id, trace_id, span_name, service_name, key, value,
-          |    annotation_type_value, ipv4, port)
-          |VALUES
-          |  ({span_id}, {trace_id}, {span_name}, {service_name}, {key}, {value},
-          |    {annotation_type_value}, {ipv4}, {port})
-        """.stripMargin)
-        .on("span_id" -> span.id)
-        .on("trace_id" -> span.traceId)
-        .on("span_name" -> span.name)
-        .on("service_name" -> b.host.map(_.serviceName).getOrElse("Unknown service name")) // from Annotation
-        .on("key" -> b.key)
-        .on("value" -> Util.getArrayFromBuffer(b.value))
-        .on("annotation_type_value" -> b.annotationType.value)
-        .on("ipv4" -> b.host.map(_.ipv4))
-        .on("port" -> b.host.map(_.ipv4))
-        .execute()
-    )
+      span.annotations.foreach(a =>
+        SQL(
+          """INSERT INTO zipkin_annotations
+            |  (span_id, trace_id, span_name, service_name, value, ipv4, port,
+            |    a_timestamp, duration)
+            |VALUES
+            |  ({span_id}, {trace_id}, {span_name}, {service_name}, {value},
+            |    {ipv4}, {port}, {timestamp}, {duration})
+          """.stripMargin)
+          .on("span_id" -> span.id)
+          .on("trace_id" -> span.traceId)
+          .on("span_name" -> span.name)
+          .on("service_name" -> a.serviceName)
+          .on("value" -> a.value)
+          .on("ipv4" -> a.host.map(_.ipv4))
+          .on("port" -> a.host.map(_.port))
+          .on("timestamp" -> a.timestamp)
+          .on("duration" -> a.duration.map(_.inNanoseconds))
+          .execute()
+      )
+      span.binaryAnnotations.foreach(b =>
+        SQL(
+          """INSERT INTO zipkin_binary_annotations
+            |  (span_id, trace_id, span_name, service_name, key, value,
+            |    annotation_type_value, ipv4, port)
+            |VALUES
+            |  ({span_id}, {trace_id}, {span_name}, {service_name}, {key}, {value},
+            |    {annotation_type_value}, {ipv4}, {port})
+          """.stripMargin)
+          .on("span_id" -> span.id)
+          .on("trace_id" -> span.traceId)
+          .on("span_name" -> span.name)
+          .on("service_name" -> b.host.map(_.serviceName).getOrElse("Unknown service name")) // from Annotation
+          .on("key" -> b.key)
+          .on("value" -> Util.getArrayFromBuffer(b.value))
+          .on("annotation_type_value" -> b.annotationType.value)
+          .on("ipv4" -> b.host.map(_.ipv4))
+          .on("port" -> b.host.map(_.ipv4))
+          .execute()
+      )
+    })
   }
 
   /**

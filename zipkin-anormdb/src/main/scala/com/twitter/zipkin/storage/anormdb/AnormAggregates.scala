@@ -86,29 +86,31 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
    * Synchronize these so we don't do concurrent writes from the same box
    */
   def storeDependencies(dependencies: Dependencies): Future[Unit] = sqlFuturePool {
-    val dlid = SQL("""INSERT INTO zipkin_dependencies
-          |  (start_ts, end_ts)
-          |VALUES ({startTs}, {endTs})
-        """.stripMargin)
-      .on("startTs" -> dependencies.startTime.inMicroseconds)
-      .on("endTs" -> dependencies.endTime.inMicroseconds)
-    .executeInsert()
-
-    dependencies.links.foreach { link =>
-      SQL("""INSERT INTO zipkin_dependency_links
-            |  (dlid, parent, child, m0, m1, m2, m3, m4)
-            |VALUES ({dlid}, {parent}, {child}, {m0}, {m1}, {m2}, {m3}, {m4})
+    db.withTransaction(conn, { implicit conn: Connection =>
+      val dlid = SQL("""INSERT INTO zipkin_dependencies
+            |  (start_ts, end_ts)
+            |VALUES ({startTs}, {endTs})
           """.stripMargin)
-        .on("dlid" -> dlid)
-        .on("parent" -> link.parent.name)
-        .on("child" -> link.child.name)
-        .on("m0" -> link.durationMoments.m0)
-        .on("m1" -> link.durationMoments.m1)
-        .on("m2" -> link.durationMoments.m2)
-        .on("m3" -> link.durationMoments.m3)
-        .on("m4" -> link.durationMoments.m4)
-      .execute()
-    }
+        .on("startTs" -> dependencies.startTime.inMicroseconds)
+        .on("endTs" -> dependencies.endTime.inMicroseconds)
+      .executeInsert()
+
+      dependencies.links.foreach { link =>
+        SQL("""INSERT INTO zipkin_dependency_links
+              |  (dlid, parent, child, m0, m1, m2, m3, m4)
+              |VALUES ({dlid}, {parent}, {child}, {m0}, {m1}, {m2}, {m3}, {m4})
+            """.stripMargin)
+          .on("dlid" -> dlid)
+          .on("parent" -> link.parent.name)
+          .on("child" -> link.child.name)
+          .on("m0" -> link.durationMoments.m0)
+          .on("m1" -> link.durationMoments.m1)
+          .on("m2" -> link.durationMoments.m2)
+          .on("m3" -> link.durationMoments.m3)
+          .on("m4" -> link.durationMoments.m4)
+        .execute()
+      }
+    })
   }
 
   /**
