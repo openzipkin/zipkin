@@ -48,6 +48,32 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
   }
 
   /**
+   * Execute SQL in a transaction.
+   *
+   * Example usage:
+   *
+   * db.withTransaction(conn, { implicit conn: Connection =>
+   *   // Do database updates
+   * })
+   */
+  def withTransaction[A](conn: Connection, code: Connection => A): Either[String, A] = {
+    val autoCommit = conn.getAutoCommit
+    try {
+      conn.setAutoCommit(false)
+      val result = code(conn)
+      conn.commit()
+      Right(result)
+    }
+    catch {
+      case e: Throwable => conn.rollback()
+      Left("Error. Rolling back transaction: " + e.getMessage)
+    }
+    finally {
+      conn.setAutoCommit(autoCommit)
+    }
+  }
+
+  /**
    * Set up the database tables.
    *
    * Returns an open database connection, so remember to close it, for example
