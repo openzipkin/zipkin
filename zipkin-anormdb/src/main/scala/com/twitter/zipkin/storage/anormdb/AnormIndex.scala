@@ -98,8 +98,8 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
             |LEFT JOIN zipkin_spans AS s
             |  ON zba.trace_id = s.trace_id
             |WHERE zba.service_name = {service_name}
-            |  AND zba.a_key = {annotation}
-            |  AND zba.value = {value}
+            |  AND zba.annotation_key = {annotation}
+            |  AND zba.annotation_value = {value}
             |  AND s.created_ts < {end_ts}
             |  AND s.created_ts IS NOT NULL
             |GROUP BY zba.trace_id
