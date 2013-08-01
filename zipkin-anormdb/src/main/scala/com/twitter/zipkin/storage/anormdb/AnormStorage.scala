@@ -97,7 +97,7 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
     span.binaryAnnotations.foreach(b =>
       SQL(
         """INSERT INTO zipkin_binary_annotations
-          |  (span_id, trace_id, span_name, service_name, key, value,
+          |  (span_id, trace_id, span_name, service_name, a_key, value,
           |    annotation_type_value, ipv4, port)
           |VALUES
           |  ({span_id}, {trace_id}, {span_name}, {service_name}, {key}, {value},
@@ -177,12 +177,12 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
           }) *)
     val binAnnos:List[DBBinaryAnnotation] =
       SQL(
-        """SELECT span_id, trace_id, service_name, key, value, annotation_type_value,
+        """SELECT span_id, trace_id, service_name, a_key, value, annotation_type_value,
           |  ipv4, port
           |FROM zipkin_binary_annotations
           |WHERE trace_id IN (%s)
         """.stripMargin.format(traceIdsString))
-        .as((long("span_id") ~ long("trace_id") ~ str("service_name") ~ str("key") ~
+        .as((long("span_id") ~ long("trace_id") ~ str("service_name") ~ str("a_key") ~
           db.bytes("value") ~ int("annotation_type_value") ~
           get[Option[Int]]("ipv4") ~ get[Option[Int]]("port") map {
             case a~b~c~d~e~f~g~h => DBBinaryAnnotation(a, b, c, d, e, f, g, h)
