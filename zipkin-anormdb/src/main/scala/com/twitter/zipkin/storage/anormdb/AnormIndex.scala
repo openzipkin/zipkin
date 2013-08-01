@@ -61,7 +61,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Only return maximum of limit trace ids from before the endTs.
    */
   def getTraceIdsByName(serviceName: String, spanName: Option[String],
-                        endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = sqlFuturePool[Seq[IndexedTraceId]] {
+                        endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = sqlFuturePool {
     val result:List[(Long, Long)] = SQL(
       """SELECT trace_id, MAX(a_timestamp)
         |FROM zipkin_annotations
@@ -89,7 +89,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Only return maximum of limit trace ids from before the endTs.
    */
   def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
-                              endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = sqlFuturePool[Seq[IndexedTraceId]] {
+                              endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = sqlFuturePool {
     if ((Constants.CoreAnnotations ++ Constants.CoreAddress).contains(annotation)) {
       Seq.empty
     }
@@ -148,7 +148,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    *
    * Duration returned in microseconds.
    */
-  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = sqlFuturePool[Seq[TraceIdDuration]] {
+  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = sqlFuturePool {
     val result:List[(Long, Option[Long], Long)] = SQL(
       """SELECT trace_id, duration, created_ts
         |FROM zipkin_spans
@@ -166,7 +166,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
   /**
    * Get all the service names.
    */
-  def getServiceNames: Future[Set[String]] = sqlFuturePool[Set[String]] {
+  def getServiceNames: Future[Set[String]] = sqlFuturePool {
     SQL(
       """SELECT service_name
         |FROM zipkin_annotations
@@ -179,7 +179,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
   /**
    * Get all the span names for a particular service.
    */
-  def getSpanNames(service: String): Future[Set[String]] = sqlFuturePool[Set[String]] {
+  def getSpanNames(service: String): Future[Set[String]] = sqlFuturePool {
     SQL(
       """SELECT span_name
         |FROM zipkin_annotations

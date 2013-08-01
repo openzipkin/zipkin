@@ -146,7 +146,7 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
    * @param traceIds a List of trace IDs
    * @return a Set of those trace IDs from the list which are stored
    */
-  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = sqlFuturePool[Set[Long]] {
+  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = sqlFuturePool {
     SQL(
       "SELECT trace_id FROM zipkin_spans WHERE trace_id IN (%s)".format(traceIds.mkString(","))
     ).as(long("trace_id") *).toSet
@@ -157,7 +157,7 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
    * Spans in trace should be sorted by the first annotation timestamp
    * in that span. First event should be first in the spans list.
    */
-  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = sqlFuturePool[Seq[Seq[Span]]] {
+  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = sqlFuturePool {
     val traceIdsString:String = traceIds.mkString(",")
     val spans:List[DBSpan] =
       SQL(
