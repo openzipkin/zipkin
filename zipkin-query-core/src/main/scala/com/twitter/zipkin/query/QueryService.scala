@@ -387,8 +387,8 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
   def getDependencies(startTime: Option[Long], endTime: Option[Long]) : Future[gen.Dependencies] = {
     log.debug("getDependencies: " + startTime + " - " + endTime)
     call("getDependencies") {
-      val start = startTime.map { t => Time.fromNanoseconds(t*1000) }
-      val end = endTime.map { t => Time.fromNanoseconds(t*1000) }
+      val start = startTime.map { t => Time.fromMicroseconds(t) }
+      val end = endTime.map { t => Time.fromMicroseconds(t) }
       aggregates.getDependencies(start, end) map {_.toThrift}
     }
   }
