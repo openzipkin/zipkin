@@ -19,7 +19,7 @@ package com.twitter.zipkin.storage.anormdb
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.{Index, IndexedTraceId, TraceIdDuration}
-import com.twitter.util.{Future}
+import com.twitter.util.Future
 import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import anorm._
