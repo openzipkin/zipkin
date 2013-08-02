@@ -77,7 +77,7 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
       )
     }) *)
 
-    new Dependencies(Time.fromNanoseconds(startMs*1000), Time.fromNanoseconds(endMs*1000), links)
+    new Dependencies(Time.fromMicroseconds(startMs), Time.fromMicroseconds(endMs), links)
   }
 
   /**
