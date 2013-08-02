@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import com.twitter.zipkin.builder.QueryServiceBuilder
-import com.twitter.zipkin.anormdb.{StorageBuilder, IndexBuilder}
+import com.twitter.zipkin.anormdb.{StorageBuilder, IndexBuilder, AggregatesBuilder}
 import com.twitter.zipkin.storage.anormdb.{DB, DBConfig, DBParams}
 import com.twitter.zipkin.storage.Store
 
@@ -22,7 +22,8 @@ import com.twitter.zipkin.storage.Store
 val db = DB()
 val storeBuilder = Store.Builder(
   StorageBuilder(db),
-  IndexBuilder(db)
+  IndexBuilder(db),
+  AggregatesBuilder(db)
 )
 
 QueryServiceBuilder(storeBuilder)

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import com.twitter.zipkin.builder.Scribe
-import com.twitter.zipkin.anormdb.{StorageBuilder, IndexBuilder}
+import com.twitter.zipkin.anormdb.{StorageBuilder, IndexBuilder, AggregatesBuilder}
 import com.twitter.zipkin.storage.anormdb.{DB, DBConfig, DBParams}
 import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
 import com.twitter.zipkin.storage.Store
@@ -22,7 +22,8 @@ import com.twitter.zipkin.storage.Store
 val db = DB(new DBConfig(install = true))
 val anormBuilder = Store.Builder(
   StorageBuilder(db),
-  IndexBuilder(db)
+  IndexBuilder(db),
+  AggregatesBuilder(db)
 )
 
 CollectorServiceBuilder(Scribe.Interface(categories = Set("zipkin")))
