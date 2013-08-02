@@ -19,13 +19,13 @@ package com.twitter.zipkin.storage.anormdb
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.{Index, IndexedTraceId, TraceIdDuration}
-import com.twitter.util.{FuturePool, Future}
+import com.twitter.util.{Future}
 import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
-import java.util.concurrent.Executors
+import AnormThreads.inNewThread
 
 /**
  * Retrieve and store trace and span information.
@@ -46,11 +46,6 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
     case Some(con) => con
   }
 
-  // Cached pools automatically close threads after 60 seconds
-  private val threadPool = Executors.newCachedThreadPool()
-  // FuturePool for asynchronous DB access
-  private val sqlFuturePool = FuturePool(threadPool)
-
   /**
    * Close the index
    */
@@ -61,7 +56,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Only return maximum of limit trace ids from before the endTs.
    */
   def getTraceIdsByName(serviceName: String, spanName: Option[String],
-                        endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = sqlFuturePool {
+                        endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = inNewThread {
     val result:List[(Long, Long)] = SQL(
       """SELECT trace_id, MAX(a_timestamp)
         |FROM zipkin_annotations
@@ -89,7 +84,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Only return maximum of limit trace ids from before the endTs.
    */
   def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
-                              endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = sqlFuturePool {
+                              endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = inNewThread {
     if ((Constants.CoreAnnotations ++ Constants.CoreAddress).contains(annotation)) {
       Seq.empty
     }
@@ -148,7 +143,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    *
    * Duration returned in microseconds.
    */
-  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = sqlFuturePool {
+  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = inNewThread {
     val result:List[(Long, Option[Long], Long)] = SQL(
       """SELECT trace_id, duration, created_ts
         |FROM zipkin_spans
@@ -166,7 +161,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
   /**
    * Get all the service names.
    */
-  def getServiceNames: Future[Set[String]] = sqlFuturePool {
+  def getServiceNames: Future[Set[String]] = inNewThread {
     SQL(
       """SELECT service_name
         |FROM zipkin_annotations
@@ -179,7 +174,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
   /**
    * Get all the span names for a particular service.
    */
-  def getSpanNames(service: String): Future[Set[String]] = sqlFuturePool {
+  def getSpanNames(service: String): Future[Set[String]] = inNewThread {
     SQL(
       """SELECT span_name
         |FROM zipkin_annotations

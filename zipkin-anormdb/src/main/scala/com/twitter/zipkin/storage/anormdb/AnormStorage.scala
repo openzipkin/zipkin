@@ -21,12 +21,12 @@ import com.twitter.zipkin.common._
 import com.twitter.zipkin.common.Annotation
 import com.twitter.zipkin.common.BinaryAnnotation
 import com.twitter.zipkin.util.Util
-import com.twitter.util.{Duration, Future, FuturePool}
+import com.twitter.util.{Duration, Future}
 import anorm._
 import anorm.SqlParser._
 import java.nio.ByteBuffer
 import java.sql.Connection
-import java.util.concurrent.Executors
+import AnormThreads.inNewThread
 
 /**
  * Retrieve and store span information.
@@ -46,11 +46,6 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
     case Some(con) => con
   }
 
-  // Cached pools automatically close threads after 60 seconds
-  private val threadPool = Executors.newCachedThreadPool()
-  // FuturePool for asynchronous DB access
-  private val sqlFuturePool = FuturePool(threadPool)
-
   /**
    * Close the storage
    */
@@ -60,7 +55,7 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
    * Store the span in the underlying storage for later retrieval.
    * @return a future for the operation
    */
-  def storeSpan(span: Span): Future[Unit] = sqlFuturePool {
+  def storeSpan(span: Span): Future[Unit] = inNewThread {
     val createdTs: Option[Long] = span.firstAnnotation match {
       case Some(anno) => Some(anno.timestamp)
       case None => None
@@ -146,7 +141,7 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
    * @param traceIds a List of trace IDs
    * @return a Set of those trace IDs from the list which are stored
    */
-  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = sqlFuturePool {
+  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = inNewThread {
     SQL(
       "SELECT trace_id FROM zipkin_spans WHERE trace_id IN (%s)".format(traceIds.mkString(","))
     ).as(long("trace_id") *).toSet
@@ -157,7 +152,7 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
    * Spans in trace should be sorted by the first annotation timestamp
    * in that span. First event should be first in the spans list.
    */
-  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = sqlFuturePool {
+  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = inNewThread {
     val traceIdsString:String = traceIds.mkString(",")
     val spans:List[DBSpan] =
       SQL(
