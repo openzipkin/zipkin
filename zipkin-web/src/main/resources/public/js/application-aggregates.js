@@ -38,8 +38,14 @@ Zipkin.Application.Aggregates = (function() {
       }
     });
 
-    var radial = new Zipkin.RadialDependencies;
-    radial.render();
+    if (window.location.hash) {
+      var block = new Zipkin.BlockDependencies(window.location.hash.substring(1));
+      block.render();
+    }
+    else {
+      var radial = new Zipkin.RadialDependencies;
+      radial.render();
+    }
   };
 
   return {
