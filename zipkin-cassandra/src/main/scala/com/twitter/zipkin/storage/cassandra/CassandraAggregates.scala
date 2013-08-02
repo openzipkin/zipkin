@@ -121,7 +121,7 @@ case class CassandraAggregates(
   private[cassandra] def store[Key,Val](cf: ColumnFamily[Key, Long, Val], key: Key, values: Seq[Val]): Future[Unit] = synchronized {
     val remove = cf.removeRow(key)
     val batch = cf.batch()
-    values.zipWithIndex.foreach { case (value: Val, index: Int) =>
+    values.zipWithIndex.foreach { case (value, index: Int) =>
       batch.insert(key, new Column[Long, Val](index, value))
     }
     remove transform {
