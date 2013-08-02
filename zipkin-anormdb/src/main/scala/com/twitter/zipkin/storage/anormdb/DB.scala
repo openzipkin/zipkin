@@ -87,8 +87,8 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
         |  trace_id BIGINT NOT NULL,
         |  span_name VARCHAR(255) NOT NULL,
         |  service_name VARCHAR(255) NOT NULL,
-        |  key VARCHAR(255) NOT NULL,
-        |  value %s,
+        |  annotation_key VARCHAR(255) NOT NULL,
+        |  annotation_value %s,
         |  annotation_type_value INT NOT NULL,
         |  ipv4 INT,
         |  port INT
