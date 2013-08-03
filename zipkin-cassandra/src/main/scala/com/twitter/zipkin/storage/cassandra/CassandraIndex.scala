@@ -283,7 +283,7 @@ case class CassandraIndex(
     annFuture.unit
   }
 
-  def indexSpanDuration(span: Span): Future[Void] = {
+  def indexSpanDuration(span: Span): Future[Unit] = {
     val first = span.firstAnnotation.map(_.timestamp)
     val last = span.lastAnnotation.map(_.timestamp)
 
@@ -296,6 +296,6 @@ case class CassandraIndex(
       WRITE_REQUEST_COUNTER.incr()
       t => batch.insert(span.traceId, Column[Long, String](t, "").ttl(dataTimeToLive))
     }
-    batch.execute()
+    batch.execute().unit
   }
 }

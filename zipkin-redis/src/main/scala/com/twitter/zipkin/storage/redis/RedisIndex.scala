@@ -179,12 +179,12 @@ trait RedisIndex extends Index {
     else
       Future.Unit
 
-  override def indexSpanDuration(span: Span): Future[Void] = (traceHash.get(span.traceId) map {
+  override def indexSpanDuration(span: Span): Future[Unit] = (traceHash.get(span.traceId) map {
     case None => TimeRange.fromSpan(span) map { timeRange =>
       traceHash.put(span.traceId, timeRange)
     }
     case Some(bytes) => indexNewStartAndEnd(span, bytes)
-  }).voided
+  }).unit
 
   private[this] def indexNewStartAndEnd(span: Span, buf: ChannelBuffer) =
     TimeRange.fromSpan(span) map { timeRange =>

@@ -1,2 +1,6 @@
-#!/usr/bin/env sh
-bin/sbt 'project zipkin-query-service' 'run -f zipkin-query-service/config/query-dev.scala'
+#!/usr/bin/env bash
+
+DEFAULT_TYPE=dev
+SERVICE_TYPE=${1:-$DEFAULT_TYPE}
+
+bin/sbt 'project zipkin-query-service' "run -f zipkin-query-service/config/query-${SERVICE_TYPE}.scala"
