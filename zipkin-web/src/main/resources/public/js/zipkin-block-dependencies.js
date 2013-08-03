@@ -204,6 +204,8 @@ Zipkin.BlockDependencies = (function () {
      */
     function zoomData(selected) {
 
+      window.location.hash = selected.name;
+
       currGeneration += 1; // each zoom is a new generation
 
       var graph = { nodes: [], links: [] };
