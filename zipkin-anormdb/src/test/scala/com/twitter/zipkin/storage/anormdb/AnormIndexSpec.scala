@@ -66,7 +66,7 @@ class AnormIndexSpec extends Specification {
       val storage = new AnormStorage(db, Some(con))
       val index = new AnormIndex(db, Some(con))
 
-      storage.storeSpan(span1)
+      Await.result(storage.storeSpan(span1))
       val traces = Await.result(index.getTraceIdsByName("service", None, 3, 3))
       traces foreach {
         _.traceId mustEqual span1.traceId
@@ -87,7 +87,7 @@ class AnormIndexSpec extends Specification {
       val storage = new AnormStorage(db, Some(con))
       val index = new AnormIndex(db, Some(con))
 
-      storage.storeSpan(span1)
+      Await.result(storage.storeSpan(span1))
 
       val normalTraces = Await.result(index.getTraceIdsByAnnotation("service", "custom", None, 3, 3))
       normalTraces.foreach {
@@ -113,10 +113,10 @@ class AnormIndexSpec extends Specification {
       val storage = new AnormStorage(db, Some(con))
       val index = new AnormIndex(db, Some(con))
 
-      storage.storeSpan(spanEmptyServiceName)
+      Await.result(storage.storeSpan(spanEmptyServiceName))
       Await.result(index.getTracesDuration(Seq(spanEmptyServiceName.traceId))).isEmpty mustEqual true
 
-      storage.storeSpan(span1)
+      Await.result(storage.storeSpan(span1))
       val duration = Await.result(index.getTracesDuration(Seq(span1.traceId)))
       duration(0).traceId mustEqual span1.traceId
       duration(0).duration mustEqual span1.duration.getOrElse(-1)
@@ -130,10 +130,10 @@ class AnormIndexSpec extends Specification {
       val storage = new AnormStorage(db, Some(con))
       val index = new AnormIndex(db, Some(con))
 
-      storage.storeSpan(spanEmptyServiceName)
+      Await.result(storage.storeSpan(spanEmptyServiceName))
       Await.result(index.getServiceNames).isEmpty mustBe true
 
-      storage.storeSpan(span1)
+      Await.result(storage.storeSpan(span1))
       val serviceNames = Await.result(index.getServiceNames)
       val expectedServices = span1.annotations.map(_.serviceName).toSet
       serviceNames mustEqual expectedServices
@@ -147,12 +147,12 @@ class AnormIndexSpec extends Specification {
       val storage = new AnormStorage(db, Some(con))
       val index = new AnormIndex(db, Some(con))
 
-      storage.storeSpan(spanEmptySpanName)
+      Await.result(storage.storeSpan(spanEmptySpanName))
       val noSpanNames = Await.result(index.getSpanNames(ann3.serviceName))
       noSpanNames.isEmpty mustBe true
 
-      storage.storeSpan(span1)
-      storage.storeSpan(span3)
+      Await.result(storage.storeSpan(span1))
+      Await.result(storage.storeSpan(span3))
       val spanNames = Await.result(index.getSpanNames(ann3.serviceName))
       val expectedSpans = Set(span1.name, span3.name)
       spanNames mustEqual expectedSpans

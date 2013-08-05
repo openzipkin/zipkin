@@ -7,21 +7,15 @@ See [http://twitter.github.com/zipkin](http://twitter.github.com/zipkin)
 
 ## Quick start
 
-To install Zipkin on a single machine, see the
-[Ubuntu Quickstart](https://github.com/twitter/zipkin/blob/master/doc/ubuntu-quickstart.txt) and
-[Mac Quickstart](https://github.com/twitter/zipkin/blob/master/doc/mac-quickstart.md) guides.
-For more in-depth installation instructions with an explanation of the
-dependencies and related services, see
-[install.md](https://github.com/twitter/zipkin/blob/master/doc/install.md).
-
-Zipkin itself provides three services:
+Zipkin provides three services:
 
  - To collect data: `bin/collector`
  - To extract data: `bin/query`
  - To display data: `bin/web`
 
-If all three of these daemons are running, you should be able to visit
-http://localhost:8080 to view the Zipkin UI. There is also a
+You can run these services immediately after downloading Zipkin. Once all three
+daemons are running, you should be able to visit http://localhost:8080 to view
+the Zipkin UI. There is also a
 [browser extension](https://github.com/twitter/zipkin/tree/master/zipkin-browser-extension)
 which shows visualizations of traces of each page as you browse your website.
 
@@ -34,7 +28,8 @@ external libraries (currently for Python, REST, node, and Java) are listed in th
 and there is also a [Ruby gem](https://rubygems.org/gems/finagle-thrift) and
 [Ruby Thrift client](https://github.com/twitter/thrift_client).
 
-See the [in-depth installation guide](https://github.com/twitter/zipkin/blob/master/doc/install.md) for more information.
+See the [in-depth installation guide](https://github.com/twitter/zipkin/blob/master/doc/install.md)
+for more information on larger / more complex Zipkin installations.
 
 ## Get involved
 

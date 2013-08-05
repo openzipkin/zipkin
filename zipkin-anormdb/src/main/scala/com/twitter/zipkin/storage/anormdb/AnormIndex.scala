@@ -16,6 +16,7 @@
 
 package com.twitter.zipkin.storage.anormdb
 
+import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.{Index, IndexedTraceId, TraceIdDuration}
 import com.twitter.util.Future
@@ -24,6 +25,7 @@ import java.nio.ByteBuffer
 import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
+import AnormThreads.inNewThread
 
 /**
  * Retrieve and store trace and span information.
@@ -54,7 +56,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Only return maximum of limit trace ids from before the endTs.
    */
   def getTraceIdsByName(serviceName: String, spanName: Option[String],
-                        endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
+                        endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = inNewThread {
     val result:List[(Long, Long)] = SQL(
       """SELECT trace_id, MAX(a_timestamp)
         |FROM zipkin_annotations
@@ -70,10 +72,8 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
       .on("end_ts" -> endTs)
       .on("limit" -> limit)
       .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
-    Future {
-      result map { case (tId, ts) =>
-        IndexedTraceId(traceId = tId, timestamp = ts)
-      }
+    result map { case (tId, ts) =>
+      IndexedTraceId(traceId = tId, timestamp = ts)
     }
   }
 
@@ -84,16 +84,16 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Only return maximum of limit trace ids from before the endTs.
    */
   def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
-                              endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
-    // Ignore core annotations. Yay magic names!
-    if (List("cs", "cr", "ss", "sr", "ca", "sa").contains(annotation))
-      return Future.value[Seq[IndexedTraceId]](Seq())
-
-    val result:List[(Long, Long)] = value match {
-      // Binary annotations
-      case Some(bytes) => {
-        SQL(
-          """SELECT zba.trace_id, s.created_ts
+                              endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = inNewThread {
+    if ((Constants.CoreAnnotations ++ Constants.CoreAddress).contains(annotation)) {
+      Seq.empty
+    }
+    else {
+      val result:List[(Long, Long)] = value match {
+        // Binary annotations
+        case Some(bytes) => {
+          SQL(
+            """SELECT zba.trace_id, s.created_ts
             |FROM zipkin_binary_annotations AS zba
             |LEFT JOIN zipkin_spans AS s
             |  ON zba.trace_id = s.trace_id
@@ -106,33 +106,32 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
             |ORDER BY s.created_ts DESC
             |LIMIT {limit}
           """.stripMargin)
-          .on("service_name" -> serviceName)
-          .on("annotation" -> annotation)
-          .on("value" -> Util.getArrayFromBuffer(bytes))
-          .on("end_ts" -> endTs)
-          .on("limit" -> limit)
-          .as((long("trace_id") ~ long("created_ts") map flatten) *)
+            .on("service_name" -> serviceName)
+            .on("annotation" -> annotation)
+            .on("value" -> Util.getArrayFromBuffer(bytes))
+            .on("end_ts" -> endTs)
+            .on("limit" -> limit)
+            .as((long("trace_id") ~ long("created_ts") map flatten) *)
+        }
+        // Normal annotations
+        case None => {
+          SQL(
+            """SELECT trace_id, MAX(a_timestamp)
+              |FROM zipkin_annotations
+              |WHERE service_name = {service_name}
+              |  AND value = {annotation}
+              |  AND a_timestamp < {end_ts}
+              |GROUP BY trace_id
+              |ORDER BY a_timestamp DESC
+              |LIMIT {limit}
+            """.stripMargin)
+            .on("service_name" -> serviceName)
+            .on("annotation" -> annotation)
+            .on("end_ts" -> endTs)
+            .on("limit" -> limit)
+            .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
+        }
       }
-      // Normal annotations
-      case None => {
-        SQL(
-          """SELECT trace_id, MAX(a_timestamp)
-            |FROM zipkin_annotations
-            |WHERE service_name = {service_name}
-            |  AND value = {annotation}
-            |  AND a_timestamp < {end_ts}
-            |GROUP BY trace_id
-            |ORDER BY a_timestamp DESC
-            |LIMIT {limit}
-          """.stripMargin)
-          .on("service_name" -> serviceName)
-          .on("annotation" -> annotation)
-          .on("end_ts" -> endTs)
-          .on("limit" -> limit)
-          .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
-      }
-    }
-    Future {
       result map { case (tId, ts) =>
         IndexedTraceId(traceId = tId, timestamp = ts)
       }
@@ -144,7 +143,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    *
    * Duration returned in microseconds.
    */
-  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = {
+  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = inNewThread {
     val result:List[(Long, Option[Long], Long)] = SQL(
       """SELECT trace_id, duration, created_ts
         |FROM zipkin_spans
@@ -153,45 +152,39 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
         |ORDER BY created_ts DESC
       """.stripMargin.format(traceIds.mkString(",")))
       .as((long("trace_id") ~ get[Option[Long]]("duration") ~ long("created_ts") map flatten) *)
-    Future {
-      result map { case (traceId, duration, startTs) =>
-        // trace ID, duration, start TS
-        TraceIdDuration(traceId, duration.getOrElse(0), startTs)
-      }
+    result map { case (traceId, duration, startTs) =>
+      // trace ID, duration, start TS
+      TraceIdDuration(traceId, duration.getOrElse(0), startTs)
     }
   }
 
   /**
    * Get all the service names.
    */
-  def getServiceNames: Future[Set[String]] = {
-    Future {
-      SQL(
-        """SELECT service_name
-          |FROM zipkin_annotations
-          |GROUP BY service_name
-          |ORDER BY service_name ASC
-        """.stripMargin)
-        .as(str("service_name") *).toSet
-    }
+  def getServiceNames: Future[Set[String]] = inNewThread {
+    SQL(
+      """SELECT service_name
+        |FROM zipkin_annotations
+        |GROUP BY service_name
+        |ORDER BY service_name ASC
+      """.stripMargin)
+      .as(str("service_name") *).toSet
   }
 
   /**
    * Get all the span names for a particular service.
    */
-  def getSpanNames(service: String): Future[Set[String]] = {
-    Future {
-      SQL(
-        """SELECT span_name
-          |FROM zipkin_annotations
-          |WHERE service_name = {service} AND span_name <> ''
-          |GROUP BY span_name
-          |ORDER BY span_name ASC
-        """.stripMargin)
-        .on("service" -> service)
-        .as(str("span_name") *)
-        .toSet
-    }
+  def getSpanNames(service: String): Future[Set[String]] = inNewThread {
+    SQL(
+      """SELECT span_name
+        |FROM zipkin_annotations
+        |WHERE service_name = {service} AND span_name <> ''
+        |GROUP BY span_name
+        |ORDER BY span_name ASC
+      """.stripMargin)
+      .on("service" -> service)
+      .as(str("span_name") *)
+      .toSet
   }
 
   /**

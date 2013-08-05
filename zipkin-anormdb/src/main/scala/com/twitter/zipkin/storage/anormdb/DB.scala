@@ -19,6 +19,7 @@ package com.twitter.zipkin.storage.anormdb
 import anorm._
 import anorm.SqlParser._
 import java.sql.{Blob, Connection, DriverManager, SQLException}
+import com.twitter.util.{Try, Return, Throw}
 
 /**
  * Provides SQL database access via Anorm from the Play framework.
@@ -45,6 +46,34 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
    */
   def getConnection() = {
     DriverManager.getConnection(dbconfig.location)
+  }
+
+  /**
+   * Execute SQL in a transaction.
+   *
+   * Example usage:
+   *
+   * db.withTransaction(conn, { implicit conn: Connection =>
+   *   // Do database updates
+   * })
+   */
+  def withTransaction[A](conn: Connection, code: Connection => A): Try[A] = {
+    val autoCommit = conn.getAutoCommit
+    try {
+      conn.setAutoCommit(false)
+      val result = code(conn)
+      conn.commit()
+      Return(result)
+    }
+    catch {
+      case e: Throwable => {
+        conn.rollback()
+        Throw(e)
+      }
+    }
+    finally {
+      conn.setAutoCommit(autoCommit)
+    }
   }
 
   /**
@@ -95,6 +124,25 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
         |)
       """.stripMargin.format(this.getBlobType)).execute()
     //SQL("CREATE INDEX trace_id ON zipkin_binary_annotations (trace_id)").execute()
+    SQL(
+      """CREATE TABLE IF NOT EXISTS zipkin_dependencies (
+        |  dlid %s,
+        |  start_ts BIGINT NOT NULL,
+        |  end_ts BIGINT NOT NULL
+        |)
+      """.stripMargin.format(this.getAutoIncrement)).execute()
+    SQL(
+      """CREATE TABLE IF NOT EXISTS zipkin_dependency_links (
+        |  dlid BIGINT NOT NULL,
+        |  parent VARCHAR(255) NOT NULL,
+        |  child VARCHAR(255) NOT NULL,
+        |  m0 BIGINT NOT NULL,
+        |  m1 DOUBLE PRECISION NOT NULL,
+        |  m2 DOUBLE PRECISION NOT NULL,
+        |  m3 DOUBLE PRECISION NOT NULL,
+        |  m4 DOUBLE PRECISION NOT NULL
+        |)
+      """.stripMargin).execute()
     con
   }
 
@@ -103,6 +151,15 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
     case "PostgreSQL" => "BYTEA" /* As usual PostgreSQL has to be different */
     case "MySQL" => "MEDIUMBLOB" /* MySQL has length limits, in this case 16MB */
     case _ => "BLOB"
+  }
+
+  private def getAutoIncrement = dbconfig.description match {
+    case "SQLite in-memory" => "INTEGER PRIMARY KEY AUTOINCREMENT" // Must be nullable
+    case "SQLite persistent" => "INTEGER PRIMARY KEY AUTOINCREMENT"
+    case "H2 in-memory" => "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"
+    case "H2 persistent" => "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"
+    case "PostgreSQL" => "BIGSERIAL PRIMARY KEY"
+    case "MySQL" => "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"
   }
 
   // (Below) Provide Anorm with the ability to handle BLOBs.
