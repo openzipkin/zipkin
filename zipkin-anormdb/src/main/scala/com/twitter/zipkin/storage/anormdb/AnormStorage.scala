@@ -26,6 +26,7 @@ import anorm._
 import anorm.SqlParser._
 import java.nio.ByteBuffer
 import java.sql.Connection
+import AnormThreads.inNewThread
 
 /**
  * Retrieve and store span information.
@@ -54,67 +55,68 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
    * Store the span in the underlying storage for later retrieval.
    * @return a future for the operation
    */
-  def storeSpan(span: Span): Future[Unit] = {
+  def storeSpan(span: Span): Future[Unit] = inNewThread {
     val createdTs: Option[Long] = span.firstAnnotation match {
       case Some(anno) => Some(anno.timestamp)
       case None => None
     }
-    SQL(
-      """INSERT INTO zipkin_spans
-        |  (span_id, parent_id, trace_id, span_name, debug, duration, created_ts)
-        |VALUES
-        |  ({span_id}, {parent_id}, {trace_id}, {span_name}, {debug}, {duration}, {created_ts})
-      """.stripMargin)
-      .on("span_id" -> span.id)
-      .on("parent_id" -> span.parentId)
-      .on("trace_id" -> span.traceId)
-      .on("span_name" -> span.name)
-      .on("debug" -> (if (span.debug) 1 else 0))
-      .on("duration" -> span.duration)
-      .on("created_ts" -> createdTs)
-      .execute()
+    db.withTransaction(conn, { implicit conn: Connection =>
+      SQL(
+        """INSERT INTO zipkin_spans
+          |  (span_id, parent_id, trace_id, span_name, debug, duration, created_ts)
+          |VALUES
+          |  ({span_id}, {parent_id}, {trace_id}, {span_name}, {debug}, {duration}, {created_ts})
+        """.stripMargin)
+        .on("span_id" -> span.id)
+        .on("parent_id" -> span.parentId)
+        .on("trace_id" -> span.traceId)
+        .on("span_name" -> span.name)
+        .on("debug" -> (if (span.debug) 1 else 0))
+        .on("duration" -> span.duration)
+        .on("created_ts" -> createdTs)
+        .execute()
 
-    span.annotations.foreach(a =>
-      SQL(
-        """INSERT INTO zipkin_annotations
-          |  (span_id, trace_id, span_name, service_name, value, ipv4, port,
-          |    a_timestamp, duration)
-          |VALUES
-          |  ({span_id}, {trace_id}, {span_name}, {service_name}, {value},
-          |    {ipv4}, {port}, {timestamp}, {duration})
-        """.stripMargin)
-        .on("span_id" -> span.id)
-        .on("trace_id" -> span.traceId)
-        .on("span_name" -> span.name)
-        .on("service_name" -> a.serviceName)
-        .on("value" -> a.value)
-        .on("ipv4" -> a.host.map(_.ipv4))
-        .on("port" -> a.host.map(_.port))
-        .on("timestamp" -> a.timestamp)
-        .on("duration" -> a.duration.map(_.inNanoseconds))
-        .execute()
-    )
-    span.binaryAnnotations.foreach(b =>
-      SQL(
-        """INSERT INTO zipkin_binary_annotations
-          |  (span_id, trace_id, span_name, service_name, annotation_key,
-          |    annotation_value, annotation_type_value, ipv4, port)
-          |VALUES
-          |  ({span_id}, {trace_id}, {span_name}, {service_name}, {key}, {value},
-          |    {annotation_type_value}, {ipv4}, {port})
-        """.stripMargin)
-        .on("span_id" -> span.id)
-        .on("trace_id" -> span.traceId)
-        .on("span_name" -> span.name)
-        .on("service_name" -> b.host.map(_.serviceName).getOrElse("Unknown service name")) // from Annotation
-        .on("key" -> b.key)
-        .on("value" -> Util.getArrayFromBuffer(b.value))
-        .on("annotation_type_value" -> b.annotationType.value)
-        .on("ipv4" -> b.host.map(_.ipv4))
-        .on("port" -> b.host.map(_.ipv4))
-        .execute()
-    )
-    Future.Unit
+      span.annotations.foreach(a =>
+        SQL(
+          """INSERT INTO zipkin_annotations
+            |  (span_id, trace_id, span_name, service_name, value, ipv4, port,
+            |    a_timestamp, duration)
+            |VALUES
+            |  ({span_id}, {trace_id}, {span_name}, {service_name}, {value},
+            |    {ipv4}, {port}, {timestamp}, {duration})
+          """.stripMargin)
+          .on("span_id" -> span.id)
+          .on("trace_id" -> span.traceId)
+          .on("span_name" -> span.name)
+          .on("service_name" -> a.serviceName)
+          .on("value" -> a.value)
+          .on("ipv4" -> a.host.map(_.ipv4))
+          .on("port" -> a.host.map(_.port))
+          .on("timestamp" -> a.timestamp)
+          .on("duration" -> a.duration.map(_.inNanoseconds))
+          .execute()
+      )
+      span.binaryAnnotations.foreach(b =>
+        SQL(
+          """INSERT INTO zipkin_binary_annotations
+            |  (span_id, trace_id, span_name, service_name, annotation_key,
+            |    annotation_value, annotation_type_value, ipv4, port)
+            |VALUES
+            |  ({span_id}, {trace_id}, {span_name}, {service_name}, {key}, {value},
+            |    {annotation_type_value}, {ipv4}, {port})
+          """.stripMargin)
+          .on("span_id" -> span.id)
+          .on("trace_id" -> span.traceId)
+          .on("span_name" -> span.name)
+          .on("service_name" -> b.host.map(_.serviceName).getOrElse("Unknown service name")) // from Annotation
+          .on("key" -> b.key)
+          .on("value" -> Util.getArrayFromBuffer(b.value))
+          .on("annotation_type_value" -> b.annotationType.value)
+          .on("ipv4" -> b.host.map(_.ipv4))
+          .on("port" -> b.host.map(_.ipv4))
+          .execute()
+      )
+    })
   }
 
   /**
@@ -139,12 +141,10 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
    * @param traceIds a List of trace IDs
    * @return a Set of those trace IDs from the list which are stored
    */
-  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
-    Future {
-      SQL(
-        "SELECT trace_id FROM zipkin_spans WHERE trace_id IN (%s)".format(traceIds.mkString(","))
-      ).as(long("trace_id") *).toSet
-    }
+  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = inNewThread {
+    SQL(
+      "SELECT trace_id FROM zipkin_spans WHERE trace_id IN (%s)".format(traceIds.mkString(","))
+    ).as(long("trace_id") *).toSet
   }
 
   /**
@@ -152,7 +152,7 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
    * Spans in trace should be sorted by the first annotation timestamp
    * in that span. First event should be first in the spans list.
    */
-  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
+  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = inNewThread {
     val traceIdsString:String = traceIds.mkString(",")
     val spans:List[DBSpan] =
       SQL(
@@ -214,9 +214,7 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
         Span(traceId, span.spanName, span.spanId, span.parentId, spanAnnos, spanBinAnnos, span.debug)
       }
     }
-    Future {
-      results.filter(!_.isEmpty)
-    }
+    results.filter(!_.isEmpty)
   }
   def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = {
     getSpansByTraceIds(Seq(traceId)).map {

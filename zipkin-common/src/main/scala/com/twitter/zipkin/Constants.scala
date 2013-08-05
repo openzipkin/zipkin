@@ -22,8 +22,12 @@ object Constants {
   val ServerSend: String = "ss"
   val ServerRecv: String = "sr"
 
+  val ClientAddr: String = "ca"
+  val ServerAddr: String = "sa"
+
   val CoreClient: Seq[String] = Seq(ClientSend, ClientRecv)
   val CoreServer: Seq[String] = Seq(ServerRecv, ServerSend)
+  val CoreAddress: Seq[String] = Seq(ClientAddr, ServerAddr)
 
   val CoreAnnotations: Seq[String] = CoreClient ++ CoreServer
 
