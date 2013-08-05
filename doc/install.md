@@ -51,16 +51,12 @@ are set up to work with SQLite by default. To use Zipkin with a different SQL
 database, we recommend changing those configurations as described in the
 [SQL guide](https://github.com/twitter/zipkin/blob/master/doc/sql-databases.md).
 
-For NoSQL databases, you have a few options. To run Zipkin with Cassandra for
-example, you can copy the Cassandra configuration into the default
-configuration, change the `bin` scripts to run the Cassandra configuration, or
-run the full daemon commands that the `bin` scripts are invoking:
+For NoSQL databases, you can pass the name of your preferred database to the
+collector and query daemons. For example, with Cassandra:
 
-    bin/sbt 'project zipkin-collector-service' 'run -f zipkin-collector-service/config/collector-cassandra.scala'
-    bin/sbt 'project zipkin-query-service' 'run -f zipkin-query-service/config/query-cassandra.scala'
-
-The `bin/web` script does not access the database so you do not need to change
-anything there.
+    bin/collector cassandra
+    bin/query cassandra
+    bin/web
 
 ### Storage: Cassandra
 

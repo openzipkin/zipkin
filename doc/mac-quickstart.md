@@ -1,51 +1,39 @@
 This page explains how to set up Zipkin on a single Mac (typically for local
-testing) with Cassandra and Zookeeper, the most common configuration.
+testing) with Cassandra, the most common choice of database for use with Zipkin.
+To run Zipkin out of the box without using Cassandra, see
+[install.md](https://github.com/twitter/zipkin/blob/master/doc/install.md).
 
 Scala 2.9.1 or later is required.
 
+## Installing Cassandra
+
 [Install Homebrew](http://mxcl.github.io/homebrew/) if you haven't already. It
 will make your life easier. Then run the following commands to install
-Zipkin's dependencies (you can skip dependencies you already have installed):
+and set up Cassandra:
 
-    # Cassandra is currently required, though it should be possible to replace it.
+    # Cassandra is the most common choice, though Zipkin supports other databases
     brew install cassandra
     # Start Cassandra on login
     ln -sfv /opt/twitter/opt/cassandra/*.plist ~/Library/LaunchAgents
     launchctl load ~/Library/LaunchAgents/homebrew.mxcl.cassandra.plist
-    # Scala Build Tool
-    brew install sbt
-    # VCS
-    brew install git
-
-These dependencies are explained in more detail in
-[install.md](https://github.com/twitter/zipkin/blob/master/doc/install.md).
 
 Now we can install Zipkin itself:
 
     # WORKSPACE is wherever you want your Zipkin folder
     cd WORKSPACE
+    # If you don't have git, `brew install git` or just download Zipkin directly
     git clone https://github.com/twitter/zipkin.git
     cd zipkin
     # Install the Zipkin schema
     cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt
 
-Zipkin runs three daemons: collector, query, and web. The collector and query
-daemons access the database. The default configuration for those two daemons is
-to run a SQLite database. To make them connect to Cassandra instead, you can
-either copy the Cassandra configuration into the default configuration or
-change the `bin/collector` and `bin/query` scripts to run the Cassandra
-configuration. The configuration files are located at
-`zipkin-collector-service/config' and `zipkin-query-service/config`,
-respectively. The default configurations end in `-dev.scala` and the Cassandra
-configurations end in `-cassandra.scala`.
-
 Now you can run Zipkin (you'll need to leave these processes running, so use
 separate bash windows if you're doing it that way):
 
     # Collect data
-    bin/collector
+    bin/collector cassandra
     # Extract data
-    bin/query
+    bin/query cassandra
     # Display data
     bin/web
 
