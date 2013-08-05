@@ -17,6 +17,8 @@ and set up Cassandra:
     ln -sfv /opt/twitter/opt/cassandra/*.plist ~/Library/LaunchAgents
     launchctl load ~/Library/LaunchAgents/homebrew.mxcl.cassandra.plist
 
+## Install Zipkin
+
 Now we can install Zipkin itself:
 
     # WORKSPACE is wherever you want your Zipkin folder
@@ -26,6 +28,8 @@ Now we can install Zipkin itself:
     cd zipkin
     # Install the Zipkin schema
     cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt
+
+## Run Zipkin
 
 Now you can run Zipkin (you'll need to leave these processes running, so use
 separate bash windows if you're doing it that way):
@@ -38,6 +42,8 @@ separate bash windows if you're doing it that way):
     bin/web
 
 Zipkin should now be running and you can access the UI at http://localhost:8080/
+
+## Next Steps
 
 The next step is to collect trace data to view in Zipkin. To do this, interface
 with the collector (e.g. by using Scribe) to record trace data. There are
