@@ -30,8 +30,9 @@ configuration. For example, to run Zipkin on a MySQL database named
 
     val db = new DB(new DBConfig("mysql", new DBParams("production", "127.0.0.1")))
 
-The connection parameters you can specify are defined in `DBConfig.scala` in
-the Anorm module.
+The connection parameters you can specify are defined in
+[`DBConfig.scala`](https://github.com/twitter/zipkin/blob/master/zipkin-anormdb/src/main/scala/com/twitter/zipkin/util/DBConfig.scala)
+in the Anorm module.
 
 Additionally, you need to make sure Zipkin loads the correct database driver.
 To do this, find the line in `project/Project.scala` that looks like this:
