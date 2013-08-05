@@ -97,6 +97,7 @@ class Requests(collectorHost: String, collectorPort: Int, queryHost: String, que
 
     val traceTimeline = Await.result(client.getTraceTimelinesByIds(ts4, List(gen.Adjust.TimeSkew)))
 
+    println("Timeline:")
     println(traceTimeline.toString)
 
     println("Data ttl: " + Await.result(client.getDataTimeToLive()))

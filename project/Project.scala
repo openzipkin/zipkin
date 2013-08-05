@@ -12,6 +12,7 @@ object Zipkin extends Build {
   val SCROOGE_VERSION = "3.3.2"
   val ZOOKEEPER_VERSION = Map("candidate" -> "0.0.41", "group" -> "0.0.44", "client" -> "0.0.35")
   val ALGEBIRD_VERSION  = "0.1.13"
+  val HBASE_VERSION = "0.94.10"
 
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
   val travisCi = Option(System.getenv("SBT_TRAVIS_CI")) // for adding travis ci maven repos before others
@@ -75,7 +76,7 @@ object Zipkin extends Build {
     Project(
       id = "zipkin",
       base = file(".")
-    ) aggregate(test, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, anormDB, collectorCore, collectorService, kafka, redis)
+    ) aggregate(test, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, anormDB, collectorCore, collectorService, kafka, redis, hbase)
 
   lazy val test   = Project(
     id = "zipkin-test",
@@ -99,7 +100,7 @@ object Zipkin extends Build {
         "com.twitter" %% "finagle-exception" % FINAGLE_VERSION,
         "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
         "com.twitter" %% "util-core"         % UTIL_VERSION,
-        "com.twitter" %% "algebird-core"    % ALGEBIRD_VERSION,
+        "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
 
         "com.twitter.common.zookeeper" % "client"    % ZOOKEEPER_VERSION("client")
       ) ++ testDependencies
@@ -144,7 +145,7 @@ object Zipkin extends Build {
       "com.twitter" %% "finagle-thrift"    % FINAGLE_VERSION,
       "com.twitter" %% "finagle-zipkin"    % FINAGLE_VERSION,
       "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
-      "com.twitter" %% "algebird-core"    % ALGEBIRD_VERSION,
+      "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
       "com.twitter" %% "util-core"         % UTIL_VERSION,
       "com.twitter" %% "util-zk"           % UTIL_VERSION,
       "com.twitter" %% "util-zk-common"    % UTIL_VERSION,
@@ -202,7 +203,7 @@ object Zipkin extends Build {
         "com.twitter" %% "finagle-thrift"    % FINAGLE_VERSION,
         "com.twitter" %% "finagle-zipkin"    % FINAGLE_VERSION,
         "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
-        "com.twitter" %% "algebird-core"    % ALGEBIRD_VERSION,
+        "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
         "com.twitter" %% "util-core"         % UTIL_VERSION,
         "com.twitter" %% "util-zk"           % UTIL_VERSION,
         "com.twitter" %% "util-zk-common"    % UTIL_VERSION,
@@ -228,7 +229,7 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
-  ).dependsOn(queryCore, cassandra, redis, anormDB)
+  ).dependsOn(queryCore, cassandra, redis, anormDB, hbase)
 
   lazy val collectorScribe =
     Project(
@@ -271,7 +272,7 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
-  ).dependsOn(collectorCore, collectorScribe, cassandra, kafka, redis, anormDB)
+  ).dependsOn(collectorCore, collectorScribe, cassandra, kafka, redis, anormDB, hbase)
 
   lazy val web =
     Project(
@@ -311,6 +312,32 @@ object Zipkin extends Build {
       "com.twitter" %% "finagle-redis"     % FINAGLE_VERSION,
       "org.slf4j" % "slf4j-log4j12"          % "1.6.4" % "runtime",
       "com.twitter"     %% "util-logging"      % UTIL_VERSION
+    ) ++ testDependencies,
+
+    /* Add configs to resource path for ConfigSpec */
+    unmanagedResourceDirectories in Test <<= baseDirectory {
+      base =>
+        (base / "config" +++ base / "src" / "test" / "resources").get
+    }
+  ).dependsOn(scrooge)
+
+  lazy val hbase = Project(
+    id = "zipkin-hbase",
+    base = file("zipkin-hbase"),
+    settings = defaultSettings
+  ).settings(
+    parallelExecution in Test := false,
+    libraryDependencies ++= Seq(
+      "org.apache.hbase"      % "hbase"                 % HBASE_VERSION notTransitive(),
+      "org.apache.hbase"      % "hbase"                 % HBASE_VERSION % "test" classifier("tests") classifier(""),
+      "com.google.protobuf"   % "protobuf-java"         % "2.4.1",
+      "org.apache.hadoop"     % "hadoop-core"           % "1.1.2" notTransitive(),
+      "org.apache.hadoop"     % "hadoop-test"           % "1.1.2" % "test",
+      "commons-logging"       % "commons-logging"       % "1.1.1",
+      "commons-configuration" % "commons-configuration" % "1.6",
+      "org.apache.zookeeper"  % "zookeeper"             % "3.4.5" % "runtime" notTransitive(),
+      "org.slf4j"             % "slf4j-log4j12"         % "1.6.4" % "runtime",
+      "com.twitter"           % "util-logging"          % UTIL_VERSION
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */

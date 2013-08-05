@@ -19,7 +19,6 @@ if [ "${sbtjar_md5}" != 124fb91b398542c23cd920360580d2d7 ]; then
   exit 1
 fi
 
-
 test -f ~/.sbtconfig && . ~/.sbtconfig
 
 java -ea                          \
@@ -37,6 +36,6 @@ java -ea                          \
   -XX:ReservedCodeCacheSize=64m   \
   -Xss8M                          \
   -Xms512M                        \
-  -Xmx1G                          \
+  -Xmx4G                          \
   -server                         \
   -jar $sbtjar "$@"

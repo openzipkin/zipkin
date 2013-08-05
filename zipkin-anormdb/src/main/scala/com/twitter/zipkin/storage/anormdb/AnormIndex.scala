@@ -229,7 +229,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
   /**
    * Index a span's duration. This is so we can look up the trace duration.
    */
-  def indexSpanDuration(span: Span): Future[Void] = {
-    Future.Void
+  def indexSpanDuration(span: Span): Future[Unit] = {
+    Future.Unit
   }
 }

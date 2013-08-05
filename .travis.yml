@@ -6,3 +6,6 @@ services:
 jdk:
   - openjdk7
   - openjdk6
+script:
+  - "umask 0022"
+  - "sbt ++$TRAVIS_SCALA_VERSION clean test"
