@@ -11,34 +11,8 @@ Your preferred package manager probably lets you install redis.  The piece of re
 You can start redis by running redis-server, which will start an instance of redis-server that listens on port 6379.  For further configuration options, you can use a [redis.conf](https://raw.github.com/antirez/redis/2.6/redis.conf) file to configure it.
 
 ### Zipkin + Redis
-There are a few configuration changes that must be made before you can use zipkin-redis in your zipkin project.
+If you have Redis installed and configured you can run Zipkin normally, except that you should pass "redis" as an argument to the collector and query daemons:
 
-#### Config Changes
-Go into zipkin/zipkin-collector-service/config/collector-dev.scala, and replace the lines which say:
-```scala
-  def storeBuilder = Store.Builder(
-    cassandra.StorageBuilder(keyspaceBuilder),
-    cassandra.IndexBuilder(keyspaceBuilder),
-    cassandra.AggregatesBuilder(keyspaceBuilder)
-  )
-```
-
-with
-
-```scala
-  def storeBuilder = Store.Builder(
-    redis.StorageBuilder("0.0.0.0", 6379),
-    redis.IndexBuilder("0.0.0.0", 6379)
-  )
-```
-
-You'll also need to add an import
-```scala
-  import com.twitter.zipkin.redis
-```
-Then do the same in zipkin/zipkin-query-service/config/query-dev.scala.  Host and port should be the host and port your redis-server is listening on.
-
-#### SBT Changes
-Open up your project/Project.scala, and in the .dependsOn arguments list for collectorService and queryService, append redis to the end of the arguments list.
-
-Then, run your zipkin instance normally!
+    bin/collector redis
+    bin/query redis
+    bin/web
