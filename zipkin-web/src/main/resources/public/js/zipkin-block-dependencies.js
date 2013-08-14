@@ -24,7 +24,7 @@ Zipkin.BlockDependencies = (function () {
 
 	// various constants used to position and size graph elements
 	var STYLE = {
-		width: $(".content").width(),
+		width: "100%",
 		height: 1600,
 
 		topMargin: 20, // spacing from the top
