@@ -20,6 +20,8 @@ require 'zipkin-tracer/careless_scribe'
 module ZipkinTracer extend self
 
   class RackHandler
+    B3_HEADERS = %w[HTTP_X_B3_TRACEID, HTTP_X_B3_PARENTSPANID, HTTP_X_B3_SPANID, HTTP_X_B3_SAMPLED]
+
     def initialize(app)
       @app = app
       @lock = Mutex.new
@@ -53,7 +55,7 @@ module ZipkinTracer extend self
     end
 
     def call(env)
-      id = ::Trace::TraceId.new(::Trace.generate_id, nil, ::Trace.generate_id, true, ::Trace::Flags::EMPTY)
+      id = get_or_create_trace_id(env)
       ::Trace.default_endpoint = ::Trace.default_endpoint.with_service_name(@service_name).with_port(@service_port)
       ::Trace.sample_rate=(@sample_rate)
       tracing_filter(id, env) { @app.call(env) }
@@ -73,6 +75,19 @@ module ZipkinTracer extend self
         ::Trace.record(::Trace::Annotation.new(::Trace::Annotation::SERVER_SEND, ::Trace.default_endpoint))
         ::Trace.pop
       end
+    end
+
+    private
+    def get_or_create_trace_id(env)
+      trace_parameters = if B3_HEADERS.all? { |key| env.has_key?(key) }
+                           env.values_at(*B3_HEADERS)
+                         else
+                           new_id = Trace.generate_id
+                           [new_id, nil, new_id, "true"]
+                         end
+      trace_parameters[3] = (trace_parameters[3] == "true")
+
+      Trace::TraceId.new(*trace_parameters)
     end
   end
 
