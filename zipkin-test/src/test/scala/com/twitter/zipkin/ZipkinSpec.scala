@@ -98,6 +98,8 @@ class ZipkinSpec extends Specification with JMocker with ClassMocker {
       val collectorClient = new gen.ZipkinCollector.FinagledClient(collectorTransport, protocol)
       Await.result(collectorClient.log(Seq(LogEntry("zipkin", span))))
 
+      Thread.sleep(500) // hack our way around race conditions
+
       // let's check that the trace we just sent has been stored and indexed properly
       val queryClient = new gen.ZipkinQuery.FinagledClient(queryTransport, protocol)
       val traces = Await.result(queryClient.getTracesByIds(Seq(123), Seq()))
