@@ -26,30 +26,20 @@ object ZipkinResolver extends Plugin {
   )
 
   val newSettings = Seq(
-    defaultResolvers := proxyRepo map { url =>
-        // only resolve using an internal proxy if the env is set
-        Seq("proxy-repo" at url)
-    } getOrElse {
-        // for everybody else
-        Seq(
-          // used for github continuous integration
-          "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central/",
-          "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype/",
-
-          // standard resolvers
-          "typesafe" at "http://repo.typesafe.com/typesafe/releases",
-          "ibiblio" at "http://mirrors.ibiblio.org/pub/mirrors/maven2/",
-          "twitter.com" at "http://maven.twttr.com/",
-          "powermock-api" at "http://powermock.googlecode.com/svn/repo/",
-          "scala-tools.org" at "http://scala-tools.org/repo-releases/",
-          "testing.scala-tools.org" at "http://scala-tools.org/repo-releases/testing/",
-          "oauth.net" at "http://oauth.googlecode.com/svn/code/maven",
-          "download.java.net" at "http://download.java.net/maven/2/",
-          "atlassian" at "https://m2proxy.atlassian.com/repository/public/",
-          // for netty:
-          "jboss" at "http://repository.jboss.org/nexus/content/groups/public/"
-        )
-    },
+    defaultResolvers := Seq(
+      // standard resolvers
+      "typesafe" at "http://repo.typesafe.com/typesafe/releases",
+      "ibiblio" at "http://mirrors.ibiblio.org/pub/mirrors/maven2/",
+      "twitter.com" at "http://maven.twttr.com/",
+      "powermock-api" at "http://powermock.googlecode.com/svn/repo/",
+      "scala-tools.org" at "http://scala-tools.org/repo-releases/",
+      "testing.scala-tools.org" at "http://scala-tools.org/repo-releases/testing/",
+      "oauth.net" at "http://oauth.googlecode.com/svn/code/maven",
+      "download.java.net" at "http://download.java.net/maven/2/",
+      "atlassian" at "https://m2proxy.atlassian.com/repository/public/",
+      // for netty:
+      "jboss" at "http://repository.jboss.org/nexus/content/groups/public/"
+    ),
 
     travisCiResolvers := Seq(
       "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central/",
@@ -59,12 +49,8 @@ object ZipkinResolver extends Plugin {
     localRepo := file(System.getProperty("user.home") + "/.m2/repository"),
 
     // configure resolvers for the build
-    resolvers <<= (
-      resolvers,
-      defaultResolvers,
-      travisCiResolvers,
-      localRepo
-      ) { (resolvers, defaultResolvers, travisCiResolvers, localRepo) =>
+    resolvers <<= (resolvers, defaultResolvers, travisCiResolvers, localRepo)
+    { (resolvers, defaultResolvers, travisCiResolvers, localRepo) =>
       (proxyRepo map { url =>
         Seq("proxy-repo" at url)
       } getOrElse {
