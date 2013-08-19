@@ -8,16 +8,10 @@ import Keys._
 object ZipkinResolver extends Plugin {
 
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
-  val isTravisCi = "true".equalsIgnoreCase(System.getenv("SBT_TRAVIS_CI"))
 
   val defaultResolvers = SettingKey[Seq[Resolver]](
     "default-resolvers",
     "maven repositories to use by default, unless a proxy repo is set via SBT_PROXY_REPO"
-  )
-
-  val travisCiResolvers = SettingKey[Seq[Resolver]](
-    "travisci-central",
-    "Use these resolvers when building on travis-ci"
   )
 
   val localRepo = SettingKey[File](
@@ -41,20 +35,15 @@ object ZipkinResolver extends Plugin {
       "jboss" at "http://repository.jboss.org/nexus/content/groups/public/"
     ),
 
-    travisCiResolvers := Seq(
-      "travisci-central" at "http://maven.travis-ci.org/nexus/content/repositories/central/",
-      "travisci-sonatype" at "http://maven.travis-ci.org/nexus/content/repositories/sonatype/"
-    ),
-
     localRepo := file(System.getProperty("user.home") + "/.m2/repository"),
 
     // configure resolvers for the build
-    resolvers <<= (resolvers, defaultResolvers, travisCiResolvers, localRepo)
-    { (resolvers, defaultResolvers, travisCiResolvers, localRepo) =>
+    resolvers <<= (resolvers, defaultResolvers, localRepo)
+    { (resolvers, defaultResolvers, localRepo) =>
       (proxyRepo map { url =>
         Seq("proxy-repo" at url)
       } getOrElse {
-        (if (isTravisCi) travisCiResolvers else Seq.empty[Resolver]) ++ resolvers ++ defaultResolvers
+        resolvers ++ defaultResolvers
       }) ++ Seq(
         // the local repo has to be in here twice, because sbt won't push to a "file:"
         // repo, but it won't read artifacts from a "Resolver.file" repo. (head -> desk)
