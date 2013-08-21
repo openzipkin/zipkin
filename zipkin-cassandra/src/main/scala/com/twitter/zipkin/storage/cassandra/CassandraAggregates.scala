@@ -110,7 +110,7 @@ case class CassandraAggregates(
   /** Synchronize these so we don't do concurrent writes from the same box */
   def storeDependencies(deps: Dependencies): Future[Unit] = {
     val keyBB = ByteBuffer.allocate(8)
-    keyBB.putLong(deps.startTime.floor(1.day).inMicroseconds)
+    keyBB.putLong(Time.fromMilliseconds(deps.startTime).floor(1.day).inMicroseconds)
     store[ByteBuffer,gen.Dependencies](dependenciesCF, keyBB, Seq(deps.toThrift))
   }
 
@@ -133,6 +133,7 @@ case class CassandraAggregates(
       }
     }
   }
+
 
   private[cassandra] def topAnnotationRowKey(serviceName: String) =
     serviceName + Delimiter + "annotation"
