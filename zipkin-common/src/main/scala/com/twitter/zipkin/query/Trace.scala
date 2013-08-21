@@ -17,9 +17,9 @@ package com.twitter.zipkin.query
 
 import com.twitter.finagle.tracing.{Trace => FTrace}
 import com.twitter.zipkin.common.{BinaryAnnotation, Endpoint, Span}
+import com.twitter.algebird.Monoid
 import java.nio.ByteBuffer
 import scala.collection.mutable
-import com.twitter.algebird.Monoid
 
 /**
  * A chunk of time, between a start and an end.
@@ -32,13 +32,13 @@ case class Timespan(start: Long, end: Long)
 object Trace {
   def apply(spanTree: SpanTreeEntry): Trace = Trace(spanTree.toList)
 
-  def invalid = Trace(Seq(Span.invalid))
+  val invalid = Trace(Seq(Span.invalid))
 
-  def zero = Trace(Seq.empty[Span])
+  val zero = Trace(Seq.empty[Span])
 
-  val MAX_SPANS = 10000 // any trace with more spans becomes invalid
+  val MaxSpans = 10000 // any trace with more spans becomes invalid
 
-  implicit val monoid:Monoid[Trace] = new Monoid[Trace] {
+  implicit val monoid: Monoid[Trace] = new Monoid[Trace] {
     def plus(l: Trace, r: Trace) = {
       for {
         lId <- l.s.headOption.map(_.traceId)
@@ -46,7 +46,7 @@ object Trace {
         if (l != Trace.invalid && r != Trace.invalid && lId != rId)
       } throw new IllegalArgumentException("Trace Ids must match")
 
-      if (l.s.size + r.s.size > MAX_SPANS)
+      if (l.s.size + r.s.size > MaxSpans)
         Trace.invalid
       else {
         // merge span lists by combining spans with matching ids

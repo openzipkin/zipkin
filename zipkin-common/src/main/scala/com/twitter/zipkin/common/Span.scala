@@ -30,9 +30,6 @@ import com.twitter.algebird.{Monoid, Semigroup}
  */
 object Span {
 
-  def apply(span: Span): Span = Span(span.traceId, span.name, span.id,
-    span.parentId, span.annotations, span.binaryAnnotations, span.debug)
-
   val invalid = new Span(0, "invalid", 0, None, Nil, Nil, true)
   val zero = new Span(0, "zero", 0, None, Nil, Nil, true)
 

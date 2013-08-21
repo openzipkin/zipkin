@@ -72,7 +72,7 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
       )
     }) *)
 
-    new Dependencies(Time.fromMicroseconds(startMs), Time.fromMicroseconds(endMs), links)
+    new Dependencies(startMs, endMs, links)
   }
 
   /**
@@ -86,8 +86,8 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
             |  (start_ts, end_ts)
             |VALUES ({startTs}, {endTs})
           """.stripMargin)
-        .on("startTs" -> dependencies.startTime.inMicroseconds)
-        .on("endTs" -> dependencies.endTime.inMicroseconds)
+        .on("startTs" -> dependencies.startTime)
+        .on("endTs" -> dependencies.endTime)
       .executeInsert()
 
       dependencies.links.foreach { link =>
