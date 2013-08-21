@@ -17,7 +17,7 @@
 package com.twitter.zipkin.common
 
 import com.twitter.util.Time
-import com.twitter.algebird.{Monoid, Semigroup, Moments}
+import com.twitter.algebird.{Monoid, Moments}
 
 /**
  * Abstraction of a service
@@ -35,23 +35,28 @@ case class DependencyLink(parent: Service, child: Service, durationMoments: Mome
 
 object DependencyLink {
   // this gives us free + operator along with other algebird aggregation methods
-  implicit val sg:Semigroup[DependencyLink] = new Semigroup[DependencyLink] {
+  implicit val monoid:Monoid[DependencyLink] = new Monoid[DependencyLink] {
+    val zero = DependencyLink(Service("zero"), Service("zero"), Monoid.zero[Moments])
     def plus(l: DependencyLink, r: DependencyLink) = {
-      assert(l.child == r.child && l.parent == r.parent)
-      DependencyLink(l.parent, l.child, Monoid.plus(l.durationMoments, r.durationMoments))
+      if (l == zero) r
+      else if (r == zero) l
+      else {
+        assert(l.child == r.child && l.parent == r.parent)
+        DependencyLink(l.parent, l.child, Monoid.plus(l.durationMoments, r.durationMoments))
+      }
     }
   }
 }
 
 /**
  * This represents all dependencies across all services over a given time period.
- * @param startTime the startTime time for this period
- * @param endTime how long the period lasted
+ * @param startTime the beginning of the time span this aggregates in epoch microseconds
+ * @param endTime the end of the time span in epoch microseconds
  * @param links link information for every dependent service
  */
 case class Dependencies(
-  startTime: Time,
-  endTime: Time,
+  startTime: Long,
+  endTime: Long,
   links: Seq[DependencyLink]
 )
 
@@ -63,14 +68,16 @@ object Dependencies {
       val newStart = r.startTime min l.startTime
       val newEnd = r.endTime max l.endTime
 
-      // links are merged by mapping to parent/child and summing corresponding links
-      val lLinkMap = l.links.map { link => (link.parent, link.child) -> link }.toMap
-      val rLinkMap = r.links.map { link => (link.parent, link.child) -> link }.toMap
-      val newLinks = Monoid.plus(rLinkMap, lLinkMap).values.toSeq
+      // links are merged by grouping by parent/child and summing corresponding links
+      val newLinks = (l.links ++ r.links)
+        .groupBy { link => (link.parent, link.child) }
+        .values
+        .map { Monoid.sum(_) }
+        .toSeq
 
       Dependencies(newStart, newEnd, newLinks)
     }
 
-    val zero = Dependencies(Time.Top, Time.Bottom, Seq.empty[DependencyLink])
+    val zero = Dependencies(Long.MaxValue, Long.MinValue, Seq.empty[DependencyLink])
   }
 }

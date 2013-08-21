@@ -16,8 +16,8 @@
 package com.twitter.zipkin.query
 
 import com.twitter.finagle.tracing.{Trace => FTrace}
-import com.twitter.logging.Logger
 import com.twitter.zipkin.common.{BinaryAnnotation, Endpoint, Span}
+import com.twitter.algebird.Monoid
 import java.nio.ByteBuffer
 import scala.collection.mutable
 
@@ -31,6 +31,40 @@ case class Timespan(start: Long, end: Long)
  */
 object Trace {
   def apply(spanTree: SpanTreeEntry): Trace = Trace(spanTree.toList)
+
+  val invalid = Trace(Seq(Span.invalid))
+
+  val zero = Trace(Seq.empty[Span])
+
+  val MaxSpans = 10000 // any trace with more spans becomes invalid
+
+  implicit val monoid: Monoid[Trace] = new Monoid[Trace] {
+    def plus(l: Trace, r: Trace) = {
+      for {
+        lId <- l.s.headOption.map(_.traceId)
+        rId <- r.s.headOption.map(_.traceId)
+        if (l != Trace.invalid && r != Trace.invalid && lId != rId)
+      } throw new IllegalArgumentException("Trace Ids must match")
+
+      if (l.s.size + r.s.size > MaxSpans)
+        Trace.invalid
+      else {
+        // merge span lists by combining spans with matching ids
+        val newspans = (l.s ++ r.s) // combine both lists
+          .groupBy(_.id) // group by span id
+          .values // ditch the id key
+          .map { Monoid.sum(_) } // combine resulting spans
+          .toSeq
+
+        if (newspans.contains(Span.invalid))
+          Trace.invalid
+        else
+          new Trace(newspans.toSeq)
+      }
+    }
+
+    val zero = Trace.zero
+  }
 }
 
 case class Trace(private val s: Seq[Span]) {
@@ -67,6 +101,7 @@ case class Trace(private val s: Seq[Span]) {
    * that is closes to the root. For example it could be that we don't yet log spans
    * from the root service, then we want the one just below that.
    * FIXME if there are holes in the trace this might not return the correct span
+   * Span holes are impossible afaik.  TraceId is handed down with parent id.
    */
   lazy val getRootMostSpan: Option[Span] = {
     getRootSpan.orElse {

@@ -39,7 +39,7 @@ trait HBaseAggregates extends Aggregates {
   def getDependencies(startDate: Option[Time], endDate: Option[Time]=None): Future[Dependencies] = {
     val scan = new Scan()
     scan.setStartRow(Bytes.toBytes(Long.MaxValue - startDate.map(_.inMilliseconds).getOrElse(Long.MaxValue)))
-    endDate.foreach { ed => scan.setStopRow(Bytes.toBytes(Long.MaxValue - ed.inMilliseconds))}
+    endDate.foreach { ed => scan.setStopRow(Bytes.toBytes(Long.MaxValue - ed.inMicroseconds))}
     scan.addColumn(TableLayouts.dependenciesFamily, Bytes.toBytes("\0"))
     dependenciesTable.scan(scan, 100).map { results =>
       val depList = results.flatMap { result =>
@@ -53,7 +53,7 @@ trait HBaseAggregates extends Aggregates {
   }
 
   def storeDependencies(dependencies: Dependencies): Future[Unit] = {
-    val rk = Bytes.toBytes(Long.MaxValue - dependencies.startTime.inMilliseconds)
+    val rk = Bytes.toBytes(Long.MaxValue - dependencies.startTime)
     val put = new Put(rk)
     put.add(TableLayouts.dependenciesFamily, Bytes.toBytes("\0"), serializer.toBytes(dependencies.toThrift))
     dependenciesTable.put(Seq(put))
