@@ -2,6 +2,7 @@ package com.twitter.zipkin.storage.hbase
 
 import com.twitter.algebird.Moments
 import com.twitter.util.{Await, Time}
+import com.twitter.conversions.time._
 import com.twitter.zipkin.common.{Dependencies, Service, DependencyLink}
 import com.twitter.zipkin.hbase.{TableLayouts, AggregatesBuilder}
 import com.twitter.zipkin.storage.hbase.utils.HBaseTable
@@ -24,7 +25,7 @@ class HBaseAggregatesSpec extends ZipkinHBaseSpecification {
   val m2 = Moments(2)
   val d1 = DependencyLink(Service("HBase.Client"), Service("HBase.RegionServer"), m1)
   val d2 = DependencyLink(Service("HBase.Master"), Service("HBase.RegionServer"), m2)
-  val deps = Dependencies(Time.fromSeconds(2), Time.fromSeconds(1000), List(d1, d2))
+  val deps = Dependencies(2.seconds.inMicroseconds, 1000.seconds.inMicroseconds, List(d1, d2))
 
   val topAnnos = Seq("key1", "key2", "key3")
   val annoService = "HBase.RegionServer"
@@ -38,7 +39,7 @@ class HBaseAggregatesSpec extends ZipkinHBaseSpecification {
     "storeDependencies" in {
       Await.result(aggregates.storeDependencies(deps))
       val depsTable = new HBaseTable(_conf, TableLayouts.dependenciesTableName)
-      val get = new Get(Bytes.toBytes(Long.MaxValue - Time.fromSeconds(2).inMilliseconds))
+      val get = new Get(Bytes.toBytes(Long.MaxValue - Time.fromSeconds(2).inMicroseconds))
       val result = Await.result(depsTable.get(Seq(get)))
       result.size must_== 1
     }

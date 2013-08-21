@@ -69,8 +69,8 @@ class DependenciesSpec extends SpecificationWithJUnit
     val dl4 = DependencyLink(Service("mobileweb"), Service("Gizmoduck"), m2)
     val dl5 = dl1.copy(durationMoments = Monoid.plus(m1,m2))
 
-    val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
-    val deps2 = Dependencies(Time.fromSeconds(0)+1.hour, Time.fromSeconds(0)+2.hours, List(dl2, dl4))
+    val deps1 = Dependencies(0, 1.hour.inMicroseconds, List(dl1, dl3))
+    val deps2 = Dependencies(1.hour.inMicroseconds, 2.hours.inMicroseconds, List(dl2, dl4))
 
     "express identity when added to zero" in {
       val result = Monoid.plus(deps1, Monoid.zero[Dependencies])
