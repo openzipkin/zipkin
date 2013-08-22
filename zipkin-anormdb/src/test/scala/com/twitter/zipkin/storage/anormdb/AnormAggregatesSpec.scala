@@ -32,11 +32,11 @@ class AnormAggregatesSpec extends Specification {
 
       val dl1 = new DependencyLink(new Service("parent1"), new Service("child1"), Moments(18))
       val dl2 = new DependencyLink(new Service("parent2"), new Service("child2"), Moments(42))
-      val dep1 = new Dependencies(Time.fromSeconds(1), Time.fromSeconds(2), List(dl1, dl2))
+      val dep1 = new Dependencies(1.seconds.inMicroseconds, 2.seconds.inMicroseconds, List(dl1, dl2))
 
       Await.result(aggregates.storeDependencies(dep1))
 
-      val agg1 = Await.result(aggregates.getDependencies(Some(dep1.startTime), Some(dep1.endTime))) // Inclusive, start to end
+      val agg1 = Await.result(aggregates.getDependencies(Some(Time.fromMicroseconds(dep1.startTime)), Some(Time.fromMicroseconds(dep1.endTime)))) // Inclusive, start to end
       val agg2 = Await.result(aggregates.getDependencies(Some(Time.fromSeconds(0)), Some(Time.now))) // All time
       val agg3 = Await.result(aggregates.getDependencies(Some(Time.fromSeconds(0)), None)) // 0 to +1.day
 

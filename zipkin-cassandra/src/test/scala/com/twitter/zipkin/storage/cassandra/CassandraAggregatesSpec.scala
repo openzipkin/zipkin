@@ -111,7 +111,7 @@ class CassandraAggregatesSpec extends SpecificationWithJUnit with JMocker with C
         val m2 = Moments(4)
         val dl1 = DependencyLink(Service("tfe"), Service("mobileweb"), m1)
         val dl3 = DependencyLink(Service("Gizmoduck"), Service("tflock"), m2)
-        val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
+        val deps1 = Dependencies(0, 1.hour.inMicroseconds, List(dl1, dl3))
 
         // ideally we'd like to retrieve the stored deps but FakeCassandra does not support
         // the retrieval mechanism we use to get out dependencies.
