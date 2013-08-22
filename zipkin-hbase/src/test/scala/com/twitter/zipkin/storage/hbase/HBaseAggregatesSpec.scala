@@ -8,8 +8,10 @@ import com.twitter.zipkin.hbase.{TableLayouts, AggregatesBuilder}
 import com.twitter.zipkin.storage.hbase.utils.HBaseTable
 import org.apache.hadoop.hbase.client.{Scan, Get}
 import org.apache.hadoop.hbase.util.Bytes
+import org.junit.runner.RunWith
+import org.specs.runner.JUnitSuiteRunner
 
-
+@RunWith(classOf[JUnitSuiteRunner])
 class HBaseAggregatesSpec extends ZipkinHBaseSpecification {
 
   val tablesNeeded = Seq(
@@ -46,7 +48,7 @@ class HBaseAggregatesSpec extends ZipkinHBaseSpecification {
 
     "getDependencies" in {
       Await.result(aggregates.storeDependencies(deps))
-      val retrieved = Await.result(aggregates.getDependencies(Some(Time.fromSeconds(100))))
+      val retrieved = Await.result(aggregates.getDependencies(None))
       retrieved must_== deps
     }
 
