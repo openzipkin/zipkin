@@ -80,8 +80,8 @@ class DependenciesSpec extends SpecificationWithJUnit
     "combine" in {
       val result = Monoid.plus(deps1, deps2)
 
-      result.startTime mustEqual Time.fromSeconds(0)
-      result.endTime mustEqual Time.fromSeconds(0)+2.hours
+      result.startTime mustEqual 0
+      result.endTime mustEqual 2.hours.inMicroseconds
       result.links must haveTheSameElementsAs(Seq(dl4, dl5, dl3))
     }
   }
