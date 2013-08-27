@@ -1,3 +1,12 @@
+# 1.1.0
+* Storage
+  * Added Hbase storage backend
+  * Added Anorm SQL storage backend
+* Web
+  * Reworked aggregate dependencies visualization
+* Hadoop
+  * Removed hadoop functionality due to incompatibilities
+
 # 1.0.0
 * Collector
   * Refactor into collector-core, collector-scribe, collector-service
