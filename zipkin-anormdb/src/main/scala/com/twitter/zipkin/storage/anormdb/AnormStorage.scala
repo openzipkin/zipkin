@@ -191,7 +191,8 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
 
     val results: Seq[Seq[Span]] = traceIds.map { traceId =>
       spans.filter(_.traceId == traceId).map { span =>
-        val spanAnnos = annos.filter(_.traceId == span.traceId).map { anno =>
+        val spanAnnos = annos.filter(a =>
+          a.traceId == span.traceId && a.spanId == span.spanId).map { anno =>
           val host:Option[Endpoint] = (anno.ipv4, anno.port) match {
             case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, anno.serviceName))
             case _ => None
@@ -202,7 +203,8 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
           }
           Annotation(anno.timestamp, anno.value, host, duration)
         }
-        val spanBinAnnos = binAnnos.filter(_.traceId == span.traceId).map { binAnno =>
+        val spanBinAnnos = binAnnos.filter(a =>
+          a.traceId == span.traceId && a.spanId == span.spanId).map { binAnno =>
           val host:Option[Endpoint] = (binAnno.ipv4, binAnno.port) match {
             case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, binAnno.serviceName))
             case _ => None
