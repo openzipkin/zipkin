@@ -212,7 +212,7 @@ Zipkin.TraceSummary = (function(Zipkin) {
       }
 
       if (d.getDuration() === 0) {
-        return 0;
+        return x(1);
       }
       if(d.getDuration() > 1) {
         return x(d.getDuration());
