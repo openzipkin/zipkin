@@ -273,9 +273,6 @@ Zipkin.TraceSummary = (function(Zipkin) {
       .on("mouseout", Zipkin.Util.bind(this, blurEvent))
       .on("click", Zipkin.Util.bind(this, clickEvent))
       .text(function(d) {
-        if (d.getDuration() === 0) {
-          return "";
-        }
         var text = d.getDuration().toFixed(3);
         if (!d.isFilter || !d.isFilter()) {
           text += " " + d.getName();
