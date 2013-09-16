@@ -191,28 +191,32 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
 
     val results: Seq[Seq[Span]] = traceIds.map { traceId =>
       spans.filter(_.traceId == traceId).map { span =>
-        val spanAnnos = annos.filter(a =>
-          a.traceId == span.traceId && a.spanId == span.spanId).map { anno =>
-          val host:Option[Endpoint] = (anno.ipv4, anno.port) match {
-            case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, anno.serviceName))
-            case _ => None
+        val spanAnnos = annos.filter { a =>
+            a.traceId == span.traceId && a.spanId == span.spanId
           }
-          val duration:Option[Duration] = anno.duration match {
-            case Some(nanos) => Some(Duration.fromNanoseconds(nanos))
-            case None => None
+          .map { anno =>
+            val host:Option[Endpoint] = (anno.ipv4, anno.port) match {
+              case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, anno.serviceName))
+              case _ => None
+            }
+            val duration:Option[Duration] = anno.duration match {
+              case Some(nanos) => Some(Duration.fromNanoseconds(nanos))
+              case None => None
+            }
+            Annotation(anno.timestamp, anno.value, host, duration)
           }
-          Annotation(anno.timestamp, anno.value, host, duration)
-        }
-        val spanBinAnnos = binAnnos.filter(a =>
-          a.traceId == span.traceId && a.spanId == span.spanId).map { binAnno =>
-          val host:Option[Endpoint] = (binAnno.ipv4, binAnno.port) match {
-            case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, binAnno.serviceName))
-            case _ => None
+        val spanBinAnnos = binAnnos.filter { a =>
+            a.traceId == span.traceId && a.spanId == span.spanId
           }
-          val value = ByteBuffer.wrap(binAnno.value)
-          val annotationType = AnnotationType.fromInt(binAnno.annotationTypeValue)
-          BinaryAnnotation(binAnno.key, value, annotationType, host)
-        }
+          .map { binAnno =>
+            val host:Option[Endpoint] = (binAnno.ipv4, binAnno.port) match {
+              case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, binAnno.serviceName))
+              case _ => None
+            }
+            val value = ByteBuffer.wrap(binAnno.value)
+            val annotationType = AnnotationType.fromInt(binAnno.annotationTypeValue)
+            BinaryAnnotation(binAnno.key, value, annotationType, host)
+          }
         Span(traceId, span.spanName, span.spanId, span.parentId, spanAnnos, spanBinAnnos, span.debug)
       }
     }
