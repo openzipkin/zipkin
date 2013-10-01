@@ -74,7 +74,10 @@ Zipkin.Application.Show = (function() {
 
         var traceStartTime = data.trace.startTimestamp;
 
-        data.trace.spans.sort(function(a,b) { return a.startTimestamp - b.startTimestamp; });
+        data.trace.spans.sort(function(a,b) {
+            var startDiff = a.startTimestamp - b.startTimestamp;
+            return (startDiff == 0)?a.duration - b.duration:startDiff;
+        });
 
         $.each(data.trace.spans, function(i, span) {
           span.startTime = span.startTimestamp - traceStartTime;
