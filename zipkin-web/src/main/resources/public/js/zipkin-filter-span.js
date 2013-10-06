@@ -130,7 +130,7 @@ Zipkin.groupFiltered = function(nodes) {
     });
     var weightedAvg = num / denom;
     $.each(nodeSet, function(i, n) {
-      sum = n.duration * Math.abs(weightedAvg - ((n.getEndTime() + n.getStartTime()) / 2));
+      sum += n.duration * Math.abs(weightedAvg - ((n.getEndTime() + n.getStartTime()) / 2));
     });
     return sum;
   };
