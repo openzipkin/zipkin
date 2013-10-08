@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+DEFAULT_COMPRESSION=none
+COMPRESSION_TYPE=${1:-$DEFAULT_COMPRESSION}
+
+bin/sbt 'project zipkin-hbase' "run-main com.twitter.zipkin.hbase.TableLayouts ${COMPRESSION_TYPE}"
