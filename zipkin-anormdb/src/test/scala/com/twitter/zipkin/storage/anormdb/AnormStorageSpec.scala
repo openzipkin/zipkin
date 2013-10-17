@@ -42,11 +42,15 @@ class AnormStorageSpec extends Specification {
   val ann1 = Annotation(1, "cs", Some(ep))
   val ann2 = Annotation(2, "sr", None)
   val ann3 = Annotation(2, "custom", Some(ep))
+  val ann4 = Annotation(3, "ss", None)
 
   val span1 = Span(123, "methodcall", spanId, None, List(ann1, ann3),
     List(binaryAnnotation("BAH", "BEH")))
   val span2 = Span(667, "methodcall2", spanId, None, List(ann2),
     List(binaryAnnotation("BAH2", "BEH2")))
+  val span3 = Span(667, "methodcall3", spanId, None, List(ann4), List(binaryAnnotation("KEY", "VALUE")))
+
+  val span2and3 = span2 mergeSpan span3
 
   "AnormStorage" should {
     "tracesExist" in {
@@ -91,6 +95,7 @@ class AnormStorageSpec extends Specification {
 
       Await.result(storage.storeSpan(span1))
       Await.result(storage.storeSpan(span2))
+      Await.result(storage.storeSpan(span3))
 
       val emptySpans = Await.result(storage.getSpansByTraceIds(List(traceIdDNE)))
       emptySpans.isEmpty mustEqual true
@@ -108,7 +113,9 @@ class AnormStorageSpec extends Specification {
       trace2a.spans.isEmpty mustEqual false
       trace2a.spans(0) mustEqual span1
       trace2b.spans.isEmpty mustEqual false
-      trace2b.spans(0) mustEqual span2
+      trace2b.spans.length mustEqual 1
+
+      trace2b.spans(0) mustEqual span2and3
 
       con.close()
     }
