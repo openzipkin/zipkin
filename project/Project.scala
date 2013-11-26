@@ -9,7 +9,7 @@ object Zipkin extends Build {
   val FINAGLE_VERSION = "6.5.2"
   val OSTRICH_VERSION = "9.1.2"
   val UTIL_VERSION    = "6.3.8"
-  val SCROOGE_VERSION = "3.3.2"
+  val SCROOGE_VERSION = "3.11.1"
   val ZOOKEEPER_VERSION = Map("candidate" -> "0.0.41", "group" -> "0.0.44", "client" -> "0.0.35")
   val ALGEBIRD_VERSION  = "0.1.13"
   val HBASE_VERSION = "0.94.10"
@@ -130,7 +130,7 @@ object Zipkin extends Build {
         "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
         "com.twitter" %% "util-core"         % UTIL_VERSION,
         "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
-        "com.twitter" %% "scrooge-runtime"   % SCROOGE_VERSION
+        "com.twitter" %% "scrooge-core"      % SCROOGE_VERSION
       ) ++ testDependencies
     ).dependsOn(common)
 
