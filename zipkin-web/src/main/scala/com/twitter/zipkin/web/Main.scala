@@ -24,7 +24,6 @@ import com.twitter.io.{Files, TempFile}
 import com.twitter.server.TwitterServer
 import com.twitter.util.Await
 import com.twitter.zipkin.gen.ZipkinQuery
-import com.twitter.zipkin.builder.{ZooKeeperClientBuilder, QueryClient}
 import com.twitter.zipkin.config.{CssConfig, JsConfig}
 import java.net.InetSocketAddress
 import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
