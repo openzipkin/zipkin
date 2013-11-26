@@ -40,17 +40,16 @@ class App(
   pinTtl: Duration,
   jsConfig: JsConfig,
   cssConfig: CssConfig,
-  client: gen.ZipkinQuery.FinagledClient,
-  statsReceiver: StatsReceiver) extends Controller(statsReceiver) { self =>
+  client: gen.ZipkinQuery.FutureIface,
+  statsReceiver: StatsReceiver) extends Controller { self =>
 
-  val log = Logger.get()
   val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
   val timeFormat = new SimpleDateFormat("HH:mm:ss")
   def getDate = dateFormat.format(Calendar.getInstance().getTime)
   def getTime = timeFormat.format(Calendar.getInstance().getTime)
 
   override def render = new Response {
-    override val jsonGenerator = ZipkinJson
+    override lazy val jsonMapper = ZipkinJson.mapper
   }
 
   /* Index page */

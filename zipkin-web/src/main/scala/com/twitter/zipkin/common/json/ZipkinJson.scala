@@ -1,8 +1,8 @@
 package com.twitter.zipkin.common.json
 
-import com.codahale.jerkson.Json
-import com.fasterxml.jackson.databind.{SerializerProvider, JsonSerializer}
-import com.fasterxml.jackson.core.{JsonGenerator=>JacksonGenerator}
+import com.fasterxml.jackson.databind.{ObjectMapper, SerializerProvider, JsonSerializer}
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.fasterxml.jackson.core.{JsonGenerator => JacksonGenerator}
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.twitter.zipkin.query.{TraceTimeline, TraceSummary, Trace}
 
@@ -14,7 +14,10 @@ trait WrappedJson
 /**
  * Custom json generator that knows about zipkin datatypes
  */
-object ZipkinJson extends Json {
+object ZipkinJson {
+  val mapper = new ObjectMapper()
+  mapper.registerModule(DefaultScalaModule)
+
   val module = new SimpleModule("ZipkinJson")
 
   // --- (SERIALIZERS) ---
@@ -23,6 +26,10 @@ object ZipkinJson extends Json {
   module.addSerializer(classOf[TraceTimeline], new ZipkinJsonSerializer(JsonTraceTimeline.wrap))
 
   mapper.registerModule(module)
+
+  val writer = mapper.writer()
+
+  def generate(obj: Any) = writer.writeValueAsString(obj)
 }
 
 class ZipkinJsonSerializer[T](wrap: T => WrappedJson) extends JsonSerializer[T]
