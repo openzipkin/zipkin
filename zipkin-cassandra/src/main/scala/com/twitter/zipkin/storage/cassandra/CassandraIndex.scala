@@ -168,7 +168,7 @@ case class CassandraIndex(
         annotationsIndex.getRowSlice(key, Some(endTs), None, limit, Order.Reversed)
       }
       case None =>
-        val key = ByteBuffer.wrap(encode(service, annotation).getBytes)
+        val key = ByteBuffer.wrap(encode(service, annotation.toLowerCase).getBytes)
         annotationsIndex.getRowSlice(key, Some(endTs), None, limit, Order.Reversed)
     }
 
@@ -260,7 +260,7 @@ case class CassandraIndex(
         case Some(endpoint) => {
           WRITE_REQUEST_COUNTER.incr()
           val col = Column[Long, Long](a.timestamp, span.traceId).ttl(dataTimeToLive)
-          batch.insert(ByteBuffer.wrap(encode(endpoint.serviceName, a.value).getBytes), col)
+          batch.insert(ByteBuffer.wrap(encode(endpoint.serviceName.toLowerCase, a.value.toLowerCase).getBytes), col)
         }
         case None => // Nothin
       }
