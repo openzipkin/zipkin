@@ -19,7 +19,11 @@ object Zipkin extends Build {
   val cwd = System.getProperty("user.dir")
 
   lazy val testDependencies = Seq(
-    "org.scala-tools.testing" %% "specs"        % "1.6.9" % "test",
+    "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources() cross CrossVersion.binaryMapped {
+      case "2.9.2" => "2.9.1"
+      case "2.10.0" => "2.10"
+      case x => x
+    },
     "org.jmock"               %  "jmock"        % "2.4.0" % "test",
     "org.hamcrest"            %  "hamcrest-all" % "1.1"   % "test",
     "cglib"                   %  "cglib"        % "2.2.2" % "test",
