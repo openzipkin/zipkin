@@ -321,7 +321,8 @@ object Zipkin extends Build {
     libraryDependencies ++= Seq(
       "com.twitter" %% "finagle-redis"     % FINAGLE_VERSION,
       "org.slf4j" % "slf4j-log4j12"          % "1.6.4" % "runtime",
-      "com.twitter"     %% "util-logging"      % UTIL_VERSION
+      "com.twitter"     %% "util-logging"      % UTIL_VERSION,
+        "com.twitter" %% "scrooge-serializer"      % SCROOGE_VERSION
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */
