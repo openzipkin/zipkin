@@ -16,20 +16,14 @@
 package com.twitter.zipkin.web
 
 import com.twitter.conversions.time._
-import com.twitter.finagle.http.{Request, Response}
-import com.twitter.finagle.{Filter, Http, Service, Thrift}
-import com.twitter.finagle.zipkin.thrift.ZipkinTracer
-import com.twitter.finatra._
-import com.twitter.io.{Files, TempFile}
+import com.twitter.finagle.http.HttpMuxer
+import com.twitter.finagle.{Http, Thrift}
 import com.twitter.server.TwitterServer
-import com.twitter.util.Await
+import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.gen.ZipkinQuery
-import com.twitter.zipkin.config.{CssConfig, JsConfig}
 import java.net.InetSocketAddress
-import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
 
 object Main extends TwitterServer {
-
   val serverPort = flag("zipkin.web.port", new InetSocketAddress(8080), "Listening port for the zipkin web frontend")
 
   val rootUrl = flag("zipkin.web.rootUrl", "http://localhost:8080/", "Url where the service is located")
@@ -39,57 +33,15 @@ object Main extends TwitterServer {
   // TODO: make this idomatic
   val queryClientLocation = flag("zipkin.queryClient.location", "127.0.0.1:9411", "Location of the query server")
 
-  /* Map dirname to content type */
-  private val resourceDirs: Map[String, String] = Map[String, String](
-    "css"       -> "text/css",
-    "img"       -> "image/png",
-    "js"        -> "application/javascript",
-    "templates" -> "text/plain"
-  )
-
-  private[this] val nettyToFinagle =
-    Filter.mk[HttpRequest, HttpResponse, Request, Response] { (req, service) =>
-      service(Request(req)) map { _.httpResponse }
-    }
-
   def main() {
-    val jsConfig = new JsConfig {
-      override val pathPrefix = resourcePathPrefix()
-    }
-    val cssConfig = new CssConfig {
-      override val pathPrefix = resourcePathPrefix()
-    }
-
     // TODO: ThriftMux
-    val finagledClient = Thrift.newIface[ZipkinQuery.FutureIface]("ZipkinQuery=" + queryClientLocation())
+    val queryClient = Thrift.newIface[ZipkinQuery.FutureIface]("ZipkinQuery=" + queryClientLocation())
 
-    val app = new App(rootUrl(), pinTtl(), jsConfig, cssConfig, finagledClient, statsReceiver)
+    val handlers = new Handlers(rootUrl(), queryClient, pinTtl())
+    val muxer = handlers.install(new HttpMuxer)
 
-    val resource = new Resource(resourceDirs)
-
-    val controllers = new ControllerCollection
-    controllers.add(app)
-
-    val appService = new AppService(controllers)
-    val fileService = new FileService
-
-    val service = nettyToFinagle andThen fileService andThen appService
-
-    val server = Http.serve(serverPort(), service)
+    val server = Http.serve(serverPort(), muxer)
     onExit { server.close() }
     Await.ready(server)
-  }
-}
-
-class Resource(resourceDirs: Map[String, String]) extends Controller {
-  resourceDirs.foreach { case (dir, contentType) =>
-    get("/public/" + dir + "/:id") { request =>
-      val file = TempFile.fromResourcePath("/public/" + dir + "/" + request.params("id"))
-      if (file.exists()) {
-        render.status(200).body(Files.readBytes(file)).header("Content-Type", contentType).toFuture
-      } else {
-        render.status(404).body("Not Found").toFuture
-      }
-    }
   }
 }

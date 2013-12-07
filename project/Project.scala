@@ -39,8 +39,7 @@ object Zipkin extends Build {
     crossPaths := false,            /* Removes Scala version from artifact name */
     fork := true, // forking prevents runaway thread pollution of sbt
     baseDirectory in run := file(cwd), // necessary for forking
-    publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath + "/.ivy2/local"))),
-    scalaVersion := "2.10.1"
+    publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath + "/.ivy2/local")))
   )
 
   // settings from inlined plugins
@@ -287,7 +286,8 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "com.twitter" % "finatra" % "1.4.1",
+        "com.twitter" %% "twitter-server" % "1.3.1",
+        "com.github.spullara.mustache.java" % "mustache.java" % "0.8.13",
 
         "com.twitter.common.zookeeper" % "server-set" % "1.0.36",
 

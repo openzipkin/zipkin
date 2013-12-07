@@ -15,7 +15,7 @@
  */
 package com.twitter.zipkin.web
 
-import com.twitter.finatra.Request
+import com.twitter.finagle.http.Request
 import com.twitter.util.Time
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
 import com.twitter.zipkin.query.{Order, QueryRequest}
