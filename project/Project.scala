@@ -173,7 +173,8 @@ object Zipkin extends Build {
       "com.twitter"     % "cassie-core"       % CASSIE_VERSION,
       "com.twitter"     % "cassie-serversets" % CASSIE_VERSION,
       util("logging"),
-      "org.iq80.snappy" % "snappy"            % "0.1"
+      "org.iq80.snappy" % "snappy"            % "0.1",
+      "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */
@@ -246,7 +247,9 @@ object Zipkin extends Build {
       base = file("zipkin-collector-scribe"),
       settings = defaultSettings
     ).settings(
-      libraryDependencies ++= testDependencies
+      libraryDependencies ++= Seq(
+        "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
+      ) ++ testDependencies
     ).dependsOn(collectorCore, scrooge)
 
   lazy val kafka =
@@ -256,7 +259,8 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "org.clojars.jasonjckn"      %% "kafka"    % "0.7.2-test1"
+        "org.clojars.jasonjckn"      %% "kafka"    % "0.7.2-test1",
+      "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
       ) ++ testDependencies,
       resolvers ++= (proxyRepo match {
         case None => Seq(
@@ -291,7 +295,7 @@ object Zipkin extends Build {
     ).settings(
       libraryDependencies ++= Seq(
         "com.twitter" %% "twitter-server" % "1.3.1",
-        "com.github.spullara.mustache.java" % "mustache.java" % "0.8.13",
+        "com.github.spullara.mustache.java" % "compiler" % "0.8.13",
 
         "com.twitter.common.zookeeper" % "server-set" % "1.0.36",
 
@@ -319,10 +323,10 @@ object Zipkin extends Build {
   ).settings(
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-redis"     % FINAGLE_VERSION,
-      "org.slf4j" % "slf4j-log4j12"          % "1.6.4" % "runtime",
-      "com.twitter"     %% "util-logging"      % UTIL_VERSION,
-        "com.twitter" %% "scrooge-serializer"      % SCROOGE_VERSION
+      "com.twitter" %% "finagle-redis"      % FINAGLE_VERSION,
+      "org.slf4j"   %  "slf4j-log4j12"      % "1.6.4" % "runtime",
+      "com.twitter" %% "util-logging"       % UTIL_VERSION,
+      "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */
@@ -348,7 +352,8 @@ object Zipkin extends Build {
       "commons-configuration" % "commons-configuration" % "1.6",
       "org.apache.zookeeper"  % "zookeeper"             % "3.4.5" % "runtime" notTransitive(),
       "org.slf4j"             % "slf4j-log4j12"         % "1.6.4" % "runtime",
-      "com.twitter"           % "util-logging"          % UTIL_VERSION
+      "com.twitter"           % "util-logging"          % UTIL_VERSION,
+      "com.twitter"           %% "scrooge-serializer"   % SCROOGE_VERSION
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */
