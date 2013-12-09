@@ -6,9 +6,7 @@ import sbt.Keys._
 object Zipkin extends Build {
 
   val CASSIE_VERSION  = "0.25.2"
-  val FINAGLE_VERSION = "6.5.2"
   val OSTRICH_VERSION = "9.1.2"
-  val UTIL_VERSION    = "6.3.8"
   val SCROOGE_VERSION = "3.11.1"
   val ZOOKEEPER_VERSION = Map("candidate" -> "0.0.41", "group" -> "0.0.44", "client" -> "0.0.35")
   val ALGEBIRD_VERSION  = "0.1.13"
@@ -24,7 +22,7 @@ object Zipkin extends Build {
   val cwd = System.getProperty("user.dir")
 
   lazy val testDependencies = Seq(
-    "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources() cross CrossVersion.binaryMapped {
+    "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" cross CrossVersion.binaryMapped {
       case "2.9.2" => "2.9.1"
       case "2.10.0" => "2.10"
       case x => x
@@ -323,9 +321,9 @@ object Zipkin extends Build {
   ).settings(
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-redis"      % FINAGLE_VERSION,
+      finagle("redis"),
+      util("logging"),
       "org.slf4j"   %  "slf4j-log4j12"      % "1.6.4" % "runtime",
-      "com.twitter" %% "util-logging"       % UTIL_VERSION,
       "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
     ) ++ testDependencies,
 
@@ -352,7 +350,7 @@ object Zipkin extends Build {
       "commons-configuration" % "commons-configuration" % "1.6",
       "org.apache.zookeeper"  % "zookeeper"             % "3.4.5" % "runtime" notTransitive(),
       "org.slf4j"             % "slf4j-log4j12"         % "1.6.4" % "runtime",
-      "com.twitter"           % "util-logging"          % UTIL_VERSION,
+      util("logging"),
       "com.twitter"           %% "scrooge-serializer"   % SCROOGE_VERSION
     ) ++ testDependencies,
 
