@@ -24,6 +24,15 @@ import com.twitter.zipkin.gen.ZipkinQuery
 import java.net.InetSocketAddress
 
 object Main extends TwitterServer {
+  import Handlers._
+
+  private[this] val resourceDirs = Map(
+    "/public/css"       -> "text/css",
+    "/public/img"       -> "image/png",
+    "/public/js"        -> "application/javascript",
+    "/public/templates" -> "text/plain"
+  )
+
   val serverPort = flag("zipkin.web.port", new InetSocketAddress(8080), "Listening port for the zipkin web frontend")
 
   val rootUrl = flag("zipkin.web.rootUrl", "http://localhost:8080/", "Url where the service is located")
@@ -37,8 +46,35 @@ object Main extends TwitterServer {
     // TODO: ThriftMux
     val queryClient = Thrift.newIface[ZipkinQuery.FutureIface]("ZipkinQuery=" + queryClientLocation())
 
-    val handlers = new Handlers(rootUrl(), queryClient, pinTtl())
-    val muxer = handlers.install(new HttpMuxer)
+    val muxer = Seq(
+      ("/public/", handlePublic(resourceDirs)),
+      ("/", addLayout(rootUrl()) andThen handleIndex(queryClient)),
+      ("/traces/:id", addLayout(rootUrl()) andThen handleTraces),
+      ("/static", addLayout(rootUrl()) andThen handleStatic),
+      ("/aggregates", addLayout(rootUrl()) andThen handleAggregates),
+      ("/api/query", handleQuery(queryClient)),
+      ("/api/services", handleServices(queryClient)),
+      ("/api/spans", requireServiceName andThen handleSpans(queryClient)),
+      ("/api/top_annotations", requireServiceName andThen handleTopAnnotations(queryClient)),
+      ("/api/top_kv_annotations", requireServiceName andThen handleTopKVAnnotations(queryClient)),
+      ("/api/dependencies", handleDependencies(queryClient)),
+      ("/api/dependencies/?:startTime/?:endTime", handleDependencies(queryClient)),
+      ("/api/get/:id", handleGetTrace(queryClient)),
+      ("/api/trace/:id", handleGetTrace(queryClient)),
+      ("/api/is_pinned/:id", handleIsPinned(queryClient)),
+      ("/api/pin/:id/:state", handleTogglePin(queryClient, pinTtl()))
+    ).foldLeft(new HttpMuxer) { case (m , (p, handler)) =>
+      val path = p.split("/").toList
+      val handlePath = path.takeWhile { t => !(t.startsWith(":") || t.startsWith("?:")) }
+      val suffix = if (p.endsWith("/") || p.contains(":")) "/" else ""
+
+      m.withHandler(handlePath.mkString("/") + suffix,
+        nettyToFinagle andThen
+        renderPage andThen
+        catchExceptions andThen
+        checkPath(path) andThen
+        handler)
+    }
 
     val server = Http.serve(serverPort(), muxer)
     onExit { server.close() }
