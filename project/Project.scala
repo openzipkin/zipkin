@@ -5,8 +5,8 @@ import sbt.Keys._
 
 object Zipkin extends Build {
 
-  val CASSIE_VERSION  = "0.25.2"
-  val OSTRICH_VERSION = "9.1.2"
+  val CASSIE_VERSION  = "0.25.3"
+  val OSTRICH_VERSION = "9.2.1"
   val SCROOGE_VERSION = "3.11.1"
   val ZOOKEEPER_VERSION = Map("candidate" -> "0.0.41", "group" -> "0.0.44", "client" -> "0.0.35")
   val ALGEBIRD_VERSION  = "0.1.13"
