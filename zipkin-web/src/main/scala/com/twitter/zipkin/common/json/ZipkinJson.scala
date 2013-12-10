@@ -1,9 +1,9 @@
 package com.twitter.zipkin.common.json
 
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.{ObjectMapper, SerializerProvider, JsonSerializer}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.fasterxml.jackson.core.{JsonGenerator => JacksonGenerator}
-import com.fasterxml.jackson.databind.module.SimpleModule
 import com.twitter.zipkin.query.{TraceTimeline, TraceSummary, Trace}
 
 /**
@@ -32,9 +32,8 @@ object ZipkinJson {
   def generate(obj: Any) = writer.writeValueAsString(obj)
 }
 
-class ZipkinJsonSerializer[T](wrap: T => WrappedJson) extends JsonSerializer[T]
-{
-  def serialize(value: T, jgen: JacksonGenerator, provider: SerializerProvider) {
+class ZipkinJsonSerializer[T](wrap: T => WrappedJson) extends JsonSerializer[T] {
+  def serialize(value: T, jgen: JsonGenerator, provider: SerializerProvider) {
     jgen.writeObject(wrap(value))
   }
 }

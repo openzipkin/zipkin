@@ -19,27 +19,18 @@ import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
 
 trait Renderer {
-  def render(response: Response)
-
-  def response: Response = {
-    val response = Response()
-    render(response)
-    response.contentLength = response.content.readableBytes
-    response
-  }
+  def apply(response: Response)
 }
 
 case class ErrorRenderer(code: Int, msg: String) extends Renderer {
-  def render(response: Response) {
-    MustacheRenderer("templates/layouts/application.mustache", Map(
-      ("body" -> MustacheRenderer("templates/error.mustache", Map(("errorMsg" -> msg))).generate))
-    ).render(response)
+  def apply(response: Response) {
+    response.contentString = msg
     response.statusCode = code
   }
 }
 
 case class MustacheRenderer(template: String, data: Map[String, Object]) extends Renderer {
-  def render(response: Response) {
+  def apply(response: Response) {
     response.contentString = generate
   }
 
@@ -47,23 +38,23 @@ case class MustacheRenderer(template: String, data: Map[String, Object]) extends
 }
 
 case class JsonRenderer(data: Any) extends Renderer {
-  def render(response: Response) {
+  def apply(response: Response) {
     response.setContentTypeJson()
     response.contentString = ZipkinJson.generate(data)
   }
 }
 
 case class StaticRenderer(input: InputStream, typ: String) extends Renderer {
-  override val response = Response()
-  response.setContentType(typ)
-  response.content = {
+  private[this] val content = {
     val bytes = IOUtils.toByteArray(input)
     input.read(bytes)
     ChannelBuffers.wrappedBuffer(bytes)
   }
-  response.contentLength = response.content.readableBytes
 
-  def render(response: Response) {}
+  def apply(response: Response) {
+    response.setContentType(typ)
+    response.content = content
+  }
 }
 
 object Handlers {
@@ -128,7 +119,12 @@ object Handlers {
 
   val renderPage =
     Filter.mk[Request, Response, Request, Renderer] { (req, svc) =>
-      svc(req) map { _.response }
+      svc(req) map { renderer =>
+        val res = req.response
+        renderer(res)
+        res.contentLength = res.content.readableBytes
+        res
+      }
     }
 
   def checkPath(path: List[String]): Filter[Request, Renderer, Request, Renderer] = {
@@ -143,7 +139,7 @@ object Handlers {
   def addLayout(rootUrl: String): Filter[Request, Renderer, Request, MustacheRenderer] =
     Filter.mk[Request, Renderer, Request, MustacheRenderer] { (req, svc) =>
       svc(req) map { r =>
-        MustacheRenderer("templates/layouts/application.mustache", r.data ++ Map(
+        MustacheRenderer("layouts/application.mustache", r.data ++ Map(
           ("body" -> r.generate),
           ("rootUrl" -> rootUrl)))
       }
@@ -206,14 +202,14 @@ object Handlers {
             ("annotations" -> qReq.annotations),
             ("binaryAnnotations" -> binAnn))
         }
-        MustacheRenderer("templates/index.mustache", data)
+        MustacheRenderer("index.mustache", data)
       }
     }
 
   val handleStatic =
     new Service[Request, MustacheRenderer] {
       private[this] val StaticRenderer =
-        Future.value(MustacheRenderer("templates/static.mustache", Map(
+        Future.value(MustacheRenderer("static.mustache", Map(
           ("pageTitle" -> "Static"))))
 
       def apply(req: Request): Future[MustacheRenderer] = StaticRenderer
@@ -221,7 +217,7 @@ object Handlers {
 
   val handleAggregates =
     Service.mk[Request, MustacheRenderer] { _ =>
-      Future.value(MustacheRenderer("templates/aggregates.mustache", Map(
+      Future.value(MustacheRenderer("aggregates.mustache", Map(
         ("pageTitle" -> "Aggregates"),
         ("endDate" -> getDate))))
     }
@@ -229,7 +225,7 @@ object Handlers {
   val handleTraces =
     Service.mk[Request, MustacheRenderer] { req =>
       val id = req.path.split("/").last
-      Future.value(MustacheRenderer("templates/show.mustache", Map(
+      Future.value(MustacheRenderer("show.mustache", Map(
         ("pageTitle" -> "Trace %s".format(id)),
         ("traceId" -> id))))
     }
