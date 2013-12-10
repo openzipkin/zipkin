@@ -23,7 +23,6 @@ import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import org.specs.mock.{ClassMocker, JMocker}
 import org.specs.Specification
-import scala.collection.mutable
 
 class QueryExtractorSpec extends Specification with JMocker with ClassMocker {
 
