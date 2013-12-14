@@ -16,7 +16,7 @@
 
 package com.twitter.zipkin.storage.anormdb
 
-import com.twitter.util.{Future, Time}
+import com.twitter.util.{Future, FuturePool, Time}
 import com.twitter.conversions.time._
 import com.twitter.zipkin.common.{Service, DependencyLink, Dependencies}
 import com.twitter.zipkin.storage.Aggregates
@@ -42,7 +42,7 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
   /**
    * Close the index
    */
-  def close() { conn.close() }
+  def close(deadline: Time): Future[Unit] = FuturePool.unboundedPool { conn.close() }
 
   /**
    * Get the dependencies in a time range.

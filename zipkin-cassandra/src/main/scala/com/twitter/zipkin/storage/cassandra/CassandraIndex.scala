@@ -2,13 +2,13 @@ package com.twitter.zipkin.storage.cassandra
 
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,7 +21,7 @@ import com.twitter.ostrich.stats.Stats
 import com.twitter.zipkin.common.{Annotation, Span}
 import com.twitter.zipkin.storage.{IndexedTraceId, TraceIdDuration, Index}
 import com.twitter.zipkin.util.Util
-import com.twitter.util.{Duration, Future}
+import com.twitter.util.{Duration, Future, FuturePool, Time}
 import com.twitter.zipkin.Constants
 import java.nio.ByteBuffer
 import java.util.{Map => JMap}
@@ -42,7 +42,7 @@ case class CassandraIndex(
   dataTimeToLive: Duration = 3.days
 ) extends Index {
 
-  def close() {
+  def close(deadline: Time): Future[Unit] = FuturePool.unboundedPool {
     keyspace.close()
   }
 

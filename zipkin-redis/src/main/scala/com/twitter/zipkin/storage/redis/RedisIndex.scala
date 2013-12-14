@@ -1,12 +1,12 @@
 /*
  * Copyright 2012 Tumblr Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +17,7 @@ package com.twitter.zipkin.storage.redis
 
 import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.protocol.ZRangeResults
-import com.twitter.util.{Duration, Future}
+import com.twitter.util.{Duration, Future, FuturePool, Time}
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation, Span}
 import com.twitter.zipkin.storage.{Index, IndexedTraceId, TraceIdDuration}
 import java.nio.ByteBuffer
@@ -72,7 +72,7 @@ trait RedisIndex extends Index {
   lazy val serviceArray = new RedisSet(database, "services")
   lazy val traceHash = new RedisHash(database, "ttlMap")
 
-  override def close() = {
+  override def close(deadline: Time): Future[Unit] = FuturePool.unboundedPool {
     database.release()
   }
 

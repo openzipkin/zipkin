@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,16 +16,10 @@
  */
 package com.twitter.zipkin.storage
 
-import com.twitter.util.{Duration, Future}
+import com.twitter.util.{Closable, Duration, Future}
 import com.twitter.zipkin.common.Span
 
-trait Storage {
-
-  /**
-   * Close the storage
-   */
-  def close()
-
+trait Storage extends Closable {
   /**
    * Store the span in the underlying storage for later retrieval.
    * @return a future for the operation

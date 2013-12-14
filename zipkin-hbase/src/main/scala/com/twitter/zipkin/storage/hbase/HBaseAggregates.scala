@@ -2,7 +2,7 @@ package com.twitter.zipkin.storage.hbase
 
 import com.twitter.algebird.Monoid
 import com.twitter.scrooge.BinaryThriftStructSerializer
-import com.twitter.util.{Time, Future}
+import com.twitter.util.{Future, FuturePool, Time}
 import com.twitter.zipkin.common.Dependencies
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
@@ -28,7 +28,7 @@ trait HBaseAggregates extends Aggregates {
     def codec = gen.Dependencies
   }
 
-  def close() {
+  def close(deadline: Time): Future[Unit] = FuturePool.unboundedPool {
     mappingTable.close()
     idGenTable.close()
 

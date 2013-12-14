@@ -1,12 +1,12 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,7 +18,7 @@ package com.twitter.zipkin.storage.cassandra
 import com.twitter.cassie._
 import com.twitter.conversions.time._
 import com.twitter.ostrich.stats.Stats
-import com.twitter.util.{Await, Duration, Future}
+import com.twitter.util.{Await, Duration, Future, FuturePool, Time}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
@@ -32,7 +32,7 @@ case class CassandraStorage(
   dataTimeToLive: Duration
 ) extends Storage {
 
-  def close() {
+  def close(deadline: Time): Future[Unit] = FuturePool.unboundedPool {
     keyspace.close()
   }
 
@@ -69,6 +69,7 @@ case class CassandraStorage(
 
     // fetch each col for trace, change ttl and reinsert
     // note that we block here
+    // TODO: why?
     Await.result(rowFuture).values().asScala.foreach { value =>
     // creating a new column in order to set timestamp to None
       val col = Column[String, gen.Span](value.name, value.value).ttl(ttl)
