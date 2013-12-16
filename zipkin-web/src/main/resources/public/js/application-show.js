@@ -82,6 +82,22 @@ Zipkin.Application.Show = (function() {
         $.each(data.trace.spans, function(i, span) {
           span.startTime = span.startTimestamp - traceStartTime;
           span.endTime = span.endTimestamp - traceStartTime;
+          var hasClient, serverStartTime, serverEndTime;
+          $.each(span.annotations, function(i, a) {
+              if (a.value === "sr") {
+                  serverStartTime = a.timestamp - traceStartTime;
+              } else if (a.value === "ss") {
+                  serverEndTime = a.timestamp - traceStartTime;
+              } else if (a.value === "cr" || a.value === "cs") {
+                  hasClient = true;
+              }
+          });
+          // Only include detailed server timing if this span has client timing as well.
+          if (hasClient) {
+              span.serverStartTime = serverStartTime;
+              span.serverEndTime = serverEndTime;
+              span.serverDuration = serverEndTime - serverStartTime;
+          }
 
           var s = Zipkin.fromRawSpan(span);
           spanMap[s.id] = s;

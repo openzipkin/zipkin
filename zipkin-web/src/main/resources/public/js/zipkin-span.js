@@ -26,6 +26,10 @@ Zipkin.Span = (function(superClass) {
     this.services      = config.services || [];
     this.annotations   = config.annotations || [];
     this.kvAnnotations = config.kvAnnotations || [];
+
+    this.serverStartTime = config.serverStartTime
+    this.serverEndTime   = config.serverEndTime
+    this.serverDuration  = config.serverDuration
   };
 
   jQuery.extend(Span.prototype, superClass.prototype);
@@ -37,6 +41,10 @@ Zipkin.Span = (function(superClass) {
   Span.prototype.getServices      = function() { return this.services; };
   Span.prototype.getAnnotations   = function() { return Zipkin.Util.shallowCopy(this.annotations); };
   Span.prototype.getKvAnnotations = function() { return Zipkin.Util.shallowCopy(this.kvAnnotations); };
+
+  Span.prototype.getServerStartTime = function() { return this.serverStartTime; };
+  Span.prototype.getServerEndTime   = function() { return this.serverEndTime; };
+  Span.prototype.getServerDuration  = function() { return this.serverDuration; };
 
   Span.prototype.setTraceId       = function(id)   { this.traceId = id; };
   Span.prototype.setStartTime     = function(s)    { this.startTime = s; };
@@ -67,7 +75,11 @@ Zipkin.Span = (function(superClass) {
         duration      : this.getDuration(),
         services      : this.getServices(),
         annotations   : this.getAnnotations(),
-        kvAnnotations : this.getKvAnnotations()
+        kvAnnotations : this.getKvAnnotations(),
+
+        serverStartTime : this.getServerStartTime(),
+        serverEndTime   : this.getServerEndTime(),
+        serverDuration  : this.getServerDuration()
       }
     );
   };
@@ -89,6 +101,10 @@ Zipkin.fromRawSpan = function(rawSpan) {
     services      : rawSpan.services,
     annotations   : [],
     kvAnnotations : [],
+
+    serverStartTime : rawSpan.serverStartTime,
+    serverEndTime   : rawSpan.serverEndTime,
+    serverDuration  : rawSpan.serverDuration,
   });
   var annotations = $.map(rawSpan.annotations, function(a) {
     var ann = Zipkin.fromRawAnnotation(a);

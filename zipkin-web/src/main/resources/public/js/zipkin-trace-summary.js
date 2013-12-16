@@ -22,6 +22,7 @@ Zipkin.TraceSummary = (function(Zipkin) {
     var id = d.getId();
     var selected = isSelected(d);
     chart.select('#bar-id-' + id).classed('selected', selected);
+    chart.select('#server-bar-id-' + id).classed('selected', selected);
     chart.select('#bar-text-id-' + id).classed('selected', selected);
     chart.select('#span-labels-id-' + id).classed('selected', selected);
     chart.select('#span-labels-text-id-' + id)
@@ -250,6 +251,54 @@ Zipkin.TraceSummary = (function(Zipkin) {
 
     /* Exit */
     bars.exit().remove();
+
+    /* Modifier functions for service time bars (for spans that have both client / server timings, highlight time spent in server) */
+    var serverBarX = function(d, i) { return x(d.getServerStartTime()) || 0; };
+    var serverBarY = function(d, i) { d.index = i; return y(i) + y.rangeBand() * (1.25); };
+    var serverBarWidth = function(d) {
+      if(d.isFilter && d.isFilter()) {
+        return x(d.getServerDuration());
+      }
+
+      if (d.getServerDuration() === 0) {
+        return x(0);
+      }
+      if(d.getServerDuration() > 0) {
+        return x(d.getServerDuration());
+      } else {
+        return x(0);
+      }
+    };
+
+    /* Update */
+    var serverBars = d3.select(this.chartSelector)
+      .selectAll('.server-bars')
+      .data(data, keyFunction)
+      .attr("x", serverBarX)
+      .attr("y", serverBarY)
+      .attr("width", serverBarWidth)
+      .classed("filtered", isFiltered);
+
+    /* Enter */
+    var serverBarEnter = serverBars.enter()
+      .append("rect")
+      .attr('id', function(d) { return 'server-bar-id-' + d.getId(); })
+      .classed("server-bars", true)
+      .on("mouseover", Zipkin.Util.bind(this, hoverEvent))
+      .on("mouseout", Zipkin.Util.bind(this, blurEvent))
+      .on("click", Zipkin.Util.bind(this, clickEvent))
+      .attr("width", serverBarWidth)
+      .attr("height", function(d) { return (y.rangeBand() / 4) - 1; })
+      .attr("x", serverBarX)
+      .attr("y", serverBarY)
+      .classed("filtered", isFiltered);
+
+    $.each(this.colorClasses, function (i, e) {
+      serverBarEnter.classed(e, function (d) { return !d.filter && (d.getDepth() % that.colorClasses.length) == i; });
+    });
+
+    /* Exit */
+    serverBars.exit().remove();
 
     /* Modifier functions for bar text */
     var barTextX = function(d, i) { return (x(d.getStartTime()) || 0) + 8; };
