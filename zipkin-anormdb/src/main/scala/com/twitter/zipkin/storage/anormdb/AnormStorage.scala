@@ -21,7 +21,7 @@ import com.twitter.zipkin.common._
 import com.twitter.zipkin.common.Annotation
 import com.twitter.zipkin.common.BinaryAnnotation
 import com.twitter.zipkin.util.Util
-import com.twitter.util.{Duration, Future, FuturePool, Time}
+import com.twitter.util.{Duration, Future, Time}
 import anorm._
 import anorm.SqlParser._
 import java.nio.ByteBuffer
@@ -49,7 +49,7 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
   /**
    * Close the storage
    */
-  def close(deadline: Time): Future[Unit] = FuturePool.unboundedPool { conn.close() }
+  def close(deadline: Time): Future[Unit] = inNewThread { conn.close() }
 
   /**
    * Store the span in the underlying storage for later retrieval.
