@@ -19,7 +19,7 @@ package com.twitter.zipkin.storage.anormdb
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.{Index, IndexedTraceId, TraceIdDuration}
-import com.twitter.util.Future
+import com.twitter.util.{Future, Time}
 import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import anorm._
@@ -49,7 +49,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
   /**
    * Close the index
    */
-  def close() { conn.close() }
+  def close(deadline: Time): Future[Unit] = inNewThread { conn.close() }
 
   /**
    * Get the trace ids for this particular service and if provided, span name.

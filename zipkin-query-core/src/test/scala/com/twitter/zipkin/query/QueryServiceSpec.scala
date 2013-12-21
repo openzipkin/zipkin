@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
  */
 package com.twitter.zipkin.query
 
-import com.twitter.util.{Await, Future}
+import com.twitter.util.{Await, Future, Time}
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
@@ -84,7 +84,7 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
       def mockSpanName: Option[String] = Some("methodcall")
       def mockValue: Option[ByteBuffer] = None
 
-      def close() = null
+      def close(deadline: Time): Future[Unit] = Future.Done
       def getTraceIdsByName(serviceName: String, spanName: Option[String],
                             endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
         serviceName mustEqual "service"

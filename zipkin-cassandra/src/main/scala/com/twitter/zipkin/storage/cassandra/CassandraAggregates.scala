@@ -16,7 +16,7 @@
 package com.twitter.zipkin.storage.cassandra
 
 import com.twitter.cassie._
-import com.twitter.util.{Time, Future, Return, Throw}
+import com.twitter.util.{Future, FuturePool, Return, Throw, Time}
 import com.twitter.conversions.time._
 import com.twitter.zipkin.storage.Aggregates
 import com.twitter.zipkin.conversions.thrift._
@@ -42,7 +42,7 @@ case class CassandraAggregates(
   dependenciesCF: ColumnFamily[ByteBuffer, Long, gen.Dependencies]
 ) extends Aggregates {
 
-  def close() {
+  def close(deadline: Time): Future[Unit] = FuturePool.unboundedPool {
     keyspace.close()
   }
 

@@ -1,12 +1,12 @@
 /*
  * Copyright 2012 Tumblr Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +17,7 @@
 package com.twitter.zipkin.storage.redis
 
 import com.twitter.finagle.redis.Client
-import com.twitter.util.{Duration, Future}
+import com.twitter.util.{Duration, Future, FuturePool, Time}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.Storage
 import org.jboss.netty.buffer.ChannelBuffer
@@ -26,7 +26,9 @@ trait RedisStorage extends Storage {
 
   val database: Client
 
-  override def close() = database.release()
+  override def close(deadline: Time): Future[Unit] = FuturePool.unboundedPool {
+    database.release()
+  }
 
   private[this] lazy val spanListMap = new RedisListMap(database, "full_span", ttl)
 

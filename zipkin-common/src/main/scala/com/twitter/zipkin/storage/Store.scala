@@ -16,6 +16,7 @@
 package com.twitter.zipkin.storage
 
 import com.twitter.zipkin.builder.{Builder => ZBuilder}
+import com.twitter.util.{Closable, Future, Time}
 
 object Store {
 
@@ -35,4 +36,7 @@ object Store {
 /**
  * Wrapper class for the necessary store components
  */
-case class Store(storage: Storage, index: Index, aggregates: Aggregates)
+case class Store(storage: Storage, index: Index, aggregates: Aggregates) extends Closable {
+  def close(deadline: Time): Future[Unit] =
+    Closable.all(storage, index, aggregates).close(deadline)
+}

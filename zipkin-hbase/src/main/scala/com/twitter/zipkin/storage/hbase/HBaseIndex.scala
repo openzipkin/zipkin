@@ -1,7 +1,7 @@
 package com.twitter.zipkin.storage.hbase
 
 import com.twitter.logging.Logger
-import com.twitter.util.Future
+import com.twitter.util.{Future, FuturePool, Time}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.hbase.TableLayouts
@@ -33,7 +33,7 @@ trait HBaseIndex extends Index {
   /**
    * Close the index
    */
-  def close() {
+  def close(deadline: Time): Future[Unit] = FuturePool.unboundedPool {
     idGenTable.close()
     mappingTable.close()
 

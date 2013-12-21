@@ -42,7 +42,7 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
   /**
    * Close the index
    */
-  def close() { conn.close() }
+  def close(deadline: Time): Future[Unit] = inNewThread { conn.close() }
 
   /**
    * Get the dependencies in a time range.

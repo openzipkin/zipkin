@@ -2,7 +2,7 @@ package com.twitter.zipkin.storage.hbase
 
 import com.twitter.conversions.time._
 import com.twitter.scrooge.BinaryThriftStructSerializer
-import com.twitter.util.{Duration, Future}
+import com.twitter.util.{Duration, Future, FuturePool, Time}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
@@ -36,7 +36,7 @@ trait HBaseStorage extends Storage {
   /**
    * Close the storage
    */
-  def close() {
+  def close(deadline: Time): Future[Unit] = FuturePool.unboundedPool {
     hbaseTable.close()
   }
 
