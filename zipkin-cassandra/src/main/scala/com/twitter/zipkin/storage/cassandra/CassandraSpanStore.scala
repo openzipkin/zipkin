@@ -232,7 +232,6 @@ class CassandraSpanStore(
   }
 
   private[this] def getSpansByTraceIds(traceIds: Seq[Long], count: Int): Future[Seq[Seq[Span]]] = {
-    QueryGetSpansByTraceIdsStat.add(traceIds.size)
     val results = traceIds.grouped(readBatchSize) map { idBatch =>
       Traces.multigetRows(idBatch.toSet.asJava, None, None, Order.Normal, count) map { rowSet =>
         val rows = rowSet.asScala
@@ -330,8 +329,10 @@ class CassandraSpanStore(
   def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
     getSpansByTraceIds(Seq(traceId)).map(_.head)
 
-  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] =
+  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
+    QueryGetSpansByTraceIdsStat.add(traceIds.size)
     getSpansByTraceIds(traceIds, maxTraceCols)
+  }
 
   def getServiceNames: Future[Set[String]] = {
     QueryGetServiceNamesCounter.incr()
