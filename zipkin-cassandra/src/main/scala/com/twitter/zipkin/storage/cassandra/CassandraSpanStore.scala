@@ -202,7 +202,7 @@ class CassandraSpanStore(
       // skip core annotations since that query can be done by service name/span name anyway
       span.annotations
         .filter { a => !Constants.CoreAnnotations.contains(a.value) }
-        .groupBy { _.value }
+        .groupBy(_.value)
         .foreach { case (_, as) =>
           val a = as.min
           a.host foreach { endpoint =>
@@ -252,7 +252,7 @@ class CassandraSpanStore(
       }
     }
 
-    Future.collect(results.toSeq) map { _.flatten }
+    Future.collect(results.toSeq).map(_.flatten)
   }
 
   /**
@@ -328,7 +328,7 @@ class CassandraSpanStore(
   }
 
   def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
-    getSpansByTraceIds(Seq(traceId)).map { _.head }
+    getSpansByTraceIds(Seq(traceId)).map(_.head)
 
   def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] =
     getSpansByTraceIds(traceIds, maxTraceCols)
@@ -355,8 +355,8 @@ class CassandraSpanStore(
     // if we have a span name, look up in the service + span name index
     // if not, look up by service name only
     val idx: ColumnFamily[String, Long, Long] =
-      spanName.map { _ => ServiceSpanNameIndex }.getOrElse(ServiceNameIndex)
-    idx.getRowSlice(key, Some(endTs), None, limit, Order.Reversed) map { colToIndexedTraceId(_) }
+      spanName.map(_ => ServiceSpanNameIndex).getOrElse(ServiceNameIndex)
+    idx.getRowSlice(key, Some(endTs), None, limit, Order.Reversed) map colToIndexedTraceId
   }
 
   def getTraceIdsByAnnotation(
@@ -368,7 +368,7 @@ class CassandraSpanStore(
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByAnnotationCounter.incr()
     val key = annotationKey(serviceName, annotation, value)
-    AnnotationsIndex.getRowSlice(key, Some(endTs), None, limit, Order.Reversed) map { colToIndexedTraceId(_) }
+    AnnotationsIndex.getRowSlice(key, Some(endTs), None, limit, Order.Reversed) map colToIndexedTraceId
   }
 
   def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = {
