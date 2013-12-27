@@ -155,7 +155,7 @@ object Handlers {
         }
     }
 
-  def handlePublic(resourceDirs: Map[String, String]) =
+  def handlePublic(resourceDirs: Map[String, String], cache: Boolean = false) =
     new Service[Request, Renderer] {
       private[this] var rendererCache = Map.empty[String, Future[Renderer]]
 
@@ -166,7 +166,7 @@ object Handlers {
               resourceDirs find { case (k, _) => path.startsWith(k) } flatMap { case (_, typ) =>
                 Option(getClass.getResourceAsStream(path)) filter { _.available > 0 } map { input =>
                   val renderer = Future.value(StaticRenderer(input, typ))
-                  rendererCache += (path -> renderer)
+                  if (cache) rendererCache += (path -> renderer)
                   renderer
                 }
               }

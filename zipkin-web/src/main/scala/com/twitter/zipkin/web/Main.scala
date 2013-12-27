@@ -20,6 +20,7 @@ import com.twitter.finagle.http.HttpMuxer
 import com.twitter.finagle.{Http, Thrift}
 import com.twitter.server.TwitterServer
 import com.twitter.util.{Await, Future}
+import com.twitter.zipkin.common.mustache.ZipkinMustache
 import com.twitter.zipkin.gen.ZipkinQuery
 import java.net.InetSocketAddress
 
@@ -36,6 +37,7 @@ object Main extends TwitterServer {
   val serverPort = flag("zipkin.web.port", new InetSocketAddress(8080), "Listening port for the zipkin web frontend")
 
   val rootUrl = flag("zipkin.web.rootUrl", "http://localhost:8080/", "Url where the service is located")
+  val cacheResources = flag("zipkin.web.cacheResources", false, "cache resources (mustache, static sources, etc)")
   val pinTtl = flag("zipkin.web.pinTtl", 30.days, "Length of time pinned traces should exist")
   val resourcePathPrefix = flag("zipkin.web.resourcePathPrefix", "/public", "Path used for static resources")
 
@@ -43,11 +45,13 @@ object Main extends TwitterServer {
   val queryClientLocation = flag("zipkin.queryClient.location", "127.0.0.1:9411", "Location of the query server")
 
   def main() {
+    ZipkinMustache.cache = cacheResources()
+
     // TODO: ThriftMux
     val queryClient = Thrift.newIface[ZipkinQuery.FutureIface]("ZipkinQuery=" + queryClientLocation())
 
     val muxer = Seq(
-      ("/public/", handlePublic(resourceDirs)),
+      ("/public/", handlePublic(resourceDirs, cacheResources())),
       ("/", addLayout(rootUrl()) andThen handleIndex(queryClient)),
       ("/traces/:id", addLayout(rootUrl()) andThen handleTraces),
       ("/static", addLayout(rootUrl()) andThen handleStatic),
