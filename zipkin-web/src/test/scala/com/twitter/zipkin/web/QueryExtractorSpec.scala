@@ -16,21 +16,17 @@
  */
 package com.twitter.zipkin.web
 
-import com.twitter.finagle.http.{Request => FinagleRequest}
-import com.twitter.finatra.Request
+import com.twitter.finagle.http.Request
 import com.twitter.util.Time
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import org.specs.mock.{ClassMocker, JMocker}
 import org.specs.Specification
-import scala.collection.mutable
 
 class QueryExtractorSpec extends Specification with JMocker with ClassMocker {
 
-  def request(p: (String, String)*) = new Request(FinagleRequest(p:_*)) {
-    routeParams = mutable.Map(p:_*)
-  }
+  def request(p: (String, String)*) = Request(p:_*)
 
   "QueryExtractor" should {
     "require" in {

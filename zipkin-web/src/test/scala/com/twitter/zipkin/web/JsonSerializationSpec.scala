@@ -5,7 +5,7 @@ import org.specs.Specification
 import com.twitter.zipkin.common.json.ZipkinJson
 
 class JsonSerializationSpec extends Specification {
-  "Jerkson" should {
+  "Jackson" should {
     "serialize" in {
       "span with no annotations" in {
         val s = Span(1L, "Unknown", 2L, None, List.empty[Annotation], List.empty[BinaryAnnotation], false)
