@@ -15,7 +15,7 @@
  */
 package com.twitter.zipkin.web
 
-import com.twitter.finatra.Request
+import com.twitter.finagle.http.Request
 import com.twitter.util.Time
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
 import com.twitter.zipkin.query.{Order, QueryRequest}
@@ -26,7 +26,7 @@ object QueryExtractor {
   val fmt = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss")
 
   /**
-   * Takes a Finatra `Request` and produce the correct `QueryRequest` depending
+   * Takes a `Request` and produces the correct `QueryRequest` depending
    * on the GET parameters present
    */
   def apply(request: Request): Option[QueryRequest] = {
