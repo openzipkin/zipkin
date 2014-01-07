@@ -33,6 +33,7 @@ trait WriteSpanStore
   with Closable
   with CloseAwaitably
 {
+  // Used for pinning
   def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit]
 }
 
