@@ -19,7 +19,7 @@ import com.twitter.app.App
 import com.twitter.cassie.tests.util.FakeCassandra
 import com.twitter.conversions.time._
 import com.twitter.util.Await
-import com.twitter.zipkin.cassandra.{CassieCluster, CassieSpanStore}
+import com.twitter.zipkin.cassandra.{CassieCluster, CassieSpanStoreFactory}
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query.Trace
 import com.twitter.zipkin.storage.SpanStore
@@ -29,11 +29,11 @@ import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
-class CassandraSpanStoreTest extends FunSuite {
+class CassieSpanStoreTest extends FunSuite {
   object FakeServer extends FakeCassandra
   FakeServer.start()
 
-  object CassieStore extends App with CassieSpanStore
+  object CassieStore extends App with CassieSpanStoreFactory
   CassieStore.main(Array("-zipkin.store.cassie.cluster", "inet!%d!127.0.0.1".format(FakeServer.port.get)))
 
   val ep = Endpoint(123, 123, "service")

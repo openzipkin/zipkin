@@ -52,7 +52,7 @@ class CassieCluster(val flagVal: String) extends ClusterBase {
     underlying.keyspace(name)
 }
 
-trait CassieSpanStore { self: App =>
+trait CassieSpanStoreFactory { self: App =>
   implicit object flagOfCassieCluster extends Flaggable[CassieCluster] {
     def parse(v: String) = new CassieCluster(v)
     override def show(c: CassieCluster) = c.flagVal
@@ -101,8 +101,8 @@ trait CassieSpanStore { self: App =>
   val cassieMaxTraceCols = flag("zipkin.store.cassie.maxTraceCols", 100000, "max number of spans to return from a query")
   val cassieReadBatchSize = flag("zipkin.store.cassie.readBatchSize", 500, "max number of rows per query")
 
-  def newCassandraStore(stats: StatsReceiver = LoadedStatsReceiver): CassandraSpanStore = {
-    val scopedStats = stats.scope("cassie").scope(cassieKeyspace())
+  def newCassandraStore(stats: StatsReceiver = LoadedStatsReceiver.scope("cassie")): CassieSpanStore = {
+    val scopedStats = stats.scope(cassieKeyspace())
     //TODO: fix these
     val keyspace = cassieCluster().keyspace(cassieKeyspace())
       .connectTimeout(10.seconds.inMillis.toInt)
@@ -114,7 +114,7 @@ trait CassieSpanStore { self: App =>
       .retryPolicy(RetryPolicy.Idempotent)
       .reportStatsTo(scopedStats)
 
-    new CassandraSpanStore(
+    new CassieSpanStore(
       scopedStats,
       keyspace.connect(),
       cassieColumnFamilies,

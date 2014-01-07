@@ -30,7 +30,7 @@ import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import scala.collection.JavaConverters._
 
-class CassandraSpanStore(
+class CassieSpanStore(
   stats: StatsReceiver,
   keyspace: Keyspace,
   cfs: ColumnFamilyNames,
