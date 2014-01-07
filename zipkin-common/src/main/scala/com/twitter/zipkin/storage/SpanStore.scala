@@ -33,6 +33,9 @@ trait WriteSpanStore
   with Closable
   with CloseAwaitably
 {
+  // store a list of spans
+  def apply(spans: Seq[Span]): Future[Unit]
+
   // Used for pinning
   def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit]
 }
