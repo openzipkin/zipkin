@@ -103,7 +103,7 @@ trait CassieSpanStoreFactory { self: App =>
 
   def newCassandraStore(stats: StatsReceiver = LoadedStatsReceiver.scope("cassie")): CassieSpanStore = {
     val scopedStats = stats.scope(cassieKeyspace())
-    //TODO: fix these
+    //TODO: properly tune these
     val keyspace = cassieCluster().keyspace(cassieKeyspace())
       .connectTimeout(10.seconds.inMillis.toInt)
       .requestTimeout(20.seconds.inMillis.toInt)

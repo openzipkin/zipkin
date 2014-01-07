@@ -334,7 +334,7 @@ class CassieSpanStore(
     getSpansByTraceIds(traceIds, maxTraceCols)
   }
 
-  def getServiceNames: Future[Set[String]] = {
+  def getAllServiceNames: Future[Set[String]] = {
     QueryGetServiceNamesCounter.incr()
     ServiceNames.getRow(ServiceNamesKey).map(_.values.asScala.map(_.name).toSet)
   }

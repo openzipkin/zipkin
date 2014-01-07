@@ -89,7 +89,7 @@ trait ReadSpanStore {
   /**
    * Get all the service names for as far back as the ttl allows.
    */
-  def getServiceNames: Future[Set[String]]
+  def getAllServiceNames: Future[Set[String]]
 
   /**
    * Get all the span names for a particular service, as far back as the ttl allows.

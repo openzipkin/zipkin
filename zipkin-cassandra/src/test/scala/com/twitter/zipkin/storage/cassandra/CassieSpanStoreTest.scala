@@ -117,7 +117,7 @@ class CassieSpanStoreTest extends FunSuite {
 
   test("get service names") {
     val store = resetAndLoadStore(Seq(span1))
-    assert(Await.result(store.getServiceNames) === span1.serviceNames)
+    assert(Await.result(store.getAllServiceNames) === span1.serviceNames)
   }
 
   test("get trace ids by name") {
@@ -152,7 +152,7 @@ class CassieSpanStoreTest extends FunSuite {
 
   test("wont index empty service names") {
     val store = resetAndLoadStore(Seq(spanEmptyServiceName))
-    assert(Await.result(store.getServiceNames).isEmpty)
+    assert(Await.result(store.getAllServiceNames).isEmpty)
   }
 
   test("wont index empty span names") {
