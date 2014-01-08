@@ -266,8 +266,8 @@ object Zipkin extends Build {
     settings = defaultSettings
   ).settings(
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-core"      % FINAGLE_VERSION,
-      "com.twitter" %% "util-core"         % UTIL_VERSION,
+      finagle("core"),
+      util("core"),
       "com.twitter" %% "twitter-server"    % TwitterServerVersion
     ) ++ testDependencies
   ).dependsOn(common, scrooge)
@@ -281,7 +281,7 @@ object Zipkin extends Build {
       libraryDependencies ++=
         testDependencies ++
         Seq(
-          "com.twitter" %% "util-zk"           % UTIL_VERSION,
+          util("zk"),
           "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
         )
     ).dependsOn(collector, scrooge)
