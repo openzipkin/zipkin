@@ -87,7 +87,10 @@ object Zipkin extends Build {
     Project(
       id = "zipkin",
       base = file(".")
-    ) aggregate(test, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, anormDB, collectorCore, collectorService, kafka, redis, hbase)
+    ) aggregate(
+      test, queryCore, queryService, common, scrooge, collectorScribe,
+      web, cassandra, anormDB, collectorCore, collectorService, kafka,
+      redis, hbase, collector, receiverScribe)
 
   lazy val test   = Project(
     id = "zipkin-test",
@@ -256,6 +259,32 @@ object Zipkin extends Build {
         "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
       ) ++ testDependencies
     ).dependsOn(collectorCore, scrooge)
+
+  lazy val collector = Project(
+    id = "zipkin-collector",
+    base = file("zipkin-collector"),
+    settings = defaultSettings
+  ).settings(
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "finagle-core"      % FINAGLE_VERSION,
+      "com.twitter" %% "util-core"         % UTIL_VERSION,
+      "com.twitter" %% "twitter-server"    % TwitterServerVersion
+    ) ++ testDependencies
+  ).dependsOn(common, scrooge)
+
+  lazy val receiverScribe =
+    Project(
+      id = "zipkin-receiver-scribe",
+      base = file("zipkin-receiver-scribe"),
+      settings = defaultSettings
+    ).settings(
+      libraryDependencies ++=
+        testDependencies ++
+        Seq(
+          "com.twitter" %% "util-zk"           % UTIL_VERSION,
+          "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
+        )
+    ).dependsOn(collector, scrooge)
 
   lazy val kafka =
     Project(
