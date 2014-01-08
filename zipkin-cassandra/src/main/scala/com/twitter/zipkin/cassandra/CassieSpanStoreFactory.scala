@@ -60,29 +60,29 @@ trait CassieSpanStoreFactory { self: App =>
 
   implicit object flagOfWriteConsistency extends Flaggable[WriteConsistency] {
     def parse(v: String) = v match {
-      case "One" => WriteConsistency.One
-      case "Any" => WriteConsistency.Any
-      case "Quorum" => WriteConsistency.Quorum
-      case "LocalQuorum" => WriteConsistency.LocalQuorum
-      case "EachQuorum" => WriteConsistency.EachQuorum
-      case "All" => WriteConsistency.All
+      case "one" => WriteConsistency.One
+      case "any" => WriteConsistency.Any
+      case "quorum" => WriteConsistency.Quorum
+      case "localquorum" => WriteConsistency.LocalQuorum
+      case "eachquorum" => WriteConsistency.EachQuorum
+      case "all" => WriteConsistency.All
     }
 
     override def show(wc: WriteConsistency) =
-      wc.toString.split(".")(1)
+      wc.toString.split('.')(1)
   }
 
   implicit object flagOfReadConsistency extends Flaggable[ReadConsistency] {
-    def parse(v: String) = v match {
-      case "One" => ReadConsistency.One
-      case "Quorum" => ReadConsistency.Quorum
-      case "LocalQuorum" => ReadConsistency.LocalQuorum
-      case "EachQuorum" => ReadConsistency.EachQuorum
-      case "All" => ReadConsistency.All
+    def parse(v: String) = v.toLowerCase match {
+      case "one" => ReadConsistency.One
+      case "quorum" => ReadConsistency.Quorum
+      case "localquorum" => ReadConsistency.LocalQuorum
+      case "eachquorum" => ReadConsistency.EachQuorum
+      case "all" => ReadConsistency.All
     }
 
     override def show(wc: ReadConsistency) =
-      wc.toString.split(".")(1)
+      wc.toString.split('.')(1)
   }
 
   val cassieColumnFamilies = ColumnFamilyNames()
