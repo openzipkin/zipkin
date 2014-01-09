@@ -6,7 +6,7 @@ Before we start we need to know a few things about how we structure the tracing 
 * Span - a set of annotations that correspond to a particular RPC
 * Trace - a set of spans that share a single root span
 
-The above is used to send the tracing data to Zipkin. You can find these and more described <a href="https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinCore.thrift">here</a>
+The above is used to send the tracing data to Zipkin. You can find these and more described <a href="https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/resources/thrift/zipkinCore.thrift">here</a>
 
 Another important part of the tracing is the light weight header we use to pass information between the traced services.
 The tracing header consists of the following:
