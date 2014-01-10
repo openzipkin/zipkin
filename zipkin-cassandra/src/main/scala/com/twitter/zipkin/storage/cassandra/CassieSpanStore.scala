@@ -292,7 +292,7 @@ class CassieSpanStore(
       serviceSpanNameIdx,
       annotationsIdx,
       durationIdx
-    ).map(_.execute())) flatMap { _ => Future.Unit }
+    ).map(_.execute())).unit
   }
 
   def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = {
@@ -301,8 +301,8 @@ class CassieSpanStore(
       row.values.asScala foreach { col =>
         traces.insert(traceId, col.copy(timestamp = None, ttl = Some(ttl)))
       }
-      traces.execute()
-    } flatMap { _ => Future.Unit }
+      traces.execute().unit
+    }
   }
 
   def getTimeToLive(traceId: Long): Future[Duration] = {

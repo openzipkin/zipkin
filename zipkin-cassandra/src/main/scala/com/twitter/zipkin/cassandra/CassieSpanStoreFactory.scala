@@ -17,13 +17,20 @@ package com.twitter.zipkin.cassandra
 
 import com.twitter.app.{App, Flaggable}
 import com.twitter.cassie._
-import com.twitter.cassie.connection.RetryPolicy
+import com.twitter.cassie.connection.{CCluster, RetryPolicy}
+import com.twitter.concurrent.Spool
+import com.twitter.concurrent.Spool.*::
 import com.twitter.conversions.time._
+import com.twitter.finagle.{Addr, Resolver}
+import com.twitter.finagle.builder.Cluster
 import com.twitter.finagle.stats.{LoadedStatsReceiver, StatsReceiver}
+import com.twitter.finagle.tracing.DefaultTracer
 import com.twitter.finagle.util.InetSocketAddressUtil
-import com.twitter.zipkin.common.Span
+import com.twitter.util.{Await, Future, Promise, Return, Var}
 import com.twitter.zipkin.gen.{Span => ThriftSpan}
 import com.twitter.zipkin.storage.cassandra._
+import java.net.SocketAddress
+import scala.collection.mutable.HashSet
 
 case class ColumnFamilyNames(
   traces: String = "Traces",
@@ -34,32 +41,9 @@ case class ColumnFamilyNames(
   annotationsIndex: String = "AnnotationsIndex",
   durationIndex: String = "DurationIndex")
 
-class CassieCluster(val flagVal: String) extends ClusterBase {
-  val underlying = flagVal.split("!") match {
-    case Array("inet", port, hosts) =>
-      new Cluster(hosts, port.toInt)
-    case Array("zk", hosts, path) =>
-      new ServerSetsCluster(
-        InetSocketAddressUtil.parseHosts(hosts).toIterable,
-        path,
-        90.seconds.inMilliseconds.toInt,
-        LoadedStatsReceiver)
-    case _ =>
-      throw new IllegalArgumentException
-  }
-
-  def keyspace(name: String): KeyspaceBuilder =
-    underlying.keyspace(name)
-}
-
 trait CassieSpanStoreFactory { self: App =>
-  implicit object flagOfCassieCluster extends Flaggable[CassieCluster] {
-    def parse(v: String) = new CassieCluster(v)
-    override def show(c: CassieCluster) = c.flagVal
-  }
-
   implicit object flagOfWriteConsistency extends Flaggable[WriteConsistency] {
-    def parse(v: String) = v match {
+    def parse(v: String) = v.toLowerCase match {
       case "one" => WriteConsistency.One
       case "any" => WriteConsistency.Any
       case "quorum" => WriteConsistency.Quorum
@@ -85,11 +69,47 @@ trait CassieSpanStoreFactory { self: App =>
       wc.toString.split('.')(1)
   }
 
+  // Gross
+  private class VarAddrCluster(va: Var[Addr]) extends CCluster[SocketAddress] {
+    private[this] val underlyingSet = new HashSet[SocketAddress]
+    private[this] var changes = new Promise[Spool[Cluster.Change[SocketAddress]]]
+
+    private[this] def appendUpdate(update: Cluster.Change[SocketAddress]) = {
+      val newTail = new Promise[Spool[Cluster.Change[SocketAddress]]]
+      changes() = Return(update *:: newTail)
+      changes = newTail
+    }
+
+    private[this] def performChange(newSet: Set[SocketAddress]) = synchronized {
+      val added = newSet &~ underlyingSet
+      val removed = underlyingSet &~ newSet
+      added foreach { address =>
+        underlyingSet += address
+        appendUpdate(Cluster.Add(address))
+      }
+      removed foreach { address =>
+        underlyingSet -= address
+        appendUpdate(Cluster.Rem(address))
+      }
+    }
+
+    val observer = va observe {
+      case Addr.Bound(sockaddrs) => performChange(sockaddrs)
+      case _ => ()
+    }
+
+    def snap: (Seq[SocketAddress], Future[Spool[Cluster.Change[SocketAddress]]]) = synchronized {
+      (underlyingSet.toSeq, changes)
+    }
+
+    def close { Await.ready(observer.close()) }
+  }
+
   val cassieColumnFamilies = ColumnFamilyNames()
   val cassieSpanCodec = new SnappyCodec(new ScroogeThriftCodec[ThriftSpan](ThriftSpan))
 
   val cassieKeyspace = flag("zipkin.store.cassie.keyspace", "Zipkin", "name of the keyspace to use")
-  val cassieCluster = flag[CassieCluster]("zipkin.store.cassie.cluster", new CassieCluster("inet!9160!localhost"), "location of the cassandra cluster")
+  val cassieLocation = flag("zipkin.store.cassie.location", "localhost:9160", "location of the cassandra cluster")
 
   val cassieWriteConsistency = flag[WriteConsistency]("zipkin.store.cassie.writeConsistency", WriteConsistency.One, "cassie write consistency (one, quorum, all)")
   val cassieReadConsistency = flag[ReadConsistency]("zipkin.store.cassie.readConsistency", ReadConsistency.One, "cassie read consistency (one, quorum, all)")
@@ -103,8 +123,9 @@ trait CassieSpanStoreFactory { self: App =>
 
   def newCassandraStore(stats: StatsReceiver = LoadedStatsReceiver.scope("cassie")): CassieSpanStore = {
     val scopedStats = stats.scope(cassieKeyspace())
+    val cluster = new VarAddrCluster(Resolver.eval(cassieLocation()).bind())
     //TODO: properly tune these
-    val keyspace = cassieCluster().keyspace(cassieKeyspace())
+    val keyspace = KeyspaceBuilder(cluster, cassieKeyspace(), scopedStats, { () => DefaultTracer })
       .connectTimeout(10.seconds.inMillis.toInt)
       .requestTimeout(20.seconds.inMillis.toInt)
       .timeout(90.seconds.inMillis.toInt)
@@ -112,7 +133,6 @@ trait CassieSpanStoreFactory { self: App =>
       .maxConnectionsPerHost(400)
       .hostConnectionMaxWaiters(5000)
       .retryPolicy(RetryPolicy.Idempotent)
-      .reportStatsTo(scopedStats)
 
     new CassieSpanStore(
       scopedStats,
