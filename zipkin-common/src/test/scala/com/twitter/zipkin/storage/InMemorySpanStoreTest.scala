@@ -13,30 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.zipkin.storage.cassandra
+package com.twitter.zipkin.storage
 
-import com.twitter.app.App
-import com.twitter.cassie.tests.util.FakeCassandra
 import com.twitter.zipkin.storage.util.SpanStoreValidator
-import com.twitter.zipkin.cassandra.CassieSpanStoreFactory
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
-class CassieSpanStoreTest extends FunSuite {
-  object FakeServer extends FakeCassandra
-  FakeServer.start()
-
-  object CassieStore extends App with CassieSpanStoreFactory
-  CassieStore.main(Array("-zipkin.store.cassie.location", "127.0.0.1:%d".format(FakeServer.port.get)))
-
-  def newSpanStore = {
-    FakeServer.reset()
-    CassieStore.newCassandraStore()
-  }
-
-  test("validate") {
-    new SpanStoreValidator(newSpanStore).validate
-  }
+class InMemorySpanStoreTest extends FunSuite {
+  def newSpanStore = new InMemorySpanStore
+  test("validate") { new SpanStoreValidator(newSpanStore).validate }
 }

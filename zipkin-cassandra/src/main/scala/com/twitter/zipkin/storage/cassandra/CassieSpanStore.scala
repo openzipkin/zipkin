@@ -51,9 +51,6 @@ class CassieSpanStore(
   /**
    * Internal helper methods
    */
-  private[this] def shouldIndex(span: Span): Boolean =
-    !(span.isClientSide() && span.serviceNames.contains("client"))
-
   private[this] def createSpanColumnName(span: Span): String =
     "%d_%d".format(span.id, span.annotations.hashCode)
 
@@ -68,7 +65,7 @@ class CassieSpanStore(
 
   private[this] def annotationKey(serviceName: String, annotation: String, value: Option[ByteBuffer]): ByteBuffer = {
     ByteBuffer.wrap(
-      serviceName.getBytes ++  IndexDelimiterBytes ++  annotation.getBytes ++
+      serviceName.getBytes ++ IndexDelimiterBytes ++ annotation.getBytes ++
       value.map { v => IndexDelimiterBytes ++ Util.getArrayFromBuffer(v) }.getOrElse(Array()))
   }
 
@@ -357,7 +354,7 @@ class CassieSpanStore(
     // if not, look up by service name only
     val idx: ColumnFamily[String, Long, Long] =
       spanName.map(_ => ServiceSpanNameIndex).getOrElse(ServiceNameIndex)
-    idx.getRowSlice(key, Some(endTs), None, limit, Order.Reversed) map colToIndexedTraceId
+    idx.getRowSlice(key, None, Some(endTs), limit, Order.Reversed) map colToIndexedTraceId
   }
 
   def getTraceIdsByAnnotation(
@@ -369,7 +366,7 @@ class CassieSpanStore(
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByAnnotationCounter.incr()
     val key = annotationKey(serviceName, annotation, value)
-    AnnotationsIndex.getRowSlice(key, Some(endTs), None, limit, Order.Reversed) map colToIndexedTraceId
+    AnnotationsIndex.getRowSlice(key, None, Some(endTs), limit, Order.Reversed) map colToIndexedTraceId
   }
 
   def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = {

@@ -15,10 +15,13 @@
  */
 package com.twitter.zipkin.storage
 
+import com.twitter.conversions.time._
 import com.twitter.finagle.{Filter, Service}
 import com.twitter.util.{Closable, CloseAwaitably, Duration, Future, Time}
+import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import java.nio.ByteBuffer
+import scala.collection.mutable
 
 trait SpanStoreFilter extends Filter[Seq[Span], Unit, Seq[Span], Unit]
 
@@ -38,6 +41,9 @@ trait WriteSpanStore
 
   // Used for pinning
   def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit]
+
+  protected def shouldIndex(span: Span): Boolean =
+    !(span.isClientSide() && span.serviceNames.contains("client"))
 }
 
 trait ReadSpanStore {
@@ -95,4 +101,115 @@ trait ReadSpanStore {
    * Get all the span names for a particular service, as far back as the ttl allows.
    */
   def getSpanNames(service: String): Future[Set[String]]
+}
+
+class InMemorySpanStore extends SpanStore {
+  val ttls: mutable.Map[Long, Duration] = mutable.Map.empty
+  val spans: mutable.ArrayBuffer[Span] = new mutable.ArrayBuffer[Span]
+
+  private[this] def call[T](f: => T): Future[T] = synchronized { Future(f) }
+
+  private[this] def spansForService(name: String): Seq[Span] =
+    spans filter { span =>
+      shouldIndex(span) &&
+      span.serviceNames.exists { _.toLowerCase == name.toLowerCase }
+    }
+
+  def close(deadline: Time): Future[Unit] = closeAwaitably {
+    Future.Done
+  }
+
+  def apply(newSpans: Seq[Span]): Future[Unit] = call {
+    spans foreach { span => ttls(span.traceId) = 1.second }
+    spans ++= newSpans
+  }.unit
+
+  // Used for pinning
+  def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = call {
+    ttls(traceId) = ttl
+  }.unit
+
+  def getTimeToLive(traceId: Long): Future[Duration] = call {
+    ttls(traceId)
+  }
+
+  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = call {
+    spans.map(_.traceId).toSet & traceIds.toSet
+  }
+
+  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = call {
+    traceIds flatMap { id =>
+      Some(spans filter { _.traceId == id }) filter { _.length > 0 }
+    }
+  }
+
+  def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = call {
+    spans filter { _.traceId == traceId }
+  }
+
+  def getTraceIdsByName(
+    serviceName: String,
+    spanName: Option[String],
+    endTs: Long,
+    limit: Int
+  ): Future[Seq[IndexedTraceId]] = call {
+    ((spanName, spansForService(serviceName)) match {
+      case (Some(name), spans) =>
+        spans filter { _.name.toLowerCase == name.toLowerCase }
+      case (_, spans) =>
+        spans
+    }) filter { span =>
+      span.lastAnnotation match {
+        case Some(ann) => ann.timestamp <= endTs
+        case None => false
+      }
+    } filter(shouldIndex) take(limit) map { span =>
+      IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
+    }
+  }
+
+  def getTraceIdsByAnnotation(
+    serviceName: String,
+    annotation: String,
+    value: Option[ByteBuffer],
+    endTs: Long,
+    limit: Int
+  ): Future[Seq[IndexedTraceId]] = call {
+    // simulate the lack of index for core annotations
+    if (Constants.CoreAnnotations.contains(annotation)) Seq.empty else {
+      ((value, spansForService(serviceName)) match {
+        case (Some(v), spans) =>
+          spans filter { span =>
+            span.lastAnnotation.isDefined &&
+            span.lastAnnotation.get.timestamp <= endTs &&
+            span.binaryAnnotations.exists { ba => ba.key == annotation && ba.value == v }
+          }
+        case (_, spans) =>
+          spans filter { span =>
+            span.annotations foreach { a => println((annotation, a.value, annotation == a.value)) }
+            span.lastAnnotation.isDefined &&
+            span.annotations.min.timestamp <= endTs &&
+            span.annotations.exists { _.value == annotation }
+          }
+      }) filter(shouldIndex) take(limit) map { span =>
+        IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
+      }
+    }
+  }
+
+  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = call {
+    spans filter { span => traceIds.contains(span.traceId) } flatMap { span =>
+      span.duration map { d =>
+        TraceIdDuration(span.traceId, d, span.firstAnnotation.get.timestamp)
+      }
+    }
+  }
+
+  def getAllServiceNames: Future[Set[String]] = call {
+    spans.flatMap(_.serviceNames).toSet
+  }
+
+  def getSpanNames(serviceName: String): Future[Set[String]] = call {
+    spansForService(serviceName).map(_.name).toSet
+  }
 }
