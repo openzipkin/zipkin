@@ -28,6 +28,24 @@ trait SpanStoreFilter extends Filter[Seq[Span], Unit, Seq[Span], Unit]
 trait SpanStore extends WriteSpanStore with ReadSpanStore
 
 /**
+ * A convencience builder to create a single WriteSpanStore from many. Writes
+ * will be fanned out concurrently. A failure of any store will return a failure.
+ */
+object FanoutWriteSpanStore {
+  def apply(stores: WriteSpanStore*): WriteSpanStore = new WriteSpanStore {
+    def apply(spans: Seq[Span]): Future[Unit] =
+      Future.join(stores map { _(spans) })
+
+    def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] =
+      Future.join(stores map { _.setTimeToLive(traceId, ttl) })
+
+    override def close(deadline: Time): Future[Unit] = closeAwaitably {
+      Closable.all(stores: _*).close(deadline)
+    }
+  }
+}
+
+/**
  * Write store extends CloseAwaitably so we can close writes and await possible draining
  * of internal queues.
  */
