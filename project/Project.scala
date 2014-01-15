@@ -375,7 +375,8 @@ object Zipkin extends Build {
       "storm"                 % "storm-kafka"           % "0.9.0-wip16b-scala292",
       "commons-logging"       % "commons-logging"       % "1.1.1",
       "commons-configuration" % "commons-configuration" % "1.6",
-      "com.twitter"           % "util-logging"          % UTIL_VERSION
+      util("logging"),
+      "com.twitter"           %% "scrooge-serializer"   % SCROOGE_VERSION
     ) ++ testDependencies,
 
     PackageDist.packageDistZipName := "zipkin-storm.zip",

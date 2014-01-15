@@ -16,7 +16,7 @@
  */
 package com.twitter.zipkin.storm
 
-import backtype.storm.spout.{SchemeAsMultiScheme, MultiScheme}
+import backtype.storm.spout.MultiScheme
 import storm.kafka.KafkaConfig
 import storm.kafka.trident.{OpaqueTridentKafkaSpout, TridentKafkaConfig}
 
@@ -24,13 +24,12 @@ import storm.kafka.trident.{OpaqueTridentKafkaSpout, TridentKafkaConfig}
  * Storm spout to read spans from Kafka
  */
 object ZipkinSpout {
-  protected def getOpaqueKafkaTridentSpout(
+  def getSpanSpout(
       zkBroker: String,
       zkPath: String,
       kafkaTopic: String,
       scheme: MultiScheme,
       timeOffset: Int = -1) = {
-
     val kafkaConf =
       new TridentKafkaConfig(
         new KafkaConfig.ZkHosts(zkBroker, zkPath),
@@ -39,11 +38,4 @@ object ZipkinSpout {
     kafkaConf.scheme = scheme
     new OpaqueTridentKafkaSpout(kafkaConf)
   }
-
-  def getSpanSpout = getOpaqueKafkaTridentSpout(
-    "szookeeper.smf1.twitter.com:2181",
-    "/twitter/kafka/brokers",
-    "zipkin",
-    new SchemeAsMultiScheme(new SpanScheme())
-  )
 }
