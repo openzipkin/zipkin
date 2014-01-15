@@ -29,7 +29,7 @@ class CassieSpanStoreTest extends FunSuite {
   FakeServer.start()
 
   object CassieStore extends App with CassieSpanStoreFactory
-  CassieStore.main(Array("-zipkin.store.cassie.location", "127.0.0.1:%d".format(FakeServer.port.get)))
+  CassieStore.main(Array("-zipkin.store.cassie.dest", "127.0.0.1:%d".format(FakeServer.port.get)))
 
   def newSpanStore = {
     FakeServer.reset()
