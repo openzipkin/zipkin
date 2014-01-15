@@ -19,8 +19,12 @@
 
         <!-- Holds any additional filters that are added to the query -->
         <div class="additional-filter-group">
-          {{annotationsPartial}}
-          {{kvAnnotationsPartial}}
+          {{#annotations}}
+            {{>public/templates/query-add-annotation}}
+          {{/annotations}}
+          {{#kvAnnotations}}
+            {{>public/templates/query-add-kv}}
+          {{/kvAnnotations}}
         </div>
 
         <div class="btn-group add-filter-group">
@@ -145,6 +149,6 @@
 </div>
 <script type="text/javascript">
   $(document).ready(function() {
-    $(Zipkin.Application.Index.initialize({{jsonServices}}, {{jsonQueryResults}}));
+    $(Zipkin.Application.Index.initialize({{{jsonServices}}}, {{{jsonQueryResults}}}));
   });
 </script>

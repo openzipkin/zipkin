@@ -18,10 +18,17 @@ package com.twitter.zipkin.query
 
 import com.twitter.zipkin.common.BinaryAnnotation
 
-case class QueryRequest(serviceName: String,
-                        spanName: Option[String],
-                        annotations: Option[Seq[String]],
-                        binaryAnnotations: Option[Seq[BinaryAnnotation]],
-                        endTs: Long,
-                        limit: Int,
-                        order: Order)
+case class QueryRequest(
+  serviceName: String,
+  spanName: Option[String],
+  annotations: Option[Seq[String]],
+  binaryAnnotations: Option[Seq[BinaryAnnotation]],
+  endTs: Long,
+  limit: Int,
+  order: Order
+) {
+  def hasAnnotations = {
+    (annotations.map { _.length } getOrElse 0) +
+    (binaryAnnotations.map { _.length } getOrElse 0) > 0
+  }
+}
