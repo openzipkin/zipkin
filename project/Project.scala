@@ -2,24 +2,30 @@ import com.twitter.sbt.{BuildProperties,PackageDist,GitProject}
 import sbt._
 import com.twitter.scrooge.ScroogeSBT
 import sbt.Keys._
+import Keys._
+import sbtassembly.Plugin._
+import AssemblyKeys._
 
 object Zipkin extends Build {
 
-  val CASSIE_VERSION  = "0.25.2"
-  val FINAGLE_VERSION = "6.5.2"
-  val OSTRICH_VERSION = "9.1.2"
-  val UTIL_VERSION    = "6.3.8"
+  val CASSIE_VERSION  = "0.25.3"
+  val OSTRICH_VERSION = "9.2.1"
   val SCROOGE_VERSION = "3.11.1"
   val ZOOKEEPER_VERSION = Map("candidate" -> "0.0.41", "group" -> "0.0.44", "client" -> "0.0.35")
   val ALGEBIRD_VERSION  = "0.1.13"
   val HBASE_VERSION = "0.94.10"
+
+  val finagleVersion = "6.8.1"
+  val utilVersion = "6.8.1"
+  def finagle(name: String) = "com.twitter" %% ("finagle-" + name) % finagleVersion
+  def util(name: String) = "com.twitter" %% ("util-" + name) % utilVersion
 
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
   val travisCi = Option(System.getenv("SBT_TRAVIS_CI")) // for adding travis ci maven repos before others
   val cwd = System.getProperty("user.dir")
 
   lazy val testDependencies = Seq(
-    "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources() cross CrossVersion.binaryMapped {
+    "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" cross CrossVersion.binaryMapped {
       case "2.9.2" => "2.9.1"
       case "2.10.0" => "2.10"
       case x => x
@@ -80,7 +86,7 @@ object Zipkin extends Build {
     Project(
       id = "zipkin",
       base = file(".")
-    ) aggregate(test, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, anormDB, collectorCore, collectorService, kafka, redis, hbase)
+    ) aggregate(test, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, anormDB, collectorCore, collectorService, kafka, redis, hbase, storm)
 
   lazy val test   = Project(
     id = "zipkin-test",
@@ -98,12 +104,12 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "com.twitter" %% "finagle-ostrich4"  % FINAGLE_VERSION,
-        "com.twitter" %% "finagle-thrift"    % FINAGLE_VERSION,
-        "com.twitter" %% "finagle-zipkin"    % FINAGLE_VERSION,
-        "com.twitter" %% "finagle-exception" % FINAGLE_VERSION,
+        finagle("ostrich4"),
+        finagle("thrift"),
+        finagle("zipkin"),
+        finagle("exception"),
         "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
-        "com.twitter" %% "util-core"         % UTIL_VERSION,
+        util("core"),
         "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
 
         "com.twitter.common.zookeeper" % "client"    % ZOOKEEPER_VERSION("client")
@@ -128,11 +134,11 @@ object Zipkin extends Build {
       settings = defaultSettings ++ ScroogeSBT.newSettings
     ).settings(
         libraryDependencies ++= Seq(
-        "com.twitter" %% "finagle-ostrich4"  % FINAGLE_VERSION,
-        "com.twitter" %% "finagle-thrift"    % FINAGLE_VERSION,
-        "com.twitter" %% "finagle-zipkin"    % FINAGLE_VERSION,
+        finagle("ostrich4"),
+        finagle("thrift"),
+        finagle("zipkin"),
         "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
-        "com.twitter" %% "util-core"         % UTIL_VERSION,
+        util("core"),
         "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
         "com.twitter" %% "scrooge-core"      % SCROOGE_VERSION
       ) ++ testDependencies
@@ -144,15 +150,15 @@ object Zipkin extends Build {
     settings = defaultSettings
   ).settings(
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-ostrich4"  % FINAGLE_VERSION,
-      "com.twitter" %% "finagle-serversets"% FINAGLE_VERSION,
-      "com.twitter" %% "finagle-thrift"    % FINAGLE_VERSION,
-      "com.twitter" %% "finagle-zipkin"    % FINAGLE_VERSION,
+      finagle("ostrich4"),
+      finagle("serversets"),
+      finagle("thrift"),
+      finagle("zipkin"),
       "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
       "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
-      "com.twitter" %% "util-core"         % UTIL_VERSION,
-      "com.twitter" %% "util-zk"           % UTIL_VERSION,
-      "com.twitter" %% "util-zk-common"    % UTIL_VERSION,
+      util("core"),
+      util("zk"),
+      util("zk-common"),
 
       "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION("candidate"),
       "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION("group")
@@ -167,8 +173,9 @@ object Zipkin extends Build {
     libraryDependencies ++= Seq(
       "com.twitter"     % "cassie-core"       % CASSIE_VERSION,
       "com.twitter"     % "cassie-serversets" % CASSIE_VERSION,
-      "com.twitter"     % "util-logging"      % UTIL_VERSION,
-      "org.iq80.snappy" % "snappy"            % "0.1"
+      util("logging"),
+      "org.iq80.snappy" % "snappy"            % "0.1",
+      "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */
@@ -202,15 +209,15 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "com.twitter" %% "finagle-ostrich4"  % FINAGLE_VERSION,
-        "com.twitter" %% "finagle-serversets"% FINAGLE_VERSION,
-        "com.twitter" %% "finagle-thrift"    % FINAGLE_VERSION,
-        "com.twitter" %% "finagle-zipkin"    % FINAGLE_VERSION,
+        finagle("ostrich4"),
+        finagle("serversets"),
+        finagle("thrift"),
+        finagle("zipkin"),
         "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
         "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
-        "com.twitter" %% "util-core"         % UTIL_VERSION,
-        "com.twitter" %% "util-zk"           % UTIL_VERSION,
-        "com.twitter" %% "util-zk-common"    % UTIL_VERSION,
+        util("core"),
+        util("zk"),
+        util("zk-common"),
 
         "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION("candidate"),
         "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION("group")
@@ -241,7 +248,9 @@ object Zipkin extends Build {
       base = file("zipkin-collector-scribe"),
       settings = defaultSettings
     ).settings(
-      libraryDependencies ++= testDependencies
+      libraryDependencies ++= Seq(
+        "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
+      ) ++ testDependencies
     ).dependsOn(collectorCore, scrooge)
 
   lazy val kafka =
@@ -251,7 +260,8 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "org.clojars.jasonjckn"      %% "kafka"    % "0.7.2-test1"
+        "org.clojars.jasonjckn"      %% "kafka"    % "0.7.2-test1",
+      "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
       ) ++ testDependencies,
       resolvers ++= (proxyRepo match {
         case None => Seq(
@@ -285,13 +295,14 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "com.twitter" % "finatra" % "1.3.7",
+        "com.twitter" %% "twitter-server" % "1.3.1",
+        "com.github.spullara.mustache.java" % "compiler" % "0.8.13",
 
         "com.twitter.common.zookeeper" % "server-set" % "1.0.36",
 
-        "com.twitter" %% "finagle-serversets" % FINAGLE_VERSION,
-        "com.twitter" %% "finagle-zipkin"     % FINAGLE_VERSION,
-        "com.twitter" %% "finagle-exception"  % FINAGLE_VERSION,
+        finagle("serversets"),
+        finagle("zipkin"),
+        finagle("exception"),
         "com.twitter" %% "algebird-core"      % ALGEBIRD_VERSION
       ) ++ testDependencies,
 
@@ -313,9 +324,10 @@ object Zipkin extends Build {
   ).settings(
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-redis"     % FINAGLE_VERSION,
-      "org.slf4j" % "slf4j-log4j12"          % "1.6.4" % "runtime",
-      "com.twitter"     %% "util-logging"      % UTIL_VERSION
+      finagle("redis"),
+      util("logging"),
+      "org.slf4j"   %  "slf4j-log4j12"      % "1.6.4" % "runtime",
+      "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */
@@ -341,13 +353,49 @@ object Zipkin extends Build {
       "commons-configuration" % "commons-configuration" % "1.6",
       "org.apache.zookeeper"  % "zookeeper"             % "3.4.5" % "runtime" notTransitive(),
       "org.slf4j"             % "slf4j-log4j12"         % "1.6.4" % "runtime",
-      "com.twitter"           % "util-logging"          % UTIL_VERSION
+      util("logging"),
+      "com.twitter"           %% "scrooge-serializer"   % SCROOGE_VERSION
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
+    }
+  ).dependsOn(scrooge)
+
+  lazy val storm = Project(
+    id = "zipkin-storm",
+    base = file("zipkin-storm"),
+    settings = defaultSettings ++ assemblySettings
+  ).settings(
+    parallelExecution in Test := false,
+    libraryDependencies ++= Seq(
+      "storm"                 % "storm"                 % "0.9.0-wip15-2.1.4"      % "provided",
+      "storm"                 % "storm-kafka"           % "0.9.0-wip16b-scala292",
+      "commons-logging"       % "commons-logging"       % "1.1.1",
+      "commons-configuration" % "commons-configuration" % "1.6",
+      "com.twitter"           % "util-logging"          % UTIL_VERSION
+    ) ++ testDependencies,
+
+    PackageDist.packageDistZipName := "zipkin-storm.zip",
+    BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
+    resourceGenerators in Compile <+= BuildProperties.buildPropertiesWrite,
+
+    /* Add configs to resource path for ConfigSpec */
+    unmanagedResourceDirectories in Test <<= baseDirectory {
+      base =>
+        (base / "config" +++ base / "src" / "test" / "resources").get
+    },
+
+    mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+      {
+        case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
+        case PathList("org", "apache", xs @ _*) => MergeStrategy.last
+        case PathList("com", "twitter", xs @ _*) => MergeStrategy.last
+        case PathList("project.clj") => MergeStrategy.last
+        case x => old(x)
+      }
     }
   ).dependsOn(scrooge)
 }
