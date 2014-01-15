@@ -62,7 +62,12 @@ trait CassieSpanStoreFactory { self: App =>
       wc.toString.split('.')(1)
   }
 
-  // Gross
+  /**
+   * Gross
+   *
+   * Cassie requires a `com.twitter.finagle.builder.Cluster`. The new API is Var[Addr] produced from
+   * a Resolver. This bridges the old and new.
+   */
   private class VarAddrCluster(va: Var[Addr]) extends CCluster[SocketAddress] {
     private[this] val underlyingSet = new HashSet[SocketAddress]
     private[this] var changes = new Promise[Spool[Cluster.Change[SocketAddress]]]
