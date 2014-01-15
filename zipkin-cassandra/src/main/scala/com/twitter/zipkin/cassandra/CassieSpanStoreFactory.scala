@@ -32,16 +32,9 @@ import com.twitter.zipkin.storage.cassandra._
 import java.net.SocketAddress
 import scala.collection.mutable.HashSet
 
-case class ColumnFamilyNames(
-  traces: String = "Traces",
-  serviceNames: String = "ServiceNames",
-  spanNames: String = "SpanNames",
-  serviceNameIndex: String = "ServiceNameIndex",
-  serviceSpanNameIndex: String = "ServiceSpanNameIndex",
-  annotationsIndex: String = "AnnotationsIndex",
-  durationIndex: String = "DurationIndex")
-
 trait CassieSpanStoreFactory { self: App =>
+  import com.twitter.zipkin.storage.cassandra.{CassieSpanStoreDefaults => Defaults}
+
   implicit object flagOfWriteConsistency extends Flaggable[WriteConsistency] {
     def parse(v: String) = v.toLowerCase match {
       case "one" => WriteConsistency.One
@@ -105,21 +98,21 @@ trait CassieSpanStoreFactory { self: App =>
     def close { Await.ready(observer.close()) }
   }
 
-  val cassieColumnFamilies = ColumnFamilyNames()
-  val cassieSpanCodec = new SnappyCodec(new ScroogeThriftCodec[ThriftSpan](ThriftSpan))
+  val cassieColumnFamilies = Defaults.ColumnFamilyNames
+  val cassieSpanCodec = Defaults.SpanCodec
 
-  val cassieKeyspace = flag("zipkin.store.cassie.keyspace", "Zipkin", "name of the keyspace to use")
+  val cassieKeyspace = flag("zipkin.store.cassie.keyspace", Defaults.KeyspaceName, "name of the keyspace to use")
   val cassieLocation = flag("zipkin.store.cassie.location", "localhost:9160", "location of the cassandra cluster")
 
-  val cassieWriteConsistency = flag[WriteConsistency]("zipkin.store.cassie.writeConsistency", WriteConsistency.One, "cassie write consistency (one, quorum, all)")
-  val cassieReadConsistency = flag[ReadConsistency]("zipkin.store.cassie.readConsistency", ReadConsistency.One, "cassie read consistency (one, quorum, all)")
+  val cassieWriteConsistency = flag[WriteConsistency]("zipkin.store.cassie.writeConsistency", Defaults.WriteConsistency,  "cassie write consistency (one, quorum, all)")
+  val cassieReadConsistency = flag[ReadConsistency]("zipkin.store.cassie.readConsistency", Defaults.ReadConsistency, "cassie read consistency (one, quorum, all)")
 
-  val cassieSpanTtl = flag("zipkin.store.cassie.spanTTL", 7.days, "length of time cassandra should store spans")
-  val cassieIndexTtl = flag("zipkin.store.cassie.indexTTL", 3.days, "length of time cassandra should store span indexes")
-  val cassieIndexBuckets = flag("zipkin.store.cassie.indexBuckets", 10, "number of buckets to split index data into")
+  val cassieSpanTtl = flag("zipkin.store.cassie.spanTTL", Defaults.SpanTtl, "length of time cassandra should store spans")
+  val cassieIndexTtl = flag("zipkin.store.cassie.indexTTL", Defaults.IndexTtl, "length of time cassandra should store span indexes")
+  val cassieIndexBuckets = flag("zipkin.store.cassie.indexBuckets", Defaults.IndexBuckets, "number of buckets to split index data into")
 
-  val cassieMaxTraceCols = flag("zipkin.store.cassie.maxTraceCols", 100000, "max number of spans to return from a query")
-  val cassieReadBatchSize = flag("zipkin.store.cassie.readBatchSize", 500, "max number of rows per query")
+  val cassieMaxTraceCols = flag("zipkin.store.cassie.maxTraceCols", Defaults.MaxTraceCols, "max number of spans to return from a query")
+  val cassieReadBatchSize = flag("zipkin.store.cassie.readBatchSize", Defaults.ReadBatchSize, "max number of rows per query")
 
   def newCassandraStore(stats: StatsReceiver = LoadedStatsReceiver.scope("cassie")): CassieSpanStore = {
     val scopedStats = stats.scope(cassieKeyspace())
@@ -135,8 +128,8 @@ trait CassieSpanStoreFactory { self: App =>
       .retryPolicy(RetryPolicy.Idempotent)
 
     new CassieSpanStore(
-      scopedStats,
       keyspace.connect(),
+      scopedStats,
       cassieColumnFamilies,
       cassieWriteConsistency(),
       cassieReadConsistency(),

@@ -15,13 +15,13 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
+import com.twitter.cassie
 import com.twitter.cassie._
 import com.twitter.cassie.codecs.{Codec, LongCodec, Utf8Codec}
 import com.twitter.conversions.time._
-import com.twitter.finagle.stats.StatsReceiver
+import com.twitter.finagle.stats.{LoadedStatsReceiver, StatsReceiver}
 import com.twitter.util.{Future, FuturePool, Duration, Time}
 import com.twitter.zipkin.Constants
-import com.twitter.zipkin.cassandra.ColumnFamilyNames
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen.{Span => ThriftSpan}
@@ -30,18 +30,40 @@ import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import scala.collection.JavaConverters._
 
+case class ZipkinColumnFamilyNames(
+  traces: String = "Traces",
+  serviceNames: String = "ServiceNames",
+  spanNames: String = "SpanNames",
+  serviceNameIndex: String = "ServiceNameIndex",
+  serviceSpanNameIndex: String = "ServiceSpanNameIndex",
+  annotationsIndex: String = "AnnotationsIndex",
+  durationIndex: String = "DurationIndex")
+
+object CassieSpanStoreDefaults {
+  val KeyspaceName = "Zipkin"
+  val ColumnFamilyNames = ZipkinColumnFamilyNames()
+  val WriteConsistency = cassie.WriteConsistency.One
+  val ReadConsistency = cassie.ReadConsistency.One
+  val SpanTtl = 7.days
+  val IndexTtl = 3.days
+  val IndexBuckets = 10
+  val MaxTraceCols = 100000
+  val ReadBatchSize = 500
+  val SpanCodec = new SnappyCodec(new ScroogeThriftCodec[ThriftSpan](ThriftSpan))
+}
+
 class CassieSpanStore(
-  stats: StatsReceiver,
   keyspace: Keyspace,
-  cfs: ColumnFamilyNames,
-  writeConsistency: WriteConsistency,
-  readConsistency: ReadConsistency,
-  spanTtl: Duration,
-  indexTtl: Duration,
-  bucketsCount: Int,
-  maxTraceCols: Int,
-  readBatchSize: Int,
-  spanCodec: Codec[ThriftSpan]
+  stats: StatsReceiver = LoadedStatsReceiver.scope("CassieSpanStore"),
+  cfs: ZipkinColumnFamilyNames = CassieSpanStoreDefaults.ColumnFamilyNames,
+  writeConsistency: WriteConsistency = CassieSpanStoreDefaults.WriteConsistency,
+  readConsistency: ReadConsistency = CassieSpanStoreDefaults.ReadConsistency,
+  spanTtl: Duration = CassieSpanStoreDefaults.SpanTtl,
+  indexTtl: Duration = CassieSpanStoreDefaults.IndexTtl,
+  bucketsCount: Int = CassieSpanStoreDefaults.IndexBuckets,
+  maxTraceCols: Int = CassieSpanStoreDefaults.MaxTraceCols,
+  readBatchSize: Int = CassieSpanStoreDefaults.ReadBatchSize,
+  spanCodec: Codec[ThriftSpan] = CassieSpanStoreDefaults.SpanCodec
 ) extends SpanStore {
   private[this] val ServiceNamesKey = "servicenames"
   private[this] val IndexDelimiter = ":"
