@@ -39,7 +39,7 @@ class SpanScheme extends Scheme {
   override def deserialize(bytes: Array[Byte]) = {
     val span = try {
       Stats.time("deserializeSpanSpout") {
-        Some(deserializer.fromBytes(bytes))
+        Some(deserializer.fromBytes(bytes).toSpan)
       }
     } catch {
       case e: Exception => {
@@ -51,7 +51,7 @@ class SpanScheme extends Scheme {
 
     span match {
       case Some(s) => {
-        Seq(s.traceId, s.id, s.name, s.toSpan.serviceName.getOrElse(""), s.toSpan.isClientSide)
+        Seq(s.traceId, s.id, s.name, s.serviceName.getOrElse(""), s.isClientSide)
             .asJava.asInstanceOf[util.List[java.lang.Object]]
       }
       case None =>

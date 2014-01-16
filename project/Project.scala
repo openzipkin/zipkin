@@ -376,8 +376,9 @@ object Zipkin extends Build {
       "commons-logging"       % "commons-logging"       % "1.1.1",
       "commons-configuration" % "commons-configuration" % "1.6",
       util("logging"),
-      "com.twitter"           %% "scrooge-serializer"   % SCROOGE_VERSION
-    ) ++ testDependencies,
+      "com.twitter"           %% "scrooge-serializer"   % SCROOGE_VERSION,
+      "org.scalatest"         %% "scalatest"           % "1.9.2"                  % "test"
+    ),
 
     PackageDist.packageDistZipName := "zipkin-storm.zip",
     BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",

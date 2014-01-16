@@ -15,12 +15,11 @@
  */
 package com.twitter.zipkin.storm
 
-import org.specs.Specification
-import org.specs.mock.{ClassMocker, JMocker}
+import org.scalatest._
 import com.twitter.zipkin.gen.{Annotation, Endpoint, Span}
 import scala.collection.JavaConversions._
 
-class SpanSchemeSpec extends Specification with JMocker with ClassMocker {
+class SpanSchemeSpec extends FlatSpec {
 
   val annotation1 = Annotation(1, "cs", Some(Endpoint(1, 2, "service")))
   val annotation2 = Annotation(2, "cr", Some(Endpoint(3, 4, "Service")))
@@ -30,17 +29,14 @@ class SpanSchemeSpec extends Specification with JMocker with ClassMocker {
   val spanScheme = new SpanScheme()
   val bytes = spanScheme.deserializer.toBytes(span)
 
-  "SpanScheme" should {
-
-    "deserialize bytes to span" in {
+  "SpanScheme" should "deserialize bytes to span" in {
       val spanRecovered = spanScheme.deserializer.fromBytes(bytes)
-      spanRecovered mustEqual span
+      assert(spanRecovered === span)
     }
-  }
 
-    "return values of the fields" in {
+  it should "return correct values of the fields" in {
       val expectedValues = Seq(12345, 666, "methodcall", "service", true)
       val values = spanScheme.deserialize(bytes).toList
-      expectedValues mustEqual values
+      assert(expectedValues === values)
     }
 }
