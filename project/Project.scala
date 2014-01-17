@@ -372,7 +372,7 @@ object Zipkin extends Build {
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
       "storm"                 % "storm"                 % "0.9.0.1"               % "provided",
-      "storm"                 % "storm-kafka"           % "0.9.0-wip16b-scala292",
+      "storm"                 % "storm-kafka"           % "0.9.0-wip16a-scala292",
       "commons-logging"       % "commons-logging"       % "1.1.1",
       "commons-configuration" % "commons-configuration" % "1.6",
       util("logging"),
