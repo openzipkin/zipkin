@@ -377,6 +377,7 @@ object Zipkin extends Build {
       "commons-configuration" % "commons-configuration" % "1.6",
       util("logging"),
       "com.twitter"           %% "scrooge-serializer"   % SCROOGE_VERSION,
+      "com.twitter"           %% "kafka"                % "0.7.0",
       "org.scalatest"         %% "scalatest"            % "1.9.2"                 % "test"
     ),
 
