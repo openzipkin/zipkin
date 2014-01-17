@@ -50,6 +50,9 @@ trait Storage {
    * Get the available trace information from the storage system.
    * Spans in trace should be sorted by the first annotation timestamp
    * in that span. First event should be first in the spans list.
+   *
+   * The return list will contain only spans that have been found, thus
+   * the return list may not match the provided list of ids.
    */
   def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]]
   def getSpansByTraceId(traceId: Long): Future[Seq[Span]]

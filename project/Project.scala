@@ -11,6 +11,7 @@ object Zipkin extends Build {
   val CASSIE_VERSION  = "0.25.3"
   val OSTRICH_VERSION = "9.2.1"
   val SCROOGE_VERSION = "3.11.1"
+  val TwitterServerVersion = "1.4.0"
   val ZOOKEEPER_VERSION = Map("candidate" -> "0.0.41", "group" -> "0.0.44", "client" -> "0.0.35")
   val ALGEBIRD_VERSION  = "0.1.13"
   val HBASE_VERSION = "0.94.10"
@@ -25,22 +26,25 @@ object Zipkin extends Build {
   val cwd = System.getProperty("user.dir")
 
   lazy val testDependencies = Seq(
-    "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" cross CrossVersion.binaryMapped {
-      case "2.9.2" => "2.9.1"
-      case "2.10.0" => "2.10"
-      case x => x
-    },
     "org.jmock"               %  "jmock"        % "2.4.0" % "test",
     "org.hamcrest"            %  "hamcrest-all" % "1.1"   % "test",
     "cglib"                   %  "cglib"        % "2.2.2" % "test",
     "asm"                     %  "asm"          % "1.5.3" % "test",
     "org.objenesis"           %  "objenesis"    % "1.1"   % "test",
-    "junit"                   %  "junit"        % "4.7"   % "test"
+    "org.scalatest"           %% "scalatest"    % "1.9.1" % "test",
+    "org.scala-tools.testing" %% "specs"        % "1.6.9" % "test" cross CrossVersion.binaryMapped {
+      case "2.9.2" => "2.9.1"
+      case "2.10.0" => "2.10"
+      case x => x
+    },
+    "junit" % "junit" % "4.10" % "test"
   )
 
   def zipkinSettings = Seq(
     organization := "com.twitter",
     version := "1.1.1-SNAPSHOT",
+    crossScalaVersions := Seq("2.9.2"),
+    scalaVersion := "2.9.2",
     crossPaths := false,            /* Removes Scala version from artifact name */
     fork := true, // forking prevents runaway thread pollution of sbt
     baseDirectory in run := file(cwd), // necessary for forking
@@ -140,7 +144,8 @@ object Zipkin extends Build {
         "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
         util("core"),
         "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
-        "com.twitter" %% "scrooge-core"      % SCROOGE_VERSION
+        "com.twitter" %% "scrooge-core"      % SCROOGE_VERSION,
+        "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
       ) ++ testDependencies
     ).dependsOn(common)
 
@@ -159,6 +164,7 @@ object Zipkin extends Build {
       util("core"),
       util("zk"),
       util("zk-common"),
+      "com.twitter" %% "twitter-server"    % TwitterServerVersion,
 
       "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION("candidate"),
       "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION("group")
@@ -174,6 +180,7 @@ object Zipkin extends Build {
       "com.twitter"     % "cassie-core"       % CASSIE_VERSION,
       "com.twitter"     % "cassie-serversets" % CASSIE_VERSION,
       util("logging"),
+      util("app"),
       "org.iq80.snappy" % "snappy"            % "0.1",
       "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
     ) ++ testDependencies,
