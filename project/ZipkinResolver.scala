@@ -34,7 +34,8 @@ object ZipkinResolver extends Plugin {
       // for netty:
       "jboss" at "http://repository.jboss.org/nexus/content/groups/public/",
       // for storm:
-      "clojars.org" at "http://clojars.org/repo"
+      "clojars.org" at "http://clojars.org/repo",
+      "conjars.org" at "http://conjars.org/repo"
     ),
 
     localRepo := file(System.getProperty("user.home") + "/.m2/repository"),
