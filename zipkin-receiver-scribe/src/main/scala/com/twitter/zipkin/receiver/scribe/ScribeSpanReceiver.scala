@@ -16,27 +16,29 @@
 package com.twitter.zipkin.receiver.scribe
 
 import com.twitter.app.{App, Flaggable}
+import com.twitter.conversions.time._
 import com.twitter.finagle.Thrift
 import com.twitter.finagle.stats.{LoadedStatsReceiver, StatsReceiver}
 import com.twitter.finagle.util.{DefaultTimer, InetSocketAddressUtil}
 import com.twitter.logging.Logger
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Closable, Future, Return, Throw, Time}
-import com.twitter.conversions.time._
 import com.twitter.zipkin.collector.SpanReceiver
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen.{LogEntry, ResultCode, Scribe, Span => ThriftSpan, ZipkinCollector}
+import com.twitter.zipkin.zookeeper._
 import com.twitter.zk.ZkClient
 import java.net.{InetSocketAddress, URI}
 
 /**
  * A SpanReceiverFactory that should be mixed into a base ZipkinCollector. This provides `newScribeSpanReceiver` which
  * will create a `ScribeSpanReciever` listening on a configurable port (-zipkin.receiver.scribe.port) and announced to
- * ZooKeeper via a given URI (-zipkin.receiver.scribe.announceURI). If a URI is not explicitly provided no announcement
- * will be made (this is helpful for instance during development).
+ * ZooKeeper via a given path (-zipkin.receiver.scribe.zk.path). If a path is not explicitly provided no announcement
+ * will be made (this is helpful for instance during development). This factory must also be mixed into an App trait
+ * along with a ZooKeeperClientFactory.
  */
-trait ScribeSpanReceiverFactory { self: App =>
+trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
   implicit object flagOfURI extends Flaggable[URI] {
     def parse(v: String) = new URI(v)
     override def show(c: URI) = c.toString
@@ -44,23 +46,23 @@ trait ScribeSpanReceiverFactory { self: App =>
 
   val scribePort = flag("zipkin.receiver.scribe.port", 1490, "the port to listen on")
   val scribeCategories = flag("zipkin.receiver.scribe.categories", Seq("zipkin"), "a whitelist of categories to process")
-  val scribeAnnounceURI = flag("zipkin.receiver.scribe.annoucnceURI", new URI("none"), "the zookeeper URI to announce on. blank does not announce")
+  val scribeZkPath = flag("zipkin.receiver.scribe.zk.path", "", "the zookeeper URI to announce on. blank does not announce")
 
   def newScribeSpanReceiver(
     process: Seq[Span] => Future[Unit],
     stats: StatsReceiver = LoadedStatsReceiver.scope("ScribeSpanReceiver")
   ): SpanReceiver = new SpanReceiver {
-    val boundAddress = InetSocketAddressUtil.toPublic(new InetSocketAddress(scribePort())).asInstanceOf[InetSocketAddress]
+    val addr = InetSocketAddressUtil.toPublic(new InetSocketAddress(scribePort())).asInstanceOf[InetSocketAddress]
 
-    val announcer: Option[Closable] = scribeAnnounceURI.get.map { uri =>
-      implicit val timer = DefaultTimer.twitter
-      val client = ZkClient("%s:%d".format(uri.getHost, uri.getPort), 3.seconds)
-      new ScribeZKAnnouncer(uri.getPath, boundAddress, client, stats.scope("ZKAnnouncer"))
+    val zkNode: Option[Closable] = scribeZkPath.get.map { path =>
+      val nodeName = "%s:%d".format(addr.getHostName, addr.getPort)
+      val fullPath = path + "/" + nodeName
+      zkClient.createEphemeral(path, nodeName.getBytes)
     }
 
-    val service = Thrift.serveIface(boundAddress, new ScribeReceiver(scribeCategories().toSet, process, stats))
+    val service = Thrift.serveIface(addr, new ScribeReceiver(scribeCategories().toSet, process, stats))
 
-    val closer: Closable = announcer map { Closable.sequence(_, service) } getOrElse { service }
+    val closer: Closable = zkNode map { Closable.sequence(_, service) } getOrElse { service }
     def close(deadline: Time): Future[Unit] = closeAwaitably { closer.close(deadline) }
   }
 }

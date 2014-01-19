@@ -13,8 +13,8 @@ object Zipkin extends Build {
   val ALGEBIRD_VERSION  = "0.1.13"
   val HBASE_VERSION = "0.94.10"
 
-  val finagleVersion = "6.8.1"
-  val utilVersion = "6.8.1"
+  val finagleVersion = "6.10.0"
+  val utilVersion = "6.11.0"
   def finagle(name: String) = "com.twitter" %% ("finagle-" + name) % finagleVersion
   def util(name: String) = "com.twitter" %% ("util-" + name) % utilVersion
 
@@ -148,6 +148,20 @@ object Zipkin extends Build {
         "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
       ) ++ testDependencies
     ).dependsOn(common)
+
+  lazy val zookeeper = Project(
+    id = "zipkin-zookeeper",
+    base = file("zipkin-zookeeper"),
+    settings = defaultSettings
+  ).settings(
+    libraryDependencies ++= Seq(
+      finagle("core"),
+      util("core"),
+      util("zk"),
+      "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION("candidate"),
+      "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION("group")
+    )
+  )
 
   lazy val collectorCore = Project(
     id = "zipkin-collector-core",
@@ -284,7 +298,7 @@ object Zipkin extends Build {
           util("zk"),
           "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
         )
-    ).dependsOn(collector, scrooge)
+    ).dependsOn(collector, zookeeper, scrooge)
 
   lazy val kafka =
     Project(
