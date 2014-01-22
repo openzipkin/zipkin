@@ -16,16 +16,19 @@
 package com.twitter.zipkin.storage
 
 import com.twitter.conversions.time._
-import com.twitter.finagle.{Filter, Service}
+import com.twitter.finagle.{Filter => FFilter, Service}
 import com.twitter.util.{Closable, CloseAwaitably, Duration, Future, Time}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import java.nio.ByteBuffer
 import scala.collection.mutable
 
-trait SpanStoreFilter extends Filter[Seq[Span], Unit, Seq[Span], Unit]
-
 trait SpanStore extends WriteSpanStore with ReadSpanStore
+
+object SpanStore {
+  type Filter = FFilter[Seq[Span], Unit, Seq[Span], Unit]
+}
+
 
 /**
  * A convencience builder to create a single WriteSpanStore from many. Writes

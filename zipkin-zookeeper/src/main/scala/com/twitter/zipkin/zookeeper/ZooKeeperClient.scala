@@ -95,6 +95,13 @@ class ZKClient(
     }
   }
 
+  def setData(path: String, data: Array[Byte]): Future[Unit] = {
+    zkClient(path).setData(data, -1).rescue {
+      case e: KeeperException.NoNodeException =>
+        ensurePath(path) before create(path, true, Some(data))
+    }.unit
+  }
+
   /**
    * Create a persistent ephemeral node at `path` with `data`. The node will be persisted for as long as
    * the jvm process is alive or until it is closed

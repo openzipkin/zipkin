@@ -88,9 +88,12 @@ object Zipkin extends Build {
       id = "zipkin",
       base = file(".")
     ) aggregate(
-      test, queryCore, queryService, common, scrooge, collectorScribe,
-      web, cassandra, anormDB, collectorCore, collectorService, kafka,
-      redis, hbase, collector, receiverScribe)
+      test, common, scrooge, zookeeper,
+      queryCore, queryService, web,
+      collectorScribe, collectorCore, collectorService,
+      sampler, receiverScribe, collector,
+      cassandra, anormDB, kafka, redis, hbase
+    )
 
   lazy val test   = Project(
     id = "zipkin-test",
@@ -130,6 +133,19 @@ object Zipkin extends Build {
       // define a whole new artifact that gets included in the scrooge publish task
       (artifactClassifier in packageSrc) := Some("idl")
     )
+
+  lazy val sampler =
+    Project(
+      id = "zipkin-sampler",
+      base = file("zipkin-sampler"),
+      settings = defaultSettings
+    ).settings(
+      libraryDependencies ++= Seq(
+        finagle("core"),
+        util("core"),
+        util("zk")
+      ) ++ testDependencies
+    ).dependsOn(common, zookeeper)
 
   lazy val scrooge =
     Project(
