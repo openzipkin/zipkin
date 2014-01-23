@@ -44,7 +44,7 @@ trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
     override def show(c: URI) = c.toString
   }
 
-  val scribePort = flag("zipkin.receiver.scribe.port", 1490, "the port to listen on")
+  val scribeAddr = flag("zipkin.receiver.scribe.addr", new InetSocketAddress(1490), "the address to listen on")
   val scribeCategories = flag("zipkin.receiver.scribe.categories", Seq("zipkin"), "a whitelist of categories to process")
   val scribeZkPath = flag("zipkin.receiver.scribe.zk.path", "", "the zookeeper URI to announce on. blank does not announce")
 
@@ -52,15 +52,15 @@ trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
     process: Seq[Span] => Future[Unit],
     stats: StatsReceiver = DefaultStatsReceiver.scope("ScribeSpanReceiver")
   ): SpanReceiver = new SpanReceiver {
-    val addr = InetSocketAddressUtil.toPublic(new InetSocketAddress(scribePort())).asInstanceOf[InetSocketAddress]
 
     val zkNode: Option[Closable] = scribeZkPath.get.map { path =>
+      val addr = InetSocketAddressUtil.toPublic(scribeAddr()).asInstanceOf[InetSocketAddress]
       val nodeName = "%s:%d".format(addr.getHostName, addr.getPort)
       val fullPath = path + "/" + nodeName
       zkClient.createEphemeral(path, nodeName.getBytes)
     }
 
-    val service = Thrift.serveIface(addr, new ScribeReceiver(scribeCategories().toSet, process, stats))
+    val service = Thrift.serveIface(scribeAddr(), new ScribeReceiver(scribeCategories().toSet, process, stats))
 
     val closer: Closable = zkNode map { Closable.sequence(_, service) } getOrElse { service }
     def close(deadline: Time): Future[Unit] = closeAwaitably { closer.close(deadline) }
