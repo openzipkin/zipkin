@@ -17,7 +17,7 @@
 package com.twitter.zipkin.sampler
 
 import com.twitter.finagle.Service
-import com.twitter.finagle.stats.{LoadedStatsReceiver, StatsReceiver}
+import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.Future
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.SpanStore
@@ -29,7 +29,7 @@ import com.twitter.zipkin.storage.SpanStore
  */
 class SpanSamplerFilter(
   sample: Long => Boolean,
-  stats: StatsReceiver = LoadedStatsReceiver.scope("SpanSamplerFilter")
+  stats: StatsReceiver = DefaultStatsReceiver.scope("SpanSamplerFilter")
 ) extends SpanStore.Filter {
   private[this] val DebugCounter = stats.counter("debugFlag")
   private[this] val DebugStats = stats.scope("debugFlag")

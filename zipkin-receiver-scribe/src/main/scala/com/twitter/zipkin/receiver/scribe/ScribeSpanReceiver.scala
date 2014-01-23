@@ -18,7 +18,7 @@ package com.twitter.zipkin.receiver.scribe
 import com.twitter.app.{App, Flaggable}
 import com.twitter.conversions.time._
 import com.twitter.finagle.Thrift
-import com.twitter.finagle.stats.{LoadedStatsReceiver, StatsReceiver}
+import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.util.{DefaultTimer, InetSocketAddressUtil}
 import com.twitter.logging.Logger
 import com.twitter.scrooge.BinaryThriftStructSerializer
@@ -50,7 +50,7 @@ trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
 
   def newScribeSpanReceiver(
     process: Seq[Span] => Future[Unit],
-    stats: StatsReceiver = LoadedStatsReceiver.scope("ScribeSpanReceiver")
+    stats: StatsReceiver = DefaultStatsReceiver.scope("ScribeSpanReceiver")
   ): SpanReceiver = new SpanReceiver {
     val addr = InetSocketAddressUtil.toPublic(new InetSocketAddress(scribePort())).asInstanceOf[InetSocketAddress]
 
@@ -70,7 +70,7 @@ trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
 class ScribeReceiver(
   categories: Set[String],
   process: Seq[Span] => Future[Unit],
-  stats: StatsReceiver = LoadedStatsReceiver.scope("ScribeReceiver")
+  stats: StatsReceiver = DefaultStatsReceiver.scope("ScribeReceiver")
 ) extends Scribe[Future] {
   private[this] val deserializer = new BinaryThriftStructSerializer[ThriftSpan] {
     def codec = ThriftSpan

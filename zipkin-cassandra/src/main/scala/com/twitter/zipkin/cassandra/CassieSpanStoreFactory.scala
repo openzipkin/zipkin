@@ -23,7 +23,7 @@ import com.twitter.concurrent.Spool.*::
 import com.twitter.conversions.time._
 import com.twitter.finagle.{Addr, Resolver}
 import com.twitter.finagle.builder.Cluster
-import com.twitter.finagle.stats.{LoadedStatsReceiver, StatsReceiver}
+import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.tracing.DefaultTracer
 import com.twitter.finagle.util.InetSocketAddressUtil
 import com.twitter.util.{Await, Future, Promise, Return, Var}
@@ -119,7 +119,7 @@ trait CassieSpanStoreFactory { self: App =>
   val cassieMaxTraceCols = flag("zipkin.store.cassie.maxTraceCols", Defaults.MaxTraceCols, "max number of spans to return from a query")
   val cassieReadBatchSize = flag("zipkin.store.cassie.readBatchSize", Defaults.ReadBatchSize, "max number of rows per query")
 
-  def newCassandraStore(stats: StatsReceiver = LoadedStatsReceiver.scope("cassie")): CassieSpanStore = {
+  def newCassandraStore(stats: StatsReceiver = DefaultStatsReceiver.scope("cassie")): CassieSpanStore = {
     val scopedStats = stats.scope(cassieKeyspace())
     val cluster = new VarAddrCluster(Resolver.eval(cassieDest()).bind())
     //TODO: properly tune these

@@ -16,7 +16,7 @@
 package com.twitter.zipkin.collector
 
 import com.twitter.util.{Await, Closable, CloseAwaitably, Future, FuturePool, Time}
-import com.twitter.finagle.stats.{LoadedStatsReceiver, StatsReceiver}
+import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import java.util.concurrent.{ArrayBlockingQueue, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -39,7 +39,7 @@ class ItemQueue[T](
   maxSize: Int,
   maxConcurrency: Int,
   process: T => Future[_],
-  stats: StatsReceiver = LoadedStatsReceiver.scope("ItemQueue")
+  stats: StatsReceiver = DefaultStatsReceiver.scope("ItemQueue")
 ) extends Closable with CloseAwaitably {
   @volatile private[this] var running: Boolean = true
 
