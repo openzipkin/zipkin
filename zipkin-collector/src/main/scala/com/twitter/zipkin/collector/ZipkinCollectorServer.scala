@@ -42,14 +42,14 @@ trait ZipkinCollectorServer extends TwitterServer {
  * A base collector that inserts a configurable queue between the receiver and store.
  */
 trait ZipkinQueuedCollectorServer extends ZipkinCollectorServer {
-  val itemQueueMax = flag("zipkin.itemQueue.maxSize", 500, "max number of span itemes to buffer")
+  val itemQueueMax = flag("zipkin.itemQueue.maxSize", 500, "max number of span items to buffer")
   val itemQueueConcurrency = flag("zipkin.itemQueue.concurrency", 10, "number of concurrent workers to process the write queue")
 
   override def main() {
     val store = newSpanStore(statsReceiver)
 
     val queue = new ItemQueue[Seq[Span]](
-      itemQueueMax(), itemQueueConcurrency(), store(_), statsReceiver.scope("itemQueue"))
+      itemQueueMax(), itemQueueConcurrency(), store(_), statsReceiver.scope("ItemQueue"))
 
     val receiver = newReceiver(statsReceiver, queue.add(_))
 

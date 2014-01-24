@@ -45,12 +45,10 @@ class ItemQueue[T](
 
   private[this] val queue = new ArrayBlockingQueue[T](maxSize)
   private[this] val queueSizeGauge = stats.addGauge("queueSize") { queue.size }
-  private[this] val activeWorkers = new AtomicInteger
+  private[this] val activeWorkers = new AtomicInteger(0)
   private[this] val activeWorkerGauge = stats.addGauge("activeWorkers") { activeWorkers.get }
   private[this] val maxConcurrencyGauge = stats.addGauge("maxConcurrency") { maxConcurrency }
-  private[this] val workers = (0 until maxConcurrency) map { _ =>
-    FuturePool.unboundedPool { loop() }
-  }
+  private[this] val workers = Seq.fill(maxConcurrency) { FuturePool.unboundedPool { loop() } }
 
   private[this] def loop() {
     while (running || !queue.isEmpty) {

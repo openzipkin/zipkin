@@ -16,48 +16,41 @@
  */
 package com.twitter.zipkin.sampler
 
+import com.twitter.app.App
 import com.twitter.conversions.time._
 import com.twitter.finagle.Service
 import com.twitter.finagle.util.DefaultTimer
-import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util._
-import com.twitter.zipkin.zookeeper._
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.SpanStore
+import com.twitter.zipkin.zookeeper._
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference, AtomicInteger}
-import com.twitter.logging.Logger
-import com.twitter.app.App
-import com.twitter.zipkin.common.Span
 
 trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
-  private[this] val basePath = "/com/twitter/zipkin/adaptiveSampler"
+  val asBasePath = flag(
+    "zipkin.sampler.adaptive.basePath",
+    "/com/twitter/zipkin/sampler/adaptive",
+    "Base path in ZooKeeper for the sampler to use")
 
-  val asElectionPath =
-    flag("zipkin.sampler.adaptive.electionPath", basePath + "/election", "ZK path to use for running leader elections")
+  val asUpdateFreq = flag(
+    "zipkin.sampler.adaptive.updateFreq",
+    30.seconds,
+    "Frequency with which to update the sample rate")
 
-  val asReporterPath =
-    flag("zipkin.sampler.adaptive.reporterPath", basePath + "/requestRate", "ZK path to report current request rate to")
+  val asWindowSize = flag(
+    "zipkin.sampler.adaptive.windowSize",
+    30.minutes,
+    "Amount of request rate data to base sample rate on")
 
-  val asSampleRatePath =
-    flag("zipkin.sampler.adaptive.sampleRatePath", basePath + "/sampleRate", "ZK path to use for setting/getting the overall sampler rate")
+  val asSufficientWindowSize = flag(
+    "zipkin.sampler.adaptive.sufficientWindowSize",
+    10.minutes,
+    "Amount of request rate data to gather before calculating sample rate")
 
-  val asTargetRatePath =
-    flag("zipkin.sampler.adaptive.targetRatePath", basePath + "/targetRate", "ZK path to use for getting the target store rate")
-
-  val asUpdateFreq =
-    flag("zipkin.sampler.adaptive.updateFreq", 30.seconds, "Frequency with which to update the sample rate")
-
-  val asWindowSize =
-    flag("zipkin.sampler.adaptive.windowSize", 30.minutes, "Amount of request rate data to base sample rate on")
-
-  val asSufficientWindowSize =
-    flag("zipkin.sampler.adaptive.sufficientWindowSize", 10.minutes, "Amount of request rate data to gather before calculating sample rate")
-
-  val asOutlierThreshold =
-    flag("zipkin.sampler.adaptive.outlierThreshold", 5.minutes, "Amount of time to see outliers before updating sample rate")
-
-  val asDefault =
-    flag("zipkin.sampler.adaptive.default", 1.0, "Default sample rate")
+  val asOutlierThreshold = flag(
+    "zipkin.sampler.adaptive.outlierThreshold",
+    5.minutes,
+    "Amount of time to see outliers before updating sample rate")
 
   def adaptiveSampleRateCalculator(
     targetReqRate: Var[Int],
@@ -71,23 +64,28 @@ trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
     new CalculateSampleRate(targetReqRate, sampleRate)
   }
 
-  def newAdaptiveSamplerFilter(): SpanStore.Filter = {
-    val targetReqRateWatch = zkClient.watchData(asTargetRatePath())
+  def newAdaptiveSamplerFilter(
+    electionPath: String = asBasePath() + "/election",
+    reporterPath: String = asBasePath() + "/requestRates",
+    sampleRatePath: String = asBasePath() + "/sampleRate",
+    targetRequestRatePath: String = asBasePath() + "/targetRequestRate"
+  ): SpanStore.Filter = {
+    val targetReqRateWatch = zkClient.watchData(targetRequestRatePath)
     val targetReqRate = targetReqRateWatch.data.map { bytes =>
       try new String(bytes).toInt catch { case e: Exception => 0 }
     }
 
     val curReqRate = Var[Int](0)
-    val reportingGroup = zkClient.joinGroup(asReporterPath(), curReqRate.map(_.toString.getBytes))
+    val reportingGroup = zkClient.joinGroup(reporterPath, curReqRate.map(_.toString.getBytes))
 
-    val smplRateWatch = zkClient.watchData(asSampleRatePath())
+    val smplRateWatch = zkClient.watchData(sampleRatePath)
     val smplRate = smplRateWatch.data.map { bytes =>
       try new String(bytes).toDouble catch { case e: Exception => 0.0 }
     }
 
-    val buffer = new BoundedBuffer[Int](asWindowSize().inSeconds / asUpdateFreq().inSeconds)
+    val buffer = new AtomicRingBuffer[Int](asWindowSize().inSeconds / asUpdateFreq().inSeconds)
 
-    val isLeader = new IsLeaderCheck[Double](zkClient, asElectionPath())
+    val isLeader = new IsLeaderCheck[Double](zkClient, electionPath)
     val cooldown = new CooldownCheck[Double](asOutlierThreshold())
 
     val calculator =
@@ -98,8 +96,8 @@ trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
 
     val globalSampleRateUpdater = new GlobalSampleRateUpdater(
       zkClient,
-      asSampleRatePath(),
-      asReporterPath(),
+      sampleRatePath,
+      reporterPath,
       asUpdateFreq(),
       calculator
     )
@@ -119,6 +117,15 @@ trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
     new FlowReportingFilter(curReqRate.update(_))
   }
 
+}
+
+class AtomicRingBuffer[T: ClassManifest](maxSize: Int) {
+  private[this] val underlying = new RingBuffer[T](maxSize)
+
+  def pushAndSnap(newVal: T): Seq[T] = synchronized {
+    underlying += newVal
+    underlying.reverse
+  }
 }
 
 /**
@@ -145,6 +152,10 @@ class FlowReportingFilter(
     updateTask.close(deadline)
 }
 
+/**
+ * A filter that uses ZK leader election to decide which node should be allowed
+ * to operate on the incoming value.
+ */
 class IsLeaderCheck[T](
   zkClient: ZKClient,
   electionPath: String
@@ -260,8 +271,8 @@ class CalculateSampleRate(
   private[this] val tgtReqRate = new AtomicInteger(0)
   targetRate.changes.register(Witness(tgtReqRate.set(_)))
 
-  private[this] val curSmplRate = new AtomicReference[Double](0.0)
-  smplRate.changes.register(Witness(curSmplRate.set(_)))
+  private[this] val curSmplRate = new AtomicReference[Double](1.0)
+  smplRate.changes.register(Witness(curSmplRate))
 
   /**
    * Since we assume that the sample rate and storage request rate are

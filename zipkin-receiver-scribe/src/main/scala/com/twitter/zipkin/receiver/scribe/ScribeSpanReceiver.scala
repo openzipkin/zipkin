@@ -32,21 +32,29 @@ import com.twitter.zk.ZkClient
 import java.net.{InetSocketAddress, URI}
 
 /**
- * A SpanReceiverFactory that should be mixed into a base ZipkinCollector. This provides `newScribeSpanReceiver` which
- * will create a `ScribeSpanReciever` listening on a configurable port (-zipkin.receiver.scribe.port) and announced to
- * ZooKeeper via a given path (-zipkin.receiver.scribe.zk.path). If a path is not explicitly provided no announcement
- * will be made (this is helpful for instance during development). This factory must also be mixed into an App trait
- * along with a ZooKeeperClientFactory.
+ * A SpanReceiverFactory that should be mixed into a base ZipkinCollector. This
+ * provides `newScribeSpanReceiver` which will create a `ScribeSpanReciever`
+ * listening on a configurable port (-zipkin.receiver.scribe.port) and announced to
+ * ZooKeeper via a given path (-zipkin.receiver.scribe.zk.path). If a path is not
+ * explicitly provided no announcement will be made (this is helpful for instance
+ * during development). This factory must also be mixed into an App trait along with
+ * a ZooKeeperClientFactory.
  */
 trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
-  implicit object flagOfURI extends Flaggable[URI] {
-    def parse(v: String) = new URI(v)
-    override def show(c: URI) = c.toString
-  }
+  val scribeAddr = flag(
+    "zipkin.receiver.scribe.addr",
+    new InetSocketAddress(1490),
+    "the address to listen on")
 
-  val scribeAddr = flag("zipkin.receiver.scribe.addr", new InetSocketAddress(1490), "the address to listen on")
-  val scribeCategories = flag("zipkin.receiver.scribe.categories", Seq("zipkin"), "a whitelist of categories to process")
-  val scribeZkPath = flag("zipkin.receiver.scribe.zk.path", "", "the zookeeper URI to announce on. blank does not announce")
+  val scribeCategories = flag(
+    "zipkin.receiver.scribe.categories",
+    Seq("zipkin"),
+    "a whitelist of categories to process")
+
+  val scribeZkPath = flag(
+    "zipkin.receiver.scribe.zk.path",
+    "/com/twitter/zipkin/receiver/scribe",
+    "the zookeeper path to announce on. blank does not announce")
 
   def newScribeSpanReceiver(
     process: Seq[Span] => Future[Unit],
@@ -60,7 +68,9 @@ trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
       zkClient.createEphemeral(path, nodeName.getBytes)
     }
 
-    val service = Thrift.serveIface(scribeAddr(), new ScribeReceiver(scribeCategories().toSet, process, stats))
+    val service = Thrift.serveIface(
+      scribeAddr(),
+      new ScribeReceiver(scribeCategories().toSet, process, stats))
 
     val closer: Closable = zkNode map { Closable.sequence(_, service) } getOrElse { service }
     def close(deadline: Time): Future[Unit] = closeAwaitably { closer.close(deadline) }
@@ -78,18 +88,18 @@ class ScribeReceiver(
 
   private[this] val log = Logger.get
 
-  private[this] val TryLater = Future.value(ResultCode.TryLater)
-  private[this] val Ok = Future.value(ResultCode.Ok)
+  private[this] val tryLater = Future.value(ResultCode.TryLater)
+  private[this] val ok = Future.value(ResultCode.Ok)
 
-  private[this] val LogCallStat = stats.stat("logCallBatches")
-  private[this] val PushbackCounter = stats.counter("pushBack")
-  private[this] val BatchesProcessedStat = stats.stat("processedBatches")
-  private[this] val MessagesStats = stats.scope("messages")
-  private[this] val TotalMessagesCounter = MessagesStats.counter("total")
-  private[this] val InvalidMessagesCounter = MessagesStats.counter("invalid")
-  private[this] val CategoryCounters = categories map { category =>
+  private[this] val logCallStat = stats.stat("logCallBatches")
+  private[this] val pushbackCounter = stats.counter("pushBack")
+  private[this] val batchesProcessedStat = stats.stat("processedBatches")
+  private[this] val messagesStats = stats.scope("messages")
+  private[this] val totalMessagesCounter = messagesStats.counter("total")
+  private[this] val InvalidMessagesCounter = messagesStats.counter("invalid")
+  private[this] val categoryCounters = categories map { category =>
     val cat = category.toLowerCase
-    (cat, MessagesStats.scope("perCategory").counter(cat))
+    (cat, messagesStats.scope("perCategory").counter(cat))
   } toMap
 
   private[this] def entryToSpan(entry: LogEntry): Option[Span] = try {
@@ -107,24 +117,24 @@ class ScribeReceiver(
   }
 
   def log(entries: Seq[LogEntry]): Future[ResultCode] = {
-    LogCallStat.add(entries.size)
+    logCallStat.add(entries.size)
 
     val spans = entries flatMap { entry =>
-      TotalMessagesCounter.incr()
-      CategoryCounters.get(entry.category.toLowerCase) flatMap { counter =>
+      totalMessagesCounter.incr()
+      categoryCounters.get(entry.category.toLowerCase) flatMap { counter =>
         counter.incr()
         entryToSpan(entry)
       }
     }
 
-    if (spans.isEmpty) Ok else {
+    if (spans.isEmpty) ok else {
       process(spans) transform {
         case Return(_) =>
-          BatchesProcessedStat.add(spans.size)
-          Ok
+          batchesProcessedStat.add(spans.size)
+          ok
         case Throw(e) =>
-          PushbackCounter.incr()
-          TryLater
+          pushbackCounter.incr()
+          tryLater
       }
     }
   }

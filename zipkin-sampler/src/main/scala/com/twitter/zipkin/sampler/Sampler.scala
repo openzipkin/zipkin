@@ -29,7 +29,7 @@ class Sampler(
   stats: StatsReceiver = DefaultStatsReceiver.scope("Sampler")
 ) extends (Long => Boolean) {
   private[this] val rate = new AtomicReference[Double](1.0)
-  rateVar.changes.register(Witness(rate.set(_)))
+  rateVar.changes.register(Witness(rate))
 
   private[this] val RateGauge = stats.addGauge("rate") { rate.get.toFloat }
   private[this] val allowedCounter = stats.counter("allowed")
@@ -38,7 +38,7 @@ class Sampler(
   def apply(traceId: Long): Boolean = {
     val curRate = rate.get
 
-    val allow = if (curRate == 1) true else {
+    val allow = (curRate == 1) || {
       val t = if (traceId == Long.MinValue) Long.MaxValue else math.abs(traceId)
       t < Long.MaxValue * curRate
     }

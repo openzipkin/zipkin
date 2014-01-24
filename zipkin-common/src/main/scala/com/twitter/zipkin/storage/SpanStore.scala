@@ -31,8 +31,9 @@ object SpanStore {
 
 
 /**
- * A convencience builder to create a single WriteSpanStore from many. Writes
+ * A convenience builder to create a single WriteSpanStore from many. Writes
  * will be fanned out concurrently. A failure of any store will return a failure.
+ * Any store logic should be handled per-store and then wrapped in this.
  */
 object FanoutWriteSpanStore {
   def apply(stores: WriteSpanStore*): WriteSpanStore = new WriteSpanStore {

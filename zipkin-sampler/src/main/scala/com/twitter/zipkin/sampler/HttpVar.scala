@@ -21,6 +21,12 @@ import com.twitter.finagle.http.{HttpMuxer, Request, Response}
 import com.twitter.util.{Extractable, Future, Var}
 import org.jboss.netty.handler.codec.http.HttpMethod
 
+/**
+ * A wrapper around a Var[Double] that exposes it to an HTTP endpoint
+ * at "/vars/`name`". The Var can be read via a GET request and
+ * updated via a POST request. The body of the POST will be used
+ * as the new value.
+ */
 class HttpVar(name: String, default: Double = 1.0) {
   private[this] val underlying = Var(default)
 
@@ -33,25 +39,22 @@ class HttpVar(name: String, default: Double = 1.0) {
 
     case req if req.method == HttpMethod.POST =>
       val rep = req.response
-      req.params.get("value") match {
-        case Some(value) =>
-          try {
-            val newRate = value.toDouble
-            if (newRate > 1 || newRate < 0) {
-              rep.statusCode = 400
-              rep.contentString = "invalid rate"
-            } else {
-              underlying.update(newRate)
-              rep.contentString = newRate.toString
-            }
-          } catch {
-            case e: Exception =>
-              rep.statusCode = 500
-              rep.contentString = e.toString
-          }
-        case None =>
-          rep.statusCode = 404
+
+      try {
+        val newRate = req.contentString.toDouble
+        if (newRate > 1 || newRate < 0) {
+          rep.statusCode = 400
+          rep.contentString = "invalid rate"
+        } else {
+          underlying.update(newRate)
+          rep.contentString = newRate.toString
+        }
+      } catch {
+        case e: Exception =>
+          rep.statusCode = 500
+          rep.contentString = e.toString
       }
+
       Future.value(rep)
 
     case req =>

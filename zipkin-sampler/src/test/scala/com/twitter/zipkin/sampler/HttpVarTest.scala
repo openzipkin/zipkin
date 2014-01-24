@@ -20,7 +20,7 @@ import com.twitter.finagle.http.{HttpMuxer, Response, RequestBuilder}
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
-import org.jboss.netty.buffer.ChannelBuffers.buffer
+import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
 
 @RunWith(classOf[JUnitRunner])
 class HttpVarTest extends FunSuite {
@@ -34,7 +34,7 @@ class HttpVarTest extends FunSuite {
 
   test("can update the value") {
     val httpVar = new HttpVar("test2", 1.0)
-    val req = RequestBuilder().url("http://localhost/vars/test2?value=0.5").buildPost(buffer(0))
+    val req = RequestBuilder().url("http://localhost/vars/test2").buildPost(wrappedBuffer("0.5".getBytes))
     assert(httpVar.self() === 1.0)
     val res = Response(Await.result(HttpMuxer(req)))
     assert(res.statusCode === 200)
@@ -44,7 +44,7 @@ class HttpVarTest extends FunSuite {
 
   test("provides an error when the new value is out of range") {
     val httpVar = new HttpVar("test3", 1.0)
-    val req = RequestBuilder().url("http://localhost/vars/test3?value=5").buildPost(buffer(0))
+    val req = RequestBuilder().url("http://localhost/vars/test3").buildPost(wrappedBuffer("5".getBytes))
     val res = Response(Await.result(HttpMuxer(req)))
     assert(res.statusCode === 400)
     assert(res.contentString === "invalid rate")
@@ -53,7 +53,7 @@ class HttpVarTest extends FunSuite {
 
   test("provides an error when the new value invald") {
     val httpVar = new HttpVar("test4", 1.0)
-    val req = RequestBuilder().url("http://localhost/vars/test4?value=foo").buildPost(buffer(0))
+    val req = RequestBuilder().url("http://localhost/vars/test4").buildPost(wrappedBuffer("foo".getBytes))
     val res = Response(Await.result(HttpMuxer(req)))
     assert(res.statusCode === 500)
     assert(httpVar.self() === 1.0)

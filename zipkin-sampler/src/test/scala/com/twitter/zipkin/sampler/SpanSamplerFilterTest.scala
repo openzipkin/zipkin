@@ -36,7 +36,7 @@ class SpanSamplerFilterTest extends FunSuite {
 
     val svc = new SpanSamplerFilter(_ > 2) andThen Service.mk[Seq[Span], Unit] { spans =>
       rcvdSpans = spans
-      Future.Unit
+      Future.Done
     }
 
     Await.ready(svc(spans))
@@ -54,7 +54,7 @@ class SpanSamplerFilterTest extends FunSuite {
 
     val svc = new SpanSamplerFilter(_  => false) andThen Service.mk[Seq[Span], Unit] { spans =>
       rcvdSpans = spans
-      Future.Unit
+      Future.Done
     }
 
     Await.ready(svc(spans))
