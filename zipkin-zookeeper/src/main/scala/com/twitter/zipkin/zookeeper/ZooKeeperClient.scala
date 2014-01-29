@@ -16,23 +16,23 @@
 
 package com.twitter.zipkin.zookeeper
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import com.twitter.common.base.ExceptionalCommand
-import com.twitter.conversions.time._
-import com.twitter.app.App
-import com.twitter.logging.Logger
-import java.net.InetSocketAddress
-import com.twitter.util._
-import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.finagle.util.DefaultTimer
-import scala.collection.mutable
-import com.twitter.common.zookeeper._
-import com.twitter.zk.{Connector, ZkClient, ZNode}
 import com.google.common.base.Supplier
-import org.apache.zookeeper.{CreateMode, KeeperException, Watcher, ZooDefs}
-import scala.collection.JavaConverters._
+import com.twitter.app.App
+import com.twitter.common.base.ExceptionalCommand
 import com.twitter.common.quantity.Amount
 import com.twitter.common.quantity.{Time => CommonTime}
+import com.twitter.common.zookeeper._
+import com.twitter.conversions.time._
+import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
+import com.twitter.finagle.util.DefaultTimer
+import com.twitter.logging.Logger
+import com.twitter.util._
+import com.twitter.zk.{Connector, ZkClient, ZNode}
+import java.net.InetSocketAddress
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import org.apache.zookeeper.{CreateMode, KeeperException, Watcher, ZooDefs}
+import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 trait ZooKeeperClientFactory { self: App =>
   val zkServerLocations = flag("zipkin.zookeeper.location", Seq(new InetSocketAddress(2181)), "Location of the ZooKeeper server")
