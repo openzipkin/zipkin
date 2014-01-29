@@ -2,6 +2,7 @@ package com.twitter.zipkin.web
 
 import com.twitter.conversions.time._
 import com.twitter.finagle.http.{Request, Response}
+import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.finagle.{Filter, Service, SimpleFilter}
 import com.twitter.util.{Duration, Future}
@@ -67,7 +68,7 @@ object Handlers {
   private[this] def getTime = timeFormat.format(Calendar.getInstance().getTime)
 
   private[this] def query(
-    client: ZipkinQuery.FutureIface,
+    client: ZipkinQuery[Future],
     queryRequest: QueryRequest,
     request: Request,
     retryLimit: Int = 10
@@ -91,7 +92,7 @@ object Handlers {
     }
   }
 
-  private[this] def getServices(client: ZipkinQuery.FutureIface): Future[Seq[TracedService]] =
+  private[this] def getServices(client: ZipkinQuery[Future]): Future[Seq[TracedService]] =
     client.getServiceNames() map { _.toSeq.sorted map { TracedService(_) } }
 
   /**
@@ -106,6 +107,13 @@ object Handlers {
   val nettyToFinagle =
     Filter.mk[HttpRequest, HttpResponse, Request, Response] { (req, service) =>
       service(Request(req)) map { _.httpResponse }
+    }
+
+  def collectStats(stats: StatsReceiver): Filter[Request, Response, Request, Response] =
+    Filter.mk[Request, Response, Request, Response] { (req, svc) =>
+      stats.timeFuture("request")(svc(req)) onSuccess { rep =>
+        stats.scope("response").counter(rep.statusCode.toString).incr()
+      }
     }
 
   val catchExceptions =
@@ -181,7 +189,7 @@ object Handlers {
         }
     }
 
-  def handleIndex(client: ZipkinQuery.FutureIface): Service[Request, MustacheRenderer] =
+  def handleIndex(client: ZipkinQuery[Future]): Service[Request, MustacheRenderer] =
     Service.mk[Request, MustacheRenderer] { req =>
       val qr = QueryExtractor(req)
       val qResults = qr map { query(client, _, req) } getOrElse { EmptyTraces }
@@ -232,7 +240,7 @@ object Handlers {
 
   // API Endpoints
 
-  def handleQuery(client: ZipkinQuery.FutureIface): Service[Request, Renderer] =
+  def handleQuery(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
       val res = QueryExtractor(req) match {
         case Some(qr) => query(client, qr, req)
@@ -241,29 +249,29 @@ object Handlers {
       res map { JsonRenderer(_) }
     }
 
-  def handleServices(client: ZipkinQuery.FutureIface): Service[Request, Renderer] =
+  def handleServices(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { _ =>
     getServices(client) map { JsonRenderer(_) }
   }
 
-  def handleSpans(client: ZipkinQuery.FutureIface): Service[Request, Renderer] =
+  def handleSpans(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
       client.getSpanNames(req.params("serviceName")) map { spans =>
         JsonRenderer(spans.toSeq.sorted map { s => Map("name" -> s) })
       }
     }
 
-  def handleTopAnnotations(client: ZipkinQuery.FutureIface): Service[Request, Renderer] =
+  def handleTopAnnotations(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
       client.getTopAnnotations(req.params("serviceName")) map { ann => JsonRenderer(ann.toSeq.sorted) }
     }
 
-  def handleTopKVAnnotations(client: ZipkinQuery.FutureIface): Service[Request, Renderer] =
+  def handleTopKVAnnotations(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
       client.getTopKeyValueAnnotations(req.params("serviceName")) map { ann => JsonRenderer(ann.toSeq.sorted) }
     }
 
-  def handleDependencies(client: ZipkinQuery.FutureIface): Service[Request, Renderer] =
+  def handleDependencies(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     new Service[Request, Renderer] {
       private[this] val PathMatch = """/api/dependencies(/([^/]+))?(/([^/]+))?/?""".r
       def apply(req: Request): Future[Renderer] = {
@@ -285,7 +293,7 @@ object Handlers {
       process(req) getOrElse NotFound
   }
 
-  def handleGetTrace(client: ZipkinQuery.FutureIface): Service[Request, Renderer] =
+  def handleGetTrace(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     new NotFoundService {
       def process(req: Request): Option[Future[Renderer]] =
         pathTraceId(req.path.split("/").lastOption) map { id =>
@@ -296,7 +304,7 @@ object Handlers {
         }
     }
 
-  def handleIsPinned(client: ZipkinQuery.FutureIface): Service[Request, Renderer] =
+  def handleIsPinned(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     new NotFoundService {
       def process(req: Request): Option[Future[Renderer]] =
         pathTraceId(req.path.split("/").lastOption) map { id =>
@@ -304,7 +312,7 @@ object Handlers {
         }
     }
 
-  def handleTogglePin(client: ZipkinQuery.FutureIface, pinTtl: Duration): Service[Request, Renderer] =
+  def handleTogglePin(client: ZipkinQuery[Future], pinTtl: Duration): Service[Request, Renderer] =
     new NotFoundService {
       private[this] val Err = Future.value(ErrorRenderer(400, "Must be true or false"))
       private[this] val SetState = Future.value(pinTtl.inSeconds)
