@@ -18,6 +18,16 @@ object Zipkin extends Build {
   def finagle(name: String) = "com.twitter" %% ("finagle-" + name) % finagleVersion
   def util(name: String) = "com.twitter" %% ("util-" + name) % utilVersion
 
+  // cassie brings in old versions of finagle and util. we need to exclude here and bring in exclusive versions
+  val cassieVersion = "0.25.3"
+  def cassie(name: String) =
+    "com.twitter" % ("cassie-" + name) % cassieVersion excludeAll(
+      ExclusionRule(organization = "com.twitter", name = "finagle-core"),
+      ExclusionRule(organization = "com.twitter", name = "finagle-serversets"),
+      ExclusionRule(organization = "com.twitter", name = "finagle-thrift"),
+      ExclusionRule(organization = "com.twitter", name = "util-core")
+    )
+
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
   val travisCi = Option(System.getenv("SBT_TRAVIS_CI")) // for adding travis ci maven repos before others
   val cwd = System.getProperty("user.dir")
@@ -174,8 +184,9 @@ object Zipkin extends Build {
     settings = defaultSettings
   ).settings(
     libraryDependencies ++= Seq(
-      "com.twitter"     % "cassie-core"       % CASSIE_VERSION,
-      "com.twitter"     % "cassie-serversets" % CASSIE_VERSION,
+      cassie("core"),
+      cassie("serversets"),
+      finagle("serversets"),
       util("logging"),
       util("app"),
       "org.iq80.snappy" % "snappy"            % "0.1",
