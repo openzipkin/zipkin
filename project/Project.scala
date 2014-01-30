@@ -267,7 +267,7 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "org.clojars.jasonjckn"      %% "kafka"    % "0.7.2-test1",
+        "com.twitter"      %% "kafka"    % "0.7.0",
       "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
       ) ++ testDependencies,
       resolvers ++= (proxyRepo match {
