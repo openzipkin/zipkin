@@ -304,9 +304,10 @@ object Zipkin extends Build {
 
         "com.twitter.common.zookeeper" % "server-set" % "1.0.36",
 
+        finagle("exception"),
+        finagle("thriftmux"),
         finagle("serversets"),
         finagle("zipkin"),
-        finagle("exception"),
         "com.twitter" %% "algebird-core"      % ALGEBIRD_VERSION
       ) ++ testDependencies,
 
