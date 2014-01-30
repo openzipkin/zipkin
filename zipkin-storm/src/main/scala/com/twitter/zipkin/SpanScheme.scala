@@ -19,7 +19,6 @@ package com.twitter.zipkin.storm
 import backtype.storm.spout.Scheme
 import backtype.storm.tuple.Fields
 import com.twitter.logging.Logger
-import com.twitter.ostrich.stats.Stats
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Return, Throw, Try}
 import com.twitter.zipkin.common.Span
@@ -49,7 +48,6 @@ class SpanScheme extends Scheme {
     } catch {
       case e: Exception => {
         log.warning(e, "Invalid bytes for deserializer")
-        Stats.incr("spout.invalid_bytes")
         Arrays.asList("")
       }
     }

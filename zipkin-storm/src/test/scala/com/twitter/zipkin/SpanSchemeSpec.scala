@@ -30,13 +30,13 @@ class SpanSchemeSpec extends FunSuite {
   val bytes = spanScheme.deserializer.toBytes(span)
 
   test("SpanScheme deserializes bytes to span" ) {
-      val spanRecovered = spanScheme.deserializer.fromBytes(bytes)
-      assert(spanRecovered === span)
-    }
+    val spanRecovered = spanScheme.deserializer.fromBytes(bytes)
+    assert(spanRecovered === span)
+  }
 
   test("SpanScheme return correct values of the fields") {
-      val expectedValues = Seq(12345, 666, "methodcall", "service", true)
-      val values = spanScheme.deserialize(bytes).toList
-      assert(expectedValues === values)
-    }
+    val expectedValues = Seq(12345, 666, "methodcall", "service", true)
+    val values = spanScheme.deserialize(bytes).toList
+    assert(expectedValues === values)
+  }
 }
