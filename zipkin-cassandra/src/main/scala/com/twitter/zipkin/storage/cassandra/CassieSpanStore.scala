@@ -376,7 +376,8 @@ class CassieSpanStore(
     // if not, look up by service name only
     val idx: ColumnFamily[String, Long, Long] =
       spanName.map(_ => ServiceSpanNameIndex).getOrElse(ServiceNameIndex)
-    idx.getRowSlice(key, None, Some(endTs), limit, Order.Reversed) map colToIndexedTraceId
+    // TODO: endTs seems wrong here
+    idx.getRowSlice(key, Some(endTs), None, limit, Order.Reversed) map colToIndexedTraceId
   }
 
   def getTraceIdsByAnnotation(
