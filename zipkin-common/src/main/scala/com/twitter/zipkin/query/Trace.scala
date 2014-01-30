@@ -35,7 +35,7 @@ object Trace {
 
 case class Trace(private val s: Seq[Span]) {
 
-  lazy val spans = mergeBySpanId(s).toSeq.sortWith {
+  lazy val spans = mergeBySpanId(s).toList.sortWith {
     (a, b) =>
       val aTimestamp = a.firstAnnotation.map(_.timestamp).getOrElse(Long.MaxValue)
       val bTimestamp = b.firstAnnotation.map(_.timestamp).getOrElse(Long.MaxValue)
@@ -155,7 +155,7 @@ case class Trace(private val s: Seq[Span]) {
   def getBinaryAnnotationsByKey(key: String): Seq[ByteBuffer] = {
     spans.flatMap(_.binaryAnnotations.collect {
       case BinaryAnnotation(bKey, bValue, _, _) if (bKey == key) => bValue
-    }.toSeq)
+    }.toList)
   }
 
   /**
