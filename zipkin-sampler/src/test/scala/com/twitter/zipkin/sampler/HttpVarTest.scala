@@ -35,11 +35,11 @@ class HttpVarTest extends FunSuite {
   test("can update the value") {
     val httpVar = new HttpVar("test2", 1.0)
     val req = RequestBuilder().url("http://localhost/vars/test2").buildPost(wrappedBuffer("0.5".getBytes))
-    assert(httpVar.self() === 1.0)
+    assert(httpVar()() === 1.0)
     val res = Response(Await.result(HttpMuxer(req)))
     assert(res.statusCode === 200)
     assert(res.contentString === "0.5")
-    assert(httpVar.self() === 0.5)
+    assert(httpVar()() === 0.5)
   }
 
   test("provides an error when the new value is out of range") {
@@ -48,7 +48,7 @@ class HttpVarTest extends FunSuite {
     val res = Response(Await.result(HttpMuxer(req)))
     assert(res.statusCode === 400)
     assert(res.contentString === "invalid rate")
-    assert(httpVar.self() === 1.0)
+    assert(httpVar()() === 1.0)
   }
 
   test("provides an error when the new value invald") {
@@ -56,6 +56,6 @@ class HttpVarTest extends FunSuite {
     val req = RequestBuilder().url("http://localhost/vars/test4").buildPost(wrappedBuffer("foo".getBytes))
     val res = Response(Await.result(HttpMuxer(req)))
     assert(res.statusCode === 500)
-    assert(httpVar.self() === 1.0)
+    assert(httpVar()() === 1.0)
   }
 }

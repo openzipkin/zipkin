@@ -30,7 +30,7 @@ import org.jboss.netty.handler.codec.http.HttpMethod
 class HttpVar(name: String, default: Double = 1.0) {
   private[this] val underlying = Var(default)
 
-  val self: Var[Double] with Extractable[Double] = underlying
+  def apply(): Var[Double] with Extractable[Double] = underlying
 
   HttpMuxer.addRichHandler("/vars/"+name, Service.mk[Request, Response] {
     case req if req.method == HttpMethod.GET =>
