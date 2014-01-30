@@ -19,7 +19,7 @@ import org.scalatest._
 import com.twitter.zipkin.gen.{Annotation, Endpoint, Span}
 import scala.collection.JavaConversions._
 
-class SpanSchemeSpec extends FlatSpec {
+class SpanSchemeSpec extends FunSuite {
 
   val annotation1 = Annotation(1, "cs", Some(Endpoint(1, 2, "service")))
   val annotation2 = Annotation(2, "cr", Some(Endpoint(3, 4, "Service")))
@@ -29,12 +29,12 @@ class SpanSchemeSpec extends FlatSpec {
   val spanScheme = new SpanScheme()
   val bytes = spanScheme.deserializer.toBytes(span)
 
-  "SpanScheme" should "deserialize bytes to span" in {
+  test("SpanScheme deserializes bytes to span" ) {
       val spanRecovered = spanScheme.deserializer.fromBytes(bytes)
       assert(spanRecovered === span)
     }
 
-  it should "return correct values of the fields" in {
+  test("SpanScheme return correct values of the fields") {
       val expectedValues = Seq(12345, 666, "methodcall", "service", true)
       val values = spanScheme.deserialize(bytes).toList
       assert(expectedValues === values)

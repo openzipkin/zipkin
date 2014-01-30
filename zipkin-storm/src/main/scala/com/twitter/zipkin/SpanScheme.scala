@@ -18,34 +18,39 @@ package com.twitter.zipkin.storm
 
 import backtype.storm.spout.Scheme
 import backtype.storm.tuple.Fields
+import com.twitter.logging.Logger
+import com.twitter.ostrich.stats.Stats
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Return, Throw, Try}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
-import java.util
+import java.util.Arrays
 import scala.collection.JavaConverters._
 
 /**
  * Spout scheme to turn incoming data into Span fields
  */
 class SpanScheme extends Scheme {
+  @transient private val log = Logger.get
   lazy val deserializer = new BinaryThriftStructSerializer[gen.Span] {
     def codec = gen.Span
   }
 
   override def deserialize(bytes: Array[Byte]) = {
-    Try (deserializer.fromBytes(bytes).toSpan) match {
-      case s: Return[Span] => {
-          util.Arrays.asList(
-            s().traceId.asInstanceOf[java.lang.Long],
-            s().id.asInstanceOf[java.lang.Long],
-            s().name,
-            s().serviceName.getOrElse(""),
-            s().isClientSide.asInstanceOf[java.lang.Boolean])
-      }
-      case t: Throw[Span] => {
-          util.Arrays.asList("")
+    try {
+      val s = deserializer.fromBytes(bytes).toSpan
+      Arrays.asList(
+        s.traceId.asInstanceOf[java.lang.Long],
+        s.id.asInstanceOf[java.lang.Long],
+        s.name,
+        s.serviceName.getOrElse(""),
+        s.isClientSide.asInstanceOf[java.lang.Boolean])
+    } catch {
+      case e: Exception => {
+        log.warning(e, "Invalid bytes for deserializer")
+        Stats.incr("spout.invalid_bytes")
+        Arrays.asList("")
       }
     }
   }
