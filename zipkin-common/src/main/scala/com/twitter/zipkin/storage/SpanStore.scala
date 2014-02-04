@@ -16,16 +16,38 @@
 package com.twitter.zipkin.storage
 
 import com.twitter.conversions.time._
-import com.twitter.finagle.{Filter, Service}
+import com.twitter.finagle.{Filter => FFilter, Service}
 import com.twitter.util.{Closable, CloseAwaitably, Duration, Future, Time}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import java.nio.ByteBuffer
 import scala.collection.mutable
 
-trait SpanStoreFilter extends Filter[Seq[Span], Unit, Seq[Span], Unit]
-
 trait SpanStore extends WriteSpanStore with ReadSpanStore
+
+object SpanStore {
+  type Filter = FFilter[Seq[Span], Unit, Seq[Span], Unit]
+}
+
+
+/**
+ * A convenience builder to create a single WriteSpanStore from many. Writes
+ * will be fanned out concurrently. A failure of any store will return a failure.
+ * Any store logic should be handled per-store and then wrapped in this.
+ */
+object FanoutWriteSpanStore {
+  def apply(stores: WriteSpanStore*): WriteSpanStore = new WriteSpanStore {
+    def apply(spans: Seq[Span]): Future[Unit] =
+      Future.join(stores map { _(spans) })
+
+    def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] =
+      Future.join(stores map { _.setTimeToLive(traceId, ttl) })
+
+    override def close(deadline: Time): Future[Unit] = closeAwaitably {
+      Closable.all(stores: _*).close(deadline)
+    }
+  }
+}
 
 /**
  * Write store extends CloseAwaitably so we can close writes and await possible draining

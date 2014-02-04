@@ -1,3 +1,19 @@
+/*
+ * Copyright 2012 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
 import com.twitter.sbt.{BuildProperties,PackageDist,GitProject}
 import sbt._
 import com.twitter.scrooge.ScroogeSBT
@@ -13,8 +29,8 @@ object Zipkin extends Build {
   val ALGEBIRD_VERSION  = "0.1.13"
   val HBASE_VERSION = "0.94.10"
 
-  val finagleVersion = "6.8.1"
-  val utilVersion = "6.8.1"
+  val finagleVersion = "6.10.0"
+  val utilVersion = "6.11.0"
   def finagle(name: String) = "com.twitter" %% ("finagle-" + name) % finagleVersion
   def util(name: String) = "com.twitter" %% ("util-" + name) % utilVersion
 
@@ -97,7 +113,13 @@ object Zipkin extends Build {
     Project(
       id = "zipkin",
       base = file(".")
-    ) aggregate(test, queryCore, queryService, common, scrooge, collectorScribe, web, cassandra, anormDB, collectorCore, collectorService, kafka, redis, hbase)
+    ) aggregate(
+      test, common, scrooge, zookeeper,
+      queryCore, queryService, web,
+      collectorScribe, collectorCore, collectorService,
+      sampler, receiverScribe, collector,
+      cassandra, anormDB, kafka, redis, hbase
+    )
 
   lazy val test   = Project(
     id = "zipkin-test",
@@ -138,6 +160,19 @@ object Zipkin extends Build {
       (artifactClassifier in packageSrc) := Some("idl")
     )
 
+  lazy val sampler =
+    Project(
+      id = "zipkin-sampler",
+      base = file("zipkin-sampler"),
+      settings = defaultSettings
+    ).settings(
+      libraryDependencies ++= Seq(
+        finagle("core"),
+        util("core"),
+        util("zk")
+      ) ++ testDependencies
+    ).dependsOn(common, zookeeper)
+
   lazy val scrooge =
     Project(
       id = "zipkin-scrooge",
@@ -155,6 +190,20 @@ object Zipkin extends Build {
         "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
       ) ++ testDependencies
     ).dependsOn(common)
+
+  lazy val zookeeper = Project(
+    id = "zipkin-zookeeper",
+    base = file("zipkin-zookeeper"),
+    settings = defaultSettings
+  ).settings(
+    libraryDependencies ++= Seq(
+      finagle("core"),
+      util("core"),
+      util("zk"),
+      "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION("candidate"),
+      "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION("group")
+    )
+  )
 
   lazy val collectorCore = Project(
     id = "zipkin-collector-core",
@@ -268,6 +317,32 @@ object Zipkin extends Build {
       ) ++ testDependencies
     ).dependsOn(collectorCore, scrooge)
 
+  lazy val collector = Project(
+    id = "zipkin-collector",
+    base = file("zipkin-collector"),
+    settings = defaultSettings
+  ).settings(
+    libraryDependencies ++= Seq(
+      finagle("core"),
+      util("core"),
+      "com.twitter" %% "twitter-server"    % TwitterServerVersion
+    ) ++ testDependencies
+  ).dependsOn(common, scrooge)
+
+  lazy val receiverScribe =
+    Project(
+      id = "zipkin-receiver-scribe",
+      base = file("zipkin-receiver-scribe"),
+      settings = defaultSettings
+    ).settings(
+      libraryDependencies ++=
+        testDependencies ++
+        Seq(
+          util("zk"),
+          "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
+        )
+    ).dependsOn(collector, zookeeper, scrooge)
+
   lazy val kafka =
     Project(
       id = "zipkin-kafka",
@@ -380,4 +455,3 @@ object Zipkin extends Build {
     }
   ).dependsOn(scrooge)
 }
-
