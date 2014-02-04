@@ -135,14 +135,14 @@ class InMemorySpanStore extends SpanStore {
     spans filter { span =>
       shouldIndex(span) &&
       span.serviceNames.exists { _.toLowerCase == name.toLowerCase }
-    }
+    } toList
 
   def close(deadline: Time): Future[Unit] = closeAwaitably {
     Future.Done
   }
 
   def apply(newSpans: Seq[Span]): Future[Unit] = call {
-    spans foreach { span => ttls(span.traceId) = 1.second }
+    newSpans foreach { span => ttls(span.traceId) = 1.second }
     spans ++= newSpans
   }.unit
 
@@ -161,12 +161,12 @@ class InMemorySpanStore extends SpanStore {
 
   def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = call {
     traceIds flatMap { id =>
-      Some(spans filter { _.traceId == id }) filter { _.length > 0 }
+      Some(spans filter { _.traceId == id } toList) filter { _.length > 0 }
     }
   }
 
   def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = call {
-    spans filter { _.traceId == traceId }
+    spans filter { _.traceId == traceId } toList
   }
 
   def getTraceIdsByName(
@@ -187,7 +187,7 @@ class InMemorySpanStore extends SpanStore {
       }
     } filter(shouldIndex) take(limit) map { span =>
       IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
-    }
+    } toList
   }
 
   def getTraceIdsByAnnotation(
@@ -208,14 +208,13 @@ class InMemorySpanStore extends SpanStore {
           }
         case (_, spans) =>
           spans filter { span =>
-            span.annotations foreach { a => println((annotation, a.value, annotation == a.value)) }
             span.lastAnnotation.isDefined &&
             span.annotations.min.timestamp <= endTs &&
             span.annotations.exists { _.value == annotation }
           }
       }) filter(shouldIndex) take(limit) map { span =>
         IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
-      }
+      } toList
     }
   }
 
@@ -224,7 +223,7 @@ class InMemorySpanStore extends SpanStore {
       span.duration map { d =>
         TraceIdDuration(span.traceId, d, span.firstAnnotation.get.timestamp)
       }
-    }
+    } toList
   }
 
   def getAllServiceNames: Future[Set[String]] = call {
