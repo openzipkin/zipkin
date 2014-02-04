@@ -160,7 +160,7 @@ class InMemorySpanStore extends SpanStore {
         spans
     }) filter { span =>
       span.lastAnnotation match {
-        case Some(ann) => ann.timestamp <= endTs
+        case Some(ann) => ann.timestamp >= endTs
         case None => false
       }
     } filter(shouldIndex) take(limit) map { span =>
