@@ -64,8 +64,7 @@ trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
     val zkNode: Option[Closable] = scribeZkPath.get.map { path =>
       val addr = InetSocketAddressUtil.toPublic(scribeAddr()).asInstanceOf[InetSocketAddress]
       val nodeName = "%s:%d".format(addr.getHostName, addr.getPort)
-      val fullPath = path + "/" + nodeName
-      zkClient.createEphemeral(path, nodeName.getBytes)
+      zkClient.createEphemeral(path + "/" + nodeName, nodeName.getBytes)
     }
 
     val service = Thrift.serveIface(

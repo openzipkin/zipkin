@@ -36,7 +36,14 @@ import scala.collection.mutable
 
 trait ZooKeeperClientFactory { self: App =>
   val zkServerLocations = flag("zipkin.zookeeper.location", Seq(new InetSocketAddress(2181)), "Location of the ZooKeeper server")
-  lazy val zkClient = new ZKClient(zkServerLocations())
+  val zkServerCredentials = flag("zipkin.zookeeper.credentials", "[none]", "Optional credentials of the form 'username:password'")
+  lazy val zkClient = {
+    val creds = zkServerCredentials.get map { creds =>
+      val Array(u, p) = creds.split(':')
+      (u, p)
+    }
+    new ZKClient(zkServerLocations(), creds)
+  }
 }
 
 trait ZkWatch[T] extends Closable {
@@ -45,13 +52,19 @@ trait ZkWatch[T] extends Closable {
 
 class ZKClient(
   addrs: Seq[InetSocketAddress],
+  credentials: Option[(String, String)] = None,
   timeout: Duration = 3.seconds,
   stats: StatsReceiver = DefaultStatsReceiver.scope("ZKClient"),
   log: Logger = Logger.get("ZKClient"),
   timer: Timer = DefaultTimer.twitter,
   pool: FuturePool = FuturePool.unboundedPool
 ) extends Closable {
-  private[this] val client = new ZooKeeperClient(Amount.of(timeout.inMilliseconds.toInt, CommonTime.MILLISECONDS), addrs.asJava)
+  private[this] val client = credentials map { case (u, p) =>
+    new ZooKeeperClient(Amount.of(timeout.inMilliseconds.toInt, CommonTime.MILLISECONDS), ZooKeeperClient.digestCredentials(u, p), addrs.asJava)
+  } getOrElse {
+    new ZooKeeperClient(Amount.of(timeout.inMilliseconds.toInt, CommonTime.MILLISECONDS), addrs.asJava)
+  }
+
   private[this] val zkClient = ZkClient(new Connector {
     client.register(sessionBroker)
     def apply() = pool(client.get(Amount.of(timeout.inMilliseconds, CommonTime.MILLISECONDS)))
@@ -73,15 +86,20 @@ class ZKClient(
   private[this] def ensurePath(path: String): Future[Unit] = {
     path.slice(1, path.size).split("/").foldLeft(Future.value("")) { (f, p) =>
       f map { _ + "/" + p } flatMap { path =>
-        create(path) map { _ => path } rescue {
-          case e: KeeperException.NodeExistsException => Future.value(path)
-        }
+        zkClient(path).exists() rescue {
+          // Node doesn't exist yet
+          case e: KeeperException.NoNodeException =>
+            create(path) rescue {
+              // Someone beat us to creation
+              case e: KeeperException.NodeExistsException => Future.Done
+            }
+        } map { _ => path }
       }
     }.unit
   }
 
   private[this] def create(path: String, persist: Boolean = true, data: Option[Array[Byte]] = None): Future[Unit] = {
-    log.info("creating node: %s " + path)
+    log.info("creating node: " + path)
     val cMode = if (persist) CreateMode.PERSISTENT else CreateMode.EPHEMERAL
     val cData = data getOrElse Array.empty[Byte]
     zkClient(path).create(data = cData, mode = cMode).unit rescue {
@@ -89,9 +107,9 @@ class ZKClient(
         log.info("Node exists: " + path)
         Future.Unit
     } onSuccess { _ =>
-      log.info("creating node: %s " + path)
+      log.info("created node: " + path)
     } onFailure { e =>
-      log.error(e, "failed to create node: %s " + path)
+      log.error(e, "failed to create node: " + path)
     }
   }
 
