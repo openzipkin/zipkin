@@ -18,6 +18,9 @@ import com.twitter.sbt.{BuildProperties,PackageDist,GitProject}
 import sbt._
 import com.twitter.scrooge.ScroogeSBT
 import sbt.Keys._
+import Keys._
+import sbtassembly.Plugin._
+import AssemblyKeys._
 
 object Zipkin extends Build {
 
@@ -118,7 +121,7 @@ object Zipkin extends Build {
       query, queryCore, queryService, web,
       collectorScribe, collectorCore, collectorService,
       sampler, receiverScribe, collector,
-      cassandra, anormDB, kafka, redis, hbase
+      cassandra, anormDB, kafka, redis, hbase, storm
     )
 
   lazy val test   = Project(
@@ -364,7 +367,7 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "org.clojars.jasonjckn"      %% "kafka"    % "0.7.2-test1",
+        "com.twitter"      %% "kafka"    % "0.7.0",
       "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
       ) ++ testDependencies,
       resolvers ++= (proxyRepo match {
@@ -466,6 +469,44 @@ object Zipkin extends Build {
     unmanagedResourceDirectories in Test <<= baseDirectory {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
+    }
+  ).dependsOn(scrooge)
+
+  lazy val storm = Project(
+    id = "zipkin-storm",
+    base = file("zipkin-storm"),
+    settings = defaultSettings ++ assemblySettings
+  ).settings(
+    parallelExecution in Test := false,
+    libraryDependencies ++= Seq(
+      "storm"                 % "storm"                 % "0.9.0.1"               % "provided",
+      "storm"                 % "storm-kafka"           % "0.9.0-wip16a-scala292",
+      "commons-logging"       % "commons-logging"       % "1.1.1",
+      "commons-configuration" % "commons-configuration" % "1.6",
+      util("logging"),
+      "com.twitter"           %% "scrooge-serializer"   % SCROOGE_VERSION,
+      "com.twitter"           %% "kafka"                % "0.7.0",
+      "org.scalatest"         %% "scalatest"            % "1.9.2"                 % "test"
+    ),
+
+    PackageDist.packageDistZipName := "zipkin-storm.zip",
+    BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
+    resourceGenerators in Compile <+= BuildProperties.buildPropertiesWrite,
+
+    /* Add configs to resource path for ConfigSpec */
+    unmanagedResourceDirectories in Test <<= baseDirectory {
+      base =>
+        (base / "config" +++ base / "src" / "test" / "resources").get
+    },
+
+    mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+      {
+        case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
+        case PathList("org", "apache", xs @ _*) => MergeStrategy.last
+        case PathList("com", "twitter", xs @ _*) => MergeStrategy.last
+        case PathList("project.clj") => MergeStrategy.last
+        case x => old(x)
+      }
     }
   ).dependsOn(scrooge)
 }
