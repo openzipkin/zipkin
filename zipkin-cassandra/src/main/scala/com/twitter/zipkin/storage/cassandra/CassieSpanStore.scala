@@ -19,7 +19,7 @@ import com.twitter.cassie
 import com.twitter.cassie._
 import com.twitter.cassie.codecs.{Codec, LongCodec, Utf8Codec}
 import com.twitter.conversions.time._
-import com.twitter.finagle.stats.{LoadedStatsReceiver, StatsReceiver}
+import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.{Future, FuturePool, Duration, Time}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
@@ -54,7 +54,7 @@ object CassieSpanStoreDefaults {
 
 class CassieSpanStore(
   keyspace: Keyspace,
-  stats: StatsReceiver = LoadedStatsReceiver.scope("CassieSpanStore"),
+  stats: StatsReceiver = DefaultStatsReceiver.scope("CassieSpanStore"),
   cfs: ZipkinColumnFamilyNames = CassieSpanStoreDefaults.ColumnFamilyNames,
   writeConsistency: WriteConsistency = CassieSpanStoreDefaults.WriteConsistency,
   readConsistency: ReadConsistency = CassieSpanStoreDefaults.ReadConsistency,
@@ -376,7 +376,8 @@ class CassieSpanStore(
     // if not, look up by service name only
     val idx: ColumnFamily[String, Long, Long] =
       spanName.map(_ => ServiceSpanNameIndex).getOrElse(ServiceNameIndex)
-    idx.getRowSlice(key, None, Some(endTs), limit, Order.Reversed) map colToIndexedTraceId
+    // TODO: endTs seems wrong here
+    idx.getRowSlice(key, Some(endTs), None, limit, Order.Reversed) map colToIndexedTraceId
   }
 
   def getTraceIdsByAnnotation(

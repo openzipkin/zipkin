@@ -130,14 +130,15 @@ class SpanStoreValidator(
     assert(Await.result(store.getAllServiceNames) == span1.serviceNames)
   }
 
+  // TODO: endTs seems wrong here
   test("get trace ids by name") {
     val store = resetAndLoadStore(Seq(span1))
-    assert(Await.result(store.getTraceIdsByName("service", None, 100, 3)).head.traceId == span1.traceId)
-    assert(Await.result(store.getTraceIdsByName("service", Some("methodcall"), 100, 3)).head.traceId == span1.traceId)
+    assert(Await.result(store.getTraceIdsByName("service", None, 0, 3)).head.traceId == span1.traceId)
+    assert(Await.result(store.getTraceIdsByName("service", Some("methodcall"), 0, 3)).head.traceId == span1.traceId)
 
-    assert(Await.result(store.getTraceIdsByName("badservice", None, 100, 3)).isEmpty)
-    assert(Await.result(store.getTraceIdsByName("service", Some("badmethod"), 100, 3)).isEmpty)
-    assert(Await.result(store.getTraceIdsByName("badservice", Some("badmethod"), 100, 3)).isEmpty)
+    assert(Await.result(store.getTraceIdsByName("badservice", None, 0, 3)).isEmpty)
+    assert(Await.result(store.getTraceIdsByName("service", Some("badmethod"), 0, 3)).isEmpty)
+    assert(Await.result(store.getTraceIdsByName("badservice", Some("badmethod"), 0, 3)).isEmpty)
   }
 
   //TODO

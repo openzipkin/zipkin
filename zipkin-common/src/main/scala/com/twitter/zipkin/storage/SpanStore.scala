@@ -16,16 +16,38 @@
 package com.twitter.zipkin.storage
 
 import com.twitter.conversions.time._
-import com.twitter.finagle.{Filter, Service}
+import com.twitter.finagle.{Filter => FFilter, Service}
 import com.twitter.util.{Closable, CloseAwaitably, Duration, Future, Time}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import java.nio.ByteBuffer
 import scala.collection.mutable
 
-trait SpanStoreFilter extends Filter[Seq[Span], Unit, Seq[Span], Unit]
-
 trait SpanStore extends WriteSpanStore with ReadSpanStore
+
+object SpanStore {
+  type Filter = FFilter[Seq[Span], Unit, Seq[Span], Unit]
+}
+
+
+/**
+ * A convenience builder to create a single WriteSpanStore from many. Writes
+ * will be fanned out concurrently. A failure of any store will return a failure.
+ * Any store logic should be handled per-store and then wrapped in this.
+ */
+object FanoutWriteSpanStore {
+  def apply(stores: WriteSpanStore*): WriteSpanStore = new WriteSpanStore {
+    def apply(spans: Seq[Span]): Future[Unit] =
+      Future.join(stores map { _(spans) })
+
+    def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] =
+      Future.join(stores map { _.setTimeToLive(traceId, ttl) })
+
+    override def close(deadline: Time): Future[Unit] = closeAwaitably {
+      Closable.all(stores: _*).close(deadline)
+    }
+  }
+}
 
 /**
  * Write store extends CloseAwaitably so we can close writes and await possible draining
@@ -113,14 +135,14 @@ class InMemorySpanStore extends SpanStore {
     spans filter { span =>
       shouldIndex(span) &&
       span.serviceNames.exists { _.toLowerCase == name.toLowerCase }
-    }
+    } toList
 
   def close(deadline: Time): Future[Unit] = closeAwaitably {
     Future.Done
   }
 
   def apply(newSpans: Seq[Span]): Future[Unit] = call {
-    spans foreach { span => ttls(span.traceId) = 1.second }
+    newSpans foreach { span => ttls(span.traceId) = 1.second }
     spans ++= newSpans
   }.unit
 
@@ -139,12 +161,12 @@ class InMemorySpanStore extends SpanStore {
 
   def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = call {
     traceIds flatMap { id =>
-      Some(spans filter { _.traceId == id }) filter { _.length > 0 }
+      Some(spans filter { _.traceId == id } toList) filter { _.length > 0 }
     }
   }
 
   def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = call {
-    spans filter { _.traceId == traceId }
+    spans filter { _.traceId == traceId } toList
   }
 
   def getTraceIdsByName(
@@ -160,12 +182,12 @@ class InMemorySpanStore extends SpanStore {
         spans
     }) filter { span =>
       span.lastAnnotation match {
-        case Some(ann) => ann.timestamp <= endTs
+        case Some(ann) => ann.timestamp >= endTs
         case None => false
       }
     } filter(shouldIndex) take(limit) map { span =>
       IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
-    }
+    } toList
   }
 
   def getTraceIdsByAnnotation(
@@ -186,14 +208,13 @@ class InMemorySpanStore extends SpanStore {
           }
         case (_, spans) =>
           spans filter { span =>
-            span.annotations foreach { a => println((annotation, a.value, annotation == a.value)) }
             span.lastAnnotation.isDefined &&
             span.annotations.min.timestamp <= endTs &&
             span.annotations.exists { _.value == annotation }
           }
       }) filter(shouldIndex) take(limit) map { span =>
         IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
-      }
+      } toList
     }
   }
 
@@ -202,7 +223,7 @@ class InMemorySpanStore extends SpanStore {
       span.duration map { d =>
         TraceIdDuration(span.traceId, d, span.firstAnnotation.get.timestamp)
       }
-    }
+    } toList
   }
 
   def getAllServiceNames: Future[Set[String]] = call {
