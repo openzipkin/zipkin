@@ -23,22 +23,30 @@ import sbtassembly.Plugin._
 import AssemblyKeys._
 
 object Zipkin extends Build {
-
-  val CASSIE_VERSION  = "0.25.3"
-  val OSTRICH_VERSION = "9.2.1"
-  val SCROOGE_VERSION = "3.11.1"
-  val TwitterServerVersion = "1.4.0"
-  val ZOOKEEPER_VERSION = Map("candidate" -> "0.0.41", "group" -> "0.0.44", "client" -> "0.0.35")
-  val ALGEBIRD_VERSION  = "0.1.13"
-  val HBASE_VERSION = "0.94.10"
+  val zipkinVersion = "1.2.0-SNAPSHOT"
 
   val finagleVersion = "6.10.0"
   val utilVersion = "6.11.0"
+  val scroogeVersion = "3.12.2"
+  val cassieVersion = "0.25.3"
+  val zookeeperVersions = Map(
+    "candidate" -> "0.0.41",
+    "group" -> "0.0.44",
+    "client" -> "0.0.35",
+    "server-set" -> "1.0.36"
+  )
+
+  val ostrichVersion = "9.2.1"
+  val twitterServerVersion = "1.4.0"
+  val algebirdVersion  = "0.1.13"
+  val hbaseVersion = "0.94.10"
+
   def finagle(name: String) = "com.twitter" %% ("finagle-" + name) % finagleVersion
   def util(name: String) = "com.twitter" %% ("util-" + name) % utilVersion
+  def scroogeDep(name: String) = "com.twitter" %% ("scrooge-" + name) % scroogeVersion
+  def zk(name: String) = "com.twitter.common.zookeeper" % name % zookeeperVersions(name)
 
   // cassie brings in old versions of finagle and util. we need to exclude here and bring in exclusive versions
-  val cassieVersion = "0.25.3"
   def cassie(name: String) =
     "com.twitter" % ("cassie-" + name) % cassieVersion excludeAll(
       ExclusionRule(organization = "com.twitter", name = "finagle-core"),
@@ -68,7 +76,7 @@ object Zipkin extends Build {
 
   def zipkinSettings = Seq(
     organization := "com.twitter",
-    version := "1.1.1-SNAPSHOT",
+    version := zipkinVersion,
     crossScalaVersions := Seq("2.9.2"),
     scalaVersion := "2.9.2",
     crossPaths := false,            /* Removes Scala version from artifact name */
@@ -144,11 +152,10 @@ object Zipkin extends Build {
         finagle("thrift"),
         finagle("zipkin"),
         finagle("exception"),
-        "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
         util("core"),
-        "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
-
-        "com.twitter.common.zookeeper" % "client"    % ZOOKEEPER_VERSION("client")
+        zk("client"),
+        "com.twitter" %% "ostrich" % ostrichVersion,
+        "com.twitter" %% "algebird-core" % algebirdVersion
       ) ++ testDependencies
     )
 
@@ -186,11 +193,11 @@ object Zipkin extends Build {
         finagle("ostrich4"),
         finagle("thrift"),
         finagle("zipkin"),
-        "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
         util("core"),
-        "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
-        "com.twitter" %% "scrooge-core"      % SCROOGE_VERSION,
-        "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
+        scroogeDep("core"),
+        scroogeDep("serializer"),
+        "com.twitter" %% "ostrich" % ostrichVersion,
+        "com.twitter" %% "algebird-core" % algebirdVersion
       ) ++ testDependencies
     ).dependsOn(common)
 
@@ -203,8 +210,8 @@ object Zipkin extends Build {
       finagle("core"),
       util("core"),
       util("zk"),
-      "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION("candidate"),
-      "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION("group")
+      zk("candidate"),
+      zk("group")
     )
   )
 
@@ -218,15 +225,14 @@ object Zipkin extends Build {
       finagle("serversets"),
       finagle("thrift"),
       finagle("zipkin"),
-      "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
-      "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
       util("core"),
       util("zk"),
       util("zk-common"),
-      "com.twitter" %% "twitter-server"    % TwitterServerVersion,
-
-      "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION("candidate"),
-      "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION("group")
+      zk("candidate"),
+      zk("group"),
+      "com.twitter" %% "ostrich" % ostrichVersion,
+      "com.twitter" %% "algebird-core" % algebirdVersion,
+      "com.twitter" %% "twitter-server" % twitterServerVersion
     ) ++ testDependencies
   ).dependsOn(common, scrooge)
 
@@ -241,8 +247,8 @@ object Zipkin extends Build {
       finagle("serversets"),
       util("logging"),
       util("app"),
-      "org.iq80.snappy" % "snappy"            % "0.1",
-      "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
+      scroogeDep("serializer"),
+      "org.iq80.snappy" % "snappy" % "0.1"
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */
@@ -294,14 +300,13 @@ object Zipkin extends Build {
         finagle("serversets"),
         finagle("thrift"),
         finagle("zipkin"),
-        "com.twitter" %% "ostrich"           % OSTRICH_VERSION,
-        "com.twitter" %% "algebird-core"     % ALGEBIRD_VERSION,
         util("core"),
         util("zk"),
         util("zk-common"),
-
-        "com.twitter.common.zookeeper" % "candidate" % ZOOKEEPER_VERSION("candidate"),
-        "com.twitter.common.zookeeper" % "group"     % ZOOKEEPER_VERSION("group")
+        zk("candidate"),
+        zk("group"),
+        "com.twitter" %% "ostrich" % ostrichVersion,
+        "com.twitter" %% "algebird-core" % algebirdVersion
       ) ++ testDependencies
     ).dependsOn(common, query, scrooge)
 
@@ -330,7 +335,7 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
+        scroogeDep("serializer")
       ) ++ testDependencies
     ).dependsOn(collectorCore, scrooge)
 
@@ -342,7 +347,7 @@ object Zipkin extends Build {
     libraryDependencies ++= Seq(
       finagle("core"),
       util("core"),
-      "com.twitter" %% "twitter-server"    % TwitterServerVersion
+      "com.twitter" %% "twitter-server" % twitterServerVersion
     ) ++ testDependencies
   ).dependsOn(common, scrooge)
 
@@ -352,12 +357,10 @@ object Zipkin extends Build {
       base = file("zipkin-receiver-scribe"),
       settings = defaultSettings
     ).settings(
-      libraryDependencies ++=
-        testDependencies ++
-        Seq(
-          util("zk"),
-          "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
-        )
+      libraryDependencies ++= Seq(
+        util("zk"),
+        "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
+      ) ++ testDependencies
     ).dependsOn(collector, zookeeper, scrooge)
 
   lazy val kafka =
@@ -368,7 +371,7 @@ object Zipkin extends Build {
     ).settings(
       libraryDependencies ++= Seq(
         "com.twitter"      %% "kafka"    % "0.7.0",
-      "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
+        scroogeDep("serializer")
       ) ++ testDependencies,
       resolvers ++= (proxyRepo match {
         case None => Seq(
@@ -402,16 +405,14 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "com.twitter" %% "twitter-server" % "1.3.1",
-        "com.github.spullara.mustache.java" % "compiler" % "0.8.13",
-
-        "com.twitter.common.zookeeper" % "server-set" % "1.0.36",
-
         finagle("exception"),
         finagle("thriftmux"),
         finagle("serversets"),
         finagle("zipkin"),
-        "com.twitter" %% "algebird-core"      % ALGEBIRD_VERSION
+        zk("server-set"),
+        "com.twitter" %% "twitter-server" % twitterServerVersion,
+        "com.github.spullara.mustache.java" % "compiler" % "0.8.13",
+        "com.twitter" %% "algebird-core" % algebirdVersion
       ) ++ testDependencies,
 
       PackageDist.packageDistZipName := "zipkin-web.zip",
@@ -434,8 +435,8 @@ object Zipkin extends Build {
     libraryDependencies ++= Seq(
       finagle("redis"),
       util("logging"),
-      "org.slf4j"   %  "slf4j-log4j12"      % "1.6.4" % "runtime",
-      "com.twitter" %% "scrooge-serializer" % SCROOGE_VERSION
+      scroogeDep("serializer"),
+      "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */
@@ -452,8 +453,9 @@ object Zipkin extends Build {
   ).settings(
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-      "org.apache.hbase"      % "hbase"                 % HBASE_VERSION notTransitive(),
-      "org.apache.hbase"      % "hbase"                 % HBASE_VERSION % "test" classifier("tests") classifier(""),
+      "org.apache.hbase"      % "hbase"                 % hbaseVersion notTransitive(),
+      "org.apache.hbase"      % "hbase"                 % hbaseVersion % "test" classifier("tests") classifier(""),
+      "com.google.guava"      % "guava-io"              % "r03" % "test",
       "com.google.protobuf"   % "protobuf-java"         % "2.4.1",
       "org.apache.hadoop"     % "hadoop-core"           % "1.1.2" notTransitive(),
       "org.apache.hadoop"     % "hadoop-test"           % "1.1.2" % "test",
@@ -462,7 +464,7 @@ object Zipkin extends Build {
       "org.apache.zookeeper"  % "zookeeper"             % "3.4.5" % "runtime" notTransitive(),
       "org.slf4j"             % "slf4j-log4j12"         % "1.6.4" % "runtime",
       util("logging"),
-      "com.twitter"           %% "scrooge-serializer"   % SCROOGE_VERSION
+      scroogeDep("serializer")
     ) ++ testDependencies,
 
     /* Add configs to resource path for ConfigSpec */
@@ -479,14 +481,14 @@ object Zipkin extends Build {
   ).settings(
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-      "storm"                 % "storm"                 % "0.9.0.1"               % "provided",
+      util("logging"),
+      scroogeDep("serializer"),
+      "storm"                 % "storm"                 % "0.9.0.1" % "provided",
       "storm"                 % "storm-kafka"           % "0.9.0-wip16a-scala292",
       "commons-logging"       % "commons-logging"       % "1.1.1",
       "commons-configuration" % "commons-configuration" % "1.6",
-      util("logging"),
-      "com.twitter"           %% "scrooge-serializer"   % SCROOGE_VERSION,
       "com.twitter"           %% "kafka"                % "0.7.0",
-      "org.scalatest"         %% "scalatest"            % "1.9.2"                 % "test"
+      "org.scalatest"         %% "scalatest"            % "1.9.2" % "test"
     ),
 
     PackageDist.packageDistZipName := "zipkin-storm.zip",
