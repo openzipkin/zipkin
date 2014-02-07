@@ -491,6 +491,8 @@ object Zipkin extends Build {
       "org.scalatest"         %% "scalatest"            % "1.9.2" % "test"
     ),
 
+    publishArtifact in packageDoc := false,
+
     PackageDist.packageDistZipName := "zipkin-storm.zip",
     BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
     resourceGenerators in Compile <+= BuildProperties.buildPropertiesWrite,
