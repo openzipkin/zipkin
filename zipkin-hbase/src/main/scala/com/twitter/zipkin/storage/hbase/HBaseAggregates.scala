@@ -1,6 +1,6 @@
 package com.twitter.zipkin.storage.hbase
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.Semigroup
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Time, Future}
 import com.twitter.zipkin.common.Dependencies
@@ -48,7 +48,7 @@ trait HBaseAggregates extends Aggregates {
           tDep.toDependencies
         }
       }
-      Monoid.sum(depList)
+      Semigroup.sumOption(depList).get
     }
   }
 

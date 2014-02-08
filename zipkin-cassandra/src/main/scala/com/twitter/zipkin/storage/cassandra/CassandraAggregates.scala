@@ -23,7 +23,7 @@ import com.twitter.zipkin.conversions.thrift._
 import scala.collection.JavaConverters._
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.common.Dependencies
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.Semigroup
 import java.nio.ByteBuffer
 
 /**
@@ -69,7 +69,7 @@ case class CassandraAggregates(
     }
 
     result.map { depList =>
-      Monoid.sum(depList) // reduce to one instance containing all values
+      Semigroup.sumOption(depList).get // reduce to one instance containing all values
     }
   }
 

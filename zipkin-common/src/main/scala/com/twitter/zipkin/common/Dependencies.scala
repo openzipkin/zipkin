@@ -57,7 +57,7 @@ case class Dependencies(
 
 object Dependencies {
   // used for summing/merging database rows
-  implicit val monoid:Monoid[Dependencies] = new Monoid[Dependencies] {
+  implicit val sg:Semigroup[Dependencies] = new Semigroup[Dependencies] {
     def plus(l: Dependencies, r: Dependencies) = {
       // new start/end should be the inclusive time span of both items
       val newStart = r.startTime min l.startTime
@@ -66,11 +66,11 @@ object Dependencies {
       // links are merged by mapping to parent/child and summing corresponding links
       val lLinkMap = l.links.map { link => (link.parent, link.child) -> link }.toMap
       val rLinkMap = r.links.map { link => (link.parent, link.child) -> link }.toMap
-      val newLinks = Monoid.plus(rLinkMap, lLinkMap).values.toSeq
+      val newLinks = Semigroup.plus(rLinkMap, lLinkMap).values.toSeq
 
       Dependencies(newStart, newEnd, newLinks)
     }
-
-    val zero = Dependencies(Time.Top, Time.Bottom, Seq.empty[DependencyLink])
   }
+
+  val zero = Dependencies(Time.Top, Time.Bottom, Seq.empty[DependencyLink])
 }
