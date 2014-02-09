@@ -15,6 +15,7 @@
  */
 package com.twitter.zipkin.storage
 
+import com.twitter.algebird.Monoid
 import com.twitter.util.{Time, Future}
 import com.twitter.zipkin.common.Dependencies
 
@@ -39,7 +40,7 @@ class NullAggregates extends Aggregates {
 
   def close() {}
 
-  def getDependencies(startDate: Option[Time], endDate: Option[Time] = None) = Future(Dependencies.zero)
+  def getDependencies(startDate: Option[Time], endDate: Option[Time] = None) = Future(Monoid.zero[Dependencies])
   def storeDependencies(dependencies: Dependencies): Future[Unit]                    = Future.Unit
 
   def getTopAnnotations(serviceName: String)         = Future(Seq.empty[String])
