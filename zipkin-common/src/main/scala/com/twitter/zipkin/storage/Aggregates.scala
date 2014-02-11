@@ -15,9 +15,9 @@
  */
 package com.twitter.zipkin.storage
 
+import com.twitter.algebird.Monoid
 import com.twitter.util.{Time, Future}
 import com.twitter.zipkin.common.Dependencies
-import com.twitter.algebird.Monoid
 
 /**
  * Storage and retrieval interface for aggregates that may be computed offline and reloaded into

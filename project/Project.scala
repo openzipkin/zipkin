@@ -38,7 +38,7 @@ object Zipkin extends Build {
 
   val ostrichVersion = "9.2.1"
   val twitterServerVersion = "1.4.0"
-  val algebirdVersion  = "0.1.13"
+  val algebirdVersion  = "0.4.0"
   val hbaseVersion = "0.94.10"
 
   def finagle(name: String) = "com.twitter" %% ("finagle-" + name) % finagleVersion
@@ -155,7 +155,7 @@ object Zipkin extends Build {
         util("core"),
         zk("client"),
         "com.twitter" %% "ostrich" % ostrichVersion,
-        "com.twitter" %% "algebird-core" % algebirdVersion
+        "com.twitter" % "algebird-core_2.9.3" % algebirdVersion
       ) ++ testDependencies
     )
 
@@ -197,7 +197,7 @@ object Zipkin extends Build {
         scroogeDep("core"),
         scroogeDep("serializer"),
         "com.twitter" %% "ostrich" % ostrichVersion,
-        "com.twitter" %% "algebird-core" % algebirdVersion
+        "com.twitter" % "algebird-core_2.9.3" % algebirdVersion
       ) ++ testDependencies
     ).dependsOn(common)
 
@@ -231,7 +231,7 @@ object Zipkin extends Build {
       zk("candidate"),
       zk("group"),
       "com.twitter" %% "ostrich" % ostrichVersion,
-      "com.twitter" %% "algebird-core" % algebirdVersion,
+      "com.twitter" % "algebird-core_2.9.3" % algebirdVersion,
       "com.twitter" %% "twitter-server" % twitterServerVersion
     ) ++ testDependencies
   ).dependsOn(common, scrooge)
@@ -306,7 +306,7 @@ object Zipkin extends Build {
         zk("candidate"),
         zk("group"),
         "com.twitter" %% "ostrich" % ostrichVersion,
-        "com.twitter" %% "algebird-core" % algebirdVersion
+        "com.twitter" % "algebird-core_2.9.3" % algebirdVersion
       ) ++ testDependencies
     ).dependsOn(common, query, scrooge)
 
@@ -412,7 +412,7 @@ object Zipkin extends Build {
         zk("server-set"),
         "com.twitter" %% "twitter-server" % twitterServerVersion,
         "com.github.spullara.mustache.java" % "compiler" % "0.8.13",
-        "com.twitter" %% "algebird-core" % algebirdVersion
+        "com.twitter" % "algebird-core_2.9.3" % algebirdVersion
       ) ++ testDependencies,
 
       PackageDist.packageDistZipName := "zipkin-web.zip",
