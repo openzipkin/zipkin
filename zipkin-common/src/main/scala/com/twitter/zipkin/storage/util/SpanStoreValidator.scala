@@ -20,7 +20,7 @@ import com.twitter.logging.Logger
 import com.twitter.util.Await
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query.Trace
-import com.twitter.zipkin.storage.SpanStore
+import com.twitter.zipkin.storage.{TraceIdDuration, SpanStore}
 import java.nio.ByteBuffer
 
 class SpanStoreValidator(
@@ -37,12 +37,20 @@ class SpanStoreValidator(
   val ann2 = Annotation(2, "sr", None)
   val ann3 = Annotation(2, "custom", Some(ep))
   val ann4 = Annotation(2, "custom", Some(ep))
+  val ann5 = Annotation(5, "custom", Some(ep))
+  val ann6 = Annotation(6, "custom", Some(ep))
+  val ann7 = Annotation(7, "custom", Some(ep))
+  val ann8 = Annotation(8, "custom", Some(ep))
 
   val span1 = Span(123, "methodcall", spanId, None, List(ann1, ann3),
     List(binaryAnnotation("BAH", "BEH")))
   val span2 = Span(123, "methodcall", spanId, None, List(ann2),
     List(binaryAnnotation("BAH2", "BEH2")))
   val span3 = Span(123, "methodcall", spanId, None, List(ann2, ann3, ann4),
+    List(binaryAnnotation("BAH2", "BEH2")))
+  val span4 = Span(999, "methodcall", spanId, None, List(ann6, ann7),
+    List())
+  val span5 = Span(999, "methodcall", spanId, None, List(ann5, ann8),
     List(binaryAnnotation("BAH2", "BEH2")))
 
   val spanEmptySpanName = Span(123, "", spanId, None, List(ann1, ann2), List())
@@ -63,18 +71,28 @@ class SpanStoreValidator(
   }
 
   def validate {
-    var passed = true
     val spanStoreName = newSpanStore.getClass.getName.split('.').last
-    tests foreach { case (name, f) =>
+    val results = tests map { case (name, f) =>
       println("validating %s: %s".format(spanStoreName, name))
       try {
         f(); println("  pass")
+        true
       } catch { case e: Throwable =>
-        passed = false
+        println("fail")
         log.error(e, "validation failed")
+        false
       }
     }
-    assert(passed)
+
+    val passedCount = results.count(x => x)
+    println("%d / %d passed.".format(passedCount, tests.size))
+
+    if (passedCount < tests.size) {
+      println("Failed tests for %s:".format(spanStoreName))
+      results.zip(tests) collect { case (result, (name, _)) if !result => println(name) }
+    }
+
+    assert(results.count(x => x) == tests.size)
   }
 
   test("get by trace id") {
@@ -110,7 +128,7 @@ class SpanStoreValidator(
 
   test("get by trace ids returns an empty list if nothing is found") {
     val store = resetAndLoadStore(Seq())
-    val spans = Await.result(store.getSpansByTraceIds(Seq(span1.traceId)))
+    val spans = Await.result(store.getSpansByTraceIds(Seq(54321))) // Nonexistent span
     assert(spans.isEmpty)
   }
 
@@ -141,10 +159,12 @@ class SpanStoreValidator(
     assert(Await.result(store.getTraceIdsByName("badservice", Some("badmethod"), 0, 3)).isEmpty)
   }
 
-  //TODO
   test("get traces duration") {
-    println("  - not implemented")
-    // FakeCassandra doesn't support order and limit (!?)
+    val store = resetAndLoadStore(Seq(span4))
+    assert(Await.result(store.getTracesDuration(Seq(999))) == Seq(TraceIdDuration(999, 1, 6)))
+
+    Await.result(store.apply(Seq(span5)))
+    assert(Await.result(store.getTracesDuration(Seq(999))) == Seq(TraceIdDuration(999, 3, 5)))
   }
 
   test("get trace ids by annotation") {
