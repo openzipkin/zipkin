@@ -21,10 +21,12 @@ import com.twitter.util.Await
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query.Trace
 import com.twitter.zipkin.storage.SpanStore
+import com.twitter.zipkin.storage.TraceIdDuration
 import java.nio.ByteBuffer
 
 class SpanStoreValidator(
   newSpanStore: => SpanStore,
+  ignoreSortTests: Boolean = false,
   log: Logger = Logger.get("ValidateSpanStore")
 ) {
   val ep = Endpoint(123, 123, "service")
@@ -35,8 +37,8 @@ class SpanStoreValidator(
   val spanId = 456
   val ann1 = Annotation(1, "cs", Some(ep))
   val ann2 = Annotation(2, "sr", None)
-  val ann3 = Annotation(2, "custom", Some(ep))
-  val ann4 = Annotation(2, "custom", Some(ep))
+  val ann3 = Annotation(20, "custom", Some(ep))
+  val ann4 = Annotation(20, "custom", Some(ep))
 
   val span1 = Span(123, "methodcall", spanId, None, List(ann1, ann3),
     List(binaryAnnotation("BAH", "BEH")))
@@ -130,22 +132,22 @@ class SpanStoreValidator(
     assert(Await.result(store.getAllServiceNames) == span1.serviceNames)
   }
 
-  // TODO: endTs seems wrong here
-  test("get trace ids by name") {
-    val store = resetAndLoadStore(Seq(span1))
-    assert(Await.result(store.getTraceIdsByName("service", None, 0, 3)).head.traceId == span1.traceId)
-    assert(Await.result(store.getTraceIdsByName("service", Some("methodcall"), 0, 3)).head.traceId == span1.traceId)
+  if (!ignoreSortTests)
+    test("get trace ids by name") {
+      val store = resetAndLoadStore(Seq(span1))
+      assert(Await.result(store.getTraceIdsByName("service", None, 100, 3)).head.traceId == span1.traceId)
+      assert(Await.result(store.getTraceIdsByName("service", Some("methodcall"), 100, 3)).head.traceId == span1.traceId)
 
-    assert(Await.result(store.getTraceIdsByName("badservice", None, 0, 3)).isEmpty)
-    assert(Await.result(store.getTraceIdsByName("service", Some("badmethod"), 0, 3)).isEmpty)
-    assert(Await.result(store.getTraceIdsByName("badservice", Some("badmethod"), 0, 3)).isEmpty)
-  }
+      assert(Await.result(store.getTraceIdsByName("badservice", None, 100, 3)).isEmpty)
+      assert(Await.result(store.getTraceIdsByName("service", Some("badmethod"), 100, 3)).isEmpty)
+      assert(Await.result(store.getTraceIdsByName("badservice", Some("badmethod"), 100, 3)).isEmpty)
+    }
 
-  //TODO
-  test("get traces duration") {
-    println("  - not implemented")
-    // FakeCassandra doesn't support order and limit (!?)
-  }
+  if (!ignoreSortTests)
+    test("get traces duration") {
+      val store = resetAndLoadStore(Seq(span1))
+      assert(Await.result(store.getTracesDuration(Seq(span1.traceId))) == Seq(TraceIdDuration(span1.traceId, 19, 1)))
+    }
 
   test("get trace ids by annotation") {
     val store = resetAndLoadStore(Seq(span1))

@@ -37,6 +37,7 @@ class CassieSpanStoreTest extends FunSuite {
   }
 
   test("validate") {
-    new SpanStoreValidator(newSpanStore).validate
+    // FakeCassandra doesn't honor sort order
+    new SpanStoreValidator(newSpanStore, true).validate
   }
 }
