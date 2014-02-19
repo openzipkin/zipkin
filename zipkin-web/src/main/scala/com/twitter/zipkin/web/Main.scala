@@ -19,7 +19,7 @@ import com.twitter.app.App
 import com.twitter.conversions.time._
 import com.twitter.finagle.http.HttpMuxer
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.finagle.{Http, Service, ThriftMux}
+import com.twitter.finagle.{Http, Service, Thrift}
 import com.twitter.server.TwitterServer
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common.mustache.ZipkinMustache
@@ -45,7 +45,7 @@ trait ZipkinWebFactory { self: App =>
 
   val queryDest = flag("zipkin.web.query.dest", "127.0.0.1:9411", "Location of the query server")
   def newQueryClient(): ZipkinQuery[Future] =
-    ThriftMux.newIface[ZipkinQuery[Future]]("ZipkinQuery=" + queryDest())
+    Thrift.newIface[ZipkinQuery[Future]]("ZipkinQuery=" + queryDest())
 
   def newWebServer(
     queryClient: ZipkinQuery[Future] = newQueryClient(),
