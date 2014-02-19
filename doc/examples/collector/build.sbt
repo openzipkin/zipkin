@@ -5,9 +5,10 @@ organization := "com.twitter"
 scalaVersion := "2.9.2"
 
 libraryDependencies ++= Seq(
-  "com.twitter" % "zipkin-cassandra" % "1.1.1-SNAPSHOT",
-  "com.twitter" % "zipkin-collector" % "1.1.1-SNAPSHOT",
-  "com.twitter" % "zipkin-receiver-scribe" % "1.1.1-SNAPSHOT")
+  "com.twitter" % "zipkin-cassandra" % "1.2.0-SNAPSHOT",
+  "com.twitter" % "zipkin-collector" % "1.2.0-SNAPSHOT",
+  "com.twitter" % "zipkin-receiver-scribe" % "1.2.0-SNAPSHOT",
+  "com.twitter" %% "twitter-server" % "1.4.1")
 
 resolvers ++= Seq(
   "twitter.com" at "http://maven.twttr.com/",
