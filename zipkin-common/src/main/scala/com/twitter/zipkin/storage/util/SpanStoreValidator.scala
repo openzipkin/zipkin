@@ -174,6 +174,7 @@ class SpanStoreValidator(
 
     // fetch by time based annotation, find trace
     val res1 = Await.result(store.getTraceIdsByAnnotation("service", "custom", None, 100, 3))
+    println(res1)
     assert(res1.head.traceId == span1.traceId)
 
     // should not find any traces since the core annotation doesn't exist in index
@@ -183,6 +184,14 @@ class SpanStoreValidator(
     // should find traces by the key and value annotation
     val res3 = Await.result(store.getTraceIdsByAnnotation("service", "BAH", Some(ByteBuffer.wrap("BEH".getBytes)), 100, 3))
     assert(res3.head.traceId == span1.traceId)
+  }
+
+  test("limit on annotations") {
+    val store = resetAndLoadStore(Seq(span1, span2, span3, span4, span5))
+
+    val res1 = Await.result(store.getTraceIdsByAnnotation("service", "custom", None, 100, limit = 3))
+    assert(res1.length == 3)
+    assert(res1.head.traceId == span5.traceId)
   }
 
   test("wont index empty service names") {
