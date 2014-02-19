@@ -80,10 +80,10 @@ class ThriftQueryServiceTest extends FunSuite {
 
     // exception on null serviceName
     intercept[thrift.QueryException] {
-      Await.result(svc.getTraceIdsBySpanName(null, "span", 0, 100, thrift.Order.DurationDesc))
+      Await.result(svc.getTraceIdsBySpanName(null, "span", 100, 100, thrift.Order.DurationDesc))
     }
 
-    val actual = Await.result(svc.getTraceIdsBySpanName("service2", "methodcall", 0, 50, thrift.Order.DurationDesc))
+    val actual = Await.result(svc.getTraceIdsBySpanName("service2", "methodcall", 1000, 50, thrift.Order.DurationDesc))
     assert(actual === Seq(2, 2, 2))
   }
 
@@ -91,15 +91,15 @@ class ThriftQueryServiceTest extends FunSuite {
     val svc = newLoadedService()
 
     // desc
-    val actualDesc = Await.result(svc.getTraceIdsByServiceName("service3", 0, 50, thrift.Order.DurationDesc))
+    val actualDesc = Await.result(svc.getTraceIdsByServiceName("service3", 1000, 50, thrift.Order.DurationDesc))
     assert(actualDesc === Seq(3, 5))
 
     // asc
-    val actualAsc = Await.result(svc.getTraceIdsByServiceName("service3", 0, 50, thrift.Order.DurationAsc))
+    val actualAsc = Await.result(svc.getTraceIdsByServiceName("service3", 1000, 50, thrift.Order.DurationAsc))
     assert(actualAsc === Seq(5, 3))
 
     // none
-    val actualNone = Await.result(svc.getTraceIdsByServiceName("service3", 0, 50, thrift.Order.None))
+    val actualNone = Await.result(svc.getTraceIdsByServiceName("service3", 1000, 50, thrift.Order.None))
     assert(actualNone === Seq(3, 5))
   }
 
@@ -123,7 +123,7 @@ class ThriftQueryServiceTest extends FunSuite {
 
   test("find trace ids by service name") {
     val svc = newLoadedService()
-    val actual = Await.result(svc.getTraceIdsByServiceName("service3", 0, 50, thrift.Order.DurationDesc))
+    val actual = Await.result(svc.getTraceIdsByServiceName("service3", 1000, 50, thrift.Order.DurationDesc))
     assert(actual === Seq(3, 5))
   }
 
