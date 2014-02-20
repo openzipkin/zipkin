@@ -224,7 +224,7 @@ class InMemorySpanStore extends SpanStore {
         Seq(span.firstAnnotation.map { _.timestamp }, span.lastAnnotation.map { _.timestamp }).flatten
       }
 
-      if(timestamps.isEmpty)
+      if (timestamps.isEmpty)
         None
       else
         Some(TraceIdDuration(traceId, timestamps.max - timestamps.min, timestamps.min))
