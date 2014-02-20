@@ -491,9 +491,8 @@ object Zipkin extends Build {
       "storm"                 % "storm-kafka"           % "0.9.0-wip16a-scala292",
       "commons-logging"       % "commons-logging"       % "1.1.1",
       "commons-configuration" % "commons-configuration" % "1.6",
-      "com.twitter"           %% "kafka"                % "0.7.0",
-      "org.scalatest"         %% "scalatest"            % "1.9.2" % "test"
-    ),
+      "com.twitter"           %% "kafka"                % "0.7.0"
+    ) ++ scalaTestDeps,
 
     publishArtifact in packageDoc := false,
 
