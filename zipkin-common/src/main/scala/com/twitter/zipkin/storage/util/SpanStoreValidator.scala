@@ -187,11 +187,12 @@ class SpanStoreValidator(
   }
 
   test("limit on annotations") {
-    val store = resetAndLoadStore(Seq(span1, span2, span3, span4, span5))
+    val store = resetAndLoadStore(Seq(span1, span4, span5))
 
-    val res1 = Await.result(store.getTraceIdsByAnnotation("service", "custom", None, 100, limit = 3))
-    assert(res1.length == 3)
-    assert(res1.head.traceId == span5.traceId)
+    val res1 = Await.result(store.getTraceIdsByAnnotation("service", "custom", None, 100, limit = 2))
+    assert(res1.length == 2)
+    assert(res1(0).traceId == span1.traceId)
+    assert(res1(1).traceId == span5.traceId)
   }
 
   test("wont index empty service names") {
