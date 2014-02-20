@@ -79,7 +79,7 @@ class SpanStoreValidator(
         f(); println("  pass")
         true
       } catch { case e: Throwable =>
-        println("fail")
+        println("  fail")
         log.error(e, "validation failed")
         false
       }
