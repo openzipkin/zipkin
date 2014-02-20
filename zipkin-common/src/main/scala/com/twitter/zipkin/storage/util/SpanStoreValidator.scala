@@ -163,16 +163,14 @@ class SpanStoreValidator(
     test("get traces duration") {
       val store = resetAndLoadStore(Seq(span1))
       assert(Await.result(store.getTracesDuration(Seq(span1.traceId))) == Seq(TraceIdDuration(span1.traceId, 19, 1)))
+
+      val store2 = resetAndLoadStore(Seq(span4))
+      assert(Await.result(store2.getTracesDuration(Seq(999))) == Seq(TraceIdDuration(999, 1, 6)))
+
+      Await.result(store2.apply(Seq(span5)))
+      assert(Await.result(store2.getTracesDuration(Seq(999))) == Seq(TraceIdDuration(999, 3, 5)))
     }
   }
-
-    test("get traces duration - 2") {
-      val store = resetAndLoadStore(Seq(span4))
-      assert(Await.result(store.getTracesDuration(Seq(999))) == Seq(TraceIdDuration(999, 1, 6)))
-
-      Await.result(store.apply(Seq(span5)))
-      assert(Await.result(store.getTracesDuration(Seq(999))) == Seq(TraceIdDuration(999, 3, 5)))
-    }
 
   test("get trace ids by annotation") {
     val store = resetAndLoadStore(Seq(span1))
