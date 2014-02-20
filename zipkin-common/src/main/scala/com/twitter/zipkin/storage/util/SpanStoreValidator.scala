@@ -93,7 +93,7 @@ class SpanStoreValidator(
       results.zip(tests) collect { case (result, (name, _)) if !result => println(name) }
     }
 
-    assert(results.count(x => x) == tests.size)
+    assert(results.forall(x => x))
   }
 
   test("get by trace id") {
