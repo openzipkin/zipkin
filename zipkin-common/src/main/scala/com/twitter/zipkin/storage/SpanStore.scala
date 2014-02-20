@@ -219,7 +219,7 @@ class InMemorySpanStore extends SpanStore {
   }
 
   def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = call {
-    traceIds.map { traceId =>
+    traceIds.flatMap { traceId =>
       val timestamps = spans.filter { span => span.traceId == traceId }.flatMap { span =>
         Seq(span.firstAnnotation.map { _.timestamp }, span.lastAnnotation.map { _.timestamp }).flatten
       }
@@ -228,7 +228,7 @@ class InMemorySpanStore extends SpanStore {
         None
       else
         Some(TraceIdDuration(traceId, timestamps.max - timestamps.min, timestamps.min))
-    }.flatten
+    }
   }
 
   def getAllServiceNames: Future[Set[String]] = call {
