@@ -133,11 +133,11 @@ class SpanStoreValidator(
     assert(spans.isEmpty)
   }
 
-  // test("alter TTL on a span") {
-  //   val store = resetAndLoadStore(Seq(span1))
-  //   Await.result(store.setTimeToLive(span1.traceId, 1234.seconds))
-  //   assert(Await.result(store.getTimeToLive(span1.traceId)) == 1234.seconds)
-  // }
+  test("alter TTL on a span") {
+    val store = resetAndLoadStore(Seq(span1))
+    Await.result(store.setTimeToLive(span1.traceId, 1234.seconds))
+    assert(Await.result(store.getTimeToLive(span1.traceId)) == 1234.seconds)
+  }
 
   test("get spans by name") {
     val store = resetAndLoadStore(Seq(span1))
