@@ -146,7 +146,6 @@ class SpanStoreValidator(
 
   test("get service names") {
     val store = resetAndLoadStore(Seq(span1))
-    println(Await.result(store.getAllServiceNames))
     assert(Await.result(store.getAllServiceNames) == span1.serviceNames)
   }
 
@@ -169,10 +168,9 @@ class SpanStoreValidator(
 
     test("get traces duration - 2") {
       val store = resetAndLoadStore(Seq(span4))
-      //assert(Await.result(store.getTracesDuration(Seq(999))) == Seq(TraceIdDuration(999, 1, 6)))
+      assert(Await.result(store.getTracesDuration(Seq(999))) == Seq(TraceIdDuration(999, 1, 6)))
 
       Await.result(store.apply(Seq(span5)))
-      println(Await.result(store.getTracesDuration(Seq(999))))
       assert(Await.result(store.getTracesDuration(Seq(999))) == Seq(TraceIdDuration(999, 3, 5)))
     }
 
@@ -181,7 +179,6 @@ class SpanStoreValidator(
 
     // fetch by time based annotation, find trace
     val res1 = Await.result(store.getTraceIdsByAnnotation("service", "custom", None, 100, 3))
-    println(res1)
     assert(res1.head.traceId == span1.traceId)
 
     // should not find any traces since the core annotation doesn't exist in index
