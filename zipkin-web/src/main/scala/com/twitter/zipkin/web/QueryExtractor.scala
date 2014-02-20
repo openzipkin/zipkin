@@ -29,62 +29,37 @@ object QueryExtractor {
    * Takes a `Request` and produces the correct `QueryRequest` depending
    * on the GET parameters present
    */
-  def apply(request: Request): Option[QueryRequest] = {
-    val serviceName = request.params.get("serviceName")
-    val spanName = request.params.get("spanName").flatMap {
-      case "all" => None
-      case "" => None
-      case s@_ => Some(s)
-    }
+  def apply(request: Request): Option[QueryRequest] = request.params.get("serviceName") map { serviceName =>
+    val spanName = request.params.get("spanName") filterNot { n => n == "all" || n == "" }
 
-    /* Pull out the annotations */
-    val annotations = extractParams(request, "annotations[%d]") match {
-      case Nil     => None
-      case seq @ _ => Some(seq)
-    }
+    val annotations = extractParams(request, "annotations[%d]")
 
-    /* Pull out the kv annotations */
-    val keys = extractParams(request, "keyValueAnnotations[%d][key]")
-    val values = extractParams(request, "keyValueAnnotations[%d][val]")
-
-    val binaryAnnotations = (0 until (keys.length min values.length)).map { i =>
-      BinaryAnnotation(keys(i), ByteBuffer.wrap(values(i).getBytes), AnnotationType.String, None)
-    }.toSeq match {
-      case Nil     => None
-      case seq @ _ => Some(seq)
+    val binaryAnnotations = for {
+      keys <- extractParams(request, "keyValueAnnotations[%d][key]")
+      values <- extractParams(request, "keyValueAnnotations[%d][val]")
+    } yield {
+      keys zip(values) map { case (k, v) =>
+        BinaryAnnotation(k, ByteBuffer.wrap(v.getBytes), AnnotationType.String, None)
+      }
     }
 
     val endTimestamp = request.params.get("endDatetime") match {
-      case Some(str) => {
-        fmt.parse(str).getTime * 1000
-      }
-      case _ => {
-        Time.now.inMicroseconds
-      }
+      case Some(str) => fmt.parse(str).getTime * 1000
+      case None => Time.now.inMicroseconds
     }
-    val limit = request.params.get("limit").map { _.toInt }.getOrElse(Constants.DefaultQueryLimit)
+
+    val limit = request.params.get("limit").map(_.toInt).getOrElse(Constants.DefaultQueryLimit)
     val order = Order.DurationDesc
 
-    serviceName.map { name =>
-      QueryRequest(name, spanName, annotations, binaryAnnotations, endTimestamp, limit, order)
-    }
+    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, endTimestamp, limit, order)
   }
 
-  private def extractParams(request: Request, keyFormatStr: String): Seq[String] = {
-    var values = Seq.empty[String]
-    var done = false
-    var count = 0
-    while (!done) {
-      request.params.get(keyFormatStr.format(count)) match {
-        case Some(v) => {
-          values = values :+ v
-          count += 1
-        }
-        case None => {
-          done = true
-        }
-      }
+  private def extractParams(request: Request, keyFormatStr: String): Option[Seq[String]] = {
+    Stream.from(0).map { n =>
+      request.params.get(keyFormatStr.format(n))
+    }.takeWhile(_.isDefined).toSeq.flatten match {
+      case Nil => None
+      case seq => Some(seq)
     }
-    values
   }
 }

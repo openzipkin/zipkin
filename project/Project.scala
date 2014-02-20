@@ -59,13 +59,17 @@ object Zipkin extends Build {
   val travisCi = Option(System.getenv("SBT_TRAVIS_CI")) // for adding travis ci maven repos before others
   val cwd = System.getProperty("user.dir")
 
+  lazy val scalaTestDeps = Seq(
+    "org.scalatest" %% "scalatest" % "1.9.1" % "test",
+    "junit" % "junit" % "4.10" % "test"
+  )
+
   lazy val testDependencies = Seq(
     "org.jmock"               %  "jmock"        % "2.4.0" % "test",
     "org.hamcrest"            %  "hamcrest-all" % "1.1"   % "test",
     "cglib"                   %  "cglib"        % "2.2.2" % "test",
     "asm"                     %  "asm"          % "1.5.3" % "test",
     "org.objenesis"           %  "objenesis"    % "1.1"   % "test",
-    "org.scalatest"           %% "scalatest"    % "1.9.1" % "test",
     "org.scala-tools.testing" %% "specs"        % "1.6.9" % "test" cross CrossVersion.binaryMapped {
       case "2.9.2" => "2.9.1"
       case "2.10.0" => "2.10"
@@ -156,7 +160,7 @@ object Zipkin extends Build {
         zk("client"),
         "com.twitter" %% "ostrich" % ostrichVersion,
         "com.twitter" % "algebird-core_2.9.3" % algebirdVersion
-      ) ++ testDependencies
+      ) ++ testDependencies ++ scalaTestDeps
     )
 
   lazy val thriftidl =
@@ -180,7 +184,7 @@ object Zipkin extends Build {
         finagle("core"),
         util("core"),
         util("zk")
-      ) ++ testDependencies
+      ) ++ scalaTestDeps
     ).dependsOn(common, zookeeper)
 
   lazy val scrooge =
@@ -249,7 +253,7 @@ object Zipkin extends Build {
       util("app"),
       scroogeDep("serializer"),
       "org.iq80.snappy" % "snappy" % "0.1"
-    ) ++ testDependencies,
+    ) ++ testDependencies ++ scalaTestDeps,
 
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
@@ -286,7 +290,7 @@ object Zipkin extends Build {
         finagle("zipkin"),
         util("app"),
         util("core")
-      ) ++ testDependencies
+      ) ++ scalaTestDeps
     ).dependsOn(common, scrooge)
 
   lazy val queryCore =
@@ -348,7 +352,7 @@ object Zipkin extends Build {
       finagle("core"),
       util("core"),
       "com.twitter" %% "twitter-server" % twitterServerVersion
-    ) ++ testDependencies
+    ) ++ scalaTestDeps
   ).dependsOn(common, scrooge)
 
   lazy val receiverScribe =
@@ -360,7 +364,7 @@ object Zipkin extends Build {
       libraryDependencies ++= Seq(
         util("zk"),
         "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
-      ) ++ testDependencies
+      ) ++ scalaTestDeps
     ).dependsOn(collector, zookeeper, scrooge)
 
   lazy val kafka =
@@ -413,7 +417,7 @@ object Zipkin extends Build {
         "com.twitter" %% "twitter-server" % twitterServerVersion,
         "com.github.spullara.mustache.java" % "compiler" % "0.8.13",
         "com.twitter" % "algebird-core_2.9.3" % algebirdVersion
-      ) ++ testDependencies,
+      ) ++ scalaTestDeps,
 
       PackageDist.packageDistZipName := "zipkin-web.zip",
       BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
@@ -487,9 +491,8 @@ object Zipkin extends Build {
       "storm"                 % "storm-kafka"           % "0.9.0-wip16a-scala292",
       "commons-logging"       % "commons-logging"       % "1.1.1",
       "commons-configuration" % "commons-configuration" % "1.6",
-      "com.twitter"           %% "kafka"                % "0.7.0",
-      "org.scalatest"         %% "scalatest"            % "1.9.2" % "test"
-    ),
+      "com.twitter"           %% "kafka"                % "0.7.0"
+    ) ++ scalaTestDeps,
 
     publishArtifact in packageDoc := false,
 
