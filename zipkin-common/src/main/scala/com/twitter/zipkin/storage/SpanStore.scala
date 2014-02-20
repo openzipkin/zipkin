@@ -224,8 +224,11 @@ class InMemorySpanStore extends SpanStore {
         Seq(span.firstAnnotation.map { _.timestamp }, span.lastAnnotation.map { _.timestamp }).flatten
       }
 
-      TraceIdDuration(traceId, timestamps.max - timestamps.min, timestamps.min)
-    }
+      if(timestamps.isEmpty)
+        None
+      else
+        Some(TraceIdDuration(traceId, timestamps.max - timestamps.min, timestamps.min))
+    }.flatten
   }
 
   def getAllServiceNames: Future[Set[String]] = call {
