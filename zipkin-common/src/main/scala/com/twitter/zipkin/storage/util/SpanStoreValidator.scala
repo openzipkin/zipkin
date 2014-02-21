@@ -20,8 +20,7 @@ import com.twitter.logging.Logger
 import com.twitter.util.Await
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query.Trace
-import com.twitter.zipkin.storage.SpanStore
-import com.twitter.zipkin.storage.TraceIdDuration
+import com.twitter.zipkin.storage.{TraceIdDuration, SpanStore}
 import java.nio.ByteBuffer
 
 class SpanStoreValidator(
@@ -39,12 +38,20 @@ class SpanStoreValidator(
   val ann2 = Annotation(2, "sr", None)
   val ann3 = Annotation(20, "custom", Some(ep))
   val ann4 = Annotation(20, "custom", Some(ep))
+  val ann5 = Annotation(5, "custom", Some(ep))
+  val ann6 = Annotation(6, "custom", Some(ep))
+  val ann7 = Annotation(7, "custom", Some(ep))
+  val ann8 = Annotation(8, "custom", Some(ep))
 
   val span1 = Span(123, "methodcall", spanId, None, List(ann1, ann3),
     List(binaryAnnotation("BAH", "BEH")))
   val span2 = Span(123, "methodcall", spanId, None, List(ann2),
     List(binaryAnnotation("BAH2", "BEH2")))
   val span3 = Span(123, "methodcall", spanId, None, List(ann2, ann3, ann4),
+    List(binaryAnnotation("BAH2", "BEH2")))
+  val span4 = Span(999, "methodcall", spanId, None, List(ann6, ann7),
+    List())
+  val span5 = Span(999, "methodcall", spanId, None, List(ann5, ann8),
     List(binaryAnnotation("BAH2", "BEH2")))
 
   val spanEmptySpanName = Span(123, "", spanId, None, List(ann1, ann2), List())
@@ -65,18 +72,28 @@ class SpanStoreValidator(
   }
 
   def validate {
-    var passed = true
     val spanStoreName = newSpanStore.getClass.getName.split('.').last
-    tests foreach { case (name, f) =>
+    val results = tests map { case (name, f) =>
       println("validating %s: %s".format(spanStoreName, name))
       try {
         f(); println("  pass")
+        true
       } catch { case e: Throwable =>
-        passed = false
+        println("  fail")
         log.error(e, "validation failed")
+        false
       }
     }
-    assert(passed)
+
+    val passedCount = results.count(x => x)
+    println("%d / %d passed.".format(passedCount, tests.size))
+
+    if (passedCount < tests.size) {
+      println("Failed tests for %s:".format(spanStoreName))
+      results.zip(tests) collect { case (result, (name, _)) if !result => println(name) }
+    }
+
+    assert(passedCount == tests.size)
   }
 
   test("get by trace id") {
@@ -112,7 +129,7 @@ class SpanStoreValidator(
 
   test("get by trace ids returns an empty list if nothing is found") {
     val store = resetAndLoadStore(Seq())
-    val spans = Await.result(store.getSpansByTraceIds(Seq(span1.traceId)))
+    val spans = Await.result(store.getSpansByTraceIds(Seq(54321))) // Nonexistent span
     assert(spans.isEmpty)
   }
 
@@ -132,7 +149,7 @@ class SpanStoreValidator(
     assert(Await.result(store.getAllServiceNames) == span1.serviceNames)
   }
 
-  if (!ignoreSortTests)
+  if (!ignoreSortTests) {
     test("get trace ids by name") {
       val store = resetAndLoadStore(Seq(span1))
       assert(Await.result(store.getTraceIdsByName("service", None, 100, 3)).head.traceId == span1.traceId)
@@ -143,11 +160,17 @@ class SpanStoreValidator(
       assert(Await.result(store.getTraceIdsByName("badservice", Some("badmethod"), 100, 3)).isEmpty)
     }
 
-  if (!ignoreSortTests)
     test("get traces duration") {
       val store = resetAndLoadStore(Seq(span1))
       assert(Await.result(store.getTracesDuration(Seq(span1.traceId))) == Seq(TraceIdDuration(span1.traceId, 19, 1)))
+
+      val store2 = resetAndLoadStore(Seq(span4))
+      assert(Await.result(store2.getTracesDuration(Seq(999))) == Seq(TraceIdDuration(999, 1, 6)))
+
+      Await.result(store2.apply(Seq(span5)))
+      assert(Await.result(store2.getTracesDuration(Seq(999))) == Seq(TraceIdDuration(999, 3, 5)))
     }
+  }
 
   test("get trace ids by annotation") {
     val store = resetAndLoadStore(Seq(span1))
@@ -163,6 +186,15 @@ class SpanStoreValidator(
     // should find traces by the key and value annotation
     val res3 = Await.result(store.getTraceIdsByAnnotation("service", "BAH", Some(ByteBuffer.wrap("BEH".getBytes)), 100, 3))
     assert(res3.head.traceId == span1.traceId)
+  }
+
+  test("limit on annotations") {
+    val store = resetAndLoadStore(Seq(span1, span4, span5))
+    val res1 = Await.result(store.getTraceIdsByAnnotation("service", "custom", None, 100, limit = 2))
+
+    assert(res1.length == 2)
+    assert(res1(0).traceId == span1.traceId)
+    assert(res1(1).traceId == span5.traceId)
   }
 
   test("wont index empty service names") {

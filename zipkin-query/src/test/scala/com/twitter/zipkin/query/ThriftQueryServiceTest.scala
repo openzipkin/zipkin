@@ -84,7 +84,7 @@ class ThriftQueryServiceTest extends FunSuite {
     }
 
     val actual = Await.result(svc.getTraceIdsBySpanName("service2", "methodcall", 1000, 50, thrift.Order.DurationDesc))
-    assert(actual === Seq(2, 2, 2))
+    assert(actual === Seq(2, 2))
   }
 
   test("order results") {
