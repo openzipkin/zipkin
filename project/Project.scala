@@ -270,7 +270,7 @@ object Zipkin extends Build {
     libraryDependencies ++= Seq(
       "play" %% "anorm" % "2.1-09142012",
       anormDriverDependencies("sqlite-persistent")
-    ) ++ testDependencies,
+    ) ++ testDependencies ++ scalaTestDeps,
 
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
