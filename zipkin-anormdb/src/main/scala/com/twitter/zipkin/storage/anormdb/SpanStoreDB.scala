@@ -1,9 +1,23 @@
+/*
+ * Copyright 2014 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.twitter.zipkin.storage.anormdb
 
 import anorm._
 import anorm.SqlParser._
 import java.sql.{Blob, Connection, DriverManager, SQLException}
-import com.twitter.util.Try
 
 case class SpanStoreDB(location: String) {
   val (driver, blobType, autoIncrementSql) = location.split(":").toList match {
@@ -42,28 +56,6 @@ case class SpanStoreDB(location: String) {
     DriverManager.getConnection("jdbc:" + location)
   }
 
-  /**
-   * Execute SQL in a transaction.
-   *
-   * Example usage:
-   *
-   * db.withTransaction(conn, { implicit conn: Connection =>
-   *   // Do database updates
-   * })
-   */
-  def withTransaction[A](conn: Connection, code: Connection => A): Try[A] = {
-    val autoCommit = conn.getAutoCommit
-    conn.setAutoCommit(false)
-    Try {
-      code(conn)
-    } onSuccess { _ =>
-      conn.commit()
-    } onFailure { _ =>
-      conn.rollback()
-    } ensure {
-      conn.setAutoCommit(autoCommit)
-    }
-  }
   /**
    * Attempt to convert a SQL value into a byte array.
    */
@@ -120,7 +112,6 @@ case class SpanStoreDB(location: String) {
         |  created_ts BIGINT
         |)
       """.stripMargin).execute()
-    //SQL("CREATE INDEX trace_id ON zipkin_spans (trace_id)").execute()
 
     if (clear) SQL("DROP TABLE IF EXISTS zipkin_annotations").execute()
     SQL(
@@ -136,7 +127,6 @@ case class SpanStoreDB(location: String) {
         |  duration BIGINT
         |)
       """.stripMargin).execute()
-    //SQL("CREATE INDEX trace_id ON zipkin_annotations (trace_id)").execute()
 
     if (clear) SQL("DROP TABLE IF EXISTS zipkin_binary_annotations").execute()
     SQL(
@@ -152,7 +142,6 @@ case class SpanStoreDB(location: String) {
         |  port INT
         |)
       """.stripMargin.format(blobType)).execute()
-    //SQL("CREATE INDEX trace_id ON zipkin_binary_annotations (trace_id)").execute()
 
     if (clear) SQL("DROP TABLE IF EXISTS zipkin_dependencies").execute()
     SQL(

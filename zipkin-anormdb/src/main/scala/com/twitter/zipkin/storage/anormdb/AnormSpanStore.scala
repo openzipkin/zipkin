@@ -1,3 +1,18 @@
+/*
+ * Copyright 2014 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.twitter.zipkin.storage.anormdb
 
 import anorm.SqlParser._
@@ -98,12 +113,11 @@ class AnormSpanStore(
       }
 
     // This parallelism is a lie. There's only one DB connection (for now anyway).
-    pool { spanBatch.execute() } flatMap { _ =>
-      Future.join(Seq(
-        pool { annBatch.execute() },
-        pool { binAnnBatch.execute }
-      ))
-    }
+    Future.join(Seq(
+      pool { spanBatch.execute() },
+      pool { annBatch.execute() },
+      pool { binAnnBatch.execute() }
+    ))
   }
 
   def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] =
@@ -288,22 +302,24 @@ class AnormSpanStore(
     endTs: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] =
-  if (Constants.CoreAnnotations.contains(annotation)) Future.value(Seq.empty) else pool {
-    val sql = value
-      .map(_ => byAnnValSql)
-      .getOrElse(byAnnSql)
-      .on("service_name" -> serviceName)
-      .on("annotation" -> annotation)
-      .on("end_ts" -> endTs)
-      .on("limit" -> limit)
+    if (Constants.CoreAnnotations.contains(annotation))
+      Future.value(Seq.empty)
+    else pool {
+      val sql = value
+        .map(_ => byAnnValSql)
+        .getOrElse(byAnnSql)
+        .on("service_name" -> serviceName)
+        .on("annotation" -> annotation)
+        .on("end_ts" -> endTs)
+        .on("limit" -> limit)
 
-    value match {
-      case Some(bytes) =>
-        sql.on("value" -> Util.getArrayFromBuffer(bytes)).as(byAnnValResult *)
-      case None =>
-        sql.as(byAnnResult *)
+      value match {
+        case Some(bytes) =>
+          sql.on("value" -> Util.getArrayFromBuffer(bytes)).as(byAnnValResult *)
+        case None =>
+          sql.as(byAnnResult *)
+      }
     }
-  }
 
   private[this] val byDurationSql = SQL("""
     |SELECT trace_id, duration, created_ts
