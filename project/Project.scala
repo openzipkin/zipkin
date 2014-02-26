@@ -83,7 +83,7 @@ object Zipkin extends Build {
   def zipkinSettings = Seq(
     organization := "com.twitter",
     version := zipkinVersion,
-    crossScalaVersions := Seq("2.9.2"),
+    crossScalaVersions := Seq("2.9.3"),
     scalaVersion := "2.9.3",
     crossPaths := false,            /* Removes Scala version from artifact name */
     fork := true, // forking prevents runaway thread pollution of sbt
