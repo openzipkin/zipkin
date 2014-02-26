@@ -40,10 +40,12 @@ object Zipkin extends Build {
   val twitterServerVersion = "1.4.0"
   val algebirdVersion  = "0.4.0"
   val hbaseVersion = "0.94.10"
+  val summingbirdVersion = "0.3.2"
 
-  def finagle(name: String) = "com.twitter" %% ("finagle-" + name) % finagleVersion
-  def util(name: String) = "com.twitter" %% ("util-" + name) % utilVersion
-  def scroogeDep(name: String) = "com.twitter" %% ("scrooge-" + name) % scroogeVersion
+  def finagle(name: String) = "com.twitter" % ("finagle-" + name + "_2.9.2") % finagleVersion
+  def util(name: String) = "com.twitter" % ("util-" + name + "_2.9.2") % utilVersion
+  def scroogeDep(name: String) = "com.twitter" % ("scrooge-" + name + "_2.9.2") % scroogeVersion
+  def algebird(name: String) = "com.twitter" %% ("algebird-" + name) % algebirdVersion
   def zk(name: String) = "com.twitter.common.zookeeper" % name % zookeeperVersions(name)
 
   // cassie brings in old versions of finagle and util. we need to exclude here and bring in exclusive versions
@@ -82,7 +84,7 @@ object Zipkin extends Build {
     organization := "com.twitter",
     version := zipkinVersion,
     crossScalaVersions := Seq("2.9.2"),
-    scalaVersion := "2.9.2",
+    scalaVersion := "2.9.3",
     crossPaths := false,            /* Removes Scala version from artifact name */
     fork := true, // forking prevents runaway thread pollution of sbt
     baseDirectory in run := file(cwd), // necessary for forking
@@ -158,8 +160,8 @@ object Zipkin extends Build {
         finagle("exception"),
         util("core"),
         zk("client"),
-        "com.twitter" %% "ostrich" % ostrichVersion,
-        "com.twitter" % "algebird-core_2.9.3" % algebirdVersion
+        algebird("core"),
+        "com.twitter" % "ostrich_2.9.2" % ostrichVersion
       ) ++ testDependencies ++ scalaTestDeps
     )
 
@@ -200,8 +202,8 @@ object Zipkin extends Build {
         util("core"),
         scroogeDep("core"),
         scroogeDep("serializer"),
-        "com.twitter" %% "ostrich" % ostrichVersion,
-        "com.twitter" % "algebird-core_2.9.3" % algebirdVersion
+        algebird("core"),
+        "com.twitter" % "ostrich_2.9.2" % ostrichVersion
       ) ++ testDependencies
     ).dependsOn(common)
 
@@ -234,9 +236,9 @@ object Zipkin extends Build {
       util("zk-common"),
       zk("candidate"),
       zk("group"),
-      "com.twitter" %% "ostrich" % ostrichVersion,
-      "com.twitter" % "algebird-core_2.9.3" % algebirdVersion,
-      "com.twitter" %% "twitter-server" % twitterServerVersion
+      algebird("core"),
+      "com.twitter" % "ostrich_2.9.2" % ostrichVersion,
+      "com.twitter" % "twitter-server_2.9.2" % twitterServerVersion
     ) ++ testDependencies
   ).dependsOn(common, scrooge)
 
@@ -268,7 +270,7 @@ object Zipkin extends Build {
     settings = defaultSettings
   ).settings(
     libraryDependencies ++= Seq(
-      "play" %% "anorm" % "2.1-09142012",
+      "play" % "anorm_2.9.2" % "2.1-09142012",
       anormDriverDependencies("sqlite-persistent")
     ) ++ testDependencies ++ scalaTestDeps,
 
@@ -309,8 +311,8 @@ object Zipkin extends Build {
         util("zk-common"),
         zk("candidate"),
         zk("group"),
-        "com.twitter" %% "ostrich" % ostrichVersion,
-        "com.twitter" % "algebird-core_2.9.3" % algebirdVersion
+        algebird("core"),
+        "com.twitter" % "ostrich_2.9.2" % ostrichVersion
       ) ++ testDependencies
     ).dependsOn(common, query, scrooge)
 
@@ -351,7 +353,7 @@ object Zipkin extends Build {
     libraryDependencies ++= Seq(
       finagle("core"),
       util("core"),
-      "com.twitter" %% "twitter-server" % twitterServerVersion
+      "com.twitter" % "twitter-server_2.9.2" % twitterServerVersion
     ) ++ scalaTestDeps
   ).dependsOn(common, scrooge)
 
@@ -374,7 +376,7 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "com.twitter"      %% "kafka"    % "0.7.0",
+        "com.twitter"      % "kafka_2.9.2"    % "0.7.0",
         scroogeDep("serializer")
       ) ++ testDependencies,
       resolvers ++= (proxyRepo match {
@@ -414,9 +416,9 @@ object Zipkin extends Build {
         finagle("serversets"),
         finagle("zipkin"),
         zk("server-set"),
-        "com.twitter" %% "twitter-server" % twitterServerVersion,
-        "com.github.spullara.mustache.java" % "compiler" % "0.8.13",
-        "com.twitter" % "algebird-core_2.9.3" % algebirdVersion
+        algebird("core"),
+        "com.twitter" % "twitter-server_2.9.2" % twitterServerVersion,
+        "com.github.spullara.mustache.java" % "compiler" % "0.8.13"
       ) ++ scalaTestDeps,
 
       PackageDist.packageDistZipName := "zipkin-web.zip",
@@ -487,11 +489,16 @@ object Zipkin extends Build {
     libraryDependencies ++= Seq(
       util("logging"),
       scroogeDep("serializer"),
-      "storm"                 % "storm"                 % "0.9.0.1" % "provided",
-      "storm"                 % "storm-kafka"           % "0.9.0-wip16a-scala292",
       "commons-logging"       % "commons-logging"       % "1.1.1",
       "commons-configuration" % "commons-configuration" % "1.6",
-      "com.twitter"           %% "kafka"                % "0.7.0"
+      "com.twitter"           %% "bijection-core"       % "0.6.0",
+      "com.twitter"           %% "bijection-scrooge"    % "0.6.0",
+      "com.twitter"           %% "storehaus-memcache"   % "0.8.0",
+      "com.twitter"           %% "summingbird-core"     % summingbirdVersion,
+      "com.twitter"           %% "summingbird-batch"    % summingbirdVersion,
+      "com.twitter"           %% "tormenta-kafka"       % "0.6.1" exclude("org.slf4j", "log4j-over-slf4j") exclude("ch.qos.logback", "logback-classic"),
+      "storm"                 % "storm"                 % "0.9.0.1" % "provided",
+      "storm"                 % "storm-kafka"           % "0.9.0-wip16a-scala292"
     ) ++ scalaTestDeps,
 
     publishArtifact in packageDoc := false,
@@ -506,12 +513,20 @@ object Zipkin extends Build {
         (base / "config" +++ base / "src" / "test" / "resources").get
     },
 
+    excludedJars in assembly <<= (fullClasspath in assembly) map { cp =>
+      cp filter {_.data.getName == "netty-3.2.3.Final.jar"}
+    },
+
     mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
       {
+        case PathList("com", "esotericsoftware", xs @ _*) => MergeStrategy.last
+        case PathList("com", "fasterxml", xs @ _*) => MergeStrategy.last
+        case PathList("com", "twitter", xs @ _*) => MergeStrategy.last
         case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
         case PathList("org", "apache", xs @ _*) => MergeStrategy.last
-        case PathList("com", "twitter", xs @ _*) => MergeStrategy.last
-        case PathList("project.clj") => MergeStrategy.last
+        case PathList("org", "objectweb", xs @ _*) => MergeStrategy.last
+        case PathList("org", "slf4j", xs @ _*) => MergeStrategy.last
+        case "project.clj" => MergeStrategy.last
         case x => old(x)
       }
     }

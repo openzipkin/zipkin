@@ -16,11 +16,12 @@
  */
 package com.twitter.zipkin.storm
 
-import backtype.storm.spout.Scheme
+import backtype.storm.spout.{Scheme => SpoutScheme}
 import backtype.storm.tuple.Fields
+import com.twitter.bijection.Injection
 import com.twitter.logging.Logger
 import com.twitter.scrooge.BinaryThriftStructSerializer
-import com.twitter.util.{Return, Throw, Try}
+import com.twitter.tormenta.scheme.{Scheme => TormentaScheme}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
@@ -30,7 +31,7 @@ import scala.collection.JavaConverters._
 /**
  * Spout scheme to turn incoming data into Span fields
  */
-class SpanScheme extends Scheme {
+class SpanScheme extends SpoutScheme {
   @transient private val log = Logger.get
   lazy val deserializer = new BinaryThriftStructSerializer[gen.Span] {
     def codec = gen.Span
@@ -55,4 +56,12 @@ class SpanScheme extends Scheme {
 
   override def getOutputFields =
     new Fields("traceId", "spanId", "name", "serviceName", "isClientSide")
+}
+
+class SpanInjectionScheme extends TormentaScheme[Span] {
+  import Serialization._
+  lazy val injection = implicitly[Injection[Span, Array[Byte]]]
+  override def decode(bytes: Array[Byte]) = {
+    List(injection.invert(bytes).get)
+  }
 }

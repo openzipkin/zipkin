@@ -16,27 +16,22 @@
 package com.twitter.zipkin.storm
 
 import org.scalatest._
-import com.twitter.zipkin.gen.{Annotation, Endpoint, Span}
-import scala.collection.JavaConversions._
+import com.twitter.zipkin.common.{Endpoint, Annotation, Span}
 
-class SpanSchemeSpec extends FunSuite {
-
+class SerializationTest extends FunSuite {
   val annotation1 = Annotation(1, "cs", Some(Endpoint(1, 2, "service")))
   val annotation2 = Annotation(2, "cr", Some(Endpoint(3, 4, "Service")))
+  val annotation3 = Annotation(3, "cr", Some(Endpoint(5, 6, "Service")))
   val span = Span(12345, "methodcall", 666, None,
     List(annotation1, annotation2), Nil)
+  val span2 = Span(6789, "methodcall2", 000, None,
+    List(annotation3), Nil)
+  //val spanScheme = new Serialization()
 
-  val spanScheme = new SpanScheme()
-  val bytes = spanScheme.deserializer.toBytes(span)
-
-  test("SpanScheme deserializes bytes to span" ) {
-    val spanRecovered = spanScheme.deserializer.fromBytes(bytes)
-    assert(spanRecovered === span)
-  }
-
-  test("SpanScheme return correct values of the fields") {
-    val expectedValues = Seq(12345, 666, "methodcall", "service", true)
-    val values = spanScheme.deserialize(bytes).toList
-    assert(expectedValues === values)
+  test("spanMonoid plus") {
+    val expectedSpan = Span(12345, "methodcall", 666, None,
+      List(annotation1, annotation2), Nil)
+    val spanAfterPlus = Serialization.spanMonoid.plus(span, span2)
+    assert(expectedSpan === spanAfterPlus)
   }
 }
