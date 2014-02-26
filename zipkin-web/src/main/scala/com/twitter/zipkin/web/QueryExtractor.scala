@@ -21,45 +21,70 @@ import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
 import com.twitter.zipkin.query.{Order, QueryRequest}
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
+import java.util.{Calendar, Date}
 
 object QueryExtractor {
   val fmt = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss")
+
+  private[this] val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
+  private[this] val timeFormat = new SimpleDateFormat("HH:mm:ss")
+
+  def getDate(req: Request): Option[Date] =
+    req.params.get("endDate").map(dateFormat.parse)
+
+  def getDateStr(req: Request): String = {
+    val date = getDate(req).getOrElse(Calendar.getInstance().getTime)
+    dateFormat.format(date)
+  }
+
+  def getTime(req: Request): Option[Date] =
+    req.params.get("endTime").map(timeFormat.parse)
+
+  def getTimeStr(req: Request): String = {
+    val time = getTime(req).getOrElse(Calendar.getInstance().getTime)
+    timeFormat.format(time)
+  }
 
   /**
    * Takes a `Request` and produces the correct `QueryRequest` depending
    * on the GET parameters present
    */
-  def apply(request: Request): Option[QueryRequest] = request.params.get("serviceName") map { serviceName =>
-    val spanName = request.params.get("spanName") filterNot { n => n == "all" || n == "" }
+  def apply(req: Request): Option[QueryRequest] = req.params.get("serviceName") map { serviceName =>
+    val spanName = req.params.get("spanName") filterNot { n => n == "all" || n == "" }
 
-    val annotations = extractParams(request, "annotations[%d]")
-
-    val binaryAnnotations = for {
-      keys <- extractParams(request, "keyValueAnnotations[%d][key]")
-      values <- extractParams(request, "keyValueAnnotations[%d][val]")
-    } yield {
-      keys zip(values) map { case (k, v) =>
-        BinaryAnnotation(k, ByteBuffer.wrap(v.getBytes), AnnotationType.String, None)
+    val endTimestamp = getDate(req) flatMap { d =>
+      getTime(req) map { t =>
+        (d.getTime + t.getTime) * 1000
       }
+    } getOrElse {
+      Time.now.inMicroseconds
     }
 
-    val endTimestamp = request.params.get("endDatetime") match {
-      case Some(str) => fmt.parse(str).getTime * 1000
-      case None => Time.now.inMicroseconds
+    val (annotations, binaryAnnotations) = req.params.get("annotationQuery") map { query =>
+      var anns = Seq.empty[String]
+      var binAnns = Seq.empty[BinaryAnnotation]
+
+      query.split(" and ") foreach { ann =>
+        ann.split("=").toList match {
+          case "" :: Nil =>
+          case key :: value :: Nil =>
+            binAnns +:= BinaryAnnotation(key, ByteBuffer.wrap(value.getBytes), AnnotationType.String, None)
+          case key :: Nil =>
+            anns +:= key
+          case _ =>
+        }
+      }
+
+      ( (if (anns.isEmpty) None else Some(anns)),
+        (if (binAnns.isEmpty) None else Some(binAnns))
+      )
+    } getOrElse {
+      (None, None)
     }
 
-    val limit = request.params.get("limit").map(_.toInt).getOrElse(Constants.DefaultQueryLimit)
+    val limit = req.params.get("limit").map(_.toInt).getOrElse(Constants.DefaultQueryLimit)
     val order = Order.DurationDesc
 
     QueryRequest(serviceName, spanName, annotations, binaryAnnotations, endTimestamp, limit, order)
-  }
-
-  private def extractParams(request: Request, keyFormatStr: String): Option[Seq[String]] = {
-    Stream.from(0).map { n =>
-      request.params.get(keyFormatStr.format(n))
-    }.takeWhile(_.isDefined).toSeq.flatten match {
-      case Nil => None
-      case seq => Some(seq)
-    }
   }
 }

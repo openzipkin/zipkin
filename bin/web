@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 # In dev mode, Finatra uses the local_docroot flag to load resources.
 # Override the default with zipkin-web prefix
-bin/sbt 'project zipkin-web' 'run'
+bin/sbt "project zipkin-web" "run $@"

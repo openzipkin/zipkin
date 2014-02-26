@@ -30,11 +30,22 @@ import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
 trait ZipkinWebFactory { self: App =>
   import Handlers._
 
-  private[this] val resourceDirs = Map(
-    "/public/css"       -> "text/css",
-    "/public/img"       -> "image/png",
-    "/public/js"        -> "application/javascript",
-    "/public/templates" -> "text/plain"
+  private[this] val resourceDirs = Set(
+    "/public/css",
+    "/public/img",
+    "/public/js",
+    "/public/templates",
+
+    "/app/libs",
+    "/app/css",
+    "/app/img",
+    "/app/js"
+  )
+
+  private[this] val typesMap = Map(
+    "css" -> "text/css",
+    "png" -> "image/png",
+    "js" -> "application/javascript"
   )
 
   val webServerPort = flag("zipkin.web.port", new InetSocketAddress(8080), "Listening port for the zipkin web frontend")
@@ -54,8 +65,9 @@ trait ZipkinWebFactory { self: App =>
     ZipkinMustache.cache = webCacheResources()
 
     Seq(
-      ("/public/", handlePublic(resourceDirs, webCacheResources())),
-      ("/", addLayout(webRootUrl()) andThen handleIndex(queryClient)),
+      ("/app/", handlePublic(resourceDirs, typesMap, webCacheResources())),
+      ("/public/", handlePublic(resourceDirs, typesMap, webCacheResources())),
+      ("/", addLayout andThen handleIndex(queryClient)),
       ("/traces/:id", addLayout(webRootUrl()) andThen handleTraces),
       ("/static", addLayout(webRootUrl()) andThen handleStatic),
       ("/aggregates", addLayout(webRootUrl()) andThen handleAggregates),
