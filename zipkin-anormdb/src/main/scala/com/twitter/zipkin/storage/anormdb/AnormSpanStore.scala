@@ -126,12 +126,12 @@ class AnormSpanStore(
   def getTimeToLive(traceId: Long): Future[Duration] =
     Future.value(Duration.Top)
 
-  private[this] val tracesExistSql = SQL(
-    "SELECT trace_id FROM zipkin_spans WHERE trace_id IN ({ids})")
+  private[this] def tracesExistSql(ids: Seq[Long]) = SQL("""
+    SELECT trace_id FROM zipkin_spans WHERE trace_id IN (%s)
+  """.format(ids.mkString(",")))
 
   def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = pool {
-    tracesExistSql
-      .on("ids" -> traceIds.mkString(","))
+    tracesExistSql(traceIds)
       .as(long("trace_id") *)
       .toSet
   }
@@ -321,13 +321,13 @@ class AnormSpanStore(
       }
     }
 
-  private[this] val byDurationSql = SQL("""
+  private[this] def byDurationSql(ids: Seq[Long]) = SQL("""
     |SELECT trace_id, duration, created_ts
     |FROM zipkin_spans
-    |WHERE trace_id IN ({ids}) AND created_ts IS NOT NULL
+    |WHERE trace_id IN (%s) AND created_ts IS NOT NULL
     |GROUP BY trace_id
     |ORDER BY created_ts DESC
-  """.stripMargin)
+  """.stripMargin.format(ids.mkString(",")))
 
   private[this] val byDurationResults = (
     long("trace_id") ~
@@ -336,8 +336,7 @@ class AnormSpanStore(
   ) map { case a~b~c => TraceIdDuration(a, b.getOrElse(0), c) }
 
   def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = pool {
-    byDurationSql
-      .on("ids" -> traceIds.mkString(","))
+    byDurationSql(traceIds)
       .as(byDurationResults *)
   }
 

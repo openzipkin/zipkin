@@ -159,6 +159,13 @@ class SpanStoreValidator(
     assert(allowedVals.contains(Await.result(store.getTimeToLive(span1.traceId))))
   }
 
+  test("check for existing traces") {
+    val store = resetAndLoadStore(Seq(span1, span4))
+    val expected = Set(span1.traceId, span4.traceId)
+    val result = Await.result(store.tracesExist(Seq(span1.traceId, span4.traceId, 111111)))
+    assert(eq(result, expected))
+  }
+
   test("get spans by name") {
     val store = resetAndLoadStore(Seq(span1))
     assert(eq(Await.result(store.getSpanNames("service")), Set(span1.name)))
@@ -181,13 +188,17 @@ class SpanStoreValidator(
     }
 
     test("get traces duration") {
-      val store = resetAndLoadStore(Seq(span1))
-      assert(eq(Await.result(store.getTracesDuration(Seq(span1.traceId))), Seq(TraceIdDuration(span1.traceId, 19, 1))))
+      val store = resetAndLoadStore(Seq(span1, span4))
+      val expected = Seq(
+        TraceIdDuration(span4.traceId, 1, 6),
+        TraceIdDuration(span1.traceId, 19, 1))
+      val result = Await.result(store.getTracesDuration(Seq(span1.traceId, span4.traceId)))
+      assert(eq(result, expected))
 
       val store2 = resetAndLoadStore(Seq(span4))
       assert(eq(Await.result(store2.getTracesDuration(Seq(999))), Seq(TraceIdDuration(999, 1, 6))))
 
-      Await.result(store2.apply(Seq(span5)))
+      Await.result(store2(Seq(span5)))
       assert(eq(Await.result(store2.getTracesDuration(Seq(999))), Seq(TraceIdDuration(999, 3, 5))))
     }
   }
