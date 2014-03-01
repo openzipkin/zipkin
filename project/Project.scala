@@ -131,21 +131,18 @@ object Zipkin extends Build {
       id = "zipkin",
       base = file(".")
     ) aggregate(
-      test, common, scrooge, zookeeper,
+      tracegen, common, scrooge, zookeeper,
       query, queryCore, queryService, web,
       collectorScribe, collectorCore, collectorService,
       sampler, receiverScribe, collector,
       cassandra, anormDB, kafka, redis, hbase, storm
     )
 
-  lazy val test   = Project(
-    id = "zipkin-test",
-    base = file("zipkin-test"),
+  lazy val tracegen = Project(
+    id = "zipkin-tracegen",
+    base = file("zipkin-tracegen"),
     settings = defaultSettings
-  ).settings(
-    name := "zipkin-test",
-    libraryDependencies ++= testDependencies
-  ) dependsOn(queryService, collectorService)
+  ).dependsOn(queryService, collectorService)
 
   lazy val common =
     Project(
