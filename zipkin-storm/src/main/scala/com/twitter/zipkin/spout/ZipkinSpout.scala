@@ -17,6 +17,7 @@
 package com.twitter.zipkin.storm
 
 import backtype.storm.spout.MultiScheme
+import com.twitter.tormenta.spout._
 import storm.kafka.KafkaConfig
 import storm.kafka.trident.{OpaqueTridentKafkaSpout, TridentKafkaConfig}
 
@@ -24,7 +25,8 @@ import storm.kafka.trident.{OpaqueTridentKafkaSpout, TridentKafkaConfig}
  * Storm spout to read spans from Kafka
  */
 object ZipkinSpout {
-  def getSpanSpout(
+  import Serialization._
+  def getTridentSpanSpout(
       zkBroker: String,
       zkPath: String,
       kafkaTopic: String,
@@ -38,4 +40,22 @@ object ZipkinSpout {
     kafkaConf.scheme = scheme
     new OpaqueTridentKafkaSpout(kafkaConf)
   }
+
+  def getTormentaSpanSpout(
+      zkHost: String,
+      brokerZkPath: String,
+      topic: String,
+      appID: String,
+      zkRoot: String,
+      timeOffset: Int = -1) = {
+    new KafkaSpout(
+      new SpanInjectionScheme(),
+      zkHost,
+      brokerZkPath,
+      topic,
+      appID,
+      zkRoot,
+      timeOffset)
+  }
+
 }
