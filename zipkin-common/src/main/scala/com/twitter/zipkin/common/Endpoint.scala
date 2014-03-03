@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -51,7 +51,11 @@ case class Endpoint(ipv4: Int, port: Short, serviceName: String)
    * Convenience function to get the string-based ip-address
    */
   def getHostAddress: String = {
-    this.getInetSocketAddress.getAddress.getHostAddress
+    "%d.%d.%d.%d".format(
+      (ipv4 >> 24) & 0xFF,
+      (ipv4 >> 16) & 0xFF,
+      (ipv4 >> 8) & 0xFF,
+      ipv4 & 0xFF)
   }
 
   def getUnsignedPort: Int = {
