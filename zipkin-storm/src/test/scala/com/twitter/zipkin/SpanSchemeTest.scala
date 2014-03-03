@@ -20,7 +20,6 @@ import com.twitter.zipkin.gen.{Annotation, Endpoint, Span}
 import scala.collection.JavaConversions._
 
 class SpanSchemeSpec extends FunSuite {
-
   val annotation1 = Annotation(1, "cs", Some(Endpoint(1, 2, "service")))
   val annotation2 = Annotation(2, "cr", Some(Endpoint(3, 4, "Service")))
   val span = Span(12345, "methodcall", 666, None,
