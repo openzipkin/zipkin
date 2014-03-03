@@ -228,7 +228,7 @@ class InMemorySpanStore extends SpanStore {
         None
       else
         Some(TraceIdDuration(traceId, timestamps.max - timestamps.min, timestamps.min))
-    }
+    }.sortBy(_.startTimestamp).reverse
   }
 
   def getAllServiceNames: Future[Set[String]] = call {
