@@ -33,7 +33,7 @@ import java.net.{InetSocketAddress, URI}
 
 /**
  * A SpanReceiverFactory that should be mixed into a base ZipkinCollector. This
- * provides `newScribeSpanReceiver` which will create a `ScribeSpanReciever`
+ * provides `newScribeSpanReceiver` which will create a `ScribeSpanReceiver`
  * listening on a configurable port (-zipkin.receiver.scribe.port) and announced to
  * ZooKeeper via a given path (-zipkin.receiver.scribe.zk.path). If a path is not
  * explicitly provided no announcement will be made (this is helpful for instance
