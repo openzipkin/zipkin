@@ -54,9 +54,16 @@ class SerializationTest extends FunSuite {
     assert(invalid === spanAfterPlus)
   }
 
-  test("map injection") {
-    val mInj = Serialization.mapInj
+  test("map[string, long] injection") {
+    val mInj = Serialization.mapStrLongInj
     val map = Map("str1" -> 1L, "str2" -> 2L)
+    val value = mInj.invert(mInj(map)).get
+    assert(map === value)
+  }
+
+  test("map[string, list[long]] injection") {
+    val mInj = Serialization.mapStrListInj
+    val map = Map("str1" -> List(1L), "str2" -> List(2L))
     val value = mInj.invert(mInj(map)).get
     assert(map === value)
   }

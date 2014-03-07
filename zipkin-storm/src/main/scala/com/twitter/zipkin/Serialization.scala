@@ -42,8 +42,11 @@ object Serialization {
   implicit def vInj[V: Codec]: Injection[(BatchID, V), Array[Byte]] =
     Injection.connect[(BatchID, V), (V, BatchID), Array[Byte]]
 
-  implicit val mapInj: Injection[Map[String, Long], Array[Byte]] =
+  implicit val mapStrLongInj: Injection[Map[String, Long], Array[Byte]] =
     Bufferable.injectionOf[Map[String, Long]]
+
+  implicit val mapStrListInj: Injection[Map[String, List[Long]], Array[Byte]] =
+    Bufferable.injectionOf[Map[String, List[Long]]]
 
   implicit val spanMonoid: Monoid[Span] = new Monoid[Span] {
     val zero = Span(0, "zero", 0, None, Nil, Nil, true)
