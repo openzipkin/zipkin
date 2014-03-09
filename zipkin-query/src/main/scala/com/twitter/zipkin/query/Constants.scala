@@ -18,8 +18,15 @@ package com.twitter.zipkin.query
 
 import com.twitter.conversions.time._
 import com.twitter.util.Duration
+import com.twitter.zipkin.gen.Adjust
+import com.twitter.zipkin.query.adjusters._
 
 package object constants {
   /* Amount of time padding to use when resolving complex query timestamps */
   val TraceTimestampPadding: Duration = 1.minute
+
+  val DefaultAdjusters = Map[Adjust, Adjuster](
+    Adjust.Nothing -> NullAdjuster,
+    Adjust.TimeSkew -> new TimeSkewAdjuster()
+  )
 }

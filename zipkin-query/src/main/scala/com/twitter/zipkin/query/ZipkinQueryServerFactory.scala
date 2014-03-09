@@ -29,15 +29,10 @@ trait ZipkinQueryServerFactory { self: App =>
   val queryServicePort = flag("zipkin.queryService.port", ":9411", "port for the query service to listen on")
   val queryServiceDurationBatchSize = flag("zipkin.queryService.durationBatchSize", 500, "max number of durations to pull per batch")
 
-  val defaultAdjusterMap: Map[Adjust, Adjuster] = Map(
-    Adjust.Nothing -> NullAdjuster,
-    Adjust.TimeSkew -> new TimeSkewAdjuster()
-  )
-
   def newQueryServer(
     spanStore: SpanStore,
     aggregatesStore: Aggregates = new NullAggregates,
-    adjusters: Map[Adjust, Adjuster] = defaultAdjusterMap,
+    adjusters: Map[Adjust, Adjuster] = constants.DefaultAdjusters,
     stats: StatsReceiver = DefaultStatsReceiver.scope("QueryService"),
     log: Logger = Logger.get("QueryService")
   ): ListeningServer = {
