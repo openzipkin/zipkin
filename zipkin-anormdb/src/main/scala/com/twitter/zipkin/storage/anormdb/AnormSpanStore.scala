@@ -205,7 +205,7 @@ class AnormSpanStore(
   def getSpansByTraceIds(ids: Seq[Long]): Future[Seq[Seq[Span]]] = {
     val spans = pool {
       spansSql(ids).as(spansResults *)
-    } map { _.groupBy(_.traceId) }
+    } map { _.distinct.groupBy(_.traceId) }
 
     val anns = pool {
       annsSql(ids).as(annsResults *)
