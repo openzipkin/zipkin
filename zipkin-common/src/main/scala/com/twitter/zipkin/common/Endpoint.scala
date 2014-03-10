@@ -35,9 +35,8 @@ object Endpoint {
 case class Endpoint(ipv4: Int, port: Short, serviceName: String)
   extends Ordered[Endpoint] {
 
-  override def toString: String = {
-    this.getInetSocketAddress.toString() + "(" + serviceName + ")"
-  }
+  override def toString: String =
+    "%s:%d(%s)".format(getHostAddress, port, serviceName)
 
   /**
    * Return the java.net.InetSocketAddress which contains host/port
