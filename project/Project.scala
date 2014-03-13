@@ -37,7 +37,6 @@ object Zipkin extends Build {
   )
 
   val ostrichVersion = "9.2.1"
-  val twitterServerVersion = "1.4.0"
   val algebirdVersion  = "0.4.0"
   val hbaseVersion = "0.94.10"
   val summingbirdVersion = "0.3.2"
@@ -47,6 +46,8 @@ object Zipkin extends Build {
   def scroogeDep(name: String) = "com.twitter" % ("scrooge-" + name + "_2.9.2") % scroogeVersion
   def algebird(name: String) = "com.twitter" %% ("algebird-" + name) % algebirdVersion
   def zk(name: String) = "com.twitter.common.zookeeper" % name % zookeeperVersions(name)
+
+  val twitterServer = "com.twitter" % "twitter-server_2.9.2" % "1.4.0"
 
   // cassie brings in old versions of finagle and util. we need to exclude here and bring in exclusive versions
   def cassie(name: String) =
@@ -234,8 +235,8 @@ object Zipkin extends Build {
       zk("candidate"),
       zk("group"),
       algebird("core"),
-      "com.twitter" % "ostrich_2.9.2" % ostrichVersion,
-      "com.twitter" % "twitter-server_2.9.2" % twitterServerVersion
+      twitterServer,
+      "com.twitter" % "ostrich_2.9.2" % ostrichVersion
     ) ++ testDependencies
   ).dependsOn(common, scrooge)
 
@@ -350,7 +351,7 @@ object Zipkin extends Build {
     libraryDependencies ++= Seq(
       finagle("core"),
       util("core"),
-      "com.twitter" % "twitter-server_2.9.2" % twitterServerVersion
+      twitterServer
     ) ++ scalaTestDeps
   ).dependsOn(common, scrooge)
 
@@ -414,7 +415,7 @@ object Zipkin extends Build {
         finagle("zipkin"),
         zk("server-set"),
         algebird("core"),
-        "com.twitter" % "twitter-server_2.9.2" % twitterServerVersion,
+        twitterServer,
         "com.github.spullara.mustache.java" % "compiler" % "0.8.13"
       ) ++ scalaTestDeps,
 
