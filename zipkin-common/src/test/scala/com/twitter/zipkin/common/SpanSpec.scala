@@ -18,8 +18,8 @@ package com.twitter.zipkin.common
 
 import org.specs.Specification
 import com.twitter.zipkin.Constants
-import javax.net.ssl.HostnameVerifier
 import com.twitter.zipkin.common.Endpoint
+import javax.net.ssl.HostnameVerifier
 import java.nio.ByteBuffer
 
 class SpanSpec extends Specification {
