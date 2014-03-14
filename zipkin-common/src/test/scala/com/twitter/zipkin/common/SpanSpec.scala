@@ -18,6 +18,9 @@ package com.twitter.zipkin.common
 
 import org.specs.Specification
 import com.twitter.zipkin.Constants
+import javax.net.ssl.HostnameVerifier
+import com.twitter.zipkin.common.Endpoint
+import java.nio.ByteBuffer
 
 class SpanSpec extends Specification {
 
@@ -30,8 +33,13 @@ class SpanSpec extends Specification {
   val annotation2 = Annotation(2, "value2", Some(Endpoint(3, 4, "Service"))) // upper case service name
   val annotation3 = Annotation(3, "value3", Some(Endpoint(5, 6, "service")))
 
+  val binaryAnnotation1 = BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), AnnotationType.String, Some(Endpoint(1, 2, "service1")))
+  val binaryAnnotation2 = BinaryAnnotation("key2", ByteBuffer.wrap("value2".getBytes), AnnotationType.String, Some(Endpoint(3, 4, "service2")))
+
   val spanWith3Annotations = Span(12345, "methodcall", 666, None,
     List(annotation1, annotation2, annotation3), Nil)
+  val spanWith2BinaryAnnotations = Span(12345, "methodcall", 666, None,
+    Nil, List(binaryAnnotation1, binaryAnnotation2))
 
 
   "Span" should {
@@ -102,6 +110,11 @@ class SpanSpec extends Specification {
 
       val s3 = Span(1, "i", 123, None, List(cs, sr, ss, cr, cs2), Nil)
       s3.isValid mustEqual false
+    }
+
+    "get binary annotation" in {
+      Some(binaryAnnotation1) mustEqual spanWith2BinaryAnnotations.getBinaryAnnotation("key1")
+      None mustEqual spanWith2BinaryAnnotations.getBinaryAnnotation("NoExitingKey")
     }
   }
 }
