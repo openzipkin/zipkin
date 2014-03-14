@@ -77,7 +77,14 @@ case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
    * Iterate through list of annotations and return the one with the given value.
    */
   def getAnnotation(value: String): Option[Annotation] = {
-    annotations.find {a => a.value == value}
+    annotations.find { a => a.value == value }
+  }
+
+  /**
+   * Iterate through list of binaryAnnotations and return the one with the given key.
+   */
+  def getBinaryAnnotation(key: String): Option[BinaryAnnotation] = {
+    binaryAnnotations.find { ba => ba.key == key }
   }
 
   /**
