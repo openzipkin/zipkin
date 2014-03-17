@@ -2,7 +2,7 @@ package com.twitter.zipkin.common.mustache
 
 import com.github.mustachejava.DefaultMustacheFactory
 import com.twitter.mustache.ScalaObjectHandler
-import java.io.StringWriter
+import java.io._
 import collection.JavaConversions.mapAsJavaMap
 
 object ZipkinMustache {
@@ -16,7 +16,11 @@ object ZipkinMustache {
     override def getReader(rn: String): Reader = {
       // hack to get partials to work properly
       val name = if (rn.startsWith("public")) rn else "templates/" + rn
-      super.getReader(name)
+
+      if (_cache) super.getReader(name) else {
+        val file = new File("zipkin-web/src/main/resources", name)
+        new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"))
+      }
     }
 
     def invalidateCaches() {
@@ -26,7 +30,7 @@ object ZipkinMustache {
   }
   private[this] val mf = new ZipkinMustacheFactory
   //TODO: why isn't the scala handler coercing maps properly?
-  //mf.setObjectHandler(new ScalaObjectHandler)
+  mf.setObjectHandler(new ScalaObjectHandler)
 
   def render(template: String, data: Map[String, Object]): String = {
     if (!_cache) mf.invalidateCaches()

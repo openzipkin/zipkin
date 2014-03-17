@@ -12,9 +12,8 @@ import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.gen.{ZipkinQuery, Adjust}
 import com.twitter.zipkin.query.{TraceSummary, QueryRequest}
-import java.io.InputStream
+import java.io.{File, FileInputStream, InputStream}
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import org.apache.commons.io.IOUtils
 import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
@@ -62,10 +61,6 @@ object Handlers {
   private[this] val EmptyTraces = Future.value(Seq.empty[TraceSummary])
   private[this] val NotFound = Future.value(ErrorRenderer(404, "Not Found"))
 
-  private[this] val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
-  private[this] val timeFormat = new SimpleDateFormat("HH:mm:ss")
-  private[this] def getDate = dateFormat.format(Calendar.getInstance().getTime)
-  private[this] def getTime = timeFormat.format(Calendar.getInstance().getTime)
 
   private[this] def query(
     client: ZipkinQuery[Future],
@@ -92,8 +87,8 @@ object Handlers {
     }
   }
 
-  private[this] def getServices(client: ZipkinQuery[Future]): Future[Seq[TracedService]] =
-    client.getServiceNames() map { _.toSeq.sorted map { TracedService(_) } }
+  private[this] def getServices(client: ZipkinQuery[Future]): Future[Seq[String]] =
+    client.getServiceNames() map { _.toSeq.sorted }
 
   /**
    * Returns a sequence of adjusters based on the params for a request. Default is TimeSkewAdjuster
@@ -143,6 +138,13 @@ object Handlers {
       }
   }
 
+  val addLayout: Filter[Request, Renderer, Request, MustacheRenderer] =
+    Filter.mk[Request, Renderer, Request, MustacheRenderer] { (req, svc) =>
+      svc(req) map { r =>
+        MustacheRenderer("v2/layout.mustache", r.data ++ Map(
+          ("body" -> r.generate)))
+      }
+    }
 
   def addLayout(rootUrl: String): Filter[Request, Renderer, Request, MustacheRenderer] =
     Filter.mk[Request, Renderer, Request, MustacheRenderer] { (req, svc) =>
@@ -163,16 +165,25 @@ object Handlers {
         }
     }
 
-  def handlePublic(resourceDirs: Map[String, String], cache: Boolean = false) =
+  def handlePublic(resourceDirs: Set[String], typesMap: Map[String, String], cache: Boolean = false) =
     new Service[Request, Renderer] {
       private[this] var rendererCache = Map.empty[String, Future[Renderer]]
+
+      private[this] def getStream(path: String): Option[InputStream] = {
+        if (cache) {
+          Option(getClass.getResourceAsStream(path)) filter { _.available > 0 }
+        } else {
+          Some(new FileInputStream(new File("zipkin-web/src/main/resources", path)))
+        }
+      }
 
       private[this] def getRenderer(path: String): Option[Future[Renderer]] = {
         rendererCache.get(path) orElse {
           synchronized {
             rendererCache.get(path) orElse {
-              resourceDirs find { case (k, _) => path.startsWith(k) } flatMap { case (_, typ) =>
-                Option(getClass.getResourceAsStream(path)) filter { _.available > 0 } map { input =>
+              resourceDirs find(path.startsWith) flatMap { _ =>
+                val typ = typesMap find { case (n, _) => path.endsWith(n) } map { _._2 } getOrElse("text/plain")
+                 getStream(path) map { input =>
                   val renderer = Future.value(StaticRenderer(input, typ))
                   if (cache) rendererCache += (path -> renderer)
                   renderer
@@ -189,17 +200,64 @@ object Handlers {
         }
     }
 
+  case class MustacheServiceCount(name: String, count: Int)
+  case class MustacheTraceSummary(
+    traceId: String,
+    startTime: String,
+    timestamp: Long,
+    duration: Long,
+    spanCount: Int,
+    serviceCounts: Seq[MustacheServiceCount],
+    width: Int)
+
+  private[this] def traceSummaryToMustache(ts: Seq[TraceSummary]): Map[String, Any] = {
+    val (maxDuration, minStartTime, maxStartTime) = ts.foldLeft((Int.MinValue, Long.MaxValue, Long.MinValue)) { case ((maxD, minST, maxST), t) =>
+      ( math.max(t.durationMicro / 1000, maxD),
+        math.min(t.startTimestamp, minST),
+        math.max(t.startTimestamp, maxST)
+      )
+    }
+
+    val traces = ts map { t =>
+      val duration = t.durationMicro / 1000
+      MustacheTraceSummary(
+        SpanId(t.traceId).toString,
+        QueryExtractor.fmt.format(new java.util.Date(t.startTimestamp / 1000)),
+        t.startTimestamp,
+        duration,
+        t.serviceCounts.foldLeft(0) { case (acc, (_, c)) => acc + c },
+        t.serviceCounts.toSeq map { case (n, c) => MustacheServiceCount(n, c) },
+        ((duration.toFloat / maxDuration) * 100).toInt
+      )
+    } sortBy(_.duration) reverse
+
+    Map(
+      ("traces" -> traces),
+      ("count" -> traces.size),
+      ("duration" -> (maxStartTime - minStartTime)))
+  }
+
   def handleIndex(client: ZipkinQuery[Future]): Service[Request, MustacheRenderer] =
     Service.mk[Request, MustacheRenderer] { req =>
+      val serviceName = req.params.get("serviceName")
+      val spanName = req.params.get("spanName")
+
       val qr = QueryExtractor(req)
       val qResults = qr map { query(client, _, req) } getOrElse { EmptyTraces }
-      for (services <- getServices(client); results <- qResults) yield {
+      val spanResults = serviceName map(client.getSpanNames(_).map(_.toSeq.sorted)) getOrElse(Future.value(Seq.empty))
+
+      for (services <- getServices(client); results <- qResults; spans <- spanResults) yield {
+        val svcList = services map { svc => Map("name" -> svc, "selected" -> (if (Some(svc) == serviceName) "selected" else "")) }
+        val spanList = spans map { span => Map("name" -> span, "selected" -> (if (Some(span) == spanName) "selected" else "")) }
+
         var data = Map[String, Object](
           ("pageTitle" -> "Index"),
-          ("endDate" -> getDate),
-          ("endTime" -> getTime),
-          ("jsonServices" -> ZipkinJson.generate(services)),
-          ("jsonQueryResults" -> ZipkinJson.generate(qResults)))
+          ("endDate" -> QueryExtractor.getDateStr(req)),
+          ("endTime" -> QueryExtractor.getTimeStr(req)),
+          ("annotationQuery" -> req.params.get("annotationQuery").getOrElse("")),
+          ("services" -> svcList),
+          ("spans" -> spanList),
+          ("limit" -> req.params.get("limit").getOrElse("100")))
 
         qr foreach { qReq =>
           val binAnn = qReq.binaryAnnotations map { _.map { b =>
@@ -207,10 +265,12 @@ object Handlers {
           } }
           data ++= Map(
             ("pageTitle" -> qReq.serviceName),
+            ("serviceName" -> qReq.serviceName),
+            ("queryResults" -> traceSummaryToMustache(results)),
             ("annotations" -> qReq.annotations),
             ("binaryAnnotations" -> binAnn))
         }
-        MustacheRenderer("index.mustache", data)
+        MustacheRenderer("v2/index.mustache", data)
       }
     }
 
@@ -224,10 +284,10 @@ object Handlers {
     }
 
   val handleAggregates =
-    Service.mk[Request, MustacheRenderer] { _ =>
+    Service.mk[Request, MustacheRenderer] { req =>
       Future.value(MustacheRenderer("aggregates.mustache", Map(
         ("pageTitle" -> "Aggregates"),
-        ("endDate" -> getDate))))
+        ("endDate" -> QueryExtractor.getDateStr(req)))))
     }
 
   val handleTraces =
@@ -257,7 +317,7 @@ object Handlers {
   def handleSpans(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
       client.getSpanNames(req.params("serviceName")) map { spans =>
-        JsonRenderer(spans.toSeq.sorted map { s => Map("name" -> s) })
+        JsonRenderer(spans.toSeq.sorted)
       }
     }
 
