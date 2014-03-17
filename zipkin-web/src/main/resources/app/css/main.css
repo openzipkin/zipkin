@@ -1,0 +1,20 @@
+body {
+  padding-top: 50px;
+}
+
+.container {
+  width: 90%;
+  margin: 0 5%;
+}
+
+.content {
+  padding-top: 20px;
+}
+
+#annotationQuery {
+  margin: 5px 0;
+}
+
+.chosen-container .chosen-single {
+  height: 30px;
+}

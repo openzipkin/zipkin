@@ -35,19 +35,27 @@ class QueryExtractorTest extends FunSuite {
   }
 
   test("parse params") {
-    val fmt = "MM-dd-yyyy HH:mm:ss"
-    val formatted = Time.now.format(fmt)
+    val dateFmt = "MM-dd-yyyy"
+    val timeFmt = "HH:mm:ss"
+    val dateFormatted = Time.now.format(dateFmt)
+    val timeFormatted = Time.now.format(timeFmt)
     val r = request(
       "serviceName" -> "myService",
       "spanName" -> "mySpan",
-      "endDatetime" -> formatted,
+      "endDate" -> dateFormatted,
+      "endTime" -> timeFormatted,
       "limit" -> "1000")
 
     val actual = QueryExtractor(r).get
 
+    val endTs = (
+      new SimpleDateFormat(dateFmt).parse(dateFormatted).getTime +
+      new SimpleDateFormat(timeFmt).parse(timeFormatted).getTime
+    ) * 1000
+
     assert(actual.serviceName === "myService")
     assert(actual.spanName.get === "mySpan")
-    assert(actual.endTs === new SimpleDateFormat(fmt).parse(formatted).getTime * 1000)
+    assert(actual.endTs ===  endTs)
     assert(actual.limit === 1000)
   }
 
@@ -84,18 +92,16 @@ class QueryExtractorTest extends FunSuite {
   test("parse annotations") {
     val r = request(
       "serviceName" -> "myService",
-      "annotations[0]" -> "finagle.retry",
-      "annotations[1]" -> "finagle.timeout")
+      "annotationQuery" -> "finagle.retry and finagle.timeout")
     val actual = QueryExtractor(r).get
-    assert(actual.annotations.get === Seq("finagle.retry", "finagle.timeout"))
+    assert(actual.annotations.get.contains("finagle.retry"))
+    assert(actual.annotations.get.contains("finagle.timeout"))
   }
 
   test("parse key value annotations") {
     val r = request(
       "serviceName" -> "myService",
-      "keyValueAnnotations[0][key]" -> "http.responsecode",
-      "keyValueAnnotations[0][val]" -> "500"
-    )
+      "annotationQuery" -> "http.responsecode=500")
     val actual = QueryExtractor(r).get
     assert(
       actual.binaryAnnotations.get ===

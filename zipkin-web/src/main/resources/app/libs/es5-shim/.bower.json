@@ -1,0 +1,14 @@
+{
+  "name": "es5-shim",
+  "homepage": "https://github.com/es-shims/es5-shim",
+  "version": "2.0.0",
+  "_release": "2.0.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "v2.0.0",
+    "commit": "1ac2e3e4daad2a6d8f2b38b38d68361cec18fd72"
+  },
+  "_source": "git://github.com/es-shims/es5-shim.git",
+  "_target": "2.0.0",
+  "_originalSource": "es5-shim"
+}
