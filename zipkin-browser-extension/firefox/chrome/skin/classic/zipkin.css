@@ -1,0 +1,150 @@
+/* Firebug Tracing Console customization. All messages from this example use this color.
+   This helps to distinguish logs from those coming from Firebug
+   Rule syntax: .DBG_<ext-id>
+   See: http://getfirebug.com/wiki/index.php/FBTrace for more details */
+.DBG_ZIPKIN {
+    color: #1376D3;
+    font-size: 110%;
+}
+
+.zipkin-empty {
+    font-size: 20px;
+    padding: 20px;
+    text-align: center;
+}
+
+#zipkin-data {
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0 auto 25px;
+    width: 100%;
+}
+
+#zipkin-data thead {
+    font-size: 110%;
+    font-weight: bold;
+}
+
+/* Zebra striping */
+#zipkin-data .even td,
+#zipkin-data .even + .zipkin-panel-viz td {
+    background-color: #F3F3F3;
+}
+
+#zipkin-data th,
+#zipkin-data td {
+    border: 1px solid #CCCCCC;
+    max-width: 384px;
+    padding: 2px 4px;
+}
+
+#zipkin-data th {
+    background-color: #CFCFCF;
+    border-bottom-width: 2px;
+    padding: 4px;
+}
+
+.zipkin-no-data {
+    opacity: 0.6;
+    text-align: center;
+}
+.zipkin-no-data:hover {
+    opacity: 1;
+}
+
+.zipkin-loading {
+    background: url('loader.gif') transparent no-repeat right top;
+}
+
+/** Visualizations **/
+
+.zipkin-panel-viz-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.zipkin-panel-viz-span-wrapper {
+    margin: 0 10px;
+}
+.zipkin-panel-viz-span-wrapper:first-child {
+    margin-top: 5px;
+}
+.zipkin-panel-viz-span-wrapper:last-child {
+    margin-bottom: 5px;
+}
+
+.zipkin-panel-viz-span {
+    border: 1px solid #333333;
+    border-radius: 4px;
+    height: 6px;
+    margin: 1px;
+    opacity: 0.35;
+    position: relative;
+}
+.zipkin-panel-viz-span-wrapper:hover .zipkin-panel-viz-span {
+    opacity: 1;
+}
+.zipkin-panel-viz-span-wrapper:hover .zipkin-panel-viz-span:before {
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 4px solid #333333;
+    content: "";
+    height: 0;
+    left: 50%;
+    margin: 0 0 0 -2px;
+    opacity: 0.95;
+    position: absolute;
+    top: 7px;
+    width: 0;
+    z-index: 2;
+}
+.zipkin-panel-viz-span-wrapper:hover .zipkin-panel-viz-span:after {
+    background-color: #FAFAFA;
+    border: 1px solid #333333;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.7), 0 0 4px 2px rgba(160, 200, 220, 0.5);
+    content: attr(data-span);
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    left: 50%;
+    margin: 11px 0 0 -75px;
+    opacity: 0.95;
+    padding: 3px;
+    position: absolute;
+    text-align: center;
+    text-shadow: -1px 1px 1px rgba(0, 0, 0, 0.12), 0 0 2px rgba(160, 200, 220, 0.7);
+    width: 150px;
+    z-index: 1;
+}
+.zipkin-panel-viz-span-wrapper:nth-of-type(5n+1) .zipkin-panel-viz-span {
+    background-color: #66BBDD;
+}
+.zipkin-panel-viz-span-wrapper:nth-of-type(5n+2) .zipkin-panel-viz-span {
+    background-color: #66CC66;
+}
+.zipkin-panel-viz-span-wrapper:nth-of-type(5n+3) .zipkin-panel-viz-span {
+    background-color: #DDBB66;
+}
+.zipkin-panel-viz-span-wrapper:nth-of-type(5n+4) .zipkin-panel-viz-span {
+    background-color: #DD7666;
+}
+.zipkin-panel-viz-span-wrapper:nth-of-type(5n+5) .zipkin-panel-viz-span {
+    background-color: #BB66DD;
+}
+
+.zipkin-panel-duration {
+    background-color: #FAFAFA;
+    border: 1px solid #333333;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.7), 0 0 4px 2px rgba(160, 200, 220, 0.5);
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+    opacity: 0.35;
+    padding: 0 2px;
+    position: absolute;
+    right: 10px;
+    text-align: right;
+    top: 0;
+}
+.zipkin-panel-viz:hover .zipkin-panel-duration {
+    opacity: 0.9;
+}

@@ -1,0 +1,40 @@
+# 1.1.0
+* Storage
+  * Added Hbase storage backend
+  * Added Anorm SQL storage backend
+* Web
+  * Reworked aggregate dependencies visualization
+* Hadoop
+  * Removed hadoop functionality due to incompatibilities
+
+# 1.0.0
+* Collector
+  * Refactor into collector-core, collector-scribe, collector-service
+* Query
+  * Refactor into query-core, query-service
+* Web
+  * Replace Rails with Scala Finatra app
+  * Rename zipkin-finatra to zipkin-web
+
+# 0.2.0
+* Collector
+  * Refactor scrooge specific code to zipkin-scrooge
+  * Refactor Scribe specific code to zipkin-scribe
+  * Add top annotations storage endpoints
+* Hadoop
+  * Add job runner
+  * Add expensive endpoints job
+  * Add whale report
+* Query
+  * Add top annotations query endpoints
+* Web
+  * Add Scala UI (zipkin-finatra), not entirely stable yet. Rails UI
+    (zipkin-web) is deprecated and will be removed in the next release.
+  * Add static trace rendering page
+  * Add top annotations suggestions on search page
+  * Add link to static search page
+* Misc
+  * Refactor many shared classes from zipkin-server to zipkin-common
+    for reuse in zipkin-finatra
+  * Add startup scripts
+

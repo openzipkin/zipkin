@@ -1,0 +1,73 @@
+/*
+ * Copyright 2012 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.radialNode {
+    font: 10px sans-serif;
+    fill: #808080;
+    cursor: default;
+}
+
+.radialLink {
+    stroke: #808080;
+    stroke-opacity: .4;
+    fill: none;
+}
+
+.radialInbound {
+    stroke: #006600;
+    stroke-opacity: 1;
+    stroke-width: 2px;
+}
+
+.radialOutbound {
+    stroke: #990000;
+    stroke-opacity: 1;
+    stroke-width: 2px;
+}
+
+.radialUnfocused {
+    fill: #a0a0a0;
+}
+
+.radialFocused {
+    font: 20px sans-serif;
+    fill: #303030;
+}
+
+/** block deps **/
+
+.blockNode text {
+    font: 12px sans-serif;
+    fill: #ffffff;
+}
+
+.blockParent rect {
+    fill: #387338;
+}
+
+.blockChild rect {
+    fill: #733737;
+}
+
+.blockTarget rect {
+    fill: #565e73;
+}
+
+.blockLink {
+    stroke: #cccccc;
+    fill: #aaaaaa;
+}
+

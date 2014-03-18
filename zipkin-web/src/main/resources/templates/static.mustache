@@ -1,0 +1,24 @@
+<div id='trace-content'>
+  <!-- AJAX fetched data goes here -->
+</div>
+
+<div class="row">
+  <div class="span12">
+    <div id="input-json-error" class="alert alert-error hide">
+      <a class="close" data-dismiss="alert" href="#">x</a>
+      <p><strong id="input-json-error-body"></strong></p>
+    </div>
+    <h3>Input JSON</h3>
+    <textarea id="input-json" class="span12" rows="10"></textarea>
+    <button class="js-input-json-btn pull-right btn btn-primary">Render!</button>
+  </div>
+</div>
+
+<div id="annotation-modal" class="trace-desc-body annotation-list modal">
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $(Zipkin.Application.Static.initialize());
+  });
+</script>
