@@ -1,0 +1,18 @@
+scala_library(name='scala',
+  dependencies=[
+    pants('3rdparty:finagle-exception'),
+    pants('3rdparty:finagle-thriftmux'),
+    pants('3rdparty:finagle-serversets'),
+    pants('3rdparty:finagle-zipkin'),
+    pants('3rdparty:zookeeper-server-set'),
+    pants('3rdparty:algebird-core'),
+    pants('3rdparty:twitter-server'),
+    pants('3rdparty:mustache'),
+    pants('oss/zipkin-common'),
+    pants('oss/zipkin-scrooge'),
+  ],
+  sources=rglobs('*.scala'),
+  resources=[
+    pants('oss/zipkin-web/src/main/resources')
+  ]
+)
