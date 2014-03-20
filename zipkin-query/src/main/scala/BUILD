@@ -1,0 +1,11 @@
+scala_library(name='scala',
+  dependencies=[
+    pants('3rdparty:finagle-thriftmux'),
+    pants('3rdparty:finagle-zipkin'),
+    pants('3rdparty:util-app'),
+    pants('3rdparty:util-core'),
+    pants('oss/zipkin-common'),
+    pants('oss/zipkin-scrooge'),
+  ],
+  sources=rglobs('*.scala')
+)
