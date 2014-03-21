@@ -15,11 +15,14 @@
  */
 package com.twitter.zipkin.storm
 
-import org.scalatest._
 import com.twitter.zipkin.gen.{Annotation, Endpoint, Span}
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
 import scala.collection.JavaConversions._
 
-class SpanSchemeSpec extends FunSuite {
+@RunWith(classOf[JUnitRunner])
+class SpanSchemeTest extends FunSuite {
   val annotation1 = Annotation(1, "cs", Some(Endpoint(1, 2, "service")))
   val annotation2 = Annotation(2, "cr", Some(Endpoint(3, 4, "Service")))
   val span = Span(12345, "methodcall", 666, None,
