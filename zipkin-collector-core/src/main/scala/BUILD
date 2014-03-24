@@ -1,0 +1,14 @@
+scala_library(name='scala',
+  dependencies=[
+    pants('3rdparty:finagle-exception'),
+    pants('3rdparty:finagle-ostrich4'),
+    pants('3rdparty:finagle-serversets'),
+    pants('3rdparty:finagle-zipkin'),
+    pants('3rdparty:util-core'),
+    pants('3rdparty:util-zk'),
+    pants('oss/zipkin-common'),
+    pants('oss/zipkin-scrooge'),
+    pants('oss/zipkin-zookeeper'),
+  ],
+  sources=rglobs('*.scala'),
+)

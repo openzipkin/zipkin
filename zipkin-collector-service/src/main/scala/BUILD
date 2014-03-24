@@ -8,18 +8,15 @@ scala_library(name='scala',
     pants('3rdparty:algebird-core'),
     pants('3rdparty:twitter-server'),
     pants('3rdparty:mustache'),
-    pants('oss/zipkin-common'),
-    pants('oss/zipkin-scrooge'),
+    pants('3rdparty:ostrich'),
+    pants('oss/zipkin-collector-core'),
   ],
   sources=rglobs('*.scala'),
-  resources=[
-    pants('oss/zipkin-web/src/main/resources')
-  ]
 )
 
 jvm_binary(
   name='bin',
-  basename='zipkin-web-server',
-  main='com.twitter.zipkin.web.Main',
+  basename='zipkin-collector-service',
+  main='com.twitter.zipkin.collector.Main',
   dependencies=[pants(':scala')],
 )
