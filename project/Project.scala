@@ -529,4 +529,19 @@ object Zipkin extends Build {
       }
     }
   ).dependsOn(scrooge)
+
+  lazy val example = Project(
+    id = "zipkin-example",
+    base = file("zipkin-example"),
+    settings = defaultSettings
+  ).settings(
+    libraryDependencies ++= Seq(
+      finagle("zipkin"),
+      finagle("stats"),
+      twitterServer
+    )
+  ).dependsOn(
+    tracegen, web, anormDB, query,
+    receiverScribe, zookeeper
+  )
 }
