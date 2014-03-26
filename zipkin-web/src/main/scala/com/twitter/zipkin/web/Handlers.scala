@@ -48,12 +48,12 @@ case class StaticRenderer(input: InputStream, typ: String) extends Renderer {
   private[this] val content = {
     val bytes = IOUtils.toByteArray(input)
     input.read(bytes)
-    ChannelBuffers.wrappedBuffer(bytes)
+    bytes
   }
 
   def apply(response: Response) {
     response.setContentType(typ)
-    response.content = content
+    response.content = ChannelBuffers.wrappedBuffer(content)
   }
 }
 
