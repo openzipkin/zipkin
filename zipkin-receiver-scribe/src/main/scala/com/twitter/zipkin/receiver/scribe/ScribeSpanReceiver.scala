@@ -22,7 +22,7 @@ import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.util.{DefaultTimer, InetSocketAddressUtil}
 import com.twitter.logging.Logger
 import com.twitter.scrooge.BinaryThriftStructSerializer
-import com.twitter.util.{Closable, Future, Return, Throw, Time}
+import com.twitter.util.{Closable, Future, NonFatal, Return, Throw, Time}
 import com.twitter.zipkin.collector.SpanReceiver
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
@@ -131,9 +131,11 @@ class ScribeReceiver(
         case Return(_) =>
           batchesProcessedStat.add(spans.size)
           ok
-        case Throw(e) =>
+        case Throw(NonFatal(e)) =>
           pushbackCounter.incr()
           tryLater
+        case Throw(e) =>
+          Future.exception(e)
       }
     }
   }
