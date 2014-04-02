@@ -149,7 +149,6 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
         |FROM zipkin_spans
         |WHERE trace_id IN (%s) AND created_ts IS NOT NULL
         |GROUP BY trace_id
-        |ORDER BY created_ts DESC
       """.stripMargin.format(traceIds.mkString(",")))
       .as((long("trace_id") ~ get[Option[Long]]("duration") ~ long("created_ts") map flatten) *)
     result map { case (traceId, duration, startTs) =>
