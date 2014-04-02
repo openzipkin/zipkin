@@ -326,7 +326,6 @@ class AnormSpanStore(
     |FROM zipkin_spans
     |WHERE trace_id IN (%s) AND created_ts IS NOT NULL
     |GROUP BY trace_id
-    |ORDER BY created_ts DESC
   """.stripMargin.format(ids.mkString(",")))
 
   private[this] val byDurationResults = (

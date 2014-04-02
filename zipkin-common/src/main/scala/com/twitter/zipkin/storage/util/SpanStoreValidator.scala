@@ -45,9 +45,9 @@ class SpanStoreValidator(
 
   val span1 = Span(123, "methodcall", spanId, None, List(ann1, ann3),
     List(binaryAnnotation("BAH", "BEH")))
-  val span2 = Span(123, "methodcall", spanId, None, List(ann2),
+  val span2 = Span(456, "methodcall", spanId, None, List(ann2),
     List(binaryAnnotation("BAH2", "BEH2")))
-  val span3 = Span(123, "methodcall", spanId, None, List(ann2, ann3, ann4),
+  val span3 = Span(789, "methodcall", spanId, None, List(ann2, ann3, ann4),
     List(binaryAnnotation("BAH2", "BEH2")))
   val span4 = Span(999, "methodcall", spanId, None, List(ann6, ann7),
     List())
@@ -188,11 +188,14 @@ class SpanStoreValidator(
     }
 
     test("get traces duration") {
-      val store = resetAndLoadStore(Seq(span1, span4))
+      val store = resetAndLoadStore(Seq(span1, span2, span3, span4))
       val expected = Seq(
-        TraceIdDuration(span4.traceId, 1, 6),
-        TraceIdDuration(span1.traceId, 19, 1))
-      val result = Await.result(store.getTracesDuration(Seq(span1.traceId, span4.traceId)))
+        TraceIdDuration(span1.traceId, 19, 1),
+        TraceIdDuration(span2.traceId, 0, 2),
+        TraceIdDuration(span3.traceId, 18, 2),
+        TraceIdDuration(span4.traceId, 1, 6))
+      val result = Await.result(store.getTracesDuration(
+        Seq(span1.traceId, span2.traceId, span3.traceId, span4.traceId)))
       assert(eq(result, expected))
 
       val store2 = resetAndLoadStore(Seq(span4))
