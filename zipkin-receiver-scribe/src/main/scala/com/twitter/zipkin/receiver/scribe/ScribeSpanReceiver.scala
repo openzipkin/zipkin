@@ -132,6 +132,7 @@ class ScribeReceiver(
           batchesProcessedStat.add(spans.size)
           ok
         case Throw(NonFatal(e)) =>
+          log.warning(e, "Exception in process()")
           pushbackCounter.incr()
           tryLater
         case Throw(e) =>

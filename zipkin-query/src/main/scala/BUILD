@@ -1,5 +1,7 @@
 scala_library(name='scala',
   dependencies=[
+    pants('3rdparty:finagle-exception'),
+    pants('3rdparty:finagle-stats'),
     pants('3rdparty:finagle-thriftmux'),
     pants('3rdparty:finagle-zipkin'),
     pants('3rdparty:util-app'),
