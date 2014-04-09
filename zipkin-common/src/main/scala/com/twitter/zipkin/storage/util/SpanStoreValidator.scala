@@ -96,6 +96,37 @@ class SpanStoreValidator(
     assert(passedCount == tests.size)
   }
 
+  // Test that we handle failures correctly.
+  def validateFailures {
+    val spanStoreName = newSpanStore.getClass.getName.split('.').last
+    val results = tests map { case (name, f) =>
+      println("validating failures with %s: %s".format(spanStoreName, name))
+      try {
+        f()
+        println("  Fail: exception not thrown.")
+        log.error("Validation failed: exception not thrown.")
+        false
+      } catch {
+        case e: SpanStoreException =>
+          println("  Caught exception %s (expected)".format(e))
+          true
+        case x =>
+          println("  Error: caught exception %s (unexpected)".format(x))
+          false
+      }
+    }
+
+    val passedCount = results.count(x => x)
+    println("%d / %d passed.".format(passedCount, tests.size))
+
+    if (passedCount < tests.size) {
+      println("Failed tests for %s:".format(spanStoreName))
+      results.zip(tests) collect { case (result, (name, _)) if !result => println(name) }
+    }
+
+    assert(passedCount == tests.size)
+  }
+
   def eq(a: Any, b: Any): Boolean =
     if (a == b) true else {
       println("%s is not equal to %s".format(a, b))
