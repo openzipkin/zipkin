@@ -96,7 +96,7 @@ class CassieSpanStore(
 
   /**
    * Column Families
-   * and type aliases to thier batch types
+   * and type aliases to their batch types
    */
   private type BatchTraces = BatchMutationBuilder[Long, String, Span]
   private[this] val Traces = keyspace
