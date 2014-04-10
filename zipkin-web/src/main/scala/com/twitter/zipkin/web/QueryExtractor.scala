@@ -40,6 +40,7 @@ object QueryExtractor {
     /* Pull out the annotations */
     val annotations = extractParams(request, "annotations[%d]") match {
       case Nil     => None
+      case Seq("") => None
       case seq @ _ => Some(seq)
     }
 
