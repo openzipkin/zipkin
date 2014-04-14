@@ -3,6 +3,7 @@
 }
 
 #trace-filters .service-filter-label {
+  cursor: default;
   padding-right: 0;
 }
 
@@ -142,10 +143,6 @@
 
 #traces li .services {
   width: 80%;
-}
-
-#traces li .services span {
-  cursor: pointer;
 }
 
 #traces li .timestamp {

@@ -60,7 +60,7 @@
 
     <div class="service-tags">
       Services:
-      <span class='label service-tag-filtered' data-serviceName="{{serviceName}}">{{serviceName}}</span>
+      <span class='label service-tag-filtered' data-service-name="{{serviceName}}">{{serviceName}}</span>
     </div>
   </div>
 {{/queryResults}}
@@ -76,16 +76,16 @@
   <ul id="traces">
   {{#traces}}
     <li class="trace" data-traceId="{{traceId}}" data-duration="{{duration}}" data-timestamp="{{timestamp}}">
-    <a href="/traces/{{traceId}}">
-      <div class="bar-block">
-        <span class="bar-graphic" style="width:{{width}}%;"></span>
-        <span class="bar-label">{{duration}} ms</span>
-        <span class="bar-label">{{spanCount}} spans</span>
-      </div>
-    </a>
+      <a href="/traces/{{traceId}}?serviceName={{serviceName}}">
+        <div class="bar-block">
+          <span class="bar-graphic" style="width:{{width}}%;"></span>
+          <span class="bar-label">{{durationStr}}</span>
+          <span class="bar-label">{{spanCount}} spans</span>
+        </div>
+      </a>
       <div class="trace-details services">
       {{#serviceCounts}}
-        <span class="label label-default service-filter-label" data-serviceName="{{name}}">{{name}} x{{count}}</span>
+        <span class="label label-default service-filter-label" data-service-name="{{name}}">{{name}} x{{count}}</span>
       {{/serviceCounts}}
       </div>
       <div class="trace-details timestamp pull-right">

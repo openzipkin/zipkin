@@ -26,7 +26,7 @@ define(
           this.triggerChange(lastServiceName);
         }
 
-        this.$node.chosen();
+        this.$node.chosen({search_contains: true});
         this.on('change', this.onChange);
       });
     }
