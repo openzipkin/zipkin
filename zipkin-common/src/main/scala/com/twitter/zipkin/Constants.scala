@@ -25,11 +25,20 @@ object Constants {
   val ClientAddr: String = "ca"
   val ServerAddr: String = "sa"
 
-  val CoreClient: Seq[String] = Seq(ClientSend, ClientRecv)
-  val CoreServer: Seq[String] = Seq(ServerRecv, ServerSend)
-  val CoreAddress: Seq[String] = Seq(ClientAddr, ServerAddr)
+  val CoreClient: Set[String] = Set(ClientSend, ClientRecv)
+  val CoreServer: Set[String] = Set(ServerRecv, ServerSend)
+  val CoreAddress: Set[String] = Set(ClientAddr, ServerAddr)
 
-  val CoreAnnotations: Seq[String] = CoreClient ++ CoreServer
+  val CoreAnnotations: Set[String] = CoreClient ++ CoreServer
+
+  val CoreAnnotationNames: Map[String, String] = Map(
+    ClientSend -> "Client Send",
+    ClientRecv -> "Client Receive",
+    ServerSend -> "Server Send",
+    ServerRecv -> "Server Receive",
+    ClientAddr -> "Client Address",
+    ServerAddr -> "Server Address"
+  )
 
   /* 127.0.0.1 */
   val LocalhostLoopBackIP = (127 << 24) | 1

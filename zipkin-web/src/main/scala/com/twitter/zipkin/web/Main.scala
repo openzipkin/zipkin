@@ -22,14 +22,13 @@ import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.{Http, Service, Thrift}
 import com.twitter.server.TwitterServer
 import com.twitter.util.{Await, Future}
+import com.twitter.zipkin.common.json.ZipkinJson
 import com.twitter.zipkin.common.mustache.ZipkinMustache
 import com.twitter.zipkin.gen.ZipkinQuery
 import java.net.InetSocketAddress
 import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
 
 trait ZipkinWebFactory { self: App =>
-  import Handlers._
-
   private[this] val resourceDirs = Set(
     "/public/css",
     "/public/img",
@@ -51,7 +50,8 @@ trait ZipkinWebFactory { self: App =>
   val webServerPort = flag("zipkin.web.port", new InetSocketAddress(8080), "Listening port for the zipkin web frontend")
 
   val webRootUrl = flag("zipkin.web.rootUrl", "http://localhost:8080/", "Url where the service is located")
-  val webCacheResources = flag("zipkin.web.cacheResources", false, "cache resources (mustache, static sources, etc)")
+  val webCacheResources = flag("zipkin.web.cacheResources", false, "cache static resources and mustache templates")
+  val webResourcesRoot = flag("zipkin.web.resourcesRoot", "zipkin-web/src/main/resources", "on-disk location of resources")
   val webPinTtl = flag("zipkin.web.pinTtl", 30.days, "Length of time pinned traces should exist")
 
   val queryDest = flag("zipkin.web.query.dest", "127.0.0.1:9411", "Location of the query server")
@@ -62,15 +62,17 @@ trait ZipkinWebFactory { self: App =>
     queryClient: ZipkinQuery[Future] = newQueryClient(),
     stats: StatsReceiver = DefaultStatsReceiver.scope("zipkin-web")
   ): Service[HttpRequest, HttpResponse] = {
-    ZipkinMustache.cache = webCacheResources()
+    val jsonGenerator = new ZipkinJson
+    val mustacheGenerator = new ZipkinMustache(webResourcesRoot(), webCacheResources())
+    val handlers = new Handlers(jsonGenerator, mustacheGenerator)
+    import handlers._
 
+    val publicRoot = if (webCacheResources()) None else Some(webResourcesRoot())
     Seq(
-      ("/app/", handlePublic(resourceDirs, typesMap, webCacheResources())),
-      ("/public/", handlePublic(resourceDirs, typesMap, webCacheResources())),
+      ("/app/", handlePublic(resourceDirs, typesMap, publicRoot)),
+      ("/public/", handlePublic(resourceDirs, typesMap, publicRoot)),
       ("/", addLayout andThen handleIndex(queryClient)),
-      ("/traces/:id", addLayout(webRootUrl()) andThen handleTraces),
-      ("/static", addLayout(webRootUrl()) andThen handleStatic),
-      ("/aggregates", addLayout(webRootUrl()) andThen handleAggregates),
+      ("/traces/:id", addLayout andThen handleTraces(queryClient)),
       ("/api/query", handleQuery(queryClient)),
       ("/api/services", handleServices(queryClient)),
       ("/api/spans", requireServiceName andThen handleSpans(queryClient)),

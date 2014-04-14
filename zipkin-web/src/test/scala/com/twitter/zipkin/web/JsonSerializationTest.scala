@@ -11,6 +11,6 @@ class JsonSerializationTest extends FunSuite {
   test("serialize span with no annotations") {
     val s = Span(1L, "Unknown", 2L, None, List.empty[Annotation], List.empty[BinaryAnnotation], false)
     // will not throw an exception
-    ZipkinJson.generate(s)
+    (new ZipkinJson).generate(s)
   }
 }
