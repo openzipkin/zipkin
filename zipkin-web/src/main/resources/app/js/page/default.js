@@ -8,7 +8,8 @@ define(
     'component_ui/infoPanel',
     'component_ui/infoButton',
     'component_ui/traceFilters',
-    'component_ui/traces'
+    'component_ui/traces',
+    'component_ui/endTime'
   ],
 
   function (
@@ -18,7 +19,8 @@ define(
     InfoPanelUI,
     InfoButtonUI,
     TraceFiltersUI,
-    TracesUI
+    TracesUI,
+    EndTimeUI
   ) {
 
     return initialize;
@@ -31,8 +33,8 @@ define(
       InfoButtonUI.attachTo('button.info-request');
       TraceFiltersUI.attachTo('#trace-filters');
       TracesUI.attachTo('#traces');
+      EndTimeUI.attachTo('#end-time');
 
-      $('.date-input').datepicker({format: 'mm-dd-yyyy'});
       $('.timeago').timeago();
     }
   }
