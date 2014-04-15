@@ -29,5 +29,5 @@ package object hbase {
 
   def timeStampToRowKeyBytes(timeStamp: Long): Array[Byte] = Bytes.toBytes(Long.MaxValue - timeStamp)
 
-  def getEndScanTimeStampRowKeyBytes(ts: Long) = Bytes.toBytes(scala.math.max(Long.MaxValue - ts, 1L) - 1L)
+  def getEndScanTimeStampRowKeyBytes(ts: Long) = Bytes.toBytes(scala.math.max(Long.MaxValue - ts, 0L))
 }
