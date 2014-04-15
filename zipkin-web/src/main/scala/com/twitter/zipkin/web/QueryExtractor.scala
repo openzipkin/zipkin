@@ -45,6 +45,14 @@ object QueryExtractor {
     timeFormat.format(time)
   }
 
+  def getTimestampStr(req: Request): String = {
+    getTimestamp(req).getOrElse(Time.now.inMicroseconds).toString
+  }
+
+  def getTimestamp(req: Request): Option[Long] = {
+    req.params.getLong("endTimestamp")
+  }
+
   /**
    * Takes a `Request` and produces the correct `QueryRequest` depending
    * on the GET parameters present
@@ -52,13 +60,7 @@ object QueryExtractor {
   def apply(req: Request): Option[QueryRequest] = req.params.get("serviceName") map { serviceName =>
     val spanName = req.params.get("spanName") filterNot { n => n == "all" || n == "" }
 
-    val endTimestamp = getDate(req) flatMap { d =>
-      getTime(req) map { t =>
-        (d.getTime + t.getTime) * 1000
-      }
-    } getOrElse {
-      Time.now.inMicroseconds
-    }
+    val endTimestamp = getTimestamp(req).getOrElse(Time.now.inMicroseconds)
 
     val (annotations, binaryAnnotations) = req.params.get("annotationQuery") map { query =>
       var anns = Seq.empty[String]

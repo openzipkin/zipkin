@@ -8,6 +8,7 @@
     "bootstrap-datepicker": "~1.3.0",
     "jquery-timeago": "~1.3.1",
     "chosen": "https://github.com/harvesthq/chosen/releases/download/v1.1.0/chosen_v1.1.0.zip",
-    "jquery-cookie": "~1.4.0"
+    "jquery-cookie": "~1.4.0",
+    "momentjs": "~2.5.1"
   }
 }

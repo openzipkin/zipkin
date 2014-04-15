@@ -73,8 +73,8 @@ trait HBaseIndex extends Index {
 
     annoMappingFuture.flatMap { annoMapping =>
       val scan = new Scan()
-      val startRk = Bytes.toBytes(annoMapping.parent.get.id) ++ Bytes.toBytes(annoMapping.id) ++ Bytes.toBytes(0L)
-      val endRk = Bytes.toBytes(annoMapping.parent.get.id) ++ Bytes.toBytes(annoMapping.id) ++ getEndScanTimeStampRowKeyBytes(endTs)
+      val startRk = Bytes.toBytes(annoMapping.parent.get.id) ++ Bytes.toBytes(annoMapping.id) ++ getEndScanTimeStampRowKeyBytes(endTs)
+      val endRk = Bytes.toBytes(annoMapping.parent.get.id) ++ Bytes.toBytes(annoMapping.id) ++ Bytes.toBytes(Long.MaxValue)
       scan.setStartRow(startRk)
       scan.setStopRow(endRk)
       scan.addFamily(TableLayouts.idxAnnotationFamily)
@@ -258,8 +258,8 @@ trait HBaseIndex extends Index {
       // Ask for more rows because there can be large number of dupes.
       scan.setCaching(limit * 10)
 
-      val startRk = Bytes.toBytes(serviceMapping.id) ++ Bytes.toBytes(0L)
-      val endRk =  Bytes.toBytes(serviceMapping.id) ++ getEndScanTimeStampRowKeyBytes(endTs)
+      val startRk = Bytes.toBytes(serviceMapping.id) ++ getEndScanTimeStampRowKeyBytes(endTs)
+      val endRk =  Bytes.toBytes(serviceMapping.id) ++ Bytes.toBytes(Long.MaxValue)
       scan.setStartRow(startRk)
       scan.setStopRow(endRk)
       // TODO(eclark): make this go back to the region server multiple times with a smart filter.
@@ -273,8 +273,8 @@ trait HBaseIndex extends Index {
       val spanNameMappingFuture = serviceMapping.spanNameMapper.get(spanName)
       spanNameMappingFuture.flatMap { spanNameMapping =>
         val scan = new Scan()
-        val startRow = Bytes.toBytes(serviceMapping.id) ++ Bytes.toBytes(spanNameMapping.id) ++ Bytes.toBytes(0L)
-        val stopRow = Bytes.toBytes(serviceMapping.id) ++ Bytes.toBytes(spanNameMapping.id) ++ getEndScanTimeStampRowKeyBytes(endTs)
+        val startRow = Bytes.toBytes(serviceMapping.id) ++ Bytes.toBytes(spanNameMapping.id) ++ getEndScanTimeStampRowKeyBytes(endTs)
+        val stopRow = Bytes.toBytes(serviceMapping.id) ++ Bytes.toBytes(spanNameMapping.id) ++ Bytes.toBytes(Long.MaxValue)
         scan.setStartRow(startRow)
         scan.setStopRow(stopRow)
         idxServiceSpanNameTable.scan(scan, limit)

@@ -252,8 +252,7 @@ object Handlers {
 
         var data = Map[String, Object](
           ("pageTitle" -> "Index"),
-          ("endDate" -> QueryExtractor.getDateStr(req)),
-          ("endTime" -> QueryExtractor.getTimeStr(req)),
+          ("endTimestamp" -> QueryExtractor.getTimestampStr(req)),
           ("annotationQuery" -> req.params.get("annotationQuery").getOrElse("")),
           ("services" -> svcList),
           ("spans" -> spanList),

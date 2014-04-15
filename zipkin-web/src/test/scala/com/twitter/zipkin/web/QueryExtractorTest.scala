@@ -35,27 +35,19 @@ class QueryExtractorTest extends FunSuite {
   }
 
   test("parse params") {
-    val dateFmt = "MM-dd-yyyy"
-    val timeFmt = "HH:mm:ss"
-    val dateFormatted = Time.now.format(dateFmt)
-    val timeFormatted = Time.now.format(timeFmt)
+    val endTs = Time.now
+    val endTimestamp = endTs.inMicroseconds.toString
     val r = request(
       "serviceName" -> "myService",
       "spanName" -> "mySpan",
-      "endDate" -> dateFormatted,
-      "endTime" -> timeFormatted,
+      "endTimestamp" -> endTimestamp,
       "limit" -> "1000")
 
     val actual = QueryExtractor(r).get
 
-    val endTs = (
-      new SimpleDateFormat(dateFmt).parse(dateFormatted).getTime +
-      new SimpleDateFormat(timeFmt).parse(timeFormatted).getTime
-    ) * 1000
-
     assert(actual.serviceName === "myService")
     assert(actual.spanName.get === "mySpan")
-    assert(actual.endTs ===  endTs)
+    assert(actual.endTs ===  endTs.inMicroseconds)
     assert(actual.limit === 1000)
   }
 
