@@ -24,7 +24,7 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 object QueryExtractor {
-  val fmt = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss")
+  val fmt = new SimpleDateFormat("MM-dd-yyyy'T'HH:mm:ss.SSSZ")
 
   private[this] val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
   private[this] val timeFormat = new SimpleDateFormat("HH:mm:ss")
