@@ -1,12 +1,12 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -90,6 +90,31 @@ class CassandraStorageSpec extends Specification with JMocker with ClassMocker {
     "getSpansByTraceIds should return empty list if no trace exists" in {
       val actual1 = Await.result(cassandraStorage.getSpansByTraceIds(List(span1.traceId)))
       actual1.isEmpty mustEqual true
+    }
+
+    "all binary annotations are logged" in {
+      val a_traceId = 1234L
+      val a1 = Annotation(1, "sr", Some(ep))
+      val a2 = Annotation(2, "ss", Some(ep))
+      val ba1 = binaryAnnotation("key1", "value1")
+      val ba2 = binaryAnnotation("key2", "value2")
+      val originalKeyNames = Set("key1", "key2")
+      val a_span1 = Span(a_traceId, "test", 345L, None, List(a1), Nil)
+      val a_span2 = Span(a_traceId, "test", 345L, None, Nil, List(ba1))
+      val a_span3 = Span(a_traceId, "test", 345L, None, Nil, List(ba2))
+      val a_span4 = Span(a_traceId, "test", 345L, None, List(a2), Nil)
+      val data = List(a_span1, a_span2, a_span3, a_span4)
+      for(s <- data) {
+        Await.result(cassandraStorage.storeSpan(s))
+      }
+
+      val actual1 = Await.result(cassandraStorage.getSpansByTraceIds(List(a_traceId)))
+      val trace1 = Trace(actual1(0))
+      val bAnnotations = trace1.spans(0).binaryAnnotations
+      val keyNames = bAnnotations map { _.key }
+      bAnnotations.length mustEqual 2
+      keyNames.toSet mustEqual originalKeyNames
+
     }
 
     "set time to live on a trace and then get it" in {
