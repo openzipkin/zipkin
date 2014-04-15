@@ -1,0 +1,25 @@
+scala_library(name='scala',
+  dependencies=[
+    pants('3rdparty:algebird-core'),
+    pants('3rdparty:finagle-exception'),
+    pants('3rdparty:finagle-serversets'),
+    pants('3rdparty:finagle-thriftmux'),
+    pants('3rdparty:finagle-zipkin'),
+    pants('3rdparty:mustache'),
+    pants('3rdparty:ostrich'),
+    pants('3rdparty:twitter-server'),
+    pants('3rdparty:zookeeper-group'),
+    pants('3rdparty:zookeeper-server-set'),
+    pants('oss/zipkin-cassandra'),
+    pants('oss/zipkin-collector-core'),
+    pants('oss/zipkin-collector-scribe'),
+],
+  sources=rglobs('*.scala'),
+)
+
+jvm_binary(
+  name='bin',
+  basename='zipkin-collector-service',
+  main='com.twitter.zipkin.collector.Main',
+  dependencies=[pants(':scala')],
+)
