@@ -25,9 +25,9 @@ import AssemblyKeys._
 object Zipkin extends Build {
   val zipkinVersion = "1.2.0-SNAPSHOT"
 
-  val finagleVersion = "6.12.2"
-  val utilVersion = "6.12.1"
-  val scroogeVersion = "3.12.2"
+  val finagleVersion = "6.13.1"
+  val utilVersion = "6.13.2"
+  val scroogeVersion = "3.13.0"
   val cassieVersion = "0.25.3"
   val zookeeperVersions = Map(
     "candidate" -> "0.0.41",
@@ -47,7 +47,7 @@ object Zipkin extends Build {
   def algebird(name: String) = "com.twitter" %% ("algebird-" + name) % algebirdVersion
   def zk(name: String) = "com.twitter.common.zookeeper" % name % zookeeperVersions(name)
 
-  val twitterServer = "com.twitter" % "twitter-server_2.9.2" % "1.4.0"
+  val twitterServer = "com.twitter" % "twitter-server_2.9.2" % "1.6.1"
 
   // cassie brings in old versions of finagle and util. we need to exclude here and bring in exclusive versions
   def cassie(name: String) =
@@ -529,4 +529,19 @@ object Zipkin extends Build {
       }
     }
   ).dependsOn(scrooge)
+
+  lazy val example = Project(
+    id = "zipkin-example",
+    base = file("zipkin-example"),
+    settings = defaultSettings
+  ).settings(
+    libraryDependencies ++= Seq(
+      finagle("zipkin"),
+      finagle("stats"),
+      twitterServer
+    )
+  ).dependsOn(
+    tracegen, web, anormDB, query,
+    receiverScribe, zookeeper
+  )
 }

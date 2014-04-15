@@ -11,6 +11,6 @@ libraryDependencies ++= Seq(
     "org.slf4j"              % "slf4j-api"          % "1.6.1",
     "org.slf4j"              % "slf4j-simple"       % "1.6.1")
 
-addSbtPlugin("com.twitter" %% "scrooge-sbt-plugin" % "3.12.3")
+addSbtPlugin("com.twitter" %% "scrooge-sbt-plugin" % "3.13.0")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.9.2")
