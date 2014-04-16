@@ -207,7 +207,9 @@ module PullRequest
       user_login = pull_request['user']['login']
       user_obj = Github.get("users/#{user_login}")
       user_name = user_obj['name']
+      user_name = user_login if user_name.nil? || user_name.empty?
       user_email = user_obj['email']
+      user_email = user_login if user_email.nil? || user_email.empty?
 
       puts "Committing"
       Git.commit("--author=\"#{user_name} <#{user_email}>\" -m #{Shellwords.escape(commit_msg)} -e")

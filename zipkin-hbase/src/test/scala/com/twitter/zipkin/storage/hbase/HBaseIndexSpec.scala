@@ -15,6 +15,8 @@ class HBaseIndexSpec extends ZipkinHBaseSpecification {
 
   var index: HBaseIndex = null
 
+  val endOfTime = Long.MaxValue
+  def before(ts: Long) = ts - 1
   val traceIdOne = 100
   val spanOneStart = 90000L
   val serviceNameOne = "HBase.Client"
@@ -117,24 +119,24 @@ class HBaseIndexSpec extends ZipkinHBaseSpecification {
       Await.result(index.indexTraceIdByServiceAndName(spanThree))
       Await.result(index.indexTraceIdByServiceAndName(spanFour))
 
-      val emptyResult = Await.result(index.getTraceIdsByName(serviceNameOne, None, spanOneStart + 100, 1))
+      val emptyResult = Await.result(index.getTraceIdsByName(serviceNameOne, None, before(spanOneStart), 1))
       emptyResult must beEmpty
 
       // Try and get the first trace from the first service name
-      val t1 = Await.result(index.getTraceIdsByName(serviceNameOne, None, 0, 1))
+      val t1 = Await.result(index.getTraceIdsByName(serviceNameOne, None, before(endOfTime), 1))
       t1.map {_.traceId} must contain(traceIdOne)
       t1.map {_.timestamp} must contain(spanOneStart)
       t1.size must_== 1
 
       // Try and get the first two traces from the second service name
-      val t2 = Await.result(index.getTraceIdsByName(serviceNameTwo, None, 0, 100))
+      val t2 = Await.result(index.getTraceIdsByName(serviceNameTwo, None, before(endOfTime), 100))
       t2.map {_.traceId} must contain(traceIdOne)
       t2.map {_.traceId} must contain(traceIdFour)
       t2.map {_.timestamp} must contain(spanTwoStart)
       t2.map {_.timestamp} must contain(spanThreeStart)
 
       // Try and get the first trace from the first service name and the first span name
-      val t3 = Await.result(index.getTraceIdsByName(serviceNameOne, Some(spanOne.name), 0, 1))
+      val t3 = Await.result(index.getTraceIdsByName(serviceNameOne, Some(spanOne.name), before(endOfTime), 1))
       t3.map {_.traceId} must contain(traceIdOne)
       t3.map {_.timestamp} must contain(spanOneStart)
       t3.size must_== 1
@@ -142,7 +144,7 @@ class HBaseIndexSpec extends ZipkinHBaseSpecification {
 
     "getTraceIdsByAnnotation" in {
       Await.result(index.indexSpanByAnnotations(spanFive))
-      val idf = index.getTraceIdsByAnnotation(spanFive.annotations.head.serviceName, spanFive.annotations.head.value, None, 0, 100)
+      val idf = index.getTraceIdsByAnnotation(spanFive.annotations.head.serviceName, spanFive.annotations.head.value, None, before(endOfTime), 100)
       val ids = Await.result(idf)
       ids.size must_== 1
       ids.map {_.traceId} must contain(spanFive.traceId)
