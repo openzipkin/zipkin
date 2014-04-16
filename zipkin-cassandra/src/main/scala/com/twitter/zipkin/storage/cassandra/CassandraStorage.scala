@@ -173,6 +173,6 @@ case class CassandraStorage(
    */
   private def createSpanColumnName(span: Span) : String = {
     // TODO make into a codec?
-    span.id.toString + "_" + span.annotations.hashCode
+    span.id.toString + "_" + span.annotations.hashCode + "_" + span.binaryAnnotations.hashCode
   }
 }
