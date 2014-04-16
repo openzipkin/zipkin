@@ -15,7 +15,7 @@
  */
 package com.twitter.zipkin.collector
 
-import com.twitter.util.{Await, Closable, CloseAwaitably, Future, Time}
+import com.twitter.util.{Closable, CloseAwaitably}
 
 /**
  * SpanReceivers are nothing special. They need only allow us to Await on them
@@ -25,11 +25,3 @@ import com.twitter.util.{Await, Closable, CloseAwaitably, Future, Time}
  * that it should use to process incoming spans.
  */
 trait SpanReceiver extends Closable with CloseAwaitably
-
-object SpanReceiver {
-  def multiReceiver(receivers: SpanReceiver*): SpanReceiver = new SpanReceiver {
-    def close(deadline: Time): Future[Unit] = closeAwaitably {
-      Closable.all(receivers: _*).close(deadline)
-    }
-  }
-}

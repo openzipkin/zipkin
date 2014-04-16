@@ -24,6 +24,7 @@ import com.twitter.util.Future
 import com.twitter.zipkin.gen.Adjust
 import com.twitter.zipkin.query.adjusters._
 import com.twitter.zipkin.storage.{Aggregates, NullAggregates, SpanStore}
+import com.twitter.zipkin.storage.{NullRealtimeAggregates, RealtimeAggregates}
 
 trait ZipkinQueryServerFactory { self: App =>
   val queryServicePort = flag("zipkin.queryService.port", ":9411", "port for the query service to listen on")
@@ -31,12 +32,13 @@ trait ZipkinQueryServerFactory { self: App =>
 
   def newQueryServer(
     spanStore: SpanStore,
+    realtimeStore: RealtimeAggregates = NullRealtimeAggregates,
     aggregatesStore: Aggregates = new NullAggregates,
     adjusters: Map[Adjust, Adjuster] = constants.DefaultAdjusters,
     stats: StatsReceiver = DefaultStatsReceiver.scope("QueryService"),
     log: Logger = Logger.get("QueryService")
   ): ListeningServer = {
     ThriftMux.serveIface(queryServicePort(), new ThriftQueryService(
-      spanStore, aggregatesStore, adjusters, queryServiceDurationBatchSize()))
+      spanStore, aggregatesStore, realtimeStore, adjusters, queryServiceDurationBatchSize()))
   }
 }

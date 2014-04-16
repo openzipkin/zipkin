@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,8 +36,14 @@ import scala.collection.Set
  * by lookup the information in the index and then fetch the required trace data
  * from the storage.
  */
-class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjusterMap: Map[gen.Adjust, Adjuster],
-                   statsReceiver: StatsReceiver = NullStatsReceiver) extends gen.ZipkinQuery.FutureIface with Service {
+class QueryService(
+  storage: Storage,
+  index: Index,
+  aggregates: Aggregates,
+  adjusterMap: Map[gen.Adjust, Adjuster],
+  statsReceiver: StatsReceiver = NullStatsReceiver
+) extends gen.ZipkinQuery.FutureIface with Service {
+
   private val log = Logger.get
   private val running = new AtomicBoolean(false)
 
@@ -406,6 +412,13 @@ class QueryService(storage: Storage, index: Index, aggregates: Aggregates, adjus
       aggregates.getTopKeyValueAnnotations(serviceName)
     }
   }
+
+  def getSpanDurations(
+    timeStamp: Long,
+    serverServiceName: String,
+    rcpName: String
+  ): Future[Map[String, List[Long]]] =
+    Future.exception(new Exception("Not Implemented"))
 
   private def checkIfRunning() = {
     if (!running.get) {

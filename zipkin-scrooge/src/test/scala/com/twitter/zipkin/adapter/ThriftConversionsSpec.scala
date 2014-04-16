@@ -21,11 +21,12 @@ import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.query._
-import org.specs.Specification
-import org.specs.mock.{ClassMocker, JMocker}
 import java.nio.ByteBuffer
+import org.specs.Specification
+import org.specs.SpecificationWithJUnit
+import org.specs.mock.{ClassMocker, JMocker}
 
-class ThriftConversionsSpec extends Specification with JMocker with ClassMocker {
+class ThriftConversionsSpec extends SpecificationWithJUnit with JMocker with ClassMocker {
 
   "ThriftConversions" should {
     "convert Annotation" in {
