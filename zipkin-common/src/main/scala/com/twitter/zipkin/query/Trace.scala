@@ -90,7 +90,7 @@ case class Trace(private val s: Seq[Span]) {
   def getStartAndEndTimestamp: Option[Timespan] = {
     spans.flatMap(_.annotations.map(_.timestamp)) match {
       case Nil => None // No annotations
-      case s => Some(Timespan(s.min, s.max))
+      case s: Seq[Long] => Some(Timespan(s.min, s.max))
     }
   }
 
@@ -156,7 +156,7 @@ case class Trace(private val s: Seq[Span]) {
    * Get all the binary annotations in this trace.
    */
   def getBinaryAnnotations: Seq[BinaryAnnotation] =
-    spans.map(_.binaryAnnotations).flatten
+    spans.flatMap(_.binaryAnnotations)
 
   /**
    * Merge all the spans objects with the same span ids into one per id.
