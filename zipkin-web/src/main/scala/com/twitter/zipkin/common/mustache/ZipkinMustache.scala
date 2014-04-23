@@ -18,7 +18,7 @@ object ZipkinMustache {
       val name = if (rn.startsWith("public")) rn else "templates/" + rn
 
       if (_cache) super.getReader(name) else {
-        val file = new File("oss/zipkin-web/src/main/resources", name)
+        val file = new File("zipkin-web/src/main/resources", name)
         new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"))
       }
     }

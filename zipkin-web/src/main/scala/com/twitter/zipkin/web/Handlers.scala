@@ -170,7 +170,7 @@ object Handlers {
         if (cache) {
           Option(getClass.getResourceAsStream(path)) filter { _.available > 0 }
         } else {
-          Some(new FileInputStream(new File("oss/zipkin-web/src/main/resources", path)))
+          Some(new FileInputStream(new File("zipkin-web/src/main/resources", path)))
         }
       }
 
