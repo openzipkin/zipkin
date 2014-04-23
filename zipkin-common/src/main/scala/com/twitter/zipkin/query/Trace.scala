@@ -46,21 +46,20 @@ case class Trace(private val s: Seq[Span]) {
    * Find the trace id for this trace.
    * Returns none if we have no spans to look up id by
    */
-  def id: Option[Long] = {
+  def id: Option[Long] =
     spans.headOption.map(_.traceId)
-  }
 
   /**
    * Find the root span of this trace and return
    */
-  def getRootSpan: Option[Span] = spans.find {
-    s => s.parentId == None
-  }
+  def getRootSpan: Option[Span] =
+    spans.find { !_.parentId.isDefined }
 
   /**
    * Find a span by the id. Note that this iterates through all the spans.
    */
-  def getSpanById(spanId: Long): Option[Span] = spans.find { s => s.id == spanId }
+  def getSpanById(spanId: Long): Option[Span] =
+    spans.find { _.id == spanId }
 
   /**
    * In some cases we don't care if it's the actual root span or just the span
@@ -69,34 +68,29 @@ case class Trace(private val s: Seq[Span]) {
    * FIXME if there are holes in the trace this might not return the correct span
    */
   lazy val getRootMostSpan: Option[Span] = {
-    getRootSpan.orElse {
+    getRootSpan orElse {
       val idSpan = getIdToSpanMap
-      spans.headOption.map {
-        s =>
-          recursiveGetRootMostSpan(idSpan, s)
-      }
+      spans.headOption map { recursiveGetRootMostSpan(idSpan, _) }
     }
   }
 
+  def getRootSpans(idSpan: Map[Long, Span] = getIdToSpanMap): Seq[Span] =
+    spans filter { !_.parentId.flatMap(idSpan.get).isDefined }
+
   private def recursiveGetRootMostSpan(idSpan: Map[Long, Span], prevSpan: Span): Span = {
     // parent id shouldn't be none as then we would have returned already
-    idSpan.get(prevSpan.parentId.get) match {
-      case Some(s) => recursiveGetRootMostSpan(idSpan, s)
-      case None => prevSpan
-    }
+    val span = for ( id <- prevSpan.parentId; s <- idSpan.get(id) ) yield
+      recursiveGetRootMostSpan(idSpan, s)
+    span.getOrElse(prevSpan)
   }
 
   /**
    * Get the start and end timestamps for this trace.
    */
   def getStartAndEndTimestamp: Option[Timespan] = {
-    spans.flatMap {
-      s => s.annotations.map {
-        a => a.timestamp
-      }
-    } match {
+    spans.flatMap(_.annotations.map(_.timestamp)) match {
       case Nil => None // No annotations
-      case s@_ => Some(Timespan(s.min, s.max))
+      case s: Seq[Long] => Some(Timespan(s.min, s.max))
     }
   }
 
@@ -104,16 +98,16 @@ case class Trace(private val s: Seq[Span]) {
    * How long did this span take to run?
    * Returns microseconds between start annotation and end annotation
    */
-  def duration: Int = {
+  def duration: Long = {
     val startEnd = getStartAndEndTimestamp.getOrElse(Timespan(0, 0))
-    (startEnd.end - startEnd.start).toInt
+    (startEnd.end - startEnd.start)
   }
 
   /**
    * Returns all the endpoints involved in this trace.
    */
   def endpoints: Set[Endpoint] = {
-    spans.flatMap(s => s.endpoints).toSet
+    spans.flatMap(_.endpoints).toSet
   }
 
   /**
@@ -161,11 +155,8 @@ case class Trace(private val s: Seq[Span]) {
   /**
    * Get all the binary annotations in this trace.
    */
-  def getBinaryAnnotations: Seq[BinaryAnnotation] = {
-    spans.map {
-      _.binaryAnnotations
-    }.flatten
-  }
+  def getBinaryAnnotations: Seq[BinaryAnnotation] =
+    spans.flatMap(_.binaryAnnotations)
 
   /**
    * Merge all the spans objects with the same span ids into one per id.
@@ -192,21 +183,15 @@ case class Trace(private val s: Seq[Span]) {
    */
   def getIdToChildrenMap: mutable.MultiMap[Long, Span] = {
     val map = new mutable.HashMap[Long, mutable.Set[Span]] with mutable.MultiMap[Long, Span]
-    spans.foreach(s => {
-      s.parentId match {
-        case Some(id) => map.addBinding(id, s)
-        case None =>
-      }
-    })
+    for ( s <- spans; pId <- s.parentId ) map.addBinding(pId, s)
     map
   }
 
   /*
    * Turn the Trace into a map of Span Id -> Span
    */
-  def getIdToSpanMap: Map[Long, Span] = spans.map {
-    s => (s.id, s)
-  }.toMap
+  def getIdToSpanMap: Map[Long, Span] =
+    spans.map { s => (s.id, s) }.toMap
 
   /**
    * Get the spans of this trace in a tree form. SpanTreeEntry wraps a Span and it's children.
@@ -215,12 +200,8 @@ case class Trace(private val s: Seq[Span]) {
     val children = idToChildren.get(span.id)
 
     children match {
-      case Some(cSet) => {
-        SpanTreeEntry(span, cSet.map(getSpanTree(_, idToChildren)).toList)
-      }
-      case None => {
-        SpanTreeEntry(span, List[SpanTreeEntry]())
-      }
+      case Some(cSet) => SpanTreeEntry(span, cSet.map(getSpanTree(_, idToChildren)).toList)
+      case None => SpanTreeEntry(span, List[SpanTreeEntry]())
     }
   }
 

@@ -28,10 +28,13 @@ case class SpanTreeEntry(span: Span, children: List[SpanTreeEntry]) {
   }
 
   private def childrenToList(span: SpanTreeEntry): List[Span] = {
-    if (span.children.isEmpty) {
-      List[Span](span.span)
-    } else {
-      span.span +: span.children.map(childrenToList(_)).flatten
+    span.children match {
+      case Nil =>
+        List[Span](span.span)
+
+      case children =>
+        val sorted = children.sortBy(_.span.firstAnnotation.map(_.timestamp))
+        span.span :: sorted.map(childrenToList).flatten
     }
   }
 
