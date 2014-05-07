@@ -17,6 +17,7 @@ package com.twitter.zipkin.redis
 
 import com.twitter.conversions.time._
 import com.twitter.finagle.redis.Client
+import com.twitter.finagle.redis.util.StringToChannelBuffer
 import com.twitter.util.Duration
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.redis.RedisStorage
@@ -25,6 +26,7 @@ import com.twitter.zipkin.storage.Storage
 case class StorageBuilder(
   host: String,
   port: Int,
+  authPassword: Option[String] = None,
   ttl: Duration = 7.days
 ) extends Builder[Storage] { self =>
 
@@ -32,6 +34,7 @@ case class StorageBuilder(
 
   def apply() = {
     val client = Client("%s:%d".format(host, port))
+    authPassword.map(p => client.auth(StringToChannelBuffer(p)))
     new RedisStorage {
       val database = client
       val ttl = Some(self.ttl)

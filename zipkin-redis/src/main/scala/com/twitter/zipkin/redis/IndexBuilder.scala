@@ -17,6 +17,7 @@ package com.twitter.zipkin.redis
 
 import com.twitter.conversions.time._
 import com.twitter.finagle.redis.Client
+import com.twitter.finagle.redis.util.StringToChannelBuffer
 import com.twitter.util.Duration
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.redis.RedisIndex
@@ -25,6 +26,7 @@ import com.twitter.zipkin.storage.Index
 case class IndexBuilder(
   host: String,
   port: Int,
+  authPassword: Option[String] = None,
   ttl: Duration = 7.days
 ) extends Builder[Index] { self =>
 
@@ -32,6 +34,7 @@ case class IndexBuilder(
 
   def apply() = {
     val client = Client("%s:%d".format(host, port))
+    authPassword.map(p => client.auth(StringToChannelBuffer(p)))
     new RedisIndex {
       val database = client
       val ttl = Some(self.ttl)
