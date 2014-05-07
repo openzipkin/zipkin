@@ -22,6 +22,8 @@ import com.twitter.util.Duration
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.redis.RedisIndex
 import com.twitter.zipkin.storage.Index
+import com.twitter.util.Await
+import com.twitter.util.Future
 
 case class IndexBuilder(
   host: String,
@@ -34,10 +36,10 @@ case class IndexBuilder(
 
   def apply() = {
     val client = Client("%s:%d".format(host, port))
-    authPassword.map(p => client.auth(StringToChannelBuffer(p)))
-    new RedisIndex {
+    val authenticate = authPassword.map(p => client.auth(StringToChannelBuffer(p))) getOrElse Future.Done
+    Await.result(authenticate before Future.value(new RedisIndex {
       val database = client
       val ttl = Some(self.ttl)
-    }
+    }), 10.seconds)
   }
 }
