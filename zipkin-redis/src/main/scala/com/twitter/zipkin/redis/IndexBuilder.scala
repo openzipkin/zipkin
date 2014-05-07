@@ -26,8 +26,8 @@ import com.twitter.zipkin.storage.Index
 case class IndexBuilder(
   host: String,
   port: Int,
-  authPassword: Option[String] = None,
-  ttl: Duration = 7.days
+  ttl: Duration = 7.days,
+  authPassword: Option[String] = None
 ) extends Builder[Index] { self =>
 
   def ttl(t: Duration): IndexBuilder = copy(ttl = t)

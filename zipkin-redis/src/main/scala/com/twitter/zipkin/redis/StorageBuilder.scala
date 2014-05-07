@@ -26,8 +26,8 @@ import com.twitter.zipkin.storage.Storage
 case class StorageBuilder(
   host: String,
   port: Int,
-  authPassword: Option[String] = None,
-  ttl: Duration = 7.days
+  ttl: Duration = 7.days,
+  authPassword: Option[String] = None
 ) extends Builder[Storage] { self =>
 
   def ttl(t: Duration): StorageBuilder = copy(ttl = t)
