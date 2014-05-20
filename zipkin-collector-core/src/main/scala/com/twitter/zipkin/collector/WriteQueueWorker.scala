@@ -19,6 +19,7 @@ package com.twitter.zipkin.collector
 import com.twitter.finagle.Service
 import com.twitter.ostrich.admin.BackgroundProcess
 import java.util.concurrent.{TimeUnit, BlockingQueue}
+import com.twitter.util.Await
 
 class WriteQueueWorker[T](queue: BlockingQueue[T],
                        service: Service[T, _]) extends BackgroundProcess("WriteQueueWorker", false) {
@@ -31,6 +32,6 @@ class WriteQueueWorker[T](queue: BlockingQueue[T],
   }
 
   private[collector] def process(t: T) {
-    service(t)
+    Await.ready(service(t))
   }
 }
