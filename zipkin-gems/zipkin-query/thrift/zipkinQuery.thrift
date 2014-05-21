@@ -1,1 +1,1 @@
-../../../zipkin-thrift/src/main/thrift/zipkinQuery.thrift
+../../../zipkin-thrift/src/main/resources/thrift/zipkinQuery.thrift
