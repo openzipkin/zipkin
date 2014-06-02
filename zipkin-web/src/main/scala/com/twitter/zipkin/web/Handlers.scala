@@ -328,7 +328,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
       e match {
         case (serviceName, durations) =>
           val h = new ApproximateHistogram()
-          durations.map(i => h.add((i / 1000L).toInt))
+          durations.map(i => h.add(i))
           MustacheRealtimeSummary(
             serviceName,
             durations.size,
