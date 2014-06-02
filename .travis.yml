@@ -1,0 +1,11 @@
+language: scala
+scala:
+  - 2.9.3
+services:
+  - redis-server
+jdk:
+  - openjdk7
+  - openjdk6
+script:
+  - "umask 0022"
+  - "sbt ++$TRAVIS_SCALA_VERSION clean test"

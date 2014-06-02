@@ -1,0 +1,10 @@
+junit_tests(name='scala',
+  dependencies=[
+    pants('3rdparty:junit'),
+    pants('3rdparty:scalatest'),
+    pants('3rdparty:mockito-all'),
+    pants('3rdparty:specs'),
+    pants('oss/zipkin-common'),
+  ],
+  sources=rglobs('*.scala')
+)

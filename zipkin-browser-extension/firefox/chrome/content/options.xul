@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+
+<vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+    <setting type="string" pref="extensions.zipkin.profile_site" title="Site to trace" desc="A regular expression matching the hostname of the website being traced by Zipkin" />
+    <setting type="string" pref="extensions.zipkin.zipkin_site" title="Zipkin URL" desc="The base URL of the Zipkin site, e.g. http://zipkin.example.com" />
+</vbox>

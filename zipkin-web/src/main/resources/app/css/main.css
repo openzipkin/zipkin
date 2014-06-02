@@ -1,0 +1,39 @@
+body {
+  padding-top: 50px;
+}
+
+.container {
+  width: 90%;
+  margin: 0 5%;
+}
+
+.content {
+  padding-top: 20px;
+}
+
+#annotationQuery {
+  margin: 5px 0;
+}
+
+.chosen-container .chosen-single {
+  height: 30px;
+}
+
+.service-filter-label {
+  cursor: pointer;
+}
+
+#fullPageSpinner {
+  display: none;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0px;
+  padding-top: 10%;
+  background: rgba(256, 256, 256, 0.5);
+}
+
+#fullPageSpinner .progress {
+  margin-left: 25%;
+  width: 50%;
+}

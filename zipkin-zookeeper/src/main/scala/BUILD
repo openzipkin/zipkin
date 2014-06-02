@@ -1,0 +1,10 @@
+scala_library(name='scala',
+  dependencies=[
+    pants('3rdparty:finagle-core'),
+    pants('3rdparty:util-core'),
+    pants('3rdparty:util-zk'),
+    pants('3rdparty:zookeeper-candidate'),
+    pants('3rdparty:zookeeper-group'),
+  ],
+  sources=rglobs('*.scala')
+)

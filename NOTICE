@@ -1,0 +1,21 @@
+Zipkin is a distributed tracing system.
+Copyright 2012 Twitter, Inc.
+
+Zipkin has a number of optional third party dependencies:
+
+Cassandra
+Apache Public License 2.0
+http://cassandra.apache.org/
+
+Kafka 0.7.0
+Apache Public License 2.0
+http://incubator.apache.org/kafka/
+
+Scribe
+Apache Public License 2.0
+https://github.com/facebook/scribe
+
+ZooKeeper
+Apache Public License 2.0
+http://zookeeper.apache.org/
+

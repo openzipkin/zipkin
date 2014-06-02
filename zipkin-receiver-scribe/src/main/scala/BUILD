@@ -1,0 +1,16 @@
+scala_library(
+  name='scala',
+  sources=rglobs('*.scala'),
+  dependencies=[
+    pants('3rdparty:util-app'),
+    pants('3rdparty:util-zk'),
+    pants('3rdparty:util-logging'),
+    pants('3rdparty:finagle-core'),
+    pants('3rdparty:finagle-thriftmux'),
+    pants('3rdparty:scrooge-serializer'),
+    pants('3rdparty:slf4j-log4j12'),
+    pants('oss/zipkin-collector'),
+    pants('oss/zipkin-scrooge'),
+    pants('oss/zipkin-zookeeper'),
+  ]
+)
