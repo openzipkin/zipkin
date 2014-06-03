@@ -15,7 +15,7 @@ trait WrappedJson
 /**
  * Custom json generator that knows about zipkin datatypes
  */
-object ZipkinJson {
+class ZipkinJson {
   val mapper = new ObjectMapper()
   mapper.registerModule(DefaultScalaModule)
 

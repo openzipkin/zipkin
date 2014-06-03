@@ -25,9 +25,9 @@ import AssemblyKeys._
 object Zipkin extends Build {
   val zipkinVersion = "1.2.0-SNAPSHOT"
 
-  val finagleVersion = "6.13.1"
-  val utilVersion = "6.13.2"
-  val scroogeVersion = "3.13.0"
+  val finagleVersion = "6.16.0"
+  val utilVersion = "6.16.0"
+  val scroogeVersion = "3.15.0"
   val cassieVersion = "0.25.3"
   val zookeeperVersions = Map(
     "candidate" -> "0.0.41",
@@ -47,7 +47,7 @@ object Zipkin extends Build {
   def algebird(name: String) = "com.twitter" %% ("algebird-" + name) % algebirdVersion
   def zk(name: String) = "com.twitter.common.zookeeper" % name % zookeeperVersions(name)
 
-  val twitterServer = "com.twitter" % "twitter-server_2.9.2" % "1.6.1"
+  val twitterServer = "com.twitter" % "twitter-server_2.9.2" % "1.7.0"
 
   // cassie brings in old versions of finagle and util. we need to exclude here and bring in exclusive versions
   def cassie(name: String) =
@@ -136,7 +136,7 @@ object Zipkin extends Build {
       query, queryCore, queryService, web,
       collectorScribe, collectorCore, collectorService,
       sampler, receiverScribe, collector,
-      cassandra, anormDB, kafka, redis, hbase, storm
+      cassandra, anormDB, kafka, redis, hbase
     )
 
   lazy val tracegen = Project(
@@ -159,7 +159,9 @@ object Zipkin extends Build {
         util("core"),
         zk("client"),
         algebird("core"),
-        "com.twitter" % "ostrich_2.9.2" % ostrichVersion
+        "com.twitter" % "ostrich_2.9.2" % ostrichVersion,
+        "com.twitter" %% "bijection-core" % "0.6.0",
+        "com.twitter" %% "summingbird-batch" % summingbirdVersion
       ) ++ testDependencies ++ scalaTestDeps
     )
 
@@ -362,6 +364,7 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
+        finagle("thriftmux"),
         util("zk"),
         "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
       ) ++ scalaTestDeps
@@ -416,7 +419,8 @@ object Zipkin extends Build {
         zk("server-set"),
         algebird("core"),
         twitterServer,
-        "com.github.spullara.mustache.java" % "compiler" % "0.8.13"
+        "com.github.spullara.mustache.java" % "compiler" % "0.8.13",
+        "com.twitter.common" % "stats-util" % "0.0.42"
       ) ++ scalaTestDeps,
 
       PackageDist.packageDistZipName := "zipkin-web.zip",
@@ -475,58 +479,6 @@ object Zipkin extends Build {
     unmanagedResourceDirectories in Test <<= baseDirectory {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
-    }
-  ).dependsOn(scrooge)
-
-  lazy val storm = Project(
-    id = "zipkin-storm",
-    base = file("zipkin-storm"),
-    settings = defaultSettings ++ assemblySettings
-  ).settings(
-    parallelExecution in Test := false,
-    libraryDependencies ++= Seq(
-      util("logging"),
-      scroogeDep("serializer"),
-      "commons-logging"       % "commons-logging"       % "1.1.1",
-      "commons-configuration" % "commons-configuration" % "1.6",
-      "com.twitter"           %% "bijection-core"       % "0.6.0",
-      "com.twitter"           %% "bijection-scrooge"    % "0.6.0",
-      "com.twitter"           %% "storehaus-memcache"   % "0.8.0",
-      "com.twitter"           %% "summingbird-core"     % summingbirdVersion,
-      "com.twitter"           %% "summingbird-batch"    % summingbirdVersion,
-      "com.twitter"           %% "tormenta-kafka"       % "0.6.1" exclude("org.slf4j", "log4j-over-slf4j") exclude("ch.qos.logback", "logback-classic"),
-      "storm"                 % "storm"                 % "0.9.0.1" % "provided",
-      "storm"                 % "storm-kafka"           % "0.9.0-wip16a-scala292"
-    ) ++ scalaTestDeps,
-
-    publishArtifact in packageDoc := false,
-
-    PackageDist.packageDistZipName := "zipkin-storm.zip",
-    BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
-    resourceGenerators in Compile <+= BuildProperties.buildPropertiesWrite,
-
-    /* Add configs to resource path for ConfigSpec */
-    unmanagedResourceDirectories in Test <<= baseDirectory {
-      base =>
-        (base / "config" +++ base / "src" / "test" / "resources").get
-    },
-
-    excludedJars in assembly <<= (fullClasspath in assembly) map { cp =>
-      cp filter {_.data.getName == "netty-3.2.3.Final.jar"}
-    },
-
-    mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
-      {
-        case PathList("com", "esotericsoftware", xs @ _*) => MergeStrategy.last
-        case PathList("com", "fasterxml", xs @ _*) => MergeStrategy.last
-        case PathList("com", "twitter", xs @ _*) => MergeStrategy.last
-        case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
-        case PathList("org", "apache", xs @ _*) => MergeStrategy.last
-        case PathList("org", "objectweb", xs @ _*) => MergeStrategy.last
-        case PathList("org", "slf4j", xs @ _*) => MergeStrategy.last
-        case "project.clj" => MergeStrategy.last
-        case x => old(x)
-      }
     }
   ).dependsOn(scrooge)
 

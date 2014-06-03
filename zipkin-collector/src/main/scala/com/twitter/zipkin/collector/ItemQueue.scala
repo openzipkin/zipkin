@@ -35,19 +35,21 @@ class QueueClosedException extends Exception("Queue is closed")
  *
  * The queue can be awaited on and will not complete until it's been closed and drained.
  */
-class ItemQueue[T](
+class ItemQueue[A, B](
   maxSize: Int,
   maxConcurrency: Int,
-  process: T => Future[_],
+  process: A => Future[B],
   stats: StatsReceiver = DefaultStatsReceiver.scope("ItemQueue")
 ) extends Closable with CloseAwaitably {
   @volatile private[this] var running: Boolean = true
 
-  private[this] val queue = new ArrayBlockingQueue[T](maxSize)
+  private[this] val queue = new ArrayBlockingQueue[A](maxSize)
   private[this] val queueSizeGauge = stats.addGauge("queueSize") { queue.size }
   private[this] val activeWorkers = new AtomicInteger(0)
   private[this] val activeWorkerGauge = stats.addGauge("activeWorkers") { activeWorkers.get }
   private[this] val maxConcurrencyGauge = stats.addGauge("maxConcurrency") { maxConcurrency }
+  private[this] val failuresCounter = stats.counter("failures")
+  private[this] val successesCounter = stats.counter("successes")
   private[this] val workers = Seq.fill(maxConcurrency) { FuturePool.unboundedPool { loop() } }
 
   private[this] def loop() {
@@ -55,7 +57,12 @@ class ItemQueue[T](
       val item = queue.poll(500, TimeUnit.MILLISECONDS)
       if (item != null) {
         activeWorkers.incrementAndGet()
-        Await.ready(process(item))
+        val rep = stats.timeFuture("processing_time_ms")(process(item)) onSuccess{ _ =>
+          successesCounter.incr()
+        } onFailure { _ =>
+          failuresCounter.incr()
+        }
+        Await.ready(rep)
         activeWorkers.decrementAndGet()
       }
     }
@@ -69,7 +76,7 @@ class ItemQueue[T](
   private[this] val QueueFull = Future.exception(new QueueFullException(maxSize))
   private[this] val QueueClosed = Future.exception(new QueueClosedException)
 
-  def add(item: T): Future[Unit] =
+  def add(item: A): Future[Unit] =
     if (!running)
       QueueClosed
     else if (!queue.offer(item))

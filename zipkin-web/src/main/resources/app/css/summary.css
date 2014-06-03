@@ -1,37 +1,14 @@
-#trace-filters .label {
-  margin-right: 5px;
-}
-
-#trace-filters .service-filter-label {
-  cursor: default;
-  padding-right: 0;
-}
-
-.service-filter-remove {
-  cursor: pointer;
-  border-radius: 0;
-  margin-left: 5px;
-}
-
-.service-filter-remove:hover {
-  background: red;
-}
-
-.service-tag-filtered {
-  background: #0084B4;
-}
-
-#traces {
+#summary {
   list-style: none;
   margin: 10px 0 0 0;
   padding: 0;
 }
 
-#traces a {
+#summary a {
   text-decoration: none;
 }
 
-#traces li {
+#summary li {
   display: block;
   padding: 5px;
   padding-bottom: 20px;
@@ -47,7 +24,7 @@
   -webkit-transition: background-color .3s;
 }
 
-#traces li:after {
+#summary li:after {
   content: '';
   display: block;
   width: 75%;
@@ -55,16 +32,16 @@
   border-bottom: 1px solid #EEE;
 }
 
-#traces li:first-child {
+#summary li:first-child {
   margin-top: 0px;
 }
 
-#traces li:hover {
+#summary li:hover {
   background-color: rgba(221,238,246,1);
 }
 
 
-#traces li div {
+#summary li div {
   display: block;
   padding: 2px 0px;
   margin-bottom: 0px;
@@ -73,7 +50,7 @@
   -webkit-transition: .3s;
 }
 
-#traces li .bar-block {
+#summary li .bar-block {
   position: relative;
   line-height: 20px;
   padding: 0px;
@@ -85,7 +62,7 @@
   border-radius: 4px;
 }
 
-#traces li .bar-graphic {
+#summary li .bar-graphic {
   position: absolute;
   top: 0px;
   left: 0px;
@@ -102,11 +79,11 @@
   -webkit-transition: .3s;
 }
 
-#traces li:hover .bar-graphic {
+#summary li:hover .bar-graphic {
   background-color: #0084B4;
 }
 
-#traces li .bar-label {
+#summary li .bar-label {
   position: relative;
   margin-left: 6px;
   padding: 2px 4px;
@@ -121,54 +98,71 @@
   -webkit-transition: .3s;
 }
 
-#traces li:hover .bar-label {
+#summary li:hover .bar-label {
   color: #FFF;
   background-color: rgba(0,132,180,.35);
 }
 
-#traces li div span.label {
+#summary .trace-id {
+  font-size: 85%;
+  color: #0084B4;
+  background-color: rgba(0,132,180,.35);
+  border-radius: 4px;
+}
+
+#summary .trace-id:hover {
+  font-size: 85%;
+  color: #FFF;
+  background-color: #0084B4;
+}
+
+#summary li div span.label {
   -webkit-transition: .3s;
 }
 
-#traces li div p {
+#summary li div p {
   margin-bottom: 0;
   font-size: 11px;
   font-weight: bold;
   line-height: 11px;
 }
 
-#traces li .trace-details {
+#summary li .summary-details {
   display: inline-block;
 }
 
-#traces li .services {
+#summary li .durations {
   width: 80%;
 }
 
-#traces li .timestamp {
+#summary li .durations span {
+  cursor: pointer;
+}
+
+#summary li .timestamp {
   width: 19%;
   text-align: right;
 }
 
-#traces li:hover .services .label {
+#summary li:hover .durations .label {
   background-color: #F89406;
 }
 
-#traces li:hover .services .service-tag-filtered {
+#summary li:hover .durations .service-tag-filtered {
   background-color: #0084B4;
 }
 
-#traces li .services .label:hover,
-#traces li .services .label:hover span {
+#summary li .durations .label:hover,
+#summary li .durations .label:hover span {
   background-color: red;
 }
 
-#traces li .timestamp .label {
+#summary li .timestamp .label {
   background-color: #FAFAFA;
   color: #AAA;
 }
 
-#traces li:hover .timestamp .label {
+#summary li:hover .timestamp .label {
   background-color: #FFF;
   color: #666;
 }

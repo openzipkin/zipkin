@@ -17,14 +17,13 @@ package com.twitter.zipkin.receiver.scribe
 
 import com.twitter.app.{App, Flaggable}
 import com.twitter.conversions.time._
-import com.twitter.finagle.Thrift
+import com.twitter.finagle.ThriftMux
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.util.{DefaultTimer, InetSocketAddressUtil}
 import com.twitter.logging.Logger
 import com.twitter.scrooge.BinaryThriftStructSerializer
-import com.twitter.util.{Closable, Future, NonFatal, Return, Throw, Time}
+import com.twitter.util.{Base64StringEncoder, Closable, Future, NonFatal, Return, Throw, Time}
 import com.twitter.zipkin.collector.SpanReceiver
-import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen.{LogEntry, ResultCode, Scribe, Span => ThriftSpan, ZipkinCollector}
 import com.twitter.zipkin.zookeeper._
@@ -57,7 +56,7 @@ trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
     "the zookeeper path to announce on. blank does not announce")
 
   def newScribeSpanReceiver(
-    process: Seq[Span] => Future[Unit],
+    process: Seq[ThriftSpan] => Future[Unit],
     stats: StatsReceiver = DefaultStatsReceiver.scope("ScribeSpanReceiver")
   ): SpanReceiver = new SpanReceiver {
 
@@ -67,7 +66,7 @@ trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
       zkClient.createEphemeral(path + "/" + nodeName, nodeName.getBytes)
     }
 
-    val service = Thrift.serveIface(
+    val service = ThriftMux.serveIface(
       scribeAddr(),
       new ScribeReceiver(scribeCategories().toSet, process, stats))
 
@@ -78,11 +77,12 @@ trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
 
 class ScribeReceiver(
   categories: Set[String],
-  process: Seq[Span] => Future[Unit],
+  process: Seq[ThriftSpan] => Future[Unit],
   stats: StatsReceiver = DefaultStatsReceiver.scope("ScribeReceiver")
 ) extends Scribe[Future] {
   private[this] val deserializer = new BinaryThriftStructSerializer[ThriftSpan] {
-    def codec = ThriftSpan
+    override val encoder = Base64StringEncoder
+    val codec = ThriftSpan
   }
 
   private[this] val log = Logger.get
@@ -92,6 +92,7 @@ class ScribeReceiver(
 
   private[this] val logCallStat = stats.stat("logCallBatches")
   private[this] val pushbackCounter = stats.counter("pushBack")
+  private[this] val fatalCounter = stats.counter("fatalException")
   private[this] val batchesProcessedStat = stats.stat("processedBatches")
   private[this] val messagesStats = stats.scope("messages")
   private[this] val totalMessagesCounter = messagesStats.counter("total")
@@ -101,9 +102,8 @@ class ScribeReceiver(
     (cat, messagesStats.scope("perCategory").counter(cat))
   } toMap
 
-  private[this] def entryToSpan(entry: LogEntry): Option[Span] = try {
-    val span = stats.time("deserializeSpan") { deserializer.fromString(entry.message).toSpan }
-    log.ifDebug("Processing span: " + span + " from " + entry.message)
+  private[this] def entryToSpan(entry: LogEntry): Option[ThriftSpan] = try {
+    val span = stats.time("deserializeSpan") { deserializer.fromString(entry.message) }
     Some(span)
   } catch {
     case e: Exception => {
@@ -132,10 +132,11 @@ class ScribeReceiver(
           batchesProcessedStat.add(spans.size)
           ok
         case Throw(NonFatal(e)) =>
-          log.warning(e, "Exception in process()")
+          log.warning("Exception in process(): %s".format(e.getMessage))
           pushbackCounter.incr()
           tryLater
         case Throw(e) =>
+          fatalCounter.incr()
           Future.exception(e)
       }
     }

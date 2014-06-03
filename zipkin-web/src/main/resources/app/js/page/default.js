@@ -9,7 +9,7 @@ define(
     'component_ui/infoButton',
     'component_ui/traceFilters',
     'component_ui/traces',
-    'component_ui/endTime'
+    'component_ui/timeStamp'
   ],
 
   function (
@@ -20,7 +20,7 @@ define(
     InfoButtonUI,
     TraceFiltersUI,
     TracesUI,
-    EndTimeUI
+    TimeStampUI
   ) {
 
     return initialize;
@@ -33,7 +33,7 @@ define(
       InfoButtonUI.attachTo('button.info-request');
       TraceFiltersUI.attachTo('#trace-filters');
       TracesUI.attachTo('#traces');
-      EndTimeUI.attachTo('#end-time');
+      TimeStampUI.attachTo('#time-stamp');
 
       $('.timeago').timeago();
     }

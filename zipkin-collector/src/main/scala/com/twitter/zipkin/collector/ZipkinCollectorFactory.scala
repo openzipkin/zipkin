@@ -17,11 +17,19 @@ package com.twitter.zipkin.collector
 
 import com.twitter.app.App
 import com.twitter.finagle.stats.StatsReceiver
+import com.twitter.finagle.{Filter, Service}
 import com.twitter.util.{Await, Closable, CloseAwaitably, Duration, Future, Time}
 import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.storage.WriteSpanStore
+import com.twitter.zipkin.conversions.thrift._
+import com.twitter.zipkin.gen.{Span => ThriftSpan}
+import com.twitter.zipkin.storage.{SpanStore, WriteSpanStore}
 
 sealed trait AwaitableCloser extends Closable with CloseAwaitably
+
+object SpanConvertingFilter extends Filter[Seq[ThriftSpan], Unit, Seq[Span], Unit] {
+  def apply(spans: Seq[ThriftSpan], svc: Service[Seq[Span], Unit]): Future[Unit] =
+    svc(spans.map(_.toSpan))
+}
 
 /**
  * A basic collector from which to create a server. Your collector will extend this
@@ -29,12 +37,15 @@ sealed trait AwaitableCloser extends Closable with CloseAwaitably
  * together.
  */
 trait ZipkinCollectorFactory {
-  def newReceiver(receive: Seq[Span] => Future[Unit], stats: StatsReceiver): SpanReceiver
+  def newReceiver(receive: Seq[ThriftSpan] => Future[Unit], stats: StatsReceiver): SpanReceiver
   def newSpanStore(stats: StatsReceiver): WriteSpanStore
+
+  // overwrite in the Main trait to add a SpanStore filter to the SpanStore
+  def spanStoreFilter: SpanStore.Filter = Filter.identity[Seq[Span], Unit]
 
   def newCollector(stats: StatsReceiver): AwaitableCloser = new AwaitableCloser {
     val store = newSpanStore(stats)
-    val receiver = newReceiver(store(_), stats)
+    val receiver = newReceiver(SpanConvertingFilter andThen spanStoreFilter andThen store, stats)
 
     def close(deadline: Time): Future[Unit] = closeAwaitably {
       Closable.sequence(receiver, store).close(deadline)
@@ -52,10 +63,13 @@ trait ZipkinQueuedCollectorFactory extends ZipkinCollectorFactory { self: App =>
   override def newCollector(stats: StatsReceiver): AwaitableCloser = new AwaitableCloser {
     val store = newSpanStore(stats)
 
-    val queue = new ItemQueue[Seq[Span]](
-      itemQueueMax(), itemQueueConcurrency(), store(_), stats.scope("ItemQueue"))
+    val queue = new ItemQueue[Seq[ThriftSpan], Unit](
+      itemQueueMax(),
+      itemQueueConcurrency(),
+      SpanConvertingFilter andThen spanStoreFilter andThen store,
+      stats.scope("ItemQueue"))
 
-    val receiver = newReceiver(queue.add(_), stats)
+    val receiver = newReceiver(queue.add, stats)
 
     def close(deadline: Time): Future[Unit] = closeAwaitably {
       Closable.sequence(receiver, queue, store).close(deadline)

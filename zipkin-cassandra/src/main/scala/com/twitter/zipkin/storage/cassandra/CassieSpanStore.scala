@@ -74,7 +74,7 @@ class CassieSpanStore(
    * Internal helper methods
    */
   private[this] def createSpanColumnName(span: Span): String =
-    "%d_%d".format(span.id, span.annotations.hashCode)
+    "%d_%d_%d".format(span.id, span.annotations.hashCode, span.binaryAnnotations.hashCode)
 
   private[this] def newBCF[N, V](cf: String, nCodec: Codec[N], vCodec: Codec[V]) =
     BucketedColumnFamily(keyspace, cf, nCodec, vCodec, writeConsistency, readConsistency)

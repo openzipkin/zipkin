@@ -417,7 +417,14 @@ class QueryService(
     timeStamp: Long,
     serverServiceName: String,
     rcpName: String
-  ): Future[Map[String, List[Long]]] =
+  ): Future[Map[String, Seq[Long]]] =
+    Future.exception(new Exception("Not Implemented"))
+
+  def getServiceNamesToTraceIds(
+    timeStamp: Long,
+    serviceName: String,
+    rcpName: String
+  ): Future[Map[String, Seq[Long]]] =
     Future.exception(new Exception("Not Implemented"))
 
   private def checkIfRunning() = {

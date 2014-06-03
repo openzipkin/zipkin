@@ -15,6 +15,7 @@
  */
 package com.twitter.zipkin.sampler
 
+import com.twitter.finagle.stats.NullStatsReceiver
 import com.twitter.util.{MockTimer, Time, Var}
 import com.twitter.conversions.time._
 import org.junit.runner.RunWith
@@ -57,7 +58,7 @@ class CooldownCheckTest extends FunSuite {
   test("allows only once per period") {
     Time.withCurrentTimeFrozen { tc =>
       val timer = new MockTimer
-      val check = new CooldownCheck[Unit](1.minute, timer)
+      val check = new CooldownCheck[Unit](1.minute, NullStatsReceiver, timer)
 
       assert(check(Some(())).isDefined)
       assert(check(Some(())).isEmpty)

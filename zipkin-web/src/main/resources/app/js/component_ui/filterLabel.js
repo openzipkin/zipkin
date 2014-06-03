@@ -12,8 +12,11 @@ define(
     function filterLabel() {
       this.serviceName = "";
 
-      this.addFilter = function(e) {
-        this.trigger('uiAddServiceNameFilter', {value: this.serviceName});
+      this.toggleFilter = function() {
+        var evt = this.$node.is('.service-tag-filtered') ?
+          'uiRemoveServiceNameFilter' :
+          'uiAddServiceNameFilter';
+        this.trigger(evt, {value: this.serviceName});
       };
 
       this.filterAdded = function(e, data) {
@@ -27,8 +30,8 @@ define(
       };
 
       this.after('initialize', function() {
-        this.serviceName = this.$node.attr('data-serviceName');
-        this.on('click', this.addFilter);
+        this.serviceName = this.$node.data('serviceName');
+        this.on('click', this.toggleFilter);
         this.on(document, 'uiAddServiceNameFilter', this.filterAdded);
         this.on(document, 'uiRemoveServiceNameFilter', this.filterRemoved);
       });

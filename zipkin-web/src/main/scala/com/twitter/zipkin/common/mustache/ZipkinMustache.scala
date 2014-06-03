@@ -5,20 +5,15 @@ import com.twitter.mustache.ScalaObjectHandler
 import java.io._
 import collection.JavaConversions.mapAsJavaMap
 
-object ZipkinMustache {
-  // TODO: can this be done better?
-  def cache = _cache
-  def cache_=(c: Boolean) = { _cache = c }
-  @volatile private[this] var _cache: Boolean = false
-
+class ZipkinMustache(templateRoot: String, cache: Boolean) {
   import java.io.Reader
   class ZipkinMustacheFactory extends DefaultMustacheFactory() {
     override def getReader(rn: String): Reader = {
       // hack to get partials to work properly
       val name = if (rn.startsWith("public")) rn else "templates/" + rn
 
-      if (_cache) super.getReader(name) else {
-        val file = new File("zipkin-web/src/main/resources", name)
+      if (cache) super.getReader(name) else {
+        val file = new File(templateRoot, name)
         new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"))
       }
     }
@@ -33,7 +28,7 @@ object ZipkinMustache {
   mf.setObjectHandler(new ScalaObjectHandler)
 
   def render(template: String, data: Map[String, Object]): String = {
-    if (!_cache) mf.invalidateCaches()
+    if (!cache) mf.invalidateCaches()
 
     val mustache = mf.compile(template)
     val output = new StringWriter

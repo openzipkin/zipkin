@@ -1,56 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
 
     <title>Zipkin - {{pageTitle}}</title>
 
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name='description' content=''>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
 
-    <link rel="stylesheet" href="/app/libs/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/app/libs/chosen/chosen.min.css">
-    <link rel="stylesheet" href="/app/libs/bootstrap-datepicker/css/datepicker3.css">
+    <link rel='stylesheet' href='/app/libs/bootstrap/css/bootstrap.min.css'>
+    <link rel='stylesheet' href='/app/libs/chosen/chosen.min.css'>
+    <link rel='stylesheet' href='/app/libs/bootstrap-datepicker/css/datepicker3.css'>
 
     <link rel="stylesheet" href="/app/css/main.css">
     <link rel="stylesheet" href="/app/css/traces.css">
-
-    <!--[if lt IE 9]>
-    <script src="/app/bower_components/es5-shim/es5-shim.js"></script>
-    <script src="/app/bower_components/es5-shim/es5-sham.js"></script>
-    <![endif]-->
-    <script src="/app/libs/jquery/jquery.min.js"></script>
-    <script src="/app/libs/jquery-timeago/jquery.timeago.js"></script>
-    <script src="/app/libs/chosen/chosen.jquery.min.js"></script>
-    <script src="/app/libs/jquery-cookie/jquery.cookie.js"></script>
-    <script src="/app/libs/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
-    <script src="/app/libs/momentjs/min/moment.min.js"></script>
-
-    <script src="/app/libs/bootstrap/js/bootstrap.min.js"></script>
-    <script src="/app/libs/requirejs/require.js" data-main="/app/js/main.js"></script>
+    <link rel='stylesheet' href='/app/css/trace.css'>
+    <link rel="stylesheet" href="/app/css/summary.css">
   </head>
   <body>
-    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-      <div class="container">
-        <div class="navbar-header">
-          <a class="navbar-brand" href="/">
-            Zipkin<span class="muted" style="font-size: .75em; padding-left: 10px;">Investigate system behavior</span>
+    <div class='navbar navbar-inverse navbar-fixed-top' role='navigation'>
+      <div class='container'>
+        <div class='navbar-header'>
+          <a class='navbar-brand' href='/'>
+            Zipkin<span class='muted' style='font-size: .75em; padding-left: 10px;'>Investigate system behavior</span>
           </a>
         </div>
         <div class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
             <li class="active"><a href="/">Find a trace</a></li>
+            <li><a href="/realtime">Realtime</a></li>
             <li><a href="#">Aggregates</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
     </div>
 
-    <div class="container">
-      <div class="content">
+    <div class='container'>
+      <div class='content'>
         {{{body}}}
       </div>
     </div>
+
+    <div id='fullPageSpinner'>
+      <div class='progress progress-striped active'>
+        <div class='progress-bar' style='width: 100%'>Working...</div>
+      </div>
+    </div>
+
+    <!--[if lt IE 9]>
+    <script src='/app/bower_components/es5-shim/es5-shim.js'></script>
+    <script src='/app/bower_components/es5-shim/es5-sham.js'></script>
+    <![endif]-->
+    <script src='/app/libs/jquery/jquery.min.js'></script>
+    <script src='/app/libs/jquery-timeago/jquery.timeago.js'></script>
+    <script src='/app/libs/chosen/chosen.jquery.min.js'></script>
+    <script src='/app/libs/jquery-cookie/jquery.cookie.js'></script>
+    <script src='/app/libs/bootstrap-datepicker/js/bootstrap-datepicker.js'></script>
+    <script src="/app/libs/momentjs/min/moment.min.js"></script>
+
+    <script src='/app/libs/bootstrap/js/bootstrap.min.js'></script>
+    <script src='/app/libs/requirejs/require.js' data-main='/app/js/main.js'></script>
   </body>
 </html>

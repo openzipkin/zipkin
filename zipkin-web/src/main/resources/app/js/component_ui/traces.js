@@ -29,7 +29,7 @@ define(
           if (services.length > 0) {
             var show = true;
             $.each(services, function(idx, svc) {
-              if (!$trace.has(".service-filter-label[data-serviceName='" + svc + "']").length)
+              if (!$trace.has(".service-filter-label[data-service-name='" + svc + "']").length)
                 show = false
             });
 

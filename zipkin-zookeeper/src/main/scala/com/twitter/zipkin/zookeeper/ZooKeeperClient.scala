@@ -175,7 +175,7 @@ class ZKClient(
     new Closable {
       private[this] val curVal = new AtomicReference[Array[Byte]](Array.empty[Byte])
 
-      val membership = pool {
+      val membership = ensurePath(path) map { _ =>
         groupFor(path).join(new Supplier[Array[Byte]] {
           def get(): Array[Byte] = curVal.get
         })
@@ -198,13 +198,13 @@ class ZKClient(
     new ZkWatch[Seq[Array[Byte]]] {
       val data = Var(Seq.empty[Array[Byte]])
 
-      private[this] val group = groupFor(path)
+      private[this] val group = ensurePath(path) map { _ => groupFor(path) }
 
       // ensure this only ever runs once per `freq` thus ensuring only one
       // thread will ever be updating the Var.
-      private[this] def update(): Future[Unit] = {
-        Future.collect(group.getMemberIds.asScala.toSeq map { id =>
-          zkClient(group.getMemberPath(id)).getData().map(_.bytes)
+      private[this] def update(): Future[Unit] = group flatMap { g =>
+        Future.collect(g.getMemberIds.asScala.toSeq map { id =>
+          zkClient(g.getMemberPath(id)).getData().map(_.bytes)
         }).onSuccess { newVal =>
           data.update(newVal)
         }.delayed(freq)(timer) flatMap { _ =>

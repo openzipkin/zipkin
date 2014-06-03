@@ -19,6 +19,7 @@ import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
+import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen.{LogEntry, ResultCode, Span => ThriftSpan}
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
@@ -37,14 +38,14 @@ class ScribeSpanReceiverTest extends FunSuite {
   val base64 = "CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAIACQAA"
 
   test("processes entries") {
-    var recvdSpan: Option[Seq[Span]] = None
+    var recvdSpan: Option[Seq[ThriftSpan]] = None
     val receiver = new ScribeReceiver(Set(category), { s =>
       recvdSpan = Some(s)
       Future.value(true)
     })
     assert(Await.result(receiver.log(Seq(validList.head, validList.head))) === ResultCode.Ok)
     assert(!recvdSpan.isEmpty)
-    assert(recvdSpan.get === Seq(validSpan, validSpan))
+    assert(recvdSpan.get.map(_.toSpan) === Seq(validSpan, validSpan))
   }
 
   test("pushes back") {
@@ -53,7 +54,7 @@ class ScribeSpanReceiverTest extends FunSuite {
   }
 
   test("ignores bad categories") {
-    var recvdSpan: Option[Span] = None
+    var recvdSpan: Option[ThriftSpan] = None
     val receiver = new ScribeReceiver(Set("othercat"), { s =>
       recvdSpan = Some(s.head)
       Future.value(true)
@@ -63,7 +64,7 @@ class ScribeSpanReceiverTest extends FunSuite {
   }
 
   test("ignores bad messages") {
-    var recvdSpan: Option[Span] = None
+    var recvdSpan: Option[ThriftSpan] = None
     val receiver = new ScribeReceiver(Set(category), { s =>
       recvdSpan = Some(s.head)
       Future.value(true)

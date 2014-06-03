@@ -15,7 +15,7 @@ define(
       };
 
       this.addToFilter = function(ev, data) {
-        if (this.$node.find("[data-serviceName='" + data.value +"']").length) return;
+        if (this.$node.find("[data-service-name='" + data.value +"']").length) return;
 
         // TODO: should this be mustache instead?
         var $remove =

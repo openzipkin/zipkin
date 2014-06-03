@@ -316,4 +316,14 @@ class ThriftQueryService(
       val time = Time.fromMicroseconds(timeStamp)
       realtimeStore.getSpanDurations(time, serverServiceName, rpcName)
     }
+
+  def getServiceNamesToTraceIds(
+    timeStamp: Long,
+    serverServiceName: String,
+    rpcName: String
+  ): Future[Map[String, List[Long]]] =
+    handle("getServiceNamesToTraceIds") {
+      val time = Time.fromMicroseconds(timeStamp)
+      realtimeStore.getServiceNamesToTraceIds(time, serverServiceName, rpcName)
+    }
 }

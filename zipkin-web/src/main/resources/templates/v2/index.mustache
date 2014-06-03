@@ -18,11 +18,11 @@
       </select>
     </div>
 
-    <div id="end-time" class="form-group">
-      <label for="endTime">End time</label>
+    <div id="time-stamp" class="form-group">
+      <label for="timeStamp">End time</label>
       <input class="form-control input-sm date-input" type="text">
       <input class="form-control input-sm time-input" type="text">
-      <input class="" id="endTimestamp" name="endTimestamp" type="hidden" value="{{endTimestamp}}">
+      <input class="" id="timestamp" name="timestamp" type="hidden" value="{{timestamp}}">
     </div>
 
     <div class="form-group">
@@ -60,7 +60,7 @@
 
     <div class="service-tags">
       Services:
-      <span class='label service-tag-filtered' data-serviceName="{{serviceName}}">{{serviceName}}</span>
+      <span class='label service-tag-filtered' data-service-name="{{serviceName}}">{{serviceName}}</span>
     </div>
   </div>
 {{/queryResults}}
@@ -76,16 +76,16 @@
   <ul id="traces">
   {{#traces}}
     <li class="trace" data-traceId="{{traceId}}" data-duration="{{duration}}" data-timestamp="{{timestamp}}">
-    <a href="/traces/{{traceId}}">
-      <div class="bar-block">
-        <span class="bar-graphic" style="width:{{width}}%;"></span>
-        <span class="bar-label">{{duration}} ms</span>
-        <span class="bar-label">{{spanCount}} spans</span>
-      </div>
-    </a>
+      <a href="/traces/{{traceId}}?serviceName={{serviceName}}">
+        <div class="bar-block">
+          <span class="bar-graphic" style="width:{{width}}%;"></span>
+          <span class="bar-label">{{durationStr}}</span>
+          <span class="bar-label">{{spanCount}} spans</span>
+        </div>
+      </a>
       <div class="trace-details services">
       {{#serviceCounts}}
-        <span class="label label-default service-filter-label" data-serviceName="{{name}}">{{name}} x{{count}}</span>
+        <span class="label label-default service-filter-label" data-service-name="{{name}}">{{name}} x{{count}}</span>
       {{/serviceCounts}}
       </div>
       <div class="trace-details timestamp pull-right">

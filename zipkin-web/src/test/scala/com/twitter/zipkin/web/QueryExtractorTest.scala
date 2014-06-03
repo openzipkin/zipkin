@@ -40,7 +40,7 @@ class QueryExtractorTest extends FunSuite {
     val r = request(
       "serviceName" -> "myService",
       "spanName" -> "mySpan",
-      "endTimestamp" -> endTimestamp,
+      "timestamp" -> endTimestamp,
       "limit" -> "1000")
 
     val actual = QueryExtractor(r).get

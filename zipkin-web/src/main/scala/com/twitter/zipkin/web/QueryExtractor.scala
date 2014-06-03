@@ -27,10 +27,10 @@ object QueryExtractor {
   val fmt = new SimpleDateFormat("MM-dd-yyyy'T'HH:mm:ss.SSSZ")
 
   private[this] val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
-  private[this] val timeFormat = new SimpleDateFormat("HH:mm:ss")
+  private[this] val timeFormat = new SimpleDateFormat("HH:mm")
 
   def getDate(req: Request): Option[Date] =
-    req.params.get("endDate").map(dateFormat.parse)
+    req.params.get("date").map(dateFormat.parse)
 
   def getDateStr(req: Request): String = {
     val date = getDate(req).getOrElse(Calendar.getInstance().getTime)
@@ -38,7 +38,7 @@ object QueryExtractor {
   }
 
   def getTime(req: Request): Option[Date] =
-    req.params.get("endTime").map(timeFormat.parse)
+    req.params.get("time").map(timeFormat.parse)
 
   def getTimeStr(req: Request): String = {
     val time = getTime(req).getOrElse(Calendar.getInstance().getTime)
@@ -50,7 +50,7 @@ object QueryExtractor {
   }
 
   def getTimestamp(req: Request): Option[Long] = {
-    req.params.getLong("endTimestamp")
+    req.params.getLong("timestamp")
   }
 
   /**
@@ -60,7 +60,7 @@ object QueryExtractor {
   def apply(req: Request): Option[QueryRequest] = req.params.get("serviceName") map { serviceName =>
     val spanName = req.params.get("spanName") filterNot { n => n == "all" || n == "" }
 
-    val endTimestamp = getTimestamp(req).getOrElse(Time.now.inMicroseconds)
+    val timestamp = getTimestamp(req).getOrElse(Time.now.inMicroseconds)
 
     val (annotations, binaryAnnotations) = req.params.get("annotationQuery") map { query =>
       var anns = Seq.empty[String]
@@ -87,6 +87,6 @@ object QueryExtractor {
     val limit = req.params.get("limit").map(_.toInt).getOrElse(Constants.DefaultQueryLimit)
     val order = Order.DurationDesc
 
-    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, endTimestamp, limit, order)
+    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, timestamp, limit, order)
   }
 }

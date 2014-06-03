@@ -21,7 +21,7 @@ import com.twitter.cassie.connection.{CCluster, RetryPolicy}
 import com.twitter.concurrent.Spool
 import com.twitter.concurrent.Spool.*::
 import com.twitter.conversions.time._
-import com.twitter.finagle.{Addr, Resolver}
+import com.twitter.finagle.{Addr, Name, Resolver}
 import com.twitter.finagle.builder.Cluster
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.tracing.DefaultTracer
@@ -121,16 +121,10 @@ trait CassieSpanStoreFactory { self: App =>
 
   def newCassandraStore(stats: StatsReceiver = DefaultStatsReceiver.scope("cassie")): CassieSpanStore = {
     val scopedStats = stats.scope(cassieKeyspace())
-    val cluster = new VarAddrCluster(Resolver.eval(cassieDest()).bind())
+    val Name.Bound(addr) = Resolver.eval(cassieDest())
+    val cluster = new VarAddrCluster(addr)
     //TODO: properly tune these
     val keyspace = KeyspaceBuilder(cluster, cassieKeyspace(), scopedStats, { () => DefaultTracer })
-      .connectTimeout(10.seconds.inMillis.toInt)
-      .requestTimeout(20.seconds.inMillis.toInt)
-      .timeout(90.seconds.inMillis.toInt)
-      .retries(3)
-      .maxConnectionsPerHost(400)
-      .hostConnectionMaxWaiters(5000)
-      .retryPolicy(RetryPolicy.Idempotent)
 
     new CassieSpanStore(
       keyspace.connect(),
