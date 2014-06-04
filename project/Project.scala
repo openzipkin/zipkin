@@ -135,7 +135,7 @@ object Zipkin extends Build {
       tracegen, common, scrooge, zookeeper,
       query, queryCore, queryService, web,
       collectorScribe, collectorCore, collectorService,
-      sampler, receiverScribe, collector,
+      sampler, receiverScribe, receiverKafka, collector,
       cassandra, anormDB, kafka, redis, hbase
     )
 
@@ -370,6 +370,19 @@ object Zipkin extends Build {
       ) ++ scalaTestDeps
     ).dependsOn(collector, zookeeper, scrooge)
 
+  lazy val receiverKafka =
+    Project(
+      id = "zipkin-receiver-kafka",
+      base = file("zipkin-receiver-kafka"),
+      settings = defaultSettings
+    ).settings(
+      libraryDependencies ++= Seq(
+        twitterServer,
+        "com.twitter" % "kafka_2.9.2" % "0.7.0",
+        scroogeDep("serializer")
+      ) ++ testDependencies ++ scalaTestDeps
+    ).dependsOn(common, collector, zookeeper, cassandra, scrooge)
+
   lazy val kafka =
     Project(
       id = "zipkin-kafka",
@@ -403,7 +416,7 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
-  ).dependsOn(collectorCore, collectorScribe, cassandra, kafka, redis, anormDB, hbase)
+  ).dependsOn(collectorCore, collectorScribe, receiverKafka, cassandra, kafka, redis, anormDB, hbase)
 
   lazy val web =
     Project(
