@@ -195,6 +195,8 @@ object Zipkin extends Build {
       base = file("zipkin-scrooge"),
       settings = defaultSettings ++ ScroogeSBT.newSettings
     ).settings(
+        ScroogeSBT.scroogeThriftSourceFolder in Compile <<= (baseDirectory in ThisBuild)
+          (_ / "zipkin-thrift" / "src" / "main" / "resources" / "thrift"),
         libraryDependencies ++= Seq(
         finagle("ostrich4"),
         finagle("thrift"),
