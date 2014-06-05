@@ -1,7 +1,7 @@
 scala_library(name='scala',
   dependencies=[
-    pants('oss/zipkin-scrooge/src/main/thrift'),
-    pants('oss/zipkin-common/src/main/scala'),
+    pants('oss/zipkin-thrift'),
+    pants('oss/zipkin-common'),
     pants('3rdparty:finagle-ostrich4'),
     pants('3rdparty:finagle-thrift'),
     pants('3rdparty:finagle-zipkin'),
