@@ -2,12 +2,12 @@ package com.twitter.zipkin.receiver.kafka
 
 import com.twitter.app.{App, Flaggable}
 import java.util.Properties
-import com.twitter.zipkin.common.Span
+import com.twitter.zipkin.gen.{Span => ThriftSpan}
 import com.twitter.zipkin.collector.SpanReceiver
+import com.twitter.zipkin.conversions.thrift._
 import com.twitter.util.{Closable, Future, Time}
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.zipkin.zookeeper.ZooKeeperClientFactory
-import kafka.serializer.Decoder
 
 trait KafkaSpanReceiverFactory { self: App =>
   val defaultKafkaServer = "127.0.0.1:2181"
@@ -27,10 +27,11 @@ trait KafkaSpanReceiverFactory { self: App =>
   val kafkaAutoOffset = flag("zipkin.kafka.zk.autooffset", defaultKafkaAutoOffset, "kafka zk auto offset [smallest|largest]")
 
   def newKafkaSpanReceiver(
-    process: Seq[Span] => Future[Unit],
+    process: Seq[ThriftSpan] => Future[Unit],
     stats: StatsReceiver = DefaultStatsReceiver.scope("KafkaSpanReceiver"),
-    decoder: Decoder[Option[List[Span]]]
+    decoder: KafkaProcessor.KafkaDecoder
   ): SpanReceiver = new SpanReceiver {
+
 
     val props = new Properties() {
       put("groupid", kafkaGroupId())
