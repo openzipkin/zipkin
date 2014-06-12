@@ -1,40 +1,41 @@
 package com.twitter.zipkin.receiver.kafka
 
-
+import com.twitter.zipkin.receiver.test.kafka.{TestUtils, EmbeddedZookeeper}
+import com.twitter.zipkin.common._
+import com.twitter.zipkin.gen.{Span => ThriftSpan}
+import com.twitter.zipkin.conversions.thrift.{thriftSpanToSpan, spanToThriftSpan}
 import com.twitter.util.{Await, Future}
 import com.twitter.scrooge.BinaryThriftStructSerializer
-import com.twitter.zipkin.common.{Annotation, BinaryAnnotation, Endpoint, Span}
-import com.twitter.zipkin.conversions.thrift.{thriftSpanToSpan, spanToThriftSpan}
-import com.twitter.zipkin.gen
-import com.twitter.zipkin.receiver.test.kafka.{TestUtils, EmbeddedZookeeper}
-
-import kafka.server.KafkaServer
-import kafka.message.Message
-import kafka.producer.{Producer, ProducerConfig, ProducerData}
-import kafka.consumer.{Consumer, ConsumerConnector, ConsumerConfig}
-import kafka.serializer.Decoder
 
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.BeforeAndAfter
 import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
-class KafkaProcessorSpec extends FunSuite with BeforeAndAfter {
+import kafka.consumer.{Consumer, ConsumerConnector, ConsumerConfig}
+import kafka.message.Message
+import kafka.producer.{Producer, ProducerConfig, ProducerData}
+import kafka.serializer.Decoder
+import kafka.server.KafkaServer
 
-  case class TestDecoder extends KafkaProcessor.KafkaDecoder {
-      val deserializer = new BinaryThriftStructSerializer[gen.Span] {
-          def codec = gen.Span
+
+import java.io._
+
+@RunWith(classOf[JUnitRunner])
+class KafkaProcessorSpecSimple extends FunSuite with BeforeAndAfter {
+
+  case class TestDecoder extends Decoder[Option[List[ThriftSpan]]] {
+      val deserializer = new BinaryThriftStructSerializer[ThriftSpan] {
+          def codec = ThriftSpan
       }
 
-      def toEvent(message: Message): Option[List[Span]] = {
+      def toEvent(message: Message): Option[List[ThriftSpan]] = {
 
         val buffer = message.payload
         val payload = new Array[Byte](buffer.remaining)
         buffer.get(payload)
 
-        val gSpan = deserializer.fromBytes(payload)
-        val span = thriftSpanToSpan(gSpan).toSpan
+        val span = deserializer.fromBytes(payload)
         Some(List(span))
       }
 
@@ -47,17 +48,15 @@ class KafkaProcessorSpec extends FunSuite with BeforeAndAfter {
   var zkServer: EmbeddedZookeeper = _
   var kafkaServer: KafkaServer = _
 
-  def processorFun(spans: Seq[Span]): Future[Unit] = {
-    assert(1 == spans.length, "received more spans than sent")
-    val message = spans.head
+  def processorFun(spans: Seq[ThriftSpan]): Future[Unit] = {
+    assert( 1 == spans.length, "received more spans than sent" )
+    val message = spans.head.toSpan
     assert(message.traceId == 1234, "traceId mismatch")
     assert(message.name == "methodName", "method name mismatch")
     assert(message.id == 4567, "spanId mismatch")
-    message.annotations map {
-      a => {
-        assert(a.value == "value", "annotation name mismatch")
-        assert(a.timestamp == 1, "annotation timestamp mismatch")
-      }
+    message.annotations map { a =>
+      assert(a.value == "value", "annotation name mismatch")
+      assert(a.timestamp == 1, "annotation timestamp mismatch")
     }
     Future.Done
   }
@@ -96,7 +95,7 @@ class KafkaProcessorSpec extends FunSuite with BeforeAndAfter {
     val consumerConnector: ConsumerConnector = Consumer.create(new ConsumerConfig(processorConfig))
     val topicMessageStreams = consumerConnector.createMessageStreams(topic, decoder)
 
-    for ((topic, streams) <- topicMessageStreams) {
+    for((topic, streams) <- topicMessageStreams) {
       val messageList = streams.head.head.message getOrElse List()
       processorFun(messageList)
     }
