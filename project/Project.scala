@@ -488,7 +488,7 @@ object Zipkin extends Build {
       "org.apache.hadoop"     % "hadoop-test"           % "1.2.1" % "test",
       "commons-logging"       % "commons-logging"       % "1.1.1",
       "commons-configuration" % "commons-configuration" % "1.6",
-      "org.apache.zookeeper"  % "zookeeper"             % "3.4.5" % "runtime" notTransitive(),
+      "org.apache.zookeeper"  % "zookeeper"             % "3.4.6" % "runtime" notTransitive(),
       "org.slf4j"             % "slf4j-log4j12"         % "1.6.4" % "runtime",
       util("logging"),
       scroogeDep("serializer")
