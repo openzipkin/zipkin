@@ -49,6 +49,19 @@ object PackageDist extends Plugin {
     SettingKey[Option[File]]("package-dist-config-output-path", "location of config output path")
 
   /**
+   * where to find resource files (if any)
+   */
+  val packageDistResourcesPath =
+    SettingKey[Option[File]]("package-dist-resources-path", "location of resources (if any)")
+
+  /**
+   * where to write resource files in the zip
+   */
+  val packageDistResourcesOutputPath =
+    SettingKey[Option[File]]("package-dist-resources-output-path", "location of resources output path")
+
+
+  /**
    * where to find script files (if any)
    */
   val packageDistScriptsPath =
@@ -95,6 +108,13 @@ object PackageDist extends Plugin {
    */
   val packageDistCopyScripts =
     TaskKey[Set[File]]("package-dist-copy-scripts", "copy scripts into the package dist folder")
+
+  /**
+   * task to copy resources from the source folder to dist, doing @VAR@ substitutions along the way
+   */
+  val packageDistCopyResources =
+    TaskKey[Set[File]]("package-dist-copy-resources", "copy resources into the package dist folder")
+
 
   val packageDistConfigFiles =
     TaskKey[Set[File]]("package-dist-config-files", "config files to package with the server")
@@ -179,6 +199,8 @@ object PackageDist extends Plugin {
     packageDistConfigOutputPath <<= (packageDistDir) { d => Some(d / "config") },
     packageDistScriptsPath <<= (baseDirectory) { b => Some(b / "src" / "scripts") },
     packageDistScriptsOutputPath <<= (packageDistDir) { d => Some(d / "scripts") },
+    packageDistResourcesPath <<= (baseDirectory) { b => Some(b / "src/main" / "resources")},
+    packageDistResourcesOutputPath <<= (packageDistDir) { d => Some(d / "resources") },
 
     // for releases, default to putting the zipfile contents inside a subfolder.
     packageDistZipPath <<= (
@@ -234,6 +256,18 @@ object PackageDist extends Plugin {
       }
     },
 
+    packageDistCopyResources <<= (
+      packageVars,
+      packageDistResourcesPath,
+      packageDistResourcesOutputPath
+    ) map { (vars, resource, resourceOut) =>
+      copyTree(resource, resourceOut).map { case (source, destination) =>
+        destination.getParentFile().mkdirs()
+        com.twitter.sbt.FileFilter.filter(source, destination, vars)
+        destination
+      }
+    },
+
     packageDistCopyConfig <<= (
       packageDistConfigPath,
       packageDistConfigOutputPath,
@@ -265,10 +299,11 @@ object PackageDist extends Plugin {
     packageDistCopy <<= (
       packageDistCopyLibs,
       packageDistCopyScripts,
+      packageDistCopyResources,
       packageDistCopyConfig,
       packageDistCopyJars
-    ) map { (libs, scripts, config, jars) =>
-      libs ++ scripts ++ config ++ jars
+    ) map { (libs, scripts, resources, config, jars) =>
+      libs ++ scripts ++ resources ++ config ++ jars
     },
 
     packageDistConfigFiles <<= (
