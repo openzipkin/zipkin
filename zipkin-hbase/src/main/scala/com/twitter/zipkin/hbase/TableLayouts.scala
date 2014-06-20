@@ -4,8 +4,8 @@ import com.twitter.conversions.time._
 import com.twitter.util.Duration
 import org.apache.hadoop.hbase.client.HBaseAdmin
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding
-import org.apache.hadoop.hbase.io.hfile.Compression
-import org.apache.hadoop.hbase.regionserver.StoreFile.BloomType
+import org.apache.hadoop.hbase.io.compress.Compression
+import org.apache.hadoop.hbase.regionserver.BloomType
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase.{HBaseConfiguration, HColumnDescriptor, HTableDescriptor}
 
@@ -72,11 +72,14 @@ object TableLayouts {
   def createTables(admin: HBaseAdmin, tableNames:Seq[String], compression:Option[Compression.Algorithm]) {
     tableNames.foreach { tableName =>
       tables.get(tableName).foreach { case (families, ttl) =>
+        println("Creating table: "+tableName)
         if (admin.tableExists(tableName)) {
+          println("Table "+tableName+" already existed. Disabling and deleting.")
           admin.disableTable(tableName)
           admin.deleteTable(tableName)
         }
         admin.createTable(createHTD(tableName, families, ttl, compression))
+        println("Table "+tableName+" created")
       }
     }
   }

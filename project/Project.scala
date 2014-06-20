@@ -38,7 +38,7 @@ object Zipkin extends Build {
 
   val ostrichVersion = "9.2.1"
   val algebirdVersion  = "0.4.0"
-  val hbaseVersion = "0.94.10"
+  val hbaseVersion = "0.98.3-hadoop2"
   val summingbirdVersion = "0.3.2"
 
   def finagle(name: String) = "com.twitter" % ("finagle-" + name + "_2.9.2") % finagleVersion
@@ -476,12 +476,16 @@ object Zipkin extends Build {
   ).settings(
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-      "org.apache.hbase"      % "hbase"                 % hbaseVersion notTransitive(),
-      "org.apache.hbase"      % "hbase"                 % hbaseVersion % "test" classifier("tests") classifier(""),
+      "junit"                 % "junit"                 % "4.10",
+      "org.apache.hadoop"     % "hadoop-common"         % "2.4.0",
+      "org.apache.hbase"      % "hbase"                 % hbaseVersion,
+      "org.apache.hbase"      % "hbase-common"          % hbaseVersion,
+      "org.apache.hbase"      % "hbase-client"          % hbaseVersion,
+      "org.apache.hbase"      % "hbase-client"          % hbaseVersion % "test" classifier("tests") classifier(""),
       "com.google.guava"      % "guava-io"              % "r03" % "test",
       "com.google.protobuf"   % "protobuf-java"         % "2.4.1",
-      "org.apache.hadoop"     % "hadoop-core"           % "1.1.2" notTransitive(),
-      "org.apache.hadoop"     % "hadoop-test"           % "1.1.2" % "test",
+      "org.apache.hadoop"     % "hadoop-core"           % "1.2.1" notTransitive(),
+      "org.apache.hadoop"     % "hadoop-test"           % "1.2.1" % "test",
       "commons-logging"       % "commons-logging"       % "1.1.1",
       "commons-configuration" % "commons-configuration" % "1.6",
       "org.apache.zookeeper"  % "zookeeper"             % "3.4.5" % "runtime" notTransitive(),
