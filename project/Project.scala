@@ -480,8 +480,10 @@ object Zipkin extends Build {
       "org.apache.hadoop"     % "hadoop-common"         % "2.4.0",
       "org.apache.hbase"      % "hbase"                 % hbaseVersion,
       "org.apache.hbase"      % "hbase-common"          % hbaseVersion,
+      "org.apache.hbase"      % "hbase-common"          % hbaseVersion % "test" classifier("tests") classifier(""),
       "org.apache.hbase"      % "hbase-client"          % hbaseVersion,
       "org.apache.hbase"      % "hbase-client"          % hbaseVersion % "test" classifier("tests") classifier(""),
+      "org.apache.hbase"      % "hbase-server"          % hbaseVersion % "test" classifier("tests") classifier(""),
       "com.google.guava"      % "guava-io"              % "r03" % "test",
       "com.google.protobuf"   % "protobuf-java"         % "2.4.1",
       "org.apache.hadoop"     % "hadoop-core"           % "1.2.1" notTransitive(),
@@ -493,7 +495,12 @@ object Zipkin extends Build {
       util("logging"),
       scroogeDep("serializer")
     ) ++ testDependencies,
-
+    
+    resolvers ++= (proxyRepo match {
+      case None => Seq(DefaultMavenRepository)
+      case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
+    }),
+    
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
       base =>
