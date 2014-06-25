@@ -39,6 +39,7 @@ object Zipkin extends Build {
   val ostrichVersion = "9.2.1"
   val algebirdVersion  = "0.4.0"
   val hbaseVersion = "0.98.3-hadoop2"
+  val hadoopVersion = "2.4.0"
   val summingbirdVersion = "0.3.2"
 
   def finagle(name: String) = "com.twitter" % ("finagle-" + name + "_2.9.2") % finagleVersion
@@ -469,6 +470,11 @@ object Zipkin extends Build {
     }
   ).dependsOn(scrooge)
 
+  lazy val hbaseTestGuavaHack = Project(
+    id = "zipkin-hbase-test-guava-hack",
+    base = file("zipkin-hbase/test-guava-hack"),
+    settings = defaultSettings
+  )
   lazy val hbase = Project(
     id = "zipkin-hbase",
     base = file("zipkin-hbase"),
@@ -476,22 +482,26 @@ object Zipkin extends Build {
   ).settings(
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-      "junit"                 % "junit"                 % "4.10",
-      "org.apache.hadoop"     % "hadoop-common"         % "2.4.0",
-      "org.apache.hbase"      % "hbase"                 % hbaseVersion,
-      "org.apache.hbase"      % "hbase-common"          % hbaseVersion,
-      "org.apache.hbase"      % "hbase-common"          % hbaseVersion % "test" classifier("tests") classifier(""),
-      "org.apache.hbase"      % "hbase-client"          % hbaseVersion,
-      "org.apache.hbase"      % "hbase-client"          % hbaseVersion % "test" classifier("tests") classifier(""),
-      "org.apache.hbase"      % "hbase-server"          % hbaseVersion % "test" classifier("tests") classifier(""),
-      "com.google.guava"      % "guava-io"              % "r03" % "test",
-      "com.google.protobuf"   % "protobuf-java"         % "2.4.1",
-      "org.apache.hadoop"     % "hadoop-core"           % "1.2.1" notTransitive(),
-      "org.apache.hadoop"     % "hadoop-test"           % "1.2.1" % "test",
-      "commons-logging"       % "commons-logging"       % "1.1.1",
-      "commons-configuration" % "commons-configuration" % "1.6",
-      "org.apache.zookeeper"  % "zookeeper"             % "3.4.6" % "runtime" notTransitive(),
-      "org.slf4j"             % "slf4j-log4j12"         % "1.6.4" % "runtime",
+      "junit"                 % "junit"                             % "4.10",
+      "org.apache.hbase"      % "hbase"                             % hbaseVersion,
+      "org.apache.hbase"      % "hbase-common"                      % hbaseVersion,
+      "org.apache.hbase"      % "hbase-common"                      % hbaseVersion % "test" classifier("tests") classifier(""),
+      "org.apache.hbase"      % "hbase-client"                      % hbaseVersion,
+      "org.apache.hbase"      % "hbase-client"                      % hbaseVersion % "test" classifier("tests") classifier(""),
+      "org.apache.hbase"      % "hbase-server"                      % hbaseVersion % "test" classifier("tests") classifier(""),
+      "org.apache.hbase"      % "hbase-hadoop-compat"               % hbaseVersion % "test" classifier("tests") classifier(""),
+      "org.apache.hbase"      % "hbase-hadoop2-compat"              % hbaseVersion % "test" classifier("tests") classifier(""),
+      "com.google.guava"      % "guava"                             % "11.0.2" % "test", //Hadoop needs a deprecated class
+      "com.google.guava"      % "guava-io"                          % "r03" % "test", //Hadoop needs a deprecated class
+      "com.google.protobuf"   % "protobuf-java"                     % "2.4.1",
+      "org.apache.hadoop"     % "hadoop-common"                     % hadoopVersion,
+      "org.apache.hadoop"     % "hadoop-mapreduce-client-jobclient" % hadoopVersion % "test" classifier("tests") classifier(""),
+      "org.apache.hadoop"     % "hadoop-common"                     % hadoopVersion % "test" classifier("tests"),
+      "org.apache.hadoop"     % "hadoop-hdfs"                       % hadoopVersion % "test" classifier("tests") classifier(""),
+      "commons-logging"       % "commons-logging"                   % "1.1.1",
+      "commons-configuration" % "commons-configuration"             % "1.6",
+      "org.apache.zookeeper"  % "zookeeper"                         % "3.4.6" % "runtime" notTransitive(),
+      "org.slf4j"             % "slf4j-log4j12"                     % "1.6.4" % "runtime",
       util("logging"),
       scroogeDep("serializer")
     ) ++ testDependencies,
@@ -506,7 +516,7 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
-  ).dependsOn(scrooge)
+  ).dependsOn(scrooge, hbaseTestGuavaHack % "test->compile")
 
   lazy val example = Project(
     id = "zipkin-example",
