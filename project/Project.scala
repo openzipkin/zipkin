@@ -472,7 +472,7 @@ object Zipkin extends Build {
 
   lazy val hbaseTestGuavaHack = Project(
     id = "zipkin-hbase-test-guava-hack",
-    base = file("zipkin-hbase/test-guava-hack"),
+    base = file("zipkin-hbase/src/test/guava-hack"),
     settings = defaultSettings
   )
   lazy val hbase = Project(
