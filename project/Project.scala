@@ -506,10 +506,7 @@ object Zipkin extends Build {
       scroogeDep("serializer")
     ) ++ testDependencies,
     
-    resolvers ++= (proxyRepo match {
-      case None => Seq(DefaultMavenRepository)
-      case Some(pr) => Seq() // if proxy is set we assume that it has the artifacts we would get from the above repo
-    }),
+    resolvers ~= {rs => Seq(DefaultMavenRepository) ++ rs},
     
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
