@@ -23,11 +23,11 @@ module ZipkinTracer extend self
     B3_REQUIRED_HEADERS = %w[HTTP_X_B3_TRACEID HTTP_X_B3_PARENTSPANID HTTP_X_B3_SPANID HTTP_X_B3_SAMPLED]
     B3_HEADERS = B3_REQUIRED_HEADERS + %w[HTTP_X_B3_FLAGS]
 
-    def initialize(app)
+    def initialize(app, config=nil)
       @app = app
       @lock = Mutex.new
 
-      config = app.config.zipkin_tracer
+      config ||= app.config.zipkin_tracer # if not specified, try on app (e.g. Rails 3+)
       @service_name = config[:service_name]
       @service_port = config[:service_port]
 
