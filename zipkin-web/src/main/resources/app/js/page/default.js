@@ -9,7 +9,8 @@ define(
     'component_ui/infoButton',
     'component_ui/traceFilters',
     'component_ui/traces',
-    'component_ui/timeStamp'
+    'component_ui/timeStamp',
+    'component_ui/sortOrder'
   ],
 
   function (
@@ -20,7 +21,8 @@ define(
     InfoButtonUI,
     TraceFiltersUI,
     TracesUI,
-    TimeStampUI
+    TimeStampUI,
+    SortOrderUI
   ) {
 
     return initialize;
@@ -34,6 +36,7 @@ define(
       TraceFiltersUI.attachTo('#trace-filters');
       TracesUI.attachTo('#traces');
       TimeStampUI.attachTo('#time-stamp');
+      SortOrderUI.attachTo('#sort-order');
 
       $('.timeago').timeago();
     }

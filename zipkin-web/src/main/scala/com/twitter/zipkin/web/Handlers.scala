@@ -84,7 +84,8 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
 
         case ids =>
           val adjusters = getAdjusters(request)
-          client.getTraceSummariesByIds(ids, adjusters) map { _.map { _.toTraceSummary } }
+          val order = SortOrders.getSortFunction(request.params.get("order"))
+          client.getTraceSummariesByIds(ids, adjusters) map { _.map { _.toTraceSummary } } map {_.sortWith(order)}
       }
     }
   }
@@ -253,7 +254,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
         t.serviceCounts.toSeq map { case (n, c) => MustacheServiceCount(n, c) },
         ((duration.toFloat / maxDuration) * 100).toInt
       )
-    } sortBy(_.duration) reverse
+    }
 
     Map(
       ("traces" -> traces),
@@ -264,6 +265,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
     Service.mk[Request, Renderer] { req =>
       val serviceName = req.params.get("serviceName")
       val spanName = req.params.get("spanName")
+      val order = req.params.get("order")
 
       val qr = QueryExtractor(req)
       val qResults = qr map { query(client, _, req) } getOrElse { EmptyTraces }
@@ -272,6 +274,10 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
       for (services <- getServices(client); results <- qResults; spans <- spanResults) yield {
         val svcList = services map { svc => Map("name" -> svc, "selected" -> (if (Some(svc) == serviceName) "selected" else "")) }
         val spanList = spans map { span => Map("name" -> span, "selected" -> (if (Some(span) == spanName) "selected" else "")) }
+        val orderList = SortOrders.getOrderNames() map {
+          case (orderKey, name) =>
+            Map("name" -> name, "value" -> orderKey, "selected" -> (if (Some(orderKey) == order) "selected" else ""))
+        }
 
         var data = Map[String, Object](
           ("pageTitle" -> "Index"),
@@ -279,7 +285,9 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
           ("annotationQuery" -> req.params.get("annotationQuery").getOrElse("")),
           ("services" -> svcList),
           ("spans" -> spanList),
-          ("limit" -> req.params.get("limit").getOrElse("100")))
+          ("limit" -> req.params.get("limit").getOrElse("100")),
+          ("order" -> order.getOrElse("")),
+          ("orders" -> orderList))
 
         qr foreach { qReq =>
           val binAnn = qReq.binaryAnnotations map { _.map { b =>
