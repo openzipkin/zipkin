@@ -144,16 +144,16 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Duration returned in microseconds.
    */
   def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = inNewThread {
-    val result:List[(Long, Option[Long], Long)] = SQL(
-      """SELECT trace_id, duration, created_ts
-        |FROM zipkin_spans
-        |WHERE trace_id IN (%s) AND created_ts IS NOT NULL
+    val result = SQL(
+      """SELECT trace_id, MIN(a_timestamp), MAX(a_timestamp)
+        |FROM zipkin_annotations
+        |WHERE trace_id IN (%s)
         |GROUP BY trace_id
       """.stripMargin.format(traceIds.mkString(",")))
-      .as((long("trace_id") ~ get[Option[Long]]("duration") ~ long("created_ts") map flatten) *)
-    result map { case (traceId, duration, startTs) =>
+      .as((long("trace_id") ~ long("MIN(a_timestamp)") ~ long("MAX(a_timestamp)") map flatten) *)
+    result map { case (traceId, startTs, endTs) =>
       // trace ID, duration, start TS
-      TraceIdDuration(traceId, duration.getOrElse(0), startTs)
+      TraceIdDuration(traceId, endTs - startTs, startTs)
     }
   }
 

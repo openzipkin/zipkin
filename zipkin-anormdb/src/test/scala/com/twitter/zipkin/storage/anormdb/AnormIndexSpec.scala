@@ -41,6 +41,7 @@ class AnormIndexSpec extends Specification {
   val ann2 = Annotation(2, "sr", None)
   val ann3 = Annotation(2, "custom", Some(ep))
   val ann4 = Annotation(2, "custom", Some(ep))
+  val ann5 = Annotation(3, "custom", Some(ep))
 
   val span1 = Span(123, "methodcall", spanId, None, List(ann1, ann3),
     List(binaryAnnotation("BAH", "BEH")))
@@ -48,6 +49,8 @@ class AnormIndexSpec extends Specification {
     List(binaryAnnotation("BAH2", "BEH2")))
   val span3 = Span(123, "methodcall", spanId, None, List(ann2, ann3, ann4),
     List(binaryAnnotation("BAH2", "BEH2")))
+  val span4 = Span(123, "methodcall", spanId, None, List(ann4, ann5),
+    List())
 
   val spanEmptySpanName = Span(123, "", spanId, None, List(ann1, ann2), List())
   val spanEmptyServiceName = Span(123, "spanname", spanId, None, List(), List())
@@ -117,9 +120,11 @@ class AnormIndexSpec extends Specification {
       Await.result(index.getTracesDuration(Seq(spanEmptyServiceName.traceId))).isEmpty mustEqual true
 
       Await.result(storage.storeSpan(span1))
+      Await.result(storage.storeSpan(span4))
       val duration = Await.result(index.getTracesDuration(Seq(span1.traceId)))
       duration(0).traceId mustEqual span1.traceId
-      duration(0).duration mustEqual span1.duration.getOrElse(-1)
+      duration(0).duration mustEqual ann5.timestamp - ann1.timestamp
+      duration(0).startTimestamp mustEqual ann1.timestamp
 
       con.close()
     }
