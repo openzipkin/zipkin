@@ -186,8 +186,8 @@ class SpanStoreValidator(
     val store = resetAndLoadStore(Seq(span1))
     Await.result(store.setTimeToLive(span1.traceId, 1234.seconds))
     // If a store doesn't use TTLs this should return Duration.Top
-    val allowedVals = Seq(1234.seconds, Duration.Top)
-    assert(allowedVals.contains(Await.result(store.getTimeToLive(span1.traceId))))
+    val ttl = Await.result(store.getTimeToLive(span1.traceId))
+    assert(ttl == Duration.Top || (ttl - 1234.seconds).abs.inMilliseconds <= 10)
   }
 
   test("check for existing traces") {

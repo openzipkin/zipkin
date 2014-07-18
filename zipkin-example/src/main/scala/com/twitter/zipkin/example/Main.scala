@@ -17,11 +17,11 @@ import com.twitter.zipkin.query.constants.DefaultAdjusters
 import com.twitter.zipkin.tracegen.ZipkinSpanGenerator
 
 object Main extends TwitterServer with Closer
-  with ZooKeeperClientFactory
-  with ScribeSpanReceiverFactory
-  with ZipkinWebFactory
-  with AnormDBSpanStoreFactory
-  with ZipkinSpanGenerator
+with ZooKeeperClientFactory
+with ScribeSpanReceiverFactory
+with ZipkinWebFactory
+with AnormDBSpanStoreFactory
+with ZipkinSpanGenerator
 {
   val genSampleTraces = flag("genSampleTraces", false, "Generate sample traces")
 
