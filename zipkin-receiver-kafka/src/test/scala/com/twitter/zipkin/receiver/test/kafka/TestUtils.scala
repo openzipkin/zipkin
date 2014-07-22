@@ -26,7 +26,7 @@ object TestUtils {
 
   def choosePorts(count: Int) = {
     val sockets =
-      for (i <- 0 until count)
+      for(i <- 0 until count)
         yield new ServerSocket(0)
     val socketList = sockets.toList
     val ports = socketList.map(_.getLocalPort)

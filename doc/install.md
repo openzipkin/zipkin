@@ -116,13 +116,21 @@ there is no reason why Scribe has to be the only one.
 
 ### Zipkin UI
 
-The UI is a standard Rails 3 app.
-
-1. Update config with your ZooKeeper server. This is used to find the query daemons.
-2. Deploy to a suitable Rails 3 app server. For testing you can simply do
+To develop on the ui start it with
 ```
-  bundle install &&
-  bundle exec rails server.
+bin/web.sh
+```
+
+To run zipkin ui on a server do
+```
+  sbt zipkin-web/package-dist
+  cd zipkin-web/dist/zipkin-web
+  java -cp libs/ -jar zipkin-web-1.2.0-SNAPSHOT.jar -zipkin.web.resourcesRoot=resources/
+```
+
+For a list of available options do
+```
+java -cp libs/ -jar zipkin-web-1.2.0-SNAPSHOT.jar -h
 ```
 
 #### zipkin-tracer gem

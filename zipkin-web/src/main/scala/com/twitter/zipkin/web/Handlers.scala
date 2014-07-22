@@ -296,14 +296,14 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
     }
 
   case class MustacheRealtimeSummary(
-      clientServiceName: String,
-      reqCount: Long,
-      width: Int,
-      p50: Long,
-      p90: Long,
-      p99: Long,
-      p999: Long,
-      traceIds: collection.Seq[MustacheTraceId])
+    clientServiceName: String,
+    reqCount: Long,
+    width: Int,
+    p50: Long,
+    p90: Long,
+    p99: Long,
+    p999: Long,
+    traceIds: collection.Seq[MustacheTraceId])
 
   private[this] def getExistingTracedId(
     client: ZipkinQuery[Future],
@@ -314,38 +314,38 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
 
   private[this] def realtimeSummaryToMustache(
     client: ZipkinQuery[Future],
-    durations: collection.Map[String, Seq[Long]],
+    durationMap: collection.Map[String, Seq[Long]],
     traceIds: Seq[(String, Seq[Long])]
   ): Map[String, Any] = {
-    val maxReqs = durations.values.foldLeft(Int.MinValue) { case (maxR, t) =>
+    val maxReqs = durationMap.values.foldLeft(Int.MinValue) { case (maxR, t) =>
       math.max(t.size, maxR)
     }
     val traceIdsMap = traceIds.foldLeft(Option(Map[String, Seq[Long]]())) {
       case (Some(m),e @ (k,v)) if m.getOrElse(k, v) == v => Some(m + e)
       case _ => None
     }.getOrElse(Map.empty[String, Seq[Long]])
-    val summary = durations map { e =>
+    val summary = durationMap map { e =>
       e match {
         case (serviceName, durations) =>
           val h = new ApproximateHistogram()
-          durations.map(i => h.add(i))
+          durations.map(i => h.add(i / 1000L))
           MustacheRealtimeSummary(
             serviceName,
             durations.size,
             ((durations.size.toFloat / maxReqs) * 70).toInt + 30,
-              h.getQuantile(0.5),
-              h.getQuantile(0.9),
-              h.getQuantile(0.99),
-              h.getQuantile(0.999),
-              traceIdsMap.get(serviceName)
-                .getOrElse(Seq.empty[Long])
-                .map(id => MustacheTraceId(SpanId(id).toString))
+            h.getQuantile(0.5),
+            h.getQuantile(0.9),
+            h.getQuantile(0.99),
+            h.getQuantile(0.999),
+            traceIdsMap.get(serviceName)
+              .getOrElse(Seq.empty[Long])
+              .map(id => MustacheTraceId(SpanId(id).toString))
           )
       }
     }
     Map(
       ("summary" -> summary.toList.sortBy(_.reqCount).reverse),
-      ("count" -> durations.size)
+      ("count" -> durationMap.size)
     )
   }
 
