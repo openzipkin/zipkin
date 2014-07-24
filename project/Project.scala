@@ -490,11 +490,8 @@ object Zipkin extends Build {
       scroogeDep("serializer")
     ) ++ testDependencies,
 
-    /* Add configs to resource path for ConfigSpec */
-    unmanagedResourceDirectories in Test <<= baseDirectory {
-      base =>
-        (base / "config" +++ base / "src" / "test" / "resources").get
-    }
+    unmanagedClasspath in Runtime <+= baseDirectory map { bd => Attributed.blank(bd / "config") }
+
   ).dependsOn(scrooge)
 
   lazy val example = Project(

@@ -26,5 +26,12 @@ trait ZipkinHBaseSpecification extends HBaseSpecification {
   }
 
   sequential
+
+  org.apache.log4j.Logger.getLogger("org.apache.zookeeper").setLevel(org.apache.log4j.Level.ERROR);
+  org.apache.log4j.Logger.getLogger("org.apache.hadoop").setLevel(org.apache.log4j.Level.ERROR);
+  org.apache.log4j.Logger.getLogger("org.apache.hadoop.hbase").setLevel(org.apache.log4j.Level.ERROR);
+  org.apache.log4j.Logger.getLogger("org.apache.hbase").setLevel(org.apache.log4j.Level.ERROR);
+  org.apache.log4j.Logger.getLogger("org.mortbay").setLevel(org.apache.log4j.Level.ERROR);
+  org.apache.log4j.Logger.getLogger("org").setLevel(org.apache.log4j.Level.ERROR);
 }
 
