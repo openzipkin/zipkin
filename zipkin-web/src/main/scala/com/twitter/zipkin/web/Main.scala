@@ -92,7 +92,7 @@ trait ZipkinWebFactory { self: App =>
 
       m.withHandler(handlePath.mkString("/") + suffix,
         nettyToFinagle andThen
-        collectStats(stats.scope(handlePath.mkString("-"))) andThen
+        collectStats(handlePath.foldLeft(stats) { case (s, p) => s.scope(p) }) andThen
         renderPage andThen
         catchExceptions andThen
         checkPath(path) andThen
