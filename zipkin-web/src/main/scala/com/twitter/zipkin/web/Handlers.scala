@@ -443,6 +443,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
     val trace = combo.trace.toTrace
     val traceStartTimestamp = trace.getStartAndEndTimestamp.get.start
     val childMap = trace.getIdToChildrenMap
+    val spanMap = trace.getIdToSpanMap
 
     val spans = for {
       rootSpan <- trace.getRootSpans().sortBy(_.firstAnnotation.map(_.timestamp))
@@ -451,11 +452,11 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
 
       val start = span.firstAnnotation.map(_.timestamp).getOrElse(traceStartTimestamp)
 
-      val depth = combo.spanDepths.get(span.id)
+      val depth = combo.spanDepths.get.getOrElse(span.id, 1)
       val width = span.duration.map { d => (d.toDouble / trace.duration.toDouble) * 100 }.getOrElse(0.0)
       Map(
         "spanId" -> SpanId(span.id).toString,
-        "parentId" -> span.parentId.map(SpanId(_).toString),
+        "parentId" -> span.parentId.filter(spanMap.get(_).isDefined).map(SpanId(_).toString),
         "spanName" -> span.name,
         "serviceNames" -> span.serviceNames.mkString(","),
         "duration" -> span.duration,
