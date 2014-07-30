@@ -20,13 +20,14 @@ require 'zipkin-tracer/careless_scribe'
 module ZipkinTracer extend self
 
   class RackHandler
-    B3_HEADERS = %w[HTTP_X_B3_TRACEID, HTTP_X_B3_PARENTSPANID, HTTP_X_B3_SPANID, HTTP_X_B3_SAMPLED]
+    B3_REQUIRED_HEADERS = %w[HTTP_X_B3_TRACEID HTTP_X_B3_PARENTSPANID HTTP_X_B3_SPANID HTTP_X_B3_SAMPLED]
+    B3_HEADERS = B3_REQUIRED_HEADERS + %w[HTTP_X_B3_FLAGS]
 
-    def initialize(app)
+    def initialize(app, config=nil)
       @app = app
       @lock = Mutex.new
 
-      config = app.config.zipkin_tracer
+      config ||= app.config.zipkin_tracer # if not specified, try on app (e.g. Rails 3+)
       @service_name = config[:service_name]
       @service_port = config[:service_port]
 
@@ -78,14 +79,15 @@ module ZipkinTracer extend self
     end
 
     private
-    def get_or_create_trace_id(env)
-      trace_parameters = if B3_HEADERS.all? { |key| env.has_key?(key) }
+    def get_or_create_trace_id(env, default_flags = ::Trace::Flags::EMPTY)
+      trace_parameters = if B3_REQUIRED_HEADERS.all? { |key| env.has_key?(key) }
                            env.values_at(*B3_HEADERS)
                          else
                            new_id = Trace.generate_id
-                           [new_id, nil, new_id, "true" if Trace.should_sample?]
+                           [new_id, nil, new_id, ("true" if Trace.should_sample?), default_flags]
                          end
       trace_parameters[3] = (trace_parameters[3] == "true")
+      trace_parameters[4] = (trace_parameters[4] || default_flags).to_i
 
       Trace::TraceId.new(*trace_parameters)
     end
