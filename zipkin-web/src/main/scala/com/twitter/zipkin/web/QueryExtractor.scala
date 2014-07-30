@@ -84,9 +84,9 @@ object QueryExtractor {
       (None, None)
     }
 
+    // traces are ordered in the UI itself. Using None means the query service wont lookup durations
+    val order = Order.None
     val limit = req.params.get("limit").map(_.toInt).getOrElse(Constants.DefaultQueryLimit)
-    val order = Order.DurationDesc
-
     QueryRequest(serviceName, spanName, annotations, binaryAnnotations, timestamp, limit, order)
   }
 }
