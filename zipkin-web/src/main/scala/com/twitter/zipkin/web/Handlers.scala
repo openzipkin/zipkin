@@ -441,7 +441,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
 
   private[this] def renderTrace(combo: TraceCombo): Renderer = {
     val trace = combo.trace.toTrace
-    val traceStartTimestamp = trace.getStartAndEndTimestamp.get.start
+    val traceStartTimestamp = trace.getStartAndEndTimestamp.map(_.start).getOrElse(0L)
     val childMap = trace.getIdToChildrenMap
     val spanMap = trace.getIdToSpanMap
 

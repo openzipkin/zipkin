@@ -46,16 +46,6 @@ class ThriftQueryService(
     case s => Some(s)
   }
 
-  private[this] def getOrderBy(order: thrift.Order): ((TraceIdDuration, TraceIdDuration) => Boolean) = {
-    order match {
-      case thrift.Order.None => (a: TraceIdDuration, b: TraceIdDuration) => a.duration > b.duration
-      case thrift.Order.DurationDesc => (a: TraceIdDuration, b: TraceIdDuration) => a.duration > b.duration
-      case thrift.Order.DurationAsc => (a: TraceIdDuration, b: TraceIdDuration) => a.duration < b.duration
-      case thrift.Order.TimestampDesc => (a: TraceIdDuration, b: TraceIdDuration) => a.startTimestamp > b.startTimestamp
-      case thrift.Order.TimestampAsc => (a: TraceIdDuration, b: TraceIdDuration) => a.startTimestamp < b.startTimestamp
-    }
-  }
-
   private[this] def getTraceIdDurations(fIds: Future[Seq[Long]]): Future[Seq[TraceIdDuration]] = {
     fIds flatMap { ids =>
       val ret = ids.grouped(traceDurationFetchBatchSize).toSeq.map(spanStore.getTracesDuration(_))
@@ -63,14 +53,32 @@ class ThriftQueryService(
     }
   }
 
-  private[this] def sortedTraceIds(traceIds: Future[Seq[Long]], limit: Int, order: thrift.Order): Future[Seq[Long]] =
-    if (order == thrift.Order.None) traceIds else {
-      val orderBy = getOrderBy(order)
-      getTraceIdDurations(traceIds) map { _.sortWith(orderBy).slice(0, limit).map(_.traceId) }
+  private[this] def sortedTraceIds(traceIds: Future[Seq[IndexedTraceId]], limit: Int, o: thrift.Order): Future[Seq[Long]] = {
+    val order: thrift.Order = thrift.Order.None
+    order match {
+      case thrift.Order.None =>
+        traceIds.map(_.slice(0, limit).map(_.traceId))
+
+      case thrift.Order.TimestampDesc | thrift.Order.TimestampAsc =>
+        val orderBy = order match {
+          case thrift.Order.TimestampDesc => (a: IndexedTraceId, b: IndexedTraceId) => a.timestamp > b.timestamp
+          case thrift.Order.TimestampAsc => (a: IndexedTraceId, b: IndexedTraceId) => a.timestamp < b.timestamp
+          case _ => throw new Exception("what?")
+        }
+        traceIds.map { _.sortWith(orderBy).slice(0, limit).map(_.traceId) }
+
+      case thrift.Order.DurationDesc | thrift.Order.DurationAsc =>
+        val orderBy = order match {
+          case thrift.Order.DurationDesc => (a: TraceIdDuration, b: TraceIdDuration) => a.duration > b.duration
+          case thrift.Order.DurationAsc => (a: TraceIdDuration, b: TraceIdDuration) => a.duration < b.duration
+          case _ => throw new Exception("what?")
+        }
+        getTraceIdDurations(traceIds.map(_.map(_.traceId))) map { _.sortWith(orderBy).slice(0, limit).map(_.traceId) }
     }
+  }
 
   private[this] def sort(traces: Future[Seq[IndexedTraceId]], limit: Int, order: thrift.Order): Future[Seq[Long]] =
-    sortedTraceIds(traces.map(_.map(_.traceId)), limit, order)
+    sortedTraceIds(traces, limit, order)
 
   private[this] def adjustedTraces(traces: Seq[Seq[Span]], adjusts: Seq[thrift.Adjust]): Seq[Trace] = {
     val as = adjusts flatMap { adjusters.get(_) }
@@ -102,7 +110,7 @@ class ThriftQueryService(
     qr: thrift.QueryRequest,
     endTs: Long = -1
   ): Future[thrift.QueryResponse] = {
-    sortedTraceIds(Future.value(ids.map(_.traceId)), qr.limit, qr.order) map { sortedIds =>
+    sortedTraceIds(Future.value(ids), qr.limit, qr.order) map { sortedIds =>
       val (min, max) = sortedIds match {
         case Nil =>
           (-1L, endTs)
