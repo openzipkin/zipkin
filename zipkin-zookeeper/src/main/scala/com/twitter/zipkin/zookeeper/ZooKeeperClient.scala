@@ -124,21 +124,38 @@ class ZKClient(
    * Create a persistent ephemeral node at `path` with `data`. The node will be persisted for as long as
    * the jvm process is alive or until it is closed
    */
-  def createEphemeral(path: String, data: Array[Byte] = Array.empty[Byte]): Closable =
+  def createEphemeral(path: String, data: Array[Byte] = Array.empty[Byte]): Closable = {
+    log.info("creating ephemeral: " + path)
     new Closable {
       private[this] val closed = new AtomicBoolean(false)
 
       private[this] def register() {
         if (closed.get) return
+
+        log.info("registering ephemeral: " + path)
+
         ensurePath(path.split("/").init.mkString("/")) before create(path, false, Some(data)) onSuccess { _ =>
           zkClient(path).exists.watch() onSuccess { case ZNode.Watch(_, update) =>
             update onSuccess {
-              case e if e.getType == Watcher.Event.EventType.NodeDeleted => register()
-              case e if e.getState == Watcher.Event.KeeperState.Disconnected => register()
-              case e if e.getState == Watcher.Event.KeeperState.Expired => register()
-              case _ => ()
+              case e if e.getType == Watcher.Event.EventType.NodeDeleted =>
+                log.info("ephemeral node (%s) deleted. re-registering".format(path))
+                register()
+
+              case e if e.getState == Watcher.Event.KeeperState.Disconnected =>
+                log.info("ephermal node (%s) keeper disconnected. re-registering".format(path))
+                register()
+
+              case e if e.getState == Watcher.Event.KeeperState.Expired =>
+                log.info("ephemeral node (%s) keeper expired. re-registering".format(path))
+                register()
+
+              case e =>
+                log.info("ephemeral node (%s) watch fired (ignoring): " + e)
+                ()
             }
           }
+        } onFailure { e: Throwable =>
+          log.error("failed to register ephemeral: " + path, e)
         }
       }
       register()
@@ -149,35 +166,46 @@ class ZKClient(
         }
       }
     }
+  }
 
-  def watchData(path: String): ZkWatch[Array[Byte]] = new ZkWatch[Array[Byte]] {
-    val data = Var(Array.empty[Byte])
+  def watchData(path: String): ZkWatch[Array[Byte]] = {
+    log.info("setting watch for: " + path)
 
-    private[this] val closed = new AtomicBoolean(false)
-    private[this] def watch(): Future[Unit] = {
-      zkClient(path).getData.watch() flatMap {
-        case ZNode.Watch(Return(nodeData), update) if !closed.get =>
-          data.update(nodeData.bytes)
-          update flatMap { _ => watch() }
-        case _ =>
-          Future.Unit
+    new ZkWatch[Array[Byte]] {
+      val data = Var(Array.empty[Byte])
+
+      private[this] val closed = new AtomicBoolean(false)
+      private[this] def watch(): Future[Unit] = {
+        zkClient(path).getData.watch() flatMap {
+          case ZNode.Watch(Return(nodeData), update) if !closed.get =>
+            log.info("watch fired with data: " + path)
+            data.update(nodeData.bytes)
+            update flatMap { _ => watch() }
+          case _ =>
+            log.info("watch fired (ignoring): " + path)
+            Future.Unit
+        }
       }
-    }
-    ensurePath(path) before watch()
+      ensurePath(path) before watch()
 
-    def close(deadline: Time): Future[Unit] = {
-      closed.getAndSet(true)
-      Future.Unit
+      def close(deadline: Time): Future[Unit] = {
+        closed.getAndSet(true)
+        Future.Unit
+      }
     }
   }
 
-  def joinGroup(path: String, data: Var[Array[Byte]]): Closable =
+  def joinGroup(path: String, data: Var[Array[Byte]]): Closable = {
+    log.info("joining group: " + path)
     new Closable {
       private[this] val curVal = new AtomicReference[Array[Byte]](Array.empty[Byte])
 
       val membership = ensurePath(path) map { _ =>
         groupFor(path).join(new Supplier[Array[Byte]] {
-          def get(): Array[Byte] = curVal.get
+          def get(): Array[Byte] = {
+            log.info("updating data for group: " + path)
+            curVal.get
+          }
         })
       }
 
@@ -193,8 +221,10 @@ class ZKClient(
           membership flatMap { m => pool { m.cancel() } }
         }
     }
+  }
 
-  def groupData(path: String, freq: Duration): ZkWatch[Seq[Array[Byte]]] =
+  def groupData(path: String, freq: Duration): ZkWatch[Seq[Array[Byte]]] = {
+    log.info("watching group data: " + path)
     new ZkWatch[Seq[Array[Byte]]] {
       val data = Var(Seq.empty[Array[Byte]])
 
@@ -206,6 +236,7 @@ class ZKClient(
         Future.collect(g.getMemberIds.asScala.toSeq map { id =>
           zkClient(g.getMemberPath(id)).getData().map(_.bytes)
         }).onSuccess { newVal =>
+          log.info("updating data for group: " + path)
           data.update(newVal)
         }.delayed(freq)(timer) flatMap { _ =>
           update()
@@ -219,30 +250,38 @@ class ZKClient(
         Future.Unit
       }
     }
+  }
 
-  def offerLeadership(path: String): ZkWatch[Boolean] = new ZkWatch[Boolean] {
-    val data = Var(false)
+  def offerLeadership(path: String): ZkWatch[Boolean] = {
+    log.info("offering leadership: " + path)
+    new ZkWatch[Boolean] {
+      val data = Var(false)
 
-    private[this] val closed = new AtomicBoolean(false)
-    private[this] val abdicate = new AtomicReference[ExceptionalCommand[Group.JoinException]]()
+      private[this] val closed = new AtomicBoolean(false)
+      private[this] val abdicate = new AtomicReference[ExceptionalCommand[Group.JoinException]]()
 
-    pool {
-      (new CandidateImpl(groupFor(path))).offerLeadership(new Candidate.Leader {
-        def onElected(cmd: ExceptionalCommand[Group.JoinException]) {
-          if (closed.get) cmd.execute() else {
-            abdicate.set(cmd)
-            data.update(true)
+      pool {
+        (new CandidateImpl(groupFor(path))).offerLeadership(new Candidate.Leader {
+          def onElected(cmd: ExceptionalCommand[Group.JoinException]) {
+            if (closed.get) cmd.execute() else {
+              log.info("elected as leader: " + path)
+              abdicate.set(cmd)
+              data.update(true)
+            }
           }
-        }
-        def onDefeated() { data.update(false) }
-      })
-    }
+          def onDefeated() {
+            log.info("defeated in leader election: " + path)
+            data.update(false)
+          }
+        })
+      }
 
-    def close(deadline: Time): Future[Unit] = {
-      if (closed.getAndSet(true)) Future.Unit else pool {
-        val cmd = abdicate.getAndSet(null)
-        if (cmd != null) cmd.execute()
-        ()
+      def close(deadline: Time): Future[Unit] = {
+        if (closed.getAndSet(true)) Future.Unit else pool {
+          val cmd = abdicate.getAndSet(null)
+          if (cmd != null) cmd.execute()
+          ()
+        }
       }
     }
   }
