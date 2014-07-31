@@ -3,6 +3,7 @@ scala:
   - 2.9.3
 services:
   - redis-server
+  - mongodb
 jdk:
   - openjdk7
   - openjdk6
