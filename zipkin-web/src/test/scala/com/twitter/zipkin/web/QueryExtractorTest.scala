@@ -103,7 +103,7 @@ class QueryExtractorTest extends FunSuite {
   test("parse key value annotations with slash") {
     val r = request(
       "serviceName" -> "myService",
-      "annotationQuery" -> "http.uri%3D%2Fsessions") // "http.uri=/sessions"
+      "annotationQuery" -> "http.uri=/sessions")
     val actual = QueryExtractor(r).get
     assert(
       actual.binaryAnnotations.get ===

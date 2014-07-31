@@ -53,8 +53,7 @@ class ThriftQueryService(
     }
   }
 
-  private[this] def sortedTraceIds(traceIds: Future[Seq[IndexedTraceId]], limit: Int, o: thrift.Order): Future[Seq[Long]] = {
-    val order: thrift.Order = thrift.Order.None
+  private[this] def sortedTraceIds(traceIds: Future[Seq[IndexedTraceId]], limit: Int, order: thrift.Order): Future[Seq[Long]] = {
     order match {
       case thrift.Order.None =>
         traceIds.map(_.slice(0, limit).map(_.traceId))
