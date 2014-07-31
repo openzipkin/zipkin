@@ -70,17 +70,10 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
     request: Request,
     retryLimit: Int = 10
   ): Future[Seq[TraceSummary]] = {
-    /* Get trace ids */
-    val response = client.getTraceIds(queryRequest.toThrift) map { _.toQueryResponse }
-
-    response flatMap { resp =>
+    client.getTraceIds(queryRequest.toThrift) flatMap { resp =>
       resp.traceIds match {
         case Nil =>
-          /* Complex query, so retry */
-          if (retryLimit > 0 && queryRequest.hasAnnotations)
-            query(client, queryRequest.copy(endTs = resp.endTs), request, retryLimit - 1)
-          else
-            EmptyTraces
+          EmptyTraces
 
         case ids =>
           val adjusters = getAdjusters(request)
