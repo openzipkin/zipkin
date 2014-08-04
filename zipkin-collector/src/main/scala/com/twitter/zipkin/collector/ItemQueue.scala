@@ -57,7 +57,7 @@ class ItemQueue[A, B](
       val item = queue.poll(500, TimeUnit.MILLISECONDS)
       if (item != null) {
         activeWorkers.incrementAndGet()
-        val rep = stats.timeFuture("processing_time_ms")(process(item)) onSuccess{ _ =>
+        val rep = stats.timeFuture("processing_time_ms")(process(item)) onSuccess { _ =>
           successesCounter.incr()
         } onFailure { _ =>
           failuresCounter.incr()
