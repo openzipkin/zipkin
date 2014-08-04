@@ -58,13 +58,14 @@ trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
     targetReqRate: Var[Int],
     curReqRate: Var[Int],
     sampleRate: Var[Double],
-    stats: StatsReceiver
+    stats: StatsReceiver,
+    log: Logger
   ): (Option[Seq[Int]] => Option[Double]) = {
-    new RequestRateCheck[Seq[Int]](curReqRate, stats.scope("reqRateCheck")) andThen
-    new SufficientDataCheck[Int](asSufficientWindowSize().inSeconds / asUpdateFreq().inSeconds, stats.scope("sufficientDataCheck")) andThen
-    new ValidDataCheck[Int](_ > 0, stats.scope("validDataCheck")) andThen
-    new OutlierCheck(curReqRate, asOutlierThreshold().inSeconds / asUpdateFreq().inSeconds, stats = stats.scope("outlierCheck")) andThen
-    new CalculateSampleRate(targetReqRate, sampleRate, stats = stats.scope("sampleRateCalculator"))
+    new RequestRateCheck[Seq[Int]](curReqRate, stats.scope("reqRateCheck"), log) andThen
+    new SufficientDataCheck[Int](asSufficientWindowSize().inSeconds / asUpdateFreq().inSeconds, stats.scope("sufficientDataCheck"), log) andThen
+    new ValidDataCheck[Int](_ > 0, stats.scope("validDataCheck"), log) andThen
+    new OutlierCheck(curReqRate, asOutlierThreshold().inSeconds / asUpdateFreq().inSeconds, stats = stats.scope("outlierCheck"), log = log) andThen
+    new CalculateSampleRate(targetReqRate, sampleRate, stats = stats.scope("sampleRateCalculator"), log = log)
   }
 
   def newAdaptiveSamplerFilter(
@@ -96,12 +97,12 @@ trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
 
     val buffer = new AtomicRingBuffer[Int](asWindowSize().inSeconds / asUpdateFreq().inSeconds)
 
-    val isLeader = new IsLeaderCheck[Double](zkClient, electionPath, stats.scope("leaderCheck"))
-    val cooldown = new CooldownCheck[Double](asOutlierThreshold(), stats.scope("cooldownCheck"))
+    val isLeader = new IsLeaderCheck[Double](zkClient, electionPath, stats.scope("leaderCheck"), log)
+    val cooldown = new CooldownCheck[Double](asOutlierThreshold(), stats.scope("cooldownCheck"), log)
 
     val calculator =
       { v: Int => Some(buffer.pushAndSnap(v)) } andThen
-      adaptiveSampleRateCalculator(targetReqRate, curReqRate, smplRate, stats) andThen
+      adaptiveSampleRateCalculator(targetReqRate, curReqRate, smplRate, stats, log) andThen
       isLeader andThen
       cooldown
 
@@ -111,7 +112,8 @@ trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
       reporterPath,
       asUpdateFreq(),
       calculator,
-      stats.scope("globalRateUpdater"))
+      stats.scope("globalRateUpdater"),
+      log)
 
     onExit {
       val closer = Closable.all(
@@ -172,7 +174,8 @@ class FlowReportingFilter(
 class IsLeaderCheck[T](
   zkClient: ZKClient,
   electionPath: String,
-  stats: StatsReceiver = DefaultStatsReceiver.scope("leaderCheck")
+  stats: StatsReceiver = DefaultStatsReceiver.scope("leaderCheck"),
+  log: Logger = Logger.get("IsLeaderCheck")
 ) extends (Option[T] => Option[T]) with Closable {
   private[this] val isLeader = new AtomicBoolean(false)
   private[this] val leadership = zkClient.offerLeadership(electionPath)
@@ -181,7 +184,10 @@ class IsLeaderCheck[T](
   private[this] val isLeaderGauge = stats.addGauge("isLeader") { if (isLeader.get) 1 else 0 }
 
   def apply(in: Option[T]): Option[T] =
-    in filter { _ => isLeader.get }
+    in filter { _ =>
+      log.debug("is leader check: " + isLeader.get)
+      isLeader.get
+    }
 
   def close(deadline: Time): Future[Unit] =
     leadership.close(deadline)
@@ -198,7 +204,8 @@ class GlobalSampleRateUpdater(
   reporterPath: String,
   updateFreq: Duration,
   calculate: (Int => Option[Double]),
-  stats: StatsReceiver = DefaultStatsReceiver.scope("globalSampleRateUpdater")
+  stats: StatsReceiver = DefaultStatsReceiver.scope("globalSampleRateUpdater"),
+  log: Logger = Logger.get("GlobalSampleRateUpdater")
 ) extends Closable {
   private[this] val globalRateCounter = stats.counter("rate")
 
@@ -211,9 +218,11 @@ class GlobalSampleRateUpdater(
     }
 
     val sum = memberVals.sum
+    log.debug("global rate update: " + sum + " " + memberVals)
     globalRateCounter.incr(sum)
 
     calculate(sum) foreach { rate =>
+      log.debug("setting new sample rate: " + sampleRatePath + " " + rate)
       zkClient.setData(sampleRatePath, rate.toString.getBytes)
     }
   })
@@ -224,7 +233,8 @@ class GlobalSampleRateUpdater(
 
 class RequestRateCheck[T](
   reqRate: Var[Int],
-  stats: StatsReceiver = DefaultStatsReceiver.scope("requestRateCheck")
+  stats: StatsReceiver = DefaultStatsReceiver.scope("requestRateCheck"),
+  log: Logger = Logger.get("RequestRateCheck")
 ) extends (Option[T] => Option[T]) {
   private[this] val curRate = new AtomicInteger(0)
   reqRate.changes.register(Witness(curRate.set(_)))
@@ -243,7 +253,8 @@ class RequestRateCheck[T](
 
 class SufficientDataCheck[T](
   sufficientThreshold: Int,
-  stats: StatsReceiver = DefaultStatsReceiver.scope("sufficientDataCheck")
+  stats: StatsReceiver = DefaultStatsReceiver.scope("sufficientDataCheck"),
+  log: Logger = Logger.get("SufficientDataCheck")
 ) extends (Option[Seq[T]] => Option[Seq[T]]) {
   private[this] val sufficientCounter = stats.counter("sufficient")
   private[this] val insufficientCounter = stats.counter("insufficient")
@@ -251,6 +262,7 @@ class SufficientDataCheck[T](
   def apply(in: Option[Seq[T]]): Option[Seq[T]] =
     in filter { i =>
       val sufficient = i.length >= sufficientThreshold
+      log.debug("checking for sufficient data: " + sufficient + " |  " + i.length + " | " + sufficientThreshold)
       (if (sufficient) sufficientCounter else insufficientCounter).incr()
       sufficient
     }
@@ -258,7 +270,8 @@ class SufficientDataCheck[T](
 
 class ValidDataCheck[T](
   validate: T => Boolean,
-  stats: StatsReceiver = DefaultStatsReceiver.scope("validDataCheck")
+  stats: StatsReceiver = DefaultStatsReceiver.scope("validDataCheck"),
+  log: Logger = Logger.get("ValidDataCheck")
 ) extends (Option[Seq[T]] => Option[Seq[T]]) {
   private[this] val validCounter = stats.counter("valid")
   private[this] val invalidCounter = stats.counter("invalid")
@@ -266,6 +279,7 @@ class ValidDataCheck[T](
   def apply(in: Option[Seq[T]]): Option[Seq[T]] =
     in filter { i =>
       val valid = i.forall(validate)
+      log.debug("validating data: " + valid + " | " + i)
       (if (valid) validCounter else invalidCounter).incr()
       valid
     }
@@ -274,6 +288,7 @@ class ValidDataCheck[T](
 class CooldownCheck[T](
   period: Duration,
   stats: StatsReceiver = DefaultStatsReceiver.scope("cooldownCheck"),
+  log: Logger = Logger.get("CooldownCheck"),
   timer: Timer = DefaultTimer.twitter
 ) extends (Option[T] => Option[T]) {
   private[this] val permit = new AtomicBoolean(true)
@@ -282,6 +297,7 @@ class CooldownCheck[T](
   def apply(in: Option[T]): Option[T] =
     in filter { _ =>
       val allow = permit.compareAndSet(true, false)
+      log.debug("checking cooldown: " + allow)
       if (allow) timer.doLater(period) { permit.set(true) }
       allow
     }
@@ -291,14 +307,17 @@ class OutlierCheck(
   reqRate: Var[Int],
   requiredDataPoints: Int,
   threshold: Double = 0.15,
-  stats: StatsReceiver = DefaultStatsReceiver.scope("outlierCheck")
+  stats: StatsReceiver = DefaultStatsReceiver.scope("outlierCheck"),
+  log: Logger = Logger.get("OutlierCheck")
 ) extends (Option[Seq[Int]] => Option[Seq[Int]]) {
   private[this] val curRate = new AtomicInteger(0)
   reqRate.changes.register(Witness(curRate.set(_)))
 
   def apply(in: Option[Seq[Int]]): Option[Seq[Int]] =
     in filter { buf =>
-      buf.segmentLength(isOut(curRate.get, _), buf.length - requiredDataPoints) == requiredDataPoints
+      val outliers = buf.segmentLength(isOut(curRate.get, _), buf.length - requiredDataPoints)
+      log.debug("checking for outliers: " + outliers + " " + requiredDataPoints)
+      outliers == requiredDataPoints
     }
 
   private[this] def isOut(curRate: Int, datum: Int): Boolean =
@@ -323,7 +342,8 @@ class CalculateSampleRate(
   calculate: Seq[Int] => Double = DiscountedAverage,
   threshold: Double = 0.05,
   maxSampleRate: Double = 1.0,
-  stats: StatsReceiver = DefaultStatsReceiver.scope("sampleRateCalculator")
+  stats: StatsReceiver = DefaultStatsReceiver.scope("sampleRateCalculator"),
+  log: Logger = Logger.get("CalculateSampleRate")
 ) extends (Option[Seq[Int]] => Option[Double]) {
   private[this] val tgtReqRate = new AtomicInteger(0)
   targetRate.changes.register(Witness(tgtReqRate.set(_)))
@@ -332,7 +352,7 @@ class CalculateSampleRate(
   smplRate.changes.register(Witness(curSmplRate))
 
   private[this] val tgtRateGauge = stats.addGauge("targetReqRate") { tgtReqRate.get }
-  private[this] val curlRateGauge = stats.addGauge("currentSampleRate") { curSmplRate.get.toFloat }
+  private[this] val curRateGauge = stats.addGauge("currentSampleRate") { curSmplRate.get.toFloat }
 
   /**
    * Since we assume that the sample rate and storage request rate are
@@ -342,13 +362,18 @@ class CalculateSampleRate(
    * thus
    * newSampleRate = (currentSampleRate * targetStoreRate) / currentStoreRate
    */
-  def apply(in: Option[Seq[Int]]): Option[Double] = in flatMap { vals =>
-    val curStoreRate = calculate(vals)
-    if (curStoreRate <= 0) None else {
-      val curRateSnap = curSmplRate.get
-      val newSampleRate = curRateSnap * tgtReqRate.get / curStoreRate
-      val sr = math.min(maxSampleRate, newSampleRate)
-      if (math.abs(curRateSnap - sr) < threshold) None else Some(sr)
+  def apply(in: Option[Seq[Int]]): Option[Double] = {
+    log.debug("Calculating rate for: " + in)
+    in flatMap { vals =>
+      val curStoreRate = calculate(vals)
+      log.debug("Calculated current store rate: " + curStoreRate)
+      if (curStoreRate <= 0) None else {
+        val curRateSnap = curSmplRate.get
+        val newSampleRate = curRateSnap * tgtReqRate.get / curStoreRate
+        val sr = math.min(maxSampleRate, newSampleRate)
+        log.debug("new sample rate: " + sr + " " + (math.abs(curRateSnap - sr) < threshold))
+        if (math.abs(curRateSnap - sr) < threshold) None else Some(sr)
+      }
     }
   }
 }
