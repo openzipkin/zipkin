@@ -340,7 +340,7 @@ class CalculateSampleRate(
   targetRate: Var[Int],
   smplRate: Var[Double],
   calculate: Seq[Int] => Double = DiscountedAverage,
-  threshold: Double = 0.05,
+  threshold: Double = 0.02,
   maxSampleRate: Double = 1.0,
   stats: StatsReceiver = DefaultStatsReceiver.scope("sampleRateCalculator"),
   log: Logger = Logger.get("CalculateSampleRate")
@@ -371,8 +371,8 @@ class CalculateSampleRate(
         val curRateSnap = curSmplRate.get
         val newSampleRate = curRateSnap * tgtReqRate.get / curStoreRate
         val sr = math.min(maxSampleRate, newSampleRate)
-        log.debug("new sample rate: " + sr + " " + (math.abs(curRateSnap - sr) < threshold))
-        if (math.abs(curRateSnap - sr) < threshold) None else Some(sr)
+        log.debug("new sample rate: " + sr + " " + (math.abs(curRateSnap - sr) >= threshold))
+        if (math.abs(curRateSnap - sr) >= threshold) Some(sr) else None
       }
     }
   }

@@ -58,7 +58,7 @@ class CooldownCheckTest extends FunSuite {
   test("allows only once per period") {
     Time.withCurrentTimeFrozen { tc =>
       val timer = new MockTimer
-      val check = new CooldownCheck[Unit](1.minute, NullStatsReceiver, timer)
+      val check = new CooldownCheck[Unit](1.minute, NullStatsReceiver, timer = timer)
 
       assert(check(Some(())).isDefined)
       assert(check(Some(())).isEmpty)
