@@ -15,10 +15,11 @@
  */
 package com.twitter.zipkin.collector
 
-import com.twitter.util.{Await, Closable, CloseAwaitably, Future, FuturePool, Time}
+import com.twitter.concurrent.NamedPoolThreadFactory
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import java.util.concurrent.{ArrayBlockingQueue, TimeUnit}
+import com.twitter.util.{Await, Closable, CloseAwaitably, Future, ExecutorServiceFuturePool, Time}
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.{ArrayBlockingQueue, Executors, TimeUnit}
 
 class QueueFullException(size: Int) extends Exception("Queue is full. MaxSize: %d".format(size))
 class QueueClosedException extends Exception("Queue is closed")
@@ -50,20 +51,24 @@ class ItemQueue[A, B](
   private[this] val maxConcurrencyGauge = stats.addGauge("maxConcurrency") { maxConcurrency }
   private[this] val failuresCounter = stats.counter("failures")
   private[this] val successesCounter = stats.counter("successes")
-  private[this] val workers = Seq.fill(maxConcurrency) { FuturePool.unboundedPool { loop() } }
+
+  private[this] val futurePool = new ExecutorServiceFuturePool(Executors.newCachedThreadPool(
+    new NamedPoolThreadFactory("ItemQueuePool", makeDaemons = true)))
+  private[this] val workers = Seq.fill(maxConcurrency) { futurePool(loop()) }
 
   private[this] def loop() {
     while (running || !queue.isEmpty) {
       val item = queue.poll(500, TimeUnit.MILLISECONDS)
       if (item != null) {
         activeWorkers.incrementAndGet()
-        val rep = stats.timeFuture("processing_time_ms")(process(item)) onSuccess { _ =>
+        val rep = stats.timeFuture("processing_time_ms")(process(item)) ensure {
+          activeWorkers.decrementAndGet()
+        } onSuccess { _ =>
           successesCounter.incr()
         } onFailure { _ =>
           failuresCounter.incr()
         }
         Await.ready(rep)
-        activeWorkers.decrementAndGet()
       }
     }
   }
