@@ -13,12 +13,13 @@ import com.twitter.zipkin.common.mustache.ZipkinMustache
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen
 import com.twitter.zipkin.gen.{Adjust, TraceCombo, ZipkinQuery}
-import com.twitter.zipkin.query.{TraceSummary, QueryRequest}
+import com.twitter.zipkin.query.{SpanTimestamp, TraceSummary, QueryRequest}
 import java.io.{File, FileInputStream, InputStream}
 import java.text.SimpleDateFormat
 import org.apache.commons.io.IOUtils
 import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
+import scala.annotation.tailrec
 
 class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
   import Util._
@@ -214,19 +215,33 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
         }
     }
 
-  case class MustacheServiceCount(name: String, count: Int)
+  case class MustacheServiceDuration(name: String, count: Int, max: Long)
   case class MustacheTraceSummary(
     traceId: String,
     startTime: String,
     timestamp: Long,
     duration: Long,
     durationStr: String,
+    servicePercentage: Int,
     spanCount: Int,
-    serviceCounts: Seq[MustacheServiceCount],
+    serviceDurations: Seq[MustacheServiceDuration],
     width: Int)
   case class MustacheTraceId(id: String)
 
-  private[this] def traceSummaryToMustache(ts: Seq[TraceSummary]): Map[String, Any] = {
+  @tailrec
+  private[this] def totalServiceTime(stamps: Seq[SpanTimestamp], acc: Long = 0): Long =
+    if (stamps.isEmpty) acc else {
+      val start = stamps.map(_.startTimestamp).min
+      val ts = stamps.find(_.startTimestamp == start).get
+      val (current, next) = stamps.partition { t => t.startTimestamp >= ts.startTimestamp && t.endTimestamp <= ts.endTimestamp }
+      val end = current.map(_.endTimestamp).max
+      totalServiceTime(next, acc + (end - start))
+    }
+
+  private[this] def traceSummaryToMustache(
+    serviceName: Option[String],
+    ts: Seq[TraceSummary]
+  ): Map[String, Any] = {
     val (maxDuration, minStartTime, maxStartTime) = ts.foldLeft((Long.MinValue, Long.MaxValue, Long.MinValue)) { case ((maxD, minST, maxST), t) =>
       ( math.max(t.durationMicro / 1000, maxD),
         math.min(t.startTimestamp, minST),
@@ -236,14 +251,26 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
 
     val traces = ts map { t =>
       val duration = t.durationMicro / 1000
+      val groupedSpanTimestamps = t.spanTimestamps.groupBy(_.name)
+
+      val serviceDurations = groupedSpanTimestamps map { case (n, sts) =>
+        MustacheServiceDuration(n, sts.length, sts.map(_.duration).max / 1000)
+      } toSeq
+
+      val serviceTime = for {
+        name <- serviceName
+        timestamps <- groupedSpanTimestamps.get(name)
+      } yield totalServiceTime(timestamps)
+
       MustacheTraceSummary(
         SpanId(t.traceId).toString,
         QueryExtractor.fmt.format(new java.util.Date(t.startTimestamp / 1000)),
         t.startTimestamp,
         duration,
         durationStr(t.durationMicro.toLong * 1000),
-        t.serviceCounts.foldLeft(0) { case (acc, (_, c)) => acc + c },
-        t.serviceCounts.toSeq map { case (n, c) => MustacheServiceCount(n, c) },
+        serviceTime.map { st => ((st.toFloat / t.durationMicro.toFloat) * 100).toInt }.getOrElse(0),
+        groupedSpanTimestamps.foldLeft(0) { case (acc, (_, sts)) => acc + sts.length },
+        serviceDurations,
         ((duration.toFloat / maxDuration) * 100).toInt
       )
     } sortBy(_.duration) reverse
@@ -280,7 +307,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
           } }
           data ++= Map(
             ("serviceName" -> qReq.serviceName),
-            ("queryResults" -> traceSummaryToMustache(results)),
+            ("queryResults" -> traceSummaryToMustache(serviceName, results)),
             ("annotations" -> qReq.annotations),
             ("binaryAnnotations" -> binAnn))
         }
@@ -477,17 +504,22 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
     }
 
     val traceDuration = trace.duration * 1000
-    val serviceCounts = combo.summary.get.serviceCounts.toSeq map { case (n, c) => MustacheServiceCount(n, c) }
+    val serviceDurations = combo.summary map { summary =>
+      summary.spanTimestamps.groupBy(_.name) map { case (n, sts) =>
+        MustacheServiceDuration(n, sts.length, sts.map(_.toSpanTimestamp.duration).max / 1000)
+      } toSeq
+    }
+
     val timeMarkers = Seq[Double](0.0, 0.2, 0.4, 0.6, 0.8, 1.0).zipWithIndex map { case (p, i) =>
       Map("index" -> i, "time" -> durationStr((traceDuration * p).toLong))
     }
 
     val data = Map[String, Object](
       "duration" -> durationStr(traceDuration),
-      "services" -> combo.summary.map(_.serviceCounts.size),
+      "services" -> serviceDurations.map(_.size),
       "depth" -> combo.spanDepths.map(_.values.max),
       "totalSpans" -> spans.size.asInstanceOf[Object],
-      "serviceCounts" -> serviceCounts.sortBy(_.name),
+      "serviceCounts" -> serviceDurations.map(_.sortBy(_.name)),
       "timeMarkers" -> timeMarkers,
       "spans" -> spans)
 

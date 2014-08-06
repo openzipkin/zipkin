@@ -49,6 +49,8 @@
     <div class="pull-right">
       <span class="selector">Sort:
         <select class="sort-order js-sort-order">
+          <option value="service-percentage-desc">Service Percentage: Longest First</i></span>
+          <option value="service-percentage-asc">Service Percentage: Shortest First</i></span>
           <option selected value="duration-desc">Longest First</i></span>
           <option value="duration-asc">Shortest First</span>
           <option value="timestamp-desc">Newest First</span>
@@ -75,18 +77,22 @@
 {{#queryResults}}
   <ul id="traces">
   {{#traces}}
-    <li class="trace" data-traceId="{{traceId}}" data-duration="{{duration}}" data-timestamp="{{timestamp}}">
+    <li class="trace" data-traceId="{{traceId}}" data-duration="{{duration}}" data-timestamp="{{timestamp}}" data-service-percentage="{{servicePercentage}}">
       <a href="/traces/{{traceId}}?serviceName={{serviceName}}">
         <div class="bar-block">
           <span class="bar-graphic" style="width:{{width}}%;"></span>
           <span class="bar-label">{{durationStr}}</span>
           <span class="bar-label">{{spanCount}} spans</span>
         </div>
+        <div class="bar-block">
+          <span class="bar-graphic" style="width:{{servicePercentage}}%;"></span>
+          <span class="bar-label">{{serviceName}} {{servicePercentage}}%</span>
+        </div>
       </a>
       <div class="trace-details services">
-      {{#serviceCounts}}
-        <span class="label label-default service-filter-label" data-service-name="{{name}}">{{name}} x{{count}}</span>
-      {{/serviceCounts}}
+      {{#serviceDurations}}
+        <span class="label label-default service-filter-label" data-service-name="{{name}}">{{name}} x{{count}} {{max}}ms</span>
+      {{/serviceDurations}}
       </div>
       <div class="trace-details timestamp pull-right">
         <time class="label timeago" datetime="{{startTime}}">{{startTime}}</time>

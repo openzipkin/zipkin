@@ -203,19 +203,33 @@ object thrift {
   implicit def traceTimelineToThrift(t: TraceTimeline) = new WrappedTraceTimeline(t)
   implicit def thriftToTraceTimeline(t: gen.TraceTimeline) = new ThriftTraceTimeline(t)
 
+  class WrappedSpanTimestamp(t: SpanTimestamp) {
+    lazy val toThrift = gen.SpanTimestamp(t.name, t.startTimestamp, t.endTimestamp)
+  }
+  class ThriftSpanTimestamp(t: gen.SpanTimestamp) {
+    lazy val toSpanTimestamp = SpanTimestamp(t.name, t.startTimestamp, t.endTimestamp)
+  }
+  implicit def spanTimestampToThrift(t: SpanTimestamp) = new WrappedSpanTimestamp(t)
+  implicit def thriftToSpanTimestamp(t: gen.SpanTimestamp) = new ThriftSpanTimestamp(t)
+
   /* TraceSummary */
   class WrappedTraceSummary(t: TraceSummary) {
-    lazy val toThrift = {
-      gen.TraceSummary(t.traceId, t.startTimestamp, t.endTimestamp,
-        t.durationMicro, t.serviceCounts, t.endpoints.map { _.toThrift })
-    }
+    lazy val toThrift = gen.TraceSummary(
+      t.traceId,
+      t.startTimestamp,
+      t.endTimestamp,
+      t.durationMicro,
+      t.endpoints.map(_.toThrift),
+      t.spanTimestamps.map(_.toThrift))
   }
   class ThriftTraceSummary(t: gen.TraceSummary) {
-    lazy val toTraceSummary = {
-      new TraceSummary(t.traceId, t.startTimestamp, t.endTimestamp,
-        t.durationMicro, t.serviceCounts,
-        t.endpoints.map { _.toEndpoint }.toList)
-    }
+    lazy val toTraceSummary = TraceSummary(
+      t.traceId,
+      t.startTimestamp,
+      t.endTimestamp,
+      t.durationMicro,
+      t.spanTimestamps.map(_.toSpanTimestamp).toList,
+      t.endpoints.map(_.toEndpoint).toList)
   }
   implicit def traceSummaryToThrift(t: TraceSummary) = new WrappedTraceSummary(t)
   implicit def thriftToTraceSummary(t: gen.TraceSummary) = new ThriftTraceSummary(t)

@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Twitter Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,9 +28,14 @@ import com.twitter.zipkin.Constants
  * such as cache hits/misses.
  */
 object Span {
-
-  def apply(span: Span): Span = Span(span.traceId, span.name, span.id,
-    span.parentId, span.annotations, span.binaryAnnotations, span.debug)
+  def apply(span: Span): Span = Span(
+    span.traceId,
+    span.name,
+    span.id,
+    span.parentId,
+    span.annotations,
+    span.binaryAnnotations,
+    span.debug)
 }
 
 /**
@@ -44,8 +49,15 @@ object Span {
  * serialized objects
  * @param debug if this is set we will make sure this span is stored, no matter what the samplers want
  */
-case class Span(traceId: Long, name: String, id: Long, parentId: Option[Long],
-                 annotations: List[Annotation], binaryAnnotations: Seq[BinaryAnnotation], debug: Boolean = false) {
+case class Span(
+  traceId: Long,
+  name: String,
+  id: Long,
+  parentId: Option[Long],
+  annotations: List[Annotation],
+  binaryAnnotations: Seq[BinaryAnnotation],
+  debug: Boolean = false
+) {
   /**
    * Order annotations by timestamp.
    */

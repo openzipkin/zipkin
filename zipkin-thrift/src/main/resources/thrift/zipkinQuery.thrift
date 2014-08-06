@@ -25,6 +25,12 @@ exception QueryException {
   1: string msg
 }
 
+struct SpanTimestamp {
+  1: string name
+  2: i64 start_timestamp
+  3: i64 end_timestamp
+}
+
 /**
  * This sums up a single Trace to make it easy for a client to get an overview of what happened.
  */
@@ -33,8 +39,9 @@ struct TraceSummary {
   2: i64 start_timestamp           // start timestamp of the trace, in microseconds
   3: i64 end_timestamp             // end timestamp of the trace, in microseconds
   4: i32 duration_micro            // how long did the entire trace take? in microseconds
-  5: map<string, i32> service_counts     // which services were involved?
+  // 5: map<string, i32> service_counts     // which services were involved?
   6: list<zipkinCore.Endpoint> endpoints      // which endpoints were involved?
+  7: list<SpanTimestamp> span_timestamps
 }
 
 /**

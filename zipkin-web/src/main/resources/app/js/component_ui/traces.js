@@ -58,6 +58,8 @@ define(
       };
 
       this.sortFunctions = {
+        'service-percentage-desc': function(a ,b) { return b.percentage - a.percentage; },
+        'service-percentage-asc': function(a ,b) { return a.percentage - b.percentage; },
         'duration-desc': function(a, b) { return b.duration - a.duration; },
         'duration-asc': function(a, b) { return a.duration - b.duration; },
         'timestamp-desc': function(a, b) { return b.timestamp - a.timestamp; },
@@ -82,8 +84,9 @@ define(
         this.$traces = this.$node.find('.trace');
         this.$traces.each(function() {
           var $this = $(this);
-          this.duration = parseInt($this.attr('data-duration'), 10),
-          this.timestamp = parseInt($this.attr('data-timestamp'), 10)
+          this.duration = parseInt($this.data('duration'), 10),
+          this.timestamp = parseInt($this.data('timestamp'), 10)
+          this.percentage = parseInt($this.data('servicePercentage'), 10);
         });
         this.on(document, 'uiAddServiceNameFilter', this.addFilter);
         this.on(document, 'uiRemoveServiceNameFilter', this.removeFilter);

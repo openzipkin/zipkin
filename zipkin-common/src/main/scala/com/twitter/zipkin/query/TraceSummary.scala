@@ -19,6 +19,10 @@ package com.twitter.zipkin.query
 import scala.collection.Map
 import com.twitter.zipkin.common.Endpoint
 
+case class SpanTimestamp(name: String, startTimestamp: Long, endTimestamp: Long) {
+  def duration = endTimestamp - startTimestamp
+}
+
 object TraceSummary {
 
   /**
@@ -27,8 +31,13 @@ object TraceSummary {
    */
   def apply(trace: Trace): Option[TraceSummary] = {
     for (traceId <- trace.id; startEnd <- trace.getStartAndEndTimestamp)
-    yield TraceSummary(traceId, startEnd.start, startEnd.end, (startEnd.end - startEnd.start).toInt,
-      trace.serviceCounts, trace.endpoints.toList)
+    yield TraceSummary(
+      traceId,
+      startEnd.start,
+      startEnd.end,
+      (startEnd.end - startEnd.start).toInt,
+      trace.spanTimestamps.toList,
+      trace.endpoints.toList)
   }
 }
 
@@ -41,5 +50,10 @@ object TraceSummary {
  *                      mapped to the number of spans of that service
  * @param endpoints endpoints involved in the traced operation
  */
-case class TraceSummary(traceId: Long, startTimestamp: Long, endTimestamp: Long,
-                        durationMicro: Int, serviceCounts: Map[String, Int], endpoints: List[Endpoint])
+case class TraceSummary(
+  traceId: Long,
+  startTimestamp: Long,
+  endTimestamp: Long,
+  durationMicro: Int,
+  spanTimestamps: List[SpanTimestamp],
+  endpoints: List[Endpoint])

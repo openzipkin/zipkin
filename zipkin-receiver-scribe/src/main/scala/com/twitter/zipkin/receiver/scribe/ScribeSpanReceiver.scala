@@ -92,7 +92,8 @@ class ScribeReceiver(
 
   private[this] val logCallStat = stats.stat("logCallBatches")
   private[this] val pushbackCounter = stats.counter("pushBack")
-  private[this] val fatalCounter = stats.counter("fatalException")
+  private[this] val errorStats = stats.scope("processingError")
+  private[this] val fatalStats = stats.scope("fatalException")
   private[this] val batchesProcessedStat = stats.stat("processedBatches")
   private[this] val messagesStats = stats.scope("messages")
   private[this] val totalMessagesCounter = messagesStats.counter("total")
@@ -133,10 +134,11 @@ class ScribeReceiver(
           ok
         case Throw(NonFatal(e)) =>
           log.warning("Exception in process(): %s".format(e.getMessage))
+          errorStats.counter(e.getClass.getName).incr()
           pushbackCounter.incr()
           tryLater
         case Throw(e) =>
-          fatalCounter.incr()
+          fatalStats.counter(e.getClass.getName).incr()
           Future.exception(e)
       }
     }

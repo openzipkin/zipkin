@@ -128,6 +128,18 @@ case class Trace(private val s: Seq[Span]) {
   }
 
   /**
+   * Returns a map of services to a list of their durations
+   */
+  def spanTimestamps: List[SpanTimestamp] = {
+    for {
+      span <- spans.toList
+      serviceName <- span.serviceNames
+      first <- span.firstAnnotation
+      last <- span.lastAnnotation
+    } yield SpanTimestamp(serviceName, first.timestamp, last.timestamp)
+  }
+
+  /**
    * Figures out the "span depth". This is used in the ui
    * to figure out how to lay out the spans in the visualization.
    * @return span id -> depth in the tree

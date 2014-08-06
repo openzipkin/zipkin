@@ -109,8 +109,14 @@ class ThriftConversionsSpec extends SpecificationWithJUnit with JMocker with Cla
 
     "convert TraceSummary" in {
       "to thrift and back" in {
-        val expectedTraceSummary = TraceSummary(123, 10000, 10300, 300, Map("service1" -> 1),
+        val expectedTraceSummary = TraceSummary(
+          123,
+          10000,
+          10300,
+          300,
+          List(SpanTimestamp("service1", 123, 123)),
           List(Endpoint(123, 123, "service1")))
+
         val thriftTraceSummary = expectedTraceSummary.toThrift
         val actualTraceSummary = thriftTraceSummary.toTraceSummary
         expectedTraceSummary mustEqual actualTraceSummary
