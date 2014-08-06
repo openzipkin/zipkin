@@ -624,6 +624,18 @@ ul.traces li:hover .timestamp .label {
 .bars.depth5 { fill: #08306B;}
 .bars.selected { fill: #00A8C6; }
 
+/**
+ * Same as .bars, but shifted by 1
+ */
+.server-bars.filtered { fill: #F9F2E7; }
+.server-bars.depth0 { fill: #9ECAE1; }
+.server-bars.depth1 { fill: #4292C6; }
+.server-bars.depth2 { fill: #2171B5;}
+.server-bars.depth3 { fill: #08519C;}
+.server-bars.depth4 { fill: #08306B;}
+.server-bars.depth5 { fill: #C6DBEF; }
+.server-bars.selected { fill: #00A8C6; }
+
 /** Span text */
 .bar-text {
   fill: #000000;
