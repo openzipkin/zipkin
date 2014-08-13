@@ -35,6 +35,8 @@
       <span class="glyphicon glyphicon-question-sign"></span>
     </button>
 
+    <input id="sort-order" name="order" type="hidden" value="{{order}}">
+
     <div class="clearfix"></div>
     <input type="text" class="form-control input-sm" id="annotationQuery" name="annotationQuery" value="{{annotationQuery}}" style="width: 100%" placeholder='Annotations Query (e.g. "finagle.timeout", "http.uri=/foo/bar/ and cluster=foo and cache.miss")'>
   </form>
@@ -49,10 +51,9 @@
     <div class="pull-right">
       <span class="selector">Sort:
         <select class="sort-order js-sort-order">
-          <option selected value="duration-desc">Longest First</i></span>
-          <option value="duration-asc">Shortest First</span>
-          <option value="timestamp-desc">Newest First</span>
-          <option value="timestamp-asc">Oldest First</span>
+        {{#orders}}
+          <option value="{{value}}" {{selected}}>{{name}}</option>
+        {{/orders}}
         </select>
       </span>
     </div>
