@@ -22,6 +22,7 @@ import com.twitter.common.base.ExceptionalCommand
 import com.twitter.common.quantity.Amount
 import com.twitter.common.quantity.{Time => CommonTime}
 import com.twitter.common.zookeeper._
+import com.twitter.concurrent.NamedPoolThreadFactory
 import com.twitter.conversions.time._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.util.DefaultTimer
@@ -29,6 +30,7 @@ import com.twitter.logging.Logger
 import com.twitter.util._
 import com.twitter.zk.{Connector, ZkClient, ZNode}
 import java.net.InetSocketAddress
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import org.apache.zookeeper.{CreateMode, KeeperException, Watcher, ZooDefs}
 import scala.collection.JavaConverters._
@@ -50,6 +52,11 @@ trait ZkWatch[T] extends Closable {
   val data: Var[T]
 }
 
+object ZKClient {
+  val pool: FuturePool = new ExecutorServiceFuturePool(Executors.newCachedThreadPool(
+    new NamedPoolThreadFactory("ZKClientPool", makeDaemons = true)))
+}
+
 class ZKClient(
   addrs: Seq[InetSocketAddress],
   credentials: Option[(String, String)] = None,
@@ -57,7 +64,7 @@ class ZKClient(
   stats: StatsReceiver = DefaultStatsReceiver.scope("ZKClient"),
   log: Logger = Logger.get("ZKClient"),
   timer: Timer = DefaultTimer.twitter,
-  pool: FuturePool = FuturePool.unboundedPool
+  pool: FuturePool = ZKClient.pool
 ) extends Closable {
   private[this] val client = credentials map { case (u, p) =>
     new ZooKeeperClient(Amount.of(timeout.inMilliseconds.toInt, CommonTime.MILLISECONDS), ZooKeeperClient.digestCredentials(u, p), addrs.asJava)
