@@ -319,10 +319,20 @@ object Zipkin extends Build {
       ) ++ testDependencies
     ).dependsOn(common, query, scrooge)
 
+  lazy val queryServiceAssemblySettings = mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+    {
+      case PathList("org", "slf4j", "impl", _*) => MergeStrategy.first
+      case PathList("org", "apache", "commons", _*) => MergeStrategy.first
+      case PathList("com", "twitter", "zipkin", "query", "adjusters", _*) => MergeStrategy.first
+      case PathList("com", "twitter", "common", "args", "apt", "cmdline.arg.info.txt.1") => MergeStrategy.first
+      case x => old(x)
+    }
+  }
+
   lazy val queryService = Project(
     id = "zipkin-query-service",
     base = file("zipkin-query-service"),
-    settings = defaultSettings
+    settings = defaultSettings ++ assemblySettings ++ Seq(queryServiceAssemblySettings)
   ).settings(
     libraryDependencies ++= testDependencies,
 
@@ -405,8 +415,8 @@ object Zipkin extends Build {
 
   lazy val collectorServiceAssemblySettings = mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
     {
-      case PathList("org", "slf4j", "impl", ps @ _*) => MergeStrategy.first
-      case PathList("org", "apache", "commons", ps @ _*) => MergeStrategy.first
+      case PathList("org", "slf4j", "impl", _*) => MergeStrategy.first
+      case PathList("org", "apache", "commons", _*) => MergeStrategy.first
       case PathList("com", "twitter", "common", "args", "apt", "cmdline.arg.info.txt.1") => MergeStrategy.first
       case x => old(x)
     }
