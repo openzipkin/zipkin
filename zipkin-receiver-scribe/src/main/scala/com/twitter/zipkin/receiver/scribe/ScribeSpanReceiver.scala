@@ -23,7 +23,7 @@ import com.twitter.finagle.util.{DefaultTimer, InetSocketAddressUtil}
 import com.twitter.logging.Logger
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Base64StringEncoder, Closable, Future, NonFatal, Return, Throw, Time}
-import com.twitter.zipkin.collector.SpanReceiver
+import com.twitter.zipkin.collector.{QueueFullException, SpanReceiver}
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.gen.{LogEntry, ResultCode, Scribe, Span => ThriftSpan, ZipkinCollector}
 import com.twitter.zipkin.zookeeper._
@@ -133,7 +133,8 @@ class ScribeReceiver(
           batchesProcessedStat.add(spans.size)
           ok
         case Throw(NonFatal(e)) =>
-          log.warning("Exception in process(): %s".format(e.getMessage))
+          if (!e.isInstanceOf[QueueFullException])
+            log.warning("Exception in process(): %s".format(e.getMessage))
           errorStats.counter(e.getClass.getName).incr()
           pushbackCounter.incr()
           tryLater
