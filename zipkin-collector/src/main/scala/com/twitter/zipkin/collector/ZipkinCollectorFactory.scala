@@ -16,6 +16,7 @@
 package com.twitter.zipkin.collector
 
 import com.twitter.app.App
+import com.twitter.conversions.time._
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finagle.{Filter, Service}
 import com.twitter.util.{Await, Closable, CloseAwaitably, Duration, Future, Time}
@@ -57,6 +58,7 @@ trait ZipkinCollectorFactory {
  * A base collector that inserts a configurable queue between the receiver and store.
  */
 trait ZipkinQueuedCollectorFactory extends ZipkinCollectorFactory { self: App =>
+  val itemQueueTimeout = flag("zipkin.itemQueue.timeout", 30.seconds, "max amount of time to spend waiting for the processor to complete")
   val itemQueueMax = flag("zipkin.itemQueue.maxSize", 500, "max number of span items to buffer")
   val itemQueueConcurrency = flag("zipkin.itemQueue.concurrency", 10, "number of concurrent workers to process the write queue")
 
@@ -67,6 +69,7 @@ trait ZipkinQueuedCollectorFactory extends ZipkinCollectorFactory { self: App =>
       itemQueueMax(),
       itemQueueConcurrency(),
       SpanConvertingFilter andThen spanStoreFilter andThen store,
+      itemQueueTimeout(),
       stats.scope("ItemQueue"))
 
     val receiver = newReceiver(queue.add, stats)

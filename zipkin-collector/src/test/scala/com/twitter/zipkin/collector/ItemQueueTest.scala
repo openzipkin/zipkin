@@ -67,7 +67,7 @@ class ItemQueueTest extends FunSuite {
     assert(processed.await(100, TimeUnit.MILLISECONDS))
   }
 
-  test("enfoces a max queue size") {
+  test("enforces a max queue size") {
     val queue = new ItemQueue[Unit, Unit](10, 0, { _ => Future.Unit })
     assert(Await.result(fill(queue, 10)))
     assert(Await.ready(queue.add(Item)).poll.get.isThrow)

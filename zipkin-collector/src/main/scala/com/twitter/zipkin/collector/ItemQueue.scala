@@ -17,7 +17,7 @@ package com.twitter.zipkin.collector
 
 import com.twitter.concurrent.NamedPoolThreadFactory
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.util.{Await, Closable, CloseAwaitably, Future, ExecutorServiceFuturePool, Time}
+import com.twitter.util._
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{ArrayBlockingQueue, Executors, TimeUnit}
 
@@ -40,12 +40,14 @@ class ItemQueue[A, B](
   maxSize: Int,
   maxConcurrency: Int,
   process: A => Future[B],
+  timeout: Duration = Duration.Top,
   stats: StatsReceiver = DefaultStatsReceiver.scope("ItemQueue")
 ) extends Closable with CloseAwaitably {
   @volatile private[this] var running: Boolean = true
 
   private[this] val queue = new ArrayBlockingQueue[A](maxSize)
   private[this] val queueSizeGauge = stats.addGauge("queueSize") { queue.size }
+  private[this] val queueFullCounter = stats.counter("queueFull")
   private[this] val activeWorkers = new AtomicInteger(0)
   private[this] val activeWorkerGauge = stats.addGauge("activeWorkers") { activeWorkers.get }
   private[this] val maxConcurrencyGauge = stats.addGauge("maxConcurrency") { maxConcurrency }
@@ -61,14 +63,10 @@ class ItemQueue[A, B](
       val item = queue.poll(500, TimeUnit.MILLISECONDS)
       if (item != null) {
         activeWorkers.incrementAndGet()
-        val rep = stats.timeFuture("processing_time_ms")(process(item)) ensure {
-          activeWorkers.decrementAndGet()
-        } onSuccess { _ =>
-          successesCounter.incr()
-        } onFailure { _ =>
-          failuresCounter.incr()
-        }
-        Await.ready(rep)
+        Try(Await.result(stats.timeFuture("processing_time_ms")(process(item)), timeout))
+          .onSuccess(_ => successesCounter.incr())
+          .onFailure(_ => failuresCounter.incr())
+        activeWorkers.decrementAndGet()
       }
     }
   }
@@ -82,10 +80,12 @@ class ItemQueue[A, B](
   private[this] val QueueClosed = Future.exception(new QueueClosedException)
 
   def add(item: A): Future[Unit] =
-    if (!running)
+    if (!running) {
       QueueClosed
-    else if (!queue.offer(item))
+    } else if (!queue.offer(item)) {
+      queueFullCounter.incr()
       QueueFull
-    else
+    } else {
       Future.Done
+    }
 }
