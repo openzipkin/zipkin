@@ -288,7 +288,7 @@ object Zipkin extends Build {
     Project(
       id = "zipkin-query",
       base = file("zipkin-query"),
-      settings = defaultSettings
+      settings = defaultSettings ++ assemblySettings
     ).settings(
       libraryDependencies ++= Seq(
         finagle("thriftmux"),
@@ -341,7 +341,7 @@ object Zipkin extends Build {
     Project(
       id = "zipkin-collector-scribe",
       base = file("zipkin-collector-scribe"),
-      settings = defaultSettings
+      settings = defaultSettings ++ assemblySettings
     ).settings(
       libraryDependencies ++= Seq(
         scroogeDep("serializer")
@@ -403,10 +403,19 @@ object Zipkin extends Build {
       })
     ).dependsOn(collectorCore, scrooge)
 
+  lazy val collectorServiceAssemblySettings = mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+    {
+      case PathList("org", "slf4j", "impl", ps @ _*) => MergeStrategy.first
+      case PathList("org", "apache", "commons", ps @ _*) => MergeStrategy.first
+      case PathList("com", "twitter", "common", "args", "apt", "cmdline.arg.info.txt.1") => MergeStrategy.first
+      case x => old(x)
+    }
+  }
+
   lazy val collectorService = Project(
     id = "zipkin-collector-service",
     base = file("zipkin-collector-service"),
-    settings = defaultSettings
+    settings = defaultSettings ++ assemblySettings ++ Seq(collectorServiceAssemblySettings)
   ).settings(
     libraryDependencies ++= testDependencies,
 
@@ -425,8 +434,14 @@ object Zipkin extends Build {
     Project(
       id = "zipkin-web",
       base = file("zipkin-web"),
-      settings = defaultSettings
-    ).settings(
+      settings = defaultSettings ++ assemblySettings ++
+Seq(mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+        {
+          case PathList("com", "twitter", "common", "args", "apt", "cmdline.arg.info.txt.1") => MergeStrategy.first
+          case x => old(x)
+        }
+      }
+    )).settings(
       libraryDependencies ++= Seq(
         finagle("exception"),
         finagle("thriftmux"),
@@ -505,9 +520,9 @@ object Zipkin extends Build {
       util("logging"),
       scroogeDep("serializer")
     ) ++ testDependencies,
-    
+
     resolvers ~= {rs => Seq(DefaultMavenRepository) ++ rs},
-    
+
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
       base =>
