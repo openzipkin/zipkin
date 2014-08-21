@@ -7,7 +7,7 @@
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
+ *  Unless requsred by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
@@ -440,18 +440,19 @@ object Zipkin extends Build {
     }
   ).dependsOn(collectorCore, collectorScribe, receiverKafka, cassandra, kafka, redis, anormDB, hbase)
 
+  lazy val webAssemblySettings = mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+    {
+      case PathList("com", "twitter", "common", "args", "apt", "cmdline.arg.info.txt.1") => MergeStrategy.first
+      case x => old(x)
+    }
+  }
+
   lazy val web =
     Project(
       id = "zipkin-web",
       base = file("zipkin-web"),
-      settings = defaultSettings ++ assemblySettings ++
-Seq(mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
-        {
-          case PathList("com", "twitter", "common", "args", "apt", "cmdline.arg.info.txt.1") => MergeStrategy.first
-          case x => old(x)
-        }
-      }
-    )).settings(
+      settings = defaultSettings ++ assemblySettings ++ webAssemblySettings
+    ).settings(
       libraryDependencies ++= Seq(
         finagle("exception"),
         finagle("thriftmux"),
