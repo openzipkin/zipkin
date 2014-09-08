@@ -19,7 +19,10 @@ import com.twitter.zipkin.storage.anormdb.{DB, DBConfig, DBParams}
 import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
 import com.twitter.zipkin.storage.Store
 
-val db = DB(new DBConfig(install = true))
+// val db = DB(new DBConfig(install = true))
+// var params = new DBParams(dbName="zipkin", host="127.0.0.1", username="root", password="root")
+var params = new DBParams(dbName="dev_zipkin", host="rdseng01.private", username="dev_zipkin", password="beph4sWe")
+val db = DB(new DBConfig(name="mysql", params, install = true))
 val anormBuilder = Store.Builder(
   StorageBuilder(db),
   IndexBuilder(db),

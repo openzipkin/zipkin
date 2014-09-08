@@ -28,9 +28,8 @@ import com.twitter.util.{Try, Return, Throw}
  * documentation on using Anorm.
  */
 case class DB(dbconfig: DBConfig = new DBConfig()) {
-
   // Load the driver
-  Class.forName(dbconfig.driver)
+  var driverClass = Class.forName(dbconfig.driver)
 
   // Install the schema if requested
   if (dbconfig.install) this.install().close()
