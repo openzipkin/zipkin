@@ -7,7 +7,7 @@
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
+ *  Unless requsred by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
@@ -274,7 +274,8 @@ object Zipkin extends Build {
   ).settings(
     libraryDependencies ++= Seq(
       "play" % "anorm_2.9.2" % "2.1-09142012",
-      anormDriverDependencies("sqlite-persistent")
+      anormDriverDependencies("sqlite-persistent"),
+      anormDriverDependencies("mysql")
     ) ++ testDependencies ++ scalaTestDeps,
 
     /* Add configs to resource path for ConfigSpec */
@@ -288,7 +289,7 @@ object Zipkin extends Build {
     Project(
       id = "zipkin-query",
       base = file("zipkin-query"),
-      settings = defaultSettings
+      settings = defaultSettings ++ assemblySettings
     ).settings(
       libraryDependencies ++= Seq(
         finagle("thriftmux"),
@@ -319,10 +320,20 @@ object Zipkin extends Build {
       ) ++ testDependencies
     ).dependsOn(common, query, scrooge)
 
+  lazy val queryServiceAssemblySettings = mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+    {
+      case PathList("org", "slf4j", "impl", _*) => MergeStrategy.first
+      case PathList("org", "apache", "commons", _*) => MergeStrategy.first
+      case PathList("com", "twitter", "zipkin", "query", "adjusters", _*) => MergeStrategy.first
+      case PathList("com", "twitter", "common", "args", "apt", "cmdline.arg.info.txt.1") => MergeStrategy.first
+      case x => old(x)
+    }
+  }
+
   lazy val queryService = Project(
     id = "zipkin-query-service",
     base = file("zipkin-query-service"),
-    settings = defaultSettings
+    settings = defaultSettings ++ assemblySettings ++ Seq(queryServiceAssemblySettings)
   ).settings(
     libraryDependencies ++= testDependencies,
 
@@ -341,7 +352,7 @@ object Zipkin extends Build {
     Project(
       id = "zipkin-collector-scribe",
       base = file("zipkin-collector-scribe"),
-      settings = defaultSettings
+      settings = defaultSettings ++ assemblySettings
     ).settings(
       libraryDependencies ++= Seq(
         scroogeDep("serializer")
@@ -403,10 +414,19 @@ object Zipkin extends Build {
       })
     ).dependsOn(collectorCore, scrooge)
 
+  lazy val collectorServiceAssemblySettings = mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+    {
+      case PathList("org", "slf4j", "impl", _*) => MergeStrategy.first
+      case PathList("org", "apache", "commons", _*) => MergeStrategy.first
+      case PathList("com", "twitter", "common", "args", "apt", "cmdline.arg.info.txt.1") => MergeStrategy.first
+      case x => old(x)
+    }
+  }
+
   lazy val collectorService = Project(
     id = "zipkin-collector-service",
     base = file("zipkin-collector-service"),
-    settings = defaultSettings
+    settings = defaultSettings ++ assemblySettings ++ Seq(collectorServiceAssemblySettings)
   ).settings(
     libraryDependencies ++= testDependencies,
 
@@ -421,11 +441,18 @@ object Zipkin extends Build {
     }
   ).dependsOn(collectorCore, collectorScribe, receiverKafka, cassandra, kafka, redis, anormDB, hbase)
 
+  lazy val webAssemblySettings = mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+    {
+      case PathList("com", "twitter", "common", "args", "apt", "cmdline.arg.info.txt.1") => MergeStrategy.first
+      case x => old(x)
+    }
+  }
+
   lazy val web =
     Project(
       id = "zipkin-web",
       base = file("zipkin-web"),
-      settings = defaultSettings
+      settings = defaultSettings ++ assemblySettings ++ webAssemblySettings
     ).settings(
       libraryDependencies ++= Seq(
         finagle("exception"),
@@ -505,9 +532,9 @@ object Zipkin extends Build {
       util("logging"),
       scroogeDep("serializer")
     ) ++ testDependencies,
-    
+
     resolvers ~= {rs => Seq(DefaultMavenRepository) ++ rs},
-    
+
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
       base =>
