@@ -106,14 +106,28 @@ class ThriftQueryServiceTest extends FunSuite {
   test("trace summary for trace id") {
     val svc = newLoadedService()
     val actual = Await.result(svc.getTraceSummariesByIds(List(1), List()))
-    assert(actual === List(TraceSummary(1, 100, 150, 50, Map("service1" -> 1), List(ep1)).toThrift))
+    assert(actual === List(TraceSummary(
+      1,
+      100,
+      150,
+      50,
+      List(SpanTimestamp("service1", 100, 150)),
+      List(ep1)
+    ).toThrift))
   }
 
   test("trace combo for trace id") {
     val svc = newLoadedService()
 
     val trace = trace1.toThrift
-    val summary = TraceSummary(1, 100, 150, 50, Map("service1" -> 1), List(ep1)).toThrift
+    val summary = TraceSummary(
+      1,
+      100,
+      150,
+      50,
+      List(SpanTimestamp("service1", 100, 150)),
+      List(ep1)
+    ).toThrift
     val timeline = TraceTimeline(trace1) map { _.toThrift }
     val combo = thrift.TraceCombo(trace, Some(summary), timeline, Some(Map(666L -> 1)))
 
