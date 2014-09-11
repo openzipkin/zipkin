@@ -36,12 +36,12 @@ struct SpanTimestamp {
  * This sums up a single Trace to make it easy for a client to get an overview of what happened.
  */
 struct TraceSummary {
-  1: i64 trace_id                  // the trace
-  2: i64 start_timestamp           // start timestamp of the trace, in microseconds
-  3: i64 end_timestamp             // end timestamp of the trace, in microseconds
-  4: i32 duration_micro            // how long did the entire trace take? in microseconds
-  // 5: map<string, i32> service_counts     // which services were involved?
-  6: list<zipkinCore.Endpoint> endpoints      // which endpoints were involved?
+  1: i64 trace_id                  # the trace
+  2: i64 start_timestamp           # start timestamp of the trace, in microseconds
+  3: i64 end_timestamp             # end timestamp of the trace, in microseconds
+  4: i32 duration_micro            # how long did the entire trace take? in microseconds
+  # 5: map<string, i32> service_counts     # which services were involved?
+  6: list<zipkinCore.Endpoint> endpoints      # which endpoints were involved?
   7: list<SpanTimestamp> span_timestamps
 }
 
@@ -49,23 +49,23 @@ struct TraceSummary {
  * A modified version of the Annotation struct that brings in more information
  */
 struct TimelineAnnotation {
-  1: i64 timestamp                 // microseconds from epoch
-  2: string value                  // what happened at the timestamp?
-  3: zipkinCore.Endpoint host      // host this happened on
-  4: i64 span_id                   // which span does this annotation belong to?
-  5: optional i64 parent_id        // parent span id
-  6: string service_name           // which service did this annotation happen on?
-  7: string span_name              // span name, rpc method for example
+  1: i64 timestamp                 # microseconds from epoch
+  2: string value                  # what happened at the timestamp?
+  3: zipkinCore.Endpoint host      # host this happened on
+  4: i64 span_id                   # which span does this annotation belong to?
+  5: optional i64 parent_id        # parent span id
+  6: string service_name           # which service did this annotation happen on?
+  7: string span_name              # span name, rpc method for example
 }
 
 /**
  * This sums up a single Trace to make it easy for a client to get an overview of what happened.
  */
 struct TraceTimeline {
-  1: i64 trace_id                          // the trace
-  2: i64 root_most_span_id                 // either the true root span or the closest we can find
-  6: list<TimelineAnnotation> annotations  // annotations as they happened
-  7: list<zipkinCore.BinaryAnnotation> binary_annotations // all the binary annotations
+  1: i64 trace_id                          # the trace
+  2: i64 root_most_span_id                 # either the true root span or the closest we can find
+  6: list<TimelineAnnotation> annotations  # annotations as they happened
+  7: list<zipkinCore.BinaryAnnotation> binary_annotations # all the binary annotations
 }
 
 /**
@@ -73,9 +73,9 @@ struct TraceTimeline {
  */
 struct TraceCombo {
   1: Trace trace
-  2: optional TraceSummary summary // not set if no spans in trace
-  3: optional TraceTimeline timeline // not set if no spans in trace
-  4: optional map<i64, i32> span_depths // not set if no spans in trace
+  2: optional TraceSummary summary # not set if no spans in trace
+  3: optional TraceTimeline timeline # not set if no spans in trace
+  4: optional map<i64, i32> span_depths # not set if no spans in trace
 }
 
 enum Order { TIMESTAMP_DESC, TIMESTAMP_ASC, DURATION_ASC, DURATION_DESC, NONE }
@@ -108,7 +108,7 @@ struct QueryResponse {
 
 service ZipkinQuery {
 
-    //************** Index lookups **************
+    #************** Index lookups **************
 
     QueryResponse getTraceIds(1: QueryRequest request) throws (1: QueryException qe);
 
@@ -145,7 +145,7 @@ service ZipkinQuery {
         5: i64 end_ts, 6: i32 limit, 7: Order order) throws (1: QueryException qe);
 
 
-    //************** Fetch traces from id **************
+    #************** Fetch traces from id **************
 
     /**
      * Get the traces that are in the database from the given list of trace ids.
@@ -190,7 +190,7 @@ service ZipkinQuery {
      */
     list<TraceCombo> getTraceCombosByIds(1: list<i64> trace_ids, 2: list<Adjust> adjust) throws (1: QueryException qe);
 
-    //************** Misc metadata **************
+    #************** Misc metadata **************
 
     /**
      * Fetch all the service names we have seen from now all the way back to the set ttl.
@@ -202,7 +202,7 @@ service ZipkinQuery {
      */
     set<string> getSpanNames(1: string service_name) throws (1: QueryException qe);
 
-    //************** TTL related **************
+    #************** TTL related **************
 
     /**
      * Change the TTL of a trace. If we find an interesting trace we want to keep around for further
