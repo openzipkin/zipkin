@@ -111,6 +111,7 @@ case class CassandraAggregates(
   def storeDependencies(deps: Dependencies): Future[Unit] = {
     val keyBB = ByteBuffer.allocate(8)
     keyBB.putLong(deps.startTime.floor(1.day).inMicroseconds)
+    keyBB.rewind()
     store[ByteBuffer,thriftscala.Dependencies](dependenciesCF, keyBB, Seq(deps.toThrift))
   }
 
