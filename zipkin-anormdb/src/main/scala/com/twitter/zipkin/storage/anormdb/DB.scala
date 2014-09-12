@@ -20,7 +20,7 @@ import anorm._
 import anorm.SqlParser._
 import java.sql.{Blob, Connection, DriverManager, SQLException}
 import com.twitter.util.{Try, Return, Throw}
-
+import com.twitter.logging.Logger
 /**
  * Provides SQL database access via Anorm from the Play framework.
  *
@@ -59,13 +59,16 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
   def withTransaction[A](conn: Connection, code: Connection => A): Try[A] = {
     val autoCommit = conn.getAutoCommit
     try {
-      conn.setAutoCommit(false)
+      // Disable transaction because this seems not not thread safe 
+      // and got "Can't call commit when autocommit=true" sometimes.
+      //conn.setAutoCommit(false)
       val result = code(conn)
-      conn.commit()
+      //conn.commit()
       Return(result)
     }
     catch {
       case e: Throwable => {
+        Logger.get().error(e, "withTransaction")
         conn.rollback()
         Throw(e)
       }

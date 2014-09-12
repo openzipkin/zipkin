@@ -121,7 +121,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
 	  val sql = """SELECT trace_id, MAX(a_timestamp)
               |FROM zipkin_annotations
               |WHERE service_name = {service_name}
-              |  AND value = {annotation}
+              |  AND span_name like {annotation}
               |  AND a_timestamp < {end_ts}
               |GROUP BY trace_id
               |ORDER BY a_timestamp DESC
@@ -130,7 +130,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
 	  Logger.get.info("SQL: " + sql)
 	  SQL(sql)
             .on("service_name" -> serviceName)
-            .on("annotation" -> annotation)
+            .on("annotation" -> ("%" + annotation + "%"))
             .on("end_ts" -> endTs)
             .on("limit" -> limit)
             .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)

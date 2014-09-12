@@ -105,6 +105,7 @@ class AnormSpanStore(
               ("key" -> b.key),
               ("value" -> Util.getArrayFromBuffer(b.value)),
               ("annotation_type_value" -> b.annotationType.value),
+	      ("created_ts" -> span.firstAnnotation.map(_.timestamp)),
               ("ipv4" -> b.host.map(_.ipv4)),
               ("port" -> b.host.map(_.ipv4)))
           }

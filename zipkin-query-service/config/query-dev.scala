@@ -20,7 +20,7 @@ import com.twitter.zipkin.storage.Store
 
 
 
-var params = new DBParams(dbName="dev_zipkin", host="rdseng01.private", username="dev_zipkin", password="beph4sWe")
+var params = new DBParams(dbName="dev_zipkin", host="rdseng01.private", username="dev_zipkin", password="Y8keZTVxErAwHx8PXdEJmppNTpjZQwRg6oVsmGmgpcpUUnnRaq")
 val db = DB(new DBConfig(name="mysql", params, install = true))
 //val db = DB(new DBConfig(install = true))
 
