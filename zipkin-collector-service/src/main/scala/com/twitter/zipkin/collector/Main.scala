@@ -27,7 +27,7 @@ object Main {
   val log = Logger.get(getClass.getName)
 
   def main(args: Array[String]) {
-    log.info("Loading configuration")
+    log.info("Loading configuration with args:" + args.mkString(","))
     val runtime = RuntimeEnvironment(BuildProperties, args)
     val builder = (new Eval).apply[CollectorServiceBuilder[Seq[String]]](runtime.configFile)
     try {

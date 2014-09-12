@@ -27,7 +27,7 @@ import anorm.SqlParser._
 import java.nio.ByteBuffer
 import java.sql.Connection
 import AnormThreads.inNewThread
-
+import com.twitter.logging.Logger
 /**
  * Retrieve and store span information.
  *
@@ -75,6 +75,7 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
         .on("duration" -> span.duration)
         .on("created_ts" -> createdTs)
         .execute()
+      Logger.get().error("inserted span " + span.id) 
 
       span.annotations.foreach(a =>
         SQL(
@@ -100,10 +101,10 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
         SQL(
           """INSERT INTO zipkin_binary_annotations
             |  (span_id, trace_id, span_name, service_name, annotation_key,
-            |    annotation_value, annotation_type_value, ipv4, port)
+            |    annotation_value, annotation_type_value, ipv4, port, created_ts)
             |VALUES
             |  ({span_id}, {trace_id}, {span_name}, {service_name}, {key}, {value},
-            |    {annotation_type_value}, {ipv4}, {port})
+            |    {annotation_type_value}, {ipv4}, {port}, {created_ts})
           """.stripMargin)
           .on("span_id" -> span.id)
           .on("trace_id" -> span.traceId)
@@ -114,6 +115,7 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
           .on("annotation_type_value" -> b.annotationType.value)
           .on("ipv4" -> b.host.map(_.ipv4))
           .on("port" -> b.host.map(_.ipv4))
+          .on("created_ts" -> createdTs)
           .execute()
       )
     })

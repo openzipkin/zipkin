@@ -26,6 +26,7 @@ import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
 import AnormThreads.inNewThread
+import com.twitter.logging.Logger
 
 /**
  * Retrieve and store trace and span information.
@@ -57,8 +58,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    */
   def getTraceIdsByName(serviceName: String, spanName: Option[String],
                         endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = inNewThread {
-    val result:List[(Long, Long)] = SQL(
-      """SELECT trace_id, MAX(a_timestamp)
+    val sql = """SELECT trace_id, MAX(a_timestamp)
         |FROM zipkin_annotations
         |WHERE service_name = {service_name}
         |  AND (span_name = {span_name} OR {span_name} = '')
@@ -66,7 +66,9 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
         |GROUP BY trace_id
         |ORDER BY a_timestamp DESC
         |LIMIT {limit}
-      """.stripMargin)
+      """.stripMargin
+    Logger.get.info("SQL: " + sql)
+    val result:List[(Long, Long)] = SQL(sql)
       .on("service_name" -> serviceName)
       .on("span_name" -> (if (spanName.isEmpty) "" else spanName.get))
       .on("end_ts" -> endTs)
@@ -92,8 +94,7 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
       val result:List[(Long, Long)] = value match {
         // Binary annotations
         case Some(bytes) => {
-          SQL(
-            """SELECT zba.trace_id, s.created_ts
+	  val sql =             """SELECT zba.trace_id, s.created_ts
             |FROM zipkin_binary_annotations AS zba
             |LEFT JOIN zipkin_spans AS s
             |  ON zba.trace_id = s.trace_id
@@ -105,7 +106,9 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
             |GROUP BY zba.trace_id
             |ORDER BY s.created_ts DESC
             |LIMIT {limit}
-          """.stripMargin)
+          """.stripMargin
+	  Logger.get.info("SQL: " + sql)
+          SQL(sql)
             .on("service_name" -> serviceName)
             .on("annotation" -> annotation)
             .on("value" -> Util.getArrayFromBuffer(bytes))
@@ -115,18 +118,19 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
         }
         // Normal annotations
         case None => {
-          SQL(
-            """SELECT trace_id, MAX(a_timestamp)
+	  val sql = """SELECT trace_id, MAX(a_timestamp)
               |FROM zipkin_annotations
               |WHERE service_name = {service_name}
-              |  AND value = {annotation}
+              |  AND span_name like {annotation}
               |  AND a_timestamp < {end_ts}
               |GROUP BY trace_id
               |ORDER BY a_timestamp DESC
               |LIMIT {limit}
-            """.stripMargin)
+            """.stripMargin
+	  Logger.get.info("SQL: " + sql)
+	  SQL(sql)
             .on("service_name" -> serviceName)
-            .on("annotation" -> annotation)
+            .on("annotation" -> ("%" + annotation + "%"))
             .on("end_ts" -> endTs)
             .on("limit" -> limit)
             .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
@@ -144,12 +148,13 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Duration returned in microseconds.
    */
   def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = inNewThread {
-    val result:List[(Long, Option[Long], Long)] = SQL(
-      """SELECT trace_id, duration, created_ts
+    val sql = """SELECT trace_id, duration, created_ts
         |FROM zipkin_spans
         |WHERE trace_id IN (%s) AND created_ts IS NOT NULL
         |GROUP BY trace_id
-      """.stripMargin.format(traceIds.mkString(",")))
+      """.stripMargin.format(traceIds.mkString(","))
+       Logger.get.info("SQL: " + sql)
+    val result:List[(Long, Option[Long], Long)] = SQL(sql)
       .as((long("trace_id") ~ get[Option[Long]]("duration") ~ long("created_ts") map flatten) *)
     result map { case (traceId, duration, startTs) =>
       // trace ID, duration, start TS
@@ -161,12 +166,13 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Get all the service names.
    */
   def getServiceNames: Future[Set[String]] = inNewThread {
-    SQL(
-      """SELECT service_name
+    val sql =       """SELECT service_name
         |FROM zipkin_annotations
         |GROUP BY service_name
         |ORDER BY service_name ASC
-      """.stripMargin)
+      """.stripMargin
+    Logger.get.info("SQL: " + sql)
+    SQL(sql)
       .as(str("service_name") *).toSet
   }
 
@@ -174,13 +180,14 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Get all the span names for a particular service.
    */
   def getSpanNames(service: String): Future[Set[String]] = inNewThread {
-    SQL(
-      """SELECT span_name
+    var sql =       """SELECT span_name
         |FROM zipkin_annotations
         |WHERE service_name = {service} AND span_name <> ''
         |GROUP BY span_name
         |ORDER BY span_name ASC
-      """.stripMargin)
+      """.stripMargin
+    Logger.get.info("SQL: " + sql)
+    SQL(sql)
       .on("service" -> service)
       .as(str("span_name") *)
       .toSet

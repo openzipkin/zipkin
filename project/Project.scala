@@ -274,7 +274,7 @@ object Zipkin extends Build {
   ).settings(
     libraryDependencies ++= Seq(
       "play" % "anorm_2.9.2" % "2.1-09142012",
-      anormDriverDependencies("sqlite-persistent")
+      anormDriverDependencies("mysql")
     ) ++ testDependencies ++ scalaTestDeps,
 
     /* Add configs to resource path for ConfigSpec */

@@ -24,6 +24,7 @@ import com.twitter.zipkin.storage.{IndexedTraceId, SpanStore, TraceIdDuration}
 import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import java.sql.Connection
+import com.twitter.logging.Logger
 
 // TODO: connection pooling for real parallelism
 class AnormSpanStore(
@@ -104,6 +105,7 @@ class AnormSpanStore(
               ("key" -> b.key),
               ("value" -> Util.getArrayFromBuffer(b.value)),
               ("annotation_type_value" -> b.annotationType.value),
+	      ("created_ts" -> span.firstAnnotation.map(_.timestamp)),
               ("ipv4" -> b.host.map(_.ipv4)),
               ("port" -> b.host.map(_.ipv4)))
           }
@@ -251,6 +253,7 @@ class AnormSpanStore(
     endTs: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] = pool {
+    Logger.get.info("zzz SQL: " + idsByNameSql)
     idsByNameSql
       .on("service_name" -> serviceName)
       .on("span_name" -> spanName.getOrElse(""))
@@ -305,6 +308,7 @@ class AnormSpanStore(
     if (Constants.CoreAnnotations.contains(annotation))
       Future.value(Seq.empty)
     else pool {
+      Logger.get.info("zzz SQL: " + byAnnValSql)
       val sql = value
         .map(_ => byAnnValSql)
         .getOrElse(byAnnSql)
@@ -335,6 +339,7 @@ class AnormSpanStore(
   ) map { case a~b~c => TraceIdDuration(a, b.getOrElse(0), c) }
 
   def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = pool {
+    Logger.get.info("zzz SQL: " + byDurationSql(traceIds))
     byDurationSql(traceIds)
       .as(byDurationResults *)
   }
@@ -347,6 +352,7 @@ class AnormSpanStore(
   """.stripMargin)
 
   def getAllServiceNames: Future[Set[String]] = pool {
+    Logger.get.info("zzz SQL: " + svcNamesSql)
     svcNamesSql.as(str("service_name") *).toSet
   }
 
@@ -359,6 +365,7 @@ class AnormSpanStore(
   """.stripMargin)
 
   def getSpanNames(service: String): Future[Set[String]] = pool {
+    Logger.get.info("zzz SQL: " + spanNamesSql)
     spanNamesSql.on("service" -> service).as(str("span_name") *).toSet
   }
 }
