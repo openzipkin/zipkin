@@ -52,39 +52,61 @@ module ZipkinTracer extend self
           0.1
         end
 
+      @annotate_plugin = config[:annotate_plugin]     # call for trace annotation
+      @filter_plugin = config[:filter_plugin]         # skip tracing if returns false
+      @whitelist_plugin = config[:whitelist_plugin]   # force sampling if returns true
+
       ::Trace.tracer = ::Trace::ZipkinTracer.new(CarelessScribe.new(scribe), scribe_max_buffer)
     end
 
     def call(env)
+      # skip certain requests
+      return @app.call(env) if filtered?(env)
+
       ::Trace.default_endpoint = ::Trace.default_endpoint.with_service_name(@service_name).with_port(@service_port)
       ::Trace.sample_rate=(@sample_rate)
-      id = get_or_create_trace_id(env) # note that this depends on the sample rate being set
-      tracing_filter(id, env) { @app.call(env) }
+      whitelisted = force_sample?(env)
+      id = get_or_create_trace_id(env, whitelisted) # note that this depends on the sample rate being set
+      tracing_filter(id, env, whitelisted) { @app.call(env) }
     end
 
     private
-    def tracing_filter(trace_id, env)
+    def annotate(env, status, response_headers, response_body)
+      @annotate_plugin.call(env, status, response_headers, response_body) if @annotate_plugin
+    end
+
+    def filtered?(env)
+      @filter_plugin && !@filter_plugin.call(env)
+    end
+
+    def force_sample?(env)
+      @whitelist_plugin && @whitelist_plugin.call(env)
+    end
+
+    def tracing_filter(trace_id, env, whitelisted=false)
       @lock.synchronize do
         ::Trace.push(trace_id)
         ::Trace.set_rpc_name(env["REQUEST_METHOD"]) # get/post and all that jazz
         ::Trace.record(::Trace::BinaryAnnotation.new("http.uri", env["PATH_INFO"], "STRING", ::Trace.default_endpoint))
         ::Trace.record(::Trace::Annotation.new(::Trace::Annotation::SERVER_RECV, ::Trace.default_endpoint))
+        ::Trace.record(::Trace::Annotation.new('whitelisted', ::Trace.default_endpoint)) if whitelisted
       end
-      yield if block_given?
+      status, headers, body = yield if block_given?
     ensure
       @lock.synchronize do
         ::Trace.record(::Trace::Annotation.new(::Trace::Annotation::SERVER_SEND, ::Trace.default_endpoint))
+        annotate(env, status, headers, body)
         ::Trace.pop
       end
     end
 
     private
-    def get_or_create_trace_id(env, default_flags = ::Trace::Flags::EMPTY)
+    def get_or_create_trace_id(env, whitelisted, default_flags = ::Trace::Flags::EMPTY)
       trace_parameters = if B3_REQUIRED_HEADERS.all? { |key| env.has_key?(key) }
                            env.values_at(*B3_HEADERS)
                          else
                            new_id = Trace.generate_id
-                           [new_id, nil, new_id, ("true" if Trace.should_sample?), default_flags]
+                           [new_id, nil, new_id, ("true" if whitelisted || Trace.should_sample?), default_flags]
                          end
       trace_parameters[3] = (trace_parameters[3] == "true")
       trace_parameters[4] = (trace_parameters[4] || default_flags).to_i
