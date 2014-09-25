@@ -111,7 +111,7 @@ class ZKClient(
     val cData = data getOrElse Array.empty[Byte]
     zkClient(path).create(data = cData, mode = cMode).unit rescue {
       case e: KeeperException.NodeExistsException =>
-        log.debug("Node exists: " + path)
+        log.debug(e, "Node exists: " + path)
         Future.Unit
     } onSuccess { _ =>
       log.debug("created node: " + path)
@@ -149,7 +149,7 @@ class ZKClient(
                 register()
 
               case e if e.getState == Watcher.Event.KeeperState.Disconnected =>
-                log.debug("ephermal node (%s) keeper disconnected. re-registering".format(path))
+                log.debug("ephemeral node (%s) keeper disconnected. re-registering".format(path))
                 register()
 
               case e if e.getState == Watcher.Event.KeeperState.Expired =>
@@ -161,10 +161,10 @@ class ZKClient(
                 ()
             }
           } onFailure { e: Throwable =>
-            log.error("ephemeral node (%s) watch fired. update failed".format(path), e)
+            log.error(e, "ephemeral node (%s) watch fired. update failed".format(path))
           }
         } onFailure { e: Throwable =>
-          log.error("failed to register ephemeral: " + path, e)
+          log.error(e, "failed to register ephemeral: %s".format(path))
         }
       }
       register()
