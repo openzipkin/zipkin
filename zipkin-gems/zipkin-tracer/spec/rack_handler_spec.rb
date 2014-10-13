@@ -28,4 +28,29 @@ describe ZipkinTracer::RackHandler do
     # return expected status
     expect(status).to eq(200)
   end
+
+  context 'with sample rate set to 0' do
+    before(:each) { ::Trace.sample_rate = 0 }
+
+    it 'does not sample a request' do
+      expect(::Trace).to receive(:push) do |trace_id|
+        expect(trace_id.sampled?).to be_falsy
+      end
+      status, headers, body = subject.call(mock_env())
+
+      # return expected status
+      expect(status).to eq(200)
+    end
+
+    it 'always samples if debug flag is passed in header' do
+      expect(::Trace).to receive(:push) do |trace_id|
+        expect(trace_id.sampled?).to be_truthy
+      end
+      status, headers, body = subject.call(
+        mock_env('/', 'HTTP_X_B3_FLAGS' => ::Trace::Flags::DEBUG.to_s))
+
+      # return expected status
+      expect(status).to eq(200)
+    end
+  end
 end
