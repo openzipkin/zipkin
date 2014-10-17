@@ -163,8 +163,19 @@ class ZKClient(
           } onFailure { e: Throwable =>
             log.error(e, "ephemeral node (%s) watch fired. update failed".format(path))
           }
-        } onFailure { e: Throwable =>
-          log.error(e, "failed to register ephemeral: %s".format(path))
+        } onFailure {
+          case e: KeeperException =>
+            if (client.shouldRetry(e)) {
+              log.debug(e, "ephemeral node (%s) registration exception. Re-registering.".format(path))
+              register()
+            } else {
+              log.error(e, "ephemeral node (%s) registration exception. NOT re-registering.".format(path))
+            }
+          case e: TimeoutException =>
+            log.debug(e, "Failed to register ephemeral (%s) due to timeout. Re-registering.".format(path))
+            register()
+          case e =>
+            log.error(e, "Failed to register ephemeral (%s). NOT re-registering.".format(path))
         }
       }
       register()
