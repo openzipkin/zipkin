@@ -2,4 +2,4 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 VERSION=@VERSION@
 
-java -cp "$DIR/../libs/*" -jar $DIR/../zipkin-web-$VERSION.jar $@
+java -cp "$DIR/../libs/*" -jar $DIR/../zipkin-web-$VERSION.jar -zipkin.web.resourcesRoot=$DIR/../resources/ $@
