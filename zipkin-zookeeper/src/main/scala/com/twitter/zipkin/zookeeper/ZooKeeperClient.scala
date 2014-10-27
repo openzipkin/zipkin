@@ -171,7 +171,7 @@ class ZKClient(
             } else {
               log.error(e, "ephemeral node (%s) registration exception. NOT re-registering.".format(path))
             }
-          case e: TimeoutException =>
+          case e: java.util.concurrent.TimeoutException =>
             log.debug(e, "Failed to register ephemeral (%s) due to timeout. Re-registering.".format(path))
             register()
           case e =>
