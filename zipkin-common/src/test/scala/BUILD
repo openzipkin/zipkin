@@ -2,8 +2,6 @@ junit_tests(name='scala',
   dependencies=[
     '3rdparty:junit',
     '3rdparty:scalatest',
-    '3rdparty:mockito-all',
-    '3rdparty:specs',
     'zipkin/oss/zipkin-common',
   ],
   sources=rglobs('*.scala')

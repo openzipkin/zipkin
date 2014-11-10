@@ -16,51 +16,45 @@
  */
 package com.twitter.zipkin.common
 
-import org.specs.SpecificationWithJUnit
-import org.specs.runner.JUnitSuiteRunner
-import org.junit.runner.RunWith
-
 import com.twitter.algebird.{Semigroup, Moments, Monoid}
 import com.twitter.util.Time
 import com.twitter.conversions.time._
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitSuiteRunner])
-class DependenciesSpec extends SpecificationWithJUnit
-{
-  "Services" should {
-    "compare correctly" in {
-      val s1 = Service("foo")
-      val s2 = Service("bar")
-      val s3 = Service("foo")
-      val s4 = Service("Foo")
-      val s5 = Service("FOO")
+@RunWith(classOf[JUnitRunner])
+class DependenciesTest extends FunSuite {
+  test("services compare correctly") {
+    val s1 = Service("foo")
+    val s2 = Service("bar")
+    val s3 = Service("foo")
+    val s4 = Service("Foo")
+    val s5 = Service("FOO")
 
-      s1 mustEqual s1
-      s1 mustEqual s3
-      s1 mustNotEq s2
-      s1 mustNotEq s4 // not sure if case sensitivity is required, but we should be aware if it changes
-      s1 mustNotEq s5
-    }
+    assert(s1 === s1)
+    assert(s1 === s3)
+    assert(s1 !=  s2)
+    assert(s1 !=  s4) // not sure if case sensitivity is required, but we should be aware if it changes
+    assert(s1 !=  s5)
   }
 
-  "DependencyLinks" should {
+  test("DependencyLinks") {
     val m1 = Moments(2)
     val m2 = Moments(4)
     val d1 = DependencyLink(Service("tfe"), Service("mobileweb"), m1)
     val d2 = DependencyLink(Service("tfe"), Service("mobileweb"), m2)
     val d3 = DependencyLink(Service("Gizmoduck"), Service("tflock"), m2)
 
-    "combine" in {
-      Semigroup.plus(d1, d2) mustEqual d1.copy(durationMoments = Monoid.plus(m1, m2))
-    }
+    // combine
+    assert(Semigroup.plus(d1, d2) === d1.copy(durationMoments = Monoid.plus(m1, m2)))
 
-    "assert if incompatible links are combined" in {
-      Semigroup.plus(d1, d3) must throwA[AssertionError]
-    }
+    // assert if incompatible links are combined
+    intercept[AssertionError] { Semigroup.plus(d1, d3) }
   }
 
 
-  "Dependencies" should {
+  test("Dependencies") {
     val m1 = Moments(2)
     val m2 = Moments(4)
     val dl1 = DependencyLink(Service("tfe"), Service("mobileweb"), m1)
@@ -72,17 +66,17 @@ class DependenciesSpec extends SpecificationWithJUnit
     val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
     val deps2 = Dependencies(Time.fromSeconds(0)+1.hour, Time.fromSeconds(0)+2.hours, List(dl2, dl4))
 
-    "express identity when added to zero" in {
-      val result = Monoid.plus(deps1, Monoid.zero[Dependencies])
-      result mustEqual deps1
-    }
+    // express identity when added to zero
+    val result = Monoid.plus(deps1, Monoid.zero[Dependencies])
+    assert(result === deps1)
 
-    "combine" in {
-      val result = Monoid.plus(deps1, deps2)
+    // combine
+    val result2 = Monoid.plus(deps1, deps2)
 
-      result.startTime mustEqual Time.fromSeconds(0)
-      result.endTime mustEqual Time.fromSeconds(0)+2.hours
-      result.links must haveTheSameElementsAs(Seq(dl4, dl5, dl3))
-    }
+    assert(result2.startTime === Time.fromSeconds(0))
+    assert(result2.endTime === Time.fromSeconds(0)+2.hours)
+
+    def counts(e: Traversable[_]) = e groupBy identity mapValues (_.size)
+    assert(counts(result2.links) == counts(Seq(dl4, dl5, dl3)))
   }
 }
