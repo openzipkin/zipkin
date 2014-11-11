@@ -17,11 +17,12 @@ package com.twitter.zipkin.storage.util
 
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
-import com.twitter.util.{Await, Duration}
+import com.twitter.util.{Await, Duration, NonFatal}
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query.Trace
 import com.twitter.zipkin.storage.{TraceIdDuration, SpanStore}
 import java.nio.ByteBuffer
+import scala.language.reflectiveCalls
 
 class SpanStoreValidator(
   newSpanStore: => SpanStore,
@@ -78,7 +79,7 @@ class SpanStoreValidator(
       try {
         f(); println("  pass")
         true
-      } catch { case e: Throwable =>
+      } catch { case NonFatal(e) =>
         println("  fail")
         log.error(e, "validation failed")
         false
@@ -110,7 +111,7 @@ class SpanStoreValidator(
         case e: SpanStoreException =>
           println("  Caught exception %s (expected)".format(e))
           true
-        case x =>
+        case NonFatal(x) =>
           println("  Error: caught exception %s (unexpected)".format(x))
           false
       }

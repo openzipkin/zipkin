@@ -248,13 +248,13 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
       )
     }
 
-    val traces = ts map { t =>
+    val traces = ts.map { t =>
       val duration = t.durationMicro / 1000
       val groupedSpanTimestamps = t.spanTimestamps.groupBy(_.name)
 
-      val serviceDurations = groupedSpanTimestamps map { case (n, sts) =>
+      val serviceDurations = groupedSpanTimestamps.map { case (n, sts) =>
         MustacheServiceDuration(n, sts.length, sts.map(_.duration).max / 1000)
-      } toSeq
+      }.toSeq
 
       val serviceTime = for {
         name <- serviceName
@@ -272,7 +272,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
         serviceDurations,
         ((duration.toFloat / maxDuration) * 100).toInt
       )
-    } sortBy(_.duration) reverse
+    }.sortBy(_.duration).reverse
 
     Map(
       ("traces" -> traces),
@@ -503,10 +503,10 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
     }
 
     val traceDuration = trace.duration * 1000
-    val serviceDurations = combo.summary map { summary =>
-      summary.spanTimestamps.groupBy(_.name) map { case (n, sts) =>
+    val serviceDurations = combo.summary.map { summary =>
+      summary.spanTimestamps.groupBy(_.name).map { case (n, sts) =>
         MustacheServiceDuration(n, sts.length, sts.map(_.toSpanTimestamp.duration).max / 1000)
-      } toSeq
+      }.toSeq
     }
 
     val timeMarkers = Seq[Double](0.0, 0.2, 0.4, 0.6, 0.8, 1.0).zipWithIndex map { case (p, i) =>

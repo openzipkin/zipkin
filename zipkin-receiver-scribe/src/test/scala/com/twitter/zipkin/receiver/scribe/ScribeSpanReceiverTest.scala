@@ -19,7 +19,6 @@ import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.thriftscala.{LogEntry, ResultCode, Span => ThriftSpan}
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
@@ -41,7 +40,7 @@ class ScribeSpanReceiverTest extends FunSuite {
     var recvdSpan: Option[Seq[ThriftSpan]] = None
     val receiver = new ScribeReceiver(Set(category), { s =>
       recvdSpan = Some(s)
-      Future.value(true)
+      Future.Done
     })
     assert(Await.result(receiver.log(Seq(validList.head, validList.head))) === ResultCode.Ok)
     assert(!recvdSpan.isEmpty)
@@ -57,7 +56,7 @@ class ScribeSpanReceiverTest extends FunSuite {
     var recvdSpan: Option[ThriftSpan] = None
     val receiver = new ScribeReceiver(Set("othercat"), { s =>
       recvdSpan = Some(s.head)
-      Future.value(true)
+      Future.Done
     })
     assert(Await.result(receiver.log(validList)) === ResultCode.Ok)
     assert(recvdSpan.isEmpty)
@@ -67,7 +66,7 @@ class ScribeSpanReceiverTest extends FunSuite {
     var recvdSpan: Option[ThriftSpan] = None
     val receiver = new ScribeReceiver(Set(category), { s =>
       recvdSpan = Some(s.head)
-      Future.value(true)
+      Future.Done
     })
     assert(Await.result(receiver.log(Seq(LogEntry(category, "badencoding")))) === ResultCode.Ok)
     assert(recvdSpan.isEmpty)

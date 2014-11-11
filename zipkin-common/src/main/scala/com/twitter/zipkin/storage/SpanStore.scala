@@ -132,10 +132,10 @@ class InMemorySpanStore extends SpanStore {
   private[this] def call[T](f: => T): Future[T] = synchronized { Future(f) }
 
   private[this] def spansForService(name: String): Seq[Span] =
-    spans filter { span =>
+    spans.filter { span =>
       shouldIndex(span) &&
       span.serviceNames.exists { _.toLowerCase == name.toLowerCase }
-    } toList
+    }.toList
 
   def close(deadline: Time): Future[Unit] = closeAwaitably {
     Future.Done
@@ -161,12 +161,12 @@ class InMemorySpanStore extends SpanStore {
 
   def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = call {
     traceIds flatMap { id =>
-      Some(spans filter { _.traceId == id } toList) filter { _.length > 0 }
+      Some(spans.filter { _.traceId == id }.toList).filter { _.length > 0 }
     }
   }
 
   def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = call {
-    spans filter { _.traceId == traceId } toList
+    spans.filter { _.traceId == traceId }.toList
   }
 
   def getTraceIdsByName(
@@ -180,14 +180,14 @@ class InMemorySpanStore extends SpanStore {
         spans filter { _.name.toLowerCase == name.toLowerCase }
       case (_, spans) =>
         spans
-    }) filter { span =>
+    }).filter { span =>
       span.lastAnnotation match {
         case Some(ann) => ann.timestamp <= endTs
         case None => false
       }
-    } filter(shouldIndex) take(limit) map { span =>
+    }.filter(shouldIndex).take(limit).map { span =>
       IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
-    } toList
+    }.toList
   }
 
   def getTraceIdsByAnnotation(
@@ -212,9 +212,9 @@ class InMemorySpanStore extends SpanStore {
             span.annotations.min.timestamp <= endTs &&
             span.annotations.exists { _.value == annotation }
           }
-      }) filter(shouldIndex) take(limit) map { span =>
+      }).filter(shouldIndex).take(limit).map { span =>
         IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
-      } toList
+      }.toList
     }
   }
 

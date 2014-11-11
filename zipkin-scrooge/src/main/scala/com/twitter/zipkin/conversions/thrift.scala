@@ -15,13 +15,14 @@
  */
 package com.twitter.zipkin.conversions
 
-import com.twitter.conversions.time._
-import com.twitter.zipkin.common._
-import com.twitter.zipkin.thriftscala
-import com.twitter.zipkin.query._
-import com.twitter.util.{Duration, Time}
-import java.util.concurrent.TimeUnit
 import com.twitter.algebird.Moments
+import com.twitter.conversions.time._
+import com.twitter.util.{Duration, Time}
+import com.twitter.zipkin.common._
+import com.twitter.zipkin.query._
+import com.twitter.zipkin.thriftscala
+import java.util.concurrent.TimeUnit
+import scala.language.implicitConversions
 
 /**
  * Convenience implicits for converting between common classes and Thrift.

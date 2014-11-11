@@ -98,10 +98,10 @@ class ScribeReceiver(
   private[this] val messagesStats = stats.scope("messages")
   private[this] val totalMessagesCounter = messagesStats.counter("total")
   private[this] val InvalidMessagesCounter = messagesStats.counter("invalid")
-  private[this] val categoryCounters = categories map { category =>
+  private[this] val categoryCounters = categories.map { category =>
     val cat = category.toLowerCase
     (cat, messagesStats.scope("perCategory").counter(cat))
-  } toMap
+  }.toMap
 
   private[this] def entryToSpan(entry: LogEntry): Option[ThriftSpan] = try {
     val span = stats.time("deserializeSpan") { deserializer.fromString(entry.message) }

@@ -35,7 +35,7 @@ case class DependencyLink(parent: Service, child: Service, durationMoments: Mome
 
 object DependencyLink {
   // this gives us free + operator along with other algebird aggregation methods
-  implicit val sg:Semigroup[DependencyLink] = new Semigroup[DependencyLink] {
+  implicit val sg: Semigroup[DependencyLink] = new Semigroup[DependencyLink] {
     def plus(l: DependencyLink, r: DependencyLink) = {
       assert(l.child == r.child && l.parent == r.parent)
       DependencyLink(l.parent, l.child, Monoid.plus(l.durationMoments, r.durationMoments))
@@ -57,7 +57,7 @@ case class Dependencies(
 
 object Dependencies {
   // used for summing/merging database rows
-  implicit val monoid:Monoid[Dependencies] = new Monoid[Dependencies] {
+  implicit val monoid: Monoid[Dependencies] = new Monoid[Dependencies] {
     def plus(l: Dependencies, r: Dependencies) = {
       // new start/end should be the inclusive time span of both items
       val newStart = r.startTime min l.startTime

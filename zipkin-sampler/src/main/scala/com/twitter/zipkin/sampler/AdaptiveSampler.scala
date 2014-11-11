@@ -16,6 +16,7 @@
  */
 package com.twitter.zipkin.sampler
 
+import com.google.common.collect.EvictingQueue
 import com.twitter.app.App
 import com.twitter.conversions.time._
 import com.twitter.finagle.Service
@@ -27,6 +28,7 @@ import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.SpanStore
 import com.twitter.zipkin.zookeeper._
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference, AtomicInteger}
+import scala.reflect.ClassTag
 
 trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
   val asBasePath = flag(
@@ -132,12 +134,13 @@ trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
 
 }
 
-class AtomicRingBuffer[T: ClassManifest](maxSize: Int) {
-  private[this] val underlying = new RingBuffer[T](maxSize)
+class AtomicRingBuffer[T: ClassTag](maxSize: Int) {
+  private[this] val underlying: EvictingQueue[T] = EvictingQueue.create[T](maxSize)
 
   def pushAndSnap(newVal: T): Seq[T] = synchronized {
-    underlying += newVal
-    underlying.reverse
+    underlying.add(newVal)
+    val arr = underlying.toArray.asInstanceOf[Array[T]]
+    arr.reverse
   }
 }
 
