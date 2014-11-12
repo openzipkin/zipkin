@@ -55,16 +55,18 @@ trait ZipkinWebFactory { self: App =>
   val webPinTtl = flag("zipkin.web.pinTtl", 30.days, "Length of time pinned traces should exist")
 
   val queryDest = flag("zipkin.web.query.dest", "127.0.0.1:9411", "Location of the query server")
-  def newQueryClient(): ZipkinQuery[Future] =
+  def newQueryClient(): ZipkinQuery.FutureIface =
     Thrift.newIface[ZipkinQuery.FutureIface]("ZipkinQuery=" + queryDest())
+
+  def newJsonGenerator = new ZipkinJson
+  def newMustacheGenerator = new ZipkinMustache(webResourcesRoot(), webCacheResources())
+  def newHandlers = new Handlers(newJsonGenerator, newMustacheGenerator)
 
   def newWebServer(
     queryClient: ZipkinQuery[Future] = newQueryClient(),
     stats: StatsReceiver = DefaultStatsReceiver.scope("zipkin-web")
   ): Service[HttpRequest, HttpResponse] = {
-    val jsonGenerator = new ZipkinJson
-    val mustacheGenerator = new ZipkinMustache(webResourcesRoot(), webCacheResources())
-    val handlers = new Handlers(jsonGenerator, mustacheGenerator)
+    val handlers = newHandlers
     import handlers._
 
     val publicRoot = if (webCacheResources()) None else Some(webResourcesRoot())

@@ -22,6 +22,7 @@ import com.twitter.zipkin.common._
 import com.twitter.zipkin.query._
 import com.twitter.zipkin.thriftscala
 import java.util.concurrent.TimeUnit
+import scala.collection.breakOut
 import scala.language.implicitConversions
 
 /**
@@ -102,17 +103,21 @@ object thrift {
         case _ => ()
       }
 
-      val annotations = s.annotations match {
-        case null => List.empty[Annotation]
-        case as => as.map { _.toAnnotation }.toList
-      }
-
-      val binaryAnnotations = s.binaryAnnotations match {
-        case null => List.empty[BinaryAnnotation]
-        case b => b.map { _.toBinaryAnnotation }
-      }
-
-      new Span(s.traceId, s.name, s.id, s.parentId, annotations, binaryAnnotations, s.debug)
+      Span(
+        s.traceId,
+        s.name,
+        s.id,
+        s.parentId,
+        s.annotations match {
+          case null => List.empty[Annotation]
+          case as => as.map(_.toAnnotation)(breakOut)
+        },
+        s.binaryAnnotations match {
+          case null => List.empty[BinaryAnnotation]
+          case b => b.map(_.toBinaryAnnotation)(breakOut)
+        },
+        s.debug
+      )
     }
   }
   implicit def spanToThriftSpan(s: Span) = new ThriftSpan(s)
@@ -229,8 +234,8 @@ object thrift {
       t.startTimestamp,
       t.endTimestamp,
       t.durationMicro,
-      t.spanTimestamps.map(_.toSpanTimestamp).toList,
-      t.endpoints.map(_.toEndpoint).toList)
+      t.spanTimestamps.map(_.toSpanTimestamp)(breakOut),
+      t.endpoints.map(_.toEndpoint)(breakOut))
   }
   implicit def traceSummaryToThrift(t: TraceSummary) = new WrappedTraceSummary(t)
   implicit def thriftToTraceSummary(t: thriftscala.TraceSummary) = new ThriftTraceSummary(t)

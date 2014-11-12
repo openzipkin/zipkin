@@ -40,10 +40,11 @@
   <div
     id='{{spanId}}'
     class='span service-span depth-{{depthClass}}'
-    data-keys='id,spanName,serviceNames,durationStr,duration'
+    data-keys='id,spanName,serviceNames,serviceName,durationStr,duration'
     data-id='{{spanId}}'
     data-parent-id='{{parentId}}'
     data-span-name='{{spanName}}'
+    data-service-name='{{serviceName}}'
     data-service-names='{{serviceNames}}'
     data-duration-str='{{durationStr}}'
     data-duration='{{duration}}'
@@ -52,7 +53,7 @@
     <div class='handle'>
       <div class='service-name' style='margin-left: {{depth}}px'>
         <span class='expander'>+</span>
-        {{serviceNames}}
+        {{serviceName}}
       </div>
     </div>
 
@@ -97,6 +98,7 @@
       <div class='modal-header'>
         <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
         <h4 class='modal-title'></h4>
+        <h5>AKA: <span class='service-names'></span></h5>
       </div>
       <div class='modal-body'>
         <table id='annotations' class='table table-striped'>

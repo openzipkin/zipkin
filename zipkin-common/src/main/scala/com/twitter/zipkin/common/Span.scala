@@ -16,7 +16,9 @@
  */
 package com.twitter.zipkin.common
 
+import com.twitter.util.NonFatal
 import com.twitter.zipkin.Constants
+import scala.collection.breakOut
 
 /**
  * A span represents one RPC request. A trace is made up of many spans.
@@ -28,14 +30,49 @@ import com.twitter.zipkin.Constants
  * such as cache hits/misses.
  */
 object Span {
-  def apply(span: Span): Span = Span(
-    span.traceId,
-    span.name,
-    span.id,
-    span.parentId,
-    span.annotations,
-    span.binaryAnnotations,
-    span.debug)
+  // TODO(jeff): what?!
+  def apply(span: Span): Span = span
+
+  def apply(
+    _traceId: Long,
+    _name: String,
+    _id: Long,
+    _parentId: Option[Long],
+    _annotations: List[Annotation],
+    _binaryAnnotations: Seq[BinaryAnnotation],
+    _debug: Boolean = false
+  ): Span = new Span {
+    def traceId = _traceId
+    def name = _name
+    def id = _id
+    def parentId = _parentId
+    def annotations = _annotations
+    def binaryAnnotations = _binaryAnnotations
+    def debug = _debug
+  }
+
+  def unapply(span: Span): Option[(Long, String, Long, Option[Long], List[Annotation], Seq[BinaryAnnotation], Boolean)] =
+    try {
+      Some(
+        span.traceId,
+        span.name,
+        span.id,
+        span.parentId,
+        span.annotations,
+        span.binaryAnnotations,
+        span.debug
+      )
+    } catch {
+      case NonFatal(_) => None
+    }
+
+  /**
+   * Order annotations by timestamp.
+   */
+  val timestampOrdering = new Ordering[Annotation] {
+    def compare(a: Annotation, b: Annotation) = a.timestamp.compare(b.timestamp)
+  }
+
 }
 
 /**
@@ -49,38 +86,46 @@ object Span {
  * serialized objects
  * @param debug if this is set we will make sure this span is stored, no matter what the samplers want
  */
-case class Span(
-  traceId: Long,
-  name: String,
-  id: Long,
-  parentId: Option[Long],
-  annotations: List[Annotation],
-  binaryAnnotations: Seq[BinaryAnnotation],
-  debug: Boolean = false
-) {
-  /**
-   * Order annotations by timestamp.
-   */
-  val timestampOrdering = new Ordering[Annotation] {
-      def compare(a: Annotation, b: Annotation) = {a.timestamp.compare(b.timestamp)}
+trait Span { self =>
+  def traceId: Long
+  def name: String
+  def id: Long
+  def parentId: Option[Long]
+  def annotations: List[Annotation]
+  def binaryAnnotations: Seq[BinaryAnnotation]
+  def debug: Boolean
+
+  def copy(
+    traceId: Long = self.traceId,
+    name: String = self.name,
+    id: Long = self.id,
+    parentId: Option[Long] = self.parentId,
+    annotations: List[Annotation] = self.annotations,
+    binaryAnnotations: Seq[BinaryAnnotation] = self.binaryAnnotations,
+    debug: Boolean = self.debug
+  ): Span = Span(traceId, name, id, parentId, annotations, binaryAnnotations, debug)
+
+  private def tuple = (traceId, name, id, parentId, annotations, binaryAnnotations, debug)
+
+  override def equals(other: Any): Boolean = other match {
+    case o: Span => o.tuple == self.tuple
+    case _ => false
   }
 
-  def serviceNames: Set[String] = {
+  override def hashCode: Int = tuple.hashCode
+
+  override def toString: String = s"Span${tuple}"
+
+  def serviceNames: Set[String] =
     annotations.flatMap(a => a.host.map(h => h.serviceName.toLowerCase)).toSet
-  }
 
   /**
    * Tries to extract the best possible service name
    */
   def serviceName: Option[String] = {
-    if (annotations.isEmpty) {
-      None
-    } else {
-      val sName = serverSideAnnotations.flatMap(_.host).headOption.map(_.serviceName)
-      val cName = clientSideAnnotations.flatMap(_.host).headOption.map(_.serviceName)
-      sName match {
-        case Some(s) => Some(s)
-        case None => cName
+    if (annotations.isEmpty) None else {
+      serverSideAnnotations.flatMap(_.host).headOption.map(_.serviceName) orElse {
+        clientSideAnnotations.flatMap(_.host).headOption.map(_.serviceName)
       }
     }
   }
@@ -88,16 +133,14 @@ case class Span(
   /**
    * Iterate through list of annotations and return the one with the given value.
    */
-  def getAnnotation(value: String): Option[Annotation] = {
-    annotations.find { a => a.value == value }
-  }
+  def getAnnotation(value: String): Option[Annotation] =
+    annotations.find(_.value == value)
 
   /**
    * Iterate through list of binaryAnnotations and return the one with the given key.
    */
-  def getBinaryAnnotation(key: String): Option[BinaryAnnotation] = {
-    binaryAnnotations.find { ba => ba.key == key }
-  }
+  def getBinaryAnnotation(key: String): Option[BinaryAnnotation] =
+    binaryAnnotations.find(_.key == key)
 
   /**
    * Take two spans with the same span id and merge all data into one of them.
@@ -114,9 +157,15 @@ case class Span(
       case _ => name
     }
 
-    new Span(traceId, selectedName, id, parentId,
-      annotations ++ mergeFrom.annotations,
-      binaryAnnotations ++ mergeFrom.binaryAnnotations, debug | mergeFrom.debug)
+    new Span {
+      def traceId = self.traceId
+      def name = selectedName
+      def id = self.id
+      def parentId = self.parentId
+      def annotations = self.annotations ++ mergeFrom.annotations
+      def binaryAnnotations = self.binaryAnnotations ++ mergeFrom.binaryAnnotations
+      def debug = self.debug | mergeFrom.debug
+    }
   }
 
   /**
@@ -124,7 +173,7 @@ case class Span(
    */
   def firstAnnotation: Option[Annotation] = {
     try {
-      Some(annotations.min(timestampOrdering))
+      Some(annotations.min(Span.timestampOrdering))
     } catch {
       case e: UnsupportedOperationException => None
     }
@@ -135,7 +184,7 @@ case class Span(
    */
   def lastAnnotation: Option[Annotation] = {
     try {
-      Some(annotations.max(timestampOrdering))
+      Some(annotations.max(Span.timestampOrdering))
     } catch {
       case e: UnsupportedOperationException => None
     }
@@ -144,47 +193,41 @@ case class Span(
   /**
    * Endpoints involved in this span
    */
-  def endpoints: Set[Endpoint] = {
-    annotations.flatMap(a => a.host).toSet
-  }
+  def endpoints: Set[Endpoint] =
+    annotations.flatMap(_.host).toSet
 
   /**
    * Endpoint that is likely the owner of this span
    */
-  def clientSideEndpoint: Option[Endpoint] = {
+  def clientSideEndpoint: Option[Endpoint] =
     clientSideAnnotations.map(_.host).flatten.headOption
-  }
 
   /**
    * Assuming this is an RPC span, is it from the client side?
    */
-  def isClientSide(): Boolean = {
+  def isClientSide(): Boolean =
     annotations.exists(a => {
       a.value.equals(Constants.ClientSend) || a.value.equals(Constants.ClientRecv)
     })
-  }
 
   /**
    * Pick out the core client side annotations
    */
-  def clientSideAnnotations: Seq[Annotation] = {
+  def clientSideAnnotations: Seq[Annotation] =
     annotations.filter(a => Constants.CoreClient.contains(a.value))
-  }
 
   /**
    * Pick out the core server side annotations
    */
-  def serverSideAnnotations: Seq[Annotation] = {
+  def serverSideAnnotations: Seq[Annotation] =
     annotations.filter(a => Constants.CoreServer.contains(a.value))
-  }
 
   /**
    * Duration of this span. May be None if we cannot find any annotations.
    */
-  def duration: Option[Long] = {
+  def duration: Option[Long] =
     for (first <- firstAnnotation; last <- lastAnnotation)
       yield last.timestamp - first.timestamp
-  }
 
   /**
    * @return true  if Span contains at most one of each core annotation
@@ -192,12 +235,13 @@ case class Span(
    */
   def isValid: Boolean = {
     Constants.CoreAnnotations.map { c =>
-      annotations.filter { _.value == c }.length > 1
-    }.count {b => b} == 0
+      annotations.filter(_.value == c).length > 1
+    }.count(b => b) == 0
   }
 
   /**
    * Get the annotations as a map with value to annotation bindings.
    */
-  def getAnnotationsAsMap(): Map[String, Annotation] = annotations.map{ a => a.value -> a}.toMap
+  def getAnnotationsAsMap(): Map[String, Annotation] =
+    annotations.map(a => a.value -> a)(breakOut)
 }

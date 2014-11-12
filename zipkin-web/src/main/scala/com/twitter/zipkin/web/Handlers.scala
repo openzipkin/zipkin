@@ -11,8 +11,8 @@ import com.twitter.zipkin.Constants.CoreAnnotations
 import com.twitter.zipkin.common.json._
 import com.twitter.zipkin.common.mustache.ZipkinMustache
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.thriftscala.{Adjust, TraceCombo, ZipkinQuery}
-import com.twitter.zipkin.query.{SpanTimestamp, TraceSummary, QueryRequest}
+import com.twitter.zipkin.query.{SpanTimestamp, TraceCombo, TraceSummary, QueryRequest}
+import com.twitter.zipkin.thriftscala.{Adjust, ZipkinQuery}
 import java.io.{File, FileInputStream, InputStream}
 import java.text.SimpleDateFormat
 import org.apache.commons.io.IOUtils
@@ -458,8 +458,8 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
       process(req) getOrElse NotFound
   }
 
-  private[this] def renderTrace(combo: TraceCombo): Renderer = {
-    val trace = combo.trace.toTrace
+  protected def renderTrace(combo: TraceCombo): Renderer = {
+    val trace = combo.trace
     val traceStartTimestamp = trace.getStartAndEndTimestamp.map(_.start).getOrElse(0L)
     val childMap = trace.getIdToChildrenMap
     val spanMap = trace.getIdToSpanMap
@@ -478,6 +478,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
         "parentId" -> span.parentId.filter(spanMap.get(_).isDefined).map(SpanId(_).toString),
         "spanName" -> span.name,
         "serviceNames" -> span.serviceNames.mkString(","),
+        "serviceName" -> span.serviceName,
         "duration" -> span.duration,
         "durationStr" -> span.duration.map { d => durationStr(d * 1000) },
         "left" -> ((start - traceStartTimestamp).toFloat / trace.duration.toFloat) * 100,
@@ -503,9 +504,9 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
     }
 
     val traceDuration = trace.duration * 1000
-    val serviceDurations = combo.summary.map { summary =>
+    val serviceDurations = combo.traceSummary map { summary =>
       summary.spanTimestamps.groupBy(_.name).map { case (n, sts) =>
-        MustacheServiceDuration(n, sts.length, sts.map(_.toSpanTimestamp.duration).max / 1000)
+        MustacheServiceDuration(n, sts.length, sts.map(_.duration).max / 1000)
       }.toSeq
     }
 
@@ -529,7 +530,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
     Service.mk[Request, Renderer] { req =>
       pathTraceId(req.path.split("/").lastOption) map { id =>
         client.getTraceCombosByIds(Seq(id), getAdjusters(req)) flatMap {
-          case Seq(combo) => Future.value(renderTrace(combo))
+          case Seq(combo) => Future.value(renderTrace(combo.toTraceCombo))
           case _ => NotFound
         }
       } getOrElse NotFound
