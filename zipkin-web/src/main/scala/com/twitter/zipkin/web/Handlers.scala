@@ -7,7 +7,7 @@ import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.finagle.{Filter, Service, SimpleFilter}
 import com.twitter.util.{Duration, Future}
-import com.twitter.zipkin.Constants.CoreAnnotations
+import com.twitter.zipkin.{Constants => ZConstants}
 import com.twitter.zipkin.common.json._
 import com.twitter.zipkin.common.mustache.ZipkinMustache
 import com.twitter.zipkin.conversions.thrift._
@@ -473,6 +473,15 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
 
       val depth = combo.spanDepths.get.getOrElse(span.id, 1)
       val width = span.duration.map { d => (d.toDouble / trace.duration.toDouble) * 100 }.getOrElse(0.0)
+
+      val binaryAnnotations = span.binaryAnnotations.map {
+        case ann if ZConstants.CoreAddress.contains(ann.key) =>
+          val key = ZConstants.CoreAnnotationNames.get(ann.key).get
+          val value = ann.host.map { e => s"${e.getHostAddress}:${e.getUnsignedPort}" }.get
+          JsonBinaryAnnotation(key, value, ann.annotationType, ann.host.map(JsonEndpoint.wrap))
+        case ann => JsonBinaryAnnotation.wrap(ann)
+      }
+
       Map(
         "spanId" -> SpanId(span.id).toString,
         "parentId" -> span.parentId.filter(spanMap.get(_).isDefined).map(SpanId(_).toString),
@@ -488,9 +497,9 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
         "children" -> childMap.get(span.id).map(_.map(s => SpanId(s.id).toString).mkString(",")),
         "annotations" -> span.annotations.sortBy(_.timestamp).map { a =>
           Map(
-            "isCore" -> CoreAnnotations.contains(a.value),
+            "isCore" -> ZConstants.CoreAnnotations.contains(a.value),
             "left" -> span.duration.map { d => ((a.timestamp - start).toFloat / d.toFloat) * 100 },
-            "endpoint" -> a.host.map { e => "%s:%d".format(e.getHostAddress, e.getUnsignedPort) },
+            "endpoint" -> a.host.map { e => s"${e.getHostAddress}:${e.getUnsignedPort}" },
             "value" -> annoToString(a.value),
             "timestamp" -> a.timestamp,
             "relativeTime" -> durationStr((a.timestamp - traceStartTimestamp) * 1000),
@@ -499,7 +508,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
             "width" -> a.duration.getOrElse(8)
           )
         },
-        "binaryAnnotations" -> span.binaryAnnotations.map(JsonBinaryAnnotation.wrap)
+        "binaryAnnotations" -> binaryAnnotations
       )
     }
 
