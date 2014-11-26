@@ -40,7 +40,6 @@ object Zipkin extends Build {
   val algebirdVersion  = "0.4.0"
   val hbaseVersion = "0.98.3-hadoop2"
   val hadoopVersion = "2.4.0"
-  val summingbirdVersion = "0.3.2"
 
   def finagle(name: String) = "com.twitter" % ("finagle-" + name + "_2.9.2") % finagleVersion
   def util(name: String) = "com.twitter" % ("util-" + name + "_2.9.2") % utilVersion
@@ -160,9 +159,7 @@ object Zipkin extends Build {
         util("core"),
         zk("client"),
         algebird("core"),
-        "com.twitter" % "ostrich_2.9.2" % ostrichVersion,
-        "com.twitter" %% "bijection-core" % "0.6.0",
-        "com.twitter" %% "summingbird-batch" % summingbirdVersion
+        "com.twitter" % "ostrich_2.9.2" % ostrichVersion
       ) ++ testDependencies ++ scalaTestDeps
     )
 

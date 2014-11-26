@@ -62,7 +62,6 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
 
   private[this] val EmptyTraces = Future.value(Seq.empty[TraceSummary])
   private[this] val NotFound = Future.value(ErrorRenderer(404, "Not Found"))
-  private[this] val EmptyRealtimeAgg = Future.value(Map.empty[String, Seq[Long]])
 
   private[this] def query(
     client: ZipkinQuery[Future],
@@ -314,94 +313,12 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
       }
     }
 
-  case class MustacheRealtimeSummary(
-    clientServiceName: String,
-    reqCount: Long,
-    width: Int,
-    p50: Long,
-    p90: Long,
-    p99: Long,
-    p999: Long,
-    traceIds: collection.Seq[MustacheTraceId])
-
   private[this] def getExistingTracedId(
     client: ZipkinQuery[Future],
     traceIds: collection.Map[String, Seq[Long]]): Future[Seq[(String, Seq[Long])]] = {
       Future.collect(traceIds.toList.map { case (svcName, traceIds) =>
         client.tracesExist(traceIds) map {(svcName -> _.toSeq)} })
   }
-
-  private[this] def realtimeSummaryToMustache(
-    client: ZipkinQuery[Future],
-    durationMap: collection.Map[String, Seq[Long]],
-    traceIds: Seq[(String, Seq[Long])]
-  ): Map[String, Any] = {
-    val maxReqs = durationMap.values.foldLeft(Int.MinValue) { case (maxR, t) =>
-      math.max(t.size, maxR)
-    }
-    val traceIdsMap = traceIds.foldLeft(Option(Map[String, Seq[Long]]())) {
-      case (Some(m),e @ (k,v)) if m.getOrElse(k, v) == v => Some(m + e)
-      case _ => None
-    }.getOrElse(Map.empty[String, Seq[Long]])
-    val summary = durationMap map { e =>
-      e match {
-        case (serviceName, durations) =>
-          val h = new ApproximateHistogram()
-          durations.map(i => h.add(i / 1000L))
-          MustacheRealtimeSummary(
-            serviceName,
-            durations.size,
-            ((durations.size.toFloat / maxReqs) * 70).toInt + 30,
-            h.getQuantile(0.5),
-            h.getQuantile(0.9),
-            h.getQuantile(0.99),
-            h.getQuantile(0.999),
-            traceIdsMap.get(serviceName)
-              .getOrElse(Seq.empty[Long])
-              .map(id => MustacheTraceId(SpanId(id).toString))
-          )
-      }
-    }
-    Map(
-      ("summary" -> summary.toList.sortBy(_.reqCount).reverse),
-      ("count" -> durationMap.size)
-    )
-  }
-
-  def handleRealtime(client: ZipkinQuery[Future]): Service[Request, MustacheRenderer] =
-    Service.mk[Request, MustacheRenderer] { req =>
-      val qr = QueryExtractor(req)
-      val spanDurationResults = qr map { querySpanDurantions(client, _) } getOrElse { EmptyRealtimeAgg }
-      val svc2traceIdResults = qr map { queryServiceNamesToTraceIds(client, _) } getOrElse { EmptyRealtimeAgg }
-
-      val serviceName = req.params.get("serviceName")
-      val spanName = req.params.get("spanName")
-      val spanResults = serviceName map(client.getSpanNames(_).map(_.toSeq.sorted)) getOrElse(Future.value(Seq.empty))
-
-      for (
-        services <- getServices(client);
-        spans <- spanResults;
-        spanDurantions <- spanDurationResults;
-        svc2traceIds <- svc2traceIdResults;
-        svc2existingTraceIds <- getExistingTracedId(client, svc2traceIds)
-      ) yield {
-        val svcList = services map { svc => Map("name" -> svc, "selected" -> (if (Some(svc) == serviceName) "selected" else "")) }
-        val spanList = spans map { span => Map("name" -> span, "selected" -> (if (Some(span) == spanName) "selected" else "")) }
-
-        var data = Map[String, Object](
-          ("pageTitle" -> "Realtime"),
-          ("timestamp" -> QueryExtractor.getTimestampStr(req)),
-          ("services" -> svcList),
-          ("spans" -> spanList))
-
-        data ++= Map(
-          ("pageTitle" -> "Realtime"),
-          ("serviceName" -> req.params.get("serviceName")),
-          ("realtimeResults" -> realtimeSummaryToMustache(client, spanDurantions, svc2existingTraceIds))
-        )
-        MustacheRenderer("v2/realtime.mustache", data)
-      }
-    }
 
   // API Endpoints
 

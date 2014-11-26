@@ -75,7 +75,6 @@ trait ZipkinWebFactory { self: App =>
       ("/public/", handlePublic(resourceDirs, typesMap, publicRoot)),
       ("/", addLayout andThen handleIndex(queryClient)),
       ("/traces/:id", addLayout andThen handleTraces(queryClient)),
-      ("/realtime", addLayout andThen handleRealtime(queryClient)),
       ("/api/query", handleQuery(queryClient)),
       ("/api/services", handleServices(queryClient)),
       ("/api/spans", requireServiceName andThen handleSpans(queryClient)),
