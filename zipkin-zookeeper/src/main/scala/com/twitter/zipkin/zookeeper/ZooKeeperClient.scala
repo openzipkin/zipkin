@@ -124,6 +124,12 @@ class ZKClient(
     zkClient(path).setData(data, -1).rescue {
       case e: KeeperException.NoNodeException =>
         ensurePath(path) before create(path, true, Some(data))
+      case e: KeeperException if client.shouldRetry(e) =>
+        log.debug(e, s"retrying write of data to $path")
+        setData(path, data)
+      case e =>
+        log.error(e, s"failed to write to $path: not retrying")
+        Future.exception(e)
     }.unit
   }
 
@@ -226,6 +232,8 @@ class ZKClient(
             log.debug("updating data for group: " + path)
             curVal.get
           }
+        }, new com.twitter.common.base.Command {
+          def execute: Unit = log.error(s"lost membership for $path")
         })
       }
 
