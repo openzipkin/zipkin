@@ -244,4 +244,7 @@ trait Span { self =>
    */
   def getAnnotationsAsMap(): Map[String, Annotation] =
     annotations.map(a => a.value -> a)(breakOut)
+
+  def lastTimestamp: Option[Long] = lastAnnotation.map(_.timestamp)
+  def firstTimestamp: Option[Long] = firstAnnotation.map(_.timestamp)
 }
