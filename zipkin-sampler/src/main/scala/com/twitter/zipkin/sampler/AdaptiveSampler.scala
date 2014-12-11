@@ -222,7 +222,7 @@ class GlobalSampleRateUpdater(
 
     val sum = memberVals.sum
     log.debug("global rate update: " + sum + " " + memberVals)
-    globalRateCounter.incr(sum)
+    globalRateCounter.incr((sum * 1.0 * updateFreq.inNanoseconds / 60.seconds.inNanoseconds).toInt)
 
     calculate(sum) foreach { rate =>
       log.debug("setting new sample rate: " + sampleRatePath + " " + rate)
@@ -356,8 +356,11 @@ class CalculateSampleRate(
   private[this] val curSmplRate = new AtomicReference[Double](1.0)
   smplRate.changes.register(Witness(curSmplRate))
 
+  private[this] val currentStoreRate = new AtomicInteger(0)
+
+  private[this] val currentStoreRateGauge = stats.addGauge("currentStoreRate") { currentStoreRate.get }
   private[this] val tgtRateGauge = stats.addGauge("targetStoreRate") { tgtStoreRate.get }
-  private[this] val curRateGauge = stats.addGauge("currentSampleRate") { curSmplRate.get.toFloat }
+  private[this] val curSampleRateGauge = stats.addGauge("currentSampleRate") { curSmplRate.get.toFloat }
 
   /**
    * Since we assume that the sample rate and storage request rate are
@@ -371,14 +374,15 @@ class CalculateSampleRate(
     log.debug("Calculating rate for: " + in)
     in flatMap { vals =>
       val curStoreRate = calculate(vals)
+      currentStoreRate.set(curStoreRate.toInt)
       log.debug("Calculated current store rate: " + curStoreRate)
       if (curStoreRate <= 0) None else {
-        val curRateSnap = curSmplRate.get
-        val newSampleRate = curRateSnap * tgtStoreRate.get / curStoreRate
+        val curSampleRateSnap = curSmplRate.get
+        val newSampleRate = curSampleRateSnap * tgtStoreRate.get / curStoreRate
         val sr = math.min(maxSampleRate, newSampleRate)
-        val change = math.abs(curRateSnap - sr)/curRateSnap
-        log.debug(s"current store rate : $curStoreRate ; current sample rate : $curRateSnap ; target store rate : $tgtStoreRate")
-        log.debug(s"sample rate : old $curRateSnap ; new : $sr ; threshold : $threshold ; execute : ${change >= threshold} ; % change : ${100*change}")
+        val change = math.abs(curSampleRateSnap - sr)/curSampleRateSnap
+        log.debug(s"current store rate : $curStoreRate ; current sample rate : $curSampleRateSnap ; target store rate : $tgtStoreRate")
+        log.debug(s"sample rate : old $curSampleRateSnap ; new : $sr ; threshold : $threshold ; execute : ${change >= threshold} ; % change : ${100*change}")
         if (change >= threshold) Some(sr) else None
       }
     }
