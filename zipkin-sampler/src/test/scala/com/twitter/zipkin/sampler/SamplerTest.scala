@@ -41,8 +41,8 @@ class SamplerTest extends FunSuite {
 
   test("samples based on the given number") {
     val sampler = new Sampler(Var(0.5))
-    assert(sampler(0L))
-    assert(!sampler((Long.MaxValue * 0.5 + 1).toLong))
+    assert(sampler(Long.MaxValue))
+    assert(!sampler((Long.MaxValue * 0.5).toLong))
   }
 
   test("will update based on the given Var") {

@@ -34,13 +34,15 @@ class Sampler(
   private[this] val RateGauge = stats.addGauge("rate") { rate.get.toFloat }
   private[this] val allowedCounter = stats.counter("allowed")
   private[this] val deniedCounter = stats.counter("denied")
+  private[this] val zerosCounter = stats.counter("zeros")
 
   def apply(traceId: Long): Boolean = {
     val curRate = rate.get
 
     val allow = (curRate == 1) || {
       val t = if (traceId == Long.MinValue) Long.MaxValue else math.abs(traceId)
-      t < Long.MaxValue * curRate
+      if (t == 0) zerosCounter.incr()
+      t > Long.MaxValue * (1 - curRate)
     }
     if (allow) allowedCounter.incr() else deniedCounter.incr()
     allow
