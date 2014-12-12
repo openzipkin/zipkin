@@ -27,28 +27,28 @@ class HBaseIndexSpec extends ZipkinHBaseSpecification {
   )
   val spanOneId: Long = 32003
   val spanOneName = "startingSpan"
-  val spanOne = new Span(traceIdOne, spanOneName, spanOneId, None, annoOneList, Seq())
+  val spanOne = Span(traceIdOne, spanOneName, spanOneId, None, annoOneList, Seq())
 
   val spanTwoStart = spanOneStart + 100
   val serviceNameTwo = "HBase.RegionServer"
   val endPointTwo = new Endpoint(0, 0, serviceNameTwo)
   val annoTwoList = List(new Annotation(spanTwoStart, Constants.ServerRecv, Some(endPointTwo)))
-  val spanTwo = new Span(traceIdOne, "secondSpan", 45006, Some(spanOneId), annoTwoList, Seq())
+  val spanTwo = Span(traceIdOne, "secondSpan", 45006, Some(spanOneId), annoTwoList, Seq())
 
   val spanThreeStart = spanTwoStart + 100
   val annoThreeList = List(new Annotation(spanThreeStart, Constants.ServerRecv, Some(endPointTwo)))
-  val spanThree = new Span(traceIdOne, "spanThree", 45007, Some(spanOneId), annoThreeList, Seq())
+  val spanThree = Span(traceIdOne, "spanThree", 45007, Some(spanOneId), annoThreeList, Seq())
 
   val traceIdFour = 103
   val spanFourStart = spanThreeStart + 100
   val annoFourList = List(new Annotation(spanFourStart, Constants.ServerRecv, Some(endPointTwo)))
-  val spanFour = new Span(traceIdFour, "spanThree", 45008, None, annoFourList, Seq())
+  val spanFour = Span(traceIdFour, "spanThree", 45008, None, annoFourList, Seq())
 
 
   val spanFiveStart = spanFourStart + 100
   val annoFiveValue = "CustomANNO"
   val annoFiveList = List(new Annotation(spanFiveStart, annoFiveValue, Some(endPointTwo)))
-  val spanFive = new Span(traceIdFour, "spanThree", 45009, Some(45006), annoFiveList, Seq())
+  val spanFive = Span(traceIdFour, "spanThree", 45009, Some(45006), annoFiveList, Seq())
   "HBaseIndex" should {
 
     doBefore {

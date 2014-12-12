@@ -19,7 +19,7 @@ package com.twitter.zipkin.storage
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift.{spanToThriftSpan,thriftSpanToSpan}
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.storage.redis.{ExpiringValue, TimeRange}
 import java.nio.charset.Charset
 import org.jboss.netty.buffer.{ChannelBuffer, ChannelBuffers}
@@ -77,8 +77,8 @@ package object redis {
 
   private[redis] implicit def chanBuf2String(buf: ChannelBuffer) = buf.toString(Charset.defaultCharset)
 
-  val serializer = new BinaryThriftStructSerializer[gen.Span] {
-    def codec = gen.Span
+  val serializer = new BinaryThriftStructSerializer[thriftscala.Span] {
+    def codec = thriftscala.Span
   }
 
   private[redis] implicit def serializeSpan(span: Span): ChannelBuffer = {

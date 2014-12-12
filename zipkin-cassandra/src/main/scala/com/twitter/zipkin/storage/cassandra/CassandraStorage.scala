@@ -21,13 +21,13 @@ import com.twitter.ostrich.stats.Stats
 import com.twitter.util.{Await, Duration, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.storage.Storage
 import scala.collection.JavaConverters._
 
 case class CassandraStorage(
   keyspace: Keyspace,
-  traces: ColumnFamily[Long, String, gen.Span],
+  traces: ColumnFamily[Long, String, thriftscala.Span],
   readBatchSize: Int,
   dataTimeToLive: Duration
 ) extends Storage {
@@ -59,7 +59,7 @@ case class CassandraStorage(
     CASSANDRA_STORE_SPAN.incr
     WRITE_REQUEST_COUNTER.incr()
     val traceKey = span.traceId
-    val traceCol = Column[String, gen.Span](createSpanColumnName(span), span.toThrift).ttl(dataTimeToLive)
+    val traceCol = Column[String, thriftscala.Span](createSpanColumnName(span), span.toThrift).ttl(dataTimeToLive)
     traces.insert(traceKey, traceCol).unit
   }
 
@@ -71,7 +71,7 @@ case class CassandraStorage(
     // note that we block here
     Await.result(rowFuture).values().asScala.foreach { value =>
     // creating a new column in order to set timestamp to None
-      val col = Column[String, gen.Span](value.name, value.value).ttl(ttl)
+      val col = Column[String, thriftscala.Span](value.name, value.value).ttl(ttl)
       batch.insert(traceId, col)
     }
 
@@ -82,7 +82,7 @@ case class CassandraStorage(
     val rowFuture = traces.getRow(traceId)
     rowFuture map { rows =>
     // fetch the
-      val minTtlSec = rows.values().asScala.foldLeft(Int.MaxValue)((ttl: Int, col: Column[String, gen.Span]) =>
+      val minTtlSec = rows.values().asScala.foldLeft(Int.MaxValue)((ttl: Int, col: Column[String, thriftscala.Span]) =>
         math.min(ttl, col.ttl.map(_.inSeconds).getOrElse(Int.MaxValue)))
       if (minTtlSec == Int.MaxValue) {
         throw new IllegalArgumentException("The trace " + traceId + " does not have any ttl set!")

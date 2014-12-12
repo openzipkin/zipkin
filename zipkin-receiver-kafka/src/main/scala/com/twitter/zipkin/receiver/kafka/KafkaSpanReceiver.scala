@@ -2,7 +2,7 @@ package com.twitter.zipkin.receiver.kafka
 
 import com.twitter.app.{App, Flaggable}
 import java.util.Properties
-import com.twitter.zipkin.gen.{Span => ThriftSpan}
+import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.zipkin.collector.SpanReceiver
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.util.{Closable, Future, Time}

@@ -5,7 +5,7 @@ import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Time, Future}
 import com.twitter.zipkin.common.Dependencies
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.hbase.TableLayouts
 import com.twitter.zipkin.storage.Aggregates
 import com.twitter.zipkin.storage.hbase.mapping.ServiceMapper
@@ -24,8 +24,8 @@ trait HBaseAggregates extends Aggregates {
   lazy val idGen = new IDGenerator(idGenTable)
   lazy val serviceMapper = new ServiceMapper(mappingTable, idGen)
 
-  val serializer = new BinaryThriftStructSerializer[gen.Dependencies] {
-    def codec = gen.Dependencies
+  val serializer = new BinaryThriftStructSerializer[thriftscala.Dependencies] {
+    def codec = thriftscala.Dependencies
   }
 
   def close() {

@@ -5,7 +5,7 @@ import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Duration, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.hbase.TableLayouts
 import com.twitter.zipkin.storage.Storage
 import com.twitter.zipkin.storage.hbase.utils.HBaseTable
@@ -29,8 +29,8 @@ trait HBaseStorage extends Storage {
 
   val hbaseTable: HBaseTable
 
-  val serializer = new BinaryThriftStructSerializer[gen.Span] {
-    def codec = gen.Span
+  val serializer = new BinaryThriftStructSerializer[thriftscala.Span] {
+    def codec = thriftscala.Span
   }
 
   /**

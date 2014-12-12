@@ -23,7 +23,7 @@ import com.twitter.zipkin.common._
 import com.twitter.zipkin.storage.{IndexedTraceId, SpanStore, TraceIdDuration}
 import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
-import java.sql.Connection
+import java.sql.{Connection, PreparedStatement}
 
 // TODO: connection pooling for real parallelism
 class AnormSpanStore(
@@ -39,6 +39,10 @@ class AnormSpanStore(
 
   def close(deadline: Time): Future[Unit] = pool {
     conn.close()
+  }
+
+  implicit object byteArrayToStatement extends ToStatement[Array[Byte]] {
+    def set(s: PreparedStatement, i: Int, b: Array[Byte]): Unit = s.setBytes(i, b)
   }
 
   private[this] val spanInsertSql = SQL("""
@@ -68,9 +72,14 @@ class AnormSpanStore(
 
   // store a list of spans
   def apply(spans: Seq[Span]): Future[Unit] = {
+    var hasSpans = false
+    var hasAnns = false
+    var hasBinAnns = false
+
     val init = (spanInsertSql, annInsertSql, binAnnInsertSql)
     val (spanBatch, annBatch, binAnnBatch) =
       spans.foldLeft(init) { case ((sb, ab, bb), span) =>
+        hasSpans = true
         val sbp = sb.addBatch(
           ("span_id" -> span.id),
           ("parent_id" -> span.parentId),
@@ -83,6 +92,7 @@ class AnormSpanStore(
 
         if (!shouldIndex(span)) (sbp, ab, bb) else {
           val abp = span.annotations.foldLeft(ab) { (ab, a) =>
+            hasAnns = true
             ab.addBatch(
               ("span_id" -> span.id),
               ("trace_id" -> span.traceId),
@@ -96,6 +106,7 @@ class AnormSpanStore(
           }
 
           val bbp = span.binaryAnnotations.foldLeft(bb) { (bb, b) =>
+            hasBinAnns = true
             bb.addBatch(
               ("span_id" -> span.id),
               ("trace_id" -> span.traceId),
@@ -114,9 +125,9 @@ class AnormSpanStore(
 
     // This parallelism is a lie. There's only one DB connection (for now anyway).
     Future.join(Seq(
-      pool { spanBatch.execute() },
-      pool { annBatch.execute() },
-      pool { binAnnBatch.execute() }
+      if (hasSpans) pool { spanBatch.execute() } else Future.Done,
+      if (hasAnns) pool { annBatch.execute() } else Future.Done,
+      if (hasBinAnns) pool { binAnnBatch.execute() } else Future.Done
     ))
   }
 

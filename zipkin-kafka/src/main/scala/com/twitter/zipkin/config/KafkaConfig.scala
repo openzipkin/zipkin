@@ -19,7 +19,7 @@ package com.twitter.zipkin.config
 import com.twitter.finagle.stats.{StatsReceiver, NullStatsReceiver}
 import com.twitter.util.Config
 import com.twitter.zipkin.collector.Kafka
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import java.util.Properties
 import kafka.producer.Producer
 import kafka.producer.ProducerConfig
@@ -34,7 +34,7 @@ trait KafkaConfig extends Config[Kafka] {
     properties.put("zk.connect", zkConnectString)
     properties.put("serializer.class", "com.twitter.zipkin.collector.SpanEncoder")
     properties.put("producer.type", "sync")
-    val producer = new Producer[String, gen.Span](new ProducerConfig(properties))
+    val producer = new Producer[String, thriftscala.Span](new ProducerConfig(properties))
     new Kafka(producer, topic, statsReceiver.scope("kafka"))
   }
 }

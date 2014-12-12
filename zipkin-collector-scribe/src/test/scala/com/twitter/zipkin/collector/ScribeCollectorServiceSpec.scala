@@ -20,7 +20,7 @@ import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.config.sampler.AdjustableRateConfig
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.storage.{Store, Aggregates}
 import org.specs.SpecificationWithJUnit
 import org.specs.mock.{ClassMocker, JMocker}
@@ -34,15 +34,15 @@ import com.twitter.zipkin.common.Annotation
 
 @RunWith(classOf[JUnitSuiteRunner])
 class ScribeCollectorServiceSpec extends SpecificationWithJUnit with JMocker with ClassMocker {
-  val serializer = new BinaryThriftStructSerializer[gen.Span] {
-    def codec = gen.Span
+  val serializer = new BinaryThriftStructSerializer[thriftscala.Span] {
+    def codec = thriftscala.Span
   }
   val category = "zipkin"
 
   val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
-  val validList = List(gen.LogEntry(category, serializer.toString(validSpan.toThrift)))
+  val validList = List(thriftscala.LogEntry(category, serializer.toString(validSpan.toThrift)))
 
-  val wrongCatList = List(gen.LogEntry("wrongcat", serializer.toString(validSpan.toThrift)))
+  val wrongCatList = List(thriftscala.LogEntry("wrongcat", serializer.toString(validSpan.toThrift)))
 
   val base64 = "CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAIACQAA"
 
@@ -62,7 +62,7 @@ class ScribeCollectorServiceSpec extends SpecificationWithJUnit with JMocker wit
         one(queue).add(List(base64)) willReturn(true)
       }
 
-      gen.ResultCode.Ok mustEqual Await.result(cs.log(validList))
+      thriftscala.ResultCode.Ok mustEqual Await.result(cs.log(validList))
     }
 
     "push back" in {
@@ -72,7 +72,7 @@ class ScribeCollectorServiceSpec extends SpecificationWithJUnit with JMocker wit
         one(queue).add(List(base64)) willReturn(false)
       }
 
-      gen.ResultCode.TryLater mustEqual Await.result(cs.log(validList))
+      thriftscala.ResultCode.TryLater mustEqual Await.result(cs.log(validList))
     }
 
     "ignore wrong category" in {
@@ -82,7 +82,7 @@ class ScribeCollectorServiceSpec extends SpecificationWithJUnit with JMocker wit
         never(queue).add(any)
       }
 
-      gen.ResultCode.Ok mustEqual Await.result(cs.log(wrongCatList))
+      thriftscala.ResultCode.Ok mustEqual Await.result(cs.log(wrongCatList))
     }
 
     "store dependencies" in {

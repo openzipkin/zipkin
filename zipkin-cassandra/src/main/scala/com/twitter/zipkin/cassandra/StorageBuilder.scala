@@ -20,7 +20,7 @@ import com.twitter.cassie.{ReadConsistency, WriteConsistency, KeyspaceBuilder}
 import com.twitter.conversions.time._
 import com.twitter.util.Duration
 import com.twitter.zipkin.builder.Builder
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.storage.cassandra.{CassandraStorage, ScroogeThriftCodec, SnappyCodec}
 import com.twitter.zipkin.storage.Storage
 
@@ -31,7 +31,7 @@ case class StorageBuilder(
   readConsistency: ReadConsistency = ReadConsistency.One,
   dataTimeToLive: Duration = 7.days,
   readBatchSize: Int = 500,
-  spanCodec: Codec[gen.Span] = new SnappyCodec(new ScroogeThriftCodec[gen.Span](gen.Span))
+  spanCodec: Codec[thriftscala.Span] = new SnappyCodec(new ScroogeThriftCodec[thriftscala.Span](thriftscala.Span))
 ) extends Builder[Storage] {
 
   def columnFamily(c: String):                StorageBuilder = copy(columnFamily = c)
@@ -39,7 +39,7 @@ case class StorageBuilder(
   def readConsistency(rc: ReadConsistency):   StorageBuilder = copy(readConsistency = rc)
   def dataTimeToLive(ttl: Duration):          StorageBuilder = copy(dataTimeToLive = ttl)
   def readBatchSize(s: Int):                  StorageBuilder = copy(readBatchSize = s)
-  def spanCodec(c: Codec[gen.Span]):          StorageBuilder = copy(spanCodec = c)
+  def spanCodec(c: Codec[thriftscala.Span]):          StorageBuilder = copy(spanCodec = c)
 
   def apply() = {
     val keyspace = keyspaceBuilder.connect()

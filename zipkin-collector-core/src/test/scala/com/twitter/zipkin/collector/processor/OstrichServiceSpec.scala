@@ -16,7 +16,7 @@ package com.twitter.zipkin.collector.processor
  *  limitations under the License.
  *
  */
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.common.{Span, Endpoint, Annotation}
 import com.twitter.ostrich.stats.{Histogram, Distribution, Stats}
 import org.specs.Specification
@@ -32,8 +32,8 @@ class OstrichServiceSpec extends Specification {
     "add two metrics if server span" in {
       val agg = new OstrichService(prefix)
 
-      val annotation1 = Annotation(10, gen.Constants.SERVER_RECV, Some(Endpoint(1, 2, "service")))
-      val annotation2 = Annotation(20, gen.Constants.SERVER_SEND, Some(Endpoint(3, 4, "service")))
+      val annotation1 = Annotation(10, thriftscala.Constants.SERVER_RECV, Some(Endpoint(1, 2, "service")))
+      val annotation2 = Annotation(20, thriftscala.Constants.SERVER_SEND, Some(Endpoint(3, 4, "service")))
       val annotation3 = Annotation(30, "value3", Some(Endpoint(5, 6, "service")))
 
       val span = Span(12345, "methodcall", 666, None, List(annotation1, annotation2, annotation3), Nil)
@@ -48,8 +48,8 @@ class OstrichServiceSpec extends Specification {
     "add no metrics since not server span" in {
       val agg = new OstrichService(prefix)
 
-      val annotation1 = Annotation(10, gen.Constants.CLIENT_SEND, Some(Endpoint(1, 2, "service")))
-      val annotation2 = Annotation(20, gen.Constants.CLIENT_RECV, Some(Endpoint(3, 4, "service")))
+      val annotation1 = Annotation(10, thriftscala.Constants.CLIENT_SEND, Some(Endpoint(1, 2, "service")))
+      val annotation2 = Annotation(20, thriftscala.Constants.CLIENT_RECV, Some(Endpoint(3, 4, "service")))
       val annotation3 = Annotation(30, "value3", Some(Endpoint(5, 6, "service")))
 
       val span = Span(12345, "methodcall", 666, None, List(annotation1, annotation2, annotation3), Nil)

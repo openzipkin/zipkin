@@ -26,6 +26,7 @@ import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
 import AnormThreads.inNewThread
+import com.twitter.zipkin.storage.anormdb.DB.byteArrayToStatement
 
 /**
  * Retrieve and store trace and span information.

@@ -25,7 +25,7 @@ import com.twitter.util.Timer
 import com.twitter.zipkin.collector.builder.CollectorInterface
 import com.twitter.zipkin.collector.processor.ScribeFilter
 import com.twitter.zipkin.collector.{ResilientZKNode, WriteQueue, ScribeCollectorService}
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.storage.Store
 import java.net.{InetAddress, InetSocketAddress}
 import org.apache.thrift.protocol.TBinaryProtocol
@@ -58,7 +58,7 @@ object Scribe {
             .name("ZipkinCollector")
             .reportTo(statsReceiver)
             .tracer(tracer)
-            .build(new gen.ZipkinCollector.FinagledService(service, new TBinaryProtocol.Factory()))
+            .build(new thriftscala.ZipkinCollector.FinagledService(service, new TBinaryProtocol.Factory()))
         }
       }
     }

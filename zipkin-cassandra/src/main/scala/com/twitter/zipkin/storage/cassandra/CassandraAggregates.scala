@@ -21,7 +21,7 @@ import com.twitter.conversions.time._
 import com.twitter.zipkin.storage.Aggregates
 import com.twitter.zipkin.conversions.thrift._
 import scala.collection.JavaConverters._
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.common.Dependencies
 import com.twitter.algebird.Monoid
 import java.nio.ByteBuffer
@@ -39,7 +39,7 @@ case class CassandraAggregates(
   keyspace: Keyspace,
   topAnnotations: ColumnFamily[String, Long, String],
   // Use ByteBuffer as key to get around a bug in cassie with rowsIteratee and Long
-  dependenciesCF: ColumnFamily[ByteBuffer, Long, gen.Dependencies]
+  dependenciesCF: ColumnFamily[ByteBuffer, Long, thriftscala.Dependencies]
 ) extends Aggregates {
 
   def close() {
@@ -55,7 +55,7 @@ case class CassandraAggregates(
 
     val result = {
       val iteratee = dependenciesCF.rowsIteratee(100)
-      def collapse(key:ByteBuffer, columns:java.util.List[Column[Long, gen.Dependencies]]) : Seq[Dependencies]= {
+      def collapse(key:ByteBuffer, columns:java.util.List[Column[Long, thriftscala.Dependencies]]) : Seq[Dependencies]= {
         columns.asScala.filter { column =>
           !endDate.exists { column.name > _.inMicroseconds } &&
           !startDate.exists { column.name > _.inMicroseconds }
@@ -111,7 +111,7 @@ case class CassandraAggregates(
   def storeDependencies(deps: Dependencies): Future[Unit] = {
     val keyBB = ByteBuffer.allocate(8)
     keyBB.putLong(deps.startTime.floor(1.day).inMicroseconds)
-    store[ByteBuffer,gen.Dependencies](dependenciesCF, keyBB, Seq(deps.toThrift))
+    store[ByteBuffer,thriftscala.Dependencies](dependenciesCF, keyBB, Seq(deps.toThrift))
   }
 
   /** Synchronize these so we don't do concurrent writes from the same box */

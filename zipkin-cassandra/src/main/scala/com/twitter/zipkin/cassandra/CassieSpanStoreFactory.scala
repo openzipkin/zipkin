@@ -27,7 +27,7 @@ import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.tracing.DefaultTracer
 import com.twitter.finagle.util.InetSocketAddressUtil
 import com.twitter.util.{Await, Future, Promise, Return, Var}
-import com.twitter.zipkin.gen.{Span => ThriftSpan}
+import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.zipkin.storage.cassandra._
 import java.net.SocketAddress
 import scala.collection.mutable.HashSet

@@ -23,7 +23,7 @@ import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.{gen => thrift}
+import com.twitter.zipkin.thriftscala
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 
@@ -42,17 +42,17 @@ object Main extends App with ZipkinSpanGenerator {
   val queryDest = flag("queryDest", "localhost:9411", "Destination of the query service")
   val generateOnly = flag("generateOnly", false, "Only generate date, do not request it back")
 
-  private[this] val serializer = new BinaryThriftStructSerializer[thrift.Span] { def codec = thrift.Span }
+  private[this] val serializer = new BinaryThriftStructSerializer[thriftscala.Span] { def codec = thriftscala.Span }
 
   def main() {
-    val scribe = Thrift.newIface[thrift.Scribe[Future]](scribeDest())
+    val scribe = Thrift.newIface[thriftscala.Scribe.FutureIface](scribeDest())
     val store = { spans: Seq[Span] =>
-      scribe.log(spans.map { span => thrift.LogEntry("zipkin", serializer.toString(span.toThrift)) }).unit
+      scribe.log(spans.map { span => thriftscala.LogEntry("zipkin", serializer.toString(span.toThrift)) }).unit
     }
     Await.result(generateTraces(store))
 
     if (!generateOnly()) {
-      val client = Thrift.newIface[thrift.ZipkinQuery[Future]](queryDest())
+      val client = Thrift.newIface[thriftscala.ZipkinQuery.FutureIface](queryDest())
       Await.result {
         querySpan(
           client,
@@ -65,15 +65,15 @@ object Main extends App with ZipkinSpanGenerator {
     }
   }
 
-  private[this] def printTrace(traceIds: Seq[Long], client: thrift.ZipkinQuery[Future]): Future[Unit] = {
-    client.getTracesByIds(traceIds, List(thrift.Adjust.TimeSkew)) map { traces =>
+  private[this] def printTrace(traceIds: Seq[Long], client: thriftscala.ZipkinQuery[Future]): Future[Unit] = {
+    client.getTracesByIds(traceIds, List(thriftscala.Adjust.TimeSkew)) map { traces =>
       for (trace <- traces; span <- trace.spans) yield
         println("Got span: " + span)
     }
   }
 
   private[this] def querySpan(
-    client: thrift.ZipkinQuery[Future],
+    client: thriftscala.ZipkinQuery[Future],
     service: String,
     span: String,
     annotation: String,
@@ -82,25 +82,25 @@ object Main extends App with ZipkinSpanGenerator {
   ): Future[Unit] = {
     println("Querying for service name: " + service + " and span name " + span)
     for {
-      ts1 <- client.getTraceIdsBySpanName(service, span, Long.MaxValue, maxTraces, thrift.Order.DurationDesc)
+      ts1 <- client.getTraceIdsBySpanName(service, span, Long.MaxValue, maxTraces, thriftscala.Order.DurationDesc)
       _ = printTrace(ts1, client)
 
       _ = println("Querying for service name: " + service)
-      ts2 <- client.getTraceIdsBySpanName(service, "", Long.MaxValue, maxTraces, thrift.Order.DurationDesc)
+      ts2 <- client.getTraceIdsBySpanName(service, "", Long.MaxValue, maxTraces, thriftscala.Order.DurationDesc)
       _ <- printTrace(ts2, client)
 
       _ = println("Querying for annotation: " + annotation)
-      ts3 <- client.getTraceIdsByAnnotation(service, annotation, ByteBuffer.wrap("".getBytes), Long.MaxValue, maxTraces, thrift.Order.DurationDesc)
+      ts3 <- client.getTraceIdsByAnnotation(service, annotation, ByteBuffer.wrap("".getBytes), Long.MaxValue, maxTraces, thriftscala.Order.DurationDesc)
       _ <- printTrace(ts3, client)
 
       _ = println("Querying for kv annotation: " + kvAnnotation)
-      ts4 <- client.getTraceIdsByAnnotation(service, kvAnnotation._1, kvAnnotation._2, Long.MaxValue, maxTraces, thrift.Order.DurationDesc)
+      ts4 <- client.getTraceIdsByAnnotation(service, kvAnnotation._1, kvAnnotation._2, Long.MaxValue, maxTraces, thriftscala.Order.DurationDesc)
       _ <- printTrace(ts4, client)
 
-      traces <- client.getTracesByIds(ts4, List(thrift.Adjust.TimeSkew))
+      traces <- client.getTracesByIds(ts4, List(thriftscala.Adjust.TimeSkew))
       _ = println(traces.toString)
 
-      traceTimeline <- client.getTraceTimelinesByIds(ts4, List(thrift.Adjust.TimeSkew))
+      traceTimeline <- client.getTraceTimelinesByIds(ts4, List(thriftscala.Adjust.TimeSkew))
       _ = println("Timeline:")
       _ = println(traceTimeline.toString)
 

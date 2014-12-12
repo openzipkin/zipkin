@@ -23,7 +23,7 @@ import com.twitter.finagle.thrift.ThriftServerFramedCodec
 import com.twitter.finagle.tracing.{NullTracer, Tracer}
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.{ServiceTracker, Service}
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.storage.{Aggregates, Index, Storage}
 import java.net.InetSocketAddress
 import org.apache.thrift.protocol.TBinaryProtocol
@@ -33,7 +33,7 @@ class ZipkinQuery(
   storage: Storage,
   index: Index,
   aggregates: Aggregates,
-  adjusterMap: Map[gen.Adjust, Adjuster] = Map.empty,
+  adjusterMap: Map[thriftscala.Adjust, Adjuster] = Map.empty,
   statsReceiver: StatsReceiver = NullStatsReceiver,
   tracer: Tracer = NullTracer
 ) extends Service {
@@ -53,7 +53,7 @@ class ZipkinQuery(
       .bindTo(serverAddress)
       .name("ZipkinQuery")
       .tracer(tracer)
-      .build(new gen.ZipkinQuery.FinagledService(queryService, new TBinaryProtocol.Factory()))
+      .build(new thriftscala.ZipkinQuery.FinagledService(queryService, new TBinaryProtocol.Factory()))
   }
 
   def shutdown() {

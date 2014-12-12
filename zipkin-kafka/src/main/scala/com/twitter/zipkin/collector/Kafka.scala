@@ -23,13 +23,13 @@ import com.twitter.util.{Time, Future}
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import kafka.message.Message
 import kafka.producer.{ProducerData, Producer}
 import kafka.serializer.Encoder
 
 class Kafka(
-  kafka: Producer[String, gen.Span],
+  kafka: Producer[String, thriftscala.Span],
   topic: String,
   statsReceiver: StatsReceiver
 ) extends Service[Span, Unit] {
@@ -38,7 +38,7 @@ class Kafka(
 
   def apply(req: Span): Future[Unit] = {
     statsReceiver.counter("try").incr()
-    val producerData = new ProducerData[String, gen.Span](topic, Seq(req.toThrift))
+    val producerData = new ProducerData[String, thriftscala.Span](topic, Seq(req.toThrift))
     Future {
       kafka.send(producerData)
     } onSuccess { (_) =>
@@ -52,12 +52,12 @@ class Kafka(
   }
 }
 
-class SpanEncoder extends Encoder[gen.Span] {
-  val serializer = new BinaryThriftStructSerializer[gen.Span] {
-    def codec = gen.Span
+class SpanEncoder extends Encoder[thriftscala.Span] {
+  val serializer = new BinaryThriftStructSerializer[thriftscala.Span] {
+    def codec = thriftscala.Span
   }
 
-  def toMessage(span: gen.Span): Message = {
+  def toMessage(span: thriftscala.Span): Message = {
     new Message(serializer.toBytes(span))
   }
 }

@@ -19,13 +19,13 @@ import com.twitter.finagle.Service
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.zipkin.common.{Annotation, Span}
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import org.specs.Specification
 import org.specs.mock.{JMocker, ClassMocker}
 
 class ScribeFilterSpec extends Specification with JMocker with ClassMocker {
-  val serializer = new BinaryThriftStructSerializer[gen.Span] {
-    def codec = gen.Span
+  val serializer = new BinaryThriftStructSerializer[thriftscala.Span] {
+    def codec = thriftscala.Span
   }
 
   val mockService = mock[Service[Span, Unit]]
@@ -42,14 +42,14 @@ class ScribeFilterSpec extends Specification with JMocker with ClassMocker {
 
     val filter = new ScribeFilter
 
-    "convert gen.LogEntry to Span" in {
+    "convert thriftscala.LogEntry to Span" in {
       expect {
         one(mockService).apply(validSpan)
       }
       filter.apply(base64, mockService)
     }
 
-    "convert gen.LogEntry with endline to Span" in {
+    "convert thriftscala.LogEntry with endline to Span" in {
       expect {
         one(mockService).apply(validSpan)
       }

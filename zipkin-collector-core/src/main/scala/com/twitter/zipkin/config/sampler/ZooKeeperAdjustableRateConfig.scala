@@ -15,7 +15,7 @@
  */
 package com.twitter.zipkin.config.sampler
 
-import com.twitter.zipkin.gen.AdjustableRateException
+import com.twitter.zipkin.thriftscala.AdjustableRateException
 import com.twitter.ostrich.stats.Stats
 import com.twitter.logging.Logger
 import com.twitter.zk._

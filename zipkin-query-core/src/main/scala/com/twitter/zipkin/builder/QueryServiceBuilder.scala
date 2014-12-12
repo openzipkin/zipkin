@@ -19,7 +19,7 @@ import com.twitter.common.zookeeper.ServerSetImpl
 import com.twitter.finagle.zookeeper.ZookeeperServerSetCluster
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.RuntimeEnvironment
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.query.adjusters.{NullAdjuster, TimeSkewAdjuster, Adjuster}
 import com.twitter.zipkin.query.ZipkinQuery
 import com.twitter.zipkin.storage.Store
@@ -31,9 +31,9 @@ case class QueryServiceBuilder(
   serverBuilder: ZipkinServerBuilder = ZipkinServerBuilder(9411, 9901)
 ) extends Builder[RuntimeEnvironment => ZipkinQuery] {
 
-  private val adjusterMap: Map[gen.Adjust, Adjuster] = Map (
-    gen.Adjust.Nothing -> NullAdjuster,
-    gen.Adjust.TimeSkew -> new TimeSkewAdjuster()
+  private val adjusterMap: Map[thriftscala.Adjust, Adjuster] = Map (
+    thriftscala.Adjust.Nothing -> NullAdjuster,
+    thriftscala.Adjust.TimeSkew -> new TimeSkewAdjuster()
   )
 
   def addServerSetPath(p: (ZooKeeperClientBuilder, String)) = copy(serverSetPaths = serverSetPaths :+ p)

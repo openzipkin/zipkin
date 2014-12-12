@@ -21,7 +21,7 @@ import com.twitter.conversions.time._
 import com.twitter.util.Time
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.{gen => thrift}
+import com.twitter.zipkin.thriftscala
 import java.nio.ByteBuffer
 import scala.util.Random
 
@@ -99,7 +99,7 @@ class TraceGen(traces: Int, maxDepth: Int) {
     var curTime = time + 1.millisecond
 
     val svrAnnos = new ListBuffer[Annotation]()
-    svrAnnos += Annotation(curTime.inMicroseconds, thrift.Constants.SERVER_RECV, Some(ep))
+    svrAnnos += Annotation(curTime.inMicroseconds, thriftscala.Constants.SERVER_RECV, Some(ep))
 
     val svrBinAnnos = (0 to rnd.nextInt(3)) map { _ =>
       BinaryAnnotation(rndSvcName, ByteBuffer.wrap(rndSvcName.getBytes), AnnotationType.String, Some(ep))
@@ -124,9 +124,9 @@ class TraceGen(traces: Int, maxDepth: Int) {
           val binAnnos = new ListBuffer[BinaryAnnotation]()
 
           val delay = (if (rnd.nextInt(10) > 6) rnd.nextInt(10) else 0).microseconds
-          annos += Annotation((curTime + delay).inMicroseconds, thrift.Constants.CLIENT_SEND, Some(nextEp))
+          annos += Annotation((curTime + delay).inMicroseconds, thriftscala.Constants.CLIENT_SEND, Some(nextEp))
           val time = doRpc(trace, curTime, rnd.nextInt(depth), rpcName, nextEp, thisSpanId, thisParentId) + 1.millisecond
-          annos += Annotation(time.inMicroseconds, thrift.Constants.CLIENT_RECV, Some(nextEp))
+          annos += Annotation(time.inMicroseconds, thriftscala.Constants.CLIENT_RECV, Some(nextEp))
 
           trace.addSpan(rpcName, thisSpanId, thisParentId, annos.toList, binAnnos.toList)
 
@@ -136,7 +136,7 @@ class TraceGen(traces: Int, maxDepth: Int) {
       curTime = times.max
     }
 
-    svrAnnos += Annotation(curTime.inMicroseconds, thrift.Constants.SERVER_SEND, Some(ep))
+    svrAnnos += Annotation(curTime.inMicroseconds, thriftscala.Constants.SERVER_SEND, Some(ep))
     trace.addSpan(spanName, spanId, parentSpanId, svrAnnos.toList, svrBinAnnos.toList)
     curTime
   }

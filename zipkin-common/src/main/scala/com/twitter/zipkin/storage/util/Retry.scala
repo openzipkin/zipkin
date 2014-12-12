@@ -8,7 +8,7 @@ package com.twitter.zipkin.storage.util
  * No clean up between each invocation is attempted.  It's up to the user to ensue that
  * supplied function is resilient to this fact.
  */
-object Retry{
+object Retry {
   def apply[T](n: Int)(f: => T) : T = {
     var result:Option[T] = None
     var throwable:Option[Throwable] = None
@@ -22,7 +22,7 @@ object Retry{
     }
 
     if (result.isEmpty && throwable.isDefined) {
-      throw new RetriesExhaustedException("%d retries exhausted".format(n), throwable.get)
+      throw new RetriesExhaustedException(s"$n retries exhausted", throwable.get)
     }
 
     result.get

@@ -18,7 +18,7 @@ package com.twitter.zipkin.storage.anormdb
 
 import anorm._
 import anorm.SqlParser._
-import java.sql.{Blob, Connection, DriverManager, SQLException}
+import java.sql.{Blob, Connection, DriverManager, SQLException, PreparedStatement}
 import com.twitter.util.{Try, Return, Throw}
 
 /**
@@ -199,5 +199,11 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
    */
   def bytes(columnName: String): RowParser[Array[Byte]] = {
     get[Array[Byte]](columnName)(rowToByteArray)
+  }
+}
+
+object DB {
+  implicit object byteArrayToStatement extends ToStatement[Array[Byte]] {
+    def set(s: PreparedStatement, i: Int, b: Array[Byte]): Unit = s.setBytes(i, b)
   }
 }

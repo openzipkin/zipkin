@@ -19,7 +19,7 @@ package com.twitter.zipkin.storage.redis
 import com.twitter.finagle.redis.protocol.ZRangeResults
 import com.twitter.zipkin.common.{Annotation, AnnotationType, BinaryAnnotation, Endpoint, Span}
 import com.twitter.zipkin.conversions.thrift.thriftAnnotationTypeToAnnotationType
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import org.jboss.netty.buffer.ChannelBuffers

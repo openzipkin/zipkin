@@ -20,7 +20,7 @@ class RetrySpec extends SpecificationWithJUnit {
           throw new Exception("No! No! No!")
           LongWrapper(1)
         }
-      } must throwAnException
+      } must throwA[Retry.RetriesExhaustedException]
 
     }
     "return if fewer than max retries are needed" in {

@@ -2,7 +2,7 @@ package com.twitter.zipkin.receiver.kafka
 
 import com.twitter.logging.Logger
 import kafka.consumer.KafkaStream
-import com.twitter.zipkin.gen.{Span => ThriftSpan}
+import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.util.{Await, Future}
 import java.io._
 

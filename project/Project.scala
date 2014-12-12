@@ -25,10 +25,9 @@ import AssemblyKeys._
 object Zipkin extends Build {
   val zipkinVersion = "1.2.0-SNAPSHOT"
 
-  val finagleVersion = "6.16.0"
-  val utilVersion = "6.16.0"
-  val scroogeVersion = "3.15.0"
-  val cassieVersion = "0.25.3"
+  val finagleVersion = "6.22.0"
+  val utilVersion = "6.22.1"
+  val scroogeVersion = "3.17.0"
   val zookeeperVersions = Map(
     "candidate" -> "0.0.41",
     "group" -> "0.0.44",
@@ -36,35 +35,26 @@ object Zipkin extends Build {
     "server-set" -> "1.0.36"
   )
 
-  val ostrichVersion = "9.2.1"
-  val algebirdVersion  = "0.4.0"
+  val ostrichVersion = "9.6.0"
+  val algebirdVersion  = "0.8.1"
   val hbaseVersion = "0.98.3-hadoop2"
   val hadoopVersion = "2.4.0"
 
-  def finagle(name: String) = "com.twitter" % ("finagle-" + name + "_2.9.2") % finagleVersion
-  def util(name: String) = "com.twitter" % ("util-" + name + "_2.9.2") % utilVersion
-  def scroogeDep(name: String) = "com.twitter" % ("scrooge-" + name + "_2.9.2") % scroogeVersion
+  def finagle(name: String) = "com.twitter" %% ("finagle-" + name) % finagleVersion
+  def util(name: String) = "com.twitter" %% ("util-" + name) % utilVersion
+  def scroogeDep(name: String) = "com.twitter" %% ("scrooge-" + name) % scroogeVersion
   def algebird(name: String) = "com.twitter" %% ("algebird-" + name) % algebirdVersion
   def zk(name: String) = "com.twitter.common.zookeeper" % name % zookeeperVersions(name)
 
-  val twitterServer = "com.twitter" % "twitter-server_2.9.2" % "1.7.0"
-
-  // cassie brings in old versions of finagle and util. we need to exclude here and bring in exclusive versions
-  def cassie(name: String) =
-    "com.twitter" % ("cassie-" + name) % cassieVersion excludeAll(
-      ExclusionRule(organization = "com.twitter", name = "finagle-core"),
-      ExclusionRule(organization = "com.twitter", name = "finagle-serversets"),
-      ExclusionRule(organization = "com.twitter", name = "finagle-thrift"),
-      ExclusionRule(organization = "com.twitter", name = "util-core")
-    )
+  val twitterServer = "com.twitter" %% "twitter-server" % "1.8.0"
 
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
   val travisCi = Option(System.getenv("SBT_TRAVIS_CI")) // for adding travis ci maven repos before others
   val cwd = System.getProperty("user.dir")
 
   lazy val scalaTestDeps = Seq(
-    "org.scalatest" %% "scalatest" % "1.9.1" % "test",
-    "junit" % "junit" % "4.10" % "test"
+    "org.scalatest" %% "scalatest" % "2.2.2" % "test",
+    "junit" % "junit" % "4.11" % "test"
   )
 
   lazy val testDependencies = Seq(
@@ -75,7 +65,7 @@ object Zipkin extends Build {
     "org.objenesis"           %  "objenesis"    % "1.1"   % "test",
     "org.scala-tools.testing" %% "specs"        % "1.6.9" % "test" cross CrossVersion.binaryMapped {
       case "2.9.2" => "2.9.1"
-      case "2.10.0" => "2.10"
+      case "2.10.4" => "2.10"
       case x => x
     },
     "junit" % "junit" % "4.10" % "test"
@@ -84,8 +74,8 @@ object Zipkin extends Build {
   def zipkinSettings = Seq(
     organization := "com.twitter",
     version := zipkinVersion,
-    crossScalaVersions := Seq("2.9.3"),
-    scalaVersion := "2.9.3",
+    crossScalaVersions := Seq("2.10.4"),
+    scalaVersion := "2.10.4",
     crossPaths := false,            /* Removes Scala version from artifact name */
     fork := true, // forking prevents runaway thread pollution of sbt
     baseDirectory in run := file(cwd), // necessary for forking
@@ -159,8 +149,8 @@ object Zipkin extends Build {
         util("core"),
         zk("client"),
         algebird("core"),
-        "com.twitter" % "ostrich_2.9.2" % ostrichVersion
-      ) ++ testDependencies ++ scalaTestDeps
+        "com.twitter" %% "ostrich" % ostrichVersion
+      ) ++ scalaTestDeps
     )
 
   lazy val thriftidl =
@@ -194,7 +184,7 @@ object Zipkin extends Build {
       settings = defaultSettings ++ ScroogeSBT.newSettings
     ).settings(
         ScroogeSBT.scroogeThriftSourceFolder in Compile <<= (baseDirectory in ThisBuild)
-          (_ / "zipkin-thrift" / "src" / "main" / "resources" / "thrift"),
+          (_ / "zipkin-thrift" / "src" / "main" / "thrift" / "com" / "twitter" / "zipkin" ),
         libraryDependencies ++= Seq(
         finagle("ostrich4"),
         finagle("thrift"),
@@ -203,7 +193,7 @@ object Zipkin extends Build {
         scroogeDep("core"),
         scroogeDep("serializer"),
         algebird("core"),
-        "com.twitter" % "ostrich_2.9.2" % ostrichVersion
+        "com.twitter" %% "ostrich" % ostrichVersion
       ) ++ testDependencies
     ).dependsOn(common)
 
@@ -238,7 +228,7 @@ object Zipkin extends Build {
       zk("group"),
       algebird("core"),
       twitterServer,
-      "com.twitter" % "ostrich_2.9.2" % ostrichVersion
+      "com.twitter" %% "ostrich" % ostrichVersion
     ) ++ testDependencies
   ).dependsOn(common, scrooge)
 
@@ -248,14 +238,13 @@ object Zipkin extends Build {
     settings = defaultSettings
   ).settings(
     libraryDependencies ++= Seq(
-      cassie("core"),
-      cassie("serversets"),
+      "commons-codec" % "commons-codec" % "1.6",
       finagle("serversets"),
       util("logging"),
       util("app"),
       scroogeDep("serializer"),
       "org.iq80.snappy" % "snappy" % "0.1"
-    ) ++ testDependencies ++ scalaTestDeps,
+    ) ++ scalaTestDeps,
 
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
@@ -270,9 +259,9 @@ object Zipkin extends Build {
     settings = defaultSettings
   ).settings(
     libraryDependencies ++= Seq(
-      "play" % "anorm_2.9.2" % "2.1-09142012",
+      "com.typesafe.play" %% "anorm" % "2.3.7",
       anormDriverDependencies("sqlite-persistent")
-    ) ++ testDependencies ++ scalaTestDeps,
+    ) ++ scalaTestDeps,
 
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
@@ -312,7 +301,7 @@ object Zipkin extends Build {
         zk("candidate"),
         zk("group"),
         algebird("core"),
-        "com.twitter" % "ostrich_2.9.2" % ostrichVersion
+        "com.twitter" %% "ostrich" % ostrichVersion
       ) ++ testDependencies
     ).dependsOn(common, query, scrooge)
 
@@ -378,10 +367,10 @@ object Zipkin extends Build {
     ).settings(
       libraryDependencies ++= Seq(
         twitterServer,
-        "com.twitter" % "kafka_2.9.2" % "0.7.0",
+        "com.twitter" %% "tormenta-kafka" % "0.8.0",
         scroogeDep("serializer")
-      ) ++ testDependencies ++ scalaTestDeps
-    ).dependsOn(common, collector, zookeeper, cassandra, scrooge)
+      ) ++ scalaTestDeps
+    ).dependsOn(common, collector, zookeeper, scrooge)
 
   lazy val kafka =
     Project(
@@ -390,7 +379,7 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        "com.twitter"      % "kafka_2.9.2"    % "0.7.0",
+        "com.twitter" %% "tormenta-kafka" % "0.8.0",
         scroogeDep("serializer")
       ) ++ testDependencies,
       resolvers ++= (proxyRepo match {
@@ -502,9 +491,9 @@ object Zipkin extends Build {
       util("logging"),
       scroogeDep("serializer")
     ) ++ testDependencies,
-    
+
     resolvers ~= {rs => Seq(DefaultMavenRepository) ++ rs},
-    
+
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
       base =>

@@ -27,6 +27,7 @@ import anorm.SqlParser._
 import java.nio.ByteBuffer
 import java.sql.Connection
 import AnormThreads.inNewThread
+import com.twitter.zipkin.storage.anormdb.DB.byteArrayToStatement
 
 /**
  * Retrieve and store span information.
@@ -96,6 +97,7 @@ case class AnormStorage(db: DB, openCon: Option[Connection] = None) extends Stor
           .on("duration" -> a.duration.map(_.inNanoseconds))
           .execute()
       )
+
       span.binaryAnnotations.foreach(b =>
         SQL(
           """INSERT INTO zipkin_binary_annotations

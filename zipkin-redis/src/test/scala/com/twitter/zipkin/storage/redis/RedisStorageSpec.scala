@@ -18,7 +18,7 @@ package com.twitter.zipkin.storage.redis
 import com.twitter.conversions.time.intToTimeableNumber
 import com.twitter.zipkin.common.{Annotation, AnnotationType, BinaryAnnotation, Endpoint, Span}
 import com.twitter.zipkin.conversions.thrift.thriftAnnotationTypeToAnnotationType
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import java.nio.ByteBuffer
 
 class RedisStorageSpec extends RedisSpecification {

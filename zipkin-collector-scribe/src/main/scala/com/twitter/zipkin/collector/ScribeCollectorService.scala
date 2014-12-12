@@ -18,7 +18,7 @@ package com.twitter.zipkin.collector
 import com.twitter.logging.Logger
 import com.twitter.ostrich.stats.Stats
 import com.twitter.util.{FuturePool, Future}
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.storage.Store
 import com.twitter.zipkin.conversions.thrift._
 
@@ -29,18 +29,18 @@ class ScribeCollectorService(
   val writeQueue: WriteQueue[Seq[_ <: String]],
   val stores: Seq[Store],
   categories: Set[String]
-) extends gen.ZipkinCollector.FutureIface with CollectorService {
+) extends thriftscala.ZipkinCollector.FutureIface with CollectorService {
   private val log = Logger.get
 
   val futurePool = FuturePool.unboundedPool
 
-  val TryLater = Future(gen.ResultCode.TryLater)
-  val Ok = Future(gen.ResultCode.Ok)
+  val TryLater = Future(thriftscala.ResultCode.TryLater)
+  val Ok = Future(thriftscala.ResultCode.Ok)
 
   /**
    * Accept lists of LogEntries.
    */
-  override def log(logEntries: Seq[gen.LogEntry]): Future[gen.ResultCode] = {
+  override def log(logEntries: Seq[thriftscala.LogEntry]): Future[thriftscala.ResultCode] = {
     Stats.incr("collector.log")
 
     if (!running) {
@@ -51,7 +51,7 @@ class ScribeCollectorService(
     Stats.addMetric("scribe_size", logEntries.map(_.message.size).sum)
 
     if (logEntries.isEmpty) {
-      Stats.incr("collector.empty_logentry")
+      Stats.incr("collector.empty_lothriftscala.ry")
       return Ok
     }
 
@@ -79,7 +79,7 @@ class ScribeCollectorService(
     }
   }
 
-  def storeDependencies(dependencies: gen.Dependencies): Future[Unit] = {
+  def storeDependencies(dependencies: thriftscala.Dependencies): Future[Unit] = {
 
     Stats.timeFutureMillis("collector.storeDependencies") {
       Future.join {
@@ -89,7 +89,7 @@ class ScribeCollectorService(
       case e: Exception =>
         log.error(e, "storeDependencies failed")
         Stats.incr("collector.storeDependencies")
-        Future.exception(gen.StoreAggregatesException(e.toString))
+        Future.exception(thriftscala.StoreAggregatesException(e.toString))
     }
   }
 
@@ -105,7 +105,7 @@ class ScribeCollectorService(
       case e: Exception =>
         log.error(e, "storeTopAnnotations failed")
         Stats.incr("collector.storeTopAnnotations")
-        Future.exception(gen.AdjustableRateException(e.toString))
+        Future.exception(thriftscala.AdjustableRateException(e.toString))
     }
   }
 
@@ -121,7 +121,7 @@ class ScribeCollectorService(
       case e: Exception =>
         log.error(e, "storeTopKeyValueAnnotations failed")
         Stats.incr("collector.storeTopKeyValueAnnotations")
-        Future.exception(gen.AdjustableRateException(e.toString))
+        Future.exception(thriftscala.AdjustableRateException(e.toString))
     }
   }
 }

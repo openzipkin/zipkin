@@ -23,10 +23,10 @@ import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.Future
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 
 /**
- * Transforms a `Seq[gen.LogEntry]` to `Seq[Span]` for a collector service to consume.
+ * Transforms a `Seq[thriftscala.LogEntry]` to `Seq[Span]` for a collector service to consume.
  * Assumes:
  *   - the Scribe struct contains a `message` that is the Base64 encoded Thrift Span struct.
  *   - the sequence of `LogEntry`s only contains messages we want to pass on (already filtered
@@ -35,8 +35,8 @@ import com.twitter.zipkin.gen
 class ScribeFilter extends Filter[Seq[String], Unit, Span, Unit] {
   private val log = Logger.get
 
-  val deserializer = new BinaryThriftStructSerializer[gen.Span] {
-    def codec = gen.Span
+  val deserializer = new BinaryThriftStructSerializer[thriftscala.Span] {
+    def codec = thriftscala.Span
   }
 
   def apply(logEntries: Seq[String], service: Service[Span, Unit]): Future[Unit] = {

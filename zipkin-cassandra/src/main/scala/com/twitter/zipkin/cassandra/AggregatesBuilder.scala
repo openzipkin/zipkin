@@ -20,7 +20,7 @@ import com.twitter.cassie.{ReadConsistency, WriteConsistency, KeyspaceBuilder}
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.cassandra.{ScroogeThriftCodec, CassandraAggregates}
 import com.twitter.zipkin.storage.Aggregates
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 
 case class AggregatesBuilder(
   keyspaceBuilder: KeyspaceBuilder,
@@ -28,14 +28,14 @@ case class AggregatesBuilder(
   dependenciesCf: String = "Dependencies",
   writeConsistency: WriteConsistency = WriteConsistency.One,
   readConsistency: ReadConsistency = ReadConsistency.One,
-  dependenciesCodec: Codec[gen.Dependencies] = new ScroogeThriftCodec[gen.Dependencies](gen.Dependencies)
+  dependenciesCodec: Codec[thriftscala.Dependencies] = new ScroogeThriftCodec[thriftscala.Dependencies](thriftscala.Dependencies)
 ) extends Builder[Aggregates] {
 
   def topAnnotationsCf(t: String):            AggregatesBuilder = copy(topAnnotationsCf = t)
   def dependenciesCf(d: String):              AggregatesBuilder = copy(dependenciesCf = d)
   def writeConsistency(wc: WriteConsistency): AggregatesBuilder = copy(writeConsistency = wc)
   def readConsistency(rc: ReadConsistency):   AggregatesBuilder = copy(readConsistency = rc)
-  def dependenciesCodec(c: Codec[gen.Dependencies]): AggregatesBuilder = copy(dependenciesCodec = c)
+  def dependenciesCodec(c: Codec[thriftscala.Dependencies]): AggregatesBuilder = copy(dependenciesCodec = c)
 
   def apply() = {
     val keyspace = keyspaceBuilder.connect()

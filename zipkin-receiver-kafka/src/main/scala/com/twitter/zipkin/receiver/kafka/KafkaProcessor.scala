@@ -1,6 +1,6 @@
 package com.twitter.zipkin.receiver.kafka
 
-import com.twitter.zipkin.gen.{Span => ThriftSpan}
+import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.ostrich.admin.{Service => OstrichService, ServiceTracker}
 import kafka.consumer.{Consumer, ConsumerConnector, ConsumerConfig}
 import kafka.serializer.Decoder
