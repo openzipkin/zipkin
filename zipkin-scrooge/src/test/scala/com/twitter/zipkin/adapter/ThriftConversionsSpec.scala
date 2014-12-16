@@ -19,7 +19,7 @@ package com.twitter.zipkin.adapter
 import com.twitter.conversions.time._
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.gen
+import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.query._
 import java.nio.ByteBuffer
 import org.specs.Specification
@@ -68,7 +68,7 @@ class ThriftConversionsSpec extends SpecificationWithJUnit with JMocker with Cla
 
       "to thrift and back, with null service" in {
         // TODO this could happen if we deserialize an old style struct
-        val actualEndpoint = gen.Endpoint(123, 456, null)
+        val actualEndpoint = thriftscala.Endpoint(123, 456, null)
         val expectedEndpoint = Endpoint(123, 456, Endpoint.UnknownServiceName)
         actualEndpoint.toEndpoint mustEqual expectedEndpoint
       }
@@ -85,13 +85,13 @@ class ThriftConversionsSpec extends SpecificationWithJUnit with JMocker with Cla
       }
 
       "handle incomplete thrift span" in {
-        val noNameSpan = gen.Span(0, null, 0, None, Seq(), Seq())
+        val noNameSpan = thriftscala.Span(0, null, 0, None, Seq(), Seq())
         noNameSpan.toSpan must throwA[IncompleteTraceDataException]
 
-        val noAnnotationsSpan = gen.Span(0, "name", 0, None, null, Seq())
+        val noAnnotationsSpan = thriftscala.Span(0, "name", 0, None, null, Seq())
         noAnnotationsSpan.toSpan mustEqual Span(0, "name", 0, None, List(), Seq())
 
-        val noBinaryAnnotationsSpan = gen.Span(0, "name", 0, None, Seq(), null)
+        val noBinaryAnnotationsSpan = thriftscala.Span(0, "name", 0, None, Seq(), null)
         noBinaryAnnotationsSpan.toSpan mustEqual Span(0, "name", 0, None, List(), Seq())
       }
     }

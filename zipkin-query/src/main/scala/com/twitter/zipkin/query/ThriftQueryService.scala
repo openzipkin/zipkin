@@ -26,18 +26,18 @@ import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.query.adjusters._
 import com.twitter.zipkin.query.constants._
 import com.twitter.zipkin.storage._
-import com.twitter.zipkin.{gen => thrift}
+import com.twitter.zipkin.thriftscala
 import java.nio.ByteBuffer
 
 class ThriftQueryService(
   spanStore: SpanStore,
   aggsStore: Aggregates = new NullAggregates,
   realtimeStore: RealtimeAggregates = NullRealtimeAggregates,
-  adjusters: Map[thrift.Adjust, Adjuster] = Map.empty[thrift.Adjust, Adjuster],
+  adjusters: Map[thriftscala.Adjust, Adjuster] = Map.empty[thriftscala.Adjust, Adjuster],
   traceDurationFetchBatchSize: Int = 500,
   stats: StatsReceiver = DefaultStatsReceiver.scope("ThriftQueryService"),
   log: Logger = Logger.get("ThriftQueryService")
-) extends thrift.ZipkinQuery[Future] {
+) extends thriftscala.ZipkinQuery[Future] {
 
   private[this] val methodStats = stats.scope("perMethod")
 
@@ -53,33 +53,33 @@ class ThriftQueryService(
     }
   }
 
-  private[this] def sortedTraceIds(traceIds: Future[Seq[IndexedTraceId]], limit: Int, order: thrift.Order): Future[Seq[Long]] = {
+  private[this] def sortedTraceIds(traceIds: Future[Seq[IndexedTraceId]], limit: Int, order: thriftscala.Order): Future[Seq[Long]] = {
     order match {
-      case thrift.Order.None =>
+      case thriftscala.Order.None =>
         traceIds.map(_.slice(0, limit).map(_.traceId))
 
-      case thrift.Order.TimestampDesc | thrift.Order.TimestampAsc =>
+      case thriftscala.Order.TimestampDesc | thriftscala.Order.TimestampAsc =>
         val orderBy = order match {
-          case thrift.Order.TimestampDesc => (a: IndexedTraceId, b: IndexedTraceId) => a.timestamp > b.timestamp
-          case thrift.Order.TimestampAsc => (a: IndexedTraceId, b: IndexedTraceId) => a.timestamp < b.timestamp
+          case thriftscala.Order.TimestampDesc => (a: IndexedTraceId, b: IndexedTraceId) => a.timestamp > b.timestamp
+          case thriftscala.Order.TimestampAsc => (a: IndexedTraceId, b: IndexedTraceId) => a.timestamp < b.timestamp
           case _ => throw new Exception("what?")
         }
         traceIds.map { _.sortWith(orderBy).slice(0, limit).map(_.traceId) }
 
-      case thrift.Order.DurationDesc | thrift.Order.DurationAsc =>
+      case thriftscala.Order.DurationDesc | thriftscala.Order.DurationAsc =>
         val orderBy = order match {
-          case thrift.Order.DurationDesc => (a: TraceIdDuration, b: TraceIdDuration) => a.duration > b.duration
-          case thrift.Order.DurationAsc => (a: TraceIdDuration, b: TraceIdDuration) => a.duration < b.duration
+          case thriftscala.Order.DurationDesc => (a: TraceIdDuration, b: TraceIdDuration) => a.duration > b.duration
+          case thriftscala.Order.DurationAsc => (a: TraceIdDuration, b: TraceIdDuration) => a.duration < b.duration
           case _ => throw new Exception("what?")
         }
         getTraceIdDurations(traceIds.map(_.map(_.traceId))) map { _.sortWith(orderBy).slice(0, limit).map(_.traceId) }
     }
   }
 
-  private[this] def sort(traces: Future[Seq[IndexedTraceId]], limit: Int, order: thrift.Order): Future[Seq[Long]] =
+  private[this] def sort(traces: Future[Seq[IndexedTraceId]], limit: Int, order: thriftscala.Order): Future[Seq[Long]] =
     sortedTraceIds(traces, limit, order)
 
-  private[this] def adjustedTraces(traces: Seq[Seq[Span]], adjusts: Seq[thrift.Adjust]): Seq[Trace] = {
+  private[this] def adjustedTraces(traces: Seq[Seq[Span]], adjusts: Seq[thriftscala.Adjust]): Seq[Trace] = {
     val as = adjusts flatMap { adjusters.get(_) }
     traces map { spans =>
       as.foldLeft(Trace(spans)) { (t, adjuster) => adjuster.adjust(t) }
@@ -106,9 +106,9 @@ class ThriftQueryService(
 
   private[this] def queryResponse(
     ids: Seq[IndexedTraceId],
-    qr: thrift.QueryRequest,
+    qr: thriftscala.QueryRequest,
     endTs: Long = -1
-  ): Future[thrift.QueryResponse] = {
+  ): Future[thriftscala.QueryResponse] = {
     sortedTraceIds(Future.value(ids), qr.limit, qr.order) map { sortedIds =>
       val (min, max) = sortedIds match {
         case Nil =>
@@ -117,7 +117,7 @@ class ThriftQueryService(
           val ts = ids.map(_.timestamp)
           (ts.min, ts.max)
       }
-      thrift.QueryResponse(sortedIds, min, max)
+      thriftscala.QueryResponse(sortedIds, min, max)
     }
   }
 
@@ -125,7 +125,7 @@ class ThriftQueryService(
   private case class SpanSliceQuery(name: String) extends SliceQuery
   private case class AnnotationSliceQuery(key: String, value: Option[ByteBuffer]) extends SliceQuery
 
-  private[this] def querySlices(slices: Seq[SliceQuery], qr: thrift.QueryRequest): Future[Seq[Seq[IndexedTraceId]]] =
+  private[this] def querySlices(slices: Seq[SliceQuery], qr: thriftscala.QueryRequest): Future[Seq[Seq[IndexedTraceId]]] =
     Future.collect(slices map {
       case SpanSliceQuery(name) =>
         spanStore.getTraceIdsByName(qr.serviceName, Some(name), qr.endTs, qr.limit)
@@ -148,12 +148,12 @@ class ThriftQueryService(
       log.error(e, "%s error".format(name))
       errorStats.counter(name).incr()
       errorStats.scope(name).counter(e.getClass.getName).incr()
-      Future.exception(thrift.QueryException(e.toString))
+      Future.exception(thriftscala.QueryException(e.toString))
     }
   }
 
-  private[this] val noServiceNameError = Future.exception(thrift.QueryException("No service name provided"))
-  private[this] def handleQuery[T](name: String, qr: thrift.QueryRequest)(f: => Future[T]): Future[T] =
+  private[this] val noServiceNameError = Future.exception(thriftscala.QueryException("No service name provided"))
+  private[this] def handleQuery[T](name: String, qr: thriftscala.QueryRequest)(f: => Future[T]): Future[T] =
     if (!opt(qr.serviceName).isDefined) noServiceNameError else {
       FTrace.recordBinary("serviceName", qr.serviceName)
       FTrace.recordBinary("endTs", qr.endTs)
@@ -162,7 +162,7 @@ class ThriftQueryService(
       handle(name)(f)
     }
 
-  def getTraceIds(qr: thrift.QueryRequest): Future[thrift.QueryResponse] =
+  def getTraceIds(qr: thriftscala.QueryRequest): Future[thriftscala.QueryResponse] =
     handleQuery("getTraceIds", qr) {
       val sliceQueries = Seq[Option[Seq[SliceQuery]]](
         qr.spanName.map { n => Seq(SpanSliceQuery(n)) },
@@ -201,9 +201,9 @@ class ThriftQueryService(
     spanName: String,
     endTs: Long,
     limit: Int,
-    order: thrift.Order
+    order: thriftscala.Order
   ): Future[Seq[Long]] = {
-    val qr = thrift.QueryRequest(serviceName, opt(spanName), None, None, endTs, limit, order)
+    val qr = thriftscala.QueryRequest(serviceName, opt(spanName), None, None, endTs, limit, order)
     handleQuery("getTraceIdsBySpanName", qr) {
       sort(spanStore.getTraceIdsByName(serviceName, qr.spanName, endTs, limit), limit, order)
     }
@@ -213,9 +213,9 @@ class ThriftQueryService(
     serviceName: String,
     endTs: Long,
     limit: Int,
-    order: thrift.Order
+    order: thriftscala.Order
   ): Future[Seq[Long]] = {
-    val qr = thrift.QueryRequest(serviceName, None, None, None, endTs, limit, order)
+    val qr = thriftscala.QueryRequest(serviceName, None, None, None, endTs, limit, order)
     handleQuery("getTraceIdsBySpanName", qr) {
       sort(spanStore.getTraceIdsByName(serviceName, None, endTs, limit), limit, order)
     }
@@ -227,9 +227,9 @@ class ThriftQueryService(
     value: ByteBuffer,
     endTs: Long,
     limit: Int,
-    order: thrift.Order
+    order: thriftscala.Order
   ): Future[Seq[Long]] = {
-    val qr = thrift.QueryRequest(serviceName, None, None, None, endTs, limit, order)
+    val qr = thriftscala.QueryRequest(serviceName, None, None, None, endTs, limit, order)
     handleQuery("getTraceIdsByAnnotation", qr) {
       sort(spanStore.getTraceIdsByAnnotation(serviceName, key, opt(value), endTs, limit), limit, order)
     }
@@ -241,13 +241,13 @@ class ThriftQueryService(
       spanStore.tracesExist(traceIds)
     }
 
-  def getTracesByIds(traceIds: Seq[Long], adjust: Seq[thrift.Adjust]): Future[Seq[thrift.Trace]] =
+  def getTracesByIds(traceIds: Seq[Long], adjust: Seq[thriftscala.Adjust]): Future[Seq[thriftscala.Trace]] =
     handle("getTracesByIds") {
       FTrace.recordBinary("numIds", traceIds.length)
       spanStore.getSpansByTraceIds(traceIds) map { adjustedTraces(_, adjust).map(_.toThrift) }
     }
 
-  def getTraceTimelinesByIds(traceIds: Seq[Long], adjust: Seq[thrift.Adjust]): Future[Seq[thrift.TraceTimeline]] =
+  def getTraceTimelinesByIds(traceIds: Seq[Long], adjust: Seq[thriftscala.Adjust]): Future[Seq[thriftscala.TraceTimeline]] =
     handle("getTraceTimelinesByIds") {
       FTrace.recordBinary("numIds", traceIds.length)
       spanStore.getSpansByTraceIds(traceIds) map { traces =>
@@ -255,7 +255,7 @@ class ThriftQueryService(
       }
     }
 
-  def getTraceSummariesByIds(traceIds: Seq[Long], adjust: Seq[thrift.Adjust]): Future[Seq[thrift.TraceSummary]] =
+  def getTraceSummariesByIds(traceIds: Seq[Long], adjust: Seq[thriftscala.Adjust]): Future[Seq[thriftscala.TraceSummary]] =
     handle("getTraceSummariesByIds") {
       FTrace.recordBinary("numIds", traceIds.length)
       spanStore.getSpansByTraceIds(traceIds) map { traces =>
@@ -263,7 +263,7 @@ class ThriftQueryService(
       }
     }
 
-  def getTraceCombosByIds(traceIds: Seq[Long], adjust: Seq[thrift.Adjust]): Future[Seq[thrift.TraceCombo]] =
+  def getTraceCombosByIds(traceIds: Seq[Long], adjust: Seq[thriftscala.Adjust]): Future[Seq[thriftscala.TraceCombo]] =
     handle("getTraceCombosByIds") {
       FTrace.recordBinary("numIds", traceIds.length)
       spanStore.getSpansByTraceIds(traceIds) map { traces =>
@@ -297,7 +297,7 @@ class ThriftQueryService(
       spanStore.getTimeToLive(traceId).map(_.inSeconds)
     }
 
-  def getDependencies(startTime: Option[Long], endTime: Option[Long]) : Future[thrift.Dependencies] =
+  def getDependencies(startTime: Option[Long], endTime: Option[Long]) : Future[thriftscala.Dependencies] =
     handle("getDependencies") {
       val start = startTime map { Time.fromMicroseconds(_) }
       val end = endTime map { Time.fromMicroseconds(_) }

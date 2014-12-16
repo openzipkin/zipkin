@@ -11,8 +11,7 @@ import com.twitter.zipkin.Constants.CoreAnnotations
 import com.twitter.zipkin.common.json._
 import com.twitter.zipkin.common.mustache.ZipkinMustache
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.gen
-import com.twitter.zipkin.gen.{Adjust, TraceCombo, ZipkinQuery}
+import com.twitter.zipkin.thriftscala.{Adjust, TraceCombo, ZipkinQuery}
 import com.twitter.zipkin.query.{SpanTimestamp, TraceSummary, QueryRequest}
 import java.io.{File, FileInputStream, InputStream}
 import java.text.SimpleDateFormat

@@ -1,7 +1,9 @@
 maven_layout()
 
-jar_library(name='zipkin-thrift',
+jar_library(
+  name='zipkin-thrift',
   dependencies=[
-    pants('oss/zipkin-thrift/src/main/resources/thrift')
+    'zipkin/oss/zipkin-thrift/src/main/thrift:thrift-scala'
   ]
 )
+

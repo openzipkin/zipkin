@@ -1,13 +1,14 @@
-scala_library(name='scala',
+scala_library(
+  name='scala',
   dependencies=[
-    pants('3rdparty:finagle-exception'),
-    pants('3rdparty:finagle-stats'),
-    pants('3rdparty:finagle-thriftmux'),
-    pants('3rdparty:finagle-zipkin'),
-    pants('3rdparty:util-app'),
-    pants('3rdparty:util-core'),
-    pants('oss/zipkin-common'),
-    pants('oss/zipkin-scrooge'),
+    'finagle/finagle-exception',
+    'finagle/finagle-stats',
+    'finagle/finagle-thriftmux',
+    'finagle/finagle-zipkin',
+    'util/util-app',
+    'util/util-core',
+    'zipkin/oss/zipkin-common',
+    'zipkin/oss/zipkin-scrooge',
   ],
   sources=rglobs('*.scala')
 )

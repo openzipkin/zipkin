@@ -18,7 +18,7 @@ package com.twitter.zipkin.query
 
 import com.twitter.conversions.time._
 import com.twitter.util.Duration
-import com.twitter.zipkin.gen.Adjust
+import com.twitter.zipkin.thriftscala.Adjust
 import com.twitter.zipkin.query.adjusters._
 
 package object constants {

@@ -20,7 +20,7 @@ import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.gen.{LogEntry, ResultCode, Span => ThriftSpan}
+import com.twitter.zipkin.thriftscala.{LogEntry, ResultCode, Span => ThriftSpan}
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner

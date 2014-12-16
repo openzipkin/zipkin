@@ -21,7 +21,7 @@ import com.twitter.finagle.ThriftMux
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.logging.Logger
 import com.twitter.util.Future
-import com.twitter.zipkin.gen.Adjust
+import com.twitter.zipkin.thriftscala.Adjust
 import com.twitter.zipkin.query.adjusters._
 import com.twitter.zipkin.storage.{Aggregates, NullAggregates, SpanStore}
 import com.twitter.zipkin.storage.{NullRealtimeAggregates, RealtimeAggregates}

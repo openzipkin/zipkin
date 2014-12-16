@@ -1,10 +1,11 @@
-scala_library(name='scala',
+scala_library(
+  name='scala',
   dependencies=[
-    pants('3rdparty:finagle-core'),
-    pants('3rdparty:util-core'),
-    pants('3rdparty:util-zk'),
-    pants('3rdparty:zookeeper-candidate'),
-    pants('3rdparty:zookeeper-group'),
+    'finagle/finagle-core',
+    'util/util-core',
+    'util/util-zk',
+    '3rdparty/jvm/com/twitter/common/zookeeper:candidate',
+    '3rdparty/jvm/com/twitter/common/zookeeper:group',
   ],
   sources=rglobs('*.scala')
 )

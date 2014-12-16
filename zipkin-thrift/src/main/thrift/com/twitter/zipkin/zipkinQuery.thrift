@@ -11,7 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-namespace java com.twitter.zipkin.gen
+namespace java com.twitter.zipkin.thriftjava
+#@namespace scala com.twitter.zipkin.thriftscala
 namespace rb Zipkin
 
 include "zipkinCore.thrift"

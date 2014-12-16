@@ -1,13 +1,15 @@
 maven_layout()
 
-jar_library(name='zipkin-web',
+jar_library(
+  name='zipkin-web',
   dependencies=[
-    pants('oss/zipkin-web/src/main/scala')
+    'zipkin/oss/zipkin-web/src/main/scala'
   ]
 )
 
-jar_library(name='tests',
+jar_library(
+  name='tests',
   dependencies=[
-    pants('oss/zipkin-web/src/test/scala')
+    'zipkin/oss/zipkin-web/src/test/scala'
   ]
 )

@@ -25,7 +25,7 @@ import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Base64StringEncoder, Closable, Future, NonFatal, Return, Throw, Time}
 import com.twitter.zipkin.collector.{QueueFullException, SpanReceiver}
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.gen.{LogEntry, ResultCode, Scribe, Span => ThriftSpan, ZipkinCollector}
+import com.twitter.zipkin.thriftscala.{LogEntry, ResultCode, Scribe, Span => ThriftSpan, ZipkinCollector}
 import com.twitter.zipkin.zookeeper._
 import com.twitter.zk.ZkClient
 import java.net.{InetSocketAddress, URI}

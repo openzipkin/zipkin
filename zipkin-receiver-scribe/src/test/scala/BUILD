@@ -1,8 +1,9 @@
-junit_tests(name='scala',
+junit_tests(
+  name='scala',
   dependencies=[
-    pants('3rdparty:junit'),
-    pants('3rdparty:scalatest'),
-    pants('oss/zipkin-receiver-scribe'),
+    '3rdparty:junit',
+    '3rdparty:scalatest',
+    'zipkin/oss/zipkin-receiver-scribe',
   ],
   sources=rglobs('*.scala')
 )

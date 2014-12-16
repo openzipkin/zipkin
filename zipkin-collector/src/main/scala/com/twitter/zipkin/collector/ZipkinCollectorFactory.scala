@@ -22,7 +22,7 @@ import com.twitter.finagle.{Filter, Service}
 import com.twitter.util.{Await, Closable, CloseAwaitably, Duration, Future, Time}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.gen.{Span => ThriftSpan}
+import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.zipkin.storage.{SpanStore, WriteSpanStore}
 
 sealed trait AwaitableCloser extends Closable with CloseAwaitably

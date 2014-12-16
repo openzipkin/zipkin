@@ -1,12 +1,13 @@
-scala_library(name='scala',
+scala_library(
+  name='scala',
   dependencies=[
-    pants('3rdparty:finagle-core'),
-    pants('3rdparty:finagle-http'),
-    pants('3rdparty:util-app'),
-    pants('3rdparty:util-core'),
-    pants('3rdparty:util-zk'),
-    pants('oss/zipkin-common'),
-    pants('oss/zipkin-zookeeper'),
+    'finagle/finagle-core',
+    'finagle/finagle-http',
+    'util/util-app',
+    'util/util-core',
+    'util/util-zk',
+    'zipkin/oss/zipkin-common',
+    'zipkin/oss/zipkin-zookeeper',
   ],
   sources=rglobs('*.scala')
 )
