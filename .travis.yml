@@ -1,11 +1,19 @@
 language: scala
+
 scala:
-  - 2.9.3
+  - 2.10.4
+
 services:
   - redis-server
+
 jdk:
-  - openjdk7
+  - oraclejdk7
   - openjdk6
+  - openjdk7
+
+before_script:
+  # default $SBT_OPTS is irrelevant to sbt lancher
+  - unset SBT_OPTS
+
 script:
-  - "umask 0022"
-  - "sbt ++$TRAVIS_SCALA_VERSION clean test"
+  - "./bin/sbt ++$TRAVIS_SCALA_VERSION clean test"

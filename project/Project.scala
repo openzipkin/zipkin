@@ -243,7 +243,8 @@ object Zipkin extends Build {
       util("logging"),
       util("app"),
       scroogeDep("serializer"),
-      "org.iq80.snappy" % "snappy" % "0.1"
+      "org.iq80.snappy" % "snappy" % "0.1",
+      "org.mockito" % "mockito-all" % "1.9.5" % "test"
     ) ++ scalaTestDeps,
 
     /* Add configs to resource path for ConfigSpec */
