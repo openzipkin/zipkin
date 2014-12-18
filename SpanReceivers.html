@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Span Recievers &mdash; Zipkin 1.2.0-SNAPSHOT documentation</title>
+    
+    <link rel="stylesheet" href="_static/zipkin.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.2.0-SNAPSHOT',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Zipkin 1.2.0-SNAPSHOT documentation" href="index.html" />
+    <link rel="next" title="Architecture" href="Architecture.html" />
+    <link rel="prev" title="Instrumenting a library" href="Instrumenting.html" />
+   
+  
+  <link media="only screen and (max-device-width: 480px)" href="_static/small_flask.css" type= "text/css" rel="stylesheet" />
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-39101739-4', 'twitter.github.io');
+    ga('send', 'pageview');
+
+  </script>
+
+  </head>
+  <body>
+  
+  
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="Architecture.html" title="Architecture"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Instrumenting.html" title="Instrumenting a library"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Zipkin</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="span-recievers">
+<h1>Span Recievers<a class="headerlink" href="#span-recievers" title="Permalink to this headline">¶</a></h1>
+<p>A <cite>SpanReciever</cite> is responsible for collecting spans from services, converting
+them to a Zipkin common Span, then passing them to the storage layer. This
+approach provides modularity allowing for receivers that accept any sort of data
+from any sort of producer. Zipkin comes with a receiver for Scribe and one for
+Kafka.</p>
+<div class="section" id="scribe-reciever">
+<h2>Scribe Reciever<a class="headerlink" href="#scribe-reciever" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://github.com/facebook/scribe">Scribe</a> is the logging framework we use at Twitter to transport trace data. Thus
+the scribe span receiver is the most well supported.</p>
+<p>For small architectures tracers can be setup to send directly to the Zipkin
+collectors. The ScribeSpanReceiver expects a scribe log entry with a Base64
+encoded, binary serialized thrift Span using the &#8220;zipkin&#8221; category (this
+category is configurable via command line flag). Finagle-zipkin does this
+automatically.</p>
+<p>As the architecture scales out it may become infeasible to connect all services
+directly to the collectors. At Twitter we use a <a class="reference external" href="https://github.com/traviscrawford/scribe">modified scribe daemon</a> that
+run on every host. The daemons connect to ZooKeeper and watch for a list of
+hosts to forward messages to.</p>
+<p>To use Scribe with Zipkin, you need to set up a network store that points to
+the Zipkin collector daemon. A Scribe store for Zipkin might look something
+like this:</p>
+<div class="highlight-text"><div class="highlight"><pre>&lt;store&gt;
+  category=zipkin
+  type=network
+  remote_host=123.123.123.123
+  remote_port=9410
+  use_conn_pool=yes
+  default_max_msg_before_reconnect=50000
+  allowable_delta_before_reconnect=12500
+  must_succeed=no
+&lt;/store&gt;
+</pre></div>
+</div>
+<p>The ScribeSpanReceiver will register itself to a configurable ZooKeeper host and
+advertise on a configurable path (see the flags for details)</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="index.html">
+  <img class="logo" src="_static/logo.jpg" alt="Logo"/>
+</a></p>
+<a href="index.html"><h3>Zipkin</h3></a>
+<p>
+  A distributed tracing system
+</p>
+
+<h3>Useful Links</h3>
+<ul>
+  <li><a href="http://github.com/twitter/zipkin">Zipkin @ GitHub</a></li>
+  <li><a href="http://github.com/twitter/zipkin/issues">Issue Tracker</a></li>
+</ul>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Span Recievers</a><ul>
+<li><a class="reference internal" href="#scribe-reciever">Scribe Reciever</a></li>
+</ul>
+</li>
+</ul>
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="Instrumenting.html" title="previous chapter">Instrumenting a library</a></li>
+      <li>Next: <a href="Architecture.html" title="next chapter">Architecture</a></li>
+  </ul></li>
+</ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Search the contents of this site.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">&copy; Copyright 2014 Twitter, Inc.</div>
+  
+  </body>
+</html>

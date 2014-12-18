@@ -1,0 +1,268 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Instrumenting a library &mdash; Zipkin 1.2.0-SNAPSHOT documentation</title>
+    
+    <link rel="stylesheet" href="_static/zipkin.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.2.0-SNAPSHOT',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Zipkin 1.2.0-SNAPSHOT documentation" href="index.html" />
+    <link rel="next" title="Span Recievers" href="SpanReceivers.html" />
+    <link rel="prev" title="Quickstart" href="Quickstart.html" />
+   
+  
+  <link media="only screen and (max-device-width: 480px)" href="_static/small_flask.css" type= "text/css" rel="stylesheet" />
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-39101739-4', 'twitter.github.io');
+    ga('send', 'pageview');
+
+  </script>
+
+  </head>
+  <body>
+  
+  
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="SpanReceivers.html" title="Span Recievers"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Quickstart.html" title="Quickstart"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Zipkin</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="instrumenting-a-library">
+<h1>Instrumenting a library<a class="headerlink" href="#instrumenting-a-library" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="finagle">
+<h2>Finagle<a class="headerlink" href="#finagle" title="Permalink to this headline">¶</a></h2>
+<p>Running a Finagle service makes it very easy to trace with Zipkin. If your
+service uses the DefaultTracer simply make your service depend on
+finagle-zipkin. That will inject the ZipkinTracer into the DefaultTracer and
+provide flags to set the host:port that it should send scribe messages to.</p>
+<p>For current APIs the DefaultTracer is already used:</p>
+<div class="highlight-text"><div class="highlight"><pre>Protocol.serve(...)
+Protocol.newClient(...)
+</pre></div>
+</div>
+<p>When using the builders, however, the tracer parameter will need to be set:</p>
+<div class="highlight-text"><div class="highlight"><pre>ServerBuilder()
+  .tracer(DefaultTracer)
+  ...
+  .build()
+
+ClientBuilder()
+  .tracer(DefaultTracer)
+  ...
+  .build()
+</pre></div>
+</div>
+<p>Additional annotations can be recorded via the Trace object:</p>
+<div class="highlight-text"><div class="highlight"><pre>Trace.record(&quot;time stamped annotation&quot;)
+Trace.recordBinary(&quot;annotation key&quot;, some value of nearly any type)
+</pre></div>
+</div>
+</div>
+<div class="section" id="instrumenting-other-libraries">
+<h2>Instrumenting Other Libraries<a class="headerlink" href="#instrumenting-other-libraries" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s walk through the parts required to instrument a service that doens&#8217;t
+already have support for Zipkin.</p>
+</div>
+<div class="section" id="core-data-structures">
+<h2>Core data structures<a class="headerlink" href="#core-data-structures" title="Permalink to this headline">¶</a></h2>
+<p>First, there are a core set of structures that we need:</p>
+<p><strong>Annotation</strong></p>
+<p>An Annotation is used to record an occurance in time. There&#8217;s a set of core
+annotations used to define the beginning and end of a request:</p>
+<ul class="simple">
+<li><strong>cs</strong> - Client Start. The client has made the request. This sets the
+beginning of the span.</li>
+<li><strong>sr</strong> - Server Receive. The server has received the request and will start
+processing it. The difference between this and <cite>cs</cite> will be combination of
+network latency and clock jitter.</li>
+<li><strong>ss</strong> - Server Send. The server has completed processing and has sent the
+request back to the client. The difference between this and <cite>ss</cite> will be the
+amount of time it took the server to process the request.</li>
+<li><strong>cr</strong> - Client Recieve. The client has received the response from the server.
+This sets the end of the span. The RPC is considered complete when this
+annotation is recorded.</li>
+</ul>
+<p>Other annotations can be recorded during the request&#8217;s lifetime in order to
+provide further insight. For instance adding an annotation when a server begins
+and ends an expensive computation may provide insight into how much time is
+being spent pre and post processing the request versus how much time is spent
+running the calculation.</p>
+<p><strong>BinaryAnnotation</strong></p>
+<p>Binary annotations do not have a time component. They are meant to provide extra
+information about the RPC. For instance, when calling an HTTP service providing
+the URI of the call will help with later analysis of requests coming into the
+service.</p>
+<p><strong>Span</strong></p>
+<p>A set of Annotations and BinaryAnnotations that correspond to a particular RPC.
+Spans contain identifying information such as traceId, spandId, parentId, and
+RPC name.</p>
+<p><strong>Trace</strong></p>
+<p>A set of spans that share a single root span. Traces are built by collecting all
+Spans that share a traceId. The spans are then arranged in a tree based on
+spanId and parentId thus providing an overview of the path a request takes
+through the system.</p>
+</div>
+<div class="section" id="trace-identifiers">
+<h2>Trace identifiers<a class="headerlink" href="#trace-identifiers" title="Permalink to this headline">¶</a></h2>
+<p>In order to reassmble a set of spans into a full trace three pieces of
+information are required. These are all 64 bits long.</p>
+<p><strong>Trace Id</strong></p>
+<p>The overall ID of the trace. Every span in a trace will share this ID.</p>
+<p><strong>Span Id</strong></p>
+<p>The ID for a particular span. This may or may not be the same as the
+trace id.</p>
+<p><strong>Parent Id</strong></p>
+<p>This is an optional ID that will only be present on child spans. That is the
+span without a parent id is considered the root of the trace.</p>
+</div>
+<div class="section" id="generating-identifiers">
+<h2>Generating identifiers<a class="headerlink" href="#generating-identifiers" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s walk through how Spans are identified.</p>
+<p>For the initial receipt of a request no trace information exists. So we create a
+trace id and span id. These should be 64 random bits. The span id can be the same
+as the trace id.</p>
+<p>If the request already has trace information attached to it, the service should
+use that information as server receive and server send events are part of the
+same span as the client send and client receive events</p>
+<p>If the service calls out to a downstream service a new span is created as a
+child of the former span. It is identified by the same trace id, a new span id,
+and the parent id is set to the span id of the previous span. The new span id
+should be 64 random bits.</p>
+<p><strong>Note</strong> This process must be repeated if the service makes multiple downstream
+calls. That is each subsequent span will have the same trace id and parent id,
+but a new and different span id.</p>
+</div>
+<div class="section" id="communicating-trace-information">
+<h2>Communicating trace information<a class="headerlink" href="#communicating-trace-information" title="Permalink to this headline">¶</a></h2>
+<p>Trace information needs to be passed between upstream and downstream services in
+order to reassemble a complete trace. Four pieces of information are required:</p>
+<ul class="simple">
+<li>Trace Id</li>
+<li>Span Id</li>
+<li>Parent Id</li>
+<li>Is Sampled</li>
+<li>Flags</li>
+</ul>
+<p>&#8220;Is Sampled&#8221; lets the downstream service know if it should record trace
+information for the request.</p>
+<p>&#8220;Flags&#8221; provide the ability to create and communicate feature flags. This is how
+we can tell downstream services that this is a &#8220;debug&#8221; request.</p>
+<p>Finagle provides mechanisms for passing this information with Http and Thrift
+requests. Other protocols will need to be augmented with the information for
+tracing to be effective.</p>
+<p><strong>Http Tracing</strong></p>
+<p>Http headers are used to pass along trace information:</p>
+<p>The B3 portion of the header is so named for the original name of Zipkin:
+BigBrotherBird.</p>
+<p>Ids are encoded as <a class="reference external" href="https://github.com/twitter/finagle/blob/master/finagle-core/src/main/scala/com/twitter/finagle/tracing/Id.scala">hex strings</a></p>
+<ul class="simple">
+<li>X-B3-TraceId: 64 encoded bits</li>
+<li>X-B3-SpanId: 64 encoded bits</li>
+<li>X-B3-ParentSpanId: 64 encoded bits</li>
+<li>X-B3-Sampled: Boolean (either &#8220;1&#8221; or &#8220;0&#8221;)</li>
+<li>X-B3-Flags: a Long</li>
+</ul>
+<p><strong>Thrift Tracing</strong></p>
+<p>Finagle clients and servers negotate whether they can handle extra information
+in the header of the thrift message when a connection is established. Once
+negotiated trace data is packed into the front of each thrift message.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="index.html">
+  <img class="logo" src="_static/logo.jpg" alt="Logo"/>
+</a></p>
+<a href="index.html"><h3>Zipkin</h3></a>
+<p>
+  A distributed tracing system
+</p>
+
+<h3>Useful Links</h3>
+<ul>
+  <li><a href="http://github.com/twitter/zipkin">Zipkin @ GitHub</a></li>
+  <li><a href="http://github.com/twitter/zipkin/issues">Issue Tracker</a></li>
+</ul>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Instrumenting a library</a><ul>
+<li><a class="reference internal" href="#finagle">Finagle</a></li>
+<li><a class="reference internal" href="#instrumenting-other-libraries">Instrumenting Other Libraries</a></li>
+<li><a class="reference internal" href="#core-data-structures">Core data structures</a></li>
+<li><a class="reference internal" href="#trace-identifiers">Trace identifiers</a></li>
+<li><a class="reference internal" href="#generating-identifiers">Generating identifiers</a></li>
+<li><a class="reference internal" href="#communicating-trace-information">Communicating trace information</a></li>
+</ul>
+</li>
+</ul>
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="Quickstart.html" title="previous chapter">Quickstart</a></li>
+      <li>Next: <a href="SpanReceivers.html" title="next chapter">Span Recievers</a></li>
+  </ul></li>
+</ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Search the contents of this site.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">&copy; Copyright 2014 Twitter, Inc.</div>
+  
+  </body>
+</html>

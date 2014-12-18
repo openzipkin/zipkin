@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Architecture &mdash; Zipkin 1.2.0-SNAPSHOT documentation</title>
+    
+    <link rel="stylesheet" href="_static/zipkin.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.2.0-SNAPSHOT',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Zipkin 1.2.0-SNAPSHOT documentation" href="index.html" />
+    <link rel="prev" title="Span Recievers" href="SpanReceivers.html" />
+   
+  
+  <link media="only screen and (max-device-width: 480px)" href="_static/small_flask.css" type= "text/css" rel="stylesheet" />
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-39101739-4', 'twitter.github.io');
+    ga('send', 'pageview');
+
+  </script>
+
+  </head>
+  <body>
+  
+  
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="SpanReceivers.html" title="Span Recievers"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Zipkin</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="architecture">
+<h1>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h1>
+<p>These are the components that make up a fully fledged tracing system.</p>
+<img alt="_images/architecture-0.png" src="_images/architecture-0.png" />
+<div class="section" id="instrumented-libraries">
+<h2>Instrumented libraries<a class="headerlink" href="#instrumented-libraries" title="Permalink to this headline">¶</a></h2>
+<p>Tracing information is collected on each host using the instrumented libraries
+and sent to Zipkin. When the host makes a request to another service, it passes
+a few tracing identifers along with the request so we can later tie the data
+together.</p>
+<img alt="_images/architecture-1.png" src="_images/architecture-1.png" />
+<p>We have instrumented the libraries below to trace requests and to pass the
+required identifiers to the other services called in the request.</p>
+</div>
+<div class="section" id="finagle">
+<h2>Finagle<a class="headerlink" href="#finagle" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="http://twitter.github.io/finagle">Finagle</a> is an asynchronous network stack for the JVM that you can use to build
+asynchronous Remote Procedure Call (RPC) clients and servers in Java, Scala, or
+any JVM-hosted language.</p>
+<p><a class="reference external" href="http://twitter.github.io/finagle">Finagle</a> is used heavily inside of Twitter and it was a natural point to include
+tracing support. So far we have client/server support for Thrift and HTTP as well
+as client only support for Memcache and Redis.</p>
+<p>To set up a Finagle server in Scala, just do the following. Adding tracing is as
+simple as adding <a class="reference external" href="https://github.com/twitter/finagle/tree/master/finagle-zipkin">finagle-zipkin</a> as a dependency and a <cite>tracer</cite> to the ServerBuilder.</p>
+<div class="highlight-text"><div class="highlight"><pre>ServerBuilder()
+  .codec(ThriftServerFramedCodec())
+  .bindTo(serverAddr)
+  .name(&quot;servicename&quot;)
+  .tracer(ZipkinTracer.mk())
+  .build(new SomeService.FinagledService(queryService, new TBinaryProtocol.Factory()))
+</pre></div>
+</div>
+<p>The tracing setup for clients is similar. When you&#8217;ve specified the Zipkin tracer
+as above a small sample of your requests will be traced automatically. We&#8217;ll
+record when the request started and ended, services and hosts involved.</p>
+<p>In case you want to record additional information you can add a custom annotation
+in your code.</p>
+<div class="highlight-text"><div class="highlight"><pre>Trace.record(&quot;starting that extremely expensive computation&quot;)
+</pre></div>
+</div>
+<p>The line above will add an annotation with the string attached to the point in time
+when it happened. You can also add a key value annotation. It could look like this:</p>
+<div class="highlight-text"><div class="highlight"><pre>Trace.recordBinary(&quot;http.response.code&quot;, &quot;500&quot;)
+</pre></div>
+</div>
+</div>
+<div class="section" id="ruby-thrift">
+<h2>Ruby Thrift<a class="headerlink" href="#ruby-thrift" title="Permalink to this headline">¶</a></h2>
+<p>There&#8217;s a <a class="reference external" href="https://rubygems.org/gems/finagle-thrift">gem</a> we use to trace requests. In order to push the tracer and generate
+a trace id on a request you can use that gem in a RackHandler</p>
+<p>For tracing client calls from Ruby we rely on the Twitter <a class="reference external" href="https://github.com/twitter/thrift_client">Ruby Thrift client</a>.
+See below for an example on how to wrap the client.</p>
+<div class="highlight-text"><div class="highlight"><pre>client = ThriftClient.new(SomeService::Client, &quot;127.0.0.1:1234&quot;)
+client_id = FinagleThrift::ClientId.new(:name =&gt; &quot;service_example.sample_environment&quot;)
+FinagleThrift.enable_tracing!(client, client_id), &quot;service_name&quot;)
+</pre></div>
+</div>
+</div>
+<div class="section" id="transport">
+<h2>Transport<a class="headerlink" href="#transport" title="Permalink to this headline">¶</a></h2>
+<p>We use Scribe to transport all the traces from the different services to Zipkin
+and Hadoop. Scribe was developed by Facebook and it&#8217;s made up of a daemon that
+can run on each server in your system. It listens for log messages and routes
+them to the correct receiver depending on the category.</p>
+</div>
+<div class="section" id="zipkin-collector">
+<h2>Zipkin Collector<a class="headerlink" href="#zipkin-collector" title="Permalink to this headline">¶</a></h2>
+<p>Once the trace data arrives at the Zipkin collector daemon we check that it&#8217;s
+valid, store it and the index it for lookups.</p>
+</div>
+<div class="section" id="storage">
+<h2>Storage<a class="headerlink" href="#storage" title="Permalink to this headline">¶</a></h2>
+<p>We originally built Zipkin on Cassandra for storage. It&#8217;s scalable, has a
+flexible schema, and is heavily used within Twitter. However, we made this
+component pluggable, and we now have support for Redis, HBase, MySQL,
+PostgreSQL, SQLite, and H2.</p>
+</div>
+<div class="section" id="zipkin-query-service">
+<h2>Zipkin Query Service<a class="headerlink" href="#zipkin-query-service" title="Permalink to this headline">¶</a></h2>
+<p>Once the data is stored and indexed we need a way to extract it. This is where
+the query daemon comes in, providing the users with a simple Thrift api for
+finding and retrieving traces. See the <a class="reference external" href="https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinQuery.thrift">thrift idl</a>.</p>
+</div>
+<div class="section" id="web-ui">
+<h2>Web UI<a class="headerlink" href="#web-ui" title="Permalink to this headline">¶</a></h2>
+<p>A GUI that presents a nice face for viewing traces. The web UI provides a
+method for viewing traces based on service, time, and  annotations. Note
+that there is no built in authentication in the UI.</p>
+</div>
+<div class="section" id="modules">
+<h2>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h2>
+<img alt="_images/modules.png" src="_images/modules.png" />
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="index.html">
+  <img class="logo" src="_static/logo.jpg" alt="Logo"/>
+</a></p>
+<a href="index.html"><h3>Zipkin</h3></a>
+<p>
+  A distributed tracing system
+</p>
+
+<h3>Useful Links</h3>
+<ul>
+  <li><a href="http://github.com/twitter/zipkin">Zipkin @ GitHub</a></li>
+  <li><a href="http://github.com/twitter/zipkin/issues">Issue Tracker</a></li>
+</ul>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Architecture</a><ul>
+<li><a class="reference internal" href="#instrumented-libraries">Instrumented libraries</a></li>
+<li><a class="reference internal" href="#finagle">Finagle</a></li>
+<li><a class="reference internal" href="#ruby-thrift">Ruby Thrift</a></li>
+<li><a class="reference internal" href="#transport">Transport</a></li>
+<li><a class="reference internal" href="#zipkin-collector">Zipkin Collector</a></li>
+<li><a class="reference internal" href="#storage">Storage</a></li>
+<li><a class="reference internal" href="#zipkin-query-service">Zipkin Query Service</a></li>
+<li><a class="reference internal" href="#web-ui">Web UI</a></li>
+<li><a class="reference internal" href="#modules">Modules</a></li>
+</ul>
+</li>
+</ul>
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="SpanReceivers.html" title="previous chapter">Span Recievers</a></li>
+  </ul></li>
+</ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Search the contents of this site.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">&copy; Copyright 2014 Twitter, Inc.</div>
+  
+  </body>
+</html>
