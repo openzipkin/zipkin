@@ -70,7 +70,7 @@ object Zipkin extends Build {
       case "2.10.4" => "2.10"
       case x => x
     },
-    "junit" % "junit" % "4.10" % "test"
+    "junit" % "junit" % "4.12" % "test"
   )
 
   def zipkinSettings = Seq(
