@@ -37,6 +37,7 @@ object Zipkin extends Build {
 
   val ostrichVersion = "9.6.0"
   val algebirdVersion  = "0.8.1"
+  val scaldingVersion = "0.11.2"
   val hbaseVersion = "0.98.3-hadoop2"
   val hadoopVersion = "2.4.0"
 
@@ -68,7 +69,7 @@ object Zipkin extends Build {
       case "2.10.4" => "2.10"
       case x => x
     },
-    "junit" % "junit" % "4.10" % "test"
+    "junit" % "junit" % "4.12" % "test"
   )
 
   def zipkinSettings = Seq(
@@ -123,7 +124,7 @@ object Zipkin extends Build {
       base = file(".")
     ) aggregate(
       tracegen, common, scrooge, zookeeper,
-      query, queryCore, queryService, web,
+      query, queryCore, queryService, web, zipkinAggregate,
       collectorScribe, collectorCore, collectorService,
       sampler, receiverScribe, receiverKafka, collector,
       cassandra, anormDB, kafka, redis, hbase
@@ -244,8 +245,10 @@ object Zipkin extends Build {
       util("app"),
       scroogeDep("serializer"),
       "org.iq80.snappy" % "snappy" % "0.1",
-      "org.mockito" % "mockito-all" % "1.9.5" % "test"
-    ) ++ scalaTestDeps,
+      "org.mockito" % "mockito-all" % "1.9.5" % "test",
+      "com.twitter" %% "scalding-core" % scaldingVersion,
+      "org.apache.hadoop" % "hadoop-client" % hadoopVersion
+    ) ++ testDependencies ++ scalaTestDeps,
 
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
@@ -407,6 +410,27 @@ object Zipkin extends Build {
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
   ).dependsOn(collectorCore, collectorScribe, receiverKafka, cassandra, kafka, redis, anormDB, hbase)
+
+  lazy val zipkinAggregate =
+    Project(
+      id = "zipkin-aggregate",
+      base = file("zipkin-aggregate"),
+      settings = defaultSettings ++ assemblySettings
+    ).settings(
+      mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+        {
+          case PathList("org", xs @ _*) => MergeStrategy.first
+          case PathList("com", xs @ _*) => MergeStrategy.first
+          case "BUILD" => MergeStrategy.first
+          case PathList(ps @_*) if ps.last == "package-info.class" => MergeStrategy.discard
+          case x => old(x)
+        }
+      },
+      BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
+      resourceGenerators in Compile <+= BuildProperties.buildPropertiesWrite
+  ).dependsOn(cassandra, common)
+
+
 
   lazy val web =
     Project(
