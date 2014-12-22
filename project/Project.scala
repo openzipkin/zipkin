@@ -28,6 +28,7 @@ object Zipkin extends Build {
   val finagleVersion = "6.22.0"
   val utilVersion = "6.22.1"
   val scroogeVersion = "3.17.0"
+  val cassieVersion = "0.25.3"
   val zookeeperVersions = Map(
     "candidate" -> "0.0.41",
     "group" -> "0.0.44",
