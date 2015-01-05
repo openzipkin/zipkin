@@ -8,13 +8,13 @@ import com.twitter.util.{Await, Closable, Future}
 import com.twitter.zipkin.anormdb.AnormDBSpanStoreFactory
 import com.twitter.zipkin.collector.SpanReceiver
 import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.{thriftscala.=> thrift}
+import com.twitter.zipkin.{thriftscala => thrift}
 import com.twitter.zipkin.receiver.scribe.ScribeSpanReceiverFactory
 import com.twitter.zipkin.zookeeper.ZooKeeperClientFactory
 import com.twitter.zipkin.web.ZipkinWebFactory
 import com.twitter.zipkin.query.ThriftQueryService
 import com.twitter.zipkin.query.constants.DefaultAdjusters
-import com.twitter.zipkin.tracethriftscala.ZipkinSpanGenerator
+import com.twitter.zipkin.tracegen.ZipkinSpanGenerator
 
 object Main extends TwitterServer with Closer
   with ZooKeeperClientFactory
@@ -23,12 +23,12 @@ object Main extends TwitterServer with Closer
   with AnormDBSpanStoreFactory
   with ZipkinSpanGenerator
 {
-  val thriftscala.ampleTraces = flag("thriftscala.ampleTraces", false, "Generate sample traces")
+  val genSampleTraces = flag("genSampleTraces", false, "Generate sample traces")
 
   def main() {
     val store = newAnormSpanStore()
-    if (thriftscala.ampleTraces())
-      Await.result(thriftscala.rateTraces(store))
+    if (genSampleTraces())
+      Await.result(generateTraces(store))
 
     val convert: Seq[thrift.Span] => Seq[Span] = { _.map(_.toSpan) }
     val receiver = newScribeSpanReceiver(convert andThen store, statsReceiver.scope("scribeSpanReceiver"))

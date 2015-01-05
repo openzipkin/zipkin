@@ -57,9 +57,7 @@ private[cassie] abstract class BaseColumnFamily(keyspace: String, cf: String, pr
     }
     timeFutureWithFailures(stats, name) {
       // Associate trace annotations with the client span by using a terminal trace id
-      Trace.unwind {
-        Trace.setTerminalId(Trace.nextId)
-
+      Trace.letId(Trace.nextId, true) {
         trace(traceAnnotations)
         provider.map(f)
       }

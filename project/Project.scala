@@ -19,14 +19,17 @@ import sbt._
 import com.twitter.scrooge.ScroogeSBT
 import sbt.Keys._
 import Keys._
+import Tests._
 import sbtassembly.Plugin._
 import AssemblyKeys._
+import com.typesafe.sbt.SbtSite.site
+import com.typesafe.sbt.site.SphinxSupport.Sphinx
 
 object Zipkin extends Build {
   val zipkinVersion = "1.2.0-SNAPSHOT"
 
-  val finagleVersion = "6.22.0"
-  val utilVersion = "6.22.1"
+  val finagleVersion = "6.24.0"
+  val utilVersion = "6.23.0"
   val scroogeVersion = "3.17.0"
   val zookeeperVersions = Map(
     "candidate" -> "0.0.41",
@@ -35,7 +38,7 @@ object Zipkin extends Build {
     "server-set" -> "1.0.36"
   )
 
-  val ostrichVersion = "9.6.0"
+  val ostrichVersion = "9.7.0"
   val algebirdVersion  = "0.8.1"
   val scaldingVersion = "0.11.2"
   val hbaseVersion = "0.98.3-hadoop2"
@@ -47,7 +50,7 @@ object Zipkin extends Build {
   def algebird(name: String) = "com.twitter" %% ("algebird-" + name) % algebirdVersion
   def zk(name: String) = "com.twitter.common.zookeeper" % name % zookeeperVersions(name)
 
-  val twitterServer = "com.twitter" %% "twitter-server" % "1.8.0"
+  val twitterServer = "com.twitter" %% "twitter-server" % "1.9.0"
 
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
   val travisCi = Option(System.getenv("SBT_TRAVIS_CI")) // for adding travis ci maven repos before others
@@ -121,7 +124,10 @@ object Zipkin extends Build {
   lazy val zipkin =
     Project(
       id = "zipkin",
-      base = file(".")
+      base = file("."),
+      settings = Project.defaultSettings ++
+        defaultSettings ++
+        Unidoc.settings
     ) aggregate(
       tracegen, common, scrooge, zookeeper,
       query, queryCore, queryService, web, zipkinAggregate,
@@ -540,4 +546,32 @@ object Zipkin extends Build {
     tracegen, web, anormDB, query,
     receiverScribe, zookeeper
   )
+
+  lazy val zipkinDoc = Project(
+    id = "zipkin-doc",
+    base = file("doc"),
+    settings = Project.defaultSettings ++ site.settings ++ site.sphinxSupport() ++ defaultSettings ++ Seq(
+      scalacOptions in doc <++= (version).map(v => Seq("-doc-title", "Zipkin", "-doc-version", v)),
+      includeFilter in Sphinx := ("*.html" | "*.jpg" | "*.png" | "*.svg" | "*.js" | "*.css" | "*.gif" | "*.txt"),
+
+      // Workaround for sbt bug: Without a testGrouping for all test configs,
+      // the wrong tests are run
+      testGrouping <<= definedTests in Test map partitionTests,
+      testGrouping in DocTest <<= definedTests in DocTest map partitionTests
+
+    )).configs(DocTest).settings(inConfig(DocTest)(Defaults.testSettings): _*).settings(
+      unmanagedSourceDirectories in DocTest <+= baseDirectory { _ / "src/sphinx/code" },
+      //resourceDirectory in DocTest <<= baseDirectory { _ / "src/test/resources" }
+
+      // Make the "test" command run both, test and doctest:test
+      test <<= Seq(test in Test, test in DocTest).dependOn
+    )//.dependsOn(finagleCore, finagleHttp)
+
+  /* Test Configuration for running tests on doc sources */
+  lazy val DocTest = config("doctest") extend(Test)
+
+  // A dummy partitioning scheme for tests
+  def partitionTests(tests: Seq[TestDefinition]) = {
+    Seq(new Group("inProcess", tests, InProcess))
+  }
 }
