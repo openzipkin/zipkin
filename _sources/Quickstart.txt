@@ -56,7 +56,7 @@ Packaging for Production
 Build a distribution package
 
 .. parsed-literal::
-    ./bin/sbt "project zipkin-example/package-dist"
+    ./bin/sbt zipkin-example/package-dist
 
 A zip archive should now exist under zipkin-example/dist. That will contain all
 necessariy packages and libraries to run the project. Unpack it then run it:
