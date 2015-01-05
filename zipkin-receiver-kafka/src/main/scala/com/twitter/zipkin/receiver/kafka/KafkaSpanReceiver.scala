@@ -1,13 +1,12 @@
 package com.twitter.zipkin.receiver.kafka
 
-import com.twitter.app.{App, Flaggable}
 import java.util.Properties
-import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
-import com.twitter.zipkin.collector.SpanReceiver
-import com.twitter.zipkin.conversions.thrift._
-import com.twitter.util.{Closable, Future, Time}
+import com.twitter.app.App
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.zipkin.zookeeper.ZooKeeperClientFactory
+import com.twitter.util.{Closable, Future, Time}
+import com.twitter.zipkin.collector.SpanReceiver
+import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
+import kafka.serializer.Decoder
 
 trait KafkaSpanReceiverFactory { self: App =>
   val defaultKafkaServer = "127.0.0.1:2181"
@@ -15,7 +14,7 @@ trait KafkaSpanReceiverFactory { self: App =>
   val defaultKafkaZkConnectionTimeout = "1000000"
   val defaultKafkaSessionTimeout = "4000"
   val defaultKafkaSyncTime = "200"
-  val defaultKafkaAutoOffset = "largest"
+  val defaultKafkaAutoOffset = "smallest"
   val defaultKafkaTopics = Map("topic" -> 1)
 
   val kafkaTopics = flag[Map[String, Int]]("zipkin.kafka.topics", defaultKafkaTopics, "kafka topics to collect from")
@@ -26,23 +25,29 @@ trait KafkaSpanReceiverFactory { self: App =>
   val kafkaSyncTime = flag("zipkin.kafka.zk.syncTime", defaultKafkaSyncTime, "kafka zk sync time in ms")
   val kafkaAutoOffset = flag("zipkin.kafka.zk.autooffset", defaultKafkaAutoOffset, "kafka zk auto offset [smallest|largest]")
 
-  def newKafkaSpanReceiver(
+  def newKafkaSpanReceiver[T](
     process: Seq[ThriftSpan] => Future[Unit],
     stats: StatsReceiver = DefaultStatsReceiver.scope("KafkaSpanReceiver"),
-    decoder: KafkaProcessor.KafkaDecoder
+    keyDecoder: Option[Decoder[T]],
+    valueDecoder: KafkaProcessor.KafkaDecoder
   ): SpanReceiver = new SpanReceiver {
 
 
-    val props = new Properties() {
-      put("groupid", kafkaGroupId())
-      put("zk.connect", kafkaServer() )
-      put("zk.connectiontimeout.ms", kafkaZkConnectionTimeout())
-      put("zk.sessiontimeout.ms", kafkaSessionTimeout())
-      put("zk.synctime.ms", kafkaSyncTime())
-      put("autooffset.reset", kafkaAutoOffset())
+    val receiverProps = new Properties() {
+      put("group.id", kafkaGroupId())
+      put("zookeeper.connect", kafkaServer() )
+      put("zookeeper.connection.timeout.ms", kafkaZkConnectionTimeout())
+      put("zookeeper.session.timeout.ms", kafkaSessionTimeout())
+      put("zookeeper.sync.time.ms", kafkaSyncTime())
+      put("auto.offset.reset", kafkaAutoOffset())
+      put("auto.commit.interval.ms", "10")
+      put("consumer.id", "zipkin-consumerid")
+      put("consumer.timeout.ms", "-1")
+      put("rebalance.max.retries", "4")
+      put("num.consumer.fetchers", "2")
     }
 
-    val service = KafkaProcessor(kafkaTopics(), props, process, decoder)
+    val service = KafkaProcessor(kafkaTopics(), receiverProps, process, keyDecoder getOrElse KafkaProcessor.defaultKeyDecoder, valueDecoder)
 
     def close(deadline: Time): Future[Unit] = closeAwaitably {
       Closable.sequence(service).close(deadline)
