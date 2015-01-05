@@ -371,7 +371,7 @@ object Zipkin extends Build {
     ).settings(
       libraryDependencies ++= Seq(
         twitterServer,
-        "com.twitter" %% "tormenta-kafka" % "0.8.0",
+        "org.apache.kafka" %% "kafka" % "0.8.1.1",
         scroogeDep("serializer")
       ) ++ scalaTestDeps
     ).dependsOn(common, collector, zookeeper, scrooge)
