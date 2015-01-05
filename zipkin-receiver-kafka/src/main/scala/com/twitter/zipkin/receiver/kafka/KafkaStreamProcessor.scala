@@ -1,28 +1,29 @@
 package com.twitter.zipkin.receiver.kafka
 
 import com.twitter.logging.Logger
-import kafka.consumer.KafkaStream
-import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.util.{Await, Future}
-import java.io._
+import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
+import kafka.consumer.KafkaStream
 
-case class KafkaStreamProcessor(
-  stream: KafkaStream[Option[List[ThriftSpan]]],
+case class KafkaStreamProcessor[T](
+  stream: KafkaStream[T, Option[List[ThriftSpan]]],
   process: Seq[ThriftSpan] => Future[Unit]
   ) extends Runnable {
 
   private[this] val log = Logger.get(getClass.getName)
 
   def run() {
-    log.debug("%s run" format(KafkaStreamProcessor.getClass.getName))
+    log.debug(s"${KafkaStreamProcessor.getClass.getName} run")
     try {
       stream foreach { msg =>
-        log.debug("processing event %s" format (msg.message))
+        log.debug(s"processing event ${msg.message()}")
         msg.message map { spans => Await.result(process(spans))}
       }
     }
     catch {
-      case e: Exception => log.error("exception : %s : %s" format(e, e.getMessage))
+      case e: Exception =>
+        e.printStackTrace()
+        log.error(s"${e.getCause}")
     }
   }
 
