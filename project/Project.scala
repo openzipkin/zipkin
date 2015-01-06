@@ -58,7 +58,7 @@ object Zipkin extends Build {
 
   lazy val scalaTestDeps = Seq(
     "org.scalatest" %% "scalatest" % "2.2.2" % "test",
-    "junit" % "junit" % "4.11" % "test"
+    "junit" % "junit" % "4.12" % "test"
   )
 
   lazy val testDependencies = Seq(
@@ -201,7 +201,7 @@ object Zipkin extends Build {
         scroogeDep("serializer"),
         algebird("core"),
         "com.twitter" %% "ostrich" % ostrichVersion
-      ) ++ testDependencies
+      ) ++ scalaTestDeps
     ).dependsOn(common)
 
   lazy val zookeeper = Project(
