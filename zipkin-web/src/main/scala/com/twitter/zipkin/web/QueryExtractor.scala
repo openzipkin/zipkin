@@ -16,18 +16,17 @@
 package com.twitter.zipkin.web
 
 import com.twitter.finagle.http.Request
-import com.twitter.util.Time
+import com.twitter.util.{Time, TwitterDateFormat}
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
 import com.twitter.zipkin.query.{Order, QueryRequest}
 import java.nio.ByteBuffer
-import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 object QueryExtractor {
-  val fmt = new SimpleDateFormat("MM-dd-yyyy'T'HH:mm:ss.SSSZ")
+  val fmt = TwitterDateFormat("MM-dd-yyyy'T'HH:mm:ss.SSSZ")
 
-  private[this] val dateFormat = new SimpleDateFormat("MM-dd-yyyy")
-  private[this] val timeFormat = new SimpleDateFormat("HH:mm")
+  private[this] val dateFormat = TwitterDateFormat("MM-dd-yyyy")
+  private[this] val timeFormat = TwitterDateFormat("HH:mm")
 
   def getDate(req: Request): Option[Date] =
     req.params.get("date").map(dateFormat.parse)

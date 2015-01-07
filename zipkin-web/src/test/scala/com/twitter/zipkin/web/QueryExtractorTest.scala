@@ -20,7 +20,6 @@ import com.twitter.finagle.http.Request
 import com.twitter.util.Time
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
 import java.nio.ByteBuffer
-import java.text.SimpleDateFormat
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner

@@ -14,7 +14,6 @@ import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.query.{SpanTimestamp, TraceCombo, TraceSummary, QueryRequest}
 import com.twitter.zipkin.thriftscala.{Adjust, ZipkinQuery}
 import java.io.{File, FileInputStream, InputStream}
-import java.text.SimpleDateFormat
 import org.apache.commons.io.IOUtils
 import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
