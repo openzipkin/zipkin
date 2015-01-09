@@ -1,10 +1,13 @@
 package com.twitter.zipkin.storage.hbase.utils
 
-import org.specs.SpecificationWithJUnit
+import org.junit.runner.RunWith
+import org.scalatest.{WordSpec, MustMatchers}
+import org.scalatest.junit.JUnitRunner
 import java.util.concurrent.atomic.AtomicLong
 import com.twitter.zipkin.storage.util.Retry
 
-class RetrySpec extends SpecificationWithJUnit {
+@RunWith(classOf[JUnitRunner])
+class RetryTest extends WordSpec with MustMatchers {
   "Retry" should {
     "return if success" in {
       val counter = new AtomicLong(0)
@@ -12,7 +15,7 @@ class RetrySpec extends SpecificationWithJUnit {
         val innerResult: Long = counter.incrementAndGet()
         LongWrapper(innerResult)
       }
-      result must_== LongWrapper(1L)
+      result mustEqual LongWrapper(1L)
     }
     "throw an error if retries are exhausted" in {
       {
@@ -20,7 +23,7 @@ class RetrySpec extends SpecificationWithJUnit {
           throw new Exception("No! No! No!")
           LongWrapper(1)
         }
-      } must throwA[Retry.RetriesExhaustedException]
+      a [Retry.RetriesExhaustedException] must be thrownBy }
 
     }
     "return if fewer than max retries are needed" in {
@@ -32,7 +35,7 @@ class RetrySpec extends SpecificationWithJUnit {
         }
         LongWrapper(innerResult)
       }
-      result must_== LongWrapper(10L)
+      result mustEqual LongWrapper(10L)
     }
   }
   case class LongWrapper(value:Long)
