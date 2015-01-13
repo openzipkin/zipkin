@@ -92,7 +92,7 @@ trait CassieSpanStoreFactory { self: App =>
     }
 
     private[this] val observer = va observe {
-      case Addr.Bound(sockaddrs) => performChange(sockaddrs)
+      case Addr.Bound(sockaddrs, _) => performChange(sockaddrs)
       case _ => ()
     }
 
