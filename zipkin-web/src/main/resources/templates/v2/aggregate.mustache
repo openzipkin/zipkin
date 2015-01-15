@@ -1,0 +1,84 @@
+<div id="service-data-modal-container">
+  <div class="modal" id="serviceModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <span id="serviceModalTitle">[title]</span>
+          </h3>
+        </div>
+        <div class="modal-body">
+
+          <div class="container">
+            <div class="row">
+              <div class="col-sm-6">
+                <h4>Used by</h4>
+                <ul id="serviceUsedByList"></ul>
+              </div>
+              <div class="col-sm-6">
+                <h4>Uses</h4>
+                <ul id="serviceUsesList"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="dependencyModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title text-center">
+            <div id="dependencyModalParent">[parent]</div>
+            <div class=""><span class="glyphicon glyphicon-arrow-down"></span></div>
+            <div id="dependencyModalChild">[child]</div>
+
+          </h3>
+        </div>
+        <div class="modal-body">
+          <table class="table table-striped">
+            <thead>
+            <tr>
+              <th>Key</th>
+              <th>Value</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+              <td>Number of calls</td>
+              <td id="dependencyNumCalls">?</td>
+            </tr>
+            <tr>
+              <td>Mean</td>
+              <td id="dependencyMean">?</td>
+            </tr>
+            <tr>
+              <td>Variance</td>
+              <td id="dependencyVariance">?</td>
+            </tr>
+            <tr>
+              <td>Stddev</td>
+              <td id="dependencyStddev">?</td>
+            </tr>
+            <tr>
+              <td>Skewness</td>
+              <td id="dependencySkewness">?</td>
+            </tr>
+            <tr>
+              <td>Kurtosis</td>
+              <td id="dependencyKurtosis">?</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="aggregate-container">
+  <svg width="100%" height="4000" class="rootSvg">
+  </svg>
+</div>

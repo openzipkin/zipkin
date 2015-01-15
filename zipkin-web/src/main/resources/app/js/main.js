@@ -28,7 +28,17 @@ requirejs.config({
   paths: {
     'component_data': '../js/component_data',
     'component_ui': '../js/component_ui',
-    'page': '../js/page'
+    'page': '../js/page',
+    'dagre-d3': 'dagre-d3/js/dagre-d3'
+  },
+  shim: {
+    'dagre-d3': {
+      deps: ['d3/d3'],
+      exports: 'dagreD3'
+    },
+    'd3/d3': {
+      exports: 'd3'
+    }
   }
 });
 
@@ -49,13 +59,16 @@ require(
       [
         'page/default',
         'page/trace',
+        'page/aggregate'
       ],
       function(
         initializeDefault,
-        initializeTrace
+        initializeTrace,
+        initializeAggregate
       ) {
         initializeDefault();
         initializeTrace();
+        initializeAggregate();
       }
     );
   }
