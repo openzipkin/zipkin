@@ -8,7 +8,7 @@ scala_library(
     'finagle/finagle-core',
     'finagle/finagle-thriftmux',
     'scrooge/scrooge-serializer',
-    '3rdparty:slf4j-log4j12',
+    '3rdparty/jvm/org/slf4j:slf4j-log4j12',
     'zipkin/oss/zipkin-collector',
     'zipkin/oss/zipkin-scrooge',
     'zipkin/oss/zipkin-zookeeper',
