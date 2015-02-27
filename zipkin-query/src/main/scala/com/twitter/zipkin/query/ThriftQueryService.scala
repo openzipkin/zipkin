@@ -17,7 +17,7 @@
 package com.twitter.zipkin.query
 
 import com.twitter.conversions.time._
-import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
+import com.twitter.finagle.stats.{StatsReceiver, DefaultStatsReceiver, Stat}
 import com.twitter.finagle.tracing.{Trace => FTrace}
 import com.twitter.logging.Logger
 import com.twitter.util.{Future, Time}
@@ -139,7 +139,7 @@ class ThriftQueryService(
     val errorStats = methodStats.scope("errors")
 
     val ret = try {
-      methodStats.timeFuture(name)(f)
+      Stat.timeFuture(methodStats.stat(name))(f)
     } catch {
       case e: Exception => Future.exception(e)
     }

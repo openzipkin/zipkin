@@ -3,7 +3,7 @@ package com.twitter.zipkin.web
 import com.twitter.common.stats.ApproximateHistogram
 import com.twitter.conversions.time._
 import com.twitter.finagle.http.{Request, Response}
-import com.twitter.finagle.stats.StatsReceiver
+import com.twitter.finagle.stats.{StatsReceiver, Stat}
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.finagle.{Filter, Service, SimpleFilter}
 import com.twitter.util.{Duration, Future}
@@ -121,7 +121,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
 
   def collectStats(stats: StatsReceiver): Filter[Request, Response, Request, Response] =
     Filter.mk[Request, Response, Request, Response] { (req, svc) =>
-      stats.timeFuture("request")(svc(req)) onSuccess { rep =>
+      Stat.timeFuture(stats.stat("request"))(svc(req)) onSuccess { rep =>
         stats.scope("response").counter(rep.statusCode.toString).incr()
       }
     }

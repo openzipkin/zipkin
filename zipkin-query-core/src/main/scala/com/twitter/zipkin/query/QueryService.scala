@@ -17,7 +17,7 @@
 package com.twitter.zipkin.query
 
 import com.twitter.conversions.time._
-import com.twitter.finagle.stats.{StatsReceiver, NullStatsReceiver}
+import com.twitter.finagle.stats.{StatsReceiver, NullStatsReceiver, Stat}
 import com.twitter.finagle.tracing.{Trace => FTrace}
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.Service
@@ -438,7 +438,7 @@ class QueryService(
     checkIfRunning()
     methodStats.counter(name).incr()
 
-    timingStats.timeFuture(name) {
+    Stat.timeFuture(timingStats.stat(name)) {
       f rescue {
         case e: Exception => {
           log.error(e, "%s failed".format(name))

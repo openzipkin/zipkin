@@ -16,7 +16,7 @@
 package com.twitter.zipkin.collector
 
 import com.twitter.concurrent.NamedPoolThreadFactory
-import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
+import com.twitter.finagle.stats.{StatsReceiver, DefaultStatsReceiver, Stat}
 import com.twitter.util._
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{ArrayBlockingQueue, Executors, TimeUnit}
@@ -63,7 +63,7 @@ class ItemQueue[A, B](
       val item = queue.poll(500, TimeUnit.MILLISECONDS)
       if (item != null) {
         activeWorkers.incrementAndGet()
-        Try(Await.result(stats.timeFuture("processing_time_ms")(process(item)), timeout))
+        Try(Await.result(Stat.timeFuture(stats.stat("processing_time_ms"))(process(item)), timeout))
           .onSuccess(_ => successesCounter.incr())
           .onFailure(_ => failuresCounter.incr())
         activeWorkers.decrementAndGet()
