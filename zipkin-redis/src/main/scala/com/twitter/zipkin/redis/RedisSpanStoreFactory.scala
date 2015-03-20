@@ -13,7 +13,7 @@ trait RedisSpanStoreFactory { self: App =>
   val redisPort = flag("zipkin.storage.redis.port", 6379, "Port for Redis")
   val redisTtl = flag("zipkin.storage.redis.ttl", 168, "Redis data TTL in hours")
 
-  def newRedisSpanStore(): SpanStore = {
+  def newRedisSpanStore(): RedisSpanStore = {
     val storage = StorageBuilder(redisHost(), redisPort(), redisTtl().hours)
     val index = IndexBuilder(redisHost(), redisPort(), redisTtl().hours)
     new RedisSpanStore(index.apply(), storage.apply())

@@ -478,7 +478,7 @@ object Zipkin extends Build {
       util("logging"),
       scroogeDep("serializer"),
       "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
-    ) ++ testDependencies,
+    ) ++ testDependencies ++ scalaTestDeps,
 
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {

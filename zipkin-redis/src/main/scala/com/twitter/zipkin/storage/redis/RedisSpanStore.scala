@@ -17,7 +17,7 @@ import com.twitter.util.{Closable, CloseAwaitably, Duration, Future, Time}
 /**
  * Created by caporp01 on 19/03/2015.
  */
-class RedisSpanStore ( index : RedisIndex, storage : RedisStorage ) extends SpanStore {
+class RedisSpanStore ( val index : RedisIndex, val storage : RedisStorage ) extends SpanStore {
 
   private[this] def call[T](f: => T): Future[T] = synchronized { Future(f) }
 
@@ -25,17 +25,15 @@ class RedisSpanStore ( index : RedisIndex, storage : RedisStorage ) extends Span
       call { storage.close() }.unit
     }
 
-    def apply(newSpans: Seq[Span]): Future[Unit] = call {
-      newSpans foreach {
+    def apply(newSpans: Seq[Span]): Future[Unit] = Future.collect(newSpans.flatMap {
         span =>
-          storage.storeSpan(span)
-          index.indexServiceName(span)
-          index.indexSpanNameByService(span)
-          index.indexTraceIdByServiceAndName(span)
-          index.indexSpanByAnnotations(span)
-          index.indexSpanDuration(span)
-      }
-    }.unit
+          Seq(storage.storeSpan(span),
+          index.indexServiceName(span),
+          index.indexSpanNameByService(span),
+          index.indexTraceIdByServiceAndName(span),
+          index.indexSpanByAnnotations(span),
+          index.indexSpanDuration(span))
+      }).unit
 
     // Used for pinning
     def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = {
