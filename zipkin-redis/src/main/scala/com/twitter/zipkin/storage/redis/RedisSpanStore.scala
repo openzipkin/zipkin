@@ -1,18 +1,10 @@
 package com.twitter.zipkin.storage.redis
 
 import com.twitter.zipkin.storage._
-
-import com.twitter.util.{Time, Future, Duration}
-import java.nio.ByteBuffer
-import com.twitter.conversions.time._
-import com.twitter.finagle.{Filter => FFilter, Service}
-import com.twitter.util.{Closable, CloseAwaitably, Duration, Future, Time}
-import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import java.nio.ByteBuffer
-import scala.collection.mutable
 
-import com.twitter.util.{Closable, CloseAwaitably, Duration, Future, Time}
+import com.twitter.util.{Duration, Future, Time}
 
 /**
  * Created by caporp01 on 19/03/2015.

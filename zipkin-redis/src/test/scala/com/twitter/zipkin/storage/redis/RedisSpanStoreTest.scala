@@ -15,10 +15,8 @@
  */
 package com.twitter.zipkin.storage.redis
 
-import com.twitter.app.App
 import com.twitter.zipkin.redis.RedisSpanStoreFactory
 import com.twitter.zipkin.storage.util.SpanStoreValidator
-import org.junit.runner.RunWith
 import com.twitter.util.Await
 import com.twitter.app.App
 import org.junit.runner.RunWith

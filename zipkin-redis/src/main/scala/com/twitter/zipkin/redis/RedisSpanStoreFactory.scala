@@ -3,7 +3,6 @@ package com.twitter.zipkin.redis
 import com.twitter.app.App
 import com.twitter.conversions.time._
 import com.twitter.zipkin.storage.redis.RedisSpanStore
-import com.twitter.zipkin.storage.SpanStore
 
 /**
  * Created by caporp01 on 19/03/2015.
