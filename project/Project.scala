@@ -83,7 +83,7 @@ object Zipkin extends Build {
     crossPaths := false,            /* Removes Scala version from artifact name */
     fork := true, // forking prevents runaway thread pollution of sbt
     baseDirectory in run := file(cwd), // necessary for forking
-    publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath + "/.ivy2/local")))
+    publishTo := Some(Resolver.defaultLocal)
   )
 
   // settings from inlined plugins
