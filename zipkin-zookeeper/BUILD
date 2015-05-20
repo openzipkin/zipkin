@@ -1,6 +1,6 @@
 maven_layout()
 
-jar_library(
+target(
   name='zipkin-zookeeper',
   dependencies=[
     'zipkin/oss/zipkin-zookeeper/src/main/scala'

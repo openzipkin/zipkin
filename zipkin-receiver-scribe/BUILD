@@ -1,13 +1,13 @@
 maven_layout()
 
-jar_library(
+target(
   name='zipkin-receiver-scribe',
   dependencies=[
     'zipkin/oss/zipkin-receiver-scribe/src/main/scala'
   ]
 )
 
-jar_library(
+target(
   name='tests',
   dependencies=[
     'zipkin/oss/zipkin-receiver-scribe/src/test/scala'

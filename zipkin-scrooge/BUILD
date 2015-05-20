@@ -1,13 +1,13 @@
 maven_layout()
 
-jar_library(
+target(
   name='zipkin-scrooge',
   dependencies=[
     'zipkin/oss/zipkin-scrooge/src/main/scala',
   ]
 )
 
-jar_library(
+target(
   name='tests',
   dependencies=[
     'zipkin/oss/zipkin-scrooge/src/test/scala'

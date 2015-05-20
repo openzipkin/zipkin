@@ -1,13 +1,13 @@
 maven_layout()
 
-jar_library(
+target(
   name='zipkin-query',
   dependencies=[
     'zipkin/oss/zipkin-query/src/main/scala'
   ]
 )
 
-jar_library(
+target(
   name='tests',
   dependencies=[
     'zipkin/oss/zipkin-query/src/test/scala'

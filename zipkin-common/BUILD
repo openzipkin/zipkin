@@ -1,12 +1,12 @@
 maven_layout()
 
-jar_library(name='zipkin-common',
+target(name='zipkin-common',
   dependencies=[
     'zipkin/oss/zipkin-common/src/main/scala'
   ]
 )
 
-jar_library(name='tests',
+target(name='tests',
   dependencies=[
     'zipkin/oss/zipkin-common/src/test/scala'
   ]
