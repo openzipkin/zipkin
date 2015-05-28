@@ -1,7 +1,7 @@
 scala_library(
   name='scala',
   dependencies=[
-    '3rdparty/jvm/com/github/spullara/mustache/java:mustache-compiler',
+    '3rdparty/jvm/com/github/spullara/mustache/java:mustache-compiler-0.8.14',
     '3rdparty/jvm/com/twitter/algebird:core',
     '3rdparty/jvm/com/twitter/common/zookeeper:server-set',
     '3rdparty/jvm/com/twitter/common:stats-util',
