@@ -6,17 +6,17 @@ import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.{Closable, Future, Time}
 import com.twitter.zipkin.collector.SpanReceiver
 import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
+import kafka.consumer.ConsumerConfig
 import kafka.serializer.Decoder
 
 trait KafkaSpanReceiverFactory { self: App =>
   val defaultKafkaServer = "127.0.0.1:2181"
-  val defaultKafkaGroupId = "zipkinId"
+  val defaultKafkaGroupId = "blackbox"
   val defaultKafkaZkConnectionTimeout = "1000000"
-  val defaultKafkaSessionTimeout = "4000"
+  val defaultKafkaSessionTimeout = "10000"
   val defaultKafkaSyncTime = "200"
   val defaultKafkaAutoOffset = "smallest"
-  val defaultKafkaTopics = Map("topic" -> 1)
-
+  val defaultKafkaTopics = Map("blackbox" -> 1)
   val kafkaTopics = flag[Map[String, Int]]("zipkin.kafka.topics", defaultKafkaTopics, "kafka topics to collect from")
   val kafkaServer = flag("zipkin.kafka.server", defaultKafkaServer, "kafka server to connect")
   val kafkaGroupId = flag("zipkin.kafka.groupid", defaultKafkaGroupId, "kafka group id")
