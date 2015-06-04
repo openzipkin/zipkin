@@ -11,12 +11,12 @@ import kafka.serializer.Decoder
 
 trait KafkaSpanReceiverFactory { self: App =>
   val defaultKafkaServer = "127.0.0.1:2181"
-  val defaultKafkaGroupId = "blackbox"
+  val defaultKafkaGroupId = "blackbox-collector"
   val defaultKafkaZkConnectionTimeout = "1000000"
   val defaultKafkaSessionTimeout = "10000"
   val defaultKafkaSyncTime = "200"
   val defaultKafkaAutoOffset = "smallest"
-  val defaultKafkaTopics = Map("blackbox" -> 1)
+  val defaultKafkaTopics = Map("blackbox" -> 8)
   val kafkaTopics = flag[Map[String, Int]]("zipkin.kafka.topics", defaultKafkaTopics, "kafka topics to collect from")
   val kafkaServer = flag("zipkin.kafka.server", defaultKafkaServer, "kafka server to connect")
   val kafkaGroupId = flag("zipkin.kafka.groupid", defaultKafkaGroupId, "kafka group id")
