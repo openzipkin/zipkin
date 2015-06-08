@@ -25,9 +25,10 @@ import com.twitter.zipkin.thriftscala.Adjust
 import com.twitter.zipkin.query.adjusters._
 import com.twitter.zipkin.storage.{Aggregates, NullAggregates, SpanStore}
 import com.twitter.zipkin.storage.{NullRealtimeAggregates, RealtimeAggregates}
+import java.net.InetSocketAddress
 
 trait ZipkinQueryServerFactory { self: App =>
-  val queryServicePort = flag("zipkin.queryService.port", ":9411", "port for the query service to listen on")
+  val queryServicePort = flag("zipkin.queryService.port", new InetSocketAddress(9411), "port for the query service to listen on")
   val queryServiceDurationBatchSize = flag("zipkin.queryService.durationBatchSize", 500, "max number of durations to pull per batch")
 
   def newQueryServer(
