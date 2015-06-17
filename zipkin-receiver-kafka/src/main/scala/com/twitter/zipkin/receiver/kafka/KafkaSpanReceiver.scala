@@ -44,7 +44,7 @@ trait KafkaSpanReceiverFactory { self: App =>
       put("consumer.id", "zipkin-consumerid")
       put("consumer.timeout.ms", "-1")
       put("rebalance.max.retries", "4")
-      put("num.consumer.fetchers", "2")
+      put("num.consumer.fetchers", "8")
     }
 
     val service = KafkaProcessor(kafkaTopics(), receiverProps, process, keyDecoder getOrElse KafkaProcessor.defaultKeyDecoder, valueDecoder)
