@@ -30,7 +30,7 @@ import com.twitter.zipkin.storage.WriteSpanStore
 import com.twitter.zipkin.zookeeper.ZooKeeperClientFactory
 
 object ZipkinKafkaCollectorServer extends TwitterServer
-with ZipkinCollectorFactory
+with ZipkinQueuedCollectorFactory
 with CassieSpanStoreFactory
 with ZooKeeperClientFactory
 with KafkaSpanReceiverFactory
