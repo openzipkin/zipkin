@@ -10,21 +10,22 @@ case class KafkaStreamProcessor[T](
   process: Seq[ThriftSpan] => Future[Unit]
   ) extends Runnable {
 
+
+  private val streamIterator  = stream.iterator
+
   private[this] val log = Logger.get(getClass.getName)
 
   def run() {
     log.debug(s"${KafkaStreamProcessor.getClass.getName} run")
-    try {
-      stream foreach { msg =>
-        log.debug(s"processing event ${msg.message()}")
-        msg.message map { spans => Await.result(process(spans))}
+    while(streamIterator.hasNext){
+      try {
+        streamIterator.next.message map { spans => Await.result(process(spans)) }
+      }
+      catch {
+        case e: Exception =>
+          e.printStackTrace()
+          log.error(s"${e.getCause}")
       }
     }
-    catch {
-      case e: Exception =>
-        e.printStackTrace()
-        log.error(s"${e.getCause}")
-    }
   }
-
 }
