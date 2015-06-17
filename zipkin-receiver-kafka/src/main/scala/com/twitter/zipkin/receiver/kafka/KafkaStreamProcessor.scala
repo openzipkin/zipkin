@@ -18,13 +18,7 @@ case class KafkaStreamProcessor[T](
   def run() {
     log.debug(s"${KafkaStreamProcessor.getClass.getName} run")
     while(streamIterator.hasNext){
-      try {
-        streamIterator.next.message map { spans => Await.result(process(spans)) }
-      }
-      catch {
-        case e: Exception =>
-          log.error(s"${e.getCause}")
-      }
+      streamIterator.next.message map { spans => Await.result(process(spans)) }
     }
   }
 }
