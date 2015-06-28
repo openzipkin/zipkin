@@ -1,7 +1,5 @@
 language: scala
 
-sudo: false
-
 scala:
   - 2.10.5
 
@@ -10,7 +8,12 @@ services:
 
 jdk:
   - oraclejdk7
-  - openjdk7
+
+# These directories are cached to S3 at the end of the build
+cache:
+  directories:
+   - $HOME/.ivy2/cache
+   - $HOME/.sbt/boot/scala-$TRAVIS_SCALA_VERSION
 
 before_script:
   # default $SBT_OPTS is irrelevant to sbt lancher
