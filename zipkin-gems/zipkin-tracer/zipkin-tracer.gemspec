@@ -33,4 +33,9 @@ Gem::Specification.new do |s|
 
   s.add_dependency "finagle-thrift", "~> 1.3.0"
   s.add_dependency "scribe", "~> 0.2.4"
+  s.add_dependency "rack"
+
+  s.add_development_dependency "rspec", "~> 3.0.0"
+  s.add_development_dependency "rack-test"
+  s.add_development_dependency "thin" # allow testing with thrift v0.9.1
 end
