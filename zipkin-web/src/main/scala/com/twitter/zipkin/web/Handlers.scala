@@ -76,7 +76,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
 
         case ids =>
           val adjusters = getAdjusters(request)
-          client.getTraceSummariesByIds(ids, adjusters) map { _.map { _.toTraceSummary } }
+          client.getTraceSummariesByIds(ids distinct, adjusters) map { _.map { _.toTraceSummary } }
       }
     }
   }
