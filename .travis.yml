@@ -1,5 +1,7 @@
 language: scala
 
+sudo: false
+
 scala:
   - 2.10.5
 
