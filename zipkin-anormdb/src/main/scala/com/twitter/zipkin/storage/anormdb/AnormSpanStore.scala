@@ -241,13 +241,13 @@ class AnormSpanStore(
     getSpansByTraceIds(Seq(traceId)).map(_.head)
 
   private[this] val idsByNameSql = SQL("""
-    |SELECT trace_id, MAX(a_timestamp)
+    |SELECT trace_id, MAX(a_timestamp) as "MAX(a_timestamp)"
     |FROM zipkin_annotations
     |WHERE service_name = {service_name}
     |  AND (span_name = {span_name} OR {span_name} = '')
     |  AND a_timestamp < {end_ts}
     |GROUP BY trace_id
-    |ORDER BY a_timestamp DESC
+    |ORDER BY MAX(a_timestamp) DESC
     |LIMIT {limit}
   """.stripMargin)
 
@@ -271,7 +271,7 @@ class AnormSpanStore(
   }
 
   private[this] val byAnnValSql = SQL("""
-    |SELECT zba.trace_id, s.created_ts
+    |SELECT zba.trace_id, MAX(s.created_ts) as "s.created_ts"
     |FROM zipkin_binary_annotations AS zba
     |LEFT JOIN zipkin_spans AS s
     |  ON zba.trace_id = s.trace_id
@@ -281,7 +281,7 @@ class AnormSpanStore(
     |  AND s.created_ts < {end_ts}
     |  AND s.created_ts IS NOT NULL
     |GROUP BY zba.trace_id
-    |ORDER BY s.created_ts DESC
+    |ORDER BY MAX(s.created_ts) DESC
     |LIMIT {limit}
   """.stripMargin)
 
@@ -291,13 +291,13 @@ class AnormSpanStore(
   ) map { case a~b => IndexedTraceId(a, b) }
 
   private[this] val byAnnSql = SQL("""
-    |SELECT trace_id, MAX(a_timestamp)
+    |SELECT trace_id, MAX(a_timestamp) as "MAX(a_timestamp)"
     |FROM zipkin_annotations
     |WHERE service_name = {service_name}
     |  AND value = {annotation}
     |  AND a_timestamp < {end_ts}
     |GROUP BY trace_id
-    |ORDER BY a_timestamp DESC
+    |ORDER BY MAX(a_timestamp) DESC
     |LIMIT {limit}
   """.stripMargin)
 
