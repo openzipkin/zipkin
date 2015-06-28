@@ -78,7 +78,7 @@ trait HBaseIndex extends Index {
       scan.setStartRow(startRk)
       scan.setStopRow(endRk)
       scan.addFamily(TableLayouts.idxAnnotationFamily)
-      value.foreach { bb => scan.setFilter(new ValueFilter(CompareOp.EQUAL, new BinaryComparator(bb.array()))) }
+      value.foreach { bb => scan.setFilter(new ValueFilter(CompareOp.EQUAL, new BinaryComparator(Util.getArrayFromBuffer(bb)))) }
       idxServiceAnnotationTable.scan(scan, limit).map { results =>
         results.flatMap { result => indexResultToTraceId(result)}.toSeq.distinct.take(limit)
       }

@@ -18,12 +18,12 @@ class RetryTest extends WordSpec with MustMatchers {
       result mustEqual LongWrapper(1L)
     }
     "throw an error if retries are exhausted" in {
-      {
+      intercept[Retry.RetriesExhaustedException]{
         val result = Retry(5) {
           throw new Exception("No! No! No!")
           LongWrapper(1)
         }
-      a [Retry.RetriesExhaustedException] must be thrownBy }
+      }
 
     }
     "return if fewer than max retries are needed" in {

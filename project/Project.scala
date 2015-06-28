@@ -501,7 +501,6 @@ object Zipkin extends Build {
   ).settings(
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-      "junit"                 % "junit"                             % "4.10",
       "org.apache.hbase"      % "hbase"                             % hbaseVersion,
       "org.apache.hbase"      % "hbase-common"                      % hbaseVersion,
       "org.apache.hbase"      % "hbase-common"                      % hbaseVersion % "test" classifier("tests") classifier(""),
@@ -523,7 +522,7 @@ object Zipkin extends Build {
       "org.slf4j"             % "slf4j-log4j12"                     % "1.6.4" % "runtime",
       util("logging"),
       scroogeDep("serializer")
-    ) ++ testDependencies,
+    )  ++ testDependencies ++ scalaTestDeps,
 
     resolvers ~= {rs => Seq(DefaultMavenRepository) ++ rs},
 
