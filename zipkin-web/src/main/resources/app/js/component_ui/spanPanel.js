@@ -31,6 +31,12 @@ define(
           $annoBody.append($row);
         });
 
+        $annoBody.find(".local-datetime").each(function() {
+          var $this = $(this);
+          var timestamp = $this.text();
+          $this.text((new Date(parseInt(timestamp) / 1000)).toLocaleString());
+        });
+
         var $binAnnoBody = this.$node.find('#binaryAnnotations tbody').text('');
         $.each(span.binaryAnnotations, function(i, anno) {
           var $row = self.$binaryAnnotationTemplate.clone();
