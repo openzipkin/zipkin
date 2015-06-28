@@ -59,7 +59,7 @@ Build a distribution package
     ./bin/sbt zipkin-example/package-dist
 
 A zip archive should now exist under zipkin-example/dist. That will contain all
-necessariy packages and libraries to run the project. Unpack it then run it:
+necessary packages and libraries to run the project. Unpack it then run it:
 
 .. parsed-literal::
     cd [root directory of unpacked archive]
