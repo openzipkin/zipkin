@@ -27,7 +27,7 @@ sudo apt-get install dsc12
 
 3. Install Java 7 JDK
 #we aren't a java shop so openjdk is fine for us
-sudo apt-get install openjdk-6-jre-headless
+sudo apt-get install openjdk-7-jre-headless
 
 4. Set up JAVA_HOME path var
 #in .bashrc or equivalent 
