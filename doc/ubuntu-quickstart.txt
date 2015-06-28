@@ -41,14 +41,14 @@ sudo service cassandra start
 #I installed to /opt/zookeeper, follow the instructions
 http://zookeeper.apache.org/doc/trunk/zookeeperStarted.html
 
-8. Install GIT
+7. Install GIT
 sudo apt-get install git
 
 --------------------------------
 Zipkin
 --------------------------------
 
-9. Install Zipkin
+8. Install Zipkin
 
 mkdir -p ~/apps/
 git clone https://github.com/twitter/zipkin.git
@@ -68,6 +68,9 @@ bin/sbt <enter>
 > project zipkin-query
 > compile
 #wait
+
+9. Create Zipkin namespace in Cassandra
+cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt
 
 10. Start zookeeper (optional)
 
