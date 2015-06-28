@@ -1,14 +1,13 @@
 language: scala
 
 scala:
-  - 2.10.4
+  - 2.10.5
 
 services:
   - redis-server
 
 jdk:
   - oraclejdk7
-  - openjdk6
   - openjdk7
 
 before_script:

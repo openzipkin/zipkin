@@ -28,9 +28,9 @@ import com.typesafe.sbt.site.SphinxSupport.Sphinx
 object Zipkin extends Build {
   val zipkinVersion = "1.2.0-SNAPSHOT"
 
-  val finagleVersion = "6.24.0"
-  val utilVersion = "6.23.0"
-  val scroogeVersion = "3.17.0"
+  val finagleVersion = "6.26.0"
+  val utilVersion = "6.25.0"
+  val scroogeVersion = "3.19.0"
   val zookeeperVersions = Map(
     "candidate" -> "0.0.41",
     "group" -> "0.0.44",
@@ -38,8 +38,8 @@ object Zipkin extends Build {
     "server-set" -> "1.0.36"
   )
 
-  val ostrichVersion = "9.7.0"
-  val algebirdVersion  = "0.8.1"
+  val ostrichVersion = "9.9.0"
+  val algebirdVersion  = "0.10.2"
   val scaldingVersion = "0.11.2"
   val hbaseVersion = "0.98.3-hadoop2"
   val hadoopVersion = "2.4.0"
@@ -50,14 +50,14 @@ object Zipkin extends Build {
   def algebird(name: String) = "com.twitter" %% ("algebird-" + name) % algebirdVersion
   def zk(name: String) = "com.twitter.common.zookeeper" % name % zookeeperVersions(name)
 
-  val twitterServer = "com.twitter" %% "twitter-server" % "1.9.0"
+  val twitterServer = "com.twitter" %% "twitter-server" % "1.11.0"
 
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
   val travisCi = Option(System.getenv("SBT_TRAVIS_CI")) // for adding travis ci maven repos before others
   val cwd = System.getProperty("user.dir")
 
   lazy val scalaTestDeps = Seq(
-    "org.scalatest" %% "scalatest" % "2.2.2" % "test",
+    "org.scalatest" %% "scalatest" % "2.2.4" % "test",
     "junit" % "junit" % "4.12" % "test"
   )
 
@@ -69,7 +69,7 @@ object Zipkin extends Build {
     "org.objenesis"           %  "objenesis"    % "1.1"   % "test",
     "org.scala-tools.testing" %% "specs"        % "1.6.9" % "test" cross CrossVersion.binaryMapped {
       case "2.9.2" => "2.9.1"
-      case "2.10.4" => "2.10"
+      case "2.10.5" => "2.10"
       case x => x
     },
     "junit" % "junit" % "4.12" % "test"
@@ -78,8 +78,8 @@ object Zipkin extends Build {
   def zipkinSettings = Seq(
     organization := "com.twitter",
     version := zipkinVersion,
-    crossScalaVersions := Seq("2.10.4"),
-    scalaVersion := "2.10.4",
+    crossScalaVersions := Seq("2.10.5"),
+    scalaVersion := "2.10.5",
     crossPaths := false,            /* Removes Scala version from artifact name */
     fork := true, // forking prevents runaway thread pollution of sbt
     baseDirectory in run := file(cwd), // necessary for forking
@@ -179,6 +179,7 @@ object Zipkin extends Build {
     ).settings(
       libraryDependencies ++= Seq(
         finagle("core"),
+        finagle("http"),
         util("core"),
         util("zk")
       ) ++ scalaTestDeps
