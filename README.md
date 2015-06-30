@@ -1,4 +1,4 @@
-[![Gitter chat](http://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin)
+[![Gitter chat](http://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin) [![Build Status](https://travis-ci.org/openzipkin/zipkin.svg?branch=master)](https://travis-ci.org/openzipkin/zipkin)
 
 ![Zipkin (doc/zipkin-logo-200x119.jpg)](https://github.com/twitter/zipkin/raw/master/doc/zipkin-logo-200x119.jpg)
 
@@ -10,10 +10,9 @@ See [http://twitter.github.com/zipkin](http://twitter.github.com/zipkin)
 
 ## Get involved
 
-Check out the #zipkin IRC channel on chat.freenode.com to see if any
-developers are there for questions or live debugging tips. Otherwise,
-there are two mailing lists you can use to get in touch with other
-users and developers.
+Join the [openzipkin/zipkin gitter chat](https://gitter.im/openzipkin/zipkin)
+for questions and to talk with the developers. Otherwise, there are two mailing
+lists you can use to get in touch with other users and developers.
 
 Users: [https://groups.google.com/group/zipkin-user](https://groups.google.com/group/zipkin-user)
 
@@ -21,11 +20,11 @@ Developers: [https://groups.google.com/group/zipkin-dev](https://groups.google.c
 
 ## Issues
 
-Noticed a bug? [https://github.com/twitter/zipkin/issues](https://github.com/twitter/zipkin/issues)
+Noticed a bug? [Please file an issue](https://github.com/openzipkin/zipkin/issues)
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/twitter/zipkin/blob/master/CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](https://github.com/openzipkin/zipkin/blob/master/CONTRIBUTING.md) for guidelines.
 
 Areas where we'd love to see contributions:
 
