@@ -16,14 +16,17 @@
 
 package com.twitter.zipkin.storage.anormdb
 
-import java.util.concurrent.Executors
+import java.util.concurrent.{ThreadPoolExecutor, TimeUnit, LinkedBlockingQueue}
 import com.twitter.util.FuturePool
 
 
 object AnormThreads {
 
-  // Cached pools automatically close threads after 60 seconds
-  private val threadPool = Executors.newCachedThreadPool()
+  // Custom pool with max of 32 threads, max of 1000 queued tasks, idle threads automatically closed after 60 seconds
+  private val threadPool = new ThreadPoolExecutor(0, 32, 60, TimeUnit.SECONDS, new LinkedBlockingQueue[Runnable](1000))
+
+  // Back-pressure mechanism if pool is saturated
+  threadPool.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy())
 
   /**
    * Execute a callback in a separate thread.

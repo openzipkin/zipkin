@@ -101,7 +101,8 @@ case class DBConfig(name: String = "sqlite-persistent",
       description = "MySQL",
       driver = "com.mysql.jdbc.Driver",
       location = { dbp: DBParams =>
-        "jdbc:mysql://" + dbp.host + dbp.getPort + "/" + dbp.dbName + "?user=" + dbp.username + "&password=" + dbp.password
+        // We need to enable auto-reconnect to recover from dropped connections
+        "jdbc:mysql://" + dbp.host + dbp.getPort + "/" + dbp.dbName + "?user=" + dbp.username + "&password=" + dbp.password + "&autoReconnect=true"
       }
     )
   )
