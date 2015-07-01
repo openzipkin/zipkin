@@ -486,9 +486,9 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
 
       def id(id: Long, time: Long) = IndexedTraceId(id, time)
 
-      "get intersection of different filters" in {
-        val request = thriftscala.QueryRequest(serviceName, spanName, annotations, binaryAnnotations, endTs, limit, order)
+      val request = thriftscala.QueryRequest(serviceName, spanName, annotations, binaryAnnotations, endTs, limit, order)
 
+      "get intersection of different filters" in {
         expect {
           one(mockIndex).getTraceIdsByName(serviceName, spanName, endTs, 1) willReturn Future(Seq(id(1, endTs)))
           one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, endTs, 1) willReturn Future(Seq(id(1, endTs)))
@@ -509,7 +509,64 @@ class QueryServiceSpec extends Specification with JMocker with ClassMocker {
         response.`startTs` mustEqual 9
       }
 
+      "empty intersection of empty filters" in {
+        expect {
+          one(mockIndex).getTraceIdsByName(serviceName, spanName, endTs, 1) willReturn Future(Seq(id(1, endTs)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, endTs, 1) willReturn Future(Nil)
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "key", Some(ByteBuffer.wrap("value".getBytes)), endTs, 1) willReturn Future(Nil)
+
+          one(mockIndex).getTraceIdsByName(serviceName, spanName, paddedTs, limit) willReturn Future(Seq(id(1, 1), id(2, 2), id(3, 3)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, paddedTs, limit) willReturn Future(Nil)
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "key", Some(ByteBuffer.wrap("value".getBytes)), paddedTs, limit) willReturn Future(Nil)
+        }
+
+        val response = Await.result(qs.getTraceIds(request))
+        response.`traceIds`.length mustEqual 0
+      }
+
+      "empty response" in {
+        expect {
+          one(mockIndex).getTraceIdsByName(serviceName, spanName, endTs, 1) willReturn Future(Nil)
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, endTs, 1) willReturn Future(Nil)
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "key", Some(ByteBuffer.wrap("value".getBytes)), endTs, 1) willReturn Future(Nil)
+
+          one(mockIndex).getTraceIdsByName(serviceName, spanName, -1, limit) willReturn Future(Nil)
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, -1, limit) willReturn Future(Nil)
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "key", Some(ByteBuffer.wrap("value".getBytes)), -1, limit) willReturn Future(Nil)
+        }
+
+        val response = Await.result(qs.getTraceIds(request))
+        response.`traceIds`.length mustEqual 0
+      }
+
+      "empty intersection of different filters" in {
+        expect {
+          one(mockIndex).getTraceIdsByName(serviceName, spanName, endTs, 1) willReturn Future(Seq(id(1, endTs)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, endTs, 1) willReturn Future(Seq(id(2, endTs)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "key", Some(ByteBuffer.wrap("value".getBytes)), endTs, 1) willReturn Future(Seq(id(3, endTs)))
+
+          one(mockIndex).getTraceIdsByName(serviceName, spanName, paddedTs, limit) willReturn Future(Seq(id(5, 5)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "ann1", None, paddedTs, limit) willReturn Future(Seq(id(6, 6)))
+          one(mockIndex).getTraceIdsByAnnotation(serviceName, "key", Some(ByteBuffer.wrap("value".getBytes)), paddedTs, limit) willReturn Future(Seq(id(7, 7)))
+        }
+
+        val response = Await.result(qs.getTraceIds(request))
+        response.`traceIds`.length mustEqual 0
+      }
+
       "find intersection" in {
+        "no ids" in {
+          qs.traceIdsIntersect(Seq(List())) mustEqual Nil
+        }
+
+        "no common ids" in {
+          val ids = Seq(
+            Seq(IndexedTraceId(1, 100), IndexedTraceId(2, 200)),
+            Seq(IndexedTraceId(3, 300))
+          )
+          qs.traceIdsIntersect(ids) mustEqual Nil
+        }
+
         "one id" in {
           val ids = Seq(
             Seq(IndexedTraceId(1, 100), IndexedTraceId(2, 140)),
