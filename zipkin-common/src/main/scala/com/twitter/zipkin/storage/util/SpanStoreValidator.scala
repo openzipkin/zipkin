@@ -233,8 +233,10 @@ class SpanStoreValidator(
       val store2 = resetAndLoadStore(Seq(span4))
       assert(eq(Await.result(store2.getTracesDuration(Seq(999))), Seq(TraceIdDuration(999, 1, 6))))
 
-      Await.result(store2(Seq(span5)))
-      assert(eq(Await.result(store2.getTracesDuration(Seq(999))), Seq(TraceIdDuration(999, 3, 5))))
+      // Add another span which happens after the first in the trace. In this case, the trace
+      // duration be the sum, not the max of span durations.
+      Await.result(store2(Seq(span4.copy(annotations = List(ann7, ann8)))))
+      assert(eq(Await.result(store2.getTracesDuration(Seq(999))), Seq(TraceIdDuration(999, 2, 6 ))))
     }
   }
 
@@ -255,12 +257,12 @@ class SpanStoreValidator(
   }
 
   test("limit on annotations") {
-    val store = resetAndLoadStore(Seq(span1, span4, span5))
+    val spans = Seq(span1, span4, span5) // all have a "custom" annotation
+    val store = resetAndLoadStore(spans)
     val res1 = Await.result(store.getTraceIdsByAnnotation("service", "custom", None, 100, limit = 2))
 
     assert(eq(res1.length, 2))
-    assert(eq(res1(0).traceId, span1.traceId))
-    assert(eq(res1(1).traceId, span5.traceId))
+    assert(res1.map(s => s.traceId) forall (spans.map(s => s.traceId) contains))
   }
 
   test("wont index empty service names") {
