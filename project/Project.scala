@@ -481,14 +481,14 @@ object Zipkin extends Build {
       util("logging"),
       scroogeDep("serializer"),
       "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
-    ) ++ testDependencies,
+    ) ++ testDependencies ++ scalaTestDeps,
 
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
-  ).dependsOn(scrooge)
+  ).dependsOn(common, scrooge)
 
   lazy val hbaseTestGuavaHack = Project(
     id = "zipkin-hbase-test-guava-hack",
@@ -561,6 +561,21 @@ object Zipkin extends Build {
     tracegen, web, anormDB, query,
     receiverScribe, zookeeper
   )
+
+  lazy val redisExample = Project(
+    id = "zipkin-redis-example",
+    base = file("zipkin-redis-example"),
+    settings = defaultSettings
+  ).settings(
+      libraryDependencies ++= Seq(
+        finagle("zipkin"),
+        finagle("stats"),
+        twitterServer
+      )
+    ).dependsOn(
+      web, redis, query,
+      receiverScribe, zookeeper
+    )
 
   lazy val zipkinDoc = Project(
     id = "zipkin-doc",
