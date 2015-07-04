@@ -5,6 +5,7 @@ scala:
 
 services:
   - redis-server
+  - mongodb
 
 jdk:
   - oraclejdk7

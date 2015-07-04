@@ -133,7 +133,7 @@ object Zipkin extends Build {
       query, queryCore, queryService, web, zipkinAggregate,
       collectorScribe, collectorCore, collectorService,
       sampler, receiverScribe, receiverKafka, collector,
-      cassandra, anormDB, kafka, redis, hbase
+      cassandra, anormDB, kafka, redis, hbase, mongodb
     )
 
   lazy val tracegen = Project(
@@ -333,7 +333,7 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
-  ).dependsOn(queryCore, cassandra, redis, anormDB, hbase)
+  ).dependsOn(queryCore, cassandra, redis, anormDB, hbase, mongodb)
 
   lazy val collectorScribe =
     Project(
@@ -418,7 +418,7 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
-  ).dependsOn(collectorCore, collectorScribe, receiverKafka, cassandra, kafka, redis, anormDB, hbase)
+  ).dependsOn(collectorCore, collectorScribe, receiverKafka, cassandra, kafka, redis, anormDB, hbase, mongodb)
 
   lazy val zipkinAggregate =
     Project(
@@ -533,6 +533,19 @@ object Zipkin extends Build {
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
   ).dependsOn(scrooge, hbaseTestGuavaHack % "test->compile")
+
+  lazy val mongodb = Project(
+    id = "zipkin-mongodb",
+    base = file("zipkin-mongodb"),
+    settings = defaultSettings
+  ).settings(
+    parallelExecution in Test := false,
+    libraryDependencies ++= Seq(
+      "org.mongodb" %% "casbah"        % "2.8.1",
+      "org.slf4j"    % "slf4j-log4j12" % "1.6.4" % "runtime",
+      util("logging")
+    ) ++ testDependencies ++ scalaTestDeps
+  ).dependsOn(common, scrooge)
 
   lazy val example = Project(
     id = "zipkin-example",
