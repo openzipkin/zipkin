@@ -32,26 +32,19 @@ import AnormThreads.inNewThread
  * The top annotations methods are stubbed because they're not currently
  * used anywhere; that feature was never completed.
  */
-case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends Aggregates {
-  // Database connection object
-  private implicit val conn = openCon match {
-    case None => db.getConnection()
-    case Some(con) => con
-  }
-
-  /**
-   * Close the index
-   */
-  def close() { conn.close() }
+case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends Aggregates with DBPool {
 
   /**
    * Get the dependencies in a time range.
    *
    * endDate is optional and if not passed defaults to startDate plus one day.
    */
-  def getDependencies(startDate: Option[Time], endDate: Option[Time]=None): Future[Dependencies] = inNewThread {
+  def getDependencies(startDate: Option[Time], endDate: Option[Time]=None): Future[Dependencies] = db.inNewThreadWithRecoverableRetry {
     val startMs = startDate.getOrElse(Time.now - 1.day).inMicroseconds
     val endMs = endDate.getOrElse(Time.now).inMicroseconds
+
+	implicit val (conn, borrowTime) = borrowConn()
+	try {
 
     val links: List[DependencyLink] = SQL(
       """SELECT parent, child, m0, m1, m2, m3, m4
@@ -73,6 +66,10 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
     }) *)
 
     new Dependencies(Time.fromMicroseconds(startMs), Time.fromMicroseconds(endMs), links)
+
+    } finally {
+      returnConn(conn, borrowTime, "getDependencies")
+    }
   }
 
   /**
@@ -81,7 +78,10 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
    * Synchronize these so we don't do concurrent writes from the same box
    */
   def storeDependencies(dependencies: Dependencies): Future[Unit] = inNewThread {
-    db.withTransaction(conn, { implicit conn: Connection =>
+	implicit val (conn, borrowTime) = borrowConn()
+	try {
+
+    db.withRecoverableTransaction(conn, { implicit conn: Connection =>
       val dlid = SQL("""INSERT INTO zipkin_dependencies
             |  (start_ts, end_ts)
             |VALUES ({startTs}, {endTs})
@@ -106,6 +106,10 @@ case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends A
         .execute()
       }
     })
+
+    } finally {
+      returnConn(conn, borrowTime, "storeDependencies")
+    }
   }
 
   /**

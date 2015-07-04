@@ -26,7 +26,8 @@ import com.twitter.zipkin.common.Span
  */
 class ServiceStatsFilter extends Filter[Span, Unit, Span, Unit] {
   def apply(span: Span, service: Service[Span, Unit]): Future[Unit] = {
+    val result = service(span)
     span.serviceNames.foreach { name => Stats.incr("process_" + name) }
-    service(span)
+    result
   }
 }

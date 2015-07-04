@@ -18,8 +18,10 @@ package com.twitter.zipkin.storage.anormdb
 
 import anorm._
 import anorm.SqlParser._
-import java.sql.{Blob, Connection, DriverManager, SQLException, PreparedStatement}
-import com.twitter.util.{Try, Return, Throw}
+import java.sql.{Blob, Connection, DriverManager, SQLException, SQLRecoverableException, PreparedStatement}
+import com.twitter.util.{Try, Return, Throw, Future}
+import AnormThreads.inNewThread
+import org.apache.commons.dbcp2.BasicDataSource
 
 /**
  * Provides SQL database access via Anorm from the Play framework.
@@ -35,8 +37,15 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
   // Install the schema if requested
   if (dbconfig.install) this.install().close()
 
+  // Initialize connection pool
+  private val connpool = new BasicDataSource()
+  connpool.setDriverClassName(dbconfig.driver)
+  connpool.setUrl(dbconfig.location)
+  connpool.setMaxTotal(32)
+
   /**
-   * Gets a java.sql.Connection to the SQL database.
+   * Gets a dedicated java.sql.Connection to the SQL database. Note that auto-commit is
+   * enabled by default.
    *
    * Example usage:
    *
@@ -45,7 +54,32 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
    * conn.close()
    */
   def getConnection() = {
-    DriverManager.getConnection(dbconfig.location)
+    val conn = DriverManager.getConnection(dbconfig.location)
+    conn.setAutoCommit(true)
+    conn
+  }
+
+  /**
+   * Gets a pooled java.sql.Connection to the SQL database. Note that auto-commit is
+   * enabled by default.
+   *
+   * Example usage:
+   *
+   * implicit val conn: Connection = db.getPooledConnection()
+   * // Do database updates
+   * conn.close()
+   */
+  def getPooledConnection() = {
+    val conn = connpool.getConnection()
+    conn.setAutoCommit(true)
+    conn
+  }
+
+  /**
+   * Closes the connection pool
+   */
+  def closeConnectionPool() = {
+    connpool.close()
   }
 
   /**
@@ -77,10 +111,70 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
   }
 
   /**
+   * Performs an automatic retry if an SQLRecoverableException is caught.
+   */
+  def withRecoverableRetry[A](code: => A): Try[A] = {
+    try {
+      Return(code)
+    }
+    catch {
+      case e: SQLRecoverableException => {
+        Return(code)
+      }
+    }
+  }
+
+  /**
+   * Wrapper for withTransaction that performs an automatic retry if an SQLRecoverableException is caught.
+   *
+   * Example usage:
+   *
+   * db.withRecoverableTransaction(conn, { implicit conn: Connection =>
+   *   // Do database updates
+   * })
+   */
+  def withRecoverableTransaction[A](conn: Connection, code: Connection => A): Try[A] = {
+    withRecoverableRetry(withTransaction(conn, code).apply())
+  }
+
+  /**
+   * Wrapper for inNewThread that performs an automatic retry if an SQLRecoverableException is caught.
+   */
+  def inNewThreadWithRecoverableRetry[A](code: => A): Future[A] = {
+    inNewThread {
+      withRecoverableRetry(code).apply()
+    }
+  }
+
+  /**
    * Set up the database tables.
    *
    * Returns an open database connection, so remember to close it, for example
    * with `(new DB()).install().close()`
+   *
+   * Recommended indexes for MySQL deployments:
+   *
+   * alter table zipkin_service_spans add primary key(service_name(64),span_name(128));
+   * alter table zipkin_service_spans add index(last_span_ts);
+   *
+   * alter table zipkin_spans add primary key(span_id);
+   * alter table zipkin_spans add index(trace_id);
+   * alter table zipkin_spans add index(span_name(64));
+   * alter table zipkin_spans add index(created_ts);
+   *
+   * alter table zipkin_annotations add foreign key(span_id) references zipkin_spans(span_id) on delete cascade;
+   * alter table zipkin_annotations add index(trace_id);
+   * alter table zipkin_annotations add index(span_name(64));
+   * alter table zipkin_annotations add index(value(64));
+   * alter table zipkin_annotations add index(a_timestamp);
+   *
+   * alter table zipkin_binary_annotations add foreign key(span_id) references zipkin_spans(span_id) on delete cascade;
+   * alter table zipkin_binary_annotations add index(trace_id);
+   * alter table zipkin_binary_annotations add index(span_name(64));
+   * alter table zipkin_binary_annotations add index(annotation_key(64));
+   * alter table zipkin_binary_annotations add index(annotation_value(64));
+   * alter table zipkin_binary_annotations add index(annotation_key(64),annotation_value(64));
+   * alter table zipkin_binary_annotations add index(annotation_ts);
    */
   def install(): Connection = {
     implicit val con = this.getConnection()
@@ -120,7 +214,8 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
         |  annotation_value %s,
         |  annotation_type_value INT NOT NULL,
         |  ipv4 INT,
-        |  port INT
+        |  port INT,
+        |  annotation_ts BIGINT
         |)
       """.stripMargin.format(this.getBlobType)).execute()
     //SQL("CREATE INDEX trace_id ON zipkin_binary_annotations (trace_id)").execute()
@@ -143,6 +238,14 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
         |  m4 DOUBLE PRECISION NOT NULL
         |)
       """.stripMargin).execute()
+    SQL(
+      """CREATE TABLE IF NOT EXISTS zipkin_service_spans (
+        |  service_name VARCHAR(255) NOT NULL,
+        |  span_name VARCHAR(255) NOT NULL,
+        |  last_span_id BIGINT NOT NULL,
+        |  last_span_ts BIGINT
+        |)
+      """.stripMargin).execute()
     con
   }
 
@@ -160,6 +263,16 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
     case "H2 persistent" => "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"
     case "PostgreSQL" => "BIGSERIAL PRIMARY KEY"
     case "MySQL" => "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"
+  }
+
+  /**
+   * Get the command to use for inserting span rows.
+   */
+  def getSpanInsertCommand(): String = {
+    dbconfig.description match {
+      case "MySQL" => "REPLACE" // Prevents primary key conflict errors if duplicates are received
+      case _ => "INSERT"
+    }
   }
 
   // (Below) Provide Anorm with the ability to handle BLOBs.

@@ -40,41 +40,47 @@ import com.twitter.zipkin.storage.anormdb.DB.byteArrayToStatement
  * The index methods are stubs since SQL databases don't use NoSQL-style
  * indexing.
  */
-case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index {
-  // Database connection object
-  private implicit val conn = openCon match {
-    case None => db.getConnection()
-    case Some(con) => con
-  }
-
-  /**
-   * Close the index
-   */
-  def close() { conn.close() }
+case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index with DBPool {
 
   /**
    * Get the trace ids for this particular service and if provided, span name.
    * Only return maximum of limit trace ids from before the endTs.
    */
   def getTraceIdsByName(serviceName: String, spanName: Option[String],
-                        endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = inNewThread {
-    val result:List[(Long, Long)] = SQL(
-      """SELECT trace_id, MAX(a_timestamp)
-        |FROM zipkin_annotations
-        |WHERE service_name = {service_name}
-        |  AND (span_name = {span_name} OR {span_name} = '')
-        |  AND a_timestamp < {end_ts}
-        |GROUP BY trace_id
-        |ORDER BY a_timestamp DESC
-        |LIMIT {limit}
-      """.stripMargin)
-      .on("service_name" -> serviceName)
-      .on("span_name" -> (if (spanName.isEmpty) "" else spanName.get))
-      .on("end_ts" -> endTs)
-      .on("limit" -> limit)
-      .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
-    result map { case (tId, ts) =>
-      IndexedTraceId(traceId = tId, timestamp = ts)
+                        endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
+
+    if (endTs <= 0 || limit <= 0) {
+      Seq.empty
+    }
+    else {
+      implicit val (conn, borrowTime) = borrowConn()
+      try {
+        val result:List[(Long, Long)] = SQL(
+          """SELECT t1.trace_id, MAX(a_timestamp)
+            |FROM zipkin_annotations t1
+            |INNER JOIN (
+            |  SELECT DISTINCT trace_id
+            |  FROM zipkin_annotations
+            |  WHERE service_name = {service_name}
+            |    AND (span_name = {span_name} OR {span_name} = '')
+            |    AND a_timestamp < {end_ts}
+            |  ORDER BY a_timestamp DESC
+            |  LIMIT {limit})
+            |AS t2 ON t1.trace_id = t2.trace_id
+            |GROUP BY t1.trace_id
+            |ORDER BY t1.a_timestamp DESC
+          """.stripMargin)
+          .on("service_name" -> serviceName)
+          .on("span_name" -> (if (spanName.isEmpty) "" else spanName.get))
+          .on("end_ts" -> endTs)
+          .on("limit" -> limit)
+          .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
+        result map { case (tId, ts) =>
+          IndexedTraceId(traceId = tId, timestamp = ts)
+        }
+      } finally {
+        returnConn(conn, borrowTime, "getTraceIdsByName")
+      }
     }
   }
 
@@ -85,27 +91,33 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    * Only return maximum of limit trace ids from before the endTs.
    */
   def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
-                              endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = inNewThread {
-    if ((Constants.CoreAnnotations ++ Constants.CoreAddress).contains(annotation)) {
+                              endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {   
+    if ((Constants.CoreAnnotations ++ Constants.CoreAddress).contains(annotation) || endTs <= 0 || limit <= 0) {
       Seq.empty
     }
     else {
+      implicit val (conn, borrowTime) = borrowConn()
+      try {
+
       val result:List[(Long, Long)] = value match {
         // Binary annotations
         case Some(bytes) => {
           SQL(
-            """SELECT zba.trace_id, s.created_ts
-            |FROM zipkin_binary_annotations AS zba
-            |LEFT JOIN zipkin_spans AS s
-            |  ON zba.trace_id = s.trace_id
-            |WHERE zba.service_name = {service_name}
-            |  AND zba.annotation_key = {annotation}
-            |  AND zba.annotation_value = {value}
-            |  AND s.created_ts < {end_ts}
-            |  AND s.created_ts IS NOT NULL
-            |GROUP BY zba.trace_id
-            |ORDER BY s.created_ts DESC
-            |LIMIT {limit}
+            """SELECT t1.trace_id, t1.created_ts
+            |FROM zipkin_spans t1
+            |INNER JOIN (
+            |  SELECT DISTINCT trace_id
+            |  FROM zipkin_binary_annotations
+            |  WHERE service_name = {service_name}
+            |    AND annotation_key = {annotation}
+            |    AND annotation_value = {value}
+            |    AND annotation_ts < {end_ts}
+            |    AND annotation_ts IS NOT NULL
+            |  ORDER BY annotation_ts DESC
+            |  LIMIT {limit})
+            |AS t2 ON t1.trace_id = t2.trace_id
+            |GROUP BY t1.trace_id
+            |ORDER BY t1.created_ts DESC
           """.stripMargin)
             .on("service_name" -> serviceName)
             .on("annotation" -> annotation)
@@ -136,6 +148,10 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
       result map { case (tId, ts) =>
         IndexedTraceId(traceId = tId, timestamp = ts)
       }
+
+      } finally {
+        returnConn(conn, borrowTime, "getTraceIdsByAnnotation")
+      }
     }
   }
 
@@ -144,7 +160,10 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
    *
    * Duration returned in microseconds.
    */
-  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = inNewThread {
+  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = db.inNewThreadWithRecoverableRetry {
+    implicit val (conn, borrowTime) = borrowConn()
+    try {
+
     val result:List[(Long, Option[Long], Long)] = SQL(
       """SELECT trace_id, duration, created_ts
         |FROM zipkin_spans
@@ -156,28 +175,42 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
       // trace ID, duration, start TS
       TraceIdDuration(traceId, duration.getOrElse(0), startTs)
     }
+
+    } finally {
+      returnConn(conn, borrowTime, "getTracesDuration")
+    }
   }
 
   /**
    * Get all the service names.
    */
-  def getServiceNames: Future[Set[String]] = inNewThread {
+  def getServiceNames: Future[Set[String]] = db.inNewThreadWithRecoverableRetry {
+    implicit val (conn, borrowTime) = borrowConn()
+    try {
+
     SQL(
       """SELECT service_name
-        |FROM zipkin_annotations
+        |FROM zipkin_service_spans
         |GROUP BY service_name
         |ORDER BY service_name ASC
       """.stripMargin)
       .as(str("service_name") *).toSet
+
+    } finally {
+      returnConn(conn, borrowTime, "getServiceNames")
+    }
   }
 
   /**
    * Get all the span names for a particular service.
    */
-  def getSpanNames(service: String): Future[Set[String]] = inNewThread {
+  def getSpanNames(service: String): Future[Set[String]] = db.inNewThreadWithRecoverableRetry {
+    implicit val (conn, borrowTime) = borrowConn()
+    try {
+
     SQL(
       """SELECT span_name
-        |FROM zipkin_annotations
+        |FROM zipkin_service_spans
         |WHERE service_name = {service} AND span_name <> ''
         |GROUP BY span_name
         |ORDER BY span_name ASC
@@ -185,6 +218,10 @@ case class AnormIndex(db: DB, openCon: Option[Connection] = None) extends Index 
       .on("service" -> service)
       .as(str("span_name") *)
       .toSet
+
+    } finally {
+      returnConn(conn, borrowTime, "getSpanNames")
+    }
   }
 
   /**
