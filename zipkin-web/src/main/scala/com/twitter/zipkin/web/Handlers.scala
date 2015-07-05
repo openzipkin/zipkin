@@ -296,7 +296,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
           ("annotationQuery" -> req.params.get("annotationQuery").getOrElse("")),
           ("services" -> svcList),
           ("spans" -> spanList),
-          ("limit" -> req.params.get("limit").getOrElse("100")))
+          ("limit" -> req.params.get("limit").getOrElse(Constants.DefaultQueryLimit.toString)))
 
         qr foreach { qReq =>
           val binAnn = qReq.binaryAnnotations map { _.map { b =>
