@@ -271,7 +271,7 @@ object Zipkin extends Build {
   ).settings(
     libraryDependencies ++= Seq(
       "com.typesafe.play" %% "anorm" % "2.3.7",
-      "org.apache.commons" % "commons-dbcp2" % "2.1",
+      "com.zaxxer" % "HikariCP-java6" % "2.3.8",
       anormDriverDependencies("sqlite-persistent")
     ) ++ testDependencies ++ scalaTestDeps,
 
