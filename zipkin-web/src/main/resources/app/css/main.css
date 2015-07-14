@@ -37,3 +37,15 @@ body {
   margin-left: 25%;
   width: 50%;
 }
+
+/*for adding a back to top link on a scrollable page*/
+#backToTop {
+  margin: 0;
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  z-index: 100;
+  background-color: #0084B4;
+}
+
+
