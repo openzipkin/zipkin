@@ -22,7 +22,7 @@ import com.twitter.zipkin.query.{Order, QueryRequest}
 import java.nio.ByteBuffer
 import java.util.{Calendar, Date}
 
-object QueryExtractor {
+class QueryExtractor(defaultQueryLimit: Int) {
   val fmt = TwitterDateFormat("MM-dd-yyyy'T'HH:mm:ss.SSSZ")
 
   private[this] val dateFormat = TwitterDateFormat("MM-dd-yyyy")
@@ -34,6 +34,14 @@ object QueryExtractor {
   def getDateStr(req: Request): String = {
     val date = getDate(req).getOrElse(Calendar.getInstance().getTime)
     dateFormat.format(date)
+  }
+
+  def getLimit(req: Request): Option[Int] = {
+    req.params.get("limit").map(_.toInt)
+  }
+
+  def getLimitStr(req: Request): String = {
+    getLimit(req).getOrElse(defaultQueryLimit).toString
   }
 
   def getTime(req: Request): Option[Date] =
@@ -85,7 +93,7 @@ object QueryExtractor {
 
     // traces are ordered in the UI itself. Using None means the query service wont lookup durations
     val order = Order.None
-    val limit = req.params.get("limit").map(_.toInt).getOrElse(Constants.DefaultQueryLimit)
+    val limit = getLimit(req).getOrElse(defaultQueryLimit)
     QueryRequest(serviceName, spanName, annotations, binaryAnnotations, timestamp, limit, order)
   }
 }
