@@ -15,6 +15,7 @@ jdk:
 # These directories are cached to S3 at the end of the build
 cache:
   directories:
+   - $HOME/.m2
    - $HOME/.ivy2/cache
    - $HOME/.sbt/boot/scala-$TRAVIS_SCALA_VERSION
 
