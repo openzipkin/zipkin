@@ -9,7 +9,8 @@ define(
     'component_ui/infoButton',
     'component_ui/traceFilters',
     'component_ui/traces',
-    'component_ui/timeStamp'
+    'component_ui/timeStamp',
+    'component_ui/backToTop'
   ],
 
   function (
@@ -20,7 +21,8 @@ define(
     InfoButtonUI,
     TraceFiltersUI,
     TracesUI,
-    TimeStampUI
+    TimeStampUI,
+    BackToTop
   ) {
 
     return initialize;
@@ -34,6 +36,7 @@ define(
       TraceFiltersUI.attachTo('#trace-filters');
       TracesUI.attachTo('#traces');
       TimeStampUI.attachTo('#time-stamp');
+      BackToTop.attachTo('#backToTop');
 
       $('.timeago').timeago();
     }
