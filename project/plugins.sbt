@@ -1,6 +1,6 @@
 
 resolvers ++= Seq(
-  "twitter.com" at "http://maven.twttr.com/",
+  "twitter.com" at "https://maven.twttr.com/",
   "maven" at "http://repo1.maven.org/maven2/",
   "freemarker" at "http://freemarker.sourceforge.net/maven2/",
   "local" at ("file:" + System.getProperty("user.home") + "/.m2/repository/"))
