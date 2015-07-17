@@ -24,7 +24,7 @@ object ZipkinResolver extends Plugin {
       // standard resolvers
       "typesafe" at "http://repo.typesafe.com/typesafe/releases",
       "ibiblio" at "http://mirrors.ibiblio.org/pub/mirrors/maven2/",
-      "twitter.com" at "http://maven.twttr.com/",
+      "twitter.com" at "https://maven.twttr.com/",
       "powermock-api" at "http://powermock.googlecode.com/svn/repo/",
       "scala-tools" at "https://oss.sonatype.org/content/groups/scala-tools/", //replaced scala-tools.org
       "oauth.net" at "http://oauth.googlecode.com/svn/code/maven",
