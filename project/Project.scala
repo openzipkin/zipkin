@@ -28,37 +28,38 @@ import com.typesafe.sbt.site.SphinxSupport.Sphinx
 object Zipkin extends Build {
   val zipkinVersion = "1.2.0-SNAPSHOT"
 
-  val finagleVersion = "6.26.0"
-  val utilVersion = "6.25.0"
-  val scroogeVersion = "3.19.0"
-  val zookeeperVersions = Map(
+  def finagle(name: String) = "com.twitter" %% ("finagle-" + name) % "6.26.0"
+  def util(name: String) = "com.twitter" %% ("util-" + name) % "6.25.0"
+  def scroogeDep(name: String) = "com.twitter" %% ("scrooge-" + name) % "3.19.0"
+  def algebird(name: String) = "com.twitter" %% ("algebird-" + name) % "0.10.2"
+  def hbaseDep(name: String) = "org.apache.hbase" % ("hbase" + (if (name.isEmpty) "" else "-" + name)) % "0.98.3-hadoop2"
+  def hbaseTest(name: String) = hbaseDep(name) classifier("tests") classifier("")
+  def hadoop(name: String) = "org.apache.hadoop" % ("hadoop-" + name) % "2.4.0"
+  def hadoopTest(name: String) = hadoop(name) classifier("tests") classifier("")
+
+  def many(gen: (String => ModuleID), names: String*) = names map gen
+
+  val twitterZookeeperVersions = Map(
     "candidate" -> "0.0.41",
     "group" -> "0.0.44",
     "client" -> "0.0.35",
     "server-set" -> "1.0.36"
   )
-
-  val ostrichVersion = "9.9.0"
-  val algebirdVersion  = "0.10.2"
-  val scaldingVersion = "0.11.2"
-  val hbaseVersion = "0.98.3-hadoop2"
-  val hadoopVersion = "2.4.0"
-
-  def finagle(name: String) = "com.twitter" %% ("finagle-" + name) % finagleVersion
-  def util(name: String) = "com.twitter" %% ("util-" + name) % utilVersion
-  def scroogeDep(name: String) = "com.twitter" %% ("scrooge-" + name) % scroogeVersion
-  def algebird(name: String) = "com.twitter" %% ("algebird-" + name) % algebirdVersion
-  def zk(name: String) = "com.twitter.common.zookeeper" % name % zookeeperVersions(name)
+  def zk(name: String) = "com.twitter.common.zookeeper" % name % twitterZookeeperVersions(name)
 
   val twitterServer = "com.twitter" %% "twitter-server" % "1.11.0"
+  val junit = "junit" % "junit" % "4.12" % "test"
+  val slf4jLog4j12 = "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
+  val ostrich = "com.twitter" %% "ostrich" % "9.9.0"
 
   val proxyRepo = Option(System.getenv("SBT_PROXY_REPO"))
   val travisCi = Option(System.getenv("SBT_TRAVIS_CI")) // for adding travis ci maven repos before others
   val cwd = System.getProperty("user.dir")
 
+
   lazy val scalaTestDeps = Seq(
     "org.scalatest" %% "scalatest" % "2.2.4" % "test",
-    "junit" % "junit" % "4.12" % "test"
+    junit
   )
 
   lazy val testDependencies = Seq(
@@ -72,7 +73,7 @@ object Zipkin extends Build {
       case "2.10.5" => "2.10"
       case x => x
     },
-    "junit" % "junit" % "4.12" % "test"
+    junit
   )
 
   def zipkinSettings = Seq(
@@ -149,15 +150,12 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        finagle("ostrich4"),
-        finagle("thrift"),
-        finagle("zipkin"),
-        finagle("exception"),
         util("core"),
         zk("client"),
         algebird("core"),
-        "com.twitter" %% "ostrich" % ostrichVersion
+        ostrich
       ) ++ scalaTestDeps
+        ++ many(finagle, "ostrich4", "thrift", "zipkin", "exception")
     )
 
   lazy val thriftidl =
@@ -177,12 +175,10 @@ object Zipkin extends Build {
       base = file("zipkin-sampler"),
       settings = defaultSettings
     ).settings(
-      libraryDependencies ++= Seq(
-        finagle("core"),
-        finagle("http"),
-        util("core"),
-        util("zk")
-      ) ++ scalaTestDeps
+      libraryDependencies ++= many(finagle, "core", "http")
+          ++ many(util, "core", "zk")
+          ++ scalaTestDeps
+
     ).dependsOn(common, zookeeper)
 
   lazy val scrooge =
@@ -194,15 +190,12 @@ object Zipkin extends Build {
         ScroogeSBT.scroogeThriftSourceFolder in Compile <<= (baseDirectory in ThisBuild)
           (_ / "zipkin-thrift" / "src" / "main" / "thrift" / "com" / "twitter" / "zipkin" ),
         libraryDependencies ++= Seq(
-        finagle("ostrich4"),
-        finagle("thrift"),
-        finagle("zipkin"),
-        util("core"),
-        scroogeDep("core"),
-        scroogeDep("serializer"),
-        algebird("core"),
-        "com.twitter" %% "ostrich" % ostrichVersion
-      ) ++ scalaTestDeps
+            util("core"),
+            algebird("core"),
+            ostrich
+        ) ++ many(finagle, "ostrich4", "thrift", "zipkin")
+          ++ many(scroogeDep, "core", "serializer")
+          ++ scalaTestDeps
     ).dependsOn(common)
 
   lazy val zookeeper = Project(
@@ -210,13 +203,9 @@ object Zipkin extends Build {
     base = file("zipkin-zookeeper"),
     settings = defaultSettings
   ).settings(
-    libraryDependencies ++= Seq(
-      finagle("core"),
-      util("core"),
-      util("zk"),
-      zk("candidate"),
-      zk("group")
-    )
+    libraryDependencies ++= Seq(finagle("core"))
+      ++ many(util, "core", "zk")
+      ++ many(zk, "candidate", "group")
   )
 
   lazy val collectorCore = Project(
@@ -225,19 +214,13 @@ object Zipkin extends Build {
     settings = defaultSettings
   ).settings(
     libraryDependencies ++= Seq(
-      finagle("ostrich4"),
-      finagle("serversets"),
-      finagle("thrift"),
-      finagle("zipkin"),
-      util("core"),
-      util("zk"),
-      util("zk-common"),
-      zk("candidate"),
-      zk("group"),
       algebird("core"),
       twitterServer,
-      "com.twitter" %% "ostrich" % ostrichVersion
-    ) ++ testDependencies
+      ostrich
+    ) ++ many(finagle, "ostrich4", "serversets", "thrift", "zipkin")
+      ++ many(util, "core", "zk", "zk-common")
+      ++ many(zk, "candidate", "group")
+      ++ testDependencies
   ).dependsOn(common, scrooge)
 
   lazy val cassandra = Project(
@@ -248,14 +231,13 @@ object Zipkin extends Build {
     libraryDependencies ++= Seq(
       "commons-codec" % "commons-codec" % "1.6",
       finagle("serversets"),
-      util("logging"),
-      util("app"),
       scroogeDep("serializer"),
       "org.iq80.snappy" % "snappy" % "0.1",
       "org.mockito" % "mockito-all" % "1.9.5" % "test",
-      "com.twitter" %% "scalding-core" % scaldingVersion,
-      "org.apache.hadoop" % "hadoop-client" % hadoopVersion
-    ) ++ testDependencies ++ scalaTestDeps,
+      "com.twitter" %% "scalding-core" % "0.11.2",
+      hadoop("client")
+    ) ++ many(util, "logging", "app")
+      ++ testDependencies ++ scalaTestDeps,
 
     /* Add configs to resource path for ConfigSpec */
     unmanagedResourceDirectories in Test <<= baseDirectory {
@@ -288,12 +270,9 @@ object Zipkin extends Build {
       base = file("zipkin-query"),
       settings = defaultSettings
     ).settings(
-      libraryDependencies ++= Seq(
-        finagle("thriftmux"),
-        finagle("zipkin"),
-        util("app"),
-        util("core")
-      ) ++ scalaTestDeps
+      libraryDependencies ++= many(finagle, "thriftmux", "zipkin")
+        ++ many(util, "app", "core")
+        ++ scalaTestDeps
     ).dependsOn(common, scrooge)
 
   lazy val queryCore =
@@ -303,18 +282,12 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        finagle("ostrich4"),
-        finagle("serversets"),
-        finagle("thrift"),
-        finagle("zipkin"),
-        util("core"),
-        util("zk"),
-        util("zk-common"),
-        zk("candidate"),
-        zk("group"),
         algebird("core"),
-        "com.twitter" %% "ostrich" % ostrichVersion
-      ) ++ testDependencies
+        ostrich
+      ) ++ many(finagle, "ostrich4", "serversets", "thrift", "zipkin")
+        ++ many(util, "core", "zk", "zk-common")
+        ++ many(zk, "candidate", "group")
+        ++ testDependencies
     ).dependsOn(common, query, scrooge)
 
   lazy val queryService = Project(
@@ -367,7 +340,7 @@ object Zipkin extends Build {
       libraryDependencies ++= Seq(
         finagle("thriftmux"),
         util("zk"),
-        "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
+        slf4jLog4j12
       ) ++ scalaTestDeps
     ).dependsOn(collector, zookeeper, scrooge)
 
@@ -448,16 +421,13 @@ object Zipkin extends Build {
       settings = defaultSettings
     ).settings(
       libraryDependencies ++= Seq(
-        finagle("exception"),
-        finagle("thriftmux"),
-        finagle("serversets"),
-        finagle("zipkin"),
         zk("server-set"),
         algebird("core"),
         twitterServer,
         "com.github.spullara.mustache.java" % "compiler" % "0.8.13",
         "com.twitter.common" % "stats-util" % "0.0.42"
-      ) ++ scalaTestDeps,
+      ) ++ many(finagle, "exception", "thriftmux", "serversets", "zipkin")
+        ++ scalaTestDeps,
 
       PackageDist.packageDistZipName := "zipkin-web.zip",
       BuildProperties.buildPropertiesPackage := "com.twitter.zipkin",
@@ -480,7 +450,7 @@ object Zipkin extends Build {
       finagle("redis"),
       util("logging"),
       scroogeDep("serializer"),
-      "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
+      slf4jLog4j12
     ) ++ testDependencies ++ scalaTestDeps,
 
     /* Add configs to resource path for ConfigSpec */
@@ -502,28 +472,20 @@ object Zipkin extends Build {
   ).settings(
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-      "org.apache.hbase"      % "hbase"                             % hbaseVersion,
-      "org.apache.hbase"      % "hbase-common"                      % hbaseVersion,
-      "org.apache.hbase"      % "hbase-common"                      % hbaseVersion % "test" classifier("tests") classifier(""),
-      "org.apache.hbase"      % "hbase-client"                      % hbaseVersion,
-      "org.apache.hbase"      % "hbase-client"                      % hbaseVersion % "test" classifier("tests") classifier(""),
-      "org.apache.hbase"      % "hbase-server"                      % hbaseVersion % "test" classifier("tests") classifier(""),
-      "org.apache.hbase"      % "hbase-hadoop-compat"               % hbaseVersion % "test" classifier("tests") classifier(""),
-      "org.apache.hbase"      % "hbase-hadoop2-compat"              % hbaseVersion % "test" classifier("tests") classifier(""),
+      hadoop("common"),
       "com.google.guava"      % "guava"                             % "11.0.2" % "test", //Hadoop needs a deprecated class
       "com.google.guava"      % "guava-io"                          % "r03" % "test", //Hadoop needs a deprecated class
       "com.google.protobuf"   % "protobuf-java"                     % "2.4.1",
-      "org.apache.hadoop"     % "hadoop-common"                     % hadoopVersion,
-      "org.apache.hadoop"     % "hadoop-mapreduce-client-jobclient" % hadoopVersion % "test" classifier("tests") classifier(""),
-      "org.apache.hadoop"     % "hadoop-common"                     % hadoopVersion % "test" classifier("tests"),
-      "org.apache.hadoop"     % "hadoop-hdfs"                       % hadoopVersion % "test" classifier("tests") classifier(""),
       "commons-logging"       % "commons-logging"                   % "1.1.1",
       "commons-configuration" % "commons-configuration"             % "1.6",
       "org.apache.zookeeper"  % "zookeeper"                         % "3.4.6" % "runtime" notTransitive(),
-      "org.slf4j"             % "slf4j-log4j12"                     % "1.6.4" % "runtime",
+      slf4jLog4j12,
       util("logging"),
       scroogeDep("serializer")
-    )  ++ testDependencies ++ scalaTestDeps,
+    ) ++ many(hbaseDep, "", "common", "client")
+      ++ many(hbaseTest, "common", "client", "server", "hadoop-compat", "hadoop2-compat")
+      ++ many(hadoopTest, "mapreduce-client-jobclient", "common", "hdfs" )
+      ++ testDependencies ++ scalaTestDeps,
 
     resolvers ~= {rs => Seq(DefaultMavenRepository) ++ rs},
 
@@ -542,7 +504,7 @@ object Zipkin extends Build {
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
       "org.mongodb" %% "casbah"        % "2.8.1",
-      "org.slf4j"    % "slf4j-log4j12" % "1.6.4" % "runtime",
+      slf4jLog4j12,
       util("logging")
     ) ++ testDependencies ++ scalaTestDeps
   ).dependsOn(common, scrooge)
@@ -552,11 +514,7 @@ object Zipkin extends Build {
     base = file("zipkin-example"),
     settings = defaultSettings
   ).settings(
-    libraryDependencies ++= Seq(
-      finagle("zipkin"),
-      finagle("stats"),
-      twitterServer
-    )
+    libraryDependencies ++= Seq(twitterServer) ++ many(finagle, "zipkin", "stats")
   ).dependsOn(
     tracegen, web, anormDB, query,
     receiverScribe, zookeeper
@@ -567,11 +525,7 @@ object Zipkin extends Build {
     base = file("zipkin-redis-example"),
     settings = defaultSettings
   ).settings(
-      libraryDependencies ++= Seq(
-        finagle("zipkin"),
-        finagle("stats"),
-        twitterServer
-      )
+      libraryDependencies ++= Seq(twitterServer) ++ many(finagle, "zipkin", "stats")
     ).dependsOn(
       web, redis, query,
       receiverScribe, zookeeper
