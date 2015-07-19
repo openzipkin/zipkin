@@ -49,7 +49,7 @@ object ZipkinResolver extends Plugin {
       }) ++ Seq(
         // the local repo has to be in here twice, because sbt won't push to a "file:"
         // repo, but it won't read artifacts from a "Resolver.file" repo. (head -> desk)
-        "local-lookup" at ("file:" + localRepo.getAbsolutePath),
+        "local-lookup" at localRepo.getAbsoluteFile.toURI.toString,
         Resolver.file("local", localRepo)(Resolver.mavenStylePatterns)
       )
     },
