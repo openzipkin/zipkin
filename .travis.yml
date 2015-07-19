@@ -1,5 +1,4 @@
 language: scala
-sudo: false
 
 scala:
   - 2.10.5
@@ -10,7 +9,6 @@ services:
 
 jdk:
   - oraclejdk7
-  - oraclejdk8
 
 # These directories are cached to S3 at the end of the build
 cache:
