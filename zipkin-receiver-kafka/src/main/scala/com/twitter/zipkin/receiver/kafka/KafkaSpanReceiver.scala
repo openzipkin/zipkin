@@ -6,6 +6,7 @@ import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.{Closable, Future, Time}
 import com.twitter.zipkin.collector.SpanReceiver
 import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
+import kafka.consumer.ConsumerConfig
 import kafka.serializer.Decoder
 
 trait KafkaSpanReceiverFactory { self: App =>
@@ -47,7 +48,7 @@ trait KafkaSpanReceiverFactory { self: App =>
       put("num.consumer.fetchers", "2")
     }
 
-    val service = KafkaProcessor(kafkaTopics(), receiverProps, process, keyDecoder getOrElse KafkaProcessor.defaultKeyDecoder, valueDecoder)
+    val service = KafkaProcessor(kafkaTopics(), new ConsumerConfig(receiverProps), process, keyDecoder getOrElse KafkaProcessor.defaultKeyDecoder, valueDecoder)
 
     def close(deadline: Time): Future[Unit] = closeAwaitably {
       Closable.sequence(service).close(deadline)
