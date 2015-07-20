@@ -38,14 +38,26 @@ body {
   width: 50%;
 }
 
+<<<<<<< HEAD
 /*for adding a back to top link on a scrollable page*/
 #backToTop {
   margin: 0;
+=======
+/*for page up button*/
+#backToTop {
+  background-color: #0084B4;
+}
+
+/*for zoomout button*/
+#zoomOutSpans {
+  background-color: #d9534f;
+}
+
+/*container for zoomout, pageup buttons*/
+#extraButtonsContainer {
   position: fixed;
   bottom: 0;
   right: 0;
   z-index: 100;
-  background-color: #0084B4;
 }
-
 

@@ -6,7 +6,8 @@ define(
     'component_ui/fullPageSpinner',
     'component_ui/serviceFilterSearch',
     'component_ui/spanPanel',
-    'component_ui/trace'
+    'component_ui/trace',
+    'component_ui/zoomOutSpans'
   ],
 
   function (
@@ -14,7 +15,8 @@ define(
     FullPageSpinnerUI,
     ServiceFilterSearchUI,
     SpanPanelUI,
-    TraceUI
+    TraceUI,
+    ZoomOut
   ) {
 
     return initialize;
@@ -25,6 +27,7 @@ define(
       ServiceFilterSearchUI.attachTo('#serviceFilterSearch');
       SpanPanelUI.attachTo('#spanPanel');
       TraceUI.attachTo('#trace-container');
+      ZoomOut.attachTo('#zoomOutSpans');
 
       $('.annotation:not(.core)').tooltip({placement: 'left'});
     }
