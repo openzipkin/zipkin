@@ -270,7 +270,7 @@ case class CassandraIndex(
       ba.host match {
         case Some(endpoint) => {
           WRITE_REQUEST_COUNTER.incr(2)
-          val key = encode(endpoint.serviceName, ba.key).getBytes
+          val key = encode(endpoint.serviceName.toLowerCase, ba.key).getBytes
           val col = Column[Long, Long](timestamp, span.traceId).ttl(dataTimeToLive)
           batch.insert(ByteBuffer.wrap(key ++ INDEX_DELIMITER.getBytes ++ Util.getArrayFromBuffer(ba.value)), col)
           batch.insert(ByteBuffer.wrap(key), col)
