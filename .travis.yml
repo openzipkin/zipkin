@@ -38,7 +38,7 @@ env:
   - PROJECT="zipkin-zookeeper"
 
 script:
-  - "./bin/sbt "project $PROJECT" ++$TRAVIS_SCALA_VERSION clean test"
+  - "./bin/sbt 'project $PROJECT' ++$TRAVIS_SCALA_VERSION clean test"
 
 
 notifications:
