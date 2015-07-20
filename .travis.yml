@@ -21,8 +21,24 @@ before_script:
   # default $SBT_OPTS is irrelevant to sbt lancher
   - unset SBT_OPTS
 
+env:
+  - PROJECT="zipkin-aggregate"
+  - PROJECT="zipkin-anormdb"
+  - PROJECT="zipkin-cassandra"
+  - PROJECT="zipkin-example"
+  - PROJECT="zipkin-hbase"
+  - PROJECT="zipkin-kafka"
+  - PROJECT="zipkin-mongodb"
+  - PROJECT="zipkin-receiver-kafka"
+  - PROJECT="zipkin-receiver-scribe"
+  - PROJECT="zipkin-redis"
+  - PROJECT="zipkin-sampler"
+  - PROJECT="zipkin-tracegen"
+  - PROJECT="zipkin-web"
+  - PROJECT="zipkin-zookeeper"
+
 script:
-  - "./bin/sbt ++$TRAVIS_SCALA_VERSION clean test"
+  - "./bin/sbt "project $PROJECT" ++$TRAVIS_SCALA_VERSION clean test"
 
 
 notifications:
