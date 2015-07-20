@@ -46,10 +46,10 @@ object Zipkin extends Build {
   def many(gen: (String => ModuleID), names: String*) = names map gen
 
   val twitterZookeeperVersions = Map(
-    "candidate" -> "0.0.41",
-    "group" -> "0.0.44",
-    "client" -> "0.0.35",
-    "server-set" -> "1.0.36"
+    "candidate" -> "0.0.75",
+    "group" -> "0.0.81",
+    "client" -> "0.0.70",
+    "server-set" -> "1.0.103"
   )
   def zk(name: String) = "com.twitter.common.zookeeper" % name % twitterZookeeperVersions(name)
 
