@@ -1,4 +1,4 @@
-package com.twitter.sbt
+package io.zipkin.sbt
 
 import sbt._
 import Keys._

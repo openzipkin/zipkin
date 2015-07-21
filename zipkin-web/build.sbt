@@ -1,4 +1,4 @@
-import com.twitter.sbt._
+import io.zipkin.sbt._
 
 defaultSettings
 

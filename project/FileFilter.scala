@@ -1,4 +1,4 @@
-package com.twitter.sbt
+package io.zipkin.sbt
 
 import java.io.{BufferedReader, FileReader, FileWriter, File}
 import sbt._

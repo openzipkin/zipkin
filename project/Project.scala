@@ -14,7 +14,7 @@
  *  limitations under the License.
  *
  */
-import com.twitter.sbt.{BuildProperties,PackageDist,GitProject}
+import io.zipkin.sbt.{BuildProperties,PackageDist,GitProject}
 import sbt._
 import Keys._
 
@@ -82,7 +82,7 @@ object Zipkin extends Build {
   /////////////////////
 
   def zipkinSettings = Seq(
-    organization := "com.twitter",
+    organization := "io.zipkin",
     version := zipkinVersion,
     crossScalaVersions := Seq("2.10.5"),
     scalaVersion := "2.10.5",
