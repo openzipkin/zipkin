@@ -21,7 +21,5 @@ libraryDependencies ++= Seq(
   testDependencies, scalaTestDeps
 ).flatten
 
-resolvers ~= {rs => Seq(DefaultMavenRepository) ++ rs}
-
 addConfigsToResourcePathForConfigSpec()
 
