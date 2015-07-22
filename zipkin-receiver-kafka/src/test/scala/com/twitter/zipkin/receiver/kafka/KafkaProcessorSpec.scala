@@ -1,46 +1,30 @@
 package com.twitter.zipkin.receiver.kafka
 
-import com.twitter.zipkin.receiver.test.kafka.{TestUtils, EmbeddedZookeeper}
-import com.twitter.zipkin.common._
-import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
-import com.twitter.zipkin.conversions.thrift.{thriftSpanToSpan, spanToThriftSpan}
+import com.github.charithe.kafka.KafkaJunitRule
 import com.twitter.util.{Await, Future, Promise}
-import com.twitter.scrooge.BinaryThriftStructSerializer
-
-import org.junit.runner.RunWith
-import org.scalatest.FunSuite
-import org.scalatest.BeforeAndAfter
-import org.scalatest.junit.JUnitRunner
-
-import kafka.consumer.{Consumer, ConsumerConnector, ConsumerConfig}
-import kafka.message.Message
+import com.twitter.zipkin.common._
+import com.twitter.zipkin.conversions.thrift.thriftSpanToSpan
+import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import kafka.producer._
-import kafka.serializer.Decoder
-import kafka.server.KafkaServer
+import org.junit.{ClassRule, Test}
+import org.scalatest.junit.JUnitSuite
 
-import com.twitter.zipkin.collector.{SpanReceiver, ZipkinQueuedCollectorFactory}
-import java.io._
+object KafkaProcessorSpecSimple {
+  // Singleton as the test needs to read the actual port in use
+  val kafkaRule = new KafkaJunitRule()
 
-import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.server.TwitterServer
-import com.twitter.zipkin.zookeeper.ZooKeeperClientFactory
+  // Scala cannot generate fields with public visibility, so use a def instead.
+  @ClassRule def kafkaRuleDef = kafkaRule
+}
 
-import java.util.Properties
-import com.twitter.app.{App, Flaggable}
-import com.twitter.zipkin.thriftscala
+class KafkaProcessorSpecSimple extends JUnitSuite {
 
-@RunWith(classOf[JUnitRunner])
-class KafkaProcessorSpecSimple extends FunSuite with BeforeAndAfter {
+  import KafkaProcessorSpecSimple.kafkaRule
 
   val topic = Map("integration-test-topic" -> 1)
   val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
-  var zkServer: EmbeddedZookeeper = _
-  var testKafkaServer: KafkaServer = _
-  val producerConfig = TestUtils.kafkaProducerProps
-  val processorConfig = TestUtils.kafkaProcessorProps
   val decoder = new SpanDecoder()
   val defaultKafkaTopics = Map("zipkin_kafka" -> 1 )
-
 
   def validateSpan(spans: Seq[ThriftSpan]): Future[Unit] = {
     assert( 1 == spans.length, "received more spans than sent" )
@@ -62,20 +46,8 @@ class KafkaProcessorSpecSimple extends FunSuite with BeforeAndAfter {
     codec.encode(message)
   }
 
-  before {
-    zkServer = TestUtils.startZkServer()
-    Thread.sleep(500)
-    testKafkaServer = TestUtils.startKafkaServer()
-    Thread.sleep(500)
-  }
-
-  after {
-    testKafkaServer.shutdown
-    zkServer.shutdown
-  }
-
-  test("kafka processor test") {
-    val producer = new Producer[Array[Byte], Array[Byte]](new ProducerConfig(producerConfig))
+  @Test def kafkaProcessorTest() {
+    val producer = new Producer[Array[Byte], Array[Byte]](kafkaRule.producerConfigWithDefaultEncoder())
     val message = createMessage()
     val data = new KeyedMessage("zipkin_kafka", "any".getBytes, message)
     val recvdSpan = new Promise[Option[Seq[ThriftSpan]]]
@@ -83,12 +55,11 @@ class KafkaProcessorSpecSimple extends FunSuite with BeforeAndAfter {
     producer.send(data)
     producer.close()
 
-    val service = KafkaProcessor(defaultKafkaTopics, processorConfig, { s =>
+    val service = KafkaProcessor(defaultKafkaTopics, kafkaRule.consumerConfig(), { s =>
         recvdSpan.setValue(Some(s))
         Future.value(true)
       }, new SpanDecoder, new SpanDecoder)
 
-    Await.result(recvdSpan)
-    validateSpan(recvdSpan.get().getOrElse(null))
+    validateSpan(Await.result(recvdSpan).getOrElse(null))
   }
 }

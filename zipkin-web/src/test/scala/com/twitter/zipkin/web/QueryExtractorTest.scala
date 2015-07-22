@@ -27,10 +27,12 @@ import org.scalatest.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class QueryExtractorTest extends FunSuite {
 
+  val queryExtractor = new QueryExtractor(10)
+
   def request(p: (String, String)*) = Request(p:_*)
 
   test("require serviceName") {
-    assert(!QueryExtractor(request()).isDefined)
+    assert(!queryExtractor(request()).isDefined)
   }
 
   test("parse params") {
@@ -42,7 +44,7 @@ class QueryExtractorTest extends FunSuite {
       "timestamp" -> endTimestamp,
       "limit" -> "1000")
 
-    val actual = QueryExtractor(r).get
+    val actual = queryExtractor(r).get
 
     assert(actual.serviceName === "myService")
     assert(actual.spanName.get === "mySpan")
@@ -52,31 +54,37 @@ class QueryExtractorTest extends FunSuite {
 
   test("default endDateTime") {
     Time.withCurrentTimeFrozen { tc =>
-      val actual = QueryExtractor(request("serviceName" -> "myService")).get
+      val actual = queryExtractor(request("serviceName" -> "myService")).get
       assert(actual.endTs === Time.now.sinceEpoch.inMicroseconds)
     }
   }
 
+  test("parse limit") {
+    val r = request("serviceName" -> "myService", "limit" -> "199")
+    val actual = queryExtractor(r).get
+    assert(actual.limit === 199)
+  }
+
   test("default limit") {
-    val actual = QueryExtractor(request("serviceName" -> "myService")).get
-    assert(actual.limit === Constants.DefaultQueryLimit)
+    val actual = new QueryExtractor(100).apply(request("serviceName" -> "myService")).get
+    assert(actual.limit === 100)
   }
 
   test("parse spanName 'all'") {
     val r = request("serviceName" -> "myService", "spanName" -> "all")
-    val actual = QueryExtractor(r).get
+    val actual = queryExtractor(r).get
     assert(!actual.spanName.isDefined)
   }
 
   test("parse spanName ''") {
     val r = request("serviceName" -> "myService", "spanName" -> "")
-    val actual = QueryExtractor(r).get
+    val actual = queryExtractor(r).get
     assert(!actual.spanName.isDefined)
   }
 
   test("parse spanName") {
     val r = request("serviceName" -> "myService", "spanName" -> "something")
-    val actual = QueryExtractor(r).get
+    val actual = queryExtractor(r).get
     assert(actual.spanName.get === "something")
   }
 
@@ -84,7 +92,7 @@ class QueryExtractorTest extends FunSuite {
     val r = request(
       "serviceName" -> "myService",
       "annotationQuery" -> "finagle.retry and finagle.timeout")
-    val actual = QueryExtractor(r).get
+    val actual = queryExtractor(r).get
     assert(actual.annotations.get.contains("finagle.retry"))
     assert(actual.annotations.get.contains("finagle.timeout"))
   }
@@ -93,7 +101,7 @@ class QueryExtractorTest extends FunSuite {
     val r = request(
       "serviceName" -> "myService",
       "annotationQuery" -> "http.responsecode=500")
-    val actual = QueryExtractor(r).get
+    val actual = queryExtractor(r).get
     assert(
       actual.binaryAnnotations.get ===
         Seq(BinaryAnnotation("http.responsecode", ByteBuffer.wrap("500".getBytes), AnnotationType.String, None)))
@@ -103,7 +111,7 @@ class QueryExtractorTest extends FunSuite {
     val r = request(
       "serviceName" -> "myService",
       "annotationQuery" -> "http.uri=/sessions")
-    val actual = QueryExtractor(r).get
+    val actual = queryExtractor(r).get
     assert(
       actual.binaryAnnotations.get ===
         Seq(BinaryAnnotation("http.uri", ByteBuffer.wrap("/sessions".getBytes), AnnotationType.String, None)))

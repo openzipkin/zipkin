@@ -19,7 +19,7 @@ import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
 import scala.annotation.tailrec
 
-class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
+class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor) {
   import Util._
 
   type Renderer = (Response => Unit)
@@ -261,7 +261,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
 
       MustacheTraceSummary(
         SpanId(t.traceId).toString,
-        QueryExtractor.fmt.format(new java.util.Date(t.startTimestamp / 1000)),
+        queryExtractor.fmt.format(new java.util.Date(t.startTimestamp / 1000)),
         t.startTimestamp,
         duration,
         durationStr(t.durationMicro.toLong * 1000),
@@ -281,8 +281,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
     Service.mk[Request, Renderer] { req =>
       val serviceName = req.params.get("serviceName")
       val spanName = req.params.get("spanName")
-
-      val qr = QueryExtractor(req)
+      val qr = queryExtractor(req)
       val qResults = qr map { query(client, _, req) } getOrElse { EmptyTraces }
       val spanResults = serviceName map(client.getSpanNames(_).map(_.toSeq.sorted)) getOrElse(Future.value(Seq.empty))
 
@@ -292,11 +291,11 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
 
         var data = Map[String, Object](
           ("pageTitle" -> "Index"),
-          ("timestamp" -> QueryExtractor.getTimestampStr(req)),
+          ("timestamp" -> queryExtractor.getTimestampStr(req)),
           ("annotationQuery" -> req.params.get("annotationQuery").getOrElse("")),
           ("services" -> svcList),
           ("spans" -> spanList),
-          ("limit" -> req.params.get("limit").getOrElse("100")))
+          ("limit" -> queryExtractor.getLimitStr(req)))
 
         qr foreach { qReq =>
           val binAnn = qReq.binaryAnnotations map { _.map { b =>
@@ -329,7 +328,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache) {
 
   def handleQuery(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
-      val res = QueryExtractor(req) match {
+      val res = queryExtractor(req) match {
         case Some(qr) => query(client, qr, req)
         case None => EmptyTraces
       }

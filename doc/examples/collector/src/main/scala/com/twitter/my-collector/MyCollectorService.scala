@@ -5,7 +5,7 @@ import com.twitter.server.TwitterServer
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.cassandra.CassieSpanStoreFactory
 import com.twitter.zipkin.collector.{SpanReceiver, ZipkinQueuedCollectorFactory}
-import com.twitter.zipkin.common.Span
+import com.twitter.zipkin.thriftscala.Span
 import com.twitter.zipkin.receiver.scribe.ScribeSpanReceiverFactory
 import com.twitter.zipkin.storage.WriteSpanStore
 import com.twitter.zipkin.zookeeper.ZooKeeperClientFactory

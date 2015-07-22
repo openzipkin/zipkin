@@ -21,21 +21,43 @@ fi
 
 test -f ~/.sbtconfig && . ~/.sbtconfig
 
+# Memory args must be set in context of Travis limits, else the build gets killed.
+# Legacy infrastructure == 3G; Containers == 4G
+# 
+# When solving this, bear in mind there's more overhead than just heap.
+# 3GB > max heap + max meta + (threadcount * stacksize) + JVM overhead
+#
+# Also, keep in mind that SBT forks processes.
+#
+# Status quo is really sensitive as we need nearly all memory available to run
+# sbt test. If we are able to refactor the build or tests so that we have more
+# headroom, a lot of the caution above becomes less sensitive, and therefore not
+# as important to keep in the foreground.
+version=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
+if [[ "$version" > "1.8" ]]; then
+    export VM_OPTS="-Xms2G                          \
+                    -Xmx2G                          \
+                    -Xss256k                        \
+                    -XX:MaxMetaspaceSize=256m"
+else
+    export VM_OPTS="-XX:+AggressiveOpts             \
+                    -XX:+UseParNewGC                \
+                    -XX:+UseConcMarkSweepGC         \
+                    -XX:+CMSParallelRemarkEnabled   \
+                    -XX:+CMSClassUnloadingEnabled   \
+                    -XX:SurvivorRatio=128           \
+                    -XX:MaxTenuringThreshold=0      \
+                    -XX:ReservedCodeCacheSize=64m   \
+                    -Xms2G                          \
+                    -Xmx2G                          \
+                    -Xss256k                        \
+                    -XX:MaxPermSize=256m            \
+                    -server"
+fi
 java -ea                          \
   $SBT_OPTS                       \
   $JAVA_OPTS                      \
-  -Djava.net.preferIPv4Stack=true \
-  -XX:+AggressiveOpts             \
-  -XX:+UseParNewGC                \
-  -XX:+UseConcMarkSweepGC         \
-  -XX:+CMSParallelRemarkEnabled   \
-  -XX:+CMSClassUnloadingEnabled   \
-  -XX:MaxPermSize=1024m           \
-  -XX:SurvivorRatio=128           \
-  -XX:MaxTenuringThreshold=0      \
-  -XX:ReservedCodeCacheSize=64m   \
-  -Xss8M                          \
-  -Xms512M                        \
-  -Xmx4G                          \
-  -server                         \
+  $VM_OPTS                        \
+  -verbose:gc                     \
+  -XX:+PrintGCDetails             \
   -jar $sbtjar "$@"

@@ -333,17 +333,17 @@ class AnormSpanStore(
     }
 
   private[this] def byDurationSql(ids: Seq[Long]) = SQL("""
-    |SELECT trace_id, duration, created_ts
-    |FROM zipkin_spans
-    |WHERE trace_id IN (%s) AND created_ts IS NOT NULL
+    |SELECT trace_id, MIN(a_timestamp), MAX(a_timestamp)
+    |FROM zipkin_annotations
+    |WHERE trace_id IN (%s)
     |GROUP BY trace_id
   """.stripMargin.format(ids.mkString(",")))
 
   private[this] val byDurationResults = (
     long("trace_id") ~
-    get[Option[Long]]("duration") ~
-    long("created_ts")
-  ) map { case a~b~c => TraceIdDuration(a, b.getOrElse(0), c) }
+    long("MIN(a_timestamp)") ~
+    long("MAX(a_timestamp)")
+  ) map { case traceId~minTs~maxTs => TraceIdDuration(traceId, maxTs - minTs, minTs) }
 
   def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = pool {
     byDurationSql(traceIds)

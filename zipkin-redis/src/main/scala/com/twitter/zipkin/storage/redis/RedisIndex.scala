@@ -22,6 +22,7 @@ import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation, Span}
 import com.twitter.zipkin.storage.{Index, IndexedTraceId, TraceIdDuration}
 import java.nio.ByteBuffer
 import org.jboss.netty.buffer.{ChannelBuffer, ChannelBuffers}
+import com.twitter.zipkin.Constants
 
 trait RedisIndex extends Index {
 
@@ -134,8 +135,7 @@ trait RedisIndex extends Index {
     }
   )
 
-  override def indexSpanByAnnotations(span: Span) : Future[Unit] = Future.join(
-    {
+  override def indexSpanByAnnotations(span: Span) : Future[Unit] = {
       def encodeAnnotation(bin: BinaryAnnotation): String = bin.annotationType match {
         case AnnotationType.Bool => (if (bin.value.get() != 0) true else false).toString
         case AnnotationType.Double => bin.value.getDouble.toString
@@ -148,22 +148,31 @@ trait RedisIndex extends Index {
       def binaryAnnoStringify(bin: BinaryAnnotation, service: String): String =
         redisJoin(service, bin.key, encodeAnnotation(bin))
 
-      val time = span.lastAnnotation.get.timestamp
-      val binaryAnnos: Seq[Future[Unit]] = span.serviceNames.toSeq flatMap { serviceName =>
-        span.binaryAnnotations map { binaryAnno =>
-          binaryAnnotationsListMap.add(
-            binaryAnnoStringify(binaryAnno, serviceName),
-            time,
-            span.traceId
-          )
-        }
+      span.lastAnnotation.map {
+        lastAnnotation =>
+          Future.join({
+            val time = lastAnnotation.timestamp
+            val binaryAnnos: Seq[Future[Unit]] = span.serviceNames.toSeq flatMap {
+              serviceName =>
+                span.binaryAnnotations map {
+                  binaryAnno =>
+                    binaryAnnotationsListMap.add(
+                      binaryAnnoStringify(binaryAnno, serviceName),
+                      time,
+                      span.traceId
+                    )
+                }
+            }
+            val annos = for (serviceName <- span.serviceNames toSeq;
+              anno <- span.annotations if (!Constants.CoreAnnotations.contains(anno.value)))
+              yield annotationsListMap.add(redisJoin(serviceName, anno.value), time, span.traceId)
+            annos ++ binaryAnnos
+          }
+        )
+      } getOrElse {
+        Future.Unit
       }
-      val annos = for (serviceName <- span.serviceNames toSeq;
-        anno <- span.annotations)
-        yield annotationsListMap.add(redisJoin(serviceName, anno.value), time, span.traceId)
-      annos ++ binaryAnnos
-    }
-  )
+  }
 
   override def indexServiceName(span: Span): Future[Unit] = Future.join(
     span.serviceNames.toSeq collect {case name if name != "" => serviceArray.add(name)}

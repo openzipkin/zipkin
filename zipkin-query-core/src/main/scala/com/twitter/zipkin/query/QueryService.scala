@@ -147,10 +147,19 @@ class QueryService(
             queries.map {
               _.execute(index)
             }
-          }.map {
-            _.flatten.map {
-              _.timestamp
-            }.min
+          }.map { values =>
+            if (values.isEmpty) {
+              -1L
+            } else {
+              val flattened = values.flatten
+              if (flattened.isEmpty) {
+                -1L
+              } else {
+                flattened.map {
+                  _.timestamp
+                }.min
+              }
+            }
           }.map { alignedTimestamp =>
             /* Pad the aligned timestamp by a minute */
             val ts = padTimestamp(alignedTimestamp)
@@ -163,10 +172,14 @@ class QueryService(
             }.map { ids =>
               traceIdsIntersect(ids) match {
                 case Nil => {
-                  val endTimestamp = ids.map {
-                    _.map { _.timestamp }.min
-                  }.max
-                  constructQueryResponse(Nil, limit, order, endTimestamp)
+                  if (!ids.isEmpty) {
+                    val endTimestamp = ids.map { id =>
+                      if (id.isEmpty) -1L else id.map { _.timestamp }.min
+                    }.max
+                    constructQueryResponse(Nil, limit, order, endTimestamp)
+                  } else {
+                    constructQueryResponse(Nil, limit, order)
+                  }
                 }
                 case seq => {
                   constructQueryResponse(seq, limit, order)
@@ -180,7 +193,9 @@ class QueryService(
     }
   }
 
-  private[query] def padTimestamp(timestamp: Long): Long = timestamp + Constants.TraceTimestampPadding.inMicroseconds
+  private[query] def padTimestamp(timestamp: Long): Long = {
+    if (timestamp == -1L) -1L else timestamp + Constants.TraceTimestampPadding.inMicroseconds
+  }
 
   private[query] def traceIdsIntersect(idSeqs: Seq[Seq[IndexedTraceId]]): Seq[IndexedTraceId] = {
     /* Find the trace IDs present in all the Seqs */

@@ -5,13 +5,16 @@ scala:
 
 services:
   - redis-server
+  - mongodb
 
 jdk:
   - oraclejdk7
+  - oraclejdk8
 
 # These directories are cached to S3 at the end of the build
 cache:
   directories:
+   - $HOME/.m2
    - $HOME/.ivy2/cache
    - $HOME/.sbt/boot/scala-$TRAVIS_SCALA_VERSION
 
@@ -21,3 +24,12 @@ before_script:
 
 script:
   - "./bin/sbt ++$TRAVIS_SCALA_VERSION clean test"
+
+
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/637e968b45032d16ee26
+    on_success: change
+    on_failure: always
+    on_start: false

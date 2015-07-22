@@ -16,6 +16,8 @@
  */
 package com.twitter.zipkin.sampler
 
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
+
 import com.google.common.collect.EvictingQueue
 import com.twitter.app.App
 import com.twitter.conversions.time._
@@ -27,7 +29,7 @@ import com.twitter.util._
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.SpanStore
 import com.twitter.zipkin.zookeeper._
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference, AtomicInteger}
+
 import scala.reflect.ClassTag
 
 trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
@@ -78,15 +80,22 @@ trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
     stats: StatsReceiver = DefaultStatsReceiver.scope("adaptiveSampler"),
     log: Logger = Logger.get("adaptiveSampler")
   ): SpanStore.Filter = {
-    def translateNode[T](name: String, default: T, f: String => T): Array[Byte] => T = { bytes => try {
-      val str = new String(bytes)
-      log.debug("node translator [%s] got \"%s\"".format(name, str))
-      f(str)
-    } catch {
-      case e: Exception =>
-        log.error(e, "node translator [%s] error".format(name))
+    def translateNode[T](name: String, default: T, f: String => T): Array[Byte] => T = { bytes =>
+      if (bytes.length == 0) {
+        log.debug("node translator [%s] defaulted to \"%s\"".format(name, default))
         default
-    } }
+      } else {
+        val str = new String(bytes)
+        log.debug("node translator [%s] got \"%s\"".format(name, str))
+        try {
+          f(str)
+        } catch {
+          case e: Exception =>
+            log.error(e, "node translator [%s] error".format(name))
+            default
+        }
+      }
+    }
 
     val targetStoreRateWatch = zkClient.watchData(targetStoreRatePath)
     val targetStoreRate = targetStoreRateWatch.data.map(translateNode("targetStoreRate", 0, _.toInt))
@@ -94,8 +103,8 @@ trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
     val curReqRate = Var[Int](0)
     val reportingGroup = zkClient.joinGroup(reporterPath, curReqRate.map(_.toString.getBytes))
 
-    val smplRateWatch = zkClient.watchData(sampleRatePath)
-    val smplRate = smplRateWatch.data.map(translateNode("smplRate", 0.0, _.toDouble))
+    val sampleRateWatch = zkClient.watchData(sampleRatePath)
+    val sampleRate = sampleRateWatch.data.map(translateNode("sampleRate", 0.0, _.toDouble))
 
     val buffer = new AtomicRingBuffer[Int](asWindowSize().inSeconds / asUpdateFreq().inSeconds)
 
@@ -104,7 +113,7 @@ trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
 
     val calculator =
       { v: Int => Some(buffer.pushAndSnap(v)) } andThen
-      adaptiveSampleRateCalculator(targetStoreRate, curReqRate, smplRate, stats, log) andThen
+      adaptiveSampleRateCalculator(targetStoreRate, curReqRate, sampleRate, stats, log) andThen
       isLeader andThen
       cooldown
 
@@ -121,14 +130,14 @@ trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
       val closer = Closable.all(
         targetStoreRateWatch,
         reportingGroup,
-        smplRateWatch,
+        sampleRateWatch,
         isLeader,
         globalSampleRateUpdater)
 
       Await.ready(closer.close())
     }
 
-    new SpanSamplerFilter(new Sampler(smplRate, stats.scope("sampler")), stats.scope("filter")) andThen
+    new SpanSamplerFilter(new Sampler(sampleRate, stats.scope("sampler")), stats.scope("filter")) andThen
     new FlowReportingFilter(curReqRate.update(_), stats.scope("flowReporter"))
   }
 
@@ -343,7 +352,7 @@ object DiscountedAverage extends (Seq[Int] => Double) {
 
 class CalculateSampleRate(
   targetStoreRate: Var[Int],
-  smplRate: Var[Double],
+  sampleRate: Var[Double],
   calculate: Seq[Int] => Double = DiscountedAverage,
   threshold: Double = 0.05,
   maxSampleRate: Double = 1.0,
@@ -353,14 +362,14 @@ class CalculateSampleRate(
   private[this] val tgtStoreRate = new AtomicInteger(0)
   targetStoreRate.changes.register(Witness(tgtStoreRate.set(_)))
 
-  private[this] val curSmplRate = new AtomicReference[Double](1.0)
-  smplRate.changes.register(Witness(curSmplRate))
+  private[this] val cursampleRate = new AtomicReference[Double](1.0)
+  sampleRate.changes.register(Witness(cursampleRate))
 
   private[this] val currentStoreRate = new AtomicInteger(0)
 
   private[this] val currentStoreRateGauge = stats.addGauge("currentStoreRate") { currentStoreRate.get }
   private[this] val tgtRateGauge = stats.addGauge("targetStoreRate") { tgtStoreRate.get }
-  private[this] val curSampleRateGauge = stats.addGauge("currentSampleRate") { curSmplRate.get.toFloat }
+  private[this] val curSampleRateGauge = stats.addGauge("currentSampleRate") { cursampleRate.get.toFloat }
 
   /**
    * Since we assume that the sample rate and storage request rate are
@@ -377,7 +386,7 @@ class CalculateSampleRate(
       currentStoreRate.set(curStoreRate.toInt)
       log.debug("Calculated current store rate: " + curStoreRate)
       if (curStoreRate <= 0) None else {
-        val curSampleRateSnap = curSmplRate.get
+        val curSampleRateSnap = cursampleRate.get
         val newSampleRate = curSampleRateSnap * tgtStoreRate.get / curStoreRate
         val sr = math.min(maxSampleRate, newSampleRate)
         val change = math.abs(curSampleRateSnap - sr)/curSampleRateSnap
