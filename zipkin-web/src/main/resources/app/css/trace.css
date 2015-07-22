@@ -7,6 +7,14 @@
   display: none;
 }
 
+#trace-container .rect-element {
+  border-style: dashed;
+  border-width: medium;
+  position: absolute;
+  z-index: 1;
+  border-color: #d9534f;
+}
+
 #trace-container .span {
   cursor: pointer;
   display: none;
@@ -147,3 +155,5 @@
   word-break: break-all;
   max-width: 75%;
 }
+
+

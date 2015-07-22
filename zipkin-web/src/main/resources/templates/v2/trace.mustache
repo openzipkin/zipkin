@@ -138,3 +138,70 @@
     </div>
   </div>
 </div>
+
+<div class='row  hidden' id='trace-container-backup'>
+  <div id='timeLabel-backup' class='span'>
+    <div class='handle'>Services</div>
+    <div class='duration-container'>
+      {{#timeMarkersBackup}}
+      <div class='time-marker time-marker-{{index}}'>{{time}}</div>
+      {{/timeMarkersBackup}}
+    </div>
+  </div>
+
+  {{#spansBackup}}
+  <div
+    id='{{spanId}}'
+    class='span service-span depth-{{depthClass}}'
+    data-keys='id,spanName,serviceNames,serviceName,durationStr,duration'
+    data-id='{{spanId}}'
+    data-parent-id='{{parentId}}'
+    data-span-name='{{spanName}}'
+    data-service-name='{{serviceName}}'
+    data-service-names='{{serviceNames}}'
+    data-duration-str='{{durationStr}}'
+    data-duration='{{duration}}'
+    data-children='{{children}}'
+  >
+    <div class='handle'>
+      <div class='service-name' style='margin-left: {{depth}}px'>
+        <span class='expander'>+</span>
+        {{serviceName}}
+      </div>
+    </div>
+
+    <div class='duration-container'>
+      {{#timeMarkersBackup}}
+      <div class='time-marker time-marker-{{index}}'>.</div>
+      {{/timeMarkersBackup}}
+
+      <div class='duration' style='left: {{left}}%; width: {{width}}%'>
+        {{durationStr}} : {{spanName}}
+        {{#annotations}}
+        <div class='annotation{{#isCore}} core{{/isCore}}'
+          style='left: {{left}}%; width: {{width}}px'
+          title='{{value}}'
+          data-keys='endpoint,value,timestamp,relativeTime,serviceName,duration'
+          data-endpoint='{{endpoint}}'
+          data-value='{{value}}'
+          data-timestamp='{{timestamp}}'
+          data-relative-time='{{relativeTime}}'
+          data-service-name='{{serviceName}}'
+          data-duration='{{duration}}'
+        ></div>
+        {{/annotations}}
+      </div>
+    </div>
+
+    {{#binaryAnnotations}}
+    <div class='binary-annotation'
+      data-keys='key,value,type'
+      data-key='{{key}}'
+      data-value='{{value}}'
+      data-type='{{annotationType}}'
+    ></div>
+    {{/binaryAnnotations}}
+  </div>
+  {{/spansBackup}}
+</div>
+

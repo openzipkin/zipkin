@@ -444,6 +444,9 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       Map("index" -> i, "time" -> durationStr((traceDuration * p).toLong))
     }
 
+    val timeMarkersBackup = timeMarkers.map {m => collection.mutable.Map() ++ m}
+    val spansBackup = spans.map {m => collection.mutable.Map() ++ m}
+
     val data = Map[String, Object](
       "duration" -> durationStr(traceDuration),
       "services" -> serviceDurations.map(_.size),
@@ -451,7 +454,9 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       "totalSpans" -> spans.size.asInstanceOf[Object],
       "serviceCounts" -> serviceDurations.map(_.sortBy(_.name)),
       "timeMarkers" -> timeMarkers,
-      "spans" -> spans)
+      "timeMarkersBackup" -> timeMarkersBackup,
+      "spans" -> spans,
+      "spansBackup" -> spansBackup)
 
     MustacheRenderer("v2/trace.mustache", data)
   }
