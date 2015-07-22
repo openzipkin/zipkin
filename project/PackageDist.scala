@@ -1,4 +1,4 @@
-package com.twitter.sbt
+package io.zipkin.sbt
 
 import java.util.regex.Pattern
 import sbt._
@@ -250,7 +250,7 @@ object PackageDist extends Plugin {
     ) map { (vars, script, scriptOut) =>
       copyTree(script, scriptOut).map { case (source, destination) =>
         destination.getParentFile().mkdirs()
-        com.twitter.sbt.FileFilter.filter(source, destination, vars)
+        io.zipkin.sbt.FileFilter.filter(source, destination, vars)
         List("chmod", "+x", destination.absolutePath.toString) !!;
         destination
       }
@@ -263,7 +263,7 @@ object PackageDist extends Plugin {
     ) map { (vars, resource, resourceOut) =>
       copyTree(resource, resourceOut).map { case (source, destination) =>
         destination.getParentFile().mkdirs()
-        com.twitter.sbt.FileFilter.filter(source, destination, vars)
+        io.zipkin.sbt.FileFilter.filter(source, destination, vars)
         destination
       }
     },
