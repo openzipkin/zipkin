@@ -37,7 +37,7 @@ object Zipkin extends Build {
   def util(name: String) = "com.twitter" %% ("util-" + name) % "6.25.0"
   def scroogeDep(name: String) = "com.twitter" %% ("scrooge-" + name) % "3.19.0"
   def algebird(name: String) = "com.twitter" %% ("algebird-" + name) % "0.10.2"
-  def hbaseDep(name: String) = "org.apache.hbase" % ("hbase" + (if (name.isEmpty) "" else "-" + name)) % "0.98.3-hadoop2"
+  def hbaseDep(name: String) = "org.apache.hbase" % ("hbase" + (if (name.isEmpty) "" else "-" + name)) % "0.98.13-hadoop2"
   def hbaseTest(name: String) = hbaseDep(name) classifier("tests") classifier("")
   def hadoop(name: String) = "org.apache.hadoop" % ("hadoop-" + name) % "2.4.0"
   def hadoopTest(name: String) = hadoop(name) classifier("tests") classifier("")
@@ -59,22 +59,21 @@ object Zipkin extends Build {
   val ostrich = "com.twitter" %% "ostrich" % "9.9.0"
 
   lazy val scalaTestDeps = Seq(
-    "org.scalatest" %% "scalatest" % "2.2.4" % "test",
+    "org.scalatest" %% "scalatest" % "2.2.5" % "test",
     junit
   )
 
   lazy val testDependencies = Seq(
-    "org.jmock"               %  "jmock"        % "2.4.0" % "test",
-    "org.hamcrest"            %  "hamcrest-all" % "1.1"   % "test",
-    "cglib"                   %  "cglib"        % "2.2.2" % "test",
-    "asm"                     %  "asm"          % "1.5.3" % "test",
-    "org.objenesis"           %  "objenesis"    % "1.1"   % "test",
+    junit,
     "org.scala-tools.testing" %% "specs"        % "1.6.9" % "test" cross CrossVersion.binaryMapped {
-      case "2.9.2" => "2.9.1"
       case "2.10.5" => "2.10"
       case x => x
     },
-    junit
+    "org.jmock"               %  "jmock"        % "2.4.0" % "test",
+        // jmock tests mock classes and require additional dependencies.
+        "cglib"                   %  "cglib"        % "2.2.2" % "test",
+        "asm"                     %  "asm"          % "1.5.3" % "test",
+        "org.objenesis"           %  "objenesis"    % "1.1"   % "test"
   )
 
   /////////////////////
@@ -89,7 +88,15 @@ object Zipkin extends Build {
     crossPaths := false,            /* Removes Scala version from artifact name */
     fork := true, // forking prevents runaway thread pollution of sbt
     baseDirectory in run := file(cwd), // necessary for forking
-    publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath + "/.ivy2/local")))
+    resolvers := Seq(
+      Resolver.jcenterRepo,
+      Resolver.typesafeRepo("releases"),
+      "Twitter Maven Repository" at "https://maven.twttr.com/" // for thrift 0.5
+    ),
+    dependencyOverrides ++= Set(
+      "org.apache.zookeeper" % "zookeeper" % "3.4.6", // internal twitter + kafka + curator
+      "org.slf4j" % "slf4j-api" % "1.6.4" // libthrift 0.5 otherwise pins 1.5.x
+    )
   )
 
   // settings from inlined plugins
@@ -113,16 +120,12 @@ object Zipkin extends Build {
   def defaultSettings = Seq(
     zipkinSettings,
     inlineSettings,
-    Project.defaultSettings,
-    ZipkinResolver.newSettings
+    Project.defaultSettings
   ).flatten
 
   ///////////////////////////
   // Misc helper functions //
   ///////////////////////////
-
-  def resolversIfNoProxyRepo(resolvers: sbt.Resolver*) =
-    if (proxyRepo.isEmpty) Seq.empty else resolvers
 
   def subproject(name: String, deps: ClasspathDep[ProjectReference]*) = {
     val id = "zipkin-" + name
@@ -137,6 +140,12 @@ object Zipkin extends Build {
       base =>
         (base / "config" +++ base / "src" / "test" / "resources").get
     }
+
+  ////////////////////////////////////
+  // Zipkin's mostly common library //
+  ////////////////////////////////////
+  // Not all projects depend on this!
+  lazy val common = subproject("common")
 
   ///////////////////////////////////////////////////////////////////////////////////////////
   // Projects with outputs that are useful on their own: documentation, examples, services //
@@ -234,6 +243,5 @@ object Zipkin extends Build {
   //////////
 
   lazy val tracegen = subproject("tracegen", queryService, collectorService)
-  lazy val common = subproject("common")
   lazy val sampler = subproject("sampler", common, zookeeper)
 }

@@ -1,9 +1,3 @@
-
-resolvers ++= Seq(
-  "twitter.com" at "https://maven.twttr.com/",
-  "maven" at "http://repo1.maven.org/maven2/",
-  "local" at ("file:" + System.getProperty("user.home") + "/.m2/repository/"))
-
 libraryDependencies ++= Seq(
     "com.google.collections" % "google-collections" % "0.8",
     "org.codehaus.plexus"    % "plexus-utils"       % "1.5.4",
