@@ -1,3 +1,5 @@
+import io.zipkin.sbt._
+
 // Change this to one of the keys in anormDriverDependencies
 // to use another database engine
 val dbEngine =  "sqlite-persistent"
@@ -22,3 +24,4 @@ libraryDependencies ++= Seq(
 
 addConfigsToResourcePathForConfigSpec()
 
+resolvers += Resolver.typesafeRepo("releases") // for anorm

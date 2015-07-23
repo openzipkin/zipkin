@@ -27,7 +27,8 @@ test -f ~/.sbtconfig && . ~/.sbtconfig
 # When solving this, bear in mind there's more overhead than just heap.
 # 3GB > max heap + max meta + (threadcount * stacksize) + JVM overhead
 #
-# Also, keep in mind that SBT forks processes.
+# Also, keep in mind that SBT forks processes, and small stack size in scala can
+# lead to StackOverflowErrors.
 #
 # Status quo is really sensitive as we need nearly all memory available to run
 # sbt test. If we are able to refactor the build or tests so that we have more
@@ -37,7 +38,7 @@ version=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
 if [[ "$version" > "1.8" ]]; then
     export VM_OPTS="-Xms2G                          \
                     -Xmx2G                          \
-                    -Xss256k                        \
+                    -Xss512k                        \
                     -XX:MaxMetaspaceSize=256m"
 else
     export VM_OPTS="-XX:+AggressiveOpts             \
@@ -50,7 +51,7 @@ else
                     -XX:ReservedCodeCacheSize=64m   \
                     -Xms2G                          \
                     -Xmx2G                          \
-                    -Xss256k                        \
+                    -Xss512k                        \
                     -XX:MaxPermSize=256m            \
                     -server"
 fi

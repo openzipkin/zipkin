@@ -1,11 +1,4 @@
-import com.twitter.scrooge.ScroogeSBT
-
-defaultSettings ++ ScroogeSBT.newSettings
-
-ScroogeSBT.scroogeThriftSourceFolder in Compile <<= (
-  (baseDirectory in ThisBuild)
-  (_ / "zipkin-thrift" / "src" / "main" / "thrift" / "com" / "twitter" / "zipkin" )
-)
+scroogeThriftSourceFolder in Compile := file("./zipkin-thrift/src/main/thrift")
 
 libraryDependencies ++= Seq(
   Seq(util("core"), algebird("core"), ostrich),

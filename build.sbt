@@ -1,2 +1,1 @@
 defaultSettings
-Unidoc.settings
