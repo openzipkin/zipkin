@@ -1,3 +1,5 @@
+resolvers += Resolver.url("bintray-sbt-plugins", url("http://dl.bintray.com/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns)
+
 libraryDependencies ++= Seq(
     "com.google.collections" % "google-collections" % "0.8",
     "org.codehaus.plexus"    % "plexus-utils"       % "1.5.4",
