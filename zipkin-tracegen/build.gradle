@@ -1,0 +1,12 @@
+apply plugin: 'application'
+mainClassName = 'com.twitter.zipkin.tracegen.Main'
+
+repositories {
+    // For dependencies of zipkin-cassandra (via zipkin-query-service and zipkin-collector-service)
+    maven { url 'http://conjars.org/repo' }
+}
+
+dependencies {
+    compile project(':zipkin-query-service')
+    compile project(':zipkin-collector-service')
+}

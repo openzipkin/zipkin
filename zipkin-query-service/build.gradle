@@ -1,0 +1,18 @@
+apply plugin: 'application'
+mainClassName = 'com.twitter.zipkin.query.Main'
+
+repositories {
+    // For dependencies of zipkin-cassandra
+    maven { url 'http://conjars.org/repo' }
+}
+
+dependencies {
+    compile project(':zipkin-query-core')
+    compile project(':zipkin-cassandra')
+    compile project(':zipkin-redis')
+    compile project(':zipkin-anormdb')
+}
+
+sourceSets.test.resources {
+    srcDir 'config'
+}

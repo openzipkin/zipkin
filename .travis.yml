@@ -1,7 +1,4 @@
-language: scala
-
-scala:
-  - 2.10.5
+language: java
 
 services:
   - redis-server
@@ -13,18 +10,11 @@ jdk:
 # These directories are cached to S3 at the end of the build
 cache:
   directories:
-   - $HOME/.m2
-   - $HOME/.ivy2/cache
-   - $HOME/.sbt/boot/scala-$TRAVIS_SCALA_VERSION
-
-before_script:
-  # default $SBT_OPTS is irrelevant to sbt lancher
-  - unset SBT_OPTS
-  # ensure the build errors if dependencies aren't available
-  - travis_retry ./bin/sbt ++$TRAVIS_SCALA_VERSION update
-
-script:
-  - ./bin/sbt ++$TRAVIS_SCALA_VERSION clean test
+    - $HOME/.gradle/wrapper
+    - $HOME/.gradle/native
+    - $HOME/.gradle/daemon
+    - $HOME/.gradle/caches/jars-1
+    - $HOME/.gradle/caches/2.5
 
 notifications:
   webhooks:

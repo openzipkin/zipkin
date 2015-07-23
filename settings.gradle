@@ -1,0 +1,64 @@
+rootProject.name = 'zipkin'
+
+////////////////////////////////////
+// Zipkin's mostly common library //
+////////////////////////////////////
+// Not all projects depend on this!
+include 'zipkin-common'
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// Projects with outputs that are useful on their own: documentation, examples, services //
+///////////////////////////////////////////////////////////////////////////////////////////
+
+//include 'doc'
+include 'zipkin-example'
+include 'zipkin-redis-example'
+include 'zipkin-collector-service'
+include 'zipkin-query-service'
+include 'zipkin-web'
+include 'zipkin-aggregate'
+
+/////////////////////////////////////
+// Collector, and Collector inputs //
+/////////////////////////////////////
+
+include 'zipkin-collector'
+include 'zipkin-collector-core'
+include 'zipkin-collector-scribe'
+
+///////////////
+// Receivers //
+///////////////
+
+include 'zipkin-receiver-scribe'
+include 'zipkin-receiver-kafka'
+
+/////////////////
+// Query logic //
+/////////////////
+
+include 'zipkin-query'
+include 'zipkin-query-core'
+
+/////////////////////////////////////////////////////
+// Libraries wrapping clients to external services //
+/////////////////////////////////////////////////////
+
+include 'zipkin-zookeeper'
+include 'zipkin-cassandra'
+include 'zipkin-anormdb'
+include 'zipkin-redis'
+
+////////////
+// Thrift //
+////////////
+
+include 'zipkin-thrift'
+include 'zipkin-scrooge'
+
+//////////
+// Misc //
+//////////
+
+include 'zipkin-tracegen'
+include 'zipkin-sampler'

@@ -1,0 +1,20 @@
+apply plugin: 'application'
+mainClassName = 'com.twitter.zipkin.collector.Main'
+
+repositories {
+    // For dependencies of zipkin-cassandra
+    maven { url 'http://conjars.org/repo' }
+}
+
+dependencies {
+    compile project(':zipkin-collector-core')
+    compile project(':zipkin-collector-scribe')
+    compile project(':zipkin-receiver-kafka')
+    compile project(':zipkin-cassandra')
+    compile project(':zipkin-redis')
+    compile project(':zipkin-anormdb')
+}
+
+sourceSets.test.resources {
+    srcDir 'config'
+}

@@ -1,0 +1,6 @@
+dependencies {
+    compile project(':zipkin-collector-core')
+    compile project(':zipkin-scrooge')
+
+    compile "com.twitter:scrooge-serializer_${scalaInterfaceVersion}:${commonVersions.scrooge}"
+}

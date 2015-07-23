@@ -1,0 +1,14 @@
+apply plugin: 'application'
+mainClassName = 'com.twitter.zipkin.example.Main'
+
+dependencies {
+    compile project(':zipkin-web')
+    compile project(':zipkin-redis')
+    compile project(':zipkin-query')
+    compile project(':zipkin-receiver-scribe')
+    compile project(':zipkin-zookeeper')
+
+    compile "com.twitter:twitter-server_${scalaInterfaceVersion}:${commonVersions.twitterServer}"
+    compile "com.twitter:finagle-zipkin_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    compile "com.twitter:finagle-stats_${scalaInterfaceVersion}:${commonVersions.finagle}"
+}

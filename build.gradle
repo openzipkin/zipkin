@@ -1,0 +1,52 @@
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'scala'
+
+    apply from: "$rootDir/gradle/dependencies.gradle"
+    apply from: "$rootDir/gradle/scalatest.gradle"
+
+    ext {
+        // SBT migration note: start of zipkinSettings
+        group "io.zipkin"
+        version zipkinVersion
+    }
+
+    repositories {
+        jcenter()
+        maven { url 'http://repo.typesafe.com/typesafe/releases/' }
+        maven { url 'https://maven.twttr.com/' }
+    }
+
+    dependencies {
+        compile "org.scala-lang:scala-library:${scalaVersion}"
+
+        // Was dependencyOverrides in SBT, will probably cause issues
+        compile 'org.apache.zookeeper:zookeeper:3.4.6' // internal twitter + kafka + curator
+        compile 'org.slf4j:slf4j-api:1.6.4' // libthrift 0.5 otherwise pins 1.5.x
+        // EOF dependencyOverrides
+
+        testCompile 'junit:junit:4.12'
+        testCompile 'org.mockito:mockito-all:1.10.19'
+        testCompile "org.scalatest:scalatest_${scalaInterfaceVersion}:2.2.5"
+    }
+    // SBT migration note: end of zipkinSettings
+}
+
+// Quick hack to visualize inter-project dependencies
+task dependencyReport {
+    description "Write the dependency graph of the zipkin-* projects in this repository into project-dependencies.dot for use with GraphViz."
+    doLast {
+        def file = new File("project-dependencies.dot")
+        file.delete()
+        file << "digraph {\n"
+        file << "splines=ortho\n"
+        rootProject.childProjects.each { item ->
+            def from = item.value
+            from.configurations.compile.dependencies
+                    .matching { it in ProjectDependency }
+                    .each { to -> file << ("\"${from.name}\" -> \"${to.name}\"\n")}
+        }
+        file << "}\n"
+    }
+}
+

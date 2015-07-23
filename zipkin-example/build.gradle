@@ -1,0 +1,22 @@
+apply plugin: 'application'
+mainClassName = 'com.twitter.zipkin.example.Main'
+
+repositories {
+    // For dependencies of zipkin-cassandra
+    // via zipkin-tracegen -> (zipkin-query-service, zipkin-collector-service)
+    maven { url 'http://conjars.org/repo' }
+}
+
+dependencies {
+    compile project(':zipkin-tracegen')
+    compile project(':zipkin-web')
+    compile project(':zipkin-anormdb')
+    compile project(':zipkin-query')
+    compile project(':zipkin-receiver-scribe')
+    compile project(':zipkin-zookeeper')
+
+    compile "com.twitter:twitter-server_${scalaInterfaceVersion}:${commonVersions.twitterServer}"
+
+    compile "com.twitter:finagle-zipkin_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    compile "com.twitter:finagle-stats_${scalaInterfaceVersion}:${commonVersions.finagle}"
+}

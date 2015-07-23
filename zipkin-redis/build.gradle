@@ -1,0 +1,11 @@
+dependencies {
+    compile project(':zipkin-common')
+    compile project(':zipkin-scrooge')
+
+    compile "com.twitter:finagle-redis_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    compile "com.twitter:util-logging_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
+
+    runtime commonDependencies.slf4jLog4j12
+}
+
+test.maxParallelForks = 1

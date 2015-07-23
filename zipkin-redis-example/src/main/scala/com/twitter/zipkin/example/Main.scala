@@ -1,4 +1,4 @@
-package com.twitter.mycollector
+package com.twitter.zipkin.example
 
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.finagle.Http

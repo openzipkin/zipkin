@@ -1,0 +1,26 @@
+// Adopted from https://github.com/ratpack/ratpack/blob/master/gradle/dependencies.gradle
+
+ext {
+    scalaVersion = '2.10.5'
+    scalaInterfaceVersion = '2.10'
+
+    commonVersions = [
+            algebird: '0.10.2',
+            finagle: '6.27.0',
+            scrooge: '3.20.0',
+            twitterUtil: '6.26.0',
+            twitterServer: '1.12.0',
+            ostrich: '9.10.0',
+            zookeeper: [
+                    candidate: '0.0.75',
+                    group: '0.0.81',
+                    client: '0.0.70',
+                    serverSet: '1.0.103'
+            ],
+            griddle: '1.7'
+    ]
+
+    commonDependencies = [
+            slf4jLog4j12: "org.slf4j:slf4j-log4j12:1.6.4"  // Don't forget to use for configuration 'runtime' only
+    ]
+}
