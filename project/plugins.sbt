@@ -1,4 +1,4 @@
-resolvers += Resolver.bintrayRepo("sbt", "sbt-plugin-releases")
+resolvers += Resolver.url("bintray-sbt-plugins", url("http://dl.bintray.com/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns)
 
 libraryDependencies ++= Seq(
     "com.google.collections" % "google-collections" % "0.8",
