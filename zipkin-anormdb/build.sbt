@@ -18,7 +18,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "anorm" % "2.3.7",
   "com.zaxxer" % "HikariCP-java6" % "2.3.8",
   anormDriverDependencies(dbEngine)
-) ++ testDependencies ++ scalaTestDeps
+) ++ testDependencies
 
 addConfigsToResourcePathForConfigSpec()
 

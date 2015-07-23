@@ -58,22 +58,10 @@ object Zipkin extends Build {
   val slf4jLog4j12 = "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
   val ostrich = "com.twitter" %% "ostrich" % "9.9.0"
 
-  lazy val scalaTestDeps = Seq(
-    "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-    junit
-  )
-
   lazy val testDependencies = Seq(
     junit,
-    "org.scala-tools.testing" %% "specs"        % "1.6.9" % "test" cross CrossVersion.binaryMapped {
-      case "2.10.5" => "2.10"
-      case x => x
-    },
-    "org.jmock"               %  "jmock"        % "2.4.0" % "test",
-        // jmock tests mock classes and require additional dependencies.
-        "cglib"                   %  "cglib"        % "2.2.2" % "test",
-        "asm"                     %  "asm"          % "1.5.3" % "test",
-        "org.objenesis"           %  "objenesis"    % "1.1"   % "test"
+    "org.mockito"              % "mockito-all" % "1.10.19" % "test",
+    "org.scalatest"           %% "scalatest"   % "2.2.5"   % "test"
   )
 
   /////////////////////

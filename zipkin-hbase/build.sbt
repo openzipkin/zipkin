@@ -17,9 +17,8 @@ libraryDependencies ++= Seq(
   ),
   many(hbaseDep, "", "common", "client"),
   many(hbaseTest, "common", "client", "server", "hadoop-compat", "hadoop2-compat"),
-  many(hadoopTest, "mapreduce-client-jobclient", "common", "hdfs" ),
-  testDependencies, scalaTestDeps
-).flatten
+  many(hadoopTest, "mapreduce-client-jobclient", "common", "hdfs" )
+).flatten ++ testDependencies
 
 addConfigsToResourcePathForConfigSpec()
 

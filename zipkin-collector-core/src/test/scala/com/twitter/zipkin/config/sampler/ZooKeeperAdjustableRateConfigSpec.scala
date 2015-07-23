@@ -17,70 +17,65 @@ package com.twitter.zipkin.config.sampler
 
 import com.twitter.concurrent.Broker
 import com.twitter.util.Try
-import com.twitter.zk.{ZOp, ZNode, ZkClient}
-import org.apache.zookeeper.{Watcher, WatchedEvent}
-import org.specs.Specification
-import org.specs.mock.{ClassMocker, JMocker}
+import com.twitter.zk.{ZNode, ZOp, ZkClient}
+import org.apache.zookeeper.WatchedEvent
+import org.mockito.Matchers.any
+import org.mockito.Mockito._
+import org.scalatest.mock.MockitoSugar
+import org.scalatest.{FunSuite, Matchers}
 
+class ZooKeeperAdjustableRateConfigSpec extends FunSuite with Matchers with MockitoSugar {
 
-class ZooKeeperAdjustableRateConfigSpec extends Specification with JMocker with ClassMocker {
+  val KeySampleRate = "samplerate"
 
-  "ZooKeeperAdjustableRateConfig" should {
-    val KeySampleRate = "samplerate"
+  val client = mock[ZkClient]
+  val mockedNode = mock[ZNode]
+  val dataop = mock[ZOp[ZNode.Data]]
 
-    val client = mock[ZkClient]
-    val mockedNode = mock[ZNode]
-    val dataop = mock[ZOp[ZNode.Data]]
+  val sessionBroker = new Broker[WatchedEvent]
 
-    val sessionBroker = new Broker[WatchedEvent]
+  val configPath = "/twitter/service/zipkin/config"
+  val fullPath = configPath + "/" + KeySampleRate
 
-    val configPath = "/twitter/service/zipkin/config"
-    val fullPath = configPath + "/" + KeySampleRate
+  val default = ZooKeeperSampleRateConfig.Default
 
-    val default = ZooKeeperSampleRateConfig.Default
+  def config = new ZooKeeperAdjustableRateConfig(
+    client,
+    configPath,
+    KeySampleRate,
+    default
+  )
 
-    def config = new ZooKeeperAdjustableRateConfig(
-      client,
-      configPath,
-      KeySampleRate,
-      default
-    )
+  test("no initialization returns default") {
+    val c = config
+    c.get should be (default)
+  }
 
-    "no initialization returns default" in {
-      val c = config
-      c.get must_== default
-    }
+  test("data monitor works") {
+    val newVal = 0.1
+    val broker = new Broker[Try[ZNode.Data]]
 
-    "data monitor works" in {
-      val newVal = 0.1
-      val broker = new Broker[Try[ZNode.Data]]
-      expect {
-        // Init
-        one(client).apply(fullPath) willReturn mockedNode
+    when(client.apply(fullPath)) thenReturn mockedNode
 
-        // Monitor
-        one(mockedNode).getData willReturn dataop
-        one(dataop).monitor() willReturn broker.recv
+    when(mockedNode.getData) thenReturn dataop
+    when(dataop.monitor()) thenReturn broker.recv
+    when(mockedNode.path) thenReturn fullPath
 
-        // Set
-        one(mockedNode).setData(any[Array[Byte]], anyInt)
-        one(mockedNode).path willReturn fullPath
-        allowingMatch(mockedNode, "zkClient")
-      }
-      val c = config
+    val c = config
 
-      // Monitor
-      c.monitor()
+    // Monitor
+    c.monitor()
 
-      c.get must_== default
+    c.get should be (default)
 
-      // Set
-      c.set(newVal)
+    // Set
+    c.set(newVal)
 
-      // Send set value via broker
-      broker.send(Try(ZNode.Data(mockedNode, null, newVal.toString.getBytes))).sync()
+    // Send set value via broker
+    broker.send(Try(ZNode.Data(mockedNode, null, newVal.toString.getBytes))).sync()
 
-      c.get must_== newVal
-    }
+    c.get should be (newVal)
+
+    verify(mockedNode).setData(any(), any())
   }
 }

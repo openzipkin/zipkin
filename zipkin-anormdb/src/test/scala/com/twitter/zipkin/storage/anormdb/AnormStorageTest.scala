@@ -17,15 +17,13 @@ package com.twitter.zipkin.storage.anormdb
  *
  */
 
-import com.twitter.zipkin.common._
 import java.nio.ByteBuffer
-import com.twitter.util.Await
-import com.twitter.zipkin.query.Trace
-import org.junit.runner.RunWith
-import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
+import com.twitter.util.Await
+import com.twitter.zipkin.common._
+import com.twitter.zipkin.query.Trace
+import org.scalatest.FunSuite
+
 class AnormStorageTest extends FunSuite {
 
   /*

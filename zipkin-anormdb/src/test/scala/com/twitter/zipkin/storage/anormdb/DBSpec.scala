@@ -17,121 +17,133 @@ package com.twitter.zipkin.storage.anormdb
  *
  */
 
-import org.specs._
-import java.sql.{Connection, SQLRecoverableException, SQLNonTransientException}
+import java.sql.{Connection, SQLNonTransientException, SQLRecoverableException}
 
-class DBSpec extends Specification {
+import com.twitter.util.Await
+import org.scalatest.{FunSuite, Matchers}
 
-  "DB" should {
-    "retry if SQLRecoverableException is thrown" in {
-      val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
-      var attempt = 0
-      db.withRecoverableRetry({
-        attempt += 1
-        throwsRecoverableUnlessSuccess(attempt == 2)
-      }).apply() mustEqual true
-      attempt mustEqual 2
-    }
+class DBSpec extends FunSuite with Matchers {
 
-    "retry only once if SQLRecoverableException is thrown again" in {
-      val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
-      var attempt = 0
+  test("retry if SQLRecoverableException is thrown") {
+    val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
+    var attempt = 0
+    db.withRecoverableRetry({
+      attempt += 1
+      throwsRecoverableUnlessSuccess(attempt == 2)
+    }).apply() should be (true)
+    attempt should be (2)
+  }
+
+  test("retry only once if SQLRecoverableException is thrown again") {
+    val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
+    var attempt = 0
+    a [SQLRecoverableException] should be thrownBy {
       db.withRecoverableRetry({
         attempt += 1
         throwsRecoverable
-      }).apply() must throwA[SQLRecoverableException]
-      attempt mustEqual 2
+      }).apply()
     }
+    attempt should be (2)
+  }
 
-    "not retry if unrecoverable SQLException is thrown" in {
-      val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
-      var attempt = 0
+  test("not retry if unrecoverable SQLException is thrown") {
+    val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
+    var attempt = 0
+    a [SQLNonTransientException] should be thrownBy {
       db.withRecoverableRetry({
         attempt += 1
         throwsUnrecoverable
-      }).apply() must throwA[SQLNonTransientException]
-      attempt mustEqual 1
+      }).apply()
     }
+    attempt should be (1)
+  }
 
-    "[withTransaction] retry if SQLRecoverableException is thrown" in {
-      val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
-      implicit val conn: Connection = db.getConnection()
-      var attempt = 0
-      db.withRecoverableTransaction(conn, { implicit conn: Connection =>
-        attempt += 1
-        throwsRecoverableUnlessSuccess(attempt == 2)
-      }).apply() mustEqual true
-      attempt mustEqual 2
-      conn.close()
-    }
+  test("[withTransaction] retry if SQLRecoverableException is thrown") {
+    val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
+    implicit val conn: Connection = db.getConnection()
+    var attempt = 0
+    db.withRecoverableTransaction(conn, { implicit conn: Connection =>
+      attempt += 1
+      throwsRecoverableUnlessSuccess(attempt == 2)
+    }).apply() should be (true)
+    attempt should be (2)
+    conn.close()
+  }
 
-    "[withTransaction] retry only once if SQLRecoverableException is thrown again" in {
-      val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
-      implicit val conn: Connection = db.getConnection()
-      var attempt = 0
+  test("[withTransaction] retry only once if SQLRecoverableException is thrown again") {
+    val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
+    implicit val conn: Connection = db.getConnection()
+    var attempt = 0
+    a [SQLRecoverableException] should be thrownBy {
       db.withRecoverableTransaction(conn, { implicit conn: Connection =>
         attempt += 1
         throwsRecoverable
-      }).apply() must throwA[SQLRecoverableException]
-      attempt mustEqual 2
-      conn.close()
+      }).apply()
     }
+    attempt should be (2)
+    conn.close()
+  }
 
-    "[withTransaction] not retry if unrecoverable SQLException is thrown" in {
-      val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
-      implicit val conn: Connection = db.getConnection()
-      var attempt = 0
+  test("[withTransaction] not retry if unrecoverable SQLException is thrown") {
+    val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
+    implicit val conn: Connection = db.getConnection()
+    var attempt = 0
+    a [SQLNonTransientException] should be thrownBy {
       db.withRecoverableTransaction(conn, { implicit conn: Connection =>
         attempt += 1
         throwsUnrecoverable
-      }).apply() must throwA[SQLNonTransientException]
-      attempt mustEqual 1
-      conn.close()
+      }).apply()
     }
+    attempt should be (1)
+    conn.close()
+  }
 
-    "[inNewThread] retry if SQLRecoverableException is thrown" in {
-      val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
-      var attempt = 0
-      db.inNewThreadWithRecoverableRetry({
-        attempt += 1
-        throwsRecoverableUnlessSuccess(attempt == 2)
-      }).apply() mustEqual true
-      attempt mustEqual 2
-    }
+  test("[inNewThread] retry if SQLRecoverableException is thrown") {
+    val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
+    var attempt = 0
+    Await.result(db.inNewThreadWithRecoverableRetry({
+      attempt += 1
+      throwsRecoverableUnlessSuccess(attempt == 2)
+    })) should be (true)
+    attempt should be (2)
+  }
 
-    "[inNewThread] retry only once if SQLRecoverableException is thrown again" in {
-      val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
-      var attempt = 0
-      db.inNewThreadWithRecoverableRetry({
+  test("[inNewThread] retry only once if SQLRecoverableException is thrown again") {
+    val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
+    var attempt = 0
+    a [SQLRecoverableException] should be thrownBy {
+      Await.result(db.inNewThreadWithRecoverableRetry({
         attempt += 1
         throwsRecoverable
-      }).apply() must throwA[SQLRecoverableException]
-      attempt mustEqual 2
+      }))
     }
+    attempt should be (2)
+  }
 
-    "[inNewThread] not retry if unrecoverable SQLException is thrown" in {
-      val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
-      var attempt = 0
-      db.inNewThreadWithRecoverableRetry({
+  test("[inNewThread] not retry if unrecoverable SQLException is thrown") {
+    val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinTest")))
+    var attempt = 0
+    a [SQLNonTransientException] should be thrownBy {
+      Await.result(db.inNewThreadWithRecoverableRetry({
         attempt += 1
         throwsUnrecoverable
-      }).apply() must throwA[SQLNonTransientException]
-      attempt mustEqual 1
+      }))
     }
+    attempt should be (1)
+  }
 
-    def throwsRecoverableUnlessSuccess(success: Boolean) : Boolean = {
-      if (!success) {
-         throwsRecoverable
-      }
-      success
+  def throwsRecoverableUnlessSuccess(success: Boolean) : Boolean = {
+    if (!success) {
+       throwsRecoverable
     }
+    success
+  }
 
-    def throwsRecoverable() : Boolean = {
-      throw new SQLRecoverableException()
-    }
+  def throwsRecoverable() : Boolean = {
+    throw new SQLRecoverableException()
+  }
 
-    def throwsUnrecoverable() : Boolean = {
-      throw new SQLNonTransientException()
-    }
+  def throwsUnrecoverable() : Boolean = {
+    throw new SQLNonTransientException()
   }
 }

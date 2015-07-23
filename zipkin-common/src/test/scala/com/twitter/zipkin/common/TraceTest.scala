@@ -16,15 +16,14 @@
  */
 package com.twitter.zipkin.common
 
-import collection.mutable
-import com.twitter.zipkin.Constants
-import com.twitter.zipkin.query.{Timespan, Trace, TraceSummary, SpanTreeEntry}
 import java.nio.ByteBuffer
-import org.junit.runner.RunWith
-import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
+import com.twitter.zipkin.Constants
+import com.twitter.zipkin.query.{SpanTreeEntry, Timespan, Trace, TraceSummary}
+import org.scalatest.FunSuite
+
+import scala.collection.mutable
+
 class TraceTest extends FunSuite {
 
   // TODO these don't actually make any sense

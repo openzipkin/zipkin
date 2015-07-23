@@ -15,14 +15,11 @@
  */
 package com.twitter.zipkin.sampler
 
+import com.twitter.conversions.time._
 import com.twitter.finagle.stats.NullStatsReceiver
 import com.twitter.util.{MockTimer, Time, Var}
-import com.twitter.conversions.time._
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class RequestRateCheckTest extends FunSuite {
   test("fails when the request rate is non-positive") {
     val rate = Var(1)
@@ -32,29 +29,20 @@ class RequestRateCheckTest extends FunSuite {
     rate.update(0)
     assert(check(Some(())).isEmpty)
   }
-}
 
-@RunWith(classOf[JUnitRunner])
-class SuffcientDataCheckTest extends FunSuite {
   test("fails when sufficient data is not present") {
     val check = new SufficientDataCheck[Unit](2)
     assert(check(Some(Seq.empty[Unit])).isEmpty)
     assert(check(Some(Seq((), ()))).isDefined)
     assert(check(Some(Seq((), (), ()))).isDefined)
   }
-}
 
-@RunWith(classOf[JUnitRunner])
-class ValidDataCheckTest extends FunSuite {
   test("fails when data fails validation") {
     val check = new ValidDataCheck[Int](_ > 1)
     assert(check(Some(Seq(0, 1, 2))).isEmpty)
     assert(check(Some(Seq(2, 3, 4))).isDefined)
   }
-}
 
-@RunWith(classOf[JUnitRunner])
-class CooldownCheckTest extends FunSuite {
   test("allows only once per period") {
     Time.withCurrentTimeFrozen { tc =>
       val timer = new MockTimer
@@ -70,10 +58,7 @@ class CooldownCheckTest extends FunSuite {
       assert(check(Some(())).isEmpty)
     }
   }
-}
 
-@RunWith(classOf[JUnitRunner])
-class OutlierCheckTest extends FunSuite {
   test("fail unless enough outliers are encountered") {
     val rate = Var(10)
     val check = new OutlierCheck(rate, 2, 0.1)
@@ -88,10 +73,7 @@ class OutlierCheckTest extends FunSuite {
     // these fall within the 0.1 threshold, thus shouldn't be counted
     assert(check(Some(Seq(9, 9))).isEmpty)
   }
-}
 
-@RunWith(classOf[JUnitRunner])
-class CalculateSampleRateTest extends FunSuite {
   test("calculates the discounted average of a series of numbers") {
     assert(DiscountedAverage.calculate(Seq(10, 5, 0), 1.0) === 5.0)
 

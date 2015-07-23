@@ -17,13 +17,10 @@ package com.twitter.zipkin.storage.cassandra
 
 import com.twitter.app.App
 import com.twitter.cassie.tests.util.FakeCassandra
-import com.twitter.zipkin.storage.util.SpanStoreValidator
 import com.twitter.zipkin.cassandra.CassieSpanStoreFactory
-import org.junit.runner.RunWith
+import com.twitter.zipkin.storage.util.SpanStoreValidator
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class CassieSpanStoreTest extends FunSuite {
   object FakeServer extends FakeCassandra
   FakeServer.start()

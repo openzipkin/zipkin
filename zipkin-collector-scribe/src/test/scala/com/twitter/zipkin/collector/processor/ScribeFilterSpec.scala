@@ -17,55 +17,51 @@ package com.twitter.zipkin.collector.processor
 
 import com.twitter.finagle.Service
 import com.twitter.scrooge.BinaryThriftStructSerializer
+import com.twitter.util.Future
 import com.twitter.zipkin.common.{Annotation, Span}
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.thriftscala
-import org.specs.Specification
-import org.specs.mock.{JMocker, ClassMocker}
+import org.mockito.Mockito._
+import org.scalatest.mock.MockitoSugar
+import org.scalatest.{FunSuite, Matchers}
 
-class ScribeFilterSpec extends Specification with JMocker with ClassMocker {
+class ScribeFilterSpec extends FunSuite with Matchers with MockitoSugar {
   val serializer = new BinaryThriftStructSerializer[thriftscala.Span] {
     def codec = thriftscala.Span
   }
 
-  val mockService = mock[Service[Span, Unit]]
+  val service = mock[Service[Span, Unit]]
 
-  "ScribeFilter" should {
-    val category = "zipkin"
+  val category = "zipkin"
 
-    val base64 = Seq("CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA=")
-    val endline = Seq("CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA=\n")
+  val base64 = Seq("CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA=")
+  val endline = Seq("CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAA=\n")
 
-    val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
-    val serialized = Seq(serializer.toString(validSpan.toThrift))
-    val bad = Seq("garbage!")
+  val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
+  val serialized = Seq(serializer.toString(validSpan.toThrift))
+  val bad = Seq("garbage!")
 
-    val filter = new ScribeFilter
+  val filter = new ScribeFilter
 
-    "convert thriftscala.LogEntry to Span" in {
-      expect {
-        one(mockService).apply(validSpan)
-      }
-      filter.apply(base64, mockService)
-    }
+  test("convert thriftscala.LogEntry to Span") {
+    when(service.apply(validSpan)) thenReturn Future.Done
 
-    "convert thriftscala.LogEntry with endline to Span" in {
-      expect {
-        one(mockService).apply(validSpan)
-      }
-      filter.apply(endline, mockService)
-    }
+    filter.apply(base64, service)
+  }
 
-    "convert serialized thrift to Span" in {
-      expect {
-        one(mockService).apply(validSpan)
-      }
-      filter.apply(serialized, mockService)
-    }
+  test("convert thriftscala.LogEntry with endline to Span") {
+    when(service.apply(validSpan)) thenReturn Future.Done
 
-    "deal with garbage" in {
-      expect {}
-      filter.apply(bad, mockService)
-    }
+    filter.apply(endline, service)
+  }
+
+  test("convert serialized thrift to Span") {
+    when(service.apply(validSpan)) thenReturn Future.Done
+
+    filter.apply(serialized, service)
+  }
+
+  test("deal with garbage") {
+    filter.apply(bad, service)
   }
 }

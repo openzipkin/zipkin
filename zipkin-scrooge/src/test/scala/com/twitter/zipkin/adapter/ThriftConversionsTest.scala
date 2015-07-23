@@ -16,17 +16,15 @@
  */
 package com.twitter.zipkin.adapter
 
+import java.nio.ByteBuffer
+
 import com.twitter.conversions.time._
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.query._
 import com.twitter.zipkin.thriftscala
-import java.nio.ByteBuffer
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class ThriftConversionsTest extends FunSuite {
   test("convert Annotation") {
     val expectedAnn: Annotation = Annotation(123, "value", Some(Endpoint(123, 123, "service")))

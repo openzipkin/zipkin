@@ -15,18 +15,16 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
+import java.nio.ByteBuffer
+
 import com.twitter.cassie.tests.util.FakeCassandra
 import com.twitter.conversions.time._
 import com.twitter.util.Await
 import com.twitter.zipkin.cassandra.{Keyspace, StorageBuilder}
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query.Trace
-import java.nio.ByteBuffer
-import org.junit.runner.RunWith
 import org.scalatest.{BeforeAndAfter, FunSuite}
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class CassandraStorageTest extends FunSuite with BeforeAndAfter {
   object FakeServer extends FakeCassandra
 

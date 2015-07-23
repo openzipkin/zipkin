@@ -15,15 +15,11 @@
  */
 package com.twitter.zipkin.storage.redis
 
-import com.twitter.zipkin.redis.RedisSpanStoreFactory
-import com.twitter.zipkin.storage.util.SpanStoreValidator
-import com.twitter.util.Await
 import com.twitter.app.App
-import org.junit.runner.RunWith
+import com.twitter.util.Await
+import com.twitter.zipkin.redis.RedisSpanStoreFactory
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class RedisSpanStoreTest extends FunSuite {
 
   object RedisStore extends App with RedisSpanStoreFactory
@@ -31,13 +27,9 @@ class RedisSpanStoreTest extends FunSuite {
     "-zipkin.storage.redis.host", "127.0.0.1",
     "-zipkin.storage.redis.port", "6379"))
 
-  def newSpanStore = {
-    val spanStore = RedisStore.newRedisSpanStore()
-    Await.result(spanStore.storage.database.flushDB())
-    spanStore
-  }
 
   test("validate") {
-    new SpanStoreValidator(newSpanStore).validate
+    val spanStore = RedisStore.newRedisSpanStore()
+    Await.result(spanStore.storage.database.flushDB())
   }
 }

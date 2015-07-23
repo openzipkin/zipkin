@@ -6,7 +6,7 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-io" % "1.3.2",
   "com.github.charithe" % "kafka-junit" % "1.4" % "test",
   scroogeDep("serializer")
-) ++ scalaTestDeps
+) ++ testDependencies
 
 dependencyOverrides ++= Set(
   // Twitter's build is pinned to 4.10, but we need 4.11+ to use rules in Scala.

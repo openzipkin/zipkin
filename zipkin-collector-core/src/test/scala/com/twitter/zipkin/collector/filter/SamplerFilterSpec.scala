@@ -16,46 +16,41 @@ package com.twitter.zipkin.collector.filter
  *  limitations under the License.
  *
  */
+
 import com.twitter.finagle.Service
-import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.collector.sampler.{EverythingGlobalSampler, NullGlobalSampler}
-import org.specs.Specification
-import org.specs.mock.{JMocker, ClassMocker}
+import com.twitter.zipkin.common.Span
+import org.mockito.Mockito._
+import org.scalatest.mock.MockitoSugar
+import org.scalatest.{FunSuite, Matchers}
 
-class SamplerFilterSpec extends Specification with JMocker with ClassMocker {
+class SamplerFilterSpec extends FunSuite with Matchers with MockitoSugar {
+  val service = mock[Service[Span, Unit]]
 
-  "SamplerFilter" should {
-    val mockService = mock[Service[Span, Unit]]
+  test("let the span pass if debug flag is set") {
+    val span = Span(12345, "methodcall", 666, None, List(), Nil, true)
+    val samplerProcessor = new SamplerFilter(NullGlobalSampler)
 
-    "let the span pass if debug flag is set" in {
-      val span = Span(12345, "methodcall", 666, None, List(), Nil, true)
-      val samplerProcessor = new SamplerFilter(NullGlobalSampler)
+    samplerProcessor(span, service)
 
-      expect {
-        one(mockService).apply(span)
-      }
+    verify(service).apply(span)
+  }
 
-      samplerProcessor(span, mockService)
-    }
+  test("let the span pass if debug flag false and sampler says yes") {
+    val span = Span(12345, "methodcall", 666, None, List(), Nil, false)
+    val samplerProcessor = new SamplerFilter(EverythingGlobalSampler)
 
-    "let the span pass if debug flag false and sampler says yes" in {
-      val span = Span(12345, "methodcall", 666, None, List(), Nil, false)
-      val samplerProcessor = new SamplerFilter(EverythingGlobalSampler)
+    samplerProcessor(span, service)
 
-      expect {
-        one(mockService).apply(span)
-      }
+    verify(service).apply(span)
+  }
 
-      samplerProcessor(span, mockService)
-    }
+  test("not let the span pass if debug flag false and sampler says no") {
+    val span = Span(12345, "methodcall", 666, None, List(), Nil, false)
+    val samplerProcessor = new SamplerFilter(NullGlobalSampler)
 
-    "don't let the span pass if debug flag false and sampler says no" in {
-      val span = Span(12345, "methodcall", 666, None, List(), Nil, false)
-      val samplerProcessor = new SamplerFilter(NullGlobalSampler)
+    samplerProcessor(span, service)
 
-      expect {}
-
-      samplerProcessor(span, mockService)
-    }
+    verifyZeroInteractions(service)
   }
 }

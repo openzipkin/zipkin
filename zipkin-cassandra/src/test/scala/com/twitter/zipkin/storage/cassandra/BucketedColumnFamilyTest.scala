@@ -15,18 +15,17 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
-import com.twitter.cassie.{Order, Column, ColumnFamily}
-import com.twitter.util.Future
 import java.nio.ByteBuffer
-import org.junit.runner.RunWith
+
+import com.twitter.cassie.{Column, ColumnFamily, Order}
+import com.twitter.util.Future
 import org.mockito.Matchers._
 import org.mockito.Mockito.{times, verify, when}
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.mock.MockitoSugar
+
 import scala.collection.JavaConverters._
 
-@RunWith(classOf[JUnitRunner])
 class BucketedColumnFamilyTest extends FunSuite with MockitoSugar {
   val numBuckets = 10
 

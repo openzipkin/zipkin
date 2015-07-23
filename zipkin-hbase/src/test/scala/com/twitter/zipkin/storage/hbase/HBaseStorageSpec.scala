@@ -2,7 +2,7 @@ package com.twitter.zipkin.storage.hbase
 
 import com.twitter.util.Await
 import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.hbase.{TableLayouts, StorageBuilder}
+import com.twitter.zipkin.hbase.{StorageBuilder, TableLayouts}
 import org.apache.hadoop.hbase.client.{Get, HTable}
 import org.apache.hadoop.hbase.util.Bytes
 
@@ -20,47 +20,39 @@ class HBaseStorageSpec extends ZipkinHBaseSpecification {
   val spanId = 567L
   val span = Span(traceId, "span.methodCall()", spanId, None, List(), List())
 
-  var hbaseStorage: HBaseStorage = null
+  val hbaseStorage = StorageBuilder(confOption = Some(_conf))()
 
-  "HBaseStorage" should {
+  after {
+    hbaseStorage.close()
+  }
 
-    doBefore {
-      hbaseStorage = StorageBuilder(confOption = Some(_conf))()
-    }
+  test("storeSpan") {
+    Await.result(hbaseStorage.storeSpan(span))
+    // The data should be there by now.
+    val htable = new HTable(_conf, TableLayouts.storageTableName)
+    val result = htable.get(new Get(Bytes.toBytes(traceId)))
+    result.size shouldEqual 1
+  }
 
-    doAfter {
-      hbaseStorage.close()
-      hbaseStorage = null
-    }
+  test("tracesExist") {
+    // Put the span just in case the ordering changes.
+    Await.result(hbaseStorage.storeSpan(span))
+    val idsFound = Await.result(hbaseStorage.tracesExist(Seq(traceId, 3002L)))
+    idsFound should contain(traceId)
+    idsFound.size should be (1)
+  }
 
-    "storeSpan" in {
-      Await.result(hbaseStorage.storeSpan(span))
-      // The data should be there by now.
-      val htable = new HTable(_conf, TableLayouts.storageTableName)
-      val result = htable.get(new Get(Bytes.toBytes(traceId)))
-      result.size mustEqual 1
-    }
+  test("getSpansByTraceId") {
+    Await.result(hbaseStorage.storeSpan(span))
+    val spansFound = hbaseStorage.getSpansByTraceId(traceId)
+    Await.result(spansFound) should contain(span)
+  }
 
-    "tracesExist" in {
-      // Put the span just in case the ordering changes.
-      Await.result(hbaseStorage.storeSpan(span))
-      val idsFound = Await.result(hbaseStorage.tracesExist(Seq(traceId, 3002L)))
-      idsFound must contain(traceId)
-      idsFound.size mustEqual 1
-    }
-
-    "getSpansByTraceId" in {
-      Await.result(hbaseStorage.storeSpan(span))
-      val spansFound = hbaseStorage.getSpansByTraceId(traceId)
-      Await.result(spansFound) must contain(span)
-    }
-
-    "getSpansByTraceIds" in {
-      Await.result(hbaseStorage.storeSpan(span))
-      val spansFoundFuture = hbaseStorage.getSpansByTraceIds(Seq(traceId, 302L))
-      val spansFound = Await.result(spansFoundFuture).flatten
-      spansFound must contain(span)
-      spansFound.size must_== 1
-    }
+  test("getSpansByTraceIds") {
+    Await.result(hbaseStorage.storeSpan(span))
+    val spansFoundFuture = hbaseStorage.getSpansByTraceIds(Seq(traceId, 302L))
+    val spansFound = Await.result(spansFoundFuture).flatten
+    spansFound should contain(span)
+    spansFound.size should be (1)
   }
 }

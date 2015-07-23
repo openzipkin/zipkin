@@ -16,14 +16,11 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.algebird.{Semigroup, Moments, Monoid}
-import com.twitter.util.Time
+import com.twitter.algebird.{Moments, Monoid, Semigroup}
 import com.twitter.conversions.time._
-import org.junit.runner.RunWith
+import com.twitter.util.Time
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class DependenciesTest extends FunSuite {
   test("services compare correctly") {
     val s1 = Service("foo")

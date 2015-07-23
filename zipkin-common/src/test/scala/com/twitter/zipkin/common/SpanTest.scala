@@ -16,14 +16,11 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.zipkin.Constants
 import java.nio.ByteBuffer
-import javax.net.ssl.HostnameVerifier
-import org.junit.runner.RunWith
-import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
+import com.twitter.zipkin.Constants
+import org.scalatest.FunSuite
+
 class SpanTest extends FunSuite {
 
   val annotationValue = "NONSENSE"

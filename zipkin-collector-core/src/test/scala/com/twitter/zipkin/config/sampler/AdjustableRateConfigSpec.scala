@@ -15,25 +15,26 @@
  */
 package com.twitter.zipkin.config.sampler
 
-import org.specs.Specification
-import org.specs.mock.{ClassMocker, JMocker}
+import org.mockito.Mockito._
+import org.scalatest.mock.MockitoSugar
+import org.scalatest.{FunSuite, Matchers}
 
-class AdjustableRateConfigSpec extends Specification with JMocker with ClassMocker {
+class AdjustableRateConfigSpec extends FunSuite with Matchers with MockitoSugar {
 
-  "ReadOnlyAdjustableRateConfig" should {
-    val sampleRateConfig = mock[AdjustableRateConfig]
-    val sr = 0.3
+  val sampleRateConfig = mock[AdjustableRateConfig]
+  val sr = 0.3
 
-    "not issue zk calls on set" in {
-      expect {}
-      val config = new ReadOnlyAdjustableRateConfig(sampleRateConfig)
-      config.set(sr)
-    }
+  test("not issue zk calls on set") {
+    val config = new ReadOnlyAdjustableRateConfig(sampleRateConfig)
+    config.set(sr)
 
-    "not issue zk calls on setIfNotExists" in {
-      expect {}
-      val config = new ReadOnlyAdjustableRateConfig(sampleRateConfig)
-      config.set(sr)
-    }
+    verifyZeroInteractions(sampleRateConfig)
+  }
+
+  test("not issue zk calls on setIfNotExists") {
+    val config = new ReadOnlyAdjustableRateConfig(sampleRateConfig)
+    config.set(sr)
+
+    verifyZeroInteractions(sampleRateConfig)
   }
 }

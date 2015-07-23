@@ -18,30 +18,27 @@ package com.twitter.zipkin.collector.sampler.adaptive.policy
 import com.twitter.zipkin.collector.sampler.adaptive.BoundedBuffer
 import com.twitter.zipkin.config.sampler.AdjustableRateConfig
 import com.twitter.zipkin.config.sampler.adaptive.ZooKeeperAdaptiveSamplerConfig
-import org.specs.mock.{JMocker, ClassMocker}
-import org.specs.Specification
+import org.scalatest.mock.MockitoSugar
+import org.scalatest.{FunSuite, Matchers}
 
-class LeaderPolicySpec extends Specification with JMocker with ClassMocker {
+class LeaderPolicySpec extends FunSuite with Matchers with MockitoSugar {
 
   val _config = mock[ZooKeeperAdaptiveSamplerConfig]
   val _sampleRate = mock[AdjustableRateConfig]
   val _storageRequestRate = mock[AdjustableRateConfig]
 
-  "LeaderPolicy" should {
-    "compose with filter" in {
-      val default = 0.25
-      val filter = new ValidLatestValueFilter
-      val policy = new PassLeaderPolicy[BoundedBuffer](default)
-      val buf = new BoundedBuffer { val maxLength = 5 }
-      val composed: LeaderPolicy[BoundedBuffer] = filter andThen policy
+  test("compose with filter") {
+    val default = 0.25
+    val filter = new ValidLatestValueFilter
+    val policy = new PassLeaderPolicy[BoundedBuffer](default)
+    val buf = new BoundedBuffer { val maxLength = 5 }
+    val composed: LeaderPolicy[BoundedBuffer] = filter andThen policy
 
 
-      composed(buf) mustEqual None // buf empty, so invalid value
-      buf.update(-1)
-      composed(buf) mustEqual None // invalid value
-      buf.update(1)
-      composed(buf) mustEqual Some(default)
-
-    }
+    composed(buf) should be (None) // buf empty, so invalid value
+    buf.update(-1)
+    composed(buf) should be (None) // invalid value
+    buf.update(1)
+    composed(buf) should be (Some(default))
   }
 }

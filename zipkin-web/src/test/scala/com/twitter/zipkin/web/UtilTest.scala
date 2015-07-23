@@ -17,11 +17,8 @@
 package com.twitter.zipkin.web
 
 import com.twitter.conversions.time._
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class UtilTest extends FunSuite {
   import Util._
 

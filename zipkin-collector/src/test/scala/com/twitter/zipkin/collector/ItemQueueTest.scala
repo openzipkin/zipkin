@@ -15,13 +15,11 @@
  */
 package com.twitter.zipkin.collector
 
-import com.twitter.util.{Await, Future}
 import java.util.concurrent.{CountDownLatch, TimeUnit}
-import org.junit.runner.RunWith
-import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
+import com.twitter.util.{Await, Future}
+import org.scalatest.FunSuite
+
 class ItemQueueTest extends FunSuite {
   val Item = ()
 
