@@ -1,3 +1,5 @@
+resolvers += Resolver.bintrayRepo("sbt", "sbt-plugin-releases")
+
 libraryDependencies ++= Seq(
     "com.google.collections" % "google-collections" % "0.8",
     "org.codehaus.plexus"    % "plexus-utils"       % "1.5.4",
