@@ -15,25 +15,22 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
+import java.nio.ByteBuffer
+
 import com.twitter.algebird.Moments
 import com.twitter.cassie._
 import com.twitter.cassie.tests.util.FakeCassandra
 import com.twitter.conversions.time._
 import com.twitter.util.{Await, Future, Time}
 import com.twitter.zipkin.cassandra.{AggregatesBuilder, Keyspace}
-import com.twitter.zipkin.common.{Dependencies, Service, DependencyLink}
-import com.twitter.zipkin.conversions.thrift._
+import com.twitter.zipkin.common.{Dependencies, DependencyLink, Service}
 import com.twitter.zipkin.thriftscala
-import java.nio.ByteBuffer
-import org.junit.runner.RunWith
-import org.mockito.Matchers._
-import org.mockito.Mockito.{times, verify, when}
-import org.scalatest.{BeforeAndAfter, FunSuite}
-import org.scalatest.junit.JUnitRunner
+import org.mockito.Mockito.when
 import org.scalatest.mock.MockitoSugar
+import org.scalatest.{BeforeAndAfter, FunSuite}
+
 import scala.collection.JavaConverters._
 
-@RunWith(classOf[JUnitRunner])
 class CassandraAggregatesTest extends FunSuite with MockitoSugar with BeforeAndAfter {
 
   val mockKeyspace = mock[Keyspace]

@@ -16,17 +16,15 @@
  */
 package com.twitter.zipkin.query
 
-import com.twitter.util.{Await, Future}
+import java.nio.ByteBuffer
+
+import com.twitter.util.Await
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.storage.InMemorySpanStore
 import com.twitter.zipkin.thriftscala
-import java.nio.ByteBuffer
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class ThriftQueryServiceTest extends FunSuite {
   val ep1 = Endpoint(123, 123, "service1")
   val ep2 = Endpoint(234, 234, "service2")

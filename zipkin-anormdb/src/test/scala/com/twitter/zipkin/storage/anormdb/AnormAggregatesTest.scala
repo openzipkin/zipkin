@@ -16,16 +16,12 @@
 
 package com.twitter.zipkin.storage.anormdb
 
-import com.twitter.zipkin.common.{Service, DependencyLink, Dependencies}
 import com.twitter.algebird.Moments
-import com.twitter.util.Time
-import com.twitter.util.Await
 import com.twitter.conversions.time._
-import org.junit.runner.RunWith
+import com.twitter.util.{Await, Time}
+import com.twitter.zipkin.common.{Dependencies, DependencyLink, Service}
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class AnormAggregatesTest extends FunSuite {
   test("store and get dependencies") {
     val db = new DB(new DBConfig("sqlite-memory", new DBParams(dbName = "zipkinAggregatesTest1")))

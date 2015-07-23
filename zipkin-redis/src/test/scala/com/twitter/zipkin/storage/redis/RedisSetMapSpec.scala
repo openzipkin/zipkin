@@ -19,28 +19,20 @@ package com.twitter.zipkin.storage.redis
 import org.jboss.netty.buffer.ChannelBuffers
 
 class RedisSetMapSpec extends RedisSpecification {
-  "RedisSetMap" should {
-    var setMap: RedisSetMap = null
+  val setMap = new RedisSetMap(_client, "prefix", None)
+  val buf1 = ChannelBuffers.copiedBuffer("val1")
+  val buf2 = ChannelBuffers.copiedBuffer("val2")
+  val buf3 = ChannelBuffers.copiedBuffer("val3")
 
-    doBefore {
-      _client.flushDB()
-      setMap = new RedisSetMap(_client, "prefix", None)
-    }
+  test("add an item then get it out") {
+    setMap.add("key", buf1)()
+    setMap.get("key")() should be (Set(buf1))
+  }
 
-    val buf1 = ChannelBuffers.copiedBuffer("val1")
-    val buf2 = ChannelBuffers.copiedBuffer("val2")
-    val buf3 = ChannelBuffers.copiedBuffer("val3")
-
-    "add an item then get it out" in {
-      setMap.add("key", buf1)()
-      setMap.get("key")() mustEqual(Set(buf1))
-    }
-
-    "add many items and then get them out" in {
-      setMap.add("key", buf1)()
-      setMap.add("key", buf2)()
-      setMap.add("key", buf3)()
-      setMap.get("key")() mustEqual(Set(buf1, buf2, buf3))
-    }
+  test("add many items and then get them out") {
+    setMap.add("key", buf1)()
+    setMap.add("key", buf2)()
+    setMap.add("key", buf3)()
+    setMap.get("key")() should be (Set(buf1, buf2, buf3))
   }
 }

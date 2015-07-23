@@ -16,15 +16,13 @@
  */
 package com.twitter.zipkin.query.adjusters
 
-import com.twitter.zipkin.common.{Endpoint, Annotation, Span}
-import com.twitter.zipkin.thriftscala
+import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
 import com.twitter.zipkin.query.Trace
-import org.junit.runner.RunWith
+import com.twitter.zipkin.thriftscala
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
+
 import scala.collection._
 
-@RunWith(classOf[JUnitRunner])
 class TimeSkewAdjusterTest extends FunSuite {
   val endpoint1 = Some(Endpoint(123, 123, "service"))
   val endpoint2 = Some(Endpoint(321, 321, "service"))

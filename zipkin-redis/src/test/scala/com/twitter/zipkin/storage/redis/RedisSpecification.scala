@@ -18,18 +18,20 @@ package com.twitter.zipkin.storage.redis
 
 import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.util.RedisCluster
-import org.specs.Specification
+import org.scalatest._
 
-trait RedisSpecification extends Specification {
+trait RedisSpecification extends FunSuite with Matchers with BeforeAndAfter with BeforeAndAfterAll {
   lazy val _client = Client("127.0.0.1:6379")
 
-  doBeforeSpec {
+  override def beforeAll(configMap: ConfigMap) {
     RedisCluster.start(1)
   }
 
-  doAfterSpec {
-    RedisCluster.stopAll()
+  before {
+    _client.flushDB()
   }
 
-  sequential
+  override def afterAll(configMap: ConfigMap) {
+    RedisCluster.stopAll()
+  }
 }

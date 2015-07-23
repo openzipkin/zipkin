@@ -17,24 +17,25 @@
 package com.twitter.zipkin.collector.processor
 
 import com.twitter.finagle.Service
-import org.specs.Specification
-import org.specs.mock.{JMocker, ClassMocker}
+import com.twitter.util.Future
+import org.mockito.Mockito._
+import org.scalatest.mock.MockitoSugar
+import org.scalatest.{FunSuite, Matchers}
 
-class FanoutServiceSpec extends Specification with JMocker with ClassMocker {
-  "FanoutService" should {
-    "fanout" in {
-      val serv1 = mock[Service[Int, Unit]]
-      val serv2 = mock[Service[Int, Unit]]
+class FanoutServiceSpec extends FunSuite with Matchers with MockitoSugar {
+  test("fanout") {
+    val serv1 = mock[Service[Int, Unit]]
+    val serv2 = mock[Service[Int, Unit]]
 
-      val fanout = new FanoutService[Int](Seq(serv1, serv2))
-      val item = 1
+    val fanout = new FanoutService[Int](Seq(serv1, serv2))
+    val item = 1
 
-      expect {
-        one(serv1).apply(item)
-        one(serv2).apply(item)
-      }
+    when(serv1.apply(item)) thenReturn Future.Done
+    when(serv2.apply(item)) thenReturn Future.Done
 
-      fanout.apply(item)
-    }
+    fanout.apply(item)
+
+    verify(serv1).apply(item)
+    verify(serv2).apply(item)
   }
 }

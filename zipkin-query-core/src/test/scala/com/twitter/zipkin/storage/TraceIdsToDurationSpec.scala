@@ -15,35 +15,27 @@
  */
 package com.twitter.zipkin.storage
 
-import com.twitter.zipkin.query.{QueryService, adjusters}
-import org.specs.Specification
-import org.specs.mock.{ClassMocker, JMocker}
 import com.twitter.util.{Await, Future}
+import org.mockito.Mockito._
+import org.scalatest.mock.MockitoSugar
+import org.scalatest.{FunSuite, Matchers}
 
-class TraceIdsToDurationSpec extends Specification with JMocker with ClassMocker {
+class TraceIdsToDurationSpec extends FunSuite with Matchers with MockitoSugar {
+  test("fetch durations in batches") {
+    val index = mock[Index]
+    val duration1 = TraceIdDuration(1L, 100L, 500L)
+    val duration2 = TraceIdDuration(2L, 200L, 600L)
+    val duration3 = TraceIdDuration(3L, 300L, 700L)
 
-  "TraceIdsToDuration" should {
+    when(index.getTracesDuration(List(1L, 2L))) thenReturn Future(List(duration1, duration2))
+    when(index.getTracesDuration(List(3L))) thenReturn Future(List(duration3))
 
-    "fetch durations in batches" in {
-      val index = mock[Index]
-      val duration1 = TraceIdDuration(1L, 100L, 500L)
-      val duration2 = TraceIdDuration(2L, 200L, 600L)
-      val duration3 = TraceIdDuration(3L, 300L, 700L)
+    val td = new TraceIdsToDuration(index, 2)
+    td.append(1)
+    td.append(2)
+    td.append(3)
 
-      expect {
-        1.of(index).getTracesDuration(List(1L, 2L)) willReturn Future(List(duration1, duration2))
-        1.of(index).getTracesDuration(List(3L)) willReturn Future(List(duration3))
-      }
-
-      val td = new TraceIdsToDuration(index, 2)
-      td.append(1)
-      td.append(2)
-      td.append(3)
-
-      val durations = Await.result(td.getDurations())
-      durations(0) mustEqual duration1
-      durations(1) mustEqual duration2
-      durations(2) mustEqual duration3
-    }
+    val durations = Await.result(td.getDurations())
+    durations should be (Seq(duration1, duration2, duration3))
   }
 }

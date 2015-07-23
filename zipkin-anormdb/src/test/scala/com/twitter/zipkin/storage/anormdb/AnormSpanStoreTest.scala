@@ -18,11 +18,8 @@ package com.twitter.zipkin.storage.anormdb
 import com.twitter.app.App
 import com.twitter.zipkin.anormdb.AnormDBSpanStoreFactory
 import com.twitter.zipkin.storage.util.SpanStoreValidator
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class AnormSpanStoreTest extends FunSuite {
   object AnormStore extends App with AnormDBSpanStoreFactory
   AnormStore.main(Array(

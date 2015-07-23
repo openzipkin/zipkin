@@ -16,25 +16,28 @@
  */
 package com.twitter.zipkin.collector
 
-import com.twitter.finagle.Service
-import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
-import org.specs.Specification
-import org.specs.mock.{ClassMocker, JMocker}
 import java.util.concurrent.BlockingQueue
 
-class WriteQueueWorkerSpec extends Specification with JMocker with ClassMocker {
-  "WriteQueueWorker" should {
-    "hand off to processor" in {
-      val service = mock[Service[Span, Unit]]
-      val queue = mock[BlockingQueue[Span]]
+import com.twitter.finagle.Service
+import com.twitter.util.Future
+import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
+import org.mockito.Mockito._
+import org.scalatest.mock.MockitoSugar
+import org.scalatest.{FunSuite, Matchers}
 
-      val w = new WriteQueueWorker[Span](queue, service)
-      val span = Span(123, "boo", 456, None, List(Annotation(123, "value", Some(Endpoint(1,2,"service")))), Nil)
+class WriteQueueWorkerSpec extends FunSuite with Matchers with MockitoSugar {
 
-      expect {
-        one(service).apply(span)
-      }
-      w.process(span)
-    }
+  test("hand off to processor") {
+    val service = mock[Service[Span, Unit]]
+    val queue = mock[BlockingQueue[Span]]
+
+    val w = new WriteQueueWorker[Span](queue, service)
+    val span = Span(123, "boo", 456, None, List(Annotation(123, "value", Some(Endpoint(1,2,"service")))), Nil)
+
+    when(service.apply(span)) thenReturn Future.Done
+
+    w.process(span)
+
+    verify(service).apply(span)
   }
 }

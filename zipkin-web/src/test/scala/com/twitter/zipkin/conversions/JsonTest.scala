@@ -1,13 +1,11 @@
 package com.twitter.zipkin.conversions
 
+import java.nio.ByteBuffer
+
 import com.twitter.zipkin.common.json._
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
-import java.nio.ByteBuffer
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class JsonTest extends FunSuite {
   val key = "key"
   test("bool") {

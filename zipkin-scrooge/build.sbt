@@ -10,6 +10,5 @@ ScroogeSBT.scroogeThriftSourceFolder in Compile <<= (
 libraryDependencies ++= Seq(
   Seq(util("core"), algebird("core"), ostrich),
   many(finagle, "ostrich4", "thrift", "zipkin"),
-  many(scroogeDep, "core", "serializer"),
-  scalaTestDeps
-).flatten
+  many(scroogeDep, "core", "serializer")
+).flatten ++ testDependencies

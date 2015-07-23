@@ -16,160 +16,155 @@
 package com.twitter.zipkin.collector.sampler.adaptive.policy
 
 import com.twitter.conversions.time._
-import com.twitter.zipkin.config.sampler.adaptive.ZooKeeperAdaptiveSamplerConfig
-import com.twitter.zipkin.config.sampler.AdjustableRateConfig
-import com.twitter.zipkin.collector.sampler.adaptive.BoundedBuffer
-import org.specs.Specification
-import org.specs.mock.{JMocker, ClassMocker}
 import com.twitter.util.{MockTimer, Time}
+import com.twitter.zipkin.collector.sampler.adaptive.BoundedBuffer
+import com.twitter.zipkin.config.sampler.AdjustableRateConfig
+import com.twitter.zipkin.config.sampler.adaptive.ZooKeeperAdaptiveSamplerConfig
+import org.mockito.Mockito._
+import org.scalatest.mock.MockitoSugar
+import org.scalatest.{FunSuite, Matchers}
 
-class PolicyFilterSpec extends Specification with JMocker with ClassMocker {
+class PolicyFilterSpec extends FunSuite with Matchers with MockitoSugar {
 
   val _config = mock[ZooKeeperAdaptiveSamplerConfig]
   val _storageRequestRate = mock[AdjustableRateConfig]
 
-  "PolicyFilter" should {
-
-    "compose" in {
-      "ValidLatestValueFilter and SufficientDataFilter" in {
-        val filter1 = new ValidLatestValueFilter
-        val filter2 = new SufficientDataFilter(1.minute, 30.seconds)
-        val buf = new BoundedBuffer { val maxLength = 5 }
-
-        val composed = filter1 andThen filter2
-
-        composed(buf) mustEqual None      // No values => fail
-        buf.update(1)
-        composed(buf) mustEqual None      // valid value, not sufficient => fail
-        buf.update(-1)
-        composed(buf) mustEqual None     // invalid value, sufficient => fail
-        buf.update(1)
-        composed(buf) mustEqual Some(buf) // valid value, sufficient => pass
-      }
+  test("ValidLatestValueFilter and SufficientDataFilter") {
+    val filter1 = new ValidLatestValueFilter
+    val filter2 = new SufficientDataFilter(1.minute, 30.seconds)
+    val buf = new BoundedBuffer {
+      val maxLength = 5
     }
 
-    "notify of sample rate change" in {
-      val mock1 = mock[Seq[Int]]
-      val filter1 = new ValidLatestValueFilter {
-        override def change(sampleRate: Double) {
-          mock1.length
-        }
-      }
-      val filter2 = new SufficientDataFilter(1.minute, 30.seconds) {
-        override def change(sampleRate: Double) {
-          mock1.length
-        }
-      }
+    val composed = filter1 andThen filter2
 
-      val composed = filter1 andThen filter2
-
-      expect {
-        2.of(mock1).length
-      }
-
-      composed.notifyChange(0.2)
-    }
+    composed(buf) should be(None) // No values => fail
+    buf.update(1)
+    composed(buf) should be(None) // valid value, not sufficient => fail
+    buf.update(-1)
+    composed(buf) should be(None) // invalid value, sufficient => fail
+    buf.update(1)
+    composed(buf) should be(Some(buf)) // valid value, sufficient => pass
   }
 
-  "StorageRequestRateFilter" should {
-    val filter = new StorageRequestRateFilter(_config)
-    val buf = new BoundedBuffer { val maxLength = 5 }
-
-    "fail if storage request rate is negative" in {
-      expect {
-        1.of(_config).storageRequestRate willReturn _storageRequestRate
-        1.of(_storageRequestRate).get willReturn -1
+  test("notify of sample rate change") {
+    val mock1 = mock[Seq[Int]]
+    val filter1 = new ValidLatestValueFilter {
+      override def change(sampleRate: Double) {
+        mock1.length
       }
-
-      filter(buf) mustEqual None
+    }
+    val filter2 = new SufficientDataFilter(1.minute, 30.seconds) {
+      override def change(sampleRate: Double) {
+        mock1.length
+      }
     }
 
-    "fail if storage request rate is zero" in {
-      expect {
-        1.of(_config).storageRequestRate willReturn _storageRequestRate
-        1.of(_storageRequestRate).get willReturn 0
-      }
+    val composed = filter1 andThen filter2
 
-      filter(buf) mustEqual None
-    }
+    composed.notifyChange(0.2)
 
-    "pass if storage request rate is positive" in {
-      expect {
-        1.of(_config).storageRequestRate willReturn _storageRequestRate
-        1.of(_storageRequestRate).get willReturn 1
-      }
-
-      filter(buf) mustEqual Some(buf)
-    }
+    verify(mock1, times(2)).length
   }
 
-  "ValidLatestValueFilter" should {
-    val filter = new ValidLatestValueFilter
-
-    "fail if latest value is negative" in {
-      val buf = new BoundedBuffer { val maxLength = 5 }
-      buf.update(-1)
-      filter(buf) mustEqual None
-    }
-
-    "fail if latest value is zero" in {
-      val buf = new BoundedBuffer { val maxLength = 5 }
-      buf.update(0)
-      filter(buf) mustEqual None
-    }
-
-    "pass if latest value is positive" in {
-      val buf = new BoundedBuffer { val maxLength = 5 }
-      buf.update(1)
-      filter(buf) mustEqual Some(buf)
-    }
+  val storageRateFilter = new StorageRequestRateFilter(_config)
+  val buf = new BoundedBuffer {
+    val maxLength = 5
   }
 
-  "SufficientDataFilter" should {
+  test("fail if storage request rate is negative") {
+    when(_config.storageRequestRate) thenReturn _storageRequestRate
+    when(_storageRequestRate.get) thenReturn -1
+
+    storageRateFilter(buf) should be(None)
+  }
+
+  test("fail if storage request rate is zero") {
+    when(_config.storageRequestRate) thenReturn _storageRequestRate
+    when(_storageRequestRate.get) thenReturn 0
+
+    storageRateFilter(buf) should be(None)
+  }
+
+  test("pass if storage request rate is positive") {
+    when(_config.storageRequestRate) thenReturn _storageRequestRate
+    when(_storageRequestRate.get) thenReturn 1
+
+    storageRateFilter(buf) should be(Some(buf))
+  }
+
+  val validLatestFilter = new ValidLatestValueFilter
+
+  test("fail if latest value is negative") {
+    val buf = new BoundedBuffer {
+      val maxLength = 5
+    }
+    buf.update(-1)
+    validLatestFilter(buf) should be(None)
+  }
+
+  test("fail if latest value is zero") {
+    val buf = new BoundedBuffer {
+      val maxLength = 5
+    }
+    buf.update(0)
+    validLatestFilter(buf) should be(None)
+  }
+
+  test("pass if latest value is positive") {
+    val buf = new BoundedBuffer {
+      val maxLength = 5
+    }
+    buf.update(1)
+    validLatestFilter(buf) should be(Some(buf))
+  }
+
+  test("pass if has enough data") {
     val filter = new SufficientDataFilter(dataSufficient = 1.minute, pollInterval = 30.seconds)
-    "pass if has enough data" in {
-      val buf = new BoundedBuffer { val maxLength = 5 }
-      filter(buf) mustEqual None
-      buf.update(1.0)
-      filter(buf) mustEqual None
-      buf.update(2.0)
-      filter(buf) mustEqual Some(buf)
+
+    val buf = new BoundedBuffer {
+      val maxLength = 5
     }
+    filter(buf) should be(None)
+    buf.update(1.0)
+    filter(buf) should be(None)
+    buf.update(2.0)
+    filter(buf) should be(Some(buf))
   }
 
-  "OutlierFilter" should {
-    "pass if enough outliers have been encountered" in {
-      val target = 10
-      val filter = new OutlierFilter(_config, 0.1, 1.minute, 30.seconds)
-      val buf = new BoundedBuffer { val maxLength = 5 }
-
-      expect {
-        atLeast(1).of(_config).storageRequestRate willReturn _storageRequestRate
-        atLeast(1).of(_storageRequestRate).get willReturn target
-      }
-
-      filter(buf) mustEqual None
-      buf.update(1.0)
-      filter(buf) mustEqual None
-      buf.update(1.0)
-      filter(buf) mustEqual Some(buf)
+  test("pass if enough outliers have been encountered") {
+    val target = 10
+    val filter = new OutlierFilter(_config, 0.1, 1.minute, 30.seconds)
+    val buf = new BoundedBuffer {
+      val maxLength = 5
     }
+
+    when(_config.storageRequestRate) thenReturn _storageRequestRate
+    when(_storageRequestRate.get) thenReturn target
+
+    filter(buf) should be(None)
+    buf.update(1.0)
+    filter(buf) should be(None)
+    buf.update(1.0)
+    filter(buf) should be(Some(buf))
   }
 
-  "CooldownFilter" should {
-    "only pass if enough time has passed since last change" in Time.withCurrentTimeFrozen { tc =>
+  test("only pass if enough time has passed since last change") {
+    Time.withCurrentTimeFrozen { tc =>
       val timer = new MockTimer
       val filter = new CooldownFilter(1.minute, timer)
-      val buf = new BoundedBuffer { val maxLength = 5 }
+      val buf = new BoundedBuffer {
+        val maxLength = 5
+      }
 
-      filter(buf) mustEqual Some(buf)
+      filter(buf) should be(Some(buf))
 
       filter.notifyChange(0.2)
-      filter(buf) mustEqual None
+      filter(buf) should be(None)
 
       tc.advance(61.seconds)
       timer.tick()
-      filter(buf) mustEqual Some(buf)
+      filter(buf) should be(Some(buf))
     }
   }
 }

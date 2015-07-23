@@ -6,13 +6,10 @@ import com.mongodb.casbah.Imports._
 import com.twitter.app.App
 import com.twitter.util.TimeConversions._
 import com.twitter.zipkin.mongodb.MongoDBSpanStoreFactory
-import com.twitter.zipkin.storage.{IndexedTraceId, SpanStore}
 import com.twitter.zipkin.storage.util.SpanStoreValidator
-import org.junit.runner.RunWith
+import com.twitter.zipkin.storage.{IndexedTraceId, SpanStore}
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class MongoDBSpanStoreTest extends FunSuite {
 
   test("timestamps in MongoDBSpanStoreUtils") {

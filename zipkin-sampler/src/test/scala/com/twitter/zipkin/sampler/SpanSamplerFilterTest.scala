@@ -15,14 +15,11 @@
  */
 package com.twitter.zipkin.sampler
 
-import com.twitter.util.{Await, Future}
 import com.twitter.finagle.Service
+import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common._
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class SpanSamplerFilterTest extends FunSuite {
   test("filters spans based on their traceId") {
     val spans = Seq(

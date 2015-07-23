@@ -20,25 +20,22 @@ import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.Eval
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.query.ZipkinQuery
-import org.specs.Specification
+import org.scalatest.{FunSuite, Matchers}
 
-class ConfigSpec extends Specification {
-  "/config" should {
-    val eval = new Eval
+class ConfigSpec extends FunSuite with Matchers {
 
-    "validate query configs" in {
-      val queryConfigFiles = Seq(
-        "/query-dev.scala",
-        "/query-cassandra.scala"
-      ) map { TempFile.fromResourcePath(_) }
+  val eval = new Eval
 
-      for (file <- queryConfigFiles) {
-        file.getName() in {
-          val config = eval[Builder[RuntimeEnvironment => ZipkinQuery]](file)
-          config must notBeNull
-          config.apply()
-        }
-      }
+  test("validate query configs") {
+    val queryConfigFiles = Seq(
+      "/query-dev.scala",
+      "/query-cassandra.scala"
+    ) map { TempFile.fromResourcePath(_) }
+
+    for (file <- queryConfigFiles) {
+      val config = eval[Builder[RuntimeEnvironment => ZipkinQuery]](file)
+      config should not be(Nil)
+      config.apply()
     }
   }
 }

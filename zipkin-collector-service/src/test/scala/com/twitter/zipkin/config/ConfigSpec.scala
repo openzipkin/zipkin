@@ -20,26 +20,24 @@ import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.Eval
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.collector.ZipkinCollector
-import org.specs.Specification
+import org.scalatest.{FunSuite, Matchers}
 
-class ConfigSpec extends Specification {
-  "/config" should {
-    val eval = new Eval
+class ConfigSpec extends FunSuite with Matchers {
+  val eval = new Eval
 
-    "validate collector configs" in {
-      val configFiles = Seq(
-        "/collector-dev.scala",
-        "/collector-hbase.scala",
-        "/collector-cassandra.scala"
-      ) map { TempFile.fromResourcePath(_) }
+  test("validate collector configs") {
+    val configFiles = Seq(
+      "/collector-dev.scala",
+      "/collector-hbase.scala",
+      "/collector-cassandra.scala"
+    ) map {
+      TempFile.fromResourcePath(_)
+    }
 
-      for (file <- configFiles) {
-        file.getName() in {
-          val config = eval[Builder[RuntimeEnvironment => ZipkinCollector]](file)
-          config must notBeNull
-          config.apply()
-        }
-      }
+    for (file <- configFiles) {
+      val config = eval[Builder[RuntimeEnvironment => ZipkinCollector]](file)
+      config should not be(Nil)
+      config.apply()
     }
   }
 }

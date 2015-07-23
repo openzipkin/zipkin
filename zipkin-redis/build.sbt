@@ -7,6 +7,6 @@ libraryDependencies ++= Seq(
   util("logging"),
   scroogeDep("serializer"),
   slf4jLog4j12
-) ++ testDependencies ++ scalaTestDeps
+) ++ testDependencies
 
 addConfigsToResourcePathForConfigSpec()

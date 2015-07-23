@@ -17,11 +17,8 @@
 package com.twitter.zipkin.common
 
 import com.twitter.conversions.time._
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class AnnotationTest extends FunSuite {
   test("get min of two annotations") {
     val ann1 = Annotation(1, "one", None)

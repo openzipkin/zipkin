@@ -15,15 +15,14 @@
  */
 package com.twitter.zipkin.query.conversions
 
-import com.twitter.zipkin.common._
-import com.twitter.zipkin.thriftscala
-import com.twitter.zipkin.query.{Trace, TimelineAnnotation, TraceTimeline}
-import org.specs.Specification
-import org.specs.mock.{ClassMocker, JMocker}
 import java.nio.ByteBuffer
 
-class TraceTimelineSpec extends Specification with JMocker with ClassMocker {
+import com.twitter.zipkin.common._
+import com.twitter.zipkin.query.{TimelineAnnotation, Trace, TraceTimeline}
+import com.twitter.zipkin.thriftscala
+import org.scalatest.{FunSuite, Matchers}
 
+class TraceTimelineSpec extends FunSuite with Matchers {
 
 //T = 0	 koalabird-cuckoo	 ValuesFromSource	 Server receive	 10.34.238.111 ():9149
 //T + 1	 client	 multiget_slice	 Client send	 10.34.238.111 ():54147
@@ -100,16 +99,13 @@ class TraceTimelineSpec extends Specification with JMocker with ClassMocker {
   val expectedTimeline = TraceTimeline(1, 2209720933601260005L, List(tAnn3, tAnn1, tAnn2,
     tAnn5, tAnn4, tAnn6), List(ba1))
 
-  "TraceTimelineSpec" should {
-    "convert to timeline with correct annotations ordering" in {
-      val actualTimeline = TraceTimeline(trace)
-      Some(expectedTimeline) mustEqual actualTimeline
-    }
-
-    "return none if empty trace" in {
-      val actualTimeline = TraceTimeline(new Trace(List()))
-      None mustEqual actualTimeline
-    }
+  test("convert to timeline with correct annotations ordering") {
+    val actualTimeline = TraceTimeline(trace)
+    actualTimeline should be (Some(expectedTimeline))
   }
 
+  test("return none if empty trace") {
+    val actualTimeline = TraceTimeline(new Trace(List()))
+    actualTimeline should be (None)
+  }
 }

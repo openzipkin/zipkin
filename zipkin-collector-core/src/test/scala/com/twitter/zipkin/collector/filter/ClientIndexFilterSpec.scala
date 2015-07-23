@@ -16,37 +16,35 @@
  */
 package com.twitter.zipkin.collector.filter
 
-import com.twitter.zipkin.common.{Endpoint, Annotation, Span}
+import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
 import com.twitter.zipkin.thriftscala
-import org.specs.Specification
+import org.scalatest.{FunSuite, Matchers}
 
-class ClientIndexFilterSpec extends Specification {
+class ClientIndexFilterSpec extends FunSuite with Matchers {
 
   val filter = new ClientIndexFilter
 
-  "ClientIndexFilter" should {
-    "not index span" in {
-      // server side, with default name
-      val spanCs = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.CLIENT_SEND, Some(Endpoint(1,1,"client")))), Nil)
-      filter.shouldIndex(spanCs) mustEqual false
-      val spanCr = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.CLIENT_RECV, Some(Endpoint(1,1,"client")))), Nil)
-      filter.shouldIndex(spanCr) mustEqual false
-    }
+  test("not index span") {
+    // server side, with default name
+    val spanCs = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.CLIENT_SEND, Some(Endpoint(1,1,"client")))), Nil)
+    filter.shouldIndex(spanCs) should be (false)
+    val spanCr = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.CLIENT_RECV, Some(Endpoint(1,1,"client")))), Nil)
+    filter.shouldIndex(spanCr) should be (false)
+  }
 
-    "index span" in {
-      // server side, so index
-      val spanSr = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.SERVER_RECV, Some(Endpoint(1,1,"s")))), Nil)
-      filter.shouldIndex(spanSr) mustEqual true
-      val spanSs = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.SERVER_SEND, Some(Endpoint(1,1,"s")))), Nil)
-      filter.shouldIndex(spanSs) mustEqual true
-      // client side, but not with default name
-      val spanCs = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.CLIENT_SEND, Some(Endpoint(1,1,"s")))), Nil)
-      filter.shouldIndex(spanCs) mustEqual true
-      val spanCr = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.CLIENT_RECV, Some(Endpoint(1,1,"s")))), Nil)
-      filter.shouldIndex(spanCr) mustEqual true
-      // the unusual case of having a server with the name "client"
-      val spanClientServer = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.SERVER_SEND, Some(Endpoint(1,1,"client")))), Nil)
-      filter.shouldIndex(spanClientServer) mustEqual true
-    }
+  test("index span") {
+    // server side, so index
+    val spanSr = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.SERVER_RECV, Some(Endpoint(1,1,"s")))), Nil)
+    filter.shouldIndex(spanSr) should be (true)
+    val spanSs = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.SERVER_SEND, Some(Endpoint(1,1,"s")))), Nil)
+    filter.shouldIndex(spanSs) should be (true)
+    // client side, but not with default name
+    val spanCs = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.CLIENT_SEND, Some(Endpoint(1,1,"s")))), Nil)
+    filter.shouldIndex(spanCs) should be (true)
+    val spanCr = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.CLIENT_RECV, Some(Endpoint(1,1,"s")))), Nil)
+    filter.shouldIndex(spanCr) should be (true)
+    // the unusual case of having a server with the name "client"
+    val spanClientServer = Span(1, "n", 2, None, List(Annotation(1, thriftscala.Constants.SERVER_SEND, Some(Endpoint(1,1,"client")))), Nil)
+    filter.shouldIndex(spanClientServer) should be (true)
   }
 }

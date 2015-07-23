@@ -17,42 +17,41 @@
 package com.twitter.zipkin.storage.redis
 
 import com.twitter.zipkin.common.Span
-import org.specs.Specification
+import org.scalatest.{FunSuite, Matchers}
+
 import scala.util.Random
 
-class RedisConversionsSpec extends Specification {
-  "RedisConversions" should {
-    val rand = new Random
+class RedisConversionsSpec extends FunSuite with Matchers {
+  val rand = new Random
 
-    "convert from a TraceLog and back" in {
-      val value = ExpiringValue(rand.nextLong(), rand.nextLong())
-      chanBuf2ExpiringValue[Long](expiringValue2ChanBuf[Long](value)) mustEqual value
-    }
+  test("convert from a TraceLog and back") {
+    val value = ExpiringValue(rand.nextLong(), rand.nextLong())
+    chanBuf2ExpiringValue[Long](expiringValue2ChanBuf[Long](value)) should be (value)
+  }
 
-    "convert from TimeRange and back" in {
-      val range = TimeRange(rand.nextLong(), rand.nextLong())
-      decodeStartEnd(encodeStartEnd(range)) mustEqual range
-    }
+  test("convert from TimeRange and back") {
+    val range = TimeRange(rand.nextLong(), rand.nextLong())
+    decodeStartEnd(encodeStartEnd(range)) should be (range)
+  }
 
-    "convert from long and back" in {
-      val long = rand.nextLong()
-      chanBuf2Long(long2ChanBuf(long)) mustEqual long
-    }
+  test("convert from long and back") {
+    val long = rand.nextLong()
+    chanBuf2Long(long2ChanBuf(long)) should be (long)
+  }
 
-    "convert from double and back" in {
-      val double = rand.nextDouble()
-      chanBuf2Double(double2ChanBuf(double)) mustEqual double
-    }
+  test("convert from double and back") {
+    val double = rand.nextDouble()
+    chanBuf2Double(double2ChanBuf(double)) should be (double)
+  }
 
-    "convert from string and back" in {
-      val string = ((0 until (rand.nextInt(10) + 5)) map (_ => rand.nextPrintableChar())).mkString
-      chanBuf2String(string2ChanBuf(string)) mustEqual string
-    }
+  test("convert from string and back") {
+    val string = ((0 until (rand.nextInt(10) + 5)) map (_ => rand.nextPrintableChar())).mkString
+    chanBuf2String(string2ChanBuf(string)) should be (string)
+  }
 
-    "convert from span and back" in {
-      val span = Span(rand.nextLong(), rand.nextString(8), rand.nextLong(),
-        Some(rand.nextLong()), List(), List())
-      deserializeSpan(serializeSpan(span)) mustEqual span
-    }
+  test("convert from span and back") {
+    val span = Span(rand.nextLong(), rand.nextString(8), rand.nextLong(),
+      Some(rand.nextLong()), List(), List())
+    deserializeSpan(serializeSpan(span)) should be (span)
   }
 }

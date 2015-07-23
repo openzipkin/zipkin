@@ -16,22 +16,21 @@ package com.twitter.zipkin.storage.cassandra
  *  limitations under the License.
  *
  */
+import java.nio.ByteBuffer
+import java.util.{Set => JSet}
+
 import com.twitter.cassie._
 import com.twitter.cassie.tests.util.FakeCassandra
 import com.twitter.util.Future
 import com.twitter.zipkin.cassandra.{IndexBuilder, Keyspace}
 import com.twitter.zipkin.common._
-import java.nio.ByteBuffer
-import java.util.{Set => JSet}
-import org.junit.runner.RunWith
 import org.mockito.Matchers._
 import org.mockito.Mockito.{atLeastOnce, times, verify, when}
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FunSuite}
+
 import scala.collection.JavaConverters._
 
-@RunWith(classOf[JUnitRunner])
 class CassandraIndexTest extends FunSuite with BeforeAndAfter with MockitoSugar {
   object FakeServer extends FakeCassandra
 

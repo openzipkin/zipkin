@@ -2,29 +2,24 @@ package com.twitter.zipkin.storage.hbase.utils
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.HBaseTestingUtility
-import org.junit.runner.RunWith
-import org.specs.SpecificationWithJUnit
-import org.specs.runner.JUnitSuiteRunner
+import org.scalatest._
 
-@RunWith(classOf[JUnitSuiteRunner])
-class HBaseSpecification extends SpecificationWithJUnit {
+class HBaseSpecification extends FunSuite with Matchers with BeforeAndAfterAll {
   lazy val _util: HBaseTestingUtility = HBaseSpecification.sharedUtil
   lazy val _conf: Configuration = _util.getConfiguration
 
-  doBeforeSpec {
+  override def beforeAll(configMap: ConfigMap) {
     HBaseSpecification.sharedUtil.synchronized {
       _util.startMiniCluster()
     }
   }
 
-  doAfterSpec {
+  override def afterAll(configMap: ConfigMap) {
     HBaseSpecification.sharedUtil.synchronized {
       _util.shutdownMiniCluster()
       Thread.sleep(10 * 1000)
     }
   }
-
-  sequential
 }
 
 /**

@@ -16,15 +16,13 @@
  */
 package com.twitter.zipkin.web
 
+import java.nio.ByteBuffer
+
 import com.twitter.finagle.http.Request
 import com.twitter.util.Time
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
-import java.nio.ByteBuffer
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class QueryExtractorTest extends FunSuite {
 
   val queryExtractor = new QueryExtractor(10)

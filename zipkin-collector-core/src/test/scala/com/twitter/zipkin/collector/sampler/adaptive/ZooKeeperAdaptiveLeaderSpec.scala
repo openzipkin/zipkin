@@ -15,105 +15,101 @@
  */
 package com.twitter.zipkin.collector.sampler.adaptive
 
-import com.twitter.common.zookeeper.{ZooKeeperClient, Group}
+import com.twitter.common.zookeeper.{Group, ZooKeeperClient}
 import com.twitter.conversions.time._
 import com.twitter.util.Timer
 import com.twitter.zipkin.collector.sampler.adaptive.policy.LeaderPolicy
-import com.twitter.zipkin.config.sampler.adaptive.ZooKeeperAdaptiveSamplerConfig
 import com.twitter.zipkin.config.sampler.AdjustableRateConfig
+import com.twitter.zipkin.config.sampler.adaptive.ZooKeeperAdaptiveSamplerConfig
 import org.apache.zookeeper.ZooKeeper
-import org.specs.mock.{ClassMocker, JMocker}
-import org.specs.Specification
+import org.mockito.Mockito._
+import org.scalatest.mock.MockitoSugar
+import org.scalatest.{FunSuite, Matchers}
+
 import scala.collection.JavaConverters._
 
-class ZooKeeperAdaptiveLeaderSpec extends Specification with JMocker with ClassMocker {
+class ZooKeeperAdaptiveLeaderSpec extends FunSuite with Matchers with MockitoSugar {
   val samplerTimer = mock[Timer]
 
-  "ZooKeeperAdaptiveLeader" should {
-    val _zk                       = mock[ZooKeeper]
-    val _zkClient                 = mock[ZooKeeperClient]
-    val _buf                      = mock[BoundedBuffer]
-    val _reportGroup              = mock[Group]
-    val _leaderPolicy             = mock[LeaderPolicy[BoundedBuffer]]
+  val _zk                       = mock[ZooKeeper]
+  val _zkClient                 = mock[ZooKeeperClient]
+  val _buf                      = mock[BoundedBuffer]
+  val _reportGroup              = mock[Group]
+  val _leaderPolicy             = mock[LeaderPolicy[BoundedBuffer]]
 
-    val _config = mock[ZooKeeperAdaptiveSamplerConfig]
-    val _sampleRateConfig = mock[AdjustableRateConfig]
+  val _config = mock[ZooKeeperAdaptiveSamplerConfig]
+  val _sampleRateConfig = mock[AdjustableRateConfig]
 
-    val _leaderGroup: Group = null
-    val _windowSize = 30.minutes
-    val _windowSufficient = 10.minutes
-    val _pollInterval = 1.minute
+  val _leaderGroup: Group = null
+  val _windowSize = 30.minutes
+  val _windowSufficient = 10.minutes
+  val _pollInterval = 1.minute
 
-    val _reportPath = "/twitter/service/zipkin/adaptivesampler/report"
+  val _reportPath = "/twitter/service/zipkin/adaptivesampler/report"
 
-    def adaptiveLeader: ZooKeeperAdaptiveLeader =
-      new ZooKeeperAdaptiveLeader {
-        val config                      = _config
-        val reportGroup                 = _reportGroup
-        val leaderGroup                 = _leaderGroup
-        val bufferSize                  = _windowSize
-        val windowSufficient            = _windowSufficient
-        val pollInterval                = _pollInterval
-        val leaderPolicy                = _leaderPolicy
+  def adaptiveLeader: ZooKeeperAdaptiveLeader =
+    new ZooKeeperAdaptiveLeader {
+      val config                      = _config
+      val reportGroup                 = _reportGroup
+      val leaderGroup                 = _leaderGroup
+      val bufferSize                  = _windowSize
+      val windowSufficient            = _windowSufficient
+      val pollInterval                = _pollInterval
+      val leaderPolicy                = _leaderPolicy
 
-        override lazy val buf = _buf
-      }
-
-    "update" in {
-      val leader = adaptiveLeader
-
-      val ids = Seq[String]("1", "2", "3")
-      val sum = 600.0
-      val expectedUpdate = sum.toLong
-
-      expect {
-        1.of(_config).client willReturn _zkClient
-        1.of(_zkClient).get willReturn _zk
-        one(_reportGroup).getMemberIds willReturn ids.asJava
-        ids.foreach { id =>
-          one(_reportGroup).getMemberPath(id) willReturn (_reportPath + "/" + id)
-        }
-
-        one(_zk).getData(_reportPath + "/1", true, null) willReturn "100".getBytes
-        one(_zk).getData(_reportPath + "/2", true, null) willReturn "200".getBytes
-        one(_zk).getData(_reportPath + "/3", true, null) willReturn "300".getBytes
-
-        one(_buf).update(expectedUpdate)
-      }
-
-      leader.update()
+      override lazy val buf = _buf
     }
 
-    "do nothing if policy returns None" in {
-      val leader = adaptiveLeader
+  test("update") {
+    val leader = adaptiveLeader
 
-      expect {
-        1.of(_leaderPolicy).apply(Some(_buf)) willReturn None
-      }
+    val ids = Seq[String]("1", "2", "3")
+    val sum = 600.0
+    val expectedUpdate = sum.toLong
 
-      leader.lead()
+    when(_config.client) thenReturn _zkClient
+    when(_zkClient.get) thenReturn _zk
+    when(_reportGroup.getMemberIds) thenReturn ids.asJava
+
+    ids.foreach { id =>
+      when(_reportGroup.getMemberPath(id)) thenReturn (_reportPath + "/" + id)
     }
 
-    "adjust sample rate if policy returns valid option" in {
-      val leader = adaptiveLeader
-      val newSampleRate = 0.1
+    when(_zk.getData(_reportPath + "/1", true, null)) thenReturn "100".getBytes
+    when(_zk.getData(_reportPath + "/2", true, null)) thenReturn "200".getBytes
+    when(_zk.getData(_reportPath + "/3", true, null)) thenReturn "300".getBytes
 
-      expect {
-        1.of(_config).sampleRate willReturn _sampleRateConfig
-        1.of(_leaderPolicy).apply(Some(_buf)) willReturn Some(newSampleRate)
-        1.of(_sampleRateConfig).set(newSampleRate)
-        1.of(_leaderPolicy).notifyChange(newSampleRate)
-      }
+    leader.update()
 
-      leader.lead()
-    }
+    verify(_buf).update(expectedUpdate)
+  }
 
-    "truncate" in {
-      ZooKeeperAdaptiveLeader.truncate(0.1110) mustEqual 0.111
-      ZooKeeperAdaptiveLeader.truncate(0.1111) mustEqual 0.111
-      ZooKeeperAdaptiveLeader.truncate(0.1115) mustEqual 0.111
-      ZooKeeperAdaptiveLeader.truncate(0.1119) mustEqual 0.111
-      ZooKeeperAdaptiveLeader.truncate(0.1120) mustEqual 0.112
-    }
+  test("do nothing if policy returns None") {
+    val leader = adaptiveLeader
+
+    when(_leaderPolicy.apply(Some(_buf))) thenReturn None
+
+    leader.lead()
+  }
+
+  test("adjust sample rate if policy returns valid option") {
+    val leader = adaptiveLeader
+    val newSampleRate = 0.1
+
+    when(_config.sampleRate) thenReturn _sampleRateConfig
+    when(_leaderPolicy.apply(Some(_buf))) thenReturn Some(newSampleRate)
+
+    leader.lead()
+
+    verify(_sampleRateConfig).set(newSampleRate)
+    verify(_leaderPolicy).notifyChange(newSampleRate)
+  }
+
+  test("truncate") {
+    ZooKeeperAdaptiveLeader.truncate(0.1110) should be (0.111)
+    ZooKeeperAdaptiveLeader.truncate(0.1111) should be (0.111)
+    ZooKeeperAdaptiveLeader.truncate(0.1115) should be (0.111)
+    ZooKeeperAdaptiveLeader.truncate(0.1119) should be (0.111)
+    ZooKeeperAdaptiveLeader.truncate(0.1120) should be (0.112)
   }
 }
