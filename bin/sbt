@@ -9,12 +9,12 @@ sbtjar=sbt-launch.jar
 
 if [ ! -f $sbtjar ]; then
   echo 'downloading '$sbtjar 1>&2
-  curl --location --remote-name https://repo.typesafe.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/0.13.8/$sbtjar
+  curl --location --remote-name https://repo.typesafe.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/0.13.9-RC3/$sbtjar
 fi
 
 test -f $sbtjar || exit 1
 sbtjar_md5=$(openssl md5 < $sbtjar|cut -f2 -d'='|awk '{print $1}')
-if [ "${sbtjar_md5}" != 00672c01d5beea62928e33cdeae7b46b ]; then
+if [ "${sbtjar_md5}" != 020aeba76c9234db7302dadf66f9ac1b ]; then
   echo "bad sbtjar!: ${sbtjar_md5}" 1>&2
   exit 1
 fi
