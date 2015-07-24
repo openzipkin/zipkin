@@ -1,6 +1,5 @@
 # 1.1.0
 * Storage
-  * Added Hbase storage backend
   * Added Anorm SQL storage backend
 * Web
   * Reworked aggregate dependencies visualization

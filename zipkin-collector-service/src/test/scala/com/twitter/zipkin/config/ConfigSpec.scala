@@ -28,7 +28,6 @@ class ConfigSpec extends FunSuite with Matchers {
   test("validate collector configs") {
     val configFiles = Seq(
       "/collector-dev.scala",
-      "/collector-hbase.scala",
       "/collector-cassandra.scala"
     ) map {
       TempFile.fromResourcePath(_)
