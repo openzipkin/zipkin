@@ -9,10 +9,6 @@ trap "rm -fr $dir" 0 1 2
 echo 'making site...' 1>&2
 ./bin/sbt zipkin-doc/make-site >/dev/null 2>&1
 
-## For the future
-#echo 'making unidoc...' 1>&2
-#./bin/sbt unidoc >/dev/null 2>&1
-
 echo 'cloning...' 1>&2
 git clone -b gh-pages git@github.com:twitter/zipkin.git $dir >/dev/null 2>&1
 

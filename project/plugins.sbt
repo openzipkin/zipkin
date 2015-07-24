@@ -1,13 +1,9 @@
-resolvers += Resolver.url("bintray-sbt-plugins", url("http://dl.bintray.com/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns)
+resolvers ++= Seq(
+  Resolver.url("bintray-sbt-plugins", url("http://dl.bintray.com/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns),
+  Resolver.jcenterRepo, // superset of maven central
+  "Twitter Maven Repository" at "https://maven.twttr.com/" // for thrift 0.5.0-1 needed by scrooge
+)
 
-libraryDependencies ++= Seq(
-    "com.google.collections" % "google-collections" % "0.8",
-    "org.codehaus.plexus"    % "plexus-utils"       % "1.5.4",
-    "org.slf4j"              % "slf4j-api"          % "1.6.1",
-    "org.slf4j"              % "slf4j-simple"       % "1.6.1")
-
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.11.2") // configuration starting with 0.12 is different
 addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "0.8.1")
-
-addSbtPlugin("com.twitter" %% "scrooge-sbt-plugin" % "3.16.3")
-
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.9.2")
+addSbtPlugin("com.twitter" % "scrooge-sbt-plugin" % "3.19.0")
