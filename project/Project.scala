@@ -37,8 +37,6 @@ object Zipkin extends Build {
   def util(name: String) = "com.twitter" %% ("util-" + name) % "6.25.0"
   def scroogeDep(name: String) = "com.twitter" %% ("scrooge-" + name) % "3.19.0"
   def algebird(name: String) = "com.twitter" %% ("algebird-" + name) % "0.10.2"
-  def hbaseDep(name: String) = "org.apache.hbase" % ("hbase" + (if (name.isEmpty) "" else "-" + name)) % "0.98.13-hadoop2"
-  def hbaseTest(name: String) = hbaseDep(name) classifier("tests") classifier("")
   def hadoop(name: String) = "org.apache.hadoop" % ("hadoop-" + name) % "2.4.0"
   def hadoopTest(name: String) = hadoop(name) classifier("tests") classifier("")
 
@@ -145,7 +143,7 @@ object Zipkin extends Build {
     query, queryCore, queryService, web, zipkinAggregate,
     collectorScribe, collectorCore, collectorService,
     sampler, receiverScribe, receiverKafka, collector,
-    cassandra, anormDB, redis, hbase, mongodb
+    cassandra, anormDB, redis, mongodb
     )
 
 
@@ -168,11 +166,11 @@ object Zipkin extends Build {
   lazy val collectorService = subproject(
     "collector-service",
     collectorCore, collectorScribe, receiverKafka,
-    cassandra, redis, anormDB, hbase, mongodb)
+    cassandra, redis, anormDB, mongodb)
 
   lazy val queryService = subproject(
     "query-service",
-    queryCore, cassandra, redis, anormDB, hbase, mongodb)
+    queryCore, cassandra, redis, anormDB, mongodb)
 
   lazy val web = subproject("web", common, scrooge)
 
@@ -209,13 +207,6 @@ object Zipkin extends Build {
   lazy val anormDB = subproject("anormdb", common, scrooge)
   lazy val redis = subproject("redis", common, scrooge)
   lazy val mongodb = subproject("mongodb", common, scrooge)
-
-  lazy val hbaseTestGuavaHack = Project(
-    id = "zipkin-hbase-test-guava-hack",
-    base = file("zipkin-hbase/src/test/guava-hack"),
-    settings = defaultSettings
-  )
-  lazy val hbase = subproject("hbase", scrooge, hbaseTestGuavaHack % "test->compile")
 
   ////////////
   // Thrift //
