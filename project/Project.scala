@@ -146,7 +146,7 @@ object Zipkin extends Build {
     query, queryCore, queryService, web, zipkinAggregate,
     collectorScribe, collectorCore, collectorService,
     sampler, receiverScribe, receiverKafka, collector,
-    cassandra, anormDB, kafka, redis, hbase, mongodb
+    cassandra, anormDB, redis, hbase, mongodb
     )
 
 
@@ -169,7 +169,7 @@ object Zipkin extends Build {
   lazy val collectorService = subproject(
     "collector-service",
     collectorCore, collectorScribe, receiverKafka,
-    cassandra, kafka, redis, anormDB, hbase, mongodb)
+    cassandra, redis, anormDB, hbase, mongodb)
 
   lazy val queryService = subproject(
     "query-service",
@@ -208,7 +208,6 @@ object Zipkin extends Build {
   lazy val zookeeper = subproject("zookeeper")
   lazy val cassandra = subproject("cassandra", scrooge)
   lazy val anormDB = subproject("anormdb", common, scrooge)
-  lazy val kafka = subproject("kafka", collectorCore, scrooge)
   lazy val redis = subproject("redis", common, scrooge)
   lazy val mongodb = subproject("mongodb", common, scrooge)
 
