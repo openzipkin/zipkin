@@ -21,10 +21,11 @@ cache:
 before_script:
   # default $SBT_OPTS is irrelevant to sbt lancher
   - unset SBT_OPTS
+  # ensure the build errors if dependencies aren't available
+  - travis_retry ./bin/sbt ++$TRAVIS_SCALA_VERSION update
 
 script:
-  - "./bin/sbt ++$TRAVIS_SCALA_VERSION clean test"
-
+  - ./bin/sbt ++$TRAVIS_SCALA_VERSION clean test
 
 notifications:
   webhooks:
