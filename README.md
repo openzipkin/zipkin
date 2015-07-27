@@ -2,7 +2,41 @@
 
 ![Zipkin (doc/zipkin-logo-200x119.jpg)](https://github.com/twitter/zipkin/raw/master/doc/zipkin-logo-200x119.jpg)
 
-[Zipkin](http://twitter.github.com/zipkin) is a distributed tracing system that helps us gather timing data for all the disparate services at Twitter.
+[Zipkin](http://twitter.github.com/zipkin) is a distributed tracing system. It is used by Twitter to help gather timing data for all their disparate services. The front end is a "waterfall" style graph of service calls showing call durations as horizontal bars:
+
+![Screenshot](https://github.com/twitter/zipkin/raw/master/doc/web-screenshot.png)
+
+## Running Zipkin
+
+Zipkin is a collection of processes (a backend for the data, a
+"collector", and query engine, and a web UI) and all of them need to
+be running to make any progress:
+
+![Architecture](https://github.com/twitter/zipkin/raw/master/doc/architecture-0.png)
+
+If you are familiar with Docker, the
+quickest way to get started quickly is to use the
+[Docker Zipkin](https://github.com/openzipkin/docker-zipkin) project,
+which (in addition to being able to build docker images) provides
+scripts and a
+[`docker-compose.yml`](https://github.com/openzipkin/docker-zipkin/blob/master/deploy/docker-compose.yml)
+for launching pre-built images, e.g.
+
+```
+$ git clone https://github.com/openzipkin/docker-zipkin
+$ cd docker-zipkin/deploy
+$ docker-compose up
+```
+
+If you are happy building from source you can use the scripts in the
+[`bin/`] directory of this repository. E.g. to start a collector
+pointing to an existing local redis server:
+
+```
+$ git clone https://github.com/openzipkin/zipkin
+$ cd zipkin
+$ ./bin/collector-redis
+```
 
 ## Full documentation
 
