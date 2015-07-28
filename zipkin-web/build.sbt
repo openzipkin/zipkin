@@ -7,7 +7,7 @@ libraryDependencies ++= Seq(
     zk("server-set"),
     algebird("core"),
     twitterServer,
-    "com.github.spullara.mustache.java" % "compiler" % "0.8.13",
+    "com.github.spullara.mustache.java" % "compiler" % "0.8.17",
     "com.twitter.common" % "stats-util" % "0.0.57"
   ),
   many(finagle, "exception", "thriftmux", "serversets", "zipkin")
