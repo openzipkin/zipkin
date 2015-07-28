@@ -1,7 +1,6 @@
 package com.twitter.zipkin.common.mustache
 
 import com.github.mustachejava.DefaultMustacheFactory
-import com.twitter.mustache.ScalaObjectHandler
 import java.io._
 import collection.JavaConversions.mapAsJavaMap
 
