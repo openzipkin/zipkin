@@ -33,9 +33,9 @@ object Zipkin extends Build {
   // Commonly used dependencies //
   ////////////////////////////////
 
-  def finagle(name: String) = "com.twitter" %% ("finagle-" + name) % "6.26.0"
-  def util(name: String) = "com.twitter" %% ("util-" + name) % "6.25.0"
-  def scroogeDep(name: String) = "com.twitter" %% ("scrooge-" + name) % "3.19.0"
+  def finagle(name: String) = "com.twitter" %% ("finagle-" + name) % "6.27.0"
+  def util(name: String) = "com.twitter" %% ("util-" + name) % "6.26.0"
+  def scroogeDep(name: String) = "com.twitter" %% ("scrooge-" + name) % "3.20.0"
   def algebird(name: String) = "com.twitter" %% ("algebird-" + name) % "0.10.2"
   def hadoop(name: String) = "org.apache.hadoop" % ("hadoop-" + name) % "2.4.0"
   def hadoopTest(name: String) = hadoop(name) classifier("tests") classifier("")
@@ -51,10 +51,10 @@ object Zipkin extends Build {
   )
   def zk(name: String) = "com.twitter.common.zookeeper" % name % twitterZookeeperVersions(name)
 
-  val twitterServer = "com.twitter" %% "twitter-server" % "1.11.0"
+  val twitterServer = "com.twitter" %% "twitter-server" % "1.12.0"
   val junit = "junit" % "junit" % "4.12" % "test"
   val slf4jLog4j12 = "org.slf4j" % "slf4j-log4j12" % "1.6.4" % "runtime"
-  val ostrich = "com.twitter" %% "ostrich" % "9.9.0"
+  val ostrich = "com.twitter" %% "ostrich" % "9.10.0"
 
   lazy val testDependencies = Seq(
     junit,

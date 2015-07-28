@@ -6,4 +6,4 @@ resolvers ++= Seq(
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.11.2") // configuration starting with 0.12 is different
 addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "0.8.1")
-addSbtPlugin("com.twitter" % "scrooge-sbt-plugin" % "3.19.0")
+addSbtPlugin("com.twitter" % "scrooge-sbt-plugin" % "3.20.0")
