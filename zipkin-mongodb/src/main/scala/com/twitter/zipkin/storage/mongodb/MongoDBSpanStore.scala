@@ -2,12 +2,11 @@ package com.twitter.zipkin.storage.mongodb
 
 import java.nio.ByteBuffer
 import java.util.Date
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{ForkJoinPool, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.conversions.scala._
-import com.twitter.finagle.jsr166y.ForkJoinPool
 import com.twitter.util._
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.Constants
