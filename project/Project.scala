@@ -143,7 +143,7 @@ object Zipkin extends Build {
     query, queryCore, queryService, web, zipkinAggregate,
     collectorScribe, collectorCore, collectorService,
     sampler, receiverScribe, receiverKafka, collector,
-    cassandra, anormDB, redis, mongodb
+    cassandra, anormDB, redis
     )
 
 
@@ -166,11 +166,11 @@ object Zipkin extends Build {
   lazy val collectorService = subproject(
     "collector-service",
     collectorCore, collectorScribe, receiverKafka,
-    cassandra, redis, anormDB, mongodb)
+    cassandra, redis, anormDB)
 
   lazy val queryService = subproject(
     "query-service",
-    queryCore, cassandra, redis, anormDB, mongodb)
+    queryCore, cassandra, redis, anormDB)
 
   lazy val web = subproject("web", common, scrooge)
 
@@ -206,7 +206,6 @@ object Zipkin extends Build {
   lazy val cassandra = subproject("cassandra", scrooge)
   lazy val anormDB = subproject("anormdb", common, scrooge)
   lazy val redis = subproject("redis", common, scrooge)
-  lazy val mongodb = subproject("mongodb", common, scrooge)
 
   ////////////
   // Thrift //
