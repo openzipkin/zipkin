@@ -17,8 +17,10 @@
 import io.zipkin.sbt.{BuildProperties,PackageDist,GitProject}
 import sbt._
 import Keys._
+import bintray.BintrayKeys._
 
 object Zipkin extends Build {
+
   val zipkinVersion = "1.2.0-SNAPSHOT"
 
   ///////////////////////
@@ -84,6 +86,14 @@ object Zipkin extends Build {
     )
   )
 
+  def defaultPublishSettings = Seq(
+    name := "zipkin",
+    licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
+    publishMavenStyle := false,
+    bintrayOrganization := Some("openzipkin"),
+    bintrayRepository := "zipkin"
+  )
+
   // settings from inlined plugins
   def inlineSettings = Seq(
     // inlined parts of sbt-package-dist
@@ -105,6 +115,7 @@ object Zipkin extends Build {
   def defaultSettings = Seq(
     zipkinSettings,
     inlineSettings,
+    defaultPublishSettings,
     Project.defaultSettings
   ).flatten
 
@@ -145,7 +156,6 @@ object Zipkin extends Build {
     sampler, receiverScribe, receiverKafka, collector,
     cassandra, anormDB, redis
     )
-
 
   lazy val zipkinDoc = Project(
     id = "zipkin-doc",
