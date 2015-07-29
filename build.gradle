@@ -5,10 +5,8 @@ subprojects {
     apply from: "$rootDir/gradle/dependencies.gradle"
     apply from: "$rootDir/gradle/scalatest.gradle"
 
-    ext {
-        // SBT migration note: start of zipkinSettings
-        group "io.zipkin"
-        version zipkinVersion
+    test {
+        maxParallelForks Runtime.runtime.availableProcessors()
     }
 
     repositories {
