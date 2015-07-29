@@ -18,7 +18,7 @@ package com.twitter.zipkin.web
 
 import java.nio.ByteBuffer
 
-import com.twitter.finagle.http.Request
+import com.twitter.finagle.httpx.Request
 import com.twitter.util.Time
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
 import org.scalatest.FunSuite

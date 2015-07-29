@@ -17,9 +17,8 @@
 package com.twitter.zipkin.sampler
 
 import com.twitter.finagle.Service
-import com.twitter.finagle.http.{HttpMuxer, Request, Response}
+import com.twitter.finagle.httpx.{HttpMuxer, Method, Request, Response}
 import com.twitter.util.{Extractable, Future, Var}
-import org.jboss.netty.handler.codec.http.HttpMethod
 
 /**
  * A wrapper around a Var[Double] that exposes it to an HTTP endpoint
@@ -33,11 +32,11 @@ class HttpVar(name: String, default: Double = 1.0) {
   def apply(): Var[Double] with Extractable[Double] = underlying
 
   HttpMuxer.addRichHandler("/vars/"+name, Service.mk[Request, Response] {
-    case req if req.method == HttpMethod.GET =>
+    case req if req.method == Method.Get =>
       req.response.contentString = underlying().toString
       Future.value(req.response)
 
-    case req if req.method == HttpMethod.POST =>
+    case req if req.method == Method.Post =>
       val rep = req.response
 
       try {
