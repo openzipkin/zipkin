@@ -1,0 +1,18 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.github.maiflai:gradle-scalatest:0.8"
+    }
+}
+
+project.apply(plugin: com.github.maiflai.ScalaTestPlugin)
+
+// Pegdown, a lib required for generating HTML test reports from ScalaTest
+// pulls in an asm dependency that's incompatible with another version pulled in by production dependencies.
+// Solution: let's just disable HTML test reports.
+test.reports.html.enabled = false
+

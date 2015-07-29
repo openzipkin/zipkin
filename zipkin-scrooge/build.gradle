@@ -1,0 +1,27 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath "com.yodle.griddle:griddle:${commonVersions.griddle}"
+    }
+}
+apply plugin: 'scrooge'
+thriftSrcDir = "${project(':zipkin-thrift').projectDir}/src/main/thrift/com/twitter/zipkin"
+
+dependencies {
+    compile project(':zipkin-common')
+
+    compile "com.twitter:scrooge-core_${scalaInterfaceVersion}:${commonVersions.scrooge}"
+    compile "com.twitter:scrooge-serializer_${scalaInterfaceVersion}:${commonVersions.scrooge}"
+    scroogeGen "com.twitter:scrooge-generator_${scalaInterfaceVersion}:${commonVersions.scrooge}"
+
+    compile "com.twitter:util-core_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
+    compile "com.twitter:algebird-core_${scalaInterfaceVersion}:${commonVersions.algebird}"
+    compile "com.twitter:ostrich_${scalaInterfaceVersion}:${commonVersions.ostrich}"
+
+    compile "com.twitter:finagle-ostrich4_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    compile "com.twitter:finagle-thrift_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    compile "com.twitter:finagle-zipkin_${scalaInterfaceVersion}:${commonVersions.finagle}"
+}
