@@ -1,11 +1,10 @@
 package com.twitter.zipkin.web
 
-import com.twitter.common.stats.ApproximateHistogram
-import com.twitter.conversions.time._
-import com.twitter.finagle.http.{Request, Response}
+import com.twitter.finagle.httpx.{Request, Response}
 import com.twitter.finagle.stats.{StatsReceiver, Stat}
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.finagle.{Filter, Service, SimpleFilter}
+import com.twitter.io.Buf
 import com.twitter.util.{Duration, Future}
 import com.twitter.zipkin.{Constants => ZConstants}
 import com.twitter.zipkin.common.json._
@@ -15,8 +14,6 @@ import com.twitter.zipkin.query.{SpanTimestamp, TraceCombo, TraceSummary, QueryR
 import com.twitter.zipkin.thriftscala.{Adjust, ZipkinQuery}
 import java.io.{File, FileInputStream, InputStream}
 import org.apache.commons.io.IOUtils
-import org.jboss.netty.buffer.ChannelBuffers
-import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
 import scala.annotation.tailrec
 
 class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor) {
@@ -55,7 +52,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
 
     def apply(response: Response) {
       response.setContentType(typ)
-      response.content = ChannelBuffers.wrappedBuffer(content)
+      response.content = Buf.ByteArray(content)
     }
   }
 
@@ -114,11 +111,6 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       case _ => Seq(Adjust.TimeSkew)
     }
 
-  val nettyToFinagle =
-    Filter.mk[HttpRequest, HttpResponse, Request, Response] { (req, service) =>
-      service(Request(req)) map { _.httpResponse }
-    }
-
   def collectStats(stats: StatsReceiver): Filter[Request, Response, Request, Response] =
     Filter.mk[Request, Response, Request, Response] { (req, svc) =>
       Stat.timeFuture(stats.stat("request"))(svc(req)) onSuccess { rep =>
@@ -140,7 +132,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       svc(req) map { renderer =>
         val res = req.response
         renderer(res)
-        res.contentLength = res.content.readableBytes
+        res.contentLength = res.content.length
         res
       }
     }

@@ -1,6 +1,6 @@
 defaultSettings
 
 libraryDependencies ++= Seq(
-  many(finagle, "core", "http"),
+  many(finagle, "core", "httpx"),
   many(util, "core", "zk")
 ).flatten ++ testDependencies

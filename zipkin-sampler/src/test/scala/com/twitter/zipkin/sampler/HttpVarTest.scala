@@ -15,25 +15,25 @@
  */
 package com.twitter.zipkin.sampler
 
-import com.twitter.finagle.http.{HttpMuxer, RequestBuilder, Response}
+import com.twitter.io.Buf
+import com.twitter.finagle.httpx.{HttpMuxer, RequestBuilder}
 import com.twitter.util.Await
-import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
 import org.scalatest.FunSuite
 
 class HttpVarTest extends FunSuite {
   test("can request the current value") {
     val httpVar = new HttpVar("test1", 1.0)
     val req = RequestBuilder().url("http://localhost/vars/test1").buildGet
-    val res = Response(Await.result(HttpMuxer(req)))
+    val res = Await.result(HttpMuxer(req))
 
     assert(res.contentString === "1.0")
   }
 
   test("can update the value") {
     val httpVar = new HttpVar("test2", 1.0)
-    val req = RequestBuilder().url("http://localhost/vars/test2").buildPost(wrappedBuffer("0.5".getBytes))
+    val req = RequestBuilder().url("http://localhost/vars/test2").buildPost(Buf.UsAscii("0.5"))
     assert(httpVar()() === 1.0)
-    val res = Response(Await.result(HttpMuxer(req)))
+    val res = Await.result(HttpMuxer(req))
     assert(res.statusCode === 200)
     assert(res.contentString === "0.5")
     assert(httpVar()() === 0.5)
@@ -41,8 +41,8 @@ class HttpVarTest extends FunSuite {
 
   test("provides an error when the new value is out of range") {
     val httpVar = new HttpVar("test3", 1.0)
-    val req = RequestBuilder().url("http://localhost/vars/test3").buildPost(wrappedBuffer("5".getBytes))
-    val res = Response(Await.result(HttpMuxer(req)))
+    val req = RequestBuilder().url("http://localhost/vars/test3").buildPost(Buf.UsAscii("5"))
+    val res = Await.result(HttpMuxer(req))
     assert(res.statusCode === 400)
     assert(res.contentString === "invalid rate")
     assert(httpVar()() === 1.0)
@@ -50,8 +50,8 @@ class HttpVarTest extends FunSuite {
 
   test("provides an error when the new value invald") {
     val httpVar = new HttpVar("test4", 1.0)
-    val req = RequestBuilder().url("http://localhost/vars/test4").buildPost(wrappedBuffer("foo".getBytes))
-    val res = Response(Await.result(HttpMuxer(req)))
+    val req = RequestBuilder().url("http://localhost/vars/test4").buildPost(Buf.UsAscii("foo"))
+    val res = Await.result(HttpMuxer(req))
     assert(res.statusCode === 500)
     assert(httpVar()() === 1.0)
   }

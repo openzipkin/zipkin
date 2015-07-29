@@ -17,16 +17,15 @@ package com.twitter.zipkin.web
 
 import com.twitter.app.App
 import com.twitter.conversions.time._
-import com.twitter.finagle.http.HttpMuxer
+import com.twitter.finagle.httpx.{HttpMuxer, Request, Response}
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.finagle.{Http, Service, Thrift}
+import com.twitter.finagle.{Httpx, Service, Thrift}
 import com.twitter.server.TwitterServer
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common.json.ZipkinJson
 import com.twitter.zipkin.common.mustache.ZipkinMustache
 import com.twitter.zipkin.thriftscala.ZipkinQuery
 import java.net.InetSocketAddress
-import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
 
 trait ZipkinWebFactory { self: App =>
   private[this] val resourceDirs = Set(
@@ -68,7 +67,7 @@ trait ZipkinWebFactory { self: App =>
   def newWebServer(
     queryClient: ZipkinQuery[Future] = newQueryClient(),
     stats: StatsReceiver = DefaultStatsReceiver.scope("zipkin-web")
-  ): Service[HttpRequest, HttpResponse] = {
+  ): Service[Request, Response] = {
     val handlers = newHandlers
     import handlers._
 
@@ -96,7 +95,6 @@ trait ZipkinWebFactory { self: App =>
       val suffix = if (p.endsWith("/") || p.contains(":")) "/" else ""
 
       m.withHandler(handlePath.mkString("/") + suffix,
-        nettyToFinagle andThen
         collectStats(handlePath.foldLeft(stats) { case (s, p) => s.scope(p) }) andThen
         renderPage andThen
         catchExceptions andThen
@@ -108,7 +106,7 @@ trait ZipkinWebFactory { self: App =>
 
 object Main extends TwitterServer with ZipkinWebFactory {
   def main() {
-    val server = Http.serve(webServerPort(), newWebServer(stats = statsReceiver.scope("zipkin-web")))
+    val server = Httpx.serve(webServerPort(), newWebServer(stats = statsReceiver.scope("zipkin-web")))
     onExit { server.close() }
     Await.ready(server)
   }
