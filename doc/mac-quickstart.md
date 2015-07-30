@@ -3,7 +3,7 @@ testing) with Cassandra, the most common choice of database for use with Zipkin.
 To run Zipkin out of the box without using Cassandra, see
 [install.md](https://github.com/twitter/zipkin/blob/master/doc/install.md).
 
-Scala 2.9.1 or later is required.
+Scala 2.10.5 or later is required.
 
 ## Installing Cassandra
 
@@ -11,35 +11,43 @@ Scala 2.9.1 or later is required.
 will make your life easier. Then run the following commands to install
 and set up Cassandra:
 
-    # Cassandra is the most common choice, though Zipkin supports other databases
-    brew install cassandra
-    # Start Cassandra on login
-    ln -sfv /opt/twitter/opt/cassandra/*.plist ~/Library/LaunchAgents
-    launchctl load ~/Library/LaunchAgents/homebrew.mxcl.cassandra.plist
+```bash
+# Cassandra is the most common choice, though Zipkin supports other databases
+brew install cassandra
+# Start Cassandra on login
+ln -sfv /opt/twitter/opt/cassandra/*.plist ~/Library/LaunchAgents
+launchctl load ~/Library/LaunchAgents/homebrew.mxcl.cassandra.plist
+```
 
 ## Install Zipkin
 
 Now we can install Zipkin itself:
 
-    # WORKSPACE is wherever you want your Zipkin folder
-    cd WORKSPACE
-    # If you don't have git, `brew install git` or just download Zipkin directly
-    git clone https://github.com/twitter/zipkin.git
-    cd zipkin
-    # Install the Zipkin schema
-    cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt
+```bash
+# WORKSPACE is wherever you want your Zipkin folder
+cd WORKSPACE
+# If you don't have git, `brew install git` or just download Zipkin directly
+git clone https://github.com/twitter/zipkin.git
+cd zipkin
+# Note the 4GB memory usage. You can use less but your build may fail.
+export GRADLE_OPTS='-Xms512m -Xmx4G -XX:MaxPermSize=1G'
+# Install the Zipkin schema
+cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt
+```
 
 ## Run Zipkin
 
 Now you can run Zipkin (you'll need to leave these processes running, so use
 separate bash windows if you're doing it that way):
 
-    # Collect data
-    bin/collector cassandra
-    # Extract data
-    bin/query cassandra
-    # Display data
-    bin/web
+```bash
+# Collect data
+bin/collector cassandra
+# Extract data
+bin/query cassandra
+# Display data
+bin/web
+```
 
 Zipkin should now be running and you can access the UI at http://localhost:8080/
 
