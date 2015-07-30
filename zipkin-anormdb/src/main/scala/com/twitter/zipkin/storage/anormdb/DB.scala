@@ -41,6 +41,7 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
   private val connpool = new HikariDataSource()
   connpool.setDriverClassName(dbconfig.driver)
   connpool.setJdbcUrl(dbconfig.location)
+  connpool.setConnectionTestQuery(if (dbconfig.jdbc3) "SELECT 1" else null)
   connpool.setMaximumPoolSize(32)
 
   /**
