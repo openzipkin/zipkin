@@ -21,6 +21,5 @@ sbt-launch.jar
 .ensime
 .ensime_lucene
 .history
-/*.db
 build
 .gradle/

@@ -2,6 +2,13 @@ apply plugin: 'application'
 apply plugin: 'com.github.johnrengelman.shadow'
 mainClassName = 'com.twitter.zipkin.collector.Main'
 
+run {
+    // Creates zipkin.db in the build directory when configKey == "dev"
+    workingDir project.buildDir
+    // See gradle.properties for an explanation of configKey
+    args '-f', "${projectDir}/config/collector-${configKey}.scala"
+}
+
 tasks.build.dependsOn(shadowJar)
 
 repositories {

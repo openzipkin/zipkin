@@ -2,6 +2,13 @@ apply plugin: 'application'
 apply plugin: 'com.github.johnrengelman.shadow'
 mainClassName = 'com.twitter.zipkin.query.Main'
 
+run {
+    // When configKey == "dev", run out of the collector's directory to reuse zipkin.db
+    workingDir configKey == "dev" ? project(':zipkin-collector-service').buildDir : project.buildDir
+    // See gradle.properties for an explanation of configKey
+    args '-f', "${projectDir}/config/query-${configKey}.scala"
+}
+
 tasks.build.dependsOn(shadowJar)
 
 repositories {
