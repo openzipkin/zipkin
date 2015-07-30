@@ -8,17 +8,18 @@ defaultSettings
 
 // Database drivers
 val anormDriverDependencies = Map(
-  "sqlite-memory"     -> "org.xerial"     % "sqlite-jdbc"          % "3.7.2",
-  "sqlite-persistent" -> "org.xerial"     % "sqlite-jdbc"          % "3.7.2",
-  "h2-memory"         -> "com.h2database" % "h2"                   % "1.3.172",
-  "h2-persistent"     -> "com.h2database" % "h2"                   % "1.3.172",
-  "postgresql"        -> "postgresql"     % "postgresql"           % "8.4-702.jdbc4", // or "9.1-901.jdbc4",
-  "mysql"             -> "mysql"          % "mysql-connector-java" % "5.1.25"
+  "sqlite-memory"     -> "org.xerial"     % "sqlite-jdbc"          % "3.8.11", // sqlite-jdbc4 isn't out, yet
+  "sqlite-persistent" -> "org.xerial"     % "sqlite-jdbc"          % "3.8.11",
+  "h2-memory"         -> "com.h2database" % "h2"                   % "1.4.187",
+  "h2-persistent"     -> "com.h2database" % "h2"                   % "1.4.187",
+  // Don't add EOL versions! http://www.postgresql.org/support/versioning
+  "postgresql93"      -> "org.postgresql" % "postgresql"           % "9.3-1103-jdbc4",
+  "mysql"             -> "mysql"          % "mysql-connector-java" % "5.1.36"
 )
 
 libraryDependencies ++= Seq(
-  "com.typesafe.play" %% "anorm" % "2.3.7",
-  "com.zaxxer" % "HikariCP-java6" % "2.3.8",
+  "com.typesafe.play" %% "anorm" % "2.3.9", // last version compatible w/ Java 7
+  "com.zaxxer" % "HikariCP" % "2.4.0",
   anormDriverDependencies(dbEngine)
 ) ++ testDependencies
 

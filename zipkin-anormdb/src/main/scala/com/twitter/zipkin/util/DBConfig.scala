@@ -55,7 +55,13 @@ case class DBConfig(name: String = "sqlite-persistent",
                     params: DBParams = new DBParams(),
                     install: Boolean = false) {
 
-  case class DBInfo(driver: String, description: String, location: DBParams => String)
+  /**
+   * @param jdbc3 Whether this is a legacy JDBC3 driver
+   */
+  case class DBInfo(driver: String,
+                    description: String,
+                    location: DBParams => String,
+                    jdbc3: Boolean = false)
 
   /**
    * Database information.
@@ -73,12 +79,14 @@ case class DBConfig(name: String = "sqlite-persistent",
     "sqlite-memory" -> DBInfo(
       description = "SQLite in-memory",
       driver = "org.sqlite.JDBC",
-      location = { _ => "jdbc:sqlite::memory:" }
+      location = { _ => "jdbc:sqlite::memory:" },
+      jdbc3 = true
     ),
     "sqlite-persistent" -> DBInfo(
       description = "SQLite persistent",
       driver = "org.sqlite.JDBC",
-      location = { dbp: DBParams => "jdbc:sqlite:" + dbp.dbName + ".db" }
+      location = { dbp: DBParams => "jdbc:sqlite:" + dbp.dbName + ".db" },
+      jdbc3 = true
     ),
     "h2-memory" -> DBInfo(
       description = "H2 in-memory",
@@ -111,4 +119,5 @@ case class DBConfig(name: String = "sqlite-persistent",
   def description: String = dbinfo.description
   def driver: String = dbinfo.driver
   def location: String = dbinfo.location(params)
+  def jdbc3: Boolean = dbinfo.jdbc3
 }
