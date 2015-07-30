@@ -1,5 +1,8 @@
 apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
 mainClassName = 'com.twitter.zipkin.example.Main'
+
+tasks.build.dependsOn(shadowJar)
 
 dependencies {
     compile project(':zipkin-web')

@@ -1,5 +1,8 @@
 apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
 mainClassName = 'com.twitter.zipkin.query.Main'
+
+tasks.build.dependsOn(shadowJar)
 
 repositories {
     // For dependencies of zipkin-cassandra

@@ -1,4 +1,12 @@
+buildscript {
+    repositories { jcenter() }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.2'
+    }
+}
+
 subprojects {
+
     apply plugin: 'java'
     apply plugin: 'scala'
 
