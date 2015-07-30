@@ -1,2 +1,0 @@
-#!/usr/bin/env sh
-bin/sbt 'project zipkin-test' 'run -f com.twitter.zipkin.tracegen.Main'

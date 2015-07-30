@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+bin/sbt 'project zipkin-tracegen' 'run com.twitter.zipkin.tracegen.Main'

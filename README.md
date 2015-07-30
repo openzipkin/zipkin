@@ -29,13 +29,22 @@ $ docker-compose up
 ```
 
 If you are happy building from source you can use the scripts in the
-[`bin/`] directory of this repository. E.g. to start a collector
-pointing to an existing local redis server:
+[`bin/`] directory of this repository.
 
-```
-$ git clone https://github.com/openzipkin/zipkin
-$ cd zipkin
-$ ./bin/collector-redis
+Here's how to start zipkin using the default file-based backend and view traces.
+```bash
+# get the zipkin source and change to its directory
+$ git clone https://github.com/openzipkin/zipkin; cd zipkin
+# start the collector server in a new terminal session or tab
+$ ./bin/collector
+# start the query server in a new terminal session or tab
+$ ./bin/query
+# start the web server in a new terminal session or tab
+$ ./bin/web
+# create dummy traces
+$ ./bin/tracegen
+# open the ui and look at them!
+$ open http://localhost:8080/
 ```
 
 ## Full documentation
