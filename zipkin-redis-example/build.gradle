@@ -2,6 +2,16 @@ apply plugin: 'application'
 apply plugin: 'com.github.johnrengelman.shadow'
 mainClassName = 'com.twitter.zipkin.example.Main'
 
+if (!project.hasProperty("runArgs")) {
+    ext.runArgs =
+            '-zipkin.web.resourcesRoot=' + project(':zipkin-web').projectDir + '/src/main/resources'
+}
+
+run {
+    workingDir project.buildDir
+    args runArgs.split()
+}
+
 tasks.build.dependsOn(shadowJar)
 
 dependencies {
