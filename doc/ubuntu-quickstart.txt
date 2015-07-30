@@ -55,19 +55,8 @@ git clone https://github.com/twitter/zipkin.git
 
 cd zipkin
 
-# note the 4gig memory usage. You can use less but your build may fail.
-export SBT_OPTS='-Xms512m -Xmx4096m -XX:MaxPermSize=1024m'
-#start a sbt shell and compile the 3 projects we need to run
-bin/sbt <enter>
-> project zipkin-web
-> compile
-#and wait, then repeat for zipkin-collector and zipkin-query ie project zipkin-collector <enter> compile <enter>
-> project zipkin-collector
-> compile
-#wait
-> project zipkin-query
-> compile
-#wait
+# Note the 4GB memory usage. You can use less but your build may fail.
+export GRADLE_OPTS='-Xms512m -Xmx4G -XX:MaxPermSize=1G'
 
 9. Create Zipkin namespace in Cassandra
 cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt
