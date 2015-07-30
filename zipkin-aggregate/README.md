@@ -5,21 +5,20 @@ analyse them aggregate the data and store it for later presentation in the web U
  
 ## Running locally:
  
-```
-sbt
-project zipkin-aggregate
-run --source cassandra --hosts cassandra1.example.com,cassandra2.example.com,cassandra3.example.com --port 9160
+```bash
+# to connect to a cassandra on localhost:9160
+./gradlew :zipkin-aggregate:run
+# to specify a different cassandra cluster
+./gradlew :zipkin-aggregate:run -Phosts=cassandra1.example.com,cassandra2.example.com,cassandra3.example.com -Pport=9160
 ```
  
 ## Building a fat jar and submitting the a Hadoop job scheduler
 ```
-sbt
-project zipkin-aggregate
-assembly
+./gradlew :zipkin-aggregate:build
 ```
-This will build a fat jar `zipkin-aggregate-assembly-XXX.jar`.
+This will build a fat jar `zipkin-aggregate/build/libs/zipkin-aggregate-XXX-all.jar`.
 Upload the jar to a job tracker and start it with arguments:
  
 ```
-hadoop jar zipkin-aggregate-assembly-XXX.jar --source cassandra --hosts cassandra1.example.com,cassandra2.example.com,cassandra3.example.com --port 9160
+hadoop jar zipkin-aggregate-XXX-all.jar --source cassandra --hosts cassandra1.example.com,cassandra2.example.com,cassandra3.example.com --port 9160
 ```
