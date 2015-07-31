@@ -15,7 +15,6 @@ ext.anormDriverDependencies = [
 ]
 
 dependencies {
-    compile project(':zipkin-common')
     compile project(':zipkin-scrooge')
 
     compile "com.typesafe.play:anorm_${scalaInterfaceVersion}:2.3.9" // last version compatible w/ Java 7

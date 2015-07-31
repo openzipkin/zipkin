@@ -1,7 +1,6 @@
 dependencies {
     compile project(':zipkin-collector')
     compile project(':zipkin-zookeeper')
-    compile project(':zipkin-scrooge')
 
     compile "com.twitter:finagle-thriftmux_${scalaInterfaceVersion}:${commonVersions.finagle}"
     compile "com.twitter:util-zk_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
