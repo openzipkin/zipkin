@@ -5,6 +5,10 @@ buildscript {
     }
 }
 
+allprojects {
+    apply plugin: 'idea'
+}
+
 subprojects {
 
     apply plugin: 'java'
