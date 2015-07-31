@@ -29,8 +29,6 @@ cd WORKSPACE
 # If you don't have git, `brew install git` or just download Zipkin directly
 git clone https://github.com/twitter/zipkin.git
 cd zipkin
-# Note the 4GB memory usage. You can use less but your build may fail.
-export GRADLE_OPTS='-Xms512m -Xmx4G -XX:MaxPermSize=1G'
 # Install the Zipkin schema
 cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt
 ```
