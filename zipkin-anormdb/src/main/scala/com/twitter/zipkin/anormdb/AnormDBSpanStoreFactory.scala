@@ -21,7 +21,7 @@ import com.twitter.zipkin.storage.anormdb.{AnormSpanStore, SpanStoreDB}
 
 trait AnormDBSpanStoreFactory { self: App =>
   val anormDB = flag("zipkin.storage.anormdb.db", "sqlite::memory:", "JDBC location URL for the AnormDB")
-  val anormInstall = flag("zipkin.storage.anormdb.install", false, "Create the tables")
+  val anormInstall = flag("zipkin.storage.anormdb.install", true, "Create the tables")
 
   def newAnormSpanStore(): SpanStore = {
     val db = SpanStoreDB(anormDB())
