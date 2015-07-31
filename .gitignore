@@ -1,25 +1,12 @@
+# Gradle
+.gradle
+build/
+
+# Intellij
 .idea/
 *.iml
-out/
-target/
-dist/
-lib_managed/
-zipkin-server/target/
-zipkin-server/dist/
-zipkin-server/lib_managed/
-zipkin-thrift/target/
-zipkin-thrift/dist/
-zipkin-thrift/lib_managed/
-project/lib
-project/boot/
-project/plugins/project/
-project/plugins/src_managed/
-*.log
-*.tmproj
-*.ivyjars
-sbt-launch.jar
-.ensime
-.ensime_lucene
-.history
-build
-.gradle/
+*.ipr
+*.iws
+
+# https://github.com/openzipkin/zipkin/issues/534
+zipkin-collector-service/zipkin.db
