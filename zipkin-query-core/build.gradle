@@ -1,7 +1,5 @@
 dependencies {
-    compile project(':zipkin-common')
     compile project(':zipkin-query')
-    compile project(':zipkin-scrooge')
 
     compile "com.twitter:algebird-core_${scalaInterfaceVersion}:${commonVersions.algebird}"
     compile "com.twitter:ostrich_${scalaInterfaceVersion}:${commonVersions.ostrich}"

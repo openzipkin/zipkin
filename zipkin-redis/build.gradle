@@ -1,5 +1,4 @@
 dependencies {
-    compile project(':zipkin-common')
     compile project(':zipkin-scrooge')
 
     compile "com.twitter:finagle-redis_${scalaInterfaceVersion}:${commonVersions.finagle}"

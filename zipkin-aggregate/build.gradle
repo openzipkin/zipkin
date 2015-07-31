@@ -25,5 +25,4 @@ repositories {
 
 dependencies {
     compile project(':zipkin-cassandra')
-    compile project(':zipkin-common')
 }

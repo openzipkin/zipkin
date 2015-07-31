@@ -19,7 +19,6 @@ dependencies {
     compile project(':zipkin-redis')
     compile project(':zipkin-query')
     compile project(':zipkin-receiver-scribe')
-    compile project(':zipkin-zookeeper')
 
     compile "com.twitter:twitter-server_${scalaInterfaceVersion}:${commonVersions.twitterServer}"
     compile "com.twitter:finagle-zipkin_${scalaInterfaceVersion}:${commonVersions.finagle}"

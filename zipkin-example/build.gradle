@@ -23,10 +23,7 @@ repositories {
 dependencies {
     compile project(':zipkin-tracegen')
     compile project(':zipkin-web')
-    compile project(':zipkin-anormdb')
-    compile project(':zipkin-query')
     compile project(':zipkin-receiver-scribe')
-    compile project(':zipkin-zookeeper')
 
     compile "com.twitter:twitter-server_${scalaInterfaceVersion}:${commonVersions.twitterServer}"
 
