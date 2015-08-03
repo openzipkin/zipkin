@@ -23,6 +23,6 @@ dependencies {
     compile project(':zipkin-anormdb')
 }
 
-sourceSets.test.resources {
-    srcDir 'config'
+sourceSets.main.resources {
+    srcDirs = ['config']
 }

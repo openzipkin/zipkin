@@ -18,7 +18,6 @@ import com.twitter.zipkin.redis
 import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
 import com.twitter.zipkin.storage.Store
 
-
 val redisBuilder = Store.Builder(
     redis.StorageBuilder("0.0.0.0", 6379),
     redis.IndexBuilder("0.0.0.0", 6379)
