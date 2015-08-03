@@ -16,12 +16,13 @@
  */
 package com.twitter.zipkin.collector
 
+import com.google.common.base.Charsets.UTF_8
+import com.google.common.io.{Resources, Files}
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.{ServiceTracker, RuntimeEnvironment}
 import com.twitter.util.Eval
 import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
 import com.twitter.zipkin.BuildProperties
-
 
 object Main {
   val log = Logger.get(getClass.getName)
@@ -29,7 +30,12 @@ object Main {
   def main(args: Array[String]) {
     log.info("Loading configuration")
     val runtime = RuntimeEnvironment(BuildProperties, args)
-    val builder = (new Eval).apply[CollectorServiceBuilder[Seq[String]]](runtime.configFile)
+
+    // Fallback to bundled config resources, if there's no file at the path specified as -f
+    val source = if (runtime.configFile.exists()) Files.toString(runtime.configFile, UTF_8)
+    else Resources.toString(getClass.getResource(runtime.configFile.toString), UTF_8)
+
+    val builder = (new Eval).apply[CollectorServiceBuilder[Seq[String]]](source)
     try {
       val server = builder.apply().apply(runtime)
       server.start()

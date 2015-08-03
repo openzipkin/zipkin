@@ -15,7 +15,8 @@
  */
 package com.twitter.zipkin.config
 
-import com.twitter.io.TempFile
+import com.google.common.base.Charsets.UTF_8
+import com.google.common.io.Resources
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.Eval
 import com.twitter.zipkin.builder.Builder
@@ -26,15 +27,16 @@ class ConfigSpec extends FunSuite with Matchers {
   val eval = new Eval
 
   test("validate collector configs") {
-    val configFiles = Seq(
+    val configSource = Seq(
       "/collector-dev.scala",
-      "/collector-cassandra.scala"
-    ) map {
-      TempFile.fromResourcePath(_)
+      "/collector-cassandra.scala",
+      "/collector-redis.scala"
+    ) map { r =>
+      Resources.toString(getClass.getResource(r), UTF_8)
     }
 
-    for (file <- configFiles) {
-      val config = eval[Builder[RuntimeEnvironment => ZipkinCollector]](file)
+    for (source <- configSource) {
+      val config = eval[Builder[RuntimeEnvironment => ZipkinCollector]](source)
       config should not be(Nil)
       config.apply()
     }
