@@ -12,7 +12,7 @@ include 'zipkin-common',
 
 //'doc'
 'zipkin-example',
-'zipkin-redis-example',
+//'zipkin-redis-example',
 'zipkin-collector-service',
 'zipkin-query-service',
 'zipkin-web',
@@ -47,7 +47,7 @@ include 'zipkin-common',
 'zipkin-zookeeper',
 'zipkin-cassandra',
 'zipkin-anormdb',
-'zipkin-redis',
+//'zipkin-redis',
 
 ////////////
 // Thrift //

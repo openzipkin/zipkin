@@ -20,7 +20,7 @@ repositories {
 dependencies {
     compile project(':zipkin-query-core')
     compile project(':zipkin-cassandra')
-    compile project(':zipkin-redis')
+//    compile project(':zipkin-redis')
     compile project(':zipkin-anormdb')
 }
 
