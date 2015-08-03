@@ -4,6 +4,7 @@ repositories {
 
 dependencies {
     compile project(':zipkin-scrooge')
+    compile project(':zipkin-cassandra-core')
 
     compile 'commons-codec:commons-codec:1.6'
     compile 'org.iq80.snappy:snappy:0.3'
@@ -17,4 +18,6 @@ dependencies {
 
     // for SpanStoreSpec
     testCompile project(':zipkin-common').sourceSets.test.output
+    testCompile 'org.cassandraunit:cassandra-unit:2.1.3.1'
 }
+
