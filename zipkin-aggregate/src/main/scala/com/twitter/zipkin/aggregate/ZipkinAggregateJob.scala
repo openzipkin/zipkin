@@ -47,9 +47,10 @@ final class ZipkinAggregateJob
 
 object SpanSourceProvider {
   def apply(args: Args) : (Map[AnyRef,AnyRef], Source with TypedSource[Span] with TypedSink[Dependencies]) = args.required("source") match {
-    case "cassandra" => {
-      (Map("hosts" -> args.required("hosts"), "port" -> args.getOrElse("port", "9160")), new cassandra.SpanSource)
-    }
+// @fixme needs to be rewritten to use CqlInputFormat
+//    case "cassandra" => {
+//      (Map("hosts" -> args.required("hosts"), "port" -> args.getOrElse("port", "9160")), new cassandra.SpanSource)
+//    }
     case s:String => throw new ArgsException(s+" is not an implemented source.")
   }
 }
