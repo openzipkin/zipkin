@@ -36,18 +36,19 @@ html_show_sphinx = False
 html_style = 'zipkin.css'
 
 project = u'Zipkin'
-copyright = u'2014 Twitter, Inc'
+copyright = u'2015 OpenZipkin contributors'
 htmlhelp_basename = "zipkin"
+release = u'1.2.0-SNAPSHOT'
 
 # e.g. :issue:`36` :ticket:`8`
 extlinks = {
-  'issue': ('https://github.com/twitter/zipkin/issues/%s', 'issue #'),
-  'ex': ('https://github.com/twitter/zipkin/blob/zipkin-example/src/main/scala/%s', 'Zipkin example '),
+  'issue': ('https://github.com/openzipkin/zipkin/issues/%s', 'issue #'),
+  'ex': ('https://github.com/openzipkin/zipkin/blob/master/zipkin-example/src/main/scala/%s', 'Zipkin example '),
   'api': ('http://twitter.github.io/zipkin/docs/#%s', '')
 }
 
 rst_epilog = '''
-.. _Zipkin Examples: https://github.com/twitter/zipkin/tree/zipkin-example
+.. _Zipkin Examples: https://github.com/openzipkin/zipkin/tree/master/zipkin-example
 '''
 
 pygments_style = 'flask_theme_support.FlaskyStyle'
