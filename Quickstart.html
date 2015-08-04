@@ -41,11 +41,11 @@
   </script>
 
   </head>
-  <body>
+  <body role="document">
   
   
 
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -57,14 +57,14 @@
         <li class="right" >
           <a href="index.html" title="User’s guide"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Zipkin</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Zipkin</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="quickstart">
 <h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
@@ -76,7 +76,7 @@ and how to enable tracing on your service.</p>
 package and adds a trace generator to provide random example traces.</p>
 <p>The following command will start an instance of ZipkinExample using SQLite
 in-memory as the data store and populating it with a few example traces.</p>
-<div class="highlight-text"><div class="highlight"><pre>./bin/sbt &quot;zipkin-example/run -zipkin.storage.anormdb.install=true -genSampleTraces=true&quot;
+<div class="highlight-text"><div class="highlight"><pre>./gradlew :zipkin-example:run
 </pre></div>
 </div>
 <p>After it starts up open <a class="reference external" href="http://localhost:8080">http://localhost:8080</a> in your browser and poke around
@@ -90,7 +90,7 @@ Zipkin uses <a class="reference external" href="http://twitter.github.io/twitter
 how the service is composed and configured.</p>
 <p>Run the following to see all the available configuration flags for the example
 project:</p>
-<div class="highlight-text"><div class="highlight"><pre>./bin/sbt &quot;zipkin-example/run -help&quot;
+<div class="highlight-text"><div class="highlight"><pre>./gradlew :zipkin-example:run -PrunArgs=&#39;-help&#39;
 </pre></div>
 </div>
 <p>The list of flags include a bunch of global flags to configure Finagle but also
@@ -112,14 +112,13 @@ and cache them in memory.</dd>
 <div class="section" id="packaging-for-production">
 <h2>Packaging for Production<a class="headerlink" href="#packaging-for-production" title="Permalink to this headline">¶</a></h2>
 <p>Build a distribution package</p>
-<div class="highlight-text"><div class="highlight"><pre>./bin/sbt zipkin-example/package-dist
+<div class="highlight-text"><div class="highlight"><pre>./gradlew installDist -x test
 </pre></div>
 </div>
-<p>A zip archive should now exist under zipkin-example/dist. That will contain all
-necessariy packages and libraries to run the project. Unpack it then run it:</p>
+<p>A distribution should now exist under zipkin-example/build/install/zipkin-example. That will contain all
+necessary packages and libraries to run the project. Change to that directory and run it:</p>
 <pre class="literal-block">
-cd [root directory of unpacked archive]
-java -jar zipkin-example-1.2.0-SNAPSHOT.jar   -zipkin.web.cacheResources=true   [any other config flags]
+bin/zipkin-example   -zipkin.web.cacheResources=true   [any other config flags]
 </pre>
 </div>
 <div class="section" id="customizing-the-service">
@@ -206,7 +205,7 @@ but SpanStore requires <cite>Seq[Span]</cite>.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper"><p class="logo"><a href="index.html">
   <img class="logo" src="_static/logo.jpg" alt="Logo"/>
 </a></p>
@@ -254,7 +253,7 @@ but SpanStore requires <cite>Seq[Span]</cite>.</p>
       </div>
       <div class="clearer"></div>
     </div>
-  <div class="footer">&copy; Copyright 2014 Twitter, Inc.</div>
+  <div class="footer">&copy; Copyright 2015, OpenZipkin contributors.</div>
   
   </body>
 </html>

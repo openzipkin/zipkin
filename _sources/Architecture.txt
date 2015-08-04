@@ -89,7 +89,7 @@ Storage
 
 We originally built Zipkin on Cassandra for storage. It's scalable, has a
 flexible schema, and is heavily used within Twitter. However, we made this
-component pluggable, and we now have support for Redis, HBase, MySQL,
+component pluggable, and we now have support for Redis, MySQL,
 PostgreSQL, SQLite, and H2.
 
 Zipkin Query Service

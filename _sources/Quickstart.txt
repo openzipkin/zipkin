@@ -14,7 +14,7 @@ The following command will start an instance of ZipkinExample using SQLite
 in-memory as the data store and populating it with a few example traces.
 
 .. parsed-literal::
-    ./bin/sbt "zipkin-example/run -zipkin.storage.anormdb.install=true -genSampleTraces=true"
+    ./gradlew :zipkin-example:run
 
 After it starts up open http://localhost:8080 in your browser and poke around
 the example traces. They're all randomly generated so they probably wont make
@@ -31,7 +31,7 @@ Run the following to see all the available configuration flags for the example
 project:
 
 .. parsed-literal::
-    ./bin/sbt "zipkin-example/run -help"
+    ./gradlew :zipkin-example:run -PrunArgs='-help'
 
 The list of flags include a bunch of global flags to configure Finagle but also
 many to configure the different Zipkin modules we've mixed in to zipkin-example.
@@ -56,14 +56,13 @@ Packaging for Production
 Build a distribution package
 
 .. parsed-literal::
-    ./bin/sbt zipkin-example/package-dist
+    ./gradlew installDist -x test
 
-A zip archive should now exist under zipkin-example/dist. That will contain all
-necessariy packages and libraries to run the project. Unpack it then run it:
+A distribution should now exist under zipkin-example/build/install/zipkin-example. That will contain all
+necessary packages and libraries to run the project. Change to that directory and run it:
 
 .. parsed-literal::
-    cd [root directory of unpacked archive]
-    java -jar zipkin-example-1.2.0-SNAPSHOT.jar \
+    bin/zipkin-example \
       -zipkin.web.cacheResources=true \
       [any other config flags]
 
