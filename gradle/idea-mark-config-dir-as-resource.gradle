@@ -1,0 +1,16 @@
+/**
+ * The idea gradle plugin (as of 2015. Aug. 05) doesn't support marking source directories as resources when
+ * translating sourceSet declarations to an idea model. This workaround marks the "config" dir in a module
+ * as "resources" in idea, without touching anything else.
+ *
+ * From: https://discuss.gradle.org/t/the-idea-plugin-breaks-the-new-intellij-13-iml-configuration/2456
+ *
+ * Related bugs:
+ *  https://issues.gradle.org/browse/GRADLE-3108
+ *  https://issues.gradle.org/browse/GRADLE-2975
+ */
+idea.module.iml.withXml {
+	it.asNode()
+			.component.content.sourceFolder
+			.find { it.@url == 'file://$MODULE_DIR$/config' }.attributes().put('type', 'java-resource')
+}

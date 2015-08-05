@@ -24,6 +24,5 @@ dependencies {
     compile project(':zipkin-anormdb')
 }
 
-sourceSets.main.resources {
-    srcDirs = ['config']
-}
+sourceSets.main.resources.srcDirs += ['config']
+apply from: "${rootDir}/gradle/idea-mark-config-dir-as-resource.gradle"
