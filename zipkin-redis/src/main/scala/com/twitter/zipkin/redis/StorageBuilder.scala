@@ -27,7 +27,7 @@ import com.twitter.util.Future
 
 case class StorageBuilder(
   client: Client,
-  ttl: Duration = 7.days,
+  ttl: Option[Duration] = Some(7.days),
   authPassword: Option[String] = None
 ) extends Builder[Storage] { self =>
 
@@ -37,7 +37,7 @@ case class StorageBuilder(
     val authenticate = authPassword.map(p => client.auth(StringToChannelBuffer(p))) getOrElse Future.Done
     Await.result(authenticate before Future.value(new RedisStorage {
       val database = client
-      val ttl = Some(self.ttl)
+      val ttl = self.ttl
     }), 10.seconds)
   }
 }

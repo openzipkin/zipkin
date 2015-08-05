@@ -27,7 +27,7 @@ import com.twitter.util.Future
 
 case class IndexBuilder(
   client: Client,
-  ttl: Duration = 7.days,
+  ttl: Option[Duration] = Some(7.days),
   authPassword: Option[String] = None
 ) extends Builder[Index] { self =>
 
@@ -37,7 +37,7 @@ case class IndexBuilder(
     val authenticate = authPassword.map(p => client.auth(StringToChannelBuffer(p))) getOrElse Future.Done
     Await.result(authenticate before Future.value(new RedisIndex {
       val database = client
-      val ttl = Some(self.ttl)
+      val ttl = self.ttl
     }), 10.seconds)
   }
 }
