@@ -26,20 +26,18 @@ import com.twitter.util.Await
 import com.twitter.util.Future
 
 case class StorageBuilder(
-  host: String,
-  port: Int,
-  ttl: Duration = 7.days,
+  client: Client,
+  ttl: Option[Duration] = Some(7.days),
   authPassword: Option[String] = None
 ) extends Builder[Storage] { self =>
 
-  def ttl(t: Duration): StorageBuilder = copy(ttl = t)
+  def ttl(t: Duration): StorageBuilder = copy(ttl = Some(t))
 
   def apply() = {
-    val client = Client("%s:%d".format(host, port))
     val authenticate = authPassword.map(p => client.auth(StringToChannelBuffer(p))) getOrElse Future.Done
     Await.result(authenticate before Future.value(new RedisStorage {
       val database = client
-      val ttl = Some(self.ttl)
+      val ttl = self.ttl
     }), 10.seconds)
   }
 }
