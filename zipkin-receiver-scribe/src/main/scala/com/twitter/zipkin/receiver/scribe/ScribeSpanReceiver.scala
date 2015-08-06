@@ -18,7 +18,7 @@ package com.twitter.zipkin.receiver.scribe
 import com.twitter.app.{App, Flaggable}
 import com.twitter.conversions.time._
 import com.twitter.finagle.ThriftMux
-import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
+import com.twitter.finagle.stats.{Stat, DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.util.{DefaultTimer, InetSocketAddressUtil}
 import com.twitter.logging.Logger
 import com.twitter.scrooge.BinaryThriftStructSerializer
@@ -104,7 +104,7 @@ class ScribeReceiver(
   }.toMap
 
   private[this] def entryToSpan(entry: LogEntry): Option[ThriftSpan] = try {
-    val span = stats.time("deserializeSpan") { deserializer.fromString(entry.message) }
+    val span = Stat.time(stats.stat("deserializeSpan")) { deserializer.fromString(entry.message) }
     Some(span)
   } catch {
     case e: Exception => {

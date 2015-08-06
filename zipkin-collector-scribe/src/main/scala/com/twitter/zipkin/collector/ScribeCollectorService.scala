@@ -81,7 +81,7 @@ class ScribeCollectorService(
 
   def storeDependencies(dependencies: thriftscala.Dependencies): Future[Unit] = {
 
-    Stats.timeFutureMillis("collector.storeDependencies") {
+    Stats.timeFutureMillisLazy("collector.storeDependencies") {
       Future.join {
         stores map { _.aggregates.storeDependencies(dependencies.toDependencies) }
       }
@@ -97,7 +97,7 @@ class ScribeCollectorService(
     Stats.incr("collector.storeTopAnnotations")
     log.info("storeTopAnnotations: " + serviceName + "; " + annotations)
 
-    Stats.timeFutureMillis("collector.storeTopAnnotations") {
+    Stats.timeFutureMillisLazy("collector.storeTopAnnotations") {
       Future.join {
         stores map { _.aggregates.storeTopAnnotations(serviceName, annotations) }
       }
@@ -113,7 +113,7 @@ class ScribeCollectorService(
     Stats.incr("collector.storeTopKeyValueAnnotations")
     log.info("storeTopKeyValueAnnotations: " + serviceName + ";" + annotations)
 
-    Stats.timeFutureMillis("collector.storeTopKeyValueAnnotations") {
+    Stats.timeFutureMillisLazy("collector.storeTopKeyValueAnnotations") {
       Future.join {
         stores map { _.aggregates.storeTopKeyValueAnnotations(serviceName, annotations) }
       }
