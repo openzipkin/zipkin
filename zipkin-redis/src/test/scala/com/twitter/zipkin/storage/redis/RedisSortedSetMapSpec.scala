@@ -20,9 +20,9 @@ import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
 import com.twitter.finagle.redis.protocol.ZRangeResults
+import com.twitter.util.Await._
 import com.twitter.zipkin.common.{Annotation, AnnotationType, BinaryAnnotation, Endpoint, Span}
 import org.jboss.netty.buffer.ChannelBuffers
-import org.scalatest.BeforeAndAfter
 
 import scala.util.Random
 
@@ -65,7 +65,7 @@ class RedisSortedSetMapSpec extends RedisSpecification {
 
   test("put a value in and get it out") {
     setMap.add("key", 0.0, ChannelBuffers.copiedBuffer("whatever", Charset.defaultCharset))
-    z2seq(setMap.get("key", -1, 1, 1)()) should be (Seq("whatever" -> 0.0))
+    z2seq(result(setMap.get("key", -1, 1, 1))) should be (Seq("whatever" -> 0.0))
   }
 
   test("follow the workflow for an index") {
@@ -75,6 +75,6 @@ class RedisSortedSetMapSpec extends RedisSpecification {
     val binaryAnnos = for (serviceName <- span.serviceNames;
                            binaryAnno <- span.binaryAnnotations)
       setMap.add(Seq(serviceName, binaryAnno.key, chanBuf2String(ChannelBuffers.copiedBuffer(binaryAnno.value))) mkString ":", time, span.traceId)
-    z2longs(setMap.get(Seq("service", "BAH", "BEH") mkString ":", 0, 4, 3)()) should be (Seq(span1.traceId -> time.toDouble))
+    z2longs(result(setMap.get(Seq("service", "BAH", "BEH") mkString ":", 0, 4, 3))) should be (Seq(span1.traceId -> time.toDouble))
   }
 }

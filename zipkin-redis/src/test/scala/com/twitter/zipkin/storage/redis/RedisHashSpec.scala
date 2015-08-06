@@ -16,6 +16,7 @@
 
 package com.twitter.zipkin.storage.redis
 
+import com.twitter.util.Await.result
 import org.jboss.netty.buffer.ChannelBuffers
 
 class RedisHashSpec extends RedisSpecification {
@@ -31,40 +32,40 @@ class RedisHashSpec extends RedisSpecification {
   buf4.writeLong(100L)
 
   test("place a new item and get it out") {
-    hash.put(key1, buf1)() should be (1)
-    hash.get(key1)() should be (Some(buf1))
+    result(hash.put(key1, buf1)) should be (1)
+    result(hash.get(key1)) should be (Some(buf1))
   }
 
   test("place a new item and update it") {
-    hash.put(key1, buf1)() should be (1)
-    hash.put(key1, buf2)() should be (0)
-    hash.get(key1)() should be (Some(buf2))
+    result(hash.put(key1, buf1)) should be (1)
+    result(hash.put(key1, buf2)) should be (0)
+    result(hash.get(key1)) should be (Some(buf2))
   }
 
   test("place a few items and get them out") {
-    hash.put(key1, buf1)() should be (1)
-    hash.put(key2, buf2)() should be (1)
-    hash.put(key3, buf3)() should be (1)
-    hash.get(key1)() should be (Some(buf1))
-    hash.get(key2)() should be (Some(buf2))
-    hash.get(key3)() should be (Some(buf3))
+    result(hash.put(key1, buf1)) should be (1)
+    result(hash.put(key2, buf2)) should be (1)
+    result(hash.put(key3, buf3)) should be (1)
+    result(hash.get(key1)) should be (Some(buf1))
+    result(hash.get(key2)) should be (Some(buf2))
+    result(hash.get(key3)) should be (Some(buf3))
   }
 
   test("place a few items and remove some") {
-    hash.put(key1, buf1)() should be (1)
-    hash.put(key2, buf2)() should be (1)
-    hash.put(key3, buf3)() should be (1)
-    hash.remove(Seq(key1, key2))() should be (2)
-    hash.get(key1)() should be (None)
-    hash.get(key2)() should be (None)
-    hash.get(key3)() should be (Some(buf3))
+    result(hash.put(key1, buf1)) should be (1)
+    result(hash.put(key2, buf2)) should be (1)
+    result(hash.put(key3, buf3)) should be (1)
+    result(hash.remove(Seq(key1, key2))) should be (2)
+    result(hash.get(key1)) should be (None)
+    result(hash.get(key2)) should be (None)
+    result(hash.get(key3)) should be (Some(buf3))
   }
 
   test("place an item and incr it") {
     val buf5 = ChannelBuffers.buffer(8)
     buf5.writeLong(101L)
-    hash.put(key1, buf4)() should be (1)
-    hash.incrBy(key1, 1)() should be (101)
-    hash.get(key1)() should be (Some(buf5))
+    result(hash.put(key1, buf4)) should be (1)
+    result(hash.incrBy(key1, 1)) should be (101)
+    result(hash.get(key1)) should be (Some(buf5))
   }
 }

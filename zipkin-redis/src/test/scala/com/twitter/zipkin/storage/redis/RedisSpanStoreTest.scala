@@ -16,7 +16,7 @@
 package com.twitter.zipkin.storage.redis
 
 import com.twitter.app.App
-import com.twitter.util.Await
+import com.twitter.util.Await.result
 import com.twitter.zipkin.redis.RedisSpanStoreFactory
 import org.scalatest.FunSuite
 
@@ -30,6 +30,6 @@ class RedisSpanStoreTest extends FunSuite {
 
   test("validate") {
     val spanStore = RedisStore.newRedisSpanStore()
-    Await.result(spanStore.storage.database.flushDB())
+    result(spanStore.storage.database.flushDB())
   }
 }
