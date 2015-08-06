@@ -16,6 +16,7 @@
 
 package com.twitter.zipkin.storage.redis
 
+import com.twitter.util.Await._
 import org.jboss.netty.buffer.ChannelBuffers
 
 class RedisSetMapSpec extends RedisSpecification {
@@ -25,14 +26,14 @@ class RedisSetMapSpec extends RedisSpecification {
   val buf3 = ChannelBuffers.copiedBuffer("val3")
 
   test("add an item then get it out") {
-    setMap.add("key", buf1)()
-    setMap.get("key")() should be (Set(buf1))
+    result(setMap.add("key", buf1))
+    result(setMap.get("key")) should be (Set(buf1))
   }
 
   test("add many items and then get them out") {
-    setMap.add("key", buf1)()
-    setMap.add("key", buf2)()
-    setMap.add("key", buf3)()
-    setMap.get("key")() should be (Set(buf1, buf2, buf3))
+    result(setMap.add("key", buf1))
+    result(setMap.add("key", buf2))
+    result(setMap.add("key", buf3))
+    result(setMap.get("key")) should be (Set(buf1, buf2, buf3))
   }
 }

@@ -18,6 +18,7 @@ package com.twitter.zipkin.storage.redis
 import java.nio.ByteBuffer
 
 import com.twitter.conversions.time.intToTimeableNumber
+import com.twitter.util.Await.result
 import com.twitter.zipkin.common.{Annotation, AnnotationType, BinaryAnnotation, Endpoint, Span}
 
 class RedisStorageSpec extends RedisSpecification {
@@ -47,23 +48,23 @@ class RedisStorageSpec extends RedisSpecification {
     List(binaryAnnotation("BAH", "BEH")))
 
   test("getTraceById") {
-    redisStorage.storeSpan(span1)()
-    val trace = redisStorage.getSpansByTraceId(span1.traceId)()
+    result(redisStorage.storeSpan(span1))
+    val trace = result(redisStorage.getSpansByTraceId(span1.traceId))
     trace.isEmpty should be (false)
     trace(0) should be (span1)
   }
 
   test("getTracesByIds") {
-    redisStorage.storeSpan(span1)()
-    val actual1 = redisStorage.getSpansByTraceIds(List(span1.traceId))()
+    result(redisStorage.storeSpan(span1))
+    val actual1 = result(redisStorage.getSpansByTraceIds(List(span1.traceId)))
     actual1.isEmpty should be (false)
     actual1(0).isEmpty should be (false)
     actual1(0)(0) should be (span1)
 
     val span2 = Span(666, "methodcall2", spanId, None, List(ann2),
       List(binaryAnnotation("BAH2", "BEH2")))
-    redisStorage.storeSpan(span2)()
-    val actual2 = redisStorage.getSpansByTraceIds(List(span1.traceId, span2.traceId))()
+    result(redisStorage.storeSpan(span2))
+    val actual2 = result(redisStorage.getSpansByTraceIds(List(span1.traceId, span2.traceId)))
     actual2.isEmpty should be (false)
     actual2(0).isEmpty should be (false)
     actual2(0)(0) should be (span1)
@@ -72,13 +73,13 @@ class RedisStorageSpec extends RedisSpecification {
   }
 
   test("getTracesByIds should return empty list if no trace exists") {
-    val actual1 = redisStorage.getSpansByTraceIds(List(span1.traceId))()
+    val actual1 = result(redisStorage.getSpansByTraceIds(List(span1.traceId)))
     actual1.isEmpty should be (true)
   }
 
   test("set time to live on a trace and then get it") {
-    redisStorage.storeSpan(span1)()
-    redisStorage.setTimeToLive(span1.traceId, 1234.seconds)()
-    redisStorage.getTimeToLive(span1.traceId)() should be (1234.seconds)
+    result(redisStorage.storeSpan(span1))
+    result(redisStorage.setTimeToLive(span1.traceId, 1234.seconds))
+    result(redisStorage.getTimeToLive(span1.traceId)) should be (1234.seconds)
   }
 }

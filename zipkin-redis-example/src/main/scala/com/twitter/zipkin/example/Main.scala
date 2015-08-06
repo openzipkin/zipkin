@@ -1,7 +1,7 @@
 package com.twitter.zipkin.example
 
 import com.twitter.finagle.Httpx
-import com.twitter.server.{Closer, TwitterServer}
+import com.twitter.server.TwitterServer
 import com.twitter.util.{Await, Closable}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
@@ -13,7 +13,7 @@ import com.twitter.zipkin.web.ZipkinWebFactory
 import com.twitter.zipkin.zookeeper.ZooKeeperClientFactory
 import com.twitter.zipkin.{thriftscala => thrift}
 
-object Main extends TwitterServer with Closer
+object Main extends TwitterServer
   with ZooKeeperClientFactory
   with ScribeSpanReceiverFactory
   with ZipkinWebFactory

@@ -37,7 +37,7 @@ trait RedisStorage extends Storage {
   override def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] =
     spanListMap.setTTL(traceId, ttl).unit
 
-  override def getTimeToLive(traceId: Long): Future[Duration] = spanListMap.getTTL(traceId) map (_.getOrElse(Duration.eternity))
+  override def getTimeToLive(traceId: Long): Future[Duration] = spanListMap.getTTL(traceId) map (_.getOrElse(Duration.Top))
 
   override def getSpansByTraceId(traceId: Long) : Future[Seq[Span]] =
     fetchTraceById(traceId) map (_.get)

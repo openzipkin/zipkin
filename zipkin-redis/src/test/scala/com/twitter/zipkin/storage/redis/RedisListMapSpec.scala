@@ -17,6 +17,7 @@
 package com.twitter.zipkin.storage.redis
 
 import com.twitter.conversions.time.intToTimeableNumber
+import com.twitter.util.Await.result
 import org.jboss.netty.buffer.ChannelBuffers
 
 class RedisListMapSpec extends RedisSpecification {
@@ -26,64 +27,64 @@ class RedisListMapSpec extends RedisSpecification {
   val buf3 = ChannelBuffers.copiedBuffer("value3")
 
   test("insert an element properly") {
-    listMap.put("key", buf1)()
-    listMap.get("key")() should be (Seq(buf1))
+    result(listMap.put("key", buf1))
+    result(listMap.get("key")) should be (Seq(buf1))
   }
 
   test("insert a few elements properly") {
-    listMap.put("key", buf2)()
-    listMap.put("key", buf3)()
-    listMap.put("key", buf1)()
-    listMap.get("key")().toSet should be (Set(buf1, buf2, buf3))
+    result(listMap.put("key", buf2))
+    result(listMap.put("key", buf3))
+    result(listMap.put("key", buf1))
+    result(listMap.get("key")).toSet should be (Set(buf1, buf2, buf3))
   }
 
   test("remove an element properly") {
-    listMap.put("key", buf2)()
-    listMap.put("key", buf3)()
-    listMap.put("key", buf1)()
-    listMap.remove("key", Seq(buf1))()
-    listMap.get("key")().toSet should be (Set(buf2, buf3))
+    result(listMap.put("key", buf2))
+    result(listMap.put("key", buf3))
+    result(listMap.put("key", buf1))
+    result(listMap.remove("key", Seq(buf1)))
+    result(listMap.get("key")).toSet should be (Set(buf2, buf3))
   }
 
   test("remove a few elements properly") {
-    listMap.put("key", buf2)()
-    listMap.put("key", buf3)()
-    listMap.put("key", buf1)()
-    listMap.remove("key", Seq(buf1, buf2))()
-    listMap.get("key")().toSet should be (Set(buf3))
+    result(listMap.put("key", buf2))
+    result(listMap.put("key", buf3))
+    result(listMap.put("key", buf1))
+    result(listMap.remove("key", Seq(buf1, buf2)))
+    result(listMap.get("key")).toSet should be (Set(buf3))
   }
 
   test("obliterate a key (and check that it is in fact obliterated)") {
-    listMap.put("key", buf2)()
-    listMap.put("key", buf3)()
-    listMap.put("key", buf1)()
-    listMap.exists("key")() should be (true)
-    listMap.delete("key")()
-    listMap.get("key")() should be (Seq())
-    listMap.exists("key")() should be (false)
+    result(listMap.put("key", buf2))
+    result(listMap.put("key", buf3))
+    result(listMap.put("key", buf1))
+    result(listMap.exists("key")) should be (true)
+    result(listMap.delete("key"))
+    result(listMap.get("key")) should be (Seq())
+    result(listMap.exists("key")) should be (false)
   }
 
   test("array map should get timeout properly") {
     val tmp = new RedisListMap(_client, "timing", Some(1000.seconds))
-    tmp.put("key", buf1)()
-    tmp.getTTL("key")() should be (Some(1000.seconds))
+    result(tmp.put("key", buf1))
+    result(tmp.getTTL("key")) should be (Some(1000.seconds))
   }
 
   test("array map should get invalid timeout properly") {
-    listMap.put("key", buf1)()
-    listMap.getTTL("key")() should be (None)
+    result(listMap.put("key", buf1))
+    result(listMap.getTTL("key")) should be (None)
   }
 
   test("array map should timeout properly") {
     val tmp = new RedisListMap(_client, "timing", Some(5.seconds))
-    tmp.put("key", buf1)()
+    result(tmp.put("key", buf1))
     Thread.sleep(10000)
-    tmp.get("key")() should be (Seq.empty)
+    result(tmp.get("key")) should be (Seq.empty)
   }
 
   test("array map should reset timeout properly") {
-    listMap.put("key", buf1)()
-    listMap.setTTL("key", 1000.seconds)() should be (true)
-    listMap.getTTL("key")() should be (Some(1000.seconds))
+    result(listMap.put("key", buf1))
+    result(listMap.setTTL("key", 1000.seconds)) should be (true)
+    result(listMap.getTTL("key")) should be (Some(1000.seconds))
   }
 }
