@@ -52,7 +52,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
 
     def apply(response: Response) {
       response.setContentType(typ)
-      response.content = Buf.ByteArray(content)
+      response.content = Buf.ByteArray.Owned(content)
     }
   }
 
