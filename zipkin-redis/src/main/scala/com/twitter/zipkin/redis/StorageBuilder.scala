@@ -18,12 +18,10 @@ package com.twitter.zipkin.redis
 import com.twitter.conversions.time._
 import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.util.StringToChannelBuffer
-import com.twitter.util.Duration
+import com.twitter.util.{Await, Duration, Future}
 import com.twitter.zipkin.builder.Builder
-import com.twitter.zipkin.storage.redis.RedisStorage
 import com.twitter.zipkin.storage.Storage
-import com.twitter.util.Await
-import com.twitter.util.Future
+import com.twitter.zipkin.storage.redis.RedisStorage
 
 case class StorageBuilder(
   client: Client,
@@ -35,9 +33,6 @@ case class StorageBuilder(
 
   def apply() = {
     val authenticate = authPassword.map(p => client.auth(StringToChannelBuffer(p))) getOrElse Future.Done
-    Await.result(authenticate before Future.value(new RedisStorage {
-      val database = client
-      val ttl = self.ttl
-    }), 10.seconds)
+    Await.result(authenticate before Future.value(new RedisStorage(client, self.ttl)), 10.seconds)
   }
 }
