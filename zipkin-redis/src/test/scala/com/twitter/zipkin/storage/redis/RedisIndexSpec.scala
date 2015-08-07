@@ -16,18 +16,14 @@
 
 package com.twitter.zipkin.storage.redis
 
-import java.nio.ByteBuffer
-
 import com.twitter.conversions.time.intToTimeableNumber
 import com.twitter.util.Await.result
 import com.twitter.zipkin.common.{Annotation, AnnotationType, BinaryAnnotation, Endpoint, Span}
 import com.twitter.zipkin.storage.IndexedTraceId
+import java.nio.ByteBuffer
 
 class RedisIndexSpec extends RedisSpecification {
-  val redisIndex = new RedisIndex {
-    val database = _client
-    val ttl = Some(7.days)
-  }
+  val redisIndex = new RedisIndex(_client, Some(7.days))
 
   val ep = Endpoint(123, 123, "service")
 

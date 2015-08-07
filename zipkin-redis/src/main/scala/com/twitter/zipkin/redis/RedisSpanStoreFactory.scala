@@ -8,6 +8,7 @@ import com.twitter.util.Duration
 import com.twitter.zipkin.storage.redis.RedisSpanStore
 
 trait RedisSpanStoreFactory { self: App =>
+  // TODO: authPassword!
   val redisHost = flag("zipkin.storage.redis.host", "0.0.0.0", "Host for Redis")
   val redisPort = flag("zipkin.storage.redis.port", 6379, "Port for Redis")
   val redisTtl = flag("zipkin.storage.redis.ttl", 168, "Redis data TTL in hours. A value smaller or equal to 0 means no ttl")
@@ -29,9 +30,6 @@ trait RedisSpanStoreFactory { self: App =>
     } else {
       optionalTtl = Some(redisTtl().hours)
     }
-
-    val storage = StorageBuilder(client, optionalTtl)
-    val index = IndexBuilder(client, optionalTtl)
-    new RedisSpanStore(index.apply(), storage.apply())
+    new RedisSpanStore(client, optionalTtl)
   }
 }

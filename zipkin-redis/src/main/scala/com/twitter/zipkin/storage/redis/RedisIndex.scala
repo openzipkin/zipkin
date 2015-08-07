@@ -1,203 +1,160 @@
-/*
- * Copyright 2012 Tumblr Inc.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.twitter.zipkin.storage.redis
 
+import com.google.common.base.Charsets.UTF_8
 import com.twitter.finagle.redis.Client
-import com.twitter.finagle.redis.protocol.ZRangeResults
 import com.twitter.util.{Duration, Future}
+import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation, Span}
 import com.twitter.zipkin.storage.{Index, IndexedTraceId, TraceIdDuration}
 import java.nio.ByteBuffer
-import org.jboss.netty.buffer.{ChannelBuffer, ChannelBuffers}
-import com.twitter.zipkin.Constants
+import org.jboss.netty.buffer.ChannelBuffers.copiedBuffer
 
-trait RedisIndex extends Index {
-
-  val database: Client
-
+/**
+ * @param client the redis client to use
+ * @param ttl expires keys older than this many seconds.
+ */
+class RedisIndex(
+  val client: Client,
   val ttl: Option[Duration]
+) extends Index {
 
-  /**
-   * A special data structure for dealing with keys which are treated differently if different
-   * arguments are passed in.
-   */
-  case class OptionSortedSetMap(_client: Client, firstPrefix: String, secondPrefix: String) {
-    lazy val firstSetMap = new RedisSortedSetMap(_client, firstPrefix, ttl)
-    lazy val secondSetMap = new RedisSortedSetMap(_client, secondPrefix, ttl)
+  private case class SpanKey(service: String, span: String)
 
-    def get(primaryKey: String,
-      secondaryKey: Option[String],
-      start: Option[Double],
-      stop: Double,
-      count: Int) = secondaryKey match {
-        case Some(contents) =>
-          firstSetMap.get(redisJoin(primaryKey, contents), start.getOrElse(0), stop, count)
-        case None => secondSetMap.get(primaryKey, start.getOrElse(0), stop, count)
-      }
+  private case class AnnotationKey(service: String, annotation: String)
 
-    def put(primaryKey: String, secondaryKey: Option[String], score: Double, value: ChannelBuffer) = {
-      val first = secondaryKey map { secondValue =>
-        firstSetMap.add(redisJoin(primaryKey, secondValue), score, value)
-      }
-      val second = secondSetMap.add(primaryKey, score, value)
-      Future.join(Seq(first.getOrElse(Future.Unit), second))
-    }
+  private case class BinaryAnnotationKey(service: String, annotation: String, value: String)
+
+  private[this] val serviceIndex = new TraceIndex[String](client, ttl) {
+    override def encodeKey(key: String) =
+      copiedBuffer("service:" + key, UTF_8)
   }
-
-  /**
-   * A singleton RedisSet
-   */
-  case class RedisSet(client: Client, key: String) {
-    val _underlying = new RedisSetMap(client, "singleton", ttl)
-    def get() = _underlying.get(key)
-    def add(bytes: ChannelBuffer) = _underlying.add(key, bytes)
+  private[this] val spanIndex = new TraceIndex[SpanKey](client, ttl) {
+    override def encodeKey(key: SpanKey) =
+      copiedBuffer("service:span:%s:%s".format(key.service, key.span), UTF_8)
   }
-
-  lazy val annotationsListMap = new RedisSortedSetMap(database, "annotations", ttl)
-  lazy val binaryAnnotationsListMap = new RedisSortedSetMap(database, "binary_annotations", ttl)
-  lazy val serviceSpanMap = OptionSortedSetMap(database, "service", "service:span")
-  lazy val spanMap = new RedisSetMap(database, "span", ttl)
-  lazy val serviceArray = new RedisSet(database, "services")
-  lazy val traceHash = new RedisHash(database, "ttlMap")
+  private[this] val annotationIndex = new TraceIndex[AnnotationKey](client, ttl) {
+    override def encodeKey(key: AnnotationKey) =
+      copiedBuffer("annotations:%s:%s".format(key.service, key.annotation), UTF_8)
+  }
+  private[this] val binaryAnnotationIndex = new TraceIndex[BinaryAnnotationKey](client, ttl) {
+    override def encodeKey(key: BinaryAnnotationKey) =
+      copiedBuffer("binary_annotations:%s:%s:%s".format(key.service, key.annotation, key.value), UTF_8)
+  }
+  private[this] val spanNames = new SetMultimap(client, ttl, "span")
+  private[this] val serviceNames = new SetMultimap(client, ttl, "singleton")
+  // TODO: bad and misleading name. should ttlMap be something else?
+  private[this] val timeRanges = new TimeRangeStore(client, "ttlMap")
 
   override def close() = {
-    database.release()
+    client.release()
   }
 
-  private[this] def zRangeResultsToSeqIds(arr: ZRangeResults): Seq[IndexedTraceId] =
-    arr.asTuples map (tup => IndexedTraceId(tup._1, tup._2.toLong))
+  override def getTraceIdsByName(
+    serviceName: String, spanName: Option[String],
+    endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
+    if (spanName.isDefined) {
+      spanIndex.list(SpanKey(serviceName, spanName.get), endTs, limit)
+    } else {
+      serviceIndex.list(serviceName, endTs, limit)
+    }
+  }
 
-  private[redis] def redisJoin(items: String*) = items.mkString(":")
+  override def getTraceIdsByAnnotation(
+    serviceName: String, annotation: String, value: Option[ByteBuffer],
+    endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
+    if (value.isDefined) {
+      val string = copiedBuffer(value.get).toString(UTF_8)
+      binaryAnnotationIndex.list(BinaryAnnotationKey(serviceName, annotation, string), endTs, limit)
+    } else {
+      annotationIndex.list(AnnotationKey(serviceName, annotation), endTs, limit)
+    }
+  }
 
-  override def getTraceIdsByName(serviceName: String, span: Option[String],
-    endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] =
-    serviceSpanMap.get(
-      serviceName,
-      span,
-      ttl map (dur => endTs - dur.inMicroseconds),
-      endTs,
-      limit) map zRangeResultsToSeqIds
-
-  override def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
-    endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = (value match {
-      case Some(anno) =>
-        binaryAnnotationsListMap.get(
-          redisJoin(serviceName, annotation, ChannelBuffers.copiedBuffer(anno)),
-          (ttl map (dur => (endTs - dur.inMicroseconds).toDouble)).getOrElse(0.0),
-          endTs,
-          limit)
-      case None =>
-        annotationsListMap.get(
-          redisJoin(serviceName, annotation),
-          (ttl map (dur => (endTs - dur.inMicroseconds).toDouble)).getOrElse(0.0),
-          endTs,
-          limit)
-    }) map zRangeResultsToSeqIds
-
-  override def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = Future.collect(
-    traceIds map (getTraceDuration(_))
-  ) map (_ flatten)
+  override def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] =
+    Future.collect(traceIds map getTraceDuration) map (_.flatten)
 
   private[this] def getTraceDuration(traceId: Long): Future[Option[TraceIdDuration]] =
-    traceHash.get(traceId) map {
-      _ flatMap { bytes =>
-        val TimeRange(start, end) = decodeStartEnd(bytes)
-        Some(TraceIdDuration(traceId, end - start, start))
-      }
+    timeRanges.get(traceId)
+      .map(_.flatMap(r => Some(TraceIdDuration(traceId, r.stopTs - r.startTs, r.startTs))))
+
+  override def getServiceNames = serviceNames.get("services")
+
+  override def getSpanNames(service: String) = spanNames.get(service)
+
+  override def indexTraceIdByServiceAndName(span: Span): Future[Unit] = {
+    if (span.lastAnnotation.isEmpty) {
+      return Future.Unit
     }
-
-  override def getServiceNames: Future[Set[String]] = serviceArray.get() map (serviceNames =>
-    (serviceNames map (new String(_))).toSet
-  )
-
-  override def getSpanNames(service: String): Future[Set[String]] = spanMap.get(service) map (
-    strings => (strings map (new String(_))).toSet
-  )
-
-  override def indexTraceIdByServiceAndName(span: Span) : Future[Unit] = Future.join(
-    (span.serviceNames toSeq) map { serviceName =>
-      (span.lastAnnotation map { last =>
-        serviceSpanMap.put(serviceName, Some(span.name), last.timestamp, span.traceId)
-      }).getOrElse(Future.Unit)
-    }
-  )
-
-  override def indexSpanByAnnotations(span: Span) : Future[Unit] = {
-      def encodeAnnotation(bin: BinaryAnnotation): String = bin.annotationType match {
-        case AnnotationType.Bool => (if (bin.value.get() != 0) true else false).toString
-        case AnnotationType.Double => bin.value.getDouble.toString
-        case AnnotationType.I16 => bin.value.getShort.toString
-        case AnnotationType.I32 => bin.value.getInt.toString
-        case AnnotationType.I64 => bin.value.getLong.toString
-        case _ => ChannelBuffers.copiedBuffer(bin.value)
-      }
-
-      def binaryAnnoStringify(bin: BinaryAnnotation, service: String): String =
-        redisJoin(service, bin.key, encodeAnnotation(bin))
-
-      span.lastAnnotation.map {
-        lastAnnotation =>
-          Future.join({
-            val time = lastAnnotation.timestamp
-            val binaryAnnos: Seq[Future[Unit]] = span.serviceNames.toSeq flatMap {
-              serviceName =>
-                span.binaryAnnotations map {
-                  binaryAnno =>
-                    binaryAnnotationsListMap.add(
-                      binaryAnnoStringify(binaryAnno, serviceName),
-                      time,
-                      span.traceId
-                    )
-                }
-            }
-            val annos = for (serviceName <- span.serviceNames toSeq;
-              anno <- span.annotations if (!Constants.CoreAnnotations.contains(anno.value)))
-              yield annotationsListMap.add(redisJoin(serviceName, anno.value), time, span.traceId)
-            annos ++ binaryAnnos
-          }
+    val lastTimestamp = span.lastAnnotation.get.timestamp
+    Future.join(
+      span.serviceNames.toSeq.flatMap(serviceName =>
+        Seq(
+          spanIndex.add(SpanKey(serviceName, span.name), lastTimestamp, span.traceId),
+          serviceIndex.add(serviceName, lastTimestamp, span.traceId)
         )
-      } getOrElse {
-        Future.Unit
-      }
+      )
+    )
   }
 
-  override def indexServiceName(span: Span): Future[Unit] = Future.join(
-    span.serviceNames.toSeq collect {case name if name != "" => serviceArray.add(name)}
-  )
-
-  override def indexSpanNameByService(span: Span): Future[Unit] =
-    if (span.name != "")
-      Future.join(
-        for (serviceName <- span.serviceNames.toSeq
-          if serviceName != "")
-          yield spanMap.add(serviceName, span.name)
-      )
-    else
-      Future.Unit
-
-  override def indexSpanDuration(span: Span): Future[Unit] = (traceHash.get(span.traceId) map {
-    case None => TimeRange.fromSpan(span) map { timeRange =>
-      traceHash.put(span.traceId, timeRange)
+  override def indexSpanByAnnotations(span: Span): Future[Unit] = {
+    if (span.lastAnnotation.isEmpty) {
+      return Future.Unit
     }
-    case Some(bytes) => indexNewStartAndEnd(span, bytes)
-  }).unit
+    val lastTimestamp = span.lastAnnotation.get.timestamp
+    Future.join({
+      val binaryAnnos = span.serviceNames.toSeq.flatMap(serviceName =>
+        span.binaryAnnotations
+          .map(bin => BinaryAnnotationKey(serviceName, bin.key, encode(bin)))
+          .map(binaryAnnotationIndex.add(_, lastTimestamp, span.traceId)
+          ))
+      val annos = span.serviceNames.toSeq.flatMap(serviceName =>
+        span.annotations.map(_.value)
+          .filter(!Constants.CoreAnnotations.contains(_))
+          .map(AnnotationKey(serviceName, _))
+          .map(annotationIndex.add(_, lastTimestamp, span.traceId)
+          ))
+      annos ++ binaryAnnos
+    })
+  }
 
-  private[this] def indexNewStartAndEnd(span: Span, buf: ChannelBuffer) =
-    TimeRange.fromSpan(span) map { timeRange =>
-      traceHash.put(span.traceId, timeRange.widen(buf))
+  override def indexServiceName(span: Span): Future[Unit] = Future.collect(
+    span.serviceNames.toSeq
+      .filter(_ != "")
+      .map(serviceNames.put("services", _))
+  ).unit
+
+  override def indexSpanNameByService(span: Span): Future[Unit] = {
+    if (span.name == "") {
+      return Future.Unit
     }
+    Future.join(
+      span.serviceNames.toSeq
+        .filter(_ != "")
+        .map(spanNames.put(_, span.name))
+    ).unit
+  }
 
+  override def indexSpanDuration(span: Span): Future[Unit] = {
+    val inputRange = for (first <- span.firstAnnotation;
+                          last <- span.lastAnnotation)
+      yield TimeRange(first.timestamp, last.timestamp)
+    inputRange.map(range =>
+      timeRanges.get(span.traceId).map {
+        case None => timeRanges.put(span.traceId, range)
+        case Some(existing) => timeRanges.put(span.traceId, union(range, existing))
+      }.unit
+    ).getOrElse(Future.Unit)
+  }
+
+  private def union(left: TimeRange, right: TimeRange) =
+    TimeRange(Math.min(left.startTs, right.startTs), Math.max(left.stopTs, right.stopTs))
+
+  private def encode(bin: BinaryAnnotation): String = bin.annotationType match {
+    case AnnotationType.Bool => (if (bin.value.get() != 0) true else false).toString
+    case AnnotationType.Double => bin.value.getDouble.toString
+    case AnnotationType.I16 => bin.value.getShort.toString
+    case AnnotationType.I32 => bin.value.getInt.toString
+    case AnnotationType.I64 => bin.value.getLong.toString
+    case _ => copiedBuffer(bin.value).toString(UTF_8)
+  }
 }

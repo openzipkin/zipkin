@@ -1,35 +1,35 @@
 /*
- * Copyright 2012 Tumblr Inc.
- * 
+ * Copyright 2014 Twitter Inc.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.twitter.zipkin.storage.redis
 
-import com.twitter.util.Time
+import com.twitter.app.App
+import com.twitter.util.Await.result
+import com.twitter.zipkin.redis.RedisSpanStoreFactory
+import org.scalatest.FunSuite
 
-/**
- * ExpiringValue represents a value with a time to live.
- * @param expiresAt is the time when ExpiringValue will expire.
- * @param value is the value that will expire.
- */
-case class ExpiringValue[A](expiresAt: Time, value: A)
+class RedisSpanStoreSpec extends FunSuite {
 
-object ExpiringValue {
+  object RedisStore extends App with RedisSpanStoreFactory
+  RedisStore.main(Array(
+    "-zipkin.storage.redis.host", "127.0.0.1",
+    "-zipkin.storage.redis.port", "6379"))
 
-  /**
-   * @param expiresAt is a long value in seconds from the epoch.
-   */
-  def apply[A](expiresAt: Long, value: A): ExpiringValue[A] =
-    ExpiringValue(Time.fromSeconds(expiresAt.toInt), value)
+
+  test("validate") {
+    val spanStore = RedisStore.newRedisSpanStore()
+    result(spanStore.clear())
+  }
 }
