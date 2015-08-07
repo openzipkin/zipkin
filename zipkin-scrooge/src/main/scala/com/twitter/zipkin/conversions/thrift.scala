@@ -138,11 +138,12 @@ object thrift {
   class ThriftOrder(o: thriftscala.Order) {
     lazy val toOrder = {
       o match {
-        case thriftscala.Order.DurationDesc  => Order.DurationDesc
-        case thriftscala.Order.DurationAsc   => Order.DurationAsc
-        case thriftscala.Order.TimestampDesc => Order.TimestampDesc
-        case thriftscala.Order.TimestampAsc  => Order.TimestampAsc
-        case thriftscala.Order.None          => Order.None
+        case thriftscala.Order.DurationDesc        => Order.DurationDesc
+        case thriftscala.Order.DurationAsc         => Order.DurationAsc
+        case thriftscala.Order.TimestampDesc       => Order.TimestampDesc
+        case thriftscala.Order.TimestampAsc        => Order.TimestampAsc
+        case thriftscala.Order.None                => Order.None
+        case thriftscala.Order.EnumUnknownOrder(_) => Order.None // don't break on unknown
       }
     }
   }
