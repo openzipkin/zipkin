@@ -5,14 +5,41 @@ buildscript {
     }
 }
 
-allprojects {
-    apply plugin: 'idea'
+plugins {
+    id 'com.jfrog.bintray' version '1.2'
+    id 'net.researchgate.release' version '2.1.2'
 }
 
-subprojects {
-
+allprojects {
+    apply plugin: 'idea'
     apply plugin: 'java'
     apply plugin: 'scala'
+    apply plugin: 'maven'
+    apply plugin: 'maven-publish'
+    apply plugin: 'com.jfrog.bintray'
+}
+
+release {
+    failOnCommitNeeded = false
+    failOnPublishNeeded = true
+    failOnSnapshotDependencies = true
+    failOnUnversionedFiles = failOnSnapshotDependencies
+    failOnUpdateNeeded = true
+    revertOnFail = true
+    tagTemplate = "${project.version}"
+    preCommitText = ''
+    preTagCommitMessage = '[RELEASE] - pre tag commit: '
+    tagCommitMessage = '[RELEASE] - creating tag: '
+    newVersionCommitMessage = '[RELEASE] - new version commit: '
+
+    git {
+        requireBranch = 'master'
+        pushToRemote = 'origin'
+        pushToCurrentBranch = true
+    }
+}
+
+subprojects { subproject ->
 
     apply from: "$rootDir/gradle/dependencies.gradle"
     apply from: "$rootDir/gradle/scalatest.gradle"
@@ -40,7 +67,42 @@ subprojects {
         testCompile "org.scalatest:scalatest_${scalaInterfaceVersion}:2.2.5"
     }
     // SBT migration note: end of zipkinSettings
+
+    bintray {
+        // Read variables from travis encrypted config or local
+        user = System.getenv('BINTRAY_USER')
+        key = System.getenv('BINTRAY_KEY')
+
+        configurations = ['archives']
+        dryRun = false
+        publish = true
+
+        pkg {
+            licenses = ['Apache-2.0']
+            repo = 'zipkin'
+            vcsUrl = 'https://github.com/openzipkin/zipkin.git'
+            name = "${subproject.name}"
+            userOrg = "openzipkin"
+            version {
+                name = "${project.version}"
+                desc = 'Zipkin version ${project.version}'
+                released  = new Date()
+                vcsTag = "${project.version}"
+            }
+        }
+    }
 }
+
+// Workaround:
+// only our subprojects have a bintray configuration. replace the root project's
+// `bintrayUpload` task with one that restricts the calls to the subprojects.
+// https://github.com/bintray/gradle-bintray-plugin/issues/74#issuecomment-126978089
+project.afterEvaluate {
+    task bintrayUpload(group: "publishing", overwrite: true) {
+        dependsOn subprojects.bintrayUpload
+    }
+}
+
 
 // Quick hack to visualize inter-project dependencies
 task dependencyReport {
