@@ -16,3 +16,5 @@ If you have Redis installed and configured you can run Zipkin normally, except t
     bin/collector redis
     bin/query redis
     bin/web
+
+When running in production you should probably set the number of threads in the connection pool to a reasonable value to get a good throughput. The properties to use are: -zipkin.storage.redis.connectionCoreSize and -zipkin.storage.redis.connectionLimit
