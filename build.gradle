@@ -44,6 +44,14 @@ subprojects { subproject ->
     apply from: "$rootDir/gradle/dependencies.gradle"
     apply from: "$rootDir/gradle/scalatest.gradle"
 
+    compileTestScala {
+        scalaCompileOptions.additionalParameters = ["-feature"]
+    }
+
+    compileScala {
+        scalaCompileOptions.additionalParameters = ["-feature"]
+    }
+
     test {
         maxParallelForks Runtime.runtime.availableProcessors()
     }
