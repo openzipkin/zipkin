@@ -23,6 +23,7 @@ import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.Service
 import com.twitter.util.{Time, Future}
 import com.twitter.zipkin.conversions.thrift._
+import com.twitter.zipkin.query.constants.TraceTimestampPadding
 import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.query.adjusters.Adjuster
 import com.twitter.zipkin.storage._
@@ -194,7 +195,7 @@ class QueryService(
   }
 
   private[query] def padTimestamp(timestamp: Long): Long = {
-    if (timestamp == -1L) -1L else timestamp + Constants.TraceTimestampPadding.inMicroseconds
+    if (timestamp == -1L) -1L else timestamp + TraceTimestampPadding.inMicroseconds
   }
 
   private[query] def traceIdsIntersect(idSeqs: Seq[Seq[IndexedTraceId]]): Seq[IndexedTraceId] = {
