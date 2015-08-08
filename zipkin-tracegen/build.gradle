@@ -3,6 +3,7 @@ apply plugin: 'com.github.johnrengelman.shadow'
 mainClassName = 'com.twitter.zipkin.tracegen.Main'
 
 tasks.build.dependsOn(shadowJar)
+artifacts.archives shadowJar
 
 repositories {
     // For dependencies of zipkin-cassandra (via zipkin-query-service and zipkin-collector-service)
