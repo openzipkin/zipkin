@@ -15,31 +15,22 @@
  */
 package com.twitter.zipkin.receiver.scribe
 
-import com.twitter.app.{App, Flaggable}
-import com.twitter.conversions.time._
+import com.twitter.app.App
 import com.twitter.finagle.ThriftMux
-import com.twitter.finagle.stats.{Stat, DefaultStatsReceiver, StatsReceiver}
-import com.twitter.finagle.util.{DefaultTimer, InetSocketAddressUtil}
+import com.twitter.finagle.stats.{DefaultStatsReceiver, Stat, StatsReceiver}
 import com.twitter.logging.Logger
 import com.twitter.scrooge.BinaryThriftStructSerializer
-import com.twitter.util.{Base64StringEncoder, Closable, Future, NonFatal, Return, Throw, Time}
+import com.twitter.util.{Base64StringEncoder, Future, NonFatal, Return, Throw, Time}
 import com.twitter.zipkin.collector.{QueueFullException, SpanReceiver}
-import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.thriftscala.{LogEntry, ResultCode, Scribe, Span => ThriftSpan, ZipkinCollector}
-import com.twitter.zipkin.zookeeper._
-import com.twitter.zk.ZkClient
-import java.net.{InetSocketAddress, URI}
+import com.twitter.zipkin.thriftscala.{LogEntry, ResultCode, Scribe, Span => ThriftSpan}
+import java.net.InetSocketAddress
 
 /**
  * A SpanReceiverFactory that should be mixed into a base ZipkinCollector. This
  * provides `newScribeSpanReceiver` which will create a `ScribeSpanReceiver`
- * listening on a configurable port (-zipkin.receiver.scribe.port) and announced to
- * ZooKeeper via a given path (-zipkin.receiver.scribe.zk.path). If a path is not
- * explicitly provided no announcement will be made (this is helpful for instance
- * during development). This factory must also be mixed into an App trait along with
- * a ZooKeeperClientFactory.
+ * listening on a configurable port (-zipkin.receiver.scribe.port).
  */
-trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
+trait ScribeSpanReceiverFactory { self: App =>
   val scribeAddr = flag(
     "zipkin.receiver.scribe.addr",
     new InetSocketAddress(1490),
@@ -50,28 +41,16 @@ trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
     Seq("zipkin"),
     "a whitelist of categories to process")
 
-  val scribeZkPath = flag(
-    "zipkin.receiver.scribe.zk.path",
-    "/com/twitter/zipkin/receiver/scribe",
-    "the zookeeper path to announce on. blank does not announce")
-
   def newScribeSpanReceiver(
     process: Seq[ThriftSpan] => Future[Unit],
     stats: StatsReceiver = DefaultStatsReceiver.scope("ScribeSpanReceiver")
   ): SpanReceiver = new SpanReceiver {
 
-    val zkNode: Option[Closable] = scribeZkPath.get.map { path =>
-      val addr = InetSocketAddressUtil.toPublic(scribeAddr()).asInstanceOf[InetSocketAddress]
-      val nodeName = "%s:%d".format(addr.getHostName, addr.getPort)
-      zkClient.createEphemeral(path + "/" + nodeName, nodeName.getBytes)
-    }
-
     val service = ThriftMux.serveIface(
       scribeAddr(),
       new ScribeReceiver(scribeCategories().toSet, process, stats))
 
-    val closer: Closable = zkNode map { Closable.sequence(_, service) } getOrElse { service }
-    def close(deadline: Time): Future[Unit] = closeAwaitably { closer.close(deadline) }
+    def close(deadline: Time): Future[Unit] = closeAwaitably { service.close(deadline) }
   }
 }
 

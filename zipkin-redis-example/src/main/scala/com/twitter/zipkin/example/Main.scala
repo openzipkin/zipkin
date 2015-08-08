@@ -10,11 +10,9 @@ import com.twitter.zipkin.query.constants.DefaultAdjusters
 import com.twitter.zipkin.receiver.scribe.ScribeSpanReceiverFactory
 import com.twitter.zipkin.redis.RedisSpanStoreFactory
 import com.twitter.zipkin.web.ZipkinWebFactory
-import com.twitter.zipkin.zookeeper.ZooKeeperClientFactory
 import com.twitter.zipkin.{thriftscala => thrift}
 
 object Main extends TwitterServer
-  with ZooKeeperClientFactory
   with ScribeSpanReceiverFactory
   with ZipkinWebFactory
   with RedisSpanStoreFactory
