@@ -115,4 +115,4 @@ Modules
 .. _finagle-zipkin: https://github.com/twitter/finagle/tree/master/finagle-zipkin
 .. _gem: https://rubygems.org/gems/finagle-thrift
 .. _Ruby thrift client: https://github.com/twitter/thrift_client
-.. _thrift idl: https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinQuery.thrift
+.. _thrift idl: https://github.com/openzipkin/zipkin/blob/master/zipkin-thrift/src/main/thrift/com/twitter/zipkin/zipkinQuery.thrift
