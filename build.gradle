@@ -93,7 +93,7 @@ subprojects { subproject ->
             userOrg = "openzipkin"
             version {
                 name = "${project.version}"
-                desc = 'Zipkin version ${project.version}'
+                desc = "Zipkin ${subproject.name} version ${project.version}"
                 released  = new Date()
                 vcsTag = "${project.version}"
             }
