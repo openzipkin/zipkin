@@ -8,6 +8,7 @@ run {
 }
 
 tasks.build.dependsOn(shadowJar)
+artifacts.archives shadowJar
 
 dependencies {
     compile project(':zipkin-scrooge')
