@@ -20,16 +20,14 @@ import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finagle.thrift.ThriftServerFramedCodec
 import com.twitter.finagle.tracing.Tracer
 import com.twitter.logging.Logger
-import com.twitter.ostrich.admin.{Service => OstrichService, ServiceTracker}
-import com.twitter.util.Timer
+import com.twitter.ostrich.admin.ServiceTracker
 import com.twitter.zipkin.collector.builder.CollectorInterface
 import com.twitter.zipkin.collector.processor.ScribeFilter
-import com.twitter.zipkin.collector.{ResilientZKNode, WriteQueue, ScribeCollectorService}
-import com.twitter.zipkin.thriftscala
+import com.twitter.zipkin.collector.{ScribeCollectorService, WriteQueue}
 import com.twitter.zipkin.storage.Store
-import java.net.{InetAddress, InetSocketAddress}
+import com.twitter.zipkin.thriftscala
+import java.net.InetSocketAddress
 import org.apache.thrift.protocol.TBinaryProtocol
-import org.apache.zookeeper.KeeperException
 
 object Scribe {
 
@@ -59,48 +57,6 @@ object Scribe {
             .reportTo(statsReceiver)
             .tracer(tracer)
             .build(new thriftscala.ZipkinCollector.FinagledService(service, new TBinaryProtocol.Factory()))
-        }
-      }
-    }
-  }
-
-  /**
-   * Builder for Service that registers Scribe-style server sets
-   * @param zkClientBuilder
-   * @param paths registers Scribe server sets at these paths in ZooKeeper
-   */
-  def serverSets(zkClientBuilder: ZooKeeperClientBuilder, paths: Set[String]) = new Builder[(InetSocketAddress, StatsReceiver, Timer) => OstrichService] {
-    def apply() = (address: InetSocketAddress, statsReceiver: StatsReceiver, timer: Timer) => {
-      new OstrichService {
-        // make sure we register with zookeeper using a reasonable address
-        def getIP(addr: InetSocketAddress): String = Option(addr.getAddress) match {
-          case Some(inet) => inet.getHostAddress
-          case None => ""  // TODO: this is a hack
-        }
-
-        var boundAddr = if (getIP(address) == "0.0.0.0" || getIP(address) == "127.0.0.1")
-          new InetSocketAddress(InetAddress.getLocalHost, address.getPort)
-        else
-          address
-
-        var zkNodes: Set[ResilientZKNode] = Set.empty
-
-        def start() {
-          val zkClient = zkClientBuilder.apply()
-          zkNodes = paths map { path =>
-            new ResilientZKNode(path, boundAddr.getHostName + ":" + boundAddr.getPort, zkClient, timer, statsReceiver)
-          }
-          zkNodes foreach { _.register() }
-        }
-
-        def shutdown() {
-          try {
-            zkNodes foreach { _.unregister() }
-          } catch {
-            case e: KeeperException => Logger.get().error("Could not unregister scribe zk node. Will continue shut down anyway", e)
-          } finally {
-            zkNodes = Set.empty
-          }
         }
       }
     }
