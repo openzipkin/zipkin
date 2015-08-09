@@ -94,6 +94,7 @@ class ItemQueueTest extends FunSuite {
     assert(Await.ready(queue.add(Item)).poll.get.isThrow)
 
     latch.countDown()
-    assert(processed.await(100, TimeUnit.MILLISECONDS))
+    assert(processed.await(5, TimeUnit.SECONDS))
+
   }
 }
