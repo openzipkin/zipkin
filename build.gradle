@@ -10,7 +10,7 @@ plugins {
     id 'net.researchgate.release' version '2.1.2'
 }
 
-allprojects {
+allprojects { thisProject ->
     apply plugin: 'idea'
     apply plugin: 'java'
     apply plugin: 'scala'
@@ -27,6 +27,37 @@ allprojects {
     apply from: "$rootDir/gradle/dependencies.gradle"
     dependencies {
         compile "org.scala-lang:scala-library:${scalaVersion}"
+    }
+
+    bintray {
+        // Read variables from travis encrypted config or local
+        user = System.getenv('BINTRAY_USER')
+        key = System.getenv('BINTRAY_KEY')
+
+        // Workaround: we don't want to publish anything from the root project.
+        // https://github.com/bintray/gradle-bintray-plugin/issues/74
+        if (thisProject == rootProject) {
+            configurations = []
+        } else {
+            configurations = ['archives']
+        }
+
+        dryRun = false
+        publish = true
+
+        pkg {
+            licenses = ['Apache-2.0']
+            repo = 'zipkin'
+            vcsUrl = 'https://github.com/openzipkin/zipkin.git'
+            name = "zipkin"
+            userOrg = "openzipkin"
+            version {
+                name = "${project.version}"
+                desc = "Zipkin ${thisProject.name} version ${project.version}"
+                released  = new Date()
+                vcsTag = "${project.version}"
+            }
+        }
     }
 }
 
@@ -82,42 +113,7 @@ subprojects { subproject ->
         testCompile "org.scalatest:scalatest_${scalaInterfaceVersion}:2.2.5"
     }
     // SBT migration note: end of zipkinSettings
-
-    bintray {
-        // Read variables from travis encrypted config or local
-        user = System.getenv('BINTRAY_USER')
-        key = System.getenv('BINTRAY_KEY')
-
-        configurations = ['archives']
-        dryRun = false
-        publish = true
-
-        pkg {
-            licenses = ['Apache-2.0']
-            repo = 'zipkin'
-            vcsUrl = 'https://github.com/openzipkin/zipkin.git'
-            name = "${subproject.name}"
-            userOrg = "openzipkin"
-            version {
-                name = "${project.version}"
-                desc = "Zipkin ${subproject.name} version ${project.version}"
-                released  = new Date()
-                vcsTag = "${project.version}"
-            }
-        }
-    }
 }
-
-// Workaround:
-// only our subprojects have a bintray configuration. replace the root project's
-// `bintrayUpload` task with one that restricts the calls to the subprojects.
-// https://github.com/bintray/gradle-bintray-plugin/issues/74#issuecomment-126978089
-project.afterEvaluate {
-    task bintrayUpload(group: "publishing", overwrite: true) {
-        dependsOn subprojects.bintrayUpload
-    }
-}
-
 
 // Quick hack to visualize inter-project dependencies
 task dependencyReport {
