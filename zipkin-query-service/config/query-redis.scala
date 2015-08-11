@@ -26,9 +26,10 @@ val client = Client(ClientBuilder().hosts("0.0.0.0:6379")
                                    .codec(Redis())
                                    .build())
 
+val storageWithIndexBuilder = redis.StorageWithIndexBuilder(client)
 val storeBuilder = Store.Builder(
-  redis.StorageBuilder(client),
-  redis.IndexBuilder(client)
+  storageWithIndexBuilder,
+  storageWithIndexBuilder
 )
 
 QueryServiceBuilder(storeBuilder)
