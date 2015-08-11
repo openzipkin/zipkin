@@ -338,6 +338,8 @@ class CassieSpanStore(
     }
   }
 
+  override def getDataTimeToLive = Future.value(spanTtl.inSeconds)
+
   def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
     QueryTracesExistStat.add(traceIds.size)
     getSpansByTraceIds(traceIds, 1) map {

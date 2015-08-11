@@ -42,6 +42,8 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
     storage.getTimeToLive(traceId)
   }
 
+  override def getDataTimeToLive = Future.value(ttl.map(_.inSeconds).getOrElse(Int.MaxValue))
+
   def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
     storage.tracesExist(traceIds)
   }

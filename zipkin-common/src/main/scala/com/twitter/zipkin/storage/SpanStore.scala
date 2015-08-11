@@ -16,7 +16,7 @@
 package com.twitter.zipkin.storage
 
 import com.twitter.conversions.time._
-import com.twitter.finagle.{Filter => FFilter, Service}
+import com.twitter.finagle.{Filter => FFilter}
 import com.twitter.util.{Closable, CloseAwaitably, Duration, Future, Time}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
@@ -69,6 +69,13 @@ trait WriteSpanStore
 }
 
 trait ReadSpanStore {
+  /**
+   * Returns the time to live in seconds or [[Int.MaxValue]], if unknown.
+   *
+   * Corresponds to the thrift call `ZipkinQuery.getDataTimeToLive`.
+   */
+  def getDataTimeToLive(): Future[Int] = Future.value(Int.MaxValue)
+
   def getTimeToLive(traceId: Long): Future[Duration]
 
   def tracesExist(traceIds: Seq[Long]): Future[Set[Long]]
