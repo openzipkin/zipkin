@@ -45,7 +45,7 @@ public final class Repository implements AutoCloseable {
     private final Session session;
     private final PreparedStatement selectTraces;
     private final PreparedStatement selectTraceTtl;
-    private final PreparedStatement insertTrace;
+    private final PreparedStatement insertSpan;
     private final PreparedStatement selectTopAnnotations;
     private final PreparedStatement deleteTopAnnotations;
     private final PreparedStatement insertTopAnnotations;
@@ -72,7 +72,7 @@ public final class Repository implements AutoCloseable {
 
         // @fixme use cassandraSpanStore.cfs.traces (from ZipkinColumnFamilyNames)
         //        or "traces" is replaced with a prepared statement being passed in
-        insertTrace = session.prepare(
+        insertSpan = session.prepare(
                 QueryBuilder
                     .insertInto("traces")
                     .value("key", QueryBuilder.bindMarker(KEY_MARKER))
@@ -198,17 +198,19 @@ public final class Repository implements AutoCloseable {
                     .value("value", QueryBuilder.bindMarker(VALUE_MARKER))
                     .using(QueryBuilder.ttl(QueryBuilder.bindMarker(TTL_MARKER))));
 
-        selectTraceDurationHead = session.prepare(QueryBuilder.select("key", "column1")
-                        .from("duration_index")
-                        .where(QueryBuilder.eq("key", QueryBuilder.bindMarker(KEY_MARKER)))
-                        .limit(1)
-                        .orderBy(QueryBuilder.asc("column1")));
+        selectTraceDurationHead = session.prepare(
+                QueryBuilder.select("key", "column1")
+                    .from("duration_index")
+                    .where(QueryBuilder.eq("key", QueryBuilder.bindMarker(KEY_MARKER)))
+                    .limit(1)
+                    .orderBy(QueryBuilder.asc("column1")));
 
-        selectTraceDurationTail = session.prepare(QueryBuilder.select("key", "column1")
-                        .from("duration_index")
-                        .where(QueryBuilder.eq("key", QueryBuilder.bindMarker(KEY_MARKER)))
-                        .limit(1)
-                        .orderBy(QueryBuilder.desc("column1")));
+        selectTraceDurationTail = session.prepare(
+                QueryBuilder.select("key", "column1")
+                    .from("duration_index")
+                    .where(QueryBuilder.eq("key", QueryBuilder.bindMarker(KEY_MARKER)))
+                    .limit(1)
+                    .orderBy(QueryBuilder.desc("column1")));
 
         insertTraceDurations = session.prepare(
                 QueryBuilder
@@ -230,24 +232,28 @@ public final class Repository implements AutoCloseable {
             ByteBuffer key = ByteBuffer.allocate(8).putLong(traceId);
             key.rewind();
 
-            BoundStatement bound = insertTrace.bind()
+            BoundStatement bound = insertSpan.bind()
                     .setBytes(KEY_MARKER, key)
                     .setBytes(COLUMN_MARKER, ByteBuffer.wrap(spanName.getBytes()))
                     .setBytes(VALUE_MARKER, span)
                     .setInt(TTL_MARKER, ttl);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(insertTrace.getQueryString()
-                        .replace(':' + KEY_MARKER, String.valueOf(traceId))
-                        .replace(':' + COLUMN_MARKER, spanName)
-                        .replace(':' + VALUE_MARKER, Bytes.toHexString(span))
-                        .replace(':' + TTL_MARKER, String.valueOf(ttl)));
+                LOG.debug(debugInsertSpan(traceId, spanName, span, ttl));
             }
             session.executeAsync(bound);
-        } catch ( RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+        } catch (RuntimeException ex) {
+            LOG.error("failed " + debugInsertSpan(traceId, spanName, span, ttl), ex);
             throw ex;
         }
+    }
+
+    private String debugInsertSpan(long traceId, String spanName, ByteBuffer span, int ttl) {
+        return insertSpan.getQueryString()
+                .replace(':' + KEY_MARKER, String.valueOf(traceId))
+                .replace(':' + COLUMN_MARKER, spanName)
+                .replace(':' + VALUE_MARKER, Bytes.toHexString(span))
+                .replace(':' + TTL_MARKER, String.valueOf(ttl));
     }
 
     public Set<Long> tracesExist(Long[] traceIds) {
@@ -277,9 +283,7 @@ public final class Repository implements AutoCloseable {
             }
             BoundStatement bound = selectTraces.bind().setList(KEY_MARKER, keys).setInt(LIMIT_MARKER, limit);
             if (LOG.isDebugEnabled()) {
-                LOG.debug(selectTraces.getQueryString()
-                        .replace(':' + KEY_MARKER, Arrays.toString(traceIds))
-                        .replace(':' + LIMIT_MARKER, String.valueOf(limit)));
+                LOG.debug(debugSelectTraces(traceIds, limit));
             }
             Map<Long,List<ByteBuffer>> spans = new HashMap<>();
             for (Row row : session.execute(bound).all()) {
@@ -291,18 +295,24 @@ public final class Repository implements AutoCloseable {
             }
             return spans;
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugSelectTraces(traceIds, limit), ex);
             throw ex;
         }
     }
 
-    public long getSpanTtl(long traceId) {
+    private String debugSelectTraces(Long[] traceIds, int limit) {
+        return selectTraces.getQueryString()
+                        .replace(':' + KEY_MARKER, Arrays.toString(traceIds))
+                        .replace(':' + LIMIT_MARKER, String.valueOf(limit));
+    }
+
+    public long getSpanTtlSeconds(long traceId) {
         try {
             ByteBuffer key = ByteBuffer.allocate(8).putLong(traceId);
             key.rewind();
             BoundStatement bound = selectTraceTtl.bind().setBytes(KEY_MARKER, key);
             if (LOG.isDebugEnabled()) {
-                LOG.debug(selectTraceTtl.getQueryString().replace(':' + KEY_MARKER, String.valueOf(traceId)));
+                LOG.debug(debugSelectTraceTtl(traceId));
             }
             int ttl = Integer.MAX_VALUE;
             for (Row row : session.execute(bound).all()) {
@@ -310,9 +320,13 @@ public final class Repository implements AutoCloseable {
             }
             return ttl;
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugSelectTraceTtl(traceId), ex);
             throw ex;
         }
+    }
+
+    private String debugSelectTraceTtl(long traceId) {
+        return selectTraceTtl.getQueryString().replace(':' + KEY_MARKER, String.valueOf(traceId));
     }
 
     public List<String> getTopAnnotations(String key) {
@@ -321,7 +335,7 @@ public final class Repository implements AutoCloseable {
         try {
             BoundStatement bound = selectTopAnnotations.bind().setBytes(KEY_MARKER, ByteBuffer.wrap(key.getBytes()));
             if (LOG.isDebugEnabled()) {
-                LOG.debug(selectTopAnnotations.getQueryString().replace(':' + KEY_MARKER, key));
+                LOG.debug(debugSelectTopAnnotations(key));
             }
             List<String> annotations = new ArrayList<>();
             for (Row row : session.execute(bound).all()) {
@@ -329,9 +343,13 @@ public final class Repository implements AutoCloseable {
             }
             return annotations;
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugSelectTopAnnotations(key), ex);
             throw ex;
         }
+    }
+
+    private String debugSelectTopAnnotations(String key) {
+        return selectTopAnnotations.getQueryString().replace(':' + KEY_MARKER, key);
     }
 
     public void storeTopAnnotations(String key, List<String> annotations) {
@@ -340,35 +358,46 @@ public final class Repository implements AutoCloseable {
         Preconditions.checkNotNull(annotations);
         Preconditions.checkArgument(!annotations.isEmpty());
         try {
-
             BoundStatement bound = deleteTopAnnotations.bind().setBytes(KEY_MARKER, ByteBuffer.wrap(key.getBytes()));
             if (LOG.isDebugEnabled()) {
-                LOG.debug(deleteTopAnnotations.getQueryString().replace(':' + KEY_MARKER, key));
+                LOG.debug(debugDeleteTopAnnotations(key));
             }
             session.execute(bound);
-
+        } catch (RuntimeException ex) {
+            LOG.error("failed " + debugDeleteTopAnnotations(key), ex);
+            throw ex;
+        }
+        StringBuilder debugs = new StringBuilder();
+        try {
             BatchStatement batch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-
             for (String annotation : annotations) {
-                bound = insertTopAnnotations.bind()
+
+                BoundStatement bound = insertTopAnnotations.bind()
                         .setBytes(KEY_MARKER, ByteBuffer.wrap(key.getBytes()))
                         .setLong(COLUMN_MARKER, annotations.indexOf(annotation))
                         .setBytes(VALUE_MARKER, ByteBuffer.wrap(annotation.getBytes()));
 
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(insertTopAnnotations.getQueryString()
-                            .replace(':' + KEY_MARKER, key)
-                            .replace(':' + COLUMN_MARKER, String.valueOf(annotations.indexOf(annotation)))
-                            .replace(':' + VALUE_MARKER, annotation));
-                }
+                String debug = debugInsertTopAnnotations(key, annotation, annotations.indexOf(annotation));
+                debugs.append(debug).append(';');
+                LOG.debug(debug);
                 batch.add(bound);
             }
-            session.execute(batch);
-
+            session.executeAsync(batch);
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugs, ex);
             throw ex;
         }
+    }
+
+    private String debugDeleteTopAnnotations(String key) {
+        return deleteTopAnnotations.getQueryString().replace(':' + KEY_MARKER, key);
+    }
+
+    private String debugInsertTopAnnotations(String key, String annotation, int idx) {
+        return insertTopAnnotations.getQueryString()
+                            .replace(':' + KEY_MARKER, key)
+                            .replace(':' + COLUMN_MARKER, String.valueOf(idx))
+                            .replace(':' + VALUE_MARKER, annotation);
     }
 
     public void storeDependencies(long startFlooredToDay, ByteBuffer dependencies) {
@@ -378,25 +407,29 @@ public final class Repository implements AutoCloseable {
 
             BoundStatement bound = insertDependencies.bind()
                     .setBytes(KEY_MARKER, key)
-                        .setLong(COLUMN_MARKER, 0)
-                        .setBytes(VALUE_MARKER, dependencies);
+                    .setLong(COLUMN_MARKER, 0)
+                    .setBytes(VALUE_MARKER, dependencies);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(insertDependencies.getQueryString()
-                        .replace(':' + KEY_MARKER, String.valueOf(startFlooredToDay))
-                        .replace(':' + COLUMN_MARKER, String.valueOf(0))
-                        .replace(':' + VALUE_MARKER, Bytes.toHexString(dependencies)));
+                LOG.debug(debugInsertDependencies(startFlooredToDay, dependencies));
             }
             session.execute(bound);
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugInsertDependencies(startFlooredToDay, dependencies), ex);
             throw ex;
         }
     }
 
+    private String debugInsertDependencies(long startFlooredToDay, ByteBuffer dependencies) {
+        return insertDependencies.getQueryString()
+                        .replace(':' + KEY_MARKER, String.valueOf(startFlooredToDay))
+                        .replace(':' + COLUMN_MARKER, String.valueOf(0))
+                        .replace(':' + VALUE_MARKER, Bytes.toHexString(dependencies));
+    }
+
     public List<ByteBuffer> getDependencies(long startDate, long endDate) {
+        List<Date> days = getDays(endDate, endDate);
         try {
-            List<Date> days = getDays(endDate, endDate);
             List<ByteBuffer> keys = new ArrayList<>();
             for (Date day : days) {
                 ByteBuffer key = ByteBuffer.allocate(8).putLong(day.getTime());
@@ -405,7 +438,7 @@ public final class Repository implements AutoCloseable {
             }
             BoundStatement bound = selectDependencies.bind().setList(KEY_MARKER, keys);
             if (LOG.isDebugEnabled()) {
-                LOG.debug(selectDependencies.getQueryString().replace(':' + KEY_MARKER, Arrays.toString(days.toArray())));
+                LOG.debug(debugSelectDependencies(days));
             }
             List<ByteBuffer> dependencies = new ArrayList<>();
             for (Row row : session.execute(bound).all()) {
@@ -413,9 +446,13 @@ public final class Repository implements AutoCloseable {
             }
             return dependencies;
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugSelectDependencies(days), ex);
             throw ex;
         }
+    }
+
+    private String debugSelectDependencies(List<Date> days) {
+        return selectDependencies.getQueryString().replace(':' + KEY_MARKER, Arrays.toString(days.toArray()));
     }
 
     public Set<String> getServiceNames() {
@@ -430,7 +467,7 @@ public final class Repository implements AutoCloseable {
             }
             return serviceNames;
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + selectServiceNames.getQueryString(), ex);
             throw ex;
         }
     }
@@ -446,17 +483,21 @@ public final class Repository implements AutoCloseable {
                     .setInt(TTL_MARKER, ttl);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(insertServiceName.getQueryString()
-                        .replace(':' + KEY_MARKER, "servicenames")
-                        .replace(':' + COLUMN_MARKER, serviceName)
-                        .replace(':' + VALUE_MARKER, "")
-                        .replace(':' + TTL_MARKER, String.valueOf(ttl)));
+                LOG.debug(debugInsertServiceName(serviceName, ttl));
             }
             session.executeAsync(bound);
-        } catch ( RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+        } catch (RuntimeException ex) {
+            LOG.error("failed " + debugInsertServiceName(serviceName, ttl), ex);
             throw ex;
         }
+    }
+
+    private String debugInsertServiceName(String serviceName, int ttl) {
+        return insertServiceName.getQueryString()
+                .replace(':' + KEY_MARKER, "servicenames")
+                .replace(':' + COLUMN_MARKER, serviceName)
+                .replace(':' + VALUE_MARKER, "")
+                .replace(':' + TTL_MARKER, String.valueOf(ttl));
     }
 
     public Set<String> getSpanNames(String serviceName) {
@@ -466,7 +507,7 @@ public final class Repository implements AutoCloseable {
             if (!serviceName.isEmpty()) {
                 BoundStatement bound = selectSpanNames.bind().setBytes(KEY_MARKER, ByteBuffer.wrap(serviceName.getBytes()));
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug(selectSpanNames.getQueryString().replace(':' + KEY_MARKER, serviceName));
+                    LOG.debug(debugSelectSpanNames(serviceName));
                 }
                 for (Row row : session.execute(bound).all()) {
                     spanNames.add(new String(Bytes.getArray(row.getBytes("column1"))));
@@ -474,9 +515,13 @@ public final class Repository implements AutoCloseable {
             }
             return spanNames;
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugSelectSpanNames(serviceName), ex);
             throw ex;
         }
+    }
+
+    private String debugSelectSpanNames(String serviceName) {
+        return selectSpanNames.getQueryString().replace(':' + KEY_MARKER, serviceName);
     }
 
     public void storeSpanName(String serviceName, String spanName, int ttl) {
@@ -492,33 +537,34 @@ public final class Repository implements AutoCloseable {
                     .setInt(TTL_MARKER, ttl);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(insertSpanName.getQueryString()
-                        .replace(':' + KEY_MARKER, serviceName)
-                        .replace(':' + COLUMN_MARKER, spanName)
-                        .replace(':' + VALUE_MARKER, "")
-                        .replace(':' + TTL_MARKER, String.valueOf(ttl)));
+                LOG.debug(debugInsertSpanName(serviceName, spanName, ttl));
             }
             session.executeAsync(bound);
-        } catch ( RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+        } catch (RuntimeException ex) {
+            LOG.error("failed " + debugInsertSpanName(serviceName, spanName, ttl), ex);
             throw ex;
         }
     }
 
-    public Map<Long,Long> getTraceIdsByServiceName(String serviceName, long from, int limit) {
+    private String debugInsertSpanName(String serviceName, String spanName, int ttl) {
+        return insertSpanName.getQueryString()
+                .replace(':' + KEY_MARKER, serviceName)
+                .replace(':' + COLUMN_MARKER, spanName)
+                .replace(':' + VALUE_MARKER, "")
+                .replace(':' + TTL_MARKER, String.valueOf(ttl));
+    }
+
+    public Map<Long,Long> getTraceIdsByServiceName(String serviceName, long to, int limit) {
         Preconditions.checkNotNull(serviceName);
         Preconditions.checkArgument(!serviceName.isEmpty());
         try {
             BoundStatement bound = selectTraceIdsByServiceName.bind()
                     .setBytes(KEY_MARKER, ByteBuffer.wrap(serviceName.getBytes()))
-                    .setLong(COLUMN_MARKER, from)
+                    .setLong(COLUMN_MARKER, to)
                     .setInt(LIMIT_MARKER, limit);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(selectTraceIdsByServiceName.getQueryString()
-                        .replace(':' + KEY_MARKER, serviceName)
-                        .replace(':' + COLUMN_MARKER, String.valueOf(from))
-                        .replace(':' + LIMIT_MARKER, String.valueOf(limit)));
+                LOG.debug(debugSelectTraceIdsByServiceName(serviceName, to, limit));
             }
             Map<Long,Long> traceIdsToTimestamps = new HashMap<>();
             for (Row row : session.execute(bound).all()) {
@@ -526,17 +572,19 @@ public final class Repository implements AutoCloseable {
             }
             return traceIdsToTimestamps;
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugSelectTraceIdsByServiceName(serviceName, to, limit), ex);
             throw ex;
         }
     }
 
-    public void storeTraceIdByServiceName(
-            String serviceName,
-            long timestamp,
-            long traceId,
-            int ttl) {
+    private String debugSelectTraceIdsByServiceName(String serviceName, long to, int limit) {
+        return selectTraceIdsByServiceName.getQueryString()
+                .replace(':' + KEY_MARKER, serviceName)
+                .replace(':' + COLUMN_MARKER, String.valueOf(to))
+                .replace(':' + LIMIT_MARKER, String.valueOf(limit));
+    }
 
+    public void storeTraceIdByServiceName(String serviceName, long timestamp, long traceId, int ttl) {
         Preconditions.checkNotNull(serviceName);
         Preconditions.checkArgument(!serviceName.isEmpty());
         try {
@@ -550,20 +598,24 @@ public final class Repository implements AutoCloseable {
                     .setInt(TTL_MARKER, ttl);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(insertTraceIdByServiceName.getQueryString()
-                        .replace(':' + KEY_MARKER, serviceName)
-                        .replace(':' + COLUMN_MARKER, String.valueOf(timestamp))
-                        .replace(':' + VALUE_MARKER, String.valueOf(traceId))
-                        .replace(':' + TTL_MARKER, String.valueOf(ttl)));
+                LOG.debug(debugInsertTraceIdByServiceName(serviceName, timestamp, traceId, ttl));
             }
             session.executeAsync(bound);
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugInsertTraceIdByServiceName(serviceName, timestamp, traceId, ttl), ex);
             throw ex;
         }
     }
 
-    public Map<Long,Long> getTraceIdsBySpanName(String serviceName, String spanName, long from, int limit) {
+    private String debugInsertTraceIdByServiceName(String serviceName, long timestamp, long traceId, int ttl) {
+        return insertTraceIdByServiceName.getQueryString()
+                        .replace(':' + KEY_MARKER, serviceName)
+                        .replace(':' + COLUMN_MARKER, String.valueOf(timestamp))
+                        .replace(':' + VALUE_MARKER, String.valueOf(traceId))
+                        .replace(':' + TTL_MARKER, String.valueOf(ttl));
+    }
+
+    public Map<Long,Long> getTraceIdsBySpanName(String serviceName, String spanName, long to, int limit) {
         Preconditions.checkNotNull(serviceName);
         Preconditions.checkArgument(!serviceName.isEmpty());
         Preconditions.checkNotNull(spanName);
@@ -572,14 +624,11 @@ public final class Repository implements AutoCloseable {
         try {
             BoundStatement bound = selectTraceIdsBySpanName.bind()
                     .setBytes(KEY_MARKER, ByteBuffer.wrap(serviceSpanName.getBytes()))
-                    .setLong(COLUMN_MARKER, from)
+                    .setLong(COLUMN_MARKER, to)
                     .setInt(LIMIT_MARKER, limit);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(selectTraceIdsByServiceName.getQueryString()
-                        .replace(':' + KEY_MARKER, serviceSpanName)
-                        .replace(':' + COLUMN_MARKER, String.valueOf(from))
-                        .replace(':' + LIMIT_MARKER, String.valueOf(limit)));
+                LOG.debug(debugSelectTraceIdsBySpanName(serviceSpanName, to, limit));
             }
             Map<Long,Long> traceIdsToTimestamps = new HashMap<>();
             for (Row row : session.execute(bound).all()) {
@@ -587,9 +636,16 @@ public final class Repository implements AutoCloseable {
             }
             return traceIdsToTimestamps;
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugSelectTraceIdsBySpanName(serviceSpanName, to, limit), ex);
             throw ex;
         }
+    }
+
+    private String debugSelectTraceIdsBySpanName(String serviceSpanName, long to, int limit) {
+        return selectTraceIdsByServiceName.getQueryString()
+                .replace(':' + KEY_MARKER, serviceSpanName)
+                .replace(':' + COLUMN_MARKER, String.valueOf(to))
+                .replace(':' + LIMIT_MARKER, String.valueOf(limit));
     }
 
     public void storeTraceIdBySpanName(String serviceName, String spanName, long timestamp, long traceId, int ttl) {
@@ -609,17 +665,21 @@ public final class Repository implements AutoCloseable {
                     .setInt(TTL_MARKER, ttl);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(insertTraceIdBySpanName.getQueryString()
-                        .replace(':' + KEY_MARKER, serviceSpanName)
-                        .replace(':' + COLUMN_MARKER, String.valueOf(timestamp))
-                        .replace(':' + VALUE_MARKER, String.valueOf(traceId))
-                        .replace(':' + TTL_MARKER, String.valueOf(ttl)));
+                LOG.debug(debugInsertTraceIdBySpanName(serviceSpanName, timestamp, traceId, ttl));
             }
             session.executeAsync(bound);
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugInsertTraceIdBySpanName(serviceName, timestamp, traceId, ttl), ex);
             throw ex;
         }
+    }
+
+    private String debugInsertTraceIdBySpanName(String serviceSpanName, long timestamp, long traceId, int ttl) {
+        return insertTraceIdBySpanName.getQueryString()
+                .replace(':' + KEY_MARKER, serviceSpanName)
+                .replace(':' + COLUMN_MARKER, String.valueOf(timestamp))
+                .replace(':' + VALUE_MARKER, String.valueOf(traceId))
+                .replace(':' + TTL_MARKER, String.valueOf(ttl));
     }
 
     public Map<Long,Long> getTraceIdsByAnnotation(ByteBuffer annotationKey, long from, int limit) {
@@ -630,10 +690,7 @@ public final class Repository implements AutoCloseable {
                     .setInt(LIMIT_MARKER, limit);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(selectTraceIdsByAnnotations.getQueryString()
-                        .replace(':' + KEY_MARKER, new String(Bytes.getArray(annotationKey)))
-                        .replace(':' + COLUMN_MARKER, String.valueOf(from))
-                        .replace(':' + LIMIT_MARKER, String.valueOf(limit)));
+                LOG.debug(debugSelectTraceIdsByAnnotations(annotationKey, from, limit));
             }
             Map<Long,Long> traceIdsToTimestamps = new HashMap<>();
             for (Row row : session.execute(bound).all()) {
@@ -641,13 +698,19 @@ public final class Repository implements AutoCloseable {
             }
             return traceIdsToTimestamps;
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugSelectTraceIdsByAnnotations(annotationKey, from, limit), ex);
             throw ex;
         }
     }
 
-    public void storeTraceIdByAnnotation(ByteBuffer annotationKey, long timestamp, long traceId, int ttl) {
+    private String debugSelectTraceIdsByAnnotations(ByteBuffer annotationKey, long from, int limit) {
+        return selectTraceIdsByAnnotations.getQueryString()
+                        .replace(':' + KEY_MARKER, new String(Bytes.getArray(annotationKey)))
+                        .replace(':' + COLUMN_MARKER, String.valueOf(from))
+                        .replace(':' + LIMIT_MARKER, String.valueOf(limit));
+    }
 
+    public void storeTraceIdByAnnotation(ByteBuffer annotationKey, long timestamp, long traceId, int ttl) {
         try {
             ByteBuffer traceIdBytes = ByteBuffer.allocate(8).putLong(traceId);
             traceIdBytes.rewind();
@@ -659,25 +722,29 @@ public final class Repository implements AutoCloseable {
                     .setInt(TTL_MARKER, ttl);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(insertTraceIdByAnnotation.getQueryString()
-                        .replace(':' + KEY_MARKER, new String(Bytes.getArray(annotationKey)))
-                        .replace(':' + COLUMN_MARKER, String.valueOf(timestamp))
-                        .replace(':' + VALUE_MARKER, String.valueOf(traceId))
-                        .replace(':' + TTL_MARKER, String.valueOf(ttl)));
+                LOG.debug(debugInsertTraceIdByAnnotation(annotationKey, timestamp, traceId, ttl));
             }
             session.executeAsync(bound);
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugInsertTraceIdByAnnotation(annotationKey, timestamp, traceId, ttl), ex);
             throw ex;
         }
+    }
+
+    private String debugInsertTraceIdByAnnotation(ByteBuffer annotationKey, long timestamp, long traceId, int ttl) {
+        return insertTraceIdByAnnotation.getQueryString()
+                .replace(':' + KEY_MARKER, new String(Bytes.getArray(annotationKey)))
+                .replace(':' + COLUMN_MARKER, String.valueOf(timestamp))
+                .replace(':' + VALUE_MARKER, String.valueOf(traceId))
+                .replace(':' + TTL_MARKER, String.valueOf(ttl));
     }
 
     public Map<Long,Long> getTraceDuration(boolean head, long[] traceIds) {
         Preconditions.checkNotNull(traceIds);
         Preconditions.checkArgument(0 < traceIds.length);
-        try {
-            List<ResultSetFuture> futures = new ArrayList<>();
-            for (Long traceId : traceIds) {
+        List<ResultSetFuture> futures = new ArrayList<>();
+        for (Long traceId : traceIds) {
+            try {
                 assert null != traceId;
                 ByteBuffer key = ByteBuffer.allocate(8).putLong(traceId);
                 key.rewind();
@@ -687,22 +754,26 @@ public final class Repository implements AutoCloseable {
                         .setBytes(KEY_MARKER, key);
 
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug((head ? selectTraceDurationHead : selectTraceDurationTail).getQueryString()
-                            .replace(':' + KEY_MARKER, new String(Bytes.getArray(key))));
+                    LOG.debug(debugSelectTraceDuration(head, traceId));
                 }
                 futures.add(session.executeAsync(bound));
+            } catch (RuntimeException ex) {
+                LOG.error("failed " + debugSelectTraceDuration(head, traceId), ex);
+                throw ex;
             }
-
-            Map<Long,Long> results = new HashMap<>();
-            for (ResultSetFuture future : futures) {
-                Row row = future.getUninterruptibly().one();
-                results.put(row.getBytes("key").getLong(), row.getLong("column1"));
-            }
-            return results;
-        } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
-            throw ex;
         }
+
+        Map<Long,Long> results = new HashMap<>();
+        for (ResultSetFuture future : futures) {
+            Row row = future.getUninterruptibly().one();
+            results.put(row.getBytes("key").getLong(), row.getLong("column1"));
+        }
+        return results;
+    }
+
+    private String debugSelectTraceDuration(boolean head, long traceId) {
+        return (head ? selectTraceDurationHead : selectTraceDurationTail).getQueryString()
+                .replace(':' + KEY_MARKER, String.valueOf(traceId));
     }
 
     public void storeTraceDuration(long traceId, long timestamp, int ttl) {
@@ -712,22 +783,26 @@ public final class Repository implements AutoCloseable {
 
             BoundStatement bound = insertTraceDurations.bind()
                     .setBytes(KEY_MARKER, key)
-                        .setLong(COLUMN_MARKER, timestamp)
-                        .setBytes(VALUE_MARKER, ByteBuffer.wrap("".getBytes()))
-                        .setInt(TTL_MARKER, ttl);
+                    .setLong(COLUMN_MARKER, timestamp)
+                    .setBytes(VALUE_MARKER, ByteBuffer.wrap("".getBytes()))
+                    .setInt(TTL_MARKER, ttl);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(insertTraceDurations.getQueryString()
-                        .replace(':' + KEY_MARKER, String.valueOf(traceId))
-                        .replace(':' + COLUMN_MARKER, String.valueOf(timestamp))
-                        .replace(':' + VALUE_MARKER, "")
-                        .replace(':' + TTL_MARKER, String.valueOf(ttl)));
+                LOG.debug(debugInsertTraceDurations(traceId, timestamp, ttl));
             }
             session.execute(bound);
         } catch (RuntimeException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.error("failed " + debugInsertTraceDurations(traceId, timestamp, ttl), ex);
             throw ex;
         }
+    }
+
+    private String debugInsertTraceDurations(long traceId, long timestamp, int ttl) {
+        return insertTraceDurations.getQueryString()
+                .replace(':' + KEY_MARKER, String.valueOf(traceId))
+                .replace(':' + COLUMN_MARKER, String.valueOf(timestamp))
+                .replace(':' + VALUE_MARKER, "")
+                .replace(':' + TTL_MARKER, String.valueOf(ttl));
     }
 
     private static List<Date> getDays(long from, long to) {

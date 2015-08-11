@@ -251,7 +251,7 @@ class CassandraSpanStore(
     QueryGetTtlCounter.incr()
 
     pool {
-      Duration(repository.getSpanTtl(traceId), java.util.concurrent.TimeUnit.SECONDS)
+      Duration(repository.getSpanTtlSeconds(traceId), java.util.concurrent.TimeUnit.SECONDS)
     }
   }
 
@@ -292,10 +292,10 @@ class CassandraSpanStore(
     QueryGetTraceIdsByNameCounter.incr()
     val key = nameKey(serviceName, spanName)
 
-    // if we have a span name, look up in the service + span name index
-    // if not, look up by service name only
     pool {
       (spanName match {
+        // if we have a span name, look up in the service + span name index
+        // if not, look up by service name only
         case Some(x :String) => repository.getTraceIdsBySpanName(serviceName, x, endTs, limit)
         case None => repository.getTraceIdsByServiceName(serviceName, endTs, limit)
       })
@@ -336,7 +336,7 @@ class CassandraSpanStore(
         .map { case (traceId :java.lang.Long, ts :java.lang.Long) =>
           (traceId.asInstanceOf[Long], ("e", ts.asInstanceOf[Long]))}
         .toSeq))
-      .groupBy(_._1)
+      .groupBy { case (traceId, _) => traceId }
       .mapValues(_.map(_._2))
       .map { case (traceId :Long, Seq(("s", startTs :Long),("e", endTs :Long))) =>
         (traceId, TraceIdDuration(traceId, endTs - startTs, startTs))
