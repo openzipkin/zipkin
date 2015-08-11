@@ -1,0 +1,18 @@
+ext.archiveName = project.name
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+        artifact sourceJar {
+            classifier "sources"
+        }
+    }
+
+}
+
+model {
+    tasks.generatePomFileForMavenJavaPublication {
+        destination = file("$buildDir/generated-pom.xml")
+    }
+}

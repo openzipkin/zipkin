@@ -25,6 +25,7 @@ allprojects {
 
     // - no Scala library Jar was found
     apply from: "$rootDir/gradle/dependencies.gradle"
+    apply from: "$rootDir/gradle/maven.gradle"
     dependencies {
         compile "org.scala-lang:scala-library:${scalaVersion}"
     }
