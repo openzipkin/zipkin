@@ -25,5 +25,10 @@ repositories {
 }
 
 dependencies {
-    compile project(':zipkin-cassandra')
+    compile project(':zipkin-scrooge')
+    compile "com.twitter:util-app_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
+    compile "org.apache.hadoop:hadoop-client:2.4.0"
+    compile "com.twitter:scalding-core_${scalaInterfaceVersion}:0.15.0"
+    // @fixme cassandra aggregate stuff needs to be rewritten to use CqlInputFormat
+    //compile project(':zipkin-cassandra')
 }

@@ -1,0 +1,11 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'com.datastax.cassandra', name: 'cassandra-driver-core', version: '2.1.6'
+    testCompile group: 'com.datastax.cassandra', name: 'cassandra-driver-core', classifier: 'tests', version: '2.1.6'
+    testCompile group: 'org.apache.commons', name: 'commons-exec', version: '1.3'
+}
