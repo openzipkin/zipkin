@@ -22,13 +22,13 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSuite, Matchers}
 
-class ZooKeeperGlobalSamplerSpec extends FunSuite with Matchers with MockitoSugar {
-  val zkConfig = mock[AdjustableRateConfig]
+class AdjustableGlobalSamplerSpec extends FunSuite with Matchers with MockitoSugar {
+  val adjustableConfig = mock[AdjustableRateConfig]
 
   test("keep 10% of traces") {
-    when(zkConfig.get) thenReturn 0.1
+    when(adjustableConfig.get) thenReturn 0.1
 
-    val sampler = new ZooKeeperGlobalSampler(zkConfig)
+    val sampler = new AdjustableGlobalSampler(adjustableConfig)
 
     sampler(Long.MinValue) should be (false)
     sampler(-1) should be (true)
@@ -38,9 +38,9 @@ class ZooKeeperGlobalSamplerSpec extends FunSuite with Matchers with MockitoSuga
   }
 
   test("drop all traces") {
-    when(zkConfig.get) thenReturn 0
+    when(adjustableConfig.get) thenReturn 0
 
-    val sampler = new ZooKeeperGlobalSampler(zkConfig)
+    val sampler = new AdjustableGlobalSampler(adjustableConfig)
 
     sampler(Long.MinValue) should be (false)
     sampler(Long.MinValue + 1)
@@ -51,9 +51,9 @@ class ZooKeeperGlobalSamplerSpec extends FunSuite with Matchers with MockitoSuga
   }
 
   test("keep all traces") {
-    when(zkConfig.get) thenReturn 1
+    when(adjustableConfig.get) thenReturn 1
 
-    val sampler = new ZooKeeperGlobalSampler(zkConfig)
+    val sampler = new AdjustableGlobalSampler(adjustableConfig)
 
     sampler(Long.MinValue) should be (true)
     -5000 to 5000 foreach { i =>

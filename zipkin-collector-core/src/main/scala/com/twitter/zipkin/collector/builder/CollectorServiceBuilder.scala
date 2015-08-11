@@ -23,7 +23,7 @@ import com.twitter.util.Timer
 import com.twitter.zipkin.builder.{ZipkinServerBuilder, Builder}
 import com.twitter.zipkin.collector.filter.{ClientIndexFilter, ServiceStatsFilter, SamplerFilter}
 import com.twitter.zipkin.collector.processor.{IndexService, StorageService, FanoutService}
-import com.twitter.zipkin.collector.sampler.ZooKeeperGlobalSampler
+import com.twitter.zipkin.collector.sampler.AdjustableGlobalSampler
 import com.twitter.zipkin.collector.{WriteQueue, ZipkinCollector}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.config.sampler.{AdaptiveSamplerConfig, AdjustableRateConfig}
@@ -116,7 +116,7 @@ case class CollectorServiceBuilder[T](
 
     val processor: Service[T, Unit] = {
       interface.filter andThen
-      new SamplerFilter(new ZooKeeperGlobalSampler(sampleRate)) andThen
+      new SamplerFilter(new AdjustableGlobalSampler(sampleRate)) andThen
       new ServiceStatsFilter andThen
       new FanoutService[Span](storeProcessors)
     }

@@ -19,10 +19,9 @@ package com.twitter.zipkin.collector.sampler
 import com.twitter.zipkin.config.sampler.AdjustableRateConfig
 
 /**
- * Get the rate of sample from ZooKeeper so that
- * users can adjust the rate on the fly.
+ * Get the rate of sample from an adjustable source.
  */
-class ZooKeeperGlobalSampler(sampleRateConfig: AdjustableRateConfig) extends GlobalSampler {
+class AdjustableGlobalSampler(sampleRateConfig: AdjustableRateConfig) extends GlobalSampler {
 
   /**
    * True: process trace

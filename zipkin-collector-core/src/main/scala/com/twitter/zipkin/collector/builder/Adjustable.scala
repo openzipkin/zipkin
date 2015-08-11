@@ -15,13 +15,8 @@
  */
 package com.twitter.zipkin.collector.builder
 
-import com.twitter.conversions.time._
-import com.twitter.util.{Timer, FuturePool}
-import com.twitter.zipkin.builder.{ZooKeeperClientBuilder, Builder}
-import com.twitter.zipkin.config.sampler.{ZooKeeperAdjustableRateConfig, MutableAdjustableRateConfig, AdjustableRateConfig}
-import com.twitter.zk.{RetryPolicy, ZkClient, CommonConnector}
-import org.apache.zookeeper.ZooDefs.Ids
-import scala.collection.JavaConverters._
+import com.twitter.zipkin.builder.Builder
+import com.twitter.zipkin.config.sampler.{AdjustableRateConfig, MutableAdjustableRateConfig}
 
 object Adjustable {
 
@@ -29,39 +24,11 @@ object Adjustable {
    * Builder for a locally adjustable rate
    *
    * @param default default value
-   * @return
+   * @return`
    */
   def local(default: Double) = new Builder[AdjustableRateConfig] {
     def apply() = {
       new MutableAdjustableRateConfig(default)
-    }
-  }
-
-  /**
-   * Builder for an adjustable rate stored in ZooKeeper
-   *
-   * @param zkClientBuilder ZooKeeperClient builder
-   * @param configPath path in ZooKeeper to store the value
-   * @param key name of the value in ZooKeeper
-   * @param defaultValue default value
-   * @param timer
-   * @return
-   */
-  def zookeeper(
-    zkClientBuilder: ZooKeeperClientBuilder,
-    configPath: String,
-    key: String,
-    defaultValue: Double)(implicit timer: Timer) = new Builder[AdjustableRateConfig] {
-
-    def apply() = {
-      val zkClient = zkClientBuilder.apply()
-      val connector = CommonConnector(zkClient)(FuturePool.unboundedPool)
-
-      val zClient = ZkClient(connector)
-        .withAcl(Ids.OPEN_ACL_UNSAFE.asScala)
-        .withRetryPolicy(RetryPolicy.Exponential(1.second, 1.5)(timer))
-
-      ZooKeeperAdjustableRateConfig(zClient, configPath, key, defaultValue)
     }
   }
 }
