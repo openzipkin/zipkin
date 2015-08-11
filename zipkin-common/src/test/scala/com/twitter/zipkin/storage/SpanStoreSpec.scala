@@ -81,6 +81,11 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store.getSpansByTraceIds(Seq(54321))) should be(empty)
   }
 
+  @Test def getDataTimeToLive() {
+    // If a store doesn't use TTLs this should return Int.Max
+    assert(result(store.getDataTimeToLive()) > 0)
+  }
+
   @Test def setTimeToLive() {
     ready(store(Seq(span1)))
     ready(store.setTimeToLive(span1.traceId, 1234.seconds))
