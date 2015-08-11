@@ -96,7 +96,7 @@ subprojects { subproject ->
             licenses = ['Apache-2.0']
             repo = 'zipkin'
             vcsUrl = 'https://github.com/openzipkin/zipkin.git'
-            name = "${subproject.name}"
+            name = "zipkin"
             userOrg = "openzipkin"
             version {
                 name = "${project.version}"
