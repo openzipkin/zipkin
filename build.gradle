@@ -53,7 +53,7 @@ allprojects { thisProject ->
             userOrg = System.getenv('BINTRAY_ZIPKIN_ORG') ?: "openzipkin"
             version {
                 name = "${project.version}"
-                desc = "Zipkin ${thisProject.name} version ${project.version}"
+                desc = "Zipkin version ${project.version}"
                 released  = new Date()
                 vcsTag = "${project.version}"
             }
