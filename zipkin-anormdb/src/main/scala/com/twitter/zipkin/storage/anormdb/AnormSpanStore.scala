@@ -116,7 +116,7 @@ class AnormSpanStore(
               ("value" -> Util.getArrayFromBuffer(b.value)),
               ("annotation_type_value" -> b.annotationType.value),
               ("ipv4" -> b.host.map(_.ipv4)),
-              ("port" -> b.host.map(_.ipv4)))
+              ("port" -> b.host.map(_.port)))
           }
 
           (sbp, abp, bbp)

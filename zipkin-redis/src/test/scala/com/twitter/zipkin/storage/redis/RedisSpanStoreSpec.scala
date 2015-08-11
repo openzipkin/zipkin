@@ -1,35 +1,19 @@
-/*
- * Copyright 2014 Twitter Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.twitter.zipkin.storage.redis
 
 import com.twitter.app.App
-import com.twitter.util.Await.result
+import com.twitter.util.Await.ready
 import com.twitter.zipkin.redis.RedisSpanStoreFactory
-import org.scalatest.FunSuite
+import com.twitter.zipkin.storage.SpanStoreSpec
 
-class RedisSpanStoreSpec extends FunSuite {
-
+class RedisSpanStoreSpec extends SpanStoreSpec {
   object RedisStore extends App with RedisSpanStoreFactory
   RedisStore.main(Array(
     "-zipkin.storage.redis.host", "127.0.0.1",
     "-zipkin.storage.redis.port", "6379"))
 
+  val store = RedisStore.newRedisSpanStore()
 
-  test("validate") {
-    val spanStore = RedisStore.newRedisSpanStore()
-    result(spanStore.clear())
+  override def clear = {
+    ready(store.clear())
   }
 }
