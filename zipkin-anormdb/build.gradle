@@ -21,4 +21,7 @@ dependencies {
     compile "com.zaxxer:HikariCP:2.4.0"
 
     compile anormDriverDependencies[dbEngine]
+
+    // for SpanStoreSpec
+    testCompile project(':zipkin-common').sourceSets.test.output
 }

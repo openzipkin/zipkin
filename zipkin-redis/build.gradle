@@ -5,6 +5,9 @@ dependencies {
     compile "com.twitter:util-logging_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
 
     runtime commonDependencies.slf4jLog4j12
+
+    // for SpanStoreSpec
+    testCompile project(':zipkin-common').sourceSets.test.output
 }
 
 test.maxParallelForks = 1

@@ -14,4 +14,7 @@ dependencies {
     compile "com.twitter:util-app_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
     compile "com.twitter:util-logging_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
     compile "com.twitter:scalding-core_${scalaInterfaceVersion}:0.15.0"
+
+    // for SpanStoreSpec
+    testCompile project(':zipkin-common').sourceSets.test.output
 }
