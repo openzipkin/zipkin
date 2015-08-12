@@ -17,6 +17,8 @@
 package com.twitter.zipkin.storage.anormdb
 
 import com.twitter.ostrich.stats.Stats
+import com.twitter.util.Time
+import com.twitter.zipkin.storage.anormdb.AnormThreads._
 import java.sql.Connection
 
 /**
@@ -32,7 +34,7 @@ trait DBPool {
   /**
    * Closes all database connections.
    */
-  def close() {
+  def close(deadline: Time) = inNewThread {
     if (!openCon.isEmpty) {
       openCon.get.close()
     }
