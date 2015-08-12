@@ -230,23 +230,4 @@ service ZipkinQuery {
 
     list<string> getTopAnnotations(1: string service_name) throws (1: QueryException qe);
     list<string> getTopKeyValueAnnotations(1: string service_name) throws (1: QueryException qe);
-
-    /**
-     * Given a time stamp, server service name, and rpc name, fetch all of the client services calling in paired
-     * with the lists of every span duration (list<i64>) from the server to client. The lists of span durations
-     * include information on call counts and mean/stdDev/etc of call durations.
-     *
-     * The three arguments specify epoch time in microseconds, server side service name and rpc name. The return maps
-     * contains the key - client_service_name and value - list<span_durations>.
-     */
-     map<string, list<i64>> getSpanDurations(1: i64 time_stamp, 2: string service_name, 3: string rpc_name);
-
-    /**
-     * Given a time stamp, server service name, and rpc name, fetch all of the client services calling in paired
-     * with the lists of every trace Ids (list<i64>) from the server to client.
-     *
-     * The three arguments specify epoch time in microseconds, server side service name and rpc name. The return maps
-     * contains the key - client_service_name and value - list<trace_id>.
-     */
-     map<string, list<i64>> getServiceNamesToTraceIds(1: i64 time_stamp, 2: string service_name, 3: string rpc_name);
 }

@@ -429,20 +429,6 @@ class QueryService(
     }
   }
 
-  def getSpanDurations(
-    timeStamp: Long,
-    serverServiceName: String,
-    rcpName: String
-  ): Future[Map[String, Seq[Long]]] =
-    Future.exception(new Exception("Not Implemented"))
-
-  def getServiceNamesToTraceIds(
-    timeStamp: Long,
-    serviceName: String,
-    rcpName: String
-  ): Future[Map[String, Seq[Long]]] =
-    Future.exception(new Exception("Not Implemented"))
-
   private def checkIfRunning() = {
     if (!running.get) {
       log.warning("Server not running, throwing exception")
