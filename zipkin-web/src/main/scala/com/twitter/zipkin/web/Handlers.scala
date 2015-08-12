@@ -77,28 +77,6 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
     }
   }
 
-  private[this] def querySpanDurantions(
-    client: ZipkinQuery[Future],
-    queryRequest: QueryRequest
-  ): Future[collection.Map[String, Seq[Long]]] = {
-    client.getSpanDurations(
-      queryRequest.endTs,
-      queryRequest.serviceName,
-      queryRequest.spanName.getOrElse("")
-    )
-  }
-
-  private[this] def queryServiceNamesToTraceIds(
-    client: ZipkinQuery[Future],
-    queryRequest: QueryRequest
-  ): Future[collection.Map[String, Seq[Long]]] = {
-    client.getServiceNamesToTraceIds(
-      queryRequest.endTs,
-      queryRequest.serviceName,
-      queryRequest.spanName.getOrElse("")
-    )
-  }
-
   private[this] def getServices(client: ZipkinQuery[Future]): Future[Seq[String]] =
     client.getServiceNames() map { _.toSeq.sorted }
 

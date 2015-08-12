@@ -32,7 +32,6 @@ import java.nio.ByteBuffer
 class ThriftQueryService(
   spanStore: SpanStore,
   aggsStore: Aggregates = new NullAggregates,
-  realtimeStore: RealtimeAggregates = NullRealtimeAggregates,
   adjusters: Map[thriftscala.Adjust, Adjuster] = Map.empty[thriftscala.Adjust, Adjuster],
   traceDurationFetchBatchSize: Int = 500,
   stats: StatsReceiver = DefaultStatsReceiver.scope("ThriftQueryService"),
@@ -312,25 +311,5 @@ class ThriftQueryService(
   def getTopKeyValueAnnotations(serviceName: String): Future[Seq[String]] =
     handle("getTopKeyValueAnnotations") {
       aggsStore.getTopKeyValueAnnotations(serviceName)
-    }
-
-  def getSpanDurations(
-    timeStamp: Long,
-    serverServiceName: String,
-    rpcName: String
-  ): Future[Map[String, List[Long]]] =
-    handle("getSpanDurations") {
-      val time = Time.fromMicroseconds(timeStamp)
-      realtimeStore.getSpanDurations(time, serverServiceName, rpcName)
-    }
-
-  def getServiceNamesToTraceIds(
-    timeStamp: Long,
-    serverServiceName: String,
-    rpcName: String
-  ): Future[Map[String, List[Long]]] =
-    handle("getServiceNamesToTraceIds") {
-      val time = Time.fromMicroseconds(timeStamp)
-      realtimeStore.getServiceNamesToTraceIds(time, serverServiceName, rpcName)
     }
 }
