@@ -6,8 +6,8 @@ import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Duration, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift.{ThriftSpan, WrappedSpan}
-import com.twitter.zipkin.storage.Storage
 import com.twitter.zipkin.thriftscala
+import java.io.Closeable
 import org.jboss.netty.buffer.ChannelBuffers._
 import org.jboss.netty.buffer.{ChannelBuffer, ChannelBuffers}
 
@@ -18,7 +18,7 @@ import org.jboss.netty.buffer.{ChannelBuffer, ChannelBuffers}
 class RedisStorage(
   val client: Client,
   val defaultTtl: Option[Duration]
-) extends Storage with ExpirationSupport {
+) extends Closeable with ExpirationSupport {
 
   private val serializer = new BinaryThriftStructSerializer[thriftscala.Span] {
     def codec = thriftscala.Span
@@ -28,32 +28,32 @@ class RedisStorage(
 
   override def close() = client.release()
 
-  override def storeSpan(span: Span): Future[Unit] = {
+  def storeSpan(span: Span): Future[Unit] = {
     val redisKey = encodeTraceId(span.traceId)
     val thrift = new ThriftSpan(span).toThrift
     val buf = ChannelBuffers.copiedBuffer(serializer.toBytes(thrift))
     client.lPush(redisKey, List(buf)).flatMap(_ => expireOnTtl(redisKey))
   }
 
-  override def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] =
+  def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] =
     expireOnTtl(encodeTraceId(traceId), Some(ttl))
 
-  override def getTimeToLive(traceId: Long): Future[Duration] =
+  def getTimeToLive(traceId: Long): Future[Duration] =
     client.ttl(encodeTraceId(traceId)) map { ttl =>
       if (ttl.isDefined) Duration.fromSeconds(ttl.get.intValue()) else Duration.Top
     }
 
-  override def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
+  def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
     client.lRange(encodeTraceId(traceId), 0L, -1L) map
       (_.map(decodeSpan).sortBy(timestampOfFirstAnnotation)(Ordering.Long.reverse))
 
-  override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] =
+  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] =
     Future.collect(traceIds.map(getSpansByTraceId))
       .map(_.filter(spans => spans.size > 0)) // prune empties
 
-  override def getDataTimeToLive: Int = (defaultTtl map (_.inSeconds)).getOrElse(Int.MaxValue)
+  def getDataTimeToLive: Int = (defaultTtl map (_.inSeconds)).getOrElse(Int.MaxValue)
 
-  override def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] =
+  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] =
     Future.collect(traceIds map { id =>
       // map the exists result to the trace id or none
       client.exists(encodeTraceId(id)) map (exists => if (exists) Some(id) else None)

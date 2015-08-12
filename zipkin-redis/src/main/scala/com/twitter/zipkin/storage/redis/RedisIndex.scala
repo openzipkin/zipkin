@@ -5,7 +5,8 @@ import com.twitter.finagle.redis.Client
 import com.twitter.util.{Duration, Future}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation, Span}
-import com.twitter.zipkin.storage.{Index, IndexedTraceId, TraceIdDuration}
+import com.twitter.zipkin.storage.{IndexedTraceId, TraceIdDuration}
+import java.io.Closeable
 import java.nio.ByteBuffer
 import org.jboss.netty.buffer.ChannelBuffers.copiedBuffer
 
@@ -16,7 +17,7 @@ import org.jboss.netty.buffer.ChannelBuffers.copiedBuffer
 class RedisIndex(
   val client: Client,
   val ttl: Option[Duration]
-) extends Index {
+) extends Closeable {
 
   private case class SpanKey(service: String, span: String)
 
@@ -25,19 +26,19 @@ class RedisIndex(
   private case class BinaryAnnotationKey(service: String, annotation: String, value: String)
 
   private[this] val serviceIndex = new TraceIndex[String](client, ttl) {
-    override def encodeKey(key: String) =
+    def encodeKey(key: String) =
       copiedBuffer("service:" + key, UTF_8)
   }
   private[this] val spanIndex = new TraceIndex[SpanKey](client, ttl) {
-    override def encodeKey(key: SpanKey) =
+    def encodeKey(key: SpanKey) =
       copiedBuffer("service:span:%s:%s".format(key.service, key.span), UTF_8)
   }
   private[this] val annotationIndex = new TraceIndex[AnnotationKey](client, ttl) {
-    override def encodeKey(key: AnnotationKey) =
+    def encodeKey(key: AnnotationKey) =
       copiedBuffer("annotations:%s:%s".format(key.service, key.annotation), UTF_8)
   }
   private[this] val binaryAnnotationIndex = new TraceIndex[BinaryAnnotationKey](client, ttl) {
-    override def encodeKey(key: BinaryAnnotationKey) =
+    def encodeKey(key: BinaryAnnotationKey) =
       copiedBuffer("binary_annotations:%s:%s:%s".format(key.service, key.annotation, key.value), UTF_8)
   }
   private[this] val spanNames = new SetMultimap(client, ttl, "span")
@@ -45,11 +46,9 @@ class RedisIndex(
   // TODO: bad and misleading name. should ttlMap be something else?
   private[this] val timeRanges = new TimeRangeStore(client, "ttlMap")
 
-  override def close() = {
-    client.release()
-  }
+  override def close() = client.release()
 
-  override def getTraceIdsByName(
+  def getTraceIdsByName(
     serviceName: String, spanName: Option[String],
     endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
     if (spanName.isDefined) {
@@ -59,7 +58,7 @@ class RedisIndex(
     }
   }
 
-  override def getTraceIdsByAnnotation(
+  def getTraceIdsByAnnotation(
     serviceName: String, annotation: String, value: Option[ByteBuffer],
     endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
     if (value.isDefined) {
@@ -70,18 +69,18 @@ class RedisIndex(
     }
   }
 
-  override def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] =
+  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] =
     Future.collect(traceIds map getTraceDuration) map (_.flatten)
 
   private[this] def getTraceDuration(traceId: Long): Future[Option[TraceIdDuration]] =
     timeRanges.get(traceId)
       .map(_.flatMap(r => Some(TraceIdDuration(traceId, r.stopTs - r.startTs, r.startTs))))
 
-  override def getServiceNames = serviceNames.get("services")
+  def getServiceNames = serviceNames.get("services")
 
-  override def getSpanNames(service: String) = spanNames.get(service)
+  def getSpanNames(service: String) = spanNames.get(service)
 
-  override def indexTraceIdByServiceAndName(span: Span): Future[Unit] = {
+  def indexTraceIdByServiceAndName(span: Span): Future[Unit] = {
     if (span.lastAnnotation.isEmpty) {
       return Future.Unit
     }
@@ -96,7 +95,7 @@ class RedisIndex(
     )
   }
 
-  override def indexSpanByAnnotations(span: Span): Future[Unit] = {
+  def indexSpanByAnnotations(span: Span): Future[Unit] = {
     if (span.lastAnnotation.isEmpty) {
       return Future.Unit
     }
@@ -117,13 +116,13 @@ class RedisIndex(
     })
   }
 
-  override def indexServiceName(span: Span): Future[Unit] = Future.collect(
+  def indexServiceName(span: Span): Future[Unit] = Future.collect(
     span.serviceNames.toSeq
       .filter(_ != "")
       .map(serviceNames.put("services", _))
   ).unit
 
-  override def indexSpanNameByService(span: Span): Future[Unit] = {
+  def indexSpanNameByService(span: Span): Future[Unit] = {
     if (span.name == "") {
       return Future.Unit
     }
@@ -134,7 +133,7 @@ class RedisIndex(
     ).unit
   }
 
-  override def indexSpanDuration(span: Span): Future[Unit] = {
+  def indexSpanDuration(span: Span): Future[Unit] = {
     val inputRange = for (first <- span.firstAnnotation;
                           last <- span.lastAnnotation)
       yield TimeRange(first.timestamp, last.timestamp)

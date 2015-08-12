@@ -1,5 +1,6 @@
 package com.twitter.zipkin.storage.redis
 
+import com.google.common.io.Closer
 import com.twitter.finagle.redis.Client
 import com.twitter.util.{Duration, Future, Time}
 import com.twitter.zipkin.common.Span
@@ -11,8 +12,9 @@ import java.nio.ByteBuffer
  * @param ttl expires keys older than this many seconds.
  */
 class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
-  private[this] val index = new RedisIndex(client, ttl)
-  private[this] val storage = new RedisStorage(client, ttl)
+  private[this] val closer = Closer.create();
+  private[this] val index = closer.register(new RedisIndex(client, ttl))
+  private[this] val storage = closer.register(new RedisStorage(client, ttl))
 
   private[this] def call[T](f: => T): Future[T] = synchronized { Future(f) }
 
@@ -20,7 +22,7 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
   private[redis] def clear(): Future[Unit] = client.flushDB()
 
   def close(deadline: Time): Future[Unit] = closeAwaitably {
-    call { storage.close() }.unit
+    call { closer.close() }.unit
   }
 
   def apply(newSpans: Seq[Span]): Future[Unit] = Future.collect(newSpans.flatMap {
