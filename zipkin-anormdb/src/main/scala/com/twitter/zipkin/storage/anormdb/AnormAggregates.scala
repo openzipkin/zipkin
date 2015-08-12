@@ -16,7 +16,7 @@
 
 package com.twitter.zipkin.storage.anormdb
 
-import com.twitter.util.{Future, Time}
+import com.twitter.util.{Await, Future, Time}
 import com.twitter.conversions.time._
 import com.twitter.zipkin.common.{Service, DependencyLink, Dependencies}
 import com.twitter.zipkin.storage.Aggregates
@@ -32,7 +32,11 @@ import AnormThreads.inNewThread
  * The top annotations methods are stubbed because they're not currently
  * used anywhere; that feature was never completed.
  */
-case class AnormAggregates(db: DB, openCon: Option[Connection] = None) extends Aggregates with DBPool {
+case class AnormAggregates(
+  val db: DB,
+  val openCon: Option[Connection] = None) extends Aggregates with DBPool {
+
+  override def close() = Await.ready(close(Time.Top))
 
   /**
    * Get the dependencies in a time range.

@@ -17,359 +17,369 @@ package com.twitter.zipkin.storage.anormdb
 
 import anorm.SqlParser._
 import anorm._
-import com.twitter.util.{Duration, Future, FuturePool, Time}
+import com.twitter.util._
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common._
+import com.twitter.zipkin.storage.anormdb.AnormThreads._
 import com.twitter.zipkin.storage.{IndexedTraceId, SpanStore, TraceIdDuration}
 import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
-import java.sql.{Connection, PreparedStatement}
+import java.sql.Connection
+import com.twitter.zipkin.storage.anormdb.DB.byteArrayToStatement
 
-// TODO: connection pooling for real parallelism
-class AnormSpanStore(
-  db: SpanStoreDB,
-  openCon: Option[Connection] = None,
-  pool: FuturePool = FuturePool.unboundedPool
-) extends SpanStore {
-  // Database connection object
-  private[this] implicit val conn = openCon match {
-    case None => db.getConnection()
-    case Some(con) => con
-  }
+class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends SpanStore with DBPool {
 
-  def close(deadline: Time): Future[Unit] = pool {
-    conn.close()
-  }
+  override def apply(spans: Seq[Span]) = Future.join(spans.map(storeSpan))
 
-  implicit object byteArrayToStatement extends ToStatement[Array[Byte]] {
-    def set(s: PreparedStatement, i: Int, b: Array[Byte]): Unit = s.setBytes(i, b)
-  }
+  private [this] def storeSpan(span: Span): Future[Unit] = inNewThread {
+    val createdTs: Option[Long] = span.firstAnnotation match {
+      case Some(anno) => Some(anno.timestamp)
+      case None => None
+    }
 
-  private[this] val spanInsertSql = SQL("""
-    |INSERT INTO zipkin_spans
-    |  (span_id, parent_id, trace_id, span_name, debug, duration, created_ts)
-    |VALUES
-    |  ({span_id}, {parent_id}, {trace_id}, {span_name}, {debug}, {duration}, {created_ts})
-  """.stripMargin).asBatch
+    implicit val (conn, borrowTime) = borrowConn()
+    try {
 
-  private[this] val annInsertSql = SQL("""
-    |INSERT INTO zipkin_annotations
-    |  (span_id, trace_id, span_name, service_name, value, ipv4, port,
-    |    a_timestamp, duration)
-    |VALUES
-    |  ({span_id}, {trace_id}, {span_name}, {service_name}, {value},
-    |    {ipv4}, {port}, {timestamp}, {duration})
-  """.stripMargin).asBatch
-
-  private[this] val binAnnInsertSql = SQL("""
-    |INSERT INTO zipkin_binary_annotations
-    |  (span_id, trace_id, span_name, service_name, annotation_key,
-    |    annotation_value, annotation_type_value, ipv4, port)
-    |VALUES
-    |  ({span_id}, {trace_id}, {span_name}, {service_name}, {key}, {value},
-    |    {annotation_type_value}, {ipv4}, {port})
-  """.stripMargin).asBatch
-
-  // store a list of spans
-  def apply(spans: Seq[Span]): Future[Unit] = {
-    var hasSpans = false
-    var hasAnns = false
-    var hasBinAnns = false
-
-    val init = (spanInsertSql, annInsertSql, binAnnInsertSql)
-    val (spanBatch, annBatch, binAnnBatch) =
-      spans.foldLeft(init) { case ((sb, ab, bb), span) =>
-        hasSpans = true
-        val sbp = sb.addBatch(
-          ("span_id" -> span.id),
-          ("parent_id" -> span.parentId),
-          ("trace_id" -> span.traceId),
-          ("span_name" -> span.name),
-          ("debug" -> (if (span.debug) 1 else 0)),
-          ("duration" -> span.duration),
-          ("created_ts" -> span.firstAnnotation.map(_.timestamp))
+      db.withRecoverableTransaction(conn, { implicit conn: Connection =>
+        // Update our inventory of known span names per service
+        span.serviceNames.foreach(serviceName =>
+          SQL(
+            db.getSpanInsertCommand() +
+              """ INTO zipkin_service_spans
+                |  (service_name, span_name, last_span_id, last_span_ts)
+                |VALUES
+                |  ({service_name}, {span_name}, {last_span_id}, {last_span_ts})
+              """.stripMargin)
+            .on("service_name" -> serviceName)
+            .on("span_name" -> span.name)
+            .on("last_span_id" -> span.id)
+            .on("last_span_ts" -> createdTs)
+            .execute()
         )
 
-        if (!shouldIndex(span)) (sbp, ab, bb) else {
-          val abp = span.annotations.foldLeft(ab) { (ab, a) =>
-            hasAnns = true
-            ab.addBatch(
-              ("span_id" -> span.id),
-              ("trace_id" -> span.traceId),
-              ("span_name" -> span.name),
-              ("service_name" -> a.serviceName),
-              ("value" -> a.value),
-              ("ipv4" -> a.host.map(_.ipv4)),
-              ("port" -> a.host.map(_.port)),
-              ("timestamp" -> a.timestamp),
-              ("duration" -> a.duration.map(_.inNanoseconds)))
-          }
+        SQL(
+          db.getSpanInsertCommand() +
+            """ INTO zipkin_spans
+              |  (span_id, parent_id, trace_id, span_name, debug, duration, created_ts)
+              |VALUES
+              |  ({span_id}, {parent_id}, {trace_id}, {span_name}, {debug}, {duration}, {created_ts})
+            """.stripMargin)
+          .on("span_id" -> span.id)
+          .on("parent_id" -> span.parentId)
+          .on("trace_id" -> span.traceId)
+          .on("span_name" -> span.name)
+          .on("debug" -> (if (span.debug) 1 else 0))
+          .on("duration" -> span.duration)
+          .on("created_ts" -> createdTs)
+          .execute()
 
-          val bbp = span.binaryAnnotations.foldLeft(bb) { (bb, b) =>
-            hasBinAnns = true
-            bb.addBatch(
-              ("span_id" -> span.id),
-              ("trace_id" -> span.traceId),
-              ("span_name" -> span.name),
-              ("service_name" -> b.host.map(_.serviceName).getOrElse("unknown")), // from Annotation
-              ("key" -> b.key),
-              ("value" -> Util.getArrayFromBuffer(b.value)),
-              ("annotation_type_value" -> b.annotationType.value),
-              ("ipv4" -> b.host.map(_.ipv4)),
-              ("port" -> b.host.map(_.port)))
-          }
+        span.annotations.foreach(a =>
+          SQL(
+            """INSERT INTO zipkin_annotations
+              |  (span_id, trace_id, span_name, service_name, value, ipv4, port,
+              |    a_timestamp, duration)
+              |VALUES
+              |  ({span_id}, {trace_id}, {span_name}, {service_name}, {value},
+              |    {ipv4}, {port}, {timestamp}, {duration})
+            """.stripMargin)
+            .on("span_id" -> span.id)
+            .on("trace_id" -> span.traceId)
+            .on("span_name" -> span.name)
+            .on("service_name" -> a.serviceName)
+            .on("value" -> a.value)
+            .on("ipv4" -> a.host.map(_.ipv4))
+            .on("port" -> a.host.map(_.port))
+            .on("timestamp" -> a.timestamp)
+            .on("duration" -> a.duration.map(_.inNanoseconds))
+            .execute()
+        )
 
-          (sbp, abp, bbp)
+        span.binaryAnnotations.foreach(b =>
+          SQL(
+            """INSERT INTO zipkin_binary_annotations
+              |  (span_id, trace_id, span_name, service_name, annotation_key,
+              |    annotation_value, annotation_type_value, ipv4, port, annotation_ts)
+              |VALUES
+              |  ({span_id}, {trace_id}, {span_name}, {service_name}, {key}, {value},
+              |    {annotation_type_value}, {ipv4}, {port}, {annotation_ts})
+            """.stripMargin)
+            .on("span_id" -> span.id)
+            .on("trace_id" -> span.traceId)
+            .on("span_name" -> span.name)
+            .on("service_name" -> b.host.map(_.serviceName).getOrElse("Unknown service name")) // from Annotation
+            .on("key" -> b.key)
+            .on("value" -> Util.getArrayFromBuffer(b.value))
+            .on("annotation_type_value" -> b.annotationType.value)
+            .on("ipv4" -> b.host.map(_.ipv4))
+            .on("port" -> b.host.map(_.port))
+            .on("annotation_ts" -> createdTs)
+            .execute()
+        )
+      })
+
+    } finally {
+      returnConn(conn, borrowTime, "storeSpan")
+    }
+  }
+
+  override def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = Future.Done
+
+  override def getTimeToLive(traceId: Long): Future[Duration] = Future.value(Duration.Top)
+
+  override def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = db.inNewThreadWithRecoverableRetry {
+    implicit val (conn, borrowTime) = borrowConn()
+    try {
+
+      SQL(
+        "SELECT trace_id FROM zipkin_spans WHERE trace_id IN (%s)".format(traceIds.mkString(","))
+      ).as(long("trace_id") *).toSet
+
+    } finally {
+      returnConn(conn, borrowTime, "tracesExist")
+    }
+  }
+
+  override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = db.inNewThreadWithRecoverableRetry {
+    implicit val (conn, borrowTime) = borrowConn()
+    try {
+
+      val traceIdsString:String = traceIds.mkString(",")
+      val spans:List[DBSpan] =
+        SQL(
+          """SELECT span_id, parent_id, trace_id, span_name, debug
+            |FROM zipkin_spans
+            |WHERE trace_id IN (%s)
+          """.stripMargin.format(traceIdsString))
+          .as((long("span_id") ~ get[Option[Long]]("parent_id") ~
+          long("trace_id") ~ str("span_name") ~ int("debug") map {
+          case a~b~c~d~e => DBSpan(a, b, c, d, e > 0)
+        }) *)
+      val annos:List[DBAnnotation] =
+        SQL(
+          """SELECT span_id, trace_id, span_name, service_name, value, ipv4, port, a_timestamp, duration
+            |FROM zipkin_annotations
+            |WHERE trace_id IN (%s)
+          """.stripMargin.format(traceIdsString))
+          .as((long("span_id") ~ long("trace_id") ~ str("span_name") ~ str("service_name") ~ str("value") ~
+          get[Option[Int]]("ipv4") ~ get[Option[Int]]("port") ~
+          long("a_timestamp") ~ get[Option[Long]]("duration") map {
+          case a~b~c~d~e~f~g~h~i => DBAnnotation(a, b, c, d, e, f, g, h, i)
+        }) *)
+      val binAnnos:List[DBBinaryAnnotation] =
+        SQL(
+          """SELECT span_id, trace_id, span_name, service_name, annotation_key,
+            |  annotation_value, annotation_type_value, ipv4, port
+            |FROM zipkin_binary_annotations
+            |WHERE trace_id IN (%s)
+          """.stripMargin.format(traceIdsString))
+          .as((long("span_id") ~ long("trace_id") ~ str("span_name") ~ str("service_name") ~
+          str("annotation_key") ~ db.bytes("annotation_value") ~
+          int("annotation_type_value") ~ get[Option[Int]]("ipv4") ~
+          get[Option[Int]]("port") map {
+          case a~b~c~d~e~f~g~h~i => DBBinaryAnnotation(a, b, c, d, e, f, g, h, i)
+        }) *)
+
+      val results: Seq[Seq[Span]] = traceIds.map { traceId =>
+        spans.filter(_.traceId == traceId).map { span =>
+          val spanAnnos = annos.filter { a =>
+            a.traceId == span.traceId && a.spanId == span.spanId && a.spanName == span.spanName
+          }
+            .map { anno =>
+            val host:Option[Endpoint] = (anno.ipv4, anno.port) match {
+              case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, anno.serviceName))
+              case _ => None
+            }
+            val duration:Option[Duration] = anno.duration match {
+              case Some(nanos) => Some(Duration.fromNanoseconds(nanos))
+              case None => None
+            }
+            Annotation(anno.timestamp, anno.value, host, duration)
+          }
+          val spanBinAnnos = binAnnos.filter { a =>
+            a.traceId == span.traceId && a.spanId == span.spanId && a.spanName == span.spanName
+          }
+            .map { binAnno =>
+            val host:Option[Endpoint] = (binAnno.ipv4, binAnno.port) match {
+              case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, binAnno.serviceName))
+              case _ => None
+            }
+            val value = ByteBuffer.wrap(binAnno.value)
+            val annotationType = AnnotationType.fromInt(binAnno.annotationTypeValue)
+            BinaryAnnotation(binAnno.key, value, annotationType, host)
+          }
+          Span(traceId, span.spanName, span.spanId, span.parentId, spanAnnos, spanBinAnnos, span.debug)
         }
       }
+      results.filter(!_.isEmpty)
 
-    // This parallelism is a lie. There's only one DB connection (for now anyway).
-    Future.join(Seq(
-      if (hasSpans) pool { spanBatch.execute() } else Future.Done,
-      if (hasAnns) pool { annBatch.execute() } else Future.Done,
-      if (hasBinAnns) pool { binAnnBatch.execute() } else Future.Done
-    ))
-  }
-
-  def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] =
-    Future.Done
-
-  def getTimeToLive(traceId: Long): Future[Duration] =
-    Future.value(Duration.Top)
-
-  private[this] def tracesExistSql(ids: Seq[Long]) = SQL("""
-    SELECT trace_id FROM zipkin_spans WHERE trace_id IN (%s)
-  """.format(ids.mkString(",")))
-
-  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = pool {
-    tracesExistSql(traceIds)
-      .as(long("trace_id") *)
-      .toSet
-  }
-
-  private[this] def ep(ipv4: Option[Int], port: Option[Int], name: String) =
-    (ipv4, port) match {
-      case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, name))
-      case _ => None
-    }
-
-  private[this] def spansSql(ids: Seq[Long]) = SQL("""
-    |SELECT span_id, parent_id, trace_id, span_name, debug
-    |FROM zipkin_spans
-    |WHERE trace_id IN (%s)
-  """.stripMargin.format(ids.mkString(",")))
-
-  private[this] val spansResults = (
-    long("span_id") ~
-    get[Option[Long]]("parent_id") ~
-    long("trace_id") ~
-    str("span_name") ~
-    int("debug")
-  ) map { case sId~pId~tId~sn~d =>
-    Span(tId, sn, sId, pId, List.empty, List.empty, d > 0)
-  }
-
-  private[this] def annsSql(ids: Seq[Long]) = SQL("""
-    |SELECT span_id, trace_id, span_name, service_name, value, ipv4, port, a_timestamp, duration
-    |FROM zipkin_annotations
-    |WHERE trace_id IN (%s)
-  """.stripMargin.format(ids.mkString(",")))
-
-  private[this] val annsResults = (
-    long("span_id") ~
-    long("trace_id") ~
-    str("span_name") ~
-    str("service_name") ~
-    str("value") ~
-    get[Option[Int]]("ipv4") ~
-    get[Option[Int]]("port") ~
-    long("a_timestamp") ~
-    get[Option[Long]]("duration")
-  ) map { case sId~tId~spN~svcN~v~ip~p~ts~d =>
-    (tId, sId) -> Annotation(ts, v, ep(ip, p, svcN), d map Duration.fromNanoseconds)
-  }
-
-  private[this] def binAnnsSql(ids: Seq[Long]) = SQL("""
-    |SELECT span_id, trace_id, span_name, service_name, annotation_key,
-    |  annotation_value, annotation_type_value, ipv4, port
-    |FROM zipkin_binary_annotations
-    |WHERE trace_id IN (%s)
-  """.stripMargin.format(ids.mkString(",")))
-
-  private[this] val binAnnsResults = (
-    long("span_id") ~
-    long("trace_id") ~
-    str("span_name") ~
-    str("service_name") ~
-    str("annotation_key") ~
-    db.bytes("annotation_value") ~
-    int("annotation_type_value") ~
-    get[Option[Int]]("ipv4") ~
-    get[Option[Int]]("port")
-  ) map { case sId~tId~spN~svcN~key~annV~annTV~ip~p =>
-    val annVal = ByteBuffer.wrap(annV)
-    val annType = AnnotationType.fromInt(annTV)
-    (tId, sId) -> BinaryAnnotation(key, annVal, annType, ep(ip, p, svcN))
-  }
-
-  // parallel queries here are also a lie (see above).
-  def getSpansByTraceIds(ids: Seq[Long]): Future[Seq[Seq[Span]]] = {
-    val spans = pool {
-      spansSql(ids).as(spansResults *)
-    } map { _.distinct.groupBy(_.traceId) }
-
-    val anns = pool {
-      annsSql(ids).as(annsResults *)
-    } map { _.groupBy(_._1) }
-
-    val binAnns = pool {
-      binAnnsSql(ids).as(binAnnsResults *)
-    } map { _.groupBy(_._1) }
-
-    Future.join(spans, anns, binAnns) map { case (spans, anns, binAnns) =>
-      ids map { id =>
-        for (tSpans <- spans.get(id).toSeq; tSpan <- tSpans) yield {
-          val tsAnns = anns.get((id, tSpan.id)).map(_.map(_._2)).toList.flatten
-          val tsBinAnns = binAnns.get((id, tSpan.id)).map(_.map(_._2)).toList.flatten
-          tSpan.copy(annotations = tsAnns, binaryAnnotations = tsBinAnns)
-        }
-      } filter { _.nonEmpty }
+    } finally {
+      returnConn(conn, borrowTime, "getSpansByTraceIds")
     }
   }
 
-  def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
+  override def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
     getSpansByTraceIds(Seq(traceId)).map(_.head)
 
-  private[this] val idsByNameSql = SQL("""
-    |SELECT trace_id, MAX(a_timestamp) as "MAX(a_timestamp)"
-    |FROM zipkin_annotations
-    |WHERE service_name = {service_name}
-    |  AND (span_name = {span_name} OR {span_name} = '')
-    |  AND a_timestamp < {end_ts}
-    |GROUP BY trace_id
-    |ORDER BY MAX(a_timestamp) DESC
-    |LIMIT {limit}
-  """.stripMargin)
+  override def getTraceIdsByName(serviceName: String, spanName: Option[String],
+    endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
 
-  private[this] val idsByNameResults = (
-    long("trace_id") ~
-    long("MAX(a_timestamp)")
-  ) map { case a~b => IndexedTraceId(a, b) }
-
-  def getTraceIdsByName(
-    serviceName: String,
-    spanName: Option[String],
-    endTs: Long,
-    limit: Int
-  ): Future[Seq[IndexedTraceId]] = pool {
-    idsByNameSql
-      .on("service_name" -> serviceName)
-      .on("span_name" -> spanName.getOrElse(""))
-      .on("end_ts" -> endTs)
-      .on("limit" -> limit)
-      .as(idsByNameResults *)
-  }
-
-  private[this] val byAnnValSql = SQL("""
-    |SELECT zba.trace_id, MAX(s.created_ts) as "s.created_ts"
-    |FROM zipkin_binary_annotations AS zba
-    |LEFT JOIN zipkin_spans AS s
-    |  ON zba.trace_id = s.trace_id
-    |WHERE zba.service_name = {service_name}
-    |  AND zba.annotation_key = {annotation}
-    |  AND zba.annotation_value = {value}
-    |  AND s.created_ts < {end_ts}
-    |  AND s.created_ts IS NOT NULL
-    |GROUP BY zba.trace_id
-    |ORDER BY MAX(s.created_ts) DESC
-    |LIMIT {limit}
-  """.stripMargin)
-
-  private[this] val byAnnValResult = (
-    long("trace_id") ~
-    long("created_ts")
-  ) map { case a~b => IndexedTraceId(a, b) }
-
-  private[this] val byAnnSql = SQL("""
-    |SELECT trace_id, MAX(a_timestamp) as "MAX(a_timestamp)"
-    |FROM zipkin_annotations
-    |WHERE service_name = {service_name}
-    |  AND value = {annotation}
-    |  AND a_timestamp < {end_ts}
-    |GROUP BY trace_id
-    |ORDER BY MAX(a_timestamp) DESC
-    |LIMIT {limit}
-  """.stripMargin)
-
-  private[this] val byAnnResult = (
-    long("trace_id") ~
-    long("MAX(a_timestamp)")
-  ) map { case a~b => IndexedTraceId(a, b) }
-
-  def getTraceIdsByAnnotation(
-    serviceName: String,
-    annotation: String,
-    value: Option[ByteBuffer],
-    endTs: Long,
-    limit: Int
-  ): Future[Seq[IndexedTraceId]] =
-    if (Constants.CoreAnnotations.contains(annotation))
-      Future.value(Seq.empty)
-    else pool {
-      val sql = value
-        .map(_ => byAnnValSql)
-        .getOrElse(byAnnSql)
-        .on("service_name" -> serviceName)
-        .on("annotation" -> annotation)
-        .on("end_ts" -> endTs)
-        .on("limit" -> limit)
-
-      value match {
-        case Some(bytes) =>
-          sql.on("value" -> Util.getArrayFromBuffer(bytes)).as(byAnnValResult *)
-        case None =>
-          sql.as(byAnnResult *)
+    if (endTs <= 0 || limit <= 0) {
+      Seq.empty
+    }
+    else {
+      implicit val (conn, borrowTime) = borrowConn()
+      try {
+        val result:List[(Long, Long)] = SQL(
+          """SELECT t1.trace_id, MAX(a_timestamp)
+            |FROM zipkin_annotations t1
+            |INNER JOIN (
+            |  SELECT DISTINCT trace_id
+            |  FROM zipkin_annotations
+            |  WHERE service_name = {service_name}
+            |    AND (span_name = {span_name} OR {span_name} = '')
+            |    AND a_timestamp < {end_ts}
+            |  ORDER BY a_timestamp DESC
+            |  LIMIT {limit})
+            |AS t2 ON t1.trace_id = t2.trace_id
+            |GROUP BY t1.trace_id
+            |ORDER BY t1.a_timestamp DESC
+          """.stripMargin)
+          .on("service_name" -> serviceName)
+          .on("span_name" -> (if (spanName.isEmpty) "" else spanName.get))
+          .on("end_ts" -> endTs)
+          .on("limit" -> limit)
+          .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
+        result map { case (tId, ts) =>
+          IndexedTraceId(traceId = tId, timestamp = ts)
+        }
+      } finally {
+        returnConn(conn, borrowTime, "getTraceIdsByName")
       }
     }
+  }
+  def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
+    endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
+    if ((Constants.CoreAnnotations ++ Constants.CoreAddress).contains(annotation) || endTs <= 0 || limit <= 0) {
+      Seq.empty
+    }
+    else {
+      implicit val (conn, borrowTime) = borrowConn()
+      try {
 
-  private[this] def byDurationSql(ids: Seq[Long]) = SQL("""
-    |SELECT trace_id, MIN(a_timestamp), MAX(a_timestamp)
-    |FROM zipkin_annotations
-    |WHERE trace_id IN (%s)
-    |GROUP BY trace_id
-  """.stripMargin.format(ids.mkString(",")))
+        val result:List[(Long, Long)] = value match {
+          // Binary annotations
+          case Some(bytes) => {
+            SQL(
+              """SELECT t1.trace_id, t1.created_ts
+              |FROM zipkin_spans t1
+              |INNER JOIN (
+              |  SELECT DISTINCT trace_id
+              |  FROM zipkin_binary_annotations
+              |  WHERE service_name = {service_name}
+              |    AND annotation_key = {annotation}
+              |    AND annotation_value = {value}
+              |    AND annotation_ts < {end_ts}
+              |    AND annotation_ts IS NOT NULL
+              |  ORDER BY annotation_ts DESC
+              |  LIMIT {limit})
+              |AS t2 ON t1.trace_id = t2.trace_id
+              |GROUP BY t1.trace_id
+              |ORDER BY t1.created_ts DESC
+            """.stripMargin)
+              .on("service_name" -> serviceName)
+              .on("annotation" -> annotation)
+              .on("value" -> Util.getArrayFromBuffer(bytes))
+              .on("end_ts" -> endTs)
+              .on("limit" -> limit)
+              .as((long("trace_id") ~ long("created_ts") map flatten) *)
+          }
+          // Normal annotations
+          case None => {
+            SQL(
+              """SELECT trace_id, MAX(a_timestamp)
+                |FROM zipkin_annotations
+                |WHERE service_name = {service_name}
+                |  AND value = {annotation}
+                |  AND a_timestamp < {end_ts}
+                |GROUP BY trace_id
+                |ORDER BY a_timestamp DESC
+                |LIMIT {limit}
+              """.stripMargin)
+              .on("service_name" -> serviceName)
+              .on("annotation" -> annotation)
+              .on("end_ts" -> endTs)
+              .on("limit" -> limit)
+              .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
+          }
+        }
+        result map { case (tId, ts) =>
+          IndexedTraceId(traceId = tId, timestamp = ts)
+        }
 
-  private[this] val byDurationResults = (
-    long("trace_id") ~
-    long("MIN(a_timestamp)") ~
-    long("MAX(a_timestamp)")
-  ) map { case traceId~minTs~maxTs => TraceIdDuration(traceId, maxTs - minTs, minTs) }
-
-  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = pool {
-    byDurationSql(traceIds)
-      .as(byDurationResults *)
+      } finally {
+        returnConn(conn, borrowTime, "getTraceIdsByAnnotation")
+      }
+    }
   }
 
-  private[this] val svcNamesSql = SQL("""
-    |SELECT service_name
-    |FROM zipkin_annotations
-    |GROUP BY service_name
-    |ORDER BY service_name ASC
-  """.stripMargin)
+  override def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = db.inNewThreadWithRecoverableRetry {
+    implicit val (conn, borrowTime) = borrowConn()
+    try {
 
-  def getAllServiceNames: Future[Set[String]] = pool {
-    svcNamesSql.as(str("service_name") *).toSet
+      val result:List[(Long, Long, Long)] = SQL(
+        """SELECT trace_id, MIN(a_timestamp), MAX(a_timestamp)
+          |FROM zipkin_annotations
+          |WHERE trace_id IN (%s)
+          |GROUP BY trace_id
+        """.stripMargin.format(traceIds.mkString(",")))
+        .as((long("trace_id") ~ long("MIN(a_timestamp)") ~ long("MAX(a_timestamp)") map flatten) *)
+      result map { case (traceId, minTs, maxTs) =>
+        TraceIdDuration(traceId, maxTs - minTs, minTs)
+      }
+
+    } finally {
+      returnConn(conn, borrowTime, "getTracesDuration")
+    }
   }
 
-  private[this] val spanNamesSql = SQL("""
-    |SELECT span_name
-    |FROM zipkin_annotations
-    |WHERE service_name = {service} AND span_name <> ''
-    |GROUP BY span_name
-    |ORDER BY span_name ASC
-  """.stripMargin)
+  override def getAllServiceNames: Future[Set[String]] = db.inNewThreadWithRecoverableRetry {
+    implicit val (conn, borrowTime) = borrowConn()
+    try {
 
-  def getSpanNames(service: String): Future[Set[String]] = pool {
-    spanNamesSql.on("service" -> service).as(str("span_name") *).toSet
+      SQL(
+        """SELECT service_name
+          |FROM zipkin_service_spans
+          |GROUP BY service_name
+          |ORDER BY service_name ASC
+        """.stripMargin)
+        .as(str("service_name") *).toSet
+
+    } finally {
+      returnConn(conn, borrowTime, "getServiceNames")
+    }
   }
+
+  override def getSpanNames(service: String): Future[Set[String]] = db.inNewThreadWithRecoverableRetry {
+    implicit val (conn, borrowTime) = borrowConn()
+    try {
+
+      SQL(
+        """SELECT span_name
+          |FROM zipkin_service_spans
+          |WHERE service_name = {service} AND span_name <> ''
+          |GROUP BY span_name
+          |ORDER BY span_name ASC
+        """.stripMargin)
+        .on("service" -> service)
+        .as(str("span_name") *)
+        .toSet
+
+    } finally {
+      returnConn(conn, borrowTime, "getSpanNames")
+    }
+  }
+
+  case class DBSpan(spanId: Long, parentId: Option[Long], traceId: Long, spanName: String, debug: Boolean)
+  case class DBAnnotation(spanId: Long, traceId: Long, spanName: String, serviceName: String, value: String, ipv4: Option[Int], port: Option[Int], timestamp: Long, duration: Option[Long])
+  case class DBBinaryAnnotation(spanId: Long, traceId: Long, spanName: String, serviceName: String, key: String, value: Array[Byte], annotationTypeValue: Int, ipv4: Option[Int], port: Option[Int])
 }
