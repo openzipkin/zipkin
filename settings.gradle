@@ -23,7 +23,6 @@ include 'zipkin-common',
 /////////////////////////////////////
 
 'zipkin-collector',
-'zipkin-collector-core',
 'zipkin-collector-scribe',
 
 ///////////////
@@ -38,7 +37,6 @@ include 'zipkin-common',
 /////////////////
 
 'zipkin-query',
-'zipkin-query-core',
 
 /////////////////////////////////////////////////////
 // Libraries wrapping clients to external services //
