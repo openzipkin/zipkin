@@ -19,11 +19,13 @@ import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
 import com.twitter.zipkin.storage.Store
 
 val keyspaceBuilder = cassandra.Keyspace.static(nodes = Set("localhost"))
-val cassandraBuilder = Store.Builder(
-  cassandra.StorageBuilder(keyspaceBuilder),
-  cassandra.IndexBuilder(keyspaceBuilder),
+
+val storageWithIndexBuilder = cassandra.StorageWithIndexBuilder(keyspaceBuilder)
+val storeBuilder = Store.Builder(
+  storageWithIndexBuilder,
+  storageWithIndexBuilder,
   cassandra.AggregatesBuilder(keyspaceBuilder)
 )
 
 CollectorServiceBuilder(Scribe.Interface(categories = Set("zipkin")))
-  .writeTo(cassandraBuilder)
+  .writeTo(storeBuilder)

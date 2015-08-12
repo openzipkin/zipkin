@@ -1,6 +1,7 @@
 package com.twitter.zipkin.aggregate.cassandra
 
 import com.twitter.zipkin
+import com.twitter.zipkin.cassandra
 import com.twitter.zipkin.storage.Store
 import org.apache.hadoop.mapred.JobConf
 import scala.collection.JavaConverters._
@@ -14,9 +15,11 @@ object HadoopStorage {
     val keyspaceBuilder = zipkin.cassandra.Keyspace.static(
       nodes = nodes,
       port = port)
+    val storageWithIndexBuilder = cassandra.StorageWithIndexBuilder(keyspaceBuilder)
     Store.Builder(
-      zipkin.cassandra.StorageBuilder(keyspaceBuilder),
-      zipkin.cassandra.IndexBuilder(keyspaceBuilder),
-      zipkin.cassandra.AggregatesBuilder(keyspaceBuilder))
+      storageWithIndexBuilder,
+      storageWithIndexBuilder,
+      cassandra.AggregatesBuilder(keyspaceBuilder)
+    )
   }
 }
