@@ -39,7 +39,7 @@ class ItemQueueTest extends FunSuite {
     })
 
     assert(Await.result(fill(queue, 5)))
-    assert(processed.await(500, TimeUnit.MILLISECONDS))
+    assert(processed.await(5, TimeUnit.SECONDS))
   }
 
   test("runs a specified number of concurrent workers") {
@@ -62,7 +62,7 @@ class ItemQueueTest extends FunSuite {
 
     // complete processing
     latch.countDown()
-    assert(processed.await(100, TimeUnit.MILLISECONDS))
+    assert(processed.await(5, TimeUnit.SECONDS))
   }
 
   test("enforces a max queue size") {
@@ -94,6 +94,7 @@ class ItemQueueTest extends FunSuite {
     assert(Await.ready(queue.add(Item)).poll.get.isThrow)
 
     latch.countDown()
-    assert(processed.await(100, TimeUnit.MILLISECONDS))
+    assert(processed.await(5, TimeUnit.SECONDS))
+
   }
 }
