@@ -19,7 +19,7 @@ import com.twitter.app.App
 import com.twitter.conversions.time._
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finagle.{Filter, Service}
-import com.twitter.util.{Await, Closable, CloseAwaitably, Duration, Future, Time}
+import com.twitter.util.{Closable, CloseAwaitably, Future, Time}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}

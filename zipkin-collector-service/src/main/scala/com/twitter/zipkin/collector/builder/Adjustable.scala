@@ -13,11 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.zipkin.config.collector
+package com.twitter.zipkin.collector.builder
 
-import com.twitter.finagle.builder.Server
-import com.twitter.util.Config
+import com.twitter.zipkin.builder.Builder
+import com.twitter.zipkin.config.sampler.{MutableAdjustableRateConfig, AdjustableRateConfig}
 
-trait CollectorServerConfig extends Config[Server] {
-  def apply(): Server
+object Adjustable {
+
+  /**
+   * Builder for a locally adjustable rate
+   *
+   * @param default default value
+   * @return`
+   */
+  def local(default: Double) = new Builder[AdjustableRateConfig] {
+    def apply() = {
+      new MutableAdjustableRateConfig(default)
+    }
+  }
 }
