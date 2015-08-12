@@ -2,7 +2,9 @@ package com.twitter.zipkin.aggregate.cassandra
 
 import com.twitter.cassie.connection.ClientProvider
 import com.twitter.util.{Await, Duration, Future}
-import com.twitter.zipkin.storage.cassandra.CassandraStorage
+import com.twitter.zipkin.aggregate.cassandra
+import com.twitter.zipkin.storage.SpanStoreStorageWithIndexAdapter
+import com.twitter.zipkin.storage.cassandra.CassieSpanStore
 import org.apache.cassandra.finagle.thrift.TokenRange
 import org.apache.hadoop.mapred._
 
@@ -53,13 +55,14 @@ final class StorageInputFormat extends InputFormat[Key,EncodedSpan] {
   }
 
   override def getSplits(conf: JobConf, numSplits: Int): Array[InputSplit] = {
-    val storage = HadoopStorage.cassandraStoreBuilder(conf).storageBuilder.apply().asInstanceOf[CassandraStorage]
+    val storage = HadoopStorage.cassandraStoreBuilder(conf).storageBuilder.apply()
+      .asInstanceOf[SpanStoreStorageWithIndexAdapter].delegate.asInstanceOf[CassieSpanStore]
 
     val flattened = Await.result(storage.keyspace.provider.map { client =>
-      getTokenRanges(storage.keyspace.provider, storage.traces.keyspace) flatMap { ranges =>
+      getTokenRanges(storage.keyspace.provider, storage.Traces.keyspace) flatMap { ranges =>
         println("Found "+ranges.length+" TokenRanges")
         val inputSplitsFutures = ranges map { range =>
-          getInputSplitsForRange(storage.keyspace.provider, storage.traces.name, range)
+          getInputSplitsForRange(storage.keyspace.provider, storage.Traces.name, range)
         }
         Future.collect(inputSplitsFutures)
       }

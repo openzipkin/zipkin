@@ -1,5 +1,6 @@
 package com.twitter.zipkin.aggregate.cassandra
 
+import com.twitter.zipkin.storage.SpanStoreStorageWithIndexAdapter
 import java.io.Closeable
 import java.nio.ByteBuffer
 
@@ -7,7 +8,7 @@ import com.twitter.cassie.Order
 import com.twitter.cassie.util.ByteBufferUtil._
 import com.twitter.util.Await
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.storage.cassandra.{CassandraStorage, CassieSpanStoreDefaults}
+import com.twitter.zipkin.storage.cassandra.{CassieSpanStore, CassieSpanStoreDefaults}
 import org.apache.cassandra.finagle.thrift
 import org.apache.cassandra.finagle.thrift.{ColumnParent, ConsistencyLevel, KeyRange, KeySlice}
 import org.apache.hadoop.io.LongWritable
@@ -32,12 +33,13 @@ final class StorageRecordReader(inputSplit: StorageInputSplit, jobConf: JobConf,
 
   private lazy val storage = {
     isConnectionOpen = true
-    HadoopStorage.cassandraStoreBuilder(jobConf).storageBuilder.apply().asInstanceOf[CassandraStorage]
+    HadoopStorage.cassandraStoreBuilder(jobConf).storageBuilder.apply()
+      .asInstanceOf[SpanStoreStorageWithIndexAdapter].delegate.asInstanceOf[CassieSpanStore]
   }
 
   private lazy val rows = Await.result(storage.keyspace.provider.map { client =>
     client.get_range_slices(
-      new ColumnParent(storage.traces.name),
+      new ColumnParent(storage.Traces.name),
       readEverythingSlicePredicate,
       new KeyRange(batchSize)
         .setStart_token(inputSplit.startToken)

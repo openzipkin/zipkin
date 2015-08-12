@@ -53,7 +53,7 @@ object CassieSpanStoreDefaults {
 }
 
 class CassieSpanStore(
-  keyspace: Keyspace,
+  val keyspace: Keyspace, // for StorageInputFormat
   stats: StatsReceiver = DefaultStatsReceiver.scope("CassieSpanStore"),
   cfs: ZipkinColumnFamilyNames = CassieSpanStoreDefaults.ColumnFamilyNames,
   writeConsistency: WriteConsistency = CassieSpanStoreDefaults.WriteConsistency,
@@ -99,7 +99,7 @@ class CassieSpanStore(
    * and type aliases to their batch types
    */
   private type BatchTraces = BatchMutationBuilder[Long, String, Span]
-  private[this] val Traces = keyspace
+  val Traces = keyspace // public for com.twitter.zipkin.aggregate.cassandra.StorageInputFormat
     .columnFamily(cfs.traces, LongCodec, Utf8Codec, spanCodec)
     .consistency(writeConsistency)
     .consistency(readConsistency)

@@ -9,7 +9,7 @@ import java.nio.ByteBuffer
  *
  * Methods that index are no-op as [[SpanStore.apply()]] already indexes.
  */
-class SpanStoreStorageWithIndexAdapter(delegate: SpanStore) extends Storage with Index  {
+class SpanStoreStorageWithIndexAdapter(val delegate: SpanStore) extends Storage with Index  {
 
   override def storeSpan(span: Span) = delegate.apply(Seq(span))
 
