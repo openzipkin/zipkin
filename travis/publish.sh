@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
 echo "********************************"
 echo "***** Publishing Artifacts *****"
@@ -68,7 +69,9 @@ function publish_snapshots_to_bintray(){
 }
 
 function publish_release_to_bintray(){
-  new_version=`increment_version "${TRAVIS_TAG}"`
+  # do not increment if the version is tentative ex. 1.0.0-rc1
+  [[ "$TRAVIS_TAG" == *-* ]] && new_version=${TRAVIS_TAG} || new_version=$(increment_version "${TRAVIS_TAG}")
+
   echo "[Publishing] Starting Release Publish (${TRAVIS_TAG}) new version (${new_version})..."
   ./gradlew release -Prelease.useAutomaticVersion=true -PreleaseVersion=${TRAVIS_TAG} -PnewVersion=${new_version}-SNAPSHOT
   ./gradlew bintrayUpload
