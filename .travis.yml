@@ -37,7 +37,12 @@ before_install:
   - git config --global user.email "${GH_USER_EMAIL}"
   - git config --global user.name "${GH_USER}"
 
+# Skip `./gradlew assemble`
+install: /bin/true
+
 before_script:
   - git remote set-url origin "https://${GH_TOKEN}@github.com/openzipkin/zipkin.git"
 
-after_success: ./travis/publish.sh
+script:
+  - ./travis/publish.sh
+
