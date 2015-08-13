@@ -15,9 +15,6 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
-
-import com.datastax.driver.core.Row
-import com.twitter.cassie.codecs.Codec
 import com.twitter.conversions.time._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.{Future, FuturePool, Duration, Time}

@@ -1,19 +1,10 @@
-repositories {
-    maven { url 'http://conjars.org/repo' }
-}
-
 dependencies {
     compile project(':zipkin-scrooge')
     compile project(':zipkin-cassandra-core')
 
-    compile 'commons-codec:commons-codec:1.6'
-    compile 'org.iq80.snappy:snappy:0.3'
-    compile "org.apache.hadoop:hadoop-client:2.4.0"
+    compile 'org.iq80.snappy:snappy:0.4'
 
-    compile "com.twitter:finagle-serversets_${scalaInterfaceVersion}:${commonVersions.finagle}"
     compile "com.twitter:scrooge-serializer_${scalaInterfaceVersion}:${commonVersions.scrooge}"
     compile "com.twitter:util-app_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
-    compile "com.twitter:util-logging_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
-    compile "com.twitter:scalding-core_${scalaInterfaceVersion}:0.15.0"
 }
 
