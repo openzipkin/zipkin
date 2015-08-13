@@ -15,13 +15,13 @@ function increment_version() {
   echo "$v" | perl -pe s/$rgx.*$'/${1}'`printf %0${#val}s $(($val+1))`/
 }
 
-function should_publish_snapshots(){
+function build_started_by_tag(){
   if [ "${TRAVIS_TAG}" == "" ]; then
     echo "[Publishing] This build was not started by a tag, starting snapshot release"
-    return 0
+    return 1
   else
     echo "[Publishing] This build was started by the tag ${TRAVIS_TAG}, starting non-snapshot release"
-    return 1
+    return 0
   fi
 }
 
@@ -45,17 +45,16 @@ function is_travis_branch_master(){
   fi
 }
 
-function does_travis_branch_equal_travis_tag(){
+function check_travis_branch_equals_travis_tag(){
   #Weird comparison comparing branch to tag because when you 'git push --tags'
   #the branch somehow becomes the tag value
   #github issue: https://github.com/travis-ci/travis-ci/issues/1675
   if [ "${TRAVIS_BRANCH}" != "${TRAVIS_TAG}" ]; then
-    echo "[Not Publishing] Travis branch does not equal Travis tag, which it should: "
-    echo "[Not Publishing]   github issue: https://github.com/travis-ci/travis-ci/issues/1675"
-    return 1
+    echo "Travis branch does not equal Travis tag, which it should, bailing out."
+    echo "  github issue: https://github.com/travis-ci/travis-ci/issues/1675"
+    exit 1
   else
     echo "[Publishing] Branch (${TRAVIS_BRANCH}) same as Tag (${TRAVIS_TAG})"
-    return 0
   fi
 }
 
@@ -97,18 +96,15 @@ function run_tests(){
 #----------------------
 # MAIN
 #----------------------
-if is_pull_request || ! is_travis_branch_master || ! want_to_release_from_this_jdk; then
-  action=run_tests
-else
-  if should_publish_snapshots; then
+action=run_tests
+if want_to_release_from_this_jdk && ! is_pull_request; then
+  if build_started_by_tag; then
+    check_travis_branch_equals_travis_tag
+    action=publish_release_to_bintray
+  elif is_travis_branch_master; then
     action=publish_snapshots_to_bintray
-  else
-    if does_travis_branch_equal_travis_tag; then
-      action=publish_release_to_bintray
-    else
-      action=run_tests
-    fi
   fi
 fi
 
 $action
+
