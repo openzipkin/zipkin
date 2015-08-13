@@ -4,6 +4,7 @@ repositories {
 
 dependencies {
     compile project(':zipkin-scrooge')
+    compile project(':zipkin-cassandra-core')
 
     compile 'commons-codec:commons-codec:1.6'
     compile 'org.iq80.snappy:snappy:0.3'
@@ -14,7 +15,5 @@ dependencies {
     compile "com.twitter:util-app_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
     compile "com.twitter:util-logging_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
     compile "com.twitter:scalding-core_${scalaInterfaceVersion}:0.15.0"
-
-    // for SpanStoreSpec
-    testCompile project(':zipkin-common').sourceSets.test.output
 }
+
