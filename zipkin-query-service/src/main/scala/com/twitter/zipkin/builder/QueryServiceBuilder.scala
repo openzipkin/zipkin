@@ -16,12 +16,13 @@
 package com.twitter.zipkin.builder
 
 import com.twitter.common.zookeeper.ServerSetImpl
+import com.twitter.finagle.ListeningServer
 import com.twitter.finagle.zookeeper.ZookeeperServerSetCluster
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.zipkin.thriftscala
 import com.twitter.zipkin.query.adjusters.{NullAdjuster, TimeSkewAdjuster, Adjuster}
-import com.twitter.zipkin.query.ZipkinQuery
+import com.twitter.zipkin.query.ZipkinQueryServerFactory
 import com.twitter.zipkin.storage.Store
 import java.net.InetSocketAddress
 
@@ -29,7 +30,7 @@ case class QueryServiceBuilder(
   storeBuilder: Builder[Store],
   serverSetPaths: List[(ZooKeeperClientBuilder, String)] = List.empty,
   serverBuilder: ZipkinServerBuilder = ZipkinServerBuilder(9411, 9901)
-) extends Builder[RuntimeEnvironment => ZipkinQuery] {
+) extends Builder[RuntimeEnvironment => ListeningServer] {
 
   private val adjusterMap: Map[thriftscala.Adjust, Adjuster] = Map (
     thriftscala.Adjust.Nothing -> NullAdjuster,
@@ -38,7 +39,7 @@ case class QueryServiceBuilder(
 
   def addServerSetPath(p: (ZooKeeperClientBuilder, String)) = copy(serverSetPaths = serverSetPaths :+ p)
 
-  def apply(): (RuntimeEnvironment) => ZipkinQuery = (runtime: RuntimeEnvironment) => {
+  def apply(): (RuntimeEnvironment) => ListeningServer = (runtime: RuntimeEnvironment) => {
     val log = Logger.get()
     serverBuilder.apply().apply(runtime)
 
@@ -54,6 +55,10 @@ case class QueryServiceBuilder(
       cluster.join(address)
     }
 
-    new ZipkinQuery(address, store.storage, store.index, store.aggregates, adjusterMap, serverBuilder.statsReceiver, serverBuilder.tracer)
+    object UseOnceFactory extends com.twitter.app.App with ZipkinQueryServerFactory
+    UseOnceFactory.nonExitingMain(Array(
+      "zipkin.queryService.port", serverBuilder.serverAddress + ":" + serverBuilder.serverPort
+    ))
+    UseOnceFactory.newQueryServer(store.spanStore, store.aggregates, adjusterMap, serverBuilder.statsReceiver)
   }
 }

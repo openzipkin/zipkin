@@ -24,15 +24,14 @@ object Store {
   }
 
   case class Builder(
-    storageBuilder: ZBuilder[Storage],
-    indexBuilder: ZBuilder[Index],
+    spanStoreBuilder: ZBuilder[SpanStore],
     aggregatesBuilder: ZBuilder[Aggregates] = nullAggregatesBuilder
   ) extends ZBuilder[Store] {
-    def apply() = Store(storageBuilder.apply(), indexBuilder.apply(), aggregatesBuilder.apply())
+    def apply() = Store(spanStoreBuilder.apply(), aggregatesBuilder.apply())
   }
 }
 
 /**
  * Wrapper class for the necessary store components
  */
-case class Store(storage: Storage, index: Index, aggregates: Aggregates)
+case class Store(spanStore: SpanStore, aggregates: Aggregates)

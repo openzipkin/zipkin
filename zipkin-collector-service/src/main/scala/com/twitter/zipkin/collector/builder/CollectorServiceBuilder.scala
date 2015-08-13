@@ -21,8 +21,8 @@ import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.{ServiceTracker, RuntimeEnvironment, Service => OstrichService}
 import com.twitter.util.Timer
 import com.twitter.zipkin.builder.{ZipkinServerBuilder, Builder}
-import com.twitter.zipkin.collector.filter.{ClientIndexFilter, ServiceStatsFilter, SamplerFilter}
-import com.twitter.zipkin.collector.processor.{IndexService, StorageService, FanoutService}
+import com.twitter.zipkin.collector.filter.{ServiceStatsFilter, SamplerFilter}
+import com.twitter.zipkin.collector.processor.{SpanStoreService, FanoutService}
 import com.twitter.zipkin.collector.sampler.AdjustableGlobalSampler
 import com.twitter.zipkin.collector.{WriteQueue, ZipkinCollector}
 import com.twitter.zipkin.common.Span
@@ -109,7 +109,7 @@ case class CollectorServiceBuilder[T](
       _.apply()
     }
     val storeProcessors = stores flatMap { store =>
-      Seq(new StorageService(store.storage), new ClientIndexFilter andThen new IndexService(store.index))
+      Seq(new SpanStoreService(store.spanStore))
     }
 
     val sampleRate = sampleRateBuilder.apply()

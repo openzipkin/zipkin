@@ -33,8 +33,7 @@ trait CollectorService extends Service {
     writeQueue.shutdown()
     stores.foreach { store =>
       store.aggregates.close()
-      store.index.close()
-      store.storage.close()
+      store.spanStore.close()
     }
   }
 }

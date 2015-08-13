@@ -21,7 +21,6 @@ import com.twitter.conversions.time._
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Await, Future, Time}
 import com.twitter.zipkin.common.{Annotation, Service, _}
-import com.twitter.zipkin.config.sampler.AdjustableRateConfig
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.storage.{Aggregates, Store}
 import com.twitter.zipkin.thriftscala
@@ -46,10 +45,9 @@ class ScribeCollectorServiceSpec extends FunSuite with OneInstancePerTest with M
   val base64 = "CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAIACQAA"
 
   val queue = mock[WriteQueue[Seq[String]]]
-  val sampleRateConfig = mock[AdjustableRateConfig]
   val mockAggregates = mock[Aggregates]
 
-  def cs = new ScribeCollectorService(queue, Seq(Store(null, null, mockAggregates)), Set(category)) {
+  def cs = new ScribeCollectorService(queue, Seq(Store(null, mockAggregates)), Set(category)) {
     running = true
   }
 

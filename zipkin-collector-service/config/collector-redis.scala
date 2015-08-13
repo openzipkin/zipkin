@@ -27,11 +27,7 @@ val client = Client(ClientBuilder().hosts("0.0.0.0:6379")
                                    .codec(Redis())
                                    .build())
 
-val storageWithIndexBuilder = redis.StorageWithIndexBuilder(client)
-val storeBuilder = Store.Builder(
-  storageWithIndexBuilder,
-  storageWithIndexBuilder
-)
+val storeBuilder = Store.Builder(redis.SpanStoreBuilder(client))
 
 CollectorServiceBuilder(Scribe.Interface(categories = Set("zipkin")))
   .writeTo(storeBuilder)

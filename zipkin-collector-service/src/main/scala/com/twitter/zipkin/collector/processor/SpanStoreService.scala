@@ -17,18 +17,26 @@
 package com.twitter.zipkin.collector.processor
 
 import com.twitter.finagle.Service
-import com.twitter.util.{Await, Time, Future}
+import com.twitter.logging.Logger
+import com.twitter.ostrich.stats.Stats
+import com.twitter.util.{Time, Future}
+import com.twitter.zipkin.common.Span
+import com.twitter.zipkin.storage.SpanStore
 
-class FanoutService[-Req](services: Seq[Service[Req, Unit]]) extends Service[Req, Unit] {
-  def apply(req: Req): Future[Unit] = {
-    Future.join {
-      services map { _.apply(req) }
+class SpanStoreService(spanStore: SpanStore) extends Service[Span, Unit] {
+
+  private[this] val log = Logger.get()
+
+  def apply(span: Span): Future[Unit] = {
+    spanStore.apply(Seq(span)) onFailure {
+      case e => {
+        Stats.getCounter("exception_%s_%s".format("storeSpan", e.getClass)).incr()
+        log.error(e, "storeSpan")
+      }
     }
   }
 
   override def close(deadline: Time) = {
-    val results = services map { _.close(deadline) }
-    Await.result(Future.collect(results), Time.now - deadline)
     super.close(deadline)
   }
 }

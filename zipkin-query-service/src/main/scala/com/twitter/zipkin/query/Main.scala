@@ -18,9 +18,10 @@ package com.twitter.zipkin.query
 
 import com.google.common.base.Charsets.UTF_8
 import com.google.common.io.{Resources, Files}
+import com.twitter.finagle.ListeningServer
 import com.twitter.logging.Logger
-import com.twitter.ostrich.admin.{ServiceTracker, RuntimeEnvironment}
-import com.twitter.util.Eval
+import com.twitter.ostrich.admin.{Service, ServiceTracker, RuntimeEnvironment}
+import com.twitter.util.{Await, Eval}
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.BuildProperties
 
@@ -35,11 +36,15 @@ object Main {
     val source = if (runtime.configFile.exists()) Files.toString(runtime.configFile, UTF_8)
     else Resources.toString(getClass.getResource(runtime.configFile.toString), UTF_8)
 
-    val builder = (new Eval).apply[Builder[RuntimeEnvironment => ZipkinQuery]](source)
+    val builder = (new Eval).apply[Builder[RuntimeEnvironment => ListeningServer]](source)
     try {
-      val server = builder.apply().apply(runtime)
-      server.start()
-      ServiceTracker.register(server)
+      val query = builder.apply().apply(runtime)
+      Await.ready(query)
+      ServiceTracker.register(new Service() {
+        override def shutdown() = Await.ready(query.close())
+
+        override def start() = {}
+      })
     } catch {
       case e: Exception =>
         e.printStackTrace()

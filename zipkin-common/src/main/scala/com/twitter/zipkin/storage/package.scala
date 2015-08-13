@@ -13,17 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.zipkin.collector.sampler
-
-import com.twitter.ostrich.admin.Service
+package com.twitter.zipkin.storage
 
 /**
- * A process that adjusts the Collector sample rate to modulate the number of
- * requests to the storage backend (Cassandra)
+ * Duration of the trace in question in microseconds.
  */
-trait AdaptiveSampler extends Service
+case class TraceIdDuration(traceId: Long, duration: Long, startTimestamp: Long)
 
-class NullAdaptiveSampler extends AdaptiveSampler {
-  def start() {}
-  def shutdown() {}
-}
+/* A trace ID and its associated timestamp */
+case class IndexedTraceId(traceId: Long, timestamp: Long)
