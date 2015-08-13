@@ -11,3 +11,15 @@ build/
 # https://github.com/openzipkin/zipkin/issues/534
 zipkin-collector-service/zipkin.db
 /.nb-gradle/
+
+# sbt specific
+sbt-launch.jar
+.cache
+.history
+.lib/
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
