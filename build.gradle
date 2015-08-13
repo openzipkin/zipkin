@@ -103,10 +103,7 @@ subprojects { subproject ->
     }
 
     dependencies {
-        // Was dependencyOverrides in SBT, will probably cause issues
-        compile 'org.apache.zookeeper:zookeeper:3.4.6' // internal twitter + kafka + curator
         compile 'org.slf4j:slf4j-api:1.6.4' // libthrift 0.5 otherwise pins 1.5.x
-        // EOF dependencyOverrides
 
         testCompile 'junit:junit:4.12'
         testCompile 'org.mockito:mockito-all:1.10.19'

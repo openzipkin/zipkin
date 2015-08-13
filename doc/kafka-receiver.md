@@ -13,20 +13,18 @@ import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.server.TwitterServer
 import com.twitter.util.{Await, Future}
-import com.twitter.zipkin.cassandra.CassieSpanStoreFactory
+import com.twitter.zipkin.cassandra.CassandraSpanStoreFactory
 import com.twitter.zipkin.collector.{SpanReceiver, ZipkinQueuedCollectorFactory}
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.receiver.kafka.KafkaSpanReceiverFactory
 import com.twitter.zipkin.storage.WriteSpanStore
-import com.twitter.zipkin.zookeeper.ZooKeeperClientFactory
 import kafka.serializer.Decoder
 
 import com.twitter.zipkin.receiver.kafka.SpanDecoder
 
 object ZipkinKafkaCollectorServer extends TwitterServer
   with ZipkinQueuedCollectorFactory
-  with CassieSpanStoreFactory
-  with ZooKeeperClientFactory
+  with CassandraSpanStoreFactory
   with KafkaSpanReceiverFactory
 {
   def newReceiver(receive: Seq[ThriftSpan] => Future[Unit], stats: StatsReceiver): SpanReceiver = {
@@ -34,7 +32,7 @@ object ZipkinKafkaCollectorServer extends TwitterServer
   }
 
   def newSpanStore(stats: StatsReceiver): WriteSpanStore =
-    newCassandraStore(stats.scope("cassie"))
+    newCassandraStore(stats.scope("cassandra"))
 
   def main() {
     val collector = newCollector(statsReceiver)

@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package com.twitter.zipkin.zookeeper
+package com.twitter.zipkin.sampler
 
 import com.google.common.base.Supplier
-import com.twitter.app.App
 import com.twitter.common.base.ExceptionalCommand
-import com.twitter.common.quantity.Amount
-import com.twitter.common.quantity.{Time => CommonTime}
+import com.twitter.common.quantity.{Amount, Time => CommonTime}
 import com.twitter.common.zookeeper._
 import com.twitter.concurrent.NamedPoolThreadFactory
 import com.twitter.conversions.time._
@@ -28,25 +26,13 @@ import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.util.DefaultTimer
 import com.twitter.logging.Logger
 import com.twitter.util._
-import com.twitter.zk.{Connector, ZkClient, ZNode}
+import com.twitter.zk.{Connector, ZNode, ZkClient}
 import java.net.InetSocketAddress
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import org.apache.zookeeper.{CreateMode, KeeperException, Watcher, ZooDefs}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-
-trait ZooKeeperClientFactory { self: App =>
-  val zkServerLocations = flag("zipkin.zookeeper.location", Seq(new InetSocketAddress(2181)), "Location of the ZooKeeper server")
-  val zkServerCredentials = flag("zipkin.zookeeper.credentials", "[none]", "Optional credentials of the form 'username:password'")
-  lazy val zkClient = {
-    val creds = zkServerCredentials.get map { creds =>
-      val Array(u, p) = creds.split(':')
-      (u, p)
-    }
-    new ZKClient(zkServerLocations(), creds)
-  }
-}
 
 trait ZkWatch[T] extends Closable {
   val data: Var[T]

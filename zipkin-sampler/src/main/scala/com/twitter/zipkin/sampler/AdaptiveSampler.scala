@@ -16,6 +16,8 @@
  */
 package com.twitter.zipkin.sampler
 
+import com.twitter.finagle.httpx.HttpMuxer
+import java.net.InetSocketAddress
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
 
 import com.google.common.collect.EvictingQueue
@@ -28,15 +30,40 @@ import com.twitter.logging.Logger
 import com.twitter.util._
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage.SpanStore
-import com.twitter.zipkin.zookeeper._
 
 import scala.reflect.ClassTag
 
-trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
+/**
+ * The adaptive sampler optimizes sampling towards a global rate. This state
+ * is maintained in ZooKeeper.
+ *
+ * {{{
+ * object MyCollectorServer extends TwitterServer
+ *   with ..
+ *   with AdaptiveSampler {
+ *
+ *   // Sampling will adjust dynamically towards a target rate.
+ *   override def spanStoreFilter = newAdaptiveSamplerFilter()
+ *
+ *   def main() {
+ *
+ *     // Adds endpoints to adjust the sample rate via http
+ *     configureAdaptiveSamplerHttpApi()
+ *
+ * --snip--
+ * }}}
+ *
+ */
+trait AdaptiveSampler { self: App =>
   val asBasePath = flag(
     "zipkin.sampler.adaptive.basePath",
     "/com/twitter/zipkin/sampler/adaptive",
     "Base path in ZooKeeper for the sampler to use")
+
+  val asApiPath = flag(
+    "zipkin.sampler.adaptive.apiPath",
+    "/admin/sampler/adaptive",
+    "Http path under for /targetStoreRate and /sampleRate, each accepting the newRate parameter")
 
   val asUpdateFreq = flag(
     "zipkin.sampler.adaptive.updateFreq",
@@ -58,6 +85,24 @@ trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
     5.minutes,
     "Amount of time to see outliers before updating sample rate")
 
+  val zkServerLocations = flag(
+    "zipkin.zookeeper.location",
+    Seq(new InetSocketAddress(2181)),
+    "Location of the ZooKeeper server")
+
+  val zkServerCredentials = flag(
+    "zipkin.zookeeper.credentials",
+    "[none]",
+    "Optional credentials of the form 'username:password'")
+
+  lazy val zkClient = {
+    val creds = zkServerCredentials.get map { creds =>
+      val Array(u, p) = creds.split(':')
+      (u, p)
+    }
+    new ZKClient(zkServerLocations(), creds)
+  }
+
   def adaptiveSampleRateCalculator(
     targetStoreRate: Var[Int],
     curReqRate: Var[Int],
@@ -70,6 +115,31 @@ trait AdaptiveSampler { self: App with ZooKeeperClientFactory =>
     new ValidDataCheck[Int](_ > 0, stats.scope("validDataCheck"), log) andThen
     new OutlierCheck(curReqRate, asOutlierThreshold().inSeconds / asUpdateFreq().inSeconds, stats = stats.scope("outlierCheck"), log = log) andThen
     new CalculateSampleRate(targetStoreRate, sampleRate, stats = stats.scope("sampleRateCalculator"), log = log)
+  }
+
+  /**
+   * Adds an http api under the path [[asApiPath]] with the following endpoints:
+   *
+   * - /targetStoreRate
+   *   - Adapt rate such that the collector will write this many spans to storage.
+   * - /sampleRate
+   *   - Manually set the sampling rate. If this is set to 0 it will not adjust towards targetStoreRate.
+   *
+   * Both endpoints respond to the query param `newRate`.
+   *
+   * For example, once invoked, the following endpoints will respond with corresponding rates:
+   *
+   * - http://collectorhost/admin/sampler/adaptive/targetStoreRate
+   * - http://collectorhost/admin/sampler/adaptive/sampleRate
+   */
+  def configureAdaptiveSamplerHttpApi(): Unit = {
+    HttpMuxer.addHandler(
+      asApiPath() + "/targetStoreRate",
+      new ZkPathUpdater[Int](zkClient, asBasePath() + "/targetStoreRate", _.toInt, _ >= 0))
+
+    HttpMuxer.addHandler(
+      asApiPath() + "/sampleRate",
+      new ZkPathUpdater[Double](zkClient, asBasePath() + "/sampleRate", _.toDouble, _ >= 0.0))
   }
 
   def newAdaptiveSamplerFilter(

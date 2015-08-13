@@ -1,6 +1,5 @@
 dependencies {
     compile project(':zipkin-collector')
-    compile project(':zipkin-zookeeper')
 
     compile "com.twitter:twitter-server_${scalaInterfaceVersion}:${commonVersions.twitterServer}"
     compile "org.apache.kafka:kafka_${scalaInterfaceVersion}:0.8.2.1"
