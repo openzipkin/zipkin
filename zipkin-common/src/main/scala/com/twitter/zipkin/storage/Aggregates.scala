@@ -23,9 +23,7 @@ import com.twitter.zipkin.common.Dependencies
  * Storage and retrieval interface for aggregates that may be computed offline and reloaded into
  * online storage
  */
-trait Aggregates {
-
-  def close()
+abstract class Aggregates extends java.io.Closeable {
 
   def getDependencies(startDate: Option[Time], endDate: Option[Time]=None): Future[Dependencies]
   def storeDependencies(dependencies: Dependencies): Future[Unit]

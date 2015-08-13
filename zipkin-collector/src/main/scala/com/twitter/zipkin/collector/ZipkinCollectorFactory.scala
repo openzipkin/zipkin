@@ -19,11 +19,11 @@ import com.twitter.app.App
 import com.twitter.conversions.time._
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finagle.{Filter, Service}
-import com.twitter.util.{Closable, CloseAwaitably, Future, Time}
+import com.twitter.util._
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
-import com.twitter.zipkin.storage.{SpanStore, WriteSpanStore}
+import com.twitter.zipkin.storage.SpanStore
 
 sealed trait AwaitableCloser extends Closable with CloseAwaitably
 
@@ -39,7 +39,7 @@ object SpanConvertingFilter extends Filter[Seq[ThriftSpan], Unit, Seq[Span], Uni
  */
 trait ZipkinCollectorFactory {
   def newReceiver(receive: Seq[ThriftSpan] => Future[Unit], stats: StatsReceiver): SpanReceiver
-  def newSpanStore(stats: StatsReceiver): WriteSpanStore
+  def newSpanStore(stats: StatsReceiver): SpanStore
 
   // overwrite in the Main trait to add a SpanStore filter to the SpanStore
   def spanStoreFilter: SpanStore.Filter = Filter.identity[Seq[Span], Unit]

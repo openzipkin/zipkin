@@ -2,7 +2,7 @@ package com.twitter.zipkin.storage.redis
 
 import com.google.common.io.Closer
 import com.twitter.finagle.redis.Client
-import com.twitter.util.{Duration, Future, Time}
+import com.twitter.util.{Duration, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage._
 import java.nio.ByteBuffer
@@ -21,9 +21,7 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
   /** For testing, clear this store. */
   private[redis] def clear(): Future[Unit] = client.flushDB()
 
-  def close(deadline: Time): Future[Unit] = closeAwaitably {
-    call { closer.close() }.unit
-  }
+  override def close() = closer.close()
 
   def apply(newSpans: Seq[Span]): Future[Unit] = Future.collect(newSpans.flatMap {
     span =>

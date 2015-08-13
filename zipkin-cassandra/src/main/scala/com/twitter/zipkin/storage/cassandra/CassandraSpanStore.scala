@@ -17,7 +17,7 @@ package com.twitter.zipkin.storage.cassandra
 
 import com.twitter.conversions.time._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.util.{Future, FuturePool, Duration, Time}
+import com.twitter.util.{Future, FuturePool, Duration}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
@@ -217,8 +217,7 @@ class CassandraSpanStore(
   /**
    * API Implementation
    */
-  override def close(deadline: Time): Future[Unit] =
-    FuturePool.unboundedPool { repository.close() }
+  override def close() = repository.close()
 
   def apply(spans: Seq[Span]): Future[Unit] = {
     SpansStoredCounter.incr(spans.size)
