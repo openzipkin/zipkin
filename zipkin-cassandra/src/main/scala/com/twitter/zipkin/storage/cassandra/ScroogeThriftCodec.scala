@@ -16,7 +16,6 @@
 package com.twitter.zipkin.storage.cassandra
 
 import java.nio.ByteBuffer
-import com.twitter.cassie.codecs.Codec
 import com.twitter.scrooge.{ThriftStructCodec, BinaryThriftStructSerializer, ThriftStruct}
 import com.twitter.ostrich.stats.Stats
 

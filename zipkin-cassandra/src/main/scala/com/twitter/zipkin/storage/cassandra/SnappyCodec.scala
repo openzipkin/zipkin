@@ -15,8 +15,8 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
+import com.twitter.zipkin.storage.cassandra.Codec
 import java.nio.ByteBuffer
-import com.twitter.cassie.codecs.Codec
 import com.twitter.zipkin.util.Util
 import org.iq80.snappy.Snappy
 import com.twitter.ostrich.stats.Stats
