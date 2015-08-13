@@ -28,11 +28,7 @@ val cluster = Cluster.builder()
   .withRetryPolicy(ZipkinRetryPolicy.INSTANCE)
   .build()
 
-val storageWithIndexBuilder = cassandra.StorageWithIndexBuilder(cluster)
-val storeBuilder = Store.Builder(
-  storageWithIndexBuilder,
-  storageWithIndexBuilder
-)
+val storeBuilder = Store.Builder(new cassandra.SpanStoreBuilder(cluster))
 
 CollectorServiceBuilder(Scribe.Interface(categories = Set("zipkin")))
   .writeTo(storeBuilder)

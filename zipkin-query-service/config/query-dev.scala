@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-import com.twitter.zipkin.anormdb.{AggregatesBuilder, StorageWithIndexBuilder}
+import com.twitter.zipkin.anormdb.{AggregatesBuilder, SpanStoreBuilder}
 import com.twitter.zipkin.builder.QueryServiceBuilder
 import com.twitter.zipkin.storage.Store
 import com.twitter.zipkin.storage.anormdb.DB
 
 val db = DB()
-val storageWithIndexBuilder = StorageWithIndexBuilder(db)
-val storeBuilder = Store.Builder(
-  storageWithIndexBuilder,
-  storageWithIndexBuilder,
-  AggregatesBuilder(db)
-)
+
+val storeBuilder = Store.Builder(SpanStoreBuilder(db), AggregatesBuilder(db))
 
 QueryServiceBuilder(storeBuilder)

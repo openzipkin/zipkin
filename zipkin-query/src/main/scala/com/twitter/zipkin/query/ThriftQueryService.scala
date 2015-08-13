@@ -270,10 +270,9 @@ class ThriftQueryService(
       }
     }
 
-  // TODO
   def getDataTimeToLive: Future[Int] =
     handle("getDataTimeToLive") {
-      Future.exception(new Exception("not implemented"))
+      spanStore.getDataTimeToLive()
     }
 
   def getServiceNames: Future[Set[String]] =
