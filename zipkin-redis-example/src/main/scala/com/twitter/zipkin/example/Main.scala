@@ -30,6 +30,6 @@ object Main extends TwitterServer
     closeOnExit(closer)
 
     println("running and ready")
-    Await.all(web, receiver, store)
+    Await.all(web, receiver)
   }
 }
