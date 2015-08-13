@@ -22,7 +22,6 @@ dependencies {
     compile project(':zipkin-cassandra')
     compile project(':zipkin-redis')
     compile project(':zipkin-anormdb')
-    compile "com.twitter:finagle-serversets_${scalaInterfaceVersion}:${commonVersions.finagle}"
 }
 
 sourceSets.main.resources.srcDirs += ['config']

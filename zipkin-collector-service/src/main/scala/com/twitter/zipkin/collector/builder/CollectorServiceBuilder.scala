@@ -15,11 +15,9 @@
  */
 package com.twitter.zipkin.collector.builder
 
-import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finagle.Service
 import com.twitter.logging.Logger
-import com.twitter.ostrich.admin.{ServiceTracker, RuntimeEnvironment, Service => OstrichService}
-import com.twitter.util.Timer
+import com.twitter.ostrich.admin.{ServiceTracker, RuntimeEnvironment}
 import com.twitter.zipkin.builder.{ZipkinServerBuilder, Builder}
 import com.twitter.zipkin.collector.filter.{ServiceStatsFilter, SamplerFilter}
 import com.twitter.zipkin.collector.processor.{SpanStoreService, FanoutService}
@@ -42,7 +40,6 @@ import java.net.InetSocketAddress
  * @param sampleRateBuilder
  * @param adaptiveSamplerBuilder
  * @param additionalConfigEndpoints
- * @param additionalServices
  * @param queueMaxSize
  * @param queueNumWorkers
  * @param serverBuilder
@@ -54,7 +51,6 @@ case class CollectorServiceBuilder[T](
   sampleRateBuilder: Builder[AdjustableRateConfig] = Adjustable.local(1.0),
   adaptiveSamplerBuilder: Option[Builder[AdaptiveSamplerConfig]] = None,
   additionalConfigEndpoints: Seq[(String, Builder[AdjustableRateConfig])] = Seq.empty,
-  additionalServices: Seq[Builder[(InetSocketAddress, StatsReceiver, Timer) => OstrichService]] = Seq.empty,
   queueMaxSize: Int = 500,
   queueNumWorkers: Int = 10,
   serverBuilder: ZipkinServerBuilder = ZipkinServerBuilder(9410, 9900)
@@ -86,15 +82,6 @@ case class CollectorServiceBuilder[T](
    */
   def addConfigEndpoint(name: String, builder: Builder[AdjustableRateConfig]) =
     copy(additionalConfigEndpoints = additionalConfigEndpoints :+ (name, builder))
-
-  /**
-   * Register builders for registering ServerSets
-   *
-   * @param s server set builder
-   * @return a new CollectorServiceBuilder
-   */
-  def register(s: Builder[(InetSocketAddress, StatsReceiver, Timer) => OstrichService]) =
-    copy(additionalServices = additionalServices :+ s)
 
   def sampleRate(c: Builder[AdjustableRateConfig]): CollectorServiceBuilder[T] = copy(sampleRateBuilder = c)
   def adaptiveSampler(b: Builder[AdaptiveSamplerConfig]) = copy(adaptiveSamplerBuilder = Some(b))
@@ -140,13 +127,6 @@ case class CollectorServiceBuilder[T](
     }
     configEndpoints foreach { case (path, adjustable) =>
       serverBuilder.adminHttpService map { _.addContext(path, new ConfigRequestHandler(adjustable)) }
-    }
-
-    /* Start additional services (server sets) */
-    additionalServices foreach { builder =>
-      val s = builder.apply().apply(serverBuilder.socketAddress, serverBuilder.statsReceiver, serverBuilder.timer)
-      s.start()
-      ServiceTracker.register(s)
     }
 
     adaptiveSamplerBuilder foreach { builder =>
