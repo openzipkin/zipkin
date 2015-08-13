@@ -15,7 +15,6 @@ ext {
                     candidate: '0.0.75',
                     group: '0.0.81',
                     client: '0.0.70',
-                    serverSet: '1.0.103'
             ],
             griddle: '1.7'
     ]
