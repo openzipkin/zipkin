@@ -1,6 +1,5 @@
 dependencies {
     compile "com.twitter:util-core_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
-    compile "com.twitter.common.zookeeper:client:${commonVersions.zookeeper.client}"
     compile "com.twitter:algebird-core_${scalaInterfaceVersion}:${commonVersions.algebird}"
     compile "com.twitter:ostrich_${scalaInterfaceVersion}:${commonVersions.ostrich}"
 
