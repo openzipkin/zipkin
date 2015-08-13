@@ -73,7 +73,7 @@ function want_to_release_from_this_jdk(){
 
 function publish_snapshots_to_bintray(){
   echo "[Publishing] Starting Snapshot Publish..."
-  ./gradlew bintrayUpload
+  ./gradlew check bintrayUpload
   echo "[Publishing] Done"
 }
 
@@ -83,8 +83,9 @@ function publish_release_to_bintray(){
 
   echo "[Publishing] Starting Release Publish (${TRAVIS_TAG}) new version (${new_version})..."
   git checkout master
-  ./gradlew release -Prelease.useAutomaticVersion=true -PreleaseVersion=${TRAVIS_TAG} -PnewVersion=${new_version}-SNAPSHOT
-  ./gradlew bintrayUpload
+  ./gradlew check \
+            release -Prelease.useAutomaticVersion=true -PreleaseVersion=${TRAVIS_TAG} -PnewVersion=${new_version}-SNAPSHOT \
+            bintrayUpload
   echo "[Publishing] Done"
 }
 
