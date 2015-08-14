@@ -78,7 +78,6 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
   def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = index.getTracesDuration(traceIds)
 
   def getAllServiceNames: Future[Set[String]] = {
-    println("Getting service names")
     index.getServiceNames
   }
 
