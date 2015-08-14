@@ -9,7 +9,7 @@ import com.twitter.zipkin.thriftscala.Span
 import com.twitter.zipkin.receiver.scribe.ScribeSpanReceiverFactory
 import com.twitter.zipkin.storage.WriteSpanStore
 
-object ZipkinCollectorServer extends TwitterServer
+object MyCollectorService extends TwitterServer
   with ZipkinQueuedCollectorFactory
   with CassandraSpanStoreFactory
   with ScribeSpanReceiverFactory
