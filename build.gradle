@@ -29,6 +29,22 @@ allprojects { thisProject ->
         compile "org.scala-lang:scala-library:${scalaVersion}"
     }
 
+    task sourceJar(type: Jar) {
+      description "An archive of the source code for Maven Central"
+      classifier "sources"
+      from sourceSets.main.allSource
+    }
+
+    task javadocJar(type: Jar) {
+      description "An archive of the JavaDocs for Maven Central"
+      classifier "javadoc"
+      from javadoc
+    }
+
+    artifacts {
+      archives javadocJar, sourceJar
+    }
+
     bintray {
         // Read variables from travis encrypted config or local
         user = System.getenv('BINTRAY_USER')
