@@ -105,9 +105,7 @@ Finally our collector:
 .. includecode:: code/quickstart/WebAndCollector.scala#collector_main
 
 Here again we extend TwitterServer and mix in our required factories. We'll use
-the scribe span receiver so we can send spans from finagle-zipkin.
-ScribeSpanReceiver requires the ZooKeeperClient. We wont use it here, but we
-still need to mix it in.
+the ScribeSpanReceiver so we can receive spans sent from finagle-zipkin.
 
 Other than the converter, this is pretty straight forward. The converter is
 there because SpanReceiver requires a function that takes `Seq[scribethrift.Span]`
