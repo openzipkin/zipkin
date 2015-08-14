@@ -41,7 +41,7 @@ before_install:
 install: /bin/true
 
 before_script:
-  - git remote set-url origin "https://${GH_TOKEN}@github.com/openzipkin/zipkin.git"
+  - git remote set-url origin "https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git"
 
 script:
   - ./travis/publish.sh

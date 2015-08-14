@@ -81,7 +81,9 @@ function publish_release_to_bintray(){
   [[ "$TRAVIS_TAG" == *-* ]] && new_version=${TRAVIS_TAG} || new_version=$(increment_version "${TRAVIS_TAG}")
 
   echo "[Publishing] Starting Release Publish (${TRAVIS_TAG}) new version (${new_version})..."
-  git checkout master
+
+  git checkout -B master
+
   ./gradlew check \
             release -Prelease.useAutomaticVersion=true -PreleaseVersion=${TRAVIS_TAG} -PnewVersion=${new_version}-SNAPSHOT \
             bintrayUpload
