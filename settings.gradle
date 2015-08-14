@@ -42,7 +42,6 @@ include 'zipkin-common',
 // Libraries wrapping clients to external services //
 /////////////////////////////////////////////////////
 
-'zipkin-zookeeper',
 'zipkin-cassandra-core',
 'zipkin-cassandra',
 'zipkin-anormdb',
