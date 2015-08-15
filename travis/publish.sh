@@ -71,9 +71,9 @@ function want_to_release_from_this_jdk(){
   fi
 }
 
-function publish_to_bintray(){
+function publish(){
   echo "[Publishing] Publishing..."
-  ./gradlew check bintrayUpload
+  ./gradlew check zipkinUpload
   echo "[Publishing] Done"
 }
 
@@ -115,7 +115,7 @@ if want_to_release_from_this_jdk && ! is_pull_request; then
     check_travis_branch_equals_travis_tag
     action=do_gradle_release
   elif is_travis_branch_master; then
-    action=publish_to_bintray
+    action=publish
   fi
 fi
 

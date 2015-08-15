@@ -3,8 +3,8 @@ digraph examples {
         erc_release [label="Job 1: gradle release"]
         erc_commit1 [label="Commit 1: [RELEASE] publish version: 1.0.0-rc1\nversion is now 1.0.0-rc1"]
         erc_commit2 [label="Commit 2: [RELEASE] new version: 1.0.0-SNAPSHOT\nversion is now 1.0.0-SNAPSHOT"]
-        erc_publish1 [label="Job 2: gradle bintrayUpload\nPublishes 1.0.0-rc1"]
-        erc_publish2 [label="Job 3: gradle bintrayUpload\nPublishes 1.0.0-SNAPSHOT"]
+        erc_publish1 [label="Job 2: gradle zipkinUpload\nPublishes 1.0.0-rc1"]
+        erc_publish2 [label="Job 3: gradle zipkinUpload\nPublishes 1.0.0-SNAPSHOT"]
 
         erc_tag->erc_release
         erc_release->erc_commit1
@@ -16,8 +16,8 @@ digraph examples {
         er_release [label="Job 1: gradle release"]
         er_commit1 [label="Commit 1: [RELEASE] publish version: 1.0.0\nversion is now 1.0.0"]
         er_commit2 [label="Commit 2: [RELEASE] new version: 1.0.1-SNAPSHOT\nversion is now 1.0.1-SNAPSHOT"]
-        er_publish1 [label="Job 2: gradle bintrayUpload\nPublishes 1.0.0"]
-        er_publish2 [label="Job 3: gradle bintrayUpload\nPublishes 1.0.1-SNAPSHOT"]
+        er_publish1 [label="Job 2: gradle zipkinUpload\nPublishes 1.0.0"]
+        er_publish2 [label="Job 3: gradle zipkinUpload\nPublishes 1.0.1-SNAPSHOT"]
 
         er_tag->er_release
         er_release->er_commit1
