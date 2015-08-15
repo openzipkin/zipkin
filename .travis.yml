@@ -32,6 +32,7 @@ env:
   - secure: AWjkKlDz6vvzOHtz/ufK2ahEZNkMVpBosovi0K+J715mw6GjhYav4HfORc4PmuV55uiXZ8pxhFEAS1x4Aq4VnOndE9vti0azBtxopwvcx9ZmDSOzSx62ovTxV9PwtQ8KC0wHFE0B5N2ENhhly/A4mvoNPEv5EodF/l1JzfSfXEg=
   - secure: CR3d3i2qUuMqVxA1r8+mSsPXTEBp74bKShSLNwNm2mwYa0TSNNx0tnD5kkTJYKxQYmrRIwKqDFZdkD3hLrCXbp1bpI5XbkJL/fMEdCdbiuOo1xOr3q4oZEUSfige9RTOdUudII3JO1RcL8fPdEwjRQZut4Rqf6ueGqNbilMRSjU=
   - secure: Vxl1MpMeWktJNCRbhsMUn5M8gzlyaqt+bYAzpe9gics/NmCFNNviDY/YsxcLJ0gCv5ZD4sw/L7dLE490fmAGzlq5i1gViNJ2gnDmr5benizhcnyc+h2BtUn9+uYOKO4sRxcVTL7WOfxAQ+S2/SvmMYVP2MJ9cqVbjAhtEF4d8zI=
+  - GRADLE_OPTS="-Dorg.gradle.daemon=false -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC -Xms2G -Xmx2G -Xss512k -XX:MaxPermSize=256m -verbose:gc"
 
 before_install:
   - git config --global user.email "${GH_USER_EMAIL}"
