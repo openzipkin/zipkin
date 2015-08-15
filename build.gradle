@@ -1,3 +1,5 @@
+import org.gradle.util.VersionNumber
+
 buildscript {
     repositories { jcenter() }
     dependencies {
@@ -20,7 +22,7 @@ allprojects { thisProject ->
 
     // Following are workarounds to idea goal failing on:
     // Cannot infer Scala class path because..
-    // - no repository is declared in root project 
+    // - no repository is declared in root project
     repositories { jcenter() }
 
     // - no Scala library Jar was found
@@ -152,3 +154,14 @@ task dependencyReport {
     }
 }
 
+task artifactoryUpload(group: 'release') {
+    description "Empty placeholder task until we integrate with oss.jfrog.org"
+}
+
+task zipkinUpload(group: 'release') {
+    description "Upload to oss.jfrog.org if this is a SNAPSHOT release. Upload to both Bintray and oss.jfrog.org otherwise."
+    dependsOn artifactoryUpload
+    if (VersionNumber.parse(rootProject.version).qualifier != "SNAPSHOT") {
+        dependsOn bintrayUpload
+    }
+}
