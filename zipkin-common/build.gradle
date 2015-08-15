@@ -8,3 +8,16 @@ dependencies {
     compile "com.twitter:finagle-zipkin_${scalaInterfaceVersion}:${commonVersions.finagle}"
     compile "com.twitter:finagle-exception_${scalaInterfaceVersion}:${commonVersions.finagle}"
 }
+
+task testJar(type: Jar) {
+    classifier = 'test'
+    from sourceSets.test.output
+}
+
+artifacts {
+    archives testJar
+}
+
+configurations {
+    archives.extendsFrom (testCompile)
+}
