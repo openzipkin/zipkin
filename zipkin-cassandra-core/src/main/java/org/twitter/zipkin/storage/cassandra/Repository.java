@@ -223,7 +223,6 @@ public final class Repository implements AutoCloseable {
 
     /**
      * Store the span in the underlying storage for later retrieval.
-     * @return a future for the operation
      */
     public void storeSpan(long traceId, String spanName, ByteBuffer span, int ttl) {
         Preconditions.checkNotNull(spanName);
