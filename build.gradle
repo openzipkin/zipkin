@@ -72,6 +72,9 @@ allprojects { thisProject ->
                 desc = "Zipkin version ${project.version}"
                 released  = new Date()
                 vcsTag = "${project.version}"
+                gpg {
+                    sign = true
+                }
             }
         }
     }
