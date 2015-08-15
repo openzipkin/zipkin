@@ -84,17 +84,20 @@ release {
     failOnUnversionedFiles = failOnSnapshotDependencies
     failOnUpdateNeeded = true
     revertOnFail = true
-    tagTemplate = "${project.version}"
-    preCommitText = ''
-    preTagCommitMessage = '[RELEASE] - pre tag commit: '
-    tagCommitMessage = '[RELEASE] - creating tag: '
-    newVersionCommitMessage = '[RELEASE] - new version commit: '
+    preCommitText = '[RELEASE] - '
+    preTagCommitMessage = 'publish version: '
+    newVersionCommitMessage = 'new version: '
 
     git {
         requireBranch = 'master'
         pushToRemote = 'origin'
         pushToCurrentBranch = true
     }
+}
+
+task createReleaseTag(overwrite: true, group: 'Release') {
+    // Zipkin is released by pushing tags manually, so
+    // we need the release plugin to NOT create tags when it runs.
 }
 
 subprojects { subproject ->

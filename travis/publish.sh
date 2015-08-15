@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-set -e
+set -ex
 
 declare -r PUBLISH_USING_JDK="oraclejdk7"
 
 function increment_version() {
+  # TODO this would be cleaner in release.versionPatterns
   local v=$1
   if [ -z $2 ]; then
      local rgx='^((?:[0-9]+\.)*)([0-9]+)($)'
@@ -17,10 +18,10 @@ function increment_version() {
 
 function build_started_by_tag(){
   if [ "${TRAVIS_TAG}" == "" ]; then
-    echo "[Publishing] This build was not started by a tag, starting snapshot release"
+    echo "[Publishing] This build was not started by a tag, publishing"
     return 1
   else
-    echo "[Publishing] This build was started by the tag ${TRAVIS_TAG}, starting non-snapshot release"
+    echo "[Publishing] This build was started by the tag ${TRAVIS_TAG}, creating release commits"
     return 0
   fi
 }
@@ -70,23 +71,33 @@ function want_to_release_from_this_jdk(){
   fi
 }
 
-function publish_snapshots_to_bintray(){
-  echo "[Publishing] Starting Snapshot Publish..."
+function publish_to_bintray(){
+  echo "[Publishing] Publishing..."
   ./gradlew check bintrayUpload
   echo "[Publishing] Done"
 }
 
-function publish_release_to_bintray(){
-  # do not increment if the version is tentative ex. 1.0.0-rc1
-  [[ "$TRAVIS_TAG" == *-* ]] && new_version=${TRAVIS_TAG} || new_version=$(increment_version "${TRAVIS_TAG}")
+function do_gradle_release(){
+  # TODO this would be cleaner in release.versionPatterns
+  major_minor_revision=$(echo "$TRAVIS_TAG" | cut -f1 -d-)
+  qualifier=$(echo "$TRAVIS_TAG" | cut -f2 -d- -s)
 
-  echo "[Publishing] Starting Release Publish (${TRAVIS_TAG}) new version (${new_version})..."
+  # do not increment if the version is tentative ex. 1.0.0-rc1
+  if [[ -n "$qualifier" ]]; then
+    new_version=${major_minor_revision}
+  else
+    new_version=$(increment_version "${major_minor_revision}")
+  fi
+  new_version="${new_version}-SNAPSHOT"
+
+  echo "[Publishing] Creating release commits"
+  echo "[Publishing]   Release version: ${TRAVIS_TAG}"
+  echo "[Publishing]   Post-release version: ${new_version}"
 
   git checkout -B master
 
   ./gradlew check \
-            release -Prelease.useAutomaticVersion=true -PreleaseVersion=${TRAVIS_TAG} -PnewVersion=${new_version}-SNAPSHOT \
-            bintrayUpload
+            release -Prelease.useAutomaticVersion=true -PreleaseVersion=${TRAVIS_TAG} -PnewVersion=${new_version}
   echo "[Publishing] Done"
 }
 
@@ -102,9 +113,9 @@ action=run_tests
 if want_to_release_from_this_jdk && ! is_pull_request; then
   if build_started_by_tag; then
     check_travis_branch_equals_travis_tag
-    action=publish_release_to_bintray
+    action=do_gradle_release
   elif is_travis_branch_master; then
-    action=publish_snapshots_to_bintray
+    action=publish_to_bintray
   fi
 fi
 
