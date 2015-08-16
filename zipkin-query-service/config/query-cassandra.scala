@@ -20,8 +20,11 @@ import com.twitter.zipkin.cassandra
 import com.twitter.zipkin.storage.Store
 import org.twitter.zipkin.storage.cassandra.ZipkinRetryPolicy
 
+val contactPoints: Array[String] = sys.env.get("CASSANDRA_CONTACT_POINTS").getOrElse("localhost")
+  .split(",")
+
 val cluster = Cluster.builder()
-  .addContactPoint("localhost")
+  .addContactPoints(contactPoints:_*)
   .withSocketOptions(new SocketOptions().setConnectTimeoutMillis(10000).setReadTimeoutMillis(20000))
   .withRetryPolicy(ZipkinRetryPolicy.INSTANCE)
   .build()
