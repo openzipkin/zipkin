@@ -4,6 +4,7 @@ buildscript {
     repositories { jcenter() }
     dependencies {
         classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.2'
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.1.1"
     }
 }
 
@@ -19,6 +20,7 @@ allprojects { thisProject ->
     apply plugin: 'maven'
     apply plugin: 'maven-publish'
     apply plugin: 'com.jfrog.bintray'
+    apply plugin: "com.jfrog.artifactory-upload"
 
     // Following are workarounds to idea goal failing on:
     // Cannot infer Scala class path because..
@@ -80,6 +82,11 @@ allprojects { thisProject ->
             }
         }
     }
+
+    // Workaround: we don't want to publish anything from the root project.
+    if (thisProject == rootProject) {
+        artifactoryPublish.publishConfigs()
+    }
 }
 
 release {
@@ -100,13 +107,25 @@ release {
     }
 }
 
+artifactory {
+    contextUrl = "http://oss.jfrog.org/artifactory"
+
+    publish {
+        repository {
+            repoKey = 'oss-snapshot-local'
+            username = System.getenv('BINTRAY_USER')
+            password = System.getenv('BINTRAY_KEY')
+            maven = true
+        }
+    }
+}
+
 task createReleaseTag(overwrite: true, group: 'Release') {
     // Zipkin is released by pushing tags manually, so
     // we need the release plugin to NOT create tags when it runs.
 }
 
 subprojects { subproject ->
-
     apply from: "$rootDir/gradle/scalatest.gradle"
 
     compileTestScala {
@@ -154,13 +173,9 @@ task dependencyReport {
     }
 }
 
-task artifactoryUpload(group: 'release') {
-    description "Empty placeholder task until we integrate with oss.jfrog.org"
-}
-
 task zipkinUpload(group: 'release') {
     description "Upload to oss.jfrog.org if this is a SNAPSHOT release. Upload to both Bintray and oss.jfrog.org otherwise."
-    dependsOn artifactoryUpload
+    dependsOn artifactoryPublish
     if (VersionNumber.parse(rootProject.version).qualifier != "SNAPSHOT") {
         dependsOn bintrayUpload
     }
