@@ -29,41 +29,26 @@ import org.twitter.zipkin.storage.cassandra.Repository
 import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 
-case class ZipkinColumnFamilyNames(
-  traces: String = "traces",
-  serviceNames: String = "service_names",
-  spanNames: String = "span_names",
-  serviceNameIndex: String = "service_name_index",
-  serviceSpanNameIndex: String = "service_span_name_index",
-  annotationsIndex: String = "annotations_index",
-  durationIndex: String = "duration_index")
-
 object CassandraSpanStoreDefaults {
-  val KeyspaceName = "zipkin"
-  val ColumnFamilyNames = ZipkinColumnFamilyNames()
+  val KeyspaceName = Repository.KEYSPACE
   val SpanTtl = 7.days
   val IndexTtl = 3.days
-  val IndexBuckets = 10
   val MaxTraceCols = 100000
-  val ReadBatchSize = 500
   val SpanCodec = new SnappyCodec(new ScroogeThriftCodec[ThriftSpan](ThriftSpan))
 }
 
 class CassandraSpanStore(
   repository: Repository,
   stats: StatsReceiver = DefaultStatsReceiver.scope("CassandraSpanStore"),
-  cfs: ZipkinColumnFamilyNames = CassandraSpanStoreDefaults.ColumnFamilyNames,
   spanTtl: Duration = CassandraSpanStoreDefaults.SpanTtl,
   indexTtl: Duration = CassandraSpanStoreDefaults.IndexTtl,
-  bucketsCount: Int = CassandraSpanStoreDefaults.IndexBuckets,
-  maxTraceCols: Int = CassandraSpanStoreDefaults.MaxTraceCols,
-  readBatchSize: Int = CassandraSpanStoreDefaults.ReadBatchSize,
-  spanCodec: Codec[ThriftSpan] = CassandraSpanStoreDefaults.SpanCodec
+  maxTraceCols: Int = CassandraSpanStoreDefaults.MaxTraceCols
 ) extends SpanStore {
   private[this] val ServiceNamesKey = "servicenames"
   private[this] val IndexDelimiter = ":"
   private[this] val IndexDelimiterBytes = IndexDelimiter.getBytes
   private[this] val SomeIndexTtl = Some(indexTtl)
+  private[this] val spanCodec = CassandraSpanStoreDefaults.SpanCodec
 
   /**
    * Internal helper methods
@@ -201,17 +186,12 @@ class CassandraSpanStore(
   }
 
   private[this] def getSpansByTraceIds(traceIds: Seq[Long], count: Int): Future[Seq[Seq[Span]]] = {
+    pool {
+      val spans = repository.getSpansByTraceIds(traceIds.toArray.map(Long.box), count)
+        .mapValues { case spans :java.util.List[ByteBuffer] => spans.asScala.map(spanCodec.decode(_).toSpan) }
 
-    val results = traceIds.grouped(readBatchSize) map { idBatch =>
-      pool {
-        val spans = repository.getSpansByTraceIds(idBatch.toArray.map(Long.box), count)
-          .mapValues { case spans :java.util.List[ByteBuffer] => spans.asScala.map(spanCodec.decode(_).toSpan) }
-
-        traceIds.map(traceId => spans.get(traceId)).flatten.toSeq
-      }
+      traceIds.map(traceId => spans.get(traceId)).flatten.toSeq
     }
-
-    Future.collect(results.toSeq).map(_.flatten)
   }
 
   /**
@@ -223,7 +203,13 @@ class CassandraSpanStore(
     SpansStoredCounter.incr(spans.size)
 
     spans foreach { span =>
-      repository.storeSpan(span.traceId, createSpanColumnName(span), spanCodec.encode(span.toThrift), spanTtl.inSeconds)
+      repository.storeSpan(
+        span.traceId,
+        span.lastTimestamp.getOrElse(span.firstTimestamp.getOrElse(0)),
+        createSpanColumnName(span),
+        spanCodec.encode(span.toThrift),
+        spanTtl.inSeconds)
+
       if (shouldIndex(span)) {
         SpansIndexedCounter.incr()
         indexServiceName(span)
@@ -239,7 +225,12 @@ class CassandraSpanStore(
 
   def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = {
     getSpansByTraceId(traceId).get foreach { span =>
-      repository.storeSpan(traceId, createSpanColumnName(span), spanCodec.encode(span.toThrift), ttl.inSeconds)
+      repository.storeSpan(
+        traceId,
+        span.lastTimestamp.getOrElse(span.firstTimestamp.getOrElse(0)),
+        createSpanColumnName(span),
+        spanCodec.encode(span.toThrift),
+        ttl.inSeconds)
     }
     Future.Unit
   }

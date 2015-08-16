@@ -13,7 +13,7 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers {
     TestFactory.nonExitingMain(Array())
 
     TestFactory.addContactPoint(Cluster.builder()).getContactPoints should be(
-      asList(new InetSocketAddress("127.0.0.1", 9160))
+      asList(new InetSocketAddress("127.0.0.1", 9042))
     )
   }
 
@@ -23,7 +23,7 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers {
     ))
 
     TestFactory.addContactPoint(Cluster.builder()).getContactPoints should be(
-      asList(new InetSocketAddress("1.1.1.1", 9160))
+      asList(new InetSocketAddress("1.1.1.1", 9042))
     )
   }
 
