@@ -55,6 +55,7 @@ trait ZipkinWebFactory { self: App =>
 
   val queryDest = flag("zipkin.web.query.dest", "127.0.0.1:9411", "Location of the query server")
   val queryLimit = flag("zipkin.web.query.limit", 10, "Default query limit for trace results")
+  val environment = flag("zipkin.web.environmentName", "", "The name of the environment Zipkin is running in")
 
   def newQueryClient(): ZipkinQuery.FutureIface =
     Thrift.newIface[ZipkinQuery.FutureIface]("ZipkinQuery=" + queryDest())
@@ -75,9 +76,9 @@ trait ZipkinWebFactory { self: App =>
     Seq(
       ("/app/", handlePublic(resourceDirs, typesMap, publicRoot)),
       ("/public/", handlePublic(resourceDirs, typesMap, publicRoot)),
-      ("/", addLayout("Index") andThen handleIndex(queryClient)),
-      ("/traces/:id", addLayout("Traces") andThen handleTraces(queryClient)),
-      ("/aggregate", addLayout("Aggregate") andThen handleAggregate(queryClient)),
+      ("/", addLayout("Index", environment()) andThen handleIndex(queryClient)),
+      ("/traces/:id", addLayout("Traces", environment()) andThen handleTraces(queryClient)),
+      ("/aggregate", addLayout("Aggregate", environment()) andThen handleAggregate(queryClient)),
       ("/api/query", handleQuery(queryClient)),
       ("/api/services", handleServices(queryClient)),
       ("/api/spans", requireServiceName andThen handleSpans(queryClient)),
