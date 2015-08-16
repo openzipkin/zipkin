@@ -123,13 +123,14 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       }
   }
 
-  def addLayout(pageTitle: String): Filter[Request, Renderer, Request, Renderer] =
+  def addLayout(pageTitle: String, environment: String): Filter[Request, Renderer, Request, Renderer] =
     Filter.mk[Request, Renderer, Request, Renderer] { (req, svc) =>
       svc(req) map { renderer =>
         response: Response => {
           renderer(response)
           val data = Map[String, Object](
             ("pageTitle" -> pageTitle),
+            ("environment" -> environment),
             ("body" -> response.contentString))
           val r = MustacheRenderer("v2/layout.mustache", data)
           r(response)
