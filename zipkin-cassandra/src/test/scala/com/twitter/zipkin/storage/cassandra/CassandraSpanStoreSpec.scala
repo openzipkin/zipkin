@@ -3,9 +3,10 @@ package com.twitter.zipkin.storage.cassandra
 import com.datastax.driver.core.Cluster
 import com.twitter.zipkin.storage.SpanStoreSpec
 import java.util.Collections
-import org.cassandraunit.CassandraCQLUnit
+import org.cassandraunit.CQLDataLoader
 import org.cassandraunit.dataset.CQLDataSet
-import org.junit.ClassRule
+import org.cassandraunit.utils.EmbeddedCassandraServerHelper.startEmbeddedCassandra
+import org.junit.BeforeClass
 import org.twitter.zipkin.storage.cassandra.Repository
 
 object CassandraSpanStoreSpec {
@@ -16,16 +17,19 @@ object CassandraSpanStoreSpec {
   // Avoid conflicts with thrift 0.5
   System.setProperty("cassandra.start_rpc", "false")
 
-  // Scala cannot generate fields with public visibility, so use a def instead.
-  @ClassRule def cassandra = new CassandraCQLUnit(new CQLDataSet() {
-    override def isKeyspaceDeletion = true
+  @BeforeClass def cassandra = {
+    startEmbeddedCassandra("cu-cassandra.yaml", "build/embeddedCassandra", 10 * 1000)
 
-    override def getKeyspaceName = keyspace
+    new CQLDataLoader(cluster.connect).load(new CQLDataSet() {
+      override def isKeyspaceDeletion = true
 
-    override def isKeyspaceCreation = true
+      override def getKeyspaceName = keyspace
 
-    override def getCQLStatements = Collections.emptyList()
-  })
+      override def isKeyspaceCreation = true
+
+      override def getCQLStatements = Collections.emptyList()
+    })
+  }
 }
 
 class CassandraSpanStoreSpec extends SpanStoreSpec {
