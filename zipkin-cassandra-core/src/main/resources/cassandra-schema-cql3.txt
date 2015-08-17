@@ -17,23 +17,26 @@ CREATE TABLE IF NOT EXISTS zipkin.top_annotations (
 
 CREATE TABLE IF NOT EXISTS zipkin.service_name_index (
     service_name      text,
+    bucket            int,
     ts                timestamp,
     trace_id          bigint,
-    PRIMARY KEY (service_name, ts)
+    PRIMARY KEY ((service_name, bucket), ts)
 ) WITH CLUSTERING ORDER BY (ts DESC)
     AND compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_sstable_age_days': '1'};
 
 CREATE TABLE IF NOT EXISTS zipkin.span_names (
     service_name text,
+    bucket       int,
     span_name    text,
-    PRIMARY KEY (service_name, span_name)
+    PRIMARY KEY ((service_name, bucket), span_name)
 ) WITH compaction = {'min_threshold': '4', 'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32'};
 
 CREATE TABLE IF NOT EXISTS zipkin.annotations_index (
     annotation     blob,
+    bucket         int,
     ts             timestamp,
     trace_id       bigint,
-    PRIMARY KEY (annotation, ts)
+    PRIMARY KEY ((annotation, bucket), ts)
 ) WITH CLUSTERING ORDER BY (ts DESC)
     AND compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_sstable_age_days': '1'};
 
