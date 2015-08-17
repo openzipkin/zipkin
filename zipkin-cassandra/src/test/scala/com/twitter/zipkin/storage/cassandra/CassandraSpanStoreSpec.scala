@@ -14,9 +14,6 @@ object CassandraSpanStoreSpec {
   // Defer shared connection to the cluster
   lazy val cluster = Cluster.builder().addContactPoint("127.0.0.1").withPort(9142).build()
 
-  // Avoid conflicts with thrift 0.5
-  System.setProperty("cassandra.start_rpc", "false")
-
   @BeforeClass def cassandra = {
     startEmbeddedCassandra("cu-cassandra.yaml", "build/embeddedCassandra", 10 * 1000)
 
