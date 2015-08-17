@@ -76,8 +76,14 @@ allprojects { thisProject ->
                 desc = "Zipkin version ${project.version}"
                 released  = new Date()
                 vcsTag = "${project.version}"
+
                 gpg {
                     sign = true
+                }
+
+                mavenCentralSync {
+                    user = System.getenv('SONATYPE_TOKEN')
+                    password = System.getenv('SONATYPE_PASSWORD')
                 }
             }
         }
