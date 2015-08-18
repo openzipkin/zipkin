@@ -73,7 +73,7 @@ function want_to_release_from_this_jdk(){
 
 function publish(){
   echo "[Publishing] Publishing..."
-  ./gradlew check zipkinUpload
+  ./gradlew zipkinUpload
   echo "[Publishing] Done"
 }
 
@@ -96,8 +96,7 @@ function do_gradle_release(){
 
   git checkout -B master
 
-  ./gradlew check \
-            release -Prelease.useAutomaticVersion=true -PreleaseVersion=${TRAVIS_TAG} -PnewVersion=${new_version}
+  ./gradlew release -Prelease.useAutomaticVersion=true -PreleaseVersion=${TRAVIS_TAG} -PnewVersion=${new_version}
   echo "[Publishing] Done"
 }
 
