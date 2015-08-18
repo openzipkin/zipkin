@@ -6,7 +6,7 @@ import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import kafka.consumer.KafkaStream
 
 case class KafkaStreamProcessor[T](
-  stream: KafkaStream[T, Option[List[ThriftSpan]]],
+  stream: KafkaStream[T, List[ThriftSpan]],
   process: Seq[ThriftSpan] => Future[Unit]
   ) extends Runnable {
 
@@ -17,7 +17,7 @@ case class KafkaStreamProcessor[T](
     try {
       stream foreach { msg =>
         log.debug(s"processing event ${msg.message()}")
-        msg.message map { spans => Await.result(process(spans))}
+        Await.result(process(msg.message))
       }
     }
     catch {

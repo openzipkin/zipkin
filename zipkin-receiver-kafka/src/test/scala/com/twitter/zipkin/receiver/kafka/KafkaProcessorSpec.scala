@@ -50,16 +50,16 @@ class KafkaProcessorSpecSimple extends JUnitSuite {
     val producer = new Producer[Array[Byte], Array[Byte]](kafkaRule.producerConfigWithDefaultEncoder())
     val message = createMessage()
     val data = new KeyedMessage("zipkin_kafka", "any".getBytes, message)
-    val recvdSpan = new Promise[Option[Seq[ThriftSpan]]]
+    val recvdSpan = new Promise[Seq[ThriftSpan]]
 
     producer.send(data)
     producer.close()
 
     val service = KafkaProcessor(defaultKafkaTopics, kafkaRule.consumerConfig(), { s =>
-        recvdSpan.setValue(Some(s))
+        recvdSpan.setValue(s)
         Future.value(true)
       }, new SpanDecoder, new SpanDecoder)
 
-    validateSpan(Await.result(recvdSpan).getOrElse(null))
+    validateSpan(Await.result(recvdSpan))
   }
 }
