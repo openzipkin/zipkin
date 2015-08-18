@@ -1,8 +1,12 @@
 package com.twitter.zipkin.storage.cassandra
 
 import com.datastax.driver.core.Cluster
+import com.twitter.conversions.time.intToTimeableNumber
+import com.twitter.util.Await.{ready, result}
+import com.twitter.util.Duration
 import com.twitter.zipkin.storage.SpanStoreSpec
 import java.util.Collections
+import junit.framework.Test
 import org.cassandraunit.CQLDataLoader
 import org.cassandraunit.dataset.CQLDataSet
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper.startEmbeddedCassandra
@@ -36,4 +40,19 @@ class CassandraSpanStoreSpec extends SpanStoreSpec {
   override lazy val store = new CassandraSpanStore(new Repository(keyspace, cluster))
 
   override def clear = cluster.connect().execute("DROP KEYSPACE IF EXISTS " + keyspace)
+
+  override def setTimeToLive() {
+    ready(store(Seq(span1)))
+    ready(store.setTimeToLive(span1.traceId, 1234.seconds))
+
+    for( i <- 1 to 100) {
+      // Repository.storeXXX() methods write asynchronously but don't return a Future so we can't reliably test.
+      //  just wait and loop instead
+      java.lang.Thread.sleep(50)
+      if ((result(store.getTimeToLive(span1.traceId)) - 1234.seconds).abs.inMilliseconds <= (i*50) + 100) {
+        return
+      }
+    }
+    throw new AssertionError
+  }
 }
