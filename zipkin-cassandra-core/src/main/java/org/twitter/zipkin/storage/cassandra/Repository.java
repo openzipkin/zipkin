@@ -23,19 +23,28 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public final class Repository implements AutoCloseable {
 
     public static final String KEYSPACE = "zipkin";
+    public static final short BUCKETS = 10;
 
     private static final Logger LOG = LoggerFactory.getLogger(Repository.class);
+    private static final Random RAND = new Random();
+    private static final List<Integer> ALL_BUCKETS = Collections.unmodifiableList(new ArrayList<Integer>() {{
+        for (int i = 0 ; i < BUCKETS ; ++i) {
+            add(i);
+        }
+    }});
 
     private final Session session;
     private final PreparedStatement selectTraces;
@@ -129,12 +138,14 @@ public final class Repository implements AutoCloseable {
         selectSpanNames = session.prepare(
                 QueryBuilder.select("span_name")
                     .from("span_names")
-                    .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name"))));
+                    .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
+                    .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket"))));
 
         insertSpanName = session.prepare(
                 QueryBuilder
                     .insertInto("span_names")
                     .value("service_name", QueryBuilder.bindMarker("service_name"))
+                    .value("bucket", QueryBuilder.bindMarker("bucket"))
                     .value("span_name", QueryBuilder.bindMarker("span_name"))
                     .using(QueryBuilder.ttl(QueryBuilder.bindMarker("ttl_"))));
 
@@ -142,6 +153,7 @@ public final class Repository implements AutoCloseable {
                 QueryBuilder.select("ts", "trace_id")
                     .from("service_name_index")
                     .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
+                    .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
                     .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("ts")))
                     .limit(QueryBuilder.bindMarker("limit_"))
                     .orderBy(QueryBuilder.desc("ts")));
@@ -150,6 +162,7 @@ public final class Repository implements AutoCloseable {
                 QueryBuilder
                     .insertInto("service_name_index")
                     .value("service_name", QueryBuilder.bindMarker("service_name"))
+                    .value("bucket", QueryBuilder.bindMarker("bucket"))
                     .value("ts", QueryBuilder.bindMarker("ts"))
                     .value("trace_id", QueryBuilder.bindMarker("trace_id"))
                     .using(QueryBuilder.ttl(QueryBuilder.bindMarker("ttl_"))));
@@ -174,6 +187,7 @@ public final class Repository implements AutoCloseable {
                 QueryBuilder.select("ts", "trace_id")
                     .from("annotations_index")
                     .where(QueryBuilder.eq("annotation", QueryBuilder.bindMarker("annotation")))
+                    .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
                     .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("ts")))
                     .limit(QueryBuilder.bindMarker("limit_"))
                     .orderBy(QueryBuilder.desc("ts")));
@@ -182,6 +196,7 @@ public final class Repository implements AutoCloseable {
                 QueryBuilder
                     .insertInto("annotations_index")
                     .value("annotation", QueryBuilder.bindMarker("annotation"))
+                    .value("bucket", QueryBuilder.bindMarker("bucket"))
                     .value("ts", QueryBuilder.bindMarker("ts"))
                     .value("trace_id", QueryBuilder.bindMarker("trace_id"))
                     .using(QueryBuilder.ttl(QueryBuilder.bindMarker("ttl_"))));
@@ -478,7 +493,11 @@ public final class Repository implements AutoCloseable {
         try {
             Set<String> spanNames = new HashSet<>();
             if (!serviceName.isEmpty()) {
-                BoundStatement bound = selectSpanNames.bind().setString("service_name", serviceName);
+
+                BoundStatement bound = selectSpanNames.bind()
+                        .setString("service_name", serviceName)
+                        .setList("bucket", ALL_BUCKETS);
+
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(debugSelectSpanNames(serviceName));
                 }
@@ -505,6 +524,7 @@ public final class Repository implements AutoCloseable {
         try {
             BoundStatement bound = insertSpanName.bind()
                     .setString("service_name", serviceName)
+                    .setInt("bucket", RAND.nextInt(BUCKETS))
                     .setString("span_name", spanName)
                     .setInt("ttl_", ttl);
 
@@ -531,6 +551,7 @@ public final class Repository implements AutoCloseable {
         try {
             BoundStatement bound = selectTraceIdsByServiceName.bind()
                     .setString("service_name", serviceName)
+                    .setList("bucket", ALL_BUCKETS)
                     .setDate("ts", new Date(to))
                     .setInt("limit_", limit);
 
@@ -562,6 +583,7 @@ public final class Repository implements AutoCloseable {
 
             BoundStatement bound = insertTraceIdByServiceName.bind()
                     .setString("service_name", serviceName)
+                    .setInt("bucket", RAND.nextInt(BUCKETS))
                     .setDate("ts", new Date(timestamp))
                     .setLong("trace_id", traceId)
                     .setInt("ttl_", ttl);
@@ -653,6 +675,7 @@ public final class Repository implements AutoCloseable {
         try {
             BoundStatement bound = selectTraceIdsByAnnotations.bind()
                     .setBytes("annotation", annotationKey)
+                    .setList("bucket", ALL_BUCKETS)
                     .setDate("ts", new Date(from))
                     .setInt("limit_", limit);
 
@@ -681,6 +704,7 @@ public final class Repository implements AutoCloseable {
         try {
             BoundStatement bound = insertTraceIdByAnnotation.bind()
                     .setBytes("annotation", annotationKey)
+                    .setInt("bucket", RAND.nextInt(BUCKETS))
                     .setDate("ts", new Date(timestamp))
                     .setLong("trace_id", traceId)
                     .setInt("ttl_", ttl);
