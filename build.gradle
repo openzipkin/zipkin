@@ -13,6 +13,8 @@ plugins {
     id 'net.researchgate.release' version '2.2.1'
 }
 
+ext.isSnapshot = VersionNumber.parse(rootProject.version).qualifier == "SNAPSHOT"
+
 allprojects { thisProject ->
     apply plugin: 'idea'
     apply plugin: 'java'
@@ -118,7 +120,11 @@ artifactory {
 
     publish {
         repository {
-            repoKey = 'oss-snapshot-local'
+            if (project.isSnapshot) {
+                repoKey = 'oss-snapshot-local'
+            } else {
+                repoKey = 'oss-release-local'
+            }
             username = System.getenv('BINTRAY_USER')
             password = System.getenv('BINTRAY_KEY')
             maven = true
@@ -187,7 +193,7 @@ task dependencyReport {
 task zipkinUpload(group: 'release') {
     description "Upload to oss.jfrog.org if this is a SNAPSHOT release. Upload to both Bintray and oss.jfrog.org otherwise."
     dependsOn artifactoryPublish
-    if (VersionNumber.parse(rootProject.version).qualifier != "SNAPSHOT") {
+    if (!project.isSnapshot) {
         dependsOn bintrayUpload
     }
 }
