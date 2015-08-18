@@ -17,7 +17,6 @@ package com.twitter.zipkin.cassandra
 
 import com.datastax.driver.core.Cluster
 import com.datastax.driver.core.policies.LatencyAwarePolicy;
-import com.datastax.driver.core.policies.RetryPolicy;
 import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
 import com.google.common.net.HostAndPort
@@ -33,7 +32,7 @@ trait CassandraSpanStoreFactory {self: App =>
 
 
   val keyspace = flag("zipkin.store.cassandra.keyspace", Defaults.KeyspaceName, "name of the keyspace to use")
-  val cassandraDest = flag("zipkin.store.cassandra.dest", "localhost:9042", "dest of the cassandra cluster")
+  val cassandraDest = flag("zipkin.store.cassandra.dest", "localhost:9042", "dest of the cassandra cluster; comma-separated list of host:port pairs")
 
   val cassieSpanTtl = flag("zipkin.store.cassandra.spanTTL", Defaults.SpanTtl, "length of time cassandra should store spans")
   val cassieIndexTtl = flag("zipkin.store.cassandra.indexTTL", Defaults.IndexTtl, "length of time cassandra should store span indexes")
@@ -58,9 +57,15 @@ trait CassandraSpanStoreFactory {self: App =>
   }
 
   def addContactPoint(builder: Cluster.Builder): Cluster.Builder = {
-    val contactPoint = HostAndPort.fromString(cassandraDest())
+    val contactPoints = cassandraDest().split(",").map(HostAndPort.fromString)
 
-    builder.addContactPoint(contactPoint.getHostText)
-      .withPort(contactPoint.getPortOrDefault(9042))
+    if (contactPoints.length > 1) {
+      val addresses = contactPoints.map(cp => new java.net.InetSocketAddress(cp.getHostText, cp.getPortOrDefault(9042)))
+      builder.addContactPointsWithPorts(collection.JavaConversions.asJavaCollection(addresses))
+    } else {
+      val contactPoint = contactPoints.head
+      builder.addContactPoint(contactPoint.getHostText)
+        .withPort(contactPoint.getPortOrDefault(9042))
+    }
   }
 }
