@@ -10,7 +10,7 @@ buildscript {
 
 plugins {
     id 'com.jfrog.bintray' version '1.3.1'
-    id 'net.researchgate.release' version '2.1.2'
+    id 'net.researchgate.release' version '2.2.1'
 }
 
 allprojects { thisProject ->
@@ -129,6 +129,11 @@ artifactory {
 task createReleaseTag(overwrite: true, group: 'Release') {
     // Zipkin is released by pushing tags manually, so
     // we need the release plugin to NOT create tags when it runs.
+}
+
+task runBuildTasks(overwrite: true, group: 'Release') {
+    // During the release process, building and testing in the Travis job running `gradle release`
+    // is redundant. We can save time by running the build and tests only on commits to master.
 }
 
 subprojects { subproject ->
