@@ -11,14 +11,14 @@ class SpanDecoder extends KafkaProcessor.KafkaDecoder {
     def codec = ThriftSpan
   }
 
-  def toEvent(message: Message): Option[List[ThriftSpan]] = {
+  def toEvent(message: Message): List[ThriftSpan] = {
     val buffer = message.payload
     val payload = new Array[Byte](buffer.remaining)
     buffer.get(payload)
     val span = deserializer.fromBytes(payload)
-    Option(List(span))
+    List(span)
   }
-  def fromBytes(bytes: Array[Byte]): Option[List[ThriftSpan]] = Option(List(deserializer.fromBytes(bytes)))
+  def fromBytes(bytes: Array[Byte]): List[ThriftSpan] = List(deserializer.fromBytes(bytes))
 
   def encode(span: Span) = {
     val tspan = spanToThriftSpan(span)
