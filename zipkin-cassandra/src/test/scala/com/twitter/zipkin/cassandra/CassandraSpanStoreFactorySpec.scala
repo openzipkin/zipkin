@@ -36,4 +36,14 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers {
       asList(new InetSocketAddress("1.1.1.1", 9142))
     )
   }
+
+  test("zipkin.store.cassandra.dest as host1:port,host2 (default port)") {
+    TestFactory.nonExitingMain(Array(
+      "-zipkin.store.cassandra.dest", "1.1.1.1:9143,2.2.2.2"
+    ))
+
+    TestFactory.addContactPoint(Cluster.builder()).getContactPoints should be(
+      asList(new InetSocketAddress("1.1.1.1", 9143), new InetSocketAddress("2.2.2.2", 9042))
+    )
+  }
 }
