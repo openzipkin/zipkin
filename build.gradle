@@ -14,11 +14,6 @@ plugins {
 }
 
 ext.isSnapshot = VersionNumber.parse(rootProject.version).qualifier == "SNAPSHOT"
-ext.wantDistTar = [
-        project(':zipkin-collector-service'),
-        project(':zipkin-query-service'),
-        project(':zipkin-web')
-]
 
 allprojects { thisProject ->
     apply plugin: 'idea'
@@ -28,6 +23,10 @@ allprojects { thisProject ->
     apply plugin: 'maven-publish'
     apply plugin: 'com.jfrog.bintray'
     apply plugin: "com.jfrog.artifactory-upload"
+
+    configurations {
+        zipkinUpload
+    }
 
     // Following are workarounds to idea goal failing on:
     // Cannot infer Scala class path because..
@@ -53,7 +52,7 @@ allprojects { thisProject ->
     }
 
     artifacts {
-      archives javadocJar, sourceJar
+        zipkinUpload javadocJar, sourceJar
     }
 
     bintray {
@@ -66,7 +65,7 @@ allprojects { thisProject ->
         if (thisProject == rootProject) {
             configurations = []
         } else {
-            configurations = ['archives']
+            configurations = ['zipkinUpload']
         }
 
         dryRun = System.getenv('BINTRAY_DRYRUN') != null
@@ -101,18 +100,11 @@ allprojects { thisProject ->
         artifactoryPublish.publishConfigs()
     }
 
-    // Never build zip distributions (to save space and time)
-    // Only build tar distributions for stand-alone services
     thisProject.plugins.withType(DistributionPlugin) {
-        thisProject.tasks.distZip.enabled = false
-        if (thisProject in rootProject.wantDistTar) {
-            thisProject.tasks.distTar {
-                compression = Compression.GZIP
-                extension = 'tar.gz'
-            }
-        } else {
-            thisProject.tasks.distTar.enabled = false
-        }
+		thisProject.tasks.distTar {
+			compression = Compression.GZIP
+			extension = 'tar.gz'
+		}
     }
 }
 
@@ -147,6 +139,10 @@ artifactory {
             username = System.getenv('BINTRAY_USER')
             password = System.getenv('BINTRAY_KEY')
             maven = true
+        }
+
+        defaults {
+            publishConfigs 'zipkinUpload'
         }
     }
 }
