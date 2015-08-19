@@ -10,7 +10,8 @@ run {
 }
 
 tasks.build.dependsOn(shadowJar)
-artifacts.archives shadowJar
+artifacts.zipkinUpload shadowJar
+artifacts.zipkinUpload distTar
 
 repositories {
     // For dependencies of zipkin-cassandra
