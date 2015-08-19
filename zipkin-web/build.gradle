@@ -8,8 +8,9 @@ run {
 }
 
 tasks.build.dependsOn(shadowJar)
-artifacts.zipkinUpload shadowJar
-artifacts.zipkinUpload distTar
+// TODO: revert me once we verify that 408s go away when we publish less bytes
+// artifacts.zipkinUpload shadowJar
+// artifacts.zipkinUpload distTar
 
 dependencies {
     compile project(':zipkin-scrooge')

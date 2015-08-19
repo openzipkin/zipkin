@@ -17,7 +17,8 @@ run {
 }
 
 tasks.build.dependsOn(shadowJar)
-artifacts.zipkinUpload shadowJar
+// TODO: revert me once we verify that 408s go away when we publish less bytes
+// artifacts.zipkinUpload shadowJar
 
 repositories {
     // For dependencies of zipkin-cassandra
