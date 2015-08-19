@@ -14,6 +14,11 @@ plugins {
 }
 
 ext.isSnapshot = VersionNumber.parse(rootProject.version).qualifier == "SNAPSHOT"
+ext.wantDistTar = [
+        project(':zipkin-collector-service'),
+        project(':zipkin-query-service'),
+        project(':zipkin-web')
+]
 
 allprojects { thisProject ->
     apply plugin: 'idea'
@@ -94,6 +99,20 @@ allprojects { thisProject ->
     // Workaround: we don't want to publish anything from the root project.
     if (thisProject == rootProject) {
         artifactoryPublish.publishConfigs()
+    }
+
+    // Never build zip distributions (to save space and time)
+    // Only build tar distributions for stand-alone services
+    thisProject.plugins.withType(DistributionPlugin) {
+        thisProject.tasks.distZip.enabled = false
+        if (thisProject in rootProject.wantDistTar) {
+            thisProject.tasks.distTar {
+                compression = Compression.GZIP
+                extension = 'tar.gz'
+            }
+        } else {
+            thisProject.tasks.distTar.enabled = false
+        }
     }
 }
 

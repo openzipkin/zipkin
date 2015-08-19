@@ -1,5 +1,4 @@
 apply plugin: 'application'
-apply plugin: 'com.github.johnrengelman.shadow'
 mainClassName = 'com.twitter.zipkin.example.Main'
 
 if (!project.hasProperty("runArgs")) {
@@ -11,9 +10,6 @@ run {
     workingDir project.buildDir
     args runArgs.split()
 }
-
-tasks.build.dependsOn(shadowJar)
-artifacts.archives shadowJar
 
 repositories {
     // For dependencies of zipkin-cassandra
