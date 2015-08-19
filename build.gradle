@@ -52,7 +52,7 @@ allprojects { thisProject ->
     }
 
     artifacts {
-        zipkinUpload javadocJar, sourceJar
+        zipkinUpload jar, javadocJar, sourceJar
     }
 
     bintray {
