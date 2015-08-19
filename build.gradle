@@ -86,11 +86,6 @@ allprojects { thisProject ->
                 gpg {
                     sign = true
                 }
-
-                mavenCentralSync {
-                    user = System.getenv('SONATYPE_TOKEN')
-                    password = System.getenv('SONATYPE_PASSWORD')
-                }
             }
         }
     }
