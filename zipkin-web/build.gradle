@@ -9,7 +9,6 @@ run {
 
 tasks.build.dependsOn(shadowJar)
 artifacts.zipkinUpload shadowJar
-artifacts.zipkinUpload distTar
 
 dependencies {
     compile project(':zipkin-scrooge')
