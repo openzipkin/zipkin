@@ -47,5 +47,6 @@ before_script:
   - git remote set-url origin "https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git"
 
 script:
-  - ./travis/publish.sh
+# increases no-feedback threshold to 20m to avoid killing bintrayUpload
+  - travis_wait 20 ./travis/publish.sh
 
