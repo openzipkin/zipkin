@@ -15,9 +15,9 @@ task testJar(type: Jar) {
 }
 
 artifacts {
-    archives testJar
+    zipkinUpload testJar
 }
 
 configurations {
-    archives.extendsFrom (testCompile)
+    zipkinUpload.extendsFrom (testCompile)
 }
