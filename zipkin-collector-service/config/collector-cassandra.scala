@@ -16,20 +16,32 @@
 
 import com.datastax.driver.core.Cluster
 import com.datastax.driver.core.SocketOptions
+import com.twitter.app.App
 import com.twitter.zipkin.builder.Scribe
 import com.twitter.zipkin.cassandra
+import com.twitter.zipkin.cassandra.CassandraSpanStoreFactory
 import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
 import com.twitter.zipkin.storage.Store
 import org.twitter.zipkin.storage.cassandra.ZipkinRetryPolicy
+import scala.collection.mutable.ListBuffer
 
 val contactPoints: Array[String] = sys.env.get("CASSANDRA_CONTACT_POINTS").getOrElse("localhost")
   .split(",")
 
-val cluster = Cluster.builder()
-  .addContactPoints(contactPoints:_*)
-  .withSocketOptions(new SocketOptions().setConnectTimeoutMillis(10000).setReadTimeoutMillis(20000))
-  .withRetryPolicy(ZipkinRetryPolicy.INSTANCE)
-  .build()
+val cassandraUser = sys.env.get("CASSANDRA_USER")
+val cassandraPass = sys.env.get("CASSANDRA_PASS")
+
+var args = new ListBuffer[String]()
+if (cassandraUser.isDefined && cassandraPass.isDefined) {
+  args += "-zipkin.store.cassandra.user"
+  args += cassandraUser.get
+  args += "-zipkin.store.cassandra.password"
+  args += cassandraPass.get
+}
+
+object CollectorService extends App with CassandraSpanStoreFactory
+CollectorService.nonExitingMain(args.toArray)
+val cluster = CollectorService.createClusterBuilder().build()
 
 val storeBuilder = Store.Builder(new cassandra.SpanStoreBuilder(cluster))
 

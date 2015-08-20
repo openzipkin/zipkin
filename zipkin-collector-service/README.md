@@ -1,16 +1,26 @@
 # zipkin-collector-service
- 
+
 The Zipkin collector service accepts trace data via its Scribe interface.
 After validity checks, the collector stores and indexes trace data into a
 store, most typically SQL, Cassandra or Redis.
 
 ## Running locally
- 
+
 ```bash
 # to start a scribe listener on localhost:9410, sinking to a file-based SQL store.
 ./gradlew :zipkin-collector-service:run
 ```
- 
+
+#### Start with Cassandra Authentication
+
+Will throw an exception on startup if authentication failed
+```
+# specify user/pass as environment variables
+CASSANDRA_USER=user CASSANDRA_PASS=pass ./bin/collector cassandra
+
+```
+
+
 ## Building and running a fat jar
 
 ```bash
