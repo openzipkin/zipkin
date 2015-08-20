@@ -1,5 +1,3 @@
-import org.gradle.util.VersionNumber
-
 buildscript {
     repositories { jcenter() }
     dependencies {
@@ -13,9 +11,7 @@ plugins {
     id 'net.researchgate.release' version '2.2.1'
 }
 
-ext.isSnapshot = VersionNumber.parse(rootProject.version).qualifier == "SNAPSHOT"
-
-allprojects { thisProject ->
+allprojects {
     apply plugin: 'idea'
     apply plugin: 'java'
     apply plugin: 'scala'
@@ -23,38 +19,124 @@ allprojects { thisProject ->
     apply plugin: 'maven-publish'
     apply plugin: 'com.jfrog.bintray'
     apply plugin: "com.jfrog.artifactory-upload"
+    apply from: "$rootDir/gradle/dependencies.gradle"  // common dependency versions
+}
 
-    configurations {
-        zipkinUpload
-    }
+import org.gradle.util.VersionNumber
+ext.isSnapshot = VersionNumber.parse(rootProject.version).qualifier == "SNAPSHOT"
 
-    // Following are workarounds to idea goal failing on:
+// Workarounds for idea goal failing
+allprojects {
     // Cannot infer Scala class path because..
     // - no repository is declared in root project
     repositories { jcenter() }
 
     // - no Scala library Jar was found
-    apply from: "$rootDir/gradle/dependencies.gradle"
     dependencies {
         compile "org.scala-lang:scala-library:${scalaVersion}"
     }
+}
 
+// We like compressed tars
+allprojects { thisProject ->
+    thisProject.plugins.withType(DistributionPlugin) {
+        thisProject.tasks.distTar {
+            compression = Compression.GZIP
+            extension = 'tar.gz'
+        }
+    }
+}
+
+// Source and JavaDoc jars for Maven Central
+allprojects {
     task sourceJar(type: Jar) {
-      description "An archive of the source code for Maven Central"
-      classifier "sources"
-      from sourceSets.main.allSource
+        description "An archive of the source code for Maven Central"
+        classifier "sources"
+        from sourceSets.main.allSource
     }
 
     task javadocJar(type: Jar) {
-      description "An archive of the JavaDocs for Maven Central"
-      classifier "javadoc"
-      from javadoc
+        description "An archive of the JavaDocs for Maven Central"
+        classifier "javadoc"
+        from javadoc
+    }
+}
+
+// Custom configuration used to explicitly control the artifacts we want to publish
+allprojects {
+    configurations {
+        zipkinUpload
     }
 
+    // These we want for each subproject
     artifacts {
         zipkinUpload jar, javadocJar, sourceJar
     }
+}
 
+// Step 1 in the release process: `gradle release` creates new commits based on a tag
+// to trigger new builds which will upload artifacts. See travis/README.md for more.
+release {
+    failOnCommitNeeded = false
+    failOnPublishNeeded = true
+    failOnSnapshotDependencies = true
+    failOnUnversionedFiles = failOnSnapshotDependencies
+    failOnUpdateNeeded = true
+    revertOnFail = true
+    preCommitText = '[RELEASE] - '
+    preTagCommitMessage = 'publish version: '
+    newVersionCommitMessage = 'new version: '
+
+    git {
+        requireBranch = 'master'
+        pushToRemote = 'origin'
+        pushToCurrentBranch = true
+    }
+}
+
+// Workaround 1 for `gradle release`
+task createReleaseTag(overwrite: true, group: 'Release') {
+    // Zipkin is released by pushing tags manually, so
+    // we need the release plugin to NOT create tags when it runs.
+}
+
+// Workaround 2 for `gradle release`
+task runBuildTasks(overwrite: true, group: 'Release') {
+    // During the release process, building and testing in the Travis job running `gradle release`
+    // is redundant. We can save time by running the build and tests only on commits to master.
+}
+
+// Step 2 in the release process: upload all builds to OJO
+artifactory {
+    contextUrl = "http://oss.jfrog.org/artifactory"
+
+    publish {
+        repository {
+            if (project.isSnapshot) {
+                repoKey = 'oss-snapshot-local'
+            } else {
+                repoKey = 'oss-release-local'
+            }
+            username = System.getenv('BINTRAY_USER')
+            password = System.getenv('BINTRAY_KEY')
+            maven = true
+        }
+
+        defaults {
+            publishConfigs 'zipkinUpload'
+        }
+    }
+}
+
+// Workaround for OJO: we don't want to publish anything from the root project.
+allprojects { thisProject ->
+    if (thisProject == rootProject) {
+        artifactoryPublish.publishConfigs()
+    }
+}
+
+// Step 3 in the release process: Publish non-SNAPSHOT releases to Bintray
+allprojects { thisProject ->
     bintray {
         // Read variables from travis encrypted config or local
         user = System.getenv('BINTRAY_USER')
@@ -80,7 +162,7 @@ allprojects { thisProject ->
             version {
                 name = project.version
                 desc = "Zipkin version ${project.version}"
-                released  = new Date()
+                released = new Date()
                 vcsTag = project.version
 
                 gpg {
@@ -89,19 +171,20 @@ allprojects { thisProject ->
             }
         }
     }
+}
 
-    // Workaround: we don't want to publish anything from the root project.
-    if (thisProject == rootProject) {
-        artifactoryPublish.publishConfigs()
+// Wiring to call the appropriate upload tasks
+task zipkinUpload(group: 'release') {
+    description "Upload to oss.jfrog.org if this is a SNAPSHOT release. Upload to both Bintray and oss.jfrog.org otherwise."
+    dependsOn artifactoryPublish
+    if (!project.isSnapshot) {
+        dependsOn bintrayUpload
     }
+}
 
-    thisProject.plugins.withType(DistributionPlugin) {
-		thisProject.tasks.distTar {
-			compression = Compression.GZIP
-			extension = 'tar.gz'
-		}
-    }
-
+// Step 4 of the release process is syncing to Maven Central. That requires some metadata to be present
+// in the .pom files. This section takes care of that.
+allprojects { thisProject ->
     install {
         repositories.mavenInstaller {
             pom {
@@ -137,69 +220,14 @@ allprojects { thisProject ->
 
 }
 
-release {
-    failOnCommitNeeded = false
-    failOnPublishNeeded = true
-    failOnSnapshotDependencies = true
-    failOnUnversionedFiles = failOnSnapshotDependencies
-    failOnUpdateNeeded = true
-    revertOnFail = true
-    preCommitText = '[RELEASE] - '
-    preTagCommitMessage = 'publish version: '
-    newVersionCommitMessage = 'new version: '
-
-    git {
-        requireBranch = 'master'
-        pushToRemote = 'origin'
-        pushToCurrentBranch = true
-    }
-}
-
-artifactory {
-    contextUrl = "http://oss.jfrog.org/artifactory"
-
-    publish {
-        repository {
-            if (project.isSnapshot) {
-                repoKey = 'oss-snapshot-local'
-            } else {
-                repoKey = 'oss-release-local'
-            }
-            username = System.getenv('BINTRAY_USER')
-            password = System.getenv('BINTRAY_KEY')
-            maven = true
-        }
-
-        defaults {
-            publishConfigs 'zipkinUpload'
-        }
-    }
-}
-
-task createReleaseTag(overwrite: true, group: 'Release') {
-    // Zipkin is released by pushing tags manually, so
-    // we need the release plugin to NOT create tags when it runs.
-}
-
-task runBuildTasks(overwrite: true, group: 'Release') {
-    // During the release process, building and testing in the Travis job running `gradle release`
-    // is redundant. We can save time by running the build and tests only on commits to master.
-}
-
+// Build settings shared by all subprojects
 subprojects { subproject ->
     apply from: "$rootDir/gradle/scalatest.gradle"
 
-    compileTestScala {
-        scalaCompileOptions.additionalParameters = ["-feature"]
-    }
+    compileTestScala.scalaCompileOptions.additionalParameters = ["-feature"]
+    compileScala.scalaCompileOptions.additionalParameters = ["-feature"]
 
-    compileScala {
-        scalaCompileOptions.additionalParameters = ["-feature"]
-    }
-
-    test {
-        maxParallelForks Runtime.runtime.availableProcessors()
-    }
+    test.maxParallelForks Runtime.runtime.availableProcessors()
 
     repositories {
         maven { url 'http://repo.typesafe.com/typesafe/releases/' }
@@ -213,7 +241,6 @@ subprojects { subproject ->
         testCompile 'org.mockito:mockito-all:1.10.19'
         testCompile "org.scalatest:scalatest_${scalaInterfaceVersion}:2.2.5"
     }
-    // SBT migration note: end of zipkinSettings
 }
 
 // Quick hack to visualize inter-project dependencies
@@ -233,13 +260,4 @@ task dependencyReport {
         file << "}\n"
     }
 }
-
-task zipkinUpload(group: 'release') {
-    description "Upload to oss.jfrog.org if this is a SNAPSHOT release. Upload to both Bintray and oss.jfrog.org otherwise."
-    dependsOn artifactoryPublish
-    if (!project.isSnapshot) {
-        dependsOn bintrayUpload
-    }
-}
-
 
