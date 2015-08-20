@@ -74,14 +74,14 @@ allprojects { thisProject ->
         pkg {
             licenses = ['Apache-2.0']
             repo = System.getenv('BINTRAY_ZIPKIN_REPO') ?: "zipkin"
-            vcsUrl = 'https://github.com/openzipkin/zipkin.git'
+            vcsUrl = project.repo
             name = System.getenv('BINTRAY_ZIPKIN_PACKAGE') ?: "zipkin"
             userOrg = System.getenv('BINTRAY_ZIPKIN_ORG') ?: "openzipkin"
             version {
-                name = "${project.version}"
+                name = project.version
                 desc = "Zipkin version ${project.version}"
                 released  = new Date()
-                vcsTag = "${project.version}"
+                vcsTag = project.version
 
                 gpg {
                     sign = true
@@ -101,6 +101,40 @@ allprojects { thisProject ->
 			extension = 'tar.gz'
 		}
     }
+
+    install {
+        repositories.mavenInstaller {
+            pom {
+                project {
+                    name 'Zipkin'
+                    description project.description
+                    url project.repo
+
+                    licenses {
+                        license {
+                            name 'The Apache Software License, Version 2.0'
+                            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                            distribution 'repo'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id 'zipkin-dev'
+                            email 'zipkin-dev@googlegroups.com'
+                        }
+                    }
+
+                    scm {
+                        connection project.repo + '.git'
+                        developerConnection 'git@github.com:openzipkin/zipkin.git'
+                        url project.repo
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 release {
