@@ -11,3 +11,6 @@ build/
 # https://github.com/openzipkin/zipkin/issues/534
 zipkin-collector-service/zipkin.db
 /.nb-gradle/
+
+# https://github.com/openzipkin/zipkin/pull/642
+travis_wait*.log
