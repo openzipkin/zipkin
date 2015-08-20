@@ -37,16 +37,6 @@ allprojects {
     }
 }
 
-// We like compressed tars
-allprojects { thisProject ->
-    thisProject.plugins.withType(DistributionPlugin) {
-        thisProject.tasks.distTar {
-            compression = Compression.GZIP
-            extension = 'tar.gz'
-        }
-    }
-}
-
 // Source and JavaDoc jars for Maven Central
 allprojects {
     task sourceJar(type: Jar) {
