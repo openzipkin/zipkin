@@ -16,7 +16,6 @@ include 'zipkin-common',
 'zipkin-collector-service',
 'zipkin-query-service',
 'zipkin-web',
-'zipkin-aggregate',
 
 /////////////////////////////////////
 // Collector, and Collector inputs //
