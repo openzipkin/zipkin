@@ -1,18 +1,17 @@
 rootProject.name = 'zipkin'
 
+def includes = [
+
 ////////////////////////////////////
 // Zipkin's mostly common library //
 ////////////////////////////////////
 // Not all projects depend on this!
-include 'zipkin-common',
+'zipkin-common',
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Projects with outputs that are useful on their own: documentation, examples, services //
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-//'doc'
-'zipkin-example',
-'zipkin-redis-example',
 'zipkin-collector-service',
 'zipkin-query-service',
 'zipkin-web',
@@ -57,5 +56,10 @@ include 'zipkin-common',
 // Misc //
 //////////
 
-'zipkin-tracegen',
 'zipkin-sampler'
+]
+
+if (System.getenv('PUBLISHING') == null) {
+    includes.addAll(['zipkin-tracegen', 'zipkin-example', 'zipkin-redis-example'])
+}
+include includes.toArray(new String[0])
