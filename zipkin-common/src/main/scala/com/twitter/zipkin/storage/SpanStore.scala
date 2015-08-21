@@ -22,7 +22,6 @@ import com.twitter.util.{Closable, Duration, Future}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import java.nio.ByteBuffer
-import scala.collection.mutable
 
 abstract class SpanStore extends java.io.Closeable {
   /**
@@ -117,6 +116,8 @@ object SpanStore {
 }
 
 class InMemorySpanStore extends SpanStore {
+  import scala.collection.mutable
+
   val ttls: mutable.Map[Long, Duration] = mutable.Map.empty
   val spans: mutable.ArrayBuffer[Span] = new mutable.ArrayBuffer[Span]
 
