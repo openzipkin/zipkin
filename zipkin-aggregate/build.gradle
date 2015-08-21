@@ -1,6 +1,5 @@
-apply plugin: 'application'
 apply plugin: 'com.github.johnrengelman.shadow'
-mainClassName = 'com.twitter.zipkin.aggregate.RunHadoopJob'
+ext.mainClassName = 'com.twitter.zipkin.aggregate.RunHadoopJob'
 
 if (!project.hasProperty("hosts")) {
     ext.hosts = "localhost"
@@ -10,11 +9,15 @@ if (!project.hasProperty("port")) {
     ext.port = "9160"
 }
 
-run {
+task run(type:JavaExec) {
+    main = mainClassName
+    classpath = sourceSets.main.runtimeClasspath
     workingDir project.buildDir
     // only cassandra is supported
     args '--source', "cassandra", '--hosts', hosts, '--port', port
 }
+
+jar.manifest.attributes 'Main-Class': mainClassName
 
 tasks.build.dependsOn(shadowJar)
 artifacts.zipkinUpload shadowJar
