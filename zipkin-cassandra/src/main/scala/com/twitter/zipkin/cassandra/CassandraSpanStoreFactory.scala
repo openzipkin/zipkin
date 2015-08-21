@@ -25,19 +25,20 @@ import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.zipkin.storage.cassandra._
 import org.twitter.zipkin.storage.cassandra.Repository
 import org.twitter.zipkin.storage.cassandra.ZipkinRetryPolicy
+import com.twitter.app.Flag
 
 trait CassandraSpanStoreFactory {self: App =>
 
   import com.twitter.zipkin.storage.cassandra.{CassandraSpanStoreDefaults => Defaults}
 
+  val keyspace              = flag("zipkin.store.cassandra.keyspace", Defaults.KeyspaceName, "name of the keyspace to use")
+  val cassandraDest         = flag("zipkin.store.cassandra.dest", "localhost:9042", "dest of the cassandra cluster; comma-separated list of host:port pairs")
+  val cassandraSpanTtl      = flag("zipkin.store.cassandra.spanTTL", Defaults.SpanTtl, "length of time cassandra should store spans")
+  val cassandraIndexTtl     = flag("zipkin.store.cassandra.indexTTL", Defaults.IndexTtl, "length of time cassandra should store span indexes")
+  val cassandraMaxTraceCols = flag("zipkin.store.cassandra.maxTraceCols", Defaults.MaxTraceCols, "max number of spans to return from a query")
+  val cassandraUser: Flag[String]     = flag("zipkin.store.cassandra.user", "cassandra authentication user name")
+  val cassandraPassword: Flag[String] = flag("zipkin.store.cassandra.password", "cassandra authentication password")
 
-  val keyspace = flag("zipkin.store.cassandra.keyspace", Defaults.KeyspaceName, "name of the keyspace to use")
-  val cassandraDest = flag("zipkin.store.cassandra.dest", "localhost:9042", "dest of the cassandra cluster; comma-separated list of host:port pairs")
-
-  val cassieSpanTtl = flag("zipkin.store.cassandra.spanTTL", Defaults.SpanTtl, "length of time cassandra should store spans")
-  val cassieIndexTtl = flag("zipkin.store.cassandra.indexTTL", Defaults.IndexTtl, "length of time cassandra should store span indexes")
-
-  val cassieMaxTraceCols = flag("zipkin.store.cassandra.maxTraceCols", Defaults.MaxTraceCols, "max number of spans to return from a query")
 
   def newCassandraStore(stats: StatsReceiver = DefaultStatsReceiver.scope("CassandraSpanStore")): CassandraSpanStore = {
     val repository = new Repository(keyspace(), createClusterBuilder().build())
@@ -45,14 +46,17 @@ trait CassandraSpanStoreFactory {self: App =>
     new CassandraSpanStore(
       repository,
       stats.scope(keyspace()),
-      cassieSpanTtl(),
-      cassieIndexTtl(),
-      cassieMaxTraceCols())
+      cassandraSpanTtl(),
+      cassandraIndexTtl(),
+      cassandraMaxTraceCols())
   }
 
   def createClusterBuilder(): Cluster.Builder = {
-    addContactPoint(Cluster.builder())
-      .withRetryPolicy(ZipkinRetryPolicy.INSTANCE)
+    val builder = addContactPoint(Cluster.builder())
+    if(cassandraUser.isDefined && cassandraPassword.isDefined)
+      builder.withCredentials(cassandraUser(), cassandraPassword())
+
+    builder.withRetryPolicy(ZipkinRetryPolicy.INSTANCE)
       .withLoadBalancingPolicy(new TokenAwarePolicy(new LatencyAwarePolicy.Builder(new RoundRobinPolicy()).build()))
   }
 

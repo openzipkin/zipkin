@@ -1,15 +1,24 @@
 # zipkin-query-service
- 
+
 The Zipkin query service provides a thrift api over stored and indexed trace
 data, most typically SQL, Cassandra or Redis.
 
 ## Running locally
- 
+
 ```bash
 # to start a query service on localhost:9411, reading from a file-based SQL store.
 ./gradlew :zipkin-query-service:run
 ```
- 
+
+#### Start with Cassandra Authentication
+
+Will throw an exception on startup if authentication failed
+```
+# specify user/pass as environment variables
+CASSANDRA_USER=user CASSANDRA_PASS=pass ./bin/query cassandra
+
+```
+
 ## Building and running a fat jar
 
 ```bash
