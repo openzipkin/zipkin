@@ -1,61 +1,70 @@
 rootProject.name = 'zipkin'
 
+def coreProjects = new ArrayList()
+def noncoreProjects = new ArrayList()
+
 ////////////////////////////////////
 // Zipkin's mostly common library //
 ////////////////////////////////////
 // Not all projects depend on this!
-include 'zipkin-common',
+coreProjects << 'zipkin-common'
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Projects with outputs that are useful on their own: documentation, examples, services //
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 //'doc'
-'zipkin-example',
-'zipkin-redis-example',
-'zipkin-collector-service',
-'zipkin-query-service',
-'zipkin-web',
+noncoreProjects << 'zipkin-example'
+noncoreProjects << 'zipkin-redis-example'
+
+coreProjects << 'zipkin-collector-service'
+coreProjects << 'zipkin-query-service'
+coreProjects << 'zipkin-web'
 
 /////////////////////////////////////
 // Collector, and Collector inputs //
 /////////////////////////////////////
 
-'zipkin-collector',
-'zipkin-collector-scribe',
+coreProjects << 'zipkin-collector'
+coreProjects << 'zipkin-collector-scribe'
 
 ///////////////
 // Receivers //
 ///////////////
 
-'zipkin-receiver-scribe',
-'zipkin-receiver-kafka',
+coreProjects << 'zipkin-receiver-scribe'
+coreProjects << 'zipkin-receiver-kafka'
 
 /////////////////
 // Query logic //
 /////////////////
 
-'zipkin-query',
+coreProjects << 'zipkin-query'
 
 /////////////////////////////////////////////////////
 // Libraries wrapping clients to external services //
 /////////////////////////////////////////////////////
 
-'zipkin-cassandra-core',
-'zipkin-cassandra',
-'zipkin-anormdb',
-'zipkin-redis',
+coreProjects << 'zipkin-cassandra-core'
+coreProjects << 'zipkin-cassandra'
+coreProjects << 'zipkin-anormdb'
+coreProjects << 'zipkin-redis'
 
 ////////////
 // Thrift //
 ////////////
 
-'zipkin-thrift',
-'zipkin-scrooge',
+coreProjects << 'zipkin-thrift'
+coreProjects << 'zipkin-scrooge'
 
 //////////
 // Misc //
 //////////
+noncoreProjects << 'zipkin-tracegen'
+coreProjects << 'zipkin-sampler'
 
-'zipkin-tracegen',
-'zipkin-sampler'
+println("[settings.gradle] Including non-core projects: ${include_noncore_projects}")
+
+def all_projects = include_noncore_projects ? coreProjects + noncoreProjects : coreProjects
+
+include all_projects.toArray(new String[0])
