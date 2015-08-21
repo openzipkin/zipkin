@@ -4,9 +4,12 @@ sudo: false
 services:
   - redis-server
 
-jdk:
-  - oraclejdk7
-  - oraclejdk8
+matrix:
+  include:
+    - jdk: "oraclejdk7"
+      env: GRADLE_OPTS="-Dorg.gradle.daemon=false -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC -Xms2G -Xmx2G -Xss512k -XX:MaxPermSize=256m"
+    - jdk: "oraclejdk8"
+      env: GRADLE_OPTS="-Dorg.gradle.daemon=false -Xms2G -Xmx2G -Xss512k -XX:MetaspaceSize=256m"
 
 # These directories are cached to S3 at the end of the build
 cache:
@@ -34,7 +37,6 @@ env:
   - secure: Vxl1MpMeWktJNCRbhsMUn5M8gzlyaqt+bYAzpe9gics/NmCFNNviDY/YsxcLJ0gCv5ZD4sw/L7dLE490fmAGzlq5i1gViNJ2gnDmr5benizhcnyc+h2BtUn9+uYOKO4sRxcVTL7WOfxAQ+S2/SvmMYVP2MJ9cqVbjAhtEF4d8zI=
   - secure: a14BeUrZ0vh3Zqu2bLTPqsDXoxdbbqF6yE07bnwo0PELypOzkCSHc1yWOv/gt0hOmSDe1QlvCnx1O3ChafzxsuhR275Zd1jfv28YjiprMhssJo1wFQcf4z/ha4msHk2RP09jr/ILVIQqal4MWVvob5mH8fJxUy57hXcn+dZPqw4=
   - secure: itpof2Yfx1j9T9uuF9+nKISFKfYVmZKQav4gVmELDop4L6W0uysdFAkCJrDXd6lXMSVmjEGRm+7O+EERUH1FGsMD6b8iyKHVWQzNwXkyhyZUe+8C7s6QWpPPw8ycNNZj6/vV2oDeuoDaVi2/yqjS2+r5hHdlojNB1/wL7qLoF8M=
-  - GRADLE_OPTS="-Dorg.gradle.daemon=false -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC -Xms2G -Xmx2G -Xss512k -XX:MaxPermSize=256m -verbose:gc"
 
 before_install:
   - git config --global user.email "${GH_USER_EMAIL}"
