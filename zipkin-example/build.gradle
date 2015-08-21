@@ -1,12 +1,11 @@
-apply plugin: 'application'
-mainClassName = 'com.twitter.zipkin.example.Main'
-
 if (!project.hasProperty("runArgs")) {
     ext.runArgs = '-zipkin.storage.anormdb.install=true -genSampleTraces=true ' +
             '-zipkin.web.resourcesRoot=' + project(':zipkin-web').projectDir + '/src/main/resources'
 }
 
-run {
+task run(type:JavaExec) {
+    main = 'com.twitter.zipkin.example.Main'
+    classpath = sourceSets.main.runtimeClasspath
     workingDir project.buildDir
     args runArgs.split()
 }

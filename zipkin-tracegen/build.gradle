@@ -1,5 +1,7 @@
-apply plugin: 'application'
-mainClassName = 'com.twitter.zipkin.tracegen.Main'
+task run(type:JavaExec) {
+   main = 'com.twitter.zipkin.tracegen.Main'
+   classpath = sourceSets.main.runtimeClasspath
+}
 
 repositories {
     // For dependencies of zipkin-cassandra (via zipkin-query-service and zipkin-collector-service)

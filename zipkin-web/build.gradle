@@ -1,11 +1,14 @@
-apply plugin: 'application'
 apply plugin: 'com.github.johnrengelman.shadow'
-mainClassName = 'com.twitter.zipkin.web.Main'
+ext.mainClassName = 'com.twitter.zipkin.web.Main'
 
-run {
+task run(type:JavaExec) {
+    main = mainClassName
+    classpath = sourceSets.main.runtimeClasspath
     args "-zipkin.web.resourcesRoot=${projectDir}/src/main/resources"
     workingDir project.buildDir
 }
+
+jar.manifest.attributes 'Main-Class': mainClassName
 
 tasks.build.dependsOn(shadowJar)
 artifacts.zipkinUpload shadowJar
