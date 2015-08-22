@@ -1,12 +1,10 @@
 package com.twitter.zipkin.cassandra
 
-import com.datastax.driver.core.{AuthProvider, Cluster}
+import com.datastax.driver.core.AuthProvider
 import com.twitter.app.App
 import java.net.InetSocketAddress
 import java.util.Arrays.asList
 import org.scalatest.{FunSuite, Matchers}
-import com.datastax.driver.core.exceptions.AuthenticationException
-
 
 class CassandraSpanStoreFactorySpec extends FunSuite with Matchers {
   object TestFactory extends App with CassandraSpanStoreFactory
@@ -14,7 +12,7 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers {
   test("zipkin.store.cassandra.dest default") {
     TestFactory.nonExitingMain(Array())
 
-    TestFactory.addContactPoint(Cluster.builder()).getContactPoints should be(
+    TestFactory.parseContactPoints() should be(
       asList(new InetSocketAddress("127.0.0.1", 9042))
     )
   }
@@ -24,7 +22,7 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers {
       "-zipkin.store.cassandra.dest", "1.1.1.1"
     ))
 
-    TestFactory.addContactPoint(Cluster.builder()).getContactPoints should be(
+    TestFactory.parseContactPoints() should be(
       asList(new InetSocketAddress("1.1.1.1", 9042))
     )
   }
@@ -34,7 +32,7 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers {
       "-zipkin.store.cassandra.dest", "1.1.1.1:9142"
     ))
 
-    TestFactory.addContactPoint(Cluster.builder()).getContactPoints should be(
+    TestFactory.parseContactPoints() should be(
       asList(new InetSocketAddress("1.1.1.1", 9142))
     )
   }
@@ -44,17 +42,17 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers {
       "-zipkin.store.cassandra.dest", "1.1.1.1:9143,2.2.2.2"
     ))
 
-    TestFactory.addContactPoint(Cluster.builder()).getContactPoints should be(
+    TestFactory.parseContactPoints() should be(
       asList(new InetSocketAddress("1.1.1.1", 9143), new InetSocketAddress("2.2.2.2", 9042))
     )
   }
 
   test("creatingClusterBuilder with SASL authentication null delimited utf8 bytes") {
     TestFactory.nonExitingMain(Array(
-      "-zipkin.store.cassandra.user", "user",
-      "-zipkin.store.cassandra.password", "pass"
+      "-zipkin.store.cassandra.username", "bob",
+      "-zipkin.store.cassandra.password", "secret"
     ))
-    val SASLhandshake = Array[Byte](0, 'u', 's', 'e', 'r', 0, 'p', 'a', 's', 's')
+    val SASLhandshake = Array[Byte](0, 'b', 'o', 'b', 0, 's', 'e', 'c', 'r', 'e', 't')
     val authProvider = TestFactory.createClusterBuilder()
                          .getConfiguration()
                          .getProtocolOptions()
