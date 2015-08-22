@@ -16,60 +16,47 @@
 package com.twitter.zipkin.cassandra
 
 import com.datastax.driver.core.Cluster
-import com.datastax.driver.core.policies.LatencyAwarePolicy;
-import com.datastax.driver.core.policies.RoundRobinPolicy;
-import com.datastax.driver.core.policies.TokenAwarePolicy;
+import com.datastax.driver.core.policies.LatencyAwarePolicy
+import com.datastax.driver.core.policies.RoundRobinPolicy
+import com.datastax.driver.core.policies.TokenAwarePolicy
 import com.google.common.net.HostAndPort
 import com.twitter.app.App
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
+import com.twitter.util.Duration
 import com.twitter.zipkin.storage.cassandra._
+import com.twitter.zipkin.storage.cassandra.CassandraSpanStoreDefaults._
 import org.twitter.zipkin.storage.cassandra.Repository
 import org.twitter.zipkin.storage.cassandra.ZipkinRetryPolicy
-import com.twitter.app.Flag
+
+import scala.collection.JavaConversions
 
 trait CassandraSpanStoreFactory {self: App =>
 
-  import com.twitter.zipkin.storage.cassandra.{CassandraSpanStoreDefaults => Defaults}
-
-  val keyspace              = flag("zipkin.store.cassandra.keyspace", Defaults.KeyspaceName, "name of the keyspace to use")
-  val cassandraDest         = flag("zipkin.store.cassandra.dest", "localhost:9042", "dest of the cassandra cluster; comma-separated list of host:port pairs")
-  val cassandraSpanTtl      = flag("zipkin.store.cassandra.spanTTL", Defaults.SpanTtl, "length of time cassandra should store spans")
-  val cassandraIndexTtl     = flag("zipkin.store.cassandra.indexTTL", Defaults.IndexTtl, "length of time cassandra should store span indexes")
-  val cassandraMaxTraceCols = flag("zipkin.store.cassandra.maxTraceCols", Defaults.MaxTraceCols, "max number of spans to return from a query")
-  val cassandraUser: Flag[String]     = flag("zipkin.store.cassandra.user", "cassandra authentication user name")
-  val cassandraPassword: Flag[String] = flag("zipkin.store.cassandra.password", "cassandra authentication password")
-
+  val keyspace              = flag[String]   ("zipkin.store.cassandra.keyspace", KeyspaceName, "name of the keyspace to use")
+  val cassandraDest         = flag[String]   ("zipkin.store.cassandra.dest", "localhost:9042", "dest of the cassandra cluster; comma-separated list of host:port pairs")
+  val cassandraSpanTtl      = flag[Duration] ("zipkin.store.cassandra.spanTTL", SpanTtl, "length of time cassandra should store spans")
+  val cassandraIndexTtl     = flag[Duration] ("zipkin.store.cassandra.indexTTL", IndexTtl, "length of time cassandra should store span indexes")
+  val cassandraMaxTraceCols = flag[Int]      ("zipkin.store.cassandra.maxTraceCols", MaxTraceCols, "max number of spans to return from a query")
+  val cassandraUsername     = flag[String]   ("zipkin.store.cassandra.username", "cassandra authentication user name")
+  val cassandraPassword     = flag[String]   ("zipkin.store.cassandra.password", "cassandra authentication password")
 
   def newCassandraStore(stats: StatsReceiver = DefaultStatsReceiver.scope("CassandraSpanStore")): CassandraSpanStore = {
     val repository = new Repository(keyspace(), createClusterBuilder().build())
-
-    new CassandraSpanStore(
-      repository,
-      stats.scope(keyspace()),
-      cassandraSpanTtl(),
-      cassandraIndexTtl(),
-      cassandraMaxTraceCols())
+    new CassandraSpanStore(repository, stats.scope(keyspace()), cassandraSpanTtl(), cassandraIndexTtl(), cassandraMaxTraceCols())
   }
 
   def createClusterBuilder(): Cluster.Builder = {
-    val builder = addContactPoint(Cluster.builder())
-    if(cassandraUser.isDefined && cassandraPassword.isDefined)
-      builder.withCredentials(cassandraUser(), cassandraPassword())
-
+    val builder = Cluster.builder()
+    builder.addContactPointsWithPorts(parseContactPoints())
+    if (cassandraUsername.isDefined && cassandraPassword.isDefined)
+      builder.withCredentials(cassandraUsername(), cassandraPassword())
     builder.withRetryPolicy(ZipkinRetryPolicy.INSTANCE)
-      .withLoadBalancingPolicy(new TokenAwarePolicy(new LatencyAwarePolicy.Builder(new RoundRobinPolicy()).build()))
+    builder.withLoadBalancingPolicy(new TokenAwarePolicy(new LatencyAwarePolicy.Builder(new RoundRobinPolicy()).build()))
   }
 
-  def addContactPoint(builder: Cluster.Builder): Cluster.Builder = {
-    val contactPoints = cassandraDest().split(",").map(HostAndPort.fromString)
-
-    if (contactPoints.length > 1) {
-      val addresses = contactPoints.map(cp => new java.net.InetSocketAddress(cp.getHostText, cp.getPortOrDefault(9042)))
-      builder.addContactPointsWithPorts(collection.JavaConversions.asJavaCollection(addresses))
-    } else {
-      val contactPoint = contactPoints.head
-      builder.addContactPoint(contactPoint.getHostText)
-        .withPort(contactPoint.getPortOrDefault(9042))
-    }
+  def parseContactPoints() = {
+    JavaConversions.seqAsJavaList(cassandraDest().split(",")
+      .map(HostAndPort.fromString)
+      .map(cp => new java.net.InetSocketAddress(cp.getHostText, cp.getPortOrDefault(9042))))
   }
 }

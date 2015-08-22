@@ -13,33 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import com.datastax.driver.core.Cluster
-import com.datastax.driver.core.SocketOptions
 import com.twitter.app.App
 import com.twitter.zipkin.builder.QueryServiceBuilder
 import com.twitter.zipkin.cassandra
 import com.twitter.zipkin.cassandra.CassandraSpanStoreFactory
 import com.twitter.zipkin.storage.Store
-import scala.collection.mutable.ListBuffer
 
-val contactPoints: Array[String] = sys.env.get("CASSANDRA_CONTACT_POINTS").getOrElse("localhost")
-  .split(",")
+object Factory extends App with CassandraSpanStoreFactory
 
-val cassandraUser = sys.env.get("CASSANDRA_USER")
-val cassandraPass = sys.env.get("CASSANDRA_PASS")
+Factory.cassandraDest.parse(sys.env.get("CASSANDRA_CONTACT_POINTS").getOrElse("localhost"))
 
-var args = new ListBuffer[String]()
-if (cassandraUser.isDefined && cassandraPass.isDefined) {
-  args += "-zipkin.store.cassandra.user"
-  args += cassandraUser.get
-  args += "-zipkin.store.cassandra.password"
-  args += cassandraPass.get
+val username = sys.env.get("CASSANDRA_USERNAME")
+val password = sys.env.get("CASSANDRA_PASSWORD")
+
+if (username.isDefined && password.isDefined) {
+  Factory.cassandraUsername.parse(username.get)
+  Factory.cassandraPassword.parse(password.get)
 }
 
-object QueryService extends App with CassandraSpanStoreFactory
-QueryService.nonExitingMain(args.toArray)
-val cluster = QueryService.createClusterBuilder().build()
-
+val cluster = Factory.createClusterBuilder().build()
 val storeBuilder = Store.Builder(new cassandra.SpanStoreBuilder(cluster))
 
 QueryServiceBuilder(storeBuilder)

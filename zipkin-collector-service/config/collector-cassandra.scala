@@ -14,35 +14,26 @@
  * limitations under the License.
  */
 
-import com.datastax.driver.core.Cluster
-import com.datastax.driver.core.SocketOptions
 import com.twitter.app.App
 import com.twitter.zipkin.builder.Scribe
 import com.twitter.zipkin.cassandra
 import com.twitter.zipkin.cassandra.CassandraSpanStoreFactory
 import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
 import com.twitter.zipkin.storage.Store
-import org.twitter.zipkin.storage.cassandra.ZipkinRetryPolicy
-import scala.collection.mutable.ListBuffer
 
-val contactPoints: Array[String] = sys.env.get("CASSANDRA_CONTACT_POINTS").getOrElse("localhost")
-  .split(",")
+object Factory extends App with CassandraSpanStoreFactory
 
-val cassandraUser = sys.env.get("CASSANDRA_USER")
-val cassandraPass = sys.env.get("CASSANDRA_PASS")
+Factory.cassandraDest.parse(sys.env.get("CASSANDRA_CONTACT_POINTS").getOrElse("localhost"))
 
-var args = new ListBuffer[String]()
-if (cassandraUser.isDefined && cassandraPass.isDefined) {
-  args += "-zipkin.store.cassandra.user"
-  args += cassandraUser.get
-  args += "-zipkin.store.cassandra.password"
-  args += cassandraPass.get
+val username = sys.env.get("CASSANDRA_USERNAME")
+val password = sys.env.get("CASSANDRA_PASSWORD")
+
+if (username.isDefined && password.isDefined) {
+  Factory.cassandraUsername.parse(username.get)
+  Factory.cassandraPassword.parse(password.get)
 }
 
-object CollectorService extends App with CassandraSpanStoreFactory
-CollectorService.nonExitingMain(args.toArray)
-val cluster = CollectorService.createClusterBuilder().build()
-
+val cluster = Factory.createClusterBuilder().build()
 val storeBuilder = Store.Builder(new cassandra.SpanStoreBuilder(cluster))
 
 CollectorServiceBuilder(Scribe.Interface(categories = Set("zipkin")))
