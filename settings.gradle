@@ -8,9 +8,9 @@ def includes = [
 // Not all projects depend on this!
 'zipkin-common',
 
-///////////////////////////////////////////////////////////////////////////////////////////
-// Projects with outputs that are useful on their own: documentation, examples, services //
-///////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
+// Projects with outputs that are useful on their own //
+////////////////////////////////////////////////////////
 
 'zipkin-collector-service',
 'zipkin-query-service',
@@ -60,6 +60,6 @@ def includes = [
 ]
 
 if (System.getenv('PUBLISHING') == null) {
-    includes.addAll(['zipkin-tracegen', 'zipkin-example', 'zipkin-redis-example'])
+    includes.add('zipkin-tracegen')
 }
 include includes.toArray(new String[0])
