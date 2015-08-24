@@ -4,6 +4,19 @@ Quickstart
 In this section we'll walk through building and starting an instance of Zipkin
 and how to enable tracing on your service.
 
+Docker
+------
+If you are familiar with Docker, the quickest way to get started quickly is to
+use the `Docker Zipkin`_ project, which (in addition to being able to build docker
+images) provides scripts and a `docker-compose.yml`_ for launching pre-built images,
+e.g.
+
+.. parsed-literal::
+    $ git clone https://github.com/openzipkin/docker-zipkin
+    $ cd docker-zipkin/deploy
+    $ docker-compose up
+
+
 Super Quickstart
 ----------------
 
@@ -53,18 +66,15 @@ trace data to it.
 Packaging for Production
 ------------------------
 
-Build a distribution package
+First things first: if you don't need to recompile Zipkin, you can use the
+fat jars distributed to `Bintray`_ or `Maven Central`_. The only (pretty big) use-case for
+compiling Zipkin yourself is customizing the services (see below). This setup is
+sub-optimal, and is being tracked in Zipkin issue `#466`_.
+
+You can generate a production-ready fat jar for each stand-alone service with
 
 .. parsed-literal::
-    ./gradlew installDist -x test
-
-A distribution should now exist under zipkin-example/build/install/zipkin-example. That will contain all
-necessary packages and libraries to run the project. Change to that directory and run it:
-
-.. parsed-literal::
-    bin/zipkin-example \
-      -zipkin.web.cacheResources=true \
-      [any other config flags]
+    ./gradlew shadowJar -x test
 
 Customizing the service
 -----------------------
@@ -112,3 +122,8 @@ there because SpanReceiver requires a function that takes `Seq[scribethrift.Span
 but SpanStore requires `Seq[Span]`.
 
 .. _TwitterServer: http://twitter.github.io/twitter-server/
+.. _Docker Zipkin: https://github.com/openzipkin/docker-zipkin
+.. _docker-compose.yml: https://github.com/openzipkin/docker-zipkin/blob/master/deploy/docker-compose.yml
+.. _Bintray: https://bintray.com/openzipkin/zipkin/zipkin
+.. _Maven Central: http://search.maven.org/#search|ga|1|g%3A%22io.zipkin%22%20AND%20l%3A%22all%22
+.. _#466: https://github.com/openzipkin/zipkin/issues/466
