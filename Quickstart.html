@@ -70,6 +70,18 @@
 <h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
 <p>In this section we&#8217;ll walk through building and starting an instance of Zipkin
 and how to enable tracing on your service.</p>
+<div class="section" id="docker">
+<h2>Docker<a class="headerlink" href="#docker" title="Permalink to this headline">¶</a></h2>
+<p>If you are familiar with Docker, the quickest way to get started quickly is to
+use the <a class="reference external" href="https://github.com/openzipkin/docker-zipkin">Docker Zipkin</a> project, which (in addition to being able to build docker
+images) provides scripts and a <a class="reference external" href="https://github.com/openzipkin/docker-zipkin/blob/master/deploy/docker-compose.yml">docker-compose.yml</a> for launching pre-built images,
+e.g.</p>
+<div class="highlight-text"><div class="highlight"><pre>$ git clone https://github.com/openzipkin/docker-zipkin
+$ cd docker-zipkin/deploy
+$ docker-compose up
+</pre></div>
+</div>
+</div>
 <div class="section" id="super-quickstart">
 <h2>Super Quickstart<a class="headerlink" href="#super-quickstart" title="Permalink to this headline">¶</a></h2>
 <p>The zipkin-example project combines all parts of the service into a single
@@ -111,15 +123,14 @@ and cache them in memory.</dd>
 </div>
 <div class="section" id="packaging-for-production">
 <h2>Packaging for Production<a class="headerlink" href="#packaging-for-production" title="Permalink to this headline">¶</a></h2>
-<p>Build a distribution package</p>
-<div class="highlight-text"><div class="highlight"><pre>./gradlew installDist -x test
+<p>First things first: if you don&#8217;t need to recompile Zipkin, you can use the
+fat jars distributed to <a class="reference external" href="https://bintray.com/openzipkin/zipkin/zipkin">Bintray</a> or <a class="reference external" href="http://search.maven.org/#search|ga|1|g%3A%22io.zipkin%22%20AND%20l%3A%22all%22">Maven Central</a>. The only (pretty big) use-case for
+compiling Zipkin yourself is customizing the services (see below). This setup is
+sub-optimal, and is being tracked in Zipkin issue <a class="reference external" href="https://github.com/openzipkin/zipkin/issues/466">#466</a>.</p>
+<p>You can generate a production-ready fat jar for each stand-alone service with</p>
+<div class="highlight-text"><div class="highlight"><pre>./gradlew shadowJar -x test
 </pre></div>
 </div>
-<p>A distribution should now exist under zipkin-example/build/install/zipkin-example. That will contain all
-necessary packages and libraries to run the project. Change to that directory and run it:</p>
-<pre class="literal-block">
-bin/zipkin-example   -zipkin.web.cacheResources=true   [any other config flags]
-</pre>
 </div>
 <div class="section" id="customizing-the-service">
 <h2>Customizing the service<a class="headerlink" href="#customizing-the-service" title="Permalink to this headline">¶</a></h2>
@@ -218,6 +229,7 @@ but SpanStore requires <cite>Seq[Span]</cite>.</p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Quickstart</a><ul>
+<li><a class="reference internal" href="#docker">Docker</a></li>
 <li><a class="reference internal" href="#super-quickstart">Super Quickstart</a></li>
 <li><a class="reference internal" href="#digging-deeper">Digging Deeper</a></li>
 <li><a class="reference internal" href="#packaging-for-production">Packaging for Production</a></li>
