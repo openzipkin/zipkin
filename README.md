@@ -29,7 +29,7 @@ $ docker-compose up
 ```
 
 If you are happy building from source you can use the scripts in the
-[`bin/`] directory of this repository.
+[`bin`](bin) directory of this repository.
 
 Here's how to start zipkin using the default file-based backend and view traces.
 ```bash
