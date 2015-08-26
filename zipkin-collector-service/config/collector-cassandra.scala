@@ -15,11 +15,14 @@
  */
 
 import com.twitter.app.App
-import com.twitter.zipkin.builder.Scribe
+import com.twitter.zipkin.builder.{ZipkinServerBuilder, Scribe}
 import com.twitter.zipkin.cassandra
 import com.twitter.zipkin.cassandra.CassandraSpanStoreFactory
-import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
+import com.twitter.zipkin.collector.builder.{Adjustable, CollectorServiceBuilder}
 import com.twitter.zipkin.storage.Store
+import com.twitter.logging.LoggerFactory
+import com.twitter.logging.Level
+import com.twitter.logging.ConsoleHandler
 
 object Factory extends App with CassandraSpanStoreFactory
 
@@ -27,6 +30,13 @@ Factory.cassandraDest.parse(sys.env.get("CASSANDRA_CONTACT_POINTS").getOrElse("l
 
 val username = sys.env.get("CASSANDRA_USERNAME")
 val password = sys.env.get("CASSANDRA_PASSWORD")
+val sampleRate = sys.env.get("COLLECTOR_SAMPLE_RATE").getOrElse("1.0").toDouble
+val queueNumWorkers = sys.env.get("COLLECTOR_QUEUE_NUM_WORKERS").getOrElse("10").toInt
+val queueMaxSize = sys.env.get("COLLECTOR_QUEUE_MAX_SIZE").getOrElse("500").toInt
+val serverPort = sys.env.get("COLLECTOR_PORT").getOrElse("9410").toInt
+val adminPort = sys.env.get("COLLECTOR_ADMIN_PORT").getOrElse("9900").toInt
+val logLevel = sys.env.get("COLLECTOR_LOG_LEVEL").getOrElse("DEBUG")
+
 
 if (username.isDefined && password.isDefined) {
   Factory.cassandraUsername.parse(username.get)
@@ -36,5 +46,16 @@ if (username.isDefined && password.isDefined) {
 val cluster = Factory.createClusterBuilder().build()
 val storeBuilder = Store.Builder(new cassandra.SpanStoreBuilder(cluster))
 
-CollectorServiceBuilder(Scribe.Interface(categories = Set("zipkin")))
-  .writeTo(storeBuilder)
+val loggerFactory = new LoggerFactory(
+  node = "",
+  level = Level.parse(logLevel),
+  handlers = List(ConsoleHandler())
+)
+
+CollectorServiceBuilder(
+  interface = Scribe.Interface(categories = Set("zipkin")),
+  serverBuilder = ZipkinServerBuilder(serverPort, adminPort).loggers(List(loggerFactory))
+).writeTo(storeBuilder)
+  .sampleRate(Adjustable.local(sampleRate))
+  .queueNumWorkers(queueNumWorkers)
+  .queueMaxSize(queueMaxSize)
