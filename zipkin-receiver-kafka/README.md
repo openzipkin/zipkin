@@ -1,9 +1,9 @@
 ## Kafka Receiver
 
 To change Zipkin's transport mechanism to use kafka.
- * change the contents of the Main.scala file to below code
- * this config requires cassandra and zookeeper
- * remove '-f' from zipkin-receiver-kafka/build.gradle (i.e. args '-f', "${projectDir}...")
+ * drop code below into `zipkin-collector-service/src/main/scala/com/twitter/zipkin/collector/Main.scala`
+ * this config requires cassandra
+ * remove '-f' from zipkin-collector-service/build.gradle (i.e. args '-f', "${projectDir}...")
  * ```bin/collector cassandra```
 
 
