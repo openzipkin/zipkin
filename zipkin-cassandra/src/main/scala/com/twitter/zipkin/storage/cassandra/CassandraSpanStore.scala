@@ -106,7 +106,6 @@ class CassandraSpanStore(
       case "" =>
         IndexServiceNameNoNameCounter.incr()
       case s =>
-        // @xxx so many identical writes going to the one partition key is bad. implement caching of writes.
         repository.storeServiceName(s.toLowerCase, indexTtl.inSeconds)
     }
   }
