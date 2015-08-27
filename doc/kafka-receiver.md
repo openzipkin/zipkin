@@ -23,13 +23,10 @@ import kafka.serializer.Decoder
 
 import com.twitter.zipkin.receiver.kafka.SpanDecoder
 
-import com.twitter.zipkin.receiver.kafka.ZooKeeperClientFactory
-
 // 'Main' object referenced by project's build.gradle
 object Main extends TwitterServer
   with ZipkinQueuedCollectorFactory
   with CassandraSpanStoreFactory
-  with ZooKeeperClientFactory
   with KafkaSpanReceiverFactory
 {
   def newReceiver(receive: Seq[ThriftSpan] => Future[Unit], stats: StatsReceiver): SpanReceiver = {
