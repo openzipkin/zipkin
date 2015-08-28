@@ -40,11 +40,15 @@ public final class Repository implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(Repository.class);
     private static final Random RAND = new Random();
+
     private static final List<Integer> ALL_BUCKETS = Collections.unmodifiableList(new ArrayList<Integer>() {{
         for (int i = 0 ; i < BUCKETS ; ++i) {
             add(i);
         }
     }});
+
+    private static final long WRITTEN_NAMES_TTL
+            = Long.getLong("zipkin.store.cassandra.internal.writtenNamesTtl", 60 * 60 * 1000);
 
     private final Session session;
     private final PreparedStatement selectTraces;
@@ -70,6 +74,26 @@ public final class Repository implements AutoCloseable {
     private final PreparedStatement selectTraceDurationTail;
     private final Map<String,String> metadata;
 
+    private final ThreadLocal<Set<String>> writtenNames = new ThreadLocal<Set<String>>() {
+            private long cacheInterval = toCacheInterval(System.currentTimeMillis());
+
+            @Override
+            protected Set<String> initialValue() {
+                return new HashSet<String>();
+            }
+            @Override
+            public Set<String> get() {
+                long newCacheInterval = toCacheInterval(System.currentTimeMillis());
+                if (cacheInterval != newCacheInterval) {
+                    cacheInterval = newCacheInterval;
+                    set(new HashSet<String>());
+                }
+                return super.get();
+            }
+            private long toCacheInterval(long ms) {
+                return ms / WRITTEN_NAMES_TTL;
+            }
+        };
 
     public Repository(String keyspace, Cluster cluster) {
         metadata = Schema.ensureExists(keyspace, cluster);
@@ -139,7 +163,7 @@ public final class Repository implements AutoCloseable {
                 QueryBuilder.select("span_name")
                     .from("span_names")
                     .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
-                    .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket"))));
+                    .and(QueryBuilder.eq("bucket", QueryBuilder.bindMarker("bucket"))));
 
         insertSpanName = session.prepare(
                 QueryBuilder
@@ -467,18 +491,21 @@ public final class Repository implements AutoCloseable {
     public void storeServiceName(String serviceName, int ttl) {
         Preconditions.checkNotNull(serviceName);
         Preconditions.checkArgument(!serviceName.isEmpty());
-        try {
-            BoundStatement bound = insertServiceName.bind()
-                    .setString("service_name", serviceName)
-                    .setInt("ttl_", ttl);
+        if (writtenNames.get().add(serviceName)) {
+            try {
+                BoundStatement bound = insertServiceName.bind()
+                        .setString("service_name", serviceName)
+                        .setInt("ttl_", ttl);
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(debugInsertServiceName(serviceName, ttl));
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(debugInsertServiceName(serviceName, ttl));
+                }
+                session.executeAsync(bound);
+            } catch (RuntimeException ex) {
+                LOG.error("failed " + debugInsertServiceName(serviceName, ttl), ex);
+                writtenNames.get().remove(serviceName);
+                throw ex;
             }
-            session.executeAsync(bound);
-        } catch (RuntimeException ex) {
-            LOG.error("failed " + debugInsertServiceName(serviceName, ttl), ex);
-            throw ex;
         }
     }
 
@@ -496,7 +523,7 @@ public final class Repository implements AutoCloseable {
 
                 BoundStatement bound = selectSpanNames.bind()
                         .setString("service_name", serviceName)
-                        .setList("bucket", ALL_BUCKETS);
+                        .setInt("bucket", 0);
 
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(debugSelectSpanNames(serviceName));
@@ -521,20 +548,23 @@ public final class Repository implements AutoCloseable {
         Preconditions.checkArgument(!serviceName.isEmpty());
         Preconditions.checkNotNull(spanName);
         Preconditions.checkArgument(!spanName.isEmpty());
-        try {
-            BoundStatement bound = insertSpanName.bind()
-                    .setString("service_name", serviceName)
-                    .setInt("bucket", RAND.nextInt(BUCKETS))
-                    .setString("span_name", spanName)
-                    .setInt("ttl_", ttl);
+        if (writtenNames.get().add(serviceName + "––" + spanName)) {
+            try {
+                BoundStatement bound = insertSpanName.bind()
+                        .setString("service_name", serviceName)
+                        .setInt("bucket", 0)
+                        .setString("span_name", spanName)
+                        .setInt("ttl_", ttl);
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(debugInsertSpanName(serviceName, spanName, ttl));
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(debugInsertSpanName(serviceName, spanName, ttl));
+                }
+                session.executeAsync(bound);
+            } catch (RuntimeException ex) {
+                LOG.error("failed " + debugInsertSpanName(serviceName, spanName, ttl), ex);
+                writtenNames.get().remove(serviceName + "––" + spanName);
+                throw ex;
             }
-            session.executeAsync(bound);
-        } catch (RuntimeException ex) {
-            LOG.error("failed " + debugInsertSpanName(serviceName, spanName, ttl), ex);
-            throw ex;
         }
     }
 

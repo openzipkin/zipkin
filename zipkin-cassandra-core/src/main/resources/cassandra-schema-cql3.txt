@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS zipkin.service_name_index (
 
 CREATE TABLE IF NOT EXISTS zipkin.span_names (
     service_name text,
-    bucket       int,
+    bucket       int,   -- no longer used. kept for compatibility
     span_name    text,
     PRIMARY KEY ((service_name, bucket), span_name)
 ) WITH compaction = {'min_threshold': '4', 'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32'};
