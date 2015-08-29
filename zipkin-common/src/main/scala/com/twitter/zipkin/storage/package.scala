@@ -15,9 +15,7 @@
  */
 package com.twitter.zipkin.storage
 
-/**
- * Duration of the trace in question in microseconds.
- */
+@deprecated("This is no longer used: it only supported query order, which is obsolete", "1.2.3")
 case class TraceIdDuration(traceId: Long, duration: Long, startTimestamp: Long)
 
 /* A trace ID and its associated timestamp */

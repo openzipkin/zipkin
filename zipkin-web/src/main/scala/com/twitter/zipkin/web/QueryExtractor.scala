@@ -18,7 +18,7 @@ package com.twitter.zipkin.web
 import com.twitter.finagle.httpx.Request
 import com.twitter.util.{Time, TwitterDateFormat}
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
-import com.twitter.zipkin.query.{Order, QueryRequest}
+import com.twitter.zipkin.query.QueryRequest
 import java.nio.ByteBuffer
 import java.util.{Calendar, Date}
 
@@ -91,9 +91,7 @@ class QueryExtractor(defaultQueryLimit: Int) {
       (None, None)
     }
 
-    // traces are ordered in the UI itself. Using None means the query service wont lookup durations
-    val order = Order.None
     val limit = getLimit(req).getOrElse(defaultQueryLimit)
-    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, timestamp, limit, order)
+    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, timestamp, limit)
   }
 }

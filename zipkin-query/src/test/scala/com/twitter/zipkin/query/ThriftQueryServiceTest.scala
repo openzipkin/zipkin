@@ -85,22 +85,6 @@ class ThriftQueryServiceTest extends FunSuite {
     assert(actual === Seq(2, 2))
   }
 
-  test("order results") {
-    val svc = newLoadedService()
-
-    // desc
-    val actualDesc = Await.result(svc.getTraceIdsByServiceName("service3", 1000, 50, thriftscala.Order.DurationDesc))
-    assert(actualDesc === Seq(3, 5))
-
-    // asc
-    val actualAsc = Await.result(svc.getTraceIdsByServiceName("service3", 1000, 50, thriftscala.Order.DurationAsc))
-    assert(actualAsc === Seq(5, 3))
-
-    // none
-    val actualNone = Await.result(svc.getTraceIdsByServiceName("service3", 1000, 50, thriftscala.Order.None))
-    assert(actualNone === Seq(3, 5))
-  }
-
   test("trace summary for trace id") {
     val svc = newLoadedService()
     val actual = Await.result(svc.getTraceSummariesByIds(List(1), List()))

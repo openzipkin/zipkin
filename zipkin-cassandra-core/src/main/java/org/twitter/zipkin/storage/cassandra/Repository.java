@@ -6,7 +6,6 @@ import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
@@ -69,9 +68,6 @@ public final class Repository implements AutoCloseable {
     private final PreparedStatement insertTraceIdBySpanName;
     private final PreparedStatement selectTraceIdsByAnnotations;
     private final PreparedStatement insertTraceIdByAnnotation;
-    private final PreparedStatement insertTraceDurations;
-    private final PreparedStatement selectTraceDurationHead;
-    private final PreparedStatement selectTraceDurationTail;
     private final Map<String,String> metadata;
 
     private final ThreadLocal<Set<String>> writtenNames = new ThreadLocal<Set<String>>() {
@@ -223,27 +219,6 @@ public final class Repository implements AutoCloseable {
                     .value("bucket", QueryBuilder.bindMarker("bucket"))
                     .value("ts", QueryBuilder.bindMarker("ts"))
                     .value("trace_id", QueryBuilder.bindMarker("trace_id"))
-                    .using(QueryBuilder.ttl(QueryBuilder.bindMarker("ttl_"))));
-
-        selectTraceDurationHead = session.prepare(
-                QueryBuilder.select("trace_id", "ts")
-                    .from("duration_index")
-                    .where(QueryBuilder.eq("trace_id", QueryBuilder.bindMarker("trace_id")))
-                    .limit(1)
-                    .orderBy(QueryBuilder.asc("ts")));
-
-        selectTraceDurationTail = session.prepare(
-                QueryBuilder.select("trace_id", "ts")
-                    .from("duration_index")
-                    .where(QueryBuilder.eq("trace_id", QueryBuilder.bindMarker("trace_id")))
-                    .limit(1)
-                    .orderBy(QueryBuilder.desc("ts")));
-
-        insertTraceDurations = session.prepare(
-                QueryBuilder
-                    .insertInto("duration_index")
-                    .value("trace_id", QueryBuilder.bindMarker("trace_id"))
-                    .value("ts", QueryBuilder.bindMarker("ts"))
                     .using(QueryBuilder.ttl(QueryBuilder.bindMarker("ttl_"))));
     }
 
@@ -754,69 +729,6 @@ public final class Repository implements AutoCloseable {
                 .replace(":annotation", new String(Bytes.getArray(annotationKey)))
                 .replace(":ts", new Date(timestamp).toString())
                 .replace(":trace_id", String.valueOf(traceId))
-                .replace(":ttl_", String.valueOf(ttl));
-    }
-
-    public Map<Long,Long> getTraceDuration(boolean head, long[] traceIds) {
-
-        // @todo upgrade to aggregate functions in Cassandra-2.2
-        //  with min(..) and max(..) functions in CQL the logic here and above in CassandraSpanStore can be simplified
-        //  ref CASSANDRA-4914
-
-        Preconditions.checkNotNull(traceIds);
-        List<ResultSetFuture> futures = new ArrayList<>();
-        for (Long traceId : traceIds) {
-            try {
-
-                BoundStatement bound = (head ? selectTraceDurationHead : selectTraceDurationTail)
-                        .bind()
-                        .setLong("trace_id", traceId);
-
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(debugSelectTraceDuration(head, traceId));
-                }
-                futures.add(session.executeAsync(bound));
-            } catch (RuntimeException ex) {
-                LOG.error("failed " + debugSelectTraceDuration(head, traceId), ex);
-                throw ex;
-            }
-        }
-
-        Map<Long,Long> results = new HashMap<>();
-        for (ResultSetFuture future : futures) {
-            Row row = future.getUninterruptibly().one();
-            results.put(row.getLong("trace_id"), row.getDate("ts").getTime());
-        }
-        return results;
-    }
-
-    private String debugSelectTraceDuration(boolean head, long traceId) {
-        return (head ? selectTraceDurationHead : selectTraceDurationTail).getQueryString()
-                .replace(":trace_id", String.valueOf(traceId));
-    }
-
-    public void storeTraceDuration(long traceId, long timestamp, int ttl) {
-        try {
-
-            BoundStatement bound = insertTraceDurations.bind()
-                    .setLong("trace_id", traceId)
-                    .setDate("ts", new Date(timestamp))
-                    .setInt("ttl_", ttl);
-
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(debugInsertTraceDurations(traceId, timestamp, ttl));
-            }
-            session.execute(bound);
-        } catch (RuntimeException ex) {
-            LOG.error("failed " + debugInsertTraceDurations(traceId, timestamp, ttl), ex);
-            throw ex;
-        }
-    }
-
-    private String debugInsertTraceDurations(long traceId, long timestamp, int ttl) {
-        return insertTraceDurations.getQueryString()
-                .replace(":trace_id", String.valueOf(traceId))
-                .replace(":ts", new Date(timestamp).toString())
                 .replace(":ttl_", String.valueOf(ttl));
     }
 

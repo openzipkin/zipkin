@@ -15,13 +15,14 @@
  */
 package com.twitter.zipkin.storage
 
+import java.nio.ByteBuffer
+
 import com.twitter.conversions.time._
 import com.twitter.finagle.{Filter => FFilter}
 import com.twitter.util.FuturePools._
 import com.twitter.util.{Closable, Duration, Future}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
-import java.nio.ByteBuffer
 
 abstract class SpanStore extends java.io.Closeable {
   /**
@@ -70,11 +71,10 @@ abstract class SpanStore extends java.io.Closeable {
     limit: Int
   ): Future[Seq[IndexedTraceId]]
 
-  /**
-   * Fetch the duration or an estimate thereof from the traces.
-   * Duration returned in micro seconds.
-   */
-  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]]
+  @deprecated("This is no longer used: it only supported query order, which is obsolete", "1.2.3")
+  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = {
+    Future.exception(new UnsupportedOperationException("This is no longer used"))
+  }
 
   /**
    * Get all the service names for as far back as the ttl allows.
@@ -204,19 +204,6 @@ class InMemorySpanStore extends SpanStore {
       }).filter(shouldIndex).take(limit).map { span =>
         IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
       }.toList
-    }
-  }
-
-  override def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = call {
-    traceIds.flatMap { traceId =>
-      val timestamps = spans.filter { span => span.traceId == traceId }.flatMap { span =>
-        Seq(span.firstAnnotation.map { _.timestamp }, span.lastAnnotation.map { _.timestamp }).flatten
-      }
-
-      if (timestamps.isEmpty)
-        None
-      else
-        Some(TraceIdDuration(traceId, timestamps.max - timestamps.min, timestamps.min))
     }
   }
 

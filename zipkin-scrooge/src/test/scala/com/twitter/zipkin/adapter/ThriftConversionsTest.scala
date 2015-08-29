@@ -16,7 +16,7 @@
  */
 package com.twitter.zipkin.adapter
 
-import com.twitter.zipkin.thriftscala.Order.EnumUnknownOrder
+import com.twitter.zipkin.thriftscala.Order
 import java.nio.ByteBuffer
 
 import com.twitter.conversions.time._
@@ -102,8 +102,8 @@ class ThriftConversionsTest extends FunSuite {
     assert(expectedTraceSummary === actualTraceSummary)
   }
 
-  test("doesn't break on unknown order") {
-    val result = thriftToOrder(new EnumUnknownOrder(999)).toOrder
-    assert(result === Order.None)
+  test("sets order to none") {
+    val result = queryRequestToThrift(QueryRequest("foo", None, None, None, 0, 10))
+    assert(result.toThrift.obsoleteOrder === Order.None)
   }
 }

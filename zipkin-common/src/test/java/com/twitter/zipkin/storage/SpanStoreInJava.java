@@ -47,11 +47,6 @@ public class SpanStoreInJava extends SpanStore {
     }
 
     @Override
-    public Future<Seq<TraceIdDuration>> getTracesDuration(Seq<Object> traceIds) {
-        return null;
-    }
-
-    @Override
     public Future<Set<String>> getAllServiceNames() {
         return null;
     }
