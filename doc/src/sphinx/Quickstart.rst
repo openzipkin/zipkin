@@ -13,7 +13,7 @@ e.g.
 
 .. parsed-literal::
     $ git clone https://github.com/openzipkin/docker-zipkin
-    $ cd docker-zipkin/deploy
+    $ cd docker-zipkin
     $ docker-compose up
 
 
@@ -123,7 +123,7 @@ but SpanStore requires `Seq[Span]`.
 
 .. _TwitterServer: http://twitter.github.io/twitter-server/
 .. _Docker Zipkin: https://github.com/openzipkin/docker-zipkin
-.. _docker-compose.yml: https://github.com/openzipkin/docker-zipkin/blob/master/deploy/docker-compose.yml
+.. _docker-compose.yml: https://github.com/openzipkin/docker-zipkin/blob/master/docker-compose.yml
 .. _Bintray: https://bintray.com/openzipkin/zipkin/zipkin
 .. _Maven Central: http://search.maven.org/#search|ga|1|g%3A%22io.zipkin%22%20AND%20l%3A%22all%22
 .. _#466: https://github.com/openzipkin/zipkin/issues/466
