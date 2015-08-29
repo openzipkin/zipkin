@@ -65,7 +65,7 @@ allprojects {
 }
 
 // Step 1 in the release process: `gradle release` creates new commits based on a tag
-// to trigger new builds which will upload artifacts. See travis/README.md for more.
+// to trigger new builds which will upload artifacts. See RELEASE.md for more.
 release {
     failOnCommitNeeded = false
     failOnPublishNeeded = true

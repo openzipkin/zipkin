@@ -19,12 +19,12 @@ quickest way to get started quickly is to use the
 [Docker Zipkin](https://github.com/openzipkin/docker-zipkin) project,
 which (in addition to being able to build docker images) provides
 scripts and a
-[`docker-compose.yml`](https://github.com/openzipkin/docker-zipkin/blob/master/deploy/docker-compose.yml)
+[`docker-compose.yml`](https://github.com/openzipkin/docker-zipkin/blob/master/docker-compose.yml)
 for launching pre-built images, e.g.
 
 ```
 $ git clone https://github.com/openzipkin/docker-zipkin
-$ cd docker-zipkin/deploy
+$ cd docker-zipkin
 $ docker-compose up
 ```
 
