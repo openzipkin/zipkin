@@ -72,18 +72,9 @@ class ThriftQueryService(
 
   private[this] def queryResponse(
     ids: Seq[IndexedTraceId],
-    qr: thriftscala.QueryRequest,
-    endTs: Long = -1
+    qr: thriftscala.QueryRequest
   ): Future[thriftscala.QueryResponse] = {
-    val sortedIds = ids.slice(0, qr.limit).map(_.traceId).sorted
-    val (min, max) = sortedIds match {
-      case Nil =>
-        (-1L, endTs)
-      case _ =>
-        val ts = ids.map(_.timestamp)
-        (ts.min, ts.max)
-    }
-    Future.value(thriftscala.QueryResponse(sortedIds, min, max))
+    Future.value(thriftscala.QueryResponse(ids.slice(0, qr.limit).map(_.traceId)))
   }
 
   private trait SliceQuery
@@ -149,13 +140,7 @@ class ThriftQueryService(
           querySlices(sliceQueries, qr.copy(limit = 1)) flatMap { ids =>
             val ts = padTimestamp(ids.flatMap(_.map(_.timestamp)).reduceOption(_ min _).getOrElse(0))
             querySlices(sliceQueries, qr.copy(endTs = ts)) flatMap { ids =>
-              traceIdsIntersect(ids) match {
-                case Nil =>
-                  val endTs = ids.map(_.map(_.timestamp).reduceOption(_ min _).getOrElse(0L)).reduceOption(_ max _).getOrElse(0L)
-                  queryResponse(Nil, qr, endTs)
-                case seq =>
-                  queryResponse(seq, qr)
-              }
+              queryResponse(traceIdsIntersect(ids), qr)
             }
           }
       }
