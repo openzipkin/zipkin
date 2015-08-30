@@ -217,14 +217,6 @@ class ThriftQueryService(
       spanStore.getSpansByTraceIds(traceIds) map { adjustedTraces(_, adjust).map(_.toThrift) }
     }
 
-  override def getTraceTimelinesByIds(traceIds: Seq[Long], adjust: Seq[thriftscala.Adjust]): Future[Seq[thriftscala.TraceTimeline]] =
-    handle("getTraceTimelinesByIds") {
-      FTrace.recordBinary("numIds", traceIds.length)
-      spanStore.getSpansByTraceIds(traceIds) map { traces =>
-        adjustedTraces(traces, adjust) flatMap { TraceTimeline(_).map(_.toThrift) }
-      }
-    }
-
   override def getTraceSummariesByIds(traceIds: Seq[Long], adjust: Seq[thriftscala.Adjust]): Future[Seq[thriftscala.TraceSummary]] =
     handle("getTraceSummariesByIds") {
       FTrace.recordBinary("numIds", traceIds.length)

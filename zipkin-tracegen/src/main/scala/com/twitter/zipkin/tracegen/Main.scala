@@ -18,13 +18,11 @@ package com.twitter.zipkin.tracegen
  */
 import com.twitter.app.App
 import com.twitter.finagle.Thrift
-import com.twitter.logging.Logger
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.thriftscala
-import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 
 trait ZipkinSpanGenerator { self: App =>
@@ -100,9 +98,9 @@ object Main extends App with ZipkinSpanGenerator {
       traces <- client.getTracesByIds(ts4, List(thriftscala.Adjust.TimeSkew))
       _ = println(traces.toString)
 
-      traceTimeline <- client.getTraceTimelinesByIds(ts4, List(thriftscala.Adjust.TimeSkew))
-      _ = println("Timeline:")
-      _ = println(traceTimeline.toString)
+      traceCombo <- client.getTraceCombosByIds(ts4, List(thriftscala.Adjust.TimeSkew))
+      _ = println("TraceCombo:")
+      _ = println(traceCombo.toString)
 
       ttl <- client.getDataTimeToLive()
       _ = println("Data ttl: " + ttl)
