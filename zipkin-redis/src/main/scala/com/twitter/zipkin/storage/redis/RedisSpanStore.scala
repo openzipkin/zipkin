@@ -1,11 +1,12 @@
 package com.twitter.zipkin.storage.redis
 
+import java.nio.ByteBuffer
+
 import com.google.common.io.Closer
 import com.twitter.finagle.redis.Client
 import com.twitter.util.{Duration, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage._
-import java.nio.ByteBuffer
 
 /**
  * @param client the redis client to use
@@ -21,14 +22,9 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
 
   override def close() = closer.close()
 
-  override def apply(newSpans: Seq[Span]): Future[Unit] = Future.collect(newSpans.flatMap {
-    span =>
-      Seq(storage.storeSpan(span),
-        index.indexServiceName(span),
-        index.indexSpanNameByService(span),
-        index.indexTraceIdByServiceAndName(span),
-        index.indexSpanByAnnotations(span))
-  }).unit
+  override def apply(newSpans: Seq[Span]): Future[Unit] = Future.join(newSpans.flatMap { span =>
+    Seq(storage.storeSpan(span), index.index(span))
+  })
 
   override def getDataTimeToLive = Future.value(ttl.map(_.inSeconds).getOrElse(Int.MaxValue))
 
@@ -36,9 +32,8 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
     storage.getSpansByTraceIds(traceIds)
   }
 
-  override def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = {
-    storage.getSpansByTraceId(traceId)
-  }
+  override def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
+    getSpansByTraceIds(Seq(traceId)).map(_.head)
 
   override def getTraceIdsByName(
     serviceName: String,
@@ -59,9 +54,7 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
     index.getTraceIdsByAnnotation(serviceName, annotation, value, endTs, limit)
   }
 
-  override def getAllServiceNames: Future[Set[String]] = {
-    index.getServiceNames
-  }
+  override def getAllServiceNames: Future[Set[String]] = index.getServiceNames
 
   override def getSpanNames(serviceName: String): Future[Set[String]] = index.getSpanNames(serviceName)
 }
