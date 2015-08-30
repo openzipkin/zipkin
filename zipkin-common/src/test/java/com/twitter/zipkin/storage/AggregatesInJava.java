@@ -1,7 +1,6 @@
 package com.twitter.zipkin.storage;
 
 import scala.Option;
-import scala.collection.Seq;
 import scala.runtime.BoxedUnit;
 
 import com.twitter.util.Future;
@@ -29,26 +28,6 @@ public class AggregatesInJava extends Aggregates {
 
     @Override
     public Future<BoxedUnit> storeDependencies(Dependencies dependencies) {
-        return null;
-    }
-
-    @Override
-    public Future<Seq<String>> getTopAnnotations(String serviceName) {
-        return null;
-    }
-
-    @Override
-    public Future<Seq<String>> getTopKeyValueAnnotations(String serviceName) {
-        return null;
-    }
-
-    @Override
-    public Future<BoxedUnit> storeTopAnnotations(String serviceName, Seq<String> a) {
-        return null;
-    }
-
-    @Override
-    public Future<BoxedUnit> storeTopKeyValueAnnotations(String serviceName, Seq<String> a) {
         return null;
     }
 }

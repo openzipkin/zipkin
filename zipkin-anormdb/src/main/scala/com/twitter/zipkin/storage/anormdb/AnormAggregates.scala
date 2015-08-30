@@ -113,32 +113,4 @@ case class AnormAggregates(
       returnConn(conn, borrowTime, "storeDependencies")
     }
   }
-
-  /**
-   * Get the top annotations for a service name
-   */
-  def getTopAnnotations(serviceName: String): Future[Seq[String]] = {
-    Future.value(Seq.empty[String])
-  }
-
-  /**
-   * Get the top key value annotation keys for a service name
-   */
-  def getTopKeyValueAnnotations(serviceName: String): Future[Seq[String]] = {
-    Future.value(Seq.empty[String])
-  }
-
-  /**
-   * Override the top annotations for a service
-   */
-  def storeTopAnnotations(serviceName: String, a: Seq[String]): Future[Unit] = {
-    Future.Unit
-  }
-
-  /**
-   * Override the top key value annotation keys for a service
-   */
-  def storeTopKeyValueAnnotations(serviceName: String, a: Seq[String]): Future[Unit] = {
-    Future.Unit
-  }
 }

@@ -82,20 +82,4 @@ class ScribeCollectorServiceSpec extends FunSuite with OneInstancePerTest with M
 
     verify(mockAggregates).storeDependencies(deps1)
   }
-
-  test("store top annotations") {
-    when(mockAggregates.storeTopAnnotations(serviceName, annotations)) thenReturn Future.Done
-
-    cs.storeTopAnnotations(serviceName, annotations)
-
-    verify(mockAggregates).storeTopAnnotations(serviceName, annotations)
-  }
-
-  test("store top key value annotations") {
-    when(mockAggregates.storeTopKeyValueAnnotations(serviceName, annotations)) thenReturn Future.Done
-
-    cs.storeTopKeyValueAnnotations(serviceName, annotations)
-
-    verify(mockAggregates).storeTopKeyValueAnnotations(serviceName, annotations)
-  }
 }

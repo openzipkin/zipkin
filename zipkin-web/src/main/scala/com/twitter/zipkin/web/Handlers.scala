@@ -313,16 +313,6 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       }
     }
 
-  def handleTopAnnotations(client: ZipkinQuery[Future]): Service[Request, Renderer] =
-    Service.mk[Request, Renderer] { req =>
-      client.getTopAnnotations(req.params("serviceName")) map { ann => JsonRenderer(ann.toSeq.sorted) }
-    }
-
-  def handleTopKVAnnotations(client: ZipkinQuery[Future]): Service[Request, Renderer] =
-    Service.mk[Request, Renderer] { req =>
-      client.getTopKeyValueAnnotations(req.params("serviceName")) map { ann => JsonRenderer(ann.toSeq.sorted) }
-    }
-
   def handleDependencies(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     new Service[Request, Renderer] {
       private[this] val PathMatch = """/api/dependencies(/([^/]+))?(/([^/]+))?/?""".r
