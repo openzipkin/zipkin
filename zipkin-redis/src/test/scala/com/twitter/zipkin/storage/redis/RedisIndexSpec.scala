@@ -16,11 +16,12 @@
 
 package com.twitter.zipkin.storage.redis
 
+import java.nio.ByteBuffer
+
 import com.twitter.conversions.time.intToTimeableNumber
-import com.twitter.util.Await.result
+import com.twitter.util.Await.{ready, result}
 import com.twitter.zipkin.common.{Annotation, AnnotationType, BinaryAnnotation, Endpoint, Span}
 import com.twitter.zipkin.storage.IndexedTraceId
-import java.nio.ByteBuffer
 
 class RedisIndexSpec extends RedisSpecification {
   val redisIndex = new RedisIndex(_client, Some(7.days))
@@ -55,56 +56,50 @@ class RedisIndexSpec extends RedisSpecification {
     List(ann1, ann2), List(binaryAnnotation("BAH2", "BEH2")))
 
   test("index and get span names") {
-    result(redisIndex.indexSpanNameByService(span1))
+    ready(redisIndex.index(span1))
     result(redisIndex.getSpanNames("service")) should be (Set(span1.name))
   }
 
   test("index and get service names") {
-    result(redisIndex.indexServiceName(span1))
+    ready(redisIndex.index(span1))
     result(redisIndex.getServiceNames) should be (Set(span1.serviceNames.head))
   }
 
-  test("index only on annotation in each span with the same value") {
-    result(redisIndex.indexSpanByAnnotations(span3))
-  }
-
   test("getTraceIdsByName") {
-    var ls = List[Long]()
-    result(redisIndex.indexTraceIdByServiceAndName(span1))
-    result(redisIndex.getTraceIdsByName("service", None, 0, 3)) foreach {
-      _ should be (span1.traceId)
-    }
-    result(redisIndex.getTraceIdsByName("service", Some("methodname"), 0, 3)) foreach {
-      _ should be (span1.traceId)
-    }
+    ready(redisIndex.index(span1))
+
+    val endTs = ann3.timestamp + 1
+    result(redisIndex.getTraceIdsByName("service", None, endTs, 1)).map(_.traceId) should
+      be(Seq(span1.traceId))
+    result(redisIndex.getTraceIdsByName("service", Some("methodcall"), endTs, 1)).map(_.traceId) should
+      be(Seq(span1.traceId))
   }
 
   test("getTraceIdsByAnnotation") {
-    result(redisIndex.indexSpanByAnnotations(span1))
+    ready(redisIndex.index(span1))
 
     // fetch by time based annotation, find trace
-    var seq = result(redisIndex.getTraceIdsByAnnotation("service", "custom", None, 3, 3))
-    (seq map (_.traceId)) should be (Seq(span1.traceId))
+    val endTs = ann3.timestamp + 1
+    result(redisIndex.getTraceIdsByAnnotation("service", "custom", None, endTs, 1)).map(_.traceId) should
+      be (Seq(span1.traceId))
 
     // should not find any traces since the core annotation doesn't exist in index
-    seq = result(redisIndex.getTraceIdsByAnnotation("service", "cs", None, 0, 3))
-    //seq.isEmpty should be (true)
+    result(redisIndex.getTraceIdsByAnnotation("service", "cs", None, 0, 1)) should be (empty)
 
     // should find traces by the key and value annotation
-    seq = result(redisIndex.getTraceIdsByAnnotation("service", "BAH",
-      Some(ByteBuffer.wrap("BEH".getBytes)), 4, 3))
-    seq should be (Seq(IndexedTraceId(span1.traceId, span1.lastAnnotation.get.timestamp)))
+    result(redisIndex.getTraceIdsByAnnotation("service", "BAH", Some(ByteBuffer.wrap("BEH".getBytes)), endTs, 1)) should
+      be (Seq(IndexedTraceId(span1.traceId, span1.lastAnnotation.get.timestamp)))
   }
 
   test("not index empty service name") {
-    result(redisIndex.indexServiceName(spanEmptyServiceName))
-    val serviceNames = result(redisIndex.getServiceNames)
-    serviceNames.isEmpty should be (true)
+    ready(redisIndex.index(spanEmptyServiceName))
+
+    result(redisIndex.getServiceNames) should be (empty)
   }
 
   test("not index empty span name ") {
-    result(redisIndex.indexSpanNameByService(spanEmptySpanName))
-    val spanNames = result(redisIndex.getSpanNames(spanEmptySpanName.name))
-    spanNames.isEmpty should be (true)
+    ready(redisIndex.index(spanEmptySpanName))
+
+    result(redisIndex.getSpanNames(spanEmptySpanName.name)) should be (empty)
   }
 }

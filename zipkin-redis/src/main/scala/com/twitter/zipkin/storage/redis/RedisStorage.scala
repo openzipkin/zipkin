@@ -35,15 +35,13 @@ class RedisStorage(
     client.lPush(redisKey, List(buf)).flatMap(_ => expireOnTtl(redisKey))
   }
 
-  def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
-    client.lRange(encodeTraceId(traceId), 0L, -1L) map
-      (_.map(decodeSpan).sortBy(timestampOfFirstAnnotation)(Ordering.Long.reverse))
-
   def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] =
     Future.collect(traceIds.map(getSpansByTraceId))
       .map(_.filter(spans => spans.size > 0)) // prune empties
 
-  def getDataTimeToLive: Int = (ttl map (_.inSeconds)).getOrElse(Int.MaxValue)
+  private[this] def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
+    client.lRange(encodeTraceId(traceId), 0L, -1L) map
+      (_.map(decodeSpan).sortBy(timestampOfFirstAnnotation)(Ordering.Long.reverse))
 
   private def decodeSpan(buf: ChannelBuffer): Span = {
     val thrift = serializer.fromBytes(buf.copy().array)
