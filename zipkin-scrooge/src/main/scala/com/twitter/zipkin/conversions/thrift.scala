@@ -241,16 +241,6 @@ object thrift {
   implicit def queryRequestToThrift(q: QueryRequest) = new WrappedQueryRequest(q)
   implicit def thriftToQueryRequest(q: thriftscala.QueryRequest) = new ThriftQueryRequest(q)
 
-  /* QueryResponse */
-  class WrappedQueryResponse(q: QueryResponse) {
-    lazy val toThrift = thriftscala.QueryResponse(q.traceIds, q.startTs, q.endTs)
-  }
-  class ThriftQueryResponse(q: thriftscala.QueryResponse) {
-    lazy val toQueryResponse = QueryResponse(q.traceIds, q.startTs, q.endTs)
-  }
-  implicit def queryResponseToThrift(q: QueryResponse) = new WrappedQueryResponse(q)
-  implicit def thriftToQueryResponse(q: thriftscala.QueryResponse) = new ThriftQueryResponse(q)
-
   /* Dependencies */
   class WrappedMoments(m: Moments) {
     lazy val toThrift = thriftscala.Moments(m.m0, m.m1, m.m2, m.m3, m.m4)
