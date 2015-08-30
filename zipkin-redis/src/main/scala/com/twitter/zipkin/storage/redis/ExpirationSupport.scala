@@ -8,9 +8,9 @@ trait ExpirationSupport {
   val client: Client
 
   /** Expires keys older than this many seconds. */
-  val defaultTtl: Option[Duration]
+  val ttl: Option[Duration]
 
-  def expireOnTtl(redisKey: ChannelBuffer, ttl: Option[Duration] = defaultTtl): Future[Unit] = {
+  def expireOnTtl(redisKey: ChannelBuffer): Future[Unit] = {
     if (ttl.isDefined) client.expire(redisKey, ttl.get.inLongSeconds).unit else Future.Unit
   }
 }

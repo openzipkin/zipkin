@@ -102,9 +102,6 @@ object Main extends App with ZipkinSpanGenerator {
       _ = println("TraceCombo:")
       _ = println(traceCombo.toString)
 
-      ttl <- client.getDataTimeToLive()
-      _ = println("Data ttl: " + ttl)
-
       svcNames <- client.getServiceNames()
       _ = println("Service names: " + svcNames)
 

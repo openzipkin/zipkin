@@ -51,7 +51,6 @@ trait ZipkinWebFactory { self: App =>
   val webRootUrl = flag("zipkin.web.rootUrl", "http://localhost:8080/", "Url where the service is located")
   val webCacheResources = flag("zipkin.web.cacheResources", false, "cache static resources and mustache templates")
   val webResourcesRoot = flag("zipkin.web.resourcesRoot", "zipkin-web/src/main/resources", "on-disk location of resources")
-  val webPinTtl = flag("zipkin.web.pinTtl", 30.days, "Length of time pinned traces should exist")
 
   val queryDest = flag("zipkin.web.query.dest", "127.0.0.1:9411", "Location of the query server")
   val queryLimit = flag("zipkin.web.query.limit", 10, "Default query limit for trace results")
@@ -85,9 +84,7 @@ trait ZipkinWebFactory { self: App =>
       ("/api/dependencies", handleDependencies(queryClient)),
       ("/api/dependencies/?:startTime/?:endTime", handleDependencies(queryClient)),
       ("/api/get/:id", handleGetTrace(queryClient)),
-      ("/api/trace/:id", handleGetTrace(queryClient)),
-      ("/api/is_pinned/:id", handleIsPinned(queryClient)),
-      ("/api/pin/:id/:state", handleTogglePin(queryClient, webPinTtl()))
+      ("/api/trace/:id", handleGetTrace(queryClient))
     ).foldLeft(new HttpMuxer) { case (m , (p, handler)) =>
       val path = p.split("/").toList
       val handlePath = path.takeWhile { t => !(t.startsWith(":") || t.startsWith("?:")) }

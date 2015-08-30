@@ -171,24 +171,6 @@ service ZipkinQuery {
      */
     set<string> getSpanNames(1: string service_name) throws (1: QueryException qe);
 
-    #************** TTL related **************
-
-    /**
-     * Change the TTL of a trace. If we find an interesting trace we want to keep around for further
-     * investigation.
-     */
-    void setTraceTimeToLive(1: i64 trace_id, 2: i32 ttl_seconds) throws (1: QueryException qe);
-
-    /**
-     * Get the TTL in seconds of a specific trace.
-     */
-    i32 getTraceTimeToLive(1: i64 trace_id) throws (1: QueryException qe);
-
-    /**
-     * Get the data ttl. This is the number of seconds we keep the data around before deleting it.
-     */
-    i32 getDataTimeToLive() throws (1: QueryException qe);
-
     /**
      * Get an aggregate representation of all services paired with every service they call in to.
      * This includes information on call counts and mean/stdDev/etc of call durations.  The two arguments

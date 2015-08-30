@@ -7,7 +7,6 @@ import scala.collection.Seq;
 import scala.collection.immutable.Set;
 import scala.runtime.BoxedUnit;
 
-import com.twitter.util.Duration;
 import com.twitter.util.Future;
 import com.twitter.zipkin.common.Span;
 
@@ -15,11 +14,6 @@ import com.twitter.zipkin.common.Span;
  * Shows that {@link SpanStore} is implementable in Java 7+.
  */
 public class SpanStoreInJava extends SpanStore {
-
-    @Override
-    public Future<Duration> getTimeToLive(long traceId) {
-        return null;
-    }
 
     @Override
     public Future<Seq<Seq<Span>>> getSpansByTraceIds(Seq<Object> traceIds) {
@@ -53,11 +47,6 @@ public class SpanStoreInJava extends SpanStore {
 
     @Override
     public Future<BoxedUnit> apply(Seq<Span> spans) {
-        return null;
-    }
-
-    @Override
-    public Future<BoxedUnit> setTimeToLive(long traceId, Duration ttl) {
         return null;
     }
 

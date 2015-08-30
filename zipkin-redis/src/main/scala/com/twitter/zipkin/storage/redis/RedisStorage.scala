@@ -13,11 +13,11 @@ import org.jboss.netty.buffer.{ChannelBuffer, ChannelBuffers}
 
 /**
  * @param client the redis client to use
- * @param defaultTtl expires keys older than this many seconds.
+ * @param ttl expires keys older than this many seconds.
  */
 class RedisStorage(
   val client: Client,
-  val defaultTtl: Option[Duration]
+  val ttl: Option[Duration]
 ) extends Closeable with ExpirationSupport {
 
   private val serializer = new BinaryThriftStructSerializer[thriftscala.Span] {
@@ -35,14 +35,6 @@ class RedisStorage(
     client.lPush(redisKey, List(buf)).flatMap(_ => expireOnTtl(redisKey))
   }
 
-  def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] =
-    expireOnTtl(encodeTraceId(traceId), Some(ttl))
-
-  def getTimeToLive(traceId: Long): Future[Duration] =
-    client.ttl(encodeTraceId(traceId)) map { ttl =>
-      if (ttl.isDefined) Duration.fromSeconds(ttl.get.intValue()) else Duration.Top
-    }
-
   def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
     client.lRange(encodeTraceId(traceId), 0L, -1L) map
       (_.map(decodeSpan).sortBy(timestampOfFirstAnnotation)(Ordering.Long.reverse))
@@ -51,7 +43,7 @@ class RedisStorage(
     Future.collect(traceIds.map(getSpansByTraceId))
       .map(_.filter(spans => spans.size > 0)) // prune empties
 
-  def getDataTimeToLive: Int = (defaultTtl map (_.inSeconds)).getOrElse(Int.MaxValue)
+  def getDataTimeToLive: Int = (ttl map (_.inSeconds)).getOrElse(Int.MaxValue)
 
   private def decodeSpan(buf: ChannelBuffer): Span = {
     val thrift = serializer.fromBytes(buf.copy().array)

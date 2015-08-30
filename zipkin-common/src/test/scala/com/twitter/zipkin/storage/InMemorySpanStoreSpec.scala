@@ -5,6 +5,5 @@ class InMemorySpanStoreSpec extends SpanStoreSpec {
 
   override def clear = {
     store.spans.clear
-    store.ttls.clear
   }
 }

@@ -1,9 +1,7 @@
 package com.twitter.zipkin.storage
 
 import com.google.common.net.InetAddresses._
-import com.twitter.conversions.time.intToTimeableNumber
 import com.twitter.util.Await.{ready, result}
-import com.twitter.util.Duration
 import com.twitter.zipkin.common.{Annotation, AnnotationType, BinaryAnnotation, Endpoint, Span}
 import java.net.InetAddress._
 import java.nio.ByteBuffer
@@ -79,20 +77,6 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
   @Test def getSpansByTraceIds_empty() {
     result(store.getSpansByTraceIds(Seq(54321))) should be(empty)
-  }
-
-  @Test def getDataTimeToLive() {
-    // If a store doesn't use TTLs this should return Int.Max
-    assert(result(store.getDataTimeToLive()) > 0)
-  }
-
-  @Test def setTimeToLive() {
-    ready(store(Seq(span1)))
-    ready(store.setTimeToLive(span1.traceId, 1234.seconds))
-
-    // If a store doesn't use TTLs this should return Duration.Top
-    val ttl = result(store.getTimeToLive(span1.traceId))
-    assert(ttl == Duration.Top || (ttl - 1234.seconds).abs.inMilliseconds <= 10)
   }
 
   @Test def getSpanNames() {
