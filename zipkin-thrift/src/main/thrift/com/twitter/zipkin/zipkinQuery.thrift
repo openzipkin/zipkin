@@ -68,9 +68,6 @@ struct TraceCombo {
   4: optional map<i64, i32> span_depths # not set if no spans in trace
 }
 
-/** This is obsolete. Use Order.NONE for compatibility. */
-enum Order { TIMESTAMP_DESC, TIMESTAMP_ASC, DURATION_ASC, DURATION_DESC, NONE }
-
 /**
  * The raw data in our storage might have various problems. How should we adjust it before
  * returning it to the user?
@@ -86,9 +83,11 @@ struct QueryRequest {
   2: optional string span_name
   3: optional list<string> annotations
   4: optional list<zipkinCore.BinaryAnnotation> binary_annotations
+  /** results will have epoch microsecond timestamps before this value */
   5: i64 end_ts
+  /** maximum entries to return before "end_ts" */
   6: i32 limit
-  7: Order OBSOLETE_order = Order.NONE
+  # 7: Order OBSOLETE_order = Order.NONE
 }
 
 struct QueryResponse {
@@ -99,41 +98,7 @@ struct QueryResponse {
 
 service ZipkinQuery {
 
-    #************** Index lookups **************
-
     QueryResponse getTraceIds(1: QueryRequest request) throws (1: QueryException qe);
-
-    /**
-     * Fetch trace ids by service and span name.
-     * Gets "limit" number of entries from before the "end_ts".
-     *
-     * Span name is optional.
-     * Timestamps are in microseconds.
-     */
-    list<i64> getTraceIdsBySpanName(1: string service_name, 2: string span_name,
-        4: i64 end_ts, 5: i32 limit, 6: Order OBSOLETE_order) throws (1: QueryException qe);
-
-    /**
-     * Fetch trace ids by service name.
-     * Gets "limit" number of entries from before the "end_ts".
-     *
-     * Timestamps are in microseconds.
-     */
-    list<i64> getTraceIdsByServiceName(1: string service_name,
-        3: i64 end_ts, 4: i32 limit, 5: Order OBSOLETE_order) throws (1: QueryException qe);
-
-    /**
-     * Fetch trace ids with a particular annotation.
-     * Gets "limit" number of entries from before the "end_ts".
-     *
-     * When requesting based on time based annotations only pass in the first parameter, "annotation" and leave out
-     * the second "value". If looking for a key-value binary annotation provide both, "annotation" is then the
-     * key in the key-value.
-     *
-     * Timestamps are in microseconds.
-     */
-    list<i64> getTraceIdsByAnnotation(1: string service_name, 2: string annotation, 3: binary value,
-        5: i64 end_ts, 6: i32 limit, 7: Order OBSOLETE_order) throws (1: QueryException qe);
 
     /**
      * Get the full traces associated with the given trace ids.

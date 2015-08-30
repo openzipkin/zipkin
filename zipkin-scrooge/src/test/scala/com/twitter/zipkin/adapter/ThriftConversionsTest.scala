@@ -16,7 +16,6 @@
  */
 package com.twitter.zipkin.adapter
 
-import com.twitter.zipkin.thriftscala.Order
 import java.nio.ByteBuffer
 
 import com.twitter.conversions.time._
@@ -100,10 +99,5 @@ class ThriftConversionsTest extends FunSuite {
     val thriftTraceSummary = expectedTraceSummary.toThrift
     val actualTraceSummary = thriftTraceSummary.toTraceSummary
     assert(expectedTraceSummary === actualTraceSummary)
-  }
-
-  test("sets order to none") {
-    val result = queryRequestToThrift(QueryRequest("foo", None, None, None, 0, 10))
-    assert(result.toThrift.obsoleteOrder === Order.None)
   }
 }

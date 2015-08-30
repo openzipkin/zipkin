@@ -16,6 +16,8 @@ package com.twitter.zipkin.tracegen
  *  limitations under the License.
  *
  */
+import java.nio.ByteBuffer
+
 import com.twitter.app.App
 import com.twitter.finagle.Thrift
 import com.twitter.scrooge.BinaryThriftStructSerializer
@@ -23,7 +25,7 @@ import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.thriftscala
-import java.nio.ByteBuffer
+import com.twitter.zipkin.thriftscala.{AnnotationType, BinaryAnnotation, QueryRequest}
 
 trait ZipkinSpanGenerator { self: App =>
   val genTraces = flag("genTraces", 5, "Number of traces to generate")
@@ -80,25 +82,26 @@ object Main extends App with ZipkinSpanGenerator {
   ): Future[Unit] = {
     println("Querying for service name: " + service + " and span name " + span)
     for {
-      ts1 <- client.getTraceIdsBySpanName(service, span, Long.MaxValue, maxTraces, thriftscala.Order.None)
-      _ = printTrace(ts1, client)
+      ts1 <- client.getTraceIds(QueryRequest(service, Some(span), None, None, Long.MaxValue, maxTraces))
+      _ = printTrace(ts1.traceIds, client)
 
       _ = println("Querying for service name: " + service)
-      ts2 <- client.getTraceIdsBySpanName(service, "", Long.MaxValue, maxTraces, thriftscala.Order.None)
-      _ <- printTrace(ts2, client)
+      ts2 <- client.getTraceIds(QueryRequest(service, None, None, None, Long.MaxValue, maxTraces))
+      _ <- printTrace(ts2.traceIds, client)
 
       _ = println("Querying for annotation: " + annotation)
-      ts3 <- client.getTraceIdsByAnnotation(service, annotation, ByteBuffer.wrap("".getBytes), Long.MaxValue, maxTraces, thriftscala.Order.None)
-      _ <- printTrace(ts3, client)
+      ts3 <- client.getTraceIds(QueryRequest(service, None, Some(Seq(annotation)), None, Long.MaxValue, maxTraces))
+      _ <- printTrace(ts3.traceIds, client)
 
-      _ = println("Querying for kv annotation: " + kvAnnotation)
-      ts4 <- client.getTraceIdsByAnnotation(service, kvAnnotation._1, kvAnnotation._2, Long.MaxValue, maxTraces, thriftscala.Order.None)
-      _ <- printTrace(ts4, client)
+      binaryAnnotation = BinaryAnnotation(kvAnnotation._1, kvAnnotation._2, AnnotationType.String, None)
+      _ = println("Querying for kv annotation: " + kvAnnotation._1)
+      ts4 <- client.getTraceIds(QueryRequest(service, None, None, Some(Seq(binaryAnnotation)), Long.MaxValue, maxTraces))
+      _ <- printTrace(ts4.traceIds, client)
 
-      traces <- client.getTracesByIds(ts4, List(thriftscala.Adjust.TimeSkew))
+      traces <- client.getTracesByIds(ts4.traceIds, List(thriftscala.Adjust.TimeSkew))
       _ = println(traces.toString)
 
-      traceCombo <- client.getTraceCombosByIds(ts4, List(thriftscala.Adjust.TimeSkew))
+      traceCombo <- client.getTraceCombosByIds(ts4.traceIds, List(thriftscala.Adjust.TimeSkew))
       _ = println("TraceCombo:")
       _ = println(traceCombo.toString)
 
