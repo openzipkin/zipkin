@@ -29,8 +29,7 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
         index.indexServiceName(span),
         index.indexSpanNameByService(span),
         index.indexTraceIdByServiceAndName(span),
-        index.indexSpanByAnnotations(span),
-        index.indexSpanDuration(span))
+        index.indexSpanByAnnotations(span))
   }).unit
 
   // Used for pinning
@@ -74,8 +73,6 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
   ): Future[Seq[IndexedTraceId]] = {
     index.getTraceIdsByAnnotation(serviceName, annotation, value, endTs, limit)
   }
-
-  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = index.getTracesDuration(traceIds)
 
   def getAllServiceNames: Future[Set[String]] = {
     index.getServiceNames

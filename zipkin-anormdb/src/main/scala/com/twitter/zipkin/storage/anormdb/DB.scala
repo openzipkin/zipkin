@@ -239,14 +239,6 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
         |  m4 DOUBLE PRECISION NOT NULL
         |)
       """.stripMargin).execute()
-    SQL(
-      """CREATE TABLE IF NOT EXISTS zipkin_service_spans (
-        |  service_name VARCHAR(255) NOT NULL,
-        |  span_name VARCHAR(255) NOT NULL,
-        |  last_span_id BIGINT NOT NULL,
-        |  last_span_ts BIGINT
-        |)
-      """.stripMargin).execute()
     con
   }
 

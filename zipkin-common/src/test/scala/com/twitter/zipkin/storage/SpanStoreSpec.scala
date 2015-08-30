@@ -126,29 +126,6 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store.getTraceIdsByName("badservice", Some("badmethod"), 100, 3)) should be(empty)
   }
 
-  @Test def getTracesDuration() {
-    ready(store(Seq(span1, span2, span3, span4)))
-
-    result(store.getTracesDuration(Seq(span1.traceId, span2.traceId, span3.traceId, span4.traceId))) should be(
-      Seq(
-        TraceIdDuration(span1.traceId, 19, 1),
-        TraceIdDuration(span2.traceId, 0, 2),
-        TraceIdDuration(span3.traceId, 18, 2),
-        TraceIdDuration(span4.traceId, 1, 6)
-      )
-    )
-
-    ready(store(Seq(span4)))
-
-    result(store.getTracesDuration(Seq(999))) should be(Seq(TraceIdDuration(999, 1, 6)))
-
-    // Add another span which happens after the first in the trace. In this case, the trace
-    // duration be the sum, not the max of span durations.
-    ready(store(Seq(span4.copy(annotations = List(ann7, ann8)))))
-
-    result(store.getTracesDuration(Seq(999))) should be(Seq(TraceIdDuration(999, 2, 6)))
-  }
-
   @Test def getTraceIdsByAnnotation() {
     ready(store(Seq(span1)))
 

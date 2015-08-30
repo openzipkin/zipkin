@@ -82,19 +82,19 @@ object Main extends App with ZipkinSpanGenerator {
   ): Future[Unit] = {
     println("Querying for service name: " + service + " and span name " + span)
     for {
-      ts1 <- client.getTraceIdsBySpanName(service, span, Long.MaxValue, maxTraces, thriftscala.Order.DurationDesc)
+      ts1 <- client.getTraceIdsBySpanName(service, span, Long.MaxValue, maxTraces, thriftscala.Order.None)
       _ = printTrace(ts1, client)
 
       _ = println("Querying for service name: " + service)
-      ts2 <- client.getTraceIdsBySpanName(service, "", Long.MaxValue, maxTraces, thriftscala.Order.DurationDesc)
+      ts2 <- client.getTraceIdsBySpanName(service, "", Long.MaxValue, maxTraces, thriftscala.Order.None)
       _ <- printTrace(ts2, client)
 
       _ = println("Querying for annotation: " + annotation)
-      ts3 <- client.getTraceIdsByAnnotation(service, annotation, ByteBuffer.wrap("".getBytes), Long.MaxValue, maxTraces, thriftscala.Order.DurationDesc)
+      ts3 <- client.getTraceIdsByAnnotation(service, annotation, ByteBuffer.wrap("".getBytes), Long.MaxValue, maxTraces, thriftscala.Order.None)
       _ <- printTrace(ts3, client)
 
       _ = println("Querying for kv annotation: " + kvAnnotation)
-      ts4 <- client.getTraceIdsByAnnotation(service, kvAnnotation._1, kvAnnotation._2, Long.MaxValue, maxTraces, thriftscala.Order.DurationDesc)
+      ts4 <- client.getTraceIdsByAnnotation(service, kvAnnotation._1, kvAnnotation._2, Long.MaxValue, maxTraces, thriftscala.Order.None)
       _ <- printTrace(ts4, client)
 
       traces <- client.getTracesByIds(ts4, List(thriftscala.Adjust.TimeSkew))

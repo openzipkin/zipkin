@@ -21,7 +21,7 @@ import com.twitter.util._
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.storage.anormdb.AnormThreads._
-import com.twitter.zipkin.storage.{IndexedTraceId, SpanStore, TraceIdDuration}
+import com.twitter.zipkin.storage.{IndexedTraceId, SpanStore}
 import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import java.sql.Connection
@@ -41,22 +41,6 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
     try {
 
       db.withRecoverableTransaction(conn, { implicit conn: Connection =>
-        // Update our inventory of known span names per service
-        span.serviceNames.foreach(serviceName =>
-          SQL(
-            db.getSpanInsertCommand() +
-              """ INTO zipkin_service_spans
-                |  (service_name, span_name, last_span_id, last_span_ts)
-                |VALUES
-                |  ({service_name}, {span_name}, {last_span_id}, {last_span_ts})
-              """.stripMargin)
-            .on("service_name" -> serviceName)
-            .on("span_name" -> span.name)
-            .on("last_span_id" -> span.id)
-            .on("last_span_ts" -> createdTs)
-            .execute()
-        )
-
         SQL(
           db.getSpanInsertCommand() +
             """ INTO zipkin_spans
@@ -257,7 +241,8 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
       }
     }
   }
-  def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
+
+  override def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
     endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
     if ((Constants.CoreAnnotations ++ Constants.CoreAddress).contains(annotation) || endTs <= 0 || limit <= 0) {
       Seq.empty
@@ -322,33 +307,13 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
     }
   }
 
-  override def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = db.inNewThreadWithRecoverableRetry {
-    implicit val (conn, borrowTime) = borrowConn()
-    try {
-
-      val result:List[(Long, Long, Long)] = SQL(
-        """SELECT trace_id, MIN(a_timestamp), MAX(a_timestamp)
-          |FROM zipkin_annotations
-          |WHERE trace_id IN (%s)
-          |GROUP BY trace_id
-        """.stripMargin.format(traceIds.mkString(",")))
-        .as((long("trace_id") ~ long("MIN(a_timestamp)") ~ long("MAX(a_timestamp)") map flatten) *)
-      result map { case (traceId, minTs, maxTs) =>
-        TraceIdDuration(traceId, maxTs - minTs, minTs)
-      }
-
-    } finally {
-      returnConn(conn, borrowTime, "getTracesDuration")
-    }
-  }
-
   override def getAllServiceNames: Future[Set[String]] = db.inNewThreadWithRecoverableRetry {
     implicit val (conn, borrowTime) = borrowConn()
     try {
 
       SQL(
-        """SELECT service_name
-          |FROM zipkin_service_spans
+        """SELECT DISTINCT service_name
+          |FROM zipkin_annotations
           |GROUP BY service_name
           |ORDER BY service_name ASC
         """.stripMargin)
@@ -364,8 +329,8 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
     try {
 
       SQL(
-        """SELECT span_name
-          |FROM zipkin_service_spans
+        """SELECT DISTINCT span_name
+          |FROM zipkin_annotations
           |WHERE service_name = {service} AND span_name <> ''
           |GROUP BY span_name
           |ORDER BY span_name ASC

@@ -5,7 +5,7 @@ import com.twitter.finagle.redis.Client
 import com.twitter.util.{Duration, Future}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation, Span}
-import com.twitter.zipkin.storage.{IndexedTraceId, TraceIdDuration}
+import com.twitter.zipkin.storage.IndexedTraceId
 import java.io.Closeable
 import java.nio.ByteBuffer
 import org.jboss.netty.buffer.ChannelBuffers.copiedBuffer
@@ -43,8 +43,6 @@ class RedisIndex(
   }
   private[this] val spanNames = new SetMultimap(client, ttl, "span")
   private[this] val serviceNames = new SetMultimap(client, ttl, "singleton")
-  // TODO: bad and misleading name. should ttlMap be something else?
-  private[this] val timeRanges = new TimeRangeStore(client, "ttlMap")
 
   override def close() = client.release()
 
@@ -68,13 +66,6 @@ class RedisIndex(
       annotationIndex.list(AnnotationKey(serviceName, annotation), endTs, limit)
     }
   }
-
-  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] =
-    Future.collect(traceIds map getTraceDuration) map (_.flatten)
-
-  private[this] def getTraceDuration(traceId: Long): Future[Option[TraceIdDuration]] =
-    timeRanges.get(traceId)
-      .map(_.flatMap(r => Some(TraceIdDuration(traceId, r.stopTs - r.startTs, r.startTs))))
 
   def getServiceNames = serviceNames.get("services")
 
@@ -131,18 +122,6 @@ class RedisIndex(
         .filter(_ != "")
         .map(spanNames.put(_, span.name))
     ).unit
-  }
-
-  def indexSpanDuration(span: Span): Future[Unit] = {
-    val inputRange = for (first <- span.firstAnnotation;
-                          last <- span.lastAnnotation)
-      yield TimeRange(first.timestamp, last.timestamp)
-    inputRange.map(range =>
-      timeRanges.get(span.traceId).map {
-        case None => timeRanges.put(span.traceId, range)
-        case Some(existing) => timeRanges.put(span.traceId, union(range, existing))
-      }.unit
-    ).getOrElse(Future.Unit)
   }
 
   private def union(left: TimeRange, right: TimeRange) =

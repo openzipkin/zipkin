@@ -17,11 +17,11 @@ package com.twitter.zipkin.conversions
 
 import com.twitter.algebird.Moments
 import com.twitter.conversions.time._
-import com.twitter.util.{Duration, Time}
+import com.twitter.util.Time
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query._
 import com.twitter.zipkin.thriftscala
-import java.util.concurrent.TimeUnit
+import com.twitter.zipkin.thriftscala.Order
 import scala.collection.breakOut
 import scala.language.implicitConversions
 
@@ -122,33 +122,6 @@ object thrift {
   }
   implicit def spanToThriftSpan(s: Span) = new ThriftSpan(s)
   implicit def thriftSpanToSpan(s: thriftscala.Span) = new WrappedSpan(s)
-
-  /* Order */
-  class WrappedOrder(o: Order) {
-    lazy val toThrift = {
-      o match {
-        case Order.DurationDesc  => thriftscala.Order.DurationDesc
-        case Order.DurationAsc   => thriftscala.Order.DurationAsc
-        case Order.TimestampDesc => thriftscala.Order.TimestampDesc
-        case Order.TimestampAsc  => thriftscala.Order.TimestampAsc
-        case Order.None          => thriftscala.Order.None
-      }
-    }
-  }
-  class ThriftOrder(o: thriftscala.Order) {
-    lazy val toOrder = {
-      o match {
-        case thriftscala.Order.DurationDesc        => Order.DurationDesc
-        case thriftscala.Order.DurationAsc         => Order.DurationAsc
-        case thriftscala.Order.TimestampDesc       => Order.TimestampDesc
-        case thriftscala.Order.TimestampAsc        => Order.TimestampAsc
-        case thriftscala.Order.None                => Order.None
-        case thriftscala.Order.EnumUnknownOrder(_) => Order.None // don't break on unknown
-      }
-    }
-  }
-  implicit def orderToThrift(o: Order) = new WrappedOrder(o)
-  implicit def thriftToOrder(o: thriftscala.Order) = new ThriftOrder(o)
 
   /* TimelineAnnotation */
   class WrappedTimelineAnnotation(t: TimelineAnnotation) {
@@ -275,7 +248,7 @@ object thrift {
         },
         q.endTs,
         q.limit,
-        q.order.toThrift)
+        Order.None)
     }
   }
   class ThriftQueryRequest(q: thriftscala.QueryRequest) {
@@ -288,8 +261,7 @@ object thrift {
           _ map { _.toBinaryAnnotation }
         },
         q.endTs,
-        q.limit,
-        q.order.toOrder)
+        q.limit)
     }
   }
   implicit def queryRequestToThrift(q: QueryRequest) = new WrappedQueryRequest(q)
