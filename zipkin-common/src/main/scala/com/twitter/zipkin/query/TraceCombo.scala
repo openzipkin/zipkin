@@ -17,7 +17,7 @@ package com.twitter.zipkin.query
 
 object TraceCombo {
   def apply(trace: Trace): TraceCombo =
-    TraceCombo(trace, TraceSummary(trace), TraceTimeline(trace), trace.toSpanDepths)
+    TraceCombo(trace, TraceSummary(trace), trace.toSpanDepths)
 }
 
 /**
@@ -26,5 +26,4 @@ object TraceCombo {
 case class TraceCombo(
   trace: Trace,
   traceSummary: Option[TraceSummary],
-  traceTimeline: Option[TraceTimeline],
   spanDepths: Option[Map[Long, Int]])

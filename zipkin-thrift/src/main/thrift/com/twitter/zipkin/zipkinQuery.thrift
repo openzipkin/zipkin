@@ -59,22 +59,12 @@ struct TimelineAnnotation {
 }
 
 /**
- * This sums up a single Trace to make it easy for a client to get an overview of what happened.
- */
-struct TraceTimeline {
-  1: i64 trace_id                          # the trace
-  2: i64 root_most_span_id                 # either the true root span or the closest we can find
-  6: list<TimelineAnnotation> annotations  # annotations as they happened
-  7: list<zipkinCore.BinaryAnnotation> binary_annotations # all the binary annotations
-}
-
-/**
- * Returns a combination of trace, summary and timeline.
+ * Returns a combination of trace, summary and span depth.
  */
 struct TraceCombo {
   1: Trace trace
   2: optional TraceSummary summary # not set if no spans in trace
-  3: optional TraceTimeline timeline # not set if no spans in trace
+  /** 3: optional TraceTimeline timeline */
   4: optional map<i64, i32> span_depths # not set if no spans in trace
 }
 
@@ -152,19 +142,6 @@ service ZipkinQuery {
      * data before returning it. Can be empty.
      */
     list<Trace> getTracesByIds(1: list<i64> trace_ids, 2: list<Adjust> adjust) throws (1: QueryException qe);
-
-    /**
-     * Get the trace timelines associated with the given trace ids.
-     * This is a convenience method for users that just want to know
-     * the annotations and the (assumed) order they happened in.
-     *
-     * Second argument is a list of methods of adjusting the trace
-     * data before returning it. Can be empty.
-     *
-     * Note that if one of the trace ids does not have any data associated with it, it will not be
-     * represented in the output list.
-     */
-    list<TraceTimeline> getTraceTimelinesByIds(1: list<i64> trace_ids, 2: list<Adjust> adjust) throws (1: QueryException qe);
 
     /**
      * Fetch trace summaries for the given trace ids.

@@ -161,28 +161,6 @@ object thrift {
   implicit def traceToThrift(t: Trace) = new WrappedTrace(t)
   implicit def thriftToTrace(t: thriftscala.Trace) = new ThriftTrace(t)
 
-  /* TraceTimeline */
-  class WrappedTraceTimeline(t: TraceTimeline) {
-    lazy val toThrift = {
-      thriftscala.TraceTimeline(
-        t.traceId,
-        t.rootSpanId,
-        t.annotations.map { _.toThrift },
-        t.binaryAnnotations.map { _.toThrift })
-    }
-  }
-  class ThriftTraceTimeline(t: thriftscala.TraceTimeline) {
-    lazy val toTraceTimeline = {
-      TraceTimeline(
-        t.traceId,
-        t.rootMostSpanId,
-        t.annotations.map { _.toTimelineAnnotation },
-        t.binaryAnnotations.map { _.toBinaryAnnotation })
-    }
-  }
-  implicit def traceTimelineToThrift(t: TraceTimeline) = new WrappedTraceTimeline(t)
-  implicit def thriftToTraceTimeline(t: thriftscala.TraceTimeline) = new ThriftTraceTimeline(t)
-
   class WrappedSpanTimestamp(t: SpanTimestamp) {
     lazy val toThrift = thriftscala.SpanTimestamp(t.name, t.startTimestamp, t.endTimestamp)
   }
@@ -220,7 +198,6 @@ object thrift {
       thriftscala.TraceCombo(
         t.trace.toThrift,
         t.traceSummary map { _.toThrift },
-        t.traceTimeline map { _.toThrift },
         t.spanDepths)
     }
   }
@@ -229,7 +206,6 @@ object thrift {
       TraceCombo(
         t.trace.toTrace,
         t.summary map { _.toTraceSummary },
-        t.timeline map { _.toTraceTimeline },
         t.spanDepths map {_.toMap })
     }
   }

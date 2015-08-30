@@ -110,8 +110,7 @@ class ThriftQueryServiceTest extends FunSuite {
       List(SpanTimestamp("service1", 100, 150)),
       List(ep1)
     ).toThrift
-    val timeline = TraceTimeline(trace1) map { _.toThrift }
-    val combo = thriftscala.TraceCombo(trace, Some(summary), timeline, Some(Map(666L -> 1)))
+    val combo = thriftscala.TraceCombo(trace, Some(summary), Some(Map(666L -> 1)))
 
     val actual = Await.result(svc.getTraceCombosByIds(List(1), List()))
     assert(actual === Seq(combo))
@@ -139,27 +138,6 @@ class ThriftQueryServiceTest extends FunSuite {
     val svc = newLoadedService()
     val actual = Await.result(svc.getTracesByIds(List(1L), List()))
     assert(actual === List(trace1.toThrift))
-  }
-
-  test("get timeline by traceId") {
-    val svc = newLoadedService()
-
-    val ann1 = thriftscala.TimelineAnnotation(100, thriftscala.Constants.CLIENT_SEND,
-      ep1.toThrift, 666, None, "service1", "methodcall")
-    val ann2 = thriftscala.TimelineAnnotation(150, thriftscala.Constants.CLIENT_RECV,
-      ep1.toThrift, 666, None, "service1", "methodcall")
-    val ann3 = thriftscala.TimelineAnnotation(101, thriftscala.Constants.CLIENT_SEND,
-      ep2.toThrift, 667, None, "service2", "methodcall")
-    val ann4 = thriftscala.TimelineAnnotation(501, thriftscala.Constants.CLIENT_RECV,
-      ep2.toThrift, 667, None, "service2", "methodcall")
-    val ann5 = thriftscala.TimelineAnnotation(110, thriftscala.Constants.SERVER_RECV,
-      ep2.toThrift, 666, None, "service2", "methodcall")
-    val ann6 = thriftscala.TimelineAnnotation(140, thriftscala.Constants.SERVER_SEND,
-      ep2.toThrift, 666, None, "service2", "methodcall")
-
-    val control = List(thriftscala.TraceTimeline(2L, 666, List(ann1, ann3, ann5, ann6, ann2, ann4), List()))
-    val actual = Await.result(svc.getTraceTimelinesByIds(List(2L), List(thriftscala.Adjust.Nothing, thriftscala.Adjust.TimeSkew)))
-    assert(actual === control)
   }
 
   test("get span names") {
