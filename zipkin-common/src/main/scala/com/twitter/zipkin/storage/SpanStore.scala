@@ -34,7 +34,10 @@ abstract class SpanStore extends java.io.Closeable {
 
   def getTimeToLive(traceId: Long): Future[Duration]
 
-  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]]
+  @deprecated("This is no longer used; getSpansByTraceIds ignores absent ids", "1.2.3")
+  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
+    Future.exception(new UnsupportedOperationException("This is no longer used"))
+  }
 
   /**
    * Get the available trace information from the storage system.
@@ -142,10 +145,6 @@ class InMemorySpanStore extends SpanStore {
 
   override def getTimeToLive(traceId: Long): Future[Duration] = call {
     ttls(traceId)
-  }
-
-  override def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = call {
-    spans.map(_.traceId).toSet & traceIds.toSet
   }
 
   override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = call {

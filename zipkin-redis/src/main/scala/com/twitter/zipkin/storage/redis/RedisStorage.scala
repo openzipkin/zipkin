@@ -53,12 +53,6 @@ class RedisStorage(
 
   def getDataTimeToLive: Int = (defaultTtl map (_.inSeconds)).getOrElse(Int.MaxValue)
 
-  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] =
-    Future.collect(traceIds map { id =>
-      // map the exists result to the trace id or none
-      client.exists(encodeTraceId(id)) map (exists => if (exists) Some(id) else None)
-    }).map(_.flatten.toSet)
-
   private def decodeSpan(buf: ChannelBuffer): Span = {
     val thrift = serializer.fromBytes(buf.copy().array)
     new WrappedSpan(thrift).toSpan

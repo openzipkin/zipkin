@@ -290,13 +290,6 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       Future(MustacheRenderer("v2/aggregate.mustache", data))
     }
 
-  private[this] def getExistingTracedId(
-    client: ZipkinQuery[Future],
-    traceIds: collection.Map[String, Seq[Long]]): Future[Seq[(String, Seq[Long])]] = {
-      Future.collect(traceIds.toList.map { case (svcName, traceIds) =>
-        client.tracesExist(traceIds) map {(svcName -> _.toSeq)} })
-  }
-
   // API Endpoints
 
   def handleQuery(client: ZipkinQuery[Future]): Service[Request, Renderer] =

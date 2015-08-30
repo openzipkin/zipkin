@@ -205,12 +205,6 @@ class ThriftQueryService(
     }
   }
 
-  override def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] =
-    handle("tracesExist") {
-      FTrace.recordBinary("numIds", traceIds.length)
-      spanStore.tracesExist(traceIds)
-    }
-
   override def getTracesByIds(traceIds: Seq[Long], adjust: Seq[thriftscala.Adjust]): Future[Seq[thriftscala.Trace]] =
     handle("getTracesByIds") {
       FTrace.recordBinary("numIds", traceIds.length)

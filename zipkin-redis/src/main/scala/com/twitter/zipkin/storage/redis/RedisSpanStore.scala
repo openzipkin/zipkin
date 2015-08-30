@@ -23,7 +23,7 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
 
   override def close() = closer.close()
 
-  def apply(newSpans: Seq[Span]): Future[Unit] = Future.collect(newSpans.flatMap {
+  override def apply(newSpans: Seq[Span]): Future[Unit] = Future.collect(newSpans.flatMap {
     span =>
       Seq(storage.storeSpan(span),
         index.indexServiceName(span),
@@ -32,30 +32,25 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
         index.indexSpanByAnnotations(span))
   }).unit
 
-  // Used for pinning
-  def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = {
+  override def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = {
     storage.setTimeToLive(traceId, ttl)
   }
 
-  def getTimeToLive(traceId: Long): Future[Duration] = {
+  override def getTimeToLive(traceId: Long): Future[Duration] = {
     storage.getTimeToLive(traceId)
   }
 
   override def getDataTimeToLive = Future.value(ttl.map(_.inSeconds).getOrElse(Int.MaxValue))
 
-  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
-    storage.tracesExist(traceIds)
-  }
-
-  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
+  override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
     storage.getSpansByTraceIds(traceIds)
   }
 
-  def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = {
+  override def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = {
     storage.getSpansByTraceId(traceId)
   }
 
-  def getTraceIdsByName(
+  override def getTraceIdsByName(
     serviceName: String,
     spanName: Option[String],
     endTs: Long,
@@ -64,7 +59,7 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
     index.getTraceIdsByName(serviceName, spanName, endTs, limit)
   }
 
-  def getTraceIdsByAnnotation(
+  override def getTraceIdsByAnnotation(
     serviceName: String,
     annotation: String,
     value: Option[ByteBuffer],
@@ -74,9 +69,9 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
     index.getTraceIdsByAnnotation(serviceName, annotation, value, endTs, limit)
   }
 
-  def getAllServiceNames: Future[Set[String]] = {
+  override def getAllServiceNames: Future[Set[String]] = {
     index.getServiceNames
   }
 
-  def getSpanNames(serviceName: String): Future[Set[String]] = index.getSpanNames(serviceName)
+  override def getSpanNames(serviceName: String): Future[Set[String]] = index.getSpanNames(serviceName)
 }

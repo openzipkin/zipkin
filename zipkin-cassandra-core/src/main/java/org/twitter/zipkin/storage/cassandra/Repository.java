@@ -261,12 +261,6 @@ public final class Repository implements AutoCloseable {
                 .replace(":ttl_", String.valueOf(ttl));
     }
 
-    public Set<Long> tracesExist(Long[] traceIds) {
-        Preconditions.checkNotNull(traceIds);
-        Preconditions.checkArgument(0 < traceIds.length);
-        return getSpansByTraceIds(traceIds, 100000).keySet();
-    }
-
     /**
      * Get the available trace information from the storage system.
      * Spans in trace should be sorted by the first annotation timestamp
