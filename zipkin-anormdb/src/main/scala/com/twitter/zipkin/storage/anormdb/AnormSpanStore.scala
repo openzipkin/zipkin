@@ -106,10 +106,6 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
     }
   }
 
-  override def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = Future.Done
-
-  override def getTimeToLive(traceId: Long): Future[Duration] = Future.value(Duration.Top)
-
   override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = db.inNewThreadWithRecoverableRetry {
     implicit val (conn, borrowTime) = borrowConn()
     try {

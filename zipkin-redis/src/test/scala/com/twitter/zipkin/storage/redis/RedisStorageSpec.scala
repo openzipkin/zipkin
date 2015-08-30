@@ -46,22 +46,4 @@ class RedisStorageSpec extends RedisSpecification {
       Seq(Seq(span), Seq(span2))
     )
   }
-
-  test("get default ttl") {
-    result(storage.storeSpan(span))
-    result(storage.getTimeToLive(span.traceId)) should be(7.days)
-  }
-
-  test("ttl is honored") {
-    result(storage.storeSpan(span))
-    result(storage.setTimeToLive(span.traceId, 1.seconds))
-    Thread.sleep(2 * 1000)
-    result(storage.getSpansByTraceIds(List(span.traceId))) should be(Seq())
-  }
-
-  test("reset ttl") {
-    result(storage.storeSpan(span))
-    result(storage.setTimeToLive(span.traceId, 1234.seconds))
-    result(storage.getTimeToLive(span.traceId)) should be(1234.seconds)
-  }
 }

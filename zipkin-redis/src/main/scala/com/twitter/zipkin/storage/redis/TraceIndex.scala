@@ -8,11 +8,11 @@ import org.jboss.netty.buffer.{ChannelBuffers, ChannelBuffer}
 
 /**
  * @param client the redis client to use
- * @param defaultTtl expires keys older than this many seconds.
+ * @param ttl expires keys older than this many seconds.
  */
 abstract class TraceIndex[K](
   val client: Client,
-  val defaultTtl: Option[Duration]
+  val ttl: Option[Duration]
 ) extends ExpirationSupport {
 
   def encodeKey(key: K): ChannelBuffer
@@ -37,7 +37,7 @@ abstract class TraceIndex[K](
    * @param limit maximum number of items to return
    */
   def list(key: K, endTs: Long, limit: Long): Future[Seq[IndexedTraceId]] = {
-    val startTs: Long = defaultTtl map (dur => endTs - dur.inMicroseconds) getOrElse 0
+    val startTs: Long = ttl map (dur => endTs - dur.inMicroseconds) getOrElse 0
 
     client.zRevRangeByScore(encodeKey(key), ZInterval(endTs), ZInterval(startTs), true, Some(Limit(0, limit)))
       .map(_.left.get)

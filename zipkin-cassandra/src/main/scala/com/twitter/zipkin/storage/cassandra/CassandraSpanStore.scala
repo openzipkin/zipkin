@@ -84,7 +84,6 @@ class CassandraSpanStore(
   private[this] val IndexAnnotationNoLastAnnotationCounter = IndexStats.scope("annotation").counter("noLastAnnotation")
   private[this] val IndexBinaryAnnotationCounter = IndexStats.scope("annotation").counter("binary")
   private[this] val QueryStats = stats.scope("query")
-  private[this] val QueryGetTtlCounter = QueryStats.counter("getTimeToLive")
   private[this] val QueryGetSpansByTraceIdsStat = QueryStats.stat("getSpansByTraceIds")
   private[this] val QueryGetSpansByTraceIdsTooBigCounter = QueryStats.scope("getSpansByTraceIds").counter("tooBig")
   private[this] val QueryGetServiceNamesCounter = QueryStats.counter("getServiceNames")
@@ -177,7 +176,7 @@ class CassandraSpanStore(
       val spans = repository.getSpansByTraceIds(traceIds.toArray.map(Long.box), count)
         .mapValues { case spans :java.util.List[ByteBuffer] => spans.asScala.map(spanCodec.decode(_).toSpan) }
 
-      traceIds.map(traceId => spans.get(traceId)).flatten.toSeq
+      traceIds.map(traceId => spans.get(traceId)).flatten
     }
   }
 
@@ -209,28 +208,6 @@ class CassandraSpanStore(
     Future.Unit
   }
 
-  override def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = {
-    getSpansByTraceId(traceId).get foreach { span =>
-      repository.storeSpan(
-        traceId,
-        span.lastTimestamp.getOrElse(span.firstTimestamp.getOrElse(0)),
-        createSpanColumnName(span),
-        spanCodec.encode(span.toThrift),
-        ttl.inSeconds)
-    }
-    Future.Unit
-  }
-
-  override def getTimeToLive(traceId: Long): Future[Duration] = {
-    QueryGetTtlCounter.incr()
-
-    pool {
-      Duration(repository.getSpanTtlSeconds(traceId), java.util.concurrent.TimeUnit.SECONDS)
-    }
-  }
-
-  override def getDataTimeToLive = Future.value(spanTtl.inSeconds)
-
   override def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
     getSpansByTraceIds(Seq(traceId)).map(_.head)
 
@@ -256,7 +233,6 @@ class CassandraSpanStore(
     limit: Int
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByNameCounter.incr()
-    val key = nameKey(serviceName, spanName)
 
     pool {
       (spanName match {
@@ -278,7 +254,6 @@ class CassandraSpanStore(
     limit: Int
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByAnnotationCounter.incr()
-    val key = annotationKey(serviceName, annotation, value)
 
     pool {
       repository

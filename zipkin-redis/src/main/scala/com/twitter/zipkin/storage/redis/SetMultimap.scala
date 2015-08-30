@@ -9,12 +9,12 @@ import org.jboss.netty.buffer.ChannelBuffers._
  * Allows you to associate one or more string values with a string key.
  *
  * @param client the redis client to use
- * @param defaultTtl expires keys older than this many seconds.
+ * @param ttl expires keys older than this many seconds.
  * @param prefix prefix of the namespace/redis hash key
  */
 class SetMultimap(
   val client: Client,
-  val defaultTtl: Option[Duration],
+  val ttl: Option[Duration],
   prefix: String
 ) extends ExpirationSupport {
 

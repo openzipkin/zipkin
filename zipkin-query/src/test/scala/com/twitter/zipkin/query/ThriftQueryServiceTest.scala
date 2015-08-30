@@ -145,15 +145,4 @@ class ThriftQueryServiceTest extends FunSuite {
     val actual = Await.result(svc.getSpanNames("service3"))
     assert(actual === Set("methodcall", "otherMethod"))
   }
-
-  test("get/set trace TTL") {
-    val svc = newLoadedService()
-
-    val original = Await.result(svc.getTraceTimeToLive(1))
-    assert(original === 1)
-
-    Await.ready(svc.setTraceTimeToLive(1, 100))
-    val newVal = Await.result(svc.getTraceTimeToLive(1))
-    assert(newVal === 100)
-  }
 }

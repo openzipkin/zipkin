@@ -18,7 +18,6 @@ package com.twitter.zipkin.query
 
 import java.nio.ByteBuffer
 
-import com.twitter.conversions.time._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, Stat, StatsReceiver}
 import com.twitter.finagle.tracing.{Trace => FTrace}
 import com.twitter.logging.Logger
@@ -227,11 +226,6 @@ class ThriftQueryService(
       }
     }
 
-  override def getDataTimeToLive: Future[Int] =
-    handle("getDataTimeToLive") {
-      spanStore.getDataTimeToLive()
-    }
-
   override def getServiceNames: Future[Set[String]] =
     handle("getServiceNames") {
       spanStore.getAllServiceNames
@@ -240,16 +234,6 @@ class ThriftQueryService(
   override def getSpanNames(serviceName: String): Future[Set[String]] =
     handle("getSpanNames") {
       spanStore.getSpanNames(serviceName)
-    }
-
-  override def setTraceTimeToLive(traceId: Long, ttl: Int): Future[Unit] =
-    handle("setTraceTimeToLive") {
-      spanStore.setTimeToLive(traceId, ttl.seconds)
-    }
-
-  override def getTraceTimeToLive(traceId: Long): Future[Int] =
-    handle("getTraceTimeToLive") {
-      spanStore.getTimeToLive(traceId).map(_.inSeconds)
     }
 
   override def getDependencies(startTime: Option[Long], endTime: Option[Long]) : Future[thriftscala.Dependencies] =

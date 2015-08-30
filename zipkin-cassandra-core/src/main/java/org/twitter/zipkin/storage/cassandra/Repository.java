@@ -40,7 +40,7 @@ public final class Repository implements AutoCloseable {
     private static final Random RAND = new Random();
 
     private static final List<Integer> ALL_BUCKETS = Collections.unmodifiableList(new ArrayList<Integer>() {{
-        for (int i = 0 ; i < BUCKETS ; ++i) {
+        for (int i = 0; i < BUCKETS; ++i) {
             add(i);
         }
     }});
@@ -50,7 +50,6 @@ public final class Repository implements AutoCloseable {
 
     private final Session session;
     private final PreparedStatement selectTraces;
-    private final PreparedStatement selectTraceTtl;
     private final PreparedStatement insertSpan;
     private final PreparedStatement selectDependencies;
     private final PreparedStatement insertDependencies;
@@ -105,12 +104,6 @@ public final class Repository implements AutoCloseable {
                     .from("traces")
                     .where(QueryBuilder.in("trace_id", QueryBuilder.bindMarker("trace_id")))
                     .limit(QueryBuilder.bindMarker("limit_")));
-
-        selectTraceTtl = session.prepare(
-                QueryBuilder.select()
-                    .ttl("span")
-                    .from("traces")
-                    .where(QueryBuilder.eq("trace_id", QueryBuilder.bindMarker("trace_id"))));
 
         selectDependencies = session.prepare(
                 QueryBuilder.select("dependencies")
@@ -279,27 +272,6 @@ public final class Repository implements AutoCloseable {
         return selectTraces.getQueryString()
                         .replace(":trace_id", Arrays.toString(traceIds))
                         .replace(":limit_", String.valueOf(limit));
-    }
-
-    public long getSpanTtlSeconds(long traceId) {
-        try {
-            BoundStatement bound = selectTraceTtl.bind().setLong("trace_id", traceId);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(debugSelectTraceTtl(traceId));
-            }
-            int ttl = Integer.MAX_VALUE;
-            for (Row row : session.execute(bound).all()) {
-                ttl = Math.min(ttl, row.getInt(0));
-            }
-            return ttl;
-        } catch (RuntimeException ex) {
-            LOG.error("failed " + debugSelectTraceTtl(traceId), ex);
-            throw ex;
-        }
-    }
-
-    private String debugSelectTraceTtl(long traceId) {
-        return selectTraceTtl.getQueryString().replace(":trace_id", String.valueOf(traceId));
     }
 
     public void storeDependencies(long startFlooredToDay, ByteBuffer dependencies) {

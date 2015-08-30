@@ -6,7 +6,7 @@ import com.twitter.finagle.stats.{StatsReceiver, Stat}
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.finagle.{Filter, Service, SimpleFilter}
 import com.twitter.io.Buf
-import com.twitter.util.{Duration, Future}
+import com.twitter.util.Future
 import com.twitter.zipkin.{Constants => ZConstants}
 import com.twitter.zipkin.common.json._
 import com.twitter.zipkin.common.mustache.ZipkinMustache
@@ -435,42 +435,6 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
             val combo = ts.head.toTraceCombo
             JsonRenderer(if (req.path.startsWith("/api/trace")) combo.trace else combo)
           }
-        }
-    }
-
-  def handleIsPinned(client: ZipkinQuery[Future]): Service[Request, Renderer] =
-    new NotFoundService {
-      def process(req: Request): Option[Future[Renderer]] =
-        pathTraceId(req.path.split("/").lastOption) map { id =>
-          client.getTraceTimeToLive(id) map { ttl => JsonRenderer(ttl) }
-        }
-    }
-
-  def handleTogglePin(client: ZipkinQuery[Future], pinTtl: Duration): Service[Request, Renderer] =
-    new NotFoundService {
-      private[this] val Err = Future.value(ErrorRenderer(400, "Must be true or false"))
-      private[this] val SetState = Future.value(pinTtl.inSeconds)
-      private[this] def togglePinState(traceId: Long, state: Boolean): Future[Boolean] = {
-        val ttl = if (state) SetState else client.getDataTimeToLive()
-        ttl flatMap { client.setTraceTimeToLive(traceId, _) } map { _ => state }
-      }
-
-      def process(req: Request): Option[Future[Renderer]] =
-        req.path.split("/") match {
-          case Array("", "api", "pin", traceId, stateVal) =>
-            pathTraceId(Some(traceId)) map { id =>
-              val state = stateVal match {
-                case "true" => Some(true)
-                case "false" => Some(false)
-                case _ => None
-              }
-              state map { s =>
-                togglePinState(id, s) map { v => JsonRenderer(v) }
-              } getOrElse {
-                Err
-              }
-            }
-          case _ => None
         }
     }
 }

@@ -17,7 +17,6 @@ package com.twitter.zipkin.storage
 
 import java.nio.ByteBuffer
 
-import com.twitter.conversions.time._
 import com.twitter.finagle.{Filter => FFilter}
 import com.twitter.util.FuturePools._
 import com.twitter.util.{Closable, Duration, Future}
@@ -25,14 +24,6 @@ import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 
 abstract class SpanStore extends java.io.Closeable {
-  /**
-   * Returns the time to live in seconds or [[Int.MaxValue]], if unknown.
-   *
-   * Corresponds to the thrift call `ZipkinQuery.getDataTimeToLive`.
-   */
-  def getDataTimeToLive(): Future[Int] = Future.value(Int.MaxValue)
-
-  def getTimeToLive(traceId: Long): Future[Duration]
 
   @deprecated("This is no longer used; getSpansByTraceIds ignores absent ids", "1.2.3")
   def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
@@ -74,11 +65,6 @@ abstract class SpanStore extends java.io.Closeable {
     limit: Int
   ): Future[Seq[IndexedTraceId]]
 
-  @deprecated("This is no longer used: it only supported query order, which is obsolete", "1.2.3")
-  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = {
-    Future.exception(new UnsupportedOperationException("This is no longer used"))
-  }
-
   /**
    * Get all the service names for as far back as the ttl allows.
    */
@@ -94,8 +80,6 @@ abstract class SpanStore extends java.io.Closeable {
    */
   def apply(spans: Seq[Span]): Future[Unit]
 
-  def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit]
-
   protected def shouldIndex(span: Span): Boolean =
     !(span.isClientSide() && span.serviceNames.contains("client"))
 
@@ -103,6 +87,26 @@ abstract class SpanStore extends java.io.Closeable {
    * Close writes and await possible draining of internal queues.
    */
   override def close()
+
+  @deprecated("This is no longer used: it only supported query order, which is obsolete", "1.2.3")
+  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = {
+    Future.exception(new UnsupportedOperationException("This is no longer used"))
+  }
+
+  @deprecated("This didn't have UI support and was only partially supported", "1.2.3")
+  def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = {
+    Future.exception(new UnsupportedOperationException("This is no longer used"))
+  }
+
+  @deprecated("This didn't have UI support and was only partially supported", "1.2.3")
+  def getDataTimeToLive(): Future[Int] = {
+    Future.exception(new UnsupportedOperationException("This is no longer used"))
+  }
+
+  @deprecated("This didn't have UI support and was only partially supported", "1.2.3")
+  def getTimeToLive(traceId: Long): Future[Duration] = {
+    Future.exception(new UnsupportedOperationException("This is no longer used"))
+  }
 }
 
 object SpanStore {
@@ -121,7 +125,6 @@ object SpanStore {
 class InMemorySpanStore extends SpanStore {
   import scala.collection.mutable
 
-  val ttls: mutable.Map[Long, Duration] = mutable.Map.empty
   val spans: mutable.ArrayBuffer[Span] = new mutable.ArrayBuffer[Span]
 
   private[this] def call[T](f: => T): Future[T] = synchronized { Future(f) }
@@ -135,17 +138,8 @@ class InMemorySpanStore extends SpanStore {
   override def close() = {}
 
   override def apply(newSpans: Seq[Span]): Future[Unit] = call {
-    newSpans foreach { span => ttls(span.traceId) = 1.second }
     spans ++= newSpans
   }.unit
-
-  override def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = call {
-    ttls(traceId) = ttl
-  }.unit
-
-  override def getTimeToLive(traceId: Long): Future[Duration] = call {
-    ttls(traceId)
-  }
 
   override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = call {
     traceIds flatMap { id =>

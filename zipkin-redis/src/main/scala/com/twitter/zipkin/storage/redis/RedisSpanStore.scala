@@ -12,11 +12,9 @@ import java.nio.ByteBuffer
  * @param ttl expires keys older than this many seconds.
  */
 class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
-  private[this] val closer = Closer.create();
+  private[this] val closer = Closer.create()
   private[this] val index = closer.register(new RedisIndex(client, ttl))
   private[this] val storage = closer.register(new RedisStorage(client, ttl))
-
-  private[this] def call[T](f: => T): Future[T] = synchronized { Future(f) }
 
   /** For testing, clear this store. */
   private[redis] def clear(): Future[Unit] = client.flushDB()
@@ -31,14 +29,6 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
         index.indexTraceIdByServiceAndName(span),
         index.indexSpanByAnnotations(span))
   }).unit
-
-  override def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = {
-    storage.setTimeToLive(traceId, ttl)
-  }
-
-  override def getTimeToLive(traceId: Long): Future[Duration] = {
-    storage.getTimeToLive(traceId)
-  }
 
   override def getDataTimeToLive = Future.value(ttl.map(_.inSeconds).getOrElse(Int.MaxValue))
 
