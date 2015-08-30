@@ -82,8 +82,6 @@ trait ZipkinWebFactory { self: App =>
       ("/api/query", handleQuery(queryClient)),
       ("/api/services", handleServices(queryClient)),
       ("/api/spans", requireServiceName andThen handleSpans(queryClient)),
-      ("/api/top_annotations", requireServiceName andThen handleTopAnnotations(queryClient)),
-      ("/api/top_kv_annotations", requireServiceName andThen handleTopKVAnnotations(queryClient)),
       ("/api/dependencies", handleDependencies(queryClient)),
       ("/api/dependencies/?:startTime/?:endTime", handleDependencies(queryClient)),
       ("/api/get/:id", handleGetTrace(queryClient)),

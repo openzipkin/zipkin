@@ -1,7 +1,6 @@
 
 package org.twitter.zipkin.storage.cassandra;
 
-import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.KeyspaceMetadata;
@@ -53,9 +52,6 @@ public final class Repository implements AutoCloseable {
     private final PreparedStatement selectTraces;
     private final PreparedStatement selectTraceTtl;
     private final PreparedStatement insertSpan;
-    private final PreparedStatement selectTopAnnotations;
-    private final PreparedStatement deleteTopAnnotations;
-    private final PreparedStatement insertTopAnnotations;
     private final PreparedStatement selectDependencies;
     private final PreparedStatement insertDependencies;
     private final PreparedStatement selectServiceNames;
@@ -115,24 +111,6 @@ public final class Repository implements AutoCloseable {
                     .ttl("span")
                     .from("traces")
                     .where(QueryBuilder.eq("trace_id", QueryBuilder.bindMarker("trace_id"))));
-
-        selectTopAnnotations = session.prepare(
-                QueryBuilder.select("annotation")
-                    .from("top_annotations")
-                    .where(QueryBuilder.in("key", QueryBuilder.bindMarker("key_"))));
-
-        deleteTopAnnotations = session.prepare(
-                QueryBuilder
-                    .delete()
-                    .from("top_annotations")
-                    .where(QueryBuilder.eq("key", QueryBuilder.bindMarker("key_"))));
-
-        insertTopAnnotations = session.prepare(
-                QueryBuilder
-                    .insertInto("top_annotations")
-                    .value("key", QueryBuilder.bindMarker("key_"))
-                    .value("idx", QueryBuilder.bindMarker("idx"))
-                    .value("annotation", QueryBuilder.bindMarker("annotation")));
 
         selectDependencies = session.prepare(
                 QueryBuilder.select("dependencies")
@@ -328,77 +306,6 @@ public final class Repository implements AutoCloseable {
 
     private String debugSelectTraceTtl(long traceId) {
         return selectTraceTtl.getQueryString().replace(":trace_id", String.valueOf(traceId));
-    }
-
-    public List<String> getTopAnnotations(String key) {
-        Preconditions.checkNotNull(key);
-        Preconditions.checkArgument(!key.isEmpty());
-        try {
-            BoundStatement bound = selectTopAnnotations.bind().setString("key_", key);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(debugSelectTopAnnotations(key));
-            }
-            List<String> annotations = new ArrayList<>();
-            for (Row row : session.execute(bound).all()) {
-                annotations.add(row.getString("annotation"));
-            }
-            return annotations;
-        } catch (RuntimeException ex) {
-            LOG.error("failed " + debugSelectTopAnnotations(key), ex);
-            throw ex;
-        }
-    }
-
-    private String debugSelectTopAnnotations(String key) {
-        return selectTopAnnotations.getQueryString().replace(":key_", key);
-    }
-
-    public void storeTopAnnotations(String key, List<String> annotations) {
-        Preconditions.checkNotNull(key);
-        Preconditions.checkArgument(!key.isEmpty());
-        Preconditions.checkNotNull(annotations);
-        Preconditions.checkArgument(!annotations.isEmpty());
-        try {
-            BoundStatement bound = deleteTopAnnotations.bind().setString("key_", key);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(debugDeleteTopAnnotations(key));
-            }
-            session.execute(bound);
-        } catch (RuntimeException ex) {
-            LOG.error("failed " + debugDeleteTopAnnotations(key), ex);
-            throw ex;
-        }
-        StringBuilder debugs = new StringBuilder();
-        try {
-            BatchStatement batch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-            for (String annotation : annotations) {
-
-                BoundStatement bound = insertTopAnnotations.bind()
-                        .setString("key_", key)
-                        .setInt("idx", annotations.indexOf(annotation))
-                        .setString("annotation", annotation);
-
-                String debug = debugInsertTopAnnotations(key, annotation, annotations.indexOf(annotation));
-                debugs.append(debug).append(';');
-                LOG.debug(debug);
-                batch.add(bound);
-            }
-            session.executeAsync(batch);
-        } catch (RuntimeException ex) {
-            LOG.error("failed " + debugs, ex);
-            throw ex;
-        }
-    }
-
-    private String debugDeleteTopAnnotations(String key) {
-        return deleteTopAnnotations.getQueryString().replace(":key_", key);
-    }
-
-    private String debugInsertTopAnnotations(String key, String annotation, int idx) {
-        return insertTopAnnotations.getQueryString()
-                            .replace(":key_", key)
-                            .replace(":idx", String.valueOf(idx))
-                            .replace(":annotation", annotation);
     }
 
     public void storeDependencies(long startFlooredToDay, ByteBuffer dependencies) {

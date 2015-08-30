@@ -79,7 +79,7 @@ class ScribeCollectorService(
     }
   }
 
-  def storeDependencies(dependencies: thriftscala.Dependencies): Future[Unit] = {
+  override def storeDependencies(dependencies: thriftscala.Dependencies): Future[Unit] = {
 
     Stats.timeFutureMillisLazy("collector.storeDependencies") {
       Future.join {
@@ -90,38 +90,6 @@ class ScribeCollectorService(
         log.error(e, "storeDependencies failed")
         Stats.incr("collector.storeDependencies")
         Future.exception(thriftscala.StoreAggregatesException(e.toString))
-    }
-  }
-
-  def storeTopAnnotations(serviceName: String, annotations: Seq[String]): Future[Unit] = {
-    Stats.incr("collector.storeTopAnnotations")
-    log.info("storeTopAnnotations: " + serviceName + "; " + annotations)
-
-    Stats.timeFutureMillisLazy("collector.storeTopAnnotations") {
-      Future.join {
-        stores map { _.aggregates.storeTopAnnotations(serviceName, annotations) }
-      }
-    } rescue {
-      case e: Exception =>
-        log.error(e, "storeTopAnnotations failed")
-        Stats.incr("collector.storeTopAnnotations")
-        Future.exception(thriftscala.AdjustableRateException(e.toString))
-    }
-  }
-
-  def storeTopKeyValueAnnotations(serviceName: String, annotations: Seq[String]): Future[Unit] = {
-    Stats.incr("collector.storeTopKeyValueAnnotations")
-    log.info("storeTopKeyValueAnnotations: " + serviceName + ";" + annotations)
-
-    Stats.timeFutureMillisLazy("collector.storeTopKeyValueAnnotations") {
-      Future.join {
-        stores map { _.aggregates.storeTopKeyValueAnnotations(serviceName, annotations) }
-      }
-    } rescue {
-      case e: Exception =>
-        log.error(e, "storeTopKeyValueAnnotations failed")
-        Stats.incr("collector.storeTopKeyValueAnnotations")
-        Future.exception(thriftscala.AdjustableRateException(e.toString))
     }
   }
 }

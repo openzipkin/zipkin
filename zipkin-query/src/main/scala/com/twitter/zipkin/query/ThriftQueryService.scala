@@ -272,14 +272,4 @@ class ThriftQueryService(
       val end = endTime map { Time.fromMicroseconds(_) }
       aggsStore.getDependencies(start, end).map(_.toThrift)
     }
-
-  override def getTopAnnotations(serviceName: String): Future[Seq[String]] =
-    handle("getTopAnnotations") {
-      aggsStore.getTopAnnotations(serviceName)
-    }
-
-  override def getTopKeyValueAnnotations(serviceName: String): Future[Seq[String]] =
-    handle("getTopKeyValueAnnotations") {
-      aggsStore.getTopKeyValueAnnotations(serviceName)
-    }
 }

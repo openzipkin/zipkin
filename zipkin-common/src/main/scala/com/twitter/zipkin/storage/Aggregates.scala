@@ -16,7 +16,7 @@
 package com.twitter.zipkin.storage
 
 import com.twitter.algebird.Monoid
-import com.twitter.util.{Time, Future}
+import com.twitter.util.{Future, Time}
 import com.twitter.zipkin.common.Dependencies
 
 /**
@@ -28,10 +28,22 @@ abstract class Aggregates extends java.io.Closeable {
   def getDependencies(startDate: Option[Time], endDate: Option[Time]=None): Future[Dependencies]
   def storeDependencies(dependencies: Dependencies): Future[Unit]
 
-  def getTopAnnotations(serviceName: String): Future[Seq[String]]
-  def getTopKeyValueAnnotations(serviceName: String): Future[Seq[String]]
-  def storeTopAnnotations(serviceName: String, a: Seq[String]): Future[Unit]
-  def storeTopKeyValueAnnotations(serviceName: String, a: Seq[String]): Future[Unit]
+  @deprecated("This didn't have UI support", "1.2.3")
+  def getTopAnnotations(serviceName: String): Future[Seq[String]] = {
+    Future.exception(new UnsupportedOperationException("This is no longer used"))
+  }
+  @deprecated("This didn't have UI support", "1.2.3")
+  def getTopKeyValueAnnotations(serviceName: String): Future[Seq[String]] = {
+    Future.exception(new UnsupportedOperationException("This is no longer used"))
+  }
+  @deprecated("This didn't have UI support", "1.2.3")
+  def storeTopAnnotations(serviceName: String, a: Seq[String]): Future[Unit] = {
+    Future.exception(new UnsupportedOperationException("This is no longer used"))
+  }
+  @deprecated("This didn't have UI support", "1.2.3")
+  def storeTopKeyValueAnnotations(serviceName: String, a: Seq[String]): Future[Unit] = {
+    Future.exception(new UnsupportedOperationException("This is no longer used"))
+  }
 }
 
 class NullAggregates extends Aggregates {
@@ -40,9 +52,4 @@ class NullAggregates extends Aggregates {
 
   def getDependencies(startDate: Option[Time], endDate: Option[Time] = None) = Future(Monoid.zero[Dependencies])
   def storeDependencies(dependencies: Dependencies): Future[Unit]                    = Future.Unit
-
-  def getTopAnnotations(serviceName: String)         = Future(Seq.empty[String])
-  def getTopKeyValueAnnotations(serviceName: String) = Future(Seq.empty[String])
-  def storeTopAnnotations(serviceName: String, a: Seq[String]): Future[Unit]         = Future.Unit
-  def storeTopKeyValueAnnotations(serviceName: String, a: Seq[String]): Future[Unit] = Future.Unit
 }
