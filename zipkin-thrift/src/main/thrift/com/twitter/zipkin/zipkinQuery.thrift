@@ -145,15 +145,6 @@ service ZipkinQuery {
     list<i64> getTraceIdsByAnnotation(1: string service_name, 2: string annotation, 3: binary value,
         5: i64 end_ts, 6: i32 limit, 7: Order OBSOLETE_order) throws (1: QueryException qe);
 
-
-    #************** Fetch traces from id **************
-
-    /**
-     * Get the traces that are in the database from the given list of trace ids.
-     */
-
-    set<i64> tracesExist(1: list<i64> trace_ids) throws (1: QueryException qe);
-
     /**
      * Get the full traces associated with the given trace ids.
      *

@@ -85,7 +85,6 @@ class CassandraSpanStore(
   private[this] val IndexBinaryAnnotationCounter = IndexStats.scope("annotation").counter("binary")
   private[this] val QueryStats = stats.scope("query")
   private[this] val QueryGetTtlCounter = QueryStats.counter("getTimeToLive")
-  private[this] val QueryTracesExistStat = QueryStats.stat("tracesExist")
   private[this] val QueryGetSpansByTraceIdsStat = QueryStats.stat("getSpansByTraceIds")
   private[this] val QueryGetSpansByTraceIdsTooBigCounter = QueryStats.scope("getSpansByTraceIds").counter("tooBig")
   private[this] val QueryGetServiceNamesCounter = QueryStats.counter("getServiceNames")
@@ -231,16 +230,6 @@ class CassandraSpanStore(
   }
 
   override def getDataTimeToLive = Future.value(spanTtl.inSeconds)
-
-  override def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
-    QueryTracesExistStat.add(traceIds.size)
-    pool {
-      repository
-        .tracesExist(traceIds.toArray.map(Long.box))
-        .map(_.asInstanceOf[Long])
-        .toSet
-    }
-  }
 
   override def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
     getSpansByTraceIds(Seq(traceId)).map(_.head)

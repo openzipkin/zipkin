@@ -110,19 +110,6 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
 
   override def getTimeToLive(traceId: Long): Future[Duration] = Future.value(Duration.Top)
 
-  override def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = db.inNewThreadWithRecoverableRetry {
-    implicit val (conn, borrowTime) = borrowConn()
-    try {
-
-      SQL(
-        "SELECT trace_id FROM zipkin_spans WHERE trace_id IN (%s)".format(traceIds.mkString(","))
-      ).as(long("trace_id") *).toSet
-
-    } finally {
-      returnConn(conn, borrowTime, "tracesExist")
-    }
-  }
-
   override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = db.inNewThreadWithRecoverableRetry {
     implicit val (conn, borrowTime) = borrowConn()
     try {

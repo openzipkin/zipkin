@@ -72,7 +72,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     ready(store(Seq(span1, span2)))
 
     result(store.getSpansByTraceIds(Seq(span1.traceId))) should be(Seq(Seq(span1)))
-    result(store.getSpansByTraceIds(Seq(span1.traceId, span2.traceId))) should be(
+    result(store.getSpansByTraceIds(Seq(span1.traceId, span2.traceId, 111111))) should be(
       Seq(Seq(span1), Seq(span2))
     )
   }
@@ -93,14 +93,6 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     // If a store doesn't use TTLs this should return Duration.Top
     val ttl = result(store.getTimeToLive(span1.traceId))
     assert(ttl == Duration.Top || (ttl - 1234.seconds).abs.inMilliseconds <= 10)
-  }
-
-  @Test def tracesExist() {
-    ready(store(Seq(span1, span4)))
-
-    result(store.tracesExist(Seq(span1.traceId, span4.traceId, 111111))) should be(
-      Set(span1.traceId, span4.traceId)
-    )
   }
 
   @Test def getSpanNames() {
