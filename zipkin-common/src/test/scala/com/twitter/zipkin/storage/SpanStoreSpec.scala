@@ -60,12 +60,6 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   val mergedSpan = Span(123, "methodcall", spanId, None,
     List(ann1, ann2), List(binaryAnnotation("BAH2", "BEH2")))
 
-  @Test def getSpansByTraceId() {
-    ready(store(Seq(span1)))
-
-    result(store.getSpansByTraceId(span1.traceId)) should be(Seq(span1))
-  }
-
   @Test def getSpansByTraceIds() {
     ready(store(Seq(span1, span2)))
 

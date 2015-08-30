@@ -28,19 +28,19 @@ abstract class Aggregates extends java.io.Closeable {
   def getDependencies(startDate: Option[Time], endDate: Option[Time]=None): Future[Dependencies]
   def storeDependencies(dependencies: Dependencies): Future[Unit]
 
-  @deprecated("This didn't have UI support", "1.2.3")
+  @deprecated("This didn't have UI support", "1.3.0")
   def getTopAnnotations(serviceName: String): Future[Seq[String]] = {
     Future.exception(new UnsupportedOperationException("This is no longer used"))
   }
-  @deprecated("This didn't have UI support", "1.2.3")
+  @deprecated("This didn't have UI support", "1.3.0")
   def getTopKeyValueAnnotations(serviceName: String): Future[Seq[String]] = {
     Future.exception(new UnsupportedOperationException("This is no longer used"))
   }
-  @deprecated("This didn't have UI support", "1.2.3")
+  @deprecated("This didn't have UI support", "1.3.0")
   def storeTopAnnotations(serviceName: String, a: Seq[String]): Future[Unit] = {
     Future.exception(new UnsupportedOperationException("This is no longer used"))
   }
-  @deprecated("This didn't have UI support", "1.2.3")
+  @deprecated("This didn't have UI support", "1.3.0")
   def storeTopKeyValueAnnotations(serviceName: String, a: Seq[String]): Future[Unit] = {
     Future.exception(new UnsupportedOperationException("This is no longer used"))
   }

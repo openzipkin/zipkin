@@ -184,9 +184,6 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
     }
   }
 
-  override def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
-    getSpansByTraceIds(Seq(traceId)).map(_.head)
-
   override def getTraceIdsByName(serviceName: String, spanName: Option[String],
     endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
 

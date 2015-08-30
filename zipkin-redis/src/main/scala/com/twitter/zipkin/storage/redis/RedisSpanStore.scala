@@ -26,14 +26,9 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
     Seq(storage.storeSpan(span), index.index(span))
   })
 
-  override def getDataTimeToLive = Future.value(ttl.map(_.inSeconds).getOrElse(Int.MaxValue))
-
   override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
     storage.getSpansByTraceIds(traceIds)
   }
-
-  override def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
-    getSpansByTraceIds(Seq(traceId)).map(_.head)
 
   override def getTraceIdsByName(
     serviceName: String,
