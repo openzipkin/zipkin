@@ -28,7 +28,6 @@ import com.twitter.zipkin.query.adjusters._
 import com.twitter.zipkin.query.constants._
 import com.twitter.zipkin.storage._
 import com.twitter.zipkin.thriftscala
-import com.twitter.zipkin.thriftscala.Order
 
 class ThriftQueryService(
   spanStore: SpanStore,
@@ -120,9 +119,6 @@ class ThriftQueryService(
 
   private[this] val noServiceNameError = Future.exception(thriftscala.QueryException("No service name provided"))
   private[this] def handleQuery[T](name: String, qr: thriftscala.QueryRequest)(f: => Future[T]): Future[T] = {
-    if (qr.obsoleteOrder != Order.None) {
-      log.ifWarning("obsolete order argument specified " + qr)
-    }
     if (!opt(qr.serviceName).isDefined) noServiceNameError else {
       FTrace.recordBinary("serviceName", qr.serviceName)
       FTrace.recordBinary("endTs", qr.endTs)
@@ -164,45 +160,6 @@ class ThriftQueryService(
           }
       }
     }
-
-  override def getTraceIdsBySpanName(
-    serviceName: String,
-    spanName: String,
-    endTs: Long,
-    limit: Int,
-    order: thriftscala.Order
-  ): Future[Seq[Long]] = {
-    val qr = thriftscala.QueryRequest(serviceName, opt(spanName), None, None, endTs, limit, order)
-    handleQuery("getTraceIdsBySpanName", qr) {
-      spanStore.getTraceIdsByName(serviceName, qr.spanName, endTs, limit).map(seq => seq.map(_.traceId))
-    }
-  }
-
-  override def getTraceIdsByServiceName(
-    serviceName: String,
-    endTs: Long,
-    limit: Int,
-    order: thriftscala.Order
-  ): Future[Seq[Long]] = {
-    val qr = thriftscala.QueryRequest(serviceName, None, None, None, endTs, limit, order)
-    handleQuery("getTraceIdsBySpanName", qr) {
-      spanStore.getTraceIdsByName(serviceName, None, endTs, limit).map(seq => seq.map(_.traceId))
-    }
-  }
-
-  override def getTraceIdsByAnnotation(
-    serviceName: String,
-    key: String,
-    value: ByteBuffer,
-    endTs: Long,
-    limit: Int,
-    order: thriftscala.Order
-  ): Future[Seq[Long]] = {
-    val qr = thriftscala.QueryRequest(serviceName, None, None, None, endTs, limit, order)
-    handleQuery("getTraceIdsByAnnotation", qr) {
-      spanStore.getTraceIdsByAnnotation(serviceName, key, opt(value), endTs, limit).map(seq => seq.map(_.traceId))
-    }
-  }
 
   override def getTracesByIds(traceIds: Seq[Long], adjust: Seq[thriftscala.Adjust]): Future[Seq[thriftscala.Trace]] =
     handle("getTracesByIds") {

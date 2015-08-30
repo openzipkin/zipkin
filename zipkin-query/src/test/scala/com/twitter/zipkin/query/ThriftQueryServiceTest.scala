@@ -78,11 +78,11 @@ class ThriftQueryServiceTest extends FunSuite {
 
     // exception on null serviceName
     intercept[thriftscala.QueryException] {
-      Await.result(svc.getTraceIdsBySpanName(null, "span", 100, 100, thriftscala.Order.DurationDesc))
+      Await.result(svc.getTraceIds(thriftscala.QueryRequest(null, Some("span"), None, None, 100, 100)))
     }
 
-    val actual = Await.result(svc.getTraceIdsBySpanName("service2", "methodcall", 1000, 50, thriftscala.Order.DurationDesc))
-    assert(actual === Seq(2, 2))
+    val actual = Await.result(svc.getTraceIds(thriftscala.QueryRequest("service2", Some("methodcall"),  None, None, 1000, 50)))
+    assert(actual.traceIds === Seq(2, 2))
   }
 
   test("trace summary for trace id") {
@@ -118,20 +118,22 @@ class ThriftQueryServiceTest extends FunSuite {
 
   test("find trace ids by service name") {
     val svc = newLoadedService()
-    val actual = Await.result(svc.getTraceIdsByServiceName("service3", 1000, 50, thriftscala.Order.DurationDesc))
-    assert(actual === Seq(3, 5))
+    val actual = Await.result(svc.getTraceIds(thriftscala.QueryRequest("service3", None, None, None, 1000, 50)))
+    assert(actual.traceIds === Seq(3, 5))
   }
 
   test("find trace ids by annotation name") {
     val svc = newLoadedService()
-    val actual = Await.result(svc.getTraceIdsByAnnotation("service3", "annotation", null, 1000, 50, thriftscala.Order.DurationDesc))
-    assert(actual === Seq(5))
+    val actual = Await.result(svc.getTraceIds(thriftscala.QueryRequest("service3", None, Some(Seq("annotation")), None, 1000, 50)))
+    assert(actual.traceIds === Seq(5))
   }
 
   test("find trace ids by annotation name and value") {
     val svc = newLoadedService()
-    val actual = Await.result(svc.getTraceIdsByAnnotation("service3", "annotation", ByteBuffer.wrap("ann".getBytes), 1000, 50, thriftscala.Order.DurationDesc))
-    assert(actual === Seq(5))
+    val keyValue = thriftscala.BinaryAnnotation("annotation", ByteBuffer.wrap("ann".getBytes), thriftscala.AnnotationType.String, None)
+
+    val actual = Await.result(svc.getTraceIds(thriftscala.QueryRequest("service3", None, None, Some(Seq(keyValue)), 1000, 50)))
+    assert(actual.traceIds === Seq(5))
   }
 
   test("get trace by traceId") {

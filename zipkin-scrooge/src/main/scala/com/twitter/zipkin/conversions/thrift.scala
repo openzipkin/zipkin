@@ -21,7 +21,6 @@ import com.twitter.util.Time
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query._
 import com.twitter.zipkin.thriftscala
-import com.twitter.zipkin.thriftscala.Order
 import scala.collection.breakOut
 import scala.language.implicitConversions
 
@@ -223,8 +222,7 @@ object thrift {
           _.map { _.toThrift }
         },
         q.endTs,
-        q.limit,
-        Order.None)
+        q.limit)
     }
   }
   class ThriftQueryRequest(q: thriftscala.QueryRequest) {
