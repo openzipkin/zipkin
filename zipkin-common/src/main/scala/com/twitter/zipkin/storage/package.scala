@@ -15,7 +15,7 @@
  */
 package com.twitter.zipkin.storage
 
-@deprecated("This is no longer used: it only supported query order, which is obsolete", "1.2.3")
+@deprecated("This is no longer used: it only supported query order, which is obsolete", "1.3.0")
 case class TraceIdDuration(traceId: Long, duration: Long, startTimestamp: Long)
 
 /* A trace ID and its associated timestamp */

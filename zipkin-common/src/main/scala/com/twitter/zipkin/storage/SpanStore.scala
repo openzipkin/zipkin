@@ -25,11 +25,6 @@ import com.twitter.zipkin.common.Span
 
 abstract class SpanStore extends java.io.Closeable {
 
-  @deprecated("This is no longer used; getSpansByTraceIds ignores absent ids", "1.2.3")
-  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
-    Future.exception(new UnsupportedOperationException("This is no longer used"))
-  }
-
   /**
    * Get the available trace information from the storage system.
    * Spans in trace should be sorted by the first annotation timestamp
@@ -39,7 +34,6 @@ abstract class SpanStore extends java.io.Closeable {
    * the return list may not match the provided list of ids.
    */
   def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]]
-  def getSpansByTraceId(traceId: Long): Future[Seq[Span]]
 
   /**
    * Get the trace ids for this particular service and if provided, span name.
@@ -88,22 +82,30 @@ abstract class SpanStore extends java.io.Closeable {
    */
   override def close()
 
-  @deprecated("This is no longer used: it only supported query order, which is obsolete", "1.2.3")
+  @deprecated("Use getSpansByTraceIds instead", "1.3.0")
+  def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = getSpansByTraceIds(Seq(traceId)).map(_.head)
+
+  @deprecated("This is no longer used; getSpansByTraceIds ignores absent ids", "1.3.0")
+  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
+    Future.exception(new UnsupportedOperationException("This is no longer used"))
+  }
+
+  @deprecated("This is no longer used: it only supported query order, which is obsolete", "1.3.0")
   def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = {
     Future.exception(new UnsupportedOperationException("This is no longer used"))
   }
 
-  @deprecated("This didn't have UI support and was only partially supported", "1.2.3")
+  @deprecated("This didn't have UI support and was only partially supported", "1.3.0")
   def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = {
     Future.exception(new UnsupportedOperationException("This is no longer used"))
   }
 
-  @deprecated("This didn't have UI support and was only partially supported", "1.2.3")
+  @deprecated("This didn't have UI support and was only partially supported", "1.3.0")
   def getDataTimeToLive(): Future[Int] = {
     Future.exception(new UnsupportedOperationException("This is no longer used"))
   }
 
-  @deprecated("This didn't have UI support and was only partially supported", "1.2.3")
+  @deprecated("This didn't have UI support and was only partially supported", "1.3.0")
   def getTimeToLive(traceId: Long): Future[Duration] = {
     Future.exception(new UnsupportedOperationException("This is no longer used"))
   }
@@ -145,10 +147,6 @@ class InMemorySpanStore extends SpanStore {
     traceIds flatMap { id =>
       Some(spans.filter { _.traceId == id }.toList).filter { _.length > 0 }
     }
-  }
-
-  override def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = call {
-    spans.filter { _.traceId == traceId }.toList
   }
 
   override def getTraceIdsByName(

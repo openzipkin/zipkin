@@ -21,11 +21,6 @@ public class SpanStoreInJava extends SpanStore {
     }
 
     @Override
-    public Future<Seq<Span>> getSpansByTraceId(long traceId) {
-        return null;
-    }
-
-    @Override
     public Future<Seq<IndexedTraceId>> getTraceIdsByName(String serviceName, Option<String> spanName, long endTs, int limit) {
         return null;
     }
