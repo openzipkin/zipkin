@@ -5,8 +5,8 @@ dependencies {
     compile "com.twitter:finagle-httpx_${scalaInterfaceVersion}:${commonVersions.finagle}"
     compile "com.twitter:util-core_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
     compile "com.twitter:util-zk_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
-    compile "com.twitter.common.zookeeper:candidate:0.0.75"
-    compile "com.twitter.common.zookeeper:group:0.0.81"
+    compile "com.twitter.common.zookeeper:candidate:0.0.84"
+    compile "com.twitter.common.zookeeper:group:0.0.90"
 
     testCompile 'org.apache.curator:curator-test:2.8.0'
 }

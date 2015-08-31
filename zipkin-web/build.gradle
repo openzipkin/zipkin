@@ -19,7 +19,7 @@ dependencies {
     compile "com.twitter:algebird-core_${scalaInterfaceVersion}:${commonVersions.algebird}"
     compile "com.twitter:twitter-server_${scalaInterfaceVersion}:${commonVersions.twitterServer}"
     compile 'com.github.spullara.mustache.java:compiler:0.8.17'
-    compile 'com.twitter.common:stats-util:0.0.57'
+    compile 'com.twitter.common:stats-util:0.0.58'
 
     compile "com.twitter:finagle-exception_${scalaInterfaceVersion}:${commonVersions.finagle}"
     compile "com.twitter:finagle-thriftmux_${scalaInterfaceVersion}:${commonVersions.finagle}"

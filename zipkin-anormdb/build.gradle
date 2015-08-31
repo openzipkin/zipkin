@@ -18,7 +18,7 @@ dependencies {
     compile project(':zipkin-scrooge')
 
     compile "com.typesafe.play:anorm_${scalaInterfaceVersion}:2.3.9" // last version compatible w/ Java 7
-    compile "com.zaxxer:HikariCP:2.4.0"
+    compile "com.zaxxer:HikariCP:2.4.1"
 
     compile anormDriverDependencies[dbEngine]
 

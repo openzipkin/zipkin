@@ -5,12 +5,12 @@ ext {
     scalaInterfaceVersion = '2.10'
 
     commonVersions = [
-            algebird: '0.10.2',
-            finagle: '6.27.0',
-            scrooge: '3.20.0',
-            twitterUtil: '6.26.0',
-            twitterServer: '1.12.0',
-            ostrich: '9.10.0',
+            algebird: '0.11.0',
+            finagle: '6.28.0',
+            scrooge: '4.0.0',
+            twitterUtil: '6.27.0',
+            twitterServer: '1.13.0',
+            ostrich: '9.11.0',
             griddle: '1.7'
     ]
 
