@@ -16,6 +16,8 @@
  */
 package com.twitter.zipkin.web
 
+import java.util.Locale
+
 import com.twitter.util.Duration
 import com.twitter.zipkin.Constants.CoreAnnotationNames
 import java.util.concurrent.TimeUnit
@@ -43,13 +45,13 @@ object Util {
       case s if s.size == 0 => ""
 
       // seconds
-      case Seq(_, _, _) => "%.3fs".format(d.inMilliseconds / 1000.0)
+      case Seq(_, _, _) => "%.3fs".formatLocal(Locale.ENGLISH, d.inMilliseconds / 1000.0)
 
       // milliseconds
-      case Seq(_, _) => "%.3fms".format(d.inMicroseconds / 1000.0)
+      case Seq(_, _) => "%.3fms".formatLocal(Locale.ENGLISH, d.inMicroseconds / 1000.0)
 
       // microseconds
-      case Seq(_) => "%dμ".format(d.inMicroseconds)
+      case Seq(_) => "%dμ".formatLocal(Locale.ENGLISH, d.inMicroseconds)
 
       // seconds or more
       case _ =>
