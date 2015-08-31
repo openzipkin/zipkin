@@ -1,8 +1,8 @@
 // Adopted from https://github.com/ratpack/ratpack/blob/master/gradle/dependencies.gradle
 
 ext {
-    scalaVersion = '2.10.5'
-    scalaInterfaceVersion = '2.10'
+    scalaVersion = '2.11.7'
+    scalaInterfaceVersion = '2.11'
 
     commonVersions = [
             algebird: '0.11.0',
