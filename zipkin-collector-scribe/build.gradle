@@ -2,4 +2,6 @@ dependencies {
     compile project(':zipkin-collector')
 
     compile "com.twitter:scrooge-serializer_${scalaInterfaceVersion}:${commonVersions.scrooge}"
+
+    runtime commonDependencies.slf4jLog4j12
 }

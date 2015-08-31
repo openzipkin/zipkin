@@ -6,7 +6,7 @@ dependencies {
     compile 'org.apache.commons:commons-io:1.3.2'
     compile "com.twitter:scrooge-serializer_${scalaInterfaceVersion}:${commonVersions.scrooge}"
 
-    testCompile 'com.github.charithe:kafka-junit:1.4'
+    testCompile 'com.github.charithe:kafka-junit:1.5'
 }
 
 // SBT migration note: this was in the SBT build, but tests pass without it.
