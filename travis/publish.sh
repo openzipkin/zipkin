@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -ex
 
-declare -r PUBLISH_USING_JDK="oraclejdk7"
-
 function increment_version() {
   # TODO this would be cleaner in release.versionPatterns
   local v=$1
@@ -59,18 +57,6 @@ function check_travis_branch_equals_travis_tag(){
   fi
 }
 
-function want_to_release_from_this_jdk(){
-  if [ "${TRAVIS_JDK_VERSION}" != "${PUBLISH_USING_JDK}" ]; then
-    echo "[Not Publishing] Current JDK(${TRAVIS_JDK_VERSION}) does not"
-    echo "[Not Publishing]   equal PUBLISH_USING_JDK(${PUBLISH_USING_JDK})"
-    return 1
-  else
-    echo "[Publishing] Current JDK is the same as PUBLISH_USING_JDK"
-    echo "[Publishing]   environment variable (${TRAVIS_JDK_VERSION})"
-    return 0
-  fi
-}
-
 function publish(){
   echo "[Publishing] Publishing..."
   PUBLISHING=true ./gradlew --info --stacktrace zipkinUpload
@@ -109,7 +95,8 @@ function run_tests(){
 # MAIN
 #----------------------
 action=run_tests
-if want_to_release_from_this_jdk && ! is_pull_request; then
+
+if ! is_pull_request; then
   if build_started_by_tag; then
     check_travis_branch_equals_travis_tag
     action=do_gradle_release
@@ -119,4 +106,3 @@ if want_to_release_from_this_jdk && ! is_pull_request; then
 fi
 
 $action
-

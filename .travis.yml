@@ -6,8 +6,6 @@ services:
 
 matrix:
   include:
-    - jdk: "oraclejdk7"
-      env: GRADLE_OPTS="-Dorg.gradle.daemon=false -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC -Xms2G -Xmx2G -Xss512k -XX:MaxPermSize=256m"
     - jdk: "oraclejdk8"
       env: GRADLE_OPTS="-Dorg.gradle.daemon=false -Xms2G -Xmx2G -Xss512k -XX:MetaspaceSize=256m"
 
