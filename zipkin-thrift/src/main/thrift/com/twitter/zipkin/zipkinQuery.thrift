@@ -46,19 +46,6 @@ struct TraceSummary {
 }
 
 /**
- * A modified version of the Annotation struct that brings in more information
- */
-struct TimelineAnnotation {
-  1: i64 timestamp                 # microseconds from epoch
-  2: string value                  # what happened at the timestamp?
-  3: zipkinCore.Endpoint host      # host this happened on
-  4: i64 span_id                   # which span does this annotation belong to?
-  5: optional i64 parent_id        # parent span id
-  6: string service_name           # which service did this annotation happen on?
-  7: string span_name              # span name, rpc method for example
-}
-
-/**
  * Returns a combination of trace, summary and span depth.
  */
 struct TraceCombo {
