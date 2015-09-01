@@ -122,34 +122,6 @@ object thrift {
   implicit def spanToThriftSpan(s: Span) = new ThriftSpan(s)
   implicit def thriftSpanToSpan(s: thriftscala.Span) = new WrappedSpan(s)
 
-  /* TimelineAnnotation */
-  class WrappedTimelineAnnotation(t: TimelineAnnotation) {
-    lazy val toThrift = {
-      thriftscala.TimelineAnnotation(
-        t.timestamp,
-        t.value,
-        t.host.toThrift,
-        t.spanId,
-        t.parentId,
-        t.serviceName,
-        t.spanName)
-    }
-  }
-  class ThriftTimelineAnnotation(t: thriftscala.TimelineAnnotation) {
-    lazy val toTimelineAnnotation = {
-      TimelineAnnotation(
-        t.timestamp,
-        t.value,
-        t.host.toEndpoint,
-        t.spanId,
-        t.parentId,
-        t.serviceName,
-        t.spanName)
-    }
-  }
-  implicit def timelineAnnotationToThrift(t: TimelineAnnotation) = new WrappedTimelineAnnotation(t)
-  implicit def thriftToTimelineAnnotation(t: thriftscala.TimelineAnnotation) = new ThriftTimelineAnnotation(t)
-
   /* Trace */
   class WrappedTrace(t: Trace) {
     lazy val toThrift = thriftscala.Trace(t.spans.map{ _.toThrift })
