@@ -25,6 +25,7 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>swift-codec</module>
     <module>zipkin-java-core</module>
     <module>zipkin-java-query</module>
     <module>zipkin-java-scribe</module>
@@ -114,15 +115,21 @@
       </dependency>
 
       <dependency>
-        <groupId>com.facebook.swift</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>swift-codec</artifactId>
-        <version>${swift.version}</version>
+        <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>com.facebook.swift</groupId>
         <artifactId>swift-service</artifactId>
         <version>${swift.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.facebook.swift</groupId>
+            <artifactId>swift-codec</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
 
       <dependency>

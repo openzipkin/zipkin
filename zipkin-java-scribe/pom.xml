@@ -41,7 +41,7 @@
     </dependency>
 
     <dependency>
-      <groupId>com.facebook.swift</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>swift-codec</artifactId>
     </dependency>
 
