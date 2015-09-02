@@ -10,7 +10,8 @@ define(
     'component_ui/traceFilters',
     'component_ui/traces',
     'component_ui/timeStamp',
-    'component_ui/backToTop'
+    'component_ui/backToTop',
+    'component_ui/goToTrace'
   ],
 
   function (
@@ -22,7 +23,8 @@ define(
     TraceFiltersUI,
     TracesUI,
     TimeStampUI,
-    BackToTop
+    BackToTop,
+    GoToTraceUI
   ) {
 
     return initialize;
@@ -37,6 +39,7 @@ define(
       TracesUI.attachTo('#traces');
       TimeStampUI.attachTo('#time-stamp');
       BackToTop.attachTo('#backToTop');
+      GoToTraceUI.attachTo('#traceIdQueryForm');
 
       $('.timeago').timeago();
     }
