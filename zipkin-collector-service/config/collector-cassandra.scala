@@ -15,7 +15,7 @@
  */
 
 import com.twitter.app.App
-import com.twitter.zipkin.builder.{ZipkinServerBuilder, Scribe}
+import com.twitter.zipkin.builder.ZipkinServerBuilder
 import com.twitter.zipkin.cassandra
 import com.twitter.zipkin.cassandra.CassandraSpanStoreFactory
 import com.twitter.zipkin.collector.builder.{Adjustable, CollectorServiceBuilder}
@@ -53,9 +53,8 @@ val loggerFactory = new LoggerFactory(
 )
 
 CollectorServiceBuilder(
-  interface = Scribe.Interface(categories = Set("zipkin")),
+  storeBuilder,
   serverBuilder = ZipkinServerBuilder(serverPort, adminPort).loggers(List(loggerFactory))
-).writeTo(storeBuilder)
-  .sampleRate(Adjustable.local(sampleRate))
-  .queueNumWorkers(queueNumWorkers)
-  .queueMaxSize(queueMaxSize)
+).sampleRate(Adjustable.local(sampleRate))
+ .queueNumWorkers(queueNumWorkers)
+ .queueMaxSize(queueMaxSize)

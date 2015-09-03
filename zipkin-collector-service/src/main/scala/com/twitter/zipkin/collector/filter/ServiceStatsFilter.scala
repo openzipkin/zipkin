@@ -16,18 +16,15 @@
  */
 package com.twitter.zipkin.collector.filter
 
-import com.twitter.finagle.{Service, Filter}
 import com.twitter.ostrich.stats.Stats
-import com.twitter.util.Future
 import com.twitter.zipkin.common.Span
 
 /**
  * Filter that increments a counter for each service present in the Span
  */
-class ServiceStatsFilter extends Filter[Span, Unit, Span, Unit] {
-  def apply(span: Span, service: Service[Span, Unit]): Future[Unit] = {
-    val result = service(span)
+object ServiceStatsFilter {
+  def apply(spans: Seq[Span]): Seq[Span] = spans.map { span =>
     span.serviceNames.foreach { name => Stats.incr("process_" + name) }
-    result
+    span
   }
 }

@@ -15,19 +15,19 @@
  */
 package com.twitter.zipkin.collector.builder
 
-import com.twitter.finagle.Service
-import com.twitter.logging.Logger
-import com.twitter.ostrich.admin.{ServiceTracker, RuntimeEnvironment}
-import com.twitter.zipkin.builder.{ZipkinServerBuilder, Builder}
-import com.twitter.zipkin.collector.filter.{ServiceStatsFilter, SamplerFilter}
-import com.twitter.zipkin.collector.processor.{SpanStoreService, FanoutService}
-import com.twitter.zipkin.collector.sampler.AdjustableGlobalSampler
-import com.twitter.zipkin.collector.{WriteQueue, ZipkinCollector}
-import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.config.sampler.{AdaptiveSamplerConfig, AdjustableRateConfig}
-import com.twitter.zipkin.config.ConfigRequestHandler
-import com.twitter.zipkin.storage.Store
 import java.net.InetSocketAddress
+
+import com.twitter.finagle.ThriftMux
+import com.twitter.logging.Logger
+import com.twitter.ostrich.admin.{RuntimeEnvironment, ServiceTracker}
+import com.twitter.zipkin.builder.{Builder, ZipkinServerBuilder}
+import com.twitter.zipkin.collector.{ScribeCollectorInterface, ZipkinCollector}
+import com.twitter.zipkin.collector.filter.{SamplerFilter, ServiceStatsFilter}
+import com.twitter.zipkin.collector.sampler.AdjustableGlobalSampler
+import com.twitter.zipkin.config.ConfigRequestHandler
+import com.twitter.zipkin.config.sampler.{AdaptiveSamplerConfig, AdjustableRateConfig}
+import com.twitter.zipkin.storage.Store
+import com.twitter.zipkin.thriftscala
 
 /**
  * Immutable builder for ZipkinCollector
@@ -35,19 +35,11 @@ import java.net.InetSocketAddress
  * CollectorInterface[T] stands up the actual server, and its filter is used to process the object
  * of type T into a Span in a worker thread.
  *
- * @param interface
- * @param storeBuilders
- * @param sampleRateBuilder
- * @param adaptiveSamplerBuilder
- * @param additionalConfigEndpoints
- * @param queueMaxSize
- * @param queueNumWorkers
- * @param serverBuilder
  * @tparam T type of object added to write queue
  */
 case class CollectorServiceBuilder[T](
-  interface: CollectorInterface[T],
-  storeBuilders: Seq[Builder[Store]] = Seq.empty,
+  storeBuilder: Builder[Store],
+  scribeCategories: Set[String] = Set("zipkin"),
   sampleRateBuilder: Builder[AdjustableRateConfig] = Adjustable.local(1.0),
   adaptiveSamplerBuilder: Option[Builder[AdaptiveSamplerConfig]] = None,
   additionalConfigEndpoints: Seq[(String, Builder[AdjustableRateConfig])] = Seq.empty,
@@ -57,16 +49,6 @@ case class CollectorServiceBuilder[T](
 ) extends Builder[RuntimeEnvironment => ZipkinCollector] {
 
   val log = Logger.get()
-
-  /**
-   * Add a storage backend (Cassandra, Redis, etc.) to the builder
-   * All Spans are stored and indexed in all the `Store`s given
-   *
-   * @param sb store builder
-   * @return a new CollectorServiceBuilder
-   */
-  def writeTo(sb: Builder[Store]) =
-    copy(storeBuilders = storeBuilders :+ sb)
 
   /**
    * Add a configuration endpoint to control `AdjustableRateConfig`s
@@ -91,31 +73,20 @@ case class CollectorServiceBuilder[T](
   def apply() = (runtime: RuntimeEnvironment) => {
     serverBuilder.apply().apply(runtime)
 
-    log.info("Building %d stores: %s".format(storeBuilders.length, storeBuilders.toString))
-    val stores = storeBuilders map {
-      _.apply()
-    }
-    val storeProcessors = stores flatMap { store =>
-      Seq(new SpanStoreService(store.spanStore))
-    }
+    log.info("Building store: %s".format(storeBuilder.toString))
+    val store = storeBuilder.apply()
 
     val sampleRate = sampleRateBuilder.apply()
+    val sampler = new SamplerFilter(new AdjustableGlobalSampler(sampleRate))
 
-    val processor: Service[T, Unit] = {
-      interface.filter andThen
-      new SamplerFilter(new AdjustableGlobalSampler(sampleRate)) andThen
-      new ServiceStatsFilter andThen
-      new FanoutService[Span](storeProcessors)
-    }
+    import com.twitter.zipkin.conversions.thrift._
 
-    val queue = new WriteQueue(queueMaxSize, queueNumWorkers, processor)
-    queue.start()
+    val process = (spans: Seq[thriftscala.Span]) =>
+      store.spanStore.apply(ServiceStatsFilter(sampler(spans.map(_.toSpan))))
 
-    val server = interface.apply().apply(queue,
-      stores,
+    val server = ThriftMux.serveIface(
       new InetSocketAddress(serverBuilder.serverAddress, serverBuilder.serverPort),
-      serverBuilder.statsReceiver,
-      serverBuilder.tracer)
+      new ScribeCollectorInterface(store, scribeCategories, process, serverBuilder.statsReceiver))
 
     /**
      * Add config endpoints with the sampleRate endpoint. Available via:
@@ -136,6 +107,6 @@ case class CollectorServiceBuilder[T](
       ServiceTracker.register(service)
     }
 
-    new ZipkinCollector(server)
+    new ZipkinCollector(server, store)
   }
 }

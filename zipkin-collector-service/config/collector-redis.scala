@@ -16,7 +16,6 @@
 
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.redis.{Redis, Client}
-import com.twitter.zipkin.builder.Scribe
 import com.twitter.zipkin.redis
 import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
 import com.twitter.zipkin.storage.Store
@@ -29,5 +28,4 @@ val client = Client(ClientBuilder().hosts("0.0.0.0:6379")
 
 val storeBuilder = Store.Builder(redis.SpanStoreBuilder(client))
 
-CollectorServiceBuilder(Scribe.Interface(categories = Set("zipkin")))
-  .writeTo(storeBuilder)
+CollectorServiceBuilder(storeBuilder)
