@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.{ObjectMapper, SerializerProvider, JsonSerializer}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.twitter.zipkin.query.{TraceSummary, Trace}
+import com.twitter.zipkin.query.Trace
 import com.twitter.zipkin.common.Endpoint
 
 /**

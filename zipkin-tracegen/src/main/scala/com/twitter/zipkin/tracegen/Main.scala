@@ -81,23 +81,23 @@ object Main extends App with ZipkinSpanGenerator {
   ): Future[Unit] = {
     println("Querying for service name: " + service + " and span name " + span)
     for {
-      ts1 <- client.getTraces(QueryRequest(service, Some(span), None, None, Long.MaxValue, maxTraces, None))
+      ts1 <- client.getTraces(QueryRequest(service, Some(span), None, None, Long.MaxValue, maxTraces))
       _ = printTrace(ts1)
 
       _ = println("Querying for service name: " + service)
-      ts2 <- client.getTraces(QueryRequest(service, None, None, None, Long.MaxValue, maxTraces, None))
+      ts2 <- client.getTraces(QueryRequest(service, None, None, None, Long.MaxValue, maxTraces))
       _ = printTrace(ts2)
 
       _ = println("Querying for annotation: " + annotation)
-      ts3 <- client.getTraces(QueryRequest(service, None, Some(Seq(annotation)), None, Long.MaxValue, maxTraces, None))
+      ts3 <- client.getTraces(QueryRequest(service, None, Some(Seq(annotation)), None, Long.MaxValue, maxTraces))
       _ = printTrace(ts3)
 
       binaryAnnotation = Map(kvAnnotation._1 -> new String(kvAnnotation._2.array(), UTF_8))
       _ = println("Querying for kv annotation: " + kvAnnotation._1)
-      ts4 <- client.getTraces(QueryRequest(service, None, None, None, Long.MaxValue, maxTraces, Some(binaryAnnotation)))
+      ts4 <- client.getTraces(QueryRequest(service, None, None, Some(binaryAnnotation), Long.MaxValue, maxTraces))
       _ = printTrace(ts4)
 
-      traces <- client.getTracesByIds(ts4.map(t => t.spans.head.traceId), List())
+      traces <- client.getTracesByIds(ts4.map(t => t.spans.head.traceId))
       _ = printTrace(traces)
 
       svcNames <- client.getServiceNames()

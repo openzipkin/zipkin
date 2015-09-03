@@ -400,7 +400,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
   def handleTraces(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
       pathTraceId(req.path.split("/").lastOption) map { id =>
-        client.getTracesByIds(Seq(id), Seq.empty, queryExtractor.adjustClockSkew(req)) flatMap {
+        client.getTracesByIds(Seq(id), queryExtractor.adjustClockSkew(req)) flatMap {
           case Seq(t) => Future.value(renderTrace(t.toTrace))
           case _ => NotFound
         }
@@ -411,7 +411,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
     new NotFoundService {
       def process(req: Request): Option[Future[Renderer]] =
         pathTraceId(req.path.split("/").lastOption) map { id =>
-          client.getTracesByIds(Seq(id), Seq.empty, queryExtractor.adjustClockSkew(req)).map { ts =>
+          client.getTracesByIds(Seq(id), queryExtractor.adjustClockSkew(req)).map { ts =>
             JsonRenderer(if (req.path.startsWith("/api/trace")) ts else ts.map(t => TraceSummary(t.toTrace)))
           }
         }

@@ -17,7 +17,6 @@ package com.twitter.zipkin.conversions
 
 import com.twitter.algebird.Moments
 import com.twitter.conversions.time._
-import com.twitter.finagle.tracing.SpanId
 import com.twitter.util.Time
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query._
@@ -132,28 +131,6 @@ object thrift {
   }
   implicit def traceToThrift(t: Trace) = new WrappedTrace(t)
   implicit def thriftToTrace(t: thriftscala.Trace) = new ThriftTrace(t)
-
-  class WrappedSpanTimestamp(t: SpanTimestamp) {
-    lazy val toThrift = thriftscala.SpanTimestamp(t.name, t.startTimestamp, t.endTimestamp)
-  }
-  class ThriftSpanTimestamp(t: thriftscala.SpanTimestamp) {
-    lazy val toSpanTimestamp = SpanTimestamp(t.name, t.startTimestamp, t.endTimestamp)
-  }
-  implicit def spanTimestampToThrift(t: SpanTimestamp) = new WrappedSpanTimestamp(t)
-  implicit def thriftToSpanTimestamp(t: thriftscala.SpanTimestamp) = new ThriftSpanTimestamp(t)
-
-  @deprecated("zipkin-web no longer uses thrift.TraceSummary", "1.4.3")
-  class WrappedTraceSummary(t: TraceSummary) {
-    lazy val toThrift = thriftscala.TraceSummary(
-      SpanId.fromString(t.traceId).get.toLong,
-      t.startTimestamp,
-      t.endTimestamp,
-      t.durationMicro,
-      t.endpoints.map(_.toThrift),
-      t.spanTimestamps.map(_.toThrift))
-  }
-  @deprecated("zipkin-web no longer uses thrift.TraceSummary", "1.4.3")
-  implicit def traceSummaryToThrift(t: TraceSummary) = new WrappedTraceSummary(t)
 
   /* Dependencies */
   class WrappedMoments(m: Moments) {
