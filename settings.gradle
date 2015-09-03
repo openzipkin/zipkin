@@ -21,7 +21,6 @@ def includes = [
 /////////////////////////////////////
 
 'zipkin-collector',
-'zipkin-collector-scribe',
 
 ///////////////
 // Receivers //

@@ -16,32 +16,32 @@
  */
 package com.twitter.zipkin.collector.filter
 
-import com.twitter.finagle.{Service, Filter}
 import com.twitter.ostrich.stats.Stats
-import com.twitter.util.Future
 import com.twitter.zipkin.collector.sampler.GlobalSampler
 import com.twitter.zipkin.common.Span
 
-class SamplerFilter(sampler: GlobalSampler) extends Filter[Span, Unit, Span, Unit] {
-  def apply(span: Span, service: Service[Span, Unit]): Future[Unit] = {
-    span.serviceNames.foreach { name => Stats.incr("received_" + name) }
+class SamplerFilter(sampler: GlobalSampler) {
+  def apply(spans: Seq[Span]): Seq[Span] = {
+    spans.filter(span => {
+      span.serviceNames.foreach { name => Stats.incr("received_" + name) }
 
-    /**
-     * If the span was created with debug mode on we guarantee that it will be
-     * stored no matter what our sampler tells us
-     */
-    if (span.debug) {
-      Stats.incr("debugflag")
-      (span.parentId, span.serviceName) match {
-        case (None, Some(serviceName)) =>
-          Stats.incr("debugflag_" + serviceName)
-        case _ =>
+      /**
+       * If the span was created with debug mode on we guarantee that it will be
+       * stored no matter what our sampler tells us
+       */
+      if (span.debug) {
+        Stats.incr("debugflag")
+        (span.parentId, span.serviceName) match {
+          case (None, Some(serviceName)) =>
+            Stats.incr("debugflag_" + serviceName)
+          case _ =>
+        }
+        true
+      } else if (sampler(span.traceId)) {
+        true
+      } else {
+        false
       }
-      service(span)
-    } else if (sampler(span.traceId)) {
-      service(span)
-    } else {
-      Future.Unit
-    }
+    })
   }
 }

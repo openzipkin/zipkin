@@ -14,29 +14,26 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.collector.processor
+package com.twitter.zipkin.collector
 
 import com.twitter.finagle.Service
-import com.twitter.logging.Logger
 import com.twitter.ostrich.stats.Stats
-import com.twitter.util.{Time, Future}
+import com.twitter.util.Future
 import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.storage.SpanStore
+import com.twitter.zipkin.thriftscala
 
-class SpanStoreService(spanStore: SpanStore) extends Service[Span, Unit] {
-
-  private[this] val log = Logger.get()
-
+class OstrichService(serviceStatsPrefix: String) extends Service[Span, Unit] {
   def apply(span: Span): Future[Unit] = {
-    spanStore.apply(Seq(span)) onFailure {
-      case e => {
-        Stats.getCounter("exception_%s_%s".format("storeSpan", e.getClass)).incr()
-        log.error(e, "storeSpan")
-      }
+    for {
+      start <- span.getAnnotation(thriftscala.Constants.SERVER_RECV)
+      end <- span.getAnnotation(thriftscala.Constants.SERVER_SEND)
+    } {
+      span.serviceNames.foreach(serviceName => {
+        Stats.addMetric(serviceStatsPrefix + serviceName, (end - start).toInt)
+        Stats.addMetric(serviceStatsPrefix + serviceName + "." + span.name, (end - start).toInt)
+      })
     }
-  }
 
-  override def close(deadline: Time) = {
-    super.close(deadline)
+    Future.Unit
   }
 }

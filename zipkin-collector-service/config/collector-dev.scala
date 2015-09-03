@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import com.twitter.zipkin.builder.Scribe
 import com.twitter.zipkin.anormdb.{SpanStoreBuilder, AggregatesBuilder}
 import com.twitter.zipkin.storage.anormdb.DB
 import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
@@ -23,5 +22,4 @@ val db = DB()
 
 val storeBuilder = Store.Builder(SpanStoreBuilder(db, true), AggregatesBuilder(db))
 
-CollectorServiceBuilder(Scribe.Interface(categories = Set("zipkin")))
-  .writeTo(storeBuilder)
+CollectorServiceBuilder(storeBuilder)

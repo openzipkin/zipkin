@@ -15,22 +15,23 @@
  */
 package com.twitter.zipkin.collector
 
-import com.twitter.finagle.builder.Server
+import com.twitter.finagle.ListeningServer
 import com.twitter.logging.Logger
-import com.twitter.ostrich.admin.{Service, ServiceTracker}
+import com.twitter.ostrich.admin.{ServiceTracker, Service}
+import com.twitter.util.Await
+import com.twitter.zipkin.storage.Store
 
-class ZipkinCollector(server: Server) extends Service {
+class ZipkinCollector(server: ListeningServer, store: Store) extends Service {
 
   val log = Logger.get(getClass.getName)
 
-  def start() {}
+  override def start() {}
 
-  def shutdown() {
+  override def shutdown() {
     log.info("Shutting down collector thrift service.")
-
-    server.close()
+    Await.ready(server.close())
+    store.aggregates.close()
+    store.spanStore.close()
     ServiceTracker.shutdown()
   }
 }
-
-

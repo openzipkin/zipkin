@@ -18,6 +18,7 @@ package com.twitter.zipkin.collector.processor
  */
 
 import com.twitter.ostrich.stats.{Distribution, Histogram, Stats}
+import com.twitter.zipkin.collector.OstrichService
 import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
 import com.twitter.zipkin.thriftscala
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
