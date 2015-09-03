@@ -81,34 +81,6 @@ abstract class SpanStore extends java.io.Closeable {
    * Close writes and await possible draining of internal queues.
    */
   override def close()
-
-  @deprecated("Use getSpansByTraceIds instead", "1.3.0")
-  def getSpansByTraceId(traceId: Long): Future[Seq[Span]] = getSpansByTraceIds(Seq(traceId)).map(_.head)
-
-  @deprecated("This is no longer used; getSpansByTraceIds ignores absent ids", "1.3.0")
-  def tracesExist(traceIds: Seq[Long]): Future[Set[Long]] = {
-    Future.exception(new UnsupportedOperationException("This is no longer used"))
-  }
-
-  @deprecated("This is no longer used: it only supported query order, which is obsolete", "1.3.0")
-  def getTracesDuration(traceIds: Seq[Long]): Future[Seq[TraceIdDuration]] = {
-    Future.exception(new UnsupportedOperationException("This is no longer used"))
-  }
-
-  @deprecated("This didn't have UI support and was only partially supported", "1.3.0")
-  def setTimeToLive(traceId: Long, ttl: Duration): Future[Unit] = {
-    Future.exception(new UnsupportedOperationException("This is no longer used"))
-  }
-
-  @deprecated("This didn't have UI support and was only partially supported", "1.3.0")
-  def getDataTimeToLive(): Future[Int] = {
-    Future.exception(new UnsupportedOperationException("This is no longer used"))
-  }
-
-  @deprecated("This didn't have UI support and was only partially supported", "1.3.0")
-  def getTimeToLive(traceId: Long): Future[Duration] = {
-    Future.exception(new UnsupportedOperationException("This is no longer used"))
-  }
 }
 
 object SpanStore {

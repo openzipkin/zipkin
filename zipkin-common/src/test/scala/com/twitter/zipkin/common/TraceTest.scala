@@ -19,7 +19,7 @@ package com.twitter.zipkin.common
 import java.nio.ByteBuffer
 
 import com.twitter.zipkin.Constants
-import com.twitter.zipkin.query.{SpanTreeEntry, Timespan, Trace, TraceSummary}
+import com.twitter.zipkin.query.{SpanTreeEntry, Timespan, Trace}
 import org.scalatest.FunSuite
 
 import scala.collection.mutable
@@ -82,8 +82,6 @@ class TraceTest extends FunSuite {
     val span2 = Span(123, "method_2", 200, Some(100), ann2, Nil)
 
     val trace = new Trace(Seq(span1, span2))
-    val duration = TraceSummary(trace).get.durationMicro
-    assert(duration === 12)
   }
 
   test("get services involved in trace") {

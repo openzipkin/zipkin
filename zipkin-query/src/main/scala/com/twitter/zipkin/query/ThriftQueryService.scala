@@ -27,8 +27,6 @@ import com.twitter.zipkin.query.adjusters._
 import com.twitter.zipkin.query.constants._
 import com.twitter.zipkin.storage._
 import com.twitter.zipkin.thriftscala
-import com.twitter.zipkin.thriftscala.Adjust.TimeSkew
-import com.twitter.zipkin.thriftscala.QueryResponse
 import java.nio.ByteBuffer
 
 class ThriftQueryService(
@@ -122,18 +120,11 @@ class ThriftQueryService(
     }
   }
 
-  @deprecated("zipkin-web no longer uses getTraceIds", "1.4.3")
-  override def getTraceIds(qr: thriftscala.QueryRequest): Future[thriftscala.QueryResponse] =
-    handleQuery("getTraceIds", qr) {
-      traceIds(qr).map(QueryResponse(_))
-    }
-
   def traceIds(qr: thriftscala.QueryRequest): Future[Seq[Long]] = {
     val sliceQueries = Seq[Option[Seq[SliceQuery]]](
       qr.spanName.map { n => Seq(SpanSliceQuery(n)) },
       qr.annotations.map { _.map { AnnotationSliceQuery(_, None) } },
-      qr.binaryAnnotations.map { _.map { e => AnnotationSliceQuery(e._1, Some(ByteBuffer.wrap(e._2.getBytes(UTF_8)))) }(collection.breakOut) },
-      qr.obsoleteBinaryAnnotations.map { _.map { b => AnnotationSliceQuery(b.key, Some(b.value)) } }
+      qr.binaryAnnotations.map { _.map { e => AnnotationSliceQuery(e._1, Some(ByteBuffer.wrap(e._2.getBytes(UTF_8)))) }(collection.breakOut) }
     ).flatten.flatten
 
     sliceQueries match {
@@ -158,39 +149,13 @@ class ThriftQueryService(
 
   override def getTraces(qr: thriftscala.QueryRequest): Future[Seq[thriftscala.Trace]] =
     handleQuery("getTraces", qr) {
-      traceIds(qr).flatMap(getTracesByIds(_, Seq.empty, qr.adjustClockSkew))
+      traceIds(qr).flatMap(getTracesByIds(_, qr.adjustClockSkew))
     }
 
-  override def getTracesByIds(traceIds: Seq[Long], obsolete: Seq[thriftscala.Adjust], adjustClockSkew: Boolean = true): Future[Seq[thriftscala.Trace]] =
+  override def getTracesByIds(traceIds: Seq[Long], adjustClockSkew: Boolean = true): Future[Seq[thriftscala.Trace]] =
     handle("getTracesByIds") {
       FTrace.recordBinary("numIds", traceIds.length)
-      val adjust = obsolete.find(_ == TimeSkew).map(_ => true).getOrElse(adjustClockSkew)
-      spanStore.getSpansByTraceIds(traceIds) map { adjustedTraces(_, adjust).map(_.toThrift) }
-    }
-
-  @deprecated("zipkin-web no longer uses thrift.TraceSummary", "1.4.3")
-  override def getTraceSummariesByIds(traceIds: Seq[Long], obsolete: Seq[thriftscala.Adjust]): Future[Seq[thriftscala.TraceSummary]] =
-    handle("getTraceSummariesByIds") {
-      FTrace.recordBinary("numIds", traceIds.length)
-      val adjust = obsolete.find(_ == TimeSkew).map(_ => true).getOrElse(false)
-      spanStore.getSpansByTraceIds(traceIds) map { traces =>
-        adjustedTraces(traces, adjust) flatMap { TraceSummary(_).map(_.toThrift) }
-      }
-    }
-
-  @deprecated("zipkin-web no longer uses thrift.TraceCombo", "1.4.3")
-  override def getTraceCombosByIds(traceIds: Seq[Long], obsolete: Seq[thriftscala.Adjust]): Future[Seq[thriftscala.TraceCombo]] =
-    handle("getTraceCombosByIds") {
-      FTrace.recordBinary("numIds", traceIds.length)
-      val adjust = obsolete.find(_ == TimeSkew).map(_ => true).getOrElse(false)
-      spanStore.getSpansByTraceIds(traceIds) map { traces =>
-        adjustedTraces(traces, adjust) map { trace =>
-          thriftscala.TraceCombo(
-            trace.toThrift,
-            TraceSummary(trace).map(_.toThrift),
-            trace.toSpanDepths)
-        }
-      }
+      spanStore.getSpansByTraceIds(traceIds) map { adjustedTraces(_, adjustClockSkew).map(_.toThrift) }
     }
 
   override def getServiceNames: Future[Set[String]] =

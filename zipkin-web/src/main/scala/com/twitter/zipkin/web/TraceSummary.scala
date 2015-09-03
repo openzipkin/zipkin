@@ -14,10 +14,11 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.query
+package com.twitter.zipkin.web
 
 import com.twitter.finagle.tracing.SpanId
-import com.twitter.zipkin.common.Endpoint
+import com.twitter.zipkin.common.{Span, Endpoint}
+import com.twitter.zipkin.query.Trace
 
 case class SpanTimestamp(name: String, startTimestamp: Long, endTimestamp: Long) {
   def duration = endTimestamp - startTimestamp
@@ -36,8 +37,20 @@ object TraceSummary {
       startEnd.start,
       startEnd.end,
       (startEnd.end - startEnd.start).toInt,
-      t.spanTimestamps,
+      spanTimestamps(t.spans),
       t.endpoints.toList)
+  }
+
+  /**
+   * Returns a map of services to a list of their durations
+   */
+  def spanTimestamps(spans: Seq[Span]): List[SpanTimestamp] = {
+    for {
+      span <- spans.toList
+      serviceName <- span.serviceNames
+      first <- span.firstAnnotation
+      last <- span.lastAnnotation
+    } yield SpanTimestamp(serviceName, first.timestamp, last.timestamp)
   }
 }
 

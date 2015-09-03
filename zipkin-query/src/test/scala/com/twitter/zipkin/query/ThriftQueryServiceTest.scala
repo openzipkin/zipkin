@@ -80,7 +80,7 @@ class ThriftQueryServiceTest extends FunSuite {
       Await.result(svc.getTraces(thriftscala.QueryRequest(null, Some("span"), None, None, 100, 100)))
     }
 
-    val actual = Await.result(svc.getTraces(thriftscala.QueryRequest("service2", Some("methodcall"),  None, None, 1000, 50)))
+    val actual = Await.result(svc.getTraces(thriftscala.QueryRequest("service2", Some("methodcall"), None, None, 1000, 50)))
     assert(actual.map(_.spans.head.traceId) === Seq(2, 2))
   }
 
@@ -100,13 +100,13 @@ class ThriftQueryServiceTest extends FunSuite {
     val svc = newLoadedService()
     val keyValue = Map("annotation" -> "ann")
 
-    val actual = Await.result(svc.getTraces(thriftscala.QueryRequest("service3", None, None, None, 1000, 50, Some(keyValue))))
+    val actual = Await.result(svc.getTraces(thriftscala.QueryRequest("service3", None, None, Some(keyValue), 1000, 50)))
     assert(actual.map(_.spans.head.traceId) === Seq(5))
   }
 
   test("get traces by traceId") {
     val svc = newLoadedService()
-    val actual = Await.result(svc.getTracesByIds(List(1L), List()))
+    val actual = Await.result(svc.getTracesByIds(List(1L)))
     assert(actual === List(trace1.toThrift))
   }
 

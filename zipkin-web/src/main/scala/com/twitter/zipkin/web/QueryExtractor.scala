@@ -89,9 +89,8 @@ class QueryExtractor(defaultQueryLimit: Int) {
     } getOrElse {
       (None, None)
     }
-    val adjuster: Boolean = adjustClockSkew(req)
     val limit = getLimit(req).getOrElse(defaultQueryLimit)
-    QueryRequest(serviceName, spanName, annotations, None, timestamp, limit, binaryAnnotations, adjuster)
+    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, timestamp, limit, adjustClockSkew(req))
   }
 
   def adjustClockSkew(req: Request): Boolean =
