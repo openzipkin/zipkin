@@ -21,9 +21,9 @@ import com.twitter.finagle.ThriftMux
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.{RuntimeEnvironment, ServiceTracker}
 import com.twitter.zipkin.builder.{Builder, ZipkinServerBuilder}
-import com.twitter.zipkin.collector.{ScribeCollectorInterface, ZipkinCollector}
 import com.twitter.zipkin.collector.filter.{SamplerFilter, ServiceStatsFilter}
 import com.twitter.zipkin.collector.sampler.AdjustableGlobalSampler
+import com.twitter.zipkin.collector.{ScribeCollectorInterface, SpanReceiver, ZipkinCollector}
 import com.twitter.zipkin.config.ConfigRequestHandler
 import com.twitter.zipkin.config.sampler.{AdaptiveSamplerConfig, AdjustableRateConfig}
 import com.twitter.zipkin.storage.Store
@@ -39,6 +39,7 @@ import com.twitter.zipkin.thriftscala
  */
 case class CollectorServiceBuilder[T](
   storeBuilder: Builder[Store],
+  receiver: Option[SpanReceiver.Processor => SpanReceiver] = None,
   scribeCategories: Set[String] = Set("zipkin"),
   sampleRateBuilder: Builder[AdjustableRateConfig] = Adjustable.local(1.0),
   adaptiveSamplerBuilder: Option[Builder[AdaptiveSamplerConfig]] = None,
@@ -88,6 +89,9 @@ case class CollectorServiceBuilder[T](
       new InetSocketAddress(serverBuilder.serverAddress, serverBuilder.serverPort),
       new ScribeCollectorInterface(store, scribeCategories, process, serverBuilder.statsReceiver))
 
+    // initialize any alternate receiver, such as kafka
+    val rcv = receiver.map(_(process))
+
     /**
      * Add config endpoints with the sampleRate endpoint. Available via:
      *   GET  /config/<name>
@@ -107,6 +111,6 @@ case class CollectorServiceBuilder[T](
       ServiceTracker.register(service)
     }
 
-    new ZipkinCollector(server, store)
+    new ZipkinCollector(server, store, rcv)
   }
 }
