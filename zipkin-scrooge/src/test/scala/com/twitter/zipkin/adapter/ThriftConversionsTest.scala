@@ -86,18 +86,4 @@ class ThriftConversionsTest extends FunSuite {
     val actualTrace = thriftTrace.toTrace
     assert(expectedTrace === actualTrace)
   }
-
-  test("convert TraceSummary") {
-    val expectedTraceSummary = TraceSummary(
-      123,
-      10000,
-      10300,
-      300,
-      List(SpanTimestamp("service1", 123, 123)),
-      List(Endpoint(123, 123, "service1")))
-
-    val thriftTraceSummary = expectedTraceSummary.toThrift
-    val actualTraceSummary = thriftTraceSummary.toTraceSummary
-    assert(expectedTraceSummary === actualTraceSummary)
-  }
 }

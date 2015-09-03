@@ -17,6 +17,7 @@ package com.twitter.zipkin.conversions
 
 import com.twitter.algebird.Moments
 import com.twitter.conversions.time._
+import com.twitter.finagle.tracing.SpanId
 import com.twitter.util.Time
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query._
@@ -141,77 +142,18 @@ object thrift {
   implicit def spanTimestampToThrift(t: SpanTimestamp) = new WrappedSpanTimestamp(t)
   implicit def thriftToSpanTimestamp(t: thriftscala.SpanTimestamp) = new ThriftSpanTimestamp(t)
 
-  /* TraceSummary */
+  @deprecated("zipkin-web no longer uses thrift.TraceSummary", "1.4.3")
   class WrappedTraceSummary(t: TraceSummary) {
     lazy val toThrift = thriftscala.TraceSummary(
-      t.traceId,
+      SpanId.fromString(t.traceId).get.toLong,
       t.startTimestamp,
       t.endTimestamp,
       t.durationMicro,
       t.endpoints.map(_.toThrift),
       t.spanTimestamps.map(_.toThrift))
   }
-  class ThriftTraceSummary(t: thriftscala.TraceSummary) {
-    lazy val toTraceSummary = TraceSummary(
-      t.traceId,
-      t.startTimestamp,
-      t.endTimestamp,
-      t.durationMicro,
-      t.spanTimestamps.map(_.toSpanTimestamp)(breakOut),
-      t.endpoints.map(_.toEndpoint)(breakOut))
-  }
+  @deprecated("zipkin-web no longer uses thrift.TraceSummary", "1.4.3")
   implicit def traceSummaryToThrift(t: TraceSummary) = new WrappedTraceSummary(t)
-  implicit def thriftToTraceSummary(t: thriftscala.TraceSummary) = new ThriftTraceSummary(t)
-
-  /* TraceCombo */
-  class WrappedTraceCombo(t: TraceCombo) {
-    lazy val toThrift = {
-      thriftscala.TraceCombo(
-        t.trace.toThrift,
-        t.traceSummary map { _.toThrift },
-        t.spanDepths)
-    }
-  }
-  class ThriftTraceCombo(t: thriftscala.TraceCombo) {
-    lazy val toTraceCombo = {
-      TraceCombo(
-        t.trace.toTrace,
-        t.summary map { _.toTraceSummary },
-        t.spanDepths map {_.toMap })
-    }
-  }
-  implicit def traceComboToThrift(t: TraceCombo) = new WrappedTraceCombo(t)
-  implicit def thriftToTraceCombo(t: thriftscala.TraceCombo) = new ThriftTraceCombo(t)
-
-  /* QueryRequest */
-  class WrappedQueryRequest(q: QueryRequest) {
-    lazy val toThrift = {
-      thriftscala.QueryRequest(
-        q.serviceName,
-        q.spanName,
-        q.annotations,
-        q.binaryAnnotations.map {
-          _.map { _.toThrift }
-        },
-        q.endTs,
-        q.limit)
-    }
-  }
-  class ThriftQueryRequest(q: thriftscala.QueryRequest) {
-    lazy val toQueryRequest = {
-      QueryRequest(
-        q.serviceName,
-        q.spanName,
-        q.annotations,
-        q.binaryAnnotations map {
-          _ map { _.toBinaryAnnotation }
-        },
-        q.endTs,
-        q.limit)
-    }
-  }
-  implicit def queryRequestToThrift(q: QueryRequest) = new WrappedQueryRequest(q)
-  implicit def thriftToQueryRequest(q: thriftscala.QueryRequest) = new ThriftQueryRequest(q)
 
   /* Dependencies */
   class WrappedMoments(m: Moments) {

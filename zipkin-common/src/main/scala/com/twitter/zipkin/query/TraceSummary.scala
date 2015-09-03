@@ -16,7 +16,7 @@
  */
 package com.twitter.zipkin.query
 
-import scala.collection.Map
+import com.twitter.finagle.tracing.SpanId
 import com.twitter.zipkin.common.Endpoint
 
 case class SpanTimestamp(name: String, startTimestamp: Long, endTimestamp: Long) {
@@ -29,29 +29,29 @@ object TraceSummary {
    * Return a summary of this trace or none if we
    * cannot construct a trace summary. Could be that we have no spans.
    */
-  def apply(trace: Trace): Option[TraceSummary] = {
-    for (traceId <- trace.id; startEnd <- trace.getStartAndEndTimestamp)
+  def apply(t: Trace): Option[TraceSummary] = {
+    for (traceId <- t.id; startEnd <- t.getStartAndEndTimestamp)
     yield TraceSummary(
-      traceId,
+      SpanId(traceId).toString,
       startEnd.start,
       startEnd.end,
       (startEnd.end - startEnd.start).toInt,
-      trace.spanTimestamps.toList,
-      trace.endpoints.toList)
+      t.spanTimestamps,
+      t.endpoints.toList)
   }
 }
 
 /**
+ * json-friendly representation of a trace summary
+ *
  * @param traceId id of this trace
  * @param startTimestamp when did the trace start?
  * @param endTimestamp when did the trace end?
  * @param durationMicro how long did the traced operation take?
- * @param serviceCounts name of the services involved in the traced operation
- *                      mapped to the number of spans of that service
  * @param endpoints endpoints involved in the traced operation
  */
 case class TraceSummary(
-  traceId: Long,
+  traceId: String,
   startTimestamp: Long,
   endTimestamp: Long,
   durationMicro: Int,

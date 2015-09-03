@@ -23,7 +23,6 @@ class ZipkinJson {
 
   // --- (SERIALIZERS) ---
   module.addSerializer(classOf[Trace], new ZipkinJsonSerializer(JsonTrace.wrap))
-  module.addSerializer(classOf[TraceSummary], new ZipkinJsonSerializer(JsonTraceSummary.wrap))
   module.addSerializer(classOf[Endpoint], new ZipkinJsonSerializer(JsonEndpoint.wrap))
 
   mapper.registerModule(module)

@@ -17,10 +17,9 @@ package com.twitter.zipkin.web
 
 import com.twitter.finagle.httpx.Request
 import com.twitter.util.{Time, TwitterDateFormat}
-import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
-import com.twitter.zipkin.query.QueryRequest
-import java.nio.ByteBuffer
 import java.util.{Calendar, Date}
+
+import com.twitter.zipkin.thriftscala.QueryRequest
 
 class QueryExtractor(defaultQueryLimit: Int) {
   val fmt = TwitterDateFormat("MM-dd-yyyy'T'HH:mm:ss.SSSZ")
@@ -71,13 +70,13 @@ class QueryExtractor(defaultQueryLimit: Int) {
 
     val (annotations, binaryAnnotations) = req.params.get("annotationQuery") map { query =>
       var anns = Seq.empty[String]
-      var binAnns = Seq.empty[BinaryAnnotation]
+      var binAnns = scala.collection.mutable.Map[String, String]()
 
       query.split(" and ") foreach { ann =>
         ann.split("=").toList match {
           case "" :: Nil =>
           case key :: value :: Nil =>
-            binAnns +:= BinaryAnnotation(key, ByteBuffer.wrap(value.getBytes), AnnotationType.String, None)
+            binAnns += key -> value
           case key :: Nil =>
             anns +:= key
           case _ =>
@@ -90,8 +89,14 @@ class QueryExtractor(defaultQueryLimit: Int) {
     } getOrElse {
       (None, None)
     }
-
+    val adjuster: Boolean = adjustClockSkew(req)
     val limit = getLimit(req).getOrElse(defaultQueryLimit)
-    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, timestamp, limit)
+    QueryRequest(serviceName, spanName, annotations, None, timestamp, limit, binaryAnnotations, adjuster)
   }
+
+  def adjustClockSkew(req: Request): Boolean =
+    req.params.get("adjust_clock_skew") match {
+      case Some("false") => false
+      case _ => true
+    }
 }

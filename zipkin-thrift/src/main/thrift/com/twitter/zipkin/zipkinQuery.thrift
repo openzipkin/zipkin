@@ -26,15 +26,14 @@ exception QueryException {
   1: string msg
 }
 
+/* OBSOLETE: update zipkin-web and zipkin-query to 1.4.2+ which no longer needs this. */
 struct SpanTimestamp {
   1: string name
   2: i64 start_timestamp
   3: i64 end_timestamp
 }
 
-/**
- * This sums up a single Trace to make it easy for a client to get an overview of what happened.
- */
+/* OBSOLETE: update zipkin-web and zipkin-query to 1.4.2+ which no longer needs this. */
 struct TraceSummary {
   1: i64 trace_id                  # the trace
   2: i64 start_timestamp           # start timestamp of the trace, in microseconds
@@ -45,9 +44,7 @@ struct TraceSummary {
   7: list<SpanTimestamp> span_timestamps
 }
 
-/**
- * Returns a combination of trace, summary and span depth.
- */
+/* OBSOLETE: update zipkin-web and zipkin-query to 1.4.2+ which no longer needs this. */
 struct TraceCombo {
   1: Trace trace
   2: optional TraceSummary summary # not set if no spans in trace
@@ -55,28 +52,25 @@ struct TraceCombo {
   4: optional map<i64, i32> span_depths # not set if no spans in trace
 }
 
-/**
- * The raw data in our storage might have various problems. How should we adjust it before
- * returning it to the user?
- *
- * Time skew adjuster tries to make sure that even though servers might have slightly
- * different clocks the annotations in the returned data are adjusted so that they are
- * in the correct order.
- */
+/* OBSOLETE: update zipkin-web and zipkin-query to 1.4.2+ which no longer needs this. */
 enum Adjust { NOTHING, TIME_SKEW }
 
 struct QueryRequest {
   1: string service_name
   2: optional string span_name
   3: optional list<string> annotations
-  4: optional list<zipkinCore.BinaryAnnotation> binary_annotations
+  4: optional list<zipkinCore.BinaryAnnotation> OBSOLETE_binary_annotations
   /** results will have epoch microsecond timestamps before this value */
   5: i64 end_ts
   /** maximum entries to return before "end_ts" */
   6: i32 limit
   # 7: Order OBSOLETE_order = Order.NONE
+  /** custom string annotations */
+  8: optional map<string, string> binary_annotations
+  9: bool adjust_clock_skew = true
 }
 
+/* OBSOLETE: update zipkin-web and zipkin-query to 1.4.2+ which no longer needs this. */
 struct QueryResponse {
   1: list<i64> trace_ids
   # 2: i64 OBSOLETE_start_ts
@@ -85,33 +79,13 @@ struct QueryResponse {
 
 service ZipkinQuery {
 
-    QueryResponse getTraceIds(1: QueryRequest request) throws (1: QueryException qe);
+    list<Trace> getTracesByIds(
+      1: list<i64> trace_ids,
+      /* OBSOLETE: update zipkin-web and zipkin-query to 1.4.2+ which no longer needs this. */
+      2: list<Adjust> OBSOLETE_adjust,
+      3: bool adjust_clock_skew = true) throws (1: QueryException qe);
 
-    /**
-     * Get the full traces associated with the given trace ids.
-     *
-     * Second argument is a list of methods of adjusting the trace
-     * data before returning it. Can be empty.
-     */
-    list<Trace> getTracesByIds(1: list<i64> trace_ids, 2: list<Adjust> adjust) throws (1: QueryException qe);
-
-    /**
-     * Fetch trace summaries for the given trace ids.
-     *
-     * Second argument is a list of methods of adjusting the trace
-     * data before returning it. Can be empty.
-     *
-     * Note that if one of the trace ids does not have any data associated with it, it will not be
-     * represented in the output list.
-     */
-    list<TraceSummary> getTraceSummariesByIds(1: list<i64> trace_ids, 2: list<Adjust> adjust) throws (1: QueryException qe);
-
-    /**
-     * Not content with just one of traces, summaries or timelines? Want it all? This is the method for you.
-     */
-    list<TraceCombo> getTraceCombosByIds(1: list<i64> trace_ids, 2: list<Adjust> adjust) throws (1: QueryException qe);
-
-    #************** Misc metadata **************
+    list<Trace> getTraces(1: QueryRequest request) throws (1: QueryException qe);
 
     /**
      * Fetch all the service names we have seen from now all the way back to the set ttl.
@@ -130,4 +104,19 @@ service ZipkinQuery {
      * start time.
      */
     zipkinDependencies.Dependencies getDependencies(1: optional i64 start_time, 2: optional i64 end_time) throws (1: QueryException qe);
+
+    /**
+     * OBSOLETE: update zipkin-web and zipkin-query to 1.4.2+ which no longer needs this.
+     */
+    QueryResponse getTraceIds(1: QueryRequest request) throws (1: QueryException qe);
+
+    /**
+     * OBSOLETE: update zipkin-web and zipkin-query to 1.4.2+ which no longer needs this.
+     */
+    list<TraceSummary> getTraceSummariesByIds(1: list<i64> trace_ids, 2: list<Adjust> adjust) throws (1: QueryException qe);
+
+    /**
+     * OBSOLETE: update zipkin-web and zipkin-query to 1.4.2+ which no longer needs this.
+     */
+    list<TraceCombo> getTraceCombosByIds(1: list<i64> trace_ids, 2: list<Adjust> adjust) throws (1: QueryException qe);
 }

@@ -16,14 +16,13 @@
  */
 package com.twitter.zipkin.query
 
-import java.nio.ByteBuffer
-
 import com.twitter.util.Await
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.storage.InMemorySpanStore
 import com.twitter.zipkin.thriftscala
 import org.scalatest.FunSuite
+import java.nio.ByteBuffer
 
 class ThriftQueryServiceTest extends FunSuite {
   val ep1 = Endpoint(123, 123, "service1")
@@ -78,65 +77,34 @@ class ThriftQueryServiceTest extends FunSuite {
 
     // exception on null serviceName
     intercept[thriftscala.QueryException] {
-      Await.result(svc.getTraceIds(thriftscala.QueryRequest(null, Some("span"), None, None, 100, 100)))
+      Await.result(svc.getTraces(thriftscala.QueryRequest(null, Some("span"), None, None, 100, 100)))
     }
 
-    val actual = Await.result(svc.getTraceIds(thriftscala.QueryRequest("service2", Some("methodcall"),  None, None, 1000, 50)))
-    assert(actual.traceIds === Seq(2, 2))
+    val actual = Await.result(svc.getTraces(thriftscala.QueryRequest("service2", Some("methodcall"),  None, None, 1000, 50)))
+    assert(actual.map(_.spans.head.traceId) === Seq(2, 2))
   }
 
-  test("trace summary for trace id") {
+  test("find traces by service name") {
     val svc = newLoadedService()
-    val actual = Await.result(svc.getTraceSummariesByIds(List(1), List()))
-    assert(actual === List(TraceSummary(
-      1,
-      100,
-      150,
-      50,
-      List(SpanTimestamp("service1", 100, 150)),
-      List(ep1)
-    ).toThrift))
+    val actual = Await.result(svc.getTraces(thriftscala.QueryRequest("service3", None, None, None, 1000, 50)))
+    assert(actual.map(_.spans.head.traceId) === Seq(3, 5))
   }
 
-  test("trace combo for trace id") {
+  test("find traces by annotation name") {
     val svc = newLoadedService()
-
-    val trace = trace1.toThrift
-    val summary = TraceSummary(
-      1,
-      100,
-      150,
-      50,
-      List(SpanTimestamp("service1", 100, 150)),
-      List(ep1)
-    ).toThrift
-    val combo = thriftscala.TraceCombo(trace, Some(summary), Some(Map(666L -> 1)))
-
-    val actual = Await.result(svc.getTraceCombosByIds(List(1), List()))
-    assert(actual === Seq(combo))
+    val actual = Await.result(svc.getTraces(thriftscala.QueryRequest("service3", None, Some(Seq("annotation")), None, 1000, 50)))
+    assert(actual.map(_.spans.head.traceId) === Seq(5))
   }
 
-  test("find trace ids by service name") {
+  test("find traces by annotation name and value") {
     val svc = newLoadedService()
-    val actual = Await.result(svc.getTraceIds(thriftscala.QueryRequest("service3", None, None, None, 1000, 50)))
-    assert(actual.traceIds === Seq(3, 5))
+    val keyValue = Map("annotation" -> "ann")
+
+    val actual = Await.result(svc.getTraces(thriftscala.QueryRequest("service3", None, None, None, 1000, 50, Some(keyValue))))
+    assert(actual.map(_.spans.head.traceId) === Seq(5))
   }
 
-  test("find trace ids by annotation name") {
-    val svc = newLoadedService()
-    val actual = Await.result(svc.getTraceIds(thriftscala.QueryRequest("service3", None, Some(Seq("annotation")), None, 1000, 50)))
-    assert(actual.traceIds === Seq(5))
-  }
-
-  test("find trace ids by annotation name and value") {
-    val svc = newLoadedService()
-    val keyValue = thriftscala.BinaryAnnotation("annotation", ByteBuffer.wrap("ann".getBytes), thriftscala.AnnotationType.String, None)
-
-    val actual = Await.result(svc.getTraceIds(thriftscala.QueryRequest("service3", None, None, Some(Seq(keyValue)), 1000, 50)))
-    assert(actual.traceIds === Seq(5))
-  }
-
-  test("get trace by traceId") {
+  test("get traces by traceId") {
     val svc = newLoadedService()
     val actual = Await.result(svc.getTracesByIds(List(1L), List()))
     assert(actual === List(trace1.toThrift))
