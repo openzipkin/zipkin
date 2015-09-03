@@ -16,11 +16,8 @@
  */
 package com.twitter.zipkin.web
 
-import java.nio.ByteBuffer
-
 import com.twitter.finagle.httpx.Request
 import com.twitter.util.Time
-import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
 import org.scalatest.FunSuite
 
 class QueryExtractorTest extends FunSuite {
@@ -101,8 +98,7 @@ class QueryExtractorTest extends FunSuite {
       "annotationQuery" -> "http.responsecode=500")
     val actual = queryExtractor(r).get
     assert(
-      actual.binaryAnnotations.get ===
-        Seq(BinaryAnnotation("http.responsecode", ByteBuffer.wrap("500".getBytes), AnnotationType.String, None)))
+      actual.binaryAnnotations.get === Map("http.responsecode" -> "500"))
   }
 
   test("parse key value annotations with slash") {
@@ -111,7 +107,6 @@ class QueryExtractorTest extends FunSuite {
       "annotationQuery" -> "http.uri=/sessions")
     val actual = queryExtractor(r).get
     assert(
-      actual.binaryAnnotations.get ===
-        Seq(BinaryAnnotation("http.uri", ByteBuffer.wrap("/sessions".getBytes), AnnotationType.String, None)))
+      actual.binaryAnnotations.get === Map("http.uri" -> "/sessions"))
   }
 }

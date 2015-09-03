@@ -17,8 +17,6 @@ package com.twitter.zipkin.builder
 
 import com.twitter.finagle.ListeningServer
 import com.twitter.ostrich.admin.RuntimeEnvironment
-import com.twitter.zipkin.thriftscala
-import com.twitter.zipkin.query.adjusters.{NullAdjuster, TimeSkewAdjuster, Adjuster}
 import com.twitter.zipkin.query.ZipkinQueryServerFactory
 import com.twitter.zipkin.storage.Store
 
@@ -26,11 +24,6 @@ case class QueryServiceBuilder(
   storeBuilder: Builder[Store],
   serverBuilder: ZipkinServerBuilder = ZipkinServerBuilder(9411, 9901)
 ) extends Builder[RuntimeEnvironment => ListeningServer] {
-
-  private val adjusterMap: Map[thriftscala.Adjust, Adjuster] = Map (
-    thriftscala.Adjust.Nothing -> NullAdjuster,
-    thriftscala.Adjust.TimeSkew -> new TimeSkewAdjuster()
-  )
 
   def apply(): (RuntimeEnvironment) => ListeningServer = (runtime: RuntimeEnvironment) => {
     serverBuilder.apply().apply(runtime)
@@ -40,6 +33,6 @@ case class QueryServiceBuilder(
     UseOnceFactory.nonExitingMain(Array(
       "zipkin.queryService.port", serverBuilder.serverAddress + ":" + serverBuilder.serverPort
     ))
-    UseOnceFactory.newQueryServer(store.spanStore, store.aggregates, adjusterMap, serverBuilder.statsReceiver)
+    UseOnceFactory.newQueryServer(store.spanStore, store.aggregates, serverBuilder.statsReceiver)
   }
 }

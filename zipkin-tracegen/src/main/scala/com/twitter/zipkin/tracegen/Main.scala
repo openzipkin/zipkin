@@ -18,6 +18,7 @@ package com.twitter.zipkin.tracegen
  */
 import java.nio.ByteBuffer
 
+import com.google.common.base.Charsets.UTF_8
 import com.twitter.app.App
 import com.twitter.finagle.Thrift
 import com.twitter.scrooge.BinaryThriftStructSerializer
@@ -25,7 +26,7 @@ import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.thriftscala
-import com.twitter.zipkin.thriftscala.{AnnotationType, BinaryAnnotation, QueryRequest}
+import com.twitter.zipkin.thriftscala.{Trace, QueryRequest}
 
 trait ZipkinSpanGenerator { self: App =>
   val genTraces = flag("genTraces", 5, "Number of traces to generate")
@@ -65,11 +66,9 @@ object Main extends App with ZipkinSpanGenerator {
     }
   }
 
-  private[this] def printTrace(traceIds: Seq[Long], client: thriftscala.ZipkinQuery[Future]): Future[Unit] = {
-    client.getTracesByIds(traceIds, List(thriftscala.Adjust.TimeSkew)) map { traces =>
-      for (trace <- traces; span <- trace.spans) yield
-        println("Got span: " + span)
-    }
+  private[this] def printTrace(traces: Seq[Trace])= {
+    for (trace <- traces; span <- trace.spans) yield
+      println("Got span: " + span)
   }
 
   private[this] def querySpan(
@@ -82,28 +81,24 @@ object Main extends App with ZipkinSpanGenerator {
   ): Future[Unit] = {
     println("Querying for service name: " + service + " and span name " + span)
     for {
-      ts1 <- client.getTraceIds(QueryRequest(service, Some(span), None, None, Long.MaxValue, maxTraces))
-      _ = printTrace(ts1.traceIds, client)
+      ts1 <- client.getTraces(QueryRequest(service, Some(span), None, None, Long.MaxValue, maxTraces, None))
+      _ = printTrace(ts1)
 
       _ = println("Querying for service name: " + service)
-      ts2 <- client.getTraceIds(QueryRequest(service, None, None, None, Long.MaxValue, maxTraces))
-      _ <- printTrace(ts2.traceIds, client)
+      ts2 <- client.getTraces(QueryRequest(service, None, None, None, Long.MaxValue, maxTraces, None))
+      _ = printTrace(ts2)
 
       _ = println("Querying for annotation: " + annotation)
-      ts3 <- client.getTraceIds(QueryRequest(service, None, Some(Seq(annotation)), None, Long.MaxValue, maxTraces))
-      _ <- printTrace(ts3.traceIds, client)
+      ts3 <- client.getTraces(QueryRequest(service, None, Some(Seq(annotation)), None, Long.MaxValue, maxTraces, None))
+      _ = printTrace(ts3)
 
-      binaryAnnotation = BinaryAnnotation(kvAnnotation._1, kvAnnotation._2, AnnotationType.String, None)
+      binaryAnnotation = Map(kvAnnotation._1 -> new String(kvAnnotation._2.array(), UTF_8))
       _ = println("Querying for kv annotation: " + kvAnnotation._1)
-      ts4 <- client.getTraceIds(QueryRequest(service, None, None, Some(Seq(binaryAnnotation)), Long.MaxValue, maxTraces))
-      _ <- printTrace(ts4.traceIds, client)
+      ts4 <- client.getTraces(QueryRequest(service, None, None, None, Long.MaxValue, maxTraces, Some(binaryAnnotation)))
+      _ = printTrace(ts4)
 
-      traces <- client.getTracesByIds(ts4.traceIds, List(thriftscala.Adjust.TimeSkew))
-      _ = println(traces.toString)
-
-      traceCombo <- client.getTraceCombosByIds(ts4.traceIds, List(thriftscala.Adjust.TimeSkew))
-      _ = println("TraceCombo:")
-      _ = println(traceCombo.toString)
+      traces <- client.getTracesByIds(ts4.map(t => t.spans.head.traceId), List())
+      _ = printTrace(traces)
 
       svcNames <- client.getServiceNames()
       _ = println("Service names: " + svcNames)

@@ -2,18 +2,19 @@ package com.twitter.zipkin.web
 
 import com.google.common.io.ByteStreams
 import com.twitter.finagle.httpx.{Request, Response}
-import com.twitter.finagle.stats.{StatsReceiver, Stat}
+import com.twitter.finagle.stats.{Stat, StatsReceiver}
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.finagle.{Filter, Service, SimpleFilter}
 import com.twitter.io.Buf
 import com.twitter.util.Future
-import com.twitter.zipkin.{Constants => ZConstants}
 import com.twitter.zipkin.common.json._
 import com.twitter.zipkin.common.mustache.ZipkinMustache
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.query.{SpanTimestamp, TraceCombo, TraceSummary, QueryRequest}
-import com.twitter.zipkin.thriftscala.{Adjust, ZipkinQuery}
+import com.twitter.zipkin.query._
+import com.twitter.zipkin.thriftscala.{QueryRequest, ZipkinQuery}
+import com.twitter.zipkin.{Constants => ZConstants}
 import java.io.{File, FileInputStream, InputStream}
+
 import scala.annotation.tailrec
 
 class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor) {
@@ -61,33 +62,15 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
 
   private[this] def query(
     client: ZipkinQuery[Future],
-    queryRequest: QueryRequest,
-    request: Request,
-    retryLimit: Int = 10
+    queryRequest: QueryRequest
   ): Future[Seq[TraceSummary]] = {
-    client.getTraceIds(queryRequest.toThrift) flatMap { resp =>
-      resp.traceIds match {
-        case Nil =>
-          EmptyTraces
-
-        case ids =>
-          val adjusters = getAdjusters(request)
-          client.getTraceSummariesByIds(ids distinct, adjusters) map { _.map { _.toTraceSummary } }
-      }
+    client.getTraces(queryRequest) map { traces =>
+      traces.flatMap(t => TraceSummary(Trace(t.spans.map { _.toSpan })))
     }
   }
 
   private[this] def getServices(client: ZipkinQuery[Future]): Future[Seq[String]] =
     client.getServiceNames() map { _.toSeq.sorted }
-
-  /**
-   * Returns a sequence of adjusters based on the params for a request. Default is TimeSkewAdjuster
-   */
-  private[this] def getAdjusters(request: Request) =
-    request.params.get("adjust_clock_skew") match {
-      case Some("false") => Seq.empty[Adjust]
-      case _ => Seq(Adjust.TimeSkew)
-    }
 
   def collectStats(stats: StatsReceiver): Filter[Request, Response, Request, Response] =
     Filter.mk[Request, Response, Request, Response] { (req, svc) =>
@@ -234,7 +217,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       } yield totalServiceTime(timestamps)
 
       MustacheTraceSummary(
-        SpanId(t.traceId).toString,
+        t.traceId,
         queryExtractor.fmt.format(new java.util.Date(t.startTimestamp / 1000)),
         t.startTimestamp,
         duration,
@@ -256,7 +239,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       val serviceName = req.params.get("serviceName")
       val spanName = req.params.get("spanName")
       val qr = queryExtractor(req)
-      val qResults = qr map { query(client, _, req) } getOrElse { EmptyTraces }
+      val qResults = qr map { query(client, _) } getOrElse { EmptyTraces }
       val spanResults = serviceName map(client.getSpanNames(_).map(_.toSeq.sorted)) getOrElse(Future.value(Seq.empty))
 
       for (services <- getServices(client); results <- qResults; spans <- spanResults) yield {
@@ -271,14 +254,11 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
           ("limit" -> queryExtractor.getLimitStr(req)))
 
         qr foreach { qReq =>
-          val binAnn = qReq.binaryAnnotations map { _.map { b =>
-            (b.key, new String(b.value.array, b.value.position, b.value.remaining))
-          } }
           data ++= Map(
             ("serviceName" -> qReq.serviceName),
             ("queryResults" -> traceSummaryToMustache(serviceName, results)),
             ("annotations" -> qReq.annotations),
-            ("binaryAnnotations" -> binAnn))
+            ("binaryAnnotations" -> qReq.binaryAnnotations))
         }
         MustacheRenderer("v2/index.mustache", data)
       }
@@ -295,7 +275,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
   def handleQuery(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
       val res = queryExtractor(req) match {
-        case Some(qr) => query(client, qr, req)
+        case Some(qr) => query(client, qr)
         case None => EmptyTraces
       }
       res map { JsonRenderer(_) }
@@ -335,9 +315,9 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       process(req) getOrElse NotFound
   }
 
-  protected def renderTrace(combo: TraceCombo): Renderer = {
-    val trace = combo.trace
+  private[this] def renderTrace(trace: Trace): Renderer = {
     val traceStartTimestamp = trace.getStartAndEndTimestamp.map(_.start).getOrElse(0L)
+    val spanDepths = trace.toSpanDepths
     val childMap = trace.getIdToChildrenMap
     val spanMap = trace.getIdToSpanMap
 
@@ -348,7 +328,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
 
       val start = span.firstAnnotation.map(_.timestamp).getOrElse(traceStartTimestamp)
 
-      val depth = combo.spanDepths.get.getOrElse(span.id, 1)
+      val depth = trace.toSpanDepths.get.getOrElse(span.id, 1)
       val width = span.duration.map { d => (d.toDouble / trace.duration.toDouble) * 100 }.getOrElse(0.0)
 
       val binaryAnnotations = span.binaryAnnotations.map {
@@ -390,7 +370,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
     }
 
     val traceDuration = trace.duration * 1000
-    val serviceDurations = combo.traceSummary map { summary =>
+    val serviceDurations = TraceSummary(trace) map { summary =>
       summary.spanTimestamps.groupBy(_.name).map { case (n, sts) =>
         MustacheServiceDuration(n, sts.length, sts.map(_.duration).max / 1000)
       }.toSeq
@@ -406,7 +386,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
     val data = Map[String, Object](
       "duration" -> durationStr(traceDuration),
       "services" -> serviceDurations.map(_.size),
-      "depth" -> combo.spanDepths.map(_.values.max),
+      "depth" -> spanDepths.map(_.values.max),
       "totalSpans" -> spans.size.asInstanceOf[Object],
       "serviceCounts" -> serviceDurations.map(_.sortBy(_.name)),
       "timeMarkers" -> timeMarkers,
@@ -420,8 +400,8 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
   def handleTraces(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
       pathTraceId(req.path.split("/").lastOption) map { id =>
-        client.getTraceCombosByIds(Seq(id), getAdjusters(req)) flatMap {
-          case Seq(combo) => Future.value(renderTrace(combo.toTraceCombo))
+        client.getTracesByIds(Seq(id), Seq.empty, queryExtractor.adjustClockSkew(req)) flatMap {
+          case Seq(t) => Future.value(renderTrace(t.toTrace))
           case _ => NotFound
         }
       } getOrElse NotFound
@@ -431,9 +411,8 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
     new NotFoundService {
       def process(req: Request): Option[Future[Renderer]] =
         pathTraceId(req.path.split("/").lastOption) map { id =>
-          client.getTraceCombosByIds(Seq(id), getAdjusters(req)) map { ts =>
-            val combo = ts.head.toTraceCombo
-            JsonRenderer(if (req.path.startsWith("/api/trace")) combo.trace else combo)
+          client.getTracesByIds(Seq(id), Seq.empty, queryExtractor.adjustClockSkew(req)).map { ts =>
+            JsonRenderer(if (req.path.startsWith("/api/trace")) ts else ts.map(t => TraceSummary(t.toTrace)))
           }
         }
     }
