@@ -15,20 +15,20 @@ import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.server.TwitterServer
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.cassandra.CassandraSpanStoreFactory
-import com.twitter.zipkin.collector.{SpanReceiver, ZipkinQueuedCollectorFactory}
-import com.twitter.zipkin.common._
 import com.twitter.zipkin.receiver.kafka.KafkaSpanReceiverFactory
 import com.twitter.zipkin.storage.cassandra.CassandraSpanStore
-import kafka.serializer.Decoder
 
 import com.twitter.zipkin.receiver.kafka.SpanDecoder
 
 // 'Main' object referenced by project's build.gradle
 object Main extends TwitterServer
-  with ZipkinQueuedCollectorFactory
-  with CassandraSpanStoreFactory
-  with KafkaSpanReceiverFactory
+with ZipkinQueuedCollectorFactory
+with CassandraSpanStoreFactory
+with KafkaSpanReceiverFactory
 {
+  // set the admin port to the same as the existing collector
+  override val defaultHttpPort = 9900
+
   def newReceiver(receive: Seq[ThriftSpan] => Future[Unit], stats: StatsReceiver): SpanReceiver = {
     newKafkaSpanReceiver(receive, stats.scope("kafkaSpanReceiver"), Some(new SpanDecoder()), new SpanDecoder())
   }
