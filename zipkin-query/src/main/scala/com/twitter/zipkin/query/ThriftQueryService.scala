@@ -154,6 +154,9 @@ class ThriftQueryService(
 
   override def getTracesByIds(traceIds: Seq[Long], adjustClockSkew: Boolean = true): Future[Seq[thriftscala.Trace]] =
     handle("getTracesByIds") {
+      if (traceIds.isEmpty) {
+        return Future.value(Seq.empty)
+      }
       FTrace.recordBinary("numIds", traceIds.length)
       spanStore.getSpansByTraceIds(traceIds) map { adjustedTraces(_, adjustClockSkew).map(_.toThrift) }
     }
