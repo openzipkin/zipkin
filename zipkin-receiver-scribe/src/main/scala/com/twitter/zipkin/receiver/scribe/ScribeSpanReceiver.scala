@@ -42,7 +42,7 @@ trait ScribeSpanReceiverFactory { self: App =>
     "a whitelist of categories to process")
 
   def newScribeSpanReceiver(
-    process: Seq[ThriftSpan] => Future[Unit],
+    process: SpanReceiver.Processor,
     stats: StatsReceiver = DefaultStatsReceiver.scope("ScribeSpanReceiver")
   ): SpanReceiver = new SpanReceiver {
 
@@ -56,7 +56,7 @@ trait ScribeSpanReceiverFactory { self: App =>
 
 class ScribeReceiver(
   categories: Set[String],
-  process: Seq[ThriftSpan] => Future[Unit],
+  process: SpanReceiver.Processor,
   stats: StatsReceiver = DefaultStatsReceiver.scope("ScribeReceiver")
 ) extends Scribe[Future] {
   private[this] val deserializer = new BinaryThriftStructSerializer[ThriftSpan] {

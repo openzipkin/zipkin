@@ -6,7 +6,7 @@ import com.twitter.zipkin.conversions.thrift.{thriftSpanToSpan, spanToThriftSpan
 import com.twitter.zipkin.common.Span
 import kafka.message.Message
 
-class SpanDecoder extends KafkaProcessor.KafkaDecoder {
+class SpanCodec extends KafkaProcessor.KafkaDecoder {
   val deserializer = new BinaryThriftStructSerializer[ThriftSpan] {
     def codec = ThriftSpan
   }

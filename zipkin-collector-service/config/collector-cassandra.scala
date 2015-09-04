@@ -15,14 +15,13 @@
  */
 
 import com.twitter.app.App
+import com.twitter.logging.{ConsoleHandler, Level, LoggerFactory}
 import com.twitter.zipkin.builder.ZipkinServerBuilder
 import com.twitter.zipkin.cassandra
 import com.twitter.zipkin.cassandra.CassandraSpanStoreFactory
 import com.twitter.zipkin.collector.builder.{Adjustable, CollectorServiceBuilder}
+import com.twitter.zipkin.receiver.kafka.KafkaSpanReceiverFactory
 import com.twitter.zipkin.storage.Store
-import com.twitter.logging.LoggerFactory
-import com.twitter.logging.Level
-import com.twitter.logging.ConsoleHandler
 
 object Factory extends App with CassandraSpanStoreFactory
 
@@ -45,6 +44,9 @@ if (username.isDefined && password.isDefined) {
 
 val cluster = Factory.createClusterBuilder().build()
 val storeBuilder = Store.Builder(new cassandra.SpanStoreBuilder(cluster))
+val kafkaReceiver = sys.env.get("KAFKA_ZOOKEEPER").map(
+  KafkaSpanReceiverFactory.factory(_, sys.env.get("KAFKA_TOPIC").getOrElse("zipkin"))
+)
 
 val loggerFactory = new LoggerFactory(
   node = "",
@@ -54,6 +56,7 @@ val loggerFactory = new LoggerFactory(
 
 CollectorServiceBuilder(
   storeBuilder,
+  kafkaReceiver,
   serverBuilder = ZipkinServerBuilder(serverPort, adminPort).loggers(List(loggerFactory))
 ).sampleRate(Adjustable.local(sampleRate))
  .queueNumWorkers(queueNumWorkers)

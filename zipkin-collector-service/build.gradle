@@ -21,6 +21,7 @@ repositories {
 }
 
 dependencies {
+    compile project(':zipkin-receiver-kafka')
     compile project(':zipkin-receiver-scribe')
     compile project(':zipkin-cassandra')
     compile project(':zipkin-redis')
