@@ -31,24 +31,11 @@ configuration. For example, to run Zipkin on a MySQL database named
     val db = new DB(new DBConfig("mysql", new DBParams("production", "127.0.0.1")))
 
 The connection parameters you can specify are defined in
-[`DBConfig.scala`](https://github.com/twitter/zipkin/blob/master/zipkin-anormdb/src/main/scala/com/twitter/zipkin/util/DBConfig.scala)
+[`DBConfig.scala`](https://github.com/openzipkin/zipkin/blob/master/zipkin-anormdb/src/main/scala/com/openzipkin/zipkin/util/DBConfig.scala)
 in the Anorm module.
 
 Additionally, you need to make sure Zipkin loads the correct database driver.
-To do this, find the line in `project/Project.scala` that looks like this:
-
-    anormDriverDependencies("sqlite-persistent")
-
-Change "sqlite-persistent" to the name of the database you want to use (valid
-names are specified in the definition of `anormDriverDependencies` near the top
-of the file).
-
-Note that although Zipkin technically supports in-memory SQL databases, they
-can only be used effectively in the tests for now. This is because in-memory
-databases disappear once their connection is closed, and the collector and
-query daemons open different connections. However, we would like to combine
-all three daemons (including the web one) into a single thread that could share
-one connection.
+Typically you are looking at `zipkin-collector-service/build.gradle` and `zipkin-query-service/build.gradle`.
 
 ### Setting up the schema
 
@@ -63,16 +50,6 @@ slower startup.
 
 You can also manually install the schema by running the `install()` method of
 a `DB` instance.
-
-### Adding a new database type
-
-There are two places Zipkin needs to know about new SQL database types: in
-`DBConfig.scala` in the `zipkin-anormdb` module and in `project/Project.scala`.
-In the DBConfig class, the `private val dbmap` holds a map of database types
-and how to connect to them, and in the Project file the
-`val anormDriverDependencies` holds driver dependency information. Once the
-relevant information for your database type is added in both places, you can
-continue with the connection and schema setup processes described above.
 
 ## Usage
 

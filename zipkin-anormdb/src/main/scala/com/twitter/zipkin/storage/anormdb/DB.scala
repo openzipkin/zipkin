@@ -155,9 +155,6 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
    *
    * Recommended indexes for MySQL deployments:
    *
-   * alter table zipkin_service_spans add primary key(service_name(64),span_name(128));
-   * alter table zipkin_service_spans add index(last_span_ts);
-   *
    * alter table zipkin_spans add primary key(span_id);
    * alter table zipkin_spans add index(trace_id);
    * alter table zipkin_spans add index(span_name(64));

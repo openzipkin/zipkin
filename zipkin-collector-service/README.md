@@ -13,24 +13,23 @@ store, most typically SQL, Cassandra or Redis.
 
 #### Configuration
 
-The Cassandra configuration file supports configuring following parameters through environment variables:
+`zipkin-collector-service` applies configuration parameters through environment variables.
 
-   * `CASSANDRA_USER` and `CASSANDRA_PASS`: Cassandra authentication. Will throw an exception on startup if authentication fails
-   * `CASSANDRA_CONTACT_POINTS`: Comma separated list of hosts / ip addresses part of Cassandra cluster
-   * `COLLECTOR_SAMPLE_RATE`: Sample rate. Double value between 0.0 (nothing ends up in back-end store) and 1.0 (everything ends up in back-end store)
-   * `COLLECTOR_QUEUE_NUM_WORKERS`: Number of worker threads that pick spans from internal bounded queue and write to back-end store
-   * `COLLECTOR_QUEUE_MAX_SIZE`: Internal queue size. If queue runs full offered spans are dropped. 
-   * `COLLECTOR_PORT`: Collector port
-   * `COLLECTOR_ADMIN_PORT`: Collector admin port. Port for admin http service. Admin service provides operational metrics for zipkin-collector-service.
-   * `COLLECTOR_LOG_LEVEL`: Collector log level. Valid values: OFF, FATAL, CRITICAL, ERROR, WARNING, INFO, DEBUG, TRACE, ALL
+Below are links to environment variables definitions.
 
-For default values see [zipkin-collector-service/config/collector-cassandra.scala](https://github.com/openzipkin/zipkin/blob/master/zipkin-collector-service/config/collector-cassandra.scala).
+* Span Receivers
+  * [kafka](https://github.com/openzipkin/zipkin/blob/master/zipkin-receiver-kafka/README.md)
+
+* Span Storage
+  * [dev and mysql](https://github.com/openzipkin/zipkin/blob/master/zipkin-anormdb/README.md)
+  * [cassandra](https://github.com/openzipkin/zipkin/blob/master/zipkin-cassandra/README.md)
+  * [redis](https://github.com/openzipkin/zipkin/blob/master/zipkin-redis/README.md)
 
 Example usage:
 
+```bash
+$ MYSQL_USER=root ./bin/collector mysql
 ```
-CASSANDRA_USER=user CASSANDRA_PASS=pass COLLECTOR_LOG_LEVEL=ERROR ./bin/collector cassandra
-```   
 
 ## Building and running a fat jar
 
@@ -50,4 +49,5 @@ bundled configurations below.
 
 * `/collector-dev.scala` - file-based SQL backend
 * `/collector-cassandra.scala` - localhost cassandra backend
+* `/collector-mysql.scala` - MySQL backend
 * `/collector-redis.scala` - localhost redis backend
