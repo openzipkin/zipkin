@@ -47,6 +47,33 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers {
     )
   }
 
+  test("connect port when only one contact point") {
+    TestFactory.nonExitingMain(Array(
+      "-zipkin.store.cassandra.dest", "1.1.1.1:9142"
+    ))
+    TestFactory.createClusterBuilder().getConfiguration().getProtocolOptions().getPort() should be(
+      9142
+    )
+  }
+
+  test("connect port when contact points are consistent") {
+    TestFactory.nonExitingMain(Array(
+      "-zipkin.store.cassandra.dest", "1.1.1.1:9143,2.2.2.2:9143"
+    ))
+    TestFactory.createClusterBuilder().getConfiguration().getProtocolOptions().getPort() should be(
+      9143
+    )
+  }
+
+  test("connect port is default when contact points are when mixed") {
+    TestFactory.nonExitingMain(Array(
+      "-zipkin.store.cassandra.dest", "1.1.1.1:9143,2.2.2.2"
+    ))
+    TestFactory.createClusterBuilder().getConfiguration().getProtocolOptions().getPort() should be(
+      9042
+    )
+  }
+
   test("creatingClusterBuilder with SASL authentication null delimited utf8 bytes") {
     TestFactory.nonExitingMain(Array(
       "-zipkin.store.cassandra.username", "bob",

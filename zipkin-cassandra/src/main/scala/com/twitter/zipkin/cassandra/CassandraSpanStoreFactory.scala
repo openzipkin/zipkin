@@ -15,6 +15,8 @@
  */
 package com.twitter.zipkin.cassandra
 
+import java.net.InetSocketAddress
+
 import com.datastax.driver.core.Cluster
 import com.datastax.driver.core.policies.LatencyAwarePolicy
 import com.datastax.driver.core.policies.RoundRobinPolicy
@@ -29,6 +31,7 @@ import org.twitter.zipkin.storage.cassandra.Repository
 import org.twitter.zipkin.storage.cassandra.ZipkinRetryPolicy
 
 import scala.collection.JavaConversions
+import scala.collection.JavaConverters._
 
 trait CassandraSpanStoreFactory {self: App =>
 
@@ -47,7 +50,10 @@ trait CassandraSpanStoreFactory {self: App =>
 
   def createClusterBuilder(): Cluster.Builder = {
     val builder = Cluster.builder()
-    builder.addContactPointsWithPorts(parseContactPoints())
+    val contactPoints = parseContactPoints()
+    val defaultPort = findConnectPort(contactPoints)
+    builder.addContactPointsWithPorts(contactPoints)
+    builder.withPort(defaultPort) // This ends up config.protocolOptions.port
     if (cassandraUsername.isDefined && cassandraPassword.isDefined)
       builder.withCredentials(cassandraUsername(), cassandraPassword())
     builder.withRetryPolicy(ZipkinRetryPolicy.INSTANCE)
@@ -58,5 +64,15 @@ trait CassandraSpanStoreFactory {self: App =>
     JavaConversions.seqAsJavaList(cassandraDest().split(",")
       .map(HostAndPort.fromString)
       .map(cp => new java.net.InetSocketAddress(cp.getHostText, cp.getPortOrDefault(9042))))
+  }
+
+  /** Returns the consistent port across all contact points or 9042 */
+  def findConnectPort(contactPoints: java.util.List[InetSocketAddress]) = {
+    val ports = contactPoints.asScala.map(_.getPort).toSet
+    if (ports.size == 1) {
+      ports.head
+    } else {
+      9042
+    }
   }
 }
