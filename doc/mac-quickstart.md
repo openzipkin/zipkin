@@ -1,7 +1,7 @@
 This page explains how to set up Zipkin on a single Mac (typically for local
 testing) with Cassandra, the most common choice of database for use with Zipkin.
 To run Zipkin out of the box without using Cassandra, see
-[install.md](https://github.com/twitter/zipkin/blob/master/doc/install.md).
+[install.md](https://github.com/openzipkin/zipkin/blob/master/doc/install.md).
 
 Scala 2.10.5 or later is required.
 
@@ -27,7 +27,7 @@ Now we can install Zipkin itself:
 # WORKSPACE is wherever you want your Zipkin folder
 cd WORKSPACE
 # If you don't have git, `brew install git` or just download Zipkin directly
-git clone https://github.com/twitter/zipkin.git
+git clone https://github.com/openzipkin/zipkin.git
 cd zipkin
 # Install the Zipkin schema
 cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt
@@ -56,8 +56,8 @@ with the collector (e.g. by using Scribe) to record trace data. There are
 several libraries to make this easier to do in different environments. Twitter
 uses [Finagle](https://github.com/twitter/finagle/tree/master/finagle-zipkin);
 external libraries (currently for Python, REST, node, and Java) are listed in the
-[wiki](https://github.com/twitter/zipkin/wiki#external-projects-that-use-zipkin);
+[wiki](https://github.com/openzipkin/zipkin/wiki#external-projects-that-use-zipkin);
 and there is also a [Ruby gem](https://rubygems.org/gems/finagle-thrift) and
 [Ruby Thrift client](https://github.com/twitter/thrift_client). Additional
 information is available in
-[install.md](https://github.com/twitter/zipkin/blob/master/doc/install.md).
+[install.md](https://github.com/openzipkin/zipkin/blob/master/doc/install.md).

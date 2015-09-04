@@ -26,6 +26,7 @@ dependencies {
     compile project(':zipkin-cassandra')
     compile project(':zipkin-redis')
     compile project(':zipkin-anormdb')
+    compile 'mysql:mysql-connector-java:5.1.36' // for collector-mysql
 }
 
 sourceSets.main.resources.srcDirs += ['config']

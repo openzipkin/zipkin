@@ -10,13 +10,21 @@ data, most typically SQL, Cassandra or Redis.
 ./gradlew :zipkin-query-service:run
 ```
 
-#### Start with Cassandra Authentication
+#### Configuration
 
-Will throw an exception on startup if authentication failed
-```
-# specify user/pass as environment variables
-CASSANDRA_USER=user CASSANDRA_PASS=pass ./bin/query cassandra
+`zipkin-query-service` applies configuration parameters through environment variables.
 
+Below are links to environment variables definitions.
+
+* Span Storage
+  * [dev and mysql](https://github.com/openzipkin/zipkin/blob/master/zipkin-anormdb/README.md)
+  * [cassandra](https://github.com/openzipkin/zipkin/blob/master/zipkin-cassandra/README.md)
+  * [redis](https://github.com/openzipkin/zipkin/blob/master/zipkin-redis/README.md)
+
+Example usage:
+
+```bash
+$ CASSANDRA_USER=user CASSANDRA_PASS=pass COLLECTOR_LOG_LEVEL=ERROR ./bin/query cassandra
 ```
 
 ## Building and running a fat jar
@@ -37,4 +45,5 @@ bundled configurations below.
 
 * `/query-dev.scala` - file-based SQL backend
 * `/query-cassandra.scala` - localhost cassandra backend
+* `/query-mysql.scala` - MySQL backend
 * `/query-redis.scala` - localhost redis backend

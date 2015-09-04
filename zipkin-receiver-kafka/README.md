@@ -1,11 +1,17 @@
 ## Kafka Receiver
 TODO: write me and include the flow and OSS instrumentation that logs spans to kafka.
 
-### Enabling the Kafka receiver with zipkin-collector-service
-`zipkin-collector-service` typically receives spans from scribe. To enable kafka, you need to
-assign the `KAFKA_ZOOKEEPER` variable when starting the process.
+## Service Configuration
 
-For example, if you are starting from a zipkin's source tree, you might assign this way:
+Kafka is an alternate receiver to the [zipkin-collector-service](https://github.com/openzipkin/zipkin/blob/master/zipkin-collector-service/README.md)
+
+It is enabled when the `KAFKA_ZOOKEEPER` environment variable is set. Here are the available options:
+
+   * `KAFKA_ZOOKEEPER`: ZooKeeper host string, comma-separated host:port value. no default.
+   * `KAFKA_TOPIC`: Defaults to zipkin
+
+Example usage:
+
 ```bash
 $ KAFKA_ZOOKEEPER=127.0.0.1:2181 bin/collector
 # or if zipkin isn't the right topic name

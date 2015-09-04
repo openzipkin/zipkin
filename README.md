@@ -1,10 +1,10 @@
 [![Gitter chat](http://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin) [![Build Status](https://travis-ci.org/openzipkin/zipkin.svg?branch=master)](https://travis-ci.org/openzipkin/zipkin) [![Download](https://api.bintray.com/packages/openzipkin/zipkin/zipkin/images/download.svg) ](https://bintray.com/openzipkin/zipkin/zipkin/_latestVersion)
 
-![Zipkin (doc/zipkin-logo-200x119.jpg)](https://github.com/twitter/zipkin/raw/master/doc/zipkin-logo-200x119.jpg)
+![Zipkin (doc/zipkin-logo-200x119.jpg)](https://github.com/openzipkin/zipkin/raw/master/doc/zipkin-logo-200x119.jpg)
 
 [Zipkin](http://twitter.github.com/zipkin) is a distributed tracing system. It is used by Twitter to help gather timing data for all their disparate services. The front end is a "waterfall" style graph of service calls showing call durations as horizontal bars:
 
-![Screenshot](https://github.com/twitter/zipkin/raw/master/doc/web-screenshot.png)
+![Screenshot](https://github.com/openzipkin/zipkin/raw/master/doc/web-screenshot.png)
 
 ## Running Zipkin
 
@@ -12,7 +12,7 @@ Zipkin is a collection of processes (a backend for the data, a
 "collector", and query engine, and a web UI) and all of them need to
 be running to make any progress:
 
-![Architecture](https://github.com/twitter/zipkin/raw/master/doc/architecture-0.png)
+![Architecture](https://github.com/openzipkin/zipkin/raw/master/doc/architecture-0.png)
 
 If you are familiar with Docker, the
 quickest way to get started quickly is to use the

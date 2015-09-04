@@ -14,5 +14,5 @@ master.
 # License
 By contributing your code, you agree to license your contribution under the 
 terms of the Apache Public License v2: 
-https://github.com/twitter/zipkin/blob/master/LICENSE
+https://github.com/openzipkin/zipkin/blob/master/LICENSE
 
