@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-./gradlew :zipkin-tracegen:run
+./gradlew :zipkin-tracegen:run -PtracegenDest=${1:-localhost}

@@ -1,6 +1,7 @@
 task run(type:JavaExec) {
    main = 'com.twitter.zipkin.tracegen.Main'
    classpath = sourceSets.main.runtimeClasspath
+   args '-scribeDest', "${tracegenDest}:9410", '-queryDest', "${tracegenDest}:9411"
 }
 
 repositories {
