@@ -2,20 +2,20 @@
 
 define(
   [
-    'component_data/aggregate',
+    'component_data/dependency',
     'component_ui/dependencyGraph',
     'component_ui/serviceDataModal'
   ],
 
-  function (AggregateData,
+  function (DependencyData,
             DependencyGraphUI,
             ServiceDataModal) {
 
     return initialize;
 
     function initialize() {
-      AggregateData.attachTo('#aggregate-container');
-      DependencyGraphUI.attachTo('#aggregate-container');
+      DependencyData.attachTo('#dependency-container');
+      DependencyGraphUI.attachTo('#dependency-container');
       ServiceDataModal.attachTo('#service-data-modal-container');
     }
   }

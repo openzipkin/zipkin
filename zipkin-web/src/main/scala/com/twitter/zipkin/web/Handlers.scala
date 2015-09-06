@@ -11,7 +11,7 @@ import com.twitter.zipkin.common.json._
 import com.twitter.zipkin.common.mustache.ZipkinMustache
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.query._
-import com.twitter.zipkin.thriftscala.{QueryRequest, ZipkinQuery}
+import com.twitter.zipkin.thriftscala.{DependencySource, QueryRequest, ZipkinQuery}
 import com.twitter.zipkin.{Constants => ZConstants}
 import java.io.{File, FileInputStream, InputStream}
 
@@ -264,10 +264,10 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       }
     }
 
-  def handleAggregate(client: ZipkinQuery[Future]) : Service[Request, MustacheRenderer] =
+  def handleDependency(client: ZipkinQuery[Future]) : Service[Request, MustacheRenderer] =
     Service.mk[Request, MustacheRenderer] { req =>
       val data = Map[String,Object]()
-      Future(MustacheRenderer("v2/aggregate.mustache", data))
+      Future(MustacheRenderer("v2/dependency.mustache", data))
     }
 
   // API Endpoints
@@ -293,7 +293,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       }
     }
 
-  def handleDependencies(client: ZipkinQuery[Future]): Service[Request, Renderer] =
+  def handleDependencies(client: DependencySource[Future]): Service[Request, Renderer] =
     new Service[Request, Renderer] {
       private[this] val PathMatch = """/api/dependencies(/([^/]+))?(/([^/]+))?/?""".r
       def apply(req: Request): Future[Renderer] = {

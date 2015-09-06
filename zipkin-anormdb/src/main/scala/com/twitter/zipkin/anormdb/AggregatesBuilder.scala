@@ -17,16 +17,16 @@
 package com.twitter.zipkin.anormdb
 
 import com.twitter.zipkin.builder.Builder
-import com.twitter.zipkin.storage.Aggregates
-import com.twitter.zipkin.storage.anormdb.{AnormAggregates, DB}
+import com.twitter.zipkin.storage.DependencyStore
+import com.twitter.zipkin.storage.anormdb.{AnormDependencyStore, DB}
 
-object AggregatesBuilder {
+object DependenciesBuilder {
   def apply(db:DB) = {
-    new AggregatesBuilder(db)
+    new DependenciesBuilder(db)
   }
 }
-class AggregatesBuilder(db: DB) extends Builder[Aggregates] {
+class DependenciesBuilder(db: DB) extends Builder[DependencyStore] {
   def apply() = {
-    AnormAggregates(db)
+    AnormDependencyStore(db)
   }
 }

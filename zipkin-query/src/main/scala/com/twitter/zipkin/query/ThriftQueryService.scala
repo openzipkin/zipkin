@@ -31,11 +31,11 @@ import java.nio.ByteBuffer
 
 class ThriftQueryService(
   spanStore: SpanStore,
-  aggsStore: Aggregates = new NullAggregates,
+  dependencyStore: DependencyStore = new NullDependencyStore,
   traceDurationFetchBatchSize: Int = 500,
   stats: StatsReceiver = DefaultStatsReceiver.scope("ThriftQueryService"),
   log: Logger = Logger.get("ThriftQueryService")
-) extends thriftscala.ZipkinQuery[Future] {
+) extends thriftscala.ZipkinQuery[Future] with thriftscala.DependencySource[Future] {
 
   private[this] val methodStats = stats.scope("perMethod")
   private val timeSkewAdjuster = new TimeSkewAdjuster()
@@ -175,6 +175,6 @@ class ThriftQueryService(
     handle("getDependencies") {
       val start = startTime map { Time.fromMicroseconds(_) }
       val end = endTime map { Time.fromMicroseconds(_) }
-      aggsStore.getDependencies(start, end).map(_.toThrift)
+      dependencyStore.getDependencies(start, end).map(_.toThrift)
     }
 }

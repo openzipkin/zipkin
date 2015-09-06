@@ -14,7 +14,7 @@ define(
 
     function dependencyGraph() {
       this.after('initialize', function (container, options) {
-        this.on(document, 'aggregateDataReceived', function (ev, data) {
+        this.on(document, 'dependencyDataReceived', function (ev, data) {
           var _this = this;
 
           var svg = d3.select('svg'),

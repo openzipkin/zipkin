@@ -18,5 +18,6 @@ Currently, only MySQL is configurable through environment variables. It uses the
 Example usage:
 ```bash
 $ mysql -uroot -e "create database if not exists zipkin"
+$ mysql -uroot -p zipkin < zipkin-tracegen/src/testdata/dependencies.sql
 $ MYSQL_USER=root ./bin/collector mysql
 ```

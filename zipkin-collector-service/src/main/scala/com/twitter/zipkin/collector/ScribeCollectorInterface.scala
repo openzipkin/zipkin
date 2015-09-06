@@ -15,7 +15,7 @@ class ScribeCollectorInterface(
   categories: Set[String],
   process: Seq[thriftscala.Span] => Future[Unit],
   stats: StatsReceiver = DefaultStatsReceiver.scope("ScribeReceiver")
-) extends thriftscala.ZipkinCollector.FutureIface {
+) extends thriftscala.Scribe.FutureIface with thriftscala.DependencySink.FutureIface {
 
   lazy val receiver = new ScribeReceiver(categories, process, stats)
 
@@ -25,12 +25,12 @@ class ScribeCollectorInterface(
 
   override def storeDependencies(dependencies: thriftscala.Dependencies) = {
     Stats.timeFutureMillisLazy("collector.storeDependencies") {
-      store.aggregates.storeDependencies(dependencies.toDependencies)
+      store.dependencies.storeDependencies(dependencies.toDependencies)
     } rescue {
       case e: Exception =>
         log.error(e, "storeDependencies failed")
         Stats.incr("collector.storeDependencies")
-        Future.exception(thriftscala.StoreAggregatesException(e.toString))
+        Future.exception(thriftscala.DependenciesException(e.toString))
     }
   }
 }

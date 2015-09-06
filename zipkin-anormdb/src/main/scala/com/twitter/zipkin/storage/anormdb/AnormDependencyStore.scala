@@ -19,7 +19,7 @@ package com.twitter.zipkin.storage.anormdb
 import com.twitter.util.{Future, Time}
 import com.twitter.conversions.time._
 import com.twitter.zipkin.common.{Service, DependencyLink, Dependencies}
-import com.twitter.zipkin.storage.Aggregates
+import com.twitter.zipkin.storage.DependencyStore
 import java.sql.Connection
 import anorm._
 import anorm.SqlParser._
@@ -32,9 +32,9 @@ import AnormThreads.inNewThread
  * The top annotations methods are stubbed because they're not currently
  * used anywhere; that feature was never completed.
  */
-case class AnormAggregates(
+case class AnormDependencyStore(
   val db: DB,
-  val openCon: Option[Connection] = None) extends Aggregates with DBPool {
+  val openCon: Option[Connection] = None) extends DependencyStore with DBPool {
 
   /**
    * Get the dependencies in a time range.

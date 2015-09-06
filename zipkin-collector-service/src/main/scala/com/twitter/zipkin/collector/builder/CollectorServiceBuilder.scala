@@ -18,6 +18,7 @@ package com.twitter.zipkin.collector.builder
 import java.net.InetSocketAddress
 
 import com.twitter.finagle.ThriftMux
+import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.{RuntimeEnvironment, ServiceTracker}
 import com.twitter.zipkin.builder.{Builder, ZipkinServerBuilder}
@@ -27,7 +28,8 @@ import com.twitter.zipkin.collector.{ScribeCollectorInterface, SpanReceiver, Zip
 import com.twitter.zipkin.config.ConfigRequestHandler
 import com.twitter.zipkin.config.sampler.{AdaptiveSamplerConfig, AdjustableRateConfig}
 import com.twitter.zipkin.storage.Store
-import com.twitter.zipkin.thriftscala
+import com.twitter.zipkin.thriftscala._
+import org.apache.thrift.protocol.TBinaryProtocol.Factory
 
 /**
  * Immutable builder for ZipkinCollector
@@ -82,12 +84,14 @@ case class CollectorServiceBuilder[T](
 
     import com.twitter.zipkin.conversions.thrift._
 
-    val process = (spans: Seq[thriftscala.Span]) =>
+    val process = (spans: Seq[Span]) =>
       store.spanStore.apply(ServiceStatsFilter(sampler(spans.map(_.toSpan))))
 
-    val server = ThriftMux.serveIface(
+    val stats = serverBuilder.statsReceiver
+    val impl = new ScribeCollectorInterface(store, scribeCategories, process, stats)
+    val server = ThriftMux.serve(
       new InetSocketAddress(serverBuilder.serverAddress, serverBuilder.serverPort),
-      new ScribeCollectorInterface(store, scribeCategories, process, serverBuilder.statsReceiver))
+      composeCollectorService(impl, stats))
 
     // initialize any alternate receiver, such as kafka
     val rcv = receiver.map(_(process))
@@ -112,5 +116,25 @@ case class CollectorServiceBuilder[T](
     }
 
     new ZipkinCollector(server, store, rcv)
+  }
+
+  /**
+   * Finagle+Scrooge doesn't yet support multiple interfaces on the same socket. This combines
+   * Scribe and DependencySink until they do.
+   */
+  private def composeCollectorService(impl: ScribeCollectorInterface, stats: StatsReceiver) = {
+    val protocolFactory = new Factory()
+    val maxThriftBufferSize = ThriftMux.maxThriftBufferSize
+    new Scribe$FinagleService(
+      impl, protocolFactory, stats, maxThriftBufferSize
+    ) {
+      // Add functions from DependencySink until ThriftMux supports multiple interfaces on the
+      // same port.
+      functionMap ++= new DependencySink$FinagleService(
+        impl, protocolFactory, stats, maxThriftBufferSize
+      ) {
+        val functions = functionMap // expose
+      }.functions
+    }
   }
 }

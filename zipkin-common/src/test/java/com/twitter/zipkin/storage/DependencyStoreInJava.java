@@ -8,9 +8,9 @@ import com.twitter.util.Time;
 import com.twitter.zipkin.common.Dependencies;
 
 /**
- * Shows that {@link Aggregates} is implementable in Java 7+.
+ * Shows that {@link DependencyStore} is implementable in Java 7+.
  */
-public class AggregatesInJava extends Aggregates {
+public class DependencyStoreInJava extends DependencyStore {
 
     @Override
     public void close() {

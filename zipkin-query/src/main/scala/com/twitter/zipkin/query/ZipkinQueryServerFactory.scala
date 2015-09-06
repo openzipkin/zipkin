@@ -15,13 +15,15 @@
  */
 package com.twitter.zipkin.query
 
-import com.twitter.app.App
-import com.twitter.finagle.ListeningServer
-import com.twitter.finagle.ThriftMux
-import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.logging.Logger
-import com.twitter.zipkin.storage.{Aggregates, NullAggregates, SpanStore}
 import java.net.InetSocketAddress
+
+import com.twitter.app.App
+import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
+import com.twitter.finagle.{ListeningServer, ThriftMux}
+import com.twitter.logging.Logger
+import com.twitter.zipkin.storage.{DependencyStore, NullDependencyStore, SpanStore}
+import com.twitter.zipkin.thriftscala.{DependencySource$FinagleService, ZipkinQuery$FinagleService}
+import org.apache.thrift.protocol.TBinaryProtocol.Factory
 
 trait ZipkinQueryServerFactory { self: App =>
   val queryServicePort = flag("zipkin.queryService.port", new InetSocketAddress(9411), "port for the query service to listen on")
@@ -29,11 +31,31 @@ trait ZipkinQueryServerFactory { self: App =>
 
   def newQueryServer(
     spanStore: SpanStore,
-    aggregatesStore: Aggregates = new NullAggregates,
+    aggregatesStore: DependencyStore = new NullDependencyStore,
     stats: StatsReceiver = DefaultStatsReceiver.scope("QueryService"),
     log: Logger = Logger.get("QueryService")
   ): ListeningServer = {
-    ThriftMux.serveIface(queryServicePort(), new ThriftQueryService(
-      spanStore, aggregatesStore, queryServiceDurationBatchSize()))
+    val impl = new ThriftQueryService(spanStore, aggregatesStore, queryServiceDurationBatchSize())
+    ThriftMux.serve(queryServicePort(), composeQueryService(impl, stats))
+  }
+
+  /**
+   * Finagle+Scrooge doesn't yet support multiple interfaces on the same socket. This combines
+   * ZipkinQuery and DependencySource$FinagleService until they do.
+   */
+  private def composeQueryService(impl: ThriftQueryService, stats: StatsReceiver) = {
+    val protocolFactory = new Factory()
+    val maxThriftBufferSize = ThriftMux.maxThriftBufferSize
+    new ZipkinQuery$FinagleService(
+      impl, protocolFactory, stats, maxThriftBufferSize
+    ) {
+      // Add functions from DependencySource until ThriftMux supports multiple interfaces on the
+      // same port.
+      functionMap ++= new DependencySource$FinagleService(
+        impl, protocolFactory, stats, maxThriftBufferSize
+      ) {
+        val functions = functionMap // expose
+      }.functions
+    }
   }
 }
