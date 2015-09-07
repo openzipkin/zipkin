@@ -33,7 +33,7 @@ class ZipkinCollector(server: ListeningServer, store: Store, receiver: Option[Sp
       Await.ready(receiver.get.close())
     }
     Await.ready(server.close())
-    store.aggregates.close()
+    store.dependencies.close()
     store.spanStore.close()
     ServiceTracker.shutdown()
   }

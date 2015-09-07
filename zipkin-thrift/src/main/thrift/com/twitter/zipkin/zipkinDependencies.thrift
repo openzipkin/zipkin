@@ -15,29 +15,61 @@ namespace java com.twitter.zipkin.thriftjava
 #@namespace scala com.twitter.zipkin.thriftscala
 namespace rb Zipkin
 
-#********* Zipkin Aggregate Dependency Related Structs ***********
-
-
-# This is a 1-to-1 translation of algebird Moments structure for holding
-# count/mean/variance(stdDev)/skewness/etc about a set of values.  It's
-# used below to represent span time duration ranges.
+/**
+ * Moments is defined as below per algebird's MomentsGroup.scala
+ *
+ * A class to calculate the first five central moments over a sequence of Doubles.
+ * Given the first five central moments, we can then calculate metrics like skewness
+ * and kurtosis.
+ *
+ * m{i} denotes the ith central moment.
+ */
 struct Moments {
-  1: i64 m0,    # count
-  2: double m1, # mean
-  3: double m2, # variance * count
-  4: double m3,
-  5: double m4
+  /** count */
+  1: i64 m0
+  /** mean */
+  2: double m1
+  /** population variance = m2 / count, when count > 1 */
+  3: optional double m2
+  /** skewness = math.sqrt(count) * m3 / math.pow(m2, 1.5), when count > 2 */
+  4: optional double m3
+  /** kurtosis = count * m4 / math.pow(m2, 2) - 3, when count > 3 */
+  5: optional double m4
 }
 
 struct DependencyLink {
-  1: string parent,  # parent service name (caller)
-  2: string child,   # child service name (callee)
+  /** parent service name (caller) */
+  1: string parent
+  /** child service name (callee) */
+  2: string child
   3: Moments duration_moments
   # histogram?
 }
 
 struct Dependencies {
-  1: i64 start_time  # microseconds from epoch
-  2: i64 end_time    # microseconds from epoch
-  3: list<DependencyLink> links # our data
+  /** microseconds from epoch */
+  1: i64 start_time
+  /** microseconds from epoch */
+  2: i64 end_time
+  3: list<DependencyLink> links
+}
+
+exception DependenciesException {
+  1: string msg
+}
+
+service DependencySink {
+
+    void storeDependencies(1: Dependencies dependencies) throws (1: DependenciesException e);
+}
+
+service DependencySource {
+
+    /**
+     * Get an aggregate representation of all services paired with every service they call in to.
+     * This includes information on call counts and mean/stdDev/etc of call durations.  The two arguments
+     * specify epoch time in microseconds. The end time is optional and defaults to one day after the
+     * start time.
+     */
+    Dependencies getDependencies(1: optional i64 start_time, 2: optional i64 end_time) throws (1: DependenciesException qe);
 }

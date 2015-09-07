@@ -33,6 +33,6 @@ case class QueryServiceBuilder(
     UseOnceFactory.nonExitingMain(Array(
       "zipkin.queryService.port", serverBuilder.serverAddress + ":" + serverBuilder.serverPort
     ))
-    UseOnceFactory.newQueryServer(store.spanStore, store.aggregates, serverBuilder.statsReceiver)
+    UseOnceFactory.newQueryServer(store.spanStore, store.dependencies, serverBuilder.statsReceiver)
   }
 }

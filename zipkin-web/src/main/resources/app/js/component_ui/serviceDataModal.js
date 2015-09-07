@@ -3,11 +3,11 @@
 define(
   [
     'flight/lib/component',
-    'component_data/aggregate',
+    'component_data/dependency',
     'component_data/momentAnnotations'
   ],
 
-  function (defineComponent, aggregate, getMomentAnnotations) {
+  function (defineComponent, dependency, getMomentAnnotations) {
     return defineComponent(serviceDataModal);
 
     function serviceDataModal() {

@@ -20,19 +20,19 @@ import com.twitter.util.{Future, Time}
 import com.twitter.zipkin.common.Dependencies
 
 /**
- * Storage and retrieval interface for aggregates that may be computed offline and reloaded into
- * online storage
+ * Storage and retrieval interface for aggregate dependencies that may be computed offline and
+ * reloaded into online storage.
  */
-abstract class Aggregates extends java.io.Closeable {
+abstract class DependencyStore extends java.io.Closeable {
 
   def getDependencies(startDate: Option[Time], endDate: Option[Time]=None): Future[Dependencies]
   def storeDependencies(dependencies: Dependencies): Future[Unit]
 }
 
-class NullAggregates extends Aggregates {
+class NullDependencyStore extends DependencyStore {
 
   def close() {}
 
   def getDependencies(startDate: Option[Time], endDate: Option[Time] = None) = Future(Monoid.zero[Dependencies])
-  def storeDependencies(dependencies: Dependencies): Future[Unit]                    = Future.Unit
+  def storeDependencies(dependencies: Dependencies): Future[Unit]            = Future.Unit
 }

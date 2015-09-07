@@ -16,7 +16,6 @@
 package com.twitter.zipkin.web
 
 import com.twitter.app.App
-import com.twitter.conversions.time._
 import com.twitter.finagle.httpx.{HttpMuxer, Request, Response}
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.{Httpx, Service, Thrift}
@@ -24,7 +23,7 @@ import com.twitter.server.TwitterServer
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common.json.ZipkinJson
 import com.twitter.zipkin.common.mustache.ZipkinMustache
-import com.twitter.zipkin.thriftscala.ZipkinQuery
+import com.twitter.zipkin.thriftscala.{DependencySource, ZipkinQuery}
 import java.net.InetSocketAddress
 
 trait ZipkinWebFactory { self: App =>
@@ -56,8 +55,8 @@ trait ZipkinWebFactory { self: App =>
   val queryLimit = flag("zipkin.web.query.limit", 10, "Default query limit for trace results")
   val environment = flag("zipkin.web.environmentName", "", "The name of the environment Zipkin is running in")
 
-  def newQueryClient(): ZipkinQuery.FutureIface =
-    Thrift.newIface[ZipkinQuery.FutureIface]("ZipkinQuery=" + queryDest())
+  def newQueryClient() = Thrift.newIface[ZipkinQuery.FutureIface]("ZipkinQuery=" + queryDest())
+  def newDependencySource() = Thrift.newIface[DependencySource.FutureIface]("DependencySource=" + queryDest())
 
   def newJsonGenerator = new ZipkinJson
   def newMustacheGenerator = new ZipkinMustache(webResourcesRoot(), webCacheResources())
@@ -66,6 +65,7 @@ trait ZipkinWebFactory { self: App =>
 
   def newWebServer(
     queryClient: ZipkinQuery[Future] = newQueryClient(),
+    dependencySource: DependencySource[Future] = newDependencySource(),
     stats: StatsReceiver = DefaultStatsReceiver.scope("zipkin-web")
   ): Service[Request, Response] = {
     val handlers = newHandlers
@@ -77,12 +77,12 @@ trait ZipkinWebFactory { self: App =>
       ("/public/", handlePublic(resourceDirs, typesMap, publicRoot)),
       ("/", addLayout("Index", environment()) andThen handleIndex(queryClient)),
       ("/traces/:id", addLayout("Traces", environment()) andThen handleTraces(queryClient)),
-      ("/aggregate", addLayout("Aggregate", environment()) andThen handleAggregate(queryClient)),
+      ("/dependency", addLayout("Dependency", environment()) andThen handleDependency(queryClient)),
       ("/api/query", handleQuery(queryClient)),
       ("/api/services", handleServices(queryClient)),
       ("/api/spans", requireServiceName andThen handleSpans(queryClient)),
-      ("/api/dependencies", handleDependencies(queryClient)),
-      ("/api/dependencies/?:startTime/?:endTime", handleDependencies(queryClient)),
+      ("/api/dependencies", handleDependencies(dependencySource)),
+      ("/api/dependencies/?:startTime/?:endTime", handleDependencies(dependencySource)),
       ("/api/get/:id", handleGetTrace(queryClient)),
       ("/api/trace/:id", handleGetTrace(queryClient))
     ).foldLeft(new HttpMuxer) { case (m , (p, handler)) =>

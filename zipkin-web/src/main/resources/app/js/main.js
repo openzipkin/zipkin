@@ -59,16 +59,16 @@ require(
       [
         'page/default',
         'page/trace',
-        'page/aggregate'
+        'page/dependency'
       ],
       function(
         initializeDefault,
         initializeTrace,
-        initializeAggregate
+        initializeDependency
       ) {
         initializeDefault();
         initializeTrace();
-        initializeAggregate();
+        initializeDependency();
       }
     );
   }

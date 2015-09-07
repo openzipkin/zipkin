@@ -134,10 +134,11 @@ object thrift {
 
   /* Dependencies */
   class WrappedMoments(m: Moments) {
-    lazy val toThrift = thriftscala.Moments(m.m0, m.m1, m.m2, m.m3, m.m4)
+    lazy val toThrift = thriftscala.Moments(m.m0, m.m1, nanToNone(m.m2), nanToNone(m.m3), nanToNone(m.m4))
+    private def nanToNone(d: Double) = if (d == Double.NaN) None else Some(d)
   }
   class ThriftMoments(m: thriftscala.Moments) {
-    lazy val toMoments = Moments(m.m0, m.m1, m.m2, m.m3, m.m4)
+    lazy val toMoments = Moments(m.m0, m.m1, m.m2.getOrElse(Double.NaN), m.m3.getOrElse(Double.NaN), m.m4.getOrElse(Double.NaN))
   }
   implicit def momentsToThrift(m: Moments) = new WrappedMoments(m)
   implicit def thriftToMoments(m: thriftscala.Moments) = new ThriftMoments(m)

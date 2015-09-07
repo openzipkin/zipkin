@@ -7,14 +7,14 @@ define(
 
   function (defineComponent) {
 
-    return defineComponent(aggregate);
+    return defineComponent(dependency);
 
-    function aggregate() {
+    function dependency() {
       var _data = [];
       var services = {};
       var dependencies = {};
 
-      this.getAggregate = function (from, to) {
+      this.getDependency = function (from, to) {
         var url = "/api/dependencies/" + from + '/' + to;
         $.ajax(url, {
           type: "GET",
@@ -23,13 +23,13 @@ define(
           success: function (data) {
             _data = data;
             this.buildServiceData(data);
-            this.trigger('aggregateDataReceived', data);
+            this.trigger('dependencyDataReceived', data);
           },
           failure: function (jqXHR, status, err) {
             var error = {
               message: "Couldn't get dependency data from backend: " + err
             };
-            this.trigger('aggregateDataFailed', error);
+            this.trigger('dependencyDataFailed', error);
           }
         });
       };
@@ -53,8 +53,8 @@ define(
       };
 
       this.after('initialize', function () {
-        this.on(document, 'aggregateDataRequested', function (args) {
-          this.getAggregate(args.from, args.to)
+        this.on(document, 'dependencyDataRequested', function (args) {
+          this.getDependency(args.from, args.to)
         });
 
         this.on(document, 'serviceDataRequested', function (event, args) {
@@ -69,7 +69,7 @@ define(
           }.bind(this));
         });
 
-        this.getAggregate(0, Date.now() * 1000);
+        this.getDependency(0, Date.now() * 1000);
       });
 
       this.getServiceData = function (serviceName, callback) {

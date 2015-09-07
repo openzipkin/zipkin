@@ -21,13 +21,13 @@ import com.twitter.conversions.time._
 import com.twitter.util.{Future, Time}
 import com.twitter.zipkin.common.{Service, _}
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.storage.{Aggregates, Store}
+import com.twitter.zipkin.storage.{DependencyStore, Store}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSuite, Matchers, OneInstancePerTest}
 
 class ScribeCollectorServiceSpec extends FunSuite with OneInstancePerTest with Matchers with MockitoSugar {
-  val mockAggregates = mock[Aggregates]
+  val mockDependencies = mock[DependencyStore]
 
   test("store dependencies") {
     val m1 = Moments(2)
@@ -36,11 +36,11 @@ class ScribeCollectorServiceSpec extends FunSuite with OneInstancePerTest with M
     val dl3 = DependencyLink(Service("Gizmoduck"), Service("tflock"), m2)
     val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
 
-    when(mockAggregates.storeDependencies(deps1)) thenReturn Future.Done
+    when(mockDependencies.storeDependencies(deps1)) thenReturn Future.Done
 
-    val cs = new ScribeCollectorInterface(Store(null, mockAggregates), null, null);
+    val cs = new ScribeCollectorInterface(Store(null, mockDependencies), null, null);
     cs.storeDependencies(deps1.toThrift)
 
-    verify(mockAggregates).storeDependencies(deps1)
+    verify(mockDependencies).storeDependencies(deps1)
   }
 }
