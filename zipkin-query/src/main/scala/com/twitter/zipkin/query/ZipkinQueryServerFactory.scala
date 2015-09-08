@@ -31,11 +31,11 @@ trait ZipkinQueryServerFactory { self: App =>
 
   def newQueryServer(
     spanStore: SpanStore,
-    aggregatesStore: DependencyStore = new NullDependencyStore,
+    dependencyStore: DependencyStore = new NullDependencyStore,
     stats: StatsReceiver = DefaultStatsReceiver.scope("QueryService"),
     log: Logger = Logger.get("QueryService")
   ): ListeningServer = {
-    val impl = new ThriftQueryService(spanStore, aggregatesStore, queryServiceDurationBatchSize())
+    val impl = new ThriftQueryService(spanStore, dependencyStore, queryServiceDurationBatchSize())
     ThriftMux.serve(queryServicePort(), composeQueryService(impl, stats))
   }
 

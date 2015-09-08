@@ -20,12 +20,12 @@ import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.storage.DependencyStore
 import com.twitter.zipkin.storage.anormdb.{AnormDependencyStore, DB}
 
-object DependenciesBuilder {
+object DependencyStoreBuilder {
   def apply(db:DB) = {
-    new DependenciesBuilder(db)
+    new DependencyStoreBuilder(db)
   }
 }
-class DependenciesBuilder(db: DB) extends Builder[DependencyStore] {
+class DependencyStoreBuilder(db: DB) extends Builder[DependencyStore] {
   def apply() = {
     AnormDependencyStore(db)
   }
