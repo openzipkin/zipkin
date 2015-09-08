@@ -1,0 +1,73 @@
+diff --git a/swift-codec/src/main/java/com/facebook/swift/codec/metadata/AbstractThriftMetadataBuilder.java b/swift-codec/src/main/java/com/facebook/swift/codec/metadata/AbstractThriftMetadataBuilder.java
+index 8fc3828..5c025e7 100644
+--- a/swift-codec/src/main/java/com/facebook/swift/codec/metadata/AbstractThriftMetadataBuilder.java
++++ b/swift-codec/src/main/java/com/facebook/swift/codec/metadata/AbstractThriftMetadataBuilder.java
+@@ -67,7 +67,6 @@
+ import static com.google.common.collect.Lists.newArrayList;
+ import static com.google.common.collect.Lists.newArrayListWithCapacity;
+ import static com.google.common.collect.Sets.newTreeSet;
+-
+ import static java.util.Arrays.asList;
+ 
+ @NotThreadSafe
+@@ -178,9 +177,6 @@ protected final void verifyClass(Class<? extends Annotation> annotation)
+         if (!Modifier.isPublic(getStructClass().getModifiers())) {
+             metadataErrors.addError("%s class '%s' is not public", annotationName, structClassName);
+         }
+-        if (!Modifier.isFinal(getStructClass().getModifiers())) {
+-            metadataErrors.addError("%s class '%s' is not final (thrift does not support polymorphic data types)", annotationName, structClassName);
+-        }
+ 
+         if (!getStructClass().isAnnotationPresent(annotation)) {
+             metadataErrors.addError("%s class '%s' does not have a @%s annotation", annotationName, structClassName, annotationName);
+diff --git a/swift-codec/src/test/java/com/facebook/swift/codec/metadata/TestThriftStructMetadataBuilder.java b/swift-codec/src/test/java/com/facebook/swift/codec/metadata/TestThriftStructMetadataBuilder.java
+index 417a5c4..3826fb7 100644
+--- a/swift-codec/src/test/java/com/facebook/swift/codec/metadata/TestThriftStructMetadataBuilder.java
++++ b/swift-codec/src/test/java/com/facebook/swift/codec/metadata/TestThriftStructMetadataBuilder.java
+@@ -339,4 +339,16 @@ public void setFoo(int value)
+         {
+         }
+     }
++
++    @Test
++    public void testNonFinalStructsOk()
++    {
++        ThriftStructMetadataBuilder builder = new ThriftStructMetadataBuilder(new ThriftCatalog(), NotFinalStruct.class);
++        builder.build();
++    }
++
++    @ThriftStruct
++    public static class NotFinalStruct
++    {
++    }
+ }
+diff --git a/swift-codec/src/test/java/com/facebook/swift/codec/metadata/TestThriftUnionMetadataBuilder.java b/swift-codec/src/test/java/com/facebook/swift/codec/metadata/TestThriftUnionMetadataBuilder.java
+index dfa8b46..a4bcfcb 100644
+--- a/swift-codec/src/test/java/com/facebook/swift/codec/metadata/TestThriftUnionMetadataBuilder.java
++++ b/swift-codec/src/test/java/com/facebook/swift/codec/metadata/TestThriftUnionMetadataBuilder.java
+@@ -18,7 +18,6 @@
+ import com.facebook.swift.codec.ThriftField;
+ import com.facebook.swift.codec.ThriftUnion;
+ import com.facebook.swift.codec.ThriftUnionId;
+-
+ import org.testng.annotations.Test;
+ 
+ import java.util.concurrent.locks.Lock;
+@@ -232,4 +231,17 @@ public void setFoo(short value)
+         {
+         }
+     }
++
++    @Test
++    public void testNonFinalUnionOk()
++    {
++        ThriftUnionMetadataBuilder builder = new ThriftUnionMetadataBuilder(new ThriftCatalog(), NotFinalUnion.class);
++        builder.build();
++    }
++
++    @ThriftUnion
++    public static class NotFinalUnion
++    {
++        @ThriftUnionId public short id;
++    }
+ }
