@@ -244,4 +244,22 @@ public abstract class ZipkinQueryTest {
     assertThat(query().getSpanNames("db"))
         .containsExactly("QUERY BOOK", "QUERY EGG");
   }
+
+  @Test
+  public void getSpanNames_null() {
+    assertThat(query().getSpanNames(null))
+        .isEmpty();
+  }
+
+  @Test
+  public void getSpanNames_notFound() {
+    assertThat(query().getSpanNames("booboo"))
+        .isEmpty();
+  }
+
+  @Test
+  public void getServiceNames() {
+    assertThat(query().getServiceNames())
+        .containsExactly("web", "app", "db");
+  }
 }
