@@ -4,7 +4,7 @@ already downloaded Zipkin.
 ## One-time database setup
 
 We use the
-[Anorm library](http://www.playframework.com/documentation/2.1.1/ScalaAnorm) to
+[Anorm library](https://www.playframework.com/documentation/2.1.1/ScalaAnorm) to
 support SQL databases. Anorm supports any SQL database; Zipkin includes
 out-of-the-box support for SQLite, H2, MySQL, and PostgreSQL, and adding support
 for additional databases is as easy as tracking down the right database driver
@@ -18,24 +18,28 @@ on-demand.
 
 To use a different database, you need to change the collector and query
 configurations. The configurations are located at
-`zipkin-collector-service/config/collector-dev.scala` and
-`zipkin-query-service/config/query-dev.scala`, respectively. They both
-instantiate a `DB`, which looks something like this:
+[`zipkin-collector-service/config/collector-dev.scala`](https://github.com/openzipkin/zipkin/blob/master/zipkin-collector-service/config/collector-dev.scala) and
+[`zipkin-query-service/config/query-dev.scala`](https://github.com/openzipkin/zipkin/blob/master/zipkin-query-service/config/query-dev.scala), respectively.
+They both instantiate a `DB`, which looks something like this:
 
-    val db = new DB()
+```scala
+  val db = DB()
+```
 
 You need to pass in parameters to `DB()` that match your database
 configuration. For example, to run Zipkin on a MySQL database named
-*production*, you might write something like this:
+"production", you might write something like this:
 
-    val db = new DB(new DBConfig("mysql", new DBParams("production", "127.0.0.1")))
+```scala
+  val db = DB(new DBConfig("mysql", new DBParams("production", "127.0.0.1")))
+```
 
 The connection parameters you can specify are defined in
-[`DBConfig.scala`](https://github.com/openzipkin/zipkin/blob/master/zipkin-anormdb/src/main/scala/com/openzipkin/zipkin/util/DBConfig.scala)
+[`DBConfig.scala`](https://github.com/openzipkin/zipkin/blob/master/zipkin-anormdb/src/main/scala/com/twitter/zipkin/util/DBConfig.scala)
 in the Anorm module.
 
 Additionally, you need to make sure Zipkin loads the correct database driver.
-Typically you are looking at `zipkin-collector-service/build.gradle` and `zipkin-query-service/build.gradle`.
+Typically you are looking at [`zipkin-collector-service/build.gradle`](https://github.com/openzipkin/zipkin/blob/master/zipkin-collector-service/build.gradle) and [`zipkin-query-service/build.gradle`](https://github.com/openzipkin/zipkin/blob/master/zipkin-query-service/build.gradle).
 
 ### Setting up the schema
 
