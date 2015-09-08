@@ -149,7 +149,7 @@ allprojects { thisProject ->
             licenses = ['Apache-2.0']
             repo = System.getenv('BINTRAY_ZIPKIN_REPO') ?: "zipkin"
             vcsUrl = project.repo
-            name = System.getenv('BINTRAY_ZIPKIN_PACKAGE') ?: "zipkin"
+            name = System.getenv('BINTRAY_ZIPKIN_PACKAGE') ?: "maven"
             userOrg = System.getenv('BINTRAY_ZIPKIN_ORG') ?: "openzipkin"
             version {
                 name = project.version

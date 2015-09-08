@@ -25,7 +25,7 @@
 1. **Sync to Maven Central**
 
    Publishing to Maven Central currently happens by manually pushing the "Sync" button on
-   [Bintray](https://bintray.com/openzipkin/zipkin/zipkin#central) after the release has finished.
+   [Bintray](https://bintray.com/openzipkin/maven/zipkin#central) after the release has finished.
    This is required because automated sync requires a synchronous call to the Bintray API for
    publishing the just released version, and that consistently times out (PR [#82](https://github.com/bintray/gradle-bintray-plugin/pull/82)
    in [`zipkin-gradle-plugin`](https://github.com/bintray/gradle-bintray-plugin/) may help with that).
