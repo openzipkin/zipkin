@@ -17,6 +17,7 @@ import io.zipkin.Annotation;
 import io.zipkin.BinaryAnnotation;
 import io.zipkin.Span;
 import io.zipkin.Trace;
+import io.zipkin.internal.Nullable;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -84,8 +85,10 @@ public final class InMemoryZipkinQuery implements ZipkinQuery {
   }
 
   @Override
-  public synchronized Set<String> getSpanNames(String service) {
-    return new LinkedHashSet<>(serviceToSpanNames.get(service));
+  public synchronized Set<String> getSpanNames(@Nullable String service) {
+    if (service == null) return Collections.emptySet();
+    Collection<String> result = serviceToSpanNames.get(service);
+    return result != null ? new LinkedHashSet<>(result) : Collections.emptySet();
   }
 
   static final class Multimap<K, V> {
