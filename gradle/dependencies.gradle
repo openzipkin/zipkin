@@ -11,10 +11,31 @@ ext {
             twitterUtil: '6.27.0',
             twitterServer: '1.13.0',
             ostrich: '9.11.0',
-            griddle: '1.7'
+            griddle: '1.7',
+            slf4j: '1.7.2'
     ]
+}
 
-    commonDependencies = [
-            slf4jLog4j12: "org.slf4j:slf4j-log4j12:1.6.4"  // Don't forget to use for configuration 'runtime' only
-    ]
+subprojects { subproject ->
+    configurations.all {
+        resolutionStrategy {
+            eachDependency { DependencyResolveDetails details ->
+                // Ensures libthrift 0.5.0 isn't accidentally in the classpath
+                if (details.requested.group == 'org.apache.thrift') {
+                  details.useVersion '0.9.0' // https://github.com/twitter/scrooge/issues/203
+                }
+                // Don't use mixed versions of SLF4J
+                if (details.requested.group == 'org.slf4j') {
+                  details.useVersion commonVersions.slf4j
+                }
+            }
+        }
+
+        // Some dependencies early bound slf4j impl
+        exclude module: "log4j-over-slf4j"
+        exclude module: "slf4j-logback"
+        // logback shouldn't be bound, yet, and also http://jira.qos.ch/browse/LOGBACK-1071
+        exclude module: "logback-classic"
+        exclude module: "logback-core"
+     }
 }

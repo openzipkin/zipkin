@@ -27,6 +27,7 @@ dependencies {
     compile project(':zipkin-redis')
     compile project(':zipkin-anormdb')
     compile 'mysql:mysql-connector-java:5.1.36' // for collector-mysql
+    compile "org.slf4j:slf4j-simple:" + commonVersions.slf4j
 }
 
 sourceSets.main.resources.srcDirs += ['config']
