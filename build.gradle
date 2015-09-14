@@ -230,19 +230,7 @@ subprojects { subproject ->
         testCompile 'junit:junit:4.12'
         testCompile 'org.mockito:mockito-all:1.10.19'
         testCompile "org.scalatest:scalatest_${scalaInterfaceVersion}:2.2.5"
-    }
-}
-
-// Ensures libthrift 0.5.0 isn't accidentally in the classpath
-subprojects { subproject ->
-    configurations.all {
-        resolutionStrategy {
-            eachDependency { DependencyResolveDetails details ->
-                if (details.requested.group == 'org.apache.thrift') {
-                    details.useVersion '0.9.0' // https://github.com/twitter/scrooge/issues/203
-                }
-            }
-        }
+        testRuntime "org.slf4j:slf4j-simple:" + commonVersions.slf4j
     }
 }
 

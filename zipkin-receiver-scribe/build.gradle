@@ -3,6 +3,4 @@ dependencies {
 
     compile "com.twitter:finagle-thriftmux_${scalaInterfaceVersion}:${commonVersions.finagle}"
     compile "com.twitter:util-zk_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
-
-    runtime commonDependencies.slf4jLog4j12
 }
