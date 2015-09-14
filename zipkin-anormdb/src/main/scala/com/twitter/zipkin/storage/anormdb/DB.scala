@@ -21,7 +21,6 @@ import anorm.SqlParser._
 import java.sql.{Blob, Connection, DriverManager, SQLException, SQLRecoverableException, PreparedStatement}
 import com.twitter.util.{Try, Return, Throw, Future}
 import AnormThreads.inNewThread
-import com.zaxxer.hikari.HikariDataSource
 
 /**
  * Provides SQL database access via Anorm from the Play framework.
@@ -38,11 +37,7 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
   if (dbconfig.install) this.install().close()
 
   // Initialize connection pool
-  private val connpool = new HikariDataSource()
-  connpool.setDriverClassName(dbconfig.driver)
-  connpool.setJdbcUrl(dbconfig.location)
-  connpool.setConnectionTestQuery(if (dbconfig.jdbc3) "SELECT 1" else null)
-  connpool.setMaximumPoolSize(32)
+  private val connpool = new DataSource(dbconfig.driver, dbconfig.location, dbconfig.jdbc3)
 
   /**
    * Gets a dedicated java.sql.Connection to the SQL database. Note that auto-commit is
