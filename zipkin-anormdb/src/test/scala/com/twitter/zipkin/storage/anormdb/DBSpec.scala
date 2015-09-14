@@ -132,6 +132,12 @@ class DBSpec extends FunSuite with Matchers {
     attempt should be (1)
   }
 
+  test("MySQL must be installed manually") {
+    a [IllegalArgumentException] should be thrownBy {
+      new DB(new DBConfig("mysql", install = true))
+    }
+  }
+
   def throwsRecoverableUnlessSuccess(success: Boolean) : Boolean = {
     if (!success) {
        throwsRecoverable

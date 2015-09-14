@@ -8,6 +8,11 @@ CREATE TABLE IF NOT EXISTS zipkin_spans (
   created_ts BIGINT
 );
 
+ALTER TABLE zipkin_spans ADD PRIMARY KEY(span_id);
+ALTER TABLE zipkin_spans ADD INDEX(trace_id);
+ALTER TABLE zipkin_spans ADD INDEX(span_name(64));
+ALTER TABLE zipkin_spans ADD INDEX(created_ts);
+
 CREATE TABLE IF NOT EXISTS zipkin_annotations (
   span_id BIGINT NOT NULL,
   trace_id BIGINT NOT NULL,
@@ -19,6 +24,12 @@ CREATE TABLE IF NOT EXISTS zipkin_annotations (
   a_timestamp BIGINT NOT NULL,
   duration BIGINT
 );
+
+ALTER TABLE zipkin_annotations ADD FOREIGN KEY(span_id) REFERENCES zipkin_spans(span_id) ON DELETE CASCADE;
+ALTER TABLE zipkin_annotations ADD INDEX(trace_id);
+ALTER TABLE zipkin_annotations ADD INDEX(span_name(64));
+ALTER TABLE zipkin_annotations ADD INDEX(value(64));
+ALTER TABLE zipkin_annotations ADD INDEX(a_timestamp);
 
 CREATE TABLE IF NOT EXISTS zipkin_binary_annotations (
   span_id BIGINT NOT NULL,
@@ -32,6 +43,14 @@ CREATE TABLE IF NOT EXISTS zipkin_binary_annotations (
   port INT,
   annotation_ts BIGINT
 );
+
+ALTER TABLE zipkin_binary_annotations ADD FOREIGN KEY(span_id) REFERENCES zipkin_spans(span_id) ON DELETE CASCADE;
+ALTER TABLE zipkin_binary_annotations ADD INDEX(trace_id);
+ALTER TABLE zipkin_binary_annotations ADD INDEX(span_name(64));
+ALTER TABLE zipkin_binary_annotations ADD INDEX(annotation_key(64));
+ALTER TABLE zipkin_binary_annotations ADD INDEX(annotation_value(64));
+ALTER TABLE zipkin_binary_annotations ADD INDEX(annotation_key(64),annotation_value(64));
+ALTER TABLE zipkin_binary_annotations ADD INDEX(annotation_ts);
 
 CREATE TABLE IF NOT EXISTS zipkin_dependencies (
   dlid BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -49,3 +68,4 @@ CREATE TABLE IF NOT EXISTS zipkin_dependency_links (
   m3 DOUBLE PRECISION NOT NULL,
   m4 DOUBLE PRECISION NOT NULL
 );
+

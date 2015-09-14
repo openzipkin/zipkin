@@ -18,6 +18,9 @@ Currently, only MySQL is configurable through environment variables. It uses the
 Example usage:
 ```bash
 $ mysql -uroot -e "create database if not exists zipkin"
-$ mysql -uroot -p zipkin < zipkin-tracegen/src/testdata/dependencies.sql
+# install the schema and indexes
+$ mysql -uroot -Dzipkin < zipkin-anormdb/src/main/resources/mysql.sql
+# load test data for http://localhost:8080/dependency
+$ mysql -uroot -Dzipkin < zipkin-tracegen/src/testdata/dependencies.sql
 $ MYSQL_USER=root ./bin/collector mysql
 ```

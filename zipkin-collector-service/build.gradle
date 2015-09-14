@@ -26,7 +26,7 @@ dependencies {
     compile project(':zipkin-cassandra')
     compile project(':zipkin-redis')
     compile project(':zipkin-anormdb')
-    compile 'mysql:mysql-connector-java:5.1.36' // for collector-mysql
+    compile anormDriverDependencies["mysql"] // for query-mysql
     compile "org.slf4j:slf4j-simple:" + commonVersions.slf4j
 }
 

@@ -11,7 +11,9 @@ val db = DB(DBConfig("mysql", new DBParams(
   sys.env.get("MYSQL_USER").getOrElse(""),
   sys.env.get("MYSQL_PASS").getOrElse(""))))
 
-val storeBuilder = Store.Builder(SpanStoreBuilder(db, true), DependencyStoreBuilder(db))
+// Note: schema must be present prior to starting the collector or query
+//   - zipkin-anormdb/src/main/resources/mysql.sql
+val storeBuilder = Store.Builder(SpanStoreBuilder(db), DependencyStoreBuilder(db))
 val kafkaReceiver = sys.env.get("KAFKA_ZOOKEEPER").map(
   KafkaSpanReceiverFactory.factory(_, sys.env.get("KAFKA_TOPIC").getOrElse("zipkin"))
 )

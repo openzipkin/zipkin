@@ -10,6 +10,8 @@ val db = DB(DBConfig("mysql", new DBParams(
   sys.env.get("MYSQL_USER").getOrElse(""),
   sys.env.get("MYSQL_PASS").getOrElse(""))))
 
+// Note: schema must be present prior to starting the collector or query
+//   - zipkin-anormdb/src/main/resources/mysql.sql
 val storeBuilder = Store.Builder(SpanStoreBuilder(db), DependencyStoreBuilder(db))
 
 QueryServiceBuilder(storeBuilder)

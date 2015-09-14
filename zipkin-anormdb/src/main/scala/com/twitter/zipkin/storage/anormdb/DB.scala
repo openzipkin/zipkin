@@ -149,16 +149,19 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
 
   /**
    * Set up the database tables.
-   * In the case of MySQL this method has no effect, please load the schema using
-   * the files at zipkin/zipkin-anormdb/src/main/resources
    *
    * Returns an open database connection, so remember to close it, for example
    * with `(new DB()).install().close()`
    *
+   * @throws IllegalArgumentException if "MySQL" is the the database description. Install directly
+   *                                  from "zipkin-anormdb/src/main/resources/mysql.sql"
    */
   def install(): Connection = {
+    if (dbconfig.description == "MySQL") {
+      throw new IllegalArgumentException("Please install MySQL schema directly: zipkin-anormdb/src/main/resources/mysql.sql")
+    }
+
     implicit val con = this.getConnection()
-    if (dbconfig.description == "MySQL") return con
 
     SQL(
       """CREATE TABLE IF NOT EXISTS zipkin_spans (
