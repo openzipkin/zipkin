@@ -149,33 +149,17 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
 
   /**
    * Set up the database tables.
+   * In the case of MySQL this method has no effect, please load the schema using
+   * the files at zipkin/zipkin-anormdb/src/main/resources
    *
    * Returns an open database connection, so remember to close it, for example
    * with `(new DB()).install().close()`
    *
-   * Recommended indexes for MySQL deployments:
-   *
-   * alter table zipkin_spans add primary key(span_id);
-   * alter table zipkin_spans add index(trace_id);
-   * alter table zipkin_spans add index(span_name(64));
-   * alter table zipkin_spans add index(created_ts);
-   *
-   * alter table zipkin_annotations add foreign key(span_id) references zipkin_spans(span_id) on delete cascade;
-   * alter table zipkin_annotations add index(trace_id);
-   * alter table zipkin_annotations add index(span_name(64));
-   * alter table zipkin_annotations add index(value(64));
-   * alter table zipkin_annotations add index(a_timestamp);
-   *
-   * alter table zipkin_binary_annotations add foreign key(span_id) references zipkin_spans(span_id) on delete cascade;
-   * alter table zipkin_binary_annotations add index(trace_id);
-   * alter table zipkin_binary_annotations add index(span_name(64));
-   * alter table zipkin_binary_annotations add index(annotation_key(64));
-   * alter table zipkin_binary_annotations add index(annotation_value(64));
-   * alter table zipkin_binary_annotations add index(annotation_key(64),annotation_value(64));
-   * alter table zipkin_binary_annotations add index(annotation_ts);
    */
   def install(): Connection = {
     implicit val con = this.getConnection()
+    if (dbconfig.description == "MySQL") return con
+
     SQL(
       """CREATE TABLE IF NOT EXISTS zipkin_spans (
         |  span_id BIGINT NOT NULL,
@@ -242,7 +226,6 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
   // Get the column the current database type uses for BLOBs.
   private def getBlobType = dbconfig.description match {
     case "PostgreSQL" => "BYTEA" /* As usual PostgreSQL has to be different */
-    case "MySQL" => "MEDIUMBLOB" /* MySQL has length limits, in this case 16MB */
     case _ => "BLOB"
   }
 
@@ -252,7 +235,6 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
     case "H2 in-memory" => "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"
     case "H2 persistent" => "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"
     case "PostgreSQL" => "BIGSERIAL PRIMARY KEY"
-    case "MySQL" => "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"
   }
 
   /**
