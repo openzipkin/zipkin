@@ -23,18 +23,17 @@ import com.twitter.zipkin.collector.builder.{Adjustable, CollectorServiceBuilder
 import com.twitter.zipkin.receiver.kafka.KafkaSpanReceiverFactory
 import com.twitter.zipkin.storage.Store
 
+val serverPort = sys.env.get("COLLECTOR_PORT").getOrElse("9410").toInt
+val adminPort = sys.env.get("COLLECTOR_ADMIN_PORT").getOrElse("9900").toInt
+val logLevel = sys.env.get("COLLECTOR_LOG_LEVEL").getOrElse("INFO")
+val sampleRate = sys.env.get("COLLECTOR_SAMPLE_RATE").getOrElse("1.0").toDouble
+
 object Factory extends App with CassandraSpanStoreFactory
 
 Factory.cassandraDest.parse(sys.env.get("CASSANDRA_CONTACT_POINTS").getOrElse("localhost"))
 
 val username = sys.env.get("CASSANDRA_USERNAME")
 val password = sys.env.get("CASSANDRA_PASSWORD")
-val sampleRate = sys.env.get("COLLECTOR_SAMPLE_RATE").getOrElse("1.0").toDouble
-val queueNumWorkers = sys.env.get("COLLECTOR_QUEUE_NUM_WORKERS").getOrElse("10").toInt
-val queueMaxSize = sys.env.get("COLLECTOR_QUEUE_MAX_SIZE").getOrElse("500").toInt
-val serverPort = sys.env.get("COLLECTOR_PORT").getOrElse("9410").toInt
-val adminPort = sys.env.get("COLLECTOR_ADMIN_PORT").getOrElse("9900").toInt
-val logLevel = sys.env.get("COLLECTOR_LOG_LEVEL").getOrElse("DEBUG")
 
 
 if (username.isDefined && password.isDefined) {
@@ -59,5 +58,3 @@ CollectorServiceBuilder(
   kafkaReceiver,
   serverBuilder = ZipkinServerBuilder(serverPort, adminPort).loggers(List(loggerFactory))
 ).sampleRate(Adjustable.local(sampleRate))
- .queueNumWorkers(queueNumWorkers)
- .queueMaxSize(queueMaxSize)

@@ -14,7 +14,11 @@ data, most typically SQL, Cassandra or Redis.
 
 `zipkin-query-service` applies configuration parameters through environment variables.
 
-Below are links to environment variables definitions.
+Below are environment variables definitions.
+
+    * `QUERY_PORT`: Listen port for the query thrift api; Defaults to 9411
+    * `QUERY_ADMIN_PORT`: Listen port for the ostrich admin http server; Defaults to 9901
+    * `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
 
 * Span Storage
   * [dev and mysql](https://github.com/openzipkin/zipkin/blob/master/zipkin-anormdb/README.md)
