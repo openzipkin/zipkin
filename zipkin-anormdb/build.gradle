@@ -1,3 +1,6 @@
+// Otherwise, javadoc will cry because it has no work to do
+javadoc.options.memberLevel = JavadocMemberLevel.PACKAGE
+
 dependencies {
     compile project(':zipkin-scrooge')
 
