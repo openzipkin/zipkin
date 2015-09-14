@@ -3,6 +3,7 @@ dependencies {
 
     compile "com.twitter:finagle-redis_${scalaInterfaceVersion}:${commonVersions.finagle}"
     compile "com.twitter:util-logging_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
+    compile 'org.iq80.snappy:snappy:0.4'
 
     runtime commonDependencies.slf4jLog4j12
 
