@@ -14,6 +14,22 @@ ext {
             griddle: '1.7',
             slf4j: '1.7.2'
     ]
+
+    // Database drivers
+    // The keys are the valid values for the system property dbEngine.
+    // The values are the dependency to be used in the build to support the requested storage system.
+    //
+    // The default value of dbEngine is sqlite-persistent, defined in gradle.properties
+    // To override, run the build like this: ./gradlew build -PdbEngine=postgresql
+    anormDriverDependencies = [
+            "sqlite-memory": "org.xerial:sqlite-jdbc:3.8.11",  // sqlite-jdbc4 isn't out, yet
+            "sqlite-persistent": "org.xerial:sqlite-jdbc:3.8.11",
+            "h2-memory": "com.h2database:h2:1.4.187",
+            "h2-persistent": "com.h2database:h2:1.4.187",
+            // Don't add EOL versions! http://www.postgresql.org/support/versioning
+            "postgresql": "org.postgresql:postgresql:9.3-1103-jdbc4",
+            "mysql": "mysql:mysql-connector-java:5.1.36"
+    ]
 }
 
 subprojects { subproject ->
