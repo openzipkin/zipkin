@@ -17,13 +17,15 @@
 package com.twitter.zipkin.query
 
 import com.google.common.base.Charsets.UTF_8
-import com.google.common.io.{Resources, Files}
+import com.google.common.io.{Files, Resources}
+import com.twitter.finagle.tracing.NullTracer
+import com.twitter.finagle.zipkin.thrift.RawZipkinTracer
 import com.twitter.finagle.ListeningServer
 import com.twitter.logging.Logger
-import com.twitter.ostrich.admin.{Service, ServiceTracker, RuntimeEnvironment}
+import com.twitter.ostrich.admin.{RuntimeEnvironment, Service, ServiceTracker}
 import com.twitter.util.{Await, Eval}
-import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.BuildProperties
+import com.twitter.zipkin.builder.Builder
 
 object Main {
   val log = Logger.get(getClass.getName)

@@ -18,6 +18,7 @@ package com.twitter.zipkin.collector
 
 import com.google.common.base.Charsets.UTF_8
 import com.google.common.io.{Resources, Files}
+import com.twitter.finagle.tracing.{NullTracer, DefaultTracer}
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.{ServiceTracker, RuntimeEnvironment}
 import com.twitter.util.Eval
@@ -29,6 +30,8 @@ object Main {
 
   def main(args: Array[String]) {
     log.info("Loading configuration")
+    DefaultTracer.self = NullTracer // Disable tracing within the collector
+
     val runtime = RuntimeEnvironment(BuildProperties, args)
 
     // Fallback to bundled config resources, if there's no file at the path specified as -f
