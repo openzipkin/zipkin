@@ -53,7 +53,7 @@ public abstract class ZipkinQueryTest {
   }
 
   Endpoint web = Endpoint.builder()
-      .ipv4(0x7f000001 /* 127.0.0.1 */)
+      .ipv4((127 << 24) | 1 /* 127.0.0.1 */)
       .port((short) 8080)
       .serviceName("web").build();
   Endpoint app = Endpoint.builder(web)
