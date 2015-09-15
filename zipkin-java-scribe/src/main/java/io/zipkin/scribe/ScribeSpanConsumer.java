@@ -38,7 +38,7 @@ public final class ScribeSpanConsumer implements Scribe {
     Stream<Span> spansToStore = messages.stream()
         .filter(m -> m.category().equals("zipkin"))
         .map(LogEntry::message)
-        .map(m -> Base64.getDecoder().decode(m))
+        .map(m -> Base64.getMimeDecoder().decode(m)) // finagle-zipkin uses mime encoding
         .map(bytes -> {
           TMemoryBuffer transport = new TMemoryBuffer(bytes.length);
           try {
