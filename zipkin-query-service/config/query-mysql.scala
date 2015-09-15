@@ -1,7 +1,12 @@
+import com.twitter.logging.{ConsoleHandler, Level, LoggerFactory}
 import com.twitter.zipkin.anormdb.{DependencyStoreBuilder, SpanStoreBuilder}
-import com.twitter.zipkin.builder.QueryServiceBuilder
+import com.twitter.zipkin.builder.{ZipkinServerBuilder, QueryServiceBuilder}
 import com.twitter.zipkin.storage.Store
 import com.twitter.zipkin.storage.anormdb.{DB, DBConfig, DBParams}
+
+val serverPort = sys.env.get("QUERY_PORT").getOrElse("9411").toInt
+val adminPort = sys.env.get("QUERY_ADMIN_PORT").getOrElse("9901").toInt
+val logLevel = sys.env.get("QUERY_LOG_LEVEL").getOrElse("INFO")
 
 val db = DB(DBConfig("mysql", new DBParams(
   dbName = "zipkin",
@@ -14,4 +19,13 @@ val db = DB(DBConfig("mysql", new DBParams(
 //   - zipkin-anormdb/src/main/resources/mysql.sql
 val storeBuilder = Store.Builder(SpanStoreBuilder(db), DependencyStoreBuilder(db))
 
-QueryServiceBuilder(storeBuilder)
+val loggerFactory = new LoggerFactory(
+  node = "",
+  level = Level.parse(logLevel),
+  handlers = List(ConsoleHandler())
+)
+
+QueryServiceBuilder(
+  storeBuilder,
+  serverBuilder = ZipkinServerBuilder(serverPort, adminPort).loggers(List(loggerFactory))
+)

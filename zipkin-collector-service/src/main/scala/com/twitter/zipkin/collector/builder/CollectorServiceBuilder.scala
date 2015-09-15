@@ -43,35 +43,20 @@ case class CollectorServiceBuilder[T](
   storeBuilder: Builder[Store],
   receiver: Option[SpanReceiver.Processor => SpanReceiver] = None,
   scribeCategories: Set[String] = Set("zipkin"),
+  /**
+   * Endpoints are available via
+   *   GET  /config/<name>
+   *   POST /config/<name>?value=<value>
+   */
   sampleRateBuilder: Builder[AdjustableRateConfig] = Adjustable.local(1.0),
   adaptiveSamplerBuilder: Option[Builder[AdaptiveSamplerConfig]] = None,
-  additionalConfigEndpoints: Seq[(String, Builder[AdjustableRateConfig])] = Seq.empty,
-  queueMaxSize: Int = 500,
-  queueNumWorkers: Int = 10,
   serverBuilder: ZipkinServerBuilder = ZipkinServerBuilder(9410, 9900)
 ) extends Builder[RuntimeEnvironment => ZipkinCollector] {
 
   val log = Logger.get()
 
-  /**
-   * Add a configuration endpoint to control `AdjustableRateConfig`s
-   * Endpoints are available via
-   *   GET  /config/<name>
-   *   POST /config/<name>?value=<value>
-   *
-   * to get and set the values
-   *
-   * @param name name of the endpoint
-   * @param builder AdjustableRateConfig builder
-   * @return a new CollectorServiceBuilder
-   */
-  def addConfigEndpoint(name: String, builder: Builder[AdjustableRateConfig]) =
-    copy(additionalConfigEndpoints = additionalConfigEndpoints :+ (name, builder))
-
   def sampleRate(c: Builder[AdjustableRateConfig]): CollectorServiceBuilder[T] = copy(sampleRateBuilder = c)
   def adaptiveSampler(b: Builder[AdaptiveSamplerConfig]) = copy(adaptiveSamplerBuilder = Some(b))
-  def queueMaxSize(s: Int): CollectorServiceBuilder[T] = copy(queueMaxSize = s)
-  def queueNumWorkers(w: Int): CollectorServiceBuilder[T] = copy(queueNumWorkers = w)
 
   def apply() = (runtime: RuntimeEnvironment) => {
     serverBuilder.apply().apply(runtime)
@@ -101,11 +86,8 @@ case class CollectorServiceBuilder[T](
      *   GET  /config/<name>
      *   POST /config/<name>?value=0.2
      */
-    val configEndpoints = ("/config/sampleRate", sampleRate) +: additionalConfigEndpoints.map { case (path, builder) =>
-      ("/config/%s".format(path), builder.apply())
-    }
-    configEndpoints foreach { case (path, adjustable) =>
-      serverBuilder.adminHttpService map { _.addContext(path, new ConfigRequestHandler(adjustable)) }
+    serverBuilder.adminHttpService map {
+      _.addContext("/config/sampleRate", new ConfigRequestHandler(sampleRate))
     }
 
     adaptiveSamplerBuilder foreach { builder =>
