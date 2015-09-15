@@ -224,7 +224,7 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
 
   override def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
     endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
-    if ((Constants.CoreAnnotations ++ Constants.CoreAddress).contains(annotation) || endTs <= 0 || limit <= 0) {
+    if ((Constants.CoreAnnotations).contains(annotation) || endTs <= 0 || limit <= 0) {
       Seq.empty
     }
     else {
