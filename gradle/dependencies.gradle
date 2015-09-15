@@ -49,6 +49,7 @@ subprojects { subproject ->
 
         // Some dependencies early bound slf4j impl
         exclude module: "log4j-over-slf4j"
+        exclude module: "slf4j-log4j12"
         exclude module: "slf4j-logback"
         // logback shouldn't be bound, yet, and also http://jira.qos.ch/browse/LOGBACK-1071
         exclude module: "logback-classic"
