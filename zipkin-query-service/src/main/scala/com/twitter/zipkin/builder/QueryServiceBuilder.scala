@@ -16,6 +16,8 @@
 package com.twitter.zipkin.builder
 
 import com.twitter.finagle.ListeningServer
+import com.twitter.finagle.tracing.{NullTracer, DefaultTracer}
+import com.twitter.finagle.zipkin.thrift.RawZipkinTracer
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.zipkin.query.ZipkinQueryServerFactory
 import com.twitter.zipkin.storage.Store
@@ -28,6 +30,15 @@ case class QueryServiceBuilder(
   def apply(): (RuntimeEnvironment) => ListeningServer = (runtime: RuntimeEnvironment) => {
     serverBuilder.apply().apply(runtime)
     val store = storeBuilder.apply()
+
+    // If a scribe host is configured, send all traces to it, otherwise disable tracing
+    val scribeHost = sys.env.get("SCRIBE_HOST")
+    val scribePort = sys.env.get("SCRIBE_PORT")
+    DefaultTracer.self = if (scribeHost.isDefined || scribePort.isDefined) {
+      RawZipkinTracer(scribeHost.getOrElse("localhost"), scribePort.getOrElse("1463").toInt)
+    } else {
+      NullTracer
+    }
 
     object UseOnceFactory extends com.twitter.app.App with ZipkinQueryServerFactory
     UseOnceFactory.nonExitingMain(Array(

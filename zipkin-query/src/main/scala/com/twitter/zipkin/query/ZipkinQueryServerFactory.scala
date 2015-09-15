@@ -19,7 +19,7 @@ import java.net.InetSocketAddress
 
 import com.twitter.app.App
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.finagle.{ListeningServer, ThriftMux}
+import com.twitter.finagle.{param, ListeningServer, ThriftMux}
 import com.twitter.logging.Logger
 import com.twitter.zipkin.storage.{DependencyStore, NullDependencyStore, SpanStore}
 import com.twitter.zipkin.thriftscala.{DependencySource$FinagleService, ZipkinQuery$FinagleService}
@@ -36,7 +36,9 @@ trait ZipkinQueryServerFactory { self: App =>
     log: Logger = Logger.get("QueryService")
   ): ListeningServer = {
     val impl = new ThriftQueryService(spanStore, dependencyStore, queryServiceDurationBatchSize())
-    ThriftMux.serve(queryServicePort(), composeQueryService(impl, stats))
+    ThriftMux.server
+             .configured(param.Label("zipkin-query"))
+             .serve(queryServicePort(), composeQueryService(impl, stats))
   }
 
   /**

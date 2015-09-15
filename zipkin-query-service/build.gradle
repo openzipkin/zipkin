@@ -27,6 +27,8 @@ dependencies {
     compile project(':zipkin-anormdb')
     compile anormDriverDependencies["mysql"] // for query-mysql
     compile "org.slf4j:slf4j-simple:" + commonVersions.slf4j
+
+    compile "com.twitter:finagle-zipkin_${scalaInterfaceVersion}:${commonVersions.finagle}"
 }
 
 sourceSets.main.resources.srcDirs += ['config']

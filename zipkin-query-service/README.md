@@ -19,6 +19,8 @@ Below are environment variables definitions.
     * `QUERY_PORT`: Listen port for the query thrift api; Defaults to 9411
     * `QUERY_ADMIN_PORT`: Listen port for the ostrich admin http server; Defaults to 9901
     * `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
+    * `SCRIBE_HOST`: Listen host for scribe, where traces will be sent
+    * `SCRIBE_PORT`: Listen port for scribe, where traces will be sent
 
 * Span Storage
   * [dev and mysql](https://github.com/openzipkin/zipkin/blob/master/zipkin-anormdb/README.md)

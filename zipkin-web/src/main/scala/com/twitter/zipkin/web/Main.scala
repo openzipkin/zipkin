@@ -18,7 +18,9 @@ package com.twitter.zipkin.web
 import com.twitter.app.App
 import com.twitter.finagle.httpx.{HttpMuxer, Request, Response}
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.finagle.{Httpx, Service, Thrift}
+import com.twitter.finagle.tracing.{NullTracer, DefaultTracer}
+import com.twitter.finagle.zipkin.thrift.RawZipkinTracer
+import com.twitter.finagle._
 import com.twitter.server.TwitterServer
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common.json.ZipkinJson
@@ -55,8 +57,22 @@ trait ZipkinWebFactory { self: App =>
   val queryLimit = flag("zipkin.web.query.limit", 10, "Default query limit for trace results")
   val environment = flag("zipkin.web.environmentName", "", "The name of the environment Zipkin is running in")
 
-  def newQueryClient() = Thrift.newIface[ZipkinQuery.FutureIface]("ZipkinQuery=" + queryDest())
-  def newDependencySource() = Thrift.newIface[DependencySource.FutureIface]("DependencySource=" + queryDest())
+  // If a scribe host is configured, send all traces to it, otherwise disable tracing
+  val scribeHost = sys.env.get("SCRIBE_HOST")
+  val scribePort = sys.env.get("SCRIBE_PORT")
+  DefaultTracer.self = if (scribeHost.isDefined || scribePort.isDefined) {
+    RawZipkinTracer(scribeHost.getOrElse("localhost"), scribePort.getOrElse("1463").toInt)
+  } else {
+    NullTracer
+  }
+
+  // Don't use ThriftMux as it will make zipkin-web incompatible with non-finagle thrift servers.
+  def newQueryClient() = Thrift.client
+                               .configured(param.Label("zipkin-query"))
+                               .newIface[ZipkinQuery.FutureIface](queryDest())
+  def newDependencySource() = Thrift.client
+                                    .configured(param.Label("zipkin-query"))
+                                    .newIface[DependencySource.FutureIface](queryDest())
 
   def newJsonGenerator = new ZipkinJson
   def newMustacheGenerator = new ZipkinMustache(webResourcesRoot(), webCacheResources())
@@ -102,7 +118,9 @@ trait ZipkinWebFactory { self: App =>
 
 object Main extends TwitterServer with ZipkinWebFactory {
   def main() {
-    val server = Httpx.serve(webServerPort(), newWebServer(stats = statsReceiver.scope("zipkin-web")))
+    val server = Httpx.server
+      .configured(param.Label("zipkin-web"))
+      .serve(webServerPort(), newWebServer(stats = statsReceiver.scope("zipkin-web")))
     onExit { server.close() }
     Await.ready(server)
   }

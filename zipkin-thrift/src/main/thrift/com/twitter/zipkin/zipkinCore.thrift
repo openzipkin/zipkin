@@ -15,13 +15,18 @@ namespace java com.twitter.zipkin.thriftjava
 #@namespace scala com.twitter.zipkin.thriftscala
 namespace rb Zipkin
 
-#************** Collection related structs **************
-
-# these are the annotations we always expect to find in a span
+#************** Common annotation values **************
 const string CLIENT_SEND = "cs"
 const string CLIENT_RECV = "cr"
 const string SERVER_SEND = "ss"
 const string SERVER_RECV = "sr"
+const string WIRE_SEND = "ws"
+const string WIRE_RECV = "wr"
+
+#************** Common binary annotation keys **************
+const string CLIENT_ADDR = "ca"
+const string SERVER_ADDR = "sa"
+
 
 # this represents a host and port in a network
 struct Endpoint {
