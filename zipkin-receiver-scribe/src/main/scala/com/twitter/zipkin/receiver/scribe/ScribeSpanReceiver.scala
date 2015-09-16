@@ -111,20 +111,17 @@ class ScribeReceiver(
         case Return(_) =>
           batchesProcessedStat.add(spans.size)
           ok
-        case Throw(NonFatal(e)) =>
+        case Throw(NonFatal(e)) => (e, e.getCause) match {
           // It is not an error if the scribe client decided to cancel its request.
           // See Finagle FAQ's first entry http://twitter.github.io/finagle/guide/FAQ.html
-          if (e.isInstanceOf[CancellationException] && e.getCause.isInstanceOf[CancelledRequestException]) {
-            ok
-          } else if (e.isInstanceOf[QueueFullException]) {
-            pushbackCounter.incr()
-            tryLater
-          } else {
+          case (_: CancellationException, _: CancelledRequestException) => ok
+          case (_: QueueFullException, _) => pushbackCounter.incr(); tryLater
+          case _ =>
             log.warning("Sending TryLater due to %s(%s)"
               .format(e.getClass.getSimpleName, if (e.getMessage == null) "" else e.getMessage))
             errorStats.counter(e.getClass.getName).incr()
             tryLater
-          }
+        }
         case Throw(e) =>
           fatalStats.counter(e.getClass.getName).incr()
           Future.exception(e)
