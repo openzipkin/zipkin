@@ -41,9 +41,7 @@ case class QueryServiceBuilder(
     }
 
     object UseOnceFactory extends com.twitter.app.App with ZipkinQueryServerFactory
-    UseOnceFactory.nonExitingMain(Array(
-      "zipkin.queryService.port", serverBuilder.serverAddress + ":" + serverBuilder.serverPort
-    ))
+    UseOnceFactory.queryServicePort.parse(serverBuilder.serverAddress.getHostAddress + ":" + serverBuilder.serverPort)
     UseOnceFactory.newQueryServer(store.spanStore, store.dependencies, serverBuilder.statsReceiver)
   }
 }
