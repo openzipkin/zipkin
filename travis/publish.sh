@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 set -ex
 
+function heartbeat() {
+  # Some operations (for example Bintray GPG signing) run for a long time without output,
+  # causing Travis to time out the build. This is an ugly hack to work around that.
+  hard_timeout=3600  # 1 hour
+  heartbeat_interval=10
+  counter=0
+  while [[ $counter -lt $hard_timeout ]] && kill -0 "$$" 2>/dev/null; do
+    echo "(heartbeat $counter)"
+	counter=$(($counter + $heartbeat_interval))
+	sleep $heartbeat_interval
+  done &
+}
+
 function increment_version() {
   # TODO this would be cleaner in release.versionPatterns
   local v=$1
@@ -105,4 +118,5 @@ if ! is_pull_request; then
   fi
 fi
 
+heartbeat
 $action
