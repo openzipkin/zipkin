@@ -16,7 +16,7 @@
 package com.twitter.zipkin.receiver.scribe
 
 import com.twitter.app.App
-import com.twitter.finagle.ThriftMux
+import com.twitter.finagle.{CancelledRequestException, ThriftMux}
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.logging.Logger
 import com.twitter.scrooge.BinaryThriftStructSerializer
@@ -24,6 +24,7 @@ import com.twitter.util.{Base64StringEncoder, Future, NonFatal, Return, Throw, T
 import com.twitter.zipkin.collector.{QueueFullException, SpanReceiver}
 import com.twitter.zipkin.thriftscala.{LogEntry, ResultCode, Scribe, Span => ThriftSpan}
 import java.net.InetSocketAddress
+import java.util.concurrent.CancellationException
 
 /**
  * A SpanReceiverFactory that should be mixed into a base ZipkinCollector. This
@@ -111,11 +112,19 @@ class ScribeReceiver(
           batchesProcessedStat.add(spans.size)
           ok
         case Throw(NonFatal(e)) =>
-          if (!e.isInstanceOf[QueueFullException])
-            log.warning("Exception in process(): %s".format(e.getMessage))
-          errorStats.counter(e.getClass.getName).incr()
-          pushbackCounter.incr()
-          tryLater
+          // It is not an error if the scribe client decided to cancel its request.
+          // See Finagle FAQ's first entry http://twitter.github.io/finagle/guide/FAQ.html
+          if (e.isInstanceOf[CancellationException] && e.getCause.isInstanceOf[CancelledRequestException]) {
+            ok
+          } else if (e.isInstanceOf[QueueFullException]) {
+            pushbackCounter.incr()
+            tryLater
+          } else {
+            log.warning("Sending TryLater due to %s(%s)"
+              .format(e.getClass.getSimpleName, if (e.getMessage == null) "" else e.getMessage))
+            errorStats.counter(e.getClass.getName).incr()
+            tryLater
+          }
         case Throw(e) =>
           fatalStats.counter(e.getClass.getName).incr()
           Future.exception(e)
