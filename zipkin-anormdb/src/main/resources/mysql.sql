@@ -4,7 +4,6 @@ CREATE TABLE IF NOT EXISTS zipkin_spans (
   trace_id BIGINT NOT NULL,
   span_name VARCHAR(255) NOT NULL,
   debug SMALLINT NOT NULL,
-  duration BIGINT,
   created_ts BIGINT
 );
 
@@ -21,8 +20,7 @@ CREATE TABLE IF NOT EXISTS zipkin_annotations (
   value TEXT,
   ipv4 INT,
   port INT,
-  a_timestamp BIGINT NOT NULL,
-  duration BIGINT
+  a_timestamp BIGINT NOT NULL
 );
 
 ALTER TABLE zipkin_annotations ADD FOREIGN KEY(span_id) REFERENCES zipkin_spans(span_id) ON DELETE CASCADE;

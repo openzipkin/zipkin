@@ -16,7 +16,6 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.conversions.time._
 import org.scalatest.FunSuite
 
 class AnnotationTest extends FunSuite {
@@ -29,16 +28,16 @@ class AnnotationTest extends FunSuite {
   }
 
   test("compare correctly") {
-    val ann1 = Annotation(1, "a", None, None)
+    val ann1 = Annotation(1, "a", None)
     val ann2 = Annotation(2, "a", None)
     val ann3 = Annotation(1, "b", None)
     val ann4 = Annotation(1, "a", Some(Endpoint(1, 2, "service")))
-    val ann5 = Annotation(1, "a", None, Some(1.second))
+    val ann5 = Annotation(1, "a", None)
 
     assert(ann1.compare(ann1) === 0)
     assert(ann1.compare(ann2) < 0)
     assert(ann1.compare(ann3) < 0)
     assert(ann1.compare(ann4) < 0)
-    assert(ann1.compare(ann5) < 0)
+    assert(ann1.compare(ann5) === 0)
   }
 }
