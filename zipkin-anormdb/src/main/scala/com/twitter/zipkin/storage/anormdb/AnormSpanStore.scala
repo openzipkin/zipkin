@@ -44,16 +44,15 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
         SQL(
           db.getSpanInsertCommand() +
             """ INTO zipkin_spans
-              |  (span_id, parent_id, trace_id, span_name, debug, duration, created_ts)
+              |  (span_id, parent_id, trace_id, span_name, debug, created_ts)
               |VALUES
-              |  ({span_id}, {parent_id}, {trace_id}, {span_name}, {debug}, {duration}, {created_ts})
+              |  ({span_id}, {parent_id}, {trace_id}, {span_name}, {debug}, {created_ts})
             """.stripMargin)
           .on("span_id" -> span.id)
           .on("parent_id" -> span.parentId)
           .on("trace_id" -> span.traceId)
           .on("span_name" -> span.name)
           .on("debug" -> (if (span.debug) 1 else 0))
-          .on("duration" -> span.duration)
           .on("created_ts" -> createdTs)
           .execute()
 
@@ -61,10 +60,10 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
           SQL(
             """INSERT INTO zipkin_annotations
               |  (span_id, trace_id, span_name, service_name, value, ipv4, port,
-              |    a_timestamp, duration)
+              |    a_timestamp)
               |VALUES
               |  ({span_id}, {trace_id}, {span_name}, {service_name}, {value},
-              |    {ipv4}, {port}, {timestamp}, {duration})
+              |    {ipv4}, {port}, {timestamp})
             """.stripMargin)
             .on("span_id" -> span.id)
             .on("trace_id" -> span.traceId)
@@ -74,7 +73,6 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
             .on("ipv4" -> a.host.map(_.ipv4))
             .on("port" -> a.host.map(_.port))
             .on("timestamp" -> a.timestamp)
-            .on("duration" -> a.duration.map(_.inNanoseconds))
             .execute()
         )
 
@@ -123,14 +121,14 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
         }) *)
       val annos:List[DBAnnotation] =
         SQL(
-          """SELECT span_id, trace_id, span_name, service_name, value, ipv4, port, a_timestamp, duration
+          """SELECT span_id, trace_id, span_name, service_name, value, ipv4, port, a_timestamp
             |FROM zipkin_annotations
             |WHERE trace_id IN (%s)
           """.stripMargin.format(traceIdsString))
           .as((long("span_id") ~ long("trace_id") ~ str("span_name") ~ str("service_name") ~ str("value") ~
           get[Option[Int]]("ipv4") ~ get[Option[Int]]("port") ~
-          long("a_timestamp") ~ get[Option[Long]]("duration") map {
-          case a~b~c~d~e~f~g~h~i => DBAnnotation(a, b, c, d, e, f, g, h, i)
+          long("a_timestamp") map {
+          case a~b~c~d~e~f~g~h => DBAnnotation(a, b, c, d, e, f, g, h)
         }) *)
       val binAnnos:List[DBBinaryAnnotation] =
         SQL(
@@ -156,11 +154,7 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
               case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, anno.serviceName))
               case _ => None
             }
-            val duration:Option[Duration] = anno.duration match {
-              case Some(nanos) => Some(Duration.fromNanoseconds(nanos))
-              case None => None
-            }
-            Annotation(anno.timestamp, anno.value, host, duration)
+            Annotation(anno.timestamp, anno.value, host)
           }
           val spanBinAnnos = binAnnos.filter { a =>
             a.traceId == span.traceId && a.spanId == span.spanId && a.spanName == span.spanName
@@ -325,6 +319,6 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
   }
 
   case class DBSpan(spanId: Long, parentId: Option[Long], traceId: Long, spanName: String, debug: Boolean)
-  case class DBAnnotation(spanId: Long, traceId: Long, spanName: String, serviceName: String, value: String, ipv4: Option[Int], port: Option[Int], timestamp: Long, duration: Option[Long])
+  case class DBAnnotation(spanId: Long, traceId: Long, spanName: String, serviceName: String, value: String, ipv4: Option[Int], port: Option[Int], timestamp: Long)
   case class DBBinaryAnnotation(spanId: Long, traceId: Long, spanName: String, serviceName: String, key: String, value: Array[Byte], annotationTypeValue: Int, ipv4: Option[Int], port: Option[Int])
 }

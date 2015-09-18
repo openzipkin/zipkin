@@ -18,7 +18,6 @@ package com.twitter.zipkin.adapter
 
 import java.nio.ByteBuffer
 
-import com.twitter.conversions.time._
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.query._
@@ -30,7 +29,7 @@ class ThriftConversionsTest extends FunSuite {
     val expectedAnn: Annotation = Annotation(123, "value", Some(Endpoint(123, 123, "service")))
     assert(expectedAnn.toThrift.toAnnotation === expectedAnn)
 
-    val expectedAnn2: Annotation = Annotation(123, "value", Some(Endpoint(123, 123, "service")), Some(1.seconds))
+    val expectedAnn2: Annotation = Annotation(123, "value", Some(Endpoint(123, 123, "service")))
     assert(expectedAnn2.toThrift.toAnnotation === expectedAnn2)
   }
 

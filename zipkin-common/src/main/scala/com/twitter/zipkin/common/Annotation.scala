@@ -16,15 +16,12 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.util.Duration
-
 /**
  * @param timestamp when was this annotation created? microseconds from epoch
  * @param value description of what happened at the timestamp could for example be "cache miss for key: x"
  * @param host host this annotation was created on
- * @param duration how long did the operation this annotation represent take?
  */
-case class Annotation(timestamp: Long, value: String, host: Option[Endpoint], duration: Option[Duration] = None)
+case class Annotation(timestamp: Long, value: String, host: Option[Endpoint])
   extends Ordered[Annotation]{
   def serviceName = host.map(_.serviceName).getOrElse("Unknown service name")
 
@@ -40,8 +37,6 @@ case class Annotation(timestamp: Long, value: String, host: Option[Endpoint], du
       this.value compare that.value
     else if (this.host != that.host)
       this.host.getOrElse {return -1} compare that.host.getOrElse {return 1}
-    else if (this.duration != that.duration)
-      this.duration.getOrElse {return -1} compare that.duration.getOrElse {return 1}
     else
       0
   }

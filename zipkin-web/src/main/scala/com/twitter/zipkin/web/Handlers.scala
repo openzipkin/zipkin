@@ -361,8 +361,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
             "timestamp" -> a.timestamp,
             "relativeTime" -> durationStr((a.timestamp - traceStartTimestamp) * 1000),
             "serviceName" -> a.host.map(_.serviceName),
-            "duration" -> a.duration,
-            "width" -> a.duration.getOrElse(8)
+            "width" -> 8
           )
         },
         "binaryAnnotations" -> binaryAnnotations

@@ -16,7 +16,6 @@
 package com.twitter.zipkin.conversions
 
 import com.twitter.algebird.Moments
-import com.twitter.conversions.time._
 import com.twitter.util.Time
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.query._
@@ -57,7 +56,7 @@ object thrift {
   /* Annotation */
   class ThriftAnnotation(a: Annotation) {
     lazy val toThrift = {
-      thriftscala.Annotation(a.timestamp, a.value, a.host.map { _.toThrift }, a.duration.map(_.inMicroseconds.toInt))
+      thriftscala.Annotation(a.timestamp, a.value, a.host.map(_.toThrift))
     }
   }
   class WrappedAnnotation(a: thriftscala.Annotation) {
@@ -68,7 +67,7 @@ object thrift {
       if ("".equals(a.value))
         throw new IllegalArgumentException("Annotation must have a value: %s".format(a.toString))
 
-      new Annotation(a.timestamp, a.value, a.host.map { _.toEndpoint }, a.duration.map { _.microseconds })
+      new Annotation(a.timestamp, a.value, a.host.map(_.toEndpoint))
     }
   }
   implicit def annotationToThriftAnnotation(a: Annotation) = new ThriftAnnotation(a)
@@ -77,12 +76,12 @@ object thrift {
   /* BinaryAnnotation */
   class ThriftBinaryAnnotation(b: BinaryAnnotation) {
     lazy val toThrift = {
-      thriftscala.BinaryAnnotation(b.key, b.value, b.annotationType.toThrift, b.host.map { _.toThrift })
+      thriftscala.BinaryAnnotation(b.key, b.value, b.annotationType.toThrift, b.host.map(_.toThrift))
     }
   }
   class WrappedBinaryAnnotation(b: thriftscala.BinaryAnnotation) {
     lazy val toBinaryAnnotation = {
-      BinaryAnnotation(b.key, b.value, b.annotationType.toAnnotationType, b.host.map { _.toEndpoint })
+      BinaryAnnotation(b.key, b.value, b.annotationType.toAnnotationType, b.host.map(_.toEndpoint))
     }
   }
   implicit def binaryAnnotationToThriftBinaryAnnotation(b: BinaryAnnotation) = new ThriftBinaryAnnotation(b)
