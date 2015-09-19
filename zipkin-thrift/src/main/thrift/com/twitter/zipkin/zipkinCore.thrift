@@ -40,6 +40,7 @@ struct Annotation {
   1: i64 timestamp                 # microseconds from epoch
   2: string value                  # what happened at the timestamp?
   3: optional Endpoint host        # host this happened on
+  # 4: optional i32 OBSOLETE_duration         # how long did the operation take? microseconds
 }
 
 enum AnnotationType { BOOL, BYTES, I16, I32, I64, DOUBLE, STRING }
