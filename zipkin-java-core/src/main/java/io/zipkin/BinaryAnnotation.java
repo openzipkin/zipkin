@@ -39,6 +39,28 @@ public abstract class BinaryAnnotation {
     public int value() {
       return value;
     }
+
+    /** Returns {@link Type#BYTES} if unknown. */
+    public static Type fromValue(int value) {
+      switch (value) {
+        case 0:
+          return BOOL;
+        case 1:
+          return BYTES;
+        case 2:
+          return I16;
+        case 3:
+          return I32;
+        case 4:
+          return I64;
+        case 5:
+          return DOUBLE;
+        case 6:
+          return STRING;
+        default:
+          return BYTES;
+      }
+    }
   }
 
   public static Builder builder() {

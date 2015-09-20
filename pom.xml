@@ -31,6 +31,7 @@
     <module>zipkin-java-scribe</module>
     <module>zipkin-java-dependencies</module>
     <module>zipkin-java-server</module>
+    <module>zipkin-java-jdbc</module>
   </modules>
 
   <properties>
@@ -43,6 +44,10 @@
     <junit.version>4.12</junit.version>
     <assertj.version>3.1.0</assertj.version>
 
+    <!-- Dependencies for SpanStoreSpec -->
+    <zipkin-scala.version>1.9.0</zipkin-scala.version>
+    <scalatest.version>2.2.5</scalatest.version>
+
     <!-- Run `mvn wrapper:wrapper -N` on updating below -->
     <maven.version>3.3.3</maven.version>
     <wrapper-maven-plugin.version>0.0.4</wrapper-maven-plugin.version>
@@ -51,6 +56,10 @@
     <maven-source-plugin.version>2.4</maven-source-plugin.version>
     <maven-javadoc-plugin.version>2.10.3</maven-javadoc-plugin.version>
     <maven-license-plugin.version>2.11</maven-license-plugin.version>
+    <maven-jar-plugin.version>2.6</maven-jar-plugin.version>
+    <maven-release-plugin.version>2.5.2</maven-release-plugin.version>
+    <nexus-staging-maven-plugin.version>1.6.6</nexus-staging-maven-plugin.version>
+    <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
   </properties>
 
   <name>Zipkin Java</name>
@@ -109,6 +118,13 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-java-query</artifactId>
+        <version>${project.version}</version>
+        <classifier>tests</classifier>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-java-scribe</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -116,6 +132,12 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-java-dependencies</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-java-jdbc</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -164,6 +186,50 @@
         <artifactId>assertj-core</artifactId>
         <version>${assertj.version}</version>
       </dependency>
+
+      <!-- Dependencies for SpanStoreSpec -->
+      <dependency>
+        <groupId>io.zipkin</groupId>
+        <artifactId>zipkin-common</artifactId>
+        <version>${zipkin-scala.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>io.zipkin</groupId>
+        <artifactId>zipkin-scrooge</artifactId>
+        <version>${zipkin-scala.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>io.zipkin</groupId>
+        <artifactId>zipkin-common</artifactId>
+        <version>${zipkin-scala.version}</version>
+        <classifier>test</classifier>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>org.scalatest</groupId>
+        <artifactId>scalatest_2.10</artifactId>
+        <version>${scalatest.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -205,6 +271,11 @@
         <plugin>
           <artifactId>maven-shade-plugin</artifactId>
           <version>${maven-shade-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>${maven-jar-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -253,7 +324,7 @@
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.6.6</version>
+        <version>${nexus-staging-maven-plugin.version}</version>
         <extensions>true</extensions>
         <configuration>
           <serverId>ossrh</serverId>
@@ -263,9 +334,8 @@
       </plugin>
 
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>2.5</version>
+        <version>${maven-release-plugin.version}</version>
         <configuration>
           <autoVersionSubmodules>true</autoVersionSubmodules>
           <useReleaseProfile>false</useReleaseProfile>
@@ -317,7 +387,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.5</version>
+            <version>${maven-gpg-plugin.version}</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -328,7 +398,6 @@
               </execution>
             </executions>
           </plugin>
-
         </plugins>
       </build>
     </profile>

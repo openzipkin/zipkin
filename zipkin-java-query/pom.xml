@@ -29,12 +29,6 @@
   <name>Zipkin Java Query</name>
   <description>Zipkin Java Query</description>
 
-  <properties>
-    <!-- Dependencies for SpanStoreSpec -->
-    <zipkin-scala.version>1.9.0</zipkin-scala.version>
-    <scalatest.version>2.2.5</scalatest.version>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -56,48 +50,41 @@
     <dependency>
       <groupId>io.zipkin</groupId>
       <artifactId>zipkin-common</artifactId>
-      <version>${zipkin-scala.version}</version>
+      <classifier>test</classifier>
       <scope>test</scope>
-      <exclusions>
-          <exclusion>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-          </exclusion>
-      </exclusions>
     </dependency>
 
     <dependency>
       <groupId>io.zipkin</groupId>
       <artifactId>zipkin-scrooge</artifactId>
-      <version>${zipkin-scala.version}</version>
       <scope>test</scope>
-      <exclusions>
-          <exclusion>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-          </exclusion>
-      </exclusions>
     </dependency>
 
     <dependency>
       <groupId>io.zipkin</groupId>
       <artifactId>zipkin-common</artifactId>
-      <version>${zipkin-scala.version}</version>
-      <classifier>test</classifier>
       <scope>test</scope>
-      <exclusions>
-          <exclusion>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-          </exclusion>
-      </exclusions>
     </dependency>
 
     <dependency>
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest_2.10</artifactId>
-      <version>${scalatest.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
