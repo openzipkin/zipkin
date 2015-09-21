@@ -15,10 +15,15 @@ Currently, only MySQL is configurable through environment variables. It uses the
     * `MYSQL_HOST`: Defaults to localhost
     * `MYSQL_TCP_PORT`: Defaults to 3306
 
-Example usage:
+Example MySQL usage:
 ```bash
-$ mysql -uroot -e "create database if not exists zipkin"
+# Barracuda supports compression (In AWS RDS, this must be assigned in a parameter group)
+$ mysql -uroot -e "SET GLOBAL innodb_file_format=Barracuda"
+# This command should work even in RDS, and return "Barracuda"
+$ mysql -uroot -e "show global variables like 'innodb_file_format'"
+
 # install the schema and indexes
+$ mysql -uroot -e "create database if not exists zipkin"
 $ mysql -uroot -Dzipkin < zipkin-anormdb/src/main/resources/mysql.sql
 # load test data for http://localhost:8080/dependency
 $ mysql -uroot -Dzipkin < zipkin-tracegen/src/testdata/dependencies.sql
