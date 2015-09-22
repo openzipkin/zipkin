@@ -17,7 +17,9 @@ import com.facebook.swift.codec.ThriftConstructor;
 import com.facebook.swift.codec.ThriftField;
 import com.facebook.swift.codec.ThriftStruct;
 import com.google.auto.value.AutoValue;
+import java.net.InetSocketAddress;
 
+/** Indicates the network context of a service recording an annotation. */
 @AutoValue
 @ThriftStruct(value = "Endpoint", builder = AutoValue_Endpoint.Builder.class)
 public abstract class Endpoint {
@@ -30,12 +32,31 @@ public abstract class Endpoint {
     return new AutoValue_Endpoint.Builder(source);
   }
 
+  /**
+   * IPv4 host address packed into 4 bytes.
+   *
+   * <p/>Ex for the IP 1.2.3.4, it would be {@code (1 << 24) | (2 << 16) | (3 << 8) | 4}
+   *
+   * @see java.net.Inet4Address#getAddress()
+   */
   @ThriftField(value = 1)
   public abstract int ipv4();
 
+  /**
+   * IPv4 port
+   *
+   * <p/>Note: this is to be treated as an unsigned integer, so watch for negatives.
+   *
+   * @see InetSocketAddress#getPort()
+   */
   @ThriftField(value = 2)
   public abstract short port();
 
+  /**
+   * Service name, such as "memcache" or "zipkin-web"
+   *
+   * <p/>Note: Some implementations set this to "Unknown"
+   */
   @ThriftField(value = 3)
   public abstract String serviceName();
 

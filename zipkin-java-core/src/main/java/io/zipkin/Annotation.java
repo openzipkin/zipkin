@@ -33,19 +33,27 @@ public abstract class Annotation {
     return new AutoValue_Annotation.Builder(source);
   }
 
+  /** Microseconds from epoch */
   @ThriftField(value = 1)
   public abstract long timestamp();
 
+  /** What happened at the timestamp? */
   @ThriftField(value = 2)
   public abstract String value();
 
+  /**
+   * The endpoint associated with this annotation depends on {@link #value()}.
+   *
+   * <p/>When {@link #value()} is...
+   * <ul>
+   *   <li>{@link Constants#CLIENT_ADDR}, this is the client endpoint of an RPC call</li>
+   *   <li>{@link Constants#SERVER_ADDR}, this is the server endpoint of an RPC call</li>
+   *   <li>Otherwise, this is the endpoint that recorded this annotation</li>
+   * </ul
+   */
   @Nullable
   @ThriftField(value = 3, requiredness = OPTIONAL)
   public abstract Endpoint host();
-
-  @Nullable
-  @ThriftField(value = 4, requiredness = OPTIONAL)
-  public abstract Integer duration();
 
   @AutoValue.Builder
   public interface Builder {
@@ -58,9 +66,6 @@ public abstract class Annotation {
 
     @ThriftField(value = 3, requiredness = OPTIONAL)
     Builder host(Endpoint host);
-
-    @ThriftField(value = 4, requiredness = OPTIONAL)
-    Builder duration(Integer duration);
 
     @ThriftConstructor
     Annotation build();

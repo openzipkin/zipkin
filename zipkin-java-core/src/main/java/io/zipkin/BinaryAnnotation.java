@@ -58,6 +58,7 @@ public abstract class BinaryAnnotation {
   @ThriftField(value = 3)
   public abstract Type type();
 
+  /** The endpoint that recorded this annotation */
   @Nullable
   @ThriftField(value = 4, requiredness = OPTIONAL)
   public abstract Endpoint host();
