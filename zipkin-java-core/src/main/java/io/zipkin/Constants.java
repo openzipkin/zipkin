@@ -13,6 +13,11 @@
  */
 package io.zipkin;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 public final class Constants {
   /* Common annotation values */
   public static final String CLIENT_RECV = "cr";
@@ -27,11 +32,31 @@ public final class Constants {
    * Annotation#host()}
    */
   public static final String CLIENT_ADDR = "ca";
+
   /**
    * The endpoint associated with "SERVER_" annotations is not necessarily {@link
    * Annotation#host()}
    */
   public static final String SERVER_ADDR = "sa";
+
+  /**
+   * Zipkin Span Storage implementations should not expect users to search by core annotations.
+   *
+   * When storage implementations separate annotation indexing from storage, filter out these
+   * values.
+   */
+  public static final Set<String> CORE_ANNOTATIONS = Collections.unmodifiableSet(
+      new LinkedHashSet<>(Arrays.asList(
+          CLIENT_RECV,
+          CLIENT_SEND,
+          SERVER_RECV,
+          SERVER_SEND,
+          WIRE_SEND,
+          WIRE_RECV,
+          CLIENT_ADDR,
+          SERVER_ADDR
+      ))
+  );
 
   private Constants() {
   }

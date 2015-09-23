@@ -15,6 +15,7 @@ package io.zipkin.query;
 
 import io.zipkin.Annotation;
 import io.zipkin.BinaryAnnotation;
+import io.zipkin.Constants;
 import io.zipkin.Span;
 import io.zipkin.Trace;
 import io.zipkin.internal.Nullable;
@@ -28,18 +29,20 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public final class InMemoryZipkinQuery implements ZipkinQuery {
+public final class InMemoryZipkinQuery implements ZipkinQuery, Consumer<List<Span>> {
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final Multimap<Long, Span> traceIdToSpans = new Multimap<>(LinkedList::new);
   private final Multimap<String, Long> serviceToTraceIds = new Multimap<>(LinkedHashSet::new);
   private final Multimap<String, String> serviceToSpanNames = new Multimap<>(LinkedHashSet::new);
 
-  public synchronized void accept(Iterable<Span> spans) {
+  @Override
+  public synchronized void accept(List<Span> spans) {
     spans.forEach(span -> {
       long traceId = span.traceId();
       traceIdToSpans.put(span.traceId(), span);
@@ -125,14 +128,16 @@ public final class InMemoryZipkinQuery implements ZipkinQuery {
       spanPredicate = spanPredicate.and(s -> s.name().equals(request.spanName()));
     }
     if (request.annotations() != null && !request.annotations().isEmpty()) {
-      spanPredicate = spanPredicate.and(s -> s.annotations().stream().map(
-          Annotation::value).allMatch(v -> request.annotations().contains(v)));
+      spanPredicate = spanPredicate.and(s -> s.annotations().stream()
+          .map(Annotation::value)
+          .filter(v -> !Constants.CORE_ANNOTATIONS.contains(v)) // don't return core annotations
+          .anyMatch(v -> request.annotations().contains(v)));
     }
     if (request.binaryAnnotations() != null && !request.binaryAnnotations().isEmpty()) {
       spanPredicate = spanPredicate.and(s -> s.binaryAnnotations().stream()
           .filter(b -> b.type() == BinaryAnnotation.Type.STRING)
           .filter(b -> request.binaryAnnotations().containsKey(b.key()))
-          .allMatch(
+          .anyMatch(
               b -> request.binaryAnnotations().get(b.key()).equals(new String(b.value(), UTF_8))));
     }
     return spanPredicate;

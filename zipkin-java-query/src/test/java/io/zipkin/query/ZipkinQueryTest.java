@@ -42,7 +42,7 @@ public abstract class ZipkinQueryTest {
 
   protected abstract ZipkinQuery query();
 
-  protected abstract void reload(Iterable<Span> spans);
+  protected abstract void reload(List<Span> spans);
 
   @Before
   public void load() {
@@ -64,6 +64,7 @@ public abstract class ZipkinQueryTest {
       .serviceName("db").build();
 
   Annotation webSR = Annotation.builder().timestamp(10).value(SERVER_RECV).host(web).build();
+  Annotation webCustom = Annotation.builder().timestamp(10).value("finagle.retry").host(web).build();
   BinaryAnnotation httpUri = BinaryAnnotation.builder()
       .key("http.uri").value("/foo".getBytes())
       .type(BinaryAnnotation.Type.STRING).host(web).build();
@@ -76,7 +77,7 @@ public abstract class ZipkinQueryTest {
           .traceId(1L)
           .name("GET")
           .id(1L)
-          .annotations(asList(webSR))
+          .annotations(asList(webSR, webCustom))
           .binaryAnnotations(asList(httpUri))
           .build(),
       Span.builder()
@@ -214,10 +215,20 @@ public abstract class ZipkinQueryTest {
   public void getTraces_annotation_name() {
     assertThat(query().getTraces(QueryRequest.builder()
         .serviceName("web")
-        .annotations(asList(SERVER_SEND))
+        .annotations(asList(webCustom.value()))
         .binaryAnnotations(emptyMap())
         .endTs(afterWebSS)
         .limit(100).build())).containsExactly(trace1);
+  }
+
+  @Test
+  public void getTraces_annotation_name_core_ignored() {
+    assertThat(query().getTraces(QueryRequest.builder()
+        .serviceName("web")
+        .annotations(asList(SERVER_SEND))
+        .binaryAnnotations(emptyMap())
+        .endTs(afterWebSS)
+        .limit(100).build())).isEmpty();
   }
 
   @Test

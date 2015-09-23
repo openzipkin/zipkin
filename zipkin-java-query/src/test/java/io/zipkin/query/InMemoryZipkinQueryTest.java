@@ -14,6 +14,7 @@
 package io.zipkin.query;
 
 import io.zipkin.Span;
+import java.util.List;
 
 public class InMemoryZipkinQueryTest extends ZipkinQueryTest {
   InMemoryZipkinQuery query = new InMemoryZipkinQuery();
@@ -22,7 +23,7 @@ public class InMemoryZipkinQueryTest extends ZipkinQueryTest {
     return query;
   }
 
-  @Override protected void reload(Iterable<Span> spans) {
+  @Override protected void reload(List<Span> spans) {
     query.clear();
     query.accept(spans);
   }

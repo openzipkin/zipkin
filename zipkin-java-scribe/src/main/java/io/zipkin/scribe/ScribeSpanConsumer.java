@@ -26,10 +26,10 @@ import org.apache.thrift.transport.TMemoryBuffer;
 
 public final class ScribeSpanConsumer implements Scribe {
 
-  private final Consumer<Iterable<Span>> consumer;
+  private final Consumer<List<Span>> consumer;
   private final ThriftCodec<Span> spanCodec = new ThriftCodecManager().getCodec(Span.class);
 
-  public ScribeSpanConsumer(Consumer<Iterable<Span>> consumer) {
+  public ScribeSpanConsumer(Consumer<List<Span>> consumer) {
     this.consumer = consumer;
   }
 
@@ -48,8 +48,7 @@ public final class ScribeSpanConsumer implements Scribe {
             return null;
           }
         })
-        .filter(s -> s != null)
-        .filter(s -> !(s.isClientSide() && s.serviceNames().contains("client")));
+        .filter(s -> s != null);
     consumer.accept(spansToStore.collect(Collectors.toList()));
     return ResultCode.OK;
   }
