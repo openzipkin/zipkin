@@ -17,22 +17,11 @@ package com.twitter.zipkin.storage.cassandra
 
 import java.nio.ByteBuffer
 import com.twitter.scrooge.{ThriftStructCodec, BinaryThriftStructSerializer, ThriftStruct}
-import com.twitter.ostrich.stats.Stats
 
 class ScroogeThriftCodec[T <: ThriftStruct](structCodec: ThriftStructCodec[T]) extends Codec[T] {
   val serializer = new BinaryThriftStructSerializer[T] { def codec = structCodec }
 
-  def encode(t: T): ByteBuffer = {
-    Stats.time("scroogecodec.serialize") {
-      val serialized = serializer.toBytes(t)
-      Stats.addMetric("scroogecodec.serialized", serialized.size)
-      b2b(serialized)
-    }
-  }
+  def encode(t: T): ByteBuffer = b2b(serializer.toBytes(t))
 
-  def decode(ary: ByteBuffer): T = {
-    Stats.time("scroogecodec.deserialize") {
-      serializer.fromBytes(b2b(ary))
-    }
-  }
+  def decode(ary: ByteBuffer): T = serializer.fromBytes(b2b(ary))
 }

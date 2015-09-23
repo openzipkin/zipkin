@@ -1,7 +1,7 @@
 package com.twitter.zipkin.storage.cassandra
 
 import com.datastax.driver.core.Cluster
-import com.twitter.zipkin.storage.SpanStoreSpec
+import com.twitter.zipkin.storage.DependencyStoreSpec
 import java.util.Collections
 import org.cassandraunit.CQLDataLoader
 import org.cassandraunit.dataset.CQLDataSet
@@ -9,8 +9,8 @@ import org.cassandraunit.utils.EmbeddedCassandraServerHelper.startEmbeddedCassan
 import org.junit.BeforeClass
 import org.twitter.zipkin.storage.cassandra.Repository
 
-object CassandraSpanStoreSpec {
-  val keyspace = "test_zipkin_spanstore"
+object CassandraDependencyStoreSpec {
+  val keyspace = "test_zipkin_dependencystore"
   // Defer shared connection to the cluster
   lazy val cluster = Cluster.builder().addContactPoint("127.0.0.1").withPort(9142).build()
 
@@ -29,11 +29,11 @@ object CassandraSpanStoreSpec {
   }
 }
 
-class CassandraSpanStoreSpec extends SpanStoreSpec {
+class CassandraDependencyStoreSpec extends DependencyStoreSpec {
 
-  import CassandraSpanStoreSpec._
+  import CassandraDependencyStoreSpec._
 
-  override lazy val store = new CassandraSpanStore(new Repository(keyspace, cluster))
+  override lazy val store = new CassandraDependencyStore(new Repository(keyspace, cluster))
 
   override def clear = cluster.connect().execute("DROP KEYSPACE IF EXISTS " + keyspace)
 }
