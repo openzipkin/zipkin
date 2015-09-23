@@ -18,26 +18,24 @@ import com.facebook.swift.codec.internal.reflection.ReflectionThriftCodecFactory
 import com.facebook.swift.service.ThriftServer;
 import com.facebook.swift.service.ThriftServerConfig;
 import com.facebook.swift.service.ThriftServiceProcessor;
-import io.zipkin.jdbc.JDBCZipkinQuery;
-import io.zipkin.query.InMemoryZipkinQuery;
-import io.zipkin.query.ZipkinQuery;
+import io.zipkin.jdbc.JDBCSpanStore;
+import io.zipkin.spanstore.InMemorySpanStore;
+import io.zipkin.spanstore.SpanStore;
 import io.zipkin.scribe.ScribeSpanConsumer;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.List;
-import java.util.function.Consumer;
 import org.apache.commons.dbcp2.BasicDataSource;
 
 import static java.util.Collections.emptyList;
 
-public final class ZipkinServer<T extends ZipkinQuery & Consumer<List<Span>>> implements Closeable {
+public final class ZipkinServer implements Closeable {
 
   private final int scribePort;
   private final int queryPort;
-  private final T spanStore;
+  private final SpanStore spanStore;
 
-  private ZipkinServer(int scribePort, int queryPort, T spanStore) {
+  private ZipkinServer(int scribePort, int queryPort, SpanStore spanStore) {
     this.scribePort = scribePort;
     this.queryPort = queryPort;
     this.spanStore = spanStore;
@@ -81,7 +79,7 @@ public final class ZipkinServer<T extends ZipkinQuery & Consumer<List<Span>>> im
     int collectorPort = envOr("COLLECTOR_PORT", 9410);
     int queryPort = envOr("QUERY_PORT", 9411);
 
-    final ZipkinServer<?> server;
+    final ZipkinServer server;
     if (System.getenv("MYSQL_HOST") != null) {
       String mysqlHost = System.getenv("MYSQL_HOST");
       int mysqlPort = envOr("MYSQL_TCP_PORT", 3306);
@@ -96,9 +94,9 @@ public final class ZipkinServer<T extends ZipkinQuery & Consumer<List<Span>>> im
       datasource.setDriverClassName("com.mysql.jdbc.Driver");
       datasource.setUrl(url);
       datasource.setMaxTotal(10);
-      server = new ZipkinServer<>(collectorPort, queryPort, new JDBCZipkinQuery(datasource));
+      server = new ZipkinServer(collectorPort, queryPort, new JDBCSpanStore(datasource));
     } else {
-      server = new ZipkinServer<>(collectorPort, queryPort, new InMemoryZipkinQuery());
+      server = new ZipkinServer(collectorPort, queryPort, new InMemorySpanStore());
     }
     try {
       server.start();

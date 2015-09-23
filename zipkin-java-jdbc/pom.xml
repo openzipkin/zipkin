@@ -37,7 +37,7 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-java-query</artifactId>
+      <artifactId>zipkin-java-spanstore</artifactId>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>

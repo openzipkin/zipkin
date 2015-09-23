@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin.query;
+package io.zipkin.spanstore;
 
 import io.zipkin.Annotation;
 import io.zipkin.BinaryAnnotation;
@@ -29,12 +29,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public final class InMemoryZipkinQuery implements ZipkinQuery, Consumer<List<Span>> {
+public final class InMemorySpanStore implements SpanStore {
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final Multimap<Long, Span> traceIdToSpans = new Multimap<>(LinkedList::new);

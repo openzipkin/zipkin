@@ -25,9 +25,9 @@
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>zipkin-java-query</artifactId>
-  <name>Zipkin Java Query</name>
-  <description>Zipkin Java Query</description>
+  <artifactId>zipkin-java-spanstore</artifactId>
+  <name>Zipkin Java SpanStore</name>
+  <description>Zipkin Java SpanStore</description>
 
   <dependencies>
     <dependency>
@@ -40,10 +40,11 @@
       <artifactId>swift-annotations</artifactId>
     </dependency>
 
-    <!-- for ZipkinQuerySpanStoreAdapter -->
+    <!-- for ScalaSpanStoreAdapter -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>swift-codec</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <!-- Dependencies for SpanStoreSpec -->

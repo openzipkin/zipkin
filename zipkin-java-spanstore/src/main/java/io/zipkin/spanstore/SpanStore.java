@@ -11,43 +11,50 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin.query;
+package io.zipkin.spanstore;
 
 import com.facebook.swift.codec.ThriftField;
 import com.facebook.swift.service.ThriftException;
 import com.facebook.swift.service.ThriftMethod;
 import com.facebook.swift.service.ThriftService;
+import io.zipkin.Span;
 import io.zipkin.Trace;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
-@ThriftService("ZipkinQuery")
-public interface ZipkinQuery {
+@ThriftService("SpanStore")
+public interface SpanStore extends Consumer<List<Span>> {
 
-  @ThriftMethod(value = "getTraces",
-      exception = {
-          @ThriftException(type = QueryException.class, id = 1)
-      }) List<Trace> getTraces(
-      @ThriftField(value = 1) QueryRequest request
-  ) throws QueryException;
+  /**
+   * Sinks the given spans, ignoring duplicate annotations.
+   */
+  @Override
+  void accept(List<Span> spans);
+
+  @ThriftMethod(
+      value = "getTraces",
+      exception = @ThriftException(type = QueryException.class, id = 1)
+  )
+  List<Trace> getTraces(@ThriftField(value = 1) QueryRequest request) throws QueryException;
 
   @ThriftMethod(value = "getTracesByIds",
-      exception = {
-          @ThriftException(type = QueryException.class, id = 1)
-      }) List<Trace> getTracesByIds(
+      exception = @ThriftException(type = QueryException.class, id = 1)
+  )
+  List<Trace> getTracesByIds(
       @ThriftField(value = 1) List<Long> traceIds,
       @ThriftField(value = 3) boolean adjustClockSkew
   ) throws QueryException;
 
-  @ThriftMethod(value = "getServiceNames",
-      exception = {
-          @ThriftException(type = QueryException.class, id = 1)
-      }) Set<String> getServiceNames() throws QueryException;
+  @ThriftMethod(
+      value = "getServiceNames",
+      exception = @ThriftException(type = QueryException.class, id = 1)
+  )
+  Set<String> getServiceNames() throws QueryException;
 
-  @ThriftMethod(value = "getSpanNames",
-      exception = {
-          @ThriftException(type = QueryException.class, id = 1)
-      }) Set<String> getSpanNames(
-      @ThriftField(value = 1) String serviceName
-  ) throws QueryException;
+  @ThriftMethod(
+      value = "getSpanNames",
+      exception = @ThriftException(type = QueryException.class, id = 1)
+  )
+  Set<String> getSpanNames(@ThriftField(value = 1) String serviceName) throws QueryException;
 }
