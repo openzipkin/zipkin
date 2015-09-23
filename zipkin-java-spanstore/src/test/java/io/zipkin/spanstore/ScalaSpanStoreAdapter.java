@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin.query;
+package io.zipkin.spanstore;
 
 import com.facebook.swift.codec.ThriftCodec;
 import com.facebook.swift.codec.ThriftCodecManager;
@@ -19,7 +19,6 @@ import com.twitter.util.Future;
 import com.twitter.zipkin.common.Span;
 import com.twitter.zipkin.conversions.thrift;
 import com.twitter.zipkin.storage.IndexedTraceId;
-import com.twitter.zipkin.storage.SpanStore;
 import com.twitter.zipkin.thriftscala.Span$;
 import io.zipkin.Annotation;
 import io.zipkin.Trace;
@@ -28,7 +27,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.transport.TMemoryBuffer;
@@ -45,16 +43,16 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
 /**
- * Adapts {@link ZipkinQuery} to a scala/scrooge {@link com.twitter.zipkin.storage.SpanStore} in
+ * Adapts {@link SpanStore} to a scala/scrooge {@link com.twitter.zipkin.storage.SpanStore} in
  * order to test against its {@link com.twitter.zipkin.storage.SpanStoreSpec} for interoperability
  * reasons.
  */
-public final class ZipkinQuerySpanStoreAdapter<T extends ZipkinQuery & Consumer<List<io.zipkin.Span>>> extends SpanStore {
+public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.SpanStore {
   private static final ThriftCodec<io.zipkin.Span> spanCodec = new ThriftCodecManager().getCodec(io.zipkin.Span.class);
 
-  private final T spanStore;
+  private final SpanStore spanStore;
 
-  public ZipkinQuerySpanStoreAdapter(T spanStore) {
+  public ScalaSpanStoreAdapter(SpanStore spanStore) {
     this.spanStore = spanStore;
   }
 
@@ -66,7 +64,7 @@ public final class ZipkinQuerySpanStoreAdapter<T extends ZipkinQuery & Consumer<
         JavaConversions.asScalaBuffer(spanStore.getTracesByIds(input, false).stream()
             .map(t -> JavaConversions.asScalaBuffer(
                     t.spans().stream()
-                        .map(ZipkinQuerySpanStoreAdapter::convert)
+                        .map(ScalaSpanStoreAdapter::convert)
                         .filter(s -> s != null)
                         .collect(Collectors.toList()))
             ).collect(Collectors.toList())));
@@ -108,7 +106,7 @@ public final class ZipkinQuerySpanStoreAdapter<T extends ZipkinQuery & Consumer<
   @Override
   public Future<BoxedUnit> apply(Seq<Span> input) {
     List<io.zipkin.Span> spans = JavaConversions.asJavaCollection(input).stream()
-        .map(ZipkinQuerySpanStoreAdapter::invert)
+        .map(ScalaSpanStoreAdapter::invert)
         .filter(s -> s != null)
         .collect(Collectors.toList());
     spanStore.accept(spans);

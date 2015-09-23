@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin.query;
+package io.zipkin.spanstore;
 
 import io.zipkin.Annotation;
 import io.zipkin.BinaryAnnotation;
@@ -36,11 +36,11 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public abstract class ZipkinQueryTest {
+public abstract class SpanStoreTest {
 
   private final Charset UTF_8 = Charset.forName("UTF-8");
 
-  protected abstract ZipkinQuery query();
+  protected abstract SpanStore query();
 
   protected abstract void reload(List<Span> spans);
 

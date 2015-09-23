@@ -11,20 +11,19 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin.query;
+package io.zipkin.spanstore;
 
-import io.zipkin.Span;
-import java.util.List;
+import com.twitter.zipkin.storage.SpanStore;
+import com.twitter.zipkin.storage.SpanStoreSpec;
 
-public class InMemoryZipkinQueryTest extends ZipkinQueryTest {
-  InMemoryZipkinQuery query = new InMemoryZipkinQuery();
+public class InMemoryScalaSpanStoreTest extends SpanStoreSpec {
+  private ScalaSpanStoreAdapter mem;
 
-  @Override protected ZipkinQuery query() {
-    return query;
+  public SpanStore store() {
+    return mem;
   }
 
-  @Override protected void reload(List<Span> spans) {
-    query.clear();
-    query.accept(spans);
+  public void clear() {
+    mem = new ScalaSpanStoreAdapter(new InMemorySpanStore());
   }
 }

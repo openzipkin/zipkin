@@ -27,7 +27,7 @@
   <modules>
     <module>swift-codec</module>
     <module>zipkin-java-core</module>
-    <module>zipkin-java-query</module>
+    <module>zipkin-java-spanstore</module>
     <module>zipkin-java-scribe</module>
     <module>zipkin-java-dependencies</module>
     <module>zipkin-java-server</module>
@@ -112,13 +112,13 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-java-query</artifactId>
+        <artifactId>zipkin-java-spanstore</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-java-query</artifactId>
+        <artifactId>zipkin-java-spanstore</artifactId>
         <version>${project.version}</version>
         <classifier>tests</classifier>
       </dependency>

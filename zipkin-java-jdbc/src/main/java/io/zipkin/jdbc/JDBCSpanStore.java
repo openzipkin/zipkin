@@ -22,9 +22,9 @@ import io.zipkin.Span;
 import io.zipkin.Trace;
 import io.zipkin.internal.Nullable;
 import io.zipkin.jdbc.internal.generated.tables.ZipkinAnnotations;
-import io.zipkin.query.QueryException;
-import io.zipkin.query.QueryRequest;
-import io.zipkin.query.ZipkinQuery;
+import io.zipkin.spanstore.QueryException;
+import io.zipkin.spanstore.QueryRequest;
+import io.zipkin.spanstore.SpanStore;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -34,7 +34,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import javax.sql.DataSource;
 import org.jooq.DSLContext;
 import org.jooq.InsertSetMoreStep;
@@ -51,7 +50,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.groupingBy;
 
-public final class JDBCZipkinQuery implements ZipkinQuery, Consumer<List<Span>> {
+public final class JDBCSpanStore implements SpanStore {
   private static final Charset UTF_8 = Charset.forName("UTF-8");
   {
     System.setProperty("org.jooq.no-logo", "true");
@@ -59,7 +58,7 @@ public final class JDBCZipkinQuery implements ZipkinQuery, Consumer<List<Span>> 
 
   private final DataSource datasource;
 
-  public JDBCZipkinQuery(DataSource datasource) {
+  public JDBCSpanStore(DataSource datasource) {
     this.datasource = datasource;
   }
 
@@ -254,7 +253,7 @@ public final class JDBCZipkinQuery implements ZipkinQuery, Consumer<List<Span>> 
     abstract long spanId();
 
     static SpanKey create(long traceId, long spanId) {
-      return new AutoValue_JDBCZipkinQuery_SpanKey(traceId, spanId);
+      return new AutoValue_JDBCSpanStore_SpanKey(traceId, spanId);
     }
   }
 
