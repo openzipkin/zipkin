@@ -17,6 +17,7 @@ import com.facebook.swift.codec.ThriftConstructor;
 import com.facebook.swift.codec.ThriftField;
 import com.facebook.swift.codec.ThriftStruct;
 import com.google.auto.value.AutoValue;
+import io.zipkin.BinaryAnnotation;
 import io.zipkin.internal.Nullable;
 import java.util.List;
 import java.util.Map;
@@ -38,10 +39,16 @@ public abstract class QueryRequest {
   @ThriftField(value = 2, requiredness = OPTIONAL)
   public abstract String spanName();
 
+  /**
+   * Custom-defined annotation values to search for.
+   */
   @Nullable
   @ThriftField(value = 3, requiredness = OPTIONAL)
   public abstract List<String> annotations();
 
+  /**
+   * Binary annotations of type {@link BinaryAnnotation.Type#STRING} to search for.
+   */
   @Nullable
   @ThriftField(value = 8, requiredness = OPTIONAL)
   public abstract Map<String, String> binaryAnnotations();

@@ -18,9 +18,7 @@ import com.facebook.swift.codec.ThriftField;
 import com.facebook.swift.codec.ThriftStruct;
 import com.google.auto.value.AutoValue;
 import io.zipkin.internal.Nullable;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import static com.facebook.swift.codec.ThriftField.Requiredness.OPTIONAL;
 
@@ -58,31 +56,6 @@ public abstract class Span {
   @Nullable
   @ThriftField(value = 9, requiredness = OPTIONAL)
   public abstract Boolean debug();
-
-  /**
-   * Assuming this is an RPC span, is it from the client side?
-   */
-  public boolean isClientSide() {
-    for (Annotation a : annotations()) {
-      if (a.value().equals(Constants.CLIENT_SEND) || a.value().equals(Constants.CLIENT_RECV)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Returns the lower-cased set of service names this span has annotations for.
-   */
-  public Set<String> serviceNames() {
-    Set<String> result = new LinkedHashSet<>();
-    for (Annotation a : annotations()) {
-      if (a.host() != null) {
-        result.add(a.host().serviceName().toLowerCase());
-      }
-    }
-    return result;
-  }
 
   @AutoValue.Builder
   public interface Builder {

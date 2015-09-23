@@ -13,18 +13,17 @@
  */
 package io.zipkin.query;
 
-import io.zipkin.Span;
-import java.util.List;
+import com.twitter.zipkin.storage.SpanStore;
+import com.twitter.zipkin.storage.SpanStoreSpec;
 
-public class InMemoryZipkinQueryTest extends ZipkinQueryTest {
-  InMemoryZipkinQuery query = new InMemoryZipkinQuery();
+public class InMemoryZipkinQuerySpanStoreTest extends SpanStoreSpec {
+  private ZipkinQuerySpanStoreAdapter<InMemoryZipkinQuery> mem;
 
-  @Override protected ZipkinQuery query() {
-    return query;
+  public SpanStore store() {
+    return mem;
   }
 
-  @Override protected void reload(List<Span> spans) {
-    query.clear();
-    query.accept(spans);
+  public void clear() {
+    mem = new ZipkinQuerySpanStoreAdapter<>(new InMemoryZipkinQuery());
   }
 }
