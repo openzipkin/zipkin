@@ -16,10 +16,9 @@
  */
 package com.twitter.zipkin.collector
 
-import com.twitter.algebird.Moments
 import com.twitter.conversions.time._
 import com.twitter.util.{Future, Time}
-import com.twitter.zipkin.common.{Service, _}
+import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.storage.{DependencyStore, Store}
 import org.mockito.Mockito._
@@ -30,15 +29,15 @@ class ScribeCollectorServiceSpec extends FunSuite with OneInstancePerTest with M
   val mockDependencies = mock[DependencyStore]
 
   test("store dependencies") {
-    val m1 = Moments(2)
-    val m2 = Moments(4)
-    val dl1 = DependencyLink(Service("tfe"), Service("mobileweb"), m1)
-    val dl3 = DependencyLink(Service("Gizmoduck"), Service("tflock"), m2)
+    val callCount1 = 2
+    val callCount2 = 4
+    val dl1 = DependencyLink("tfe", "mobileweb", callCount1)
+    val dl3 = DependencyLink("Gizmoduck", "tflock", callCount2)
     val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
 
     when(mockDependencies.storeDependencies(deps1)) thenReturn Future.Done
 
-    val cs = new ScribeCollectorInterface(Store(null, mockDependencies), null, null);
+    val cs = new ScribeCollectorInterface(Store(null, mockDependencies), null, null)
     cs.storeDependencies(deps1.toThrift)
 
     verify(mockDependencies).storeDependencies(deps1)

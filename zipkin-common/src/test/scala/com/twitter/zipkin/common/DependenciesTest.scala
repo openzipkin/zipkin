@@ -16,52 +16,40 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.algebird.{Moments, Monoid, Semigroup}
+import com.twitter.algebird.{Monoid, Semigroup}
 import com.twitter.conversions.time._
 import com.twitter.util.Time
 import org.scalatest.FunSuite
 
 class DependenciesTest extends FunSuite {
-  test("services compare correctly") {
-    val s1 = Service("foo")
-    val s2 = Service("bar")
-    val s3 = Service("foo")
-    val s4 = Service("Foo")
-    val s5 = Service("FOO")
-
-    assert(s1 === s1)
-    assert(s1 === s3)
-    assert(s1 !=  s2)
-    assert(s1 !=  s4) // not sure if case sensitivity is required, but we should be aware if it changes
-    assert(s1 !=  s5)
-  }
-
   test("DependencyLinks") {
-    val m1 = Moments(2)
-    val m2 = Moments(4)
-    val d1 = DependencyLink(Service("tfe"), Service("mobileweb"), m1)
-    val d2 = DependencyLink(Service("tfe"), Service("mobileweb"), m2)
-    val d3 = DependencyLink(Service("Gizmoduck"), Service("tflock"), m2)
+    val callCount1 = 2
+    val callCount2 = 4
+    val d1 = DependencyLink("tfe", "mobileweb", callCount1)
+    val d2 = DependencyLink("tfe", "mobileweb", callCount2)
+    val d3 = DependencyLink("Gizmoduck", "tflock", callCount2)
 
     // combine
-    assert(Semigroup.plus(d1, d2) === d1.copy(durationMoments = Monoid.plus(m1, m2)))
+    assert(Semigroup.plus(d1, d2) === d1.copy(callCount = callCount1 + callCount2))
 
     // assert if incompatible links are combined
-    intercept[AssertionError] { Semigroup.plus(d1, d3) }
+    intercept[AssertionError] {
+      Semigroup.plus(d1, d3)
+    }
   }
 
 
   test("Dependencies") {
-    val m1 = Moments(2)
-    val m2 = Moments(4)
-    val dl1 = DependencyLink(Service("tfe"), Service("mobileweb"), m1)
-    val dl2 = DependencyLink(Service("tfe"), Service("mobileweb"), m2)
-    val dl3 = DependencyLink(Service("Gizmoduck"), Service("tflock"), m2)
-    val dl4 = DependencyLink(Service("mobileweb"), Service("Gizmoduck"), m2)
-    val dl5 = dl1.copy(durationMoments = Monoid.plus(m1,m2))
+    val callCount1 = 2
+    val callCount2 = 4
+    val dl1 = DependencyLink("tfe", "mobileweb", callCount1)
+    val dl2 = DependencyLink("tfe", "mobileweb", callCount2)
+    val dl3 = DependencyLink("Gizmoduck", "tflock", callCount2)
+    val dl4 = DependencyLink("mobileweb", "Gizmoduck", callCount2)
+    val dl5 = dl1.copy(callCount = callCount1 + callCount2)
 
-    val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0)+1.hour, List(dl1, dl3))
-    val deps2 = Dependencies(Time.fromSeconds(0)+1.hour, Time.fromSeconds(0)+2.hours, List(dl2, dl4))
+    val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0) + 1.hour, List(dl1, dl3))
+    val deps2 = Dependencies(Time.fromSeconds(0) + 1.hour, Time.fromSeconds(0) + 2.hours, List(dl2, dl4))
 
     // express identity when added to zero
     val result = Monoid.plus(deps1, Monoid.zero[Dependencies])
@@ -71,9 +59,8 @@ class DependenciesTest extends FunSuite {
     val result2 = Monoid.plus(deps1, deps2)
 
     assert(result2.startTime === Time.fromSeconds(0))
-    assert(result2.endTime === Time.fromSeconds(0)+2.hours)
+    assert(result2.endTime === Time.fromSeconds(0) + 2.hours)
 
-    def counts(e: Traversable[_]) = e groupBy identity mapValues (_.size)
-    assert(counts(result2.links) == counts(Seq(dl4, dl5, dl3)))
+    assert(result2.links == Seq(dl5, dl3, dl4))
   }
 }

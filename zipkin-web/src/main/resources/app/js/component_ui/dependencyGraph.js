@@ -4,11 +4,10 @@ define(
   [
     'flight/lib/component',
     'd3/d3',
-    'dagre-d3',
-    'component_data/momentAnnotations'
+    'dagre-d3'
   ],
 
-  function (defineComponent, d3, dagre, getMomentAnnotations) {
+  function (defineComponent, d3, dagre) {
 
     return defineComponent(dependencyGraph);
 
@@ -67,28 +66,28 @@ define(
             return minResult + (i - startRange) * (maxResult - minResult) / (endRange - startRange);
           }
 
-          function arrowWidth(numberOfCalls) {
-            var lg = Math.log(numberOfCalls);
+          function arrowWidth(callCount) {
+            var lg = Math.log(callCount);
             return scale(lg, minLg, maxLg, 0.3, 3);
           }
 
           // Find min/max number of calls for all dependency links
           // to render different arrow widths depending on number of calls
-          var minNumberOfCalls = 0;
-          var maxNumberOfCalls = 0;
+          var minCallCount = 0;
+          var maxCallCount = 0;
           data.links.filter(function (link) {
             return link.parent != link.child;
           }).forEach(function (link) {
-            var numCalls = getMomentAnnotations(link.durationMoments).count;
-            if (minNumberOfCalls == 0 || numCalls < minNumberOfCalls) {
-              minNumberOfCalls = numCalls;
+            var numCalls = link.callCount;
+            if (minCallCount == 0 || numCalls < minCallCount) {
+              minCallCount = numCalls;
             }
-            if (numCalls > maxNumberOfCalls) {
-              maxNumberOfCalls = numCalls;
+            if (numCalls > maxCallCount) {
+              maxCallCount = numCalls;
             }
           });
-          var minLg = Math.log(minNumberOfCalls);
-          var maxLg = Math.log(maxNumberOfCalls);
+          var minLg = Math.log(minCallCount);
+          var maxLg = Math.log(maxCallCount);
 
 
           // Get the names of all nodes in the graph
@@ -113,9 +112,9 @@ define(
             return link.parent != link.child;
           }).forEach(function (link) {
             g.addEdge(link.parent + '->' + link.child, link.parent, link.child, {
-              annotations: getMomentAnnotations(link.durationMoments),
               from: link.parent,
-              to: link.child
+              to: link.child,
+              callCount: link.callCount
             });
           });
 
@@ -176,8 +175,8 @@ define(
               var el = this;
               var $el = $(el);
 
-              var numberOfCalls = g.edge(edge).annotations.count;
-              var arrowWidthPx = arrowWidth(numberOfCalls) + 'px';
+              var callCount = g.edge(edge).callCount;
+              var arrowWidthPx = arrowWidth(callCount) + 'px';
               $el.css('stroke-width', arrowWidthPx);
 
               $el.hover(function () {

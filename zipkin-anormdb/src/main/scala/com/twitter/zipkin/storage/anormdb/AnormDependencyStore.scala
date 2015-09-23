@@ -18,12 +18,11 @@ package com.twitter.zipkin.storage.anormdb
 
 import com.twitter.util.{Future, Time}
 import com.twitter.conversions.time._
-import com.twitter.zipkin.common.{Service, DependencyLink, Dependencies}
+import com.twitter.zipkin.common.{DependencyLink, Dependencies}
 import com.twitter.zipkin.storage.DependencyStore
 import java.sql.Connection
 import anorm._
 import anorm.SqlParser._
-import com.twitter.algebird.Moments
 import AnormThreads.inNewThread
 
 /**
@@ -49,7 +48,7 @@ case class AnormDependencyStore(
 	try {
 
     val links: List[DependencyLink] = SQL(
-      """SELECT parent, child, m0, m1, m2, m3, m4
+      """SELECT parent, child, call_count
         |FROM zipkin_dependency_links AS l
         |LEFT JOIN zipkin_dependencies AS d
         |  ON l.dlid = d.dlid
@@ -59,12 +58,8 @@ case class AnormDependencyStore(
       """.stripMargin)
     .on("startTs" -> startMs)
     .on("endTs" -> endMs)
-    .as((str("parent") ~ str("child") ~ long("m0") ~ get[Double]("m1") ~ get[Double]("m2") ~ get[Double]("m3") ~ get[Double]("m4") map {
-      case parent ~ child ~ m0 ~ m1 ~ m2 ~ m3 ~ m4 => new DependencyLink(
-        new Service(parent),
-        new Service(child),
-        new Moments(m0, m1, m2, m3, m4)
-      )
+    .as((str("parent") ~ str("child") ~ long("call_count") map {
+      case parent ~ child ~ callCount => new DependencyLink(parent,child, callCount)
     }) *)
 
     new Dependencies(Time.fromMicroseconds(startMs), Time.fromMicroseconds(endMs), links)
@@ -94,17 +89,13 @@ case class AnormDependencyStore(
 
       dependencies.links.foreach { link =>
         SQL("""INSERT INTO zipkin_dependency_links
-              |  (dlid, parent, child, m0, m1, m2, m3, m4)
-              |VALUES ({dlid}, {parent}, {child}, {m0}, {m1}, {m2}, {m3}, {m4})
+              |  (dlid, parent, child, call_count)
+              |VALUES ({dlid}, {parent}, {child}, {callCount})
             """.stripMargin)
           .on("dlid" -> dlid)
-          .on("parent" -> link.parent.name)
-          .on("child" -> link.child.name)
-          .on("m0" -> link.durationMoments.m0)
-          .on("m1" -> link.durationMoments.m1)
-          .on("m2" -> link.durationMoments.m2)
-          .on("m3" -> link.durationMoments.m3)
-          .on("m4" -> link.durationMoments.m4)
+          .on("parent" -> link.parent)
+          .on("child" -> link.child)
+          .on("callCount" -> link.callCount)
         .execute()
       }
     })

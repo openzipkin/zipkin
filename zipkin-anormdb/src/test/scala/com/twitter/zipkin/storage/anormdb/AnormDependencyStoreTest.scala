@@ -16,10 +16,9 @@
 
 package com.twitter.zipkin.storage.anormdb
 
-import com.twitter.algebird.Moments
 import com.twitter.conversions.time._
 import com.twitter.util.{Await, Time}
-import com.twitter.zipkin.common.{Dependencies, DependencyLink, Service}
+import com.twitter.zipkin.common.{Dependencies, DependencyLink}
 import org.scalatest.FunSuite
 
 class AnormDependencyStoreTest extends FunSuite {
@@ -28,8 +27,8 @@ class AnormDependencyStoreTest extends FunSuite {
     val con = db.install()
     val dependencies = new AnormDependencyStore(db, Some(con))
 
-    val dl1 = new DependencyLink(new Service("parent1"), new Service("child1"), Moments(18))
-    val dl2 = new DependencyLink(new Service("parent2"), new Service("child2"), Moments(42))
+    val dl1 = new DependencyLink("parent1", "child1", 18)
+    val dl2 = new DependencyLink("parent2", "child2", 42)
     val dep1 = new Dependencies(Time.fromSeconds(1), Time.fromSeconds(2), List(dl1, dl2))
 
     Await.result(dependencies.storeDependencies(dep1))
