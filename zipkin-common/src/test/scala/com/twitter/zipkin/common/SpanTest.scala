@@ -80,11 +80,6 @@ class SpanTest extends FunSuite {
     assert(spanWith3Annotations.lastAnnotation.get === annotation3)
   }
 
-  test("know this is not a client side span") {
-    val spanSr = Span(1, "n", 2, None, List(Annotation(1, Constants.ServerRecv, None)), Nil)
-    assert(!spanSr.isClientSide)
-  }
-
   test("get duration") {
     assert(spanWith3Annotations.duration === Some(2))
   }

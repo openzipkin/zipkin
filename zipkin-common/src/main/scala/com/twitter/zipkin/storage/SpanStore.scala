@@ -74,9 +74,6 @@ abstract class SpanStore extends java.io.Closeable {
    */
   def apply(spans: Seq[Span]): Future[Unit]
 
-  protected def shouldIndex(span: Span): Boolean =
-    !(span.isClientSide() && span.serviceNames.contains("client"))
-
   /**
    * Close writes and await possible draining of internal queues.
    */
@@ -105,7 +102,6 @@ class InMemorySpanStore extends SpanStore {
 
   private[this] def spansForService(name: String): Seq[Span] =
     spans.filter { span =>
-      shouldIndex(span) &&
       span.serviceNames.exists { _.toLowerCase == name.toLowerCase }
     }.toList
 
@@ -137,7 +133,7 @@ class InMemorySpanStore extends SpanStore {
         case Some(ann) => ann.timestamp <= endTs
         case None => false
       }
-    }.filter(shouldIndex).take(limit).map { span =>
+    }.take(limit).map { span =>
       IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
     }.toList
   }
@@ -164,7 +160,7 @@ class InMemorySpanStore extends SpanStore {
             span.annotations.min.timestamp <= endTs &&
             span.annotations.exists { _.value == annotation }
           }
-      }).filter(shouldIndex).take(limit).map { span =>
+      }).take(limit).map { span =>
         IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
       }.toList
     }

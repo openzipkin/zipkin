@@ -203,14 +203,6 @@ trait Span { self =>
     clientSideAnnotations.map(_.host).flatten.headOption
 
   /**
-   * Assuming this is an RPC span, is it from the client side?
-   */
-  def isClientSide(): Boolean =
-    annotations.exists(a => {
-      a.value.equals(Constants.ClientSend) || a.value.equals(Constants.ClientRecv)
-    })
-
-  /**
    * Pick out the core client side annotations
    */
   def clientSideAnnotations: Seq[Annotation] =
