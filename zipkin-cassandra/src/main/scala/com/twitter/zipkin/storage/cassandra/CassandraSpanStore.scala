@@ -196,13 +196,11 @@ class CassandraSpanStore(
         spanCodec.encode(span.toThrift),
         spanTtl.inSeconds)
 
-      if (shouldIndex(span)) {
-        SpansIndexedCounter.incr()
-        indexServiceName(span)
-        indexSpanNameByService(span)
-        indexTraceIdByName(span)
-        indexByAnnotations(span)
-      }
+      SpansIndexedCounter.incr()
+      indexServiceName(span)
+      indexSpanNameByService(span)
+      indexTraceIdByName(span)
+      indexByAnnotations(span)
     }
 
     Future.Unit
