@@ -301,7 +301,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
           case PathMatch(_, startTime, _, endTime) => (Option(startTime), Option(endTime))
           case _ => (None, None)
         }
-        client.getDependencies(startTime.map(_.toLong), endTime.map(_.toLong)) map { JsonRenderer(_) }
+        client.getDependencies(startTime.map(_.toLong), endTime.map(_.toLong)).map(JsonRenderer(_))
       }
     }
 

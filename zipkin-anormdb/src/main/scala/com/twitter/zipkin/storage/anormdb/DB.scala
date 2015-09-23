@@ -211,11 +211,7 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
         |  dlid BIGINT NOT NULL,
         |  parent VARCHAR(255) NOT NULL,
         |  child VARCHAR(255) NOT NULL,
-        |  m0 BIGINT NOT NULL,
-        |  m1 DOUBLE PRECISION NOT NULL,
-        |  m2 DOUBLE PRECISION NOT NULL,
-        |  m3 DOUBLE PRECISION NOT NULL,
-        |  m4 DOUBLE PRECISION NOT NULL
+        |  call_count BIGINT NOT NULL
         |)
       """.stripMargin).execute()
     con

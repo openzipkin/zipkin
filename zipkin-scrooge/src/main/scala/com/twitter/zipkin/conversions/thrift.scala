@@ -131,28 +131,11 @@ object thrift {
   implicit def traceToThrift(t: Trace) = new WrappedTrace(t)
   implicit def thriftToTrace(t: thriftscala.Trace) = new ThriftTrace(t)
 
-  /* Dependencies */
-  class WrappedMoments(m: Moments) {
-    lazy val toThrift = thriftscala.Moments(m.m0, m.m1, nanToNone(m.m2), nanToNone(m.m3), nanToNone(m.m4))
-    private def nanToNone(d: Double) = if (d == Double.NaN) None else Some(d)
-  }
-  class ThriftMoments(m: thriftscala.Moments) {
-    lazy val toMoments = Moments(m.m0, m.m1, m.m2.getOrElse(Double.NaN), m.m3.getOrElse(Double.NaN), m.m4.getOrElse(Double.NaN))
-  }
-  implicit def momentsToThrift(m: Moments) = new WrappedMoments(m)
-  implicit def thriftToMoments(m: thriftscala.Moments) = new ThriftMoments(m)
-
   class WrappedDependencyLink(dl: DependencyLink) {
-    lazy val toThrift = {
-      thriftscala.DependencyLink(dl.parent.name, dl.child.name, dl.durationMoments.toThrift)
-    }
+    lazy val toThrift = thriftscala.DependencyLink(dl.parent, dl.child, dl.callCount)
   }
   class ThriftDependencyLink(dl: thriftscala.DependencyLink) {
-    lazy val toDependencyLink = DependencyLink(
-      Service(dl.parent),
-      Service(dl.child),
-      dl.durationMoments.toMoments
-    )
+    lazy val toDependencyLink = DependencyLink(dl.parent, dl.child, dl.callCount)
   }
   implicit def dependencyLinkToThrift(dl: DependencyLink) = new WrappedDependencyLink(dl)
   implicit def thriftToDependencyLink(dl: thriftscala.DependencyLink) = new ThriftDependencyLink(dl)

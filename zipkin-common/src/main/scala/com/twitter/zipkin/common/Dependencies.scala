@@ -17,28 +17,23 @@
 package com.twitter.zipkin.common
 
 import com.twitter.util.Time
-import com.twitter.algebird.{Monoid, Semigroup, Moments}
-
-/**
- * Abstraction of a service
- */
-case class Service(name: String)
+import com.twitter.algebird.{Monoid, Semigroup}
 
 /**
  * A representation of the fact that one service calls another.  These should be unique across
  * the set of (parent, child)
  * @param parent the calling service
  * @param child the service being called
- * @param durationMoments moments describing the distribution of durations (in microseconds) for this link
+ * @param callCount calls made during the duration (in microseconds) of this link
  */
-case class DependencyLink(parent: Service, child: Service, durationMoments: Moments)
+case class DependencyLink(parent: String, child: String, callCount: Long)
 
 object DependencyLink {
   // this gives us free + operator along with other algebird aggregation methods
   implicit val sg: Semigroup[DependencyLink] = new Semigroup[DependencyLink] {
     def plus(l: DependencyLink, r: DependencyLink) = {
       assert(l.child == r.child && l.parent == r.parent)
-      DependencyLink(l.parent, l.child, Monoid.plus(l.durationMoments, r.durationMoments))
+      DependencyLink(l.parent, l.child, l.callCount + r.callCount)
     }
   }
 }

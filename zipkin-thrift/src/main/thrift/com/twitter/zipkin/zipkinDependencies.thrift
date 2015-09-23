@@ -15,34 +15,14 @@ namespace java com.twitter.zipkin.thriftjava
 #@namespace scala com.twitter.zipkin.thriftscala
 namespace rb Zipkin
 
-/**
- * Moments is defined as below per algebird's MomentsGroup.scala
- *
- * A class to calculate the first five central moments over a sequence of Doubles.
- * Given the first five central moments, we can then calculate metrics like skewness
- * and kurtosis.
- *
- * m{i} denotes the ith central moment.
- */
-struct Moments {
-  /** count */
-  1: i64 m0
-  /** mean */
-  2: double m1
-  /** population variance = m2 / count, when count > 1 */
-  3: optional double m2
-  /** skewness = math.sqrt(count) * m3 / math.pow(m2, 1.5), when count > 2 */
-  4: optional double m3
-  /** kurtosis = count * m4 / math.pow(m2, 2) - 3, when count > 3 */
-  5: optional double m4
-}
-
 struct DependencyLink {
   /** parent service name (caller) */
   1: string parent
   /** child service name (callee) */
   2: string child
-  3: Moments duration_moments
+  # 3: Moments OBSOLETE_duration_moments
+  /** calls made during the duration (in microseconds) of this link */
+  4: i64 callCount
   # histogram?
 }
 

@@ -4,10 +4,9 @@ define(
   [
     'flight/lib/component',
     'component_data/dependency',
-    'component_data/momentAnnotations'
   ],
 
-  function (defineComponent, dependency, getMomentAnnotations) {
+  function (defineComponent, dependency) {
     return defineComponent(serviceDataModal);
 
     function serviceDataModal() {
@@ -27,14 +26,13 @@ define(
       this.showDependencyModal = function (event, data) {
         this.trigger(document, 'parentChildDataRequested', {
           parent: data.parent,
-          child: data.child
+          child: data.child,
+          callCount: data.callCount
         });
       }
     }
 
     function renderDependencyModal(event, data) {
-      var moments = getMomentAnnotations(data.durationMoments);
-
       var $modal = $('#dependencyModal');
       var $parentElement = $('<a href="">' + data.parent + '</a>');
       $parentElement.click(function (ev) {
@@ -54,13 +52,7 @@ define(
 
       $modal.find('#dependencyModalParent').html($parentElement);
       $modal.find('#dependencyModalChild').html($childElement);
-
-      $modal.find('#dependencyNumCalls').text(moments.count);
-      $modal.find('#dependencyMean').text(moments.mean);
-      $modal.find('#dependencyVariance').text(moments.variance);
-      $modal.find('#dependencyStddev').text(moments.stddev);
-      $modal.find('#dependencySkewness').text(moments.skewness);
-      $modal.find('#dependencyKurtosis').text(moments.kurtosis);
+      $modal.find('#dependencyCallCount').text(data.callCount);
 
       $('#serviceModal').modal('hide');
       $modal.modal('show');
