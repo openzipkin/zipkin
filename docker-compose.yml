@@ -22,9 +22,10 @@ zipkin-java-server:
     - 9410:9410
     - 9411:9411
 web:
-  image: quay.io/openzipkin/zipkin-web:1.6.0
+  image: quay.io/openzipkin/zipkin-web:1.9.0
   links:
     - zipkin-java-server:query
+    - zipkin-java-server:collector
   ports:
     - 8080:8080
     - 9990:9990
