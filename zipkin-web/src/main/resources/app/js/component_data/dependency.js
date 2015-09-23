@@ -63,9 +63,9 @@ define(
           }.bind(this));
         });
 
-        this.on(document, 'dependencyDataRequested', function (event, args) {
+        this.on(document, 'parentChildDataRequested', function (event, args) {
           this.getDependencyData(args.parent, args.child, function (data) {
-            this.trigger(document, 'dependencyDataReceived', data);
+            this.trigger(document, 'parentChildDataReceived', data);
           }.bind(this));
         });
 

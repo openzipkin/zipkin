@@ -15,7 +15,7 @@ define(
         this.on(document, 'showServiceDataModal', this.showServiceDataModal);
         this.on(document, 'showDependencyModal', this.showDependencyModal);
         this.on(document, 'serviceDataReceived', renderServiceDataModal);
-        this.on(document, 'dependencyDataReceived', renderDependencyModal);
+        this.on(document, 'parentChildDataReceived', renderDependencyModal);
       });
 
       this.showServiceDataModal = function (event, data) {
@@ -25,7 +25,7 @@ define(
       };
 
       this.showDependencyModal = function (event, data) {
-        this.trigger(document, 'dependencyDataRequested', {
+        this.trigger(document, 'parentChildDataRequested', {
           parent: data.parent,
           child: data.child
         });
