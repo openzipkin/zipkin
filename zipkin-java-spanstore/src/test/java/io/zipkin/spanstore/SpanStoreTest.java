@@ -40,7 +40,7 @@ public abstract class SpanStoreTest {
 
   private final Charset UTF_8 = Charset.forName("UTF-8");
 
-  protected abstract SpanStore query();
+  protected abstract SpanStore spanStore();
 
   protected abstract void reload(List<Span> spans);
 
@@ -181,7 +181,7 @@ public abstract class SpanStoreTest {
 
   @Test(expected = IllegalStateException.class)
   public void getTraces_null_service_name() {
-    query().getTraces(QueryRequest.builder()
+    spanStore().getTraces(QueryRequest.builder()
         .spanName("span")
         .annotations(asList())
         .binaryAnnotations(emptyMap())
@@ -191,7 +191,7 @@ public abstract class SpanStoreTest {
 
   @Test
   public void getTraces_span_name() {
-    assertThat(query().getTraces(QueryRequest.builder()
+    assertThat(spanStore().getTraces(QueryRequest.builder()
         .serviceName("db")
         .spanName("QUERY EGG")
         .annotations(asList())
@@ -202,7 +202,7 @@ public abstract class SpanStoreTest {
 
   @Test
   public void getTraces_service_name() {
-    assertThat(query().getTraces(QueryRequest.builder()
+    assertThat(spanStore().getTraces(QueryRequest.builder()
         .serviceName("db")
         .spanName("QUERY EGG")
         .annotations(asList())
@@ -213,7 +213,7 @@ public abstract class SpanStoreTest {
 
   @Test
   public void getTraces_annotation_name() {
-    assertThat(query().getTraces(QueryRequest.builder()
+    assertThat(spanStore().getTraces(QueryRequest.builder()
         .serviceName("web")
         .annotations(asList(webCustom.value()))
         .binaryAnnotations(emptyMap())
@@ -223,7 +223,7 @@ public abstract class SpanStoreTest {
 
   @Test
   public void getTraces_annotation_name_core_ignored() {
-    assertThat(query().getTraces(QueryRequest.builder()
+    assertThat(spanStore().getTraces(QueryRequest.builder()
         .serviceName("web")
         .annotations(asList(SERVER_SEND))
         .binaryAnnotations(emptyMap())
@@ -236,7 +236,7 @@ public abstract class SpanStoreTest {
     Map<String, String> binaryAnnotations = new LinkedHashMap<>();
     binaryAnnotations.put(httpUri.key(), new String(httpUri.value(), UTF_8));
     // NOTE: Thrift accepts the whole struct, but scala impl only pays attention to key and id
-    assertThat(query().getTraces(QueryRequest.builder()
+    assertThat(spanStore().getTraces(QueryRequest.builder()
         .serviceName("web")
         .annotations(asList())
         .binaryAnnotations(binaryAnnotations)
@@ -246,31 +246,31 @@ public abstract class SpanStoreTest {
 
   @Test
   public void getTracesByIds() {
-    assertThat(query().getTracesByIds(asList(1L, 3L), true))
+    assertThat(spanStore().getTracesByIds(asList(1L, 3L), true))
         .containsExactly(trace1);
   }
 
   @Test
   public void getSpanNames() {
-    assertThat(query().getSpanNames("db"))
+    assertThat(spanStore().getSpanNames("db"))
         .containsExactly("QUERY BOOK", "QUERY EGG");
   }
 
   @Test
   public void getSpanNames_null() {
-    assertThat(query().getSpanNames(null))
+    assertThat(spanStore().getSpanNames(null))
         .isEmpty();
   }
 
   @Test
   public void getSpanNames_notFound() {
-    assertThat(query().getSpanNames("booboo"))
+    assertThat(spanStore().getSpanNames("booboo"))
         .isEmpty();
   }
 
   @Test
   public void getServiceNames() {
-    assertThat(query().getServiceNames())
+    assertThat(spanStore().getServiceNames())
         .containsExactly("web", "app", "db");
   }
 }

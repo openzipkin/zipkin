@@ -75,10 +75,8 @@
     </dependency>
   </dependencies>
   <properties>
-    <slf4j.version>1.7.12</slf4j.version>
     <commons-pool2.version>2.4.2</commons-pool2.version>
     <really-executable-jar-maven-plugin>1.4.1</really-executable-jar-maven-plugin>
-    <mysql-connector-java.version>5.1.36</mysql-connector-java.version>
     <commons-dbcp2.version>2.1.1</commons-dbcp2.version>
   </properties>
 </project>

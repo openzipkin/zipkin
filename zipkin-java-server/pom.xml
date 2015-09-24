@@ -30,8 +30,6 @@
   <description>Zipkin Server</description>
 
   <properties>
-    <mysql-connector-java.version>5.1.36</mysql-connector-java.version>
-    <slf4j.version>1.7.12</slf4j.version>
     <!-- Until HikariCP 2.4.2 -->
     <commons-pool2.version>2.4.2</commons-pool2.version>
     <commons-dbcp2.version>2.1.1</commons-dbcp2.version>
@@ -65,9 +63,13 @@
     </dependency>
 
     <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>${slf4j.version}</version>
     </dependency>
 
     <!-- Until HikariCP 2.4.2, which supports java compact3 profile -->

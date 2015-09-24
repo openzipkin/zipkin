@@ -11,20 +11,17 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin.spanstore;
+package io.zipkin.internal;
 
-import io.zipkin.Span;
-import java.util.List;
-
-public class InMemorySpanStoreTest extends SpanStoreTest {
-  InMemorySpanStore spanStore = new InMemorySpanStore();
-
-  @Override protected SpanStore spanStore() {
-    return spanStore;
+public final class Util {
+  public static int envOr(String key, int fallback) {
+    return System.getenv(key) != null ? Integer.parseInt(System.getenv(key)) : fallback;
   }
 
-  @Override protected void reload(List<Span> spans) {
-    spanStore.clear();
-    spanStore.accept(spans);
+  public static String envOr(String key, String fallback) {
+    return System.getenv(key) != null ? System.getenv(key) : fallback;
+  }
+
+  private Util() {
   }
 }

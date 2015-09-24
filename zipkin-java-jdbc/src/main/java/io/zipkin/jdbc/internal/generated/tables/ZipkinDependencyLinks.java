@@ -41,7 +41,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinDependencyLinks extends TableImpl<Record> {
 
-	private static final long serialVersionUID = -2120591302;
+	private static final long serialVersionUID = -702572253;
 
 	/**
 	 * The reference instance of <code>zipkin.zipkin_dependency_links</code>
@@ -72,29 +72,9 @@ public class ZipkinDependencyLinks extends TableImpl<Record> {
 	public final TableField<Record, String> CHILD = createField("child", org.jooq.impl.SQLDataType.VARCHAR.length(255).nullable(false), this, "");
 
 	/**
-	 * The column <code>zipkin.zipkin_dependency_links.m0</code>.
+	 * The column <code>zipkin.zipkin_dependency_links.call_count</code>.
 	 */
-	public final TableField<Record, Long> M0 = createField("m0", org.jooq.impl.SQLDataType.BIGINT.nullable(false), this, "");
-
-	/**
-	 * The column <code>zipkin.zipkin_dependency_links.m1</code>.
-	 */
-	public final TableField<Record, Double> M1 = createField("m1", org.jooq.impl.SQLDataType.DOUBLE.nullable(false), this, "");
-
-	/**
-	 * The column <code>zipkin.zipkin_dependency_links.m2</code>.
-	 */
-	public final TableField<Record, Double> M2 = createField("m2", org.jooq.impl.SQLDataType.DOUBLE.nullable(false), this, "");
-
-	/**
-	 * The column <code>zipkin.zipkin_dependency_links.m3</code>.
-	 */
-	public final TableField<Record, Double> M3 = createField("m3", org.jooq.impl.SQLDataType.DOUBLE.nullable(false), this, "");
-
-	/**
-	 * The column <code>zipkin.zipkin_dependency_links.m4</code>.
-	 */
-	public final TableField<Record, Double> M4 = createField("m4", org.jooq.impl.SQLDataType.DOUBLE.nullable(false), this, "");
+	public final TableField<Record, Long> CALL_COUNT = createField("call_count", org.jooq.impl.SQLDataType.BIGINT.nullable(false), this, "");
 
 	/**
 	 * Create a <code>zipkin.zipkin_dependency_links</code> table reference
