@@ -11,20 +11,23 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin.spanstore;
+package io.zipkin.jdbc;
 
-import io.zipkin.Span;
-import java.util.List;
+import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import org.jooq.conf.Settings;
+import org.junit.AssumptionViolatedException;
 
-public class InMemorySpanStoreTest extends SpanStoreTest {
-  InMemorySpanStore spanStore = new InMemorySpanStore();
+final class JDBCTestGraph {
 
-  @Override protected SpanStore spanStore() {
-    return spanStore;
-  }
+  final JDBCSpanStore spanStore;
 
-  @Override protected void reload(List<Span> spans) {
-    spanStore.clear();
-    spanStore.accept(spans);
+  JDBCTestGraph() {
+    String mysqlUrl = JDBCSpanStore.mysqlUrlFromEnv();
+    if (mysqlUrl == null) {
+      throw new AssumptionViolatedException("Minimally, the environment variable MYSQL_USER must be set");
+    }
+    MysqlDataSource dataSource = new MysqlDataSource();
+    dataSource.setURL(mysqlUrl);
+    spanStore = new JDBCSpanStore(dataSource, new Settings());
   }
 }

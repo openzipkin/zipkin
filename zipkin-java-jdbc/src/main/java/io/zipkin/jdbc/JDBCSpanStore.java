@@ -41,9 +41,11 @@ import org.jooq.Query;
 import org.jooq.Record;
 import org.jooq.SelectConditionStep;
 import org.jooq.Table;
+import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
 
 import static io.zipkin.BinaryAnnotation.Type.STRING;
+import static io.zipkin.internal.Util.envOr;
 import static io.zipkin.jdbc.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static io.zipkin.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 import static java.util.Collections.emptyList;
@@ -51,28 +53,44 @@ import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.groupingBy;
 
 public final class JDBCSpanStore implements SpanStore {
+
+  @Nullable
+  public static String mysqlUrlFromEnv() {
+    if (System.getenv("MYSQL_USER") == null) return null;
+    String mysqlHost = envOr("MYSQL_HOST", "localhost");
+    int mysqlPort = envOr("MYSQL_TCP_PORT", 3306);
+    String mysqlUser = envOr("MYSQL_USER", "");
+    String mysqlPass = envOr("MYSQL_PASS", "");
+
+    return String.format("jdbc:mysql://%s:%s/zipkin?user=%s&password=%s&autoReconnect=true",
+        mysqlHost, mysqlPort, mysqlUser, mysqlPass);
+  }
+
   private static final Charset UTF_8 = Charset.forName("UTF-8");
+
   {
     System.setProperty("org.jooq.no-logo", "true");
   }
 
   private final DataSource datasource;
+  private final Settings settings;
 
-  public JDBCSpanStore(DataSource datasource) {
+  public JDBCSpanStore(DataSource datasource, Settings settings) {
     this.datasource = datasource;
+    this.settings = settings;
   }
 
   void clear() throws SQLException {
     try (Connection conn = datasource.getConnection()) {
-      DSL.using(conn).truncate(ZIPKIN_SPANS).execute();
-      DSL.using(conn).truncate(ZIPKIN_ANNOTATIONS).execute();
+      context(conn).truncate(ZIPKIN_SPANS).execute();
+      context(conn).truncate(ZIPKIN_ANNOTATIONS).execute();
     }
   }
 
   @Override
   public void accept(List<Span> spans) {
     try (Connection conn = datasource.getConnection()) {
-      DSLContext create = DSL.using(conn);
+      DSLContext create = context(conn);
 
       List<Query> inserts = new ArrayList<>();
 
@@ -128,21 +146,22 @@ public final class JDBCSpanStore implements SpanStore {
     }
   }
 
-  @Override public List<Trace> getTraces(QueryRequest request) throws QueryException {
+  @Override
+  public List<Trace> getTraces(QueryRequest request) throws QueryException {
     return getTraces(request, null, request.adjustClockSkew());
   }
 
   private List<Trace> getTraces(@Nullable QueryRequest request, @Nullable List<Long> traceIds,
-      boolean adjustClockSkew) {
+                                boolean adjustClockSkew) {
     final Map<Long, List<Span>> spansWithoutAnnotations;
     final Map<SpanKey, List<Record>> dbAnnotations;
     try (Connection conn = datasource.getConnection()) {
 
       final SelectConditionStep<?> dsl;
       if (request == null) {
-        dsl = DSL.using(conn).selectFrom(ZIPKIN_SPANS).where(ZIPKIN_SPANS.TRACE_ID.in(traceIds));
+        dsl = context(conn).selectFrom(ZIPKIN_SPANS).where(ZIPKIN_SPANS.TRACE_ID.in(traceIds));
       } else {
-        dsl = toSelectCondition(DSL.using(conn), request);
+        dsl = toSelectCondition(context(conn), request);
       }
       spansWithoutAnnotations = dsl
           .orderBy(ZIPKIN_SPANS.FIRST_TIMESTAMP.asc())
@@ -156,7 +175,7 @@ public final class JDBCSpanStore implements SpanStore {
               .binaryAnnotations(emptyList())
               .build());
 
-      dbAnnotations = DSL.using(conn)
+      dbAnnotations = context(conn)
           .selectFrom(ZIPKIN_ANNOTATIONS)
           .where(ZIPKIN_ANNOTATIONS.TRACE_ID.in(spansWithoutAnnotations.keySet()))
           .orderBy(ZIPKIN_ANNOTATIONS.TIMESTAMP.asc())
@@ -209,6 +228,10 @@ public final class JDBCSpanStore implements SpanStore {
     return result;
   }
 
+  private DSLContext context(Connection conn) {
+    return DSL.using(conn, settings);
+  }
+
   @Override
   public List<Trace> getTracesByIds(List<Long> traceIds, boolean adjustClockSkew)
       throws QueryException {
@@ -218,7 +241,7 @@ public final class JDBCSpanStore implements SpanStore {
   @Override
   public Set<String> getServiceNames() throws QueryException {
     try (Connection conn = datasource.getConnection()) {
-      return DSL.using(conn)
+      return context(conn)
           .selectDistinct(ZIPKIN_ANNOTATIONS.HOST_SERVICE_NAME)
           .from(ZIPKIN_ANNOTATIONS)
           .where(ZIPKIN_ANNOTATIONS.HOST_SERVICE_NAME.isNotNull())
@@ -232,7 +255,7 @@ public final class JDBCSpanStore implements SpanStore {
   public Set<String> getSpanNames(String serviceName) throws QueryException {
     if (serviceName == null) return emptySet();
     try (Connection conn = datasource.getConnection()) {
-      return DSL.using(conn)
+      return context(conn)
           .selectDistinct(ZIPKIN_SPANS.NAME)
           .from(ZIPKIN_SPANS)
           .join(ZIPKIN_ANNOTATIONS)

@@ -9,5 +9,13 @@ language: java
 jdk:
   - oraclejdk8
 
+services:
+  - mysql
+
+before_install:
+  - mysql -uroot -e 'SET GLOBAL innodb_file_format=Barracuda'
+  - mysql -utravis -e 'create database if not exists zipkin'
+  - mysql -utravis -Dzipkin < zipkin-java-jdbc/src/main/resources/mysql.sql
+
 install:
-- ./mvnw install
+- MYSQL_USER=travis ./mvnw install

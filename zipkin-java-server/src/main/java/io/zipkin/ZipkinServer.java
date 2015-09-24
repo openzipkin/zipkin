@@ -26,7 +26,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ServerSocket;
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.jooq.conf.Settings;
 
+import static io.zipkin.internal.Util.envOr;
 import static java.util.Collections.emptyList;
 
 public final class ZipkinServer implements Closeable {
@@ -94,7 +96,7 @@ public final class ZipkinServer implements Closeable {
       datasource.setDriverClassName("com.mysql.jdbc.Driver");
       datasource.setUrl(url);
       datasource.setMaxTotal(10);
-      server = new ZipkinServer(collectorPort, queryPort, new JDBCSpanStore(datasource));
+      server = new ZipkinServer(collectorPort, queryPort, new JDBCSpanStore(datasource, new Settings()));
     } else {
       server = new ZipkinServer(collectorPort, queryPort, new InMemorySpanStore());
     }
@@ -109,13 +111,5 @@ public final class ZipkinServer implements Closeable {
   @Override
   public void close() {
     stop();
-  }
-
-  private static int envOr(String key, int fallback) {
-    return System.getenv(key) != null ? Integer.parseInt(System.getenv(key)) : fallback;
-  }
-
-  private static String envOr(String key, String fallback) {
-    return System.getenv(key) != null ? System.getenv(key) : fallback;
   }
 }

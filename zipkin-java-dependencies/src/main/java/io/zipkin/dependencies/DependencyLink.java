@@ -38,8 +38,9 @@ public abstract class DependencyLink {
   @ThriftField(value = 2)
   public abstract String child();
 
-  @ThriftField(value = 3)
-  public abstract Moments duration();
+  /** calls made during the duration (in microseconds) of this link */
+  @ThriftField(value = 4)
+  public abstract long callCount();
 
   @AutoValue.Builder
   interface Builder {
@@ -50,8 +51,8 @@ public abstract class DependencyLink {
     @ThriftField(value = 2)
     Builder child(String child);
 
-    @ThriftField(value = 3)
-    Builder duration(Moments duration);
+    @ThriftField(value = 4)
+    Builder callCount(long callCount);
 
     @ThriftConstructor
     DependencyLink build();
