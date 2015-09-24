@@ -42,7 +42,10 @@ if (username.isDefined && password.isDefined) {
 }
 
 val cluster = Factory.createClusterBuilder().build()
-val storeBuilder = Store.Builder(new cassandra.SpanStoreBuilder(cluster))
+val storeBuilder = Store.Builder(
+  new cassandra.SpanStoreBuilder(cluster),
+  new cassandra.DependencyStoreBuilder(cluster)
+)
 val kafkaReceiver = sys.env.get("KAFKA_ZOOKEEPER").map(
   KafkaSpanReceiverFactory.factory(_, sys.env.get("KAFKA_TOPIC").getOrElse("zipkin"))
 )

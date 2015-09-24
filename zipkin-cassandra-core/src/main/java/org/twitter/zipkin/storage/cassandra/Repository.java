@@ -108,7 +108,7 @@ public final class Repository implements AutoCloseable {
         selectDependencies = session.prepare(
                 QueryBuilder.select("dependencies")
                     .from("dependencies")
-                    .where(QueryBuilder.in("day", QueryBuilder.bindMarker("day"))));
+                    .where(QueryBuilder.in("day", QueryBuilder.bindMarker("days"))));
 
         insertDependencies = session.prepare(
                 QueryBuilder
@@ -274,11 +274,11 @@ public final class Repository implements AutoCloseable {
                         .replace(":limit_", String.valueOf(limit));
     }
 
-    public void storeDependencies(long startFlooredToDay, ByteBuffer dependencies) {
+    public void storeDependencies(long startMillis, ByteBuffer dependencies) {
+        Date startFlooredToDay = getDay(startMillis).getTime();
         try {
-
             BoundStatement bound = insertDependencies.bind()
-                    .setDate("day", new Date(startFlooredToDay))
+                    .setDate("day", startFlooredToDay)
                     .setBytes("dependencies", dependencies);
 
             if (LOG.isDebugEnabled()) {
@@ -291,16 +291,16 @@ public final class Repository implements AutoCloseable {
         }
     }
 
-    private String debugInsertDependencies(long startFlooredToDay, ByteBuffer dependencies) {
+    private String debugInsertDependencies(Date startFlooredToDay, ByteBuffer dependencies) {
         return insertDependencies.getQueryString()
-                        .replace(":day", new Date(startFlooredToDay).toString())
+                        .replace(":day", startFlooredToDay.toString())
                         .replace(":dependencies", Bytes.toHexString(dependencies));
     }
 
-    public List<ByteBuffer> getDependencies(long startDate, long endDate) {
-        List<Date> days = getDays(endDate, endDate);
+    public List<ByteBuffer> getDependencies(long startMillis, long endMillis) {
+        List<Date> days = getDays(startMillis, endMillis);
         try {
-            BoundStatement bound = selectDependencies.bind().setList("day", days);
+            BoundStatement bound = selectDependencies.bind().setList("days", days);
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugSelectDependencies(days));
             }
@@ -316,7 +316,7 @@ public final class Repository implements AutoCloseable {
     }
 
     private String debugSelectDependencies(List<Date> days) {
-        return selectDependencies.getQueryString().replace(":day", Arrays.toString(days.toArray()));
+        return selectDependencies.getQueryString().replace(":days", Arrays.toString(days.toArray()));
     }
 
     public Set<String> getServiceNames() {
