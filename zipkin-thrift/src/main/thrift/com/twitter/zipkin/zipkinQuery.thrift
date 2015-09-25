@@ -19,6 +19,7 @@ include "zipkinCore.thrift"
 include "zipkinDependencies.thrift"
 
 struct Trace {
+  /** spans having the same trace id, sorted on the timestamp of their first annotation */
   1: list<zipkinCore.Span> spans
 }
 
@@ -43,11 +44,13 @@ struct QueryRequest {
 
 service ZipkinQuery {
 
+    /** Results are sorted in order of the first span's timestamp */
     list<Trace> getTracesByIds(
       1: list<i64> trace_ids,
       # 2: list<Adjust> OBSOLETE_adjust,
       3: bool adjust_clock_skew = true) throws (1: QueryException qe);
 
+    /** Results are sorted in order of the first span's timestamp */
     list<Trace> getTraces(1: QueryRequest request) throws (1: QueryException qe);
 
     /**

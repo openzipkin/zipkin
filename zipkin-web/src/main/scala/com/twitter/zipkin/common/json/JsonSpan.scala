@@ -27,7 +27,7 @@ case class JsonSpan(
   startTimestamp: Option[Long],
   duration: Option[Long],
   annotations: List[JsonAnnotation],
-  binaryAnnotations: Seq[JsonBinaryAnnotation])  extends WrappedJson
+  binaryAnnotations: Seq[JsonBinaryAnnotation]) extends WrappedJson
 
 object JsonSpan {
   def wrap(s: Span) = {
@@ -39,7 +39,7 @@ object JsonSpan {
       s.serviceNames,
       s.firstAnnotation.map {_.timestamp},
       s.duration,
-      s.annotations.sortWith((a,b) => a.timestamp < b.timestamp).map { JsonAnnotation.wrap(_) },
+      s.annotations.map { JsonAnnotation.wrap(_) },
       s.binaryAnnotations.map { JsonBinaryAnnotation.wrap(_) })
   }
 }

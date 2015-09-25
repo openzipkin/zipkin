@@ -69,9 +69,6 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
     }
   }
 
-  private[this] def getServices(client: ZipkinQuery[Future]): Future[Seq[String]] =
-    client.getServiceNames() map { _.toSeq.sorted }
-
   def collectStats(stats: StatsReceiver): Filter[Request, Response, Request, Response] =
     Filter.mk[Request, Response, Request, Response] { (req, svc) =>
       Stat.timeFuture(stats.stat("request"))(svc(req)) onSuccess { rep =>
@@ -240,11 +237,15 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       val spanName = req.params.get("spanName")
       val qr = queryExtractor(req)
       val qResults = qr map { query(client, _) } getOrElse { EmptyTraces }
-      val spanResults = serviceName map(client.getSpanNames(_).map(_.toSeq.sorted)) getOrElse(Future.value(Seq.empty))
+      val spanResults = serviceName map(client.getSpanNames(_)) getOrElse(Future.value(Seq.empty))
 
-      for (services <- getServices(client); results <- qResults; spans <- spanResults) yield {
-        val svcList = services map { svc => Map("name" -> svc, "selected" -> (if (Some(svc) == serviceName) "selected" else "")) }
-        val spanList = spans map { span => Map("name" -> span, "selected" -> (if (Some(span) == spanName) "selected" else "")) }
+      for (services <- client.getServiceNames(); results <- qResults; spans <- spanResults) yield {
+        val svcList = services.map(_.sorted) map {
+          svc => Map("name" -> svc, "selected" -> (if (Some(svc) == serviceName) "selected" else ""))
+        }
+        val spanList = spans.map(_.sorted) map {
+          span => Map("name" -> span, "selected" -> (if (Some(span) == spanName) "selected" else ""))
+        }
 
         var data = Map[String, Object](
           ("timestamp" -> queryExtractor.getTimestampStr(req)),
@@ -282,15 +283,12 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
     }
 
   def handleServices(client: ZipkinQuery[Future]): Service[Request, Renderer] =
-    Service.mk[Request, Renderer] { _ =>
-    getServices(client) map { JsonRenderer(_) }
+    Service.mk[Request, Renderer] { _ => client.getServiceNames().map(_.toList.sorted).map(JsonRenderer(_))
   }
 
   def handleSpans(client: ZipkinQuery[Future]): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
-      client.getSpanNames(req.params("serviceName")) map { spans =>
-        JsonRenderer(spans.toSeq.sorted)
-      }
+      client.getSpanNames(req.params("serviceName")).map(_.toList.sorted).map(JsonRenderer(_))
     }
 
   def handleDependencies(client: DependencyStore[Future]): Service[Request, Renderer] =
@@ -322,7 +320,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
     val spanMap = trace.getIdToSpanMap
 
     val spans = for {
-      rootSpan <- trace.getRootSpans().sortBy(_.firstAnnotation.map(_.timestamp))
+      rootSpan <- trace.getRootSpans()
       span <- trace.getSpanTree(rootSpan, childMap).toList
     } yield {
 
@@ -352,7 +350,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
         "depth" -> (depth + 1) * 5,
         "depthClass" -> (depth - 1) % 6,
         "children" -> childMap.get(span.id).map(_.map(s => SpanId(s.id).toString).mkString(",")),
-        "annotations" -> span.annotations.sortBy(_.timestamp).map { a =>
+        "annotations" -> span.annotations.map { a =>
           Map(
             "isCore" -> ZConstants.CoreAnnotations.contains(a.value),
             "left" -> span.duration.map { d => ((a.timestamp - start).toFloat / d.toFloat) * 100 },

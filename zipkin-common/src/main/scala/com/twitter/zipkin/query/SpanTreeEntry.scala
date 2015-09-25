@@ -33,7 +33,7 @@ case class SpanTreeEntry(span: Span, children: List[SpanTreeEntry]) {
         List[Span](entry.span)
 
       case children =>
-        val sorted = children.sortBy(_.span.firstAnnotation.map(_.timestamp))
+        val sorted = children.sortBy(_.span.firstTimestamp)
         entry.span :: sorted.map(childrenToList).flatten
     }
   }

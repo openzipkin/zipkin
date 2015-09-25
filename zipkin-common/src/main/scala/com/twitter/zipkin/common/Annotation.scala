@@ -32,7 +32,7 @@ case class Annotation(timestamp: Long, value: String, host: Option[Endpoint])
 
   override def compare(that: Annotation): Int = {
     if (this.timestamp != that.timestamp)
-      (this.timestamp - that.timestamp).toInt
+      this.timestamp compare that.timestamp
     else if (this.value != that.value)
       this.value compare that.value
     else if (this.host != that.host)
