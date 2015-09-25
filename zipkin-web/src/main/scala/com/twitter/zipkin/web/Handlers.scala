@@ -11,7 +11,7 @@ import com.twitter.zipkin.common.json._
 import com.twitter.zipkin.common.mustache.ZipkinMustache
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.query._
-import com.twitter.zipkin.thriftscala.{DependencySource, QueryRequest, ZipkinQuery}
+import com.twitter.zipkin.thriftscala.{DependencyStore, QueryRequest, ZipkinQuery}
 import com.twitter.zipkin.{Constants => ZConstants}
 import java.io.{File, FileInputStream, InputStream}
 
@@ -293,7 +293,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       }
     }
 
-  def handleDependencies(client: DependencySource[Future]): Service[Request, Renderer] =
+  def handleDependencies(client: DependencyStore[Future]): Service[Request, Renderer] =
     new Service[Request, Renderer] {
       private[this] val PathMatch = """/api/dependencies(/([^/]+))?(/([^/]+))?/?""".r
       def apply(req: Request): Future[Renderer] = {

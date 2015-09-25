@@ -102,7 +102,7 @@ case class CollectorServiceBuilder[T](
 
   /**
    * Finagle+Scrooge doesn't yet support multiple interfaces on the same socket. This combines
-   * Scribe and DependencySink until they do.
+   * Scribe and DependencyStore until they do.
    */
   private def composeCollectorService(impl: ScribeCollectorInterface, stats: StatsReceiver) = {
     val protocolFactory = new Factory()
@@ -110,9 +110,9 @@ case class CollectorServiceBuilder[T](
     new Scribe$FinagleService(
       impl, protocolFactory, stats, maxThriftBufferSize
     ) {
-      // Add functions from DependencySink until ThriftMux supports multiple interfaces on the
+      // Add functions from DependencyStore until ThriftMux supports multiple interfaces on the
       // same port.
-      functionMap ++= new DependencySink$FinagleService(
+      functionMap ++= new DependencyStore$FinagleService(
         impl, protocolFactory, stats, maxThriftBufferSize
       ) {
         val functions = functionMap // expose

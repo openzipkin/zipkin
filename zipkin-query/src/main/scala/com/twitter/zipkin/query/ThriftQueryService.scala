@@ -20,13 +20,14 @@ import com.google.common.base.Charsets.UTF_8
 import com.twitter.finagle.stats.{DefaultStatsReceiver, Stat, StatsReceiver}
 import com.twitter.finagle.tracing.{Trace => FTrace}
 import com.twitter.logging.Logger
-import com.twitter.util.{Future, Time}
+import com.twitter.util.Future
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.query.adjusters._
 import com.twitter.zipkin.query.constants._
 import com.twitter.zipkin.storage._
 import com.twitter.zipkin.thriftscala
+import com.twitter.zipkin.thriftscala.Dependencies
 import java.nio.ByteBuffer
 
 class ThriftQueryService(
@@ -35,7 +36,7 @@ class ThriftQueryService(
   traceDurationFetchBatchSize: Int = 500,
   stats: StatsReceiver = DefaultStatsReceiver.scope("ThriftQueryService"),
   log: Logger = Logger.get("ThriftQueryService")
-) extends thriftscala.ZipkinQuery[Future] with thriftscala.DependencySource[Future] {
+) extends thriftscala.ZipkinQuery[Future] with thriftscala.DependencyStore[Future] {
 
   private[this] val methodStats = stats.scope("perMethod")
   private val timeSkewAdjuster = new TimeSkewAdjuster()
@@ -171,10 +172,13 @@ class ThriftQueryService(
       spanStore.getSpanNames(serviceName)
     }
 
-  override def getDependencies(startTime: Option[Long], endTime: Option[Long]) : Future[thriftscala.Dependencies] =
+  override def getDependencies(startTime: Option[Long], endTime: Option[Long]) =
     handle("getDependencies") {
-      val start = startTime map { Time.fromMicroseconds(_) }
-      val end = endTime map { Time.fromMicroseconds(_) }
-      dependencyStore.getDependencies(start, end).map(_.toThrift)
+      dependencyStore.getDependencies(startTime, endTime).map(_.toThrift)
+    }
+
+  override def storeDependencies(dependencies: Dependencies) =
+    handle("storeDependencies") {
+      dependencyStore.storeDependencies(dependencies.toDependencies)
     }
 }

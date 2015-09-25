@@ -25,7 +25,7 @@ import com.twitter.server.TwitterServer
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common.json.ZipkinJson
 import com.twitter.zipkin.common.mustache.ZipkinMustache
-import com.twitter.zipkin.thriftscala.{DependencySource, ZipkinQuery}
+import com.twitter.zipkin.thriftscala.{DependencyStore, ZipkinQuery}
 import java.net.InetSocketAddress
 
 trait ZipkinWebFactory { self: App =>
@@ -70,9 +70,9 @@ trait ZipkinWebFactory { self: App =>
   def newQueryClient() = Thrift.client
                                .configured(param.Label("zipkin-query"))
                                .newIface[ZipkinQuery.FutureIface](queryDest())
-  def newDependencySource() = Thrift.client
-                                    .configured(param.Label("zipkin-query"))
-                                    .newIface[DependencySource.FutureIface](queryDest())
+  def newDependencyStore() = Thrift.client
+                                   .configured(param.Label("zipkin-query"))
+                                   .newIface[DependencyStore.FutureIface](queryDest())
 
   def newJsonGenerator = new ZipkinJson
   def newMustacheGenerator = new ZipkinMustache(webResourcesRoot(), webCacheResources())
@@ -81,7 +81,7 @@ trait ZipkinWebFactory { self: App =>
 
   def newWebServer(
     queryClient: ZipkinQuery[Future] = newQueryClient(),
-    dependencySource: DependencySource[Future] = newDependencySource(),
+    DependencyStore: DependencyStore[Future] = newDependencyStore(),
     stats: StatsReceiver = DefaultStatsReceiver.scope("zipkin-web")
   ): Service[Request, Response] = {
     val handlers = newHandlers
@@ -97,8 +97,8 @@ trait ZipkinWebFactory { self: App =>
       ("/api/query", handleQuery(queryClient)),
       ("/api/services", handleServices(queryClient)),
       ("/api/spans", requireServiceName andThen handleSpans(queryClient)),
-      ("/api/dependencies", handleDependencies(dependencySource)),
-      ("/api/dependencies/?:startTime/?:endTime", handleDependencies(dependencySource)),
+      ("/api/dependencies", handleDependencies(DependencyStore)),
+      ("/api/dependencies/?:startTime/?:endTime", handleDependencies(DependencyStore)),
       ("/api/get/:id", handleGetTrace(queryClient)),
       ("/api/trace/:id", handleGetTrace(queryClient))
     ).foldLeft(new HttpMuxer) { case (m , (p, handler)) =>

@@ -17,9 +17,8 @@
 package com.twitter.zipkin.common
 
 import com.twitter.algebird.{Monoid, Semigroup}
-import com.twitter.conversions.time._
-import com.twitter.util.Time
 import org.scalatest.FunSuite
+import java.util.concurrent.TimeUnit.{HOURS, MICROSECONDS}
 
 class DependenciesTest extends FunSuite {
   test("DependencyLinks") {
@@ -48,8 +47,8 @@ class DependenciesTest extends FunSuite {
     val dl4 = DependencyLink("mobileweb", "Gizmoduck", callCount2)
     val dl5 = dl1.copy(callCount = callCount1 + callCount2)
 
-    val deps1 = Dependencies(Time.fromSeconds(0), Time.fromSeconds(0) + 1.hour, List(dl1, dl3))
-    val deps2 = Dependencies(Time.fromSeconds(0) + 1.hour, Time.fromSeconds(0) + 2.hours, List(dl2, dl4))
+    val deps1 = Dependencies(0L, MICROSECONDS.convert(1, HOURS), List(dl1, dl3))
+    val deps2 = Dependencies(MICROSECONDS.convert(1, HOURS), MICROSECONDS.convert(2, HOURS), List(dl2, dl4))
 
     // express identity when added to zero
     val result = Monoid.plus(deps1, Monoid.zero[Dependencies])
@@ -58,8 +57,8 @@ class DependenciesTest extends FunSuite {
     // combine
     val result2 = Monoid.plus(deps1, deps2)
 
-    assert(result2.startTime === Time.fromSeconds(0))
-    assert(result2.endTime === Time.fromSeconds(0) + 2.hours)
+    assert(result2.startTime === 0L)
+    assert(result2.endTime === MICROSECONDS.convert(2, HOURS))
 
     assert(result2.links == Seq(dl5, dl3, dl4))
   }

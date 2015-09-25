@@ -16,7 +16,6 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.util.Time
 import com.twitter.algebird.{Monoid, Semigroup}
 
 /**
@@ -40,13 +39,13 @@ object DependencyLink {
 
 /**
  * This represents all dependencies across all services over a given time period.
- * @param startTime the startTime time for this period
- * @param endTime how long the period lasted
+ * @param startTime microseconds from epoch
+ * @param endTime microseconds from epoch
  * @param links link information for every dependent service
  */
 case class Dependencies(
-  startTime: Time,
-  endTime: Time,
+  startTime: Long,
+  endTime: Long,
   links: Seq[DependencyLink]
 )
 
@@ -66,6 +65,6 @@ object Dependencies {
       Dependencies(newStart, newEnd, newLinks)
     }
 
-    val zero = Dependencies(Time.Top, Time.Bottom, Seq.empty[DependencyLink])
+    val zero = Dependencies(0, 0, Seq.empty[DependencyLink])
   }
 }
