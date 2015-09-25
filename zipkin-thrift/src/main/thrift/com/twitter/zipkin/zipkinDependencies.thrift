@@ -26,6 +26,7 @@ struct DependencyLink {
   # histogram?
 }
 
+/* An aggregate representation of services paired with every service they call. */
 struct Dependencies {
   /** microseconds from epoch */
   1: i64 start_time
@@ -38,18 +39,18 @@ exception DependenciesException {
   1: string msg
 }
 
-service DependencySink {
+service DependencyStore {
 
-    void storeDependencies(1: Dependencies dependencies) throws (1: DependenciesException e);
-}
+    void storeDependencies(
+      /** replaces the links defined for the given interval */
+      1: Dependencies dependencies
+    ) throws (1: DependenciesException e);
 
-service DependencySource {
-
-    /**
-     * Get an aggregate representation of all services paired with every service they call in to.
-     * This includes information on call counts and mean/stdDev/etc of call durations.  The two arguments
-     * specify epoch time in microseconds. The end time is optional and defaults to one day after the
-     * start time.
-     */
-    Dependencies getDependencies(1: optional i64 start_time, 2: optional i64 end_time) throws (1: DependenciesException qe);
+    /* Return dependency links in an interval contained by start_time and end_time */
+    Dependencies getDependencies(
+      /* microseconds from epoch, defaults to one day before end_time */
+      1: optional i64 start_time,
+      /* microseconds from epoch, defaults to now */
+      2: optional i64 end_time
+    ) throws (1: DependenciesException qe);
 }

@@ -4,7 +4,6 @@ import scala.Option;
 import scala.runtime.BoxedUnit;
 
 import com.twitter.util.Future;
-import com.twitter.util.Time;
 import com.twitter.zipkin.common.Dependencies;
 
 /**
@@ -17,12 +16,12 @@ public class DependencyStoreInJava extends DependencyStore {
     }
 
     @Override
-    public Future<Dependencies> getDependencies(Option<Time> startDate, Option<Time> endDate) {
+    public Future<Dependencies> getDependencies(Option<Object> startTime, Option<Object> endTime) {
         return null;
     }
 
     @Override
-    public Option<Time> getDependencies$default$2() {
+    public Option<Object> getDependencies$default$2() {
         return null;
     }
 

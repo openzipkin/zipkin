@@ -20,7 +20,6 @@ import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -274,8 +273,8 @@ public final class Repository implements AutoCloseable {
                         .replace(":limit_", String.valueOf(limit));
     }
 
-    public void storeDependencies(long startMillis, ByteBuffer dependencies) {
-        Date startFlooredToDay = getDay(startMillis).getTime();
+    public void storeDependencies(long epochDayMillis, ByteBuffer dependencies) {
+        Date startFlooredToDay = new Date(epochDayMillis);
         try {
             BoundStatement bound = insertDependencies.bind()
                     .setDate("day", startFlooredToDay)
@@ -297,8 +296,8 @@ public final class Repository implements AutoCloseable {
                         .replace(":dependencies", Bytes.toHexString(dependencies));
     }
 
-    public List<ByteBuffer> getDependencies(long startMillis, long endMillis) {
-        List<Date> days = getDays(startMillis, endMillis);
+    public List<ByteBuffer> getDependencies(long startEpochDayMillis, long endEpochDayMillis) {
+        List<Date> days = getDays(startEpochDayMillis, endEpochDayMillis);
         try {
             BoundStatement bound = selectDependencies.bind().setList("days", days);
             if (LOG.isDebugEnabled()) {
@@ -607,22 +606,10 @@ public final class Repository implements AutoCloseable {
 
     private static List<Date> getDays(long from, long to) {
         List<Date> days = new ArrayList<>();
-        Calendar day = getDay(from);
-        do {
-            days.add(day.getTime());
-            day = getDay(day.getTimeInMillis() + TimeUnit.DAYS.toMillis(1));
-        } while (day.getTimeInMillis() <= to);
+        for (long time = from; time <= to; time += TimeUnit.DAYS.toMillis(1)) {
+            days.add(new Date(time));
+        }
         return days;
-    }
-
-    private static Calendar getDay(long from) {
-        Calendar day = Calendar.getInstance();
-        day.setTimeInMillis(from);
-        day.set(Calendar.MILLISECOND, 0);
-        day.set(Calendar.SECOND, 0);
-        day.set(Calendar.MINUTE, 0);
-        day.set(Calendar.HOUR, 0);
-        return day;
     }
 
     @Override

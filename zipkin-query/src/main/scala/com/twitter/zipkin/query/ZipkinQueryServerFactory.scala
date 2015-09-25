@@ -22,7 +22,7 @@ import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.{param, ListeningServer, ThriftMux}
 import com.twitter.logging.Logger
 import com.twitter.zipkin.storage.{DependencyStore, NullDependencyStore, SpanStore}
-import com.twitter.zipkin.thriftscala.{DependencySource$FinagleService, ZipkinQuery$FinagleService}
+import com.twitter.zipkin.thriftscala.{DependencyStore$FinagleService, ZipkinQuery$FinagleService}
 import org.apache.thrift.protocol.TBinaryProtocol.Factory
 
 trait ZipkinQueryServerFactory { self: App =>
@@ -43,7 +43,7 @@ trait ZipkinQueryServerFactory { self: App =>
 
   /**
    * Finagle+Scrooge doesn't yet support multiple interfaces on the same socket. This combines
-   * ZipkinQuery and DependencySource$FinagleService until they do.
+   * ZipkinQuery and DependencyStore$FinagleService until they do.
    */
   private def composeQueryService(impl: ThriftQueryService, stats: StatsReceiver) = {
     val protocolFactory = new Factory()
@@ -51,9 +51,9 @@ trait ZipkinQueryServerFactory { self: App =>
     new ZipkinQuery$FinagleService(
       impl, protocolFactory, stats, maxThriftBufferSize
     ) {
-      // Add functions from DependencySource until ThriftMux supports multiple interfaces on the
+      // Add functions from DependencyStore until ThriftMux supports multiple interfaces on the
       // same port.
-      functionMap ++= new DependencySource$FinagleService(
+      functionMap ++= new DependencyStore$FinagleService(
         impl, protocolFactory, stats, maxThriftBufferSize
       ) {
         val functions = functionMap // expose
