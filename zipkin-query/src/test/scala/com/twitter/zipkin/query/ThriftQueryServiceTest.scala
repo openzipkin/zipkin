@@ -87,7 +87,7 @@ class ThriftQueryServiceTest extends FunSuite {
   test("find traces by service name") {
     val svc = newLoadedService()
     val actual = Await.result(svc.getTraces(thriftscala.QueryRequest("service3", None, None, None, 1000, 50)))
-    assert(actual.map(_.spans.head.traceId) === Seq(3, 5))
+    assert(actual.map(_.spans.head.traceId) === Seq(5, 3)) // Note trace 5's timestamp is before trace 3's
   }
 
   test("find traces by annotation name") {

@@ -22,9 +22,10 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
 
   override def close() = closer.close()
 
-  override def apply(newSpans: Seq[Span]): Future[Unit] = Future.join(newSpans.flatMap { span =>
-    Seq(storage.storeSpan(span), index.index(span))
-  })
+  override def apply(newSpans: Seq[Span]): Future[Unit] = Future.join(
+    newSpans.map(s => s.copy(annotations = s.annotations.sorted))
+      .flatMap { span => Seq(storage.storeSpan(span), index.index(span))
+    })
 
   override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
     storage.getSpansByTraceIds(traceIds)

@@ -148,7 +148,7 @@ class TraceTest extends FunSuite {
     assert(expectedTrace.spans === actualTrace.spans)
   }
 
-  test("merge spans") {
+  test("merged spans are sorted") {
     val ann1 = List(Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
       Annotation(300, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
     val ann2 = List(Annotation(150, Constants.ServerRecv, Some(Endpoint(456, 456, "service2"))),
@@ -156,9 +156,9 @@ class TraceTest extends FunSuite {
 
     val annMerged = List(
       Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
-      Annotation(300, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))),
       Annotation(150, Constants.ServerRecv, Some(Endpoint(456, 456, "service2"))),
-      Annotation(200, Constants.ServerSend, Some(Endpoint(456, 456, "service2")))
+      Annotation(200, Constants.ServerSend, Some(Endpoint(456, 456, "service2"))),
+      Annotation(300, Constants.ClientRecv, Some(Endpoint(123, 123, "service1")))
     )
 
     val spanToMerge1 = Span(12345, "methodcall2", span2Id, Some(span1Id), ann1, Nil)

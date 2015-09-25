@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -242,7 +242,7 @@ public final class Repository implements AutoCloseable {
     public Map<Long,List<ByteBuffer>> getSpansByTraceIds(Long[] traceIds, int limit) {
         Preconditions.checkNotNull(traceIds);
         try {
-            Map<Long,List<ByteBuffer>> spans = new HashMap<>();
+            Map<Long,List<ByteBuffer>> spans = new LinkedHashMap<>();
             if (0 < traceIds.length) {
 
                 BoundStatement bound = selectTraces.bind()
@@ -435,7 +435,7 @@ public final class Repository implements AutoCloseable {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugSelectTraceIdsByServiceName(serviceName, to, limit));
             }
-            Map<Long,Long> traceIdsToTimestamps = new HashMap<>();
+            Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
             for (Row row : session.execute(bound).all()) {
                 traceIdsToTimestamps.put(row.getLong("trace_id"), row.getDate("ts").getTime());
             }
@@ -498,7 +498,7 @@ public final class Repository implements AutoCloseable {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugSelectTraceIdsBySpanName(serviceSpanName, to, limit));
             }
-            Map<Long,Long> traceIdsToTimestamps = new HashMap<>();
+            Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
             for (Row row : session.execute(bound).all()) {
                 traceIdsToTimestamps.put(row.getLong("trace_id"), row.getDate("ts").getTime());
             }
@@ -559,7 +559,7 @@ public final class Repository implements AutoCloseable {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugSelectTraceIdsByAnnotations(annotationKey, from, limit));
             }
-            Map<Long,Long> traceIdsToTimestamps = new HashMap<>();
+            Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
             for (Row row : session.execute(bound).all()) {
                 traceIdsToTimestamps.put(row.getLong("trace_id"), row.getDate("ts").getTime());
             }
@@ -622,7 +622,7 @@ public final class Repository implements AutoCloseable {
         private static final String SCHEMA = "/cassandra-schema-cql3.txt";
 
         static Map<String,String> ensureExists(String keyspace, Cluster cluster) {
-            Map<String,String> metadata = new HashMap<>();
+            Map<String,String> metadata = new LinkedHashMap<>();
             try (Session session = cluster.connect()) {
                 try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(SCHEMA))) {
                     for (String cmd : String.format(CharStreams.toString(reader)).split(";")) {

@@ -65,14 +65,6 @@ object Span {
     } catch {
       case NonFatal(_) => None
     }
-
-  /**
-   * Order annotations by timestamp.
-   */
-  val timestampOrdering = new Ordering[Annotation] {
-    def compare(a: Annotation, b: Annotation) = a.timestamp.compare(b.timestamp)
-  }
-
 }
 
 /**
@@ -162,7 +154,7 @@ trait Span { self =>
       def name = selectedName
       def id = self.id
       def parentId = self.parentId
-      def annotations = self.annotations ++ mergeFrom.annotations
+      def annotations = (self.annotations ++ mergeFrom.annotations).sorted
       def binaryAnnotations = self.binaryAnnotations ++ mergeFrom.binaryAnnotations
       def debug = self.debug | mergeFrom.debug
     }
@@ -171,24 +163,12 @@ trait Span { self =>
   /**
    * Get the first annotation by timestamp.
    */
-  def firstAnnotation: Option[Annotation] = {
-    try {
-      Some(annotations.min(Span.timestampOrdering))
-    } catch {
-      case e: UnsupportedOperationException => None
-    }
-  }
+  def firstAnnotation: Option[Annotation] = annotations.headOption
 
   /**
    * Get the last annotation by timestamp.
    */
-  def lastAnnotation: Option[Annotation] = {
-    try {
-      Some(annotations.max(Span.timestampOrdering))
-    } catch {
-      case e: UnsupportedOperationException => None
-    }
-  }
+  def lastAnnotation: Option[Annotation] = annotations.lastOption
 
   /**
    * Endpoints involved in this span

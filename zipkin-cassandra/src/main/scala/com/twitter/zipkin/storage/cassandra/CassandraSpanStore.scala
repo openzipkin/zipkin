@@ -193,7 +193,7 @@ class CassandraSpanStore(
         span.traceId,
         span.lastTimestamp.getOrElse(span.firstTimestamp.getOrElse(0)),
         createSpanColumnName(span),
-        spanCodec.encode(span.toThrift),
+        spanCodec.encode(span.copy(annotations = span.annotations.sorted).toThrift),
         spanTtl.inSeconds)
 
       SpansIndexedCounter.incr()
@@ -209,6 +209,7 @@ class CassandraSpanStore(
   override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
     QueryGetSpansByTraceIdsStat.add(traceIds.size)
     getSpansByTraceIds(traceIds, maxTraceCols)
+      .map(_.sortBy(t => t.head.firstTimestamp)) // CQL doesn't allow order by with an "in" query
   }
 
   override def getAllServiceNames: Future[Set[String]] = {
