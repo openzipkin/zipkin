@@ -240,10 +240,10 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       val spanResults = serviceName map(client.getSpanNames(_)) getOrElse(Future.value(Seq.empty))
 
       for (services <- client.getServiceNames(); results <- qResults; spans <- spanResults) yield {
-        val svcList = services.map(_.sorted) map {
+        val svcList = services.toList.sorted map {
           svc => Map("name" -> svc, "selected" -> (if (Some(svc) == serviceName) "selected" else ""))
         }
-        val spanList = spans.map(_.sorted) map {
+        val spanList = spans.toList.sorted map {
           span => Map("name" -> span, "selected" -> (if (Some(span) == spanName) "selected" else ""))
         }
 
