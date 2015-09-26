@@ -30,14 +30,8 @@ case class Annotation(timestamp: Long, value: String, host: Option[Endpoint])
    */
   def -(annotation: Annotation): Long = timestamp - annotation.timestamp
 
-  override def compare(that: Annotation): Int = {
-    if (this.timestamp != that.timestamp)
-      this.timestamp compare that.timestamp
-    else if (this.value != that.value)
-      this.value compare that.value
-    else if (this.host != that.host)
-      this.host.getOrElse {return -1} compare that.host.getOrElse {return 1}
-    else
-      0
-  }
+  import scala.math.Ordered.orderingToOrdered
+
+  def compare(that: Annotation): Int =
+    (this.timestamp, this.value, this.host) compare (that.timestamp, that.value, that.host)
 }
