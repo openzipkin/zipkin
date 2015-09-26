@@ -30,7 +30,7 @@ trait KafkaSpanReceiverFactory { self: App =>
   val defaultKafkaGroupId = "zipkin"
   val defaultKafkaZkConnectionTimeout = "1000000"
   val defaultKafkaSessionTimeout = "4000"
-  val defaultKafkaSyncTime = "200"
+  val defaultKafkaSyncTime = "2000"
   val defaultKafkaAutoOffset = "smallest"
   val defaultKafkaTopics = Map("zipkin" -> 1)
 
@@ -57,7 +57,7 @@ trait KafkaSpanReceiverFactory { self: App =>
       put("zookeeper.session.timeout.ms", kafkaSessionTimeout())
       put("zookeeper.sync.time.ms", kafkaSyncTime())
       put("auto.offset.reset", kafkaAutoOffset())
-      put("auto.commit.interval.ms", "10")
+      put("auto.commit.interval.ms", "10000")
       put("consumer.id", "zipkin")
       put("consumer.timeout.ms", "-1")
       put("rebalance.max.retries", "4")
