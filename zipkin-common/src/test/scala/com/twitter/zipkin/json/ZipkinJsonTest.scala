@@ -12,7 +12,7 @@ import org.scalatest.{FunSuite, Matchers}
  * Tests that who how data is serialized, so that subtle code changes don't break users.
  */
 class ZipkinJsonTest extends FunSuite with Matchers {
-  val mapper = ZipkinJson.mapper
+  val mapper = ZipkinJson
 
   val web = Endpoint((192 << 24 | 168 << 16 | 1), 8080, "zipkin-web")
   val query = Endpoint((192 << 24 | 168 << 16 | 1), 9411, "zipkin-query")

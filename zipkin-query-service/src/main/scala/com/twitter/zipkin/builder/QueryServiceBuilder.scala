@@ -16,10 +16,10 @@
 package com.twitter.zipkin.builder
 
 import com.twitter.finagle.ListeningServer
-import com.twitter.finagle.tracing.{NullTracer, DefaultTracer}
+import com.twitter.finagle.tracing.{DefaultTracer, NullTracer}
 import com.twitter.finagle.zipkin.thrift.RawZipkinTracer
 import com.twitter.ostrich.admin.RuntimeEnvironment
-import com.twitter.zipkin.query.ZipkinQueryServerFactory
+import com.twitter.zipkin.query.ZipkinQueryServer
 import com.twitter.zipkin.storage.Store
 
 case class QueryServiceBuilder(
@@ -28,9 +28,6 @@ case class QueryServiceBuilder(
 ) extends Builder[RuntimeEnvironment => ListeningServer] {
 
   def apply(): (RuntimeEnvironment) => ListeningServer = (runtime: RuntimeEnvironment) => {
-    serverBuilder.apply().apply(runtime)
-    val store = storeBuilder.apply()
-
     // If a scribe host is configured, send all traces to it, otherwise disable tracing
     val scribeHost = sys.env.get("SCRIBE_HOST")
     val scribePort = sys.env.get("SCRIBE_PORT")
@@ -40,8 +37,15 @@ case class QueryServiceBuilder(
       NullTracer
     }
 
-    object UseOnceFactory extends com.twitter.app.App with ZipkinQueryServerFactory
-    UseOnceFactory.queryServicePort.parse(serverBuilder.serverAddress.getHostAddress + ":" + serverBuilder.serverPort)
-    UseOnceFactory.newQueryServer(store.spanStore, store.dependencies, serverBuilder.statsReceiver)
+    val store = storeBuilder.apply()
+    object Main extends ZipkinQueryServer(store.spanStore, store.dependencies) {
+      def admin = adminHttpServer
+      override val defaultFinatraHttpPort = serverBuilder.serverAddress.getHostAddress + ":" + serverBuilder.serverPort
+      override val defaultHttpPort = serverBuilder.adminPort
+    }
+    Main.nonExitingMain(Array(
+      "-local.doc.root", "/"
+    ))
+    Main.admin
   }
 }
