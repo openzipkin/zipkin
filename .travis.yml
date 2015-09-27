@@ -2,6 +2,7 @@ language: java
 sudo: false
 
 services:
+  - cassandra
   - redis-server
 
 matrix:

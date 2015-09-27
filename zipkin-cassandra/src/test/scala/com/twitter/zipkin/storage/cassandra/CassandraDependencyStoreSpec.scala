@@ -1,22 +1,24 @@
 package com.twitter.zipkin.storage.cassandra
 
+import java.util.Collections
+
 import com.datastax.driver.core.Cluster
 import com.twitter.zipkin.storage.DependencyStoreSpec
-import java.util.Collections
 import org.cassandraunit.CQLDataLoader
 import org.cassandraunit.dataset.CQLDataSet
-import org.cassandraunit.utils.EmbeddedCassandraServerHelper.startEmbeddedCassandra
 import org.junit.BeforeClass
 import org.twitter.zipkin.storage.cassandra.Repository
 
 object CassandraDependencyStoreSpec {
   val keyspace = "test_zipkin_dependencystore"
   // Defer shared connection to the cluster
-  lazy val cluster = Cluster.builder().addContactPoint("127.0.0.1").withPort(9142).build()
+  lazy val cluster = Cluster.builder().addContactPoint("127.0.0.1").withPort(9042).build()
 
+  /**
+   * Skips all tests when the default cluster isn't present.
+   * @see [[com.datastax.driver.core.exceptions.NoHostAvailableException]]
+   */
   @BeforeClass def cassandra = {
-    startEmbeddedCassandra("cu-cassandra.yaml", "build/embeddedCassandra", 10 * 1000)
-
     new CQLDataLoader(cluster.connect).load(new CQLDataSet() {
       override def isKeyspaceDeletion = true
 
