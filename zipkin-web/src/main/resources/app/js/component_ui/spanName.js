@@ -21,7 +21,10 @@ define(
       };
 
       this.after('initialize', function() {
-        this.$node.chosen();
+        this.$node.chosen(
+        {
+          search_contains: true
+        });
         this.on(document, 'dataSpanNames', this.updateSpans);
       });
     }
