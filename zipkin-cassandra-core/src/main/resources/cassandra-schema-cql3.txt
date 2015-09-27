@@ -2,7 +2,7 @@ CREATE KEYSPACE IF NOT EXISTS zipkin WITH replication = {'class': 'SimpleStrateg
 
 CREATE TABLE IF NOT EXISTS zipkin.service_span_name_index (
     service_span_name text,
-    ts                timestamp,
+    ts                bigint,
     trace_id          bigint,
     PRIMARY KEY (service_span_name, ts)
 ) WITH CLUSTERING ORDER BY (ts DESC)
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS zipkin.service_span_name_index (
 CREATE TABLE IF NOT EXISTS zipkin.service_name_index (
     service_name      text,
     bucket            int,
-    ts                timestamp,
+    ts                bigint,
     trace_id          bigint,
     PRIMARY KEY ((service_name, bucket), ts)
 ) WITH CLUSTERING ORDER BY (ts DESC)
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS zipkin.span_names (
 CREATE TABLE IF NOT EXISTS zipkin.annotations_index (
     annotation     blob,
     bucket         int,
-    ts             timestamp,
+    ts             bigint,
     trace_id       bigint,
     PRIMARY KEY ((annotation, bucket), ts)
 ) WITH CLUSTERING ORDER BY (ts DESC)
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS zipkin.service_names (
 
 CREATE TABLE IF NOT EXISTS zipkin.traces (
     trace_id  bigint,
-    ts        timestamp,
+    ts        bigint,
     span_name text,
     span      blob,
     PRIMARY KEY (trace_id, ts, span_name)
