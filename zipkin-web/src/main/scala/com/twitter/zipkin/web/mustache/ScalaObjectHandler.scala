@@ -1,4 +1,4 @@
-package com.twitter.zipkin.common.mustache
+package com.twitter.zipkin.web.mustache
 
 import collection.JavaConversions._
 import com.github.mustachejava.Iteration
@@ -10,7 +10,7 @@ import scala.reflect.ClassTag
 
 /**
  * This class is borrowed from Mustache.java in scala-extensions. Its package
- * has been renamed from com.twitter.mustache to com.twitter.zipkin.common.mustache,
+ * has been renamed from com.twitter.mustache to com.twitter.zipkin.web.mustache,
  * so it won't collide if a user also has included the scala-extensions jar in
  * their classpath.
  */

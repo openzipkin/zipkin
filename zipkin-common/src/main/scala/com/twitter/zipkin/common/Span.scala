@@ -46,7 +46,7 @@ object Span {
     def name = _name
     def id = _id
     def parentId = _parentId
-    def annotations = _annotations
+    def annotations = _annotations.sorted
     def binaryAnnotations = _binaryAnnotations
     def debug = _debug
   }
@@ -73,9 +73,9 @@ object Span {
  * @param id random long that identifies this span
  * @param parentId reference to the parent span in the trace tree
  * @param annotations annotations, containing a timestamp and some value. both user generated and
- * some fixed ones from the tracing framework
+ * some fixed ones from the tracing framework. Sorted ascending by timestamp
  * @param binaryAnnotations  binary annotations, can contain more detailed information such as
- * serialized objects
+ * serialized objects. Sorted ascending by timestamp. Sorted ascending by timestamp
  * @param debug if this is set we will make sure this span is stored, no matter what the samplers want
  */
 trait Span { self =>

@@ -15,8 +15,6 @@ artifacts.zipkinUpload shadowJar
 
 dependencies {
     compile project(':zipkin-scrooge')
-
-    compile "com.twitter:algebird-core_${scalaInterfaceVersion}:${commonVersions.algebird}"
     compile "com.twitter:twitter-server_${scalaInterfaceVersion}:${commonVersions.twitterServer}"
     compile 'com.github.spullara.mustache.java:compiler:0.8.17'
     compile 'com.twitter.common:stats-util:0.0.58'

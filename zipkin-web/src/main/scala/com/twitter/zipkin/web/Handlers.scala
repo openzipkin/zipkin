@@ -1,5 +1,6 @@
 package com.twitter.zipkin.web
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.io.ByteStreams
 import com.twitter.finagle.httpx.{Request, Response}
 import com.twitter.finagle.stats.{Stat, StatsReceiver}
@@ -7,8 +8,8 @@ import com.twitter.finagle.tracing.SpanId
 import com.twitter.finagle.{Filter, Service, SimpleFilter}
 import com.twitter.io.Buf
 import com.twitter.util.Future
-import com.twitter.zipkin.common.json._
-import com.twitter.zipkin.common.mustache.ZipkinMustache
+import com.twitter.zipkin.json._
+import com.twitter.zipkin.web.mustache.ZipkinMustache
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.query._
 import com.twitter.zipkin.thriftscala.{DependencyStore, QueryRequest, ZipkinQuery}
@@ -17,7 +18,7 @@ import java.io.{File, FileInputStream, InputStream}
 
 import scala.annotation.tailrec
 
-class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor) {
+class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor) {
   import Util._
 
   type Renderer = (Response => Unit)
@@ -40,7 +41,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
   case class JsonRenderer(data: Any) extends Renderer {
     def apply(response: Response) {
       response.setContentTypeJson()
-      response.contentString = jsonGenerator.generate(data)
+      response.contentString = mapper.writeValueAsString(data)
     }
   }
 
@@ -333,8 +334,8 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
         case ann if ZConstants.CoreAddress.contains(ann.key) =>
           val key = ZConstants.CoreAnnotationNames.get(ann.key).get
           val value = ann.host.map { e => s"${e.getHostAddress}:${e.getUnsignedPort}" }.get
-          JsonBinaryAnnotation(key, value, ann.annotationType, ann.host.map(JsonEndpoint.wrap))
-        case ann => JsonBinaryAnnotation.wrap(ann)
+          JsonBinaryAnnotation(key, value, None, ann.host.map(JsonServiceBijection))
+        case ann => JsonBinaryAnnotationBijection(ann)
       }
 
       Map(
@@ -409,7 +410,7 @@ class Handlers(jsonGenerator: ZipkinJson, mustacheGenerator: ZipkinMustache, que
       def process(req: Request): Option[Future[Renderer]] =
         pathTraceId(req.path.split("/").lastOption) map { id =>
           client.getTracesByIds(Seq(id), queryExtractor.adjustClockSkew(req)).map { ts =>
-            JsonRenderer(if (req.path.startsWith("/api/trace")) ts else ts.map(t => TraceSummary(t.toTrace)))
+            JsonRenderer(if (req.path.startsWith("/api/trace")) ts.map(t => t.spans.map(_.toSpan)) else ts.map(t => TraceSummary(t.toTrace)))
           }
         }
     }

@@ -16,16 +16,16 @@
 package com.twitter.zipkin.web
 
 import com.twitter.app.App
+import com.twitter.finagle._
 import com.twitter.finagle.httpx.{HttpMuxer, Request, Response}
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.finagle.tracing.{NullTracer, DefaultTracer}
+import com.twitter.finagle.tracing.{DefaultTracer, NullTracer}
 import com.twitter.finagle.zipkin.thrift.RawZipkinTracer
-import com.twitter.finagle._
 import com.twitter.server.TwitterServer
 import com.twitter.util.{Await, Future}
-import com.twitter.zipkin.common.json.ZipkinJson
-import com.twitter.zipkin.common.mustache.ZipkinMustache
+import com.twitter.zipkin.json.{ZipkinJson}
 import com.twitter.zipkin.thriftscala.{DependencyStore, ZipkinQuery}
+import com.twitter.zipkin.web.mustache.ZipkinMustache
 import java.net.InetSocketAddress
 
 trait ZipkinWebFactory { self: App =>
@@ -74,10 +74,9 @@ trait ZipkinWebFactory { self: App =>
                                    .configured(param.Label("zipkin-query"))
                                    .newIface[DependencyStore.FutureIface](queryDest())
 
-  def newJsonGenerator = new ZipkinJson
   def newMustacheGenerator = new ZipkinMustache(webResourcesRoot(), webCacheResources())
   def newQueryExtractor = new QueryExtractor(queryLimit())
-  def newHandlers = new Handlers(newJsonGenerator, newMustacheGenerator, newQueryExtractor)
+  def newHandlers = new Handlers(ZipkinJson.mapper, newMustacheGenerator, newQueryExtractor)
 
   def newWebServer(
     queryClient: ZipkinQuery[Future] = newQueryClient(),

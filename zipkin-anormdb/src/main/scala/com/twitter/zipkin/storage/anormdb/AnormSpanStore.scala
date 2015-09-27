@@ -106,7 +106,7 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
       val traceIdsString:String = traceIds.mkString(",")
       val spans:List[DBSpan] =
         SQL(
-          """SELECT span_id, parent_id, trace_id, span_name, debug
+          """SELECT DISTINCT span_id, parent_id, trace_id, span_name, debug
             |FROM zipkin_spans
             |WHERE trace_id IN (%s)
             |ORDER BY created_ts
@@ -117,7 +117,7 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
         }) *)
       val annos:List[DBAnnotation] =
         SQL(
-          """SELECT span_id, trace_id, span_name, service_name, value, ipv4, port, a_timestamp
+          """SELECT DISTINCT span_id, trace_id, span_name, service_name, value, ipv4, port, a_timestamp
             |FROM zipkin_annotations
             |WHERE trace_id IN (%s)
             |ORDER BY a_timestamp
@@ -129,7 +129,7 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
         }) *)
       val binAnnos:List[DBBinaryAnnotation] =
         SQL(
-          """SELECT span_id, trace_id, span_name, service_name, annotation_key,
+          """SELECT DISTINCT span_id, trace_id, span_name, service_name, annotation_key,
             |  annotation_value, annotation_type_value, ipv4, port
             |FROM zipkin_binary_annotations
             |WHERE trace_id IN (%s)

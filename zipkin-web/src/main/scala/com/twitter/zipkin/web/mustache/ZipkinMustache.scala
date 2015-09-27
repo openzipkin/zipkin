@@ -1,4 +1,4 @@
-package com.twitter.zipkin.common.mustache
+package com.twitter.zipkin.web.mustache
 
 import com.github.mustachejava.DefaultMustacheFactory
 import java.io._
