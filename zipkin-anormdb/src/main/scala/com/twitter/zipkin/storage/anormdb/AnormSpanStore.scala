@@ -168,7 +168,7 @@ class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends
         }
       }
       // Redundant sort as List.groupBy loses order of values
-      results.groupBy(_.traceId).values.toSeq.sortBy(_.head.firstTimestamp)
+      results.groupBy(_.traceId).values.toList.sortBy(_.head) // sort traces by the first span
     } finally {
       returnConn(conn, borrowTime, "getSpansByTraceIds")
     }

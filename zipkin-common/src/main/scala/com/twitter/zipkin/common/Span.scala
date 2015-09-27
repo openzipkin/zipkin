@@ -78,7 +78,7 @@ object Span {
  * serialized objects. Sorted ascending by timestamp. Sorted ascending by timestamp
  * @param debug if this is set we will make sure this span is stored, no matter what the samplers want
  */
-trait Span { self =>
+trait Span extends Ordered[Span] { self =>
   def traceId: Long
   def name: String
   def id: Long
@@ -86,6 +86,10 @@ trait Span { self =>
   def annotations: List[Annotation]
   def binaryAnnotations: Seq[BinaryAnnotation]
   def debug: Boolean
+
+  // TODO: cache first timestamp when this is a normal case class as opposed to a trait
+  override def compare(that: Span) =
+    java.lang.Long.compare(firstTimestamp.getOrElse(0L), that.firstTimestamp.getOrElse(0L))
 
   def copy(
     traceId: Long = self.traceId,

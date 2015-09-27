@@ -18,6 +18,7 @@ package com.twitter.zipkin.common
 
 import java.nio.ByteBuffer
 import java.net.{InetAddress, InetSocketAddress}
+import com.google.common.collect.ComparisonChain
 
 /**
  * Represents the client or server machine we traced.
@@ -61,14 +62,9 @@ case class Endpoint(ipv4: Int, port: Short, serviceName: String)
     port & 0xFFFF
   }
 
-  override def compare(that: Endpoint) = {
-    if (serviceName != that.serviceName)
-      serviceName compare that.serviceName
-    else if (ipv4 != that.ipv4)
-      ipv4 compare that.ipv4
-    else if (port != that.port)
-      port compare that.port
-    else
-      0
-  }
+  override def compare(that: Endpoint) = ComparisonChain.start()
+    .compare(serviceName, that.serviceName)
+    .compare(ipv4, that.ipv4)
+    .compare(port, that.port)
+    .result()
 }

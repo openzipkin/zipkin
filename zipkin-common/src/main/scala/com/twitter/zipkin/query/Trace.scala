@@ -34,7 +34,7 @@ object Trace {
 
 case class Trace(private val s: Seq[Span]) {
 
-  lazy val spans = mergeBySpanId(s).toSeq.sortBy(_.firstTimestamp)
+  lazy val spans = mergeBySpanId(s).toList.sorted
 
   /**
    * Find the trace id for this trace.

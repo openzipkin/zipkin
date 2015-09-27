@@ -16,13 +16,17 @@
  */
 package com.twitter.zipkin.common
 
+import com.google.common.collect.ComparisonChain
+import com.google.common.collect.Ordering.natural
+import java.util.Comparator
+
 /**
  * @param timestamp when was this annotation created? microseconds from epoch
  * @param value description of what happened at the timestamp could for example be "cache miss for key: x"
  * @param host host this annotation was created on
  */
 case class Annotation(timestamp: Long, value: String, host: Option[Endpoint])
-  extends Ordered[Annotation]{
+  extends Ordered[Annotation] {
   def serviceName = host.map(_.serviceName).getOrElse("Unknown service name")
 
   /**
@@ -30,8 +34,11 @@ case class Annotation(timestamp: Long, value: String, host: Option[Endpoint])
    */
   def -(annotation: Annotation): Long = timestamp - annotation.timestamp
 
-  import scala.math.Ordered.orderingToOrdered
+  private[this] val nullsFirst: Comparator[Endpoint] = natural().nullsFirst()
 
-  def compare(that: Annotation): Int =
-    (this.timestamp, this.value, this.host) compare (that.timestamp, that.value, that.host)
+  override def compare(that: Annotation) = ComparisonChain.start()
+    .compare(timestamp, that.timestamp)
+    .compare(value, that.value)
+    .compare(host.orNull, that.host.orNull, nullsFirst)
+    .result()
 }

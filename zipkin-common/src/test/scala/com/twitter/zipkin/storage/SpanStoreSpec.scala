@@ -72,10 +72,13 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     )
   }
 
-  @Test def annotationsRetrieveInOrder() {
-    ready(store(Seq(span1.copy(annotations = List(ann3, ann1)))))
+  /** Spans can come out of order, and so can annotations within them */
+  @Test def spansRetrieveInOrder() {
+    ready(store(Seq(span2, span1.copy(annotations = List(ann3, ann1)))))
 
-    result(store.getSpansByTraceIds(Seq(span1.traceId))) should be(Seq(Seq(span1)))
+    result(store.getSpansByTraceIds(Seq(span2.traceId, span1.traceId))) should be(
+      Seq(Seq(span1), Seq(span2))
+    )
   }
 
   @Test def getSpansByTraceIds_empty() {
