@@ -32,6 +32,7 @@ class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExt
 
   case class MustacheRenderer(template: String, data: Map[String, Object]) extends Renderer {
     def apply(response: Response) {
+      response.contentType = "text/html"
       response.contentString = generate
     }
 
