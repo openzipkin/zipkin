@@ -207,7 +207,7 @@ public final class Repository implements AutoCloseable {
 
             BoundStatement bound = insertSpan.bind()
                     .setLong("trace_id", traceId)
-                    .setDate("ts", new Date(timestamp))
+                    .setLong("ts", timestamp)
                     .setString("span_name", spanName)
                     .setBytes("span", span)
                     .setInt("ttl_", ttl);
@@ -429,7 +429,7 @@ public final class Repository implements AutoCloseable {
             BoundStatement bound = selectTraceIdsByServiceName.bind()
                     .setString("service_name", serviceName)
                     .setList("bucket", ALL_BUCKETS)
-                    .setDate("ts", new Date(to))
+                    .setLong("ts", to)
                     .setInt("limit_", limit);
 
             if (LOG.isDebugEnabled()) {
@@ -437,7 +437,7 @@ public final class Repository implements AutoCloseable {
             }
             Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
             for (Row row : session.execute(bound).all()) {
-                traceIdsToTimestamps.put(row.getLong("trace_id"), row.getDate("ts").getTime());
+                traceIdsToTimestamps.put(row.getLong("trace_id"), row.getLong("ts"));
             }
             return traceIdsToTimestamps;
         } catch (RuntimeException ex) {
@@ -449,7 +449,7 @@ public final class Repository implements AutoCloseable {
     private String debugSelectTraceIdsByServiceName(String serviceName, long to, int limit) {
         return selectTraceIdsByServiceName.getQueryString()
                 .replace(":service_name", serviceName)
-                .replace(":ts", new Date(to).toString())
+                .replace(":ts", new Date(to / 1000).toString())
                 .replace(":limit_", String.valueOf(limit));
     }
 
@@ -461,7 +461,7 @@ public final class Repository implements AutoCloseable {
             BoundStatement bound = insertTraceIdByServiceName.bind()
                     .setString("service_name", serviceName)
                     .setInt("bucket", RAND.nextInt(BUCKETS))
-                    .setDate("ts", new Date(timestamp))
+                    .setLong("ts", timestamp)
                     .setLong("trace_id", traceId)
                     .setInt("ttl_", ttl);
 
@@ -478,7 +478,7 @@ public final class Repository implements AutoCloseable {
     private String debugInsertTraceIdByServiceName(String serviceName, long timestamp, long traceId, int ttl) {
         return insertTraceIdByServiceName.getQueryString()
                         .replace(":service_name", serviceName)
-                        .replace(":ts", new Date(timestamp).toString())
+                        .replace(":ts", new Date(timestamp / 1000).toString())
                         .replace(":trace_id", new Date(traceId).toString())
                         .replace(":ttl_", String.valueOf(ttl));
     }
@@ -492,7 +492,7 @@ public final class Repository implements AutoCloseable {
         try {
             BoundStatement bound = selectTraceIdsBySpanName.bind()
                     .setString("service_span_name", serviceSpanName)
-                    .setDate("ts", new Date(to))
+                    .setLong("ts", to)
                     .setInt("limit_", limit);
 
             if (LOG.isDebugEnabled()) {
@@ -500,7 +500,7 @@ public final class Repository implements AutoCloseable {
             }
             Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
             for (Row row : session.execute(bound).all()) {
-                traceIdsToTimestamps.put(row.getLong("trace_id"), row.getDate("ts").getTime());
+                traceIdsToTimestamps.put(row.getLong("trace_id"), row.getLong("ts"));
             }
             return traceIdsToTimestamps;
         } catch (RuntimeException ex) {
@@ -512,7 +512,7 @@ public final class Repository implements AutoCloseable {
     private String debugSelectTraceIdsBySpanName(String serviceSpanName, long to, int limit) {
         return selectTraceIdsByServiceName.getQueryString()
                 .replace(":service_span_name", serviceSpanName)
-                .replace(":ts", new Date(to).toString())
+                .replace(":ts", new Date(to / 1000).toString())
                 .replace(":limit_", String.valueOf(limit));
     }
 
@@ -526,7 +526,7 @@ public final class Repository implements AutoCloseable {
 
             BoundStatement bound = insertTraceIdBySpanName.bind()
                     .setString("service_span_name", serviceSpanName)
-                    .setDate("ts", new Date(timestamp))
+                    .setLong("ts", timestamp)
                     .setLong("trace_id", traceId)
                     .setInt("ttl_", ttl);
 
@@ -553,7 +553,7 @@ public final class Repository implements AutoCloseable {
             BoundStatement bound = selectTraceIdsByAnnotations.bind()
                     .setBytes("annotation", annotationKey)
                     .setList("bucket", ALL_BUCKETS)
-                    .setDate("ts", new Date(from))
+                    .setLong("ts", from)
                     .setInt("limit_", limit);
 
             if (LOG.isDebugEnabled()) {
@@ -561,7 +561,7 @@ public final class Repository implements AutoCloseable {
             }
             Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
             for (Row row : session.execute(bound).all()) {
-                traceIdsToTimestamps.put(row.getLong("trace_id"), row.getDate("ts").getTime());
+                traceIdsToTimestamps.put(row.getLong("trace_id"), row.getLong("ts"));
             }
             return traceIdsToTimestamps;
         } catch (RuntimeException ex) {
@@ -573,7 +573,7 @@ public final class Repository implements AutoCloseable {
     private String debugSelectTraceIdsByAnnotations(ByteBuffer annotationKey, long from, int limit) {
         return selectTraceIdsByAnnotations.getQueryString()
                         .replace(":annotation", new String(Bytes.getArray(annotationKey)))
-                        .replace(":ts", new Date(from).toString())
+                        .replace(":ts", new Date(from / 1000).toString())
                         .replace(":limit_", String.valueOf(limit));
     }
 
@@ -582,7 +582,7 @@ public final class Repository implements AutoCloseable {
             BoundStatement bound = insertTraceIdByAnnotation.bind()
                     .setBytes("annotation", annotationKey)
                     .setInt("bucket", RAND.nextInt(BUCKETS))
-                    .setDate("ts", new Date(timestamp))
+                    .setLong("ts", timestamp)
                     .setLong("trace_id", traceId)
                     .setInt("ttl_", ttl);
 
@@ -599,7 +599,7 @@ public final class Repository implements AutoCloseable {
     private String debugInsertTraceIdByAnnotation(ByteBuffer annotationKey, long timestamp, long traceId, int ttl) {
         return insertTraceIdByAnnotation.getQueryString()
                 .replace(":annotation", new String(Bytes.getArray(annotationKey)))
-                .replace(":ts", new Date(timestamp).toString())
+                .replace(":ts", new Date(timestamp / 1000).toString())
                 .replace(":trace_id", String.valueOf(traceId))
                 .replace(":ttl_", String.valueOf(ttl));
     }
