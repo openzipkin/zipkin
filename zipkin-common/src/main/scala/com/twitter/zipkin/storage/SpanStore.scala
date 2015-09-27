@@ -17,7 +17,6 @@ package com.twitter.zipkin.storage
 
 import java.nio.ByteBuffer
 
-import com.twitter.finagle.{Filter => FFilter}
 import com.twitter.util.FuturePools._
 import com.twitter.util.{Closable, Future}
 import com.twitter.zipkin.Constants
@@ -87,9 +86,8 @@ abstract class SpanStore extends java.io.Closeable {
 }
 
 object SpanStore {
-  type Filter = FFilter[Seq[Span], Unit, Seq[Span], Unit]
 
-  /** Allows [[SpanStore]] to be used with a [[Filter]] */
+  /** Allows [[SpanStore]] to be used with a [[com.twitter.finagle.Filter]] */
   implicit def toScalaFunc(s: SpanStore): (Seq[Span] => Future[Unit]) = {
     return (spans: Seq[Span]) => s.apply(spans)
   }

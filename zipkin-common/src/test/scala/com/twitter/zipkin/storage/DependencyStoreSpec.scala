@@ -57,12 +57,12 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   @Test def getDependencies_endTimeBeforeData() = {
     ready(store.storeDependencies(dep))
 
-    result(store.getDependencies(None, Some(today - day))) should be(Dependencies.monoid.zero)
+    result(store.getDependencies(None, Some(today - day))) should be(Dependencies.zero)
   }
 
   @Test def getDependencies_endTimeAfterData() = {
     ready(store.storeDependencies(dep))
 
-    result(store.getDependencies(None, Some(today + 2 * day))) should be(Dependencies.monoid.zero)
+    result(store.getDependencies(None, Some(today + 2 * day))) should be(Dependencies.zero)
   }
 }

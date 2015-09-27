@@ -1,7 +1,6 @@
 import com.twitter.logging.{ConsoleHandler, Level, LoggerFactory}
 import com.twitter.zipkin.anormdb.{DependencyStoreBuilder, SpanStoreBuilder}
-import com.twitter.zipkin.builder.ZipkinServerBuilder
-import com.twitter.zipkin.collector.builder.{Adjustable, CollectorServiceBuilder}
+import com.twitter.zipkin.collector.builder.{ZipkinServerBuilder, Adjustable, CollectorServiceBuilder}
 import com.twitter.zipkin.receiver.kafka.KafkaSpanReceiverFactory
 import com.twitter.zipkin.storage.Store
 import com.twitter.zipkin.storage.anormdb.{DB, DBConfig, DBParams}

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.base.CaseFormat.{UPPER_CAMEL, UPPER_UNDERSCORE}
 import com.google.common.io.BaseEncoding
 import com.twitter.io.Charsets.Utf8
-import com.twitter.util.Bijection
 import com.twitter.zipkin.common.AnnotationType._
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
 
@@ -16,9 +15,9 @@ case class JsonBinaryAnnotation(key: String,
                                 annotationType: Option[String],
                                 endpoint: Option[JsonEndpoint])
 
-object JsonBinaryAnnotationBijection extends Bijection[BinaryAnnotation, JsonBinaryAnnotation] {
+object JsonBinaryAnnotation extends (BinaryAnnotation => JsonBinaryAnnotation) {
   val base64 = BaseEncoding.base64()
-  val upperCamelBijection = UPPER_UNDERSCORE.converterTo(UPPER_CAMEL)
+  val upperCamel = UPPER_UNDERSCORE.converterTo(UPPER_CAMEL)
 
   def apply(b: BinaryAnnotation) = {
     val (annotationType: Option[String], value: Any) = try {
@@ -35,12 +34,12 @@ object JsonBinaryAnnotationBijection extends Bijection[BinaryAnnotation, JsonBin
     } catch {
       case e: Exception => "Error parsing binary annotation: %s".format(exceptionString(e))
     }
-    JsonBinaryAnnotation(b.key, value, annotationType, b.host.map(JsonServiceBijection))
+    JsonBinaryAnnotation(b.key, value, annotationType, b.host.map(JsonService))
   }
 
-  override def invert(b: JsonBinaryAnnotation) = {
+  def invert(b: JsonBinaryAnnotation) = {
     val annotationType = b.annotationType
-      .map(upperCamelBijection.convert(_))
+      .map(upperCamel.convert(_))
       .map(AnnotationType.fromName(_))
       .getOrElse(b.value match {
       // annotationType is mostly redundant in json, especially as most annotations are strings
@@ -67,7 +66,7 @@ object JsonBinaryAnnotationBijection extends Bijection[BinaryAnnotation, JsonBin
     } catch {
       case e: Exception => ByteBuffer.wrap("Error parsing json binary annotation: %s".format(exceptionString(e)).getBytes(Utf8))
     }
-    new BinaryAnnotation(b.key, bytes, annotationType, b.endpoint.map(JsonServiceBijection.inverse))
+    new BinaryAnnotation(b.key, bytes, annotationType, b.endpoint.map(JsonService.invert))
   }
 
   private[this] def exceptionString(e: Exception) =

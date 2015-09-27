@@ -5,12 +5,13 @@ ext {
     scalaInterfaceVersion = '2.11'
 
     commonVersions = [
-            algebird: '0.11.0',
             finagle: '6.28.0',
+            guava: '16.0.1', // to match finagle
             scrooge: '4.0.0',
             twitterUtil: '6.27.0',
             twitterServer: '1.13.0',
             finatra: '2.0.1',
+            jackson: '2.4.4', // from finatra's build.sbt
             ostrich: '9.11.0',
             griddle: '1.7',
             slf4j: '1.7.2'

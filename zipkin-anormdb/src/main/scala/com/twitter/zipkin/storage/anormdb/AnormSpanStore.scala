@@ -17,17 +17,21 @@ package com.twitter.zipkin.storage.anormdb
 
 import anorm.SqlParser._
 import anorm._
+import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util._
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.storage.anormdb.AnormThreads._
+import com.twitter.zipkin.storage.anormdb.DB.byteArrayToStatement
 import com.twitter.zipkin.storage.{IndexedTraceId, SpanStore}
 import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import java.sql.Connection
-import com.twitter.zipkin.storage.anormdb.DB.byteArrayToStatement
 
-class AnormSpanStore(val db: DB, val openCon: Option[Connection] = None) extends SpanStore with DBPool {
+class AnormSpanStore(val db: DB,
+                     val openCon: Option[Connection] = None,
+                     val stats: StatsReceiver = DefaultStatsReceiver.scope("AnormSpanStore")
+                      ) extends SpanStore with DBPool {
 
   override def apply(spans: Seq[Span]) = Future.join(spans.map(storeSpan))
 

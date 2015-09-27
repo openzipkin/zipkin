@@ -16,10 +16,8 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.algebird.{Monoid, Semigroup}
-
 /**
- * A representation of the fact that one service calls another.  These should be unique across
+ * A representation of the fact that one service calls another. These should be unique across
  * the set of (parent, child)
  * @param parent the calling service
  * @param child the service being called
@@ -27,44 +25,39 @@ import com.twitter.algebird.{Monoid, Semigroup}
  */
 case class DependencyLink(parent: String, child: String, callCount: Long)
 
-object DependencyLink {
-  // this gives us free + operator along with other algebird aggregation methods
-  implicit val sg: Semigroup[DependencyLink] = new Semigroup[DependencyLink] {
-    def plus(l: DependencyLink, r: DependencyLink) = {
-      assert(l.child == r.child && l.parent == r.parent)
-      DependencyLink(l.parent, l.child, l.callCount + r.callCount)
-    }
-  }
-}
-
 /**
  * This represents all dependencies across all services over a given time period.
  * @param startTime microseconds from epoch
  * @param endTime microseconds from epoch
  * @param links link information for every dependent service
  */
-case class Dependencies(
-  startTime: Long,
-  endTime: Long,
-  links: Seq[DependencyLink]
-)
-
-object Dependencies {
+case class Dependencies(startTime: Long, endTime: Long, links: Seq[DependencyLink]) {
   // used for summing/merging database rows
-  implicit val monoid: Monoid[Dependencies] = new Monoid[Dependencies] {
-    def plus(l: Dependencies, r: Dependencies) = {
-      // new start/end should be the inclusive time span of both items
-      val newStart = r.startTime min l.startTime
-      val newEnd = r.endTime max l.endTime
-
-      // links are merged by mapping to parent/child and summing corresponding links
-      val lLinkMap = l.links.map { link => (link.parent, link.child) -> link }.toMap
-      val rLinkMap = r.links.map { link => (link.parent, link.child) -> link }.toMap
-      val newLinks = Monoid.plus(rLinkMap, lLinkMap).values.toSeq
-
-      Dependencies(newStart, newEnd, newLinks)
+  def +(that: Dependencies): Dependencies = {
+    // don't sum against Dependencies.zero
+    if (that == Dependencies.zero) {
+      return this
+    } else if (this == Dependencies.zero) {
+      return that
     }
 
-    val zero = Dependencies(0, 0, Seq.empty[DependencyLink])
+    // new start/end should be the inclusive time span of both items
+    val newStart = startTime min that.startTime
+    val newEnd = endTime max that.endTime
+
+    // links are merged by mapping to parent/child and summing corresponding links
+    val lLinkMap = that.links.map { link => (link.parent, link.child) -> link }.toMap
+    val rLinkMap = links.map { link => (link.parent, link.child) -> link }.toMap
+
+    val merged = lLinkMap.toSeq ++ rLinkMap.toSeq
+    val newLinks = merged.groupBy(_._1) // group by parent/child
+      .mapValues(_.map(_._2).toList) // concatenate values
+      .map({
+      case ((parent, child), links) => DependencyLink(parent, child, links.map(_.callCount).sum)
+    }).toSeq
+    Dependencies(newStart, newEnd, newLinks)
   }
+}
+object Dependencies {
+  val zero = Dependencies(0, 0, Seq.empty[DependencyLink])
 }

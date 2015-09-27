@@ -4,11 +4,6 @@ task run(type:JavaExec) {
    args '-scribeDest', "${tracegenDest}:9410", '-queryDest', "${tracegenDest}:9411"
 }
 
-repositories {
-    // For dependencies of zipkin-cassandra (via zipkin-query-service and zipkin-collector-service)
-    maven { url 'http://conjars.org/repo' }
-}
-
 dependencies {
     compile project(':zipkin-query-service')
     compile project(':zipkin-collector-service')

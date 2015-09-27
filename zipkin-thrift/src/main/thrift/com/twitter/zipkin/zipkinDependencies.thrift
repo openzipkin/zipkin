@@ -46,7 +46,10 @@ service DependencyStore {
       1: Dependencies dependencies
     ) throws (1: DependenciesException e);
 
-    /* Return dependency links in an interval contained by start_time and end_time */
+    /**
+     * Returns dependency links in an interval contained by start_time and end_time,
+     * or Dependencies(0, 0, empty), when none are present.
+     */
     Dependencies getDependencies(
       /* microseconds from epoch, defaults to one day before end_time */
       1: optional i64 start_time,
