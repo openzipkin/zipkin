@@ -177,6 +177,7 @@ class CassandraSpanStore(
         .mapValues { case spans :java.util.List[ByteBuffer] => spans.asScala.map(spanCodec.decode(_).toSpan) }
 
       traceIds.map(traceId => spans.get(traceId)).flatten
+        .sortBy(_.head) // CQL doesn't allow order by with an "in" query
     }
   }
 
@@ -209,7 +210,6 @@ class CassandraSpanStore(
   override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
     QueryGetSpansByTraceIdsStat.add(traceIds.size)
     getSpansByTraceIds(traceIds, maxTraceCols)
-      .map(_.sortBy(t => t.head.firstTimestamp)) // CQL doesn't allow order by with an "in" query
   }
 
   override def getAllServiceNames: Future[Set[String]] = {

@@ -38,12 +38,12 @@ class RedisStorage(
 
   def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] =
     Future.collect(traceIds.map(getSpansByTraceId))
-      .map(_.filter(spans => spans.size > 0)) // prune empties
-      .map(_.sortBy(_.head.firstTimestamp))
+      .map(_.filterNot(_.isEmpty)) // prune empties
+      .map(_.sortBy(_.head)) // sort traces by the first span
 
   private[this] def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
     client.lRange(encodeTraceId(traceId), 0L, -1L) map
-      (_.map(decodeSpan).sortBy(_.firstTimestamp))
+      (_.map(decodeSpan).sorted)
 
   private def decodeSpan(buf: ChannelBuffer): Span = {
     new WrappedSpan(snappyCodec.decode(buf)).toSpan
