@@ -23,13 +23,12 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReferenc
 import com.google.common.collect.EvictingQueue
 import com.twitter.app.App
 import com.twitter.conversions.time._
-import com.twitter.finagle.Service
+import com.twitter.finagle.{Filter, Service}
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.util.DefaultTimer
 import com.twitter.logging.Logger
 import com.twitter.util._
 import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.storage.SpanStore
 
 import scala.reflect.ClassTag
 
@@ -149,7 +148,7 @@ trait AdaptiveSampler { self: App =>
     targetStoreRatePath: String = asBasePath() + "/targetStoreRate",
     stats: StatsReceiver = DefaultStatsReceiver.scope("adaptiveSampler"),
     log: Logger = Logger.get("adaptiveSampler")
-  ): SpanStore.Filter = {
+  ): Filter[Seq[Span], Unit, Seq[Span], Unit] = {
     def translateNode[T](name: String, default: T, f: String => T): Array[Byte] => T = { bytes =>
       if (bytes.length == 0) {
         log.debug("node translator [%s] defaulted to \"%s\"".format(name, default))
@@ -232,7 +231,8 @@ class FlowReportingFilter(
   stats: StatsReceiver = DefaultStatsReceiver.scope("flowReporter"),
   freq: Duration = 30.seconds,
   timer: Timer = DefaultTimer.twitter
-) extends SpanStore.Filter with Closable {
+) extends Filter[Seq[Span], Unit, Seq[Span], Unit] with Closable {
+
   private[this] val spanCount = new AtomicInteger
   private[this] val countGauge = stats.addGauge("spanCount") { spanCount.get }
 

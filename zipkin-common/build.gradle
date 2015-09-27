@@ -1,21 +1,13 @@
 dependencies {
+    compile "com.google.guava:guava:${commonVersions.guava}"
+
+    // for com.twitter.util.Future
     compile "com.twitter:util-core_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
-    compile "com.twitter:algebird-core_${scalaInterfaceVersion}:${commonVersions.algebird}"
-    compile "com.twitter:ostrich_${scalaInterfaceVersion}:${commonVersions.ostrich}"
 
-    compile ("com.twitter.finatra:finatra-jackson_${scalaInterfaceVersion}:${commonVersions.finatra}"){
-        transitive = false // only include strict dependencies of finatra-jackson
-    }
-    compile ("com.twitter.finatra:finatra-utils_${scalaInterfaceVersion}:${commonVersions.finatra}"){ // for WrappedValue
-        transitive = false
-    }
-    compile "com.twitter.inject:inject-core_${scalaInterfaceVersion}:${commonVersions.finatra}"
-    compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda:2.4.4' // from finatra's build.sbt
-
-    compile "com.twitter:finagle-ostrich4_${scalaInterfaceVersion}:${commonVersions.finagle}"
-    compile "com.twitter:finagle-thrift_${scalaInterfaceVersion}:${commonVersions.finagle}"
-    compile "com.twitter:finagle-zipkin_${scalaInterfaceVersion}:${commonVersions.finagle}"
-    compile "com.twitter:finagle-exception_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    // for ZipkinJson
+    compile "com.fasterxml.jackson.core:jackson-annotations:${commonVersions.jackson}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${commonVersions.jackson}"
+    compile "com.fasterxml.jackson.module:jackson-module-scala_${scalaInterfaceVersion}:${commonVersions.jackson}"
 }
 
 task testJar(type: Jar) {

@@ -1,8 +1,10 @@
 package com.twitter.zipkin.json
 
-import com.twitter.finagle.tracing.SpanId
-import com.twitter.util.Bijection
+import com.google.common.io.BaseEncoding
+import com.google.common.primitives.Longs
 import com.twitter.zipkin.common.Span
+
+import scala.util.control.NonFatal
 
 case class JsonSpan(traceId: String, // hex long
                     name: String,
@@ -12,24 +14,35 @@ case class JsonSpan(traceId: String, // hex long
                     binaryAnnotations: Seq[JsonBinaryAnnotation],
                     debug: Option[Boolean] = None)
 
-object JsonSpanBijection extends Bijection[Span, JsonSpan] {
+object JsonSpan extends (Span => JsonSpan) {
   override def apply(s: Span) = new JsonSpan(
-    SpanId(s.traceId).toString(),
+    id(s.traceId),
     s.name,
-    SpanId(s.id).toString(),
-    s.parentId.map(SpanId(_)).map(_.toString()),
-    s.annotations.map(JsonAnnotationBijection),
-    s.binaryAnnotations.map(JsonBinaryAnnotationBijection),
+    id(s.id),
+    s.parentId.map(id(_)),
+    s.annotations.map(JsonAnnotation),
+    s.binaryAnnotations.map(JsonBinaryAnnotation),
     if (s.debug) Some(true) else None
   )
 
-  override def invert(s: JsonSpan) = Span.apply(
-    SpanId.fromString(s.traceId).get.toLong,
+  def invert(s: JsonSpan) = Span.apply(
+    id(s.traceId),
     s.name,
-    SpanId.fromString(s.id).get.toLong,
-    s.parentId.flatMap(SpanId.fromString(_)).map(_.toLong),
-    s.annotations.map(JsonAnnotationBijection.inverse),
-    s.binaryAnnotations.map(JsonBinaryAnnotationBijection.inverse),
+    id(s.id),
+    s.parentId.map(id(_)),
+    s.annotations.map(JsonAnnotation.invert),
+    s.binaryAnnotations.map(JsonBinaryAnnotation.invert),
     s.debug.getOrElse(false)
   )
+
+  private val hex = BaseEncoding.base16().lowerCase()
+
+  private def id(l: Long) = hex.encode(Longs.toByteArray(l))
+
+  private def id(idInHex: String) = try {
+    val array = hex.decode(idInHex)
+    Longs.fromByteArray(array)
+  } catch {
+    case NonFatal(e) => 0L
+  }
 }

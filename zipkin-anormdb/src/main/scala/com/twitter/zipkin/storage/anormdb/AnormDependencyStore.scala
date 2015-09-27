@@ -16,6 +16,7 @@
 
 package com.twitter.zipkin.storage.anormdb
 
+import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.{Future, Time}
 import com.twitter.zipkin.common.{Dependencies, DependencyLink}
 import com.twitter.zipkin.storage.DependencyStore
@@ -31,9 +32,10 @@ import java.util.concurrent.TimeUnit._
  * The top annotations methods are stubbed because they're not currently
  * used anywhere; that feature was never completed.
  */
-case class AnormDependencyStore(
-  val db: DB,
-  val openCon: Option[Connection] = None) extends DependencyStore with DBPool {
+case class AnormDependencyStore(val db: DB,
+                                val openCon: Option[Connection] = None,
+                                val stats: StatsReceiver = DefaultStatsReceiver.scope("AnormDependencyStore")
+                                 ) extends DependencyStore with DBPool {
 
 
   case class DependencyInterval(startMicros: Long, endMicros: Long, startId: Long, endId: Long)
@@ -72,7 +74,7 @@ case class AnormDependencyStore(
         case parent ~ child ~ callCount => new DependencyLink(parent,child, callCount)
       }) *)
       Dependencies(interval.startMicros, interval.endMicros, links)
-    }).getOrElse(Dependencies.monoid.zero)
+    }).getOrElse(Dependencies.zero)
 
     } finally {
       returnConn(conn, borrowTime, "getDependencies")

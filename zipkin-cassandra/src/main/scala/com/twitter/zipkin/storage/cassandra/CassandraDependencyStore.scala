@@ -31,8 +31,9 @@ class CassandraDependencyStore(repository: Repository) extends DependencyStore {
     val dependencies = repository.getDependencies(startEpochDayMillis, endEpochDayMillis).asScala
       .map(codec.decode(_))
       .map(thriftToDependencies(_).toDependencies)
+
     if (dependencies.isEmpty) {
-      Dependencies.monoid.zero
+      Dependencies.zero
     } else {
       val startMicros = dependencies.head.startTime
       val endMicros = dependencies.last.endTime

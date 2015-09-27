@@ -16,10 +16,9 @@
 
 import com.twitter.logging.{ConsoleHandler, Level, LoggerFactory}
 import com.twitter.zipkin.anormdb.{SpanStoreBuilder, DependencyStoreBuilder}
-import com.twitter.zipkin.builder.ZipkinServerBuilder
 import com.twitter.zipkin.receiver.kafka.KafkaSpanReceiverFactory
 import com.twitter.zipkin.storage.anormdb.DB
-import com.twitter.zipkin.collector.builder.{Adjustable, CollectorServiceBuilder}
+import com.twitter.zipkin.collector.builder.{ZipkinServerBuilder, Adjustable, CollectorServiceBuilder}
 import com.twitter.zipkin.storage.Store
 
 val serverPort = sys.env.get("COLLECTOR_PORT").getOrElse("9410").toInt

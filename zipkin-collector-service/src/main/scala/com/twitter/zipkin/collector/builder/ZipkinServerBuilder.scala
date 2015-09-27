@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.zipkin.builder
+package com.twitter.zipkin.collector.builder
 
-import com.twitter.finagle.stats.{StatsReceiver, OstrichStatsReceiver}
-import com.twitter.finagle.tracing.{Tracer, NullTracer}
-import com.twitter.finagle.exception
+import com.twitter.finagle.stats.{OstrichStatsReceiver, StatsReceiver}
 import com.twitter.logging.config._
 import com.twitter.logging.{ConsoleHandler, Logger, LoggerFactory}
 import com.twitter.ostrich.admin._
-import com.twitter.util.{Timer, JavaTimer}
 import java.net.{InetAddress, InetSocketAddress}
+import com.twitter.zipkin.builder.Builder
+
 import scala.util.matching.Regex
 
 /**
@@ -35,10 +34,7 @@ case class ZipkinServerBuilder(
   loggers                 : List[LoggerFactory]      = List(LoggerFactory(level = Some(Level.DEBUG), handlers = List(ConsoleHandler()))),
   adminStatsNodes         : List[StatsFactory]       = List(StatsFactory(reporters = List(TimeSeriesCollectorFactory()))),
   adminStatsFilters       : List[Regex]              = List.empty,
-  statsReceiver           : StatsReceiver            = new OstrichStatsReceiver,
-  tracer                  : Tracer                   = NullTracer,
-  timer                   : Timer                    = new JavaTimer(true),
-  exceptionMonitorFactory : exception.MonitorFactory = exception.NullMonitorFactory
+  statsReceiver           : StatsReceiver            = new OstrichStatsReceiver
 ) extends Builder[(RuntimeEnvironment) => Unit] {
 
   def serverPort(p: Int)                : ZipkinServerBuilder = copy(serverPort        = p)
@@ -46,10 +42,6 @@ case class ZipkinServerBuilder(
   def serverAddress(a: InetAddress)     : ZipkinServerBuilder = copy(serverAddress     = a)
   def loggers(l: List[LoggerFactory])   : ZipkinServerBuilder = copy(loggers           = l)
   def statsReceiver(s: StatsReceiver)   : ZipkinServerBuilder = copy(statsReceiver     = s)
-  def tracer(t: Tracer)                 : ZipkinServerBuilder = copy(tracer            = t)
-  def exceptionMonitorFactory(h: exception.MonitorFactory) : ZipkinServerBuilder
-                                                              = copy(exceptionMonitorFactory = h)
-  def timer(t: Timer)                   : ZipkinServerBuilder = copy(timer             = t)
 
   def addLogger(l: LoggerFactory)       : ZipkinServerBuilder = copy(loggers           = loggers :+ l)
   def addAdminStatsNode(n: StatsFactory): ZipkinServerBuilder = copy(adminStatsNodes   = adminStatsNodes :+ n)

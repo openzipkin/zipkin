@@ -21,7 +21,7 @@ import com.twitter.finagle.ThriftMux
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.{RuntimeEnvironment, ServiceTracker}
-import com.twitter.zipkin.builder.{Builder, ZipkinServerBuilder}
+import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.collector.filter.{SamplerFilter, ServiceStatsFilter}
 import com.twitter.zipkin.collector.sampler.AdjustableGlobalSampler
 import com.twitter.zipkin.collector.{ScribeCollectorInterface, SpanReceiver, ZipkinCollector}

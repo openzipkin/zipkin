@@ -16,7 +16,7 @@
 
 package com.twitter.zipkin.storage.anormdb
 
-import com.twitter.ostrich.stats.Stats
+import com.twitter.finagle.stats.StatsReceiver
 import java.sql.Connection
 
 /**
@@ -25,6 +25,8 @@ import java.sql.Connection
 trait DBPool extends java.io.Closeable {
 
   val db: DB
+
+  val stats: StatsReceiver
 
   // If an open database connection is supplied, it supersedes usage of the connection pool.
   val openCon: Option[Connection]
@@ -60,6 +62,6 @@ trait DBPool extends java.io.Closeable {
     if (openCon.isEmpty) {
       con.close()
     }
-    Stats.addMetric(method + "_msec", (System.currentTimeMillis() - borrowTime).toInt)
+    stats.stat(method + "_msec").add(System.currentTimeMillis() - borrowTime)
   }
 }

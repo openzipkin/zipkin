@@ -1,14 +1,13 @@
 package com.twitter.zipkin.json
 
-import com.twitter.util.Bijection
 import com.twitter.zipkin.common.Annotation
 
 case class JsonAnnotation(timestamp: Long, value: String, endpoint: Option[JsonEndpoint])
 
-object JsonAnnotationBijection extends Bijection[Annotation, JsonAnnotation] {
+object JsonAnnotation extends (Annotation => JsonAnnotation) {
   override def apply(a: Annotation) =
-    JsonAnnotation(a.timestamp, a.value, a.host.map(JsonServiceBijection))
+    JsonAnnotation(a.timestamp, a.value, a.host.map(JsonService))
 
-  override def invert(a: JsonAnnotation) =
-    Annotation(a.timestamp, a.value, a.endpoint.map(JsonServiceBijection.inverse))
+  def invert(a: JsonAnnotation) =
+    Annotation(a.timestamp, a.value, a.endpoint.map(JsonService.invert))
 }

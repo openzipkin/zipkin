@@ -42,7 +42,7 @@ trait ZipkinCollectorFactory {
   def newSpanStore(stats: StatsReceiver): SpanStore
 
   // overwrite in the Main trait to add a SpanStore filter to the SpanStore
-  def spanStoreFilter: SpanStore.Filter = Filter.identity[Seq[Span], Unit]
+  def spanStoreFilter: Filter[Seq[Span], Unit, Seq[Span], Unit] = Filter.identity[Seq[Span], Unit]
 
   def newCollector(stats: StatsReceiver): AwaitableCloser = new AwaitableCloser {
     val store = newSpanStore(stats)

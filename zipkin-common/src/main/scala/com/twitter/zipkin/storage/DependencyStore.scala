@@ -15,9 +15,8 @@
  */
 package com.twitter.zipkin.storage
 
-import com.twitter.algebird.Monoid
 import com.twitter.util.Future
-import com.twitter.zipkin.common.{Dependencies, DependencyLink}
+import com.twitter.zipkin.common.Dependencies
 
 /**
  * Storage and retrieval interface for aggregate dependencies that may be computed offline and
@@ -28,7 +27,8 @@ abstract class DependencyStore extends java.io.Closeable {
   /**
    * @param startTime  microseconds from epoch, defaults to one day before end_time
    * @param endTime  microseconds from epoch, defaults to now
-   * @return dependency links in an interval contained by startTime and endTime
+   * @return dependency links in an interval contained by startTime and endTime,
+   *         or [[Dependencies.zero]] if none are found
    */
   def getDependencies(startTime: Option[Long], endTime: Option[Long] = None): Future[Dependencies]
   def storeDependencies(dependencies: Dependencies): Future[Unit]
@@ -38,6 +38,6 @@ class NullDependencyStore extends DependencyStore {
 
   def close() {}
 
-  def getDependencies(startDate: Option[Long], endDate: Option[Long] = None) = Future(Monoid.zero[Dependencies])
+  def getDependencies(startTime: Option[Long], endTime: Option[Long] = None) = Future.value(Dependencies.zero)
   def storeDependencies(dependencies: Dependencies): Future[Unit] = Future.Unit
 }

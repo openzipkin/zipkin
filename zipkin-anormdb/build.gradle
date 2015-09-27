@@ -4,6 +4,7 @@ javadoc.options.memberLevel = JavadocMemberLevel.PACKAGE
 dependencies {
     compile project(':zipkin-scrooge')
 
+    compile "com.twitter:util-stats_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
     compile "com.typesafe.play:anorm_${scalaInterfaceVersion}:2.3.9" // last version compatible w/ Java 7
     compile "com.zaxxer:HikariCP:2.4.1"
 

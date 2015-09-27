@@ -15,7 +15,6 @@
  */
 package com.twitter.zipkin.query
 
-import com.twitter.finagle.tracing.{Trace => FTrace}
 import com.twitter.zipkin.common.{BinaryAnnotation, Endpoint, Span}
 import java.nio.ByteBuffer
 import scala.collection.mutable
@@ -127,7 +126,6 @@ case class Trace(private val s: Seq[Span]) {
    * @return span id -> depth in the tree
    */
   def toSpanDepths: Option[Map[Long, Int]] = {
-    FTrace.record("toSpanDepths")
     getRootMostSpan match {
       case None => return None
       case Some(s) => {

@@ -16,50 +16,33 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.algebird.{Monoid, Semigroup}
-import org.scalatest.FunSuite
 import java.util.concurrent.TimeUnit.{HOURS, MICROSECONDS}
 
-class DependenciesTest extends FunSuite {
-  test("DependencyLinks") {
-    val callCount1 = 2
-    val callCount2 = 4
-    val d1 = DependencyLink("tfe", "mobileweb", callCount1)
-    val d2 = DependencyLink("tfe", "mobileweb", callCount2)
-    val d3 = DependencyLink("Gizmoduck", "tflock", callCount2)
+import org.scalatest.{FunSuite, Matchers}
 
-    // combine
-    assert(Semigroup.plus(d1, d2) === d1.copy(callCount = callCount1 + callCount2))
+class DependenciesTest extends FunSuite with Matchers {
 
-    // assert if incompatible links are combined
-    intercept[AssertionError] {
-      Semigroup.plus(d1, d3)
-    }
+  val dl1 = DependencyLink("Gizmoduck", "tflock", 4)
+  val dl2 = DependencyLink("mobileweb", "Gizmoduck", 4)
+  val dl3 = DependencyLink("tfe", "mobileweb", 2)
+  val dl4 = DependencyLink("tfe", "mobileweb", 4)
+
+  val deps1 = Dependencies(0L, MICROSECONDS.convert(1, HOURS), List(dl1, dl3))
+  val deps2 = Dependencies(MICROSECONDS.convert(1, HOURS), MICROSECONDS.convert(2, HOURS), List(dl2, dl4))
+
+  test("identity on Dependencies.zero") {
+    deps1 + Dependencies.zero should be(deps1)
+    Dependencies.zero + deps1 should be(deps1)
   }
 
-
-  test("Dependencies") {
-    val callCount1 = 2
-    val callCount2 = 4
-    val dl1 = DependencyLink("tfe", "mobileweb", callCount1)
-    val dl2 = DependencyLink("tfe", "mobileweb", callCount2)
-    val dl3 = DependencyLink("Gizmoduck", "tflock", callCount2)
-    val dl4 = DependencyLink("mobileweb", "Gizmoduck", callCount2)
-    val dl5 = dl1.copy(callCount = callCount1 + callCount2)
-
-    val deps1 = Dependencies(0L, MICROSECONDS.convert(1, HOURS), List(dl1, dl3))
-    val deps2 = Dependencies(MICROSECONDS.convert(1, HOURS), MICROSECONDS.convert(2, HOURS), List(dl2, dl4))
-
-    // express identity when added to zero
-    val result = Monoid.plus(deps1, Monoid.zero[Dependencies])
-    assert(result === deps1)
-
-    // combine
-    val result2 = Monoid.plus(deps1, deps2)
-
-    assert(result2.startTime === 0L)
-    assert(result2.endTime === MICROSECONDS.convert(2, HOURS))
-
-    assert(result2.links == Seq(dl5, dl3, dl4))
+  test("sums where parent/child match") {
+    val result = deps1 + deps2
+    result.startTime should be(deps1.startTime)
+    result.endTime should be(deps2.endTime)
+    result.links.sortBy(_.parent) should be(Seq(
+      dl1,
+      dl2,
+      dl3.copy(callCount = dl3.callCount + dl4.callCount)
+    ))
   }
 }

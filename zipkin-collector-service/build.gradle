@@ -15,12 +15,10 @@ jar.manifest.attributes 'Main-Class': mainClassName
 tasks.build.dependsOn(shadowJar)
 artifacts.zipkinUpload shadowJar
 
-repositories {
-    // For dependencies of zipkin-cassandra
-    maven { url 'http://conjars.org/repo' }
-}
-
 dependencies {
+    compile "com.twitter:finagle-ostrich4_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    compile "com.twitter:finagle-thriftmux_${scalaInterfaceVersion}:${commonVersions.finagle}"
+
     compile project(':zipkin-receiver-kafka')
     compile project(':zipkin-receiver-scribe')
     compile project(':zipkin-cassandra')
