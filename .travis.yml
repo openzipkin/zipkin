@@ -2,7 +2,6 @@ language: java
 sudo: false
 
 services:
-  - cassandra
   - redis-server
 
 matrix:
@@ -40,6 +39,7 @@ env:
 before_install:
   - git config --global user.email "${GH_USER_EMAIL}"
   - git config --global user.name "${GH_USER}"
+  - curl -SL http://downloads.datastax.com/community/dsc-cassandra-2.2.1-bin.tar.gz | tar xz && dsc-cassandra-2.2.1/bin/cassandra
 
 # Skip `./gradlew assemble`
 install: /bin/true
