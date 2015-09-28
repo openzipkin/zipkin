@@ -249,6 +249,8 @@ public final class Repository implements AutoCloseable {
                         .setList("trace_id", Arrays.asList(traceIds))
                         .setInt("limit_", limit);
 
+                bound.setFetchSize(Integer.MAX_VALUE);
+
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(debugSelectTraces(traceIds, limit));
                 }
@@ -432,6 +434,8 @@ public final class Repository implements AutoCloseable {
                     .setLong("ts", to)
                     .setInt("limit_", limit);
 
+            bound.setFetchSize(Integer.MAX_VALUE);
+
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugSelectTraceIdsByServiceName(serviceName, to, limit));
             }
@@ -555,6 +559,8 @@ public final class Repository implements AutoCloseable {
                     .setList("bucket", ALL_BUCKETS)
                     .setLong("ts", from)
                     .setInt("limit_", limit);
+
+            bound.setFetchSize(Integer.MAX_VALUE);
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugSelectTraceIdsByAnnotations(annotationKey, from, limit));
