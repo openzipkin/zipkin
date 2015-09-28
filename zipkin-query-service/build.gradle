@@ -17,15 +17,15 @@ artifacts.zipkinUpload shadowJar
 
 dependencies {
     compile "com.twitter:finagle-ostrich4_${scalaInterfaceVersion}:${commonVersions.finagle}"
-    compile "com.twitter:finagle-thriftmux_${scalaInterfaceVersion}:${commonVersions.finagle}"
     compile "com.twitter:finagle-zipkin_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    compile "ch.qos.logback:logback-core:${commonVersions.logback}"
+    compile "ch.qos.logback:logback-classic:${commonVersions.logback}"
 
     compile project(':zipkin-query')
     compile project(':zipkin-cassandra')
     compile project(':zipkin-redis')
     compile project(':zipkin-anormdb')
     compile anormDriverDependencies["mysql"] // for query-mysql
-    compile "org.slf4j:slf4j-simple:" + commonVersions.slf4j
 }
 
 sourceSets.main.resources.srcDirs += ['config']
