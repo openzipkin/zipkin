@@ -29,10 +29,10 @@ public class SpanTest {
       .name("methodcall")
       .id(456)
       .annotations(asList(
-          Annotation.builder().timestamp(1).value(CLIENT_SEND).host(web).build(),
-          Annotation.builder().timestamp(20).value(CLIENT_SEND).host(web).build()))
+          Annotation.builder().timestamp(1).value(CLIENT_SEND).endpoint(web).build(),
+          Annotation.builder().timestamp(20).value(CLIENT_SEND).endpoint(web).build()))
       .binaryAnnotations(asList(BinaryAnnotation.builder()
           .key("http.uri").value("/foo".getBytes())
-          .type(STRING).host(web).build()))
+          .type(STRING).endpoint(web).build()))
       .build();
 }

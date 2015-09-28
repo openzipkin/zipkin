@@ -19,6 +19,7 @@ import com.facebook.swift.codec.ThriftStruct;
 import com.google.auto.value.AutoValue;
 import java.util.List;
 
+/* An aggregate representation of services paired with every service they call. */
 @AutoValue
 @ThriftStruct(value = "Dependencies", builder = AutoValue_Dependencies.Builder.class)
 public abstract class Dependencies {
@@ -33,11 +34,11 @@ public abstract class Dependencies {
 
   /** microseconds from epoch */
   @ThriftField(value = 1)
-  public abstract long startTime();
+  public abstract long startTimestamp();
 
   /** microseconds from epoch */
   @ThriftField(value = 2)
-  public abstract long endTime();
+  public abstract long endTimestamp();
 
   @ThriftField(value = 3)
   public abstract List<DependencyLink> links();
@@ -46,10 +47,10 @@ public abstract class Dependencies {
   interface Builder {
 
     @ThriftField(value = 1)
-    Builder startTime(long startTime);
+    Builder startTimestamp(long startTimestamp);
 
     @ThriftField(value = 2)
-    Builder endTime(long endTime);
+    Builder endTimestamp(long endTimestamp);
 
     @ThriftField(value = 3)
     Builder links(List<DependencyLink> links);

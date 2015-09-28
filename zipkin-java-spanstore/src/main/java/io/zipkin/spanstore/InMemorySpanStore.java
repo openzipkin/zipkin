@@ -44,9 +44,10 @@ public final class InMemorySpanStore implements SpanStore {
   public synchronized void accept(List<Span> spans) {
     spans.forEach(span -> {
       long traceId = span.traceId();
+      Collections.sort(span.annotations());
       traceIdToSpans.put(span.traceId(), span);
-      span.annotations().stream().filter(a -> a.host() != null)
-          .map(annotation -> annotation.host().serviceName().toLowerCase())
+      span.annotations().stream().filter(a -> a.endpoint() != null)
+          .map(annotation -> annotation.endpoint().serviceName().toLowerCase())
           .forEach(serviceName -> {
             serviceToTraceIds.put(serviceName, traceId);
             serviceToSpanNames.put(serviceName, span.name());
@@ -69,6 +70,7 @@ public final class InMemorySpanStore implements SpanStore {
         .filter(spans -> spans.stream().anyMatch(finalPredicate))
         .limit(request.limit())
         .map(spans -> Trace.create(new ArrayList<>(spans)))
+        .sorted()
         .collect(Collectors.toList());
   }
 
@@ -78,6 +80,7 @@ public final class InMemorySpanStore implements SpanStore {
     return traceIds.stream().map(traceIdToSpans::get)
         .filter(spans -> spans != null)
         .map(spans -> Trace.create(new ArrayList<>(spans)))
+        .sorted()
         .collect(Collectors.toList());
   }
 

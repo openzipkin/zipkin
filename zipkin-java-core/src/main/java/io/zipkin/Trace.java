@@ -21,7 +21,15 @@ import java.util.List;
 
 @AutoValue
 @ThriftStruct(value = "Trace", builder = AutoValue_Trace.Builder.class)
-public abstract class Trace {
+public abstract class Trace implements Comparable<Trace> {
+
+  @Override
+  public int compareTo(Trace that) {
+    if (this == that) {
+      return 0;
+    }
+    return spans().get(0).compareTo(that.spans().get(0));
+  }
 
   public static Trace create(List<Span> spans) {
     return new AutoValue_Trace.Builder().spans(spans).build();

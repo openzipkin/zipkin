@@ -116,10 +116,10 @@ public final class JDBCSpanStore implements SpanStore {
               .set(ZIPKIN_ANNOTATIONS.KEY, annotation.value())
               .set(ZIPKIN_ANNOTATIONS.TYPE, -1)
               .set(ZIPKIN_ANNOTATIONS.TIMESTAMP, annotation.timestamp());
-          if (annotation.host() != null) {
-            insert.set(ZIPKIN_ANNOTATIONS.HOST_IPV4, annotation.host().ipv4());
-            insert.set(ZIPKIN_ANNOTATIONS.HOST_PORT, annotation.host().port());
-            insert.set(ZIPKIN_ANNOTATIONS.HOST_SERVICE_NAME, annotation.host().serviceName());
+          if (annotation.endpoint() != null) {
+            insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, annotation.endpoint().serviceName());
+            insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, annotation.endpoint().ipv4());
+            insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT, annotation.endpoint().port());
           }
           inserts.add(insert.onDuplicateKeyIgnore());
         }
@@ -132,10 +132,10 @@ public final class JDBCSpanStore implements SpanStore {
               .set(ZIPKIN_ANNOTATIONS.VALUE, annotation.value())
               .set(ZIPKIN_ANNOTATIONS.TYPE, annotation.type().value())
               .set(ZIPKIN_ANNOTATIONS.TIMESTAMP, createdTs);
-          if (annotation.host() != null) {
-            insert.set(ZIPKIN_ANNOTATIONS.HOST_IPV4, annotation.host().ipv4());
-            insert.set(ZIPKIN_ANNOTATIONS.HOST_PORT, annotation.host().port());
-            insert.set(ZIPKIN_ANNOTATIONS.HOST_SERVICE_NAME, annotation.host().serviceName());
+          if (annotation.endpoint() != null) {
+            insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, annotation.endpoint().serviceName());
+            insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, annotation.endpoint().ipv4());
+            insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT, annotation.endpoint().port());
           }
           inserts.add(insert.onDuplicateKeyIgnore());
         }
@@ -200,13 +200,13 @@ public final class JDBCSpanStore implements SpanStore {
           List<Annotation> annotations = new ArrayList<>();
           List<BinaryAnnotation> binaryAnnotations = new ArrayList<>();
           for (Record a : dbAnnotations.get(key)) {
-            Endpoint host = host(a);
+            Endpoint endpoint = endpoint(a);
             int type = a.getValue(ZIPKIN_ANNOTATIONS.TYPE);
             if (type == -1) {
               annotations.add(Annotation.builder()
                       .value(a.getValue(ZIPKIN_ANNOTATIONS.KEY))
                       .timestamp(a.getValue(ZIPKIN_ANNOTATIONS.TIMESTAMP))
-                      .host(host)
+                      .endpoint(endpoint)
                       .build()
               );
             } else {
@@ -214,7 +214,7 @@ public final class JDBCSpanStore implements SpanStore {
                   .key(a.getValue(ZIPKIN_ANNOTATIONS.KEY))
                   .value(a.getValue(ZIPKIN_ANNOTATIONS.VALUE))
                   .type(BinaryAnnotation.Type.fromValue(type))
-                  .host(host)
+                  .endpoint(endpoint)
                   .build());
             }
           }
@@ -242,10 +242,10 @@ public final class JDBCSpanStore implements SpanStore {
   public Set<String> getServiceNames() throws QueryException {
     try (Connection conn = datasource.getConnection()) {
       return context(conn)
-          .selectDistinct(ZIPKIN_ANNOTATIONS.HOST_SERVICE_NAME)
+          .selectDistinct(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME)
           .from(ZIPKIN_ANNOTATIONS)
-          .where(ZIPKIN_ANNOTATIONS.HOST_SERVICE_NAME.isNotNull())
-          .fetchSet(ZIPKIN_ANNOTATIONS.HOST_SERVICE_NAME);
+          .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.isNotNull())
+          .fetchSet(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME);
     } catch (SQLException e) {
       throw new QueryException("Error querying for " + e + ": " + e.getMessage());
     }
@@ -261,7 +261,7 @@ public final class JDBCSpanStore implements SpanStore {
           .join(ZIPKIN_ANNOTATIONS)
           .on(ZIPKIN_SPANS.TRACE_ID.eq(ZIPKIN_ANNOTATIONS.TRACE_ID))
           .and(ZIPKIN_SPANS.ID.eq(ZIPKIN_ANNOTATIONS.SPAN_ID))
-          .where(ZIPKIN_ANNOTATIONS.HOST_SERVICE_NAME.eq(serviceName))
+          .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(serviceName))
           .fetchSet(ZIPKIN_SPANS.NAME);
     } catch (SQLException e) {
       throw new QueryException("Error querying for " + serviceName + ": " + e.getMessage());
@@ -280,11 +280,11 @@ public final class JDBCSpanStore implements SpanStore {
     }
   }
 
-  static Endpoint host(Record a) {
-    String serviceName = a.getValue(ZIPKIN_ANNOTATIONS.HOST_SERVICE_NAME);
+  static Endpoint endpoint(Record a) {
+    String serviceName = a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME);
     return serviceName != null ? Endpoint.builder()
-        .ipv4(a.getValue(ZIPKIN_ANNOTATIONS.HOST_IPV4))
-        .port(a.getValue(ZIPKIN_ANNOTATIONS.HOST_PORT))
+        .ipv4(a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4))
+        .port(a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT))
         .serviceName(serviceName).build() : null;
   }
 
@@ -309,7 +309,7 @@ public final class JDBCSpanStore implements SpanStore {
     }
 
     SelectConditionStep<?> dsl = context.select(ZIPKIN_SPANS.fields()).from(table)
-        .where(ZIPKIN_ANNOTATIONS.HOST_SERVICE_NAME.eq(request.serviceName()))
+        .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(request.serviceName()))
         .and(ZIPKIN_SPANS.FIRST_TIMESTAMP.lessThan(endTs));
 
     if (request.spanName() != null) {

@@ -41,7 +41,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinDependencies extends TableImpl<Record> {
 
-	private static final long serialVersionUID = -1158801801;
+	private static final long serialVersionUID = 36801473;
 
 	/**
 	 * The reference instance of <code>zipkin.zipkin_dependencies</code>
@@ -62,14 +62,14 @@ public class ZipkinDependencies extends TableImpl<Record> {
 	public final TableField<Record, Long> DLID = createField("dlid", org.jooq.impl.SQLDataType.BIGINT.nullable(false), this, "");
 
 	/**
-	 * The column <code>zipkin.zipkin_dependencies.start_ts</code>.
+	 * The column <code>zipkin.zipkin_dependencies.start_timestamp</code>.
 	 */
-	public final TableField<Record, Long> START_TS = createField("start_ts", org.jooq.impl.SQLDataType.BIGINT.nullable(false), this, "");
+	public final TableField<Record, Long> START_TIMESTAMP = createField("start_timestamp", org.jooq.impl.SQLDataType.BIGINT.nullable(false), this, "");
 
 	/**
-	 * The column <code>zipkin.zipkin_dependencies.end_ts</code>.
+	 * The column <code>zipkin.zipkin_dependencies.end_timestamp</code>.
 	 */
-	public final TableField<Record, Long> END_TS = createField("end_ts", org.jooq.impl.SQLDataType.BIGINT.nullable(false), this, "");
+	public final TableField<Record, Long> END_TIMESTAMP = createField("end_timestamp", org.jooq.impl.SQLDataType.BIGINT.nullable(false), this, "");
 
 	/**
 	 * Create a <code>zipkin.zipkin_dependencies</code> table reference

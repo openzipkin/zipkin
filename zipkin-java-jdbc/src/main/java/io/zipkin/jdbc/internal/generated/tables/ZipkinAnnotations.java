@@ -41,7 +41,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinAnnotations extends TableImpl<Record> {
 
-	private static final long serialVersionUID = -1070710326;
+	private static final long serialVersionUID = 968602035;
 
 	/**
 	 * The reference instance of <code>zipkin.zipkin_annotations</code>
@@ -67,9 +67,9 @@ public class ZipkinAnnotations extends TableImpl<Record> {
 	public final TableField<Record, Long> SPAN_ID = createField("span_id", org.jooq.impl.SQLDataType.BIGINT.nullable(false), this, "coincides with zipkin_spans.span_id");
 
 	/**
-	 * The column <code>zipkin.zipkin_annotations.key</code>. BinaryAnnotation.key() or Annotation.value() if a_type == -1
+	 * The column <code>zipkin.zipkin_annotations.key</code>. BinaryAnnotation.key or Annotation.value if type == -1
 	 */
-	public final TableField<Record, String> KEY = createField("key", org.jooq.impl.SQLDataType.VARCHAR.length(255).nullable(false), this, "BinaryAnnotation.key() or Annotation.value() if a_type == -1");
+	public final TableField<Record, String> KEY = createField("key", org.jooq.impl.SQLDataType.VARCHAR.length(255).nullable(false), this, "BinaryAnnotation.key or Annotation.value if type == -1");
 
 	/**
 	 * The column <code>zipkin.zipkin_annotations.value</code>. BinaryAnnotation.value(), which must be smaller than 64KB
@@ -82,24 +82,24 @@ public class ZipkinAnnotations extends TableImpl<Record> {
 	public final TableField<Record, Integer> TYPE = createField("type", org.jooq.impl.SQLDataType.INTEGER.nullable(false), this, "BinaryAnnotation.type() or -1 if Annotation");
 
 	/**
-	 * The column <code>zipkin.zipkin_annotations.timestamp</code>. Used to implement TTL; Annotation.timestamp() or zipkin_spans.timestamp_micros
+	 * The column <code>zipkin.zipkin_annotations.timestamp</code>. Used to implement TTL; Annotation.timestamp or zipkin_spans.timestamp
 	 */
-	public final TableField<Record, Long> TIMESTAMP = createField("timestamp", org.jooq.impl.SQLDataType.BIGINT, this, "Used to implement TTL; Annotation.timestamp() or zipkin_spans.timestamp_micros");
+	public final TableField<Record, Long> TIMESTAMP = createField("timestamp", org.jooq.impl.SQLDataType.BIGINT, this, "Used to implement TTL; Annotation.timestamp or zipkin_spans.timestamp");
 
 	/**
-	 * The column <code>zipkin.zipkin_annotations.host_ipv4</code>. Null when Binary/Annotation.host() is null
+	 * The column <code>zipkin.zipkin_annotations.endpoint_ipv4</code>. Null when Binary/Annotation.endpoint is null
 	 */
-	public final TableField<Record, Integer> HOST_IPV4 = createField("host_ipv4", org.jooq.impl.SQLDataType.INTEGER, this, "Null when Binary/Annotation.host() is null");
+	public final TableField<Record, Integer> ENDPOINT_IPV4 = createField("endpoint_ipv4", org.jooq.impl.SQLDataType.INTEGER, this, "Null when Binary/Annotation.endpoint is null");
 
 	/**
-	 * The column <code>zipkin.zipkin_annotations.host_port</code>. Null when Binary/Annotation.host() is null
+	 * The column <code>zipkin.zipkin_annotations.endpoint_port</code>. Null when Binary/Annotation.endpoint is null
 	 */
-	public final TableField<Record, Short> HOST_PORT = createField("host_port", org.jooq.impl.SQLDataType.SMALLINT, this, "Null when Binary/Annotation.host() is null");
+	public final TableField<Record, Short> ENDPOINT_PORT = createField("endpoint_port", org.jooq.impl.SQLDataType.SMALLINT, this, "Null when Binary/Annotation.endpoint is null");
 
 	/**
-	 * The column <code>zipkin.zipkin_annotations.host_service_name</code>. Null when Binary/Annotation.host() is null
+	 * The column <code>zipkin.zipkin_annotations.endpoint_service_name</code>. Null when Binary/Annotation.endpoint is null
 	 */
-	public final TableField<Record, String> HOST_SERVICE_NAME = createField("host_service_name", org.jooq.impl.SQLDataType.VARCHAR.length(255), this, "Null when Binary/Annotation.host() is null");
+	public final TableField<Record, String> ENDPOINT_SERVICE_NAME = createField("endpoint_service_name", org.jooq.impl.SQLDataType.VARCHAR.length(255), this, "Null when Binary/Annotation.endpoint is null");
 
 	/**
 	 * Create a <code>zipkin.zipkin_annotations</code> table reference

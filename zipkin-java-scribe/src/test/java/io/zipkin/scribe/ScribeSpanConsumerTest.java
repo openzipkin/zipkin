@@ -60,22 +60,22 @@ public class ScribeSpanConsumerTest {
                 Annotation.builder()
                     .timestamp(1442493420635000L)
                     .value(Constants.SERVER_RECV)
-                    .host(zipkinQuery)
+                    .endpoint(zipkinQuery)
                     .build(),
                 Annotation.builder()
                     .timestamp(1442493420747000L)
                     .value(reallyLongAnnotation)
-                    .host(zipkinQuery)
+                    .endpoint(zipkinQuery)
                     .build(),
                 Annotation.builder()
                     .timestamp(1442493422583586L)
                     .value("Gc(9,0.PSScavenge,2015-09-17 12:37:02 +0000,304.milliseconds+762.microseconds)")
-                    .host(zipkinQuery)
+                    .endpoint(zipkinQuery)
                     .build(),
                 Annotation.builder()
                     .timestamp(1442493422680000L)
                     .value(Constants.SERVER_SEND)
-                    .host(zipkinQuery)
+                    .endpoint(zipkinQuery)
                     .build()
             ))
             .binaryAnnotations(asList(
@@ -83,31 +83,31 @@ public class ScribeSpanConsumerTest {
                     .key("srv/finagle.version")
                     .value(new byte[]{'6', '.', '2', '8', '.', '0'})
                     .type(BinaryAnnotation.Type.STRING)
-                    .host(Endpoint.builder(zipkinQuery).port((short) 0).build())
+                    .endpoint(Endpoint.builder(zipkinQuery).port((short) 0).build())
                     .build(),
                 BinaryAnnotation.builder()
                     .key("srv/mux/enabled")
                     .value(new byte[]{1})
                     .type(BinaryAnnotation.Type.BOOL)
-                    .host(Endpoint.builder(zipkinQuery).port((short) 0).build())
+                    .endpoint(Endpoint.builder(zipkinQuery).port((short) 0).build())
                     .build(),
                 BinaryAnnotation.builder()
                     .key(Constants.SERVER_ADDR)
                     .value(new byte[]{1})
                     .type(BinaryAnnotation.Type.BOOL)
-                    .host(zipkinQuery).build(),
+                    .endpoint(zipkinQuery).build(),
                 BinaryAnnotation.builder()
                     .key(Constants.CLIENT_ADDR)
                     .value(new byte[]{1})
                     .type(BinaryAnnotation.Type.BOOL)
-                    .host(Endpoint.builder(zipkinQuery)
+                    .endpoint(Endpoint.builder(zipkinQuery)
                         .port(/* Notice high port numbers go negative! */ (short) -1696).build())
                     .build(),
                 BinaryAnnotation.builder()
                     .key("numIds") // odd annotation added by legacy zipkin query server
                     .value(new byte[]{0, 0, 0, 1})
                     .type(BinaryAnnotation.Type.I32)
-                    .host(zipkinQuery).build()
+                    .endpoint(zipkinQuery).build()
             ))
             .debug(false)
             .build());

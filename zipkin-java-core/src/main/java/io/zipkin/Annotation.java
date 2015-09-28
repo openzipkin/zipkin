@@ -23,7 +23,15 @@ import static com.facebook.swift.codec.ThriftField.Requiredness.OPTIONAL;
 
 @AutoValue
 @ThriftStruct(value = "Annotation", builder = AutoValue_Annotation.Builder.class)
-public abstract class Annotation {
+public abstract class Annotation implements Comparable<Annotation> {
+
+  @Override
+  public int compareTo(Annotation that) {
+    if (this == that) {
+      return 0;
+    }
+    return Long.compare(timestamp(), that.timestamp());
+  }
 
   public static Builder builder() {
     return new AutoValue_Annotation.Builder();
@@ -44,16 +52,13 @@ public abstract class Annotation {
   /**
    * The endpoint associated with this annotation depends on {@link #value()}.
    *
-   * <p/>When {@link #value()} is...
-   * <ul>
-   *   <li>{@link Constants#CLIENT_ADDR}, this is the client endpoint of an RPC call</li>
-   *   <li>{@link Constants#SERVER_ADDR}, this is the server endpoint of an RPC call</li>
-   *   <li>Otherwise, this is the endpoint that recorded this annotation</li>
-   * </ul
+   * <p/>When {@link #value()} is... <ul> <li>{@link Constants#CLIENT_ADDR}, this is the client
+   * endpoint of an RPC call</li> <li>{@link Constants#SERVER_ADDR}, this is the server endpoint of
+   * an RPC call</li> <li>Otherwise, this is the endpoint that recorded this annotation</li> </ul
    */
   @Nullable
   @ThriftField(value = 3, requiredness = OPTIONAL)
-  public abstract Endpoint host();
+  public abstract Endpoint endpoint();
 
   @AutoValue.Builder
   public interface Builder {
@@ -65,7 +70,7 @@ public abstract class Annotation {
     Builder value(String value);
 
     @ThriftField(value = 3, requiredness = OPTIONAL)
-    Builder host(Endpoint host);
+    Builder endpoint(Endpoint endpoint);
 
     @ThriftConstructor
     Annotation build();

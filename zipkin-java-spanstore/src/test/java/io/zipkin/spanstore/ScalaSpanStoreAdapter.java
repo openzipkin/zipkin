@@ -60,6 +60,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
   public Future<Seq<Seq<Span>>> getSpansByTraceIds(Seq<Object> traceIds) {
     final List<Long> input = new ArrayList<>(traceIds.size());
     for (Iterator<Object> i = traceIds.iterator(); i.hasNext(); input.add((Long) i.next())) ;
+    List<Trace> foo = spanStore.getTracesByIds(input, false);
     return Future.value(
         JavaConversions.asScalaBuffer(spanStore.getTracesByIds(input, false).stream()
             .map(t -> JavaConversions.asScalaBuffer(

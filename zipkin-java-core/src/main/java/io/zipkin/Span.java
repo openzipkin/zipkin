@@ -24,7 +24,17 @@ import static com.facebook.swift.codec.ThriftField.Requiredness.OPTIONAL;
 
 @AutoValue
 @ThriftStruct(value = "Span", builder = AutoValue_Span.Builder.class)
-public abstract class Span {
+public abstract class Span implements Comparable<Span> {
+
+  @Override
+  public int compareTo(Span that) {
+    if (this == that){
+      return 0;
+    }
+    long left = annotations().isEmpty() ? 0L : annotations().get(0).timestamp();
+    long right = that.annotations().isEmpty() ? 0L : that.annotations().get(0).timestamp();
+    return Long.compare(left, right);
+  }
 
   public static Builder builder() {
     return new AutoValue_Span.Builder();

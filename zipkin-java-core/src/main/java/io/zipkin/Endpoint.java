@@ -33,7 +33,15 @@ public abstract class Endpoint {
   }
 
   /**
-   * IPv4 host address packed into 4 bytes.
+   * Service name, such as "memcache" or "zipkin-web"
+   *
+   * <p/>Note: Some implementations set this to "Unknown" or "Unknown Service"
+   */
+  @ThriftField(value = 3)
+  public abstract String serviceName();
+
+  /**
+   * IPv4 endpoint address packed into 4 bytes.
    *
    * <p/>Ex for the IP 1.2.3.4, it would be {@code (1 << 24) | (2 << 16) | (3 << 8) | 4}
    *
@@ -52,25 +60,17 @@ public abstract class Endpoint {
   @ThriftField(value = 2)
   public abstract short port();
 
-  /**
-   * Service name, such as "memcache" or "zipkin-web"
-   *
-   * <p/>Note: Some implementations set this to "Unknown"
-   */
-  @ThriftField(value = 3)
-  public abstract String serviceName();
-
   @AutoValue.Builder
   public interface Builder {
 
-    @ThriftField
+    @ThriftField(value = 3)
+    Builder serviceName(String serviceName);
+
+    @ThriftField(value = 1)
     Builder ipv4(int ipv4);
 
-    @ThriftField
+    @ThriftField(value = 2)
     Builder port(short port);
-
-    @ThriftField
-    Builder serviceName(String serviceName);
 
     @ThriftConstructor
     Endpoint build();

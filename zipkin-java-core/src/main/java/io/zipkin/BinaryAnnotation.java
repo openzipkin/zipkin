@@ -83,7 +83,7 @@ public abstract class BinaryAnnotation {
   /** The endpoint that recorded this annotation */
   @Nullable
   @ThriftField(value = 4, requiredness = OPTIONAL)
-  public abstract Endpoint host();
+  public abstract Endpoint endpoint();
 
   @AutoValue.Builder
   public interface Builder {
@@ -99,7 +99,7 @@ public abstract class BinaryAnnotation {
 
     @Nullable
     @ThriftField(value = 4, requiredness = OPTIONAL)
-    Builder host(Endpoint host);
+    Builder endpoint(Endpoint endpoint);
 
     @ThriftConstructor
     BinaryAnnotation build();

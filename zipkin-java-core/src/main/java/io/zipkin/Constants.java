@@ -29,13 +29,13 @@ public final class Constants {
 
   /**
    * The endpoint associated with "CLIENT_" annotations is not necessarily {@link
-   * Annotation#host()}
+   * Annotation#endpoint()}
    */
   public static final String CLIENT_ADDR = "ca";
 
   /**
    * The endpoint associated with "SERVER_" annotations is not necessarily {@link
-   * Annotation#host()}
+   * Annotation#endpoint()}
    */
   public static final String SERVER_ADDR = "sa";
 

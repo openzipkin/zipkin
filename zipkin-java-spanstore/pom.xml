@@ -61,9 +61,11 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- for spansRetrieveInOrder TODO: change the test to not use this -->
     <dependency>
-      <groupId>io.zipkin</groupId>
-      <artifactId>zipkin-common</artifactId>
+      <groupId>org.scala-lang.modules</groupId>
+      <artifactId>scala-xml_2.11</artifactId>
+      <version>1.0.5</version>
       <scope>test</scope>
     </dependency>
 

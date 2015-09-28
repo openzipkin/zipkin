@@ -63,15 +63,15 @@ public abstract class SpanStoreTest {
       .port((short) 3306)
       .serviceName("db").build();
 
-  Annotation webSR = Annotation.builder().timestamp(10).value(SERVER_RECV).host(web).build();
-  Annotation webCustom = Annotation.builder().timestamp(10).value("finagle.retry").host(web).build();
+  Annotation webSR = Annotation.builder().timestamp(10).value(SERVER_RECV).endpoint(web).build();
+  Annotation webCustom = Annotation.builder().timestamp(10).value("finagle.retry").endpoint(web).build();
   BinaryAnnotation httpUri = BinaryAnnotation.builder()
       .key("http.uri").value("/foo".getBytes())
-      .type(BinaryAnnotation.Type.STRING).host(web).build();
+      .type(BinaryAnnotation.Type.STRING).endpoint(web).build();
   Annotation webSS = Annotation.builder(webSR).timestamp(21).value(SERVER_SEND).build();
   BinaryAnnotation httpResponse = BinaryAnnotation.builder()
       .key("http.responseCode").value(new byte[] {0, (byte) 200})
-      .type(BinaryAnnotation.Type.I16).host(web).build();
+      .type(BinaryAnnotation.Type.I16).endpoint(web).build();
   List<Span> collection1 = asList(
       Span.builder()
           .traceId(1L)
@@ -91,7 +91,7 @@ public abstract class SpanStoreTest {
 
   long afterWebSS = webSS.timestamp() + 1;
 
-  Annotation webCS = Annotation.builder().timestamp(12).value(CLIENT_SEND).host(web).build();
+  Annotation webCS = Annotation.builder().timestamp(12).value(CLIENT_SEND).endpoint(web).build();
   Annotation webCR = Annotation.builder(webCS).timestamp(20).value(CLIENT_RECV).build();
   List<Span> collection2 = asList(
       Span.builder()
@@ -112,7 +112,7 @@ public abstract class SpanStoreTest {
           .build()
   );
 
-  Annotation appSR = Annotation.builder().timestamp(14).value(SERVER_RECV).host(app).build();
+  Annotation appSR = Annotation.builder().timestamp(14).value(SERVER_RECV).endpoint(app).build();
   Annotation appSS = Annotation.builder(appSR).timestamp(18).value(SERVER_SEND).build();
   List<Span> collection3 = asList(
       Span.builder()
@@ -133,7 +133,7 @@ public abstract class SpanStoreTest {
           .build()
   );
 
-  Annotation dbSR = Annotation.builder().timestamp(13).value(SERVER_RECV).host(db).build();
+  Annotation dbSR = Annotation.builder().timestamp(13).value(SERVER_RECV).endpoint(db).build();
   Annotation dbSS = Annotation.builder(dbSR).timestamp(15).value(SERVER_SEND).build();
   List<Span> collection4 = asList(
       Span.builder()
