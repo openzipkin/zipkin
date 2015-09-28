@@ -18,6 +18,7 @@ dependencies {
     compile "com.twitter:twitter-server_${scalaInterfaceVersion}:${commonVersions.twitterServer}"
     compile 'com.github.spullara.mustache.java:compiler:0.8.17'
     compile "org.slf4j:slf4j-simple:" + commonVersions.slf4j
+    compile "com.twitter.finatra:finatra-httpclient_${scalaInterfaceVersion}:${commonVersions.finatra}"
 
     compile "com.twitter:finagle-exception_${scalaInterfaceVersion}:${commonVersions.finagle}"
     compile "com.twitter:finagle-thriftmux_${scalaInterfaceVersion}:${commonVersions.finagle}"

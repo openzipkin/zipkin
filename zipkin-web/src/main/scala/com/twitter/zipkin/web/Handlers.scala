@@ -1,27 +1,35 @@
 package com.twitter.zipkin.web
 
-import com.fasterxml.jackson.databind.ObjectMapper
+
 import com.google.common.io.ByteStreams
-import com.twitter.finagle.httpx.{Request, Response}
+import com.twitter.finagle.httpx.{ParamMap, Request, Response}
 import com.twitter.finagle.stats.{Stat, StatsReceiver}
 import com.twitter.finagle.tracing.SpanId
-import com.twitter.finagle.{Filter, Service, SimpleFilter}
+import com.twitter.finagle.{Filter, Service}
+import com.twitter.finatra.httpclient.HttpClient
 import com.twitter.io.Buf
 import com.twitter.util.Future
 import com.twitter.zipkin.json._
-import com.twitter.zipkin.web.mustache.ZipkinMustache
-import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.query._
-import com.twitter.zipkin.thriftscala.{DependencyStore, QueryRequest, ZipkinQuery}
-import com.twitter.zipkin.{Constants => ZConstants}
 import java.io.{File, FileInputStream, InputStream}
+import com.twitter.zipkin.query._
+import com.twitter.zipkin.web.mustache.ZipkinMustache
+import com.twitter.zipkin.{Constants => ZConstants}
+import org.jboss.netty.handler.codec.http.QueryStringEncoder
 
 import scala.annotation.tailrec
+import scala.collection.immutable.SortedSet
 
-class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor) {
+class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor) {
   import Util._
 
   type Renderer = (Response => Unit)
+
+  case class CopyRenderer(input: Response) extends Renderer {
+    def apply(response: Response) {
+      response.contentString = input.contentString
+      response.statusCode = input.statusCode
+    }
+  }
 
   case class ErrorRenderer(code: Int, msg: String) extends Renderer {
     def apply(response: Response) {
@@ -39,13 +47,6 @@ class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExt
     def generate = mustacheGenerator.render(template, data)
   }
 
-  case class JsonRenderer(data: Any) extends Renderer {
-    def apply(response: Response) {
-      response.setContentTypeJson()
-      response.contentString = mapper.writeValueAsString(data)
-    }
-  }
-
   case class StaticRenderer(input: InputStream, typ: String) extends Renderer {
     private[this] val content = {
       val bytes = ByteStreams.toByteArray(input)
@@ -61,15 +62,6 @@ class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExt
 
   private[this] val EmptyTraces = Future.value(Seq.empty[TraceSummary])
   private[this] val NotFound = Future.value(ErrorRenderer(404, "Not Found"))
-
-  private[this] def query(
-    client: ZipkinQuery[Future],
-    queryRequest: QueryRequest
-  ): Future[Seq[TraceSummary]] = {
-    client.getTraces(queryRequest) map { traces =>
-      traces.flatMap(t => TraceSummary(Trace(t.spans.map { _.toSpan })))
-    }
-  }
 
   def collectStats(stats: StatsReceiver): Filter[Request, Response, Request, Response] =
     Filter.mk[Request, Response, Request, Response] { (req, svc) =>
@@ -120,16 +112,6 @@ class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExt
       }
     }
 
-  val requireServiceName =
-    new SimpleFilter[Request, Renderer] {
-      private[this] val Err = Future.value(ErrorRenderer(401, "Service name required"))
-      def apply(req: Request, svc: Service[Request, Renderer]): Future[Renderer] =
-        req.params.get("serviceName") match {
-          case Some(_) => svc(req)
-          case None => Err
-        }
-    }
-
   def handlePublic(
     resourceDirs: Set[String],
     typesMap: Map[String, String],
@@ -150,8 +132,8 @@ class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExt
           synchronized {
             rendererCache.get(path) orElse {
               resourceDirs find(path.startsWith) flatMap { _ =>
-                val typ = typesMap find { case (n, _) => path.endsWith(n) } map { _._2 } getOrElse("text/plain")
-                 getStream(path) map { input =>
+                  val typ = typesMap find { case (n, _) => path.endsWith(n) } map { _._2 } getOrElse("text/plain")
+                   getStream(path) map { input =>
                   val renderer = Future.value(StaticRenderer(input, typ))
                   if (docRoot.isEmpty) rendererCache += (path -> renderer)
                   renderer
@@ -179,6 +161,7 @@ class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExt
     spanCount: Int,
     serviceDurations: Seq[MustacheServiceDuration],
     width: Int)
+
   case class MustacheTraceId(id: String)
 
   @tailrec
@@ -233,15 +216,22 @@ class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExt
       ("count" -> traces.size))
   }
 
-  def handleIndex(client: ZipkinQuery[Future]): Service[Request, Renderer] =
+  def handleIndex(client: HttpClient): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
-      val serviceName = req.params.get("serviceName")
-      val spanName = req.params.get("spanName")
-      val qr = queryExtractor(req)
-      val qResults = qr map { query(client, _) } getOrElse { EmptyTraces }
-      val spanResults = serviceName map(client.getSpanNames(_)) getOrElse(Future.value(Seq.empty))
-
-      for (services <- client.getServiceNames(); results <- qResults; spans <- spanResults) yield {
+      val serviceName = req.params.get("serviceName").filterNot(_ == "")
+      val spanName = req.params.get("spanName").filterNot(_ == "")
+      val qResults = serviceName match {
+        case Some(service) => route[Seq[Seq[JsonSpan]]](client, "/api/v1/traces", req.params)
+          .map(traces => traces.map(_.map(JsonSpan.invert))
+          .map(Trace.apply(_)).flatMap(TraceSummary(_).toSeq))
+        case None => EmptyTraces
+      }
+      val spanResults = serviceName match {
+        case Some(service) => client.executeJson[SortedSet[String]](Request(s"/api/v1/traces?serviceName=${serviceName}"))
+        case None => Future.value(Seq.empty[String])
+      }
+      val serviceResults = client.executeJson[SortedSet[String]](Request(s"/api/v1/services"))
+      for (services <- serviceResults; results <- qResults; spans <- spanResults) yield {
         val svcList = services.toList.sorted map {
           svc => Map("name" -> svc, "selected" -> (if (Some(svc) == serviceName) "selected" else ""))
         }
@@ -250,15 +240,15 @@ class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExt
         }
 
         var data = Map[String, Object](
+          ("serviceName" -> serviceName),
           ("timestamp" -> queryExtractor.getTimestampStr(req)),
           ("annotationQuery" -> req.params.get("annotationQuery").getOrElse("")),
           ("services" -> svcList),
           ("spans" -> spanList),
           ("limit" -> queryExtractor.getLimitStr(req)))
 
-        qr foreach { qReq =>
+        queryExtractor(req) foreach { qReq =>
           data ++= Map(
-            ("serviceName" -> qReq.serviceName),
             ("queryResults" -> traceSummaryToMustache(serviceName, results)),
             ("annotations" -> qReq.annotations),
             ("binaryAnnotations" -> qReq.binaryAnnotations))
@@ -267,46 +257,31 @@ class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExt
       }
     }
 
-  def handleDependency(client: ZipkinQuery[Future]) : Service[Request, MustacheRenderer] =
-    Service.mk[Request, MustacheRenderer] { req =>
-      val data = Map[String,Object]()
-      Future(MustacheRenderer("v2/dependency.mustache", data))
-    }
-
-  // API Endpoints
-
-  def handleQuery(client: ZipkinQuery[Future]): Service[Request, Renderer] =
+  def handleRoute(client: HttpClient, baseUri: String): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
-      val res = queryExtractor(req) match {
-        case Some(qr) => query(client, qr)
-        case None => EmptyTraces
+      val encoder = new QueryStringEncoder(baseUri)
+      req.params.foreach { case (key, value) =>
+        encoder.addParam(key, value)
       }
-      res map { JsonRenderer(_) }
+      client.execute(Request(encoder.toString)).map(CopyRenderer)
     }
 
-  def handleServices(client: ZipkinQuery[Future]): Service[Request, Renderer] =
-    Service.mk[Request, Renderer] { _ => client.getServiceNames().map(_.toList.sorted).map(JsonRenderer(_))
+
+  private[this] def route[T: Manifest](client: HttpClient, baseUri: String, params: ParamMap) = {
+    val encoder = new QueryStringEncoder(baseUri)
+    params.foreach { case (key, value) =>
+      encoder.addParam(key, value)
+    }
+    client.executeJson[T](Request(encoder.toString))
   }
 
-  def handleSpans(client: ZipkinQuery[Future]): Service[Request, Renderer] =
-    Service.mk[Request, Renderer] { req =>
-      client.getSpanNames(req.params("serviceName")).map(_.toList.sorted).map(JsonRenderer(_))
+  def handleDependency(): Service[Request, MustacheRenderer] =
+    Service.mk[Request, MustacheRenderer] { req =>
+      Future(MustacheRenderer("v2/dependency.mustache", Map[String, Object]()))
     }
 
-  def handleDependencies(client: DependencyStore[Future]): Service[Request, Renderer] =
-    new Service[Request, Renderer] {
-      private[this] val PathMatch = """/api/dependencies(/([^/]+))?(/([^/]+))?/?""".r
-      def apply(req: Request): Future[Renderer] = {
-        val (startTime, endTime) = req.path match {
-          case PathMatch(_, startTime, _, endTime) => (Option(startTime), Option(endTime))
-          case _ => (None, None)
-        }
-        client.getDependencies(startTime.map(_.toLong), endTime.map(_.toLong)).map(JsonRenderer(_))
-      }
-    }
-
-  private[this] def pathTraceId(id: Option[String]): Option[Long] =
-    id flatMap { SpanId.fromString(_).map(_.toLong) }
+  private[this] def pathTraceId(id: Option[String]): Option[SpanId] =
+    id.flatMap(SpanId.fromString(_))
 
   trait NotFoundService extends Service[Request, Renderer] {
     def process(req: Request): Option[Future[Renderer]]
@@ -325,7 +300,6 @@ class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExt
       rootSpan <- trace.getRootSpans()
       span <- trace.getSpanTree(rootSpan, childMap).toList
     } yield {
-
       val start = span.firstAnnotation.map(_.timestamp).getOrElse(traceStartTimestamp)
 
       val depth = trace.toSpanDepths.get.getOrElse(span.id, 1)
@@ -379,8 +353,8 @@ class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExt
       Map("index" -> i, "time" -> durationStr((traceDuration * p).toLong))
     }
 
-    val timeMarkersBackup = timeMarkers.map {m => collection.mutable.Map() ++ m}
-    val spansBackup = spans.map {m => collection.mutable.Map() ++ m}
+    val timeMarkersBackup = timeMarkers.map { m => collection.mutable.Map() ++ m }
+    val spansBackup = spans.map { m => collection.mutable.Map() ++ m }
 
     val data = Map[String, Object](
       "duration" -> durationStr(traceDuration),
@@ -396,23 +370,13 @@ class Handlers(mapper: ObjectMapper, mustacheGenerator: ZipkinMustache, queryExt
     MustacheRenderer("v2/trace.mustache", data)
   }
 
-  def handleTraces(client: ZipkinQuery[Future]): Service[Request, Renderer] =
+  def handleTraces(client: HttpClient): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
       pathTraceId(req.path.split("/").lastOption) map { id =>
-        client.getTracesByIds(Seq(id), queryExtractor.adjustClockSkew(req)) flatMap {
-          case Seq(t) => Future.value(renderTrace(t.toTrace))
-          case _ => NotFound
-        }
+        client.executeJson[Seq[JsonSpan]](Request("/api/v1/trace/" + id))
+          .map(_.map(JsonSpan.invert))
+          .map(Trace.apply(_))
+          .map(renderTrace(_))
       } getOrElse NotFound
-    }
-
-  def handleGetTrace(client: ZipkinQuery[Future]): Service[Request, Renderer] =
-    new NotFoundService {
-      def process(req: Request): Option[Future[Renderer]] =
-        pathTraceId(req.path.split("/").lastOption) map { id =>
-          client.getTracesByIds(Seq(id), queryExtractor.adjustClockSkew(req)).map { ts =>
-            JsonRenderer(if (req.path.startsWith("/api/trace")) ts.map(t => t.spans.map(_.toSpan)) else ts.map(t => TraceSummary(t.toTrace)))
-          }
-        }
     }
 }
