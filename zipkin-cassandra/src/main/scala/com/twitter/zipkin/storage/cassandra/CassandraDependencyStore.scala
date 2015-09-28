@@ -5,6 +5,7 @@ import com.twitter.zipkin.common.Dependencies
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.storage.DependencyStore
 import com.twitter.zipkin.thriftscala.{Dependencies => ThriftDependencies}
+import com.twitter.zipkin.util.FutureUtil
 import org.twitter.zipkin.storage.cassandra.Repository
 import java.util.concurrent.TimeUnit._
 
@@ -17,27 +18,32 @@ import scala.collection.JavaConverters._
  */
 class CassandraDependencyStore(repository: Repository) extends DependencyStore {
 
-  private[this] val pool = FuturePool.unboundedPool
   private[this] val codec = new ScroogeThriftCodec[ThriftDependencies](ThriftDependencies)
 
   def close() = repository.close()
 
-  override def getDependencies(startTime: Option[Long], endTime: Option[Long] = None) = pool {
+  override def getDependencies(startTime: Option[Long], endTime: Option[Long] = None) = {
     val endMicros = endTime.getOrElse(Time.now.inMicroseconds)
 
     val endEpochDayMillis = floorEpochMicrosToDayMillis(endMicros)
     val startEpochDayMillis = floorEpochMicrosToDayMillis(endMicros - MICROSECONDS.convert(1, DAYS))
 
-    val dependencies = repository.getDependencies(startEpochDayMillis, endEpochDayMillis).asScala
-      .map(codec.decode(_))
-      .map(thriftToDependencies(_).toDependencies)
+    val dependenciesFuture =
+      FutureUtil.toFuture(repository.getDependencies(startEpochDayMillis, endEpochDayMillis))
+        .map { dependencies =>
+          dependencies.asScala
+            .map(codec.decode(_))
+            .map(thriftToDependencies(_).toDependencies)
+        }
 
-    if (dependencies.isEmpty) {
-      Dependencies.zero
-    } else {
-      val startMicros = dependencies.head.startTime
-      val endMicros = dependencies.last.endTime
-      Dependencies(startMicros, endMicros, dependencies.flatMap(_.links))
+    dependenciesFuture.map { dependencies =>
+      if (dependencies.isEmpty) {
+        Dependencies.zero
+      } else {
+        val startMicros = dependencies.head.startTime
+        val endMicros = dependencies.last.endTime
+        Dependencies(startMicros, endMicros, dependencies.flatMap(_.links))
+      }
     }
   }
 
@@ -45,8 +51,10 @@ class CassandraDependencyStore(repository: Repository) extends DependencyStore {
     Time.fromMicroseconds(micros).floor(Duration.fromTimeUnit(1, DAYS)).inMilliseconds
   }
 
-  override def storeDependencies(dependencies: Dependencies): Future[Unit] = pool {
+  override def storeDependencies(dependencies: Dependencies): Future[Unit] = {
     val thrift = codec.encode(dependenciesToThrift(dependencies).toThrift)
-    repository.storeDependencies(floorEpochMicrosToDayMillis(dependencies.startTime), thrift)
+    FutureUtil.toFuture(
+      repository.storeDependencies(floorEpochMicrosToDayMillis(dependencies.startTime), thrift))
+      .map(_ => ())
   }
 }
