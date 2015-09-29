@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import com.twitter.app.App
-import com.twitter.logging.{ConsoleHandler, Level, LoggerFactory}
-import com.twitter.zipkin.builder.{ZipkinServerBuilder, QueryServiceBuilder}
-import com.twitter.zipkin.cassandra
+import com.twitter.zipkin.builder.QueryServiceBuilder
 import com.twitter.zipkin.cassandra.CassandraSpanStoreFactory
-import com.twitter.zipkin.storage.Store
 
 val serverPort = sys.env.get("QUERY_PORT").getOrElse("9411").toInt
 val adminPort = sys.env.get("QUERY_ADMIN_PORT").getOrElse("9901").toInt
@@ -36,19 +34,13 @@ if (username.isDefined && password.isDefined) {
   Factory.cassandraPassword.parse(password.get)
 }
 
-val cluster = Factory.createClusterBuilder().build()
-val storeBuilder = Store.Builder(
-  new cassandra.SpanStoreBuilder(cluster),
-  new cassandra.DependencyStoreBuilder(cluster)
-)
-
-val loggerFactory = new LoggerFactory(
-  node = "",
-  level = Level.parse(logLevel),
-  handlers = List(ConsoleHandler())
-)
+val spanStore = Factory.newCassandraStore()
+val dependencies = Factory.newCassandraDependencies()
 
 QueryServiceBuilder(
-  storeBuilder,
-  serverBuilder = ZipkinServerBuilder(serverPort, adminPort).loggers(List(loggerFactory))
+  "0.0.0.0:" + serverPort,
+  adminPort,
+  logLevel,
+  spanStore,
+  dependencies
 )

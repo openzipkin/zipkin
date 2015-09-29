@@ -15,19 +15,27 @@
  */
 package com.twitter.zipkin.builder
 
+import ch.qos.logback.classic.{Logger, Level}
 import com.twitter.finagle.ListeningServer
 import com.twitter.finagle.tracing.{DefaultTracer, NullTracer}
 import com.twitter.finagle.zipkin.thrift.RawZipkinTracer
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.zipkin.query.ZipkinQueryServer
-import com.twitter.zipkin.storage.Store
+import com.twitter.zipkin.storage.{DependencyStore, NullDependencyStore, SpanStore}
+import org.slf4j.LoggerFactory
 
-case class QueryServiceBuilder(
-  storeBuilder: Builder[Store],
-  serverBuilder: ZipkinServerBuilder = ZipkinServerBuilder(9411, 9901)
-) extends Builder[RuntimeEnvironment => ListeningServer] {
+case class QueryServiceBuilder(override val defaultFinatraHttpPort: String = "0.0.0.0:9411",
+                               override val defaultHttpPort: Int = 9901,
+                               logLevel: String = "INFO",
+                               spanStore: SpanStore,
+                               dependencies: DependencyStore = new NullDependencyStore
+                                ) extends ZipkinQueryServer(spanStore, dependencies) with
+                                          Builder[RuntimeEnvironment => ListeningServer] {
 
-  def apply(): (RuntimeEnvironment) => ListeningServer = (runtime: RuntimeEnvironment) => {
+  override def apply() = (runtime: RuntimeEnvironment) => {
+    LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+      .asInstanceOf[Logger].setLevel(Level.toLevel(logLevel))
+
     // If a scribe host is configured, send all traces to it, otherwise disable tracing
     val scribeHost = sys.env.get("SCRIBE_HOST")
     val scribePort = sys.env.get("SCRIBE_PORT")
@@ -37,15 +45,9 @@ case class QueryServiceBuilder(
       NullTracer
     }
 
-    val store = storeBuilder.apply()
-    object Main extends ZipkinQueryServer(store.spanStore, store.dependencies) {
-      def admin = adminHttpServer
-      override val defaultFinatraHttpPort = serverBuilder.serverAddress.getHostAddress + ":" + serverBuilder.serverPort
-      override val defaultHttpPort = serverBuilder.adminPort
-    }
-    Main.nonExitingMain(Array(
+    nonExitingMain(Array(
       "-local.doc.root", "/"
     ))
-    Main.admin
+    adminHttpServer
   }
 }

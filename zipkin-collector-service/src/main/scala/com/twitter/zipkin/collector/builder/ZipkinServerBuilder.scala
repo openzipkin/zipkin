@@ -31,7 +31,6 @@ case class ZipkinServerBuilder(
   serverPort              : Int,
   adminPort               : Int,
   serverAddress           : InetAddress              = InetAddress.getByAddress(Array[Byte](0,0,0,0)),
-  loggers                 : List[LoggerFactory]      = List(LoggerFactory(level = Some(Level.DEBUG), handlers = List(ConsoleHandler()))),
   adminStatsNodes         : List[StatsFactory]       = List(StatsFactory(reporters = List(TimeSeriesCollectorFactory()))),
   adminStatsFilters       : List[Regex]              = List.empty,
   statsReceiver           : StatsReceiver            = new OstrichStatsReceiver
@@ -40,10 +39,8 @@ case class ZipkinServerBuilder(
   def serverPort(p: Int)                : ZipkinServerBuilder = copy(serverPort        = p)
   def adminPort(p: Int)                 : ZipkinServerBuilder = copy(adminPort         = p)
   def serverAddress(a: InetAddress)     : ZipkinServerBuilder = copy(serverAddress     = a)
-  def loggers(l: List[LoggerFactory])   : ZipkinServerBuilder = copy(loggers           = l)
   def statsReceiver(s: StatsReceiver)   : ZipkinServerBuilder = copy(statsReceiver     = s)
 
-  def addLogger(l: LoggerFactory)       : ZipkinServerBuilder = copy(loggers           = loggers :+ l)
   def addAdminStatsNode(n: StatsFactory): ZipkinServerBuilder = copy(adminStatsNodes   = adminStatsNodes :+ n)
   def addAdminStatsFilter(f: Regex)     : ZipkinServerBuilder = copy(adminStatsFilters = adminStatsFilters :+ f)
 
@@ -59,7 +56,6 @@ case class ZipkinServerBuilder(
   var adminHttpService: Option[AdminHttpService] = None
 
   def apply() = (runtime: RuntimeEnvironment) => {
-    Logger.configure(loggers)
     adminHttpService = Some(adminServiceFactory(runtime))
   }
 }

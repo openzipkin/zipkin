@@ -15,6 +15,7 @@
  */
 package com.twitter.zipkin.web
 
+import ch.qos.logback.classic.{Logger, Level}
 import com.twitter.app.App
 import com.twitter.finagle._
 import com.twitter.finagle.httpx.{HttpMuxer, Request, Response}
@@ -28,6 +29,7 @@ import com.twitter.util.Await
 import com.twitter.zipkin.json.ZipkinJson
 import com.twitter.zipkin.web.mustache.ZipkinMustache
 import java.net.InetSocketAddress
+import org.slf4j.LoggerFactory
 
 trait ZipkinWebFactory { self: App =>
   private[this] val resourceDirs = Set(
@@ -57,6 +59,10 @@ trait ZipkinWebFactory { self: App =>
   val queryDest = flag("zipkin.web.query.dest", "127.0.0.1:9411", "Location of the query server")
   val queryLimit = flag("zipkin.web.query.limit", 10, "Default query limit for trace results")
   val environment = flag("zipkin.web.environmentName", "", "The name of the environment Zipkin is running in")
+
+  val logLevel = sys.env.get("WEB_LOG_LEVEL").getOrElse("INFO")
+  LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+    .asInstanceOf[Logger].setLevel(Level.toLevel(logLevel))
 
   // If a scribe host is configured, send all traces to it, otherwise disable tracing
   val scribeHost = sys.env.get("SCRIBE_HOST")

@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-import com.twitter.logging.{ConsoleHandler, Level, LoggerFactory}
-import com.twitter.zipkin.anormdb.{SpanStoreBuilder, DependencyStoreBuilder}
+import com.twitter.zipkin.anormdb.{DependencyStoreBuilder, SpanStoreBuilder}
+import com.twitter.zipkin.collector.builder.{Adjustable, CollectorServiceBuilder, ZipkinServerBuilder}
 import com.twitter.zipkin.receiver.kafka.KafkaSpanReceiverFactory
-import com.twitter.zipkin.storage.anormdb.DB
-import com.twitter.zipkin.collector.builder.{ZipkinServerBuilder, Adjustable, CollectorServiceBuilder}
 import com.twitter.zipkin.storage.Store
+import com.twitter.zipkin.storage.anormdb.DB
 
 val serverPort = sys.env.get("COLLECTOR_PORT").getOrElse("9410").toInt
 val adminPort = sys.env.get("COLLECTOR_ADMIN_PORT").getOrElse("9900").toInt
@@ -33,14 +32,9 @@ val kafkaReceiver = sys.env.get("KAFKA_ZOOKEEPER").map(
   KafkaSpanReceiverFactory.factory(_, sys.env.get("KAFKA_TOPIC").getOrElse("zipkin"))
 )
 
-val loggerFactory = new LoggerFactory(
-  node = "",
-  level = Level.parse(logLevel),
-  handlers = List(ConsoleHandler())
-)
-
 CollectorServiceBuilder(
   storeBuilder,
   kafkaReceiver,
-  serverBuilder = ZipkinServerBuilder(serverPort, adminPort).loggers(List(loggerFactory))
+  serverBuilder = ZipkinServerBuilder(serverPort, adminPort),
+  logLevel = logLevel
 ).sampleRate(Adjustable.local(sampleRate))

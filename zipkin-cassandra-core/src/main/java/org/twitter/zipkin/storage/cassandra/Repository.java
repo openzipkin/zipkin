@@ -85,6 +85,9 @@ public final class Repository implements AutoCloseable {
             }
         };
 
+    /**
+     * Note: This constructor performs network I/O to the {@code cluster}.
+     */
     public Repository(String keyspace, Cluster cluster) {
         metadata = Schema.ensureExists(keyspace, cluster);
         session = cluster.connect(keyspace);
