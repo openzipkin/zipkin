@@ -1,8 +1,9 @@
 package com.twitter.zipkin.storage.cassandra
 
+import java.util.Collections
+
 import com.datastax.driver.core.Cluster
 import com.twitter.zipkin.storage.DependencyStoreSpec
-import java.util.Collections
 import org.cassandraunit.CQLDataLoader
 import org.cassandraunit.dataset.CQLDataSet
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper.startEmbeddedCassandra
@@ -33,7 +34,9 @@ class CassandraDependencyStoreSpec extends DependencyStoreSpec {
 
   import CassandraDependencyStoreSpec._
 
-  override lazy val store = new CassandraDependencyStore(new Repository(keyspace, cluster))
+  override val store = new CassandraDependencyStore {
+    override lazy val repository = new Repository(keyspace, cluster)
+  }
 
   override def clear = cluster.connect().execute("DROP KEYSPACE IF EXISTS " + keyspace)
 }

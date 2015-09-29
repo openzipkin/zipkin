@@ -18,8 +18,6 @@ package com.twitter.zipkin.query
 
 import com.google.common.base.Charsets.UTF_8
 import com.google.common.io.{Files, Resources}
-import com.twitter.finagle.tracing.NullTracer
-import com.twitter.finagle.zipkin.thrift.RawZipkinTracer
 import com.twitter.finagle.ListeningServer
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.{RuntimeEnvironment, Service, ServiceTracker}

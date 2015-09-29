@@ -37,13 +37,16 @@ object CassandraSpanStoreDefaults {
   val SpanCodec = new ScroogeThriftCodec[ThriftSpan](ThriftSpan)
 }
 
-class CassandraSpanStore(
-  repository: Repository,
+abstract class CassandraSpanStore(
   stats: StatsReceiver = DefaultStatsReceiver.scope("CassandraSpanStore"),
   spanTtl: Duration = CassandraSpanStoreDefaults.SpanTtl,
   indexTtl: Duration = CassandraSpanStoreDefaults.IndexTtl,
   maxTraceCols: Int = CassandraSpanStoreDefaults.MaxTraceCols
 ) extends SpanStore {
+
+  /** Deferred as repository eagerly creates network connections */
+  protected def repository: Repository
+
   private[this] val IndexDelimiter = ":"
   private[this] val IndexDelimiterBytes = IndexDelimiter.getBytes
   private[this] val spanCodec = CassandraSpanStoreDefaults.SpanCodec

@@ -15,8 +15,8 @@
  */
 package com.twitter.zipkin.collector.builder
 
-import java.net.InetSocketAddress
-
+import ch.qos.logback.classic
+import ch.qos.logback.classic.Level
 import com.twitter.finagle.ThriftMux
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.logging.Logger
@@ -30,6 +30,8 @@ import com.twitter.zipkin.config.sampler.{AdaptiveSamplerConfig, AdjustableRateC
 import com.twitter.zipkin.storage.Store
 import com.twitter.zipkin.thriftscala._
 import org.apache.thrift.protocol.TBinaryProtocol.Factory
+import org.slf4j.LoggerFactory
+import java.net.InetSocketAddress
 
 /**
  * Immutable builder for ZipkinCollector
@@ -50,8 +52,12 @@ case class CollectorServiceBuilder[T](
    */
   sampleRateBuilder: Builder[AdjustableRateConfig] = Adjustable.local(1.0),
   adaptiveSamplerBuilder: Option[Builder[AdaptiveSamplerConfig]] = None,
-  serverBuilder: ZipkinServerBuilder = ZipkinServerBuilder(9410, 9900)
+  serverBuilder: ZipkinServerBuilder = ZipkinServerBuilder(9410, 9900),
+  logLevel: String = "INFO"
 ) extends Builder[RuntimeEnvironment => ZipkinCollector] {
+
+  LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+    .asInstanceOf[classic.Logger].setLevel(Level.toLevel(logLevel))
 
   val log = Logger.get()
 

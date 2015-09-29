@@ -15,7 +15,10 @@ import scala.collection.JavaConverters._
  * only writes once a day. As such calls to [[.storeDependencies]] which vary contained
  * by a day will overwrite eachother.
  */
-class CassandraDependencyStore(repository: Repository) extends DependencyStore {
+abstract class CassandraDependencyStore extends DependencyStore {
+
+  /** Deferred as repository eagerly creates network connections */
+  protected def repository: Repository
 
   private[this] val pool = FuturePool.unboundedPool
   private[this] val codec = new ScroogeThriftCodec[ThriftDependencies](ThriftDependencies)

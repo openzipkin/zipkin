@@ -43,9 +43,19 @@ trait CassandraSpanStoreFactory {self: App =>
   val cassandraUsername     = flag[String]   ("zipkin.store.cassandra.username", "cassandra authentication user name")
   val cassandraPassword     = flag[String]   ("zipkin.store.cassandra.password", "cassandra authentication password")
 
-  def newCassandraStore(stats: StatsReceiver = DefaultStatsReceiver.scope("CassandraSpanStore")): CassandraSpanStore = {
-    val repository = new Repository(keyspace(), createClusterBuilder().build())
-    new CassandraSpanStore(repository, stats.scope(keyspace()), cassandraSpanTtl(), cassandraIndexTtl(), cassandraMaxTraceCols())
+  // eagerly makes network connections, so lazy
+  private[this] lazy val lazyRepository = new Repository(keyspace(), createClusterBuilder().build())
+
+  def newCassandraStore(stats: StatsReceiver = DefaultStatsReceiver.scope("CassandraSpanStore")) = {
+    new CassandraSpanStore(stats.scope(keyspace()), cassandraSpanTtl(), cassandraIndexTtl(), cassandraMaxTraceCols()) {
+      override lazy val repository = lazyRepository
+    }
+  }
+
+  def newCassandraDependencies(stats: StatsReceiver = DefaultStatsReceiver.scope("CassandraDependencyStore")) = {
+    new CassandraDependencyStore() {
+      override lazy val repository = lazyRepository
+    }
   }
 
   def createClusterBuilder(): Cluster.Builder = {

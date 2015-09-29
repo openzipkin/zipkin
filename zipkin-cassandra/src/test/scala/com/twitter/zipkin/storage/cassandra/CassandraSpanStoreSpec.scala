@@ -33,7 +33,9 @@ class CassandraSpanStoreSpec extends SpanStoreSpec {
 
   import CassandraSpanStoreSpec._
 
-  override lazy val store = new CassandraSpanStore(new Repository(keyspace, cluster))
+  override val store = new CassandraSpanStore {
+    override lazy val repository = new Repository(keyspace, cluster)
+  }
 
   override def clear = cluster.connect().execute("DROP KEYSPACE IF EXISTS " + keyspace)
 }

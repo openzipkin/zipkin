@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
+import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
+import com.twitter.finagle.redis.util.StringToChannelBuffer
 import com.twitter.finagle.redis.{Client, Redis}
-import com.twitter.logging.{ConsoleHandler, Level, LoggerFactory}
-import com.twitter.zipkin.builder.{ZipkinServerBuilder, QueryServiceBuilder}
-import com.twitter.zipkin.redis
-import com.twitter.zipkin.storage.Store
+import com.twitter.util.Await
+import com.twitter.zipkin.builder.QueryServiceBuilder
+import com.twitter.zipkin.storage.redis.RedisSpanStore
 
 val serverPort = sys.env.get("QUERY_PORT").getOrElse("9411").toInt
 val adminPort = sys.env.get("QUERY_ADMIN_PORT").getOrElse("9901").toInt
@@ -34,15 +35,16 @@ val client = Client(ClientBuilder().hosts(host + ":" + port)
                                    .codec(Redis())
                                    .build())
 
-val storeBuilder = Store.Builder(redis.SpanStoreBuilder(client, authPassword = sys.env.get("REDIS_PASSWORD")))
+val authPassword = sys.env.get("REDIS_PASSWORD")
+if (authPassword.isDefined) {
+  Await.result(client.auth(StringToChannelBuffer(authPassword.get)))
+}
 
-val loggerFactory = new LoggerFactory(
-  node = "",
-  level = Level.parse(logLevel),
-  handlers = List(ConsoleHandler())
-)
+val spanStore = new RedisSpanStore(client, Some(7.days))
 
 QueryServiceBuilder(
-  storeBuilder,
-  serverBuilder = ZipkinServerBuilder(serverPort, adminPort).loggers(List(loggerFactory))
+  "0.0.0.0:" + serverPort,
+  adminPort,
+  logLevel,
+  spanStore
 )
