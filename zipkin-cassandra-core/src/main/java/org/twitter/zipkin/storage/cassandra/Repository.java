@@ -5,12 +5,16 @@ import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.utils.Bytes;
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.io.CharStreams;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -198,15 +203,16 @@ public final class Repository implements AutoCloseable {
     /**
      * Store the span in the underlying storage for later retrieval.
      */
-    public void storeSpan(long traceId, long timestamp, String spanName, ByteBuffer span, int ttl) {
+    public ListenableFuture<Void> storeSpan(long traceId, long timestamp, String spanName, ByteBuffer span, int ttl) {
         Preconditions.checkNotNull(spanName);
         Preconditions.checkArgument(!spanName.isEmpty());
-        if (0 == timestamp && metadata.get("traces.compaction.class").contains("DateTieredCompactionStrategy")) {
-            LOG.warn("span with no first or last timestamp. "
-                    + "if this happens a lot consider switching back to SizeTieredCompactionStrategy for "
-                    + KEYSPACE + ".traces");
-        }
+
         try {
+            if (0 == timestamp && metadata.get("traces.compaction.class").contains("DateTieredCompactionStrategy")) {
+                LOG.warn("span with no first or last timestamp. "
+                        + "if this happens a lot consider switching back to SizeTieredCompactionStrategy for "
+                        + KEYSPACE + ".traces");
+            }
 
             BoundStatement bound = insertSpan.bind()
                     .setLong("trace_id", traceId)
@@ -218,10 +224,11 @@ public final class Repository implements AutoCloseable {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugInsertSpan(traceId, timestamp, spanName, span, ttl));
             }
-            session.executeAsync(bound);
+
+            return Futures.transform(session.executeAsync(bound), resultSetToVoidFunction);
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugInsertSpan(traceId, timestamp, spanName, span, ttl), ex);
-            throw ex;
+            return Futures.immediateFailedFuture(ex);
         }
     }
 
@@ -242,10 +249,9 @@ public final class Repository implements AutoCloseable {
      * The return list will contain only spans that have been found, thus
      * the return list may not match the provided list of ids.
      */
-    public Map<Long,List<ByteBuffer>> getSpansByTraceIds(Long[] traceIds, int limit) {
+    public ListenableFuture<Map<Long,List<ByteBuffer>>> getSpansByTraceIds(Long[] traceIds, int limit) {
         Preconditions.checkNotNull(traceIds);
         try {
-            Map<Long,List<ByteBuffer>> spans = new LinkedHashMap<>();
             if (0 < traceIds.length) {
 
                 BoundStatement bound = selectTraces.bind()
@@ -257,18 +263,34 @@ public final class Repository implements AutoCloseable {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(debugSelectTraces(traceIds, limit));
                 }
-                for (Row row : session.execute(bound).all()) {
-                    long traceId = row.getLong("trace_id");
-                    if (!spans.containsKey(traceId)) {
-                        spans.put(traceId, new ArrayList<ByteBuffer>());
+
+                return Futures.transform(
+                    session.executeAsync(bound),
+                    new Function<ResultSet, Map<Long, List<ByteBuffer>>>() {
+
+                        @Override
+                        public Map<Long, List<ByteBuffer>> apply(ResultSet input) {
+                            Map<Long, List<ByteBuffer>> spans = new LinkedHashMap<>();
+
+                            for (Row row : input) {
+                                long traceId = row.getLong("trace_id");
+                                if (!spans.containsKey(traceId)) {
+                                    spans.put(traceId, new ArrayList<ByteBuffer>());
+                                }
+                                spans.get(traceId).add(row.getBytes("span"));
+                            }
+
+                            return spans;
+                        }
                     }
-                    spans.get(traceId).add(row.getBytes("span"));
-                }
+                );
+
+            } else {
+                return Futures.immediateFuture(Collections.<Long, List<ByteBuffer>>emptyMap());
             }
-            return spans;
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugSelectTraces(traceIds, limit), ex);
-            throw ex;
+            return Futures.immediateFailedFuture(ex);
         }
     }
 
@@ -278,7 +300,7 @@ public final class Repository implements AutoCloseable {
                         .replace(":limit_", String.valueOf(limit));
     }
 
-    public void storeDependencies(long epochDayMillis, ByteBuffer dependencies) {
+    public ListenableFuture<Void> storeDependencies(long epochDayMillis, ByteBuffer dependencies) {
         Date startFlooredToDay = new Date(epochDayMillis);
         try {
             BoundStatement bound = insertDependencies.bind()
@@ -288,10 +310,10 @@ public final class Repository implements AutoCloseable {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugInsertDependencies(startFlooredToDay, dependencies));
             }
-            session.execute(bound);
+            return Futures.transform(session.executeAsync(bound), resultSetToVoidFunction);
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugInsertDependencies(startFlooredToDay, dependencies), ex);
-            throw ex;
+            return Futures.immediateFailedFuture(ex);
         }
     }
 
@@ -301,21 +323,29 @@ public final class Repository implements AutoCloseable {
                         .replace(":dependencies", Bytes.toHexString(dependencies));
     }
 
-    public List<ByteBuffer> getDependencies(long startEpochDayMillis, long endEpochDayMillis) {
+    public ListenableFuture<List<ByteBuffer>> getDependencies(long startEpochDayMillis, long endEpochDayMillis) {
         List<Date> days = getDays(startEpochDayMillis, endEpochDayMillis);
         try {
             BoundStatement bound = selectDependencies.bind().setList("days", days);
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugSelectDependencies(days));
             }
-            List<ByteBuffer> dependencies = new ArrayList<>();
-            for (Row row : session.execute(bound).all()) {
-                dependencies.add(row.getBytes("dependencies"));
-            }
-            return dependencies;
+            return Futures.transform(
+                session.executeAsync(bound),
+                new Function<ResultSet, List<ByteBuffer>>() {
+                    @Override
+                    public List<ByteBuffer> apply(ResultSet input) {
+                        List<ByteBuffer> dependencies = new ArrayList<>();
+                        for (Row row : input) {
+                            dependencies.add(row.getBytes("dependencies"));
+                        }
+                        return dependencies;
+                    }
+                }
+            );
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugSelectDependencies(days), ex);
-            throw ex;
+            return Futures.immediateFailedFuture(ex);
         }
     }
 
@@ -323,24 +353,33 @@ public final class Repository implements AutoCloseable {
         return selectDependencies.getQueryString().replace(":days", Arrays.toString(days.toArray()));
     }
 
-    public Set<String> getServiceNames() {
+    public ListenableFuture<Set<String>> getServiceNames() {
         try {
-            Set<String> serviceNames = new HashSet<>();
             BoundStatement bound = selectServiceNames.bind();
             if (LOG.isDebugEnabled()) {
                 LOG.debug(selectServiceNames.getQueryString());
             }
-            for (Row row : session.execute(bound).all()) {
-                serviceNames.add(row.getString("service_name"));
-            }
-            return serviceNames;
+
+            return Futures.transform(
+              session.executeAsync(bound),
+              new Function<ResultSet, Set<String>>() {
+                  @Override
+                  public Set<String> apply(ResultSet input) {
+                      Set<String> serviceNames = new HashSet<>();
+                      for (Row row : input) {
+                          serviceNames.add(row.getString("service_name"));
+                      }
+                      return serviceNames;
+                  }
+              }
+            );
         } catch (RuntimeException ex) {
             LOG.error("failed " + selectServiceNames.getQueryString(), ex);
-            throw ex;
+            return Futures.immediateFailedFuture(ex);
         }
     }
 
-    public void storeServiceName(String serviceName, int ttl) {
+    public ListenableFuture<Void> storeServiceName(String serviceName, int ttl) {
         Preconditions.checkNotNull(serviceName);
         Preconditions.checkArgument(!serviceName.isEmpty());
         if (writtenNames.get().add(serviceName)) {
@@ -352,12 +391,15 @@ public final class Repository implements AutoCloseable {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(debugInsertServiceName(serviceName, ttl));
                 }
-                session.executeAsync(bound);
+
+                return Futures.transform(session.executeAsync(bound), resultSetToVoidFunction);
             } catch (RuntimeException ex) {
                 LOG.error("failed " + debugInsertServiceName(serviceName, ttl), ex);
                 writtenNames.get().remove(serviceName);
                 throw ex;
             }
+        } else {
+            return Futures.immediateFuture(null);
         }
     }
 
@@ -367,10 +409,9 @@ public final class Repository implements AutoCloseable {
                 .replace(":ttl_", String.valueOf(ttl));
     }
 
-    public Set<String> getSpanNames(String serviceName) {
+    public ListenableFuture<Set<String>> getSpanNames(String serviceName) {
         Preconditions.checkNotNull(serviceName);
         try {
-            Set<String> spanNames = new HashSet<>();
             if (!serviceName.isEmpty()) {
 
                 BoundStatement bound = selectSpanNames.bind()
@@ -380,11 +421,23 @@ public final class Repository implements AutoCloseable {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(debugSelectSpanNames(serviceName));
                 }
-                for (Row row : session.execute(bound).all()) {
-                    spanNames.add(row.getString("span_name"));
-                }
+
+                return Futures.transform(
+                    session.executeAsync(bound),
+                    new Function<ResultSet, Set<String>>() {
+                        @Override
+                        public Set<String> apply(ResultSet input) {
+                            Set<String> spanNames = new HashSet<>();
+                            for (Row row : input) {
+                                spanNames.add(row.getString("span_name"));
+                            }
+                            return spanNames;
+                        }
+                    }
+                );
+            } else {
+                return Futures.immediateFuture(Collections.<String>emptySet());
             }
-            return spanNames;
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugSelectSpanNames(serviceName), ex);
             throw ex;
@@ -395,7 +448,7 @@ public final class Repository implements AutoCloseable {
         return selectSpanNames.getQueryString().replace(':' + "service_name", serviceName);
     }
 
-    public void storeSpanName(String serviceName, String spanName, int ttl) {
+    public ListenableFuture<Void> storeSpanName(String serviceName, String spanName, int ttl) {
         Preconditions.checkNotNull(serviceName);
         Preconditions.checkArgument(!serviceName.isEmpty());
         Preconditions.checkNotNull(spanName);
@@ -411,12 +464,15 @@ public final class Repository implements AutoCloseable {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(debugInsertSpanName(serviceName, spanName, ttl));
                 }
-                session.executeAsync(bound);
+
+                return Futures.transform(session.executeAsync(bound), resultSetToVoidFunction);
             } catch (RuntimeException ex) {
                 LOG.error("failed " + debugInsertSpanName(serviceName, spanName, ttl), ex);
                 writtenNames.get().remove(serviceName + "––" + spanName);
-                throw ex;
+                return Futures.immediateFailedFuture(ex);
             }
+        } else {
+            return Futures.immediateFuture(null);
         }
     }
 
@@ -427,7 +483,7 @@ public final class Repository implements AutoCloseable {
                 .replace(":ttl_", String.valueOf(ttl));
     }
 
-    public Map<Long,Long> getTraceIdsByServiceName(String serviceName, long to, int limit) {
+    public ListenableFuture<Map<Long,Long>> getTraceIdsByServiceName(String serviceName, long to, int limit) {
         Preconditions.checkNotNull(serviceName);
         Preconditions.checkArgument(!serviceName.isEmpty());
         try {
@@ -442,14 +498,23 @@ public final class Repository implements AutoCloseable {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugSelectTraceIdsByServiceName(serviceName, to, limit));
             }
-            Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
-            for (Row row : session.execute(bound).all()) {
-                traceIdsToTimestamps.put(row.getLong("trace_id"), row.getLong("ts"));
-            }
-            return traceIdsToTimestamps;
+
+            return Futures.transform(
+                session.executeAsync(bound),
+                new Function<ResultSet, Map<Long, Long>>() {
+                    @Override
+                    public Map<Long, Long> apply(ResultSet input) {
+                        Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
+                        for (Row row : input) {
+                            traceIdsToTimestamps.put(row.getLong("trace_id"), row.getLong("ts"));
+                        }
+                        return traceIdsToTimestamps;
+                    }
+                }
+            );
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugSelectTraceIdsByServiceName(serviceName, to, limit), ex);
-            throw ex;
+            return Futures.immediateFailedFuture(ex);
         }
     }
 
@@ -460,7 +525,8 @@ public final class Repository implements AutoCloseable {
                 .replace(":limit_", String.valueOf(limit));
     }
 
-    public void storeTraceIdByServiceName(String serviceName, long timestamp, long traceId, int ttl) {
+    public ListenableFuture<Void> storeTraceIdByServiceName(String serviceName, long timestamp, long traceId, int ttl) {
+
         Preconditions.checkNotNull(serviceName);
         Preconditions.checkArgument(!serviceName.isEmpty());
         try {
@@ -475,10 +541,11 @@ public final class Repository implements AutoCloseable {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugInsertTraceIdByServiceName(serviceName, timestamp, traceId, ttl));
             }
-            session.executeAsync(bound);
+
+            return Futures.transform(session.executeAsync(bound), resultSetToVoidFunction);
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugInsertTraceIdByServiceName(serviceName, timestamp, traceId, ttl), ex);
-            throw ex;
+            return Futures.immediateFailedFuture(ex);
         }
     }
 
@@ -490,7 +557,7 @@ public final class Repository implements AutoCloseable {
                         .replace(":ttl_", String.valueOf(ttl));
     }
 
-    public Map<Long,Long> getTraceIdsBySpanName(String serviceName, String spanName, long to, int limit) {
+    public ListenableFuture<Map<Long,Long>> getTraceIdsBySpanName(String serviceName, String spanName, long to, int limit) {
         Preconditions.checkNotNull(serviceName);
         Preconditions.checkArgument(!serviceName.isEmpty());
         Preconditions.checkNotNull(spanName);
@@ -505,14 +572,24 @@ public final class Repository implements AutoCloseable {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugSelectTraceIdsBySpanName(serviceSpanName, to, limit));
             }
-            Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
-            for (Row row : session.execute(bound).all()) {
-                traceIdsToTimestamps.put(row.getLong("trace_id"), row.getLong("ts"));
-            }
-            return traceIdsToTimestamps;
+
+            return Futures.transform(
+                session.executeAsync(bound),
+                new Function<ResultSet, Map<Long, Long>>() {
+                    @Override
+                    public Map<Long, Long> apply(ResultSet input) {
+                        Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
+                        for (Row row : input) {
+                            traceIdsToTimestamps.put(row.getLong("trace_id"), row.getLong("ts"));
+                        }
+                        return traceIdsToTimestamps;
+                    }
+                }
+            );
+
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugSelectTraceIdsBySpanName(serviceSpanName, to, limit), ex);
-            throw ex;
+            return Futures.immediateFailedFuture(ex);
         }
     }
 
@@ -523,7 +600,7 @@ public final class Repository implements AutoCloseable {
                 .replace(":limit_", String.valueOf(limit));
     }
 
-    public void storeTraceIdBySpanName(String serviceName, String spanName, long timestamp, long traceId, int ttl) {
+    public ListenableFuture<Void> storeTraceIdBySpanName(String serviceName, String spanName, long timestamp, long traceId, int ttl) {
         Preconditions.checkNotNull(serviceName);
         Preconditions.checkArgument(!serviceName.isEmpty());
         Preconditions.checkNotNull(spanName);
@@ -540,10 +617,10 @@ public final class Repository implements AutoCloseable {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugInsertTraceIdBySpanName(serviceSpanName, timestamp, traceId, ttl));
             }
-            session.executeAsync(bound);
+            return Futures.transform(session.executeAsync(bound), resultSetToVoidFunction);
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugInsertTraceIdBySpanName(serviceName, timestamp, traceId, ttl), ex);
-            throw ex;
+            return Futures.immediateFailedFuture(ex);
         }
     }
 
@@ -555,7 +632,7 @@ public final class Repository implements AutoCloseable {
                 .replace(":ttl_", String.valueOf(ttl));
     }
 
-    public Map<Long,Long> getTraceIdsByAnnotation(ByteBuffer annotationKey, long from, int limit) {
+    public ListenableFuture<Map<Long,Long>> getTraceIdsByAnnotation(ByteBuffer annotationKey, long from, int limit) {
         try {
             BoundStatement bound = selectTraceIdsByAnnotations.bind()
                     .setBytes("annotation", annotationKey)
@@ -568,11 +645,20 @@ public final class Repository implements AutoCloseable {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugSelectTraceIdsByAnnotations(annotationKey, from, limit));
             }
-            Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
-            for (Row row : session.execute(bound).all()) {
-                traceIdsToTimestamps.put(row.getLong("trace_id"), row.getLong("ts"));
-            }
-            return traceIdsToTimestamps;
+
+            return Futures.transform(
+              session.executeAsync(bound),
+              new Function<ResultSet, Map<Long, Long>>() {
+                  @Override
+                  public Map<Long, Long> apply(ResultSet input) {
+                      Map < Long, Long > traceIdsToTimestamps = new LinkedHashMap<>();
+                      for (Row row : input) {
+                          traceIdsToTimestamps.put(row.getLong("trace_id"), row.getLong("ts"));
+                      }
+                      return traceIdsToTimestamps;
+                  }
+              }
+            );
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugSelectTraceIdsByAnnotations(annotationKey, from, limit), ex);
             throw ex;
@@ -586,7 +672,7 @@ public final class Repository implements AutoCloseable {
                         .replace(":limit_", String.valueOf(limit));
     }
 
-    public void storeTraceIdByAnnotation(ByteBuffer annotationKey, long timestamp, long traceId, int ttl) {
+    public ListenableFuture<Void> storeTraceIdByAnnotation(ByteBuffer annotationKey, long timestamp, long traceId, int ttl) {
         try {
             BoundStatement bound = insertTraceIdByAnnotation.bind()
                     .setBytes("annotation", annotationKey)
@@ -598,10 +684,10 @@ public final class Repository implements AutoCloseable {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(debugInsertTraceIdByAnnotation(annotationKey, timestamp, traceId, ttl));
             }
-            session.executeAsync(bound);
+            return Futures.transform(session.executeAsync(bound), resultSetToVoidFunction);
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugInsertTraceIdByAnnotation(annotationKey, timestamp, traceId, ttl), ex);
-            throw ex;
+            return Futures.immediateFailedFuture(ex);
         }
     }
 
@@ -657,4 +743,11 @@ public final class Repository implements AutoCloseable {
         private Schema() {}
     }
 
+    private Function<ResultSet, Void> resultSetToVoidFunction =
+        new Function<ResultSet, Void>() {
+            @Override
+            public Void apply(ResultSet input) {
+                return null;
+            }
+        };
 }

@@ -17,17 +17,18 @@ package com.twitter.zipkin.storage.cassandra
 
 import com.twitter.conversions.time._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
+import com.twitter.util.Futures
 import com.twitter.util.{Future, FuturePool, Duration}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.zipkin.storage.{IndexedTraceId, SpanStore}
+import com.twitter.zipkin.util.FutureUtil
 import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import org.twitter.zipkin.storage.cassandra.Repository
 import scala.collection.JavaConverters._
-import scala.collection.JavaConversions._
 
 object CassandraSpanStoreDefaults {
   val KeyspaceName = Repository.KEYSPACE
@@ -66,8 +67,6 @@ abstract class CassandraSpanStore(
       value.map { v => IndexDelimiterBytes ++ Util.getArrayFromBuffer(v) }.getOrElse(Array()))
   }
 
-  private[this] val pool = FuturePool.unboundedPool
-
   /**
    * Stats
    */
@@ -97,91 +96,106 @@ abstract class CassandraSpanStore(
   /**
    * Internal indexing helpers
    */
-  private[this] def indexServiceName(span: Span) {
+  private[this] def indexServiceName(span: Span): Future[Unit] = {
     IndexServiceNameCounter.incr()
-    span.serviceNames foreach {
+    Future.join(span.serviceNames.toList map {
       case "" =>
         IndexServiceNameNoNameCounter.incr()
+        Future.value(())
       case s =>
-        repository.storeServiceName(s.toLowerCase, indexTtl.inSeconds)
-    }
+        FutureUtil.toFuture(repository.storeServiceName(s.toLowerCase, indexTtl.inSeconds))
+    })
   }
 
-  private[this] def indexSpanNameByService(span: Span) {
+  private[this] def indexSpanNameByService(span: Span): Future[Unit] = {
     if (span.name == "") {
       IndexSpanNameNoNameCounter.incr()
+      Future.value(())
     } else {
       IndexSpanNameCounter.incr()
-      span.serviceNames foreach {
-        repository.storeSpanName(_, span.name.toLowerCase, indexTtl.inSeconds)
-      }
+
+      Future.join(
+        span.serviceNames.toSeq map { serviceName =>
+          FutureUtil.toFuture(repository.storeSpanName(serviceName, span.name.toLowerCase, indexTtl.inSeconds))
+        })
     }
   }
 
-  private[this] def indexTraceIdByName(span: Span) {
+  private[this] def indexTraceIdByName(span: Span): Future[Unit] = {
     if (span.lastAnnotation.isEmpty)
       IndexTraceNoLastAnnotationCounter.incr()
 
-    span.lastAnnotation foreach { lastAnnotation =>
+    span.lastAnnotation map { lastAnnotation =>
       val timestamp = lastAnnotation.timestamp
       val serviceNames = span.serviceNames
 
-      serviceNames foreach { serviceName =>
+      Future.join(
+        serviceNames.toList map { serviceName =>
+          IndexTraceByServiceNameCounter.incr()
+          val storeFuture =
+            FutureUtil.toFuture(repository.storeTraceIdByServiceName(serviceName, timestamp, span.traceId, indexTtl.inSeconds))
 
-        IndexTraceByServiceNameCounter.incr()
-        repository.storeTraceIdByServiceName(serviceName, timestamp, span.traceId, indexTtl.inSeconds)
+          if (span.name != "") {
+            IndexTraceBySpanNameCounter.incr()
 
-        if (span.name != "") {
-          IndexTraceBySpanNameCounter.incr()
-          repository.storeTraceIdBySpanName(serviceName, span.name, timestamp, span.traceId, indexTtl.inSeconds)
-        }
-      }
-    }
+            Future.join(
+              storeFuture,
+              FutureUtil.toFuture(repository.storeTraceIdBySpanName(serviceName, span.name, timestamp, span.traceId, indexTtl.inSeconds)))
+          } else storeFuture
+        })
+    } getOrElse Future.value(())
   }
 
-  private[this] def indexByAnnotations(span: Span) {
+  private[this] def indexByAnnotations(span: Span): Future[Unit] = {
     if (span.lastAnnotation.isEmpty)
       IndexAnnotationNoLastAnnotationCounter.incr()
 
-    span.lastAnnotation foreach { lastAnnotation =>
+    span.lastAnnotation map { lastAnnotation =>
       val timestamp = lastAnnotation.timestamp
 
       // skip core annotations since that query can be done by service name/span name anyway
-      span.annotations
-        .filter { a => !Constants.CoreAnnotations.contains(a.value) }
-        .groupBy(_.value)
-        .foreach { case (_, as) =>
-          val a = as.min
-          a.host foreach { endpoint =>
-            IndexAnnotationCounter.incr()
+      val annotationsFuture = Future.join(
+        span.annotations
+          .filter { a => !Constants.CoreAnnotations.contains(a.value) }
+          .groupBy(_.value)
+          .flatMap { case (_, as) =>
+            val a = as.min
+            a.host map { endpoint =>
+              IndexAnnotationCounter.incr()
 
-            repository.storeTraceIdByAnnotation(
-              annotationKey(endpoint.serviceName, a.value, None), timestamp, span.traceId, indexTtl.inSeconds)
-          }
-        }
+              FutureUtil.toFuture(
+                repository.storeTraceIdByAnnotation(
+                  annotationKey(endpoint.serviceName, a.value, None), timestamp, span.traceId, indexTtl.inSeconds))
+            }
+          }.toList)
 
-      span.binaryAnnotations foreach { ba =>
-        ba.host foreach { endpoint =>
+      val binaryFuture = Future.join(span.binaryAnnotations flatMap { ba =>
+        ba.host map { endpoint =>
           IndexBinaryAnnotationCounter.incr()
 
-          repository.storeTraceIdByAnnotation(
-            annotationKey(endpoint.serviceName, ba.key, Some(ba.value)), timestamp, span.traceId, indexTtl.inSeconds)
-
-          repository.storeTraceIdByAnnotation(
-            annotationKey(endpoint.serviceName, ba.key, None), timestamp, span.traceId, indexTtl.inSeconds)
+          Future.join(
+            FutureUtil.toFuture(
+              repository.storeTraceIdByAnnotation(
+                annotationKey(endpoint.serviceName, ba.key, Some(ba.value)), timestamp, span.traceId, indexTtl.inSeconds)),
+            FutureUtil.toFuture(
+              repository.storeTraceIdByAnnotation(
+                annotationKey(endpoint.serviceName, ba.key, None), timestamp, span.traceId, indexTtl.inSeconds)))
         }
-      }
-    }
+      })
+
+      Future.join(annotationsFuture, binaryFuture).map(_ => ())
+    } getOrElse Future.value(())
   }
 
   private[this] def getSpansByTraceIds(traceIds: Seq[Long], count: Int): Future[Seq[Seq[Span]]] = {
-    pool {
-      val spans = repository.getSpansByTraceIds(traceIds.toArray.map(Long.box), count)
-        .mapValues { case spans :java.util.List[ByteBuffer] => spans.asScala.map(spanCodec.decode(_).toSpan) }
+    FutureUtil.toFuture(repository.getSpansByTraceIds(traceIds.toArray.map(Long.box), count))
+      .map { spansByTraceId =>
+        val spans =
+          spansByTraceId.asScala.mapValues { spans => spans.asScala.map(spanCodec.decode(_).toSpan) }
 
-      traceIds.map(traceId => spans.get(traceId)).flatten
-        .sortBy(_.head) // CQL doesn't allow order by with an "in" query
-    }
+        traceIds.flatMap(traceId => spans.get(traceId))
+          .sortBy(_.head) // CQL doesn't allow order by with an "in" query
+      }
   }
 
   /**
@@ -192,22 +206,23 @@ abstract class CassandraSpanStore(
   override def apply(spans: Seq[Span]): Future[Unit] = {
     SpansStoredCounter.incr(spans.size)
 
-    spans foreach { span =>
-      repository.storeSpan(
-        span.traceId,
-        span.lastTimestamp.getOrElse(span.firstTimestamp.getOrElse(0)),
-        createSpanColumnName(span),
-        spanCodec.encode(span.copy(annotations = span.annotations.sorted).toThrift),
-        spanTtl.inSeconds)
+    Future.join(
+      spans map { span =>
+        SpansIndexedCounter.incr()
 
-      SpansIndexedCounter.incr()
-      indexServiceName(span)
-      indexSpanNameByService(span)
-      indexTraceIdByName(span)
-      indexByAnnotations(span)
-    }
-
-    Future.Unit
+        Future.join(
+          FutureUtil.toFuture(
+            repository.storeSpan(
+              span.traceId,
+              span.lastTimestamp.getOrElse(span.firstTimestamp.getOrElse(0)),
+              createSpanColumnName(span),
+              spanCodec.encode(span.copy(annotations = span.annotations.sorted).toThrift),
+              spanTtl.inSeconds)),
+          indexServiceName(span),
+          indexSpanNameByService(span),
+          indexTraceIdByName(span),
+          indexByAnnotations(span))
+      })
   }
 
   override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
@@ -217,12 +232,12 @@ abstract class CassandraSpanStore(
 
   override def getAllServiceNames: Future[Set[String]] = {
     QueryGetServiceNamesCounter.incr()
-    pool { repository.getServiceNames.asScala.toSet }
+    FutureUtil.toFuture(repository.getServiceNames).map(_.asScala.toSet)
   }
 
   override def getSpanNames(service: String): Future[Set[String]] = {
     QueryGetSpanNamesCounter.incr()
-    pool { repository.getSpanNames(service).asScala.toSet }
+    FutureUtil.toFuture(repository.getSpanNames(service)).map(_.asScala.toSet)
   }
 
   override def getTraceIdsByName(
@@ -233,15 +248,17 @@ abstract class CassandraSpanStore(
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByNameCounter.incr()
 
-    pool {
-      (spanName match {
-        // if we have a span name, look up in the service + span name index
-        // if not, look up by service name only
-        case Some(x :String) => repository.getTraceIdsBySpanName(serviceName, x, endTs, limit)
-        case None => repository.getTraceIdsByServiceName(serviceName, endTs, limit)
-      })
-      .map { case (traceId : java.lang.Long, ts :java.lang.Long) => IndexedTraceId(traceId, timestamp = ts) }
-      .toSeq
+    val traceIdsFuture = FutureUtil.toFuture(spanName match {
+      // if we have a span name, look up in the service + span name index
+      // if not, look up by service name only
+      case Some(x :String) => repository.getTraceIdsBySpanName(serviceName, x, endTs, limit)
+      case None => repository.getTraceIdsByServiceName(serviceName, endTs, limit)
+    })
+
+    traceIdsFuture.map { traceIds =>
+      traceIds.asScala
+        .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
+        .toSeq
     }
   }
 
@@ -254,11 +271,13 @@ abstract class CassandraSpanStore(
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByAnnotationCounter.incr()
 
-    pool {
+    FutureUtil.toFuture(
       repository
-        .getTraceIdsByAnnotation(annotationKey(serviceName, annotation, value), endTs, limit)
-        .map { case (traceId :java.lang.Long, ts :java.lang.Long) => IndexedTraceId(traceId, timestamp = ts) }
-        .toSeq
-    }
+        .getTraceIdsByAnnotation(annotationKey(serviceName, annotation, value), endTs, limit))
+      .map { traceIds =>
+        traceIds.asScala
+          .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
+          .toSeq
+      }
   }
 }
