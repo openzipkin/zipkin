@@ -24,13 +24,9 @@ class QueryExtractorTest extends FunSuite {
 
   val queryExtractor = new QueryExtractor(10)
 
-  def request(p: (String, String)*) = Request(p:_*)
+  def request(p: (String, String)*) = Request(p: _*)
 
-  test("require serviceName") {
-    assert(!queryExtractor(request()).isDefined)
-  }
-
-  test("parse params") {
+  test("getTimestampStr") {
     val endTs = Time.now
     val endTimestamp = endTs.inMicroseconds.toString
     val r = request(
@@ -39,74 +35,50 @@ class QueryExtractorTest extends FunSuite {
       "timestamp" -> endTimestamp,
       "limit" -> "1000")
 
-    val actual = queryExtractor(r).get
-
-    assert(actual.serviceName === "myService")
-    assert(actual.spanName.get === "mySpan")
-    assert(actual.endTs ===  endTs.inMicroseconds)
-    assert(actual.limit === 1000)
+    val actual = queryExtractor.getTimestampStr(r)
+    assert(actual === endTs.inMicroseconds.toString)
   }
 
-  test("default endDateTime") {
+  test("default getTimestampStr") {
     Time.withCurrentTimeFrozen { tc =>
-      val actual = queryExtractor(request("serviceName" -> "myService")).get
-      assert(actual.endTs === Time.now.sinceEpoch.inMicroseconds)
+      val actual = queryExtractor.getTimestampStr(request("serviceName" -> "myService"))
+      assert(actual === Time.now.sinceEpoch.inMicroseconds.toString)
     }
   }
 
   test("parse limit") {
     val r = request("serviceName" -> "myService", "limit" -> "199")
-    val actual = queryExtractor(r).get
-    assert(actual.limit === 199)
+    val actual = queryExtractor.getLimitStr(r)
+    assert(actual === 199.toString)
   }
 
   test("default limit") {
-    val actual = new QueryExtractor(100).apply(request("serviceName" -> "myService")).get
-    assert(actual.limit === 100)
-  }
-
-  test("parse spanName 'all'") {
-    val r = request("serviceName" -> "myService", "spanName" -> "all")
-    val actual = queryExtractor(r).get
-    assert(!actual.spanName.isDefined)
-  }
-
-  test("parse spanName ''") {
-    val r = request("serviceName" -> "myService", "spanName" -> "")
-    val actual = queryExtractor(r).get
-    assert(!actual.spanName.isDefined)
-  }
-
-  test("parse spanName") {
-    val r = request("serviceName" -> "myService", "spanName" -> "something")
-    val actual = queryExtractor(r).get
-    assert(actual.spanName.get === "something")
+    val actual = new QueryExtractor(100).getLimitStr(request("serviceName" -> "myService"))
+    assert(actual === 100.toString)
   }
 
   test("parse annotations") {
     val r = request(
       "serviceName" -> "myService",
       "annotationQuery" -> "finagle.retry and finagle.timeout")
-    val actual = queryExtractor(r).get
-    assert(actual.annotations.get.contains("finagle.retry"))
-    assert(actual.annotations.get.contains("finagle.timeout"))
+    val actual = queryExtractor.getAnnotations(r).get
+    assert(actual._1.contains("finagle.retry"))
+    assert(actual._1.contains("finagle.timeout"))
   }
 
   test("parse key value annotations") {
     val r = request(
       "serviceName" -> "myService",
       "annotationQuery" -> "http.responsecode=500")
-    val actual = queryExtractor(r).get
-    assert(
-      actual.binaryAnnotations.get === Map("http.responsecode" -> "500"))
+    val actual = queryExtractor.getAnnotations(r).get
+    assert(actual._2 === Map("http.responsecode" -> "500"))
   }
 
   test("parse key value annotations with slash") {
     val r = request(
       "serviceName" -> "myService",
       "annotationQuery" -> "http.uri=/sessions")
-    val actual = queryExtractor(r).get
-    assert(
-      actual.binaryAnnotations.get === Map("http.uri" -> "/sessions"))
+    val actual = queryExtractor.getAnnotations(r).get
+    assert(actual._2 === Map("http.uri" -> "/sessions"))
   }
 }

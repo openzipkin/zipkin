@@ -21,7 +21,7 @@ import com.twitter.conversions.time._
 import com.twitter.util.Time
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.thriftscala
+import com.twitter.zipkin.{Constants, thriftscala}
 import java.nio.ByteBuffer
 import scala.util.Random
 
@@ -99,7 +99,7 @@ class TraceGen(traces: Int, maxDepth: Int) {
     var curTime = time + 1.millisecond
 
     val svrAnnos = new ListBuffer[Annotation]()
-    svrAnnos += Annotation(curTime.inMicroseconds, thriftscala.Constants.SERVER_RECV, Some(ep))
+    svrAnnos += Annotation(curTime.inMicroseconds, Constants.ServerRecv, Some(ep))
 
     val svrBinAnnos = (0 to rnd.nextInt(3)) map { _ =>
       BinaryAnnotation(rndSvcName, ByteBuffer.wrap(rndSvcName.getBytes), AnnotationType.String, Some(ep))

@@ -86,15 +86,17 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   }
 
   @Test def getSpanNames() {
-    ready(store(Seq(span1)))
+    ready(store(Seq(span1.copy(name = "yak"), span4)))
 
-    result(store.getSpanNames("service")) should be(Set(span1.name))
+    // should be in order
+    result(store.getSpanNames("service")) should be(List("methodcall", "yak"))
   }
 
   @Test def getAllServiceNames() {
-    ready(store(Seq(span1)))
+    ready(store(Seq(span1.copy(annotations = List(ann1.copy(host = Some(ep.copy(serviceName = "yak"))))), span4)))
 
-    result(store.getAllServiceNames) should be(span1.serviceNames)
+    // should be in order
+    result(store.getAllServiceNames()) should be(List("service", "yak"))
   }
 
   @Test def getTraceIdsByName() {
@@ -137,7 +139,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   @Test def getAllServiceNames_emptyServiceName() {
     ready(store(Seq(spanEmptyServiceName)))
 
-    result(store.getAllServiceNames) should be(empty)
+    result(store.getAllServiceNames()) should be(empty)
   }
 
   @Test def getSpanNames_emptySpanName() {

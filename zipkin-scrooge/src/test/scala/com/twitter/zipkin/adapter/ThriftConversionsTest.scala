@@ -20,7 +20,6 @@ import java.nio.ByteBuffer
 
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.query._
 import com.twitter.zipkin.thriftscala
 import org.scalatest.FunSuite
 
@@ -75,14 +74,5 @@ class ThriftConversionsTest extends FunSuite {
 
     val noBinaryAnnotationsSpan = thriftscala.Span(0, "name", 0, None, Seq(), null)
     assert(noBinaryAnnotationsSpan.toSpan === Span(0, "name", 0, None, List(), Seq()))
-  }
-
-  test("convert Trace") {
-    val span = Span(12345, "methodcall", 666, None,
-      List(Annotation(1, "boaoo", None)), Nil)
-    val expectedTrace = Trace(List[Span](span))
-    val thriftTrace = expectedTrace.toThrift
-    val actualTrace = thriftTrace.toTrace
-    assert(expectedTrace === actualTrace)
   }
 }

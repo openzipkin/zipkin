@@ -5,6 +5,9 @@ task run(type:JavaExec) {
 }
 
 dependencies {
-    compile project(':zipkin-query-service')
-    compile project(':zipkin-collector-service')
+    compile project(':zipkin-common')
+    compile project(':zipkin-receiver-scribe')
+    compile "com.twitter.finatra:finatra-httpclient_${scalaInterfaceVersion}:${commonVersions.finatra}"
+    compile "ch.qos.logback:logback-core:${commonVersions.logback}"
+    compile "ch.qos.logback:logback-classic:${commonVersions.logback}"
 }

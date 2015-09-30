@@ -17,52 +17,11 @@ package com.twitter.zipkin.query
 
 import com.twitter.finagle.httpx.Request
 import com.twitter.finatra.annotations.Flag
-import com.twitter.util.{Time, TwitterDateFormat}
-import com.twitter.zipkin.storage.SpanStore
-import com.twitter.zipkin.thriftscala.QueryRequest
-import java.util.{Calendar, Date}
+import com.twitter.util.Time
 import javax.inject.Inject
 
 // TODO: rewrite me into a normal finatra case class
-class QueryExtractor @Inject()(spanStore: SpanStore,
-                               @Flag("zipkin.queryService.durationBatchSize") defaultQueryLimit: Int) {
-  val fmt = TwitterDateFormat("MM-dd-yyyy'T'HH:mm:ss.SSSZ")
-
-  private[this] val dateFormat = TwitterDateFormat("MM-dd-yyyy")
-  private[this] val timeFormat = TwitterDateFormat("HH:mm")
-
-  def getDate(req: Request): Option[Date] =
-    req.params.get("date").map(dateFormat.parse)
-
-  def getDateStr(req: Request): String = {
-    val date = getDate(req).getOrElse(Calendar.getInstance().getTime)
-    dateFormat.format(date)
-  }
-
-  def getLimit(req: Request): Option[Int] = {
-    req.params.get("limit").map(_.toInt)
-  }
-
-  def getLimitStr(req: Request): String = {
-    getLimit(req).getOrElse(defaultQueryLimit).toString
-  }
-
-  def getTime(req: Request): Option[Date] =
-    req.params.get("time").map(timeFormat.parse)
-
-  def getTimeStr(req: Request): String = {
-    val time = getTime(req).getOrElse(Calendar.getInstance().getTime)
-    timeFormat.format(time)
-  }
-
-  def getTimestampStr(req: Request): String = {
-    getTimestamp(req).getOrElse(Time.now.inMicroseconds).toString
-  }
-
-  def getTimestamp(req: Request): Option[Long] = {
-    req.params.getLong("timestamp")
-  }
-
+class QueryExtractor @Inject()(@Flag("zipkin.queryService.durationBatchSize") defaultQueryLimit: Int) {
   /**
    * Takes a `Request` and produces the correct `QueryRequest` depending
    * on the GET parameters present
@@ -70,7 +29,7 @@ class QueryExtractor @Inject()(spanStore: SpanStore,
   def apply(req: Request): Option[QueryRequest] = req.params.get("serviceName").filterNot(_ == "") map { serviceName =>
     val spanName = req.params.get("spanName") filterNot { n => n == "all" || n == "" }
 
-    val timestamp = getTimestamp(req).getOrElse(Time.now.inMicroseconds)
+    val timestamp = req.params.getLong("timestamp").getOrElse(Time.now.inMicroseconds)
 
     val (annotations, binaryAnnotations) = req.params.get("annotationQuery") map { query =>
       var anns = Seq.empty[String]
@@ -86,20 +45,11 @@ class QueryExtractor @Inject()(spanStore: SpanStore,
           case _ =>
         }
       }
-
-      ( (if (anns.isEmpty) None else Some(anns)),
-        (if (binAnns.isEmpty) None else Some(binAnns))
-      )
+      (anns.toList, binAnns.toMap)
     } getOrElse {
-      (None, None)
+      (List.empty[String], Map.empty[String, String])
     }
-    val limit = getLimit(req).getOrElse(defaultQueryLimit)
-    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, timestamp, limit, adjustClockSkew(req))
+    val limit = req.params.get("limit").map(_.toInt).getOrElse(defaultQueryLimit)
+    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, timestamp, limit)
   }
-
-  def adjustClockSkew(req: Request): Boolean =
-    req.params.get("adjust_clock_skew") match {
-      case Some("false") => false
-      case _ => true
-    }
 }

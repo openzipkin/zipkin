@@ -16,9 +16,8 @@
  */
 package com.twitter.zipkin.query.adjusters
 
-import com.twitter.finagle.tracing.{Trace => FTrace}
 import com.twitter.zipkin.common._
-import com.twitter.zipkin.{Constants, thriftscala}
+import com.twitter.zipkin.Constants
 import com.twitter.zipkin.query.{Trace, SpanTreeEntry}
 import scala.collection.Map
 
@@ -31,7 +30,6 @@ class TimeSkewAdjuster extends Adjuster {
    * This is to counteract clock skew on servers, we want the Trace to happen in order.
    */
   def adjust(trace: Trace): Trace = {
-    FTrace.record("timeskew.adjust")
     trace.getRootSpan match {
       case Some(s) => Trace(adjust(trace.getSpanTree(s, trace.getIdToChildrenMap), None))
       case None => trace
@@ -112,18 +110,18 @@ class TimeSkewAdjuster extends Adjuster {
         case _ => None
       }
 
-      val serverRecvTs = span.getAnnotation(thriftscala.Constants.CLIENT_SEND) match {
+      val serverRecvTs = span.getAnnotation(Constants.ClientSend) match {
         case Some(a) =>
-          annotations = annotations :+ Annotation(a.timestamp, thriftscala.Constants.SERVER_RECV, endpoint)
+          annotations = annotations :+ Annotation(a.timestamp, Constants.ServerRecv, endpoint)
           warnings = warnings :+ TimeSkewAddServerRecv
           a.timestamp
         case _ => // This should never actually happen since we checked in the IF
           throw new AdjusterException
       }
 
-      val serverSendTs = span.getAnnotation(thriftscala.Constants.CLIENT_RECV) match {
+      val serverSendTs = span.getAnnotation(Constants.ClientRecv) match {
         case Some(a) =>
-          annotations = annotations :+ Annotation(a.timestamp, thriftscala.Constants.SERVER_SEND, endpoint)
+          annotations = annotations :+ Annotation(a.timestamp, Constants.ServerSend, endpoint)
           warnings = warnings :+ TimeSkewAddServerSend
           a.timestamp
         case _ => // This should never actually happen since we checked in the IF
@@ -142,8 +140,8 @@ class TimeSkewAdjuster extends Adjuster {
       children = children map { c =>
         c.span.getAnnotationsAsMap match {
           case csa if containsClientCoreAnnotations(csa) =>
-            val clientSendTs = csa(thriftscala.Constants.CLIENT_SEND).timestamp
-            val clientRecvTs = csa(thriftscala.Constants.CLIENT_RECV).timestamp
+            val clientSendTs = csa(Constants.ClientSend).timestamp
+            val clientRecvTs = csa(Constants.ClientRecv).timestamp
             endpoint flatMap { getClockSkew(serverRecvTs, serverSendTs, clientSendTs, clientRecvTs, _) } match {
               case Some(endpointSkew) => adjustTimestamps(c, endpointSkew)
               case _ => c
@@ -166,11 +164,11 @@ class TimeSkewAdjuster extends Adjuster {
   }
 
   private[this] def containsClientCoreAnnotations(annotations: Map[String, Annotation]): Boolean = {
-    annotations.contains(thriftscala.Constants.CLIENT_SEND) && annotations.contains(thriftscala.Constants.CLIENT_RECV)
+    annotations.contains(Constants.ClientSend) && annotations.contains(Constants.ClientRecv)
   }
 
   private[this] def containsServerCoreAnnotations(annotations: Map[String, Annotation]): Boolean = {
-    annotations.contains(thriftscala.Constants.SERVER_SEND) && annotations.contains(thriftscala.Constants.SERVER_RECV)
+    annotations.contains(Constants.ServerSend) && annotations.contains(Constants.ServerRecv)
   }
 
   /**
@@ -192,12 +190,12 @@ class TimeSkewAdjuster extends Adjuster {
   private[this] def getClockSkew(span: Span): Option[ClockSkew] = {
     val annotations = span.getAnnotationsAsMap
     if (!containsAllCoreAnnotations(annotations)) None else {
-      getEndpoint(annotations, List(thriftscala.Constants.SERVER_RECV, thriftscala.Constants.SERVER_SEND)) flatMap { ep =>
+      getEndpoint(annotations, List(Constants.ServerRecv, Constants.ServerSend)) flatMap { ep =>
         getClockSkew(
-          getTimestamp(annotations, thriftscala.Constants.CLIENT_SEND),
-          getTimestamp(annotations, thriftscala.Constants.CLIENT_RECV),
-          getTimestamp(annotations, thriftscala.Constants.SERVER_RECV),
-          getTimestamp(annotations, thriftscala.Constants.SERVER_SEND),
+          getTimestamp(annotations, Constants.ClientSend),
+          getTimestamp(annotations, Constants.ClientRecv),
+          getTimestamp(annotations, Constants.ServerRecv),
+          getTimestamp(annotations, Constants.ServerSend),
           ep
         )
       }

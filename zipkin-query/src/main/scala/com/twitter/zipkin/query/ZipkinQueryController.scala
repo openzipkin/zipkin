@@ -29,27 +29,25 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
 
   get("/api/v1/traces") { request: Request =>
     queryExtractor(request) match {
-      case Some(qr) => traceIds(qr).flatMap(getTraces(_, qr.adjustClockSkew))
-      case None => Future.value(response.badRequest())
+      case Some(qr) => traceIds(qr).flatMap(getTraces(_))
+      case None => Future.value(response.badRequest)
     }
   }
 
   get("/api/v1/trace/:id") { request: GetTraceRequest =>
-    getTraces(SpanId.fromString(request.id).map(_.toLong).toSeq, request.adjust_clock_skew).map(_.headOption)
+    getTraces(SpanId.fromString(request.id).map(_.toLong).toSeq).map(_.headOption)
   }
 
   get("/api/v1/dependencies/:from/:to") { request: GetDependenciesRequest =>
     dependencyStore.getDependencies(Some(request.from), Some(request.to)).map(_.links)
   }
 
-  private[this] def getTraces(ids: Seq[Long], adjustClockSkew: Boolean): Future[Seq[Seq[JsonSpan]]] = {
+  private[this] def getTraces(ids: Seq[Long]): Future[Seq[Seq[JsonSpan]]] = {
     if (ids.isEmpty) return EmptyTraces
     spanStore.getSpansByTraceIds(ids).map { spans =>
-      val traces = spans.map(Trace(_))
-      if (adjustClockSkew) {
-        traces.map(t => timeSkewAdjuster.adjust(_))
-      }
-      traces.map(_.spans.map(JsonSpan))
+      spans.map(Trace(_))
+        .map(timeSkewAdjuster.adjust)
+        .map(_.spans.map(JsonSpan))
     }
   }
 
@@ -60,4 +58,4 @@ case class GetSpanNamesRequest(@QueryParam serviceName: String)
 
 case class GetDependenciesRequest(@RouteParam from: Long, @RouteParam to: Long)
 
-case class GetTraceRequest(@RouteParam id: String, @QueryParam adjust_clock_skew: Boolean = true)
+case class GetTraceRequest(@RouteParam id: String)

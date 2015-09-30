@@ -20,29 +20,25 @@ import com.google.common.base.Charsets.UTF_8
 import com.twitter.util.Future
 import com.twitter.zipkin.query.constants._
 import com.twitter.zipkin.storage._
-import com.twitter.zipkin.thriftscala
-import com.twitter.zipkin.thriftscala.QueryRequest
 import java.nio.ByteBuffer
 import javax.inject.Inject
 
 // TODO: this class has a lot of tech debt, and also hints spanstore needs to be redone to not require a preparatory id fetch.
-class QueryTraceIds @Inject()(spanStore: SpanStore) extends ((thriftscala.QueryRequest) => Future[Seq[Long]]) {
+class QueryTraceIds @Inject()(spanStore: SpanStore) extends ((QueryRequest) => Future[Seq[Long]]) {
 
   override def apply(qr: QueryRequest) = {
-    val sliceQueries = Seq[Option[Seq[SliceQuery]]](
-      qr.spanName.map { n => Seq(SpanSliceQuery(n)) },
-      qr.annotations.map { _.map { AnnotationSliceQuery(_, None) } },
-      qr.binaryAnnotations.map { _.map { e => AnnotationSliceQuery(e._1, Some(ByteBuffer.wrap(e._2.getBytes(UTF_8)))) }(collection.breakOut) }
-    ).flatten.flatten
+    val sliceQueries = Seq[List[SliceQuery]](
+      qr.spanName.map(SpanSliceQuery(_)).toList,
+      qr.annotations.map(AnnotationSliceQuery(_, None)),
+      qr.binaryAnnotations.map(e => AnnotationSliceQuery(e._1, Some(ByteBuffer.wrap(e._2.getBytes(UTF_8))))).toList
+    ).flatten
 
     sliceQueries match {
       case Nil =>
-        spanStore.getTraceIdsByName(qr.serviceName, None, qr.endTs, qr.limit) flatMap {
-          queryResponse(_, qr)
-        }
+        spanStore.getTraceIdsByName(qr.serviceName, None, qr.endTs, qr.limit).flatMap(queryResponse(_, qr))
 
       case slice :: Nil =>
-        querySlices(sliceQueries, qr) flatMap { ids => queryResponse(ids.flatten, qr) }
+        querySlices(sliceQueries, qr).flatMap(ids => queryResponse(ids.flatten, qr))
 
       case _ =>
         // TODO: timestamps endTs is the wrong name for all this
@@ -68,15 +64,10 @@ class QueryTraceIds @Inject()(spanStore: SpanStore) extends ((thriftscala.QueryR
      * Find the timestamps associated with each trace ID and construct a new IndexedTraceId
      * that has the trace ID's maximum timestamp (ending) as the timestamp
      */
-    commonTraceIds map { id =>
-      IndexedTraceId(id, idMaps.flatMap(_(id).map(_.timestamp)).max)
-    }
+    commonTraceIds.map(id => IndexedTraceId(id, idMaps.flatMap(_(id).map(_.timestamp)).max))
   }
 
-  private[this] def queryResponse(
-    ids: Seq[IndexedTraceId],
-    qr: thriftscala.QueryRequest
-  ): Future[Seq[Long]] = {
+  private[this] def queryResponse(ids: Seq[IndexedTraceId], qr: QueryRequest): Future[Seq[Long]] = {
     Future.value(ids.slice(0, qr.limit).map(_.traceId))
   }
 
@@ -84,7 +75,7 @@ class QueryTraceIds @Inject()(spanStore: SpanStore) extends ((thriftscala.QueryR
   private case class SpanSliceQuery(name: String) extends SliceQuery
   private case class AnnotationSliceQuery(key: String, value: Option[ByteBuffer]) extends SliceQuery
 
-  private[this] def querySlices(slices: Seq[SliceQuery], qr: thriftscala.QueryRequest): Future[Seq[Seq[IndexedTraceId]]] =
+  private[this] def querySlices(slices: Seq[SliceQuery], qr: QueryRequest): Future[Seq[Seq[IndexedTraceId]]] =
     Future.collect(slices map {
       case SpanSliceQuery(name) =>
         spanStore.getTraceIdsByName(qr.serviceName, Some(name), qr.endTs, qr.limit)
