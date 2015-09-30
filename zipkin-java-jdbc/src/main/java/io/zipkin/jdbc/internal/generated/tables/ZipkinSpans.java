@@ -41,7 +41,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinSpans extends TableImpl<Record> {
 
-	private static final long serialVersionUID = -286727833;
+	private static final long serialVersionUID = -484743906;
 
 	/**
 	 * The reference instance of <code>zipkin.zipkin_spans</code>
@@ -82,9 +82,9 @@ public class ZipkinSpans extends TableImpl<Record> {
 	public final TableField<Record, Boolean> DEBUG = createField("debug", org.jooq.impl.SQLDataType.BIT, this, "");
 
 	/**
-	 * The column <code>zipkin.zipkin_spans.first_timestamp</code>. Used to implement TTL; First Annotation.timestamp() or null
+	 * The column <code>zipkin.zipkin_spans.start_ts</code>. Used to implement TTL; First Annotation.timestamp() or null
 	 */
-	public final TableField<Record, Long> FIRST_TIMESTAMP = createField("first_timestamp", org.jooq.impl.SQLDataType.BIGINT, this, "Used to implement TTL; First Annotation.timestamp() or null");
+	public final TableField<Record, Long> START_TS = createField("start_ts", org.jooq.impl.SQLDataType.BIGINT, this, "Used to implement TTL; First Annotation.timestamp() or null");
 
 	/**
 	 * Create a <code>zipkin.zipkin_spans</code> table reference

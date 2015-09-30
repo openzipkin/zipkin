@@ -13,87 +13,195 @@
  */
 package io.zipkin;
 
-import com.facebook.swift.codec.ThriftConstructor;
-import com.facebook.swift.codec.ThriftField;
-import com.facebook.swift.codec.ThriftStruct;
-import com.google.auto.value.AutoValue;
+import io.zipkin.internal.JsonCodec;
 import io.zipkin.internal.Nullable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 
-import static com.facebook.swift.codec.ThriftField.Requiredness.OPTIONAL;
+import static io.zipkin.internal.Util.checkNotNull;
+import static io.zipkin.internal.Util.equal;
+import static io.zipkin.internal.Util.sortedList;
 
-@AutoValue
-@ThriftStruct(value = "Span", builder = AutoValue_Span.Builder.class)
-public abstract class Span implements Comparable<Span> {
+public final class Span implements Comparable<Span> {
+
+  public final long traceId;
+
+  public final String name;
+
+  public final long id;
+
+  @Nullable
+  public final Long parentId;
+
+  public final List<Annotation> annotations;
+
+  public final List<BinaryAnnotation> binaryAnnotations;
+
+  @Nullable
+  public final Boolean debug;
+
+  Span(
+      long traceId,
+      String name,
+      long id,
+      @Nullable Long parentId,
+      Collection<Annotation> annotations,
+      Collection<BinaryAnnotation> binaryAnnotations,
+      @Nullable Boolean debug) {
+    this.traceId = traceId;
+    this.name = checkNotNull(name, "name");
+    this.id = id;
+    this.parentId = parentId;
+    this.annotations = sortedList(annotations);
+    this.binaryAnnotations = Collections.unmodifiableList(new ArrayList<>(binaryAnnotations));
+    this.debug = debug;
+  }
+
+  public static final class Builder {
+    private Long traceId;
+    private String name;
+    private Long id;
+    private Long parentId;
+    private LinkedHashSet<Annotation> annotations = new LinkedHashSet<>();
+    private LinkedHashSet<BinaryAnnotation> binaryAnnotations = new LinkedHashSet<>();
+    private Boolean debug;
+
+    public Builder() {
+    }
+
+    public Builder(Span source) {
+      this.traceId = source.traceId;
+      this.name = source.name;
+      this.id = source.id;
+      this.parentId = source.parentId;
+      this.annotations.addAll(source.annotations);
+      this.binaryAnnotations.addAll(source.binaryAnnotations);
+      this.debug = source.debug;
+    }
+
+    public Builder merge(Span that) {
+      if (this.traceId == null) {
+        this.traceId = that.traceId;
+      }
+      if (this.name == null) {
+        this.name = that.name;
+      }
+      if (this.id == null) {
+        this.id = that.id;
+      }
+      if (this.parentId == null) {
+        this.parentId = that.parentId;
+      }
+      this.annotations.addAll(that.annotations);
+      this.binaryAnnotations.addAll(that.binaryAnnotations);
+      if (this.debug == null) {
+        this.debug = that.debug;
+      }
+      return this;
+    }
+
+    public Span.Builder name(String name) {
+      this.name = name;
+      return this;
+    }
+
+    public Span.Builder traceId(long traceId) {
+      this.traceId = traceId;
+      return this;
+    }
+
+
+    public Span.Builder id(long id) {
+      this.id = id;
+      return this;
+    }
+
+    @Nullable
+    public Span.Builder parentId(Long parentId) {
+      this.parentId = parentId;
+      return this;
+    }
+
+    public Span.Builder addAnnotation(Annotation annotation) {
+      this.annotations.add(annotation);
+      return this;
+    }
+
+    public Span.Builder addBinaryAnnotation(BinaryAnnotation binaryAnnotation) {
+      this.binaryAnnotations.add(binaryAnnotation);
+      return this;
+    }
+
+    @Nullable
+    public Span.Builder debug(Boolean debug) {
+      this.debug = debug;
+      return this;
+    }
+
+    public Span build() {
+      return new Span(this.traceId, this.name, this.id, this.parentId, this.annotations, this.binaryAnnotations, this.debug);
+    }
+  }
+
+  @Override
+  public String toString() {
+    return JsonCodec.SPAN_ADAPTER.toJson(this);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (o instanceof Span) {
+      Span that = (Span) o;
+      return (this.traceId == that.traceId)
+          && (this.name.equals(that.name))
+          && (this.id == that.id)
+          && equal(this.parentId, that.parentId)
+          && (this.annotations.equals(that.annotations))
+          && (this.binaryAnnotations.equals(that.binaryAnnotations))
+          && equal(this.debug, that.debug);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int h = 1;
+    h *= 1000003;
+    h ^= (traceId >>> 32) ^ traceId;
+    h *= 1000003;
+    h ^= name.hashCode();
+    h *= 1000003;
+    h ^= (id >>> 32) ^ id;
+    h *= 1000003;
+    h ^= (parentId == null) ? 0 : parentId.hashCode();
+    h *= 1000003;
+    h ^= annotations.hashCode();
+    h *= 1000003;
+    h ^= binaryAnnotations.hashCode();
+    h *= 1000003;
+    h ^= (debug == null) ? 0 : debug.hashCode();
+    return h;
+  }
 
   @Override
   public int compareTo(Span that) {
-    if (this == that){
+    if (this == that) {
       return 0;
     }
-    long left = annotations().isEmpty() ? 0L : annotations().get(0).timestamp();
-    long right = that.annotations().isEmpty() ? 0L : that.annotations().get(0).timestamp();
-    return Long.compare(left, right);
+    return Long.compare(this.startTs(), that.startTs());
   }
 
-  public static Builder builder() {
-    return new AutoValue_Span.Builder();
+  public long startTs() {
+    return annotations.isEmpty() ? Long.MIN_VALUE : annotations.get(0).timestamp;
   }
 
-  public static Builder builder(Span source) {
-    return new AutoValue_Span.Builder(source);
-  }
-
-  @ThriftField(value = 1)
-  public abstract long traceId();
-
-  @ThriftField(value = 3)
-  public abstract String name();
-
-  @ThriftField(value = 4)
-  public abstract long id();
-
-  @Nullable
-  @ThriftField(value = 5, requiredness = OPTIONAL)
-  public abstract Long parentId();
-
-  @ThriftField(value = 6)
-  public abstract List<Annotation> annotations();
-
-  @ThriftField(value = 8)
-  public abstract List<BinaryAnnotation> binaryAnnotations();
-
-  @Nullable
-  @ThriftField(value = 9, requiredness = OPTIONAL)
-  public abstract Boolean debug();
-
-  @AutoValue.Builder
-  public interface Builder {
-
-    @ThriftField(value = 1)
-    Builder traceId(long traceId);
-
-    @ThriftField(value = 3)
-    Builder name(String name);
-
-    @ThriftField(value = 4)
-    Builder id(long id);
-
-    @Nullable
-    @ThriftField(value = 5, requiredness = OPTIONAL)
-    Builder parentId(Long parentId);
-
-    @ThriftField(value = 6)
-    Builder annotations(List<Annotation> annotations);
-
-    @ThriftField(value = 8)
-    Builder binaryAnnotations(List<BinaryAnnotation> binaryAnnotations);
-
-    @Nullable
-    @ThriftField(value = 9, requiredness = OPTIONAL)
-    Builder debug(Boolean debug);
-
-    @ThriftConstructor
-    Span build();
+  public Long endTs() {
+    return annotations.isEmpty() ? null : annotations.get(annotations.size() - 1).timestamp;
   }
 }

@@ -13,72 +13,35 @@
  */
 package io.zipkin;
 
-import com.facebook.swift.codec.ThriftCodecManager;
-import com.facebook.swift.codec.internal.reflection.ReflectionThriftCodecFactory;
-import com.facebook.swift.service.ThriftServer;
-import com.facebook.swift.service.ThriftServerConfig;
-import com.facebook.swift.service.ThriftServiceProcessor;
+import com.zaxxer.hikari.HikariDataSource;
 import io.zipkin.jdbc.JDBCSpanStore;
-import io.zipkin.spanstore.InMemorySpanStore;
-import io.zipkin.spanstore.SpanStore;
-import io.zipkin.scribe.ScribeSpanConsumer;
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.ServerSocket;
-import org.apache.commons.dbcp2.BasicDataSource;
 import org.jooq.conf.Settings;
 
 import static io.zipkin.internal.Util.envOr;
-import static java.util.Collections.emptyList;
 
 public final class ZipkinServer implements Closeable {
 
-  private final int scribePort;
   private final int queryPort;
   private final SpanStore spanStore;
 
-  private ZipkinServer(int scribePort, int queryPort, SpanStore spanStore) {
-    this.scribePort = scribePort;
+  private ZipkinServer(int queryPort, SpanStore spanStore) {
     this.queryPort = queryPort;
     this.spanStore = spanStore;
   }
 
-  private ThriftServer scribe;
-  private ThriftServer query;
-
   public void start() throws IOException {
-    ScribeSpanConsumer scribe = new ScribeSpanConsumer(spanStore);
-    if (scribePort == queryPort) {
-      this.scribe = query = startServices(scribePort, scribe, spanStore);
-    } else {
-      this.scribe = startServices(scribePort, scribe);
-      this.query = startServices(queryPort, spanStore);
-    }
+    // TODO
   }
 
   public void stop() {
-    if (scribe != null) {
-      scribe.close();
-    }
-    if (query != null) {
-      query.close();
-    }
-  }
-
-  private static ThriftServer startServices(int port, Object... services) throws IOException {
-    ThriftServiceProcessor processor = new ThriftServiceProcessor(
-        new ThriftCodecManager(new ReflectionThriftCodecFactory()), emptyList(), services);
-    try (ServerSocket server = new ServerSocket(port)) {
-      port = server.getLocalPort();
-    }
-    return new ThriftServer(processor, new ThriftServerConfig()
-        .setBindAddress("localhost")
-        .setPort(port)).start();
+    // TODO
+    spanStore.close();
   }
 
   public static void main(String[] args) throws IOException, InterruptedException {
 
-    int collectorPort = envOr("COLLECTOR_PORT", 9410);
     int queryPort = envOr("QUERY_PORT", 9411);
 
     final ZipkinServer server;
@@ -92,13 +55,14 @@ public final class ZipkinServer implements Closeable {
           mysqlHost, mysqlPort, mysqlUser, mysqlPass);
 
       // TODO: replace with HikariDataSource when 2.4.2 is out
-      BasicDataSource datasource = new org.apache.commons.dbcp2.BasicDataSource();
+      HikariDataSource datasource = new HikariDataSource();
       datasource.setDriverClassName("com.mysql.jdbc.Driver");
-      datasource.setUrl(url);
-      datasource.setMaxTotal(10);
-      server = new ZipkinServer(collectorPort, queryPort, new JDBCSpanStore(datasource, new Settings()));
+      datasource.setJdbcUrl(url);
+      datasource.setMaximumPoolSize(10);
+      datasource.setConnectionTestQuery("SELECT '1'");
+      server = new ZipkinServer(queryPort, new JDBCSpanStore(datasource, new Settings()));
     } else {
-      server = new ZipkinServer(collectorPort, queryPort, new InMemorySpanStore());
+      server = new ZipkinServer(queryPort, new InMemorySpanStore());
     }
     try {
       server.start();

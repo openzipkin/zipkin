@@ -13,21 +13,18 @@
  */
 package io.zipkin.scribe;
 
-import com.facebook.swift.codec.ThriftCodec;
-import com.facebook.swift.codec.ThriftCodecManager;
+import io.zipkin.Codec;
 import io.zipkin.Span;
 import java.util.Base64;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.transport.TMemoryBuffer;
 
 public final class ScribeSpanConsumer implements Scribe {
 
   private final Consumer<List<Span>> consumer;
-  private final ThriftCodec<Span> spanCodec = new ThriftCodecManager().getCodec(Span.class);
+  private final Codec spanCodec = Codec.THRIFT;
 
   public ScribeSpanConsumer(Consumer<List<Span>> consumer) {
     this.consumer = consumer;
@@ -36,18 +33,9 @@ public final class ScribeSpanConsumer implements Scribe {
   @Override
   public ResultCode log(List<LogEntry> messages) {
     Stream<Span> spansToStore = messages.stream()
-        .filter(m -> m.category().equals("zipkin"))
-        .map(LogEntry::message)
-        .map(m -> Base64.getMimeDecoder().decode(m)) // finagle-zipkin uses mime encoding
-        .map(bytes -> {
-          TMemoryBuffer transport = new TMemoryBuffer(bytes.length);
-          try {
-            transport.write(bytes);
-            return spanCodec.read(new TBinaryProtocol(transport));
-          } catch (Exception e) {
-            return null;
-          }
-        })
+        .filter(m -> m.category.equals("zipkin"))
+        .map(e -> Base64.getMimeDecoder().decode(e.message)) // finagle-zipkin uses mime encoding
+        .map(spanCodec::readSpan)
         .filter(s -> s != null);
     consumer.accept(spansToStore.collect(Collectors.toList()));
     return ResultCode.OK;

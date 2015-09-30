@@ -11,14 +11,23 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin.scribe;
+package io.zipkin.internal;
 
-import com.facebook.swift.codec.ThriftField;
-import com.facebook.swift.service.ThriftMethod;
-import com.facebook.swift.service.ThriftService;
-import java.util.List;
+import org.junit.Test;
 
-@ThriftService("Scribe")
-public interface Scribe {
-  @ThriftMethod(value = "Log") ResultCode log(@ThriftField(value = 1) List<LogEntry> messages);
+import static io.zipkin.internal.Util.equal;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class UtilTest {
+
+  @Test
+  public void equalTest() {
+    assertTrue(equal(null, null));
+    assertTrue(equal("1", "1"));
+    assertFalse(equal(null, "1"));
+    assertFalse(equal("1", null));
+    assertFalse(equal("1", "2"));
+  }
+
 }
