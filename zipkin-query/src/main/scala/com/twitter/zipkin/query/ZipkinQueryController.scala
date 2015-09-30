@@ -19,6 +19,10 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
 
   private[this] val EmptyTraces = Future.value(Seq.empty[Seq[JsonSpan]])
 
+  get("/api/v1/spans") { request: GetSpanNamesRequest =>
+    spanStore.getSpanNames(request.serviceName)
+  }
+
   get("/api/v1/services") { request: Request =>
     spanStore.getAllServiceNames()
   }
@@ -51,6 +55,8 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
 
   private[this] val timeSkewAdjuster = new TimeSkewAdjuster()
 }
+
+case class GetSpanNamesRequest(@QueryParam serviceName: String)
 
 case class GetDependenciesRequest(@RouteParam from: Long, @RouteParam to: Long)
 

@@ -80,6 +80,27 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
         """.stripMargin)
   }
 
+  "get span names" in {
+    app.injector.instance[SpanStore].apply(allSpans)
+
+    server.httpGet(
+      path = "/api/v1/spans?serviceName=service1",
+      andExpect = Ok,
+      withJsonBody =
+        """
+          |[
+          |  "methodcall"
+          |]
+        """.stripMargin)
+  }
+
+  "get span names when not found" in {
+    server.httpGet(
+      path = "/api/v1/spans?serviceName=service1",
+      andExpect = Ok,
+      withJsonBody = "[]")
+  }
+
   "get trace by hex id" in {
     app.injector.instance[SpanStore].apply(spans1)
 

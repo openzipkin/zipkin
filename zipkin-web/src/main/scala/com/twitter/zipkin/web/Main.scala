@@ -98,7 +98,7 @@ trait ZipkinWebFactory { self: App =>
       ("/", addLayout("Index", environment()) andThen handleIndex(queryClient)),
       ("/traces/:id", addLayout("Traces", environment()) andThen handleTraces(queryClient)),
       ("/dependency", addLayout("Dependency", environment()) andThen handleDependency()),
-      ("/api/spans", handleRoute(queryClient, "/api/v1/traces")),
+      ("/api/spans", handleRoute(queryClient, "/api/v1/spans")),
       ("/api/dependencies/?:startTime/?:endTime", handleRoute(queryClient, "/api/v1/dependencies"))
     ).foldLeft(new HttpMuxer) { case (m , (p, handler)) =>
       val path = p.split("/").toList
