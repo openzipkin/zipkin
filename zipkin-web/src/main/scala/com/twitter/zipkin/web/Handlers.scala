@@ -1,6 +1,5 @@
 package com.twitter.zipkin.web
 
-
 import com.google.common.io.ByteStreams
 import com.twitter.finagle.httpx.{ParamMap, Request, Response}
 import com.twitter.finagle.stats.{Stat, StatsReceiver}
@@ -10,14 +9,13 @@ import com.twitter.finatra.httpclient.HttpClient
 import com.twitter.io.Buf
 import com.twitter.util.Future
 import com.twitter.zipkin.json._
-import java.io.{File, FileInputStream, InputStream}
 import com.twitter.zipkin.query._
 import com.twitter.zipkin.web.mustache.ZipkinMustache
 import com.twitter.zipkin.{Constants => ZConstants}
 import org.jboss.netty.handler.codec.http.QueryStringEncoder
+import java.io.{File, FileInputStream, InputStream}
 
 import scala.annotation.tailrec
-import scala.collection.immutable.SortedSet
 
 class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor) {
   import Util._
@@ -61,6 +59,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
   }
 
   private[this] val EmptyTraces = Future.value(Seq.empty[TraceSummary])
+  private[this] val EmptyStrings = Future.value(Seq.empty[String])
   private[this] val NotFound = Future.value(ErrorRenderer(404, "Not Found"))
 
   def collectStats(stats: StatsReceiver): Filter[Request, Response, Request, Response] =
@@ -220,22 +219,26 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
     Service.mk[Request, Renderer] { req =>
       val serviceName = req.params.get("serviceName").filterNot(_ == "")
       val spanName = req.params.get("spanName").filterNot(_ == "")
-      val qResults = serviceName match {
+
+      val servicesCall = client.executeJson[Seq[String]](Request(s"/api/v1/services"))
+
+      val spansCall = serviceName match {
+        case Some(service) => client.executeJson[Seq[String]](Request(s"/api/v1/spans?serviceName=" + service))
+        case None => EmptyStrings
+      }
+
+      val tracesCall = serviceName match {
         case Some(service) => route[Seq[Seq[JsonSpan]]](client, "/api/v1/traces", req.params)
           .map(traces => traces.map(_.map(JsonSpan.invert))
           .map(Trace.apply(_)).flatMap(TraceSummary(_).toSeq))
         case None => EmptyTraces
       }
-      val spanResults = serviceName match {
-        case Some(service) => client.executeJson[SortedSet[String]](Request(s"/api/v1/traces?serviceName=${serviceName}"))
-        case None => Future.value(Seq.empty[String])
-      }
-      val serviceResults = client.executeJson[SortedSet[String]](Request(s"/api/v1/services"))
-      for (services <- serviceResults; results <- qResults; spans <- spanResults) yield {
-        val svcList = services.toList.sorted map {
+
+      for (services <- servicesCall; spans <- spansCall; traces <- tracesCall) yield {
+        val svcList = services.toList map {
           svc => Map("name" -> svc, "selected" -> (if (Some(svc) == serviceName) "selected" else ""))
         }
-        val spanList = spans.toList.sorted map {
+        val spanList = spans.toList map {
           span => Map("name" -> span, "selected" -> (if (Some(span) == spanName) "selected" else ""))
         }
 
@@ -247,9 +250,10 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
           ("spans" -> spanList),
           ("limit" -> queryExtractor.getLimitStr(req)))
 
+        // only call get traces if the user entered a query
         queryExtractor(req) foreach { qReq =>
           data ++= Map(
-            ("queryResults" -> traceSummaryToMustache(serviceName, results)),
+            ("queryResults" -> traceSummaryToMustache(serviceName, traces)),
             ("annotations" -> qReq.annotations),
             ("binaryAnnotations" -> qReq.binaryAnnotations))
         }
