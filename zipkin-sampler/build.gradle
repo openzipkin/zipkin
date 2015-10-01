@@ -7,6 +7,8 @@ dependencies {
     compile "com.twitter:util-zk_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
     compile "com.twitter.common.zookeeper:candidate:0.0.84"
     compile "com.twitter.common.zookeeper:group:0.0.90"
+    // zookeeper deps use log4j: route to slf4j
+    compile "org.slf4j:log4j-over-slf4j:${commonVersions.slf4j}"
 
     testCompile 'org.apache.curator:curator-test:2.8.0'
 }
