@@ -52,4 +52,7 @@ object Constants {
 
   /* Amount of time padding to use when resolving complex query timestamps */
   val TraceTimestampPadding: Duration = 1.minute
+
+  /* Max number of services for which there will be no HTTP Cache-Control header returned when getting services */
+  val MaxServicesWithoutCaching: Int = 3
 }

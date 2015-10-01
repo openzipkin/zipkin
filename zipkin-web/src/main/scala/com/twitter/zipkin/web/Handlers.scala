@@ -28,6 +28,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
     def apply(response: Response) {
       response.contentString = input.contentString
       response.statusCode = input.statusCode
+      input.headerMap foreach (e => response.headerMap.put(e._1,e._2))
     }
   }
 
@@ -222,8 +223,6 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       val serviceName = req.params.get("serviceName").filterNot(_ == "")
       val spanName = req.params.get("spanName").filterNot(_ == "")
 
-      val servicesCall = client.executeJson[Seq[String]](Request(s"/api/v1/services"))
-
       val spansCall = serviceName match {
         case Some(service) => client.executeJson[Seq[String]](Request(s"/api/v1/spans?serviceName=${service}"))
         case None => EmptyStrings
@@ -237,10 +236,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
         case None => EmptyTraces
       }
 
-      for (services <- servicesCall; spans <- spansCall; traces <- tracesCall) yield {
-        val svcList = services.toList map {
-          svc => Map("name" -> svc, "selected" -> (if (Some(svc) == serviceName) "selected" else ""))
-        }
+      for (spans <- spansCall; traces <- tracesCall) yield {
         val spanList = spans.toList map {
           span => Map("name" -> span, "selected" -> (if (Some(span) == spanName) "selected" else ""))
         }
@@ -249,7 +245,6 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
           ("serviceName" -> serviceName),
           ("timestamp" -> queryExtractor.getTimestampStr(req)),
           ("annotationQuery" -> req.params.get("annotationQuery").getOrElse("")),
-          ("services" -> svcList),
           ("spans" -> spanList),
           ("limit" -> queryExtractor.getLimitStr(req)))
 
