@@ -3,6 +3,7 @@
 define(
   [
     'component_data/spanNames',
+    'component_data/serviceNames',
     'component_ui/serviceName',
     'component_ui/spanName',
     'component_ui/infoPanel',
@@ -16,6 +17,7 @@ define(
 
   function (
     SpanNamesData,
+    ServiceNamesData,
     ServiceNameUI,
     SpanNameUI,
     InfoPanelUI,
@@ -31,6 +33,7 @@ define(
 
     function initialize() {
       SpanNamesData.attachTo(document);
+      ServiceNamesData.attachTo(document);
       ServiceNameUI.attachTo('#serviceName');
       SpanNameUI.attachTo('#spanName');
       InfoPanelUI.attachTo('#infoPanel');

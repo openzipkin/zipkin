@@ -24,6 +24,8 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   val ep1 = Endpoint(123, 123, "service1")
   val ep2 = Endpoint(234, 234, "service2")
   val ep3 = Endpoint(345, 345, "service3")
+  val ep4 = Endpoint(456, 456, "service4")
+
   val ann1 = Annotation(100, Constants.ClientSend, Some(ep1))
   val ann2 = Annotation(150, Constants.ClientRecv, Some(ep1))
   val spans1 = List(Span(1, "methodcall", 666, Some(2), List(ann1, ann2), Nil))
@@ -58,6 +60,12 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   val spans5 = List(Span(5, "otherMethod", 666, Some(2), List(ann9, ann10, ann11), List(bAnn1, bAnn2)))
   // duration 40
 
+  val ann13 = Annotation(100, Constants.ClientSend, Some(ep4))
+  val ann14 = Annotation(150, Constants.ClientRecv, Some(ep4))
+  val spans6 = List(Span(6, "someMethod", 669, Some(2), List(ann13, ann14), Nil))
+  // duration 50
+
+
   val allSpans = spans1 ++ spans2 ++ spans3 ++ spans4 ++ spans5
 
   // no spans
@@ -67,7 +75,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   "get service names" in {
     app.injector.instance[SpanStore].apply(allSpans)
 
-    server.httpGet(
+    val response = server.httpGet(
       path = "/api/v1/services",
       andExpect = Ok,
       withJsonBody =
@@ -78,7 +86,29 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |  "service3"
           |]
         """.stripMargin)
+
+    assert(response.headerMap.contains("Cache-Control") == false)
   }
+
+  "get cached service names" in {
+    app.injector.instance[SpanStore].apply(allSpans ++ spans6)
+
+    val response = server.httpGet(
+      path = "/api/v1/services",
+      andExpect = Ok,
+      withJsonBody =
+        """
+          |[
+          |  "service1",
+          |  "service2",
+          |  "service3",
+          |  "service4"
+          |]
+        """.stripMargin)
+
+    assert(response.headerMap.get("Cache-Control") == Some("max-age=300, must-revalidate"))
+  }
+
 
   "get span names" in {
     app.injector.instance[SpanStore].apply(allSpans)
