@@ -34,26 +34,3 @@ struct Dependencies {
   2: i64 end_time
   3: list<DependencyLink> links
 }
-
-exception DependenciesException {
-  1: string msg
-}
-
-service DependencyStore {
-
-    void storeDependencies(
-      /** replaces the links defined for the given interval */
-      1: Dependencies dependencies
-    ) throws (1: DependenciesException e);
-
-    /**
-     * Returns dependency links in an interval contained by start_time and end_time,
-     * or Dependencies(0, 0, empty), when none are present.
-     */
-    Dependencies getDependencies(
-      /* microseconds from epoch, defaults to one day before end_time */
-      1: optional i64 start_time,
-      /* microseconds from epoch, defaults to now */
-      2: optional i64 end_time
-    ) throws (1: DependenciesException qe);
-}

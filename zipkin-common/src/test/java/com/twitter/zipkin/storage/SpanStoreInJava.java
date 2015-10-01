@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 
 import scala.Option;
 import scala.collection.Seq;
-import scala.collection.immutable.Set;
 import scala.runtime.BoxedUnit;
 
 import com.twitter.util.Future;
@@ -31,12 +30,12 @@ public class SpanStoreInJava extends SpanStore {
     }
 
     @Override
-    public Future<Set<String>> getAllServiceNames() {
+    public Future<Seq<String>> getAllServiceNames() {
         return null;
     }
 
     @Override
-    public Future<Set<String>> getSpanNames(String service) {
+    public Future<Seq<String>> getSpanNames(String service) {
         return null;
     }
 

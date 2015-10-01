@@ -65,14 +65,14 @@ abstract class SpanStore extends java.io.Closeable {
    *
    * <p/> Results are sorted lexicographically
    */
-  def getAllServiceNames: Future[Set[String]]
+  def getAllServiceNames(): Future[Seq[String]]
 
   /**
    * Get all the span names for a particular service, as far back as the ttl allows.
    *
    * <p/> Results are sorted lexicographically
    */
-  def getSpanNames(service: String): Future[Set[String]]
+  def getSpanNames(service: String): Future[Seq[String]]
 
   /**
    * Store a list of spans, indexing as necessary.
@@ -170,11 +170,11 @@ class InMemorySpanStore extends SpanStore {
     }
   }
 
-  override def getAllServiceNames: Future[Set[String]] = call {
-    spans.flatMap(_.serviceNames).toSet
+  override def getAllServiceNames(): Future[Seq[String]] = call {
+    spans.flatMap(_.serviceNames).distinct.toList.sorted
   }
 
-  override def getSpanNames(serviceName: String): Future[Set[String]] = call {
-    spansForService(serviceName).map(_.name).toSet
+  override def getSpanNames(serviceName: String): Future[Seq[String]] = call {
+    spansForService(serviceName).map(_.name).distinct.toList.sorted
   }
 }

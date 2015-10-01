@@ -281,7 +281,7 @@ class AnormSpanStore(val db: DB,
     }
   }
 
-  override def getAllServiceNames: Future[Set[String]] = db.inNewThreadWithRecoverableRetry {
+  override def getAllServiceNames(): Future[Seq[String]] = db.inNewThreadWithRecoverableRetry {
     implicit val (conn, borrowTime) = borrowConn()
     try {
 
@@ -291,14 +291,14 @@ class AnormSpanStore(val db: DB,
           |GROUP BY service_name
           |ORDER BY service_name
         """.stripMargin)
-        .as(str("service_name") *).toSet
+        .as(str("service_name") *)
 
     } finally {
       returnConn(conn, borrowTime, "getServiceNames")
     }
   }
 
-  override def getSpanNames(service: String): Future[Set[String]] = db.inNewThreadWithRecoverableRetry {
+  override def getSpanNames(service: String): Future[Seq[String]] = db.inNewThreadWithRecoverableRetry {
     implicit val (conn, borrowTime) = borrowConn()
     try {
 
@@ -311,7 +311,6 @@ class AnormSpanStore(val db: DB,
         """.stripMargin)
         .on("service" -> service)
         .as(str("span_name") *)
-        .toSet
 
     } finally {
       returnConn(conn, borrowTime, "getSpanNames")

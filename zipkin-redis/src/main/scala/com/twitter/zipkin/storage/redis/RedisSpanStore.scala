@@ -50,7 +50,7 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
     index.getTraceIdsByAnnotation(serviceName, annotation, value, endTs, limit)
   }
 
-  override def getAllServiceNames: Future[Set[String]] = index.getServiceNames
+  override def getAllServiceNames(): Future[Seq[String]] = index.getServiceNames.map(_.toList.sorted)
 
-  override def getSpanNames(serviceName: String): Future[Set[String]] = index.getSpanNames(serviceName)
+  override def getSpanNames(serviceName: String): Future[Seq[String]] = index.getSpanNames(serviceName).map(_.toList.sorted)
 }

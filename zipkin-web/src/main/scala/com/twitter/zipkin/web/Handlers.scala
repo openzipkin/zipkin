@@ -7,7 +7,7 @@ import com.twitter.finagle.tracing.SpanId
 import com.twitter.finagle.{Filter, Service}
 import com.twitter.finatra.httpclient.HttpClient
 import com.twitter.io.Buf
-import com.twitter.util.Future
+import com.twitter.util.{Future, TwitterDateFormat}
 import com.twitter.zipkin.json._
 import com.twitter.zipkin.query._
 import com.twitter.zipkin.web.mustache.ZipkinMustache
@@ -18,6 +18,8 @@ import java.io.{File, FileInputStream, InputStream}
 import scala.annotation.tailrec
 
 class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor) {
+  private[this] val fmt = TwitterDateFormat("MM-dd-yyyy'T'HH:mm:ss.SSSZ")
+
   import Util._
 
   type Renderer = (Response => Unit)
@@ -199,7 +201,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
 
       MustacheTraceSummary(
         t.traceId,
-        queryExtractor.fmt.format(new java.util.Date(t.startTimestamp / 1000)),
+        fmt.format(new java.util.Date(t.startTimestamp / 1000)),
         t.startTimestamp,
         duration,
         durationStr(t.durationMicro.toLong * 1000),
@@ -223,10 +225,11 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       val servicesCall = client.executeJson[Seq[String]](Request(s"/api/v1/services"))
 
       val spansCall = serviceName match {
-        case Some(service) => client.executeJson[Seq[String]](Request(s"/api/v1/spans?serviceName=" + service))
+        case Some(service) => client.executeJson[Seq[String]](Request(s"/api/v1/spans?serviceName=${service}"))
         case None => EmptyStrings
       }
 
+      // only call get traces if the user entered a query
       val tracesCall = serviceName match {
         case Some(service) => route[Seq[Seq[JsonSpan]]](client, "/api/v1/traces", req.params)
           .map(traces => traces.map(_.map(JsonSpan.invert))
@@ -250,13 +253,12 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
           ("spans" -> spanList),
           ("limit" -> queryExtractor.getLimitStr(req)))
 
-        // only call get traces if the user entered a query
-        queryExtractor(req) foreach { qReq =>
+        queryExtractor.getAnnotations(req).foreach( annos =>
           data ++= Map(
             ("queryResults" -> traceSummaryToMustache(serviceName, traces)),
-            ("annotations" -> qReq.annotations),
-            ("binaryAnnotations" -> qReq.binaryAnnotations))
-        }
+            ("annotations" -> annos._1),
+            ("binaryAnnotations" -> annos._2)))
+
         MustacheRenderer("v2/index.mustache", data)
       }
     }
@@ -377,7 +379,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
   def handleTraces(client: HttpClient): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
       pathTraceId(req.path.split("/").lastOption) map { id =>
-        client.executeJson[Seq[JsonSpan]](Request("/api/v1/trace/" + id))
+        client.executeJson[Seq[JsonSpan]](Request(s"/api/v1/trace/$id"))
           .map(_.map(JsonSpan.invert))
           .map(Trace.apply(_))
           .map(renderTrace(_))

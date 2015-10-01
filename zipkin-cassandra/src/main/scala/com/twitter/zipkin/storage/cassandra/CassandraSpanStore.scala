@@ -17,8 +17,7 @@ package com.twitter.zipkin.storage.cassandra
 
 import com.twitter.conversions.time._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.util.Futures
-import com.twitter.util.{Future, FuturePool, Duration}
+import com.twitter.util.{Future, Duration}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
@@ -230,14 +229,14 @@ abstract class CassandraSpanStore(
     getSpansByTraceIds(traceIds, maxTraceCols)
   }
 
-  override def getAllServiceNames: Future[Set[String]] = {
+  override def getAllServiceNames(): Future[Seq[String]] = {
     QueryGetServiceNamesCounter.incr()
-    FutureUtil.toFuture(repository.getServiceNames).map(_.asScala.toSet)
+    FutureUtil.toFuture(repository.getServiceNames).map(_.asScala.toList.sorted)
   }
 
-  override def getSpanNames(service: String): Future[Set[String]] = {
+  override def getSpanNames(service: String): Future[Seq[String]] = {
     QueryGetSpanNamesCounter.incr()
-    FutureUtil.toFuture(repository.getSpanNames(service)).map(_.asScala.toSet)
+    FutureUtil.toFuture(repository.getSpanNames(service)).map(_.asScala.toList.sorted)
   }
 
   override def getTraceIdsByName(

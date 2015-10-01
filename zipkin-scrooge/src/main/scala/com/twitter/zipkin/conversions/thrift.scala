@@ -16,7 +16,6 @@
 package com.twitter.zipkin.conversions
 
 import com.twitter.zipkin.common._
-import com.twitter.zipkin.query._
 import com.twitter.zipkin.thriftscala
 import scala.collection.breakOut
 import scala.language.implicitConversions
@@ -118,16 +117,6 @@ object thrift {
   }
   implicit def spanToThriftSpan(s: Span) = new ThriftSpan(s)
   implicit def thriftSpanToSpan(s: thriftscala.Span) = new WrappedSpan(s)
-
-  /* Trace */
-  class WrappedTrace(t: Trace) {
-    lazy val toThrift = thriftscala.Trace(t.spans.map{ _.toThrift })
-  }
-  class ThriftTrace(t: thriftscala.Trace) {
-    lazy val toTrace = Trace(t.spans.map { _.toSpan })
-  }
-  implicit def traceToThrift(t: Trace) = new WrappedTrace(t)
-  implicit def thriftToTrace(t: thriftscala.Trace) = new ThriftTrace(t)
 
   class WrappedDependencyLink(dl: DependencyLink) {
     lazy val toThrift = thriftscala.DependencyLink(dl.parent, dl.child, dl.callCount)

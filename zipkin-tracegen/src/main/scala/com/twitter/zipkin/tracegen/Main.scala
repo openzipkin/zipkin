@@ -16,17 +16,22 @@ package com.twitter.zipkin.tracegen
  *  limitations under the License.
  *
  */
-import java.nio.ByteBuffer
 
-import com.google.common.base.Charsets.UTF_8
+import ch.qos.logback.classic.{Level, Logger}
 import com.twitter.app.App
-import com.twitter.finagle.Thrift
+import com.twitter.finagle.httpx.Request
+import com.twitter.finagle.tracing.SpanId
+import com.twitter.finagle.{Httpx, Thrift, param}
+import com.twitter.finatra.httpclient.HttpClient
+import com.twitter.finatra.json.FinatraObjectMapper
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
+import com.twitter.zipkin.json.{JsonSpan, ZipkinJson}
+import com.twitter.zipkin.query.Trace
 import com.twitter.zipkin.thriftscala
-import com.twitter.zipkin.thriftscala.{Trace, QueryRequest}
+import org.slf4j.LoggerFactory
 
 trait ZipkinSpanGenerator { self: App =>
   val genTraces = flag("genTraces", 5, "Number of traces to generate")
@@ -42,6 +47,13 @@ object Main extends App with ZipkinSpanGenerator {
   val scribeDest = flag("scribeDest", "localhost:9410", "Destination of the collector")
   val queryDest = flag("queryDest", "localhost:9411", "Destination of the query service")
   val generateOnly = flag("generateOnly", false, "Only generate date, do not request it back")
+  val client = new HttpClient(
+    httpService = Httpx.client.configured(param.Label("zipkin-query")).newClient(queryDest()).toService,
+    mapper = new FinatraObjectMapper(ZipkinJson)
+  )
+
+  LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+    .asInstanceOf[Logger].setLevel(Level.DEBUG)
 
   private[this] val serializer = new BinaryThriftStructSerializer[thriftscala.Span] { def codec = thriftscala.Span }
 
@@ -53,14 +65,12 @@ object Main extends App with ZipkinSpanGenerator {
     Await.result(generateTraces(store))
 
     if (!generateOnly()) {
-      val client = Thrift.newIface[thriftscala.ZipkinQuery.FutureIface](queryDest())
       Await.result {
         querySpan(
-          client,
           "vitae",
           "velit",
-          "some custom annotation",
-          ("key", ByteBuffer.wrap("value".getBytes)),
+          "some custom annotation".replace(" ", "%20"),
+          "key", "value",
           10)
       }
     }
@@ -72,39 +82,46 @@ object Main extends App with ZipkinSpanGenerator {
   }
 
   private[this] def querySpan(
-    client: thriftscala.ZipkinQuery[Future],
     service: String,
     span: String,
     annotation: String,
-    kvAnnotation: (String, ByteBuffer),
-    maxTraces: Int
+    key: String,
+    value: String,
+    limit: Int
   ): Future[Unit] = {
-    println("Querying for service name: " + service + " and span name " + span)
+    println(s"Querying for service name: $service and span name $span")
     for {
-      ts1 <- client.getTraces(QueryRequest(service, Some(span), None, None, Long.MaxValue, maxTraces))
+      ts1 <- getTraces(s"/api/v1/traces?serviceName=$service&spanName=$span&limit=$limit")
       _ = printTrace(ts1)
 
-      _ = println("Querying for service name: " + service)
-      ts2 <- client.getTraces(QueryRequest(service, None, None, None, Long.MaxValue, maxTraces))
+      _ = println(s"Querying for service name: $service")
+      ts2 <- getTraces(s"/api/v1/traces?serviceName=$service&limit=$limit")
       _ = printTrace(ts2)
 
-      _ = println("Querying for annotation: " + annotation)
-      ts3 <- client.getTraces(QueryRequest(service, None, Some(Seq(annotation)), None, Long.MaxValue, maxTraces))
+      _ = println(s"Querying for annotation: $annotation")
+      ts3 <- getTraces(s"/api/v1/traces?serviceName=$service&annotationQuery=$annotation&limit=$limit")
       _ = printTrace(ts3)
 
-      binaryAnnotation = Map(kvAnnotation._1 -> new String(kvAnnotation._2.array(), UTF_8))
-      _ = println("Querying for kv annotation: " + kvAnnotation._1)
-      ts4 <- client.getTraces(QueryRequest(service, None, None, Some(binaryAnnotation), Long.MaxValue, maxTraces))
+      _ = println(s"Querying for kv annotation: $key -> $value")
+      ts4 <- getTraces(s"/api/v1/traces?serviceName=$service&annotationQuery=$key=$value&limit=$limit")
       _ = printTrace(ts4)
 
-      traces <- client.getTracesByIds(ts4.map(t => t.spans.head.traceId))
+      traceId = ts2.map(t => t.spans.head.traceId).head // map first id to hex
+      traces <- client.executeJson[Seq[JsonSpan]](Request("/api/v1/trace/" + SpanId.toString(traceId)))
+        .map(_.map(JsonSpan.invert))
+        .map(Trace(_))
+        .map(Seq(_))
       _ = printTrace(traces)
 
-      svcNames <- client.getServiceNames()
-      _ = println("Service names: " + svcNames)
+      svcNames <- client.executeJson[Seq[String]](Request("/api/v1/services"))
+      _ = println(s"Service names: $svcNames")
 
-      spanNames <- client.getSpanNames(service)
-      _ = println("Span names for : " + service + " " + spanNames)
+      spanNames <- client.executeJson[Seq[String]](Request(s"/api/v1/spans?serviceName=$service"))
+      _ = println(s"Span names for $service: $spanNames")
     } yield ()
   }
+
+  def getTraces(uri: String) = client.executeJson[Seq[Seq[JsonSpan]]](Request(uri))
+    .map(traces => traces.map(_.map(JsonSpan.invert)))
+    .map(traces => traces.map(Trace(_)))
 }

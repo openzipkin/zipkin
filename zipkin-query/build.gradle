@@ -3,7 +3,7 @@ repositories {
 }
 
 dependencies {
-    compile project(':zipkin-scrooge')
+    compile project(':zipkin-common')
     compile "com.twitter.finatra:finatra-http_${scalaInterfaceVersion}:${commonVersions.finatra}"
     compile "com.twitter.finatra:finatra-slf4j_${scalaInterfaceVersion}:${commonVersions.finatra}"
 
