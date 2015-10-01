@@ -47,8 +47,14 @@ object Main extends App with ZipkinSpanGenerator {
   val scribeDest = flag("scribeDest", "localhost:9410", "Destination of the collector")
   val queryDest = flag("queryDest", "localhost:9411", "Destination of the query service")
   val generateOnly = flag("generateOnly", false, "Only generate date, do not request it back")
-  val client = new HttpClient(
-    httpService = Httpx.client.configured(param.Label("zipkin-query")).newClient(queryDest()).toService,
+
+  /**
+   * Initialize a json-aware Finatra client, targeting the query host. Lazy to ensure
+   * we get the host after the [[queryDest]] flag has been parsed.
+   */
+  lazy val queryClient = new HttpClient(
+    httpService =
+      Httpx.client.configured(param.Label("zipkin-query")).newClient(queryDest()).toService,
     mapper = new FinatraObjectMapper(ZipkinJson)
   )
 
@@ -107,21 +113,21 @@ object Main extends App with ZipkinSpanGenerator {
       _ = printTrace(ts4)
 
       traceId = ts2.map(t => t.spans.head.traceId).head // map first id to hex
-      traces <- client.executeJson[Seq[JsonSpan]](Request("/api/v1/trace/" + SpanId.toString(traceId)))
+      traces <- queryClient.executeJson[Seq[JsonSpan]](Request("/api/v1/trace/" + SpanId.toString(traceId)))
         .map(_.map(JsonSpan.invert))
         .map(Trace(_))
         .map(Seq(_))
       _ = printTrace(traces)
 
-      svcNames <- client.executeJson[Seq[String]](Request("/api/v1/services"))
+      svcNames <- queryClient.executeJson[Seq[String]](Request("/api/v1/services"))
       _ = println(s"Service names: $svcNames")
 
-      spanNames <- client.executeJson[Seq[String]](Request(s"/api/v1/spans?serviceName=$service"))
+      spanNames <- queryClient.executeJson[Seq[String]](Request(s"/api/v1/spans?serviceName=$service"))
       _ = println(s"Span names for $service: $spanNames")
     } yield ()
   }
 
-  def getTraces(uri: String) = client.executeJson[Seq[Seq[JsonSpan]]](Request(uri))
+  def getTraces(uri: String) = queryClient.executeJson[Seq[Seq[JsonSpan]]](Request(uri))
     .map(traces => traces.map(_.map(JsonSpan.invert)))
     .map(traces => traces.map(Trace(_)))
 }

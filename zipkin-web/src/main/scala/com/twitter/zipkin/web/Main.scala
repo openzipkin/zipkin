@@ -73,8 +73,11 @@ trait ZipkinWebFactory { self: App =>
     NullTracer
   }
 
-  /** Initialize a json-aware Finatra client, targeting the query host */
-  def newQueryClient() = new HttpClient(
+  /**
+   * Initialize a json-aware Finatra client, targeting the query host. Lazy to ensure
+   * we get the host after the [[queryDest]] flag has been parsed.
+   */
+  lazy val queryClient = new HttpClient(
     httpService =
       Httpx.client.configured(param.Label("zipkin-query")).newClient(queryDest()).toService,
     mapper = new FinatraObjectMapper(ZipkinJson)
@@ -85,7 +88,7 @@ trait ZipkinWebFactory { self: App =>
   def newHandlers = new Handlers(newMustacheGenerator, newQueryExtractor)
 
   def newWebServer(
-    queryClient: HttpClient = newQueryClient(),
+    queryClient: HttpClient = queryClient,
     stats: StatsReceiver = DefaultStatsReceiver.scope("zipkin-web")
   ): Service[Request, Response] = {
     val handlers = newHandlers
