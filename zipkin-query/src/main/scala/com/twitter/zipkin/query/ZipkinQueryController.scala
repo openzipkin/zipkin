@@ -2,20 +2,24 @@ package com.twitter.zipkin.query
 
 import com.twitter.finagle.httpx.Request
 import com.twitter.finagle.tracing.SpanId
+import com.twitter.finatra.annotations.Flag
 import com.twitter.finatra.http.Controller
 import com.twitter.finatra.http.response.ResponseBuilder
 import com.twitter.finatra.request.{QueryParam, RouteParam}
 import com.twitter.util.Future
 import com.twitter.zipkin.json.JsonSpan
 import com.twitter.zipkin.query.adjusters.TimeSkewAdjuster
+import com.twitter.zipkin.query.constants._
 import com.twitter.zipkin.storage.{DependencyStore, SpanStore}
 import javax.inject.Inject
+
 
 class ZipkinQueryController @Inject()(spanStore: SpanStore,
                                       dependencyStore: DependencyStore,
                                       queryExtractor: QueryExtractor,
                                       traceIds: QueryTraceIds,
-                                      response: ResponseBuilder) extends Controller {
+                                      response: ResponseBuilder,
+                                      @Flag("zipkin.queryService.servicesMaxAge") servicesMaxAge: Int) extends Controller {
 
   private[this] val EmptyTraces = Future.value(Seq.empty[Seq[JsonSpan]])
 
@@ -24,7 +28,13 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
   }
 
   get("/api/v1/services") { request: Request =>
-    spanStore.getAllServiceNames()
+    spanStore.getAllServiceNames() map { serviceNames =>
+      if (serviceNames.size <= MaxServicesWithoutCaching) {
+        response.ok(serviceNames);
+      } else {
+        response.ok(serviceNames).header("Cache-Control", s"max-age=${servicesMaxAge}, must-revalidate")
+      }
+    };
   }
 
   get("/api/v1/traces") { request: Request =>
