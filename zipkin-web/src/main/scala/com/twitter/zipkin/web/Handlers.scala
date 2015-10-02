@@ -8,8 +8,8 @@ import com.twitter.finagle.{Filter, Service}
 import com.twitter.finatra.httpclient.HttpClient
 import com.twitter.io.Buf
 import com.twitter.util.{Future, TwitterDateFormat}
+import com.twitter.zipkin.common.Trace
 import com.twitter.zipkin.json._
-import com.twitter.zipkin.query._
 import com.twitter.zipkin.web.mustache.ZipkinMustache
 import com.twitter.zipkin.{Constants => ZConstants}
 import org.jboss.netty.handler.codec.http.QueryStringEncoder

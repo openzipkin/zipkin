@@ -85,8 +85,8 @@ class RedisIndex(
       result ++= services.map(spanNames.put(_, span.name))
     }
 
-    if (span.lastAnnotation.isDefined) {
-      val lastTimestamp = span.lastAnnotation.get.timestamp
+    if (span.lastTimestamp.isDefined) {
+      val lastTimestamp = span.lastTimestamp.get
 
       result ++= services.map(serviceName =>
         serviceIndex.add(serviceName, lastTimestamp, span.traceId))

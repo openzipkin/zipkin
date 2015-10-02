@@ -23,7 +23,7 @@ import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.storage.anormdb.AnormThreads._
 import com.twitter.zipkin.storage.anormdb.DB.byteArrayToStatement
-import com.twitter.zipkin.storage.{IndexedTraceId, SpanStore}
+import com.twitter.zipkin.storage.{CollectAnnotationQueries, IndexedTraceId, SpanStore}
 import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
 import java.sql.Connection
@@ -31,7 +31,7 @@ import java.sql.Connection
 class AnormSpanStore(val db: DB,
                      val openCon: Option[Connection] = None,
                      val stats: StatsReceiver = DefaultStatsReceiver.scope("AnormSpanStore")
-                      ) extends SpanStore with DBPool {
+                      ) extends SpanStore with CollectAnnotationQueries with DBPool {
 
   override def apply(spans: Seq[Span]) = Future.join(spans.map(storeSpan))
 
@@ -93,7 +93,7 @@ class AnormSpanStore(val db: DB,
             .on("annotation_type_value" -> b.annotationType.value)
             .on("ipv4" -> b.host.map(_.ipv4))
             .on("port" -> b.host.map(_.port))
-            .on("annotation_ts" -> span.firstTimestamp)
+            .on("annotation_ts" -> span.lastTimestamp)
             .execute()
         )
       })
@@ -103,7 +103,7 @@ class AnormSpanStore(val db: DB,
     }
   }
 
-  override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = db.inNewThreadWithRecoverableRetry {
+  override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = db.inNewThreadWithRecoverableRetry {
     implicit val (conn, borrowTime) = borrowConn()
     try {
 
@@ -195,7 +195,7 @@ class AnormSpanStore(val db: DB,
             |  FROM zipkin_annotations
             |  WHERE service_name = {service_name}
             |    AND (span_name = {span_name} OR {span_name} = '')
-            |    AND a_timestamp < {end_ts}
+            |    AND a_timestamp <= {end_ts}
             |  ORDER BY a_timestamp
             |  LIMIT {limit})
             |AS t2 ON t1.trace_id = t2.trace_id
@@ -229,28 +229,22 @@ class AnormSpanStore(val db: DB,
           // Binary annotations
           case Some(bytes) => {
             SQL(
-              """SELECT t1.trace_id, t1.created_ts
-              |FROM zipkin_spans t1
-              |INNER JOIN (
-              |  SELECT DISTINCT trace_id
-              |  FROM zipkin_binary_annotations
-              |  WHERE service_name = {service_name}
-              |    AND annotation_key = {annotation}
-              |    AND annotation_value = {value}
-              |    AND annotation_ts < {end_ts}
-              |    AND annotation_ts IS NOT NULL
-              |  ORDER BY annotation_ts
-              |  LIMIT {limit})
-              |AS t2 ON t1.trace_id = t2.trace_id
-              |GROUP BY t1.trace_id
-              |ORDER BY t1.created_ts
-            """.stripMargin)
+              """SELECT DISTINCT trace_id, MAX(annotation_ts)
+                |FROM zipkin_binary_annotations
+                |WHERE service_name = {service_name}
+                |  AND annotation_key = {annotation}
+                |  AND annotation_value = {value}
+                |  AND annotation_ts <= {end_ts}
+                |GROUP BY trace_id
+                |ORDER BY annotation_ts
+                |LIMIT {limit}
+              """.stripMargin)
               .on("service_name" -> serviceName)
               .on("annotation" -> annotation)
               .on("value" -> Util.getArrayFromBuffer(bytes))
               .on("end_ts" -> endTs)
               .on("limit" -> limit)
-              .as((long("trace_id") ~ long("created_ts") map flatten) *)
+              .as((long("trace_id") ~ long("MAX(annotation_ts)") map flatten) *)
           }
           // Normal annotations
           case None => {
@@ -259,7 +253,7 @@ class AnormSpanStore(val db: DB,
                 |FROM zipkin_annotations
                 |WHERE service_name = {service_name}
                 |  AND value = {annotation}
-                |  AND a_timestamp < {end_ts}
+                |  AND a_timestamp <= {end_ts}
                 |GROUP BY trace_id
                 |ORDER BY a_timestamp
                 |LIMIT {limit}

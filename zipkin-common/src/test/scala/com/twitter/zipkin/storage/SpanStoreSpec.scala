@@ -2,12 +2,12 @@ package com.twitter.zipkin.storage
 
 import com.google.common.net.InetAddresses._
 import com.twitter.util.Await.{ready, result}
-import com.twitter.zipkin.common.{Annotation, AnnotationType, BinaryAnnotation, Endpoint, Span}
+import com.twitter.zipkin.common._
+import org.junit.{Before, Test}
+import org.scalatest.Matchers
+import org.scalatest.junit.JUnitSuite
 import java.net.InetAddress._
 import java.nio.ByteBuffer
-import org.junit.{Before, Test}
-import org.scalatest.junit.JUnitSuite
-import org.scalatest.Matchers
 
 /**
  * Base test for {@link SpanStore} implementations. Subtypes should create a
@@ -62,12 +62,12 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
   @Test def getSpansByTraceIds() {
     ready(store(Seq(span1, span2)))
-    result(store.getSpansByTraceIds(Seq(span1.traceId))) should be(Seq(Seq(span1)))
-    result(store.getSpansByTraceIds(Seq(span1.traceId, span2.traceId, 111111))) should be(
+    result(store.getTracesByIds(Seq(span1.traceId))) should be(Seq(Seq(span1)))
+    result(store.getTracesByIds(Seq(span1.traceId, span2.traceId, 111111))) should be(
       Seq(Seq(span1), Seq(span2))
     )
     // ids in wrong order
-    result(store.getSpansByTraceIds(Seq(span2.traceId, span1.traceId))) should be(
+    result(store.getTracesByIds(Seq(span2.traceId, span1.traceId))) should be(
       Seq(Seq(span1), Seq(span2))
     )
   }
@@ -76,13 +76,13 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   @Test def spansRetrieveInOrder() {
     ready(store(Seq(span2, span1.copy(annotations = List(ann3, ann1)))))
 
-    result(store.getSpansByTraceIds(Seq(span2.traceId, span1.traceId))) should be(
+    result(store.getTracesByIds(Seq(span2.traceId, span1.traceId))) should be(
       Seq(Seq(span1), Seq(span2))
     )
   }
 
   @Test def getSpansByTraceIds_empty() {
-    result(store.getSpansByTraceIds(Seq(54321))) should be(empty)
+    result(store.getTracesByIds(Seq(54321))) should be(empty)
   }
 
   @Test def getSpanNames() {
@@ -99,41 +99,66 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store.getAllServiceNames()) should be(List("service", "yak"))
   }
 
-  @Test def getTraceIdsByName() {
+  @Test def getTraces_spanName() {
     ready(store(Seq(span1)))
 
-    result(store.getTraceIdsByName("service", None, 100, 3)).head.traceId should be(span1.traceId)
-    result(store.getTraceIdsByName("service", Some("methodcall"), 100, 3)).head.traceId should be(span1.traceId)
-
-    result(store.getTraceIdsByName("badservice", None, 100, 3)) should be(empty)
-    result(store.getTraceIdsByName("service", Some("badmethod"), 100, 3)) should be(empty)
-    result(store.getTraceIdsByName("badservice", Some("badmethod"), 100, 3)) should be(empty)
+    result(store.getTraces(QueryRequest("service"))) should be(
+      Seq(Seq(span1))
+    )
+    result(store.getTraces(QueryRequest("service", Some("methodcall")))) should be(
+      Seq(Seq(span1))
+    )
+    result(store.getTraces(QueryRequest("badservice"))) should be(empty)
+    result(store.getTraces(QueryRequest("service", Some("badmethod")))) should be(empty)
+    result(store.getTraces(QueryRequest("badservice", Some("badmethod")))) should be(empty)
   }
 
-  @Test def getTraceIdsByAnnotation() {
+  @Test def getTraces_annotation() {
     ready(store(Seq(span1)))
 
     // fetch by time based annotation, find trace
-    result(store.getTraceIdsByAnnotation("service", "custom", None, 100, 3)).map(_.traceId) should be(
-      Seq(span1.traceId)
+    result(store.getTraces(QueryRequest("service", annotations = Set("custom")))) should be(
+      Seq(Seq(span1))
     )
-
     // should not find any traces since the core annotation doesn't exist in index
-    result(store.getTraceIdsByAnnotation("service", "cs", None, 100, 3)) should be(empty)
+    result(store.getTraces(QueryRequest("service", annotations = Set("cs")))) should be(empty)
 
     // should find traces by the key and value annotation
-    result(store.getTraceIdsByAnnotation("service", "BAH", Some(ByteBuffer.wrap("BEH".getBytes)), 100, 3)).map(_.traceId) should be(
-      Seq(span1.traceId)
+    result(store.getTraces(QueryRequest("service", binaryAnnotations = Set(("BAH", "BEH"))))) should be(
+      Seq(Seq(span1))
     )
   }
 
-  @Test def getTraceIdsByAnnotation_limit() {
-    val spans = Seq(span1, span4, span5) // all have a "custom" annotation
+  /**
+   * It is expected that [[com.twitter.zipkin.storage.SpanStore.apply]] will
+   * receive the same span id multiple times with different annotations. At
+   * query time, these must be merged.
+   */
+  @Test def getTraces_mergesSpans() {
+    val spans = Seq(span1, span4, span5) // span4, span5 have the same span id
     ready(store(spans))
 
-    val res = result(store.getTraceIdsByAnnotation("service", "custom", None, 100, limit = 2))
-    res.length should be(2)
-    spans.map(_.traceId) should contain(res(0).traceId).and(contain(res(1).traceId))
+    result(store.getTraces(QueryRequest("service"))) should be(
+      Seq(Seq(span1), Seq(span4.copy(annotations = (span4.annotations ::: span5.annotations).sorted,
+                                     binaryAnnotations = span5.binaryAnnotations)))
+    )
+  }
+
+  @Test def getTraces_limit() {
+    val spans = Seq(span1.copy(traceId = 1), span1.copy(traceId = 2), span1.copy(traceId = 3))
+    ready(store(spans))
+
+    result(store.getTraces(QueryRequest("service", limit = 2))).size should be(2)
+  }
+
+  /** Traces who have span annotations before or at endTs are returned */
+  @Test def getTraces_endTs() {
+    val spans = Seq(span1) // created at timestamp 1; updated at timestamp 20
+    ready(store(spans))
+
+    result(store.getTraces(QueryRequest("service", endTs = 19))) should be(empty)
+    result(store.getTraces(QueryRequest("service", endTs = 20))) should be(Seq(Seq(span1)))
+    result(store.getTraces(QueryRequest("service", endTs = 21))) should be(Seq(Seq(span1)))
   }
 
   @Test def getAllServiceNames_emptyServiceName() {

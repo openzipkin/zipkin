@@ -17,8 +17,7 @@
 package com.twitter.zipkin.query.adjusters
 
 import com.twitter.zipkin.Constants
-import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
-import com.twitter.zipkin.query.Trace
+import com.twitter.zipkin.common.{Annotation, Endpoint, Span, Trace}
 import org.scalatest.FunSuite
 
 import scala.collection._

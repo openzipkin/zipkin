@@ -16,7 +16,7 @@
  */
 package com.twitter.zipkin.query.adjusters
 
-import com.twitter.zipkin.query.Trace
+import com.twitter.zipkin.common.Trace
 
 trait Adjuster {
 

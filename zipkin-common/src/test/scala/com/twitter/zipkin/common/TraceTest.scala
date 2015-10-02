@@ -19,7 +19,6 @@ package com.twitter.zipkin.common
 import java.nio.ByteBuffer
 
 import com.twitter.zipkin.Constants
-import com.twitter.zipkin.query.{SpanTreeEntry, Timespan, Trace}
 import org.scalatest.FunSuite
 
 import scala.collection.mutable

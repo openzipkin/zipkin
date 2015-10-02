@@ -18,7 +18,6 @@ package com.twitter.zipkin.query.adjusters
 
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.Constants
-import com.twitter.zipkin.query.{Trace, SpanTreeEntry}
 import scala.collection.Map
 
 class TimeSkewAdjuster extends Adjuster {
