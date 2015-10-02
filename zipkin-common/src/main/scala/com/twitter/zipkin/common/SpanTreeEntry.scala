@@ -14,9 +14,7 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.query
-
-import com.twitter.zipkin.common.Span
+package com.twitter.zipkin.common
 
 /**
  * This represents a tree version of a Trace.

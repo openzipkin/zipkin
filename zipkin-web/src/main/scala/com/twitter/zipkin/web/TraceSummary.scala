@@ -17,8 +17,7 @@
 package com.twitter.zipkin.web
 
 import com.twitter.finagle.tracing.SpanId
-import com.twitter.zipkin.common.{Span, Endpoint}
-import com.twitter.zipkin.query.Trace
+import com.twitter.zipkin.common.{Endpoint, Span, Trace}
 
 case class SpanTimestamp(name: String, startTimestamp: Long, endTimestamp: Long) {
   def duration = endTimestamp - startTimestamp

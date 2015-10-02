@@ -26,10 +26,9 @@ import com.twitter.finatra.httpclient.HttpClient
 import com.twitter.finatra.json.FinatraObjectMapper
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Await, Future}
-import com.twitter.zipkin.common.Span
+import com.twitter.zipkin.common.{Span, Trace}
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.json.{JsonSpan, ZipkinJson}
-import com.twitter.zipkin.query.Trace
 import com.twitter.zipkin.thriftscala
 import org.slf4j.LoggerFactory
 

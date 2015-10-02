@@ -1,18 +1,18 @@
 package com.twitter.zipkin.storage.redis
 
-import java.nio.ByteBuffer
-
 import com.google.common.io.Closer
 import com.twitter.finagle.redis.Client
 import com.twitter.util.{Duration, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage._
+import java.nio.ByteBuffer
 
 /**
  * @param client the redis client to use
  * @param ttl expires keys older than this many seconds.
  */
-class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
+class RedisSpanStore(client: Client, ttl: Option[Duration])
+  extends SpanStore with CollectAnnotationQueries {
   private[this] val closer = Closer.create()
   private[this] val index = closer.register(new RedisIndex(client, ttl))
   private[this] val storage = closer.register(new RedisStorage(client, ttl))
@@ -27,7 +27,7 @@ class RedisSpanStore(client: Client, ttl: Option[Duration]) extends SpanStore {
       .flatMap { span => Seq(storage.storeSpan(span), index.index(span))
     })
 
-  override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
+  override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
     storage.getSpansByTraceIds(traceIds)
   }
 

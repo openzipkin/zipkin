@@ -6,6 +6,7 @@ import com.twitter.finatra.http.Controller
 import com.twitter.finatra.http.response.ResponseBuilder
 import com.twitter.finatra.request.{QueryParam, RouteParam}
 import com.twitter.util.Future
+import com.twitter.zipkin.common.{Span, Trace}
 import com.twitter.zipkin.json.JsonSpan
 import com.twitter.zipkin.query.adjusters.TimeSkewAdjuster
 import com.twitter.zipkin.storage.{DependencyStore, SpanStore}
@@ -14,10 +15,7 @@ import javax.inject.Inject
 class ZipkinQueryController @Inject()(spanStore: SpanStore,
                                       dependencyStore: DependencyStore,
                                       queryExtractor: QueryExtractor,
-                                      traceIds: QueryTraceIds,
                                       response: ResponseBuilder) extends Controller {
-
-  private[this] val EmptyTraces = Future.value(Seq.empty[Seq[JsonSpan]])
 
   get("/api/v1/spans") { request: GetSpanNamesRequest =>
     spanStore.getSpanNames(request.serviceName)
@@ -29,26 +27,30 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
 
   get("/api/v1/traces") { request: Request =>
     queryExtractor(request) match {
-      case Some(qr) => traceIds(qr).flatMap(getTraces(_))
+      case Some(qr) => spanStore.getTraces(qr).map(adjustTimeskewAndRenderJson(_))
       case None => Future.value(response.badRequest)
     }
   }
 
   get("/api/v1/trace/:id") { request: GetTraceRequest =>
-    getTraces(SpanId.fromString(request.id).map(_.toLong).toSeq).map(_.headOption)
+    val traceId = SpanId.fromString(request.id).map(_.toLong)
+    if (traceId.isDefined) {
+      spanStore.getTracesByIds(traceId.toSeq)
+        .map(adjustTimeskewAndRenderJson(_))
+        .map(_.headOption.getOrElse(response.notFound))
+    } else {
+      Future.value(response.notFound)
+    }
   }
 
   get("/api/v1/dependencies/:from/:to") { request: GetDependenciesRequest =>
     dependencyStore.getDependencies(Some(request.from), Some(request.to)).map(_.links)
   }
 
-  private[this] def getTraces(ids: Seq[Long]): Future[Seq[Seq[JsonSpan]]] = {
-    if (ids.isEmpty) return EmptyTraces
-    spanStore.getSpansByTraceIds(ids).map { spans =>
-      spans.map(Trace(_))
-        .map(timeSkewAdjuster.adjust)
-        .map(_.spans.map(JsonSpan))
-    }
+  private[this] def adjustTimeskewAndRenderJson(spans: Seq[Seq[Span]]): Seq[List[JsonSpan]] = {
+    spans.map(Trace(_))
+      .map(timeSkewAdjuster.adjust)
+      .map(_.spans.map(JsonSpan))
   }
 
   private[this] val timeSkewAdjuster = new TimeSkewAdjuster()

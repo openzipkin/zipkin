@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.zipkin.query
+package com.twitter.zipkin.common
 
-import com.twitter.zipkin.common.{BinaryAnnotation, Endpoint, Span}
 import java.nio.ByteBuffer
+
 import scala.collection.mutable
 
 /**

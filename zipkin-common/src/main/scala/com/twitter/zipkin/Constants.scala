@@ -16,6 +16,9 @@
  */
 package com.twitter.zipkin
 
+import com.twitter.conversions.time._
+import com.twitter.util.Duration
+
 object Constants {
   val ClientSend: String = "cs"
   val ClientRecv: String = "cr"
@@ -46,4 +49,7 @@ object Constants {
 
   /* 127.0.0.1 */
   val LocalhostLoopBackIP = (127 << 24) | 1
+
+  /* Amount of time padding to use when resolving complex query timestamps */
+  val TraceTimestampPadding: Duration = 1.minute
 }

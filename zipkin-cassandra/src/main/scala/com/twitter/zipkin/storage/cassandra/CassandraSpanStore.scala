@@ -19,10 +19,10 @@ import com.twitter.conversions.time._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.{Future, Duration}
 import com.twitter.zipkin.Constants
-import com.twitter.zipkin.common.Span
+import com.twitter.zipkin.common.{Trace, Span}
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
-import com.twitter.zipkin.storage.{IndexedTraceId, SpanStore}
+import com.twitter.zipkin.storage.{CollectAnnotationQueries, IndexedTraceId, SpanStore}
 import com.twitter.zipkin.util.FutureUtil
 import com.twitter.zipkin.util.Util
 import java.nio.ByteBuffer
@@ -42,7 +42,7 @@ abstract class CassandraSpanStore(
   spanTtl: Duration = CassandraSpanStoreDefaults.SpanTtl,
   indexTtl: Duration = CassandraSpanStoreDefaults.IndexTtl,
   maxTraceCols: Int = CassandraSpanStoreDefaults.MaxTraceCols
-) extends SpanStore {
+) extends SpanStore with CollectAnnotationQueries {
 
   /** Deferred as repository eagerly creates network connections */
   protected def repository: Repository
@@ -192,7 +192,8 @@ abstract class CassandraSpanStore(
         val spans =
           spansByTraceId.asScala.mapValues { spans => spans.asScala.map(spanCodec.decode(_).toSpan) }
 
-        traceIds.flatMap(traceId => spans.get(traceId))
+        traceIds.flatMap(traceId => spans.get(traceId)
+          .map(Trace(_).spans)) // merge by span id
           .sortBy(_.head) // CQL doesn't allow order by with an "in" query
       }
   }
@@ -224,7 +225,7 @@ abstract class CassandraSpanStore(
       })
   }
 
-  override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
+  override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
     QueryGetSpansByTraceIdsStat.add(traceIds.size)
     getSpansByTraceIds(traceIds, maxTraceCols)
   }

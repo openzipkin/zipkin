@@ -1,8 +1,5 @@
 package com.twitter.zipkin.storage;
 
-import java.nio.ByteBuffer;
-
-import scala.Option;
 import scala.collection.Seq;
 import scala.runtime.BoxedUnit;
 
@@ -15,17 +12,12 @@ import com.twitter.zipkin.common.Span;
 public class SpanStoreInJava extends SpanStore {
 
     @Override
-    public Future<Seq<Seq<Span>>> getSpansByTraceIds(Seq<Object> traceIds) {
+    public Future<Seq<Seq<Span>>> getTraces(QueryRequest qr) {
         return null;
     }
 
     @Override
-    public Future<Seq<IndexedTraceId>> getTraceIdsByName(String serviceName, Option<String> spanName, long endTs, int limit) {
-        return null;
-    }
-
-    @Override
-    public Future<Seq<IndexedTraceId>> getTraceIdsByAnnotation(String serviceName, String annotation, Option<ByteBuffer> value, long endTs, int limit) {
+    public Future<Seq<Seq<Span>>> getTracesByIds(Seq<Object> traceIds) {
         return null;
     }
 

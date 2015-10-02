@@ -18,7 +18,9 @@ package com.twitter.zipkin.query
 import com.twitter.finagle.httpx.Request
 import com.twitter.finatra.annotations.Flag
 import com.twitter.util.Time
+import com.twitter.zipkin.storage.QueryRequest
 import javax.inject.Inject
+import scala.collection.mutable
 
 // TODO: rewrite me into a normal finatra case class
 class QueryExtractor @Inject()(@Flag("zipkin.queryService.durationBatchSize") defaultQueryLimit: Int) {
@@ -32,22 +34,20 @@ class QueryExtractor @Inject()(@Flag("zipkin.queryService.durationBatchSize") de
     val timestamp = req.params.getLong("timestamp").getOrElse(Time.now.inMicroseconds)
 
     val (annotations, binaryAnnotations) = req.params.get("annotationQuery") map { query =>
-      var anns = Seq.empty[String]
-      var binAnns = scala.collection.mutable.Map[String, String]()
+      val anns = mutable.Set[String]()
+      val binAnns = mutable.Set[(String, String)]()
 
       query.split(" and ") foreach { ann =>
         ann.split("=").toList match {
           case "" :: Nil =>
-          case key :: value :: Nil =>
-            binAnns += key -> value
-          case key :: Nil =>
-            anns +:= key
+          case key :: value :: Nil => binAnns.add((key, value))
+          case key :: Nil => anns.add(key)
           case _ =>
         }
       }
-      (anns.toList, binAnns.toMap)
+      (anns.toSet, binAnns.toSet)
     } getOrElse {
-      (List.empty[String], Map.empty[String, String])
+      (Set.empty[String], Set.empty[(String, String)])
     }
     val limit = req.params.get("limit").map(_.toInt).getOrElse(defaultQueryLimit)
     QueryRequest(serviceName, spanName, annotations, binaryAnnotations, timestamp, limit)

@@ -20,45 +20,29 @@ import java.nio.ByteBuffer
 import com.twitter.util.FuturePools._
 import com.twitter.util.{Closable, Future}
 import com.twitter.zipkin.Constants
-import com.twitter.zipkin.common.Span
+import com.twitter.zipkin.common.{Trace, Span}
 
 abstract class SpanStore extends java.io.Closeable {
 
   /**
    * Get the available trace information from the storage system.
-   * Spans in trace should be sorted by the first annotation timestamp
+   * Spans in trace are sorted by the first annotation timestamp
+   * in that span. First event should be first in the spans list.
+   *
+   * <p/> Results are sorted in order of the first span's timestamp, and contain
+   * up to [[QueryRequest.limit]] elements.
+   */
+  def getTraces(qr: QueryRequest): Future[Seq[Seq[Span]]]
+
+  /**
+   * Get the available trace information from the storage system.
+   * Spans in trace are sorted by the first annotation timestamp
    * in that span. First event should be first in the spans list.
    *
    * <p/> Results are sorted in order of the first span's timestamp, and contain
    * less elements than trace IDs when corresponding traces aren't available.
    */
-  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]]
-
-  /**
-   * Get the trace ids for this particular service and if provided, span name.
-   * Only return maximum of limit trace ids from before the endTs.
-   *
-   * <p/> Results are sorted in order of the first span's timestamp
-   */
-  def getTraceIdsByName(
-    serviceName: String,
-    spanName: Option[String],
-    endTs: Long,
-    limit: Int
-  ): Future[Seq[IndexedTraceId]]
-
-  /**
-   * Get the trace ids for this annotation between the two timestamps. If value is also passed we expect
-   * both the annotation key and value to be present in index for a match to be returned.
-   * Only return maximum of limit trace ids from before the endTs.
-   */
-  def getTraceIdsByAnnotation(
-    serviceName: String,
-    annotation: String,
-    value: Option[ByteBuffer],
-    endTs: Long,
-    limit: Int
-  ): Future[Seq[IndexedTraceId]]
+  def getTracesByIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]]
 
   /**
    * Get all the service names for as far back as the ttl allows.
@@ -76,6 +60,10 @@ abstract class SpanStore extends java.io.Closeable {
 
   /**
    * Store a list of spans, indexing as necessary.
+   *
+   * <p/> Spans may come in sparse, for example apply may be called multiple times
+   * with a span with the same id, containing different annotations. The
+   * implementation should ensure these are merged at query time.
    */
   def apply(spans: Seq[Span]): Future[Unit]
 
@@ -97,16 +85,17 @@ object SpanStore {
   }
 }
 
-class InMemorySpanStore extends SpanStore {
+class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
+
   import scala.collection.mutable
 
   val spans: mutable.ArrayBuffer[Span] = new mutable.ArrayBuffer[Span]
 
-  private[this] def call[T](f: => T): Future[T] = synchronized { Future(f) }
+  private[this] def call[T](f: => T): Future[T] = synchronized(Future(f))
 
   private[this] def spansForService(name: String): Seq[Span] =
     spans.filter { span =>
-      span.serviceNames.exists { _.toLowerCase == name.toLowerCase }
+      span.serviceNames.exists(_.toLowerCase == name.toLowerCase)
     }.toList
 
   override def close() = {}
@@ -115,11 +104,13 @@ class InMemorySpanStore extends SpanStore {
     spans ++= newSpans.map(s => s.copy(annotations = s.annotations.sorted))
   }.unit
 
-  override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = call {
-    traceIds flatMap { id =>
-      Some(spans.filter(_.traceId == id)).filter(_.length > 0)
-    }
-  }.map(_.sortBy(t => t.head.firstTimestamp))
+  override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = call {
+    spans.groupBy(_.traceId)
+         .filterKeys(traceIds.contains(_))
+         .values.filter(!_.isEmpty)
+         .map(Trace(_).spans).toList
+         .sortBy(_.head.firstTimestamp)
+  }
 
   override def getTraceIdsByName(
     serviceName: String,
@@ -128,15 +119,10 @@ class InMemorySpanStore extends SpanStore {
     limit: Int
   ): Future[Seq[IndexedTraceId]] = call {
     ((spanName, spansForService(serviceName)) match {
-      case (Some(name), spans) =>
-        spans filter { _.name.toLowerCase == name.toLowerCase }
-      case (_, spans) =>
-        spans
+      case (Some(name), spans) => spans filter(_.name.toLowerCase == name.toLowerCase)
+      case (_, spans) => spans
     }).filter { span =>
-      span.lastAnnotation match {
-        case Some(ann) => ann.timestamp <= endTs
-        case None => false
-      }
+      span.lastTimestamp.map(_ <= endTs).getOrElse(false)
     }.take(limit).map { span =>
       IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
     }.toList
@@ -150,23 +136,18 @@ class InMemorySpanStore extends SpanStore {
     limit: Int
   ): Future[Seq[IndexedTraceId]] = call {
     // simulate the lack of index for core annotations
-    if (Constants.CoreAnnotations.contains(annotation)) Seq.empty else {
-      ((value, spansForService(serviceName)) match {
-        case (Some(v), spans) =>
-          spans filter { span =>
-            span.lastAnnotation.isDefined &&
-            span.lastAnnotation.get.timestamp <= endTs &&
-            span.binaryAnnotations.exists { ba => ba.key == annotation && ba.value == v }
-          }
-        case (_, spans) =>
-          spans filter { span =>
-            span.lastAnnotation.isDefined &&
-            span.annotations.min.timestamp <= endTs &&
-            span.annotations.exists { _.value == annotation }
-          }
-      }).take(limit).map { span =>
-        IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
-      }.toList
+    if (Constants.CoreAnnotations.contains(annotation)) Seq.empty
+    else {
+      spansForService(serviceName)
+        .filter(_.lastTimestamp.map(_ <= endTs).getOrElse(false))
+        .filter(if (value.isDefined) {
+        _.binaryAnnotations.exists(ba => ba.key == annotation && ba.value == value.get)
+      } else {
+        _.annotations.exists(_.value == annotation)
+      })
+        .take(limit)
+        .map(span => IndexedTraceId(span.traceId, span.lastTimestamp.get))
+        .toList
     }
   }
 

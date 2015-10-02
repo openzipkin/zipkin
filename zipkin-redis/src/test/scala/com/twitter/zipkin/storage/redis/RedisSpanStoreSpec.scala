@@ -9,7 +9,8 @@ class RedisSpanStoreSpec extends SpanStoreSpec {
   object RedisStore extends App with RedisSpanStoreFactory
   RedisStore.main(Array(
     "-zipkin.storage.redis.host", "127.0.0.1",
-    "-zipkin.storage.redis.port", "6379"))
+    "-zipkin.storage.redis.port", "6379",
+    "-zipkin.storage.redis.ttl", "0"))
 
   val store = RedisStore.newRedisSpanStore()
 
