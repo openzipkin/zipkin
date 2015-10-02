@@ -129,6 +129,27 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     )
   }
 
+  @Test def getTraces_multipleAnnotationsBecomeAndFilter() {
+    val foo = Span(1, "call1", 1, None, List(Annotation(1, "foo", Some(ep))), List())
+    val fooAndBar = Span(2, "call2", 2, None, List(Annotation(2, "foo", Some(ep)), Annotation(2, "bar", Some(ep))), List())
+    val fooAndBazAndQux = Span(3, "call3", 3, None, foo.annotations.map(_.copy(timestamp = 3)), List(binaryAnnotation("baz", "qux")))
+    val fooAndBarAndBazAndQux = Span(4, "call4", 4, None, fooAndBar.annotations.map(_.copy(timestamp = 4)), fooAndBazAndQux.binaryAnnotations)
+
+    ready(store(Seq(foo, fooAndBar, fooAndBazAndQux, fooAndBarAndBazAndQux)))
+
+    result(store.getTraces(QueryRequest("service", annotations = Set("foo")))) should be(
+      Seq(Seq(foo), Seq(fooAndBar), Seq(fooAndBazAndQux), Seq(fooAndBarAndBazAndQux))
+    )
+
+    result(store.getTraces(QueryRequest("service", annotations = Set("foo", "bar")))) should be(
+      Seq(Seq(fooAndBar), Seq(fooAndBarAndBazAndQux))
+    )
+
+    result(store.getTraces(QueryRequest("service", annotations = Set("foo", "bar"), binaryAnnotations = Set(("baz", "qux"))))) should be(
+      Seq(Seq(fooAndBarAndBazAndQux))
+    )
+  }
+
   /**
    * It is expected that [[com.twitter.zipkin.storage.SpanStore.apply]] will
    * receive the same span id multiple times with different annotations. At
