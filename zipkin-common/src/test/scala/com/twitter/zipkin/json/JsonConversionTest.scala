@@ -12,15 +12,15 @@ class JsonConversionTest extends FunSuite with Matchers {
   test("endpoint") {
     val convert = JsonEndpoint("zipkin-query", "192.168.0.1", Some(9411))
 
-    assert(JsonService(endpoint) == convert)
-    JsonService(JsonService.invert(convert)) should be(convert)
+    assert(JsonEndpoint(endpoint) == convert)
+    JsonEndpoint(JsonEndpoint.invert(convert)) should be(convert)
   }
 
   test("endpoint without port") {
     val convert = JsonEndpoint("zipkin-query", "192.168.0.1", None)
 
-    assert(JsonService(endpoint.copy(port = 0)) == convert)
-    JsonService(JsonService.invert(convert)) should be(convert)
+    assert(JsonEndpoint(endpoint.copy(port = 0)) == convert)
+    JsonEndpoint(JsonEndpoint.invert(convert)) should be(convert)
   }
 
   test("bytes") {
@@ -87,22 +87,6 @@ class JsonConversionTest extends FunSuite with Matchers {
     JsonBinaryAnnotation(JsonBinaryAnnotation.invert(unqualified)) should be(unqualified)
   }
 
-  test("int's annotation type is implicit") {
-    val unqualified = JsonBinaryAnnotation("key", 6, None, None)
-    val qualified = JsonBinaryAnnotation("key", 6, Some("I32"), None)
-
-    JsonBinaryAnnotation(JsonBinaryAnnotation.invert(qualified)) should be(unqualified)
-    JsonBinaryAnnotation(JsonBinaryAnnotation.invert(unqualified)) should be(unqualified)
-  }
-
-  test("double's annotation type is implicit") {
-    val unqualified = JsonBinaryAnnotation("key", 6.0D, None, None)
-    val qualified = JsonBinaryAnnotation("key", 6.0D, Some("DOUBLE"), None)
-
-    JsonBinaryAnnotation(JsonBinaryAnnotation.invert(qualified)) should be(unqualified)
-    JsonBinaryAnnotation(JsonBinaryAnnotation.invert(unqualified)) should be(unqualified)
-  }
-
   test("string's annotation type is implicit") {
     val unqualified = JsonBinaryAnnotation("key", "HELLO!", None, None)
     val qualified = JsonBinaryAnnotation("key", "HELLO!", Some("STRING"), None)
@@ -111,12 +95,10 @@ class JsonConversionTest extends FunSuite with Matchers {
     JsonBinaryAnnotation(JsonBinaryAnnotation.invert(unqualified)) should be(unqualified)
   }
 
-  test("float coerses to double type in json") { // since there's no FLOAT type
-    val unqualified = JsonBinaryAnnotation("key", 6.0, None, None)
-    val qualified = JsonBinaryAnnotation("key", 6.0, Some("DOUBLE"), None)
-    val double = JsonBinaryAnnotation("key", 6.0D, None, None)
+  test("float coerses to double type in json") { // since there's no FLOAT type in the thrift
+    val float = JsonBinaryAnnotation("key", 6.0, Some("DOUBLE"), None)
+    val double = JsonBinaryAnnotation("key", 6.0D, Some("DOUBLE"), None)
 
-    JsonBinaryAnnotation(JsonBinaryAnnotation.invert(qualified)) should be(double)
-    JsonBinaryAnnotation(JsonBinaryAnnotation.invert(unqualified)) should be(double)
+    JsonBinaryAnnotation(JsonBinaryAnnotation.invert(float)) should be(double)
   }
 }

@@ -310,7 +310,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
         case ann if ZConstants.CoreAddress.contains(ann.key) =>
           val key = ZConstants.CoreAnnotationNames.get(ann.key).get
           val value = ann.host.map { e => s"${e.getHostAddress}:${e.getUnsignedPort}" }.get
-          JsonBinaryAnnotation(key, value, None, ann.host.map(JsonService))
+          JsonBinaryAnnotation(key, value, None, ann.host.map(JsonEndpoint))
         case ann => JsonBinaryAnnotation(ann)
       }
 
