@@ -10,7 +10,7 @@ import com.twitter.zipkin.common.Endpoint
  */
 case class JsonEndpoint(serviceName: String, ipv4: String, port: Option[Int])
 
-object JsonService extends (Endpoint => JsonEndpoint) {
+object JsonEndpoint extends (Endpoint => JsonEndpoint) {
   override def apply(e: Endpoint) =
     new JsonEndpoint(e.serviceName, e.getHostAddress, if (e.port == 0) None else Some(e.getUnsignedPort))
 

@@ -25,16 +25,16 @@ object JsonBinaryAnnotation extends (BinaryAnnotation => JsonBinaryAnnotation) {
         case Bool.value => (None, if (b.value.get() != 0) true else false)
         case Bytes.value => (Some("BYTES"), base64.encode(b.value.array(), b.value.position(), b.value.remaining()))
         case I16.value => (Some("I16"), b.value.getShort)
-        case I32.value => (None, b.value.getInt)
+        case I32.value => (Some("I32"), b.value.getInt)
         case I64.value => (Some("I64"), b.value.getLong)
-        case Double.value => (None, b.value.getDouble)
+        case Double.value => (Some("DOUBLE"), b.value.getDouble)
         case String.value => (None, new String(b.value.array(), b.value.position(), b.value.remaining(), Utf8))
         case _ => throw new Exception("Unsupported annotation type: %s".format(b))
       }
     } catch {
       case e: Exception => "Error parsing binary annotation: %s".format(exceptionString(e))
     }
-    JsonBinaryAnnotation(b.key, value, annotationType, b.host.map(JsonService))
+    JsonBinaryAnnotation(b.key, value, annotationType, b.host.map(JsonEndpoint))
   }
 
   def invert(b: JsonBinaryAnnotation) = {
@@ -42,13 +42,9 @@ object JsonBinaryAnnotation extends (BinaryAnnotation => JsonBinaryAnnotation) {
       .map(upperCamel.convert(_))
       .map(AnnotationType.fromName(_))
       .getOrElse(b.value match {
-      // annotationType is mostly redundant in json, especially as most annotations are strings
-      // knowing this is json, the only way this won't map is list or map
+      // The only json types that can be implicit are booleans and strings. Numbers vary in shape.
       case bool: Boolean => Bool
-      // Jackson defaults floats to doubles, and zipkin thrift doesn't have a float type
-      case double: Double => Double
       case string: String => String
-      case number: Number => I32 // default numeric is I32
       case _ => throw new IllegalArgumentException("Unsupported json annotation type: %s".format(b))
     })
 
@@ -66,7 +62,7 @@ object JsonBinaryAnnotation extends (BinaryAnnotation => JsonBinaryAnnotation) {
     } catch {
       case e: Exception => ByteBuffer.wrap("Error parsing json binary annotation: %s".format(exceptionString(e)).getBytes(Utf8))
     }
-    new BinaryAnnotation(b.key, bytes, annotationType, b.endpoint.map(JsonService.invert))
+    new BinaryAnnotation(b.key, bytes, annotationType, b.endpoint.map(JsonEndpoint.invert))
   }
 
   private[this] def exceptionString(e: Exception) =

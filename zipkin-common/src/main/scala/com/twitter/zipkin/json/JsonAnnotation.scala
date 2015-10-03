@@ -6,8 +6,8 @@ case class JsonAnnotation(timestamp: Long, value: String, endpoint: Option[JsonE
 
 object JsonAnnotation extends (Annotation => JsonAnnotation) {
   override def apply(a: Annotation) =
-    JsonAnnotation(a.timestamp, a.value, a.host.map(JsonService))
+    JsonAnnotation(a.timestamp, a.value, a.host.map(JsonEndpoint))
 
   def invert(a: JsonAnnotation) =
-    Annotation(a.timestamp, a.value, a.endpoint.map(JsonService.invert))
+    Annotation(a.timestamp, a.value, a.endpoint.map(JsonEndpoint.invert))
 }

@@ -1,12 +1,11 @@
 package com.twitter.zipkin.json
 
-import java.nio.ByteBuffer
-
 import com.google.common.base.Charsets.UTF_8
 import com.twitter.util.Time
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common._
 import org.scalatest.{FunSuite, Matchers}
+import java.nio.ByteBuffer
 
 /**
  * Tests that who how data is serialized, so that subtle code changes don't break users.
@@ -194,30 +193,11 @@ class ZipkinJsonTest extends FunSuite with Matchers {
     )
   }
 
-  test("binary annotation: I32 doesn't need type") {
-    val a = BinaryAnnotation("someKey", ByteBuffer.wrap(Array[Byte](1, 1, 1, 1)), AnnotationType.I32, None)
-    assert(mapper.writeValueAsString(a) ==
-      """
-        |{"key":"someKey","value":16843009}
-      """.stripMargin.trim
-    )
-  }
-
   test("binary annotation: I64 adds type") {
     val a = BinaryAnnotation("someKey", ByteBuffer.allocate(8).putLong(0, 1234L), AnnotationType.I64, None)
     assert(mapper.writeValueAsString(a) ==
       """
         |{"key":"someKey","value":1234,"type":"I64"}
-      """.stripMargin.trim
-    )
-  }
-
-
-  test("binary annotation: Double doesn't need type") {
-    val a = BinaryAnnotation("someKey", ByteBuffer.allocate(8).putDouble(0, 1.1D), AnnotationType.Double, None)
-    assert(mapper.writeValueAsString(a) ==
-      """
-        |{"key":"someKey","value":1.1}
       """.stripMargin.trim
     )
   }

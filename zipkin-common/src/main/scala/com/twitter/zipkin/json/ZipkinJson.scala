@@ -10,7 +10,7 @@ import com.twitter.zipkin.common._
 
 object ZipkinJson extends ObjectMapper with ScalaObjectMapper {
   val module = new SimpleModule("ZipkinJson")
-    .addSerializer(classOf[Endpoint], serializer(JsonService))
+    .addSerializer(classOf[Endpoint], serializer(JsonEndpoint))
     .addSerializer(classOf[Annotation], serializer(JsonAnnotation))
     .addSerializer(classOf[BinaryAnnotation], serializer(JsonBinaryAnnotation))
     .addSerializer(classOf[Span], serializer(JsonSpan))
