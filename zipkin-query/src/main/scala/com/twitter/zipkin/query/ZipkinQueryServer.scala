@@ -30,9 +30,10 @@ import com.twitter.zipkin.storage._
 
 class ZipkinQueryServer(spanStore: SpanStore, dependencyStore: DependencyStore) extends HttpServer {
 
-  val queryServiceDurationBatchSize = flag("zipkin.queryService.durationBatchSize", 500, "max number of durations to pull per batch")
-  val queryLimit = flag("zipkin.queryService.limit", 10, "Default query limit for trace results")
-  val servicesMaxAge = flag("zipkin.queryService.servicesMaxAge", 5*60, "Get services cache TTL")
+  // Bind flags used with javax.Inject
+  flag("zipkin.queryService.durationBatchSize", 500, "max number of durations to pull per batch")
+  flag("zipkin.queryService.limit", 10, "Default query limit for trace results")
+  flag("zipkin.queryService.servicesMaxAge", 5*60, "Get services cache TTL")
 
   object StorageModule extends TwitterModule {
     @Provides

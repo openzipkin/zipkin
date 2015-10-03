@@ -23,7 +23,7 @@ import javax.inject.Inject
 import scala.collection.mutable
 
 // TODO: rewrite me into a normal finatra case class
-class QueryExtractor @Inject()(@Flag("zipkin.queryService.durationBatchSize") defaultQueryLimit: Int) {
+class QueryExtractor @Inject()(@Flag("zipkin.queryService.limit") defaultQueryLimit: Int) {
   /**
    * Takes a `Request` and produces the correct `QueryRequest` depending
    * on the GET parameters present
