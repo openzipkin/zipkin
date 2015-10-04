@@ -109,7 +109,7 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
          .filterKeys(traceIds.contains(_))
          .values.filter(!_.isEmpty)
          .map(Trace(_).spans).toList
-         .sortBy(_.head.firstTimestamp)
+         .sortBy(_.head.startTs)
   }
 
   override def getTraceIdsByName(
@@ -122,7 +122,7 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
       case (Some(name), spans) => spans filter(_.name.toLowerCase == name.toLowerCase)
       case (_, spans) => spans
     }).filter { span =>
-      span.lastTimestamp.map(_ <= endTs).getOrElse(false)
+      span.endTs.map(_ <= endTs).getOrElse(false)
     }.take(limit).map { span =>
       IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
     }.toList
@@ -135,20 +135,16 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     endTs: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] = call {
-    // simulate the lack of index for core annotations
-    if (Constants.CoreAnnotations.contains(annotation)) Seq.empty
-    else {
-      spansForService(serviceName)
-        .filter(_.lastTimestamp.map(_ <= endTs).getOrElse(false))
-        .filter(if (value.isDefined) {
-        _.binaryAnnotations.exists(ba => ba.key == annotation && ba.value == value.get)
-      } else {
-        _.annotations.exists(_.value == annotation)
-      })
-        .take(limit)
-        .map(span => IndexedTraceId(span.traceId, span.lastTimestamp.get))
-        .toList
-    }
+    spansForService(serviceName)
+      .filter(_.endTs.map(_ <= endTs).getOrElse(false))
+      .filter(if (value.isDefined) {
+      _.binaryAnnotations.exists(ba => ba.key == annotation && ba.value == value.get)
+    } else {
+      _.annotations.exists(_.value == annotation)
+    })
+      .take(limit)
+      .map(span => IndexedTraceId(span.traceId, span.endTs.get))
+      .toList
   }
 
   override def getAllServiceNames(): Future[Seq[String]] = call {

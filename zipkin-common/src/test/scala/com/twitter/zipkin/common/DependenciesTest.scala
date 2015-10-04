@@ -37,8 +37,8 @@ class DependenciesTest extends FunSuite with Matchers {
 
   test("sums where parent/child match") {
     val result = deps1 + deps2
-    result.startTime should be(deps1.startTime)
-    result.endTime should be(deps2.endTime)
+    result.startTs should be(deps1.startTs)
+    result.endTs should be(deps2.endTs)
     result.links.sortBy(_.parent) should be(Seq(
       dl1,
       dl2,

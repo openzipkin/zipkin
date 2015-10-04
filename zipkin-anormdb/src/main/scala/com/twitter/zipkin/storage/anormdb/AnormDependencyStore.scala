@@ -38,11 +38,11 @@ case class AnormDependencyStore(val db: DB,
                                  ) extends DependencyStore with DBPool {
 
 
-  case class DependencyInterval(startMicros: Long, endMicros: Long, startId: Long, endId: Long)
+  case class DependencyInterval(startTs: Long, endTs: Long, startId: Long, endId: Long)
 
-  override def getDependencies(startTime: Option[Long], endTime: Option[Long] = None): Future[Dependencies] = db.inNewThreadWithRecoverableRetry {
-    val endTs = endTime.getOrElse(Time.now.inMicroseconds)
-    val startTs = startTime.getOrElse(endTs - MICROSECONDS.convert(1, DAYS))
+  override def getDependencies(_startTs: Option[Long], _endTs: Option[Long] = None): Future[Dependencies] = db.inNewThreadWithRecoverableRetry {
+    val endTs = _endTs.getOrElse(Time.now.inMicroseconds)
+    val startTs = _startTs.getOrElse(endTs - MICROSECONDS.convert(1, DAYS))
 
 	implicit val (conn, borrowTime) = borrowConn()
 	try {
@@ -56,8 +56,8 @@ case class AnormDependencyStore(val db: DB,
       .on("startTs" -> startTs)
       .on("endTs" -> endTs)
       .as((long("min(start_ts)").? ~ long("max(end_ts)").? ~ long("min(dlid)").? ~ long("max(dlid)").? map {
-      case startMicros ~ endMicros ~ startId ~ endId => {
-        startMicros.map(DependencyInterval(_, endMicros.get, startId.get, endId.get))
+      case startTs ~ endTs ~ startId ~ endId => {
+        startTs.map(DependencyInterval(_, endTs.get, startId.get, endId.get))
       }
     }) *).flatMap(_.headOption).headOption.map(interval => {
 
@@ -73,7 +73,7 @@ case class AnormDependencyStore(val db: DB,
         .as((str("parent") ~ str("child") ~ long("call_count") map {
         case parent ~ child ~ callCount => new DependencyLink(parent,child, callCount)
       }) *)
-      Dependencies(interval.startMicros, interval.endMicros, links)
+      Dependencies(interval.startTs, interval.endTs, links)
     }).getOrElse(Dependencies.zero)
 
     } finally {
@@ -95,8 +95,8 @@ case class AnormDependencyStore(val db: DB,
             |  (start_ts, end_ts)
             |VALUES ({startTs}, {endTs})
           """.stripMargin)
-        .on("startTs" -> dependencies.startTime)
-        .on("endTs" -> dependencies.endTime)
+        .on("startTs" -> dependencies.startTs)
+        .on("endTs" -> dependencies.endTs)
       .executeInsert()
 
       dependencies.links.foreach { link =>

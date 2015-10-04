@@ -22,7 +22,7 @@
       <label for="timeStamp">End time</label>
       <input class="form-control input-sm date-input" type="text">
       <input class="form-control input-sm time-input" type="text">
-      <input class="" id="timestamp" name="timestamp" type="hidden" value="{{timestamp}}">
+      <input class="" id="endTs" name="endTs" type="hidden" value="{{endTs}}">
     </div>
 
     <div class="form-group">
@@ -95,7 +95,7 @@
       {{/serviceDurations}}
       </div>
       <div class="trace-details timestamp pull-right">
-        <time class="label timeago" datetime="{{startTime}}">{{startTime}}</time>
+        <time class="label timeago" datetime="{{startTs}}">{{startTs}}</time>
       </div>
     </li>
   {{/traces}}

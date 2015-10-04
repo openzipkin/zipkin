@@ -29,8 +29,8 @@ struct DependencyLink {
 /* An aggregate representation of services paired with every service they call. */
 struct Dependencies {
   /** microseconds from epoch */
-  1: i64 start_time
+  1: i64 start_ts
   /** microseconds from epoch */
-  2: i64 end_time
+  2: i64 end_ts
   3: list<DependencyLink> links
 }

@@ -19,8 +19,8 @@ package com.twitter.zipkin.web
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.zipkin.common.{Endpoint, Span, Trace}
 
-case class SpanTimestamp(name: String, startTimestamp: Long, endTimestamp: Long) {
-  def duration = endTimestamp - startTimestamp
+case class SpanTimestamp(name: String, startTs: Long, endTs: Long) {
+  def duration = endTs - startTs
 }
 
 object TraceSummary {
@@ -57,15 +57,15 @@ object TraceSummary {
  * json-friendly representation of a trace summary
  *
  * @param traceId id of this trace
- * @param startTimestamp when did the trace start?
- * @param endTimestamp when did the trace end?
+ * @param startTs when did the trace start?
+ * @param endTs when did the trace end?
  * @param durationMicro how long did the traced operation take?
  * @param endpoints endpoints involved in the traced operation
  */
 case class TraceSummary(
   traceId: String,
-  startTimestamp: Long,
-  endTimestamp: Long,
+  startTs: Long,
+  endTs: Long,
   durationMicro: Int,
   spanTimestamps: List[SpanTimestamp],
   endpoints: List[Endpoint])

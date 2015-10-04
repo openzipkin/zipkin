@@ -120,8 +120,6 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store.getTraces(QueryRequest("service", annotations = Set("custom")))) should be(
       Seq(Seq(span1))
     )
-    // should not find any traces since the core annotation doesn't exist in index
-    result(store.getTraces(QueryRequest("service", annotations = Set("cs")))) should be(empty)
 
     // should find traces by the key and value annotation
     result(store.getTraces(QueryRequest("service", binaryAnnotations = Set(("BAH", "BEH"))))) should be(

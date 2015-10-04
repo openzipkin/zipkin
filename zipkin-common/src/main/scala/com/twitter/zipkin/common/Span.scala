@@ -89,7 +89,7 @@ trait Span extends Ordered[Span] { self =>
 
   // TODO: cache first timestamp when this is a normal case class as opposed to a trait
   override def compare(that: Span) =
-    java.lang.Long.compare(firstTimestamp.getOrElse(0L), that.firstTimestamp.getOrElse(0L))
+    java.lang.Long.compare(startTs.getOrElse(0L), that.startTs.getOrElse(0L))
 
   def copy(
     traceId: Long = self.traceId,
@@ -221,6 +221,6 @@ trait Span extends Ordered[Span] { self =>
   def getAnnotationsAsMap(): Map[String, Annotation] =
     annotations.map(a => a.value -> a)(breakOut)
 
-  def lastTimestamp: Option[Long] = lastAnnotation.map(_.timestamp)
-  def firstTimestamp: Option[Long] = firstAnnotation.map(_.timestamp)
+  def endTs: Option[Long] = lastAnnotation.map(_.timestamp)
+  def startTs: Option[Long] = firstAnnotation.map(_.timestamp)
 }

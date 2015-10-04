@@ -25,11 +25,11 @@ abstract class CassandraDependencyStore extends DependencyStore {
 
   def close() = repository.close()
 
-  override def getDependencies(startTime: Option[Long], endTime: Option[Long] = None) = {
-    val endMicros = endTime.getOrElse(Time.now.inMicroseconds)
+  override def getDependencies(startTs: Option[Long], _endTs: Option[Long] = None) = {
+    val endTs = _endTs.getOrElse(Time.now.inMicroseconds)
 
-    val endEpochDayMillis = floorEpochMicrosToDayMillis(endMicros)
-    val startEpochDayMillis = floorEpochMicrosToDayMillis(endMicros - MICROSECONDS.convert(1, DAYS))
+    val endEpochDayMillis = floorEpochMicrosToDayMillis(endTs)
+    val startEpochDayMillis = floorEpochMicrosToDayMillis(endTs - MICROSECONDS.convert(1, DAYS))
 
     val dependenciesFuture =
       FutureUtil.toFuture(repository.getDependencies(startEpochDayMillis, endEpochDayMillis))
@@ -43,9 +43,9 @@ abstract class CassandraDependencyStore extends DependencyStore {
       if (dependencies.isEmpty) {
         Dependencies.zero
       } else {
-        val startMicros = dependencies.head.startTime
-        val endMicros = dependencies.last.endTime
-        Dependencies(startMicros, endMicros, dependencies.flatMap(_.links))
+        val startTs = dependencies.head.startTs
+        val endTs = dependencies.last.endTs
+        Dependencies(startTs, endTs, dependencies.flatMap(_.links))
       }
     }
   }
@@ -57,7 +57,7 @@ abstract class CassandraDependencyStore extends DependencyStore {
   override def storeDependencies(dependencies: Dependencies): Future[Unit] = {
     val thrift = codec.encode(dependenciesToThrift(dependencies).toThrift)
     FutureUtil.toFuture(
-      repository.storeDependencies(floorEpochMicrosToDayMillis(dependencies.startTime), thrift))
+      repository.storeDependencies(floorEpochMicrosToDayMillis(dependencies.startTs), thrift))
       .map(_ => ())
   }
 }

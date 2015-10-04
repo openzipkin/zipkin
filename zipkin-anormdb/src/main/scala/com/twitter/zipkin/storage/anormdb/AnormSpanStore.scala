@@ -19,7 +19,6 @@ import anorm.SqlParser._
 import anorm._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util._
-import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.storage.anormdb.AnormThreads._
 import com.twitter.zipkin.storage.anormdb.DB.byteArrayToStatement
@@ -52,7 +51,7 @@ class AnormSpanStore(val db: DB,
           .on("trace_id" -> span.traceId)
           .on("span_name" -> span.name)
           .on("debug" -> (if (span.debug) 1 else 0))
-          .on("created_ts" -> span.firstTimestamp)
+          .on("created_ts" -> span.startTs)
           .execute()
 
         span.annotations.foreach(a =>
@@ -93,7 +92,7 @@ class AnormSpanStore(val db: DB,
             .on("annotation_type_value" -> b.annotationType.value)
             .on("ipv4" -> b.host.map(_.ipv4))
             .on("port" -> b.host.map(_.port))
-            .on("annotation_ts" -> span.lastTimestamp)
+            .on("annotation_ts" -> span.endTs)
             .execute()
         )
       })
@@ -218,10 +217,6 @@ class AnormSpanStore(val db: DB,
 
   override def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
     endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
-    if ((Constants.CoreAnnotations).contains(annotation) || endTs <= 0 || limit <= 0) {
-      Seq.empty
-    }
-    else {
       implicit val (conn, borrowTime) = borrowConn()
       try {
 
@@ -272,7 +267,6 @@ class AnormSpanStore(val db: DB,
       } finally {
         returnConn(conn, borrowTime, "getTraceIdsByAnnotation")
       }
-    }
   }
 
   override def getAllServiceNames(): Future[Seq[String]] = db.inNewThreadWithRecoverableRetry {
