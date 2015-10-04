@@ -25,12 +25,12 @@ import com.twitter.zipkin.common.Dependencies
 abstract class DependencyStore extends java.io.Closeable {
 
   /**
-   * @param startTime  microseconds from epoch, defaults to one day before end_time
-   * @param endTime  microseconds from epoch, defaults to now
-   * @return dependency links in an interval contained by startTime and endTime,
+   * @param startTs  microseconds from epoch, defaults to one day before end_time
+   * @param endTs  microseconds from epoch, defaults to now
+   * @return dependency links in an interval contained by startTs and endTs,
    *         or [[Dependencies.zero]] if none are found
    */
-  def getDependencies(startTime: Option[Long], endTime: Option[Long] = None): Future[Dependencies]
+  def getDependencies(startTs: Option[Long], endTs: Option[Long] = None): Future[Dependencies]
   def storeDependencies(dependencies: Dependencies): Future[Unit]
 }
 
@@ -38,6 +38,6 @@ class NullDependencyStore extends DependencyStore {
 
   def close() {}
 
-  def getDependencies(startTime: Option[Long], endTime: Option[Long] = None) = Future.value(Dependencies.zero)
+  def getDependencies(startTs: Option[Long], endTs: Option[Long] = None) = Future.value(Dependencies.zero)
   def storeDependencies(dependencies: Dependencies): Future[Unit] = Future.Unit
 }

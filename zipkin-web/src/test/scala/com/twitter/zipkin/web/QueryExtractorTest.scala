@@ -27,16 +27,15 @@ class QueryExtractorTest extends FunSuite {
   def request(p: (String, String)*) = Request(p: _*)
 
   test("getTimestampStr") {
-    val endTs = Time.now
-    val endTimestamp = endTs.inMicroseconds.toString
+    val endTs = Time.now.inMicroseconds.toString
     val r = request(
       "serviceName" -> "myService",
       "spanName" -> "mySpan",
-      "timestamp" -> endTimestamp,
+      "endTs" -> endTs,
       "limit" -> "1000")
 
     val actual = queryExtractor.getTimestampStr(r)
-    assert(actual === endTs.inMicroseconds.toString)
+    assert(actual === endTs.toString)
   }
 
   test("default getTimestampStr") {

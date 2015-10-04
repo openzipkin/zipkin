@@ -16,7 +16,7 @@ public class DependencyStoreInJava extends DependencyStore {
     }
 
     @Override
-    public Future<Dependencies> getDependencies(Option<Object> startTime, Option<Object> endTime) {
+    public Future<Dependencies> getDependencies(Option<Object> startTs, Option<Object> endTs) {
         return null;
     }
 

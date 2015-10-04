@@ -109,7 +109,6 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
     assert(response.headerMap.get("Cache-Control") == Some("max-age=300, must-revalidate"))
   }
 
-
   "get span names" in {
     app.injector.instance[SpanStore].apply(allSpans)
 
@@ -129,6 +128,20 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
       path = "/api/v1/spans?serviceName=service1",
       andExpect = Ok,
       withJsonBody = "[]")
+  }
+
+  "get trace when bad limit" in {
+    server.httpGet(
+      path = "/api/v1/traces?serviceName=service1&limit=0",
+      andExpect = BadRequest,
+      withBody = "limit should be positive: was 0")
+  }
+
+  "get trace when bad endTs" in {
+    server.httpGet(
+      path = "/api/v1/traces?serviceName=service1&endTs=0",
+      andExpect = BadRequest,
+      withBody = "endTs should be positive, in epoch microseconds: was 0")
   }
 
   "get trace by hex id" in {
@@ -467,10 +480,10 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   }
 
   "find dependencies starting at timestamp zero" in {
-    when(dependencyStore.getDependencies(Some(0), Some(deps.endTime))) thenReturn Future.value(deps)
+    when(dependencyStore.getDependencies(Some(0), Some(deps.endTs))) thenReturn Future.value(deps)
 
     server.httpGet(
-      path = "/api/v1/dependencies/0/" + deps.endTime,
+      path = "/api/v1/dependencies?startTs=0&endTs=" + deps.endTs,
       andExpect = Ok,
       withJsonBody =
         """
@@ -490,10 +503,10 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   }
 
   "find dependencies when empty" in {
-    when(dependencyStore.getDependencies(Some(0), Some(deps.endTime))) thenReturn Future(Dependencies.zero)
+    when(dependencyStore.getDependencies(Some(0), Some(deps.endTs))) thenReturn Future(Dependencies.zero)
 
     server.httpGet(
-      path = "/api/v1/dependencies/0/" + deps.endTime,
+      path = "/api/v1/dependencies?startTs=0&endTs=" + deps.endTs,
       andExpect = Ok,
       withJsonBody = "[ ]")
   }

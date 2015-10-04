@@ -103,7 +103,7 @@ trait ZipkinWebFactory { self: App =>
       ("/dependency", addLayout("Dependency", environment()) andThen handleDependency()),
       ("/api/spans", handleRoute(queryClient, "/api/v1/spans")),
       ("/api/services", handleRoute(queryClient, "/api/v1/services")),
-      ("/api/dependencies/?:startTime/?:endTime", handleRoute(queryClient, "/api/v1/dependencies"))
+      ("/api/dependencies", handleRoute(queryClient, "/api/v1/dependencies"))
     ).foldLeft(new HttpMuxer) { case (m , (p, handler)) =>
       val path = p.split("/").toList
       val handlePath = path.takeWhile { t => !(t.startsWith(":") || t.startsWith("?:")) }

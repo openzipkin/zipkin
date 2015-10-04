@@ -152,10 +152,8 @@ abstract class CassandraSpanStore(
     span.lastAnnotation map { lastAnnotation =>
       val timestamp = lastAnnotation.timestamp
 
-      // skip core annotations since that query can be done by service name/span name anyway
       val annotationsFuture = Future.join(
         span.annotations
-          .filter { a => !Constants.CoreAnnotations.contains(a.value) }
           .groupBy(_.value)
           .flatMap { case (_, as) =>
             val a = as.min
@@ -214,7 +212,7 @@ abstract class CassandraSpanStore(
           FutureUtil.toFuture(
             repository.storeSpan(
               span.traceId,
-              span.lastTimestamp.getOrElse(span.firstTimestamp.getOrElse(0)),
+              span.startTs.getOrElse(0),
               createSpanColumnName(span),
               spanCodec.encode(span.copy(annotations = span.annotations.sorted).toThrift),
               spanTtl.inSeconds)),

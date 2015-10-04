@@ -17,7 +17,6 @@ package com.twitter.zipkin.web
 
 import com.twitter.finagle.httpx.Request
 import com.twitter.util.Time
-
 import scala.collection.mutable
 
 class QueryExtractor(defaultQueryLimit: Int) {
@@ -27,7 +26,7 @@ class QueryExtractor(defaultQueryLimit: Int) {
   }
 
   def getTimestampStr(req: Request): String = {
-    req.params.getLong("timestamp").getOrElse(Time.now.inMicroseconds).toString
+    req.params.getLong("endTs").getOrElse(Time.now.inMicroseconds).toString
   }
 
   def getAnnotations(req: Request): Option[(Seq[String], Map[String, String])] =

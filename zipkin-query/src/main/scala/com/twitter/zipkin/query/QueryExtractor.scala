@@ -21,6 +21,7 @@ import com.twitter.util.Time
 import com.twitter.zipkin.storage.QueryRequest
 import javax.inject.Inject
 import scala.collection.mutable
+import scala.util.Try
 
 // TODO: rewrite me into a normal finatra case class
 class QueryExtractor @Inject()(@Flag("zipkin.queryService.limit") defaultQueryLimit: Int) {
@@ -28,10 +29,11 @@ class QueryExtractor @Inject()(@Flag("zipkin.queryService.limit") defaultQueryLi
    * Takes a `Request` and produces the correct `QueryRequest` depending
    * on the GET parameters present
    */
-  def apply(req: Request): Option[QueryRequest] = req.params.get("serviceName").filterNot(_ == "") map { serviceName =>
-    val spanName = req.params.get("spanName") filterNot { n => n == "all" || n == "" }
-
-    val timestamp = req.params.getLong("timestamp").getOrElse(Time.now.inMicroseconds)
+  def apply(req: Request): Try[QueryRequest] = Try {
+    val serviceName = req.params.get("serviceName").getOrElse("")
+    val spanName = req.params.get("spanName").flatMap(n => if (n == "all" || n == "") None else Some(n))
+    val endTs = req.params.getLong("endTs").getOrElse(Time.now.inMicroseconds)
+    val limit = req.params.get("limit").map(_.toInt).getOrElse(defaultQueryLimit)
 
     val (annotations, binaryAnnotations) = req.params.get("annotationQuery") map { query =>
       val anns = mutable.Set[String]()
@@ -49,7 +51,6 @@ class QueryExtractor @Inject()(@Flag("zipkin.queryService.limit") defaultQueryLi
     } getOrElse {
       (Set.empty[String], Set.empty[(String, String)])
     }
-    val limit = req.params.get("limit").map(_.toInt).getOrElse(defaultQueryLimit)
-    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, timestamp, limit)
+    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, endTs, limit)
   }
 }

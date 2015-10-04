@@ -40,4 +40,20 @@ object Util {
     }
   }
 
+  /**
+   * Like [[require]], except it doesn't prefix the error message.
+   *
+   * <p/> Inspired by Guava's [[com.google.common.base.Preconditions.checkArgument]].
+   */
+  @inline final def checkArgument(expression: Boolean, message: String) {
+    if (!expression) {
+      throw new IllegalArgumentException(message)
+    }
+  }
+
+  @inline final def checkArgument(expression: Boolean, message: () => String) {
+    if (!expression) {
+      throw new IllegalArgumentException(message())
+    }
+  }
 }

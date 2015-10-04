@@ -13,6 +13,7 @@ import com.twitter.zipkin.json.JsonSpan
 import com.twitter.zipkin.query.adjusters.TimeSkewAdjuster
 import com.twitter.zipkin.storage.{DependencyStore, SpanStore}
 import javax.inject.Inject
+import scala.util.{Failure, Success}
 
 class ZipkinQueryController @Inject()(spanStore: SpanStore,
                                       dependencyStore: DependencyStore,
@@ -36,8 +37,8 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
 
   get("/api/v1/traces") { request: Request =>
     queryExtractor(request) match {
-      case Some(qr) => spanStore.getTraces(qr).map(adjustTimeskewAndRenderJson(_))
-      case None => Future.value(response.badRequest)
+      case Success(qr) => spanStore.getTraces(qr).map(adjustTimeskewAndRenderJson(_))
+      case Failure(ex) => Future.value(response.badRequest(ex.getMessage))
     }
   }
 
@@ -52,8 +53,8 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
     }
   }
 
-  get("/api/v1/dependencies/:from/:to") { request: GetDependenciesRequest =>
-    dependencyStore.getDependencies(Some(request.from), Some(request.to)).map(_.links)
+  get("/api/v1/dependencies") { request: GetDependenciesRequest =>
+    dependencyStore.getDependencies(Some(request.startTs), Some(request.endTs)).map(_.links)
   }
 
   private[this] def adjustTimeskewAndRenderJson(spans: Seq[Seq[Span]]): Seq[List[JsonSpan]] = {
@@ -67,6 +68,6 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
 
 case class GetSpanNamesRequest(@QueryParam serviceName: String)
 
-case class GetDependenciesRequest(@RouteParam from: Long, @RouteParam to: Long)
+case class GetDependenciesRequest(@QueryParam startTs: Long, @QueryParam endTs: Long)
 
 case class GetTraceRequest(@RouteParam id: String)

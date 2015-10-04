@@ -65,7 +65,8 @@ trait CollectAnnotationQueries {
           }
         }
     }
-    ids.flatMap(getTracesByIds(_))
+    // only issue a query if trace ids were found
+    ids.flatMap(ids => if (ids.isEmpty) Future.value(Seq.empty) else getTracesByIds(ids))
   }
 
   private[this] def padTimestamp(timestamp: Long): Long =

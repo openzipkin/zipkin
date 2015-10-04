@@ -27,11 +27,11 @@ case class DependencyLink(parent: String, child: String, callCount: Long)
 
 /**
  * This represents all dependencies across all services over a given time period.
- * @param startTime microseconds from epoch
- * @param endTime microseconds from epoch
+ * @param startTs microseconds from epoch
+ * @param endTs microseconds from epoch
  * @param links link information for every dependent service
  */
-case class Dependencies(startTime: Long, endTime: Long, links: Seq[DependencyLink]) {
+case class Dependencies(startTs: Long, endTs: Long, links: Seq[DependencyLink]) {
   // used for summing/merging database rows
   def +(that: Dependencies): Dependencies = {
     // don't sum against Dependencies.zero
@@ -42,8 +42,8 @@ case class Dependencies(startTime: Long, endTime: Long, links: Seq[DependencyLin
     }
 
     // new start/end should be the inclusive time span of both items
-    val newStart = startTime min that.startTime
-    val newEnd = endTime max that.endTime
+    val newStart = startTs min that.startTs
+    val newEnd = endTs max that.endTs
 
     // links are merged by mapping to parent/child and summing corresponding links
     val lLinkMap = that.links.map { link => (link.parent, link.child) -> link }.toMap

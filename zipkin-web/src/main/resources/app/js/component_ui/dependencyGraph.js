@@ -13,9 +13,10 @@ define(
 
     function dependencyGraph() {
       this.after('initialize', function (container, options) {
-        this.on(document, 'dependencyDataReceived', function (ev, data) {
+        this.on(document, 'dependencyDataReceived', function () {
+          // drop the event, keep the links
+          var links = Array.prototype.slice.call(arguments, 1);
           var _this = this;
-
           var svg = d3.select('svg'),
             svgGroup = svg.append('g');
           var rootSvg = container.querySelector('svg');
@@ -75,7 +76,7 @@ define(
           // to render different arrow widths depending on number of calls
           var minCallCount = 0;
           var maxCallCount = 0;
-          data.links.filter(function (link) {
+          links.filter(function (link) {
             return link.parent != link.child;
           }).forEach(function (link) {
             var numCalls = link.callCount;
@@ -91,10 +92,10 @@ define(
 
 
           // Get the names of all nodes in the graph
-          var parentNames = data.links.map(function (link) {
+          var parentNames = links.map(function (link) {
             return link.parent;
           });
-          var childNames = data.links.map(function (link) {
+          var childNames = links.map(function (link) {
             return link.child;
           });
           var allNames = arrayUnique(parentNames.concat(childNames));
@@ -108,7 +109,7 @@ define(
           });
 
           // Add edges/dependency links to the graph
-          data.links.filter(function (link) {
+          links.filter(function (link) {
             return link.parent != link.child;
           }).forEach(function (link) {
             g.addEdge(link.parent + '->' + link.child, link.parent, link.child, {

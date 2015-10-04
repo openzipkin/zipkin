@@ -10,20 +10,20 @@ define(
     return defineComponent(dependency);
 
     function dependency() {
-      var _data = [];
+      var links = [];
       var services = {};
       var dependencies = {};
 
-      this.getDependency = function (from, to) {
-        var url = "/api/dependencies/" + from + '/' + to;
+      this.getDependency = function (startTs, endTs) {
+        var url = "/api/dependencies?startTs=" + startTs + '&endTs=' + endTs;
         $.ajax(url, {
           type: "GET",
           dataType: "json",
           context: this,
-          success: function (data) {
-            _data = data;
-            this.buildServiceData(data);
-            this.trigger('dependencyDataReceived', data);
+          success: function (links) {
+            this.links = links;
+            this.buildServiceData(links);
+            this.trigger('dependencyDataReceived', links);
           },
           failure: function (jqXHR, status, err) {
             var error = {
@@ -34,10 +34,10 @@ define(
         });
       };
 
-      this.buildServiceData = function (data) {
+      this.buildServiceData = function (links) {
         services = {};
         dependencies = {};
-        data.links.forEach(function (link) {
+        links.forEach(function (link) {
           var parent = link.parent;
           var child = link.child;
 

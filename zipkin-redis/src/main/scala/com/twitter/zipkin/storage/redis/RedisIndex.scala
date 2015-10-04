@@ -85,25 +85,24 @@ class RedisIndex(
       result ++= services.map(spanNames.put(_, span.name))
     }
 
-    if (span.lastTimestamp.isDefined) {
-      val lastTimestamp = span.lastTimestamp.get
+    if (span.endTs.isDefined) {
+      val endTs = span.endTs.get
 
       result ++= services.map(serviceName =>
-        serviceIndex.add(serviceName, lastTimestamp, span.traceId))
+        serviceIndex.add(serviceName, endTs, span.traceId))
 
       result ++= services.map(serviceName =>
-        spanIndex.add(SpanKey(serviceName, span.name), lastTimestamp, span.traceId))
+        spanIndex.add(SpanKey(serviceName, span.name), endTs, span.traceId))
 
       result ++= services.flatMap(serviceName =>
         span.annotations.map(_.value)
-          .filter(!Constants.CoreAnnotations.contains(_))
           .map(AnnotationKey(serviceName, _))
-          .map(annotationIndex.add(_, lastTimestamp, span.traceId)))
+          .map(annotationIndex.add(_, endTs, span.traceId)))
 
       result ++= services.flatMap(serviceName =>
         span.binaryAnnotations
           .map(bin => BinaryAnnotationKey(serviceName, bin.key, encode(bin)))
-          .map(binaryAnnotationIndex.add(_, lastTimestamp, span.traceId)))
+          .map(binaryAnnotationIndex.add(_, endTs, span.traceId)))
     }
 
     Future.join(result)

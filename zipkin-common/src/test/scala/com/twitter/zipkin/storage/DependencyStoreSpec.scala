@@ -51,7 +51,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   @Test def getDependencies_insideTheInterval() = {
     ready(store.storeDependencies(dep))
 
-    result(store.getDependencies(Some(dep.startTime), Some(dep.endTime))) should be(dep)
+    result(store.getDependencies(Some(dep.startTs), Some(dep.endTs))) should be(dep)
   }
 
   @Test def getDependencies_endTimeBeforeData() = {
