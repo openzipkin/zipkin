@@ -13,23 +13,16 @@
  */
 package io.zipkin;
 
-import com.facebook.swift.codec.ThriftConstructor;
-import com.facebook.swift.codec.ThriftField;
-import com.facebook.swift.codec.ThriftStruct;
-import com.google.auto.value.AutoValue;
+import io.zipkin.internal.JsonCodec;
 import java.net.InetSocketAddress;
 
+import static io.zipkin.internal.Util.checkNotNull;
+
 /** Indicates the network context of a service recording an annotation. */
-@AutoValue
-@ThriftStruct(value = "Endpoint", builder = AutoValue_Endpoint.Builder.class)
-public abstract class Endpoint {
+public final class Endpoint {
 
-  public static Builder builder() {
-    return new AutoValue_Endpoint.Builder();
-  }
-
-  public static Builder builder(Endpoint source) {
-    return new AutoValue_Endpoint.Builder(source);
+  public static Endpoint create(String serviceName, int ipv4, int port) {
+    return new Endpoint(serviceName, ipv4, (short) (port & 0xffff));
   }
 
   /**
@@ -37,8 +30,7 @@ public abstract class Endpoint {
    *
    * <p/>Note: Some implementations set this to "Unknown" or "Unknown Service"
    */
-  @ThriftField(value = 3)
-  public abstract String serviceName();
+  public final String serviceName;
 
   /**
    * IPv4 endpoint address packed into 4 bytes.
@@ -47,8 +39,7 @@ public abstract class Endpoint {
    *
    * @see java.net.Inet4Address#getAddress()
    */
-  @ThriftField(value = 1)
-  public abstract int ipv4();
+  public final int ipv4;
 
   /**
    * IPv4 port
@@ -57,22 +48,76 @@ public abstract class Endpoint {
    *
    * @see InetSocketAddress#getPort()
    */
-  @ThriftField(value = 2)
-  public abstract short port();
+  public final short port;
 
-  @AutoValue.Builder
-  public interface Builder {
+  Endpoint(String serviceName, int ipv4, short port) {
+    this.serviceName = checkNotNull(serviceName, "serviceName");
+    this.ipv4 = ipv4;
+    this.port = port;
+  }
 
-    @ThriftField(value = 3)
-    Builder serviceName(String serviceName);
+  public static final class Builder {
+    private String serviceName;
+    private Integer ipv4;
+    private Short port;
 
-    @ThriftField(value = 1)
-    Builder ipv4(int ipv4);
+    public Builder() {
+    }
 
-    @ThriftField(value = 2)
-    Builder port(short port);
+    public Builder(Endpoint source) {
+      this.serviceName = source.serviceName;
+      this.ipv4 = source.ipv4;
+      this.port = source.port;
+    }
 
-    @ThriftConstructor
-    Endpoint build();
+    public Builder serviceName(String serviceName) {
+      this.serviceName = serviceName;
+      return this;
+    }
+
+    public Builder ipv4(int ipv4) {
+      this.ipv4 = ipv4;
+      return this;
+    }
+
+    public Builder port(short port) {
+      this.port = port;
+      return this;
+    }
+
+    public Endpoint build() {
+      return new Endpoint(this.serviceName, this.ipv4, this.port);
+    }
+  }
+
+  @Override
+  public String toString() {
+    return JsonCodec.ENDPOINT_ADAPTER.toJson(this);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (o instanceof Endpoint) {
+      Endpoint that = (Endpoint) o;
+      return (this.serviceName.equals(that.serviceName))
+          && (this.ipv4 == that.ipv4)
+          && (this.port == that.port);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int h = 1;
+    h *= 1000003;
+    h ^= serviceName.hashCode();
+    h *= 1000003;
+    h ^= ipv4;
+    h *= 1000003;
+    h ^= port;
+    return h;
   }
 }

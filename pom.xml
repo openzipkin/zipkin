@@ -25,13 +25,11 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>swift-codec</module>
     <module>zipkin-java-core</module>
-    <module>zipkin-java-spanstore</module>
-    <module>zipkin-java-scribe</module>
-    <module>zipkin-java-dependencies</module>
-    <module>zipkin-java-server</module>
+    <module>zipkin-java-interop</module>
     <module>zipkin-java-jdbc</module>
+    <module>zipkin-java-server</module>
+    <module>zipkin-java-scribe</module>
   </modules>
 
   <properties>
@@ -40,20 +38,14 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
 
-    <swift.version>0.15.1</swift.version>
     <mysql-connector-java.version>5.1.36</mysql-connector-java.version>
-    <slf4j.version>1.7.12</slf4j.version>
     <junit.version>4.12</junit.version>
     <assertj.version>3.1.0</assertj.version>
-
-    <!-- Dependencies for SpanStoreSpec -->
-    <zipkin-scala.version>1.12.0</zipkin-scala.version>
-    <scalatest.version>2.2.5</scalatest.version>
 
     <!-- Run `mvn wrapper:wrapper -N` on updating below -->
     <maven.version>3.3.3</maven.version>
     <wrapper-maven-plugin.version>0.0.4</wrapper-maven-plugin.version>
-    <maven-shade-plugin.version>2.3</maven-shade-plugin.version>
+    <maven-shade-plugin.version>2.4.1</maven-shade-plugin.version>
     <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
     <maven-source-plugin.version>2.4</maven-source-plugin.version>
     <maven-javadoc-plugin.version>2.10.3</maven-javadoc-plugin.version>
@@ -114,67 +106,20 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-java-spanstore</artifactId>
+        <artifactId>zipkin-java-jdbc</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-java-spanstore</artifactId>
+        <artifactId>zipkin-java-server</artifactId>
         <version>${project.version}</version>
-        <classifier>tests</classifier>
       </dependency>
 
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-java-scribe</artifactId>
         <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-java-dependencies</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-java-jdbc</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>com.facebook.swift</groupId>
-        <artifactId>swift-annotations</artifactId>
-        <version>${swift.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>swift-codec</artifactId>
-        <version>${project.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
-      <dependency>
-        <groupId>com.facebook.swift</groupId>
-        <artifactId>swift-service</artifactId>
-        <version>${swift.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>com.facebook.swift</groupId>
-            <artifactId>swift-codec</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
 
       <dependency>
@@ -190,71 +135,14 @@
       </dependency>
 
       <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-simple</artifactId>
-        <version>${slf4j.version}</version>
-      </dependency>
-
-      <dependency>
         <groupId>mysql</groupId>
         <artifactId>mysql-connector-java</artifactId>
         <version>${mysql-connector-java.version}</version>
-      </dependency>
-
-      <!-- Dependencies for SpanStoreSpec -->
-      <dependency>
-        <groupId>io.zipkin</groupId>
-        <artifactId>zipkin-common</artifactId>
-        <version>${zipkin-scala.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
-      <dependency>
-        <groupId>io.zipkin</groupId>
-        <artifactId>zipkin-scrooge</artifactId>
-        <version>${zipkin-scala.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
-      <dependency>
-        <groupId>io.zipkin</groupId>
-        <artifactId>zipkin-common</artifactId>
-        <version>${zipkin-scala.version}</version>
-        <classifier>test</classifier>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
-      <dependency>
-        <groupId>org.scalatest</groupId>
-        <artifactId>scalatest_2.10</artifactId>
-        <version>${scalatest.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
 
   <dependencies>
-    <dependency>
-      <groupId>com.google.auto.value</groupId>
-      <artifactId>auto-value</artifactId>
-      <version>1.1</version>
-      <scope>provided</scope>
-    </dependency>
-
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -416,5 +304,4 @@
       </build>
     </profile>
   </profiles>
-
 </project>

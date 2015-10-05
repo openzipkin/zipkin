@@ -12,7 +12,7 @@
 # the License.
 #
 
-FROM quay.io/openzipkin/zipkin-base:base-1.9.0
+FROM quay.io/openzipkin/zipkin-base:base-1.12.0
 
 MAINTAINER OpenZipkin "http://zipkin.io/"
 

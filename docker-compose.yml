@@ -13,7 +13,7 @@
 #
 
 zipkin-java-server:
-  image: openzipkin/zipkin-java-server
+  build: zipkin-java-server
   tty: true
   expose:
     - 9410

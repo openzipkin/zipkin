@@ -36,68 +36,13 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-java-spanstore</artifactId>
+      <artifactId>zipkin-java-core</artifactId>
     </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-java-dependencies</artifactId>
-    </dependency>
+
     <dependency>
       <groupId>org.jooq</groupId>
       <artifactId>jooq</artifactId>
       <version>${jooq.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-java-spanstore</artifactId>
-      <classifier>tests</classifier>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- for ScalaSpanStoreAdapter -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>swift-codec</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- Dependencies for SpanStoreSpec -->
-    <dependency>
-      <groupId>io.zipkin</groupId>
-      <artifactId>zipkin-common</artifactId>
-      <classifier>test</classifier>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>io.zipkin</groupId>
-      <artifactId>zipkin-scrooge</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>io.zipkin</groupId>
-      <artifactId>zipkin-common</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_2.10</artifactId>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 

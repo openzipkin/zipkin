@@ -29,6 +29,10 @@
   <name>Zipkin Scribe Listener</name>
   <description>Zipkin Scribe Listener</description>
 
+  <properties>
+    <swift.version>0.15.1</swift.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -38,19 +42,7 @@
     <dependency>
       <groupId>com.facebook.swift</groupId>
       <artifactId>swift-annotations</artifactId>
+      <version>${swift.version}</version>
     </dependency>
-
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>swift-codec</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.google.auto.value</groupId>
-      <artifactId>auto-value</artifactId>
-      <version>1.1</version>
-      <scope>provided</scope>
-    </dependency>
-
   </dependencies>
 </project>

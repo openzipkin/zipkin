@@ -32,12 +32,61 @@
   <properties>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
+    <moshi.version>1.0.0</moshi.version>
+    <libthrift.version>0.9.2</libthrift.version>
   </properties>
 
   <dependencies>
     <dependency>
-      <groupId>com.facebook.swift</groupId>
-      <artifactId>swift-annotations</artifactId>
+      <groupId>org.apache.thrift</groupId>
+      <artifactId>libthrift</artifactId>
+      <version>${libthrift.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.moshi</groupId>
+      <artifactId>moshi</artifactId>
+      <version>${moshi.version}</version>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Use of okio, moshi, and libthrift are internal only -->
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <shadeTestJar>false</shadeTestJar>
+              <minimizeJar>true</minimizeJar>
+              <relocations>
+                <relocation>
+                  <pattern>okio</pattern>
+                  <shadedPattern>io.zipkin.internal.okio</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.squareup.moshi</pattern>
+                  <shadedPattern>io.zipkin.internal.moshi</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.thrift</pattern>
+                  <shadedPattern>io.zipkin.internal.libthrift</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

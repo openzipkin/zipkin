@@ -11,14 +11,16 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin.scribe;
+package io.zipkin.internal;
 
-import com.facebook.swift.codec.ThriftField;
-import com.facebook.swift.service.ThriftMethod;
-import com.facebook.swift.service.ThriftService;
-import java.util.List;
+import io.zipkin.Codec;
+import io.zipkin.CodecTest;
 
-@ThriftService("Scribe")
-public interface Scribe {
-  @ThriftMethod(value = "Log") ResultCode log(@ThriftField(value = 1) List<LogEntry> messages);
+public final class ThriftCodecTest extends CodecTest {
+  private final ThriftCodec codec = new ThriftCodec();
+
+  @Override
+  protected Codec codec() {
+    return codec;
+  }
 }

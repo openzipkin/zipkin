@@ -11,14 +11,20 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin.scribe;
+package io.zipkin;
 
-import com.facebook.swift.codec.ThriftField;
-import com.facebook.swift.service.ThriftMethod;
-import com.facebook.swift.service.ThriftService;
-import java.util.List;
+import com.twitter.zipkin.storage.SpanStore;
+import com.twitter.zipkin.storage.SpanStoreSpec;
+import io.zipkin.interop.ScalaSpanStoreAdapter;
 
-@ThriftService("Scribe")
-public interface Scribe {
-  @ThriftMethod(value = "Log") ResultCode log(@ThriftField(value = 1) List<LogEntry> messages);
+public class InMemoryScalaSpanStoreTest extends SpanStoreSpec {
+  private InMemorySpanStore mem = new InMemorySpanStore();
+
+  public SpanStore store() {
+    return new ScalaSpanStoreAdapter(mem);
+  }
+
+  public void clear() {
+    mem.clear();
+  }
 }

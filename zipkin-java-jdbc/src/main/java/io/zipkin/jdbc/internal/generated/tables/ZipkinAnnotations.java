@@ -41,7 +41,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinAnnotations extends TableImpl<Record> {
 
-	private static final long serialVersionUID = 968602035;
+	private static final long serialVersionUID = -465666839;
 
 	/**
 	 * The reference instance of <code>zipkin.zipkin_annotations</code>
@@ -62,29 +62,29 @@ public class ZipkinAnnotations extends TableImpl<Record> {
 	public final TableField<Record, Long> TRACE_ID = createField("trace_id", org.jooq.impl.SQLDataType.BIGINT.nullable(false), this, "coincides with zipkin_spans.trace_id");
 
 	/**
-	 * The column <code>zipkin.zipkin_annotations.span_id</code>. coincides with zipkin_spans.span_id
+	 * The column <code>zipkin.zipkin_annotations.span_id</code>. coincides with zipkin_spans.id
 	 */
-	public final TableField<Record, Long> SPAN_ID = createField("span_id", org.jooq.impl.SQLDataType.BIGINT.nullable(false), this, "coincides with zipkin_spans.span_id");
+	public final TableField<Record, Long> SPAN_ID = createField("span_id", org.jooq.impl.SQLDataType.BIGINT.nullable(false), this, "coincides with zipkin_spans.id");
 
 	/**
-	 * The column <code>zipkin.zipkin_annotations.key</code>. BinaryAnnotation.key or Annotation.value if type == -1
+	 * The column <code>zipkin.zipkin_annotations.a_key</code>. BinaryAnnotation.key or Annotation.value if type == -1
 	 */
-	public final TableField<Record, String> KEY = createField("key", org.jooq.impl.SQLDataType.VARCHAR.length(255).nullable(false), this, "BinaryAnnotation.key or Annotation.value if type == -1");
+	public final TableField<Record, String> A_KEY = createField("a_key", org.jooq.impl.SQLDataType.VARCHAR.length(255).nullable(false), this, "BinaryAnnotation.key or Annotation.value if type == -1");
 
 	/**
-	 * The column <code>zipkin.zipkin_annotations.value</code>. BinaryAnnotation.value(), which must be smaller than 64KB
+	 * The column <code>zipkin.zipkin_annotations.a_value</code>. BinaryAnnotation.value(), which must be smaller than 64KB
 	 */
-	public final TableField<Record, byte[]> VALUE = createField("value", org.jooq.impl.SQLDataType.BLOB, this, "BinaryAnnotation.value(), which must be smaller than 64KB");
+	public final TableField<Record, byte[]> A_VALUE = createField("a_value", org.jooq.impl.SQLDataType.BLOB, this, "BinaryAnnotation.value(), which must be smaller than 64KB");
 
 	/**
-	 * The column <code>zipkin.zipkin_annotations.type</code>. BinaryAnnotation.type() or -1 if Annotation
+	 * The column <code>zipkin.zipkin_annotations.a_type</code>. BinaryAnnotation.type() or -1 if Annotation
 	 */
-	public final TableField<Record, Integer> TYPE = createField("type", org.jooq.impl.SQLDataType.INTEGER.nullable(false), this, "BinaryAnnotation.type() or -1 if Annotation");
+	public final TableField<Record, Integer> A_TYPE = createField("a_type", org.jooq.impl.SQLDataType.INTEGER.nullable(false), this, "BinaryAnnotation.type() or -1 if Annotation");
 
 	/**
-	 * The column <code>zipkin.zipkin_annotations.timestamp</code>. Used to implement TTL; Annotation.timestamp or zipkin_spans.timestamp
+	 * The column <code>zipkin.zipkin_annotations.a_timestamp</code>. Used to implement TTL; Annotation.timestamp or zipkin_spans.timestamp
 	 */
-	public final TableField<Record, Long> TIMESTAMP = createField("timestamp", org.jooq.impl.SQLDataType.BIGINT, this, "Used to implement TTL; Annotation.timestamp or zipkin_spans.timestamp");
+	public final TableField<Record, Long> A_TIMESTAMP = createField("a_timestamp", org.jooq.impl.SQLDataType.BIGINT, this, "Used to implement TTL; Annotation.timestamp or zipkin_spans.timestamp");
 
 	/**
 	 * The column <code>zipkin.zipkin_annotations.endpoint_ipv4</code>. Null when Binary/Annotation.endpoint is null

@@ -11,14 +11,26 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin.scribe;
+package io.zipkin;
 
-import com.facebook.swift.codec.ThriftField;
-import com.facebook.swift.service.ThriftMethod;
-import com.facebook.swift.service.ThriftService;
+import java.io.Closeable;
 import java.util.List;
 
-@ThriftService("Scribe")
-public interface Scribe {
-  @ThriftMethod(value = "Log") ResultCode log(@ThriftField(value = 1) List<LogEntry> messages);
+public interface SpanStore extends Closeable {
+
+  /**
+   * Sinks the given spans, ignoring duplicate annotations.
+   */
+  void accept(List<Span> spans);
+
+  List<List<Span>> getTraces(QueryRequest request);
+
+  List<List<Span>> getTracesByIds(List<Long> traceIds);
+
+  List<String> getServiceNames();
+
+  List<String> getSpanNames(String serviceName);
+
+  @Override
+  void close();
 }

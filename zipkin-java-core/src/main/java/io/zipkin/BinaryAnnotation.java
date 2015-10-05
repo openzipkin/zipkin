@@ -13,31 +13,22 @@
  */
 package io.zipkin;
 
-import com.facebook.swift.codec.ThriftConstructor;
-import com.facebook.swift.codec.ThriftEnumValue;
-import com.facebook.swift.codec.ThriftField;
-import com.facebook.swift.codec.ThriftStruct;
-import com.google.auto.value.AutoValue;
+import io.zipkin.internal.JsonCodec;
 import io.zipkin.internal.Nullable;
+import java.util.Arrays;
 
-import static com.facebook.swift.codec.ThriftField.Requiredness.OPTIONAL;
+import static io.zipkin.internal.Util.checkNotNull;
+import static io.zipkin.internal.Util.equal;
 
-@AutoValue
-@ThriftStruct(value = "BinaryAnnotation", builder = AutoValue_BinaryAnnotation.Builder.class)
-public abstract class BinaryAnnotation {
+public final class BinaryAnnotation {
 
   public enum Type {
     BOOL(0), BYTES(1), I16(2), I32(3), I64(4), DOUBLE(5), STRING(6);
 
-    private final int value;
+    public final int value;
 
     Type(int value) {
       this.value = value;
-    }
-
-    @ThriftEnumValue
-    public int value() {
-      return value;
     }
 
     /** Returns {@link Type#BYTES} if unknown. */
@@ -63,45 +54,100 @@ public abstract class BinaryAnnotation {
     }
   }
 
-  public static Builder builder() {
-    return new AutoValue_BinaryAnnotation.Builder();
+  public static BinaryAnnotation create(String key, byte[] value, Type type, @Nullable Endpoint endpoint) {
+    return new BinaryAnnotation(key, value, type, endpoint);
   }
 
-  public static Builder builder(BinaryAnnotation source) {
-    return new AutoValue_BinaryAnnotation.Builder(source);
-  }
+  public final String key;
 
-  @ThriftField(value = 1)
-  public abstract String key();
+  public final byte[] value;
 
-  @ThriftField(value = 2)
-  public abstract byte[] value();
-
-  @ThriftField(value = 3)
-  public abstract Type type();
+  public final Type type;
 
   /** The endpoint that recorded this annotation */
   @Nullable
-  @ThriftField(value = 4, requiredness = OPTIONAL)
-  public abstract Endpoint endpoint();
+  public final Endpoint endpoint;
 
-  @AutoValue.Builder
-  public interface Builder {
+  BinaryAnnotation(String key, byte[] value, Type type, Endpoint endpoint) {
+    this.key = checkNotNull(key, "key");
+    this.value = checkNotNull(value, "value");
+    this.type = checkNotNull(type, "type");
+    this.endpoint = endpoint;
+  }
 
-    @ThriftField(value = 1)
-    Builder key(String key);
+  public static final class Builder {
+    private String key;
+    private byte[] value;
+    private Type type;
+    private Endpoint endpoint;
 
-    @ThriftField(value = 2)
-    Builder value(byte[] value);
+    public Builder() {
+    }
 
-    @ThriftField(value = 3)
-    Builder type(Type type);
+    public Builder(BinaryAnnotation source) {
+      this.key = source.key;
+      this.value = source.value;
+      this.type = source.type;
+      this.endpoint = source.endpoint;
+    }
+
+    public BinaryAnnotation.Builder key(String key) {
+      this.key = key;
+      return this;
+    }
+
+    public BinaryAnnotation.Builder value(byte[] value) {
+      this.value = value.clone();
+      return this;
+    }
+
+    public BinaryAnnotation.Builder type(Type type) {
+      this.type = type;
+      return this;
+    }
 
     @Nullable
-    @ThriftField(value = 4, requiredness = OPTIONAL)
-    Builder endpoint(Endpoint endpoint);
+    public BinaryAnnotation.Builder endpoint(Endpoint endpoint) {
+      this.endpoint = endpoint;
+      return this;
+    }
 
-    @ThriftConstructor
-    BinaryAnnotation build();
+    public BinaryAnnotation build() {
+      return new BinaryAnnotation(key, value, type, endpoint);
+    }
+  }
+
+  @Override
+  public String toString() {
+    return JsonCodec.BINARY_ANNOTATION_ADAPTER.toJson(this);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (o instanceof BinaryAnnotation) {
+      BinaryAnnotation that = (BinaryAnnotation) o;
+      return (this.key.equals(that.key))
+          && (Arrays.equals(this.value, that.value))
+          && (this.type.equals(that.type))
+          && equal(this.endpoint, that.endpoint);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int h = 1;
+    h *= 1000003;
+    h ^= key.hashCode();
+    h *= 1000003;
+    h ^= Arrays.hashCode(value);
+    h *= 1000003;
+    h ^= type.hashCode();
+    h *= 1000003;
+    h ^= (endpoint == null) ? 0 : endpoint.hashCode();
+    return h;
   }
 }

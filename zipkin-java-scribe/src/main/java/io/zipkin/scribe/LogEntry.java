@@ -16,33 +16,43 @@ package io.zipkin.scribe;
 import com.facebook.swift.codec.ThriftConstructor;
 import com.facebook.swift.codec.ThriftField;
 import com.facebook.swift.codec.ThriftStruct;
-import com.google.auto.value.AutoValue;
 
-@AutoValue
-@ThriftStruct(value = "LogEntry", builder = AutoValue_LogEntry.Builder.class)
-public abstract class LogEntry {
-
-  public static Builder builder() {
-    return new AutoValue_LogEntry.Builder();
-  }
-
-  public static Builder builder(LogEntry source) {
-    return new AutoValue_LogEntry.Builder(source);
-  }
+@ThriftStruct(value = "LogEntry", builder = LogEntry.Builder.class)
+public final class LogEntry {
 
   @ThriftField(value = 1)
-  public abstract String category();
+  public final String category;
 
   @ThriftField(value = 2)
-  public abstract String message();
+  public final String message;
 
-  @AutoValue.Builder
-  public interface Builder {
+  LogEntry(String category, String message) {
+    this.category = category;
+    this.message = message;
+  }
 
-    @ThriftField(value = 1) Builder category(String category);
+  public static final class Builder {
+    private String category;
+    private String message;
 
-    @ThriftField(value = 2) Builder message(String message);
+    public Builder() {
+    }
 
-    @ThriftConstructor LogEntry build();
+    @ThriftField(value = 1)
+    public LogEntry.Builder category(String category) {
+      this.category = category;
+      return this;
+    }
+
+    @ThriftField(value = 2)
+    public LogEntry.Builder message(String message) {
+      this.message = message;
+      return this;
+    }
+
+    @ThriftConstructor
+    public LogEntry build() {
+      return new LogEntry(category, message);
+    }
   }
 }
