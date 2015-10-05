@@ -80,6 +80,7 @@ trait ZipkinWebFactory { self: App =>
   lazy val queryClient = new HttpClient(
     httpService =
       Httpx.client.configured(param.Label("zipkin-query")).newClient(queryDest()).toService,
+    defaultHeaders = Map("Host" -> queryDest()),
     mapper = new FinatraObjectMapper(ZipkinJson)
   )
 
