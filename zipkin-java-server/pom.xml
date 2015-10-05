@@ -31,11 +31,52 @@
 
   <properties>
     <hikaricp.version>2.4.1</hikaricp.version>
-    <logback.version>1.1.3</logback.version>
-    <really-executable-jar-maven-plugin>1.4.1</really-executable-jar-maven-plugin>
+
+    <!-- temporary until we use something besides scribe -->
+    <swift.version>0.15.1</swift.version>
   </properties>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <!-- Import dependency management from Spring Boot -->
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-java-core</artifactId>
+    </dependency>
+
+    <!-- JDBC backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-java-jdbc</artifactId>
@@ -46,63 +87,31 @@
       <artifactId>mysql-connector-java</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <version>${logback.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-core</artifactId>
-      <version>${logback.version}</version>
-    </dependency>
-
+    <!-- Spring Boot will find this in the classpath and use it. -->
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
       <version>${hikaricp.version}</version>
+    </dependency>
+
+    <!-- Collector deps -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-java-scribe</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.facebook.swift</groupId>
+      <artifactId>swift-service</artifactId>
+      <version>${swift.version}</version>
     </dependency>
   </dependencies>
 
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <transformers>
-            <transformer
-                implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-              <mainClass>io.zipkin.ZipkinServer</mainClass>
-            </transformer>
-          </transformers>
-        </configuration>
-      </plugin>
-      <!-- now make the jar chmod +x style executable -->
-      <plugin>
-        <groupId>org.skife.maven</groupId>
-        <artifactId>really-executable-jar-maven-plugin</artifactId>
-        <version>1.4.1</version>
-        <configuration>
-          <flags>-Xmx512m</flags>
-          <programFile>zipkin-server</programFile>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>really-executable-jar</goal>
-            </goals>
-          </execution>
-        </executions>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
     </plugins>
   </build>

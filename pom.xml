@@ -54,6 +54,7 @@
     <maven-release-plugin.version>2.5.2</maven-release-plugin.version>
     <nexus-staging-maven-plugin.version>1.6.6</nexus-staging-maven-plugin.version>
     <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
+    <spring-boot.version>1.2.6.RELEASE</spring-boot.version>
   </properties>
 
   <name>Zipkin Java</name>
@@ -160,8 +161,8 @@
       <plugins>
         <!-- Produces mvnw and supporting files -->
         <plugin>
-          <groupId>com.rimerosolutions.maven.plugins</groupId>
-          <artifactId>wrapper-maven-plugin</artifactId>
+          <groupId>io.takari</groupId>
+          <artifactId>maven</artifactId>
           <version>${wrapper-maven-plugin.version}</version>
           <!-- don't create mvn in each submodule -->
           <inherited>false</inherited>
@@ -170,10 +171,40 @@
           </configuration>
         </plugin>
 
+		<plugin>
+		  <groupId>org.springframework.boot</groupId>
+		  <artifactId>spring-boot-maven-plugin</artifactId>
+		  <version>${spring-boot.version}</version>
+		  <executions>
+			<execution>
+			  <goals>
+				<goal>repackage</goal>
+			  </goals>
+			</execution>
+		  </executions>
+		  <configuration>
+			<mainClass>${start-class}</mainClass>
+		  </configuration>
+		</plugin>
         <plugin>
           <artifactId>maven-shade-plugin</artifactId>
           <version>${maven-shade-plugin.version}</version>
         </plugin>
+		<plugin>
+		  <groupId>org.springframework.boot</groupId>
+		  <artifactId>spring-boot-maven-plugin</artifactId>
+		  <version>${spring-boot.version}</version>
+		  <executions>
+			<execution>
+			  <goals>
+				<goal>repackage</goal>
+			  </goals>
+			</execution>
+		  </executions>
+		  <configuration>
+			<mainClass>${start-class}</mainClass>
+		  </configuration>
+		</plugin>
 
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>

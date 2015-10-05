@@ -12,12 +12,12 @@
 # the License.
 #
 
-FROM quay.io/openzipkin/zipkin-base:base-1.12.0
+FROM openzipkin/zipkin-base:base-1.16.1
 
 MAINTAINER OpenZipkin "http://zipkin.io/"
 
-ADD target/zipkin-server /usr/local/bin/zipkin-server
+ADD target/zipkin-java-server-0.1.0-SNAPSHOT.jar /usr/local/bin/zipkin-server.jar
 
 EXPOSE 9410 9411
 
-ENTRYPOINT /usr/local/bin/zipkin-server
+ENTRYPOINT java -jar /usr/local/bin/zipkin-server.jar
