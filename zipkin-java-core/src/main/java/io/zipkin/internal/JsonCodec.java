@@ -34,10 +34,12 @@ import static io.zipkin.internal.Util.UTF_8;
  * This explicitly constructs instances of model classes via manual parsing for a number of
  * reasons.
  *
- * <ul> <li>Eliminates the need to keep separate model classes for thrift vs json</li> <li>Avoids
- * magic field initialization which, can miss constructor guards</li> <li>Allows us to safely re-use
- * the json form in toString methods</li> <li>Encourages logic to be based on the thrift shape of
- * the objects</li> </ul>
+ * <ul>
+ *   <li>Eliminates the need to keep separate model classes for thrift vs json</li>
+ *   <li>Avoids magic field initialization which, can miss constructor guards</li>
+ *   <li>Allows us to safely re-use the json form in toString methods</li>
+ *   <li>Encourages logic to be based on the thrift shape of objects</li>
+ * </ul>
  *
  * <p/> There is the up-front cost of creating this, and maintenance of this to consider. However,
  * this should be easy to justify as these objects don't change much at all.
