@@ -14,7 +14,8 @@
 package io.zipkin;
 
 import io.zipkin.internal.Nullable;
-import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -67,17 +68,23 @@ public final class QueryRequest {
     this.serviceName = serviceName;
     this.spanName = spanName;
     this.annotations = annotations;
+    for (String annotation : annotations) {
+      checkArgument(!annotation.isEmpty(), "annotation was empty");
+    }
     this.binaryAnnotations = binaryAnnotations;
+    for (Map.Entry<String, String> entry : binaryAnnotations.entrySet()) {
+      checkArgument(!entry.getKey().isEmpty(), "binary annotation key was empty");
+      checkArgument(!entry.getValue().isEmpty(), "binary annotation value was empty");
+    }
     this.endTs = endTs;
     this.limit = limit;
   }
 
   public static final class Builder {
-
     private String serviceName;
     private String spanName;
-    private List<String> annotations = Collections.emptyList();
-    private Map<String, String> binaryAnnotations = Collections.emptyMap();
+    private List<String> annotations = new LinkedList<>();
+    private Map<String, String> binaryAnnotations = new LinkedHashMap<>();
     private Long endTs;
     private Integer limit;
 
@@ -103,22 +110,22 @@ public final class QueryRequest {
       return this;
     }
 
-    public QueryRequest.Builder annotations(List<String> annotations) {
-      this.annotations = annotations;
+    public QueryRequest.Builder addAnnotation(String annotation) {
+      this.annotations.add(annotation);
       return this;
     }
 
-    public QueryRequest.Builder binaryAnnotations(Map<String, String> binaryAnnotations) {
-      this.binaryAnnotations = binaryAnnotations;
+    public QueryRequest.Builder addBinaryAnnotation(String key, String value) {
+      this.binaryAnnotations.put(key, value);
       return this;
     }
 
-    public QueryRequest.Builder endTs(long endTs) {
+    public QueryRequest.Builder endTs(Long endTs) {
       this.endTs = endTs;
       return this;
     }
 
-    public QueryRequest.Builder limit(int limit) {
+    public QueryRequest.Builder limit(Integer limit) {
       this.limit = limit;
       return this;
     }

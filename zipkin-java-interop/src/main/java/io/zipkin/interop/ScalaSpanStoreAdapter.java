@@ -25,15 +25,11 @@ import io.zipkin.SpanStore;
 import io.zipkin.internal.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import scala.Tuple2;
 import scala.collection.Iterator;
 import scala.collection.JavaConversions;
 import scala.collection.Seq;
-import scala.collection.immutable.Set;
 import scala.runtime.BoxedUnit;
 
 /**
@@ -53,24 +49,21 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
 
   @Override
   public Future<Seq<Seq<Span>>> getTraces(QueryRequest input) {
-    io.zipkin.QueryRequest request = new io.zipkin.QueryRequest.Builder()
+    io.zipkin.QueryRequest.Builder request = new io.zipkin.QueryRequest.Builder()
         .serviceName(input.serviceName())
         .spanName(input.spanName().isDefined() ? input.spanName().get() : null)
-        .annotations(input.annotations().isEmpty() ? Collections.<String>emptyList() : JavaConversions.seqAsJavaList(input.annotations().toSeq()))
-        .binaryAnnotations(input.binaryAnnotations().isEmpty() ? Collections.<String, String>emptyMap() : toMap(input.binaryAnnotations()))
         .endTs(input.endTs())
-        .limit(input.limit())
-        .build();
-    return toSeqFuture(spanStore.getTraces(request));
-  }
+        .limit(input.limit());
 
-  private Map<String, String> toMap(Set<Tuple2<String, String>> input) {
-    Map<String, String> binaryAnnotations = new LinkedHashMap<>();
-    for (Iterator<Tuple2<String, String>> i = input.iterator(); i.hasNext(); ) {
-      Tuple2<String, String> next = i.next();
-      binaryAnnotations.put(next._1(), next._2());
+    for (Iterator<String> i = input.annotations().iterator(); i.hasNext(); ) {
+      request.addAnnotation(i.next());
     }
-    return binaryAnnotations;
+
+    for (Iterator<Tuple2<String, String>> i = input.binaryAnnotations().iterator(); i.hasNext(); ) {
+      Tuple2<String, String> keyValue = i.next();
+      request.addBinaryAnnotation(keyValue._1(), keyValue._2());
+    }
+    return toSeqFuture(spanStore.getTraces(request.build()));
   }
 
   @Override

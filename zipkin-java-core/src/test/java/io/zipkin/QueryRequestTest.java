@@ -46,11 +46,35 @@ public class QueryRequestTest {
   }
 
   @Test
+  public void annotationCantBeEmpty() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("annotation was empty");
+
+    new QueryRequest.Builder().serviceName("foo").addAnnotation("").build();
+  }
+
+  @Test
+  public void binaryAnnotationKeyCantBeEmpty() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("binary annotation key was empty");
+
+    new QueryRequest.Builder().serviceName("foo").addBinaryAnnotation("", "bar").build();
+  }
+
+  @Test
+  public void binaryAnnotationValueCantBeEmpty() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("binary annotation value was empty");
+
+    new QueryRequest.Builder().serviceName("foo").addBinaryAnnotation("foo", "").build();
+  }
+
+  @Test
   public void endTsMustBePositive() {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("endTs should be positive, in epoch microseconds: was 0");
 
-    new QueryRequest.Builder().serviceName("foo").endTs(0).build();
+    new QueryRequest.Builder().serviceName("foo").endTs(0L).build();
   }
 
   @Test

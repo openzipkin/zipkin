@@ -13,14 +13,19 @@
  */
 package io.zipkin.internal;
 
+import io.zipkin.internal.Util.Serializer;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.Test;
 
+import static io.zipkin.internal.Util.UTF_8;
 import static io.zipkin.internal.Util.equal;
+import static io.zipkin.internal.Util.writeJsonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class UtilTest {
-
   @Test
   public void equalTest() {
     assertTrue(equal(null, null));
@@ -30,4 +35,28 @@ public class UtilTest {
     assertFalse(equal("1", "2"));
   }
 
+  Serializer<List<Integer>> intsSerializer = writeJsonList(new Serializer<Integer>() {
+    @Override
+    public byte[] apply(Integer in) {
+      return Integer.toString(in).getBytes(UTF_8);
+    }
+  });
+
+  @Test
+  public void writeJsonList_empty() {
+    byte[] bytes = intsSerializer.apply(Arrays.<Integer>asList());
+    assertThat(new String(bytes, UTF_8)).isEqualTo("[]");
+  }
+
+  @Test
+  public void writeJsonList_one() {
+    byte[] bytes = intsSerializer.apply(Arrays.asList(1));
+    assertThat(new String(bytes, UTF_8)).isEqualTo("[1]");
+  }
+
+  @Test
+  public void writeJsonList_two() {
+    byte[] bytes = intsSerializer.apply(Arrays.asList(1, 2));
+    assertThat(new String(bytes, UTF_8)).isEqualTo("[1,2]");
+  }
 }
