@@ -24,7 +24,7 @@ import org.springframework.context.annotation.Import;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import({ ZipkinServerConfiguration.class })
+@Import({ ZipkinServerConfiguration.class, ZipkinQueryApiV1.class })
 public @interface EnableZipkinServer {
 
 }
