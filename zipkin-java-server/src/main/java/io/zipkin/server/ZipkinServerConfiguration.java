@@ -11,46 +11,43 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin;
+package io.zipkin.server;
 
 import static java.util.Collections.emptyList;
-
-import java.io.IOException;
 
 import javax.sql.DataSource;
 
 import org.jooq.conf.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import com.facebook.swift.codec.ThriftCodecManager;
 import com.facebook.swift.service.ThriftServer;
 import com.facebook.swift.service.ThriftServerConfig;
 import com.facebook.swift.service.ThriftServiceProcessor;
 
+import io.zipkin.SpanStore;
 import io.zipkin.jdbc.JDBCSpanStore;
 import io.zipkin.scribe.Scribe;
 import io.zipkin.scribe.ScribeSpanConsumer;
+import io.zipkin.server.ZipkinServerProperties.Store.Type;
 
-@SpringBootApplication
+@Configuration
 @EnableConfigurationProperties(ZipkinServerProperties.class)
-public class ZipkinServer {
+public class ZipkinServerConfiguration {
 
   @Autowired
   ZipkinServerProperties server;
 
-  public static void main(String[] args) throws IOException, InterruptedException {
-    SpringApplication.run(ZipkinServer.class, args)
-        .getBean(ThriftServer.class).start();
-  }
+  @Autowired(required=false)
+  DataSource datasource;
 
   @Bean
   SpanStore provideSpanStore(DataSource datasource) {
-    if (System.getenv("MYSQL_HOST") != null) {
+    if (datasource !=null && this.server.getStore().getType()==Type.jdbc) {
       return new JDBCSpanStore(datasource, new Settings());
     } else {
       return new InMemorySpanStore();
@@ -74,8 +71,24 @@ public class ZipkinServer {
 @ConfigurationProperties("zipkin")
 class ZipkinServerProperties {
   private Collector collector = new Collector();
+  private Store store = new Store();
   public Collector getCollector() {
     return this.collector;
+  }
+  public Store getStore() {
+    return this.store;
+  }
+  static class Store {
+    enum Type {
+      jdbc, inMemory;
+    }
+    private Type type = Type.inMemory;
+    public Type getType() {
+      return this.type;
+    }
+    public void setType(Type type) {
+      this.type = type;
+    }
   }
   static class Collector {
     private int port = 9410;

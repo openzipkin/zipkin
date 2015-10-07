@@ -11,8 +11,12 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin;
+package io.zipkin.server;
 
+import io.zipkin.Codec;
+import io.zipkin.QueryRequest;
+import io.zipkin.Span;
+import io.zipkin.SpanStore;
 import io.zipkin.internal.Util.Serializer;
 import java.util.Arrays;
 import java.util.Collections;

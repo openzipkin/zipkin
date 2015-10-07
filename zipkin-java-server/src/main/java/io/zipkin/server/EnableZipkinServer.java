@@ -11,20 +11,20 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin;
+package io.zipkin.server;
 
-import com.twitter.zipkin.storage.SpanStore;
-import com.twitter.zipkin.storage.SpanStoreSpec;
-import io.zipkin.interop.ScalaSpanStoreAdapter;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class InMemoryScalaSpanStoreTest extends SpanStoreSpec {
-  private InMemorySpanStore mem = new InMemorySpanStore();
+import org.springframework.context.annotation.Import;
 
-  public SpanStore store() {
-    return new ScalaSpanStoreAdapter(mem);
-  }
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Import({ ZipkinServerConfiguration.class })
+public @interface EnableZipkinServer {
 
-  public void clear() {
-    mem.clear();
-  }
 }

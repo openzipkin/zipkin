@@ -9,5 +9,6 @@ You can run the experimental docker server to power the zipkin web UI. The follo
 # build zipkin-java-server/target/zipkin-java-server-0.1.0-SNAPSHOT.jar
 $ ./mvnw clean install
 # make a docker image out of it and hook up the web ui
+$ docker-compose build
 $ docker-compose up
 ```

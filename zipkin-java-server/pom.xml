@@ -34,6 +34,7 @@
 
     <!-- temporary until we use something besides scribe -->
     <swift.version>0.15.1</swift.version>
+    <start-class>io.zipkin.server.ZipkinServer</start-class>
   </properties>
 
   <dependencyManagement>
@@ -58,6 +59,7 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
@@ -69,6 +71,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-jdbc</artifactId>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
@@ -80,11 +83,13 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-java-jdbc</artifactId>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
+      <optional>true</optional>
     </dependency>
 
     <!-- Spring Boot will find this in the classpath and use it. -->
@@ -92,6 +97,7 @@
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
       <version>${hikaricp.version}</version>
+      <optional>true</optional>
     </dependency>
 
     <!-- Collector deps -->
@@ -112,6 +118,9 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <classifier>exec</classifier>
+        </configuration>
       </plugin>
     </plugins>
   </build>

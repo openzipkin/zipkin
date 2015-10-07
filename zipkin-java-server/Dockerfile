@@ -16,8 +16,12 @@ FROM openzipkin/zipkin-base:base-1.16.1
 
 MAINTAINER OpenZipkin "http://zipkin.io/"
 
-ADD target/zipkin-java-server-0.1.0-SNAPSHOT.jar /usr/local/bin/zipkin-server.jar
+VOLUME /tmp
+
+ADD target/zipkin-java-server-0.1.0-SNAPSHOT-exec.jar /usr/local/bin/zipkin-server.jar
+
+RUN sh -c 'touch /usr/local/bin/zipkin-server.jar'
 
 EXPOSE 9410 9411
 
-ENTRYPOINT java -jar /usr/local/bin/zipkin-server.jar
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/usr/local/bin/zipkin-server.jar"]
