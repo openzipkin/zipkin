@@ -3,6 +3,7 @@
 *#
 .#*
 dependency-reduced-pom.xml
+.factorypath
 .classpath
 .project
 .settings/

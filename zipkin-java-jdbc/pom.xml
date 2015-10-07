@@ -44,6 +44,7 @@
       <artifactId>jooq</artifactId>
       <version>${jooq.version}</version>
     </dependency>
+
   </dependencies>
 
   <build>
