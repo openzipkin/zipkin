@@ -2,7 +2,7 @@
 
 ![Zipkin (doc/zipkin-logo-200x119.jpg)](https://github.com/openzipkin/zipkin/raw/master/doc/zipkin-logo-200x119.jpg)
 
-[Zipkin](http://twitter.github.com/zipkin) is a distributed tracing system. It is used by Twitter to help gather timing data for all their disparate services. The front end is a "waterfall" style graph of service calls showing call durations as horizontal bars:
+[Zipkin](http://twitter.github.com/zipkin) is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in microservice architectures. The front end is a "waterfall" style graph of service calls showing call durations as horizontal bars:
 
 ![Screenshot](https://github.com/openzipkin/zipkin/raw/master/doc/web-screenshot.png)
 
