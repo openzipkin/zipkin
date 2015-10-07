@@ -30,8 +30,6 @@
   <description>Zipkin Server</description>
 
   <properties>
-    <hikaricp.version>2.4.1</hikaricp.version>
-
     <!-- temporary until we use something besides scribe -->
     <swift.version>0.15.1</swift.version>
     <start-class>io.zipkin.server.ZipkinServer</start-class>
@@ -83,7 +81,6 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-java-jdbc</artifactId>
-      <optional>true</optional>
     </dependency>
 
     <dependency>
@@ -96,7 +93,6 @@
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
-      <version>${hikaricp.version}</version>
       <optional>true</optional>
     </dependency>
 
@@ -110,6 +106,13 @@
       <groupId>com.facebook.swift</groupId>
       <artifactId>swift-service</artifactId>
       <version>${swift.version}</version>
+      <exclusions>
+        <!-- A validator implementation is already included with spring-boot-starter-web -->
+        <exclusion>
+          <artifactId>bval-jsr303</artifactId>
+          <groupId>org.apache.bval</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 
