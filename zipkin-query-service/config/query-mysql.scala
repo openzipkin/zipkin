@@ -6,7 +6,7 @@ val adminPort = sys.env.get("QUERY_ADMIN_PORT").getOrElse("9901").toInt
 val logLevel = sys.env.get("QUERY_LOG_LEVEL").getOrElse("INFO")
 
 val db = DB(DBConfig("mysql", new DBParams(
-  dbName = "zipkin",
+  dbName = sys.env.get("MYSQL_DB").getOrElse("zipkin"),
   sys.env.get("MYSQL_HOST").getOrElse("localhost"),
   sys.env.get("MYSQL_TCP_PORT").map(_.toInt),
   sys.env.get("MYSQL_USER").getOrElse(""),
