@@ -10,7 +10,7 @@ val logLevel = sys.env.get("COLLECTOR_LOG_LEVEL").getOrElse("INFO")
 val sampleRate = sys.env.get("COLLECTOR_SAMPLE_RATE").getOrElse("1.0").toDouble
 
 val db = DB(DBConfig("mysql", new DBParams(
-  dbName = "zipkin",
+  dbName = sys.env.get("MYSQL_DB").getOrElse("zipkin"),
   sys.env.get("MYSQL_HOST").getOrElse("localhost"),
   sys.env.get("MYSQL_TCP_PORT").map(_.toInt),
   sys.env.get("MYSQL_USER").getOrElse(""),
