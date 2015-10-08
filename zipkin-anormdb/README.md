@@ -9,8 +9,9 @@ See [sql-databases](https://github.com/openzipkin/zipkin/blob/master/doc/sql-dat
 * [zipkin-collector-service](https://github.com/openzipkin/zipkin/blob/master/zipkin-collector-service/README.md)
 * [zipkin-query-service](https://github.com/openzipkin/zipkin/blob/master/zipkin-query-service/README.md)
 
-Currently, only MySQL is configurable through environment variables. It uses the database `zipkin`:
+Currently, only MySQL is configurable through environment variables:
 
+    * `MYSQL_DB`: The database to use. Defaults to "zipkin".
     * `MYSQL_USER` and `MYSQL_PASS`: MySQL authentication, which defaults to empty string.
     * `MYSQL_HOST`: Defaults to localhost
     * `MYSQL_TCP_PORT`: Defaults to 3306
