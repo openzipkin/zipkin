@@ -6,8 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.base.CaseFormat.{UPPER_CAMEL, UPPER_UNDERSCORE}
 import com.google.common.io.BaseEncoding
 import com.twitter.io.Charsets.Utf8
+import com.twitter.zipkin.common._
 import com.twitter.zipkin.common.AnnotationType._
-import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation}
 
 case class JsonBinaryAnnotation(key: String,
                                 value: Any,
@@ -50,17 +50,17 @@ object JsonBinaryAnnotation extends (BinaryAnnotation => JsonBinaryAnnotation) {
 
     val bytes: ByteBuffer = try {
       annotationType.value match {
-        case Bool.value => ByteBuffer.wrap(if (b.value.asInstanceOf[Boolean]) Array(1.toByte) else Array(0.toByte))
+        case Bool.value => BinaryAnnotationValue(b.value.asInstanceOf[Boolean]).encode
         case Bytes.value => ByteBuffer.wrap(base64.decode(b.value.asInstanceOf[String]))
-        case I16.value => ByteBuffer.allocate(2).putShort(0, b.value.asInstanceOf[Short])
-        case I32.value => ByteBuffer.allocate(4).putInt(0, b.value.asInstanceOf[Int])
-        case I64.value => ByteBuffer.allocate(8).putLong(0, b.value.asInstanceOf[Long])
-        case Double.value => ByteBuffer.allocate(8).putDouble(0, b.value.asInstanceOf[Double])
-        case String.value => ByteBuffer.wrap(b.value.asInstanceOf[String].getBytes(Utf8))
+        case I16.value => BinaryAnnotationValue(b.value.asInstanceOf[Short]).encode
+        case I32.value => BinaryAnnotationValue(b.value.asInstanceOf[Int]).encode
+        case I64.value => BinaryAnnotationValue(b.value.asInstanceOf[Long]).encode
+        case Double.value => BinaryAnnotationValue(b.value.asInstanceOf[Double]).encode
+        case String.value => BinaryAnnotationValue(b.value.asInstanceOf[String]).encode
         case _ => throw new IllegalArgumentException("Unsupported annotation type: %s".format(b))
       }
     } catch {
-      case e: Exception => ByteBuffer.wrap("Error parsing json binary annotation: %s".format(exceptionString(e)).getBytes(Utf8))
+      case e: Exception => BinaryAnnotationValue("Error parsing json binary annotation: %s".format(exceptionString(e))).encode
     }
     new BinaryAnnotation(b.key, bytes, annotationType, b.endpoint.map(JsonEndpoint.invert))
   }
