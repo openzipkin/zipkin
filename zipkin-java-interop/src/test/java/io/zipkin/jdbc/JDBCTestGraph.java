@@ -14,20 +14,35 @@
 package io.zipkin.jdbc;
 
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import io.zipkin.internal.Nullable;
 import org.jooq.conf.Settings;
 import org.junit.AssumptionViolatedException;
+
+import static io.zipkin.internal.Util.envOr;
 
 final class JDBCTestGraph {
 
   final JDBCSpanStore spanStore;
 
   JDBCTestGraph() {
-    String mysqlUrl = JDBCSpanStore.mysqlUrlFromEnv();
+    String mysqlUrl = mysqlUrlFromEnv();
     if (mysqlUrl == null) {
       throw new AssumptionViolatedException("Minimally, the environment variable MYSQL_USER must be set");
     }
     MysqlDataSource dataSource = new MysqlDataSource();
     dataSource.setURL(mysqlUrl);
     spanStore = new JDBCSpanStore(dataSource, new Settings().withRenderSchema(false));
+  }
+
+  @Nullable
+  public static String mysqlUrlFromEnv() {
+    if (System.getenv("MYSQL_USER") == null) return null;
+    String mysqlHost = envOr("MYSQL_HOST", "localhost");
+    int mysqlPort = envOr("MYSQL_TCP_PORT", 3306);
+    String mysqlUser = envOr("MYSQL_USER", "");
+    String mysqlPass = envOr("MYSQL_PASS", "");
+
+    return String.format("jdbc:mysql://%s:%s/zipkin?user=%s&password=%s&autoReconnect=true",
+        mysqlHost, mysqlPort, mysqlUser, mysqlPass);
   }
 }

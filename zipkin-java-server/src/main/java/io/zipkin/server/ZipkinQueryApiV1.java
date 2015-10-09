@@ -80,9 +80,9 @@ public class ZipkinQueryApiV1 {
   public byte[] getTraces(
       @RequestParam(value = "serviceName", required = true) String serviceName,
       @RequestParam(value = "spanName", defaultValue = "all") String spanName,
-      @RequestParam(value = "annotationQuery") String annotationQuery,
-      @RequestParam(value = "endTs") Long endTs,
-      @RequestParam(value = "limit") Integer limit) {
+      @RequestParam(value = "annotationQuery", required = false) String annotationQuery,
+      @RequestParam(value = "endTs", required = false) Long endTs,
+      @RequestParam(value = "limit", required = false) Integer limit) {
     QueryRequest.Builder builder = new QueryRequest.Builder().serviceName(serviceName)
         .spanName(spanName.equals("all") ? null : spanName).endTs(endTs).limit(limit);
     if (annotationQuery != null && !annotationQuery.isEmpty()) {
@@ -105,8 +105,7 @@ public class ZipkinQueryApiV1 {
   @RequestMapping(value = "/trace/{traceId}", method = RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE)
   public byte[] getTrace(@PathVariable String traceId) {
     long id = new Buffer().writeUtf8(traceId).readHexadecimalUnsignedLong();
-    List<List<Span>> traces = this.spanStore
-        .getTracesByIds(Collections.singletonList(id));
+    List<List<Span>> traces = this.spanStore.getTracesByIds(Collections.singletonList(id));
 
     if (traces.isEmpty()) {
       throw new TraceNotFoundException(traceId, id);

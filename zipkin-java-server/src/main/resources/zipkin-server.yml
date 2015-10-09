@@ -2,7 +2,7 @@ mysql:
   host: ${MYSQL_HOST:localhost}
   port: ${MYSQL_PORT:3306}
   username: ${MYSQL_USER:root}
-  password: ${MYSQL_PASS:root}
+  password: ${MYSQL_PASS:}
   db: ${MYSQL_DB:zipkin}
 zipkin:
   collector:
