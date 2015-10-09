@@ -23,6 +23,7 @@ import io.zipkin.scribe.Scribe;
 import io.zipkin.scribe.ScribeSpanConsumer;
 import io.zipkin.server.ZipkinServerProperties.Store.Type;
 import javax.sql.DataSource;
+import org.jooq.ExecuteListenerProvider;
 import org.jooq.conf.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -41,10 +42,13 @@ public class ZipkinServerConfiguration {
   @Autowired(required = false)
   DataSource datasource;
 
+  @Autowired(required = false)
+  ExecuteListenerProvider listener;
+
   @Bean
   SpanStore spanStore() {
     if (this.datasource != null && this.server.getStore().getType() == Type.jdbc) {
-      return new JDBCSpanStore(this.datasource, new Settings().withRenderSchema(false));
+      return new JDBCSpanStore(this.datasource, new Settings().withRenderSchema(false), listener);
     } else {
       return new InMemorySpanStore();
     }

@@ -31,7 +31,7 @@ final class JDBCTestGraph {
     }
     MysqlDataSource dataSource = new MysqlDataSource();
     dataSource.setURL(mysqlUrl);
-    spanStore = new JDBCSpanStore(dataSource, new Settings().withRenderSchema(false));
+    spanStore = new JDBCSpanStore(dataSource, new Settings().withRenderSchema(false), null);
   }
 
   @Nullable

@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
 import org.jooq.DSLContext;
+import org.jooq.ExecuteListenerProvider;
 import org.jooq.Field;
 import org.jooq.InsertSetMoreStep;
 import org.jooq.Query;
@@ -44,8 +45,11 @@ import org.jooq.SelectOffsetStep;
 import org.jooq.Table;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
+import org.jooq.impl.DefaultConfiguration;
+import org.jooq.tools.jdbc.JDBCUtils;
 
 import static io.zipkin.BinaryAnnotation.Type.STRING;
+import static io.zipkin.internal.Util.checkNotNull;
 import static io.zipkin.jdbc.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static io.zipkin.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 import static java.util.Collections.emptyList;
@@ -62,10 +66,12 @@ public final class JDBCSpanStore implements SpanStore {
 
   private final DataSource datasource;
   private final Settings settings;
+  private final ExecuteListenerProvider listenerProvider;
 
-  public JDBCSpanStore(DataSource datasource, Settings settings) {
-    this.datasource = datasource;
-    this.settings = settings;
+  public JDBCSpanStore(DataSource datasource, Settings settings, @Nullable ExecuteListenerProvider listenerProvider) {
+    this.datasource = checkNotNull(datasource, "datasource");
+    this.settings = checkNotNull(settings, "settings");
+    this.listenerProvider = listenerProvider;
   }
 
   void clear() throws SQLException {
@@ -205,7 +211,11 @@ public final class JDBCSpanStore implements SpanStore {
   }
 
   private DSLContext context(Connection conn) {
-    return DSL.using(conn, this.settings);
+    return DSL.using(new DefaultConfiguration()
+        .set(conn)
+        .set(JDBCUtils.dialect(conn))
+        .set(this.settings)
+        .set(this.listenerProvider));
   }
 
   @Override

@@ -43,7 +43,6 @@
     <assertj.version>3.1.0</assertj.version>
 
     <maven-plugin.version>0.3.1</maven-plugin.version>
-    <maven-shade-plugin.version>2.4.1</maven-shade-plugin.version>
     <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
     <maven-source-plugin.version>2.4</maven-source-plugin.version>
     <maven-javadoc-plugin.version>2.10.3</maven-javadoc-plugin.version>
@@ -162,11 +161,6 @@
           <groupId>io.takari</groupId>
           <artifactId>maven</artifactId>
           <version>${maven-plugin.version}</version>
-        </plugin>
-
-        <plugin>
-          <artifactId>maven-shade-plugin</artifactId>
-          <version>${maven-shade-plugin.version}</version>
         </plugin>
 
         <plugin>

@@ -30,6 +30,7 @@
   <description>Zipkin Server</description>
 
   <properties>
+    <brave.version>3.0.0</brave.version>
     <!-- temporary until we use something besides scribe -->
     <swift.version>0.15.1</swift.version>
     <start-class>io.zipkin.server.ZipkinServer</start-class>
@@ -52,6 +53,19 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Trace api controller activity with Brave -->
+    <dependency>
+      <groupId>com.github.kristofa</groupId>
+      <artifactId>brave-spring-web-servlet-interceptor</artifactId>
+      <version>${brave.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.kristofa</groupId>
+      <artifactId>brave-zipkin-spancollector</artifactId>
+      <version>${brave.version}</version>
     </dependency>
 
     <dependency>
