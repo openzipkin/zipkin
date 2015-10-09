@@ -144,20 +144,20 @@ public final class JDBCSpanStore implements SpanStore {
       spansWithoutAnnotations = context(conn)
           .selectFrom(ZIPKIN_SPANS).where(ZIPKIN_SPANS.TRACE_ID.in(traceIds))
           .orderBy(ZIPKIN_SPANS.START_TS.asc())
-          .fetch(r -> new Span.Builder()
+          .stream()
+          .map(r -> new Span.Builder()
               .traceId(r.getValue(ZIPKIN_SPANS.TRACE_ID))
               .name(r.getValue(ZIPKIN_SPANS.NAME))
               .id(r.getValue(ZIPKIN_SPANS.ID))
               .parentId(r.getValue(ZIPKIN_SPANS.PARENT_ID))
               .debug(r.getValue(ZIPKIN_SPANS.DEBUG))
               .build())
-          .stream().collect(groupingBy(s -> s.traceId, LinkedHashMap::new, toList()));
+          .collect(groupingBy(s -> s.traceId, LinkedHashMap::new, toList()));
 
       dbAnnotations = context(conn)
           .selectFrom(ZIPKIN_ANNOTATIONS)
           .where(ZIPKIN_ANNOTATIONS.TRACE_ID.in(spansWithoutAnnotations.keySet()))
           .orderBy(ZIPKIN_ANNOTATIONS.A_TIMESTAMP.asc(), ZIPKIN_ANNOTATIONS.A_KEY.asc())
-          .fetch()
           .stream()
           .collect(groupingBy(a -> new SpanKey(
               a.getValue(ZIPKIN_ANNOTATIONS.TRACE_ID),

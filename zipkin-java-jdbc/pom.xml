@@ -30,7 +30,7 @@
   <description>Zipkin Java JDBC Model</description>
 
   <properties>
-    <jooq.version>3.6.3</jooq.version>
+    <jooq.version>3.7.0</jooq.version>
   </properties>
 
   <dependencies>
