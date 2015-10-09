@@ -13,35 +13,6 @@
  */
 package io.zipkin.jdbc;
 
-import static io.zipkin.BinaryAnnotation.Type.STRING;
-import static io.zipkin.internal.Util.envOr;
-import static io.zipkin.jdbc.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
-import static io.zipkin.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.groupingBy;
-
-import java.nio.charset.Charset;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.sql.DataSource;
-
-import org.jooq.DSLContext;
-import org.jooq.Field;
-import org.jooq.InsertSetMoreStep;
-import org.jooq.Query;
-import org.jooq.Record;
-import org.jooq.Record2;
-import org.jooq.SelectConditionStep;
-import org.jooq.Table;
-import org.jooq.conf.Settings;
-import org.jooq.impl.DSL;
-
 import io.zipkin.Annotation;
 import io.zipkin.BinaryAnnotation;
 import io.zipkin.BinaryAnnotation.Type;
@@ -52,20 +23,36 @@ import io.zipkin.SpanStore;
 import io.zipkin.internal.Nullable;
 import io.zipkin.internal.Util;
 import io.zipkin.jdbc.internal.generated.tables.ZipkinAnnotations;
+import java.nio.charset.Charset;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import javax.sql.DataSource;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.InsertSetMoreStep;
+import org.jooq.Query;
+import org.jooq.Record;
+import org.jooq.Record1;
+import org.jooq.Record2;
+import org.jooq.SelectConditionStep;
+import org.jooq.SelectOffsetStep;
+import org.jooq.Table;
+import org.jooq.conf.Settings;
+import org.jooq.impl.DSL;
+
+import static io.zipkin.BinaryAnnotation.Type.STRING;
+import static io.zipkin.jdbc.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
+import static io.zipkin.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 
 public final class JDBCSpanStore implements SpanStore {
-
-  @Nullable
-  public static String mysqlUrlFromEnv() {
-    if (System.getenv("MYSQL_USER") == null) return null;
-    String mysqlHost = envOr("MYSQL_HOST", "localhost");
-    int mysqlPort = envOr("MYSQL_TCP_PORT", 3306);
-    String mysqlUser = envOr("MYSQL_USER", "");
-    String mysqlPass = envOr("MYSQL_PASS", "");
-
-    return String.format("jdbc:mysql://%s:%s/zipkin?user=%s&password=%s&autoReconnect=true",
-        mysqlHost, mysqlPort, mysqlUser, mysqlPass);
-  }
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
@@ -151,22 +138,20 @@ public final class JDBCSpanStore implements SpanStore {
     final Map<Long, List<Span>> spansWithoutAnnotations;
     final Map<SpanKey, List<Record>> dbAnnotations;
     try (Connection conn = this.datasource.getConnection()) {
-      final SelectConditionStep<?> dsl;
-      if (request == null) {
-        dsl = context(conn).selectFrom(ZIPKIN_SPANS).where(ZIPKIN_SPANS.TRACE_ID.in(traceIds));
-      } else {
-        dsl = toSelectCondition(context(conn), request);
+      if (request != null) {
+        traceIds = toTraceIdQuery(context(conn), request).fetch(ZIPKIN_SPANS.TRACE_ID);
       }
-      spansWithoutAnnotations = dsl
+      spansWithoutAnnotations = context(conn)
+          .selectFrom(ZIPKIN_SPANS).where(ZIPKIN_SPANS.TRACE_ID.in(traceIds))
           .orderBy(ZIPKIN_SPANS.START_TS.asc())
-          .limit(request == null ? traceIds.size() : request.limit)
-          .fetchGroups(ZIPKIN_SPANS.TRACE_ID, r -> new Span.Builder()
+          .fetch(r -> new Span.Builder()
               .traceId(r.getValue(ZIPKIN_SPANS.TRACE_ID))
               .name(r.getValue(ZIPKIN_SPANS.NAME))
               .id(r.getValue(ZIPKIN_SPANS.ID))
               .parentId(r.getValue(ZIPKIN_SPANS.PARENT_ID))
               .debug(r.getValue(ZIPKIN_SPANS.DEBUG))
-              .build());
+              .build())
+          .stream().collect(groupingBy(s -> s.traceId, LinkedHashMap::new, toList()));
 
       dbAnnotations = context(conn)
           .selectFrom(ZIPKIN_ANNOTATIONS)
@@ -177,7 +162,7 @@ public final class JDBCSpanStore implements SpanStore {
           .collect(groupingBy(a -> new SpanKey(
               a.getValue(ZIPKIN_ANNOTATIONS.TRACE_ID),
               a.getValue(ZIPKIN_ANNOTATIONS.SPAN_ID)
-          )));
+          ), LinkedHashMap::new, toList())); // LinkedHashMap preserves order while grouping
     } catch (SQLException e) {
       throw new RuntimeException("Error querying for " + request + ": " + e.getMessage());
     }
@@ -274,7 +259,7 @@ public final class JDBCSpanStore implements SpanStore {
         a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT).intValue());
   }
 
-  static SelectConditionStep<?> toSelectCondition(DSLContext context, QueryRequest request) {
+  static SelectOffsetStep<Record1<Long>> toTraceIdQuery(DSLContext context, QueryRequest request) {
     long endTs = (request.endTs > 0 && request.endTs != Long.MAX_VALUE) ? request.endTs
         : System.currentTimeMillis() / 1000;
 
@@ -299,7 +284,8 @@ public final class JDBCSpanStore implements SpanStore {
       table = join(table, keyToTables.get(key), key, -1);
     }
 
-    SelectConditionStep<?> dsl = context.select(ZIPKIN_SPANS.fields()).from(table)
+    SelectConditionStep<Record1<Long>> dsl = context.selectDistinct(ZIPKIN_SPANS.TRACE_ID)
+        .from(table)
         .where(lastTimestamp.le(endTs));
 
     if (request.spanName != null) {
@@ -309,7 +295,7 @@ public final class JDBCSpanStore implements SpanStore {
     for (Map.Entry<String, String> entry : request.binaryAnnotations.entrySet()) {
       dsl.and(keyToTables.get(entry.getKey()).A_VALUE.eq(entry.getValue().getBytes(UTF_8)));
     }
-    return dsl;
+    return dsl.limit(request.limit);
   }
 
   private static Table<?> join(Table<?> table, ZipkinAnnotations joinTable, String key, int type) {
