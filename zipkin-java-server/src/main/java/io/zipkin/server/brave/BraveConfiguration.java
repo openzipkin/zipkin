@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 
 @Configuration
-@Import({JDBCTracerConfiguration.class, JDBCTracerConfiguration.class})
+@Import({ApiTracerConfiguration.class, JDBCTracerConfiguration.class})
 public class BraveConfiguration {
 
   /** Lazy because ZipkinSpanCollector makes network connections in its constructor. */
