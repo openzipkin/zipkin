@@ -13,6 +13,7 @@
  */
 package io.zipkin.server;
 
+import com.github.kristofa.brave.ApiTracerConfiguration;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -23,7 +24,7 @@ import org.springframework.context.annotation.Import;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import({ZipkinServerConfiguration.class, ZipkinQueryApiV1.class})
+@Import({ZipkinServerConfiguration.class, ApiTracerConfiguration.class, ZipkinQueryApiV1.class})
 public @interface EnableZipkinServer {
 
 }

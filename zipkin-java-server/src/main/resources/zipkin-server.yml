@@ -8,7 +8,7 @@ zipkin:
   collector:
     port: ${COLLECTOR_PORT:9410}
   store:
-#    type: jdbc # default is inMemory
+    type: ${STORAGE_TYPE:inMemory}
 logging:
   level:
 # Silence Invalid method name: '__can__finagle__trace__v3__'
