@@ -42,9 +42,7 @@
     <junit.version>4.12</junit.version>
     <assertj.version>3.1.0</assertj.version>
 
-    <!-- Run `mvn wrapper:wrapper -N` on updating below -->
-    <maven.version>3.3.3</maven.version>
-    <wrapper-maven-plugin.version>0.0.4</wrapper-maven-plugin.version>
+    <maven-plugin.version>0.3.1</maven-plugin.version>
     <maven-shade-plugin.version>2.4.1</maven-shade-plugin.version>
     <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
     <maven-source-plugin.version>2.4</maven-source-plugin.version>
@@ -159,52 +157,33 @@
   <build>
     <pluginManagement>
       <plugins>
-        <!-- Produces mvnw and supporting files -->
+        <!-- mvn -N io.takari:maven:wrapper -Dmaven=3.3.3 -->
         <plugin>
           <groupId>io.takari</groupId>
           <artifactId>maven</artifactId>
-          <version>${wrapper-maven-plugin.version}</version>
-          <!-- don't create mvn in each submodule -->
-          <inherited>false</inherited>
-          <configuration>
-            <mavenVersion>${maven.version}</mavenVersion>
-          </configuration>
+          <version>${maven-plugin.version}</version>
         </plugin>
 
-		<plugin>
-		  <groupId>org.springframework.boot</groupId>
-		  <artifactId>spring-boot-maven-plugin</artifactId>
-		  <version>${spring-boot.version}</version>
-		  <executions>
-			<execution>
-			  <goals>
-				<goal>repackage</goal>
-			  </goals>
-			</execution>
-		  </executions>
-		  <configuration>
-			<mainClass>${start-class}</mainClass>
-		  </configuration>
-		</plugin>
         <plugin>
           <artifactId>maven-shade-plugin</artifactId>
           <version>${maven-shade-plugin.version}</version>
         </plugin>
-		<plugin>
-		  <groupId>org.springframework.boot</groupId>
-		  <artifactId>spring-boot-maven-plugin</artifactId>
-		  <version>${spring-boot.version}</version>
-		  <executions>
-			<execution>
-			  <goals>
-				<goal>repackage</goal>
-			  </goals>
-			</execution>
-		  </executions>
-		  <configuration>
-			<mainClass>${start-class}</mainClass>
-		  </configuration>
-		</plugin>
+
+        <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+          <version>${spring-boot.version}</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>repackage</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <mainClass>${start-class}</mainClass>
+          </configuration>
+        </plugin>
 
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
@@ -233,7 +212,7 @@
           <excludes>
             <exclude>.travis.yml</exclude>
             <exclude>.gitignore</exclude>
-            <exclude>**/maven/**</exclude>
+            <exclude>.mvn/**</exclude>
             <exclude>mvnw*</exclude>
             <exclude>etc/header.txt</exclude>
             <exclude>**/.idea/**</exclude>

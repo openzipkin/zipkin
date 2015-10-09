@@ -13,27 +13,23 @@
  */
 package io.zipkin.server;
 
-import static java.util.Collections.emptyList;
-
-import javax.sql.DataSource;
-
-import org.jooq.conf.Settings;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
 import com.facebook.swift.codec.ThriftCodecManager;
 import com.facebook.swift.service.ThriftServer;
 import com.facebook.swift.service.ThriftServerConfig;
 import com.facebook.swift.service.ThriftServiceProcessor;
-
 import io.zipkin.SpanStore;
 import io.zipkin.jdbc.JDBCSpanStore;
 import io.zipkin.scribe.Scribe;
 import io.zipkin.scribe.ScribeSpanConsumer;
 import io.zipkin.server.ZipkinServerProperties.Store.Type;
+import javax.sql.DataSource;
+import org.jooq.conf.Settings;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import static java.util.Collections.emptyList;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinServerProperties.class)
@@ -42,13 +38,13 @@ public class ZipkinServerConfiguration {
   @Autowired
   ZipkinServerProperties server;
 
-  @Autowired(required=false)
+  @Autowired(required = false)
   DataSource datasource;
 
   @Bean
-  SpanStore provideSpanStore(DataSource datasource) {
-    if (datasource !=null && this.server.getStore().getType()==Type.jdbc) {
-      return new JDBCSpanStore(datasource, new Settings().withRenderSchema(false));
+  SpanStore spanStore() {
+    if (this.datasource != null && this.server.getStore().getType() == Type.jdbc) {
+      return new JDBCSpanStore(this.datasource, new Settings().withRenderSchema(false));
     } else {
       return new InMemorySpanStore();
     }
@@ -65,40 +61,5 @@ public class ZipkinServerConfiguration {
     return new ThriftServer(processor, new ThriftServerConfig()
         .setBindAddress("localhost")
         .setPort(this.server.getCollector().getPort()));
-  }
-}
-
-@ConfigurationProperties("zipkin")
-class ZipkinServerProperties {
-  private Collector collector = new Collector();
-  private Store store = new Store();
-  public Collector getCollector() {
-    return this.collector;
-  }
-  public Store getStore() {
-    return this.store;
-  }
-  static class Store {
-    enum Type {
-      jdbc, inMemory;
-    }
-    private Type type = Type.inMemory;
-    public Type getType() {
-      return this.type;
-    }
-    public void setType(Type type) {
-      this.type = type;
-    }
-  }
-  static class Collector {
-    private int port = 9410;
-
-    public int getPort() {
-      return this.port;
-    }
-
-    public void setPort(int port) {
-      this.port = port;
-    }
   }
 }
