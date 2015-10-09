@@ -14,33 +14,41 @@
 package io.zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
-import com.github.kristofa.brave.zipkin.ZipkinSpanCollector;
+import io.zipkin.SpanStore;
 import java.util.Collections;
 import javax.inject.Singleton;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.context.annotation.Scope;
-import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 
 @Configuration
 @Import({ApiTracerConfiguration.class, JDBCTracerConfiguration.class})
+@EnableScheduling
 public class BraveConfiguration {
 
-  /** Lazy because ZipkinSpanCollector makes network connections in its constructor. */
+  @Autowired
+  private SpanStoreSpanCollector spanCollector;
+
+  @Scheduled(fixedDelayString = "${zipkin.collector.delayMillisec:1000}")
+  public void flushSpans() {
+    this.spanCollector.flush();
+  }
+
+  /**
+   * @param spanStore lazy to avoid circular reference: the collector uses the same span store as the query api.
+   */
   @Bean
-  @Singleton
-  @Lazy
-  @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
-  ZipkinSpanCollector zipkinSpanCollector(@Value("${zipkin.collector.port:9410}") int scribePort) {
-    return new ZipkinSpanCollector("127.0.0.1", scribePort);
+  SpanStoreSpanCollector spanCollector(@Lazy SpanStore spanStore) {
+    return new SpanStoreSpanCollector(spanStore);
   }
 
   @Bean
   @Singleton
-  Brave brave(ZipkinSpanCollector spanCollector) {
+  Brave brave(SpanStoreSpanCollector spanCollector) {
     return new Brave.Builder("zipkin-query")
         .traceFilters(Collections.emptyList()) // sample all
         .spanCollector(spanCollector).build();
