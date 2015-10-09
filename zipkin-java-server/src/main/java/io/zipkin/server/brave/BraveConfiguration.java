@@ -11,7 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-// TODO: switch package back after https://github.com/openzipkin/brave/pull/99
 package io.zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
