@@ -18,13 +18,12 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
 import org.springframework.context.annotation.Import;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import({ ZipkinServerConfiguration.class, ZipkinQueryApiV1.class })
+@Import({ZipkinServerConfiguration.class, ZipkinQueryApiV1.class})
 public @interface EnableZipkinServer {
 
 }

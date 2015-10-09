@@ -66,7 +66,7 @@ echo.
 goto error
 
 :OkJHome
-if exist "%JAVA_HOME%\bin\java.exe" goto chkMHome
+if exist "%JAVA_HOME%\bin\java.exe" goto init
 
 echo.
 echo Error: JAVA_HOME is set to an invalid directory. >&2
@@ -76,41 +76,11 @@ echo location of your Java installation. >&2
 echo.
 goto error
 
-:chkMHome
-if not "%M2_HOME%"=="" goto valMHome
-
-SET "M2_HOME=%~dp0.."
-if not "%M2_HOME%"=="" goto valMHome
-
-echo.
-echo Error: M2_HOME not found in your environment. >&2
-echo Please set the M2_HOME variable in your environment to match the >&2
-echo location of the Maven installation. >&2
-echo.
-goto error
-
-:valMHome
-
-:stripMHome
-if not "_%M2_HOME:~-1%"=="_\" goto checkMCmd
-set "M2_HOME=%M2_HOME:~0,-1%"
-goto stripMHome
-
-:checkMCmd
-if exist "%M2_HOME%\bin\mvn.cmd" goto init
-
-echo.
-echo Error: M2_HOME is set to an invalid directory. >&2
-echo M2_HOME = "%M2_HOME%" >&2
-echo Please set the M2_HOME variable in your environment to match the >&2
-echo location of the Maven installation >&2
-echo.
-goto error
 @REM ==== END VALIDATION ====
 
 :init
 
-set MAVEN_CMD_LINE_ARGS=%*
+set MAVEN_CMD_LINE_ARGS=%MAVEN_CONFIG% %*
 
 @REM Find the project base dir, i.e. the directory that contains the folder ".mvn".
 @REM Fallback to current working directory if not found.
@@ -147,10 +117,11 @@ for /F "usebackq delims=" %%a in ("%MAVEN_PROJECTBASEDIR%\.mvn\jvm.config") do s
 :endReadAdditionalConfig
 
 SET MAVEN_JAVA_EXE="%JAVA_HOME%\bin\java.exe"
-set WRAPPER_JAR="%MAVEN_PROJECTBASEDIR%\maven\maven-wrapper.jar"
-set WRAPPER_LAUNCHER=org.apache.maven.wrapper.MavenWrapperMain
-%MAVEN_JAVA_EXE% %JVM_CONFIG_MAVEN_PROPS% %MAVEN_OPTS% %MAVEN_DEBUG_OPTS% -classpath %WRAPPER_JAR% %WRAPPER_LAUNCHER% %MAVEN_CMD_LINE_ARGS%
 
+set WRAPPER_JAR=""%MAVEN_PROJECTBASEDIR%\.mvn\wrapper\maven-wrapper.jar""
+set WRAPPER_LAUNCHER=org.apache.maven.wrapper.MavenWrapperMain
+
+%MAVEN_JAVA_EXE% %JVM_CONFIG_MAVEN_PROPS% %MAVEN_OPTS% %MAVEN_DEBUG_OPTS% -classpath %WRAPPER_JAR% "-Dmaven.multiModuleProjectDirectory=%MAVEN_PROJECTBASEDIR%" %WRAPPER_LAUNCHER% %MAVEN_CMD_LINE_ARGS%
 if ERRORLEVEL 1 goto error
 goto end
 

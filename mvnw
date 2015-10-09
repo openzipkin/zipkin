@@ -200,11 +200,11 @@ find_maven_basedir() {
   local basedir=$(pwd)
   local wdir=$(pwd)
   while [ "$wdir" != '/' ] ; do
-    wdir=$(cd "$wdir/.."; pwd)
     if [ -d "$wdir"/.mvn ] ; then
       basedir=$wdir
       break
     fi
+    wdir=$(cd "$wdir/.."; pwd)
   done
   echo "${basedir}"
 }
@@ -224,11 +224,11 @@ MAVEN_OPTS="$(concat_lines "$MAVEN_PROJECTBASEDIR/.mvn/jvm.config") $MAVEN_OPTS"
 MAVEN_CMD_LINE_ARGS="$MAVEN_CONFIG $@"
 export MAVEN_CMD_LINE_ARGS
 
-WRAPPER_LAUNCHER="org.apache.maven.wrapper.MavenWrapperMain"
+WRAPPER_LAUNCHER=org.apache.maven.wrapper.MavenWrapperMain
 
 exec "$JAVACMD" \
-     $MAVEN_OPTS \
-     "-Dmaven.home=${M2_HOME}" "-Dmaven.multiModuleProjectDirectory=${MAVEN_PROJECTBASEDIR}" \
-  -classpath \
-"$MAVEN_PROJECTBASEDIR/maven/maven-wrapper.jar" \
-  ${WRAPPER_LAUNCHER} "$@"
+  $MAVEN_OPTS \
+  -classpath "$MAVEN_PROJECTBASEDIR/.mvn/wrapper/maven-wrapper.jar" \
+  "-Dmaven.home=${M2_HOME}" "-Dmaven.multiModuleProjectDirectory=${MAVEN_PROJECTBASEDIR}" \
+  ${WRAPPER_LAUNCHER} $MAVEN_CMD_LINE_ARGS
+
