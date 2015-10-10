@@ -26,7 +26,5 @@ $ mysql -uroot -e "show global variables like 'innodb_file_format'"
 # install the schema and indexes
 $ mysql -uroot -e "create database if not exists zipkin"
 $ mysql -uroot -Dzipkin < zipkin-anormdb/src/main/resources/mysql.sql
-# load test data for http://localhost:8080/dependency
-$ mysql -uroot -Dzipkin < zipkin-tracegen/src/testdata/dependencies.sql
 $ MYSQL_USER=root ./bin/collector mysql
 ```

@@ -16,15 +16,15 @@
 
 package com.twitter.zipkin.storage.anormdb
 
+import java.sql.Connection
+import java.util.concurrent.TimeUnit._
+
+import anorm.SqlParser._
+import anorm._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.{Future, Time}
 import com.twitter.zipkin.common.{Dependencies, DependencyLink}
 import com.twitter.zipkin.storage.DependencyStore
-import com.twitter.zipkin.storage.anormdb.AnormThreads.inNewThread
-import java.sql.Connection
-import anorm.SqlParser._
-import anorm._
-import java.util.concurrent.TimeUnit._
 
 /**
  * Retrieve and store aggregate dependency information.
@@ -37,82 +37,49 @@ case class AnormDependencyStore(val db: DB,
                                 val stats: StatsReceiver = DefaultStatsReceiver.scope("AnormDependencyStore")
                                  ) extends DependencyStore with DBPool {
 
-
-  case class DependencyInterval(startTs: Long, endTs: Long, startId: Long, endId: Long)
-
   override def getDependencies(_startTs: Option[Long], _endTs: Option[Long] = None): Future[Seq[DependencyLink]] = db.inNewThreadWithRecoverableRetry {
     val endTs = _endTs.getOrElse(Time.now.inMicroseconds)
     val startTs = _startTs.getOrElse(endTs - MICROSECONDS.convert(1, DAYS))
 
-	implicit val (conn, borrowTime) = borrowConn()
-	try {
-
-    SQL(
-      """SELECT min(start_ts), max(end_ts), min(dlid), max(dlid)
-        |FROM zipkin_dependencies
-        |WHERE start_ts >= {startTs}
-        |  AND end_ts <= {endTs}
-      """.stripMargin)
-      .on("startTs" -> startTs)
-      .on("endTs" -> endTs)
-      .as((long("min(start_ts)").? ~ long("max(end_ts)").? ~ long("min(dlid)").? ~ long("max(dlid)").? map {
-      case startTs ~ endTs ~ startId ~ endId => {
-        startTs.map(DependencyInterval(_, endTs.get, startId.get, endId.get))
-      }
-    }) *).flatMap(_.headOption).headOption.map(interval => {
-
-      SQL(
-        """SELECT parent, child, call_count
-          |FROM zipkin_dependency_links
-          |WHERE dlid >= {startId}
-          |  AND dlid <= {endId}
-          |ORDER BY dlid DESC
+    implicit val (conn, borrowTime) = borrowConn()
+    try {
+      val parentChild = SQL(
+        """SELECT trace_id, parent_id, id
+          |FROM zipkin_spans
+          |WHERE start_ts >= {startTs}
+          |  AND start_ts <= {endTs}
+          |AND parent_id is not null
         """.stripMargin)
-        .on("startId" -> interval.startId)
-        .on("endId" -> interval.endId)
-        .as((str("parent") ~ str("child") ~ long("call_count") map {
-        case parent ~ child ~ callCount => new DependencyLink(parent,child, callCount)
-      }) *)
-    }).getOrElse(Seq.empty)
+        .on("startTs" -> startTs)
+        .on("endTs" -> endTs)
+        .as((long("trace_id") ~ long("parent_id") ~ long("id") map {
+          case traceId ~ parentId ~ id => (traceId, parentId, id)
+        }) *).groupBy(_._1)
 
+      val traceSpanServiceName: Map[(Long, Long), String] = SQL(
+        """SELECT DISTINCT trace_id, span_id, endpoint_service_name
+          |FROM zipkin_annotations
+          |WHERE trace_id IN (%s)
+          |AND endpoint_service_name is not null
+          |GROUP BY trace_id, span_id
+        """.stripMargin.format(parentChild.keys.mkString(",")))
+        .as((long("trace_id") ~ long("span_id") ~ str("endpoint_service_name") map {
+          case traceId ~ spanId ~ serviceName => (traceId, spanId, serviceName)
+        }) *).map(r => (r._1, r._2) -> r._3).toMap
+
+      parentChild.values.flatMap(identity).flatMap(r => {
+        // parent can be empty if a root span is missing, or the root's span id doesn't eq the trace id
+        for (
+          parent <- traceSpanServiceName.get((r._1, r._2));
+          child <- traceSpanServiceName.get((r._1, r._3))
+        ) yield (parent, child)
+      })
+      .groupBy(identity).mapValues(_.size) // sum span count
+      .map{ case ((parent, child), count) => DependencyLink(parent, child, count)}.toSeq
     } finally {
       returnConn(conn, borrowTime, "getDependencies")
     }
   }
 
-  /**
-   * Write dependencies
-   *
-   * Synchronize these so we don't do concurrent writes from the same box
-   */
-  override def storeDependencies(dependencies: Dependencies): Future[Unit] = inNewThread {
-	implicit val (conn, borrowTime) = borrowConn()
-	try {
-
-    db.withRecoverableTransaction(conn, { implicit conn: Connection =>
-      val dlid = SQL("""INSERT INTO zipkin_dependencies
-            |  (start_ts, end_ts)
-            |VALUES ({startTs}, {endTs})
-          """.stripMargin)
-        .on("startTs" -> dependencies.startTs)
-        .on("endTs" -> dependencies.endTs)
-      .executeInsert()
-
-      dependencies.links.foreach { link =>
-        SQL("""INSERT INTO zipkin_dependency_links
-              |  (dlid, parent, child, call_count)
-              |VALUES ({dlid}, {parent}, {child}, {callCount})
-            """.stripMargin)
-          .on("dlid" -> dlid)
-          .on("parent" -> link.parent)
-          .on("child" -> link.child)
-          .on("callCount" -> link.callCount)
-        .execute()
-      }
-    })
-
-    } finally {
-      returnConn(conn, borrowTime, "storeDependencies")
-    }
-  }
+  override def storeDependencies(dependencies: Dependencies): Future[Unit] = Future.Unit
 }

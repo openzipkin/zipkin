@@ -163,63 +163,29 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
     }
 
     implicit val con = this.getConnection()
-
     SQL(
       """CREATE TABLE IF NOT EXISTS zipkin_spans (
-        |  span_id BIGINT NOT NULL,
-        |  parent_id BIGINT,
         |  trace_id BIGINT NOT NULL,
-        |  span_name VARCHAR(255) NOT NULL,
+        |  id BIGINT NOT NULL,
+        |  name VARCHAR(255) NOT NULL,
+        |  parent_id BIGINT,
         |  debug SMALLINT NOT NULL,
-        |  duration BIGINT,
-        |  created_ts BIGINT
+        |  start_ts BIGINT
         |)
       """.stripMargin).execute()
-    //SQL("CREATE INDEX trace_id ON zipkin_spans (trace_id)").execute()
     SQL(
       """CREATE TABLE IF NOT EXISTS zipkin_annotations (
-        |  span_id BIGINT NOT NULL,
         |  trace_id BIGINT NOT NULL,
-        |  span_name VARCHAR(255) NOT NULL,
-        |  service_name VARCHAR(255) NOT NULL,
-        |  value TEXT,
-        |  ipv4 INT,
-        |  port INT,
+        |  span_id BIGINT NOT NULL,
+        |  a_key VARCHAR(255) NOT NULL,
+        |  a_value %s,
+        |  a_type INT NOT NULL,
         |  a_timestamp BIGINT NOT NULL,
-        |  duration BIGINT
+        |  endpoint_ipv4 INT,
+        |  endpoint_port SMALLINT,
+        |  endpoint_service_name VARCHAR(255) NOT NULL
         |)
-      """.stripMargin).execute()
-    //SQL("CREATE INDEX trace_id ON zipkin_annotations (trace_id)").execute()
-    SQL(
-      """CREATE TABLE IF NOT EXISTS zipkin_binary_annotations (
-        |  span_id BIGINT NOT NULL,
-        |  trace_id BIGINT NOT NULL,
-        |  span_name VARCHAR(255) NOT NULL,
-        |  service_name VARCHAR(255) NOT NULL,
-        |  annotation_key VARCHAR(255) NOT NULL,
-        |  annotation_value %s,
-        |  annotation_type_value INT NOT NULL,
-        |  ipv4 INT,
-        |  port INT,
-        |  annotation_ts BIGINT
-        |)
-      """.stripMargin.format(this.getBlobType)).execute()
-    //SQL("CREATE INDEX trace_id ON zipkin_binary_annotations (trace_id)").execute()
-    SQL(
-      """CREATE TABLE IF NOT EXISTS zipkin_dependencies (
-        |  dlid %s,
-        |  start_ts BIGINT NOT NULL,
-        |  end_ts BIGINT NOT NULL
-        |)
-      """.stripMargin.format(this.getAutoIncrement)).execute()
-    SQL(
-      """CREATE TABLE IF NOT EXISTS zipkin_dependency_links (
-        |  dlid BIGINT NOT NULL,
-        |  parent VARCHAR(255) NOT NULL,
-        |  child VARCHAR(255) NOT NULL,
-        |  call_count BIGINT NOT NULL
-        |)
-      """.stripMargin).execute()
+      """.stripMargin.format(getBlobType)).execute()
     con
   }
 
