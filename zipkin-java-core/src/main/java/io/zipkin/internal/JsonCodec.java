@@ -39,6 +39,7 @@ import static io.zipkin.internal.Util.UTF_8;
  *   <li>Avoids magic field initialization which, can miss constructor guards</li>
  *   <li>Allows us to safely re-use the json form in toString methods</li>
  *   <li>Encourages logic to be based on the thrift shape of objects</li>
+ *   <li>Ensures the order and naming of the fields in json is stable</li>
  * </ul>
  *
  * <p/> There is the up-front cost of creating this, and maintenance of this to consider. However,
@@ -294,14 +295,14 @@ public final class JsonCodec implements Codec {
       }
       writer.name("annotations");
       writer.beginArray();
-      for (Annotation a : value.annotations) {
-        ANNOTATION_ADAPTER.toJson(writer, a);
+      for (int i = 0, length = value.annotations.size(); i < length; i++) {
+        ANNOTATION_ADAPTER.toJson(writer, value.annotations.get(i));
       }
       writer.endArray();
       writer.name("binaryAnnotations");
       writer.beginArray();
-      for (BinaryAnnotation b : value.binaryAnnotations) {
-        BINARY_ANNOTATION_ADAPTER.toJson(writer, b);
+      for (int i = 0, length = value.binaryAnnotations.size(); i < length; i++) {
+        BINARY_ANNOTATION_ADAPTER.toJson(writer, value.binaryAnnotations.get(i));
       }
       writer.endArray();
       if (value.debug != null) {
@@ -326,11 +327,100 @@ public final class JsonCodec implements Codec {
     return write(SPAN_ADAPTER, value);
   }
 
-  public static final JsonAdapter<DependencyLink> DEPENDENCY_LINK_ADAPTER =
-      new Moshi.Builder().build().adapter(DependencyLink.class);
+  public static final JsonAdapter<DependencyLink> DEPENDENCY_LINK_ADAPTER = new JsonAdapter<DependencyLink>() {
 
-  public static final JsonAdapter<Dependencies> DEPENDENCIES_ADAPTER =
-      new Moshi.Builder().build().adapter(Dependencies.class);
+    @Override
+    public DependencyLink fromJson(JsonReader reader) throws IOException {
+      DependencyLink.Builder result = new DependencyLink.Builder();
+      reader.beginObject();
+      while (reader.hasNext()) {
+        switch (reader.nextName()) {
+          case "parent":
+            result.parent(reader.nextString());
+            break;
+          case "child":
+            result.child(reader.nextString());
+            break;
+          case "callCount":
+            result.callCount(reader.nextLong());
+            break;
+        }
+      }
+      reader.endObject();
+      return result.build();
+    }
+
+    @Override
+    public void toJson(JsonWriter writer, DependencyLink value) throws IOException {
+      writer.beginObject();
+      writer.name("parent").value(value.parent);
+      writer.name("child").value(value.child);
+      writer.name("callCount").value(value.callCount);
+      writer.endObject();
+    }
+
+    @Override
+    public String toString() {
+      return "JsonAdapter(DependencyLink)";
+    }
+  };
+
+  @Override
+  public DependencyLink readDependencyLink(byte[] bytes) {
+    return read(DEPENDENCY_LINK_ADAPTER, bytes);
+  }
+
+  @Override
+  public byte[] writeDependencyLink(DependencyLink value) {
+    return write(DEPENDENCY_LINK_ADAPTER, value);
+  }
+
+  public static final JsonAdapter<Dependencies> DEPENDENCIES_ADAPTER = new JsonAdapter<Dependencies>() {
+
+    @Override
+    public Dependencies fromJson(JsonReader reader) throws IOException {
+      Dependencies.Builder result = new Dependencies.Builder();
+      reader.beginObject();
+      while (reader.hasNext()) {
+        switch (reader.nextName()) {
+          case "startTs":
+            result.startTs(reader.nextLong());
+            break;
+          case "endTs":
+            result.endTs(reader.nextLong());
+            break;
+          case "links":
+            reader.beginArray();
+            while (reader.hasNext()) {
+              result.addLink(DEPENDENCY_LINK_ADAPTER.fromJson(reader));
+            }
+            reader.endArray();
+            break;
+        }
+      }
+      reader.endObject();
+      return result.build();
+    }
+
+    @Override
+    public void toJson(JsonWriter writer, Dependencies value) throws IOException {
+      writer.beginObject();
+      writer.name("startTs").value(value.startTs);
+      writer.name("endTs").value(value.endTs);
+      writer.name("links");
+      writer.beginArray();
+      for (int i = 0, length = value.links.size(); i < length; i++) {
+        DEPENDENCY_LINK_ADAPTER.toJson(writer, value.links.get(i));
+      }
+      writer.endArray();
+      writer.endObject();
+    }
+
+    @Override
+    public String toString() {
+      return "JsonAdapter(Dependencies)";
+    }
+  };
 
   @Override
   public Dependencies readDependencies(byte[] bytes) {

@@ -33,6 +33,14 @@ public interface Codec {
   @Nullable
   byte[] writeSpan(Span value);
 
+  /** Returns null if the dependency link couldn't be decoded */
+  @Nullable
+  DependencyLink readDependencyLink(byte[] bytes);
+
+  /** Returns null if the dependency link couldn't be encoded */
+  @Nullable
+  byte[] writeDependencyLink(DependencyLink value);
+
   /** Returns null if the dependencies couldn't be decoded */
   @Nullable
   Dependencies readDependencies(byte[] bytes);
