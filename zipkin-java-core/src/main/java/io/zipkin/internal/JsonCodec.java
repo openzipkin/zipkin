@@ -344,6 +344,8 @@ public final class JsonCodec implements Codec {
           case "callCount":
             result.callCount(reader.nextLong());
             break;
+          default:
+            reader.skipValue();
         }
       }
       reader.endObject();
@@ -396,6 +398,8 @@ public final class JsonCodec implements Codec {
             }
             reader.endArray();
             break;
+          default:
+            reader.skipValue();
         }
       }
       reader.endObject();
