@@ -40,7 +40,7 @@ case class AnormDependencyStore(val db: DB,
 
   case class DependencyInterval(startTs: Long, endTs: Long, startId: Long, endId: Long)
 
-  override def getDependencies(_startTs: Option[Long], _endTs: Option[Long] = None): Future[Dependencies] = db.inNewThreadWithRecoverableRetry {
+  override def getDependencies(_startTs: Option[Long], _endTs: Option[Long] = None): Future[Seq[DependencyLink]] = db.inNewThreadWithRecoverableRetry {
     val endTs = _endTs.getOrElse(Time.now.inMicroseconds)
     val startTs = _startTs.getOrElse(endTs - MICROSECONDS.convert(1, DAYS))
 
@@ -61,7 +61,7 @@ case class AnormDependencyStore(val db: DB,
       }
     }) *).flatMap(_.headOption).headOption.map(interval => {
 
-      val links: List[DependencyLink] = SQL(
+      SQL(
         """SELECT parent, child, call_count
           |FROM zipkin_dependency_links
           |WHERE dlid >= {startId}
@@ -73,8 +73,7 @@ case class AnormDependencyStore(val db: DB,
         .as((str("parent") ~ str("child") ~ long("call_count") map {
         case parent ~ child ~ callCount => new DependencyLink(parent,child, callCount)
       }) *)
-      Dependencies(interval.startTs, interval.endTs, links)
-    }).getOrElse(Dependencies.zero)
+    }).getOrElse(Seq.empty)
 
     } finally {
       returnConn(conn, borrowTime, "getDependencies")

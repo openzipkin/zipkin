@@ -31,26 +31,15 @@ abstract class CassandraDependencyStore extends DependencyStore {
     val endEpochDayMillis = floorEpochMicrosToDayMillis(endTs)
     val startEpochDayMillis = floorEpochMicrosToDayMillis(endTs - MICROSECONDS.convert(1, DAYS))
 
-    val dependenciesFuture =
-      FutureUtil.toFuture(repository.getDependencies(startEpochDayMillis, endEpochDayMillis))
-        .map { dependencies =>
-          dependencies.asScala
-            .map(codec.decode(_))
-            .map(thriftToDependencies(_).toDependencies)
-        }
-
-    dependenciesFuture.map { dependencies =>
-      if (dependencies.isEmpty) {
-        Dependencies.zero
-      } else {
-        val startTs = dependencies.head.startTs
-        val endTs = dependencies.last.endTs
-        Dependencies(startTs, endTs, dependencies.flatMap(_.links))
+    FutureUtil.toFuture(repository.getDependencies(startEpochDayMillis, endEpochDayMillis))
+      .map { dependencies => dependencies.asScala
+          .map(codec.decode(_))
+          .map(thriftToDependencies(_).toDependencies)
+          .flatMap(_.links)
       }
-    }
   }
 
-  def floorEpochMicrosToDayMillis(micros: Long) = {
+  private def floorEpochMicrosToDayMillis(micros: Long) = {
     Time.fromMicroseconds(micros).floor(Duration.fromTimeUnit(1, DAYS)).inMilliseconds
   }
 

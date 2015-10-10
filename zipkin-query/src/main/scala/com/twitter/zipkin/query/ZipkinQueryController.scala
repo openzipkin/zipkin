@@ -54,7 +54,7 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
   }
 
   get("/api/v1/dependencies") { request: GetDependenciesRequest =>
-    dependencyStore.getDependencies(Some(request.startTs), Some(request.endTs)).map(_.links)
+    dependencyStore.getDependencies(Some(request.startTs), Some(request.endTs))
   }
 
   private[this] def adjustTimeskewAndRenderJson(spans: Seq[Seq[Span]]): Seq[List[JsonSpan]] = {

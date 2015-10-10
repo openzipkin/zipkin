@@ -480,7 +480,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   }
 
   "find dependencies starting at timestamp zero" in {
-    when(dependencyStore.getDependencies(Some(0), Some(deps.endTs))) thenReturn Future.value(deps)
+    when(dependencyStore.getDependencies(Some(0), Some(deps.endTs))) thenReturn Future.value(deps.links)
 
     server.httpGet(
       path = "/api/v1/dependencies?startTs=0&endTs=" + deps.endTs,
@@ -503,7 +503,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   }
 
   "find dependencies when empty" in {
-    when(dependencyStore.getDependencies(Some(0), Some(deps.endTs))) thenReturn Future(Dependencies.zero)
+    when(dependencyStore.getDependencies(Some(0), Some(deps.endTs))) thenReturn Future(Seq.empty)
 
     server.httpGet(
       path = "/api/v1/dependencies?startTs=0&endTs=" + deps.endTs,
