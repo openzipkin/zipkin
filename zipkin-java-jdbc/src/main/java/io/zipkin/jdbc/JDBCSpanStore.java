@@ -62,7 +62,6 @@ import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
 
 public final class JDBCSpanStore implements SpanStore {
 
@@ -150,7 +149,7 @@ public final class JDBCSpanStore implements SpanStore {
 
   private List<List<Span>> getTraces(@Nullable QueryRequest request, @Nullable List<Long> traceIds) {
     final Map<Long, List<Span>> spansWithoutAnnotations;
-    final Map<Pair, List<Record>> dbAnnotations;
+    final Map<Pair<?>, List<Record>> dbAnnotations;
     try (Connection conn = this.datasource.getConnection()) {
       if (request != null) {
         traceIds = toTraceIdQuery(context(conn), request).fetch(ZIPKIN_SPANS.TRACE_ID);
@@ -166,17 +165,17 @@ public final class JDBCSpanStore implements SpanStore {
               .parentId(r.getValue(ZIPKIN_SPANS.PARENT_ID))
               .debug(r.getValue(ZIPKIN_SPANS.DEBUG))
               .build())
-          .collect(groupingBy(s -> s.traceId, LinkedHashMap::new, toList()));
+          .collect(groupingBy((Span s) -> s.traceId, LinkedHashMap::new, Collectors.<Span>toList()));
 
       dbAnnotations = context(conn)
           .selectFrom(ZIPKIN_ANNOTATIONS)
           .where(ZIPKIN_ANNOTATIONS.TRACE_ID.in(spansWithoutAnnotations.keySet()))
           .orderBy(ZIPKIN_ANNOTATIONS.A_TIMESTAMP.asc(), ZIPKIN_ANNOTATIONS.A_KEY.asc())
           .stream()
-          .collect(groupingBy(a -> Pair.create(
+          .collect(groupingBy((Record a) -> Pair.create(
               a.getValue(ZIPKIN_ANNOTATIONS.TRACE_ID),
               a.getValue(ZIPKIN_ANNOTATIONS.SPAN_ID)
-          ), LinkedHashMap::new, toList())); // LinkedHashMap preserves order while grouping
+          ), LinkedHashMap::new, Collectors.<Record>toList())); // LinkedHashMap preserves order while grouping
     } catch (SQLException e) {
       throw new RuntimeException("Error querying for " + request + ": " + e.getMessage());
     }
@@ -186,7 +185,7 @@ public final class JDBCSpanStore implements SpanStore {
       List<Span> trace = new ArrayList<>(spans.size());
       for (Span s : spans) {
         Span.Builder span = new Span.Builder(s);
-        Pair key = Pair.create(s.traceId, s.id);
+        Pair<?> key = Pair.create(s.traceId, s.id);
 
         if (dbAnnotations.containsKey(key)) {
           for (Record a : dbAnnotations.get(key)) {
