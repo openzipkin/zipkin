@@ -13,21 +13,16 @@
  */
 package io.zipkin.server;
 
-import java.io.IOException;
-
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-
-import com.facebook.swift.service.ThriftServer;
 
 @SpringBootApplication
 @EnableZipkinServer
 public class ZipkinServer {
 
-  public static void main(String[] args) throws IOException, InterruptedException {
+  public static void main(String[] args) {
     new SpringApplicationBuilder(ZipkinServer.class)
-        .properties("spring.config.name=zipkin-server").run(args)
-        .getBean(ThriftServer.class).start();
+        .properties("spring.config.name=zipkin-server").run(args);
   }
 
 }

@@ -120,7 +120,7 @@ public final class ThriftCodec implements Codec {
       oprot.writeI32(value.ipv4);
       oprot.writeFieldEnd();
       oprot.writeFieldBegin(PORT_FIELD_DESC);
-      oprot.writeI16(value.port);
+      oprot.writeI16(value.port == null ? 0 : value.port);
       oprot.writeFieldEnd();
       oprot.writeFieldBegin(SERVICE_NAME_FIELD_DESC);
       oprot.writeString(value.serviceName);

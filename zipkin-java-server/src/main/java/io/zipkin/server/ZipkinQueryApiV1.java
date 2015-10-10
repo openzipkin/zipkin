@@ -21,8 +21,8 @@ import io.zipkin.SpanStore;
 import io.zipkin.internal.Util.Serializer;
 import java.util.Collections;
 import java.util.List;
-import javax.inject.Inject;
 import okio.Buffer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,18 +48,14 @@ public class ZipkinQueryApiV1 {
   static final Serializer<List<List<Span>>> TRACES_TO_JSON = writeJsonList(TRACE_TO_JSON);
   static final Serializer<List<DependencyLink>> DEPENDENCY_LINKS_TO_JSON = writeJsonList(Codec.JSON::writeDependencyLink);
 
-  private final SpanStore spanStore;
-
-  @Inject
-  ZipkinQueryApiV1(SpanStore spanStore) {
-    this.spanStore = spanStore;
-  }
+  @Autowired
+  private SpanStore spanStore;
 
   @RequestMapping(value = "/dependencies", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getDependencies(
       @RequestParam(value = "startTs", required = false, defaultValue = "0") long startTs,
       @RequestParam(value = "endTs", required = true) long endTs) {
-    return DEPENDENCY_LINKS_TO_JSON.apply(spanStore.getDependencies(startTs != 0 ? startTs : null, endTs).links);
+    return DEPENDENCY_LINKS_TO_JSON.apply(this.spanStore.getDependencies(startTs != 0 ? startTs : null, endTs));
   }
 
   @RequestMapping(value = "/services", method = RequestMethod.GET)

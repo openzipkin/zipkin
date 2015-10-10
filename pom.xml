@@ -29,7 +29,6 @@
     <module>zipkin-java-interop</module>
     <module>zipkin-java-jdbc</module>
     <module>zipkin-java-server</module>
-    <module>zipkin-java-scribe</module>
   </modules>
 
   <properties>

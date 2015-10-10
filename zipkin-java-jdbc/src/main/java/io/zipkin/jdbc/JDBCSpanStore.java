@@ -262,7 +262,7 @@ public final class JDBCSpanStore implements SpanStore {
   }
 
   @Override
-  public Dependencies getDependencies(@Nullable Long startTs, @Nullable Long endTs) {
+  public List<DependencyLink> getDependencies(@Nullable Long startTs, @Nullable Long endTs) {
     if (endTs == null) {
       endTs = System.currentTimeMillis() * 1000;
     }
@@ -290,11 +290,11 @@ public final class JDBCSpanStore implements SpanStore {
               .parent(parent)
               .child(child)
               .callCount(1).build();
-          result.addLink(link);
+          result.addLink(link); // this will merge links as necessary
         }
       });
 
-      return result.build();
+      return result.build().links;
     } catch (SQLException e) {
       throw new RuntimeException("Error querying dependencies between " + startTs + " and " + endTs + ": " + e.getMessage());
     }
@@ -319,10 +319,10 @@ public final class JDBCSpanStore implements SpanStore {
     if (serviceName == null) {
       return null;
     }
-    return Endpoint.create(
-        serviceName,
-        a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4),
-        a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT).intValue());
+    Short port = a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT);
+    return port != null ?
+        Endpoint.create(serviceName, a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4), port.intValue())
+        : Endpoint.create(serviceName, a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4));
   }
 
   static SelectOffsetStep<Record1<Long>> toTraceIdQuery(DSLContext context, QueryRequest request) {

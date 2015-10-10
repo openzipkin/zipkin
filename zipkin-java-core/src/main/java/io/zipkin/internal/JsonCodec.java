@@ -105,7 +105,7 @@ public final class JsonCodec implements Codec {
           (value.ipv4 & 0xff)
       );
       writer.name("ipv4").value(ipv4);
-      if (value.port != 0) {
+      if (value.port != null && !value.port.equals(0)) {
         writer.name("port").value(value.port & 0xffff);
       }
       writer.endObject();

@@ -13,14 +13,8 @@
  */
 package io.zipkin.server;
 
-import com.facebook.swift.codec.ThriftCodecManager;
-import com.facebook.swift.service.ThriftServer;
-import com.facebook.swift.service.ThriftServerConfig;
-import com.facebook.swift.service.ThriftServiceProcessor;
 import io.zipkin.SpanStore;
 import io.zipkin.jdbc.JDBCSpanStore;
-import io.zipkin.scribe.Scribe;
-import io.zipkin.scribe.ScribeSpanConsumer;
 import io.zipkin.server.ZipkinServerProperties.Store.Type;
 import javax.sql.DataSource;
 import org.jooq.ExecuteListenerProvider;
@@ -52,18 +46,5 @@ public class ZipkinServerConfiguration {
     } else {
       return new InMemorySpanStore();
     }
-  }
-
-  @Bean
-  Scribe scribeConsumer(SpanStore spanStore) {
-    return new ScribeSpanConsumer(spanStore::accept);
-  }
-
-  @Bean
-  ThriftServer scribeServer(Scribe scribe) {
-    ThriftServiceProcessor processor = new ThriftServiceProcessor(new ThriftCodecManager(), emptyList(), scribe);
-    return new ThriftServer(processor, new ThriftServerConfig()
-        .setBindAddress("localhost")
-        .setPort(this.server.getCollector().getPort()));
   }
 }

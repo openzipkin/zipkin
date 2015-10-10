@@ -13,13 +13,16 @@
  */
 package io.zipkin.jdbc;
 
-import com.twitter.zipkin.storage.SpanStore;
-import com.twitter.zipkin.storage.SpanStoreSpec;
+import com.twitter.zipkin.common.Span;
+import com.twitter.zipkin.storage.DependencyStore;
+import com.twitter.zipkin.storage.DependencyStoreSpec;
+import io.zipkin.interop.ScalaDependencyStoreAdapter;
 import io.zipkin.interop.ScalaSpanStoreAdapter;
 import java.sql.SQLException;
 import org.junit.BeforeClass;
+import scala.collection.immutable.List;
 
-public class JDBCScalaSpanStoreTest extends SpanStoreSpec {
+public class JDBCScalaDependencyStoreTest extends DependencyStoreSpec {
   private static JDBCSpanStore spanStore;
 
   @BeforeClass
@@ -27,8 +30,13 @@ public class JDBCScalaSpanStoreTest extends SpanStoreSpec {
     spanStore = new JDBCTestGraph().spanStore;
   }
 
-  public SpanStore store() {
-    return new ScalaSpanStoreAdapter(spanStore);
+  public DependencyStore store() {
+    return new ScalaDependencyStoreAdapter(spanStore);
+  }
+
+  @Override
+  public void processDependencies(List<Span> spans) {
+    new ScalaSpanStoreAdapter(spanStore).apply(spans);
   }
 
   public void clear() {

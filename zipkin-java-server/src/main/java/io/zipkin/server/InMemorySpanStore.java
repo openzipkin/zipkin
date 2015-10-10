@@ -14,7 +14,7 @@
 package io.zipkin.server;
 
 import io.zipkin.BinaryAnnotation;
-import io.zipkin.Dependencies;
+import io.zipkin.DependencyLink;
 import io.zipkin.QueryRequest;
 import io.zipkin.Span;
 import io.zipkin.SpanStore;
@@ -95,8 +95,8 @@ public final class InMemorySpanStore implements SpanStore {
   }
 
   @Override
-  public Dependencies getDependencies(@Nullable Long startTs, @Nullable Long endTs) {
-    return Dependencies.ZERO;
+  public List<DependencyLink> getDependencies(@Nullable Long startTs, @Nullable Long endTs) {
+    return Collections.emptyList();
   }
 
   @Override
