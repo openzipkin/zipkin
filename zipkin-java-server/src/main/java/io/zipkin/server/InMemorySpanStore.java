@@ -13,6 +13,12 @@
  */
 package io.zipkin.server;
 
+import io.zipkin.BinaryAnnotation;
+import io.zipkin.Dependencies;
+import io.zipkin.QueryRequest;
+import io.zipkin.Span;
+import io.zipkin.SpanStore;
+import io.zipkin.internal.Nullable;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,11 +32,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import io.zipkin.BinaryAnnotation;
-import io.zipkin.QueryRequest;
-import io.zipkin.Span;
-import io.zipkin.SpanStore;
 
 import static io.zipkin.internal.Util.merge;
 import static io.zipkin.internal.Util.sortedList;
@@ -91,6 +92,11 @@ public final class InMemorySpanStore implements SpanStore {
   public synchronized List<String> getSpanNames(String service) {
     if (service == null) return Collections.emptyList();
     return sortedList(serviceToSpanNames.get(service));
+  }
+
+  @Override
+  public Dependencies getDependencies(@Nullable Long startTs, @Nullable Long endTs) {
+    return Dependencies.ZERO;
   }
 
   @Override

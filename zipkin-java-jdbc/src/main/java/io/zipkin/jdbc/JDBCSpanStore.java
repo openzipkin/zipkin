@@ -16,11 +16,14 @@ package io.zipkin.jdbc;
 import io.zipkin.Annotation;
 import io.zipkin.BinaryAnnotation;
 import io.zipkin.BinaryAnnotation.Type;
+import io.zipkin.Dependencies;
+import io.zipkin.DependencyLink;
 import io.zipkin.Endpoint;
 import io.zipkin.QueryRequest;
 import io.zipkin.Span;
 import io.zipkin.SpanStore;
 import io.zipkin.internal.Nullable;
+import io.zipkin.internal.Pair;
 import io.zipkin.internal.Util;
 import io.zipkin.jdbc.internal.generated.tables.ZipkinAnnotations;
 import java.nio.charset.Charset;
@@ -31,6 +34,8 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import org.jooq.DSLContext;
 import org.jooq.ExecuteListenerProvider;
@@ -40,6 +45,7 @@ import org.jooq.Query;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Record2;
+import org.jooq.Record3;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectOffsetStep;
 import org.jooq.Table;
@@ -53,6 +59,8 @@ import static io.zipkin.internal.Util.checkNotNull;
 import static io.zipkin.jdbc.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static io.zipkin.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 import static java.util.Collections.emptyList;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
@@ -142,7 +150,7 @@ public final class JDBCSpanStore implements SpanStore {
 
   private List<List<Span>> getTraces(@Nullable QueryRequest request, @Nullable List<Long> traceIds) {
     final Map<Long, List<Span>> spansWithoutAnnotations;
-    final Map<SpanKey, List<Record>> dbAnnotations;
+    final Map<Pair, List<Record>> dbAnnotations;
     try (Connection conn = this.datasource.getConnection()) {
       if (request != null) {
         traceIds = toTraceIdQuery(context(conn), request).fetch(ZIPKIN_SPANS.TRACE_ID);
@@ -165,7 +173,7 @@ public final class JDBCSpanStore implements SpanStore {
           .where(ZIPKIN_ANNOTATIONS.TRACE_ID.in(spansWithoutAnnotations.keySet()))
           .orderBy(ZIPKIN_ANNOTATIONS.A_TIMESTAMP.asc(), ZIPKIN_ANNOTATIONS.A_KEY.asc())
           .stream()
-          .collect(groupingBy(a -> new SpanKey(
+          .collect(groupingBy(a -> Pair.create(
               a.getValue(ZIPKIN_ANNOTATIONS.TRACE_ID),
               a.getValue(ZIPKIN_ANNOTATIONS.SPAN_ID)
           ), LinkedHashMap::new, toList())); // LinkedHashMap preserves order while grouping
@@ -178,7 +186,7 @@ public final class JDBCSpanStore implements SpanStore {
       List<Span> trace = new ArrayList<>(spans.size());
       for (Span s : spans) {
         Span.Builder span = new Span.Builder(s);
-        SpanKey key = new SpanKey(s.traceId, s.id);
+        Pair key = Pair.create(s.traceId, s.id);
 
         if (dbAnnotations.containsKey(key)) {
           for (Record a : dbAnnotations.get(key)) {
@@ -255,6 +263,55 @@ public final class JDBCSpanStore implements SpanStore {
   }
 
   @Override
+  public Dependencies getDependencies(@Nullable Long startTs, @Nullable Long endTs) {
+    if (endTs == null) {
+      endTs = System.currentTimeMillis() * 1000;
+    }
+    if (startTs == null) {
+      startTs = endTs - MICROSECONDS.convert(1, DAYS);
+    }
+    try (Connection conn = this.datasource.getConnection()) {
+      Map<Long, List<Record3<Long, Long, Long>>> parentChild = context(conn)
+          .select(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.PARENT_ID, ZIPKIN_SPANS.ID)
+          .from(ZIPKIN_SPANS)
+          .where(ZIPKIN_SPANS.START_TS.between(startTs, endTs))
+          .and(ZIPKIN_SPANS.PARENT_ID.isNotNull())
+          .stream().collect(Collectors.groupingBy(r -> r.value1()));
+
+      Map<Pair<Long>, String> traceSpanServiceName = traceSpanServiceName(conn, parentChild.keySet());
+
+      Dependencies.Builder result = new Dependencies.Builder().startTs(startTs).endTs(endTs);
+
+      parentChild.values().stream().flatMap(List::stream).forEach(r -> {
+        String parent = traceSpanServiceName.get(Pair.create(r.value1(), r.value2()));
+        // can be null if a root span is missing, or the root's span id doesn't eq the trace id
+        if (parent != null) {
+          String child = traceSpanServiceName.get(Pair.create(r.value1(), r.value3()));
+          DependencyLink link = new DependencyLink.Builder()
+              .parent(parent)
+              .child(child)
+              .callCount(1).build();
+          result.addLink(link);
+        }
+      });
+
+      return result.build();
+    } catch (SQLException e) {
+      throw new RuntimeException("Error querying dependencies between " + startTs + " and " + endTs + ": " + e.getMessage());
+    }
+  }
+
+  private Map<Pair<Long>, String> traceSpanServiceName(Connection conn, Set<Long> traceIds) {
+    return context(conn)
+        .selectDistinct(ZIPKIN_ANNOTATIONS.TRACE_ID, ZIPKIN_ANNOTATIONS.SPAN_ID, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME)
+        .from(ZIPKIN_ANNOTATIONS)
+        .where(ZIPKIN_ANNOTATIONS.TRACE_ID.in(traceIds))
+        .and(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.isNotNull())
+        .groupBy(ZIPKIN_ANNOTATIONS.TRACE_ID, ZIPKIN_ANNOTATIONS.SPAN_ID)
+        .fetchMap(r -> Pair.create(r.value1(), r.value2()), r -> r.value3());
+  }
+
+  @Override
   public void close() {
   }
 
@@ -315,38 +372,5 @@ public final class JDBCSpanStore implements SpanStore {
         .and(joinTable.A_TYPE.eq(type))
         .and(joinTable.A_KEY.eq(key));
     return table;
-  }
-
-  private static class SpanKey {
-
-    private final long traceId;
-    private final long spanId;
-
-    private SpanKey(long traceId, long spanId) {
-      this.traceId = traceId;
-      this.spanId = spanId;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (o == this) {
-        return true;
-      }
-      if (o instanceof SpanKey) {
-        SpanKey that = (SpanKey) o;
-        return (this.traceId == that.traceId) && (this.spanId == that.spanId);
-      }
-      return false;
-    }
-
-    @Override
-    public int hashCode() {
-      int h = 1;
-      h *= 1000003;
-      h ^= (this.traceId >>> 32) ^ this.traceId;
-      h *= 1000003;
-      h ^= (this.spanId >>> 32) ^ this.spanId;
-      return h;
-    }
   }
 }

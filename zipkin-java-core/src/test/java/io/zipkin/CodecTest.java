@@ -54,9 +54,21 @@ public abstract class CodecTest {
   Dependencies dependencies = new Dependencies(0L, TimeUnit.HOURS.toMicros(1), asList(
       new DependencyLink("Gizmoduck", "tflock", 4),
       new DependencyLink("mobileweb", "Gizmoduck", 4),
-      new DependencyLink("tfe", "mobileweb", 2),
-      new DependencyLink("tfe", "mobileweb", 4)
+      new DependencyLink("tfe", "mobileweb", 6)
   ));
+
+  @Test
+  public void dependencyLinkRoundTrip() throws IOException {
+    byte[] bytes = codec().writeDependencyLink(dependencies.links.get(0));
+    assertThat(codec().readDependencyLink(bytes))
+        .isEqualTo(dependencies.links.get(0));
+  }
+
+  @Test
+  public void dependencyLinkDecodesToNullOnEmpty() throws IOException {
+    assertThat(codec().readDependencyLink(new byte[0]))
+        .isNull();
+  }
 
   @Test
   public void dependenciesRoundTrip() throws IOException {

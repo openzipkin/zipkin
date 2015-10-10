@@ -501,6 +501,16 @@ public final class ThriftCodec implements Codec {
     }
   }
 
+  @Override
+  public DependencyLink readDependencyLink(byte[] bytes) {
+    return read(DependencyLinkAdapter.INSTANCE, bytes);
+  }
+
+  @Override
+  public byte[] writeDependencyLink(DependencyLink value) {
+    return write(DependencyLinkAdapter.INSTANCE, value);
+  }
+
   enum DependenciesAdapter implements ThriftAdapter<Dependencies> {
     INSTANCE;
 
