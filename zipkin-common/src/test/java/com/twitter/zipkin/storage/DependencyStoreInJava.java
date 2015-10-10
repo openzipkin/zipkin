@@ -1,10 +1,11 @@
 package com.twitter.zipkin.storage;
 
-import scala.Option;
-import scala.runtime.BoxedUnit;
-
 import com.twitter.util.Future;
 import com.twitter.zipkin.common.Dependencies;
+import com.twitter.zipkin.common.DependencyLink;
+import scala.Option;
+import scala.collection.Seq;
+import scala.runtime.BoxedUnit;
 
 /**
  * Shows that {@link DependencyStore} is implementable in Java 7+.
@@ -16,7 +17,7 @@ public class DependencyStoreInJava extends DependencyStore {
     }
 
     @Override
-    public Future<Dependencies> getDependencies(Option<Object> startTs, Option<Object> endTs) {
+    public Future<Seq<DependencyLink>> getDependencies(Option<Object> startTs, Option<Object> endTs) {
         return null;
     }
 

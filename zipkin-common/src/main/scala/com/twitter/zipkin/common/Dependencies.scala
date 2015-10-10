@@ -60,4 +60,29 @@ case class Dependencies(startTs: Long, endTs: Long, links: Seq[DependencyLink]) 
 }
 object Dependencies {
   val zero = Dependencies(0, 0, Seq.empty[DependencyLink])
+
+  def toLinks(spans: Seq[Span]): Seq[DependencyLink] = {
+    val flattenedSpans: Map[(Long, Long), Span] = spans
+      .filter(_.serviceName.isDefined)
+      .groupBy(s => (s.id, s.traceId))
+      .mapValues(spans => spans.reduce((s1, s2) => s1.mergeSpan(s2)))
+
+    val childCountByParent: Map[(Long, Long), Map[String, Long]] = flattenedSpans
+      .filter { case (key, span) => span.parentId.isDefined }
+      .mapValues(span => ((span.parentId.get, span.traceId), span))
+      .groupBy(_._2._1) // group by parentId, traceId
+      .mapValues(_.values.map(_._2.serviceName.get).toList) // convert values to serviceNames
+      .mapValues(serviceNames => serviceNames.groupBy(identity).mapValues(_.size)) // count serviceNames
+
+    val parentToChildCount: Map[(String, String), Long] = flattenedSpans // join on key
+      .map { case (key, span) => span.serviceName.get -> childCountByParent.getOrElse(key, Map.empty) }
+      .flatMap { case (parent, childServiceNameCount) => // Convert from Map of Maps to something we can sum
+        childServiceNameCount.map { case (child, count) => ((parent, child), count) }
+      }
+      .groupBy(_._1).mapValues(_.map(_._2).seq.sum) // collect and sum entries with same parent, child
+
+    parentToChildCount.map {
+      case (parentChild, count) => DependencyLink(parentChild._1, parentChild._2, count)
+    }.toSeq
+  }
 }
