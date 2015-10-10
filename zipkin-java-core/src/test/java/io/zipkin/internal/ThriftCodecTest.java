@@ -17,7 +17,7 @@ import io.zipkin.Codec;
 import io.zipkin.CodecTest;
 
 public final class ThriftCodecTest extends CodecTest {
-  private final ThriftCodec codec = new ThriftCodec();
+  private final Codec codec = Codec.THRIFT;
 
   @Override
   protected Codec codec() {

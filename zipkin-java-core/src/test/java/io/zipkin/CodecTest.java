@@ -17,9 +17,6 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
-import static io.zipkin.BinaryAnnotation.Type.STRING;
-import static io.zipkin.Constants.CLIENT_SEND;
-import static io.zipkin.internal.Util.UTF_8;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,22 +24,13 @@ public abstract class CodecTest {
 
   protected abstract Codec codec();
 
-  Endpoint web = Endpoint.create("web", (127 << 24) | 1, 8080);
-
-  Span span = new Span.Builder()
-      .traceId(123)
-      .name("methodcall")
-      .id(456)
-      .addAnnotation(Annotation.create(1, CLIENT_SEND, web))
-      .addAnnotation(Annotation.create(20, CLIENT_SEND, web))
-      .addBinaryAnnotation(BinaryAnnotation.create("http.uri", "/foo".getBytes(UTF_8), STRING, web))
-      .build();
-
   @Test
   public void spanRoundTrip() throws IOException {
-    byte[] bytes = codec().writeSpan(span);
-    assertThat(codec().readSpan(bytes))
-        .isEqualTo(span);
+    for (Span span : TestObjects.TRACE) {
+      byte[] bytes = codec().writeSpan(span);
+      assertThat(codec().readSpan(bytes))
+          .isEqualTo(span);
+    }
   }
 
   @Test

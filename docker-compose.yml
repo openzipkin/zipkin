@@ -16,16 +16,12 @@ zipkin-java-server:
   build: zipkin-java-server
   tty: true
   expose:
-    - 9410
     - 9411
   ports:
-    - 9410:9410
     - 9411:9411
 web:
-  image: openzipkin/zipkin-web:1.16.1
+  image: openzipkin/zipkin-web:1.17.0
   links:
     - zipkin-java-server:query
-    - zipkin-java-server:collector
   ports:
     - 8080:8080
-    - 9990:9990

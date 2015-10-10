@@ -14,6 +14,8 @@
 package io.zipkin;
 
 import io.zipkin.internal.JsonCodec;
+import io.zipkin.internal.Nullable;
+import io.zipkin.internal.Util;
 import java.net.InetSocketAddress;
 
 import static io.zipkin.internal.Util.checkNotNull;
@@ -23,6 +25,10 @@ public final class Endpoint {
 
   public static Endpoint create(String serviceName, int ipv4, int port) {
     return new Endpoint(serviceName, ipv4, (short) (port & 0xffff));
+  }
+
+  public static Endpoint create(String serviceName, int ipv4) {
+    return new Endpoint(serviceName, ipv4, null);
   }
 
   /**
@@ -42,15 +48,16 @@ public final class Endpoint {
   public final int ipv4;
 
   /**
-   * IPv4 port
+   * IPv4 port or null, if not known.
    *
    * <p/>Note: this is to be treated as an unsigned integer, so watch for negatives.
    *
    * @see InetSocketAddress#getPort()
    */
-  public final short port;
+  @Nullable
+  public final Short port;
 
-  Endpoint(String serviceName, int ipv4, short port) {
+  Endpoint(String serviceName, int ipv4, Short port) {
     this.serviceName = checkNotNull(serviceName, "serviceName");
     this.ipv4 = ipv4;
     this.port = port;
@@ -81,7 +88,9 @@ public final class Endpoint {
     }
 
     public Builder port(short port) {
-      this.port = port;
+      if (port != 0) {
+        this.port = port;
+      }
       return this;
     }
 
@@ -104,7 +113,7 @@ public final class Endpoint {
       Endpoint that = (Endpoint) o;
       return (this.serviceName.equals(that.serviceName))
           && (this.ipv4 == that.ipv4)
-          && (this.port == that.port);
+          && Util.equal(this.port, that.port);
     }
     return false;
   }
@@ -117,7 +126,7 @@ public final class Endpoint {
     h *= 1000003;
     h ^= ipv4;
     h *= 1000003;
-    h ^= port;
+    h ^= (port == null) ? 0 : port.hashCode();
     return h;
   }
 }

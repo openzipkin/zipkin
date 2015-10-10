@@ -17,7 +17,7 @@ import io.zipkin.Codec;
 import io.zipkin.CodecTest;
 
 public final class JsonCodecTest extends CodecTest {
-  private final ThriftCodec codec = new ThriftCodec();
+  private final Codec codec = Codec.JSON;
 
   @Override
   protected Codec codec() {

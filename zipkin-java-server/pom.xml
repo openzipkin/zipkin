@@ -31,8 +31,6 @@
 
   <properties>
     <brave.version>3.0.0</brave.version>
-    <!-- temporary until we use something besides scribe -->
-    <swift.version>0.15.1</swift.version>
     <start-class>io.zipkin.server.ZipkinServer</start-class>
   </properties>
 
@@ -108,25 +106,6 @@
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
       <optional>true</optional>
-    </dependency>
-
-    <!-- Collector deps -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-java-scribe</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.facebook.swift</groupId>
-      <artifactId>swift-service</artifactId>
-      <version>${swift.version}</version>
-      <exclusions>
-        <!-- A validator implementation is already included with spring-boot-starter-web -->
-        <exclusion>
-          <artifactId>bval-jsr303</artifactId>
-          <groupId>org.apache.bval</groupId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
 

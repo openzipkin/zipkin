@@ -16,12 +16,12 @@ package io.zipkin.server.brave;
 import com.github.kristofa.brave.Brave;
 import io.zipkin.SpanStore;
 import java.util.Collections;
-import javax.inject.Singleton;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -47,7 +47,7 @@ public class BraveConfiguration {
   }
 
   @Bean
-  @Singleton
+  @Scope
   Brave brave(SpanStoreSpanCollector spanCollector) {
     return new Brave.Builder("zipkin-query")
         .traceFilters(Collections.emptyList()) // sample all
