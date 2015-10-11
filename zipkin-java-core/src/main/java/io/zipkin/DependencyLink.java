@@ -19,6 +19,10 @@ import static io.zipkin.internal.Util.checkNotNull;
 
 public final class DependencyLink {
 
+  public static DependencyLink create(String parent, String child, long callCount) {
+    return new DependencyLink(parent, child, callCount);
+  }
+
   /** parent service name (caller) */
   public final String parent;
 
@@ -28,7 +32,7 @@ public final class DependencyLink {
   /** calls made during the duration (in microseconds) of this link */
   public final long callCount;
 
-  DependencyLink(String parent, String child, long callCount) {
+  private DependencyLink(String parent, String child, long callCount) {
     this.parent = checkNotNull(parent, "parent");
     this.child = checkNotNull(child, "child");
     this.callCount = callCount;

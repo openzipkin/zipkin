@@ -16,7 +16,6 @@ package io.zipkin.internal;
 import io.zipkin.Annotation;
 import io.zipkin.BinaryAnnotation;
 import io.zipkin.Codec;
-import io.zipkin.Dependencies;
 import io.zipkin.DependencyLink;
 import io.zipkin.Endpoint;
 import io.zipkin.Span;
@@ -509,94 +508,6 @@ public final class ThriftCodec implements Codec {
   @Override
   public byte[] writeDependencyLink(DependencyLink value) {
     return write(DependencyLinkAdapter.INSTANCE, value);
-  }
-
-  enum DependenciesAdapter implements ThriftAdapter<Dependencies> {
-    INSTANCE;
-
-    private static final TStruct STRUCT_DESC = new TStruct("Dependencies");
-    private static final TField START_TS_FIELD_DESC = new TField("start_ts", TType.I64, (short) 1);
-    private static final TField END_TS_FIELD_DESC = new TField("end_ts", TType.I64, (short) 2);
-    private static final TField LINKS_FIELD_DESC = new TField("links", TType.LIST, (short) 3);
-
-    @Override
-    public Dependencies read(TProtocol iprot) throws TException {
-      Dependencies.Builder result = new Dependencies.Builder();
-      TField field;
-      iprot.readStructBegin();
-      while (true) {
-        field = iprot.readFieldBegin();
-        if (field.type == TType.STOP) {
-          break;
-        }
-        switch (field.id) {
-          case 1: // START_TS
-            if (field.type == TType.I64) {
-              result.startTs(iprot.readI64());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 2: // END_TS
-            if (field.type == TType.I64) {
-              result.endTs(iprot.readI64());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 3: // LINKS
-            if (field.type == TType.LIST) {
-              TList links = iprot.readListBegin();
-              for (int i = 0; i < links.size; i++) {
-                result.addLink(DependencyLinkAdapter.INSTANCE.read(iprot));
-              }
-              iprot.readListEnd();
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          default:
-            skip(iprot, field.type);
-        }
-        iprot.readFieldEnd();
-      }
-      iprot.readStructEnd();
-      return result.build();
-    }
-
-    @Override
-    public void write(Dependencies value, TProtocol oprot) throws TException {
-      oprot.writeStructBegin(STRUCT_DESC);
-
-      oprot.writeFieldBegin(START_TS_FIELD_DESC);
-      oprot.writeI64(value.startTs);
-      oprot.writeFieldEnd();
-
-      oprot.writeFieldBegin(END_TS_FIELD_DESC);
-      oprot.writeI64(value.endTs);
-      oprot.writeFieldEnd();
-
-      oprot.writeFieldBegin(LINKS_FIELD_DESC);
-      oprot.writeListBegin(new TList(TType.STRUCT, value.links.size()));
-      for (int i = 0, length = value.links.size(); i < length; i++) {
-        DependencyLinkAdapter.INSTANCE.write(value.links.get(i), oprot);
-      }
-      oprot.writeListEnd();
-      oprot.writeFieldEnd();
-
-      oprot.writeFieldStop();
-      oprot.writeStructEnd();
-    }
-  }
-
-  @Override
-  public Dependencies readDependencies(byte[] bytes) {
-    return read(DependenciesAdapter.INSTANCE, bytes);
-  }
-
-  @Override
-  public byte[] writeDependencies(Dependencies value) {
-    return write(DependenciesAdapter.INSTANCE, value);
   }
 
   private static <T> T read(ThriftAdapter<T> adapter, byte[] bytes) {

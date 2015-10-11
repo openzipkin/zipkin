@@ -40,12 +40,4 @@ public interface Codec {
   /** Returns null if the dependency link couldn't be encoded */
   @Nullable
   byte[] writeDependencyLink(DependencyLink value);
-
-  /** Returns null if the dependencies couldn't be decoded */
-  @Nullable
-  Dependencies readDependencies(byte[] bytes);
-
-  /** Returns null if the dependencies couldn't be encoded */
-  @Nullable
-  byte[] writeDependencies(Dependencies value);
 }

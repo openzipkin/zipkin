@@ -16,7 +16,6 @@ package io.zipkin.jdbc;
 import io.zipkin.Annotation;
 import io.zipkin.BinaryAnnotation;
 import io.zipkin.BinaryAnnotation.Type;
-import io.zipkin.Dependencies;
 import io.zipkin.DependencyLink;
 import io.zipkin.Endpoint;
 import io.zipkin.QueryRequest;
@@ -279,22 +278,27 @@ public final class JDBCSpanStore implements SpanStore {
 
       Map<Pair<Long>, String> traceSpanServiceName = traceSpanServiceName(conn, parentChild.keySet());
 
-      Dependencies.Builder result = new Dependencies.Builder().startTs(startTs).endTs(endTs);
+      // links are merged by mapping to parent/child and summing corresponding links
+      Map<Pair<String>, Long> linkMap = new LinkedHashMap<>();
 
       parentChild.values().stream().flatMap(List::stream).forEach(r -> {
         String parent = traceSpanServiceName.get(Pair.create(r.value1(), r.value2()));
         // can be null if a root span is missing, or the root's span id doesn't eq the trace id
         if (parent != null) {
           String child = traceSpanServiceName.get(Pair.create(r.value1(), r.value3()));
-          DependencyLink link = new DependencyLink.Builder()
-              .parent(parent)
-              .child(child)
-              .callCount(1).build();
-          result.addLink(link); // this will merge links as necessary
+          Pair key = Pair.create(parent, child);
+          if (linkMap.containsKey(key)) {
+            linkMap.put(key, linkMap.get(key) + 1);
+          } else {
+            linkMap.put(key, 1L);
+          }
         }
       });
-
-      return result.build().links;
+      List<DependencyLink> result = new ArrayList<>(linkMap.size());
+      for (Map.Entry<Pair<String>, Long> entry : linkMap.entrySet()) {
+        result.add(DependencyLink.create(entry.getKey()._1, entry.getKey()._2, entry.getValue()));
+      }
+      return result;
     } catch (SQLException e) {
       throw new RuntimeException("Error querying dependencies between " + startTs + " and " + endTs + ": " + e.getMessage());
     }
