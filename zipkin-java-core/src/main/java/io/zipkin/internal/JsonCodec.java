@@ -20,7 +20,6 @@ import com.squareup.moshi.Moshi;
 import io.zipkin.Annotation;
 import io.zipkin.BinaryAnnotation;
 import io.zipkin.Codec;
-import io.zipkin.Dependencies;
 import io.zipkin.DependencyLink;
 import io.zipkin.Endpoint;
 import io.zipkin.Span;
@@ -375,65 +374,6 @@ public final class JsonCodec implements Codec {
   @Override
   public byte[] writeDependencyLink(DependencyLink value) {
     return write(DEPENDENCY_LINK_ADAPTER, value);
-  }
-
-  public static final JsonAdapter<Dependencies> DEPENDENCIES_ADAPTER = new JsonAdapter<Dependencies>() {
-
-    @Override
-    public Dependencies fromJson(JsonReader reader) throws IOException {
-      Dependencies.Builder result = new Dependencies.Builder();
-      reader.beginObject();
-      while (reader.hasNext()) {
-        switch (reader.nextName()) {
-          case "startTs":
-            result.startTs(reader.nextLong());
-            break;
-          case "endTs":
-            result.endTs(reader.nextLong());
-            break;
-          case "links":
-            reader.beginArray();
-            while (reader.hasNext()) {
-              result.addLink(DEPENDENCY_LINK_ADAPTER.fromJson(reader));
-            }
-            reader.endArray();
-            break;
-          default:
-            reader.skipValue();
-        }
-      }
-      reader.endObject();
-      return result.build();
-    }
-
-    @Override
-    public void toJson(JsonWriter writer, Dependencies value) throws IOException {
-      writer.beginObject();
-      writer.name("startTs").value(value.startTs);
-      writer.name("endTs").value(value.endTs);
-      writer.name("links");
-      writer.beginArray();
-      for (int i = 0, length = value.links.size(); i < length; i++) {
-        DEPENDENCY_LINK_ADAPTER.toJson(writer, value.links.get(i));
-      }
-      writer.endArray();
-      writer.endObject();
-    }
-
-    @Override
-    public String toString() {
-      return "JsonAdapter(Dependencies)";
-    }
-  };
-
-  @Override
-  public Dependencies readDependencies(byte[] bytes) {
-    return read(DEPENDENCIES_ADAPTER, bytes);
-  }
-
-  @Override
-  public byte[] writeDependencies(Dependencies value) {
-    return write(DEPENDENCIES_ADAPTER, value);
   }
 
   private <T> T read(JsonAdapter<T> adapter, byte[] bytes) {

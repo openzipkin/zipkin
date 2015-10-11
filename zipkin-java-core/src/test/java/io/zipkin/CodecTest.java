@@ -14,10 +14,8 @@
 package io.zipkin;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class CodecTest {
@@ -39,35 +37,17 @@ public abstract class CodecTest {
         .isNull();
   }
 
-  Dependencies dependencies = new Dependencies(0L, TimeUnit.HOURS.toMicros(1), asList(
-      new DependencyLink("Gizmoduck", "tflock", 4),
-      new DependencyLink("mobileweb", "Gizmoduck", 4),
-      new DependencyLink("tfe", "mobileweb", 6)
-  ));
-
   @Test
   public void dependencyLinkRoundTrip() throws IOException {
-    byte[] bytes = codec().writeDependencyLink(dependencies.links.get(0));
+    DependencyLink link = DependencyLink.create("tfe", "mobileweb", 6);
+    byte[] bytes = codec().writeDependencyLink(link);
     assertThat(codec().readDependencyLink(bytes))
-        .isEqualTo(dependencies.links.get(0));
+        .isEqualTo(link);
   }
 
   @Test
   public void dependencyLinkDecodesToNullOnEmpty() throws IOException {
     assertThat(codec().readDependencyLink(new byte[0]))
-        .isNull();
-  }
-
-  @Test
-  public void dependenciesRoundTrip() throws IOException {
-    byte[] bytes = codec().writeDependencies(dependencies);
-    assertThat(codec().readDependencies(bytes))
-        .isEqualTo(dependencies);
-  }
-
-  @Test
-  public void dependenciesDecodeToNullOnEmpty() throws IOException {
-    assertThat(codec().readDependencies(new byte[0]))
         .isNull();
   }
 }
