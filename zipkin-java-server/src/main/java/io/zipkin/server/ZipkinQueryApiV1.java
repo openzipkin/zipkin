@@ -13,15 +13,12 @@
  */
 package io.zipkin.server;
 
-import io.zipkin.Codec;
-import io.zipkin.DependencyLink;
-import io.zipkin.QueryRequest;
-import io.zipkin.Span;
-import io.zipkin.SpanStore;
-import io.zipkin.internal.Util.Serializer;
+import static io.zipkin.internal.Util.writeJsonList;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 import java.util.Collections;
 import java.util.List;
-import okio.Buffer;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,8 +29,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import static io.zipkin.internal.Util.writeJsonList;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import io.zipkin.Codec;
+import io.zipkin.DependencyLink;
+import io.zipkin.QueryRequest;
+import io.zipkin.Span;
+import io.zipkin.SpanStore;
+import io.zipkin.internal.Util.Serializer;
+import okio.Buffer;
 
 /**
  * Implements the json api used by {@code zipkin-web}.
@@ -96,6 +98,7 @@ public class ZipkinQueryApiV1 {
 
   @RequestMapping(value = "/trace/{traceId}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getTrace(@PathVariable String traceId) {
+    @SuppressWarnings("resource")
     long id = new Buffer().writeUtf8(traceId).readHexadecimalUnsignedLong();
     List<List<Span>> traces = this.spanStore.getTracesByIds(Collections.singletonList(id));
 
