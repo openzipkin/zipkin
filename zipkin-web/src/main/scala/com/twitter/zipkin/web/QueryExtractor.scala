@@ -37,10 +37,10 @@ class QueryExtractor(defaultQueryLimit: Int) {
       query.split(" and ") foreach { ann =>
         ann.split("=").toList match {
           case "" :: Nil =>
-          case key :: value :: Nil =>
-            binAnns += key -> value
           case key :: Nil =>
             anns += key
+          case key :: values =>
+            binAnns += key -> values.mkString("=")
           case _ =>
         }
       }

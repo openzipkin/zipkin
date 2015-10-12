@@ -80,4 +80,12 @@ class QueryExtractorTest extends FunSuite {
     val actual = queryExtractor.getAnnotations(r).get
     assert(actual._2 === Map("http.uri" -> "/sessions"))
   }
+
+  test("parse key value annotations with equal sign") {
+    val r = request(
+      "serviceName" -> "myService",
+      "annotationQuery" -> "http.uri=sessions=foo")
+    val actual = queryExtractor.getAnnotations(r).get
+    assert(actual._2 === Map("http.uri" -> "sessions=foo"))
+  }
 }
