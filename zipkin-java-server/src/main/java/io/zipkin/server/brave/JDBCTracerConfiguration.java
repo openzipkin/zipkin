@@ -14,8 +14,6 @@
 
 package io.zipkin.server.brave;
 
-import com.github.kristofa.brave.Brave;
-import com.mysql.jdbc.Driver;
 import org.jooq.ExecuteContext;
 import org.jooq.ExecuteListenerProvider;
 import org.jooq.ExecuteType;
@@ -27,13 +25,16 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.github.kristofa.brave.Brave;
+import com.mysql.jdbc.Driver;
+
 /** Sets up the JDBC tracing in Brave as an initialization. */
 @ConditionalOnClass({Driver.class})
 @Configuration
 public class JDBCTracerConfiguration extends DefaultExecuteListener {
 
   @Bean
-  ExecuteListenerProvider executeListenerProvider() {
+  ExecuteListenerProvider jdbcTraceListenerProvider() {
     return new DefaultExecuteListenerProvider(this);
   }
 
@@ -43,23 +44,23 @@ public class JDBCTracerConfiguration extends DefaultExecuteListener {
   @Override
   public void renderEnd(ExecuteContext ctx) {
     if (ctx.type() == ExecuteType.READ) { // Don't log writes (so as to not loop on collector)
-      brave.clientTracer().startNewSpan("query");
-      brave.clientTracer().setCurrentClientServiceName("zipkin-jdbc");
+      this.brave.clientTracer().startNewSpan("query");
+      this.brave.clientTracer().setCurrentClientServiceName("zipkin-jdbc");
 
       String[] batchSQL = ctx.batchSQL();
       if (!StringUtils.isBlank(ctx.sql())) {
-        brave.clientTracer().submitBinaryAnnotation("jdbc.query", ctx.sql());
+        this.brave.clientTracer().submitBinaryAnnotation("jdbc.query", ctx.sql());
       } else if (batchSQL.length > 0 && batchSQL[batchSQL.length - 1] != null) {
-        brave.clientTracer().submitBinaryAnnotation("jdbc.query", StringUtils.join(batchSQL, '\n'));
+        this.brave.clientTracer().submitBinaryAnnotation("jdbc.query", StringUtils.join(batchSQL, '\n'));
       }
-      brave.clientTracer().setClientSent();
+      this.brave.clientTracer().setClientSent();
     }
   }
 
   @Override
   public void executeEnd(ExecuteContext ctx) {
     if (ctx.type() == ExecuteType.READ) { // Don't log writes (so as to not loop on collector)
-      brave.clientTracer().setClientReceived();
+      this.brave.clientTracer().setClientReceived();
     }
   }
 }

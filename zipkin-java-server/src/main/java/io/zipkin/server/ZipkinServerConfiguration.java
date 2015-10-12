@@ -13,18 +13,19 @@
  */
 package io.zipkin.server;
 
-import io.zipkin.SpanStore;
-import io.zipkin.jdbc.JDBCSpanStore;
-import io.zipkin.server.ZipkinServerProperties.Store.Type;
 import javax.sql.DataSource;
+
 import org.jooq.ExecuteListenerProvider;
 import org.jooq.conf.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import static java.util.Collections.emptyList;
+import io.zipkin.SpanStore;
+import io.zipkin.jdbc.JDBCSpanStore;
+import io.zipkin.server.ZipkinServerProperties.Store.Type;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinServerProperties.class)
@@ -37,12 +38,13 @@ public class ZipkinServerConfiguration {
   DataSource datasource;
 
   @Autowired(required = false)
+  @Qualifier("jdbcTraceListenerProvider")
   ExecuteListenerProvider listener;
 
   @Bean
   SpanStore spanStore() {
     if (this.datasource != null && this.server.getStore().getType() == Type.jdbc) {
-      return new JDBCSpanStore(this.datasource, new Settings().withRenderSchema(false), listener);
+      return new JDBCSpanStore(this.datasource, new Settings().withRenderSchema(false), this.listener);
     } else {
       return new InMemorySpanStore();
     }
