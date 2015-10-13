@@ -5,10 +5,8 @@ mysql:
   password: ${MYSQL_PASS:}
   db: ${MYSQL_DB:zipkin}
 zipkin:
-  collector:
-    port: ${COLLECTOR_PORT:9410}
   store:
-    type: ${STORAGE_TYPE:inMemory}
+    type: ${STORAGE_TYPE:mem}
 server:
   port: ${QUERY_PORT:9411}
 spring:
