@@ -43,7 +43,7 @@ public class ZipkinServerConfiguration {
 
   @Bean
   SpanStore spanStore() {
-    if (this.datasource != null && this.server.getStore().getType() == Type.jdbc) {
+    if (this.datasource != null && this.server.getStore().getType() == Type.mysql) {
       return new JDBCSpanStore(this.datasource, new Settings().withRenderSchema(false), this.listener);
     } else {
       return new InMemorySpanStore();

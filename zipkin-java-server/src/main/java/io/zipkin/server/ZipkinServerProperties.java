@@ -30,10 +30,10 @@ class ZipkinServerProperties {
 
   static class Store {
     enum Type {
-      jdbc, inMemory;
+      mysql, mem;
     }
 
-    private Type type = Type.inMemory;
+    private Type type = Type.mem;
 
     public Type getType() {
       return this.type;

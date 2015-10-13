@@ -12,16 +12,16 @@
 # the License.
 #
 
-FROM openzipkin/zipkin-base:base-1.17.0
+FROM openzipkin/zipkin-base:base-1.17.1
 
 MAINTAINER OpenZipkin "http://zipkin.io/"
 
 VOLUME /tmp
 
-ADD target/zipkin-java-server-0.1.0-SNAPSHOT-exec.jar /usr/local/bin/zipkin-server.jar
+ADD target/zipkin-java-server-0.1.0-SNAPSHOT-exec.jar zipkin-server.jar
 
-RUN sh -c 'touch /usr/local/bin/zipkin-server.jar'
+RUN touch zipkin-server.jar
 
-EXPOSE 9410 9411
+EXPOSE 9411
 
-ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/usr/local/bin/zipkin-server.jar"]
+CMD test -n "$STORAGE_TYPE" && source .${STORAGE_TYPE}_profile; java -Djava.security.egd=file:/dev/./urandom -jar zipkin-server.jar
