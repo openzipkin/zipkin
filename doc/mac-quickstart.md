@@ -3,7 +3,7 @@ testing) with Cassandra, the most common choice of database for use with Zipkin.
 To run Zipkin out of the box without using Cassandra, see
 [install.md](https://github.com/openzipkin/zipkin/blob/master/doc/install.md).
 
-Scala 2.10.5 or later is required.
+Scala 2.11.7 or later is required.
 
 ## Installing Cassandra
 
