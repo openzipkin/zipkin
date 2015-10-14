@@ -30,7 +30,7 @@ class KafkaProcessorSpecSimple extends JUnitSuite {
     assert( 1 == spans.length, "received more spans than sent" )
     val message = spans.head.toSpan
     assert(message.traceId == 1234, "traceId mismatch")
-    assert(message.name == "methodName", "method name mismatch")
+    assert(message.name == "methodname", "method name mismatch")
     assert(message.id == 4567, "spanId mismatch")
     message.annotations map { a =>
       assert(a.value == "value", "annotation name mismatch")

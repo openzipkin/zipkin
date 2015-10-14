@@ -272,7 +272,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |  [
           |    {
           |      "traceId" : "0000000000000005",
-          |      "name" : "otherMethod",
+          |      "name" : "othermethod",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
           |      "annotations" : [
@@ -412,7 +412,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |  [
           |    {
           |      "traceId" : "0000000000000005",
-          |      "name" : "otherMethod",
+          |      "name" : "othermethod",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
           |      "annotations" : [
@@ -483,7 +483,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |  [
           |    {
           |      "traceId" : "0000000000000005",
-          |      "name" : "otherMethod",
+          |      "name" : "othermethod",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
           |      "annotations" : [

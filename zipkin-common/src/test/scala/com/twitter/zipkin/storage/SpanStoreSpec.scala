@@ -218,4 +218,16 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
     result(store.getSpanNames(spanEmptySpanName.name)) should be(empty)
   }
+
+  @Test def spanNamesGoLowercase() {
+    val spanUpperCaseSpanName = Span(123, "SPAN_NAME", spanId, None, List(ann1, ann2), List())
+
+    result(store(Seq(spanUpperCaseSpanName)))
+
+    result(store.getSpanNames("service")) should be(List("span_name"))
+
+    result(store.getTraces(QueryRequest("service", Some("span_name")))) should be(
+      Seq(Seq(spanUpperCaseSpanName))
+    )
+  }
 }
