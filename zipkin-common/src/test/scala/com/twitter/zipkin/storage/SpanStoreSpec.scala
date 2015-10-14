@@ -99,6 +99,32 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store.getAllServiceNames()) should be(List("service", "yak"))
   }
 
+  /**
+   * This would only happen when the storage layer is bootstrapping, or has been purged.
+   */
+  @Test def allShouldWorkWhenEmpty() {
+    result(store.getTraces(QueryRequest("service"))) should be(empty)
+    result(store.getTraces(QueryRequest("service", Some("methodcall")))) should be(empty)
+    result(store.getTraces(QueryRequest("service", annotations = Set("custom")))) should be(empty)
+    result(store.getTraces(QueryRequest("service", binaryAnnotations = Set(("BAH", "BEH"))))) should be(
+      empty
+    )
+  }
+
+  /**
+   * This is unlikely and means instrumentation sends empty spans by mistake.
+   */
+  @Test def allShouldWorkWhenNoAnnotationsYet() {
+    result(store(Seq(spanEmptyServiceName)))
+
+    result(store.getTraces(QueryRequest("service"))) should be(empty)
+    result(store.getTraces(QueryRequest("service", Some("methodcall")))) should be(empty)
+    result(store.getTraces(QueryRequest("service", annotations = Set("custom")))) should be(empty)
+    result(store.getTraces(QueryRequest("service", binaryAnnotations = Set(("BAH", "BEH"))))) should be(
+      empty
+    )
+  }
+
   @Test def getTraces_spanName() {
     result(store(Seq(span1)))
 
