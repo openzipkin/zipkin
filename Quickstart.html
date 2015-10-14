@@ -82,129 +82,10 @@ $ docker-compose up
 </pre></div>
 </div>
 </div>
-<div class="section" id="super-quickstart">
-<h2>Super Quickstart<a class="headerlink" href="#super-quickstart" title="Permalink to this headline">¶</a></h2>
-<p>The zipkin-example project combines all parts of the service into a single
-package and adds a trace generator to provide random example traces.</p>
-<p>The following command will start an instance of ZipkinExample using SQLite
-in-memory as the data store and populating it with a few example traces.</p>
-<div class="highlight-text"><div class="highlight"><pre>./gradlew :zipkin-example:run
-</pre></div>
-</div>
-<p>After it starts up open <a class="reference external" href="http://localhost:8080">http://localhost:8080</a> in your browser and poke around
-the example traces. They&#8217;re all randomly generated so they probably wont make
-much sense, but it&#8217;ll provide a starting to point to navigate from.</p>
-</div>
-<div class="section" id="digging-deeper">
-<h2>Digging Deeper<a class="headerlink" href="#digging-deeper" title="Permalink to this headline">¶</a></h2>
-<p>From the example project, let&#8217;s dig in a bit more to see what&#8217;s available.
-Zipkin uses <a class="reference external" href="http://twitter.github.io/twitter-server/">TwitterServer</a> at its core. This gives us a lot of flexibility as to
-how the service is composed and configured.</p>
-<p>Run the following to see all the available configuration flags for the example
-project:</p>
-<div class="highlight-text"><div class="highlight"><pre>./gradlew :zipkin-example:run -PrunArgs=&#39;-help&#39;
-</pre></div>
-</div>
-<p>The list of flags include a bunch of global flags to configure Finagle but also
-many to configure the different Zipkin modules we&#8217;ve mixed in to zipkin-example.
-Of these, the most important will be <cite>-zipkin.web.cacheResources</cite>,
-<cite>-zipkin.storage.anormdb.install</cite>, and <cite>-zipkin.storage.anormdb.db</cite>. We can set
-zipkin-example up as a staging instance with persistant storage and send some
-trace data to it.</p>
-<dl class="docutils">
-<dt><strong>-zipkin.web.cacheResources=true</strong> is required when running Zipkin from a jar. It</dt>
-<dd>lets the web server know that it should search the jar for static resources
-and cache them in memory.</dd>
-<dt><strong>-zipkin.storage.anormdb.install=true</strong> will install the necessary tables into</dt>
-<dd>the database. It&#8217;s only needed once for persistent databases.</dd>
-<dt><strong>-zipkin.storage.anormdb.db=...</strong> will tell zipkin-anormdb which SQL database to</dt>
-<dd>use.</dd>
-</dl>
-</div>
-<div class="section" id="packaging-for-production">
-<h2>Packaging for Production<a class="headerlink" href="#packaging-for-production" title="Permalink to this headline">¶</a></h2>
-<p>First things first: if you don&#8217;t need to recompile Zipkin, you can use the
-fat jars distributed to <a class="reference external" href="https://bintray.com/openzipkin/zipkin/zipkin">Bintray</a> or <a class="reference external" href="http://search.maven.org/#search|ga|1|g%3A%22io.zipkin%22%20AND%20l%3A%22all%22">Maven Central</a>. The only (pretty big) use-case for
-compiling Zipkin yourself is customizing the services (see below). This setup is
-sub-optimal, and is being tracked in Zipkin issue <a class="reference external" href="https://github.com/openzipkin/zipkin/issues/466">#466</a>.</p>
-<p>You can generate a production-ready fat jar for each stand-alone service with</p>
-<div class="highlight-text"><div class="highlight"><pre>./gradlew shadowJar -x test
-</pre></div>
-</div>
-</div>
-<div class="section" id="customizing-the-service">
-<h2>Customizing the service<a class="headerlink" href="#customizing-the-service" title="Permalink to this headline">¶</a></h2>
-<p>Zipkin uses the cake pattern to compose a set of modules into a service. Taking
-a look at the Main.scala file in zipkin-example we see a Main object with a set
-of Zipkin factories mixed into it. Each factory contains a factory specific set
-of flags for configuration. They also contain the methods necessary to build
-their functionality so it can be composed with other modules. The reasons for
-using the cake pattern and manually composing modules is beyond the scope of
-this quickstart.</p>
-<p>Given this information, we can split the monolithic process into individual
-pieces and tune them independently. We can also mix in a different storage
-backend or a different receiver frontend.</p>
-<p>Here we&#8217;ll create a separate main for the web and collector services. We&#8217;ll also
-trade out the AnormDB backend for Cassandra.</p>
-<p>First provide the imports</p>
-<div class="highlight-text"><div class="highlight"><pre>import com.twitter.zipkin.conversions.thrift._
-import com.twitter.finagle.Http
-import com.twitter.server.TwitterServer
-import com.twitter.util.Await
-import com.twitter.zipkin.cassandra.CassandraSpanStoreFactory
-import com.twitter.zipkin.collector.SpanReceiver
-import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.{thriftscala =&gt; thrift}
-import com.twitter.zipkin.receiver.scribe.ScribeSpanReceiverFactory
-import com.twitter.zipkin.web.ZipkinWebFactory
-import com.twitter.zipkin.query.ThriftQueryService
-import com.twitter.zipkin.query.constants.DefaultAdjusters
-</pre></div>
-</div>
-<p>Next we&#8217;ll build our web main:</p>
-<div class="highlight-text"><div class="highlight"><pre>object WebMain extends TwitterServer
-  with ZipkinWebFactory
-  with CassandraSpanStoreFactory
-{
-  override def newQueryClient(): ZipkinQuery.FutureIface =
-    new ThriftQueryService(newCassandraSpanStore(), adjusters = DefaultAdjusters)
-
-  def main() {
-    val web = Http.serve(webServerPort(), newWebServer())
-    closeOnExit(web)
-    Await.ready(web)
-  }
-}
-</pre></div>
-</div>
-<p>We start by extending TwitterServer then mix in the web and cassie factories.
-ZipkinWebFactory defines a method <cite>newQueryClient</cite> that it uses to create a
-query client used to request trace information. By default it will create a
-thrift client that will connect to a query service. However, we&#8217;re going to
-connect directly to Cassandra. We&#8217;ll override <cite>newQueryClient</cite> to create a new
-<cite>ThriftQueryService</cite> with a cassie span store. TwitterServer requires us to
-define <cite>main</cite> and <cite>Await</cite> on our service.</p>
-<p>Finally our collector:</p>
-<div class="highlight-text"><div class="highlight"><pre>object CollectorMain extends TwitterServer
-  with ZipkinCollectorFactory
-  with CassandraSpanStoreFactory
-  with ScribeSpanReceiverFactory
-{
-  def main() {
-    val store = newCassandraSpanStore()
-    val convert: Seq[thrift.Span] =&gt; Seq[Span] = { _.map(_.toSpan) }
-    val receiver = newScribeSpanReceiver(convert andThen store)
-    closeOnExit(receiver)
-    Await.ready(receiver)
-  }
-}
-</pre></div>
-</div>
-<p>Here again we extend TwitterServer and mix in our required factories. We&#8217;ll use
-the ScribeSpanReceiver so we can receive spans sent from finagle-zipkin.</p>
-<p>Other than the converter, this is pretty straight forward. The converter is
-there because SpanReceiver requires a function that takes <cite>Seq[scribethrift.Span]</cite>
-but SpanStore requires <cite>Seq[Span]</cite>.</p>
+<div class="section" id="running-from-source">
+<h2>Running from Source<a class="headerlink" href="#running-from-source" title="Permalink to this headline">¶</a></h2>
+<p>Zipkin can be run from source, if you are testing new features or cannot use docker.
+These instructions are the first thing you see in the <a class="reference external" href="https://github.com/openzipkin/zipkin">Zipkin</a> GitHub repository.</p>
 </div>
 </div>
 
@@ -230,10 +111,7 @@ but SpanStore requires <cite>Seq[Span]</cite>.</p>
   <ul>
 <li><a class="reference internal" href="#">Quickstart</a><ul>
 <li><a class="reference internal" href="#docker">Docker</a></li>
-<li><a class="reference internal" href="#super-quickstart">Super Quickstart</a></li>
-<li><a class="reference internal" href="#digging-deeper">Digging Deeper</a></li>
-<li><a class="reference internal" href="#packaging-for-production">Packaging for Production</a></li>
-<li><a class="reference internal" href="#customizing-the-service">Customizing the service</a></li>
+<li><a class="reference internal" href="#running-from-source">Running from Source</a></li>
 </ul>
 </li>
 </ul>

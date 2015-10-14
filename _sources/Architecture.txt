@@ -73,10 +73,8 @@ See below for an example on how to wrap the client.
 Transport
 ---------
 
-We use Scribe to transport all the traces from the different services to Zipkin
-and Hadoop. Scribe was developed by Facebook and it's made up of a daemon that
-can run on each server in your system. It listens for log messages and routes
-them to the correct receiver depending on the category.
+Spans must be transported from the services being traced to Zipkin collectors.
+There are two primary transports, Scribe and Kafka. Scribe is deprecated.
 
 Zipkin Collector
 ----------------
@@ -89,15 +87,14 @@ Storage
 
 We originally built Zipkin on Cassandra for storage. It's scalable, has a
 flexible schema, and is heavily used within Twitter. However, we made this
-component pluggable, and we now have support for Redis, MySQL,
-PostgreSQL, SQLite, and H2.
+component pluggable, and we now have support for Redis and MySQL.
 
 Zipkin Query Service
 --------------------
 
 Once the data is stored and indexed we need a way to extract it. This is where
-the query daemon comes in, providing the users with a simple Thrift api for
-finding and retrieving traces. See the `thrift idl`_.
+the query daemon comes in, providing a simple JSON api for finding and retrieving
+traces. The primary consumer of this api is the Web UI.
 
 Web UI
 ------
@@ -106,13 +103,7 @@ A GUI that presents a nice face for viewing traces. The web UI provides a
 method for viewing traces based on service, time, and  annotations. Note
 that there is no built in authentication in the UI.
 
-Modules
--------
-
-.. image:: _static/modules.png
-
 .. _Finagle: http://twitter.github.io/finagle
 .. _finagle-zipkin: https://github.com/twitter/finagle/tree/master/finagle-zipkin
 .. _gem: https://rubygems.org/gems/finagle-thrift
 .. _Ruby thrift client: https://github.com/twitter/thrift_client
-.. _thrift idl: https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinQuery.thrift
