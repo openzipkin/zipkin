@@ -43,13 +43,8 @@ release = u'1.2.0-SNAPSHOT'
 # e.g. :issue:`36` :ticket:`8`
 extlinks = {
   'issue': ('https://github.com/openzipkin/zipkin/issues/%s', 'issue #'),
-  'ex': ('https://github.com/openzipkin/zipkin/blob/master/zipkin-example/src/main/scala/%s', 'Zipkin example '),
   'api': ('http://twitter.github.io/zipkin/docs/#%s', '')
 }
-
-rst_epilog = '''
-.. _Zipkin Examples: https://github.com/openzipkin/zipkin/tree/master/zipkin-example
-'''
 
 pygments_style = 'flask_theme_support.FlaskyStyle'
 
