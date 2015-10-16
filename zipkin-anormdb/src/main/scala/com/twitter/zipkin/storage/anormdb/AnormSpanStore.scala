@@ -40,7 +40,7 @@ class AnormSpanStore(val db: DB,
 
       db.withRecoverableTransaction(conn, { implicit conn: Connection =>
         SQL(
-          db.getSpanInsertCommand() +
+          db.replaceCommand() +
             """ INTO zipkin_spans
               |VALUES
               |  ({trace_id}, {id}, {name}, {parent_id}, {debug}, {start_ts})
@@ -55,7 +55,8 @@ class AnormSpanStore(val db: DB,
 
         span.annotations.foreach(a =>
           SQL(
-            """INSERT INTO zipkin_annotations
+            db.replaceCommand() +
+            """ INTO zipkin_annotations
               |  (trace_id, span_id, a_key, a_type, a_timestamp,
               |   endpoint_ipv4, endpoint_port, endpoint_service_name)
               |VALUES
@@ -73,7 +74,8 @@ class AnormSpanStore(val db: DB,
 
         span.binaryAnnotations.foreach(b =>
           SQL(
-            """INSERT INTO zipkin_annotations
+            db.replaceCommand() +
+            """ INTO zipkin_annotations
               |  (trace_id, span_id, a_key, a_value, a_type, a_timestamp,
               |   endpoint_ipv4, endpoint_port, endpoint_service_name)
               |VALUES

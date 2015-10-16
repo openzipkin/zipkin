@@ -206,7 +206,7 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
   /**
    * Get the command to use for inserting span rows.
    */
-  def getSpanInsertCommand(): String = {
+  def replaceCommand(): String = {
     dbconfig.description match {
       case "MySQL" => "REPLACE" // Prevents primary key conflict errors if duplicates are received
       case _ => "INSERT"
