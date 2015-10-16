@@ -19,6 +19,7 @@ import ch.qos.logback.classic.{Logger, Level}
 import com.twitter.app.App
 import com.twitter.finagle._
 import com.twitter.finagle.httpx.{HttpMuxer, Request, Response}
+import com.twitter.finagle.server.StackServer
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.tracing.{DefaultTracer, NullTracer}
 import com.twitter.finagle.zipkin.thrift.RawZipkinTracer
@@ -122,7 +123,9 @@ trait ZipkinWebFactory { self: App =>
 
 object Main extends TwitterServer with ZipkinWebFactory {
   def main() {
-    val server = Httpx.server
+    /** Httpx.server will trace all paths. We don't care about static assets, so need to customize */
+    val server = Httpx.Server(StackServer.newStack
+      .replace(FilteredHttpEntrypointTraceInitializer.role, FilteredHttpEntrypointTraceInitializer))
       .configured(param.Label("zipkin-web"))
       .serve(webServerPort(), newWebServer(stats = statsReceiver.scope("zipkin-web")))
     onExit { server.close() }
