@@ -30,7 +30,7 @@
   <description>Zipkin Java Interoperability Tests</description>
 
   <properties>
-    <zipkin-scala.version>1.17.0</zipkin-scala.version>
+    <zipkin-scala.version>1.17.2</zipkin-scala.version>
     <scalatest.version>2.2.5</scalatest.version>
   </properties>
 

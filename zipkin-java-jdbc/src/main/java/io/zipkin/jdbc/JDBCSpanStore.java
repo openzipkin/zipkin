@@ -89,6 +89,7 @@ public final class JDBCSpanStore implements SpanStore {
 
   @Override
   public void accept(List<Span> spans) {
+    if (spans.isEmpty()) return;
     try (Connection conn = this.datasource.getConnection()) {
       DSLContext create = context(conn);
 

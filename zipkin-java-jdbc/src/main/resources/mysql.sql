@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS zipkin_spans (
   `start_ts` BIGINT COMMENT 'Used to implement TTL; First Annotation.timestamp() or null'
 ) ENGINE=InnoDB ROW_FORMAT=COMPRESSED;
 
-ALTER TABLE zipkin_spans ADD KEY(`trace_id`, `id`) COMMENT 'ignore insert on duplicate';
+ALTER TABLE zipkin_spans ADD UNIQUE KEY(`trace_id`, `id`) COMMENT 'ignore insert on duplicate';
 ALTER TABLE zipkin_spans ADD INDEX(`trace_id`, `id`) COMMENT 'for joining with zipkin_annotations';
 ALTER TABLE zipkin_spans ADD INDEX(`trace_id`) COMMENT 'for getTracesByIds';
 ALTER TABLE zipkin_spans ADD INDEX(`name`) COMMENT 'for getTraces and getSpanNames';
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS zipkin_annotations (
   `endpoint_service_name` VARCHAR(255) COMMENT 'Null when Binary/Annotation.endpoint is null'
 ) ENGINE=InnoDB ROW_FORMAT=COMPRESSED;
 
-ALTER TABLE zipkin_annotations ADD KEY(`trace_id`, `span_id`, `a_key`) COMMENT 'Ignore insert on duplicate';
+ALTER TABLE zipkin_annotations ADD UNIQUE KEY(`trace_id`, `span_id`, `a_key`, `a_timestamp`) COMMENT 'Ignore insert on duplicate';
 ALTER TABLE zipkin_annotations ADD INDEX(`trace_id`, `span_id`) COMMENT 'for joining with zipkin_spans';
 ALTER TABLE zipkin_annotations ADD INDEX(`trace_id`) COMMENT 'for getTraces/ByIds';
 ALTER TABLE zipkin_annotations ADD INDEX(`endpoint_service_name`) COMMENT 'for getTraces and getServiceNames';

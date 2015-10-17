@@ -12,7 +12,7 @@
 # the License.
 #
 
-FROM openzipkin/zipkin-base:base-1.17.1
+FROM openzipkin/zipkin-base:base-1.17.2
 
 MAINTAINER OpenZipkin "http://zipkin.io/"
 
