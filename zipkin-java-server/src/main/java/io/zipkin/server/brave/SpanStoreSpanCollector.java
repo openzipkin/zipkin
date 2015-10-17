@@ -13,19 +13,21 @@
  */
 package io.zipkin.server.brave;
 
+import java.io.Flushable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 import com.github.kristofa.brave.SpanCollector;
 import com.twitter.zipkin.gen.AnnotationType;
+
 import io.zipkin.Annotation;
 import io.zipkin.BinaryAnnotation;
 import io.zipkin.BinaryAnnotation.Type;
 import io.zipkin.Endpoint;
 import io.zipkin.Span;
 import io.zipkin.SpanStore;
-import java.io.Flushable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * A Brave {@link SpanCollector} that forwards to the local {@link SpanStore}.
@@ -43,22 +45,24 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
 
   @Override
   public void collect(com.twitter.zipkin.gen.Span span) {
-    queue.offer(span);
-    if (queue.size() >= limit) {
+    this.queue.offer(span);
+    if (this.queue.size() >= this.limit) {
       flush();
     }
   }
 
   @Override
   public void flush() {
-    List<Span> spans = new ArrayList<>(queue.size());
-    while (!queue.isEmpty()) {
-      com.twitter.zipkin.gen.Span span = queue.poll();
+    List<Span> spans = new ArrayList<>(this.queue.size());
+    while (!this.queue.isEmpty()) {
+      com.twitter.zipkin.gen.Span span = this.queue.poll();
       if (span != null) {
         spans.add(convert(span));
       }
     }
-    this.spanStore.accept(spans);
+    if (!spans.isEmpty()) {
+      this.spanStore.accept(spans);
+    }
   }
 
   private Span convert(com.twitter.zipkin.gen.Span span) {
