@@ -13,12 +13,14 @@
  */
 package io.zipkin.jdbc;
 
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
-import io.zipkin.internal.Nullable;
+import static io.zipkin.internal.Util.envOr;
+
 import org.jooq.conf.Settings;
 import org.junit.AssumptionViolatedException;
 
-import static io.zipkin.internal.Util.envOr;
+import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+
+import io.zipkin.internal.Nullable;
 
 final class JDBCTestGraph {
 
@@ -31,7 +33,7 @@ final class JDBCTestGraph {
     }
     MysqlDataSource dataSource = new MysqlDataSource();
     dataSource.setURL(mysqlUrl);
-    spanStore = new JDBCSpanStore(dataSource, new Settings().withRenderSchema(false), null);
+    this.spanStore = new JDBCSpanStore(dataSource, new Settings().withRenderSchema(false), null);
   }
 
   @Nullable
@@ -41,8 +43,9 @@ final class JDBCTestGraph {
     int mysqlPort = envOr("MYSQL_TCP_PORT", 3306);
     String mysqlUser = envOr("MYSQL_USER", "");
     String mysqlPass = envOr("MYSQL_PASS", "");
+    String mysqlDb  = envOr("MYSQL_DB", "zipkin");
 
-    return String.format("jdbc:mysql://%s:%s/zipkin?user=%s&password=%s&autoReconnect=true",
-        mysqlHost, mysqlPort, mysqlUser, mysqlPass);
+    return String.format("jdbc:mysql://%s:%s/%s?user=%s&password=%s&autoReconnect=true",
+        mysqlHost, mysqlPort, mysqlDb, mysqlUser, mysqlPass);
   }
 }
