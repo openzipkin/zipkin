@@ -24,6 +24,8 @@ import io.zipkin.DependencyLink;
 import io.zipkin.Endpoint;
 import io.zipkin.Span;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import okio.Buffer;
 import okio.ByteString;
 
@@ -116,10 +118,9 @@ public final class JsonCodec implements Codec {
     }
   };
 
-  public static final JsonAdapter<Annotation> ANNOTATION_ADAPTER =
-      new Moshi.Builder()
-          .add(Endpoint.class, ENDPOINT_ADAPTER.nullSafe())
-          .build().adapter(Annotation.class);
+  public static final JsonAdapter<Annotation> ANNOTATION_ADAPTER = new Moshi.Builder()
+      .add(Endpoint.class, ENDPOINT_ADAPTER.nullSafe())
+      .build().adapter(Annotation.class);
 
   public static final JsonAdapter<BinaryAnnotation> BINARY_ANNOTATION_ADAPTER = new JsonAdapter<BinaryAnnotation>() {
 
@@ -324,6 +325,43 @@ public final class JsonCodec implements Codec {
   @Override
   public byte[] writeSpan(Span value) {
     return write(SPAN_ADAPTER, value);
+  }
+
+  public static final JsonAdapter<List<Span>> SPAN_LIST_ADAPTER = new JsonAdapter<List<Span>>() {
+    @Override
+    public List<Span> fromJson(JsonReader reader) throws IOException {
+      List<Span> spans = new LinkedList<>(); // cause we don't know how long it will be
+      reader.beginArray();
+      while (reader.hasNext()) {
+        spans.add(SPAN_ADAPTER.fromJson(reader));
+      }
+      reader.endArray();
+      return spans;
+    }
+
+    @Override
+    public void toJson(JsonWriter writer, List<Span> value) throws IOException {
+      writer.beginArray();
+      for (int i = 0, length = value.size(); i < length; i++) {
+        SPAN_ADAPTER.toJson(writer, value.get(i));
+      }
+      writer.endArray();
+    }
+
+    @Override
+    public String toString() {
+      return "JsonAdapter(List<Span>)";
+    }
+  };
+
+  @Override
+  public List<Span> readSpans(byte[] bytes) {
+    return read(SPAN_LIST_ADAPTER, bytes);
+  }
+
+  @Override
+  public byte[] writeSpans(List<Span> value) {
+    return write(SPAN_LIST_ADAPTER, value);
   }
 
   public static final JsonAdapter<DependencyLink> DEPENDENCY_LINK_ADAPTER = new JsonAdapter<DependencyLink>() {

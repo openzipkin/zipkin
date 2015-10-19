@@ -38,6 +38,19 @@ public abstract class CodecTest {
   }
 
   @Test
+  public void spansRoundTrip() throws IOException {
+    byte[] bytes = codec().writeSpans(TestObjects.TRACE);
+    assertThat(codec().readSpans(bytes))
+        .isEqualTo(TestObjects.TRACE);
+  }
+
+  @Test
+  public void spansDecodeToNullOnEmpty() throws IOException {
+    assertThat(codec().readSpans(new byte[0]))
+        .isNull();
+  }
+
+  @Test
   public void dependencyLinkRoundTrip() throws IOException {
     DependencyLink link = DependencyLink.create("tfe", "mobileweb", 6);
     byte[] bytes = codec().writeDependencyLink(link);

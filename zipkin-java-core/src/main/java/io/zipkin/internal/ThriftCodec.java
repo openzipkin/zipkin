@@ -20,6 +20,8 @@ import io.zipkin.DependencyLink;
 import io.zipkin.Endpoint;
 import io.zipkin.Span;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TField;
@@ -53,6 +55,16 @@ public final class ThriftCodec implements Codec {
   @Override
   public byte[] writeSpan(Span value) {
     return write(SpanAdapter.INSTANCE, value);
+  }
+
+  @Override
+  public List<Span> readSpans(byte[] bytes) {
+    return read(SpanListAdapter.INSTANCE, bytes);
+  }
+
+  @Override
+  public byte[] writeSpans(List<Span> value) {
+    return write(SpanListAdapter.INSTANCE, value);
   }
 
   interface ThriftAdapter<T> {
@@ -423,10 +435,34 @@ public final class ThriftCodec implements Codec {
         oprot.writeFieldBegin(DEBUG_FIELD_DESC);
         oprot.writeBool(value.debug);
         oprot.writeFieldEnd();
-        oprot.writeFieldStop();
       }
 
+      oprot.writeFieldStop();
       oprot.writeStructEnd();
+    }
+  }
+
+  enum SpanListAdapter implements ThriftAdapter<List<Span>> {
+    INSTANCE;
+
+    @Override
+    public List<Span> read(TProtocol iprot) throws TException {
+      TList spans = iprot.readListBegin();
+      List<Span> result = new ArrayList<>(spans.size);
+      for (int i = 0; i < spans.size; i++) {
+        result.add(SpanAdapter.INSTANCE.read(iprot));
+      }
+      iprot.readListEnd();
+      return result;
+    }
+
+    @Override
+    public void write(List<Span> value, TProtocol oprot) throws TException {
+      oprot.writeListBegin(new TList(TType.STRUCT, value.size()));
+      for (int i = 0, length = value.size(); i < length; i++) {
+        SpanAdapter.INSTANCE.write(value.get(i), oprot);
+      }
+      oprot.writeListEnd();
     }
   }
 

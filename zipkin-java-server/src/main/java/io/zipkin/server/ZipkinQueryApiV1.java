@@ -46,8 +46,7 @@ import okio.Buffer;
 @RequestMapping("/api/v1")
 public class ZipkinQueryApiV1 {
 
-  static final Serializer<List<Span>> TRACE_TO_JSON = writeJsonList(Codec.JSON::writeSpan);
-  static final Serializer<List<List<Span>>> TRACES_TO_JSON = writeJsonList(TRACE_TO_JSON);
+  static final Serializer<List<List<Span>>> TRACES_TO_JSON = writeJsonList(Codec.JSON::writeSpans);
   static final Serializer<List<DependencyLink>> DEPENDENCY_LINKS_TO_JSON = writeJsonList(Codec.JSON::writeDependencyLink);
 
   @Autowired
@@ -105,7 +104,7 @@ public class ZipkinQueryApiV1 {
     if (traces.isEmpty()) {
       throw new TraceNotFoundException(traceId, id);
     }
-    return TRACE_TO_JSON.apply(traces.get(0));
+    return Codec.JSON.writeSpans(traces.get(0));
   }
 
   @ExceptionHandler(TraceNotFoundException.class)
