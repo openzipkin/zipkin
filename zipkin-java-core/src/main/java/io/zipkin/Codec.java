@@ -16,6 +16,7 @@ package io.zipkin;
 import io.zipkin.internal.JsonCodec;
 import io.zipkin.internal.Nullable;
 import io.zipkin.internal.ThriftCodec;
+import java.util.List;
 
 /**
  * Methods make an attempt to perform codec operations, failing to null.
@@ -32,6 +33,14 @@ public interface Codec {
   /** Returns null if the span couldn't be encoded */
   @Nullable
   byte[] writeSpan(Span value);
+
+  /** Returns null if the spans couldn't be decoded */
+  @Nullable
+  List<Span> readSpans(byte[] bytes);
+
+  /** Returns null if the span couldn't be encoded */
+  @Nullable
+  byte[] writeSpans(List<Span> value);
 
   /** Returns null if the dependency link couldn't be decoded */
   @Nullable
