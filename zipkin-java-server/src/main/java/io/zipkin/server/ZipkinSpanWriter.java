@@ -13,20 +13,16 @@
  */
 package io.zipkin.server;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
 
-import org.springframework.context.annotation.Import;
+import io.zipkin.Codec;
+import io.zipkin.SpanStore;
 
-import io.zipkin.server.brave.BraveConfiguration;
-
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@Import({ZipkinServerConfiguration.class, BraveConfiguration.class, ZipkinQueryApiV1.class, ZipkinSpanWriter.class})
-public @interface EnableZipkinServer {
-
+@Service
+public class ZipkinSpanWriter {
+  @Async
+  public void write(SpanStore spanStore, Codec codec, byte[] spans) {
+    spanStore.accept(codec.readSpans(spans));
+  }
 }
