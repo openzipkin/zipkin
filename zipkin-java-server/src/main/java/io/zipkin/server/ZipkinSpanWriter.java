@@ -13,16 +13,16 @@
  */
 package io.zipkin.server;
 
+import io.zipkin.Span;
+import io.zipkin.SpanStore;
+import java.util.List;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
-import io.zipkin.Codec;
-import io.zipkin.SpanStore;
 
 @Service
 public class ZipkinSpanWriter {
   @Async
-  public void write(SpanStore spanStore, Codec codec, byte[] spans) {
-    spanStore.accept(codec.readSpans(spans));
+  public void write(SpanStore spanStore, List<Span> spans) {
+    spanStore.accept(spans);
   }
 }

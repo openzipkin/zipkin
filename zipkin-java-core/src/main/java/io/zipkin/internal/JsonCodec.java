@@ -26,10 +26,12 @@ import io.zipkin.Span;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 import okio.Buffer;
 import okio.ByteString;
 
 import static io.zipkin.internal.Util.UTF_8;
+import static java.util.logging.Level.FINEST;
 
 /**
  * This explicitly constructs instances of model classes via manual parsing for a number of
@@ -47,6 +49,8 @@ import static io.zipkin.internal.Util.UTF_8;
  * this should be easy to justify as these objects don't change much at all.
  */
 public final class JsonCodec implements Codec {
+  private static final Logger LOGGER = Logger.getLogger(JsonCodec.class.getName());
+
   static final JsonAdapter<Long> HEX_LONG_ADAPTER = new JsonAdapter<Long>() {
     @Override
     public Long fromJson(JsonReader reader) throws IOException {
@@ -420,6 +424,9 @@ public final class JsonCodec implements Codec {
     try {
       return adapter.fromJson(buffer);
     } catch (IOException e) {
+      if (LOGGER.isLoggable(FINEST)) {
+        LOGGER.log(FINEST, adapter + " could not read " + new String(bytes, UTF_8), e);
+      }
       return null;
     }
   }
@@ -429,7 +436,9 @@ public final class JsonCodec implements Codec {
     try {
       adapter.toJson(buffer, value);
     } catch (IOException e) {
-      return null;
+      if (LOGGER.isLoggable(FINEST)) {
+        LOGGER.log(FINEST, adapter + " could not write " + value, e);
+      }
     }
     return buffer.readByteArray();
   }

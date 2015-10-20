@@ -50,6 +50,15 @@ public abstract class CodecTest {
         .isNull();
   }
 
+  /**
+   * Particulary, thrift can mistake malformed content as a huge list. Let's not blow up.
+   */
+  @Test
+  public void spansDecodeToNullOnMalformed() throws IOException {
+    assertThat(codec().readSpans(new byte[]{'h', 'e', 'l', 'l', 'o'}))
+        .isNull();
+  }
+
   @Test
   public void dependencyLinkRoundTrip() throws IOException {
     DependencyLink link = DependencyLink.create("tfe", "mobileweb", 6);
