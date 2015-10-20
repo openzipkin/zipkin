@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -48,9 +49,16 @@ public class ZipkinQueryApiV1 {
 
   static final Serializer<List<List<Span>>> TRACES_TO_JSON = writeJsonList(Codec.JSON::writeSpans);
   static final Serializer<List<DependencyLink>> DEPENDENCY_LINKS_TO_JSON = writeJsonList(Codec.JSON::writeDependencyLink);
+  private static final String THRIFT = "application/x-thrift";
+
+  private SpanStore spanStore;
+  private ZipkinSpanWriter spanWriter;
 
   @Autowired
-  private SpanStore spanStore;
+  public ZipkinQueryApiV1(SpanStore spanStore, ZipkinSpanWriter spanWriter) {
+    this.spanStore = spanStore;
+    this.spanWriter = spanWriter;
+  }
 
   @RequestMapping(value = "/dependencies", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getDependencies(
@@ -69,6 +77,18 @@ public class ZipkinQueryApiV1 {
       @RequestParam(value = "serviceName", required = true) String serviceName) {
     return this.spanStore.getSpanNames(serviceName);
   }
+
+  @RequestMapping(value = "/spans", method = RequestMethod.POST)
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public void uploadSpansJson(@RequestBody byte[] body) {
+    this.spanWriter.write(this.spanStore, Codec.JSON, body);
+  }
+
+  @RequestMapping(value = "/spans", method = RequestMethod.POST, consumes = THRIFT)
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public void uploadSpansThrift(@RequestBody byte[] body) {
+    this.spanWriter.write(this.spanStore, Codec.THRIFT, body);
+ }
 
   @RequestMapping(value = "/traces", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getTraces(

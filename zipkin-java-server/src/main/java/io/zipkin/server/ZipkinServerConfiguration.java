@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 import io.zipkin.SpanStore;
 import io.zipkin.jdbc.JDBCSpanStore;
@@ -29,6 +30,7 @@ import io.zipkin.server.ZipkinServerProperties.Store.Type;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinServerProperties.class)
+@EnableAsync(proxyTargetClass=true)
 public class ZipkinServerConfiguration {
 
   @Autowired
