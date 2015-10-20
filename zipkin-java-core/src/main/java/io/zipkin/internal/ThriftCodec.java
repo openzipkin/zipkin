@@ -22,6 +22,8 @@ import io.zipkin.Span;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
+import okio.ByteString;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TField;
@@ -32,6 +34,7 @@ import org.apache.thrift.protocol.TType;
 import org.apache.thrift.transport.TMemoryBuffer;
 import org.apache.thrift.transport.TMemoryInputTransport;
 
+import static java.util.logging.Level.FINEST;
 import static org.apache.thrift.protocol.TProtocolUtil.skip;
 
 /**
@@ -46,6 +49,7 @@ import static org.apache.thrift.protocol.TProtocolUtil.skip;
  * are later compressed with snappy.
  */
 public final class ThriftCodec implements Codec {
+  private static final Logger LOGGER = Logger.getLogger(ThriftCodec.class.getName());
 
   @Override
   public Span readSpan(byte[] bytes) {
@@ -448,6 +452,9 @@ public final class ThriftCodec implements Codec {
     @Override
     public List<Span> read(TProtocol iprot) throws TException {
       TList spans = iprot.readListBegin();
+      if (spans.size > 10000) { // don't allocate massive arrays
+        throw new IllegalArgumentException(spans.size + " > 10000: possibly malformed thrift");
+      }
       List<Span> result = new ArrayList<>(spans.size);
       for (int i = 0; i < spans.size; i++) {
         result.add(SpanAdapter.INSTANCE.read(iprot));
@@ -550,6 +557,9 @@ public final class ThriftCodec implements Codec {
     try {
       return adapter.read(new TBinaryProtocol(new TMemoryInputTransport(bytes)));
     } catch (Exception e) {
+      if (LOGGER.isLoggable(FINEST)) {
+        LOGGER.log(FINEST, adapter + " could not read " + ByteString.of(bytes).base64(), e);
+      }
       return null;
     }
   }
@@ -560,6 +570,9 @@ public final class ThriftCodec implements Codec {
     try {
       adapter.write(value, protocol);
     } catch (Exception e) {
+      if (LOGGER.isLoggable(FINEST)) {
+        LOGGER.log(FINEST, adapter + " could not write " + value, e);
+      }
       return null;
     }
     return transport.getArray();

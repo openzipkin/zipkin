@@ -18,3 +18,7 @@ spring:
     schema: classpath:/mysql.sql
 # Switch this on to create the schema on startup:
     initialize: false
+# Example of how to log codec failures
+# logging:
+#     level:
+#         io.zipkin.internal: 'TRACE'

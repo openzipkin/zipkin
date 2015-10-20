@@ -13,11 +13,11 @@
  */
 package io.zipkin.server;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import io.zipkin.Annotation;
+import io.zipkin.Codec;
+import io.zipkin.Endpoint;
+import io.zipkin.Span;
 import java.util.Arrays;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,16 +30,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 
-import io.zipkin.Annotation;
-import io.zipkin.Codec;
-import io.zipkin.Endpoint;
-import io.zipkin.Span;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringApplicationConfiguration(classes = ZipkinServer.class)
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@TestPropertySource(properties = { "zipkin.store.type=mem",
-    "spring.config.name=zipkin-server" })
+@TestPropertySource(properties = {"zipkin.store.type=mem", "spring.config.name=zipkin-server"})
 public class ZipkinServerIntegrationTests {
 
   @Autowired
@@ -52,30 +49,40 @@ public class ZipkinServerIntegrationTests {
   }
 
   @Test
-  public void addJsonSpan() throws Exception {
-    byte[] body = Codec.JSON
-        .writeSpans(Arrays.asList(newSpan(1L, 1L, "foo", "an", "bar")));
-    this.mockMvc.perform(post("/api/v1/spans").content(body))
+  public void writeSpans_noContentTypeIsJson() throws Exception {
+    byte[] body = Codec.JSON.writeSpans(Arrays.asList(newSpan(1L, 1L, "foo", "an", "bar")));
+    this.mockMvc
+        .perform(post("/api/v1/spans").content(body))
         .andExpect(status().isAccepted());
   }
 
   @Test
-  public void addThriftSpan() throws Exception {
-    byte[] body = Codec.THRIFT
-        .writeSpans(Arrays.asList(newSpan(1L, 2L, "foo", "an", "bar")));
+  public void writeSpans_malformedJsonIsBadRequest() throws Exception {
+    byte[] body = {'h', 'e', 'l', 'l', 'o'};
+    this.mockMvc
+        .perform(post("/api/v1/spans").content(body))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void writeSpans_contentTypeXThrift() throws Exception {
+    byte[] body = Codec.THRIFT.writeSpans(Arrays.asList(newSpan(1L, 2L, "foo", "an", "bar")));
     this.mockMvc
         .perform(post("/api/v1/spans").content(body).contentType("application/x-thrift"))
         .andExpect(status().isAccepted());
   }
 
-  private static Span newSpan(long traceId, long id, String spanName, String value,
-      String service) {
-    Endpoint endpoint = new Endpoint.Builder().serviceName(service).port((short) 80)
-        .ipv4(0).build();
-    Annotation annotation = new Annotation.Builder().endpoint(endpoint).value(value)
-        .timestamp(System.currentTimeMillis()).build();
-    Span span = new Span.Builder().id(id).traceId(traceId).name(spanName)
-        .addAnnotation(annotation).build();
-    return span;
+  @Test
+  public void writeSpans_malformedThriftIsBadRequest() throws Exception {
+    byte[] body = {'h', 'e', 'l', 'l', 'o'};
+    this.mockMvc
+        .perform(post("/api/v1/spans").content(body).contentType("application/x-thrift"))
+        .andExpect(status().isBadRequest());
+  }
+
+  static Span newSpan(long traceId, long id, String spanName, String value, String service) {
+    Endpoint endpoint = Endpoint.create(service, 127 << 24 | 1, 80);
+    Annotation ann = Annotation.create(System.currentTimeMillis(), value, endpoint);
+    return new Span.Builder().id(id).traceId(traceId).name(spanName).addAnnotation(ann).build();
   }
 }
