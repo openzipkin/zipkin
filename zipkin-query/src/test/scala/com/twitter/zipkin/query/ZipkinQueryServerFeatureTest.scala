@@ -1,12 +1,18 @@
 package com.twitter.zipkin.query
 
+import com.twitter.finagle.httpx.{Request, Method}
 import com.twitter.finagle.httpx.Status._
 import com.twitter.finatra.http.test.EmbeddedHttpServer
 import com.twitter.inject.server.FeatureTest
-import com.twitter.util.{Future, Time}
+import com.twitter.io.Buf
+import com.twitter.util.{Await, Future, Time}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common._
+import com.twitter.zipkin.conversions.thrift._
+import com.twitter.zipkin.json.{JsonSpan, ZipkinJson}
 import com.twitter.zipkin.storage.{DependencyStore, InMemorySpanStore, SpanStore}
+import org.apache.thrift.protocol.{TCompactProtocol, TList, TType}
+import org.apache.thrift.transport.TMemoryBuffer
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mock.MockitoSugar
@@ -66,14 +72,71 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   // duration 50
 
 
-  val allSpans = spans1 ++ spans2 ++ spans3 ++ spans4 ++ spans5
+  val allSpans = spans1 ++ spans2 ++ spans3 ++ spans4 ++ spans5 ++ spans6
 
   // no spans
   val emptyTrace = Trace(List())
   val deps = Dependencies(0, Time.now.inMicroseconds, List(DependencyLink("tfe", "mobileweb", 1), DependencyLink("Gizmoduck", "tflock", 2)))
 
-  "get service names" in {
-    app.injector.instance[SpanStore].apply(allSpans)
+  "post spans" in {
+    server.httpPost(
+      path = "/api/v1/spans",
+      postBody = ZipkinJson.writer().writeValueAsString(allSpans.map(JsonSpan)),
+      andExpect = Accepted)
+    // memory store is synchronous, so we can immediately read back
+    Await.result(spanStore.getAllServiceNames()) should be(
+      List("service1", "service2", "service3", "service4")
+    )
+  }
+
+  "post spans with content-type json" in {
+    server.httpPost(
+      path = "/api/v1/spans",
+      contentType = "application/json; charset=utf-8",
+      postBody = ZipkinJson.writer().writeValueAsString(allSpans.map(JsonSpan)),
+      andExpect = Accepted)
+  }
+
+  "post spans in thrift" in {
+    // serialize all spans as a thrift list
+    val transport = new TMemoryBuffer(0)
+    val oproto = new TCompactProtocol(transport)
+    oproto.writeListBegin(new TList(TType.STRUCT, allSpans.size))
+    allSpans.map(spanToThriftSpan).foreach(_.toThrift.write(oproto))
+    oproto.writeListEnd()
+    val serializedSpans = Buf.ByteArray.Owned(transport.getArray())
+
+    // Create an HTTP request object directly as Embedded Server assumes all are strings!
+    val request = Request(Method.Post, "/api/v1/spans")
+    request.headerMap.add("Content-Type", "application/x-thrift")
+    request.headerMap.add("Content-Length", serializedSpans.length.toString)
+    request.content = serializedSpans
+
+    server.httpRequest(request = request, andExpect = Accepted)
+
+    // memory store is synchronous, so we can immediately read back
+    Await.result(spanStore.getAllServiceNames()) should be(
+      List("service1", "service2", "service3", "service4")
+    )
+  }
+
+  "post garbage spans" in {
+    server.httpPost(
+      path = "/api/v1/spans",
+      postBody = "hello",
+      andExpect = BadRequest)
+  }
+
+  "post garbage spans in thrift" in {
+    server.httpPost(
+      path = "/api/v1/spans",
+      contentType = "application/x-thrift",
+      postBody = "hello",
+      andExpect = BadRequest)
+  }
+
+  "caching is disabled when 3 or less service names" in {
+    app.injector.instance[SpanStore].apply(spans1 ++ spans2 ++ spans3 ++ spans4 ++ spans5)
 
     val response = server.httpGet(
       path = "/api/v1/services",

@@ -1,25 +1,53 @@
 package com.twitter.zipkin.query
 
+import com.fasterxml.jackson.core.`type`.TypeReference
 import com.twitter.finagle.httpx.Request
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.finatra.annotations.Flag
 import com.twitter.finatra.http.Controller
 import com.twitter.finatra.http.response.ResponseBuilder
 import com.twitter.finatra.request.{QueryParam, RouteParam}
+import com.twitter.scrooge.TArrayByteTransport
 import com.twitter.util.Future
 import com.twitter.zipkin.Constants.MaxServicesWithoutCaching
 import com.twitter.zipkin.common.{Span, Trace}
-import com.twitter.zipkin.json.JsonSpan
+import com.twitter.zipkin.conversions.thrift._
+import com.twitter.zipkin.json.{JsonSpan, ZipkinJson}
 import com.twitter.zipkin.query.adjusters.TimeSkewAdjuster
 import com.twitter.zipkin.storage.{DependencyStore, SpanStore}
+import com.twitter.zipkin.thriftscala
+import org.apache.thrift.protocol.TCompactProtocol
 import javax.inject.Inject
-import scala.util.{Failure, Success}
+import scala.collection.mutable.ArrayBuffer
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 class ZipkinQueryController @Inject()(spanStore: SpanStore,
                                       dependencyStore: DependencyStore,
                                       queryExtractor: QueryExtractor,
                                       response: ResponseBuilder,
                                       @Flag("zipkin.queryService.servicesMaxAge") servicesMaxAge: Int) extends Controller {
+
+  post("/api/v1/spans") { request: Request =>
+    val spans: Try[Seq[Span]] = try {
+      Success(request.mediaType match {
+        case Some("application/x-thrift") => {
+          val bytes = new Array[Byte](request.content.length)
+          request.content.write(bytes, 0)
+          readThriftSpans(bytes)
+        }
+        case _ => jsonSpansReader.readValue(request.contentString)
+          .asInstanceOf[Seq[JsonSpan]]
+          .map(JsonSpan.invert(_))
+      })
+    } catch {
+      case NonFatal(e) => Failure(e)
+    }
+    spans match {
+      case Failure(exception) => response.badRequest(exception.getMessage)
+      case Success(spans) => spanStore.apply(spans); response.accepted // returning fast is intentional
+    }
+  }
 
   get("/api/v1/spans") { request: GetSpanNamesRequest =>
     spanStore.getSpanNames(request.serviceName)
@@ -64,6 +92,23 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
   }
 
   private[this] val timeSkewAdjuster = new TimeSkewAdjuster()
+
+  private[this] def readThriftSpans(bytes: Array[Byte]): ArrayBuffer[Span] = {
+    val proto = new TCompactProtocol(TArrayByteTransport(bytes))
+    val _list = proto.readListBegin()
+    if (_list.size > 10000) {
+      throw new scala.IllegalArgumentException(_list.size + " > 10000: possibly malformed thrift")
+    }
+    val result = new ArrayBuffer[Span](_list.size)
+    for (i <- 1 to _list.size) {
+      val thrift = thriftscala.Span.decode(proto)
+      result += thriftSpanToSpan(thrift).toSpan
+    }
+    proto.readListEnd()
+    result
+  }
+
+  val jsonSpansReader = ZipkinJson.reader(new TypeReference[Seq[JsonSpan]] {})
 }
 
 case class GetSpanNamesRequest(@QueryParam serviceName: String)
