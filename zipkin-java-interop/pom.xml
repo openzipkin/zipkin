@@ -30,6 +30,7 @@
   <description>Zipkin Java Interoperability Tests</description>
 
   <properties>
+    <main.basedir>${project.basedir}/..</main.basedir>
     <zipkin-scala.version>1.18.0</zipkin-scala.version>
     <scalatest.version>2.2.5</scalatest.version>
   </properties>

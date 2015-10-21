@@ -37,6 +37,8 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
 
+    <main.basedir>${project.basedir}</main.basedir>
+
     <mysql-connector-java.version>5.1.37</mysql-connector-java.version>
     <junit.version>4.12</junit.version>
     <assertj.version>3.2.0</assertj.version>
@@ -234,7 +236,7 @@
         <artifactId>license-maven-plugin</artifactId>
         <version>${maven-license-plugin.version}</version>
         <configuration>
-          <header>src/etc/header.txt</header>
+          <header>${main.basedir}/src/etc/header.txt</header>
           <excludes>
             <exclude>.travis.yml</exclude>
             <exclude>.gitignore</exclude>

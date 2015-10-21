@@ -30,6 +30,7 @@
   <description>Zipkin Java JDBC Model</description>
 
   <properties>
+    <main.basedir>${project.basedir}/..</main.basedir>
     <jooq.version>3.7.0</jooq.version>
   </properties>
 

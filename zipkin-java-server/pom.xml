@@ -30,6 +30,7 @@
   <description>Zipkin Server</description>
 
   <properties>
+    <main.basedir>${project.basedir}/..</main.basedir>
     <brave.version>3.0.0</brave.version>
     <start-class>io.zipkin.server.ZipkinServer</start-class>
   </properties>
