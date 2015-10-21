@@ -4,14 +4,12 @@ import com.google.common.io.BaseEncoding
 import com.google.common.primitives.Longs
 import com.twitter.zipkin.common.Span
 
-import scala.util.control.NonFatal
-
 case class JsonSpan(traceId: String, // hex long
                     name: String,
                     id: String, // hex long
-                    parentId: Option[String], // hex long
-                    annotations: List[JsonAnnotation], // ordered by timestamp
-                    binaryAnnotations: Seq[JsonBinaryAnnotation],
+                    parentId: Option[String] = None, // hex long
+                    annotations: List[JsonAnnotation] = List.empty, // ordered by timestamp
+                    binaryAnnotations: Seq[JsonBinaryAnnotation] = Seq.empty,
                     debug: Option[Boolean] = None)
 
 object JsonSpan extends (Span => JsonSpan) {
@@ -30,19 +28,26 @@ object JsonSpan extends (Span => JsonSpan) {
     s.name,
     id(s.id),
     s.parentId.map(id(_)),
-    s.annotations.map(JsonAnnotation.invert),
-    s.binaryAnnotations.map(JsonBinaryAnnotation.invert),
+    /** If deserialized with jackson, these could be null, as it doesn't look at default values. */
+    if (s.annotations == null) List.empty else s.annotations.map(JsonAnnotation.invert),
+    if (s.binaryAnnotations == null) Seq.empty else s.binaryAnnotations.map(JsonBinaryAnnotation.invert),
     s.debug.getOrElse(false)
   )
 
+  /** Strictly looks at length, so for a long, expects 16 ascii hex chars */
   private val hex = BaseEncoding.base16().lowerCase()
 
   private def id(l: Long) = hex.encode(Longs.toByteArray(l))
 
-  private def id(idInHex: String) = try {
-    val array = hex.decode(idInHex)
+  private def id(idInHex: String) = {
+    val array = if (idInHex.length < 16) {
+      val correctLength = new Array[Char](16)
+      java.util.Arrays.fill(correctLength, '0') // cause 0 in ASCII is NUL, not '0'
+      System.arraycopy(idInHex.toCharArray, 0, correctLength, 16 - idInHex.length, idInHex.length)
+      hex.decode(new String(correctLength))
+    } else {
+      hex.decode(idInHex)
+    }
     Longs.fromByteArray(array)
-  } catch {
-    case NonFatal(e) => 0L
   }
 }

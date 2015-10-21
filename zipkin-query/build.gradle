@@ -4,6 +4,8 @@ repositories {
 
 dependencies {
     compile project(':zipkin-common')
+    compile project(':zipkin-scrooge') // for thrift codec needed in POST api
+
     compile "com.twitter.finatra:finatra-http_${scalaInterfaceVersion}:${commonVersions.finatra}"
     compile "com.twitter.finatra:finatra-slf4j_${scalaInterfaceVersion}:${commonVersions.finatra}"
 

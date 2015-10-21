@@ -130,8 +130,8 @@ object thrift {
     lazy val toThrift = thriftscala.Dependencies(d.startTs, d.endTs, d.links.map(_.toThrift))
   }
   class ThriftDependencies(d: thriftscala.Dependencies) {
-    lazy val toDependencies = Dependencies(d.startTs, d.endTs, d.links.map(_.toDependencyLink))
+    lazy val toDependencies: Dependencies = Dependencies(d.startTs, d.endTs, d.links.map(_.toDependencyLink))
   }
-  implicit def dependenciesToThrift(d: Dependencies) = new WrappedDependencies(d)
+  implicit def dependenciesToThrift(d: Dependencies): WrappedDependencies = new WrappedDependencies(d)
   implicit def thriftToDependencies(d: thriftscala.Dependencies) = new ThriftDependencies(d)
 }
