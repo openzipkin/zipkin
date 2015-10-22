@@ -20,8 +20,8 @@ VOLUME /tmp
 
 ADD target/zipkin-java-server-0.1.0-SNAPSHOT-exec.jar zipkin-server.jar
 
-RUN touch zipkin-server.jar
+RUN unzip zipkin-server.jar
 
 EXPOSE 9411
 
-CMD test -n "$STORAGE_TYPE" && source .${STORAGE_TYPE}_profile; java -Djava.security.egd=file:/dev/./urandom -jar zipkin-server.jar
+CMD test -n "$STORAGE_TYPE" && source .${STORAGE_TYPE}_profile; java -Djava.security.egd=file:/dev/./urandom -cp '.:lib/*' io.zipkin.server.ZipkinServer
