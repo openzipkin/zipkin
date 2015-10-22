@@ -43,7 +43,7 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
   connpool.setDriverClassName(dbconfig.driver)
   connpool.setJdbcUrl(dbconfig.location)
   connpool.setConnectionTestQuery(if (dbconfig.jdbc3) "SELECT 1" else null)
-  connpool.setMaximumPoolSize(32)
+  connpool.setMaximumPoolSize(dbconfig.maxConnections)
 
   /**
    * Gets a dedicated java.sql.Connection to the SQL database. Note that auto-commit is

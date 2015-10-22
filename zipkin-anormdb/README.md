@@ -15,6 +15,7 @@ Currently, only MySQL is configurable through environment variables:
     * `MYSQL_USER` and `MYSQL_PASS`: MySQL authentication, which defaults to empty string.
     * `MYSQL_HOST`: Defaults to localhost
     * `MYSQL_TCP_PORT`: Defaults to 3306
+    * `MYSQL_MAX_CONNECTIONS`: Maximum concurrent connections, defaults to 10
 
 Example MySQL usage:
 ```bash

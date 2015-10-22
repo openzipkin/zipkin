@@ -50,10 +50,12 @@ case class DBParams(
  * @param params Connection information
  * @param install Whether to set up the database schema.
  *                The schema can be installed multiple times with no problems.
+ * @param maxConnections Maximum count of concurrent connections to the database.
  */
 case class DBConfig(name: String = "sqlite-persistent",
                     params: DBParams = new DBParams(),
-                    install: Boolean = false) {
+                    install: Boolean = false,
+                    maxConnections: Int = 10) {
 
   /**
    * @param jdbc3 Whether this is a legacy JDBC3 driver
