@@ -54,8 +54,8 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   val span5 = Span(999, "methodcall", spanId, None, List(ann5, ann8),
     List(binaryAnnotation("BAH2", "BEH2")))
 
-  val spanEmptySpanName = Span(123, "", spanId, None, List(ann1, ann2), List())
-  val spanEmptyServiceName = Span(123, "spanname", spanId, None, List(), List())
+  val spanEmptySpanName = Span(123, "", spanId, None, List(ann1, ann2))
+  val spanEmptyServiceName = Span(123, "spanname", spanId)
 
   val mergedSpan = Span(123, "methodcall", spanId, None,
     List(ann1, ann2), List(binaryAnnotation("BAH2", "BEH2")))
@@ -154,23 +154,24 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   }
 
   @Test def getTraces_multipleAnnotationsBecomeAndFilter() {
-    val foo = Span(1, "call1", 1, None, List(Annotation(1, "foo", Some(ep))), List())
-    val fooAndBar = Span(2, "call2", 2, None, List(Annotation(2, "foo", Some(ep)), Annotation(2, "bar", Some(ep))), List())
+    val foo = Span(1, "call1", 1, None, List(Annotation(1, "foo", Some(ep))))
+    // would be foo bar, except lexicographically bar precedes foo
+    val barAndFoo = Span(2, "call2", 2, None, List(Annotation(2, "bar", Some(ep)), Annotation(2, "foo", Some(ep))))
     val fooAndBazAndQux = Span(3, "call3", 3, None, foo.annotations.map(_.copy(timestamp = 3)), List(binaryAnnotation("baz", "qux")))
-    val fooAndBarAndBazAndQux = Span(4, "call4", 4, None, fooAndBar.annotations.map(_.copy(timestamp = 4)), fooAndBazAndQux.binaryAnnotations)
+    val barAndFooAndBazAndQux = Span(4, "call4", 4, None, barAndFoo.annotations.map(_.copy(timestamp = 4)), fooAndBazAndQux.binaryAnnotations)
 
-    result(store(Seq(foo, fooAndBar, fooAndBazAndQux, fooAndBarAndBazAndQux)))
+    result(store(Seq(foo, barAndFoo, fooAndBazAndQux, barAndFooAndBazAndQux)))
 
     result(store.getTraces(QueryRequest("service", annotations = Set("foo")))) should be(
-      Seq(Seq(foo), Seq(fooAndBar), Seq(fooAndBazAndQux), Seq(fooAndBarAndBazAndQux))
+      Seq(Seq(foo), Seq(barAndFoo), Seq(fooAndBazAndQux), Seq(barAndFooAndBazAndQux))
     )
 
     result(store.getTraces(QueryRequest("service", annotations = Set("foo", "bar")))) should be(
-      Seq(Seq(fooAndBar), Seq(fooAndBarAndBazAndQux))
+      Seq(Seq(barAndFoo), Seq(barAndFooAndBazAndQux))
     )
 
     result(store.getTraces(QueryRequest("service", annotations = Set("foo", "bar"), binaryAnnotations = Set(("baz", "qux"))))) should be(
-      Seq(Seq(fooAndBarAndBazAndQux))
+      Seq(Seq(barAndFooAndBazAndQux))
     )
   }
 

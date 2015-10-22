@@ -25,8 +25,7 @@ class SpanTest extends FunSuite {
 
   val annotationValue = "NONSENSE"
   val expectedAnnotation = Annotation(1, annotationValue, Some(Endpoint(1, 2, "service")))
-  val expectedSpan = Span(12345, "methodcall", 666, None,
-    List(expectedAnnotation), Nil)
+  val expectedSpan = Span(12345, "methodcall", 666, None, List(expectedAnnotation))
 
   val annotation1 = Annotation(1, "value1", Some(Endpoint(1, 2, "service")))
   val annotation2 = Annotation(2, "value2", Some(Endpoint(3, 4, "Service"))) // upper case service name
@@ -36,9 +35,9 @@ class SpanTest extends FunSuite {
   val binaryAnnotation2 = BinaryAnnotation("key2", ByteBuffer.wrap("value2".getBytes), AnnotationType.String, Some(Endpoint(3, 4, "service2")))
 
   val spanWith3Annotations = Span(12345, "methodcall", 666, None,
-    List(annotation1, annotation2, annotation3), Nil)
+    List(annotation1, annotation2, annotation3))
   val spanWith2BinaryAnnotations = Span(12345, "methodcall", 666, None,
-    Nil, List(binaryAnnotation1, binaryAnnotation2))
+    List.empty, Seq(binaryAnnotation1, binaryAnnotation2))
 
 
   test("serviceNames is lowercase") {
@@ -57,9 +56,9 @@ class SpanTest extends FunSuite {
     val ann1 = Annotation(1, "value1", Some(Endpoint(1, 2, "service")))
     val ann2 = Annotation(2, "value2", Some(Endpoint(3, 4, "service")))
 
-    val span1 = Span(12345, "", 666, None, List(ann1), Nil, true)
-    val span2 = Span(12345, "methodcall", 666, None, List(ann2), Nil, false)
-    val expectedSpan = Span(12345, "methodcall", 666, None, List(ann1, ann2), Nil, true)
+    val span1 = Span(12345, "", 666, None, List(ann1), Seq(), Some(true))
+    val span2 = Span(12345, "methodcall", 666, None, List(ann2), Seq(), Some(false))
+    val expectedSpan = Span(12345, "methodcall", 666, None, List(ann1, ann2), Seq(), Some(true))
     val actualSpan = span1.mergeSpan(span2)
     assert(actualSpan === expectedSpan)
   }
@@ -85,7 +84,7 @@ class SpanTest extends FunSuite {
   }
 
   test("don't get duration duration when there are no annotations") {
-    val span = Span(1, "n", 2, None, List(), Nil)
+    val span = Span(1, "n", 2)
     assert(span.duration === None)
   }
 
@@ -97,10 +96,10 @@ class SpanTest extends FunSuite {
 
     val cs2 = Annotation(5, Constants.ClientSend, None)
 
-    val s1 = Span(1, "i", 123, None, List(cs, sr, ss, cr), Nil)
+    val s1 = Span(1, "i", 123, None, List(cs, sr, ss, cr))
     assert(s1.isValid)
 
-    val s3 = Span(1, "i", 123, None, List(cs, sr, ss, cr, cs2), Nil)
+    val s3 = Span(1, "i", 123, None, List(cs, sr, ss, cr, cs2))
     assert(!s3.isValid)
   }
 

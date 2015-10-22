@@ -16,7 +16,6 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.util.NonFatal
 import com.twitter.zipkin.Constants
 import scala.collection.breakOut
 
@@ -28,46 +27,7 @@ import scala.collection.breakOut
  *
  * Some are created by users, describing application specific information,
  * such as cache hits/misses.
- */
-object Span {
-  // TODO(jeff): what?!
-  def apply(span: Span): Span = span
-
-  def apply(
-    _traceId: Long,
-    _name: String,
-    _id: Long,
-    _parentId: Option[Long],
-    _annotations: List[Annotation],
-    _binaryAnnotations: Seq[BinaryAnnotation],
-    _debug: Boolean = false
-  ): Span = new Span {
-    def traceId = _traceId
-    def name = _name
-    def id = _id
-    def parentId = _parentId
-    def annotations = _annotations.sorted
-    def binaryAnnotations = _binaryAnnotations
-    def debug = _debug
-  }
-
-  def unapply(span: Span): Option[(Long, String, Long, Option[Long], List[Annotation], Seq[BinaryAnnotation], Boolean)] =
-    try {
-      Some(
-        span.traceId,
-        span.name,
-        span.id,
-        span.parentId,
-        span.annotations,
-        span.binaryAnnotations,
-        span.debug
-      )
-    } catch {
-      case NonFatal(_) => None
-    }
-}
-
-/**
+ *
  * @param traceId random long that identifies the trace, will be set in all spans in this trace
  * @param name name of span, can be rpc method name for example
  * @param id random long that identifies this span
@@ -78,39 +38,18 @@ object Span {
  * serialized objects. Sorted ascending by timestamp. Sorted ascending by timestamp
  * @param debug if this is set we will make sure this span is stored, no matter what the samplers want
  */
-trait Span extends Ordered[Span] { self =>
-  def traceId: Long
-  def name: String
-  def id: Long
-  def parentId: Option[Long]
-  def annotations: List[Annotation]
-  def binaryAnnotations: Seq[BinaryAnnotation]
-  def debug: Boolean
+case class Span(
+  traceId: Long,
+  name: String,
+  id: Long,
+  parentId: Option[Long] = None,
+  annotations: List[Annotation] = List.empty,
+  binaryAnnotations: Seq[BinaryAnnotation] = Seq.empty,
+  debug: Option[Boolean] = None
+) extends Ordered[Span] {
 
-  // TODO: cache first timestamp when this is a normal case class as opposed to a trait
   override def compare(that: Span) =
     java.lang.Long.compare(startTs.getOrElse(0L), that.startTs.getOrElse(0L))
-
-  def copy(
-    traceId: Long = self.traceId,
-    name: String = self.name,
-    id: Long = self.id,
-    parentId: Option[Long] = self.parentId,
-    annotations: List[Annotation] = self.annotations,
-    binaryAnnotations: Seq[BinaryAnnotation] = self.binaryAnnotations,
-    debug: Boolean = self.debug
-  ): Span = Span(traceId, name, id, parentId, annotations, binaryAnnotations, debug)
-
-  private def tuple = (traceId, name, id, parentId, annotations, binaryAnnotations, debug)
-
-  override def equals(other: Any): Boolean = other match {
-    case o: Span => o.tuple == self.tuple
-    case _ => false
-  }
-
-  override def hashCode: Int = tuple.hashCode
-
-  override def toString: String = s"Span${tuple}"
 
   def serviceNames: Set[String] =
     annotations.flatMap(a => a.host.map(h => h.serviceName.toLowerCase)).toSet
@@ -153,15 +92,15 @@ trait Span extends Ordered[Span] { self =>
       case _ => name
     }
 
-    new Span {
-      def traceId = self.traceId
-      def name = selectedName
-      def id = self.id
-      def parentId = self.parentId
-      def annotations = (self.annotations ++ mergeFrom.annotations).sorted
-      def binaryAnnotations = self.binaryAnnotations ++ mergeFrom.binaryAnnotations
-      def debug = self.debug | mergeFrom.debug
-    }
+    new Span(
+      traceId,
+      selectedName,
+      id,
+      parentId,
+      (annotations ++ mergeFrom.annotations).sorted,
+      binaryAnnotations ++ mergeFrom.binaryAnnotations,
+      if (debug.getOrElse(false) | mergeFrom.debug.getOrElse(false)) Some(true) else None
+    )
   }
 
   /**
@@ -221,6 +160,6 @@ trait Span extends Ordered[Span] { self =>
   def getAnnotationsAsMap(): Map[String, Annotation] =
     annotations.map(a => a.value -> a)(breakOut)
 
-  def endTs: Option[Long] = lastAnnotation.map(_.timestamp)
-  def startTs: Option[Long] = firstAnnotation.map(_.timestamp)
+  lazy val endTs: Option[Long] = lastAnnotation.map(_.timestamp)
+  lazy val startTs: Option[Long] = firstAnnotation.map(_.timestamp)
 }

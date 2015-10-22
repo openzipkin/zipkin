@@ -40,31 +40,28 @@ class TraceTest extends FunSuite {
   val span3Id = 888L
   val span4Id = 999L
 
-  val span1 = Span(12345, "methodcall1", span1Id, None, annotations1, Nil)
-  val span2 = Span(12345, "methodcall2", span2Id, Some(span1Id), annotations2, Nil)
-  val span3 = Span(12345, "methodcall2", span3Id, Some(span2Id), annotations3, Nil)
-  val span4 = Span(12345, "methodcall2", span4Id, Some(span3Id), annotations4, Nil)
-  val span5 = Span(12345, "methodcall4", 1111L, Some(span4Id), List(), Nil) // no annotations
+  val span1 = Span(12345, "methodcall1", span1Id, None, annotations1)
+  val span2 = Span(12345, "methodcall2", span2Id, Some(span1Id), annotations2)
+  val span3 = Span(12345, "methodcall2", span3Id, Some(span2Id), annotations3)
+  val span4 = Span(12345, "methodcall2", span4Id, Some(span3Id), annotations4)
+  val span5 = Span(12345, "methodcall4", 1111L, Some(span4Id)) // no annotations
 
   val trace = Trace(List[Span](span1, span2, span3, span4))
 
   test("get duration of trace") {
     val annotations = List(Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
       Annotation(200, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
-    val span = Span(12345, "methodcall", 666, None,
-      annotations, Nil)
+    val span = Span(12345, "methodcall", 666, None, annotations)
     assert(Trace(List(span)).duration === 100)
   }
 
   test("get duration of trace without root span") {
     val annotations = List(Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
       Annotation(200, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
-    val span = Span(12345, "methodcall", 666, Some(123),
-      annotations, Nil)
+    val span = Span(12345, "methodcall", 666, Some(123), annotations)
     val annotations2 = List(Annotation(150, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
       Annotation(160, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
-    val span2 = Span(12345, "methodcall", 666, Some(123),
-      annotations2, Nil)
+    val span2 = Span(12345, "methodcall", 666, Some(123), annotations2)
     assert(Trace(List(span, span2)).duration === 100)
   }
 
@@ -77,8 +74,8 @@ class TraceTest extends FunSuite {
       Annotation(12, "Server send", None)
     )
 
-    val span1 = Span(123, "method_1", 100, None, ann1, Nil)
-    val span2 = Span(123, "method_2", 200, Some(100), ann2, Nil)
+    val span1 = Span(123, "method_1", 100, None, ann1)
+    val span2 = Span(123, "method_2", 200, Some(100), ann2)
 
     val trace = new Trace(Seq(span1, span2))
   }
@@ -134,7 +131,7 @@ class TraceTest extends FunSuite {
 
   test("return none due to missing annotations") {
     // no annotation at all
-    val spanNoAnn = Span(1, "method", 123L, None, List(), Nil)
+    val spanNoAnn = Span(1, "method", 123L)
     val noAnnTrace = Trace(List(spanNoAnn))
     assert(noAnnTrace.getStartAndEndTimestamp === None)
   }
@@ -160,22 +157,22 @@ class TraceTest extends FunSuite {
       Annotation(300, Constants.ClientRecv, Some(Endpoint(123, 123, "service1")))
     )
 
-    val spanToMerge1 = Span(12345, "methodcall2", span2Id, Some(span1Id), ann1, Nil)
-    val spanToMerge2 = Span(12345, "methodcall2", span2Id, Some(span1Id), ann2, Nil)
-    val spanMerged = Span(12345, "methodcall2", span2Id, Some(span1Id), annMerged, Nil)
+    val spanToMerge1 = Span(12345, "methodcall2", span2Id, Some(span1Id), ann1)
+    val spanToMerge2 = Span(12345, "methodcall2", span2Id, Some(span1Id), ann2)
+    val spanMerged = Span(12345, "methodcall2", span2Id, Some(span1Id), annMerged)
 
     assert(Trace(List(spanMerged)).spans === Trace(List(spanToMerge1, spanToMerge2)).spans)
   }
 
   test("get rootmost span from full trace") {
-    val spanNoneParent = Span(1, "", 100, None, List(), Nil)
-    val spanParent = Span(1, "", 200, Some(100), List(), Nil)
+    val spanNoneParent = Span(1, "", 100)
+    val spanParent = Span(1, "", 200, Some(100))
     assert(Trace(List(spanParent, spanNoneParent)).getRootMostSpan === Some(spanNoneParent))
   }
 
   test("get rootmost span from trace without real root") {
-    val spanNoParent = Span(1, "", 100, Some(0), List(), Nil)
-    val spanParent = Span(1, "", 200, Some(100), List(), Nil)
+    val spanNoParent = Span(1, "", 100, Some(0))
+    val spanParent = Span(1, "", 200, Some(100))
     assert(Trace(List(spanParent, spanNoParent)).getRootMostSpan === Some(spanNoParent))
   }
 
@@ -191,11 +188,11 @@ class TraceTest extends FunSuite {
     val ann1 = Annotation(1, "hello", None)
     val ann2 = Annotation(43, "goodbye", None)
 
-    val span1 = Span(12345, "methodcall", 6789, None, List(), Nil)
-    val span2 = Span(12345, "methodcall_2", 345, None, List(ann1, ann2), Nil)
+    val span1 = Span(12345, "methodcall", 6789)
+    val span2 = Span(12345, "methodcall_2", 345, None, List(ann1, ann2))
 
-    val span3 = Span(23456, "methodcall_3", 12, None, List(ann1), Nil)
-    val span4 = Span(23456, "methodcall_4", 34, None, List(ann2), Nil)
+    val span3 = Span(23456, "methodcall_3", 12, None, List(ann1))
+    val span4 = Span(23456, "methodcall_4", 34, None, List(ann2))
 
     // no spans
     val trace1 = new Trace(List())
@@ -222,8 +219,8 @@ class TraceTest extends FunSuite {
     val ann3 = Annotation(3, "ann3", ep3)
     val ann4 = Annotation(4, "ann4", ep2)
 
-    val span1 = Span(1234, "method1", 5678, None, List(ann1, ann2, ann3, ann4), Nil)
-    val span2 = Span(1234, "method2", 345, None, List(ann4), Nil)
+    val span1 = Span(1234, "method1", 5678, None, List(ann1, ann2, ann3, ann4))
+    val span2 = Span(1234, "method2", 345, None, List(ann4))
     val trace1 = new Trace(Seq(span1, span2))
 
     val expected = Map("ep1" -> 1, "ep2" -> 2, "ep3" -> 1)

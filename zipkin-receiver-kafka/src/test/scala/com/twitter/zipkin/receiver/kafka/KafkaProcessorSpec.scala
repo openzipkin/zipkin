@@ -22,7 +22,7 @@ class KafkaProcessorSpecSimple extends JUnitSuite {
   import KafkaProcessorSpecSimple.kafkaRule
 
   val topic = Map("integration-test-topic" -> 1)
-  val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
+  val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)))
   val decoder = new SpanCodec()
   val defaultKafkaTopics = Map("zipkin_kafka" -> 1 )
 
@@ -41,7 +41,7 @@ class KafkaProcessorSpecSimple extends JUnitSuite {
 
   def createMessage(): Array[Byte] = {
     val annotation = Annotation(1, "value", Some(Endpoint(1, 2, "service")))
-    val message = Span(1234, "methodName", 4567, None, List(annotation), Nil)
+    val message = Span(1234, "methodName", 4567, None, List(annotation))
     val codec = new SpanCodec()
     codec.encode(message)
   }
