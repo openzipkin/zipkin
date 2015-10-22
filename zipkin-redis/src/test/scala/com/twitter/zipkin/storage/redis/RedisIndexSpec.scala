@@ -49,8 +49,8 @@ class RedisIndexSpec extends RedisSpecification {
   val span3 = Span(123, "methodcall", spanId, None, List(ann2, ann3, ann4),
     List(binaryAnnotation("BAH2", "BEH2")))
 
-  val spanEmptySpanName = Span(123, "", spanId, None, List(ann1, ann2), List())
-  val spanEmptyServiceName = Span(123, "spanname", spanId, None, List(), List())
+  val spanEmptySpanName = Span(123, "", spanId, None, List(ann1, ann2))
+  val spanEmptyServiceName = Span(123, "spanname", spanId)
 
   val mergedSpan = Span(123, "methodcall", spanId, None,
     List(ann1, ann2), List(binaryAnnotation("BAH2", "BEH2")))

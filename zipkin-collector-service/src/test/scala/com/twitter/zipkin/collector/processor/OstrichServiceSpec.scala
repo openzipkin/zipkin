@@ -41,7 +41,7 @@ class OstrichServiceSpec extends FunSuite with Matchers with BeforeAndAfter {
     val annotation2 = Annotation(20, thriftscala.Constants.SERVER_SEND, Some(Endpoint(3, 4, "service")))
     val annotation3 = Annotation(30, "value3", Some(Endpoint(5, 6, "service")))
 
-    val span = Span(12345, "methodcall", 666, None, List(annotation1, annotation2, annotation3), Nil)
+    val span = Span(12345, "methodcall", 666, None, List(annotation1, annotation2, annotation3))
 
     agg.apply(span)
 
@@ -56,7 +56,7 @@ class OstrichServiceSpec extends FunSuite with Matchers with BeforeAndAfter {
     val annotation2 = Annotation(20, thriftscala.Constants.CLIENT_RECV, Some(Endpoint(3, 4, "service")))
     val annotation3 = Annotation(30, "value3", Some(Endpoint(5, 6, "service")))
 
-    val span = Span(12345, "methodcall", 666, None, List(annotation1, annotation2, annotation3), Nil)
+    val span = Span(12345, "methodcall", 666, None, List(annotation1, annotation2, annotation3))
 
     agg.apply(span)
 

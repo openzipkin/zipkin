@@ -49,7 +49,7 @@ class AnormSpanStore(val db: DB,
           .on("id" -> span.id)
           .on("name" -> span.name)
           .on("parent_id" -> span.parentId)
-          .on("debug" -> (if (span.debug) 1 else 0))
+          .on("debug" -> span.debug.map(if (_) 1 else 0))
           .on("start_ts" -> span.startTs)
           .execute()
 
@@ -112,8 +112,8 @@ class AnormSpanStore(val db: DB,
             |ORDER BY start_ts
           """.stripMargin.format(traceIdsString))
           .as((long("id") ~ get[Option[Long]]("parent_id") ~
-          long("trace_id") ~ str("name") ~ int("debug") map {
-          case a~b~c~d~e => DBSpan(a, b, c, d, e > 0)
+          long("trace_id") ~ str("name") ~ get[Option[Int]]("debug") map {
+          case a~b~c~d~e => DBSpan(a, b, c, d, e.map(_ > 0))
         }) *)
       val annos:List[DBAnnotation] =
         SQL(
@@ -304,7 +304,7 @@ class AnormSpanStore(val db: DB,
     }
   }
 
-  case class DBSpan(spanId: Long, parentId: Option[Long], traceId: Long, spanName: String, debug: Boolean)
+  case class DBSpan(spanId: Long, parentId: Option[Long], traceId: Long, spanName: String, debug: Option[Boolean])
   case class DBAnnotation(spanId: Long, traceId: Long, serviceName: String, value: String, ipv4: Option[Int], port: Option[Int], timestamp: Long)
   case class DBBinaryAnnotation(spanId: Long, traceId: Long, serviceName: String, key: String, value: Array[Byte], annotationTypeValue: Int, ipv4: Option[Int], port: Option[Int])
 }

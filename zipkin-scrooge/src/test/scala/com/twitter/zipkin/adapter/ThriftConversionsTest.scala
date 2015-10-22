@@ -61,8 +61,7 @@ class ThriftConversionsTest extends FunSuite {
   test("convert Span") {
     val annotationValue = "NONSENSE"
     val expectedAnnotation = Annotation(1, annotationValue, Some(Endpoint(1, 2, "service")))
-    val expectedSpan = Span(12345, "methodcall", 666, None,
-      List(expectedAnnotation), Nil)
+    val expectedSpan = Span(12345, "methodcall", 666, None, List(expectedAnnotation))
 
     assert(expectedSpan.toThrift.toSpan === expectedSpan)
 
@@ -70,9 +69,9 @@ class ThriftConversionsTest extends FunSuite {
     intercept[IncompleteTraceDataException] { noNameSpan.toSpan }
 
     val noAnnotationsSpan = thriftscala.Span(0, "name", 0, None, null, Seq())
-    assert(noAnnotationsSpan.toSpan === Span(0, "name", 0, None, List(), Seq()))
+    assert(noAnnotationsSpan.toSpan === Span(0, "name", 0))
 
     val noBinaryAnnotationsSpan = thriftscala.Span(0, "name", 0, None, Seq(), null)
-    assert(noBinaryAnnotationsSpan.toSpan === Span(0, "name", 0, None, List(), Seq()))
+    assert(noBinaryAnnotationsSpan.toSpan === Span(0, "name", 0))
   }
 }

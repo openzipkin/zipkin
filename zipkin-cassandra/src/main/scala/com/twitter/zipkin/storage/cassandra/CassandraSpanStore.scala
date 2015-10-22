@@ -18,7 +18,6 @@ package com.twitter.zipkin.storage.cassandra
 import com.twitter.conversions.time._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.{Future, Duration}
-import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.{Trace, Span}
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}

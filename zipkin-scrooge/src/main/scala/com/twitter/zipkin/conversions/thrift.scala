@@ -88,7 +88,7 @@ object thrift {
   class ThriftSpan(s: Span) {
     lazy val toThrift = {
       thriftscala.Span(s.traceId, s.name, s.id, s.parentId, s.annotations.map { _.toThrift },
-        s.binaryAnnotations.map { _.toThrift }, s.debug)
+        s.binaryAnnotations.map { _.toThrift }, s.debug.getOrElse(false))
     }
   }
   class WrappedSpan(s: thriftscala.Span) {
@@ -105,13 +105,13 @@ object thrift {
         s.parentId,
         s.annotations match {
           case null => List.empty[Annotation]
-          case as => as.map(_.toAnnotation)(breakOut)
+          case as => as.map(_.toAnnotation)(breakOut).toList.sorted
         },
         s.binaryAnnotations match {
           case null => List.empty[BinaryAnnotation]
           case b => b.map(_.toBinaryAnnotation)(breakOut)
         },
-        s.debug
+        if (s.debug) Some(true) else None // Scrooge treats optional bool as bool!
       )
     }
   }

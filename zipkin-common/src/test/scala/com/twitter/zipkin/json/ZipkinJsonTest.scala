@@ -26,7 +26,7 @@ class ZipkinJsonTest extends FunSuite with Matchers {
       BinaryAnnotation("http.uri", ByteBuffer.wrap("/path".getBytes(UTF_8)), AnnotationType.String, Some(web.copy(port = 0))),
       BinaryAnnotation(Constants.ClientAddr, ByteBuffer.wrap(Array[Byte](1)), AnnotationType.Bool, Some(web)),
       BinaryAnnotation(Constants.ServerAddr, ByteBuffer.wrap(Array[Byte](1)), AnnotationType.Bool, Some(query))
-    ), true)
+    ), Some(true))
     assert(mapper.writeValueAsString(s) ==
       """
         |{
@@ -119,7 +119,7 @@ class ZipkinJsonTest extends FunSuite with Matchers {
   }
 
   test("doesn't serialize absent fields of span") { // like debug or parentId
-    val s = Span(1L, "zipkin-query", 2L, None, List.empty[Annotation], List.empty[BinaryAnnotation], false)
+    val s = Span(1L, "zipkin-query", 2L, None, List.empty[Annotation], List.empty[BinaryAnnotation])
     assert(mapper.writeValueAsString(s) ==
       """
         |{"traceId":"0000000000000001","name":"zipkin-query","id":"0000000000000002","annotations":[],"binaryAnnotations":[]}

@@ -25,21 +25,21 @@ import org.scalatest.{FunSuite, Matchers}
 class SamplerFilterSpec extends FunSuite with Matchers with MockitoSugar {
 
   test("let the span pass if debug flag is set") {
-    val span = Span(12345, "methodcall", 666, None, List(), Nil, true)
+    val span = Span(12345, "methodcall", 666, None, List(), Seq(), Some(true))
     val samplerProcessor = new SamplerFilter(NullGlobalSampler)
 
     samplerProcessor(Seq(span)) should be (Seq(span))
   }
 
   test("let the span pass if debug flag false and sampler says yes") {
-    val span = Span(12345, "methodcall", 666, None, List(), Nil, false)
+    val span = Span(12345, "methodcall", 666, None, List(), Seq(), Some(false))
     val samplerProcessor = new SamplerFilter(EverythingGlobalSampler)
 
     samplerProcessor(Seq(span)) should be (Seq(span))
   }
 
   test("not let the span pass if debug flag false and sampler says no") {
-    val span = Span(12345, "methodcall", 666, None, List(), Nil, false)
+    val span = Span(12345, "methodcall", 666, None, List(), Seq(), Some(false))
     val samplerProcessor = new SamplerFilter(NullGlobalSampler)
 
     samplerProcessor(Seq(span)) should be (empty)

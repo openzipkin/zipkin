@@ -20,18 +20,18 @@ object JsonSpan extends (Span => JsonSpan) {
     s.parentId.map(id(_)),
     s.annotations.map(JsonAnnotation),
     s.binaryAnnotations.map(JsonBinaryAnnotation),
-    if (s.debug) Some(true) else None
+    s.debug
   )
 
-  def invert(s: JsonSpan) = Span.apply(
+  def invert(s: JsonSpan) = Span(
     id(s.traceId),
     s.name,
     id(s.id),
     s.parentId.map(id(_)),
     /** If deserialized with jackson, these could be null, as it doesn't look at default values. */
-    if (s.annotations == null) List.empty else s.annotations.map(JsonAnnotation.invert),
+    if (s.annotations == null) List.empty else s.annotations.map(JsonAnnotation.invert).sorted,
     if (s.binaryAnnotations == null) Seq.empty else s.binaryAnnotations.map(JsonBinaryAnnotation.invert),
-    s.debug.getOrElse(false)
+    s.debug
   )
 
   /** Strictly looks at length, so for a long, expects 16 ascii hex chars */

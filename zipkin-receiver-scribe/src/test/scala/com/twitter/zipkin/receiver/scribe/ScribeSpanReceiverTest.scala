@@ -33,7 +33,7 @@ class ScribeSpanReceiverTest extends FunSuite {
   }
   val category = "zipkin"
 
-  val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)), Nil)
+  val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)))
   val validList = List(LogEntry(category, serializer.toString(validSpan.toThrift)))
 
   val base64 = "CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAIACQAA"

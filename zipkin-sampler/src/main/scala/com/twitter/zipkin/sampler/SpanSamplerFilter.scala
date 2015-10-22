@@ -35,7 +35,7 @@ class SpanSamplerFilter(
 
   def apply(spans: Seq[Span], store: Service[Seq[Span], Unit]): Future[Unit] =
     store(spans collect {
-      case span if span.debug =>
+      case span if span.debug.getOrElse(false) =>
         DebugCounter.incr()
         if (span.parentId.isEmpty && !span.serviceName.isEmpty)
           DebugStats.counter(span.serviceName.get).incr()

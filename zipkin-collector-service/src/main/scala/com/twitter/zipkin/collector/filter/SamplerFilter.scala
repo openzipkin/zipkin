@@ -29,7 +29,7 @@ class SamplerFilter(sampler: GlobalSampler) {
        * If the span was created with debug mode on we guarantee that it will be
        * stored no matter what our sampler tells us
        */
-      if (span.debug) {
+      if (span.debug.getOrElse(false)) {
         Stats.incr("debugflag")
         (span.parentId, span.serviceName) match {
           case (None, Some(serviceName)) =>
