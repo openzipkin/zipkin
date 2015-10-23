@@ -170,7 +170,7 @@ public final class JsonCodec implements Codec {
       result.type(type);
       switch (type) {
         case BOOL:
-          result.build();
+          return result.build();
         case STRING:
           return result.value(string.getBytes(UTF_8)).build();
         case BYTES:
