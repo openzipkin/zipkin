@@ -55,14 +55,18 @@ case class Span(
     annotations.flatMap(a => a.host.map(h => h.serviceName.toLowerCase)).toSet
 
   /**
-   * Tries to extract the best possible service name
+   * Tries to extract the best name of the service in this span. This depends on annotations
+   * logged and prioritized names logged by the server over those logged by the client.
    */
-  def serviceName: Option[String] = {
-    if (annotations.isEmpty) None else {
-      serverSideAnnotations.flatMap(_.host).headOption.map(_.serviceName) orElse {
-        clientSideAnnotations.flatMap(_.host).headOption.map(_.serviceName)
-      }
-    }
+  lazy val serviceName: Option[String] = {
+    // Most authoritative is the label of the server's endpoint
+    binaryAnnotations.find(_.key == Constants.ServerAddr).flatMap(_.host).map(_.serviceName) orElse
+      // Next, the label of any server annotation, logged by an instrumented server
+      serverSideAnnotations.flatMap(_.host).headOption.map(_.serviceName) orElse
+      // Next is the label of the client's endpoint
+      binaryAnnotations.find(_.key == Constants.ClientAddr).flatMap(_.host).map(_.serviceName) orElse
+      // Finally, the label of any client annotation, logged by an instrumented client
+      clientSideAnnotations.flatMap(_.host).headOption.map(_.serviceName)
   }
 
   /**

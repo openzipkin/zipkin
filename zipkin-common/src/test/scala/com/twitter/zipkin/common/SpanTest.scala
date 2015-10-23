@@ -39,14 +39,45 @@ class SpanTest extends FunSuite {
   val spanWith2BinaryAnnotations = Span(12345, "methodcall", 666, None,
     List.empty, Seq(binaryAnnotation1, binaryAnnotation2))
 
-
   test("serviceNames is lowercase") {
     val names = spanWith3Annotations.serviceNames
     assert(names.size === 1)
     assert(names.toSeq(0) === "service")
   }
 
-  test("serviceNames") {
+  test("serviceName preference") {
+    var span = Span(12345, "methodcall", 666, None,
+      List(
+        Annotation(1, "cs", Some(Endpoint(1, 2, "cs"))),
+        Annotation(1, "sr", Some(Endpoint(1, 2, "sr"))),
+        Annotation(1, "ss", Some(Endpoint(1, 2, "ss"))),
+        Annotation(1, "cr", Some(Endpoint(1, 2, "cr")))
+      ),
+      List(
+        BinaryAnnotation("ca", BinaryAnnotationValue(true), Some(Endpoint(1, 2, "ca"))),
+        BinaryAnnotation("sa", BinaryAnnotationValue(true), Some(Endpoint(1, 2, "sa")))
+      ))
+
+    // Most authoritative is the label of the server's endpoint
+    assert(span.serviceName === Some("sa"))
+
+    span = span.copy(binaryAnnotations = List(span.binaryAnnotations(0)))
+
+    // Next, the label of any server annotation, logged by an instrumented server
+    assert(span.serviceName === Some("sr"))
+
+    // Next is the label of the client's endpoint
+    span = span.copy(annotations = List(span.annotations(0), span.annotations(3)))
+
+    assert(span.serviceName === Some("ca"))
+
+    // Finally, the label of any client annotation, logged by an instrumented client
+    span = span.copy(binaryAnnotations = List.empty)
+
+    assert(span.serviceName === Some("cs"))
+  }
+
+  test("getAnnotationsAsMap") {
     val map = expectedSpan.getAnnotationsAsMap
     val actualAnnotation = map.get(annotationValue).get
     assert(expectedAnnotation === actualAnnotation)
@@ -64,8 +95,8 @@ class SpanTest extends FunSuite {
   }
 
   test("merge span with Unknown span name with known span name") {
-    val span1 = Span(1, "Unknown", 2, None, List(), Seq())
-    val span2 = Span(1, "get", 2, None, List(), Seq())
+    val span1 = Span(1, "Unknown", 2)
+    val span2 = Span(1, "get", 2)
 
     assert(span1.mergeSpan(span2).name === "get")
     assert(span2.mergeSpan(span1).name === "get")
