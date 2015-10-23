@@ -97,10 +97,10 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
     )
     processDependencies(trace)
 
-    result(store.getDependencies(Some(trace(0).startTs.get), Some(trace(0).endTs.get))) should be(
+    result(store.getDependencies(Some(trace(0).startTs.get), Some(trace(0).endTs.get))).sortBy(_.parent) should be(
       List(
-        new DependencyLink("TraceProducerTwo", "TraceProducerThree", 1),
-        new DependencyLink("TraceProducerOne", "TraceProducerTwo", 1)
+        new DependencyLink("TraceProducerOne", "TraceProducerTwo", 1),
+        new DependencyLink("TraceProducerTwo", "TraceProducerThree", 1)
       )
     )
   }
@@ -117,7 +117,8 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   @Test def dependencies_loopback {
     val traceWithLoopback = List(
       trace(0),
-      trace(1).copy(annotations = trace(1).annotations.map( a => a.copy(host = Some(zipkinWeb))))
+      trace(1).copy(annotations = trace(1).annotations.map(a => a.copy(host = Some(zipkinWeb))),
+                    binaryAnnotations = List.empty)
     )
 
     processDependencies(traceWithLoopback)
