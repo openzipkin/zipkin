@@ -60,6 +60,7 @@ case class AnormDependencyStore(val db: DB,
         """SELECT DISTINCT trace_id, span_id, endpoint_service_name
           |FROM zipkin_annotations
           |WHERE trace_id IN (%s)
+          |AND a_key in ("sr","sa")
           |AND endpoint_service_name is not null
           |GROUP BY trace_id, span_id
         """.stripMargin.format(parentChild.keys.mkString(",")))
