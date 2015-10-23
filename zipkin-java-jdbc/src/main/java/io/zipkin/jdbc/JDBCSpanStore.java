@@ -34,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import org.jooq.DSLContext;
@@ -60,10 +61,11 @@ import static io.zipkin.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.logging.Level.FINEST;
 import static java.util.stream.Collectors.groupingBy;
 
 public final class JDBCSpanStore implements SpanStore {
-
+  private static final Logger LOGGER = Logger.getLogger(JDBCSpanStore.class.getName());
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   {
@@ -283,15 +285,17 @@ public final class JDBCSpanStore implements SpanStore {
       Map<Pair<String>, Long> linkMap = new LinkedHashMap<>();
 
       parentChild.values().stream().flatMap(List::stream).forEach(r -> {
-        String parent = traceSpanServiceName.get(Pair.create(r.value1(), r.value2()));
+        String parent = lookup(traceSpanServiceName, Pair.create(r.value1(), r.value2()));
         // can be null if a root span is missing, or the root's span id doesn't eq the trace id
         if (parent != null) {
-          String child = traceSpanServiceName.get(Pair.create(r.value1(), r.value3()));
-          Pair key = Pair.create(parent, child);
-          if (linkMap.containsKey(key)) {
-            linkMap.put(key, linkMap.get(key) + 1);
-          } else {
-            linkMap.put(key, 1L);
+          String child = lookup(traceSpanServiceName, Pair.create(r.value1(), r.value3()));
+          if (child != null) {
+            Pair key = Pair.create(parent, child);
+            if (linkMap.containsKey(key)) {
+              linkMap.put(key, linkMap.get(key) + 1);
+            } else {
+              linkMap.put(key, 1L);
+            }
           }
         }
       });
@@ -310,6 +314,7 @@ public final class JDBCSpanStore implements SpanStore {
         .selectDistinct(ZIPKIN_ANNOTATIONS.TRACE_ID, ZIPKIN_ANNOTATIONS.SPAN_ID, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME)
         .from(ZIPKIN_ANNOTATIONS)
         .where(ZIPKIN_ANNOTATIONS.TRACE_ID.in(traceIds))
+        .and(ZIPKIN_ANNOTATIONS.A_KEY.in("sr", "sa"))
         .and(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.isNotNull())
         .groupBy(ZIPKIN_ANNOTATIONS.TRACE_ID, ZIPKIN_ANNOTATIONS.SPAN_ID)
         .fetchMap(r -> Pair.create(r.value1(), r.value2()), r -> r.value3());
@@ -370,11 +375,22 @@ public final class JDBCSpanStore implements SpanStore {
   }
 
   private static Table<?> join(Table<?> table, ZipkinAnnotations joinTable, String key, int type) {
-    table = table.join(joinTable)
+    return table.join(joinTable)
         .on(ZIPKIN_SPANS.TRACE_ID.eq(joinTable.TRACE_ID))
         .and(ZIPKIN_SPANS.ID.eq(joinTable.SPAN_ID))
         .and(joinTable.A_TYPE.eq(type))
         .and(joinTable.A_KEY.eq(key));
-    return table;
+  }
+
+  private static String lookup(Map<Pair<Long>, String> table, Pair<Long> key) {
+    String value = table.get(key);
+    if (value == null && LOGGER.isLoggable(FINEST)) {
+      if (key._1.equals(key._2)) {
+        LOGGER.log(FINEST, "could not find service name of root span " + key._1);
+      } else {
+        LOGGER.log(FINEST, "could not find service name of span " + key);
+      }
+    }
+    return value;
   }
 }

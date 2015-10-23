@@ -31,6 +31,11 @@ public final class Pair<T> {
   }
 
   @Override
+  public String toString() {
+    return "(" + _1 + ", " + _2 + ")";
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (o == this) {
       return true;
