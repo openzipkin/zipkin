@@ -1,14 +1,14 @@
-package com.twitter.zipkin.web
+package com.twitter.zipkin.query
 
-import com.twitter.finagle.httpx.{Response, Request}
+import com.twitter.finagle.httpx.{Method, Request, Response}
 import com.twitter.finagle.tracing.{DefaultTracer, Trace}
-import com.twitter.finagle.{Filter, ServiceFactory, param, Stack}
+import com.twitter.finagle.{Filter, ServiceFactory, Stack, param}
 import com.twitter.util.Future
 
 /**
  * Hacked variant of the private `com.twitter.finagle.httpx.codec.HttpServerTraceInitializer`
  *
- * <p/>This version only starts traces at certain entrypoints.
+ * <p/>This version doesn't trace POST requests
  *
  * <p/>See https://github.com/twitter/finatra/issues/271
  */
@@ -18,7 +18,7 @@ object FilteredHttpEntrypointTraceInitializer extends Stack.Module1[param.Tracer
 
   override def make(ignored: param.Tracer, next: ServiceFactory[Request, Response]) = {
     val traceInitializer = Filter.mk[Request, Response, Request, Response] { (req, svc) =>
-      if (req.path.equals("/") || req.path.equals("/dependency") || req.path.startsWith("/api/")) {
+      if (req.method != Method.Post) {
         newRootSpan(req, svc)
       } else {
         svc(req)

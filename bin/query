@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 # See gradle.properties for an explanation of configKey
-./gradlew :zipkin-query-service:run -PconfigKey=${1:-dev}
+TRANSPORT_TYPE="${TRANSPORT_TYPE:-http}" ./gradlew :zipkin-query-service:run -PconfigKey=${1:-dev}

@@ -27,7 +27,7 @@ val sampleRate = sys.env.get("COLLECTOR_SAMPLE_RATE").getOrElse("1.0").toDouble
 
 val db = DB()
 
-val storeBuilder = Store.Builder(SpanStoreBuilder(db, true), DependencyStoreBuilder(db))
+val storeBuilder = Store.Builder(SpanStoreBuilder(db), DependencyStoreBuilder(db))
 val kafkaReceiver = sys.env.get("KAFKA_ZOOKEEPER").map(
   KafkaSpanReceiverFactory.factory(_, sys.env.get("KAFKA_TOPIC").getOrElse("zipkin"))
 )

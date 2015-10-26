@@ -20,6 +20,7 @@ import java.nio.ByteBuffer
 
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
+import com.twitter.zipkin.storage.QueryRequest
 import com.twitter.zipkin.thriftscala
 import org.scalatest.FunSuite
 
@@ -73,5 +74,11 @@ class ThriftConversionsTest extends FunSuite {
 
     val noBinaryAnnotationsSpan = thriftscala.Span(0, "name", 0, None, Seq(), null)
     assert(noBinaryAnnotationsSpan.toSpan === Span(0, "name", 0))
+  }
+
+  test("thriftListToSpans doesn't allocate huge array") {
+    assert(intercept[IllegalArgumentException] {
+      thriftListToSpans("hello".getBytes())
+    }.getMessage == "1701604463 > 10000: possibly malformed thrift")
   }
 }

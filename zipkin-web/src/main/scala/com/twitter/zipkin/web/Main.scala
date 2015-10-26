@@ -22,7 +22,7 @@ import com.twitter.finagle.httpx.{HttpMuxer, Request, Response}
 import com.twitter.finagle.server.StackServer
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.finagle.tracing.{DefaultTracer, NullTracer}
-import com.twitter.finagle.zipkin.thrift.RawZipkinTracer
+import com.twitter.finagle.zipkin.thrift.{HttpZipkinTracer, RawZipkinTracer}
 import com.twitter.finatra.httpclient.HttpClient
 import com.twitter.finatra.json.FinatraObjectMapper
 import com.twitter.server.TwitterServer
@@ -65,20 +65,18 @@ trait ZipkinWebFactory { self: App =>
   LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
     .asInstanceOf[Logger].setLevel(Level.toLevel(logLevel))
 
-  // If a scribe host is configured, send all traces to it, otherwise disable tracing
-  val scribeHost = sys.env.get("SCRIBE_HOST")
-  val scribePort = sys.env.get("SCRIBE_PORT")
-  DefaultTracer.self = if (scribeHost.isDefined || scribePort.isDefined) {
-    RawZipkinTracer(scribeHost.getOrElse("localhost"), scribePort.getOrElse("1463").toInt)
-  } else {
-    NullTracer
+  // Eagerly parse the query destination as it is used in multiple places.
+  queryDest.parse()
+
+  /** If the span transport is set, trace accordingly, or disable tracing */
+  DefaultTracer.self = sys.env.get("TRANSPORT_TYPE") match {
+    case Some("scribe") => RawZipkinTracer(sys.env.get("SCRIBE_HOST").getOrElse("localhost"), sys.env.get("SCRIBE_PORT").getOrElse("1463").toInt)
+    case Some("http") => new HttpZipkinTracer(queryDest(), DefaultStatsReceiver.get)
+    case _ => NullTracer
   }
 
-  /**
-   * Initialize a json-aware Finatra client, targeting the query host. Lazy to ensure
-   * we get the host after the [[queryDest]] flag has been parsed.
-   */
-  lazy val queryClient = new HttpClient(
+  /** Initialize a json-aware Finatra client, targeting the query host. */
+  val queryClient = new HttpClient(
     httpService =
       Httpx.client.configured(param.Label("zipkin-query")).newClient(queryDest()).toService,
     defaultHeaders = Map("Host" -> queryDest()),

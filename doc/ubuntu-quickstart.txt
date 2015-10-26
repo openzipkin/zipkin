@@ -56,7 +56,6 @@ cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandr
 
 9. Run it!
 
-bin/collector cassandra
 bin/query cassandra
 bin/web
 

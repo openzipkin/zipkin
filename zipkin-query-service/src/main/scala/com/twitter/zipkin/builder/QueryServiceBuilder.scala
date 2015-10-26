@@ -17,8 +17,9 @@ package com.twitter.zipkin.builder
 
 import ch.qos.logback.classic.{Logger, Level}
 import com.twitter.finagle.ListeningServer
+import com.twitter.finagle.stats.DefaultStatsReceiver
 import com.twitter.finagle.tracing.{DefaultTracer, NullTracer}
-import com.twitter.finagle.zipkin.thrift.RawZipkinTracer
+import com.twitter.finagle.zipkin.thrift.{SpanStoreZipkinTracer, RawZipkinTracer}
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.zipkin.query.ZipkinQueryServer
 import com.twitter.zipkin.storage.{DependencyStore, NullDependencyStore, SpanStore}
@@ -36,13 +37,11 @@ case class QueryServiceBuilder(override val defaultFinatraHttpPort: String = "0.
     LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
       .asInstanceOf[Logger].setLevel(Level.toLevel(logLevel))
 
-    // If a scribe host is configured, send all traces to it, otherwise disable tracing
-    val scribeHost = sys.env.get("SCRIBE_HOST")
-    val scribePort = sys.env.get("SCRIBE_PORT")
-    DefaultTracer.self = if (scribeHost.isDefined || scribePort.isDefined) {
-      RawZipkinTracer(scribeHost.getOrElse("localhost"), scribePort.getOrElse("1463").toInt)
-    } else {
-      NullTracer
+    /** If the span transport is set, trace accordingly, or disable tracing */
+    DefaultTracer.self = sys.env.get("TRANSPORT_TYPE") match {
+      case Some("scribe") => RawZipkinTracer(sys.env.get("SCRIBE_HOST").getOrElse("localhost"), sys.env.get("SCRIBE_PORT").getOrElse("1463").toInt)
+      case Some("http") => new SpanStoreZipkinTracer(spanStore, DefaultStatsReceiver.get)
+      case _ => NullTracer
     }
 
     nonExitingMain(Array(

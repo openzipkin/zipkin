@@ -16,7 +16,10 @@
 package com.twitter.zipkin.query
 
 import com.google.inject.Provides
+import com.twitter.finagle.stats.StatsReceiver
+import com.twitter.finagle.{ListeningServer, param, Httpx}
 import com.twitter.finagle.httpx.{Request, Response}
+import com.twitter.finagle.server.StackServer
 import com.twitter.finatra.http.HttpServer
 import com.twitter.finatra.http.filters.CommonFilters
 import com.twitter.finatra.http.routing.HttpRouter
@@ -25,6 +28,8 @@ import com.twitter.finatra.json.utils.CamelCasePropertyNamingStrategy
 import com.twitter.finatra.logging.filter.{LoggingMDCFilter, TraceIdMDCFilter}
 import com.twitter.finatra.logging.modules.Slf4jBridgeModule
 import com.twitter.inject.TwitterModule
+import com.twitter.inject.server.PortUtils
+import com.twitter.util.Await
 import com.twitter.zipkin.json.ZipkinJson
 import com.twitter.zipkin.storage._
 
@@ -57,5 +62,36 @@ class ZipkinQueryServer(spanStore: SpanStore, dependencyStore: DependencyStore) 
       .filter[TraceIdMDCFilter[Request, Response]]
       .filter[CommonFilters]
       .add[ZipkinQueryController]
+  }
+
+  // All of the below are needed to do the following:
+  // Disable POST tracing: https://github.com/twitter/finatra/issues/271
+  // Set serviceName to zipkin-query: https://github.com/twitter/finatra/issues/270
+  private var httpServer: ListeningServer = _
+
+  override def postWarmup() {
+    if (disableAdminHttpServer) {
+      info("Disabling the Admin HTTP Server since disableAdminHttpServer=true")
+      adminHttpServer.close()
+    }
+    /** Httpx.server will trace all paths. Disable tracing of POST. */
+    httpServer = Httpx.Server(StackServer.newStack
+      .replace(FilteredHttpEntrypointTraceInitializer.role, FilteredHttpEntrypointTraceInitializer))
+      .configured(param.Label("zipkin-query"))
+      .configured(param.Stats(injector.instance[StatsReceiver]))
+      .serve(defaultFinatraHttpPort, httpService)
+    info("http server started on port: " + httpExternalPort.get)
+  }
+
+  override def httpExternalPort = Option(httpServer).map(PortUtils.getPort)
+
+  override def httpExternalSocketAddress = Option(httpServer).map(_.boundAddress)
+
+  override def waitForServer() {
+    Await.ready(httpServer)
+  }
+
+  onExit {
+    Await.result(httpServer.close(defaultShutdownTimeout.fromNow))
   }
 }

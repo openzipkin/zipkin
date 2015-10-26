@@ -16,6 +16,6 @@ Example usage:
 ```bash
 # in one terminal, install and start redis
 $ redis-server
-# in another terminal, start the collector and query services
-$ REDIS_PASSWORD=secret ./bin/collector redis
+# in another terminal, start the query service (optionally a collector)
+$ REDIS_PASSWORD=secret ./bin/query redis
 ```

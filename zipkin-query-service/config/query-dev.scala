@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import com.twitter.zipkin.anormdb.SpanStoreBuilder
 import com.twitter.zipkin.builder.QueryServiceBuilder
 import com.twitter.zipkin.storage.anormdb.{AnormDependencyStore, AnormSpanStore, DB}
 
@@ -23,7 +24,7 @@ val logLevel = sys.env.get("QUERY_LOG_LEVEL").getOrElse("INFO")
 
 val db = DB()
 
-val spanStore = new AnormSpanStore(db, None)
+val spanStore = SpanStoreBuilder(db, true)()
 val dependencies = AnormDependencyStore(db)
 
 QueryServiceBuilder(

@@ -4,8 +4,8 @@ ext.mainClassName = 'com.twitter.zipkin.collector.Main'
 task run(type:JavaExec) {
     main = mainClassName
     classpath = sourceSets.main.runtimeClasspath
-    // Creates zipkin.db in the build directory when configKey == "dev"
-    workingDir project.buildDir
+    // When configKey == "dev", run out of the query's directory to reuse zipkin.db
+    workingDir configKey == "dev" ? project(':zipkin-query-service').buildDir : project.buildDir
     // See gradle.properties for an explanation of configKey
     args '-f', "${projectDir}/config/collector-${configKey}.scala"
 }
