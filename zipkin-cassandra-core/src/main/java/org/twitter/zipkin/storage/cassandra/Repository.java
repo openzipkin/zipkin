@@ -3,8 +3,10 @@ package org.twitter.zipkin.storage.cassandra;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -26,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -68,6 +69,7 @@ public final class Repository implements AutoCloseable {
     private final PreparedStatement selectTraceIdsByAnnotations;
     private final PreparedStatement insertTraceIdByAnnotation;
     private final Map<String,String> metadata;
+    private final ProtocolVersion protocolVersion;
 
     private final ThreadLocal<Set<String>> writtenNames = new ThreadLocal<Set<String>>() {
             private long cacheInterval = toCacheInterval(System.currentTimeMillis());
@@ -96,6 +98,7 @@ public final class Repository implements AutoCloseable {
     public Repository(String keyspace, Cluster cluster) {
         metadata = Schema.ensureExists(keyspace, cluster);
         session = cluster.connect(keyspace);
+        protocolVersion = cluster.getConfiguration().getProtocolOptions().getProtocolVersionEnum();
 
         insertSpan = session.prepare(
                 QueryBuilder
@@ -216,7 +219,7 @@ public final class Repository implements AutoCloseable {
 
             BoundStatement bound = insertSpan.bind()
                     .setLong("trace_id", traceId)
-                    .setLong("ts", timestamp)
+                    .setBytesUnsafe("ts", serializeTs(timestamp))
                     .setString("span_name", spanName)
                     .setBytes("span", span)
                     .setInt("ttl_", ttl);
@@ -490,7 +493,7 @@ public final class Repository implements AutoCloseable {
             BoundStatement bound = selectTraceIdsByServiceName.bind()
                     .setString("service_name", serviceName)
                     .setList("bucket", ALL_BUCKETS)
-                    .setLong("ts", to)
+                    .setBytesUnsafe("ts", serializeTs(to))
                     .setInt("limit_", limit);
 
             bound.setFetchSize(Integer.MAX_VALUE);
@@ -506,7 +509,7 @@ public final class Repository implements AutoCloseable {
                     public Map<Long, Long> apply(ResultSet input) {
                         Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
                         for (Row row : input) {
-                            traceIdsToTimestamps.put(row.getLong("trace_id"), row.getLong("ts"));
+                            traceIdsToTimestamps.put(row.getLong("trace_id"), deserializeTs(row, "ts"));
                         }
                         return traceIdsToTimestamps;
                     }
@@ -534,7 +537,7 @@ public final class Repository implements AutoCloseable {
             BoundStatement bound = insertTraceIdByServiceName.bind()
                     .setString("service_name", serviceName)
                     .setInt("bucket", RAND.nextInt(BUCKETS))
-                    .setLong("ts", timestamp)
+                    .setBytesUnsafe("ts", serializeTs(timestamp))
                     .setLong("trace_id", traceId)
                     .setInt("ttl_", ttl);
 
@@ -566,7 +569,7 @@ public final class Repository implements AutoCloseable {
         try {
             BoundStatement bound = selectTraceIdsBySpanName.bind()
                     .setString("service_span_name", serviceSpanName)
-                    .setLong("ts", to)
+                    .setBytesUnsafe("ts", serializeTs(to))
                     .setInt("limit_", limit);
 
             if (LOG.isDebugEnabled()) {
@@ -580,7 +583,7 @@ public final class Repository implements AutoCloseable {
                     public Map<Long, Long> apply(ResultSet input) {
                         Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
                         for (Row row : input) {
-                            traceIdsToTimestamps.put(row.getLong("trace_id"), row.getLong("ts"));
+                            traceIdsToTimestamps.put(row.getLong("trace_id"), deserializeTs(row, "ts"));
                         }
                         return traceIdsToTimestamps;
                     }
@@ -610,7 +613,7 @@ public final class Repository implements AutoCloseable {
 
             BoundStatement bound = insertTraceIdBySpanName.bind()
                     .setString("service_span_name", serviceSpanName)
-                    .setLong("ts", timestamp)
+                    .setBytesUnsafe("ts", serializeTs(timestamp))
                     .setLong("trace_id", traceId)
                     .setInt("ttl_", ttl);
 
@@ -637,7 +640,7 @@ public final class Repository implements AutoCloseable {
             BoundStatement bound = selectTraceIdsByAnnotations.bind()
                     .setBytes("annotation", annotationKey)
                     .setList("bucket", ALL_BUCKETS)
-                    .setLong("ts", from)
+                    .setBytesUnsafe("ts", serializeTs(from))
                     .setInt("limit_", limit);
 
             bound.setFetchSize(Integer.MAX_VALUE);
@@ -653,7 +656,7 @@ public final class Repository implements AutoCloseable {
                   public Map<Long, Long> apply(ResultSet input) {
                       Map < Long, Long > traceIdsToTimestamps = new LinkedHashMap<>();
                       for (Row row : input) {
-                          traceIdsToTimestamps.put(row.getLong("trace_id"), row.getLong("ts"));
+                          traceIdsToTimestamps.put(row.getLong("trace_id"), deserializeTs(row, "ts"));
                       }
                       return traceIdsToTimestamps;
                   }
@@ -677,7 +680,7 @@ public final class Repository implements AutoCloseable {
             BoundStatement bound = insertTraceIdByAnnotation.bind()
                     .setBytes("annotation", annotationKey)
                     .setInt("bucket", RAND.nextInt(BUCKETS))
-                    .setLong("ts", timestamp)
+                    .setBytesUnsafe("ts", serializeTs(timestamp))
                     .setLong("trace_id", traceId)
                     .setInt("ttl_", ttl);
 
@@ -750,4 +753,14 @@ public final class Repository implements AutoCloseable {
                 return null;
             }
         };
+
+    // Overrides default codec of timestamps as dates (as doing so truncates to millis).
+    // TODO: When we switch to datastax java-driver v3+, move this to a custom codec.
+    private ByteBuffer serializeTs(long timestamp) {
+        return DataType.bigint().serialize(timestamp, protocolVersion);
+    }
+
+    private long deserializeTs(Row row, String name) {
+        return (long) DataType.bigint().deserialize(row.getBytesUnsafe(name), protocolVersion);
+    }
 }
