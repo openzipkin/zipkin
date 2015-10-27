@@ -19,8 +19,12 @@ import com.github.kristofa.brave.ServerResponseInterceptor;
 import com.github.kristofa.brave.ServerTracer;
 import com.github.kristofa.brave.http.DefaultSpanNameProvider;
 import com.github.kristofa.brave.spring.ServletHandlerInterceptor;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.AsyncHandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
@@ -33,8 +37,43 @@ public class ApiTracerConfiguration extends WebMvcConfigurerAdapter {
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
     ServerTracer tracer = brave.serverTracer();
-    registry.addInterceptor(new ServletHandlerInterceptor(
+    ServletHandlerInterceptor traceInterceptor = new ServletHandlerInterceptor(
         new ServerRequestInterceptor(tracer), new ServerResponseInterceptor(tracer),
-        new DefaultSpanNameProvider(), brave.serverSpanThreadBinder()));
+        new DefaultSpanNameProvider(), brave.serverSpanThreadBinder());
+    registry.addInterceptor(new NoPOSTHandlerInterceptorAdapter(traceInterceptor));
+  }
+
+  static class NoPOSTHandlerInterceptorAdapter implements AsyncHandlerInterceptor {
+    private final AsyncHandlerInterceptor delegate;
+
+    NoPOSTHandlerInterceptorAdapter(AsyncHandlerInterceptor delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public void afterConcurrentHandlingStarted(HttpServletRequest request, HttpServletResponse response, Object o) throws Exception {
+      if (!request.getMethod().equals("POST")) {
+        delegate.afterConcurrentHandlingStarted(request, response, o);
+      }
+    }
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object o) throws Exception {
+      return request.getMethod().equals("POST") ? true : delegate.preHandle(request, response, o);
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object o, ModelAndView modelAndView) throws Exception {
+      if (!request.getMethod().equals("POST")) {
+        delegate.postHandle(request, response, o, modelAndView);
+      }
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object o, Exception e) throws Exception {
+      if (!request.getMethod().equals("POST")) {
+        delegate.afterCompletion(request, response, o, e);
+      }
+    }
   }
 }
