@@ -31,17 +31,9 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <zipkin-scala.version>1.18.1</zipkin-scala.version>
+    <zipkin-scala.version>1.19.1</zipkin-scala.version>
     <scalatest.version>2.2.5</scalatest.version>
   </properties>
-
-  <!-- Temporary until 1.18.2 -->
-  <repositories>
-    <repository>
-      <id>jfrog-snapshot</id>
-      <url>http://oss.jfrog.org/artifactory/oss-snapshot-local</url>
-    </repository>
-  </repositories>
 
   <dependencies>
     <dependency>
@@ -72,8 +64,7 @@
       <groupId>io.zipkin</groupId>
       <artifactId>zipkin-common</artifactId>
       <classifier>test</classifier>
-      <!-- TODO revert to ${zipkin-scala.version} on 1.18.2 -->
-      <version>1.18.2-SNAPSHOT</version>
+      <version>${zipkin-scala.version}</version>
       <scope>test</scope>
     </dependency>
 
