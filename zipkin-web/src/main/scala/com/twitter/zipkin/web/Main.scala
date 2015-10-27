@@ -65,18 +65,11 @@ trait ZipkinWebFactory { self: App =>
   LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
     .asInstanceOf[Logger].setLevel(Level.toLevel(logLevel))
 
-  // Eagerly parse the query destination as it is used in multiple places.
-  queryDest.parse()
-
-  /** If the span transport is set, trace accordingly, or disable tracing */
-  DefaultTracer.self = sys.env.get("TRANSPORT_TYPE") match {
-    case Some("scribe") => RawZipkinTracer(sys.env.get("SCRIBE_HOST").getOrElse("localhost"), sys.env.get("SCRIBE_PORT").getOrElse("1463").toInt)
-    case Some("http") => new HttpZipkinTracer(queryDest(), DefaultStatsReceiver.get)
-    case _ => NullTracer
-  }
-
-  /** Initialize a json-aware Finatra client, targeting the query host. */
-  val queryClient = new HttpClient(
+ /**
+  * Initialize a json-aware Finatra client, targeting the query host. Lazy to ensure
+  * we get the host after the [[queryDest]] flag has been parsed.
+  */
+  lazy val queryClient = new HttpClient(
     httpService =
       Httpx.client.configured(param.Label("zipkin-query")).newClient(queryDest()).toService,
     defaultHeaders = Map("Host" -> queryDest()),
@@ -121,7 +114,14 @@ trait ZipkinWebFactory { self: App =>
 
 object Main extends TwitterServer with ZipkinWebFactory {
   def main() {
-    /** Httpx.server will trace all paths. We don't care about static assets, so need to customize */
+    // If the span transport is set, trace accordingly, or disable tracing
+    DefaultTracer.self = sys.env.get("TRANSPORT_TYPE") match {
+      case Some("scribe") => RawZipkinTracer(sys.env.get("SCRIBE_HOST").getOrElse("localhost"), sys.env.get("SCRIBE_PORT").getOrElse("1463").toInt)
+      case Some("http") => new HttpZipkinTracer(queryDest(), DefaultStatsReceiver.get)
+      case _ => NullTracer
+    }
+
+    // Httpx.server will trace all paths. We don't care about static assets, so need to customize
     val server = Httpx.Server(StackServer.newStack
       .replace(FilteredHttpEntrypointTraceInitializer.role, FilteredHttpEntrypointTraceInitializer))
       .configured(param.Label("zipkin-web"))
