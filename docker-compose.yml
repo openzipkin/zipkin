@@ -13,20 +13,9 @@
 #
 
 mysql:
-  image: openzipkin/zipkin-mysql:1.18.0
+  image: openzipkin/zipkin-mysql:1.19.1
   ports:
     - 3306:3306
-collector:
-  image: openzipkin/zipkin-collector:1.18.0
-  environment:
-    - TRANSPORT_TYPE=scribe
-    - STORAGE_TYPE=mysql
-  expose:
-    - 9410
-  ports:
-    - 9410:9410
-  links:
-    - mysql:storage
 query:
   build: zipkin-java-server
   environment:
@@ -38,11 +27,11 @@ query:
   links:
     - mysql:storage
 web:
-  image: openzipkin/zipkin-web:1.18.0
+  image: openzipkin/zipkin-web:1.19.1
   ports:
     - 8080:8080
   environment:
-    - TRANSPORT_TYPE=scribe
+    - TRANSPORT_TYPE=http
+    - WEB_LOG_LEVEL=DEBUG
   links:
-    - collector
     - query
