@@ -24,5 +24,5 @@ For default values see:
 Example usage:
 
 ```bash
-$ CASSANDRA_USERNAME=user CASSANDRA_PASSWORD=pass COLLECTOR_LOG_LEVEL=ERROR ./bin/collector cassandra
+$ CASSANDRA_USERNAME=user CASSANDRA_PASSWORD=pass QUERY_LOG_LEVEL=ERROR ./bin/query cassandra
 ```

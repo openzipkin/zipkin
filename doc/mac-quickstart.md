@@ -39,11 +39,9 @@ Now you can run Zipkin (you'll need to leave these processes running, so use
 separate bash windows if you're doing it that way):
 
 ```bash
-# Collect data
-bin/collector cassandra
-# Extract data
+# Start the Api server
 bin/query cassandra
-# Display data
+# Start the UI server
 bin/web
 ```
 

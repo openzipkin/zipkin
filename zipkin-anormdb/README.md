@@ -27,5 +27,5 @@ $ mysql -uroot -e "show global variables like 'innodb_file_format'"
 # install the schema and indexes
 $ mysql -uroot -e "create database if not exists zipkin"
 $ mysql -uroot -Dzipkin < zipkin-anormdb/src/main/resources/mysql.sql
-$ MYSQL_USER=root ./bin/collector mysql
+$ MYSQL_USER=root ./bin/query mysql
 ```

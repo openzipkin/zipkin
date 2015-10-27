@@ -8,9 +8,8 @@
 
 ## Running Zipkin
 
-Zipkin is a collection of processes (a backend for the data, a
-"collector", and query engine, and a web UI) and all of them need to
-be running to make any progress:
+Zipkin minimally needs a datastore, query and UI server. Some architectures also include
+a collection tier (ex polling Kafka).
 
 ![Architecture](https://github.com/openzipkin/zipkin/raw/master/doc/architecture-0.png)
 
@@ -35,8 +34,6 @@ Here's how to start zipkin using the default file-based backend and view traces.
 ```bash
 # get the zipkin source and change to its directory
 $ git clone https://github.com/openzipkin/zipkin; cd zipkin
-# start the collector server in a new terminal session or tab
-$ ./bin/collector
 # start the query server in a new terminal session or tab
 $ ./bin/query
 # start the web server in a new terminal session or tab
@@ -73,5 +70,5 @@ Areas where we'd love to see contributions:
 
 * adding tracing to more libraries and protocols
 * interesting reports generated with Hadoop from the trace data
-* extending collector to support more transports and storage systems
+* extending collection to more transports and storage systems
 * trace data visualizations in the web UI

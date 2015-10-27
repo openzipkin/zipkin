@@ -15,9 +15,12 @@
  */
 package com.twitter.zipkin.conversions
 
+import com.twitter.scrooge.TArrayByteTransport
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.thriftscala
+import org.apache.thrift.protocol.TBinaryProtocol
 import scala.collection.breakOut
+import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
 /**
@@ -117,6 +120,21 @@ object thrift {
   }
   implicit def spanToThriftSpan(s: Span) = new ThriftSpan(s)
   implicit def thriftSpanToSpan(s: thriftscala.Span) = new WrappedSpan(s)
+
+  def thriftListToSpans(bytes: Array[Byte]) = {
+    val proto = new TBinaryProtocol(TArrayByteTransport(bytes))
+    val _list = proto.readListBegin()
+    if (_list.size > 10000) {
+      throw new IllegalArgumentException(_list.size + " > 10000: possibly malformed thrift")
+    }
+    val result = new ArrayBuffer[Span](_list.size)
+    for (i <- 1 to _list.size) {
+      val thrift = thriftscala.Span.decode(proto)
+      result += thriftSpanToSpan(thrift).toSpan
+    }
+    proto.readListEnd()
+    result
+  }
 
   class WrappedDependencyLink(dl: DependencyLink) {
     lazy val toThrift = thriftscala.DependencyLink(dl.parent, dl.child, dl.callCount)

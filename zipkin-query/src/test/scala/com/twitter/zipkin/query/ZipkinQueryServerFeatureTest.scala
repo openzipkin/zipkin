@@ -11,7 +11,7 @@ import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.json.{JsonSpan, ZipkinJson}
 import com.twitter.zipkin.storage.{DependencyStore, InMemorySpanStore, SpanStore}
-import org.apache.thrift.protocol.{TCompactProtocol, TList, TType}
+import org.apache.thrift.protocol.{TBinaryProtocol, TList, TType}
 import org.apache.thrift.transport.TMemoryBuffer
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
@@ -100,7 +100,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   "post spans in thrift" in {
     // serialize all spans as a thrift list
     val transport = new TMemoryBuffer(0)
-    val oproto = new TCompactProtocol(transport)
+    val oproto = new TBinaryProtocol(transport)
     oproto.writeListBegin(new TList(TType.STRUCT, allSpans.size))
     allSpans.map(spanToThriftSpan).foreach(_.toThrift.write(oproto))
     oproto.writeListEnd()
