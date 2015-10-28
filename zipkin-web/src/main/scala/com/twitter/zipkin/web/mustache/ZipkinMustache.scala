@@ -2,6 +2,8 @@ package com.twitter.zipkin.web.mustache
 
 import com.github.mustachejava.DefaultMustacheFactory
 import java.io._
+import com.twitter.mustache.ScalaObjectHandler
+
 import collection.JavaConversions.mapAsJavaMap
 
 class ZipkinMustache(templateRoot: String, cache: Boolean) {
@@ -18,8 +20,8 @@ class ZipkinMustache(templateRoot: String, cache: Boolean) {
     }
 
     def invalidateCaches() {
-      mustacheCache.invalidateAll()
-      templateCache.invalidateAll()
+      mustacheCache.clear()
+      templateCache.clear()
     }
   }
   private[this] val mf = new ZipkinMustacheFactory

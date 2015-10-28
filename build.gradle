@@ -20,8 +20,8 @@ allprojects {
     apply plugin: 'com.jfrog.bintray'
     apply plugin: "com.jfrog.artifactory-upload"
     apply from: "$rootDir/gradle/dependencies.gradle"  // common dependency versions
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
 }
 
 import org.gradle.util.VersionNumber

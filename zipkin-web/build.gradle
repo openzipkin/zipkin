@@ -16,7 +16,8 @@ artifacts.zipkinUpload shadowJar
 dependencies {
     compile project(':zipkin-common')
     compile "com.twitter:twitter-server_${scalaInterfaceVersion}:${commonVersions.twitterServer}"
-    compile 'com.github.spullara.mustache.java:compiler:0.8.17'
+    compile 'com.github.spullara.mustache.java:compiler:0.9.1'
+    compile "com.github.spullara.mustache.java:scala-extensions-${scalaInterfaceVersion}:0.9.1"
     compile "com.twitter.finatra:finatra-httpclient_${scalaInterfaceVersion}:${commonVersions.finatra}"
     compile "ch.qos.logback:logback-core:${commonVersions.logback}"
     compile "ch.qos.logback:logback-classic:${commonVersions.logback}"
