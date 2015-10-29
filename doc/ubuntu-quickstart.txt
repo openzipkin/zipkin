@@ -25,9 +25,9 @@ curl -L http://debian.datastax.com/debian/repo_key | sudo apt-key add -
 sudo apt-get update
 sudo apt-get install dsc12
 
-3. Install Java 7 JDK
+3. Install Java 8 JRE
 #we aren't a java shop so openjdk is fine for us
-sudo apt-get install openjdk-7-jre-headless
+sudo apt-get install openjdk-8-jre-headless
 
 4. Set up JAVA_HOME path var
 #in .bashrc or equivalent 

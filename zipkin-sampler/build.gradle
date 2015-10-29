@@ -10,5 +10,5 @@ dependencies {
     // zookeeper deps use log4j: route to slf4j
     compile "org.slf4j:log4j-over-slf4j:${commonVersions.slf4j}"
 
-    testCompile 'org.apache.curator:curator-test:2.8.0'
+    testCompile 'org.apache.curator:curator-test:2.9.0'
 }
