@@ -29,7 +29,8 @@ case class QueryServiceBuilder(override val defaultFinatraHttpPort: String = "0.
                                override val defaultHttpPort: Int = 9901,
                                logLevel: String = "INFO",
                                spanStore: SpanStore,
-                               dependencies: DependencyStore = new NullDependencyStore
+                               dependencies: DependencyStore = new NullDependencyStore,
+                               override val defaultHttpServerName: String = "zipkin-query"
                                 ) extends ZipkinQueryServer(spanStore, dependencies) with
                                           Builder[RuntimeEnvironment => ListeningServer] {
 

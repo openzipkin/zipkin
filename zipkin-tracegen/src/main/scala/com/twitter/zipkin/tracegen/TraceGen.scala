@@ -20,7 +20,6 @@ import collection.mutable.ListBuffer
 import com.twitter.conversions.time._
 import com.twitter.util.Time
 import com.twitter.zipkin.common._
-import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.{Constants, thriftscala}
 import java.nio.ByteBuffer
 import scala.util.Random

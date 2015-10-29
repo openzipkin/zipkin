@@ -17,8 +17,8 @@ package com.twitter.zipkin.query
 
 import com.google.inject.Provides
 import com.twitter.finagle.stats.StatsReceiver
-import com.twitter.finagle.{ListeningServer, param, Httpx}
-import com.twitter.finagle.httpx.{Request, Response}
+import com.twitter.finagle.{ListeningServer, param, Http}
+import com.twitter.finagle.http.{Request, Response}
 import com.twitter.finagle.server.StackServer
 import com.twitter.finatra.http.HttpServer
 import com.twitter.finatra.http.filters.CommonFilters
@@ -64,9 +64,8 @@ class ZipkinQueryServer(spanStore: SpanStore, dependencyStore: DependencyStore) 
       .add[ZipkinQueryController]
   }
 
-  // All of the below are needed to do the following:
-  // Disable POST tracing: https://github.com/twitter/finatra/issues/271
-  // Set serviceName to zipkin-query: https://github.com/twitter/finatra/issues/270
+  // All of the below is needed to do disable POST tracing:
+  // https://github.com/twitter/finatra/issues/271
   private var httpServer: ListeningServer = _
 
   override def postWarmup() {
@@ -75,7 +74,7 @@ class ZipkinQueryServer(spanStore: SpanStore, dependencyStore: DependencyStore) 
       adminHttpServer.close()
     }
     /** Httpx.server will trace all paths. Disable tracing of POST. */
-    httpServer = Httpx.Server(StackServer.newStack
+    httpServer = Http.Server(StackServer.newStack
       .replace(FilteredHttpEntrypointTraceInitializer.role, FilteredHttpEntrypointTraceInitializer))
       .configured(param.Label("zipkin-query"))
       .configured(param.Stats(injector.instance[StatsReceiver]))

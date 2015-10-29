@@ -1,7 +1,7 @@
 package com.twitter.zipkin.query
 
 import com.fasterxml.jackson.core.`type`.TypeReference
-import com.twitter.finagle.httpx.Request
+import com.twitter.finagle.http.Request
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.finatra.annotations.Flag
 import com.twitter.finatra.http.Controller

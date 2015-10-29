@@ -1,7 +1,7 @@
 package com.twitter.zipkin.web
 
 import com.google.common.io.ByteStreams
-import com.twitter.finagle.httpx.{ParamMap, Request, Response}
+import com.twitter.finagle.http.{ParamMap, Request, Response}
 import com.twitter.finagle.stats.{Stat, StatsReceiver}
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.finagle.{Filter, Service}

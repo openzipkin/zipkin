@@ -19,9 +19,9 @@ package com.twitter.zipkin.tracegen
 
 import ch.qos.logback.classic.{Level, Logger}
 import com.twitter.app.App
-import com.twitter.finagle.httpx.Request
+import com.twitter.finagle.http.Request
 import com.twitter.finagle.tracing.SpanId
-import com.twitter.finagle.{Httpx, Thrift, param}
+import com.twitter.finagle.{Http, Thrift, param}
 import com.twitter.finatra.httpclient.HttpClient
 import com.twitter.finatra.json.FinatraObjectMapper
 import com.twitter.scrooge.BinaryThriftStructSerializer
@@ -53,7 +53,7 @@ object Main extends App with ZipkinSpanGenerator {
    */
   lazy val queryClient = new HttpClient(
     httpService =
-      Httpx.client.configured(param.Label("zipkin-query")).newClient(queryDest()).toService,
+      Http.client.configured(param.Label("zipkin-query")).newClient(queryDest()).toService,
     mapper = new FinatraObjectMapper(ZipkinJson)
   )
 

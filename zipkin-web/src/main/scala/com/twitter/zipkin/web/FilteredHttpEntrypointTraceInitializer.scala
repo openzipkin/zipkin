@@ -1,6 +1,6 @@
 package com.twitter.zipkin.web
 
-import com.twitter.finagle.httpx.{Response, Request}
+import com.twitter.finagle.http.{Response, Request}
 import com.twitter.finagle.tracing.{DefaultTracer, Trace}
 import com.twitter.finagle.{Filter, ServiceFactory, param, Stack}
 import com.twitter.util.Future

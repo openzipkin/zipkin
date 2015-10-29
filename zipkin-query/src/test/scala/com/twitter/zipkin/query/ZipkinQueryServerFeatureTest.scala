@@ -1,7 +1,7 @@
 package com.twitter.zipkin.query
 
-import com.twitter.finagle.httpx.{Request, Method}
-import com.twitter.finagle.httpx.Status._
+import com.twitter.finagle.http.{Request, Method}
+import com.twitter.finagle.http.Status._
 import com.twitter.finatra.http.test.EmbeddedHttpServer
 import com.twitter.inject.server.FeatureTest
 import com.twitter.io.Buf

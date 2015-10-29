@@ -16,7 +16,7 @@
  */
 package com.twitter.zipkin.sampler
 
-import com.twitter.finagle.httpx.HttpMuxer
+import com.twitter.finagle.http.HttpMuxer
 import java.net.InetSocketAddress
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
 

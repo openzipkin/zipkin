@@ -12,6 +12,7 @@ dependencies {
     testCompile "com.twitter.finatra:finatra-http_${scalaInterfaceVersion}:${commonVersions.finatra}:tests"
     testCompile "com.twitter.finatra:finatra-jackson_${scalaInterfaceVersion}:${commonVersions.finatra}:tests"
     testCompile "com.twitter.inject:inject-core_${scalaInterfaceVersion}:${commonVersions.finatra}:tests"
+    testCompile 'com.google.inject.extensions:guice-testlib:4.0' // missing dependency from inject-core
     testCompile "com.twitter.inject:inject-modules_${scalaInterfaceVersion}:${commonVersions.finatra}:tests"
     testCompile "com.twitter.inject:inject-app_${scalaInterfaceVersion}:${commonVersions.finatra}:tests"
     testCompile "com.twitter.inject:inject-server_${scalaInterfaceVersion}:${commonVersions.finatra}:tests"
