@@ -15,7 +15,7 @@
  */
 package com.twitter.zipkin.query
 
-import com.twitter.finagle.httpx.Request
+import com.twitter.finagle.http.Request
 import com.twitter.finatra.annotations.Flag
 import com.twitter.util.Time
 import com.twitter.zipkin.storage.QueryRequest

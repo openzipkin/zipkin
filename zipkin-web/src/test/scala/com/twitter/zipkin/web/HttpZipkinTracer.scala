@@ -25,8 +25,8 @@ class HttpZipkinTracerTest extends JUnitSuite {
   val finagleSpan = Span(
     traceId = TraceId(Some(SpanId(1)), None, SpanId(1), None, Flags().setDebug),
     annotations = Seq(
-      ZipkinAnnotation(Time.fromMicroseconds(123), "cs", finagleEndpoint, None),
-      ZipkinAnnotation(Time.fromMicroseconds(456), "cr", finagleEndpoint, None)
+      ZipkinAnnotation(Time.fromMicroseconds(123), "cs", finagleEndpoint),
+      ZipkinAnnotation(Time.fromMicroseconds(456), "cr", finagleEndpoint)
     ),
     _serviceName = Some("zipkin-query"),
     _name = Some("GET"),

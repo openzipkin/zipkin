@@ -1,7 +1,7 @@
 package com.twitter.zipkin.sampler
 
 import com.twitter.finagle.Service
-import com.twitter.finagle.httpx.{Request, Response}
+import com.twitter.finagle.http.{Request, Response}
 import com.twitter.util.{Future, Return, Throw, Try, Witness}
 import java.util.concurrent.atomic.AtomicReference
 

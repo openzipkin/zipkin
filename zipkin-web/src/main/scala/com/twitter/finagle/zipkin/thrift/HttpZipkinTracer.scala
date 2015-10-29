@@ -1,11 +1,11 @@
 package com.twitter.finagle.zipkin.thrift
 
 import com.twitter.conversions.storage._
-import com.twitter.finagle.httpx.{Method, Request}
+import com.twitter.finagle.http.{Method, Request}
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finagle.tracing.{NullTracer, Trace}
 import com.twitter.finagle.util.DefaultTimer
-import com.twitter.finagle.{Httpx, param}
+import com.twitter.finagle.{Http, param}
 import com.twitter.io.Buf
 import com.twitter.util._
 import org.apache.thrift.protocol.{TBinaryProtocol, TList, TType}
@@ -30,7 +30,7 @@ class HttpZipkinTracer(
   maxBufferSize: StorageUnit = 1.megabyte
 ) extends RawZipkinTracer(null, statsReceiver, timer, poolSize, initialBufferSize, maxBufferSize) {
 
-  private[this] val client = Httpx.client.configured(param.Tracer(NullTracer)).newClient(hostname).toService
+  private[this] val client = Http.client.configured(param.Tracer(NullTracer)).newClient(hostname).toService
   private[this] val okCounter = statsReceiver.scope("log_span").counter("ok")
   private[this] val errorReceiver = statsReceiver.scope("log_span").scope("error")
 

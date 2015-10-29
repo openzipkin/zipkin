@@ -1,7 +1,7 @@
 package com.twitter.zipkin.sampler
 
 import com.twitter.app.App
-import com.twitter.finagle.httpx.{HttpMuxer, RequestBuilder}
+import com.twitter.finagle.http.{HttpMuxer, RequestBuilder}
 import com.twitter.util.Await.{ready, result}
 import org.apache.curator.test.TestingServer
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}

@@ -1,12 +1,12 @@
 package com.twitter.zipkin.query
 
-import com.twitter.finagle.httpx.{Method, Request, Response}
+import com.twitter.finagle.http.{Method, Request, Response}
 import com.twitter.finagle.tracing.{DefaultTracer, Trace}
 import com.twitter.finagle.{Filter, ServiceFactory, Stack, param}
 import com.twitter.util.Future
 
 /**
- * Hacked variant of the private `com.twitter.finagle.httpx.codec.HttpServerTraceInitializer`
+ * Hacked variant of the private `com.twitter.finagle.http.codec.HttpServerTraceInitializer`
  *
  * <p/>This version doesn't trace POST requests
  *
@@ -27,7 +27,7 @@ object FilteredHttpEntrypointTraceInitializer extends Stack.Module1[param.Tracer
     traceInitializer andThen next
   }
 
-  /** Same behavior as `com.twitter.finagle.httpx.codec.HttpServerTraceInitializer` */
+  /** Same behavior as `com.twitter.finagle.http.codec.HttpServerTraceInitializer` */
   private def newRootSpan(req: Request, svc: (Request) => Future[Response]) = {
     Trace.letTracerAndId(DefaultTracer.self, Trace.nextId) {
       Trace.recordRpc(req.method.toString())

@@ -16,7 +16,7 @@
  */
 package com.twitter.zipkin.web
 
-import com.twitter.finagle.httpx.Request
+import com.twitter.finagle.http.Request
 import com.twitter.util.Time
 import org.scalatest.FunSuite
 
