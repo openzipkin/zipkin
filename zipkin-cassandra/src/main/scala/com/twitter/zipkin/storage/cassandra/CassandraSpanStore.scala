@@ -56,9 +56,6 @@ abstract class CassandraSpanStore(
   private[this] def createSpanColumnName(span: Span): String =
     "%d_%d_%d".format(span.id, span.annotations.hashCode, span.binaryAnnotations.hashCode)
 
-  private[this] def nameKey(serviceName: String, spanName: Option[String]): String =
-    (serviceName + spanName.map("." + _).getOrElse("")).toLowerCase
-
   private[this] def annotationKey(serviceName: String, annotation: String, value: Option[ByteBuffer]): ByteBuffer = {
     ByteBuffer.wrap(
       serviceName.getBytes ++ IndexDelimiterBytes ++ annotation.getBytes ++
@@ -101,7 +98,7 @@ abstract class CassandraSpanStore(
         IndexServiceNameNoNameCounter.incr()
         Future.value(())
       case s =>
-        FutureUtil.toFuture(repository.storeServiceName(s.toLowerCase, indexTtl.inSeconds))
+        FutureUtil.toFuture(repository.storeServiceName(s, indexTtl.inSeconds))
     })
   }
 

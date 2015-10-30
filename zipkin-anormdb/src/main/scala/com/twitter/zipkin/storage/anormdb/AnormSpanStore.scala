@@ -284,7 +284,8 @@ class AnormSpanStore(val db: DB,
     }
   }
 
-  override def getSpanNames(service: String): Future[Seq[String]] = db.inNewThreadWithRecoverableRetry {
+  override def getSpanNames(_service: String): Future[Seq[String]] = db.inNewThreadWithRecoverableRetry {
+    val service = _service.toLowerCase // service names are always lowercase!
     implicit val (conn, borrowTime) = borrowConn()
     try {
 

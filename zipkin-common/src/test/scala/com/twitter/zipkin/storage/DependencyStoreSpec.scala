@@ -76,9 +76,9 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
    * When all servers are instrumented, they all log a "sr" annotation, indicating the service.
    */
   @Test def getDependenciesAllInstrumented() = {
-    val one = Endpoint(127 << 24 | 1, 9410, "TraceProducerOne")
-    val two = Endpoint(127 << 24 | 2, 9410, "TraceProducerTwo")
-    val three = Endpoint(127 << 24 | 3, 9410, "TraceProducerThree")
+    val one = Endpoint(127 << 24 | 1, 9410, "trace-producer-one")
+    val two = Endpoint(127 << 24 | 2, 9410, "trace-producer-two")
+    val three = Endpoint(127 << 24 | 3, 9410, "trace-producer-three")
 
     val trace = List(
       Span(10L, "GET", 10L, None, List(
@@ -99,8 +99,8 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
 
     result(store.getDependencies(Some(trace(0).startTs.get), Some(trace(0).endTs.get))).sortBy(_.parent) should be(
       List(
-        new DependencyLink("TraceProducerOne", "TraceProducerTwo", 1),
-        new DependencyLink("TraceProducerTwo", "TraceProducerThree", 1)
+        new DependencyLink("trace-producer-one", "trace-producer-two", 1),
+        new DependencyLink("trace-producer-two", "trace-producer-three", 1)
       )
     )
   }

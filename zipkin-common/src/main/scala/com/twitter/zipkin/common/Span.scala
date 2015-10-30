@@ -30,7 +30,7 @@ import scala.util.hashing.MurmurHash3
  * such as cache hits/misses.
  *
  * @param traceId random long that identifies the trace, will be set in all spans in this trace
- * @param _name name of span, can be rpc method name for example
+ * @param _name name of span, can be rpc method name for example, in lowercase.
  * @param id random long that identifies this span
  * @param parentId reference to the parent span in the trace tree
  * @param annotations annotations, containing a timestamp and some value. both user generated and
@@ -39,6 +39,7 @@ import scala.util.hashing.MurmurHash3
  * serialized objects. Sorted ascending by timestamp. Sorted ascending by timestamp
  * @param debug if this is set we will make sure this span is stored, no matter what the samplers want
  */
+// This is not a case-class as we need to enforce name as lowercase
 class Span(
   val traceId: Long,
   _name: String,
@@ -48,13 +49,13 @@ class Span(
   val binaryAnnotations: Seq[BinaryAnnotation],
   val debug: Option[Boolean]) extends Ordered[Span] {
 
+  /** name of span, can be rpc method name for example, in lowercase. */
   val name: String = _name.toLowerCase
 
   override def compare(that: Span) =
     java.lang.Long.compare(startTs.getOrElse(0L), that.startTs.getOrElse(0L))
 
-  def serviceNames: Set[String] =
-    annotations.flatMap(a => a.host.map(h => h.serviceName.toLowerCase)).toSet
+  def serviceNames: Set[String] = annotations.flatMap(a => a.host.map(h => h.serviceName)).toSet
 
   /**
    * Tries to extract the best name of the service in this span. This depends on annotations
@@ -169,19 +170,16 @@ class Span(
   lazy val endTs: Option[Long] = lastAnnotation.map(_.timestamp)
   lazy val startTs: Option[Long] = firstAnnotation.map(_.timestamp)
 
-  override lazy val hashCode: Int = {
+  override lazy val hashCode =
     MurmurHash3.seqHash(List(traceId, name, id, parentId, annotations, binaryAnnotations, debug))
-  }
 
-  override def equals(other: Any): Boolean = {
-    other match {
-      case x: Span =>
-        x.traceId == traceId && x.name == name && x.id == id && x.parentId == parentId &&
-          x.annotations == annotations && x.binaryAnnotations == binaryAnnotations &&
-          x.debug == debug
-      case _ =>
-        false
-    }
+  override def equals(other: Any) = other match {
+    case x: Span =>
+      x.traceId == traceId && x.name == name && x.id == id && x.parentId == parentId &&
+        x.annotations == annotations && x.binaryAnnotations == binaryAnnotations &&
+        x.debug == debug
+    case _ =>
+      false
   }
 
   def copy(
@@ -191,11 +189,8 @@ class Span(
     parentId: Option[Long] = this.parentId,
     annotations: List[Annotation] = this.annotations,
     binaryAnnotations: Seq[BinaryAnnotation] = this.binaryAnnotations,
-    debug: Option[Boolean] = this.debug): Span = {
-
-    Span(traceId, name, id, parentId, annotations, binaryAnnotations, debug)
-  }
-
+    debug: Option[Boolean] = this.debug
+  ) = Span(traceId, name, id, parentId, annotations, binaryAnnotations, debug)
 }
 
 object Span {
@@ -206,8 +201,6 @@ object Span {
     parentId: Option[Long] = None,
     annotations: List[Annotation] = List.empty,
     binaryAnnotations: Seq[BinaryAnnotation] = Seq.empty,
-    debug: Option[Boolean] = None): Span = {
-
-    new Span(traceId, name, id, parentId, annotations, binaryAnnotations, debug)
-  }
+    debug: Option[Boolean] = None
+  ) = new Span(traceId, name, id, parentId, annotations, binaryAnnotations, debug)
 }

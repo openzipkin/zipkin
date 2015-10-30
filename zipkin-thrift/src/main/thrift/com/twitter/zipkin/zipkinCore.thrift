@@ -137,8 +137,8 @@ struct Endpoint {
   // IPv4 port
   // Note: this is to be treated as an unsigned integer, so watch for negatives.
   2: i16 port
-  // Service name, such as "memcache" or "zipkin-web"
-  // Note: Some implementations set this to "Unknown"
+  // Service name in lowercase, such as "memcache" or "zipkin-web"
+  // Note: Some implementations set this to "unknown"
   3: string service_name
 }
 
@@ -198,7 +198,7 @@ struct BinaryAnnotation {
  */
 struct Span {
   1: i64 trace_id                  # unique trace id, use for all spans in trace
-  3: string name,                  # span name, rpc method for example
+  3: string name,                  # span name in lowercase, rpc method for example
   4: i64 id,                       # unique span id, only used for this span
   5: optional i64 parent_id,       # parent span id
   6: list<Annotation> annotations, # all annotations/events that occured, sorted by timestamp
