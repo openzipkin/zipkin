@@ -50,7 +50,10 @@ class RedisSpanStore(client: Client, ttl: Option[Duration])
     index.getTraceIdsByAnnotation(serviceName, annotation, value, endTs, limit)
   }
 
-  override def getAllServiceNames(): Future[Seq[String]] = index.getServiceNames.map(_.toList.sorted)
+  override def getAllServiceNames() = index.getServiceNames.map(_.toList.sorted)
 
-  override def getSpanNames(serviceName: String): Future[Seq[String]] = index.getSpanNames(serviceName).map(_.toList.sorted)
+  override def getSpanNames(_serviceName: String) = {
+    val serviceName = _serviceName.toLowerCase // service names are always lowercase!
+    index.getSpanNames(serviceName).map(_.toList.sorted)
+  }
 }

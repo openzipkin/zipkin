@@ -63,12 +63,12 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   val ann11 = Annotation(100, Constants.ClientRecv, Some(ep3))
   val bAnn1 = BinaryAnnotation("annotation", ByteBuffer.wrap("ann".getBytes), AnnotationType.String, Some(ep3))
   val bAnn2 = BinaryAnnotation("binary", ByteBuffer.wrap("ann".getBytes), AnnotationType.Bytes, Some(ep3))
-  val spans5 = List(Span(5, "otherMethod", 666, Some(2), List(ann9, ann10, ann11), List(bAnn1, bAnn2)))
+  val spans5 = List(Span(5, "other-method", 666, Some(2), List(ann9, ann10, ann11), List(bAnn1, bAnn2)))
   // duration 40
 
   val ann13 = Annotation(100, Constants.ClientSend, Some(ep4))
   val ann14 = Annotation(150, Constants.ClientRecv, Some(ep4))
-  val spans6 = List(Span(6, "someMethod", 669, Some(2), List(ann13, ann14)))
+  val spans6 = List(Span(6, "some-method", 669, Some(2), List(ann13, ann14)))
   // duration 50
 
 
@@ -76,7 +76,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
 
   // no spans
   val emptyTrace = Trace(List())
-  val deps = Dependencies(0, Time.now.inMicroseconds, List(DependencyLink("tfe", "mobileweb", 1), DependencyLink("Gizmoduck", "tflock", 2)))
+  val deps = Dependencies(0, Time.now.inMicroseconds, List(DependencyLink("tfe", "mobileweb", 1), DependencyLink("gizmoduck", "tflock", 2)))
 
   "post spans" in {
     server.httpPost(
@@ -272,7 +272,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |  [
           |    {
           |      "traceId" : "0000000000000005",
-          |      "name" : "othermethod",
+          |      "name" : "other-method",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
           |      "annotations" : [
@@ -412,7 +412,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |  [
           |    {
           |      "traceId" : "0000000000000005",
-          |      "name" : "othermethod",
+          |      "name" : "other-method",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
           |      "annotations" : [
@@ -483,7 +483,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |  [
           |    {
           |      "traceId" : "0000000000000005",
-          |      "name" : "othermethod",
+          |      "name" : "other-method",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
           |      "annotations" : [
@@ -557,7 +557,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |    "callCount" : 1
           |  },
           |  {
-          |    "parent" : "Gizmoduck",
+          |    "parent" : "gizmoduck",
           |    "child" : "tflock",
           |    "callCount" : 2
           |  }

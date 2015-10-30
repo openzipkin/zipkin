@@ -39,7 +39,7 @@ class SpanTest extends FunSuite {
   val spanWith2BinaryAnnotations = Span(12345, "methodcall", 666, None,
     List.empty, Seq(binaryAnnotation1, binaryAnnotation2))
 
-  test("serviceNames is lowercase") {
+  test("serviceNames are lowercase") {
     val names = spanWith3Annotations.serviceNames
     assert(names.size === 1)
     assert(names.toSeq(0) === "service")

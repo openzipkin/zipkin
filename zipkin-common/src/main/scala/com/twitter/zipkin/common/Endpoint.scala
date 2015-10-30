@@ -16,28 +16,27 @@
  */
 package com.twitter.zipkin.common
 
-import java.nio.ByteBuffer
 import java.net.{InetAddress, InetSocketAddress}
+import java.nio.ByteBuffer
+
 import com.google.common.collect.ComparisonChain
+
+import scala.util.hashing.MurmurHash3
 
 /**
  * Represents the client or server machine we traced.
- */
-object Endpoint {
-  val Unknown = Endpoint(0, 0, "")
-  val UnknownServiceName = "Unknown service name"
-}
-
-/**
+ *
  * @param ipv4 ipv4 ip address.
  * @param port note that due to lack of unsigned integers this will wrap.
- * @param serviceName the service this operation happened on
+ * @param _serviceName the service this operation happened on, in lowercase
  */
-case class Endpoint(ipv4: Int, port: Short, serviceName: String)
-  extends Ordered[Endpoint] {
+// This is not a case-class as we need to enforce serviceName as lowercase
+class Endpoint(val ipv4: Int, val port: Short, _serviceName: String) extends Ordered[Endpoint] {
 
-  override def toString: String =
-    "%s:%d(%s)".format(getHostAddress, port, serviceName)
+  /**  the service this operation happened on, in lowercase. */
+  val serviceName: String = _serviceName.toLowerCase
+
+  override lazy val toString = "%s:%d(%s)".format(getHostAddress, port, serviceName)
 
   /**
    * Return the java.net.InetSocketAddress which contains host/port
@@ -67,4 +66,22 @@ case class Endpoint(ipv4: Int, port: Short, serviceName: String)
     .compare(ipv4, that.ipv4)
     .compare(port, that.port)
     .result()
+
+  override lazy val hashCode: Int = MurmurHash3.seqHash(List(serviceName, ipv4, port))
+
+  override def equals(other: Any) = other match {
+    case that: Endpoint =>
+      this.serviceName == that.serviceName && this.ipv4 == that.ipv4 && this.port == that.port
+    case _ => false
+  }
+
+  def copy(ipv4: Int = this.ipv4, port: Short = this.port, serviceName: String = this.serviceName) =
+    Endpoint(ipv4, port, serviceName)
+}
+
+object Endpoint {
+  val Unknown = Endpoint(0, 0, "")
+  val UnknownServiceName = "Unknown service name"
+
+  def apply(ipv4: Int, port: Short, serviceName: String) = new Endpoint(ipv4, port, serviceName)
 }

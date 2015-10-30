@@ -94,9 +94,7 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
   private[this] def call[T](f: => T): Future[T] = synchronized(Future(f))
 
   private[this] def spansForService(name: String): Seq[Span] =
-    spans.filter { span =>
-      span.serviceNames.exists(_.toLowerCase == name.toLowerCase)
-    }.toList
+    spans.filter(_.serviceNames.contains(name)).toList
 
   override def close() = {}
 
@@ -119,7 +117,7 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     limit: Int
   ): Future[Seq[IndexedTraceId]] = call {
     ((spanName, spansForService(serviceName)) match {
-      case (Some(name), spans) => spans filter(_.name.toLowerCase == name.toLowerCase)
+      case (Some(name), spans) => spans filter(_.name == name)
       case (_, spans) => spans
     }).filter { span =>
       span.endTs.map(_ <= endTs).getOrElse(false)
@@ -151,7 +149,8 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     spans.flatMap(_.serviceNames).distinct.toList.sorted
   }
 
-  override def getSpanNames(serviceName: String): Future[Seq[String]] = call {
+  override def getSpanNames(_serviceName: String): Future[Seq[String]] = call {
+    val serviceName = _serviceName.toLowerCase // service names are always lowercase!
     spansForService(serviceName).map(_.name).distinct.toList.sorted
   }
 }

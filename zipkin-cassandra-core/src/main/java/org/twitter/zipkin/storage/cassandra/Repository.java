@@ -414,6 +414,7 @@ public final class Repository implements AutoCloseable {
 
     public ListenableFuture<Set<String>> getSpanNames(String serviceName) {
         Preconditions.checkNotNull(serviceName);
+        serviceName = serviceName.toLowerCase(); // service names are always lowercase!
         try {
             if (!serviceName.isEmpty()) {
 
