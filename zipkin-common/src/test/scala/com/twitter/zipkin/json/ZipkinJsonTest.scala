@@ -31,7 +31,7 @@ class ZipkinJsonTest extends FunSuite with Matchers {
       """
         |{
         |  "traceId": "0000000000000001",
-        |  "name": "GET",
+        |  "name": "get",
         |  "id": "0000000000003039",
         |  "annotations": [
         |    {

@@ -114,7 +114,7 @@ abstract class CassandraSpanStore(
 
       Future.join(
         span.serviceNames.toSeq map { serviceName =>
-          FutureUtil.toFuture(repository.storeSpanName(serviceName, span.name.toLowerCase, indexTtl.inSeconds))
+          FutureUtil.toFuture(repository.storeSpanName(serviceName, span.name, indexTtl.inSeconds))
         })
     }
   }

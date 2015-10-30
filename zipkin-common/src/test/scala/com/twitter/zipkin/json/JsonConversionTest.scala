@@ -11,13 +11,13 @@ class JsonConversionTest extends FunSuite with Matchers {
   test("span with null annotations, binaryAnnotations") {
     val convert = JsonSpan("0000000000000001", "GET", "0000000000003039", None, null, null)
 
-    JsonSpan(JsonSpan.invert(convert)) should be(JsonSpan("0000000000000001", "GET", "0000000000003039"))
+    JsonSpan(JsonSpan.invert(convert)) should be(JsonSpan("0000000000000001", "get", "0000000000003039"))
   }
 
   test("span with ids less trailing zeros") {
     val convert = JsonSpan("0000001", "GET", "3039")
 
-    JsonSpan(JsonSpan.invert(convert)) should be(JsonSpan("0000000000000001", "GET", "0000000000003039"))
+    JsonSpan(JsonSpan.invert(convert)) should be(JsonSpan("0000000000000001", "get", "0000000000003039"))
   }
 
   val endpoint = Endpoint((192 << 24 | 168 << 16 | 1), 9411, "zipkin-query")
