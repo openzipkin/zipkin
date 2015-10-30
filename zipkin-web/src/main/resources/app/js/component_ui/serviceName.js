@@ -20,6 +20,7 @@ define(
       };
 
       this.updateServiceNameDropdown = function(ev, data) {
+        $('#serviceName').empty()
         $.each(data.serviceNames, function(i, item) {
             $('<option>').val(item).text(item).appendTo('#serviceName');
         });
