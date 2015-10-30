@@ -8,7 +8,7 @@ ext {
             finagle: '6.30.0',
             guava: '16.0.1', // to match finagle
             scrooge: '4.2.0',
-            twitterUtil: '6.28.0',
+            twitterUtil: '6.29.0',
             twitterServer: '1.15.0',
             finatra: '2.1.1',
             jackson: '2.4.4', // from finatra's build.sbt
