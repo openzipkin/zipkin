@@ -52,7 +52,7 @@ public final class Span implements Comparable<Span> {
       Collection<BinaryAnnotation> binaryAnnotations,
       @Nullable Boolean debug) {
     this.traceId = traceId;
-    this.name = checkNotNull(name, "name");
+    this.name = checkNotNull(name, "name").toLowerCase();
     this.id = id;
     this.parentId = parentId;
     this.annotations = sortedList(annotations);

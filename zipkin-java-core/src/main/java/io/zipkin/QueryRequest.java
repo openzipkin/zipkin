@@ -65,8 +65,8 @@ public final class QueryRequest {
     checkArgument(spanName == null || !spanName.isEmpty(), "spanName was empty");
     checkArgument(endTs > 0, "endTs should be positive, in epoch microseconds: was %d", endTs);
     checkArgument(limit > 0, "limit should be positive: was %d", limit);
-    this.serviceName = serviceName;
-    this.spanName = spanName;
+    this.serviceName = serviceName.toLowerCase();
+    this.spanName = spanName != null ? spanName.toLowerCase() : null;
     this.annotations = annotations;
     for (String annotation : annotations) {
       checkArgument(!annotation.isEmpty(), "annotation was empty");

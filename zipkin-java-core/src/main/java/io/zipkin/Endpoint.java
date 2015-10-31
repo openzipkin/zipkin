@@ -58,7 +58,7 @@ public final class Endpoint {
   public final Short port;
 
   Endpoint(String serviceName, int ipv4, Short port) {
-    this.serviceName = checkNotNull(serviceName, "serviceName");
+    this.serviceName = checkNotNull(serviceName, "serviceName").toLowerCase();
     this.ipv4 = ipv4;
     this.port = port;
   }

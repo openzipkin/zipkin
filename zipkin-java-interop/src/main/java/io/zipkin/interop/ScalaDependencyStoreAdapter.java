@@ -13,15 +13,11 @@
  */
 package io.zipkin.interop;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twitter.util.Future;
 import com.twitter.zipkin.common.Dependencies;
 import com.twitter.zipkin.common.DependencyLink;
-import com.twitter.zipkin.json.ZipkinJson$;
-import io.zipkin.Codec;
 import io.zipkin.SpanStore;
 import io.zipkin.internal.Nullable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import scala.Option;
@@ -37,8 +33,6 @@ import scala.runtime.BoxedUnit;
  * <p/> This implementation uses json to ensure structures are compatible.
  */
 public final class ScalaDependencyStoreAdapter extends com.twitter.zipkin.storage.DependencyStore {
-  private static final ObjectMapper scalaCodec = ZipkinJson$.MODULE$;
-
   private final SpanStore spanStore;
 
   public ScalaDependencyStoreAdapter(SpanStore spanStore) {
@@ -78,12 +72,6 @@ public final class ScalaDependencyStoreAdapter extends com.twitter.zipkin.storag
 
   @Nullable
   static DependencyLink convert(io.zipkin.DependencyLink input) {
-    byte[] bytes = Codec.JSON.writeDependencyLink(input);
-    try {
-      return scalaCodec.readValue(bytes, DependencyLink.class);
-    } catch (IOException e) {
-      e.printStackTrace();
-      return null;
-    }
+    return new DependencyLink(input.parent, input.child, input.callCount);
   }
 }

@@ -50,7 +50,7 @@ public final class InMemorySpanStore implements SpanStore {
       long traceId = span.traceId;
       traceIdToSpans.put(span.traceId, span);
       span.annotations.stream().filter(a -> a.endpoint != null)
-          .map(annotation -> annotation.endpoint.serviceName.toLowerCase())
+          .map(annotation -> annotation.endpoint.serviceName)
           .forEach(serviceName -> {
             serviceToTraceIds.put(serviceName, traceId);
             serviceToSpanNames.put(serviceName, span.name);
@@ -91,6 +91,7 @@ public final class InMemorySpanStore implements SpanStore {
   @Override
   public synchronized List<String> getSpanNames(String service) {
     if (service == null) return Collections.emptyList();
+    service = service.toLowerCase(); // service names are always lowercase!
     return sortedList(serviceToSpanNames.get(service));
   }
 

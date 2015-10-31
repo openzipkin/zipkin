@@ -33,8 +33,8 @@ public final class DependencyLink {
   public final long callCount;
 
   private DependencyLink(String parent, String child, long callCount) {
-    this.parent = checkNotNull(parent, "parent");
-    this.child = checkNotNull(child, "child");
+    this.parent = checkNotNull(parent, "parent").toLowerCase();
+    this.child = checkNotNull(child, "child").toLowerCase();
     this.callCount = callCount;
   }
 

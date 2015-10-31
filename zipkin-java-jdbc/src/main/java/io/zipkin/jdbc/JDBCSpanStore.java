@@ -248,6 +248,7 @@ public final class JDBCSpanStore implements SpanStore {
   @Override
   public List<String> getSpanNames(String serviceName) {
     if (serviceName == null) return emptyList();
+    serviceName = serviceName.toLowerCase(); // service names are always lowercase!
     try (Connection conn = this.datasource.getConnection()) {
       return context(conn)
           .selectDistinct(ZIPKIN_SPANS.NAME)
