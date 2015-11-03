@@ -122,9 +122,9 @@ class TimeSkewAdjusterTest extends FunSuite {
   val ann6 = Annotation(87, Constants.ClientRecv, epCassie)
   val ann6F = Annotation(86, Constants.ClientRecv, epCassie)
 
-  val span1a = Span(1, "ValuesFromSource", 2209720933601260005L, None, List(ann3, ann6))
-  val span1aFixed = Span(1, "ValuesFromSource", 2209720933601260005L, None, List(ann3F, ann6F))
-  val span1b = Span(1, "ValuesFromSource", 2209720933601260005L, None, List(ann1, ann4))
+  val span1a = Span(1, "values-from-source", 2209720933601260005L, None, List(ann3, ann6))
+  val span1aFixed = Span(1, "values-from-source", 2209720933601260005L, None, List(ann3F, ann6F))
+  val span1b = Span(1, "values-from-source", 2209720933601260005L, None, List(ann1, ann4))
   // the above two spans are part of the same actual span
 
   val span2 = Span(1, "multiget_slice", -855543208864892776L, Some(2209720933601260005L),
@@ -168,7 +168,7 @@ class TimeSkewAdjusterTest extends FunSuite {
 
     val rootSr     = Annotation(1330539326400951L, Constants.ServerRecv, epTfe)
     val rootSs     = Annotation(1330539327264251L, Constants.ServerSend, epTfe)
-    val spanTfe    = Span(1, "POST", 7264365917420400007L, None, List(rootSr, rootSs))
+    val spanTfe    = Span(1, "post", 7264365917420400007L, None, List(rootSr, rootSs))
 
     val unicornCs  = Annotation(1330539326401999L, Constants.ClientSend, epTfe)
     val monorailSr = Annotation(1330539325900366L, Constants.ServerRecv, epMonorail)
@@ -199,7 +199,7 @@ class TimeSkewAdjusterTest extends FunSuite {
 
     val tfeSr         = Annotation(1330647964054410L, Constants.ServerRecv, epTfe)
     val tfeSs         = Annotation(1330647964057394L, Constants.ServerSend, epTfe)
-    val spanTfe       = Span(1, "GET", 583798990668970003L, None, List(tfeSr, tfeSs))
+    val spanTfe       = Span(1, "get", 583798990668970003L, None, List(tfeSr, tfeSs))
 
     val tfeCs         = Annotation(1330647964054881L, Constants.ClientSend, epTfe)
     val passbirdSr    = Annotation(1330647964055250L, Constants.ServerRecv, epPassbird)
@@ -214,7 +214,7 @@ class TimeSkewAdjusterTest extends FunSuite {
 
     val gizmoduckCs   = Annotation(1330647963542175L, Constants.ClientSend, epGizmoduck)
     val gizmoduckCr   = Annotation(1330647963542565L, Constants.ClientRecv, epGizmoduck)
-    val spanMemcache  = Span(1, "Get", 3983355768376203472L, Some(119310086840195752L), List(gizmoduckCs, gizmoduckCr))
+    val spanMemcache  = Span(1, "get", 3983355768376203472L, Some(119310086840195752L), List(gizmoduckCs, gizmoduckCr))
 
     // Adjusted/created annotations
     val createdGizmoduckSr   = Annotation(1330647964055324L, Constants.ServerRecv, epGizmoduck)
@@ -223,7 +223,7 @@ class TimeSkewAdjusterTest extends FunSuite {
     val adjustedGizmoduckCr = Annotation(1330647964056420L, Constants.ClientRecv, epGizmoduck)
 
     val spanAdjustedGizmoduck = Span(1, "get_by_auth_token", 119310086840195752L, Some(7625434200987291951L), List(passbirdCs, passbirdCr, createdGizmoduckSr, createdGizmoduckSs))
-    val spanAdjustedMemcache = Span(1, "Get", 3983355768376203472L, Some(119310086840195752L), List(adjustedGizmoduckCs, adjustedGizmoduckCr))
+    val spanAdjustedMemcache = Span(1, "get", 3983355768376203472L, Some(119310086840195752L), List(adjustedGizmoduckCs, adjustedGizmoduckCr))
 
     val realTrace = new Trace(Seq(spanTfe, spanPassbird, spanGizmoduck, spanMemcache))
     val adjustedTrace = new Trace(Seq(spanTfe, spanPassbird, spanAdjustedGizmoduck, spanAdjustedMemcache))
@@ -266,7 +266,7 @@ class TimeSkewAdjusterTest extends FunSuite {
   test("adjust even if we only have client send") {
     val tfeService = Endpoint(123, 9455, "api.twitter.com-ssl")
 
-    val tfe = Span(142224153997690008L, "GET", 142224153997690008L, None, List(
+    val tfe = Span(142224153997690008L, "get", 142224153997690008L, None, List(
       Annotation(60498165L, Constants.ServerRecv, Some(tfeService)),
       Annotation(61031100L, Constants.ServerSend, Some(tfeService))
     ))

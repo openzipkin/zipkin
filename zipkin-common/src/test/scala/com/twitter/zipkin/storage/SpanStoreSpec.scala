@@ -220,28 +220,20 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   }
 
   @Test def spanNamesGoLowercase() {
-    val span = Span(123, "SPAN_NAME", spanId, None, List(ann1, ann2))
+    result(store(Seq(span1)))
 
-    result(store(Seq(span)))
-
-    result(store.getSpanNames("service")) should be(List("span_name"))
-
-    result(store.getTraces(QueryRequest("service", Some("SpAn_NaMe")))) should be(
-      Seq(Seq(Span(123, "span_name", spanId, None, List(ann1, ann2))))
+    result(store.getTraces(QueryRequest("service", Some("MeThOdCaLl")))) should be(
+      Seq(Seq(span1))
     )
   }
 
   @Test def serviceNamesGoLowercase() {
-    val span = span2.copy(
-      name = "foo",
-      annotations = List(ann2.copy(host = Some(ep.copy(serviceName = "SERVICE"))))
-    )
-    result(store(Seq(span)))
+    result(store(Seq(span1)))
 
-    result(store.getSpanNames("SeRvIcE")) should be(List("foo"))
+    result(store.getSpanNames("SeRvIcE")) should be(List("methodcall"))
 
-    result(store.getTraces(QueryRequest("SeRvIcE", Some("foo")))) should be(
-      Seq(Seq(span))
+    result(store.getTraces(QueryRequest("SeRvIcE"))) should be(
+      Seq(Seq(span1))
     )
   }
 }

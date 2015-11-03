@@ -17,8 +17,8 @@
 package com.twitter.zipkin.common
 
 import com.twitter.zipkin.Constants
+import com.twitter.zipkin.util.Util._
 import scala.collection.breakOut
-import scala.util.hashing.MurmurHash3
 
 /**
  * A span represents one RPC request. A trace is made up of many spans.
@@ -30,7 +30,7 @@ import scala.util.hashing.MurmurHash3
  * such as cache hits/misses.
  *
  * @param traceId random long that identifies the trace, will be set in all spans in this trace
- * @param _name name of span, can be rpc method name for example, in lowercase.
+ * @param name name of span, can be rpc method name for example, in lowercase.
  * @param id random long that identifies this span
  * @param parentId reference to the parent span in the trace tree
  * @param annotations annotations, containing a timestamp and some value. both user generated and
@@ -39,18 +39,16 @@ import scala.util.hashing.MurmurHash3
  * serialized objects. Sorted ascending by timestamp. Sorted ascending by timestamp
  * @param debug if this is set we will make sure this span is stored, no matter what the samplers want
  */
-// This is not a case-class as we need to enforce name as lowercase
-class Span(
-  val traceId: Long,
-  _name: String,
-  val id: Long,
-  val parentId: Option[Long],
-  val annotations: List[Annotation],
-  val binaryAnnotations: Seq[BinaryAnnotation],
-  val debug: Option[Boolean]) extends Ordered[Span] {
+case class Span(
+  traceId: Long,
+  name: String,
+  id: Long,
+  parentId: Option[Long] = None,
+  annotations: List[Annotation] = List.empty,
+  binaryAnnotations: Seq[BinaryAnnotation] = Seq.empty,
+  debug: Option[Boolean] = None) extends Ordered[Span] {
 
-  /** name of span, can be rpc method name for example, in lowercase. */
-  val name: String = _name.toLowerCase
+  checkArgument(name.toLowerCase == name, s"name must be lowercase: $name")
 
   override def compare(that: Span) =
     java.lang.Long.compare(startTs.getOrElse(0L), that.startTs.getOrElse(0L))
@@ -169,38 +167,4 @@ class Span(
 
   lazy val endTs: Option[Long] = lastAnnotation.map(_.timestamp)
   lazy val startTs: Option[Long] = firstAnnotation.map(_.timestamp)
-
-  override lazy val hashCode =
-    MurmurHash3.seqHash(List(traceId, name, id, parentId, annotations, binaryAnnotations, debug))
-
-  override def equals(other: Any) = other match {
-    case x: Span =>
-      x.traceId == traceId && x.name == name && x.id == id && x.parentId == parentId &&
-        x.annotations == annotations && x.binaryAnnotations == binaryAnnotations &&
-        x.debug == debug
-    case _ =>
-      false
-  }
-
-  def copy(
-    traceId: Long = this.traceId,
-    name: String = this.name,
-    id: Long = this.id,
-    parentId: Option[Long] = this.parentId,
-    annotations: List[Annotation] = this.annotations,
-    binaryAnnotations: Seq[BinaryAnnotation] = this.binaryAnnotations,
-    debug: Option[Boolean] = this.debug
-  ) = Span(traceId, name, id, parentId, annotations, binaryAnnotations, debug)
-}
-
-object Span {
-  def apply(
-    traceId: Long,
-    name: String,
-    id: Long,
-    parentId: Option[Long] = None,
-    annotations: List[Annotation] = List.empty,
-    binaryAnnotations: Seq[BinaryAnnotation] = Seq.empty,
-    debug: Option[Boolean] = None
-  ) = new Span(traceId, name, id, parentId, annotations, binaryAnnotations, debug)
 }

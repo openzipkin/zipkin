@@ -57,6 +57,9 @@ class ThriftConversionsTest extends FunSuite {
     val actualEndpoint = thriftscala.Endpoint(123, 456, null)
     val expectedEndpoint2 = Endpoint(123, 456, Endpoint.UnknownServiceName)
     assert(actualEndpoint.toEndpoint === expectedEndpoint2)
+
+    val mixedCaseEndpoint = thriftscala.Endpoint(123, 456, "SeRvIcE")
+    assert(mixedCaseEndpoint.toEndpoint === Endpoint(123, 456, "service"))
   }
 
   test("convert Span") {
@@ -71,6 +74,9 @@ class ThriftConversionsTest extends FunSuite {
 
     val noAnnotationsSpan = thriftscala.Span(0, "name", 0, None, null, Seq())
     assert(noAnnotationsSpan.toSpan === Span(0, "name", 0))
+
+    val mixedCaseSpan = thriftscala.Span(0, "NaMe", 0, None, null, Seq())
+    assert(mixedCaseSpan.toSpan === Span(0, "name", 0))
 
     val noBinaryAnnotationsSpan = thriftscala.Span(0, "name", 0, None, Seq(), null)
     assert(noBinaryAnnotationsSpan.toSpan === Span(0, "name", 0))
