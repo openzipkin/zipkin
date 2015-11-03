@@ -32,7 +32,7 @@ abstract class SpanStore extends java.io.Closeable {
    * <p/> Results are sorted in order of the first span's timestamp, and contain
    * up to [[QueryRequest.limit]] elements.
    */
-  def getTraces(qr: QueryRequest): Future[Seq[Seq[Span]]]
+  def getTraces(qr: QueryRequest): Future[Seq[List[Span]]]
 
   /**
    * Get the available trace information from the storage system.
@@ -42,7 +42,7 @@ abstract class SpanStore extends java.io.Closeable {
    * <p/> Results are sorted in order of the first span's timestamp, and contain
    * less elements than trace IDs when corresponding traces aren't available.
    */
-  def getTracesByIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]]
+  def getTracesByIds(traceIds: Seq[Long]): Future[Seq[List[Span]]]
 
   /**
    * Get all the service names for as far back as the ttl allows.
@@ -102,7 +102,7 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     spans ++= newSpans.map(s => s.copy(annotations = s.annotations.sorted))
   }.unit
 
-  override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = call {
+  override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[List[Span]]] = call {
     spans.groupBy(_.traceId)
          .filterKeys(traceIds.contains(_))
          .values.filter(!_.isEmpty)

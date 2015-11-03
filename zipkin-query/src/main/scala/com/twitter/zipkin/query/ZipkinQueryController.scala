@@ -25,7 +25,7 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
                                       @Flag("zipkin.queryService.servicesMaxAge") servicesMaxAge: Int) extends Controller {
 
   post("/api/v1/spans") { request: Request =>
-    val spans: Try[Seq[Span]] = try {
+    val spans: Try[List[Span]] = try {
       Success(request.mediaType match {
         case Some("application/x-thrift") => {
           val bytes = new Array[Byte](request.content.length)
@@ -33,7 +33,7 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
           thriftListToSpans(bytes)
         }
         case _ => jsonSpansReader.readValue(request.contentString)
-          .asInstanceOf[Seq[JsonSpan]]
+          .asInstanceOf[List[JsonSpan]]
           .map(JsonSpan.invert(_))
       })
     } catch {
@@ -81,7 +81,7 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
     dependencyStore.getDependencies(Some(request.startTs), Some(request.endTs))
   }
 
-  private[this] def adjustTimeskewAndRenderJson(spans: Seq[Seq[Span]]): Seq[List[JsonSpan]] = {
+  private[this] def adjustTimeskewAndRenderJson(spans: Seq[List[Span]]): Seq[List[JsonSpan]] = {
     spans.map(Trace(_))
       .map(timeSkewAdjuster.adjust)
       .map(_.spans.map(JsonSpan))

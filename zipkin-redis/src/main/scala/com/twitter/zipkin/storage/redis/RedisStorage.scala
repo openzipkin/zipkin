@@ -36,13 +36,13 @@ class RedisStorage(
     client.lPush(redisKey, List(buf)).flatMap(_ => expireOnTtl(redisKey))
   }
 
-  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] =
+  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[List[Span]]] =
     Future.collect(traceIds.map(getSpansByTraceId))
       .map(_.filterNot(_.isEmpty)) // prune empties
       .map(_.map(Trace(_).spans)) // merge by span id
       .map(_.sortBy(_.head)) // sort traces by the first span
 
-  private[this] def getSpansByTraceId(traceId: Long): Future[Seq[Span]] =
+  private[this] def getSpansByTraceId(traceId: Long): Future[List[Span]] =
     client.lRange(encodeTraceId(traceId), 0L, -1L) map
       (_.map(decodeSpan).sorted)
 

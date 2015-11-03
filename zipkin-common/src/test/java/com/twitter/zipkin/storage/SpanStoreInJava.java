@@ -1,6 +1,7 @@
 package com.twitter.zipkin.storage;
 
 import scala.collection.Seq;
+import scala.collection.immutable.List;
 import scala.runtime.BoxedUnit;
 
 import com.twitter.util.Future;
@@ -12,12 +13,12 @@ import com.twitter.zipkin.common.Span;
 public class SpanStoreInJava extends SpanStore {
 
     @Override
-    public Future<Seq<Seq<Span>>> getTraces(QueryRequest qr) {
+    public Future<Seq<List<Span>>> getTraces(QueryRequest qr) {
         return null;
     }
 
     @Override
-    public Future<Seq<Seq<Span>>> getTracesByIds(Seq<Object> traceIds) {
+    public Future<Seq<List<Span>>> getTracesByIds(Seq<Object> traceIds) {
         return null;
     }
 

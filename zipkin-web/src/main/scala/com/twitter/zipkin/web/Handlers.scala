@@ -226,7 +226,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
 
       // only call get traces if the user entered a query
       val tracesCall = serviceName match {
-        case Some(service) => route[Seq[Seq[JsonSpan]]](client, "/api/v1/traces", req.params)
+        case Some(service) => route[Seq[List[JsonSpan]]](client, "/api/v1/traces", req.params)
           .map(traces => traces.map(_.map(JsonSpan.invert))
           .map(Trace.apply(_)).flatMap(TraceSummary(_).toSeq))
         case None => EmptyTraces

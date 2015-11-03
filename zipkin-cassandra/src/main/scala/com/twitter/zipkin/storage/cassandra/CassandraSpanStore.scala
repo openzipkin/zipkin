@@ -180,7 +180,7 @@ abstract class CassandraSpanStore(
     } getOrElse Future.value(())
   }
 
-  private[this] def getSpansByTraceIds(traceIds: Seq[Long], count: Int): Future[Seq[Seq[Span]]] = {
+  private[this] def getSpansByTraceIds(traceIds: Seq[Long], count: Int): Future[Seq[List[Span]]] = {
     FutureUtil.toFuture(repository.getSpansByTraceIds(traceIds.toArray.map(Long.box), count))
       .map { spansByTraceId =>
         val spans =
@@ -219,7 +219,7 @@ abstract class CassandraSpanStore(
       })
   }
 
-  override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
+  override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[List[Span]]] = {
     QueryGetSpansByTraceIdsStat.add(traceIds.size)
     getSpansByTraceIds(traceIds, maxTraceCols)
   }

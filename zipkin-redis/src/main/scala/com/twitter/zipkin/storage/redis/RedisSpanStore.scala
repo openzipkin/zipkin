@@ -27,7 +27,7 @@ class RedisSpanStore(client: Client, ttl: Option[Duration])
       .flatMap { span => Seq(storage.storeSpan(span), index.index(span))
     })
 
-  override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
+  override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[List[Span]]] = {
     storage.getSpansByTraceIds(traceIds)
   }
 
