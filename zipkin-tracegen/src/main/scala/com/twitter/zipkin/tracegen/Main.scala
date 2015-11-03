@@ -126,7 +126,7 @@ object Main extends App with ZipkinSpanGenerator {
     } yield ()
   }
 
-  def getTraces(uri: String) = queryClient.executeJson[Seq[Seq[JsonSpan]]](Request(uri))
+  def getTraces(uri: String) = queryClient.executeJson[Seq[List[JsonSpan]]](Request(uri))
     .map(traces => traces.map(_.map(JsonSpan.invert)))
     .map(traces => traces.map(Trace(_)))
 }

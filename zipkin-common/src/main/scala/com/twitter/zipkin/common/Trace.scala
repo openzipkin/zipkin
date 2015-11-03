@@ -67,7 +67,7 @@ case class Trace(private val s: Seq[Span]) {
     }
   }
 
-  def getRootSpans(idSpan: Map[Long, Span] = getIdToSpanMap): Seq[Span] =
+  def getRootSpans(idSpan: Map[Long, Span] = getIdToSpanMap): List[Span] =
     spans filter { !_.parentId.flatMap(idSpan.get).isDefined }
 
   private def recursiveGetRootMostSpan(idSpan: Map[Long, Span], prevSpan: Span): Span = {

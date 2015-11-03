@@ -99,7 +99,7 @@ class AnormSpanStore(val db: DB,
     }
   }
 
-  override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = db.inNewThreadWithRecoverableRetry {
+  override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[List[Span]]] = db.inNewThreadWithRecoverableRetry {
     implicit val (conn, borrowTime) = borrowConn()
     try {
 

@@ -39,10 +39,10 @@ trait CollectAnnotationQueries {
   ): Future[Seq[IndexedTraceId]]
 
   /** @see [[com.twitter.zipkin.storage.SpanStore.getTracesByIds()]] */
-  def getTracesByIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]]
+  def getTracesByIds(traceIds: Seq[Long]): Future[Seq[List[Span]]]
 
   /** @see [[com.twitter.zipkin.storage.SpanStore.getTraces()]] */
-  def getTraces(qr: QueryRequest): Future[Seq[Seq[Span]]] = {
+  def getTraces(qr: QueryRequest): Future[Seq[List[Span]]] = {
     val sliceQueries = Seq[Set[SliceQuery]](
       qr.spanName.map(SpanSliceQuery(_)).toSet,
       qr.annotations.map(AnnotationSliceQuery(_, None)),

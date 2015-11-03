@@ -133,7 +133,7 @@ object thrift {
       result += thriftSpanToSpan(thrift).toSpan
     }
     proto.readListEnd()
-    result
+    result.toList
   }
 
   class WrappedDependencyLink(dl: DependencyLink) {
