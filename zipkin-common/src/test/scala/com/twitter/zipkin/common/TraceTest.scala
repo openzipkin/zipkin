@@ -16,8 +16,6 @@
  */
 package com.twitter.zipkin.common
 
-import java.nio.ByteBuffer
-
 import com.twitter.zipkin.Constants
 import org.scalatest.FunSuite
 
@@ -80,18 +78,6 @@ class TraceTest extends FunSuite {
     val trace = new Trace(Seq(span1, span2))
   }
 
-  test("get services involved in trace") {
-    val expectedServices = Set("service1", "service2", "service3")
-    assert(expectedServices === Trace(List(span1, span2, span3, span4)).services)
-  }
-
-  test("get endpooints involved in trace") {
-    val expectedEndpoints = Set(Endpoint(123, 123, "service1"), Endpoint(123, 123, "service2"),
-      Endpoint(456, 456, "service1"), Endpoint(456, 456, "service2"), Endpoint(666, 666, "service2"),
-      Endpoint(777, 777, "service3"), Endpoint(888, 888, "service3"))
-    assert(expectedEndpoints === Trace(List(span1, span2, span3, span4)).endpoints)
-  }
-
   test("return root span") {
     assert(trace.getRootSpan === Some(span1))
   }
@@ -102,17 +88,6 @@ class TraceTest extends FunSuite {
     map.addBinding(span2Id, span3)
     map.addBinding(span3Id, span4)
     assert(trace.getIdToChildrenMap === map)
-  }
-
-  test("getBinaryAnnotations") {
-    val ba1 = BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), AnnotationType.String, None)
-    val span1 = Span(1L, "", 1L, None, List(), List(ba1))
-    val ba2 = BinaryAnnotation("key2", ByteBuffer.wrap("value2".getBytes), AnnotationType.String, None)
-    val span2 = Span(1L, "", 2L, None, List(), List(ba2))
-
-    val trace = Trace(List[Span](span1, span2))
-    def counts(e: Traversable[_]) = e groupBy identity mapValues (_.size)
-    assert(counts(trace.getBinaryAnnotations) === counts(Seq(ba1, ba2)))
   }
 
   test("getSpanTree") {
@@ -129,11 +104,11 @@ class TraceTest extends FunSuite {
     assert(trace === actualTrace)
   }
 
-  test("return none due to missing annotations") {
+  test("return duration 0 due to missing annotations") {
     // no annotation at all
     val spanNoAnn = Span(1, "method", 123L)
     val noAnnTrace = Trace(List(spanNoAnn))
-    assert(noAnnTrace.getStartAndEndTimestamp === None)
+    assert(noAnnTrace.duration === 0L)
   }
 
   test("sort spans by first annotation timestamp") {
@@ -162,68 +137,5 @@ class TraceTest extends FunSuite {
     val spanMerged = Span(12345, "methodcall2", span2Id, Some(span1Id), annMerged)
 
     assert(Trace(List(spanMerged)).spans === Trace(List(spanToMerge1, spanToMerge2)).spans)
-  }
-
-  test("get rootmost span from full trace") {
-    val spanNoneParent = Span(1, "", 100)
-    val spanParent = Span(1, "", 200, Some(100))
-    assert(Trace(List(spanParent, spanNoneParent)).getRootMostSpan === Some(spanNoneParent))
-  }
-
-  test("get rootmost span from trace without real root") {
-    val spanNoParent = Span(1, "", 100, Some(0))
-    val spanParent = Span(1, "", 200, Some(100))
-    assert(Trace(List(spanParent, spanNoParent)).getRootMostSpan === Some(spanNoParent))
-  }
-
-  test("get span depths for trace") {
-    assert(trace.toSpanDepths === Some(Map(666 -> 1, 777 -> 2, 888 -> 3, 999 -> 4)))
-  }
-
-  test("get no span depths for empty trace") {
-    assert(Trace(List()).toSpanDepths === None)
-  }
-
-  test("get start and end timestamp") {
-    val ann1 = Annotation(1, "hello", None)
-    val ann2 = Annotation(43, "goodbye", None)
-
-    val span1 = Span(12345, "methodcall", 6789)
-    val span2 = Span(12345, "methodcall_2", 345, None, List(ann1, ann2))
-
-    val span3 = Span(23456, "methodcall_3", 12, None, List(ann1))
-    val span4 = Span(23456, "methodcall_4", 34, None, List(ann2))
-
-    // no spans
-    val trace1 = new Trace(List())
-    assert(trace1.getStartAndEndTimestamp === None)
-
-    // 1 span, 0 annotations
-    val trace2 = new Trace(List(span1))
-    assert(trace2.getStartAndEndTimestamp === None)
-
-    val trace3 = new Trace(List(span1, span2))
-    assert(trace3.getStartAndEndTimestamp === Some(Timespan(1, 43)))
-
-    val trace4 = new Trace(List(span3, span4))
-    assert(trace4.getStartAndEndTimestamp === Some(Timespan(1, 43)))
-  }
-
-  test("get service counts") {
-    val ep1 = Some(Endpoint(1, 1, "ep1"))
-    val ep2 = Some(Endpoint(2, 2, "ep2"))
-    val ep3 = Some(Endpoint(3, 3, "ep3"))
-
-    val ann1 = Annotation(1, "ann1", ep1)
-    val ann2 = Annotation(2, "ann2", ep2)
-    val ann3 = Annotation(3, "ann3", ep3)
-    val ann4 = Annotation(4, "ann4", ep2)
-
-    val span1 = Span(1234, "method1", 5678, None, List(ann1, ann2, ann3, ann4))
-    val span2 = Span(1234, "method2", 345, None, List(ann4))
-    val trace1 = new Trace(Seq(span1, span2))
-
-    val expected = Map("ep1" -> 1, "ep2" -> 2, "ep3" -> 1)
-    assert(trace1.serviceCounts === expected)
   }
 }

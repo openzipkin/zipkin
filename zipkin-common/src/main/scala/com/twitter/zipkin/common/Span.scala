@@ -18,7 +18,6 @@ package com.twitter.zipkin.common
 
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.util.Util._
-import scala.collection.breakOut
 
 /**
  * A span represents one RPC request. A trace is made up of many spans.
@@ -71,18 +70,6 @@ case class Span(
   }
 
   /**
-   * Iterate through list of annotations and return the one with the given value.
-   */
-  def getAnnotation(value: String): Option[Annotation] =
-    annotations.find(_.value == value)
-
-  /**
-   * Iterate through list of binaryAnnotations and return the one with the given key.
-   */
-  def getBinaryAnnotation(key: String): Option[BinaryAnnotation] =
-    binaryAnnotations.find(_.key == key)
-
-  /**
    * Take two spans with the same span id and merge all data into one of them.
    */
   def mergeSpan(mergeFrom: Span): Span = {
@@ -119,18 +106,6 @@ case class Span(
   def lastAnnotation: Option[Annotation] = annotations.lastOption
 
   /**
-   * Endpoints involved in this span
-   */
-  def endpoints: Set[Endpoint] =
-    annotations.flatMap(_.host).toSet
-
-  /**
-   * Endpoint that is likely the owner of this span
-   */
-  def clientSideEndpoint: Option[Endpoint] =
-    clientSideAnnotations.map(_.host).flatten.headOption
-
-  /**
    * Pick out the core client side annotations
    */
   def clientSideAnnotations: Seq[Annotation] =
@@ -148,22 +123,6 @@ case class Span(
   def duration: Option[Long] =
     for (first <- firstAnnotation; last <- lastAnnotation)
       yield last.timestamp - first.timestamp
-
-  /**
-   * @return true  if Span contains at most one of each core annotation
-   *         false otherwise
-   */
-  def isValid: Boolean = {
-    Constants.CoreAnnotations.map { c =>
-      annotations.filter(_.value == c).length > 1
-    }.count(b => b) == 0
-  }
-
-  /**
-   * Get the annotations as a map with value to annotation bindings.
-   */
-  def getAnnotationsAsMap(): Map[String, Annotation] =
-    annotations.map(a => a.value -> a)(breakOut)
 
   lazy val endTs: Option[Long] = lastAnnotation.map(_.timestamp)
   lazy val startTs: Option[Long] = firstAnnotation.map(_.timestamp)

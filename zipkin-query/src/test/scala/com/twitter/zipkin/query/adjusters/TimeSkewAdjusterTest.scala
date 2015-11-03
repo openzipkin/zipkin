@@ -19,7 +19,6 @@ package com.twitter.zipkin.query.adjusters
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.{Annotation, Endpoint, Span, Trace}
 import org.scalatest.FunSuite
-
 import scala.collection._
 
 class TimeSkewAdjusterTest extends FunSuite {
@@ -302,12 +301,33 @@ class TimeSkewAdjusterTest extends FunSuite {
     val adjusted = adjuster.adjust(trace)
 
     // let's see how we did
-    val adjustedFlock = adjusted.getSpanById(7330066031642813936L).get
-    val adjustedTflock = adjusted.getSpanById(6924056367845423617L).get
-    val flockCs = adjustedFlock.getAnnotation(Constants.ClientSend).get
-    val tflockSr = adjustedTflock.getAnnotation(Constants.ServerRecv).get
+    val adjustedFlock = adjusted.spans.find(_.id == 7330066031642813936L).get
+    val adjustedTflock = adjusted.spans.find(_.id == 6924056367845423617L).get
+    val flockCs = adjustedFlock.annotations.find(_.value == Constants.ClientSend).get
+    val tflockSr = adjustedTflock.annotations.find(_.value == Constants.ServerRecv).get
 
     // tflock must receive the request before it send a request to flock
     assert(flockCs.timestamp > tflockSr.timestamp)
+  }
+
+  test("as map") {
+    val cs = Annotation(1, Constants.ClientSend, None)
+    val sr = Annotation(2, Constants.ServerRecv, None)
+
+    val map = TimeSkewAdjuster.asMap(List(cs, sr))
+    assert(map.get(Constants.ClientSend).get === cs)
+    assert(map.get(Constants.ServerRecv).get === sr)
+  }
+
+  test("validate annotations") {
+    val cs = Annotation(1, Constants.ClientSend, None)
+    val sr = Annotation(2, Constants.ServerRecv, None)
+    val ss = Annotation(3, Constants.ServerSend, None)
+    val cr = Annotation(4, Constants.ClientRecv, None)
+
+    val cs2 = Annotation(5, Constants.ClientSend, None)
+
+    assert(TimeSkewAdjuster.containsCoreAnnotation(List(cs, sr, ss, cr)))
+    assert(!TimeSkewAdjuster.containsCoreAnnotation(List(cs, sr, ss, cr, cs2)))
   }
 }

@@ -288,18 +288,18 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
   }
 
   private[this] def renderTrace(trace: Trace): Renderer = {
-    val traceStartTs = trace.getStartAndEndTimestamp.map(_.start).getOrElse(0L)
-    val spanDepths = trace.toSpanDepths
+    val traceStartTs= trace.spans.headOption.flatMap(_.startTs).getOrElse(0L)
+    val spanDepths = TraceSummary.toSpanDepths(trace)
     val childMap = trace.getIdToChildrenMap
     val spanMap = trace.getIdToSpanMap
 
     val spans = for {
-      rootSpan <- trace.getRootSpans()
+      rootSpan <- getRootSpans(trace)
       span <- trace.getSpanTree(rootSpan, childMap).toList
     } yield {
-      val start = span.firstAnnotation.map(_.timestamp).getOrElse(traceStartTs)
+      val spanStartTs = span.startTs.getOrElse(traceStartTs)
 
-      val depth = trace.toSpanDepths.get.getOrElse(span.id, 1)
+      val depth = spanDepths.getOrElse(span.id, 1)
       val width = span.duration.map { d => (d.toDouble / trace.duration.toDouble) * 100 }.getOrElse(0.0)
 
       val binaryAnnotations = span.binaryAnnotations.map {
@@ -318,7 +318,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
         "serviceName" -> span.serviceName,
         "duration" -> span.duration,
         "durationStr" -> span.duration.map { d => durationStr(d * 1000) },
-        "left" -> ((start - traceStartTs).toFloat / trace.duration.toFloat) * 100,
+        "left" -> ((spanStartTs - traceStartTs).toFloat / trace.duration.toFloat) * 100,
         "width" -> (if (width < 0.1) 0.1 else width),
         "depth" -> (depth + 1) * 5,
         "depthClass" -> (depth - 1) % 6,
@@ -326,7 +326,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
         "annotations" -> span.annotations.map { a =>
           Map(
             "isCore" -> ZConstants.CoreAnnotations.contains(a.value),
-            "left" -> span.duration.map { d => ((a.timestamp - start).toFloat / d.toFloat) * 100 },
+            "left" -> span.duration.map { d => ((a.timestamp - spanStartTs).toFloat / d.toFloat) * 100 },
             "endpoint" -> a.host.map { e => s"${e.getHostAddress}:${e.getUnsignedPort}" },
             "value" -> annoToString(a.value),
             "timestamp" -> a.timestamp,
@@ -356,7 +356,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
     val data = Map[String, Object](
       "duration" -> durationStr(traceDuration),
       "services" -> serviceDurations.map(_.size),
-      "depth" -> spanDepths.map(_.values.max),
+      "depth" -> spanDepths.values.reduceOption(_ max _),
       "totalSpans" -> spans.size.asInstanceOf[Object],
       "serviceCounts" -> serviceDurations.map(_.sortBy(_.name)),
       "timeMarkers" -> timeMarkers,

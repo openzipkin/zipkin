@@ -30,26 +30,65 @@ object TraceSummary {
    * cannot construct a trace summary. Could be that we have no spans.
    */
   def apply(t: Trace): Option[TraceSummary] = {
-    for (traceId <- t.id; startEnd <- t.getStartAndEndTimestamp)
-    yield TraceSummary(
+
+    val endpoints = t.spans.flatMap(_.annotations).flatMap(_.host).distinct
+    for (
+      traceId <- t.spans.headOption.map(_.traceId);
+      startTs <- t.spans.headOption.flatMap(_.startTs)
+    ) yield TraceSummary(
       SpanId(traceId).toString,
-      startEnd.start,
-      startEnd.end,
-      (startEnd.end - startEnd.start).toInt,
+      startTs,
+      startTs + t.duration,
+      t.duration,
       spanTimestamps(t.spans),
-      t.endpoints.toList)
+      endpoints)
   }
 
   /**
    * Returns a map of services to a list of their durations
    */
-  def spanTimestamps(spans: Seq[Span]): List[SpanTimestamp] = {
+  private def spanTimestamps(spans: Seq[Span]): List[SpanTimestamp] = {
     for {
       span <- spans.toList
       serviceName <- span.serviceNames
       first <- span.firstAnnotation
       last <- span.lastAnnotation
     } yield SpanTimestamp(serviceName, first.timestamp, last.timestamp)
+  }
+
+  /**
+   * Figures out the "span depth". This is used in the ui
+   * to figure out how to lay out the spans in the visualization.
+   * @return span id -> depth in the tree
+   */
+  def toSpanDepths(t: Trace): Map[Long, Int] = {
+    getRootMostSpan(t) match {
+      case None => return Map.empty
+      case Some(s) => {
+        val spanTree = t.getSpanTree(s, t.getIdToChildrenMap)
+        spanTree.depths(1)
+      }
+    }
+  }
+
+  /**
+   * In some cases we don't care if it's the actual root span or just the span
+   * that is closes to the root. For example it could be that we don't yet log spans
+   * from the root service, then we want the one just below that.
+   * FIXME if there are holes in the trace this might not return the correct span
+   */
+  private def getRootMostSpan(t: Trace): Option[Span] = {
+    t.getRootSpan orElse {
+      val idSpan = t.getIdToSpanMap
+      t.spans.headOption map { recursiveGetRootMostSpan(idSpan, _) }
+    }
+  }
+
+  private def recursiveGetRootMostSpan(idSpan: Map[Long, Span], prevSpan: Span): Span = {
+    // parent id shouldn't be none as then we would have returned already
+    val span = for ( id <- prevSpan.parentId; s <- idSpan.get(id) ) yield
+    recursiveGetRootMostSpan(idSpan, s)
+    span.getOrElse(prevSpan)
   }
 }
 
@@ -66,6 +105,6 @@ case class TraceSummary(
   traceId: String,
   startTs: Long,
   endTs: Long,
-  durationMicro: Int,
+  durationMicro: Long,
   spanTimestamps: List[SpanTimestamp],
   endpoints: List[Endpoint])
