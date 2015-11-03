@@ -17,8 +17,6 @@
 package com.twitter.zipkin.common
 
 import java.nio.ByteBuffer
-
-import com.twitter.zipkin.Constants
 import org.scalatest.FunSuite
 
 class SpanTest extends FunSuite {
@@ -78,12 +76,6 @@ class SpanTest extends FunSuite {
     assert(span.serviceName === Some("cs"))
   }
 
-  test("getAnnotationsAsMap") {
-    val map = expectedSpan.getAnnotationsAsMap
-    val actualAnnotation = map.get(annotationValue).get
-    assert(expectedAnnotation === actualAnnotation)
-  }
-
   test("merge two span parts") {
     val ann1 = Annotation(1, "value1", Some(Endpoint(1, 2, "service")))
     val ann2 = Annotation(2, "value2", Some(Endpoint(3, 4, "service")))
@@ -118,25 +110,5 @@ class SpanTest extends FunSuite {
   test("don't get duration duration when there are no annotations") {
     val span = Span(1, "n", 2)
     assert(span.duration === None)
-  }
-
-  test("validate span") {
-    val cs = Annotation(1, Constants.ClientSend, None)
-    val sr = Annotation(2, Constants.ServerRecv, None)
-    val ss = Annotation(3, Constants.ServerSend, None)
-    val cr = Annotation(4, Constants.ClientRecv, None)
-
-    val cs2 = Annotation(5, Constants.ClientSend, None)
-
-    val s1 = Span(1, "i", 123, None, List(cs, sr, ss, cr))
-    assert(s1.isValid)
-
-    val s3 = Span(1, "i", 123, None, List(cs, sr, ss, cr, cs2))
-    assert(!s3.isValid)
-  }
-
-  test("get binary annotation") {
-    assert(spanWith2BinaryAnnotations.getBinaryAnnotation("key1") === Some(binaryAnnotation1))
-    assert(spanWith2BinaryAnnotations.getBinaryAnnotation("NoExitingKey") === None)
   }
 }
