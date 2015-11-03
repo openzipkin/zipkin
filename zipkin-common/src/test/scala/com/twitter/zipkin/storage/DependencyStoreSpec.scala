@@ -27,10 +27,10 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   val zipkinJdbc = Endpoint(172 << 24 | 17 << 16 | 2, 0, "zipkin-jdbc")
 
   val trace = List(
-    Span(1L, "GET", 1L, None, List(
+    Span(1L, "get", 1L, None, List(
       Annotation(today, Constants.ServerRecv, Some(zipkinWeb)),
       Annotation(today + 350, Constants.ServerSend, Some(zipkinWeb)))),
-    Span(1L, "GET", 2L, Some(1L), List(
+    Span(1L, "get", 2L, Some(1L), List(
       Annotation(today + 50, Constants.ClientSend, Some(zipkinWeb)),
       Annotation(today + 100, Constants.ServerRecv, Some(zipkinQuery.copy(port = 0))),
       Annotation(today + 250, Constants.ServerSend, Some(zipkinQuery.copy(port = 0))),
@@ -81,10 +81,10 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
     val three = Endpoint(127 << 24 | 3, 9410, "trace-producer-three")
 
     val trace = List(
-      Span(10L, "GET", 10L, None, List(
+      Span(10L, "get", 10L, None, List(
         Annotation(1445136539256150L, Constants.ServerRecv, Some(one)),
         Annotation(1445136540408729L, Constants.ServerSend, Some(one)))),
-      Span(10L, "GET", 20L, Some(10L), List(
+      Span(10L, "get", 20L, Some(10L), List(
         Annotation(1445136539764798L, Constants.ClientSend, Some(one.copy(port = 3001))),
         Annotation(1445136539816432L, Constants.ServerRecv, Some(two)),
         Annotation(1445136540401414L, Constants.ServerSend, Some(two)),

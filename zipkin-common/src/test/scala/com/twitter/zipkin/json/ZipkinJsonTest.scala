@@ -17,7 +17,7 @@ class ZipkinJsonTest extends FunSuite with Matchers {
   val query = Endpoint((192 << 24 | 168 << 16 | 1), 9411, "zipkin-query")
 
   test("complete span example") {
-    val s = Span(1, "GET", 12345L, None, List(
+    val s = Span(1, "get", 12345L, None, List(
       Annotation(1L, Constants.ClientSend, Some(web.copy(port = 0))),
       Annotation(2L, Constants.ServerRecv, Some(query)),
       Annotation(3L, Constants.ServerSend, Some(query)),

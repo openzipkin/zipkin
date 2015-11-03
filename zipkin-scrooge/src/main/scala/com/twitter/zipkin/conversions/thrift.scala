@@ -37,7 +37,7 @@ object thrift {
         case (null | "") => Endpoint.UnknownServiceName
         case _ => e.serviceName
       }
-      new Endpoint(e.ipv4, e.port, serviceName)
+      new Endpoint(e.ipv4, e.port, serviceName.toLowerCase)
     }
   }
   implicit def endpointToThriftEndpoint(e: Endpoint) = new ThriftEndpoint(e)
@@ -103,7 +103,7 @@ object thrift {
 
       Span(
         s.traceId,
-        s.name,
+        s.name.toLowerCase,
         s.id,
         s.parentId,
         s.annotations match {

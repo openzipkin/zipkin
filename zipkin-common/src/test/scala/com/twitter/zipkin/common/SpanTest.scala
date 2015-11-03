@@ -28,7 +28,7 @@ class SpanTest extends FunSuite {
   val expectedSpan = Span(12345, "methodcall", 666, None, List(expectedAnnotation))
 
   val annotation1 = Annotation(1, "value1", Some(Endpoint(1, 2, "service")))
-  val annotation2 = Annotation(2, "value2", Some(Endpoint(3, 4, "Service"))) // upper case service name
+  val annotation2 = Annotation(2, "value2", Some(Endpoint(3, 4, "service")))
   val annotation3 = Annotation(3, "value3", Some(Endpoint(5, 6, "service")))
 
   val binaryAnnotation1 = BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), AnnotationType.String, Some(Endpoint(1, 2, "service1")))
@@ -39,10 +39,11 @@ class SpanTest extends FunSuite {
   val spanWith2BinaryAnnotations = Span(12345, "methodcall", 666, None,
     List.empty, Seq(binaryAnnotation1, binaryAnnotation2))
 
-  test("serviceNames are lowercase") {
-    val names = spanWith3Annotations.serviceNames
-    assert(names.size === 1)
-    assert(names.toSeq(0) === "service")
+  /** Representations should lowercase on the way in */
+  test("name cannot be lowercase") {
+    intercept[IllegalArgumentException] {
+      Span(12345, "Foo", 666)
+    }
   }
 
   test("serviceName preference") {
@@ -95,7 +96,7 @@ class SpanTest extends FunSuite {
   }
 
   test("merge span with Unknown span name with known span name") {
-    val span1 = Span(1, "Unknown", 2)
+    val span1 = Span(1, "unknown", 2)
     val span2 = Span(1, "get", 2)
 
     assert(span1.mergeSpan(span2).name === "get")

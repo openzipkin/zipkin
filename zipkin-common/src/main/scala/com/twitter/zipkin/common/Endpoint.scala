@@ -20,23 +20,18 @@ import java.net.{InetAddress, InetSocketAddress}
 import java.nio.ByteBuffer
 
 import com.google.common.collect.ComparisonChain
-
-import scala.util.hashing.MurmurHash3
+import com.twitter.zipkin.util.Util._
 
 /**
  * Represents the client or server machine we traced.
  *
  * @param ipv4 ipv4 ip address.
  * @param port note that due to lack of unsigned integers this will wrap.
- * @param _serviceName the service this operation happened on, in lowercase
+ * @param serviceName the service this operation happened on, in lowercase
  */
-// This is not a case-class as we need to enforce serviceName as lowercase
-class Endpoint(val ipv4: Int, val port: Short, _serviceName: String) extends Ordered[Endpoint] {
-
-  /**  the service this operation happened on, in lowercase. */
-  val serviceName: String = _serviceName.toLowerCase
-
-  override lazy val toString = "%s:%d(%s)".format(getHostAddress, port, serviceName)
+case class Endpoint(ipv4: Int, port: Short, serviceName: String) extends Ordered[Endpoint] {
+  checkArgument(serviceName.toLowerCase == serviceName,
+    s"serviceName must be lowercase: $serviceName")
 
   /**
    * Return the java.net.InetSocketAddress which contains host/port
@@ -57,31 +52,16 @@ class Endpoint(val ipv4: Int, val port: Short, _serviceName: String) extends Ord
       ipv4 & 0xFF)
   }
 
-  def getUnsignedPort: Int = {
-    port & 0xFFFF
-  }
+  def getUnsignedPort: Int = port & 0xFFFF
 
   override def compare(that: Endpoint) = ComparisonChain.start()
     .compare(serviceName, that.serviceName)
     .compare(ipv4, that.ipv4)
     .compare(port, that.port)
     .result()
-
-  override lazy val hashCode: Int = MurmurHash3.seqHash(List(serviceName, ipv4, port))
-
-  override def equals(other: Any) = other match {
-    case that: Endpoint =>
-      this.serviceName == that.serviceName && this.ipv4 == that.ipv4 && this.port == that.port
-    case _ => false
-  }
-
-  def copy(ipv4: Int = this.ipv4, port: Short = this.port, serviceName: String = this.serviceName) =
-    Endpoint(ipv4, port, serviceName)
 }
 
 object Endpoint {
   val Unknown = Endpoint(0, 0, "")
-  val UnknownServiceName = "Unknown service name"
-
-  def apply(ipv4: Int, port: Short, serviceName: String) = new Endpoint(ipv4, port, serviceName)
+  val UnknownServiceName = "unknown"
 }

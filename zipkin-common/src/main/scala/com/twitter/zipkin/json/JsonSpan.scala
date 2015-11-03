@@ -25,7 +25,7 @@ object JsonSpan extends (Span => JsonSpan) {
 
   def invert(s: JsonSpan) = Span(
     id(s.traceId),
-    s.name,
+    s.name.toLowerCase,
     id(s.id),
     s.parentId.map(id(_)),
     /** If deserialized with jackson, these could be null, as it doesn't look at default values. */

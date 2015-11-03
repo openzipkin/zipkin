@@ -9,7 +9,7 @@ import kafka.producer._
 import org.junit.{ClassRule, Test}
 import org.scalatest.junit.JUnitSuite
 
-object KafkaProcessorSpecSimple {
+object KafkaProcessorSpec {
   // Singleton as the test needs to read the actual port in use
   val kafkaRule = new KafkaJunitRule()
 
@@ -17,9 +17,9 @@ object KafkaProcessorSpecSimple {
   @ClassRule def kafkaRuleDef = kafkaRule
 }
 
-class KafkaProcessorSpecSimple extends JUnitSuite {
+class KafkaProcessorSpec extends JUnitSuite {
 
-  import KafkaProcessorSpecSimple.kafkaRule
+  import KafkaProcessorSpec.kafkaRule
 
   val topic = Map("integration-test-topic" -> 1)
   val validSpan = Span(123, "boo", 456, None, List(new Annotation(1, "bah", None)))
@@ -41,7 +41,7 @@ class KafkaProcessorSpecSimple extends JUnitSuite {
 
   def createMessage(): Array[Byte] = {
     val annotation = Annotation(1, "value", Some(Endpoint(1, 2, "service")))
-    val message = Span(1234, "methodName", 4567, None, List(annotation))
+    val message = Span(1234, "methodname", 4567, None, List(annotation))
     val codec = new SpanCodec()
     codec.encode(message)
   }
