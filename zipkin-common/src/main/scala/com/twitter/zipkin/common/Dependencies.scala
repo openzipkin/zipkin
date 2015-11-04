@@ -97,7 +97,7 @@ object Dependencies {
     val flattenedSpans: Map[(Long, Long), Span] = spans
       .filter(_.serviceName.isDefined)
       .groupBy(s => (s.id, s.traceId))
-      .mapValues(spans => spans.reduce((s1, s2) => s1.mergeSpan(s2)))
+      .mapValues(spans => spans.reduce((s1, s2) => s1.merge(s2)))
 
     val childCountByParent: Map[(Long, Long), Map[String, Long]] = flattenedSpans
       .filter { case (key, span) => span.parentId.isDefined }

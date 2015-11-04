@@ -21,7 +21,7 @@ import java.util.Locale
 import com.twitter.util.Duration
 import com.twitter.zipkin.Constants.CoreAnnotationNames
 import java.util.concurrent.TimeUnit
-import com.twitter.zipkin.common.{Trace, Span}
+import com.twitter.zipkin.common.Span
 
 object Util {
   private[this] val TimeUnits = Seq(
@@ -81,8 +81,22 @@ object Util {
   def annoToString(value: String): String =
     CoreAnnotationNames.get(value).getOrElse(value)
 
-  def getRootSpans(trace: Trace): List[Span] = {
-    val idSpan = trace.getIdToSpanMap
-    trace.spans filter { !_.parentId.flatMap(idSpan.get).isDefined }
+  def getRootSpans(spans: List[Span]): List[Span] = {
+    val idSpan = getIdToSpanMap(spans)
+    spans filter { !_.parentId.flatMap(idSpan.get).isDefined }
   }
+
+  /**
+   * How long did this span take to run?
+   * Returns microseconds between start annotation and end annotation
+   */
+  def duration(spans: List[Span]): Long = {
+    val endTs = spans.flatMap(_.annotations).map(_.timestamp).reduceOption(_ max _)
+    (endTs.getOrElse(0L) - spans.headOption.flatMap(_.startTs).getOrElse(0L))
+  }
+
+  /*
+   * Turn the Trace into a map of Span Id -> Span
+   */
+  def getIdToSpanMap(spans: List[Span]): Map[Long, Span] = spans.map(s => (s.id, s)).toMap
 }

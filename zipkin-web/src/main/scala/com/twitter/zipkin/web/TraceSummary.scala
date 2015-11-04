@@ -17,7 +17,8 @@
 package com.twitter.zipkin.web
 
 import com.twitter.finagle.tracing.SpanId
-import com.twitter.zipkin.common.{Endpoint, Span, Trace}
+import com.twitter.zipkin.common.{Endpoint, Span, SpanTreeEntry}
+import com.twitter.zipkin.web.Util.getIdToSpanMap
 
 case class SpanTimestamp(name: String, startTs: Long, endTs: Long) {
   def duration = endTs - startTs
@@ -29,25 +30,25 @@ object TraceSummary {
    * Return a summary of this trace or none if we
    * cannot construct a trace summary. Could be that we have no spans.
    */
-  def apply(t: Trace): Option[TraceSummary] = {
-
-    val endpoints = t.spans.flatMap(_.annotations).flatMap(_.host).distinct
+  def apply(spans: List[Span]): Option[TraceSummary] = {
+    val duration = Util.duration(spans)
+    val endpoints = spans.flatMap(_.annotations).flatMap(_.host).distinct
     for (
-      traceId <- t.spans.headOption.map(_.traceId);
-      startTs <- t.spans.headOption.flatMap(_.startTs)
+      traceId <- spans.headOption.map(_.traceId);
+      startTs <- spans.headOption.flatMap(_.startTs)
     ) yield TraceSummary(
       SpanId(traceId).toString,
       startTs,
-      startTs + t.duration,
-      t.duration,
-      spanTimestamps(t.spans),
+      startTs + duration,
+      duration,
+      spanTimestamps(spans),
       endpoints)
   }
 
   /**
    * Returns a map of services to a list of their durations
    */
-  private def spanTimestamps(spans: Seq[Span]): List[SpanTimestamp] = {
+  private def spanTimestamps(spans: List[Span]): List[SpanTimestamp] = {
     for {
       span <- spans.toList
       serviceName <- span.serviceNames
@@ -61,11 +62,11 @@ object TraceSummary {
    * to figure out how to lay out the spans in the visualization.
    * @return span id -> depth in the tree
    */
-  def toSpanDepths(t: Trace): Map[Long, Int] = {
-    getRootMostSpan(t) match {
+  def toSpanDepths(spans: List[Span]): Map[Long, Int] = {
+    getRootMostSpan(spans) match {
       case None => return Map.empty
       case Some(s) => {
-        val spanTree = t.getSpanTree(s, t.getIdToChildrenMap)
+        val spanTree = SpanTreeEntry.create(s, spans)
         spanTree.depths(1)
       }
     }
@@ -77,16 +78,18 @@ object TraceSummary {
    * from the root service, then we want the one just below that.
    * FIXME if there are holes in the trace this might not return the correct span
    */
-  private def getRootMostSpan(t: Trace): Option[Span] = {
-    t.getRootSpan orElse {
-      val idSpan = t.getIdToSpanMap
-      t.spans.headOption map { recursiveGetRootMostSpan(idSpan, _) }
+  private def getRootMostSpan(spans: List[Span]): Option[Span] = {
+    spans.find(!_.parentId.isDefined) orElse {
+      val idSpan = getIdToSpanMap(spans)
+      spans.headOption map {
+        recursiveGetRootMostSpan(idSpan, _)
+      }
     }
   }
 
   private def recursiveGetRootMostSpan(idSpan: Map[Long, Span], prevSpan: Span): Span = {
     // parent id shouldn't be none as then we would have returned already
-    val span = for ( id <- prevSpan.parentId; s <- idSpan.get(id) ) yield
+    val span = for (id <- prevSpan.parentId; s <- idSpan.get(id)) yield
     recursiveGetRootMostSpan(idSpan, s)
     span.getOrElse(prevSpan)
   }

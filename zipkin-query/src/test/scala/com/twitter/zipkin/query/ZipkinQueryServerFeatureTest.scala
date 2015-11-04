@@ -35,19 +35,16 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   val ann1 = Annotation(100, Constants.ClientSend, Some(ep1))
   val ann2 = Annotation(150, Constants.ClientRecv, Some(ep1))
   val spans1 = List(Span(1, "methodcall", 666, Some(2), List(ann1, ann2)))
-  val trace1 = Trace(spans1)
   // duration 50
 
   val ann3 = Annotation(101, Constants.ClientSend, Some(ep2))
   val ann4 = Annotation(501, Constants.ClientRecv, Some(ep2))
   val spans2 = List(Span(2, "methodcall", 667, None, List(ann3, ann4)))
-  val trace2 = Trace(spans2)
   // duration 400
 
   val ann5 = Annotation(99, Constants.ClientSend, Some(ep3))
   val ann6 = Annotation(199, Constants.ClientRecv, Some(ep3))
   val spans3 = List(Span(3, "methodcall", 668, None, List(ann5, ann6)))
-  val trace3 = Trace(spans3)
   // duration 100
 
   // get some server action going on
@@ -56,7 +53,6 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   val spans4 = List(
     Span(2, "methodcall", 666, Some(2), List(ann1, ann2)),
     Span(2, "methodcall", 666, Some(2), List(ann7, ann8)))
-  val trace4 = Trace(spans4)
 
   val ann9 = Annotation(60, Constants.ClientSend, Some(ep3))
   val ann10 = Annotation(65, "annotation", Some(ep3))
@@ -75,7 +71,6 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   val allSpans = spans1 ++ spans2 ++ spans3 ++ spans4 ++ spans5 ++ spans6
 
   // no spans
-  val emptyTrace = Trace(List())
   val deps = Dependencies(0, Time.now.inMicroseconds, List(DependencyLink("tfe", "mobileweb", 1), DependencyLink("gizmoduck", "tflock", 2)))
 
   "post spans" in {

@@ -16,22 +16,45 @@
  */
 package com.twitter.zipkin.common
 
+import scala.collection.mutable
+
 /**
  * This represents a tree version of a Trace.
  */
+object SpanTreeEntry {
+
+  /**
+   * Get the spans of this trace in a tree form. SpanTreeEntry wraps a Span and its children.
+   */
+  def create(span: Span, spans: List[Span]): SpanTreeEntry = { // apply would collide on generics
+    create(span, indexByParentId(spans))
+  }
+
+  private def create(span: Span, idToChildren: mutable.MultiMap[Long, Span]): SpanTreeEntry = {
+    idToChildren.get(span.id) match {
+      case Some(cSet) => SpanTreeEntry(span, cSet.map(create(_, idToChildren)).toList)
+      case None => SpanTreeEntry(span, List[SpanTreeEntry]())
+    }
+  }
+
+  /*
+   * Turn the Trace into a map of Span Id -> One or more children Spans
+   */
+  private[common] def indexByParentId(spans: List[Span]): mutable.MultiMap[Long, Span] = {
+    val map = new mutable.HashMap[Long, mutable.Set[Span]] with mutable.MultiMap[Long, Span]
+    for ( s <- spans; pId <- s.parentId ) map.addBinding(pId, s)
+    map
+  }
+}
+
 case class SpanTreeEntry(span: Span, children: List[SpanTreeEntry]) {
 
-  def toList: List[Span] = {
-    childrenToList(this)
-  }
+  def toList: List[Span] = childrenToList(this)
 
   private def childrenToList(entry: SpanTreeEntry): List[Span] = {
     entry.children match {
-      case Nil =>
-        List[Span](entry.span)
-
-      case children =>
-        entry.span :: children.sortBy(_.span).map(childrenToList).flatten
+      case Nil => List[Span](entry.span)
+      case children => entry.span :: children.sortBy(_.span).map(childrenToList).flatten
     }
   }
 

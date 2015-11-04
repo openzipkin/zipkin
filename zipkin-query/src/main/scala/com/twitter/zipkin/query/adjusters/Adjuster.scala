@@ -16,7 +16,7 @@
  */
 package com.twitter.zipkin.query.adjusters
 
-import com.twitter.zipkin.common.Trace
+import com.twitter.zipkin.common.Span
 
 trait Adjuster {
 
@@ -24,11 +24,11 @@ trait Adjuster {
    * Adjusts the incoming trace in some way. Could for example be
    * moving timestamps or filling in missing spans.
    */
-  def adjust(trace: Trace) : Trace
+  def adjust(trace: List[Span]) : List[Span]
 }
 
 class AdjusterException extends Exception
 
 object NullAdjuster extends Adjuster {
-  def adjust(trace: Trace) = trace
+  def adjust(trace: List[Span]) = trace
 }

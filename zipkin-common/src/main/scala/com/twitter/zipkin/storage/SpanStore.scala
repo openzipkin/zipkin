@@ -19,8 +19,7 @@ import java.nio.ByteBuffer
 
 import com.twitter.util.FuturePools._
 import com.twitter.util.{Closable, Future}
-import com.twitter.zipkin.Constants
-import com.twitter.zipkin.common.{Trace, Span}
+import com.twitter.zipkin.common.Span
 
 abstract class SpanStore extends java.io.Closeable {
 
@@ -106,7 +105,7 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     spans.groupBy(_.traceId)
          .filterKeys(traceIds.contains(_))
          .values.filter(!_.isEmpty)
-         .map(Trace(_).spans).toList
+         .map(Span.mergeById).toList
          .sortBy(_.head.startTs)
   }
 
