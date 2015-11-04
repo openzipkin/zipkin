@@ -41,7 +41,7 @@ class CassandraDependencyStoreSpec extends DependencyStoreSpec {
   }
 
   override def processDependencies(spans: List[Span]) = {
-    val deps = new Dependencies(spans.head.startTs.get, spans.last.endTs.get, Dependencies.toLinks(spans))
+    val deps = new Dependencies(spans.head.timestamp.get, spans.last.timestamp.get, Dependencies.toLinks(spans))
     result(store.storeDependencies(deps))
   }
 

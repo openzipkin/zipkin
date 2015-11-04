@@ -6,7 +6,6 @@ import java.nio.ByteBuffer
 import com.google.common.base.Charsets.UTF_8
 import com.twitter.finagle.redis.Client
 import com.twitter.util.{Duration, Future}
-import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.{AnnotationType, BinaryAnnotation, Span}
 import com.twitter.zipkin.storage.IndexedTraceId
 import org.jboss.netty.buffer.ChannelBuffers.copiedBuffer
@@ -85,24 +84,24 @@ class RedisIndex(
       result ++= services.map(spanNames.put(_, span.name))
     }
 
-    if (span.endTs.isDefined) {
-      val endTs = span.endTs.get
+    if (span.timestamp.isDefined) {
+      val timestamp = span.timestamp.get
 
       result ++= services.map(serviceName =>
-        serviceIndex.add(serviceName, endTs, span.traceId))
+        serviceIndex.add(serviceName, timestamp, span.traceId))
 
       result ++= services.map(serviceName =>
-        spanIndex.add(SpanKey(serviceName, span.name), endTs, span.traceId))
+        spanIndex.add(SpanKey(serviceName, span.name), timestamp, span.traceId))
 
       result ++= services.flatMap(serviceName =>
         span.annotations.map(_.value)
           .map(AnnotationKey(serviceName, _))
-          .map(annotationIndex.add(_, endTs, span.traceId)))
+          .map(annotationIndex.add(_, timestamp, span.traceId)))
 
       result ++= services.flatMap(serviceName =>
         span.binaryAnnotations
           .map(bin => BinaryAnnotationKey(serviceName, bin.key, encode(bin)))
-          .map(binaryAnnotationIndex.add(_, endTs, span.traceId)))
+          .map(binaryAnnotationIndex.add(_, timestamp, span.traceId)))
     }
 
     Future.join(result)

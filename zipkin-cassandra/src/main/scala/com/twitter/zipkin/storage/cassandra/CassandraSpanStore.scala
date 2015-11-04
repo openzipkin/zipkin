@@ -74,12 +74,12 @@ abstract class CassandraSpanStore(
   private[this] val IndexSpanNameCounter = IndexStats.scope("serviceName").counter("spanName")
   private[this] val IndexSpanNameNoNameCounter = IndexStats.scope("serviceName").scope("spanName").counter("noName")
   private[this] val IndexTraceStats = IndexStats.scope("trace")
-  private[this] val IndexTraceNoLastAnnotationCounter = IndexTraceStats.counter("noLastAnnotation")
+  private[this] val IndexTraceNoTimestampCounter = IndexTraceStats.counter("noTimestamp")
   private[this] val IndexTraceByServiceNameCounter = IndexTraceStats.counter("serviceName")
   private[this] val IndexTraceBySpanNameCounter = IndexTraceStats.counter("spanName")
   private[this] val IndexAnnotationCounter = IndexStats.scope("annotation").counter("standard")
-  private[this] val IndexAnnotationNoLastAnnotationCounter = IndexStats.scope("annotation").counter("noLastAnnotation")
   private[this] val IndexBinaryAnnotationCounter = IndexStats.scope("annotation").counter("binary")
+  private[this] val IndexSpanNoTimestampCounter = IndexStats.scope("span").counter("noTimestamp")
   private[this] val QueryStats = stats.scope("query")
   private[this] val QueryGetSpansByTraceIdsStat = QueryStats.stat("getSpansByTraceIds")
   private[this] val QueryGetSpansByTraceIdsTooBigCounter = QueryStats.scope("getSpansByTraceIds").counter("tooBig")
@@ -117,11 +117,10 @@ abstract class CassandraSpanStore(
   }
 
   private[this] def indexTraceIdByName(span: Span): Future[Unit] = {
-    if (span.lastAnnotation.isEmpty)
-      IndexTraceNoLastAnnotationCounter.incr()
+    if (span.timestamp.isEmpty)
+      IndexTraceNoTimestampCounter.incr()
 
-    span.lastAnnotation map { lastAnnotation =>
-      val timestamp = lastAnnotation.timestamp
+    span.timestamp map { timestamp =>
       val serviceNames = span.serviceNames
 
       Future.join(
@@ -142,11 +141,10 @@ abstract class CassandraSpanStore(
   }
 
   private[this] def indexByAnnotations(span: Span): Future[Unit] = {
-    if (span.lastAnnotation.isEmpty)
-      IndexAnnotationNoLastAnnotationCounter.incr()
+    if (span.timestamp.isEmpty)
+      IndexSpanNoTimestampCounter.incr()
 
-    span.lastAnnotation map { lastAnnotation =>
-      val timestamp = lastAnnotation.timestamp
+    span.timestamp map { timestamp =>
 
       val annotationsFuture = Future.join(
         span.annotations
@@ -208,7 +206,7 @@ abstract class CassandraSpanStore(
           FutureUtil.toFuture(
             repository.storeSpan(
               span.traceId,
-              span.startTs.getOrElse(0),
+              span.timestamp.getOrElse(0L),
               createSpanColumnName(span),
               spanCodec.encode(span.copy(annotations = span.annotations.sorted).toThrift),
               spanTtl.inSeconds)),

@@ -37,9 +37,9 @@ abstract class TraceIndex[K](
    * @param limit maximum number of items to return
    */
   def list(key: K, endTs: Long, limit: Long): Future[Seq[IndexedTraceId]] = {
-    val startTs: Long = ttl map (dur => endTs - dur.inMicroseconds) getOrElse 0
+    val timestamp: Long = ttl map (dur => endTs - dur.inMicroseconds) getOrElse 0
 
-    client.zRevRangeByScore(encodeKey(key), ZInterval(endTs), ZInterval(startTs), true, Some(Limit(0, limit)))
+    client.zRevRangeByScore(encodeKey(key), ZInterval(endTs), ZInterval(timestamp), true, Some(Limit(0, limit)))
       .map(_.left.get)
       .map(_.asTuples map (tup => IndexedTraceId(tup._1.copy().readLong(), tup._2.toLong)))
   }

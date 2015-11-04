@@ -20,8 +20,8 @@ import com.twitter.finagle.tracing.SpanId
 import com.twitter.zipkin.common.{Endpoint, Span, SpanTreeEntry}
 import com.twitter.zipkin.web.Util.getIdToSpanMap
 
-case class SpanTimestamp(name: String, startTs: Long, endTs: Long) {
-  def duration = endTs - startTs
+case class SpanTimestamp(name: String, timestamp: Long, duration: Long) {
+  def endTs = timestamp + duration
 }
 
 object TraceSummary {
@@ -35,11 +35,10 @@ object TraceSummary {
     val endpoints = spans.flatMap(_.annotations).flatMap(_.host).distinct
     for (
       traceId <- spans.headOption.map(_.traceId);
-      startTs <- spans.headOption.flatMap(_.startTs)
+      timestamp <- spans.headOption.flatMap(_.timestamp)
     ) yield TraceSummary(
       SpanId(traceId).toString,
-      startTs,
-      startTs + duration,
+      timestamp,
       duration,
       spanTimestamps(spans),
       endpoints)
@@ -52,9 +51,9 @@ object TraceSummary {
     for {
       span <- spans.toList
       serviceName <- span.serviceNames
-      first <- span.firstAnnotation
-      last <- span.lastAnnotation
-    } yield SpanTimestamp(serviceName, first.timestamp, last.timestamp)
+      timestamp <- span.timestamp
+      duration <- span.duration
+    } yield SpanTimestamp(serviceName, timestamp, duration)
   }
 
   /**
@@ -99,15 +98,13 @@ object TraceSummary {
  * json-friendly representation of a trace summary
  *
  * @param traceId id of this trace
- * @param startTs when did the trace start?
- * @param endTs when did the trace end?
- * @param durationMicro how long did the traced operation take?
+ * @param timestamp when did the trace start?
+ * @param duration how long did the traced operation take?
  * @param endpoints endpoints involved in the traced operation
  */
 case class TraceSummary(
   traceId: String,
-  startTs: Long,
-  endTs: Long,
-  durationMicro: Long,
+  timestamp: Long,
+  duration: Long,
   spanTimestamps: List[SpanTimestamp],
   endpoints: List[Endpoint])

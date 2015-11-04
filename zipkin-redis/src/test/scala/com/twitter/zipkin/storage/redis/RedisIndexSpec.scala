@@ -88,7 +88,7 @@ class RedisIndexSpec extends RedisSpecification {
 
     // should find traces by the key and value annotation
     result(redisIndex.getTraceIdsByAnnotation("service", "BAH", Some(ByteBuffer.wrap("BEH".getBytes)), endTs, 1)) should
-      be (Seq(IndexedTraceId(span1.traceId, span1.lastAnnotation.get.timestamp)))
+      be (Seq(IndexedTraceId(span1.traceId, span1.timestamp.get)))
   }
 
   test("not index empty service name") {

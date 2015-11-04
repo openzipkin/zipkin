@@ -43,14 +43,14 @@ class AnormSpanStore(val db: DB,
           db.replaceCommand() +
             """ INTO zipkin_spans
               |VALUES
-              |  ({trace_id}, {id}, {name}, {parent_id}, {debug}, {start_ts})
+              |  ({trace_id}, {id}, {name}, {parent_id}, {debug}, {timestamp})
             """.stripMargin)
           .on("trace_id" -> span.traceId)
           .on("id" -> span.id)
           .on("name" -> span.name)
           .on("parent_id" -> span.parentId)
           .on("debug" -> span.debug.map(if (_) 1 else 0))
-          .on("start_ts" -> span.startTs)
+          .on("timestamp" -> span.timestamp)
           .execute()
 
         span.annotations.foreach(a =>
@@ -86,7 +86,7 @@ class AnormSpanStore(val db: DB,
             .on("key" -> b.key)
             .on("value" -> Util.getArrayFromBuffer(b.value))
             .on("type" -> b.annotationType.value)
-            .on("timestamp" -> span.endTs.getOrElse(System.currentTimeMillis() * 1000)) // fallback if we have no timestamp, yet
+            .on("timestamp" -> span.timestamp.getOrElse(System.currentTimeMillis() * 1000)) // fallback if we have no timestamp, yet
             .on("ipv4" -> b.host.map(_.ipv4))
             .on("port" -> b.host.map(_.port))
             .on("service_name" -> b.host.map(_.serviceName).getOrElse("Unknown service name")) // from Annotation
@@ -185,25 +185,26 @@ class AnormSpanStore(val db: DB,
       implicit val (conn, borrowTime) = borrowConn()
       try {
         val result:List[(Long, Long)] = SQL(
-          """SELECT t1.trace_id, end_ts
+          """SELECT t1.trace_id, start_ts
             |FROM zipkin_spans t1
             |INNER JOIN (
-            |  SELECT DISTINCT trace_id, MAX(a_timestamp) as end_ts
+            |  SELECT DISTINCT trace_id
             |  FROM zipkin_annotations
             |  WHERE endpoint_service_name = {service_name}
             |  AND a_type = -1
             |  GROUP BY trace_id)
             |AS t2 ON t1.trace_id = t2.trace_id
             |WHERE (name = {name} OR {name} = '')
+            |AND start_ts <= {end_ts}
             |GROUP BY t1.trace_id
-            |ORDER BY end_ts
+            |ORDER BY start_ts
             |LIMIT {limit}
           """.stripMargin)
           .on("service_name" -> serviceName)
           .on("name" -> (if (spanName.isEmpty) "" else spanName.get))
           .on("end_ts" -> endTs)
           .on("limit" -> limit)
-          .as((long("trace_id") ~ long("end_ts") map flatten) *)
+          .as((long("trace_id") ~ long("start_ts") map flatten) *)
         result map { case (tId, ts) =>
           IndexedTraceId(traceId = tId, timestamp = ts)
         }

@@ -50,8 +50,21 @@ case class Span(
 
   checkArgument(name.toLowerCase == name, s"name must be lowercase: $name")
 
+  lazy val timestamp: Option[Long] = annotations.headOption.map(_.timestamp)
+
+  /**
+   * Duration in microseconds.
+   *
+   * Absent when this is span has only binary annotations or only a single
+   * annotation. This is possible when a span isn't complete, or messages that
+   * complete it were lost.
+   */
+  def duration: Option[Long] =
+    for (first <- annotations.headOption; last <- annotations.lastOption; if (first != last))
+      yield last.timestamp - first.timestamp
+
   override def compare(that: Span) =
-    java.lang.Long.compare(startTs.getOrElse(0L), that.startTs.getOrElse(0L))
+    java.lang.Long.compare(timestamp.getOrElse(0L), that.timestamp.getOrElse(0L))
 
   def serviceNames: Set[String] = annotations.flatMap(a => a.host.map(h => h.serviceName)).toSet
 
@@ -97,16 +110,6 @@ case class Span(
   }
 
   /**
-   * Get the first annotation by timestamp.
-   */
-  def firstAnnotation: Option[Annotation] = annotations.headOption
-
-  /**
-   * Get the last annotation by timestamp.
-   */
-  def lastAnnotation: Option[Annotation] = annotations.lastOption
-
-  /**
    * Pick out the core client side annotations
    */
   def clientSideAnnotations: Seq[Annotation] =
@@ -117,16 +120,6 @@ case class Span(
    */
   def serverSideAnnotations: Seq[Annotation] =
     annotations.filter(a => Constants.CoreServer.contains(a.value))
-
-  /**
-   * Duration of this span. May be None if we cannot find any annotations.
-   */
-  def duration: Option[Long] =
-    for (first <- firstAnnotation; last <- lastAnnotation)
-      yield last.timestamp - first.timestamp
-
-  lazy val endTs: Option[Long] = lastAnnotation.map(_.timestamp)
-  lazy val startTs: Option[Long] = firstAnnotation.map(_.timestamp)
 }
 object Span {
   /**

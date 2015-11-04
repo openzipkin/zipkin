@@ -96,20 +96,17 @@ class SpanTest extends FunSuite {
     assert(span2.merge(span1).name === "get")
   }
 
-  test("return the first annotation") {
-    assert(spanWith3Annotations.firstAnnotation.get === annotation1)
-  }
-
-  test("return the last annotation") {
-    assert(spanWith3Annotations.lastAnnotation.get === annotation3)
-  }
-
   test("get duration") {
     assert(spanWith3Annotations.duration === Some(2))
   }
 
-  test("don't get duration duration when there are no annotations") {
+  test("get duration none when no annotations") {
     val span = Span(1, "n", 2)
+    assert(span.duration === None)
+  }
+
+  test("get duration none when one annotation") {
+    val span = Span(1, "n", 2, annotations = List(annotation1))
     assert(span.duration === None)
   }
 
