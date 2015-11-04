@@ -29,7 +29,6 @@ import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,12 +38,10 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import org.jooq.DSLContext;
 import org.jooq.ExecuteListenerProvider;
-import org.jooq.Field;
 import org.jooq.InsertSetMoreStep;
 import org.jooq.Query;
 import org.jooq.Record;
 import org.jooq.Record1;
-import org.jooq.Record2;
 import org.jooq.Record3;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectOffsetStep;
@@ -98,9 +95,10 @@ public final class JDBCSpanStore implements SpanStore {
       List<Query> inserts = new ArrayList<>();
 
       for (Span span : spans) {
-        Long startTs = span.annotations.stream()
-            .map(a -> a.timestamp)
-            .min(Comparator.naturalOrder()).orElse(null);
+        Long timestamp = span.timestamp();
+        if (timestamp == null) { // possible if only contains binary annotations
+          timestamp = System.currentTimeMillis() * 1000;
+        }
 
         inserts.add(create.insertInto(ZIPKIN_SPANS)
                 .set(ZIPKIN_SPANS.TRACE_ID, span.traceId)
@@ -108,7 +106,7 @@ public final class JDBCSpanStore implements SpanStore {
                 .set(ZIPKIN_SPANS.NAME, span.name)
                 .set(ZIPKIN_SPANS.PARENT_ID, span.parentId)
                 .set(ZIPKIN_SPANS.DEBUG, span.debug)
-                .set(ZIPKIN_SPANS.START_TS, startTs)
+                .set(ZIPKIN_SPANS.START_TS, timestamp)
                 .onDuplicateKeyIgnore()
         );
 
@@ -134,7 +132,7 @@ public final class JDBCSpanStore implements SpanStore {
               .set(ZIPKIN_ANNOTATIONS.A_KEY, annotation.key)
               .set(ZIPKIN_ANNOTATIONS.A_VALUE, annotation.value)
               .set(ZIPKIN_ANNOTATIONS.A_TYPE, annotation.type.value)
-              .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, span.endTs());
+              .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, timestamp);
           if (annotation.endpoint != null) {
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, annotation.endpoint.serviceName);
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, annotation.endpoint.ipv4);
@@ -340,10 +338,10 @@ public final class JDBCSpanStore implements SpanStore {
     long endTs = (request.endTs > 0 && request.endTs != Long.MAX_VALUE) ? request.endTs
         : System.currentTimeMillis() / 1000;
 
-    Field<Long> lastTimestamp = ZIPKIN_ANNOTATIONS.A_TIMESTAMP.max().as("last_timestamp");
-    Table<Record2<Long, Long>> a1 = context.selectDistinct(ZIPKIN_ANNOTATIONS.TRACE_ID, lastTimestamp)
+    Table<Record1<Long>> a1 = context.selectDistinct(ZIPKIN_ANNOTATIONS.TRACE_ID)
         .from(ZIPKIN_ANNOTATIONS)
         .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(request.serviceName))
+        .and(ZIPKIN_ANNOTATIONS.A_TYPE.eq(-1))
         .groupBy(ZIPKIN_ANNOTATIONS.TRACE_ID).asTable();
 
     Table<?> table = ZIPKIN_SPANS.join(a1)
@@ -363,7 +361,7 @@ public final class JDBCSpanStore implements SpanStore {
 
     SelectConditionStep<Record1<Long>> dsl = context.selectDistinct(ZIPKIN_SPANS.TRACE_ID)
         .from(table)
-        .where(lastTimestamp.le(endTs));
+        .where(ZIPKIN_SPANS.START_TS.le(endTs));
 
     if (request.spanName != null) {
       dsl.and(ZIPKIN_SPANS.NAME.eq(request.spanName));

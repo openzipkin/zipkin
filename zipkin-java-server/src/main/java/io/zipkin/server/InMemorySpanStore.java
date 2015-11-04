@@ -72,7 +72,7 @@ public final class InMemorySpanStore implements SpanStore {
         : System.currentTimeMillis() / 1000;
 
     return toSortedTraces(traceIds.stream().map(traceIdToSpans::get)).stream()
-        .filter(t -> t.stream().map(s -> s.endTs()).allMatch(ts -> ts <= endTs))
+        .filter(t -> t.stream().allMatch(s -> s.timestamp() <= endTs))
         .filter(spansPredicate(request))
         .limit(request.limit).collect(Collectors.toList());
   }

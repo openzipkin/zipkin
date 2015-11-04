@@ -194,14 +194,10 @@ public final class Span implements Comparable<Span> {
     if (this == that) {
       return 0;
     }
-    return Long.compare(this.startTs(), that.startTs());
+    return Long.compare(this.timestamp(), that.timestamp());
   }
 
-  public long startTs() {
-    return annotations.isEmpty() ? Long.MIN_VALUE : annotations.get(0).timestamp;
-  }
-
-  public Long endTs() {
-    return annotations.isEmpty() ? null : annotations.get(annotations.size() - 1).timestamp;
+  @Nullable public Long timestamp() {
+    return annotations.isEmpty() ? null : annotations.get(0).timestamp;
   }
 }

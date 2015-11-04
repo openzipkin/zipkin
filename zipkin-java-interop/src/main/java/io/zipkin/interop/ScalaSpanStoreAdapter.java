@@ -25,11 +25,11 @@ import io.zipkin.SpanStore;
 import io.zipkin.internal.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import scala.Tuple2;
 import scala.collection.Iterator;
 import scala.collection.JavaConversions;
 import scala.collection.Seq;
+import scala.collection.immutable.List;
 import scala.runtime.BoxedUnit;
 
 import static java.util.stream.Collectors.toList;
@@ -50,7 +50,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
   }
 
   @Override
-  public Future<Seq<Seq<Span>>> getTraces(QueryRequest input) {
+  public Future<Seq<List<Span>>> getTraces(QueryRequest input) {
     io.zipkin.QueryRequest.Builder request = new io.zipkin.QueryRequest.Builder()
         .serviceName(input.serviceName())
         .spanName(input.spanName().isDefined() ? input.spanName().get() : null)
@@ -69,25 +69,25 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
   }
 
   @Override
-  public Future<Seq<Seq<Span>>> getTracesByIds(Seq<Object> input) {
-    List<Long> traceIds = JavaConversions.asJavaCollection(input).stream()
+  public Future<Seq<List<Span>>> getTracesByIds(Seq<Object> input) {
+    java.util.List<Long> traceIds = JavaConversions.asJavaCollection(input).stream()
         .map(o -> Long.valueOf(o.toString())).collect(toList());
     return toSeqFuture(this.spanStore.getTracesByIds(traceIds));
   }
 
-  static Future<Seq<Seq<Span>>> toSeqFuture(List<List<io.zipkin.Span>> traces) {
-    List<Seq<Span>> result = new ArrayList<>(traces.size());
-    for (List<io.zipkin.Span> trace : traces) {
-      List<Span> spans = new ArrayList<>(trace.size());
+  static Future<Seq<List<Span>>> toSeqFuture(java.util.List<java.util.List<io.zipkin.Span>> traces) {
+    ArrayList<List<Span>> result = new ArrayList<>(traces.size());
+    for (java.util.List<io.zipkin.Span> trace : traces) {
+      ArrayList<Span> spans = new ArrayList<>(trace.size());
       for (io.zipkin.Span span : trace) {
         Span converted = convert(span);
         if (converted != null) {
           spans.add(converted);
         }
       }
-      result.add(JavaConversions.asScalaBuffer(spans));
+      result.add(JavaConversions.asScalaBuffer(spans).toList());
     }
-    return Future.value(JavaConversions.asScalaBuffer(result).seq());
+    return Future.value(JavaConversions.asScalaBuffer(result));
   }
 
   @Override
@@ -102,7 +102,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
 
   @Override
   public Future<BoxedUnit> apply(Seq<Span> input) {
-    List<io.zipkin.Span> spans = JavaConversions.asJavaCollection(input).stream()
+    java.util.List<io.zipkin.Span> spans = JavaConversions.asJavaCollection(input).stream()
         .map(ScalaSpanStoreAdapter::invert)
         .filter(i -> i != null)
         .collect(toList());
