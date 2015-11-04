@@ -7,7 +7,7 @@ buildscript {
 }
 
 plugins {
-    id 'com.jfrog.bintray' version '1.3.1'
+    id 'com.jfrog.bintray' version '1.4'
     id 'net.researchgate.release' version '2.2.1'
 }
 
@@ -159,6 +159,11 @@ allprojects { thisProject ->
 
                 gpg {
                     sign = true
+                }
+
+                mavenCentralSync {
+                    user = System.getenv('SONATYPE_TOKEN')
+                    password = System.getenv('SONATYPE_PASSWORD')
                 }
             }
         }
