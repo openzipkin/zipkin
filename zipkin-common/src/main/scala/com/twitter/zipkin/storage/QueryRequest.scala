@@ -12,7 +12,7 @@ import scala.util.hashing.MurmurHash3
  * @param binaryAnnotations Include traces whose [[com.twitter.zipkin.common.Span.binaryAnnotations]] include a
  *                          String whose key and value are an entry in this set.
  *                          This is an AND condition against the set, as well against [[annotations]]
- * @param endTs only return traces where all [[com.twitter.zipkin.common.Span.endTs]] are at
+ * @param endTs only return traces where all [[com.twitter.zipkin.common.Span.timestamp]] are at
  *              or before this time in epoch microseconds. Defaults to current time.
  * @param limit maximum number of traces to return. Defaults to 10
  */

@@ -48,12 +48,11 @@ class TraceSummaryTest extends FunSuite {
     assert(summary.endpoints == List(ep1, ep2, ep3, ep4, ep5))
   }
 
-  test("start, end timestamp and duration") {
+  test("timestamp and duration") {
     val summary = TraceSummary(trace).get
 
-    assert(summary.startTs == 100L)
-    assert(summary.endTs == 500L)
-    assert(summary.durationMicro == 400L)
+    assert(summary.timestamp == 100L)
+    assert(summary.duration == 400L)
   }
 
   test("get span depths from trace") {

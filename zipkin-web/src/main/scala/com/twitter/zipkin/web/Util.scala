@@ -92,7 +92,7 @@ object Util {
    */
   def duration(spans: List[Span]): Long = {
     val endTs = spans.flatMap(_.annotations).map(_.timestamp).reduceOption(_ max _)
-    (endTs.getOrElse(0L) - spans.headOption.flatMap(_.startTs).getOrElse(0L))
+    (endTs.getOrElse(0L) - spans.headOption.flatMap(_.timestamp).getOrElse(0L))
   }
 
   /*

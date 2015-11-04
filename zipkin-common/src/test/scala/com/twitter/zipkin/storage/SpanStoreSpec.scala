@@ -36,7 +36,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   val spanId = 456
   val ann1 = Annotation(1, "cs", Some(ep))
   val ann2 = Annotation(2, "sr", None)
-  val ann3 = Annotation(20, "custom", Some(ep))
+  val ann3 = Annotation(10, "custom", Some(ep))
   val ann4 = Annotation(20, "custom", Some(ep))
   val ann5 = Annotation(5, "custom", Some(ep))
   val ann6 = Annotation(6, "custom", Some(ep))
@@ -220,14 +220,13 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store.getTraces(QueryRequest("service", limit = 2))).size should be(2)
   }
 
-  /** Traces who have span annotations before or at endTs are returned */
+  /** Traces whose root span has timestamps before or at endTs are returned */
   @Test def getTraces_endTs() {
-    val spans = Seq(span1) // created at timestamp 1; updated at timestamp 20
-    result(store(spans))
+    result(store(Seq(span1, span3))) // span1's timestamp is 1, span3's timestamp is 2
 
-    result(store.getTraces(QueryRequest("service", endTs = 19))) should be(empty)
-    result(store.getTraces(QueryRequest("service", endTs = 20))) should be(Seq(Seq(span1)))
-    result(store.getTraces(QueryRequest("service", endTs = 21))) should be(Seq(Seq(span1)))
+    result(store.getTraces(QueryRequest("service", endTs = 1))) should be(Seq(List(span1)))
+    result(store.getTraces(QueryRequest("service", endTs = 2))) should be(Seq(List(span1), List(span3)))
+    result(store.getTraces(QueryRequest("service", endTs = 3))) should be(Seq(List(span1), List(span3)))
   }
 
   @Test def getAllServiceNames_emptyServiceName() {

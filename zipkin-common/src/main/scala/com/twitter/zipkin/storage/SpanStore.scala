@@ -106,7 +106,7 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
          .filterKeys(traceIds.contains(_))
          .values.filter(!_.isEmpty)
          .map(Span.mergeById).toList
-         .sortBy(_.head.startTs)
+         .sortBy(_.head.timestamp)
   }
 
   override def getTraceIdsByName(
@@ -119,9 +119,9 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
       case (Some(name), spans) => spans filter(_.name == name)
       case (_, spans) => spans
     }).filter { span =>
-      span.endTs.map(_ <= endTs).getOrElse(false)
+      span.timestamp.map(_ <= endTs).getOrElse(false)
     }.take(limit).map { span =>
-      IndexedTraceId(span.traceId, span.lastAnnotation.get.timestamp)
+      IndexedTraceId(span.traceId, span.timestamp.get)
     }.toList
   }
 
@@ -133,14 +133,14 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     limit: Int
   ): Future[Seq[IndexedTraceId]] = call {
     spansForService(serviceName)
-      .filter(_.endTs.map(_ <= endTs).getOrElse(false))
+      .filter(_.timestamp.map(_ <= endTs).getOrElse(false))
       .filter(if (value.isDefined) {
       _.binaryAnnotations.exists(ba => ba.key == annotation && ba.value == value.get)
     } else {
       _.annotations.exists(_.value == annotation)
     })
       .take(limit)
-      .map(span => IndexedTraceId(span.traceId, span.endTs.get))
+      .map(span => IndexedTraceId(span.traceId, span.timestamp.get))
       .toList
   }
 

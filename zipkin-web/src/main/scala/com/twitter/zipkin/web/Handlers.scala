@@ -169,10 +169,10 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
   @tailrec
   private[this] def totalServiceTime(stamps: Seq[SpanTimestamp], acc: Long = 0): Long =
     if (stamps.isEmpty) acc else {
-      val ts = stamps.minBy(_.startTs)
-      val (current, next) = stamps.partition { t => t.startTs >= ts.startTs && t.endTs <= ts.endTs }
+      val ts = stamps.minBy(_.timestamp)
+      val (current, next) = stamps.partition { t => t.timestamp >= ts.timestamp && t.endTs <= ts.endTs }
       val endTs = current.map(_.endTs).max
-      totalServiceTime(next, acc + (endTs - ts.startTs))
+      totalServiceTime(next, acc + (endTs - ts.timestamp))
     }
 
   private[this] def traceSummaryToMustache(
@@ -180,11 +180,11 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
     ts: Seq[TraceSummary]
   ): Map[String, Any] = {
     val maxDuration = ts.foldLeft(Long.MinValue) { case ((maxD), t) =>
-      math.max(t.durationMicro / 1000, maxD)
+      math.max(t.duration / 1000, maxD)
     }
 
     val traces = ts.map { t =>
-      val duration = t.durationMicro / 1000
+      val duration = t.duration / 1000
       val groupedSpanTimestamps = t.spanTimestamps.groupBy(_.name)
 
       val serviceDurations = groupedSpanTimestamps.map { case (n, sts) =>
@@ -198,11 +198,11 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
 
       MustacheTraceSummary(
         t.traceId,
-        fmt.format(new java.util.Date(t.startTs / 1000)),
-        t.startTs,
+        fmt.format(new java.util.Date(t.timestamp / 1000)),
+        t.timestamp,
         duration,
-        durationStr(t.durationMicro.toLong * 1000),
-        serviceTime.map { st => ((st.toFloat / t.durationMicro.toFloat) * 100).toInt }.getOrElse(0),
+        durationStr(t.duration * 1000),
+        serviceTime.map { st => ((st.toFloat / t.duration.toFloat) * 100).toInt }.getOrElse(0),
         groupedSpanTimestamps.foldLeft(0) { case (acc, (_, sts)) => acc + sts.length },
         serviceDurations,
         ((duration.toFloat / maxDuration) * 100).toInt
@@ -288,7 +288,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
   }
 
   private[this] def renderTrace(trace: List[Span]): Renderer = {
-    val traceStartTs= trace.headOption.flatMap(_.startTs).getOrElse(0L)
+    val traceTimestamp = trace.headOption.flatMap(_.timestamp).getOrElse(0L)
     val spanDepths = TraceSummary.toSpanDepths(trace)
     val spanMap = getIdToSpanMap(trace)
 
@@ -296,7 +296,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       rootSpan <- getRootSpans(trace)
       span <- SpanTreeEntry.create(rootSpan, trace).toList
     } yield {
-      val spanStartTs = span.startTs.getOrElse(traceStartTs)
+      val spanStartTs = span.timestamp.getOrElse(traceTimestamp)
 
       val depth = spanDepths.getOrElse(span.id, 1)
       val width = span.duration.map { d => (d.toDouble / duration(trace).toDouble) * 100 }.getOrElse(0.0)
@@ -317,7 +317,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
         "serviceName" -> span.serviceName,
         "duration" -> span.duration,
         "durationStr" -> span.duration.map { d => durationStr(d * 1000) },
-        "left" -> ((spanStartTs - traceStartTs).toFloat / duration(trace).toFloat) * 100,
+        "left" -> ((spanStartTs - traceTimestamp).toFloat / duration(trace).toFloat) * 100,
         "width" -> (if (width < 0.1) 0.1 else width),
         "depth" -> (depth + 1) * 5,
         "depthClass" -> (depth - 1) % 6,
@@ -329,7 +329,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
             "endpoint" -> a.host.map { e => s"${e.getHostAddress}:${e.getUnsignedPort}" },
             "value" -> annoToString(a.value),
             "timestamp" -> a.timestamp,
-            "relativeTime" -> durationStr((a.timestamp - traceStartTs) * 1000),
+            "relativeTime" -> durationStr((a.timestamp - traceTimestamp) * 1000),
             "serviceName" -> a.host.map(_.serviceName),
             "width" -> 8
           )

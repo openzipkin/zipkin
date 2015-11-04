@@ -97,7 +97,10 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
     )
     processDependencies(trace)
 
-    result(store.getDependencies(Some(trace(0).startTs.get), Some(trace(0).endTs.get))).sortBy(_.parent) should be(
+    result(store.getDependencies(
+      Some(trace.head.timestamp.get),
+      Some(trace.last.timestamp.get))
+    ).sortBy(_.parent) should be(
       List(
         new DependencyLink("trace-producer-one", "trace-producer-two", 1),
         new DependencyLink("trace-producer-two", "trace-producer-three", 1)
