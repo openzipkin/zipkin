@@ -26,7 +26,7 @@ import com.twitter.finatra.httpclient.HttpClient
 import com.twitter.finatra.json.FinatraObjectMapper
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Await, Future}
-import com.twitter.zipkin.common.{Span, Trace}
+import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.json.{JsonSpan, ZipkinJson}
 import com.twitter.zipkin.thriftscala
@@ -81,8 +81,8 @@ object Main extends App with ZipkinSpanGenerator {
     }
   }
 
-  private[this] def printTrace(traces: Seq[Trace])= {
-    for (trace <- traces; span <- trace.spans) yield
+  private[this] def printTraces(traces: Seq[List[Span]])= {
+    for (trace <- traces; span <- trace) yield
       println("Got span: " + span)
   }
 
@@ -97,26 +97,24 @@ object Main extends App with ZipkinSpanGenerator {
     println(s"Querying for service name: $service and span name $span")
     for {
       ts1 <- getTraces(s"/api/v1/traces?serviceName=$service&spanName=$span&limit=$limit")
-      _ = printTrace(ts1)
+      _ = printTraces(ts1)
 
       _ = println(s"Querying for service name: $service")
       ts2 <- getTraces(s"/api/v1/traces?serviceName=$service&limit=$limit")
-      _ = printTrace(ts2)
+      _ = printTraces(ts2)
 
       _ = println(s"Querying for annotation: $annotation")
       ts3 <- getTraces(s"/api/v1/traces?serviceName=$service&annotationQuery=$annotation&limit=$limit")
-      _ = printTrace(ts3)
+      _ = printTraces(ts3)
 
       _ = println(s"Querying for kv annotation: $key -> $value")
       ts4 <- getTraces(s"/api/v1/traces?serviceName=$service&annotationQuery=$key=$value&limit=$limit")
-      _ = printTrace(ts4)
+      _ = printTraces(ts4)
 
-      traceId = ts2.map(t => t.spans.head.traceId).head // map first id to hex
-      traces <- queryClient.executeJson[Seq[JsonSpan]](Request("/api/v1/trace/" + SpanId.toString(traceId)))
+      traceId = ts2.map(t => t.head.traceId).head // map first id to hex
+      trace <- queryClient.executeJson[List[JsonSpan]](Request("/api/v1/trace/" + SpanId.toString(traceId)))
         .map(_.map(JsonSpan.invert))
-        .map(Trace(_))
-        .map(Seq(_))
-      _ = printTrace(traces)
+      _ = printTraces(Seq(trace))
 
       svcNames <- queryClient.executeJson[Seq[String]](Request("/api/v1/services"))
       _ = println(s"Service names: $svcNames")
@@ -128,5 +126,4 @@ object Main extends App with ZipkinSpanGenerator {
 
   def getTraces(uri: String) = queryClient.executeJson[Seq[List[JsonSpan]]](Request(uri))
     .map(traces => traces.map(_.map(JsonSpan.invert)))
-    .map(traces => traces.map(Trace(_)))
 }

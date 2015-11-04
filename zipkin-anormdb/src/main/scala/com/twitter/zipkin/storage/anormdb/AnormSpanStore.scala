@@ -86,7 +86,7 @@ class AnormSpanStore(val db: DB,
             .on("key" -> b.key)
             .on("value" -> Util.getArrayFromBuffer(b.value))
             .on("type" -> b.annotationType.value)
-            .on("timestamp" -> span.endTs)
+            .on("timestamp" -> span.endTs.getOrElse(System.currentTimeMillis() * 1000)) // fallback if we have no timestamp, yet
             .on("ipv4" -> b.host.map(_.ipv4))
             .on("port" -> b.host.map(_.port))
             .on("service_name" -> b.host.map(_.serviceName).getOrElse("Unknown service name")) // from Annotation
@@ -102,7 +102,6 @@ class AnormSpanStore(val db: DB,
   override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[List[Span]]] = db.inNewThreadWithRecoverableRetry {
     implicit val (conn, borrowTime) = borrowConn()
     try {
-
       val traceIdsString:String = traceIds.mkString(",")
       val spans:List[DBSpan] =
         SQL(
@@ -192,6 +191,7 @@ class AnormSpanStore(val db: DB,
             |  SELECT DISTINCT trace_id, MAX(a_timestamp) as end_ts
             |  FROM zipkin_annotations
             |  WHERE endpoint_service_name = {service_name}
+            |  AND a_type = -1
             |  GROUP BY trace_id)
             |AS t2 ON t1.trace_id = t2.trace_id
             |WHERE (name = {name} OR {name} = '')

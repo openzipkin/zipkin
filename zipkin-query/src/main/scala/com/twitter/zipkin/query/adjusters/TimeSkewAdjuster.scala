@@ -31,15 +31,14 @@ class TimeSkewAdjuster extends Adjuster {
    * Adjusts Spans timestamps so that each child happens after their parents.
    * This is to counteract clock skew on servers, we want the Trace to happen in order.
    */
-  def adjust(trace: Trace): Trace = {
-    trace.getRootSpan match {
-      case Some(s) => Trace(adjust(trace.getSpanTree(s, trace.getIdToChildrenMap), None))
-      case None => trace
+  def adjust(spans: List[Span]): List[Span] = {
+    spans.find(!_.parentId.isDefined) match {
+      case Some(s) => {
+        val tree = SpanTreeEntry.create(s, spans)
+        adjust(AdjusterSpanTreeEntry(tree), None).toList
+      }
+      case None => spans
     }
-  }
-
-  private[this] def adjust(span: SpanTreeEntry, previousSkew: Option[ClockSkew]): AdjusterSpanTreeEntry = {
-    adjust(AdjusterSpanTreeEntry(span), previousSkew)
   }
 
   /**

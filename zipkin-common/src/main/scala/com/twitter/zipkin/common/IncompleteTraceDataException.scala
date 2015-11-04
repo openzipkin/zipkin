@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.zipkin.common;
+package com.twitter.zipkin.common
 
 /**
  * Thrown when a trace is lacking enough information to be properly analyzed.

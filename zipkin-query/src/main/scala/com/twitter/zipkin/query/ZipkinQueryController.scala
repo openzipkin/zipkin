@@ -9,7 +9,7 @@ import com.twitter.finatra.http.response.ResponseBuilder
 import com.twitter.finatra.request.{QueryParam, RouteParam}
 import com.twitter.util.Future
 import com.twitter.zipkin.Constants.MaxServicesWithoutCaching
-import com.twitter.zipkin.common.{Span, Trace}
+import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift.thriftListToSpans
 import com.twitter.zipkin.json.{JsonSpan, ZipkinJson}
 import com.twitter.zipkin.query.adjusters.TimeSkewAdjuster
@@ -82,9 +82,8 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
   }
 
   private[this] def adjustTimeskewAndRenderJson(spans: Seq[List[Span]]): Seq[List[JsonSpan]] = {
-    spans.map(Trace(_))
-      .map(timeSkewAdjuster.adjust)
-      .map(_.spans.map(JsonSpan))
+    spans.map(timeSkewAdjuster.adjust)
+         .map(_.map(JsonSpan))
   }
 
   private[this] val timeSkewAdjuster = new TimeSkewAdjuster()

@@ -17,6 +17,7 @@
 package com.twitter.zipkin.common
 
 import java.nio.ByteBuffer
+import com.twitter.zipkin.Constants
 import org.scalatest.FunSuite
 
 class SpanTest extends FunSuite {
@@ -83,7 +84,7 @@ class SpanTest extends FunSuite {
     val span1 = Span(12345, "", 666, None, List(ann1), Seq(), Some(true))
     val span2 = Span(12345, "methodcall", 666, None, List(ann2), Seq(), Some(false))
     val expectedSpan = Span(12345, "methodcall", 666, None, List(ann1, ann2), Seq(), Some(true))
-    val actualSpan = span1.mergeSpan(span2)
+    val actualSpan = span1.merge(span2)
     assert(actualSpan === expectedSpan)
   }
 
@@ -91,8 +92,8 @@ class SpanTest extends FunSuite {
     val span1 = Span(1, "unknown", 2)
     val span2 = Span(1, "get", 2)
 
-    assert(span1.mergeSpan(span2).name === "get")
-    assert(span2.mergeSpan(span1).name === "get")
+    assert(span1.merge(span2).name === "get")
+    assert(span2.merge(span1).name === "get")
   }
 
   test("return the first annotation") {
@@ -110,5 +111,25 @@ class SpanTest extends FunSuite {
   test("don't get duration duration when there are no annotations") {
     val span = Span(1, "n", 2)
     assert(span.duration === None)
+  }
+
+  test("merged spans are sorted") {
+    val ann1 = List(Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
+      Annotation(300, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
+    val ann2 = List(Annotation(150, Constants.ServerRecv, Some(Endpoint(456, 456, "service2"))),
+      Annotation(200, Constants.ServerSend, Some(Endpoint(456, 456, "service2"))))
+
+    val annMerged = List(
+      Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
+      Annotation(150, Constants.ServerRecv, Some(Endpoint(456, 456, "service2"))),
+      Annotation(200, Constants.ServerSend, Some(Endpoint(456, 456, "service2"))),
+      Annotation(300, Constants.ClientRecv, Some(Endpoint(123, 123, "service1")))
+    )
+
+    val spanToMerge1 = Span(12345, "methodcall2", 2, Some(1), ann1)
+    val spanToMerge2 = Span(12345, "methodcall2", 2, Some(1), ann2)
+    val spanMerged = Span(12345, "methodcall2", 2, Some(1), annMerged)
+
+    assert(Span.mergeById(List(spanToMerge1, spanToMerge2)) == List(spanMerged))
   }
 }

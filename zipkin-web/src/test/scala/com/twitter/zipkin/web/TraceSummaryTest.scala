@@ -32,14 +32,14 @@ class TraceSummaryTest extends FunSuite {
   val span4 = Span(12345, "methodcall2", span4Id, Some(span3Id), annotations4)
   val span5 = Span(12345, "methodcall4", 1111L, Some(span4Id)) // no annotations
 
-  val trace = Trace(List[Span](span1, span2, span3, span4))
+  val trace = List(span1, span2, span3, span4)
 
   test("none when no spans") {
-    assert(TraceSummary(Trace(List())) === None)
+    assert(TraceSummary(List()) === None)
   }
 
   test("none when no annotations") {
-    assert(TraceSummary(Trace(List(span5))) === None)
+    assert(TraceSummary(List(span5)) === None)
   }
 
   test("dedupes duplicate endpoints") {
@@ -59,16 +59,16 @@ class TraceSummaryTest extends FunSuite {
   test("get span depths from trace") {
     val spanNoneParent = Span(1, "", 100)
     val spanParent = Span(1, "", 200, Some(100))
-    assert(TraceSummary.toSpanDepths(Trace(List(spanParent, spanNoneParent))) === Map(100 -> 1, 200 -> 2))
+    assert(TraceSummary.toSpanDepths(List(spanParent, spanNoneParent)) === Map(100 -> 1, 200 -> 2))
   }
 
   test("get span depths from trace without real root") {
     val spanNoParent = Span(1, "", 100, Some(0)) // 0 isn't present!
     val spanParent = Span(1, "", 200, Some(100))
-    assert(TraceSummary.toSpanDepths(Trace(List(spanParent, spanNoParent))) === Map(100 -> 1, 200 -> 2))
+    assert(TraceSummary.toSpanDepths(List(spanParent, spanNoParent)) === Map(100 -> 1, 200 -> 2))
   }
 
   test("get no span depths for empty trace") {
-    assert(TraceSummary.toSpanDepths(Trace(List())) === Map.empty)
+    assert(TraceSummary.toSpanDepths(List()) === Map.empty)
   }
 }

@@ -17,9 +17,8 @@
 package com.twitter.zipkin.query.adjusters
 
 import com.twitter.zipkin.Constants
-import com.twitter.zipkin.common.{Annotation, Endpoint, Span, Trace}
+import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
 import org.scalatest.FunSuite
-import scala.collection._
 
 class TimeSkewAdjusterTest extends FunSuite {
   val endpoint1 = Some(Endpoint(123, 123, "service"))
@@ -55,7 +54,7 @@ class TimeSkewAdjusterTest extends FunSuite {
   val skewAnn8 = Annotation(115, Constants.ClientRecv, endpoint2) // skewed
   val skewSpan2 = Span(1, "method2", 777, Some(666), List(skewAnn5, skewAnn6, skewAnn7, skewAnn8))
 
-  val inputTrace = new Trace(List[Span](skewSpan1, skewSpan2))
+  val inputTrace = List(skewSpan1, skewSpan2)
 
   /*
    * Adjusted timings from a constant perspective
@@ -84,7 +83,7 @@ class TimeSkewAdjusterTest extends FunSuite {
   val expectedSpan2 = Span(1, "method2", 777, Some(666),
     List(expectedAnn5, expectedAnn6, expectedAnn7, expectedAnn8))
 
-  val expectedTrace = new Trace(List[Span](expectedSpan1, expectedSpan2))
+  val expectedTrace = List(expectedSpan1, expectedSpan2)
 
 
   /*
@@ -105,7 +104,7 @@ class TimeSkewAdjusterTest extends FunSuite {
   val incompleteSpan1 = Span(1, "method1", 666, None,
     List(incompleteAnn1, incompleteAnn4))
 
-  val incompleteTrace = new Trace(List[Span](expectedSpan1))
+  val incompleteTrace = List(expectedSpan1)
 
   val epKoalabird = Some(Endpoint(123, 123, "koalabird-cuckoo"))
   val epCuckoo = Some(Endpoint(321, 321, "cuckoo.thrift"))
@@ -129,8 +128,8 @@ class TimeSkewAdjusterTest extends FunSuite {
   val span2 = Span(1, "multiget_slice", -855543208864892776L, Some(2209720933601260005L),
     List(ann2, ann5))
 
-  val realTrace = new Trace(List(span1a, span1b, span2))
-  val expectedRealTrace = new Trace(List(span1aFixed, span1b, span2))
+  val realTrace = List(span1a, span1b, span2)
+  val expectedRealTrace = List(span1aFixed, span1b, span2)
 
   val adjuster = new TimeSkewAdjuster
 
@@ -156,9 +155,8 @@ class TimeSkewAdjusterTest extends FunSuite {
     val monorailSs = Annotation(3L, Constants.ServerSend, epMonorail)
     val unicornCr  = Annotation(4L, Constants.ClientRecv, epTfe)
     val goodSpan = Span(1, "friendships/create", 12345L, None, List(unicornCs, monorailSr, monorailSs, unicornCr))
-    val goodTrace = new Trace(Seq(goodSpan))
 
-    assert(adjuster.adjust(goodTrace) === goodTrace)
+    assert(adjuster.adjust(List(goodSpan)) === List(goodSpan))
   }
 
   test("adjust live case") {
@@ -179,16 +177,13 @@ class TimeSkewAdjusterTest extends FunSuite {
     val adjustedMonorailSs = Annotation(1330539327145012L, Constants.ServerSend, epMonorail)
     val spanAdjustedMonorail = Span(1, "friendships/create", 6379677665629798877L, Some(7264365917420400007L), List(unicornCs, adjustedMonorailSr, adjustedMonorailSs, unicornCr))
 
-    val realTrace = new Trace(Seq(spanTfe, spanMonorailUnicorn))
-    val expectedAdjustedTrace = new Trace(Seq(spanTfe, spanAdjustedMonorail))
+    val realTrace = List(spanTfe, spanMonorailUnicorn)
+    val expected = List(spanTfe, spanAdjustedMonorail)
 
     val adjusted = adjuster.adjust(realTrace)
 
-    val adjustedSpans = adjusted.spans
-    val expectedSpans = expectedAdjustedTrace.spans
-
-    assert(expectedSpans.length === adjustedSpans.length)
-    assert(adjustedSpans.length === adjustedSpans.intersect(expectedSpans).length)
+    assert(adjusted.length === adjusted.length)
+    assert(adjusted.length === adjusted.intersect(adjusted).length)
   }
 
   test("adjust trace with depth 3") {
@@ -224,8 +219,8 @@ class TimeSkewAdjusterTest extends FunSuite {
     val spanAdjustedGizmoduck = Span(1, "get_by_auth_token", 119310086840195752L, Some(7625434200987291951L), List(passbirdCs, passbirdCr, createdGizmoduckSr, createdGizmoduckSs))
     val spanAdjustedMemcache = Span(1, "get", 3983355768376203472L, Some(119310086840195752L), List(adjustedGizmoduckCs, adjustedGizmoduckCr))
 
-    val realTrace = new Trace(Seq(spanTfe, spanPassbird, spanGizmoduck, spanMemcache))
-    val adjustedTrace = new Trace(Seq(spanTfe, spanPassbird, spanAdjustedGizmoduck, spanAdjustedMemcache))
+    val realTrace = List(spanTfe, spanPassbird, spanGizmoduck, spanMemcache)
+    val adjustedTrace = List(spanTfe, spanPassbird, spanAdjustedGizmoduck, spanAdjustedMemcache)
 
     assert(adjustedTrace === adjuster.adjust(realTrace))
   }
@@ -242,10 +237,10 @@ class TimeSkewAdjusterTest extends FunSuite {
     val spanBad   = Span(1, "method", 123L, None, List(cs, sr, ss, cr, cr2))
     val spanGood   = Span(1, "method", 123L, None, List(cs, sr, ss, cr))
 
-    val trace1 = new Trace(Seq(spanGood))
+    val trace1 = List(spanGood)
     assert(trace1 != adjuster.adjust(trace1))
 
-    val trace2 = new Trace(Seq(spanBad))
+    val trace2 = List(spanBad)
     assert(trace2 != adjuster.adjust(trace2))
 
   }
@@ -258,7 +253,7 @@ class TimeSkewAdjusterTest extends FunSuite {
 
     val span = Span(1, "method", 123L, None, List(cs, sr, ss, cr))
 
-    val trace1 = new Trace(Seq(span))
+    val trace1 = List(span)
     assert(trace1 === adjuster.adjust(trace1))
   }
 
@@ -297,12 +292,12 @@ class TimeSkewAdjusterTest extends FunSuite {
       Annotation(59542778L, Constants.ClientRecv, Some(flockService))
     ))
 
-    val trace = new Trace(Seq(monorail, tflock, tfe, flock))
+    val trace = List(monorail, tflock, tfe, flock)
     val adjusted = adjuster.adjust(trace)
 
     // let's see how we did
-    val adjustedFlock = adjusted.spans.find(_.id == 7330066031642813936L).get
-    val adjustedTflock = adjusted.spans.find(_.id == 6924056367845423617L).get
+    val adjustedFlock = adjusted.find(_.id == 7330066031642813936L).get
+    val adjustedTflock = adjusted.find(_.id == 6924056367845423617L).get
     val flockCs = adjustedFlock.annotations.find(_.value == Constants.ClientSend).get
     val tflockSr = adjustedTflock.annotations.find(_.value == Constants.ServerRecv).get
 

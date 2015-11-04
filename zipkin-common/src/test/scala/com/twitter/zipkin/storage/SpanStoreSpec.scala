@@ -139,6 +139,29 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store.getTraces(QueryRequest("badservice", Some("badmethod")))) should be(empty)
   }
 
+  /**
+   * Spans and traces are meaningless unless they have a timestamp. While
+   * unlikley, this could happen if a binary annotation is logged before a
+   * timestamped one is.
+   */
+  @Test def getTraces_absentWhenNoTimestamp() {
+    // store the binary annotations
+    result(store(Seq(span1.copy(annotations = List.empty))))
+
+    result(store.getTraces(QueryRequest("service"))) should be(empty)
+    result(store.getTraces(QueryRequest("service", Some("methodcall")))) should be(empty)
+
+    // now store the timestamped annotations
+    result(store(Seq(span1.copy(binaryAnnotations = Seq.empty))))
+
+    result(store.getTraces(QueryRequest("service"))) should be(
+      Seq(Seq(span1))
+    )
+    result(store.getTraces(QueryRequest("service", Some("methodcall")))) should be(
+      Seq(Seq(span1))
+    )
+  }
+
   @Test def getTraces_annotation() {
     result(store(Seq(span1)))
 

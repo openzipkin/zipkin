@@ -8,7 +8,7 @@ import com.twitter.finagle.{Filter, Service}
 import com.twitter.finatra.httpclient.HttpClient
 import com.twitter.io.Buf
 import com.twitter.util.{Future, TwitterDateFormat}
-import com.twitter.zipkin.common.Trace
+import com.twitter.zipkin.common.{SpanTreeEntry, Span}
 import com.twitter.zipkin.json._
 import com.twitter.zipkin.web.mustache.ZipkinMustache
 import com.twitter.zipkin.{Constants => ZConstants}
@@ -228,7 +228,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       val tracesCall = serviceName match {
         case Some(service) => route[Seq[List[JsonSpan]]](client, "/api/v1/traces", req.params)
           .map(traces => traces.map(_.map(JsonSpan.invert))
-          .map(Trace.apply(_)).flatMap(TraceSummary(_).toSeq))
+          .flatMap(TraceSummary(_).toSeq))
         case None => EmptyTraces
       }
 
@@ -287,20 +287,19 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       process(req) getOrElse NotFound
   }
 
-  private[this] def renderTrace(trace: Trace): Renderer = {
-    val traceStartTs= trace.spans.headOption.flatMap(_.startTs).getOrElse(0L)
+  private[this] def renderTrace(trace: List[Span]): Renderer = {
+    val traceStartTs= trace.headOption.flatMap(_.startTs).getOrElse(0L)
     val spanDepths = TraceSummary.toSpanDepths(trace)
-    val childMap = trace.getIdToChildrenMap
-    val spanMap = trace.getIdToSpanMap
+    val spanMap = getIdToSpanMap(trace)
 
     val spans = for {
       rootSpan <- getRootSpans(trace)
-      span <- trace.getSpanTree(rootSpan, childMap).toList
+      span <- SpanTreeEntry.create(rootSpan, trace).toList
     } yield {
       val spanStartTs = span.startTs.getOrElse(traceStartTs)
 
       val depth = spanDepths.getOrElse(span.id, 1)
-      val width = span.duration.map { d => (d.toDouble / trace.duration.toDouble) * 100 }.getOrElse(0.0)
+      val width = span.duration.map { d => (d.toDouble / duration(trace).toDouble) * 100 }.getOrElse(0.0)
 
       val binaryAnnotations = span.binaryAnnotations.map {
         case ann if ZConstants.CoreAddress.contains(ann.key) =>
@@ -318,11 +317,11 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
         "serviceName" -> span.serviceName,
         "duration" -> span.duration,
         "durationStr" -> span.duration.map { d => durationStr(d * 1000) },
-        "left" -> ((spanStartTs - traceStartTs).toFloat / trace.duration.toFloat) * 100,
+        "left" -> ((spanStartTs - traceStartTs).toFloat / duration(trace).toFloat) * 100,
         "width" -> (if (width < 0.1) 0.1 else width),
         "depth" -> (depth + 1) * 5,
         "depthClass" -> (depth - 1) % 6,
-        "children" -> childMap.get(span.id).map(_.map(s => SpanId(s.id).toString).mkString(",")),
+        "children" -> spanMap.get(span.id).map(s => SpanId(s.id).toString).mkString(","),
         "annotations" -> span.annotations.map { a =>
           Map(
             "isCore" -> ZConstants.CoreAnnotations.contains(a.value),
@@ -339,7 +338,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       )
     }
 
-    val traceDuration = trace.duration * 1000
+    val traceDuration = duration(trace) * 1000
     val serviceDurations = TraceSummary(trace) map { summary =>
       summary.spanTimestamps.groupBy(_.name).map { case (n, sts) =>
         MustacheServiceDuration(n, sts.length, sts.map(_.duration).max / 1000)
@@ -370,9 +369,8 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
   def handleTraces(client: HttpClient): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
       pathTraceId(req.path.split("/").lastOption) map { id =>
-        client.executeJson[Seq[JsonSpan]](Request(s"/api/v1/trace/$id"))
+        client.executeJson[List[JsonSpan]](Request(s"/api/v1/trace/$id"))
           .map(_.map(JsonSpan.invert))
-          .map(Trace.apply(_))
           .map(renderTrace(_))
       } getOrElse NotFound
     }

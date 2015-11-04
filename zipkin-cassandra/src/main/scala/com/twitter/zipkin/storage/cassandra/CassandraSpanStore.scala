@@ -18,7 +18,7 @@ package com.twitter.zipkin.storage.cassandra
 import com.twitter.conversions.time._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.{Future, Duration}
-import com.twitter.zipkin.common.{Trace, Span}
+import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.zipkin.storage.{CollectAnnotationQueries, IndexedTraceId, SpanStore}
@@ -187,7 +187,7 @@ abstract class CassandraSpanStore(
           spansByTraceId.asScala.mapValues { spans => spans.asScala.map(spanCodec.decode(_).toSpan) }
 
         traceIds.flatMap(traceId => spans.get(traceId)
-          .map(Trace(_).spans)) // merge by span id
+          .map(Span.mergeById)) // merge by span id
           .sortBy(_.head) // CQL doesn't allow order by with an "in" query
       }
   }
