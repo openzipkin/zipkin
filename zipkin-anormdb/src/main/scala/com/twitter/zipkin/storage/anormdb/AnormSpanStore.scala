@@ -19,6 +19,7 @@ import anorm.SqlParser._
 import anorm._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util._
+import com.twitter.zipkin.adjuster.CorrectForClockSkew
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.storage.anormdb.AnormThreads._
 import com.twitter.zipkin.storage.anormdb.DB.byteArrayToStatement
@@ -169,7 +170,10 @@ class AnormSpanStore(val db: DB,
         }
       }
       // Redundant sort as List.groupBy loses order of values
-      results.groupBy(_.traceId).values.toList.sortBy(_.head) // sort traces by the first span
+      results.groupBy(_.traceId)
+        .values.toList
+        .map(CorrectForClockSkew)
+        .sortBy(_.head) // sort traces by the first span
     } finally {
       returnConn(conn, borrowTime, "getSpansByTraceIds")
     }

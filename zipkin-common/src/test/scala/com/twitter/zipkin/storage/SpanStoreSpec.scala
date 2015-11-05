@@ -2,6 +2,7 @@ package com.twitter.zipkin.storage
 
 import com.google.common.net.InetAddresses._
 import com.twitter.util.Await.result
+import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common._
 import org.junit.{Before, Test}
 import org.scalatest.Matchers
@@ -257,5 +258,57 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store.getTraces(QueryRequest("SeRvIcE"))) should be(
       Seq(Seq(span1))
     )
+  }
+
+  /**
+   * Basic clock skew correction is something span stores should support, until
+   * the UI supports happens-before without using timestamps. The easiest clock
+   * skew to correct is where a child  appears to happen before the parent.
+   *
+   * It doesn't matter if clock-skew correction happens at storage or query
+   * time, as long as it occurs by the time results are returned.
+   *
+   * Span stores who don't support this can override and disable this test,
+   * noting in the README the limitation.
+   */
+  @Test def correctsClockSkew() {
+    val client = Some(Endpoint(192 << 24 | 168 << 16 | 1, 8080, "client"))
+    val frontend = Some(Endpoint(192 << 24 | 168 << 16 | 2, 8080, "frontend"))
+    val backend = Some(Endpoint(192 << 24 | 168 << 16 | 3, 8080, "backend"))
+
+    val parent = Span(1, "method1", 666, None, List(
+      Annotation(100, Constants.ClientSend, client),
+      Annotation(95, Constants.ServerRecv, frontend), // before client sends
+      Annotation(120, Constants.ServerSend, frontend), // before client receives
+      Annotation(135, Constants.ClientRecv, client)
+    ).sorted)
+
+    val child = Span(1, "method2", 777, Some(666), List(
+      Annotation(100, Constants.ClientSend, frontend),
+      Annotation(115, Constants.ServerRecv, backend),
+      Annotation(120, Constants.ServerSend, backend),
+      Annotation(115, Constants.ClientRecv, frontend) // before server sent
+    ))
+
+    val skewed = List(parent, child)
+
+    // There's clock skew when the child doesn't happen after the parent
+    skewed(0).timestamp.get should be <= skewed(1).timestamp.get
+
+    // Regardless of when clock skew is corrected, it should be corrected before traces return
+    result(store(List(parent, child)))
+    val adjusted = result(store.getTraces(QueryRequest("frontend")))(0)
+
+    // After correction, the child happens after the parent
+    adjusted(0).timestamp.get should be <= adjusted(1).timestamp.get
+    // .. because the child is shifted to a later date
+    adjusted(1).timestamp.get should be > skewed(1).timestamp.get
+
+    // Since we've shifted the child to a later timestamp, the total duration appears shorter
+    adjusted(0).duration.get should be < skewed(0).duration.get
+
+    // .. but that change in duration should be accounted for
+    val shift = adjusted(0).timestamp.get - skewed(0).timestamp.get
+    adjusted(0).duration.get should be (skewed(0).duration.get - shift)
   }
 }

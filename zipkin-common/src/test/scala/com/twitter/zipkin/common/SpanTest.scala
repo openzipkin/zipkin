@@ -17,7 +17,6 @@
 package com.twitter.zipkin.common
 
 import java.nio.ByteBuffer
-import com.twitter.zipkin.Constants
 import org.scalatest.FunSuite
 
 class SpanTest extends FunSuite {
@@ -108,25 +107,5 @@ class SpanTest extends FunSuite {
   test("get duration none when one annotation") {
     val span = Span(1, "n", 2, annotations = List(annotation1))
     assert(span.duration === None)
-  }
-
-  test("merged spans are sorted") {
-    val ann1 = List(Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
-      Annotation(300, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
-    val ann2 = List(Annotation(150, Constants.ServerRecv, Some(Endpoint(456, 456, "service2"))),
-      Annotation(200, Constants.ServerSend, Some(Endpoint(456, 456, "service2"))))
-
-    val annMerged = List(
-      Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
-      Annotation(150, Constants.ServerRecv, Some(Endpoint(456, 456, "service2"))),
-      Annotation(200, Constants.ServerSend, Some(Endpoint(456, 456, "service2"))),
-      Annotation(300, Constants.ClientRecv, Some(Endpoint(123, 123, "service1")))
-    )
-
-    val spanToMerge1 = Span(12345, "methodcall2", 2, Some(1), ann1)
-    val spanToMerge2 = Span(12345, "methodcall2", 2, Some(1), ann2)
-    val spanMerged = Span(12345, "methodcall2", 2, Some(1), annMerged)
-
-    assert(Span.mergeById(List(spanToMerge1, spanToMerge2)) == List(spanMerged))
   }
 }

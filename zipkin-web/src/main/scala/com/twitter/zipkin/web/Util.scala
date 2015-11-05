@@ -37,12 +37,12 @@ object Util {
     TimeUnit.HOURS -> ("hrs", "hr"),
     TimeUnit.MINUTES -> ("min", "min"))
 
-  def durationStr(durationNs: Long): String =
-    durationStr(Duration.fromNanoseconds(durationNs))
+  def durationStr(duration: Long): String =
+    durationStr(Duration.fromMicroseconds(duration))
 
   def durationStr(d: Duration): String = {
-    var ns = d.inNanoseconds
-    TimeUnits.dropWhile(_.convert(ns, TimeUnit.NANOSECONDS) == 0) match {
+    var micros = d.inMicroseconds
+    TimeUnits.dropWhile(_.convert(micros, TimeUnit.MICROSECONDS) == 0) match {
       case s if s.size == 0 => ""
 
       // seconds
@@ -58,9 +58,9 @@ object Util {
       case _ =>
         val s = new StringBuilder
         for ((u, (pName, sName)) <- TimeUnitNames) {
-          val v = u.convert(ns, TimeUnit.NANOSECONDS)
+          val v = u.convert(micros, TimeUnit.MICROSECONDS)
           if (v != 0) {
-            ns -= TimeUnit.NANOSECONDS.convert(v, u)
+            micros -= TimeUnit.MICROSECONDS.convert(v, u)
             if (v > 0 && !s.isEmpty)
               s.append(" ")
             s.append(v.toString)
@@ -68,10 +68,10 @@ object Util {
           }
         }
 
-        if (ns > 0) {
+        if (micros > 0) {
           if (!s.isEmpty)
             s.append(" ")
-          s.append(durationStr(ns))
+          s.append(durationStr(micros))
         }
 
         s.toString()
@@ -84,15 +84,6 @@ object Util {
   def getRootSpans(spans: List[Span]): List[Span] = {
     val idSpan = getIdToSpanMap(spans)
     spans filter { !_.parentId.flatMap(idSpan.get).isDefined }
-  }
-
-  /**
-   * How long did this span take to run?
-   * Returns microseconds between start annotation and end annotation
-   */
-  def duration(spans: List[Span]): Long = {
-    val endTs = spans.flatMap(_.annotations).map(_.timestamp).reduceOption(_ max _)
-    (endTs.getOrElse(0L) - spans.headOption.flatMap(_.timestamp).getOrElse(0L))
   }
 
   /*
