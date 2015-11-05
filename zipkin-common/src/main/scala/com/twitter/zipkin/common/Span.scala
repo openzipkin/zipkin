@@ -18,7 +18,6 @@ package com.twitter.zipkin.common
 
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.util.Util._
-import scala.collection.mutable
 
 /**
  * A span represents one RPC request. A trace is made up of many spans.
@@ -120,28 +119,4 @@ case class Span(
    */
   def serverSideAnnotations: Seq[Annotation] =
     annotations.filter(a => Constants.CoreServer.contains(a.value))
-}
-object Span {
-  /**
-   * Merge all the spans with the same id. This is used by span stores who
-   * store partial spans and need them collated at query time.
-   *
-   * Spans without an annotation are filtered out, as they are not possible to
-   * present on a timeline. This is because the timestamp and duration of a
-   * span are derived from annotations.
-   */
-  def mergeById(spans: Seq[Span]): List[Span] = {
-    val spanMap = new mutable.HashMap[Long, Span]
-    spans.foreach(s => {
-      val oldSpan = spanMap.get(s.id)
-      oldSpan match {
-        case Some(oldS) => {
-          val merged = oldS.merge(s)
-          spanMap.put(merged.id, merged)
-        }
-        case None => spanMap.put(s.id, s)
-      }
-    })
-    spanMap.values.filter(_.annotations.nonEmpty).toList.sorted
-  }
 }

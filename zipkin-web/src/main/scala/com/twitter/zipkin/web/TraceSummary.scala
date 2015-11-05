@@ -17,7 +17,7 @@
 package com.twitter.zipkin.web
 
 import com.twitter.finagle.tracing.SpanId
-import com.twitter.zipkin.common.{Endpoint, Span, SpanTreeEntry}
+import com.twitter.zipkin.common.{Trace, Endpoint, Span, SpanTreeEntry}
 import com.twitter.zipkin.web.Util.getIdToSpanMap
 
 case class SpanTimestamp(name: String, timestamp: Long, duration: Long) {
@@ -30,17 +30,17 @@ object TraceSummary {
    * Return a summary of this trace or none if we
    * cannot construct a trace summary. Could be that we have no spans.
    */
-  def apply(spans: List[Span]): Option[TraceSummary] = {
-    val duration = Util.duration(spans)
-    val endpoints = spans.flatMap(_.annotations).flatMap(_.host).distinct
+  def apply(trace: List[Span]): Option[TraceSummary] = {
+    val duration = Trace.duration(trace).getOrElse(0L)
+    val endpoints = trace.flatMap(_.annotations).flatMap(_.host).distinct
     for (
-      traceId <- spans.headOption.map(_.traceId);
-      timestamp <- spans.headOption.flatMap(_.timestamp)
+      traceId <- trace.headOption.map(_.traceId);
+      timestamp <- trace.headOption.flatMap(_.timestamp)
     ) yield TraceSummary(
       SpanId(traceId).toString,
       timestamp,
       duration,
-      spanTimestamps(spans),
+      spanTimestamps(trace),
       endpoints)
   }
 

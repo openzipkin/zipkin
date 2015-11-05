@@ -14,28 +14,24 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.query.adjusters
+package com.twitter.zipkin.adjuster
 
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common._
-import scala.collection.Map
-import scala.collection.breakOut
 
-class TimeSkewAdjuster extends Adjuster {
-  import com.twitter.zipkin.query.adjusters.TimeSkewAdjuster._
-  
-  val TimeSkewAddServerRecv = AdjusterWarning("TIME_SKEW_ADD_SERVER_RECV")
-  val TimeSkewAddServerSend = AdjusterWarning("TIME_SKEW_ADD_SERVER_SEND")
+import scala.collection.{Map, breakOut}
 
-  /**
-   * Adjusts Spans timestamps so that each child happens after their parents.
-   * This is to counteract clock skew on servers, we want the Trace to happen in order.
-   */
-  def adjust(spans: List[Span]): List[Span] = {
+/**
+ * Adjusts Spans timestamps so that each child happens after their parents.
+ * This is to counteract clock skew on servers, we want the Trace to happen in order.
+ */
+object CorrectForClockSkew extends ((List[Span]) => List[Span]) {
+
+  override def apply(spans: List[Span]): List[Span] = {
     spans.find(!_.parentId.isDefined) match {
       case Some(s) => {
         val tree = SpanTreeEntry.create(s, spans)
-        adjust(AdjusterSpanTreeEntry(tree), None).toList
+        adjust(tree, None).toList
       }
       case None => spans
     }
@@ -45,7 +41,7 @@ class TimeSkewAdjuster extends Adjuster {
    * Recursively adjust the timestamps on the span tree. Root span is the reference point,
    * all children's timestamps gets adjusted based on that span's timestamps.
    */
-  private[this] def adjust(span: AdjusterSpanTreeEntry, previousSkew: Option[ClockSkew]): AdjusterSpanTreeEntry = {
+  private[this] def adjust(span: SpanTreeEntry, previousSkew: Option[ClockSkew]): SpanTreeEntry = {
 
     val previousAdjustedSpan = previousSkew match {
       // adjust skew for particular endpoint brought over from the parent span
@@ -59,22 +55,12 @@ class TimeSkewAdjuster extends Adjuster {
     getClockSkew(validatedSpan.span) match {
       case Some(es) =>
         val adjustedSpan = adjustTimestamps(validatedSpan, es)
-
         // adjusting the timestamp of the endpoint with the skew
         // both for the current span and the direct children
-        new AdjusterSpanTreeEntry(
-          adjustedSpan.span,
-          adjustedSpan.children.map(adjust(_, Some(es))),
-          adjustedSpan.messages
-        )
+        new SpanTreeEntry(adjustedSpan.span, adjustedSpan.children.map(adjust(_, Some(es))))
 
-      case None =>
-        new AdjusterSpanTreeEntry(
-          validatedSpan.span,
-          validatedSpan.children.map(adjust(_, None)),
-          validatedSpan.messages
-        )
-      // could not figure out clock skew, return untouched.
+      case None => // could not figure out clock skew, return untouched.
+        new SpanTreeEntry(validatedSpan.span, validatedSpan.children.map(adjust(_, None)))
     }
   }
 
@@ -91,7 +77,7 @@ class TimeSkewAdjuster extends Adjuster {
    *   NOTE: this could also be refactored out into its own adjuster that would
    *   run before TimeSkewAdjuster, if necessary
    */
-  private[this] def validateSpan(spanTree: AdjusterSpanTreeEntry): AdjusterSpanTreeEntry = {
+  private[this] def validateSpan(spanTree: SpanTreeEntry): SpanTreeEntry = {
 
     // if we have only CS and CR, inject a SR and SS
     val span = spanTree.span
@@ -99,7 +85,6 @@ class TimeSkewAdjuster extends Adjuster {
     val annotationsMap = asMap(annotations)
 
     var children = spanTree.children
-    var warnings = spanTree.messages
     if (containsCoreAnnotation(span.annotations) &&
         spanTree.children.length > 0 &&
         containsClientCoreAnnotations(annotationsMap) &&
@@ -114,19 +99,17 @@ class TimeSkewAdjuster extends Adjuster {
       val serverRecvTs = span.annotations.find(_.value == Constants.ClientSend) match {
         case Some(a) =>
           annotations = annotations :+ Annotation(a.timestamp, Constants.ServerRecv, endpoint)
-          warnings = warnings :+ TimeSkewAddServerRecv
           a.timestamp
         case _ => // This should never actually happen since we checked in the IF
-          throw new AdjusterException
+          throw new IllegalStateException("could not find cs in " + span)
       }
 
       val serverSendTs = span.annotations.find(_.value == Constants.ClientRecv) match {
         case Some(a) =>
           annotations = annotations :+ Annotation(a.timestamp, Constants.ServerSend, endpoint)
-          warnings = warnings :+ TimeSkewAddServerSend
           a.timestamp
         case _ => // This should never actually happen since we checked in the IF
-          throw new AdjusterException
+          throw new IllegalStateException("could not find cr in " + span)
       }
 
       /**
@@ -153,8 +136,7 @@ class TimeSkewAdjuster extends Adjuster {
         }
       }
     }
-    val newSpan = Span(span.traceId, span.name, span.id, span.parentId, annotations, span.binaryAnnotations)
-    new AdjusterSpanTreeEntry(newSpan, children, warnings)
+    new SpanTreeEntry(span.copy(annotations = annotations), children)
   }
 
   /**
@@ -250,7 +232,7 @@ class TimeSkewAdjuster extends Adjuster {
   /**
    * Adjust the span's annotation timestamps for the endpoint by skew ms.
    */
-  private[this] def adjustTimestamps(spanTree: AdjusterSpanTreeEntry, clockSkew: ClockSkew): AdjusterSpanTreeEntry = {
+  private[this] def adjustTimestamps(spanTree: SpanTreeEntry, clockSkew: ClockSkew): SpanTreeEntry = {
     if (clockSkew.skew == 0) spanTree else {
       def isHost(ep: Endpoint, value: String): Boolean =
         clockSkew.endpoint.ipv4 == ep.ipv4 ||
@@ -265,17 +247,15 @@ class TimeSkewAdjuster extends Adjuster {
         }
       }
 
-      new AdjusterSpanTreeEntry(span.copy(annotations = annotations), spanTree.children, spanTree.messages)
+      new SpanTreeEntry(span.copy(annotations = annotations.sorted), spanTree.children)
     }
   }
-}
 
-object TimeSkewAdjuster {
   /**
    * @return true  if Span contains at most one of each core annotation
    *         false otherwise
    */
-  private[adjusters] def containsCoreAnnotation(annotations: List[Annotation]): Boolean = {
+  private[adjuster] def containsCoreAnnotation(annotations: List[Annotation]): Boolean = {
     Constants.CoreAnnotations.map { c =>
       annotations.filter(_.value == c).length > 1
     }.count(b => b) == 0
@@ -284,6 +264,6 @@ object TimeSkewAdjuster {
   /**
    * Get the annotations as a map with value to annotation bindings.
    */
-  private[adjusters] def asMap(annotations: List[Annotation]): Map[String, Annotation] = 
+  private[adjuster] def asMap(annotations: List[Annotation]): Map[String, Annotation] =
     annotations.map(a => a.value -> a)(breakOut)
 }

@@ -12,7 +12,6 @@ import com.twitter.zipkin.Constants.MaxServicesWithoutCaching
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift.thriftListToSpans
 import com.twitter.zipkin.json.{JsonSpan, ZipkinJson}
-import com.twitter.zipkin.query.adjusters.TimeSkewAdjuster
 import com.twitter.zipkin.storage.{DependencyStore, SpanStore}
 import javax.inject.Inject
 import scala.util.control.NonFatal
@@ -61,7 +60,7 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
 
   get("/api/v1/traces") { request: Request =>
     queryExtractor(request) match {
-      case Success(qr) => spanStore.getTraces(qr).map(adjustTimeskewAndRenderJson(_))
+      case Success(qr) => spanStore.getTraces(qr).map(_.map(_.map(JsonSpan)))
       case Failure(ex) => Future.value(response.badRequest(ex.getMessage))
     }
   }
@@ -70,7 +69,7 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
     val traceId = SpanId.fromString(request.id).map(_.toLong)
     if (traceId.isDefined) {
       spanStore.getTracesByIds(traceId.toSeq)
-        .map(adjustTimeskewAndRenderJson(_))
+        .map(_.map(_.map(JsonSpan)))
         .map(_.headOption.getOrElse(response.notFound))
     } else {
       Future.value(response.notFound)
@@ -80,13 +79,6 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
   get("/api/v1/dependencies") { request: GetDependenciesRequest =>
     dependencyStore.getDependencies(Some(request.startTs), Some(request.endTs))
   }
-
-  private[this] def adjustTimeskewAndRenderJson(spans: Seq[List[Span]]): Seq[List[JsonSpan]] = {
-    spans.map(timeSkewAdjuster.adjust)
-         .map(_.map(JsonSpan))
-  }
-
-  private[this] val timeSkewAdjuster = new TimeSkewAdjuster()
 
   val jsonSpansReader = ZipkinJson.reader(new TypeReference[Seq[JsonSpan]] {})
 }

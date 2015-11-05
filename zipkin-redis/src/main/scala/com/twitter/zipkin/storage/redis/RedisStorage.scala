@@ -4,6 +4,7 @@ import com.google.common.base.Charsets._
 import com.twitter.finagle.redis.Client
 import com.twitter.scrooge.{CompactThriftSerializer, ThriftStructSerializer}
 import com.twitter.util.{Duration, Future}
+import com.twitter.zipkin.adjuster.{CorrectForClockSkew, MergeById}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift.{WrappedSpan, ThriftSpan}
 import com.twitter.zipkin.thriftscala
@@ -38,9 +39,10 @@ class RedisStorage(
 
   def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[List[Span]]] =
     Future.collect(traceIds.map(getSpansByTraceId))
-      .map(_.filterNot(_.isEmpty)) // prune empties
-      .map(_.map(Span.mergeById)) // merge by span id
-      .map(_.sortBy(_.head)) // sort traces by the first span
+      .map(_.filterNot(_.isEmpty)
+            .map(MergeById)
+            .map(CorrectForClockSkew)
+            .sortBy(_.head)) // sort traces by the first span
 
   private[this] def getSpansByTraceId(traceId: Long): Future[List[Span]] =
     client.lRange(encodeTraceId(traceId), 0L, -1L) map

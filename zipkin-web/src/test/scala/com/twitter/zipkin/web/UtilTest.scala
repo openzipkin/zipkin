@@ -17,8 +17,6 @@
 package com.twitter.zipkin.web
 
 import com.twitter.conversions.time._
-import com.twitter.zipkin.Constants
-import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
 import org.scalatest.FunSuite
 
 class UtilTest extends FunSuite {
@@ -51,39 +49,7 @@ class UtilTest extends FunSuite {
       assert(durationStr(t) === v)
 
       // test as Long
-      assert(durationStr(t.inNanoseconds) === v)
+      assert(durationStr(t.inMicroseconds) === v)
     }
-  }
-
-  test("get duration of trace") {
-    val annotations = List(Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
-      Annotation(200, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
-    val span = Span(12345, "methodcall", 666, None, annotations)
-    assert(duration(List(span)) === 100)
-  }
-
-  test("get duration of trace without root span") {
-    val annotations = List(Annotation(100, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
-      Annotation(200, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
-    val span = Span(12345, "methodcall", 666, Some(123), annotations)
-    val annotations2 = List(Annotation(150, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
-      Annotation(160, Constants.ClientRecv, Some(Endpoint(123, 123, "service1"))))
-    val span2 = Span(12345, "methodcall", 666, Some(123), annotations2)
-    assert(duration(List(span, span2)) === 100)
-  }
-
-  test("get correct duration for imbalanced spans") {
-    val ann1 = List(
-      Annotation(0, "Client send", None)
-    )
-    val ann2 = List(
-      Annotation(1, "Server receive", None),
-      Annotation(12, "Server send", None)
-    )
-
-    val span1 = Span(123, "method_1", 100, None, ann1)
-    val span2 = Span(123, "method_2", 200, Some(100), ann2)
-
-    assert(duration(List(span1, span2)) === 12)
   }
 }

@@ -8,7 +8,7 @@ import com.twitter.finagle.{Filter, Service}
 import com.twitter.finatra.httpclient.HttpClient
 import com.twitter.io.Buf
 import com.twitter.util.{Future, TwitterDateFormat}
-import com.twitter.zipkin.common.{SpanTreeEntry, Span}
+import com.twitter.zipkin.common.{Trace, SpanTreeEntry, Span}
 import com.twitter.zipkin.json._
 import com.twitter.zipkin.web.mustache.ZipkinMustache
 import com.twitter.zipkin.{Constants => ZConstants}
@@ -289,6 +289,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
 
   private[this] def renderTrace(trace: List[Span]): Renderer = {
     val traceTimestamp = trace.headOption.flatMap(_.timestamp).getOrElse(0L)
+    val traceDuration = Trace.duration(trace).getOrElse(0L)
     val spanDepths = TraceSummary.toSpanDepths(trace)
     val spanMap = getIdToSpanMap(trace)
 
@@ -299,7 +300,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       val spanStartTs = span.timestamp.getOrElse(traceTimestamp)
 
       val depth = spanDepths.getOrElse(span.id, 1)
-      val width = span.duration.map { d => (d.toDouble / duration(trace).toDouble) * 100 }.getOrElse(0.0)
+      val width = span.duration.map { d => (d.toDouble / traceDuration.toDouble) * 100 }.getOrElse(0.0)
 
       val binaryAnnotations = span.binaryAnnotations.map {
         case ann if ZConstants.CoreAddress.contains(ann.key) =>
@@ -316,8 +317,8 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
         "serviceNames" -> span.serviceNames.mkString(","),
         "serviceName" -> span.serviceName,
         "duration" -> span.duration,
-        "durationStr" -> span.duration.map { d => durationStr(d * 1000) },
-        "left" -> ((spanStartTs - traceTimestamp).toFloat / duration(trace).toFloat) * 100,
+        "durationStr" -> span.duration.map(durationStr),
+        "left" -> ((spanStartTs - traceTimestamp).toFloat / traceDuration.toFloat) * 100,
         "width" -> (if (width < 0.1) 0.1 else width),
         "depth" -> (depth + 1) * 5,
         "depthClass" -> (depth - 1) % 6,
@@ -338,7 +339,6 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       )
     }
 
-    val traceDuration = duration(trace) * 1000
     val serviceDurations = TraceSummary(trace) map { summary =>
       summary.spanTimestamps.groupBy(_.name).map { case (n, sts) =>
         MustacheServiceDuration(n, sts.length, sts.map(_.duration).max / 1000)

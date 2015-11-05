@@ -14,13 +14,13 @@
  *  limitations under the License.
  *
  */
-package com.twitter.zipkin.query.adjusters
+package com.twitter.zipkin.adjuster
 
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
 import org.scalatest.FunSuite
 
-class TimeSkewAdjusterTest extends FunSuite {
+class CorrectForClockSkewTest extends FunSuite {
   val endpoint1 = Some(Endpoint(123, 123, "service"))
   val endpoint2 = Some(Endpoint(321, 321, "service"))
   val endpoint3 = Some(Endpoint(456, 456, "service"))
@@ -131,19 +131,17 @@ class TimeSkewAdjusterTest extends FunSuite {
   val realTrace = List(span1a, span1b, span2)
   val expectedRealTrace = List(span1aFixed, span1b, span2)
 
-  val adjuster = new TimeSkewAdjuster
-
   test("adjust span time from machine with incorrect clock") {
-    assert(adjuster.adjust(inputTrace) === expectedTrace)
+    assert(CorrectForClockSkew(inputTrace) === expectedTrace)
   }
 
   test("not adjust when there is no clock skew") {
-    assert(adjuster.adjust(expectedTrace) === expectedTrace)
+    assert(CorrectForClockSkew(expectedTrace) === expectedTrace)
   }
 
   // this happens if the server in an rpc is not trace enabled
   test("not adjust when there are no server spans") {
-    assert(adjuster.adjust(incompleteTrace) === incompleteTrace)
+    assert(CorrectForClockSkew(incompleteTrace) === incompleteTrace)
   }
 
   test("not adjust when core annotations are fine") {
@@ -156,7 +154,7 @@ class TimeSkewAdjusterTest extends FunSuite {
     val unicornCr  = Annotation(4L, Constants.ClientRecv, epTfe)
     val goodSpan = Span(1, "friendships/create", 12345L, None, List(unicornCs, monorailSr, monorailSs, unicornCr))
 
-    assert(adjuster.adjust(List(goodSpan)) === List(goodSpan))
+    assert(CorrectForClockSkew(List(goodSpan)) === List(goodSpan))
   }
 
   test("adjust live case") {
@@ -180,7 +178,7 @@ class TimeSkewAdjusterTest extends FunSuite {
     val realTrace = List(spanTfe, spanMonorailUnicorn)
     val expected = List(spanTfe, spanAdjustedMonorail)
 
-    val adjusted = adjuster.adjust(realTrace)
+    val adjusted = CorrectForClockSkew(realTrace)
 
     assert(adjusted.length === adjusted.length)
     assert(adjusted.length === adjusted.intersect(adjusted).length)
@@ -204,7 +202,7 @@ class TimeSkewAdjusterTest extends FunSuite {
     // Gizmoduck server entries are missing
     val passbirdCs    = Annotation(1330647964055324L, Constants.ClientSend, epPassbird)
     val passbirdCr    = Annotation(1330647964057127L, Constants.ClientRecv, epPassbird)
-    val spanGizmoduck = Span(1, "get_by_auth_token", 119310086840195752L, Some(7625434200987291951L), List(passbirdCs, passbirdCr))
+    val spanGizmoduck = Span(1, "get_by_auth_token", 119310086840195752L, Some(7625434200987291951L),List(passbirdCs, passbirdCr))
 
     val gizmoduckCs   = Annotation(1330647963542175L, Constants.ClientSend, epGizmoduck)
     val gizmoduckCr   = Annotation(1330647963542565L, Constants.ClientRecv, epGizmoduck)
@@ -222,7 +220,7 @@ class TimeSkewAdjusterTest extends FunSuite {
     val realTrace = List(spanTfe, spanPassbird, spanGizmoduck, spanMemcache)
     val adjustedTrace = List(spanTfe, spanPassbird, spanAdjustedGizmoduck, spanAdjustedMemcache)
 
-    assert(adjustedTrace === adjuster.adjust(realTrace))
+    assert(adjustedTrace === CorrectForClockSkew(realTrace))
   }
 
   val ep1 = Some(Endpoint(1, 1, "ep1"))
@@ -238,10 +236,10 @@ class TimeSkewAdjusterTest extends FunSuite {
     val spanGood   = Span(1, "method", 123L, None, List(cs, sr, ss, cr))
 
     val trace1 = List(spanGood)
-    assert(trace1 != adjuster.adjust(trace1))
+    assert(trace1 != CorrectForClockSkew(trace1))
 
     val trace2 = List(spanBad)
-    assert(trace2 != adjuster.adjust(trace2))
+    assert(trace2 != CorrectForClockSkew(trace2))
 
   }
 
@@ -254,7 +252,7 @@ class TimeSkewAdjusterTest extends FunSuite {
     val span = Span(1, "method", 123L, None, List(cs, sr, ss, cr))
 
     val trace1 = List(span)
-    assert(trace1 === adjuster.adjust(trace1))
+    assert(trace1 === CorrectForClockSkew(trace1))
   }
 
   test("adjust even if we only have client send") {
@@ -293,7 +291,7 @@ class TimeSkewAdjusterTest extends FunSuite {
     ))
 
     val trace = List(monorail, tflock, tfe, flock)
-    val adjusted = adjuster.adjust(trace)
+    val adjusted = CorrectForClockSkew(trace)
 
     // let's see how we did
     val adjustedFlock = adjusted.find(_.id == 7330066031642813936L).get
@@ -309,7 +307,7 @@ class TimeSkewAdjusterTest extends FunSuite {
     val cs = Annotation(1, Constants.ClientSend, None)
     val sr = Annotation(2, Constants.ServerRecv, None)
 
-    val map = TimeSkewAdjuster.asMap(List(cs, sr))
+    val map = CorrectForClockSkew.asMap(List(cs, sr))
     assert(map.get(Constants.ClientSend).get === cs)
     assert(map.get(Constants.ServerRecv).get === sr)
   }
@@ -322,7 +320,7 @@ class TimeSkewAdjusterTest extends FunSuite {
 
     val cs2 = Annotation(5, Constants.ClientSend, None)
 
-    assert(TimeSkewAdjuster.containsCoreAnnotation(List(cs, sr, ss, cr)))
-    assert(!TimeSkewAdjuster.containsCoreAnnotation(List(cs, sr, ss, cr, cs2)))
+    assert(CorrectForClockSkew.containsCoreAnnotation(List(cs, sr, ss, cr)))
+    assert(!CorrectForClockSkew.containsCoreAnnotation(List(cs, sr, ss, cr, cs2)))
   }
 }
