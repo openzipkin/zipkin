@@ -27,6 +27,20 @@ class SpanTest extends FunSuite {
     }
   }
 
+  test("serviceNames include binary annotations") {
+    assert(Span(12345, "methodcall", 666, None, None, None,
+      List(
+        Annotation(1, "cs", Some(Endpoint(1, 2, "cs"))),
+        Annotation(1, "sr", Some(Endpoint(1, 2, "sr"))),
+        Annotation(1, "ss", Some(Endpoint(1, 2, "ss"))),
+        Annotation(1, "cr", Some(Endpoint(1, 2, "cr")))
+      ),
+      List(
+        BinaryAnnotation("ca", BinaryAnnotationValue(true), Some(Endpoint(1, 2, "ca"))),
+        BinaryAnnotation("sa", BinaryAnnotationValue(true), Some(Endpoint(1, 2, "sa")))
+      )).serviceNames === Set("cs", "cr", "ss", "sr", "ca", "sa"))
+  }
+
   test("serviceName preference") {
     var span = Span(12345, "methodcall", 666, None, None, None,
       List(

@@ -3,7 +3,6 @@ package com.twitter.zipkin.storage
 import com.google.common.net.InetAddresses._
 import com.twitter.util.Await.result
 import com.twitter.zipkin.Constants
-import com.twitter.zipkin.adjuster.ApplyTimestampAndDuration
 import com.twitter.zipkin.common._
 import org.junit.{Before, Test}
 import org.scalatest.Matchers
@@ -157,7 +156,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
    */
   @Test def getTraces_absentWhenNoTimestamp() {
     // store the binary annotations
-    result(store(Seq(span1.copy(annotations = List.empty))))
+    result(store(Seq(span1.copy(timestamp = None, duration = None, annotations = List.empty))))
 
     result(store.getTraces(QueryRequest("service"))) should be(empty)
     result(store.getTraces(QueryRequest("service", Some("methodcall")))) should be(empty)
