@@ -33,6 +33,7 @@ class ScribeSpanReceiverTest extends FunSuite {
   }
   val category = "zipkin"
 
+  // Intentionally leaving timestamp and duration unset, as legacy instrumentation don't set this.
   val validSpan = Span(123, "boo", 456, annotations = List(new Annotation(1, "bah", None)))
   val validList = List(LogEntry(category, serializer.toString(validSpan.toThrift)))
 

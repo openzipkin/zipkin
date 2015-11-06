@@ -210,6 +210,8 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |    "name" : "methodcall",
           |    "id" : "000000000000029a",
           |    "parentId" : "0000000000000002",
+          |    "timestamp" : 100,
+          |    "duration" : 50,
           |    "annotations" : [
           |      {
           |        "timestamp" : 100,
@@ -264,6 +266,8 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "name" : "other-method",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
+          |      "timestamp" : 60,
+          |      "duration" : 40,
           |      "annotations" : [
           |        {
           |          "timestamp" : 60,
@@ -321,6 +325,8 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "traceId" : "0000000000000003",
           |      "name" : "methodcall",
           |      "id" : "000000000000029c",
+          |      "timestamp" : 99,
+          |      "duration" : 100,
           |      "annotations" : [
           |        {
           |          "timestamp" : 99,
@@ -362,6 +368,8 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "traceId" : "0000000000000003",
           |      "name" : "methodcall",
           |      "id" : "000000000000029c",
+          |      "timestamp" : 99,
+          |      "duration" : 100,
           |      "annotations" : [
           |        {
           |          "timestamp" : 99,
@@ -404,6 +412,8 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "name" : "other-method",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
+          |      "timestamp" : 60,
+          |      "duration" : 40,
           |      "annotations" : [
           |        {
           |          "timestamp" : 60,
@@ -475,6 +485,8 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "name" : "other-method",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
+          |      "timestamp" : 60,
+          |      "duration" : 40,
           |      "annotations" : [
           |        {
           |          "timestamp" : 60,

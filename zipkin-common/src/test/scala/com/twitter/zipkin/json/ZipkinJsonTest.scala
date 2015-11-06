@@ -27,79 +27,85 @@ class ZipkinJsonTest extends FunSuite with Matchers {
       BinaryAnnotation(Constants.ClientAddr, ByteBuffer.wrap(Array[Byte](1)), AnnotationType.Bool, Some(web)),
       BinaryAnnotation(Constants.ServerAddr, ByteBuffer.wrap(Array[Byte](1)), AnnotationType.Bool, Some(query))
     ), Some(true))
-    assert(mapper.writeValueAsString(s) ==
-      """
-        |{
-        |  "traceId": "0000000000000001",
-        |  "name": "get",
-        |  "id": "0000000000003039",
-        |  "annotations": [
-        |    {
-        |      "timestamp": 1,
-        |      "value": "cs",
-        |      "endpoint": {
-        |        "serviceName": "zipkin-web",
-        |        "ipv4": "192.168.0.1"
-        |      }
-        |    },
-        |    {
-        |      "timestamp": 2,
-        |      "value": "sr",
-        |      "endpoint": {
-        |        "serviceName": "zipkin-query",
-        |        "ipv4": "192.168.0.1",
-        |        "port": 9411
-        |      }
-        |    },
-        |    {
-        |      "timestamp": 3,
-        |      "value": "ss",
-        |      "endpoint": {
-        |        "serviceName": "zipkin-query",
-        |        "ipv4": "192.168.0.1",
-        |        "port": 9411
-        |      }
-        |    },
-        |    {
-        |      "timestamp": 4,
-        |      "value": "cr",
-        |      "endpoint": {
-        |        "serviceName": "zipkin-web",
-        |        "ipv4": "192.168.0.1"
-        |      }
-        |    }
-        |  ],
-        |  "binaryAnnotations": [
-        |    {
-        |      "key": "http.uri",
-        |      "value": "/path",
-        |      "endpoint": {
-        |        "serviceName": "zipkin-web",
-        |        "ipv4": "192.168.0.1"
-        |      }
-        |    },
-        |    {
-        |      "key": "ca",
-        |      "value": true,
-        |      "endpoint": {
-        |        "serviceName": "zipkin-web",
-        |        "ipv4": "192.168.0.1",
-        |        "port": 8080
-        |      }
-        |    },
-        |    {
-        |      "key": "sa",
-        |      "value": true,
-        |      "endpoint": {
-        |        "serviceName": "zipkin-query",
-        |        "ipv4": "192.168.0.1",
-        |        "port": 9411
-        |      }
-        |    }
-        |  ],
-        |  "debug": true
-        |}
-      """.stripMargin.replaceAll("\\s",""))
+    val json = """
+                 |{
+                 |  "traceId": "0000000000000001",
+                 |  "name": "get",
+                 |  "id": "0000000000003039",
+                 |  "timestamp": 1,
+                 |  "duration": 3,
+                 |  "annotations": [
+                 |    {
+                 |      "timestamp": 1,
+                 |      "value": "cs",
+                 |      "endpoint": {
+                 |        "serviceName": "zipkin-web",
+                 |        "ipv4": "192.168.0.1"
+                 |      }
+                 |    },
+                 |    {
+                 |      "timestamp": 2,
+                 |      "value": "sr",
+                 |      "endpoint": {
+                 |        "serviceName": "zipkin-query",
+                 |        "ipv4": "192.168.0.1",
+                 |        "port": 9411
+                 |      }
+                 |    },
+                 |    {
+                 |      "timestamp": 3,
+                 |      "value": "ss",
+                 |      "endpoint": {
+                 |        "serviceName": "zipkin-query",
+                 |        "ipv4": "192.168.0.1",
+                 |        "port": 9411
+                 |      }
+                 |    },
+                 |    {
+                 |      "timestamp": 4,
+                 |      "value": "cr",
+                 |      "endpoint": {
+                 |        "serviceName": "zipkin-web",
+                 |        "ipv4": "192.168.0.1"
+                 |      }
+                 |    }
+                 |  ],
+                 |  "binaryAnnotations": [
+                 |    {
+                 |      "key": "http.uri",
+                 |      "value": "/path",
+                 |      "endpoint": {
+                 |        "serviceName": "zipkin-web",
+                 |        "ipv4": "192.168.0.1"
+                 |      }
+                 |    },
+                 |    {
+                 |      "key": "ca",
+                 |      "value": true,
+                 |      "endpoint": {
+                 |        "serviceName": "zipkin-web",
+                 |        "ipv4": "192.168.0.1",
+                 |        "port": 8080
+                 |      }
+                 |    },
+                 |    {
+                 |      "key": "sa",
+                 |      "value": true,
+                 |      "endpoint": {
+                 |        "serviceName": "zipkin-query",
+                 |        "ipv4": "192.168.0.1",
+                 |        "port": 9411
+                 |      }
+                 |    }
+                 |  ],
+                 |  "debug": true
+                 |}
+               """.stripMargin.replaceAll("\\s","")
+    assert(mapper.writeValueAsString(s) == json)
+    // This will catch any conversion problems such as stuffing integers into long fields
+    val readBack = JsonSpan.invert(mapper.readValue[JsonSpan](json))
+    // we can't compare byte buffers with equals.
+    assert(readBack.copy(binaryAnnotations = List.empty) == s.copy(binaryAnnotations = List.empty) )
   }
 
   test("endpoint") {

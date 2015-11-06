@@ -14,6 +14,7 @@ class SpanStoreZipkinTracerTest extends JUnitSuite {
   val finagleEndpoint = Endpoint(172 << 24 | 17 << 16 | 3, 8080)
   val finagleSpan = Span(
     traceId = TraceId(Some(SpanId(1)), None, SpanId(1), None, Flags().setDebug),
+    // TODO: update finagle to do timestamp, duration on a span
     annotations = Seq(
       ZipkinAnnotation(Time.fromMicroseconds(123), "cs", finagleEndpoint),
       ZipkinAnnotation(Time.fromMicroseconds(456), "cr", finagleEndpoint)

@@ -8,7 +8,6 @@ import com.twitter.finagle.{Filter, Service}
 import com.twitter.finatra.httpclient.HttpClient
 import com.twitter.io.Buf
 import com.twitter.util.{Future, TwitterDateFormat}
-import com.twitter.zipkin.adjuster.ApplyTimestampAndDuration
 import com.twitter.zipkin.common.{Trace, SpanTreeEntry, Span}
 import com.twitter.zipkin.json._
 import com.twitter.zipkin.web.mustache.ZipkinMustache
@@ -229,7 +228,6 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       val tracesCall = serviceName match {
         case Some(service) => route[Seq[List[JsonSpan]]](client, "/api/v1/traces", req.params)
           .map(traces => traces.map(_.map(JsonSpan.invert))
-                               .map(ApplyTimestampAndDuration) // TODO: remove when span.timestamp, duration are in json
           .flatMap(TraceSummary(_)))
         case None => EmptyTraces
       }
@@ -373,7 +371,6 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       pathTraceId(req.path.split("/").lastOption) map { id =>
         client.executeJson[List[JsonSpan]](Request(s"/api/v1/trace/$id"))
           .map(_.map(JsonSpan.invert))
-          .map(ApplyTimestampAndDuration) // TODO: remove when span.timestamp, duration are in json
           .map(renderTrace(_))
       } getOrElse NotFound
     }

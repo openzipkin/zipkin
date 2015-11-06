@@ -9,7 +9,7 @@ import org.scalatest.{FunSuite, Matchers}
 class JsonConversionTest extends FunSuite with Matchers {
 
   test("span with null annotations, binaryAnnotations") {
-    val convert = JsonSpan("0000000000000001", "GET", "0000000000003039", None, null, null)
+    val convert = JsonSpan("0000000000000001", "GET", "0000000000003039", None, None, None, null, null)
 
     JsonSpan(JsonSpan.invert(convert)) should be(JsonSpan("0000000000000001", "get", "0000000000003039"))
   }

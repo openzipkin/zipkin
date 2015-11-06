@@ -63,9 +63,12 @@ class ThriftConversionsTest extends FunSuite {
   test("convert Span") {
     val annotationValue = "NONSENSE"
     val expectedAnnotation = Annotation(1, annotationValue, Some(Endpoint(1, 2, "service")))
-    val expectedSpan = Span(12345, "methodcall", 666, annotations = List(expectedAnnotation))
+    val expectedSpan = Span(12345, "methodcall", 666, None, Some(1L), Some(2L), List(expectedAnnotation))
 
     assert(expectedSpan.toThrift.toSpan === expectedSpan)
+
+    val timestampedSpan = expectedSpan.copy(timestamp = Some(13L), duration = Some(10L))
+    assert(timestampedSpan.toThrift.toSpan === timestampedSpan)
 
     val noNameSpan = thriftscala.Span(0, null, 0, None, Seq(), Seq())
     intercept[IncompleteTraceDataException] { noNameSpan.toSpan }

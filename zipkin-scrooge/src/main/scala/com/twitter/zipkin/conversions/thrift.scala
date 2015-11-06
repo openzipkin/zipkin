@@ -90,8 +90,17 @@ object thrift {
   /* Span */
   class ThriftSpan(s: Span) {
     lazy val toThrift = {
-      thriftscala.Span(s.traceId, s.name, s.id, s.parentId, s.annotations.map { _.toThrift },
-        s.binaryAnnotations.map { _.toThrift }, s.debug.getOrElse(false))
+      thriftscala.Span(
+        s.traceId,
+        s.name,
+        s.id,
+        s.parentId,
+        s.annotations.map(_.toThrift),
+        s.binaryAnnotations.map(_.toThrift),
+        s.debug.getOrElse(false),
+        s.timestamp,
+        s.duration
+      )
     }
   }
   class WrappedSpan(s: thriftscala.Span) {
@@ -106,8 +115,8 @@ object thrift {
         s.name.toLowerCase,
         s.id,
         s.parentId,
-        None,
-        None,
+        s.timestamp,
+        s.duration,
         s.annotations match {
           case null => List.empty[Annotation]
           case as => as.map(_.toAnnotation)(breakOut).toList.sorted
