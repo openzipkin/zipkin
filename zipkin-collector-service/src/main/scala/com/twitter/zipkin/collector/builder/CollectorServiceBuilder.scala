@@ -52,7 +52,7 @@ case class CollectorServiceBuilder[T](
   sampleRateBuilder: Builder[AdjustableRateConfig] = Adjustable.local(1.0),
   adaptiveSamplerBuilder: Option[Builder[AdaptiveSamplerConfig]] = None,
   serverBuilder: ZipkinServerBuilder = ZipkinServerBuilder(9410, 9900),
-  logLevel: String = "INFO"
+  logLevel: String = sys.env.get("COLLECTOR_LOG_LEVEL").getOrElse("INFO")
 ) extends Builder[RuntimeEnvironment => ZipkinCollector] {
 
   LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
