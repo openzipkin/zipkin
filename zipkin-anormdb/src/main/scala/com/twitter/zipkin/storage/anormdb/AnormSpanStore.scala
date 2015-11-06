@@ -47,7 +47,7 @@ class AnormSpanStore(val db: DB,
           db.replaceCommand() +
             """ INTO zipkin_spans
               |VALUES
-              |  ({trace_id}, {id}, {name}, {parent_id}, {debug}, {timestamp})
+              |  ({trace_id}, {id}, {name}, {parent_id}, {debug}, {timestamp}, {duration})
             """.stripMargin)
           .on("trace_id" -> span.traceId)
           .on("id" -> span.id)
@@ -55,6 +55,7 @@ class AnormSpanStore(val db: DB,
           .on("parent_id" -> span.parentId)
           .on("debug" -> span.debug.map(if (_) 1 else 0))
           .on("timestamp" -> span.timestamp)
+          .on("duration" -> span.duration)
           .execute()
 
         span.annotations.foreach(a =>
@@ -109,14 +110,15 @@ class AnormSpanStore(val db: DB,
       val traceIdsString:String = traceIds.mkString(",")
       val spans:List[DBSpan] =
         SQL(
-          """SELECT DISTINCT id, parent_id, trace_id, name, debug
+          """SELECT DISTINCT id, parent_id, trace_id, name, debug, start_ts, duration
             |FROM zipkin_spans
             |WHERE trace_id IN (%s)
             |ORDER BY start_ts
           """.stripMargin.format(traceIdsString))
           .as((long("id") ~ get[Option[Long]]("parent_id") ~
-          long("trace_id") ~ str("name") ~ get[Option[Int]]("debug") map {
-          case a~b~c~d~e => DBSpan(a, b, c, d, e.map(_ > 0))
+          long("trace_id") ~ str("name") ~ get[Option[Int]]("debug") ~
+          get[Option[Long]]("start_ts") ~ get[Option[Long]]("duration")map {
+          case a~b~c~d~e~f~g => DBSpan(a, b, c, d, e.map(_ > 0), f, g)
         }) *)
       val annos:List[DBAnnotation] =
         SQL(
@@ -169,7 +171,7 @@ class AnormSpanStore(val db: DB,
             val annotationType = AnnotationType.fromInt(binAnno.annotationTypeValue)
             BinaryAnnotation(binAnno.key, value, annotationType, host)
           }
-          Span(span.traceId, span.spanName, span.spanId, span.parentId, None, None, spanAnnos, spanBinAnnos, span.debug)
+          Span(span.traceId, span.spanName, span.spanId, span.parentId, span.timestamp, span.duration, spanAnnos, spanBinAnnos, span.debug)
         }
       }
       // Redundant sort as List.groupBy loses order of values
@@ -209,7 +211,7 @@ class AnormSpanStore(val db: DB,
             |LIMIT {limit}
           """.stripMargin)
           .on("service_name" -> serviceName)
-          .on("name" -> (if (spanName.isEmpty) "" else spanName.get))
+          .on("name" -> spanName.getOrElse(""))
           .on("end_ts" -> endTs)
           .on("limit" -> limit)
           .as((long("trace_id") ~ long("start_ts") map flatten) *)
@@ -277,6 +279,39 @@ class AnormSpanStore(val db: DB,
       }
   }
 
+  override protected def getTraceIdsByDuration(
+    serviceName: String,
+    minDuration: Long,
+    maxDuration: Option[Long],
+    endTs: Long,
+    limit: Int
+  ): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
+    implicit val (conn, borrowTime) = borrowConn()
+    try {
+      val result:List[(Long, Long)] = SQL(
+        """SELECT t1.trace_id, start_ts
+          |FROM zipkin_spans t1
+          |WHERE trace_id = id
+          |AND duration BETWEEN {min_duration} AND {max_duration}
+          |AND start_ts <= {end_ts}
+          |GROUP BY t1.trace_id
+          |ORDER BY start_ts
+          |LIMIT {limit}
+        """.stripMargin)
+        .on("service_name" -> serviceName)
+        .on("min_duration" -> minDuration)
+        .on("max_duration" -> maxDuration.getOrElse(Long.MaxValue))
+        .on("end_ts" -> endTs)
+        .on("limit" -> limit)
+        .as((long("trace_id") ~ long("start_ts") map flatten) *)
+      result map { case (tId, ts) =>
+        IndexedTraceId(traceId = tId, timestamp = ts)
+      }
+    } finally {
+      returnConn(conn, borrowTime, "getTraceIdsByDuration")
+    }
+  }
+
   override def getAllServiceNames(): Future[Seq[String]] = db.inNewThreadWithRecoverableRetry {
     implicit val (conn, borrowTime) = borrowConn()
     try {
@@ -314,7 +349,7 @@ class AnormSpanStore(val db: DB,
     }
   }
 
-  case class DBSpan(spanId: Long, parentId: Option[Long], traceId: Long, spanName: String, debug: Option[Boolean])
+  case class DBSpan(spanId: Long, parentId: Option[Long], traceId: Long, spanName: String, debug: Option[Boolean], timestamp: Option[Long], duration: Option[Long])
   case class DBAnnotation(spanId: Long, traceId: Long, serviceName: String, value: String, ipv4: Option[Int], port: Option[Int], timestamp: Long)
   case class DBBinaryAnnotation(spanId: Long, traceId: Long, serviceName: String, key: String, value: Array[Byte], annotationTypeValue: Int, ipv4: Option[Int], port: Option[Int])
 }

@@ -170,7 +170,8 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
         |  name VARCHAR(255) NOT NULL,
         |  parent_id BIGINT,
         |  debug SMALLINT,
-        |  start_ts BIGINT
+        |  start_ts BIGINT,
+        |  duration BIGINT
         |)
       """.stripMargin).execute()
     SQL(
