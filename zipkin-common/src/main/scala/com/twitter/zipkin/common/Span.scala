@@ -17,7 +17,6 @@
 package com.twitter.zipkin.common
 
 import com.twitter.zipkin.Constants
-import com.twitter.zipkin.adjuster.ApplyTimestampAndDuration
 import com.twitter.zipkin.util.Util._
 
 /**
@@ -57,7 +56,10 @@ case class Span(
   override def compare(that: Span) =
     java.lang.Long.compare(timestamp.getOrElse(0L), that.timestamp.getOrElse(0L))
 
-  def serviceNames: Set[String] = annotations.flatMap(a => a.host.map(h => h.serviceName)).toSet
+  def serviceNames: Set[String] = (
+    annotations.flatMap(_.host.map(h => h.serviceName)) ++
+      binaryAnnotations.flatMap(_.host.map(h => h.serviceName))
+    ).toSet
 
   /**
    * Tries to extract the best name of the service in this span. This depends on annotations
