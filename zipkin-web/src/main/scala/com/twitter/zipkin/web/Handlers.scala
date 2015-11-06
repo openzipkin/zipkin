@@ -8,6 +8,7 @@ import com.twitter.finagle.{Filter, Service}
 import com.twitter.finatra.httpclient.HttpClient
 import com.twitter.io.Buf
 import com.twitter.util.{Future, TwitterDateFormat}
+import com.twitter.zipkin.adjuster.ApplyTimestampAndDuration
 import com.twitter.zipkin.common.{Trace, SpanTreeEntry, Span}
 import com.twitter.zipkin.json._
 import com.twitter.zipkin.web.mustache.ZipkinMustache
@@ -201,7 +202,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
         fmt.format(new java.util.Date(t.timestamp / 1000)),
         t.timestamp,
         duration,
-        durationStr(t.duration * 1000),
+        durationStr(t.duration),
         serviceTime.map { st => ((st.toFloat / t.duration.toFloat) * 100).toInt }.getOrElse(0),
         groupedSpanTimestamps.foldLeft(0) { case (acc, (_, sts)) => acc + sts.length },
         serviceDurations,
@@ -228,7 +229,8 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       val tracesCall = serviceName match {
         case Some(service) => route[Seq[List[JsonSpan]]](client, "/api/v1/traces", req.params)
           .map(traces => traces.map(_.map(JsonSpan.invert))
-          .flatMap(TraceSummary(_).toSeq))
+                               .map(ApplyTimestampAndDuration) // TODO: remove when span.timestamp, duration are in json
+          .flatMap(TraceSummary(_)))
         case None => EmptyTraces
       }
 
@@ -330,7 +332,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
             "endpoint" -> a.host.map { e => s"${e.getHostAddress}:${e.getUnsignedPort}" },
             "value" -> annoToString(a.value),
             "timestamp" -> a.timestamp,
-            "relativeTime" -> durationStr((a.timestamp - traceTimestamp) * 1000),
+            "relativeTime" -> durationStr((a.timestamp - traceTimestamp)),
             "serviceName" -> a.host.map(_.serviceName),
             "width" -> 8
           )
@@ -371,6 +373,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       pathTraceId(req.path.split("/").lastOption) map { id =>
         client.executeJson[List[JsonSpan]](Request(s"/api/v1/trace/$id"))
           .map(_.map(JsonSpan.invert))
+          .map(ApplyTimestampAndDuration) // TODO: remove when span.timestamp, duration are in json
           .map(renderTrace(_))
       } getOrElse NotFound
     }

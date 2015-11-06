@@ -240,14 +240,21 @@ object CorrectForClockSkew extends ((List[Span]) => List[Span]) {
         Constants.LocalhostLoopBackIP == ep.ipv4
 
       val span = spanTree.span
-      val annotations = span.annotations map { a =>
-        a.host match {
+      val annotations: List[Annotation] = span.annotations.map(a => a.host match {
           case Some(ep) if isHost(ep, a.value) => a.copy(timestamp = a.timestamp - clockSkew.skew)
           case _ => a
         }
-      }
+      ).sorted
 
-      new SpanTreeEntry(span.copy(annotations = annotations.sorted), spanTree.children)
+      // reset timestamp and duration as if there's skew, these will change.
+      val firstOption = annotations.headOption.map(_.timestamp)
+      val lastOption = annotations.lastOption.map(_.timestamp)
+      val duration = for (first <- firstOption; last <- lastOption; if (first != last))
+        yield last - first
+      new SpanTreeEntry(span.copy(
+        timestamp = firstOption,
+        duration = duration,
+        annotations = annotations.sorted), spanTree.children)
     }
   }
 

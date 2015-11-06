@@ -17,7 +17,7 @@ class ZipkinJsonTest extends FunSuite with Matchers {
   val query = Endpoint((192 << 24 | 168 << 16 | 1), 9411, "zipkin-query")
 
   test("complete span example") {
-    val s = Span(1, "get", 12345L, None, List(
+    val s = Span(1, "get", 12345L, None, Some(1L), Some(3L), List(
       Annotation(1L, Constants.ClientSend, Some(web.copy(port = 0))),
       Annotation(2L, Constants.ServerRecv, Some(query)),
       Annotation(3L, Constants.ServerSend, Some(query)),
@@ -119,7 +119,7 @@ class ZipkinJsonTest extends FunSuite with Matchers {
   }
 
   test("doesn't serialize absent fields of span") { // like debug or parentId
-    val s = Span(1L, "zipkin-query", 2L, None, List.empty[Annotation], List.empty[BinaryAnnotation])
+    val s = Span(1L, "zipkin-query", 2L)
     assert(mapper.writeValueAsString(s) ==
       """
         |{"traceId":"0000000000000001","name":"zipkin-query","id":"0000000000000002","annotations":[],"binaryAnnotations":[]}

@@ -28,6 +28,8 @@ object JsonSpan extends (Span => JsonSpan) {
     s.name.toLowerCase,
     id(s.id),
     s.parentId.map(id(_)),
+    None,
+    None,
     /** If deserialized with jackson, these could be null, as it doesn't look at default values. */
     if (s.annotations == null) List.empty else s.annotations.map(JsonAnnotation.invert).sorted,
     if (s.binaryAnnotations == null) Seq.empty else s.binaryAnnotations.map(JsonBinaryAnnotation.invert),

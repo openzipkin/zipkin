@@ -18,7 +18,7 @@ package com.twitter.zipkin.storage.cassandra
 import com.twitter.conversions.time._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.{Future, Duration}
-import com.twitter.zipkin.adjuster.{CorrectForClockSkew, MergeById}
+import com.twitter.zipkin.adjuster.{ApplyTimestampAndDuration, CorrectForClockSkew, MergeById}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
@@ -188,6 +188,7 @@ abstract class CassandraSpanStore(
         traceIds.flatMap(traceId => spans.get(traceId))
           .map(MergeById)
           .map(CorrectForClockSkew)
+          .map(ApplyTimestampAndDuration)
           .sortBy(_.head) // CQL doesn't allow order by with an "in" query
       }
   }
@@ -201,7 +202,8 @@ abstract class CassandraSpanStore(
     SpansStoredCounter.incr(spans.size)
 
     Future.join(
-      spans map { span =>
+      spans.map(s => s.copy(annotations = s.annotations.sorted))
+           .map(ApplyTimestampAndDuration.apply).map { span =>
         SpansIndexedCounter.incr()
 
         Future.join(
@@ -210,7 +212,7 @@ abstract class CassandraSpanStore(
               span.traceId,
               span.timestamp.getOrElse(0L),
               createSpanColumnName(span),
-              spanCodec.encode(span.copy(annotations = span.annotations.sorted).toThrift),
+              spanCodec.encode(span.toThrift),
               spanTtl.inSeconds)),
           indexServiceName(span),
           indexSpanNameByService(span),

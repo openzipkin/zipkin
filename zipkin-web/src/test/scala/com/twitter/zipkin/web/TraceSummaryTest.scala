@@ -26,10 +26,10 @@ class TraceSummaryTest extends FunSuite {
   val span3Id = 888L
   val span4Id = 999L
 
-  val span1 = Span(12345, "methodcall1", span1Id, None, annotations1)
-  val span2 = Span(12345, "methodcall2", span2Id, Some(span1Id), annotations2)
-  val span3 = Span(12345, "methodcall2", span3Id, Some(span2Id), annotations3)
-  val span4 = Span(12345, "methodcall2", span4Id, Some(span3Id), annotations4)
+  val span1 = Span(12345, "methodcall1", span1Id, None, Some(100), Some(50), annotations1)
+  val span2 = Span(12345, "methodcall2", span2Id, Some(span1Id), Some(200), Some(50), annotations2)
+  val span3 = Span(12345, "methodcall2", span3Id, Some(span2Id), Some(300), Some(50), annotations3)
+  val span4 = Span(12345, "methodcall2", span4Id, Some(span3Id), Some(400), Some(100), annotations4)
   val span5 = Span(12345, "methodcall4", 1111L, Some(span4Id)) // no annotations
 
   val trace = List(span1, span2, span3, span4)
@@ -57,13 +57,13 @@ class TraceSummaryTest extends FunSuite {
 
   test("get span depths from trace") {
     val spanNoneParent = Span(1, "", 100)
-    val spanParent = Span(1, "", 200, Some(100))
+    val spanParent = Span(1, "", 200, Some(100L))
     assert(TraceSummary.toSpanDepths(List(spanParent, spanNoneParent)) === Map(100 -> 1, 200 -> 2))
   }
 
   test("get span depths from trace without real root") {
-    val spanNoParent = Span(1, "", 100, Some(0)) // 0 isn't present!
-    val spanParent = Span(1, "", 200, Some(100))
+    val spanNoParent = Span(1, "", 100, Some(0L)) // 0 isn't present!
+    val spanParent = Span(1, "", 200, Some(100L))
     assert(TraceSummary.toSpanDepths(List(spanParent, spanNoParent)) === Map(100 -> 1, 200 -> 2))
   }
 

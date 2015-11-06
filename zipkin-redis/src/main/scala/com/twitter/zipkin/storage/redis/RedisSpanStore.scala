@@ -3,6 +3,7 @@ package com.twitter.zipkin.storage.redis
 import com.google.common.io.Closer
 import com.twitter.finagle.redis.Client
 import com.twitter.util.{Duration, Future}
+import com.twitter.zipkin.adjuster.ApplyTimestampAndDuration
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.storage._
 import java.nio.ByteBuffer
@@ -24,8 +25,8 @@ class RedisSpanStore(client: Client, ttl: Option[Duration])
 
   override def apply(newSpans: Seq[Span]): Future[Unit] = Future.join(
     newSpans.map(s => s.copy(annotations = s.annotations.sorted))
-      .flatMap { span => Seq(storage.storeSpan(span), index.index(span))
-    })
+            .map(ApplyTimestampAndDuration.apply)
+            .flatMap(s => Seq(storage.storeSpan(s), index.index(s))))
 
   override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[List[Span]]] = {
     storage.getSpansByTraceIds(traceIds)

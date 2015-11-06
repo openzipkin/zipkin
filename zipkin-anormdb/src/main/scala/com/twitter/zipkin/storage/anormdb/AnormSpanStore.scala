@@ -19,7 +19,7 @@ import anorm.SqlParser._
 import anorm._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util._
-import com.twitter.zipkin.adjuster.CorrectForClockSkew
+import com.twitter.zipkin.adjuster.{ApplyTimestampAndDuration, CorrectForClockSkew}
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.storage.anormdb.AnormThreads._
 import com.twitter.zipkin.storage.anormdb.DB.byteArrayToStatement
@@ -33,7 +33,10 @@ class AnormSpanStore(val db: DB,
                      val stats: StatsReceiver = DefaultStatsReceiver.scope("AnormSpanStore")
                       ) extends SpanStore with CollectAnnotationQueries with DBPool {
 
-  override def apply(spans: Seq[Span]) = Future.join(spans.map(storeSpan))
+  override def apply(spans: Seq[Span]) = Future.join(spans
+    .map(s => s.copy(annotations = s.annotations.sorted))
+    .map(ApplyTimestampAndDuration.apply)
+    .map(storeSpan))
 
   private [this] def storeSpan(span: Span): Future[Unit] = inNewThread {
     implicit val (conn, borrowTime) = borrowConn()
@@ -166,13 +169,14 @@ class AnormSpanStore(val db: DB,
             val annotationType = AnnotationType.fromInt(binAnno.annotationTypeValue)
             BinaryAnnotation(binAnno.key, value, annotationType, host)
           }
-          Span(span.traceId, span.spanName, span.spanId, span.parentId, spanAnnos, spanBinAnnos, span.debug)
+          Span(span.traceId, span.spanName, span.spanId, span.parentId, None, None, spanAnnos, spanBinAnnos, span.debug)
         }
       }
       // Redundant sort as List.groupBy loses order of values
       results.groupBy(_.traceId)
         .values.toList
         .map(CorrectForClockSkew)
+        .map(ApplyTimestampAndDuration)
         .sortBy(_.head) // sort traces by the first span
     } finally {
       returnConn(conn, borrowTime, "getSpansByTraceIds")

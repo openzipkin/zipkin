@@ -106,6 +106,8 @@ object thrift {
         s.name.toLowerCase,
         s.id,
         s.parentId,
+        None,
+        None,
         s.annotations match {
           case null => List.empty[Annotation]
           case as => as.map(_.toAnnotation)(breakOut).toList.sorted

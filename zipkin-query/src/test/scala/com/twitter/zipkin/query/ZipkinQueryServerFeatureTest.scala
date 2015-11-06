@@ -34,39 +34,33 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
 
   val ann1 = Annotation(100, Constants.ClientSend, Some(ep1))
   val ann2 = Annotation(150, Constants.ClientRecv, Some(ep1))
-  val spans1 = List(Span(1, "methodcall", 666, Some(2), List(ann1, ann2)))
-  // duration 50
+  val spans1 = List(Span(1, "methodcall", 666, Some(2), Some(100), Some(50), List(ann1, ann2)))
 
   val ann3 = Annotation(101, Constants.ClientSend, Some(ep2))
   val ann4 = Annotation(501, Constants.ClientRecv, Some(ep2))
-  val spans2 = List(Span(2, "methodcall", 667, None, List(ann3, ann4)))
-  // duration 400
+  val spans2 = List(Span(2, "methodcall", 667, None, Some(101), Some(400), List(ann3, ann4)))
 
   val ann5 = Annotation(99, Constants.ClientSend, Some(ep3))
   val ann6 = Annotation(199, Constants.ClientRecv, Some(ep3))
-  val spans3 = List(Span(3, "methodcall", 668, None, List(ann5, ann6)))
-  // duration 100
+  val spans3 = List(Span(3, "methodcall", 668, None, Some(99), Some(100), List(ann5, ann6)))
 
   // get some server action going on
   val ann7 = Annotation(110, Constants.ServerRecv, Some(ep2))
   val ann8 = Annotation(140, Constants.ServerSend, Some(ep2))
   val spans4 = List(
-    Span(2, "methodcall", 666, Some(2), List(ann1, ann2)),
-    Span(2, "methodcall", 666, Some(2), List(ann7, ann8)))
+    Span(2, "methodcall", 666, Some(2), Some(100), Some(50), List(ann1, ann2)),
+    Span(2, "methodcall", 666, Some(2), Some(110), Some(30), List(ann7, ann8)))
 
   val ann9 = Annotation(60, Constants.ClientSend, Some(ep3))
   val ann10 = Annotation(65, "annotation", Some(ep3))
   val ann11 = Annotation(100, Constants.ClientRecv, Some(ep3))
   val bAnn1 = BinaryAnnotation("annotation", ByteBuffer.wrap("ann".getBytes), AnnotationType.String, Some(ep3))
   val bAnn2 = BinaryAnnotation("binary", ByteBuffer.wrap("ann".getBytes), AnnotationType.Bytes, Some(ep3))
-  val spans5 = List(Span(5, "other-method", 666, Some(2), List(ann9, ann10, ann11), List(bAnn1, bAnn2)))
-  // duration 40
+  val spans5 = List(Span(5, "other-method", 666, Some(2), Some(60), Some(40), List(ann9, ann10, ann11), List(bAnn1, bAnn2)))
 
   val ann13 = Annotation(100, Constants.ClientSend, Some(ep4))
   val ann14 = Annotation(150, Constants.ClientRecv, Some(ep4))
-  val spans6 = List(Span(6, "some-method", 669, Some(2), List(ann13, ann14)))
-  // duration 50
-
+  val spans6 = List(Span(6, "some-method", 669, Some(2), Some(100), Some(50), List(ann13, ann14)))
 
   val allSpans = spans1 ++ spans2 ++ spans3 ++ spans4 ++ spans5 ++ spans6
 

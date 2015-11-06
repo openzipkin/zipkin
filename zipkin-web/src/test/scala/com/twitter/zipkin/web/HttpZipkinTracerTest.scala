@@ -34,10 +34,10 @@ class HttpZipkinTracerTest extends JUnitSuite {
     endpoint = finagleEndpoint)
 
   val endpoint = common.Endpoint(172 << 24 | 17 << 16 | 3, 8080, "zipkin-query")
-  val span = common.Span(1L, "get", 1L, None, List(
+  val span = common.Span(1L, "get", 1L, annotations = List(
     Annotation(123, Constants.ClientSend, Some(endpoint)),
     Annotation(456, Constants.ClientRecv, Some(endpoint))),
-    Seq.empty, Some(true)
+    debug = Some(true)
   )
 
   @Test def sendsValidSpanAndIncrementsOk() {

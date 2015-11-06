@@ -16,26 +16,9 @@
  */
 package com.twitter.zipkin.common
 
-import java.nio.ByteBuffer
 import org.scalatest.FunSuite
 
 class SpanTest extends FunSuite {
-
-  val annotationValue = "NONSENSE"
-  val expectedAnnotation = Annotation(1, annotationValue, Some(Endpoint(1, 2, "service")))
-  val expectedSpan = Span(12345, "methodcall", 666, None, List(expectedAnnotation))
-
-  val annotation1 = Annotation(1, "value1", Some(Endpoint(1, 2, "service")))
-  val annotation2 = Annotation(2, "value2", Some(Endpoint(3, 4, "service")))
-  val annotation3 = Annotation(3, "value3", Some(Endpoint(5, 6, "service")))
-
-  val binaryAnnotation1 = BinaryAnnotation("key1", ByteBuffer.wrap("value1".getBytes), AnnotationType.String, Some(Endpoint(1, 2, "service1")))
-  val binaryAnnotation2 = BinaryAnnotation("key2", ByteBuffer.wrap("value2".getBytes), AnnotationType.String, Some(Endpoint(3, 4, "service2")))
-
-  val spanWith3Annotations = Span(12345, "methodcall", 666, None,
-    List(annotation1, annotation2, annotation3))
-  val spanWith2BinaryAnnotations = Span(12345, "methodcall", 666, None,
-    List.empty, Seq(binaryAnnotation1, binaryAnnotation2))
 
   /** Representations should lowercase on the way in */
   test("name cannot be lowercase") {
@@ -45,7 +28,7 @@ class SpanTest extends FunSuite {
   }
 
   test("serviceName preference") {
-    var span = Span(12345, "methodcall", 666, None,
+    var span = Span(12345, "methodcall", 666, None, None, None,
       List(
         Annotation(1, "cs", Some(Endpoint(1, 2, "cs"))),
         Annotation(1, "sr", Some(Endpoint(1, 2, "sr"))),
@@ -80,11 +63,12 @@ class SpanTest extends FunSuite {
     val ann1 = Annotation(1, "value1", Some(Endpoint(1, 2, "service")))
     val ann2 = Annotation(2, "value2", Some(Endpoint(3, 4, "service")))
 
-    val span1 = Span(12345, "", 666, None, List(ann1), Seq(), Some(true))
-    val span2 = Span(12345, "methodcall", 666, None, List(ann2), Seq(), Some(false))
-    val expectedSpan = Span(12345, "methodcall", 666, None, List(ann1, ann2), Seq(), Some(true))
-    val actualSpan = span1.merge(span2)
-    assert(actualSpan === expectedSpan)
+    val span1 = Span(12345, "", 666, None, Some(1), None, List(ann1), Seq(), Some(true))
+    val span2 = Span(12345, "methodcall", 666, None, None, Some(2), List(ann2), Seq(), Some(false))
+    val expectedSpan = Span(12345, "methodcall", 666, None, Some(1), Some(2), List(ann1, ann2), Seq(), Some(true))
+
+    assert(span1.merge(span2) === expectedSpan)
+    assert(span2.merge(span1) === expectedSpan)
   }
 
   test("merge span with Unknown span name with known span name") {
@@ -93,19 +77,5 @@ class SpanTest extends FunSuite {
 
     assert(span1.merge(span2).name === "get")
     assert(span2.merge(span1).name === "get")
-  }
-
-  test("get duration") {
-    assert(spanWith3Annotations.duration === Some(2))
-  }
-
-  test("get duration none when no annotations") {
-    val span = Span(1, "n", 2)
-    assert(span.duration === None)
-  }
-
-  test("get duration none when one annotation") {
-    val span = Span(1, "n", 2, annotations = List(annotation1))
-    assert(span.duration === None)
   }
 }

@@ -43,8 +43,8 @@ class SpanSamplerFilterTest extends FunSuite {
 
   test("will not filter debug spans") {
     val spans = Seq(
-      Span(0, "svc", 123L, None, List.empty, Seq.empty, Some(true)),
-      Span(1, "svc", 123L, None, List.empty, Seq.empty, Some(true)),
+      Span(0, "svc", 123L, debug = Some(true)),
+      Span(1, "svc", 123L, debug = Some(true)),
       Span(1, "svc", 123L))
 
     var rcvdSpans = Seq.empty[Span]
