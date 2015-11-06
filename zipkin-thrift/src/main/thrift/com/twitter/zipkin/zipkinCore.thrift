@@ -16,7 +16,7 @@ namespace java com.twitter.zipkin.thriftjava
 namespace rb Zipkin
 
 #************** Annotation.value **************
-/*
+/**
  * The client sent ("cs") a request to a server. There is only one send per
  * span. For example, if there's a transport error, each attempt can be logged
  * as a WIRE_SEND annotation.
@@ -29,7 +29,7 @@ namespace rb Zipkin
  * should also log the SERVER_ADDR.
  */
 const string CLIENT_SEND = "cs"
-/*
+/**
  * The client received ("cr") a response from a server. There is only one
  * receive per span. For example, if duplicate responses were received, each
  * can be logged as a WIRE_RECV annotation.
@@ -42,7 +42,7 @@ const string CLIENT_SEND = "cs"
  * recorded separately as SERVER_ADDR when CLIENT_SEND is logged.
  */
 const string CLIENT_RECV = "cr"
-/*
+/**
  * The server sent ("ss") a response to a client. There is only one response
  * per span. If there's a transport error, each attempt can be logged as a
  * WIRE_SEND annotation.
@@ -58,7 +58,7 @@ const string CLIENT_RECV = "cr"
  * recorded separately as CLIENT_ADDR when SERVER_RECV is logged.
  */
 const string SERVER_SEND = "ss"
-/*
+/**
  * The server received ("sr") a request from a client. There is only one
  * request per span.  For example, if duplicate responses were received, each
  * can be logged as a WIRE_RECV annotation.
@@ -74,54 +74,54 @@ const string SERVER_SEND = "ss"
  * should also log the CLIENT_ADDR.
  */
 const string SERVER_RECV = "sr"
-/*
+/**
  * Optionally logs an attempt to send a message on the wire. Multiple wire send
  * events could indicate network retries. A lag between client or server send
  * and wire send might indicate queuing or processing delay.
  */
 const string WIRE_SEND = "ws"
-/*
+/**
  * Optionally logs an attempt to receive a message from the wire. Multiple wire
  * receive events could indicate network retries. A lag between wire receive
  * and client or server receive might indicate queuing or processing delay.
  */
 const string WIRE_RECV = "wr"
-/*
+/**
  * Optionally logs progress of a (CLIENT_SEND, WIRE_SEND). For example, this
  * could be one chunk in a chunked request.
  */
 const string CLIENT_SEND_FRAGMENT = "csf"
-/*
+/**
  * Optionally logs progress of a (CLIENT_RECV, WIRE_RECV). For example, this
  * could be one chunk in a chunked response.
  */
 const string CLIENT_RECV_FRAGMENT = "crf"
-/*
+/**
  * Optionally logs progress of a (SERVER_SEND, WIRE_SEND). For example, this
  * could be one chunk in a chunked response.
  */
 const string SERVER_SEND_FRAGMENT = "ssf"
-/*
+/**
  * Optionally logs progress of a (SERVER_RECV, WIRE_RECV). For example, this
  * could be one chunk in a chunked request.
  */
 const string SERVER_RECV_FRAGMENT = "srf"
 
 #***** BinaryAnnotation.key where value = [1] and annotation_type = BOOL ******
-/*
+/**
  * Indicates a client address ("ca") in a span. Most likely, there's only one.
  * Multiple addresses are possible when a client changes its ip or port within
  * a span.
  */
 const string CLIENT_ADDR = "ca"
-/*
+/**
  * Indicates a server address ("sa") in a span. Most likely, there's only one.
  * Multiple addresses are possible when a client is redirected, or fails to a
  * different server ip or port.
  */
 const string SERVER_ADDR = "sa"
 
-/*
+/**
  * Indicates the network context of a service recording an annotation with two
  * exceptions.
  *
@@ -142,14 +142,20 @@ struct Endpoint {
   3: string service_name
 }
 
-/*
+/**
  * An annotation is similar to a log statement. It includes a host field which
  * allows these events to be attributed properly, and also aggregatable.
  */
 struct Annotation {
-  1: i64 timestamp                 // microseconds from epoch
+  /**
+   * Microseconds from epoch.
+   *
+   * This value should use the most precise value possible. For example,
+   * gettimeofday or syncing nanoTime against a tick of currentTimeMillis.
+   */
+  1: i64 timestamp
   2: string value                  // what happened at the timestamp?
-  /*
+  /**
    * Always the host that recorded the event. By specifying the host you allow
    * rollup of all events (such as client requests to a service) by IP address.
    */
@@ -159,7 +165,7 @@ struct Annotation {
 
 enum AnnotationType { BOOL, BYTES, I16, I32, I64, DOUBLE, STRING }
 
-/*
+/**
  * Binary annotations are tags applied to a Span to give it context. For
  * example, a binary annotation of "http.uri" could the path to a resource in a
  * RPC call.
@@ -178,7 +184,7 @@ struct BinaryAnnotation {
   1: string key,
   2: binary value,
   3: AnnotationType annotation_type,
-  /*
+  /**
    * The host that recorded tag, which allows you to differentiate between
    * multiple tags with the same key. There are two exceptions to this.
    *
@@ -189,7 +195,7 @@ struct BinaryAnnotation {
   4: optional Endpoint host
 }
 
-/*
+/**
  * A trace is a series of spans (often RPC calls) which form a latency tree.
  *
  * The root span is where trace_id = id and parent_id = Nil. The root span is
@@ -204,5 +210,38 @@ struct Span {
   6: list<Annotation> annotations, # all annotations/events that occured, sorted by timestamp
   8: list<BinaryAnnotation> binary_annotations # any binary annotations
   9: optional bool debug = 0       # if true, we DEMAND that this span passes all samplers
+  /**
+   * Microseconds from epoch of the creation of this span.
+   *
+   * This value should be set directly by instrumentation, using the most
+   * precise value possible. For example, gettimeofday or syncing nanoTime
+   * against a tick of currentTimeMillis.
+   *
+   * For compatibilty with instrumentation that precede this field, collectors
+   * or span stores can derive this via Annotation.timestamp.
+   * For example, SERVER_RECV.timestamp or CLIENT_SEND.timestamp.
+   *
+   * This field is optional for compatibility with old data: first-party span
+   * stores are expected to support this at time of introduction.
+   */
+  10: optional i64 timestamp,
+  /**
+   * Measurement of duration in microseconds, used to support queries.
+   *
+   * This value should be set directly, where possible. Doing so encourages
+   * precise measurement decoupled from problems of clocks, such as skew or NTP
+   * updates causing time to move backwards.
+   *
+   * For compatibilty with instrumentation that precede this field, collectors
+   * or span stores can derive this by subtracting Annotation.timestamp.
+   * For example, SERVER_SEND.timestamp - SERVER_RECV.timestamp.
+   *
+   * If this field is persisted as unset, zipkin will continue to work, except
+   * duration query support will be implementation-specific. Similarly, setting
+   * this field non-atomically is implementation-specific.
+   *
+   * This field is i64 vs i32 to support spans longer than 35 minutes.
+   */
+  11: optional i64 duration
 }
 

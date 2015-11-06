@@ -22,6 +22,7 @@ class KafkaProcessorSpec extends JUnitSuite {
   import KafkaProcessorSpec.kafkaRule
 
   val topic = Map("integration-test-topic" -> 1)
+  // Intentionally leaving timestamp and duration unset, as legacy instrumentation don't set this.
   val validSpan = Span(123, "boo", 456, annotations = List(new Annotation(1, "bah", None)))
   val decoder = new SpanCodec()
   val defaultKafkaTopics = Map("zipkin_kafka" -> 1 )
@@ -41,6 +42,7 @@ class KafkaProcessorSpec extends JUnitSuite {
 
   def createMessage(): Array[Byte] = {
     val annotation = Annotation(1, "value", Some(Endpoint(1, 2, "service")))
+    // Intentionally leaving timestamp and duration unset, as legacy instrumentation don't set this.
     val message = Span(1234, "methodname", 4567, annotations = List(annotation))
     val codec = new SpanCodec()
     codec.encode(message)

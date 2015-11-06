@@ -7,7 +7,7 @@ object Trace {
   def duration(spans: List[Span]): Option[Long] = {
     // turns (timestamp, timestamp + duration) into an ordered list
     val timestamps: List[Long] = spans.flatMap(s => s.timestamp.map(ts =>
-      if (s.duration.nonEmpty) List(ts, ts + s.duration.get) else List(ts)
+      s.duration.map(d => List(ts, (ts + d))).getOrElse(List(ts))
     ).getOrElse(List.empty)).sorted
     // first and last timestamp are boundaries of the span, and their difference is the duration.
     timestamps.lastOption.flatMap { last =>
