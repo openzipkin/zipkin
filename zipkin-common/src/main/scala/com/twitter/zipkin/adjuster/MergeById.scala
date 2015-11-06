@@ -22,12 +22,6 @@ import scala.collection.mutable
 /**
  * Merge all the spans with the same id. This is used by span stores who store
  * partial spans and need them collated at query time.
- *
- * After merge, spans without a timestamp are filtered out, as they are
- * not possible to present on a timeline. The only scenario where this is
- * possible is when instrumentation sends binary annotations ahead of the span
- * start event, or when a span's start even was lost. Considering this is error
- * -case or transient, there's no option to control this behavior.
  */
 object MergeById extends ((Seq[Span]) => List[Span]) {
 
@@ -43,8 +37,6 @@ object MergeById extends ((Seq[Span]) => List[Span]) {
         case None => spanMap.put(s.id, s)
       }
     })
-    spanMap.values
-      .filter(_.timestamp.nonEmpty)
-      .toList.sorted
+    spanMap.values.toList.sorted
   }
 }

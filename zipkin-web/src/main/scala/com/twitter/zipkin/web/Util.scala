@@ -37,8 +37,7 @@ object Util {
     TimeUnit.HOURS -> ("hrs", "hr"),
     TimeUnit.MINUTES -> ("min", "min"))
 
-  def durationStr(duration: Long): String =
-    durationStr(Duration.fromMicroseconds(duration))
+  def durationStr(duration: Long): String = durationStr(Duration.fromMicroseconds(duration))
 
   def durationStr(d: Duration): String = {
     var micros = d.inMicroseconds

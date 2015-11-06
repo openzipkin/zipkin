@@ -16,13 +16,11 @@
  */
 package com.twitter.zipkin.adapter
 
-import java.nio.ByteBuffer
-
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.storage.QueryRequest
 import com.twitter.zipkin.thriftscala
 import org.scalatest.FunSuite
+import java.nio.ByteBuffer
 
 class ThriftConversionsTest extends FunSuite {
   test("convert Annotation") {
@@ -65,7 +63,7 @@ class ThriftConversionsTest extends FunSuite {
   test("convert Span") {
     val annotationValue = "NONSENSE"
     val expectedAnnotation = Annotation(1, annotationValue, Some(Endpoint(1, 2, "service")))
-    val expectedSpan = Span(12345, "methodcall", 666, None, List(expectedAnnotation))
+    val expectedSpan = Span(12345, "methodcall", 666, annotations = List(expectedAnnotation))
 
     assert(expectedSpan.toThrift.toSpan === expectedSpan)
 

@@ -17,6 +17,7 @@
 package com.twitter.zipkin.common
 
 import com.twitter.zipkin.Constants
+import com.twitter.zipkin.adjuster.ApplyTimestampAndDuration
 import com.twitter.zipkin.util.Util._
 
 /**
@@ -32,6 +33,8 @@ import com.twitter.zipkin.util.Util._
  * @param name name of span, can be rpc method name for example, in lowercase.
  * @param id random long that identifies this span
  * @param parentId reference to the parent span in the trace tree
+ * @param timestamp epoch microseconds of the start of this span. None when a partial span.
+ * @param duration microseconds comprising the critical path, if known.
  * @param annotations annotations, containing a timestamp and some value. both user generated and
  * some fixed ones from the tracing framework. Sorted ascending by timestamp
  * @param binaryAnnotations  binary annotations, can contain more detailed information such as
@@ -43,24 +46,13 @@ case class Span(
   name: String,
   id: Long,
   parentId: Option[Long] = None,
+  timestamp: Option[Long] = None,
+  duration: Option[Long] = None,
   annotations: List[Annotation] = List.empty,
   binaryAnnotations: Seq[BinaryAnnotation] = Seq.empty,
   debug: Option[Boolean] = None) extends Ordered[Span] {
 
   checkArgument(name.toLowerCase == name, s"name must be lowercase: $name")
-
-  lazy val timestamp: Option[Long] = annotations.headOption.map(_.timestamp)
-
-  /**
-   * Duration in microseconds.
-   *
-   * Absent when this is span has only binary annotations or only a single
-   * annotation. This is possible when a span isn't complete, or messages that
-   * complete it were lost.
-   */
-  def duration: Option[Long] =
-    for (first <- annotations.headOption; last <- annotations.lastOption; if (first != last))
-      yield last.timestamp - first.timestamp
 
   override def compare(that: Span) =
     java.lang.Long.compare(timestamp.getOrElse(0L), that.timestamp.getOrElse(0L))
@@ -97,11 +89,17 @@ case class Span(
       case _ => name
     }
 
+    val selectedTimestamp = Seq(timestamp, mergeFrom.timestamp).flatten.reduceOption(_ min _)
+    val selectedDuration = Trace.duration(List(this, mergeFrom))
+                                .orElse(duration).orElse(mergeFrom.duration)
+
     new Span(
       traceId,
       selectedName,
       id,
       parentId,
+      selectedTimestamp,
+      selectedDuration,
       (annotations ++ mergeFrom.annotations).sorted,
       binaryAnnotations ++ mergeFrom.binaryAnnotations,
       if (debug.getOrElse(false) | mergeFrom.debug.getOrElse(false)) Some(true) else None

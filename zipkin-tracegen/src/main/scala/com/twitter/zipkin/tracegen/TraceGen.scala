@@ -61,7 +61,7 @@ class TraceGen(traces: Int, maxDepth: Int) {
     val traceId = rnd.nextLong
     val spans = new ListBuffer[Span]()
     def addSpan(name: String, id: Long, parentId: Option[Long], annos: List[Annotation], binAnnos: List[BinaryAnnotation]) {
-      spans += Span(traceId, name, id, parentId, annos, binAnnos)
+      spans += Span(traceId, name, id, parentId, None, None, annos, binAnnos)
     }
   }
 

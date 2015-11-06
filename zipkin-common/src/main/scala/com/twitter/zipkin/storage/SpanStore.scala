@@ -19,7 +19,7 @@ import java.nio.ByteBuffer
 
 import com.twitter.util.FuturePools._
 import com.twitter.util.{Closable, Future}
-import com.twitter.zipkin.adjuster.{CorrectForClockSkew, MergeById}
+import com.twitter.zipkin.adjuster.{ApplyTimestampAndDuration, CorrectForClockSkew, MergeById}
 import com.twitter.zipkin.common.Span
 
 abstract class SpanStore extends java.io.Closeable {
@@ -99,7 +99,9 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
   override def close() = {}
 
   override def apply(newSpans: Seq[Span]): Future[Unit] = call {
-    spans ++= newSpans.map(s => s.copy(annotations = s.annotations.sorted))
+    spans ++= newSpans
+      .map(s => s.copy(annotations = s.annotations.sorted))
+      .map(ApplyTimestampAndDuration.apply)
   }.unit
 
   override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[List[Span]]] = call {
@@ -108,7 +110,8 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
          .values.filter(!_.isEmpty).toList
          .map(MergeById)
          .map(CorrectForClockSkew)
-         .sortBy(_.head.timestamp)
+         .map(ApplyTimestampAndDuration)
+         .sortBy(_.head)
   }
 
   override def getTraceIdsByName(

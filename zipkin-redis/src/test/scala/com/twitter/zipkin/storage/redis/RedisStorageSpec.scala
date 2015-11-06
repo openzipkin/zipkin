@@ -13,7 +13,7 @@ class RedisStorageSpec extends RedisSpecification {
   var storage = new RedisStorage(_client, Some(7.days))
   val ep = Endpoint(coerceToInteger(getByAddress(Array[Byte](127, 0, 0, 1))), 8080, "service")
 
-  val span = Span(123, "methodcall", 456, None,
+  val span = Span(123, "methodcall", 456, None, Some(1), Some(1),
     List(
       Annotation(1, "cs", Some(ep)),
       Annotation(2, "custom", Some(ep))
@@ -32,18 +32,18 @@ class RedisStorageSpec extends RedisSpecification {
     result(storage.getSpansByTraceIds(List(span.traceId))) should be(Seq())
   }
 
-  test("getSpansByTraceIds single") {
-    result(storage.storeSpan(span))
-    result(storage.getSpansByTraceIds(List(span.traceId))) should be(Seq(Seq(span)))
+  test("getSpansByTraceIds derives timestamp, duration from annotations") {
+    result(storage.storeSpan(span.copy(timestamp = None, duration = None)))
+    result(storage.getSpansByTraceIds(List(span.traceId))) should be(Seq(List(span)))
   }
 
   test("getSpansByTraceIds multiple") {
-    val span2 = Span(456, "methodcall2", 789, None, span.annotations, span.binaryAnnotations)
+    val span2 = span.copy(traceId = 456)
 
     result(storage.storeSpan(span))
     result(storage.storeSpan(span2))
     result(storage.getSpansByTraceIds(List(span.traceId, span2.traceId))) should be(
-      Seq(Seq(span), Seq(span2))
+      Seq(List(span), List(span2))
     )
   }
 }

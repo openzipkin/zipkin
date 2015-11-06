@@ -36,10 +36,10 @@ class SpanTreeEntryTest extends FunSuite {
   val span3Id = 888L
   val span4Id = 999L
 
-  val span1 = Span(12345, "methodcall1", span1Id, None, annotations1)
-  val span2 = Span(12345, "methodcall2", span2Id, Some(span1Id), annotations2)
-  val span3 = Span(12345, "methodcall2", span3Id, Some(span2Id), annotations3)
-  val span4 = Span(12345, "methodcall2", span4Id, Some(span3Id), annotations4)
+  val span1 = Span(12345, "methodcall1", span1Id, None, None, None, annotations1)
+  val span2 = Span(12345, "methodcall2", span2Id, Some(span1Id), None, None, annotations2)
+  val span3 = Span(12345, "methodcall2", span3Id, Some(span2Id), None, None, annotations3)
+  val span4 = Span(12345, "methodcall2", span4Id, Some(span3Id), None, None, annotations4)
   val span5 = Span(12345, "methodcall4", 1111L, Some(span4Id)) // no annotations
 
   val trace = List(span1, span2, span3, span4)
@@ -54,9 +54,9 @@ class SpanTreeEntryTest extends FunSuite {
 
   test("indexByParentId") {
     val span1 = Span(1, "a", 1)
-    val span2 = Span(1, "b", 2, Some(1))
-    val span3 = Span(1, "c", 3, Some(2))
-    val span4 = Span(1, "d", 4, Some(2))
+    val span2 = Span(1, "b", 2, Some(1L))
+    val span3 = Span(1, "c", 3, Some(2L))
+    val span4 = Span(1, "d", 4, Some(2L))
     val map = new mutable.HashMap[Long, mutable.Set[Span]] with mutable.MultiMap[Long, Span]
     map.addBinding(1, span2)
     map.addBinding(2, span3)

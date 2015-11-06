@@ -3,6 +3,7 @@ package com.twitter.zipkin.storage
 import com.google.common.net.InetAddresses._
 import com.twitter.util.Await.result
 import com.twitter.zipkin.Constants
+import com.twitter.zipkin.adjuster.ApplyTimestampAndDuration
 import com.twitter.zipkin.common._
 import org.junit.{Before, Test}
 import org.scalatest.Matchers
@@ -44,21 +45,21 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   val ann7 = Annotation(7, "custom", Some(ep))
   val ann8 = Annotation(8, "custom", Some(ep))
 
-  val span1 = Span(123, "methodcall", spanId, None, List(ann1, ann3),
+  val span1 = Span(123, "methodcall", spanId, None, Some(1), Some(9), List(ann1, ann3),
     List(binaryAnnotation("BAH", "BEH")))
-  val span2 = Span(456, "methodcall", spanId, None, List(ann2),
+  val span2 = Span(456, "methodcall", spanId, None, Some(2), None, List(ann2),
     List(binaryAnnotation("BAH2", "BEH2")))
-  val span3 = Span(789, "methodcall", spanId, None, List(ann2, ann3, ann4),
+  val span3 = Span(789, "methodcall", spanId, None, Some(2), Some(18), List(ann2, ann3, ann4),
     List(binaryAnnotation("BAH2", "BEH2")))
-  val span4 = Span(999, "methodcall", spanId, None, List(ann6, ann7),
+  val span4 = Span(999, "methodcall", spanId, None, Some(6), Some(1), List(ann6, ann7),
     List())
-  val span5 = Span(999, "methodcall", spanId, None, List(ann5, ann8),
+  val span5 = Span(999, "methodcall", spanId, None, Some(5), Some(3), List(ann5, ann8),
     List(binaryAnnotation("BAH2", "BEH2")))
 
-  val spanEmptySpanName = Span(123, "", spanId, None, List(ann1, ann2))
+  val spanEmptySpanName = Span(123, "", spanId, None, Some(1), Some(1), List(ann1, ann2))
   val spanEmptyServiceName = Span(123, "spanname", spanId)
 
-  val mergedSpan = Span(123, "methodcall", spanId, None,
+  val mergedSpan = Span(123, "methodcall", spanId, None, Some(1), Some(1),
     List(ann1, ann2), List(binaryAnnotation("BAH2", "BEH2")))
 
   @Test def getSpansByTraceIds() {
@@ -79,6 +80,15 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
     result(store.getTracesByIds(Seq(span2.traceId, span1.traceId))) should be(
       Seq(Seq(span1), Seq(span2))
+    )
+  }
+
+  /** Legacy instrumentation will not set timestamp and duration explicitly */
+  @Test def derivesTimestampAndDurationFromAnnotations() {
+    result(store(Seq(span1.copy(timestamp = None, duration = None))))
+
+    result(store.getTracesByIds(Seq(span1.traceId))) should be(
+      Seq(List(span1))
     )
   }
 
@@ -178,14 +188,13 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   }
 
   @Test def getTraces_multipleAnnotationsBecomeAndFilter() {
-    val foo = Span(1, "call1", 1, None, List(Annotation(1, "foo", Some(ep))))
+    val foo = Span(1, "call1", 1, None, Some(1), None, List(Annotation(1, "foo", Some(ep))))
     // would be foo bar, except lexicographically bar precedes foo
-    val barAndFoo = Span(2, "call2", 2, None, List(Annotation(2, "bar", Some(ep)), Annotation(2, "foo", Some(ep))))
-    val fooAndBazAndQux = Span(3, "call3", 3, None, foo.annotations.map(_.copy(timestamp = 3)), List(binaryAnnotation("baz", "qux")))
-    val barAndFooAndBazAndQux = Span(4, "call4", 4, None, barAndFoo.annotations.map(_.copy(timestamp = 4)), fooAndBazAndQux.binaryAnnotations)
+    val barAndFoo = Span(2, "call2", 2, None, Some(2), None, List(Annotation(2, "bar", Some(ep)), Annotation(2, "foo", Some(ep))))
+    val fooAndBazAndQux = Span(3, "call3", 3, None, Some(3), None, foo.annotations.map(_.copy(timestamp = 3)), List(binaryAnnotation("baz", "qux")))
+    val barAndFooAndBazAndQux = Span(4, "call4", 4, None, Some(4), None, barAndFoo.annotations.map(_.copy(timestamp = 4)), fooAndBazAndQux.binaryAnnotations)
 
     result(store(Seq(foo, barAndFoo, fooAndBazAndQux, barAndFooAndBazAndQux)))
-
     result(store.getTraces(QueryRequest("service", annotations = Set("foo")))) should be(
       Seq(Seq(foo), Seq(barAndFoo), Seq(fooAndBazAndQux), Seq(barAndFooAndBazAndQux))
     )
@@ -208,10 +217,14 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     val spans = Seq(span1, span4, span5) // span4, span5 have the same span id
     result(store(spans))
 
-    result(store.getTraces(QueryRequest("service"))) should be(
-      Seq(Seq(span1), Seq(span4.copy(annotations = (span4.annotations ::: span5.annotations).sorted,
-                                     binaryAnnotations = span5.binaryAnnotations)))
-    )
+    val mergedAnnotations = (span4.annotations ::: span5.annotations).sorted
+    val merged = span4.copy(
+      timestamp = Some(mergedAnnotations.head.timestamp),
+      duration = Some(mergedAnnotations.last.timestamp - mergedAnnotations.head.timestamp),
+      annotations = mergedAnnotations,
+      binaryAnnotations = span5.binaryAnnotations)
+
+    result(store.getTraces(QueryRequest("service"))) should be(Seq(List(span1), List(merged)))
   }
 
   @Test def getTraces_limit() {
@@ -276,14 +289,14 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     val frontend = Some(Endpoint(192 << 24 | 168 << 16 | 2, 8080, "frontend"))
     val backend = Some(Endpoint(192 << 24 | 168 << 16 | 3, 8080, "backend"))
 
-    val parent = Span(1, "method1", 666, None, List(
+    val parent = Span(1, "method1", 666, None, Some(95), Some(40), List(
       Annotation(100, Constants.ClientSend, client),
       Annotation(95, Constants.ServerRecv, frontend), // before client sends
       Annotation(120, Constants.ServerSend, frontend), // before client receives
       Annotation(135, Constants.ClientRecv, client)
     ).sorted)
 
-    val child = Span(1, "method2", 777, Some(666), List(
+    val child = Span(1, "method2", 777, Some(666L), Some(100), Some(20), List(
       Annotation(100, Constants.ClientSend, frontend),
       Annotation(115, Constants.ServerRecv, backend),
       Annotation(120, Constants.ServerSend, backend),
