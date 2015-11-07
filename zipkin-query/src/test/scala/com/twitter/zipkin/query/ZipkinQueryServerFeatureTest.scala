@@ -38,11 +38,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
 
   val ann3 = Annotation(101, Constants.ClientSend, Some(ep2))
   val ann4 = Annotation(501, Constants.ClientRecv, Some(ep2))
-  val spans2 = List(Span(2, "methodcall", 667, None, Some(101), Some(400), List(ann3, ann4)))
+  val spans2 = List(Span(2, "methodcall", 2, None, Some(101), Some(400), List(ann3, ann4)))
 
-  val ann5 = Annotation(99, Constants.ClientSend, Some(ep3))
-  val ann6 = Annotation(199, Constants.ClientRecv, Some(ep3))
-  val spans3 = List(Span(3, "methodcall", 668, None, Some(99), Some(100), List(ann5, ann6)))
+  val ann5 = Annotation(99, Constants.ClientSend, Some(ep2))
+  val ann6 = Annotation(199, Constants.ClientRecv, Some(ep2))
+  val spans3 = List(Span(3, "methodcall", 3, None, Some(99), Some(100), List(ann5, ann6)))
 
   // get some server action going on
   val ann7 = Annotation(110, Constants.ServerRecv, Some(ep2))
@@ -319,36 +319,6 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |        }
           |      ]
           |    }
-          |  ],
-          |  [
-          |    {
-          |      "traceId" : "0000000000000003",
-          |      "name" : "methodcall",
-          |      "id" : "000000000000029c",
-          |      "timestamp" : 99,
-          |      "duration" : 100,
-          |      "annotations" : [
-          |        {
-          |          "timestamp" : 99,
-          |          "value" : "cs",
-          |          "endpoint" : {
-          |            "serviceName" : "service3",
-          |            "ipv4" : "0.0.1.89",
-          |            "port" : 345
-          |          }
-          |        },
-          |        {
-          |          "timestamp" : 199,
-          |          "value" : "cr",
-          |          "endpoint" : {
-          |            "serviceName" : "service3",
-          |            "ipv4" : "0.0.1.89",
-          |            "port" : 345
-          |          }
-          |        }
-          |      ],
-          |      "binaryAnnotations" : [ ]
-          |    }
           |  ]
           |]
         """.stripMargin)
@@ -358,21 +328,22 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
     app.injector.instance[SpanStore].apply(allSpans)
 
     server.httpGet(
-      path = "/api/v1/traces?serviceName=service3&spanName=methodcall",
+      path = "/api/v1/traces?serviceName=service3&spanName=other-method",
       andExpect = Ok,
       withJsonBody =
         """
           |[
           |  [
           |    {
-          |      "traceId" : "0000000000000003",
-          |      "name" : "methodcall",
-          |      "id" : "000000000000029c",
-          |      "timestamp" : 99,
-          |      "duration" : 100,
+          |      "traceId" : "0000000000000005",
+          |      "name" : "other-method",
+          |      "id" : "000000000000029a",
+          |      "parentId" : "0000000000000002",
+          |      "timestamp" : 60,
+          |      "duration" : 40,
           |      "annotations" : [
           |        {
-          |          "timestamp" : 99,
+          |          "timestamp" : 60,
           |          "value" : "cs",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -381,7 +352,16 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 199,
+          |          "timestamp" : 65,
+          |          "value" : "annotation",
+          |          "endpoint" : {
+          |            "serviceName" : "service3",
+          |            "ipv4" : "0.0.1.89",
+          |            "port" : 345
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 100,
           |          "value" : "cr",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -390,7 +370,27 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        }
           |      ],
-          |      "binaryAnnotations" : [ ]
+          |      "binaryAnnotations" : [
+          |        {
+          |          "key" : "annotation",
+          |          "value" : "ann",
+          |          "endpoint" : {
+          |            "serviceName" : "service3",
+          |            "ipv4" : "0.0.1.89",
+          |            "port" : 345
+          |          }
+          |        },
+          |        {
+          |          "key" : "binary",
+          |          "value" : "YW5u",
+          |          "type" : "BYTES",
+          |          "endpoint" : {
+          |            "serviceName" : "service3",
+          |            "ipv4" : "0.0.1.89",
+          |            "port" : 345
+          |          }
+          |        }
+          |      ]
           |    }
           |  ]
           |]
@@ -537,6 +537,187 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        }
           |      ]
+          |    }
+          |  ]
+          |]
+        """.stripMargin)
+  }
+
+  "find traces by minDuration" in {
+    app.injector.instance[SpanStore].apply(allSpans)
+
+    server.httpGet(
+      path = "/api/v1/traces?serviceName=service2&minDuration=100",
+      andExpect = Ok,
+      withJsonBody =
+        """
+          |[
+          |  [
+          |    {
+          |      "traceId" : "0000000000000003",
+          |      "name" : "methodcall",
+          |      "id" : "0000000000000003",
+          |      "timestamp" : 99,
+          |      "duration" : 100,
+          |      "annotations" : [
+          |        {
+          |          "timestamp" : 99,
+          |          "value" : "cs",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 199,
+          |          "value" : "cr",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        }
+          |      ],
+          |      "binaryAnnotations" : [ ]
+          |    }
+          |  ],
+          |  [
+          |    {
+          |      "traceId" : "0000000000000002",
+          |      "name" : "methodcall",
+          |      "id" : "0000000000000002",
+          |      "timestamp" : 101,
+          |      "duration" : 400,
+          |      "annotations" : [
+          |        {
+          |          "timestamp" : 101,
+          |          "value" : "cs",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 501,
+          |          "value" : "cr",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 101,
+          |          "value" : "sr",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 501,
+          |          "value" : "ss",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        }
+          |      ],
+          |      "binaryAnnotations" : [ ]
+          |    },
+          |    {
+          |      "traceId" : "0000000000000002",
+          |      "name" : "methodcall",
+          |      "id" : "000000000000029a",
+          |      "parentId" : "0000000000000002",
+          |      "timestamp" : 276,
+          |      "duration" : 50,
+          |      "annotations" : [
+          |        {
+          |          "timestamp" : 276,
+          |          "value" : "cs",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 286,
+          |          "value" : "sr",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 316,
+          |          "value" : "ss",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 326,
+          |          "value" : "cr",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        }
+          |      ],
+          |      "binaryAnnotations" : [ ]
+          |    }
+          |  ]
+          |]
+        """.stripMargin)
+  }
+
+  "find traces by minDuration and maxDuration" in {
+    app.injector.instance[SpanStore].apply(allSpans)
+
+    server.httpGet(
+      path = "/api/v1/traces?serviceName=service2&minDuration=50&maxDuration=100",
+      andExpect = Ok,
+      withJsonBody =
+        """
+          |[
+          |  [
+          |    {
+          |      "traceId" : "0000000000000003",
+          |      "name" : "methodcall",
+          |      "id" : "0000000000000003",
+          |      "timestamp" : 99,
+          |      "duration" : 100,
+          |      "annotations" : [
+          |        {
+          |          "timestamp" : 99,
+          |          "value" : "cs",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 199,
+          |          "value" : "cr",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        }
+          |      ],
+          |      "binaryAnnotations" : [ ]
           |    }
           |  ]
           |]

@@ -12,6 +12,10 @@ import scala.util.hashing.MurmurHash3
  * @param binaryAnnotations Include traces whose [[com.twitter.zipkin.common.Span.binaryAnnotations]] include a
  *                          String whose key and value are an entry in this set.
  *                          This is an AND condition against the set, as well against [[annotations]]
+ * @param minDuration only return traces whose [[com.twitter.zipkin.common.Trace.duration]] is
+ *                    greater than or equal to minDuration microseconds.
+ * @param maxDuration only return traces whose [[com.twitter.zipkin.common.Trace.duration]] is less
+ *                    than or equal to maxDuration microseconds. Only valid with [[minDuration]].
  * @param endTs only return traces where all [[com.twitter.zipkin.common.Span.timestamp]] are at
  *              or before this time in epoch microseconds. Defaults to current time.
  * @param limit maximum number of traces to return. Defaults to 10
@@ -21,6 +25,8 @@ class QueryRequest(_serviceName: String,
                    _spanName: Option[String] = None,
                    val annotations: Set[String] = Set.empty,
                    val binaryAnnotations: Set[(String, String)] = Set.empty,
+                   val minDuration: Option[Long] = None,
+                   val maxDuration: Option[Long] = None,
                    val endTs: Long = Time.now.inMicroseconds,
                    val limit: Int = 10) {
 
@@ -32,16 +38,23 @@ class QueryRequest(_serviceName: String,
 
   checkArgument(serviceName.nonEmpty, "serviceName was empty")
   checkArgument(spanName.map(_.nonEmpty).getOrElse(true), "spanName was empty")
-  checkArgument(endTs > 0, () => "endTs should be positive, in epoch microseconds: was %d".format(endTs))
-  checkArgument(limit > 0, () => "limit should be positive: was %d".format(limit))
+  checkArgument(minDuration.map(_ > 0).getOrElse(true),
+    () => "minDuration should be positive: was " + minDuration.get)
+  checkArgument(maxDuration.map(_ > 0).getOrElse(true),
+    () => "maxDuration should be positive: was " + maxDuration.get)
+  checkArgument(maxDuration.map(_ => minDuration.isDefined).getOrElse(true),
+    "minDuration is required when specifying maxDuration")
+  checkArgument(endTs > 0, () => "endTs should be positive, in epoch microseconds: was " + endTs)
+  checkArgument(limit > 0, () => "limit should be positive: was " + limit)
 
   override lazy val hashCode =
-    MurmurHash3.seqHash(List(serviceName, spanName, annotations, binaryAnnotations, endTs, limit))
+    MurmurHash3.seqHash(List(serviceName, spanName, annotations, binaryAnnotations, minDuration, maxDuration, endTs, limit))
 
   override def equals(other: Any) = other match {
     case x: QueryRequest =>
       x.serviceName == serviceName && x.spanName == spanName && x.annotations == annotations &&
-        x.binaryAnnotations == binaryAnnotations && x.endTs == endTs && x.limit == limit
+        x.binaryAnnotations == binaryAnnotations && x.minDuration == minDuration &&
+        x.maxDuration == maxDuration && x.endTs == endTs && x.limit == limit
     case _ => false
   }
 
@@ -50,9 +63,11 @@ class QueryRequest(_serviceName: String,
     spanName: Option[String] = this.spanName,
     annotations: Set[String] = this.annotations,
     binaryAnnotations: Set[(String, String)] = this.binaryAnnotations,
+    minDuration: Option[Long] = this.minDuration,
+    maxDuration: Option[Long] = this.maxDuration,
     endTs: Long = this.endTs,
     limit: Int = this.limit
-  ) = QueryRequest(serviceName, spanName, annotations, binaryAnnotations, endTs, limit)
+  ) = QueryRequest(serviceName, spanName, annotations, binaryAnnotations, minDuration, maxDuration, endTs, limit)
 }
 
 object QueryRequest {
@@ -61,7 +76,9 @@ object QueryRequest {
     spanName: Option[String] = None,
     annotations: Set[String] = Set.empty,
     binaryAnnotations: Set[(String, String)] = Set.empty,
+    minDuration: Option[Long] = None,
+    maxDuration: Option[Long] = None,
     endTs: Long = Time.now.inMicroseconds,
     limit: Int = 10
-  ) = new QueryRequest(serviceName, spanName, annotations, binaryAnnotations, endTs, limit)
+  ) = new QueryRequest(serviceName, spanName, annotations, binaryAnnotations, minDuration, maxDuration, endTs, limit)
 }

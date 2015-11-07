@@ -32,6 +32,8 @@ class QueryExtractor @Inject()(@Flag("zipkin.queryService.limit") defaultQueryLi
   def apply(req: Request): Try[QueryRequest] = Try {
     val serviceName = req.params.get("serviceName").getOrElse("")
     val spanName = req.params.get("spanName").flatMap(n => if (n == "all" || n == "") None else Some(n))
+    val minDuration = req.params.get("minDuration").flatMap(d => if (d.isEmpty) None else Some(d.toLong))
+    val maxDuration = req.params.get("maxDuration").flatMap(d => if (d.isEmpty) None else Some(d.toLong))
     val endTs = req.params.getLong("endTs").getOrElse(Time.now.inMicroseconds)
     val limit = req.params.get("limit").map(_.toInt).getOrElse(defaultQueryLimit)
 
@@ -51,6 +53,6 @@ class QueryExtractor @Inject()(@Flag("zipkin.queryService.limit") defaultQueryLi
     } getOrElse {
       (Set.empty[String], Set.empty[(String, String)])
     }
-    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, endTs, limit)
+    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, minDuration, maxDuration, endTs, limit)
   }
 }

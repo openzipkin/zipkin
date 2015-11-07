@@ -38,6 +38,15 @@ trait CollectAnnotationQueries {
     limit: Int
   ): Future[Seq[IndexedTraceId]]
 
+  /** Only return traces where root span duration is between minDuration and maxDuration */
+  protected def getTraceIdsByDuration(
+    serviceName: String,
+    minDuration: Long,
+    maxDuration: Option[Long],
+    endTs: Long,
+    limit: Int
+  ): Future[Seq[IndexedTraceId]] = Future.exception(new UnsupportedOperationException)
+
   /** @see [[com.twitter.zipkin.storage.SpanStore.getTracesByIds()]] */
   def getTracesByIds(traceIds: Seq[Long]): Future[Seq[List[Span]]]
 
@@ -46,7 +55,8 @@ trait CollectAnnotationQueries {
     val sliceQueries = Seq[Set[SliceQuery]](
       qr.spanName.map(SpanSliceQuery(_)).toSet,
       qr.annotations.map(AnnotationSliceQuery(_, None)),
-      qr.binaryAnnotations.map(e => AnnotationSliceQuery(e._1, Some(ByteBuffer.wrap(e._2.getBytes(UTF_8)))))
+      qr.binaryAnnotations.map(e => AnnotationSliceQuery(e._1, Some(ByteBuffer.wrap(e._2.getBytes(UTF_8))))),
+      qr.minDuration.map(DurationSliceQuery(_, qr.maxDuration)).toSet
     ).flatten
 
     val ids = sliceQueries match {
@@ -92,6 +102,7 @@ trait CollectAnnotationQueries {
   private trait SliceQuery
   private case class SpanSliceQuery(name: String) extends SliceQuery
   private case class AnnotationSliceQuery(key: String, value: Option[ByteBuffer]) extends SliceQuery
+  private case class DurationSliceQuery(minDuration: Long, maxDuration: Option[Long]) extends SliceQuery
 
   private[this] def querySlices(slices: Seq[SliceQuery], qr: QueryRequest): Future[Seq[Seq[IndexedTraceId]]] =
     Future.collect(slices map {
@@ -99,6 +110,8 @@ trait CollectAnnotationQueries {
         getTraceIdsByName(qr.serviceName, Some(name), qr.endTs, qr.limit)
       case AnnotationSliceQuery(key, value) =>
         getTraceIdsByAnnotation(qr.serviceName, key, value, qr.endTs, qr.limit)
+      case DurationSliceQuery(minDuration, maxDuration) =>
+        getTraceIdsByDuration(qr.serviceName, minDuration, maxDuration, qr.endTs, qr.limit)
       case s =>
         Future.exception(new Exception("Uknown SliceQuery: %s".format(s)))
     })

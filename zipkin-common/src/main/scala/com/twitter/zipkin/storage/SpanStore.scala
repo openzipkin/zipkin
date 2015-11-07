@@ -149,6 +149,23 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
       .toList
   }
 
+  override protected def getTraceIdsByDuration(
+    serviceName: String,
+    minDuration: Long,
+    maxDuration: Option[Long],
+    endTs: Long,
+    limit: Int
+  ): Future[Seq[IndexedTraceId]] = call {
+    spansForService(serviceName)
+      .filter(s => s.id == s.traceId) // only root spans
+      .filter(_.timestamp.exists(_ <= endTs))
+      .filter(_.duration.exists(_ >= minDuration))
+      .filter(_.duration.exists(_ <= maxDuration.getOrElse(Long.MaxValue)))
+      .take(limit)
+      .map(span => IndexedTraceId(span.traceId, span.timestamp.get))
+      .toList
+  }
+
   override def getAllServiceNames(): Future[Seq[String]] = call {
     spans.flatMap(_.serviceNames).distinct.toList.sorted
   }

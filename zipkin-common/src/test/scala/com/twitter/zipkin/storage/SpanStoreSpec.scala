@@ -149,6 +149,34 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store.getTraces(QueryRequest("badservice", Some("badmethod")))) should be(empty)
   }
 
+  /** Shows that duration queries go against the root span, not the child */
+  @Test def getTraces_duration() {
+    // Foreshadowing of local spans https://github.com/openzipkin/zipkin/issues/808
+    val archiver = List(binaryAnnotation("lc", "archiver"))
+    val targz = Span(1L, "targz", 1L, None, Some(100L), Some(200L), binaryAnnotations = archiver)
+    val tar = Span(1L, "tar", 2L, Some(1L), Some(100L), Some(150L), binaryAnnotations = archiver)
+    val gz = Span(1L, "gz", 3L, Some(1L), Some(250L), Some(50L), binaryAnnotations = archiver)
+
+    result(store(List(targz, tar, gz)))
+
+    result(store.getTraces(QueryRequest("service", minDuration = targz.duration))) should be(
+      Seq(List(targz, tar, gz))
+    )
+
+    result(store.getTraces(QueryRequest("service", minDuration = targz.duration, maxDuration = targz.duration.map(_ + 10L)))) should be(
+      Seq(List(targz, tar, gz))
+    )
+
+    result(store.getTraces(QueryRequest("service", minDuration = Some(targz.duration.get + 1)))) should be(
+      empty
+    )
+
+    //Only root spans should be considered (ex. traceId = spanId)
+    result(store.getTraces(QueryRequest("service", minDuration = tar.duration, maxDuration = targz.duration.map(_ - 10L)))) should be(
+      empty
+    )
+  }
+
   /**
    * Spans and traces are meaningless unless they have a timestamp. While
    * unlikley, this could happen if a binary annotation is logged before a
