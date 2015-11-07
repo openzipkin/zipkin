@@ -17,10 +17,8 @@ package com.twitter.zipkin.config
 
 import com.google.common.base.Charsets.UTF_8
 import com.google.common.io.Resources
-import com.twitter.finagle.ListeningServer
-import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.Eval
-import com.twitter.zipkin.builder.Builder
+import com.twitter.zipkin.builder.QueryServiceBuilder
 import org.scalatest.{FunSuite, Matchers}
 
 class ConfigSpec extends FunSuite with Matchers {
@@ -30,6 +28,7 @@ class ConfigSpec extends FunSuite with Matchers {
   test("validate query configs") {
     val configSource = Seq(
       "/query-dev.scala",
+      "/query-mysql.scala",
       "/query-cassandra.scala",
       "/query-redis.scala"
     ) map { r =>
@@ -37,9 +36,8 @@ class ConfigSpec extends FunSuite with Matchers {
     }
 
     for (source <- configSource) {
-      val config = eval[Builder[RuntimeEnvironment => ListeningServer]](source)
-      config should not be(Nil)
-      config.apply()
+      val query = eval[QueryServiceBuilder](source)
+      query should not be(Nil)
     }
   }
 }

@@ -29,6 +29,7 @@ class ConfigSpec extends FunSuite with Matchers {
   test("validate collector configs") {
     val configSource = Seq(
       "/collector-dev.scala",
+      "/collector-mysql.scala",
       "/collector-cassandra.scala",
       "/collector-redis.scala"
     ) map { r =>

@@ -151,8 +151,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
   /** Shows that duration queries go against the root span, not the child */
   @Test def getTraces_duration() {
-    // Foreshadowing of local spans https://github.com/openzipkin/zipkin/issues/808
-    val archiver = List(binaryAnnotation("lc", "archiver"))
+    val archiver = List(binaryAnnotation(Constants.LocalComponent, "archiver"))
     val targz = Span(1L, "targz", 1L, None, Some(100L), Some(200L), binaryAnnotations = archiver)
     val tar = Span(1L, "tar", 2L, Some(1L), Some(100L), Some(150L), binaryAnnotations = archiver)
     val gz = Span(1L, "gz", 3L, Some(1L), Some(250L), Some(50L), binaryAnnotations = archiver)

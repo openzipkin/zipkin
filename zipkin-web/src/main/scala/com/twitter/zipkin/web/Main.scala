@@ -15,7 +15,9 @@
  */
 package com.twitter.zipkin.web
 
-import ch.qos.logback.classic.{Logger, Level}
+import java.net.InetSocketAddress
+
+import ch.qos.logback.classic.{Level, Logger}
 import com.twitter.app.App
 import com.twitter.finagle._
 import com.twitter.finagle.http.{HttpMuxer, Request, Response}
@@ -29,7 +31,6 @@ import com.twitter.server.TwitterServer
 import com.twitter.util.Await
 import com.twitter.zipkin.json.ZipkinJson
 import com.twitter.zipkin.web.mustache.ZipkinMustache
-import java.net.InetSocketAddress
 import org.slf4j.LoggerFactory
 
 trait ZipkinWebFactory { self: App =>
@@ -113,13 +114,18 @@ trait ZipkinWebFactory { self: App =>
 }
 
 object Main extends TwitterServer with ZipkinWebFactory {
-  def main() {
-    // If the span transport is set, trace accordingly, or disable tracing
+
+  /** If the span transport is set, trace accordingly, or disable tracing. */
+  premain {
     DefaultTracer.self = sys.env.get("TRANSPORT_TYPE") match {
       case Some("scribe") => RawZipkinTracer(sys.env.get("SCRIBE_HOST").getOrElse("localhost"), sys.env.get("SCRIBE_PORT").getOrElse("1463").toInt)
       case Some("http") => new HttpZipkinTracer(queryDest(), DefaultStatsReceiver.get)
       case _ => NullTracer
     }
+  }
+
+  def main() = {
+    BootstrapTrace.record("main")
 
     // Httpx.server will trace all paths. We don't care about static assets, so need to customize
     val server = Http.Server(StackServer.newStack
@@ -127,6 +133,10 @@ object Main extends TwitterServer with ZipkinWebFactory {
       .configured(param.Label("zipkin-web"))
       .serve(webServerPort(), newWebServer(stats = statsReceiver.scope("zipkin-web")))
     onExit { server.close() }
+
+    BootstrapTrace.complete()
+
+    // Note: this is blocking, so nothing after this will be called.
     Await.ready(server)
   }
 }

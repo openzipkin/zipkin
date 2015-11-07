@@ -32,13 +32,15 @@ object Constants {
   val ServerAddr: String = "sa"
   val WireSend: String = "ws"
   val WireRecv: String = "wr"
+  val LocalComponent: String = "lc"
 
   val CoreClient: Set[String] = Set(ClientSend, ClientSendFragment, ClientRecv, ClientRecvFragment)
   val CoreServer: Set[String] = Set(ServerRecv, ServerRecvFragment, ServerSend, ServerSendFragment)
   val CoreAddress: Set[String] = Set(ClientAddr, ServerAddr)
   val CoreWire: Set[String] = Set(WireSend, WireRecv)
+  val CoreLocal: Set[String] = Set(LocalComponent)
 
-  val CoreAnnotations: Set[String] = CoreClient ++ CoreServer ++ CoreWire
+  val CoreAnnotations: Set[String] = CoreClient ++ CoreServer ++ CoreWire ++ CoreLocal
 
   val CoreAnnotationNames: Map[String, String] = Map(
     ClientSend -> "Client Send",
@@ -52,7 +54,8 @@ object Constants {
     ClientAddr -> "Client Address",
     ServerAddr -> "Server Address",
     WireSend -> "Wire Send",
-    WireRecv -> "Wire Receive"
+    WireRecv -> "Wire Receive",
+    LocalComponent -> "Local Component"
   )
 
   /* 127.0.0.1 */

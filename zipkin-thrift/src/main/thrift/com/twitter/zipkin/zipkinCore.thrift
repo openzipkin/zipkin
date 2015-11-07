@@ -107,6 +107,34 @@ const string SERVER_SEND_FRAGMENT = "ssf"
  */
 const string SERVER_RECV_FRAGMENT = "srf"
 
+#***** BinaryAnnotation.key ******
+/**
+ * The value of "lc" is the component or namespace of a local span.
+ *
+ * BinaryAnnotation.host adds service context needed to support queries.
+ *
+ * Local Component("lc") supports three key features: flagging, query by
+ * service and filtering Span.name by namespace.
+ *
+ * While structurally the same, local spans are fundamentally different than
+ * RPC spans in how they should be interpreted. For example, zipkin v1 tools
+ * center on RPC latency and service graphs. Root local-spans are neither
+ * indicative of critical path RPC latency, nor have impact on the shape of a
+ * service graph. By flagging with "lc", tools can special-case local spans.
+ *
+ * Zipkin v1 Spans are unqueryable unless they can be indexed by service name.
+ * The only path to a service name is by (Binary)?Annotation.host.serviceName.
+ * By logging "lc", a local span can be queried even if no other annotations
+ * are logged.
+ *
+ * The value of "lc" is the namespace of Span.name. For example, it might be
+ * "finatra2", for a span named "bootstrap". "lc" allows you to resolves
+ * conflicts for the same Span.name, for example "finatra/bootstrap" vs
+ * "finch/bootstrap". Using local component, you'd search for spans named
+ * "bootstrap" where "lc=finch"
+ */
+const string LOCAL_COMPONENT = "lc"
+
 #***** BinaryAnnotation.key where value = [1] and annotation_type = BOOL ******
 /**
  * Indicates a client address ("ca") in a span. Most likely, there's only one.
