@@ -242,7 +242,8 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
           ("endTs" -> queryExtractor.getTimestampStr(req)),
           ("annotationQuery" -> req.params.get("annotationQuery").getOrElse("")),
           ("spans" -> spanList),
-          ("limit" -> queryExtractor.getLimitStr(req)))
+          ("limit" -> queryExtractor.getLimitStr(req)),
+          ("minDuration" -> req.params.get("minDuration").getOrElse("")))
 
         queryExtractor.getAnnotations(req).foreach( annos =>
           data ++= Map(
