@@ -15,18 +15,19 @@
  */
 package com.twitter.zipkin.storage.cassandra
 
+import java.nio.ByteBuffer
+
 import com.twitter.conversions.time._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.util.{Future, Duration}
+import com.twitter.util.{Duration, Future}
 import com.twitter.zipkin.adjuster.{ApplyTimestampAndDuration, CorrectForClockSkew, MergeById}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.zipkin.storage.{CollectAnnotationQueries, IndexedTraceId, SpanStore}
-import com.twitter.zipkin.util.FutureUtil
-import com.twitter.zipkin.util.Util
-import java.nio.ByteBuffer
+import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
+import com.twitter.zipkin.util.{FutureUtil, Util}
 import org.twitter.zipkin.storage.cassandra.Repository
+
 import scala.collection.JavaConverters._
 
 object CassandraSpanStoreDefaults {
@@ -88,6 +89,7 @@ abstract class CassandraSpanStore(
   private[this] val QueryGetSpanNamesCounter = QueryStats.counter("getSpanNames")
   private[this] val QueryGetTraceIdsByNameCounter = QueryStats.counter("getTraceIdsByName")
   private[this] val QueryGetTraceIdsByAnnotationCounter = QueryStats.counter("getTraceIdsByAnnotation")
+  private[this] val QueryGetTraceIdsByDurationCounter = QueryStats.counter("getTraceIdsByDuration")
 
   /**
    * Internal indexing helpers
@@ -277,5 +279,18 @@ abstract class CassandraSpanStore(
           .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
           .toSeq
       }
+  }
+
+  /** Only return traces where root span duration is between minDuration and maxDuration */
+  override protected def getTraceIdsByDuration(
+    serviceName: String,
+    minDuration: Long,
+    maxDuration: Option[Long],
+    endTs: Long,
+    limit: Int
+  ): Future[Seq[IndexedTraceId]] = {
+    QueryGetTraceIdsByDurationCounter.incr()
+
+    Future.exception(new UnsupportedOperationException)
   }
 }
