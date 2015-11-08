@@ -51,3 +51,17 @@ CREATE TABLE IF NOT EXISTS zipkin.traces (
     span      blob,
     PRIMARY KEY (trace_id, ts, span_name)
 ) WITH compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_sstable_age_days': '1'};
+
+// This table uses bigint to store timestamp in microseconds, as Cassandra's timestamp is apparently limited to milliseconds.
+// The table uses short column names for increased efficiency of Cassandra storage.
+// Cassandra storage was optimized for long column names only in 3.0 (https://issues.apache.org/jira/browse/CASSANDRA-4175)
+CREATE TABLE IF NOT EXISTS zipkin.span_duration_index (
+    s      text,      // service name
+    sp     text,      // span name, or blank for queries without span name
+    b      int,       // time bucket, calculated as ts/interval (in microseconds), for some pre-configured interval like 1h.
+    d      bigint,    // span duration, in microseconds
+    ts     bigint,    // start timestamp of the span, in microseconds since epoch
+    tid    bigint,    // trace ID. Included as a clustering column to avoid clashes (however unlikely)
+    PRIMARY KEY ((s, sp, b), d, ts, tid)
+) WITH CLUSTERING ORDER BY (d DESC, ts DESC)
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_sstable_age_days': '1'};

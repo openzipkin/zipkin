@@ -24,17 +24,26 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.IntFunction;
+import java.util.function.LongFunction;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.StreamSupport;
 
 public final class Repository implements AutoCloseable {
 
@@ -53,6 +62,10 @@ public final class Repository implements AutoCloseable {
     private static final long WRITTEN_NAMES_TTL
             = Long.getLong("zipkin.store.cassandra.internal.writtenNamesTtl", 60 * 60 * 1000);
 
+    // Time window covered by a single bucket of the Span Duration Index, in seconds. Default: 1hr
+    private static final long DURATION_INDEX_BUCKET_WINDOW_SECONDS
+            = Long.getLong("zipkin.store.cassandra.internal.durationIndexBucket", 60 * 60);
+
     private final Session session;
     private final PreparedStatement selectTraces;
     private final PreparedStatement insertSpan;
@@ -68,6 +81,8 @@ public final class Repository implements AutoCloseable {
     private final PreparedStatement insertTraceIdBySpanName;
     private final PreparedStatement selectTraceIdsByAnnotations;
     private final PreparedStatement insertTraceIdByAnnotation;
+    private final PreparedStatement selectTraceIdsBySpanDuration;
+    private final PreparedStatement insertTraceIdBySpanDuration;
     private final Map<String,String> metadata;
     private final ProtocolVersion protocolVersion;
 
@@ -205,6 +220,28 @@ public final class Repository implements AutoCloseable {
                     .value("ts", QueryBuilder.bindMarker("ts"))
                     .value("trace_id", QueryBuilder.bindMarker("trace_id"))
                     .using(QueryBuilder.ttl(QueryBuilder.bindMarker("ttl_"))));
+
+        selectTraceIdsBySpanDuration = session.prepare(
+                QueryBuilder.select("d", "ts", "tid")
+                    .from("span_duration_index")
+                    .where(QueryBuilder.eq("s", QueryBuilder.bindMarker("service_name")))
+                        .and(QueryBuilder.eq("sp", QueryBuilder.bindMarker("span_name")))
+                        .and(QueryBuilder.eq("b", QueryBuilder.bindMarker("time_bucket")))
+                        .and(QueryBuilder.lte("d", QueryBuilder.bindMarker("max_duration")))
+                        .and(QueryBuilder.gte("d", QueryBuilder.bindMarker("min_duration")))
+                    .orderBy(QueryBuilder.desc("d")));
+
+        insertTraceIdBySpanDuration = session.prepare(
+                QueryBuilder
+                        .insertInto("span_duration_index")
+                        .value("s", QueryBuilder.bindMarker("service_name"))
+                        .value("sp", QueryBuilder.bindMarker("span_name"))
+                        .value("b", QueryBuilder.bindMarker("bucket"))
+                        .value("d", QueryBuilder.bindMarker("duration"))
+                        .value("ts", QueryBuilder.bindMarker("ts"))
+                        .value("tid", QueryBuilder.bindMarker("trace_id"))
+                        .using(QueryBuilder.ttl(QueryBuilder.bindMarker("ttl_"))));
+
     }
 
     /**
@@ -707,6 +744,129 @@ public final class Repository implements AutoCloseable {
                 .replace(":ttl_", String.valueOf(ttl));
     }
 
+    private class DurationRow {
+        Long trace_id;
+        Long duration;
+        Long timestamp;
+        DurationRow(Row row) {
+            trace_id = row.getLong("tid");
+            duration = row.getLong("d");
+            timestamp = row.getLong("ts");
+        }
+        public String toString() {
+            return String.format("trace_id=%d, duration=%d, timestamp=%d", trace_id, duration, timestamp);
+        }
+    }
+
+    /** Returns a map of trace id -> timestamp */
+    public ListenableFuture<Map<Long, Long>> getTraceIdsByDuration(String serviceName, String spanName,
+                                                                   long minDuration, long maxDuration,
+                                                                   long endTs, long startTs, int limit) {
+        int startBucket = durationIndexBucket(startTs);
+        int endBucket = durationIndexBucket(endTs);
+        try {
+            if (startBucket > endBucket) {
+                throw new IllegalArgumentException("Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");
+            }
+            IntFunction<ListenableFuture<List<DurationRow>>> oneBucketQuery = (bucket) -> {
+                BoundStatement bound = selectTraceIdsBySpanDuration.bind()
+                        .setString("service_name", serviceName)
+                        .setString("span_name", spanName == null ? "" : spanName)
+                        .setInt("time_bucket", bucket)
+                        .setLong("max_duration", maxDuration)
+                        .setLong("min_duration", minDuration);
+                // optimistically setting fetch size to 'limit' here. Since we are likely to filter some results
+                // because their timestamps are out of range, we may need to fetch again.
+                // TODO figure out better strategy
+                bound.setFetchSize(limit);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(debugSelectTraceIdsByDuration(serviceName, spanName, minDuration, maxDuration, startTs, endTs, limit));
+                }
+                return Futures.transform(
+                        session.executeAsync(bound),
+                        (ResultSet rs) -> {
+                            Iterable<Row> it = rs::iterator;
+                            return StreamSupport
+                                    .stream(it.spliterator(), false)
+                                    .map(DurationRow::new)
+                                    .filter((row) -> row.timestamp >= startTs && row.timestamp <= endTs)
+                                    .limit(limit)
+                                    .collect(Collectors.toList());
+                        }
+                );
+            };
+
+            List<ListenableFuture<List<DurationRow>>> futures = IntStream
+                    .rangeClosed(startBucket, endBucket)
+                    .mapToObj(oneBucketQuery)
+                    .collect(Collectors.toList());
+
+            return Futures.transform(Futures.successfulAsList(futures),
+                    (List<List<DurationRow>> input) -> {
+                        return input.stream()
+                                .flatMap(Collection::stream)
+                                .collect( // bloody IntelliJ can't infer types
+                                        Collectors.groupingBy((DurationRow d) -> d.trace_id,
+                                                Collectors.collectingAndThen(
+                                                        // find earliest startTs for each trace ID
+                                                        Collectors.minBy((d1, d2) -> d1.timestamp.compareTo(d2.timestamp)),
+                                                        // convert from Optional to Long - we always have at least 1 value
+                                                        (Optional<DurationRow> d) -> d.get().timestamp)));
+                    });
+        } catch (RuntimeException ex) {
+            LOG.error("failed " + debugSelectTraceIdsByDuration(serviceName, spanName, minDuration, maxDuration, startTs, endTs, limit), ex);
+            throw ex;
+        }
+    }
+
+    private String debugSelectTraceIdsByDuration(String serviceName, String spanName, long minDuration, long maxDuration,
+                                                 long endTs, long startTs, int limit) {
+        return selectTraceIdsBySpanDuration.getQueryString()
+                .replace(":service_name", serviceName)
+                .replace(":span_name", spanName)
+                .replace(":max_duration", String.valueOf(maxDuration))
+                .replace(":min_duration", String.valueOf(minDuration))
+                .replace(":limit_", String.valueOf(limit));
+    }
+
+    private int durationIndexBucket(long ts) {
+        // if the window constant has microsecond precision, the division produces negative values
+        return (int)((ts / DURATION_INDEX_BUCKET_WINDOW_SECONDS) / 1000000);
+    }
+
+    public ListenableFuture<Void> storeTraceIdByDuration(String serviceName, String spanName, long timestamp, long duration,
+                                                         long traceId, int ttl) {
+        try {
+            BoundStatement bound = insertTraceIdBySpanDuration.bind()
+                    .setString("service_name", serviceName)
+                    .setString("service_name", spanName)
+                    .setInt("bucket", durationIndexBucket(timestamp))
+                    .setLong("ts", timestamp)
+                    .setLong("trace_id", traceId)
+                    .setInt("ttl_", ttl);
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(debugInsertTraceIdByDuration(serviceName, spanName, timestamp, duration, traceId, ttl));
+            }
+            return Futures.transform(session.executeAsync(bound), resultSetToVoidFunction);
+        } catch (RuntimeException ex) {
+            LOG.error("failed " + debugInsertTraceIdByDuration(serviceName, spanName, timestamp, duration, traceId, ttl));
+            return Futures.immediateFailedFuture(ex);
+        }
+    }
+
+    private String debugInsertTraceIdByDuration(String serviceName, String spanName, long timestamp, long duration,
+                                                long traceId, int ttl) {
+        return insertTraceIdByAnnotation.getQueryString()
+                .replace(":service_name", serviceName)
+                .replace(":span_name", spanName)
+                .replace(":bucket", String.valueOf(durationIndexBucket(timestamp)))
+                .replace(":ts", new Date(timestamp / 1000).toString())
+                .replace(":duration", String.valueOf(duration))
+                .replace(":trace_id", String.valueOf(traceId))
+                .replace(":ttl_", String.valueOf(ttl));
+    }
+
     private static List<Date> getDays(long from, long to) {
         List<Date> days = new ArrayList<>();
         for (long time = from; time <= to; time += TimeUnit.DAYS.toMillis(1)) {
@@ -744,8 +904,9 @@ public final class Repository implements AutoCloseable {
             KeyspaceMetadata keyspaceMetadata = cluster.getMetadata().getKeyspace(keyspace);
 
             if (keyspaceMetadata == null) {
-                throw new IllegalStateException(String.format("Cannot read keyspace metadata for give keyspace: %s and cluster: ",
-                                keyspace, cluster.getClusterName()));
+                throw new IllegalStateException(String.format(
+                        "Cannot read keyspace metadata for give keyspace: %s and cluster: %s",
+                        keyspace, cluster.getClusterName()));
             }
             return keyspaceMetadata;
         }
@@ -768,13 +929,7 @@ public final class Repository implements AutoCloseable {
         private Schema() {}
     }
 
-    private Function<ResultSet, Void> resultSetToVoidFunction =
-        new Function<ResultSet, Void>() {
-            @Override
-            public Void apply(ResultSet input) {
-                return null;
-            }
-        };
+    private Function<ResultSet, Void> resultSetToVoidFunction = input -> null;
 
     // Overrides default codec of timestamps as dates (as doing so truncates to millis).
     // TODO: When we switch to datastax java-driver v3+, move this to a custom codec.
