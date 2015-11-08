@@ -21,7 +21,8 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
                                       dependencyStore: DependencyStore,
                                       queryExtractor: QueryExtractor,
                                       response: ResponseBuilder,
-                                      @Flag("zipkin.queryService.servicesMaxAge") servicesMaxAge: Int) extends Controller {
+                                      @Flag("zipkin.queryService.servicesMaxAge") servicesMaxAge: Int,
+                                      @Flag("zipkin.queryService.lookback") val defaultLookback: Long) extends Controller {
 
   post("/api/v1/spans") { request: Request =>
     val spans: Try[List[Span]] = try {
@@ -77,7 +78,7 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
   }
 
   get("/api/v1/dependencies") { request: GetDependenciesRequest =>
-    dependencyStore.getDependencies(Some(request.startTs), Some(request.endTs))
+    dependencyStore.getDependencies(request.endTs, request.lookback.orElse(Some(defaultLookback)))
   }
 
   val jsonSpansReader = ZipkinJson.reader(new TypeReference[Seq[JsonSpan]] {})
@@ -85,6 +86,6 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
 
 case class GetSpanNamesRequest(@QueryParam serviceName: String)
 
-case class GetDependenciesRequest(@QueryParam startTs: Long, @QueryParam endTs: Long)
+case class GetDependenciesRequest(@QueryParam endTs: Long, @QueryParam lookback: Option[Long])
 
 case class GetTraceRequest(@RouteParam id: String)

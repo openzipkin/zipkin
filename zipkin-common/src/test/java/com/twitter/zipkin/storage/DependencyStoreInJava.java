@@ -17,7 +17,7 @@ public class DependencyStoreInJava extends DependencyStore {
     }
 
     @Override
-    public Future<Seq<DependencyLink>> getDependencies(Option<Object> startTs, Option<Object> endTs) {
+    public Future<Seq<DependencyLink>> getDependencies(long endTs, Option<Object> lookback) {
         return null;
     }
 

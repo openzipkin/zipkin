@@ -240,6 +240,7 @@ abstract class CassandraSpanStore(
     serviceName: String,
     spanName: Option[String],
     endTs: Long,
+    lookback: Long, // TODO
     limit: Int
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByNameCounter.incr()
@@ -263,6 +264,7 @@ abstract class CassandraSpanStore(
     annotation: String,
     value: Option[ByteBuffer],
     endTs: Long,
+    lookback: Long, // TODO
     limit: Int
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByAnnotationCounter.incr()

@@ -41,6 +41,12 @@ class QueryRequestTest extends FunSuite {
     }
   }
 
+  test("lookback must be positive") {
+    intercept[IllegalArgumentException] {
+      QueryRequest("foo", lookback = Some(0))
+    }
+  }
+
   test("limit must be positive") {
     intercept[IllegalArgumentException] {
       QueryRequest("foo", limit = 0)

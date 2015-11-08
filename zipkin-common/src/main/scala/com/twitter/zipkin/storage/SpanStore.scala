@@ -118,16 +118,16 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     serviceName: String,
     spanName: Option[String],
     endTs: Long,
+    lookback: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] = call {
     ((spanName, spansForService(serviceName)) match {
       case (Some(name), spans) => spans filter(_.name == name)
       case (_, spans) => spans
-    }).filter { span =>
-      span.timestamp.map(_ <= endTs).getOrElse(false)
-    }.take(limit).map { span =>
-      IndexedTraceId(span.traceId, span.timestamp.get)
-    }.toList
+    }).filter(_.timestamp.exists(t => t >= (endTs - lookback) && t <= endTs))
+      .take(limit)
+      .map(span => IndexedTraceId(span.traceId, span.timestamp.get))
+      .toList
   }
 
   override def getTraceIdsByAnnotation(
@@ -135,10 +135,11 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     annotation: String,
     value: Option[ByteBuffer],
     endTs: Long,
+    lookback: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] = call {
     spansForService(serviceName)
-      .filter(_.timestamp.map(_ <= endTs).getOrElse(false))
+      .filter(_.timestamp.exists(t => t >= (endTs - lookback) && t <= endTs))
       .filter(if (value.isDefined) {
       _.binaryAnnotations.exists(ba => ba.key == annotation && ba.value == value.get)
     } else {
@@ -154,11 +155,12 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     minDuration: Long,
     maxDuration: Option[Long],
     endTs: Long,
+    lookback: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] = call {
     spansForService(serviceName)
       .filter(s => s.id == s.traceId) // only root spans
-      .filter(_.timestamp.exists(_ <= endTs))
+      .filter(_.timestamp.exists(t => t >= (endTs - lookback) && t <= endTs))
       .filter(_.duration.exists(_ >= minDuration))
       .filter(_.duration.exists(_ <= maxDuration.getOrElse(Long.MaxValue)))
       .take(limit)

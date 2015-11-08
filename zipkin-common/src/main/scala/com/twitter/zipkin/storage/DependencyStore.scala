@@ -16,7 +16,7 @@
 package com.twitter.zipkin.storage
 
 import com.twitter.util.Future
-import com.twitter.zipkin.common.{DependencyLink, Dependencies}
+import com.twitter.zipkin.common.{Dependencies, DependencyLink}
 
 /**
  * Storage and retrieval interface for aggregate dependencies that may be computed offline and
@@ -25,12 +25,21 @@ import com.twitter.zipkin.common.{DependencyLink, Dependencies}
 abstract class DependencyStore extends java.io.Closeable {
 
   /**
-   * @param startTs  microseconds from epoch, defaults to one day before end_time
-   * @param endTs  microseconds from epoch, defaults to now
-   * @return dependency links in an interval contained by startTs and endTs,
-   *         or empty if none are found
+   * Returns dependency links derived from spans in the [[SpanStore]].
+   *
+   * <p/>Implementations may bucket aggregated data, for example daily. When this is the case, endTs
+   * may be floored to align with that bucket, for example midnight if daily. lookback applies to
+   * the original endTs, even when bucketed. Using the daily example, if endTs was 11pm and lookback
+   * was 25 hours, the implementation would query against 2 buckets.
+   *
+   * @param endTs only return links from spans where [[com.twitter.zipkin.common.Span.timestamp]]
+   *              are at or before this time in epoch microseconds.
+   * @param lookback only return links from spans where [[com.twitter.zipkin.common.Span.timestamp]]
+   *                 are at or after (endTs - lookback) in microseconds. Defaults to endTs.
+   * @return dependency links in an interval contained by (endTs - lookback) or
+   *         empty if none are found
    */
-  def getDependencies(startTs: Option[Long], endTs: Option[Long] = None): Future[Seq[DependencyLink]]
+  def getDependencies(endTs: Long, lookback: Option[Long] = None): Future[Seq[DependencyLink]]
   def storeDependencies(dependencies: Dependencies): Future[Unit]
 }
 
@@ -38,6 +47,6 @@ class NullDependencyStore extends DependencyStore {
 
   def close() {}
 
-  def getDependencies(startTs: Option[Long], endTs: Option[Long] = None) = Future.value(Seq.empty)
+  def getDependencies(endTs: Long, lookback: Option[Long] = None) = Future.value(Seq.empty)
   def storeDependencies(dependencies: Dependencies): Future[Unit] = Future.Unit
 }
