@@ -39,6 +39,10 @@ class CassandraSpanStoreSpec extends SpanStoreSpec {
 
   override def clear = cluster.connect().execute("DROP KEYSPACE IF EXISTS " + keyspace)
 
+  @Ignore override def getTraces_lookback() = {
+    // TODO!
+  }
+
   @Ignore override def getTraces_duration() = {
     // TODO!
   }

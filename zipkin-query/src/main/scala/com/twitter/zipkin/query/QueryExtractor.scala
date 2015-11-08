@@ -24,7 +24,8 @@ import scala.collection.mutable
 import scala.util.Try
 
 // TODO: rewrite me into a normal finatra case class
-class QueryExtractor @Inject()(@Flag("zipkin.queryService.limit") defaultQueryLimit: Int) {
+class QueryExtractor @Inject()(@Flag("zipkin.queryService.limit") val defaultLimit: Int,
+                               @Flag("zipkin.queryService.lookback") val defaultLookback: Long) {
   /**
    * Takes a `Request` and produces the correct `QueryRequest` depending
    * on the GET parameters present
@@ -35,7 +36,8 @@ class QueryExtractor @Inject()(@Flag("zipkin.queryService.limit") defaultQueryLi
     val minDuration = req.params.get("minDuration").flatMap(d => if (d.isEmpty) None else Some(d.toLong))
     val maxDuration = req.params.get("maxDuration").flatMap(d => if (d.isEmpty) None else Some(d.toLong))
     val endTs = req.params.getLong("endTs").getOrElse(Time.now.inMicroseconds)
-    val limit = req.params.get("limit").map(_.toInt).getOrElse(defaultQueryLimit)
+    val lookback = req.params.get("lookback").map(_.toLong).getOrElse(defaultLookback)
+    val limit = req.params.get("limit").map(_.toInt).getOrElse(defaultLimit)
 
     val (annotations, binaryAnnotations) = req.params.get("annotationQuery") map { query =>
       val anns = mutable.Set[String]()
@@ -53,6 +55,6 @@ class QueryExtractor @Inject()(@Flag("zipkin.queryService.limit") defaultQueryLi
     } getOrElse {
       (Set.empty[String], Set.empty[(String, String)])
     }
-    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, minDuration, maxDuration, endTs, limit)
+    QueryRequest(serviceName, spanName, annotations, binaryAnnotations, minDuration, maxDuration, endTs, Some(lookback), limit)
   }
 }

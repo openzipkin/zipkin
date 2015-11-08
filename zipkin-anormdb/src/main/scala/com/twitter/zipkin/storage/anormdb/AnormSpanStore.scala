@@ -186,7 +186,7 @@ class AnormSpanStore(val db: DB,
   }
 
   override def getTraceIdsByName(serviceName: String, spanName: Option[String],
-    endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
+    endTs: Long, lookback: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
 
     if (endTs <= 0 || limit <= 0) {
       Seq.empty
@@ -205,13 +205,14 @@ class AnormSpanStore(val db: DB,
             |  GROUP BY trace_id)
             |AS t2 ON t1.trace_id = t2.trace_id
             |WHERE (name = {name} OR {name} = '')
-            |AND start_ts <= {end_ts}
+            |AND start_ts BETWEEN {start_ts} AND {end_ts}
             |GROUP BY t1.trace_id
             |ORDER BY start_ts
             |LIMIT {limit}
           """.stripMargin)
           .on("service_name" -> serviceName)
           .on("name" -> spanName.getOrElse(""))
+          .on("start_ts" -> (endTs - lookback))
           .on("end_ts" -> endTs)
           .on("limit" -> limit)
           .as((long("trace_id") ~ long("start_ts") map flatten) *)
@@ -225,7 +226,7 @@ class AnormSpanStore(val db: DB,
   }
 
   override def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
-    endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
+    endTs: Long, lookback: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
       implicit val (conn, borrowTime) = borrowConn()
       try {
         val result:List[(Long, Long)] = value match {
@@ -238,7 +239,7 @@ class AnormSpanStore(val db: DB,
                 |  AND a_key = {annotation}
                 |  AND a_value = {value}
                 |  AND a_type != -1
-                |  AND a_timestamp <= {end_ts}
+                |  AND a_timestamp BETWEEN {start_ts} AND {end_ts}
                 |GROUP BY trace_id
                 |ORDER BY a_timestamp
                 |LIMIT {limit}
@@ -246,6 +247,7 @@ class AnormSpanStore(val db: DB,
               .on("service_name" -> serviceName)
               .on("annotation" -> annotation)
               .on("value" -> Util.getArrayFromBuffer(bytes))
+              .on("start_ts" -> (endTs - lookback))
               .on("end_ts" -> endTs)
               .on("limit" -> limit)
               .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
@@ -258,13 +260,14 @@ class AnormSpanStore(val db: DB,
                 |WHERE endpoint_service_name = {service_name}
                 |  AND a_key = {annotation}
                 |  AND a_type = -1
-                |  AND a_timestamp <= {end_ts}
+                |  AND a_timestamp BETWEEN {start_ts} AND {end_ts}
                 |GROUP BY trace_id
                 |ORDER BY a_timestamp
                 |LIMIT {limit}
               """.stripMargin)
               .on("service_name" -> serviceName)
               .on("annotation" -> annotation)
+              .on("start_ts" -> (endTs - lookback))
               .on("end_ts" -> endTs)
               .on("limit" -> limit)
               .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
@@ -284,6 +287,7 @@ class AnormSpanStore(val db: DB,
     minDuration: Long,
     maxDuration: Option[Long],
     endTs: Long,
+    lookback: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
     implicit val (conn, borrowTime) = borrowConn()
@@ -293,7 +297,7 @@ class AnormSpanStore(val db: DB,
           |FROM zipkin_spans t1
           |WHERE trace_id = id
           |AND duration BETWEEN {min_duration} AND {max_duration}
-          |AND start_ts <= {end_ts}
+          |AND start_ts BETWEEN {start_ts} AND {end_ts}
           |GROUP BY t1.trace_id
           |ORDER BY start_ts
           |LIMIT {limit}
@@ -301,6 +305,7 @@ class AnormSpanStore(val db: DB,
         .on("service_name" -> serviceName)
         .on("min_duration" -> minDuration)
         .on("max_duration" -> maxDuration.getOrElse(Long.MaxValue))
+        .on("start_ts" -> (endTs - lookback))
         .on("end_ts" -> endTs)
         .on("limit" -> limit)
         .as((long("trace_id") ~ long("start_ts") map flatten) *)

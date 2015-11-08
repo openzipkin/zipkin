@@ -16,38 +16,28 @@
 
 package com.twitter.zipkin.storage.anormdb
 
-import java.sql.Connection
-import java.util.concurrent.TimeUnit._
-
 import anorm.SqlParser._
 import anorm._
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.util.{Future, Time}
+import com.twitter.util.Future
 import com.twitter.zipkin.common.{Dependencies, DependencyLink}
 import com.twitter.zipkin.storage.DependencyStore
+import java.sql.Connection
 
-/**
- * Retrieve and store aggregate dependency information.
- *
- * The top annotations methods are stubbed because they're not currently
- * used anywhere; that feature was never completed.
- */
 case class AnormDependencyStore(val db: DB,
                                 val openCon: Option[Connection] = None,
                                 val stats: StatsReceiver = DefaultStatsReceiver.scope("AnormDependencyStore")
                                  ) extends DependencyStore with DBPool {
 
-  override def getDependencies(_startTs: Option[Long], _endTs: Option[Long] = None): Future[Seq[DependencyLink]] = db.inNewThreadWithRecoverableRetry {
-    val endTs = _endTs.getOrElse(Time.now.inMicroseconds)
-    val startTs = _startTs.getOrElse(endTs - MICROSECONDS.convert(1, DAYS))
+  override def getDependencies(endTs: Long, lookback: Option[Long]): Future[Seq[DependencyLink]] = db.inNewThreadWithRecoverableRetry {
+    val startTs = endTs - lookback.getOrElse(endTs)
 
     implicit val (conn, borrowTime) = borrowConn()
     try {
       val parentChild = SQL(
         """SELECT trace_id, parent_id, id
           |FROM zipkin_spans
-          |WHERE start_ts >= {startTs}
-          |  AND start_ts <= {endTs}
+          |WHERE start_ts BETWEEN {startTs} AND {endTs}
           |AND parent_id is not null
         """.stripMargin)
         .on("startTs" -> startTs)

@@ -16,6 +16,7 @@
 package com.twitter.zipkin.builder
 
 import ch.qos.logback.classic.{Logger, Level}
+import com.twitter.conversions.time._
 import com.twitter.finagle.ListeningServer
 import com.twitter.finagle.stats.DefaultStatsReceiver
 import com.twitter.finagle.tracing.{DefaultTracer, NullTracer}
@@ -45,8 +46,10 @@ case class QueryServiceBuilder(override val defaultFinatraHttpPort: String = "0.
       case _ => NullTracer
     }
 
+    val defaultLookback = sys.env.get("QUERY_LOOKBACK").getOrElse(7.days.inMicroseconds.toString)
     nonExitingMain(Array(
-      "-local.doc.root", "/"
+      "-local.doc.root", "/",
+      "-zipkin.queryService.lookback", defaultLookback
     ))
     adminHttpServer
   }

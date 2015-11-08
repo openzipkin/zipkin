@@ -25,11 +25,10 @@ abstract class CassandraDependencyStore extends DependencyStore {
 
   def close() = repository.close()
 
-  override def getDependencies(startTs: Option[Long], _endTs: Option[Long] = None) = {
-    val endTs = _endTs.getOrElse(Time.now.inMicroseconds)
+  override def getDependencies(endTs: Long, lookback: Option[Long]) = {
 
     val endEpochDayMillis = floorEpochMicrosToDayMillis(endTs)
-    val startEpochDayMillis = floorEpochMicrosToDayMillis(endTs - MICROSECONDS.convert(1, DAYS))
+    val startEpochDayMillis = floorEpochMicrosToDayMillis(endTs - lookback.getOrElse(endTs))
 
     FutureUtil.toFuture(repository.getDependencies(startEpochDayMillis, endEpochDayMillis))
       .map { dependencies => dependencies.asScala

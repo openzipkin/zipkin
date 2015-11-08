@@ -14,8 +14,8 @@ define(
       var services = {};
       var dependencies = {};
 
-      this.getDependency = function (startTs, endTs) {
-        var url = "/api/dependencies?startTs=" + startTs + '&endTs=' + endTs;
+      this.getDependency = function (endTs) {
+        var url = "/api/dependencies?endTs=" + endTs;
         $.ajax(url, {
           type: "GET",
           dataType: "json",
@@ -69,7 +69,7 @@ define(
           }.bind(this));
         });
 
-        this.getDependency(0, Date.now() * 1000);
+        this.getDependency(Date.now() * 1000);
       });
 
       this.getServiceData = function (serviceName, callback) {

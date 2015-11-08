@@ -36,6 +36,7 @@ class RedisSpanStore(client: Client, ttl: Option[Duration])
     serviceName: String,
     spanName: Option[String],
     endTs: Long,
+    lookback: Long, // TODO
     limit: Int
   ): Future[Seq[IndexedTraceId]] = {
     index.getTraceIdsByName(serviceName, spanName, endTs, limit)
@@ -46,6 +47,7 @@ class RedisSpanStore(client: Client, ttl: Option[Duration])
     annotation: String,
     value: Option[ByteBuffer],
     endTs: Long,
+    lookback: Long, // TODO
     limit: Int
   ): Future[Seq[IndexedTraceId]] = {
     index.getTraceIdsByAnnotation(serviceName, annotation, value, endTs, limit)

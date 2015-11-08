@@ -262,12 +262,22 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   }
 
   /** Traces whose root span has timestamps before or at endTs are returned */
-  @Test def getTraces_endTs() {
+  @Test def getTraces_endTsAndLookback() {
     result(store(Seq(span1, span3))) // span1's timestamp is 1, span3's timestamp is 2
 
     result(store.getTraces(QueryRequest("service", endTs = 1))) should be(Seq(List(span1)))
     result(store.getTraces(QueryRequest("service", endTs = 2))) should be(Seq(List(span1), List(span3)))
     result(store.getTraces(QueryRequest("service", endTs = 3))) should be(Seq(List(span1), List(span3)))
+  }
+
+  /** Traces whose root span has timestamps between (endTs - lookback) and endTs are returned */
+  @Test def getTraces_lookback() {
+    result(store(Seq(span1, span3))) // span1's timestamp is 1, span3's timestamp is 2
+
+    result(store.getTraces(QueryRequest("service", endTs = 1, lookback = Some(1)))) should be(Seq(List(span1)))
+    result(store.getTraces(QueryRequest("service", endTs = 2, lookback = Some(1)))) should be(Seq(List(span1), List(span3)))
+    result(store.getTraces(QueryRequest("service", endTs = 3, lookback = Some(1)))) should be(Seq(List(span3)))
+    result(store.getTraces(QueryRequest("service", endTs = 3, lookback = Some(2)))) should be(Seq(List(span1), List(span3)))
   }
 
   @Test def getAllServiceNames_emptyServiceName() {

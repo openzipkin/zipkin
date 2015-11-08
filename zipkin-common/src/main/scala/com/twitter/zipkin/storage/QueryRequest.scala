@@ -18,7 +18,9 @@ import scala.util.hashing.MurmurHash3
  *                    than or equal to maxDuration microseconds. Only valid with [[minDuration]].
  * @param endTs only return traces where all [[com.twitter.zipkin.common.Span.timestamp]] are at
  *              or before this time in epoch microseconds. Defaults to current time.
- * @param limit maximum number of traces to return. Defaults to 10
+ * @param _lookback only return traces where all [[com.twitter.zipkin.common.Span.timestamp]] are at
+ *                  or after (endTs - lookback) in microseconds. Defaults to endTs.
+ * @param limit maximum number of traces to return. Defaults to 10.
  */
 // This is not a case-class as we need to enforce serviceName and spanName as lowercase
 class QueryRequest(_serviceName: String,
@@ -28,6 +30,7 @@ class QueryRequest(_serviceName: String,
                    val minDuration: Option[Long] = None,
                    val maxDuration: Option[Long] = None,
                    val endTs: Long = Time.now.inMicroseconds,
+                   _lookback: Option[Long] = None,
                    val limit: Int = 10) {
 
   /** Mandatory [[com.twitter.zipkin.common.Endpoint.serviceName]] */
@@ -35,6 +38,12 @@ class QueryRequest(_serviceName: String,
 
   /** When present, only include traces with this [[com.twitter.zipkin.common.Span.name]] */
   val spanName: Option[String] = _spanName.map(_.toLowerCase)
+
+  /**
+   * Only return traces where all [[com.twitter.zipkin.common.Span.timestamp]] are at
+   * or after (endTs - lookback) in microseconds.
+   */
+  val lookback: Long = Math.min(_lookback.getOrElse(endTs), endTs)
 
   checkArgument(serviceName.nonEmpty, "serviceName was empty")
   checkArgument(spanName.map(_.nonEmpty).getOrElse(true), "spanName was empty")
@@ -45,16 +54,17 @@ class QueryRequest(_serviceName: String,
   checkArgument(maxDuration.map(_ => minDuration.isDefined).getOrElse(true),
     "minDuration is required when specifying maxDuration")
   checkArgument(endTs > 0, () => "endTs should be positive, in epoch microseconds: was " + endTs)
+  checkArgument(lookback > 0, () => "lookback should be positive, in microseconds: was " + lookback)
   checkArgument(limit > 0, () => "limit should be positive: was " + limit)
 
   override lazy val hashCode =
-    MurmurHash3.seqHash(List(serviceName, spanName, annotations, binaryAnnotations, minDuration, maxDuration, endTs, limit))
+    MurmurHash3.seqHash(List(serviceName, spanName, annotations, binaryAnnotations, minDuration, maxDuration, endTs, lookback, limit))
 
   override def equals(other: Any) = other match {
     case x: QueryRequest =>
       x.serviceName == serviceName && x.spanName == spanName && x.annotations == annotations &&
         x.binaryAnnotations == binaryAnnotations && x.minDuration == minDuration &&
-        x.maxDuration == maxDuration && x.endTs == endTs && x.limit == limit
+        x.maxDuration == maxDuration && x.endTs == endTs && x.lookback == lookback && x.limit == limit
     case _ => false
   }
 
@@ -66,8 +76,9 @@ class QueryRequest(_serviceName: String,
     minDuration: Option[Long] = this.minDuration,
     maxDuration: Option[Long] = this.maxDuration,
     endTs: Long = this.endTs,
+    lookback: Option[Long] = Some(this.lookback),
     limit: Int = this.limit
-  ) = QueryRequest(serviceName, spanName, annotations, binaryAnnotations, minDuration, maxDuration, endTs, limit)
+  ) = QueryRequest(serviceName, spanName, annotations, binaryAnnotations, minDuration, maxDuration, endTs, lookback, limit)
 }
 
 object QueryRequest {
@@ -79,6 +90,7 @@ object QueryRequest {
     minDuration: Option[Long] = None,
     maxDuration: Option[Long] = None,
     endTs: Long = Time.now.inMicroseconds,
+    lookback: Option[Long] = None,
     limit: Int = 10
-  ) = new QueryRequest(serviceName, spanName, annotations, binaryAnnotations, minDuration, maxDuration, endTs, limit)
+  ) = new QueryRequest(serviceName, spanName, annotations, binaryAnnotations, minDuration, maxDuration, endTs, lookback,limit)
 }

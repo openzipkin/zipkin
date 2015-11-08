@@ -22,6 +22,7 @@ trait CollectAnnotationQueries {
     serviceName: String,
     spanName: Option[String],
     endTs: Long,
+    lookback: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]]
 
@@ -35,6 +36,7 @@ trait CollectAnnotationQueries {
     annotation: String,
     value: Option[ByteBuffer],
     endTs: Long,
+    lookback: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]]
 
@@ -44,6 +46,7 @@ trait CollectAnnotationQueries {
     minDuration: Long,
     maxDuration: Option[Long],
     endTs: Long,
+    lookback: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] = Future.exception(new UnsupportedOperationException)
 
@@ -61,7 +64,7 @@ trait CollectAnnotationQueries {
 
     val ids = sliceQueries match {
       case Nil =>
-        getTraceIdsByName(qr.serviceName, None, qr.endTs, qr.limit).flatMap(queryResponse(_, qr))
+        getTraceIdsByName(qr.serviceName, None, qr.endTs, qr.lookback, qr.limit).flatMap(queryResponse(_, qr))
 
       case slice :: Nil =>
         querySlices(sliceQueries, qr).flatMap(ids => queryResponse(ids.flatten, qr))
@@ -107,11 +110,11 @@ trait CollectAnnotationQueries {
   private[this] def querySlices(slices: Seq[SliceQuery], qr: QueryRequest): Future[Seq[Seq[IndexedTraceId]]] =
     Future.collect(slices map {
       case SpanSliceQuery(name) =>
-        getTraceIdsByName(qr.serviceName, Some(name), qr.endTs, qr.limit)
+        getTraceIdsByName(qr.serviceName, Some(name), qr.endTs, qr.lookback, qr.limit)
       case AnnotationSliceQuery(key, value) =>
-        getTraceIdsByAnnotation(qr.serviceName, key, value, qr.endTs, qr.limit)
+        getTraceIdsByAnnotation(qr.serviceName, key, value, qr.endTs, qr.lookback, qr.limit)
       case DurationSliceQuery(minDuration, maxDuration) =>
-        getTraceIdsByDuration(qr.serviceName, minDuration, maxDuration, qr.endTs, qr.limit)
+        getTraceIdsByDuration(qr.serviceName, minDuration, maxDuration, qr.endTs, qr.lookback, qr.limit)
       case s =>
         Future.exception(new Exception("Uknown SliceQuery: %s".format(s)))
     })

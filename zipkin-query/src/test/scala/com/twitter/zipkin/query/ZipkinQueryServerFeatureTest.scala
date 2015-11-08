@@ -1,7 +1,7 @@
 package com.twitter.zipkin.query
 
-import com.twitter.finagle.http.{Request, Method}
 import com.twitter.finagle.http.Status._
+import com.twitter.finagle.http.{Method, Request}
 import com.twitter.finatra.http.test.EmbeddedHttpServer
 import com.twitter.inject.server.FeatureTest
 import com.twitter.io.Buf
@@ -19,13 +19,18 @@ import org.scalatest.mock.MockitoSugar
 import java.nio.ByteBuffer
 
 class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with BeforeAndAfter {
+  val lookbackOverride = Long.MaxValue
   val spanStore = new InMemorySpanStore()
   val dependencyStore = mock[DependencyStore]
   after {
     spanStore.spans.clear()
   }
 
-  override val server = new EmbeddedHttpServer(new ZipkinQueryServer(spanStore, dependencyStore))
+  override val server = new EmbeddedHttpServer(
+    new ZipkinQueryServer(spanStore, dependencyStore),
+    // We are using fake times, so make sure default lookback doesn't interfere
+    extraArgs = Seq( "-zipkin.queryService.lookback", lookbackOverride.toString)
+  )
 
   val ep1 = Endpoint(123, 123, "service1")
   val ep2 = Endpoint(234, 234, "service2")
@@ -194,6 +199,13 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
       path = "/api/v1/traces?serviceName=service1&endTs=0",
       andExpect = BadRequest,
       withBody = "endTs should be positive, in epoch microseconds: was 0")
+  }
+
+  "get trace when bad lookback" in {
+    server.httpGet(
+      path = "/api/v1/traces?serviceName=service1&lookback=0",
+      andExpect = BadRequest,
+      withBody = "lookback should be positive, in microseconds: was 0")
   }
 
   "get trace by hex id" in {
@@ -681,6 +693,114 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
         """.stripMargin)
   }
 
+  "find traces by minDuration limited by endTs and lookback" in {
+    app.injector.instance[SpanStore].apply(allSpans)
+
+    server.httpGet(
+      path = "/api/v1/traces?serviceName=service2&minDuration=100&endTs=200&lookback=100",
+      andExpect = Ok,
+      withJsonBody =
+        """
+          |[
+          |  [
+          |    {
+          |      "traceId" : "0000000000000002",
+          |      "name" : "methodcall",
+          |      "id" : "0000000000000002",
+          |      "timestamp" : 101,
+          |      "duration" : 400,
+          |      "annotations" : [
+          |        {
+          |          "timestamp" : 101,
+          |          "value" : "cs",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 501,
+          |          "value" : "cr",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 101,
+          |          "value" : "sr",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 501,
+          |          "value" : "ss",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        }
+          |      ],
+          |      "binaryAnnotations" : [ ]
+          |    },
+          |    {
+          |      "traceId" : "0000000000000002",
+          |      "name" : "methodcall",
+          |      "id" : "000000000000029a",
+          |      "parentId" : "0000000000000002",
+          |      "timestamp" : 276,
+          |      "duration" : 50,
+          |      "annotations" : [
+          |        {
+          |          "timestamp" : 276,
+          |          "value" : "cs",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 286,
+          |          "value" : "sr",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 316,
+          |          "value" : "ss",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 326,
+          |          "value" : "cr",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        }
+          |      ],
+          |      "binaryAnnotations" : [ ]
+          |    }
+          |  ]
+          |]
+        """.stripMargin)
+  }
+
   "find traces by minDuration and maxDuration" in {
     app.injector.instance[SpanStore].apply(allSpans)
 
@@ -724,11 +844,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
         """.stripMargin)
   }
 
-  "find dependencies starting at timestamp zero" in {
-    when(dependencyStore.getDependencies(Some(0), Some(deps.endTs))) thenReturn Future.value(deps.links)
+  "find dependencies starting at beginning of data" in {
+    when(dependencyStore.getDependencies(deps.endTs, Some(lookbackOverride))) thenReturn Future.value(deps.links)
 
     server.httpGet(
-      path = "/api/v1/dependencies?startTs=0&endTs=" + deps.endTs,
+      path = "/api/v1/dependencies?endTs=" + deps.endTs,
       andExpect = Ok,
       withJsonBody =
         """
@@ -748,10 +868,10 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   }
 
   "find dependencies when empty" in {
-    when(dependencyStore.getDependencies(Some(0), Some(deps.endTs))) thenReturn Future(Seq.empty)
+    when(dependencyStore.getDependencies(deps.endTs, Some(lookbackOverride))) thenReturn Future(Seq.empty)
 
     server.httpGet(
-      path = "/api/v1/dependencies?startTs=0&endTs=" + deps.endTs,
+      path = "/api/v1/dependencies?endTs=" + deps.endTs,
       andExpect = Ok,
       withJsonBody = "[ ]")
   }

@@ -21,6 +21,10 @@ class RedisSpanStoreSpec extends SpanStoreSpec {
     ready(store.clear())
   }
 
+  @Ignore override def getTraces_lookback() = {
+    // TODO!
+  }
+
   @Ignore override def getTraces_duration() = {
     // TODO!
   }

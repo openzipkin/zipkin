@@ -16,6 +16,7 @@
 package com.twitter.zipkin.query
 
 import com.google.inject.Provides
+import com.twitter.conversions.time._
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finagle.{ListeningServer, param, Http}
 import com.twitter.finagle.http.{Request, Response}
@@ -38,6 +39,7 @@ class ZipkinQueryServer(spanStore: SpanStore, dependencyStore: DependencyStore) 
   // Bind flags used with javax.Inject
   flag("zipkin.queryService.durationBatchSize", 500, "max number of durations to pull per batch")
   flag("zipkin.queryService.limit", 10, "Default query limit for trace results")
+  flag("zipkin.queryService.lookback", 7.days.inMicroseconds, "Default query lookback for trace results")
   flag("zipkin.queryService.servicesMaxAge", 5*60, "Get services cache TTL")
 
   object StorageModule extends TwitterModule {
@@ -80,6 +82,10 @@ class ZipkinQueryServer(spanStore: SpanStore, dependencyStore: DependencyStore) 
       .configured(param.Stats(injector.instance[StatsReceiver]))
       .serve(defaultFinatraHttpPort, httpService)
     info("http server started on port: " + httpExternalPort.get)
+
+    onExit {
+      Await.result(httpServer.close(defaultShutdownTimeout.fromNow))
+    }
   }
 
   override def httpExternalPort = Option(httpServer).map(PortUtils.getPort)
@@ -88,9 +94,5 @@ class ZipkinQueryServer(spanStore: SpanStore, dependencyStore: DependencyStore) 
 
   override def waitForServer() {
     Await.ready(httpServer)
-  }
-
-  onExit {
-    Await.result(httpServer.close(defaultShutdownTimeout.fromNow))
   }
 }

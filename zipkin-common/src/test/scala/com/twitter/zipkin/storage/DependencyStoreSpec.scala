@@ -69,7 +69,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   @Test def getDependencies() = {
     processDependencies(trace)
 
-    result(store.getDependencies(None, None)) should be(dep.links)
+    result(store.getDependencies(today + 1000)) should be(dep.links)
   }
 
   /**
@@ -97,10 +97,11 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
     )
     processDependencies(trace)
 
+    val traceDuration = Trace.duration(trace).get
     result(store.getDependencies(
-      Some(trace.head.timestamp.get),
-      Some(trace.last.timestamp.get))
-    ).sortBy(_.parent) should be(
+      trace(0).timestamp.get + traceDuration,
+      Some(traceDuration)
+    )).sortBy(_.parent) should be(
       List(
         new DependencyLink("trace-producer-one", "trace-producer-two", 1),
         new DependencyLink("trace-producer-two", "trace-producer-three", 1)
@@ -114,7 +115,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   @Test def getDependenciesMultiLevel() = {
     processDependencies(trace)
 
-    result(store.getDependencies(None, None)) should be(dep.links)
+    result(store.getDependencies(today + 1000)) should be(dep.links)
   }
 
   @Test def dependencies_loopback {
@@ -126,7 +127,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
 
     processDependencies(traceWithLoopback)
 
-    result(store.getDependencies(None, None)) should be(Dependencies.toLinks(traceWithLoopback))
+    result(store.getDependencies(today + 1000)) should be(Dependencies.toLinks(traceWithLoopback))
   }
 
   /**
@@ -136,31 +137,31 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   @Test def dependencies_headlessTrace {
     processDependencies(List(trace(1), trace(2)))
 
-    result(store.getDependencies(None, None)) should be(Dependencies.toLinks(List(trace(1), trace(2))))
+    result(store.getDependencies(today + 1000)) should be(Dependencies.toLinks(List(trace(1), trace(2))))
   }
 
 
-  @Test def getDependencies_looksBackOneDay() = {
+  @Test def getDependencies_looksBackIndefinitely() = {
     processDependencies(trace)
 
-    result(store.getDependencies(None, Some(today + day))) should be(dep.links)
+    result(store.getDependencies(today + 1000)) should be(dep.links)
   }
 
   @Test def getDependencies_insideTheInterval() = {
     processDependencies(trace)
 
-    result(store.getDependencies(Some(dep.startTs), Some(dep.endTs))) should be(dep.links)
+    result(store.getDependencies(dep.endTs, Some(dep.endTs - dep.startTs))) should be(dep.links)
   }
 
   @Test def getDependencies_endTimeBeforeData() = {
     processDependencies(trace)
 
-    result(store.getDependencies(None, Some(today - day))) should be(empty)
+    result(store.getDependencies(today - day)) should be(empty)
   }
 
-  @Test def getDependencies_endTimeAfterData() = {
+  @Test def getDependencies_lookbackAfterData() = {
     processDependencies(trace)
 
-    result(store.getDependencies(None, Some(today + 2 * day))) should be(empty)
+    result(store.getDependencies(today + 2 * day, Some(day))) should be(empty)
   }
 }
