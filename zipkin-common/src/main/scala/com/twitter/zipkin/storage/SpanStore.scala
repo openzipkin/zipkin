@@ -159,7 +159,6 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     limit: Int
   ): Future[Seq[IndexedTraceId]] = call {
     spansForService(serviceName)
-      .filter(s => s.id == s.traceId) // only root spans
       .filter(_.timestamp.exists(t => t >= (endTs - lookback) && t <= endTs))
       .filter(_.duration.exists(_ >= minDuration))
       .filter(_.duration.exists(_ <= maxDuration.getOrElse(Long.MaxValue)))

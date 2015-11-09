@@ -295,7 +295,8 @@ class AnormSpanStore(val db: DB,
       val result:List[(Long, Long)] = SQL(
         """SELECT t1.trace_id, start_ts
           |FROM zipkin_spans t1
-          |WHERE trace_id = id
+          |JOIN zipkin_annotations t2 ON t1.trace_id = t2.trace_id AND t1.id = t2.span_id
+          |WHERE t2.endpoint_service_name = {service_name}
           |AND duration BETWEEN {min_duration} AND {max_duration}
           |AND start_ts BETWEEN {start_ts} AND {end_ts}
           |GROUP BY t1.trace_id

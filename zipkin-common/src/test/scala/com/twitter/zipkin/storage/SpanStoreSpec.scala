@@ -1,14 +1,11 @@
 package com.twitter.zipkin.storage
 
-import com.google.common.net.InetAddresses._
 import com.twitter.util.Await.result
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common._
 import org.junit.{Before, Test}
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitSuite
-import java.net.InetAddress._
-import java.nio.ByteBuffer
 
 /**
  * Base test for {@link SpanStore} implementations. Subtypes should create a
@@ -29,10 +26,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
   @Before def before() = clear
 
-  val ep = Endpoint(coerceToInteger(getByAddress(Array[Byte](127, 0, 0, 1))), 8080, "service")
-
-  private def binaryAnnotation(key: String, value: String) =
-    BinaryAnnotation(key, ByteBuffer.wrap(value.getBytes), AnnotationType.String, Some(ep))
+  val ep = Endpoint(127 << 24 | 1, 8080, "service")
 
   val spanId = 456
   val ann1 = Annotation(1, "cs", Some(ep))
@@ -45,21 +39,21 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   val ann8 = Annotation(8, "custom", Some(ep))
 
   val span1 = Span(123, "methodcall", spanId, None, Some(1), Some(9), List(ann1, ann3),
-    List(binaryAnnotation("BAH", "BEH")))
+    List(BinaryAnnotation("BAH", "BEH", Some(ep))))
   val span2 = Span(456, "methodcall", spanId, None, Some(2), None, List(ann2),
-    List(binaryAnnotation("BAH2", "BEH2")))
+    List(BinaryAnnotation("BAH2", "BEH2", Some(ep))))
   val span3 = Span(789, "methodcall", spanId, None, Some(2), Some(18), List(ann2, ann3, ann4),
-    List(binaryAnnotation("BAH2", "BEH2")))
+    List(BinaryAnnotation("BAH2", "BEH2", Some(ep))))
   val span4 = Span(999, "methodcall", spanId, None, Some(6), Some(1), List(ann6, ann7),
     List())
   val span5 = Span(999, "methodcall", spanId, None, Some(5), Some(3), List(ann5, ann8),
-    List(binaryAnnotation("BAH2", "BEH2")))
+    List(BinaryAnnotation("BAH2", "BEH2", Some(ep))))
 
   val spanEmptySpanName = Span(123, "", spanId, None, Some(1), Some(1), List(ann1, ann2))
   val spanEmptyServiceName = Span(123, "spanname", spanId)
 
   val mergedSpan = Span(123, "methodcall", spanId, None, Some(1), Some(1),
-    List(ann1, ann2), List(binaryAnnotation("BAH2", "BEH2")))
+    List(ann1, ann2), List(BinaryAnnotation("BAH2", "BEH2", Some(ep))))
 
   @Test def getSpansByTraceIds() {
     result(store(Seq(span1, span2)))
@@ -151,28 +145,43 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
   /** Shows that duration queries go against the root span, not the child */
   @Test def getTraces_duration() {
-    val archiver = List(binaryAnnotation(Constants.LocalComponent, "archiver"))
-    val targz = Span(1L, "targz", 1L, None, Some(100L), Some(200L), binaryAnnotations = archiver)
-    val tar = Span(1L, "tar", 2L, Some(1L), Some(100L), Some(150L), binaryAnnotations = archiver)
-    val gz = Span(1L, "gz", 3L, Some(1L), Some(250L), Some(50L), binaryAnnotations = archiver)
+    val service1 = Endpoint(127 << 24 | 1, 8080, "service1")
+    val service2 = Endpoint(127 << 24 | 2, 8080, "service2")
+    val service3 = Endpoint(127 << 24 | 3, 8080, "service3")
 
-    result(store(List(targz, tar, gz)))
+    val archiver1 = List(BinaryAnnotation(Constants.LocalComponent, "archiver", Some(service1)))
+    val archiver2 = List(BinaryAnnotation(Constants.LocalComponent, "archiver", Some(service2)))
+    val archiver3 = List(BinaryAnnotation(Constants.LocalComponent, "archiver", Some(service3)))
+    val targz = Span(1L, "targz", 1L, None, Some(100L), Some(200L), binaryAnnotations = archiver1)
+    val tar = Span(1L, "tar", 2L, Some(1L), Some(200L), Some(150L), binaryAnnotations = archiver2)
+    val gz = Span(1L, "gz", 3L, Some(1L), Some(250L), Some(50L), binaryAnnotations = archiver3)
+    val fastTar = Span(3L, "tar", 3L, None, Some(130L), Some(50L), binaryAnnotations = archiver2)
 
-    result(store.getTraces(QueryRequest("service", minDuration = targz.duration))) should be(
-      Seq(List(targz, tar, gz))
+    val trace1 = List(targz, tar, gz)
+    val trace2 = List(
+      targz.copy(traceId = 2L, timestamp = Some(110L), binaryAnnotations = archiver3),
+      tar.copy(traceId = 2L, timestamp = Some(210L), binaryAnnotations = archiver2),
+      gz.copy(traceId = 2L, timestamp = Some(260L), binaryAnnotations = archiver1))
+    val trace3 = List(fastTar)
+
+    result(store(trace1 ::: trace2 ::: trace3))
+
+    // Min duration is inclusive and is applied by service.
+    result(store.getTraces(QueryRequest("service1", minDuration = targz.duration))) should be(
+      Seq(trace1)
+    )
+    result(store.getTraces(QueryRequest("service3", minDuration = targz.duration))) should be(
+      Seq(trace2)
     )
 
-    result(store.getTraces(QueryRequest("service", minDuration = targz.duration, maxDuration = targz.duration.map(_ + 10L)))) should be(
-      Seq(List(targz, tar, gz))
+    // Duration bounds aren't limited to root spans: they apply to all spans by service in a trace
+    result(store.getTraces(QueryRequest("service2", minDuration = fastTar.duration, maxDuration = tar.duration))) should be(
+      Seq(trace1, trace2, trace3) // service2 is in the middle of trace1 and 2, but root of trace3
     )
 
-    result(store.getTraces(QueryRequest("service", minDuration = Some(targz.duration.get + 1)))) should be(
-      empty
-    )
-
-    //Only root spans should be considered (ex. traceId = spanId)
-    result(store.getTraces(QueryRequest("service", minDuration = tar.duration, maxDuration = targz.duration.map(_ - 10L)))) should be(
-      empty
+    // Max duration should filter our longer spans from the same service
+    result(store.getTraces(QueryRequest("service2", minDuration = gz.duration, maxDuration = fastTar.duration))) should be(
+      Seq(trace3)
     )
   }
 
@@ -217,7 +226,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     val foo = Span(1, "call1", 1, None, Some(1), None, List(Annotation(1, "foo", Some(ep))))
     // would be foo bar, except lexicographically bar precedes foo
     val barAndFoo = Span(2, "call2", 2, None, Some(2), None, List(Annotation(2, "bar", Some(ep)), Annotation(2, "foo", Some(ep))))
-    val fooAndBazAndQux = Span(3, "call3", 3, None, Some(3), None, foo.annotations.map(_.copy(timestamp = 3)), List(binaryAnnotation("baz", "qux")))
+    val fooAndBazAndQux = Span(3, "call3", 3, None, Some(3), None, foo.annotations.map(_.copy(timestamp = 3)), List(BinaryAnnotation("baz", "qux", Some(ep))))
     val barAndFooAndBazAndQux = Span(4, "call4", 4, None, Some(4), None, barAndFoo.annotations.map(_.copy(timestamp = 4)), fooAndBazAndQux.binaryAnnotations)
 
     result(store(Seq(foo, barAndFoo, fooAndBazAndQux, barAndFooAndBazAndQux)))
