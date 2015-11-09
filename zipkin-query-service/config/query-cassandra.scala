@@ -24,6 +24,7 @@ val logLevel = sys.env.get("QUERY_LOG_LEVEL").getOrElse("INFO")
 
 object Factory extends App with CassandraSpanStoreFactory
 
+Factory.ensureSchema.parse(sys.env.get("CASSANDRA_ENSURE_SCHEMA").getOrElse("true"))
 Factory.cassandraDest.parse(sys.env.get("CASSANDRA_CONTACT_POINTS").getOrElse("localhost"))
 
 val username = sys.env.get("CASSANDRA_USERNAME")
