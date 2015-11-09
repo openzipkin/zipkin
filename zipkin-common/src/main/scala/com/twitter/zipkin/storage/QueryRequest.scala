@@ -5,16 +5,17 @@ import com.twitter.zipkin.util.Util.checkArgument
 import scala.util.hashing.MurmurHash3
 
 /**
- * @param _serviceName Mandatory [[com.twitter.zipkin.common.Endpoint.serviceName]]
+ * @param _serviceName Mandatory [[com.twitter.zipkin.common.Endpoint.serviceName]] and constrains
+ *                     all other parameters.
  * @param _spanName When present, only include traces with this [[com.twitter.zipkin.common.Span.name]]
  * @param annotations Include traces whose [[com.twitter.zipkin.common.Span.annotations]] include a value in this set.
  *                    This is an AND condition against the set, as well against [[binaryAnnotations]]
  * @param binaryAnnotations Include traces whose [[com.twitter.zipkin.common.Span.binaryAnnotations]] include a
  *                          String whose key and value are an entry in this set.
  *                          This is an AND condition against the set, as well against [[annotations]]
- * @param minDuration only return traces whose [[com.twitter.zipkin.common.Trace.duration]] is
+ * @param minDuration only return traces whose [[com.twitter.zipkin.common.Span.duration]] is
  *                    greater than or equal to minDuration microseconds.
- * @param maxDuration only return traces whose [[com.twitter.zipkin.common.Trace.duration]] is less
+ * @param maxDuration only return traces whose [[com.twitter.zipkin.common.Span.duration]] is less
  *                    than or equal to maxDuration microseconds. Only valid with [[minDuration]].
  * @param endTs only return traces where all [[com.twitter.zipkin.common.Span.timestamp]] are at
  *              or before this time in epoch microseconds. Defaults to current time.
