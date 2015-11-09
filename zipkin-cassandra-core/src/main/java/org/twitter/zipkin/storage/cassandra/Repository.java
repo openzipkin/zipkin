@@ -95,8 +95,12 @@ public final class Repository implements AutoCloseable {
     /**
      * Note: This constructor performs network I/O to the {@code cluster}.
      */
-    public Repository(String keyspace, Cluster cluster) {
-        metadata = Schema.ensureExists(keyspace, cluster);
+    public Repository(String keyspace, Cluster cluster, Boolean ensureSchema) {
+        if (ensureSchema.booleanValue()) {
+            Schema.ensureExists(keyspace, cluster);
+        }
+
+        metadata = Schema.readMetadata(keyspace, cluster);
         session = cluster.connect(keyspace);
         protocolVersion = cluster.getConfiguration().getProtocolOptions().getProtocolVersionEnum();
 
@@ -248,11 +252,11 @@ public final class Repository implements AutoCloseable {
      * Get the available trace information from the storage system.
      * Spans in trace should be sorted by the first annotation timestamp
      * in that span. First event should be first in the spans list.
-     *
+     * <p>
      * The return list will contain only spans that have been found, thus
      * the return list may not match the provided list of ids.
      */
-    public ListenableFuture<Map<Long,List<ByteBuffer>>> getSpansByTraceIds(Long[] traceIds, int limit) {
+    public ListenableFuture<Map<Long, List<ByteBuffer>>> getSpansByTraceIds(Long[] traceIds, int limit) {
         Preconditions.checkNotNull(traceIds);
         try {
             if (0 < traceIds.length) {
@@ -720,8 +724,33 @@ public final class Repository implements AutoCloseable {
 
         private static final String SCHEMA = "/cassandra-schema-cql3.txt";
 
-        static Map<String,String> ensureExists(String keyspace, Cluster cluster) {
-            Map<String,String> metadata = new LinkedHashMap<>();
+        static Map<String, String> readMetadata(String keyspace, Cluster cluster) {
+            Map<String, String> metadata = new LinkedHashMap<>();
+            try (Session session = cluster.connect()) {
+                KeyspaceMetadata keyspaceMetadata = getKeyspaceMetadata(keyspace, cluster);
+
+                Map<String, String> replicatn = keyspaceMetadata.getReplication();
+                if ("SimpleStrategy".equals(replicatn.get("class")) && "1".equals(replicatn.get("replication_factor"))) {
+                    LOG.warn("running with RF=1, this is not suitable for production. Optimal is 3+");
+                }
+                Map<String, String> tracesCompaction = keyspaceMetadata.getTable("traces").getOptions().getCompaction();
+                metadata.put("traces.compaction.class", tracesCompaction.get("class"));
+            }
+
+            return metadata;
+        }
+
+        private static KeyspaceMetadata getKeyspaceMetadata(String keyspace, Cluster cluster) {
+            KeyspaceMetadata keyspaceMetadata = cluster.getMetadata().getKeyspace(keyspace);
+
+            if (keyspaceMetadata == null) {
+                throw new IllegalStateException(String.format("Cannot read keyspace metadata for give keyspace: %s and cluster: ",
+                                keyspace, cluster.getClusterName()));
+            }
+            return keyspaceMetadata;
+        }
+
+        static void ensureExists(String keyspace, Cluster cluster) {
             try (Session session = cluster.connect()) {
                 try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(SCHEMA))) {
                     for (String cmd : String.format(CharStreams.toString(reader)).split(";")) {
@@ -731,17 +760,9 @@ public final class Repository implements AutoCloseable {
                         }
                     }
                 }
-                KeyspaceMetadata keyspaceMetadata = cluster.getMetadata().getKeyspace(keyspace);
-                Map<String,String> replicatn = keyspaceMetadata.getReplication();
-                if("SimpleStrategy".equals(replicatn.get("class")) && "1".equals(replicatn.get("replication_factor"))) {
-                    LOG.warn("running with RF=1, this is not suitable for production. Optimal is 3+");
-                }
-                Map<String,String> tracesCompaction = keyspaceMetadata.getTable("traces").getOptions().getCompaction();
-                metadata.put("traces.compaction.class", tracesCompaction.get("class"));
             } catch (IOException ex) {
                 LOG.error(ex.getMessage(), ex);
             }
-            return metadata;
         }
 
         private Schema() {}

@@ -8,6 +8,7 @@
 
 These services apply configuration through environment variables:
 
+   * `CASSANDRA_ENSURE_SCHEMA`: Ensuring that schema exists, if enabled tries to execute script /zipkin-cassandra-core/resources/cassandra-schema-cql3.txt 
    * `CASSANDRA_USERNAME` and `CASSANDRA_PASSWORD`: Cassandra authentication. Will throw an exception on startup if authentication fails
    * `CASSANDRA_CONTACT_POINTS`: Comma separated list of hosts / ip addresses part of Cassandra cluster
    * `COLLECTOR_SAMPLE_RATE`: Sample rate. Double value between 0.0 (nothing ends up in back-end store) and 1.0 (everything ends up in back-end store)

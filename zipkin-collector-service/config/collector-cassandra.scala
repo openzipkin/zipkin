@@ -28,6 +28,7 @@ val sampleRate = sys.env.get("COLLECTOR_SAMPLE_RATE").getOrElse("1.0").toDouble
 
 object Factory extends App with CassandraSpanStoreFactory
 
+Factory.ensureSchema.parse(sys.env.get("CASSANDRA_ENSURE_SCHEMA").getOrElse("true"))
 Factory.cassandraDest.parse(sys.env.get("CASSANDRA_CONTACT_POINTS").getOrElse("localhost"))
 
 val username = sys.env.get("CASSANDRA_USERNAME")

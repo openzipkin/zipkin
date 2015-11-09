@@ -35,6 +35,7 @@ import scala.collection.JavaConverters._
 
 trait CassandraSpanStoreFactory {self: App =>
 
+  val ensureSchema          = flag[Boolean]  ("zipkin.store.cassandra.ensureSchema", false, "ensures schema exists")
   val keyspace              = flag[String]   ("zipkin.store.cassandra.keyspace", KeyspaceName, "name of the keyspace to use")
   val cassandraDest         = flag[String]   ("zipkin.store.cassandra.dest", "localhost:9042", "dest of the cassandra cluster; comma-separated list of host:port pairs")
   val cassandraSpanTtl      = flag[Duration] ("zipkin.store.cassandra.spanTTL", SpanTtl, "length of time cassandra should store spans")
@@ -44,7 +45,7 @@ trait CassandraSpanStoreFactory {self: App =>
   val cassandraPassword     = flag[String]   ("zipkin.store.cassandra.password", "cassandra authentication password")
 
   // eagerly makes network connections, so lazy
-  private[this] lazy val lazyRepository = new Repository(keyspace(), createClusterBuilder().build())
+  private[this] lazy val lazyRepository = new Repository(keyspace(), createClusterBuilder().build(), ensureSchema())
 
   def newCassandraStore(stats: StatsReceiver = DefaultStatsReceiver.scope("CassandraSpanStore")) = {
     new CassandraSpanStore(stats.scope(keyspace()), cassandraSpanTtl(), cassandraIndexTtl(), cassandraMaxTraceCols()) {

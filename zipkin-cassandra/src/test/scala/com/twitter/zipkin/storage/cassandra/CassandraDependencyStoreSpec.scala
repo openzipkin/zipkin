@@ -37,7 +37,7 @@ class CassandraDependencyStoreSpec extends DependencyStoreSpec {
   import CassandraDependencyStoreSpec._
 
   override val store = new CassandraDependencyStore {
-    override lazy val repository = new Repository(keyspace, cluster)
+    override lazy val repository = new Repository(keyspace, cluster, true)
   }
 
   override def processDependencies(spans: List[Span]) = {
