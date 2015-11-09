@@ -15,16 +15,10 @@
  */
 package com.twitter.zipkin.builder
 
-import ch.qos.logback.classic.{Logger, Level}
-import com.twitter.conversions.time._
-import com.twitter.finagle.ListeningServer
-import com.twitter.finagle.stats.DefaultStatsReceiver
 import com.twitter.finagle.tracing.{DefaultTracer, NullTracer}
-import com.twitter.finagle.zipkin.thrift.{SpanStoreZipkinTracer, RawZipkinTracer}
-import com.twitter.ostrich.admin.RuntimeEnvironment
-import com.twitter.zipkin.query.ZipkinQueryServer
+import com.twitter.finagle.zipkin.thrift.{RawZipkinTracer, SpanStoreZipkinTracer}
+import com.twitter.zipkin.query.{BootstrapTrace, ZipkinQueryServer}
 import com.twitter.zipkin.storage.{DependencyStore, NullDependencyStore, SpanStore}
-import org.slf4j.LoggerFactory
 
 case class QueryServiceBuilder(override val defaultFinatraHttpPort: String = "0.0.0.0:9411",
                                override val defaultHttpPort: Int = 9901,
@@ -32,25 +26,24 @@ case class QueryServiceBuilder(override val defaultFinatraHttpPort: String = "0.
                                spanStore: SpanStore,
                                dependencies: DependencyStore = new NullDependencyStore,
                                override val defaultHttpServerName: String = "zipkin-query"
-                                ) extends ZipkinQueryServer(spanStore, dependencies) with
-                                          Builder[RuntimeEnvironment => ListeningServer] {
+                                ) extends ZipkinQueryServer(spanStore, dependencies) {
 
-  override def apply() = (runtime: RuntimeEnvironment) => {
-    LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
-      .asInstanceOf[Logger].setLevel(Level.toLevel(logLevel))
-
-    /** If the span transport is set, trace accordingly, or disable tracing */
+  /** If the span transport is set, trace accordingly, or disable tracing. */
+  premain {
     DefaultTracer.self = sys.env.get("TRANSPORT_TYPE") match {
       case Some("scribe") => RawZipkinTracer(sys.env.get("SCRIBE_HOST").getOrElse("localhost"), sys.env.get("SCRIBE_PORT").getOrElse("1463").toInt)
-      case Some("http") => new SpanStoreZipkinTracer(spanStore, DefaultStatsReceiver.get)
+      case Some("http") => new SpanStoreZipkinTracer(spanStore, statsReceiver)
       case _ => NullTracer
     }
+  }
 
-    val defaultLookback = sys.env.get("QUERY_LOOKBACK").getOrElse(7.days.inMicroseconds.toString)
-    nonExitingMain(Array(
-      "-local.doc.root", "/",
-      "-zipkin.queryService.lookback", defaultLookback
-    ))
-    adminHttpServer
+  override def warmup() {
+    super.warmup()
+    BootstrapTrace.record("warmup")
+  }
+
+  override def postWarmup() {
+    super.postWarmup()
+    BootstrapTrace.complete()
   }
 }

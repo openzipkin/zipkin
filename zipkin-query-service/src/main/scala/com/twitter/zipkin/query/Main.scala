@@ -16,40 +16,34 @@
  */
 package com.twitter.zipkin.query
 
+import ch.qos.logback.classic.{Level, Logger}
 import com.google.common.base.Charsets.UTF_8
 import com.google.common.io.{Files, Resources}
-import com.twitter.finagle.ListeningServer
-import com.twitter.logging.Logger
-import com.twitter.ostrich.admin.{RuntimeEnvironment, Service, ServiceTracker}
-import com.twitter.util.{Await, Eval}
+import com.twitter.conversions.time._
+import com.twitter.ostrich.admin.RuntimeEnvironment
+import com.twitter.util.Eval
 import com.twitter.zipkin.BuildProperties
-import com.twitter.zipkin.builder.Builder
+import com.twitter.zipkin.builder.QueryServiceBuilder
+import org.slf4j.LoggerFactory
 
 object Main {
-  val log = Logger.get(getClass.getName)
 
-  def main(args: Array[String]) {
-    log.info("Loading configuration")
+  def main(args: Array[String]) = {
     val runtime = RuntimeEnvironment(BuildProperties, args)
 
     // Fallback to bundled config resources, if there's no file at the path specified as -f
     val source = if (runtime.configFile.exists()) Files.toString(runtime.configFile, UTF_8)
     else Resources.toString(getClass.getResource(runtime.configFile.toString), UTF_8)
 
-    val builder = (new Eval).apply[Builder[RuntimeEnvironment => ListeningServer]](source)
-    try {
-      val query = builder.apply().apply(runtime)
-      Await.ready(query)
-      ServiceTracker.register(new Service() {
-        override def shutdown() = Await.ready(query.close())
+    val query = (new Eval).apply[QueryServiceBuilder](source)
+    LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+      .asInstanceOf[Logger].setLevel(Level.toLevel(query.logLevel))
 
-        override def start() = {}
-      })
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
-        log.error(e, "Unexpected exception: %s", e.getMessage)
-        System.exit(0)
-    }
+    // Note: this is blocking, so nothing after this will be called.
+    val defaultLookback = sys.env.get("QUERY_LOOKBACK").getOrElse(7.days.inMicroseconds.toString)
+    query.nonExitingMain(Array(
+      "-local.doc.root", "/",
+      "-zipkin.queryService.lookback", defaultLookback
+    ))
   }
 }
