@@ -67,13 +67,15 @@ case class Span(
    */
   lazy val serviceName: Option[String] = {
     // Most authoritative is the label of the server's endpoint
-    binaryAnnotations.find(_.key == Constants.ServerAddr).flatMap(_.host).map(_.serviceName) orElse
+    binaryAnnotations.find(_.key == Constants.ServerAddr).map(_.serviceName) orElse
       // Next, the label of any server annotation, logged by an instrumented server
-      serverSideAnnotations.flatMap(_.host).headOption.map(_.serviceName) orElse
+      serverSideAnnotations.headOption.map(_.serviceName) orElse
       // Next is the label of the client's endpoint
-      binaryAnnotations.find(_.key == Constants.ClientAddr).flatMap(_.host).map(_.serviceName) orElse
-      // Finally, the label of any client annotation, logged by an instrumented client
-      clientSideAnnotations.flatMap(_.host).headOption.map(_.serviceName)
+      binaryAnnotations.find(_.key == Constants.ClientAddr).map(_.serviceName) orElse
+      // Next is the label of any client annotation, logged by an instrumented client
+      clientSideAnnotations.headOption.map(_.serviceName) orElse
+      // Finally is the label of the local component's endpoint
+      binaryAnnotations.find(_.key == Constants.LocalComponent).map(_.serviceName)
   }
 
   /**

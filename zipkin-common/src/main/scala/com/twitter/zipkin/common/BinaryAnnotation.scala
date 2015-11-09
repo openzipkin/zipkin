@@ -24,7 +24,9 @@ case class BinaryAnnotation(
   value: ByteBuffer,
   annotationType: AnnotationType,
   host: Option[Endpoint]
-)
+) {
+  def serviceName = host.map(_.serviceName).getOrElse("unknown")
+}
 
 object BinaryAnnotation {
   def apply[V](key: String, value: BinaryAnnotationValue[V], host: Option[Endpoint]): BinaryAnnotation =

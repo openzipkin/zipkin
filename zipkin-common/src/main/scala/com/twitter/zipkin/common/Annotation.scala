@@ -27,7 +27,7 @@ import java.util.Comparator
  */
 case class Annotation(timestamp: Long, value: String, host: Option[Endpoint])
   extends Ordered[Annotation] {
-  def serviceName = host.map(_.serviceName).getOrElse("Unknown service name")
+  def serviceName = host.map(_.serviceName).getOrElse("unknown")
 
   /**
    * @return diff between timestamps of the two annotations.

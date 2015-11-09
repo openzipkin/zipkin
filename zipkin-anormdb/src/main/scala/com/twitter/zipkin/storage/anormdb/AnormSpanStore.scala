@@ -94,7 +94,7 @@ class AnormSpanStore(val db: DB,
             .on("timestamp" -> span.timestamp.getOrElse(System.currentTimeMillis() * 1000)) // fallback if we have no timestamp, yet
             .on("ipv4" -> b.host.map(_.ipv4))
             .on("port" -> b.host.map(_.port))
-            .on("service_name" -> b.host.map(_.serviceName).getOrElse("Unknown service name")) // from Annotation
+            .on("service_name" -> b.serviceName)
             .execute()
         )
       })
@@ -201,7 +201,6 @@ class AnormSpanStore(val db: DB,
             |  SELECT DISTINCT trace_id
             |  FROM zipkin_annotations
             |  WHERE endpoint_service_name = {service_name}
-            |  AND a_type = -1
             |  GROUP BY trace_id)
             |AS t2 ON t1.trace_id = t2.trace_id
             |WHERE (name = {name} OR {name} = '')
