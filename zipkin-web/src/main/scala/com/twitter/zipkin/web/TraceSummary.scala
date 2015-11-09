@@ -32,7 +32,7 @@ object TraceSummary {
    */
   def apply(trace: List[Span]): Option[TraceSummary] = {
     val duration = Trace.duration(trace).getOrElse(0L)
-    val endpoints = trace.flatMap(_.annotations).flatMap(_.host).distinct
+    val endpoints = trace.flatMap(_.endpoints).distinct
     for (
       traceId <- trace.headOption.map(_.traceId);
       timestamp <- trace.headOption.flatMap(_.timestamp)

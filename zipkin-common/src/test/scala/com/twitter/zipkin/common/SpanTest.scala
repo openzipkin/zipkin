@@ -19,7 +19,17 @@ package com.twitter.zipkin.common
 import org.scalatest.FunSuite
 
 class SpanTest extends FunSuite {
-
+  val span = Span(12345, "methodcall", 666, None, None, None,
+    List(
+      Annotation(1, "cs", Some(Endpoint(1, 2, "cs"))),
+      Annotation(1, "sr", Some(Endpoint(1, 2, "sr"))),
+      Annotation(1, "ss", Some(Endpoint(1, 2, "ss"))),
+      Annotation(1, "cr", Some(Endpoint(1, 2, "cr")))
+    ),
+    List(
+      BinaryAnnotation("ca", BinaryAnnotationValue(true), Some(Endpoint(1, 2, "ca"))),
+      BinaryAnnotation("sa", BinaryAnnotationValue(true), Some(Endpoint(1, 2, "sa")))
+    ))
   /** Representations should lowercase on the way in */
   test("name cannot be lowercase") {
     intercept[IllegalArgumentException] {
@@ -27,18 +37,12 @@ class SpanTest extends FunSuite {
     }
   }
 
+  test("endpoints include binary annotations") {
+    assert(span.endpoints.map(_.serviceName) === Set("cs", "cr", "ss", "sr", "ca", "sa"))
+  }
+
   test("serviceNames include binary annotations") {
-    assert(Span(12345, "methodcall", 666, None, None, None,
-      List(
-        Annotation(1, "cs", Some(Endpoint(1, 2, "cs"))),
-        Annotation(1, "sr", Some(Endpoint(1, 2, "sr"))),
-        Annotation(1, "ss", Some(Endpoint(1, 2, "ss"))),
-        Annotation(1, "cr", Some(Endpoint(1, 2, "cr")))
-      ),
-      List(
-        BinaryAnnotation("ca", BinaryAnnotationValue(true), Some(Endpoint(1, 2, "ca"))),
-        BinaryAnnotation("sa", BinaryAnnotationValue(true), Some(Endpoint(1, 2, "sa")))
-      )).serviceNames === Set("cs", "cr", "ss", "sr", "ca", "sa"))
+    assert(span.serviceNames === Set("cs", "cr", "ss", "sr", "ca", "sa"))
   }
 
   test("serviceName preference") {
