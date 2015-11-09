@@ -56,10 +56,10 @@ case class Span(
   override def compare(that: Span) =
     java.lang.Long.compare(timestamp.getOrElse(0L), that.timestamp.getOrElse(0L))
 
-  def serviceNames: Set[String] = (
-    annotations.flatMap(_.host.map(h => h.serviceName)) ++
-      binaryAnnotations.flatMap(_.host.map(h => h.serviceName))
-    ).toSet
+  def endpoints: Set[Endpoint] =
+    (annotations.flatMap(_.host) ++ binaryAnnotations.flatMap(_.host)).toSet
+
+  def serviceNames: Set[String] = endpoints.map(_.serviceName)
 
   /**
    * Tries to extract the best name of the service in this span. This depends on annotations
