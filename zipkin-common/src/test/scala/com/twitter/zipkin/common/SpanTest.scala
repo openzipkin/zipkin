@@ -27,9 +27,11 @@ class SpanTest extends FunSuite {
       Annotation(1, "cr", Some(Endpoint(1, 2, "cr")))
     ),
     List(
-      BinaryAnnotation("ca", BinaryAnnotationValue(true), Some(Endpoint(1, 2, "ca"))),
-      BinaryAnnotation("sa", BinaryAnnotationValue(true), Some(Endpoint(1, 2, "sa")))
+      BinaryAnnotation("ca", true, Some(Endpoint(1, 2, "ca"))),
+      BinaryAnnotation("sa", true, Some(Endpoint(1, 2, "sa"))),
+      BinaryAnnotation("lc", "foo", Some(Endpoint(1, 2, "lc")))
     ))
+
   /** Representations should lowercase on the way in */
   test("name cannot be lowercase") {
     intercept[IllegalArgumentException] {
@@ -38,25 +40,15 @@ class SpanTest extends FunSuite {
   }
 
   test("endpoints include binary annotations") {
-    assert(span.endpoints.map(_.serviceName) === Set("cs", "cr", "ss", "sr", "ca", "sa"))
+    assert(span.endpoints.map(_.serviceName) === Set("cs", "cr", "ss", "sr", "ca", "sa", "lc"))
   }
 
   test("serviceNames include binary annotations") {
-    assert(span.serviceNames === Set("cs", "cr", "ss", "sr", "ca", "sa"))
+    assert(span.serviceNames === Set("cs", "cr", "ss", "sr", "ca", "sa", "lc"))
   }
 
   test("serviceName preference") {
-    var span = Span(12345, "methodcall", 666, None, None, None,
-      List(
-        Annotation(1, "cs", Some(Endpoint(1, 2, "cs"))),
-        Annotation(1, "sr", Some(Endpoint(1, 2, "sr"))),
-        Annotation(1, "ss", Some(Endpoint(1, 2, "ss"))),
-        Annotation(1, "cr", Some(Endpoint(1, 2, "cr")))
-      ),
-      List(
-        BinaryAnnotation("ca", BinaryAnnotationValue(true), Some(Endpoint(1, 2, "ca"))),
-        BinaryAnnotation("sa", BinaryAnnotationValue(true), Some(Endpoint(1, 2, "sa")))
-      ))
+    var span = this.span
 
     // Most authoritative is the label of the server's endpoint
     assert(span.serviceName === Some("sa"))
@@ -71,8 +63,13 @@ class SpanTest extends FunSuite {
 
     assert(span.serviceName === Some("ca"))
 
-    // Finally, the label of any client annotation, logged by an instrumented client
+    // Next is the label of any client annotation, logged by an instrumented client
     span = span.copy(binaryAnnotations = List.empty)
+
+    assert(span.serviceName === Some("cs"))
+
+    // Finally is the label of the local component's endpoint
+    span = span.copy(binaryAnnotations = List(this.span.binaryAnnotations.last))
 
     assert(span.serviceName === Some("cs"))
   }

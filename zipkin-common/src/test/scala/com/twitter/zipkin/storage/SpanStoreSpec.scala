@@ -143,6 +143,15 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store.getTraces(QueryRequest("badservice", Some("badmethod")))) should be(empty)
   }
 
+  @Test def getTraces_serviceNameInBinaryAnnotation() {
+    val localTrace = List(Span(1L, "targz", 1L, None, Some(100L), Some(200L),
+      binaryAnnotations = List(BinaryAnnotation(Constants.LocalComponent, "archiver", Some(ep)))))
+
+    result(store(localTrace))
+
+    result(store.getTraces(QueryRequest("service"))) should be(Seq(localTrace))
+  }
+
   /** Shows that duration queries go against the root span, not the child */
   @Test def getTraces_duration() {
     val service1 = Endpoint(127 << 24 | 1, 8080, "service1")
