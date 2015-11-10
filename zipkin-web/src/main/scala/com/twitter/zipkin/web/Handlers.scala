@@ -8,7 +8,7 @@ import com.twitter.finagle.{Filter, Service}
 import com.twitter.finatra.httpclient.HttpClient
 import com.twitter.io.Buf
 import com.twitter.util.{Future, TwitterDateFormat}
-import com.twitter.zipkin.common.{Trace, SpanTreeEntry, Span}
+import com.twitter.zipkin.common._
 import com.twitter.zipkin.json._
 import com.twitter.zipkin.web.mustache.ZipkinMustache
 import com.twitter.zipkin.{Constants => ZConstants}
@@ -303,14 +303,15 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       val depth = spanDepths.getOrElse(span.id, 1)
       val width = span.duration.map { d => (d.toDouble / traceDuration.toDouble) * 100 }.getOrElse(0.0)
 
-      val binaryAnnotations = span.binaryAnnotations.map {
+      var binaryAnnotations = span.binaryAnnotations.map {
         case ann if ZConstants.CoreAddress.contains(ann.key) =>
-          val key = ZConstants.CoreAnnotationNames.get(ann.key).get
-          val value = ann.host.map { e => s"${e.getHostAddress}:${e.getUnsignedPort}" }.get
-          JsonBinaryAnnotation(key, value, None, ann.host.map(JsonEndpoint))
+          ann.host.map(toHostAndPort(ZConstants.CoreAnnotationNames.get(ann.key).get, _))
         case ann if ZConstants.CoreAnnotationNames.contains(ann.key) =>
           JsonBinaryAnnotation(ann.copy(key = ZConstants.CoreAnnotationNames.get(ann.key).get))
         case ann => JsonBinaryAnnotation(ann)
+      }
+      span.binaryAnnotations.find(_.key == ZConstants.LocalComponent).foreach { ann =>
+        binaryAnnotations ++= ann.host.map(toHostAndPort("Local Address", _))
       }
 
       Map(
@@ -377,4 +378,9 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
           .map(renderTrace(_))
       } getOrElse NotFound
     }
+
+  private def toHostAndPort(key: String, endpoint: Endpoint): JsonBinaryAnnotation = {
+    val value = s"${endpoint.getHostAddress}:${endpoint.getUnsignedPort}"
+    JsonBinaryAnnotation(key, value, None, Some(JsonEndpoint(endpoint)))
+  }
 }
