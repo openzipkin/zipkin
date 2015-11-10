@@ -36,10 +36,10 @@ class RedisSpanStore(client: Client, ttl: Option[Duration])
     serviceName: String,
     spanName: Option[String],
     endTs: Long,
-    lookback: Long, // TODO
+    lookback: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] = {
-    index.getTraceIdsByName(serviceName, spanName, endTs, limit)
+    index.getTraceIdsByName(serviceName, spanName, endTs, lookback, limit)
   }
 
   override def getTraceIdsByAnnotation(
@@ -47,10 +47,10 @@ class RedisSpanStore(client: Client, ttl: Option[Duration])
     annotation: String,
     value: Option[ByteBuffer],
     endTs: Long,
-    lookback: Long, // TODO
+    lookback: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] = {
-    index.getTraceIdsByAnnotation(serviceName, annotation, value, endTs, limit)
+    index.getTraceIdsByAnnotation(serviceName, annotation, value, endTs, lookback, limit)
   }
 
   override def getAllServiceNames() = index.getServiceNames.map(_.toList.sorted)

@@ -36,8 +36,8 @@ abstract class TraceIndex[K](
    * @param endTs microseconds from epoch for the youngest results.
    * @param limit maximum number of items to return
    */
-  def list(key: K, endTs: Long, limit: Long): Future[Seq[IndexedTraceId]] = {
-    val timestamp: Long = ttl map (dur => endTs - dur.inMicroseconds) getOrElse 0
+  def list(key: K, endTs: Long, lookback: Long, limit: Long): Future[Seq[IndexedTraceId]] = {
+    val timestamp = endTs - lookback
 
     client.zRevRangeByScore(encodeKey(key), ZInterval(endTs), ZInterval(timestamp), true, Some(Limit(0, limit)))
       .map(_.left.get)
