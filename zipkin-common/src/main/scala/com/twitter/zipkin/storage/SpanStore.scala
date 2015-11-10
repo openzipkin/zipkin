@@ -15,12 +15,11 @@
  */
 package com.twitter.zipkin.storage
 
-import java.nio.ByteBuffer
-
 import com.twitter.util.FuturePools._
 import com.twitter.util.{Closable, Future}
 import com.twitter.zipkin.adjuster.{ApplyTimestampAndDuration, CorrectForClockSkew, MergeById}
 import com.twitter.zipkin.common.Span
+import java.nio.ByteBuffer
 
 abstract class SpanStore extends java.io.Closeable {
 
@@ -121,10 +120,9 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     lookback: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] = call {
-    ((spanName, spansForService(serviceName)) match {
-      case (Some(name), spans) => spans filter(_.name == name)
-      case (_, spans) => spans
-    }).filter(_.timestamp.exists(t => t >= (endTs - lookback) && t <= endTs))
+    spansForService(serviceName)
+      .filter(s => spanName.map(_ == s.name).getOrElse(true))
+      .filter(_.timestamp.exists(t => t >= (endTs - lookback) && t <= endTs))
       .take(limit)
       .map(span => IndexedTraceId(span.traceId, span.timestamp.get))
       .toList
@@ -152,6 +150,7 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
 
   override protected def getTraceIdsByDuration(
     serviceName: String,
+    spanName: Option[String],
     minDuration: Long,
     maxDuration: Option[Long],
     endTs: Long,
@@ -159,6 +158,7 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     limit: Int
   ): Future[Seq[IndexedTraceId]] = call {
     spansForService(serviceName)
+      .filter(s => spanName.map(_ == s.name).getOrElse(true))
       .filter(_.timestamp.exists(t => t >= (endTs - lookback) && t <= endTs))
       .filter(_.duration.exists(_ >= minDuration))
       .filter(_.duration.exists(_ <= maxDuration.getOrElse(Long.MaxValue)))

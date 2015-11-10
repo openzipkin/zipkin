@@ -283,6 +283,7 @@ class AnormSpanStore(val db: DB,
 
   override protected def getTraceIdsByDuration(
     serviceName: String,
+    spanName: Option[String],
     minDuration: Long,
     maxDuration: Option[Long],
     endTs: Long,
@@ -295,13 +296,15 @@ class AnormSpanStore(val db: DB,
         """SELECT t1.trace_id, start_ts
           |FROM zipkin_spans t1
           |JOIN zipkin_annotations t2 ON t1.trace_id = t2.trace_id AND t1.id = t2.span_id
-          |WHERE t2.endpoint_service_name = {service_name}
+          |WHERE (name = {name} OR {name} = '')
+          |AND t2.endpoint_service_name = {service_name}
           |AND duration BETWEEN {min_duration} AND {max_duration}
           |AND start_ts BETWEEN {start_ts} AND {end_ts}
           |GROUP BY t1.trace_id
           |ORDER BY start_ts
           |LIMIT {limit}
         """.stripMargin)
+        .on("name" -> spanName.getOrElse(""))
         .on("service_name" -> serviceName)
         .on("min_duration" -> minDuration)
         .on("max_duration" -> maxDuration.getOrElse(Long.MaxValue))

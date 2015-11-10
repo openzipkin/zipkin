@@ -164,14 +164,14 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     val targz = Span(1L, "targz", 1L, None, Some(100L), Some(200L), binaryAnnotations = archiver1)
     val tar = Span(1L, "tar", 2L, Some(1L), Some(200L), Some(150L), binaryAnnotations = archiver2)
     val gz = Span(1L, "gz", 3L, Some(1L), Some(250L), Some(50L), binaryAnnotations = archiver3)
-    val fastTar = Span(3L, "tar", 3L, None, Some(130L), Some(50L), binaryAnnotations = archiver2)
+    val zip = Span(3L, "zip", 3L, None, Some(130L), Some(50L), binaryAnnotations = archiver2)
 
     val trace1 = List(targz, tar, gz)
     val trace2 = List(
       targz.copy(traceId = 2L, timestamp = Some(110L), binaryAnnotations = archiver3),
       tar.copy(traceId = 2L, timestamp = Some(210L), binaryAnnotations = archiver2),
       gz.copy(traceId = 2L, timestamp = Some(260L), binaryAnnotations = archiver1))
-    val trace3 = List(fastTar)
+    val trace3 = List(zip)
 
     result(store(trace1 ::: trace2 ::: trace3))
 
@@ -184,12 +184,17 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     )
 
     // Duration bounds aren't limited to root spans: they apply to all spans by service in a trace
-    result(store.getTraces(QueryRequest("service2", minDuration = fastTar.duration, maxDuration = tar.duration))) should be(
+    result(store.getTraces(QueryRequest("service2", minDuration = zip.duration, maxDuration = tar.duration))) should be(
       Seq(trace1, trace2, trace3) // service2 is in the middle of trace1 and 2, but root of trace3
     )
 
+    // Span name should apply to the duration filter
+    result(store.getTraces(QueryRequest("service2", Some("zip"), minDuration = zip.duration))) should be(
+      Seq(trace3)
+    )
+
     // Max duration should filter our longer spans from the same service
-    result(store.getTraces(QueryRequest("service2", minDuration = gz.duration, maxDuration = fastTar.duration))) should be(
+    result(store.getTraces(QueryRequest("service2", minDuration = gz.duration, maxDuration = zip.duration))) should be(
       Seq(trace3)
     )
   }

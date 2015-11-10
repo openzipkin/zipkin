@@ -43,6 +43,7 @@ trait CollectAnnotationQueries {
   /** Only return traces where root span duration is between minDuration and maxDuration */
   protected def getTraceIdsByDuration(
     serviceName: String,
+    spanName: Option[String],
     minDuration: Long,
     maxDuration: Option[Long],
     endTs: Long,
@@ -55,12 +56,17 @@ trait CollectAnnotationQueries {
 
   /** @see [[com.twitter.zipkin.storage.SpanStore.getTraces()]] */
   def getTraces(qr: QueryRequest): Future[Seq[List[Span]]] = {
-    val sliceQueries = Seq[Set[SliceQuery]](
+    var sliceQueries = Seq[Set[SliceQuery]](
       qr.spanName.map(SpanSliceQuery(_)).toSet,
       qr.annotations.map(AnnotationSliceQuery(_, None)),
       qr.binaryAnnotations.map(e => AnnotationSliceQuery(e._1, Some(ByteBuffer.wrap(e._2.getBytes(UTF_8))))),
-      qr.minDuration.map(DurationSliceQuery(_, qr.maxDuration)).toSet
+      qr.minDuration.map(DurationSliceQuery(_, qr.maxDuration, qr.spanName)).toSet
     ).flatten
+
+    // don't lookup traces by span name twice
+    if (qr.minDuration.isDefined && qr.spanName.isDefined) {
+      sliceQueries = sliceQueries.filterNot(_.isInstanceOf[SpanSliceQuery])
+    }
 
     val ids = sliceQueries match {
       case Nil =>
@@ -105,7 +111,7 @@ trait CollectAnnotationQueries {
   private trait SliceQuery
   private case class SpanSliceQuery(name: String) extends SliceQuery
   private case class AnnotationSliceQuery(key: String, value: Option[ByteBuffer]) extends SliceQuery
-  private case class DurationSliceQuery(minDuration: Long, maxDuration: Option[Long]) extends SliceQuery
+  private case class DurationSliceQuery(minDuration: Long, maxDuration: Option[Long], name: Option[String]) extends SliceQuery
 
   private[this] def querySlices(slices: Seq[SliceQuery], qr: QueryRequest): Future[Seq[Seq[IndexedTraceId]]] =
     Future.collect(slices map {
@@ -113,8 +119,8 @@ trait CollectAnnotationQueries {
         getTraceIdsByName(qr.serviceName, Some(name), qr.endTs, qr.lookback, qr.limit)
       case AnnotationSliceQuery(key, value) =>
         getTraceIdsByAnnotation(qr.serviceName, key, value, qr.endTs, qr.lookback, qr.limit)
-      case DurationSliceQuery(minDuration, maxDuration) =>
-        getTraceIdsByDuration(qr.serviceName, minDuration, maxDuration, qr.endTs, qr.lookback, qr.limit)
+      case DurationSliceQuery(minDuration, maxDuration, name) =>
+        getTraceIdsByDuration(qr.serviceName, name, minDuration, maxDuration, qr.endTs, qr.lookback, qr.limit)
       case s =>
         Future.exception(new Exception("Uknown SliceQuery: %s".format(s)))
     })
