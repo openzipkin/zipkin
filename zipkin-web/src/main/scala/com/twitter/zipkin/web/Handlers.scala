@@ -12,6 +12,7 @@ import com.twitter.zipkin.common._
 import com.twitter.zipkin.json._
 import com.twitter.zipkin.web.mustache.ZipkinMustache
 import com.twitter.zipkin.{Constants => ZConstants}
+import com.twitter.conversions.time._
 import org.jboss.netty.handler.codec.http.QueryStringEncoder
 import java.io.{File, FileInputStream, InputStream}
 
@@ -57,6 +58,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
 
     def apply(response: Response) {
       response.setContentType(typ)
+      response.cacheControl = 10.minutes
       response.content = Buf.ByteArray.Owned(content)
     }
   }
