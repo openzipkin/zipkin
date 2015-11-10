@@ -50,22 +50,22 @@ class RedisIndex(
 
   def getTraceIdsByName(
     serviceName: String, spanName: Option[String],
-    endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
+    endTs: Long, lookback: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
     if (spanName.isDefined) {
-      spanIndex.list(SpanKey(serviceName, spanName.get), endTs, limit)
+      spanIndex.list(SpanKey(serviceName, spanName.get), endTs, lookback, limit)
     } else {
-      serviceIndex.list(serviceName, endTs, limit)
+      serviceIndex.list(serviceName, endTs, lookback, limit)
     }
   }
 
   def getTraceIdsByAnnotation(
     serviceName: String, annotation: String, value: Option[ByteBuffer],
-    endTs: Long, limit: Int): Future[Seq[IndexedTraceId]] = {
+    endTs: Long, lookback: Long,limit: Int): Future[Seq[IndexedTraceId]] = {
     if (value.isDefined) {
       val string = copiedBuffer(value.get).toString(UTF_8)
-      binaryAnnotationIndex.list(BinaryAnnotationKey(serviceName, annotation, string), endTs, limit)
+      binaryAnnotationIndex.list(BinaryAnnotationKey(serviceName, annotation, string), endTs, lookback, limit)
     } else {
-      annotationIndex.list(AnnotationKey(serviceName, annotation), endTs, limit)
+      annotationIndex.list(AnnotationKey(serviceName, annotation), endTs, lookback, limit)
     }
   }
 

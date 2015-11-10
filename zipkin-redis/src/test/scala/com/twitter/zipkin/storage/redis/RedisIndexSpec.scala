@@ -69,9 +69,9 @@ class RedisIndexSpec extends RedisSpecification {
     ready(redisIndex.index(span1))
 
     val endTs = ann3.timestamp + 1
-    result(redisIndex.getTraceIdsByName("service", None, endTs, 1)).map(_.traceId) should
+    result(redisIndex.getTraceIdsByName("service", None, endTs, endTs, 1)).map(_.traceId) should
       be(Seq(span1.traceId))
-    result(redisIndex.getTraceIdsByName("service", Some("methodcall"), endTs, 1)).map(_.traceId) should
+    result(redisIndex.getTraceIdsByName("service", Some("methodcall"), endTs, endTs, 1)).map(_.traceId) should
       be(Seq(span1.traceId))
   }
 
@@ -80,14 +80,14 @@ class RedisIndexSpec extends RedisSpecification {
 
     // fetch by time based annotation, find trace
     val endTs = ann3.timestamp + 1
-    result(redisIndex.getTraceIdsByAnnotation("service", "custom", None, endTs, 1)).map(_.traceId) should
+    result(redisIndex.getTraceIdsByAnnotation("service", "custom", None, endTs, endTs, 1)).map(_.traceId) should
       be (Seq(span1.traceId))
 
     // should not find any traces since the core annotation doesn't exist in index
-    result(redisIndex.getTraceIdsByAnnotation("service", "cs", None, 0, 1)) should be (empty)
+    result(redisIndex.getTraceIdsByAnnotation("service", "cs", None, 0, endTs, 1)) should be (empty)
 
     // should find traces by the key and value annotation
-    result(redisIndex.getTraceIdsByAnnotation("service", "BAH", Some(ByteBuffer.wrap("BEH".getBytes)), endTs, 1)) should
+    result(redisIndex.getTraceIdsByAnnotation("service", "BAH", Some(ByteBuffer.wrap("BEH".getBytes)), endTs, endTs, 1)) should
       be (Seq(IndexedTraceId(span1.traceId, span1.timestamp.get)))
   }
 
