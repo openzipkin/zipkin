@@ -59,20 +59,23 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store(Seq(span1, span2)))
     result(store.getTracesByIds(Seq(span1.traceId))) should be(Seq(Seq(span1)))
     result(store.getTracesByIds(Seq(span1.traceId, span2.traceId, 111111))) should be(
-      Seq(Seq(span1), Seq(span2))
+      Seq(List(span2), List(span1))
     )
     // ids in wrong order
     result(store.getTracesByIds(Seq(span2.traceId, span1.traceId))) should be(
-      Seq(Seq(span1), Seq(span2))
+      Seq(List(span2), List(span1))
     )
   }
 
-  /** Spans can come out of order, and so can annotations within them */
-  @Test def spansRetrieveInOrder() {
+  /**
+   * Filtered traces are returned in reverse insertion order. This is because the primary search
+   * interface is a timeline view, looking back from an end timestamp.
+   */
+  @Test def tracesRetrieveInOrderDesc() {
     result(store(Seq(span2, span1.copy(annotations = List(ann3, ann1)))))
 
     result(store.getTracesByIds(Seq(span2.traceId, span1.traceId))) should be(
-      Seq(Seq(span1), Seq(span2))
+      Seq(List(span2), List(span1))
     )
   }
 
@@ -185,7 +188,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
     // Duration bounds aren't limited to root spans: they apply to all spans by service in a trace
     result(store.getTraces(QueryRequest("service2", minDuration = zip.duration, maxDuration = tar.duration))) should be(
-      Seq(trace1, trace2, trace3) // service2 is in the middle of trace1 and 2, but root of trace3
+      Seq(trace3, trace2, trace1) // service2 is in the middle of trace1 and 2, but root of trace3
     )
 
     // Span name should apply to the duration filter
@@ -245,15 +248,15 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
     result(store(Seq(foo, barAndFoo, fooAndBazAndQux, barAndFooAndBazAndQux)))
     result(store.getTraces(QueryRequest("service", annotations = Set("foo")))) should be(
-      Seq(Seq(foo), Seq(barAndFoo), Seq(fooAndBazAndQux), Seq(barAndFooAndBazAndQux))
+      Seq(List(barAndFooAndBazAndQux), List(fooAndBazAndQux), List(barAndFoo), List(foo))
     )
 
     result(store.getTraces(QueryRequest("service", annotations = Set("foo", "bar")))) should be(
-      Seq(Seq(barAndFoo), Seq(barAndFooAndBazAndQux))
+      Seq(List(barAndFooAndBazAndQux), List(barAndFoo))
     )
 
     result(store.getTraces(QueryRequest("service", annotations = Set("foo", "bar"), binaryAnnotations = Set(("baz", "qux"))))) should be(
-      Seq(Seq(barAndFooAndBazAndQux))
+      Seq(List(barAndFooAndBazAndQux))
     )
   }
 
@@ -273,14 +276,14 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
       annotations = mergedAnnotations,
       binaryAnnotations = span5.binaryAnnotations)
 
-    result(store.getTraces(QueryRequest("service"))) should be(Seq(List(span1), List(merged)))
+    result(store.getTraces(QueryRequest("service"))) should be(Seq(List(merged), List(span1)))
   }
 
+  /** limit should apply to traces closest to endTs */
   @Test def getTraces_limit() {
-    val spans = Seq(span1.copy(traceId = 1), span1.copy(traceId = 2), span1.copy(traceId = 3))
-    result(store(spans))
+    result(store(Seq(span1, span3))) // span1's timestamp is 1, span3's timestamp is 2
 
-    result(store.getTraces(QueryRequest("service", limit = 2))).size should be(2)
+    result(store.getTraces(QueryRequest("service", limit = 1))) should be(Seq(List(span3)))
   }
 
   /** Traces whose root span has timestamps before or at endTs are returned */
@@ -288,8 +291,8 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store(Seq(span1, span3))) // span1's timestamp is 1, span3's timestamp is 2
 
     result(store.getTraces(QueryRequest("service", endTs = 1))) should be(Seq(List(span1)))
-    result(store.getTraces(QueryRequest("service", endTs = 2))) should be(Seq(List(span1), List(span3)))
-    result(store.getTraces(QueryRequest("service", endTs = 3))) should be(Seq(List(span1), List(span3)))
+    result(store.getTraces(QueryRequest("service", endTs = 2))) should be(Seq(List(span3), List(span1)))
+    result(store.getTraces(QueryRequest("service", endTs = 3))) should be(Seq(List(span3), List(span1)))
   }
 
   /** Traces whose root span has timestamps between (endTs - lookback) and endTs are returned */
@@ -297,9 +300,9 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store(Seq(span1, span3))) // span1's timestamp is 1, span3's timestamp is 2
 
     result(store.getTraces(QueryRequest("service", endTs = 1, lookback = Some(1)))) should be(Seq(List(span1)))
-    result(store.getTraces(QueryRequest("service", endTs = 2, lookback = Some(1)))) should be(Seq(List(span1), List(span3)))
+    result(store.getTraces(QueryRequest("service", endTs = 2, lookback = Some(1)))) should be(Seq(List(span3), List(span1)))
     result(store.getTraces(QueryRequest("service", endTs = 3, lookback = Some(1)))) should be(Seq(List(span3)))
-    result(store.getTraces(QueryRequest("service", endTs = 3, lookback = Some(2)))) should be(Seq(List(span1), List(span3)))
+    result(store.getTraces(QueryRequest("service", endTs = 3, lookback = Some(2)))) should be(Seq(List(span3), List(span1)))
   }
 
   @Test def getAllServiceNames_emptyServiceName() {

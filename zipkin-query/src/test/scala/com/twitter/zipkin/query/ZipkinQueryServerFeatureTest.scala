@@ -566,36 +566,6 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |[
           |  [
           |    {
-          |      "traceId" : "0000000000000003",
-          |      "name" : "methodcall",
-          |      "id" : "0000000000000003",
-          |      "timestamp" : 99,
-          |      "duration" : 100,
-          |      "annotations" : [
-          |        {
-          |          "timestamp" : 99,
-          |          "value" : "cs",
-          |          "endpoint" : {
-          |            "serviceName" : "service2",
-          |            "ipv4" : "0.0.0.234",
-          |            "port" : 234
-          |          }
-          |        },
-          |        {
-          |          "timestamp" : 199,
-          |          "value" : "cr",
-          |          "endpoint" : {
-          |            "serviceName" : "service2",
-          |            "ipv4" : "0.0.0.234",
-          |            "port" : 234
-          |          }
-          |        }
-          |      ],
-          |      "binaryAnnotations" : [ ]
-          |    }
-          |  ],
-          |  [
-          |    {
           |      "traceId" : "0000000000000002",
           |      "name" : "methodcall",
           |      "id" : "0000000000000002",
@@ -683,6 +653,36 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |            "serviceName" : "service1",
           |            "ipv4" : "0.0.0.123",
           |            "port" : 123
+          |          }
+          |        }
+          |      ],
+          |      "binaryAnnotations" : [ ]
+          |    }
+          |  ],
+          |  [
+          |    {
+          |      "traceId" : "0000000000000003",
+          |      "name" : "methodcall",
+          |      "id" : "0000000000000003",
+          |      "timestamp" : 99,
+          |      "duration" : 100,
+          |      "annotations" : [
+          |        {
+          |          "timestamp" : 99,
+          |          "value" : "cs",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 199,
+          |          "value" : "cr",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
           |          }
           |        }
           |      ],

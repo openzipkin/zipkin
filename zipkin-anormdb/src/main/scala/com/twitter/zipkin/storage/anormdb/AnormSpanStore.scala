@@ -179,11 +179,26 @@ class AnormSpanStore(val db: DB,
         .values.toList
         .map(CorrectForClockSkew)
         .map(ApplyTimestampAndDuration)
-        .sortBy(_.head) // sort traces by the first span
+        .sortBy(_.head)(Ordering[Span].reverse) // sort descending by the first span
     } finally {
       returnConn(conn, borrowTime, "getSpansByTraceIds")
     }
   }
+
+  // TODO: rewrite or delete anorm, as its implementation unnecessarily uses sliced queries
+  val sliceQueryHeader =
+    """SELECT t1.trace_id, start_ts
+      |FROM zipkin_spans t1
+      |JOIN zipkin_annotations t2 ON t1.trace_id = t2.trace_id AND t1.id = t2.span_id
+      |WHERE t2.endpoint_service_name = {service_name}
+    """.stripMargin
+
+  val sliceQueryFooter =
+    """AND start_ts BETWEEN {start_ts} AND {end_ts}
+      |GROUP BY t1.trace_id
+      |ORDER BY start_ts DESC
+      |LIMIT {limit}
+    """.stripMargin
 
   override def getTraceIdsByName(serviceName: String, spanName: Option[String],
     endTs: Long, lookback: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
@@ -194,21 +209,8 @@ class AnormSpanStore(val db: DB,
     else {
       implicit val (conn, borrowTime) = borrowConn()
       try {
-        val result:List[(Long, Long)] = SQL(
-          """SELECT t1.trace_id, start_ts
-            |FROM zipkin_spans t1
-            |INNER JOIN (
-            |  SELECT DISTINCT trace_id
-            |  FROM zipkin_annotations
-            |  WHERE endpoint_service_name = {service_name}
-            |  GROUP BY trace_id)
-            |AS t2 ON t1.trace_id = t2.trace_id
-            |WHERE (name = {name} OR {name} = '')
-            |AND start_ts BETWEEN {start_ts} AND {end_ts}
-            |GROUP BY t1.trace_id
-            |ORDER BY start_ts
-            |LIMIT {limit}
-          """.stripMargin)
+        val result: List[(Long, Long)] = SQL(sliceQueryHeader +
+          "AND (name = {name} OR {name} = '')" + sliceQueryFooter)
           .on("service_name" -> serviceName)
           .on("name" -> spanName.getOrElse(""))
           .on("start_ts" -> (endTs - lookback))
@@ -231,45 +233,31 @@ class AnormSpanStore(val db: DB,
         val result:List[(Long, Long)] = value match {
           // Binary annotations
           case Some(bytes) => {
-            SQL(
-              """SELECT DISTINCT trace_id, MAX(a_timestamp)
-                |FROM zipkin_annotations
-                |WHERE endpoint_service_name = {service_name}
-                |  AND a_key = {annotation}
-                |  AND a_value = {value}
-                |  AND a_type != -1
-                |  AND a_timestamp BETWEEN {start_ts} AND {end_ts}
-                |GROUP BY trace_id
-                |ORDER BY a_timestamp
-                |LIMIT {limit}
-              """.stripMargin)
+            SQL(sliceQueryHeader +
+              """AND t2.a_key = {annotation}
+                |AND t2.a_value = {value}
+                |AND t2.a_type != -1
+              """.stripMargin + sliceQueryFooter)
               .on("service_name" -> serviceName)
               .on("annotation" -> annotation)
               .on("value" -> Util.getArrayFromBuffer(bytes))
               .on("start_ts" -> (endTs - lookback))
               .on("end_ts" -> endTs)
               .on("limit" -> limit)
-              .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
+              .as((long("trace_id") ~ long("start_ts") map flatten) *)
           }
           // Normal annotations
           case None => {
-            SQL(
-              """SELECT trace_id, MAX(a_timestamp)
-                |FROM zipkin_annotations
-                |WHERE endpoint_service_name = {service_name}
-                |  AND a_key = {annotation}
-                |  AND a_type = -1
-                |  AND a_timestamp BETWEEN {start_ts} AND {end_ts}
-                |GROUP BY trace_id
-                |ORDER BY a_timestamp
-                |LIMIT {limit}
-              """.stripMargin)
+            SQL(sliceQueryHeader +
+              """AND t2.a_key = {annotation}
+                |AND t2.a_type = -1
+              """.stripMargin + sliceQueryFooter)
               .on("service_name" -> serviceName)
               .on("annotation" -> annotation)
               .on("start_ts" -> (endTs - lookback))
               .on("end_ts" -> endTs)
               .on("limit" -> limit)
-              .as((long("trace_id") ~ long("MAX(a_timestamp)") map flatten) *)
+              .as((long("trace_id") ~ long("start_ts") map flatten) *)
           }
         }
         result map { case (tId, ts) =>
@@ -292,18 +280,10 @@ class AnormSpanStore(val db: DB,
   ): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
     implicit val (conn, borrowTime) = borrowConn()
     try {
-      val result:List[(Long, Long)] = SQL(
-        """SELECT t1.trace_id, start_ts
-          |FROM zipkin_spans t1
-          |JOIN zipkin_annotations t2 ON t1.trace_id = t2.trace_id AND t1.id = t2.span_id
-          |WHERE (name = {name} OR {name} = '')
-          |AND t2.endpoint_service_name = {service_name}
+      val result: List[(Long, Long)] = SQL(sliceQueryHeader +
+        """AND (name = {name} OR {name} = '')
           |AND duration BETWEEN {min_duration} AND {max_duration}
-          |AND start_ts BETWEEN {start_ts} AND {end_ts}
-          |GROUP BY t1.trace_id
-          |ORDER BY start_ts
-          |LIMIT {limit}
-        """.stripMargin)
+        """.stripMargin + sliceQueryFooter)
         .on("name" -> spanName.getOrElse(""))
         .on("service_name" -> serviceName)
         .on("min_duration" -> minDuration)

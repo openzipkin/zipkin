@@ -43,7 +43,7 @@ class RedisStorage(
             .map(MergeById)
             .map(CorrectForClockSkew)
             .map(ApplyTimestampAndDuration)
-            .sortBy(_.head)) // sort traces by the first span
+            .sortBy(_.head)(Ordering[Span].reverse)) // sort descending by the first span
 
   private[this] def getSpansByTraceId(traceId: Long): Future[List[Span]] =
     client.lRange(encodeTraceId(traceId), 0L, -1L) map

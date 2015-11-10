@@ -25,11 +25,13 @@ abstract class SpanStore extends java.io.Closeable {
 
   /**
    * Get the available trace information from the storage system.
-   * Spans in trace are sorted by the first annotation timestamp
-   * in that span. First event should be first in the spans list.
    *
-   * <p/> Results are sorted in order of the first span's timestamp, and contain
-   * up to [[QueryRequest.limit]] elements.
+   * <p/> Traces are sorted in descending in order of the first span's
+   * timestamp, containing up to [[QueryRequest.limit]] traces, nearest to
+   * [[QueryRequest.endTs]], looking back up to [[QueryRequest.lookback]] μs.
+   *
+   * <p/> Spans in trace, and annotations in a span are sorted ascending by
+   * timestamp. First event should be first in the spans list.
    */
   def getTraces(qr: QueryRequest): Future[Seq[List[Span]]]
 
@@ -92,8 +94,8 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
 
   private[this] def call[T](f: => T): Future[T] = synchronized(Future(f))
 
-  private[this] def spansForService(name: String): Seq[Span] =
-    spans.filter(_.serviceNames.contains(name)).toList
+  private[this] def spansForService(name: String): Iterator[Span] =
+    spans.reverseIterator.filter(_.serviceNames.contains(name))
 
   override def close() = {}
 
@@ -110,7 +112,7 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
          .map(MergeById)
          .map(CorrectForClockSkew)
          .map(ApplyTimestampAndDuration)
-         .sortBy(_.head)
+         .sortBy(_.head)(Ordering[Span].reverse) // sort descending by the first span
   }
 
   override def getTraceIdsByName(
@@ -173,6 +175,6 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
 
   override def getSpanNames(_serviceName: String): Future[Seq[String]] = call {
     val serviceName = _serviceName.toLowerCase // service names are always lowercase!
-    spansForService(serviceName).map(_.name).distinct.toList.sorted
+    spansForService(serviceName).map(_.name).toList.distinct.sorted
   }
 }

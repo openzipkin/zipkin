@@ -189,7 +189,7 @@ abstract class CassandraSpanStore(
           .map(MergeById)
           .map(CorrectForClockSkew)
           .map(ApplyTimestampAndDuration)
-          .sortBy(_.head) // CQL doesn't allow order by with an "in" query
+          .sortBy(_.head)(Ordering[Span].reverse) // sort descending by the first span
       }
   }
 
