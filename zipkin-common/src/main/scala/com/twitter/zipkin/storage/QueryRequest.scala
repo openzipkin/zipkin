@@ -5,6 +5,12 @@ import com.twitter.zipkin.util.Util.checkArgument
 import scala.util.hashing.MurmurHash3
 
 /**
+ * Invoking this request retrieves traces matching the below filters.
+ *
+ * <p/> Results should be filtered against [[endTs]], subject to [[limit]] and [[_lookback]]. For
+ * example, if endTs is 10:20 today, limit is 10, and lookback is 7 days, traces returned should be
+ * those nearest to 10:20 today, not 10:20 a week ago.
+ *
  * @param _serviceName Mandatory [[com.twitter.zipkin.common.Endpoint.serviceName]] and constrains
  *                     all other parameters.
  * @param _spanName When present, only include traces with this [[com.twitter.zipkin.common.Span.name]]
