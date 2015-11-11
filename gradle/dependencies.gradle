@@ -11,7 +11,7 @@ ext {
             twitterUtil: '6.29.0',
             twitterServer: '1.15.0',
             finatra: '2.1.1',
-            jackson: '2.4.4', // from finatra's build.sbt
+            jackson: '2.6.3',
             ostrich: '9.13.0',
             griddle: '1.7',
             slf4j: '1.7.12',
@@ -53,6 +53,9 @@ subprojects { subproject ->
                 }
                 if (details.requested.group == 'com.github.spullara.mustache.java') {
                   details.useVersion commonVersions.mustache
+                }
+                if (details.requested.group == 'com.fasterxml.jackson.core') {
+                    details.useVersion commonVersions.jackson
                 }
             }
         }
