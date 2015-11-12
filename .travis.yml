@@ -1,5 +1,10 @@
 language: java
 sudo: false
+dist: trusty
+addons:
+  apt:
+    packages:
+      - oracle-java8-installer
 
 services:
   - redis-server
