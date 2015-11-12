@@ -52,7 +52,9 @@ CREATE TABLE IF NOT EXISTS zipkin.traces (
     PRIMARY KEY (trace_id, ts, span_name)
 ) WITH compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_sstable_age_days': '1'};
 
-// This table uses bigint to store timestamp in microseconds, as Cassandra's timestamp is apparently limited to milliseconds
+// This table uses bigint to store timestamp in microseconds, as Cassandra's timestamp is apparently limited to milliseconds.
+// The table uses short column names for increased efficiency of Cassandra storage.
+// Cassandra storage was optimized for long column names only in 3.0 (https://issues.apache.org/jira/browse/CASSANDRA-4175)
 CREATE TABLE IF NOT EXISTS zipkin.span_duration_index (
     s      text,      // service name
     sp     text,      // span name, or blank for queries without span name

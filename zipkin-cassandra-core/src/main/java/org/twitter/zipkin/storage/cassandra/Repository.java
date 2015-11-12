@@ -758,9 +758,7 @@ public final class Repository implements AutoCloseable {
         }
     }
 
-    /**
-     * @return Returns a map of trace id -> timestamp
-     */
+    /** Returns a map of trace id -> timestamp */
     public ListenableFuture<Map<Long, Long>> getTraceIdsByDuration(String serviceName, String spanName,
                                                                    long minDuration, long maxDuration,
                                                                    long endTs, long startTs, int limit) {
