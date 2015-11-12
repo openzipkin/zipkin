@@ -39,10 +39,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
-import java.util.function.LongFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
 
 public final class Repository implements AutoCloseable {
@@ -758,7 +756,7 @@ public final class Repository implements AutoCloseable {
         }
     }
 
-    /** Returns a map of trace id -> timestamp */
+    /** Returns a map of trace id to timestamp */
     public ListenableFuture<Map<Long, Long>> getTraceIdsByDuration(String serviceName, String spanName,
                                                                    long minDuration, long maxDuration,
                                                                    long endTs, long startTs, int limit) {
