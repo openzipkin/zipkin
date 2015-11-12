@@ -79,12 +79,13 @@ abstract class CassandraSpanStore(
   private[this] val IndexTraceNoTimestampCounter = IndexTraceStats.counter("noTimestamp")
   private[this] val IndexTraceByServiceNameCounter = IndexTraceStats.counter("serviceName")
   private[this] val IndexTraceBySpanNameCounter = IndexTraceStats.counter("spanName")
+  private[this] val IndexTraceByDurationCounter = IndexTraceStats.counter("duration")
   private[this] val IndexAnnotationCounter = IndexStats.scope("annotation").counter("standard")
   private[this] val IndexBinaryAnnotationCounter = IndexStats.scope("annotation").counter("binary")
   private[this] val IndexSpanNoTimestampCounter = IndexStats.scope("span").counter("noTimestamp")
+  private[this] val IndexSpanNoDurationCounter = IndexStats.scope("span").counter("noDuration")
   private[this] val QueryStats = stats.scope("query")
   private[this] val QueryGetSpansByTraceIdsStat = QueryStats.stat("getSpansByTraceIds")
-  private[this] val QueryGetSpansByTraceIdsTooBigCounter = QueryStats.scope("getSpansByTraceIds").counter("tooBig")
   private[this] val QueryGetServiceNamesCounter = QueryStats.counter("getServiceNames")
   private[this] val QueryGetSpanNamesCounter = QueryStats.counter("getSpanNames")
   private[this] val QueryGetTraceIdsByNameCounter = QueryStats.counter("getTraceIdsByName")
@@ -181,6 +182,27 @@ abstract class CassandraSpanStore(
     } getOrElse Future.value(())
   }
 
+  private[this] def indexByDuration(span: Span): Future[Unit] = {
+    (span.timestamp, span.duration) match {
+      case (Some(timestamp), Some(duration)) =>
+        Future.join(
+          span.serviceNames.toSeq.flatMap { serviceName =>
+            IndexTraceByDurationCounter.incr()
+            Seq(
+              repository.storeTraceIdByDuration(
+                serviceName, span.name, timestamp, duration, span.traceId, indexTtl.inSeconds),
+              repository.storeTraceIdByDuration(
+                serviceName, "", timestamp, duration, span.traceId, indexTtl.inSeconds)
+            )
+          }.map(FutureUtil.toFuture)
+        )
+      case (_, None) =>
+        IndexSpanNoDurationCounter.incr()
+        Future.value((): Unit)
+      case _ => Future.value((): Unit)
+    }
+  }
+
   private[this] def getSpansByTraceIds(traceIds: Seq[Long], count: Int): Future[Seq[List[Span]]] = {
     FutureUtil.toFuture(repository.getSpansByTraceIds(traceIds.toArray.map(Long.box), count))
       .map { spansByTraceId =>
@@ -219,7 +241,8 @@ abstract class CassandraSpanStore(
           indexServiceName(span),
           indexSpanNameByService(span),
           indexTraceIdByName(span),
-          indexByAnnotations(span))
+          indexByAnnotations(span),
+          indexByDuration(span))
       })
   }
 
@@ -284,13 +307,24 @@ abstract class CassandraSpanStore(
   /** Only return traces where root span duration is between minDuration and maxDuration */
   override protected def getTraceIdsByDuration(
     serviceName: String,
+    spanName: Option[String],
     minDuration: Long,
     maxDuration: Option[Long],
     endTs: Long,
+    lookback: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByDurationCounter.incr()
 
     Future.exception(new UnsupportedOperationException)
+    FutureUtil.toFuture(
+      repository
+        .getTraceIdsByDuration(serviceName, spanName getOrElse "", minDuration, maxDuration getOrElse Long.MaxValue,
+          endTs, endTs - lookback, limit))
+      .map { traceIds =>
+      traceIds.asScala
+        .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
+        .toSeq
+    }
   }
 }
