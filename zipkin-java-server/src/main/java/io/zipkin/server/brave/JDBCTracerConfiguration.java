@@ -15,11 +15,7 @@
 package io.zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
-import org.mariadb.jdbc.Driver;
-import com.twitter.zipkin.gen.AnnotationType;
-import com.twitter.zipkin.gen.BinaryAnnotation;
-import com.twitter.zipkin.gen.Endpoint;
-import com.twitter.zipkin.gen.Span;
+import io.zipkin.Endpoint;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -30,6 +26,7 @@ import org.jooq.ExecuteType;
 import org.jooq.impl.DefaultExecuteListener;
 import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.jooq.tools.StringUtils;
+import org.mariadb.jdbc.Driver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -48,41 +45,29 @@ public class JDBCTracerConfiguration extends DefaultExecuteListener {
 
   /** Attach the IP of the remote datasource, knowing that DNS may invalidate this */
   @Bean
-  BinaryAnnotation jdbcServerAddr(@Value("${spring.datasource.url}") String jdbcUrl) throws UnknownHostException {
+  Endpoint jdbcServerAddr(@Value("${spring.datasource.url}") String jdbcUrl) throws UnknownHostException {
     URI url = URI.create(jdbcUrl.substring(5)); // strip "jdbc:"
     int ipv4 = ByteBuffer.wrap(InetAddress.getByName(url.getHost()).getAddress()).getInt();
-    Endpoint endpoint = new Endpoint(ipv4, (short) url.getPort(), "zipkin-jdbc");
-    BinaryAnnotation ba = new BinaryAnnotation();
-    ba.setKey("sa");
-    ba.setValue(new byte[]{1});
-    ba.setAnnotation_type(AnnotationType.BOOL);
-    ba.setHost(endpoint);
-    return ba;
+    return Endpoint.create("zipkin-jdbc", ipv4, url.getPort());
   }
 
   @Autowired
   Brave brave;
   @Autowired
-  BinaryAnnotation jdbcServerAddr;
+  Endpoint jdbcEndpoint;
 
   @Override
   public void renderEnd(ExecuteContext ctx) {
     if (ctx.type() == ExecuteType.READ) { // Don't log writes (so as to not loop on collector)
       this.brave.clientTracer().startNewSpan("query");
       this.brave.clientTracer().setCurrentClientServiceName("zipkin-jdbc");
-
-      // Temporary until https://github.com/openzipkin/brave/issues/104
-      Span span = this.brave.clientSpanThreadBinder().getCurrentClientSpan();
-      synchronized (span) {
-        span.addToBinary_annotations(jdbcServerAddr);
-      }
       String[] batchSQL = ctx.batchSQL();
       if (!StringUtils.isBlank(ctx.sql())) {
         this.brave.clientTracer().submitBinaryAnnotation("jdbc.query", ctx.sql());
       } else if (batchSQL.length > 0 && batchSQL[batchSQL.length - 1] != null) {
         this.brave.clientTracer().submitBinaryAnnotation("jdbc.query", StringUtils.join(batchSQL, '\n'));
       }
-      this.brave.clientTracer().setClientSent();
+      this.brave.clientTracer().setClientSent(jdbcEndpoint.ipv4, jdbcEndpoint.port, jdbcEndpoint.serviceName);
     }
   }
 

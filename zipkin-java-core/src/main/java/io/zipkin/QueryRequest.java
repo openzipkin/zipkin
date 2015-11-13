@@ -21,9 +21,20 @@ import java.util.Map;
 
 import static io.zipkin.internal.Util.checkArgument;
 
+/**
+ * Invoking this request retrieves traces matching the below filters.
+ *
+ * <p/> Results should be filtered against {@link #endTs}, subject to {@link #limit} and {@link
+ * #lookback}. For example, if endTs is 10:20 today, limit is 10, and lookback is 7 days, traces
+ * returned should be those nearest to 10:20 today, not 10:20 a week ago.
+ *
+ * <p/> Time units of {@link #endTs} and {@link #lookback} are milliseconds as opposed to
+ * microseconds, the grain of {@link Span#timestamp}. Milliseconds is a more familiar and supported
+ * granularity for query, index and windowing functions.
+ */
 public final class QueryRequest {
 
-  /** Only include traces whose annotation includes this {@link io.zipkin.Endpoint#serviceName} */
+  /** Mandatory {@link io.zipkin.Endpoint#serviceName} and constrains. */
   public final String serviceName;
 
   /** When present, only include traces with this {@link io.zipkin.Span#name} */
@@ -46,10 +57,30 @@ public final class QueryRequest {
   public final Map<String, String> binaryAnnotations;
 
   /**
-   * Only return traces where all {@link io.zipkin.Span#endTs} are at or before this time in epoch
-   * microseconds. Defaults to current time.
+   * Only return traces whose {@link io.zipkin.Span#duration} is greater than or equal to
+   * minDuration microseconds.
+   */
+  @Nullable
+  public final Long minDuration;
+
+  /**
+   * Only return traces whose {@link io.zipkin.Span#duration} is less than or equal to maxDuration
+   * microseconds. Only valid with {@link #minDuration}.
+   */
+  @Nullable
+  public final Long maxDuration;
+
+  /**
+   * Only return traces where all {@link io.zipkin.Span#timestamp} are at or before this time in
+   * epoch milliseconds. Defaults to current time.
    */
   public final long endTs;
+
+  /**
+   * Only return traces where all {@link io.zipkin.Span#timestamp} are at or after (endTs -
+   * lookback) in milliseconds. Defaults to endTs.
+   */
+  public final long lookback;
 
   /** Maximum number of traces to return. Defaults to 10 */
   public final int limit;
@@ -59,7 +90,10 @@ public final class QueryRequest {
       String spanName,
       List<String> annotations,
       Map<String, String> binaryAnnotations,
+      Long minDuration,
+      Long maxDuration,
       long endTs,
+      long lookback,
       int limit) {
     checkArgument(serviceName != null && !serviceName.isEmpty(), "serviceName was empty");
     checkArgument(spanName == null || !spanName.isEmpty(), "spanName was empty");
@@ -76,7 +110,10 @@ public final class QueryRequest {
       checkArgument(!entry.getKey().isEmpty(), "binary annotation key was empty");
       checkArgument(!entry.getValue().isEmpty(), "binary annotation value was empty");
     }
+    this.minDuration = minDuration;
+    this.maxDuration = maxDuration;
     this.endTs = endTs;
+    this.lookback = lookback;
     this.limit = limit;
   }
 
@@ -85,7 +122,10 @@ public final class QueryRequest {
     private String spanName;
     private List<String> annotations = new LinkedList<>();
     private Map<String, String> binaryAnnotations = new LinkedHashMap<>();
+    private Long minDuration;
+    private Long maxDuration;
     private Long endTs;
+    private Long lookback;
     private Integer limit;
 
     public Builder() {
@@ -96,47 +136,78 @@ public final class QueryRequest {
       this.spanName = source.spanName;
       this.annotations = source.annotations;
       this.binaryAnnotations = source.binaryAnnotations;
+      this.minDuration = source.minDuration;
+      this.maxDuration = source.maxDuration;
       this.endTs = source.endTs;
+      this.lookback = source.lookback;
       this.limit = source.limit;
     }
 
-    public QueryRequest.Builder serviceName(String serviceName) {
+    /** @see QueryRequest#serviceName */
+    public Builder serviceName(String serviceName) {
       this.serviceName = serviceName;
       return this;
     }
 
-    public QueryRequest.Builder spanName(@Nullable String spanName) {
+    /** @see QueryRequest#spanName */
+    public Builder spanName(@Nullable String spanName) {
       this.spanName = spanName;
       return this;
     }
 
-    public QueryRequest.Builder addAnnotation(String annotation) {
+    /** @see QueryRequest#annotations */
+    public Builder addAnnotation(String annotation) {
       this.annotations.add(annotation);
       return this;
     }
 
-    public QueryRequest.Builder addBinaryAnnotation(String key, String value) {
+    /** @see QueryRequest#binaryAnnotations */
+    public Builder addBinaryAnnotation(String key, String value) {
       this.binaryAnnotations.put(key, value);
       return this;
     }
 
-    public QueryRequest.Builder endTs(Long endTs) {
+    /** @see QueryRequest#minDuration */
+    public Builder minDuration(Long minDuration) {
+      this.minDuration = minDuration;
+      return this;
+    }
+
+    /** @see QueryRequest#maxDuration */
+    public Builder maxDuration(Long maxDuration) {
+      this.maxDuration = maxDuration;
+      return this;
+    }
+
+    /** @see QueryRequest#endTs */
+    public Builder endTs(Long endTs) {
       this.endTs = endTs;
       return this;
     }
 
-    public QueryRequest.Builder limit(Integer limit) {
+    /** @see QueryRequest#lookback */
+    public Builder lookback(Long lookback) {
+      this.lookback = lookback;
+      return this;
+    }
+
+    /** @see QueryRequest#limit */
+    public Builder limit(Integer limit) {
       this.limit = limit;
       return this;
     }
 
     public QueryRequest build() {
+      long selectedEndTs = endTs == null ? System.currentTimeMillis() * 1000 : endTs;
       return new QueryRequest(
           serviceName,
           spanName,
           annotations,
           binaryAnnotations,
-          endTs == null ? System.currentTimeMillis() * 1000 : endTs,
+          minDuration,
+          maxDuration,
+          selectedEndTs,
+          Math.min(lookback == null ? selectedEndTs : lookback, selectedEndTs),
           limit == null ? 10 : limit);
     }
   }
@@ -148,7 +219,10 @@ public final class QueryRequest {
         + "spanName=" + spanName + ", "
         + "annotations=" + annotations + ", "
         + "binaryAnnotations=" + binaryAnnotations + ", "
+        + "minDuration=" + minDuration + ", "
+        + "maxDuration=" + maxDuration + ", "
         + "endTs=" + endTs + ", "
+        + "lookback=" + lookback + ", "
         + "limit=" + limit
         + "}";
   }
@@ -164,7 +238,10 @@ public final class QueryRequest {
           && ((this.spanName == null) ? (that.spanName == null) : this.spanName.equals(that.spanName))
           && ((this.annotations == null) ? (that.annotations == null) : this.annotations.equals(that.annotations))
           && ((this.binaryAnnotations == null) ? (that.binaryAnnotations == null) : this.binaryAnnotations.equals(that.binaryAnnotations))
+          && ((this.minDuration == null) ? (that.minDuration == null) : this.minDuration.equals(that.minDuration))
+          && ((this.maxDuration == null) ? (that.maxDuration == null) : this.maxDuration.equals(that.maxDuration))
           && (this.endTs == that.endTs)
+          && (this.lookback == that.lookback)
           && (this.limit == that.limit);
     }
     return false;
@@ -182,7 +259,13 @@ public final class QueryRequest {
     h *= 1000003;
     h ^= (binaryAnnotations == null) ? 0 : binaryAnnotations.hashCode();
     h *= 1000003;
+    h ^= (minDuration == null) ? 0 : minDuration.hashCode();
+    h *= 1000003;
+    h ^= (maxDuration == null) ? 0 : maxDuration.hashCode();
+    h *= 1000003;
     h ^= (endTs >>> 32) ^ endTs;
+    h *= 1000003;
+    h ^= (lookback >>> 32) ^ lookback;
     h *= 1000003;
     h ^= limit;
     return h;

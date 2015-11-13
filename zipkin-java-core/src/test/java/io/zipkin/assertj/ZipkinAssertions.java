@@ -11,20 +11,15 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin.server;
+package io.zipkin.assertj;
 
-import com.twitter.zipkin.storage.SpanStore;
-import com.twitter.zipkin.storage.SpanStoreSpec;
-import io.zipkin.interop.ScalaSpanStoreAdapter;
+import org.assertj.core.api.Assertions;
 
-public class InMemoryScalaSpanStoreTest extends SpanStoreSpec {
-  private InMemorySpanStore mem = new InMemorySpanStore();
+import io.zipkin.Span;
 
-  public SpanStore store() {
-    return new ScalaSpanStoreAdapter(mem);
-  }
+public class ZipkinAssertions extends Assertions {
 
-  public void clear() {
-    mem.clear();
+  public static SpanAssert assertThat(Span actual) {
+    return new SpanAssert(actual);
   }
 }

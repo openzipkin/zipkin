@@ -21,6 +21,7 @@ import io.zipkin.Endpoint;
 import io.zipkin.QueryRequest;
 import io.zipkin.Span;
 import io.zipkin.SpanStore;
+import io.zipkin.internal.CorrectForClockSkew;
 import io.zipkin.internal.Nullable;
 import io.zipkin.internal.Pair;
 import io.zipkin.internal.Util;
@@ -29,6 +30,7 @@ import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,7 @@ import org.jooq.Record3;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectOffsetStep;
 import org.jooq.Table;
+import org.jooq.TableField;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultConfiguration;
@@ -56,8 +59,6 @@ import static io.zipkin.internal.Util.checkNotNull;
 import static io.zipkin.jdbc.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static io.zipkin.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 import static java.util.Collections.emptyList;
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.logging.Level.FINEST;
 import static java.util.stream.Collectors.groupingBy;
 
@@ -95,20 +96,34 @@ public final class JDBCSpanStore implements SpanStore {
       List<Query> inserts = new ArrayList<>();
 
       for (Span span : spans) {
-        Long timestamp = span.timestamp();
-        if (timestamp == null) { // possible if only contains binary annotations
-          timestamp = System.currentTimeMillis() * 1000;
+        Long binaryAnnotationTimestamp = span.timestamp;
+        if (binaryAnnotationTimestamp == null) { // fallback if we have no timestamp, yet
+          binaryAnnotationTimestamp = System.currentTimeMillis() * 1000;
         }
 
-        inserts.add(create.insertInto(ZIPKIN_SPANS)
-                .set(ZIPKIN_SPANS.TRACE_ID, span.traceId)
-                .set(ZIPKIN_SPANS.ID, span.id)
-                .set(ZIPKIN_SPANS.NAME, span.name)
-                .set(ZIPKIN_SPANS.PARENT_ID, span.parentId)
-                .set(ZIPKIN_SPANS.DEBUG, span.debug)
-                .set(ZIPKIN_SPANS.START_TS, timestamp)
-                .onDuplicateKeyIgnore()
-        );
+        Map<TableField<Record, ?>, Object> updateFields = new LinkedHashMap<>();
+        if (!span.name.equals("") && !span.name.equals("unknown")) {
+          updateFields.put(ZIPKIN_SPANS.NAME, span.name);
+        }
+        if (span.timestamp != null) {
+          updateFields.put(ZIPKIN_SPANS.START_TS, span.timestamp);
+        }
+        if (span.duration != null) {
+          updateFields.put(ZIPKIN_SPANS.DURATION, span.duration);
+        }
+
+        InsertSetMoreStep<Record> insertSpan = create.insertInto(ZIPKIN_SPANS)
+            .set(ZIPKIN_SPANS.TRACE_ID, span.traceId)
+            .set(ZIPKIN_SPANS.ID, span.id)
+            .set(ZIPKIN_SPANS.PARENT_ID, span.parentId)
+            .set(ZIPKIN_SPANS.NAME, span.name)
+            .set(ZIPKIN_SPANS.DEBUG, span.debug)
+            .set(ZIPKIN_SPANS.START_TS, span.timestamp)
+            .set(ZIPKIN_SPANS.DURATION, span.duration);
+
+        inserts.add(updateFields.isEmpty() ?
+            insertSpan.onDuplicateKeyIgnore() :
+            insertSpan.onDuplicateKeyUpdate().set(updateFields));
 
         for (Annotation annotation : span.annotations) {
           InsertSetMoreStep<Record> insert = create.insertInto(ZIPKIN_ANNOTATIONS)
@@ -132,7 +147,7 @@ public final class JDBCSpanStore implements SpanStore {
               .set(ZIPKIN_ANNOTATIONS.A_KEY, annotation.key)
               .set(ZIPKIN_ANNOTATIONS.A_VALUE, annotation.value)
               .set(ZIPKIN_ANNOTATIONS.A_TYPE, annotation.type.value)
-              .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, timestamp);
+              .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, binaryAnnotationTimestamp);
           if (annotation.endpoint != null) {
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, annotation.endpoint.serviceName);
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, annotation.endpoint.ipv4);
@@ -156,13 +171,14 @@ public final class JDBCSpanStore implements SpanStore {
       }
       spansWithoutAnnotations = context(conn)
           .selectFrom(ZIPKIN_SPANS).where(ZIPKIN_SPANS.TRACE_ID.in(traceIds))
-          .orderBy(ZIPKIN_SPANS.START_TS.asc())
           .stream()
           .map(r -> new Span.Builder()
               .traceId(r.getValue(ZIPKIN_SPANS.TRACE_ID))
               .name(r.getValue(ZIPKIN_SPANS.NAME))
               .id(r.getValue(ZIPKIN_SPANS.ID))
               .parentId(r.getValue(ZIPKIN_SPANS.PARENT_ID))
+              .timestamp(r.getValue(ZIPKIN_SPANS.START_TS))
+              .duration(r.getValue(ZIPKIN_SPANS.DURATION))
               .debug(r.getValue(ZIPKIN_SPANS.DEBUG))
               .build())
           .collect(groupingBy((Span s) -> s.traceId, LinkedHashMap::new, Collectors.<Span>toList()));
@@ -207,8 +223,9 @@ public final class JDBCSpanStore implements SpanStore {
         }
         trace.add(span.build());
       }
-      result.add(Util.merge(trace));
+      result.add(CorrectForClockSkew.INSTANCE.apply(Util.merge(trace)));
     }
+    Collections.sort(result, (left, right) -> right.get(0).compareTo(left.get(0)));
     return result;
   }
 
@@ -263,18 +280,15 @@ public final class JDBCSpanStore implements SpanStore {
   }
 
   @Override
-  public List<DependencyLink> getDependencies(@Nullable Long startTs, @Nullable Long endTs) {
-    if (endTs == null) {
-      endTs = System.currentTimeMillis() * 1000;
-    }
-    if (startTs == null) {
-      startTs = endTs - MICROSECONDS.convert(1, DAYS);
-    }
+  public List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback) {
+    endTs = endTs * 1000;
     try (Connection conn = this.datasource.getConnection()) {
       Map<Long, List<Record3<Long, Long, Long>>> parentChild = context(conn)
           .select(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.PARENT_ID, ZIPKIN_SPANS.ID)
           .from(ZIPKIN_SPANS)
-          .where(ZIPKIN_SPANS.START_TS.between(startTs, endTs))
+          .where(lookback == null ?
+              ZIPKIN_SPANS.START_TS.lessOrEqual(endTs) :
+              ZIPKIN_SPANS.START_TS.between(endTs - lookback * 1000, endTs))
           .and(ZIPKIN_SPANS.PARENT_ID.isNotNull())
           .stream().collect(Collectors.groupingBy(r -> r.value1()));
 
@@ -304,7 +318,7 @@ public final class JDBCSpanStore implements SpanStore {
       }
       return result;
     } catch (SQLException e) {
-      throw new RuntimeException("Error querying dependencies between " + startTs + " and " + endTs + ": " + e.getMessage());
+      throw new RuntimeException("Error querying dependencies for endTs " + endTs + " and lookback " + lookback + ": " + e.getMessage());
     }
   }
 
@@ -335,17 +349,12 @@ public final class JDBCSpanStore implements SpanStore {
   }
 
   static SelectOffsetStep<Record1<Long>> toTraceIdQuery(DSLContext context, QueryRequest request) {
-    long endTs = (request.endTs > 0 && request.endTs != Long.MAX_VALUE) ? request.endTs
-        : System.currentTimeMillis() / 1000;
+    long endTs = (request.endTs > 0 && request.endTs != Long.MAX_VALUE) ? request.endTs * 1000
+        : System.currentTimeMillis() * 1000;
 
-    Table<Record1<Long>> a1 = context.selectDistinct(ZIPKIN_ANNOTATIONS.TRACE_ID)
-        .from(ZIPKIN_ANNOTATIONS)
-        .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(request.serviceName))
-        .and(ZIPKIN_ANNOTATIONS.A_TYPE.eq(-1))
-        .groupBy(ZIPKIN_ANNOTATIONS.TRACE_ID).asTable();
-
-    Table<?> table = ZIPKIN_SPANS.join(a1)
-        .on(ZIPKIN_SPANS.TRACE_ID.eq(a1.field(ZIPKIN_ANNOTATIONS.TRACE_ID)));
+    Table<?> table = ZIPKIN_SPANS.join(ZIPKIN_ANNOTATIONS)
+        .on(ZIPKIN_SPANS.TRACE_ID.eq(ZIPKIN_ANNOTATIONS.TRACE_ID).and(
+            ZIPKIN_SPANS.ID.eq(ZIPKIN_ANNOTATIONS.SPAN_ID)));
 
     Map<String, ZipkinAnnotations> keyToTables = new LinkedHashMap<>();
     int i = 0;
@@ -361,16 +370,23 @@ public final class JDBCSpanStore implements SpanStore {
 
     SelectConditionStep<Record1<Long>> dsl = context.selectDistinct(ZIPKIN_SPANS.TRACE_ID)
         .from(table)
-        .where(ZIPKIN_SPANS.START_TS.le(endTs));
+        .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(request.serviceName))
+        .and(ZIPKIN_SPANS.START_TS.between(endTs - request.lookback * 1000, endTs));
 
     if (request.spanName != null) {
       dsl.and(ZIPKIN_SPANS.NAME.eq(request.spanName));
     }
 
+    if (request.minDuration != null && request.maxDuration != null) {
+      dsl.and(ZIPKIN_SPANS.DURATION.between(request.minDuration, request.maxDuration));
+    } else if (request.minDuration != null){
+      dsl.and(ZIPKIN_SPANS.DURATION.greaterOrEqual(request.minDuration));
+    }
+
     for (Map.Entry<String, String> entry : request.binaryAnnotations.entrySet()) {
       dsl.and(keyToTables.get(entry.getKey()).A_VALUE.eq(entry.getValue().getBytes(UTF_8)));
     }
-    return dsl.limit(request.limit);
+    return dsl.orderBy(ZIPKIN_SPANS.START_TS.desc()).limit(request.limit);
   }
 
   private static Table<?> join(Table<?> table, ZipkinAnnotations joinTable, String key, int type) {

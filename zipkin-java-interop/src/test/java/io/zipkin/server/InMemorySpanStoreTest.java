@@ -13,18 +13,14 @@
  */
 package io.zipkin.server;
 
-import com.twitter.zipkin.storage.SpanStore;
-import com.twitter.zipkin.storage.SpanStoreSpec;
-import io.zipkin.interop.ScalaSpanStoreAdapter;
+import io.zipkin.SpanStoreTest;
 
-public class InMemoryScalaSpanStoreTest extends SpanStoreSpec {
-  private InMemorySpanStore mem = new InMemorySpanStore();
-
-  public SpanStore store() {
-    return new ScalaSpanStoreAdapter(mem);
+public class InMemorySpanStoreTest extends SpanStoreTest<InMemorySpanStore> {
+  public InMemorySpanStoreTest() {
+    super(new InMemorySpanStore());
   }
 
   public void clear() {
-    mem.clear();
+    store.clear();
   }
 }

@@ -20,41 +20,133 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.TreeSet;
 
 import static io.zipkin.internal.Util.checkNotNull;
 import static io.zipkin.internal.Util.equal;
 import static io.zipkin.internal.Util.sortedList;
 
+/**
+ * A trace is a series of spans (often RPC calls) which form a latency tree.
+ *
+ * <p/>Spans are usually created by instrumentation in RPC clients or servers, but can also
+ * represent in-process activity. Annotations in spans are similar to log statements, and are
+ * sometimes created directly by application developers to indicate events of interest, such as a
+ * cache miss.
+ *
+ * <p/>The root span is where {@link #parentId} is null; it usually has the longest {@link #duration} in the
+ * trace.
+ *
+ * <p/>Span identifiers are packed into longs, but should be treated opaquely. String encoding is
+ * fixed-width lower-hex, to avoid signed interpretation.
+ */
 public final class Span implements Comparable<Span> {
-
+  /**
+   * Unique 8-byte identifier for a trace, set on all spans within it.
+   */
   public final long traceId;
 
+  /**
+   * Span name in lowercase, rpc method for example.
+   *
+   * <p/>Conventionally, when the span name isn't known, name = "unknown".
+   */
   public final String name;
 
+  /**
+   * Unique 8-byte identifier of this span within a trace.
+   *
+   * <p/>A span is uniquely identified in storage by ({@linkplain #traceId}, {@linkplain #id}).
+   */
   public final long id;
 
+  /**
+   * The parent's {@link #id} or null if this the root span in a trace.
+   */
   @Nullable
   public final Long parentId;
 
+  /**
+   * Epoch microseconds of the start of this span, possibly absent if this an incomplete span.
+   *
+   * <p/>This value should be set directly by instrumentation, using the most precise value
+   * possible. For example, {@code gettimeofday} or syncing {@link System#nanoTime} against a tick
+   * of {@link System#currentTimeMillis}.
+   *
+   * <p/>For compatibilty with instrumentation that precede this field, collectors or span stores
+   * can derive this via Annotation.timestamp. For example, {@link Constants#SERVER_RECV}.timestamp
+   * or {@link Constants#CLIENT_SEND}.timestamp.
+   *
+   * <p/>Timestamp is nullable for input only. Spans without a timestamp cannot be presented in a
+   * timeline: Span stores should not output spans missing a timestamp.
+   *
+   * <p/>There are two known edge-cases where this could be absent: both cases exist when a
+   * collector receives a span in parts and a binary annotation precedes a timestamp. This is
+   * possible when..
+   * <ul>
+   *   <li>The span is in-flight (ex not yet received a timestamp)</li>
+   *   <li>The span's start event was lost</li>
+   * </ul>
+   */
+  @Nullable
+  public final Long timestamp;
+
+  /**
+   * Measurement in microseconds of the critical path, if known.
+   *
+   * <p/>This value should be set directly, as opposed to implicitly via annotation timestamps.
+   * Doing so encourages precision decoupled from problems of clocks, such as skew or NTP updates
+   * causing time to move backwards.
+   *
+   * <p/>For compatibility with instrumentation that precede this field, collectors or span stores
+   * can derive this by subtracting {@link Annotation#timestamp}. For example, {@link
+   * Constants#SERVER_SEND}.timestamp - {@link Constants#SERVER_RECV}.timestamp.
+   *
+   * <p/>If this field is persisted as unset, zipkin will continue to work, except duration query
+   * support will be implementation-specific. Similarly, setting this field non-atomically is
+   * implementation-specific.
+   *
+   * <p/>This field is i64 vs i32 to support spans longer than 35 minutes.
+   */
+  @Nullable
+  public final Long duration;
+
+  /**
+   * Associates events that explain latency with a timestamp.
+   *
+   * <p/>Unlike log statements, annotations are often codes: for example {@link
+   * Constants#SERVER_RECV}. Annotations are sorted ascending by timestamp.
+   */
   public final List<Annotation> annotations;
 
+  /**
+   * Tags a span with context, usually to support query or aggregation.
+   *
+   * <p/>example, a binary annotation key could be "http.uri".
+   */
   public final List<BinaryAnnotation> binaryAnnotations;
 
+  /**
+   * True is a request to store this span even if it overrides sampling policy.
+   */
   @Nullable
   public final Boolean debug;
 
-  Span(
-      long traceId,
-      String name,
-      long id,
-      @Nullable Long parentId,
-      Collection<Annotation> annotations,
-      Collection<BinaryAnnotation> binaryAnnotations,
-      @Nullable Boolean debug) {
+  private Span(long traceId,
+               String name,
+               long id,
+               @Nullable Long parentId,
+               @Nullable Long timestamp,
+               @Nullable Long duration,
+               Collection<Annotation> annotations,
+               Collection<BinaryAnnotation> binaryAnnotations,
+               @Nullable Boolean debug) {
     this.traceId = traceId;
     this.name = checkNotNull(name, "name").toLowerCase();
     this.id = id;
     this.parentId = parentId;
+    this.timestamp = timestamp;
+    this.duration = duration;
     this.annotations = sortedList(annotations);
     this.binaryAnnotations = Collections.unmodifiableList(new ArrayList<>(binaryAnnotations));
     this.debug = debug;
@@ -65,7 +157,9 @@ public final class Span implements Comparable<Span> {
     private String name;
     private Long id;
     private Long parentId;
-    private LinkedHashSet<Annotation> annotations = new LinkedHashSet<>();
+    private Long timestamp;
+    private Long duration;
+    private TreeSet<Annotation> annotations = new TreeSet<>();
     private LinkedHashSet<BinaryAnnotation> binaryAnnotations = new LinkedHashSet<>();
     private Boolean debug;
 
@@ -77,6 +171,8 @@ public final class Span implements Comparable<Span> {
       this.name = source.name;
       this.id = source.id;
       this.parentId = source.parentId;
+      this.timestamp = source.timestamp;
+      this.duration = source.duration;
       this.annotations.addAll(source.annotations);
       this.binaryAnnotations.addAll(source.binaryAnnotations);
       this.debug = source.debug;
@@ -86,7 +182,7 @@ public final class Span implements Comparable<Span> {
       if (this.traceId == null) {
         this.traceId = that.traceId;
       }
-      if (this.name == null) {
+      if (this.name == null || this.name.length() == 0 || this.name.equals("unknown")) {
         this.name = that.name;
       }
       if (this.id == null) {
@@ -95,6 +191,22 @@ public final class Span implements Comparable<Span> {
       if (this.parentId == null) {
         this.parentId = that.parentId;
       }
+
+      // Single timestamp makes duration easy: just choose max
+      if (this.timestamp == null || that.timestamp == null || this.timestamp.equals(that.timestamp)) {
+        this.timestamp = this.timestamp != null ? this.timestamp : that.timestamp;
+        if (this.duration == null) {
+          this.duration = that.duration;
+        } else if (that.duration != null) {
+          this.duration = Math.max(this.duration, that.duration);
+        }
+      } else { // duration might need to be recalculated, since we have 2 different timestamps
+        long thisEndTs = this.duration != null ? this.timestamp + this.duration : this.timestamp;
+        long thatEndTs = that.duration != null ? that.timestamp + that.duration : that.timestamp;
+        this.timestamp = Math.min(this.timestamp, that.timestamp);
+        this.duration = Math.max(thisEndTs, thatEndTs) - this.timestamp;
+      }
+
       this.annotations.addAll(that.annotations);
       this.binaryAnnotations.addAll(that.binaryAnnotations);
       if (this.debug == null) {
@@ -103,46 +215,91 @@ public final class Span implements Comparable<Span> {
       return this;
     }
 
-    public Span.Builder name(String name) {
+    /** @see Span#name */
+    public Builder name(String name) {
       this.name = name;
       return this;
     }
 
-    public Span.Builder traceId(long traceId) {
+    /** @see Span#traceId */
+    public Builder traceId(long traceId) {
       this.traceId = traceId;
       return this;
     }
 
-
-    public Span.Builder id(long id) {
+    /** @see Span#id */
+    public Builder id(long id) {
       this.id = id;
       return this;
     }
 
-    @Nullable
-    public Span.Builder parentId(Long parentId) {
+    /** @see Span#parentId */
+    public Builder parentId(@Nullable Long parentId) {
       this.parentId = parentId;
       return this;
     }
 
-    public Span.Builder addAnnotation(Annotation annotation) {
+    /** @see Span#timestamp */
+    public Builder timestamp(@Nullable Long timestamp) {
+      this.timestamp = timestamp;
+      return this;
+    }
+
+    /** @see Span#duration */
+    public Builder duration(@Nullable Long duration) {
+      this.duration = duration;
+      return this;
+    }
+
+    /**
+     * Replaces currently collected annotations.
+     *
+     * @see Span#annotations
+     */
+    public Builder annotations(Collection<Annotation> annotations) {
+      this.annotations.clear();
+      this.annotations.addAll(annotations);
+      return this;
+    }
+
+    /** @see Span#annotations */
+    public Builder addAnnotation(Annotation annotation) {
       this.annotations.add(annotation);
       return this;
     }
 
-    public Span.Builder addBinaryAnnotation(BinaryAnnotation binaryAnnotation) {
+    /** @see Span#binaryAnnotations */
+    public Builder addBinaryAnnotation(BinaryAnnotation binaryAnnotation) {
       this.binaryAnnotations.add(binaryAnnotation);
       return this;
     }
 
-    @Nullable
-    public Span.Builder debug(Boolean debug) {
+    /** @see Span#debug */
+    public Builder debug(@Nullable Boolean debug) {
       this.debug = debug;
       return this;
     }
 
+    /**
+     * <h3>Derived timestamp and duration</h3>
+     *
+     * <p/>Instrumentation should log timestamp and duration, but since these fields are recent
+     * (Nov-2015), a lot of tracers will not. Accordingly, this will backfill timestamp and duration
+     * to if possible, based on interpretation of annotations.
+     */
     public Span build() {
-      return new Span(this.traceId, this.name, this.id, this.parentId, this.annotations, this.binaryAnnotations, this.debug);
+      Long ts = timestamp;
+      Long dur = duration;
+      if ((timestamp == null || duration == null) && !annotations.isEmpty()) {
+        ts = ts != null ? ts : annotations.first().timestamp;
+        if (dur == null) {
+          long lastTs = annotations.last().timestamp;
+          if (ts.longValue() != lastTs) {
+            dur = lastTs - ts;
+          }
+        }
+      }
+      return new Span(this.traceId, this.name, this.id, this.parentId, ts, dur, this.annotations, this.binaryAnnotations, this.debug);
     }
   }
 
@@ -162,6 +319,8 @@ public final class Span implements Comparable<Span> {
           && (this.name.equals(that.name))
           && (this.id == that.id)
           && equal(this.parentId, that.parentId)
+          && equal(this.timestamp, that.timestamp)
+          && equal(this.duration, that.duration)
           && (this.annotations.equals(that.annotations))
           && (this.binaryAnnotations.equals(that.binaryAnnotations))
           && equal(this.debug, that.debug);
@@ -181,6 +340,10 @@ public final class Span implements Comparable<Span> {
     h *= 1000003;
     h ^= (parentId == null) ? 0 : parentId.hashCode();
     h *= 1000003;
+    h ^= (timestamp == null) ? 0 : timestamp.hashCode();
+    h *= 1000003;
+    h ^= (duration == null) ? 0 : duration.hashCode();
+    h *= 1000003;
     h ^= annotations.hashCode();
     h *= 1000003;
     h ^= binaryAnnotations.hashCode();
@@ -189,15 +352,14 @@ public final class Span implements Comparable<Span> {
     return h;
   }
 
+  /** Compares by {@link #timestamp}, then {@link #name}. */
   @Override
   public int compareTo(Span that) {
-    if (this == that) {
-      return 0;
-    }
-    return Long.compare(this.timestamp(), that.timestamp());
-  }
-
-  @Nullable public Long timestamp() {
-    return annotations.isEmpty() ? null : annotations.get(0).timestamp;
+    if (this == that) return 0;
+    int byTimestamp = Long.compare(
+        this.timestamp == null ? Long.MIN_VALUE : this.timestamp,
+        that.timestamp == null ? Long.MIN_VALUE : that.timestamp);
+    if (byTimestamp != 0) return byTimestamp;
+    return name.compareTo(that.name);
   }
 }

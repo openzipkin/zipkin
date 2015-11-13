@@ -9,6 +9,8 @@ zipkin:
     type: ${STORAGE_TYPE:mem}
 server:
   port: ${QUERY_PORT:9411}
+  compression:
+    enabled: true
 spring:
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver

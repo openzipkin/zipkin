@@ -11,20 +11,22 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.zipkin.server;
+package io.zipkin.jdbc;
 
-import com.twitter.zipkin.storage.SpanStore;
-import com.twitter.zipkin.storage.SpanStoreSpec;
-import io.zipkin.interop.ScalaSpanStoreAdapter;
+import io.zipkin.SpanStoreTest;
+import java.sql.SQLException;
 
-public class InMemoryScalaSpanStoreTest extends SpanStoreSpec {
-  private InMemorySpanStore mem = new InMemorySpanStore();
+public class JDBCSpanStoreTest extends SpanStoreTest<JDBCSpanStore> {
 
-  public SpanStore store() {
-    return new ScalaSpanStoreAdapter(mem);
+  public JDBCSpanStoreTest() throws SQLException {
+    super(new JDBCTestGraph().spanStore);
   }
 
   public void clear() {
-    mem.clear();
+    try {
+      store.clear();
+    } catch (SQLException e) {
+      throw new AssertionError(e);
+    }
   }
 }

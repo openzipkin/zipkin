@@ -15,15 +15,42 @@ package io.zipkin;
 
 import io.zipkin.internal.JsonCodec;
 import io.zipkin.internal.Nullable;
+import io.zipkin.internal.Util;
 import java.util.Arrays;
 
 import static io.zipkin.internal.Util.checkNotNull;
 import static io.zipkin.internal.Util.equal;
 
+/**
+ * Binary annotations are tags applied to a Span to give it context. For example, a binary
+ * annotation of "http.uri" could the path to a resource in a RPC call.
+ *
+ * <p/>Binary annotations of type {@link Type#STRING} are always queryable, though more a historical
+ * implementation detail than a structural concern.
+ *
+ * <p/>Binary annotations can repeat, and vary on the host. Similar to Annotation, the host
+ * indicates who logged the event. This allows you to tell the difference between the client and
+ * server side of the same key. For example, the key "http.uri" might be different on the client and
+ * server side due to rewriting, like "/api/v1/myresource" vs "/myresource. Via the host field, you
+ * can see the different points of view, which often help in debugging.
+ */
 public final class BinaryAnnotation {
 
+  /** A subset of thrift base types, except BYTES. */
   public enum Type {
-    BOOL(0), BYTES(1), I16(2), I32(3), I64(4), DOUBLE(5), STRING(6);
+    /**
+     * Set to 0x01 when {@link BinaryAnnotation#key} is {@link Constants#CLIENT_ADDR} or  {@link
+     * Constants#SERVER_ADDR}
+     */
+    BOOL(0),
+    /** No encoding, or type is unknown. */
+    BYTES(1),
+    I16(2),
+    I32(3),
+    I64(4),
+    DOUBLE(5),
+    /** The only type zipkin v1 supports search against. */
+    STRING(6);
 
     public final int value;
 
@@ -54,17 +81,50 @@ public final class BinaryAnnotation {
     }
   }
 
+  /**
+   * Special-cased form supporting {@link Constants#CLIENT_ADDR} and
+   * {@link Constants#SERVER_ADDR}.
+   *
+   * @param key {@link Constants#CLIENT_ADDR} or {@link Constants#SERVER_ADDR}
+   * @param endpoint associated endpoint.
+   */
+  public static BinaryAnnotation address(String key, Endpoint endpoint) {
+    return new BinaryAnnotation(key, new byte[]{1}, Type.BOOL, checkNotNull(endpoint, "endpoint"));
+  }
+
+  /** String values are the only queryable type of binary annotation. */
+  public static BinaryAnnotation create(String key, String value, @Nullable Endpoint endpoint) {
+    return new BinaryAnnotation(key, value.getBytes(Util.UTF_8), Type.STRING, endpoint);
+  }
+
   public static BinaryAnnotation create(String key, byte[] value, Type type, @Nullable Endpoint endpoint) {
     return new BinaryAnnotation(key, value, type, endpoint);
   }
 
+  /**
+   * Name used to lookup spans, such as "http.uri" or "finagle.version".
+   */
   public final String key;
-
+  /**
+   * Serialized thrift bytes, in TBinaryProtocol format.
+   *
+   * <p/>For legacy reasons, byte order is big-endian. See THRIFT-3217.
+   */
   public final byte[] value;
-
+  /**
+   * The thrift type of value, most often STRING.
+   *
+   * <p/>Note: type shouldn't vary for the same key.
+   */
   public final Type type;
 
-  /** The endpoint that recorded this annotation */
+  /**
+   * The host that recorded {@link #value}, allowing query by service name or address.
+   *
+   * <p/>There are two exceptions: when {@link #key} is {@link Constants#CLIENT_ADDR} or {@link
+   * Constants#SERVER_ADDR}, this is the source or destination of an RPC. This exception allows
+   * zipkin to display network context of uninstrumented services, such as browsers or databases.
+   */
   @Nullable
   public final Endpoint endpoint;
 
@@ -91,23 +151,26 @@ public final class BinaryAnnotation {
       this.endpoint = source.endpoint;
     }
 
+    /** @see BinaryAnnotation#key */
     public BinaryAnnotation.Builder key(String key) {
       this.key = key;
       return this;
     }
 
+    /** @see BinaryAnnotation#value */
     public BinaryAnnotation.Builder value(byte[] value) {
       this.value = value.clone();
       return this;
     }
 
-    public BinaryAnnotation.Builder type(Type type) {
+    /** @see BinaryAnnotation#type */
+    public Builder type(Type type) {
       this.type = type;
       return this;
     }
 
-    @Nullable
-    public BinaryAnnotation.Builder endpoint(Endpoint endpoint) {
+    /** @see BinaryAnnotation#endpoint */
+    public BinaryAnnotation.Builder endpoint(@Nullable Endpoint endpoint) {
       this.endpoint = endpoint;
       return this;
     }

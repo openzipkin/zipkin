@@ -18,6 +18,7 @@ import io.zipkin.DependencyLink;
 import io.zipkin.QueryRequest;
 import io.zipkin.Span;
 import io.zipkin.SpanStore;
+import io.zipkin.internal.CorrectForClockSkew;
 import io.zipkin.internal.Nullable;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -49,8 +50,11 @@ public final class InMemorySpanStore implements SpanStore {
     spans.forEach(span -> {
       long traceId = span.traceId;
       traceIdToSpans.put(span.traceId, span);
-      span.annotations.stream().filter(a -> a.endpoint != null)
-          .map(annotation -> annotation.endpoint.serviceName)
+      Stream.concat(span.annotations.stream().map(a -> a.endpoint),
+                    span.binaryAnnotations.stream().map(a -> a.endpoint))
+          .filter(e -> e != null)
+          .map(e -> e.serviceName)
+          .distinct()
           .forEach(serviceName -> {
             serviceToTraceIds.put(serviceName, traceId);
             serviceToSpanNames.put(serviceName, span.name);
@@ -68,13 +72,9 @@ public final class InMemorySpanStore implements SpanStore {
     Collection<Long> traceIds = serviceToTraceIds.get(request.serviceName);
     if (traceIds == null || traceIds.isEmpty()) return Collections.emptyList();
 
-    long endTs = (request.endTs > 0 && request.endTs != Long.MAX_VALUE) ? request.endTs
-        : System.currentTimeMillis() / 1000;
-
     return toSortedTraces(traceIds.stream().map(traceIdToSpans::get)).stream()
-        .filter(t -> t.stream().allMatch(s -> s.timestamp() <= endTs))
-        .filter(spansPredicate(request))
-        .limit(request.limit).collect(Collectors.toList());
+            .filter(spansPredicate(request))
+            .limit(request.limit).collect(Collectors.toList());
   }
 
   @Override
@@ -96,7 +96,7 @@ public final class InMemorySpanStore implements SpanStore {
   }
 
   @Override
-  public List<DependencyLink> getDependencies(@Nullable Long startTs, @Nullable Long endTs) {
+  public List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback) {
     return Collections.emptyList();
   }
 
@@ -106,16 +106,32 @@ public final class InMemorySpanStore implements SpanStore {
 
   static Predicate<List<Span>> spansPredicate(QueryRequest request) {
     return spans -> {
+      Long timestamp = spans.get(0).timestamp;
+      if (timestamp == null ||
+          timestamp < (request.endTs - request.lookback) * 1000 ||
+          timestamp > request.endTs * 1000) {
+        return false;
+      }
       Set<String> serviceNames = new LinkedHashSet<>();
+      Predicate<Long> durationPredicate = null;
+      if (request.minDuration != null && request.maxDuration != null) {
+        durationPredicate = d -> d >= request.minDuration && d <= request.maxDuration;
+      } else if (request.minDuration != null){
+        durationPredicate = d -> d >= request.minDuration;
+      }
       String spanName = request.spanName;
       Set<String> annotations = new LinkedHashSet<>(request.annotations);
       Map<String, String> binaryAnnotations = new LinkedHashMap<>(request.binaryAnnotations);
 
+      Set<String> currentServiceNames = new LinkedHashSet<>();
       for (Span span : spans) {
+        currentServiceNames.clear();
+
         span.annotations.forEach(a -> {
           annotations.remove(a.value);
           if (a.endpoint != null) {
             serviceNames.add(a.endpoint.serviceName);
+            currentServiceNames.add(a.endpoint.serviceName);
           }
         });
 
@@ -125,21 +141,33 @@ public final class InMemorySpanStore implements SpanStore {
           }
           if (b.endpoint != null) {
             serviceNames.add(b.endpoint.serviceName);
+            currentServiceNames.add(b.endpoint.serviceName);
           }
         });
+
+        if (currentServiceNames.contains(request.serviceName) && durationPredicate != null) {
+          if (durationPredicate.test(span.duration)) {
+            durationPredicate = null;
+          }
+        }
 
         if (span.name.equals(spanName)) {
           spanName = null;
         }
       }
-      return serviceNames.contains(request.serviceName) && spanName == null && annotations.isEmpty() && binaryAnnotations.isEmpty();
+      return serviceNames.contains(request.serviceName)
+          && spanName == null
+          && annotations.isEmpty()
+          && binaryAnnotations.isEmpty()
+          && durationPredicate == null;
     };
   }
 
   static List<List<Span>> toSortedTraces(Stream<Collection<Span>> unfiltered) {
     return unfiltered.filter(spans -> spans != null && !spans.isEmpty())
         .map(spans -> merge(spans))
-        .sorted((left, right) -> left.get(0).compareTo(right.get(0)))
+        .map(CorrectForClockSkew.INSTANCE)
+        .sorted((left, right) -> right.get(0).compareTo(left.get(0)))
         .collect(Collectors.toList());
   }
 

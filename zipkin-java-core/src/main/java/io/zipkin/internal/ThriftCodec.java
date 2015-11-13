@@ -319,6 +319,8 @@ public final class ThriftCodec implements Codec {
     private static final TField ANNOTATIONS_FIELD_DESC = new TField("annotations", TType.LIST, (short) 6);
     private static final TField BINARY_ANNOTATIONS_FIELD_DESC = new TField("binary_annotations", TType.LIST, (short) 8);
     private static final TField DEBUG_FIELD_DESC = new TField("debug", TType.BOOL, (short) 9);
+    private static final TField TIMESTAMP_FIELD_DESC = new TField("timestamp", TType.I64, (short) 10);
+    private static final TField DURATION_FIELD_DESC = new TField("duration", TType.I64, (short) 11);
 
     @Override
     public Span read(TProtocol iprot) throws TException {
@@ -388,6 +390,20 @@ public final class ThriftCodec implements Codec {
               skip(iprot, field.type);
             }
             break;
+          case 10: // TIMESTAMP
+            if (field.type == TType.I64) {
+              result.timestamp(iprot.readI64());
+            } else {
+              skip(iprot, field.type);
+            }
+            break;
+          case 11: // DURATION
+            if (field.type == TType.I64) {
+              result.duration(iprot.readI64());
+            } else {
+              skip(iprot, field.type);
+            }
+            break;
           default:
             skip(iprot, field.type);
         }
@@ -438,6 +454,18 @@ public final class ThriftCodec implements Codec {
       if (value.debug != null) {
         oprot.writeFieldBegin(DEBUG_FIELD_DESC);
         oprot.writeBool(value.debug);
+        oprot.writeFieldEnd();
+      }
+
+      if (value.timestamp != null) {
+        oprot.writeFieldBegin(TIMESTAMP_FIELD_DESC);
+        oprot.writeI64(value.timestamp);
+        oprot.writeFieldEnd();
+      }
+
+      if (value.duration != null) {
+        oprot.writeFieldBegin(DURATION_FIELD_DESC);
+        oprot.writeI64(value.duration);
         oprot.writeFieldEnd();
       }
 

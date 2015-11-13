@@ -50,6 +50,7 @@ public class SpanStoreSpanCollectorTest {
     Span span = new Span();
     span.setId(id);
     span.setTrace_id(traceId);
+    span.setParent_id(traceId);
     span.setName(spanName);
     Annotation annotation = new Annotation();
     annotation.setHost(new Endpoint(0, (short) 80, service));
