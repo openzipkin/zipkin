@@ -17,14 +17,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,6 +38,8 @@ import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class Repository implements AutoCloseable {
 
@@ -778,7 +776,7 @@ public final class Repository implements AutoCloseable {
                 // TODO figure out better strategy
                 bound.setFetchSize(limit);
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug(debugSelectTraceIdsByDuration(serviceName, spanName, minDuration, maxDuration, startTs, endTs, limit));
+                    LOG.debug(debugSelectTraceIdsByDuration(serviceName, spanName, minDuration, maxDuration, limit));
                 }
                 return Futures.transform(
                         session.executeAsync(bound),
@@ -812,19 +810,18 @@ public final class Repository implements AutoCloseable {
                                                         (Optional<DurationRow> d) -> d.get().timestamp)));
                     });
         } catch (RuntimeException ex) {
-            LOG.error("failed " + debugSelectTraceIdsByDuration(serviceName, spanName, minDuration, maxDuration, startTs, endTs, limit), ex);
+            LOG.error("failed " + debugSelectTraceIdsByDuration(serviceName, spanName, minDuration, maxDuration, limit), ex);
             throw ex;
         }
     }
 
-    private String debugSelectTraceIdsByDuration(String serviceName, String spanName, long minDuration, long maxDuration,
-                                                 long endTs, long startTs, int limit) {
+    private String debugSelectTraceIdsByDuration(String serviceName, String spanName, long minDuration, long maxDuration, int limit) {
         return selectTraceIdsBySpanDuration.getQueryString()
-                .replace(":service_name", serviceName)
-                .replace(":span_name", spanName)
-                .replace(":max_duration", String.valueOf(maxDuration))
-                .replace(":min_duration", String.valueOf(minDuration))
-                .replace(":limit_", String.valueOf(limit));
+            .replace(":service_name", serviceName)
+            .replace(":span_name", spanName)
+            .replace(":max_duration", String.valueOf(maxDuration))
+            .replace(":min_duration", String.valueOf(minDuration))
+            .replace(":limit_", String.valueOf(limit));
     }
 
     private int durationIndexBucket(long ts) {
@@ -836,26 +833,27 @@ public final class Repository implements AutoCloseable {
                                                          long traceId, int ttl) {
         try {
             BoundStatement bound = insertTraceIdBySpanDuration.bind()
-                    .setString("service_name", serviceName)
-                    .setString("service_name", spanName)
-                    .setInt("bucket", durationIndexBucket(timestamp))
-                    .setLong("ts", timestamp)
-                    .setLong("trace_id", traceId)
-                    .setInt("ttl_", ttl);
+                .setString("service_name", serviceName)
+                .setString("span_name", spanName)
+                .setInt("bucket", durationIndexBucket(timestamp))
+                .setLong("ts", timestamp)
+                .setLong("duration", duration)
+                .setLong("trace_id", traceId)
+                .setInt("ttl_", ttl);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(debugInsertTraceIdByDuration(serviceName, spanName, timestamp, duration, traceId, ttl));
+                LOG.debug(debugInsertTraceIdBySpanDuration(serviceName, spanName, timestamp, duration, traceId, ttl));
             }
             return Futures.transform(session.executeAsync(bound), resultSetToVoidFunction);
         } catch (RuntimeException ex) {
-            LOG.error("failed " + debugInsertTraceIdByDuration(serviceName, spanName, timestamp, duration, traceId, ttl));
+            LOG.error("failed " + debugInsertTraceIdBySpanDuration(serviceName, spanName, timestamp, duration, traceId, ttl));
             return Futures.immediateFailedFuture(ex);
         }
     }
 
-    private String debugInsertTraceIdByDuration(String serviceName, String spanName, long timestamp, long duration,
-                                                long traceId, int ttl) {
-        return insertTraceIdByAnnotation.getQueryString()
+    private String debugInsertTraceIdBySpanDuration(String serviceName, String spanName, long timestamp, long duration,
+                                                    long traceId, int ttl) {
+        return insertTraceIdBySpanDuration.getQueryString()
                 .replace(":service_name", serviceName)
                 .replace(":span_name", spanName)
                 .replace(":bucket", String.valueOf(durationIndexBucket(timestamp)))
