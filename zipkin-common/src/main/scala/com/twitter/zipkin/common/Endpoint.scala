@@ -23,11 +23,11 @@ import com.google.common.collect.ComparisonChain
 import com.twitter.zipkin.util.Util._
 
 /**
- * Represents the client or server machine we traced.
+ * Indicates the network context of a service involved in a span.
  *
- * @param ipv4 ipv4 ip address.
- * @param port note that due to lack of unsigned integers this will wrap.
- * @param serviceName the service this operation happened on, in lowercase
+ * @param ipv4 IPv4 host address packed into 4 bytes
+ * @param port IPv4 port or 0, if unknown
+ * @param serviceName classifier of a source or destination in lowercase, such as "zipkin-web".
  */
 case class Endpoint(ipv4: Int, port: Short, serviceName: String) extends Ordered[Endpoint] {
   checkArgument(serviceName.toLowerCase == serviceName,

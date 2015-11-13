@@ -150,13 +150,7 @@ const string CLIENT_ADDR = "ca"
 const string SERVER_ADDR = "sa"
 
 /**
- * Indicates the network context of a service recording an annotation with two
- * exceptions.
- *
- * When a BinaryAnnotation, and key is CLIENT_ADDR or SERVER_ADDR,
- * the endpoint indicates the source or destination of an RPC. This exception
- * allows zipkin to display network context of uninstrumented services, or
- * clients such as web browsers.
+ * Indicates the network context of a service involved in a span.
  */
 struct Endpoint {
   /**
@@ -166,24 +160,30 @@ struct Endpoint {
    */
   1: i32 ipv4
   /**
-   * IPv4 port
+   * IPv4 port or 0, if unknown.
    *
    * Note: this is to be treated as an unsigned integer, so watch for negatives.
-   *
-   * Conventionally, when the port isn't known, port = 0.
    */
   2: i16 port
   /**
-   * Service name in lowercase, such as "memcache" or "zipkin-web"
+   * Classifier of a source or destination in lowercase, such as "zipkin-web".
    *
    * Conventionally, when the service name isn't known, service_name = "unknown".
+   *
+   * This is the primary parameter for trace lookup, so should be intuitive as
+   * possible, for example, matching names in service discovery.
+   *
+   * Particularly clients may not have a reliable service name at ingest. One
+   * approach is to set service_name to "unknown" at ingest, and later assign a
+   * better label based on binary annotations, such as user agent.
    */
   3: string service_name
 }
 
 /**
- * An annotation is similar to a log statement. It includes a host field which
- * allows these events to be attributed properly, and also aggregatable.
+ * Associates an event that explains latency with a timestamp.
+ *
+ * Unlike log statements, annotations are often codes: for example "sr".
  */
 struct Annotation {
   /**
@@ -193,16 +193,38 @@ struct Annotation {
    * gettimeofday or syncing nanoTime against a tick of currentTimeMillis.
    */
   1: i64 timestamp
-  2: string value                  // what happened at the timestamp?
   /**
-   * Always the host that recorded the event. By specifying the host you allow
-   * rollup of all events (such as client requests to a service) by IP address.
+   * Usually a short tag indicating an event, like "sr" or "finagle.retry".
+   */
+  2: string value
+  /**
+   * The host that recorded the value, primarily for query by service name.
    */
   3: optional Endpoint host
   // don't reuse 4: optional i32 OBSOLETE_duration         // how long did the operation take? microseconds
 }
 
-enum AnnotationType { BOOL, BYTES, I16, I32, I64, DOUBLE, STRING }
+/**
+ * A subset of thrift base types, except BYTES.
+ */
+enum AnnotationType {
+  /**
+   * Set to 0x01 when key is CLIENT_ADDR or SERVER_ADDR
+   */
+  BOOL,
+  /**
+   * No encoding, or type is unknown.
+   */
+  BYTES,
+  I16,
+  I32,
+  I64,
+  DOUBLE,
+  /**
+   * the only type zipkin v1 supports search against.
+   */
+  STRING
+}
 
 /**
  * Binary annotations are tags applied to a Span to give it context. For
@@ -220,16 +242,28 @@ enum AnnotationType { BOOL, BYTES, I16, I32, I64, DOUBLE, STRING }
  * you can see the different points of view, which often help in debugging.
  */
 struct BinaryAnnotation {
+  /**
+   * Name used to lookup spans, such as "http.uri" or "finagle.version".
+   */
   1: string key,
+  /**
+   * Serialized thrift bytes, in TBinaryProtocol format.
+   *
+   * For legacy reasons, byte order is big-endian. See THRIFT-3217.
+   */
   2: binary value,
+  /**
+   * The thrift type of value, most often STRING.
+   *
+   * annotation_type shouldn't vary for the same key.
+   */
   3: AnnotationType annotation_type,
   /**
-   * The host that recorded tag, which allows you to differentiate between
-   * multiple tags with the same key. There are two exceptions to this.
+   * The host that recorded value, allowing query by service name or address.
    *
-   * When the key is CLIENT_ADDR or SERVER_ADDR, host indicates the source or
+   * There are two exceptions: when key is "ca" or "sa", this is the source or
    * destination of an RPC. This exception allows zipkin to display network
-   * context of uninstrumented services, or clients such as web browsers.
+   * context of uninstrumented services, such as browsers or databases.
    */
   4: optional Endpoint host
 }
@@ -237,25 +271,56 @@ struct BinaryAnnotation {
 /**
  * A trace is a series of spans (often RPC calls) which form a latency tree.
  *
+ * Spans are usually created by instrumentation in RPC clients or servers, but
+ * can also represent in-process activity. Annotations in spans are similar to
+ * log statements, and are sometimes created directly by application developers
+ * to indicate events of interest, such as a cache miss.
+ *
  * The root span is where trace_id = id and parent_id = Nil. The root span is
- * usually the longest interval in the trace, starting with a SERVER_RECV
- * annotation and ending with a SERVER_SEND.
+ * usually the longest interval in the trace, starting with Span.timestamp and
+ * ending with Span.timestamp + Span.duration.
+ *
+ * Span identifiers are packed into i64s, but should be treated opaquely.
+ * String encoding is fixed-width lower-hex, to avoid signed interpretation.
  */
 struct Span {
-  1: i64 trace_id                  # unique trace id, use for all spans in trace
   /**
-   * Span name in lowercase, rpc method for example
-   *
-   * Conventionally, when the span name isn't known, name = "unknown".
+   * Unique 8-byte identifier for a trace, set on all spans within it.
+   */
+  1: i64 trace_id
+  /**
+   * Span name in lowercase, rpc method for example. Conventionally, when the
+   * span name isn't known, name = "unknown".
    */
   3: string name,
-  4: i64 id,                       # unique span id, only used for this span
-  5: optional i64 parent_id,       # parent span id
-  6: list<Annotation> annotations, # all annotations/events that occured, sorted by timestamp
-  8: list<BinaryAnnotation> binary_annotations # any binary annotations
-  9: optional bool debug = 0       # if true, we DEMAND that this span passes all samplers
   /**
-   * Microseconds from epoch of the creation of this span.
+   * Unique 8-byte identifier of this span within a trace. If this is the root
+   * span, id = trace_id and parent_id is absent. A span is uniquely identified
+   * in storage by (trace_id, id).
+   */
+  4: i64 id,
+  /**
+   * The parent's Span.id; absent if this the root span in a trace.
+   */
+  5: optional i64 parent_id,
+  /**
+   * Associates events that explain latency with a timestamp. Unlike log
+   * statements, annotations are often codes: for example SERVER_RECV("sr").
+   * Annotations are sorted ascending by timestamp.
+   */
+  6: list<Annotation> annotations,
+  /**
+   * Tags a span with context, usually to support query or aggregation. For
+   * example, a binary annotation key could be "http.uri".
+   */
+  8: list<BinaryAnnotation> binary_annotations
+  /**
+   * True is a request to store this span even if it overrides sampling policy.
+   */
+  9: optional bool debug = 0
+  /**
+   * Epoch microseconds of the start of this span, absent if this an incomplete
+   * span.
    *
    * This value should be set directly by instrumentation, using the most
    * precise value possible. For example, gettimeofday or syncing nanoTime
@@ -265,18 +330,25 @@ struct Span {
    * or span stores can derive this via Annotation.timestamp.
    * For example, SERVER_RECV.timestamp or CLIENT_SEND.timestamp.
    *
-   * This field is optional for compatibility with old data: first-party span
-   * stores are expected to support this at time of introduction.
+   * Timestamp is nullable for input only. Spans without a timestamp cannot be
+   * presented in a timeline: Span stores should not output spans missing a
+   * timestamp.
+   *
+   * There are two known edge-cases where this could be absent: both cases
+   * exist when a collector receives a span in parts and a binary annotation
+   * precedes a timestamp. This is possible when..
+   *  - The span is in-flight (ex not yet received a timestamp)
+   *  - The span's start event was lost
    */
   10: optional i64 timestamp,
   /**
-   * Measurement of duration in microseconds, used to support queries.
+   * Measurement in microseconds of the critical path, if known.
    *
-   * This value should be set directly, where possible. Doing so encourages
-   * precise measurement decoupled from problems of clocks, such as skew or NTP
-   * updates causing time to move backwards.
+   * This value should be set directly, as opposed to implicitly via annotation
+   * timestamps. Doing so encourages precision decoupled from problems of
+   * clocks, such as skew or NTP updates causing time to move backwards.
    *
-   * For compatibilty with instrumentation that precede this field, collectors
+   * For compatibility with instrumentation that precede this field, collectors
    * or span stores can derive this by subtracting Annotation.timestamp.
    * For example, SERVER_SEND.timestamp - SERVER_RECV.timestamp.
    *

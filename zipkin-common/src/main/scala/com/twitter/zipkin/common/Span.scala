@@ -20,25 +20,35 @@ import com.twitter.zipkin.Constants
 import com.twitter.zipkin.util.Util._
 
 /**
- * A span represents one RPC request. A trace is made up of many spans.
+ * A trace is a series of spans (often RPC calls) which form a latency tree.
  *
- * A span can contain multiple annotations, some are always included such as
- * Client send -> Server received -> Server send -> Client receive.
+ * <p/>Spans are usually created by instrumentation in RPC clients or servers, but can also
+ * represent in-process activity. Annotations in spans are similar to log statements, and are
+ * sometimes created directly by application developers to indicate events of interest, such as a
+ * cache miss.
  *
- * Some are created by users, describing application specific information,
- * such as cache hits/misses.
+ * <p/>The root span is where [[traceId]] = [[id]] and [[parentId]] is empty. The root span is
+ * usually the longest interval in the trace, starting with [[timestamp]] and ending with
+ * [[timestamp]] + [[duration]].
  *
- * @param traceId random long that identifies the trace, will be set in all spans in this trace
- * @param name name of span, can be rpc method name for example, in lowercase.
- * @param id random long that identifies this span
- * @param parentId reference to the parent span in the trace tree
- * @param timestamp epoch microseconds of the start of this span. None when a partial span.
- * @param duration microseconds comprising the critical path, if known.
- * @param annotations annotations, containing a timestamp and some value. both user generated and
- * some fixed ones from the tracing framework. Sorted ascending by timestamp
- * @param binaryAnnotations  binary annotations, can contain more detailed information such as
- * serialized objects. Sorted ascending by timestamp. Sorted ascending by timestamp
- * @param debug if this is set we will make sure this span is stored, no matter what the samplers want
+ * <p/>Span identifiers are packed into longs, but should be treated opaquely. String encoding is
+ * fixed-width lower-hex, to avoid signed interpretation.
+ *
+ * @param traceId unique 8-byte identifier for a trace, set on all spans within it.
+ * @param name span name in lowercase, rpc method for example. Conventionally, when the span name
+ *             isn't known, name = "unknown".
+ * @param id unique 8-byte identifier of this span within a trace. If this is the root span,
+ *           [[id]] = [[traceId]] and [[parentId]] is absent. A span is uniquely identified in
+ *           storage by (trace_id, id).
+ * @param parentId the parent's [[id]]; absent if this the root span in a trace.
+ * @param timestamp epoch microseconds of the start of this span; absent if this an incomplete span.
+ * @param duration measurement in microseconds of the critical path, if known.
+ * @param annotations associates events that explain latency with a timestamp. Unlike log
+ *                    statements, annotations are often codes: for example [[Constants.ServerRecv]].
+ *                    Annotations are sorted ascending by timestamp.
+ * @param binaryAnnotations tags a span with context, usually to support query or aggregation. For
+ *                          example, a binary annotation key could be "http.uri".
+ * @param debug true is a request to store this span even if it overrides sampling policy.
  */
 case class Span(
   traceId: Long,
