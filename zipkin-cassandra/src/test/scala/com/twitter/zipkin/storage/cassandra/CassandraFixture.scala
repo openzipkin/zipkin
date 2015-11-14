@@ -35,7 +35,8 @@ class CassandraFixture(val keyspace: String) {
       "span_names",
       "service_name_index",
       "service_span_name_index",
-      "annotations_index"
+      "annotations_index",
+      "span_duration_index"
     ).foreach(cf => connection.execute("TRUNCATE %s.%s".format(keyspace, cf)))
   }
 }
