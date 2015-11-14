@@ -21,9 +21,13 @@ import com.google.common.collect.Ordering.natural
 import java.util.Comparator
 
 /**
- * @param timestamp when was this annotation created? microseconds from epoch
- * @param value description of what happened at the timestamp could for example be "cache miss for key: x"
- * @param host host this annotation was created on
+ * Associates an event that explains latency with a timestamp.
+ *
+ * <p/>Unlike log statements, annotations are often codes: Ex. [[com.twitter.zipkin.Constants.ServerRecv]].
+ *
+ * @param timestamp microseconds from epoch
+ * @param value usually a short tag indicating an event, like "sr" or "finagle.retry"
+ * @param host The host that recorded [[value]], primarily for query by service name.
  */
 case class Annotation(timestamp: Long, value: String, host: Option[Endpoint])
   extends Ordered[Annotation] {
