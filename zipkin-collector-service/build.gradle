@@ -31,3 +31,4 @@ dependencies {
 
 sourceSets.main.resources.srcDirs += ['config']
 apply from: "${rootDir}/gradle/idea-mark-config-dir-as-resource.gradle"
+apply from: "${rootDir}/gradle/verify-licenses.gradle"

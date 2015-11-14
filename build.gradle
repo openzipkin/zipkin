@@ -9,6 +9,7 @@ buildscript {
 plugins {
     id 'com.jfrog.bintray' version '1.4'
     id 'net.researchgate.release' version '2.2.1'
+    id 'com.github.hierynomus.license' version '0.12.1'
 }
 
 allprojects {
@@ -257,3 +258,4 @@ task dependencyReport {
     }
 }
 
+apply from: "${rootDir}/gradle/verify-licenses.gradle"
