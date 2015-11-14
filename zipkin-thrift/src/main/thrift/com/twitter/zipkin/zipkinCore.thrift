@@ -276,9 +276,8 @@ struct BinaryAnnotation {
  * log statements, and are sometimes created directly by application developers
  * to indicate events of interest, such as a cache miss.
  *
- * The root span is where trace_id = id and parent_id = Nil. The root span is
- * usually the longest interval in the trace, starting with Span.timestamp and
- * ending with Span.timestamp + Span.duration.
+ * The root span is where parent_id = Nil; it usually has the longest duration
+ * in the trace.
  *
  * Span identifiers are packed into i64s, but should be treated opaquely.
  * String encoding is fixed-width lower-hex, to avoid signed interpretation.
@@ -294,9 +293,8 @@ struct Span {
    */
   3: string name,
   /**
-   * Unique 8-byte identifier of this span within a trace. If this is the root
-   * span, id = trace_id and parent_id is absent. A span is uniquely identified
-   * in storage by (trace_id, id).
+   * Unique 8-byte identifier of this span within a trace. A span is uniquely
+   * identified in storage by (trace_id, id).
    */
   4: i64 id,
   /**

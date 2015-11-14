@@ -59,7 +59,7 @@ case class AnormDependencyStore(val db: DB,
         }) *).map(r => (r._1, r._2) -> r._3).toMap
 
       parentChild.values.flatMap(identity).flatMap(r => {
-        // parent can be empty if a root span is missing, or the root's span id doesn't eq the trace id
+        // parent can be empty if a root span is missing
         for (
           parent <- traceSpanServiceName.get((r._1, r._2));
           child <- traceSpanServiceName.get((r._1, r._3))

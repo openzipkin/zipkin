@@ -27,9 +27,8 @@ import com.twitter.zipkin.util.Util._
  * sometimes created directly by application developers to indicate events of interest, such as a
  * cache miss.
  *
- * <p/>The root span is where [[traceId]] = [[id]] and [[parentId]] is empty. The root span is
- * usually the longest interval in the trace, starting with [[timestamp]] and ending with
- * [[timestamp]] + [[duration]].
+ * <p/>The root span is where [[parentId]] is empty; it usually has the longest [[duration]] in the
+ * trace.
  *
  * <p/>Span identifiers are packed into longs, but should be treated opaquely. String encoding is
  * fixed-width lower-hex, to avoid signed interpretation.
@@ -37,9 +36,8 @@ import com.twitter.zipkin.util.Util._
  * @param traceId unique 8-byte identifier for a trace, set on all spans within it.
  * @param name span name in lowercase, rpc method for example. Conventionally, when the span name
  *             isn't known, name = "unknown".
- * @param id unique 8-byte identifier of this span within a trace. If this is the root span,
- *           [[id]] = [[traceId]] and [[parentId]] is absent. A span is uniquely identified in
- *           storage by (trace_id, id).
+ * @param id unique 8-byte identifier of this span within a trace. A span is uniquely
+ *           identified in storage by (trace_id, id).
  * @param parentId the parent's [[id]]; absent if this the root span in a trace.
  * @param timestamp epoch microseconds of the start of this span; absent if this an incomplete span.
  * @param duration measurement in microseconds of the critical path, if known.

@@ -17,6 +17,7 @@
 package com.twitter.zipkin.web
 
 import com.twitter.conversions.time._
+import com.twitter.zipkin.common.Span
 import org.scalatest.FunSuite
 
 class UtilTest extends FunSuite {
@@ -51,5 +52,41 @@ class UtilTest extends FunSuite {
       // test as Long
       assert(durationStr(t.inMicroseconds) === v)
     }
+  }
+
+  test("get root spans when id = trace id") {
+    val spanNoneParent = Span(100, "", 100)
+    val spanParent = Span(100, "", 200, Some(100L))
+    assert(getRootSpans(List(spanParent, spanNoneParent)) === List(spanNoneParent))
+  }
+
+  test("get root spans when id != trace id") {
+    val spanNoneParent = Span(1, "", 100)
+    val spanParent = Span(1, "", 200, Some(100L))
+    assert(getRootSpans(List(spanParent, spanNoneParent)) === List(spanNoneParent))
+  }
+
+  test("get root spans when parent id not found") {
+    val spanNoneParent = Span(1, "", 100, Some(0L)) // 0 isn't present!
+    val spanParent = Span(1, "", 200, Some(100L))
+    assert(getRootSpans(List(spanParent, spanNoneParent)) === List(spanNoneParent))
+  }
+
+  test("get root most span when id = trace id") {
+    val spanNoneParent = Span(100, "", 100)
+    val spanParent = Span(100, "", 200, Some(100L))
+    assert(getRootMostSpan(List(spanParent, spanNoneParent)) === Some(spanNoneParent))
+  }
+
+  test("get root most span when id != trace id") {
+    val spanNoneParent = Span(1, "", 100)
+    val spanParent = Span(1, "", 200, Some(100L))
+    assert(getRootMostSpan(List(spanParent, spanNoneParent)) === Some(spanNoneParent))
+  }
+
+  test("get root most span when parent id not found") {
+    val spanNoneParent = Span(1, "", 100, Some(0L)) // 0 isn't present!
+    val spanParent = Span(1, "", 200, Some(100L))
+    assert(getRootMostSpan(List(spanParent, spanNoneParent)) === Some(spanNoneParent))
   }
 }

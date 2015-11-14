@@ -304,7 +304,6 @@ abstract class CassandraSpanStore(
       }
   }
 
-  /** Only return traces where root span duration is between minDuration and maxDuration */
   override protected def getTraceIdsByDuration(
     serviceName: String,
     spanName: Option[String],

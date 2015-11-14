@@ -35,13 +35,13 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
       Annotation(today + 100, Constants.ServerRecv, Some(zipkinQuery.copy(port = 0))),
       Annotation(today + 250, Constants.ServerSend, Some(zipkinQuery.copy(port = 0))),
       Annotation(today + 300, Constants.ClientRecv, Some(zipkinWeb))), List(
-      BinaryAnnotation(Constants.ClientAddr, BinaryAnnotationValue(true), Some(zipkinWeb)),
-      BinaryAnnotation(Constants.ServerAddr, BinaryAnnotationValue(true), Some(zipkinQuery)))),
+      BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinWeb)),
+      BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinQuery)))),
     Span(1L, "query", 3L, Some(2L), Some(today + 150), Some(50), List(
       Annotation(today + 150, Constants.ClientSend, Some(zipkinQuery)),
       Annotation(today + 200, Constants.ClientRecv, Some(zipkinQuery))), List(
-      BinaryAnnotation(Constants.ClientAddr, BinaryAnnotationValue(true), Some(zipkinQuery)),
-      BinaryAnnotation(Constants.ServerAddr, BinaryAnnotationValue(true), Some(zipkinJdbc))))
+      BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinQuery)),
+      BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinJdbc))))
   )
 
   val dep = new Dependencies(today, today + 1000, List(
@@ -68,6 +68,17 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
    */
   @Test def getDependencies() = {
     processDependencies(trace)
+
+    result(store.getDependencies(today + 1000)) should be(dep.links)
+  }
+
+  /**
+   * Trace id is not required to be a span id. For example, some instrumentation may create separate
+   * trace ids to help with collisions, or to encode information about the origin. This test makes
+   * sure we don't rely on the trace id = root span id convention.
+   */
+  @Test def getDependencies_traceIdIsOpaque() = {
+    processDependencies(trace.map(_.copy(traceId = Long.MaxValue)))
 
     result(store.getDependencies(today + 1000)) should be(dep.links)
   }

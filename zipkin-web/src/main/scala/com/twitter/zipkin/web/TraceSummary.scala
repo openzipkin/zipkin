@@ -18,7 +18,7 @@ package com.twitter.zipkin.web
 
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.zipkin.common.{Trace, Endpoint, Span, SpanTreeEntry}
-import com.twitter.zipkin.web.Util.getIdToSpanMap
+import com.twitter.zipkin.web.Util.getRootMostSpan
 
 case class SpanTimestamp(name: String, timestamp: Long, duration: Long) {
   def endTs = timestamp + duration
@@ -69,28 +69,6 @@ object TraceSummary {
         spanTree.depths(1)
       }
     }
-  }
-
-  /**
-   * In some cases we don't care if it's the actual root span or just the span
-   * that is closes to the root. For example it could be that we don't yet log spans
-   * from the root service, then we want the one just below that.
-   * FIXME if there are holes in the trace this might not return the correct span
-   */
-  private def getRootMostSpan(spans: List[Span]): Option[Span] = {
-    spans.find(!_.parentId.isDefined) orElse {
-      val idSpan = getIdToSpanMap(spans)
-      spans.headOption map {
-        recursiveGetRootMostSpan(idSpan, _)
-      }
-    }
-  }
-
-  private def recursiveGetRootMostSpan(idSpan: Map[Long, Span], prevSpan: Span): Span = {
-    // parent id shouldn't be none as then we would have returned already
-    val span = for (id <- prevSpan.parentId; s <- idSpan.get(id)) yield
-    recursiveGetRootMostSpan(idSpan, s)
-    span.getOrElse(prevSpan)
   }
 }
 
