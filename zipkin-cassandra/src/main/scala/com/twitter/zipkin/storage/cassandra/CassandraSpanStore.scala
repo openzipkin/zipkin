@@ -45,7 +45,7 @@ abstract class CassandraSpanStore(
   maxTraceCols: Int = CassandraSpanStoreDefaults.MaxTraceCols
 ) extends SpanStore with CollectAnnotationQueries {
 
-  /** Deferred as repository eagerly creates network connections */
+  /** Deferred as repository creates network connections */
   protected def repository: Repository
 
   private[this] val IndexDelimiter = ":"

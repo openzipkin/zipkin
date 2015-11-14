@@ -6,6 +6,6 @@ dependencies {
 
     // for SpanStoreSpec
     testCompile project(':zipkin-common').sourceSets.test.output
-    testCompile 'org.cassandraunit:cassandra-unit:2.1.9.2'
+    testCompile "org.apache.cassandra:cassandra-all:${commonVersions.cassandra}"
 }
 

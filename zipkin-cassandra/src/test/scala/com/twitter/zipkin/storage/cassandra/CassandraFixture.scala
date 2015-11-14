@@ -1,34 +1,36 @@
 package com.twitter.zipkin.storage.cassandra
 
 import com.datastax.driver.core.Cluster
-import org.cassandraunit.CQLDataLoader
-import org.cassandraunit.dataset.CQLDataSet
-import org.cassandraunit.utils.EmbeddedCassandraServerHelper._
+import com.google.common.util.concurrent.Futures
+import org.apache.cassandra.service.CassandraDaemon
 import org.twitter.zipkin.storage.cassandra.Repository
-import java.util.Collections
+import scala.collection.JavaConversions
 
-class CassandraFixture(val keyspace: String) {
+/** Ensures all cassandra micro-integration tests use only one cassandra server. */
+object CassandraFixture {
+  val keyspace = "test_zipkin_spanstore"
+
   // Defer shared connection to the cluster
   lazy val cluster = Cluster.builder().addContactPoint("127.0.0.1").withPort(9142).build()
 
-  def cassandra = {
-    startEmbeddedCassandra("cu-cassandra.yaml", "build/embeddedCassandra", 10 * 1000)
-
-    new CQLDataLoader(cluster.connect).load(new CQLDataSet() {
-      override def isKeyspaceDeletion = false
-
-      override def getKeyspaceName = keyspace
-
-      override def isKeyspaceCreation = false
-
-      override def getCQLStatements = Collections.emptyList()
-    })
+  /** overridden to use gradle's "build" dir instead of maven's "target" dir. */
+  lazy val cassandra = {
+    System.setProperty("cassandra-foreground", "true")
+    System.setProperty("cassandra.native.epoll.enabled", "false")
+    val cassandraDaemon = new CassandraDaemon
+    cassandraDaemon.activate
   }
 
+  // Ensure the repository's local cache of service names expire quickly
+  System.setProperty("zipkin.store.cassandra.internal.writtenNamesTtl", "1")
+
+  // the "true" at the end will ensure schema. lazy to do this only once.
+  lazy val repository = new Repository(keyspace, cluster, true)
+
   def truncate = {
-    new Repository(keyspace, cluster, true) // initialize the repository, which creates the keyspace.
-    val connection = cluster.connect()
-    Seq(
+    repository // dereference to ensure schema exists
+    val session = cluster.connect()
+    Futures.allAsList(JavaConversions.asJavaIterable(Seq(
       "traces",
       "dependencies",
       "service_names",
@@ -37,6 +39,6 @@ class CassandraFixture(val keyspace: String) {
       "service_span_name_index",
       "annotations_index",
       "span_duration_index"
-    ).foreach(cf => connection.execute("TRUNCATE %s.%s".format(keyspace, cf)))
+    ).map(cf => session.executeAsync("TRUNCATE %s.%s".format(keyspace, cf))))).get()
   }
 }
