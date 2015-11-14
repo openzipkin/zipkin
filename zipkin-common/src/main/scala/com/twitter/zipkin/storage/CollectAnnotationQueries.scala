@@ -40,7 +40,7 @@ trait CollectAnnotationQueries {
     limit: Int
   ): Future[Seq[IndexedTraceId]]
 
-  /** Only return traces where root span duration is between minDuration and maxDuration */
+  /** Only return traces where [[Span.duration]] is between minDuration and maxDuration */
   protected def getTraceIdsByDuration(
     serviceName: String,
     spanName: Option[String],
