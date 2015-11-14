@@ -16,7 +16,9 @@ ext {
             griddle: '1.7',
             slf4j: '1.7.12',
             logback: '1.1.3',
-            mustache: '0.9.1'
+            mustache: '0.9.1',
+            cassandra: '2.2.3', // to ensure tests match docker
+            codahaleMetrics: '3.0.2'
     ]
 
     // Database drivers
@@ -56,6 +58,12 @@ subprojects { subproject ->
                 }
                 if (details.requested.group == 'com.fasterxml.jackson.core') {
                     details.useVersion commonVersions.jackson
+                }
+                if (details.requested.group == 'org.apache.cassandra') {
+                    details.useVersion commonVersions.cassandra
+                }
+                if (details.requested.group == 'com.codahale.metrics') {
+                    details.useVersion commonVersions.codahaleMetrics
                 }
             }
         }

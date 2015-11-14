@@ -4,19 +4,17 @@ import com.twitter.util.Await._
 import com.twitter.zipkin.common.{Dependencies, Span}
 import com.twitter.zipkin.storage.DependencyStoreSpec
 import org.junit.BeforeClass
-import org.twitter.zipkin.storage.cassandra.Repository
 
-object CassandraDependencyStoreSpec extends CassandraFixture("test_zipkin_dependencystore") {
+object CassandraDependencyStoreSpec {
 
-  @BeforeClass override def cassandra = super.cassandra
+  @BeforeClass def ensureCassandra = CassandraFixture.cassandra
 }
 
 class CassandraDependencyStoreSpec extends DependencyStoreSpec {
 
-  import CassandraDependencyStoreSpec._
-
   override val store = new CassandraDependencyStore {
-    override lazy val repository = new Repository(keyspace, cluster, true)
+    /** Deferred as repository creates network connections */
+    override lazy val repository = CassandraFixture.repository
   }
 
   override def processDependencies(spans: List[Span]) = {
@@ -24,5 +22,5 @@ class CassandraDependencyStoreSpec extends DependencyStoreSpec {
     result(store.storeDependencies(deps))
   }
 
-  override def clear = truncate
+  override def clear = CassandraFixture.truncate
 }

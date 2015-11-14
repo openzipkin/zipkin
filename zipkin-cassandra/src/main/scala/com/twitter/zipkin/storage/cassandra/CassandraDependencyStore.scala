@@ -18,7 +18,7 @@ import scala.collection.JavaConverters._
  */
 abstract class CassandraDependencyStore extends DependencyStore {
 
-  /** Deferred as repository eagerly creates network connections */
+  /** Deferred as repository creates network connections */
   protected def repository: Repository
 
   private[this] val codec = new ScroogeThriftCodec[ThriftDependencies](ThriftDependencies)
