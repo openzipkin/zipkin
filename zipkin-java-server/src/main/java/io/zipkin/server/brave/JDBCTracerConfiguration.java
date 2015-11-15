@@ -15,7 +15,7 @@
 package io.zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
-import com.mysql.jdbc.Driver;
+import org.mariadb.jdbc.Driver;
 import com.twitter.zipkin.gen.AnnotationType;
 import com.twitter.zipkin.gen.BinaryAnnotation;
 import com.twitter.zipkin.gen.Endpoint;

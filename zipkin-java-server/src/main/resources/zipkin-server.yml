@@ -11,7 +11,7 @@ server:
   port: ${QUERY_PORT:9411}
 spring:
   datasource:
-    driver-class-name: com.mysql.jdbc.Driver
+    driver-class-name: org.mariadb.jdbc.Driver
     url: jdbc:mysql://${mysql.host}:${mysql.port}/${mysql.db}?autoReconnect=true
     username: ${mysql.username}
     password: ${mysql.password}

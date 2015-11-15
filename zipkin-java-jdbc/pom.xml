@@ -31,7 +31,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <jooq.version>3.7.0</jooq.version>
+    <jooq.version>3.7.1</jooq.version>
   </properties>
 
   <dependencies>
@@ -69,14 +69,14 @@
               <version>${jooq.version}</version>
             </dependency>
             <dependency>
-              <groupId>mysql</groupId>
-              <artifactId>mysql-connector-java</artifactId>
-              <version>${mysql-connector-java.version}</version>
+              <groupId>org.mariadb.jdbc</groupId>
+              <artifactId>mariadb-java-client</artifactId>
+              <version>${mariadb-java-client.version}</version>
             </dependency>
           </dependencies>
           <configuration>
             <jdbc>
-              <driver>com.mysql.jdbc.Driver</driver>
+              <driver>org.mariadb.jdbc.Driver</driver>
               <url>jdbc:mysql://localhost:3306/zipkin</url>
               <user>root</user>
               <password></password>
