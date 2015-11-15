@@ -75,7 +75,7 @@ case class DBConfig(name: String = "sqlite-persistent",
    * Anorm supports any SQL database, so more databases can be added here.
    *
    * The other place the database driver needs to be set is in the project
-   * dependencies in project/Project.scala.
+   * dependencies in `gradle/dependencies.gradle`.
    */
   private val dbmap = Map(
     "sqlite-memory" -> DBInfo(
@@ -90,29 +90,12 @@ case class DBConfig(name: String = "sqlite-persistent",
       location = { dbp: DBParams => "jdbc:sqlite:" + dbp.dbName + ".db" },
       jdbc3 = true
     ),
-    "h2-memory" -> DBInfo(
-      description = "H2 in-memory",
-      driver = "org.h2.Driver",
-      location = { dbp: DBParams => "jdbc:h2:mem:" + dbp.dbName }
-    ),
-    "h2-persistent" -> DBInfo(
-      description = "H2 persistent",
-      driver = "org.h2.Driver",
-      location = { dbp: DBParams => "jdbc:h2:" + dbp.dbName }
-    ),
-    "postgresql" -> DBInfo(
-      description = "PostgreSQL",
-      driver = "org.postgresql.Driver",
-      location = { dbp: DBParams =>
-        "jdbc:postgresql://" + dbp.host + dbp.getPort + "/" + dbp.dbName + "?user=" + dbp.username + "&password=" + dbp.password + "&ssl=" + dbp.ssl
-      }
-    ),
     "mysql" -> DBInfo(
       description = "MySQL",
-      driver = "com.mysql.jdbc.Driver",
+      driver = "org.mariadb.jdbc.Driver",
       location = { dbp: DBParams =>
         // We need to enable auto-reconnect to recover from dropped connections
-        "jdbc:mysql://" + dbp.host + dbp.getPort + "/" + dbp.dbName + "?user=" + dbp.username + "&password=" + dbp.password + "&autoReconnect=true"
+        "jdbc:mariadb://" + dbp.host + dbp.getPort + "/" + dbp.dbName + "?user=" + dbp.username + "&password=" + dbp.password + "&autoReconnect=true"
       }
     )
   )
