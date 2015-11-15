@@ -26,7 +26,7 @@ public class JDBCScalaDependencyStoreTest extends DependencyStoreSpec {
   private static JDBCSpanStore spanStore;
 
   @BeforeClass
-  public static void setupDB() {
+  public static void setupDB() throws SQLException {
     spanStore = new JDBCTestGraph().spanStore;
   }
 

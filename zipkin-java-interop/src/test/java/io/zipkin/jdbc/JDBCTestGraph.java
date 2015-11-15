@@ -13,26 +13,25 @@
  */
 package io.zipkin.jdbc;
 
-import static io.zipkin.internal.Util.envOr;
-
+import io.zipkin.internal.Nullable;
+import java.sql.SQLException;
 import org.jooq.conf.Settings;
 import org.junit.AssumptionViolatedException;
+import org.mariadb.jdbc.MariaDbDataSource;
 
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
-
-import io.zipkin.internal.Nullable;
+import static io.zipkin.internal.Util.envOr;
 
 final class JDBCTestGraph {
 
   final JDBCSpanStore spanStore;
 
-  JDBCTestGraph() {
+  JDBCTestGraph() throws SQLException {
     String mysqlUrl = mysqlUrlFromEnv();
     if (mysqlUrl == null) {
       throw new AssumptionViolatedException("Minimally, the environment variable MYSQL_USER must be set");
     }
-    MysqlDataSource dataSource = new MysqlDataSource();
-    dataSource.setURL(mysqlUrl);
+    MariaDbDataSource dataSource = new MariaDbDataSource();
+    dataSource.setUrl(mysqlUrl);
     this.spanStore = new JDBCSpanStore(dataSource, new Settings().withRenderSchema(false), null);
   }
 
