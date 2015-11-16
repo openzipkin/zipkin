@@ -138,7 +138,7 @@ Communicating trace information
 -------------------------------
 
 Trace information needs to be passed between upstream and downstream services in
-order to reassemble a complete trace. Four pieces of information are required:
+order to reassemble a complete trace. Five pieces of information are required:
 
 * Trace Id
 * Span Id
