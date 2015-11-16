@@ -1,7 +1,6 @@
 # zipkin-anormdb
 
 AnormDB is a SQL layer for zipkin span storage.
-See [sql-databases](https://github.com/openzipkin/zipkin/blob/master/doc/sql-databases.db) for details.
 
 ## Service Configuration
 

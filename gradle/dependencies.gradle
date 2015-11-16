@@ -26,15 +26,15 @@ ext {
     // The values are the dependency to be used in the build to support the requested storage system.
     //
     // The default value of dbEngine is sqlite-persistent, defined in gradle.properties
-    // To override, run the build like this: ./gradlew build -PdbEngine=postgresql
+    // To override, run the build like this: ./gradlew build -PdbEngine=sqlite-memory
     anormDriverDependencies = [
             "sqlite-memory": "org.xerial:sqlite-jdbc:3.8.11.2",  // sqlite-jdbc4 isn't out, yet
             "sqlite-persistent": "org.xerial:sqlite-jdbc:3.8.11.2",
-            "h2-memory": "com.h2database:h2:1.4.190",
-            "h2-persistent": "com.h2database:h2:1.4.190",
-            // Don't add EOL versions! http://www.postgresql.org/support/versioning
-            "postgresql": "org.postgresql:postgresql:9.3-1104-jdbc4",
-            "mysql": "mysql:mysql-connector-java:5.1.37"
+            // MySQL connector is GPL, even if it has an OSS exception.
+            // https://www.mysql.com/about/legal/licensing/foss-exception/
+            //
+            // MariaDB has a friendlier license, LGPL, which is less scary in audits.
+            "mysql": "org.mariadb.jdbc:mariadb-java-client:1.3.0"
     ]
 }
 

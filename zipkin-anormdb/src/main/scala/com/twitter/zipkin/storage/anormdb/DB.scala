@@ -160,6 +160,8 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
   def install(): Connection = {
     if (dbconfig.description == "MySQL") {
       throw new IllegalArgumentException("Please install MySQL schema directly: zipkin-anormdb/src/main/resources/mysql.sql")
+    } else if (!dbconfig.description.startsWith("SQLite")) {
+      throw new IllegalArgumentException("Auto-install schema is only supported for SQLite, not: " + dbconfig.description);
     }
 
     implicit val con = this.getConnection()
@@ -179,29 +181,15 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
         |  trace_id BIGINT NOT NULL,
         |  span_id BIGINT NOT NULL,
         |  a_key VARCHAR(255) NOT NULL,
-        |  a_value %s,
+        |  a_value BLOB,
         |  a_type INT NOT NULL,
         |  a_timestamp BIGINT NOT NULL,
         |  endpoint_ipv4 INT,
         |  endpoint_port SMALLINT,
         |  endpoint_service_name VARCHAR(255) NOT NULL
         |)
-      """.stripMargin.format(getBlobType)).execute()
+      """.stripMargin).execute()
     con
-  }
-
-  // Get the column the current database type uses for BLOBs.
-  private def getBlobType = dbconfig.description match {
-    case "PostgreSQL" => "BYTEA" /* As usual PostgreSQL has to be different */
-    case _ => "BLOB"
-  }
-
-  private def getAutoIncrement = dbconfig.description match {
-    case "SQLite in-memory" => "INTEGER PRIMARY KEY AUTOINCREMENT" // Must be nullable
-    case "SQLite persistent" => "INTEGER PRIMARY KEY AUTOINCREMENT"
-    case "H2 in-memory" => "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"
-    case "H2 persistent" => "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"
-    case "PostgreSQL" => "BIGSERIAL PRIMARY KEY"
   }
 
   /**
