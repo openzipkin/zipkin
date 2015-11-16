@@ -28,3 +28,5 @@ dependencies {
     testCompile project(':zipkin-scrooge')
     testCompile 'com.squareup.okhttp:mockwebserver:2.5.0'
 }
+
+apply from: "${rootDir}/gradle/verify-licenses.gradle"
