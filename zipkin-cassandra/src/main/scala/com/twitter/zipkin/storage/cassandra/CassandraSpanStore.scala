@@ -273,8 +273,8 @@ abstract class CassandraSpanStore(
     val traceIdsFuture = FutureUtil.toFuture(spanName match {
       // if we have a span name, look up in the service + span name index
       // if not, look up by service name only
-      case Some(x :String) => repository.getTraceIdsBySpanName(serviceName, x, endTs, lookback, limit)
-      case None => repository.getTraceIdsByServiceName(serviceName, endTs, lookback, limit)
+      case Some(x :String) => repository.getTraceIdsBySpanName(serviceName, x, endTs * 1000, lookback * 1000, limit)
+      case None => repository.getTraceIdsByServiceName(serviceName, endTs * 1000, lookback * 1000, limit)
     })
 
     traceIdsFuture.map { traceIds =>
@@ -296,7 +296,7 @@ abstract class CassandraSpanStore(
 
     FutureUtil.toFuture(
       repository
-        .getTraceIdsByAnnotation(annotationKey(serviceName, annotation, value), endTs, lookback, limit))
+        .getTraceIdsByAnnotation(annotationKey(serviceName, annotation, value), endTs * 1000, lookback * 1000, limit))
       .map { traceIds =>
         traceIds.asScala
           .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
@@ -319,7 +319,7 @@ abstract class CassandraSpanStore(
     FutureUtil.toFuture(
       repository
         .getTraceIdsByDuration(serviceName, spanName getOrElse "", minDuration, maxDuration getOrElse Long.MaxValue,
-          endTs, endTs - lookback, limit))
+          endTs * 1000, (endTs - lookback)  * 1000, limit))
       .map { traceIds =>
       traceIds.asScala
         .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }

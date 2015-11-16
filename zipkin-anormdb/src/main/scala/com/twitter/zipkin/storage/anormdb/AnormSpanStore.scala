@@ -213,8 +213,8 @@ class AnormSpanStore(val db: DB,
           "AND (name = {name} OR {name} = '')" + sliceQueryFooter)
           .on("service_name" -> serviceName)
           .on("name" -> spanName.getOrElse(""))
-          .on("start_ts" -> (endTs - lookback))
-          .on("end_ts" -> endTs)
+          .on("start_ts" -> (endTs - lookback) * 1000)
+          .on("end_ts" -> endTs * 1000)
           .on("limit" -> limit)
           .as((long("trace_id") ~ long("start_ts") map flatten) *)
         result map { case (tId, ts) =>
@@ -241,8 +241,8 @@ class AnormSpanStore(val db: DB,
               .on("service_name" -> serviceName)
               .on("annotation" -> annotation)
               .on("value" -> Util.getArrayFromBuffer(bytes))
-              .on("start_ts" -> (endTs - lookback))
-              .on("end_ts" -> endTs)
+              .on("start_ts" -> (endTs - lookback) * 1000)
+              .on("end_ts" -> endTs * 1000)
               .on("limit" -> limit)
               .as((long("trace_id") ~ long("start_ts") map flatten) *)
           }
@@ -254,8 +254,8 @@ class AnormSpanStore(val db: DB,
               """.stripMargin + sliceQueryFooter)
               .on("service_name" -> serviceName)
               .on("annotation" -> annotation)
-              .on("start_ts" -> (endTs - lookback))
-              .on("end_ts" -> endTs)
+              .on("start_ts" -> (endTs - lookback) * 1000)
+              .on("end_ts" -> endTs * 1000)
               .on("limit" -> limit)
               .as((long("trace_id") ~ long("start_ts") map flatten) *)
           }
@@ -288,8 +288,8 @@ class AnormSpanStore(val db: DB,
         .on("service_name" -> serviceName)
         .on("min_duration" -> minDuration)
         .on("max_duration" -> maxDuration.getOrElse(Long.MaxValue))
-        .on("start_ts" -> (endTs - lookback))
-        .on("end_ts" -> endTs)
+        .on("start_ts" -> (endTs - lookback) * 1000)
+        .on("end_ts" -> endTs * 1000)
         .on("limit" -> limit)
         .as((long("trace_id") ~ long("start_ts") map flatten) *)
       result map { case (tId, ts) =>

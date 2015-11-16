@@ -26,7 +26,7 @@ class QueryExtractor(defaultQueryLimit: Int) {
   }
 
   def getTimestampStr(req: Request): String = {
-    req.params.getLong("endTs").getOrElse(Time.now.inMicroseconds).toString
+    req.params.getLong("endTs").getOrElse(Time.now.inMillis).toString
   }
 
   def getAnnotations(req: Request): Option[(Seq[String], Map[String, String])] =

@@ -16,7 +16,7 @@
  */
 package com.twitter.zipkin.common
 
-import java.util.concurrent.TimeUnit.{HOURS, MICROSECONDS}
+import java.util.concurrent.TimeUnit.{HOURS, MILLISECONDS}
 
 import org.scalatest.{FunSuite, Matchers}
 
@@ -27,8 +27,8 @@ class DependenciesTest extends FunSuite with Matchers {
   val dl3 = DependencyLink("tfe", "mobileweb", 2)
   val dl4 = DependencyLink("tfe", "mobileweb", 4)
 
-  val deps1 = Dependencies(0L, MICROSECONDS.convert(1, HOURS), List(dl1, dl3))
-  val deps2 = Dependencies(MICROSECONDS.convert(1, HOURS), MICROSECONDS.convert(2, HOURS), List(dl2, dl4))
+  val deps1 = Dependencies(0L, MILLISECONDS.convert(1, HOURS), List(dl1, dl3))
+  val deps2 = Dependencies(MILLISECONDS.convert(1, HOURS), MILLISECONDS.convert(2, HOURS), List(dl2, dl4))
 
   test("identity on Dependencies.zero") {
     deps1 + Dependencies.zero should be(deps1)

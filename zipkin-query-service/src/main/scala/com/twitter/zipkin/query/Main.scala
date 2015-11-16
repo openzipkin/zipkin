@@ -40,7 +40,7 @@ object Main {
       .asInstanceOf[Logger].setLevel(Level.toLevel(query.logLevel))
 
     // Note: this is blocking, so nothing after this will be called.
-    val defaultLookback = sys.env.get("QUERY_LOOKBACK").getOrElse(7.days.inMicroseconds.toString)
+    val defaultLookback = sys.env.get("QUERY_LOOKBACK").getOrElse(7.days.inMillis.toString)
     query.nonExitingMain(Array(
       "-local.doc.root", "/",
       "-zipkin.queryService.lookback", defaultLookback

@@ -24,7 +24,7 @@ define(
       }
 
       this.setTimestamp = function(time) {
-        this.$timestamp.val(time.valueOf() * 1000);
+        this.$timestamp.val(time.valueOf());
       }
 
       this.dateChanged = function (e) {

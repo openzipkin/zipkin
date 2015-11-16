@@ -21,16 +21,16 @@ struct DependencyLink {
   /** child service name (callee) */
   2: string child
   # 3: Moments OBSOLETE_duration_moments
-  /** calls made during the duration (in microseconds) of this link */
+  /** calls made during the duration of this link */
   4: i64 callCount
   # histogram?
 }
 
 /* An aggregate representation of services paired with every service they call. */
 struct Dependencies {
-  /** microseconds from epoch */
+  /** milliseconds from epoch */
   1: i64 start_ts
-  /** microseconds from epoch */
+  /** milliseconds from epoch */
   2: i64 end_ts
   3: list<DependencyLink> links
 }
