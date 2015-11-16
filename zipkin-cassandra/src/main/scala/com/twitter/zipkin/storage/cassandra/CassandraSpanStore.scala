@@ -265,7 +265,7 @@ abstract class CassandraSpanStore(
     serviceName: String,
     spanName: Option[String],
     endTs: Long,
-    lookback: Long, // TODO
+    lookback: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByNameCounter.incr()
@@ -273,8 +273,8 @@ abstract class CassandraSpanStore(
     val traceIdsFuture = FutureUtil.toFuture(spanName match {
       // if we have a span name, look up in the service + span name index
       // if not, look up by service name only
-      case Some(x :String) => repository.getTraceIdsBySpanName(serviceName, x, endTs, limit)
-      case None => repository.getTraceIdsByServiceName(serviceName, endTs, limit)
+      case Some(x :String) => repository.getTraceIdsBySpanName(serviceName, x, endTs, lookback, limit)
+      case None => repository.getTraceIdsByServiceName(serviceName, endTs, lookback, limit)
     })
 
     traceIdsFuture.map { traceIds =>
@@ -289,14 +289,14 @@ abstract class CassandraSpanStore(
     annotation: String,
     value: Option[ByteBuffer],
     endTs: Long,
-    lookback: Long, // TODO
+    lookback: Long,
     limit: Int
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByAnnotationCounter.incr()
 
     FutureUtil.toFuture(
       repository
-        .getTraceIdsByAnnotation(annotationKey(serviceName, annotation, value), endTs, limit))
+        .getTraceIdsByAnnotation(annotationKey(serviceName, annotation, value), endTs, lookback, limit))
       .map { traceIds =>
         traceIds.asScala
           .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
