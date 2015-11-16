@@ -40,8 +40,8 @@ case class AnormDependencyStore(val db: DB,
           |WHERE start_ts BETWEEN {startTs} AND {endTs}
           |AND parent_id is not null
         """.stripMargin)
-        .on("startTs" -> startTs)
-        .on("endTs" -> endTs)
+        .on("startTs" -> startTs * 1000)
+        .on("endTs" -> endTs * 1000)
         .as((long("trace_id") ~ long("parent_id") ~ long("id") map {
           case traceId ~ parentId ~ id => (traceId, parentId, id)
         }) *).groupBy(_._1)

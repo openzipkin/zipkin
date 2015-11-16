@@ -3,6 +3,7 @@ package com.twitter.zipkin.storage
 import com.twitter.util.Await.result
 import com.twitter.util.{Duration, Time}
 import com.twitter.zipkin.Constants
+import com.twitter.zipkin.adjuster.ApplyTimestampAndDuration
 import com.twitter.zipkin.common.{Dependencies, DependencyLink, _}
 import org.junit.{Before, Test}
 import org.scalatest.Matchers
@@ -19,30 +20,35 @@ import java.util.concurrent.TimeUnit._
 abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
 
   /** Notably, the cassandra implementation has day granularity */
-  val day = MICROSECONDS.convert(1, DAYS)
-  val today = Time.now.floor(Duration.fromMicroseconds(day)).inMicroseconds
+  val day = MILLISECONDS.convert(1, DAYS)
+  val today = Time.now.floor(Duration.fromMilliseconds(day)).inMillis
 
   val zipkinWeb = Endpoint(172 << 24 | 17 << 16 | 3, 8080, "zipkin-web")
   val zipkinQuery = Endpoint(172 << 24 | 17 << 16 | 2, 9411, "zipkin-query")
   val zipkinJdbc = Endpoint(172 << 24 | 17 << 16 | 2, 0, "zipkin-jdbc")
 
-  val trace = List(
-    Span(1L, "get", 1L, None, Some(today), Some(350), List(
-      Annotation(today, Constants.ServerRecv, Some(zipkinWeb)),
-      Annotation(today + 350, Constants.ServerSend, Some(zipkinWeb)))),
-    Span(1L, "get", 2L, Some(1L), Some(today + 50), Some(250), List(
-      Annotation(today + 50, Constants.ClientSend, Some(zipkinWeb)),
-      Annotation(today + 100, Constants.ServerRecv, Some(zipkinQuery.copy(port = 0))),
-      Annotation(today + 250, Constants.ServerSend, Some(zipkinQuery.copy(port = 0))),
-      Annotation(today + 300, Constants.ClientRecv, Some(zipkinWeb))), List(
-      BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinWeb)),
-      BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinQuery)))),
-    Span(1L, "query", 3L, Some(2L), Some(today + 150), Some(50), List(
-      Annotation(today + 150, Constants.ClientSend, Some(zipkinQuery)),
-      Annotation(today + 200, Constants.ClientRecv, Some(zipkinQuery))), List(
-      BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinQuery)),
-      BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinJdbc))))
-  )
+  val trace = ApplyTimestampAndDuration(List(
+    Span(1L, "get", 1L,
+      annotations = List(
+        Annotation(today * 1000, Constants.ServerRecv, Some(zipkinWeb)),
+        Annotation((today + 350) * 1000, Constants.ServerSend, Some(zipkinWeb)))),
+    Span(1L, "get", 2L, Some(1L),
+      annotations = List(
+        Annotation((today + 50) * 1000, Constants.ClientSend, Some(zipkinWeb)),
+        Annotation((today + 100) * 1000, Constants.ServerRecv, Some(zipkinQuery.copy(port = 0))),
+        Annotation((today + 250) * 1000, Constants.ServerSend, Some(zipkinQuery.copy(port = 0))),
+        Annotation((today + 300) * 1000, Constants.ClientRecv, Some(zipkinWeb))),
+      binaryAnnotations = List(
+        BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinWeb)),
+        BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinQuery)))),
+    Span(1L, "query", 3L, Some(2L),
+      annotations = List(
+        Annotation((today + 150) * 1000, Constants.ClientSend, Some(zipkinQuery)),
+        Annotation((today + 200) * 1000, Constants.ClientRecv, Some(zipkinQuery))),
+      binaryAnnotations = List(
+        BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinQuery)),
+        BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinJdbc))))
+  ))
 
   val dep = new Dependencies(today, today + 1000, List(
     new DependencyLink("zipkin-web", "zipkin-query", 1),
@@ -110,8 +116,8 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
 
     val traceDuration = Trace.duration(trace).get
     result(store.getDependencies(
-      trace(0).timestamp.get + traceDuration,
-      Some(traceDuration)
+      (trace(0).timestamp.get + traceDuration) / 1000,
+      Some(traceDuration / 1000)
     )).sortBy(_.parent) should be(
       List(
         new DependencyLink("trace-producer-one", "trace-producer-two", 1),

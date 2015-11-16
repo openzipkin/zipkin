@@ -105,7 +105,7 @@ trait CollectAnnotationQueries {
   }
 
   private[this] def queryResponse(ids: Seq[IndexedTraceId], qr: QueryRequest): Future[Seq[Long]] = {
-    Future.value(ids.filter(_.timestamp <= qr.endTs).slice(0, qr.limit).map(_.traceId))
+    Future.value(ids.filter(_.timestamp <= qr.endTs * 1000).slice(0, qr.limit).map(_.traceId))
   }
 
   private trait SliceQuery

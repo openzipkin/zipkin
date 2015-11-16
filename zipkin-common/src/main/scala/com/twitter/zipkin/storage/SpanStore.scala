@@ -28,7 +28,7 @@ abstract class SpanStore extends java.io.Closeable {
    *
    * <p/> Traces are sorted in descending in order of the first span's
    * timestamp, containing up to [[QueryRequest.limit]] traces, nearest to
-   * [[QueryRequest.endTs]], looking back up to [[QueryRequest.lookback]] μs.
+   * [[QueryRequest.endTs]], looking back up to [[QueryRequest.lookback]] ms.
    *
    * <p/> Spans in trace, and annotations in a span are sorted ascending by
    * timestamp. First event should be first in the spans list.
@@ -124,7 +124,7 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
   ): Future[Seq[IndexedTraceId]] = call {
     spansForService(serviceName)
       .filter(s => spanName.map(_ == s.name).getOrElse(true))
-      .filter(_.timestamp.exists(t => t >= (endTs - lookback) && t <= endTs))
+      .filter(_.timestamp.exists(t => t >= (endTs - lookback) * 1000 && t <= endTs * 1000))
       .take(limit)
       .map(span => IndexedTraceId(span.traceId, span.timestamp.get))
       .toList
@@ -139,7 +139,7 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     limit: Int
   ): Future[Seq[IndexedTraceId]] = call {
     spansForService(serviceName)
-      .filter(_.timestamp.exists(t => t >= (endTs - lookback) && t <= endTs))
+      .filter(_.timestamp.exists(t => t >= (endTs - lookback) * 1000 && t <= endTs * 1000))
       .filter(if (value.isDefined) {
       _.binaryAnnotations.exists(ba => ba.key == annotation && ba.value == value.get)
     } else {
@@ -161,7 +161,7 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
   ): Future[Seq[IndexedTraceId]] = call {
     spansForService(serviceName)
       .filter(s => spanName.map(_ == s.name).getOrElse(true))
-      .filter(_.timestamp.exists(t => t >= (endTs - lookback) && t <= endTs))
+      .filter(_.timestamp.exists(t => t >= (endTs - lookback) * 1000 && t <= endTs * 1000))
       .filter(_.duration.exists(_ >= minDuration))
       .filter(_.duration.exists(_ <= maxDuration.getOrElse(Long.MaxValue)))
       .take(limit)

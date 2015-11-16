@@ -33,9 +33,9 @@ abstract class DependencyStore extends java.io.Closeable {
    * was 25 hours, the implementation would query against 2 buckets.
    *
    * @param endTs only return links from spans where [[com.twitter.zipkin.common.Span.timestamp]]
-   *              are at or before this time in epoch microseconds.
+   *              are at or before this time in epoch milliseconds.
    * @param lookback only return links from spans where [[com.twitter.zipkin.common.Span.timestamp]]
-   *                 are at or after (endTs - lookback) in microseconds. Defaults to endTs.
+   *                 are at or after (endTs - lookback) in milliseconds. Defaults to endTs.
    * @return dependency links in an interval contained by (endTs - lookback) or
    *         empty if none are found
    */

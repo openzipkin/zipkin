@@ -11,6 +11,10 @@ import scala.util.hashing.MurmurHash3
  * example, if endTs is 10:20 today, limit is 10, and lookback is 7 days, traces returned should be
  * those nearest to 10:20 today, not 10:20 a week ago.
  *
+ * <p/> Time units of [[endTs]] and [[_lookback]] are milliseconds as opposed to microseconds, which
+ * the grain of [[com.twitter.zipkin.common.Span.timestamp]]. Milliseconds is a more familiar and
+ * supported granularity for query, index and windowing functions.
+ *
  * @param _serviceName Mandatory [[com.twitter.zipkin.common.Endpoint.serviceName]] and constrains
  *                     all other parameters.
  * @param _spanName When present, only include traces with this [[com.twitter.zipkin.common.Span.name]]
@@ -24,9 +28,9 @@ import scala.util.hashing.MurmurHash3
  * @param maxDuration only return traces whose [[com.twitter.zipkin.common.Span.duration]] is less
  *                    than or equal to maxDuration microseconds. Only valid with [[minDuration]].
  * @param endTs only return traces where all [[com.twitter.zipkin.common.Span.timestamp]] are at
- *              or before this time in epoch microseconds. Defaults to current time.
+ *              or before this time in epoch milliseconds. Defaults to current time.
  * @param _lookback only return traces where all [[com.twitter.zipkin.common.Span.timestamp]] are at
- *                  or after (endTs - lookback) in microseconds. Defaults to endTs.
+ *                  or after (endTs - lookback) in milliseconds. Defaults to endTs.
  * @param limit maximum number of traces to return. Defaults to 10.
  */
 // This is not a case-class as we need to enforce serviceName and spanName as lowercase
@@ -36,7 +40,7 @@ class QueryRequest(_serviceName: String,
                    val binaryAnnotations: Set[(String, String)] = Set.empty,
                    val minDuration: Option[Long] = None,
                    val maxDuration: Option[Long] = None,
-                   val endTs: Long = Time.now.inMicroseconds,
+                   val endTs: Long = Time.now.inMillis,
                    _lookback: Option[Long] = None,
                    val limit: Int = 10) {
 
@@ -48,7 +52,7 @@ class QueryRequest(_serviceName: String,
 
   /**
    * Only return traces where all [[com.twitter.zipkin.common.Span.timestamp]] are at
-   * or after (endTs - lookback) in microseconds.
+   * or after (endTs - lookback) in milliseconds.
    */
   val lookback: Long = Math.min(_lookback.getOrElse(endTs), endTs)
 
@@ -60,8 +64,8 @@ class QueryRequest(_serviceName: String,
     () => "maxDuration should be positive: was " + maxDuration.get)
   checkArgument(maxDuration.map(_ => minDuration.isDefined).getOrElse(true),
     "minDuration is required when specifying maxDuration")
-  checkArgument(endTs > 0, () => "endTs should be positive, in epoch microseconds: was " + endTs)
-  checkArgument(lookback > 0, () => "lookback should be positive, in microseconds: was " + lookback)
+  checkArgument(endTs > 0, () => "endTs should be positive, in epoch milliseconds: was " + endTs)
+  checkArgument(lookback > 0, () => "lookback should be positive, in milliseconds: was " + lookback)
   checkArgument(limit > 0, () => "limit should be positive: was " + limit)
 
   override lazy val hashCode =
@@ -96,7 +100,7 @@ object QueryRequest {
     binaryAnnotations: Set[(String, String)] = Set.empty,
     minDuration: Option[Long] = None,
     maxDuration: Option[Long] = None,
-    endTs: Long = Time.now.inMicroseconds,
+    endTs: Long = Time.now.inMillis,
     lookback: Option[Long] = None,
     limit: Int = 10
   ) = new QueryRequest(serviceName, spanName, annotations, binaryAnnotations, minDuration, maxDuration, endTs, lookback,limit)

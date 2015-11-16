@@ -16,7 +16,7 @@ class ZipkinQueryServerTest extends FunSuite with Matchers {
     val queryRequest = query.injector.instance[QueryExtractor].apply(Request("?serviceName=foo")).get
 
     queryRequest.limit should be(1000)
-    queryRequest.lookback should be(7.days.inMicroseconds)  // default
+    queryRequest.lookback should be(7.days.inMillis)  // default
   }
 
   test("zipkin.queryService.lookback override") {
@@ -24,10 +24,10 @@ class ZipkinQueryServerTest extends FunSuite with Matchers {
       override def postWarmup() = Unit // don't start a server
       override def waitForServer() = Unit // don't wait for a server
     }
-    query.nonExitingMain(Array("-zipkin.queryService.lookback", 1.day.inMicroseconds.toString))
+    query.nonExitingMain(Array("-zipkin.queryService.lookback", 1.day.inMillis.toString))
     val queryRequest = query.injector.instance[QueryExtractor].apply(Request("?serviceName=foo")).get
 
     queryRequest.limit should be(10) // default
-    queryRequest.lookback should be(86400000000L)
+    queryRequest.lookback should be(86400000L)
   }
 }

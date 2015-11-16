@@ -7,6 +7,7 @@ import com.twitter.inject.server.FeatureTest
 import com.twitter.io.Buf
 import com.twitter.util.{Await, Future, Time}
 import com.twitter.zipkin.Constants
+import com.twitter.zipkin.adjuster.ApplyTimestampAndDuration
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.json.{JsonSpan, ZipkinJson}
@@ -37,40 +38,40 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   val ep3 = Endpoint(345, 345, "service3")
   val ep4 = Endpoint(456, 456, "service4")
 
-  val ann1 = Annotation(100, Constants.ClientSend, Some(ep1))
-  val ann2 = Annotation(150, Constants.ClientRecv, Some(ep1))
-  val spans1 = List(Span(1, "methodcall", 666, Some(2), Some(100), Some(50), List(ann1, ann2)))
+  val ann1 = Annotation(100000, Constants.ClientSend, Some(ep1))
+  val ann2 = Annotation(150000, Constants.ClientRecv, Some(ep1))
+  val spans1 = List(Span(1, "methodcall", 666, Some(2), annotations = List(ann1, ann2)))
 
-  val ann3 = Annotation(101, Constants.ClientSend, Some(ep2))
-  val ann4 = Annotation(501, Constants.ClientRecv, Some(ep2))
-  val spans2 = List(Span(2, "methodcall", 2, None, Some(101), Some(400), List(ann3, ann4)))
+  val ann3 = Annotation(101000, Constants.ClientSend, Some(ep2))
+  val ann4 = Annotation(501000, Constants.ClientRecv, Some(ep2))
+  val spans2 = List(Span(2, "methodcall", 2, annotations = List(ann3, ann4)))
 
-  val ann5 = Annotation(99, Constants.ClientSend, Some(ep2))
-  val ann6 = Annotation(199, Constants.ClientRecv, Some(ep2))
-  val spans3 = List(Span(3, "methodcall", 3, None, Some(99), Some(100), List(ann5, ann6)))
+  val ann5 = Annotation(99000, Constants.ClientSend, Some(ep2))
+  val ann6 = Annotation(199000, Constants.ClientRecv, Some(ep2))
+  val spans3 = List(Span(3, "methodcall", 3, annotations = List(ann5, ann6)))
 
   // get some server action going on
-  val ann7 = Annotation(110, Constants.ServerRecv, Some(ep2))
-  val ann8 = Annotation(140, Constants.ServerSend, Some(ep2))
+  val ann7 = Annotation(110000, Constants.ServerRecv, Some(ep2))
+  val ann8 = Annotation(140000, Constants.ServerSend, Some(ep2))
   val spans4 = List(
-    Span(2, "methodcall", 666, Some(2), Some(100), Some(50), List(ann1, ann2)),
-    Span(2, "methodcall", 666, Some(2), Some(110), Some(30), List(ann7, ann8)))
+    Span(2, "methodcall", 666, Some(2), annotations = List(ann1, ann2)),
+    Span(2, "methodcall", 666, Some(2), annotations = List(ann7, ann8)))
 
-  val ann9 = Annotation(60, Constants.ClientSend, Some(ep3))
-  val ann10 = Annotation(65, "annotation", Some(ep3))
-  val ann11 = Annotation(100, Constants.ClientRecv, Some(ep3))
+  val ann9 = Annotation(60000, Constants.ClientSend, Some(ep3))
+  val ann10 = Annotation(65000, "annotation", Some(ep3))
+  val ann11 = Annotation(100000, Constants.ClientRecv, Some(ep3))
   val bAnn1 = BinaryAnnotation("annotation", ByteBuffer.wrap("ann".getBytes), AnnotationType.String, Some(ep3))
   val bAnn2 = BinaryAnnotation("binary", ByteBuffer.wrap("ann".getBytes), AnnotationType.Bytes, Some(ep3))
-  val spans5 = List(Span(5, "other-method", 666, Some(2), Some(60), Some(40), List(ann9, ann10, ann11), List(bAnn1, bAnn2)))
+  val spans5 = List(Span(5, "other-method", 666, Some(2), annotations = List(ann9, ann10, ann11), binaryAnnotations = List(bAnn1, bAnn2)))
 
-  val ann13 = Annotation(100, Constants.ClientSend, Some(ep4))
-  val ann14 = Annotation(150, Constants.ClientRecv, Some(ep4))
-  val spans6 = List(Span(6, "some-method", 669, Some(2), Some(100), Some(50), List(ann13, ann14)))
+  val ann13 = Annotation(100000, Constants.ClientSend, Some(ep4))
+  val ann14 = Annotation(150000, Constants.ClientRecv, Some(ep4))
+  val spans6 = List(Span(6, "some-method", 669, Some(2), annotations = List(ann13, ann14)))
 
-  val allSpans = spans1 ++ spans2 ++ spans3 ++ spans4 ++ spans5 ++ spans6
+  val allSpans = ApplyTimestampAndDuration(spans1 ++ spans2 ++ spans3 ++ spans4 ++ spans5 ++ spans6)
 
   // no spans
-  val deps = Dependencies(0, Time.now.inMicroseconds, List(DependencyLink("tfe", "mobileweb", 1), DependencyLink("gizmoduck", "tflock", 2)))
+  val deps = Dependencies(0, Time.now.inMillis, List(DependencyLink("tfe", "mobileweb", 1), DependencyLink("gizmoduck", "tflock", 2)))
 
   "post spans" in {
     server.httpPost(
@@ -198,14 +199,14 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
     server.httpGet(
       path = "/api/v1/traces?serviceName=service1&endTs=0",
       andExpect = BadRequest,
-      withBody = "endTs should be positive, in epoch microseconds: was 0")
+      withBody = "endTs should be positive, in epoch milliseconds: was 0")
   }
 
   "get trace when bad lookback" in {
     server.httpGet(
       path = "/api/v1/traces?serviceName=service1&lookback=0",
       andExpect = BadRequest,
-      withBody = "lookback should be positive, in microseconds: was 0")
+      withBody = "lookback should be positive, in milliseconds: was 0")
   }
 
   "get trace by hex id" in {
@@ -222,11 +223,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |    "name" : "methodcall",
           |    "id" : "000000000000029a",
           |    "parentId" : "0000000000000002",
-          |    "timestamp" : 100,
-          |    "duration" : 50,
+          |    "timestamp" : 100000,
+          |    "duration" : 50000,
           |    "annotations" : [
           |      {
-          |        "timestamp" : 100,
+          |        "timestamp" : 100000,
           |        "value" : "cs",
           |        "endpoint" : {
           |          "serviceName" : "service1",
@@ -235,7 +236,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |        }
           |      },
           |      {
-          |        "timestamp" : 150,
+          |        "timestamp" : 150000,
           |        "value" : "cr",
           |        "endpoint" : {
           |          "serviceName" : "service1",
@@ -278,11 +279,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "name" : "other-method",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
-          |      "timestamp" : 60,
-          |      "duration" : 40,
+          |      "timestamp" : 60000,
+          |      "duration" : 40000,
           |      "annotations" : [
           |        {
-          |          "timestamp" : 60,
+          |          "timestamp" : 60000,
           |          "value" : "cs",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -291,7 +292,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 65,
+          |          "timestamp" : 65000,
           |          "value" : "annotation",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -300,7 +301,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 100,
+          |          "timestamp" : 100000,
           |          "value" : "cr",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -351,11 +352,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "name" : "other-method",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
-          |      "timestamp" : 60,
-          |      "duration" : 40,
+          |      "timestamp" : 60000,
+          |      "duration" : 40000,
           |      "annotations" : [
           |        {
-          |          "timestamp" : 60,
+          |          "timestamp" : 60000,
           |          "value" : "cs",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -364,7 +365,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 65,
+          |          "timestamp" : 65000,
           |          "value" : "annotation",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -373,7 +374,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 100,
+          |          "timestamp" : 100000,
           |          "value" : "cr",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -424,11 +425,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "name" : "other-method",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
-          |      "timestamp" : 60,
-          |      "duration" : 40,
+          |      "timestamp" : 60000,
+          |      "duration" : 40000,
           |      "annotations" : [
           |        {
-          |          "timestamp" : 60,
+          |          "timestamp" : 60000,
           |          "value" : "cs",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -437,7 +438,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 65,
+          |          "timestamp" : 65000,
           |          "value" : "annotation",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -446,7 +447,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 100,
+          |          "timestamp" : 100000,
           |          "value" : "cr",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -497,11 +498,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "name" : "other-method",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
-          |      "timestamp" : 60,
-          |      "duration" : 40,
+          |      "timestamp" : 60000,
+          |      "duration" : 40000,
           |      "annotations" : [
           |        {
-          |          "timestamp" : 60,
+          |          "timestamp" : 60000,
           |          "value" : "cs",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -510,7 +511,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 65,
+          |          "timestamp" : 65000,
           |          "value" : "annotation",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -519,7 +520,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 100,
+          |          "timestamp" : 100000,
           |          "value" : "cr",
           |          "endpoint" : {
           |            "serviceName" : "service3",
@@ -569,11 +570,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "traceId" : "0000000000000002",
           |      "name" : "methodcall",
           |      "id" : "0000000000000002",
-          |      "timestamp" : 101,
-          |      "duration" : 400,
+          |      "timestamp" : 101000,
+          |      "duration" : 400000,
           |      "annotations" : [
           |        {
-          |          "timestamp" : 101,
+          |          "timestamp" : 101000,
           |          "value" : "cs",
           |          "endpoint" : {
           |            "serviceName" : "service2",
@@ -582,7 +583,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 501,
+          |          "timestamp" : 501000,
           |          "value" : "cr",
           |          "endpoint" : {
           |            "serviceName" : "service2",
@@ -591,7 +592,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 101,
+          |          "timestamp" : 101000,
           |          "value" : "sr",
           |          "endpoint" : {
           |            "serviceName" : "service1",
@@ -600,7 +601,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 501,
+          |          "timestamp" : 501000,
           |          "value" : "ss",
           |          "endpoint" : {
           |            "serviceName" : "service1",
@@ -616,11 +617,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "name" : "methodcall",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
-          |      "timestamp" : 276,
-          |      "duration" : 50,
+          |      "timestamp" : 276000,
+          |      "duration" : 50000,
           |      "annotations" : [
           |        {
-          |          "timestamp" : 276,
+          |          "timestamp" : 276000,
           |          "value" : "cs",
           |          "endpoint" : {
           |            "serviceName" : "service1",
@@ -629,7 +630,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 286,
+          |          "timestamp" : 286000,
           |          "value" : "sr",
           |          "endpoint" : {
           |            "serviceName" : "service2",
@@ -638,7 +639,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 316,
+          |          "timestamp" : 316000,
           |          "value" : "ss",
           |          "endpoint" : {
           |            "serviceName" : "service2",
@@ -647,7 +648,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 326,
+          |          "timestamp" : 326000,
           |          "value" : "cr",
           |          "endpoint" : {
           |            "serviceName" : "service1",
@@ -664,11 +665,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "traceId" : "0000000000000003",
           |      "name" : "methodcall",
           |      "id" : "0000000000000003",
-          |      "timestamp" : 99,
-          |      "duration" : 100,
+          |      "timestamp" : 99000,
+          |      "duration" : 100000,
           |      "annotations" : [
           |        {
-          |          "timestamp" : 99,
+          |          "timestamp" : 99000,
           |          "value" : "cs",
           |          "endpoint" : {
           |            "serviceName" : "service2",
@@ -677,7 +678,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 199,
+          |          "timestamp" : 199000,
           |          "value" : "cr",
           |          "endpoint" : {
           |            "serviceName" : "service2",
@@ -707,11 +708,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "traceId" : "0000000000000002",
           |      "name" : "methodcall",
           |      "id" : "0000000000000002",
-          |      "timestamp" : 101,
-          |      "duration" : 400,
+          |      "timestamp" : 101000,
+          |      "duration" : 400000,
           |      "annotations" : [
           |        {
-          |          "timestamp" : 101,
+          |          "timestamp" : 101000,
           |          "value" : "cs",
           |          "endpoint" : {
           |            "serviceName" : "service2",
@@ -720,7 +721,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 501,
+          |          "timestamp" : 501000,
           |          "value" : "cr",
           |          "endpoint" : {
           |            "serviceName" : "service2",
@@ -729,7 +730,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 101,
+          |          "timestamp" : 101000,
           |          "value" : "sr",
           |          "endpoint" : {
           |            "serviceName" : "service1",
@@ -738,7 +739,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 501,
+          |          "timestamp" : 501000,
           |          "value" : "ss",
           |          "endpoint" : {
           |            "serviceName" : "service1",
@@ -754,11 +755,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "name" : "methodcall",
           |      "id" : "000000000000029a",
           |      "parentId" : "0000000000000002",
-          |      "timestamp" : 276,
-          |      "duration" : 50,
+          |      "timestamp" : 276000,
+          |      "duration" : 50000,
           |      "annotations" : [
           |        {
-          |          "timestamp" : 276,
+          |          "timestamp" : 276000,
           |          "value" : "cs",
           |          "endpoint" : {
           |            "serviceName" : "service1",
@@ -767,7 +768,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 286,
+          |          "timestamp" : 286000,
           |          "value" : "sr",
           |          "endpoint" : {
           |            "serviceName" : "service2",
@@ -776,7 +777,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 316,
+          |          "timestamp" : 316000,
           |          "value" : "ss",
           |          "endpoint" : {
           |            "serviceName" : "service2",
@@ -785,7 +786,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 326,
+          |          "timestamp" : 326000,
           |          "value" : "cr",
           |          "endpoint" : {
           |            "serviceName" : "service1",
@@ -805,7 +806,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
     app.injector.instance[SpanStore].apply(allSpans)
 
     server.httpGet(
-      path = "/api/v1/traces?serviceName=service2&minDuration=50&maxDuration=100",
+      path = "/api/v1/traces?serviceName=service2&minDuration=50000&maxDuration=100000",
       andExpect = Ok,
       withJsonBody =
         """
@@ -815,11 +816,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |      "traceId" : "0000000000000003",
           |      "name" : "methodcall",
           |      "id" : "0000000000000003",
-          |      "timestamp" : 99,
-          |      "duration" : 100,
+          |      "timestamp" : 99000,
+          |      "duration" : 100000,
           |      "annotations" : [
           |        {
-          |          "timestamp" : 99,
+          |          "timestamp" : 99000,
           |          "value" : "cs",
           |          "endpoint" : {
           |            "serviceName" : "service2",
@@ -828,7 +829,7 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
           |          }
           |        },
           |        {
-          |          "timestamp" : 199,
+          |          "timestamp" : 199000,
           |          "value" : "cr",
           |          "endpoint" : {
           |            "serviceName" : "service2",

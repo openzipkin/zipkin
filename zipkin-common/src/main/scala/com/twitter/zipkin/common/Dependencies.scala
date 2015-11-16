@@ -24,7 +24,7 @@ import scala.util.hashing.MurmurHash3
  *
  * @param _parent the calling [[com.twitter.zipkin.common.Endpoint.serviceName]]
  * @param _child the callee's [[com.twitter.zipkin.common.Endpoint.serviceName]]
- * @param callCount calls made during the duration (in microseconds) of this link
+ * @param callCount calls made during the duration (in milliseconds) of this link
  */
 // This is not a case-class as we need to enforce serviceName and spanName as lowercase
 class DependencyLink(_parent: String, _child: String, val callCount: Long) {
@@ -58,8 +58,8 @@ object DependencyLink {
 /**
  * This represents all dependencies across all services over a given time period.
  *
- * @param startTs microseconds from epoch
- * @param endTs microseconds from epoch
+ * @param startTs milliseconds from epoch
+ * @param endTs milliseconds from epoch
  * @param links link information for every dependent service
  */
 case class Dependencies(startTs: Long, endTs: Long, links: Seq[DependencyLink]) {

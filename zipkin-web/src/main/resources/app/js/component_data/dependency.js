@@ -69,7 +69,7 @@ define(
           }.bind(this));
         });
 
-        this.getDependency(Date.now() * 1000);
+        this.getDependency(Date.now());
       });
 
       this.getServiceData = function (serviceName, callback) {

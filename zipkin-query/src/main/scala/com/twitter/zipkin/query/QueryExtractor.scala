@@ -35,7 +35,7 @@ class QueryExtractor @Inject()(@Flag("zipkin.queryService.limit") val defaultLim
     val spanName = req.params.get("spanName").flatMap(n => if (n == "all" || n == "") None else Some(n))
     val minDuration = req.params.get("minDuration").flatMap(d => if (d.isEmpty) None else Some(d.toLong))
     val maxDuration = req.params.get("maxDuration").flatMap(d => if (d.isEmpty) None else Some(d.toLong))
-    val endTs = req.params.getLong("endTs").getOrElse(Time.now.inMicroseconds)
+    val endTs = req.params.getLong("endTs").getOrElse(Time.now.inMillis)
     val lookback = req.params.get("lookback").map(_.toLong).getOrElse(defaultLookback)
     val limit = req.params.get("limit").map(_.toInt).getOrElse(defaultLimit)
 
