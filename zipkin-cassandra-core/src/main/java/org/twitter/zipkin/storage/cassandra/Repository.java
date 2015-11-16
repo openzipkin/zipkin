@@ -87,14 +87,14 @@ public final class Repository implements AutoCloseable {
 
             @Override
             protected Set<String> initialValue() {
-                return new HashSet<String>();
+                return new HashSet<>();
             }
             @Override
             public Set<String> get() {
                 long newCacheInterval = toCacheInterval(System.currentTimeMillis());
                 if (cacheInterval != newCacheInterval) {
                     cacheInterval = newCacheInterval;
-                    set(new HashSet<String>());
+                    set(new HashSet<>());
                 }
                 return super.get();
             }
@@ -107,7 +107,7 @@ public final class Repository implements AutoCloseable {
      * Note: This constructor performs network I/O to the {@code cluster}.
      */
     public Repository(String keyspace, Cluster cluster, Boolean ensureSchema) {
-        if (ensureSchema.booleanValue()) {
+        if (ensureSchema) {
             Schema.ensureExists(keyspace, cluster);
         }
 
@@ -221,24 +221,24 @@ public final class Repository implements AutoCloseable {
                     .using(QueryBuilder.ttl(QueryBuilder.bindMarker("ttl_"))));
 
         selectTraceIdsBySpanDuration = session.prepare(
-                QueryBuilder.select("d", "ts", "tid")
+                QueryBuilder.select("duration", "ts", "trace_id")
                     .from("span_duration_index")
-                    .where(QueryBuilder.eq("s", QueryBuilder.bindMarker("service_name")))
-                        .and(QueryBuilder.eq("sp", QueryBuilder.bindMarker("span_name")))
-                        .and(QueryBuilder.eq("b", QueryBuilder.bindMarker("time_bucket")))
-                        .and(QueryBuilder.lte("d", QueryBuilder.bindMarker("max_duration")))
-                        .and(QueryBuilder.gte("d", QueryBuilder.bindMarker("min_duration")))
-                    .orderBy(QueryBuilder.desc("d")));
+                    .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
+                        .and(QueryBuilder.eq("span_name", QueryBuilder.bindMarker("span_name")))
+                        .and(QueryBuilder.eq("bucket", QueryBuilder.bindMarker("time_bucket")))
+                        .and(QueryBuilder.lte("duration", QueryBuilder.bindMarker("max_duration")))
+                        .and(QueryBuilder.gte("duration", QueryBuilder.bindMarker("min_duration")))
+                    .orderBy(QueryBuilder.desc("duration")));
 
         insertTraceIdBySpanDuration = session.prepare(
                 QueryBuilder
                         .insertInto("span_duration_index")
-                        .value("s", QueryBuilder.bindMarker("service_name"))
-                        .value("sp", QueryBuilder.bindMarker("span_name"))
-                        .value("b", QueryBuilder.bindMarker("bucket"))
-                        .value("d", QueryBuilder.bindMarker("duration"))
+                        .value("service_name", QueryBuilder.bindMarker("service_name"))
+                        .value("span_name", QueryBuilder.bindMarker("span_name"))
+                        .value("bucket", QueryBuilder.bindMarker("bucket"))
+                        .value("duration", QueryBuilder.bindMarker("duration"))
                         .value("ts", QueryBuilder.bindMarker("ts"))
-                        .value("tid", QueryBuilder.bindMarker("trace_id"))
+                        .value("trace_id", QueryBuilder.bindMarker("trace_id"))
                         .using(QueryBuilder.ttl(QueryBuilder.bindMarker("ttl_"))));
 
     }
@@ -309,23 +309,19 @@ public final class Repository implements AutoCloseable {
 
                 return Futures.transform(
                     session.executeAsync(bound),
-                    new Function<ResultSet, Map<Long, List<ByteBuffer>>>() {
-
-                        @Override
-                        public Map<Long, List<ByteBuffer>> apply(ResultSet input) {
+                        (ResultSet input) -> {
                             Map<Long, List<ByteBuffer>> spans = new LinkedHashMap<>();
 
                             for (Row row : input) {
                                 long traceId = row.getLong("trace_id");
                                 if (!spans.containsKey(traceId)) {
-                                    spans.put(traceId, new ArrayList<ByteBuffer>());
+                                    spans.put(traceId, new ArrayList<>());
                                 }
                                 spans.get(traceId).add(row.getBytes("span"));
                             }
 
                             return spans;
                         }
-                    }
                 );
 
             } else {
@@ -375,16 +371,13 @@ public final class Repository implements AutoCloseable {
             }
             return Futures.transform(
                 session.executeAsync(bound),
-                new Function<ResultSet, List<ByteBuffer>>() {
-                    @Override
-                    public List<ByteBuffer> apply(ResultSet input) {
+                    (ResultSet input) -> {
                         List<ByteBuffer> dependencies = new ArrayList<>();
                         for (Row row : input) {
                             dependencies.add(row.getBytes("dependencies"));
                         }
                         return dependencies;
                     }
-                }
             );
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugSelectDependencies(days), ex);
@@ -405,16 +398,13 @@ public final class Repository implements AutoCloseable {
 
             return Futures.transform(
               session.executeAsync(bound),
-              new Function<ResultSet, Set<String>>() {
-                  @Override
-                  public Set<String> apply(ResultSet input) {
-                      Set<String> serviceNames = new HashSet<>();
-                      for (Row row : input) {
-                          serviceNames.add(row.getString("service_name"));
-                      }
-                      return serviceNames;
-                  }
-              }
+                    (ResultSet input) -> {
+                        Set<String> serviceNames = new HashSet<>();
+                        for (Row row : input) {
+                            serviceNames.add(row.getString("service_name"));
+                        }
+                        return serviceNames;
+                    }
             );
         } catch (RuntimeException ex) {
             LOG.error("failed " + selectServiceNames.getQueryString(), ex);
@@ -468,16 +458,13 @@ public final class Repository implements AutoCloseable {
 
                 return Futures.transform(
                     session.executeAsync(bound),
-                    new Function<ResultSet, Set<String>>() {
-                        @Override
-                        public Set<String> apply(ResultSet input) {
+                        (ResultSet input) -> {
                             Set<String> spanNames = new HashSet<>();
                             for (Row row : input) {
                                 spanNames.add(row.getString("span_name"));
                             }
                             return spanNames;
                         }
-                    }
                 );
             } else {
                 return Futures.immediateFuture(Collections.<String>emptySet());
@@ -547,16 +534,13 @@ public final class Repository implements AutoCloseable {
 
             return Futures.transform(
                 session.executeAsync(bound),
-                new Function<ResultSet, Map<Long, Long>>() {
-                    @Override
-                    public Map<Long, Long> apply(ResultSet input) {
+                    (ResultSet input) -> {
                         Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
                         for (Row row : input) {
                             traceIdsToTimestamps.put(row.getLong("trace_id"), deserializeTs(row, "ts"));
                         }
                         return traceIdsToTimestamps;
                     }
-                }
             );
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugSelectTraceIdsByServiceName(serviceName, startTs, endTs, limit), ex);
@@ -624,16 +608,13 @@ public final class Repository implements AutoCloseable {
 
             return Futures.transform(
                 session.executeAsync(bound),
-                new Function<ResultSet, Map<Long, Long>>() {
-                    @Override
-                    public Map<Long, Long> apply(ResultSet input) {
+                    (ResultSet input) -> {
                         Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
                         for (Row row : input) {
                             traceIdsToTimestamps.put(row.getLong("trace_id"), deserializeTs(row, "ts"));
                         }
                         return traceIdsToTimestamps;
                     }
-                }
             );
 
         } catch (RuntimeException ex) {
@@ -700,16 +681,13 @@ public final class Repository implements AutoCloseable {
 
             return Futures.transform(
               session.executeAsync(bound),
-              new Function<ResultSet, Map<Long, Long>>() {
-                  @Override
-                  public Map<Long, Long> apply(ResultSet input) {
-                      Map < Long, Long > traceIdsToTimestamps = new LinkedHashMap<>();
-                      for (Row row : input) {
-                          traceIdsToTimestamps.put(row.getLong("trace_id"), deserializeTs(row, "ts"));
-                      }
-                      return traceIdsToTimestamps;
-                  }
-              }
+                    (ResultSet input) -> {
+                        Map < Long, Long > traceIdsToTimestamps = new LinkedHashMap<>();
+                        for (Row row : input) {
+                            traceIdsToTimestamps.put(row.getLong("trace_id"), deserializeTs(row, "ts"));
+                        }
+                        return traceIdsToTimestamps;
+                    }
             );
         } catch (RuntimeException ex) {
             LOG.error("failed " + debugSelectTraceIdsByAnnotations(annotationKey, startTs, endTs, limit), ex);
@@ -755,18 +733,22 @@ public final class Repository implements AutoCloseable {
     private class DurationRow {
         Long trace_id;
         Long duration;
-        Long timestamp;
+        Long timestamp; // inflated back to microseconds
         DurationRow(Row row) {
-            trace_id = row.getLong("tid");
-            duration = row.getLong("d");
-            timestamp = row.getLong("ts");
+            trace_id = row.getLong("trace_id");
+            duration = row.getLong("duration");
+            timestamp = deserializeTs(row, "ts");
         }
         public String toString() {
             return String.format("trace_id=%d, duration=%d, timestamp=%d", trace_id, duration, timestamp);
         }
     }
 
-    /** Returns a map of trace id to timestamp */
+    private static int compareDurationRowTimestamp(DurationRow d1, DurationRow d2) {
+        return d1.timestamp.compareTo(d2.timestamp);
+    }
+
+    /** Returns a map of trace id to timestamp (in microseconds) */
     public ListenableFuture<Map<Long, Long>> getTraceIdsByDuration(String serviceName, String spanName,
                                                                    long minDuration, long maxDuration,
                                                                    long endTs, long startTs, int limit) {
@@ -815,9 +797,10 @@ public final class Repository implements AutoCloseable {
                                 .flatMap(Collection::stream)
                                 .collect( // bloody IntelliJ can't infer types
                                         Collectors.groupingBy((DurationRow d) -> d.trace_id,
+                                                // TODO this may return a lot more data than 'limit'. Need to limit actual traces.
                                                 Collectors.collectingAndThen(
                                                         // find earliest startTs for each trace ID
-                                                        Collectors.minBy((d1, d2) -> d1.timestamp.compareTo(d2.timestamp)),
+                                                        Collectors.minBy(Repository::compareDurationRowTimestamp),
                                                         // convert from Optional to Long - we always have at least 1 value
                                                         (Optional<DurationRow> d) -> d.get().timestamp)));
                     });
@@ -848,7 +831,7 @@ public final class Repository implements AutoCloseable {
                 .setString("service_name", serviceName)
                 .setString("span_name", spanName)
                 .setInt("bucket", durationIndexBucket(timestamp))
-                .setLong("ts", timestamp)
+                .setBytesUnsafe("ts", serializeTs(timestamp))
                 .setLong("duration", duration)
                 .setLong("trace_id", traceId)
                 .setInt("ttl_", ttl);
@@ -894,11 +877,11 @@ public final class Repository implements AutoCloseable {
 
         static Map<String, String> readMetadata(String keyspace, Cluster cluster) {
             Map<String, String> metadata = new LinkedHashMap<>();
-            try (Session session = cluster.connect()) {
+            try (Session ignored = cluster.connect()) {
                 KeyspaceMetadata keyspaceMetadata = getKeyspaceMetadata(keyspace, cluster);
 
-                Map<String, String> replicatn = keyspaceMetadata.getReplication();
-                if ("SimpleStrategy".equals(replicatn.get("class")) && "1".equals(replicatn.get("replication_factor"))) {
+                Map<String, String> replication = keyspaceMetadata.getReplication();
+                if ("SimpleStrategy".equals(replication.get("class")) && "1".equals(replication.get("replication_factor"))) {
                     LOG.warn("running with RF=1, this is not suitable for production. Optimal is 3+");
                 }
                 Map<String, String> tracesCompaction = keyspaceMetadata.getTable("traces").getOptions().getCompaction();
@@ -922,7 +905,7 @@ public final class Repository implements AutoCloseable {
         static void ensureExists(String keyspace, Cluster cluster) {
             try (Session session = cluster.connect()) {
                 try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(SCHEMA))) {
-                    for (String cmd : String.format(CharStreams.toString(reader)).split(";")) {
+                    for (String cmd : CharStreams.toString(reader).split(";")) {
                         cmd = cmd.trim().replace(" " + KEYSPACE, " " + keyspace);
                         if (!cmd.isEmpty()) {
                             session.execute(cmd);
@@ -939,13 +922,13 @@ public final class Repository implements AutoCloseable {
 
     private Function<ResultSet, Void> resultSetToVoidFunction = input -> null;
 
-    // Overrides default codec of timestamps as dates (as doing so truncates to millis).
-    // TODO: When we switch to datastax java-driver v3+, move this to a custom codec.
+    /** Truncates timestamp to milliseconds and converts to binary for using with setBytesUnsafe() to avoid allocating java.util.Date */
     private ByteBuffer serializeTs(long timestamp) {
-        return DataType.bigint().serialize(timestamp, protocolVersion);
+        return DataType.bigint().serialize(timestamp / 1000, protocolVersion);
     }
 
+    /** Reads timestamp binary value directly (getBytesUnsafe) to avoid allocating java.util.Date, and converts to microseconds. */
     private long deserializeTs(Row row, String name) {
-        return (long) DataType.bigint().deserialize(row.getBytesUnsafe(name), protocolVersion);
+        return 1000L * (long) DataType.bigint().deserialize(row.getBytesUnsafe(name), protocolVersion);
     }
 }
