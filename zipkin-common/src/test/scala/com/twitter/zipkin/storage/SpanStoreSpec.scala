@@ -178,26 +178,30 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
     result(store(trace1 ::: trace2 ::: trace3))
 
+    val lookback = 12L * 60 * 60 * 1000 * 1000 // 12hrs, instead of 7days
+    val endTs = 1000L // greater than all timestamps above
+    val q = QueryRequest("placeholder", lookback = Some(lookback), endTs = endTs)
+
     // Min duration is inclusive and is applied by service.
-    result(store.getTraces(QueryRequest("service1", minDuration = targz.duration))) should be(
+    result(store.getTraces(q.copy(serviceName = "service1", minDuration = targz.duration))) should be(
       Seq(trace1)
     )
-    result(store.getTraces(QueryRequest("service3", minDuration = targz.duration))) should be(
+    result(store.getTraces(q.copy(serviceName = "service3", minDuration = targz.duration))) should be(
       Seq(trace2)
     )
 
     // Duration bounds aren't limited to root spans: they apply to all spans by service in a trace
-    result(store.getTraces(QueryRequest("service2", minDuration = zip.duration, maxDuration = tar.duration))) should be(
+    result(store.getTraces(q.copy(serviceName = "service2", minDuration = zip.duration, maxDuration = tar.duration))) should be(
       Seq(trace3, trace2, trace1) // service2 is in the middle of trace1 and 2, but root of trace3
     )
 
     // Span name should apply to the duration filter
-    result(store.getTraces(QueryRequest("service2", Some("zip"), minDuration = zip.duration))) should be(
+    result(store.getTraces(q.copy(serviceName = "service2", spanName = Some("zip"), minDuration = zip.duration))) should be(
       Seq(trace3)
     )
 
     // Max duration should filter our longer spans from the same service
-    result(store.getTraces(QueryRequest("service2", minDuration = gz.duration, maxDuration = zip.duration))) should be(
+    result(store.getTraces(q.copy(serviceName = "service2", minDuration = gz.duration, maxDuration = zip.duration))) should be(
       Seq(trace3)
     )
   }

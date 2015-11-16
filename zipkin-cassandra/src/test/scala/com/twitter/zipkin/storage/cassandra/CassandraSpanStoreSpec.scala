@@ -18,10 +18,6 @@ class CassandraSpanStoreSpec extends SpanStoreSpec {
   override def clear = CassandraFixture.truncate
 
   @Ignore override def getTraces_lookback() = {
-    // TODO!
-  }
-
-  @Ignore override def getTraces_duration() = {
-    // TODO! this is really slow and breaks travis
+    // TODO! CassandraSpanStore currently ignores lookback argument, and Repository does not take startTs
   }
 }
