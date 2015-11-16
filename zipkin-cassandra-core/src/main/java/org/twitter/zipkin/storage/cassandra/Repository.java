@@ -170,7 +170,8 @@ public final class Repository implements AutoCloseable {
                     .from("service_name_index")
                     .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
                     .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
-                    .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("ts")))
+                    .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
+                    .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
                     .limit(QueryBuilder.bindMarker("limit_"))
                     .orderBy(QueryBuilder.desc("ts")));
 
@@ -187,7 +188,8 @@ public final class Repository implements AutoCloseable {
                 QueryBuilder.select("ts", "trace_id")
                     .from("service_span_name_index")
                     .where(QueryBuilder.eq("service_span_name", QueryBuilder.bindMarker("service_span_name")))
-                    .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("ts")))
+                    .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
+                    .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
                     .limit(QueryBuilder.bindMarker("limit_"))
                     .orderBy(QueryBuilder.desc("ts")));
 
@@ -204,7 +206,8 @@ public final class Repository implements AutoCloseable {
                     .from("annotations_index")
                     .where(QueryBuilder.eq("annotation", QueryBuilder.bindMarker("annotation")))
                     .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
-                    .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("ts")))
+                    .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
+                    .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
                     .limit(QueryBuilder.bindMarker("limit_"))
                     .orderBy(QueryBuilder.desc("ts")));
 
@@ -524,20 +527,22 @@ public final class Repository implements AutoCloseable {
                 .replace(":ttl_", String.valueOf(ttl));
     }
 
-    public ListenableFuture<Map<Long,Long>> getTraceIdsByServiceName(String serviceName, long to, int limit) {
+    public ListenableFuture<Map<Long,Long>> getTraceIdsByServiceName(String serviceName, long endTs, long lookback, int limit) {
         Preconditions.checkNotNull(serviceName);
         Preconditions.checkArgument(!serviceName.isEmpty());
+        long startTs = endTs - lookback;
         try {
             BoundStatement bound = selectTraceIdsByServiceName.bind()
                     .setString("service_name", serviceName)
                     .setList("bucket", ALL_BUCKETS)
-                    .setBytesUnsafe("ts", serializeTs(to))
+                    .setBytesUnsafe("start_ts", serializeTs(startTs))
+                    .setBytesUnsafe("end_ts", serializeTs(endTs))
                     .setInt("limit_", limit);
 
             bound.setFetchSize(Integer.MAX_VALUE);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(debugSelectTraceIdsByServiceName(serviceName, to, limit));
+                LOG.debug(debugSelectTraceIdsByServiceName(serviceName, startTs, endTs, limit));
             }
 
             return Futures.transform(
@@ -554,15 +559,16 @@ public final class Repository implements AutoCloseable {
                 }
             );
         } catch (RuntimeException ex) {
-            LOG.error("failed " + debugSelectTraceIdsByServiceName(serviceName, to, limit), ex);
+            LOG.error("failed " + debugSelectTraceIdsByServiceName(serviceName, startTs, endTs, limit), ex);
             return Futures.immediateFailedFuture(ex);
         }
     }
 
-    private String debugSelectTraceIdsByServiceName(String serviceName, long to, int limit) {
+    private String debugSelectTraceIdsByServiceName(String serviceName, long startTs, long endTs, int limit) {
         return selectTraceIdsByServiceName.getQueryString()
                 .replace(":service_name", serviceName)
-                .replace(":ts", new Date(to / 1000).toString())
+                .replace(":start_ts", new Date(startTs / 1000).toString())
+                .replace(":end_ts", new Date(endTs / 1000).toString())
                 .replace(":limit_", String.valueOf(limit));
     }
 
@@ -598,20 +604,22 @@ public final class Repository implements AutoCloseable {
                         .replace(":ttl_", String.valueOf(ttl));
     }
 
-    public ListenableFuture<Map<Long,Long>> getTraceIdsBySpanName(String serviceName, String spanName, long to, int limit) {
+    public ListenableFuture<Map<Long,Long>> getTraceIdsBySpanName(String serviceName, String spanName, long endTs, long lookback, int limit) {
         Preconditions.checkNotNull(serviceName);
         Preconditions.checkArgument(!serviceName.isEmpty());
         Preconditions.checkNotNull(spanName);
         Preconditions.checkArgument(!spanName.isEmpty());
         String serviceSpanName = serviceName + "." + spanName;
+        long startTs = endTs - lookback;
         try {
             BoundStatement bound = selectTraceIdsBySpanName.bind()
                     .setString("service_span_name", serviceSpanName)
-                    .setBytesUnsafe("ts", serializeTs(to))
+                    .setBytesUnsafe("start_ts", serializeTs(startTs))
+                    .setBytesUnsafe("end_ts", serializeTs(endTs))
                     .setInt("limit_", limit);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(debugSelectTraceIdsBySpanName(serviceSpanName, to, limit));
+                LOG.debug(debugSelectTraceIdsBySpanName(serviceSpanName, startTs, endTs, limit));
             }
 
             return Futures.transform(
@@ -629,15 +637,16 @@ public final class Repository implements AutoCloseable {
             );
 
         } catch (RuntimeException ex) {
-            LOG.error("failed " + debugSelectTraceIdsBySpanName(serviceSpanName, to, limit), ex);
+            LOG.error("failed " + debugSelectTraceIdsBySpanName(serviceSpanName, startTs, endTs, limit), ex);
             return Futures.immediateFailedFuture(ex);
         }
     }
 
-    private String debugSelectTraceIdsBySpanName(String serviceSpanName, long to, int limit) {
+    private String debugSelectTraceIdsBySpanName(String serviceSpanName, long startTs, long endTs, int limit) {
         return selectTraceIdsByServiceName.getQueryString()
                 .replace(":service_span_name", serviceSpanName)
-                .replace(":ts", new Date(to / 1000).toString())
+                .replace(":start_ts", new Date(startTs / 1000).toString())
+                .replace(":end_ts", new Date(endTs / 1000).toString())
                 .replace(":limit_", String.valueOf(limit));
     }
 
@@ -673,18 +682,20 @@ public final class Repository implements AutoCloseable {
                 .replace(":ttl_", String.valueOf(ttl));
     }
 
-    public ListenableFuture<Map<Long,Long>> getTraceIdsByAnnotation(ByteBuffer annotationKey, long from, int limit) {
+    public ListenableFuture<Map<Long,Long>> getTraceIdsByAnnotation(ByteBuffer annotationKey, long endTs, long lookback, int limit) {
+        long startTs = endTs - lookback;
         try {
             BoundStatement bound = selectTraceIdsByAnnotations.bind()
                     .setBytes("annotation", annotationKey)
                     .setList("bucket", ALL_BUCKETS)
-                    .setBytesUnsafe("ts", serializeTs(from))
+                    .setBytesUnsafe("start_ts", serializeTs(startTs))
+                    .setBytesUnsafe("end_ts", serializeTs(endTs))
                     .setInt("limit_", limit);
 
             bound.setFetchSize(Integer.MAX_VALUE);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(debugSelectTraceIdsByAnnotations(annotationKey, from, limit));
+                LOG.debug(debugSelectTraceIdsByAnnotations(annotationKey, startTs, endTs, limit));
             }
 
             return Futures.transform(
@@ -701,16 +712,17 @@ public final class Repository implements AutoCloseable {
               }
             );
         } catch (RuntimeException ex) {
-            LOG.error("failed " + debugSelectTraceIdsByAnnotations(annotationKey, from, limit), ex);
+            LOG.error("failed " + debugSelectTraceIdsByAnnotations(annotationKey, startTs, endTs, limit), ex);
             throw ex;
         }
     }
 
-    private String debugSelectTraceIdsByAnnotations(ByteBuffer annotationKey, long from, int limit) {
-        return selectTraceIdsByAnnotations.getQueryString()
-                        .replace(":annotation", new String(Bytes.getArray(annotationKey)))
-                        .replace(":ts", new Date(from / 1000).toString())
-                        .replace(":limit_", String.valueOf(limit));
+    private String debugSelectTraceIdsByAnnotations(ByteBuffer annotationKey, long startTs, long endTs, int limit) {
+            return selectTraceIdsByAnnotations.getQueryString()
+                            .replace(":annotation", new String(Bytes.getArray(annotationKey)))
+                            .replace(":start_ts", new Date(startTs / 1000).toString())
+                            .replace(":end_ts", new Date(endTs / 1000).toString())
+                            .replace(":limit_", String.valueOf(limit));
     }
 
     public ListenableFuture<Void> storeTraceIdByAnnotation(ByteBuffer annotationKey, long timestamp, long traceId, int ttl) {

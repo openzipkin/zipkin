@@ -1,7 +1,7 @@
 package com.twitter.zipkin.storage.cassandra
 
 import com.twitter.zipkin.storage.SpanStoreSpec
-import org.junit.{BeforeClass, Ignore}
+import org.junit.BeforeClass
 
 object CassandraSpanStoreSpec {
 
@@ -16,8 +16,4 @@ class CassandraSpanStoreSpec extends SpanStoreSpec {
   }
 
   override def clear = CassandraFixture.truncate
-
-  @Ignore override def getTraces_lookback() = {
-    // TODO! CassandraSpanStore currently ignores lookback argument, and Repository does not take startTs
-  }
 }
