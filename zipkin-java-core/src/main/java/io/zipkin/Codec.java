@@ -23,30 +23,46 @@ import java.util.List;
  */
 public interface Codec {
 
+  interface Factory {
+    /** Returns a codec for the given media type (ex. "application/json") or null if not found. */
+    @Nullable
+    Codec get(String mediaType);
+  }
+
   Codec JSON = new JsonCodec();
   Codec THRIFT = new ThriftCodec();
 
-  /** Returns null if the span couldn't be decoded */
-  @Nullable
-  Span readSpan(byte[] bytes);
+  Factory FACTORY = new Factory() {
 
-  /** Returns null if the span couldn't be encoded */
-  @Nullable
-  byte[] writeSpan(Span value);
+    @Override
+    public Codec get(String mediaType) {
+      if (mediaType.startsWith("application/json")) {
+        return JSON;
+      } else if (mediaType.startsWith("application/x-thrift")) {
+        return THRIFT;
+      }
+      return null;
+    }
+  };
+
 
   /** Returns null if the spans couldn't be decoded */
   @Nullable
   List<Span> readSpans(byte[] bytes);
 
-  /** Returns null if the span couldn't be encoded */
+  /** Returns null if the spans couldn't be encoded */
   @Nullable
   byte[] writeSpans(List<Span> value);
 
-  /** Returns null if the dependency link couldn't be decoded */
+  /** Returns null if the traces couldn't be encoded */
   @Nullable
-  DependencyLink readDependencyLink(byte[] bytes);
+  byte[] writeTraces(List<List<Span>> value);
 
-  /** Returns null if the dependency link couldn't be encoded */
+  /** Returns null if the dependency links couldn't be decoded */
   @Nullable
-  byte[] writeDependencyLink(DependencyLink value);
+  List<DependencyLink> readDependencyLinks(byte[] bytes);
+
+  /** Returns null if the dependency links couldn't be encoded */
+  @Nullable
+  byte[] writeDependencyLinks(List<DependencyLink> value);
 }

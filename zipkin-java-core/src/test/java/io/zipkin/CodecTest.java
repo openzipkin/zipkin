@@ -14,8 +14,10 @@
 package io.zipkin;
 
 import java.io.IOException;
+import java.util.List;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class CodecTest {
@@ -23,25 +25,17 @@ public abstract class CodecTest {
   protected abstract Codec codec();
 
   @Test
-  public void spanRoundTrip() throws IOException {
-    for (Span span : TestObjects.TRACE) {
-      byte[] bytes = codec().writeSpan(span);
-      assertThat(codec().readSpan(bytes))
-          .isEqualTo(span);
-    }
-  }
-
-  @Test
-  public void spanDecodesToNullOnEmpty() throws IOException {
-    assertThat(codec().readSpan(new byte[0]))
-        .isNull();
-  }
-
-  @Test
   public void spansRoundTrip() throws IOException {
     byte[] bytes = codec().writeSpans(TestObjects.TRACE);
     assertThat(codec().readSpans(bytes))
         .isEqualTo(TestObjects.TRACE);
+  }
+
+  @Test
+  public void writeTraces() throws IOException {
+    byte[] bytes = codec().writeTraces(asList(TestObjects.TRACE, TestObjects.TRACE));
+    assertThat(codec().writeSpans(TestObjects.TRACE).length * 2)
+        .isLessThan(bytes.length);
   }
 
   @Test
@@ -60,16 +54,19 @@ public abstract class CodecTest {
   }
 
   @Test
-  public void dependencyLinkRoundTrip() throws IOException {
-    DependencyLink link = DependencyLink.create("tfe", "mobileweb", 6);
-    byte[] bytes = codec().writeDependencyLink(link);
-    assertThat(codec().readDependencyLink(bytes))
-        .isEqualTo(link);
+  public void dependencyLinksRoundTrip() throws IOException {
+    List<DependencyLink> links = asList(
+        DependencyLink.create("foo", "bar", 2),
+        DependencyLink.create("bar", "baz", 3)
+    );
+    byte[] bytes = codec().writeDependencyLinks(links);
+    assertThat(codec().readDependencyLinks(bytes))
+        .isEqualTo(links);
   }
 
   @Test
-  public void dependencyLinkDecodesToNullOnEmpty() throws IOException {
-    assertThat(codec().readDependencyLink(new byte[0]))
+  public void dependencyLinksDecodeToNullOnEmpty() throws IOException {
+    assertThat(codec().readDependencyLinks(new byte[0]))
         .isNull();
   }
 }

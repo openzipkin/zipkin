@@ -14,11 +14,9 @@
 package io.zipkin.server;
 
 import io.zipkin.Codec;
-import io.zipkin.DependencyLink;
 import io.zipkin.QueryRequest;
 import io.zipkin.Span;
 import io.zipkin.SpanStore;
-import io.zipkin.internal.Util.Serializer;
 import java.util.Collections;
 import java.util.List;
 import okio.Buffer;
@@ -33,7 +31,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import static io.zipkin.internal.Util.writeJsonList;
+import static io.zipkin.internal.Util.checkNotNull;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 /**
@@ -45,13 +43,16 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequestMapping("/api/v1")
 public class ZipkinQueryApiV1 {
 
-  static final Serializer<List<List<Span>>> TRACES_TO_JSON = writeJsonList(Codec.JSON::writeSpans);
-  static final Serializer<List<DependencyLink>> DEPENDENCY_LINKS_TO_JSON = writeJsonList(Codec.JSON::writeDependencyLink);
-  private static final String THRIFT = "application/x-thrift";
+  private static final String APPLICATION_THRIFT = "application/x-thrift";
+  private static final String DEFAULT_LOOKBACK = "86400000"; // 7 days in millis
 
-  private SpanStore spanStore;
-  private ZipkinSpanWriter spanWriter;
-  private final static String DEFAULT_LOOKBACK = "86400000"; // 7 days in millis
+  @Autowired(required = false)
+  Codec.Factory codecFactory = Codec.FACTORY;
+  Codec jsonCodec = checkNotNull(codecFactory.get(APPLICATION_JSON_VALUE), APPLICATION_JSON_VALUE);
+  Codec thriftCodec = checkNotNull(codecFactory.get(APPLICATION_THRIFT), APPLICATION_THRIFT);
+
+  private final SpanStore spanStore;
+  private final ZipkinSpanWriter spanWriter;
 
   @Autowired
   public ZipkinQueryApiV1(SpanStore spanStore, ZipkinSpanWriter spanWriter) {
@@ -62,7 +63,7 @@ public class ZipkinQueryApiV1 {
   @RequestMapping(value = "/dependencies", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getDependencies(@RequestParam(value = "endTs", required = true) long endTs,
                                 @RequestParam(value = "lookback", required = false, defaultValue = DEFAULT_LOOKBACK) long lookback) {
-    return DEPENDENCY_LINKS_TO_JSON.apply(this.spanStore.getDependencies(endTs, lookback));
+    return this.jsonCodec.writeDependencyLinks(this.spanStore.getDependencies(endTs, lookback));
   }
 
   @RequestMapping(value = "/services", method = RequestMethod.GET)
@@ -79,16 +80,16 @@ public class ZipkinQueryApiV1 {
   @RequestMapping(value = "/spans", method = RequestMethod.POST)
   @ResponseStatus(HttpStatus.ACCEPTED)
   public void uploadSpansJson(@RequestBody byte[] body) {
-    List<Span> spans = Codec.JSON.readSpans(body);
+    List<Span> spans = this.jsonCodec.readSpans(body);
     if (spans == null) throw new MalformedSpansException(APPLICATION_JSON_VALUE);
     this.spanWriter.write(this.spanStore, spans);
   }
 
-  @RequestMapping(value = "/spans", method = RequestMethod.POST, consumes = THRIFT)
+  @RequestMapping(value = "/spans", method = RequestMethod.POST, consumes = APPLICATION_THRIFT)
   @ResponseStatus(HttpStatus.ACCEPTED)
   public void uploadSpansThrift(@RequestBody byte[] body) {
-    List<Span> spans = Codec.THRIFT.readSpans(body);
-    if (spans == null) throw new MalformedSpansException(THRIFT);
+    List<Span> spans = this.thriftCodec.readSpans(body);
+    if (spans == null) throw new MalformedSpansException(APPLICATION_THRIFT);
     this.spanWriter.write(this.spanStore, spans);
   }
 
@@ -124,7 +125,7 @@ public class ZipkinQueryApiV1 {
         }
       }
     }
-    return TRACES_TO_JSON.apply(this.spanStore.getTraces(builder.build()));
+    return this.jsonCodec.writeTraces(this.spanStore.getTraces(builder.build()));
   }
 
   @RequestMapping(value = "/trace/{traceId}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
@@ -136,7 +137,7 @@ public class ZipkinQueryApiV1 {
     if (traces.isEmpty()) {
       throw new TraceNotFoundException(traceId, id);
     }
-    return Codec.JSON.writeSpans(traces.get(0));
+    return this.jsonCodec.writeSpans(traces.get(0));
   }
 
   @ExceptionHandler(TraceNotFoundException.class)

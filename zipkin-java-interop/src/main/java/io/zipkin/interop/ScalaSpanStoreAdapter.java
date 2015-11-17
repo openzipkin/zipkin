@@ -14,6 +14,7 @@
 package io.zipkin.interop;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twitter.util.Future;
 import com.twitter.zipkin.common.Span;
@@ -25,6 +26,7 @@ import io.zipkin.SpanStore;
 import io.zipkin.internal.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 import scala.Tuple2;
 import scala.collection.Iterator;
 import scala.collection.JavaConversions;
@@ -81,13 +83,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
   static Future<Seq<List<Span>>> toSeqFuture(java.util.List<java.util.List<io.zipkin.Span>> traces) {
     ArrayList<List<Span>> result = new ArrayList<>(traces.size());
     for (java.util.List<io.zipkin.Span> trace : traces) {
-      ArrayList<Span> spans = new ArrayList<>(trace.size());
-      for (io.zipkin.Span span : trace) {
-        Span converted = convert(span);
-        if (converted != null) {
-          spans.add(converted);
-        }
-      }
+      java.util.List<Span> spans = convert(trace);
       result.add(JavaConversions.asScalaBuffer(spans).toList());
     }
     return Future.value(JavaConversions.asScalaBuffer(result));
@@ -105,12 +101,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
 
   @Override
   public Future<BoxedUnit> apply(Seq<Span> input) {
-    java.util.List<io.zipkin.Span> spans = JavaConversions.asJavaCollection(input).stream()
-        .map(ScalaSpanStoreAdapter::invert)
-        .filter(i -> i != null)
-        .collect(toList());
-
-    this.spanStore.accept(spans);
+    this.spanStore.accept(ScalaSpanStoreAdapter.invert(input));
     return Future.Unit();
   }
 
@@ -120,10 +111,12 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
   }
 
   @Nullable
-  static Span convert(io.zipkin.Span input) {
-    byte[] bytes = Codec.JSON.writeSpan(input);
+  static java.util.List<Span> convert(java.util.List<io.zipkin.Span> input) {
+    byte[] bytes = Codec.JSON.writeSpans(input);
     try {
-      return JsonSpan.invert(scalaCodec.readValue(bytes, JsonSpan.class));
+      TypeReference<java.util.List<JsonSpan>> ref = new TypeReference<java.util.List<JsonSpan>>(){};
+      java.util.List<JsonSpan> read = scalaCodec.readValue(bytes, ref);
+      return read.stream().map(JsonSpan::invert).collect(Collectors.toList());
     } catch (IOException e) {
       e.printStackTrace();
       return null;
@@ -131,10 +124,10 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
   }
 
   @Nullable
-  static io.zipkin.Span invert(Span input) {
+  static java.util.List<io.zipkin.Span> invert(Seq<Span> input) {
     try {
       byte[] bytes = scalaCodec.writeValueAsBytes(input);
-      return Codec.JSON.readSpan(bytes);
+      return Codec.JSON.readSpans(bytes);
     } catch (JsonProcessingException e) {
       e.printStackTrace();
       return null;

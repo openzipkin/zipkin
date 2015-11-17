@@ -24,6 +24,7 @@ import io.zipkin.DependencyLink;
 import io.zipkin.Endpoint;
 import io.zipkin.Span;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -62,11 +63,6 @@ public final class JsonCodec implements Codec {
     @Override
     public void toJson(JsonWriter writer, Long value) throws IOException {
       writer.value(String.format("%016x", value));
-    }
-
-    @Override
-    public String toString() {
-      return "JsonAdapter(HexLong)";
     }
   };
 
@@ -114,11 +110,6 @@ public final class JsonCodec implements Codec {
         writer.name("port").value(value.port & 0xffff);
       }
       writer.endObject();
-    }
-
-    @Override
-    public String toString() {
-      return "JsonAdapter(Endpoint)";
     }
   };
 
@@ -234,11 +225,6 @@ public final class JsonCodec implements Codec {
       }
       writer.endObject();
     }
-
-    @Override
-    public String toString() {
-      return "JsonAdapter(BinaryAnnotation)";
-    }
   };
 
   public static final JsonAdapter<Span> SPAN_ADAPTER = new JsonAdapter<Span>() {
@@ -326,58 +312,36 @@ public final class JsonCodec implements Codec {
       }
       writer.endObject();
     }
-
-    @Override
-    public String toString() {
-      return "JsonAdapter(Span)";
-    }
-  };
-
-  @Override
-  public Span readSpan(byte[] bytes) {
-    return read(SPAN_ADAPTER, bytes);
-  }
-
-  @Override
-  public byte[] writeSpan(Span value) {
-    return write(SPAN_ADAPTER, value);
-  }
-
-  public static final JsonAdapter<List<Span>> SPAN_LIST_ADAPTER = new JsonAdapter<List<Span>>() {
-    @Override
-    public List<Span> fromJson(JsonReader reader) throws IOException {
-      List<Span> spans = new LinkedList<>(); // cause we don't know how long it will be
-      reader.beginArray();
-      while (reader.hasNext()) {
-        spans.add(SPAN_ADAPTER.fromJson(reader));
-      }
-      reader.endArray();
-      return spans;
-    }
-
-    @Override
-    public void toJson(JsonWriter writer, List<Span> value) throws IOException {
-      writer.beginArray();
-      for (int i = 0, length = value.size(); i < length; i++) {
-        SPAN_ADAPTER.toJson(writer, value.get(i));
-      }
-      writer.endArray();
-    }
-
-    @Override
-    public String toString() {
-      return "JsonAdapter(List<Span>)";
-    }
   };
 
   @Override
   public List<Span> readSpans(byte[] bytes) {
-    return read(SPAN_LIST_ADAPTER, bytes);
+    return readList(SPAN_ADAPTER, bytes);
   }
 
   @Override
   public byte[] writeSpans(List<Span> value) {
-    return write(SPAN_LIST_ADAPTER, value);
+    return writeList(SPAN_ADAPTER, value);
+  }
+
+  @Override
+  public byte[] writeTraces(List<List<Span>> traces) {
+    Buffer buffer = new Buffer();
+    buffer.writeUtf8CodePoint('['); // start list of traces
+    for (Iterator<List<Span>> trace = traces.iterator(); trace.hasNext(); ) {
+
+      buffer.writeUtf8CodePoint('['); // start trace
+      // write each span
+      for (Iterator<Span> span = trace.next().iterator(); span.hasNext(); ) {
+        if (!write(SPAN_ADAPTER, span.next(), buffer)) return null;
+        if (span.hasNext()) buffer.writeUtf8CodePoint(',');
+      }
+      buffer.writeUtf8CodePoint(']'); // stop trace
+
+      if (trace.hasNext()) buffer.writeUtf8CodePoint(',');
+    }
+    buffer.writeUtf8CodePoint(']'); // stop list of traces
+    return buffer.readByteArray();
   }
 
   public static final JsonAdapter<DependencyLink> DEPENDENCY_LINK_ADAPTER = new JsonAdapter<DependencyLink>() {
@@ -413,45 +377,61 @@ public final class JsonCodec implements Codec {
       writer.name("callCount").value(value.callCount);
       writer.endObject();
     }
-
-    @Override
-    public String toString() {
-      return "JsonAdapter(DependencyLink)";
-    }
   };
 
   @Override
-  public DependencyLink readDependencyLink(byte[] bytes) {
-    return read(DEPENDENCY_LINK_ADAPTER, bytes);
+  public List<DependencyLink> readDependencyLinks(byte[] bytes) {
+    return readList(DEPENDENCY_LINK_ADAPTER, bytes);
   }
 
   @Override
-  public byte[] writeDependencyLink(DependencyLink value) {
-    return write(DEPENDENCY_LINK_ADAPTER, value);
+  public byte[] writeDependencyLinks(List<DependencyLink> value) {
+    return writeList(DEPENDENCY_LINK_ADAPTER, value);
   }
 
-  private <T> T read(JsonAdapter<T> adapter, byte[] bytes) {
-    Buffer buffer = new Buffer();
-    buffer.write(bytes);
+  private static <T> List<T> readList(JsonAdapter<T> adapter, byte[] bytes) {
+    JsonReader reader = JsonReader.of(new Buffer().write(bytes));
+    List<T> result = new LinkedList<>(); // cause we don't know how long it will be
     try {
-      return adapter.fromJson(buffer);
+      reader.beginArray();
+      while (reader.hasNext()) {
+        T next = adapter.fromJson(reader);
+        if (next == null) return null;
+        result.add(next);
+      }
+      reader.endArray();
+      return result;
     } catch (IOException e) {
       if (LOGGER.isLoggable(FINEST)) {
-        LOGGER.log(FINEST, adapter + " could not read " + new String(bytes, UTF_8), e);
+        LOGGER.log(FINEST, "Could not read " + adapter + " from json" + new String(bytes, UTF_8), e);
       }
       return null;
     }
   }
 
-  private <T> byte[] write(JsonAdapter<T> adapter, T value) {
+  /** Returns null if any element could not be written. */
+  @Nullable
+  private static <T> byte[] writeList(JsonAdapter<T> adapter, List<T> values) {
     Buffer buffer = new Buffer();
+    buffer.writeUtf8CodePoint('[');
+    for (Iterator<T> i = values.iterator(); i.hasNext(); ) {
+      if (!write(adapter, i.next(), buffer)) return null;
+      if (i.hasNext()) buffer.writeUtf8CodePoint(',');
+    }
+    buffer.writeUtf8CodePoint(']');
+    return buffer.readByteArray();
+  }
+
+  /** Returns false when the value could not be written */
+  private static <T> boolean write(JsonAdapter<T> adapter, T value, Buffer buffer) {
     try {
-      adapter.toJson(buffer, value);
+      adapter.toJson(JsonWriter.of(buffer), value);
+      return true;
     } catch (IOException e) {
       if (LOGGER.isLoggable(FINEST)) {
-        LOGGER.log(FINEST, adapter + " could not write " + value, e);
+        LOGGER.log(FINEST, "Could not write " + value + " as json", e);
       }
+      return false;
     }
-    return buffer.readByteArray();
   }
 }
