@@ -21,6 +21,7 @@ import com.twitter.util.Time
 import com.twitter.zipkin.storage.QueryRequest
 import javax.inject.Inject
 import scala.collection.mutable
+import scala.concurrent.duration.Duration
 import scala.util.Try
 
 // TODO: rewrite me into a normal finatra case class
@@ -33,8 +34,8 @@ class QueryExtractor @Inject()(@Flag("zipkin.queryService.limit") val defaultLim
   def apply(req: Request): Try[QueryRequest] = Try {
     val serviceName = req.params.get("serviceName").getOrElse("")
     val spanName = req.params.get("spanName").flatMap(n => if (n == "all" || n == "") None else Some(n))
-    val minDuration = req.params.get("minDuration").flatMap(d => if (d.isEmpty) None else Some(d.toLong))
-    val maxDuration = req.params.get("maxDuration").flatMap(d => if (d.isEmpty) None else Some(d.toLong))
+    val minDuration = req.params.get("minDuration").flatMap(d => if (d.isEmpty) None else Some(Duration(d).toMicros))
+    val maxDuration = req.params.get("maxDuration").flatMap(d => if (d.isEmpty) None else Some(Duration(d).toMicros))
     val endTs = req.params.getLong("endTs").getOrElse(Time.now.inMillis)
     val lookback = req.params.get("lookback").map(_.toLong).getOrElse(defaultLookback)
     val limit = req.params.get("limit").map(_.toInt).getOrElse(defaultLimit)
