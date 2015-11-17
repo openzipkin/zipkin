@@ -51,7 +51,7 @@ public class ZipkinQueryApiV1 {
 
   private SpanStore spanStore;
   private ZipkinSpanWriter spanWriter;
-  private final static String DEFAULT_LOOKBACK = "86400000000"; // 7 days
+  private final static String DEFAULT_LOOKBACK = "86400000"; // 7 days in millis
 
   @Autowired
   public ZipkinQueryApiV1(SpanStore spanStore, ZipkinSpanWriter spanWriter) {

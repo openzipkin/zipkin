@@ -34,7 +34,7 @@ import static io.zipkin.internal.Util.checkArgument;
  */
 public final class QueryRequest {
 
-  /** Mandatory {@link io.zipkin.Endpoint#serviceName} and constrains. */
+  /** Mandatory {@link io.zipkin.Endpoint#serviceName} and constrains all other parameters. */
   public final String serviceName;
 
   /** When present, only include traces with this {@link io.zipkin.Span#name} */

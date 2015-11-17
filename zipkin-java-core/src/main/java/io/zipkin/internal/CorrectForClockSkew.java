@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Adjusts spans
+ * Adjusts spans whose children happen before their parents, based on core annotation values.
  */
 public enum CorrectForClockSkew implements Function<List<Span>, List<Span>> {
   INSTANCE;
