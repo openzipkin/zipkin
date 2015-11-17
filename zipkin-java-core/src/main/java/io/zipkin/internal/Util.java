@@ -18,12 +18,10 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import okio.Buffer;
 
 public final class Util {
   public static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -93,27 +91,6 @@ public final class Util {
 
     Collections.sort(result);
     return result;
-  }
-
-  /** Only here as this is a Java 7 module. */
-  public interface Serializer<T> {
-    byte[] apply(T in);
-  }
-
-  public static <T> Serializer<List<T>> writeJsonList(final Serializer<T> elementWriter) {
-    return new Serializer<List<T>>() {
-      @Override
-      public byte[] apply(List<T> input) {
-        Buffer buffer = new Buffer();
-        buffer.writeUtf8CodePoint('[');
-        for (Iterator<T> i = input.iterator(); i.hasNext(); ) {
-          buffer.write(elementWriter.apply(i.next()));
-          if (i.hasNext()) buffer.writeUtf8CodePoint(',');
-        }
-        buffer.writeUtf8CodePoint(']');
-        return buffer.readByteArray();
-      }
-    };
   }
 
   private Util() {
