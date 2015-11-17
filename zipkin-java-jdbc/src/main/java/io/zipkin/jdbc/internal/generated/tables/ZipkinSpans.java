@@ -41,7 +41,7 @@ import org.jooq.impl.TableImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinSpans extends TableImpl<Record> {
 
-	private static final long serialVersionUID = 107308884;
+	private static final long serialVersionUID = 851868507;
 
 	/**
 	 * The reference instance of <code>zipkin.zipkin_spans</code>
@@ -82,9 +82,14 @@ public class ZipkinSpans extends TableImpl<Record> {
 	public final TableField<Record, Boolean> DEBUG = createField("debug", org.jooq.impl.SQLDataType.BIT, this, "");
 
 	/**
-	 * The column <code>zipkin.zipkin_spans.start_ts</code>. Used to implement TTL; First Annotation.timestamp() or null
+	 * The column <code>zipkin.zipkin_spans.start_ts</code>. Span.timestamp(): epoch micros used for endTs query and to implement TTL
 	 */
-	public final TableField<Record, Long> START_TS = createField("start_ts", org.jooq.impl.SQLDataType.BIGINT, this, "Used to implement TTL; First Annotation.timestamp() or null");
+	public final TableField<Record, Long> START_TS = createField("start_ts", org.jooq.impl.SQLDataType.BIGINT, this, "Span.timestamp(): epoch micros used for endTs query and to implement TTL");
+
+	/**
+	 * The column <code>zipkin.zipkin_spans.duration</code>. Span.duration(): micros used for minDuration and maxDuration query
+	 */
+	public final TableField<Record, Long> DURATION = createField("duration", org.jooq.impl.SQLDataType.BIGINT, this, "Span.duration(): micros used for minDuration and maxDuration query");
 
 	/**
 	 * Create a <code>zipkin.zipkin_spans</code> table reference

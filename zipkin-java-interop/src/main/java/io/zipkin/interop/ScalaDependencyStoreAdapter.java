@@ -40,10 +40,14 @@ public final class ScalaDependencyStoreAdapter extends com.twitter.zipkin.storag
   }
 
   @Override
-  public Future<Seq<DependencyLink>> getDependencies(Option<Object> startTs, Option<Object> endTs) {
-    List<io.zipkin.DependencyLink> input = spanStore.getDependencies(
-        startTs.isDefined() ? (Long) startTs.get() : null,
-        endTs.isDefined() ? (Long) endTs.get() : null
+  public Option<Object> getDependencies$default$2() {
+    return Option.empty();
+  }
+
+  @Override
+  public Future<Seq<DependencyLink>> getDependencies(long endTs, Option<Object> lookback) {
+    List<io.zipkin.DependencyLink> input = spanStore.getDependencies(endTs,
+        lookback.isDefined() ? (Long) lookback.get() : null
     );
     List<DependencyLink> links = new ArrayList<>(input.size());
     for (io.zipkin.DependencyLink link : input) {
@@ -53,11 +57,6 @@ public final class ScalaDependencyStoreAdapter extends com.twitter.zipkin.storag
       }
     }
     return Future.value(JavaConversions.asScalaBuffer(links).seq());
-  }
-
-  @Override
-  public Option<Object> getDependencies$default$2() {
-    return Option.empty();
   }
 
   @Override

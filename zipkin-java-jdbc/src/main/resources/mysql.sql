@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS zipkin_spans (
   `name` VARCHAR(255) NOT NULL,
   `parent_id` BIGINT,
   `debug` BIT(1),
-  `start_ts` BIGINT COMMENT 'Used to implement TTL; First Annotation.timestamp() or null'
+  `start_ts` BIGINT COMMENT 'Span.timestamp(): epoch micros used for endTs query and to implement TTL',
+  `duration` BIGINT COMMENT 'Span.duration(): micros used for minDuration and maxDuration query'
 ) ENGINE=InnoDB ROW_FORMAT=COMPRESSED;
 
 ALTER TABLE zipkin_spans ADD UNIQUE KEY(`trace_id`, `id`) COMMENT 'ignore insert on duplicate';
@@ -32,4 +33,3 @@ ALTER TABLE zipkin_annotations ADD INDEX(`endpoint_service_name`) COMMENT 'for g
 ALTER TABLE zipkin_annotations ADD INDEX(`a_type`) COMMENT 'for getTraces';
 ALTER TABLE zipkin_annotations ADD INDEX(`a_key`) COMMENT 'for getTraces';
 ALTER TABLE zipkin_annotations ADD INDEX(`endpoint_ipv4`) COMMENT 'for getTraces ordering';
-

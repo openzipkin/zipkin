@@ -57,12 +57,21 @@ public interface SpanStore extends Closeable {
   List<String> getSpanNames(String serviceName);
 
   /**
-   * @param startTs microseconds from epoch, defaults to one day before end_time
-   * @param endTs microseconds from epoch, defaults to now
-   * @return dependency links in an interval contained by startTs and endTs, or empty if none are
-   * found
+   * Returns dependency links derived from spans.
+   *
+   * <p/>Implementations may bucket aggregated data, for example daily. When this is the case, endTs
+   * may be floored to align with that bucket, for example midnight if daily. lookback applies to
+   * the original endTs, even when bucketed. Using the daily example, if endTs was 11pm and lookback
+   * was 25 hours, the implementation would query against 2 buckets.
+   *
+   * @param endTs only return links from spans where {@link Span#timestamp} are at or before this
+   *              time in epoch milliseconds.
+   * @param lookback only return links from spans where {@link Span#timestamp} are at or after
+   *                 (endTs - lookback) in milliseconds. Defaults to endTs.
+   * @return dependency links in an interval contained by (endTs - lookback) or empty if none are
+   *         found
    */
-  List<DependencyLink> getDependencies(@Nullable Long startTs, @Nullable Long endTs);
+  List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback);
 
   @Override
   void close();

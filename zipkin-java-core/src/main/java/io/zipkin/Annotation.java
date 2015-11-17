@@ -20,14 +20,9 @@ import static io.zipkin.internal.Util.checkNotNull;
 import static io.zipkin.internal.Util.equal;
 
 /**
- * The endpoint associated with this annotation depends on {@link #value}.
+ * Associates an event that explains latency with a timestamp.
  *
- * <p/>When {@link #value} is...
- * <ul>
- *   <li>{@link Constants#CLIENT_ADDR}, this is the client endpoint of an RPC call</li>
- *   <li>{@link Constants#SERVER_ADDR}, this is the server endpoint of an RPC call</li>
- *   <li>Otherwise, this is the endpoint that recorded this annotation</li>
- * </ul>
+ * <p/>Unlike log statements, annotations are often codes: Ex. {@link Constants#SERVER_RECV "sr"}.
  */
 public final class Annotation implements Comparable<Annotation> {
 
@@ -35,12 +30,19 @@ public final class Annotation implements Comparable<Annotation> {
     return new Annotation(timestamp, value, endpoint);
   }
 
-  /** Microseconds from epoch */
+  /**
+   * Microseconds from epoch.
+   *
+   * <p/>This value should be set directly by instrumentation, using the most precise value
+   * possible. For example, {@code gettimeofday} or syncing {@link System#nanoTime} against a tick
+   * of {@link System#currentTimeMillis}.
+   */
   public final long timestamp;
 
-  /** What happened at the timestamp? */
+  /** Usually a short tag indicating an event, like {@link Constants#SERVER_RECV "sr"}. or "finagle.retry" */
   public final String value;
 
+  /** The host that recorded {@link #value}, primarily for query by service name. */
   @Nullable
   public final Endpoint endpoint;
 
@@ -64,17 +66,20 @@ public final class Annotation implements Comparable<Annotation> {
       this.endpoint = source.endpoint;
     }
 
-    public Annotation.Builder timestamp(long timestamp) {
+    /** @see Annotation#timestamp */
+    public Builder timestamp(long timestamp) {
       this.timestamp = timestamp;
       return this;
     }
 
-    public Annotation.Builder value(String value) {
+    /** @see Annotation#value */
+    public Builder value(String value) {
       this.value = value;
       return this;
     }
 
-    public Annotation.Builder endpoint(Endpoint endpoint) {
+    /** @see Annotation#endpoint */
+    public Builder endpoint(Endpoint endpoint) {
       this.endpoint = endpoint;
       return this;
     }
@@ -115,11 +120,12 @@ public final class Annotation implements Comparable<Annotation> {
     return h;
   }
 
+  /** Compares by {@link #timestamp}, then {@link #value}. */
   @Override
   public int compareTo(Annotation that) {
-    if (this == that) {
-      return 0;
-    }
-    return Long.compare(timestamp, that.timestamp);
+    if (this == that) return 0;
+    int byTimestamp = Long.compare(timestamp, that.timestamp);
+    if (byTimestamp != 0) return byTimestamp;
+    return value.compareTo(that.value);
   }
 }

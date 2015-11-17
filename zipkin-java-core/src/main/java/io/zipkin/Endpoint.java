@@ -20,7 +20,7 @@ import java.net.InetSocketAddress;
 
 import static io.zipkin.internal.Util.checkNotNull;
 
-/** Indicates the network context of a service recording an annotation. */
+/** Indicates the network context of a service involved in a span. */
 public final class Endpoint {
 
   public static Endpoint create(String serviceName, int ipv4, int port) {
@@ -32,9 +32,16 @@ public final class Endpoint {
   }
 
   /**
-   * Service name, such as "memcache" or "zipkin-web"
+   * Classifier of a source or destination in lowercase, such as "zipkin-web".
    *
-   * <p/>Note: Some implementations set this to "Unknown" or "Unknown Service"
+   * <p/>Conventionally, when the service name isn't known, service_name = "unknown".
+   *
+   * <p/>This is the primary parameter for trace lookup, so should be intuitive as possible, for
+   * example, matching names in service discovery.
+   *
+   * <p/>Particularly clients may not have a reliable service name at ingest. One approach is to set
+   * serviceName to "unknown" at ingest, and later assign a better label based on binary
+   * annotations, such as user agent.
    */
   public final String serviceName;
 
@@ -77,16 +84,19 @@ public final class Endpoint {
       this.port = source.port;
     }
 
+    /** @see Endpoint#serviceName */
     public Builder serviceName(String serviceName) {
       this.serviceName = serviceName;
       return this;
     }
 
+    /** @see Endpoint#ipv4 */
     public Builder ipv4(int ipv4) {
       this.ipv4 = ipv4;
       return this;
     }
 
+    /** @see Endpoint#port */
     public Builder port(short port) {
       if (port != 0) {
         this.port = port;

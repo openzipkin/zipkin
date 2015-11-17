@@ -27,30 +27,40 @@ public final class TestObjects {
   public static final Endpoint JDBC_ENDPOINT = Endpoint.create("zipkin-jdbc", 172 << 24 | 17 << 16 | 2);
 
   public static final List<Span> TRACE = asList(
-      new Span.Builder()
+      new Span.Builder() // browser calls web
           .traceId(WEB_SPAN_ID)
-          .name("GET")
+          .name("get")
           .id(WEB_SPAN_ID)
+          .timestamp(1444438900939000L)
+          .duration(376000L)
           .addAnnotation(Annotation.create(1444438900939000L, Constants.SERVER_RECV, WEB_ENDPOINT))
           .addAnnotation(Annotation.create(1444438901315000L, Constants.SERVER_SEND, WEB_ENDPOINT))
+          .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, WEB_ENDPOINT))
           .build(),
-      new Span.Builder()
+      new Span.Builder() // web calls query
           .traceId(WEB_SPAN_ID)
-          .name("GET")
+          .name("get")
           .id(QUERY_SPAN_ID)
           .parentId(WEB_SPAN_ID)
-          .addAnnotation(Annotation.create(1444438900941000L, Constants.CLIENT_SEND, Endpoint.create("zipkin-query", 127 << 24 | 1)))
+          .timestamp(1444438900941000L)
+          .duration(77000L)
+          .addAnnotation(Annotation.create(1444438900941000L, Constants.CLIENT_SEND, WEB_ENDPOINT))
           .addAnnotation(Annotation.create(1444438900947000L, Constants.SERVER_RECV, QUERY_ENDPOINT))
           .addAnnotation(Annotation.create(1444438901017000L, Constants.SERVER_SEND, QUERY_ENDPOINT))
-          .addAnnotation(Annotation.create(1444438901018000L, Constants.CLIENT_RECV, Endpoint.create("zipkin-query", 127 << 24 | 1)))
+          .addAnnotation(Annotation.create(1444438901018000L, Constants.CLIENT_RECV, WEB_ENDPOINT))
+          .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, QUERY_ENDPOINT))
+          .addBinaryAnnotation(BinaryAnnotation.address(Constants.CLIENT_ADDR, WEB_ENDPOINT))
           .build(),
-      new Span.Builder()
+      new Span.Builder() // query calls jdbc
           .traceId(WEB_SPAN_ID)
           .name("query")
           .id(JDBC_SPAN_ID)
           .parentId(QUERY_SPAN_ID)
-          .addAnnotation(Annotation.create(1444438900948000L, Constants.CLIENT_SEND, JDBC_ENDPOINT))
-          .addAnnotation(Annotation.create(1444438900979000L, Constants.CLIENT_RECV, JDBC_ENDPOINT))
+          .timestamp(1444438900948000L)
+          .duration(31000L)
+          .addAnnotation(Annotation.create(1444438900948000L, Constants.CLIENT_SEND, QUERY_ENDPOINT))
+          .addAnnotation(Annotation.create(1444438900979000L, Constants.CLIENT_RECV, QUERY_ENDPOINT))
+          .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, JDBC_ENDPOINT))
           .build()
   );
 

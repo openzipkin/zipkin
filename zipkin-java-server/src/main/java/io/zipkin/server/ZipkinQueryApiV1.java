@@ -51,6 +51,7 @@ public class ZipkinQueryApiV1 {
 
   private SpanStore spanStore;
   private ZipkinSpanWriter spanWriter;
+  private final static String DEFAULT_LOOKBACK = "86400000000"; // 7 days
 
   @Autowired
   public ZipkinQueryApiV1(SpanStore spanStore, ZipkinSpanWriter spanWriter) {
@@ -59,10 +60,9 @@ public class ZipkinQueryApiV1 {
   }
 
   @RequestMapping(value = "/dependencies", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
-  public byte[] getDependencies(
-      @RequestParam(value = "startTs", required = false, defaultValue = "0") long startTs,
-      @RequestParam(value = "endTs", required = true) long endTs) {
-    return DEPENDENCY_LINKS_TO_JSON.apply(this.spanStore.getDependencies(startTs != 0 ? startTs : null, endTs));
+  public byte[] getDependencies(@RequestParam(value = "endTs", required = true) long endTs,
+                                @RequestParam(value = "lookback", required = false, defaultValue = DEFAULT_LOOKBACK) long lookback) {
+    return DEPENDENCY_LINKS_TO_JSON.apply(this.spanStore.getDependencies(endTs, lookback));
   }
 
   @RequestMapping(value = "/services", method = RequestMethod.GET)
@@ -97,10 +97,20 @@ public class ZipkinQueryApiV1 {
       @RequestParam(value = "serviceName", required = true) String serviceName,
       @RequestParam(value = "spanName", defaultValue = "all") String spanName,
       @RequestParam(value = "annotationQuery", required = false) String annotationQuery,
+      @RequestParam(value = "minDuration", required = false) Long minDuration,
+      @RequestParam(value = "maxDuration", required = false) Long maxDuration,
       @RequestParam(value = "endTs", required = false) Long endTs,
+      @RequestParam(value = "lookback", required = false, defaultValue = DEFAULT_LOOKBACK) long lookback,
       @RequestParam(value = "limit", required = false) Integer limit) {
-    QueryRequest.Builder builder = new QueryRequest.Builder().serviceName(serviceName)
-        .spanName(spanName.equals("all") ? null : spanName).endTs(endTs).limit(limit);
+    QueryRequest.Builder builder = new QueryRequest.Builder()
+        .serviceName(serviceName)
+        .spanName(spanName.equals("all") ? null : spanName)
+        .minDuration(minDuration)
+        .maxDuration(maxDuration)
+        .endTs(endTs)
+        .lookback(lookback)
+        .limit(limit);
+
     if (annotationQuery != null && !annotationQuery.isEmpty()) {
       for (String ann : annotationQuery.split(" and ")) {
         if (ann.indexOf('=') == -1) {

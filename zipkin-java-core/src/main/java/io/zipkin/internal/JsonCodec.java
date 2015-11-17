@@ -144,7 +144,7 @@ public final class JsonCodec implements Codec {
             switch (reader.peek()) {
               case BOOLEAN:
                 type = BinaryAnnotation.Type.BOOL;
-                result.value(reader.nextBoolean() ? new byte[]{0} : new byte[]{1});
+                result.value(reader.nextBoolean() ? new byte[]{1} : new byte[]{0});
                 break;
               case STRING:
                 string = reader.nextString();
@@ -260,6 +260,12 @@ public final class JsonCodec implements Codec {
           case "parentId":
             result.parentId(HEX_LONG_ADAPTER.fromJson(reader));
             break;
+          case "timestamp":
+            result.timestamp(reader.nextLong());
+            break;
+          case "duration":
+            result.duration(reader.nextLong());
+            break;
           case "annotations":
             reader.beginArray();
             while (reader.hasNext()) {
@@ -296,6 +302,12 @@ public final class JsonCodec implements Codec {
       if (value.parentId != null) {
         writer.name("parentId");
         HEX_LONG_ADAPTER.toJson(writer, value.parentId);
+      }
+      if (value.timestamp != null) {
+        writer.name("timestamp").value(value.timestamp);
+      }
+      if (value.duration != null) {
+        writer.name("duration").value(value.duration);
       }
       writer.name("annotations");
       writer.beginArray();
