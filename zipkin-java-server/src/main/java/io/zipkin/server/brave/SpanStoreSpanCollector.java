@@ -13,21 +13,19 @@
  */
 package io.zipkin.server.brave;
 
-import java.io.Flushable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
 import com.github.kristofa.brave.SpanCollector;
 import com.twitter.zipkin.gen.AnnotationType;
-
 import io.zipkin.Annotation;
 import io.zipkin.BinaryAnnotation;
 import io.zipkin.BinaryAnnotation.Type;
 import io.zipkin.Endpoint;
 import io.zipkin.Span;
 import io.zipkin.SpanStore;
+import java.io.Flushable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * A Brave {@link SpanCollector} that forwards to the local {@link SpanStore}.
@@ -36,15 +34,14 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
   private SpanStore spanStore;
   // TODO: should we put a bound on this queue?
   // Since this is only used for internal tracing in zipkin, maybe it's ok
-  private BlockingQueue<com.twitter.zipkin.gen.Span> queue = new LinkedBlockingQueue<>();
+  private BlockingQueue<Span> queue = new LinkedBlockingQueue<>();
   private int limit = 200;
 
   public SpanStoreSpanCollector(SpanStore spanStore) {
     this.spanStore = spanStore;
   }
 
-  @Override
-  public void collect(com.twitter.zipkin.gen.Span span) {
+  public void collect(Span span) {
     this.queue.offer(span);
     if (this.queue.size() >= this.limit) {
       flush();
@@ -52,12 +49,17 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
   }
 
   @Override
+  public void collect(com.twitter.zipkin.gen.Span span) {
+    collect(convert(span));
+  }
+
+  @Override
   public void flush() {
     List<Span> spans = new ArrayList<>(this.queue.size());
     while (!this.queue.isEmpty()) {
-      com.twitter.zipkin.gen.Span span = this.queue.poll();
+      Span span = this.queue.poll();
       if (span != null) {
-        spans.add(convert(span));
+        spans.add(span);
       }
     }
     if (!spans.isEmpty()) {
@@ -67,19 +69,20 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
 
   private Span convert(com.twitter.zipkin.gen.Span span) {
     Span.Builder builder = new Span.Builder();
-    long parent = span.getParent_id();
     builder.name(span.getName())
-        .id(span.getId())
-        .parentId(parent == 0 ? null : parent)
-        .traceId(span.getTrace_id())
-        .debug(span.isDebug());
-    List<com.twitter.zipkin.gen.Annotation> annotations = span.getAnnotations();
+        .id(span.id)
+        .parentId(span.isSetParent_id() ? span.parent_id : null)
+        .traceId(span.trace_id)
+        .timestamp(span.timestamp)
+        .duration(span.duration)
+        .debug(span.debug);
+    List<com.twitter.zipkin.gen.Annotation> annotations = span.annotations;
     if (annotations != null) {
       for (com.twitter.zipkin.gen.Annotation annotation : annotations) {
         builder.addAnnotation(convert(annotation));
       }
     }
-    List<com.twitter.zipkin.gen.BinaryAnnotation> binaries = span.getBinary_annotations();
+    List<com.twitter.zipkin.gen.BinaryAnnotation> binaries = span.binary_annotations;
     if (binaries != null) {
       for (com.twitter.zipkin.gen.BinaryAnnotation annotation : binaries) {
         builder.addBinaryAnnotation(convert(annotation));
@@ -98,25 +101,25 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
 
   private static Annotation convert(com.twitter.zipkin.gen.Annotation annotation) {
     return new Annotation.Builder()
-        .timestamp(annotation.getTimestamp())
-        .value(annotation.getValue())
-        .endpoint(convert(annotation.getHost()))
+        .timestamp(annotation.timestamp)
+        .value(annotation.value)
+        .endpoint(convert(annotation.host))
         .build();
   }
 
   private static Endpoint convert(com.twitter.zipkin.gen.Endpoint endpoint) {
     return new Endpoint.Builder()
-        .serviceName(endpoint.getService_name())
-        .port(endpoint.getPort())
-        .ipv4(endpoint.getIpv4()).build();
+        .serviceName(endpoint.service_name)
+        .port(endpoint.port)
+        .ipv4(endpoint.ipv4).build();
   }
 
   private static BinaryAnnotation convert(com.twitter.zipkin.gen.BinaryAnnotation annotation) {
     return new BinaryAnnotation.Builder()
-        .key(annotation.getKey())
+        .key(annotation.key)
         .value(annotation.getValue())
-        .type(convert(annotation.getAnnotation_type()))
-        .endpoint(convert(annotation.getHost()))
+        .type(convert(annotation.annotation_type))
+        .endpoint(convert(annotation.host))
         .build();
   }
 
