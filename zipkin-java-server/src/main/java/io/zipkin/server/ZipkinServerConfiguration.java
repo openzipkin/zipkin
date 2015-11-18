@@ -13,20 +13,20 @@
  */
 package io.zipkin.server;
 
+import io.zipkin.Codec;
+import io.zipkin.SpanStore;
+import io.zipkin.jdbc.JDBCSpanStore;
+import io.zipkin.server.ZipkinServerProperties.Store.Type;
 import javax.sql.DataSource;
-
 import org.jooq.ExecuteListenerProvider;
 import org.jooq.conf.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
-
-import io.zipkin.SpanStore;
-import io.zipkin.jdbc.JDBCSpanStore;
-import io.zipkin.server.ZipkinServerProperties.Store.Type;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinServerProperties.class)
@@ -42,6 +42,12 @@ public class ZipkinServerConfiguration {
   @Autowired(required = false)
   @Qualifier("jdbcTraceListenerProvider")
   ExecuteListenerProvider listener;
+
+  @Bean
+  @ConditionalOnMissingBean(Codec.Factory.class)
+  Codec.Factory codecFactory() {
+    return Codec.FACTORY;
+  }
 
   @Bean
   SpanStore spanStore() {

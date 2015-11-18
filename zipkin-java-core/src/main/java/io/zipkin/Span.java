@@ -269,6 +269,13 @@ public final class Span implements Comparable<Span> {
     }
 
     /** @see Span#binaryAnnotations */
+    public Builder binaryAnnotations(Collection<BinaryAnnotation> binaryAnnotations) {
+      this.binaryAnnotations.clear();
+      this.binaryAnnotations.addAll(binaryAnnotations);
+      return this;
+    }
+
+    /** @see Span#binaryAnnotations */
     public Builder addBinaryAnnotation(BinaryAnnotation binaryAnnotation) {
       this.binaryAnnotations.add(binaryAnnotation);
       return this;

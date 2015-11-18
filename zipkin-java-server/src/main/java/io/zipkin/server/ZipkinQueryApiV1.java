@@ -46,18 +46,17 @@ public class ZipkinQueryApiV1 {
   private static final String APPLICATION_THRIFT = "application/x-thrift";
   private static final String DEFAULT_LOOKBACK = "86400000"; // 7 days in millis
 
-  @Autowired(required = false)
-  Codec.Factory codecFactory = Codec.FACTORY;
-  Codec jsonCodec = checkNotNull(codecFactory.get(APPLICATION_JSON_VALUE), APPLICATION_JSON_VALUE);
-  Codec thriftCodec = checkNotNull(codecFactory.get(APPLICATION_THRIFT), APPLICATION_THRIFT);
-
   private final SpanStore spanStore;
   private final ZipkinSpanWriter spanWriter;
+  private final Codec jsonCodec;
+  private final Codec thriftCodec;
 
   @Autowired
-  public ZipkinQueryApiV1(SpanStore spanStore, ZipkinSpanWriter spanWriter) {
+  public ZipkinQueryApiV1(SpanStore spanStore, ZipkinSpanWriter spanWriter, Codec.Factory codecFactory) {
     this.spanStore = spanStore;
     this.spanWriter = spanWriter;
+    this.jsonCodec = checkNotNull(codecFactory.get(APPLICATION_JSON_VALUE), APPLICATION_JSON_VALUE);
+    this.thriftCodec = checkNotNull(codecFactory.get(APPLICATION_THRIFT), APPLICATION_THRIFT);
   }
 
   @RequestMapping(value = "/dependencies", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)

@@ -28,6 +28,7 @@ import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.jooq.tools.StringUtils;
 import org.mariadb.jdbc.Driver;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
@@ -45,7 +46,8 @@ public class JDBCTracerConfiguration extends DefaultExecuteListener {
 
   /** Attach the IP of the remote datasource, knowing that DNS may invalidate this */
   @Bean
-  Endpoint jdbcServerAddr(@Value("${spring.datasource.url}") String jdbcUrl) throws UnknownHostException {
+  @Qualifier("jdbc")
+  Endpoint jdbc(@Value("${spring.datasource.url}") String jdbcUrl) throws UnknownHostException {
     URI url = URI.create(jdbcUrl.substring(5)); // strip "jdbc:"
     int ipv4 = ByteBuffer.wrap(InetAddress.getByName(url.getHost()).getAddress()).getInt();
     return Endpoint.create("zipkin-jdbc", ipv4, url.getPort());
@@ -54,6 +56,7 @@ public class JDBCTracerConfiguration extends DefaultExecuteListener {
   @Autowired
   Brave brave;
   @Autowired
+  @Qualifier("jdbc")
   Endpoint jdbcEndpoint;
 
   @Override

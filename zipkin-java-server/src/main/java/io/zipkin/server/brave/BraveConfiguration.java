@@ -14,9 +14,16 @@
 package io.zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
+import io.zipkin.Endpoint;
 import io.zipkin.SpanStore;
+import java.math.BigInteger;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -38,8 +45,28 @@ public class BraveConfiguration {
     this.spanCollector.flush();
   }
 
+  /** This gets the lanIP without trying to lookup its name. */
+  // http://stackoverflow.com/questions/8765578/get-local-ip-address-without-connecting-to-the-internet
+  @Bean
+  @Scope
+  Endpoint local(@Value("${server.port}") int port) {
+    int ipv4;
+    try {
+      ipv4 = Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
+          .flatMap(i -> Collections.list(i.getInetAddresses()).stream())
+          .filter(ip -> ip instanceof Inet4Address && ip.isSiteLocalAddress())
+          .map(InetAddress::getAddress)
+          .map(bytes -> new BigInteger(bytes).intValue())
+          .findAny().get();
+    } catch (Exception ignored) {
+      ipv4 = 127 << 24 | 1;
+    }
+    return Endpoint.create("zipkin-query", ipv4, port);
+  }
+
   /**
-   * @param spanStore lazy to avoid circular reference: the collector uses the same span store as the query api.
+   * @param spanStore lazy to avoid circular reference: the collector uses the same span store as
+   * the query api.
    */
   @Bean
   SpanStoreSpanCollector spanCollector(@Lazy SpanStore spanStore) {
@@ -48,8 +75,8 @@ public class BraveConfiguration {
 
   @Bean
   @Scope
-  Brave brave(SpanStoreSpanCollector spanCollector) {
-    return new Brave.Builder("zipkin-query")
+  Brave brave(@Qualifier("local") Endpoint localEndpoint, SpanStoreSpanCollector spanCollector) {
+    return new Brave.Builder(localEndpoint.ipv4, localEndpoint.port, localEndpoint.serviceName)
         .traceFilters(Collections.emptyList()) // sample all
         .spanCollector(spanCollector).build();
   }
