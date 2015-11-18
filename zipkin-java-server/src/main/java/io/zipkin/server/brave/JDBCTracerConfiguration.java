@@ -60,7 +60,7 @@ public class JDBCTracerConfiguration extends DefaultExecuteListener {
   public void renderEnd(ExecuteContext ctx) {
     if (ctx.type() == ExecuteType.READ) { // Don't log writes (so as to not loop on collector)
       this.brave.clientTracer().startNewSpan("query");
-      this.brave.clientTracer().setCurrentClientServiceName("zipkin-jdbc");
+      this.brave.clientTracer().setCurrentClientServiceName("zipkin-query");
       String[] batchSQL = ctx.batchSQL();
       if (!StringUtils.isBlank(ctx.sql())) {
         this.brave.clientTracer().submitBinaryAnnotation("jdbc.query", ctx.sql());
