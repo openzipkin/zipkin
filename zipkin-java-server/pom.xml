@@ -31,7 +31,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <brave.version>3.1.0</brave.version>
+    <brave.version>3.2.0</brave.version>
     <start-class>io.zipkin.server.ZipkinServer</start-class>
   </properties>
 

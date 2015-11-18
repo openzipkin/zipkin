@@ -13,10 +13,12 @@
  */
 package io.zipkin.server;
 
+import com.github.kristofa.brave.Brave;
 import io.zipkin.Codec;
 import io.zipkin.SpanStore;
 import io.zipkin.jdbc.JDBCSpanStore;
 import io.zipkin.server.ZipkinServerProperties.Store.Type;
+import io.zipkin.server.brave.TraceWritesSpanStore;
 import javax.sql.DataSource;
 import org.jooq.ExecuteListenerProvider;
 import org.jooq.conf.Settings;
@@ -43,6 +45,9 @@ public class ZipkinServerConfiguration {
   @Qualifier("jdbcTraceListenerProvider")
   ExecuteListenerProvider listener;
 
+  @Autowired(required = false)
+  Brave brave;
+
   @Bean
   @ConditionalOnMissingBean(Codec.Factory.class)
   Codec.Factory codecFactory() {
@@ -51,10 +56,12 @@ public class ZipkinServerConfiguration {
 
   @Bean
   SpanStore spanStore() {
+    SpanStore result;
     if (this.datasource != null && this.server.getStore().getType() == Type.mysql) {
-      return new JDBCSpanStore(this.datasource, new Settings().withRenderSchema(false), this.listener);
+      result = new JDBCSpanStore(this.datasource, new Settings().withRenderSchema(false), this.listener);
     } else {
-      return new InMemorySpanStore();
+      result = new InMemorySpanStore();
     }
+    return brave != null ? new TraceWritesSpanStore(brave, result) : result;
   }
 }
