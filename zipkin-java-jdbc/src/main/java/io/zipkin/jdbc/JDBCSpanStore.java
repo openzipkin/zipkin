@@ -21,10 +21,10 @@ import io.zipkin.Endpoint;
 import io.zipkin.QueryRequest;
 import io.zipkin.Span;
 import io.zipkin.SpanStore;
+import io.zipkin.internal.ApplyTimestampAndDuration;
 import io.zipkin.internal.CorrectForClockSkew;
 import io.zipkin.internal.Nullable;
 import io.zipkin.internal.Pair;
-import io.zipkin.internal.Util;
 import io.zipkin.jdbc.internal.generated.tables.ZipkinAnnotations;
 import java.nio.charset.Charset;
 import java.sql.Connection;
@@ -96,6 +96,7 @@ public final class JDBCSpanStore implements SpanStore {
       List<Query> inserts = new ArrayList<>();
 
       for (Span span : spans) {
+        span = ApplyTimestampAndDuration.apply(span);
         Long binaryAnnotationTimestamp = span.timestamp;
         if (binaryAnnotationTimestamp == null) { // fallback if we have no timestamp, yet
           binaryAnnotationTimestamp = System.currentTimeMillis() * 1000;
@@ -223,7 +224,8 @@ public final class JDBCSpanStore implements SpanStore {
         }
         trace.add(span.build());
       }
-      result.add(CorrectForClockSkew.INSTANCE.apply(Util.merge(trace)));
+      trace = CorrectForClockSkew.apply(trace);
+      result.add(trace);
     }
     Collections.sort(result, (left, right) -> right.get(0).compareTo(left.get(0)));
     return result;

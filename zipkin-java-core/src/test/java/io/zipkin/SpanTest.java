@@ -17,14 +17,14 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import static io.zipkin.TestObjects.WEB_ENDPOINT;
-import static io.zipkin.assertj.ZipkinAssertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SpanTest {
 
   @Test
   public void spanNamesLowercase() {
-    assertThat(new Span.Builder().traceId(1L).id(1L).name("GET").build())
-        .hasName("get");
+    assertThat(new Span.Builder().traceId(1L).id(1L).name("GET").build().name)
+        .isEqualTo("get");
   }
 
   @Test
@@ -64,8 +64,8 @@ public class SpanTest {
       Span unknown = new Span.Builder().traceId(1).id(2).name(nonName).build();
       Span get = new Span.Builder(unknown).name("get").build();
 
-      assertThat(new Span.Builder(unknown).merge(get).build()).hasName("get");
-      assertThat(new Span.Builder(get).merge(unknown).build()).hasName("get");
+      assertThat(new Span.Builder(unknown).merge(get).build().name).isEqualTo("get");
+      assertThat(new Span.Builder(get).merge(unknown).build().name).isEqualTo("get");
     }
   }
 }

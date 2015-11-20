@@ -163,6 +163,13 @@ public final class BinaryAnnotation {
       return this;
     }
 
+    /** @see BinaryAnnotation#value */
+    public BinaryAnnotation.Builder value(String value) {
+      this.value = value.getBytes(Util.UTF_8);
+      this.type = Type.STRING;
+      return this;
+    }
+
     /** @see BinaryAnnotation#type */
     public Builder type(Type type) {
       this.type = type;

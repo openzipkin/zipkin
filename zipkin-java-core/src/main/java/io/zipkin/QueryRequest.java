@@ -128,7 +128,9 @@ public final class QueryRequest {
     private Long lookback;
     private Integer limit;
 
-    public Builder() {
+    /** @see QueryRequest#serviceName */
+    public Builder(String serviceName) {
+      this.serviceName = serviceName;
     }
 
     public Builder(QueryRequest source) {

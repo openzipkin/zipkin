@@ -22,6 +22,7 @@ public class JDBCSpanStoreTest extends SpanStoreTest<JDBCSpanStore> {
     super(new JDBCTestGraph().spanStore);
   }
 
+  @Override
   public void clear() {
     try {
       store.clear();

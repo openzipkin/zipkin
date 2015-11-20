@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.zipkin.internal.Util.checkNotNull;
+import static io.zipkin.internal.Util.sortedList;
 
 final class SpanNode {
   /** mutable to avoid allocating lists for no reason */
@@ -74,6 +75,6 @@ final class SpanNode {
     for (SpanNode child : children) {
       result.addAll(child.toSpans());
     }
-    return result;
+    return sortedList(result);
   }
 }
