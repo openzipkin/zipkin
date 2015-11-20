@@ -28,3 +28,22 @@ $ mysql -uroot -e "create database if not exists zipkin"
 $ mysql -uroot -Dzipkin < zipkin-anormdb/src/main/resources/mysql.sql
 $ MYSQL_USER=root ./bin/query mysql
 ```
+
+## Troubleshooting
+
+### Looking up raw data by trace ID 
+
+Zipkin's api, http header encoding and web urls represent ids as hex strings. Data in SQL tables is keyed by the same
+id, except in numeric form, in the `zipkin_spans` and `zipkin_annotations` tables. 
+
+Let's say you are trying to debug a trace that looks wrong in the UI `http://zipkinweb/traces/ee3ba633f8cb4ad3`. In this
+case, the trace ID is `ee3ba633f8cb4ad3`.
+
+First, look at the raw json as that might help: `http://zipkinquery:9411/api/v1/trace/ee3ba633f8cb4ad3`.
+
+If you are still unable to diagnose the problem, you can explore the data in SQL using the same id:
+```SQL
+mysql> select * from zipkin_spans where trace_id = CAST(X'ee3ba633f8cb4ad3' AS SIGNED);
+mysql> select * from zipkin_annotations where trace_id = CAST(X'ee3ba633f8cb4ad3' AS SIGNED);
+```
+
