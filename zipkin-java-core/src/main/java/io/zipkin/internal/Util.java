@@ -13,15 +13,11 @@
  */
 package io.zipkin.internal;
 
-import io.zipkin.Span;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 public final class Util {
   public static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -61,36 +57,11 @@ public final class Util {
   }
 
   public static <T extends Comparable<? super T>> List<T> sortedList(@Nullable Collection<T> input) {
-    if (input == null) return Collections.emptyList();
+    if (input == null || input.isEmpty()) return Collections.emptyList();
+    if (input.size() == 1) return Collections.singletonList(input.iterator().next());
     List<T> result = new ArrayList<>(input);
     Collections.sort(result);
     return Collections.unmodifiableList(result);
-  }
-
-  public static List<Span> merge(Collection<Span> spans) {
-    List<Span> result = new ArrayList<>(spans.size());
-    Map<Long, List<Span>> spanIdToSpans = new LinkedHashMap<>();
-    for (Span span : spans) {
-      if (!spanIdToSpans.containsKey(span.id)) {
-        spanIdToSpans.put(span.id, new LinkedList<Span>());
-      }
-      spanIdToSpans.get(span.id).add(span);
-    }
-
-    for (List<Span> spansToMerge : spanIdToSpans.values()) {
-      if (spansToMerge.size() == 1) {
-        result.add(spansToMerge.get(0));
-      } else {
-        Span.Builder builder = new Span.Builder(spansToMerge.get(0));
-        for (int i = 1, length = spansToMerge.size(); i < length; i++) {
-          builder.merge(spansToMerge.get(i));
-        }
-        result.add(builder.build());
-      }
-    }
-
-    Collections.sort(result);
-    return result;
   }
 
   private Util() {

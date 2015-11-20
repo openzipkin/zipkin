@@ -256,9 +256,9 @@ public final class Span implements Comparable<Span> {
      *
      * @see Span#annotations
      */
-    public Builder annotations(Collection<Annotation> annotations) {
+    public Builder annotations(Annotation... annotations) {
       this.annotations.clear();
-      this.annotations.addAll(annotations);
+      Collections.addAll(this.annotations, annotations);
       return this;
     }
 
@@ -268,10 +268,14 @@ public final class Span implements Comparable<Span> {
       return this;
     }
 
-    /** @see Span#binaryAnnotations */
-    public Builder binaryAnnotations(Collection<BinaryAnnotation> binaryAnnotations) {
+    /**
+     * Replaces currently collected binary annotations.
+     *
+     * @see Span#binaryAnnotations
+     */
+    public Builder binaryAnnotations(BinaryAnnotation... binaryAnnotations) {
       this.binaryAnnotations.clear();
-      this.binaryAnnotations.addAll(binaryAnnotations);
+      Collections.addAll(this.binaryAnnotations, binaryAnnotations);
       return this;
     }
 
@@ -287,26 +291,8 @@ public final class Span implements Comparable<Span> {
       return this;
     }
 
-    /**
-     * <h3>Derived timestamp and duration</h3>
-     *
-     * <p/>Instrumentation should log timestamp and duration, but since these fields are recent
-     * (Nov-2015), a lot of tracers will not. Accordingly, this will backfill timestamp and duration
-     * to if possible, based on interpretation of annotations.
-     */
     public Span build() {
-      Long ts = timestamp;
-      Long dur = duration;
-      if ((timestamp == null || duration == null) && !annotations.isEmpty()) {
-        ts = ts != null ? ts : annotations.first().timestamp;
-        if (dur == null) {
-          long lastTs = annotations.last().timestamp;
-          if (ts.longValue() != lastTs) {
-            dur = lastTs - ts;
-          }
-        }
-      }
-      return new Span(this.traceId, this.name, this.id, this.parentId, ts, dur, this.annotations, this.binaryAnnotations, this.debug);
+      return new Span(this.traceId, this.name, this.id, this.parentId, this.timestamp, this.duration, this.annotations, this.binaryAnnotations, this.debug);
     }
   }
 
@@ -367,6 +353,6 @@ public final class Span implements Comparable<Span> {
         this.timestamp == null ? Long.MIN_VALUE : this.timestamp,
         that.timestamp == null ? Long.MIN_VALUE : that.timestamp);
     if (byTimestamp != 0) return byTimestamp;
-    return name.compareTo(that.name);
+    return this.name.compareTo(that.name);
   }
 }

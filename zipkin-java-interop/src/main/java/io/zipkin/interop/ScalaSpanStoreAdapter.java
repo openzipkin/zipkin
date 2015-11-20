@@ -53,8 +53,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
 
   @Override
   public Future<Seq<List<Span>>> getTraces(QueryRequest input) {
-    io.zipkin.QueryRequest.Builder request = new io.zipkin.QueryRequest.Builder()
-        .serviceName(input.serviceName())
+    io.zipkin.QueryRequest.Builder request = new io.zipkin.QueryRequest.Builder(input.serviceName())
         .spanName(input.spanName().isDefined() ? input.spanName().get() : null)
         .minDuration(input.minDuration().isDefined() ? (Long) input.minDuration().get() : null)
         .maxDuration(input.maxDuration().isDefined() ? (Long) input.maxDuration().get() : null)

@@ -26,7 +26,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("serviceName was empty");
 
-    new QueryRequest.Builder().build();
+    new QueryRequest.Builder((String) null).build();
   }
 
   @Test
@@ -34,7 +34,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("serviceName was empty");
 
-    new QueryRequest.Builder().serviceName("").build();
+    new QueryRequest.Builder("").build();
   }
 
   @Test
@@ -42,7 +42,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("spanName was empty");
 
-    new QueryRequest.Builder().serviceName("foo").spanName("").build();
+    new QueryRequest.Builder("foo").spanName("").build();
   }
 
   @Test
@@ -50,7 +50,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("annotation was empty");
 
-    new QueryRequest.Builder().serviceName("foo").addAnnotation("").build();
+    new QueryRequest.Builder("foo").addAnnotation("").build();
   }
 
   @Test
@@ -58,7 +58,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("binary annotation key was empty");
 
-    new QueryRequest.Builder().serviceName("foo").addBinaryAnnotation("", "bar").build();
+    new QueryRequest.Builder("foo").addBinaryAnnotation("", "bar").build();
   }
 
   @Test
@@ -66,7 +66,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("binary annotation value was empty");
 
-    new QueryRequest.Builder().serviceName("foo").addBinaryAnnotation("foo", "").build();
+    new QueryRequest.Builder("foo").addBinaryAnnotation("foo", "").build();
   }
 
   @Test
@@ -74,7 +74,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("endTs should be positive, in epoch microseconds: was 0");
 
-    new QueryRequest.Builder().serviceName("foo").endTs(0L).build();
+    new QueryRequest.Builder("foo").endTs(0L).build();
   }
 
   @Test
@@ -82,6 +82,6 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("limit should be positive: was 0");
 
-    new QueryRequest.Builder().serviceName("foo").limit(0).build();
+    new QueryRequest.Builder("foo").limit(0).build();
   }
 }

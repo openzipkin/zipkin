@@ -18,7 +18,9 @@ import io.zipkin.DependencyLink;
 import io.zipkin.QueryRequest;
 import io.zipkin.Span;
 import io.zipkin.SpanStore;
+import io.zipkin.internal.ApplyTimestampAndDuration;
 import io.zipkin.internal.CorrectForClockSkew;
+import io.zipkin.internal.MergeById;
 import io.zipkin.internal.Nullable;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -31,11 +33,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.zipkin.internal.Util.merge;
 import static io.zipkin.internal.Util.sortedList;
+import static java.util.stream.Collectors.toList;
 
 // TODO: make this not use Java 8, so we can put it into the core jar.
 public final class InMemorySpanStore implements SpanStore {
@@ -47,8 +48,10 @@ public final class InMemorySpanStore implements SpanStore {
 
   @Override
   public synchronized void accept(List<Span> spans) {
-    spans.forEach(span -> {
+    for (Span span : spans) {
+      span = ApplyTimestampAndDuration.apply(span);
       long traceId = span.traceId;
+      String spanName = span.name;
       traceIdToSpans.put(span.traceId, span);
       Stream.concat(span.annotations.stream().map(a -> a.endpoint),
                     span.binaryAnnotations.stream().map(a -> a.endpoint))
@@ -57,9 +60,9 @@ public final class InMemorySpanStore implements SpanStore {
           .distinct()
           .forEach(serviceName -> {
             serviceToTraceIds.put(serviceName, traceId);
-            serviceToSpanNames.put(serviceName, span.name);
+            serviceToSpanNames.put(serviceName, spanName);
           });
-    });
+    }
   }
 
   synchronized void clear() {
@@ -74,7 +77,7 @@ public final class InMemorySpanStore implements SpanStore {
 
     return toSortedTraces(traceIds.stream().map(traceIdToSpans::get)).stream()
             .filter(spansPredicate(request))
-            .limit(request.limit).collect(Collectors.toList());
+            .limit(request.limit).collect(toList());
   }
 
   @Override
@@ -165,10 +168,10 @@ public final class InMemorySpanStore implements SpanStore {
 
   static List<List<Span>> toSortedTraces(Stream<Collection<Span>> unfiltered) {
     return unfiltered.filter(spans -> spans != null && !spans.isEmpty())
-        .map(spans -> merge(spans))
-        .map(CorrectForClockSkew.INSTANCE)
+        .map(MergeById::apply)
+        .map(CorrectForClockSkew::apply)
         .sorted((left, right) -> right.get(0).compareTo(left.get(0)))
-        .collect(Collectors.toList());
+        .collect(toList());
   }
 
   static final class Multimap<K, V> {

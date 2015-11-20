@@ -20,6 +20,7 @@ public class InMemorySpanStoreTest extends SpanStoreTest<InMemorySpanStore> {
     super(new InMemorySpanStore());
   }
 
+  @Override
   public void clear() {
     store.clear();
   }

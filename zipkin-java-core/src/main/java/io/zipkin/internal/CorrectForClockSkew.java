@@ -17,17 +17,14 @@ import io.zipkin.Annotation;
 import io.zipkin.Constants;
 import io.zipkin.Endpoint;
 import io.zipkin.Span;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * Adjusts spans whose children happen before their parents, based on core annotation values.
  */
-public enum CorrectForClockSkew implements Function<List<Span>, List<Span>> {
-  INSTANCE;
+public final class CorrectForClockSkew {
 
   static class ClockSkew {
     final Endpoint endpoint;
@@ -39,7 +36,7 @@ public enum CorrectForClockSkew implements Function<List<Span>, List<Span>> {
     }
   }
 
-  public List<Span> apply(List<Span> spans) {
+  public static List<Span> apply(List<Span> spans) {
     for (Span s : spans) {
       if (s.parentId == null) {
         SpanNode tree = SpanNode.create(s, spans);
@@ -54,7 +51,7 @@ public enum CorrectForClockSkew implements Function<List<Span>, List<Span>> {
    * Recursively adjust the timestamps on the span tree. Root span is the reference point, all
    * children's timestamps gets adjusted based on that span's timestamps.
    */
-  private void adjust(SpanNode node, @Nullable ClockSkew skewFromParent) {
+  private static void adjust(SpanNode node, @Nullable ClockSkew skewFromParent) {
     // adjust skew for the endpoint brought over from the parent span
     if (skewFromParent != null) {
       node.span = adjustTimestamps(node.span, skewFromParent);
@@ -74,27 +71,28 @@ public enum CorrectForClockSkew implements Function<List<Span>, List<Span>> {
   }
 
   /** If any annotation has an IP with skew associated, adjust accordingly. */
-  private Span adjustTimestamps(Span span, ClockSkew clockSkew) {
-    List<Annotation> annotations = null;
-    for (int i = 0; i < span.annotations.size(); i++) {
+  private static Span adjustTimestamps(Span span, ClockSkew clockSkew) {
+    Annotation[] annotations = null;
+    int length = span.annotations.size();
+    for (int i = 0; i < length; i++) {
       Annotation a = span.annotations.get(i);
       if (a.endpoint == null) continue;
       if (clockSkew.endpoint.ipv4 == a.endpoint.ipv4) {
-        if (annotations == null) annotations = new ArrayList<>(span.annotations);
-        annotations.set(i, new Annotation.Builder(a).timestamp(a.timestamp - clockSkew.skew).build());
+        if (annotations == null) annotations = span.annotations.toArray(new Annotation[length]);
+        annotations[i] = new Annotation.Builder(a).timestamp(a.timestamp - clockSkew.skew).build();
       }
     }
     if (annotations == null) return span;
     // reset timestamp and duration as if there's skew, these will change.
-    long first = annotations.get(0).timestamp;
-    long last = annotations.get(annotations.size() - 1).timestamp;
+    long first = annotations[0].timestamp;
+    long last = annotations[length - 1].timestamp;
     long duration = last - first;
     return new Span.Builder(span).timestamp(first).duration(duration).annotations(annotations).build();
   }
 
   /** Use client/server annotations to determine if there's clock skew. */
   @Nullable
-  private ClockSkew getClockSkew(Span span) {
+  private static ClockSkew getClockSkew(Span span) {
     Map<String, Annotation> annotations = asMap(span.annotations);
 
     Long clientSend = getTimestamp(annotations, Constants.CLIENT_SEND);
@@ -137,8 +135,11 @@ public enum CorrectForClockSkew implements Function<List<Span>, List<Span>> {
   }
 
   @Nullable
-  private Long getTimestamp(Map<String, Annotation> annotations, String value) {
+  private static Long getTimestamp(Map<String, Annotation> annotations, String value) {
     Annotation result = annotations.get(value);
     return result != null ? result.timestamp : null;
+  }
+
+  private CorrectForClockSkew() {
   }
 }

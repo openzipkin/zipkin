@@ -102,8 +102,7 @@ public class ZipkinQueryApiV1 {
       @RequestParam(value = "endTs", required = false) Long endTs,
       @RequestParam(value = "lookback", required = false, defaultValue = DEFAULT_LOOKBACK) long lookback,
       @RequestParam(value = "limit", required = false) Integer limit) {
-    QueryRequest.Builder builder = new QueryRequest.Builder()
-        .serviceName(serviceName)
+    QueryRequest.Builder builder = new QueryRequest.Builder(serviceName)
         .spanName(spanName.equals("all") ? null : spanName)
         .minDuration(minDuration)
         .maxDuration(maxDuration)
