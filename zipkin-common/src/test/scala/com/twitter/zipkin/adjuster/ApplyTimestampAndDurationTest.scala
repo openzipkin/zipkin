@@ -34,13 +34,18 @@ class ApplyTimestampAndDurationTest extends FunSuite {
     assert(adjusted === span)
   }
 
-  test("duration isn't set when only one annotation") {
+  /**
+   * Spans subject to ApplyTimestampAndDuration are incomplete if they have
+   * only one annotation. Rather than persist an unreliable timestamp, we leave
+   * this alone until there's more data.
+   */
+  test("timestamp and duration are left unset when only one annotation") {
     val span = Span(1, "n", 2, None, None, None, annotations = List(
       Annotation(1, "value1", Some(Endpoint(1, 2, "service")))
     ))
 
     val adjusted = ApplyTimestampAndDuration(span)
-    assert(adjusted.timestamp === Some(1))
+    assert(adjusted.timestamp === None)
     assert(adjusted.duration === None)
   }
 
