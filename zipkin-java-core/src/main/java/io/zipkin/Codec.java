@@ -45,6 +45,13 @@ public interface Codec {
     }
   };
 
+  /** Returns null if the span couldn't be decoded */
+  @Nullable
+  Span readSpan(byte[] bytes);
+
+  /** Returns null if the span couldn't be encoded */
+  @Nullable
+  byte[] writeSpan(Span value);
 
   /** Returns null if the spans couldn't be decoded */
   @Nullable

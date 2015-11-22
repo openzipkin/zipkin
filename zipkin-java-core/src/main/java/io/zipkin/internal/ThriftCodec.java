@@ -53,6 +53,16 @@ public final class ThriftCodec implements Codec {
   private static final Logger LOGGER = Logger.getLogger(ThriftCodec.class.getName());
 
   @Override
+  public Span readSpan(byte[] bytes) {
+    return read(SPAN_ADAPTER, bytes);
+  }
+
+  @Override
+  public byte[] writeSpan(Span value) {
+    return write(SPAN_ADAPTER, value);
+  }
+
+  @Override
   public List<Span> readSpans(byte[] bytes) {
     return read(SPANS_ADAPTER, bytes);
   }

@@ -25,6 +25,21 @@ public abstract class CodecTest {
   protected abstract Codec codec();
 
   @Test
+  public void spanRoundTrip() throws IOException {
+    for (Span span : TestObjects.TRACE) {
+      byte[] bytes = codec().writeSpan(span);
+      assertThat(codec().readSpan(bytes))
+          .isEqualTo(span);
+    }
+  }
+
+  @Test
+  public void spanDecodesToNullOnEmpty() throws IOException {
+    assertThat(codec().readSpan(new byte[0]))
+        .isNull();
+  }
+
+  @Test
   public void spansRoundTrip() throws IOException {
     byte[] bytes = codec().writeSpans(TestObjects.TRACE);
     assertThat(codec().readSpans(bytes))

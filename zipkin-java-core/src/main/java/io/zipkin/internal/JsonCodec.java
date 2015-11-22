@@ -315,6 +315,24 @@ public final class JsonCodec implements Codec {
   };
 
   @Override
+  public Span readSpan(byte[] bytes) {
+    try {
+      return SPAN_ADAPTER.fromJson(new Buffer().write(bytes));
+    } catch (Exception e) {
+      if (LOGGER.isLoggable(FINEST)) {
+        LOGGER.log(FINEST, "Could not read Span from json" + new String(bytes, UTF_8), e);
+      }
+      return null;
+    }
+  }
+
+  @Override
+  public byte[] writeSpan(Span value) {
+    Buffer buffer = new Buffer();
+    return write(SPAN_ADAPTER, value, buffer) ? buffer.readByteArray() : null;
+  }
+
+  @Override
   public List<Span> readSpans(byte[] bytes) {
     return readList(SPAN_ADAPTER, bytes);
   }
@@ -401,7 +419,7 @@ public final class JsonCodec implements Codec {
       }
       reader.endArray();
       return result;
-    } catch (IOException e) {
+    } catch (Exception e) {
       if (LOGGER.isLoggable(FINEST)) {
         LOGGER.log(FINEST, "Could not read " + adapter + " from json" + new String(bytes, UTF_8), e);
       }
@@ -427,7 +445,7 @@ public final class JsonCodec implements Codec {
     try {
       adapter.toJson(JsonWriter.of(buffer), value);
       return true;
-    } catch (IOException e) {
+    } catch (Exception e) {
       if (LOGGER.isLoggable(FINEST)) {
         LOGGER.log(FINEST, "Could not write " + value + " as json", e);
       }
