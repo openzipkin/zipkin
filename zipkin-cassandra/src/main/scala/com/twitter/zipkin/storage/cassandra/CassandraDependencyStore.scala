@@ -1,7 +1,7 @@
 package com.twitter.zipkin.storage.cassandra
 
 import com.twitter.util._
-import com.twitter.zipkin.common.Dependencies
+import com.twitter.zipkin.common.{DependencyLink, Dependencies}
 import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.storage.DependencyStore
 import com.twitter.zipkin.thriftscala.{Dependencies => ThriftDependencies}
@@ -35,6 +35,10 @@ abstract class CassandraDependencyStore extends DependencyStore {
           .map(codec.decode(_))
           .map(thriftToDependencies(_).toDependencies)
           .flatMap(_.links)
+          .groupBy(link => (link.parent, link.child))
+          .map {
+            case ((parent, child), links) => DependencyLink(parent, child, links.map(_.callCount).sum)
+          }.toSeq
       }
   }
 
