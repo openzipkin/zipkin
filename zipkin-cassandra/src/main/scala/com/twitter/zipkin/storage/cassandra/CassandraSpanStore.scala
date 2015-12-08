@@ -319,7 +319,7 @@ abstract class CassandraSpanStore(
     FutureUtil.toFuture(
       repository
         .getTraceIdsByDuration(serviceName, spanName getOrElse "", minDuration, maxDuration getOrElse Long.MaxValue,
-          endTs * 1000, (endTs - lookback)  * 1000, limit))
+          endTs * 1000, (endTs - lookback)  * 1000, limit, indexTtl.inSeconds))
       .map { traceIds =>
       traceIds.asScala
         .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }

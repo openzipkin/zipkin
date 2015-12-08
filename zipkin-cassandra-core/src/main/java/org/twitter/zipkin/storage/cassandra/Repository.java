@@ -752,15 +752,25 @@ public final class Repository implements AutoCloseable {
     }
 
     /** Returns a map of trace id to timestamp (in microseconds) */
-    public ListenableFuture<Map<Long, Long>> getTraceIdsByDuration(String serviceName, String spanName,
-                                                                   long minDuration, long maxDuration,
-                                                                   long endTs, long startTs, int limit) {
-        int startBucket = durationIndexBucket(startTs);
-        int endBucket = durationIndexBucket(endTs);
+    public ListenableFuture<Map<Long, Long>> getTraceIdsByDuration(String serviceName,
+                                                                   String spanName,
+                                                                   long minDuration,
+                                                                   long maxDuration,
+                                                                   long endTs,
+                                                                   long startTs,
+                                                                   int limit,
+                                                                   int ttl) {
+
+        long oldestData = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttl));
+        long safeStartTs = 0 == startTs ? startTs : Math.max(startTs, oldestData);
+        long safeEndTs = 0 == endTs ? endTs : Math.max(endTs, oldestData);
+        int startBucket = durationIndexBucket(safeStartTs);
+        int endBucket = durationIndexBucket(safeEndTs);
         try {
             if (startBucket > endBucket) {
                 throw new IllegalArgumentException("Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");
             }
+
             IntFunction<ListenableFuture<List<DurationRow>>> oneBucketQuery = (bucket) -> {
                 BoundStatement bound = selectTraceIdsBySpanDuration.bind()
                         .setString("service_name", serviceName)
@@ -782,7 +792,7 @@ public final class Repository implements AutoCloseable {
                             return StreamSupport
                                     .stream(it.spliterator(), false)
                                     .map(DurationRow::new)
-                                    .filter((row) -> row.timestamp >= startTs && row.timestamp <= endTs)
+                                    .filter((row) -> row.timestamp >= safeStartTs && row.timestamp <= safeEndTs)
                                     .limit(limit)
                                     .collect(Collectors.toList());
                         }
