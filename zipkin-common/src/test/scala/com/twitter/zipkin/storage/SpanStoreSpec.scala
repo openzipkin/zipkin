@@ -1,6 +1,9 @@
 package com.twitter.zipkin.storage
 
+import java.util.concurrent.TimeUnit._
+
 import com.twitter.util.Await.result
+import com.twitter.util.{Duration, Time}
 import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common._
 import org.junit.{Before, Test}
@@ -26,33 +29,38 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
   @Before def before() = clear
 
+  /** Notably, the cassandra implementation has day granularity */
+  val day = MILLISECONDS.convert(1, DAYS)
+  // Use real time, as most span-stores have TTL logic which looks back several days.
+  val today = Time.now.floor(Duration.fromMilliseconds(day)).inMillis
+
   val ep = Endpoint(127 << 24 | 1, 8080, "service")
 
   val spanId = 456
-  val ann1 = Annotation(1000, "cs", Some(ep))
-  val ann2 = Annotation(2000, "sr", None)
-  val ann3 = Annotation(10000, "custom", Some(ep))
-  val ann4 = Annotation(20000, "custom", Some(ep))
-  val ann5 = Annotation(5000, "custom", Some(ep))
-  val ann6 = Annotation(6000, "custom", Some(ep))
-  val ann7 = Annotation(7000, "custom", Some(ep))
-  val ann8 = Annotation(8000, "custom", Some(ep))
+  val ann1 = Annotation((today + 1) * 1000, "cs", Some(ep))
+  val ann2 = Annotation((today + 2) * 1000, "sr", None)
+  val ann3 = Annotation((today + 10) * 1000, "custom", Some(ep))
+  val ann4 = Annotation((today + 20) * 1000, "custom", Some(ep))
+  val ann5 = Annotation((today + 5) * 1000, "custom", Some(ep))
+  val ann6 = Annotation((today + 6) * 1000, "custom", Some(ep))
+  val ann7 = Annotation((today + 7) * 1000, "custom", Some(ep))
+  val ann8 = Annotation((today + 8) * 1000, "custom", Some(ep))
 
-  val span1 = Span(123, "methodcall", spanId, None, Some(1000), Some(9000), List(ann1, ann3),
+  val span1 = Span(123, "methodcall", spanId, None, Some(ann1.timestamp), Some(9000), List(ann1, ann3),
     List(BinaryAnnotation("BAH", "BEH", Some(ep))))
-  val span2 = Span(456, "methodcall", spanId, None, Some(2000), None, List(ann2),
+  val span2 = Span(456, "methodcall", spanId, None, Some(ann2.timestamp), None, List(ann2),
     List(BinaryAnnotation("BAH2", "BEH2", Some(ep))))
-  val span3 = Span(789, "methodcall", spanId, None, Some(2000), Some(18000), List(ann2, ann3, ann4),
+  val span3 = Span(789, "methodcall", spanId, None, Some(ann2.timestamp), Some(18000), List(ann2, ann3, ann4),
     List(BinaryAnnotation("BAH2", "BEH2", Some(ep))))
-  val span4 = Span(999, "methodcall", spanId, None, Some(6000), Some(1000), List(ann6, ann7),
+  val span4 = Span(999, "methodcall", spanId, None, Some(ann6.timestamp), Some(1000), List(ann6, ann7),
     List())
-  val span5 = Span(999, "methodcall", spanId, None, Some(5000), Some(3000), List(ann5, ann8),
+  val span5 = Span(999, "methodcall", spanId, None, Some(ann5.timestamp), Some(3000), List(ann5, ann8),
     List(BinaryAnnotation("BAH2", "BEH2", Some(ep))))
 
-  val spanEmptySpanName = Span(123, "", spanId, None, Some(1000), Some(1000), List(ann1, ann2))
+  val spanEmptySpanName = Span(123, "", spanId, None, Some(ann1.timestamp), Some(1000), List(ann1, ann2))
   val spanEmptyServiceName = Span(123, "spanname", spanId)
 
-  val mergedSpan = Span(123, "methodcall", spanId, None, Some(1000), Some(1000),
+  val mergedSpan = Span(123, "methodcall", spanId, None, Some(ann1.timestamp), Some(1000),
     List(ann1, ann2), List(BinaryAnnotation("BAH2", "BEH2", Some(ep))))
 
   @Test def getSpansByTraceIds() {
@@ -164,22 +172,22 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     val archiver1 = List(BinaryAnnotation(Constants.LocalComponent, "archiver", Some(service1)))
     val archiver2 = List(BinaryAnnotation(Constants.LocalComponent, "archiver", Some(service2)))
     val archiver3 = List(BinaryAnnotation(Constants.LocalComponent, "archiver", Some(service3)))
-    val targz = Span(1L, "targz", 1L, None, Some(100L), Some(200L), binaryAnnotations = archiver1)
-    val tar = Span(1L, "tar", 2L, Some(1L), Some(200L), Some(150L), binaryAnnotations = archiver2)
-    val gz = Span(1L, "gz", 3L, Some(1L), Some(250L), Some(50L), binaryAnnotations = archiver3)
-    val zip = Span(3L, "zip", 3L, None, Some(130L), Some(50L), binaryAnnotations = archiver2)
+    val targz = Span(1L, "targz", 1L, None, Some(today * 1000 + 100L), Some(200L), binaryAnnotations = archiver1)
+    val tar = Span(1L, "tar", 2L, Some(1L), Some(today * 1000 + 200L), Some(150L), binaryAnnotations = archiver2)
+    val gz = Span(1L, "gz", 3L, Some(1L), Some(today * 1000 + 250L), Some(50L), binaryAnnotations = archiver3)
+    val zip = Span(3L, "zip", 3L, None, Some(today * 1000 + 130L), Some(50L), binaryAnnotations = archiver2)
 
     val trace1 = List(targz, tar, gz)
     val trace2 = List(
-      targz.copy(traceId = 2L, timestamp = Some(110L), binaryAnnotations = archiver3),
-      tar.copy(traceId = 2L, timestamp = Some(210L), binaryAnnotations = archiver2),
-      gz.copy(traceId = 2L, timestamp = Some(260L), binaryAnnotations = archiver1))
+      targz.copy(traceId = 2L, timestamp = Some(today * 1000 + 110L), binaryAnnotations = archiver3),
+      tar.copy(traceId = 2L, timestamp = Some(today * 1000 + 210L), binaryAnnotations = archiver2),
+      gz.copy(traceId = 2L, timestamp = Some(today * 1000 + 260L), binaryAnnotations = archiver1))
     val trace3 = List(zip)
 
     result(store(trace1 ::: trace2 ::: trace3))
 
     val lookback = 12L * 60 * 60 * 1000 // 12hrs, instead of 7days
-    val endTs = 1000L // greater than all timestamps above
+    val endTs = today + 1 // greater than all timestamps above
     val q = QueryRequest("placeholder", lookback = Some(lookback), endTs = endTs)
 
     // Min duration is inclusive and is applied by service.
@@ -244,11 +252,11 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   }
 
   @Test def getTraces_multipleAnnotationsBecomeAndFilter() {
-    val foo = Span(1, "call1", 1, None, Some(1000), None, List(Annotation(1000, "foo", Some(ep))))
+    val foo = Span(1, "call1", 1, None, Some((today + 1) * 1000), None, List(Annotation((today + 1) * 1000, "foo", Some(ep))))
     // would be foo bar, except lexicographically bar precedes foo
-    val barAndFoo = Span(2, "call2", 2, None, Some(2000), None, List(Annotation(2000, "bar", Some(ep)), Annotation(2000, "foo", Some(ep))))
-    val fooAndBazAndQux = Span(3, "call3", 3, None, Some(3000), None, foo.annotations.map(_.copy(timestamp = 3000)), List(BinaryAnnotation("baz", "qux", Some(ep))))
-    val barAndFooAndBazAndQux = Span(4, "call4", 4, None, Some(4000), None, barAndFoo.annotations.map(_.copy(timestamp = 4000)), fooAndBazAndQux.binaryAnnotations)
+    val barAndFoo = Span(2, "call2", 2, None, Some((today + 2) * 1000), None, List(Annotation((today + 2) * 1000, "bar", Some(ep)), Annotation((today + 2) * 1000, "foo", Some(ep))))
+    val fooAndBazAndQux = Span(3, "call3", 3, None, Some((today + 3) * 1000), None, foo.annotations.map(_.copy(timestamp = (today + 3) * 1000)), List(BinaryAnnotation("baz", "qux", Some(ep))))
+    val barAndFooAndBazAndQux = Span(4, "call4", 4, None, Some((today + 4) * 1000), None, barAndFoo.annotations.map(_.copy(timestamp = (today + 4) * 1000)), fooAndBazAndQux.binaryAnnotations)
 
     result(store(Seq(foo, barAndFoo, fooAndBazAndQux, barAndFooAndBazAndQux)))
 
@@ -295,19 +303,19 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   @Test def getTraces_endTsAndLookback() {
     result(store(Seq(span1, span3))) // span1's timestamp is 1000, span3's timestamp is 2000
 
-    result(store.getTraces(QueryRequest("service", endTs = 1))) should be(Seq(List(span1)))
-    result(store.getTraces(QueryRequest("service", endTs = 2))) should be(Seq(List(span3), List(span1)))
-    result(store.getTraces(QueryRequest("service", endTs = 3))) should be(Seq(List(span3), List(span1)))
+    result(store.getTraces(QueryRequest("service", endTs = today + 1))) should be(Seq(List(span1)))
+    result(store.getTraces(QueryRequest("service", endTs = today + 2))) should be(Seq(List(span3), List(span1)))
+    result(store.getTraces(QueryRequest("service", endTs = today + 3))) should be(Seq(List(span3), List(span1)))
   }
 
   /** Traces whose root span has timestamps between (endTs - lookback) and endTs are returned */
   @Test def getTraces_lookback() {
     result(store(Seq(span1, span3))) // span1's timestamp is 1000, span3's timestamp is 2000
 
-    result(store.getTraces(QueryRequest("service", endTs = 1, lookback = Some(1)))) should be(Seq(List(span1)))
-    result(store.getTraces(QueryRequest("service", endTs = 2, lookback = Some(1)))) should be(Seq(List(span3), List(span1)))
-    result(store.getTraces(QueryRequest("service", endTs = 3, lookback = Some(1)))) should be(Seq(List(span3)))
-    result(store.getTraces(QueryRequest("service", endTs = 3, lookback = Some(2)))) should be(Seq(List(span3), List(span1)))
+    result(store.getTraces(QueryRequest("service", endTs = today + 1, lookback = Some(1)))) should be(Seq(List(span1)))
+    result(store.getTraces(QueryRequest("service", endTs = today + 2, lookback = Some(1)))) should be(Seq(List(span3), List(span1)))
+    result(store.getTraces(QueryRequest("service", endTs = today + 3, lookback = Some(1)))) should be(Seq(List(span3)))
+    result(store.getTraces(QueryRequest("service", endTs = today + 3, lookback = Some(2)))) should be(Seq(List(span3), List(span1)))
   }
 
   @Test def getAllServiceNames_emptyServiceName() {
@@ -356,18 +364,18 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     val frontend = Some(Endpoint(192 << 24 | 168 << 16 | 2, 8080, "frontend"))
     val backend = Some(Endpoint(192 << 24 | 168 << 16 | 3, 8080, "backend"))
 
-    val parent = Span(1, "method1", 666, None, Some(95000), Some(40000), List(
-      Annotation(100000, Constants.ClientSend, client),
-      Annotation(95000, Constants.ServerRecv, frontend), // before client sends
-      Annotation(120000, Constants.ServerSend, frontend), // before client receives
-      Annotation(135000, Constants.ClientRecv, client)
+    val parent = Span(1, "method1", 666, None, Some((today + 95) * 1000), Some(40000), List(
+      Annotation((today + 100) * 1000, Constants.ClientSend, client),
+      Annotation((today + 95) * 1000, Constants.ServerRecv, frontend), // before client sends
+      Annotation((today + 120) * 1000, Constants.ServerSend, frontend), // before client receives
+      Annotation((today + 135) * 1000, Constants.ClientRecv, client)
     ).sorted)
 
-    val child = Span(1, "method2", 777, Some(666L), Some(100000), Some(20000), List(
-      Annotation(100000, Constants.ClientSend, frontend),
-      Annotation(115000, Constants.ServerRecv, backend),
-      Annotation(120000, Constants.ServerSend, backend),
-      Annotation(115000, Constants.ClientRecv, frontend) // before server sent
+    val child = Span(1, "method2", 777, Some(666L), Some((today + 100) * 1000), Some(20000), List(
+      Annotation((today + 100) * 1000, Constants.ClientSend, frontend),
+      Annotation((today + 115) * 1000, Constants.ServerRecv, backend),
+      Annotation((today + 120) * 1000, Constants.ServerSend, backend),
+      Annotation((today + 115) * 1000, Constants.ClientRecv, frontend) // before server sent
     ))
 
     val skewed = List(parent, child)

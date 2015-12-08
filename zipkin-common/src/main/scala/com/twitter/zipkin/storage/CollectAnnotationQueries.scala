@@ -79,7 +79,7 @@ trait CollectAnnotationQueries {
         // TODO: timestamps endTs is the wrong name for all this
         querySlices(sliceQueries, qr.copy(limit = 1)) flatMap { ids =>
           val ts = padTimestamp(ids.flatMap(_.map(_.timestamp)).reduceOption(_ min _).getOrElse(0))
-          querySlices(sliceQueries, qr.copy(endTs = ts)) flatMap { ids =>
+          querySlices(sliceQueries, qr.copy(endTs = ts / 1000)) flatMap { ids =>
             queryResponse(traceIdsIntersect(ids), qr)
           }
         }

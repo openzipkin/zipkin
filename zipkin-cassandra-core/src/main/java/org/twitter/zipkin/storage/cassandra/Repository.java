@@ -762,8 +762,8 @@ public final class Repository implements AutoCloseable {
                                                                    int ttl) {
 
         long oldestData = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttl));
-        long safeStartTs = 0 == startTs ? startTs : Math.max(startTs, oldestData);
-        long safeEndTs = 0 == endTs ? endTs : Math.max(endTs, oldestData);
+        long safeStartTs = Math.max(startTs, oldestData);
+        long safeEndTs = Math.max(endTs, oldestData);
         int startBucket = durationIndexBucket(safeStartTs);
         int endBucket = durationIndexBucket(safeEndTs);
         try {
