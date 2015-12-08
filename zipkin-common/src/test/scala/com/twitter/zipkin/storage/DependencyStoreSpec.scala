@@ -21,6 +21,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
 
   /** Notably, the cassandra implementation has day granularity */
   val day = MILLISECONDS.convert(1, DAYS)
+  // Use real time, as most span-stores have TTL logic which looks back several days.
   val today = Time.now.floor(Duration.fromMilliseconds(day)).inMillis
 
   val zipkinWeb = Endpoint(172 << 24 | 17 << 16 | 3, 8080, "zipkin-web")
