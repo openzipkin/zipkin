@@ -1,13 +1,16 @@
 language: java
-sudo: false
+# Trusty Beta requires sudo per https://docs.travis-ci.com/user/ci-environment/
+sudo: required
 dist: trusty
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
 
 services:
   - redis-server
+
+# Manually install cassandra until https://github.com/travis-ci/travis-ci/issues/3952
+# See https://github.com/openzipkin/zipkin/issues/706
+before_install:
+  - curl -SL http://downloads.datastax.com/community/dsc-cassandra-2.2.3-bin.tar.gz | tar xz
+  - dsc-cassandra-*/bin/cassandra > /dev/null
 
 matrix:
   include:

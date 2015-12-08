@@ -2,7 +2,6 @@ package com.twitter.zipkin.storage.cassandra
 
 import com.datastax.driver.core.Cluster
 import com.google.common.util.concurrent.Futures
-import org.apache.cassandra.service.CassandraDaemon
 import org.twitter.zipkin.storage.cassandra.Repository
 import scala.collection.JavaConversions
 
@@ -11,15 +10,7 @@ object CassandraFixture {
   val keyspace = "test_zipkin_spanstore"
 
   // Defer shared connection to the cluster
-  lazy val cluster = Cluster.builder().addContactPoint("127.0.0.1").withPort(9142).build()
-
-  /** overridden to use gradle's "build" dir instead of maven's "target" dir. */
-  lazy val cassandra = {
-    System.setProperty("cassandra-foreground", "true")
-    System.setProperty("cassandra.native.epoll.enabled", "false")
-    val cassandraDaemon = new CassandraDaemon
-    cassandraDaemon.activate
-  }
+  lazy val cluster = Cluster.builder().addContactPoint("127.0.0.1").withPort(9042).build()
 
   // Ensure the repository's local cache of service names expire quickly
   System.setProperty("zipkin.store.cassandra.internal.writtenNamesTtl", "1")

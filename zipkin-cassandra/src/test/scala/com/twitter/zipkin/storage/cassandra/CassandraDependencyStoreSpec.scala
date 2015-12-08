@@ -3,11 +3,18 @@ package com.twitter.zipkin.storage.cassandra
 import com.twitter.util.Await._
 import com.twitter.zipkin.common.{Dependencies, Span}
 import com.twitter.zipkin.storage.DependencyStoreSpec
-import org.junit.BeforeClass
+import org.junit.{AssumptionViolatedException, BeforeClass}
 
 object CassandraDependencyStoreSpec {
 
-  @BeforeClass def ensureCassandra = CassandraFixture.cassandra
+  /** This intentionally silently aborts when cassandra is not running on localhost. */
+  @BeforeClass def ensureCassandra: Unit = {
+    try {
+      CassandraFixture.repository
+    } catch {
+      case e: Exception => throw new AssumptionViolatedException("Cassandra not running", e)
+    }
+  }
 }
 
 class CassandraDependencyStoreSpec extends DependencyStoreSpec {

@@ -1,11 +1,18 @@
 package com.twitter.zipkin.storage.cassandra
 
 import com.twitter.zipkin.storage.SpanStoreSpec
-import org.junit.BeforeClass
+import org.junit.{AssumptionViolatedException, BeforeClass}
 
 object CassandraSpanStoreSpec {
 
-  @BeforeClass def ensureCassandra = CassandraFixture.cassandra
+  /** This intentionally silently aborts when cassandra is not running on localhost. */
+  @BeforeClass def ensureCassandra: Unit = {
+    try {
+      CassandraFixture.repository
+    } catch {
+      case e: Exception => throw new AssumptionViolatedException("Cassandra not running", e)
+    }
+  }
 }
 
 class CassandraSpanStoreSpec extends SpanStoreSpec {
