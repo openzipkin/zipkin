@@ -155,7 +155,8 @@ public final class Repository implements AutoCloseable {
                 QueryBuilder.select("span_name")
                     .from("span_names")
                     .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
-                    .and(QueryBuilder.eq("bucket", QueryBuilder.bindMarker("bucket"))));
+                    .and(QueryBuilder.eq("bucket", QueryBuilder.bindMarker("bucket")))
+                    .limit(QueryBuilder.bindMarker("limit_")));
 
         insertSpanName = session.prepare(
                 QueryBuilder
@@ -450,7 +451,9 @@ public final class Repository implements AutoCloseable {
 
                 BoundStatement bound = selectSpanNames.bind()
                         .setString("service_name", serviceName)
-                        .setInt("bucket", 0);
+                        .setInt("bucket", 0)
+                        // no one is ever going to browse so many span names
+                        .setInt("limit_", 1000);
 
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(debugSelectSpanNames(serviceName));
@@ -463,7 +466,7 @@ public final class Repository implements AutoCloseable {
                             for (Row row : input) {
                                 spanNames.add(row.getString("span_name"));
                             }
-                            return spanNames;
+                            return spanNames.size() < 1000 ? spanNames : Collections.singleton("too many span names");
                         }
                 );
             } else {
