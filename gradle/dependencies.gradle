@@ -17,7 +17,7 @@ ext {
             slf4j: '1.7.12',
             logback: '1.1.3',
             mustache: '0.9.1',
-            cassandra: '2.2.3', // to ensure tests match docker
+            cassandra: '2.2.4', // to ensure tests match docker
             codahaleMetrics: '3.0.2'
     ]
 
