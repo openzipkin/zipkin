@@ -31,7 +31,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <zipkin-scala.version>1.25.0</zipkin-scala.version>
+    <zipkin-scala.version>1.25.3</zipkin-scala.version>
     <scalatest.version>2.2.5</scalatest.version>
   </properties>
 
