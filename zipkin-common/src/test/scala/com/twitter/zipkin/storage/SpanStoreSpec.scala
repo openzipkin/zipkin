@@ -155,7 +155,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   }
 
   @Test def getTraces_serviceNameInBinaryAnnotation() {
-    val localTrace = List(Span(1L, "targz", 1L, None, Some(100L), Some(200L),
+    val localTrace = List(Span(1L, "targz", 1L, None, Some(today * 1000 + 100L), Some(200L),
       binaryAnnotations = List(BinaryAnnotation(Constants.LocalComponent, "archiver", Some(ep)))))
 
     result(store(localTrace))
