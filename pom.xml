@@ -88,6 +88,14 @@
     <developerConnection>scm:git:git@github.com:openzipkin/zipkin-java.git</developerConnection>
   </scm>
 
+  <developers>
+    <developer>
+      <id>adriancole</id>
+      <name>Adrian Cole</name>
+      <email>acole@pivotal.io</email>
+    </developer>
+  </developers>
+
   <distributionManagement>
     <snapshotRepository>
       <id>ossrh</id>

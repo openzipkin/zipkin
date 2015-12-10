@@ -22,7 +22,7 @@ before_install:
   - echo "https://$GH_TOKEN:@github.com" > .git/credentials
 
 script:
-  - '[ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s ./.settings.xml deploy -nsu'
+  - '[ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s ./.settings.xml -Prelease deploy -nsu'
   - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || MYSQL_USER=travis ./mvnw install -nsu'
 
 env:
