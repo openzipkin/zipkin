@@ -5,7 +5,7 @@ Experimental java zipkin backend. Please look at issues as we are currently work
 You can run the experimental server to power the zipkin web UI.
 
 ```bash
-$ (cd zipkin-java-server; mvn spring-boot:run)
+$ ./mvnw -pl zipkin-java-server spring-boot:run
 ```
 
 ### Docker  
