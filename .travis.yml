@@ -20,6 +20,11 @@ before_install:
   - git config user.email "$GH_EMAIL"
   - git config credential.helper "store --file=.git/credentials"
   - echo "https://$GH_TOKEN:@github.com" > .git/credentials
+
+script:
+  - '[ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s ./.settings.xml deploy -nsu'
+  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || MYSQL_USER=travis ./mvnw install -nsu'
+
 env:
   global:
   - GH_NAME="openzipkin-release"
@@ -27,12 +32,3 @@ env:
   - secure: "nEz3CmJJjCjvl321eV7m1VuAbcr5dDuExyZ5xmH6f9tCBifWA9iKCJDTfr5ZxEyxzYTnogB3Kkt+NzQBG18XNU4Ipo/DnXNb6y5LoYVD9qCTpP6ruHbz6pPWLLlqKYrvwTDIaLhRMhu88Ya00kvbmxqMEMuaaymrGY0GBfjqDNjGBfAbivG5zipSDwRQLj5Y8XG/r5WnYoNU9Hyhz2kNf0umKOTzOV+aUUBXZPe3yLyW1TDWFehInDVJvXzrTl2wvpavPACO3QDLcRYmu93D6P59DW1D8blciaZUPBYlhHBBWKSHQUXVI733l+re1dNKQ76HeN1KbtpYv/vzaZfjqXKq1Em3J376g2gjgjBqZFP9IGZxdre0dPz+Iyo5lX//4QvSCfCaOjSfRD2XHx9HPCYa95iALKgf8pk4yDPgg3ajW241fMIKxlh++A3AQVuU2Ex+SUPrsP/xwD7tKJ2i433X/vcO2jnCsyF1zst59fcrDJtCjwA0FRAJLXra+0p659wz5BIAGJCM/O0okhxF4JvYE2OkxIldtQmJJQhWXnutuepZsfPQsWz6aaP3gF4IOScqFf7dsU1vQ3q/rd5qWCaytLfPiFFcFeNvbvL8BynCKABP5OPOWJ2/2HXtQAryANLj6NIohPl8SB2Gpln69UiRyX/ZaP3H8hg/504dSa0="
   - secure: "gf8Sx8AbHSkT+pJU2a1/PCouiSv0iaHCt+kafxGHG1/DAIX/34WJSRM66P4G7V4K9Cwg9QFdYcNGh2VLhizD1Ptt+bzGShCDyjexWdGA9xuuPhRASRzM2wnZ/Xs9XXeqGLW1AaYkz/jX+cIo5b5ktAaFSJ6a1yDpQUmmYEnZh/PQfKjrhs77DjMg4pdHalulnxLbRNtc1esXQfNf9M8P+bmE4ISozDOK7i+cIkZ7bQI+lLYmcRcxBQ/eHj2B6Wemgwv+ceh8ZBLo54GBhpyDgJsPLQLWhTwTuhZd5g5Yvt6l5zeW/WoZGapCFmY64qR4tpQCcRliayjuryP0MwIg1KGRBSSriScxqv/++ycuTS+4STCpLkwh2rNZg0M06eHkufQ0xkZp8Bv+XCKALM08I0x2yrlcKYy3vpMVQA0ooL1k3xftEdSTSg5fl5r551f01LWYouLSN28QhteAv72ur5NYFE0XnqchDLz8/oOdyfExTtCUWX4U09kDu8L4CO3vIPWT29FjnQiJVFSuJTEeHXYhXmI2+yyE1wtt/FMqcwy8ea84ZNgnhu00RoymoYNsFiz5fBt132IEsLekl8vQuTuMNHLUu1RWYJpzhuXEkDwmQkNGbhHBrhheWHlAQDUCRhAh/Iwyjs/HM9mcY8SM2mdpxDV9NSvAbl60x2gVBY0="
   - secure: "GzNheofXqRcLgqmWIFmJz3dxS5v3mVlGbsL4KTvFfFu36DPxf+HvZbJX7M8ZyMnhRGlybb6vRlFoXcvbDxfmg/SgQ8hgANlqG4hS2WPvbwWcqgMF/SlezCyvcRg6iWaELK4v1vT2pOEQkkVydQWakZocSlXHM/9vr66XarLadMdzC3dyFbqgW3N4ohMGqXLt0JIAijXtijiW4MwF2Vw7WfP7lskNu/K146j/RjcJtCCb8KYPlr7TUqaw1ewsV/aZoFuYRGexbhO0OQGU02uu7NZsh/pjkb4fkuPamxjRA/M1oSmqT8S1PTiUdEhcpzRru1aTjCWXWy0uu80wxks1iCXRgznFDqRqr+Niy7DTnqAsjDiMxGZjTbPKixP7v7IylyfvcKKWEsvHZMAeyo/QK8Kzz3/wX1itarxL7tIh3pCDulciEjAW4m20ZRNOBlQRCIa3m7sy0e8On75PHCyvFQ7vS8WVfunmDXvTlDqjbId7GaHMhvO+S6JV6GS4/ALAthHuMiSDYi7TkSNixDvoPgoBGQfqFMNRIuZW8RIoHhzWicekEMPYKB3N5UpAMjPmUjPrfp7pxMrZz7sz/o9bL5P781r13xkbZ6T5shD/nQakuCrb8hPgLAnHcX0+xrpHcwsw6720i3J84gwOckcpaFLv44MAUPu23XeN53T+TR0="
-script: |
-  echo "Current Branch: ${TRAVIS_BRANCH}"
-  echo "Pull Request: ${TRAVIS_PULL_REQUEST}"
-  if [ "${TRAVIS_BRANCH}" = master ] && [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then
-    echo "[Publishing] Pushing snapshot to Sonatype"
-    ./mvnw -s ./.settings.xml clean deploy
-  else
-    MYSQL_USER=travis ./mvnw install
-  fi
