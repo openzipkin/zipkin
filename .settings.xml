@@ -17,26 +17,12 @@
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
                           http://maven.apache.org/xsd/settings-1.0.0.xsd">
-
-  <profiles>
-    <profile>
-      <id>ossrh</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <properties>
-        <gpg.executable>gpg</gpg.executable>
-        <gpg.passphrase></gpg.passphrase>
-      </properties>
-    </profile>
-  </profiles>
   <servers>
     <server>
-      <id>ossrh</id>
-      <username>${env.SONATYPE_USER}</username>
-      <password>${env.SONATYPE_PASS}</password>
+      <id>bintray</id>
+      <username>${env.BINTRAY_USER}</username>
+      <password>${env.BINTRAY_KEY}</password>
     </server>
   </servers>
-  <activeProfiles/>
 </settings>
 
