@@ -57,12 +57,14 @@
       <groupId>com.github.kristofa</groupId>
       <artifactId>brave-spring-web-servlet-interceptor</artifactId>
       <version>${brave.version}</version>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>com.github.kristofa</groupId>
       <artifactId>brave-spancollector-scribe</artifactId>
       <version>${brave.version}</version>
+      <optional>true</optional>
     </dependency>
 
     <dependency>

@@ -13,17 +13,16 @@
  */
 package io.zipkin.server.brave;
 
-import com.github.kristofa.brave.Brave;
-import io.zipkin.Endpoint;
-import io.zipkin.SpanStore;
 import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Collections;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -32,7 +31,14 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
+import com.github.kristofa.brave.Brave;
+import com.github.kristofa.brave.ServerTracer;
+
+import io.zipkin.Endpoint;
+import io.zipkin.SpanStore;
+
 @Configuration
+@ConditionalOnClass(ServerTracer.class)
 @Import({ApiTracerConfiguration.class, JDBCTracerConfiguration.class})
 @EnableScheduling
 public class BraveConfiguration {
