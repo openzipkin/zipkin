@@ -1,3 +1,4 @@
+# Run `travis lint` when changing this file to avoid breaking the build.
 sudo: false
 
 cache:
@@ -28,7 +29,7 @@ script:
   # If we aren't a pull request, we are publishing either a snapshot or a release.
   #   Only build from master, as otherwise we'll have a conflict running deploy twice (due to the release tag (N.N.N)).
   #   We don't currently publish the interop module, as this is test code only.
-  - '[ "${TRAVIS_BRANCH}" = master ] && [ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s ./.settings.xml -Prelease -pl -zipkin-java-interop deploy -nsu'
+  - '[ "${TRAVIS_BRANCH}" = master ] && [ "${TRAVIS_TAG}" == "" ] && [ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s ./.settings.xml -Prelease -pl -zipkin-java-interop deploy -nsu'
   # If we are on a pull request, don't build javadoc or source jars (release profile), and certainly don't deploy!
   #   We also add the MYSQL_USER so that these tests will be invoked.
   - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || MYSQL_USER=travis ./mvnw install -nsu'
