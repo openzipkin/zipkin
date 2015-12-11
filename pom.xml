@@ -99,6 +99,10 @@
       <id>bintray</id>
       <url>https://api.bintray.com/maven/openzipkin/maven/zipkin-java</url>
     </repository>
+    <snapshotRepository>
+      <id>jfrog-snapshots</id>
+      <url>http://oss.jfrog.org/artifactory/oss-snapshot-local</url>
+    </snapshotRepository>
   </distributionManagement>
 
   <issueManagement>

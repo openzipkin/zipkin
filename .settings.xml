@@ -23,6 +23,11 @@
       <username>${env.BINTRAY_USER}</username>
       <password>${env.BINTRAY_KEY}</password>
     </server>
+    <server>
+      <id>jfrog-snapshots</id>
+      <username>${env.BINTRAY_USER}</username>
+      <password>${env.BINTRAY_KEY}</password>
+    </server>
   </servers>
 </settings>
 
