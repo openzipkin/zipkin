@@ -14,15 +14,13 @@
     the License.
 
 -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns="http://maven.apache.org/POM/4.0.0"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-java</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
   </parent>
 
   <artifactId>zipkin-java-jdbc</artifactId>
@@ -79,19 +77,19 @@
               <driver>org.mariadb.jdbc.Driver</driver>
               <url>jdbc:mysql://localhost:3306/zipkin</url>
               <user>root</user>
-              <password></password>
+              <password />
             </jdbc>
             <generator>
               <generate>
                 <relations>false</relations>
                 <deprecated>false</deprecated>
                 <records>false</records>
-                <pojos>false</pojos>>
+                <pojos>false</pojos>&gt;
               </generate>
               <database>
                 <name>org.jooq.util.mysql.MySQLDatabase</name>
                 <includes>.*</includes>
-                <excludes></excludes>
+                <excludes />
                 <inputSchema>zipkin</inputSchema>
               </database>
               <target>
