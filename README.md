@@ -8,6 +8,23 @@ The [core library](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-
 
 This includes built-in codec for both thrift and json structs. Direct dependencies on thrift or moshi (json library) are avoided by minifying and repackaging classes used. The result is a 256k jar which won't conflict with any library you use.
 
+Ex.
+```java
+// your instrumentation makes a span
+archiver = BinaryAnnotation.create(LOCAL_COMPONENT, "archiver", Endpoint.create("service", 127 << 24 | 1));
+span = new Span.Builder()
+    .traceId(1L)
+    .name("targz")
+    .id(1L)
+    .timestamp(epochMicros())
+    .duration(durationInMicros)
+    .binaryAnnotations(archiver);
+
+// Now, you can encode it as json or thrift
+bytes = Codec.JSON.writeSpan(span);
+bytes = Codec.THRIFT.writeSpan(span);
+```
+
 ## Server
 The [spring-boot server](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-java-server) receives spans via HTTP POST and respond to queries from zipkin-web. It is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/master/zipkin-query-service), passing the same tests (via the interop module).
 
