@@ -97,7 +97,7 @@
   <distributionManagement>
     <repository>
       <id>bintray</id>
-      <url>https://api.bintray.com/maven/openzipkin/maven/zipkin-java</url>
+      <url>https://api.bintray.com/maven/openzipkin/maven/zipkin-java/;publish=1</url>
     </repository>
     <snapshotRepository>
       <id>jfrog-snapshots</id>
