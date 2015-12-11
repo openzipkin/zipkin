@@ -47,6 +47,6 @@ $ docker-compose up
 ### Library Releases
 Releases are uploaded to [Bintray](https://bintray.com/openzipkin/maven/zipkin-java).
 ### Library Snapshots
-Snapshots are uploaded to [JFrog](http://oss.jfrog.org/artifactory/oss-snapshot-local) after commits to master are merged which are not pull requests.
+Snapshots are uploaded to [JFrog](http://oss.jfrog.org/artifactory/oss-snapshot-local) after commits to master.
 ### Docker Images
 Docker images are not yet published, you will need to build it yourself via our [Dockerfile](https://github.com/openzipkin/zipkin-java/blob/master/zipkin-java-server/Dockerfile).
