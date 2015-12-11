@@ -18,6 +18,7 @@ before_install:
   - mysql -utravis -Dzipkin < zipkin-java-jdbc/src/main/resources/mysql.sql
   - git config user.name "$GH_USER"
   - git config user.email "$GH_USER_EMAIL"
+  # setup https authentication credentials, used by ./mvnw release:prepare
   - git config credential.helper "store --file=.git/credentials"
   - echo "https://$GH_TOKEN:@github.com" > .git/credentials
 

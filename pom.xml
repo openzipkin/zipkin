@@ -83,7 +83,8 @@
   <scm>
     <url>https://github.com/openzipkin/zipkin-java</url>
     <connection>scm:git:https://github.com/openzipkin/zipkin-java.git</connection>
-    <developerConnection>scm:git:git@github.com:openzipkin/zipkin-java.git</developerConnection>
+    <developerConnection>scm:git:https://github.com/openzipkin/zipkin-java.git</developerConnection>
+    <tag>HEAD</tag>
   </scm>
 
   <developers>
@@ -280,6 +281,8 @@
           <useReleaseProfile>false</useReleaseProfile>
           <releaseProfiles>release</releaseProfiles>
           <autoVersionSubmodules>true</autoVersionSubmodules>
+          <!-- to match zipkin-scala (openzipkin/zipkin) -->
+          <tagNameFormat>@{project.version}</tagNameFormat>
         </configuration>
       </plugin>
     </plugins>
