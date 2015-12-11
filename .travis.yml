@@ -16,6 +16,8 @@ before_install:
   - mysql -uroot -e 'SET GLOBAL innodb_file_format=Barracuda'
   - mysql -utravis -e 'create database if not exists zipkin'
   - mysql -utravis -Dzipkin < zipkin-java-jdbc/src/main/resources/mysql.sql
+  # TODO: To perfom a release, setup git config and run ./mvnw release:prepare locally
+  #       Once tag-driven automation is setup, these parameters will be used by travis.
   - git config user.name "$GH_USER"
   - git config user.email "$GH_USER_EMAIL"
   # setup https authentication credentials, used by ./mvnw release:prepare
@@ -23,13 +25,21 @@ before_install:
   - echo "https://$GH_TOKEN:@github.com" > .git/credentials
 
 script:
-  - '[ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s ./.settings.xml -Prelease deploy -nsu'
+  # If we aren't a pull request, we are publishing either a snapshot or a release.
+  #   Only build from master, as otherwise we'll have a conflict running deploy twice (due to the release tag (N.N.N)).
+  - '[ "${TRAVIS_BRANCH}" = master ] && [ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s ./.settings.xml -Prelease deploy -nsu'
+  # If we are on a pull request, don't build javadoc or source jars (release profile), and certainly don't deploy!
   - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || MYSQL_USER=travis ./mvnw install -nsu'
 
 env:
   global:
+  # Ex. travis encrypt BINTRAY_USER=your_github_account
   - secure: "HOptDMElLTHxuze2derex2ljpkZCJmlmod6Z5tIUDgQsJ+nmku2FAZ5Pxt66G4i9zrj3oIhNJ5HXDF04Hlm7DzfjKBvZXzzyusITyEf6TijOHsVD9o4ngcTnmVw7aP9Rd1Kh+FQPLpcxV8PbB0+BTmcFkQMxpjS/EgXYMDtv7Tcg+ALnGlVNHtf3EhwpxsCv5HBOp9+gw7Wta9aFCLWPySZUh/lf7WCHNnI48tBjujICQsuIp/A9RSHbFt1t0JbM99CT+Vei0gUSdIVKbQf4UcOl8uPty3nKyPc8P/4LDIxfX4acjy4jj7S2LUO77xVSMvisnHoQ/R0P3kmgl96avEtRIlC4Y4TV4PcYs8dmzX55T9zBQGVyt9IPK51XxKkZUQMlwduN5TvhHdkXW/bVELDGEZvFlhMpIjCdHZLcysVk+he+tnCo0Iv3nfVeLVCQ4qPLsumQy+Zl3l52hjvzcgdVrEwkZCl6kIfrkkLK2+srkPjoAK38uZhxEroSNgWGblCggbt/sNaqR2Z8yHT+uMlPSfOyADPr2Eufx0AgoWgFPvLO9a1nLNs5efMG3PFBFQSoBnCaOnrQ7j5NriKH0vWpuw6JpvTfl75VJ+PVb7qoDPOGCELgDJaL3Z8Uvb0CRbIo31/2JnY1m3gmQszUJNX2ej6oYCvWKrQW25b9+YI="
+  # Ex. travis encrypt BINTRAY_KEY=xxx-https://bintray.com/profile/edit-xxx --add
   - secure: "frm0I/rFFwKAfk3qzvebmSq2IQJt9l456AolnqX2biiOukDAVPNtT5kmXoPwfwemCjebXCO3Z3quPLXfsA2ZVah1WoeY8ICuTzGepg+E2FosOvl4/X5eCoNReyUG6nAqT/iNoQTCnSSDzFwh6+TciA7GPhftyBIFL8bohGscUWmtBYr/yha3LKE1weA3ahu4Kn4dswgkDtaD2fl4BsQVR2hsIQQxYOfpozspatJJtRuiVJne4f0rNdBdiQxinDh4d3B6yLjsGSFgIZ8G2dHVmlcyxmydmvX9pg30KulPM3r21qejt915k45rNRJN/IvVzGbLEaBCGIVvMS+S23Ih/Qfan41fFDekETV9bHo8IuZhxopNas/lymzA+YiXd3sId1kh8pifHBVdefrGP/5FL0bmsLOvwmY8h/hDOArTZgDgkFVaZP2NA0+W2YqlqY4JGwR/I/Jb0gDKFVOI9ScZCHCa0b7fQhWYOJry9PCmVIDv8nzByAjVncPxUEvj/hpQCG/R8D3ibFp4yLyARDWks/TF3VuiIbm/yhGg1/8p4lmx3Fj0ZvumU5x+deSVpzJK2TBVAfSTNbgsLFiLSMFSmKYK+r5vxRKoUPKFVx68VI4UQmibinNG9RE6Q0F/S0FnZnyPSEekt7os9Q9KoIovhMGii1WVSuB1Um1iypkt7zc="
+  # Ex. travis encrypt GH_USER_EMAIL=for_github@domain.com --add
   - secure: "dMZHXaLDOYZsDeKECqvukrKK9ToAiHiZWgwBueVG9MYcI/LP56PEB5KS64iCh1AUBqp8xcSaf41xP7hl/9Jl2PLok6XFob2FathGFJnyaMr4m9EUAiq3bN9sYorS7XGQ/ZfMJiAOM9ipzogQGY1gMDWsa5kCZu0qIwmXpxnpUp9E35l0KPKScLY5O6y/Pi8wfLMu0fWtyAxGDQIkUWqSQWaz5yNS2aPK8tOJFmD6/ekV9QOxQXj1Cx+vhWzeuJAmknSb47A8UuaguG4PqsaF3Ww5TwohORt/5GvRZmGBeeU4yWpS5Q5Zi8dMUIO6r+uzCkiAarxajf23oHX3cGPyqsAE8tJvf425SlD982VQon6g08t4JBeAlWEE6hJeM/a1gMTsy/2WtVP3ql2wNt7LHVAayMjjBgsRMmwaRAkUrckwirxkaJVmqj/bfA5s8zYyjKdtyc+f9KLmwkWJ9Em2adAG86BB5lZrcXcneoLNLrmN5WKs00LLskNVYcfdOAs97AUq6ZY1U7koDluUtX50qELa6Yzc+pxB1Jvy9ZGaJtg6FqfxWhEj+qe2nBLZa9mTD2mCBUcIGEFh4m67Ql0yFCKTl7sZuuTbeLmkIASy+M8ENfd7IXgBbLQX+iin+55xQEb5hxRWiPHWB6mYNW1gE1lx7O/bW1GDB1H0TG8Sw14="
+  # Ex. travis encrypt GH_USER=your_github_account --add
   - secure: "dFvQkGjZDQpPCMsJU5K5+CQWZYSWkN2b2XBpXTNu9fQc22nQb5alxNYGx/YwE9JsMP4Dxh3Ros0gh3sB1F3bbIMsFvhkbablnYm3uJiHszbOt9hwBPAqeddS+kgT6admBSYNE2b9Zhb0vRlWPs/dSO9NQ0pEIhFDtcZgZ2Q+0F1p0nACR2rPwqYKmSMR2LTQDTZrPPxAsNx2a2gnGZWxQJe2tl5mgX5j/EBC+HKef9txn0n5AIUsFhzNposGMOE0iNDg/eGcbG7LCmyx6EazlDSAvbmJBZd7Hho3snGvnroqm1yFo1ry2Rlg2W+rsiy7o38Ng5j8oLjYcpejQJwgPMdIA2wM1GUHb+Dg7UebzWocrVwGMv91nS5+VcCZ4/mvK5bOI0VRyMB8TwI5mlcmqwIDmd/pbdYbpJKwsEARaHEPT1s1t8SL1plrFdCthnEcEUwT7LyvubgDPsLcwzODsmyuKrK+aUvZWU7U5o8/XqEMy6cDHb1Fu4qjVbpOchonsvlCOO1CP9cIAkMhNmT5Pvp/oL/c7rov0JpUuexdPwi9NtgJ0uUcBIoU17v/2erK3NNssj98oKLPuhXBwl60bEEFsx0+TyI4tcwPXS8+PuWHUzewmcFHzUVIK7hclRMHdbdY6L0/C42VoVvkp+FEl5Ycihi4O6uLnv3I4Z42lH8="
+  # Ex. travis encrypt GH_TOKEN=XXX-https://github.com/settings/tokens-XXX --add
   - secure: "Iu7X1ePNpk6rbIse4P2EFu9f8I8mVMjZqFXaoIiosNuOh2V3VsyKWb/+m0oQdUPquzw5N9POjbhERE2ICAI+9o4Zkb4rjXXLHhvAEvvy9NLpH9dB2/AsMxWXha/UHmCHwq4z9qSWsOA0G0kx2FzTbUUN4PKQQjIWrUInbZpjWdIZhDVRpp2j5ZIYFrn0DS9piYIWJgfwdkCSq0c8Gpd5XxxHik/Fkb4W/UfRCM1gCNB/eagqiATyd7Eg8WnKp1lVwdipbrre7nosT2hcIILdyAnsbwd0ByMGIBnzJcFf/ITnSQQEZqRLP0401ZWmwSniSbpxvwi+jc2YVfTXqRF6GvEMWVx0b8QJoMlsQDXqv04ZpHPU2lQu2pUca4vM42KYYjNfVI91w5EgEkQEUZzBQs+zaRoT3kwpIehUHlNZNu7+uKKt3iapZ6oVSpa5i+4YDYMC92I0smRAq662xjmGusZFYwPXA9+f5Qa2XtxJnYmxBir1kq+I2Tdiy8mM7tKSbog/S7oKtS4M5znNd4ygp3ikzCHw/oZvZxjYO8S+2ds8XrzP9F0EWHOtiwwmRcH6QBjlC/I+lf1CbLIfJwPCHeqSIUZFqbwWdJ7LJsRBzFY48yfvtSDe4kYaeXrESc7KtYtqMhjzEUFt3+Md061yJZmVvz0wn3G/wUAQEbwyvZI="

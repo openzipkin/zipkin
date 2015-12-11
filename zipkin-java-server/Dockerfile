@@ -16,9 +16,10 @@ FROM openzipkin/zipkin-base:base-1.25.3
 
 MAINTAINER OpenZipkin "http://zipkin.io/"
 
-VOLUME /tmp
+ENV ZIPKIN_JAVA_VERSION 0.1.0
 
-ADD target/zipkin-java-server-0.1.0-SNAPSHOT-exec.jar zipkin-server.jar
+VOLUME /tmp
+RUN curl -SL $ZIPKIN_REPO/io/zipkin/zipkin-java-server/$ZIPKIN_JAVA_VERSION/zipkin-java-server-$ZIPKIN_JAVA_VERSION-exec.jar > zipkin-server.jar
 
 RUN unzip zipkin-server.jar
 
