@@ -13,22 +13,28 @@
  */
 package io.zipkin.server;
 
-import com.github.kristofa.brave.Brave;
-import io.zipkin.Codec;
-import io.zipkin.SpanStore;
-import io.zipkin.jdbc.JDBCSpanStore;
-import io.zipkin.server.ZipkinServerProperties.Store.Type;
-import io.zipkin.server.brave.TraceWritesSpanStore;
 import javax.sql.DataSource;
+
 import org.jooq.ExecuteListenerProvider;
 import org.jooq.conf.Settings;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
+
+import com.github.kristofa.brave.Brave;
+
+import io.zipkin.Codec;
+import io.zipkin.SpanStore;
+import io.zipkin.jdbc.JDBCSpanStore;
+import io.zipkin.server.ZipkinServerProperties.Store.Type;
+import io.zipkin.server.brave.TraceWritesSpanStore;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinServerProperties.class)
@@ -45,9 +51,6 @@ public class ZipkinServerConfiguration {
   @Qualifier("jdbcTraceListenerProvider")
   ExecuteListenerProvider listener;
 
-  @Autowired(required = false)
-  Brave brave;
-
   @Bean
   @ConditionalOnMissingBean(Codec.Factory.class)
   Codec.Factory codecFactory() {
@@ -62,6 +65,31 @@ public class ZipkinServerConfiguration {
     } else {
       result = new InMemorySpanStore();
     }
-    return brave != null ? new TraceWritesSpanStore(brave, result) : result;
+    return result;
   }
+
+  @Configuration
+  @ConditionalOnClass(Brave.class)
+  protected static class BraveSpanStoreEnhancer implements BeanPostProcessor {
+
+    @Autowired(required = false)
+    Brave brave;
+
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName)
+        throws BeansException {
+      return bean;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName)
+        throws BeansException {
+      if (bean instanceof SpanStore && this.brave!=null) {
+        return new TraceWritesSpanStore(this.brave, (SpanStore) bean);
+      }
+      return bean;
+    }
+
+  }
+
 }
