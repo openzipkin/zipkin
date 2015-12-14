@@ -92,7 +92,7 @@
     <plugins>
       <!-- don't publish interop tests! -->
       <plugin>
-        <artifactId>maven-deploy-plugin</artifactId>
+        <artifactId>maven-release-plugin</artifactId>
         <configuration>
           <skip>true</skip>
         </configuration>
