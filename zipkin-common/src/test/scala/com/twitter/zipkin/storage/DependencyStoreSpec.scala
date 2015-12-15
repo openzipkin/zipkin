@@ -79,6 +79,11 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
     result(store.getDependencies(today + 1000)) should be(dep.links)
   }
 
+  /** Edge-case when there are no spans, or instrumentation isn't logging annotations properly. */
+  @Test def getDependencies_empty() = {
+    result(store.getDependencies(today + 1000)) should be(Seq.empty)
+  }
+
   /**
    * Trace id is not required to be a span id. For example, some instrumentation may create separate
    * trace ids to help with collisions, or to encode information about the origin. This test makes
