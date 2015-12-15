@@ -46,27 +46,31 @@ case class AnormDependencyStore(val db: DB,
           case traceId ~ parentId ~ id => (traceId, parentId, id)
         }) *).groupBy(_._1)
 
-      val traceSpanServiceName: Map[(Long, Long), String] = SQL(
-        """SELECT DISTINCT trace_id, span_id, endpoint_service_name
-          |FROM zipkin_annotations
-          |WHERE trace_id IN (%s)
-          |AND a_key in ("sr","sa")
-          |AND endpoint_service_name is not null
-          |GROUP BY trace_id, span_id
-        """.stripMargin.format(parentChild.keys.mkString(",")))
+      if (parentChild.isEmpty) {
+        Seq.empty[DependencyLink]
+      } else {
+        val traceSpanServiceName: Map[(Long, Long), String] = SQL(
+          """SELECT DISTINCT trace_id, span_id, endpoint_service_name
+            |FROM zipkin_annotations
+            |WHERE trace_id IN (%s)
+            |AND a_key in ("sr","sa")
+            |AND endpoint_service_name is not null
+            |GROUP BY trace_id, span_id
+          """.stripMargin.format(parentChild.keys.mkString(",")))
         .as((long("trace_id") ~ long("span_id") ~ str("endpoint_service_name") map {
           case traceId ~ spanId ~ serviceName => (traceId, spanId, serviceName)
         }) *).map(r => (r._1, r._2) -> r._3).toMap
 
-      parentChild.values.flatMap(identity).flatMap(r => {
-        // parent can be empty if a root span is missing
-        for (
-          parent <- traceSpanServiceName.get((r._1, r._2));
-          child <- traceSpanServiceName.get((r._1, r._3))
-        ) yield (parent, child)
-      })
-      .groupBy(identity).mapValues(_.size) // sum span count
-      .map{ case ((parent, child), count) => DependencyLink(parent, child, count)}.toSeq
+        parentChild.values.flatMap(identity).flatMap(r => {
+          // parent can be empty if a root span is missing
+          for (
+            parent <- traceSpanServiceName.get((r._1, r._2));
+            child <- traceSpanServiceName.get((r._1, r._3))
+          ) yield (parent, child)
+        })
+        .groupBy(identity).mapValues(_.size) // sum span count
+        .map{ case ((parent, child), count) => DependencyLink(parent, child, count)}.toSeq
+      }
     } finally {
       returnConn(conn, borrowTime, "getDependencies")
     }
