@@ -30,8 +30,7 @@ class ConfigSpec extends FunSuite with Matchers {
     val configSource = Seq(
       "/collector-dev.scala",
       "/collector-mysql.scala",
-      "/collector-cassandra.scala",
-      "/collector-redis.scala"
+      "/collector-cassandra.scala"
     ) map { r =>
       Resources.toString(getClass.getResource(r), UTF_8)
     }

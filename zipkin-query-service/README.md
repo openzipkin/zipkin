@@ -1,7 +1,7 @@
 # zipkin-query-service
 
 The Zipkin query service provides a thrift api over stored and indexed trace
-data, most typically SQL, Cassandra or Redis.
+data, most typically SQL or Cassandra.
 
 ## Running locally
 
@@ -26,7 +26,6 @@ Below are environment variables definitions.
 * Span Storage
   * [dev and mysql](https://github.com/openzipkin/zipkin/blob/master/zipkin-anormdb/README.md)
   * [cassandra](https://github.com/openzipkin/zipkin/blob/master/zipkin-cassandra/README.md)
-  * [redis](https://github.com/openzipkin/zipkin/blob/master/zipkin-redis/README.md)
 
 Example usage:
 
@@ -53,4 +52,3 @@ bundled configurations below.
 * `/query-dev.scala` - file-based SQL backend
 * `/query-cassandra.scala` - localhost cassandra backend
 * `/query-mysql.scala` - MySQL backend
-* `/query-redis.scala` - localhost redis backend
