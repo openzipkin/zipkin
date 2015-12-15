@@ -90,8 +90,6 @@ class ZipkinQueryServer(spanStore: SpanStore, dependencyStore: DependencyStore) 
 
   override def httpExternalPort = Option(httpServer).map(PortUtils.getPort)
 
-  override def httpExternalSocketAddress = Option(httpServer).map(_.boundAddress)
-
   override def waitForServer() = Await.ready(httpServer)
 
 }

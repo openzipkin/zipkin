@@ -6,7 +6,7 @@ dependencies {
 
     compile "com.twitter:util-stats_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
     compile "com.typesafe.play:anorm_${scalaInterfaceVersion}:2.5.0"
-    compile "com.zaxxer:HikariCP:2.4.2"
+    compile "com.zaxxer:HikariCP:2.4.3"
 
     compile anormDriverDependencies[dbEngine]
 

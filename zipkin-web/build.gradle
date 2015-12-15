@@ -26,7 +26,7 @@ dependencies {
     compile "com.twitter:finagle-zipkin_${scalaInterfaceVersion}:${commonVersions.finagle}"
 
     testCompile project(':zipkin-scrooge')
-    testCompile 'com.squareup.okhttp:mockwebserver:2.5.0'
+    testCompile 'com.squareup.okhttp:mockwebserver:2.7.0'
 }
 
 apply from: "${rootDir}/gradle/verify-licenses.gradle"
