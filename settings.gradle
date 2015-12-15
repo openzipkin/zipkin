@@ -42,7 +42,6 @@ def includes = [
 'zipkin-cassandra-core',
 'zipkin-cassandra',
 'zipkin-anormdb',
-'zipkin-redis',
 
 ////////////
 // Thrift //

@@ -24,7 +24,6 @@ dependencies {
     compile project(':zipkin-receiver-kafka')
     compile project(':zipkin-receiver-scribe')
     compile project(':zipkin-cassandra')
-    compile project(':zipkin-redis')
     compile project(':zipkin-anormdb')
     compile anormDriverDependencies["mysql"] // for query-mysql
 }

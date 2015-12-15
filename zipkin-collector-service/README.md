@@ -2,7 +2,7 @@
 
 The Zipkin collector service accepts trace data via its Scribe interface.
 After validity checks, the collector stores and indexes trace data into a
-store, most typically SQL, Cassandra or Redis.
+store, most typically SQL or Cassandra.
 
 ## Running locally
 
@@ -28,7 +28,6 @@ Below are environment variables definitions.
 * Span Storage
   * [dev and mysql](https://github.com/openzipkin/zipkin/blob/master/zipkin-anormdb/README.md)
   * [cassandra](https://github.com/openzipkin/zipkin/blob/master/zipkin-cassandra/README.md)
-  * [redis](https://github.com/openzipkin/zipkin/blob/master/zipkin-redis/README.md)
 
 Example usage:
 
@@ -55,4 +54,3 @@ bundled configurations below.
 * `/collector-dev.scala` - file-based SQL backend
 * `/collector-cassandra.scala` - localhost cassandra backend
 * `/collector-mysql.scala` - MySQL backend
-* `/collector-redis.scala` - localhost redis backend

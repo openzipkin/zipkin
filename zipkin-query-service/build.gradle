@@ -23,7 +23,6 @@ dependencies {
 
     compile project(':zipkin-query')
     compile project(':zipkin-cassandra')
-    compile project(':zipkin-redis')
     compile project(':zipkin-anormdb')
     compile anormDriverDependencies["mysql"] // for query-mysql
 }
