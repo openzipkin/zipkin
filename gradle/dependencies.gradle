@@ -5,14 +5,14 @@ ext {
     scalaInterfaceVersion = '2.11'
 
     commonVersions = [
-            finagle: '6.30.0',
+            finagle: '6.31.0',
             guava: '16.0.1', // to match finagle
-            scrooge: '4.2.0',
-            twitterUtil: '6.29.0',
-            twitterServer: '1.15.0',
-            finatra: '2.1.1',
+            scrooge: '4.3.0',
+            twitterUtil: '6.30.0',
+            twitterServer: '1.16.0',
+            finatra: '2.1.2',
             jackson: '2.6.3',
-            ostrich: '9.13.0',
+            ostrich: '9.14.0',
             griddle: '1.7',
             slf4j: '1.7.12',
             logback: '1.1.3',
@@ -34,7 +34,7 @@ ext {
             // https://www.mysql.com/about/legal/licensing/foss-exception/
             //
             // MariaDB has a friendlier license, LGPL, which is less scary in audits.
-            "mysql": "org.mariadb.jdbc:mariadb-java-client:1.3.0"
+            "mysql": "org.mariadb.jdbc:mariadb-java-client:1.3.3"
     ]
 }
 

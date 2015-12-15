@@ -1,11 +1,11 @@
 dependencies {
     compile project(':zipkin-collector')
 
-    compile "org.apache.kafka:kafka_${scalaInterfaceVersion}:0.8.2.2"
+    compile "org.apache.kafka:kafka_${scalaInterfaceVersion}:0.9.0.0"
     compile 'org.apache.commons:commons-io:1.3.2'
     compile "com.twitter:scrooge-serializer_${scalaInterfaceVersion}:${commonVersions.scrooge}"
     // kafka's zk uses log4j: route to slf4j
     compile "org.slf4j:log4j-over-slf4j:${commonVersions.slf4j}"
 
-    testCompile 'com.github.charithe:kafka-junit:1.7'
+    testCompile 'com.github.charithe:kafka-junit:1.8'
 }
