@@ -13,7 +13,7 @@
 #
 
 mysql:
-  image: openzipkin/zipkin-mysql:1.25.3
+  image: openzipkin/zipkin-mysql:1.26.0
   ports:
     - 3306:3306
 query:
@@ -27,7 +27,7 @@ query:
   links:
     - mysql:storage
 web:
-  image: openzipkin/zipkin-web:1.25.3
+  image: openzipkin/zipkin-web:1.26.0
   ports:
     - 8080:8080
   environment:
