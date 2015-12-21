@@ -17,11 +17,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("zipkin")
 class ZipkinServerProperties {
-  private Collector collector = new Collector();
+  private Query query = new Query();
   private Store store = new Store();
 
-  public Collector getCollector() {
-    return this.collector;
+  public Query getQuery() {
+    return this.query;
   }
 
   public Store getStore() {
@@ -44,15 +44,15 @@ class ZipkinServerProperties {
     }
   }
 
-  static class Collector {
-    private int port = 9410;
+  static class Query {
+    private int lookback = 86400000; // 7 days in millis
 
-    public int getPort() {
-      return this.port;
+    public int getLookback() {
+      return this.lookback;
     }
 
-    public void setPort(int port) {
-      this.port = port;
+    public void setLookback(int lookback) {
+      this.lookback = lookback;
     }
   }
 }

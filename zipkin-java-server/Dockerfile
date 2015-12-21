@@ -12,11 +12,12 @@
 # the License.
 #
 
-FROM openzipkin/zipkin-base:base-1.26.0
+FROM openzipkin/zipkin-base:base-1.26.1
 
 MAINTAINER OpenZipkin "http://zipkin.io/"
 
-ENV ZIPKIN_JAVA_VERSION 0.1.1
+ENV ZIPKIN_JAVA_VERSION 0.1.2
+ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
 
 VOLUME /tmp
 RUN curl -SL $ZIPKIN_REPO/io/zipkin/zipkin-java-server/$ZIPKIN_JAVA_VERSION/zipkin-java-server-$ZIPKIN_JAVA_VERSION-exec.jar > zipkin-server.jar
@@ -25,4 +26,4 @@ RUN unzip zipkin-server.jar
 
 EXPOSE 9411
 
-CMD test -n "$STORAGE_TYPE" && source .${STORAGE_TYPE}_profile; java -Djava.security.egd=file:/dev/./urandom -cp '.:lib/*' io.zipkin.server.ZipkinServer
+CMD test -n "$STORAGE_TYPE" && source .${STORAGE_TYPE}_profile; java ${JAVA_OPTS} -cp '.:lib/*' io.zipkin.server.ZipkinServer

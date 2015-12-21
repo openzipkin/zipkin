@@ -1,10 +1,15 @@
 mysql:
   host: ${MYSQL_HOST:localhost}
-  port: ${MYSQL_PORT:3306}
-  username: ${MYSQL_USER:root}
+  lookback: ${MYSQL_TCP_PORT:3306}
+  username: ${MYSQL_USER:}
   password: ${MYSQL_PASS:}
   db: ${MYSQL_DB:zipkin}
+  max-active: ${MYSQL_MAX_CONNECTIONS:10}
+  use-ssl: ${MYSQL_USE_SSL:false}
 zipkin:
+  query:
+    # 7 days in millis
+    lookback: ${QUERY_LOOKBACK:86400000}
   store:
     type: ${STORAGE_TYPE:mem}
 server:
@@ -14,9 +19,10 @@ server:
 spring:
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mysql://${mysql.host}:${mysql.port}/${mysql.db}?autoReconnect=true
+    url: jdbc:mysql://${mysql.host}:${mysql.lookback}/${mysql.db}?autoReconnect=true&useSSL=${mysql.use-ssl}
     username: ${mysql.username}
     password: ${mysql.password}
+    max-active: ${mysql.max-active}
     schema: classpath:/mysql.sql
 # Switch this on to create the schema on startup:
     initialize: false
