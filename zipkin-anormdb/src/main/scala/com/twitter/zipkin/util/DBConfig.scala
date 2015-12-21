@@ -94,8 +94,9 @@ case class DBConfig(name: String = "sqlite-persistent",
       description = "MySQL",
       driver = "org.mariadb.jdbc.Driver",
       location = { dbp: DBParams =>
-        // We need to enable auto-reconnect to recover from dropped connections
-        "jdbc:mariadb://" + dbp.host + dbp.getPort + "/" + dbp.dbName + "?user=" + dbp.username + "&password=" + dbp.password + "&autoReconnect=true"
+        "jdbc:mariadb://" + dbp.host + dbp.getPort + "/" + dbp.dbName + "?user=" + dbp.username + "&password=" + dbp.password +
+          (if (dbp.ssl) "&useSSL=true" else "") +
+          "&autoReconnect=true" // recover from dropped connections
       }
     )
   )

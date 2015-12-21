@@ -12,7 +12,8 @@ val db = DB(DBConfig(
     sys.env.get("MYSQL_HOST").getOrElse("localhost"),
     sys.env.get("MYSQL_TCP_PORT").map(_.toInt),
     sys.env.get("MYSQL_USER").getOrElse(""),
-    sys.env.get("MYSQL_PASS").getOrElse("")
+    sys.env.get("MYSQL_PASS").getOrElse(""),
+    sys.env.get("MYSQL_USE_SSL").map(_.toBoolean).getOrElse(false)
   ),
   maxConnections = sys.env.get("MYSQL_MAX_CONNECTIONS").map(_.toInt).getOrElse(10)
 ))
