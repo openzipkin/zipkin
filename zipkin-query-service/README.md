@@ -1,6 +1,6 @@
 # zipkin-query-service
 
-The Zipkin query service provides a thrift api over stored and indexed trace
+The Zipkin query service provides a http api over stored and indexed trace
 data, most typically SQL or Cassandra.
 
 ## Running locally
@@ -16,7 +16,7 @@ data, most typically SQL or Cassandra.
 
 Below are environment variables definitions.
 
-    * `QUERY_PORT`: Listen port for the query thrift api; Defaults to 9411
+    * `QUERY_PORT`: Listen port for the query http api; Defaults to 9411
     * `QUERY_ADMIN_PORT`: Listen port for the ostrich admin http server; Defaults to 9901
     * `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
     * `QUERY_LOOKBACK`: How many milliseconds queries look back from endTs; Defaults to 7 days
