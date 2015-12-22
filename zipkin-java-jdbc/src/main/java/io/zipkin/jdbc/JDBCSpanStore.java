@@ -66,7 +66,7 @@ public final class JDBCSpanStore implements SpanStore {
   private static final Logger LOGGER = Logger.getLogger(JDBCSpanStore.class.getName());
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  {
+  static {
     System.setProperty("org.jooq.no-logo", "true");
   }
 
@@ -292,7 +292,7 @@ public final class JDBCSpanStore implements SpanStore {
               ZIPKIN_SPANS.START_TS.lessOrEqual(endTs) :
               ZIPKIN_SPANS.START_TS.between(endTs - lookback * 1000, endTs))
           .and(ZIPKIN_SPANS.PARENT_ID.isNotNull())
-          .stream().collect(Collectors.groupingBy(r -> r.value1()));
+          .stream().collect(Collectors.groupingBy(Record3::value1));
 
       Map<Pair<Long>, String> traceSpanServiceName = traceSpanServiceName(conn, parentChild.keySet());
 
@@ -305,7 +305,7 @@ public final class JDBCSpanStore implements SpanStore {
         if (parent != null) {
           String child = lookup(traceSpanServiceName, Pair.create(r.value1(), r.value3()));
           if (child != null) {
-            Pair key = Pair.create(parent, child);
+            Pair<String> key = Pair.create(parent, child);
             if (linkMap.containsKey(key)) {
               linkMap.put(key, linkMap.get(key) + 1);
             } else {
@@ -332,14 +332,14 @@ public final class JDBCSpanStore implements SpanStore {
         .and(ZIPKIN_ANNOTATIONS.A_KEY.in("sr", "sa"))
         .and(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.isNotNull())
         .groupBy(ZIPKIN_ANNOTATIONS.TRACE_ID, ZIPKIN_ANNOTATIONS.SPAN_ID)
-        .fetchMap(r -> Pair.create(r.value1(), r.value2()), r -> r.value3());
+        .fetchMap(r -> Pair.create(r.value1(), r.value2()), Record3::value3);
   }
 
   @Override
   public void close() {
   }
 
-  static Endpoint endpoint(Record a) {
+  private static Endpoint endpoint(Record a) {
     String serviceName = a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME);
     if (serviceName == null) {
       return null;
@@ -350,7 +350,7 @@ public final class JDBCSpanStore implements SpanStore {
         : Endpoint.create(serviceName, a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4));
   }
 
-  static SelectOffsetStep<Record1<Long>> toTraceIdQuery(DSLContext context, QueryRequest request) {
+  private static SelectOffsetStep<Record1<Long>> toTraceIdQuery(DSLContext context, QueryRequest request) {
     long endTs = (request.endTs > 0 && request.endTs != Long.MAX_VALUE) ? request.endTs * 1000
         : System.currentTimeMillis() * 1000;
 

@@ -38,7 +38,7 @@ public enum BootstrapTrace {
                                 .getBean(Brave.class).localTracer();
 
       tracer.startNewSpan("spring-boot", "bootstrap", timestamp);
-      annotations.forEach((value, timestamp) -> tracer.submitAnnotation(value, timestamp));
+      annotations.forEach(tracer::submitAnnotation);
       tracer.finishSpan(duration);
     }
   }

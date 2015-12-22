@@ -36,7 +36,7 @@ final class JDBCTestGraph {
   }
 
   @Nullable
-  public static String mysqlUrlFromEnv() {
+  private static String mysqlUrlFromEnv() {
     if (System.getenv("MYSQL_USER") == null) return null;
     String mysqlHost = envOr("MYSQL_HOST", "localhost");
     int mysqlPort = envOr("MYSQL_TCP_PORT", 3306);

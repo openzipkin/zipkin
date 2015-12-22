@@ -51,10 +51,7 @@ public final class ScalaDependencyStoreAdapter extends com.twitter.zipkin.storag
     );
     List<DependencyLink> links = new ArrayList<>(input.size());
     for (io.zipkin.DependencyLink link : input) {
-      DependencyLink converted = convert(link);
-      if (converted != null) {
-        links.add(converted);
-      }
+      links.add(convert(link));
     }
     return Future.value(JavaConversions.asScalaBuffer(links).seq());
   }
@@ -69,8 +66,7 @@ public final class ScalaDependencyStoreAdapter extends com.twitter.zipkin.storag
     this.spanStore.close();
   }
 
-  @Nullable
-  static DependencyLink convert(io.zipkin.DependencyLink input) {
+  private static DependencyLink convert(io.zipkin.DependencyLink input) {
     return new DependencyLink(input.parent, input.child, input.callCount);
   }
 }

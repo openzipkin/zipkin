@@ -128,7 +128,7 @@ public final class BinaryAnnotation {
   @Nullable
   public final Endpoint endpoint;
 
-  BinaryAnnotation(String key, byte[] value, Type type, Endpoint endpoint) {
+  private BinaryAnnotation(String key, byte[] value, Type type, Endpoint endpoint) {
     this.key = checkNotNull(key, "key");
     this.value = checkNotNull(value, "value");
     this.type = checkNotNull(type, "type");

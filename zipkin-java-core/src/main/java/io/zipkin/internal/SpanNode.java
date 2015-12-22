@@ -32,7 +32,7 @@ final class SpanNode {
     this.span = checkNotNull(span, "span");
   }
 
-  void addChild(SpanNode node) {
+  private void addChild(SpanNode node) {
     if (children.equals(Collections.emptyList())) children = new LinkedList<>();
     children.add(node);
   }

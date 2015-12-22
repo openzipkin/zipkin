@@ -31,7 +31,7 @@ public class ApplyTimestampAndDuration {
       ts = ts != null ? ts : s.annotations.get(0).timestamp;
       if (dur == null) {
         long lastTs = s.annotations.get(s.annotations.size() - 1).timestamp;
-        if (ts.longValue() != lastTs) {
+        if (ts != lastTs) {
           dur = lastTs - ts;
         }
       }

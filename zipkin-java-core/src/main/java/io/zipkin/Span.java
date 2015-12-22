@@ -56,7 +56,7 @@ public final class Span implements Comparable<Span> {
   /**
    * Unique 8-byte identifier of this span within a trace.
    *
-   * <p/>A span is uniquely identified in storage by ({@linkplain #traceId}, {@linkplain #id}).
+   * <p/>A span is uniquely identified in storage by ({@linkplain #traceId}, {@code #id}).
    */
   public final long id;
 
@@ -159,8 +159,8 @@ public final class Span implements Comparable<Span> {
     private Long parentId;
     private Long timestamp;
     private Long duration;
-    private TreeSet<Annotation> annotations = new TreeSet<>();
-    private LinkedHashSet<BinaryAnnotation> binaryAnnotations = new LinkedHashSet<>();
+    private final TreeSet<Annotation> annotations = new TreeSet<>();
+    private final LinkedHashSet<BinaryAnnotation> binaryAnnotations = new LinkedHashSet<>();
     private Boolean debug;
 
     public Builder() {

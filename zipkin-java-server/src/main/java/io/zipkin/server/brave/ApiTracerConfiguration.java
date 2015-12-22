@@ -61,7 +61,7 @@ public class ApiTracerConfiguration extends WebMvcConfigurerAdapter {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object o) throws Exception {
-      return request.getMethod().equals("POST") ? true : this.delegate.preHandle(request, response, o);
+      return request.getMethod().equals("POST") || this.delegate.preHandle(request, response, o);
     }
 
     @Override

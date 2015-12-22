@@ -79,7 +79,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
     return toSeqFuture(this.spanStore.getTracesByIds(traceIds));
   }
 
-  static Future<Seq<List<Span>>> toSeqFuture(java.util.List<java.util.List<io.zipkin.Span>> traces) {
+  private static Future<Seq<List<Span>>> toSeqFuture(java.util.List<java.util.List<io.zipkin.Span>> traces) {
     ArrayList<List<Span>> result = new ArrayList<>(traces.size());
     for (java.util.List<io.zipkin.Span> trace : traces) {
       java.util.List<Span> spans = convert(trace);
@@ -110,7 +110,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
   }
 
   @Nullable
-  static java.util.List<Span> convert(java.util.List<io.zipkin.Span> input) {
+  private static java.util.List<Span> convert(java.util.List<io.zipkin.Span> input) {
     byte[] bytes = Codec.JSON.writeSpans(input);
     try {
       TypeReference<java.util.List<JsonSpan>> ref = new TypeReference<java.util.List<JsonSpan>>(){};
@@ -123,7 +123,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
   }
 
   @Nullable
-  static java.util.List<io.zipkin.Span> invert(Seq<Span> input) {
+  private static java.util.List<io.zipkin.Span> invert(Seq<Span> input) {
     try {
       byte[] bytes = scalaCodec.writeValueAsBytes(input);
       return Codec.JSON.readSpans(bytes);

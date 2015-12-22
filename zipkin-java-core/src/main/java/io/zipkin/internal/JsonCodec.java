@@ -52,7 +52,7 @@ import static java.util.logging.Level.FINEST;
 public final class JsonCodec implements Codec {
   private static final Logger LOGGER = Logger.getLogger(JsonCodec.class.getName());
 
-  static final JsonAdapter<Long> HEX_LONG_ADAPTER = new JsonAdapter<Long>() {
+  private static final JsonAdapter<Long> HEX_LONG_ADAPTER = new JsonAdapter<Long>() {
     @Override
     public Long fromJson(JsonReader reader) throws IOException {
       Buffer buffer = new Buffer();
@@ -100,14 +100,15 @@ public final class JsonCodec implements Codec {
       writer.beginObject();
       writer.name("serviceName").value(value.serviceName);
       String ipv4 = String.format("%d.%d.%d.%d",
-          (value.ipv4 >> 24 & 0xff),
-          (value.ipv4 >> 16 & 0xff),
-          (value.ipv4 >> 8 & 0xff),
-          (value.ipv4 & 0xff)
+          value.ipv4 >> 24 & 0xff,
+          value.ipv4 >> 16 & 0xff,
+          value.ipv4 >> 8 & 0xff,
+          value.ipv4 & 0xff
       );
       writer.name("ipv4").value(ipv4);
-      if (value.port != null && !value.port.equals(0)) {
-        writer.name("port").value(value.port & 0xffff);
+      if (value.port != null) {
+        int port = value.port & 0xffff;
+        if (port != 0) writer.name("port").value(port);
       }
       writer.endObject();
     }

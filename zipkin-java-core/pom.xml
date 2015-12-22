@@ -31,6 +31,7 @@
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
     <main.basedir>${project.basedir}/..</main.basedir>
+    <animal-sniffer-maven-plugin.version>1.14</animal-sniffer-maven-plugin.version>
   </properties>
 
   <dependencies>
@@ -46,6 +47,26 @@
 
   <build>
     <plugins>
+      <!-- Make sure Java 8 types and methods aren't used -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>animal-sniffer-maven-plugin</artifactId>
+        <version>${animal-sniffer-maven-plugin.version}</version>
+        <configuration>
+          <signature>
+            <groupId>org.codehaus.mojo.signature</groupId>
+            <artifactId>java17</artifactId>
+            <version>1.0</version>
+          </signature>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <!-- Use of okio, moshi, and libthrift are internal only -->
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>

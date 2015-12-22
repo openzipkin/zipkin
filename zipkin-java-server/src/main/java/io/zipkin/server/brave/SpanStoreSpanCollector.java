@@ -31,19 +31,18 @@ import java.util.concurrent.LinkedBlockingQueue;
  * A Brave {@link SpanCollector} that forwards to the local {@link SpanStore}.
  */
 public class SpanStoreSpanCollector implements SpanCollector, Flushable {
-  private SpanStore spanStore;
+  private final SpanStore spanStore;
   // TODO: should we put a bound on this queue?
   // Since this is only used for internal tracing in zipkin, maybe it's ok
-  private BlockingQueue<Span> queue = new LinkedBlockingQueue<>();
-  private int limit = 200;
+  private final BlockingQueue<Span> queue = new LinkedBlockingQueue<>();
+  private final int limit = 200;
 
   public SpanStoreSpanCollector(SpanStore spanStore) {
     this.spanStore = spanStore;
   }
 
   public void collect(Span span) {
-    this.queue.offer(span);
-    if (this.queue.size() >= this.limit) {
+    if (this.queue.offer(span) && this.queue.size() >= this.limit) {
       flush();
     }
   }

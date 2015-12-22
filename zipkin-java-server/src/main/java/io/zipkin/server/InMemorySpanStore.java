@@ -107,7 +107,7 @@ public final class InMemorySpanStore implements SpanStore {
   public void close() {
   }
 
-  static Predicate<List<Span>> spansPredicate(QueryRequest request) {
+  private static Predicate<List<Span>> spansPredicate(QueryRequest request) {
     return spans -> {
       Long timestamp = spans.get(0).timestamp;
       if (timestamp == null ||
@@ -166,7 +166,7 @@ public final class InMemorySpanStore implements SpanStore {
     };
   }
 
-  static List<List<Span>> toSortedTraces(Stream<Collection<Span>> unfiltered) {
+  private static List<List<Span>> toSortedTraces(Stream<Collection<Span>> unfiltered) {
     return unfiltered.filter(spans -> spans != null && !spans.isEmpty())
         .map(MergeById::apply)
         .map(CorrectForClockSkew::apply)

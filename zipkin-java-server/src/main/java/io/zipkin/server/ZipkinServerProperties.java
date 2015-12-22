@@ -30,7 +30,7 @@ class ZipkinServerProperties {
 
   static class Store {
     enum Type {
-      mysql, mem;
+      mysql, mem
     }
 
     private Type type = Type.mem;
