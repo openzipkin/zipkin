@@ -4,7 +4,6 @@ ext.mainClassName = 'com.twitter.zipkin.web.Main'
 task run(type:JavaExec) {
     main = mainClassName
     classpath = sourceSets.main.runtimeClasspath
-    args "-zipkin.web.resourcesRoot=${projectDir}/src/main/resources"
     workingDir project.buildDir
 }
 
