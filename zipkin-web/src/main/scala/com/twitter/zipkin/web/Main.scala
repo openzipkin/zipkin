@@ -53,11 +53,7 @@ trait ZipkinWebFactory { self: App =>
   )
 
   val webServerPort = flag("zipkin.web.port", new InetSocketAddress(8080), "Listening port for the zipkin web frontend")
-
   val webRootUrl = flag("zipkin.web.rootUrl", "http://localhost:8080/", "Url where the service is located")
-  val webCacheResources = flag("zipkin.web.cacheResources", false, "cache static resources and mustache templates")
-  val webResourcesRoot = flag("zipkin.web.resourcesRoot", "zipkin-web/src/main/resources", "on-disk location of resources")
-
   val queryDest = flag("zipkin.web.query.dest", "127.0.0.1:9411", "Location of the query server")
   val queryLimit = flag("zipkin.web.query.limit", 10, "Default query limit for trace results")
   val environment = flag("zipkin.web.environmentName", "", "The name of the environment Zipkin is running in")
@@ -80,7 +76,7 @@ trait ZipkinWebFactory { self: App =>
     mapper = new FinatraObjectMapper(ZipkinJson)
   )
 
-  def newMustacheGenerator = new ZipkinMustache(webResourcesRoot(), webCacheResources())
+  def newMustacheGenerator = new ZipkinMustache()
   def newQueryExtractor = new QueryExtractor(queryLimit())
   def newHandlers = new Handlers(newMustacheGenerator, newQueryExtractor)
 
@@ -91,10 +87,9 @@ trait ZipkinWebFactory { self: App =>
     val handlers = newHandlers
     import handlers._
 
-    val publicRoot = if (webCacheResources()) None else Some(webResourcesRoot())
     Seq(
-      ("/app/", handlePublic(resourceDirs, typesMap, publicRoot)),
-      ("/public/", handlePublic(resourceDirs, typesMap, publicRoot)),
+      ("/app/", handlePublic(resourceDirs, typesMap)),
+      ("/public/", handlePublic(resourceDirs, typesMap)),
       // In preparation of moving static assets to zipkin-query
       ("/api/v1/dependencies", handleRoute(queryClient, "/api/v1/dependencies")),
       ("/api/v1/services", handleRoute(queryClient, "/api/v1/services")),

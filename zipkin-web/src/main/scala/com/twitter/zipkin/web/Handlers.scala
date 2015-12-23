@@ -14,7 +14,7 @@ import com.twitter.zipkin.web.mustache.ZipkinMustache
 import com.twitter.zipkin.{Constants => ZConstants}
 import com.twitter.conversions.time._
 import org.jboss.netty.handler.codec.http.QueryStringEncoder
-import java.io.{File, FileInputStream, InputStream}
+import java.io.InputStream
 
 import scala.annotation.tailrec
 
@@ -110,7 +110,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
             ("pageTitle" -> pageTitle),
             ("environment" -> environment),
             ("body" -> response.contentString))
-          val r = MustacheRenderer("v2/layout.mustache", data)
+          val r = MustacheRenderer("templates/v2/layout.mustache", data)
           r(response)
         }
       }
@@ -118,18 +118,12 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
 
   def handlePublic(
     resourceDirs: Set[String],
-    typesMap: Map[String, String],
-    docRoot: Option[String] = None
-  ) =
+    typesMap: Map[String, String]) =
     new Service[Request, Renderer] {
       private[this] var rendererCache = Map.empty[String, Future[Renderer]]
 
       private[this] def getStream(path: String): Option[InputStream] =
-        docRoot map { root =>
-          new FileInputStream(new File(root, path))
-        } orElse {
           Option(getClass.getResourceAsStream(path)) filter { _.available > 0 }
-        }
 
       private[this] def getRenderer(path: String): Option[Future[Renderer]] = {
         rendererCache.get(path) orElse {
@@ -139,7 +133,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
                   val typ = typesMap find { case (n, _) => path.endsWith(n) } map { _._2 } getOrElse("text/plain")
                    getStream(path) map { input =>
                   val renderer = Future.value(StaticRenderer(input, typ))
-                  if (docRoot.isEmpty) rendererCache += (path -> renderer)
+                  rendererCache += (path -> renderer)
                   renderer
                 }
               }
@@ -253,7 +247,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
             ("annotations" -> annos._1),
             ("binaryAnnotations" -> annos._2)))
 
-        MustacheRenderer("v2/index.mustache", data)
+        MustacheRenderer("templates/v2/index.mustache", data)
       }
     }
 
@@ -277,7 +271,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
 
   def handleDependency(): Service[Request, MustacheRenderer] =
     Service.mk[Request, MustacheRenderer] { req =>
-      Future(MustacheRenderer("v2/dependency.mustache", Map[String, Object]()))
+      Future(MustacheRenderer("templates/v2/dependency.mustache", Map[String, Object]()))
     }
 
   private[this] def pathTraceId(id: Option[String]): Option[SpanId] =
@@ -369,7 +363,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       "spans" -> spans,
       "spansBackup" -> spansBackup)
 
-    MustacheRenderer("v2/trace.mustache", data)
+    MustacheRenderer("templates/v2/trace.mustache", data)
   }
 
   def handleTrace(client: HttpClient): Service[Request, Renderer] =
