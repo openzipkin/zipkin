@@ -15,7 +15,7 @@ define(
       var dependencies = {};
 
       this.getDependency = function (endTs) {
-        var url = "/api/dependencies?endTs=" + endTs;
+        var url = "/api/v1/dependencies?endTs=" + endTs;
         $.ajax(url, {
           type: "GET",
           dataType: "json",
