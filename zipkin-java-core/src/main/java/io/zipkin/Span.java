@@ -132,15 +132,15 @@ public final class Span implements Comparable<Span> {
   @Nullable
   public final Boolean debug;
 
-  private Span(long traceId,
-               String name,
-               long id,
-               @Nullable Long parentId,
-               @Nullable Long timestamp,
-               @Nullable Long duration,
-               Collection<Annotation> annotations,
-               Collection<BinaryAnnotation> binaryAnnotations,
-               @Nullable Boolean debug) {
+  Span(long traceId,
+       String name,
+       long id,
+       @Nullable Long parentId,
+       @Nullable Long timestamp,
+       @Nullable Long duration,
+       Collection<Annotation> annotations,
+       Collection<BinaryAnnotation> binaryAnnotations,
+       @Nullable Boolean debug) {
     this.traceId = traceId;
     this.name = checkNotNull(name, "name").toLowerCase();
     this.id = id;

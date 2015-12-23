@@ -85,7 +85,7 @@ public final class QueryRequest {
   /** Maximum number of traces to return. Defaults to 10 */
   public final int limit;
 
-  private QueryRequest(
+  QueryRequest(
       String serviceName,
       String spanName,
       List<String> annotations,

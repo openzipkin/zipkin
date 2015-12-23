@@ -52,7 +52,7 @@ import static java.util.logging.Level.FINEST;
 public final class JsonCodec implements Codec {
   private static final Logger LOGGER = Logger.getLogger(JsonCodec.class.getName());
 
-  private static final JsonAdapter<Long> HEX_LONG_ADAPTER = new JsonAdapter<Long>() {
+  static final JsonAdapter<Long> HEX_LONG_ADAPTER = new JsonAdapter<Long>() {
     @Override
     public Long fromJson(JsonReader reader) throws IOException {
       Buffer buffer = new Buffer();

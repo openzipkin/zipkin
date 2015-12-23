@@ -77,15 +77,15 @@ public final class ThriftCodec implements Codec {
     return write(TRACES_ADAPTER, value);
   }
 
-  private interface ThriftWriter<T> {
+  interface ThriftWriter<T> {
     void write(T value, TProtocol oprot) throws TException;
   }
 
-  private interface ThriftReader<T> {
+  interface ThriftReader<T> {
     T read(TProtocol iprot) throws TException;
   }
 
-  private interface ThriftAdapter<T> extends ThriftReader<T>, ThriftWriter<T> {
+  interface ThriftAdapter<T> extends ThriftReader<T>, ThriftWriter<T> {
   }
 
   static final ThriftAdapter<Endpoint> ENDPOINT_ADAPTER = new ThriftAdapter<Endpoint>() {
@@ -588,7 +588,7 @@ public final class ThriftCodec implements Codec {
     return transport.buffer.readByteArray();
   }
 
-  private static <T> List<T> readList(ThriftReader<T> reader, TProtocol iprot) throws TException {
+  static <T> List<T> readList(ThriftReader<T> reader, TProtocol iprot) throws TException {
     TList spans = iprot.readListBegin();
     if (spans.size > 10000) { // don't allocate massive arrays
       throw new IllegalArgumentException(spans.size + " > 10000: possibly malformed thrift");
@@ -601,7 +601,7 @@ public final class ThriftCodec implements Codec {
     return result;
   }
 
-  private static <T> void writeList(ThriftWriter<T> writer, List<T> value, TProtocol oprot) throws TException {
+  static <T> void writeList(ThriftWriter<T> writer, List<T> value, TProtocol oprot) throws TException {
     oprot.writeListBegin(new TList(TType.STRUCT, value.size()));
     for (int i = 0, length = value.size(); i < length; i++) {
       writer.write(value.get(i), oprot);
@@ -632,7 +632,7 @@ public final class ThriftCodec implements Codec {
     }
   }
 
-  private static final class BufferTransport extends TTransport {
+  static final class BufferTransport extends TTransport {
     final Buffer buffer = new Buffer();
 
     @Override

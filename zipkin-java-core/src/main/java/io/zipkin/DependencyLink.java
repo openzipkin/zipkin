@@ -32,7 +32,7 @@ public final class DependencyLink {
   /** calls made during the duration (in microseconds) of this link */
   public final long callCount;
 
-  private DependencyLink(String parent, String child, long callCount) {
+  DependencyLink(String parent, String child, long callCount) {
     this.parent = checkNotNull(parent, "parent").toLowerCase();
     this.child = checkNotNull(child, "child").toLowerCase();
     this.callCount = callCount;
