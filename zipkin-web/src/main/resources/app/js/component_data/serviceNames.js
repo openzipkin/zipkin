@@ -11,7 +11,7 @@ define(
 
     function serviceNames() {
       this.updateServiceNames = function(ev, lastServiceName) {
-        $.ajax("/api/services", {
+        $.ajax("/api/v1/services", {
           type: "GET",
           dataType: "json",
           context: this,

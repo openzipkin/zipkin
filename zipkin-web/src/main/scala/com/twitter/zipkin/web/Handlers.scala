@@ -372,6 +372,14 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
     MustacheRenderer("v2/trace.mustache", data)
   }
 
+  def handleTrace(client: HttpClient): Service[Request, Renderer] =
+    Service.mk[Request, Renderer] { req =>
+      pathTraceId(req.path.split("/").lastOption) map { id =>
+        client.execute(Request(s"/api/v1/trace/$id"))
+          .map(CopyRenderer)
+      } getOrElse NotFound
+    }
+
   def handleTraces(client: HttpClient): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
       pathTraceId(req.path.split("/").lastOption) map { id =>

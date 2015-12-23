@@ -95,12 +95,16 @@ trait ZipkinWebFactory { self: App =>
     Seq(
       ("/app/", handlePublic(resourceDirs, typesMap, publicRoot)),
       ("/public/", handlePublic(resourceDirs, typesMap, publicRoot)),
+      // In preparation of moving static assets to zipkin-query
+      ("/api/v1/dependencies", handleRoute(queryClient, "/api/v1/dependencies")),
+      ("/api/v1/services", handleRoute(queryClient, "/api/v1/services")),
+      ("/api/v1/spans", handleRoute(queryClient, "/api/v1/spans")),
+      ("/api/v1/trace/:id", handleTrace(queryClient)),
+      ("/api/v1/traces", handleRoute(queryClient, "/api/v1/traces")),
+      // TODO: Once the following are javascript-only, we can move remove zipkin-web
       ("/", addLayout("Index", environment()) andThen handleIndex(queryClient)),
       ("/traces/:id", addLayout("Traces", environment()) andThen handleTraces(queryClient)),
-      ("/dependency", addLayout("Dependency", environment()) andThen handleDependency()),
-      ("/api/spans", handleRoute(queryClient, "/api/v1/spans")),
-      ("/api/services", handleRoute(queryClient, "/api/v1/services")),
-      ("/api/dependencies", handleRoute(queryClient, "/api/v1/dependencies"))
+      ("/dependency", addLayout("Dependency", environment()) andThen handleDependency())
     ).foldLeft(new HttpMuxer) { case (m , (p, handler)) =>
       val path = p.split("/").toList
       val handlePath = path.takeWhile { t => !(t.startsWith(":") || t.startsWith("?:")) }
