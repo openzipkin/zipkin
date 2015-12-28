@@ -2,7 +2,6 @@ dependencies {
     compile project(':zipkin-common')
 
     compile "com.twitter:finagle-core_${scalaInterfaceVersion}:${commonVersions.finagle}"
-    compile "com.twitter:finagle-http_${scalaInterfaceVersion}:${commonVersions.finagle}"
     compile "com.twitter:util-core_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
     compile "com.twitter:util-zk_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
     // TODO: REWRITE: this requires the unreliable https://maven.twttr.com and is also unmaintained
@@ -11,5 +10,6 @@ dependencies {
     // zookeeper deps use log4j: route to slf4j
     compile "org.slf4j:log4j-over-slf4j:${commonVersions.slf4j}"
 
+    testCompile 'org.apache.curator:curator-framework:2.9.1'
     testCompile 'org.apache.curator:curator-test:2.9.1'
 }

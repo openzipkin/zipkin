@@ -20,7 +20,7 @@ Below are environment variables definitions.
     * `COLLECTOR_PORT`: Listen port for the thrift scribe and dependency apis; Defaults to 9410
     * `COLLECTOR_ADMIN_PORT`: Listen port for the ostrich admin http server; Defaults to 9900
     * `COLLECTOR_LOG_LEVEL`: Log level written to the console; Defaults to INFO
-    * `COLLECTOR_SAMPLE_RATE`: Updatable via POST /config/sampleRate; Defaults to always sample (1.0).
+    * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 
 * Span Receivers
   * [kafka](https://github.com/openzipkin/zipkin/blob/master/zipkin-receiver-kafka/README.md)

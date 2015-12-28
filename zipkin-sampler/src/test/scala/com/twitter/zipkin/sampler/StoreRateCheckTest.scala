@@ -20,10 +20,10 @@ import com.twitter.finagle.stats.NullStatsReceiver
 import com.twitter.util.{MockTimer, Time, Var}
 import org.scalatest.FunSuite
 
-class RequestRateCheckTest extends FunSuite {
+class StoreRateCheckTest extends FunSuite {
   test("fails when the request rate is non-positive") {
     val rate = Var(1)
-    val check = new RequestRateCheck[Unit](rate)
+    val check = new StoreRateCheck[Unit](rate)
     assert(check(Some(())).isDefined)
 
     rate.update(0)

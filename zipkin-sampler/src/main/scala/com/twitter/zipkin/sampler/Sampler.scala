@@ -30,8 +30,8 @@ class Sampler(
 ) extends (Long => Boolean) {
   private[this] val rate = new AtomicReference[Double](1.0)
   rateVar.changes.register(Witness(rate))
+  stats.addGauge("rate") { rate.get.toFloat }
 
-  private[this] val RateGauge = stats.addGauge("rate") { rate.get.toFloat }
   private[this] val allowedCounter = stats.counter("allowed")
   private[this] val deniedCounter = stats.counter("denied")
   private[this] val zerosCounter = stats.counter("zeros")

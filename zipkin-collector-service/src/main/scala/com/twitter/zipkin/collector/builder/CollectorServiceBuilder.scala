@@ -24,7 +24,6 @@ import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.collector.filter.{SamplerFilter, ServiceStatsFilter}
 import com.twitter.zipkin.collector.sampler.AdjustableGlobalSampler
 import com.twitter.zipkin.collector.{SpanReceiver, ZipkinCollector}
-import com.twitter.zipkin.config.ConfigRequestHandler
 import com.twitter.zipkin.config.sampler.{AdaptiveSamplerConfig, AdjustableRateConfig}
 import com.twitter.zipkin.receiver.scribe.ScribeReceiver
 import com.twitter.zipkin.storage.Store
@@ -44,11 +43,6 @@ case class CollectorServiceBuilder[T](
   storeBuilder: Builder[Store],
   receiver: Option[SpanReceiver.Processor => SpanReceiver] = None,
   scribeCategories: Set[String] = Set("zipkin"),
-  /**
-   * Endpoints are available via
-   *   GET  /config/<name>
-   *   POST /config/<name>?value=<value>
-   */
   sampleRateBuilder: Builder[AdjustableRateConfig] = Adjustable.local(1.0),
   adaptiveSamplerBuilder: Option[Builder[AdaptiveSamplerConfig]] = None,
   serverBuilder: ZipkinServerBuilder = ZipkinServerBuilder(9410, 9900),
@@ -69,8 +63,7 @@ case class CollectorServiceBuilder[T](
     log.info("Building store: %s".format(storeBuilder.toString))
     val store = storeBuilder.apply()
 
-    val sampleRate = sampleRateBuilder.apply()
-    val sampler = new SamplerFilter(new AdjustableGlobalSampler(sampleRate))
+    val sampler = new SamplerFilter(new AdjustableGlobalSampler(sampleRateBuilder()))
 
     import com.twitter.zipkin.conversions.thrift._
 
@@ -84,15 +77,6 @@ case class CollectorServiceBuilder[T](
 
     // initialize any alternate receiver, such as kafka
     val rcv = receiver.map(_(process))
-
-    /**
-     * Add config endpoints with the sampleRate endpoint. Available via:
-     *   GET  /config/<name>
-     *   POST /config/<name>?value=0.2
-     */
-    serverBuilder.adminHttpService map {
-      _.addContext("/config/sampleRate", new ConfigRequestHandler(sampleRate))
-    }
 
     adaptiveSamplerBuilder foreach { builder =>
       val config = builder.apply()
