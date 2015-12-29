@@ -1,44 +1,104 @@
 package com.twitter.zipkin.sampler
 
-import com.twitter.app.App
-import com.twitter.finagle.http.{HttpMuxer, RequestBuilder}
-import com.twitter.util.Await.{ready, result}
-import org.apache.curator.test.TestingServer
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import java.util.Random
 
-class AdaptiveSamplerTest extends FunSuite with Matchers with BeforeAndAfterAll {
+import com.twitter.app.App
+import com.twitter.finagle.Service
+import com.twitter.util.Await.{ready, result}
+import com.twitter.util.Future
+import com.twitter.util.Time.now
+import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
+import com.twitter.zipkin.storage.InMemorySpanStore
+import com.twitter.zipkin.storage.SpanStore.toScalaFunc
+import org.apache.curator.framework.CuratorFrameworkFactory.newClient
+import org.apache.curator.retry.RetryOneTime
+import org.apache.curator.test.TestingServer
+import org.junit._
+import org.scalactic.Tolerance
+import org.scalatest.junit.JUnitSuite
+
+class AdaptiveSamplerTest extends JUnitSuite with Tolerance {
+
+  import AdaptiveSamplerTest._
+
+  /** Makes a hundred spans, with realistic, random trace ids */
+  val hundredSpans = {
+    val ann = Annotation(now.inMicroseconds, "sr", Some(Endpoint(127 << 24 | 1, 8080, "service")))
+    val proto = Span(1L, "get", 1L, annotations = List(ann))
+    new Random().longs(100).toArray.toSeq.map(id => proto.copy(traceId = id, id = id))
+  }
+
+  @Test def sampleRateReadFromZookeeper() {
+    val spanStore = new InMemorySpanStore
+
+    // Simulates an existing sample rate, set from zookeeper
+    client.setData().forPath("/sampleRate", Array[Byte]('0','.','9'))
+
+    result(sampler.apply(hundredSpans, Service.mk(spanStore)))
+
+    assert(spanStore.spans.size === (90 +- 10)) // TODO: see if there's a way to tighten this up!
+  }
+
+  @Test def exportsStoreRateToZookeeperOnInterval() {
+    result(sampler.apply(hundredSpans, Service.mk(_ => Future.Unit)))
+
+    // Until the update interval, we'll see a store rate of zero
+    assert(getLocalStoreRate === 0)
+
+    // Await until update interval passes (1 second + fudge)
+    Thread.sleep(1200)
+
+    // since update frequency is secondly, the rate exported to ZK will be the amount stored * 60
+    assert(getLocalStoreRate === hundredSpans.size * 60)
+  }
+
+  @Before def clear() {
+    // default to always sample
+    client.setData().forPath("/sampleRate", Array[Byte]('1','.','0'))
+
+    // remove any storage rate members
+    val groupMembers = client.getChildren().forPath("/storeRates")
+    if (!groupMembers.isEmpty) {
+      client.setData().forPath("/storeRates/" + groupMembers.get(0), Array[Byte]('0'))
+    }
+  }
+}
+
+object AdaptiveSamplerTest {
 
   object TestAdaptiveSampler extends App with AdaptiveSampler
 
   val zookeeper = new TestingServer()
+  lazy val client = newClient(zookeeper.getConnectString, new RetryOneTime(200 /* ms */))
+  lazy val sampler = TestAdaptiveSampler.newAdaptiveSamplerFilter()
+    .asInstanceOf[AdaptiveSamplerFilter]
 
-  override def beforeAll() {
+  @BeforeClass def beforeAll() {
     zookeeper.start()
+    client.start()
+    // AdaptiveSampler doesn't create these!
+    client.createContainers("/election")
+    client.createContainers("/storeRates")
+    client.createContainers("/sampleRate")
+    client.createContainers("/targetStoreRate")
+
     TestAdaptiveSampler.nonExitingMain(Array(
-      "-zipkin.sampler.adaptive.apiPath", "/",
+      "-zipkin.sampler.adaptive.basePath", "", // shorten for test readability
+      "-zipkin.sampler.adaptive.updateFreq", "1.second", // least possible value
       "-zipkin.zookeeper.location", zookeeper.getConnectString
     ))
-    TestAdaptiveSampler.newAdaptiveSamplerFilter()
-    TestAdaptiveSampler.configureAdaptiveSamplerHttpApi()
     ready(TestAdaptiveSampler)
   }
 
-  override def afterAll() {
+  @AfterClass def afterAll() {
+    client.close()
     zookeeper.close()
     ready(TestAdaptiveSampler.close())
   }
 
-  test("set sampleRate with http api") {
-    val update = 0.9
-
-    val setRate = RequestBuilder().url("http://localhost/sampleRate?newRate=" + update).buildGet
-    result(HttpMuxer(setRate)).contentString should be("Rate changed to: " + update)
-  }
-
-  test("set targetStoreRate with http api") {
-    val update = 100
-
-    val setRate = RequestBuilder().url("http://localhost/targetStoreRate?newRate=" + update).buildGet
-    result(HttpMuxer(setRate)).contentString should be("Rate changed to: " + update)
+  /** Twitter's zookeeper group is where you store the same value as a child node */
+  def getLocalStoreRate = {
+    val groupMember = client.getChildren().forPath("/storeRates").get(0)
+    new String(client.getData().forPath("/storeRates/" + groupMember)).toInt
   }
 }

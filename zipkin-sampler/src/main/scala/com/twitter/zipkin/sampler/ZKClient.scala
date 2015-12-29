@@ -43,6 +43,7 @@ object ZKClient {
     new NamedPoolThreadFactory("ZKClientPool", makeDaemons = true)))
 }
 
+// TODO: rewrite with curator recipes or similar
 class ZKClient(
   addrs: Seq[InetSocketAddress],
   credentials: Option[(String, String)] = None,
