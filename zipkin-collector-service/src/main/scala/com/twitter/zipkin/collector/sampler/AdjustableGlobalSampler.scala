@@ -16,19 +16,19 @@
  */
 package com.twitter.zipkin.collector.sampler
 
-import com.twitter.zipkin.config.sampler.AdjustableRateConfig
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Get the rate of sample from an adjustable source.
  */
-class AdjustableGlobalSampler(sampleRateConfig: AdjustableRateConfig) extends GlobalSampler {
+class AdjustableGlobalSampler(sampleRate: AtomicReference[Float]) extends GlobalSampler {
 
   /**
    * True: process trace
    * False: drop trace on the floor
    */
   override def apply(traceId: Long) : Boolean = {
-    if (sample(traceId, sampleRateConfig.get)) {
+    if (sample(traceId, sampleRate.get)) {
       SAMPLER_PASSED.incr
       true
     } else {
@@ -47,7 +47,7 @@ class AdjustableGlobalSampler(sampleRateConfig: AdjustableRateConfig) extends Gl
    * In addition, math.abs(Long.MinValue) = Long.MinValue due to overflow,
    * so we treat Long.MinValue as Long.MaxValue
    */
-  def sample(traceId: Long, sampleRate: Double) : Boolean = {
+  def sample(traceId: Long, sampleRate: Float) : Boolean = {
     if (sampleRate == 1) {
       true
     } else {
