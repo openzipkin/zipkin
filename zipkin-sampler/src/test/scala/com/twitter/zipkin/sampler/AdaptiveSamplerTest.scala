@@ -21,13 +21,6 @@ class AdaptiveSamplerTest extends JUnitSuite with Tolerance {
 
   import AdaptiveSamplerTest._
 
-  /** Makes a hundred spans, with realistic, random trace ids */
-  val hundredSpans = {
-    val ann = Annotation(now.inMicroseconds, "sr", Some(Endpoint(127 << 24 | 1, 8080, "service")))
-    val proto = Span(1L, "get", 1L, annotations = List(ann))
-    new Random().longs(100).toArray.toSeq.map(id => proto.copy(traceId = id, id = id))
-  }
-
   @Test def sampleRateReadFromZookeeper() {
     val spanStore = new InMemorySpanStore
 
@@ -46,7 +39,7 @@ class AdaptiveSamplerTest extends JUnitSuite with Tolerance {
     assert(getLocalStoreRate === 0)
 
     // Await until update interval passes (1 second + fudge)
-    Thread.sleep(1200)
+    Thread.sleep(TestAdaptiveSampler.asUpdateFreq().inMillis) // let the update interval pass
 
     // since update frequency is secondly, the rate exported to ZK will be the amount stored * 60
     assert(getLocalStoreRate === hundredSpans.size * 60)
@@ -65,6 +58,13 @@ class AdaptiveSamplerTest extends JUnitSuite with Tolerance {
 }
 
 object AdaptiveSamplerTest {
+
+  /** Makes a hundred spans, with realistic, random trace ids */
+  val hundredSpans = {
+    val ann = Annotation(now.inMicroseconds, "sr", Some(Endpoint(127 << 24 | 1, 8080, "service")))
+    val proto = Span(1L, "get", 1L, annotations = List(ann))
+    new Random().longs(100).toArray.toSeq.map(id => proto.copy(traceId = id, id = id))
+  }
 
   object TestAdaptiveSampler extends App with AdaptiveSampler
 
@@ -88,6 +88,10 @@ object AdaptiveSamplerTest {
       "-zipkin.zookeeper.location", zookeeper.getConnectString
     ))
     ready(TestAdaptiveSampler)
+
+    // prime zookeeper data, to make sure connection-concerns don't fail tests
+    result(sampler.apply(hundredSpans, Service.mk(_ => Future.Unit)))
+    Thread.sleep(TestAdaptiveSampler.asUpdateFreq().inMillis) // let the update interval pass
   }
 
   @AfterClass def afterAll() {
@@ -99,6 +103,7 @@ object AdaptiveSamplerTest {
   /** Twitter's zookeeper group is where you store the same value as a child node */
   def getLocalStoreRate = {
     val groupMember = client.getChildren().forPath("/storeRates").get(0)
-    new String(client.getData().forPath("/storeRates/" + groupMember)).toInt
+    val data = client.getData().forPath("/storeRates/" + groupMember)
+    if (data.length == 0) 0 else Integer.parseInt(new String(data))
   }
 }
