@@ -15,6 +15,10 @@ jar.manifest.attributes 'Main-Class': mainClassName
 tasks.build.dependsOn(shadowJar)
 artifacts.zipkinUpload shadowJar
 
+shadowJar {
+    exclude 'META-INF/LICENSE' // jackson's META-INF/LICENSE conflicts with the directory META-INF/license
+}
+
 dependencies {
     compile "com.twitter:finagle-ostrich4_${scalaInterfaceVersion}:${commonVersions.finagle}"
     compile "com.twitter:finagle-thriftmux_${scalaInterfaceVersion}:${commonVersions.finagle}"
