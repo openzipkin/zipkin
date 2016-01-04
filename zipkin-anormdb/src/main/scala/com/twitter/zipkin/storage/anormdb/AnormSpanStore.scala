@@ -306,6 +306,7 @@ class AnormSpanStore(val db: DB,
       SQL(
         """SELECT DISTINCT endpoint_service_name
           |FROM zipkin_annotations
+          |WHERE endpoint_service_name != ''
           |GROUP BY endpoint_service_name
           |ORDER BY endpoint_service_name
         """.stripMargin)

@@ -58,7 +58,8 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     List(BinaryAnnotation("BAH2", "BEH2", Some(ep))))
 
   val spanEmptySpanName = Span(123, "", spanId, None, Some(ann1.timestamp), Some(1000), List(ann1, ann2))
-  val spanEmptyServiceName = Span(123, "spanname", spanId)
+  val spanEmptyServiceName = Span(123, "spanname", spanId,
+    binaryAnnotations = List(BinaryAnnotation("BAH2", "BEH2", Some(ep.copy(serviceName = "")))))
 
   val mergedSpan = Span(123, "methodcall", spanId, None, Some(ann1.timestamp), Some(1000),
     List(ann1, ann2), List(BinaryAnnotation("BAH2", "BEH2", Some(ep))))
