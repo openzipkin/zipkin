@@ -24,6 +24,7 @@
 
   <modules>
     <module>zipkin-java-core</module>
+    <module>zipkin-java-benchmarks</module>
     <module>zipkin-java-interop</module>
     <module>zipkin-java-jdbc</module>
     <module>zipkin-java-server</module>
