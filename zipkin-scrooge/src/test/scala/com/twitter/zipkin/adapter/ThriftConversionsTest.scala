@@ -53,7 +53,7 @@ class ThriftConversionsTest extends FunSuite {
 
     // TODO this could happen if we deserialize an old style struct
     val actualEndpoint = thriftscala.Endpoint(123, 456, null)
-    val expectedEndpoint2 = Endpoint(123, 456, Endpoint.UnknownServiceName)
+    val expectedEndpoint2 = Endpoint(123, 456, "")
     assert(actualEndpoint.toEndpoint === expectedEndpoint2)
 
     val mixedCaseEndpoint = thriftscala.Endpoint(123, 456, "SeRvIcE")

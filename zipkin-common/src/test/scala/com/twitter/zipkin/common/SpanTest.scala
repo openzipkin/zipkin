@@ -31,6 +31,17 @@ class SpanTest extends FunSuite {
       BinaryAnnotation("sa", true, Some(Endpoint(1, 2, "sa"))),
       BinaryAnnotation("lc", "foo", Some(Endpoint(1, 2, "lc")))
     ))
+  val spanWithEmptyServiceNames = Span(12345, "methodcall", 666, None, None, None,
+    List(
+      Annotation(1, "cs", Some(Endpoint(1, 2, "cli"))),
+      Annotation(1, "sr", Some(Endpoint(1, 2, "srv"))),
+      Annotation(1, "ss", Some(Endpoint(1, 2, "srv"))),
+      Annotation(1, "cr", Some(Endpoint(1, 2, "cli")))
+    ),
+    List(
+      BinaryAnnotation("ca", true, Some(Endpoint(1, 2, ""))), // empty service name
+      BinaryAnnotation("sa", true, Some(Endpoint(1, 2, ""))) // empty service name
+    ))
 
   /** Representations should lowercase on the way in */
   test("name cannot be lowercase") {
@@ -45,6 +56,13 @@ class SpanTest extends FunSuite {
 
   test("serviceNames include binary annotations") {
     assert(span.serviceNames === Set("cs", "cr", "ss", "sr", "ca", "sa", "lc"))
+  }
+
+  test("serviceNames ignores annotations with empty service names") {
+    // endpoints do return empty service name
+    assert(spanWithEmptyServiceNames.endpoints.map(_.serviceName) === Set("cli", "srv", ""))
+    // but serviceNames method does not
+    assert(spanWithEmptyServiceNames.serviceNames === Set("cli", "srv"))
   }
 
   test("serviceName preference") {
@@ -72,6 +90,11 @@ class SpanTest extends FunSuite {
     span = span.copy(binaryAnnotations = List(this.span.binaryAnnotations.last))
 
     assert(span.serviceName === Some("cs"))
+  }
+
+  test("serviceName ignores annotations with empty service names") {
+    // ServerAddress annotation's serviceName is empty, so should be ignored in favor of sr/ss annotations
+    assert(spanWithEmptyServiceNames.serviceName === Some("srv"))
   }
 
   test("merge two span parts") {

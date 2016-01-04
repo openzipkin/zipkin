@@ -28,6 +28,9 @@ import com.twitter.zipkin.util.Util._
  * @param ipv4 IPv4 host address packed into 4 bytes
  * @param port IPv4 port or 0, if unknown
  * @param serviceName classifier of a source or destination in lowercase, such as "zipkin-web".
+ *                    Can be an empty string "" if the service name is not known, which would
+ *                    make the span not queryable by the service_name unless some other
+ *                    annotation provides a real value.
  */
 case class Endpoint(ipv4: Int, port: Short, serviceName: String) extends Ordered[Endpoint] {
   checkArgument(serviceName.toLowerCase == serviceName,
@@ -63,5 +66,4 @@ case class Endpoint(ipv4: Int, port: Short, serviceName: String) extends Ordered
 
 object Endpoint {
   val Unknown = Endpoint(0, 0, "")
-  val UnknownServiceName = "unknown"
 }
