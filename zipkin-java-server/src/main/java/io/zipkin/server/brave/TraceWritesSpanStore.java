@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package io.zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
@@ -21,6 +20,7 @@ import io.zipkin.QueryRequest;
 import io.zipkin.Span;
 import io.zipkin.SpanStore;
 import io.zipkin.internal.Nullable;
+import java.util.Iterator;
 import java.util.List;
 
 public final class TraceWritesSpanStore implements SpanStore {
@@ -35,7 +35,7 @@ public final class TraceWritesSpanStore implements SpanStore {
   }
 
   @Override
-  public void accept(List<Span> spans) {
+  public void accept(Iterator<Span> spans) {
     delegate.accept(spans); // don't trace writes
   }
 

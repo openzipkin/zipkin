@@ -19,6 +19,7 @@ The following environment variables from zipkin-scala are honored.
     * `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
     * `QUERY_LOOKBACK`: How many milliseconds queries look back from endTs; Defaults to 7 days
     * `STORAGE_TYPE`: SpanStore implementation: one of `mem` or `mysql`
+    * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 
 ### MySQL
 The following apply when `STORAGE_TYPE` is set to `mysql`:

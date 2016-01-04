@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import okio.Buffer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,7 +45,10 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class ZipkinQueryApiV1 {
 
   private static final String APPLICATION_THRIFT = "application/x-thrift";
-  private static final String DEFAULT_LOOKBACK = "86400000"; // 7 days in millis
+
+  @Autowired
+  @Value("${zipkin.query.lookback}")
+  int defaultLookback = 86400000; // 7 days in millis
 
   private final SpanStore spanStore;
   private final ZipkinSpanWriter spanWriter;
@@ -61,8 +65,8 @@ public class ZipkinQueryApiV1 {
 
   @RequestMapping(value = "/dependencies", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getDependencies(@RequestParam(value = "endTs", required = true) long endTs,
-                                @RequestParam(value = "lookback", required = false, defaultValue = DEFAULT_LOOKBACK) long lookback) {
-    return this.jsonCodec.writeDependencyLinks(this.spanStore.getDependencies(endTs, lookback));
+                                @RequestParam(value = "lookback", required = false) Long lookback) {
+    return this.jsonCodec.writeDependencyLinks(this.spanStore.getDependencies(endTs, lookback != null ? lookback : defaultLookback));
   }
 
   @RequestMapping(value = "/services", method = RequestMethod.GET)
@@ -100,14 +104,14 @@ public class ZipkinQueryApiV1 {
       @RequestParam(value = "minDuration", required = false) Long minDuration,
       @RequestParam(value = "maxDuration", required = false) Long maxDuration,
       @RequestParam(value = "endTs", required = false) Long endTs,
-      @RequestParam(value = "lookback", required = false, defaultValue = DEFAULT_LOOKBACK) long lookback,
+      @RequestParam(value = "lookback", required = false) Long lookback,
       @RequestParam(value = "limit", required = false) Integer limit) {
     QueryRequest.Builder builder = new QueryRequest.Builder(serviceName)
         .spanName(spanName.equals("all") ? null : spanName)
         .minDuration(minDuration)
         .maxDuration(maxDuration)
         .endTs(endTs)
-        .lookback(lookback)
+        .lookback(lookback != null ? lookback : defaultLookback)
         .limit(limit);
 
     if (annotationQuery != null && !annotationQuery.isEmpty()) {

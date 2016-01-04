@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -31,6 +31,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,15 +89,15 @@ public final class JDBCSpanStore implements SpanStore {
   }
 
   @Override
-  public void accept(List<Span> spans) {
-    if (spans.isEmpty()) return;
+  public void accept(Iterator<Span> spans) {
+    if (!spans.hasNext()) return;
     try (Connection conn = this.datasource.getConnection()) {
       DSLContext create = context(conn);
 
       List<Query> inserts = new ArrayList<>();
 
-      for (Span span : spans) {
-        span = ApplyTimestampAndDuration.apply(span);
+      while (spans.hasNext()) {
+        Span span = ApplyTimestampAndDuration.apply(spans.next());
         Long binaryAnnotationTimestamp = span.timestamp;
         if (binaryAnnotationTimestamp == null) { // fallback if we have no timestamp, yet
           binaryAnnotationTimestamp = System.currentTimeMillis() * 1000;

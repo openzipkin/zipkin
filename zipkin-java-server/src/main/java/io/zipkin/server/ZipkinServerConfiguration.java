@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 package io.zipkin.server;
 
+import io.zipkin.TraceIdSampler;
 import javax.sql.DataSource;
 
 import org.jooq.ExecuteListenerProvider;
@@ -20,6 +21,7 @@ import org.jooq.conf.Settings;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -55,6 +57,12 @@ public class ZipkinServerConfiguration {
   @ConditionalOnMissingBean(Codec.Factory.class)
   Codec.Factory codecFactory() {
     return Codec.FACTORY;
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(TraceIdSampler.class)
+  TraceIdSampler traceIdSampler(@Value("${zipkin.collector.sample-rate}") float rate) {
+    return TraceIdSampler.create(rate);
   }
 
   @Bean

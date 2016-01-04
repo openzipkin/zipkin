@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -100,7 +100,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
 
   @Override
   public Future<BoxedUnit> apply(Seq<Span> input) {
-    this.spanStore.accept(ScalaSpanStoreAdapter.invert(input));
+    this.spanStore.accept(ScalaSpanStoreAdapter.invert(input).iterator());
     return Future.Unit();
   }
 
