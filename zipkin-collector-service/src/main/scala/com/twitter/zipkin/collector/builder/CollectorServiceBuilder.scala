@@ -19,17 +19,17 @@ import ch.qos.logback.classic
 import ch.qos.logback.classic.Level
 import com.twitter.finagle.ThriftMux
 import com.twitter.logging.Logger
-import com.twitter.ostrich.admin.{RuntimeEnvironment, ServiceTracker}
+import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.collector.filter.{SamplerFilter, ServiceStatsFilter}
 import com.twitter.zipkin.collector.sampler.AdjustableGlobalSampler
 import com.twitter.zipkin.collector.{SpanReceiver, ZipkinCollector}
-import com.twitter.zipkin.config.sampler.{AdaptiveSamplerConfig, AdjustableRateConfig}
 import com.twitter.zipkin.receiver.scribe.ScribeReceiver
 import com.twitter.zipkin.storage.Store
 import com.twitter.zipkin.thriftscala._
 import org.slf4j.LoggerFactory
 import java.net.InetSocketAddress
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Immutable builder for ZipkinCollector
@@ -43,8 +43,7 @@ case class CollectorServiceBuilder[T](
   storeBuilder: Builder[Store],
   receiver: Option[SpanReceiver.Processor => SpanReceiver] = None,
   scribeCategories: Set[String] = Set("zipkin"),
-  sampleRateBuilder: Builder[AdjustableRateConfig] = Adjustable.local(1.0),
-  adaptiveSamplerBuilder: Option[Builder[AdaptiveSamplerConfig]] = None,
+  sampleRate: AtomicReference[Float] = new AtomicReference[Float](1.0f),
   serverBuilder: ZipkinServerBuilder = ZipkinServerBuilder(9410, 9900),
   logLevel: String = "INFO"
 ) extends Builder[RuntimeEnvironment => ZipkinCollector] {
@@ -54,16 +53,13 @@ case class CollectorServiceBuilder[T](
 
   val log = Logger.get()
 
-  def sampleRate(c: Builder[AdjustableRateConfig]): CollectorServiceBuilder[T] = copy(sampleRateBuilder = c)
-  def adaptiveSampler(b: Builder[AdaptiveSamplerConfig]) = copy(adaptiveSamplerBuilder = Some(b))
-
   def apply() = (runtime: RuntimeEnvironment) => {
     serverBuilder.apply().apply(runtime)
 
     log.info("Building store: %s".format(storeBuilder.toString))
     val store = storeBuilder.apply()
 
-    val sampler = new SamplerFilter(new AdjustableGlobalSampler(sampleRateBuilder()))
+    val sampler = new SamplerFilter(new AdjustableGlobalSampler(sampleRate))
 
     import com.twitter.zipkin.conversions.thrift._
 
@@ -77,13 +73,6 @@ case class CollectorServiceBuilder[T](
 
     // initialize any alternate receiver, such as kafka
     val rcv = receiver.map(_(process))
-
-    adaptiveSamplerBuilder foreach { builder =>
-      val config = builder.apply()
-      val service = config.apply()
-      service.start()
-      ServiceTracker.register(service)
-    }
 
     new ZipkinCollector(server, store, rcv)
   }

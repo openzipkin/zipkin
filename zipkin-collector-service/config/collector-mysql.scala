@@ -1,5 +1,6 @@
+import com.google.common.util.concurrent.Atomics
 import com.twitter.zipkin.anormdb.{DependencyStoreBuilder, SpanStoreBuilder}
-import com.twitter.zipkin.collector.builder.{Adjustable, CollectorServiceBuilder, ZipkinServerBuilder}
+import com.twitter.zipkin.collector.builder.{CollectorServiceBuilder, ZipkinServerBuilder}
 import com.twitter.zipkin.receiver.kafka.KafkaSpanReceiverFactory
 import com.twitter.zipkin.storage.Store
 import com.twitter.zipkin.storage.anormdb.{DB, DBConfig, DBParams}
@@ -7,7 +8,7 @@ import com.twitter.zipkin.storage.anormdb.{DB, DBConfig, DBParams}
 val serverPort = sys.env.get("COLLECTOR_PORT").getOrElse("9410").toInt
 val adminPort = sys.env.get("COLLECTOR_ADMIN_PORT").getOrElse("9900").toInt
 val logLevel = sys.env.get("COLLECTOR_LOG_LEVEL").getOrElse("INFO")
-val sampleRate = sys.env.get("COLLECTOR_SAMPLE_RATE").getOrElse("1.0").toDouble
+val sampleRate = sys.env.get("COLLECTOR_SAMPLE_RATE").getOrElse("1.0").toFloat
 
 val db = DB(DBConfig(
   name = "mysql",
@@ -33,5 +34,6 @@ CollectorServiceBuilder(
   storeBuilder,
   kafkaReceiver,
   serverBuilder = ZipkinServerBuilder(serverPort, adminPort),
+  sampleRate = Atomics.newReference(sampleRate),
   logLevel = logLevel
-).sampleRate(Adjustable.local(sampleRate))
+)

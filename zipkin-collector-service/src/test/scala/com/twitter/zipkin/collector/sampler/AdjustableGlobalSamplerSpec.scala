@@ -17,18 +17,13 @@ package com.twitter.zipkin.collector.sampler
  *
  */
 
-import com.twitter.zipkin.config.sampler.AdjustableRateConfig
-import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import com.google.common.util.concurrent.Atomics
 import org.scalatest.{FunSuite, Matchers}
 
-class AdjustableGlobalSamplerSpec extends FunSuite with Matchers with MockitoSugar {
-  val adjustableConfig = mock[AdjustableRateConfig]
+class AdjustableGlobalSamplerSpec extends FunSuite with Matchers {
 
   test("keep 10% of traces") {
-    when(adjustableConfig.get) thenReturn 0.1
-
-    val sampler = new AdjustableGlobalSampler(adjustableConfig)
+    val sampler = new AdjustableGlobalSampler(Atomics.newReference(0.1f))
 
     sampler(Long.MinValue) should be (false)
     sampler(-1) should be (true)
@@ -38,9 +33,7 @@ class AdjustableGlobalSamplerSpec extends FunSuite with Matchers with MockitoSug
   }
 
   test("drop all traces") {
-    when(adjustableConfig.get) thenReturn 0
-
-    val sampler = new AdjustableGlobalSampler(adjustableConfig)
+    val sampler = new AdjustableGlobalSampler(Atomics.newReference(0f))
 
     sampler(Long.MinValue) should be (false)
     sampler(Long.MinValue + 1)
@@ -51,9 +44,7 @@ class AdjustableGlobalSamplerSpec extends FunSuite with Matchers with MockitoSug
   }
 
   test("keep all traces") {
-    when(adjustableConfig.get) thenReturn 1
-
-    val sampler = new AdjustableGlobalSampler(adjustableConfig)
+    val sampler = new AdjustableGlobalSampler(Atomics.newReference(1f))
 
     sampler(Long.MinValue) should be (true)
     -5000 to 5000 foreach { i =>
