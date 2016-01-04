@@ -44,7 +44,7 @@ case class BinaryAnnotation(
   annotationType: AnnotationType,
   host: Option[Endpoint]
 ) {
-  def serviceName = host.map(_.serviceName).getOrElse("unknown")
+  def serviceName = host.map(_.serviceName).getOrElse("")
 }
 
 object BinaryAnnotation {

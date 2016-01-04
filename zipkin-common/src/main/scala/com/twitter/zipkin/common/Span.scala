@@ -67,7 +67,7 @@ case class Span(
   def endpoints: Set[Endpoint] =
     (annotations.flatMap(_.host) ++ binaryAnnotations.flatMap(_.host)).toSet
 
-  def serviceNames: Set[String] = endpoints.map(_.serviceName)
+  def serviceNames: Set[String] = endpoints.map(_.serviceName).filterNot(_.isEmpty)
 
   /**
    * Tries to extract the best name of the service in this span. This depends on annotations
@@ -75,15 +75,15 @@ case class Span(
    */
   lazy val serviceName: Option[String] = {
     // Most authoritative is the label of the server's endpoint
-    binaryAnnotations.find(_.key == Constants.ServerAddr).map(_.serviceName) orElse
+    binaryAnnotations.find(_.key == Constants.ServerAddr).map(_.serviceName).filterNot(_.isEmpty) orElse
       // Next, the label of any server annotation, logged by an instrumented server
-      serverSideAnnotations.headOption.map(_.serviceName) orElse
+      serverSideAnnotations.headOption.map(_.serviceName).filterNot(_.isEmpty) orElse
       // Next is the label of the client's endpoint
-      binaryAnnotations.find(_.key == Constants.ClientAddr).map(_.serviceName) orElse
+      binaryAnnotations.find(_.key == Constants.ClientAddr).map(_.serviceName).filterNot(_.isEmpty) orElse
       // Next is the label of any client annotation, logged by an instrumented client
-      clientSideAnnotations.headOption.map(_.serviceName) orElse
+      clientSideAnnotations.headOption.map(_.serviceName).filterNot(_.isEmpty) orElse
       // Finally is the label of the local component's endpoint
-      binaryAnnotations.find(_.key == Constants.LocalComponent).map(_.serviceName)
+      binaryAnnotations.find(_.key == Constants.LocalComponent).map(_.serviceName).filterNot(_.isEmpty)
   }
 
   /**

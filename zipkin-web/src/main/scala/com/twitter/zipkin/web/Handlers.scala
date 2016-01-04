@@ -315,7 +315,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
         "parentId" -> span.parentId.filter(spanMap.get(_).isDefined).map(SpanId(_).toString),
         "spanName" -> span.name,
         "serviceNames" -> span.serviceNames.mkString(","),
-        "serviceName" -> span.serviceName,
+        "serviceName" -> span.serviceName.getOrElse(""),
         "duration" -> span.duration,
         "durationStr" -> span.duration.map(durationStr),
         "left" -> ((spanStartTs - traceTimestamp).toFloat / traceDuration.toFloat) * 100,

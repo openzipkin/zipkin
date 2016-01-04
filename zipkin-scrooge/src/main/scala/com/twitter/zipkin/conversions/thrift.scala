@@ -34,7 +34,7 @@ object thrift {
   class WrappedEndpoint(e: thriftscala.Endpoint) {
     lazy val toEndpoint = {
       val serviceName = e.serviceName match {
-        case (null | "") => Endpoint.UnknownServiceName
+        case null => ""
         case _ => e.serviceName
       }
       new Endpoint(e.ipv4, e.port, serviceName.toLowerCase)
