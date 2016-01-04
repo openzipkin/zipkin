@@ -56,7 +56,7 @@ public final class InMemorySpanStore implements SpanStore {
       traceIdToSpans.put(span.traceId, span);
       Stream.concat(span.annotations.stream().map(a -> a.endpoint),
                     span.binaryAnnotations.stream().map(a -> a.endpoint))
-          .filter(e -> e != null)
+          .filter(e -> e != null && !e.serviceName.isEmpty())
           .map(e -> e.serviceName)
           .distinct()
           .forEach(serviceName -> {
