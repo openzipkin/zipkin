@@ -92,7 +92,7 @@ public abstract class TraceIdSampler {
      */
     @Override
     public boolean test(long traceId) {
-      // The absolute value of Long.MIN_VALUE is larger than a long, so returns Math.abs identity.
+      // The absolute value of Long.MIN_VALUE is larger than a long, so Math.abs returns identity.
       // This converts to MAX_VALUE to avoid always dropping when traceId == Long.MIN_VALUE
       long t = traceId == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(traceId);
       return t < threshold;
