@@ -13,6 +13,10 @@
  */
 package io.zipkin.benchmarks;
 
+import io.zipkin.TraceIdSampler;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -27,10 +31,6 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * <p>Zipkin v1 uses before-the-fact sampling. This means that the decision to keep or drop the
@@ -67,7 +67,7 @@ public class BeforeTheFactSamplingBenchmarks {
    * </ul>
    * </pre>
    */
-  static final double SAMPLE_RATE = 0.001;
+  static final float SAMPLE_RATE = 0.001f;
 
   @State(Scope.Benchmark)
   public static class Args {
@@ -79,6 +79,16 @@ public class BeforeTheFactSamplingBenchmarks {
     @Param({"-9223372036854775808", "1234567890987654321"})
     long traceId;
   }
+
+  /**
+   * This measures the trace id sampler provided with zipkin-java
+   */
+  @Benchmark
+  public boolean traceIdSampler(Args args) {
+    return TRACE_ID_SAMPLER.test(args.traceId);
+  }
+
+  static final TraceIdSampler TRACE_ID_SAMPLER = TraceIdSampler.create(SAMPLE_RATE);
 
   /**
    * Zipkin collector's AdjustableGlobalSampler compares the absolute value of the trace id against

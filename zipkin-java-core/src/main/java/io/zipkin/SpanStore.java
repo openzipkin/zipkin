@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package io.zipkin;
 
 import io.zipkin.internal.Nullable;
 import java.io.Closeable;
+import java.util.Iterator;
 import java.util.List;
 
 public interface SpanStore extends Closeable {
@@ -22,7 +23,8 @@ public interface SpanStore extends Closeable {
   /**
    * Sinks the given spans, ignoring duplicate annotations.
    */
-  void accept(List<Span> spans);
+  // Iterator to permit simple filtering without Java 8 or third-party types.
+  void accept(Iterator<Span> spans);
 
   /**
    * Get the available trace information from the storage system. Spans in trace are sorted by the

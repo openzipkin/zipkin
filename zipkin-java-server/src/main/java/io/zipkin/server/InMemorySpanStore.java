@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -25,6 +25,7 @@ import io.zipkin.internal.Nullable;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -47,9 +48,9 @@ public final class InMemorySpanStore implements SpanStore {
   private final Multimap<String, String> serviceToSpanNames = new Multimap<>(LinkedHashSet::new);
 
   @Override
-  public synchronized void accept(List<Span> spans) {
-    for (Span span : spans) {
-      span = ApplyTimestampAndDuration.apply(span);
+  public synchronized void accept(Iterator<Span> spans) {
+    while (spans.hasNext()) {
+      Span span = ApplyTimestampAndDuration.apply(spans.next());
       long traceId = span.traceId;
       String spanName = span.name;
       traceIdToSpans.put(span.traceId, span);

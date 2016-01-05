@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015 The OpenZipkin Authors
+    Copyright 2015-2016 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -28,8 +28,6 @@
   <description>Zipkin Java Core</description>
 
   <properties>
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
     <main.basedir>${project.basedir}/..</main.basedir>
     <animal-sniffer-maven-plugin.version>1.14</animal-sniffer-maven-plugin.version>
   </properties>
@@ -47,6 +45,28 @@
 
   <build>
     <plugins>
+      <plugin>
+        <inherited>true</inherited>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+        <executions>
+          <!-- Ensure main source tree compiles to Java 7 bytecode. -->
+          <execution>
+            <id>default-compile</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <source>1.7</source>
+              <target>1.7</target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <!-- Make sure Java 8 types and methods aren't used -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

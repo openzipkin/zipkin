@@ -7,6 +7,9 @@ mysql:
   max-active: ${MYSQL_MAX_CONNECTIONS:10}
   use-ssl: ${MYSQL_USE_SSL:false}
 zipkin:
+  collector:
+    # percentage to traces to retain
+    sample-rate: ${COLLECTOR_SAMPLE_RATE:1.0}
   query:
     # 7 days in millis
     lookback: ${QUERY_LOOKBACK:86400000}

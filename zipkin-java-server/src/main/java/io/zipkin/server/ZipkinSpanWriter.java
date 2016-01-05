@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,14 +15,29 @@ package io.zipkin.server;
 
 import io.zipkin.Span;
 import io.zipkin.SpanStore;
+import io.zipkin.TraceIdSampler;
+import java.util.Iterator;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ZipkinSpanWriter {
+
+  @Autowired
+  TraceIdSampler sampler;
+
+  /**
+   * Asynchronously writes spans to storage, subject to sampling policy.
+   */
   @Async
   public void write(SpanStore spanStore, List<Span> spans) {
-    spanStore.accept(spans);
+    Iterator<Span> sampled = spans.stream()
+        // For portability with zipkin v1, debug always wins.
+        .filter(s -> (s.debug != null && s.debug) || this.sampler.test(s.traceId))
+        .iterator();
+
+    spanStore.accept(sampled);
   }
 }
