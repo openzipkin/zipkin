@@ -256,7 +256,8 @@ public final class JDBCSpanStore implements SpanStore {
       return context(conn)
           .selectDistinct(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME)
           .from(ZIPKIN_ANNOTATIONS)
-          .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.isNotNull())
+          .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.isNotNull()
+              .and(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.ne("")))
           .fetch(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME);
     } catch (SQLException e) {
       throw new RuntimeException("Error querying for " + e + ": " + e.getMessage());

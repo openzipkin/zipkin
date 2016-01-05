@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -34,14 +34,17 @@ public final class Endpoint {
   /**
    * Classifier of a source or destination in lowercase, such as "zipkin-web".
    *
-   * <p/>Conventionally, when the service name isn't known, service_name = "unknown".
-   *
    * <p/>This is the primary parameter for trace lookup, so should be intuitive as possible, for
    * example, matching names in service discovery.
    *
+   * <p/>Conventionally, when the service name isn't known, service_name = "unknown". However, it is
+   * also permissible to set service_name = "" (empty string). The difference in the latter usage is
+   * that the span will not be queryable by service name unless more information is added to the
+   * span with non-empty service name, e.g. an additional annotation from the server.
+   *
    * <p/>Particularly clients may not have a reliable service name at ingest. One approach is to set
-   * serviceName to "unknown" at ingest, and later assign a better label based on binary
-   * annotations, such as user agent.
+   * service_name to "" at ingest, and later assign a better label based on binary annotations, such
+   * as user agent.
    */
   public final String serviceName;
 
