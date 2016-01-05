@@ -139,7 +139,8 @@ public class BeforeTheFactSamplingBenchmarks {
   /**
    * Brave's FixedSampleRateTraceFilter uses a shared counter to guarantee an sample ratio. This
    * approach cannot guarantee a consistent decision, as it doesn't use the trace id. Depending on
-   * implementation, this may or may not be a problem.
+   * implementation, this may or may not be a problem. For example, this strictly periodic approach
+   * could be problematic for systems that process spans that are cyclic / repetitive.
    *
    * <p>See https://github.com/openzipkin/brave/blob/master/brave-core/src/main/java/com/github/kristofa/brave/FixedSampleRateTraceFilter.java#L37
    */
