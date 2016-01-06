@@ -27,7 +27,10 @@ val db = DB(DBConfig(
 //   - zipkin-anormdb/src/main/resources/mysql.sql
 val storeBuilder = Store.Builder(SpanStoreBuilder(db), DependencyStoreBuilder(db))
 val kafkaReceiver = sys.env.get("KAFKA_ZOOKEEPER").map(
-  KafkaSpanReceiverFactory.factory(_, sys.env.get("KAFKA_TOPIC").getOrElse("zipkin"))
+  KafkaSpanReceiverFactory.factory(_,
+    sys.env.get("KAFKA_TOPIC").getOrElse("zipkin"),
+    sys.env.get("KAFKA_STREAMS").getOrElse("1").toInt
+  )
 )
 
 CollectorServiceBuilder(

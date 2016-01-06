@@ -17,11 +17,12 @@ object KafkaSpanReceiverFactory {
    *
    * @param zookeeper the zookeeper connect string, ex. 127.0.0.1:2181
    * @param topic  the topic zipkin spans will be consumed from
+   * @param streams the count of consumer threads consuming the topic
    */
-  def factory(zookeeper: String, topic: String) = {
+  def factory(zookeeper: String, topic: String, streams: Int = 1) = {
     object KafkaFactory extends App with KafkaSpanReceiverFactory
     KafkaFactory.kafkaZookeeperConnect.parse(zookeeper)
-    KafkaFactory.kafkaTopics.parse(topic + "=1")
+    KafkaFactory.kafkaTopics.parse(topic + "=" + streams)
     (process: SpanReceiver.Processor) => KafkaFactory.newKafkaSpanReceiver(process)
   }
 }
