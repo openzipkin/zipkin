@@ -39,7 +39,6 @@ trait KafkaSpanReceiverFactory { self: App =>
   val kafkaTopics = flag[Map[String, Int]]("zipkin.kafka.topics", defaultKafkaTopics, "kafka topics to collect from")
   val kafkaZookeeperConnect = flag("zipkin.kafka.server", defaultKafkaServer, "kafka zk connect string")
   val kafkaGroupId = flag("zipkin.kafka.groupid", defaultKafkaGroupId, "kafka group id")
-  val kafkaConsumerId = flag("zipkin.kafka.consumerid", defaultKafkaConsumerId, "kafka consumer id")
   val kafkaZkConnectionTimeout = flag("zipkin.kafka.zk.connectionTimeout", defaultKafkaZkConnectionTimeout, "kafka zk connection timeout in ms")
   val kafkaSessionTimeout = flag("zipkin.kafka.zk.sessionTimeout", defaultKafkaSessionTimeout, "kafka zk session timeout in ms")
   val kafkaSyncTime = flag("zipkin.kafka.zk.syncTime", defaultKafkaSyncTime, "kafka zk sync time in ms")
@@ -55,16 +54,12 @@ trait KafkaSpanReceiverFactory { self: App =>
 
     val receiverProps = new Properties() {
       put("group.id", kafkaGroupId())
-      put("consumer.id", kafkaConsumerId())
       put("zookeeper.connect", kafkaZookeeperConnect() )
       put("zookeeper.connection.timeout.ms", kafkaZkConnectionTimeout())
       put("zookeeper.session.timeout.ms", kafkaSessionTimeout())
       put("zookeeper.sync.time.ms", kafkaSyncTime())
       put("auto.offset.reset", kafkaAutoOffset())
       put("auto.commit.interval.ms", "10000")
-      put("consumer.timeout.ms", "-1")
-      put("rebalance.max.retries", "4")
-      put("num.consumer.fetchers", "2")
     }
 
     val service = KafkaProcessor(kafkaTopics(), new ConsumerConfig(receiverProps), process, keyDecoder, valueDecoder)
