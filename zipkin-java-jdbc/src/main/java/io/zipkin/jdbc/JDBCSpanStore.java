@@ -337,10 +337,6 @@ public final class JDBCSpanStore implements SpanStore {
         .fetchMap(r -> Pair.create(r.value1(), r.value2()), Record3::value3);
   }
 
-  @Override
-  public void close() {
-  }
-
   private static Endpoint endpoint(Record a) {
     String serviceName = a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME);
     if (serviceName == null) {

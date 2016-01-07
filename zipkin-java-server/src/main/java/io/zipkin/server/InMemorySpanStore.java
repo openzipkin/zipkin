@@ -104,10 +104,6 @@ public final class InMemorySpanStore implements SpanStore {
     return Collections.emptyList();
   }
 
-  @Override
-  public void close() {
-  }
-
   private static Predicate<List<Span>> spansPredicate(QueryRequest request) {
     return spans -> {
       Long timestamp = spans.get(0).timestamp;
