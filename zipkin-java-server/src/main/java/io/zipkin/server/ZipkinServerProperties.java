@@ -20,7 +20,7 @@ class ZipkinServerProperties {
   private Store store = new Store();
 
   public Store getStore() {
-    return this.store;
+    return store;
   }
 
   static class Store {
@@ -31,7 +31,7 @@ class ZipkinServerProperties {
     private Type type = Type.mem;
 
     public Type getType() {
-      return this.type;
+      return type;
     }
 
     public void setType(Type type) {

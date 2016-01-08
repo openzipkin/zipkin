@@ -69,14 +69,14 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
       Tuple2<String, String> keyValue = i.next();
       request.addBinaryAnnotation(keyValue._1(), keyValue._2());
     }
-    return toSeqFuture(this.spanStore.getTraces(request.build()));
+    return toSeqFuture(spanStore.getTraces(request.build()));
   }
 
   @Override
   public Future<Seq<List<Span>>> getTracesByIds(Seq<Object> input) {
     java.util.List<Long> traceIds = JavaConversions.asJavaCollection(input).stream()
         .map(o -> Long.valueOf(o.toString())).collect(toList());
-    return toSeqFuture(this.spanStore.getTracesByIds(traceIds));
+    return toSeqFuture(spanStore.getTracesByIds(traceIds));
   }
 
   private static Future<Seq<List<Span>>> toSeqFuture(java.util.List<java.util.List<io.zipkin.Span>> traces) {
@@ -90,17 +90,17 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
 
   @Override
   public Future<Seq<String>> getAllServiceNames() {
-    return Future.value(JavaConversions.asScalaBuffer(this.spanStore.getServiceNames()).seq());
+    return Future.value(JavaConversions.asScalaBuffer(spanStore.getServiceNames()).seq());
   }
 
   @Override
   public Future<Seq<String>> getSpanNames(String service) {
-    return Future.value(JavaConversions.asScalaBuffer(this.spanStore.getSpanNames(service)).seq());
+    return Future.value(JavaConversions.asScalaBuffer(spanStore.getSpanNames(service)).seq());
   }
 
   @Override
   public Future<BoxedUnit> apply(Seq<Span> input) {
-    this.spanStore.accept(ScalaSpanStoreAdapter.invert(input).iterator());
+    spanStore.accept(ScalaSpanStoreAdapter.invert(input).iterator());
     return Future.Unit();
   }
 

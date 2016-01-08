@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -45,13 +45,13 @@ public class ZipkinServerIntegrationTests {
 
   @Before
   public void init() {
-    this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context).build();
+    mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
   }
 
   @Test
   public void writeSpans_noContentTypeIsJson() throws Exception {
     byte[] body = Codec.JSON.writeSpans(Arrays.asList(newSpan(1L, 1L, "foo", "an", "bar")));
-    this.mockMvc
+    mockMvc
         .perform(post("/api/v1/spans").content(body))
         .andExpect(status().isAccepted());
   }
@@ -59,7 +59,7 @@ public class ZipkinServerIntegrationTests {
   @Test
   public void writeSpans_malformedJsonIsBadRequest() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
-    this.mockMvc
+    mockMvc
         .perform(post("/api/v1/spans").content(body))
         .andExpect(status().isBadRequest());
   }
@@ -67,7 +67,7 @@ public class ZipkinServerIntegrationTests {
   @Test
   public void writeSpans_contentTypeXThrift() throws Exception {
     byte[] body = Codec.THRIFT.writeSpans(Arrays.asList(newSpan(1L, 2L, "foo", "an", "bar")));
-    this.mockMvc
+    mockMvc
         .perform(post("/api/v1/spans").content(body).contentType("application/x-thrift"))
         .andExpect(status().isAccepted());
   }
@@ -75,7 +75,7 @@ public class ZipkinServerIntegrationTests {
   @Test
   public void writeSpans_malformedThriftIsBadRequest() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
-    this.mockMvc
+    mockMvc
         .perform(post("/api/v1/spans").content(body).contentType("application/x-thrift"))
         .andExpect(status().isBadRequest());
   }

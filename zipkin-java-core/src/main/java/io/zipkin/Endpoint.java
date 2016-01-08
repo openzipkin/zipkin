@@ -108,7 +108,7 @@ public final class Endpoint {
     }
 
     public Endpoint build() {
-      return new Endpoint(this.serviceName, this.ipv4, this.port);
+      return new Endpoint(serviceName, ipv4, port);
     }
   }
 
