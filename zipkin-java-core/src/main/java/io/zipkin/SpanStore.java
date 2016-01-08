@@ -14,11 +14,10 @@
 package io.zipkin;
 
 import io.zipkin.internal.Nullable;
-import java.io.Closeable;
 import java.util.Iterator;
 import java.util.List;
 
-public interface SpanStore extends Closeable {
+public interface SpanStore {
 
   /**
    * Sinks the given spans, ignoring duplicate annotations.
@@ -74,7 +73,4 @@ public interface SpanStore extends Closeable {
    *         found
    */
   List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback);
-
-  @Override
-  void close();
 }

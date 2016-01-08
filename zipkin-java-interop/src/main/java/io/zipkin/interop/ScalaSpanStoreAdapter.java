@@ -106,7 +106,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
 
   @Override
   public void close() {
-    this.spanStore.close();
+    // noop
   }
 
   @Nullable

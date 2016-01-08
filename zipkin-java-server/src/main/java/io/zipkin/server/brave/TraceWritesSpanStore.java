@@ -90,9 +90,4 @@ public final class TraceWritesSpanStore implements SpanStore {
       tracer.finishSpan();
     }
   }
-
-  @Override
-  public void close() {
-    delegate.close();
-  }
 }
