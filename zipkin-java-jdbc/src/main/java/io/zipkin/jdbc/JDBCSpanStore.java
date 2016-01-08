@@ -82,7 +82,7 @@ public final class JDBCSpanStore implements SpanStore {
   }
 
   void clear() throws SQLException {
-    try (Connection conn = this.datasource.getConnection()) {
+    try (Connection conn = datasource.getConnection()) {
       context(conn).truncate(ZIPKIN_SPANS).execute();
       context(conn).truncate(ZIPKIN_ANNOTATIONS).execute();
     }
@@ -91,7 +91,7 @@ public final class JDBCSpanStore implements SpanStore {
   @Override
   public void accept(Iterator<Span> spans) {
     if (!spans.hasNext()) return;
-    try (Connection conn = this.datasource.getConnection()) {
+    try (Connection conn = datasource.getConnection()) {
       DSLContext create = context(conn);
 
       List<Query> inserts = new ArrayList<>();
@@ -167,7 +167,7 @@ public final class JDBCSpanStore implements SpanStore {
   private List<List<Span>> getTraces(@Nullable QueryRequest request, @Nullable List<Long> traceIds) {
     final Map<Long, List<Span>> spansWithoutAnnotations;
     final Map<Pair<?>, List<Record>> dbAnnotations;
-    try (Connection conn = this.datasource.getConnection()) {
+    try (Connection conn = datasource.getConnection()) {
       if (request != null) {
         traceIds = toTraceIdQuery(context(conn), request).fetch(ZIPKIN_SPANS.TRACE_ID);
       }
@@ -241,8 +241,8 @@ public final class JDBCSpanStore implements SpanStore {
     return DSL.using(new DefaultConfiguration()
         .set(conn)
         .set(JDBCUtils.dialect(conn))
-        .set(this.settings)
-        .set(this.listenerProvider));
+        .set(settings)
+        .set(listenerProvider));
   }
 
   @Override
@@ -252,7 +252,7 @@ public final class JDBCSpanStore implements SpanStore {
 
   @Override
   public List<String> getServiceNames() {
-    try (Connection conn = this.datasource.getConnection()) {
+    try (Connection conn = datasource.getConnection()) {
       return context(conn)
           .selectDistinct(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME)
           .from(ZIPKIN_ANNOTATIONS)
@@ -268,7 +268,7 @@ public final class JDBCSpanStore implements SpanStore {
   public List<String> getSpanNames(String serviceName) {
     if (serviceName == null) return emptyList();
     serviceName = serviceName.toLowerCase(); // service names are always lowercase!
-    try (Connection conn = this.datasource.getConnection()) {
+    try (Connection conn = datasource.getConnection()) {
       return context(conn)
           .selectDistinct(ZIPKIN_SPANS.NAME)
           .from(ZIPKIN_SPANS)
@@ -286,7 +286,7 @@ public final class JDBCSpanStore implements SpanStore {
   @Override
   public List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback) {
     endTs = endTs * 1000;
-    try (Connection conn = this.datasource.getConnection()) {
+    try (Connection conn = datasource.getConnection()) {
       Map<Long, List<Record3<Long, Long, Long>>> parentChild = context(conn)
           .select(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.PARENT_ID, ZIPKIN_SPANS.ID)
           .from(ZIPKIN_SPANS)

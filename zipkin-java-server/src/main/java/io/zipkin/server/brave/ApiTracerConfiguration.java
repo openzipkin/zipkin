@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,9 +13,14 @@
  */
 package io.zipkin.server.brave;
 
+import com.github.kristofa.brave.Brave;
+import com.github.kristofa.brave.ServerRequestInterceptor;
+import com.github.kristofa.brave.ServerResponseInterceptor;
+import com.github.kristofa.brave.ServerTracer;
+import com.github.kristofa.brave.http.DefaultSpanNameProvider;
+import com.github.kristofa.brave.spring.ServletHandlerInterceptor;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.AsyncHandlerInterceptor;
@@ -23,25 +28,18 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
-import com.github.kristofa.brave.Brave;
-import com.github.kristofa.brave.ServerRequestInterceptor;
-import com.github.kristofa.brave.ServerResponseInterceptor;
-import com.github.kristofa.brave.ServerTracer;
-import com.github.kristofa.brave.http.DefaultSpanNameProvider;
-import com.github.kristofa.brave.spring.ServletHandlerInterceptor;
-
 @Configuration
 public class ApiTracerConfiguration extends WebMvcConfigurerAdapter {
 
   @Autowired
-  private Brave brave;
+  Brave brave;
 
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
-    ServerTracer tracer = this.brave.serverTracer();
+    ServerTracer tracer = brave.serverTracer();
     ServletHandlerInterceptor traceInterceptor = new ServletHandlerInterceptor(
         new ServerRequestInterceptor(tracer), new ServerResponseInterceptor(tracer),
-        new DefaultSpanNameProvider(), this.brave.serverSpanThreadBinder());
+        new DefaultSpanNameProvider(), brave.serverSpanThreadBinder());
     registry.addInterceptor(new NoPOSTHandlerInterceptorAdapter(traceInterceptor));
   }
 
@@ -55,26 +53,26 @@ public class ApiTracerConfiguration extends WebMvcConfigurerAdapter {
     @Override
     public void afterConcurrentHandlingStarted(HttpServletRequest request, HttpServletResponse response, Object o) throws Exception {
       if (!request.getMethod().equals("POST")) {
-        this.delegate.afterConcurrentHandlingStarted(request, response, o);
+        delegate.afterConcurrentHandlingStarted(request, response, o);
       }
     }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object o) throws Exception {
-      return request.getMethod().equals("POST") || this.delegate.preHandle(request, response, o);
+      return request.getMethod().equals("POST") || delegate.preHandle(request, response, o);
     }
 
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object o, ModelAndView modelAndView) throws Exception {
       if (!request.getMethod().equals("POST")) {
-        this.delegate.postHandle(request, response, o, modelAndView);
+        delegate.postHandle(request, response, o, modelAndView);
       }
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object o, Exception e) throws Exception {
       if (!request.getMethod().equals("POST")) {
-        this.delegate.afterCompletion(request, response, o, e);
+        delegate.afterCompletion(request, response, o, e);
       }
     }
   }

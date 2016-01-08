@@ -17,7 +17,6 @@ import com.twitter.util.Future;
 import com.twitter.zipkin.common.Dependencies;
 import com.twitter.zipkin.common.DependencyLink;
 import io.zipkin.SpanStore;
-import io.zipkin.internal.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import scala.Option;

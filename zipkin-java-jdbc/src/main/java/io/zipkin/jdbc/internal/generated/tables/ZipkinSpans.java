@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,11 +16,8 @@
  */
 package io.zipkin.jdbc.internal.generated.tables;
 
-
 import io.zipkin.jdbc.internal.generated.Zipkin;
-
 import javax.annotation.Generated;
-
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Table;

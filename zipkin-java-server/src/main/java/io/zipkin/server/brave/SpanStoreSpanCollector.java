@@ -42,7 +42,7 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
   }
 
   public void collect(Span span) {
-    if (this.queue.offer(span) && this.queue.size() >= this.limit) {
+    if (queue.offer(span) && queue.size() >= limit) {
       flush();
     }
   }
@@ -54,15 +54,15 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
 
   @Override
   public void flush() {
-    List<Span> spans = new ArrayList<>(this.queue.size());
-    while (!this.queue.isEmpty()) {
-      Span span = this.queue.poll();
+    List<Span> spans = new ArrayList<>(queue.size());
+    while (!queue.isEmpty()) {
+      Span span = queue.poll();
       if (span != null) {
         spans.add(span);
       }
     }
     if (!spans.isEmpty()) {
-      this.spanStore.accept(spans.iterator());
+      spanStore.accept(spans.iterator());
     }
   }
 

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,12 +13,15 @@
  */
 package io.zipkin.server.brave;
 
+import com.github.kristofa.brave.Brave;
+import com.github.kristofa.brave.ServerTracer;
+import io.zipkin.Endpoint;
+import io.zipkin.SpanStore;
 import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Collections;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,12 +34,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import com.github.kristofa.brave.Brave;
-import com.github.kristofa.brave.ServerTracer;
-
-import io.zipkin.Endpoint;
-import io.zipkin.SpanStore;
-
 @Configuration
 @ConditionalOnClass(ServerTracer.class)
 @Import({ApiTracerConfiguration.class, JDBCTracerConfiguration.class})
@@ -44,11 +41,11 @@ import io.zipkin.SpanStore;
 public class BraveConfiguration {
 
   @Autowired
-  private SpanStoreSpanCollector spanCollector;
+  SpanStoreSpanCollector spanCollector;
 
   @Scheduled(fixedDelayString = "${zipkin.collector.delayMillisec:1000}")
   public void flushSpans() {
-    this.spanCollector.flush();
+    spanCollector.flush();
   }
 
   /** This gets the lanIP without trying to lookup its name. */

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package io.zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
@@ -62,22 +61,22 @@ public class JDBCTracerConfiguration extends DefaultExecuteListener {
   @Override
   public void renderEnd(ExecuteContext ctx) {
     if (ctx.type() == ExecuteType.READ) { // Don't log writes (so as to not loop on collector)
-      this.brave.clientTracer().startNewSpan("query");
-      this.brave.clientTracer().setCurrentClientServiceName("zipkin-query");
+      brave.clientTracer().startNewSpan("query");
+      brave.clientTracer().setCurrentClientServiceName("zipkin-query");
       String[] batchSQL = ctx.batchSQL();
       if (!StringUtils.isBlank(ctx.sql())) {
-        this.brave.clientTracer().submitBinaryAnnotation("jdbc.query", ctx.sql());
+        brave.clientTracer().submitBinaryAnnotation("jdbc.query", ctx.sql());
       } else if (batchSQL.length > 0 && batchSQL[batchSQL.length - 1] != null) {
-        this.brave.clientTracer().submitBinaryAnnotation("jdbc.query", StringUtils.join(batchSQL, '\n'));
+        brave.clientTracer().submitBinaryAnnotation("jdbc.query", StringUtils.join(batchSQL, '\n'));
       }
-      this.brave.clientTracer().setClientSent(jdbcEndpoint.ipv4, jdbcEndpoint.port, jdbcEndpoint.serviceName);
+      brave.clientTracer().setClientSent(jdbcEndpoint.ipv4, jdbcEndpoint.port, jdbcEndpoint.serviceName);
     }
   }
 
   @Override
   public void executeEnd(ExecuteContext ctx) {
     if (ctx.type() == ExecuteType.READ) { // Don't log writes (so as to not loop on collector)
-      this.brave.clientTracer().setClientReceived();
+      brave.clientTracer().setClientReceived();
     }
   }
 }

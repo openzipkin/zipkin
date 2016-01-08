@@ -66,34 +66,34 @@ public class ZipkinQueryApiV1 {
   @RequestMapping(value = "/dependencies", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getDependencies(@RequestParam(value = "endTs", required = true) long endTs,
                                 @RequestParam(value = "lookback", required = false) Long lookback) {
-    return this.jsonCodec.writeDependencyLinks(this.spanStore.getDependencies(endTs, lookback != null ? lookback : defaultLookback));
+    return jsonCodec.writeDependencyLinks(spanStore.getDependencies(endTs, lookback != null ? lookback : defaultLookback));
   }
 
   @RequestMapping(value = "/services", method = RequestMethod.GET)
   public List<String> getServiceNames() {
-    return this.spanStore.getServiceNames();
+    return spanStore.getServiceNames();
   }
 
   @RequestMapping(value = "/spans", method = RequestMethod.GET)
   public List<String> getSpanNames(
       @RequestParam(value = "serviceName", required = true) String serviceName) {
-    return this.spanStore.getSpanNames(serviceName);
+    return spanStore.getSpanNames(serviceName);
   }
 
   @RequestMapping(value = "/spans", method = RequestMethod.POST)
   @ResponseStatus(HttpStatus.ACCEPTED)
   public void uploadSpansJson(@RequestBody byte[] body) {
-    List<Span> spans = this.jsonCodec.readSpans(body);
+    List<Span> spans = jsonCodec.readSpans(body);
     if (spans == null) throw new MalformedSpansException(APPLICATION_JSON_VALUE);
-    this.spanWriter.write(this.spanStore, spans);
+    spanWriter.write(spanStore, spans);
   }
 
   @RequestMapping(value = "/spans", method = RequestMethod.POST, consumes = APPLICATION_THRIFT)
   @ResponseStatus(HttpStatus.ACCEPTED)
   public void uploadSpansThrift(@RequestBody byte[] body) {
-    List<Span> spans = this.thriftCodec.readSpans(body);
+    List<Span> spans = thriftCodec.readSpans(body);
     if (spans == null) throw new MalformedSpansException(APPLICATION_THRIFT);
-    this.spanWriter.write(this.spanStore, spans);
+    spanWriter.write(spanStore, spans);
   }
 
   @RequestMapping(value = "/traces", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
@@ -127,19 +127,19 @@ public class ZipkinQueryApiV1 {
         }
       }
     }
-    return this.jsonCodec.writeTraces(this.spanStore.getTraces(builder.build()));
+    return jsonCodec.writeTraces(spanStore.getTraces(builder.build()));
   }
 
   @RequestMapping(value = "/trace/{traceId}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getTrace(@PathVariable String traceId) {
     @SuppressWarnings("resource")
     long id = new Buffer().writeUtf8(traceId).readHexadecimalUnsignedLong();
-    List<List<Span>> traces = this.spanStore.getTracesByIds(Collections.singletonList(id));
+    List<List<Span>> traces = spanStore.getTracesByIds(Collections.singletonList(id));
 
     if (traces.isEmpty()) {
       throw new TraceNotFoundException(traceId, id);
     }
-    return this.jsonCodec.writeSpans(traces.get(0));
+    return jsonCodec.writeSpans(traces.get(0));
   }
 
   @ExceptionHandler(TraceNotFoundException.class)

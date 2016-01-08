@@ -35,7 +35,7 @@ public class ZipkinSpanWriter {
   public void write(SpanStore spanStore, List<Span> spans) {
     Iterator<Span> sampled = spans.stream()
         // For portability with zipkin v1, debug always wins.
-        .filter(s -> (s.debug != null && s.debug) || this.sampler.test(s.traceId))
+        .filter(s -> (s.debug != null && s.debug) || sampler.test(s.traceId))
         .iterator();
 
     spanStore.accept(sampled);
