@@ -7,5 +7,8 @@ This module includes [JMH](http://openjdk.java.net/projects/code-tools/jmh/) ben
 From the parent directory, run `mvn install` to build the benchmarks, and the following to run them:
 
 ```bash
+# Run with a single worker thread
 $ java -jar zipkin-java-benchmarks/target/benchmarks.jar
+# Add contention by running with 4 threads
+$ java -jar zipkin-java-benchmarks/target/benchmarks.jar -t4
 ```
