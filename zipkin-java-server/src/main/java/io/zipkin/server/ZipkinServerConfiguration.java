@@ -15,8 +15,8 @@ package io.zipkin.server;
 
 import com.github.kristofa.brave.Brave;
 import io.zipkin.Codec;
+import io.zipkin.Sampler;
 import io.zipkin.SpanStore;
-import io.zipkin.TraceIdSampler;
 import io.zipkin.jdbc.JDBCSpanStore;
 import io.zipkin.server.ZipkinServerProperties.Store.Type;
 import io.zipkin.server.brave.TraceWritesSpanStore;
@@ -57,9 +57,8 @@ public class ZipkinServerConfiguration {
   }
 
   @Bean
-  @ConditionalOnMissingBean(TraceIdSampler.class)
-  TraceIdSampler traceIdSampler(@Value("${zipkin.collector.sample-rate}") float rate) {
-    return TraceIdSampler.create(rate);
+  @ConditionalOnMissingBean(Sampler.class) Sampler traceIdSampler(@Value("${zipkin.collector.sample-rate}") float rate) {
+    return Sampler.create(rate);
   }
 
   @Bean

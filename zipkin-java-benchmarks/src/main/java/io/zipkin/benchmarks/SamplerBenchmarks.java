@@ -13,7 +13,7 @@
  */
 package io.zipkin.benchmarks;
 
-import io.zipkin.TraceIdSampler;
+import io.zipkin.Sampler;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -53,7 +53,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
 @Threads(1)
-public class BeforeTheFactSamplingBenchmarks {
+public class SamplerBenchmarks {
 
   /**
    * Sample rate is a percentage expressed as a float. So, 0.001 is 0.1% (let one in a 1000nd pass).
@@ -87,10 +87,10 @@ public class BeforeTheFactSamplingBenchmarks {
    */
   @Benchmark
   public boolean traceIdSampler(Args args) {
-    return TRACE_ID_SAMPLER.test(args.traceId);
+    return TRACE_ID_SAMPLER.isSampled(args.traceId);
   }
 
-  static final TraceIdSampler TRACE_ID_SAMPLER = TraceIdSampler.create(SAMPLE_RATE);
+  static final Sampler TRACE_ID_SAMPLER = Sampler.create(SAMPLE_RATE);
 
   /**
    * Zipkin collector's AdjustableGlobalSampler compares the absolute value of the trace id against
@@ -154,7 +154,9 @@ public class BeforeTheFactSamplingBenchmarks {
    * implementation, this may or may not be a problem. For example, this strictly periodic approach
    * could be problematic for systems that process spans that are cyclic / repetitive.
    *
-   * <p>See https://github.com/openzipkin/brave/blob/master/brave-core/src/main/java/com/github/kristofa/brave/FixedSampleRateTraceFilter.java#L37
+   * <p>Note: Brave 3.4+ no longer uses this approach.
+   *
+   * <p>See https://github.com/openzipkin/brave/blob/brave-3.3.0/brave-core/src/main/java/com/github/kristofa/brave/FixedSampleRateTraceFilter.java
    */
   @Benchmark
   public boolean compareCounter(Args args) {
@@ -176,7 +178,7 @@ public class BeforeTheFactSamplingBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
-        .include(".*" + BeforeTheFactSamplingBenchmarks.class.getSimpleName() + ".*")
+        .include(".*" + SamplerBenchmarks.class.getSimpleName() + ".*")
         .build();
 
     new Runner(opt).run();
