@@ -200,7 +200,7 @@ public final class QueryRequest {
     }
 
     public QueryRequest build() {
-      long selectedEndTs = endTs == null ? System.currentTimeMillis() * 1000 : endTs;
+      long selectedEndTs = endTs == null ? System.currentTimeMillis(): endTs;
       return new QueryRequest(
           serviceName,
           spanName,
