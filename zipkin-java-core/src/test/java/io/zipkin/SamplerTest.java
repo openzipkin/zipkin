@@ -22,7 +22,7 @@ import org.junit.rules.ExpectedException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Percentage.withPercentage;
 
-public class TraceIdSamplerTest {
+public class SamplerTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none();
 
@@ -38,18 +38,18 @@ public class TraceIdSamplerTest {
    */
   @Test
   public void mostNegativeNumberDefence() {
-    TraceIdSampler sampler = TraceIdSampler.create(0.1f);
+    Sampler sampler = Sampler.create(0.1f);
 
-    assertThat(sampler.test(Long.MIN_VALUE))
-        .isEqualTo(sampler.test(Long.MAX_VALUE));
+    assertThat(sampler.isSampled(Long.MIN_VALUE))
+        .isEqualTo(sampler.isSampled(Long.MAX_VALUE));
   }
 
   @Test
   public void retain10Percent() {
     float sampleRate = 0.1f;
-    TraceIdSampler sampler = TraceIdSampler.create(sampleRate);
+    Sampler sampler = Sampler.create(sampleRate);
 
-    long passCount = LongStream.of(traceIds).filter(sampler::test).count();
+    long passCount = LongStream.of(traceIds).filter(sampler::isSampled).count();
 
     assertThat(passCount)
         .isCloseTo((long) (traceIds.length * sampleRate), withPercentage(3));
@@ -60,28 +60,28 @@ public class TraceIdSamplerTest {
    */
   @Test
   public void idempotent() {
-    TraceIdSampler sampler1 = TraceIdSampler.create(0.1f);
-    TraceIdSampler sampler2 = TraceIdSampler.create(0.1f);
+    Sampler sampler1 = Sampler.create(0.1f);
+    Sampler sampler2 = Sampler.create(0.1f);
 
-    assertThat(LongStream.of(traceIds).filter(sampler1::test).toArray())
-        .containsExactly(LongStream.of(traceIds).filter(sampler2::test).toArray());
+    assertThat(LongStream.of(traceIds).filter(sampler1::isSampled).toArray())
+        .containsExactly(LongStream.of(traceIds).filter(sampler2::isSampled).toArray());
   }
 
   @Test
   public void zeroMeansDropAllTraces() {
-    TraceIdSampler sampler = TraceIdSampler.create(0.0f);
-    assertThat(sampler).isSameAs(TraceIdSampler.NEVER_SAMPLE);
+    Sampler sampler = Sampler.create(0.0f);
+    assertThat(sampler).isSameAs(Sampler.NEVER_SAMPLE);
 
-    assertThat(LongStream.of(traceIds).filter(sampler::test).findAny())
+    assertThat(LongStream.of(traceIds).filter(sampler::isSampled).findAny())
         .isEmpty();
   }
 
   @Test
   public void oneMeansKeepAllTraces() {
-    TraceIdSampler sampler = TraceIdSampler.create(1.0f);
-    assertThat(sampler).isSameAs(TraceIdSampler.ALWAYS_SAMPLE);
+    Sampler sampler = Sampler.create(1.0f);
+    assertThat(sampler).isSameAs(Sampler.ALWAYS_SAMPLE);
 
-    assertThat(LongStream.of(traceIds).filter(sampler::test).toArray())
+    assertThat(LongStream.of(traceIds).filter(sampler::isSampled).toArray())
         .containsExactly(traceIds);
   }
 
@@ -90,7 +90,7 @@ public class TraceIdSamplerTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("rate should be between 0 and 1: was -1.0");
 
-    TraceIdSampler.create(-1.0f);
+    Sampler.create(-1.0f);
   }
 
   @Test
@@ -98,6 +98,6 @@ public class TraceIdSamplerTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("rate should be between 0 and 1: was 1.1");
 
-    TraceIdSampler.create(1.1f);
+    Sampler.create(1.1f);
   }
 }

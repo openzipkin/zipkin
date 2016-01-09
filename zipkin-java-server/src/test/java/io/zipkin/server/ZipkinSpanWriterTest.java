@@ -16,8 +16,8 @@ package io.zipkin.server;
 import io.zipkin.BinaryAnnotation;
 import io.zipkin.Constants;
 import io.zipkin.Endpoint;
+import io.zipkin.Sampler;
 import io.zipkin.Span;
-import io.zipkin.TraceIdSampler;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
@@ -40,7 +40,7 @@ public class ZipkinSpanWriterTest {
   @Test
   public void debugFlagWins() {
     ZipkinSpanWriter writer = new ZipkinSpanWriter();
-    writer.sampler = TraceIdSampler.create(0.0f); // never sample
+    writer.sampler = Sampler.create(0.0f); // never sample
 
     writer.write(spanStore, asList(builder.debug(true).build()));
 
@@ -50,7 +50,7 @@ public class ZipkinSpanWriterTest {
   @Test
   public void unsampledSpansArentStored() {
     ZipkinSpanWriter writer = new ZipkinSpanWriter();
-    writer.sampler = TraceIdSampler.create(0.0f); // never sample
+    writer.sampler = Sampler.create(0.0f); // never sample
 
     writer.write(spanStore, asList(builder.build()));
 
