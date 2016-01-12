@@ -44,6 +44,12 @@ $ ./bin/tracegen
 $ open http://localhost:8080/
 ```
 
+## Different Tracers available
+
+| Language | Library | Framework | Transports Supported | Sampling Supported? | Other notes |
+|:---------|:--------|:----------|:---------------------|:--------------------|:------------|
+| Python | [pyramid_zipkin](https://github.com/Yelp/pyramid_zipkin) | [Pyramid](http://docs.pylonsproject.org/projects/pyramid/en/latest/) |[Kafka \| Scribe](http://pyramid-zipkin.readthedocs.org/en/latest/configuring_zipkin.html#zipkin-transport-handler) | [Yes](http://pyramid-zipkin.readthedocs.org/en/latest/configuring_zipkin.html#zipkin-tracing-percent) | py2, py3 support. |
+
 ## Full documentation
 
 See [http://twitter.github.com/zipkin](http://twitter.github.com/zipkin)
