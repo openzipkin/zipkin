@@ -47,7 +47,7 @@ public class ZipkinQueryApiV1 {
   private static final String APPLICATION_THRIFT = "application/x-thrift";
 
   @Autowired
-  @Value("${zipkin.query.lookback}")
+  @Value("${zipkin.query.lookback:86400000}")
   int defaultLookback = 86400000; // 7 days in millis
 
   private final SpanStore spanStore;

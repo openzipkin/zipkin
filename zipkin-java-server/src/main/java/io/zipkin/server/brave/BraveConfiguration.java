@@ -52,7 +52,7 @@ public class BraveConfiguration {
   // http://stackoverflow.com/questions/8765578/get-local-ip-address-without-connecting-to-the-internet
   @Bean
   @Scope
-  Endpoint local(@Value("${server.port}") int port) {
+  Endpoint local(@Value("${server.port:9411}") int port) {
     int ipv4;
     try {
       ipv4 = Collections.list(NetworkInterface.getNetworkInterfaces()).stream()

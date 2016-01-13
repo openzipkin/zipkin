@@ -57,7 +57,7 @@ public class ZipkinServerConfiguration {
   }
 
   @Bean
-  @ConditionalOnMissingBean(Sampler.class) Sampler traceIdSampler(@Value("${zipkin.collector.sample-rate}") float rate) {
+  @ConditionalOnMissingBean(Sampler.class) Sampler traceIdSampler(@Value("${zipkin.collector.sample-rate:1.0}") float rate) {
     return Sampler.create(rate);
   }
 
