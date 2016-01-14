@@ -31,14 +31,12 @@ The following apply when `STORAGE_TYPE` is set to `mysql`:
     * `MYSQL_MAX_CONNECTIONS`: Maximum concurrent connections, defaults to 10
     * `MYSQL_USE_SSL`: Requires `javax.net.ssl.trustStore` and `javax.net.ssl.trustStorePassword`, defaults to false.
 
-### Docker
-When using docker, the following apply:
-
-    * `ZIPKIN_JAVA_VERSION`: Which published version of zipkin-java is installed
-    * `JAVA_OPTS`: Use to set java arguments, such as heap size or trust store location.
-
 Example usage:
 
 ```bash
 $ STORAGE_TYPE=mysql MYSQL_USER=root ./mvnw -pl zipkin-java-server spring-boot:run
 ```
+
+## Running with Docker
+Released versions of zipkin-java-server are published to Docker Hub as `openzipkin/zipkin-java`.
+See [docker-zipkin-java](https://github.com/openzipkin/docker-zipkin-java) for details.

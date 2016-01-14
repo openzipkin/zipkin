@@ -35,18 +35,11 @@ $ ./mvnw -pl zipkin-java-server spring-boot:run
 
 Note that the server requires minimum JRE 8.
 
-### Docker  
-You can also run the java server with docker. The below instructions will use the most recent published version of `zipkin-java-server` from [bintray](https://bintray.com/openzipkin/maven/zipkin-java).
-
-```bash
-$ docker-compose build
-$ docker-compose up
-```
-
 ## Artifacts
 ### Library Releases
 Releases are uploaded to [Bintray](https://bintray.com/openzipkin/maven/zipkin-java).
 ### Library Snapshots
 Snapshots are uploaded to [JFrog](http://oss.jfrog.org/artifactory/oss-snapshot-local) after commits to master.
 ### Docker Images
-Docker images are not yet published, you will need to build it yourself via our [Dockerfile](https://github.com/openzipkin/zipkin-java/blob/master/zipkin-java-server/Dockerfile).
+Released versions of zipkin-java-server are published to Docker Hub as `openzipkin/zipkin-java`.
+See [docker-zipkin-java](https://github.com/openzipkin/docker-zipkin-java) for details.
