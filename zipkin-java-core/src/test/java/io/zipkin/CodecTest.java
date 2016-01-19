@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,12 +15,16 @@ package io.zipkin;
 
 import java.io.IOException;
 import java.util.List;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class CodecTest {
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
 
   protected abstract Codec codec();
 
@@ -31,12 +35,6 @@ public abstract class CodecTest {
       assertThat(codec().readSpan(bytes))
           .isEqualTo(span);
     }
-  }
-
-  @Test
-  public void spanDecodesToNullOnEmpty() throws IOException {
-    assertThat(codec().readSpan(new byte[0]))
-        .isNull();
   }
 
   @Test
@@ -54,21 +52,6 @@ public abstract class CodecTest {
   }
 
   @Test
-  public void spansDecodeToNullOnEmpty() throws IOException {
-    assertThat(codec().readSpans(new byte[0]))
-        .isNull();
-  }
-
-  /**
-   * Particulary, thrift can mistake malformed content as a huge list. Let's not blow up.
-   */
-  @Test
-  public void spansDecodeToNullOnMalformed() throws IOException {
-    assertThat(codec().readSpans(new byte[]{'h', 'e', 'l', 'l', 'o'}))
-        .isNull();
-  }
-
-  @Test
   public void dependencyLinksRoundTrip() throws IOException {
     List<DependencyLink> links = asList(
         DependencyLink.create("foo", "bar", 2),
@@ -80,8 +63,53 @@ public abstract class CodecTest {
   }
 
   @Test
-  public void dependencyLinksDecodeToNullOnEmpty() throws IOException {
-    assertThat(codec().readDependencyLinks(new byte[0]))
-        .isNull();
+  public void decentErrorMessageOnEmptyInput_span() throws IOException {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Empty input reading Span");
+
+    codec().readSpan(new byte[0]);
+  }
+
+  @Test
+  public void decentErrorMessageOnEmptyInput_spans() throws IOException {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Empty input reading List<Span>");
+
+    codec().readSpans(new byte[0]);
+  }
+
+  @Test
+  public void decentErrorMessageOnEmptyInput_dependencyLinks() throws IOException {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Empty input reading List<DependencyLink>");
+
+    codec().readDependencyLinks(new byte[0]);
+  }
+
+  @Test
+  public void decentErrorMessageOnMalformedInput_span() throws IOException {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Malformed reading Span from ");
+
+    codec().readSpan(new byte[]{'h', 'e', 'l', 'l', 'o'});
+  }
+
+  /**
+   * Particulary, thrift can mistake malformed content as a huge list. Let's not blow up.
+   */
+  @Test
+  public void decentErrorMessageOnMalformedInput_spans() throws IOException {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Malformed reading List<Span> from ");
+
+    codec().readSpans(new byte[]{'h', 'e', 'l', 'l', 'o'});
+  }
+
+  @Test
+  public void decentErrorMessageOnMalformedInput_dependencyLinks() throws IOException {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Malformed reading List<DependencyLink> from ");
+
+    codec().readDependencyLinks(new byte[]{'h', 'e', 'l', 'l', 'o'});
   }
 }

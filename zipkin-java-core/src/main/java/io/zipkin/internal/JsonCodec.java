@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package io.zipkin.internal;
 
 import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.JsonDataException;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import com.squareup.moshi.Moshi;
@@ -27,12 +28,11 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Logger;
 import okio.Buffer;
 import okio.ByteString;
 
 import static io.zipkin.internal.Util.UTF_8;
-import static java.util.logging.Level.FINEST;
+import static io.zipkin.internal.Util.checkArgument;
 
 /**
  * This explicitly constructs instances of model classes via manual parsing for a number of
@@ -50,7 +50,6 @@ import static java.util.logging.Level.FINEST;
  * this should be easy to justify as these objects don't change much at all.
  */
 public final class JsonCodec implements Codec {
-  private static final Logger LOGGER = Logger.getLogger(JsonCodec.class.getName());
 
   static final JsonAdapter<Long> HEX_LONG_ADAPTER = new JsonAdapter<Long>() {
     @Override
@@ -136,7 +135,7 @@ public final class JsonCodec implements Codec {
             switch (reader.peek()) {
               case BOOLEAN:
                 type = BinaryAnnotation.Type.BOOL;
-                result.value(reader.nextBoolean() ? new byte[]{1} : new byte[]{0});
+                result.value(reader.nextBoolean() ? new byte[] {1} : new byte[] {0});
                 break;
               case STRING:
                 string = reader.nextString();
@@ -145,7 +144,9 @@ public final class JsonCodec implements Codec {
                 number = reader.nextDouble();
                 break;
               default:
-                return null;
+                throw new JsonDataException(
+                    "Expected value to be a boolean, string or number but was " + reader.peek()
+                        + " at path " + reader.getPath());
             }
             break;
           case "type":
@@ -183,7 +184,7 @@ public final class JsonCodec implements Codec {
           buffer.writeLong(Double.doubleToRawLongBits(number));
           break;
         default:
-          return null;
+          throw new AssertionError("BinaryAnnotationType " + type + " was added, but not handled");
       }
       return result.value(buffer.readByteArray()).build();
     }
@@ -313,28 +314,33 @@ public final class JsonCodec implements Codec {
       }
       writer.endObject();
     }
+
+    @Override
+    public String toString() {
+      return "Span";
+    }
   };
 
   @Override
   public Span readSpan(byte[] bytes) {
+    checkArgument(bytes.length > 0, "Empty input reading Span");
     try {
       return SPAN_ADAPTER.fromJson(new Buffer().write(bytes));
-    } catch (Exception e) {
-      if (LOGGER.isLoggable(FINEST)) {
-        LOGGER.log(FINEST, "Could not read Span from json" + new String(bytes, UTF_8), e);
-      }
-      return null;
+    } catch (IOException | RuntimeException e) {
+      throw exceptionReading("Span", bytes, e);
     }
   }
 
   @Override
   public byte[] writeSpan(Span value) {
     Buffer buffer = new Buffer();
-    return write(SPAN_ADAPTER, value, buffer) ? buffer.readByteArray() : null;
+    write(SPAN_ADAPTER, value, buffer);
+    return buffer.readByteArray();
   }
 
   @Override
   public List<Span> readSpans(byte[] bytes) {
+    checkArgument(bytes.length > 0, "Empty input reading List<Span>");
     return readList(SPAN_ADAPTER, bytes);
   }
 
@@ -352,7 +358,7 @@ public final class JsonCodec implements Codec {
       buffer.writeUtf8CodePoint('['); // start trace
       // write each span
       for (Iterator<Span> span = trace.next().iterator(); span.hasNext(); ) {
-        if (!write(SPAN_ADAPTER, span.next(), buffer)) return null;
+        write(SPAN_ADAPTER, span.next(), buffer);
         if (span.hasNext()) buffer.writeUtf8CodePoint(',');
       }
       buffer.writeUtf8CodePoint(']'); // stop trace
@@ -396,10 +402,16 @@ public final class JsonCodec implements Codec {
       writer.name("callCount").value(value.callCount);
       writer.endObject();
     }
+
+    @Override
+    public String toString() {
+      return "DependencyLink";
+    }
   };
 
   @Override
   public List<DependencyLink> readDependencyLinks(byte[] bytes) {
+    checkArgument(bytes.length > 0, "Empty input reading List<DependencyLink>");
     return readList(DEPENDENCY_LINK_ADAPTER, bytes);
   }
 
@@ -414,43 +426,39 @@ public final class JsonCodec implements Codec {
     try {
       reader.beginArray();
       while (reader.hasNext()) {
-        T next = adapter.fromJson(reader);
-        if (next == null) return null;
-        result.add(next);
+        result.add(adapter.fromJson(reader));
       }
       reader.endArray();
       return result;
-    } catch (Exception e) {
-      if (LOGGER.isLoggable(FINEST)) {
-        LOGGER.log(FINEST, "Could not read " + adapter + " from json" + new String(bytes, UTF_8), e);
-      }
-      return null;
+    } catch (IOException | RuntimeException e) {
+      throw exceptionReading("List<" + adapter + ">", bytes, e);
     }
   }
 
-  /** Returns null if any element could not be written. */
-  @Nullable
   private static <T> byte[] writeList(JsonAdapter<T> adapter, List<T> values) {
     Buffer buffer = new Buffer();
     buffer.writeUtf8CodePoint('[');
     for (Iterator<T> i = values.iterator(); i.hasNext(); ) {
-      if (!write(adapter, i.next(), buffer)) return null;
+      write(adapter, i.next(), buffer);
       if (i.hasNext()) buffer.writeUtf8CodePoint(',');
     }
     buffer.writeUtf8CodePoint(']');
     return buffer.readByteArray();
   }
 
-  /** Returns false when the value could not be written */
-  private static <T> boolean write(JsonAdapter<T> adapter, T value, Buffer buffer) {
+  /** Inability to encode is a programming bug. */
+  private static <T> void write(JsonAdapter<T> adapter, T value, Buffer buffer) {
     try {
       adapter.toJson(JsonWriter.of(buffer), value);
-      return true;
-    } catch (Exception e) {
-      if (LOGGER.isLoggable(FINEST)) {
-        LOGGER.log(FINEST, "Could not write " + value + " as json", e);
-      }
-      return false;
+    } catch (IOException | RuntimeException e) {
+      throw new AssertionError("Could not write " + value + " as json", e);
     }
+  }
+
+  static IllegalArgumentException exceptionReading(String type, byte[] bytes, Exception e) {
+    String cause = e.getMessage() == null ? "Error" : e.getMessage();
+    if (cause.indexOf("malformed") != -1) cause = "Malformed";
+    String message = String.format("%s reading %s from json: %s", cause, type, new String(bytes, UTF_8));
+    throw new IllegalArgumentException(message, e);
   }
 }
