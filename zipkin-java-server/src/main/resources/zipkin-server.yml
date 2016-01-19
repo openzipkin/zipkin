@@ -32,4 +32,4 @@ spring:
 # Example of how to log codec failures
 # logging:
 #     level:
-#         io.zipkin.internal: 'TRACE'
+#         io.zipkin.server.ZipkinQueryApiV1: 'FINE'

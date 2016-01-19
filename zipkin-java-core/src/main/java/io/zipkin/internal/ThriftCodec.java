@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,7 +22,6 @@ import io.zipkin.Span;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 import okio.Buffer;
 import okio.ByteString;
 import org.apache.thrift.TException;
@@ -34,8 +33,9 @@ import org.apache.thrift.protocol.TStruct;
 import org.apache.thrift.protocol.TType;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.transport.TTransportException;
 
-import static java.util.logging.Level.FINEST;
+import static io.zipkin.internal.Util.checkArgument;
 import static org.apache.thrift.protocol.TProtocolUtil.skip;
 
 /**
@@ -50,7 +50,6 @@ import static org.apache.thrift.protocol.TProtocolUtil.skip;
  * are later compressed with snappy.
  */
 public final class ThriftCodec implements Codec {
-  private static final Logger LOGGER = Logger.getLogger(ThriftCodec.class.getName());
 
   @Override
   public Span readSpan(byte[] bytes) {
@@ -477,6 +476,11 @@ public final class ThriftCodec implements Codec {
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
+
+    @Override
+    public String toString() {
+      return "Span";
+    }
   };
 
   static final ThriftAdapter<List<Span>> SPANS_ADAPTER = new ListAdapter<>(SPAN_ADAPTER);
@@ -549,9 +553,15 @@ public final class ThriftCodec implements Codec {
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
+
+    @Override
+    public String toString() {
+      return "DependencyLink";
+    }
   };
 
-  static final ThriftAdapter<List<DependencyLink>> DEPENDENCY_LINKS_ADAPTER = new ListAdapter<>(DEPENDENCY_LINK_ADAPTER);
+  static final ThriftAdapter<List<DependencyLink>> DEPENDENCY_LINKS_ADAPTER =
+      new ListAdapter<>(DEPENDENCY_LINK_ADAPTER);
 
   @Override
   public List<DependencyLink> readDependencyLinks(byte[] bytes) {
@@ -564,44 +574,41 @@ public final class ThriftCodec implements Codec {
   }
 
   private static <T> T read(ThriftReader<T> reader, byte[] bytes) {
+    checkArgument(bytes.length > 0, "Empty input reading %s", reader);
     try {
       return reader.read(new TBinaryProtocol(new TMemoryInputTransport(bytes)));
-    } catch (Exception e) {
-      if (LOGGER.isLoggable(FINEST)) {
-        LOGGER.log(FINEST, "Could not read " + reader + " from TBinary " + ByteString.of(bytes).base64(), e);
-      }
-      return null;
+    } catch (TException | RuntimeException e) {
+      throw exceptionReading(reader.toString(), bytes, e);
     }
   }
 
+  /** Inability to encode is a programming bug. */
   private static <T> byte[] write(ThriftWriter<T> writer, T value) {
     BufferTransport transport = new BufferTransport();
     TBinaryProtocol protocol = new TBinaryProtocol(transport);
     try {
       writer.write(value, protocol);
-    } catch (Exception e) {
-      if (LOGGER.isLoggable(FINEST)) {
-        LOGGER.log(FINEST, "Could not write " + value + " as TBinary", e);
-      }
-      return null;
+    } catch (TException | RuntimeException e) {
+      throw new AssertionError("Could not write " + value + " as TBinary", e);
     }
     return transport.buffer.readByteArray();
   }
 
   static <T> List<T> readList(ThriftReader<T> reader, TProtocol iprot) throws TException {
-    TList spans = iprot.readListBegin();
-    if (spans.size > 10000) { // don't allocate massive arrays
-      throw new IllegalArgumentException(spans.size + " > 10000: possibly malformed thrift");
+    TList peekLength = iprot.readListBegin();
+    if (peekLength.size > 10000) { // don't allocate massive arrays
+      throw new TException(peekLength.size + " > 10000: possibly malformed thrift");
     }
-    List<T> result = new ArrayList<>(spans.size);
-    for (int i = 0; i < spans.size; i++) {
+    List<T> result = new ArrayList<>(peekLength.size);
+    for (int i = 0; i < peekLength.size; i++) {
       result.add(reader.read(iprot));
     }
     iprot.readListEnd();
     return result;
   }
 
-  static <T> void writeList(ThriftWriter<T> writer, List<T> value, TProtocol oprot) throws TException {
+  static <T> void writeList(ThriftWriter<T> writer, List<T> value, TProtocol oprot)
+      throws TException {
     oprot.writeListBegin(new TList(TType.STRUCT, value.size()));
     for (int i = 0, length = value.size(); i < length; i++) {
       writer.write(value.get(i), oprot);
@@ -657,5 +664,13 @@ public final class ThriftCodec implements Codec {
     public void write(byte[] buf, int off, int len) {
       buffer.write(buf, off, len);
     }
+  }
+
+  static IllegalArgumentException exceptionReading(String type, byte[] bytes, Exception e) {
+    String cause = e.getMessage() == null ? "Error" : e.getMessage();
+    if (e instanceof TTransportException || cause.indexOf("malformed") != -1) cause = "Malformed";
+    String message =
+        String.format("%s reading %s from TBinary: %s", cause, type, ByteString.of(bytes).base64());
+    throw new IllegalArgumentException(message, e);
   }
 }

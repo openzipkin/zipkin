@@ -31,6 +31,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringApplicationConfiguration(classes = ZipkinServer.class)
@@ -61,7 +62,8 @@ public class ZipkinServerIntegrationTests {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
     mockMvc
         .perform(post("/api/v1/spans").content(body))
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isBadRequest())
+        .andExpect(content().string("Malformed reading List<Span> from json: hello"));
   }
 
   @Test
@@ -77,7 +79,8 @@ public class ZipkinServerIntegrationTests {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
     mockMvc
         .perform(post("/api/v1/spans").content(body).contentType("application/x-thrift"))
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isBadRequest())
+        .andExpect(content().string("Malformed reading List<Span> from TBinary: aGVsbG8="));
   }
 
   static Span newSpan(long traceId, long id, String spanName, String value, String service) {

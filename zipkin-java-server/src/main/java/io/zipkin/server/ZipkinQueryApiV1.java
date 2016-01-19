@@ -19,10 +19,13 @@ import io.zipkin.Span;
 import io.zipkin.SpanStore;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import okio.Buffer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,7 +46,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RestController
 @RequestMapping("/api/v1")
 public class ZipkinQueryApiV1 {
-
+  private static final Logger LOGGER = Logger.getLogger(ZipkinQueryApiV1.class.getName());
   private static final String APPLICATION_THRIFT = "application/x-thrift";
 
   @Autowired
@@ -82,18 +85,28 @@ public class ZipkinQueryApiV1 {
 
   @RequestMapping(value = "/spans", method = RequestMethod.POST)
   @ResponseStatus(HttpStatus.ACCEPTED)
-  public void uploadSpansJson(@RequestBody byte[] body) {
-    List<Span> spans = jsonCodec.readSpans(body);
-    if (spans == null) throw new MalformedSpansException(APPLICATION_JSON_VALUE);
-    spanWriter.write(spanStore, spans);
+  public ResponseEntity<?> uploadSpansJson(@RequestBody byte[] body) {
+    return validateAndStoreSpans(jsonCodec, body);
   }
 
   @RequestMapping(value = "/spans", method = RequestMethod.POST, consumes = APPLICATION_THRIFT)
   @ResponseStatus(HttpStatus.ACCEPTED)
-  public void uploadSpansThrift(@RequestBody byte[] body) {
-    List<Span> spans = thriftCodec.readSpans(body);
-    if (spans == null) throw new MalformedSpansException(APPLICATION_THRIFT);
+  public ResponseEntity<?> uploadSpansThrift(@RequestBody byte[] body) {
+    return validateAndStoreSpans(thriftCodec, body);
+  }
+
+  private ResponseEntity<?> validateAndStoreSpans(Codec codec, @RequestBody byte[] body) {
+    List<Span> spans;
+    try {
+      spans = codec.readSpans(body);
+    } catch (IllegalArgumentException e) {
+      if (LOGGER.isLoggable(Level.FINE)) {
+        LOGGER.log(Level.FINE, e.getMessage(), e);
+      }
+      return ResponseEntity.badRequest().body(e.getMessage() + "\n"); // newline for prettier curl
+    }
     spanWriter.write(spanStore, spans);
+    return ResponseEntity.accepted().build();
   }
 
   @RequestMapping(value = "/traces", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
@@ -150,17 +163,6 @@ public class ZipkinQueryApiV1 {
   static class TraceNotFoundException extends RuntimeException {
     public TraceNotFoundException(String traceId, long id) {
       super("Cannot find trace for id=" + traceId + ", long value=" + id);
-    }
-  }
-
-  @ExceptionHandler(MalformedSpansException.class)
-  @ResponseStatus(HttpStatus.BAD_REQUEST)
-  public void malformedSpans() {
-  }
-
-  static class MalformedSpansException extends RuntimeException {
-    public MalformedSpansException(String mediaType) {
-      super("List of spans was malformed for media type " + mediaType);
     }
   }
 }

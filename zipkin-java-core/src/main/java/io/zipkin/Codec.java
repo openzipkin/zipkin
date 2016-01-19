@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 The OpenZipkin Authors
+ * Copyright 2015-2016 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -45,31 +45,20 @@ public interface Codec {
     }
   };
 
-  /** Returns null if the span couldn't be decoded */
-  @Nullable
+  /** throws {@linkplain IllegalArgumentException} if the span couldn't be decoded */
   Span readSpan(byte[] bytes);
 
-  /** Returns null if the span couldn't be encoded */
-  @Nullable
   byte[] writeSpan(Span value);
 
-  /** Returns null if the spans couldn't be decoded */
-  @Nullable
+  /** throws {@linkplain IllegalArgumentException} if the spans couldn't be decoded */
   List<Span> readSpans(byte[] bytes);
 
-  /** Returns null if the spans couldn't be encoded */
-  @Nullable
   byte[] writeSpans(List<Span> value);
 
-  /** Returns null if the traces couldn't be encoded */
-  @Nullable
   byte[] writeTraces(List<List<Span>> value);
 
-  /** Returns null if the dependency links couldn't be decoded */
-  @Nullable
+  /** throws {@linkplain IllegalArgumentException} if the dependency links couldn't be decoded */
   List<DependencyLink> readDependencyLinks(byte[] bytes);
 
-  /** Returns null if the dependency links couldn't be encoded */
-  @Nullable
   byte[] writeDependencyLinks(List<DependencyLink> value);
 }
