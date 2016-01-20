@@ -1,3 +1,5 @@
+test.maxParallelForks = 1
+
 dependencies {
     compile project(':zipkin-collector')
 
