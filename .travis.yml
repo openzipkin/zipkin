@@ -16,7 +16,7 @@ services:
 before_install:
   - mysql -uroot -e 'SET GLOBAL innodb_file_format=Barracuda'
   - mysql -utravis -e 'create database if not exists zipkin'
-  - mysql -utravis -Dzipkin < zipkin-java-jdbc/src/main/resources/mysql.sql
+  - mysql -utravis -Dzipkin < zipkin-spanstores/jdbc/src/main/resources/mysql.sql
   # TODO: To release, setup git config and run `./mvnw -s ./.settings.xml release:prepare` locally.
   #       Once tag-driven automation is setup, these parameters will be used by travis.
   - git config user.name "$GH_USER"
@@ -28,7 +28,7 @@ before_install:
 script:
   # If we aren't a pull request, we are publishing either a snapshot or a release.
   #   We don't currently publish the benchmarks or interop modules, as they are test code only.
-  - '[ "${TRAVIS_BRANCH}" = master ] && [ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s ./.settings.xml -Prelease -pl -zipkin-java-benchmarks,-zipkin-java-interop deploy -nsu'
+  - '[ "${TRAVIS_BRANCH}" = master ] && [ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s ./.settings.xml -Prelease -pl -benchmarks,-interop deploy -nsu'
   # If we are on a pull request, don't build javadoc or source jars (release profile), and certainly don't deploy!
   #   We also add the MYSQL_USER so that these tests will be invoked.
   - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || MYSQL_USER=travis ./mvnw install -nsu'

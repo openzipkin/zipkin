@@ -4,7 +4,7 @@
 This project is a native java port of [zipkin](https://github.com/openzipkin/zipkin), which was historically written in scala+finagle. This includes a dependency-free library and a [spring-boot](http://projects.spring.io/spring-boot/) replacement for zipkin's query server. Storage options are currently limited to in-memory and JDBC (mysql), but Cassandra support is expected soon.
 
 ## Library
-The [core library](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-java-core/src/main/java/io/zipkin) requires minimum language level 7. While currently only used by the server, we expect this library to be used in native instrumentation as well.
+The [core library](https://github.com/openzipkin/zipkin-java/tree/master/zipkin/src/main/java/io/zipkin) requires minimum language level 7. While currently only used by the server, we expect this library to be used in native instrumentation as well.
 
 This includes built-in codec for both thrift and json structs. Direct dependencies on thrift or moshi (json library) are avoided by minifying and repackaging classes used. The result is a 256k jar which won't conflict with any library you use.
 
@@ -26,11 +26,11 @@ bytes = Codec.THRIFT.writeSpan(span);
 ```
 
 ## Server
-The [spring-boot server](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-java-server) receives spans via HTTP POST and respond to queries from zipkin-web. It is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/master/zipkin-query-service), passing the same tests (via the interop module).
+The [spring-boot server](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-server) receives spans via HTTP POST and respond to queries from zipkin-web. It is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/master/zipkin-query-service), passing the same tests (via the interop module).
 
 To run the server from the currently checked out source, enter the following.
 ```bash
-$ ./mvnw -pl zipkin-java-server spring-boot:run
+$ ./mvnw -pl zipkin-server spring-boot:run
 ```
 
 Note that the server requires minimum JRE 8.
@@ -41,5 +41,5 @@ Releases are uploaded to [Bintray](https://bintray.com/openzipkin/maven/zipkin-j
 ### Library Snapshots
 Snapshots are uploaded to [JFrog](http://oss.jfrog.org/artifactory/oss-snapshot-local) after commits to master.
 ### Docker Images
-Released versions of zipkin-java-server are published to Docker Hub as `openzipkin/zipkin-java`.
+Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin-java`.
 See [docker-zipkin-java](https://github.com/openzipkin/docker-zipkin-java) for details.

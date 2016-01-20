@@ -17,17 +17,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.zipkin</groupId>
-  <artifactId>zipkin-java</artifactId>
+  <groupId>io.zipkin.java</groupId>
+  <artifactId>parent</artifactId>
   <version>0.4.3-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
-    <module>zipkin-java-core</module>
-    <module>zipkin-java-benchmarks</module>
-    <module>zipkin-java-interop</module>
-    <module>zipkin-java-jdbc</module>
-    <module>zipkin-java-server</module>
+    <module>zipkin</module>
+    <module>benchmarks</module>
+    <module>interop</module>
+    <module>zipkin-spanstores</module>
+    <module>zipkin-server</module>
   </modules>
 
   <properties>
@@ -43,26 +43,26 @@
 
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
-    <mariadb-java-client.version>1.3.3</mariadb-java-client.version>
+    <mariadb-java-client.version>1.3.4</mariadb-java-client.version>
     <junit.version>4.12</junit.version>
-    <assertj.version>3.2.0</assertj.version>
+    <assertj.version>3.3.0</assertj.version>
 
     <maven-plugin.version>0.3.3</maven-plugin.version>
     <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
     <maven-source-plugin.version>2.4</maven-source-plugin.version>
     <maven-javadoc-plugin.version>2.10.3</maven-javadoc-plugin.version>
-    <maven-license-plugin.version>2.11</maven-license-plugin.version>
+    <license-maven-plugin.version>2.11</license-maven-plugin.version>
     <maven-jar-plugin.version>2.6</maven-jar-plugin.version>
     <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
-    <maven-shade-plugin.version>2.4.2</maven-shade-plugin.version>
-    <moshi.version>1.0.0</moshi.version>
+    <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
+    <moshi.version>1.1.0</moshi.version>
     <okio.version>1.6.0</okio.version>
     <spring-boot.version>1.3.1.RELEASE</spring-boot.version>
     <libthrift.version>0.9.3</libthrift.version>
   </properties>
 
-  <name>Zipkin Java</name>
-  <description>Zipkin Java</description>
+  <name>Zipkin (Parent)</name>
+  <description>Zipkin Components written in Java</description>
   <url>https://github.com/openzipkin/zipkin-java</url>
   <inceptionYear>2015</inceptionYear>
 
@@ -114,19 +114,19 @@
     <dependencies>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-java-core</artifactId>
+        <artifactId>zipkin</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-java-jdbc</artifactId>
+        <artifactId>spanstore-jdbc</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-java-server</artifactId>
+        <artifactId>zipkin-server</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -240,9 +240,10 @@
       <plugin>
         <groupId>com.mycila</groupId>
         <artifactId>license-maven-plugin</artifactId>
-        <version>${maven-license-plugin.version}</version>
+        <version>${license-maven-plugin.version}</version>
         <configuration>
-          <header>${main.basedir}/src/etc/header.txt</header>
+          <!-- session.executionRootDirectory resolves properly even with nested modules -->
+          <header>${session.executionRootDirectory}/src/etc/header.txt</header>
           <excludes>
             <exclude>.travis.yml</exclude>
             <exclude>.gitignore</exclude>
@@ -261,7 +262,7 @@
           <dependency>
             <groupId>com.mycila</groupId>
             <artifactId>license-maven-plugin-git</artifactId>
-            <version>${maven-license-plugin.version}</version>
+            <version>${license-maven-plugin.version}</version>
           </dependency>
         </dependencies>
         <executions>
@@ -313,7 +314,7 @@
             <version>${maven-javadoc-plugin.version}</version>
             <configuration>
               <failOnError>false</failOnError>
-              <excludePackageNames>io.zipkin.internal,io.zipkin.internal.*</excludePackageNames>
+              <excludePackageNames>zipkin.internal,zipkin.internal.*</excludePackageNames>
             </configuration>
             <executions>
               <execution>
