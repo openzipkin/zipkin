@@ -6,7 +6,7 @@ import java.util.concurrent.{TimeUnit, Executors}
 import kafka.consumer.{Consumer, ConsumerConfig, ConsumerConnector}
 import kafka.serializer.{Decoder, StringDecoder}
 
-object KafkaProcessor{
+object KafkaProcessor {
 
   type KafkaDecoder = Decoder[List[ThriftSpan]]
 
