@@ -19,7 +19,7 @@ shadowJar {
 dependencies {
     compile project(':zipkin-common')
     compile "com.twitter:twitter-server_${scalaInterfaceVersion}:${commonVersions.twitterServer}"
-    compile 'com.github.spullara.mustache.java:compiler:${commonVersions.mustache}'
+    compile "com.github.spullara.mustache.java:compiler:${commonVersions.mustache}"
     compile "com.github.spullara.mustache.java:scala-extensions-${scalaInterfaceVersion}:${commonVersions.mustache}"
     compile "com.twitter.finatra:finatra-httpclient_${scalaInterfaceVersion}:${commonVersions.finatra}"
     compile "ch.qos.logback:logback-core:${commonVersions.logback}"
