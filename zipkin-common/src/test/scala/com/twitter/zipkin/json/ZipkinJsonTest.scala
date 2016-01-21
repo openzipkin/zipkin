@@ -23,7 +23,7 @@ class ZipkinJsonTest extends FunSuite with Matchers {
       Annotation(3L, Constants.ServerSend, Some(query)),
       Annotation(4L, Constants.ClientRecv, Some(web.copy(port = 0)))
     ), List(
-      BinaryAnnotation("http.uri", ByteBuffer.wrap("/path".getBytes(UTF_8)), AnnotationType.String, Some(web.copy(port = 0))),
+      BinaryAnnotation("http.path", ByteBuffer.wrap("/path".getBytes(UTF_8)), AnnotationType.String, Some(web.copy(port = 0))),
       BinaryAnnotation(Constants.ClientAddr, ByteBuffer.wrap(Array[Byte](1)), AnnotationType.Bool, Some(web)),
       BinaryAnnotation(Constants.ServerAddr, ByteBuffer.wrap(Array[Byte](1)), AnnotationType.Bool, Some(query))
     ), Some(true))
@@ -72,7 +72,7 @@ class ZipkinJsonTest extends FunSuite with Matchers {
                  |  ],
                  |  "binaryAnnotations": [
                  |    {
-                 |      "key": "http.uri",
+                 |      "key": "http.path",
                  |      "value": "/path",
                  |      "endpoint": {
                  |        "serviceName": "zipkin-web",
@@ -159,10 +159,10 @@ class ZipkinJsonTest extends FunSuite with Matchers {
 
   /** String type can be inferred from the json value */
   test("binary annotation: String doesn't need type") {
-    val a = BinaryAnnotation("http.uri", ByteBuffer.wrap("/path".getBytes(UTF_8)), AnnotationType.String, None)
+    val a = BinaryAnnotation("http.path", ByteBuffer.wrap("/path".getBytes(UTF_8)), AnnotationType.String, None)
     assert(mapper.writeValueAsString(a) ==
       """
-        |{"key":"http.uri","value":"/path"}
+        |{"key":"http.path","value":"/path"}
       """.stripMargin.trim
     )
   }

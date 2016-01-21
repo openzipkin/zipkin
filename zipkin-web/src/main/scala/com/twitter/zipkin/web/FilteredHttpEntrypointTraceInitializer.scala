@@ -35,7 +35,7 @@ object FilteredHttpEntrypointTraceInitializer extends Stack.Module1[param.Tracer
         case -1 => req.uri
         case n => req.uri.substring(0, n)
       }
-      Trace.recordBinary("http.uri", withoutQuery)
+      Trace.recordBinary("http.path", withoutQuery) // Constants.HTTP_PATH is not yet in finagle
       svc(req)
     }
   }

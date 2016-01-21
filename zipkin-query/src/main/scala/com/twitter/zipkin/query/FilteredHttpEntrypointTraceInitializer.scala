@@ -4,6 +4,7 @@ import com.twitter.finagle.http.{Method, Request, Response}
 import com.twitter.finagle.tracing.{DefaultTracer, Trace}
 import com.twitter.finagle.{Filter, ServiceFactory, Stack, param}
 import com.twitter.util.Future
+import com.twitter.zipkin.thriftscala.Constants
 
 /**
  * Hacked variant of the private `com.twitter.finagle.http.codec.HttpServerTraceInitializer`
@@ -35,7 +36,7 @@ object FilteredHttpEntrypointTraceInitializer extends Stack.Module1[param.Tracer
         case -1 => req.uri
         case n => req.uri.substring(0, n)
       }
-      Trace.recordBinary("http.uri", withoutQuery)
+      Trace.recordBinary(Constants.HTTP_PATH, withoutQuery)
       svc(req)
     }
   }
