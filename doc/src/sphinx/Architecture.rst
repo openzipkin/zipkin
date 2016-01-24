@@ -54,7 +54,7 @@ The line above will add an annotation with the string attached to the point in t
 when it happened. You can also add a key value annotation. It could look like this:
 
 .. parsed-literal::
-    Trace.recordBinary("http.response.code", "500")
+    Trace.recordBinary("http.status_code", "500")
 
 Ruby Thrift
 -----------

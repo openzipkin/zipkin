@@ -18,6 +18,7 @@ package com.twitter.zipkin.web
 
 import com.twitter.finagle.http.Request
 import com.twitter.util.Time
+import com.twitter.zipkin.thriftscala.Constants
 import org.scalatest.FunSuite
 
 class QueryExtractorTest extends FunSuite {
@@ -68,24 +69,24 @@ class QueryExtractorTest extends FunSuite {
   test("parse key value annotations") {
     val r = request(
       "serviceName" -> "myService",
-      "annotationQuery" -> "http.responsecode=500")
+      "annotationQuery" -> "http.status_code=500")
     val actual = queryExtractor.getAnnotations(r).get
-    assert(actual._2 === Map("http.responsecode" -> "500"))
+    assert(actual._2 === Map(Constants.HTTP_STATUS_CODE -> "500"))
   }
 
   test("parse key value annotations with slash") {
     val r = request(
       "serviceName" -> "myService",
-      "annotationQuery" -> "http.uri=/sessions")
+      "annotationQuery" -> "http.path=/sessions")
     val actual = queryExtractor.getAnnotations(r).get
-    assert(actual._2 === Map("http.uri" -> "/sessions"))
+    assert(actual._2 === Map(Constants.HTTP_PATH -> "/sessions"))
   }
 
   test("parse key value annotations with equal sign") {
     val r = request(
       "serviceName" -> "myService",
-      "annotationQuery" -> "http.uri=sessions=foo")
+      "annotationQuery" -> "http.path=sessions=foo")
     val actual = queryExtractor.getAnnotations(r).get
-    assert(actual._2 === Map("http.uri" -> "sessions=foo"))
+    assert(actual._2 === Map(Constants.HTTP_PATH -> "sessions=foo"))
   }
 }

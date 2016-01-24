@@ -45,7 +45,7 @@ import com.twitter.zipkin.util.Util._
  *                    statements, annotations are often codes: for example [[Constants.ServerRecv]].
  *                    Annotations are sorted ascending by timestamp.
  * @param binaryAnnotations tags a span with context, usually to support query or aggregation. For
- *                          example, a binary annotation key could be "http.uri".
+ *                          example, a binary annotation key could be "http.path".
  * @param debug true is a request to store this span even if it overrides sampling policy.
  */
 case class Span(

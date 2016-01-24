@@ -109,6 +109,69 @@ const string SERVER_RECV_FRAGMENT = "srf"
 
 #***** BinaryAnnotation.key ******
 /**
+ * The domain portion of the URL or host header. Ex. "mybucket.s3.amazonaws.com"
+ *
+ * Used to filter by host as opposed to ip address.
+ */
+const string HTTP_HOST = "http.host"
+
+/**
+ * The HTTP method, or verb, such as "GET" or "POST".
+ *
+ * Used to filter against an http route.
+ */
+const string HTTP_METHOD = "http.method"
+
+/**
+ * The absolute http path, without any query parameters. Ex. "/objects/abcd-ff"
+ *
+ * Used to filter against an http route, portably with zipkin v1.
+ *
+ * In zipkin v1, only equals filters are supported. Dropping query parameters makes the number
+ * of distinct URIs less. For example, one can query for the same resource, regardless of signing
+ * parameters encoded in the query line. This does not reduce cardinality to a HTTP single route.
+ * For example, it is common to express a route as an http URI template like
+ * /resource/{resource_id}. In systems where only equals queries are available, searching for
+ * http/path=/resource won't match if the actual request was /resource/abcd-ff.
+ *
+ * Historical note: This was commonly expressed as "http.uri" in zipkin, eventhough it was most
+ * often just a path.
+ */
+const string HTTP_PATH = "http.path"
+
+/**
+ * The entire URL, including the scheme, host and query parameters if available. Ex.
+ * "https://mybucket.s3.amazonaws.com/objects/abcd-ff?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Algorithm=AWS4-HMAC-SHA256..."
+ *
+ * Combined with HTTP_METHOD, you can understand the fully-qualified request line.
+ *
+ * This is optional as it may include private data or be of considerable length.
+ */
+const string HTTP_URL = "http.url"
+
+/**
+ * The HTTP status code, when not in 2xx range. Ex. "503"
+ *
+ * Used to filter for error status.
+ */
+const string HTTP_STATUS_CODE = "http.status_code"
+
+/**
+ * The size of the non-empty HTTP request body, in bytes. Ex. "16384"
+ *
+ * Large uploads can exceed limits or contribute directly to latency.
+ */
+const string HTTP_REQUEST_SIZE = "http.request.size"
+
+/**
+ * The size of the non-empty HTTP response body, in bytes. Ex. "16384"
+ *
+ * Large downloads can exceed limits or contribute directly to latency.
+ */
+const string HTTP_RESPONSE_SIZE = "http.response.size"
+
+
+/**
  * The value of "lc" is the component or namespace of a local span.
  *
  * BinaryAnnotation.host adds service context needed to support queries.
@@ -232,8 +295,8 @@ enum AnnotationType {
 
 /**
  * Binary annotations are tags applied to a Span to give it context. For
- * example, a binary annotation of "http.uri" could the path to a resource in a
- * RPC call.
+ * example, a binary annotation of HTTP_PATH ("http.path") could the path
+ * to a resource in a RPC call.
  *
  * Binary annotations of type STRING are always queryable, though more a
  * historical implementation detail than a structural concern.
@@ -241,13 +304,13 @@ enum AnnotationType {
  * Binary annotations can repeat, and vary on the host. Similar to Annotation,
  * the host indicates who logged the event. This allows you to tell the
  * difference between the client and server side of the same key. For example,
- * the key "http.uri" might be different on the client and server side due to
+ * the key "http.path" might be different on the client and server side due to
  * rewriting, like "/api/v1/myresource" vs "/myresource. Via the host field,
  * you can see the different points of view, which often help in debugging.
  */
 struct BinaryAnnotation {
   /**
-   * Name used to lookup spans, such as "http.uri" or "finagle.version".
+   * Name used to lookup spans, such as "http.path" or "finagle.version".
    */
   1: string key,
   /**
@@ -313,7 +376,7 @@ struct Span {
   6: list<Annotation> annotations,
   /**
    * Tags a span with context, usually to support query or aggregation. For
-   * example, a binary annotation key could be "http.uri".
+   * example, a binary annotation key could be "http.path".
    */
   8: list<BinaryAnnotation> binary_annotations
   /**
