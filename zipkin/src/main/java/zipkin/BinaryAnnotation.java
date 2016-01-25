@@ -23,14 +23,14 @@ import static zipkin.internal.Util.equal;
 
 /**
  * Binary annotations are tags applied to a Span to give it context. For example, a binary
- * annotation of "http.uri" could the path to a resource in a RPC call.
+ * annotation of {@link TraceKeys#HTTP_PATH "http.path"} could the path to a resource in a RPC call.
  *
  * <p/>Binary annotations of type {@link Type#STRING} are always queryable, though more a historical
  * implementation detail than a structural concern.
  *
  * <p/>Binary annotations can repeat, and vary on the host. Similar to Annotation, the host
  * indicates who logged the event. This allows you to tell the difference between the client and
- * server side of the same key. For example, the key "http.uri" might be different on the client and
+ * server side of the same key. For example, the key "http.path" might be different on the client and
  * server side due to rewriting, like "/api/v1/myresource" vs "/myresource. Via the host field, you
  * can see the different points of view, which often help in debugging.
  */
@@ -102,7 +102,7 @@ public final class BinaryAnnotation {
   }
 
   /**
-   * Name used to lookup spans, such as "http.uri" or "finagle.version".
+   * Name used to lookup spans, such as {@link TraceKeys#HTTP_PATH "http.path"} or "finagle.version".
    */
   public final String key;
   /**

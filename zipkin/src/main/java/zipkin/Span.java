@@ -122,7 +122,7 @@ public final class Span implements Comparable<Span> {
   /**
    * Tags a span with context, usually to support query or aggregation.
    *
-   * <p/>example, a binary annotation key could be "http.uri".
+   * <p/>example, a binary annotation key could be {@link TraceKeys#HTTP_PATH "http.path"}.
    */
   public final List<BinaryAnnotation> binaryAnnotations;
 
