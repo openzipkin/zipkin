@@ -20,7 +20,14 @@ import zipkin.internal.Util;
 
 import static zipkin.internal.Util.checkNotNull;
 
-/** Indicates the network context of a service involved in a span. */
+/**
+ * Indicates the network context of a service recording an annotation with two exceptions.
+ *
+ * <p>When a BinaryAnnotation, and key is {@link Constants#CLIENT_ADDR} or {@link
+ * Constants#SERVER_ADDR}, the endpoint indicates the source or destination of an RPC. This
+ * exception allows zipkin to display network context of uninstrumented services, or clients such as
+ * web browsers.
+ */
 public final class Endpoint {
 
   public static Endpoint create(String serviceName, int ipv4, int port) {
