@@ -213,7 +213,13 @@ const string CLIENT_ADDR = "ca"
 const string SERVER_ADDR = "sa"
 
 /**
- * Indicates the network context of a service involved in a span.
+ * Indicates the network context of a service recording an annotation with two
+ * exceptions.
+ *
+ * When a BinaryAnnotation, and key is CLIENT_ADDR or SERVER_ADDR,
+ * the endpoint indicates the source or destination of an RPC. This exception
+ * allows zipkin to display network context of uninstrumented services, or
+ * clients such as web browsers.
  */
 struct Endpoint {
   /**
