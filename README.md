@@ -49,6 +49,7 @@ $ open http://localhost:8080/
 | Language | Library | Framework | Transports Supported | Sampling Supported? | Other notes |
 |:---------|:--------|:----------|:---------------------|:--------------------|:------------|
 | Python | [pyramid_zipkin](https://github.com/Yelp/pyramid_zipkin) | [Pyramid](http://docs.pylonsproject.org/projects/pyramid/en/latest/) |[Kafka \| Scribe](http://pyramid-zipkin.readthedocs.org/en/latest/configuring_zipkin.html#zipkin-transport-handler) | [Yes](http://pyramid-zipkin.readthedocs.org/en/latest/configuring_zipkin.html#zipkin-tracing-percent) | py2, py3 support. |
+| Java | [brave](https://github.com/openzipkin/brave) | Jersey, RestEASY, JAXRS2, Apache HttpClient, Mysql | Http, Kafka, Scribe | Yes | Java 7 or higher|
 
 ## Full documentation
 
