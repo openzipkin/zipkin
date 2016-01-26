@@ -80,7 +80,7 @@ Zipkin Collector
 ----------------
 
 Once the trace data arrives at the Zipkin collector daemon we check that it's
-valid, store it and the index it for lookups.
+valid, store it and then index it for lookups.
 
 Storage
 -------
