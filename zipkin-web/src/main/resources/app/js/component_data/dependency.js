@@ -14,8 +14,9 @@ define(
       var services = {};
       var dependencies = {};
 
-      this.getDependency = function (endTs) {
+      this.getDependency = function (endTs, lookback) {
         var url = "/api/v1/dependencies?endTs=" + endTs;
+        if (lookback) url += "&lookback=" + lookback;
         $.ajax(url, {
           type: "GET",
           dataType: "json",
@@ -53,8 +54,8 @@ define(
       };
 
       this.after('initialize', function () {
-        this.on(document, 'dependencyDataRequested', function (args) {
-          this.getDependency(args.from, args.to)
+        this.on(document, 'dependencyDataRequested', function (event, args) {
+          this.getDependency(args.endTs, args.lookback);
         });
 
         this.on(document, 'serviceDataRequested', function (event, args) {
