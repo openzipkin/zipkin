@@ -11,11 +11,11 @@ define(
 
     function timeStamp() {
       this.init = function () {
-        this.$timestamp = this.$node.find("[name=timestamp]");
+        this.$timestamp = this.$node.find(".timestamp-value");
         this.$date = this.$node.find(".date-input");
         this.$time = this.$node.find(".time-input");
         var ts = this.$timestamp.val();
-        this.setDateTime((ts) ? moment(ts / 1000) : moment());
+        this.setDateTime((ts) ? moment(Number(ts)) : moment());
       }
 
       this.setDateTime = function(time) {
@@ -28,7 +28,9 @@ define(
       }
 
       this.dateChanged = function (e) {
-        this.setTimestamp(moment(e.date));
+        var time = moment(e.date);
+        time.add(moment.duration(this.$time.val()));
+        this.setTimestamp(time);
       }
 
       this.timeChanged = function () {
