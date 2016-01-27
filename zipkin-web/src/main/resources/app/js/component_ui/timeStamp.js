@@ -30,7 +30,7 @@ define(
       this.dateChanged = function (e) {
         var time = moment(e.date);
         time.add(moment.duration(this.$time.val()));
-        this.setTimestamp(time);
+        this.setTimestamp(moment.utc(time));
       }
 
       this.timeChanged = function () {
