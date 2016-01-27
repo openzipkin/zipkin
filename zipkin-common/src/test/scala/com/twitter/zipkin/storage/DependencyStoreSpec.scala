@@ -121,10 +121,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
     processDependencies(trace)
 
     val traceDuration = Trace.duration(trace).get
-    result(store.getDependencies(
-      (trace(0).timestamp.get + traceDuration) / 1000,
-      Some(traceDuration / 1000)
-    )).sortBy(_.parent) should be(
+    result(store.getDependencies(today + 1000)).sortBy(_.parent) should be(
       List(
         new DependencyLink("trace-producer-one", "trace-producer-two", 1),
         new DependencyLink("trace-producer-two", "trace-producer-three", 1)
