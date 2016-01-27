@@ -70,7 +70,13 @@ define(
           }.bind(this));
         });
 
-        this.getDependency(Date.now());
+        var endTs = document.getElementById('endTs').value || moment().valueOf();
+        var startTs = document.getElementById('startTs').value;
+        var lookback;
+        if (startTs && endTs > startTs) {
+          lookback = endTs - startTs;
+        }
+        this.getDependency(endTs, lookback);
       });
 
       this.getServiceData = function (serviceName, callback) {
