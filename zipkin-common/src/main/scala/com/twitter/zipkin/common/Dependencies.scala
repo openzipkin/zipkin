@@ -20,7 +20,7 @@ import scala.util.hashing.MurmurHash3
 
 /**
  * A representation of the fact that one service calls another. These should be unique across
- * the set of (parent, child)
+ * the set of (parent, child) for a given time period.
  *
  * @param _parent the calling [[com.twitter.zipkin.common.Endpoint.serviceName]]
  * @param _child the callee's [[com.twitter.zipkin.common.Endpoint.serviceName]]
