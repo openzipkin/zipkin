@@ -187,4 +187,39 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
 
     result(store.getDependencies(today + 2 * day, Some(day))) should be(empty)
   }
+
+  /**
+   * This test shows that dependency links can be filtered at daily granularity.
+   * This allows the UI to look for dependency intervals besides today.
+   */
+  @Test def canSearchForIntervalsBesidesToday() = {
+    // Let's pretend we have two days of data processed
+    //  - Note: calling this twice allows test implementations to consider timestamps
+    processDependencies(subtractDay(trace))
+    processDependencies(trace)
+
+    // A user looks at today's links.
+    //  - Note: Using the smallest lookback avoids bumping into implementation around windowing.
+    result(store.getDependencies(dep.endTs, Some(dep.endTs - dep.startTs))) should be(dep.links)
+
+    // A user compares the links from those a day ago.
+    result(store.getDependencies(dep.endTs - day, Some(dep.endTs - dep.startTs))) should be(dep.links)
+
+    // A user looks at all links since data started
+    result(store.getDependencies(dep.endTs)) should be(
+      List(
+        new DependencyLink("zipkin-web", "zipkin-query", 2),
+        new DependencyLink("zipkin-query", "zipkin-jdbc", 2)
+      )
+    )
+  }
+
+  /** rebases a trace backwards a day. */
+  private def subtractDay(trace: List[Span]) = trace.map(s =>
+    s.copy(
+      traceId = s.traceId + 1,
+      timestamp = s.timestamp.map(_ - (day * 1000)),
+      annotations = s.annotations.map(a => a.copy(timestamp = a.timestamp - (day * 1000)))
+    )
+  )
 }
