@@ -22,12 +22,12 @@ object JsonBinaryAnnotation extends (BinaryAnnotation => JsonBinaryAnnotation) {
   def apply(b: BinaryAnnotation) = {
     val (annotationType: Option[String], value: Any) = try {
       b.annotationType.value match {
-        case Bool.value => (None, if (b.value.get() != 0) true else false)
+        case Bool.value => (None, if (b.value.get(0) != 0) true else false)
         case Bytes.value => (Some("BYTES"), base64.encode(b.value.array(), b.value.position(), b.value.remaining()))
-        case I16.value => (Some("I16"), b.value.getShort)
-        case I32.value => (Some("I32"), b.value.getInt)
-        case I64.value => (Some("I64"), b.value.getLong)
-        case Double.value => (Some("DOUBLE"), b.value.getDouble)
+        case I16.value => (Some("I16"), b.value.getShort(0))
+        case I32.value => (Some("I32"), b.value.getInt(0))
+        case I64.value => (Some("I64"), b.value.getLong(0))
+        case Double.value => (Some("DOUBLE"), b.value.getDouble(0))
         case String.value => (None, new String(b.value.array(), b.value.position(), b.value.remaining(), Utf8))
         case _ => throw new Exception("Unsupported annotation type: %s".format(b))
       }

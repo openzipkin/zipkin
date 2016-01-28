@@ -41,6 +41,7 @@ class JsonConversionTest extends FunSuite with Matchers {
     val ann = BinaryAnnotation("key", ByteBuffer.wrap(array), AnnotationType.Bytes, None)
     val convert = JsonBinaryAnnotation(ann)
     assert(convert.value === BaseEncoding.base64().encode(array))
+    assert(ann.value.position() === 0)
     JsonBinaryAnnotation(JsonBinaryAnnotation.invert(convert)) should be(convert)
   }
 
@@ -50,10 +51,12 @@ class JsonConversionTest extends FunSuite with Matchers {
 
     val trueConvert = JsonBinaryAnnotation(trueAnnotation)
     assert(trueConvert.value === true)
+    assert(trueAnnotation.value.position() === 0)
     JsonBinaryAnnotation(JsonBinaryAnnotation.invert(trueConvert)) should be(trueConvert)
 
     val falseConvert = JsonBinaryAnnotation(falseAnnotation)
     assert(falseConvert.value === false)
+    assert(falseAnnotation.value.position() === 0)
     JsonBinaryAnnotation(JsonBinaryAnnotation.invert(falseConvert)) should be(falseConvert)
   }
 
@@ -61,6 +64,7 @@ class JsonConversionTest extends FunSuite with Matchers {
     val ann = BinaryAnnotation("key", ByteBuffer.allocate(2).putShort(0, 5.toShort), AnnotationType.I16, None)
     val convert = JsonBinaryAnnotation(ann)
     assert(convert.value === 5)
+    assert(ann.value.position() === 0)
     JsonBinaryAnnotation(JsonBinaryAnnotation.invert(convert)) should be(convert)
   }
 
@@ -68,6 +72,7 @@ class JsonConversionTest extends FunSuite with Matchers {
     val ann = BinaryAnnotation("key", ByteBuffer.allocate(4).putInt(0, 6), AnnotationType.I32, None)
     val convert = JsonBinaryAnnotation(ann)
     assert(convert.value === 6)
+    assert(ann.value.position() === 0)
     JsonBinaryAnnotation(JsonBinaryAnnotation.invert(convert)) should be(convert)
   }
 
@@ -75,6 +80,7 @@ class JsonConversionTest extends FunSuite with Matchers {
     val ann = BinaryAnnotation("key", ByteBuffer.allocate(8).putLong(0, 99999999999L), AnnotationType.I64, None)
     val convert = JsonBinaryAnnotation(ann)
     assert(convert.value === 99999999999L)
+    assert(ann.value.position() === 0)
     JsonBinaryAnnotation(JsonBinaryAnnotation.invert(convert)) should be(convert)
   }
 
@@ -82,6 +88,7 @@ class JsonConversionTest extends FunSuite with Matchers {
     val ann = BinaryAnnotation("key", ByteBuffer.allocate(8).putDouble(0, 1.3496), AnnotationType.Double, None)
     val convert = JsonBinaryAnnotation(ann)
     assert(convert.value === 1.3496)
+    assert(ann.value.position() === 0)
     JsonBinaryAnnotation(JsonBinaryAnnotation.invert(convert)) should be(convert)
   }
 
@@ -89,6 +96,7 @@ class JsonConversionTest extends FunSuite with Matchers {
     val ann = BinaryAnnotation("key", ByteBuffer.wrap("HELLO!".getBytes), AnnotationType.String, None)
     val convert = JsonBinaryAnnotation(ann)
     assert(convert.value === "HELLO!")
+    assert(ann.value.position() === 0)
     JsonBinaryAnnotation(JsonBinaryAnnotation.invert(convert)) should be(convert)
   }
 
