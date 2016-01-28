@@ -17,9 +17,10 @@ define(
           // drop the event, keep the links
           var links = Array.prototype.slice.call(arguments, 1);
           var _this = this;
-          var svg = d3.select('svg'),
-            svgGroup = svg.append('g');
           var rootSvg = container.querySelector('svg');
+          rootSvg.textContent = null;
+          var svg = d3.select('svg'),
+          svgGroup = svg.append('g');
 
           function arrayUnique(array) {
             return array.filter(function (val, i, arr) {
