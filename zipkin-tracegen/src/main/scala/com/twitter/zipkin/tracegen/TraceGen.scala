@@ -124,9 +124,9 @@ class TraceGen(traces: Int, maxDepth: Int) {
           val binAnnos = new ListBuffer[BinaryAnnotation]()
 
           val delay = (if (rnd.nextInt(10) > 6) rnd.nextInt(10) else 0).microseconds
-          annos += Annotation((curTime + delay).inMicroseconds, thriftscala.Constants.CLIENT_SEND, Some(nextEp))
+          annos += Annotation((curTime + delay).inMicroseconds, thriftscala.Constants.CLIENT_SEND, Some(ep))
           val time = doRpc(trace, curTime, rnd.nextInt(depth), rpcName, nextEp, thisSpanId, thisParentId) + 1.millisecond
-          annos += Annotation(time.inMicroseconds, thriftscala.Constants.CLIENT_RECV, Some(nextEp))
+          annos += Annotation(time.inMicroseconds, thriftscala.Constants.CLIENT_RECV, Some(ep))
           val timestamp = annos(0).timestamp
           val duration = annos(1).timestamp - annos(0).timestamp
           trace.addSpan(rpcName, thisSpanId, thisParentId, timestamp, duration, annos.toList, binAnnos.toList)
