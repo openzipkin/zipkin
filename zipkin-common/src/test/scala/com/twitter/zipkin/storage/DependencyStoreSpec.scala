@@ -76,12 +76,12 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   @Test def getDependencies() = {
     processDependencies(trace)
 
-    result(store.getDependencies(today + 1000)) should be(dep.links)
+    result(store.getDependencies(today + 1000)) should contain theSameElementsAs(dep.links)
   }
 
   /** Edge-case when there are no spans, or instrumentation isn't logging annotations properly. */
   @Test def getDependencies_empty() = {
-    result(store.getDependencies(today + 1000)) should be(Seq.empty)
+    result(store.getDependencies(today + 1000)) should be(empty)
   }
 
   /**
@@ -92,7 +92,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   @Test def getDependencies_traceIdIsOpaque() = {
     processDependencies(trace.map(_.copy(traceId = Long.MaxValue)))
 
-    result(store.getDependencies(today + 1000)) should be(dep.links)
+    result(store.getDependencies(today + 1000)) should contain theSameElementsAs(dep.links)
   }
 
   /**
@@ -124,7 +124,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
     result(store.getDependencies(
       (trace(0).timestamp.get + traceDuration) / 1000,
       Some(traceDuration / 1000)
-    )).sortBy(_.parent) should be(
+    )) should contain theSameElementsAs(
       List(
         new DependencyLink("trace-producer-one", "trace-producer-two", 1),
         new DependencyLink("trace-producer-two", "trace-producer-three", 1)
@@ -138,7 +138,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   @Test def getDependenciesMultiLevel() = {
     processDependencies(trace)
 
-    result(store.getDependencies(today + 1000)) should be(dep.links)
+    result(store.getDependencies(today + 1000)) should contain theSameElementsAs(dep.links)
   }
 
   @Test def dependencies_loopback {
@@ -150,7 +150,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
 
     processDependencies(traceWithLoopback)
 
-    result(store.getDependencies(today + 1000)) should be(Dependencies.toLinks(traceWithLoopback))
+    result(store.getDependencies(today + 1000)) should contain theSameElementsAs(Dependencies.toLinks(traceWithLoopback))
   }
 
   /**
@@ -160,20 +160,20 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   @Test def dependencies_headlessTrace {
     processDependencies(List(trace(1), trace(2)))
 
-    result(store.getDependencies(today + 1000)) should be(Dependencies.toLinks(List(trace(1), trace(2))))
+    result(store.getDependencies(today + 1000)) should contain theSameElementsAs(dep.links)
   }
 
 
   @Test def getDependencies_looksBackIndefinitely() = {
     processDependencies(trace)
 
-    result(store.getDependencies(today + 1000)) should be(dep.links)
+    result(store.getDependencies(today + 1000)) should contain theSameElementsAs(dep.links)
   }
 
   @Test def getDependencies_insideTheInterval() = {
     processDependencies(trace)
 
-    result(store.getDependencies(dep.endTs, Some(dep.endTs - dep.startTs))) should be(dep.links)
+    result(store.getDependencies(dep.endTs, Some(dep.endTs - dep.startTs))) should contain theSameElementsAs(dep.links)
   }
 
   @Test def getDependencies_endTimeBeforeData() = {
@@ -189,6 +189,93 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   }
 
   /**
+   * This test confirms that the span store can process trace with intermediate
+   * spans like the below properly.
+   *
+   *   span1: SR SS
+   *     span2: intermediate call
+   *       span3: CS SR SS CR: Dependency 1
+   */
+  @Test def getDependencies_intermediateSpans() = {
+    val trace = ApplyTimestampAndDuration(List(
+      Span(20L, "get", 20L,
+        annotations = List(
+          Annotation(today * 1000, Constants.ServerRecv, Some(zipkinWeb)),
+          Annotation((today + 350) * 1000, Constants.ServerSend, Some(zipkinWeb)))),
+      Span(20L, "call", 21L, Some(20L),
+        binaryAnnotations = List(
+          BinaryAnnotation(Constants.LocalComponent, "depth2", Some(zipkinWeb)))),
+      Span(20L, "get", 22L, Some(21L),
+        annotations = List(
+          Annotation((today + 50) * 1000, Constants.ClientSend, Some(zipkinWeb)),
+          Annotation((today + 100) * 1000, Constants.ServerRecv, Some(zipkinQuery)),
+          Annotation((today + 250) * 1000, Constants.ServerSend, Some(zipkinQuery)),
+          Annotation((today + 300) * 1000, Constants.ClientRecv, Some(zipkinWeb)))),
+      Span(20L, "call", 23L, Some(22L),
+        binaryAnnotations = List(
+          BinaryAnnotation(Constants.LocalComponent, "depth4", Some(zipkinQuery)))),
+      Span(20L, "call", 24L, Some(23L),
+        binaryAnnotations = List(
+          BinaryAnnotation(Constants.LocalComponent, "depth5", Some(zipkinQuery)))),
+      Span(20L, "get", 25L, Some(24L),
+        annotations = List(
+          Annotation((today + 150) * 1000, Constants.ClientSend, Some(zipkinQuery)),
+          Annotation((today + 200) * 1000, Constants.ClientRecv, Some(zipkinQuery))),
+      binaryAnnotations = List(
+        BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinQuery)),
+        BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinJdbc))))
+    ))
+
+    processDependencies(trace)
+    result(store.getDependencies(today + 1000)) should contain theSameElementsAs(dep.links)
+  }
+
+  /**
+   * This test confirms that the span store can detect dependency indicated by
+   * SERVER_ADDR and CLIENT_ADDR.
+   * In some cases an RPC call is made where one of the two services is not instrumented.
+   * However, if the other service is able to emit "sa" or "ca" annotation with a service
+   * name, the link can still be constructed.
+   *
+   *   span1: CA SR SS: Dependency 1 by a not-instrumented client
+   *     span2: intermediate call
+   *       span3: CS CR SA: Dependency 2 to a not-instrumented server
+   */
+  @Test def getDependencies_notInstrumentedClientAndServer() = {
+    val someClient = Endpoint(172 << 24 | 17 << 16 | 4, 80, "some-client")
+
+    val trace = ApplyTimestampAndDuration(List(
+      Span(20L, "get", 20L,
+        annotations = List(
+          Annotation(today * 1000, Constants.ServerRecv, Some(zipkinWeb)),
+          Annotation((today + 350) * 1000, Constants.ServerSend, Some(zipkinWeb))),
+        binaryAnnotations = List(
+          BinaryAnnotation(Constants.ClientAddr, true, Some(someClient)))),
+      Span(20L, "get", 21L, Some(20L),
+        annotations = List(
+          Annotation((today + 50) * 1000, Constants.ClientSend, Some(zipkinWeb)),
+          Annotation((today + 100) * 1000, Constants.ServerRecv, Some(zipkinQuery)),
+          Annotation((today + 250) * 1000, Constants.ServerSend, Some(zipkinQuery)),
+          Annotation((today + 300) * 1000, Constants.ClientRecv, Some(zipkinWeb)))),
+      Span(20L, "get", 22L, Some(21L),
+        annotations = List(
+          Annotation((today + 150) * 1000, Constants.ClientSend, Some(zipkinQuery)),
+          Annotation((today + 200) * 1000, Constants.ClientRecv, Some(zipkinQuery))),
+        binaryAnnotations = List(
+          BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinQuery)),
+          BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinJdbc))))
+    ))
+
+    processDependencies(trace)
+    val dep = new Dependencies(today, today + 1000, List(
+      new DependencyLink("some-client", "zipkin-web", 1),
+      new DependencyLink("zipkin-web", "zipkin-query", 1),
+      new DependencyLink("zipkin-query", "zipkin-jdbc", 1)
+    ))
+    result(store.getDependencies(today + 1000)) should contain theSameElementsAs(dep.links)
+  }
+
+  /**
    * This test shows that dependency links can be filtered at daily granularity.
    * This allows the UI to look for dependency intervals besides today.
    */
@@ -200,13 +287,13 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
 
     // A user looks at today's links.
     //  - Note: Using the smallest lookback avoids bumping into implementation around windowing.
-    result(store.getDependencies(dep.endTs, Some(dep.endTs - dep.startTs))) should be(dep.links)
+    result(store.getDependencies(dep.endTs, Some(dep.endTs - dep.startTs))) should contain theSameElementsAs(dep.links)
 
     // A user compares the links from those a day ago.
-    result(store.getDependencies(dep.endTs - day, Some(dep.endTs - dep.startTs))) should be(dep.links)
+    result(store.getDependencies(dep.endTs - day, Some(dep.endTs - dep.startTs))) should contain theSameElementsAs(dep.links)
 
     // A user looks at all links since data started
-    result(store.getDependencies(dep.endTs)) should be(
+    result(store.getDependencies(dep.endTs)) should contain theSameElementsAs(
       List(
         new DependencyLink("zipkin-web", "zipkin-query", 2),
         new DependencyLink("zipkin-query", "zipkin-jdbc", 2)
@@ -214,10 +301,11 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
     )
   }
 
-  /** rebases a trace backwards a day. */
+  /** rebases a trace backwards a day with different trace and span id. */
   private def subtractDay(trace: List[Span]) = trace.map(s =>
     s.copy(
-      traceId = s.traceId + 1,
+      id = s.id + 100,
+      traceId = s.traceId + 100,
       timestamp = s.timestamp.map(_ - (day * 1000)),
       annotations = s.annotations.map(a => a.copy(timestamp = a.timestamp - (day * 1000)))
     )

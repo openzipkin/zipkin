@@ -34,43 +34,23 @@ case class AnormDependencyStore(val db: DB,
 
     implicit val (conn, borrowTime) = borrowConn()
     try {
-      val parentChild = SQL(
-        """SELECT trace_id, parent_id, id
-          |FROM zipkin_spans
+      SQL(
+        """SELECT parent.endpoint_service_name parent_name, child.endpoint_service_name child_name, COUNT(DISTINCT span.id) count
+          |FROM zipkin_spans       span
+          |JOIN zipkin_annotations parent ON parent.span_id = span.id
+          |JOIN zipkin_annotations child  ON child.span_id  = parent.span_id
           |WHERE start_ts BETWEEN {startTs} AND {endTs}
-          |AND parent_id is not null
+          |AND parent.a_key IN ("cs","ca")
+          |AND child.a_key  IN ("sr","sa")
+          |AND parent.endpoint_service_name IS NOT NULL
+          |AND child.endpoint_service_name IS NOT NULL
+          |GROUP BY parent_name, child_name
         """.stripMargin)
-        .on("startTs" -> startTs * 1000)
-        .on("endTs" -> endTs * 1000)
-        .as((long("trace_id") ~ long("parent_id") ~ long("id") map {
-          case traceId ~ parentId ~ id => (traceId, parentId, id)
-        }) *).groupBy(_._1)
-
-      if (parentChild.isEmpty) {
-        Seq.empty[DependencyLink]
-      } else {
-        val traceSpanServiceName: Map[(Long, Long), String] = SQL(
-          """SELECT DISTINCT trace_id, span_id, endpoint_service_name
-            |FROM zipkin_annotations
-            |WHERE trace_id IN (%s)
-            |AND a_key in ("sr","sa")
-            |AND endpoint_service_name is not null
-            |GROUP BY trace_id, span_id
-          """.stripMargin.format(parentChild.keys.mkString(",")))
-        .as((long("trace_id") ~ long("span_id") ~ str("endpoint_service_name") map {
-          case traceId ~ spanId ~ serviceName => (traceId, spanId, serviceName)
-        }) *).map(r => (r._1, r._2) -> r._3).toMap
-
-        parentChild.values.flatMap(identity).flatMap(r => {
-          // parent can be empty if a root span is missing
-          for (
-            parent <- traceSpanServiceName.get((r._1, r._2));
-            child <- traceSpanServiceName.get((r._1, r._3))
-          ) yield (parent, child)
-        })
-        .groupBy(identity).mapValues(_.size) // sum span count
-        .map{ case ((parent, child), count) => DependencyLink(parent, child, count)}.toSeq
-      }
+      .on("startTs" -> startTs * 1000)
+      .on("endTs" -> endTs * 1000)
+      .as((str("parent_name") ~ str("child_name") ~ long("count") map {
+        case a~b~c => DependencyLink(a, b, c)
+      }) *)
     } finally {
       returnConn(conn, borrowTime, "getDependencies")
     }
