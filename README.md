@@ -36,6 +36,8 @@ Here's how to start zipkin using the default file-based backend and view traces.
 $ git clone https://github.com/openzipkin/zipkin; cd zipkin
 # start the query server in a new terminal session or tab
 $ ./bin/query
+# start the collector server in a new terminal session or tab
+$ ./bin/collector
 # start the web server in a new terminal session or tab
 $ ./bin/web
 # create dummy traces
