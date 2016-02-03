@@ -96,7 +96,8 @@ case class DBConfig(name: String = "sqlite-persistent",
       location = { dbp: DBParams =>
         "jdbc:mariadb://" + dbp.host + dbp.getPort + "/" + dbp.dbName + "?user=" + dbp.username + "&password=" + dbp.password +
           (if (dbp.ssl) "&useSSL=true" else "") +
-          "&autoReconnect=true" // recover from dropped connections
+          "&autoReconnect=true" + // recover from dropped connections
+          "&useOldAliasMetadataBehavior=true" // workaround for alias column
       }
     )
   )

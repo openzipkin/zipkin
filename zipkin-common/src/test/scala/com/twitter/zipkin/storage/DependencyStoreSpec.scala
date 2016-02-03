@@ -197,7 +197,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
    *       span3: CS SR SS CR: Dependency 1
    */
   @Test def getDependencies_intermediateSpans() = {
-    val trace = ApplyTimestampAndDuration(List(
+    val trace = List(
       Span(20L, "get", 20L,
         annotations = List(
           Annotation(today * 1000, Constants.ServerRecv, Some(zipkinWeb)),
@@ -224,7 +224,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
       binaryAnnotations = List(
         BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinQuery)),
         BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinJdbc))))
-    ))
+    )
 
     processDependencies(trace)
     result(store.getDependencies(today + 1000)) should contain theSameElementsAs(dep.links)
@@ -244,7 +244,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   @Test def getDependencies_notInstrumentedClientAndServer() = {
     val someClient = Endpoint(172 << 24 | 17 << 16 | 4, 80, "some-client")
 
-    val trace = ApplyTimestampAndDuration(List(
+    val trace = List(
       Span(20L, "get", 20L,
         annotations = List(
           Annotation(today * 1000, Constants.ServerRecv, Some(zipkinWeb)),
@@ -264,7 +264,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
         binaryAnnotations = List(
           BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinQuery)),
           BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinJdbc))))
-    ))
+    )
 
     processDependencies(trace)
     val dep = new Dependencies(today, today + 1000, List(
