@@ -52,6 +52,7 @@ val storeBuilder = Store.Builder(
 val kafkaReceiver = sys.env.get("KAFKA_ZOOKEEPER").map(
   KafkaSpanReceiverFactory.factory(_,
     sys.env.get("KAFKA_TOPIC").getOrElse("zipkin"),
+    sys.env.get("KAFKA_GROUP_ID").getOrElse("zipkin"),
     sys.env.get("KAFKA_STREAMS").getOrElse("1").toInt
   )
 )
