@@ -37,13 +37,16 @@ case class AnormDependencyStore(val db: DB,
       SQL(
         """SELECT parent.endpoint_service_name parent_name, child.endpoint_service_name child_name, COUNT(DISTINCT span.id) count
           |FROM zipkin_spans       span
-          |JOIN zipkin_annotations parent ON parent.span_id = span.id
-          |JOIN zipkin_annotations child  ON child.span_id  = parent.span_id
+          |JOIN zipkin_annotations parent ON parent.trace_id = span.trace_id AND (parent.span_id = span.id OR parent.span_id = span.parent_id)
+          |JOIN zipkin_annotations child  ON child.trace_id  = span.trace_id AND child.span_id   = span.id
           |WHERE start_ts BETWEEN {startTs} AND {endTs}
-          |AND parent.a_key IN ("cs","ca")
-          |AND child.a_key  IN ("sr","sa")
+          |AND ((parent.span_id = span.id AND parent.a_key IN ("cs","ca"))         -- find cs for this span
+          |  OR (parent.span_id = span.parent_id AND parent.a_key IN ("sr","sa"))) -- find sr for parent span
+          |AND child.a_key IN ("sr","sa")
           |AND parent.endpoint_service_name IS NOT NULL
           |AND child.endpoint_service_name IS NOT NULL
+          |AND (parent.endpoint_service_name != child.endpoint_service_name
+          |  OR (parent.a_key IN ("sr", "cs") AND child.a_key IN("sr"))) -- loopback with sr/cs is ok
           |GROUP BY parent_name, child_name
         """.stripMargin)
       .on("startTs" -> startTs * 1000)

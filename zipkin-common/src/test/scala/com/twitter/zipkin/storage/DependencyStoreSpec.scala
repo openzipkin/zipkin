@@ -276,6 +276,49 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   }
 
   /**
+   * This test confirms that the span store can detect dependency indicated by
+   * SERVER_RECV or SERVER_ADDR only.
+   * Some of implementations such as finagle don't send CLIENT_SEND and CLIENT_ADDR
+   * annotations as desired.
+   * However, if there is a SERVER_RECV or SERVER_ADDR annotation in the trace tree,
+   * the link can still be constructed.
+   *
+   *   span1: SR SS: parent service
+   *     span2: SA: Dependency 1
+   *
+   * Currently, the standard implentation can't detect a link with intermediate spans
+   * that should be detected.
+   *
+   *   span1: SR SS: parent service
+   *     span2: intermediate call
+   *       span3: SR SS: Dependency 1 not detectable in the implementation
+   */
+  @Test def getDependencies_noClientSendAddrAnnotations() = {
+    val trace = List(
+      Span(20L, "get", 20L,
+        annotations = List(
+          Annotation(today * 1000, Constants.ServerRecv, Some(zipkinWeb)),
+          Annotation((today + 350) * 1000, Constants.ServerSend, Some(zipkinWeb))),
+        binaryAnnotations = List( // finagle also sends SA/CA itself
+          BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinWeb)),
+          BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinWeb)))),
+      Span(20L, "get", 21L, Some(20L),
+        annotations = List(
+          Annotation((today + 150) * 1000, Constants.ClientSend, Some(zipkinQuery)),
+          Annotation((today + 200) * 1000, Constants.ClientRecv, Some(zipkinQuery))),
+        binaryAnnotations = List( // finagle also no SR on some condition and CA with itself
+          BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinQuery)),
+          BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinQuery))))
+    )
+
+    processDependencies(trace)
+    val dep = new Dependencies(today, today + 1000, List(
+      new DependencyLink("zipkin-web", "zipkin-query", 1)
+    ))
+    result(store.getDependencies(today + 1000)) should contain theSameElementsAs(dep.links)
+  }
+
+  /**
    * This test shows that dependency links can be filtered at daily granularity.
    * This allows the UI to look for dependency intervals besides today.
    */
