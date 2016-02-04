@@ -2,14 +2,16 @@
 
 define(
   [
-    'component_data/dependency',
-    'component_ui/dependencyGraph',
-    'component_ui/serviceDataModal',
-    'component_ui/timeStamp',
-    'component_ui/goToDependency'
+    'moment',
+    '../component_data/dependency',
+    '../component_ui/dependencyGraph',
+    '../component_ui/serviceDataModal',
+    '../component_ui/timeStamp',
+    '../component_ui/goToDependency'
   ],
 
-  function (DependencyData,
+  function (moment,
+            DependencyData,
             DependencyGraphUI,
             ServiceDataModal,
             TimeStampUI,

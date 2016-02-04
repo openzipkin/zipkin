@@ -11,4 +11,5 @@ build/
 # https://github.com/openzipkin/zipkin/issues/534
 zipkin-collector-service/zipkin.db
 zipkin-query-service/zipkin.db
+zipkin-web/node_modules
 /.nb-gradle/

@@ -43,7 +43,8 @@ trait ZipkinWebFactory { self: App =>
     "/app/libs",
     "/app/css",
     "/app/img",
-    "/app/js"
+    "/app/js",
+    "/dist"
   )
 
   private[this] val typesMap = Map(
@@ -90,6 +91,7 @@ trait ZipkinWebFactory { self: App =>
     Seq(
       ("/app/", handlePublic(resourceDirs, typesMap)),
       ("/public/", handlePublic(resourceDirs, typesMap)),
+      ("/dist/", handlePublic(resourceDirs, typesMap)),
       // In preparation of moving static assets to zipkin-query
       ("/api/v1/dependencies", handleRoute(queryClient, "/api/v1/dependencies")),
       ("/api/v1/services", handleRoute(queryClient, "/api/v1/services")),

@@ -2,12 +2,12 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight',
+    'chosen'
   ],
 
-  function (defineComponent) {
-
-    return defineComponent(serviceNameFilter);
+  function (flight, chosen) {
+    return flight.component(serviceNameFilter);
 
     function serviceNameFilter() {
       this.onChange = function(e, params) {

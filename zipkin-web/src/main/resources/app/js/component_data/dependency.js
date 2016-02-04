@@ -2,12 +2,13 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight',
+    'moment'
   ],
 
-  function (defineComponent) {
+  function (flight, moment) {
 
-    return defineComponent(dependency);
+    return flight.component(dependency);
 
     function dependency() {
       var links = [];

@@ -2,12 +2,12 @@
 
 define(
   [
-    'component_ui/filterAllServices',
-    'component_ui/fullPageSpinner',
-    'component_ui/serviceFilterSearch',
-    'component_ui/spanPanel',
-    'component_ui/trace',
-    'component_ui/zoomOutSpans'
+    '../component_ui/filterAllServices',
+    '../component_ui/fullPageSpinner',
+    '../component_ui/serviceFilterSearch',
+    '../component_ui/spanPanel',
+    '../component_ui/trace',
+    '../component_ui/zoomOutSpans'
   ],
 
   function (

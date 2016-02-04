@@ -2,12 +2,12 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight'
   ],
 
-  function (defineComponent) {
+  function (flight) {
 
-    return defineComponent(goToDependency);
+    return flight.component(goToDependency);
 
     function goToDependency() {
       this.navigateToDependency = function(evt) {

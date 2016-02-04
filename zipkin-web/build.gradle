@@ -1,4 +1,5 @@
 apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.moowork.node'
 ext.mainClassName = 'com.twitter.zipkin.web.Main'
 
 task run(type:JavaExec) {
@@ -31,5 +32,33 @@ dependencies {
     testCompile project(':zipkin-scrooge')
     testCompile 'com.squareup.okhttp:mockwebserver:2.7.0'
 }
+
+node {
+    // Version of node to use.
+    version = '5.5.0'
+
+    // Version of npm to use.
+    npmVersion = '3.6.0'
+
+    // Base URL for fetching node distributions (change if you have a mirror).
+    distBaseUrl = 'https://nodejs.org/dist'
+
+    // If true, it will download node using above parameters.
+    // If false, it will try to use globally installed node.
+    download = true
+
+    // Set the work directory for unpacking node
+    workDir = file("${project.buildDir}/nodejs")
+
+    // Set the work directory where node_modules should be located
+    nodeModulesDir = file("${project.projectDir}")
+}
+
+task webpack(type: NpmTask) {
+    args = ['run-script', 'build']
+}
+webpack.dependsOn(npmInstall)
+build.dependsOn(webpack)
+run.dependsOn(webpack)
 
 apply from: "${rootDir}/gradle/verify-licenses.gradle"

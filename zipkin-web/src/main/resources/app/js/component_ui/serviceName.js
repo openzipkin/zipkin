@@ -2,16 +2,17 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight',
+    'js-cookie',
+    'chosen'
   ],
 
-  function (defineComponent) {
-
-    return defineComponent(serviceName);
+  function (flight, Cookies, chosen) {
+    return flight.component(serviceName);
 
     function serviceName() {
       this.onChange = function() {
-        $.cookie('last-serviceName', this.$node.val());
+        Cookies.set('last-serviceName', this.$node.val());
         this.triggerChange(this.$node.val());
       };
 
@@ -31,8 +32,8 @@ define(
       };
 
       this.after('initialize', function() {
-        var lastServiceName = $.cookie('last-serviceName');
-        if (this.$node.val() === "" && $.cookie('last-serviceName') !== "") {
+        var lastServiceName = Cookies.get('last-serviceName');
+        if (this.$node.val() === "" && lastServiceName !== "") {
           this.triggerChange(lastServiceName);
         }
 

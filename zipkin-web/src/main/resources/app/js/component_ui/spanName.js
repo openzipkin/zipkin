@@ -2,12 +2,12 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight',
+    'chosen'
   ],
 
-  function (defineComponent) {
-
-    return defineComponent(spanName);
+  function (flight, chosen) {
+    return flight.component(spanName);
 
     function spanName() {
       this.updateSpans = function(ev, data) {

@@ -2,17 +2,17 @@
 
 define(
   [
-    'flight/lib/component',
-    'component_ui/filterLabel'
+    'flight',
+    '../component_ui/filterLabel'
   ],
 
   function (
-    defineComponent,
+    flight,
     FilterLabelUI
   ) {
     FilterLabelUI.attachTo('.service-filter-label');
 
-    return defineComponent(traces);
+    return flight.component(traces);
 
     function traces() {
       this.$traces = [];

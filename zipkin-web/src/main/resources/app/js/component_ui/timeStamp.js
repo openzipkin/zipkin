@@ -2,12 +2,14 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight',
+    'moment',
+    'bootstrap-datepicker'
   ],
 
-  function (defineComponent) {
+  function (flight, moment, bootstrapDatepicker) {
 
-    return defineComponent(timeStamp);
+    return flight.component(timeStamp);
 
     function timeStamp() {
       this.init = function () {

@@ -2,12 +2,13 @@
 
 define(
   [
-    'flight/lib/component',
-    'component_data/dependency',
+    'flight',
+    '../component_data/dependency',
+    'bootstrap/dist/js/npm'
   ],
 
-  function (defineComponent, dependency) {
-    return defineComponent(serviceDataModal);
+  function (flight, dependency, bootstrapNpm) {
+    return flight.component(serviceDataModal);
 
     function serviceDataModal() {
       this.after('initialize', function () {
