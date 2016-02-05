@@ -13,6 +13,8 @@
  */
 package zipkin.internal;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +41,13 @@ public final class CorrectForClockSkew {
   public static List<Span> apply(List<Span> spans) {
     for (Span s : spans) {
       if (s.parentId == null) {
-        SpanNode tree = SpanNode.create(s, spans);
+        Node<Span> tree = Node.constructTree(spans);
         adjust(tree, null);
-        return tree.toSpans();
+        List<Span> result = new ArrayList<>(spans.size());
+        for (Iterator<Node<Span>> i = tree.traverse(); i.hasNext();) {
+          result.add(i.next().value());
+        }
+        return result;
       }
     }
     return spans;
@@ -51,20 +57,20 @@ public final class CorrectForClockSkew {
    * Recursively adjust the timestamps on the span tree. Root span is the reference point, all
    * children's timestamps gets adjusted based on that span's timestamps.
    */
-  private static void adjust(SpanNode node, @Nullable ClockSkew skewFromParent) {
+  private static void adjust(Node<Span> node, @Nullable ClockSkew skewFromParent) {
     // adjust skew for the endpoint brought over from the parent span
     if (skewFromParent != null) {
-      node.span = adjustTimestamps(node.span, skewFromParent);
+      node.value(adjustTimestamps(node.value(), skewFromParent));
     }
 
     // Is there any skew in the current span?
-    ClockSkew skew = getClockSkew(node.span);
+    ClockSkew skew = getClockSkew(node.value());
     if (skew != null) {
       // the current span's skew may be a different endpoint than skewFromParent, adjust again.
-      node.span = adjustTimestamps(node.span, skew);
+      node.value(adjustTimestamps(node.value(), skew));
 
       // propagate skew to any children
-      for (SpanNode child : node.children) {
+      for (Node<Span> child : node.children()) {
         adjust(child, skew);
       }
     }
