@@ -4,10 +4,10 @@ define(
   [
     'flight',
     '../component_data/dependency',
-    'bootstrap/dist/js/npm'
+    'bootstrap-sass/assets/javascripts/bootstrap.js'
   ],
 
-  function (flight, dependency, bootstrapNpm) {
+  function (flight, dependency, bootstrap) {
     return flight.component(serviceDataModal);
 
     function serviceDataModal() {

@@ -1,9 +1,14 @@
 var webpack = require('webpack');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
-    entry: __dirname + '/src/main/resources/app/js/main.js',
+    entry: [
+        __dirname + '/src/main/resources/app/js/main.js',
+        __dirname + '/src/main/resources/app/css/style-loader.js',
+    ],
     resolve: {
-        alias: { flight: 'flightjs', chosen: 'chosen-npm/public/chosen.jquery.js' }
+        alias: { flight: 'flightjs', chosen: 'chosen-npm/public/chosen.jquery.js' },
+        modulesDirectories: ['node_modules']
     },
     module: {
         loaders: [{
@@ -13,6 +18,12 @@ module.exports = {
         }, {
             test: /\.mustache$/,
             loader: 'mustache?minify'
+        }, {
+            test: /.scss$/,
+            loader: ExtractTextPlugin.extract('style-loader', 'css-loader!sass-loader')
+        }, {
+            test: /\.woff2?$|\.ttf$|\.eot$|\.svg|\.png$/,
+            loader: 'file'
         }]
     },
     output: {
@@ -24,7 +35,8 @@ module.exports = {
         new webpack.ProvidePlugin({
             $: "jquery",
             jQuery: "jquery"
-        })
+        }),
+        new ExtractTextPlugin("app.min.css", {allChunks: true})
     ],
     devServer: {
         port: 9090,

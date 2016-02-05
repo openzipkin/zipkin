@@ -10,22 +10,29 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "babel-core": "^6.4.5",
-    "babel-loader": "^6.2.1",
-    "babel-preset-es2015": "^6.3.13",
-    "bootstrap": "^3.3.6",
     "bootstrap-datepicker": "^1.6.0",
+    "bootstrap-sass": "^3.3.6",
     "chosen-npm": "^1.4.2",
+    "compass": "^0.1.1",
     "d3": "^3.5.14",
     "flightjs": "^1.5.1",
     "jquery": "^2.2.0",
     "js-cookie": "^2.1.0",
     "moment": "^2.11.1",
-    "mustache-loader": "^0.3.1",
-    "timeago": "^1.5.1",
-    "webpack": "^1.12.12"
+    "timeago": "^1.5.1"
   },
   "devDependencies": {
+    "babel-core": "^6.4.5",
+    "babel-loader": "^6.2.1",
+    "babel-preset-es2015": "^6.3.13",
+    "css-loader": "^0.23.1",
+    "extract-text-webpack-plugin": "^1.0.1",
+    "file-loader": "^0.8.5",
+    "mustache-loader": "^0.3.1",
+    "node-sass": "^3.4.2",
+    "sass-loader": "^3.1.2",
+    "style-loader": "^0.13.0",
+    "webpack": "^1.12.12",
     "webpack-dev-server": "^1.14.1"
   }
 }

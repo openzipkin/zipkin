@@ -3,10 +3,10 @@
 define(
   [
     'flight',
-    'bootstrap/dist/js/npm'
+    'bootstrap-sass/assets/javascripts/bootstrap.js'
   ],
 
-  function (flight, bootstrapNpm) {
+  function (flight, bootstrap) {
 
     return flight.component(infoPanel);
 
