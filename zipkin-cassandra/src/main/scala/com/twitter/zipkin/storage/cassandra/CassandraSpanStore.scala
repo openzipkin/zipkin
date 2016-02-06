@@ -171,7 +171,7 @@ abstract class CassandraSpanStore(
           Future.join(
             FutureUtil.toFuture(
               repository.storeTraceIdByAnnotation(
-                annotationKey(endpoint.serviceName, ba.key, Some(ba.value)), timestamp, span.traceId, indexTtl.inSeconds)),
+                annotationKey(endpoint.serviceName, ba.key, Option(ba.value)), timestamp, span.traceId, indexTtl.inSeconds)),
             FutureUtil.toFuture(
               repository.storeTraceIdByAnnotation(
                 annotationKey(endpoint.serviceName, ba.key, None), timestamp, span.traceId, indexTtl.inSeconds)))
