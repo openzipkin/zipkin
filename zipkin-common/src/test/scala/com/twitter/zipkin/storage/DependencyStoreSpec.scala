@@ -1,5 +1,7 @@
 package com.twitter.zipkin.storage
 
+import java.util.concurrent.TimeUnit._
+
 import com.twitter.util.Await.result
 import com.twitter.util.{Duration, Time}
 import com.twitter.zipkin.Constants
@@ -8,7 +10,6 @@ import com.twitter.zipkin.common.{Dependencies, DependencyLink, _}
 import org.junit.{Before, Test}
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitSuite
-import java.util.concurrent.TimeUnit._
 
 /**
  * Base test for {@link DependencyStore} implementations. Subtypes should create a
@@ -198,32 +199,32 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
    */
   @Test def getDependencies_intermediateSpans() = {
     val trace = List(
-      Span(20L, "get", 20L,
+      Span(20L, "get", 20L, None, Some(today * 1000), Some(350L * 1000),
         annotations = List(
           Annotation(today * 1000, Constants.ServerRecv, Some(zipkinWeb)),
           Annotation((today + 350) * 1000, Constants.ServerSend, Some(zipkinWeb)))),
-      Span(20L, "call", 21L, Some(20L),
+      Span(20L, "call", 21L, Some(20L), Some((today + 25) * 1000), Some(325L * 1000),
         binaryAnnotations = List(
           BinaryAnnotation(Constants.LocalComponent, "depth2", Some(zipkinWeb)))),
-      Span(20L, "get", 22L, Some(21L),
+      Span(20L, "get", 22L, Some(21L), Some((today + 50L) * 1000), Some(250L * 1000),
         annotations = List(
           Annotation((today + 50) * 1000, Constants.ClientSend, Some(zipkinWeb)),
           Annotation((today + 100) * 1000, Constants.ServerRecv, Some(zipkinQuery)),
           Annotation((today + 250) * 1000, Constants.ServerSend, Some(zipkinQuery)),
           Annotation((today + 300) * 1000, Constants.ClientRecv, Some(zipkinWeb)))),
-      Span(20L, "call", 23L, Some(22L),
+      Span(20L, "call", 23L, Some(22L), Some((today + 110L) * 1000), Some(130L * 1000),
         binaryAnnotations = List(
           BinaryAnnotation(Constants.LocalComponent, "depth4", Some(zipkinQuery)))),
-      Span(20L, "call", 24L, Some(23L),
+      Span(20L, "call", 24L, Some(23L), Some((today + 125L) * 1000), Some(105L * 1000),
         binaryAnnotations = List(
           BinaryAnnotation(Constants.LocalComponent, "depth5", Some(zipkinQuery)))),
-      Span(20L, "get", 25L, Some(24L),
+      Span(20L, "get", 25L, Some(24L), Some((today + 150L) * 1000), Some(50L * 1000),
         annotations = List(
           Annotation((today + 150) * 1000, Constants.ClientSend, Some(zipkinQuery)),
           Annotation((today + 200) * 1000, Constants.ClientRecv, Some(zipkinQuery))),
-      binaryAnnotations = List(
-        BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinQuery)),
-        BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinJdbc))))
+        binaryAnnotations = List(
+          BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinQuery)),
+          BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinJdbc))))
     )
 
     processDependencies(trace)
