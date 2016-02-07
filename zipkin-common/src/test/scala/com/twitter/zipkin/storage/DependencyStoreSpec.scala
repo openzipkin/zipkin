@@ -348,6 +348,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   private def subtractDay(trace: List[Span]) = trace.map(s =>
     s.copy(
       id = s.id + 100,
+      parentId = s.parentId.map(_ + 100),
       traceId = s.traceId + 100,
       timestamp = s.timestamp.map(_ - (day * 1000)),
       annotations = s.annotations.map(a => a.copy(timestamp = a.timestamp - (day * 1000)))

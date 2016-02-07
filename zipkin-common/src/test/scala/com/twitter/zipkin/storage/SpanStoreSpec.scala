@@ -352,7 +352,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   /**
    * Basic clock skew correction is something span stores should support, until
    * the UI supports happens-before without using timestamps. The easiest clock
-   * skew to correct is where a child  appears to happen before the parent.
+   * skew to correct is where a child appears to happen before the parent.
    *
    * It doesn't matter if clock-skew correction happens at storage or query
    * time, as long as it occurs by the time results are returned.
@@ -360,19 +360,21 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
    * Span stores who don't support this can override and disable this test,
    * noting in the README the limitation.
    */
-  @Test def correctsClockSkew() {
+  @Test def correctsClockSkew_whenSpanTimestampAndDurationAreDerivedFromAnnotations() {
     val client = Some(Endpoint(192 << 24 | 168 << 16 | 1, 8080, "client"))
     val frontend = Some(Endpoint(192 << 24 | 168 << 16 | 2, 8080, "frontend"))
     val backend = Some(Endpoint(192 << 24 | 168 << 16 | 3, 8080, "backend"))
 
-    val parent = Span(1, "method1", 666, None, Some((today + 95) * 1000), Some(40000), List(
+    /** Intentionally not setting span.timestamp, duration */
+    val parent = Span(1, "method1", 666, None, None, None, List(
       Annotation((today + 100) * 1000, Constants.ClientSend, client),
       Annotation((today + 95) * 1000, Constants.ServerRecv, frontend), // before client sends
       Annotation((today + 120) * 1000, Constants.ServerSend, frontend), // before client receives
       Annotation((today + 135) * 1000, Constants.ClientRecv, client)
     ).sorted)
 
-    val child = Span(1, "method2", 777, Some(666L), Some((today + 100) * 1000), Some(20000), List(
+    /** Intentionally not setting span.timestamp, duration */
+    val child = Span(1, "method2", 777, Some(666L), None, None, List(
       Annotation((today + 100) * 1000, Constants.ClientSend, frontend),
       Annotation((today + 115) * 1000, Constants.ServerRecv, backend),
       Annotation((today + 120) * 1000, Constants.ServerSend, backend),
@@ -382,7 +384,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     val skewed = List(parent, child)
 
     // There's clock skew when the child doesn't happen after the parent
-    skewed(0).timestamp.get should be <= skewed(1).timestamp.get
+    skewed(0).annotations.head.timestamp should be <= skewed(1).annotations.head.timestamp
 
     // Regardless of when clock skew is corrected, it should be corrected before traces return
     result(store(List(parent, child)))
@@ -391,13 +393,14 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     // After correction, the child happens after the parent
     adjusted(0).timestamp.get should be <= adjusted(1).timestamp.get
     // .. because the child is shifted to a later date
-    adjusted(1).timestamp.get should be > skewed(1).timestamp.get
+    adjusted(1).timestamp.get should be > skewed(1).annotations.head.timestamp
 
+    val skewedDuration = skewed(0).annotations.last.timestamp - skewed(0).annotations.head.timestamp
     // Since we've shifted the child to a later timestamp, the total duration appears shorter
-    adjusted(0).duration.get should be < skewed(0).duration.get
+    adjusted(0).duration.get should be < skewedDuration
 
     // .. but that change in duration should be accounted for
-    val shift = adjusted(0).timestamp.get - skewed(0).timestamp.get
-    adjusted(0).duration.get should be (skewed(0).duration.get - shift)
+    val shift = adjusted(0).timestamp.get - skewed(0).annotations.head.timestamp
+    adjusted(0).duration.get should be (skewedDuration - shift)
   }
 }
