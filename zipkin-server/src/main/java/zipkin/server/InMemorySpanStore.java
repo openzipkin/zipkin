@@ -26,13 +26,17 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
+import zipkin.Constants;
 import zipkin.DependencyLink;
 import zipkin.QueryRequest;
 import zipkin.Span;
 import zipkin.SpanStore;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.CorrectForClockSkew;
+import zipkin.internal.DependencyLinkSpan;
+import zipkin.internal.DependencyLinker;
 import zipkin.internal.MergeById;
 import zipkin.internal.Nullable;
 
@@ -101,7 +105,46 @@ public final class InMemorySpanStore implements SpanStore {
 
   @Override
   public List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback) {
-    return Collections.emptyList();
+    endTs *= 1000;
+    if (lookback == null) {
+      lookback = endTs;
+    } else {
+      lookback *= 1000;
+    }
+
+    DependencyLinker linksBuilder = new DependencyLinker();
+
+    for (Collection<Span> trace : traceIdToSpans.delegate.values()) {
+      if (trace.isEmpty()) continue;
+
+      List<DependencyLinkSpan> linkSpans = new LinkedList<>();
+      for (Span s : trace) {
+        Long timestamp = s.timestamp;
+        if (timestamp == null ||
+            timestamp < (endTs - lookback) ||
+            timestamp > endTs) {
+          continue;
+        }
+        DependencyLinkSpan.Builder linkSpan = new DependencyLinkSpan.Builder(s.parentId, s.id);
+        for (BinaryAnnotation a : s.binaryAnnotations) {
+          if (a.key.equals(Constants.CLIENT_ADDR) && a.endpoint != null) {
+            linkSpan.caService(a.endpoint.serviceName);
+          } else if (a.key.equals(Constants.SERVER_ADDR) && a.endpoint != null) {
+            linkSpan.saService(a.endpoint.serviceName);
+          }
+        }
+        for (Annotation a : s.annotations) {
+          if (a.value.equals(Constants.SERVER_RECV) && a.endpoint != null) {
+            linkSpan.srService(a.endpoint.serviceName);
+            break;
+          }
+        }
+        linkSpans.add(linkSpan.build());
+      }
+
+      linksBuilder.putTrace(linkSpans.iterator());
+    }
+    return linksBuilder.link();
   }
 
   private static Predicate<List<Span>> spansPredicate(QueryRequest request) {
@@ -116,7 +159,7 @@ public final class InMemorySpanStore implements SpanStore {
       Predicate<Long> durationPredicate = null;
       if (request.minDuration != null && request.maxDuration != null) {
         durationPredicate = d -> d >= request.minDuration && d <= request.maxDuration;
-      } else if (request.minDuration != null){
+      } else if (request.minDuration != null) {
         durationPredicate = d -> d >= request.minDuration;
       }
       String spanName = request.spanName;
