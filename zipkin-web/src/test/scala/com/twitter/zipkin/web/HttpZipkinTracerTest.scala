@@ -6,7 +6,7 @@ import com.twitter.util._
 import com.twitter.zipkin.common.Annotation
 import com.twitter.zipkin.conversions.thrift.thriftListToSpans
 import com.twitter.zipkin.{Constants, common}
-import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.{MockResponse, MockWebServer}
 import org.junit.{ClassRule, Test}
 import org.scalatest.junit.JUnitSuite
 
