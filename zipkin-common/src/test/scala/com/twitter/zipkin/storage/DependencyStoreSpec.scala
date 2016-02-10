@@ -151,7 +151,9 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
 
     processDependencies(traceWithLoopback)
 
-    result(store.getDependencies(today + 1000)) should contain theSameElementsAs(Dependencies.toLinks(traceWithLoopback))
+    result(store.getDependencies(today + 1000)) should contain theSameElementsAs(List(
+      new DependencyLink("zipkin-web", "zipkin-web", 1)
+    ))
   }
 
   /**
@@ -246,19 +248,19 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
     val someClient = Endpoint(172 << 24 | 17 << 16 | 4, 80, "some-client")
 
     val trace = List(
-      Span(20L, "get", 20L,
+      Span(20L, "get", 20L, None, Some(today * 1000), Some(350L * 1000),
         annotations = List(
           Annotation(today * 1000, Constants.ServerRecv, Some(zipkinWeb)),
           Annotation((today + 350) * 1000, Constants.ServerSend, Some(zipkinWeb))),
         binaryAnnotations = List(
           BinaryAnnotation(Constants.ClientAddr, true, Some(someClient)))),
-      Span(20L, "get", 21L, Some(20L),
+      Span(20L, "get", 21L, Some(20L), Some((today + 50L) * 1000), Some(250L * 1000),
         annotations = List(
           Annotation((today + 50) * 1000, Constants.ClientSend, Some(zipkinWeb)),
           Annotation((today + 100) * 1000, Constants.ServerRecv, Some(zipkinQuery)),
           Annotation((today + 250) * 1000, Constants.ServerSend, Some(zipkinQuery)),
           Annotation((today + 300) * 1000, Constants.ClientRecv, Some(zipkinWeb)))),
-      Span(20L, "get", 22L, Some(21L),
+      Span(20L, "get", 22L, Some(21L), Some((today + 150L) * 1000), Some(50L * 1000),
         annotations = List(
           Annotation((today + 150) * 1000, Constants.ClientSend, Some(zipkinQuery)),
           Annotation((today + 200) * 1000, Constants.ClientRecv, Some(zipkinQuery))),
@@ -296,14 +298,14 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
    */
   @Test def getDependencies_noClientSendAddrAnnotations() = {
     val trace = List(
-      Span(20L, "get", 20L,
+      Span(20L, "get", 20L, None, Some(today * 1000), Some(350L * 1000),
         annotations = List(
           Annotation(today * 1000, Constants.ServerRecv, Some(zipkinWeb)),
           Annotation((today + 350) * 1000, Constants.ServerSend, Some(zipkinWeb))),
         binaryAnnotations = List( // finagle also sends SA/CA itself
           BinaryAnnotation(Constants.ServerAddr, true, Some(zipkinWeb)),
           BinaryAnnotation(Constants.ClientAddr, true, Some(zipkinWeb)))),
-      Span(20L, "get", 21L, Some(20L),
+      Span(20L, "get", 21L, Some(20L), Some((today + 150L) * 1000), Some(50L * 1000),
         annotations = List(
           Annotation((today + 150) * 1000, Constants.ClientSend, Some(zipkinQuery)),
           Annotation((today + 200) * 1000, Constants.ClientRecv, Some(zipkinQuery))),
@@ -313,10 +315,10 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
     )
 
     processDependencies(trace)
-    val dep = new Dependencies(today, today + 1000, List(
+
+    result(store.getDependencies(today + 1000)) should contain theSameElementsAs(List(
       new DependencyLink("zipkin-web", "zipkin-query", 1)
     ))
-    result(store.getDependencies(today + 1000)) should contain theSameElementsAs(dep.links)
   }
 
   /**

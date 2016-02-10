@@ -6,5 +6,7 @@ dependencies {
 
     // for SpanStoreSpec
     testCompile project(':zipkin-common').sourceSets.test.output
+    // for dependency processing that avoids a circular dep on zipkin-dependencies-spark
+    testCompile project(':zipkin-anormdb')
 }
 
