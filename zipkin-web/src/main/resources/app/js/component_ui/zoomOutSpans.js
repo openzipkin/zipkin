@@ -2,12 +2,12 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight'
   ],
 
-  function (defineComponent) {
+  function (flight) {
 
-    return defineComponent(zoomOutSpans);
+    return flight.component(zoomOutSpans);
 
     function zoomOutSpans() {
       this.zoomOut = function() {

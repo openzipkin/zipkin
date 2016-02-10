@@ -2,18 +2,20 @@
 
 define(
   [
-    'flight/lib/component',
-    'd3/d3',
-    'dagre-d3'
+    'flight',
+    'd3',
+    '../../libs/dagre-d3/js/dagre-d3'
   ],
 
-  function (defineComponent, d3, dagre) {
+  function (flight, d3) {
+    var dagre = window.dagreD3;
+    // window.dagre = dagre;
 
-    return defineComponent(dependencyGraph);
+    return flight.component(dependencyGraph);
 
     function dependencyGraph() {
-      this.after('initialize', function (container, options) {
-        this.on(document, 'dependencyDataReceived', function () {
+      this.after('initialize', function afterInitialize(container, options) {
+        this.on(document, 'dependencyDataReceived', function onDependencyDataReceived() {
           // drop the event, keep the links
           var links = Array.prototype.slice.call(arguments, 1);
           var _this = this;

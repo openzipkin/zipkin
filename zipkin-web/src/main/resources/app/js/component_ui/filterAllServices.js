@@ -2,12 +2,12 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight'
   ],
 
-  function (defineComponent) {
+  function (flight) {
 
-    return defineComponent(filterAllServices);
+    return flight.component(filterAllServices);
 
     function filterAllServices() {
       this.$expandAll = $();

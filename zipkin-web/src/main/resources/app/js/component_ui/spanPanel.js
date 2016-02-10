@@ -2,12 +2,12 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight',
   ],
 
-  function (defineComponent) {
+  function (flight) {
 
-    return defineComponent(spanPanel);
+    return flight.component(spanPanel);
 
     function spanPanel() {
       this.$annotationTemplate = null;

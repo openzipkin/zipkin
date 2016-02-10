@@ -2,12 +2,12 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight'
   ],
 
-  function (defineComponent) {
+  function (flight) {
 
-    return defineComponent(spanNames);
+    return flight.component(spanNames);
 
     function spanNames() {
       this.updateSpanNames = function(ev, serviceName) {

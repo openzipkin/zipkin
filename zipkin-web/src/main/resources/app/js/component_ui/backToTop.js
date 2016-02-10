@@ -2,12 +2,12 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight'
   ],
 
-  function (defineComponent) {
+  function (flight) {
 
-    return defineComponent(backToTop);
+    return flight.component(backToTop);
 
     function backToTop() {
 

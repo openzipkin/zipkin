@@ -2,20 +2,22 @@
 
 define(
   [
-    'component_data/spanNames',
-    'component_data/serviceNames',
-    'component_ui/serviceName',
-    'component_ui/spanName',
-    'component_ui/infoPanel',
-    'component_ui/infoButton',
-    'component_ui/traceFilters',
-    'component_ui/traces',
-    'component_ui/timeStamp',
-    'component_ui/backToTop',
-    'component_ui/goToTrace'
+    'timeago',
+    '../component_data/spanNames',
+    '../component_data/serviceNames',
+    '../component_ui/serviceName',
+    '../component_ui/spanName',
+    '../component_ui/infoPanel',
+    '../component_ui/infoButton',
+    '../component_ui/traceFilters',
+    '../component_ui/traces',
+    '../component_ui/timeStamp',
+    '../component_ui/backToTop',
+    '../component_ui/goToTrace'
   ],
 
   function (
+    timeago,
     SpanNamesData,
     ServiceNamesData,
     ServiceNameUI,

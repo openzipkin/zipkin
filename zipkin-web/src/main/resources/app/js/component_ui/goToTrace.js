@@ -2,12 +2,12 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight'
   ],
 
-  function (defineComponent) {
+  function (flight) {
 
-    return defineComponent(goToTrace);
+    return flight.component(goToTrace);
 
     function goToTrace() {
       this.navigateToTrace = function(evt) {

@@ -2,12 +2,12 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight'
   ],
 
-  function (defineComponent) {
+  function (flight) {
 
-    return defineComponent(traceFilters);
+    return flight.component(traceFilters);
 
     function traceFilters() {
       this.idFromService = function(service) {
