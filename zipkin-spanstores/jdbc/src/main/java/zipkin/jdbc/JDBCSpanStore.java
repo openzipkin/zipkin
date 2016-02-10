@@ -22,17 +22,16 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
+import org.jooq.Cursor;
 import org.jooq.DSLContext;
 import org.jooq.ExecuteListenerProvider;
 import org.jooq.InsertSetMoreStep;
 import org.jooq.Query;
 import org.jooq.Record;
 import org.jooq.Record1;
-import org.jooq.Record3;
+import org.jooq.Record5;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectOffsetStep;
 import org.jooq.Table;
@@ -51,20 +50,23 @@ import zipkin.Span;
 import zipkin.SpanStore;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.CorrectForClockSkew;
+import zipkin.internal.DependencyLinkSpan;
+import zipkin.internal.DependencyLinker;
 import zipkin.internal.Nullable;
 import zipkin.internal.Pair;
 import zipkin.jdbc.internal.generated.tables.ZipkinAnnotations;
 
 import static java.util.Collections.emptyList;
-import static java.util.logging.Level.FINEST;
 import static java.util.stream.Collectors.groupingBy;
 import static zipkin.BinaryAnnotation.Type.STRING;
+import static zipkin.Constants.CLIENT_ADDR;
+import static zipkin.Constants.SERVER_ADDR;
+import static zipkin.Constants.SERVER_RECV;
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.jdbc.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
 public final class JDBCSpanStore implements SpanStore {
-  private static final Logger LOGGER = Logger.getLogger(JDBCSpanStore.class.getName());
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   static {
@@ -287,54 +289,38 @@ public final class JDBCSpanStore implements SpanStore {
   public List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback) {
     endTs = endTs * 1000;
     try (Connection conn = datasource.getConnection()) {
-      Map<Long, List<Record3<Long, Long, Long>>> parentChild = context(conn)
-          .select(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.PARENT_ID, ZIPKIN_SPANS.ID)
-          .from(ZIPKIN_SPANS)
+      // Lazy fetching the cursor prevents us from buffering the whole dataset in memory.
+      Cursor<Record5<Long, Long, Long, String, String>> cursor = context(conn)
+          .selectDistinct(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.PARENT_ID, ZIPKIN_SPANS.ID,
+              ZIPKIN_ANNOTATIONS.A_KEY, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME)
+          // left joining allows us to keep a mapping of all span ids, not just ones that have
+          // special annotations. We need all span ids to reconstruct the trace tree. We need
+          // the whole trace tree so that we can accurately skip local spans.
+          .from(ZIPKIN_SPANS.leftJoin(ZIPKIN_ANNOTATIONS)
+              .on(ZIPKIN_SPANS.TRACE_ID.eq(ZIPKIN_ANNOTATIONS.TRACE_ID).and(
+                  ZIPKIN_SPANS.ID.eq(ZIPKIN_ANNOTATIONS.SPAN_ID)))
+              .and(ZIPKIN_ANNOTATIONS.A_KEY.in(CLIENT_ADDR, SERVER_RECV, SERVER_ADDR)))
           .where(lookback == null ?
               ZIPKIN_SPANS.START_TS.lessOrEqual(endTs) :
               ZIPKIN_SPANS.START_TS.between(endTs - lookback * 1000, endTs))
-          .and(ZIPKIN_SPANS.PARENT_ID.isNotNull())
-          .stream().collect(Collectors.groupingBy(Record3::value1));
+          // Grouping so that later code knows when a span or trace is finished.
+          .groupBy(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.ID, ZIPKIN_ANNOTATIONS.A_KEY).fetchLazy();
 
-      Map<Pair<Long>, String> traceSpanServiceName = traceSpanServiceName(conn, parentChild.keySet());
+      Iterator<Iterator<DependencyLinkSpan>> traces =
+          new DependencyLinkSpanIterator.ByTraceId(cursor.iterator());
 
-      // links are merged by mapping to parent/child and summing corresponding links
-      Map<Pair<String>, Long> linkMap = new LinkedHashMap<>();
+      if (!traces.hasNext()) return Collections.emptyList();
 
-      parentChild.values().stream().flatMap(List::stream).forEach(r -> {
-        String parent = lookup(traceSpanServiceName, Pair.create(r.value1(), r.value2()));
-        // can be null if a root span is missing, or the root's span id doesn't eq the trace id
-        if (parent != null) {
-          String child = lookup(traceSpanServiceName, Pair.create(r.value1(), r.value3()));
-          if (child != null) {
-            Pair<String> key = Pair.create(parent, child);
-            if (linkMap.containsKey(key)) {
-              linkMap.put(key, linkMap.get(key) + 1);
-            } else {
-              linkMap.put(key, 1L);
-            }
-          }
-        }
-      });
-      List<DependencyLink> result = new ArrayList<>(linkMap.size());
-      for (Map.Entry<Pair<String>, Long> entry : linkMap.entrySet()) {
-        result.add(DependencyLink.create(entry.getKey()._1, entry.getKey()._2, entry.getValue()));
+      DependencyLinker linker = new DependencyLinker();
+
+      while (traces.hasNext()) {
+        linker.putTrace(traces.next());
       }
-      return result;
+
+      return linker.link();
     } catch (SQLException e) {
       throw new RuntimeException("Error querying dependencies for endTs " + endTs + " and lookback " + lookback + ": " + e.getMessage());
     }
-  }
-
-  private Map<Pair<Long>, String> traceSpanServiceName(Connection conn, Set<Long> traceIds) {
-    return context(conn)
-        .selectDistinct(ZIPKIN_ANNOTATIONS.TRACE_ID, ZIPKIN_ANNOTATIONS.SPAN_ID, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME)
-        .from(ZIPKIN_ANNOTATIONS)
-        .where(ZIPKIN_ANNOTATIONS.TRACE_ID.in(traceIds))
-        .and(ZIPKIN_ANNOTATIONS.A_KEY.in("sr", "sa"))
-        .and(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.isNotNull())
-        .groupBy(ZIPKIN_ANNOTATIONS.TRACE_ID, ZIPKIN_ANNOTATIONS.SPAN_ID)
-        .fetchMap(r -> Pair.create(r.value1(), r.value2()), Record3::value3);
   }
 
   private static Endpoint endpoint(Record a) {
@@ -395,17 +381,5 @@ public final class JDBCSpanStore implements SpanStore {
         .and(ZIPKIN_SPANS.ID.eq(joinTable.SPAN_ID))
         .and(joinTable.A_TYPE.eq(type))
         .and(joinTable.A_KEY.eq(key));
-  }
-
-  private static String lookup(Map<Pair<Long>, String> table, Pair<Long> key) {
-    String value = table.get(key);
-    if (value == null && LOGGER.isLoggable(FINEST)) {
-      if (key._1.equals(key._2)) {
-        LOGGER.log(FINEST, "could not find service name of root span " + key._1);
-      } else {
-        LOGGER.log(FINEST, "could not find service name of span " + key);
-      }
-    }
-    return value;
   }
 }

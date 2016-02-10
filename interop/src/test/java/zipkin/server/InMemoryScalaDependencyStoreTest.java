@@ -11,41 +11,31 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.jdbc;
+package zipkin.server;
 
 import com.twitter.zipkin.common.Span;
 import com.twitter.zipkin.storage.DependencyStore;
 import com.twitter.zipkin.storage.DependencyStoreSpec;
-import java.sql.SQLException;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import scala.collection.immutable.List;
 import zipkin.interop.ScalaDependencyStoreAdapter;
 import zipkin.interop.ScalaSpanStoreAdapter;
 
-public class JDBCScalaDependencyStoreTest extends DependencyStoreSpec {
-  private static JDBCSpanStore spanStore;
+public class InMemoryScalaDependencyStoreTest extends DependencyStoreSpec {
+  private InMemorySpanStore mem = new InMemorySpanStore();
 
-  @BeforeClass
-  public static void setupDB() throws SQLException {
-    spanStore = new JDBCTestGraph().spanStore;
-  }
-
+  @Override
   public DependencyStore store() {
-    return new ScalaDependencyStoreAdapter(spanStore);
+    return new ScalaDependencyStoreAdapter(mem);
   }
 
   @Override
   public void processDependencies(List<Span> spans) {
-    new ScalaSpanStoreAdapter(spanStore).apply(spans);
+    new ScalaSpanStoreAdapter(mem).apply(spans);
   }
 
   public void clear() {
-    try {
-      spanStore.clear();
-    } catch (SQLException e) {
-      throw new AssertionError(e);
-    }
+    mem.clear();
   }
 
   @Override
