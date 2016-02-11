@@ -59,6 +59,7 @@ task webpack(type: NpmTask) {
 }
 webpack.dependsOn(npmInstall)
 build.dependsOn(webpack)
+processResources.dependsOn(webpack)
 run.dependsOn(webpack)
 
 apply from: "${rootDir}/gradle/verify-licenses.gradle"
