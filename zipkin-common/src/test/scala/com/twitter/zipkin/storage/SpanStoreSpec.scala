@@ -403,15 +403,15 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     adjusted(1).timestamp.get should be > skewed(1).annotations.head.timestamp
     adjusted(2).timestamp.get should be > skewed(2).timestamp.get // local span
 
-    val skewedDuration = skewed(0).annotations.last.timestamp - skewed(0).annotations.head.timestamp
-    // Since we've shifted the child to a later timestamp, the total duration appears shorter
-    adjusted(0).duration.get should be < skewedDuration
-
-    // .. but that change in duration should be accounted for
-    val shift = adjusted(0).timestamp.get - skewed(0).annotations.head.timestamp
-    adjusted(0).duration.get should be (skewedDuration - shift)
-
-    // .. except the local span, which set duration explicitly
+    // And we do not change the parent (client) duration, due to skew in the child (server)
+    adjusted(0).duration.get should be(clientDuration(skewed(0)))
+    adjusted(1).duration.get should be(clientDuration(skewed(1)))
     adjusted(2).duration.get should be(skewed(2).duration.get)
+  }
+
+  // client duration is authoritative when present
+  private[this] def clientDuration(span: Span) = {
+    val clientAnnotations = span.annotations.filter(_.value.startsWith("c")).sorted
+    clientAnnotations.last.timestamp - clientAnnotations.head.timestamp
   }
 }

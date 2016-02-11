@@ -246,12 +246,6 @@ object CorrectForClockSkew extends ((List[Span]) => List[Span]) {
         }
       ).sorted
 
-      // reset timestamp and duration as if there's skew, these will change.
-      val firstOption = annotations.headOption.map(_.timestamp)
-      val lastOption = annotations.lastOption.map(_.timestamp)
-      val duration = for (first <- firstOption; last <- lastOption; if (first != last))
-        yield last - first
-
       // Local spans may have no annotations, so above calculation may produce None.
       // But if the timestamp is already defined, we just need to adjust it by the skew.
       val lcTimestamp: Option[Long] = span.timestamp.flatMap {
@@ -265,8 +259,7 @@ object CorrectForClockSkew extends ((List[Span]) => List[Span]) {
       }
 
       new SpanTreeEntry(span.copy(
-        timestamp = lcTimestamp orElse firstOption,
-        duration = duration orElse span.duration, // fallback to original if no annotations
+        timestamp = lcTimestamp orElse annotations.headOption.map(_.timestamp),
         annotations = annotations.sorted), spanTree.children)
     }
   }
