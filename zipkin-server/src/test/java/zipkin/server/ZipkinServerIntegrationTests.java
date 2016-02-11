@@ -30,6 +30,7 @@ import zipkin.Codec;
 import zipkin.Endpoint;
 import zipkin.Span;
 
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -63,7 +64,7 @@ public class ZipkinServerIntegrationTests {
     mockMvc
         .perform(post("/api/v1/spans").content(body))
         .andExpect(status().isBadRequest())
-        .andExpect(content().string("Malformed reading List<Span> from json: hello"));
+        .andExpect(content().string(startsWith("Malformed reading List<Span> from json: hello")));
   }
 
   @Test
@@ -80,7 +81,7 @@ public class ZipkinServerIntegrationTests {
     mockMvc
         .perform(post("/api/v1/spans").content(body).contentType("application/x-thrift"))
         .andExpect(status().isBadRequest())
-        .andExpect(content().string("Malformed reading List<Span> from TBinary: aGVsbG8="));
+        .andExpect(content().string(startsWith("Malformed reading List<Span> from TBinary: aGVsbG8=")));
   }
 
   static Span newSpan(long traceId, long id, String spanName, String value, String service) {
