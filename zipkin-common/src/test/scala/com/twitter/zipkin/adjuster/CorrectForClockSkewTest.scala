@@ -46,13 +46,13 @@ class CorrectForClockSkewTest extends FunSuite {
   val skewAnn2 = Annotation(95, Constants.ServerRecv, endpoint2) // skewed
   val skewAnn3 = Annotation(120, Constants.ServerSend, endpoint2) // skewed
   val skewAnn4 = Annotation(135, Constants.ClientRecv, endpoint1)
-  val skewSpan1 = Span(1, "method1", 666, None, Some(95L), Some(40L), List(skewAnn1, skewAnn2, skewAnn3, skewAnn4))
+  val skewSpan1 = Span(1, "method1", 666, None, Some(95L), Some(35L), List(skewAnn1, skewAnn2, skewAnn3, skewAnn4))
 
   val skewAnn5 = Annotation(100, Constants.ClientSend, endpoint2) // skewed
   val skewAnn6 = Annotation(115, Constants.ServerRecv, endpoint3)
   val skewAnn7 = Annotation(120, Constants.ServerSend, endpoint3)
   val skewAnn8 = Annotation(115, Constants.ClientRecv, endpoint2) // skewed
-  val skewSpan2 = Span(1, "method2", 777, Some(666L), Some(100L), Some(20L), List(skewAnn5, skewAnn6, skewAnn7, skewAnn8))
+  val skewSpan2 = Span(1, "method2", 777, Some(666L), Some(100L), Some(15L), List(skewAnn5, skewAnn6, skewAnn7, skewAnn8))
 
   val inputTrace = List(skewSpan1, skewSpan2)
 

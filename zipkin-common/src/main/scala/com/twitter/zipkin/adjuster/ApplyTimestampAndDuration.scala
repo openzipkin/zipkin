@@ -1,5 +1,6 @@
 package com.twitter.zipkin.adjuster
 
+import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common._
 
 /**
@@ -28,12 +29,20 @@ object ApplyTimestampAndDuration extends ((List[Span]) => List[Span]) {
     if (span.annotations.size < 2) {
       return span
     }
+    // For spans that core client annotations, the distance between "cs" and "cr" should be the
+    // authoritative duration. We are special-casing this to avoid setting incorrect duration
+    // when there's skew between the client and the server.
+    val clientDuration = for (cs <- span.annotations.find(_.value.equals(Constants.ClientSend));
+                              cr <- span.annotations.find(_.value.equals(Constants.ClientRecv)))
+    yield cr.timestamp - cs.timestamp
+
     val sorted = span.annotations.sorted
     val firstOption = sorted.headOption.map(_.timestamp)
     val lastOption = sorted.lastOption.map(_.timestamp)
+
     span.copy(
       timestamp = span.timestamp.orElse(firstOption),
-      duration = span.duration.orElse {
+      duration = span.duration.orElse(clientDuration).orElse {
         for (first <- firstOption; last <- lastOption; if (first != last))
           yield last - first
       }
