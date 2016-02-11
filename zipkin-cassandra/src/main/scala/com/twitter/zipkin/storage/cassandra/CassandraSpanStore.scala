@@ -35,6 +35,7 @@ object CassandraSpanStoreDefaults {
   val SpanTtl = 7.days
   val IndexTtl = 3.days
   val MaxTraceCols = 100000
+  val MaxConnections = 8
   val SpanCodec = new ScroogeThriftCodec[ThriftSpan](ThriftSpan)
 }
 
