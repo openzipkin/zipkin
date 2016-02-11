@@ -382,7 +382,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     ))
 
     /** Local spans must explicitly set timestamp */
-    val localChild = Span(1, "local", 778, Some(parent.id), Some((today + 100) * 1000), Some(50L),
+    val localChild = Span(1, "local", 778, Some(parent.id), Some((today + 101) * 1000), Some(50L),
       binaryAnnotations = List(BinaryAnnotation(Constants.LocalComponent, "framey", frontend))
     )
 
