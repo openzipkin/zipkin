@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import zipkin.Annotation;
+import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.Span;
@@ -79,8 +80,7 @@ public final class CorrectForClockSkew {
   /** If any annotation has an IP with skew associated, adjust accordingly. */
   private static Span adjustTimestamps(Span span, ClockSkew clockSkew) {
     Annotation[] annotations = null;
-    int length = span.annotations.size();
-    for (int i = 0; i < length; i++) {
+    for (int i = 0, length = span.annotations.size(); i < length; i++) {
       Annotation a = span.annotations.get(i);
       if (a.endpoint == null) continue;
       if (clockSkew.endpoint.ipv4 == a.endpoint.ipv4) {
@@ -88,12 +88,18 @@ public final class CorrectForClockSkew {
         annotations[i] = new Annotation.Builder(a).timestamp(a.timestamp - clockSkew.skew).build();
       }
     }
-    if (annotations == null) return span;
-    // reset timestamp and duration as if there's skew, these will change.
-    long first = annotations[0].timestamp;
-    long last = annotations[length - 1].timestamp;
-    long duration = last - first;
-    return new Span.Builder(span).timestamp(first).duration(duration).annotations(annotations).build();
+    if (annotations != null) {
+      return new Span.Builder(span).timestamp(annotations[0].timestamp).annotations(annotations).build();
+    }
+    // Search for a local span on the skewed endpoint
+    for (int i = 0, length = span.binaryAnnotations.size(); i < length; i++) {
+      BinaryAnnotation b = span.binaryAnnotations.get(i);
+      if (b.endpoint == null) continue;
+      if (b.key.equals(Constants.LOCAL_COMPONENT) && clockSkew.endpoint.ipv4 == b.endpoint.ipv4) {
+        return new Span.Builder(span).timestamp(span.timestamp - clockSkew.skew).build();
+      }
+    }
+    return span;
   }
 
   /** Use client/server annotations to determine if there's clock skew. */
