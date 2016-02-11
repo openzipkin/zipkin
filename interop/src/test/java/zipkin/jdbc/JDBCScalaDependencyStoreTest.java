@@ -18,7 +18,6 @@ import com.twitter.zipkin.storage.DependencyStore;
 import com.twitter.zipkin.storage.DependencyStoreSpec;
 import java.sql.SQLException;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import scala.collection.immutable.List;
 import zipkin.interop.ScalaDependencyStoreAdapter;
 import zipkin.interop.ScalaSpanStoreAdapter;
@@ -46,11 +45,5 @@ public class JDBCScalaDependencyStoreTest extends DependencyStoreSpec {
     } catch (SQLException e) {
       throw new AssertionError(e);
     }
-  }
-
-  @Override
-  @Ignore // TODO: re-enable in 1.32.4 per https://github.com/openzipkin/zipkin/pull/947
-  public void canSearchForIntervalsBesidesToday() {
-    super.canSearchForIntervalsBesidesToday();
   }
 }

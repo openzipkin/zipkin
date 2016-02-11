@@ -13,6 +13,9 @@
  */
 package zipkin.internal;
 
+import java.util.List;
+import zipkin.Annotation;
+import zipkin.Constants;
 import zipkin.Span;
 
 /**
@@ -24,13 +27,16 @@ import zipkin.Span;
  */
 public class ApplyTimestampAndDuration {
 
+  // For spans that core client annotations, the distance between "cs" and "cr" should be the
+  // authoritative duration. We are special-casing this to avoid setting incorrect duration
+  // when there's skew between the client and the server.
   public static Span apply(Span s) {
     if ((s.timestamp == null || s.duration == null) && !s.annotations.isEmpty()) {
       Long ts = s.timestamp;
       Long dur = s.duration;
-      ts = ts != null ? ts : s.annotations.get(0).timestamp;
+      ts = ts != null ? ts : getFirstTimestamp(s.annotations);
       if (dur == null) {
-        long lastTs = s.annotations.get(s.annotations.size() - 1).timestamp;
+        long lastTs = getLastTimestamp(s.annotations);
         if (ts != lastTs) {
           dur = lastTs - ts;
         }
@@ -38,6 +44,25 @@ public class ApplyTimestampAndDuration {
       return new Span.Builder(s).timestamp(ts).duration(dur).build();
     }
     return s;
+  }
+
+  private static long getFirstTimestamp(List<Annotation> annotations) {
+    for (int i = 0, length = annotations.size(); i < length; i++) {
+      if (annotations.get(i).value.equals(Constants.CLIENT_SEND)) {
+        return annotations.get(i).timestamp;
+      }
+    }
+    return annotations.get(0).timestamp;
+  }
+
+  private static long getLastTimestamp(List<Annotation> annotations) {
+    int length = annotations.size();
+    for (int i = 0; i < length; i++) {
+      if (annotations.get(i).value.equals(Constants.CLIENT_RECV)) {
+        return annotations.get(i).timestamp;
+      }
+    }
+    return annotations.get(length - 1).timestamp;
   }
 
   private ApplyTimestampAndDuration() {

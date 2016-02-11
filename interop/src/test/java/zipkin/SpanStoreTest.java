@@ -462,54 +462,69 @@ public abstract class SpanStoreTest<T extends SpanStore> {
     Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2, 8080);
     Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 3, 8080);
 
+    /** Intentionally not setting span.timestamp, duration */
     Span parent = new Span.Builder()
         .traceId(1)
         .name("method1")
         .id(666)
-        .timestamp((today + 95) * 1000).duration(40000L)
         .addAnnotation(Annotation.create((today + 100) * 1000, Constants.CLIENT_SEND, client))
         .addAnnotation(Annotation.create((today + 95) * 1000, Constants.SERVER_RECV, frontend)) // before client sends
         .addAnnotation(Annotation.create((today + 120) * 1000, Constants.SERVER_SEND, frontend)) // before client receives
         .addAnnotation(Annotation.create((today + 135) * 1000, Constants.CLIENT_RECV, client)).build();
 
-    Span child = new Span.Builder()
+    /** Intentionally not setting span.timestamp, duration */
+    Span remoteChild = new Span.Builder()
         .traceId(1)
         .name("method2")
         .id(777)
         .parentId(666L)
-        .timestamp((today + 100) * 1000).duration(20000L)
         .addAnnotation(Annotation.create((today + 100) * 1000, Constants.CLIENT_SEND, frontend))
         .addAnnotation(Annotation.create((today + 115) * 1000, Constants.SERVER_RECV, backend))
         .addAnnotation(Annotation.create((today + 120) * 1000, Constants.SERVER_SEND, backend))
         .addAnnotation(Annotation.create((today + 115) * 1000, Constants.CLIENT_RECV, frontend)) // before server sent
         .build();
 
-    List<Span> skewed = asList(parent, child);
+    /** Local spans must explicitly set timestamp */
+    Span localChild = new Span.Builder()
+        .traceId(1)
+        .name("local")
+        .id(778)
+        .parentId(666L)
+        .timestamp((today + 101) * 1000).duration(50L)
+        .binaryAnnotations(BinaryAnnotation.create(LOCAL_COMPONENT, "framey", frontend)).build();
+
+    List<Span> skewed = asList(parent, remoteChild, localChild);
 
     // There's clock skew when the child doesn't happen after the parent
-    assertThat(skewed.get(0).timestamp)
-        .isLessThanOrEqualTo(skewed.get(1).timestamp);
+    assertThat(skewed.get(0).annotations.get(0).timestamp)
+        .isLessThanOrEqualTo(skewed.get(1).annotations.get(0).timestamp)
+        .isLessThanOrEqualTo(skewed.get(2).timestamp); // local span
 
     // Regardless of when clock skew is corrected, it should be corrected before traces return
-    store.accept(iterator(parent, child));
+    store.accept(iterator(parent, remoteChild, localChild));
     List<Span> adjusted = store.getTracesByIds(asList(1L)).get(0);
 
     // After correction, the child happens after the parent
     assertThat(adjusted.get(0).timestamp)
-        .isLessThanOrEqualTo(adjusted.get(1).timestamp);
+        .isLessThanOrEqualTo(adjusted.get(0).timestamp);
 
-    // .. because the child is shifted to a later date
-    assertThat(adjusted.get(1).timestamp)
-        .isGreaterThan(skewed.get(1).timestamp);
+    // After correction, children happen after their parent
+    assertThat(adjusted.get(0).timestamp)
+        .isLessThanOrEqualTo(adjusted.get(1).timestamp)
+        .isLessThanOrEqualTo(adjusted.get(2).timestamp);
 
-    // Since we've shifted the child to a later timestamp, the total duration appears shorter
-    assertThat(adjusted.get(0).duration)
-        .isLessThan(skewed.get(0).duration);
+    // And we do not change the parent (client) duration, due to skew in the child (server)
+    assertThat(adjusted.get(0).duration).isEqualTo(clientDuration(skewed.get(0)));
+    assertThat(adjusted.get(1).duration).isEqualTo(clientDuration(skewed.get(1)));
+    assertThat(adjusted.get(2).duration).isEqualTo(skewed.get(2).duration);
+  }
 
-    // .. but that change in duration should be accounted for
-    long shift = adjusted.get(0).timestamp - skewed.get(0).timestamp;
-    assertThat(adjusted.get(0).duration)
-        .isEqualTo(skewed.get(0).duration - shift);
+  private static long clientDuration(Span span) {
+    long[] timestamps = span.annotations.stream()
+        .filter(a -> a.value.startsWith("c"))
+        .mapToLong(a -> a.timestamp)
+        .sorted().toArray();
+    return timestamps[1] - timestamps[0];
   }
 
   private static Iterator<Span> iterator(Span ... spans) {

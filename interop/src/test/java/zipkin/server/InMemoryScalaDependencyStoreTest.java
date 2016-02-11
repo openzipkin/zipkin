@@ -16,7 +16,6 @@ package zipkin.server;
 import com.twitter.zipkin.common.Span;
 import com.twitter.zipkin.storage.DependencyStore;
 import com.twitter.zipkin.storage.DependencyStoreSpec;
-import org.junit.Ignore;
 import scala.collection.immutable.List;
 import zipkin.interop.ScalaDependencyStoreAdapter;
 import zipkin.interop.ScalaSpanStoreAdapter;
@@ -36,11 +35,5 @@ public class InMemoryScalaDependencyStoreTest extends DependencyStoreSpec {
 
   public void clear() {
     mem.clear();
-  }
-
-  @Override
-  @Ignore // TODO: re-enable in 1.32.4 per https://github.com/openzipkin/zipkin/pull/947
-  public void canSearchForIntervalsBesidesToday() {
-    super.canSearchForIntervalsBesidesToday();
   }
 }
