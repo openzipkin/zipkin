@@ -374,26 +374,34 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     ).sorted)
 
     /** Intentionally not setting span.timestamp, duration */
-    val child = Span(1, "method2", 777, Some(666L), None, None, List(
+    val remoteChild = Span(1, "remote", 777, Some(parent.id), None, None, List(
       Annotation((today + 100) * 1000, Constants.ClientSend, frontend),
       Annotation((today + 115) * 1000, Constants.ServerRecv, backend),
       Annotation((today + 120) * 1000, Constants.ServerSend, backend),
       Annotation((today + 115) * 1000, Constants.ClientRecv, frontend) // before server sent
     ))
 
-    val skewed = List(parent, child)
+    /** Local spans must explicitly set timestamp */
+    val localChild = Span(1, "local", 778, Some(parent.id), Some((today + 100) * 1000), Some(50L),
+      binaryAnnotations = List(BinaryAnnotation(Constants.LocalComponent, "framey", frontend))
+    )
+
+    val skewed = List(parent, remoteChild, localChild)
 
     // There's clock skew when the child doesn't happen after the parent
     skewed(0).annotations.head.timestamp should be <= skewed(1).annotations.head.timestamp
+    skewed(0).annotations.head.timestamp should be <= skewed(2).timestamp.get // local span
 
     // Regardless of when clock skew is corrected, it should be corrected before traces return
-    result(store(List(parent, child)))
+    result(store(List(parent, remoteChild, localChild)))
     val adjusted = result(store.getTraces(QueryRequest("frontend")))(0)
 
-    // After correction, the child happens after the parent
+    // After correction, children happen after their parent
     adjusted(0).timestamp.get should be <= adjusted(1).timestamp.get
-    // .. because the child is shifted to a later date
+    adjusted(0).timestamp.get should be <= adjusted(2).timestamp.get
+    // .. because children are shifted to a later time
     adjusted(1).timestamp.get should be > skewed(1).annotations.head.timestamp
+    adjusted(2).timestamp.get should be > skewed(2).timestamp.get // local span
 
     val skewedDuration = skewed(0).annotations.last.timestamp - skewed(0).annotations.head.timestamp
     // Since we've shifted the child to a later timestamp, the total duration appears shorter
@@ -402,5 +410,8 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     // .. but that change in duration should be accounted for
     val shift = adjusted(0).timestamp.get - skewed(0).annotations.head.timestamp
     adjusted(0).duration.get should be (skewedDuration - shift)
+
+    // .. except the local span, which set duration explicitly
+    adjusted(2).duration.get should be(skewed(2).duration.get)
   }
 }
