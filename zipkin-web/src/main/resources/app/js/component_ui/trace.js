@@ -59,7 +59,7 @@ define(
           this.spansBackup[id] = $span;
         };
 
-
+      /*Returns a jquery object representing the spans in svc*/
       this.getSpansByService = function(svc) {
         var spans = this.spansByService[svc];
         if (spans === undefined)
@@ -286,6 +286,7 @@ define(
             $.each(self.children[id], function(i, cId) { self.spans[cId].openParents += 1; });
             $.each(self.parents[id], function(i, pId) { self.spans[pId].openChildren += 1; });
           });
+          /*Emulates getAllSpans(serviceNames) by looping on getSpansByService(svc)*/
           $.each(self.spansByService, function(svc, spans) {
             $.each(self.getSpansByService(svc), function(i, $span) {
               $span.inFilters += 1;
