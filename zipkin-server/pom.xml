@@ -31,6 +31,7 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <brave.version>3.4.0</brave.version>
     <start-class>zipkin.server.ZipkinServer</start-class>
+    <maven-invoker-plugin.version>2.0.0</maven-invoker-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -119,6 +120,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-invoker-plugin</artifactId>
+            <version>${maven-invoker-plugin.version}</version>
             <configuration>
               <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
               <settingsFile>src/it/settings.xml</settingsFile>
