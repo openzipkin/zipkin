@@ -40,6 +40,13 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
     }
   }
 
+  case class ConfigRenderer(config: Map[String, _]) extends Renderer {
+    def apply(response: Response) {
+      response.contentType = "application/javascript"
+      response.contentString = "window.config = " + ZipkinJson.writeValueAsString(config) + ";"
+    }
+  }
+
   case class MustacheRenderer(template: String, data: Map[String, Object]) extends Renderer {
     def apply(response: Response) {
       response.contentType = "text/html"
@@ -101,14 +108,12 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       }
   }
 
-  def addLayout(pageTitle: String, environment: String): Filter[Request, Renderer, Request, Renderer] =
+  def addLayout(): Filter[Request, Renderer, Request, Renderer] =
     Filter.mk[Request, Renderer, Request, Renderer] { (req, svc) =>
       svc(req) map { renderer =>
         response: Response => {
           renderer(response)
           val data = Map[String, Object](
-            ("pageTitle" -> pageTitle),
-            ("environment" -> environment),
             ("body" -> response.contentString))
           val r = MustacheRenderer("templates/v2/layout.mustache", data)
           r(response)
@@ -272,6 +277,11 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
   def handleDependency(): Service[Request, MustacheRenderer] =
     Service.mk[Request, MustacheRenderer] { req =>
       Future(MustacheRenderer("templates/v2/dependency.mustache", Map[String, Object]()))
+    }
+
+  def handleConfig(env: Map[String, _]) : Service[Request, Renderer] =
+    Service.mk[Request, Renderer] { req =>
+      Future(ConfigRenderer(env))
     }
 
   private[this] def pathTraceId(id: Option[String]): Option[SpanId] =

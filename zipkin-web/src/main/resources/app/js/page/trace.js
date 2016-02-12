@@ -2,6 +2,7 @@
 
 define(
   [
+    '../component_ui/environment',
     '../component_ui/filterAllServices',
     '../component_ui/fullPageSpinner',
     '../component_ui/serviceFilterSearch',
@@ -11,6 +12,7 @@ define(
   ],
 
   function (
+    {environment: EnvironmentUI},
     FilterAllServicesUI,
     FullPageSpinnerUI,
     ServiceFilterSearchUI,
@@ -22,6 +24,9 @@ define(
     return initialize;
 
     function initialize() {
+      window.document.title = 'Zipkin - Traces';
+
+      EnvironmentUI.attachTo('#environment');
       FilterAllServicesUI.attachTo('#filterAllServices', {totalServices: $('.trace-details.services span').length});
       FullPageSpinnerUI.attachTo('#fullPageSpinner');
       ServiceFilterSearchUI.attachTo('#serviceFilterSearch');

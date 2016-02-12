@@ -99,9 +99,13 @@ trait ZipkinWebFactory { self: App =>
       ("/api/v1/trace/:id", handleTrace(queryClient)),
       ("/api/v1/traces", handleRoute(queryClient, "/api/v1/traces")),
       // TODO: Once the following are javascript-only, we can move remove zipkin-web
-      ("/", addLayout("Index", environment()) andThen handleIndex(queryClient)),
-      ("/traces/:id", addLayout("Traces", environment()) andThen handleTraces(queryClient)),
-      ("/dependency", addLayout("Dependency", environment()) andThen handleDependency())
+      ("/", addLayout andThen handleIndex(queryClient)),
+      ("/traces/:id", addLayout andThen handleTraces(queryClient)),
+      ("/dependency", addLayout andThen handleDependency()),
+      ("/config.js", handleConfig(Map(
+        "environment" -> environment(),
+        "queryLimit" -> queryLimit()
+      )))
     ).foldLeft(new HttpMuxer) { case (m , (p, handler)) =>
       val path = p.split("/").toList
       val handlePath = path.takeWhile { t => !(t.startsWith(":") || t.startsWith("?:")) }
