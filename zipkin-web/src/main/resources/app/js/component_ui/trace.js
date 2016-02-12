@@ -2,10 +2,11 @@
 
 define(
   [
-    'flight'
+    'flight',
+    'query-string'
   ],
 
-  function (flight) {
+  function (flight, queryString) {
 
     return flight.component(trace);
 
@@ -434,7 +435,7 @@ define(
         /*get spans from trace-container-backup*/
         $('#trace-container-backup .span:not(#timeLabel-backup)').each(function() { self.setupSpansBackup($(this)); });
 
-        var serviceName = $.getUrlVar('serviceName');
+        var serviceName = queryString.parse(location.search).serviceName;
         if (serviceName !== undefined)
           this.trigger(document, 'uiAddServiceNameFilter', {value: serviceName});
         else
