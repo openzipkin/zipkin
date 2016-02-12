@@ -287,7 +287,9 @@ define(
             $.each(self.parents[id], function(i, pId) { self.spans[pId].openChildren += 1; });
           });
           $.each(self.spansByService, function(svc, spans) {
-            $.each(spans, function(i, $span) { $span.inFilters += 1; });
+            $.each(self.getSpansByService(svc), function(i, $span) {
+              $span.inFilters += 1;
+            });
           });
           self.triggerForAllServices('uiAddServiceNameFilter');
         });
