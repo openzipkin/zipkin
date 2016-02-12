@@ -13,4 +13,5 @@ zipkin-collector-service/zipkin.db
 zipkin-query-service/zipkin.db
 zipkin-web/node_modules
 /.nb-gradle/
+# .travis.yml installs cassandra in the pwd
 dsc-cassandra-*
