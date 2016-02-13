@@ -43,7 +43,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
   case class ConfigRenderer(config: Map[String, _]) extends Renderer {
     def apply(response: Response) {
       response.contentType = "application/javascript"
-      response.contentString = "window.config = " + ZipkinJson.writeValueAsString(config) + ";"
+      response.contentString = s"window.config = ${ZipkinJson.writeValueAsString(config)};"
     }
   }
 
