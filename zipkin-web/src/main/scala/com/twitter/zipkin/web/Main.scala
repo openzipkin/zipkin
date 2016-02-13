@@ -99,9 +99,11 @@ trait ZipkinWebFactory { self: App =>
       ("/api/v1/trace/:id", handleTrace(queryClient)),
       ("/api/v1/traces", handleRoute(queryClient, "/api/v1/traces")),
       // TODO: Once the following are javascript-only, we can move remove zipkin-web
-      ("/", addLayout andThen handleIndex(queryClient)),
-      ("/traces/:id", addLayout andThen handleTraces(queryClient)),
-      ("/dependency", addLayout andThen handleDependency()),
+      ("/modelview/", handleIndex(queryClient)),
+      ("/modelview/traces/:id", handleTraces(queryClient)),
+      ("/", serveStaticIndex()),
+      ("/traces/:id", serveStaticIndex()),
+      ("/dependency", serveStaticIndex()),
       ("/config.js", handleConfig(Map(
         "environment" -> environment(),
         "queryLimit" -> queryLimit()

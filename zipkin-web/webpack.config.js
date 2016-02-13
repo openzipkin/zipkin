@@ -17,7 +17,7 @@ module.exports = {
             loader: 'babel?presets[]=es2015'
         }, {
             test: /\.mustache$/,
-            loader: 'mustache?minify'
+            loader: 'mustache'
         }, {
             test: /.scss$/,
             loader: ExtractTextPlugin.extract('style-loader', 'css-loader!sass-loader')
