@@ -5,6 +5,7 @@ define(
     'timeago',
     '../component_data/spanNames',
     '../component_data/serviceNames',
+    '../component_ui/environment',
     '../component_ui/serviceName',
     '../component_ui/spanName',
     '../component_ui/infoPanel',
@@ -20,6 +21,7 @@ define(
     timeago,
     SpanNamesData,
     ServiceNamesData,
+    {environment: EnvironmentUI},
     ServiceNameUI,
     SpanNameUI,
     InfoPanelUI,
@@ -34,8 +36,10 @@ define(
     return initialize;
 
     function initialize() {
+      window.document.title = 'Zipkin - Index';
       SpanNamesData.attachTo(document);
       ServiceNamesData.attachTo(document);
+      EnvironmentUI.attachTo('#environment');
       ServiceNameUI.attachTo('#serviceName');
       SpanNameUI.attachTo('#spanName');
       InfoPanelUI.attachTo('#infoPanel');

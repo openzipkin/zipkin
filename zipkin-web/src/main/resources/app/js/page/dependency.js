@@ -3,7 +3,9 @@
 define(
   [
     'moment',
+    'query-string',
     '../component_data/dependency',
+    '../component_ui/environment',
     '../component_ui/dependencyGraph',
     '../component_ui/serviceDataModal',
     '../component_ui/timeStamp',
@@ -11,7 +13,9 @@ define(
   ],
 
   function (moment,
+            queryString,
             DependencyData,
+            {environment: EnvironmentUI},
             DependencyGraphUI,
             ServiceDataModal,
             TimeStampUI,
@@ -20,16 +24,13 @@ define(
     return initialize;
 
     function initialize() {
-      // parse query string to set form
-      var params = {}, postBody = location.search.substring(1), regex = /([^&=]+)=([^&]*)/g, m;
-      while (m = regex.exec(postBody)) {
-        params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
-      }
-      var endTs = params['endTs'] || moment().valueOf();
-      var startTs = params['startTs'] || moment().valueOf() - 7*24*60*60*1000; // set default startTs 7 days ago
-      $('#endTs').val(endTs);
-      $('#startTs').val(startTs);
+      window.document.title = 'Zipkin - Dependency';
 
+      const {startTs, endTs} = queryString.parse(location.search);
+      $('#endTs').val(endTs || moment().valueOf());
+      $('#startTs').val(startTs || moment().valueOf() - 7*24*60*60*1000); // set default startTs 7 days ago;
+
+      EnvironmentUI.attachTo('#environment');
       DependencyData.attachTo('#dependency-container');
       DependencyGraphUI.attachTo('#dependency-container');
       ServiceDataModal.attachTo('#service-data-modal-container');

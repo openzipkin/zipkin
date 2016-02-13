@@ -4,7 +4,7 @@
     <meta charset='utf-8'>
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
 
-    <title>Zipkin - {{pageTitle}}</title>
+    <title>Zipkin</title>
 
     <meta name='description' content=''>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
@@ -26,9 +26,7 @@
         </div>
         <div class="navbar-right" style="width: 50%">
           <div class="navbar-right" style='padding-left: 15px'>
-            <div class="navbar-brand">
-              <span class='muted'>{{environment}}</span>
-            </div>
+            <p class="navbar-text muted" id="environment"></p>
           </div>
           <form id="traceIdQueryForm" class="form-inline" role="form">
             <div class="navbar-right" style="width: 25%; float: right">
@@ -66,6 +64,7 @@
       </div>
     </div>
 
+    <script src="/config.js"></script>
     <script src="/dist/app.min.js"></script>
   </body>
 </html>
