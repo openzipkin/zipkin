@@ -10,8 +10,6 @@ define(
     flight,
     FilterLabelUI
   ) {
-    FilterLabelUI.attachTo('.service-filter-label');
-
     return flight.component(traces);
 
     function traces() {
@@ -81,6 +79,8 @@ define(
       };
 
       this.after('initialize', function() {
+        FilterLabelUI.attachTo('.service-filter-label');
+
         this.$traces = this.$node.find('.trace');
         this.$traces.each(function() {
           var $this = $(this);

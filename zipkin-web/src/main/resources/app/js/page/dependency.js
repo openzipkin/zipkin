@@ -3,28 +3,34 @@
 define(
   [
     'moment',
+    'jquery',
     'query-string',
     '../component_data/dependency',
     '../component_ui/environment',
     '../component_ui/dependencyGraph',
     '../component_ui/serviceDataModal',
     '../component_ui/timeStamp',
-    '../component_ui/goToDependency'
+    '../component_ui/goToDependency',
+    '../../../templates/v2/dependency.mustache'
   ],
 
   function (moment,
+            $,
             queryString,
             DependencyData,
             {environment: EnvironmentUI},
             DependencyGraphUI,
             ServiceDataModal,
             TimeStampUI,
-            GoToDependencyUI) {
+            GoToDependencyUI,
+            dependenciesTemplate
+  ) {
 
     return initialize;
 
     function initialize() {
       window.document.title = 'Zipkin - Dependency';
+      $('.content').html(dependenciesTemplate());
 
       const {startTs, endTs} = queryString.parse(location.search);
       $('#endTs').val(endTs || moment().valueOf());

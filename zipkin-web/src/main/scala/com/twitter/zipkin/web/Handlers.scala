@@ -47,6 +47,13 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
     }
   }
 
+  case class JsonRenderer(config: Map[String, _]) extends Renderer {
+    def apply(response: Response) {
+      response.contentType = "application/json"
+      response.contentString = ZipkinJson.writeValueAsString(config)
+    }
+  }
+
   case class MustacheRenderer(template: String, data: Map[String, Object]) extends Renderer {
     def apply(response: Response) {
       response.contentType = "text/html"
@@ -252,7 +259,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
             ("annotations" -> annos._1),
             ("binaryAnnotations" -> annos._2)))
 
-        MustacheRenderer("templates/v2/index.mustache", data)
+        JsonRenderer(data)
       }
     }
 
@@ -273,6 +280,11 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
     }
     client.executeJson[T](Request(encoder.toString))
   }
+
+  def serveStaticIndex() : Service[Request, Renderer] =
+    Service.mk[Request, MustacheRenderer] { reg =>
+      Future(MustacheRenderer("templates/v2/layout.mustache", Map.empty))
+    }
 
   def handleDependency(): Service[Request, MustacheRenderer] =
     Service.mk[Request, MustacheRenderer] { req =>
@@ -373,7 +385,7 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       "spans" -> spans,
       "spansBackup" -> spansBackup)
 
-    MustacheRenderer("templates/v2/trace.mustache", data)
+    JsonRenderer(data)
   }
 
   def handleTrace(client: HttpClient): Service[Request, Renderer] =
