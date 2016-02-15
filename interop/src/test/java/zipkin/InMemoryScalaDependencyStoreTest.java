@@ -11,27 +11,29 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.server;
+package zipkin;
 
-import com.twitter.zipkin.storage.SpanStore;
-import com.twitter.zipkin.storage.SpanStoreSpec;
-import org.junit.Ignore;
+import com.twitter.zipkin.common.Span;
+import com.twitter.zipkin.storage.DependencyStore;
+import com.twitter.zipkin.storage.DependencyStoreSpec;
+import scala.collection.immutable.List;
+import zipkin.interop.ScalaDependencyStoreAdapter;
 import zipkin.interop.ScalaSpanStoreAdapter;
 
-public class InMemoryScalaSpanStoreTest extends SpanStoreSpec {
+public class InMemoryScalaDependencyStoreTest extends DependencyStoreSpec {
   private InMemorySpanStore mem = new InMemorySpanStore();
 
-  public SpanStore store() {
-    return new ScalaSpanStoreAdapter(mem);
+  @Override
+  public DependencyStore store() {
+    return new ScalaDependencyStoreAdapter(mem);
+  }
+
+  @Override
+  public void processDependencies(List<Span> spans) {
+    new ScalaSpanStoreAdapter(mem).apply(spans);
   }
 
   public void clear() {
     mem.clear();
-  }
-
-  @Ignore
-  // TODO remove ignore when 1.33.1 is out
-  @Override
-  public void correctsClockSkew_whenSpanTimestampAndDurationAreDerivedFromAnnotations() {
   }
 }

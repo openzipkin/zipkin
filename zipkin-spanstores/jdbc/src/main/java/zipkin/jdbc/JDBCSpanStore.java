@@ -17,6 +17,7 @@ import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -166,7 +167,7 @@ public final class JDBCSpanStore implements SpanStore {
     }
   }
 
-  private List<List<Span>> getTraces(@Nullable QueryRequest request, @Nullable List<Long> traceIds) {
+  List<List<Span>> getTraces(@Nullable QueryRequest request, @Nullable Collection<Long> traceIds) {
     final Map<Long, List<Span>> spansWithoutAnnotations;
     final Map<Pair<?>, List<Record>> dbAnnotations;
     try (Connection conn = datasource.getConnection()) {
@@ -248,7 +249,7 @@ public final class JDBCSpanStore implements SpanStore {
   }
 
   @Override
-  public List<List<Span>> getTracesByIds(List<Long> traceIds) {
+  public List<List<Span>> getTracesByIds(Collection<Long> traceIds) {
     return traceIds.isEmpty() ? emptyList() : getTraces(null, traceIds);
   }
 

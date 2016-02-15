@@ -11,17 +11,23 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.server;
+package zipkin;
 
-import zipkin.SpanStoreTest;
+import java.util.List;
 
-public class InMemorySpanStoreTest extends SpanStoreTest<InMemorySpanStore> {
-  public InMemorySpanStoreTest() {
+public class InMemoryDependenciesTest extends DependenciesTest<InMemorySpanStore> {
+
+  public InMemoryDependenciesTest() {
     super(new InMemorySpanStore());
   }
 
   @Override
   public void clear() {
     store.clear();
+  }
+
+  @Override
+  protected void processDependencies(List<Span> spans) {
+    store.accept(spans.iterator());
   }
 }

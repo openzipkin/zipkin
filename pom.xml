@@ -120,6 +120,13 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin</artifactId>
+        <type>test-jar</type>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>spanstore-jdbc</artifactId>
         <version>${project.version}</version>
       </dependency>

@@ -13,6 +13,7 @@
  */
 package zipkin;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import zipkin.internal.Nullable;
@@ -41,7 +42,7 @@ public interface SpanStore {
    * <p/> Results are sorted in order of the first span's timestamp, and contain less elements than
    * trace IDs when corresponding traces aren't available.
    */
-  List<List<Span>> getTracesByIds(List<Long> traceIds);
+  List<List<Span>> getTracesByIds(Collection<Long> traceIds);
 
   /**
    * Get all the {@link Endpoint#serviceName service names}.
