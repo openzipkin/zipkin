@@ -1,12 +1,15 @@
 package com.twitter.zipkin.cassandra
 
-import com.datastax.driver.core.AuthProvider
+import com.datastax.driver.core.policies.{RoundRobinPolicy, LatencyAwarePolicy, TokenAwarePolicy, DCAwareRoundRobinPolicy}
+import com.datastax.driver.core.{Host, HostDistance, AuthProvider}
 import com.twitter.app.App
 import java.net.InetSocketAddress
 import java.util.Arrays.asList
+import org.mockito.Mockito.when
+import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSuite, Matchers}
 
-class CassandraSpanStoreFactorySpec extends FunSuite with Matchers {
+class CassandraSpanStoreFactorySpec extends FunSuite with Matchers with MockitoSugar {
   object TestFactory extends App with CassandraSpanStoreFactory
 
   test("zipkin.store.cassandra.dest default") {
@@ -96,5 +99,47 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers {
       .getConfiguration()
       .getProtocolOptions()
       .getAuthProvider() should be (AuthProvider.NONE)
+  }
+
+  test("Default load-balancing policy is round-robin") {
+    TestFactory.nonExitingMain(Array())
+
+    val policy = TestFactory.createClusterBuilder()
+      .getConfiguration()
+      .getPolicies()
+      .getLoadBalancingPolicy()
+      .asInstanceOf[TokenAwarePolicy].getChildPolicy
+      .asInstanceOf[LatencyAwarePolicy].getChildPolicy
+      .asInstanceOf[RoundRobinPolicy]
+
+    val foo = mock[Host]
+    when(foo.getDatacenter).thenReturn("foo")
+    policy.distance(foo) should be(HostDistance.LOCAL)
+
+    val bar = mock[Host]
+    when(bar.getDatacenter).thenReturn("bar")
+    policy.distance(bar) should be(HostDistance.LOCAL)
+  }
+
+  test("zipkin.store.cassandra.localDc ignores non-local datacenters") {
+    TestFactory.nonExitingMain(Array(
+      "-zipkin.store.cassandra.localDc", "foo"
+    ))
+
+    val policy = TestFactory.createClusterBuilder()
+      .getConfiguration()
+      .getPolicies()
+      .getLoadBalancingPolicy()
+      .asInstanceOf[TokenAwarePolicy].getChildPolicy
+      .asInstanceOf[LatencyAwarePolicy].getChildPolicy
+      .asInstanceOf[DCAwareRoundRobinPolicy]
+
+    val foo = mock[Host]
+    when(foo.getDatacenter).thenReturn("foo")
+    policy.distance(foo) should be(HostDistance.LOCAL)
+
+    val bar = mock[Host]
+    when(bar.getDatacenter).thenReturn("bar")
+    policy.distance(bar) should be(HostDistance.IGNORED)
   }
 }

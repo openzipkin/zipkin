@@ -35,6 +35,8 @@ if (username.isDefined && password.isDefined) {
   Factory.cassandraPassword.parse(password.get)
 }
 
+sys.env.get("CASSANDRA_LOCAL_DC").foreach(Factory.cassandraLocalDc.parse(_))
+
 val spanStore = Factory.newCassandraStore()
 val dependencies = Factory.newCassandraDependencies()
 
