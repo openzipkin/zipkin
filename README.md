@@ -71,6 +71,32 @@ Developers: [https://groups.google.com/group/zipkin-dev](https://groups.google.c
 
 Noticed a bug? [Please file an issue](https://github.com/openzipkin/zipkin/issues)
 
+## Build
+If you can't use a [release](https://jcenter.bintray.com/io/zipkin) or [snapshot build](http://oss.jfrog.org/artifactory/oss-snapshot-local/io/zipkin/), you can build zipkin's service jars directly from your fork using gradle.
+
+```bash
+$ git clone https://github.com/YOUR_USER/zipkin.git
+$ cd zipkin/
+$ ./gradlew shadowJar
+$ ls */build/libs/*all.jar
+```
+
+See zipkin-web/README.md if you experience issues from npm.
+
+## IntelliJ IDEA
+
+The most reliable way to import zipkin is to use the Gradle command-line and open the resulting project into Intellij.
+
+*Note* Do not import as a Gradle project. If you do, you'll likely see classpath or other build related problems. That's why we use the command-line.
+
+To build the project file, close any open window for zipkin and (re)generate the content like so:
+
+```bash
+$ ./gradlew cleanIdea idea
+```
+
+Import the the result via File, Open, (path you invoked gradlew). Dismiss any pop-ups about unlinked Gradle projects, as clicking those will likely break your project.
+
 ## Contributing
 
 See [CONTRIBUTING.md](https://github.com/openzipkin/zipkin/blob/master/CONTRIBUTING.md) for guidelines.
