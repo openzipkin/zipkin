@@ -41,6 +41,7 @@ if (username.isDefined && password.isDefined) {
 }
 
 sys.env.get("CASSANDRA_LOCAL_DC").foreach(Factory.cassandraLocalDc.parse(_))
+sys.env.get("CASSANDRA_MAX_CONNECTIONS").foreach(Factory.cassandraMaxConnections.parse(_))
 
 val storeBuilder = Store.Builder(
   new Builder[SpanStore]() {

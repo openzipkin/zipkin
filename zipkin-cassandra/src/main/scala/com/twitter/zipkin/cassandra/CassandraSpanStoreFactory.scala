@@ -17,7 +17,7 @@ package com.twitter.zipkin.cassandra
 
 import java.net.InetSocketAddress
 
-import com.datastax.driver.core.Cluster
+import com.datastax.driver.core.{HostDistance, PoolingOptions, Cluster}
 import com.datastax.driver.core.policies.{RoundRobinPolicy, DCAwareRoundRobinPolicy, LatencyAwarePolicy, TokenAwarePolicy}
 import com.google.common.net.HostAndPort
 import com.twitter.app.App
@@ -33,15 +33,16 @@ import scala.collection.JavaConverters._
 
 trait CassandraSpanStoreFactory {self: App =>
 
-  val ensureSchema          = flag[Boolean]  ("zipkin.store.cassandra.ensureSchema", false, "ensures schema exists")
-  val keyspace              = flag[String]   ("zipkin.store.cassandra.keyspace", KeyspaceName, "name of the keyspace to use")
-  val cassandraDest         = flag[String]   ("zipkin.store.cassandra.dest", "localhost:9042", "dest of the cassandra cluster; comma-separated list of host:port pairs")
-  val cassandraSpanTtl      = flag[Duration] ("zipkin.store.cassandra.spanTTL", SpanTtl, "length of time cassandra should store spans")
-  val cassandraIndexTtl     = flag[Duration] ("zipkin.store.cassandra.indexTTL", IndexTtl, "length of time cassandra should store span indexes")
-  val cassandraMaxTraceCols = flag[Int]      ("zipkin.store.cassandra.maxTraceCols", MaxTraceCols, "max number of spans to return from a query")
-  val cassandraUsername     = flag[String]   ("zipkin.store.cassandra.username", "cassandra authentication user name")
-  val cassandraPassword     = flag[String]   ("zipkin.store.cassandra.password", "cassandra authentication password")
-  val cassandraLocalDc      = flag[String]   ("zipkin.store.cassandra.localDc", "name of the datacenter that will be considered \"local\" for load balancing")
+  val ensureSchema            = flag[Boolean]  ("zipkin.store.cassandra.ensureSchema", false, "ensures schema exists")
+  val keyspace                = flag[String]   ("zipkin.store.cassandra.keyspace", KeyspaceName, "name of the keyspace to use")
+  val cassandraDest           = flag[String]   ("zipkin.store.cassandra.dest", "localhost:9042", "dest of the cassandra cluster; comma-separated list of host:port pairs")
+  val cassandraSpanTtl        = flag[Duration] ("zipkin.store.cassandra.spanTTL", SpanTtl, "length of time cassandra should store spans")
+  val cassandraIndexTtl       = flag[Duration] ("zipkin.store.cassandra.indexTTL", IndexTtl, "length of time cassandra should store span indexes")
+  val cassandraMaxTraceCols   = flag[Int]      ("zipkin.store.cassandra.maxTraceCols", MaxTraceCols, "max number of spans to return from a query")
+  val cassandraUsername       = flag[String]   ("zipkin.store.cassandra.username", "cassandra authentication user name")
+  val cassandraPassword       = flag[String]   ("zipkin.store.cassandra.password", "cassandra authentication password")
+  val cassandraLocalDc        = flag[String]   ("zipkin.store.cassandra.localDc", "name of the datacenter that will be considered \"local\" for load balancing")
+  val cassandraMaxConnections = flag[Int]      ("zipkin.store.cassandra.maxConnections", MaxConnections, "max pooled connections per datacenter-local host")
 
   // eagerly makes network connections, so lazy
   private[this] lazy val lazyRepository = new Repository(keyspace(), createClusterBuilder().build(), ensureSchema())
@@ -73,6 +74,9 @@ trait CassandraSpanStoreFactory {self: App =>
       else
         new RoundRobinPolicy()
     ).build()))
+    builder.withPoolingOptions(new PoolingOptions().setMaxConnectionsPerHost(
+      HostDistance.LOCAL, cassandraMaxConnections()
+    ))
   }
 
   def parseContactPoints() = {

@@ -1,7 +1,7 @@
 package com.twitter.zipkin.cassandra
 
-import com.datastax.driver.core.policies.{RoundRobinPolicy, LatencyAwarePolicy, TokenAwarePolicy, DCAwareRoundRobinPolicy}
-import com.datastax.driver.core.{Host, HostDistance, AuthProvider}
+import com.datastax.driver.core.policies.{DCAwareRoundRobinPolicy, LatencyAwarePolicy, RoundRobinPolicy, TokenAwarePolicy}
+import com.datastax.driver.core.{AuthProvider, Host, HostDistance}
 import com.twitter.app.App
 import java.net.InetSocketAddress
 import java.util.Arrays.asList
@@ -141,5 +141,25 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers with MockitoS
     val bar = mock[Host]
     when(bar.getDatacenter).thenReturn("bar")
     policy.distance(bar) should be(HostDistance.IGNORED)
+  }
+
+  test("zipkin.store.cassandra.maxConnections default") {
+    TestFactory.nonExitingMain(Array())
+
+    TestFactory.createClusterBuilder()
+      .getConfiguration()
+      .getPoolingOptions()
+      .getMaxConnectionsPerHost(HostDistance.LOCAL) should be (8)
+  }
+
+  test("zipkin.store.cassandra.maxConnections override") {
+    TestFactory.nonExitingMain(Array(
+      "-zipkin.store.cassandra.maxConnections", "16"
+    ))
+
+    TestFactory.createClusterBuilder()
+      .getConfiguration()
+      .getPoolingOptions()
+      .getMaxConnectionsPerHost(HostDistance.LOCAL) should be (16)
   }
 }
