@@ -19,10 +19,9 @@ package com.twitter.zipkin.collector.filter
 
 import com.twitter.zipkin.collector.sampler.{EverythingGlobalSampler, NullGlobalSampler}
 import com.twitter.zipkin.common.Span
-import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSuite, Matchers}
 
-class SamplerFilterSpec extends FunSuite with Matchers with MockitoSugar {
+class SamplerFilterSpec extends FunSuite with Matchers {
 
   test("let the span pass if debug flag is set") {
     val span = Span(12345, "methodcall", 666, debug = Some(true))

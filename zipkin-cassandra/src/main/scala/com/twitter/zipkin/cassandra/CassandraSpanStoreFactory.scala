@@ -18,9 +18,7 @@ package com.twitter.zipkin.cassandra
 import java.net.InetSocketAddress
 
 import com.datastax.driver.core.Cluster
-import com.datastax.driver.core.policies.LatencyAwarePolicy
-import com.datastax.driver.core.policies.RoundRobinPolicy
-import com.datastax.driver.core.policies.TokenAwarePolicy
+import com.datastax.driver.core.policies.{RoundRobinPolicy, DCAwareRoundRobinPolicy, LatencyAwarePolicy, TokenAwarePolicy}
 import com.google.common.net.HostAndPort
 import com.twitter.app.App
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
@@ -43,6 +41,7 @@ trait CassandraSpanStoreFactory {self: App =>
   val cassandraMaxTraceCols = flag[Int]      ("zipkin.store.cassandra.maxTraceCols", MaxTraceCols, "max number of spans to return from a query")
   val cassandraUsername     = flag[String]   ("zipkin.store.cassandra.username", "cassandra authentication user name")
   val cassandraPassword     = flag[String]   ("zipkin.store.cassandra.password", "cassandra authentication password")
+  val cassandraLocalDc      = flag[String]   ("zipkin.store.cassandra.localDc", "name of the datacenter that will be considered \"local\" for load balancing")
 
   // eagerly makes network connections, so lazy
   private[this] lazy val lazyRepository = new Repository(keyspace(), createClusterBuilder().build(), ensureSchema())
@@ -68,7 +67,12 @@ trait CassandraSpanStoreFactory {self: App =>
     if (cassandraUsername.isDefined && cassandraPassword.isDefined)
       builder.withCredentials(cassandraUsername(), cassandraPassword())
     builder.withRetryPolicy(ZipkinRetryPolicy.INSTANCE)
-    builder.withLoadBalancingPolicy(new TokenAwarePolicy(new LatencyAwarePolicy.Builder(new RoundRobinPolicy()).build()))
+    builder.withLoadBalancingPolicy(new TokenAwarePolicy(new LatencyAwarePolicy.Builder(
+      if (cassandraLocalDc.isDefined)
+        DCAwareRoundRobinPolicy.builder().withLocalDc(cassandraLocalDc()).build()
+      else
+        new RoundRobinPolicy()
+    ).build()))
   }
 
   def parseContactPoints() = {

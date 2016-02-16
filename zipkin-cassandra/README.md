@@ -6,21 +6,12 @@
 * [zipkin-collector-service](https://github.com/openzipkin/zipkin/blob/master/zipkin-collector-service/README.md)
 * [zipkin-query-service](https://github.com/openzipkin/zipkin/blob/master/zipkin-query-service/README.md)
 
-These services apply configuration through environment variables:
+Here are the Cassandra-specific environment variables:
 
-   * `CASSANDRA_ENSURE_SCHEMA`: Ensuring that schema exists, if enabled tries to execute script /zipkin-cassandra-core/resources/cassandra-schema-cql3.txt 
-   * `CASSANDRA_USERNAME` and `CASSANDRA_PASSWORD`: Cassandra authentication. Will throw an exception on startup if authentication fails
-   * `CASSANDRA_CONTACT_POINTS`: Comma separated list of hosts / ip addresses part of Cassandra cluster
-   * `COLLECTOR_SAMPLE_RATE`: Sample rate. Double value between 0.0 (nothing ends up in back-end store) and 1.0 (everything ends up in back-end store)
-   * `COLLECTOR_QUEUE_NUM_WORKERS`: Number of worker threads that pick spans from internal bounded queue and write to back-end store
-   * `COLLECTOR_QUEUE_MAX_SIZE`: Internal queue size. If queue runs full offered spans are dropped. 
-   * `COLLECTOR_PORT`: Collector port
-   * `COLLECTOR_ADMIN_PORT`: Collector admin port. Port for admin http service. Admin service provides operational metrics for zipkin-collector-service.
-   * `COLLECTOR_LOG_LEVEL`: Collector log level. Valid values: OFF, FATAL, CRITICAL, ERROR, WARNING, INFO, DEBUG, TRACE, ALL
-
-For default values see:
-* [zipkin-collector-service/config/collector-cassandra.scala](https://github.com/openzipkin/zipkin/blob/master/zipkin-collector-service/config/collector-cassandra.scala).
-* [zipkin-query-service/config/query-cassandra.scala](https://github.com/openzipkin/zipkin/blob/master/zipkin-query-service/config/query-cassandra.scala).
+   * `CASSANDRA_ENSURE_SCHEMA`: Ensuring that schema exists, if enabled tries to execute script /zipkin-cassandra-core/resources/cassandra-schema-cql3.txt. Defaults to true
+   * `CASSANDRA_USERNAME` and `CASSANDRA_PASSWORD`: Cassandra authentication. Will throw an exception on startup if authentication fails. No default
+   * `CASSANDRA_CONTACT_POINTS`: Comma separated list of hosts / ip addresses part of Cassandra cluster. Defaults to localhost
+   * `CASSANDRA_LOCAL_DC`: Name of the datacenter that will be considered "local" for latency load balancing. When unset, load-balancing is round-robin.
 
 Example usage:
 
