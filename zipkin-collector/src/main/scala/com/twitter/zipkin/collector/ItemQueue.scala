@@ -86,10 +86,8 @@ class ItemQueue[A, B](
   def add(item: A): Future[Unit] =
     if (!running) {
       QueueClosed
-    } else if (!queue.offer(item)) {
-      queueFullCounter.incr()
-      QueueFull
     } else {
+      queue.put(item)
       Future.Done
     }
 }
