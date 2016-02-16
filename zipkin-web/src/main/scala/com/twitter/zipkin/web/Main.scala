@@ -30,7 +30,6 @@ import com.twitter.finatra.json.FinatraObjectMapper
 import com.twitter.server.TwitterServer
 import com.twitter.util.Await
 import com.twitter.zipkin.json.ZipkinJson
-import com.twitter.zipkin.web.mustache.ZipkinMustache
 import org.slf4j.LoggerFactory
 
 trait ZipkinWebFactory { self: App =>
@@ -77,9 +76,8 @@ trait ZipkinWebFactory { self: App =>
     mapper = new FinatraObjectMapper(ZipkinJson)
   )
 
-  def newMustacheGenerator = new ZipkinMustache()
   def newQueryExtractor = new QueryExtractor(queryLimit())
-  def newHandlers = new Handlers(newMustacheGenerator, newQueryExtractor)
+  def newHandlers = new Handlers(newQueryExtractor)
 
   def newWebServer(
     queryClient: HttpClient = queryClient,
@@ -101,9 +99,7 @@ trait ZipkinWebFactory { self: App =>
       // TODO: Once the following are javascript-only, we can move remove zipkin-web
       ("/modelview/", handleIndex(queryClient)),
       ("/modelview/traces/:id", handleTraces(queryClient)),
-      ("/", serveStaticIndex()),
-      ("/traces/:id", serveStaticIndex()),
-      ("/dependency", serveStaticIndex()),
+      ("/", handleIndexHtml()),
       ("/config.js", handleConfig(Map(
         "environment" -> environment(),
         "queryLimit" -> queryLimit()

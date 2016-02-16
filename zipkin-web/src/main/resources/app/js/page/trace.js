@@ -4,7 +4,6 @@ define(
   [
     'flight',
     '../component_data/trace',
-    '../component_ui/environment',
     '../component_ui/filterAllServices',
     '../component_ui/fullPageSpinner',
     '../component_ui/serviceFilterSearch',
@@ -18,7 +17,6 @@ define(
   function (
     {component},
     {TraceData},
-    {environment: EnvironmentUI},
     FilterAllServicesUI,
     FullPageSpinnerUI,
     ServiceFilterSearchUI,
@@ -37,7 +35,6 @@ define(
         this.on(document, 'tracePageModelView', function(ev, modelview) {
           this.$node.html(tracetemplate(modelview));
 
-          EnvironmentUI.attachTo('#environment');
           FilterAllServicesUI.attachTo('#filterAllServices', {totalServices: $('.trace-details.services span').length});
           FullPageSpinnerUI.attachTo('#fullPageSpinner');
           ServiceFilterSearchUI.attachTo('#serviceFilterSearch');
