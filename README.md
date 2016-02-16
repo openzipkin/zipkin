@@ -52,6 +52,8 @@ $ open http://localhost:8080/
 |:---------|:--------|:----------|:---------------------|:--------------------|:------------|
 | Python | [pyramid_zipkin](https://github.com/Yelp/pyramid_zipkin) | [Pyramid](http://docs.pylonsproject.org/projects/pyramid/en/latest/) |[Kafka \| Scribe](http://pyramid-zipkin.readthedocs.org/en/latest/configuring_zipkin.html#zipkin-transport-handler) | [Yes](http://pyramid-zipkin.readthedocs.org/en/latest/configuring_zipkin.html#zipkin-tracing-percent) | py2, py3 support. |
 | Java | [brave](https://github.com/openzipkin/brave) | Jersey, RestEASY, JAXRS2, Apache HttpClient, Mysql | Http, Kafka, Scribe | Yes | Java 7 or higher|
+| Ruby | [zipkin-tracer](https://github.com/openzipkin/zipkin-tracer) | [Rack](http://rack.github.io/) | Http, Kafka, Scribe | Yes | lc support. Ruby 2.0 or higher|
+| C# | [ZipkinTracerModule](https://github.com/mdsol/Medidata.ZipkinTracerModule) | OWIN, HttpHandler | Http | Yes | lc support. 4.5.2 or higher |
 
 ## Full documentation
 
