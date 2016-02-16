@@ -19,7 +19,7 @@ import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.Span;
-import zipkin.server.InMemorySpanStore;
+import zipkin.InMemorySpanStore;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;

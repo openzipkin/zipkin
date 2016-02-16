@@ -41,7 +41,7 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-server</artifactId>
+      <artifactId>spanstore-jdbc</artifactId>
     </dependency>
 
     <!-- for ScalaSpanStoreAdapter -->

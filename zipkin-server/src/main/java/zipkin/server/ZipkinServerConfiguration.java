@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
 import zipkin.Codec;
+import zipkin.InMemorySpanStore;
 import zipkin.Sampler;
 import zipkin.SpanStore;
 import zipkin.jdbc.JDBCSpanStore;

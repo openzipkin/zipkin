@@ -17,6 +17,7 @@ import org.junit.Test;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
+import zipkin.InMemorySpanStore;
 import zipkin.Sampler;
 import zipkin.Span;
 
