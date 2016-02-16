@@ -1,0 +1,6 @@
+dependencies {
+    compile project(':zipkin-scrooge')
+
+    compile "com.twitter:finagle-core_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    compile "com.twitter:util-core_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
+}

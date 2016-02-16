@@ -2,12 +2,13 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight',
+    'bootstrap-sass/assets/javascripts/bootstrap.js'
   ],
 
-  function (defineComponent) {
+  function (flight, bootstrap) {
 
-    return defineComponent(infoPanel);
+    return flight.component(infoPanel);
 
     function infoPanel() {
       this.show = function() {

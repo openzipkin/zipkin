@@ -4,19 +4,11 @@
     <meta charset='utf-8'>
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
 
-    <title>Zipkin - {{pageTitle}}</title>
+    <title>Zipkin</title>
 
     <meta name='description' content=''>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
-
-    <link rel='stylesheet' href='/app/libs/bootstrap/css/bootstrap.min.css'>
-    <link rel='stylesheet' href='/app/libs/chosen/chosen.min.css'>
-    <link rel='stylesheet' href='/app/libs/bootstrap-datepicker/css/datepicker3.css'>
-
-    <link rel="stylesheet" href="/app/css/main.css">
-    <link rel="stylesheet" href="/app/css/traces.css">
-    <link rel='stylesheet' href='/app/css/trace.css'>
-    <link rel="stylesheet" href="/app/css/summary.css">
+    <link rel="stylesheet" href="/dist/app.min.css">
   </head>
   <body>
     <div class='navbar navbar-inverse navbar-fixed-top' role='navigation'>
@@ -26,19 +18,29 @@
             Zipkin<span class='muted' style='font-size: .75em; padding-left: 10px;'>Investigate system behavior</span>
           </a>
         </div>
-        <div class="collapse navbar-collapse">
+        <div class="navbar-left">
           <ul class="nav navbar-nav">
             <li class="active"><a href="/">Find a trace</a></li>
-            <li><a href="#">Aggregates</a></li>
+            <li><a href="/dependency">Dependencies</a></li>
           </ul>
+        </div>
+        <div class="navbar-right" style="width: 50%">
+          <div class="navbar-right" style='padding-left: 15px'>
+            <p class="navbar-text muted" id="environment"></p>
+          </div>
+          <form id="traceIdQueryForm" class="form-inline" role="form">
+            <div class="navbar-right" style="width: 25%; float: right">
+              <div class="row well-sm clearfix">
+                  <input type="text" class="form-control input-sm" id="traceIdQuery" name="traceIdQuery" style="width: 100%" placeholder='Go to trace'>
+              </div>
+            </div>
+          </form>
         </div><!--/.nav-collapse -->
       </div>
     </div>
 
     <div class='container'>
-      <div class='content'>
-        {{{body}}}
-      </div>
+      <div class='content'></div>
     </div>
 
     <div id='fullPageSpinner'>
@@ -47,18 +49,20 @@
       </div>
     </div>
 
-    <!--[if lt IE 9]>
-    <script src='/app/bower_components/es5-shim/es5-shim.js'></script>
-    <script src='/app/bower_components/es5-shim/es5-sham.js'></script>
-    <![endif]-->
-    <script src='/app/libs/jquery/jquery.min.js'></script>
-    <script src='/app/libs/jquery-timeago/jquery.timeago.js'></script>
-    <script src='/app/libs/chosen/chosen.jquery.min.js'></script>
-    <script src='/app/libs/jquery-cookie/jquery.cookie.js'></script>
-    <script src='/app/libs/bootstrap-datepicker/js/bootstrap-datepicker.js'></script>
-    <script src="/app/libs/momentjs/min/moment.min.js"></script>
+    <div class="ui-grid-a" id="extraButtonsContainer">
+      <div style="display: inline-block">
+        <button type="button" class="btn btn-danger btn-sm" id='zoomOutSpans' value='uiZoomOutSpans' style='display: none'>
+          <span class="glyphicon glyphicon-zoom-out"></span>
+        </button>
+      </div>
+      <div style="display: inline-block">
+        <button type="button" class="btn btn-default btn-sm back-to-top" id="backToTop" style='display: none'>
+          <span class="glyphicon glyphicon-chevron-up"></span>
+        </button>
+      </div>
+    </div>
 
-    <script src='/app/libs/bootstrap/js/bootstrap.min.js'></script>
-    <script src='/app/libs/requirejs/require.js' data-main='/app/js/main.js'></script>
+    <script src="/config.js"></script>
+    <script src="/dist/app.min.js"></script>
   </body>
 </html>

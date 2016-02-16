@@ -1,0 +1,64 @@
+CREATE KEYSPACE IF NOT EXISTS zipkin WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
+
+CREATE TABLE IF NOT EXISTS zipkin.service_span_name_index (
+    service_span_name text,
+    ts                timestamp,
+    trace_id          bigint,
+    PRIMARY KEY (service_span_name, ts)
+) WITH CLUSTERING ORDER BY (ts DESC)
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_sstable_age_days': '1'};
+
+CREATE TABLE IF NOT EXISTS zipkin.service_name_index (
+    service_name      text,
+    bucket            int,
+    ts                timestamp,
+    trace_id          bigint,
+    PRIMARY KEY ((service_name, bucket), ts)
+) WITH CLUSTERING ORDER BY (ts DESC)
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_sstable_age_days': '1'};
+
+CREATE TABLE IF NOT EXISTS zipkin.span_names (
+    service_name text,
+    bucket       int,   -- no longer used. kept for compatibility
+    span_name    text,
+    PRIMARY KEY ((service_name, bucket), span_name)
+) WITH compaction = {'min_threshold': '4', 'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32'};
+
+CREATE TABLE IF NOT EXISTS zipkin.annotations_index (
+    annotation     blob,
+    bucket         int,
+    ts             timestamp,
+    trace_id       bigint,
+    PRIMARY KEY ((annotation, bucket), ts)
+) WITH CLUSTERING ORDER BY (ts DESC)
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_sstable_age_days': '1'};
+
+CREATE TABLE IF NOT EXISTS zipkin.dependencies (
+    day          timestamp,
+    dependencies blob,
+    PRIMARY KEY (day)
+) WITH compaction = {'min_threshold': '4', 'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32'};
+
+CREATE TABLE IF NOT EXISTS zipkin.service_names (
+    service_name text,
+    PRIMARY KEY (service_name)
+) WITH compaction = {'min_threshold': '4', 'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32'};
+
+CREATE TABLE IF NOT EXISTS zipkin.traces (
+    trace_id  bigint,
+    ts        timestamp,
+    span_name text,
+    span      blob,
+    PRIMARY KEY (trace_id, ts, span_name)
+) WITH compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_sstable_age_days': '1'};
+
+CREATE TABLE IF NOT EXISTS zipkin.span_duration_index (
+    service_name  text,      // service name
+    span_name     text,      // span name, or blank for queries without span name
+    bucket        int,       // time bucket, calculated as ts/interval (in microseconds), for some pre-configured interval like 1h.
+    duration      bigint,    // span duration, in microseconds
+    ts            timestamp, // start timestamp of the span, truncated to millisecond precision
+    trace_id      bigint,    // trace ID. Included as a clustering column to avoid clashes (however unlikely)
+    PRIMARY KEY ((service_name, span_name, bucket), duration, ts, trace_id)
+) WITH CLUSTERING ORDER BY (duration DESC, ts DESC)
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_sstable_age_days': '1'};

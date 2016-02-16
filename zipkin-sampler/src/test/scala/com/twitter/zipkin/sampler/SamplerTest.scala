@@ -15,13 +15,11 @@
  */
 package com.twitter.zipkin.sampler
 
-import com.twitter.util.Var
 import java.util.Random
-import org.junit.runner.RunWith
-import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
+import com.twitter.util.Var
+import org.scalatest.FunSuite
+
 class SamplerTest extends FunSuite {
   val rnd = new Random(1L)
 

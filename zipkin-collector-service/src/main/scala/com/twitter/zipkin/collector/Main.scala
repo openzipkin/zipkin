@@ -16,34 +16,38 @@
  */
 package com.twitter.zipkin.collector
 
+import com.google.common.base.Charsets.UTF_8
+import com.google.common.io.{Resources, Files}
+import com.twitter.finagle.tracing.{NullTracer, DefaultTracer}
+import com.twitter.logging.Logger
+import com.twitter.ostrich.admin.{ServiceTracker, RuntimeEnvironment}
+import com.twitter.util.Eval
+import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
+import com.twitter.zipkin.BuildProperties
 
+object Main {
+  val log = Logger.get(getClass.getName)
 
-import com.twitter.finagle.stats.StatsReceiver
-import com.twitter.server.TwitterServer
-import com.twitter.util.{Await, Future}
-import com.twitter.zipkin.cassandra.CassieSpanStoreFactory
-import com.twitter.zipkin.collector.{SpanReceiver, ZipkinQueuedCollectorFactory}
-import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
+  def main(args: Array[String]) {
+    log.info("Loading configuration")
+    DefaultTracer.self = NullTracer // Disable tracing within the collector
 
-import com.twitter.zipkin.receiver.kafka.{KafkaProcessor, KafkaDecoderImpl, KafkaSpanReceiverFactory}
-import com.twitter.zipkin.storage.WriteSpanStore
-import com.twitter.zipkin.zookeeper.ZooKeeperClientFactory
+    val runtime = RuntimeEnvironment(BuildProperties, args)
 
-object ZipkinKafkaCollectorServer extends TwitterServer
-with ZipkinQueuedCollectorFactory
-with CassieSpanStoreFactory
-with ZooKeeperClientFactory
-with KafkaSpanReceiverFactory
-{
-  def newReceiver(receive: Seq[ThriftSpan] => Future[Unit], stats: StatsReceiver): SpanReceiver =
-  newKafkaSpanReceiver(receive, stats.scope("kafkaSpanReceiver"),Some(KafkaProcessor.defaultKeyDecoder), new KafkaDecoderImpl)
+    // Fallback to bundled config resources, if there's no file at the path specified as -f
+    val source = if (runtime.configFile.exists()) Files.toString(runtime.configFile, UTF_8)
+    else Resources.toString(getClass.getResource(runtime.configFile.toString), UTF_8)
 
-  def newSpanStore(stats: StatsReceiver): WriteSpanStore =
-    newCassandraStore(stats.scope("cassie"))
-
-  def main() {
-    val collector = newCollector(statsReceiver)
-    onExit { collector.close() }
-    Await.ready(collector)
+    val builder = (new Eval).apply[CollectorServiceBuilder[Seq[String]]](source)
+    try {
+      val server = builder.apply().apply(runtime)
+      server.start()
+      ServiceTracker.register(server)
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        log.error(e, "Unexpected exception: %s", e.getMessage)
+        System.exit(0)
+    }
   }
 }

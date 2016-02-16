@@ -50,12 +50,20 @@ case class DBParams(
  * @param params Connection information
  * @param install Whether to set up the database schema.
  *                The schema can be installed multiple times with no problems.
+ * @param maxConnections Maximum count of concurrent connections to the database.
  */
 case class DBConfig(name: String = "sqlite-persistent",
                     params: DBParams = new DBParams(),
-                    install: Boolean = false) {
+                    install: Boolean = false,
+                    maxConnections: Int = 10) {
 
-  case class DBInfo(driver: String, description: String, location: DBParams => String)
+  /**
+   * @param jdbc3 Whether this is a legacy JDBC3 driver
+   */
+  case class DBInfo(driver: String,
+                    description: String,
+                    location: DBParams => String,
+                    jdbc3: Boolean = false)
 
   /**
    * Database information.
@@ -67,41 +75,29 @@ case class DBConfig(name: String = "sqlite-persistent",
    * Anorm supports any SQL database, so more databases can be added here.
    *
    * The other place the database driver needs to be set is in the project
-   * dependencies in project/Project.scala.
+   * dependencies in `gradle/dependencies.gradle`.
    */
   private val dbmap = Map(
     "sqlite-memory" -> DBInfo(
       description = "SQLite in-memory",
       driver = "org.sqlite.JDBC",
-      location = { _ => "jdbc:sqlite::memory:" }
+      location = { _ => "jdbc:sqlite::memory:" },
+      jdbc3 = true
     ),
     "sqlite-persistent" -> DBInfo(
       description = "SQLite persistent",
       driver = "org.sqlite.JDBC",
-      location = { dbp: DBParams => "jdbc:sqlite:" + dbp.dbName + ".db" }
-    ),
-    "h2-memory" -> DBInfo(
-      description = "H2 in-memory",
-      driver = "org.h2.Driver",
-      location = { dbp: DBParams => "jdbc:h2:mem:" + dbp.dbName }
-    ),
-    "h2-persistent" -> DBInfo(
-      description = "H2 persistent",
-      driver = "org.h2.Driver",
-      location = { dbp: DBParams => "jdbc:h2:" + dbp.dbName }
-    ),
-    "postgresql" -> DBInfo(
-      description = "PostgreSQL",
-      driver = "org.postgresql.Driver",
-      location = { dbp: DBParams =>
-        "jdbc:postgresql://" + dbp.host + dbp.getPort + "/" + dbp.dbName + "?user=" + dbp.username + "&password=" + dbp.password + "&ssl=" + dbp.ssl
-      }
+      location = { dbp: DBParams => "jdbc:sqlite:" + dbp.dbName + ".db" },
+      jdbc3 = true
     ),
     "mysql" -> DBInfo(
       description = "MySQL",
-      driver = "com.mysql.jdbc.Driver",
+      driver = "org.mariadb.jdbc.Driver",
       location = { dbp: DBParams =>
-        "jdbc:mysql://" + dbp.host + dbp.getPort + "/" + dbp.dbName + "?user=" + dbp.username + "&password=" + dbp.password
+        "jdbc:mariadb://" + dbp.host + dbp.getPort + "/" + dbp.dbName + "?user=" + dbp.username + "&password=" + dbp.password +
+          (if (dbp.ssl) "&useSSL=true" else "") +
+          "&autoReconnect=true" + // recover from dropped connections
+          "&useOldAliasMetadataBehavior=true" // workaround for alias column
       }
     )
   )
@@ -110,4 +106,5 @@ case class DBConfig(name: String = "sqlite-persistent",
   def description: String = dbinfo.description
   def driver: String = dbinfo.driver
   def location: String = dbinfo.location(params)
+  def jdbc3: Boolean = dbinfo.jdbc3
 }

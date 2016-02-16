@@ -2,16 +2,16 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight'
   ],
 
-  function (defineComponent) {
+  function (flight) {
 
-    return defineComponent(spanNames);
+    return flight.component(spanNames);
 
     function spanNames() {
       this.updateSpanNames = function(ev, serviceName) {
-        $.ajax("/api/spans?serviceName="+serviceName, {
+        $.ajax("/api/v1/spans?serviceName=" + serviceName, {
           type: "GET",
           dataType: "json",
           context: this,

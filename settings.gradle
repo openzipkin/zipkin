@@ -1,0 +1,63 @@
+rootProject.name = 'zipkin'
+
+def includes = [
+
+////////////////////////////////////
+// Zipkin's mostly common library //
+////////////////////////////////////
+// Not all projects depend on this!
+'zipkin-common',
+
+////////////////////////////////////////////////////////
+// Projects with outputs that are useful on their own //
+////////////////////////////////////////////////////////
+
+'zipkin-collector-service',
+'zipkin-query-service',
+'zipkin-web',
+
+/////////////////////////////////////
+// Collector, and Collector inputs //
+/////////////////////////////////////
+
+'zipkin-collector',
+
+///////////////
+// Receivers //
+///////////////
+
+'zipkin-receiver-scribe',
+'zipkin-receiver-kafka',
+
+/////////////////
+// Query logic //
+/////////////////
+
+'zipkin-query',
+
+/////////////////////////////////////////////////////
+// Libraries wrapping clients to external services //
+/////////////////////////////////////////////////////
+
+'zipkin-cassandra-core',
+'zipkin-cassandra',
+'zipkin-anormdb',
+
+////////////
+// Thrift //
+////////////
+
+'zipkin-thrift',
+'zipkin-scrooge',
+
+//////////
+// Misc //
+//////////
+
+'zipkin-sampler'
+]
+
+if (System.getenv('PUBLISHING') == null) {
+    includes.add('zipkin-tracegen')
+}
+include includes.toArray(new String[0])

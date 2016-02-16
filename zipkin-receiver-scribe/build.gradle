@@ -1,0 +1,22 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath "com.yodle.griddle:griddle:${commonVersions.griddle}"
+    }
+}
+apply plugin: 'scrooge'
+thriftSrcDir = "src/main/thrift/com/twitter/zipkin"
+
+apply plugin: 'idl'
+
+dependencies {
+    compile project(':zipkin-collector')
+
+    compile "com.twitter:scrooge-core_${scalaInterfaceVersion}:${commonVersions.scrooge}"
+    compile "com.twitter:scrooge-serializer_${scalaInterfaceVersion}:${commonVersions.scrooge}"
+    compile "com.twitter:finagle-thriftmux_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    scroogeGen "com.twitter:scrooge-generator_${scalaInterfaceVersion}:${commonVersions.scrooge}"
+}

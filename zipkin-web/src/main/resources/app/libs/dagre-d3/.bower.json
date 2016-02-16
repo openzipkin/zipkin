@@ -1,0 +1,25 @@
+{
+  "name": "dagre-d3",
+  "version": "0.2.9",
+  "main": [
+    "js/dagre-d3.js",
+    "js/dagre-d3.min.js"
+  ],
+  "ignore": [
+    "README.md"
+  ],
+  "dependencies": {
+    "d3": "~3.3.8"
+  },
+  "homepage": "https://github.com/cpettitt/dagre-d3-bower",
+  "_release": "0.2.9",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.2.9",
+    "commit": "536bd5b212e4dd1f2d63a20b4daecb2987a0568f"
+  },
+  "_source": "git://github.com/cpettitt/dagre-d3-bower.git",
+  "_target": "~0.2.9",
+  "_originalSource": "dagre-d3",
+  "_direct": true
+}

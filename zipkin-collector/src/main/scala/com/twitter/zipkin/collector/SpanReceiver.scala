@@ -15,13 +15,18 @@
  */
 package com.twitter.zipkin.collector
 
-import com.twitter.util.{Closable, CloseAwaitably}
+import com.twitter.util.{Closable, CloseAwaitably, Future}
+import com.twitter.zipkin.thriftscala.Span
 
 /**
  * SpanReceivers are nothing special. They need only allow us to Await on them
  * and close them.
  *
- * At creation a SpanReceiver will be provided a function of Seq[Span] => Future[Unit]
- * that it should use to process incoming spans.
+ * At creation a SpanReceiver will be provided a [[SpanReceiver.Processor]] that it
+ * should use to process incoming spans.
  */
+object SpanReceiver {
+  type Processor = (Seq[Span]) => Future[Unit]
+}
+
 trait SpanReceiver extends Closable with CloseAwaitably

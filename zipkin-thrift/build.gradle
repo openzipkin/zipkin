@@ -1,0 +1,11 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath "com.yodle.griddle:griddle:${commonVersions.griddle}"
+    }
+}
+
+apply plugin: 'idl'

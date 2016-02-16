@@ -16,27 +16,25 @@
  */
 package com.twitter.zipkin.common
 
-import java.nio.ByteBuffer
 import java.net.{InetAddress, InetSocketAddress}
+import java.nio.ByteBuffer
+
+import com.google.common.collect.ComparisonChain
+import com.twitter.zipkin.util.Util._
 
 /**
- * Represents the client or server machine we traced.
+ * Indicates the network context of a service involved in a span.
+ *
+ * @param ipv4 IPv4 host address packed into 4 bytes
+ * @param port IPv4 port or 0, if unknown
+ * @param serviceName classifier of a source or destination in lowercase, such as "zipkin-web".
+ *                    Can be an empty string "" if the service name is not known, which would
+ *                    make the span not queryable by the service_name unless some other
+ *                    annotation provides a real value.
  */
-object Endpoint {
-  val Unknown = Endpoint(0, 0, "")
-  val UnknownServiceName = "Unknown service name"
-}
-
-/**
- * @param ipv4 ipv4 ip address.
- * @param port note that due to lack of unsigned integers this will wrap.
- * @param serviceName the service this operation happened on
- */
-case class Endpoint(ipv4: Int, port: Short, serviceName: String)
-  extends Ordered[Endpoint] {
-
-  override def toString: String =
-    "%s:%d(%s)".format(getHostAddress, port, serviceName)
+case class Endpoint(ipv4: Int, port: Short, serviceName: String) extends Ordered[Endpoint] {
+  checkArgument(serviceName.toLowerCase == serviceName,
+    s"serviceName must be lowercase: $serviceName")
 
   /**
    * Return the java.net.InetSocketAddress which contains host/port
@@ -57,18 +55,15 @@ case class Endpoint(ipv4: Int, port: Short, serviceName: String)
       ipv4 & 0xFF)
   }
 
-  def getUnsignedPort: Int = {
-    port & 0xFFFF
-  }
+  def getUnsignedPort: Int = port & 0xFFFF
 
-  override def compare(that: Endpoint) = {
-    if (serviceName != that.serviceName)
-      serviceName compare that.serviceName
-    else if (ipv4 != that.ipv4)
-      ipv4 compare that.ipv4
-    else if (port != that.port)
-      port compare that.port
-    else
-      0
-  }
+  override def compare(that: Endpoint) = ComparisonChain.start()
+    .compare(serviceName, that.serviceName)
+    .compare(ipv4, that.ipv4)
+    .compare(port, that.port)
+    .result()
+}
+
+object Endpoint {
+  val Unknown = Endpoint(0, 0, "")
 }

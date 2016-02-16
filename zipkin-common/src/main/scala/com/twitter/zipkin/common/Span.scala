@@ -16,136 +16,80 @@
  */
 package com.twitter.zipkin.common
 
-import com.twitter.util.NonFatal
 import com.twitter.zipkin.Constants
-import scala.collection.breakOut
+import com.twitter.zipkin.util.Util._
 
 /**
- * A span represents one RPC request. A trace is made up of many spans.
+ * A trace is a series of spans (often RPC calls) which form a latency tree.
  *
- * A span can contain multiple annotations, some are always included such as
- * Client send -> Server received -> Server send -> Client receive.
+ * <p/>Spans are usually created by instrumentation in RPC clients or servers, but can also
+ * represent in-process activity. Annotations in spans are similar to log statements, and are
+ * sometimes created directly by application developers to indicate events of interest, such as a
+ * cache miss.
  *
- * Some are created by users, describing application specific information,
- * such as cache hits/misses.
+ * <p/>The root span is where [[parentId]] is empty; it usually has the longest [[duration]] in the
+ * trace.
+ *
+ * <p/>Span identifiers are packed into longs, but should be treated opaquely. String encoding is
+ * fixed-width lower-hex, to avoid signed interpretation.
+ *
+ * @param traceId unique 8-byte identifier for a trace, set on all spans within it.
+ * @param name span name in lowercase, rpc method for example. Conventionally, when the span name
+ *             isn't known, name = "unknown".
+ * @param id unique 8-byte identifier of this span within a trace. A span is uniquely
+ *           identified in storage by (trace_id, id).
+ * @param parentId the parent's [[id]]; absent if this the root span in a trace.
+ * @param timestamp epoch microseconds of the start of this span; absent if this an incomplete span.
+ * @param duration measurement in microseconds of the critical path, if known.
+ * @param annotations associates events that explain latency with a timestamp. Unlike log
+ *                    statements, annotations are often codes: for example [[Constants.ServerRecv]].
+ *                    Annotations are sorted ascending by timestamp.
+ * @param binaryAnnotations tags a span with context, usually to support query or aggregation. For
+ *                          example, a binary annotation key could be "http.path".
+ * @param debug true is a request to store this span even if it overrides sampling policy.
  */
-object Span {
-  // TODO(jeff): what?!
-  def apply(span: Span): Span = span
+case class Span(
+  traceId: Long,
+  name: String,
+  id: Long,
+  parentId: Option[Long] = None,
+  timestamp: Option[Long] = None,
+  duration: Option[Long] = None,
+  annotations: List[Annotation] = List.empty,
+  binaryAnnotations: Seq[BinaryAnnotation] = Seq.empty,
+  debug: Option[Boolean] = None) extends Ordered[Span] {
 
-  def apply(
-    _traceId: Long,
-    _name: String,
-    _id: Long,
-    _parentId: Option[Long],
-    _annotations: List[Annotation],
-    _binaryAnnotations: Seq[BinaryAnnotation],
-    _debug: Boolean = false
-  ): Span = new Span {
-    def traceId = _traceId
-    def name = _name
-    def id = _id
-    def parentId = _parentId
-    def annotations = _annotations
-    def binaryAnnotations = _binaryAnnotations
-    def debug = _debug
-  }
+  checkArgument(name.toLowerCase == name, s"name must be lowercase: $name")
 
-  def unapply(span: Span): Option[(Long, String, Long, Option[Long], List[Annotation], Seq[BinaryAnnotation], Boolean)] =
-    try {
-      Some(
-        span.traceId,
-        span.name,
-        span.id,
-        span.parentId,
-        span.annotations,
-        span.binaryAnnotations,
-        span.debug
-      )
-    } catch {
-      case NonFatal(_) => None
-    }
+  override def compare(that: Span) =
+    java.lang.Long.compare(timestamp.getOrElse(0L), that.timestamp.getOrElse(0L))
+
+  def endpoints: Set[Endpoint] =
+    (annotations.flatMap(_.host) ++ binaryAnnotations.flatMap(_.host)).toSet
+
+  def serviceNames: Set[String] = endpoints.map(_.serviceName).filterNot(_.isEmpty)
 
   /**
-   * Order annotations by timestamp.
+   * Tries to extract the best name of the service in this span. This depends on annotations
+   * logged and prioritized names logged by the server over those logged by the client.
    */
-  val timestampOrdering = new Ordering[Annotation] {
-    def compare(a: Annotation, b: Annotation) = a.timestamp.compare(b.timestamp)
+  lazy val serviceName: Option[String] = {
+    // Most authoritative is the label of the server's endpoint
+    binaryAnnotations.find(_.key == Constants.ServerAddr).map(_.serviceName).filterNot(_.isEmpty) orElse
+      // Next, the label of any server annotation, logged by an instrumented server
+      serverSideAnnotations.headOption.map(_.serviceName).filterNot(_.isEmpty) orElse
+      // Next is the label of the client's endpoint
+      binaryAnnotations.find(_.key == Constants.ClientAddr).map(_.serviceName).filterNot(_.isEmpty) orElse
+      // Next is the label of any client annotation, logged by an instrumented client
+      clientSideAnnotations.headOption.map(_.serviceName).filterNot(_.isEmpty) orElse
+      // Finally is the label of the local component's endpoint
+      binaryAnnotations.find(_.key == Constants.LocalComponent).map(_.serviceName).filterNot(_.isEmpty)
   }
-
-}
-
-/**
- * @param traceId random long that identifies the trace, will be set in all spans in this trace
- * @param name name of span, can be rpc method name for example
- * @param id random long that identifies this span
- * @param parentId reference to the parent span in the trace tree
- * @param annotations annotations, containing a timestamp and some value. both user generated and
- * some fixed ones from the tracing framework
- * @param binaryAnnotations  binary annotations, can contain more detailed information such as
- * serialized objects
- * @param debug if this is set we will make sure this span is stored, no matter what the samplers want
- */
-trait Span { self =>
-  def traceId: Long
-  def name: String
-  def id: Long
-  def parentId: Option[Long]
-  def annotations: List[Annotation]
-  def binaryAnnotations: Seq[BinaryAnnotation]
-  def debug: Boolean
-
-  def copy(
-    traceId: Long = self.traceId,
-    name: String = self.name,
-    id: Long = self.id,
-    parentId: Option[Long] = self.parentId,
-    annotations: List[Annotation] = self.annotations,
-    binaryAnnotations: Seq[BinaryAnnotation] = self.binaryAnnotations,
-    debug: Boolean = self.debug
-  ): Span = Span(traceId, name, id, parentId, annotations, binaryAnnotations, debug)
-
-  private def tuple = (traceId, name, id, parentId, annotations, binaryAnnotations, debug)
-
-  override def equals(other: Any): Boolean = other match {
-    case o: Span => o.tuple == self.tuple
-    case _ => false
-  }
-
-  override def hashCode: Int = tuple.hashCode
-
-  override def toString: String = s"Span${tuple}"
-
-  def serviceNames: Set[String] =
-    annotations.flatMap(a => a.host.map(h => h.serviceName.toLowerCase)).toSet
-
-  /**
-   * Tries to extract the best possible service name
-   */
-  def serviceName: Option[String] = {
-    if (annotations.isEmpty) None else {
-      serverSideAnnotations.flatMap(_.host).headOption.map(_.serviceName) orElse {
-        clientSideAnnotations.flatMap(_.host).headOption.map(_.serviceName)
-      }
-    }
-  }
-
-  /**
-   * Iterate through list of annotations and return the one with the given value.
-   */
-  def getAnnotation(value: String): Option[Annotation] =
-    annotations.find(_.value == value)
-
-  /**
-   * Iterate through list of binaryAnnotations and return the one with the given key.
-   */
-  def getBinaryAnnotation(key: String): Option[BinaryAnnotation] =
-    binaryAnnotations.find(_.key == key)
 
   /**
    * Take two spans with the same span id and merge all data into one of them.
    */
-  def mergeSpan(mergeFrom: Span): Span = {
+  def merge(mergeFrom: Span): Span = {
     if (id != mergeFrom.id) {
       throw new IllegalArgumentException("Span ids must match")
     }
@@ -153,62 +97,26 @@ trait Span { self =>
     // ruby tracing can give us an empty name in one part of the span
     val selectedName = name match {
       case "" => mergeFrom.name
-      case "Unknown" => mergeFrom.name
+      case "unknown" => mergeFrom.name
       case _ => name
     }
 
-    new Span {
-      def traceId = self.traceId
-      def name = selectedName
-      def id = self.id
-      def parentId = self.parentId
-      def annotations = self.annotations ++ mergeFrom.annotations
-      def binaryAnnotations = self.binaryAnnotations ++ mergeFrom.binaryAnnotations
-      def debug = self.debug | mergeFrom.debug
-    }
+    val selectedTimestamp = Seq(timestamp, mergeFrom.timestamp).flatten.reduceOption(_ min _)
+    val selectedDuration = Trace.duration(List(this, mergeFrom))
+                                .orElse(duration).orElse(mergeFrom.duration)
+
+    new Span(
+      traceId,
+      selectedName,
+      id,
+      parentId,
+      selectedTimestamp,
+      selectedDuration,
+      (annotations ++ mergeFrom.annotations).sorted,
+      binaryAnnotations ++ mergeFrom.binaryAnnotations,
+      if (debug.getOrElse(false) | mergeFrom.debug.getOrElse(false)) Some(true) else None
+    )
   }
-
-  /**
-   * Get the first annotation by timestamp.
-   */
-  def firstAnnotation: Option[Annotation] = {
-    try {
-      Some(annotations.min(Span.timestampOrdering))
-    } catch {
-      case e: UnsupportedOperationException => None
-    }
-  }
-
-  /**
-   * Get the last annotation by timestamp.
-   */
-  def lastAnnotation: Option[Annotation] = {
-    try {
-      Some(annotations.max(Span.timestampOrdering))
-    } catch {
-      case e: UnsupportedOperationException => None
-    }
-  }
-
-  /**
-   * Endpoints involved in this span
-   */
-  def endpoints: Set[Endpoint] =
-    annotations.flatMap(_.host).toSet
-
-  /**
-   * Endpoint that is likely the owner of this span
-   */
-  def clientSideEndpoint: Option[Endpoint] =
-    clientSideAnnotations.map(_.host).flatten.headOption
-
-  /**
-   * Assuming this is an RPC span, is it from the client side?
-   */
-  def isClientSide(): Boolean =
-    annotations.exists(a => {
-      a.value.equals(Constants.ClientSend) || a.value.equals(Constants.ClientRecv)
-    })
 
   /**
    * Pick out the core client side annotations
@@ -221,30 +129,4 @@ trait Span { self =>
    */
   def serverSideAnnotations: Seq[Annotation] =
     annotations.filter(a => Constants.CoreServer.contains(a.value))
-
-  /**
-   * Duration of this span. May be None if we cannot find any annotations.
-   */
-  def duration: Option[Long] =
-    for (first <- firstAnnotation; last <- lastAnnotation)
-      yield last.timestamp - first.timestamp
-
-  /**
-   * @return true  if Span contains at most one of each core annotation
-   *         false otherwise
-   */
-  def isValid: Boolean = {
-    Constants.CoreAnnotations.map { c =>
-      annotations.filter(_.value == c).length > 1
-    }.count(b => b) == 0
-  }
-
-  /**
-   * Get the annotations as a map with value to annotation bindings.
-   */
-  def getAnnotationsAsMap(): Map[String, Annotation] =
-    annotations.map(a => a.value -> a)(breakOut)
-
-  def lastTimestamp: Option[Long] = lastAnnotation.map(_.timestamp)
-  def firstTimestamp: Option[Long] = firstAnnotation.map(_.timestamp)
 }

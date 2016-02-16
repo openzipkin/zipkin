@@ -1,0 +1,36 @@
+apply plugin: 'com.github.johnrengelman.shadow'
+ext.mainClassName = 'com.twitter.zipkin.query.Main'
+
+task run(type:JavaExec) {
+    main = mainClassName
+    classpath = sourceSets.main.runtimeClasspath
+    // Creates zipkin.db in the build directory when configKey == "dev"
+    workingDir project.buildDir
+    // See gradle.properties for an explanation of configKey
+    args '-f', "${projectDir}/config/query-${configKey}.scala"
+}
+
+jar.manifest.attributes 'Main-Class': mainClassName
+
+tasks.build.dependsOn(shadowJar)
+artifacts.zipkinUpload shadowJar
+
+shadowJar {
+    exclude 'META-INF/LICENSE' // jackson's META-INF/LICENSE conflicts with the directory META-INF/license
+}
+
+dependencies {
+    compile "com.twitter:finagle-ostrich4_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    compile "com.twitter:finagle-zipkin_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    compile "ch.qos.logback:logback-core:${commonVersions.logback}"
+    compile "ch.qos.logback:logback-classic:${commonVersions.logback}"
+
+    compile project(':zipkin-query')
+    compile project(':zipkin-cassandra')
+    compile project(':zipkin-anormdb')
+    compile anormDriverDependencies["mysql"] // for query-mysql
+}
+
+sourceSets.main.resources.srcDirs += ['config']
+apply from: "${rootDir}/gradle/idea-mark-config-dir-as-resource.gradle"
+apply from: "${rootDir}/gradle/verify-licenses.gradle"

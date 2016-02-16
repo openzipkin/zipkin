@@ -8,8 +8,6 @@ import sys, os
 sys.path.append(os.path.abspath('exts'))
 sys.path.append(os.path.abspath('utils'))
 
-import sbt_versions
-
 # highlight_language = 'scala'
 highlight_language = 'text'  # this way we don't get ugly syntax coloring
 extensions = ['sphinx.ext.extlinks', 'includecode']
@@ -38,21 +36,15 @@ html_show_sphinx = False
 html_style = 'zipkin.css'
 
 project = u'Zipkin'
-copyright = u'2014 Twitter, Inc'
+copyright = u'2015 OpenZipkin contributors'
 htmlhelp_basename = "zipkin"
-release = sbt_versions.find_release(os.path.abspath('../../../project/Build.scala'))
-version = sbt_versions.release_to_version(release)
+release = u'1.2.0-SNAPSHOT'
 
 # e.g. :issue:`36` :ticket:`8`
 extlinks = {
-  'issue': ('https://github.com/twitter/zipkin/issues/%s', 'issue #'),
-  'ex': ('https://github.com/twitter/zipkin/blob/zipkin-example/src/main/scala/%s', 'Zipkin example '),
+  'issue': ('https://github.com/openzipkin/zipkin/issues/%s', 'issue #'),
   'api': ('http://twitter.github.io/zipkin/docs/#%s', '')
 }
-
-rst_epilog = '''
-.. _Zipkin Examples: https://github.com/twitter/zipkin/tree/zipkin-example
-'''
 
 pygments_style = 'flask_theme_support.FlaskyStyle'
 

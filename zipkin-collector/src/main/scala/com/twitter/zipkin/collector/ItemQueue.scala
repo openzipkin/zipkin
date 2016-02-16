@@ -16,7 +16,7 @@
 package com.twitter.zipkin.collector
 
 import com.twitter.concurrent.NamedPoolThreadFactory
-import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
+import com.twitter.finagle.stats.{StatsReceiver, DefaultStatsReceiver, Stat}
 import com.twitter.util._
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{ArrayBlockingQueue, Executors, TimeUnit}
@@ -43,11 +43,11 @@ class ItemQueue[A, B](
   timeout: Duration = Duration.Top,
   stats: StatsReceiver = DefaultStatsReceiver.scope("ItemQueue")
 ) extends Closable with CloseAwaitably {
-  @volatile private[this] var running: Boolean = true
 
-  private[this] val queue = new ArrayBlockingQueue[A](maxSize)
+  @volatile protected[this] var running: Boolean = true
+  protected[this] val queue = new ArrayBlockingQueue[A](maxSize)
   private[this] val queueSizeGauge = stats.addGauge("queueSize") { queue.size }
-  private[this] val queueFullCounter = stats.counter("queueFull")
+  protected[this] val queueFullCounter = stats.counter("queueFull")
   private[this] val activeWorkers = new AtomicInteger(0)
   private[this] val activeWorkerGauge = stats.addGauge("activeWorkers") { activeWorkers.get }
   private[this] val maxConcurrencyGauge = stats.addGauge("maxConcurrency") { maxConcurrency }
@@ -63,7 +63,7 @@ class ItemQueue[A, B](
       val item = queue.poll(500, TimeUnit.MILLISECONDS)
       if (item != null) {
         activeWorkers.incrementAndGet()
-        Try(Await.result(stats.timeFuture("processing_time_ms")(process(item)), timeout))
+        Try(Await.result(Stat.timeFuture(stats.stat("processing_time_ms"))(process(item)), timeout))
           .onSuccess(_ => successesCounter.incr())
           .onFailure(_ => failuresCounter.incr())
         activeWorkers.decrementAndGet()
@@ -71,13 +71,17 @@ class ItemQueue[A, B](
     }
   }
 
+  def size(): Int = {
+    queue.size()
+  }
+
   def close(deadline: Time): Future[Unit] = closeAwaitably {
     running = false
     Future.join(workers)
   }
 
-  private[this] val QueueFull = Future.exception(new QueueFullException(maxSize))
-  private[this] val QueueClosed = Future.exception(new QueueClosedException)
+  protected[this] val QueueFull = Future.exception(new QueueFullException(maxSize))
+  protected[this] val QueueClosed = Future.exception(new QueueClosedException)
 
   def add(item: A): Future[Unit] =
     if (!running) {

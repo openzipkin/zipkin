@@ -15,22 +15,19 @@
  */
 package com.twitter.zipkin.sampler
 
-import com.twitter.util.{Await, Future}
 import com.twitter.finagle.Service
+import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common._
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class SpanSamplerFilterTest extends FunSuite {
   test("filters spans based on their traceId") {
     val spans = Seq(
-      Span(0, "svc", 123L, None, List.empty[Annotation], Seq.empty[BinaryAnnotation]),
-      Span(1, "svc", 123L, None, List.empty[Annotation], Seq.empty[BinaryAnnotation]),
-      Span(2, "svc", 123L, None, List.empty[Annotation], Seq.empty[BinaryAnnotation]),
-      Span(3, "svc", 123L, None, List.empty[Annotation], Seq.empty[BinaryAnnotation]),
-      Span(4, "svc", 123L, None, List.empty[Annotation], Seq.empty[BinaryAnnotation]))
+      Span(0, "svc", 123L),
+      Span(1, "svc", 123L),
+      Span(2, "svc", 123L),
+      Span(3, "svc", 123L),
+      Span(4, "svc", 123L))
 
     var rcvdSpans = Seq.empty[Span]
 
@@ -46,9 +43,9 @@ class SpanSamplerFilterTest extends FunSuite {
 
   test("will not filter debug spans") {
     val spans = Seq(
-      Span(0, "svc", 123L, None, List.empty[Annotation], Seq.empty[BinaryAnnotation], true),
-      Span(1, "svc", 123L, None, List.empty[Annotation], Seq.empty[BinaryAnnotation], true),
-      Span(1, "svc", 123L, None, List.empty[Annotation], Seq.empty[BinaryAnnotation], false))
+      Span(0, "svc", 123L, debug = Some(true)),
+      Span(1, "svc", 123L, debug = Some(true)),
+      Span(1, "svc", 123L))
 
     var rcvdSpans = Seq.empty[Span]
 

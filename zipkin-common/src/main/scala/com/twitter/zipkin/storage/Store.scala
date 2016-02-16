@@ -19,20 +19,19 @@ import com.twitter.zipkin.builder.{Builder => ZBuilder}
 
 object Store {
 
-  private val nullAggregatesBuilder = new ZBuilder[Aggregates] {
-    def apply() = new NullAggregates
+  private val nullDependencyStoreBuilder = new ZBuilder[DependencyStore] {
+    def apply() = new NullDependencyStore
   }
 
   case class Builder(
-    storageBuilder: ZBuilder[Storage],
-    indexBuilder: ZBuilder[Index],
-    aggregatesBuilder: ZBuilder[Aggregates] = nullAggregatesBuilder
+    spanStoreBuilder: ZBuilder[SpanStore],
+    dependencyStoreBuilder: ZBuilder[DependencyStore] = nullDependencyStoreBuilder
   ) extends ZBuilder[Store] {
-    def apply() = Store(storageBuilder.apply(), indexBuilder.apply(), aggregatesBuilder.apply())
+    def apply() = Store(spanStoreBuilder.apply(), dependencyStoreBuilder.apply())
   }
 }
 
 /**
  * Wrapper class for the necessary store components
  */
-case class Store(storage: Storage, index: Index, aggregates: Aggregates)
+case class Store(spanStore: SpanStore, dependencies: DependencyStore)

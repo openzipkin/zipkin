@@ -1,4 +1,4 @@
-This doc describes a quickstart to running zipkin with zookeeper and
+This doc describes a quickstart to running zipkin with
 cassandra, which is the configuration most commonly used.  All of
 these services are running on one machine in the setup described here.
 It presumes you have a clean-ish Ubuntu 12.04 install, and a user with
@@ -25,9 +25,9 @@ curl -L http://debian.datastax.com/debian/repo_key | sudo apt-key add -
 sudo apt-get update
 sudo apt-get install dsc12
 
-3. Install Java 7 JDK
+3. Install Java 8 JRE
 #we aren't a java shop so openjdk is fine for us
-sudo apt-get install openjdk-6-jre-headless
+sudo apt-get install openjdk-8-jre-headless
 
 4. Set up JAVA_HOME path var
 #in .bashrc or equivalent 
@@ -37,48 +37,27 @@ export PATH=JAVA_HOME/bin:$PATH
 5. Start cassandra 
 sudo service cassandra start
 
-6. Install Zookeeper (optional)
-#I installed to /opt/zookeeper, follow the instructions
-http://zookeeper.apache.org/doc/trunk/zookeeperStarted.html
-
-8. Install GIT
+6. Install GIT
 sudo apt-get install git
 
 --------------------------------
 Zipkin
 --------------------------------
 
-9. Install Zipkin
+7. Install Zipkin
 
 mkdir -p ~/apps/
-git clone https://github.com/twitter/zipkin.git
+git clone https://github.com/openzipkin/zipkin.git
 
 cd zipkin
 
-# note the 4gig memory usage. You can use less but your build may fail.
-export SBT_OPTS='-Xms512m -Xmx4096m -XX:MaxPermSize=1024m'
-#start a sbt shell and compile the 3 projects we need to run
-bin/sbt <enter>
-> project zipkin-web
-> compile
-#and wait, then repeat for zipkin-collector and zipkin-query ie project zipkin-collector <enter> compile <enter>
-> project zipkin-collector
-> compile
-#wait
-> project zipkin-query
-> compile
-#wait
+8. Create Zipkin namespace in Cassandra
+cassandra-cli -host localhost -port 9160 -f zipkin-cassandra/src/schema/cassandra-schema.txt
 
-10. Start zookeeper (optional)
+9. Run it!
 
-cd <zookeeper install location>
-bin/zkServer.sh start
-
-11. Run it!
-
-bin/collector cassandra
 bin/query cassandra
 bin/web
 
-12. browse to http://localhost:8080/
+10. browse to http://localhost:8080/
 

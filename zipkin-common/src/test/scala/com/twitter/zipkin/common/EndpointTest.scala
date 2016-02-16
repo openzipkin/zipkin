@@ -17,15 +17,20 @@
 package com.twitter.zipkin.common
 
 import java.net.InetSocketAddress
-import org.junit.runner.RunWith
-import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
+import org.scalatest.FunSuite
+
 class EndpointTest extends FunSuite {
   val google  = Endpoint(  134744072, -80, "google")
   val example = Endpoint(-1073730806,  21, "example")
   val twitter = Endpoint( -952396249, 443, "twitter")
+
+  /** Representations should lowercase on the way in */
+  test("serviceName cannot be lowercase") {
+    intercept[IllegalArgumentException] {
+      Endpoint( -952396249, 443, "Twitter")
+    }
+  }
 
   test("compare correctly") {
     val e1 = Endpoint(123, 456, "a")

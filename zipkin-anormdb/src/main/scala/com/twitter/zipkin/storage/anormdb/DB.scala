@@ -16,10 +16,13 @@
 
 package com.twitter.zipkin.storage.anormdb
 
-import anorm._
+import java.sql.{Blob, Connection, DriverManager, PreparedStatement, SQLException, SQLRecoverableException}
+
 import anorm.SqlParser._
-import java.sql.{Blob, Connection, DriverManager, SQLException, PreparedStatement}
-import com.twitter.util.{Try, Return, Throw}
+import anorm._
+import com.twitter.util.{Future, Return, Throw, Try}
+import com.twitter.zipkin.storage.anormdb.AnormThreads.inNewThread
+import com.zaxxer.hikari.HikariDataSource
 
 /**
  * Provides SQL database access via Anorm from the Play framework.
@@ -35,8 +38,16 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
   // Install the schema if requested
   if (dbconfig.install) this.install().close()
 
+  // Initialize connection pool
+  private val connpool = new HikariDataSource()
+  connpool.setDriverClassName(dbconfig.driver)
+  connpool.setJdbcUrl(dbconfig.location)
+  connpool.setConnectionTestQuery(if (dbconfig.jdbc3) "SELECT 1" else null)
+  connpool.setMaximumPoolSize(dbconfig.maxConnections)
+
   /**
-   * Gets a java.sql.Connection to the SQL database.
+   * Gets a dedicated java.sql.Connection to the SQL database. Note that auto-commit is
+   * enabled by default.
    *
    * Example usage:
    *
@@ -45,7 +56,32 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
    * conn.close()
    */
   def getConnection() = {
-    DriverManager.getConnection(dbconfig.location)
+    val conn = DriverManager.getConnection(dbconfig.location)
+    conn.setAutoCommit(true)
+    conn
+  }
+
+  /**
+   * Gets a pooled java.sql.Connection to the SQL database. Note that auto-commit is
+   * enabled by default.
+   *
+   * Example usage:
+   *
+   * implicit val conn: Connection = db.getPooledConnection()
+   * // Do database updates
+   * conn.close()
+   */
+  def getPooledConnection() = {
+    val conn = connpool.getConnection()
+    conn.setAutoCommit(true)
+    conn
+  }
+
+  /**
+   * Closes the connection pool
+   */
+  def closeConnectionPool() = {
+    connpool.close()
   }
 
   /**
@@ -77,89 +113,93 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
   }
 
   /**
+   * Performs an automatic retry if an SQLRecoverableException is caught.
+   */
+  def withRecoverableRetry[A](code: => A): Try[A] = {
+    try {
+      Return(code)
+    }
+    catch {
+      case e: SQLRecoverableException => {
+        Return(code)
+      }
+    }
+  }
+
+  /**
+   * Wrapper for withTransaction that performs an automatic retry if an SQLRecoverableException is caught.
+   *
+   * Example usage:
+   *
+   * db.withRecoverableTransaction(conn, { implicit conn: Connection =>
+   *   // Do database updates
+   * })
+   */
+  def withRecoverableTransaction[A](conn: Connection, code: Connection => A): Try[A] = {
+    withRecoverableRetry(withTransaction(conn, code).apply())
+  }
+
+  /**
+   * Wrapper for inNewThread that performs an automatic retry if an SQLRecoverableException is caught.
+   */
+  def inNewThreadWithRecoverableRetry[A](code: => A): Future[A] = {
+    inNewThread {
+      withRecoverableRetry(code).apply()
+    }
+  }
+
+  /**
    * Set up the database tables.
    *
    * Returns an open database connection, so remember to close it, for example
    * with `(new DB()).install().close()`
+   *
+   * @throws IllegalArgumentException if "MySQL" is the the database description. Install directly
+   *                                  from "zipkin-anormdb/src/main/resources/mysql.sql"
    */
   def install(): Connection = {
+    if (dbconfig.description == "MySQL") {
+      throw new IllegalArgumentException("Please install MySQL schema directly: zipkin-anormdb/src/main/resources/mysql.sql")
+    } else if (!dbconfig.description.startsWith("SQLite")) {
+      throw new IllegalArgumentException("Auto-install schema is only supported for SQLite, not: " + dbconfig.description);
+    }
+
     implicit val con = this.getConnection()
     SQL(
       """CREATE TABLE IF NOT EXISTS zipkin_spans (
-        |  span_id BIGINT NOT NULL,
+        |  trace_id BIGINT NOT NULL,
+        |  id BIGINT NOT NULL,
+        |  name VARCHAR(255) NOT NULL,
         |  parent_id BIGINT,
-        |  trace_id BIGINT NOT NULL,
-        |  span_name VARCHAR(255) NOT NULL,
-        |  debug SMALLINT NOT NULL,
-        |  duration BIGINT,
-        |  created_ts BIGINT
-        |)
-      """.stripMargin).execute()
-    //SQL("CREATE INDEX trace_id ON zipkin_spans (trace_id)").execute()
-    SQL(
-      """CREATE TABLE IF NOT EXISTS zipkin_annotations (
-        |  span_id BIGINT NOT NULL,
-        |  trace_id BIGINT NOT NULL,
-        |  span_name VARCHAR(255) NOT NULL,
-        |  service_name VARCHAR(255) NOT NULL,
-        |  value TEXT,
-        |  ipv4 INT,
-        |  port INT,
-        |  a_timestamp BIGINT NOT NULL,
+        |  debug SMALLINT,
+        |  start_ts BIGINT,
         |  duration BIGINT
         |)
       """.stripMargin).execute()
-    //SQL("CREATE INDEX trace_id ON zipkin_annotations (trace_id)").execute()
     SQL(
-      """CREATE TABLE IF NOT EXISTS zipkin_binary_annotations (
-        |  span_id BIGINT NOT NULL,
+      """CREATE TABLE IF NOT EXISTS zipkin_annotations (
         |  trace_id BIGINT NOT NULL,
-        |  span_name VARCHAR(255) NOT NULL,
-        |  service_name VARCHAR(255) NOT NULL,
-        |  annotation_key VARCHAR(255) NOT NULL,
-        |  annotation_value %s,
-        |  annotation_type_value INT NOT NULL,
-        |  ipv4 INT,
-        |  port INT
-        |)
-      """.stripMargin.format(this.getBlobType)).execute()
-    //SQL("CREATE INDEX trace_id ON zipkin_binary_annotations (trace_id)").execute()
-    SQL(
-      """CREATE TABLE IF NOT EXISTS zipkin_dependencies (
-        |  dlid %s,
-        |  start_ts BIGINT NOT NULL,
-        |  end_ts BIGINT NOT NULL
-        |)
-      """.stripMargin.format(this.getAutoIncrement)).execute()
-    SQL(
-      """CREATE TABLE IF NOT EXISTS zipkin_dependency_links (
-        |  dlid BIGINT NOT NULL,
-        |  parent VARCHAR(255) NOT NULL,
-        |  child VARCHAR(255) NOT NULL,
-        |  m0 BIGINT NOT NULL,
-        |  m1 DOUBLE PRECISION NOT NULL,
-        |  m2 DOUBLE PRECISION NOT NULL,
-        |  m3 DOUBLE PRECISION NOT NULL,
-        |  m4 DOUBLE PRECISION NOT NULL
+        |  span_id BIGINT NOT NULL,
+        |  a_key VARCHAR(255) NOT NULL,
+        |  a_value BLOB,
+        |  a_type INT NOT NULL,
+        |  a_timestamp BIGINT NOT NULL,
+        |  endpoint_ipv4 INT,
+        |  endpoint_port SMALLINT,
+        |  endpoint_service_name VARCHAR(255) NOT NULL
         |)
       """.stripMargin).execute()
     con
   }
 
-  // Get the column the current database type uses for BLOBs.
-  private def getBlobType = dbconfig.description match {
-    case "PostgreSQL" => "BYTEA" /* As usual PostgreSQL has to be different */
-    case "MySQL" => "MEDIUMBLOB" /* MySQL has length limits, in this case 16MB */
-    case _ => "BLOB"
-  }
-
-  private def getAutoIncrement = dbconfig.description match {
-    case "SQLite in-memory" => "INTEGER PRIMARY KEY AUTOINCREMENT" // Must be nullable
-    case "SQLite persistent" => "INTEGER PRIMARY KEY AUTOINCREMENT"
-    case "H2 in-memory" => "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"
-    case "H2 persistent" => "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"
-    case "PostgreSQL" => "BIGSERIAL PRIMARY KEY"
-    case "MySQL" => "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"
+  /**
+   * Get the command to use for inserting span rows.
+   */
+  def replaceCommand(): String = {
+    dbconfig.description match {
+      case "MySQL" => "REPLACE" // Prevents primary key conflict errors if duplicates are received
+      case _ => "INSERT"
+    }
   }
 
   // (Below) Provide Anorm with the ability to handle BLOBs.

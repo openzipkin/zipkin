@@ -13,18 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import com.twitter.zipkin.builder.Scribe
-import com.twitter.zipkin.anormdb.{StorageBuilder, IndexBuilder, AggregatesBuilder}
-import com.twitter.zipkin.storage.anormdb.{DB, DBConfig, DBParams}
-import com.twitter.zipkin.collector.builder.CollectorServiceBuilder
-import com.twitter.zipkin.storage.Store
 
-val db = DB(new DBConfig(install = true))
-val anormBuilder = Store.Builder(
-  StorageBuilder(db),
-  IndexBuilder(db),
-  AggregatesBuilder(db)
+import com.google.common.util.concurrent.Atomics
+import com.twitter.zipkin.anormdb.{DependencyStoreBuilder, SpanStoreBuilder}
+import com.twitter.zipkin.collector.builder.{CollectorServiceBuilder, ZipkinServerBuilder}
+import com.twitter.zipkin.receiver.kafka.KafkaSpanReceiverFactory
+import com.twitter.zipkin.storage.Store
+import com.twitter.zipkin.storage.anormdb.DB
+
+val serverPort = sys.env.get("COLLECTOR_PORT").getOrElse("9410").toInt
+val adminPort = sys.env.get("COLLECTOR_ADMIN_PORT").getOrElse("9900").toInt
+val logLevel = sys.env.get("COLLECTOR_LOG_LEVEL").getOrElse("INFO")
+val sampleRate = sys.env.get("COLLECTOR_SAMPLE_RATE").getOrElse("1.0").toFloat
+
+val db = DB()
+
+val storeBuilder = Store.Builder(SpanStoreBuilder(db), DependencyStoreBuilder(db))
+val kafkaReceiver = sys.env.get("KAFKA_ZOOKEEPER").map(
+  KafkaSpanReceiverFactory.factory(_,
+    sys.env.get("KAFKA_TOPIC").getOrElse("zipkin"),
+    sys.env.get("KAFKA_GROUP_ID").getOrElse("zipkin"),
+    sys.env.get("KAFKA_STREAMS").getOrElse("1").toInt
+  )
 )
 
-CollectorServiceBuilder(Scribe.Interface(categories = Set("zipkin")))
-  .writeTo(anormBuilder)
+CollectorServiceBuilder(
+  storeBuilder,
+  kafkaReceiver,
+  serverBuilder = ZipkinServerBuilder(serverPort, adminPort),
+  sampleRate = Atomics.newReference(sampleRate),
+  logLevel = logLevel
+)

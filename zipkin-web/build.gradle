@@ -1,0 +1,65 @@
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.moowork.node'
+ext.mainClassName = 'com.twitter.zipkin.web.Main'
+
+task run(type:JavaExec) {
+    main = mainClassName
+    classpath = sourceSets.main.runtimeClasspath
+    workingDir project.buildDir
+}
+
+jar.manifest.attributes 'Main-Class': mainClassName
+
+tasks.build.dependsOn(shadowJar)
+artifacts.zipkinUpload shadowJar
+
+shadowJar {
+  exclude 'META-INF/LICENSE' // jackson's META-INF/LICENSE conflicts with the directory META-INF/license
+}
+
+dependencies {
+    compile project(':zipkin-common')
+    compile "com.twitter:twitter-server_${scalaInterfaceVersion}:${commonVersions.twitterServer}"
+    compile "com.github.spullara.mustache.java:compiler:${commonVersions.mustache}"
+    compile "com.github.spullara.mustache.java:scala-extensions-${scalaInterfaceVersion}:${commonVersions.mustache}"
+    compile "com.twitter.finatra:finatra-httpclient_${scalaInterfaceVersion}:${commonVersions.finatra}"
+    compile "ch.qos.logback:logback-core:${commonVersions.logback}"
+    compile "ch.qos.logback:logback-classic:${commonVersions.logback}"
+
+    compile "com.twitter:finagle-exception_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    compile "com.twitter:finagle-zipkin_${scalaInterfaceVersion}:${commonVersions.finagle}"
+
+    testCompile project(':zipkin-scrooge')
+    testCompile 'com.squareup.okhttp3:mockwebserver:3.1.1'
+}
+
+node {
+    // Version of node to use.
+    version = '5.5.0'
+
+    // Version of npm to use.
+    npmVersion = '3.6.0'
+
+    // Base URL for fetching node distributions (change if you have a mirror).
+    distBaseUrl = 'https://nodejs.org/dist'
+
+    // If true, it will download node using above parameters.
+    // If false, it will try to use globally installed node.
+    download = true
+
+    // Set the work directory for unpacking node
+    workDir = file("${project.buildDir}/nodejs")
+
+    // Set the work directory where node_modules should be located
+    nodeModulesDir = file("${project.projectDir}")
+}
+
+task webpack(type: NpmTask) {
+    args = ['run-script', 'build']
+}
+webpack.dependsOn(npmInstall)
+build.dependsOn(webpack)
+processResources.dependsOn(webpack)
+run.dependsOn(webpack)
+
+apply from: "${rootDir}/gradle/verify-licenses.gradle"

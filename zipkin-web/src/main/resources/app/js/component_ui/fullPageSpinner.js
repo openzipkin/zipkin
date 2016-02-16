@@ -2,12 +2,12 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight'
   ],
 
-  function (defineComponent) {
+  function (flight) {
 
-    return defineComponent(fullPageSpinner);
+    return flight.component(fullPageSpinner);
 
     function fullPageSpinner() {
       this.requests = 0;

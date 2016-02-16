@@ -1,0 +1,24 @@
+dependencies {
+    compile "com.google.guava:guava:${commonVersions.guava}"
+
+    // for com.twitter.util.Future
+    compile "com.twitter:util-core_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
+
+    // for ZipkinJson
+    compile "com.fasterxml.jackson.core:jackson-annotations:${commonVersions.jackson}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${commonVersions.jackson}"
+    compile "com.fasterxml.jackson.module:jackson-module-scala_${scalaInterfaceVersion}:${commonVersions.jackson}"
+}
+
+task testJar(type: Jar) {
+    classifier = 'test'
+    from sourceSets.test.output
+}
+
+artifacts {
+    zipkinUpload testJar
+}
+
+configurations {
+    zipkinUpload.extendsFrom (testCompile)
+}

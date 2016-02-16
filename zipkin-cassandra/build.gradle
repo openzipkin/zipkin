@@ -1,0 +1,12 @@
+test.maxParallelForks = 1
+
+dependencies {
+    compile project(':zipkin-scrooge')
+    compile project(':zipkin-cassandra-core')
+
+    // for SpanStoreSpec
+    testCompile project(':zipkin-common').sourceSets.test.output
+    // for dependency processing that avoids a circular dep on zipkin-dependencies-spark
+    testCompile project(':zipkin-anormdb')
+}
+

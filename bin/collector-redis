@@ -1,2 +1,0 @@
-#!/usr/bin/env sh
-bin/sbt 'project zipkin-collector-service' 'run -f zipkin-collector-service/config/collector-redis.scala'

@@ -15,29 +15,22 @@ namespace java com.twitter.zipkin.thriftjava
 #@namespace scala com.twitter.zipkin.thriftscala
 namespace rb Zipkin
 
-#********* Zipkin Aggregate Dependency Related Structs ***********
-
-
-# This is a 1-to-1 translation of algebird Moments structure for holding
-# count/mean/variance(stdDev)/skewness/etc about a set of values.  It's
-# used below to represent span time duration ranges.
-struct Moments {
-  1: i64 m0,    # count
-  2: double m1, # mean
-  3: double m2, # variance * count
-  4: double m3,
-  5: double m4
-}
-
 struct DependencyLink {
-  1: string parent,  # parent service name (caller)
-  2: string child,   # child service name (callee)
-  3: Moments duration_moments
+  /** parent service name (caller) */
+  1: string parent
+  /** child service name (callee) */
+  2: string child
+  # 3: Moments OBSOLETE_duration_moments
+  /** calls made during the duration of this link */
+  4: i64 callCount
   # histogram?
 }
 
+/* An aggregate representation of services paired with every service they call. */
 struct Dependencies {
-  1: i64 start_time  # microseconds from epoch
-  2: i64 end_time    # microseconds from epoch
-  3: list<DependencyLink> links # our data
+  /** milliseconds from epoch */
+  1: i64 start_ts
+  /** milliseconds from epoch */
+  2: i64 end_ts
+  3: list<DependencyLink> links
 }

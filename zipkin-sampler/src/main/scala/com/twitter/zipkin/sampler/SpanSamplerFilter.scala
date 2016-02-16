@@ -16,11 +16,10 @@
  */
 package com.twitter.zipkin.sampler
 
-import com.twitter.finagle.Service
+import com.twitter.finagle.{Filter, Service}
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.Future
 import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.storage.SpanStore
 
 /**
  * A sampling filter to be placed in front of a SpanStore. This takes a `sample` function that will
@@ -30,13 +29,13 @@ import com.twitter.zipkin.storage.SpanStore
 class SpanSamplerFilter(
   sample: Long => Boolean,
   stats: StatsReceiver = DefaultStatsReceiver.scope("SpanSamplerFilter")
-) extends SpanStore.Filter {
+) extends Filter[Seq[Span], Unit, Seq[Span], Unit] {
   private[this] val DebugCounter = stats.counter("debugFlag")
   private[this] val DebugStats = stats.scope("debugFlag")
 
   def apply(spans: Seq[Span], store: Service[Seq[Span], Unit]): Future[Unit] =
     store(spans collect {
-      case span if span.debug =>
+      case span if span.debug.getOrElse(false) =>
         DebugCounter.incr()
         if (span.parentId.isEmpty && !span.serviceName.isEmpty)
           DebugStats.counter(span.serviceName.get).incr()

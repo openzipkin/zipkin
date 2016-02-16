@@ -2,12 +2,12 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight'
   ],
 
-  function (defineComponent) {
+  function (flight) {
 
-    return defineComponent(infoButton);
+    return flight.component(infoButton);
 
     function infoButton() {
       this.requestInfoPanel = function() {

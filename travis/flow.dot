@@ -1,0 +1,178 @@
+digraph releaseflow {
+        compound=true  # for connecting subgraphs
+
+        subgraph cluster_publish_sh {
+                label="publish.sh"
+                bgcolor="#f0f0f0"
+                want_to_release_from_this_jdk[shape=diamond]
+                is_pull_request[shape=diamond]
+                build_started_by_tag[shape=diamond]
+                is_travis_branch_master[shape=diamond]
+
+                want_to_release_from_this_jdk->run_tests [label=false]
+                want_to_release_from_this_jdk->is_pull_request [label=true]
+
+                is_pull_request->run_tests [label=true]
+                is_pull_request->build_started_by_tag [label=false]
+
+                build_started_by_tag->check_travis_branch_equals_travis_tag [label=true]
+                build_started_by_tag->is_travis_branch_master [label=false]
+
+                check_travis_branch_equals_travis_tag->do_gradle_release
+
+                is_travis_branch_master->publish [label=true]
+                is_travis_branch_master->run_tests [label=false]
+        }
+
+        subgraph cluster_zipkin_upload {
+                label="gradle zipkinUpload"
+                bgcolor="#f0f0f0"
+                is_snapshot [label="Are we on a SNAPSHOT version?", shape=diamond]
+                yes_snapshot [label="Yes"]
+                no_snapshot [label="No"]
+                zipkin_upload_bintray [label="Upload to Bintray"]
+                zipkin_upload_ojo [label="Upload to oss.jfrog.org"]
+
+                is_snapshot->yes_snapshot
+                is_snapshot->no_snapshot
+
+                yes_snapshot->zipkin_upload_bintray
+                yes_snapshot->zipkin_upload_ojo
+
+                no_snapshot->zipkin_upload_ojo
+        }
+
+        publish->is_snapshot
+
+        commit_on_branch [label="git commit && git push on a branch / PR"]
+
+        subgraph cluster_branch_travis {
+                label="Travis CI (publish.sh) - commit on a branch / PR"
+                bgcolor="#f0f0f0"
+                subgraph cluster_branch_travis_pr_7 {
+                        label="PR job with JDK 7"
+                        branch_travis_pr_7_conditions
+                        [
+                         label="{want_to_release_from_this_jdk|is_pull_request}|{true|true}"
+                         shape=record
+                        ]
+                        btpr7_run_tests [label=run_tests]
+                        branch_travis_pr_7_conditions->btpr7_run_tests
+                }
+                subgraph cluster_branch_travis_pr_8 {
+                        label="PR job with JDK 8"
+                        branch_travis_pr_8_conditions
+                        [
+                         label="{want_to_release_from_this_jdk}|{false}"
+                         shape=record
+                        ]
+                        btpr8_run_tests [label=run_tests]
+                        branch_travis_pr_8_conditions->btpr8_run_tests
+                }
+                subgraph cluster_branch_travis_push_7 {
+                        label="Push job with JDK 7"
+                        branch_travis_push_7_conditions
+                        [
+                         label="{want_to_release_from_this_jdk|is_pull_request|build_started_by_tag|is_travis_branch_master}|{true|false|false|false}"
+                         shape=record
+                        ]
+                        btpush7_run_tests [label=run_tests]
+                        branch_travis_push_7_conditions->btpush7_run_tests
+                }
+                subgraph cluster_branch_travis_push_8 {
+                        label="Push job with JDK 8"
+                        branch_travis_push_8_conditions
+                        [
+                         label="{want_to_release_from_this_jdk}|{false}"
+                         shape=record
+                        ]
+                        btpush8_run_tests [label=run_tests]
+                        branch_travis_push_8_conditions->btpush8_run_tests
+                }
+        }
+
+        commit_on_branch->branch_travis_pr_7_conditions [lhead=cluster_branch_travis]
+                
+        merge_pr[label="Merge PR"]
+        merge_commit[label="Merge commit on master"]
+        merge_pr->merge_commit
+
+        subgraph cluster_master_travis {
+                label="Travis CI (publish.sh) - commit on master"
+                bgcolor="#f0fff0"
+                subgraph cluster_master_travis_7 {
+                        label="Job on JDK 7"
+                        master_travis_7_conditions
+                        [
+                         label="{want_to_release_from_this_jdk|is_pull_request|build_started_by_tag|is_travis_branch_master}|{true|false|false|true}"
+                         shape=record
+                        ]
+                        m7_publish [label=publish]
+                        master_travis_7_conditions->m7_publish
+                }
+                subgraph cluster_master_travis_8 {
+                        label="Job on JDK 8"
+                        master_travis_8_conditions
+                        [
+                         label="{want_to_release_from_this_jdk}|{false}"
+                         shape=record
+                        ]
+                        m8_run_tests [label=run_tests]
+                        master_travis_8_conditions->m8_run_tests
+                }
+        }
+
+        merge_commit->master_travis_7_conditions [lhead=cluster_master_travis]
+
+        new_tag[label="Tag 1.0.0 or 1.0.0-rc1 pushed"]
+
+        subgraph cluster_tag_travis {
+                label="Travis CI (publish.sh) - tag 1.0.0 or 1.0.0-rc1 pushed"
+                bgcolor="#fff0f0"
+
+                subgraph cluster_tag_travis_7 {
+                        label="Job on JDK 7"
+                        tag_travis_7_conditions
+                        [
+                         label="{want_to_release_from_this_jdk|is_pull_request|build_started_by_tag}|{true|false|true}"
+                         shape=record
+                        ]
+                        t7_rel [label="do_gradle_release"]
+                        is_rc [shape=diamond, label="Is the tag an -rc release?"]
+
+                        tag_travis_7_conditions->t7_rel
+                        t7_rel->is_rc
+                        
+                        increment_version [label="new_version = 1.0.1-SNAPSHOT"]
+                        leave_version [label="new_version = 1.0.0-SNAPSHOT"]
+                        gradle_release [label="gradle release ..."]
+                        pre_tag_commit [label="commit: [RELEASE] publish version: $tag"]
+                        new_version_commit [label="commit: [RELEASE] new version: $new_version"]
+
+                        is_rc->increment_version [label="no"]
+                        is_rc->leave_version [label="yes"]
+
+                        increment_version->gradle_release
+                        leave_version->gradle_release
+                        gradle_release->pre_tag_commit
+                        pre_tag_commit->new_version_commit
+                }
+
+                
+                subgraph cluster_tag_travis_8 {
+                        label="Job on JDK 8"
+                        tag_travis_8_conditions
+                        [
+                         label="{want_to_release_from_this_jdk}|{false}"
+                         shape=record
+                        ]
+                        t8_run_tests [label=run_tests]
+                        tag_travis_8_conditions->t8_run_tests
+                }
+                
+        }
+        
+        new_tag->t8_run_tests [lhead=cluster_tag_travis]
+        pre_tag_commit->master_travis_7_conditions [lhead=cluster_master_travis, label="Push starts job"]
+        new_version_commit->master_travis_7_conditions [lhead=cluster_master_travis, label="Push starts job"]
+}

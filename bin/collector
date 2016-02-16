@@ -1,6 +1,3 @@
 #!/usr/bin/env bash
-
-DEFAULT_TYPE=dev
-SERVICE_TYPE=${1:-$DEFAULT_TYPE}
-
-bin/sbt 'project zipkin-collector-service' "run -f zipkin-collector-service/config/collector-${SERVICE_TYPE}.scala"
+# See gradle.properties for an explanation of configKey
+./gradlew :zipkin-collector-service:run -PconfigKey=${1:-dev} --stacktrace

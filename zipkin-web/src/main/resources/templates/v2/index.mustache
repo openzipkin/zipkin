@@ -22,7 +22,12 @@
       <label for="timeStamp">End time</label>
       <input class="form-control input-sm date-input" type="text">
       <input class="form-control input-sm time-input" type="text">
-      <input class="" id="timestamp" name="timestamp" type="hidden" value="{{timestamp}}">
+      <input class="timestamp-value" id="endTs" name="endTs" type="hidden" value="{{endTs}}">
+    </div>
+
+    <div class="form-group">
+      <label for="minDuration">Duration (μs) >=</label>
+      <input class="form-control input-sm" id="minDuration" name="minDuration" type="text" value="{{minDuration}}">
     </div>
 
     <div class="form-group">
@@ -36,7 +41,7 @@
     </button>
 
     <div class="clearfix"></div>
-    <input type="text" class="form-control input-sm" id="annotationQuery" name="annotationQuery" value="{{annotationQuery}}" style="width: 100%" placeholder='Annotations Query (e.g. "finagle.timeout", "http.uri=/foo/bar/ and cluster=foo and cache.miss")'>
+    <input type="text" class="form-control input-sm" id="annotationQuery" name="annotationQuery" value="{{annotationQuery}}" style="width: 100%" placeholder='Annotations Query (e.g. "finagle.timeout", "http.path=/foo/bar/ and cluster=foo and cache.miss")'>
   </form>
 {{#queryResults}}
   <div id="trace-filters">
@@ -49,12 +54,12 @@
     <div class="pull-right">
       <span class="selector">Sort:
         <select class="sort-order js-sort-order">
-          <option value="service-percentage-desc">Service Percentage: Longest First</i></span>
-          <option value="service-percentage-asc">Service Percentage: Shortest First</i></span>
-          <option selected value="duration-desc">Longest First</i></span>
-          <option value="duration-asc">Shortest First</span>
-          <option value="timestamp-desc">Newest First</span>
-          <option value="timestamp-asc">Oldest First</span>
+          <option value="service-percentage-desc">Service Percentage: Longest First</option>
+          <option value="service-percentage-asc">Service Percentage: Shortest First</option>
+          <option selected value="duration-desc">Longest First</option>
+          <option value="duration-asc">Shortest First</option>
+          <option value="timestamp-desc">Newest First</option>
+          <option value="timestamp-asc">Oldest First</option>
         </select>
       </span>
     </div>
@@ -95,7 +100,7 @@
       {{/serviceDurations}}
       </div>
       <div class="trace-details timestamp pull-right">
-        <time class="label timeago" datetime="{{startTime}}">{{startTime}}</time>
+        <time class="label timeago" datetime="{{startTs}}">{{startTs}}</time>
       </div>
     </li>
   {{/traces}}

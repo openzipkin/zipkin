@@ -15,31 +15,23 @@
  */
 package com.twitter.zipkin.receiver.scribe
 
-import com.twitter.app.{App, Flaggable}
-import com.twitter.conversions.time._
-import com.twitter.finagle.ThriftMux
+import com.twitter.app.App
+import com.twitter.finagle.{CancelledRequestException, ThriftMux}
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.finagle.util.{DefaultTimer, InetSocketAddressUtil}
 import com.twitter.logging.Logger
 import com.twitter.scrooge.BinaryThriftStructSerializer
-import com.twitter.util.{Base64StringEncoder, Closable, Future, NonFatal, Return, Throw, Time}
+import com.twitter.util.{Base64StringEncoder, Future, NonFatal, Return, Throw, Time}
 import com.twitter.zipkin.collector.{QueueFullException, SpanReceiver}
-import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.thriftscala.{LogEntry, ResultCode, Scribe, Span => ThriftSpan, ZipkinCollector}
-import com.twitter.zipkin.zookeeper._
-import com.twitter.zk.ZkClient
-import java.net.{InetSocketAddress, URI}
+import com.twitter.zipkin.thriftscala.{LogEntry, ResultCode, Scribe, Span => ThriftSpan}
+import java.net.InetSocketAddress
+import java.util.concurrent.CancellationException
 
 /**
  * A SpanReceiverFactory that should be mixed into a base ZipkinCollector. This
  * provides `newScribeSpanReceiver` which will create a `ScribeSpanReceiver`
- * listening on a configurable port (-zipkin.receiver.scribe.port) and announced to
- * ZooKeeper via a given path (-zipkin.receiver.scribe.zk.path). If a path is not
- * explicitly provided no announcement will be made (this is helpful for instance
- * during development). This factory must also be mixed into an App trait along with
- * a ZooKeeperClientFactory.
+ * listening on a configurable port (-zipkin.receiver.scribe.port).
  */
-trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
+trait ScribeSpanReceiverFactory { self: App =>
   val scribeAddr = flag(
     "zipkin.receiver.scribe.addr",
     new InetSocketAddress(1490),
@@ -50,34 +42,22 @@ trait ScribeSpanReceiverFactory { self: App with ZooKeeperClientFactory =>
     Seq("zipkin"),
     "a whitelist of categories to process")
 
-  val scribeZkPath = flag(
-    "zipkin.receiver.scribe.zk.path",
-    "/com/twitter/zipkin/receiver/scribe",
-    "the zookeeper path to announce on. blank does not announce")
-
   def newScribeSpanReceiver(
-    process: Seq[ThriftSpan] => Future[Unit],
+    process: SpanReceiver.Processor,
     stats: StatsReceiver = DefaultStatsReceiver.scope("ScribeSpanReceiver")
   ): SpanReceiver = new SpanReceiver {
-
-    val zkNode: Option[Closable] = scribeZkPath.get.map { path =>
-      val addr = InetSocketAddressUtil.toPublic(scribeAddr()).asInstanceOf[InetSocketAddress]
-      val nodeName = "%s:%d".format(addr.getHostName, addr.getPort)
-      zkClient.createEphemeral(path + "/" + nodeName, nodeName.getBytes)
-    }
 
     val service = ThriftMux.serveIface(
       scribeAddr(),
       new ScribeReceiver(scribeCategories().toSet, process, stats))
 
-    val closer: Closable = zkNode map { Closable.sequence(_, service) } getOrElse { service }
-    def close(deadline: Time): Future[Unit] = closeAwaitably { closer.close(deadline) }
+    def close(deadline: Time): Future[Unit] = closeAwaitably { service.close(deadline) }
   }
 }
 
 class ScribeReceiver(
   categories: Set[String],
-  process: Seq[ThriftSpan] => Future[Unit],
+  process: SpanReceiver.Processor,
   stats: StatsReceiver = DefaultStatsReceiver.scope("ScribeReceiver")
 ) extends Scribe[Future] {
   private[this] val deserializer = new BinaryThriftStructSerializer[ThriftSpan] {
@@ -104,8 +84,7 @@ class ScribeReceiver(
   }.toMap
 
   private[this] def entryToSpan(entry: LogEntry): Option[ThriftSpan] = try {
-    val span = stats.time("deserializeSpan") { deserializer.fromString(entry.message) }
-    Some(span)
+    Some(deserializer.fromString(entry.message))
   } catch {
     case e: Exception => {
       // scribe doesn't have any ResultCode.ERROR or similar
@@ -132,12 +111,17 @@ class ScribeReceiver(
         case Return(_) =>
           batchesProcessedStat.add(spans.size)
           ok
-        case Throw(NonFatal(e)) =>
-          if (!e.isInstanceOf[QueueFullException])
-            log.warning("Exception in process(): %s".format(e.getMessage))
-          errorStats.counter(e.getClass.getName).incr()
-          pushbackCounter.incr()
-          tryLater
+        case Throw(NonFatal(e)) => (e, e.getCause) match {
+          // It is not an error if the scribe client decided to cancel its request.
+          // See Finagle FAQ's first entry http://twitter.github.io/finagle/guide/FAQ.html
+          case (_: CancellationException, _: CancelledRequestException) => ok
+          case (_: QueueFullException, _) => pushbackCounter.incr(); tryLater
+          case _ =>
+            log.warning("Sending TryLater due to %s(%s)"
+              .format(e.getClass.getSimpleName, if (e.getMessage == null) "" else e.getMessage))
+            errorStats.counter(e.getClass.getName).incr()
+            tryLater
+        }
         case Throw(e) =>
           fatalStats.counter(e.getClass.getName).incr()
           Future.exception(e)

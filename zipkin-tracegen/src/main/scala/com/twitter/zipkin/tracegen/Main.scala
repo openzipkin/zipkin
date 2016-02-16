@@ -16,16 +16,21 @@ package com.twitter.zipkin.tracegen
  *  limitations under the License.
  *
  */
+
+import ch.qos.logback.classic.{Level, Logger}
 import com.twitter.app.App
-import com.twitter.finagle.Thrift
-import com.twitter.logging.Logger
+import com.twitter.finagle.http.Request
+import com.twitter.finagle.tracing.SpanId
+import com.twitter.finagle.{Http, Thrift, param}
+import com.twitter.finatra.httpclient.HttpClient
+import com.twitter.finatra.json.FinatraObjectMapper
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift._
+import com.twitter.zipkin.json.{JsonSpan, ZipkinJson}
 import com.twitter.zipkin.thriftscala
-import java.net.InetSocketAddress
-import java.nio.ByteBuffer
+import org.slf4j.LoggerFactory
 
 trait ZipkinSpanGenerator { self: App =>
   val genTraces = flag("genTraces", 5, "Number of traces to generate")
@@ -42,6 +47,19 @@ object Main extends App with ZipkinSpanGenerator {
   val queryDest = flag("queryDest", "localhost:9411", "Destination of the query service")
   val generateOnly = flag("generateOnly", false, "Only generate date, do not request it back")
 
+  /**
+   * Initialize a json-aware Finatra client, targeting the query host. Lazy to ensure
+   * we get the host after the [[queryDest]] flag has been parsed.
+   */
+  lazy val queryClient = new HttpClient(
+    httpService =
+      Http.client.configured(param.Label("zipkin-query")).newClient(queryDest()).toService,
+    mapper = new FinatraObjectMapper(ZipkinJson)
+  )
+
+  LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+    .asInstanceOf[Logger].setLevel(Level.DEBUG)
+
   private[this] val serializer = new BinaryThriftStructSerializer[thriftscala.Span] { def codec = thriftscala.Span }
 
   def main() {
@@ -52,66 +70,60 @@ object Main extends App with ZipkinSpanGenerator {
     Await.result(generateTraces(store))
 
     if (!generateOnly()) {
-      val client = Thrift.newIface[thriftscala.ZipkinQuery.FutureIface](queryDest())
       Await.result {
         querySpan(
-          client,
           "vitae",
           "velit",
-          "some custom annotation",
-          ("key", ByteBuffer.wrap("value".getBytes)),
+          "some custom annotation".replace(" ", "%20"),
+          "key", "value",
           10)
       }
     }
   }
 
-  private[this] def printTrace(traceIds: Seq[Long], client: thriftscala.ZipkinQuery[Future]): Future[Unit] = {
-    client.getTracesByIds(traceIds, List(thriftscala.Adjust.TimeSkew)) map { traces =>
-      for (trace <- traces; span <- trace.spans) yield
-        println("Got span: " + span)
-    }
+  private[this] def printTraces(traces: Seq[List[Span]])= {
+    for (trace <- traces; span <- trace) yield
+      println("Got span: " + span)
   }
 
   private[this] def querySpan(
-    client: thriftscala.ZipkinQuery[Future],
     service: String,
     span: String,
     annotation: String,
-    kvAnnotation: (String, ByteBuffer),
-    maxTraces: Int
+    key: String,
+    value: String,
+    limit: Int
   ): Future[Unit] = {
-    println("Querying for service name: " + service + " and span name " + span)
+    println(s"Querying for service name: $service and span name $span")
     for {
-      ts1 <- client.getTraceIdsBySpanName(service, span, Long.MaxValue, maxTraces, thriftscala.Order.DurationDesc)
-      _ = printTrace(ts1, client)
+      ts1 <- getTraces(s"/api/v1/traces?serviceName=$service&spanName=$span&limit=$limit")
+      _ = printTraces(ts1)
 
-      _ = println("Querying for service name: " + service)
-      ts2 <- client.getTraceIdsBySpanName(service, "", Long.MaxValue, maxTraces, thriftscala.Order.DurationDesc)
-      _ <- printTrace(ts2, client)
+      _ = println(s"Querying for service name: $service")
+      ts2 <- getTraces(s"/api/v1/traces?serviceName=$service&limit=$limit")
+      _ = printTraces(ts2)
 
-      _ = println("Querying for annotation: " + annotation)
-      ts3 <- client.getTraceIdsByAnnotation(service, annotation, ByteBuffer.wrap("".getBytes), Long.MaxValue, maxTraces, thriftscala.Order.DurationDesc)
-      _ <- printTrace(ts3, client)
+      _ = println(s"Querying for annotation: $annotation")
+      ts3 <- getTraces(s"/api/v1/traces?serviceName=$service&annotationQuery=$annotation&limit=$limit")
+      _ = printTraces(ts3)
 
-      _ = println("Querying for kv annotation: " + kvAnnotation)
-      ts4 <- client.getTraceIdsByAnnotation(service, kvAnnotation._1, kvAnnotation._2, Long.MaxValue, maxTraces, thriftscala.Order.DurationDesc)
-      _ <- printTrace(ts4, client)
+      _ = println(s"Querying for kv annotation: $key -> $value")
+      ts4 <- getTraces(s"/api/v1/traces?serviceName=$service&annotationQuery=$key=$value&limit=$limit")
+      _ = printTraces(ts4)
 
-      traces <- client.getTracesByIds(ts4, List(thriftscala.Adjust.TimeSkew))
-      _ = println(traces.toString)
+      traceId = ts2.map(t => t.head.traceId).head // map first id to hex
+      trace <- queryClient.executeJson[List[JsonSpan]](Request("/api/v1/trace/" + SpanId.toString(traceId)))
+        .map(_.map(JsonSpan.invert))
+      _ = printTraces(Seq(trace))
 
-      traceTimeline <- client.getTraceTimelinesByIds(ts4, List(thriftscala.Adjust.TimeSkew))
-      _ = println("Timeline:")
-      _ = println(traceTimeline.toString)
+      svcNames <- queryClient.executeJson[Seq[String]](Request("/api/v1/services"))
+      _ = println(s"Service names: $svcNames")
 
-      ttl <- client.getDataTimeToLive()
-      _ = println("Data ttl: " + ttl)
-
-      svcNames <- client.getServiceNames()
-      _ = println("Service names: " + svcNames)
-
-      spanNames <- client.getSpanNames(service)
-      _ = println("Span names for : " + service + " " + spanNames)
+      spanNames <- queryClient.executeJson[Seq[String]](Request(s"/api/v1/spans?serviceName=$service"))
+      _ = println(s"Span names for $service: $spanNames")
     } yield ()
   }
+
+  def getTraces(uri: String) = queryClient.executeJson[Seq[List[JsonSpan]]](Request(uri))
+    .map(traces => traces.map(_.map(JsonSpan.invert)))
 }

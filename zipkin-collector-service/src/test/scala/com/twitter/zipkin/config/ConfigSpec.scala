@@ -15,31 +15,30 @@
  */
 package com.twitter.zipkin.config
 
-import com.twitter.io.TempFile
+import com.google.common.base.Charsets.UTF_8
+import com.google.common.io.Resources
 import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.Eval
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.collector.ZipkinCollector
-import org.specs.Specification
+import org.scalatest.{FunSuite, Matchers}
 
-class ConfigSpec extends Specification {
-  "/config" should {
-    val eval = new Eval
+class ConfigSpec extends FunSuite with Matchers {
+  val eval = new Eval
 
-    "validate collector configs" in {
-      val configFiles = Seq(
-        "/collector-dev.scala",
-        "/collector-hbase.scala",
-        "/collector-cassandra.scala"
-      ) map { TempFile.fromResourcePath(_) }
+  test("validate collector configs") {
+    val configSource = Seq(
+      "/collector-dev.scala",
+      "/collector-mysql.scala",
+      "/collector-cassandra.scala"
+    ) map { r =>
+      Resources.toString(getClass.getResource(r), UTF_8)
+    }
 
-      for (file <- configFiles) {
-        file.getName() in {
-          val config = eval[Builder[RuntimeEnvironment => ZipkinCollector]](file)
-          config must notBeNull
-          config.apply()
-        }
-      }
+    for (source <- configSource) {
+      val config = eval[Builder[RuntimeEnvironment => ZipkinCollector]](source)
+      config should not be(Nil)
+      config.apply()
     }
   }
 }

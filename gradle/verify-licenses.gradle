@@ -1,0 +1,80 @@
+/**
+ * Gradle plugin used to verify that all dependencies of a project use allowed licenses.
+ * Usage:
+ *   apply from: "${rootDir}/gradle/verify-licenses.gradle"
+ *
+ * The list of allowed licenses can be modified via `licenseWhiteList` from project definitions.
+ */
+
+ext.licenseWhiteList = [
+		'No license found',
+		'Public Domain',
+		'MIT License',
+		'Apache License, Version 2.0',
+		'BSD License',
+		'BSD 3-Clause',
+		'BSD-Style',
+		'GNU Lesser General Public License',
+		'Common Public License Version 1.0',
+		'LGPL-2.1',
+		'CC0 1.0 Universal',
+		'Eclipse Public License - v 1.0'
+]
+
+// Generate license report
+downloadLicenses {
+	includeProjectDependencies = true
+	dependencyConfiguration = 'compile'
+
+	ext.apache = license('Apache License, Version 2.0', 'http://opensource.org/licenses/Apache-2.0')
+	ext.mit = license('MIT License', 'http://www.opensource.org/licenses/mit-license.php')
+	ext.bsd = license('BSD License', 'http://www.opensource.org/licenses/bsd-license.php')
+	ext.bsd3Clause = license('BSD 3-Clause', 'http://opensource.org/licenses/BSD-3-Clause')
+
+	aliases = [
+			(apache) : [
+					'The Apache Software License, Version 2.0', 'Apache License Version 2.0', 'Apache License, Version 2.0',
+					'Apache 2', 'Apache 2.0', 'Apache License 2.0', 'Apache-2.0',
+					license('Apache License', 'http://www.apache.org/licenses/LICENSE-2.0'),
+					license('Apache Software Licenses', 'http://www.apache.org/licenses/LICENSE-2.0.txt'),
+					license('Apache', 'http://www.opensource.org/licenses/Apache-2.0')
+			],
+			(mit) : ['The MIT License'],
+			(bsd) : ['BSD', 'Berkeley Software Distribution (BSD) License',
+					 license('New BSD License', 'http://www.opensource.org/licenses/bsd-license.php')
+			],
+			(bsd3Clause) : [
+					license('BSD 3-clause', 'http://opensource.org/licenses/BSD-3-Clause'),
+					license('BSD 3-Clause', 'http://www.scala-lang.org/license.html')
+			]
+	]
+
+	licenses = [
+			(group('org.apache.httpcomponents')): apache
+	]
+}
+
+// Verify that all dependency licenses are ones we like
+task verifyLicenses {
+	description "Verify that all dependencies use white-listed licenses."
+	dependsOn ':downloadLicenses'
+
+	doLast {
+		def xml = new XmlParser().parse('build/reports/license/license-dependency.xml')
+		def fail = false
+		xml.each { license ->
+			if (!licenseWhiteList.contains(license.@name)) {
+				def depStrings = []
+				license.dependency.each { depStrings << it.text() }
+				logger.error(
+						"License \"${license.@name}\" is not on the list of allowed licenses. " +\
+                        "The dependencies using it: ${depStrings}")
+				fail = true
+			}
+		}
+		if (fail) {
+			throw new GradleException("License verification failed.")
+		}
+	}
+}
+check.dependsOn verifyLicenses

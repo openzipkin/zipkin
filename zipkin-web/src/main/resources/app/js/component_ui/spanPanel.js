@@ -2,12 +2,12 @@
 
 define(
   [
-    'flight/lib/component'
+    'flight',
   ],
 
-  function (defineComponent) {
+  function (flight) {
 
-    return defineComponent(spanPanel);
+    return flight.component(spanPanel);
 
     function spanPanel() {
       this.$annotationTemplate = null;
@@ -29,6 +29,12 @@ define(
             $this.text(anno[$this.data('key')]);
           });
           $annoBody.append($row);
+        });
+
+        $annoBody.find(".local-datetime").each(function() {
+          var $this = $(this);
+          var timestamp = $this.text();
+          $this.text((new Date(parseInt(timestamp) / 1000)).toLocaleString());
         });
 
         var $binAnnoBody = this.$node.find('#binaryAnnotations tbody').text('');
