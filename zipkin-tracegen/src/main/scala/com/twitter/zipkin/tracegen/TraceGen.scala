@@ -102,7 +102,7 @@ class TraceGen(traces: Int, maxDepth: Int) {
     svrAnnos += Annotation(curTime.inMicroseconds, Constants.ServerRecv, Some(ep))
 
     val svrBinAnnos = (0 to rnd.nextInt(3)) map { _ =>
-      BinaryAnnotation(rndSvcName, ByteBuffer.wrap(rndSvcName.getBytes), AnnotationType.String, Some(ep))
+      BinaryAnnotation(rndSvcName, rndSvcName, Some(ep))
     } toList
 
     // simulate some amount of work

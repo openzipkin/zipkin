@@ -37,8 +37,8 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   val ep = Endpoint(127 << 24 | 1, 8080, "service")
 
   val spanId = 456
-  val ann1 = Annotation((today + 1) * 1000, "cs", Some(ep))
-  val ann2 = Annotation((today + 2) * 1000, "sr", None)
+  val ann1 = Annotation((today + 1) * 1000, Constants.ClientSend, Some(ep))
+  val ann2 = Annotation((today + 2) * 1000, Constants.ServerRecv, None)
   val ann3 = Annotation((today + 10) * 1000, "custom", Some(ep))
   val ann4 = Annotation((today + 20) * 1000, "custom", Some(ep))
   val ann5 = Annotation((today + 5) * 1000, "custom", Some(ep))

@@ -97,7 +97,7 @@ abstract class DependencyStoreSpec extends JUnitSuite with Matchers {
   }
 
   /**
-   * When all servers are instrumented, they all log a "sr" annotation, indicating the service.
+   * When all servers are instrumented, they all log a [[com.twitter.zipkin.Constants.ServerRecv]]("sr") annotation, indicating the service.
    */
   @Test def getDependenciesAllInstrumented() = {
     val one = Endpoint(127 << 24 | 1, 9410, "trace-producer-one")

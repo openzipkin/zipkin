@@ -23,11 +23,11 @@ import java.util.Comparator
 /**
  * Associates an event that explains latency with a timestamp.
  *
- * <p/>Unlike log statements, annotations are often codes: Ex. [[com.twitter.zipkin.Constants.ServerRecv]].
+ * <p/>Unlike log statements, annotations are often codes: Ex. [[com.twitter.zipkin.Constants.ServerRecv]]("sr").
  *
  * @param timestamp microseconds from epoch
- * @param value usually a short tag indicating an event, like "sr" or "finagle.retry"
- * @param host The host that recorded [[value]], primarily for query by service name.
+ * @param value     usually a short tag indicating an event, like [[com.twitter.zipkin.Constants.ServerRecv]]("sr") or "finagle.retry"
+ * @param host      The host that recorded [[value]], primarily for query by service name.
  */
 case class Annotation(timestamp: Long, value: String, host: Option[Endpoint])
   extends Ordered[Annotation] {
