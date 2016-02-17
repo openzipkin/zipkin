@@ -29,8 +29,8 @@ class QueryExtractor(defaultQueryLimit: Int) {
     req.params.getLong("endTs").getOrElse(Time.now.inMillis).toString
   }
 
-  def getAnnotations(req: Request): Option[(Seq[String], Map[String, String])] =
-    req.params.get("annotationQuery") map { query =>
+  def getAnnotations(req: Request): (Seq[String], Map[String, String]) = {
+    val query = req.params.getOrElse("annotationQuery", "")
       val anns = mutable.Buffer[String]()
       val binAnns = mutable.Map[String, String]()
 
