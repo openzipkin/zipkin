@@ -2,19 +2,11 @@
   <form class="form-inline" role="form">
     <div class="form-group">
       <select data-placeholder="Service Name" class="form-control input-sm" style="width: 234px;" name="serviceName" id="serviceName">
-        <option value=""></option>
-      {{#services}}
-        <option value="{{name}}" {{selected}}>{{name}}</option>
-      {{/services}}
       </select>
     </div>
 
     <div class="form-group">
       <select data-placeholder="Span Name" class="form-control input-sm" style="width: 180px;" name="spanName" id="spanName">
-        <option value="all">all</option>
-      {{#spans}}
-        <option value="{{name}}" {{selected}}>{{name}}</option>
-      {{/spans}}
       </select>
     </div>
 

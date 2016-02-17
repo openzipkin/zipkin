@@ -7,7 +7,6 @@ define(
     '../component_data/default',
     '../component_data/spanNames',
     '../component_data/serviceNames',
-    '../component_ui/environment',
     '../component_ui/serviceName',
     '../component_ui/spanName',
     '../component_ui/infoPanel',
@@ -26,7 +25,6 @@ define(
     {DefaultData},
     SpanNamesData,
     ServiceNamesData,
-    {environment: EnvironmentUI},
     ServiceNameUI,
     SpanNameUI,
     InfoPanelUI,
@@ -49,7 +47,6 @@ define(
 
           SpanNamesData.attachTo(document);
           ServiceNamesData.attachTo(document);
-          EnvironmentUI.attachTo('#environment');
           ServiceNameUI.attachTo('#serviceName');
           SpanNameUI.attachTo('#spanName');
           InfoPanelUI.attachTo('#infoPanel');

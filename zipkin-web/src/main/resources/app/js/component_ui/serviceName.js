@@ -4,10 +4,11 @@ define(
   [
     'flight',
     'js-cookie',
-    'chosen'
+    'chosen',
+    'query-string'
   ],
 
-  function (flight, Cookies, chosen) {
+  function (flight, Cookies, chosen, queryString) {
     return flight.component(serviceName);
 
     function serviceName() {
@@ -32,16 +33,13 @@ define(
       };
 
       this.after('initialize', function() {
-        var lastServiceName = Cookies.get('last-serviceName');
-        if (this.$node.val() === "" && lastServiceName !== "") {
-          this.triggerChange(lastServiceName);
-        }
+        const serviceName = queryString.parse(window.location.search).serviceName || Cookies.get('last-serviceName');
+        this.triggerChange(serviceName);
 
         this.$node.chosen({search_contains: true});
         this.on('change', this.onChange);
         this.on(document, 'dataServiceNames', this.updateServiceNameDropdown);
       });
     }
-
   }
 );

@@ -10,7 +10,6 @@ import com.twitter.io.Buf
 import com.twitter.util.{Future, TwitterDateFormat}
 import com.twitter.zipkin.common._
 import com.twitter.zipkin.json._
-import com.twitter.zipkin.web.mustache.ZipkinMustache
 import com.twitter.zipkin.{Constants => ZConstants}
 import com.twitter.conversions.time._
 import org.jboss.netty.handler.codec.http.QueryStringEncoder
@@ -18,7 +17,7 @@ import java.io.InputStream
 
 import scala.annotation.tailrec
 
-class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor) {
+class Handlers(queryExtractor: QueryExtractor) {
   private[this] val fmt = TwitterDateFormat("MM-dd-yyyy'T'HH:mm:ss.SSSZ")
 
   import Util._
@@ -52,15 +51,6 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       response.contentType = "application/json"
       response.contentString = ZipkinJson.writeValueAsString(config)
     }
-  }
-
-  case class MustacheRenderer(template: String, data: Map[String, Object]) extends Renderer {
-    def apply(response: Response) {
-      response.contentType = "text/html"
-      response.contentString = generate
-    }
-
-    def generate = mustacheGenerator.render(template, data)
   }
 
   case class StaticRenderer(input: InputStream, typ: String) extends Renderer {
@@ -115,18 +105,9 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
       }
   }
 
-  def addLayout(): Filter[Request, Renderer, Request, Renderer] =
-    Filter.mk[Request, Renderer, Request, Renderer] { (req, svc) =>
-      svc(req) map { renderer =>
-        response: Response => {
-          renderer(response)
-          val data = Map[String, Object](
-            ("body" -> response.contentString))
-          val r = MustacheRenderer("templates/v2/layout.mustache", data)
-          r(response)
-        }
-      }
-    }
+  def handleIndexHtml() = Service.mk[Request,Renderer] { _ =>
+    Future(StaticRenderer(getClass.getResourceAsStream("/app/index.html"), "text/html"))
+  }
 
   def handlePublic(
     resourceDirs: Set[String],
@@ -280,16 +261,6 @@ class Handlers(mustacheGenerator: ZipkinMustache, queryExtractor: QueryExtractor
     }
     client.executeJson[T](Request(encoder.toString))
   }
-
-  def serveStaticIndex() : Service[Request, Renderer] =
-    Service.mk[Request, MustacheRenderer] { reg =>
-      Future(MustacheRenderer("templates/v2/layout.mustache", Map.empty))
-    }
-
-  def handleDependency(): Service[Request, MustacheRenderer] =
-    Service.mk[Request, MustacheRenderer] { req =>
-      Future(MustacheRenderer("templates/v2/dependency.mustache", Map[String, Object]()))
-    }
 
   def handleConfig(env: Map[String, _]) : Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
