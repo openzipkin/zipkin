@@ -7,6 +7,7 @@ import com.twitter.finagle.Service
 import com.twitter.util.Await.{ready, result}
 import com.twitter.util.Future
 import com.twitter.util.Time.now
+import com.twitter.zipkin.Constants
 import com.twitter.zipkin.common.{Annotation, Endpoint, Span}
 import com.twitter.zipkin.storage.InMemorySpanStore
 import com.twitter.zipkin.storage.SpanStore.toScalaFunc
@@ -61,7 +62,7 @@ object AdaptiveSamplerTest {
 
   /** Makes a hundred spans, with realistic, random trace ids */
   val hundredSpans = {
-    val ann = Annotation(now.inMicroseconds, "sr", Some(Endpoint(127 << 24 | 1, 8080, "service")))
+    val ann = Annotation(now.inMicroseconds, Constants.ServerRecv, Some(Endpoint(127 << 24 | 1, 8080, "service")))
     val proto = Span(1L, "get", 1L, annotations = List(ann))
     new Random().longs(100).toArray.toSeq.map(id => proto.copy(traceId = id, id = id))
   }

@@ -67,7 +67,7 @@ trait ZipkinWebFactory { self: App =>
   * we get the host after the [[queryDest]] flag has been parsed.
   */
   lazy val queryClient = new HttpClient(
-    httpService = Http.client.configured(param.Label("zipkin-query"))
+    httpService = Http.client.configured(param.Label("zipkin-web"))
                              .newClient(queryDest()).toService,
     defaultHeaders = Map(
       "Host" -> queryDest(),
