@@ -61,7 +61,7 @@ class QueryExtractorTest extends FunSuite {
     val r = request(
       "serviceName" -> "myService",
       "annotationQuery" -> "finagle.retry and finagle.timeout")
-    val actual = queryExtractor.getAnnotations(r).get
+    val actual = queryExtractor.getAnnotations(r)
     assert(actual._1.contains("finagle.retry"))
     assert(actual._1.contains("finagle.timeout"))
   }
@@ -70,7 +70,7 @@ class QueryExtractorTest extends FunSuite {
     val r = request(
       "serviceName" -> "myService",
       "annotationQuery" -> "http.status_code=500")
-    val actual = queryExtractor.getAnnotations(r).get
+    val actual = queryExtractor.getAnnotations(r)
     assert(actual._2 === Map(Constants.HTTP_STATUS_CODE -> "500"))
   }
 
@@ -78,7 +78,7 @@ class QueryExtractorTest extends FunSuite {
     val r = request(
       "serviceName" -> "myService",
       "annotationQuery" -> "http.path=/sessions")
-    val actual = queryExtractor.getAnnotations(r).get
+    val actual = queryExtractor.getAnnotations(r)
     assert(actual._2 === Map(Constants.HTTP_PATH -> "/sessions"))
   }
 
@@ -86,7 +86,7 @@ class QueryExtractorTest extends FunSuite {
     val r = request(
       "serviceName" -> "myService",
       "annotationQuery" -> "http.path=sessions=foo")
-    val actual = queryExtractor.getAnnotations(r).get
+    val actual = queryExtractor.getAnnotations(r)
     assert(actual._2 === Map(Constants.HTTP_PATH -> "sessions=foo"))
   }
 }

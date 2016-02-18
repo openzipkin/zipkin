@@ -206,12 +206,6 @@ class Handlers(queryExtractor: QueryExtractor) {
   def handleIndex(client: HttpClient): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
       val serviceName = req.params.get("serviceName").filterNot(_ == "")
-      val spanName = req.params.get("spanName").filterNot(_ == "")
-
-      val spansCall = serviceName match {
-        case Some(service) => client.executeJson[Seq[String]](Request(s"/api/v1/spans?serviceName=${service}"))
-        case None => EmptyStrings
-      }
 
       // only call get traces if the user entered a query
       val tracesCall = serviceName match {
@@ -221,25 +215,13 @@ class Handlers(queryExtractor: QueryExtractor) {
         case None => EmptyTraces
       }
 
-      for (spans <- spansCall; traces <- tracesCall) yield {
-        val spanList = spans.toList map {
-          span => Map("name" -> span, "selected" -> (if (Some(span) == spanName) "selected" else ""))
-        }
-
+      for (traces <- tracesCall) yield {
+        val (annotations, binaryAnnotations) = queryExtractor.getAnnotations(req)
         var data = Map[String, Object](
-          ("serviceName" -> serviceName),
-          ("endTs" -> queryExtractor.getTimestampStr(req)),
-          ("annotationQuery" -> req.params.get("annotationQuery").getOrElse("")),
-          ("spans" -> spanList),
-          ("limit" -> queryExtractor.getLimitStr(req)),
-          ("minDuration" -> req.params.get("minDuration").getOrElse("")))
-
-        queryExtractor.getAnnotations(req).foreach( annos =>
-          data ++= Map(
-            ("queryResults" -> traceSummaryToMustache(serviceName, traces)),
-            ("annotations" -> annos._1),
-            ("binaryAnnotations" -> annos._2)))
-
+          "queryResults" -> traceSummaryToMustache(serviceName, traces),
+          "annotations" -> annotations,
+          "binaryAnnotations" -> binaryAnnotations
+        )
         JsonRenderer(data)
       }
     }

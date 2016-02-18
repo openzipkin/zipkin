@@ -4,6 +4,7 @@ define(
   [
     'flight',
     'timeago',
+    'query-string',
     '../component_data/default',
     '../component_data/spanNames',
     '../component_data/serviceNames',
@@ -22,6 +23,7 @@ define(
   function (
     {component},
     timeago,
+    queryString,
     {DefaultData},
     SpanNamesData,
     ServiceNamesData,
@@ -42,8 +44,22 @@ define(
         window.document.title = 'Zipkin - Index';
         DefaultData.attachTo(document);
 
+        const query = queryString.parse(window.location.search);
+
         this.on(document, 'defaultPageModelView', function(ev, modelView) {
-          this.$node.html(defaultTemplate(modelView));
+          const limit = query.limit || window.config.queryLimit;
+          const minDuration = query.minDuration;
+          const endTs = query.endTs || new Date().getTime();
+          const serviceName = query.serviceName || '';
+          const annotationQuery = query.annotationQuery || '';
+          this.$node.html(defaultTemplate({
+            limit,
+            minDuration,
+            endTs,
+            serviceName,
+            annotationQuery,
+            ...modelView
+          }));
 
           SpanNamesData.attachTo(document);
           ServiceNamesData.attachTo(document);
