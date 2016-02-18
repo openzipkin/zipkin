@@ -17,7 +17,6 @@ import com.twitter.zipkin.storage.SpanStore;
 import com.twitter.zipkin.storage.SpanStoreSpec;
 import java.sql.SQLException;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import zipkin.interop.ScalaSpanStoreAdapter;
 
 public class JDBCScalaSpanStoreTest extends SpanStoreSpec {
@@ -38,11 +37,5 @@ public class JDBCScalaSpanStoreTest extends SpanStoreSpec {
     } catch (SQLException e) {
       throw new AssertionError(e);
     }
-  }
-
-  @Ignore
-  // TODO remove ignore when 1.33.1 is out
-  @Override
-  public void correctsClockSkew_whenSpanTimestampAndDurationAreDerivedFromAnnotations() {
   }
 }
