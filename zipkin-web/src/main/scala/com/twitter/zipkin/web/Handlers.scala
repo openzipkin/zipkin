@@ -167,12 +167,12 @@ class Handlers(queryExtractor: QueryExtractor) {
   private[this] def traceSummaryToMustache(
     serviceName: Option[String],
     ts: Seq[TraceSummary]
-  ): Map[String, Any] = {
+  ): Seq[MustacheTraceSummary] = {
     val maxDuration = ts.foldLeft(Long.MinValue) { case ((maxD), t) =>
       math.max(t.duration / 1000, maxD)
     }
 
-    val traces = ts.map { t =>
+    ts.map { t =>
       val duration = t.duration / 1000
       val groupedSpanTimestamps = t.spanTimestamps.groupBy(_.name)
 
@@ -197,10 +197,6 @@ class Handlers(queryExtractor: QueryExtractor) {
         ((duration.toFloat / maxDuration) * 100).toInt
       )
     }.sortBy(_.duration).reverse
-
-    Map(
-      ("traces" -> traces),
-      ("count" -> traces.size))
   }
 
   def handleIndex(client: HttpClient): Service[Request, Renderer] =
@@ -217,8 +213,8 @@ class Handlers(queryExtractor: QueryExtractor) {
 
       for (traces <- tracesCall) yield {
         val (annotations, binaryAnnotations) = queryExtractor.getAnnotations(req)
-        var data = Map[String, Object](
-          "queryResults" -> traceSummaryToMustache(serviceName, traces),
+        val data = Map(
+          "traces" -> traceSummaryToMustache(serviceName, traces),
           "annotations" -> annotations,
           "binaryAnnotations" -> binaryAnnotations
         )
