@@ -35,7 +35,7 @@
     <div class="clearfix"></div>
     <input type="text" class="form-control input-sm" id="annotationQuery" name="annotationQuery" value="{{annotationQuery}}" style="width: 100%" placeholder='Annotations Query (e.g. "finagle.timeout", "http.path=/foo/bar/ and cluster=foo and cache.miss")'>
   </form>
-{{#queryResults}}
+{{#queryWasPerformed}}
   <div id="trace-filters">
     <div class="pull-left">
       <span>
@@ -62,16 +62,16 @@
       <span class='label service-tag-filtered' data-service-name="{{serviceName}}">{{serviceName}}</span>
     </div>
   </div>
-{{/queryResults}}
+{{/queryWasPerformed}}
 </div>
 
 <div class="row">
-{{^queryResults}}
+{{^queryWasPerformed}}
   <div class="alert alert-info" id="help-msg">
     <p>Please select the criteria for your trace lookup.</p>
   </div>
-{{/queryResults}}
-{{#queryResults}}
+{{/queryWasPerformed}}
+{{#queryWasPerformed}}
   <ul id="traces">
   {{#traces}}
     <li class="trace" data-traceId="{{traceId}}" data-duration="{{duration}}" data-timestamp="{{timestamp}}" data-service-percentage="{{servicePercentage}}">
@@ -97,7 +97,7 @@
     </li>
   {{/traces}}
   </ul>
-{{/queryResults}}
+{{/queryWasPerformed}}
 </div>
 
 <!-- help panel for different lookup options -->
