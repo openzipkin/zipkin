@@ -19,7 +19,7 @@ import zipkin.SpanStoreTest;
 public class JDBCSpanStoreTest extends SpanStoreTest<JDBCSpanStore> {
 
   public JDBCSpanStoreTest() throws SQLException {
-    super(new JDBCTestGraph().spanStore);
+    store = new JDBCTestGraph().spanStore;
   }
 
   @Override

@@ -37,11 +37,7 @@ import static zipkin.Constants.LOCAL_COMPONENT;
 public abstract class SpanStoreTest<T extends SpanStore> {
 
   /** Should maintain state between multiple calls within a test. */
-  protected final T store;
-
-  protected SpanStoreTest(T store) {
-    this.store = store;
-  }
+  protected T store;
 
   /** Clears the span store between tests. */
   @Before

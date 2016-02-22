@@ -24,6 +24,7 @@
 
   <modules>
     <module>zipkin</module>
+    <module>zipkin-junit</module>
     <module>benchmarks</module>
     <module>interop</module>
     <module>zipkin-spanstores</module>
@@ -122,6 +123,12 @@
         <groupId>${project.groupId}</groupId>
         <artifactId>zipkin</artifactId>
         <type>test-jar</type>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-junit</artifactId>
         <version>${project.version}</version>
       </dependency>
 

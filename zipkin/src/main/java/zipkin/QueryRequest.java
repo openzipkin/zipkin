@@ -13,6 +13,7 @@
  */
 package zipkin;
 
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -85,6 +86,30 @@ public final class QueryRequest {
   /** Maximum number of traces to return. Defaults to 10 */
   public final int limit;
 
+  /**
+   * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and finagle.retry"
+   *
+   * @see QueryRequest.Builder#parseAnnotationQuery(String)
+   */
+  @Nullable
+  public String toAnnotationQuery() {
+    StringBuilder annotationQuery = new StringBuilder();
+
+    for (Iterator<Map.Entry<String, String>> i = binaryAnnotations.entrySet().iterator();
+        i.hasNext(); ) {
+      Map.Entry<String, String> next = i.next();
+      annotationQuery.append(next.getKey()).append('=').append(next.getValue());
+      if (i.hasNext() || !annotations.isEmpty()) annotationQuery.append(" and ");
+    }
+
+    for (Iterator<String> i = annotations.iterator(); i.hasNext(); ) {
+      annotationQuery.append(i.next());
+      if (i.hasNext()) annotationQuery.append(" and ");
+    }
+
+    return annotationQuery.length() > 0 ? annotationQuery.toString() : null;
+  }
+
   QueryRequest(
       String serviceName,
       String spanName,
@@ -151,9 +176,35 @@ public final class QueryRequest {
       return this;
     }
 
-    /** @see QueryRequest#spanName */
+    /**
+     * This ignores the reserved span name "all".
+     *
+     * @see QueryRequest#spanName
+     */
     public Builder spanName(@Nullable String spanName) {
-      this.spanName = spanName;
+      this.spanName = "all".equals(spanName) ? null : spanName;
+      return this;
+    }
+
+    /**
+     * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and finagle.retry"
+     *
+     * @see QueryRequest#toAnnotationQuery()
+     */
+    public Builder parseAnnotationQuery(String annotationQuery) {
+      if (annotationQuery != null && !annotationQuery.isEmpty()) {
+        for (String ann : annotationQuery.split(" and ")) {
+          if (ann.indexOf('=') == -1) {
+            addAnnotation(ann);
+          } else {
+            String[] keyValue = ann.split("=");
+            if (keyValue.length < 2 || keyValue[1] == null) {
+              addAnnotation(ann);
+            }
+            addBinaryAnnotation(keyValue[0], keyValue[1]);
+          }
+        }
+      }
       return this;
     }
 
@@ -200,7 +251,7 @@ public final class QueryRequest {
     }
 
     public QueryRequest build() {
-      long selectedEndTs = endTs == null ? System.currentTimeMillis(): endTs;
+      long selectedEndTs = endTs == null ? System.currentTimeMillis() : endTs;
       return new QueryRequest(
           serviceName,
           spanName,

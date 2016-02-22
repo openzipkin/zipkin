@@ -18,7 +18,7 @@ import java.util.List;
 public class InMemoryDependenciesTest extends DependenciesTest<InMemorySpanStore> {
 
   public InMemoryDependenciesTest() {
-    super(new InMemorySpanStore());
+    this.store = new InMemorySpanStore();
   }
 
   @Override

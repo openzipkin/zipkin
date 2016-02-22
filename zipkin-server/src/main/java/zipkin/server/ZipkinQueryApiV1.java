@@ -119,28 +119,16 @@ public class ZipkinQueryApiV1 {
       @RequestParam(value = "endTs", required = false) Long endTs,
       @RequestParam(value = "lookback", required = false) Long lookback,
       @RequestParam(value = "limit", required = false) Integer limit) {
-    QueryRequest.Builder builder = new QueryRequest.Builder(serviceName)
-        .spanName(spanName.equals("all") ? null : spanName)
+    QueryRequest queryRequest = new QueryRequest.Builder(serviceName)
+        .spanName(spanName)
+        .parseAnnotationQuery(annotationQuery)
         .minDuration(minDuration)
         .maxDuration(maxDuration)
         .endTs(endTs)
         .lookback(lookback != null ? lookback : defaultLookback)
-        .limit(limit);
+        .limit(limit).build();
 
-    if (annotationQuery != null && !annotationQuery.isEmpty()) {
-      for (String ann : annotationQuery.split(" and ")) {
-        if (ann.indexOf('=') == -1) {
-          builder.addAnnotation(ann);
-        } else {
-          String[] keyValue = ann.split("=");
-          if (keyValue.length < 2 || keyValue[1] == null) {
-            builder.addAnnotation(ann);
-          }
-          builder.addBinaryAnnotation(keyValue[0], keyValue[1]);
-        }
-      }
-    }
-    return jsonCodec.writeTraces(spanStore.getTraces(builder.build()));
+    return jsonCodec.writeTraces(spanStore.getTraces(queryRequest));
   }
 
   @RequestMapping(value = "/trace/{traceId}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)

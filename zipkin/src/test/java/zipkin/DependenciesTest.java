@@ -33,11 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public abstract class DependenciesTest<T extends SpanStore> {
 
   /** Should maintain state between multiple calls within a test. */
-  protected final T store;
-
-  protected DependenciesTest(T store) {
-    this.store = store;
-  }
+  protected T store;
 
   /** Clears the span store between tests. */
   @Before
