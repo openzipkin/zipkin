@@ -91,6 +91,7 @@ trait ZipkinWebFactory { self: App =>
       ("/public/", handlePublic(resourceDirs, typesMap)),
       ("/dist/", handlePublic(resourceDirs, typesMap)),
       // In preparation of moving static assets to zipkin-query
+      ("/health", handleRoute(queryClient, "/health")),
       ("/api/v1/dependencies", handleRoute(queryClient, "/api/v1/dependencies")),
       ("/api/v1/services", handleRoute(queryClient, "/api/v1/services")),
       ("/api/v1/spans", handleRoute(queryClient, "/api/v1/spans")),

@@ -876,4 +876,11 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
       andExpect = Ok,
       withJsonBody = "[ ]")
   }
+
+  "health checks OK" in {
+    server.httpGet(
+      path = "/health",
+      andExpect = Ok,
+      withBody = "OK\n")
+  }
 }
