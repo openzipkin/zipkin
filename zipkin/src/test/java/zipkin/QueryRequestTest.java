@@ -17,6 +17,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class QueryRequestTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none();
@@ -83,5 +85,30 @@ public class QueryRequestTest {
     thrown.expectMessage("limit should be positive: was 0");
 
     new QueryRequest.Builder("foo").limit(0).build();
+  }
+
+  @Test
+  public void annotationQueryRoundTrip() {
+    String annotationQuery = "http.method=GET and finagle.retry";
+
+    QueryRequest request =
+        new QueryRequest.Builder("security-service").parseAnnotationQuery(annotationQuery).build();
+
+    assertThat(request.binaryAnnotations)
+        .containsEntry("http.method", "GET")
+        .hasSize(1);
+    assertThat(request.annotations)
+        .containsExactly("finagle.retry");
+
+    assertThat(request.toAnnotationQuery())
+        .isEqualTo(annotationQuery);
+  }
+
+  @Test
+  public void toAnnotationQueryWhenNoInputIsNull() {
+    QueryRequest request = new QueryRequest.Builder("security-service").build();
+
+    assertThat(request.toAnnotationQuery())
+        .isNull();
   }
 }

@@ -369,6 +369,27 @@ public final class JsonCodec implements Codec {
     return buffer.readByteArray();
   }
 
+  public List<List<Span>> readTraces(byte[] bytes) {
+    JsonReader reader = JsonReader.of(new Buffer().write(bytes));
+    List<List<Span>> result = new LinkedList<>(); // cause we don't know how long it will be
+    try {
+      reader.beginArray();
+      while (reader.hasNext()) {
+        reader.beginArray();
+        List<Span> trace = new LinkedList<>(); // cause we don't know how long it will be
+        while (reader.hasNext()) {
+          trace.add(SPAN_ADAPTER.fromJson(reader));
+        }
+        reader.endArray();
+        result.add(trace);
+      }
+      reader.endArray();
+      return result;
+    } catch (IOException | RuntimeException e) {
+      throw exceptionReading("List<List<Span>>", bytes, e);
+    }
+  }
+
   public static final JsonAdapter<DependencyLink> DEPENDENCY_LINK_ADAPTER = new JsonAdapter<DependencyLink>() {
 
     @Override
@@ -418,6 +439,32 @@ public final class JsonCodec implements Codec {
   @Override
   public byte[] writeDependencyLinks(List<DependencyLink> value) {
     return writeList(DEPENDENCY_LINK_ADAPTER, value);
+  }
+
+  static final JsonAdapter<String> STRING_ADAPTER = new JsonAdapter<String>() {
+    @Override
+    public String fromJson(JsonReader reader) throws IOException {
+      return reader.nextString();
+    }
+
+    @Override
+    public void toJson(JsonWriter writer, String value) throws IOException {
+      writer.value(value);
+    }
+
+    @Override
+    public String toString() {
+      return "String";
+    }
+  };
+
+  public List<String> readStrings(byte[] bytes) {
+    checkArgument(bytes.length > 0, "Empty input reading List<String>");
+    return readList(STRING_ADAPTER, bytes);
+  }
+
+  public byte[] writeStrings(List<String> value) {
+    return writeList(STRING_ADAPTER, value);
   }
 
   private static <T> List<T> readList(JsonAdapter<T> adapter, byte[] bytes) {

@@ -11,15 +11,30 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin;
+package zipkin.junit;
 
-public class InMemorySpanStoreTest extends SpanStoreTest<InMemorySpanStore> {
-  public InMemorySpanStoreTest() {
-    store = new InMemorySpanStore();
+import java.util.List;
+import org.junit.Rule;
+import zipkin.DependenciesTest;
+import zipkin.Span;
+
+/** Tests the http interface of {@link ZipkinRule}. */
+public class ZipkinRuleDependenciesTest extends DependenciesTest<HttpSpanStore> {
+
+  @Rule
+  public ZipkinRule server = new ZipkinRule();
+
+  public ZipkinRuleDependenciesTest() {
+    store = new HttpSpanStore(server.httpUrl());
   }
 
   @Override
   public void clear() {
-    store.clear();
+    // no need.. the test rule does this
+  }
+
+  @Override
+  protected void processDependencies(List<Span> spans) {
+    store.accept(spans.iterator());
   }
 }

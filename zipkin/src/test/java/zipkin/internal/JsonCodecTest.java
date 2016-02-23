@@ -13,14 +13,37 @@
  */
 package zipkin.internal;
 
-import zipkin.Codec;
+import java.io.IOException;
+import java.util.List;
+import org.junit.Test;
 import zipkin.CodecTest;
+import zipkin.Span;
+import zipkin.TestObjects;
+
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public final class JsonCodecTest extends CodecTest {
-  private final Codec codec = Codec.JSON;
+  private final JsonCodec codec = new JsonCodec();
 
   @Override
-  protected Codec codec() {
+  protected JsonCodec codec() {
     return codec;
+  }
+
+  @Test
+  public void tracesRoundTrip() throws IOException {
+    List<List<Span>> traces = asList(TestObjects.TRACE, TestObjects.TRACE);
+    byte[] bytes = codec().writeTraces(traces);
+    assertThat(codec().readTraces(bytes))
+        .isEqualTo(traces);
+  }
+
+  @Test
+  public void stringsRoundTrip() throws IOException {
+    List<String> strings = asList("foo", "bar", "baz");
+    byte[] bytes = codec().writeStrings(strings);
+    assertThat(codec().readStrings(bytes))
+        .isEqualTo(strings);
   }
 }

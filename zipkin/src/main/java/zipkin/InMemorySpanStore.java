@@ -31,6 +31,7 @@ import zipkin.internal.DependencyLinkSpan;
 import zipkin.internal.DependencyLinker;
 import zipkin.internal.MergeById;
 import zipkin.internal.Nullable;
+import zipkin.internal.Util;
 
 import static zipkin.internal.Util.sortedList;
 
@@ -56,7 +57,11 @@ public final class InMemorySpanStore implements SpanStore {
     }
   }
 
-  synchronized void clear() {
+  public synchronized List<Long> traceIds() {
+    return Util.sortedList(traceIdToSpans.keySet());
+  }
+
+  public synchronized void clear() {
     traceIdToSpans.clear();
     serviceToTraceIds.clear();
   }
