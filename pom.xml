@@ -52,6 +52,7 @@
     <junit.version>4.12</junit.version>
     <assertj.version>3.3.0</assertj.version>
 
+    <animal-sniffer-maven-plugin.version>1.14</animal-sniffer-maven-plugin.version>
     <maven-plugin.version>0.3.3</maven-plugin.version>
     <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
     <maven-source-plugin.version>2.4</maven-source-plugin.version>
@@ -236,6 +237,26 @@
         <plugin>
           <artifactId>maven-shade-plugin</artifactId>
           <version>${maven-shade-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>animal-sniffer-maven-plugin</artifactId>
+          <version>${animal-sniffer-maven-plugin.version}</version>
+          <configuration>
+            <signature>
+              <groupId>org.codehaus.mojo.signature</groupId>
+              <artifactId>java17</artifactId>
+              <version>1.0</version>
+            </signature>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </pluginManagement>

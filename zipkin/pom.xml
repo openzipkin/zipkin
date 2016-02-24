@@ -28,7 +28,6 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <animal-sniffer-maven-plugin.version>1.14</animal-sniffer-maven-plugin.version>
   </properties>
 
   <dependencies>
@@ -47,10 +46,6 @@
       <plugin>
         <inherited>true</inherited>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
         <executions>
           <!-- Ensure main source tree compiles to Java 7 bytecode. -->
           <execution>
@@ -70,21 +65,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>animal-sniffer-maven-plugin</artifactId>
-        <version>${animal-sniffer-maven-plugin.version}</version>
-        <configuration>
-          <signature>
-            <groupId>org.codehaus.mojo.signature</groupId>
-            <artifactId>java17</artifactId>
-            <version>1.0</version>
-          </signature>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <!-- Use of okio, moshi, and libthrift are internal only -->
       <plugin>

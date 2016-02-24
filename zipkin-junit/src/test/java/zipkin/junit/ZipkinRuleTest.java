@@ -14,6 +14,7 @@
 package zipkin.junit;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -28,6 +29,7 @@ import zipkin.Span;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin.Constants.SERVER_RECV;
 
 public class ZipkinRuleTest {
@@ -40,22 +42,17 @@ public class ZipkinRuleTest {
   String service = "web";
   Endpoint endpoint = Endpoint.create(service, 127 << 24 | 1, 80);
   Annotation ann = Annotation.create(System.currentTimeMillis() * 1000, SERVER_RECV, endpoint);
-  Span span = new Span.Builder().id(1L).traceId(1L).name("get").addAnnotation(ann).build();
+  Span span = new Span.Builder().id(1L).traceId(1L).timestamp(ann.timestamp).name("get")
+      .addAnnotation(ann).build();
 
   @Test
-  public void getTraces_storedUsingHttp() throws IOException {
+  public void getTraces_storedViaPost() throws IOException {
     // write the span to the zipkin using http
-    byte[] spansInJson = Codec.JSON.writeSpans(asList(span));
-    Response postResponse = client.newCall(new Request.Builder()
-        .url(zipkin.httpUrl() + "/api/v1/spans")
-        .post(RequestBody.create(MediaType.parse("application/json"), spansInJson)).build()
-    ).execute();
-    assertThat(postResponse.code()).isEqualTo(202);
+    assertThat(postSpans(span).code()).isEqualTo(202);
 
     // read the traces directly
     assertThat(zipkin.getTraces())
-        .extracting(t -> t.get(0).traceId) // get only the trace id
-        .containsOnly(span.traceId);
+        .containsOnly(asList(span));
   }
 
   @Test
@@ -67,6 +64,55 @@ public class ZipkinRuleTest {
     Response getResponse = client.newCall(new Request.Builder()
         .url(String.format("%s/api/v1/trace/%016x", zipkin.httpUrl(), span.traceId)).build()
     ).execute();
+
     assertThat(getResponse.code()).isEqualTo(200);
+  }
+
+  @Test
+  public void httpRequestCountIncrements() throws IOException {
+    postSpans(span);
+    postSpans(span);
+
+    assertThat(zipkin.httpRequestCount()).isEqualTo(2);
+  }
+
+  @Test
+  public void postSpans_disconnectDuringBody() throws IOException {
+    zipkin.enqueueFailure(HttpFailure.disconnectDuringBody());
+
+    try {
+      postSpans(span);
+      failBecauseExceptionWasNotThrown(ConnectException.class);
+    } catch (ConnectException expected) {
+    }
+
+    // Zipkin didn't store the spans, as they shouldn't have been readable, due to disconnect
+    assertThat(zipkin.getTraces()).isEmpty();
+
+    // The failure shouldn't affect later requests
+    assertThat(postSpans(span).code()).isEqualTo(202);
+  }
+
+  @Test
+  public void postSpans_sendErrorResponse400() throws IOException {
+    zipkin.enqueueFailure(HttpFailure.sendErrorResponse(400, "Invalid Format"));
+
+    Response response = postSpans(span);
+    assertThat(response.code()).isEqualTo(400);
+    assertThat(response.body().string()).isEqualTo("Invalid Format");
+
+    // Zipkin didn't store the spans, as they shouldn't have been readable, due to the error
+    assertThat(zipkin.getTraces()).isEmpty();
+
+    // The failure shouldn't affect later requests
+    assertThat(postSpans(span).code()).isEqualTo(202);
+  }
+
+  private Response postSpans(Span ... spans) throws IOException {
+    byte[] spansInJson = Codec.JSON.writeSpans(asList(spans));
+    return client.newCall(new Request.Builder()
+          .url(zipkin.httpUrl() + "/api/v1/spans")
+          .post(RequestBody.create(MediaType.parse("application/json"), spansInJson)).build()
+      ).execute();
   }
 }

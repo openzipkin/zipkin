@@ -2,6 +2,9 @@
 
 This contains `ZipkinRule`, a JUnit rule to spin-up a Zipkin server during tests.
 
+Usage
+------
+
 For example, you can write micro-integration tests like so:
 
 ```java
@@ -22,5 +25,22 @@ public void skipsReportingWhenNotSampled() throws IOException {
 
   // check that zipkin didn't receive any new data in that trace
   assertThat(zipkin.getTraces()).containsOnly(asList(rootSpan));
+}
+```
+
+You can also simulate failures.
+
+For example, if you want to ensure your instrumentation doesn't retry on http 400.
+
+```java
+@Test
+public void doesntAttemptToRetryOn400() throws IOException {
+  zipkin.enqueueFailure(sendErrorResponse(400, "Invalid Format"));
+
+  reporter.record(span);
+  reporter.flush();
+
+  // check that we didn't retry on 400
+  assertThat(zipkin.httpRequestCount()).isEqualTo(1);
 }
 ```

@@ -24,9 +24,12 @@
   </parent>
 
   <artifactId>zipkin-junit</artifactId>
-  <name>JUnit rule to spin-up a Zipkin server during tests</name>
+  <name>Zipkin JUnit</name>
+  <description>JUnit rule to spin-up a Zipkin server during tests</description>
 
   <properties>
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.target>1.7</maven.compiler.target>
     <mockwebserver.version>3.1.2</mockwebserver.version>
   </properties>
 
@@ -55,4 +58,13 @@
     </dependency>
   </dependencies>
 
+  <build>
+    <plugins>
+      <!-- Make sure Java 8 types and methods aren't used -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>animal-sniffer-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 </project>
