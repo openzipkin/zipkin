@@ -24,6 +24,10 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
                                       @Flag("zipkin.queryService.servicesMaxAge") servicesMaxAge: Int,
                                       @Flag("zipkin.queryService.lookback") val defaultLookback: Long) extends Controller {
 
+  get("/health") { request: Request =>
+    "OK\n" // TODO: expose SpanStore.ok? or similar per #994
+  }
+
   post("/api/v1/spans") { request: Request =>
     val spans: Try[List[Span]] = try {
       Success(request.mediaType match {
