@@ -15,12 +15,19 @@ package zipkin.junit;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import zipkin.InMemorySpanStore;
 import zipkin.Span;
+
+import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
 
 /**
  * Starts up a local Zipkin server, listening for http requests on {@link #httpUrl}.
@@ -31,16 +38,40 @@ import zipkin.Span;
  * See http://openzipkin.github.io/zipkin-api/#/
  */
 public final class ZipkinRule implements TestRule {
+
   private final InMemorySpanStore store = new InMemorySpanStore();
   private final MockWebServer server = new MockWebServer();
+  private final BlockingQueue<MockResponse> failureQueue = new LinkedBlockingQueue<>();
 
   public ZipkinRule() {
-    server.setDispatcher(new ZipkinDispatcher(store, server));
+    Dispatcher dispatcher = new Dispatcher() {
+      final ZipkinDispatcher successDispatch = new ZipkinDispatcher(store, server);
+
+      @Override
+      public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
+        MockResponse maybeFailure = failureQueue.poll();
+        if (maybeFailure != null) return maybeFailure;
+        return successDispatch.dispatch(request);
+      }
+
+      @Override
+      public MockResponse peek() {
+        MockResponse maybeFailure = failureQueue.peek();
+        if (maybeFailure != null) return maybeFailure;
+        return new MockResponse().setSocketPolicy(KEEP_OPEN);
+      }
+    };
+    server.setDispatcher(dispatcher);
   }
 
   /** Use this to connect. The zipkin v1 interface will be under "/api/v1" */
   public String httpUrl() {
     return String.format("http://%s:%s", server.getHostName(), server.getPort());
+  }
+
+  /** Use this to see how many requests you've sent to any zipkin http endpoint. */
+  public int httpRequestCount() {
+    return server.getRequestCount();
   }
 
   /**
@@ -51,6 +82,22 @@ public final class ZipkinRule implements TestRule {
    */
   public ZipkinRule storeSpans(Iterable<Span> spans) {
     store.accept(spans.iterator());
+    return this;
+  }
+
+  /**
+   * Adds a one-time failure to the http endpoint.
+   *
+   * <p>Ex. If you want to test that you don't repeatedly send bad data, you could send a 400 back.
+   *
+   * <pre>{@code
+   * zipkin.enqueueFailure(sendErrorResponse(400, "bad format"));
+   * }</pre>
+   *
+   * @param failure type of failure the next call to the http endpoint responds with
+   */
+  public ZipkinRule enqueueFailure(HttpFailure failure) {
+    failureQueue.add(failure.response);
     return this;
   }
 
