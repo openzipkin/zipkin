@@ -35,7 +35,7 @@ define(
 
         const {startTs, endTs} = queryString.parse(location.search);
         $('#endTs').val(endTs || moment().valueOf());
-        $('#startTs').val(startTs || moment().valueOf() - 7*24*60*60*1000); // set default startTs 7 days ago;
+        $('#startTs').val(startTs || moment().valueOf() - 1*24*60*60*1000); // set default startTs 1 day ago;
 
         DependencyData.attachTo('#dependency-container');
         DependencyGraphUI.attachTo('#dependency-container');
