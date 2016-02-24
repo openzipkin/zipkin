@@ -17,7 +17,9 @@ import org.apache.thrift.transport.TMemoryBuffer
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mock.MockitoSugar
+import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
+import java.util.zip.GZIPOutputStream
 
 class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with BeforeAndAfter {
   val lookbackOverride = Long.MaxValue
@@ -94,18 +96,51 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
 
   "post spans in thrift" in {
     // serialize all spans as a thrift list
-    val transport = new TMemoryBuffer(0)
-    val oproto = new TBinaryProtocol(transport)
-    oproto.writeListBegin(new TList(TType.STRUCT, allSpans.size))
-    allSpans.map(spanToThriftSpan).foreach(_.toThrift.write(oproto))
-    oproto.writeListEnd()
-    val serializedSpans = Buf.ByteArray.Owned(transport.getArray())
+    val thriftBytes = tBinaryProtocol(allSpans)
 
     // Create an HTTP request object directly as Embedded Server assumes all are strings!
     val request = Request(Method.Post, "/api/v1/spans")
     request.headerMap.add("Content-Type", "application/x-thrift")
-    request.headerMap.add("Content-Length", serializedSpans.length.toString)
-    request.content = serializedSpans
+    request.headerMap.add("Content-Length", thriftBytes.length.toString)
+    request.content = Buf.ByteArray.Owned(thriftBytes)
+
+    server.httpRequest(request = request, andExpect = Accepted)
+
+    // memory store is synchronous, so we can immediately read back
+    Await.result(spanStore.getAllServiceNames()) should be(
+      List("service1", "service2", "service3", "service4")
+    )
+  }
+
+  "post gzipped spans" in {
+    // serialize all spans as a gzipped json list
+    val jsonBytes = ZipkinJson.writer().writeValueAsBytes(allSpans.map(JsonSpan))
+    val gzippedJsonBytes = gzip(jsonBytes)
+
+    // Create an HTTP request object directly as Embedded Server assumes all are strings!
+    val request = Request(Method.Post, "/api/v1/spans")
+    request.headerMap.add("Content-Encoding", "gzip")
+    request.headerMap.add("Content-Length", gzippedJsonBytes.length.toString)
+    request.content = Buf.ByteArray.Owned(gzippedJsonBytes)
+
+    server.httpRequest(request = request, andExpect = Accepted)
+
+    // memory store is synchronous, so we can immediately read back
+    Await.result(spanStore.getAllServiceNames()) should be(
+      List("service1", "service2", "service3", "service4")
+    )
+  }
+
+  "post gzipped spans in thrift" in {
+    // serialize all spans as a gzipped thrift list
+    val gzippedThriftBytes = gzip(tBinaryProtocol(allSpans))
+
+    // Create an HTTP request object directly as Embedded Server assumes all are strings!
+    val request = Request(Method.Post, "/api/v1/spans")
+    request.headerMap.add("Content-Type", "application/x-thrift")
+    request.headerMap.add("Content-Encoding", "gzip")
+    request.headerMap.add("Content-Length", gzippedThriftBytes.length.toString)
+    request.content = Buf.ByteArray.Owned(gzippedThriftBytes)
 
     server.httpRequest(request = request, andExpect = Accepted)
 
@@ -882,5 +917,25 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
       path = "/health",
       andExpect = Ok,
       withBody = "OK\n")
+  }
+
+  def tBinaryProtocol(spans: List[Span]) = {
+    val transport = new TMemoryBuffer(0)
+    val oproto = new TBinaryProtocol(transport)
+    oproto.writeListBegin(new TList(TType.STRUCT, spans.size))
+    spans.map(spanToThriftSpan).foreach(_.toThrift.write(oproto))
+    oproto.writeListEnd()
+    transport.getArray()
+  }
+
+  def gzip(bytes: Array[Byte]) = {
+    val baos = new ByteArrayOutputStream
+    val gos = new GZIPOutputStream(baos)
+    try {
+      gos.write(bytes)
+    } finally {
+      gos.close()
+    }
+    baos.toByteArray
   }
 }

@@ -1,18 +1,21 @@
 package com.twitter.zipkin.query
 
 import com.fasterxml.jackson.core.`type`.TypeReference
-import com.twitter.finagle.http.Request
+import com.twitter.finagle.http.{Fields, Request}
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.finatra.annotations.Flag
 import com.twitter.finatra.http.Controller
 import com.twitter.finatra.http.response.ResponseBuilder
 import com.twitter.finatra.request.{QueryParam, RouteParam}
+import com.twitter.io.StreamIO
 import com.twitter.util.Future
 import com.twitter.zipkin.Constants.MaxServicesWithoutCaching
 import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.conversions.thrift.thriftListToSpans
 import com.twitter.zipkin.json.{JsonSpan, ZipkinJson}
 import com.twitter.zipkin.storage.{DependencyStore, SpanStore}
+import java.io.ByteArrayInputStream
+import java.util.zip.GZIPInputStream
 import javax.inject.Inject
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
@@ -29,14 +32,20 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
   }
 
   post("/api/v1/spans") { request: Request =>
+    val contentEncoding = Option(request.headerMap.get(Fields.ContentEncoding))
+
+    // gunzip here until we can do it with netty: https://github.com/twitter/finagle/issues/469
+    val gzipped = contentEncoding.map(c => c.contains("gzip")).getOrElse(false)
+    var bytes = new Array[Byte](request.content.length)
+    request.content.write(bytes, 0)
+    if (gzipped) {
+      bytes = gunzip(bytes)
+    }
+
     val spans: Try[List[Span]] = try {
       Success(request.mediaType match {
-        case Some("application/x-thrift") => {
-          val bytes = new Array[Byte](request.content.length)
-          request.content.write(bytes, 0)
-          thriftListToSpans(bytes)
-        }
-        case _ => jsonSpansReader.readValue(request.contentString)
+        case Some("application/x-thrift") => thriftListToSpans(bytes)
+        case _ => jsonSpansReader.readValue(bytes)
           .asInstanceOf[List[JsonSpan]]
           .map(JsonSpan.invert(_))
       })
@@ -85,7 +94,16 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
     dependencyStore.getDependencies(request.endTs, request.lookback.orElse(Some(defaultLookback)))
   }
 
-  val jsonSpansReader = ZipkinJson.reader(new TypeReference[Seq[JsonSpan]] {})
+  val jsonSpansReader = ZipkinJson.readerFor(new TypeReference[Seq[JsonSpan]] {})
+
+  private def gunzip(bytes: Array[Byte]) = { // array in lieu of a gunzip Buf utility
+    val gis = new GZIPInputStream(new ByteArrayInputStream(bytes))
+    try {
+      StreamIO.buffer(gis).toByteArray
+    } finally {
+      gis.close()
+    }
+  }
 }
 
 case class GetSpanNamesRequest(@QueryParam serviceName: String)
