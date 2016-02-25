@@ -13,7 +13,6 @@
  */
 package zipkin.server;
 
-import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,7 +28,9 @@ import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Endpoint;
 import zipkin.Span;
+import zipkin.internal.Util;
 
+import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -53,7 +54,7 @@ public class ZipkinServerIntegrationTests {
 
   @Test
   public void writeSpans_noContentTypeIsJson() throws Exception {
-    byte[] body = Codec.JSON.writeSpans(Arrays.asList(newSpan(1L, 1L, "foo", "an", "bar")));
+    byte[] body = Codec.JSON.writeSpans(asList(newSpan(1L, 1L, "foo", "an", "bar")));
     mockMvc
         .perform(post("/api/v1/spans").content(body))
         .andExpect(status().isAccepted());
@@ -69,8 +70,17 @@ public class ZipkinServerIntegrationTests {
   }
 
   @Test
+  public void writeSpans_malformedGzipIsBadRequest() throws Exception {
+    byte[] body = {'h', 'e', 'l', 'l', 'o'};
+    mockMvc
+        .perform(post("/api/v1/spans").content(body).header("Content-Encoding", "gzip"))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().string(startsWith("Error gunzipping spans")));
+  }
+
+  @Test
   public void writeSpans_contentTypeXThrift() throws Exception {
-    byte[] body = Codec.THRIFT.writeSpans(Arrays.asList(newSpan(1L, 2L, "foo", "an", "bar")));
+    byte[] body = Codec.THRIFT.writeSpans(asList(newSpan(1L, 2L, "foo", "an", "bar")));
     mockMvc
         .perform(post("/api/v1/spans").content(body).contentType("application/x-thrift"))
         .andExpect(status().isAccepted());
@@ -90,6 +100,14 @@ public class ZipkinServerIntegrationTests {
     mockMvc
         .perform(get("/health"))
         .andExpect(status().isOk());
+  }
+
+  public void writeSpans_gzipEncoded() throws Exception {
+    byte[] body = Codec.JSON.writeSpans(asList(newSpan(1L, 2L, "foo", "an", "bar")));
+    byte[] gzippedBody = Util.gzip(body);
+    mockMvc
+        .perform(post("/api/v1/spans").content(gzippedBody).header("Content-Encoding", "gzip"))
+        .andExpect(status().isAccepted());
   }
 
   static Span newSpan(long traceId, long id, String spanName, String value, String service) {

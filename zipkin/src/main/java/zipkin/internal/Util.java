@@ -13,11 +13,15 @@
  */
 package zipkin.internal;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import okio.Buffer;
+import okio.GzipSink;
+import okio.GzipSource;
 
 public final class Util {
   public static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -62,6 +66,21 @@ public final class Util {
     List<T> result = new ArrayList<>(input);
     Collections.sort(result);
     return Collections.unmodifiableList(result);
+  }
+
+  public static byte[] gzip(byte[] bytes) throws IOException {
+    Buffer sink = new Buffer();
+    GzipSink gzipSink = new GzipSink(sink);
+    gzipSink.write(new Buffer().write(bytes), bytes.length);
+    gzipSink.close();
+    return sink.readByteArray();
+  }
+
+  public static byte[] gunzip(byte[] bytes) throws IOException {
+    Buffer result = new Buffer();
+    GzipSource source = new GzipSource(new Buffer().write(bytes));
+    while (source.read(result, Integer.MAX_VALUE) != -1) ;
+    return result.readByteArray();
   }
 
   private Util() {

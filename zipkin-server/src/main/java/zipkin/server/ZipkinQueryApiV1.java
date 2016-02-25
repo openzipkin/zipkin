@@ -13,6 +13,7 @@
  */
 package zipkin.server;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -25,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,6 +39,7 @@ import zipkin.SpanStore;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static zipkin.internal.Util.checkNotNull;
+import static zipkin.internal.Util.gunzip;
 
 /**
  * Implements the json api used by {@code zipkin-web}.
@@ -85,17 +88,32 @@ public class ZipkinQueryApiV1 {
 
   @RequestMapping(value = "/spans", method = RequestMethod.POST)
   @ResponseStatus(HttpStatus.ACCEPTED)
-  public ResponseEntity<?> uploadSpansJson(@RequestBody byte[] body) {
-    return validateAndStoreSpans(jsonCodec, body);
+  public ResponseEntity<?> uploadSpansJson(
+      @RequestHeader(value = "Content-Encoding", required = false) String encoding,
+      @RequestBody byte[] body
+  ) {
+    return validateAndStoreSpans(encoding, jsonCodec, body);
   }
 
   @RequestMapping(value = "/spans", method = RequestMethod.POST, consumes = APPLICATION_THRIFT)
   @ResponseStatus(HttpStatus.ACCEPTED)
-  public ResponseEntity<?> uploadSpansThrift(@RequestBody byte[] body) {
-    return validateAndStoreSpans(thriftCodec, body);
+  public ResponseEntity<?> uploadSpansThrift(
+      @RequestHeader(value = "Content-Encoding", required = false) String encoding,
+      @RequestBody byte[] body
+  ) {
+    return validateAndStoreSpans(encoding, thriftCodec, body);
   }
 
-  private ResponseEntity<?> validateAndStoreSpans(Codec codec, @RequestBody byte[] body) {
+  private ResponseEntity<?> validateAndStoreSpans(String encoding, Codec codec, byte[] body) {
+    if (encoding != null && encoding.contains("gzip")) {
+      try {
+        body = gunzip(body);
+      } catch (IOException e) {
+        String message = e.getMessage();
+        if (message == null) message = "Error gunzipping spans";
+        return ResponseEntity.badRequest().body(message);
+      }
+    }
     List<Span> spans;
     try {
       spans = codec.readSpans(body);

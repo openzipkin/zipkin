@@ -13,6 +13,7 @@
  */
 package zipkin.junit;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import okhttp3.HttpUrl;
@@ -27,6 +28,8 @@ import zipkin.InMemorySpanStore;
 import zipkin.QueryRequest;
 import zipkin.Span;
 import zipkin.internal.JsonCodec;
+
+import static zipkin.internal.Util.gunzip;
 
 final class ZipkinDispatcher extends Dispatcher {
   private static final JsonCodec JSON_CODEC = new JsonCodec();
@@ -65,9 +68,22 @@ final class ZipkinDispatcher extends Dispatcher {
       }
     } else if (request.getMethod().equals("POST")) {
       if (url.encodedPath().equals("/api/v1/spans")) {
+
+        byte[] body = request.getBody().readByteArray();
+        String encoding = request.getHeader("Content-Encoding");
+        if (encoding != null && encoding.contains("gzip")) {
+          try {
+            body = gunzip(body);
+          } catch (IOException e) {
+            String message = e.getMessage();
+            if (message == null) message = "Error gunzipping spans";
+            return new MockResponse().setResponseCode(400).setBody(message);
+          }
+        }
+
         String type = request.getHeader("Content-Type");
         Codec codec = type != null && type.contains("/x-thrift") ? Codec.THRIFT : JSON_CODEC;
-        List<Span> spans = codec.readSpans(request.getBody().readByteArray());
+        List<Span> spans = codec.readSpans(body);
         store.accept(spans.iterator());
         return new MockResponse().setResponseCode(202);
       }
