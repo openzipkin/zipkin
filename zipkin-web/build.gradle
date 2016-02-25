@@ -55,9 +55,15 @@ node {
 task webpack(type: NpmTask) {
     args = ['run-script', 'build']
 }
+task karma(type: NpmTask) {
+    args = ['run-script', 'test']
+}
 webpack.dependsOn(npmInstall)
+karma.dependsOn(npmInstall)
 build.dependsOn(webpack)
+build.dependsOn(karma)
 processResources.dependsOn(webpack)
+processResources.dependsOn(karma)
 run.dependsOn(webpack)
 
 apply from: "${rootDir}/gradle/verify-licenses.gradle"
