@@ -19,6 +19,8 @@ server:
   port: ${QUERY_PORT:9411}
   compression:
     enabled: true
+    # compresses any response over min-response-size (default is 2KiB)
+    mime-types: application/json
 spring:
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver

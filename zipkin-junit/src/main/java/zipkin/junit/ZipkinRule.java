@@ -21,6 +21,8 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import okio.Buffer;
+import okio.GzipSink;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -51,7 +53,21 @@ public final class ZipkinRule implements TestRule {
       public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
         MockResponse maybeFailure = failureQueue.poll();
         if (maybeFailure != null) return maybeFailure;
-        return successDispatch.dispatch(request);
+        MockResponse result = successDispatch.dispatch(request);
+        String encoding = request.getHeaders().get("Accept-Encoding");
+        if (result.getBody() != null && encoding != null && encoding.contains("gzip")) {
+          try {
+            Buffer sink = new Buffer();
+            GzipSink gzipSink = new GzipSink(sink);
+            gzipSink.write(result.getBody(), result.getBody().size());
+            gzipSink.close();
+            result.setBody(sink);
+          } catch (IOException e) {
+            throw new AssertionError(e);
+          }
+          result.setHeader("Content-Encoding", "gzip");
+        }
+        return result;
       }
 
       @Override

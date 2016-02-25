@@ -15,6 +15,8 @@ package zipkin.junit;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.util.Arrays;
+import java.util.List;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -26,6 +28,7 @@ import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Endpoint;
 import zipkin.Span;
+import zipkin.internal.Util;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -150,5 +153,28 @@ public class ZipkinRuleTest {
     ).execute();
 
     assertThat(response.code()).isEqualTo(400);
+  }
+
+  @Test
+  public void readSpans_gzippedResponse() throws Exception {
+    char[] annotation2K = new char[2048];
+    Arrays.fill(annotation2K, 'a');
+
+    List<Span> trace = asList(new Span.Builder(span)
+        .addAnnotation(Annotation.create(ann.timestamp, new String(annotation2K), null)).build());
+
+    zipkin.storeSpans(trace);
+
+    Response response = client.newCall(new Request.Builder()
+            .url(zipkin.httpUrl() + "/api/v1/trace/" + span.traceId)
+            .addHeader("Accept-Encoding", "gzip").build()
+    ).execute();
+
+    assertThat(response.code()).isEqualTo(200);
+    assertThat(response.body().contentLength()).isLessThan(annotation2K.length);
+
+    byte[] unzipped = Util.gunzip(response.body().bytes());
+
+    assertThat(Codec.JSON.readSpans(unzipped)).isEqualTo(trace);
   }
 }
