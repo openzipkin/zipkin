@@ -62,6 +62,9 @@ public class ZipkinServerTest {
     mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
         .andExpect(status().isAccepted());
 
+    // sleep as the the storage operation is async
+    Thread.sleep(1000);
+
     // read back the span name, given its service
     mockMvc.perform(get("/api/v1/spans?serviceName=" + service))
         .andExpect(status().isOk())
