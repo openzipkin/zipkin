@@ -256,9 +256,9 @@ public final class Span implements Comparable<Span> {
      *
      * @see Span#annotations
      */
-    public Builder annotations(Annotation... annotations) {
+    public Builder annotations(Collection<Annotation> annotations) {
       this.annotations.clear();
-      Collections.addAll(this.annotations, annotations);
+      this.annotations.addAll(annotations);
       return this;
     }
 
@@ -273,9 +273,9 @@ public final class Span implements Comparable<Span> {
      *
      * @see Span#binaryAnnotations
      */
-    public Builder binaryAnnotations(BinaryAnnotation... binaryAnnotations) {
+    public Builder binaryAnnotations(Collection<BinaryAnnotation> binaryAnnotations) {
       this.binaryAnnotations.clear();
-      Collections.addAll(this.binaryAnnotations, binaryAnnotations);
+      this.binaryAnnotations.addAll(binaryAnnotations);
       return this;
     }
 

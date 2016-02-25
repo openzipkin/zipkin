@@ -13,21 +13,11 @@
  */
 package zipkin.internal;
 
-import java.nio.ByteBuffer;
+import java.io.EOFException;
 import java.util.ArrayList;
 import java.util.List;
 import okio.Buffer;
 import okio.ByteString;
-import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TField;
-import org.apache.thrift.protocol.TList;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.protocol.TStruct;
-import org.apache.thrift.protocol.TType;
-import org.apache.thrift.transport.TMemoryInputTransport;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Codec;
@@ -35,7 +25,6 @@ import zipkin.DependencyLink;
 import zipkin.Endpoint;
 import zipkin.Span;
 
-import static org.apache.thrift.protocol.TProtocolUtil.skip;
 import static zipkin.internal.Util.checkArgument;
 
 /**
@@ -43,13 +32,29 @@ import static zipkin.internal.Util.checkArgument;
  * core jar. The hard coding not only keeps us with a single data-model, it also allows the minified
  * core jar free of SLFJ classes otherwise included in generated types.
  *
- * <p/> The implementation appears scarier than it is. It was made by mechanically copying in the
- * method bodies of generated thrift classes, specifically {@link org.apache.thrift.TBase#read} and
- * {@link org.apache.thrift.TBase#write}. Zipkin uses thrifts that have been very stable in the last
- * few years. Moreover, users consolidate to {@link TBinaryProtocol} at rest, even if the structs
- * are later compressed with snappy.
+ * <p/> This is an Okio-native TBinaryProtocol codec. Natively doing this reduces dependencies and
+ * array duplication.
  */
 public final class ThriftCodec implements Codec {
+  // break vs decode huge structs, like > 1MB strings or 10k spans in a trace.
+  private static final int STRING_LENGTH_LIMIT = 1 * 1024 * 1024;
+  private static final int CONTAINER_LENGTH_LIMIT = 10 * 1000;
+  // break vs recursing infinitely when skipping data
+  private static int MAX_SKIP_DEPTH = 2147483647;
+
+  // taken from org.apache.thrift.protocol.TType
+  private static final byte TYPE_STOP = 0;
+  private static final byte TYPE_BOOL = 2;
+  private static final byte TYPE_BYTE = 3;
+  private static final byte TYPE_DOUBLE = 4;
+  private static final byte TYPE_I16 = 6;
+  private static final byte TYPE_I32 = 8;
+  private static final byte TYPE_I64 = 10;
+  private static final byte TYPE_STRING = 11;
+  private static final byte TYPE_STRUCT = 12;
+  private static final byte TYPE_MAP = 13;
+  private static final byte TYPE_SET = 14;
+  private static final byte TYPE_LIST = 15;
 
   @Override
   public Span readSpan(byte[] bytes) {
@@ -77,11 +82,11 @@ public final class ThriftCodec implements Codec {
   }
 
   interface ThriftWriter<T> {
-    void write(T value, TProtocol oprot) throws TException;
+    void write(T value, Buffer buffer);
   }
 
   interface ThriftReader<T> {
-    T read(TProtocol iprot) throws TException;
+    T read(Buffer buffer) throws EOFException;
   }
 
   interface ThriftAdapter<T> extends ThriftReader<T>, ThriftWriter<T> {
@@ -89,392 +94,233 @@ public final class ThriftCodec implements Codec {
 
   static final ThriftAdapter<Endpoint> ENDPOINT_ADAPTER = new ThriftAdapter<Endpoint>() {
 
-    private final TStruct STRUCT_DESC = new TStruct("Endpoint");
-    private final TField IPV4_FIELD_DESC = new TField("ipv4", TType.I32, (short) 1);
-    private final TField PORT_FIELD_DESC = new TField("port", TType.I16, (short) 2);
-    private final TField SERVICE_NAME_FIELD_DESC = new TField("service_name", TType.STRING, (short) 3);
+    final Field IPV4 = new Field(TYPE_I32, 1);
+    final Field PORT = new Field(TYPE_I16, 2);
+    final Field SERVICE_NAME = new Field(TYPE_STRING, 3);
 
     @Override
-    public Endpoint read(TProtocol iprot) throws TException {
+    public Endpoint read(Buffer buffer) throws EOFException {
       Endpoint.Builder result = new Endpoint.Builder();
-      TField field;
-      iprot.readStructBegin();
+      Field field;
+
       while (true) {
-        field = iprot.readFieldBegin();
-        if (field.type == TType.STOP) {
-          break;
+        field = Field.read(buffer);
+        if (field.type == TYPE_STOP) break;
+
+        if (field.equals(IPV4)) {
+          result.ipv4(buffer.readInt());
+        } else if (field.equals(PORT)) {
+          result.port(buffer.readShort());
+        } else if (field.equals(SERVICE_NAME)) {
+          result.serviceName(readUtf8(buffer));
+        } else {
+          skip(buffer, field.type);
         }
-        switch (field.id) {
-          case 1: // IPV4
-            if (field.type == TType.I32) {
-              result.ipv4(iprot.readI32());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 2: // PORT
-            if (field.type == TType.I16) {
-              result.port(iprot.readI16());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 3: // SERVICE_NAME
-            if (field.type == TType.STRING) {
-              result.serviceName(iprot.readString());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          default:
-            skip(iprot, field.type);
-        }
-        iprot.readFieldEnd();
       }
-      iprot.readStructEnd();
       return result.build();
     }
 
     @Override
-    public void write(Endpoint value, TProtocol oprot) throws TException {
-      oprot.writeStructBegin(STRUCT_DESC);
+    public void write(Endpoint value, Buffer buffer) {
+      IPV4.write(buffer);
+      buffer.writeInt(value.ipv4);
 
-      oprot.writeFieldBegin(IPV4_FIELD_DESC);
-      oprot.writeI32(value.ipv4);
-      oprot.writeFieldEnd();
-      oprot.writeFieldBegin(PORT_FIELD_DESC);
-      oprot.writeI16(value.port == null ? 0 : value.port);
-      oprot.writeFieldEnd();
-      oprot.writeFieldBegin(SERVICE_NAME_FIELD_DESC);
-      oprot.writeString(value.serviceName);
-      oprot.writeFieldEnd();
+      PORT.write(buffer);
+      buffer.writeShort(value.port == null ? 0 : value.port);
 
-      oprot.writeFieldStop();
-      oprot.writeStructEnd();
+      SERVICE_NAME.write(buffer);
+      writeUtf8(buffer, value.serviceName);
+
+      buffer.writeByte(TYPE_STOP);
     }
   };
 
   static final ThriftAdapter<Annotation> ANNOTATION_ADAPTER = new ThriftAdapter<Annotation>() {
 
-    private final TStruct STRUCT_DESC = new TStruct("Annotation");
-    private final TField TIMESTAMP_FIELD_DESC = new TField("timestamp", TType.I64, (short) 1);
-    private final TField VALUE_FIELD_DESC = new TField("value", TType.STRING, (short) 2);
-    private final TField HOST_FIELD_DESC = new TField("host", TType.STRUCT, (short) 3);
+    final Field TIMESTAMP = new Field(TYPE_I64, 1);
+    final Field VALUE = new Field(TYPE_STRING, 2);
+    final Field ENDPOINT = new Field(TYPE_STRUCT, 3);
 
     @Override
-    public Annotation read(TProtocol iprot) throws TException {
+    public Annotation read(Buffer buffer) throws EOFException {
       Annotation.Builder result = new Annotation.Builder();
-      TField field;
-      iprot.readStructBegin();
+      Field field;
       while (true) {
-        field = iprot.readFieldBegin();
-        if (field.type == TType.STOP) {
-          break;
+        field = Field.read(buffer);
+        if (field.type == TYPE_STOP) break;
+
+        if (field.equals(TIMESTAMP)) {
+          result.timestamp(buffer.readLong());
+        } else if (field.equals(VALUE)) {
+          result.value(readUtf8(buffer));
+        } else if (field.equals(ENDPOINT)) {
+          result.endpoint(ENDPOINT_ADAPTER.read(buffer));
+        } else {
+          skip(buffer, field.type);
         }
-        switch (field.id) {
-          case 1: // TIMESTAMP
-            if (field.type == TType.I64) {
-              result.timestamp(iprot.readI64());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 2: // VALUE
-            if (field.type == TType.STRING) {
-              result.value(iprot.readString());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 3: // HOST
-            if (field.type == TType.STRUCT) {
-              result.endpoint(ENDPOINT_ADAPTER.read(iprot));
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          default:
-            skip(iprot, field.type);
-        }
-        iprot.readFieldEnd();
       }
-      iprot.readStructEnd();
       return result.build();
     }
 
     @Override
-    public void write(Annotation value, TProtocol oprot) throws TException {
-      oprot.writeStructBegin(STRUCT_DESC);
-
-      oprot.writeFieldBegin(TIMESTAMP_FIELD_DESC);
-      oprot.writeI64(value.timestamp);
-      oprot.writeFieldEnd();
+    public void write(Annotation value, Buffer buffer) {
+      TIMESTAMP.write(buffer);
+      buffer.writeLong(value.timestamp);
 
       if (value.value != null) {
-        oprot.writeFieldBegin(VALUE_FIELD_DESC);
-        oprot.writeString(value.value);
-        oprot.writeFieldEnd();
+        VALUE.write(buffer);
+        writeUtf8(buffer, value.value);
       }
 
       if (value.endpoint != null) {
-        oprot.writeFieldBegin(HOST_FIELD_DESC);
-        ENDPOINT_ADAPTER.write(value.endpoint, oprot);
-        oprot.writeFieldEnd();
+        ENDPOINT.write(buffer);
+        ENDPOINT_ADAPTER.write(value.endpoint, buffer);
       }
-
-      oprot.writeFieldStop();
-      oprot.writeStructEnd();
+      buffer.writeByte(TYPE_STOP);
     }
   };
 
   static final ThriftAdapter<BinaryAnnotation> BINARY_ANNOTATION_ADAPTER = new ThriftAdapter<BinaryAnnotation>() {
 
-    private final TStruct STRUCT_DESC = new TStruct("BinaryAnnotation");
-    private final TField KEY_FIELD_DESC = new TField("key", TType.STRING, (short) 1);
-    private final TField VALUE_FIELD_DESC = new TField("value", TType.STRING, (short) 2);
-    private final TField ANNOTATION_TYPE_FIELD_DESC = new TField("annotation_type", TType.I32, (short) 3);
-    private final TField HOST_FIELD_DESC = new TField("host", TType.STRUCT, (short) 4);
+    final Field KEY = new Field(TYPE_STRING, 1);
+    final Field VALUE = new Field(TYPE_STRING, 2);
+    final Field TYPE = new Field(TYPE_I32, 3);
+    final Field ENDPOINT = new Field(TYPE_STRUCT, 4);
 
     @Override
-    public BinaryAnnotation read(TProtocol iprot) throws TException {
+    public BinaryAnnotation read(Buffer buffer) throws EOFException {
       BinaryAnnotation.Builder result = new BinaryAnnotation.Builder();
-      TField field;
-      iprot.readStructBegin();
+      Field field;
+
       while (true) {
-        field = iprot.readFieldBegin();
-        if (field.type == TType.STOP) {
-          break;
+        field = Field.read(buffer);
+        if (field.type == TYPE_STOP) break;
+
+        if (field.equals(KEY)) {
+          result.key(readUtf8(buffer));
+        } else if (field.equals(VALUE)) {
+          result.value(readBytes(buffer));
+        } else if (field.equals(TYPE)) {
+          result.type(BinaryAnnotation.Type.fromValue(buffer.readInt()));
+        } else if (field.equals(ENDPOINT)) {
+          result.endpoint(ENDPOINT_ADAPTER.read(buffer));
+        } else {
+          skip(buffer, field.type);
         }
-        switch (field.id) {
-          case 1: // KEY
-            if (field.type == TType.STRING) {
-              result.key(iprot.readString());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 2: // VALUE
-            if (field.type == TType.STRING) {
-              ByteBuffer buffer = iprot.readBinary();
-              byte[] value = new byte[buffer.remaining()];
-              buffer.get(value);
-              result.value(value);
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 3: // ANNOTATION_TYPE
-            if (field.type == TType.I32) {
-              result.type(BinaryAnnotation.Type.fromValue(iprot.readI32()));
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 4: // HOST
-            if (field.type == TType.STRUCT) {
-              result.endpoint(ENDPOINT_ADAPTER.read(iprot));
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          default:
-            skip(iprot, field.type);
-        }
-        iprot.readFieldEnd();
       }
-      iprot.readStructEnd();
       return result.build();
     }
 
     @Override
-    public void write(BinaryAnnotation value, TProtocol oprot) throws TException {
-      oprot.writeStructBegin(STRUCT_DESC);
+    public void write(BinaryAnnotation value, Buffer buffer) {
+      KEY.write(buffer);
+      writeUtf8(buffer, value.key);
 
-      oprot.writeFieldBegin(KEY_FIELD_DESC);
-      oprot.writeString(value.key);
-      oprot.writeFieldEnd();
+      VALUE.write(buffer);
+      buffer.writeInt(value.value.length);
+      buffer.write(value.value);
 
-      oprot.writeFieldBegin(VALUE_FIELD_DESC);
-      oprot.writeBinary(ByteBuffer.wrap(value.value));
-      oprot.writeFieldEnd();
-
-      oprot.writeFieldBegin(ANNOTATION_TYPE_FIELD_DESC);
-      oprot.writeI32(value.type.value);
-      oprot.writeFieldEnd();
+      TYPE.write(buffer);
+      buffer.writeInt(value.type.value);
 
       if (value.endpoint != null) {
-        oprot.writeFieldBegin(HOST_FIELD_DESC);
-        ENDPOINT_ADAPTER.write(value.endpoint, oprot);
-        oprot.writeFieldEnd();
+        ENDPOINT.write(buffer);
+        ENDPOINT_ADAPTER.write(value.endpoint, buffer);
       }
 
-      oprot.writeFieldStop();
-      oprot.writeStructEnd();
+      buffer.writeByte(TYPE_STOP);
     }
   };
 
+  static final ThriftAdapter<List<Annotation>> ANNOTATIONS_ADAPTER = new ListAdapter<>(ANNOTATION_ADAPTER);
+  static final ThriftAdapter<List<BinaryAnnotation>> BINARY_ANNOTATIONS_ADAPTER = new ListAdapter<>(BINARY_ANNOTATION_ADAPTER);
+
   static final ThriftAdapter<Span> SPAN_ADAPTER = new ThriftAdapter<Span>() {
 
-    private final TStruct STRUCT_DESC = new TStruct("Span");
-    private final TField TRACE_ID_FIELD_DESC = new TField("trace_id", TType.I64, (short) 1);
-    private final TField NAME_FIELD_DESC = new TField("name", TType.STRING, (short) 3);
-    private final TField ID_FIELD_DESC = new TField("id", TType.I64, (short) 4);
-    private final TField PARENT_ID_FIELD_DESC = new TField("parent_id", TType.I64, (short) 5);
-    private final TField ANNOTATIONS_FIELD_DESC = new TField("annotations", TType.LIST, (short) 6);
-    private final TField BINARY_ANNOTATIONS_FIELD_DESC = new TField("binary_annotations", TType.LIST, (short) 8);
-    private final TField DEBUG_FIELD_DESC = new TField("debug", TType.BOOL, (short) 9);
-    private final TField TIMESTAMP_FIELD_DESC = new TField("timestamp", TType.I64, (short) 10);
-    private final TField DURATION_FIELD_DESC = new TField("duration", TType.I64, (short) 11);
+    final Field TRACE_ID = new Field(TYPE_I64, 1);
+    final Field NAME = new Field(TYPE_STRING, 3);
+    final Field ID = new Field(TYPE_I64, 4);
+    final Field PARENT_ID = new Field(TYPE_I64, 5);
+    final Field ANNOTATIONS = new Field(TYPE_LIST, 6);
+    final Field BINARY_ANNOTATIONS = new Field(TYPE_LIST, 8);
+    final Field DEBUG = new Field(TYPE_BOOL, 9);
+    final Field TIMESTAMP = new Field(TYPE_I64, 10);
+    final Field DURATION = new Field(TYPE_I64, 11);
 
     @Override
-    public Span read(TProtocol iprot) throws TException {
+    public Span read(Buffer buffer) throws EOFException {
       Span.Builder result = new Span.Builder();
-      TField field;
-      iprot.readStructBegin();
+      Field field;
+
       while (true) {
-        field = iprot.readFieldBegin();
-        if (field.type == TType.STOP) {
-          break;
+        field = Field.read(buffer);
+        if (field.type == TYPE_STOP) break;
+
+        if (field.equals(TRACE_ID)) {
+          result.traceId(buffer.readLong());
+        } else if (field.equals(NAME)) {
+          result.name(readUtf8(buffer));
+        } else if (field.equals(ID)) {
+          result.id(buffer.readLong());
+        } else if (field.equals(PARENT_ID)) {
+          result.parentId(buffer.readLong());
+        } else if (field.equals(ANNOTATIONS)) {
+          result.annotations(ANNOTATIONS_ADAPTER.read(buffer));
+        } else if (field.equals(BINARY_ANNOTATIONS)) {
+          result.binaryAnnotations(BINARY_ANNOTATIONS_ADAPTER.read(buffer));
+        } else if (field.equals(DEBUG)) {
+          result.debug(buffer.readByte() == 1);
+        } else if (field.equals(TIMESTAMP)) {
+          result.timestamp(buffer.readLong());
+        } else if (field.equals(DURATION)) {
+          result.duration(buffer.readLong());
+        } else {
+          skip(buffer, field.type);
         }
-        switch (field.id) {
-          case 1: // TRACE_ID
-            if (field.type == TType.I64) {
-              result.traceId(iprot.readI64());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 3: // NAME
-            if (field.type == TType.STRING) {
-              result.name(iprot.readString());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 4: // ID
-            if (field.type == TType.I64) {
-              result.id(iprot.readI64());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 5: // PARENT_ID
-            if (field.type == TType.I64) {
-              result.parentId(iprot.readI64());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 6: // ANNOTATIONS
-            if (field.type == TType.LIST) {
-              TList annotations = iprot.readListBegin();
-              for (int i = 0; i < annotations.size; i++) {
-                result.addAnnotation(ANNOTATION_ADAPTER.read(iprot));
-              }
-              iprot.readListEnd();
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 8: // BINARY_ANNOTATIONS
-            if (field.type == TType.LIST) {
-              TList binaryAnnotations = iprot.readListBegin();
-              for (int i = 0; i < binaryAnnotations.size; i++) {
-                result.addBinaryAnnotation(BINARY_ANNOTATION_ADAPTER.read(iprot));
-              }
-              iprot.readListEnd();
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 9: // DEBUG
-            if (field.type == TType.BOOL) {
-              result.debug(iprot.readBool());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 10: // TIMESTAMP
-            if (field.type == TType.I64) {
-              result.timestamp(iprot.readI64());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 11: // DURATION
-            if (field.type == TType.I64) {
-              result.duration(iprot.readI64());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          default:
-            skip(iprot, field.type);
-        }
-        iprot.readFieldEnd();
       }
-      iprot.readStructEnd();
+
       return result.build();
     }
 
     @Override
-    public void write(Span value, TProtocol oprot) throws TException {
-      oprot.writeStructBegin(STRUCT_DESC);
+    public void write(Span value, Buffer buffer) {
 
-      oprot.writeFieldBegin(TRACE_ID_FIELD_DESC);
-      oprot.writeI64(value.traceId);
-      oprot.writeFieldEnd();
+      TRACE_ID.write(buffer);
+      buffer.writeLong(value.traceId);
 
-      oprot.writeFieldBegin(NAME_FIELD_DESC);
-      oprot.writeString(value.name);
-      oprot.writeFieldEnd();
+      NAME.write(buffer);
+      writeUtf8(buffer, value.name);
 
-      oprot.writeFieldBegin(ID_FIELD_DESC);
-      oprot.writeI64(value.id);
-      oprot.writeFieldEnd();
+      ID.write(buffer);
+      buffer.writeLong(value.id);
 
       if (value.parentId != null) {
-        oprot.writeFieldBegin(PARENT_ID_FIELD_DESC);
-        oprot.writeI64(value.parentId);
-        oprot.writeFieldEnd();
+        PARENT_ID.write(buffer);
+        buffer.writeLong(value.parentId);
       }
 
-      oprot.writeFieldBegin(ANNOTATIONS_FIELD_DESC);
-      oprot.writeListBegin(new TList(TType.STRUCT, value.annotations.size()));
-      for (int i = 0, length = value.annotations.size(); i < length; i++) {
-        ANNOTATION_ADAPTER.write(value.annotations.get(i), oprot);
-      }
-      oprot.writeListEnd();
-      oprot.writeFieldEnd();
+      ANNOTATIONS.write(buffer);
+      ANNOTATIONS_ADAPTER.write(value.annotations, buffer);
 
-      oprot.writeFieldBegin(BINARY_ANNOTATIONS_FIELD_DESC);
-      oprot.writeListBegin(new TList(TType.STRUCT, value.binaryAnnotations.size()));
-      for (int i = 0, length = value.binaryAnnotations.size(); i < length; i++) {
-        BINARY_ANNOTATION_ADAPTER.write(value.binaryAnnotations.get(i), oprot);
-      }
-      oprot.writeListEnd();
-      oprot.writeFieldEnd();
+      BINARY_ANNOTATIONS.write(buffer);
+      BINARY_ANNOTATIONS_ADAPTER.write(value.binaryAnnotations, buffer);
 
       if (value.debug != null) {
-        oprot.writeFieldBegin(DEBUG_FIELD_DESC);
-        oprot.writeBool(value.debug);
-        oprot.writeFieldEnd();
+        DEBUG.write(buffer);
+        buffer.writeByte(value.debug ? 1 : 0);
       }
 
       if (value.timestamp != null) {
-        oprot.writeFieldBegin(TIMESTAMP_FIELD_DESC);
-        oprot.writeI64(value.timestamp);
-        oprot.writeFieldEnd();
+        TIMESTAMP.write(buffer);
+        buffer.writeLong(value.timestamp);
       }
 
       if (value.duration != null) {
-        oprot.writeFieldBegin(DURATION_FIELD_DESC);
-        oprot.writeI64(value.duration);
-        oprot.writeFieldEnd();
+        DURATION.write(buffer);
+        buffer.writeLong(value.duration);
       }
 
-      oprot.writeFieldStop();
-      oprot.writeStructEnd();
+      buffer.writeByte(TYPE_STOP);
     }
 
     @Override
@@ -488,70 +334,45 @@ public final class ThriftCodec implements Codec {
 
   static final ThriftAdapter<DependencyLink> DEPENDENCY_LINK_ADAPTER = new ThriftAdapter<DependencyLink>() {
 
-    private final TStruct STRUCT_DESC = new TStruct("DependencyLink");
-    private final TField PARENT_FIELD_DESC = new TField("parent", TType.STRING, (short) 1);
-    private final TField CHILD_FIELD_DESC = new TField("child", TType.STRING, (short) 2);
-    private final TField CALL_COUNT_FIELD_DESC = new TField("call_count", TType.I64, (short) 4);
+    final Field PARENT = new Field(TYPE_STRING, 1);
+    final Field CHILD = new Field(TYPE_STRING, 2);
+    final Field CALL_COUNT = new Field(TYPE_I64, 4);
 
     @Override
-    public DependencyLink read(TProtocol iprot) throws TException {
+    public DependencyLink read(Buffer buffer) throws EOFException {
       DependencyLink.Builder result = new DependencyLink.Builder();
-      TField field;
-      iprot.readStructBegin();
+      Field field;
+
       while (true) {
-        field = iprot.readFieldBegin();
-        if (field.type == TType.STOP) {
-          break;
+        field = Field.read(buffer);
+        if (field.type == TYPE_STOP) break;
+
+        if (field.equals(PARENT)) {
+          result.parent(readUtf8(buffer));
+        } else if (field.equals(CHILD)) {
+          result.child(readUtf8(buffer));
+        } else if (field.equals(CALL_COUNT)) {
+          result.callCount(buffer.readLong());
+        } else {
+          skip(buffer, field.type);
         }
-        switch (field.id) {
-          case 1: // PARENT
-            if (field.type == TType.STRING) {
-              result.parent(iprot.readString());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 2: // CHILD
-            if (field.type == TType.STRING) {
-              result.child(iprot.readString());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          case 4: // CALL_COUNT
-            if (field.type == TType.I64) {
-              result.callCount(iprot.readI64());
-            } else {
-              skip(iprot, field.type);
-            }
-            break;
-          default:
-            skip(iprot, field.type);
-        }
-        iprot.readFieldEnd();
       }
-      iprot.readStructEnd();
+
       return result.build();
     }
 
     @Override
-    public void write(DependencyLink value, TProtocol oprot) throws TException {
-      oprot.writeStructBegin(STRUCT_DESC);
+    public void write(DependencyLink value, Buffer buffer) {
+      PARENT.write(buffer);
+      writeUtf8(buffer, value.parent);
 
-      oprot.writeFieldBegin(PARENT_FIELD_DESC);
-      oprot.writeString(value.parent);
-      oprot.writeFieldEnd();
+      CHILD.write(buffer);
+      writeUtf8(buffer, value.child);
 
-      oprot.writeFieldBegin(CHILD_FIELD_DESC);
-      oprot.writeString(value.child);
-      oprot.writeFieldEnd();
+      CALL_COUNT.write(buffer);
+      buffer.writeLong(value.callCount);
 
-      oprot.writeFieldBegin(CALL_COUNT_FIELD_DESC);
-      oprot.writeI64(value.callCount);
-      oprot.writeFieldEnd();
-
-      oprot.writeFieldStop();
-      oprot.writeStructEnd();
+      buffer.writeByte(TYPE_STOP);
     }
 
     @Override
@@ -560,8 +381,7 @@ public final class ThriftCodec implements Codec {
     }
   };
 
-  static final ThriftAdapter<List<DependencyLink>> DEPENDENCY_LINKS_ADAPTER =
-      new ListAdapter<>(DEPENDENCY_LINK_ADAPTER);
+  static final ThriftAdapter<List<DependencyLink>> DEPENDENCY_LINKS_ADAPTER = new ListAdapter<>(DEPENDENCY_LINK_ADAPTER);
 
   @Override
   public List<DependencyLink> readDependencyLinks(byte[] bytes) {
@@ -573,64 +393,58 @@ public final class ThriftCodec implements Codec {
     return write(DEPENDENCY_LINKS_ADAPTER, value);
   }
 
-  private static <T> T read(ThriftReader<T> reader, byte[] bytes) {
+  static <T> T read(ThriftReader<T> reader, byte[] bytes) {
     checkArgument(bytes.length > 0, "Empty input reading %s", reader);
     try {
-      return reader.read(new TBinaryProtocol(new TMemoryInputTransport(bytes)));
-    } catch (TException | RuntimeException e) {
+      return reader.read(new Buffer().write(bytes));
+    } catch (EOFException | RuntimeException e) {
       throw exceptionReading(reader.toString(), bytes, e);
     }
   }
 
   /** Inability to encode is a programming bug. */
-  private static <T> byte[] write(ThriftWriter<T> writer, T value) {
-    BufferTransport transport = new BufferTransport();
-    TBinaryProtocol protocol = new TBinaryProtocol(transport);
+  static <T> byte[] write(ThriftWriter<T> writer, T value) {
+    Buffer buffer = new Buffer();
     try {
-      writer.write(value, protocol);
-    } catch (TException | RuntimeException e) {
+      writer.write(value, buffer);
+    } catch (RuntimeException e) {
       throw new AssertionError("Could not write " + value + " as TBinary", e);
     }
-    return transport.buffer.readByteArray();
+    return buffer.readByteArray();
   }
 
-  static <T> List<T> readList(ThriftReader<T> reader, TProtocol iprot) throws TException {
-    TList peekLength = iprot.readListBegin();
-    if (peekLength.size > 10000) { // don't allocate massive arrays
-      throw new TException(peekLength.size + " > 10000: possibly malformed thrift");
+  static <T> List<T> readList(ThriftReader<T> reader, Buffer buffer) throws EOFException {
+    byte ignoredType = buffer.readByte();
+    int length = guardLength(buffer, CONTAINER_LENGTH_LIMIT);
+    List<T> result = new ArrayList<>(length);
+    for (int i = 0; i < length; i++) {
+      result.add(reader.read(buffer));
     }
-    List<T> result = new ArrayList<>(peekLength.size);
-    for (int i = 0; i < peekLength.size; i++) {
-      result.add(reader.read(iprot));
-    }
-    iprot.readListEnd();
     return result;
   }
 
-  static <T> void writeList(ThriftWriter<T> writer, List<T> value, TProtocol oprot)
-      throws TException {
-    oprot.writeListBegin(new TList(TType.STRUCT, value.size()));
+  static <T> void writeList(ThriftWriter<T> writer, List<T> value, Buffer buffer) {
+    writeListBegin(buffer, value.size());
     for (int i = 0, length = value.size(); i < length; i++) {
-      writer.write(value.get(i), oprot);
+      writer.write(value.get(i), buffer);
     }
-    oprot.writeListEnd();
   }
 
-  private static final class ListAdapter<T> implements ThriftAdapter<List<T>> {
-    private final ThriftAdapter<T> adapter;
+  static final class ListAdapter<T> implements ThriftAdapter<List<T>> {
+    final ThriftAdapter<T> adapter;
 
     ListAdapter(ThriftAdapter<T> adapter) {
       this.adapter = adapter;
     }
 
     @Override
-    public List<T> read(TProtocol iprot) throws TException {
-      return readList(adapter, iprot);
+    public List<T> read(Buffer buffer) throws EOFException {
+      return readList(adapter, buffer);
     }
 
     @Override
-    public void write(List<T> value, TProtocol oprot) throws TException {
-      writeList(adapter, value, oprot);
+    public void write(List<T> value, Buffer buffer) {
+      writeList(adapter, value, buffer);
     }
 
     @Override
@@ -639,38 +453,114 @@ public final class ThriftCodec implements Codec {
     }
   }
 
-  static final class BufferTransport extends TTransport {
-    final Buffer buffer = new Buffer();
-
-    @Override
-    public boolean isOpen() {
-      return true;
-    }
-
-    @Override
-    public void open() {
-    }
-
-    @Override
-    public void close() {
-    }
-
-    @Override
-    public int read(byte[] buf, int off, int len) {
-      return buffer.read(buf, off, len);
-    }
-
-    @Override
-    public void write(byte[] buf, int off, int len) {
-      buffer.write(buf, off, len);
-    }
-  }
-
   static IllegalArgumentException exceptionReading(String type, byte[] bytes, Exception e) {
     String cause = e.getMessage() == null ? "Error" : e.getMessage();
-    if (e instanceof TTransportException || cause.indexOf("malformed") != -1) cause = "Malformed";
+    if (e instanceof EOFException) cause = "EOF";
+    if (e instanceof IllegalStateException) cause = "Malformed";
     String message =
         String.format("%s reading %s from TBinary: %s", cause, type, ByteString.of(bytes).base64());
     throw new IllegalArgumentException(message, e);
+  }
+
+  static final class Field {
+    final byte type;
+    final int id;
+
+    Field(byte type, int id) {
+      this.type = type;
+      this.id = id;
+    }
+
+    void write(Buffer buffer) {
+      buffer.writeByte(type);
+      buffer.writeShort(id);
+    }
+
+    static Field read(Buffer buffer) {
+      byte type = buffer.readByte();
+      return new Field(type, type == TYPE_STOP ? TYPE_STOP : buffer.readShort());
+    }
+
+    boolean equals(Field that) {
+      return this.type == that.type && this.id == that.id;
+    }
+  }
+
+  static void skip(Buffer buffer, byte type) throws EOFException {
+    skip(buffer, type, MAX_SKIP_DEPTH);
+  }
+
+  static void skip(Buffer buffer, byte type, int maxDepth) throws EOFException {
+    if (maxDepth <= 0) throw new EOFException("Maximum skip depth exceeded");
+    switch (type) {
+      case TYPE_BOOL:
+      case TYPE_BYTE:
+        buffer.skip(1);
+        break;
+      case TYPE_I16:
+        buffer.skip(2);
+        break;
+      case TYPE_I32:
+        buffer.skip(4);
+        break;
+      case TYPE_DOUBLE:
+      case TYPE_I64:
+        buffer.skip(8);
+        break;
+      case TYPE_STRING:
+        int size = guardLength(buffer, STRING_LENGTH_LIMIT);
+        buffer.skip(size);
+        break;
+      case TYPE_STRUCT:
+        while (true) {
+          Field field = Field.read(buffer);
+          if (field.type == TYPE_STOP) return;
+          skip(buffer, field.type, maxDepth - 1);
+        }
+      case TYPE_MAP:
+        byte keyType = buffer.readByte();
+        byte valueType = buffer.readByte();
+        for (int i = 0, length = guardLength(buffer, CONTAINER_LENGTH_LIMIT); i < length; i++) {
+          skip(buffer, keyType, maxDepth - 1);
+          skip(buffer, valueType, maxDepth - 1);
+        }
+        break;
+      case TYPE_SET:
+      case TYPE_LIST:
+        byte elemType = buffer.readByte();
+        for (int i = 0, length = guardLength(buffer, CONTAINER_LENGTH_LIMIT); i < length; i++) {
+          skip(buffer, elemType, maxDepth - 1);
+        }
+        break;
+      default: // types that don't need explicit skipping
+        break;
+    }
+  }
+
+  static byte[] readBytes(Buffer buffer) throws EOFException {
+    return buffer.readByteArray(guardLength(buffer, STRING_LENGTH_LIMIT));
+  }
+
+  static String readUtf8(Buffer buffer) throws EOFException {
+    return buffer.readUtf8(guardLength(buffer, STRING_LENGTH_LIMIT));
+  }
+
+  static int guardLength(Buffer buffer, int limit) {
+    int length = buffer.readInt();
+    if (length > limit) { // don't allocate massive arrays
+      throw new IllegalStateException(length + " > " + limit + ": possibly malformed thrift");
+    }
+    return length;
+  }
+
+  static void writeListBegin(Buffer buffer, int size) {
+    buffer.writeByte(TYPE_STRUCT);
+    buffer.writeInt(size);
+  }
+
+  static void writeUtf8(Buffer buffer, String string) {
+    Buffer temp = new Buffer().writeUtf8(string);
+    buffer.writeInt((int) temp.size());
+    buffer.write(temp, temp.size());
   }
 }

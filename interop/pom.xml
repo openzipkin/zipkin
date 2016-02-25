@@ -29,7 +29,9 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <zipkin-scala.version>1.33.2</zipkin-scala.version>
+    <!-- override scrooge's thrift version so we don't need to declare a twitter-specific repo -->
+    <libthrift.version>0.9.3</libthrift.version>
+    <zipkin-scala.version>1.34.0</zipkin-scala.version>
     <scalatest.version>2.2.5</scalatest.version>
   </properties>
 
@@ -49,6 +51,18 @@
       <groupId>io.zipkin</groupId>
       <artifactId>zipkin-common</artifactId>
       <version>${zipkin-scala.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>zipkin-scrooge</artifactId>
+      <version>${zipkin-scala.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.thrift</groupId>
+      <artifactId>libthrift</artifactId>
+      <version>${libthrift.version}</version>
     </dependency>
 
     <dependency>
