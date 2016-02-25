@@ -78,25 +78,25 @@ public final class CorrectForClockSkew {
   }
 
   /** If any annotation has an IP with skew associated, adjust accordingly. */
-  private static Span adjustTimestamps(Span span, ClockSkew clockSkew) {
-    Annotation[] annotations = null;
+  private static Span adjustTimestamps(Span span, ClockSkew skew) {
+    List<Annotation> annotations = null;
     for (int i = 0, length = span.annotations.size(); i < length; i++) {
       Annotation a = span.annotations.get(i);
       if (a.endpoint == null) continue;
-      if (clockSkew.endpoint.ipv4 == a.endpoint.ipv4) {
-        if (annotations == null) annotations = span.annotations.toArray(new Annotation[length]);
-        annotations[i] = new Annotation.Builder(a).timestamp(a.timestamp - clockSkew.skew).build();
+      if (skew.endpoint.ipv4 == a.endpoint.ipv4) {
+        if (annotations == null) annotations = new ArrayList<>(span.annotations);
+        annotations.set(i, new Annotation.Builder(a).timestamp(a.timestamp - skew.skew).build());
       }
     }
     if (annotations != null) {
-      return new Span.Builder(span).timestamp(annotations[0].timestamp).annotations(annotations).build();
+      return new Span.Builder(span).timestamp(annotations.get(0).timestamp).annotations(annotations).build();
     }
     // Search for a local span on the skewed endpoint
     for (int i = 0, length = span.binaryAnnotations.size(); i < length; i++) {
       BinaryAnnotation b = span.binaryAnnotations.get(i);
       if (b.endpoint == null) continue;
-      if (b.key.equals(Constants.LOCAL_COMPONENT) && clockSkew.endpoint.ipv4 == b.endpoint.ipv4) {
-        return new Span.Builder(span).timestamp(span.timestamp - clockSkew.skew).build();
+      if (b.key.equals(Constants.LOCAL_COMPONENT) && skew.endpoint.ipv4 == b.endpoint.ipv4) {
+        return new Span.Builder(span).timestamp(span.timestamp - skew.skew).build();
       }
     }
     return span;

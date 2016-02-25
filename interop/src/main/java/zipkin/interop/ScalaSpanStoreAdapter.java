@@ -13,17 +13,17 @@
  */
 package zipkin.interop;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twitter.util.Future;
 import com.twitter.zipkin.common.Span;
-import com.twitter.zipkin.json.JsonSpan;
+import com.twitter.zipkin.conversions.thrift$;
 import com.twitter.zipkin.json.ZipkinJson$;
 import com.twitter.zipkin.storage.QueryRequest;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
+import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TList;
+import org.apache.thrift.protocol.TType;
+import org.apache.thrift.transport.TMemoryBuffer;
 import scala.Tuple2;
 import scala.collection.Iterator;
 import scala.collection.JavaConversions;
@@ -40,11 +40,9 @@ import static java.util.stream.Collectors.toList;
  * Adapts {@link SpanStore} to a scala {@link com.twitter.zipkin.storage.SpanStore} in order to test
  * against its {@link com.twitter.zipkin.storage.SpanStoreSpec} for interoperability reasons.
  *
- * <p/> This implementation uses json to ensure structures are compatible.
+ * <p/> This implementation uses thrift TBinaryProtocol to ensure structures are compatible.
  */
 public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.SpanStore {
-  private static final ObjectMapper scalaCodec = ZipkinJson$.MODULE$;
-
   private final SpanStore spanStore;
 
   public ScalaSpanStoreAdapter(SpanStore spanStore) {
@@ -111,12 +109,11 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
 
   @Nullable
   private static java.util.List<Span> convert(java.util.List<zipkin.Span> input) {
-    byte[] bytes = Codec.JSON.writeSpans(input);
+    byte[] bytes = Codec.THRIFT.writeSpans(input);
     try {
-      TypeReference<java.util.List<JsonSpan>> ref = new TypeReference<java.util.List<JsonSpan>>(){};
-      java.util.List<JsonSpan> read = scalaCodec.readValue(bytes, ref);
-      return read.stream().map(JsonSpan::invert).collect(Collectors.toList());
-    } catch (IOException e) {
+      List<Span> read = thrift$.MODULE$.thriftListToSpans(bytes);
+      return JavaConversions.seqAsJavaList(read);
+    } catch (RuntimeException e) {
       e.printStackTrace();
       return null;
     }
@@ -125,9 +122,19 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
   @Nullable
   private static java.util.List<zipkin.Span> invert(Seq<Span> input) {
     try {
-      byte[] bytes = scalaCodec.writeValueAsBytes(input);
-      return Codec.JSON.readSpans(bytes);
-    } catch (JsonProcessingException e) {
+      TMemoryBuffer transport = new TMemoryBuffer(0);
+      TBinaryProtocol oproto = new TBinaryProtocol(transport);
+      oproto.writeListBegin(new TList(TType.STRUCT, input.size()));
+      Iterator<Span> iterator = input.iterator();
+      while (iterator.hasNext()) {
+        com.twitter.zipkin.thriftscala.Span thriftSpan =
+            thrift$.MODULE$.spanToThriftSpan(iterator.next()).toThrift();
+        thriftSpan.write(oproto);
+      }
+      oproto.writeListEnd();
+      byte[] bytes = transport.getArray();
+      return Codec.THRIFT.readSpans(bytes);
+    } catch (Exception e) {
       e.printStackTrace();
       return null;
     }
