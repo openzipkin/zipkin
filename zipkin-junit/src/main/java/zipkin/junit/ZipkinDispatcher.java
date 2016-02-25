@@ -42,7 +42,9 @@ final class ZipkinDispatcher extends Dispatcher {
   public MockResponse dispatch(RecordedRequest request) {
     HttpUrl url = server.url(request.getPath());
     if (request.getMethod().equals("GET")) {
-      if (url.encodedPath().equals("/api/v1/services")) {
+      if (url.encodedPath().equals("/health")) {
+        return new MockResponse().setBody("OK\n");
+      } else if (url.encodedPath().equals("/api/v1/services")) {
         return jsonResponse(JSON_CODEC.writeStrings(store.getServiceNames()));
       } else if (url.encodedPath().equals("/api/v1/spans")) {
         String serviceName = url.queryParameter("serviceName");

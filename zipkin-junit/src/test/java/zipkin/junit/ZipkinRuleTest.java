@@ -56,6 +56,16 @@ public class ZipkinRuleTest {
   }
 
   @Test
+  public void healthIsOK() throws IOException {
+    Response getResponse = client.newCall(new Request.Builder()
+        .url(zipkin.httpUrl() +"/health").build()
+    ).execute();
+
+    assertThat(getResponse.code()).isEqualTo(200);
+    assertThat(getResponse.body().string()).isEqualTo("OK\n");
+  }
+
+  @Test
   public void storeSpans_readbackHttp() throws IOException {
     // write the span to zipkin directly
     zipkin.storeSpans(asList(span));
