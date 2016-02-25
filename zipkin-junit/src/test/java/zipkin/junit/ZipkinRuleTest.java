@@ -31,6 +31,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin.Constants.SERVER_RECV;
+import static zipkin.internal.Util.gzip;
 
 public class ZipkinRuleTest {
 
@@ -124,5 +125,30 @@ public class ZipkinRuleTest {
           .url(zipkin.httpUrl() + "/api/v1/spans")
           .post(RequestBody.create(MediaType.parse("application/json"), spansInJson)).build()
       ).execute();
+  }
+
+  @Test
+  public void gzippedSpans() throws IOException {
+    byte[] spansInJson = Codec.JSON.writeSpans(asList(span));
+    byte[] gzippedJson = gzip(spansInJson);
+
+    client.newCall(new Request.Builder()
+        .url(zipkin.httpUrl() + "/api/v1/spans")
+        .addHeader("Content-Encoding", "gzip")
+        .post(RequestBody.create(MediaType.parse("application/json"), gzippedJson)).build()
+    ).execute();
+
+    assertThat(zipkin.getTraces()).containsOnly(asList(span));
+  }
+
+  @Test
+  public void gzippedSpans_invalidIs400() throws IOException {
+    Response response = client.newCall(new Request.Builder()
+        .url(zipkin.httpUrl() + "/api/v1/spans")
+        .addHeader("Content-Encoding", "gzip")
+        .post(RequestBody.create(MediaType.parse("application/json"), "hello".getBytes())).build()
+    ).execute();
+
+    assertThat(response.code()).isEqualTo(400);
   }
 }
