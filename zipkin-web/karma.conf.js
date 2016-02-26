@@ -9,8 +9,8 @@ module.exports = function(config) {
     ],
 
     preprocessors: {
-      '*test.js': ['webpack'],
-      '**/*test.js': ['webpack']
+      '*test.js': ['webpack', 'sourcemap'],
+      '**/*test.js': ['webpack', 'sourcemap']
     },
 
     client: {
@@ -20,6 +20,7 @@ module.exports = function(config) {
     browsers: ['PhantomJS'],
 
     webpack: {
+      devtool: 'inline-source-map',
       module: {
         loaders: [{
           test: /\.js$/,
@@ -50,7 +51,8 @@ module.exports = function(config) {
       require('karma-webpack'),
       require('karma-mocha'),
       require('karma-chai'),
-      require('karma-phantomjs-launcher')
+      require('karma-phantomjs-launcher'),
+      require('karma-sourcemap-loader')
     ],
 
     phantomjsLauncher: {

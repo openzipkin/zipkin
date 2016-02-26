@@ -31,7 +31,9 @@ define(
       this.after('initialize', function() {
         window.document.title = 'Zipkin - Traces';
 
-        TraceData.attachTo(document);
+        TraceData.attachTo(document, {
+          traceId: this.attr.traceId
+        });
         this.on(document, 'tracePageModelView', function(ev, modelview) {
           this.$node.html(tracetemplate(modelview));
 
@@ -48,8 +50,10 @@ define(
       });
     });
 
-    return function initializeTrace() {
-      TracePageComponent.attachTo('.content');
+    return function initializeTrace(traceId) {
+      TracePageComponent.attachTo('.content', {
+        traceId
+      });
     }
   }
 );
