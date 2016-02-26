@@ -178,7 +178,7 @@ class Handlers(queryExtractor: QueryExtractor) {
 
       val serviceDurations = groupedSpanTimestamps.map { case (n, sts) =>
         MustacheServiceDuration(n, sts.length, sts.map(_.duration).max / 1000)
-      }.toSeq
+      }.toSeq.sortWith((d1, d2) => d1.name.compareTo(d2.name) < 0)
 
       val serviceTime = for {
         name <- serviceName
@@ -214,9 +214,7 @@ class Handlers(queryExtractor: QueryExtractor) {
       for (traces <- tracesCall) yield {
         val (annotations, binaryAnnotations) = queryExtractor.getAnnotations(req)
         val data = Map(
-          "traces" -> traceSummaryToMustache(serviceName, traces),
-          "annotations" -> annotations,
-          "binaryAnnotations" -> binaryAnnotations
+          "traces" -> traceSummaryToMustache(serviceName, traces)
         )
         JsonRenderer(data)
       }
