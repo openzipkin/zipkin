@@ -15,42 +15,24 @@ package zipkin.internal;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.List;
 import org.junit.Test;
-import zipkin.Codec;
-import zipkin.CodecTest;
 import zipkin.DependencyLink;
-import zipkin.Span;
-import zipkin.TestObjects;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public final class ThriftCodecTest extends CodecTest {
-  private final ThriftCodec codec = new ThriftCodec();
-
-  @Override
-  protected ThriftCodec codec() {
-    return codec;
-  }
-
+public final class DependenciesTest {
   @Test
-  public void readSpanFromByteBuffer() throws IOException {
-    for (Span span : TestObjects.TRACE) {
-      byte[] bytes = codec().writeSpan(span);
-      assertThat(codec().readSpan(ByteBuffer.wrap(bytes)))
-          .isEqualTo(span);
-    }
-  }
-
-  @Test
-  public void readDependencyLinksFromByteBuffer() throws IOException {
-    List<DependencyLink> links = asList(
+  public void dependenciesRoundTrip() throws IOException {
+    Dependencies dependencies = Dependencies.create(1L, 2L, asList(
         DependencyLink.create("foo", "bar", 2),
         DependencyLink.create("bar", "baz", 3)
-    );
-    byte[] bytes = codec().writeDependencyLinks(links);
-    assertThat(codec().readDependencyLinks(ByteBuffer.wrap(bytes)))
-        .isEqualTo(links);
+    ));
+
+    ByteBuffer bytes = dependencies.toThrift();
+    assertThat(Dependencies.fromThrift(bytes))
+        .isEqualTo(dependencies);
+
+    assertThat(bytes.remaining()).isZero();
   }
 }

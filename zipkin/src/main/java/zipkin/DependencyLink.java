@@ -29,7 +29,7 @@ public final class DependencyLink {
   /** child service name (callee) */
   public final String child;
 
-  /** calls made during the duration (in microseconds) of this link */
+  /** calls made during the duration (in milliseconds) of this link */
   public final long callCount;
 
   DependencyLink(String parent, String child, long callCount) {
