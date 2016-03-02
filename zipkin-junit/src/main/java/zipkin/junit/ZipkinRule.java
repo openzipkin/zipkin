@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -44,6 +45,7 @@ public final class ZipkinRule implements TestRule {
   private final InMemorySpanStore store = new InMemorySpanStore();
   private final MockWebServer server = new MockWebServer();
   private final BlockingQueue<MockResponse> failureQueue = new LinkedBlockingQueue<>();
+  private final AtomicInteger receivedSpanBytes = new AtomicInteger();
 
   public ZipkinRule() {
     Dispatcher dispatcher = new Dispatcher() {
@@ -54,6 +56,9 @@ public final class ZipkinRule implements TestRule {
         MockResponse maybeFailure = failureQueue.poll();
         if (maybeFailure != null) return maybeFailure;
         MockResponse result = successDispatch.dispatch(request);
+        if (request.getMethod().equals("POST")) {
+          receivedSpanBytes.addAndGet((int) request.getBodySize());
+        }
         String encoding = request.getHeaders().get("Accept-Encoding");
         if (result.getBody() != null && encoding != null && encoding.contains("gzip")) {
           try {
@@ -88,6 +93,22 @@ public final class ZipkinRule implements TestRule {
   /** Use this to see how many requests you've sent to any zipkin http endpoint. */
   public int httpRequestCount() {
     return server.getRequestCount();
+  }
+
+  /**
+   * Returns the count of spans decoded by the server. This number may be higher than unique span id
+   * count: it corresponds directly to what's reported by instrumentation.
+   */
+  public int receivedSpanCount() {
+    return store.acceptedSpanCount();
+  }
+
+  /**
+   * Returns the amount of bytes received by the server. This number is affected by compression,
+   * thrift vs json, and if spans are sent in multiple waves, repeating data.
+   */
+  public int receivedSpanBytes() {
+    return receivedSpanBytes.get();
   }
 
   /**

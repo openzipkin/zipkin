@@ -90,6 +90,19 @@ public class ZipkinRuleTest {
     assertThat(zipkin.httpRequestCount()).isEqualTo(2);
   }
 
+  /**
+   * Normally, a span can be reported twice: for client and server. However, there are bugs that
+   * happened where several updates went to the same span id. {@link ZipkinRule#receivedSpanCount}
+   * can be used to help ensure a span isn't reported more times than expected.
+   */
+  @Test
+  public void receivedSpanCountIncrements() throws IOException {
+    postSpans(span);
+    postSpans(span);
+
+    assertThat(zipkin.receivedSpanCount()).isEqualTo(2);
+  }
+
   @Test
   public void postSpans_disconnectDuringBody() throws IOException {
     zipkin.enqueueFailure(HttpFailure.disconnectDuringBody());
@@ -122,14 +135,6 @@ public class ZipkinRuleTest {
     assertThat(postSpans(span).code()).isEqualTo(202);
   }
 
-  private Response postSpans(Span ... spans) throws IOException {
-    byte[] spansInJson = Codec.JSON.writeSpans(asList(spans));
-    return client.newCall(new Request.Builder()
-          .url(zipkin.httpUrl() + "/api/v1/spans")
-          .post(RequestBody.create(MediaType.parse("application/json"), spansInJson)).build()
-      ).execute();
-  }
-
   @Test
   public void gzippedSpans() throws IOException {
     byte[] spansInJson = Codec.JSON.writeSpans(asList(span));
@@ -142,6 +147,7 @@ public class ZipkinRuleTest {
     ).execute();
 
     assertThat(zipkin.getTraces()).containsOnly(asList(span));
+    assertThat(zipkin.receivedSpanBytes()).isEqualTo(gzippedJson.length);
   }
 
   @Test
@@ -176,5 +182,13 @@ public class ZipkinRuleTest {
     byte[] unzipped = Util.gunzip(response.body().bytes());
 
     assertThat(Codec.JSON.readSpans(unzipped)).isEqualTo(trace);
+  }
+
+  private Response postSpans(Span ... spans) throws IOException {
+    byte[] spansInJson = Codec.JSON.writeSpans(asList(spans));
+    return client.newCall(new Request.Builder()
+        .url(zipkin.httpUrl() + "/api/v1/spans")
+        .post(RequestBody.create(MediaType.parse("application/json"), spansInJson)).build()
+    ).execute();
   }
 }

@@ -41,6 +41,7 @@ public final class InMemorySpanStore implements SpanStore {
   private final Multimap<Long, Span> traceIdToSpans = new LinkedListMultimap<>();
   private final Multimap<String, Long> serviceToTraceIds = new LinkedHashSetMultimap<>();
   private final Multimap<String, String> serviceToSpanNames = new LinkedHashSetMultimap<>();
+  private int acceptedSpanCount;
 
   @Override
   public synchronized void accept(Iterator<Span> spans) {
@@ -49,12 +50,17 @@ public final class InMemorySpanStore implements SpanStore {
       long traceId = span.traceId;
       String spanName = span.name;
       traceIdToSpans.put(span.traceId, span);
+      acceptedSpanCount++;
 
       for (String serviceName : serviceNames(span)) {
         serviceToTraceIds.put(serviceName, traceId);
         serviceToSpanNames.put(serviceName, spanName);
       }
     }
+  }
+
+  public synchronized int acceptedSpanCount() {
+    return acceptedSpanCount;
   }
 
   public synchronized List<Long> traceIds() {
