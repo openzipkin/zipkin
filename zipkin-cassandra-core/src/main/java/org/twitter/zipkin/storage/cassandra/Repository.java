@@ -253,9 +253,9 @@ public final class Repository implements AutoCloseable {
 
         try {
             if (0 == timestamp && metadata.get("traces.compaction.class").contains("DateTieredCompactionStrategy")) {
-                LOG.warn("span with no first or last timestamp. "
-                        + "if this happens a lot consider switching back to SizeTieredCompactionStrategy for "
-                        + KEYSPACE + ".traces");
+                LOG.warn("Span {} in trace {} had no timestamp. "
+                        + "If this happens a lot consider switching back to SizeTieredCompactionStrategy for "
+                        + "{}.traces", spanName, traceId, KEYSPACE);
             }
 
             BoundStatement bound = insertSpan.bind()
