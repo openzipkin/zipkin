@@ -409,6 +409,48 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     adjusted(2).duration.get should be(skewed(2).duration.get)
   }
 
+  /**
+   * This test shows that regardless of whether span.timestamp and duration are set directly or
+   * derived from annotations, the client wins vs the server. This is important because the client
+   * holds the critical path of a shared span.
+   */
+  @Test def clientTimestampAndDurationWinInSharedSpan() {
+    val client = Some(Endpoint(192 << 24 | 168 << 16 | 1, 8080, "client"))
+    val server = Some(Endpoint(192 << 24 | 168 << 16 | 2, 8080, "server"))
+
+    val clientTimestamp = (today + 100) * 1000
+    val clientDuration = 35 * 1000
+
+    // both client and server set span.timestamp, duration
+    val clientView = Span(1, "direct", 666, None, Some(clientTimestamp), Some(clientDuration), List(
+      Annotation((today + 100) * 1000, Constants.ClientSend, client),
+      Annotation((today + 135) * 1000, Constants.ClientRecv, client)
+    ).sorted)
+    val serverView = Span(1, "direct", 666, None, Some((today + 105) * 1000), Some(25 * 1000), List(
+      Annotation((today + 105) * 1000, Constants.ServerRecv, server),
+      Annotation((today + 130) * 1000, Constants.ServerSend, server)
+    ).sorted)
+
+    // neither client, nor server set span.timestamp, duration
+    val clientViewDerived = Span(1, "derived", 666, None, None, None, List(
+      Annotation(clientTimestamp, Constants.ClientSend, client),
+      Annotation(clientTimestamp + clientDuration, Constants.ClientRecv, client)
+    ).sorted)
+    val serverViewDerived = Span(1, "derived", 666, None, None, None, List(
+      Annotation((today + 105) * 1000, Constants.ServerRecv, server),
+      Annotation((today + 130) * 1000, Constants.ServerSend, server)
+    ).sorted)
+
+
+    result(store(Seq(serverView, serverViewDerived))) // server span hits the collection tier first
+    result(store(Seq(clientView, clientViewDerived))) // intentionally different collection event
+
+    result(store.getTracesByIds(Seq(1)))(0).foreach(sharedSpan => {
+      sharedSpan.timestamp.get should be(clientTimestamp)
+      sharedSpan.duration.get should be(clientDuration)
+    })
+  }
+
   // client duration is authoritative when present
   private[this] def clientDuration(span: Span) = {
     val clientAnnotations = span.annotations.filter(_.value.startsWith("c")).sorted
