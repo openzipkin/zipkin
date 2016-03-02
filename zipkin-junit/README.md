@@ -2,6 +2,10 @@
 
 This contains `ZipkinRule`, a JUnit rule to spin-up a Zipkin server during tests.
 
+ZipkinRule aims to emulate a full-featured server. For example, it presents the
+entire [Zipkin Api](http://openzipkin.github.io/zipkin-api/#/), and supports
+features like gzip compression.
+
 Usage
 ------
 
@@ -44,3 +48,12 @@ public void doesntAttemptToRetryOn400() throws IOException {
   assertThat(zipkin.httpRequestCount()).isEqualTo(1);
 }
 ```
+
+Besides `httpRequestCount()`, there are two other counters that can
+help you assert instrumentation is doing what you think:
+
+* `receivedSpanCount()` - How many spans the server received.
+* `receivedSpanBytes()` - The cumulative bytes the server received.
+
+These counters can validate aspects such as compression or that you are
+grouping spans by id before reporting them to the server.
