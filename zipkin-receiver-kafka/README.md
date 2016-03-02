@@ -1,5 +1,5 @@
 ## Kafka Receiver
-TODO: write me and include the flow and OSS instrumentation that logs spans to kafka.
+This receiver polls a Kafka topic for messages that contain TBinaryProtocol big-endian encoded lists of spans.
 
 ## Service Configuration
 
@@ -19,6 +19,25 @@ $ KAFKA_ZOOKEEPER=127.0.0.1:2181 bin/collector
 # or if zipkin isn't the right topic name
 $ KAFKA_ZOOKEEPER=127.0.0.1:2181 KAFKA_TOPIC=notzipkin bin/collector
 ```
+
+### Encoding spans into Kafka messages
+
+The message's binary data includes a list header followed by N spans serialized in TBinaryProtocol
+
+```
+write_byte(12) // type of the list elements: 12 == struct
+write_i32(count) // count of spans that will follow
+for (int i = 0; i < count; i++) {
+  writeTBinaryProtocol(spans(i))
+}
+```
+
+If using [zipkin-java](https://github.com/openzipkin/zipkin-java), `Codec.THRIFT.writeSpans(spans)`
+implements the above.
+
+#### Legacy encoding
+Versions before 1.35 accepted a single span per message, as opposed to a list per message. This
+practice is deprecated, but still supported.
 
 ### Creating a custom Kafka Receiver process
 
