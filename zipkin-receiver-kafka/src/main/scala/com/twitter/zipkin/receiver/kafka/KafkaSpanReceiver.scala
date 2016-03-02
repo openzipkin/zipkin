@@ -50,7 +50,7 @@ trait KafkaSpanReceiverFactory { self: App =>
     process: Seq[ThriftSpan] => Future[Unit],
     stats: StatsReceiver = DefaultStatsReceiver.scope("KafkaSpanReceiver"),
     keyDecoder: Decoder[T] = KafkaProcessor.defaultKeyDecoder,
-    valueDecoder: KafkaProcessor.KafkaDecoder = new SpanCodec()
+    valueDecoder: KafkaProcessor.KafkaDecoder = new SpanDecoder()
   ): SpanReceiver = new SpanReceiver {
 
 
