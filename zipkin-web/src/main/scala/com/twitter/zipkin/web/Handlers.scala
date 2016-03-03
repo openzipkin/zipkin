@@ -15,6 +15,8 @@ import com.twitter.conversions.time._
 import org.jboss.netty.handler.codec.http.QueryStringEncoder
 import java.io.InputStream
 
+import sun.net.www.http.HttpClient
+
 import scala.annotation.tailrec
 
 class Handlers(queryExtractor: QueryExtractor) {
@@ -259,6 +261,8 @@ class Handlers(queryExtractor: QueryExtractor) {
     val spanDepths = TraceSummary.toSpanDepths(trace)
     val spanMap = getIdToSpanMap(trace)
 
+    val byParentId = trace.filter(_.parentId.isDefined).groupBy(_.parentId.get)
+
     val spans = for {
       rootSpan <- getRootSpans(trace)
       span <- SpanTreeEntry.create(rootSpan, trace).toList
@@ -291,7 +295,7 @@ class Handlers(queryExtractor: QueryExtractor) {
         "width" -> (if (width < 0.1) 0.1 else width),
         "depth" -> (depth + 1) * 5,
         "depthClass" -> (depth - 1) % 6,
-        "children" -> spanMap.get(span.id).map(s => SpanId(s.id).toString).mkString(","),
+        "children" -> byParentId.getOrElse(span.id, Nil).map(s => SpanId(s.id).toString).mkString(","),
         "annotations" -> span.annotations.map { a =>
           Map(
             "isCore" -> ZConstants.CoreAnnotations.contains(a.value),

@@ -1,34 +1,7 @@
 import _ from 'lodash';
 import moment from 'moment';
 
-const CLIENT_SEND = 'cs';
-const CLIENT_SEND_FRAGMENT = 'csf';
-const CLIENT_RECEIVE = 'cr';
-const CLIENT_RECEIVE_FRAGMENT = 'crf';
-const SERVER_SEND = 'ss';
-const SERVER_SEND_FRAGMENT = 'ssf';
-const SERVER_RECEIVE = 'sr';
-const SERVER_RECEIVE_FRAGMENT = 'srf';
-const SERVER_ADDR = 'sa';
-const CLIENT_ADDR = 'ca';
-const LOCAL_COMPONENT = 'lc';
-const CORE_CLIENT = [CLIENT_RECEIVE, CLIENT_RECEIVE_FRAGMENT, CLIENT_SEND, CLIENT_SEND_FRAGMENT];
-const CORE_SERVER = [SERVER_RECEIVE, SERVER_RECEIVE_FRAGMENT, SERVER_SEND, SERVER_SEND_FRAGMENT];
-export const Constants = {
-  CLIENT_SEND,
-  CLIENT_SEND_FRAGMENT,
-  CLIENT_RECEIVE,
-  CLIENT_RECEIVE_FRAGMENT,
-  SERVER_SEND,
-  SERVER_SEND_FRAGMENT,
-  SERVER_RECEIVE,
-  SERVER_RECEIVE_FRAGMENT,
-  SERVER_ADDR,
-  CLIENT_ADDR,
-  CORE_CLIENT,
-  CORE_SERVER,
-  LOCAL_COMPONENT
-};
+import {Constants} from './traceConstants';
 
 function endpointsForSpan(span) {
   return _.union(
@@ -38,7 +11,7 @@ function endpointsForSpan(span) {
 }
 
 // What's the total duration of the spans in this trace?
-function traceDuration(spans) {
+export function traceDuration(spans) {
   // turns (timestamp, timestamp + duration) into an ordered list
   const timestamps = _(spans).flatMap(({timestamp, duration}) => timestamp ?
     (duration ?
@@ -58,7 +31,7 @@ function traceDuration(spans) {
   }
 }
 
-function getServiceNames(span) {
+export function getServiceNames(span) {
   return _(endpointsForSpan(span)).uniqWith(endpointEquals).map((ep) => ep.serviceName).filter((name) => name != null && name != '').value();
 }
 
@@ -152,6 +125,30 @@ function formatDate(timestamp, utc) {
 
 }
 
+export function getGroupedTimestamps(traceSummary) {
+  return _(traceSummary.spanTimestamps).groupBy((sts) => sts.name).value();
+}
+
+export function getServiceDurations(groupedTimestamps) {
+  return _(groupedTimestamps).toPairs().map(([name, sts]) => ({
+    name,
+    count: sts.length,
+    max: parseInt(Math.max(...sts.map(t => t.duration)) / 1000)
+  })).sortBy('name').value();
+}
+
+export function mkDurationStr(duration) {
+  if (duration === 0) {
+    return '';
+  } else if (duration < 1000) {
+    return duration + 'μ';
+  } else if (duration < 1000000) {
+    return (duration / 1000).toFixed(3) + 'ms';
+  } else {
+    return (duration / 1000000).toFixed(3) + 's';
+  }
+}
+
 export function traceSummariesToMustache(serviceName = null, traceSummaries, utc = false) {
   if (traceSummaries.length === 0) {
     return [];
@@ -160,12 +157,8 @@ export function traceSummariesToMustache(serviceName = null, traceSummaries, utc
 
     return traceSummaries.map((t) => {
       const duration = t.duration / 1000;
-      const groupedTimestamps = _(t.spanTimestamps).groupBy((sts) => sts.name).value();
-      const serviceDurations = _(groupedTimestamps).toPairs().map(([name, sts]) => ({
-        name,
-        count: sts.length,
-        max: parseInt(Math.max(...sts.map(t => t.duration)) / 1000)
-      })).sortBy('name').value();
+      const groupedTimestamps = getGroupedTimestamps(t);
+      const serviceDurations = getServiceDurations(groupedTimestamps);
 
       let serviceTime;
       if (!serviceName || !groupedTimestamps[serviceName]) {
@@ -175,7 +168,7 @@ export function traceSummariesToMustache(serviceName = null, traceSummaries, utc
       }
 
       const startTs = formatDate(t.timestamp, utc);
-      const durationStr = (t.duration / 1000).toFixed(3) + 'ms';
+      const durationStr = mkDurationStr(t.duration);
       const servicePercentage = parseInt(parseFloat(serviceTime) / parseFloat(t.duration) * 100);
       const spanCount = _(groupedTimestamps).values().sumBy((sts) => sts.length);
       const width = parseInt(parseFloat(duration) / parseFloat(maxDuration) * 100);

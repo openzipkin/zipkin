@@ -1,0 +1,94 @@
+import {Constants} from '../../js/component_ui/traceConstants';
+import traceToMustache, {getRootSpans} from '../../js/component_ui/traceToMustache';
+import {endpoint, annotation, span} from './traceTestHelpers';
+
+const ep1 = endpoint(123, 123, 'service1');
+const ep2 = endpoint(456, 456, 'service2');
+const ep3 = endpoint(666, 666, 'service2');
+const ep4 = endpoint(777, 777, 'service3');
+const ep5 = endpoint(888, 888, 'service3');
+
+const annotations1 = [
+  annotation(100, Constants.CLIENT_SEND, ep1),
+  annotation(150, Constants.CLIENT_RECEIVE, ep1)
+];
+const annotations2 = [
+  annotation(200, Constants.CLIENT_SEND, ep2),
+  annotation(250, Constants.CLIENT_RECEIVE, ep2)
+];
+const annotations3 = [
+  annotation(300, Constants.CLIENT_SEND, ep2),
+  annotation(350, Constants.CLIENT_RECEIVE, ep3)
+];
+const annotations4 = [
+  annotation(400, Constants.CLIENT_SEND, ep4),
+  annotation(500, Constants.CLIENT_RECEIVE, ep5)
+];
+
+const span1Id = '666';
+const span2Id = '777';
+const span3Id = '888';
+const span4Id = '999';
+
+const span1 = span(12345, 'methodcall1', span1Id, null, 100, 50, annotations1);
+const span2 = span(12345, 'methodcall2', span2Id, span1Id, 200, 50, annotations2);
+const span3 = span(12345, 'methodcall2', span3Id, span2Id, 300, 50, annotations3);
+const span4 = span(12345, 'methodcall2', span4Id, span3Id, 400, 100, annotations4);
+
+const trace = [span1, span2, span3, span4];
+
+describe('traceToMustache', () => {
+  it('should format duration', () => {
+    const modelview = traceToMustache(trace);
+    modelview.duration.should.equal('400μ');
+  });
+
+  it('should show the number of services', () => {
+    const modelview = traceToMustache(trace);
+    modelview.services.should.equal(3);
+  });
+
+  it('should show service counts', () => {
+    const modelview = traceToMustache(trace);
+    modelview.serviceCounts.should.eql([{
+      name: 'service1',
+      count: 1,
+      max: 0
+    }, {
+      name: 'service2',
+      count: 3,
+      max: 0
+    }, {
+      name: 'service3',
+      count: 2,
+      max: 0
+    }]);
+  });
+});
+
+describe('get root spans', () => {
+  it('should find root spans in a trace', () => {
+    const trace = [{
+      parentId: null, // root span (no parent)
+      id: 1
+    }, {
+      parentId: 1,
+      id: 2
+    }, {
+      parentId: 3, // root span (no parent with this id)
+      id: 4
+    }, {
+      parentId: 4,
+      id: 5
+    }];
+
+    const rootSpans = getRootSpans(trace);
+    rootSpans.should.eql([{
+      parentId: null,
+      id: 1
+    }, {
+      parentId: 3,
+      id: 4
+    }]);
+  });
+});

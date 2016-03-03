@@ -2,7 +2,9 @@ import {component} from 'flight';
 import $ from 'jquery';
 import queryString from 'query-string';
 import chai from 'chai';
+import shallowDeepAlmostEqual from 'chai-shallow-deep-almost-equal';
 import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSummary'
+chai.use(shallowDeepAlmostEqual);
 
 export const DefaultData = component(function defaultData() {
   function verifyTraceToMustacheTransformation(modelviewJs) {
@@ -11,9 +13,9 @@ export const DefaultData = component(function defaultData() {
       dataType: "json",
       context: this,
       success: (modelviewScala) => {
-        chai.config.truncateThreshold = 0;
         console.log('Comparing Scala output and JavaScript output:');
-        chai.expect(modelviewJs.traces).to.deep.equal(modelviewScala.traces);
+        chai.expect(modelviewJs.traces).to.shallowDeepAlmostEqual(modelviewScala.traces);
+        chai.expect(modelviewScala.traces).to.shallowDeepAlmostEqual(modelviewJs.traces);
         console.log('Success: The Scala-transformed results and JavaScript-transformed results are equal.');
       }
     });

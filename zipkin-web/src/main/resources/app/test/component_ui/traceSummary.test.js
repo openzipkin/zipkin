@@ -3,32 +3,15 @@ import {
   traceSummary,
   getServiceName,
   traceSummariesToMustache,
-  Constants
+  Constants,
+  mkDurationStr
 } from '../../js/component_ui/traceSummary';
+import {Constants} from '../../js/component_ui/traceConstants';
+import {endpoint, annotation, span} from './traceTestHelpers';
 
 chai.config.truncateThreshold = 0;
 
-function endpoint(ipv4, port, serviceName) {
-  return {ipv4, port, serviceName};
-}
 
-function annotation(timestamp, value, endpoint) {
-  return {timestamp, value, endpoint};
-}
-
-function span(traceId, name, id, parentId = null, timestamp = null, duration = null, annotations = [], binaryAnnotations = [], debug = false) {
-  return {
-    traceId,
-    name,
-    id,
-    parentId,
-    timestamp,
-    duration,
-    annotations,
-    binaryAnnotations,
-    debug
-  };
-}
 
 const ep1 = endpoint(123, 123, 'service1');
 const ep2 = endpoint(456, 456, 'service2');
@@ -231,5 +214,23 @@ describe('traceSummariesToMustache', () => {
   it('should pass on timestamp', () => {
     const model = traceSummariesToMustache(null, [summary]);
     model[0].timestamp.should.equal(summary.timestamp);
+  });
+});
+
+describe('mkDurationStr', () => {
+  it('should return empty string on zero duration', () => {
+    mkDurationStr(0).should.equal('');
+  });
+
+  it('should format microseconds', () => {
+    mkDurationStr(3).should.equal('3μ');
+  });
+
+  it('should format ms', () => {
+    mkDurationStr(1500).should.equal('1.500ms');
+  });
+
+  it('should format seconds', () => {
+    mkDurationStr(2534999).should.equal('2.535s');
   });
 });
