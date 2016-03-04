@@ -3,7 +3,6 @@ import {
   traceSummary,
   getServiceName,
   traceSummariesToMustache,
-  Constants,
   mkDurationStr
 } from '../../js/component_ui/traceSummary';
 import {Constants} from '../../js/component_ui/traceConstants';
