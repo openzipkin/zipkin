@@ -15,8 +15,6 @@ import com.twitter.conversions.time._
 import org.jboss.netty.handler.codec.http.QueryStringEncoder
 import java.io.InputStream
 
-import sun.net.www.http.HttpClient
-
 import scala.annotation.tailrec
 
 class Handlers(queryExtractor: QueryExtractor) {
