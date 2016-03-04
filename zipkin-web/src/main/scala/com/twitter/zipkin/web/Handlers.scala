@@ -260,6 +260,7 @@ class Handlers(queryExtractor: QueryExtractor) {
     val traceDuration = Trace.duration(trace).getOrElse(0L)
     val spanDepths = TraceSummary.toSpanDepths(trace)
     val spanMap = getIdToSpanMap(trace)
+    val byParentId = trace.filter(_.parentId.isDefined).groupBy(_.parentId.get)
 
     val spans = for {
       rootSpan <- getRootSpans(trace)
@@ -293,7 +294,7 @@ class Handlers(queryExtractor: QueryExtractor) {
         "width" -> (if (width < 0.1) 0.1 else width),
         "depth" -> (depth + 1) * 5,
         "depthClass" -> (depth - 1) % 6,
-        "children" -> spanMap.get(span.id).map(s => SpanId(s.id).toString).mkString(","),
+        "children" -> byParentId.getOrElse(span.id, Nil).map(s => SpanId(s.id).toString).mkString(","),
         "annotations" -> span.annotations.map { a =>
           Map(
             "isCore" -> ZConstants.CoreAnnotations.contains(a.value),
