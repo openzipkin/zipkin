@@ -75,6 +75,10 @@ function toSpanDepths(spans) {
   return treeDepths(entry, 1);
 }
 
+export function formatEndpoint({ipv4, port = 0}) {
+  return ipv4 + ':' + port;
+}
+
 export default function traceToMustache(trace) {
   const summary = traceSummary(trace);
   const duration = mkDurationStr(summary.duration);
@@ -89,11 +93,6 @@ export default function traceToMustache(trace) {
 
   const depth = Math.max(..._.values(spanDepths));
 
-
-  function mkEndpoint({ipv4, port}) {
-    return ipv4 + ':' + port;
-  }
-
   const spans = _(getRootSpans(trace)).flatMap(
     (rootSpan) => childrenToList(createSpanTreeEntry(rootSpan, trace))).map((span) => {
     const spanStartTs = span.timestamp || traceTimestamp;
@@ -104,7 +103,7 @@ export default function traceToMustache(trace) {
       if (Constants.CORE_ADDRESS.indexOf(a.key) !== -1) {
         return {
           ...a,
-          value: mkEndpoint(a.endpoint)
+          value: formatEndpoint(a.endpoint)
         };
       } else if (ConstantNames[a.key]) {
         return {
@@ -121,7 +120,7 @@ export default function traceToMustache(trace) {
       binaryAnnotations.push({
         ...localComponentAnnotation,
         key: ConstantNames[Constants.LOCAL_COMPONENT],
-        value: mkEndpoint(localComponentAnnotation.endpoint)
+        value: formatEndpoint(localComponentAnnotation.endpoint)
       });
     }
 
@@ -141,7 +140,7 @@ export default function traceToMustache(trace) {
       annotations: span.annotations.map((a) => ({
         isCore: Constants.CORE_ANNOTATIONS.indexOf(a.value) !== -1,
         left: (a.timestamp - spanStartTs) / span.duration * 100,
-        endpoint: a.endpoint ? mkEndpoint(a.endpoint) : null,
+        endpoint: a.endpoint ? formatEndpoint(a.endpoint) : null,
         value: ConstantNames[a.value] || a.value,
         timestamp: a.timestamp,
         relativeTime: mkDurationStr(a.timestamp - traceTimestamp),

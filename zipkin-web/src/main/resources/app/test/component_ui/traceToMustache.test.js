@@ -1,5 +1,9 @@
 import {Constants} from '../../js/component_ui/traceConstants';
-import traceToMustache, {getRootSpans} from '../../js/component_ui/traceToMustache';
+import traceToMustache,
+  {
+    getRootSpans,
+    formatEndpoint
+  } from '../../js/component_ui/traceToMustache';
 import {endpoint, annotation, span} from './traceTestHelpers';
 
 const ep1 = endpoint(123, 123, 'service1');
@@ -90,5 +94,15 @@ describe('get root spans', () => {
       parentId: 3,
       id: 4
     }]);
+  });
+});
+
+describe('formatEndpoint', () => {
+  it('should format ip and port', () => {
+    formatEndpoint({ipv4: '150.151.152.153', port: 5000}).should.equal('150.151.152.153:5000');
+  });
+
+  it('should use 0 as default port', () => {
+    formatEndpoint({ipv4: '150.151.152.153'}).should.equal('150.151.152.153:0');
   });
 });
