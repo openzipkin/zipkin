@@ -60,11 +60,11 @@ describe('traceToMustache', () => {
       max: 0
     }, {
       name: 'service2',
-      count: 3,
+      count: 2,
       max: 0
     }, {
       name: 'service3',
-      count: 2,
+      count: 1,
       max: 0
     }]);
   });

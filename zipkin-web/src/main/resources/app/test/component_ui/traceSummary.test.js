@@ -232,4 +232,43 @@ describe('mkDurationStr', () => {
   it('should format seconds', () => {
     mkDurationStr(2534999).should.equal('2.535s');
   });
+
+  it('should get correct spanCount', () => {
+    const spans = [{
+      traceId: 'd397ce70f5192a8b',
+      name: 'get',
+      id: 'd397ce70f5192a8b',
+      timestamp: 1457160374149000,
+      duration: 2000,
+      annotations: [{
+        timestamp: 1457160374149000,
+        value: 'sr',
+        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
+      },{
+        timestamp: 1457160374151000,
+        value: 'ss',
+        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
+      }],
+      binaryAnnotations: [{
+        key: 'http.path',
+        value: '/api/v1/services',
+        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1'}
+      },{
+        key: 'srv/finagle.version',
+        value: '6.33.0',
+        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1'}
+      },{
+        key: 'sa',
+        value: true,
+        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
+      },{
+        key: 'ca',
+        value: true,
+        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 56828}
+      }]
+    }];
+    const summary = traceSummary(spans);
+    const model = traceSummariesToMustache(null, [summary])[0];
+    model.spanCount.should.equal(1);
+  })
 });

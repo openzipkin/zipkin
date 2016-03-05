@@ -32,7 +32,7 @@ export function traceDuration(spans) {
 }
 
 export function getServiceNames(span) {
-  return _(endpointsForSpan(span)).uniqWith(endpointEquals).map((ep) => ep.serviceName).filter((name) => name != null && name != '').value();
+  return _(endpointsForSpan(span)).map((ep) => ep.serviceName).filter((name) => name != null && name != '').uniq().value();
 }
 
 export function getServiceName(span) {
