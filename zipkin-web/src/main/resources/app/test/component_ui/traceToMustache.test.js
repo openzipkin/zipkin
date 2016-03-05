@@ -4,6 +4,7 @@ import traceToMustache,
     getRootSpans,
     formatEndpoint
   } from '../../js/component_ui/traceToMustache';
+import {traceSummary} from '../../js/component_ui/traceSummary';
 import {endpoint, annotation, span} from './traceTestHelpers';
 
 const ep1 = endpoint(123, 123, 'service1');
@@ -94,6 +95,34 @@ describe('get root spans', () => {
       parentId: 3,
       id: 4
     }]);
+  });
+
+  it('should show human-readable annotation name', () => {
+    const trace = [{
+      traceId:  '2480ccca8df0fca5',
+      name: 'get',
+      id: '2480ccca8df0fca5',
+      timestamp: 1457186385375000,
+      duration: 333000,
+      annotations: [{
+        timestamp: 1457186385375000,
+        value: 'sr',
+        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
+      },{
+        timestamp: 1457186385708000,
+        value: 'ss',
+        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
+      }],
+      binaryAnnotations: [{
+        key: 'sa',
+        value: true,
+        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
+      }]
+    }];
+    const {spans: [span]} = traceToMustache(trace);
+    span.annotations[0].value.should.equal('Server Receive');
+    span.annotations[1].value.should.equal('Server Send');
+    span.binaryAnnotations[0].key.should.equal('Server Address');
   });
 });
 

@@ -103,6 +103,7 @@ export default function traceToMustache(trace) {
       if (Constants.CORE_ADDRESS.indexOf(a.key) !== -1) {
         return {
           ...a,
+          key: ConstantNames[a.key],
           value: formatEndpoint(a.endpoint)
         };
       } else if (ConstantNames[a.key]) {

@@ -39,6 +39,7 @@
     "karma-chai": "^0.1.0",
     "karma-mocha": "^0.2.2",
     "karma-phantomjs-launcher": "^1.0.0",
+    "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^1.7.0",
     "mocha": "^2.4.5",
     "mustache-loader": "^0.3.1",

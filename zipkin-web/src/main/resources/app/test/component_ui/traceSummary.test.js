@@ -270,5 +270,5 @@ describe('mkDurationStr', () => {
     const summary = traceSummary(spans);
     const model = traceSummariesToMustache(null, [summary])[0];
     model.spanCount.should.equal(1);
-  })
+  });
 });
