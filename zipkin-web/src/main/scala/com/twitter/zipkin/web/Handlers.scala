@@ -178,7 +178,7 @@ class Handlers(queryExtractor: QueryExtractor) {
 
       val serviceDurations = groupedSpanTimestamps.map { case (n, sts) =>
         MustacheServiceDuration(n, sts.length, sts.map(_.duration).max / 1000)
-      }.toSeq
+      }.toSeq.sortWith((d1, d2) => d1.name.compareTo(d2.name) < 0)
 
       val serviceTime = for {
         name <- serviceName
@@ -196,7 +196,7 @@ class Handlers(queryExtractor: QueryExtractor) {
         serviceDurations,
         ((duration.toFloat / maxDuration) * 100).toInt
       )
-    }.sortBy(_.duration).reverse
+    }.sortBy(t => (t.duration, t.traceId)).reverse
   }
 
   def handleIndex(client: HttpClient): Service[Request, Renderer] =
@@ -214,9 +214,7 @@ class Handlers(queryExtractor: QueryExtractor) {
       for (traces <- tracesCall) yield {
         val (annotations, binaryAnnotations) = queryExtractor.getAnnotations(req)
         val data = Map(
-          "traces" -> traceSummaryToMustache(serviceName, traces),
-          "annotations" -> annotations,
-          "binaryAnnotations" -> binaryAnnotations
+          "traces" -> traceSummaryToMustache(serviceName, traces)
         )
         JsonRenderer(data)
       }
@@ -260,6 +258,8 @@ class Handlers(queryExtractor: QueryExtractor) {
     val traceDuration = Trace.duration(trace).getOrElse(0L)
     val spanDepths = TraceSummary.toSpanDepths(trace)
     val spanMap = getIdToSpanMap(trace)
+    val byParentId = trace.filter(_.parentId.isDefined).groupBy(_.parentId.get)
+
     val byParentId = trace.filter(_.parentId.isDefined).groupBy(_.parentId.get)
 
     val spans = for {
