@@ -184,6 +184,13 @@ export function traceSummariesToMustache(serviceName = null, traceSummaries, utc
         serviceDurations,
         width
       };
-    }).sort((t1, t2) => t1.duration < t2.duration);
+    }).sort((t1, t2) => {
+      const durationComparison = t2.duration - t1.duration;
+      if (durationComparison === 0) {
+        return t1.traceId.localeCompare(t2.traceId);
+      } else {
+        return durationComparison;
+      }
+    });
   }
 }

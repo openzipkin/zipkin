@@ -214,24 +214,6 @@ describe('traceSummariesToMustache', () => {
     const model = traceSummariesToMustache(null, [summary]);
     model[0].timestamp.should.equal(summary.timestamp);
   });
-});
-
-describe('mkDurationStr', () => {
-  it('should return empty string on zero duration', () => {
-    mkDurationStr(0).should.equal('');
-  });
-
-  it('should format microseconds', () => {
-    mkDurationStr(3).should.equal('3μ');
-  });
-
-  it('should format ms', () => {
-    mkDurationStr(1500).should.equal('1.500ms');
-  });
-
-  it('should format seconds', () => {
-    mkDurationStr(2534999).should.equal('2.535s');
-  });
 
   it('should get correct spanCount', () => {
     const spans = [{
@@ -270,5 +252,63 @@ describe('mkDurationStr', () => {
     const summary = traceSummary(spans);
     const model = traceSummariesToMustache(null, [summary])[0];
     model.spanCount.should.equal(1);
+  });
+
+  it('should order traces by duration and tie-break using trace id', () => {
+    const traceId1 = "9ed44141f679130b";
+    const traceId2 = "6ff1c14161f7bde1";
+    const traceId3 = "1234561234561234";
+    const summary1 = traceSummary([{
+      "traceId":traceId1,
+      "name":"get",
+      "id":"6ff1c14161f7bde1",
+      "timestamp":1457186441657000,
+      "duration":4000,
+      "annotations": [], "binaryAnnotations": []}]);
+    const summary2 = traceSummary([{
+      "traceId":traceId2,
+      "name":"get",
+      "id":"9ed44141f679130b",
+      "timestamp":1457186568026000,
+      "duration":4000,
+      "annotations":[],
+      "binaryAnnotations": []
+    }]);
+    const summary3 = traceSummary([{
+      "traceId":traceId3,
+      "name":"get",
+      "id":"6677567324735",
+      "timestamp":1457186568027000,
+      "duration":3000,
+      "annotations":[],
+      "binaryAnnotations": []
+    }]);
+
+    const model = traceSummariesToMustache(null, [summary1, summary2, summary3]);
+    model[0].traceId.should.equal(traceId2);
+    model[1].traceId.should.equal(traceId1);
+    model[2].traceId.should.equal(traceId3);
+  });
+
+  it('should tie-break a sort on duration using trace id', () => {
+
+  });
+});
+
+describe('mkDurationStr', () => {
+  it('should return empty string on zero duration', () => {
+    mkDurationStr(0).should.equal('');
+  });
+
+  it('should format microseconds', () => {
+    mkDurationStr(3).should.equal('3μ');
+  });
+
+  it('should format ms', () => {
+    mkDurationStr(1500).should.equal('1.500ms');
+  });
+
+  it('should format seconds', () => {
+    mkDurationStr(2534999).should.equal('2.535s');
   });
 });

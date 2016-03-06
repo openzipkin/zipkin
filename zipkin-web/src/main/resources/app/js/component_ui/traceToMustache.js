@@ -120,7 +120,7 @@ export default function traceToMustache(trace) {
     if (localComponentAnnotation && localComponentAnnotation.endpoint) {
       binaryAnnotations.push({
         ...localComponentAnnotation,
-        key: ConstantNames[Constants.LOCAL_COMPONENT],
+        key: "Local Address",
         value: formatEndpoint(localComponentAnnotation.endpoint)
       });
     }

@@ -69,33 +69,6 @@ describe('traceToMustache', () => {
       max: 0
     }]);
   });
-});
-
-describe('get root spans', () => {
-  it('should find root spans in a trace', () => {
-    const trace = [{
-      parentId: null, // root span (no parent)
-      id: 1
-    }, {
-      parentId: 1,
-      id: 2
-    }, {
-      parentId: 3, // root span (no parent with this id)
-      id: 4
-    }, {
-      parentId: 4,
-      id: 5
-    }];
-
-    const rootSpans = getRootSpans(trace);
-    rootSpans.should.eql([{
-      parentId: null,
-      id: 1
-    }, {
-      parentId: 3,
-      id: 4
-    }]);
-  });
 
   it('should show human-readable annotation name', () => {
     const trace = [{
@@ -123,6 +96,33 @@ describe('get root spans', () => {
     span.annotations[0].value.should.equal('Server Receive');
     span.annotations[1].value.should.equal('Server Send');
     span.binaryAnnotations[0].key.should.equal('Server Address');
+  });
+});
+
+describe('get root spans', () => {
+  it('should find root spans in a trace', () => {
+    const trace = [{
+      parentId: null, // root span (no parent)
+      id: 1
+    }, {
+      parentId: 1,
+      id: 2
+    }, {
+      parentId: 3, // root span (no parent with this id)
+      id: 4
+    }, {
+      parentId: 4,
+      id: 5
+    }];
+
+    const rootSpans = getRootSpans(trace);
+    rootSpans.should.eql([{
+      parentId: null,
+      id: 1
+    }, {
+      parentId: 3,
+      id: 4
+    }]);
   });
 });
 

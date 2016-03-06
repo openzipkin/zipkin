@@ -196,7 +196,7 @@ class Handlers(queryExtractor: QueryExtractor) {
         serviceDurations,
         ((duration.toFloat / maxDuration) * 100).toInt
       )
-    }.sortBy(_.duration).reverse
+    }.sortBy((_.duration, _.traceId)).reverse
   }
 
   def handleIndex(client: HttpClient): Service[Request, Renderer] =
