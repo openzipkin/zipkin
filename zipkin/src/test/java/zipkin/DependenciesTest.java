@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.internal.Util.midnightUTC;
 
 /**
  * Base test for {@link SpanStore} implementations that support dependency aggregation. Subtypes
@@ -45,20 +46,8 @@ public abstract class DependenciesTest<T extends SpanStore> {
    */
   protected abstract void processDependencies(List<Span> spans);
 
-
-  /** Notably, the cassandra implementation has day granularity */
-  private static long midnight(){
-    Calendar date = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-    // reset hour, minutes, seconds and millis
-    date.set(Calendar.HOUR_OF_DAY, 0);
-    date.set(Calendar.MINUTE, 0);
-    date.set(Calendar.SECOND, 0);
-    date.set(Calendar.MILLISECOND, 0);
-    return date.getTimeInMillis();
-  }
-
   // Use real time, as most span-stores have TTL logic which looks back several days.
-  long today = midnight();
+  protected long today = midnightUTC(System.currentTimeMillis());
 
   Endpoint zipkinWeb = Endpoint.create("zipkin-web", 172 << 24 | 17 << 16 | 3, 8080);
   Endpoint zipkinQuery = Endpoint.create("zipkin-query", 172 << 24 | 17 << 16 | 2, 9411);
@@ -85,7 +74,7 @@ public abstract class DependenciesTest<T extends SpanStore> {
 
     processDependencies(trace);
 
-    assertThat(store.getDependencies(today * 1000, null)).containsOnly(
+    assertThat(store.getDependencies(today + 1000, null)).containsOnly(
         new DependencyLink("some-client", "zipkin-web", 1),
         new DependencyLink("zipkin-web", "zipkin-query", 1),
         new DependencyLink("zipkin-query", "zipkin-jdbc", 1)
@@ -131,7 +120,7 @@ public abstract class DependenciesTest<T extends SpanStore> {
 
     processDependencies(trace);
 
-    assertThat(store.getDependencies(today * 1000, null)).containsOnly(
+    assertThat(store.getDependencies(today + 1000, null)).containsOnly(
         new DependencyLink("zipkin-web", "zipkin-query", 1),
         new DependencyLink("zipkin-query", "zipkin-jdbc", 1)
     );
@@ -164,7 +153,7 @@ public abstract class DependenciesTest<T extends SpanStore> {
 
     processDependencies(trace);
 
-    assertThat(store.getDependencies(today * 1000, null)).containsOnly(
+    assertThat(store.getDependencies(today + 1000, null)).containsOnly(
         new DependencyLink("zipkin-web", "zipkin-query", 1)
     );
   }

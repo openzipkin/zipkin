@@ -68,4 +68,32 @@ public class SpanTest {
       assertThat(new Span.Builder(get).merge(unknown).build().name).isEqualTo("get");
     }
   }
+
+  @Test
+  public void serviceNames_includeBinaryAnnotations() {
+    Span span = new Span.Builder()
+        .traceId(1L)
+        .name("GET")
+        .id(1L)
+        .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, WEB_ENDPOINT))
+        .build();
+
+    assertThat(span.serviceNames())
+        .containsOnly(WEB_ENDPOINT.serviceName);
+  }
+
+  @Test
+  public void serviceNames_ignoresAnnotationsWithEmptyServiceNames() {
+    Span span = new Span.Builder()
+        .traceId(12345)
+        .id(666)
+        .name("methodcall")
+        .addAnnotation(Annotation.create(1L, "test", Endpoint.create("", 127 << 24 | 1)))
+        .addAnnotation(Annotation.create(2L, Constants.SERVER_RECV, WEB_ENDPOINT))
+        .build();
+
+    assertThat(span.serviceNames())
+        .containsOnly(WEB_ENDPOINT.serviceName);
+  }
+
 }

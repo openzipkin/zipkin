@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
 import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
@@ -354,5 +355,21 @@ public final class Span implements Comparable<Span> {
         that.timestamp == null ? Long.MIN_VALUE : that.timestamp);
     if (byTimestamp != 0) return byTimestamp;
     return this.name.compareTo(that.name);
+  }
+
+  /** Returns the distinct {@link Endpoint#serviceName service names} that logged to this span. */
+  public Set<String> serviceNames() {
+    Set<String> result = new LinkedHashSet<>();
+    for (Annotation a : annotations) {
+      if (a.endpoint == null) continue;
+      if (a.endpoint.serviceName.isEmpty()) continue;
+      result.add(a.endpoint.serviceName);
+    }
+    for (BinaryAnnotation a : binaryAnnotations) {
+      if (a.endpoint == null) continue;
+      if (a.endpoint.serviceName.isEmpty()) continue;
+      result.add(a.endpoint.serviceName);
+    }
+    return result;
   }
 }

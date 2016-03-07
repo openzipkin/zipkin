@@ -16,14 +16,17 @@ package zipkin.internal;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.TimeZone;
 import okio.Buffer;
 import okio.GzipSink;
 import okio.GzipSource;
 
 public final class Util {
+  private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
   public static final Charset UTF_8 = Charset.forName("UTF-8");
 
   public static int envOr(String key, int fallback) {
@@ -81,6 +84,17 @@ public final class Util {
     GzipSource source = new GzipSource(new Buffer().write(bytes));
     while (source.read(result, Integer.MAX_VALUE) != -1) ;
     return result.readByteArray();
+  }
+
+  /** For bucketed data floored to the day. For example, dependency links. */
+  public static long midnightUTC(long epochMillis) {
+    Calendar day = Calendar.getInstance(UTC);
+    day.setTimeInMillis(epochMillis);
+    day.set(Calendar.MILLISECOND, 0);
+    day.set(Calendar.SECOND, 0);
+    day.set(Calendar.MINUTE, 0);
+    day.set(Calendar.HOUR_OF_DAY, 0);
+    return day.getTimeInMillis();
   }
 
   private Util() {

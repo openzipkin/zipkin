@@ -52,7 +52,7 @@ public final class InMemorySpanStore implements SpanStore {
       traceIdToSpans.put(span.traceId, span);
       acceptedSpanCount++;
 
-      for (String serviceName : serviceNames(span)) {
+      for (String serviceName : span.serviceNames()) {
         serviceToTraceIds.put(serviceName, traceId);
         serviceToSpanNames.put(serviceName, spanName);
       }
@@ -267,20 +267,5 @@ public final class InMemorySpanStore implements SpanStore {
     Collection<V> get(K key) {
       return delegate.get(key);
     }
-  }
-
-  static Set<String> serviceNames(Span span) {
-    Set<String> result = new LinkedHashSet<>();
-    for (Annotation a : span.annotations) {
-      if (a.endpoint == null) continue;
-      if (a.endpoint.serviceName.isEmpty()) continue;
-      result.add(a.endpoint.serviceName);
-    }
-    for (BinaryAnnotation a : span.binaryAnnotations) {
-      if (a.endpoint == null) continue;
-      if (a.endpoint.serviceName.isEmpty()) continue;
-      result.add(a.endpoint.serviceName);
-    }
-    return result;
   }
 }

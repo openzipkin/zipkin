@@ -14,6 +14,11 @@
 package zipkin.internal;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import static zipkin.internal.Util.equal;
 import static zipkin.internal.Util.gunzip;
 import static zipkin.internal.Util.gzip;
+import static zipkin.internal.Util.midnightUTC;
 
 public class UtilTest {
   @Test
@@ -37,5 +43,19 @@ public class UtilTest {
   public void gzipTest() throws IOException {
     assertThat(gunzip(gzip("hello".getBytes())))
         .isEqualTo("hello".getBytes());
+  }
+
+  @Test
+  public void midnightUTCTest() throws ParseException {
+
+    DateFormat iso8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
+    iso8601.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+    Date date = iso8601.parse("2011-04-15T20:08:18Z");
+
+    long midnight = midnightUTC(date.getTime());
+
+    assertThat(iso8601.format(new Date(midnight)))
+        .isEqualTo("2011-04-15T00:00:00Z");
   }
 }
