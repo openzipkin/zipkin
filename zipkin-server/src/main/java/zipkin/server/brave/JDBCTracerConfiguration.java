@@ -24,17 +24,16 @@ import org.jooq.ExecuteType;
 import org.jooq.impl.DefaultExecuteListener;
 import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.jooq.tools.StringUtils;
-import org.mariadb.jdbc.Driver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin.Endpoint;
 
 /** Sets up the JDBC tracing in Brave as an initialization. */
-@ConditionalOnClass({Driver.class})
+@ConditionalOnProperty(name = "zipkin.store.type", havingValue = "mysql")
 @Configuration
 public class JDBCTracerConfiguration extends DefaultExecuteListener {
 

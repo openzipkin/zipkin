@@ -28,6 +28,7 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>cassandra</module>
     <module>jdbc</module>
   </modules>
 </project>

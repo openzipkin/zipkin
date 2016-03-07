@@ -31,7 +31,6 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <!-- override scrooge's thrift version so we don't need to declare a twitter-specific repo -->
     <libthrift.version>0.9.3</libthrift.version>
-    <zipkin-scala.version>1.35.0</zipkin-scala.version>
     <scalatest.version>2.2.5</scalatest.version>
   </properties>
 
@@ -63,6 +62,12 @@
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
       <version>${libthrift.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>spanstore-cassandra</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <dependency>

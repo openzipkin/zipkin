@@ -17,7 +17,6 @@ import com.github.kristofa.brave.Brave;
 import javax.sql.DataSource;
 import org.jooq.ExecuteListenerProvider;
 import org.jooq.conf.Settings;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,17 +31,22 @@ import zipkin.Codec;
 import zipkin.InMemorySpanStore;
 import zipkin.Sampler;
 import zipkin.SpanStore;
+import zipkin.cassandra.CassandraConfig;
+import zipkin.cassandra.CassandraSpanStore;
 import zipkin.jdbc.JDBCSpanStore;
 import zipkin.server.ZipkinServerProperties.Store.Type;
 import zipkin.server.brave.TraceWritesSpanStore;
 
 @Configuration
-@EnableConfigurationProperties(ZipkinServerProperties.class)
-@EnableAsync(proxyTargetClass=true)
+@EnableConfigurationProperties({ZipkinServerProperties.class, ZipkinCassandraProperties.class})
+@EnableAsync(proxyTargetClass = true)
 public class ZipkinServerConfiguration {
 
   @Autowired
   ZipkinServerProperties server;
+
+  @Autowired
+  ZipkinCassandraProperties cassandra;
 
   @Autowired(required = false)
   DataSource datasource;
@@ -58,19 +62,27 @@ public class ZipkinServerConfiguration {
   }
 
   @Bean
-  @ConditionalOnMissingBean(Sampler.class) Sampler traceIdSampler(@Value("${zipkin.collector.sample-rate:1.0}") float rate) {
+  @ConditionalOnMissingBean(Sampler.class)
+  Sampler traceIdSampler(@Value("${zipkin.collector.sample-rate:1.0}") float rate) {
     return Sampler.create(rate);
   }
 
-  @Bean
-  SpanStore spanStore() {
-    SpanStore result;
+  @Bean SpanStore spanStore() {
     if (datasource != null && server.getStore().getType() == Type.mysql) {
-      result = new JDBCSpanStore(datasource, new Settings().withRenderSchema(false), listener);
+      return new JDBCSpanStore(datasource, new Settings().withRenderSchema(false), listener);
+    } else if (server.getStore().getType() == Type.cassandra) {
+      CassandraConfig config = new CassandraConfig.Builder()
+          .keyspace(cassandra.getKeyspace())
+          .contactPoints(cassandra.getContactPoints())
+          .localDc(cassandra.getLocalDc())
+          .maxConnections(cassandra.getMaxConnections())
+          .ensureSchema(cassandra.isEnsureSchema())
+          .username(cassandra.getUsername())
+          .password(cassandra.getPassword()).build();
+      return new CassandraSpanStore(config);
     } else {
-      result = new InMemorySpanStore();
+      return new InMemorySpanStore();
     }
-    return result;
   }
 
   @Configuration
@@ -81,20 +93,16 @@ public class ZipkinServerConfiguration {
     Brave brave;
 
     @Override
-    public Object postProcessBeforeInitialization(Object bean, String beanName)
-        throws BeansException {
+    public Object postProcessBeforeInitialization(Object bean, String beanName) {
       return bean;
     }
 
     @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName)
-        throws BeansException {
+    public Object postProcessAfterInitialization(Object bean, String beanName) {
       if (bean instanceof SpanStore && brave != null) {
         return new TraceWritesSpanStore(brave, (SpanStore) bean);
       }
       return bean;
     }
-
   }
-
 }

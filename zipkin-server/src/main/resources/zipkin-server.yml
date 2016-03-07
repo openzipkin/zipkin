@@ -1,6 +1,19 @@
+cassandra:
+  # Comma separated list of hosts / ip addresses part of Cassandra cluster.
+  contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
+  # Name of the datacenter that will be considered "local" for latency load balancing. When unset, load-balancing is round-robin.
+  local-dc: ${CASSANDRA_LOCAL_DC:}
+  # Will throw an exception on startup if authentication fails.
+  username: ${CASSANDRA_USERNAME:}
+  password: ${CASSANDRA_PASSWORD:}
+  keyspace: ${CASSANDRA_KEYSPACE:zipkin}
+  # Max pooled connections per datacenter-local host.
+  max-connections: ${CASSANDRA_MAX_CONNECTIONS:8}
+  # Ensuring that schema exists, if enabled tries to execute script /zipkin-cassandra-core/resources/cassandra-schema-cql3.txt.
+  ensure-schema: ${CASSANDRA_ENSURE_SCHEMA:true}
 mysql:
   host: ${MYSQL_HOST:localhost}
-  lookback: ${MYSQL_TCP_PORT:3306}
+  port: ${MYSQL_TCP_PORT:3306}
   username: ${MYSQL_USER:}
   password: ${MYSQL_PASS:}
   db: ${MYSQL_DB:zipkin}
@@ -24,7 +37,7 @@ server:
 spring:
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mysql://${mysql.host}:${mysql.lookback}/${mysql.db}?autoReconnect=true&useSSL=${mysql.use-ssl}
+    url: jdbc:mysql://${mysql.host}:${mysql.port}/${mysql.db}?autoReconnect=true&useSSL=${mysql.use-ssl}
     username: ${mysql.username}
     password: ${mysql.password}
     max-active: ${mysql.max-active}

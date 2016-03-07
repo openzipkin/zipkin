@@ -11,31 +11,26 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.server;
+package zipkin.cassandra;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import com.twitter.zipkin.storage.SpanStore;
+import com.twitter.zipkin.storage.SpanStoreSpec;
+import org.junit.BeforeClass;
+import zipkin.interop.ScalaSpanStoreAdapter;
 
-@ConfigurationProperties("zipkin")
-class ZipkinServerProperties {
-  private Store store = new Store();
+public class CassandraScalaSpanStoreTest extends SpanStoreSpec {
+  private static CassandraSpanStore spanStore;
 
-  public Store getStore() {
-    return store;
+  @BeforeClass
+  public static void setupDB() {
+    spanStore = CassandraTestGraph.INSTANCE.spanStore();
   }
 
-  static class Store {
-    enum Type {
-      cassandra, mysql, mem
-    }
+  public SpanStore store() {
+    return new ScalaSpanStoreAdapter(spanStore);
+  }
 
-    private Type type = Type.mem;
-
-    public Type getType() {
-      return type;
-    }
-
-    public void setType(Type type) {
-      this.type = type;
-    }
+  public void clear() {
+    spanStore.clear();
   }
 }
