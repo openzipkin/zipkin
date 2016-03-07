@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import okio.Buffer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -40,6 +39,7 @@ import zipkin.SpanStore;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.internal.Util.gunzip;
+import static zipkin.internal.Util.lowerHexToUnsignedLong;
 
 /**
  * Implements the json api used by {@code zipkin-web}.
@@ -151,8 +151,7 @@ public class ZipkinQueryApiV1 {
 
   @RequestMapping(value = "/trace/{traceId}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getTrace(@PathVariable String traceId) {
-    @SuppressWarnings("resource")
-    long id = new Buffer().writeUtf8(traceId).readHexadecimalUnsignedLong();
+    long id = lowerHexToUnsignedLong(traceId);
     List<List<Span>> traces = spanStore.getTracesByIds(Collections.singletonList(id));
 
     if (traces.isEmpty()) {

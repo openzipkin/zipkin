@@ -22,11 +22,13 @@ import java.util.TimeZone;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static zipkin.internal.Util.equal;
 import static zipkin.internal.Util.gunzip;
 import static zipkin.internal.Util.gzip;
+import static zipkin.internal.Util.lowerHexToUnsignedLong;
 import static zipkin.internal.Util.midnightUTC;
 
 public class UtilTest {
@@ -57,5 +59,33 @@ public class UtilTest {
 
     assertThat(iso8601.format(new Date(midnight)))
         .isEqualTo("2011-04-15T00:00:00Z");
+  }
+
+  @Test
+  public void lowerHexToUnsignedLongTest() throws ParseException {
+    assertThat(lowerHexToUnsignedLong("ffffffffffffffff")).isEqualTo(-1);
+    assertThat(lowerHexToUnsignedLong("0")).isEqualTo(0);
+    assertThat(lowerHexToUnsignedLong(Long.toHexString(Long.MAX_VALUE))).isEqualTo(Long.MAX_VALUE);
+
+    try {
+      lowerHexToUnsignedLong("fffffffffffffffff"); // too long
+      failBecauseExceptionWasNotThrown(NumberFormatException.class);
+    } catch (NumberFormatException e) {
+
+    }
+
+    try {
+      lowerHexToUnsignedLong(""); // too short
+      failBecauseExceptionWasNotThrown(NumberFormatException.class);
+    } catch (NumberFormatException e) {
+
+    }
+
+    try {
+      lowerHexToUnsignedLong("rs"); // bad charset
+      failBecauseExceptionWasNotThrown(NumberFormatException.class);
+    } catch (NumberFormatException e) {
+
+    }
   }
 }

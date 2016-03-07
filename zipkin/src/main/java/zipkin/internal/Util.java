@@ -21,13 +21,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 import okio.Buffer;
 import okio.GzipSink;
 import okio.GzipSource;
 
 public final class Util {
-  private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
   public static final Charset UTF_8 = Charset.forName("UTF-8");
+  private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+  private static final Pattern HEX_ID_PATTERN = Pattern.compile("^[0-9a-f]{1,16}$");
 
   public static int envOr(String key, int fallback) {
     return System.getenv(key) != null ? Integer.parseInt(System.getenv(key)) : fallback;
@@ -95,6 +97,21 @@ public final class Util {
     day.set(Calendar.MINUTE, 0);
     day.set(Calendar.HOUR_OF_DAY, 0);
     return day.getTimeInMillis();
+  }
+
+  /** Parses a 1 to 16 character lower-hex string with no prefix int an unsigned long. */
+  public static long lowerHexToUnsignedLong(String lowerHex) {
+    if (!HEX_ID_PATTERN.matcher(lowerHex).matches()) {
+      throw new NumberFormatException(
+          lowerHex + " should be a 1 to 16 character lower-hex string with no prefix");
+    }
+
+    long result = 0;
+    for (char c : lowerHex.toCharArray()) {
+      result <<= 4;
+      result |= c <= '9' ? c - '0' : c - 'a' + 10;
+    }
+    return result;
   }
 
   private Util() {
