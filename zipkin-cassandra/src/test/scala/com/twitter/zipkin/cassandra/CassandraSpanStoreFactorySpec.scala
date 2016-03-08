@@ -1,7 +1,7 @@
 package com.twitter.zipkin.cassandra
 
 import com.datastax.driver.core.policies.{DCAwareRoundRobinPolicy, LatencyAwarePolicy, RoundRobinPolicy, TokenAwarePolicy}
-import com.datastax.driver.core.{AuthProvider, Host, HostDistance}
+import com.datastax.driver.core.{Cluster, AuthProvider, Host, HostDistance}
 import com.twitter.app.App
 import java.net.InetSocketAddress
 import java.util.Arrays.asList
@@ -101,7 +101,7 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers with MockitoS
       .getAuthProvider() should be (AuthProvider.NONE)
   }
 
-  test("Default load-balancing policy is round-robin") {
+  test("Default load-balancing policy considers first host's datacenter local") {
     TestFactory.nonExitingMain(Array())
 
     val policy = TestFactory.createClusterBuilder()
@@ -110,20 +110,21 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers with MockitoS
       .getLoadBalancingPolicy()
       .asInstanceOf[TokenAwarePolicy].getChildPolicy
       .asInstanceOf[LatencyAwarePolicy].getChildPolicy
-      .asInstanceOf[RoundRobinPolicy]
+      .asInstanceOf[DCAwareRoundRobinPolicy]
 
     val foo = mock[Host]
     when(foo.getDatacenter).thenReturn("foo")
-    policy.distance(foo) should be(HostDistance.LOCAL)
-
     val bar = mock[Host]
     when(bar.getDatacenter).thenReturn("bar")
-    policy.distance(bar) should be(HostDistance.LOCAL)
+    policy.init(mock[Cluster], asList(foo, bar))
+
+    policy.distance(foo) should be(HostDistance.LOCAL)
+    policy.distance(bar) should be(HostDistance.IGNORED)
   }
 
   test("zipkin.store.cassandra.localDc ignores non-local datacenters") {
     TestFactory.nonExitingMain(Array(
-      "-zipkin.store.cassandra.localDc", "foo"
+      "-zipkin.store.cassandra.localDc", "bar"
     ))
 
     val policy = TestFactory.createClusterBuilder()
@@ -136,11 +137,12 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers with MockitoS
 
     val foo = mock[Host]
     when(foo.getDatacenter).thenReturn("foo")
-    policy.distance(foo) should be(HostDistance.LOCAL)
-
     val bar = mock[Host]
     when(bar.getDatacenter).thenReturn("bar")
-    policy.distance(bar) should be(HostDistance.IGNORED)
+    policy.init(mock[Cluster], asList(foo, bar))
+
+    policy.distance(foo) should be(HostDistance.IGNORED)
+    policy.distance(bar) should be(HostDistance.LOCAL)
   }
 
   test("zipkin.store.cassandra.maxConnections default") {
