@@ -2,7 +2,7 @@
 
 ![Zipkin (doc/zipkin-logo-200x119.jpg)](https://github.com/openzipkin/zipkin/raw/master/doc/zipkin-logo-200x119.jpg)
 
-[Zipkin](http://twitter.github.com/zipkin) is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in microservice architectures. The front end is a "waterfall" style graph of service calls showing call durations as horizontal bars:
+[Zipkin](http://zipkin.io) is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in microservice architectures. The front end is a "waterfall" style graph of service calls showing call durations as horizontal bars:
 
 ![Screenshot](https://github.com/openzipkin/zipkin/raw/master/doc/web-screenshot.png)
 
@@ -46,19 +46,10 @@ $ ./bin/tracegen
 $ open http://localhost:8080/
 ```
 
-## Different Tracers available
-
-| Language | Library | Framework | Transports Supported | Sampling Supported? | Other notes |
-|:---------|:--------|:----------|:---------------------|:--------------------|:------------|
-| Python | [pyramid_zipkin](https://github.com/Yelp/pyramid_zipkin) | [Pyramid](http://docs.pylonsproject.org/projects/pyramid/en/latest/) |[Kafka \| Scribe](http://pyramid-zipkin.readthedocs.org/en/latest/configuring_zipkin.html#zipkin-transport-handler) | [Yes](http://pyramid-zipkin.readthedocs.org/en/latest/configuring_zipkin.html#zipkin-tracing-percent) | py2, py3 support. |
-| Java | [brave](https://github.com/openzipkin/brave) | Jersey, RestEASY, JAXRS2, Apache HttpClient, Mysql | Http, Kafka, Scribe | Yes | Java 7 or higher|
-| Ruby | [zipkin-tracer](https://github.com/openzipkin/zipkin-tracer) | [Rack](http://rack.github.io/) | Http, Kafka, Scribe | Yes | lc support. Ruby 2.0 or higher|
-| C# | [ZipkinTracerModule](https://github.com/mdsol/Medidata.ZipkinTracerModule) | OWIN, HttpHandler | Http | Yes | lc support. 4.5.2 or higher |
-| Go | [go-zipkin](https://github.com/elodina/go-zipkin) | x/net Context | Kafka | Yes | |
-
 ## Full documentation
 
-See [http://twitter.github.com/zipkin](http://twitter.github.com/zipkin)
+See [http://twitter.github.com/zipkin](http://zipkin.io), including the list of
+[existing tracers](http://zipkin.io/pages/existing_instrumentations.html).
 
 ## Get involved
 
