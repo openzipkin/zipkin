@@ -43,7 +43,6 @@ define(
       this.after('initialize', function() {
         window.document.title = 'Zipkin - Index';
         this.trigger(document, 'navigate', {route: 'index'});
-        DefaultData.attachTo(document);
 
         const query = queryString.parse(window.location.search);
 
@@ -79,6 +78,8 @@ define(
 
           $('.timeago').timeago();
         });
+
+        DefaultData.attachTo(document);
       });
     });
 

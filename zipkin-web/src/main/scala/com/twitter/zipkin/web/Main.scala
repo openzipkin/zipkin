@@ -34,15 +34,6 @@ import org.slf4j.LoggerFactory
 
 trait ZipkinWebFactory { self: App =>
   private[this] val resourceDirs = Set(
-    "/public/css",
-    "/public/img",
-    "/public/js",
-    "/public/templates",
-
-    "/app/libs",
-    "/app/css",
-    "/app/img",
-    "/app/js",
     "/dist"
   )
 
@@ -53,7 +44,6 @@ trait ZipkinWebFactory { self: App =>
   )
 
   val webServerPort = flag("zipkin.web.port", new InetSocketAddress(8080), "Listening port for the zipkin web frontend")
-  val webRootUrl = flag("zipkin.web.rootUrl", "http://localhost:8080/", "Url where the service is located")
   val queryDest = flag("zipkin.web.query.dest", "127.0.0.1:9411", "Location of the query server")
   val queryLimit = flag("zipkin.web.query.limit", 10, "Default query limit for trace results")
   val environment = flag("zipkin.web.environmentName", "", "The name of the environment Zipkin is running in")
@@ -76,8 +66,7 @@ trait ZipkinWebFactory { self: App =>
     mapper = new FinatraObjectMapper(ZipkinJson)
   )
 
-  def newQueryExtractor = new QueryExtractor(queryLimit())
-  def newHandlers = new Handlers(newQueryExtractor)
+  def newHandlers = new Handlers
 
   def newWebServer(
     queryClient: HttpClient = queryClient,
@@ -87,9 +76,7 @@ trait ZipkinWebFactory { self: App =>
     import handlers._
 
     Seq(
-      ("/app/", handlePublic(resourceDirs, typesMap)),
-      ("/public/", handlePublic(resourceDirs, typesMap)),
-      ("/dist/", handlePublic(resourceDirs, typesMap)),
+      ("/dist/", handlePublic(Set("/dist"), typesMap)),
       // In preparation of moving static assets to zipkin-query
       ("/health", handleRoute(queryClient, "/health")),
       ("/api/v1/dependencies", handleRoute(queryClient, "/api/v1/dependencies")),
@@ -97,9 +84,6 @@ trait ZipkinWebFactory { self: App =>
       ("/api/v1/spans", handleRoute(queryClient, "/api/v1/spans")),
       ("/api/v1/trace/:id", handleTrace(queryClient)),
       ("/api/v1/traces", handleRoute(queryClient, "/api/v1/traces")),
-      // TODO: Once the following are javascript-only, we can move remove zipkin-web
-      ("/modelview/", handleIndex(queryClient)),
-      ("/modelview/traces/:id", handleTraces(queryClient)),
       ("/", handleIndexHtml()),
       ("/config.js", handleConfig(Map(
         "environment" -> environment(),
