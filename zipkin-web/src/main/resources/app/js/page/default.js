@@ -15,50 +15,50 @@ import BackToTop from '../component_ui/backToTop';
 import GoToTraceUI from '../component_ui/goToTrace';
 import {defaultTemplate} from '../templates';
 
-    const DefaultPageComponent = component(function DefaultPage() {
-      this.after('initialize', function() {
-        window.document.title = 'Zipkin - Index';
-        this.trigger(document, 'navigate', {route: 'index'});
+const DefaultPageComponent = component(function DefaultPage() {
+  this.after('initialize', function() {
+    window.document.title = 'Zipkin - Index';
+    this.trigger(document, 'navigate', {route: 'index'});
 
-        const query = queryString.parse(window.location.search);
+    const query = queryString.parse(window.location.search);
 
-        this.on(document, 'defaultPageModelView', function(ev, modelView) {
-          const limit = query.limit || window.config.queryLimit;
-          const minDuration = query.minDuration;
-          const endTs = query.endTs || new Date().getTime();
-          const serviceName = query.serviceName || '';
-          const annotationQuery = query.annotationQuery || '';
-          const queryWasPerformed = serviceName && serviceName.length > 0;
-          this.$node.html(defaultTemplate({
-            limit,
-            minDuration,
-            endTs,
-            serviceName,
-            annotationQuery,
-            queryWasPerformed,
-            count: modelView.traces.length,
-            ...modelView
-          }));
+    this.on(document, 'defaultPageModelView', function(ev, modelView) {
+      const limit = query.limit || window.config.queryLimit;
+      const minDuration = query.minDuration;
+      const endTs = query.endTs || new Date().getTime();
+      const serviceName = query.serviceName || '';
+      const annotationQuery = query.annotationQuery || '';
+      const queryWasPerformed = serviceName && serviceName.length > 0;
+      this.$node.html(defaultTemplate({
+        limit,
+        minDuration,
+        endTs,
+        serviceName,
+        annotationQuery,
+        queryWasPerformed,
+        count: modelView.traces.length,
+        ...modelView
+      }));
 
-          SpanNamesData.attachTo(document);
-          ServiceNamesData.attachTo(document);
-          ServiceNameUI.attachTo('#serviceName');
-          SpanNameUI.attachTo('#spanName');
-          InfoPanelUI.attachTo('#infoPanel');
-          InfoButtonUI.attachTo('button.info-request');
-          TraceFiltersUI.attachTo('#trace-filters');
-          TracesUI.attachTo('#traces');
-          TimeStampUI.attachTo('#time-stamp');
-          BackToTop.attachTo('#backToTop');
-          GoToTraceUI.attachTo('#traceIdQueryForm');
+      SpanNamesData.attachTo(document);
+      ServiceNamesData.attachTo(document);
+      ServiceNameUI.attachTo('#serviceName');
+      SpanNameUI.attachTo('#spanName');
+      InfoPanelUI.attachTo('#infoPanel');
+      InfoButtonUI.attachTo('button.info-request');
+      TraceFiltersUI.attachTo('#trace-filters');
+      TracesUI.attachTo('#traces');
+      TimeStampUI.attachTo('#time-stamp');
+      BackToTop.attachTo('#backToTop');
+      GoToTraceUI.attachTo('#traceIdQueryForm');
 
-          $('.timeago').timeago();
-        });
-
-        DefaultData.attachTo(document);
-      });
+      $('.timeago').timeago();
     });
 
-    export default function initializeDefault() {
-      DefaultPageComponent.attachTo('.content');
-    }
+    DefaultData.attachTo(document);
+  });
+});
+
+export default function initializeDefault() {
+  DefaultPageComponent.attachTo('.content');
+}
