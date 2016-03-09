@@ -18,7 +18,7 @@ const TracePageComponent = component(function TracePage() {
       traceId: this.attr.traceId
     });
     this.on(document, 'tracePageModelView', function(ev, modelview) {
-      this.$node.html(tracetemplate(modelview));
+      this.$node.html(traceTemplate(modelview));
 
       FilterAllServicesUI.attachTo('#filterAllServices', {totalServices: $('.trace-details.services span').length});
       FullPageSpinnerUI.attachTo('#fullPageSpinner');
