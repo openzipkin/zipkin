@@ -1,4 +1,4 @@
-import {compose, registry, advice, logger as withLogging, debug} from 'flight';
+import {compose, registry, advice, logger as withLogging, debug} from 'flightjs';
 import $ from 'jquery';
 import crossroads from 'crossroads';
 import queryString from 'query-string';

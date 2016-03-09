@@ -1,4 +1,4 @@
-import {component} from 'flight';
+import {component} from 'flightjs';
 import $ from 'jquery';
 import queryString from 'query-string';
 import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSummary'

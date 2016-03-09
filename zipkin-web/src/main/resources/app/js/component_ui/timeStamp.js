@@ -2,7 +2,7 @@
 
 define(
   [
-    'flight',
+    'flightjs',
     'moment',
     'bootstrap-datepicker'
   ],

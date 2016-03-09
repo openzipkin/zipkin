@@ -1,4 +1,4 @@
-import {component} from 'flight';
+import {component} from 'flightjs';
 import $ from 'jquery';
 import traceToMustache from '../../js/component_ui/traceToMustache';
 

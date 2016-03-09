@@ -1,4 +1,4 @@
-import {component} from 'flight';
+import {component} from 'flightjs';
 import $ from 'jquery';
 import EnvironmentUI from '../component_ui/environment';
 import NavbarUI from '../component_ui/navbar';

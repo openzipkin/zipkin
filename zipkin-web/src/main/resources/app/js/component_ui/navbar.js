@@ -1,4 +1,4 @@
-import {component} from 'flight';
+import {component} from 'flightjs';
 
 const NavbarUI = component(function navbar() {
   this.onNavigate = function(ev, {route}) {

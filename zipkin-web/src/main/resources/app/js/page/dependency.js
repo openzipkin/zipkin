@@ -3,7 +3,7 @@
 define(
   [
     'moment',
-    'flight',
+    'flightjs',
     'jquery',
     'query-string',
     '../component_data/dependency',

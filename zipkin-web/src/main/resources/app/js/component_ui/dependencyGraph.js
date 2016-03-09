@@ -2,7 +2,7 @@
 
 define(
   [
-    'flight',
+    'flightjs',
     'd3',
     '../../libs/dagre-d3/js/dagre-d3'
   ],

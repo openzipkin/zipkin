@@ -2,7 +2,7 @@
 
 define(
   [
-    'flight',
+    'flightjs',
     'timeago',
     'query-string',
     '../component_data/default',

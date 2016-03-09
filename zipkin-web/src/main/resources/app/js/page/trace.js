@@ -2,7 +2,7 @@
 
 define(
   [
-    'flight',
+    'flightjs',
     '../component_data/trace',
     '../component_ui/filterAllServices',
     '../component_ui/fullPageSpinner',
