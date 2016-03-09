@@ -1,15 +1,12 @@
 import {component} from 'flightjs';
-import $ from 'jquery';
 import EnvironmentUI from '../component_ui/environment';
 import NavbarUI from '../component_ui/navbar';
+import {layoutTemplate} from '../templates';
 
-const CommonUI = component(function Common() {
+export default component(function CommonUI() {
   this.after('initialize', function() {
-    const tmpl = require('../../../templates/v2/layout.mustache');
-    this.$node.html(tmpl());
+    this.$node.html(layoutTemplate());
     NavbarUI.attachTo('#navbar');
     EnvironmentUI.attachTo('#environment');
   });
 });
-
-export default CommonUI;

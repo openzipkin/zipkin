@@ -1,30 +1,13 @@
-'use strict';
-
-define(
-  [
-    'moment',
-    'flightjs',
-    'jquery',
-    'query-string',
-    '../component_data/dependency',
-    '../component_ui/dependencyGraph',
-    '../component_ui/serviceDataModal',
-    '../component_ui/timeStamp',
-    '../component_ui/goToDependency',
-    '../../../templates/v2/dependency.mustache'
-  ],
-
-  function (moment,
-            {component},
-            $,
-            queryString,
-            DependencyData,
-            DependencyGraphUI,
-            ServiceDataModal,
-            TimeStampUI,
-            GoToDependencyUI,
-            dependenciesTemplate
-  ) {
+import moment from 'moment';
+import {component} from 'flightjs';
+import $ from 'jquery';
+import queryString from 'query-string';
+import DependencyData from '../component_data/dependency';
+import DependencyGraphUI from '../component_ui/dependencyGraph';
+import ServiceDataModal from '../component_ui/serviceDataModal';
+import TimeStampUI from '../component_ui/timeStamp';
+import GoToDependencyUI from '../component_ui/goToDependency';
+import {dependenciesTemplate} from '../templates';
 
     const DependencyPageComponent = component(function DependencyPage() {
       this.after('initialize', function() {
@@ -46,8 +29,6 @@ define(
       });
     });
 
-    return function initializeDependencies() {
+    export default function initializeDependencies() {
       DependencyPageComponent.attachTo('.content');
     }
-  }
-);

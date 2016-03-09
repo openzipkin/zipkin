@@ -1,31 +1,14 @@
-'use strict';
-
-define(
-  [
-    'flightjs',
-    '../component_data/trace',
-    '../component_ui/filterAllServices',
-    '../component_ui/fullPageSpinner',
-    '../component_ui/serviceFilterSearch',
-    '../component_ui/spanPanel',
-    '../component_ui/trace',
-    '../component_ui/filterLabel',
-    '../component_ui/zoomOutSpans',
-    '../../../templates/v2/trace.mustache'
-  ],
-
-  function (
-    {component},
-    {TraceData},
-    FilterAllServicesUI,
-    FullPageSpinnerUI,
-    ServiceFilterSearchUI,
-    SpanPanelUI,
-    TraceUI,
-    FilterLabelUI,
-    ZoomOut,
-    tracetemplate
-  ) {
+import {component} from 'flightjs';
+import $ from 'jquery';
+import TraceData from '../component_data/trace';
+import FilterAllServicesUI from '../component_ui/filterAllServices';
+import FullPageSpinnerUI from '../component_ui/fullPageSpinner';
+import ServiceFilterSearchUI from '../component_ui/serviceFilterSearch';
+import SpanPanelUI from '../component_ui/spanPanel';
+import TraceUI from '../component_ui/trace';
+import FilterLabelUI from '../component_ui/filterLabel';
+import ZoomOut from '../component_ui/zoomOutSpans';
+import {traceTemplate} from '../templates';
 
     const TracePageComponent = component(function TracePage() {
       this.after('initialize', function() {
@@ -50,10 +33,8 @@ define(
       });
     });
 
-    return function initializeTrace(traceId) {
+    export default function initializeTrace(traceId) {
       TracePageComponent.attachTo('.content', {
         traceId
       });
     }
-  }
-);

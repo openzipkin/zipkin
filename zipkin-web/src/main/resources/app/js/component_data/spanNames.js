@@ -1,22 +1,13 @@
-'use strict';
+import {component} from 'flightjs';
+import $ from 'jquery';
 
-define(
-  [
-    'flightjs'
-  ],
-
-  function (flight) {
-
-    return flight.component(spanNames);
-
-    function spanNames() {
+    export default component(function spanNames() {
       this.updateSpanNames = function(ev, serviceName) {
         $.ajax("/api/v1/spans?serviceName=" + serviceName, {
           type: "GET",
           dataType: "json",
-          context: this,
-          success: function(spans) {
-            this.trigger('dataSpanNames', {spans: spans});
+          success: spans => {
+            this.trigger('dataSpanNames', {spans});
           }
         });
       };
@@ -24,8 +15,4 @@ define(
       this.after('initialize', function() {
         this.on('uiChangeServiceName', this.updateSpanNames);
       });
-    }
-
-  }
-);
-
+    });

@@ -1,16 +1,8 @@
-'use strict';
+import {component} from 'flightjs';
+import moment from 'moment';
+import $ from 'jquery';
 
-define(
-  [
-    'flightjs',
-    'moment'
-  ],
-
-  function (flight, moment) {
-
-    return flight.component(dependency);
-
-    function dependency() {
+    export default component(function dependency() {
       var links = [];
       var services = {};
       var dependencies = {};
@@ -21,13 +13,12 @@ define(
         $.ajax(url, {
           type: "GET",
           dataType: "json",
-          context: this,
-          success: function (links) {
+          success: links => {
             this.links = links;
             this.buildServiceData(links);
             this.trigger('dependencyDataReceived', links);
           },
-          failure: function (jqXHR, status, err) {
+          failure: (jqXHR, status, err) => {
             var error = {
               message: "Couldn't get dependency data from backend: " + err
             };
@@ -55,18 +46,18 @@ define(
       };
 
       this.after('initialize', function () {
-        this.on(document, 'dependencyDataRequested', function (event, args) {
-          this.getDependency(args.endTs, args.lookback);
+        this.on(document, 'dependencyDataRequested', function (event, {endTs, lookback}) {
+          this.getDependency(endTs, lookback);
         });
 
-        this.on(document, 'serviceDataRequested', function (event, args) {
-          this.getServiceData(args.serviceName, function (data) {
+        this.on(document, 'serviceDataRequested', function (event, {serviceName}) {
+          this.getServiceData(serviceName, function (data) {
             this.trigger(document, 'serviceDataReceived', data);
           }.bind(this));
         });
 
-        this.on(document, 'parentChildDataRequested', function (event, args) {
-          this.getDependencyData(args.parent, args.child, function (data) {
+        this.on(document, 'parentChildDataRequested', function (event, {parent, child}) {
+          this.getDependencyData(parent, child, function (data) {
             this.trigger(document, 'parentChildDataReceived', data);
           }.bind(this));
         });
@@ -87,6 +78,4 @@ define(
       this.getDependencyData = function (parent, child, callback) {
         callback(dependencies[parent][child]);
       };
-    }
-  }
-);
+    });
