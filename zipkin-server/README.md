@@ -21,6 +21,22 @@ The following environment variables from zipkin-scala are honored.
     * `STORAGE_TYPE`: SpanStore implementation: one of `mem` or `mysql`
     * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 
+### Cassandra
+The following apply when `STORAGE_TYPE` is set to `cassandra`:
+
+    * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "zipkin".
+    * `CASSANDRA_CONTACT_POINTS`: Comma separated list of hosts / ip addresses part of Cassandra cluster. Defaults to localhost
+    * `CASSANDRA_LOCAL_DC`: Name of the datacenter that will be considered "local" for latency load balancing. When unset, load-balancing is round-robin.
+    * `CASSANDRA_MAX_CONNECTIONS`: Max pooled connections per datacenter-local host. Defaults to 8
+    * `CASSANDRA_ENSURE_SCHEMA`: Ensuring that schema exists, if enabled tries to execute script /zipkin-cassandra-core/resources/cassandra-schema-cql3.txt. Defaults to true
+    * `CASSANDRA_USERNAME` and `CASSANDRA_PASSWORD`: Cassandra authentication. Will throw an exception on startup if authentication fails. No default
+
+Example usage:
+
+```bash
+$ STORAGE_TYPE=cassandra CASSANDRA_CONTACT_POINTS=host1,host2 ./mvnw -pl zipkin-server spring-boot:run
+```
+
 ### MySQL
 The following apply when `STORAGE_TYPE` is set to `mysql`:
 

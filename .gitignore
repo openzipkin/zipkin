@@ -13,3 +13,5 @@ _site/
 .idea
 *.iml
 *.swp
+# .travis.yml installs cassandra in the pwd
+dsc-cassandra-*

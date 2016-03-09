@@ -90,6 +90,12 @@
       <artifactId>zipkin</artifactId>
     </dependency>
 
+    <!-- Cassandra backend -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>spanstore-cassandra</artifactId>
+    </dependency>
+
     <!-- JDBC backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
