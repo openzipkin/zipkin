@@ -11,7 +11,7 @@ import com.twitter.util.Future
 import com.twitter.zipkin.json._
 import com.twitter.conversions.time._
 import org.jboss.netty.handler.codec.http.QueryStringEncoder
-import java.io.InputStream
+import java.io.{File, InputStream}
 
 class Handlers {
 
@@ -95,24 +95,26 @@ class Handlers {
     new Service[Request, Renderer] {
       private[this] var rendererCache = Map.empty[String, Future[Renderer]]
 
-      private[this] def getStream(path: String): Option[InputStream] =
-          Option(getClass.getResourceAsStream(path)) filter { _.available > 0 }
+      private[this] def getStream(path: String): Option[InputStream] = {
+        val resource = getClass.getResource(path)
+        if (new File(resource.getPath).isDirectory) {
+          None
+        } else {
+          Option(resource.openStream())
+        }
+      }
 
       private[this] def getRenderer(path: String): Option[Future[Renderer]] = {
         rendererCache.get(path) orElse {
           synchronized {
             rendererCache.get(path) orElse {
               resourceDirs find(path.startsWith) flatMap { _ =>
-                path match {
-                  case "/"     => Option(Future(StaticRenderer(getClass.getResourceAsStream("/index.html"), "text/html")))
-                  case default =>
-                    val typ = typesMap find { case (n, _) => path.endsWith(n) } map { _._2 } getOrElse("text/plain")
-                    getStream(path) map { input =>
-                      val renderer = Future.value(StaticRenderer(input, typ))
-                      rendererCache += (path -> renderer)
-                      renderer
-                    }
-                }
+                getStream(path) map { input =>
+                  val typ = typesMap find { case (n, _) => path.endsWith(n) } map { _._2 } getOrElse("text/plain")
+                  val renderer = Future.value(StaticRenderer(input, typ))
+                  rendererCache += (path -> renderer)
+                  renderer
+                } orElse Option(Future(StaticRenderer(getClass.getResourceAsStream("/index.html"), "text/html")))
               }
             }
           }
