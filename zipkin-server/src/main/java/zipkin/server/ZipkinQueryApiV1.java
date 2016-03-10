@@ -49,8 +49,8 @@ import static zipkin.internal.Util.lowerHexToUnsignedLong;
 @RestController
 @RequestMapping("/api/v1")
 public class ZipkinQueryApiV1 {
-  private static final Logger LOGGER = Logger.getLogger(ZipkinQueryApiV1.class.getName());
-  private static final String APPLICATION_THRIFT = "application/x-thrift";
+  static final Logger LOGGER = Logger.getLogger(ZipkinQueryApiV1.class.getName());
+  static final String APPLICATION_THRIFT = "application/x-thrift";
 
   @Autowired
   @Value("${zipkin.query.lookback:86400000}")

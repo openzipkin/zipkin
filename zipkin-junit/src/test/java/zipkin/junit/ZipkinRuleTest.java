@@ -184,7 +184,7 @@ public class ZipkinRuleTest {
     assertThat(Codec.JSON.readSpans(unzipped)).isEqualTo(trace);
   }
 
-  private Response postSpans(Span ... spans) throws IOException {
+  Response postSpans(Span ... spans) throws IOException {
     byte[] spansInJson = Codec.JSON.writeSpans(asList(spans));
     return client.newCall(new Request.Builder()
         .url(zipkin.httpUrl() + "/api/v1/spans")

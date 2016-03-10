@@ -38,7 +38,7 @@ import zipkin.jdbc.internal.generated.Zipkin;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinSpans extends TableImpl<Record> {
 
-	private static final long serialVersionUID = -1574931;
+	static final long serialVersionUID = -1574931;
 
 	/**
 	 * The reference instance of <code>zipkin.zipkin_spans</code>

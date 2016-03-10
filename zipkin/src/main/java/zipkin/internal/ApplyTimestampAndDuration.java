@@ -46,7 +46,7 @@ public class ApplyTimestampAndDuration {
     return s;
   }
 
-  private static long getFirstTimestamp(List<Annotation> annotations) {
+  static long getFirstTimestamp(List<Annotation> annotations) {
     for (int i = 0, length = annotations.size(); i < length; i++) {
       if (annotations.get(i).value.equals(Constants.CLIENT_SEND)) {
         return annotations.get(i).timestamp;
@@ -55,7 +55,7 @@ public class ApplyTimestampAndDuration {
     return annotations.get(0).timestamp;
   }
 
-  private static long getLastTimestamp(List<Annotation> annotations) {
+  static long getLastTimestamp(List<Annotation> annotations) {
     int length = annotations.size();
     for (int i = 0; i < length; i++) {
       if (annotations.get(i).value.equals(Constants.CLIENT_RECV)) {

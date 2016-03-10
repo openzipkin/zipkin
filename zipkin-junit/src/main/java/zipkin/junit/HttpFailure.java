@@ -37,7 +37,7 @@ public final class HttpFailure {
   /** Not exposed publicly in order to not leak okhttp3 types. */
   final MockResponse response;
 
-  private HttpFailure(MockResponse response) {
+  HttpFailure(MockResponse response) {
     this.response = response;
   }
 }

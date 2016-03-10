@@ -45,7 +45,7 @@ public abstract class SpanStoreTest<T extends SpanStore> {
   public abstract void clear();
 
   /** Notably, the cassandra implementation has day granularity */
-  private static long midnight(){
+  static long midnight(){
     Calendar date = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
     // reset hour, minutes, seconds and millis
     date.set(Calendar.HOUR_OF_DAY, 0);
@@ -518,7 +518,7 @@ public abstract class SpanStoreTest<T extends SpanStore> {
     assertThat(adjusted.get(2).duration).isEqualTo(skewed.get(2).duration);
   }
 
-  private static long clientDuration(Span span) {
+  static long clientDuration(Span span) {
     long[] timestamps = span.annotations.stream()
         .filter(a -> a.value.startsWith("c"))
         .mapToLong(a -> a.timestamp)
@@ -526,7 +526,7 @@ public abstract class SpanStoreTest<T extends SpanStore> {
     return timestamps[1] - timestamps[0];
   }
 
-  private static Iterator<Span> iterator(Span ... spans) {
+  static Iterator<Span> iterator(Span ... spans) {
     return Stream.of(spans).iterator();
   }
 }

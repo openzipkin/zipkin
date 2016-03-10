@@ -47,7 +47,7 @@ final class CassandraSpanConsumer {
    */
   static boolean BLOCK_ON_FUTURES;
 
-  private static final ThriftCodec THRIFT_CODEC = new ThriftCodec();
+  static final ThriftCodec THRIFT_CODEC = new ThriftCodec();
 
   private final Repository repository;
   private final int spanTtl;

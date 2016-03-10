@@ -35,7 +35,7 @@ import zipkin.internal.Util;
 import static zipkin.internal.Util.UTF_8;
 
 final class CassandraUtil {
-  private static final CharsetEncoder UTF8_ENCODER = Util.UTF_8.newEncoder();
+  static final CharsetEncoder UTF8_ENCODER = Util.UTF_8.newEncoder();
 
   /**
    * Returns keys that concatenate the serviceName associated with an annotation, a binary

@@ -19,7 +19,7 @@ import org.junit.AssumptionViolatedException;
 enum CassandraTestGraph {
   INSTANCE;
 
-  private static final CassandraConfig CONFIG = new CassandraConfig.Builder()
+  static final CassandraConfig CONFIG = new CassandraConfig.Builder()
       .keyspace("test_zipkin_spanstore").build();
 
   static {

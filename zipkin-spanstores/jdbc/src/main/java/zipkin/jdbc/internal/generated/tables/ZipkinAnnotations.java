@@ -38,7 +38,7 @@ import zipkin.jdbc.internal.generated.Zipkin;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinAnnotations extends TableImpl<Record> {
 
-	private static final long serialVersionUID = 1078067589;
+	static final long serialVersionUID = 1078067589;
 
 	/**
 	 * The reference instance of <code>zipkin.zipkin_annotations</code>

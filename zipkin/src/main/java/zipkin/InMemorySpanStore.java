@@ -36,7 +36,7 @@ import zipkin.internal.Util;
 import static zipkin.internal.Util.sortedList;
 
 public final class InMemorySpanStore implements SpanStore {
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
+  static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final Multimap<Long, Span> traceIdToSpans = new LinkedListMultimap<>();
   private final Multimap<String, Long> serviceToTraceIds = new LinkedHashSetMultimap<>();
@@ -102,7 +102,7 @@ public final class InMemorySpanStore implements SpanStore {
     return result;
   }
 
-  private static final Comparator<List<Span>> TRACE_DESCENDING = new Comparator<List<Span>>() {
+  static final Comparator<List<Span>> TRACE_DESCENDING = new Comparator<List<Span>>() {
     @Override
     public int compare(List<Span> left, List<Span> right) {
       return right.get(0).compareTo(left.get(0));

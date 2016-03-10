@@ -467,7 +467,7 @@ public final class JsonCodec implements Codec {
     return writeList(STRING_ADAPTER, value);
   }
 
-  private static <T> List<T> readList(JsonAdapter<T> adapter, byte[] bytes) {
+  static <T> List<T> readList(JsonAdapter<T> adapter, byte[] bytes) {
     JsonReader reader = JsonReader.of(new Buffer().write(bytes));
     List<T> result = new LinkedList<>(); // cause we don't know how long it will be
     try {
@@ -482,7 +482,7 @@ public final class JsonCodec implements Codec {
     }
   }
 
-  private static <T> byte[] writeList(JsonAdapter<T> adapter, List<T> values) {
+  static <T> byte[] writeList(JsonAdapter<T> adapter, List<T> values) {
     Buffer buffer = new Buffer();
     buffer.writeUtf8CodePoint('[');
     for (Iterator<T> i = values.iterator(); i.hasNext(); ) {
@@ -494,7 +494,7 @@ public final class JsonCodec implements Codec {
   }
 
   /** Inability to encode is a programming bug. */
-  private static <T> void write(JsonAdapter<T> adapter, T value, Buffer buffer) {
+  static <T> void write(JsonAdapter<T> adapter, T value, Buffer buffer) {
     try {
       adapter.toJson(JsonWriter.of(buffer), value);
     } catch (IOException | RuntimeException e) {

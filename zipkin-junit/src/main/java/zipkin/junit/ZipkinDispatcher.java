@@ -32,7 +32,7 @@ import zipkin.internal.JsonCodec;
 import static zipkin.internal.Util.gunzip;
 
 final class ZipkinDispatcher extends Dispatcher {
-  private static final JsonCodec JSON_CODEC = new JsonCodec();
+  static final JsonCodec JSON_CODEC = new JsonCodec();
   private final InMemorySpanStore store;
   private final MockWebServer server;
 

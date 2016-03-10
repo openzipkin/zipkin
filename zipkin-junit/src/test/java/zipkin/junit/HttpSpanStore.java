@@ -40,7 +40,7 @@ import zipkin.internal.Nullable;
  */
 final class HttpSpanStore implements SpanStore {
 
-  private static final JsonCodec JSON_CODEC = new JsonCodec();
+  static final JsonCodec JSON_CODEC = new JsonCodec();
   private final OkHttpClient client = new OkHttpClient();
   private final HttpUrl baseUrl;
 
@@ -91,7 +91,7 @@ final class HttpSpanStore implements SpanStore {
     return result;
   }
 
-  private static final Comparator<List<Span>> TRACE_DESCENDING = new Comparator<List<Span>>() {
+  static final Comparator<List<Span>> TRACE_DESCENDING = new Comparator<List<Span>>() {
     @Override
     public int compare(List<Span> left, List<Span> right) {
       return right.get(0).compareTo(left.get(0));
@@ -120,7 +120,7 @@ final class HttpSpanStore implements SpanStore {
     return JSON_CODEC.readDependencyLinks(responseBytes(response));
   }
 
-  private Response call(Request request) {
+  Response call(Request request) {
     try {
       return client.newCall(request).execute();
     } catch (IOException e) {
@@ -128,11 +128,11 @@ final class HttpSpanStore implements SpanStore {
     }
   }
 
-  private void maybeAddQueryParam(HttpUrl.Builder builder, String name, @Nullable Object value) {
+  void maybeAddQueryParam(HttpUrl.Builder builder, String name, @Nullable Object value) {
     if (value != null) builder.addQueryParameter(name, value.toString());
   }
 
-  private byte[] responseBytes(Response response) {
+  byte[] responseBytes(Response response) {
     if (response.code() != 200) throw new RuntimeException("unexpected response: " + response);
     try {
       return response.body().bytes();

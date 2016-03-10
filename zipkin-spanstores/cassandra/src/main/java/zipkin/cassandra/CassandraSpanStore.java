@@ -55,8 +55,8 @@ import static zipkin.internal.Util.sortedList;
  * <p>This uses zipkin-cassandra-core which packages "/cassandra-schema-cql3.txt"
  */
 public final class CassandraSpanStore implements SpanStore, AutoCloseable {
-  private static final ThriftCodec THRIFT_CODEC = new ThriftCodec();
-  private static final Comparator<List<Span>> TRACE_DESCENDING = new Comparator<List<Span>>() {
+  static final ThriftCodec THRIFT_CODEC = new ThriftCodec();
+  static final Comparator<List<Span>> TRACE_DESCENDING = new Comparator<List<Span>>() {
     @Override
     public int compare(List<Span> left, List<Span> right) {
       return right.get(0).compareTo(left.get(0));

@@ -94,7 +94,7 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
   public void addDefaultAnnotation(String key, String value) {
   }
 
-  private static Annotation convert(com.twitter.zipkin.gen.Annotation annotation) {
+  static Annotation convert(com.twitter.zipkin.gen.Annotation annotation) {
     return new Annotation.Builder()
         .timestamp(annotation.timestamp)
         .value(annotation.value)
@@ -102,14 +102,14 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
         .build();
   }
 
-  private static Endpoint convert(com.twitter.zipkin.gen.Endpoint endpoint) {
+  static Endpoint convert(com.twitter.zipkin.gen.Endpoint endpoint) {
     return new Endpoint.Builder()
         .serviceName(endpoint.service_name)
         .port(endpoint.port)
         .ipv4(endpoint.ipv4).build();
   }
 
-  private static BinaryAnnotation convert(com.twitter.zipkin.gen.BinaryAnnotation annotation) {
+  static BinaryAnnotation convert(com.twitter.zipkin.gen.BinaryAnnotation annotation) {
     return new BinaryAnnotation.Builder()
         .key(annotation.key)
         .value(annotation.getValue())
@@ -118,7 +118,7 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
         .build();
   }
 
-  private static Type convert(AnnotationType type) {
+  static Type convert(AnnotationType type) {
     switch (type) {
       case STRING:
         return Type.STRING;

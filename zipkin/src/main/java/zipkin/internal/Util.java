@@ -28,8 +28,8 @@ import okio.GzipSource;
 
 public final class Util {
   public static final Charset UTF_8 = Charset.forName("UTF-8");
-  private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
-  private static final Pattern HEX_ID_PATTERN = Pattern.compile("^[0-9a-f]{1,16}$");
+  static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+  static final Pattern HEX_ID_PATTERN = Pattern.compile("^[0-9a-f]{1,16}$");
 
   public static int envOr(String key, int fallback) {
     return System.getenv(key) != null ? Integer.parseInt(System.getenv(key)) : fallback;

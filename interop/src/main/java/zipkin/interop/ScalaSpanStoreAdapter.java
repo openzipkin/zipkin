@@ -108,7 +108,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
   }
 
   @Nullable
-  private static java.util.List<Span> convert(java.util.List<zipkin.Span> input) {
+  static java.util.List<Span> convert(java.util.List<zipkin.Span> input) {
     byte[] bytes = Codec.THRIFT.writeSpans(input);
     try {
       List<Span> read = thrift$.MODULE$.thriftListToSpans(bytes);
@@ -120,7 +120,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
   }
 
   @Nullable
-  private static java.util.List<zipkin.Span> invert(Seq<Span> input) {
+  static java.util.List<zipkin.Span> invert(Seq<Span> input) {
     try {
       TMemoryBuffer transport = new TMemoryBuffer(0);
       TBinaryProtocol oproto = new TBinaryProtocol(transport);

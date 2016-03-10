@@ -158,7 +158,7 @@ public class CassandraConfigTest {
     assertThat(policy.distance(bar)).isEqualTo(HostDistance.LOCAL);
   }
 
-  private static DCAwareRoundRobinPolicy toDCAwareRoundRobinPolicy(CassandraConfig config) {
+  static DCAwareRoundRobinPolicy toDCAwareRoundRobinPolicy(CassandraConfig config) {
     return (DCAwareRoundRobinPolicy) ((LatencyAwarePolicy) ((TokenAwarePolicy) config.toCluster()
         .getConfiguration()
         .getPolicies()

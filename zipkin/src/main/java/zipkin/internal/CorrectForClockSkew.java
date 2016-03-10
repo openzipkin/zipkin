@@ -58,7 +58,7 @@ public final class CorrectForClockSkew {
    * Recursively adjust the timestamps on the span tree. Root span is the reference point, all
    * children's timestamps gets adjusted based on that span's timestamps.
    */
-  private static void adjust(Node<Span> node, @Nullable ClockSkew skewFromParent) {
+  static void adjust(Node<Span> node, @Nullable ClockSkew skewFromParent) {
     // adjust skew for the endpoint brought over from the parent span
     if (skewFromParent != null) {
       node.value(adjustTimestamps(node.value(), skewFromParent));
@@ -78,7 +78,7 @@ public final class CorrectForClockSkew {
   }
 
   /** If any annotation has an IP with skew associated, adjust accordingly. */
-  private static Span adjustTimestamps(Span span, ClockSkew skew) {
+  static Span adjustTimestamps(Span span, ClockSkew skew) {
     List<Annotation> annotations = null;
     for (int i = 0, length = span.annotations.size(); i < length; i++) {
       Annotation a = span.annotations.get(i);
@@ -104,7 +104,7 @@ public final class CorrectForClockSkew {
 
   /** Use client/server annotations to determine if there's clock skew. */
   @Nullable
-  private static ClockSkew getClockSkew(Span span) {
+  static ClockSkew getClockSkew(Span span) {
     Map<String, Annotation> annotations = asMap(span.annotations);
 
     Long clientSend = getTimestamp(annotations, Constants.CLIENT_SEND);
@@ -138,7 +138,7 @@ public final class CorrectForClockSkew {
   }
 
   /** Get the annotations as a map with value to annotation bindings. */
-  private static Map<String, Annotation> asMap(List<Annotation> annotations) {
+  static Map<String, Annotation> asMap(List<Annotation> annotations) {
     Map<String, Annotation> result = new LinkedHashMap<>(annotations.size());
     for (Annotation a : annotations) {
       result.put(a.value, a);
@@ -147,7 +147,7 @@ public final class CorrectForClockSkew {
   }
 
   @Nullable
-  private static Long getTimestamp(Map<String, Annotation> annotations, String value) {
+  static Long getTimestamp(Map<String, Annotation> annotations, String value) {
     Annotation result = annotations.get(value);
     return result != null ? result.timestamp : null;
   }

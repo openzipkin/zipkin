@@ -39,7 +39,7 @@ import zipkin.jdbc.internal.generated.tables.ZipkinSpans;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Zipkin extends SchemaImpl {
 
-	private static final long serialVersionUID = 1844875007;
+	static final long serialVersionUID = 1844875007;
 
 	/**
 	 * The reference instance of <code>zipkin</code>

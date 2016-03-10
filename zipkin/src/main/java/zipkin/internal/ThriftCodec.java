@@ -39,8 +39,8 @@ import static zipkin.internal.Util.checkArgument;
  */
 public final class ThriftCodec implements Codec {
   // break vs decode huge structs, like > 1MB strings or 10k spans in a trace.
-  private static final int STRING_LENGTH_LIMIT = 1 * 1024 * 1024;
-  private static final int CONTAINER_LENGTH_LIMIT = 10 * 1000;
+  static final int STRING_LENGTH_LIMIT = 1 * 1024 * 1024;
+  static final int CONTAINER_LENGTH_LIMIT = 10 * 1000;
   // break vs recursing infinitely when skipping data
   private static int MAX_SKIP_DEPTH = 2147483647;
 

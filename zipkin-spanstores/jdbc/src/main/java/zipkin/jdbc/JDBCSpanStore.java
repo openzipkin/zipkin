@@ -68,7 +68,7 @@ import static zipkin.jdbc.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANN
 import static zipkin.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
 public final class JDBCSpanStore implements SpanStore {
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
+  static final Charset UTF_8 = Charset.forName("UTF-8");
 
   static {
     System.setProperty("org.jooq.no-logo", "true");
@@ -240,7 +240,7 @@ public final class JDBCSpanStore implements SpanStore {
     return getTraces(request, null);
   }
 
-  private DSLContext context(Connection conn) {
+  DSLContext context(Connection conn) {
     return DSL.using(new DefaultConfiguration()
         .set(conn)
         .set(JDBCUtils.dialect(conn))
@@ -324,7 +324,7 @@ public final class JDBCSpanStore implements SpanStore {
     }
   }
 
-  private static Endpoint endpoint(Record a) {
+  static Endpoint endpoint(Record a) {
     String serviceName = a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME);
     if (serviceName == null) {
       return null;
@@ -376,7 +376,7 @@ public final class JDBCSpanStore implements SpanStore {
     return dsl.orderBy(ZIPKIN_SPANS.START_TS.desc()).limit(request.limit);
   }
 
-  private static Table<?> join(Table<?> table, ZipkinAnnotations joinTable, String key, int type) {
+  static Table<?> join(Table<?> table, ZipkinAnnotations joinTable, String key, int type) {
     return table.join(joinTable)
         .on(ZIPKIN_SPANS.TRACE_ID.eq(joinTable.TRACE_ID))
         .and(ZIPKIN_SPANS.ID.eq(joinTable.SPAN_ID))
