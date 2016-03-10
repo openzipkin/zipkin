@@ -1,0 +1,52 @@
+{
+  "name": "zipkin-web",
+  "version": "0.0.0",
+  "description": "The frontend UI for Zipkin",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node node_modules/webpack-dev-server/bin/webpack-dev-server.js --hot --inline",
+    "test": "node node_modules/karma/bin/karma start --single-run",
+    "test-watch": "node node_modules/karma/bin/karma start",
+    "build": "node node_modules/webpack/bin/webpack.js --bail"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "bootstrap-datepicker": "^1.6.0",
+    "bootstrap-sass": "^3.3.6",
+    "chosen-npm": "^1.4.2",
+    "crossroads": "^0.12.2",
+    "d3": "^3.5.14",
+    "flightjs": "^1.5.1",
+    "jquery": "^2.2.0",
+    "js-cookie": "^2.1.0",
+    "lodash": "^4.5.0",
+    "moment": "^2.11.2",
+    "query-string": "^3.0.0",
+    "timeago": "^1.5.1"
+  },
+  "devDependencies": {
+    "babel-core": "^6.4.5",
+    "babel-loader": "^6.2.1",
+    "babel-plugin-transform-object-rest-spread": "^6.5.0",
+    "babel-preset-es2015": "^6.3.13",
+    "chai": "^3.5.0",
+    "css-loader": "^0.23.1",
+    "extract-text-webpack-plugin": "^1.0.1",
+    "file-loader": "^0.8.5",
+    "karma": "^0.13.21",
+    "karma-chai": "^0.1.0",
+    "karma-mocha": "^0.2.2",
+    "karma-phantomjs-launcher": "^1.0.0",
+    "karma-sourcemap-loader": "^0.3.7",
+    "karma-webpack": "^1.7.0",
+    "mocha": "^2.4.5",
+    "mustache-loader": "^0.3.1",
+    "node-sass": "^3.4.2",
+    "phantomjs-prebuilt": "^2.1.4",
+    "sass-loader": "^3.1.2",
+    "style-loader": "^0.13.0",
+    "webpack": "^1.12.12",
+    "webpack-dev-server": "^1.14.1"
+  }
+}
