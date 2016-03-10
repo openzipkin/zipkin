@@ -33,13 +33,13 @@ node {
 
 task webpack(type: NpmTask) {
     args = ['run-script', 'build']
+    dependsOn npmInstall
 }
+build.dependsOn webpack
+processResources.dependsOn(webpack)
+
 task karma(type: NpmTask) {
     args = ['run-script', 'test']
+    dependsOn webpack
 }
-webpack.dependsOn(npmInstall)
-karma.dependsOn(npmInstall)
-build.dependsOn(webpack)
-build.dependsOn(karma)
-processResources.dependsOn(webpack)
-processResources.dependsOn(karma)
+check.dependsOn karma
