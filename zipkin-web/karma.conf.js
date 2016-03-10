@@ -32,7 +32,6 @@ module.exports = function(config) {
         }]
       },
       resolve: {
-        alias: { flight: 'flightjs', chosen: 'chosen-npm/public/chosen.jquery.js' },
         modulesDirectories: ['node_modules']
       },
       plugins: [

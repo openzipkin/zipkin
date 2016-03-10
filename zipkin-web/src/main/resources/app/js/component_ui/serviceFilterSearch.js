@@ -2,8 +2,8 @@
 
 define(
   [
-    'flight',
-    'chosen'
+    'flightjs',
+    'chosen-npm/public/chosen.jquery.js'
   ],
 
   function (flight, chosen) {

@@ -2,7 +2,7 @@
 
 define(
   [
-    'flight',
+    'flightjs',
     'bootstrap-sass/assets/javascripts/bootstrap.js'
   ],
 

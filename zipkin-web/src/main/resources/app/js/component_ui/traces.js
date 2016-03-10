@@ -2,7 +2,7 @@
 
 define(
   [
-    'flight',
+    'flightjs',
     '../component_ui/filterLabel'
   ],
 

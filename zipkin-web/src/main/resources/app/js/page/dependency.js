@@ -1,53 +1,34 @@
-'use strict';
+import moment from 'moment';
+import {component} from 'flightjs';
+import $ from 'jquery';
+import queryString from 'query-string';
+import DependencyData from '../component_data/dependency';
+import DependencyGraphUI from '../component_ui/dependencyGraph';
+import ServiceDataModal from '../component_ui/serviceDataModal';
+import TimeStampUI from '../component_ui/timeStamp';
+import GoToDependencyUI from '../component_ui/goToDependency';
+import {dependenciesTemplate} from '../templates';
 
-define(
-  [
-    'moment',
-    'flight',
-    'jquery',
-    'query-string',
-    '../component_data/dependency',
-    '../component_ui/dependencyGraph',
-    '../component_ui/serviceDataModal',
-    '../component_ui/timeStamp',
-    '../component_ui/goToDependency',
-    '../../../templates/v2/dependency.mustache'
-  ],
+const DependencyPageComponent = component(function DependencyPage() {
+  this.after('initialize', function() {
+    window.document.title = 'Zipkin - Dependency';
+    this.trigger(document, 'navigate', {route: 'dependency'});
 
-  function (moment,
-            {component},
-            $,
-            queryString,
-            DependencyData,
-            DependencyGraphUI,
-            ServiceDataModal,
-            TimeStampUI,
-            GoToDependencyUI,
-            dependenciesTemplate
-  ) {
+    this.$node.html(dependenciesTemplate());
 
-    const DependencyPageComponent = component(function DependencyPage() {
-      this.after('initialize', function() {
-        window.document.title = 'Zipkin - Dependency';
-        this.trigger(document, 'navigate', {route: 'dependency'});
+    const {startTs, endTs} = queryString.parse(location.search);
+    $('#endTs').val(endTs || moment().valueOf());
+    $('#startTs').val(startTs || moment().valueOf() - 1*24*60*60*1000); // set default startTs 1 day ago;
 
-        this.$node.html(dependenciesTemplate());
+    DependencyData.attachTo('#dependency-container');
+    DependencyGraphUI.attachTo('#dependency-container');
+    ServiceDataModal.attachTo('#service-data-modal-container');
+    TimeStampUI.attachTo('#end-ts');
+    TimeStampUI.attachTo('#start-ts');
+    GoToDependencyUI.attachTo('#dependency-query-form');
+  });
+});
 
-        const {startTs, endTs} = queryString.parse(location.search);
-        $('#endTs').val(endTs || moment().valueOf());
-        $('#startTs').val(startTs || moment().valueOf() - 1*24*60*60*1000); // set default startTs 1 day ago;
-
-        DependencyData.attachTo('#dependency-container');
-        DependencyGraphUI.attachTo('#dependency-container');
-        ServiceDataModal.attachTo('#service-data-modal-container');
-        TimeStampUI.attachTo('#end-ts');
-        TimeStampUI.attachTo('#start-ts');
-        GoToDependencyUI.attachTo('#dependency-query-form');
-      });
-    });
-
-    return function initializeDependencies() {
-      DependencyPageComponent.attachTo('.content');
-    }
-  }
-);
+export default function initializeDependencies() {
+  DependencyPageComponent.attachTo('.content');
+}

@@ -1,92 +1,81 @@
-'use strict';
+import {component} from 'flightjs';
+import moment from 'moment';
+import $ from 'jquery';
 
-define(
-  [
-    'flight',
-    'moment'
-  ],
+export default component(function dependency() {
+  var links = [];
+  var services = {};
+  var dependencies = {};
 
-  function (flight, moment) {
+  this.getDependency = function (endTs, lookback) {
+    var url = "/api/v1/dependencies?endTs=" + endTs;
+    if (lookback) url += "&lookback=" + lookback;
+    $.ajax(url, {
+      type: "GET",
+      dataType: "json",
+      success: links => {
+        this.links = links;
+        this.buildServiceData(links);
+        this.trigger('dependencyDataReceived', links);
+      },
+      failure: (jqXHR, status, err) => {
+        var error = {
+          message: "Couldn't get dependency data from backend: " + err
+        };
+        this.trigger('dependencyDataFailed', error);
+      }
+    });
+  };
 
-    return flight.component(dependency);
+  this.buildServiceData = function (links) {
+    services = {};
+    dependencies = {};
+    links.forEach(function (link) {
+      var parent = link.parent;
+      var child = link.child;
 
-    function dependency() {
-      var links = [];
-      var services = {};
-      var dependencies = {};
+      dependencies[parent] = dependencies[parent] || {};
+      dependencies[parent][child] = link;
 
-      this.getDependency = function (endTs, lookback) {
-        var url = "/api/v1/dependencies?endTs=" + endTs;
-        if (lookback) url += "&lookback=" + lookback;
-        $.ajax(url, {
-          type: "GET",
-          dataType: "json",
-          context: this,
-          success: function (links) {
-            this.links = links;
-            this.buildServiceData(links);
-            this.trigger('dependencyDataReceived', links);
-          },
-          failure: function (jqXHR, status, err) {
-            var error = {
-              message: "Couldn't get dependency data from backend: " + err
-            };
-            this.trigger('dependencyDataFailed', error);
-          }
-        });
-      };
+      services[parent] = services[parent] || {serviceName: parent, uses: [], usedBy: []};
+      services[child] = services[child] || {serviceName: child, uses: [], usedBy: []};
 
-      this.buildServiceData = function (links) {
-        services = {};
-        dependencies = {};
-        links.forEach(function (link) {
-          var parent = link.parent;
-          var child = link.child;
+      services[parent].uses.push(child);
+      services[child].usedBy.push(parent);
+    });
+  };
 
-          dependencies[parent] = dependencies[parent] || {};
-          dependencies[parent][child] = link;
+  this.after('initialize', function () {
+    this.on(document, 'dependencyDataRequested', function (event, {endTs, lookback}) {
+      this.getDependency(endTs, lookback);
+    });
 
-          services[parent] = services[parent] || {serviceName: parent, uses: [], usedBy: []};
-          services[child] = services[child] || {serviceName: child, uses: [], usedBy: []};
+    this.on(document, 'serviceDataRequested', function (event, {serviceName}) {
+      this.getServiceData(serviceName, function (data) {
+        this.trigger(document, 'serviceDataReceived', data);
+      }.bind(this));
+    });
 
-          services[parent].uses.push(child);
-          services[child].usedBy.push(parent);
-        });
-      };
+    this.on(document, 'parentChildDataRequested', function (event, {parent, child}) {
+      this.getDependencyData(parent, child, function (data) {
+        this.trigger(document, 'parentChildDataReceived', data);
+      }.bind(this));
+    });
 
-      this.after('initialize', function () {
-        this.on(document, 'dependencyDataRequested', function (event, args) {
-          this.getDependency(args.endTs, args.lookback);
-        });
-
-        this.on(document, 'serviceDataRequested', function (event, args) {
-          this.getServiceData(args.serviceName, function (data) {
-            this.trigger(document, 'serviceDataReceived', data);
-          }.bind(this));
-        });
-
-        this.on(document, 'parentChildDataRequested', function (event, args) {
-          this.getDependencyData(args.parent, args.child, function (data) {
-            this.trigger(document, 'parentChildDataReceived', data);
-          }.bind(this));
-        });
-
-        var endTs = document.getElementById('endTs').value || moment().valueOf();
-        var startTs = document.getElementById('startTs').value;
-        var lookback;
-        if (startTs && endTs > startTs) {
-          lookback = endTs - startTs;
-        }
-        this.getDependency(endTs, lookback);
-      });
-
-      this.getServiceData = function (serviceName, callback) {
-        callback(services[serviceName]);
-      };
-
-      this.getDependencyData = function (parent, child, callback) {
-        callback(dependencies[parent][child]);
-      };
+    var endTs = document.getElementById('endTs').value || moment().valueOf();
+    var startTs = document.getElementById('startTs').value;
+    var lookback;
+    if (startTs && endTs > startTs) {
+      lookback = endTs - startTs;
     }
-  }
-);
+    this.getDependency(endTs, lookback);
+  });
+
+  this.getServiceData = function (serviceName, callback) {
+    callback(services[serviceName]);
+  };
+
+  this.getDependencyData = function (parent, child, callback) {
+    callback(dependencies[parent][child]);
+  };
+});

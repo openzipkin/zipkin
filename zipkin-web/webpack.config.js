@@ -7,7 +7,6 @@ module.exports = {
         __dirname + '/src/main/resources/app/css/style-loader.js',
     ],
     resolve: {
-        alias: { flight: 'flightjs', chosen: 'chosen-npm/public/chosen.jquery.js' },
         modulesDirectories: ['node_modules']
     },
     module: {

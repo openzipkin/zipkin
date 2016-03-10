@@ -2,9 +2,9 @@
 
 define(
   [
-    'flight',
+    'flightjs',
     'js-cookie',
-    'chosen',
+    'chosen-npm/public/chosen.jquery.js',
     'query-string'
   ],
 
