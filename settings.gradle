@@ -15,6 +15,7 @@ def includes = [
 'zipkin-collector-service',
 'zipkin-query-service',
 'zipkin-web',
+'zipkin-ui',
 
 /////////////////////////////////////
 // Collector, and Collector inputs //
