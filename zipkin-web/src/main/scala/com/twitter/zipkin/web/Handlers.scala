@@ -89,10 +89,6 @@ class Handlers {
       }
   }
 
-  def handleIndexHtml() = Service.mk[Request,Renderer] { _ =>
-    Future(StaticRenderer(getClass.getResourceAsStream("/app/index.html"), "text/html"))
-  }
-
   def handlePublic(
     resourceDirs: Set[String],
     typesMap: Map[String, String]) =
@@ -107,11 +103,15 @@ class Handlers {
           synchronized {
             rendererCache.get(path) orElse {
               resourceDirs find(path.startsWith) flatMap { _ =>
-                  val typ = typesMap find { case (n, _) => path.endsWith(n) } map { _._2 } getOrElse("text/plain")
-                   getStream(path) map { input =>
-                  val renderer = Future.value(StaticRenderer(input, typ))
-                  rendererCache += (path -> renderer)
-                  renderer
+                path match {
+                  case "/"     => Option(Future(StaticRenderer(getClass.getResourceAsStream("/index.html"), "text/html")))
+                  case default =>
+                    val typ = typesMap find { case (n, _) => path.endsWith(n) } map { _._2 } getOrElse("text/plain")
+                    getStream(path) map { input =>
+                      val renderer = Future.value(StaticRenderer(input, typ))
+                      rendererCache += (path -> renderer)
+                      renderer
+                    }
                 }
               }
             }
