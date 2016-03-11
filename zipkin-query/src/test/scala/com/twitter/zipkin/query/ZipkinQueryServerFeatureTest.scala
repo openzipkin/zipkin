@@ -292,6 +292,64 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
       andExpect = NotFound)
   }
 
+  /**
+   * This simulates instrumentation that flushes to zipkin for each annotation.
+   * The in-memory span store stores these separately and can show them in a raw trace.
+   */
+  "get raw trace by hex id" in {
+    app.injector.instance[SpanStore].apply(
+      List(Span(1, "methodcall", 666, Some(2), annotations = List(ann1)))
+    )
+    app.injector.instance[SpanStore].apply(
+      List(Span(1, "methodcall", 666, Some(2), annotations = List(ann2)))
+    )
+
+    server.httpGet(
+      path = "/api/v1/trace/0000000000000001?raw",
+      andExpect = Ok,
+      withJsonBody =
+        """
+          |[
+          |  {
+          |    "traceId" : "0000000000000001",
+          |    "name" : "methodcall",
+          |    "id" : "000000000000029a",
+          |    "parentId" : "0000000000000002",
+          |    "annotations" : [
+          |      {
+          |        "timestamp" : 100000,
+          |        "value" : "cs",
+          |        "endpoint" : {
+          |          "serviceName" : "service1",
+          |          "ipv4" : "0.0.0.123",
+          |          "port" : 123
+          |        }
+          |      }
+          |    ],
+          |    "binaryAnnotations" : [ ]
+          |  },
+          |  {
+          |    "traceId" : "0000000000000001",
+          |    "name" : "methodcall",
+          |    "id" : "000000000000029a",
+          |    "parentId" : "0000000000000002",
+          |    "annotations" : [
+          |      {
+          |        "timestamp" : 150000,
+          |        "value" : "cr",
+          |        "endpoint" : {
+          |          "serviceName" : "service1",
+          |          "ipv4" : "0.0.0.123",
+          |          "port" : 123
+          |        }
+          |      }
+          |    ],
+          |    "binaryAnnotations" : [ ]
+          |  }
+          |]
+        """.stripMargin)
+  }
+
   "find traces missing service" in {
     server.httpGet(
       path = "/api/v1/traces?serviceName=",

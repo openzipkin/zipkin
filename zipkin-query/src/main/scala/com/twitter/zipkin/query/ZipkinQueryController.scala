@@ -6,7 +6,7 @@ import com.twitter.finagle.tracing.SpanId
 import com.twitter.finatra.annotations.Flag
 import com.twitter.finatra.http.Controller
 import com.twitter.finatra.http.response.ResponseBuilder
-import com.twitter.finatra.request.{QueryParam, RouteParam}
+import com.twitter.finatra.request.QueryParam
 import com.twitter.io.StreamIO
 import com.twitter.util.Future
 import com.twitter.zipkin.Constants.MaxServicesWithoutCaching
@@ -79,12 +79,18 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
     }
   }
 
-  get("/api/v1/trace/:id") { request: GetTraceRequest =>
-    val traceId = SpanId.fromString(request.id).map(_.toLong)
+  get("/api/v1/trace/:id") { request: Request =>
+    val traceIdText = request.path.replace("/api/v1/trace/", "")
+    val traceId = SpanId.fromString(traceIdText).map(_.toLong)
     if (traceId.isDefined) {
-      spanStore.getTracesByIds(traceId.toSeq)
-        .map(_.map(_.map(JsonSpan)))
-        .map(_.headOption.getOrElse(response.notFound))
+      // manually parsing request as @QueryParam doesn't support no value
+      val spans = if (request.params.get("raw").isDefined) {
+        spanStore.getSpansByTraceIds(traceId.toSeq)
+      } else {
+        spanStore.getTracesByIds(traceId.toSeq)
+      }
+      spans.map(_.map(_.map(JsonSpan)))
+           .map(_.headOption.getOrElse(response.notFound))
     } else {
       Future.value(response.notFound)
     }
@@ -109,5 +115,3 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
 case class GetSpanNamesRequest(@QueryParam serviceName: String)
 
 case class GetDependenciesRequest(@QueryParam endTs: Long, @QueryParam lookback: Option[Long])
-
-case class GetTraceRequest(@RouteParam id: String)

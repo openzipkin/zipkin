@@ -23,6 +23,11 @@ public class SpanStoreInJava extends SpanStore {
     }
 
     @Override
+    public Future<Seq<Seq<Span>>> getSpansByTraceIds(Seq<Object> traceIds) {
+        return null;
+    }
+
+    @Override
     public Future<Seq<String>> getAllServiceNames() {
         return null;
     }

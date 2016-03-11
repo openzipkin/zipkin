@@ -26,7 +26,7 @@ object SpanTreeEntry {
   /**
    * Get the spans of this trace in a tree form. SpanTreeEntry wraps a Span and its children.
    */
-  def create(span: Span, spans: List[Span]): SpanTreeEntry = { // apply would collide on generics
+  def create(span: Span, spans: Seq[Span]): SpanTreeEntry = { // apply would collide on generics
     create(span, indexByParentId(spans))
   }
 
@@ -40,7 +40,7 @@ object SpanTreeEntry {
   /*
    * Turn the Trace into a map of Span Id -> One or more children Spans
    */
-  private[common] def indexByParentId(spans: List[Span]): mutable.MultiMap[Long, Span] = {
+  private[common] def indexByParentId(spans: Seq[Span]): mutable.MultiMap[Long, Span] = {
     val map = new mutable.HashMap[Long, mutable.Set[Span]] with mutable.MultiMap[Long, Span]
     for ( s <- spans; pId <- s.parentId ) map.addBinding(pId, s)
     map

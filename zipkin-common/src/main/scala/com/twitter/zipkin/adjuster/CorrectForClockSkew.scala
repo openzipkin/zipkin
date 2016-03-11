@@ -25,15 +25,15 @@ import scala.collection.{Map, breakOut}
  * Adjusts Spans timestamps so that each child happens after their parents.
  * This is to counteract clock skew on servers, we want the Trace to happen in order.
  */
-object CorrectForClockSkew extends ((List[Span]) => List[Span]) {
+object CorrectForClockSkew extends ((Seq[Span]) => List[Span]) {
 
-  override def apply(spans: List[Span]): List[Span] = {
+  override def apply(spans: Seq[Span]): List[Span] = {
     spans.find(!_.parentId.isDefined) match {
       case Some(s) => {
         val tree = SpanTreeEntry.create(s, spans)
         adjust(tree, None).toList
       }
-      case None => spans
+      case None => spans.toList
     }
   }
 
