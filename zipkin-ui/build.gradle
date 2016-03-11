@@ -35,7 +35,6 @@ task webpack(type: NpmTask) {
     args = ['run-script', 'build']
     dependsOn npmInstall
 }
-build.dependsOn webpack
 processResources.dependsOn(webpack)
 
 task karma(type: NpmTask) {
