@@ -456,4 +456,25 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     val clientAnnotations = span.annotations.filter(_.value.startsWith("c")).sorted
     clientAnnotations.last.timestamp - clientAnnotations.head.timestamp
   }
+
+  // This supports the "raw trace" feature, which skips application-level data cleaning
+  @Test def getSpansByTraceIds_doesntPerformQueryTimeAdjustment() {
+    result(store(
+      List(Span(1, "methodcall", 666, Some(2), annotations = List(ann1)))
+    ))
+    result(store(
+      List(Span(1, "methodcall", 666, Some(2), annotations = List(ann2)))
+    ))
+
+    val withDuration = result(store.getTracesByIds(Seq(1)))(0)
+    // MergeById merges spans with the same id
+    withDuration.size should be(1)
+    // ApplyTimestampAndDuration fills duration even if not stored in the DB
+    withDuration(0).duration.get should be(ann2.timestamp - ann1.timestamp)
+
+    val raw = result(store.getSpansByTraceIds(Seq(1)))(0)
+    // We can't guarantee there will be two spans returned: For example, the collector might merge
+    // Definitely span.duration will not be set, as the collector never saw two annotations
+    raw.foreach(_.duration should be(Option.empty))
+  }
 }

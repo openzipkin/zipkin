@@ -204,17 +204,13 @@ abstract class CassandraSpanStore(
     }
   }
 
-  private[this] def getSpansByTraceIds(traceIds: Seq[Long], count: Int): Future[Seq[List[Span]]] = {
+  private[this] def getSpansByTraceIds(traceIds: Seq[Long], count: Int): Future[Seq[Seq[Span]]] = {
     FutureUtil.toFuture(repository.getSpansByTraceIds(traceIds.toArray.map(Long.box), count))
       .map { spansByTraceId =>
         val spans =
           spansByTraceId.asScala.mapValues { spans => spans.asScala.map(spanCodec.decode(_).toSpan) }
 
         traceIds.flatMap(traceId => spans.get(traceId))
-          .map(MergeById)
-          .map(CorrectForClockSkew)
-          .map(ApplyTimestampAndDuration)
-          .sortBy(_.head)(Ordering[Span].reverse) // sort descending by the first span
       }
   }
 
@@ -248,6 +244,16 @@ abstract class CassandraSpanStore(
   }
 
   override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[List[Span]]] = {
+    QueryGetSpansByTraceIdsStat.add(traceIds.size)
+    getSpansByTraceIds(traceIds, maxTraceCols).map(
+      _.map(MergeById)
+       .map(CorrectForClockSkew)
+       .map(ApplyTimestampAndDuration)
+       .sortBy(_.head)(Ordering[Span].reverse) // sort descending by the first span
+    )
+  }
+
+  override def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]] = {
     QueryGetSpansByTraceIdsStat.add(traceIds.size)
     getSpansByTraceIds(traceIds, maxTraceCols)
   }

@@ -46,6 +46,17 @@ abstract class SpanStore extends java.io.Closeable {
   def getTracesByIds(traceIds: Seq[Long]): Future[Seq[List[Span]]]
 
   /**
+    * Retrieves spans grouped by trace id, as returned from backend data store
+    * queries, with no ordering expectation.
+    *
+    * <p>This is different, but related to [[getTracesByIds()]].
+    * [[getTracesByIds()]] cleans data by merging spans, adding timestamps
+    * and performing clock skew adjustment. This feature is for debugging
+    * zipkin logic or zipkin instrumentation.
+    */
+  def getSpansByTraceIds(traceIds: Seq[Long]): Future[Seq[Seq[Span]]]
+
+  /**
    * Get all the service names for as far back as the ttl allows.
    *
    * <p/> Results are sorted lexicographically
@@ -105,14 +116,15 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
       .map(ApplyTimestampAndDuration.apply)
   }.unit
 
-  override def getTracesByIds(traceIds: Seq[Long]): Future[Seq[List[Span]]] = call {
-    spans.groupBy(_.traceId)
-         .filterKeys(traceIds.contains(_))
-         .values.filter(!_.isEmpty).toList
-         .map(MergeById)
-         .map(CorrectForClockSkew)
-         .map(ApplyTimestampAndDuration)
-         .sortBy(_.head)(Ordering[Span].reverse) // sort descending by the first span
+  override def getTracesByIds(traceIds: Seq[Long]) = getSpansByTraceIds(traceIds).map(
+    _.map(MergeById)
+     .map(CorrectForClockSkew)
+     .map(ApplyTimestampAndDuration)
+     .sortBy(_.head)(Ordering[Span].reverse) // sort descending by the first span
+  )
+
+  override def getSpansByTraceIds(traceIds: Seq[Long]) = call {
+    spans.groupBy(_.traceId).filterKeys(traceIds.contains(_)).values.toSeq
   }
 
   override def getTraceIdsByName(
