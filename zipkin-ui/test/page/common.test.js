@@ -1,3 +1,4 @@
+import $ from 'jquery';
 import CommonUI from '../../js/page/common';
 
 describe('CommonUI', () => {

@@ -18,10 +18,11 @@ export default component(function filterAllServices() {
     this.filtered[data.value] = true;
     this.currentFilterCount += 1;
 
-    if (this.currentFilterCount === this.totalServices)
+    if (this.currentFilterCount === this.totalServices) {
       this.$expandAll.addClass('active');
-    else
+    } else {
       this.$collapseAll.removeClass('active');
+    }
   };
 
   this.filterRemoved = function(e, data) {
@@ -30,10 +31,11 @@ export default component(function filterAllServices() {
     this.filtered[data.value] = false;
     this.currentFilterCount -= 1;
 
-    if (this.currentFilterCount === 0)
+    if (this.currentFilterCount === 0) {
       this.$collapseAll.addClass('active');
-    else
+    } else {
       this.$expandAll.removeClass('active');
+    }
   };
 
   this.after('initialize', function(node, data) {

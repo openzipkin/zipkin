@@ -10,8 +10,9 @@ export default component(function fullPageSpinner() {
 
   this.hideSpinner = function() {
     this.requests -= 1;
-    if (this.requests == 0)
+    if (this.requests === 0) {
       this.$node.hide();
+    }
   };
 
   this.after('initialize', function() {

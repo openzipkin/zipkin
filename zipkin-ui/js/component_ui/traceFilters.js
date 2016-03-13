@@ -3,20 +3,20 @@ import $ from 'jquery';
 
 export default component(function traceFilters() {
   this.idFromService = function(service) {
-    return "service-filter-" + service.replace(/[^a-z0-9\-_]/gi, "-");
+    return `service-filter-${service.replace(/[^a-z0-9\-_]/gi, '-')}`;
   };
 
   this.addToFilter = function(ev, data) {
-    if (this.$node.find("[data-service-name='" + data.value +"']").length) return;
+    if (this.$node.find(`[data-service-name='${data.value}']`).length) return;
 
     // TODO: should this be mustache instead?
-    var $remove =
+    const $remove =
       $('<span>')
         .attr('class', 'badge service-filter-remove')
         .text('x')
-        .on('click', function() { $(this).trigger('uiRemoveServiceNameFilter', data) });
+        .on('click', function() { $(this).trigger('uiRemoveServiceNameFilter', data); });
 
-    var $html =
+    const $html =
       $('<span>')
         .attr('class', 'label service-filter-label service-tag-filtered')
         .attr('id', this.idFromService(data.value))
@@ -28,14 +28,14 @@ export default component(function traceFilters() {
   };
 
   this.removeFromFilter = function(ev, data) {
-    this.$node.find('#' + this.idFromService(data.value)).remove();
+    this.$node.find(`#${this.idFromService(data.value)}`).remove();
   };
 
   this.updateTraces = function(ev, data) {
     this.$node.find('.filter-current').text(data.traces.size());
   };
 
-  this.updateSortOrder = function(ev, data) {
+  this.updateSortOrder = function(ev) {
     this.trigger(document, 'uiUpdateTraceSortOrder', {order: $(ev.target).val()});
   };
 

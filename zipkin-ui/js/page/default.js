@@ -1,5 +1,6 @@
 import {component} from 'flightjs';
-import timeago from 'timeago';
+import $ from 'jquery';
+import timeago from 'timeago'; // eslint-disable-line no-unused-vars
 import queryString from 'query-string';
 import DefaultData from '../component_data/default';
 import SpanNamesData from '../component_data/spanNames';
