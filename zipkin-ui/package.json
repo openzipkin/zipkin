@@ -7,6 +7,7 @@
     "dev": "node node_modules/webpack-dev-server/bin/webpack-dev-server.js --hot --inline",
     "test": "node node_modules/karma/bin/karma start --single-run",
     "test-watch": "node node_modules/karma/bin/karma start",
+    "lint": "node node_modules/eslint/bin/eslint js test",
     "build": "node node_modules/webpack/bin/webpack.js --bail"
   },
   "author": "",
@@ -32,6 +33,8 @@
     "babel-preset-es2015": "^6.3.13",
     "chai": "^3.5.0",
     "css-loader": "^0.23.1",
+    "eslint": "^2.4.0",
+    "eslint-config-airbnb": "^6.1.0",
     "extract-text-webpack-plugin": "^1.0.1",
     "file-loader": "^0.8.5",
     "karma": "^0.13.21",
