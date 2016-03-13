@@ -102,8 +102,15 @@ case class Span(
     }
 
     val selectedTimestamp = Seq(timestamp, mergeFrom.timestamp).flatten.reduceOption(_ min _)
-    val selectedDuration = Trace.duration(List(this, mergeFrom))
-                                .orElse(duration).orElse(mergeFrom.duration)
+
+    // client duration is authoritative when present
+    val selectedDuration = if (clientDurationDefined(this)) {
+      duration
+    } else if (clientDurationDefined(mergeFrom)) {
+      mergeFrom.duration
+    } else {
+      Trace.duration(List(this, mergeFrom)).orElse(duration).orElse(mergeFrom.duration)
+    }
 
     new Span(
       traceId,
@@ -116,6 +123,10 @@ case class Span(
       binaryAnnotations ++ mergeFrom.binaryAnnotations,
       if (debug.getOrElse(false) | mergeFrom.debug.getOrElse(false)) Some(true) else None
     )
+  }
+
+  def clientDurationDefined(span: Span): Boolean = {
+    span.annotations.exists(_.value == Constants.ClientSend) && span.duration.isDefined
   }
 
   /**

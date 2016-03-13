@@ -25,4 +25,16 @@ class MergeByIdTest extends FunSuite {
 
     assert(MergeById(List(spanToMerge1, spanToMerge2)) == List(spanMerged))
   }
+
+  test("merged spans prefers client duration") {
+    val server = Span(12345, "post", 2, Some(1L), Some(1457596859492000L), Some(11000), List(
+      Annotation(1457596859492000L, Constants.ServerRecv, Some(Endpoint(456, 456, "service2"))),
+      Annotation(1457596859503000L, Constants.ServerSend, Some(Endpoint(456, 456, "service2")))
+    ))
+    val client = Span(12345, "post", 2, Some(1L), Some(1457596859524000L), Some(15000), List(
+      Annotation(1457596859524000L, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
+      Annotation(1457596859539000L, Constants.ClientRecv, Some(Endpoint(123, 123, "service1")))
+    ))
+    assert(MergeById(List(server, client))(0).duration == client.duration)
+  }
 }
