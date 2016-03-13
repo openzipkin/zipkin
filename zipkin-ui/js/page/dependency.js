@@ -18,7 +18,8 @@ const DependencyPageComponent = component(function DependencyPage() {
 
     const {startTs, endTs} = queryString.parse(location.search);
     $('#endTs').val(endTs || moment().valueOf());
-    $('#startTs').val(startTs || moment().valueOf() - 1*24*60*60*1000); // set default startTs 1 day ago;
+    const defaultStartTs = 24 * 60 * 60 * 1000; // set default startTs 1 day ago;
+    $('#startTs').val(startTs || moment().valueOf() - defaultStartTs);
 
     DependencyData.attachTo('#dependency-container');
     DependencyGraphUI.attachTo('#dependency-container');

@@ -37,7 +37,7 @@ export const Constants = {
   CORE_ANNOTATIONS
 };
 
-export let ConstantNames = {};
+export const ConstantNames = {};
 ConstantNames[CLIENT_SEND] = 'Client Send';
 ConstantNames[CLIENT_SEND_FRAGMENT] = 'Client Send Fragment';
 ConstantNames[CLIENT_RECEIVE] = 'Client Receive';

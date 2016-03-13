@@ -1,4 +1,5 @@
 import {component} from 'flightjs';
+import $ from 'jquery';
 import FilterLabelUI from '../component_ui/filterLabel';
 
 export default component(function traces() {
@@ -6,23 +7,24 @@ export default component(function traces() {
   this.services = [];
 
   this.triggerUpdateTraces = function() {
-    this.$node.trigger('uiUpdateTraces', {traces: this.$traces.filter(":visible")});
+    this.$node.trigger('uiUpdateTraces', {traces: this.$traces.filter(':visible')});
   };
 
   this.updateTraces = function() {
-    var services = this.services;
+    const services = this.services;
     this.$traces.each(function() {
-      var $trace = $(this);
+      const $trace = $(this);
       if (services.length > 0) {
-        var show = true;
-        $.each(services, function(idx, svc) {
-          if (!$trace.has(".service-filter-label[data-service-name='" + svc + "']").length)
-            show = false
+        let show = true;
+        $.each(services, (idx, svc) => {
+          if (!$trace.has(`.service-filter-label[data-service-name='${svc}']`).length) {
+            show = false;
+          }
         });
 
         $trace[show ? 'show' : 'hide']();
       } else {
-        $trace.show()
+        $trace.show();
       }
     });
 
@@ -30,14 +32,14 @@ export default component(function traces() {
   };
 
   this.addFilter = function(ev, data) {
-    if ($.inArray(data.value, this.services) == -1) {
+    if ($.inArray(data.value, this.services) === -1) {
       this.services.push(data.value);
       this.updateTraces();
     }
   };
 
   this.removeFilter = function(ev, data) {
-    var idx = $.inArray(data.value, this.services);
+    const idx = $.inArray(data.value, this.services);
     if (idx > -1) {
       this.services.splice(idx, 1);
       this.updateTraces();
@@ -45,12 +47,12 @@ export default component(function traces() {
   };
 
   this.sortFunctions = {
-    'service-percentage-desc': function(a ,b) { return b.percentage - a.percentage; },
-    'service-percentage-asc': function(a ,b) { return a.percentage - b.percentage; },
-    'duration-desc': function(a, b) { return b.duration - a.duration; },
-    'duration-asc': function(a, b) { return a.duration - b.duration; },
-    'timestamp-desc': function(a, b) { return b.timestamp - a.timestamp; },
-    'timestamp-asc': function(a, b) { return a.timestamp - b.timestamp; }
+    'service-percentage-desc': (a, b) => b.percentage - a.percentage,
+    'service-percentage-asc': (a, b) => a.percentage - b.percentage,
+    'duration-desc': (a, b) => b.duration - a.duration,
+    'duration-asc': (a, b) => a.duration - b.duration,
+    'timestamp-desc': (a, b) => b.timestamp - a.timestamp,
+    'timestamp-asc': (a, b) => a.timestamp - b.timestamp
   };
 
   this.updateSortOrder = function(ev, data) {
@@ -72,9 +74,9 @@ export default component(function traces() {
 
     this.$traces = this.$node.find('.trace');
     this.$traces.each(function() {
-      var $this = $(this);
-      this.duration = parseInt($this.data('duration'), 10),
-      this.timestamp = parseInt($this.data('timestamp'), 10)
+      const $this = $(this);
+      this.duration = parseInt($this.data('duration'), 10);
+      this.timestamp = parseInt($this.data('timestamp'), 10);
       this.percentage = parseInt($this.data('servicePercentage'), 10);
     });
     this.on(document, 'uiAddServiceNameFilter', this.addFilter);

@@ -1,5 +1,6 @@
 import {component} from 'flightjs';
-import bootstrap from 'bootstrap-sass/assets/javascripts/bootstrap.js';
+import bootstrap // eslint-disable-line no-unused-vars
+    from 'bootstrap-sass/assets/javascripts/bootstrap.js';
 
 export default component(function infoPanel() {
   this.show = function() {

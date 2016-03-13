@@ -7,11 +7,13 @@ export default component(function DefaultData() {
   this.after('initialize', function() {
     const serviceName = queryString.parse(window.location.search).serviceName;
     if (serviceName) {
-      $.ajax('/api/v1/traces' + window.location.search, {
+      $.ajax(`/api/v1/traces${window.location.search}`, {
         type: 'GET',
         dataType: 'json',
         success: traces => {
-          const modelview = {traces: traceSummariesToMustache(serviceName, traces.map(traceSummary)) };
+          const modelview = {
+            traces: traceSummariesToMustache(serviceName, traces.map(traceSummary))
+          };
           this.trigger('defaultPageModelView', modelview);
         }
       });
