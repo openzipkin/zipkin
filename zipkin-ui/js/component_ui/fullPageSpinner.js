@@ -1,15 +1,6 @@
-'use strict';
+import {component} from 'flightjs';
 
-define(
-  [
-    'flightjs'
-  ],
-
-  function (flight) {
-
-    return flight.component(fullPageSpinner);
-
-    function fullPageSpinner() {
+    export default component(function fullPageSpinner() {
       this.requests = 0;
 
       this.showSpinner = function() {
@@ -27,6 +18,4 @@ define(
         this.on(document, 'uiShowFullPageSpinner', this.showSpinner);
         this.on(document, 'uiHideFullPageSpinner', this.hideSpinner);
       });
-    }
-  }
-);
+    });

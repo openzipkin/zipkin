@@ -1,18 +1,7 @@
-'use strict';
+import {component} from 'flightjs';
+import FilterLabelUI from '../component_ui/filterLabel';
 
-define(
-  [
-    'flightjs',
-    '../component_ui/filterLabel'
-  ],
-
-  function (
-    flight,
-    FilterLabelUI
-  ) {
-    return flight.component(traces);
-
-    function traces() {
+    export default component(function traces() {
       this.$traces = [];
       this.services = [];
 
@@ -92,6 +81,4 @@ define(
         this.on(document, 'uiRemoveServiceNameFilter', this.removeFilter);
         this.on(document, 'uiUpdateTraceSortOrder', this.updateSortOrder);
       });
-    }
-  }
-);
+    });

@@ -1,15 +1,7 @@
-'use strict';
+import {component} from 'flightjs';
+import chosen from 'chosen-npm/public/chosen.jquery.js';
 
-define(
-  [
-    'flightjs',
-    'chosen-npm/public/chosen.jquery.js'
-  ],
-
-  function (flight, chosen) {
-    return flight.component(serviceNameFilter);
-
-    function serviceNameFilter() {
+    export default component(function serviceNameFilter() {
       this.onChange = function(e, params) {
         if (params.selected === "") return;
 
@@ -22,7 +14,4 @@ define(
         this.$node.chosen({search_contains: true});
         this.on('change', this.onChange);
       });
-    }
-
-  }
-);
+    });

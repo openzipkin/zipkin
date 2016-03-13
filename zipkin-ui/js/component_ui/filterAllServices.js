@@ -1,15 +1,7 @@
-'use strict';
+import {component} from 'flightjs';
+import $ from 'jquery';
 
-define(
-  [
-    'flightjs'
-  ],
-
-  function (flight) {
-
-    return flight.component(filterAllServices);
-
-    function filterAllServices() {
+    export default component(function filterAllServices() {
       this.$expandAll = $();
       this.$collapseAll = $();
       this.totalServices = 0;
@@ -53,6 +45,4 @@ define(
         this.on(document, 'uiAddServiceNameFilter', this.filterAdded);
         this.on(document, 'uiRemoveServiceNameFilter', this.filterRemoved);
       });
-    }
-  }
-);
+    });

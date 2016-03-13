@@ -1,15 +1,7 @@
-'use strict';
+import {component} from 'flightjs';
+import $ from 'jquery';
 
-define(
-  [
-    'flightjs',
-  ],
-
-  function (flight) {
-
-    return flight.component(spanPanel);
-
-    function spanPanel() {
+    export default component(function spanPanel() {
       this.$annotationTemplate = null;
       this.$binaryAnnotationTemplate = null;
 
@@ -56,7 +48,4 @@ define(
         this.$binaryAnnotationTemplate = this.$node.find('#binaryAnnotations tbody tr').remove();
         this.on(document, 'uiRequestSpanPanel', this.show);
       });
-    }
-
-  }
-);
+    });

@@ -1,15 +1,6 @@
-'use strict';
+import {component} from 'flightjs';
 
-define(
-  [
-    'flightjs'
-  ],
-
-  function (flight) {
-
-    return flight.component(infoButton);
-
-    function infoButton() {
+    export default component(function infoButton() {
       this.requestInfoPanel = function() {
         this.trigger('uiRequestInfoPanel');
       };
@@ -17,7 +8,4 @@ define(
       this.after('initialize', function() {
         this.on('click', this.requestInfoPanel);
       });
-    }
-
-  }
-);
+    });

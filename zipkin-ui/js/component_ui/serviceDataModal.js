@@ -1,16 +1,9 @@
-'use strict';
+import {component} from 'flightjs';
+import $ from 'jquery';
+import dependency from '../component_data/dependency';
+import bootstrap from 'bootstrap-sass/assets/javascripts/bootstrap.js';
 
-define(
-  [
-    'flightjs',
-    '../component_data/dependency',
-    'bootstrap-sass/assets/javascripts/bootstrap.js'
-  ],
-
-  function (flight, dependency, bootstrap) {
-    return flight.component(serviceDataModal);
-
-    function serviceDataModal() {
+    export default component(function serviceDataModal() {
       this.after('initialize', function () {
         this.on(document, 'showServiceDataModal', this.showServiceDataModal);
         this.on(document, 'showDependencyModal', this.showDependencyModal);
@@ -31,7 +24,7 @@ define(
           callCount: data.callCount
         });
       }
-    }
+    });
 
     function renderDependencyModal(event, data) {
       var $modal = $('#dependencyModal');
@@ -99,5 +92,3 @@ define(
       $modal.modal('show');
       $('#dependencyModal').modal('hide');
     }
-  }
-);

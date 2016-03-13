@@ -1,16 +1,7 @@
-'use strict';
+import {component} from 'flightjs';
+import queryString from 'query-string';
 
-define(
-  [
-    'flightjs',
-    'query-string'
-  ],
-
-  function (flight, queryString) {
-
-    return flight.component(trace);
-
-    function trace() {
+    export default component(function trace() {
       this.spans = {};
       this.parents = {};
       this.children = {};
@@ -442,6 +433,4 @@ define(
         else
           this.expandSpans([this.spans[this.$node.find('.span:nth(1)').data('id')]]);
       });
-    };
-  }
-)
+    });

@@ -1,17 +1,10 @@
-'use strict';
+import {component} from 'flightjs';
+import Cookies from 'js-cookie';
+import $ from 'jquery';
+import chosen from 'chosen-npm/public/chosen.jquery.js';
+import queryString from 'query-string';
 
-define(
-  [
-    'flightjs',
-    'js-cookie',
-    'chosen-npm/public/chosen.jquery.js',
-    'query-string'
-  ],
-
-  function (flight, Cookies, chosen, queryString) {
-    return flight.component(serviceName);
-
-    function serviceName() {
+    export default component(function serviceName() {
       this.onChange = function() {
         Cookies.set('last-serviceName', this.$node.val());
         this.triggerChange(this.$node.val());
@@ -40,6 +33,4 @@ define(
         this.on('change', this.onChange);
         this.on(document, 'dataServiceNames', this.updateServiceNameDropdown);
       });
-    }
-  }
-);
+    });

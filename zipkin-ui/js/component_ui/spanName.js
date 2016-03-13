@@ -1,16 +1,9 @@
-'use strict';
+import {component} from 'flightjs';
+import chosen from 'chosen-npm/public/chosen.jquery.js';
+import $ from 'jquery';
+import queryString from 'query-string';
 
-define(
-  [
-    'flightjs',
-    'chosen-npm/public/chosen.jquery.js',
-    'query-string'
-  ],
-
-  function (flight, chosen, queryString) {
-    return flight.component(spanName);
-
-    function spanName() {
+    export default component(function spanName() {
       this.updateSpans = function(ev, data) {
         this.render(data.spans);
         this.trigger('chosen:updated');
@@ -33,7 +26,4 @@ define(
         });
         this.on(document, 'dataSpanNames', this.updateSpans);
       });
-    }
-
-  }
-);
+    });
