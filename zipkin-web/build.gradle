@@ -19,6 +19,7 @@ shadowJar {
 
 dependencies {
     compile project(':zipkin-common')
+    compile project(':zipkin-ui')
     compile "com.twitter:twitter-server_${scalaInterfaceVersion}:${commonVersions.twitterServer}"
     compile "com.twitter.finatra:finatra-httpclient_${scalaInterfaceVersion}:${commonVersions.finatra}"
     compile "ch.qos.logback:logback-core:${commonVersions.logback}"
@@ -31,36 +32,3 @@ dependencies {
     testCompile 'com.squareup.okhttp3:mockwebserver:3.1.1'
 }
 
-node {
-    // Version of node to use.
-    version = '5.5.0'
-
-    // Base URL for fetching node distributions (change if you have a mirror).
-    distBaseUrl = 'https://nodejs.org/dist'
-
-    // If true, it will download node using above parameters.
-    // If false, it will try to use globally installed node.
-    download = true
-
-    // Set the work directory for unpacking node
-    workDir = file("${project.buildDir}/nodejs")
-
-    // Set the work directory where node_modules should be located
-    nodeModulesDir = file("${project.projectDir}")
-}
-
-task webpack(type: NpmTask) {
-    args = ['run-script', 'build']
-}
-task karma(type: NpmTask) {
-    args = ['run-script', 'test']
-}
-webpack.dependsOn(npmInstall)
-karma.dependsOn(npmInstall)
-build.dependsOn(webpack)
-build.dependsOn(karma)
-processResources.dependsOn(webpack)
-processResources.dependsOn(karma)
-run.dependsOn(webpack)
-
-apply from: "${rootDir}/gradle/verify-licenses.gradle"

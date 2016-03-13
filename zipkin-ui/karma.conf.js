@@ -4,8 +4,8 @@ module.exports = function(config) {
   config.set({
     frameworks: ['mocha', 'chai'],
     files: [
-      'src/main/resources/app/test/*test.js',
-      'src/main/resources/app/test/**/*test.js'
+      'test/*test.js',
+      'test/**/*test.js'
     ],
 
     preprocessors: {

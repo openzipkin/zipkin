@@ -1,5 +1,5 @@
 {
-  "name": "zipkin-web",
+  "name": "zipkin-ui",
   "version": "0.0.0",
   "description": "The frontend UI for Zipkin",
   "main": "index.js",

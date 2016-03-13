@@ -3,8 +3,8 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
     entry: [
-        __dirname + '/src/main/resources/app/js/main.js',
-        __dirname + '/src/main/resources/app/css/style-loader.js',
+        __dirname + '/js/main.js',
+        __dirname + '/css/style-loader.js',
     ],
     resolve: {
         modulesDirectories: ['node_modules']
@@ -26,9 +26,9 @@ module.exports = {
         }]
     },
     output: {
-        path: __dirname + '/src/main/resources/dist',
+        path: __dirname + '/dist',
         filename: 'app.min.js',
-        publicPath: '/dist/'
+        publicPath: '/'
     },
     plugins: [
         new webpack.ProvidePlugin({

@@ -34,13 +34,14 @@ import org.slf4j.LoggerFactory
 
 trait ZipkinWebFactory { self: App =>
   private[this] val resourceDirs = Set(
-    "/dist"
+    "/"
   )
 
   private[this] val typesMap = Map(
     "css" -> "text/css",
     "png" -> "image/png",
-    "js" -> "application/javascript"
+    "js" -> "application/javascript",
+    "html" -> "text/html"
   )
 
   val webServerPort = flag("zipkin.web.port", new InetSocketAddress(8080), "Listening port for the zipkin web frontend")
@@ -76,7 +77,7 @@ trait ZipkinWebFactory { self: App =>
     import handlers._
 
     Seq(
-      ("/dist/", handlePublic(Set("/dist"), typesMap)),
+      ("/", handlePublic(Set("/"), typesMap)),
       // In preparation of moving static assets to zipkin-query
       ("/health", handleRoute(queryClient, "/health")),
       ("/api/v1/dependencies", handleRoute(queryClient, "/api/v1/dependencies")),
@@ -84,7 +85,6 @@ trait ZipkinWebFactory { self: App =>
       ("/api/v1/spans", handleRoute(queryClient, "/api/v1/spans")),
       ("/api/v1/trace/:id", handleTrace(queryClient)),
       ("/api/v1/traces", handleRoute(queryClient, "/api/v1/traces")),
-      ("/", handleIndexHtml()),
       ("/config.js", handleConfig(Map(
         "environment" -> environment(),
         "queryLimit" -> queryLimit()
