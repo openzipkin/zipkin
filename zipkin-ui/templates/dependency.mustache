@@ -1,0 +1,84 @@
+<div class="row well well-sm">
+  <form id="dependency-query-form" class="form-inline" role="form">
+    <div id="start-ts" class="form-group">
+      <label for="timeStamp">Start time</label>
+      <input class="form-control input-sm date-input" type="text">
+      <input class="form-control input-sm time-input" type="text">
+      <input class="timestamp-value" id="startTs" name="startTs" type="hidden" value="">
+    </div>
+
+    <div id="end-ts" class="form-group">
+      <label for="timeStamp">End time</label>
+      <input class="form-control input-sm date-input" type="text">
+      <input class="form-control input-sm time-input" type="text">
+      <input class="timestamp-value" id="endTs" name="endTs" type="hidden" value="">
+    </div>
+
+    <button type="submit" class="btn btn-default btn-sm">Analyze Dependencies</button>
+  </form>
+</div>
+
+<div id="service-data-modal-container">
+  <div class="modal" id="serviceModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <span id="serviceModalTitle">[title]</span>
+          </h3>
+        </div>
+        <div class="modal-body">
+
+          <div class="container">
+            <div class="row">
+              <div class="col-sm-6">
+                <h4>Used by</h4>
+                <ul id="serviceUsedByList"></ul>
+              </div>
+              <div class="col-sm-6">
+                <h4>Uses</h4>
+                <ul id="serviceUsesList"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="dependencyModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title text-center">
+            <div id="dependencyModalParent">[parent]</div>
+            <div class=""><span class="glyphicon glyphicon-arrow-down"></span></div>
+            <div id="dependencyModalChild">[child]</div>
+
+          </h3>
+        </div>
+        <div class="modal-body">
+          <table class="table table-striped">
+            <thead>
+            <tr>
+              <th>Key</th>
+              <th>Value</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+              <td>Number of calls</td>
+              <td id="dependencyCallCount">?</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="dependency-container">
+  <svg width="100%" height="4000" class="rootSvg">
+  </svg>
+</div>

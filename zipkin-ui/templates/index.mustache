@@ -1,0 +1,151 @@
+<div class="row well well-sm">
+  <form class="form-inline" role="form">
+    <div class="form-group">
+      <select data-placeholder="Service Name" class="form-control input-sm" style="width: 234px;" name="serviceName" id="serviceName">
+      </select>
+    </div>
+
+    <div class="form-group">
+      <select data-placeholder="Span Name" class="form-control input-sm" style="width: 180px;" name="spanName" id="spanName">
+      </select>
+    </div>
+
+    <div id="time-stamp" class="form-group">
+      <label for="timeStamp">End time</label>
+      <input class="form-control input-sm date-input" type="text">
+      <input class="form-control input-sm time-input" type="text">
+      <input class="timestamp-value" id="endTs" name="endTs" type="hidden" value="{{endTs}}">
+    </div>
+
+    <div class="form-group">
+      <label for="minDuration">Duration (μs) >=</label>
+      <input class="form-control input-sm" id="minDuration" name="minDuration" type="text" value="{{minDuration}}">
+    </div>
+
+    <div class="form-group">
+      <label for="limit">Limit</label>
+      <input class="form-control input-sm" id="limit" name="limit" type="text" value="{{limit}}">
+    </div>
+
+    <button type="submit" class="btn btn-default btn-sm">Find Traces</button>
+    <button type="button" class="btn btn-default btn-sm info-request">
+      <span class="glyphicon glyphicon-question-sign"></span>
+    </button>
+
+    <div class="clearfix"></div>
+    <input type="text" class="form-control input-sm" id="annotationQuery" name="annotationQuery" value="{{annotationQuery}}" style="width: 100%" placeholder='Annotations Query (e.g. "finagle.timeout", "http.path=/foo/bar/ and cluster=foo and cache.miss")'>
+  </form>
+{{#queryWasPerformed}}
+  <div id="trace-filters">
+    <div class="pull-left">
+      <span>
+        Showing:  <span class="filter-current">{{count}}</span>
+        of <span class="filter-total">{{count}}</span>
+      </span>
+    </div>
+    <div class="pull-right">
+      <span class="selector">Sort:
+        <select class="sort-order js-sort-order">
+          <option value="service-percentage-desc">Service Percentage: Longest First</option>
+          <option value="service-percentage-asc">Service Percentage: Shortest First</option>
+          <option selected value="duration-desc">Longest First</option>
+          <option value="duration-asc">Shortest First</option>
+          <option value="timestamp-desc">Newest First</option>
+          <option value="timestamp-asc">Oldest First</option>
+        </select>
+      </span>
+    </div>
+    <div class="clearfix"></div>
+
+    <div class="service-tags">
+      Services:
+      <span class='label service-tag-filtered' data-service-name="{{serviceName}}">{{serviceName}}</span>
+    </div>
+  </div>
+{{/queryWasPerformed}}
+</div>
+
+<div class="row">
+{{^queryWasPerformed}}
+  <div class="alert alert-info" id="help-msg">
+    <p>Please select the criteria for your trace lookup.</p>
+  </div>
+{{/queryWasPerformed}}
+{{#queryWasPerformed}}
+  <ul id="traces">
+  {{#traces}}
+    <li class="trace" data-traceId="{{traceId}}" data-duration="{{duration}}" data-timestamp="{{timestamp}}" data-service-percentage="{{servicePercentage}}">
+      <a href="/traces/{{traceId}}?serviceName={{serviceName}}">
+        <div class="bar-block">
+          <span class="bar-graphic" style="width:{{width}}%;"></span>
+          <span class="bar-label">{{durationStr}}</span>
+          <span class="bar-label">{{spanCount}} spans</span>
+        </div>
+        <div class="bar-block">
+          <span class="bar-graphic" style="width:{{servicePercentage}}%;"></span>
+          <span class="bar-label">{{serviceName}} {{servicePercentage}}%</span>
+        </div>
+      </a>
+      <div class="trace-details services">
+      {{#serviceDurations}}
+        <span class="label label-default service-filter-label" data-service-name="{{name}}">{{name}} x{{count}} {{max}}ms</span>
+      {{/serviceDurations}}
+      </div>
+      <div class="trace-details timestamp pull-right">
+        <time class="label timeago" datetime="{{startTs}}">{{startTs}}</time>
+      </div>
+    </li>
+  {{/traces}}
+  </ul>
+{{/queryWasPerformed}}
+</div>
+
+<!-- help panel for different lookup options -->
+<div class="modal fade" id="infoPanel">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">How to find a trace</h4>
+      </div>
+      <div class="modal-body">
+        <p>So you want to find some traces, huh? You've come to the right place!</p>
+
+        <h4>Service names</h4>
+        <p>First off you have select a service to lookup by. All traces are indexed by service names.</p>
+        <p>Once that is done you have three options to pick from. See notes on each below.</p>
+
+        <h4>1. Lookups by span name</h4>
+        <p>Span names are generally thrift method names or Rails endpoints. This allows you to look up traces
+          that accessed a particular part of the service.</p>
+
+        <h4>2. Lookups by annotation</h4>
+        <p>An annotation is a point in time in the trace. It is assigned a string value, this is what you can look up
+          by in this field. Could be things like <strong>finagle.timeout</strong></p>
+
+        <h4>3. Lookups by key/value</h4>
+        <p>Key / value annotations are just extra metadata attached to a trace. This could be things like the url hit,
+          response codes or exceptions. See below for a few examples.</p>
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <td><strong>Key</strong></td><td><strong>Value</strong></td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>tfe.uri</td><td>/1/trends/available.json?lang=en</td>
+            </tr>
+            <tr>
+              <td>http.responsecode</td><td>500 Internal Server Error</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>Dates and limits</h4>
+        <p>Zipkin allows you to pick a point in time to help us guide the selection of traces. When doing a lookup
+          we return traces before that point in time up until the limit number of results.</p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,51 @@
+    <div id='navbar' class='navbar navbar-inverse navbar-fixed-top' role='navigation'>
+      <div class='container'>
+        <div class='navbar-header'>
+          <a class='navbar-brand' href='/'>
+            Zipkin<span class='muted' style='font-size: .75em; padding-left: 10px;'>Investigate system behavior</span>
+          </a>
+        </div>
+        <div class="navbar-left">
+          <ul class="nav navbar-nav">
+            <li data-route="index"><a href="/">Find a trace</a></li>
+            <li data-route="dependency"><a href="/dependency">Dependencies</a></li>
+          </ul>
+        </div>
+        <div class="navbar-right" style="width: 50%">
+          <div class="navbar-right" style='padding-left: 15px'>
+            <p class="navbar-text muted" id="environment"></p>
+          </div>
+          <form id="traceIdQueryForm" class="form-inline" role="form">
+            <div class="navbar-right" style="width: 25%; float: right">
+              <div class="row well-sm clearfix">
+                  <input type="text" class="form-control input-sm" id="traceIdQuery" name="traceIdQuery" style="width: 100%" placeholder='Go to trace'>
+              </div>
+            </div>
+          </form>
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+
+    <div class='container'>
+      <div class='content'></div>
+    </div>
+
+    <div id='fullPageSpinner'>
+      <div class='progress progress-striped active'>
+        <div class='progress-bar' style='width: 100%'>Working...</div>
+      </div>
+    </div>
+
+    <div class="ui-grid-a" id="extraButtonsContainer">
+      <div style="display: inline-block">
+        <button type="button" class="btn btn-danger btn-sm" id='zoomOutSpans' value='uiZoomOutSpans' style='display: none'>
+          <span class="glyphicon glyphicon-zoom-out"></span>
+        </button>
+      </div>
+      <div style="display: inline-block">
+        <button type="button" class="btn btn-default btn-sm back-to-top" id="backToTop" style='display: none'>
+          <span class="glyphicon glyphicon-chevron-up"></span>
+        </button>
+      </div>
+    </div>
+
