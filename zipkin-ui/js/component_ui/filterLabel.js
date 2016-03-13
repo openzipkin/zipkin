@@ -1,15 +1,6 @@
-'use strict';
+import {component} from 'flightjs';
 
-define(
-  [
-    'flightjs'
-  ],
-
-  function (flight) {
-
-    return flight.component(filterLabel);
-
-    function filterLabel() {
+    export default component(function filterLabel() {
       this.serviceName = "";
 
       this.toggleFilter = function() {
@@ -35,6 +26,4 @@ define(
         this.on(document, 'uiAddServiceNameFilter', this.filterAdded);
         this.on(document, 'uiRemoveServiceNameFilter', this.filterRemoved);
       });
-    }
-  }
-);
+    });

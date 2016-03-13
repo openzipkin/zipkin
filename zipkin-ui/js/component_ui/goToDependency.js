@@ -1,15 +1,6 @@
-'use strict';
+import {component} from 'flightjs';
 
-define(
-  [
-    'flightjs'
-  ],
-
-  function (flight) {
-
-    return flight.component(goToDependency);
-
-    function goToDependency() {
+    export default component(function goToDependency() {
       this.navigateToDependency = function(evt) {
         evt.preventDefault();
         var endTs = document.getElementById('endTs').value;
@@ -20,6 +11,4 @@ define(
       this.after('initialize', function() {
         this.on('submit', this.navigateToDependency);
       });
-    }
-  }
-);
+    });

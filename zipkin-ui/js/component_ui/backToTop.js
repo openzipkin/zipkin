@@ -1,16 +1,7 @@
-'use strict';
+import {component} from 'flightjs';
+import $ from 'jquery';
 
-define(
-  [
-    'flightjs'
-  ],
-
-  function (flight) {
-
-    return flight.component(backToTop);
-
-    function backToTop() {
-
+    export default component(function backToTop() {
       this.toTop = function(e) {
         event.preventDefault();
         $('html, body').animate({scrollTop: 0}, 300);
@@ -29,8 +20,4 @@ define(
 
     	this.on('click', this.toTop);
       });
-    }
-  }
-
-);
-
+    });

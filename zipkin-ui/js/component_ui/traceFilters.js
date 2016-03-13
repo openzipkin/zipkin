@@ -1,15 +1,7 @@
-'use strict';
+import {component} from 'flightjs';
+import $ from 'jquery';
 
-define(
-  [
-    'flightjs'
-  ],
-
-  function (flight) {
-
-    return flight.component(traceFilters);
-
-    function traceFilters() {
+    export default component(function traceFilters() {
       this.idFromService = function(service) {
         return "service-filter-" + service.replace(/[^a-z0-9\-_]/gi, "-");
       };
@@ -53,7 +45,4 @@ define(
         this.on(document, 'uiUpdateTraces', this.updateTraces);
         this.on('.sort-order', 'change', this.updateSortOrder);
       });
-    }
-
-  }
-);
+    });

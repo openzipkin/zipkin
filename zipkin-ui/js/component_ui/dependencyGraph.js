@@ -1,19 +1,11 @@
-'use strict';
+import {component} from 'flightjs';
+import d3 from 'd3';
+import $ from 'jquery';
+import dagreD3 from '../../libs/dagre-d3/js/dagre-d3';
 
-define(
-  [
-    'flightjs',
-    'd3',
-    '../../libs/dagre-d3/js/dagre-d3'
-  ],
+    const dagre = window.dagreD3;
 
-  function (flight, d3) {
-    var dagre = window.dagreD3;
-    // window.dagre = dagre;
-
-    return flight.component(dependencyGraph);
-
-    function dependencyGraph() {
+    export default component(function dependencyGraph() {
       this.after('initialize', function afterInitialize(container, options) {
         this.on(document, 'dependencyDataReceived', function onDependencyDataReceived() {
           // drop the event, keep the links
@@ -215,6 +207,4 @@ define(
 
         });
       });
-    }
-  }
-);
+    });

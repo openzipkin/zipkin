@@ -1,16 +1,7 @@
-'use strict';
+import {component} from 'flightjs';
+import bootstrap from 'bootstrap-sass/assets/javascripts/bootstrap.js';
 
-define(
-  [
-    'flightjs',
-    'bootstrap-sass/assets/javascripts/bootstrap.js'
-  ],
-
-  function (flight, bootstrap) {
-
-    return flight.component(infoPanel);
-
-    function infoPanel() {
+    export default component(function infoPanel() {
       this.show = function() {
         this.$node.modal('show');
       };
@@ -19,7 +10,4 @@ define(
         this.$node.modal('hide');
         this.on(document, 'uiRequestInfoPanel', this.show);
       });
-    }
-
-  }
-);
+    });

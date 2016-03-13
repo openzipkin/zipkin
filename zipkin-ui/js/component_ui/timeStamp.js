@@ -1,17 +1,8 @@
-'use strict';
+import {component} from 'flightjs';
+import moment from 'moment';
+import bootstrapDatepicker from 'bootstrap-datepicker';
 
-define(
-  [
-    'flightjs',
-    'moment',
-    'bootstrap-datepicker'
-  ],
-
-  function (flight, moment, bootstrapDatepicker) {
-
-    return flight.component(timeStamp);
-
-    function timeStamp() {
+    export default component(function timeStamp() {
       this.init = function () {
         this.$timestamp = this.$node.find(".timestamp-value");
         this.$date = this.$node.find(".date-input");
@@ -48,6 +39,4 @@ define(
           .datepicker({format: 'mm-dd-yyyy'})
           .on("changeDate", this.dateChanged.bind(this));
       });
-    }
-  }
-);
+    });
