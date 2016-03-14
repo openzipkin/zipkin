@@ -1,13 +1,6 @@
 apply plugin: 'com.moowork.node'
 
-// manually control upload configuration as source and javadoc aren't relevant here
-configurations {
-    zipkinUpload
-}
-artifacts {
-    jar
-    zipkinUpload jar
-}
+artifacts.zipkinUpload jar
 
 sourceSets {
     main {

@@ -42,8 +42,8 @@ allprojects {
     }
 }
 
-// Source and JavaDoc jars for Maven Central, excluding static web assets (zipkin-ui)
-configure(allprojects.findAll {it.name != 'zipkin-ui'}) {
+// Source and JavaDoc jars for Maven Central
+allprojects {
     task sourceJar(type: Jar) {
         description "An archive of the source code for Maven Central"
         classifier "sources"
@@ -58,7 +58,7 @@ configure(allprojects.findAll {it.name != 'zipkin-ui'}) {
 }
 
 // Custom configuration used to explicitly control the artifacts we want to publish
-configure(allprojects.findAll {it.name != 'zipkin-ui'}) {
+allprojects {
     configurations {
         zipkinUpload
     }
