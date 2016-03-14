@@ -97,7 +97,7 @@ class Handlers {
 
       private[this] def getStream(path: String): Option[InputStream] = {
         val resource = getClass.getResource(path)
-        if (new File(resource.getPath).isDirectory) {
+        if (resource == null || new File(resource.getPath).isDirectory) {
           None
         } else {
           Option(resource.openStream())
