@@ -18,7 +18,7 @@ package com.twitter.zipkin.cassandra
 import java.net.InetSocketAddress
 
 import com.datastax.driver.core.{HostDistance, PoolingOptions, Cluster}
-import com.datastax.driver.core.policies.{DCAwareRoundRobinPolicy, LatencyAwarePolicy, TokenAwarePolicy}
+import com.datastax.driver.core.policies.{RoundRobinPolicy, DCAwareRoundRobinPolicy, LatencyAwarePolicy, TokenAwarePolicy}
 import com.google.common.net.HostAndPort
 import com.twitter.app.App
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
@@ -72,7 +72,7 @@ trait CassandraSpanStoreFactory {self: App =>
       if (cassandraLocalDc.isDefined)
         DCAwareRoundRobinPolicy.builder().withLocalDc(cassandraLocalDc()).build()
       else
-        DCAwareRoundRobinPolicy.builder().build()
+        new RoundRobinPolicy() // This can select remote, but LatencyAwarePolicy will prefer local
     ).build()))
     builder.withPoolingOptions(new PoolingOptions().setMaxConnectionsPerHost(
       HostDistance.LOCAL, cassandraMaxConnections()
