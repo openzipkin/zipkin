@@ -1,7 +1,7 @@
 package com.twitter.zipkin.cassandra
 
 import com.datastax.driver.core.policies.{DCAwareRoundRobinPolicy, LatencyAwarePolicy, RoundRobinPolicy, TokenAwarePolicy}
-import com.datastax.driver.core.{Cluster, AuthProvider, Host, HostDistance}
+import com.datastax.driver.core.{AuthProvider, Cluster, Host, HostDistance}
 import com.twitter.app.App
 import java.net.InetSocketAddress
 import java.util.Arrays.asList
@@ -101,7 +101,7 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers with MockitoS
       .getAuthProvider() should be (AuthProvider.NONE)
   }
 
-  test("Default load-balancing policy considers first host's datacenter local") {
+  test("Default load-balancing policy is round-robin") {
     TestFactory.nonExitingMain(Array())
 
     val policy = TestFactory.createClusterBuilder()
@@ -110,7 +110,7 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers with MockitoS
       .getLoadBalancingPolicy()
       .asInstanceOf[TokenAwarePolicy].getChildPolicy
       .asInstanceOf[LatencyAwarePolicy].getChildPolicy
-      .asInstanceOf[DCAwareRoundRobinPolicy]
+      .asInstanceOf[RoundRobinPolicy]
 
     val foo = mock[Host]
     when(foo.getDatacenter).thenReturn("foo")
@@ -119,7 +119,7 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers with MockitoS
     policy.init(mock[Cluster], asList(foo, bar))
 
     policy.distance(foo) should be(HostDistance.LOCAL)
-    policy.distance(bar) should be(HostDistance.IGNORED)
+    policy.distance(bar) should be(HostDistance.LOCAL)
   }
 
   test("zipkin.store.cassandra.localDc ignores non-local datacenters") {
