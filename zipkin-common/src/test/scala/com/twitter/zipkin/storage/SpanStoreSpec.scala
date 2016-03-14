@@ -41,20 +41,12 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   val ann2 = Annotation((today + 2) * 1000, Constants.ServerRecv, None)
   val ann3 = Annotation((today + 10) * 1000, "custom", Some(ep))
   val ann4 = Annotation((today + 20) * 1000, "custom", Some(ep))
-  val ann5 = Annotation((today + 5) * 1000, "custom", Some(ep))
-  val ann6 = Annotation((today + 6) * 1000, "custom", Some(ep))
-  val ann7 = Annotation((today + 7) * 1000, "custom", Some(ep))
-  val ann8 = Annotation((today + 8) * 1000, "custom", Some(ep))
 
   val span1 = Span(123, "methodcall", spanId, None, Some(ann1.timestamp), Some(9000), List(ann1, ann3),
     List(BinaryAnnotation("BAH", "BEH", Some(ep))))
   val span2 = Span(456, "methodcall", spanId, None, Some(ann2.timestamp), None, List(ann2),
     List(BinaryAnnotation("BAH2", "BEH2", Some(ep))))
   val span3 = Span(789, "methodcall", spanId, None, Some(ann2.timestamp), Some(18000), List(ann2, ann3, ann4),
-    List(BinaryAnnotation("BAH2", "BEH2", Some(ep))))
-  val span4 = Span(999, "methodcall", spanId, None, Some(ann6.timestamp), Some(1000), List(ann6, ann7),
-    List())
-  val span5 = Span(999, "methodcall", spanId, None, Some(ann5.timestamp), Some(3000), List(ann5, ann8),
     List(BinaryAnnotation("BAH2", "BEH2", Some(ep))))
 
   val spanEmptySpanName = Span(123, "", spanId, None, Some(ann1.timestamp), Some(1000), List(ann1, ann2))
@@ -102,14 +94,14 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   }
 
   @Test def getSpanNames() {
-    result(store(Seq(span1.copy(name = "yak"), span4)))
+    result(store(Seq(span1.copy(name = "yak"), span3)))
 
     // should be in order
     result(store.getSpanNames("service")) should be(List("methodcall", "yak"))
   }
 
   @Test def getAllServiceNames() {
-    result(store(Seq(span1.copy(annotations = List(ann1.copy(host = Some(ep.copy(serviceName = "yak"))))), span4)))
+    result(store(Seq(span1.copy(annotations = List(ann1.copy(host = Some(ep.copy(serviceName = "yak"))))), span3)))
 
     // should be in order
     result(store.getAllServiceNames()) should be(List("service", "yak"))
@@ -280,17 +272,24 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
    * query time, these must be merged.
    */
   @Test def getTraces_mergesSpans() {
-    val spans = Seq(span1, span4, span5) // span4, span5 have the same span id
-    result(store(spans))
+    val server = Span(12345, "post", 2, Some(1L), Some(1457596859524000L), Some(11000), List(
+      Annotation(1457596859524000L, Constants.ServerRecv, Some(Endpoint(456, 456, "service2"))),
+      Annotation(1457596859535000L, Constants.ServerSend, Some(Endpoint(456, 456, "service2")))
+    ))
+    val client = Span(12345, "post", 2, Some(1L), Some(1457596859492000L), Some(65000), List(
+      Annotation(1457596859492000L, Constants.ClientSend, Some(Endpoint(123, 123, "service1"))),
+      Annotation(1457596859557000L, Constants.ClientRecv, Some(Endpoint(123, 123, "service1")))
+    ))
 
-    val mergedAnnotations = (span4.annotations ::: span5.annotations).sorted
-    val merged = span4.copy(
-      timestamp = Some(mergedAnnotations.head.timestamp),
-      duration = Some(mergedAnnotations.last.timestamp - mergedAnnotations.head.timestamp),
-      annotations = mergedAnnotations,
-      binaryAnnotations = span5.binaryAnnotations)
+    // simulate where client and server sides of the span are reported separately
+    result(store(Seq(server)))
+    result(store(Seq(client)))
 
-    result(store.getTraces(QueryRequest("service"))) should be(Seq(List(merged), List(span1)))
+    // client duration is preferred
+    val merged = client.copy(
+      annotations = (client.annotations ::: server.annotations).sorted)
+
+    result(store.getTraces(QueryRequest("service1"))) should be(Seq(List(merged)))
   }
 
   /** limit should apply to traces closest to endTs */
