@@ -28,6 +28,6 @@ public class InMemoryDependenciesTest extends DependenciesTest<InMemorySpanStore
 
   @Override
   protected void processDependencies(List<Span> spans) {
-    store.accept(spans.iterator());
+    store.accept(spans);
   }
 }

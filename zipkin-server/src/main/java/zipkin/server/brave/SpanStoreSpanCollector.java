@@ -62,7 +62,7 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
       }
     }
     if (!spans.isEmpty()) {
-      spanStore.accept(spans.iterator());
+      spanStore.accept(spans);
     }
   }
 

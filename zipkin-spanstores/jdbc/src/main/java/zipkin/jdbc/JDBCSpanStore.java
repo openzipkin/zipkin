@@ -13,7 +13,6 @@
  */
 package zipkin.jdbc;
 
-import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -63,12 +62,12 @@ import static zipkin.BinaryAnnotation.Type.STRING;
 import static zipkin.Constants.CLIENT_ADDR;
 import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.jdbc.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
 public final class JDBCSpanStore implements SpanStore {
-  static final Charset UTF_8 = Charset.forName("UTF-8");
 
   static {
     System.setProperty("org.jooq.no-logo", "true");
@@ -92,15 +91,15 @@ public final class JDBCSpanStore implements SpanStore {
   }
 
   @Override
-  public void accept(Iterator<Span> spans) {
-    if (!spans.hasNext()) return;
+  public void accept(List<Span> spans) {
+    if (spans.isEmpty()) return;
     try (Connection conn = datasource.getConnection()) {
       DSLContext create = context(conn);
 
       List<Query> inserts = new ArrayList<>();
 
-      while (spans.hasNext()) {
-        Span span = ApplyTimestampAndDuration.apply(spans.next());
+      for (Span span : spans) {
+        span = ApplyTimestampAndDuration.apply(span);
         Long binaryAnnotationTimestamp = span.timestamp;
         if (binaryAnnotationTimestamp == null) { // fallback if we have no timestamp, yet
           binaryAnnotationTimestamp = System.currentTimeMillis() * 1000;

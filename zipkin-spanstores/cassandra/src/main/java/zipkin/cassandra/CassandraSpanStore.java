@@ -80,7 +80,7 @@ public final class CassandraSpanStore implements SpanStore, AutoCloseable {
   }
 
   @Override
-  public void accept(Iterator<Span> spans) {
+  public void accept(List<Span> spans) {
     spanConsumer.accept(spans);
   }
 

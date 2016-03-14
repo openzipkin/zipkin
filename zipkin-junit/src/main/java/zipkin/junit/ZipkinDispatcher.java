@@ -84,7 +84,7 @@ final class ZipkinDispatcher extends Dispatcher {
         String type = request.getHeader("Content-Type");
         Codec codec = type != null && type.contains("/x-thrift") ? Codec.THRIFT : JSON_CODEC;
         List<Span> spans = codec.readSpans(body);
-        store.accept(spans.iterator());
+        store.accept(spans);
         return new MockResponse().setResponseCode(202);
       }
     } else { // unsupported method
