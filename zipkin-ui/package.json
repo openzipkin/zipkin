@@ -35,6 +35,7 @@
     "css-loader": "^0.23.1",
     "eslint": "^2.4.0",
     "eslint-config-airbnb": "^6.1.0",
+    "eslint-plugin-react": "^4.2.1",
     "extract-text-webpack-plugin": "^1.0.1",
     "file-loader": "^0.8.5",
     "karma": "^0.13.21",
