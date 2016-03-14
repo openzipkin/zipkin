@@ -14,6 +14,10 @@
 package zipkin.server;
 
 import com.github.kristofa.brave.Brave;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import javax.sql.DataSource;
 import org.jooq.ExecuteListenerProvider;
 import org.jooq.conf.Settings;
@@ -21,11 +25,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.scheduling.annotation.EnableAsync;
 import zipkin.Codec;
 import zipkin.InMemorySpanStore;
@@ -34,6 +43,8 @@ import zipkin.SpanStore;
 import zipkin.cassandra.CassandraConfig;
 import zipkin.cassandra.CassandraSpanStore;
 import zipkin.jdbc.JDBCSpanStore;
+import zipkin.kafka.KafkaConfig;
+import zipkin.kafka.KafkaTransport;
 import zipkin.server.ZipkinServerProperties.Store.Type;
 import zipkin.server.brave.TraceWritesSpanStore;
 
@@ -103,6 +114,42 @@ public class ZipkinServerConfiguration {
         return new TraceWritesSpanStore(brave, (SpanStore) bean);
       }
       return bean;
+    }
+  }
+
+  /**
+   * This transport consumes a topic, decodes spans from thrift messages and stores them subject to
+   * sampling policy.
+   */
+  @Configuration
+  @EnableConfigurationProperties(ZipkinKafkaProperties.class)
+  @ConditionalOnKafkaZookeeper
+  static class KafkaConfiguration {
+    @Bean KafkaTransport kafkaTransport(ZipkinKafkaProperties kafka, ZipkinSpanWriter writer) {
+      KafkaConfig config = KafkaConfig.builder()
+          .topic(kafka.getTopic())
+          .zookeeper(kafka.getZookeeper())
+          .groupId(kafka.getGroupId())
+          .streams(kafka.getStreams()).build();
+      return new KafkaTransport(config, writer);
+    }
+  }
+
+  /**
+   * This condition passes when Kafka classes are available and {@link
+   * ZipkinKafkaProperties#getZookeeper()} is set.
+   */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  @Conditional(ConditionalOnKafkaZookeeper.KafkaEnabledCondition.class)
+  @ConditionalOnClass(name = "zipkin.kafka.KafkaTransport") @interface ConditionalOnKafkaZookeeper {
+    class KafkaEnabledCondition extends SpringBootCondition {
+      @Override
+      public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata a) {
+        return context.getEnvironment().getProperty("kafka.zookeeper").isEmpty() ?
+            ConditionOutcome.noMatch("kafka.zookeeper isn't set") :
+            ConditionOutcome.match();
+      }
     }
   }
 }

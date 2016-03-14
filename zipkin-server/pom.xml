@@ -58,21 +58,6 @@
       <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
 
-    <!-- Trace api controller activity with Brave -->
-    <dependency>
-      <groupId>com.github.kristofa</groupId>
-      <artifactId>brave-spring-web-servlet-interceptor</artifactId>
-      <version>${brave.version}</version>
-      <optional>true</optional>
-    </dependency>
-
-    <dependency>
-      <groupId>com.github.kristofa</groupId>
-      <artifactId>brave-spancollector-scribe</artifactId>
-      <version>${brave.version}</version>
-      <optional>true</optional>
-    </dependency>
-
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-configuration-processor</artifactId>
@@ -105,6 +90,28 @@
     <dependency>
       <groupId>org.mariadb.jdbc</groupId>
       <artifactId>mariadb-java-client</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Kafka transport -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>transport-kafka</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Trace api controller activity with Brave -->
+    <dependency>
+      <groupId>com.github.kristofa</groupId>
+      <artifactId>brave-spring-web-servlet-interceptor</artifactId>
+      <version>${brave.version}</version>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.kristofa</groupId>
+      <artifactId>brave-spancollector-scribe</artifactId>
+      <version>${brave.version}</version>
       <optional>true</optional>
     </dependency>
 
