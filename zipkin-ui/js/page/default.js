@@ -15,6 +15,7 @@ import TimeStampUI from '../component_ui/timeStamp';
 import BackToTop from '../component_ui/backToTop';
 import GoToTraceUI from '../component_ui/goToTrace';
 import {defaultTemplate} from '../templates';
+import config from '../config';
 
 const DefaultPageComponent = component(function DefaultPage() {
   this.after('initialize', function() {
@@ -24,7 +25,7 @@ const DefaultPageComponent = component(function DefaultPage() {
     const query = queryString.parse(window.location.search);
 
     this.on(document, 'defaultPageModelView', function(ev, modelView) {
-      const limit = query.limit || window.config.queryLimit;
+      const limit = query.limit || config('queryLimit');
       const minDuration = query.minDuration;
       const endTs = query.endTs || new Date().getTime();
       const serviceName = query.serviceName || '';
