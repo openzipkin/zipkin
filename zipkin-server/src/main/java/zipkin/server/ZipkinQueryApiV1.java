@@ -123,7 +123,7 @@ public class ZipkinQueryApiV1 {
       }
       return ResponseEntity.badRequest().body(e.getMessage() + "\n"); // newline for prettier curl
     }
-    spanWriter.write(spanStore, spans);
+    spanWriter.accept(spans);
     return ResponseEntity.accepted().build();
   }
 

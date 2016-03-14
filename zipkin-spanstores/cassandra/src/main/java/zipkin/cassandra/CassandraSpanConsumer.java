@@ -16,34 +16,33 @@ package zipkin.cassandra;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.nio.ByteBuffer;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import org.twitter.zipkin.storage.cassandra.Repository;
 import zipkin.Span;
-import zipkin.SpanStore;
+import zipkin.SpanConsumer;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.ThriftCodec;
 
 import static zipkin.cassandra.CassandraUtil.annotationKeys;
 
 // Extracted for readability
-final class CassandraSpanConsumer {
+final class CassandraSpanConsumer implements SpanConsumer {
 
   /**
    * Internal flag that allows you read-your-writes consistency during tests.
    *
    * <p>This is internal as collection endpoints are usually in different threads or not in the same
    * process as query ones. Special-casing this allows tests to pass without changing {@link
-   * SpanStore#accept(Iterator)}.
+   * SpanConsumer#accept}.
    *
-   * <p>Why not just change {@link SpanStore#accept(Iterator)} now? <p>{@link
-   * SpanStore#accept(Iterator)} may indeed need to change, but when that occurs, we'd want to
-   * choose something that is widely supportable, and serving a specific use case. That api might
-   * not be a future, for example. Future is difficult, for example, properly supporting and testing
-   * cancel. Further, there are other async models such as callbacks that could be more supportable.
-   * Regardless, this work is best delayed until there's a worthwhile use-case vs up-fronting only
-   * due to tests, and prematurely choosing Future results.
+   * <p>Why not just change {@link SpanConsumer#accept} now? {@link SpanConsumer#accept} may indeed
+   * need to change, but when that occurs, we'd want to choose something that is widely supportable,
+   * and serving a specific use case. That api might not be a future, for example. Future is
+   * difficult, for example, properly supporting and testing cancel. Further, there are other async
+   * models such as callbacks that could be more supportable. Regardless, this work is best delayed
+   * until there's a worthwhile use-case vs up-fronting only due to tests, and prematurely choosing
+   * Future results.
    */
   static boolean BLOCK_ON_FUTURES;
 
@@ -63,10 +62,11 @@ final class CassandraSpanConsumer {
    * <p>Storing spans result in asynchronous operations to the backend repository. This
    * implementation neither blocks on nor checks these futures, as the api doesn't require it.
    */
-  void accept(Iterator<Span> spans) {
+  @Override
+  public void accept(List<Span> spans) {
     List<ListenableFuture<?>> futures = new LinkedList<>();
-    while (spans.hasNext()) {
-      Span span = ApplyTimestampAndDuration.apply(spans.next());
+    for (Span span : spans) {
+      span = ApplyTimestampAndDuration.apply(span);
       futures.add(repository.storeSpan(
           span.traceId,
           span.timestamp != null ? span.timestamp : 0L,

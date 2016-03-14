@@ -13,11 +13,9 @@
  */
 package zipkin.interop;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twitter.util.Future;
 import com.twitter.zipkin.common.Span;
 import com.twitter.zipkin.conversions.thrift$;
-import com.twitter.zipkin.json.ZipkinJson$;
 import com.twitter.zipkin.storage.QueryRequest;
 import java.util.ArrayList;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -98,7 +96,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
 
   @Override
   public Future<BoxedUnit> apply(Seq<Span> input) {
-    spanStore.accept(ScalaSpanStoreAdapter.invert(input).iterator());
+    spanStore.accept(ScalaSpanStoreAdapter.invert(input));
     return Future.Unit();
   }
 

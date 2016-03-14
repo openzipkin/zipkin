@@ -11,30 +11,23 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.junit;
+package zipkin;
 
 import java.util.List;
-import org.junit.Rule;
-import zipkin.DependenciesTest;
-import zipkin.Span;
 
-/** Tests the http interface of {@link ZipkinRule}. */
-public class ZipkinRuleDependenciesTest extends DependenciesTest<HttpSpanStore> {
+/**
+ * Spans are created in instrumentation, transported out-of-band, and eventually persisted. A span
+ * consumer is a stage along that pipeline. A common consumption case in zipkin is to write spans to
+ * storage after applying sampling policy.
+ */
+// @FunctionalInterface
+public interface SpanConsumer {
 
-  @Rule
-  public ZipkinRule server = new ZipkinRule();
-
-  public ZipkinRuleDependenciesTest() {
-    store = new HttpSpanStore(server.httpUrl());
-  }
-
-  @Override
-  public void clear() {
-    // no need.. the test rule does this
-  }
-
-  @Override
-  protected void processDependencies(List<Span> spans) {
-    store.accept(spans);
-  }
+  /**
+   * Receives a list of spans {@link Codec#readSpans(byte[]) decoded} from a transport. Usually,
+   * this is an asynchronous {@link SpanStore#accept store} command.
+   *
+   * @param spans may be subject to a {@link Sampler#isSampled(long) sampling policy}.
+   */
+  void accept(List<Span> spans);
 }

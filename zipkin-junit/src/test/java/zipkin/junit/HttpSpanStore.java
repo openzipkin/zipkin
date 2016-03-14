@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -52,10 +51,8 @@ final class HttpSpanStore implements SpanStore {
   }
 
   @Override
-  public void accept(Iterator<Span> spans) {
-    List<Span> copy = new ArrayList<>();
-    while (spans.hasNext()) copy.add(spans.next());
-    byte[] spansInJson = JSON_CODEC.writeSpans(copy);
+  public void accept(List<Span> spans) {
+    byte[] spansInJson = JSON_CODEC.writeSpans(spans);
     call(new Request.Builder()
         .url(baseUrl.resolve("/api/v1/spans"))
         .post(RequestBody.create(MediaType.parse("application/json"), spansInJson)).build()

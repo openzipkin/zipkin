@@ -117,8 +117,8 @@ public final class ZipkinRule implements TestRule {
    * <p>For example, if you are testing what happens when instrumentation adds a child to a trace,
    * you'd add the parent here.
    */
-  public ZipkinRule storeSpans(Iterable<Span> spans) {
-    store.accept(spans.iterator());
+  public ZipkinRule storeSpans(List<Span> spans) {
+    store.accept(spans);
     return this;
   }
 

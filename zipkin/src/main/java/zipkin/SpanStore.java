@@ -14,17 +14,19 @@
 package zipkin;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import zipkin.internal.Nullable;
 
-public interface SpanStore {
+public interface SpanStore extends SpanConsumer {
 
   /**
-   * Sinks the given spans, ignoring duplicate annotations.
+   * Schedules a write of spans to storage. Sampling should occur prior to invoking this.
+   *
+   * <p>It is implementation-specific whether or not spans with the same id are merged.
    */
-  // Iterator to permit simple filtering without Java 8 or third-party types.
-  void accept(Iterator<Span> spans);
+  // Collection as there's no implementation that decodes lazily and knowing span count helps.
+  @Override
+  void accept(List<Span> spans);
 
   /**
    * Get the available trace information from the storage system. Spans in trace are sorted by the

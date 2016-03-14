@@ -35,6 +35,6 @@ public class JDBCDependenciesTest extends DependenciesTest<JDBCSpanStore> {
 
   @Override
   protected void processDependencies(List<Span> spans) {
-    store.accept(spans.iterator());
+    store.accept(spans);
   }
 }

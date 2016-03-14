@@ -13,31 +13,29 @@
  */
 package zipkin.server;
 
-import java.util.Iterator;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import zipkin.Sampler;
+import zipkin.SamplingSpanStoreConsumer;
 import zipkin.Span;
+import zipkin.SpanConsumer;
 import zipkin.SpanStore;
 
+/** Asynchronously writes spans to storage, subject to sampling policy. */
 @Service
-public class ZipkinSpanWriter {
+public class ZipkinSpanWriter implements SpanConsumer {
 
-  @Autowired
-  Sampler sampler;
+  final SpanConsumer delegate;
 
-  /**
-   * Asynchronously writes spans to storage, subject to sampling policy.
-   */
+  @Autowired ZipkinSpanWriter(SpanStore spanStore, Sampler sampler) {
+    this.delegate = SamplingSpanStoreConsumer.create(sampler, spanStore);
+  }
+
   @Async
-  public void write(SpanStore spanStore, List<Span> spans) {
-    Iterator<Span> sampled = spans.stream()
-        // For portability with zipkin v1, debug always wins.
-        .filter(s -> (s.debug != null && s.debug) || sampler.isSampled(s.traceId))
-        .iterator();
-
-    spanStore.accept(sampled);
+  @Override
+  public void accept(List<Span> spans) {
+    delegate.accept(spans);
   }
 }

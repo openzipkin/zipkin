@@ -11,22 +11,17 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.server;
+package zipkin;
 
 import org.junit.Test;
-import zipkin.BinaryAnnotation;
-import zipkin.Constants;
-import zipkin.Endpoint;
-import zipkin.InMemorySpanStore;
-import zipkin.Sampler;
-import zipkin.Span;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
-public class ZipkinSpanWriterTest {
+public class SamplingSpanStoreConsumerTest {
 
   private InMemorySpanStore spanStore = new InMemorySpanStore();
+  private Sampler neverSample = Sampler.create(0f);
 
   private Span.Builder builder = new Span.Builder()
       .traceId(1234L)
@@ -40,20 +35,18 @@ public class ZipkinSpanWriterTest {
 
   @Test
   public void debugFlagWins() {
-    ZipkinSpanWriter writer = new ZipkinSpanWriter();
-    writer.sampler = Sampler.create(0.0f); // never sample
+    SpanConsumer writer = SamplingSpanStoreConsumer.create(neverSample, spanStore);
 
-    writer.write(spanStore, asList(builder.debug(true).build()));
+    writer.accept(asList(builder.debug(true).build()));
 
     assertThat(spanStore.getServiceNames()).containsExactly("service");
   }
 
   @Test
   public void unsampledSpansArentStored() {
-    ZipkinSpanWriter writer = new ZipkinSpanWriter();
-    writer.sampler = Sampler.create(0.0f); // never sample
+    SpanConsumer writer = SamplingSpanStoreConsumer.create(neverSample, spanStore);
 
-    writer.write(spanStore, asList(builder.build()));
+    writer.accept(asList(builder.build()));
 
     assertThat(spanStore.getServiceNames()).isEmpty();
   }

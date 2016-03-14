@@ -16,7 +16,6 @@ package zipkin.server.brave;
 import com.github.kristofa.brave.Brave;
 import com.github.kristofa.brave.LocalTracer;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import zipkin.DependencyLink;
 import zipkin.QueryRequest;
@@ -36,7 +35,7 @@ public final class TraceWritesSpanStore implements SpanStore {
   }
 
   @Override
-  public void accept(Iterator<Span> spans) {
+  public void accept(List<Span> spans) {
     delegate.accept(spans); // don't trace writes
   }
 

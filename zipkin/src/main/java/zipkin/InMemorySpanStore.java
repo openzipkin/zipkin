@@ -13,12 +13,10 @@
  */
 package zipkin;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -33,20 +31,19 @@ import zipkin.internal.MergeById;
 import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.sortedList;
 
 public final class InMemorySpanStore implements SpanStore {
-  static final Charset UTF_8 = Charset.forName("UTF-8");
-
   private final Multimap<Long, Span> traceIdToSpans = new LinkedListMultimap<>();
   private final Multimap<String, Long> serviceToTraceIds = new LinkedHashSetMultimap<>();
   private final Multimap<String, String> serviceToSpanNames = new LinkedHashSetMultimap<>();
   private int acceptedSpanCount;
 
   @Override
-  public synchronized void accept(Iterator<Span> spans) {
-    while (spans.hasNext()) {
-      Span span = ApplyTimestampAndDuration.apply(spans.next());
+  public synchronized void accept(List<Span> spans) {
+    for (Span span : spans) {
+      span = ApplyTimestampAndDuration.apply(span);
       long traceId = span.traceId;
       String spanName = span.name;
       traceIdToSpans.put(span.traceId, span);

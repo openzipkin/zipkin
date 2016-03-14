@@ -51,7 +51,7 @@ public class CassandraDependenciesTest extends DependenciesTest<CassandraSpanSto
   @Override
   public void processDependencies(List<Span> spans) {
     SpanStore mem = new InMemorySpanStore();
-    mem.accept(spans.iterator());
+    mem.accept(spans);
     List<DependencyLink> links = mem.getDependencies(today + TimeUnit.DAYS.toMillis(1), null);
 
     long midnight = midnightUTC(spans.get(0).timestamp / 1000);
