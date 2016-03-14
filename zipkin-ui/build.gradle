@@ -42,3 +42,9 @@ task npmTest(type: NpmTask) {
     dependsOn npmBuild
 }
 check.dependsOn npmTest
+
+task npmLint(type: NpmTask) {
+    args = ['run-script', 'lint']
+    dependsOn npmInstall
+}
+check.dependsOn npmLint
