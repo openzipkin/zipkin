@@ -31,14 +31,14 @@ node {
     nodeModulesDir = file("${project.projectDir}")
 }
 
-task webpack(type: NpmTask) {
+task npmBuild(type: NpmTask) {
     args = ['run-script', 'build']
     dependsOn npmInstall
 }
-processResources.dependsOn(webpack)
+processResources.dependsOn(npmBuild)
 
-task karma(type: NpmTask) {
+task npmTest(type: NpmTask) {
     args = ['run-script', 'test']
-    dependsOn webpack
+    dependsOn npmBuild
 }
-check.dependsOn karma
+check.dependsOn npmTest
