@@ -21,6 +21,7 @@ import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LatencyAwarePolicy;
+import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
 import java.net.InetSocketAddress;
 import org.junit.Test;
@@ -127,10 +128,10 @@ public class CassandraConfigTest {
   }
 
   @Test
-  public void loadBalancing_defaultsToFirstHostDatacenter() {
+  public void loadBalancing_defaultsToRoundRobin() {
     CassandraConfig config = CassandraConfig.builder().build();
 
-    DCAwareRoundRobinPolicy policy = toDCAwareRoundRobinPolicy(config);
+    RoundRobinPolicy policy = toRoundRobinPolicy(config);
 
     Host foo = mock(Host.class);
     when(foo.getDatacenter()).thenReturn("foo");
@@ -139,7 +140,15 @@ public class CassandraConfigTest {
     policy.init(mock(Cluster.class), asList(foo, bar));
 
     assertThat(policy.distance(foo)).isEqualTo(HostDistance.LOCAL);
-    assertThat(policy.distance(bar)).isEqualTo(HostDistance.IGNORED);
+    assertThat(policy.distance(bar)).isEqualTo(HostDistance.LOCAL);
+  }
+
+  static RoundRobinPolicy toRoundRobinPolicy(CassandraConfig config) {
+    return (RoundRobinPolicy) ((LatencyAwarePolicy) ((TokenAwarePolicy) config.toCluster()
+        .getConfiguration()
+        .getPolicies()
+        .getLoadBalancingPolicy())
+        .getChildPolicy()).getChildPolicy();
   }
 
   @Test

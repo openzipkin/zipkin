@@ -19,6 +19,7 @@ import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LatencyAwarePolicy;
+import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
 import com.google.common.collect.Sets;
 import com.google.common.net.HostAndPort;
@@ -164,7 +165,7 @@ public final class CassandraConfig {
     builder.withLoadBalancingPolicy(new TokenAwarePolicy(new LatencyAwarePolicy.Builder(
         localDc != null
             ? DCAwareRoundRobinPolicy.builder().withLocalDc(localDc).build()
-            : DCAwareRoundRobinPolicy.builder().build()
+            : new RoundRobinPolicy() // This can select remote, but LatencyAwarePolicy will prefer local
     ).build()));
     builder.withPoolingOptions(new PoolingOptions().setMaxConnectionsPerHost(
         HostDistance.LOCAL, maxConnections
