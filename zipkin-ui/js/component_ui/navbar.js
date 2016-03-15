@@ -1,4 +1,5 @@
 import {component} from 'flightjs';
+import $ from 'jquery';
 
 const NavbarUI = component(function navbar() {
   this.onNavigate = function(ev, {route}) {

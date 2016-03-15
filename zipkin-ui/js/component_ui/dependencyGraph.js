@@ -1,220 +1,183 @@
-'use strict';
+import {component} from 'flightjs';
+import d3 from 'd3';
+import $ from 'jquery';
+import dagreD3 from '../../libs/dagre-d3/js/dagre-d3'; // eslint-disable-line no-unused-vars
 
-define(
-  [
-    'flightjs',
-    'd3',
-    '../../libs/dagre-d3/js/dagre-d3'
-  ],
+const dagre = window.dagreD3;
 
-  function (flight, d3) {
-    var dagre = window.dagreD3;
-    // window.dagre = dagre;
+export default component(function dependencyGraph() {
+  this.after('initialize', function afterInitialize(container) {
+    this.on(document, 'dependencyDataReceived', function onDependencyDataReceived(ev, ...links) {
+      const _this = this;
+      const rootSvg = container.querySelector('svg');
+      rootSvg.textContent = null;
+      const svg = d3.select('svg');
+      const svgGroup = svg.append('g');
+      const g = new dagre.Digraph();
+      const renderer = new dagre.Renderer();
 
-    return flight.component(dependencyGraph);
+      function arrayUnique(array) {
+        return array.filter((val, i, arr) => i <= arr.indexOf(val));
+      }
 
-    function dependencyGraph() {
-      this.after('initialize', function afterInitialize(container, options) {
-        this.on(document, 'dependencyDataReceived', function onDependencyDataReceived() {
-          // drop the event, keep the links
-          var links = Array.prototype.slice.call(arguments, 1);
-          var _this = this;
-          var rootSvg = container.querySelector('svg');
-          rootSvg.textContent = null;
-          var svg = d3.select('svg'),
-          svgGroup = svg.append('g');
+      function flatten(arrayOfArrays) {
+        if (arrayOfArrays.length === 0) {
+          return [];
+        } else {
+          return arrayOfArrays.reduce((a, b) => a.concat(b));
+        }
+      }
 
-          function arrayUnique(array) {
-            return array.filter(function (val, i, arr) {
-              return (i <= arr.indexOf(val));
-            });
-          }
+      function getIncidentEdgeElements(nodeName) {
+        const selectedElements = rootSvg
+            .querySelectorAll(`[data-from='${nodeName}'],[data-to='${nodeName}']`);
+        return [...selectedElements];
+      }
 
-          function flatten(arrayOfArrays) {
-            if (arrayOfArrays.length == 0) {
-              return [];
-            } else {
-              return arrayOfArrays.reduce(function (a, b) {
-                return a.concat(b);
-              });
-            }
-          }
+      function getIncidentNodeElements(from, to) {
+        return [
+          rootSvg.querySelector(`[data-node='${from}']`),
+          rootSvg.querySelector(`[data-node='${to}']`)
+        ];
+      }
 
-          function getIncidentEdgeElements(nodeName) {
-            var selectedElements = rootSvg.querySelectorAll("[data-from='" + nodeName + "'],[data-to='" + nodeName + "']");
-            return Array.prototype.slice.call(selectedElements);
-          }
+      function getAdjacentNodeElements(centerNode) {
+        const edges = g.incidentEdges(centerNode);
+        const nodes = flatten(edges.map(edge => g.incidentNodes(edge)));
+        const otherNodes = arrayUnique(nodes.filter(node => node !== centerNode));
+        const elements = otherNodes.map(name => rootSvg.querySelector(`[data-node='${name}']`));
+        return elements;
+      }
 
-          function getIncidentNodeElements(from, to) {
-            return [
-              rootSvg.querySelector("[data-node='" + from + "']"),
-              rootSvg.querySelector("[data-node='" + to + "']")
-            ];
-          }
+      function scale(i, startRange, endRange, minResult, maxResult) {
+        return minResult + (i - startRange) * (maxResult - minResult) / (endRange - startRange);
+      }
 
-          function getAdjacentNodeElements(centerNode) {
-            var edges = g.incidentEdges(centerNode);
-            var nodes = flatten(edges.map(function (edge) {
-              return g.incidentNodes(edge);
-            }));
-            var otherNodes = arrayUnique(nodes.filter(function (node) {
-              return node != centerNode;
-            }));
-            var elements = otherNodes.map(function (name) {
-              return rootSvg.querySelector("[data-node='" + name + "']");
-            });
-            return elements;
-          }
+      // Find min/max number of calls for all dependency links
+      // to render different arrow widths depending on number of calls
+      let minCallCount = 0;
+      let maxCallCount = 0;
+      links.filter(link => link.parent !== link.child).forEach(link => {
+        const numCalls = link.callCount;
+        if (minCallCount === 0 || numCalls < minCallCount) {
+          minCallCount = numCalls;
+        }
+        if (numCalls > maxCallCount) {
+          maxCallCount = numCalls;
+        }
+      });
+      const minLg = Math.log(minCallCount);
+      const maxLg = Math.log(maxCallCount);
 
-          function scale(i, startRange, endRange, minResult, maxResult) {
-            return minResult + (i - startRange) * (maxResult - minResult) / (endRange - startRange);
-          }
+      function arrowWidth(callCount) {
+        const lg = Math.log(callCount);
+        return scale(lg, minLg, maxLg, 0.3, 3);
+      }
 
-          function arrowWidth(callCount) {
-            var lg = Math.log(callCount);
-            return scale(lg, minLg, maxLg, 0.3, 3);
-          }
+      // Get the names of all nodes in the graph
+      const parentNames = links.map(link => link.parent);
+      const childNames = links.map(link => link.child);
+      const allNames = arrayUnique(parentNames.concat(childNames));
 
-          // Find min/max number of calls for all dependency links
-          // to render different arrow widths depending on number of calls
-          var minCallCount = 0;
-          var maxCallCount = 0;
-          links.filter(function (link) {
-            return link.parent != link.child;
-          }).forEach(function (link) {
-            var numCalls = link.callCount;
-            if (minCallCount == 0 || numCalls < minCallCount) {
-              minCallCount = numCalls;
-            }
-            if (numCalls > maxCallCount) {
-              maxCallCount = numCalls;
-            }
-          });
-          var minLg = Math.log(minCallCount);
-          var maxLg = Math.log(maxCallCount);
+      // Add nodes/service names to the graph
+      allNames.forEach(name => {
+        g.addNode(name, {label: name});
+      });
 
-
-          // Get the names of all nodes in the graph
-          var parentNames = links.map(function (link) {
-            return link.parent;
-          });
-          var childNames = links.map(function (link) {
-            return link.child;
-          });
-          var allNames = arrayUnique(parentNames.concat(childNames));
-
-          var g = new dagre.Digraph();
-          var renderer = new dagre.Renderer();
-
-          // Add nodes/service names to the graph
-          allNames.forEach(function (name) {
-            g.addNode(name, {label: name});
-          });
-
-          // Add edges/dependency links to the graph
-          links.filter(function (link) {
-            return link.parent != link.child;
-          }).forEach(function (link) {
-            g.addEdge(link.parent + '->' + link.child, link.parent, link.child, {
-              from: link.parent,
-              to: link.child,
-              callCount: link.callCount
-            });
-          });
-
-          var layout = dagre.layout()
-            .nodeSep(30)
-            .rankSep(200)
-            .rankDir("LR"); // LR = left-to-right, TB = top-to-bottom.
-
-          // Override drawNodes and drawEdgePaths, so we can add
-          // hover functionality on top of Dagre.
-          var innerDrawNodes = renderer.drawNodes();
-          var innerDrawEdgePaths = renderer.drawEdgePaths();
-
-          renderer.drawNodes(function (g, svg) {
-            var svgNodes = innerDrawNodes(g, svg);
-            // Add mouse hover/click handlers
-            svgNodes.attr('data-node', function (d) {
-              return d;
-            })
-              .each(function (d) {
-                var $this = $(this);
-                var el = $this[0];
-                var rect = el.querySelector('rect');
-
-                $this.click(function () {
-                  _this.trigger('showServiceDataModal', {
-                    serviceName: d
-                  });
-                });
-
-                $this.hover(function () {
-                  el.classList.add('hover');
-                  rootSvg.classList.add('dark');
-                  getIncidentEdgeElements(d).forEach(function (el) {
-                    el.classList.add('hover-edge');
-                  });
-                  getAdjacentNodeElements(d).forEach(function (el) {
-                    el.classList.add('hover-light');
-                  });
-                }, function () {
-                  el.classList.remove('hover');
-                  rootSvg.classList.remove('dark');
-                  getIncidentEdgeElements(d).forEach(function (el) {
-                    el.classList.remove('hover-edge');
-                  });
-                  getAdjacentNodeElements(d).forEach(function (el) {
-                    el.classList.remove('hover-light');
-                  });
-                });
-              });
-            return svgNodes;
-          });
-
-          renderer.drawEdgePaths(function (g, svg) {
-            var svgNodes = innerDrawEdgePaths(g, svg);
-            svgNodes.each(function (edge) {
-              // Add mouse hover handlers
-              var el = this;
-              var $el = $(el);
-
-              var callCount = g.edge(edge).callCount;
-              var arrowWidthPx = arrowWidth(callCount) + 'px';
-              $el.css('stroke-width', arrowWidthPx);
-
-              $el.hover(function () {
-                rootSvg.classList.add('dark');
-                var nodes = getIncidentNodeElements(el.getAttribute('data-from'), el.getAttribute('data-to'));
-                nodes.forEach(function (el) {
-                  el.classList.add('hover');
-                });
-                el.classList.add('hover-edge');
-              }, function () {
-                rootSvg.classList.remove('dark');
-                var nodes = getIncidentNodeElements(el.getAttribute('data-from'), el.getAttribute('data-to'));
-                nodes.forEach(function (el) {
-                  el.classList.remove('hover');
-                });
-                el.classList.remove('hover-edge');
-              });
-            });
-
-            svgNodes.attr('data-from', function (d) {
-              return g.edge(d).from;
-            });
-            svgNodes.attr('data-to', function (d) {
-              return g.edge(d).to;
-            });
-            return svgNodes;
-          });
-
-          renderer
-            .layout(layout)
-            .run(g, svgGroup);
-
+      // Add edges/dependency links to the graph
+      links.filter(link => link.parent !== link.child).forEach(({parent, child, callCount}) => {
+        g.addEdge(`${parent}->${child}`, parent, child, {
+          from: parent,
+          to: child,
+          callCount
         });
       });
-    }
-  }
-);
+
+      const layout = dagre.layout()
+        .nodeSep(30)
+        .rankSep(200)
+        .rankDir('LR'); // LR = left-to-right, TB = top-to-bottom.
+
+      // Override drawNodes and drawEdgePaths, so we can add
+      // hover functionality on top of Dagre.
+      const innerDrawNodes = renderer.drawNodes();
+      const innerDrawEdgePaths = renderer.drawEdgePaths();
+
+      renderer.drawNodes((gInner, svgInner) => {
+        const svgNodes = innerDrawNodes(gInner, svgInner);
+        // Add mouse hover/click handlers
+        svgNodes.attr('data-node', d => d)
+          .each(function(d) {
+            const $this = $(this);
+            const nodeEl = $this[0];
+
+            $this.click(() => {
+              _this.trigger('showServiceDataModal', {
+                serviceName: d
+              });
+            });
+
+            $this.hover(() => {
+              nodeEl.classList.add('hover');
+              rootSvg.classList.add('dark');
+              getIncidentEdgeElements(d).forEach(el => {
+                el.classList.add('hover-edge');
+              });
+              getAdjacentNodeElements(d).forEach(el => {
+                el.classList.add('hover-light');
+              });
+            }, () => {
+              nodeEl.classList.remove('hover');
+              rootSvg.classList.remove('dark');
+              getIncidentEdgeElements(d).forEach(e => {
+                e.classList.remove('hover-edge');
+              });
+              getAdjacentNodeElements(d).forEach(e => {
+                e.classList.remove('hover-light');
+              });
+            });
+          });
+        return svgNodes;
+      });
+
+      renderer.drawEdgePaths((gInner, svgInner) => {
+        const svgNodes = innerDrawEdgePaths(gInner, svgInner);
+        svgNodes.each(function(edge) {
+          // Add mouse hover handlers
+          const edgeEl = this;
+          const $el = $(edgeEl);
+
+          const callCount = gInner.edge(edge).callCount;
+          const arrowWidthPx = `${arrowWidth(callCount)}px`;
+          $el.css('stroke-width', arrowWidthPx);
+
+          $el.hover(() => {
+            rootSvg.classList.add('dark');
+            const nodes = getIncidentNodeElements(
+                edgeEl.getAttribute('data-from'),
+                edgeEl.getAttribute('data-to'));
+            nodes.forEach(el => { el.classList.add('hover'); });
+            edgeEl.classList.add('hover-edge');
+          }, () => {
+            rootSvg.classList.remove('dark');
+            const nodes = getIncidentNodeElements(
+                edgeEl.getAttribute('data-from'),
+                edgeEl.getAttribute('data-to'));
+            nodes.forEach(el => {
+              el.classList.remove('hover');
+            });
+            edgeEl.classList.remove('hover-edge');
+          });
+        });
+
+        svgNodes.attr('data-from', d => gInner.edge(d).from);
+        svgNodes.attr('data-to', d => gInner.edge(d).to);
+        return svgNodes;
+      });
+
+      renderer
+        .layout(layout)
+        .run(g, svgGroup);
+    });
+  });
+});

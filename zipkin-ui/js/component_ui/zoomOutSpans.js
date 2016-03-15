@@ -1,24 +1,11 @@
-'use strict';
+import {component} from 'flightjs';
 
-define(
-  [
-    'flightjs'
-  ],
+export default component(function zoomOutSpans() {
+  this.zoomOut = function() {
+    this.trigger('uiZoomOutSpans');
+  };
 
-  function (flight) {
-
-    return flight.component(zoomOutSpans);
-
-    function zoomOutSpans() {
-      this.zoomOut = function() {
-        this.trigger('uiZoomOutSpans');
-      };
-
-      this.after('initialize', function() {
-        this.on('click', this.zoomOut);
-      });
-    }
-
-  }
-);
-
+  this.after('initialize', function() {
+    this.on('click', this.zoomOut);
+  });
+});

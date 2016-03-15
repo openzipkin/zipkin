@@ -1,5 +1,4 @@
 import {
-  Span,
   traceSummary,
   getServiceName,
   traceSummariesToMustache,
@@ -9,7 +8,6 @@ import {Constants} from '../../js/component_ui/traceConstants';
 import {endpoint, annotation, span} from './traceTestHelpers';
 
 chai.config.truncateThreshold = 0;
-
 
 
 const ep1 = endpoint(123, 123, 'service1');
@@ -72,7 +70,7 @@ describe('traceSummary', () => {
 
 describe('get service name of a span', () => {
   it('should get service name from server addr', () => {
-    const span = {
+    const testSpan = {
       binaryAnnotations: [{
         key: Constants.SERVER_ADDR,
         value: 'something',
@@ -81,11 +79,11 @@ describe('get service name of a span', () => {
         }
       }]
     };
-    getServiceName(span).should.equal('user-service');
+    getServiceName(testSpan).should.equal('user-service');
   });
 
   it('should get service name from some server annotation', () => {
-    const span = {
+    const testSpan = {
       binaryAnnotations: [],
       annotations: [{
         value: Constants.SERVER_RECEIVE_FRAGMENT,
@@ -94,11 +92,11 @@ describe('get service name of a span', () => {
         }
       }]
     };
-    getServiceName(span).should.equal('test-service');
+    getServiceName(testSpan).should.equal('test-service');
   });
 
   it('should get service name from client addr', () => {
-    const span = {
+    const testSpan = {
       binaryAnnotations: [{
         key: Constants.CLIENT_ADDR,
         value: 'something',
@@ -107,11 +105,11 @@ describe('get service name of a span', () => {
         }
       }]
     };
-    getServiceName(span).should.equal('my-service');
+    getServiceName(testSpan).should.equal('my-service');
   });
 
   it('should get service name from client annotation', () => {
-    const span = {
+    const testSpan = {
       annotations: [{
         value: Constants.CLIENT_SEND,
         endpoint: {
@@ -119,11 +117,11 @@ describe('get service name of a span', () => {
         }
       }]
     };
-    getServiceName(span).should.equal('abc-service');
+    getServiceName(testSpan).should.equal('abc-service');
   });
 
   it('should get service name from local component annotation', () => {
-    const span = {
+    const testSpan = {
       binaryAnnotations: [{
         key: Constants.LOCAL_COMPONENT,
         value: 'something',
@@ -132,7 +130,7 @@ describe('get service name of a span', () => {
         }
       }]
     };
-    getServiceName(span).should.equal('localservice');
+    getServiceName(testSpan).should.equal('localservice');
   });
 });
 
@@ -226,7 +224,7 @@ describe('traceSummariesToMustache', () => {
         timestamp: 1457160374149000,
         value: 'sr',
         endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
-      },{
+      }, {
         timestamp: 1457160374151000,
         value: 'ss',
         endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
@@ -235,53 +233,53 @@ describe('traceSummariesToMustache', () => {
         key: 'http.path',
         value: '/api/v1/services',
         endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1'}
-      },{
+      }, {
         key: 'srv/finagle.version',
         value: '6.33.0',
         endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1'}
-      },{
+      }, {
         key: 'sa',
         value: true,
         endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
-      },{
+      }, {
         key: 'ca',
         value: true,
         endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 56828}
       }]
     }];
-    const summary = traceSummary(spans);
-    const model = traceSummariesToMustache(null, [summary])[0];
+    const testSummary = traceSummary(spans);
+    const model = traceSummariesToMustache(null, [testSummary])[0];
     model.spanCount.should.equal(1);
   });
 
   it('should order traces by duration and tie-break using trace id', () => {
-    const traceId1 = "9ed44141f679130b";
-    const traceId2 = "6ff1c14161f7bde1";
-    const traceId3 = "1234561234561234";
+    const traceId1 = '9ed44141f679130b';
+    const traceId2 = '6ff1c14161f7bde1';
+    const traceId3 = '1234561234561234';
     const summary1 = traceSummary([{
-      "traceId":traceId1,
-      "name":"get",
-      "id":"6ff1c14161f7bde1",
-      "timestamp":1457186441657000,
-      "duration":4000,
-      "annotations": [], "binaryAnnotations": []}]);
+      traceId: traceId1,
+      name: 'get',
+      id: '6ff1c14161f7bde1',
+      timestamp: 1457186441657000,
+      duration: 4000,
+      annotations: [], binaryAnnotations: []}]);
     const summary2 = traceSummary([{
-      "traceId":traceId2,
-      "name":"get",
-      "id":"9ed44141f679130b",
-      "timestamp":1457186568026000,
-      "duration":4000,
-      "annotations":[],
-      "binaryAnnotations": []
+      traceId: traceId2,
+      name: 'get',
+      id: '9ed44141f679130b',
+      timestamp: 1457186568026000,
+      duration: 4000,
+      annotations: [],
+      binaryAnnotations: []
     }]);
     const summary3 = traceSummary([{
-      "traceId":traceId3,
-      "name":"get",
-      "id":"6677567324735",
-      "timestamp":1457186568027000,
-      "duration":3000,
-      "annotations":[],
-      "binaryAnnotations": []
+      traceId: traceId3,
+      name: 'get',
+      id: '6677567324735',
+      timestamp: 1457186568027000,
+      duration: 3000,
+      annotations: [],
+      binaryAnnotations: []
     }]);
 
     const model = traceSummariesToMustache(null, [summary1, summary2, summary3]);
