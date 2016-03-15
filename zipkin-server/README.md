@@ -53,6 +53,20 @@ Example usage:
 $ STORAGE_TYPE=mysql MYSQL_USER=root ./mvnw -pl zipkin-server spring-boot:run
 ```
 
+### Kafka
+The following apply when `KAFKA_ZOOKEEPER` is set:
+
+    * `KAFKA_ZOOKEEPER`: ZooKeeper host string, comma-separated host:port value. no default.
+    * `KAFKA_TOPIC`: Defaults to zipkin
+    * `KAFKA_GROUP_ID`: Consumer group this process is consuming on behalf of. Defaults to zipkin
+    * `KAFKA_STREAMS`: Count of consumer threads consuming the topic. defaults to 1.
+
+Example usage:
+
+```bash
+$ TRANSPORT_TYPE=kafka KAFKA_ZOOKEEPER=127.0.0.1:2181 ./mvnw -pl zipkin-server spring-boot:run
+```
+
 ## Running with Docker
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin-java`.
 See [docker-zipkin-java](https://github.com/openzipkin/docker-zipkin-java) for details.
