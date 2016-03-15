@@ -1,32 +1,22 @@
-'use strict';
+import {component} from 'flightjs';
 
-define(
-  [
-    'flightjs'
-  ],
+export default component(function fullPageSpinner() {
+  this.requests = 0;
 
-  function (flight) {
+  this.showSpinner = function() {
+    this.requests += 1;
+    this.$node.show();
+  };
 
-    return flight.component(fullPageSpinner);
-
-    function fullPageSpinner() {
-      this.requests = 0;
-
-      this.showSpinner = function() {
-        this.requests += 1;
-        this.$node.show();
-      };
-
-      this.hideSpinner = function() {
-        this.requests -= 1;
-        if (this.requests == 0)
-          this.$node.hide();
-      };
-
-      this.after('initialize', function() {
-        this.on(document, 'uiShowFullPageSpinner', this.showSpinner);
-        this.on(document, 'uiHideFullPageSpinner', this.hideSpinner);
-      });
+  this.hideSpinner = function() {
+    this.requests -= 1;
+    if (this.requests === 0) {
+      this.$node.hide();
     }
-  }
-);
+  };
+
+  this.after('initialize', function() {
+    this.on(document, 'uiShowFullPageSpinner', this.showSpinner);
+    this.on(document, 'uiHideFullPageSpinner', this.hideSpinner);
+  });
+});

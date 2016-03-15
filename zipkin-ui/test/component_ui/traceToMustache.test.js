@@ -4,7 +4,6 @@ import traceToMustache,
     getRootSpans,
     formatEndpoint
   } from '../../js/component_ui/traceToMustache';
-import {traceSummary} from '../../js/component_ui/traceSummary';
 import {endpoint, annotation, span} from './traceTestHelpers';
 
 const ep1 = endpoint(123, 123, 'service1');
@@ -71,8 +70,8 @@ describe('traceToMustache', () => {
   });
 
   it('should show human-readable annotation name', () => {
-    const trace = [{
-      traceId:  '2480ccca8df0fca5',
+    const testTrace = [{
+      traceId: '2480ccca8df0fca5',
       name: 'get',
       id: '2480ccca8df0fca5',
       timestamp: 1457186385375000,
@@ -81,7 +80,7 @@ describe('traceToMustache', () => {
         timestamp: 1457186385375000,
         value: 'sr',
         endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
-      },{
+      }, {
         timestamp: 1457186385708000,
         value: 'ss',
         endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
@@ -92,16 +91,16 @@ describe('traceToMustache', () => {
         endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
       }]
     }];
-    const {spans: [span]} = traceToMustache(trace);
-    span.annotations[0].value.should.equal('Server Receive');
-    span.annotations[1].value.should.equal('Server Send');
-    span.binaryAnnotations[0].key.should.equal('Server Address');
+    const {spans: [testSpan]} = traceToMustache(testTrace);
+    testSpan.annotations[0].value.should.equal('Server Receive');
+    testSpan.annotations[1].value.should.equal('Server Send');
+    testSpan.binaryAnnotations[0].key.should.equal('Server Address');
   });
 });
 
 describe('get root spans', () => {
   it('should find root spans in a trace', () => {
-    const trace = [{
+    const testTrace = [{
       parentId: null, // root span (no parent)
       id: 1
     }, {
@@ -115,7 +114,7 @@ describe('get root spans', () => {
       id: 5
     }];
 
-    const rootSpans = getRootSpans(trace);
+    const rootSpans = getRootSpans(testTrace);
     rootSpans.should.eql([{
       parentId: null,
       id: 1
