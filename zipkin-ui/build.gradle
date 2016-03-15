@@ -5,7 +5,6 @@ artifacts.zipkinUpload jar
 sourceSets {
     main {
         resources {
-            srcDir 'static'
             srcDir 'dist'
         }
     }
