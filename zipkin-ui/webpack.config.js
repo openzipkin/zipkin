@@ -19,7 +19,7 @@ module.exports = {
             loader: 'mustache'
         }, {
             test: /.scss$/,
-            loader: ExtractTextPlugin.extract('style-loader', 'css-loader!sass-loader')
+            loader: ExtractTextPlugin.extract('style-loader', 'css-loader?sourceMap!sass-loader?sourceMap')
         }, {
             test: /\.woff2?$|\.ttf$|\.eot$|\.svg|\.png$/,
             loader: 'file'
@@ -30,6 +30,7 @@ module.exports = {
         filename: 'app.min.js',
         publicPath: '/'
     },
+    devtool: 'source-map',
     plugins: [
         new webpack.ProvidePlugin({
             $: "jquery",

@@ -85,7 +85,7 @@ trait ZipkinWebFactory { self: App =>
       ("/api/v1/spans", handleRoute(queryClient, "/api/v1/spans")),
       ("/api/v1/trace/:id", handleTrace(queryClient)),
       ("/api/v1/traces", handleRoute(queryClient, "/api/v1/traces")),
-      ("/config.js", handleConfig(Map(
+      ("/config.json", handleConfig(Map(
         "environment" -> environment(),
         "queryLimit" -> queryLimit()
       )))

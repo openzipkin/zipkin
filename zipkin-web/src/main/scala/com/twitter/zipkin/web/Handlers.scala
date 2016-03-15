@@ -34,8 +34,9 @@ class Handlers {
 
   case class ConfigRenderer(config: Map[String, _]) extends Renderer {
     def apply(response: Response) {
-      response.contentType = "application/javascript"
-      response.contentString = s"window.config = ${ZipkinJson.writeValueAsString(config)};"
+      response.contentType = "application/json"
+      response.cacheControl = 10.minutes
+      response.contentString = ZipkinJson.writeValueAsString(config)
     }
   }
 

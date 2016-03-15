@@ -35,8 +35,9 @@ const TracePageComponent = component(function TracePage() {
   });
 });
 
-export default function initializeTrace(traceId) {
+export default function initializeTrace(traceId, config) {
   TracePageComponent.attachTo('.content', {
-    traceId
+    traceId,
+    config
   });
 }
