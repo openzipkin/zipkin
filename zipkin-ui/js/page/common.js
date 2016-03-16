@@ -7,6 +7,6 @@ export default component(function CommonUI() {
   this.after('initialize', function() {
     this.$node.html(layoutTemplate());
     NavbarUI.attachTo('#navbar');
-    EnvironmentUI.attachTo('#environment');
+    EnvironmentUI.attachTo('#environment', {config: this.attr.config});
   });
 });
