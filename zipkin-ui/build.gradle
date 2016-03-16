@@ -2,16 +2,6 @@ apply plugin: 'com.moowork.node'
 
 artifacts.zipkinUpload jar
 
-sourceSets {
-    main {
-        resources {
-            srcDir 'dist'
-        }
-    }
-}
-clean {
-    delete "dist"
-}
 node {
     // Version of node to use.
     version = '5.5.0'
