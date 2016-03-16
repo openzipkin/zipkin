@@ -92,44 +92,43 @@ class Handlers {
       }
   }
 
-  def handlePublic(
-    typesMap: Map[String, String]) =
-    new Service[Request, Renderer] {
-      private[this] var rendererCache = Map.empty[String, Future[Renderer]]
+  class handlePublic(typesMap: Map[String, String]) extends Service[Request, Renderer] {
+    protected[this] var rendererCache = Map.empty[String, Future[Renderer]]
 
-      /**
-        * Resolves the resource to return for the path requested by the browser
-        * @param path The path requested by the browser. Always starts with `/`
-        * @return The URL of the file referenced by the path if it has an extension (ie. contains a dot), `static/index.html`
-        *         otherwise (we use the same HTML to serve all the pages, the page generation logic is in JS based on
-        *         `window.location`). Returns `None` if the requested file doesn't exist.
-        */
-      private[this] def getResource(path: String): Option[URL] =
-        Option(getClass.getResource(path match {
-          case _ if path.split("/").lastOption.exists(_.contains(".")) => s"/static$path"
-          case default => "/static/index.html"
-        }))
+    protected[this] def getResource(path: String): Option[URL] = Option(getClass.getResource(s"/zipkin-ui$path"))
 
-      private[this] def getRenderer(path: String): Option[Future[Renderer]] = {
-        rendererCache.get(path) orElse {
-          synchronized {
-            rendererCache.get(path) orElse {
-              getResource(path) map { resource =>
-                val typ = typesMap find { case (n, _) => resource.getPath.endsWith(n) } map { _._2 } getOrElse("text/plain")
-                val renderer = Future.value(StaticRenderer(resource.openStream(), typ))
-                rendererCache += (path -> renderer)
-                renderer
-              }
+    protected[this] def getRenderer(path: String): Option[Future[Renderer]] = {
+      rendererCache.get(path) orElse {
+        synchronized {
+          rendererCache.get(path) orElse {
+            getResource(path) map { resource =>
+              val typ = typesMap find { case (n, _) => resource.getPath.endsWith(n) } map { _._2 } getOrElse("text/plain")
+              val renderer = Future.value(StaticRenderer(resource.openStream(), typ))
+              rendererCache += (path -> renderer)
+              renderer
             }
           }
         }
       }
-
-      def apply(req: Request): Future[Renderer] =
-        if (req.path contains "..") NotFound else {
-          getRenderer(req.path) getOrElse NotFound
-        }
     }
+
+    def apply(req: Request): Future[Renderer] =
+      if (req.path contains "..") NotFound else {
+        getRenderer(req.path) getOrElse NotFound
+      }
+  }
+  object handlePublic {
+    def apply(typesMap: Map[String, String]) = new handlePublic(typesMap)
+  }
+
+  class tryIndexHtml extends handlePublic(Map("html" -> "text/html")) {
+    override protected[this] def getResource(path: String): Option[URL] = Option(getClass.getResource(
+      // The replaceAll call ensures there's exactly one / separating path segments.
+      // Needed because multiple slashes break resource lookup.
+      s"/zipkin-ui/$path/index.html".replaceAll("/+", "/")
+    ))
+  }
+  var tryIndexHtml = new tryIndexHtml
 
   def handleRoute(client: HttpClient, baseUri: String): Service[Request, Renderer] =
     Service.mk[Request, Renderer] { req =>
