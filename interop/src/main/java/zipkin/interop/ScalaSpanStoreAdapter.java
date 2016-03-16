@@ -18,6 +18,8 @@ import com.twitter.zipkin.common.Span;
 import com.twitter.zipkin.conversions.thrift$;
 import com.twitter.zipkin.storage.QueryRequest;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TList;
 import org.apache.thrift.protocol.TType;
@@ -31,8 +33,6 @@ import scala.runtime.BoxedUnit;
 import zipkin.Codec;
 import zipkin.SpanStore;
 import zipkin.internal.Nullable;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * Adapts {@link SpanStore} to a scala {@link com.twitter.zipkin.storage.SpanStore} in order to test
@@ -70,10 +70,23 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
 
   @Override
   public Future<Seq<List<Span>>> getTracesByIds(Seq<Object> input) {
-    java.util.List<Long> traceIds = JavaConversions.asJavaCollection(input).stream()
-        .map(o -> Long.valueOf(o.toString())).collect(toList());
-    return toSeqFuture(spanStore.getTracesByIds(traceIds));
+    java.util.List<java.util.List<zipkin.Span>> result = new ArrayList<>(input.size());
+    for (Iterator<Object> traceIds = input.iterator(); traceIds.hasNext();) {
+      java.util.List<zipkin.Span> span =
+          spanStore.getTrace(Long.valueOf(traceIds.next().toString()));
+      if (span != null) result.add(span);
+    }
+    Collections.sort(result, TRACE_DESCENDING);
+    return toSeqFuture(result);
   }
+
+  static final Comparator<java.util.List<zipkin.Span>> TRACE_DESCENDING =
+      new Comparator<java.util.List<zipkin.Span>>() {
+        @Override
+        public int compare(java.util.List<zipkin.Span> left, java.util.List<zipkin.Span> right) {
+          return right.get(0).compareTo(left.get(0));
+        }
+      };
 
   private static Future<Seq<List<Span>>> toSeqFuture(java.util.List<java.util.List<zipkin.Span>> traces) {
     ArrayList<List<Span>> result = new ArrayList<>(traces.size());

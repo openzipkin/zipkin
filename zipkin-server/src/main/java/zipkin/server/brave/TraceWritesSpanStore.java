@@ -15,7 +15,6 @@ package zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
 import com.github.kristofa.brave.LocalTracer;
-import java.util.Collection;
 import java.util.List;
 import zipkin.DependencyLink;
 import zipkin.QueryRequest;
@@ -52,10 +51,10 @@ public final class TraceWritesSpanStore implements SpanStore {
   }
 
   @Override
-  public List<List<Span>> getTracesByIds(Collection<Long> traceIds) {
-    tracer.startNewSpan(component, "get-traces-by-ids");
+  public List<Span> getTrace(long traceId) {
+    tracer.startNewSpan(component, "get-trace");
     try {
-      return delegate.getTracesByIds(traceIds);
+      return delegate.getTrace(traceId);
     } finally {
       tracer.finishSpan();
     }

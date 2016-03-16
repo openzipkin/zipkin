@@ -14,7 +14,6 @@
 package zipkin.junit;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import okhttp3.HttpUrl;
 import okhttp3.mockwebserver.Dispatcher;
@@ -63,8 +62,8 @@ final class ZipkinDispatcher extends Dispatcher {
       } else if (url.encodedPath().startsWith("/api/v1/trace/")) {
         String traceId = url.encodedPath().replace("/api/v1/trace/", "");
         long id = new Buffer().writeUtf8(traceId).readHexadecimalUnsignedLong();
-        List<List<Span>> traces = store.getTracesByIds(Collections.singletonList(id));
-        if (!traces.isEmpty()) return jsonResponse(JSON_CODEC.writeSpans(traces.get(0)));
+        List<Span> trace = store.getTrace(id);
+        if (trace != null) return jsonResponse(JSON_CODEC.writeSpans(trace));
       }
     } else if (request.getMethod().equals("POST")) {
       if (url.encodedPath().equals("/api/v1/spans")) {

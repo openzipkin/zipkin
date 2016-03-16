@@ -14,7 +14,6 @@
 package zipkin.server;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -152,12 +151,12 @@ public class ZipkinQueryApiV1 {
   @RequestMapping(value = "/trace/{traceId}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getTrace(@PathVariable String traceId) {
     long id = lowerHexToUnsignedLong(traceId);
-    List<List<Span>> traces = spanStore.getTracesByIds(Collections.singletonList(id));
+    List<Span> trace = spanStore.getTrace(id);
 
-    if (traces.isEmpty()) {
+    if (trace == null) {
       throw new TraceNotFoundException(traceId, id);
     }
-    return jsonCodec.writeSpans(traces.get(0));
+    return jsonCodec.writeSpans(trace);
   }
 
   @ExceptionHandler(TraceNotFoundException.class)

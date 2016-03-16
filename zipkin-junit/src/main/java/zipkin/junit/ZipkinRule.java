@@ -14,6 +14,7 @@
 package zipkin.junit;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -140,7 +141,12 @@ public final class ZipkinRule implements TestRule {
 
   /** Retrieves all traces this zipkin server has received. */
   public List<List<Span>> getTraces() {
-    return store.getTracesByIds(store.traceIds());
+    List<Long> traceIds = store.traceIds();
+    List<List<Span>> result = new ArrayList<>(traceIds.size());
+    for (long traceId : traceIds) {
+      result.add(store.getTrace(traceId));
+    }
+    return result;
   }
 
   /**

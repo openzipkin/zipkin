@@ -16,7 +16,6 @@ package zipkin.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -24,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
+import org.jooq.Condition;
 import org.jooq.Cursor;
 import org.jooq.DSLContext;
 import org.jooq.ExecuteListenerProvider;
@@ -166,15 +166,19 @@ public final class JDBCSpanStore implements SpanStore {
     }
   }
 
-  List<List<Span>> getTraces(@Nullable QueryRequest request, @Nullable Collection<Long> traceIds) {
+  List<List<Span>> getTraces(@Nullable QueryRequest request, @Nullable Long traceId) {
     final Map<Long, List<Span>> spansWithoutAnnotations;
     final Map<Pair<?>, List<Record>> dbAnnotations;
     try (Connection conn = datasource.getConnection()) {
+      Condition traceIdCondition;
       if (request != null) {
-        traceIds = toTraceIdQuery(context(conn), request).fetch(ZIPKIN_SPANS.TRACE_ID);
+        List<Long> traceIds = toTraceIdQuery(context(conn), request).fetch(ZIPKIN_SPANS.TRACE_ID);
+        traceIdCondition = ZIPKIN_SPANS.TRACE_ID.in(traceIds);
+      } else {
+        traceIdCondition = ZIPKIN_SPANS.TRACE_ID.eq(traceId);
       }
       spansWithoutAnnotations = context(conn)
-          .selectFrom(ZIPKIN_SPANS).where(ZIPKIN_SPANS.TRACE_ID.in(traceIds))
+          .selectFrom(ZIPKIN_SPANS).where(traceIdCondition)
           .stream()
           .map(r -> new Span.Builder()
               .traceId(r.getValue(ZIPKIN_SPANS.TRACE_ID))
@@ -248,8 +252,9 @@ public final class JDBCSpanStore implements SpanStore {
   }
 
   @Override
-  public List<List<Span>> getTracesByIds(Collection<Long> traceIds) {
-    return traceIds.isEmpty() ? emptyList() : getTraces(null, traceIds);
+  public List<Span> getTrace(long traceId) {
+    List<List<Span>> result = getTraces(null, traceId);
+    return result.isEmpty() ? null : result.get(0);
   }
 
   @Override

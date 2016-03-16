@@ -13,7 +13,6 @@
  */
 package zipkin;
 
-import java.util.Collection;
 import java.util.List;
 import zipkin.internal.Nullable;
 
@@ -41,10 +40,10 @@ public interface SpanStore extends SpanConsumer {
    * Get the available trace information from the storage system. Spans in trace are sorted by the
    * first annotation timestamp in that span. First event should be first in the spans list.
    *
-   * <p/> Results are sorted in order of the first span's timestamp, and contain less elements than
-   * trace IDs when corresponding traces aren't available.
+   * @return a list of spans with the same {@link Span#traceId}, or null if not present.
    */
-  List<List<Span>> getTracesByIds(Collection<Long> traceIds);
+  @Nullable
+  List<Span> getTrace(long id);
 
   /**
    * Get all the {@link Endpoint#serviceName service names}.
