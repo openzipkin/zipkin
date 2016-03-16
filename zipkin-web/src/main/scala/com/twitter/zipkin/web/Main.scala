@@ -73,28 +73,29 @@ trait ZipkinWebFactory { self: App =>
     import handlers._
 
     Seq(
+      ("", handleIndexHtml),
+      ("/dependency", handleIndexHtml),
+      ("/trace/", handleIndexHtml),
       ("/", handlePublic(typesMap)),
       ("/health", handleRoute(queryClient, "/health")),
       ("/api/v1/dependencies", handleRoute(queryClient, "/api/v1/dependencies")),
       ("/api/v1/services", handleRoute(queryClient, "/api/v1/services")),
       ("/api/v1/spans", handleRoute(queryClient, "/api/v1/spans")),
-      ("/api/v1/trace/:id", handleTrace(queryClient)),
+      ("/api/v1/trace/", handleTrace(queryClient)),
       ("/api/v1/traces", handleRoute(queryClient, "/api/v1/traces")),
       ("/config.json", handleConfig(Map(
         "environment" -> environment(),
         "queryLimit" -> queryLimit()
       )))
-    ).foldLeft(new HttpMuxer) { case (m , (p, handler)) =>
-      val path = p.split("/").toList
-      val handlePath = path.takeWhile { t => !(t.startsWith(":") || t.startsWith("?:")) }
-      val suffix = if (p.endsWith("/") || p.contains(":")) "/" else ""
-
-      m.withHandler(handlePath.mkString("/") + suffix,
-        collectStats(handlePath.foldLeft(stats) { case (s, p) => s.scope(p) }) andThen
+    ).foldLeft(new HttpMuxer) { case (muxer, (path, handler)) =>
+      val pathParts = path.split("/").toList
+      muxer.withHandler(path,
+        collectStats(pathParts.foldLeft(stats) { case (s, p) => s.scope(p) }) andThen
         renderPage andThen
         catchExceptions andThen
-        checkPath(path) andThen
-        handler)
+        checkPath(pathParts) andThen
+        handler
+      )
     }
   }
 }
