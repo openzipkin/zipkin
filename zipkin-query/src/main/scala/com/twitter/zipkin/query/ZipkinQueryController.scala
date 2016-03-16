@@ -25,10 +25,20 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
                                       queryExtractor: QueryExtractor,
                                       response: ResponseBuilder,
                                       @Flag("zipkin.queryService.servicesMaxAge") servicesMaxAge: Int,
+                                      @Flag("zipkin.queryService.limit") val queryLimit: Int,
+                                      @Flag("zipkin.queryService.environment") val environment: String,
                                       @Flag("zipkin.queryService.lookback") val defaultLookback: Long) extends Controller {
 
   get("/health") { request: Request =>
     "OK\n" // TODO: expose SpanStore.ok? or similar per #994
+  }
+
+  get("/config.json") { request: Request =>
+    response.ok(Map(
+      "environment" -> environment,
+      "queryLimit" -> queryLimit,
+      "defaultLookback" -> defaultLookback
+    )).contentType("application/json")
   }
 
   post("/api/v1/spans") { request: Request =>
@@ -98,6 +108,13 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
 
   get("/api/v1/dependencies") { request: GetDependenciesRequest =>
     dependencyStore.getDependencies(request.endTs, request.lookback.orElse(Some(defaultLookback)))
+  }
+
+  get("/:*") { request: Request =>
+    response.ok.fileOrIndex(
+    request.params("*"),
+    "index.html"
+    )
   }
 
   val jsonSpansReader = ZipkinJson.readerFor(new TypeReference[Seq[JsonSpan]] {})
