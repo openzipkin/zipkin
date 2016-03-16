@@ -106,7 +106,7 @@ class Handlers {
         */
       private[this] def getResource(path: String): Option[URL] =
         Option(getClass.getResource(path match {
-          case _ if path.split("/").last.contains(".") => s"/static$path"
+          case _ if path.split("/").lastOption.exists(_.contains(".")) => s"/static$path"
           case default => "/static/index.html"
         }))
 
