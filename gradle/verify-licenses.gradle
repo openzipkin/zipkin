@@ -7,7 +7,6 @@
  */
 
 ext.licenseWhiteList = [
-		'No license found',
 		'Public Domain',
 		'MIT License',
 		'Apache License, Version 2.0',
@@ -18,6 +17,7 @@ ext.licenseWhiteList = [
 		'Common Public License Version 1.0',
 		'LGPL-2.1',
 		'CC0 1.0 Universal',
+		'CDDL v1.0',
 		'Eclipse Public License - v 1.0'
 ]
 
@@ -30,6 +30,7 @@ downloadLicenses {
 	ext.mit = license('MIT License', 'http://www.opensource.org/licenses/mit-license.php')
 	ext.bsd = license('BSD License', 'http://www.opensource.org/licenses/bsd-license.php')
 	ext.bsd3Clause = license('BSD 3-Clause', 'http://opensource.org/licenses/BSD-3-Clause')
+	ext.cddl = license('CDDL v1.0', 'https://glassfish.java.net/public/CDDLv1.0.html')
 
 	aliases = [
 			(apache) : [
@@ -45,12 +46,23 @@ downloadLicenses {
 			],
 			(bsd3Clause) : [
 					license('BSD 3-clause', 'http://opensource.org/licenses/BSD-3-Clause'),
-					license('BSD 3-Clause', 'http://www.scala-lang.org/license.html')
+					license('BSD 3-Clause', 'http://www.scala-lang.org/license.html'),
+					license('BSD 3-Clause', 'http://asm.ow2.org/license.html')
 			]
 	]
 
 	licenses = [
-			(group('org.apache.httpcomponents')): apache
+			(group('io.zipkin')): apache,
+			'javax.servlet:servlet-api:2.5': cddl,   // see any .java file in the source .jar at http://search.maven.org/#artifactdetails|javax.servlet|servlet-api|2.5|jar
+			// Even though it'd be nice to just say "org.apache.*", that's not currently supported
+			// see https://github.com/hierynomus/license-gradle-plugin/blob/067175d2d0ce5213c9cbab9968856b0feb7ed8d5/src/main/groovy/nl/javadude/gradle/plugins/license/LicenseResolver.groovy#L56-L59
+			// and https://github.com/hierynomus/license-gradle-plugin/issues/100
+			(group('org.apache.httpcomponents')): apache,
+			(group('org.apache.zookeeper')): apache,
+			(group('asm')): license('BSD 3-Clause', 'http://asm.ow2.org/license.html'),
+			// Same goes for these
+			(group('com.twitter.common')): apache,
+			(group('com.twitter.common.zookeeper')): apache,
 	]
 }
 
