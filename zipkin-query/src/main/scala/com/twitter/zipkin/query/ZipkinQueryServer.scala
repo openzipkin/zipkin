@@ -41,6 +41,7 @@ class ZipkinQueryServer(spanStore: SpanStore, dependencyStore: DependencyStore) 
   flag("zipkin.queryService.limit", 10, "Default query limit for trace results")
   flag("zipkin.queryService.lookback", 7.days.inMillis, "Default query lookback for trace results, in milliseconds")
   flag("zipkin.queryService.servicesMaxAge", 5*60, "Get services cache TTL")
+  flag("zipkin.queryService.environment", "", "Name of the environment this Zipkin server is running in")
 
   object StorageModule extends TwitterModule {
     @Provides

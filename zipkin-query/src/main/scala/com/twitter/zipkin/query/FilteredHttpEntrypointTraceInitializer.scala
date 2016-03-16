@@ -9,7 +9,7 @@ import com.twitter.zipkin.thriftscala.Constants
 /**
  * Hacked variant of the private `com.twitter.finagle.http.codec.HttpServerTraceInitializer`
  *
- * <p/>This version doesn't trace POST requests
+ * <p/>This version only starts traces at certain entrypoints, and doesn't trace POST requests
  *
  * <p/>See https://github.com/twitter/finatra/issues/271
  */
@@ -19,7 +19,8 @@ object FilteredHttpEntrypointTraceInitializer extends Stack.Module1[param.Tracer
 
   override def make(ignored: param.Tracer, next: ServiceFactory[Request, Response]) = {
     val traceInitializer = Filter.mk[Request, Response, Request, Response] { (req, svc) =>
-      if (req.method != Method.Post) {
+      if (req.method != Method.Post &&
+        (req.path.equals("/") || req.path.equals("/dependency") || req.path.startsWith("/api/"))) {
         newRootSpan(req, svc)
       } else {
         svc(req)
