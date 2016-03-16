@@ -1,5 +1,8 @@
 # zipkin-server
-The  receives spans via HTTP POST and respond to queries from zipkin-web.
+The hosts the Zipkin [Api](http://zipkin.io/zipkin-api/#/) and [UI](https://github.com/openzipkin/zipkin/tree/master/zipkin-ui).
+
+Span storage and transports are configurable. By default storage is
+in-memory and the http span transport (POST /spans endpoint) is enabled.
 
 Note that the server requires minimum JRE 8.
 
