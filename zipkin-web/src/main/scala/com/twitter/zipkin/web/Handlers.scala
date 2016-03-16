@@ -96,6 +96,13 @@ class Handlers {
     new Service[Request, Renderer] {
       private[this] var rendererCache = Map.empty[String, Future[Renderer]]
 
+      /**
+        * Resolves the resource to return for the path requested by the browser
+        * @param path The path requested by the browser. Always starts with `/`
+        * @return The URL of the file referenced by the path if it has an extension (ie. contains a dot), `static/index.html`
+        *         otherwise (we use the same HTML to serve all the pages, the page generation logic is in JS based on
+        *         `window.location`). Returns `None` if the requested file doesn't exist.
+        */
       private[this] def getResource(path: String): Option[URL] =
         Option(getClass.getResource(path match {
           case _ if path.split("/").last.contains(".") => s"/static$path"
