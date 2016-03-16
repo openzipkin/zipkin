@@ -14,10 +14,6 @@
 package zipkin.junit;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -74,26 +70,15 @@ final class HttpSpanStore implements SpanStore {
   }
 
   @Override
-  public List<List<Span>> getTracesByIds(Collection<Long> traceIds) {
-    List<List<Span>> result = new ArrayList<>(traceIds.size());
-    for (Long id : traceIds) {
-      Response response = call(new Request.Builder()
-          .url(baseUrl.resolve(String.format("/api/v1/trace/%016x", id)))
-          .build());
-      if (response.code() != 404) {
-        result.add(JSON_CODEC.readSpans(responseBytes(response)));
-      }
+  public List<Span> getTrace(long traceId) {
+    Response response = call(new Request.Builder()
+        .url(baseUrl.resolve(String.format("/api/v1/trace/%016x", traceId)))
+        .build());
+    if (response.code() == 404) {
+      return null;
     }
-    Collections.sort(result, TRACE_DESCENDING);
-    return result;
+    return JSON_CODEC.readSpans(responseBytes(response));
   }
-
-  static final Comparator<List<Span>> TRACE_DESCENDING = new Comparator<List<Span>>() {
-    @Override
-    public int compare(List<Span> left, List<Span> right) {
-      return right.get(0).compareTo(left.get(0));
-    }
-  };
 
   @Override
   public List<String> getServiceNames() {

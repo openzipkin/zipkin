@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -127,8 +126,7 @@ public final class CassandraSpanStore implements SpanStore, AutoCloseable {
     return getTracesByIds(traceIds);
   }
 
-  @Override
-  public List<List<Span>> getTracesByIds(Collection<Long> traceIds) {
+  List<List<Span>> getTracesByIds(Collection<Long> traceIds) {
     // Synchronously get the encoded data, as there are no other requests to the backend needed.
     Collection<List<ByteBuffer>> encodedTraces = getUnchecked(
         repository.getSpansByTraceIds(traceIds.toArray(new Long[traceIds.size()]), maxTraceCols)
@@ -144,6 +142,12 @@ public final class CassandraSpanStore implements SpanStore, AutoCloseable {
     }
     Collections.sort(result, TRACE_DESCENDING);
     return result;
+  }
+
+  @Override
+  public List<Span> getTrace(long traceId) {
+    List<List<Span>> result = getTracesByIds(Collections.singleton(traceId));
+    return result.isEmpty() ? null : result.get(0);
   }
 
   @Override

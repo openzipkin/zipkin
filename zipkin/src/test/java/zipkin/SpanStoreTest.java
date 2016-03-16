@@ -121,15 +121,14 @@ public abstract class SpanStoreTest<T extends SpanStore> {
       .id(spanId).build();
 
   @Test
-  public void getSpansByTraceIds() {
+  public void getTrace() {
     store.accept(asList(span1, span2));
-    assertThat(store.getTracesByIds(asList(span1.traceId))).containsExactly(asList(span1));
-    assertThat(store.getTracesByIds(asList(span1.traceId, span2.traceId, 111111L)))
-        .containsExactly(asList(span2), asList(span1));
+    assertThat(store.getTrace(span1.traceId)).isEqualTo(asList(span1));
+  }
 
-    // ids in wrong order
-    assertThat(store.getTracesByIds(asList(span2.traceId, span1.traceId)))
-        .containsExactly(asList(span2), asList(span1));
+  @Test
+  public void getTrace_nullWhenNotFound() {
+    assertThat(store.getTrace(111111L)).isNull();
   }
 
   /**
@@ -140,7 +139,7 @@ public abstract class SpanStoreTest<T extends SpanStore> {
   public void tracesRetrieveInOrderDesc() {
     store.accept(asList(span2, new Span.Builder(span1).annotations(asList(ann3, ann1)).build()));
 
-    assertThat(store.getTracesByIds(asList(span2.traceId, span1.traceId)))
+    assertThat(store.getTraces(new QueryRequest.Builder("service").build()))
         .containsOnly(asList(span2), asList(span1));
   }
 
@@ -149,13 +148,8 @@ public abstract class SpanStoreTest<T extends SpanStore> {
   public void derivesTimestampAndDurationFromAnnotations() {
     store.accept(asList(new Span.Builder(span1).timestamp(null).duration(null).build()));
 
-    assertThat(store.getTracesByIds(asList(span1.traceId)))
-        .containsOnly(asList(span1));
-  }
-
-  @Test
-  public void getSpansByTraceIds_empty() {
-    assertThat(store.getTracesByIds(asList(54321L))).isEmpty();
+    assertThat(store.getTrace(span1.traceId))
+        .containsOnly(span1);
   }
 
   @Test
@@ -499,7 +493,7 @@ public abstract class SpanStoreTest<T extends SpanStore> {
 
     // Regardless of when clock skew is corrected, it should be corrected before traces return
     store.accept(asList(parent, remoteChild, localChild));
-    List<Span> adjusted = store.getTracesByIds(asList(1L)).get(0);
+    List<Span> adjusted = store.getTrace(1L);
 
     // After correction, the child happens after the parent
     assertThat(adjusted.get(0).timestamp)

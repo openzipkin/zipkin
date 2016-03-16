@@ -21,8 +21,7 @@ import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.InMemorySpanStore;
 
-import static java.util.Collections.singletonList;
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SpanStoreSpanCollectorTest {
 
@@ -51,7 +50,7 @@ public class SpanStoreSpanCollectorTest {
       collector.collect(builder.id(1234L + i).build());
     }
     collector.flush();
-    List<List<Span>> result = spanStore.getTracesByIds(singletonList(1234L));
-    assertThat(result.get(0)).hasSize(500);
+    List<Span> result = spanStore.getTrace(1234L);
+    assertThat(result).hasSize(500);
   }
 }

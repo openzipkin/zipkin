@@ -23,12 +23,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.CorrectForClockSkew;
 import zipkin.internal.DependencyLinkSpan;
 import zipkin.internal.DependencyLinker;
 import zipkin.internal.MergeById;
 import zipkin.internal.Nullable;
+import zipkin.internal.Pair;
 import zipkin.internal.Util;
 
 import static zipkin.internal.Util.UTF_8;
@@ -36,7 +38,7 @@ import static zipkin.internal.Util.sortedList;
 
 public final class InMemorySpanStore implements SpanStore {
   private final Multimap<Long, Span> traceIdToSpans = new LinkedListMultimap<>();
-  private final Multimap<String, Long> serviceToTraceIds = new LinkedHashSetMultimap<>();
+  private final Multimap<String, Pair<Long>> serviceToTraceIdTimeStamp = new SortedByValue2Descending<>();
   private final Multimap<String, String> serviceToSpanNames = new LinkedHashSetMultimap<>();
   private int acceptedSpanCount;
 
@@ -44,13 +46,14 @@ public final class InMemorySpanStore implements SpanStore {
   public synchronized void accept(List<Span> spans) {
     for (Span span : spans) {
       span = ApplyTimestampAndDuration.apply(span);
-      long traceId = span.traceId;
+      Pair<Long> traceIdTimeStamp =
+          Pair.create(span.traceId, span.timestamp == null ? Long.MIN_VALUE : span.timestamp);
       String spanName = span.name;
       traceIdToSpans.put(span.traceId, span);
       acceptedSpanCount++;
 
       for (String serviceName : span.serviceNames()) {
-        serviceToTraceIds.put(serviceName, traceId);
+        serviceToTraceIdTimeStamp.put(serviceName, traceIdTimeStamp);
         serviceToSpanNames.put(serviceName, spanName);
       }
     }
@@ -66,36 +69,35 @@ public final class InMemorySpanStore implements SpanStore {
 
   public synchronized void clear() {
     traceIdToSpans.clear();
-    serviceToTraceIds.clear();
+    serviceToTraceIdTimeStamp.clear();
   }
 
   @Override
   public synchronized List<List<Span>> getTraces(QueryRequest request) {
-    Collection<Long> traceIds = serviceToTraceIds.get(request.serviceName);
+    Set<Long> traceIds = traceIdsDescendingByTimestamp(request.serviceName);
     if (traceIds == null || traceIds.isEmpty()) return Collections.emptyList();
 
-    List<List<Span>> result = new ArrayList<>();
-
-    List<List<Span>> unfiltered = getTracesByIds(traceIds);
-    for (int i = 0; i < unfiltered.size() && result.size() < request.limit; i++) {
-      List<Span> next = unfiltered.get(i);
-      if (test(request, next)) {
+    List<List<Span>> result = new ArrayList<>(traceIds.size());
+    for (long traceId : traceIds) {
+      List<Span> next = getTrace(traceId);
+      if (next != null && test(request, next)) {
         result.add(next);
       }
+      if (result.size() == request.limit) {
+        break;
+      }
     }
+    Collections.sort(result, TRACE_DESCENDING);
     return result;
   }
 
-  @Override
-  public synchronized List<List<Span>> getTracesByIds(Collection<Long> traceIds) {
-    if (traceIds.isEmpty()) return Collections.emptyList();
-    List<List<Span>> result = new LinkedList<>();
-    for (Long traceId : traceIds) {
-      Collection<Span> spans = traceIdToSpans.get(traceId);
-      if (spans == null || spans.isEmpty()) continue;
-      result.add(CorrectForClockSkew.apply(MergeById.apply(spans)));
+  Set<Long> traceIdsDescendingByTimestamp(String serviceName) {
+    Collection<Pair<Long>> traceIdTimestamps = serviceToTraceIdTimeStamp.get(serviceName);
+    if (traceIdTimestamps == null || traceIdTimestamps.isEmpty()) return Collections.emptySet();
+    Set<Long> result = new LinkedHashSet<>();
+    for (Pair<Long> traceIdTimestamp : traceIdTimestamps) {
+      result.add(traceIdTimestamp._1);
     }
-    Collections.sort(result, TRACE_DESCENDING);
     return result;
   }
 
@@ -107,8 +109,15 @@ public final class InMemorySpanStore implements SpanStore {
   };
 
   @Override
+  public synchronized List<Span> getTrace(long traceId) {
+    Collection<Span> spans = traceIdToSpans.get(traceId);
+    if (spans == null || spans.isEmpty()) return null;
+    return CorrectForClockSkew.apply(MergeById.apply(spans));
+  }
+
+  @Override
   public synchronized List<String> getServiceNames() {
-    return sortedList(serviceToTraceIds.keySet());
+    return sortedList(serviceToTraceIdTimeStamp.keySet());
   }
 
   @Override
@@ -224,6 +233,22 @@ public final class InMemorySpanStore implements SpanStore {
     Collection<V> valueContainer() {
       return new LinkedList<>();
     }
+  }
+
+  /** QueryRequest.limit needs trace ids are returned in timestamp descending order. */
+  static final class SortedByValue2Descending<K> extends Multimap<K, Pair<Long>> {
+
+    @Override
+    Set<Pair<Long>> valueContainer() {
+      return new TreeSet<>(VALUE_2_DESCENDING);
+    }
+
+    final Comparator<Pair<Long>> VALUE_2_DESCENDING = new Comparator<Pair<Long>>() {
+      @Override
+      public int compare(Pair<Long> left, Pair<Long> right) {
+        return right._2.compareTo(left._2);
+      }
+    };
   }
 
   static final class LinkedHashSetMultimap<K, V> extends Multimap<K, V> {
