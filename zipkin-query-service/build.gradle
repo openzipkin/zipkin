@@ -20,7 +20,7 @@ shadowJar {
 }
 
 dependencies {
-    compile "com.twitter:finagle-ostrich4_${scalaInterfaceVersion}:${commonVersions.finagle}"
+    compile "com.twitter:util-eval_${scalaInterfaceVersion}:${commonVersions.twitterUtil}"
     compile "com.twitter:finagle-zipkin_${scalaInterfaceVersion}:${commonVersions.finagle}"
     compile "ch.qos.logback:logback-core:${commonVersions.logback}"
     compile "ch.qos.logback:logback-classic:${commonVersions.logback}"
