@@ -48,7 +48,7 @@ object Main extends App {
     // Note: this is blocking, so nothing after this will be called.
     val defaultLookback = sys.env.get("QUERY_LOOKBACK").getOrElse(7.days.inMillis.toString)
     query.nonExitingMain(Array(
-      "-doc.root", "static",
+      "-doc.root", "zipkin-ui",
       "-zipkin.queryService.lookback", defaultLookback
     ))
   }

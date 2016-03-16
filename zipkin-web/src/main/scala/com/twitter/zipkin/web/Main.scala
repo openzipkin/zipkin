@@ -29,7 +29,8 @@ import com.twitter.server.TwitterServer
 import com.twitter.util.Await
 import org.slf4j.LoggerFactory
 
-trait ZipkinWebFactory { self: App =>
+trait ZipkinWebFactory {
+  self: App =>
   val webServerPort = flag("zipkin.web.port", new InetSocketAddress(8080), "Listening port for the zipkin web frontend")
   val queryDest = flag("zipkin.web.query.dest", "127.0.0.1:9411", "Location of the query server")
   val environment = flag("zipkin.web.environmentName", "", "The name of the environment Zipkin is running in")
@@ -38,10 +39,11 @@ trait ZipkinWebFactory { self: App =>
   LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
     .asInstanceOf[Logger].setLevel(Level.toLevel(logLevel))
 
- /**
-  * Initialize an HTTP proxy service, targeting the query host.
-  */
-  def newWebServer(): Service[Request, Response] = Http.newService(queryDest())
+  /**
+    * Initialize an HTTP proxy service, targeting the query host.
+    */
+  def proxyClient(): Service[Request, Response] = Http.client.configured(param.Label("zipkin-web"))
+    .newClient(queryDest()).toService
 }
 
 object Main extends TwitterServer with ZipkinWebFactory {
@@ -62,7 +64,7 @@ object Main extends TwitterServer with ZipkinWebFactory {
     val server = Http.Server(StackServer.newStack
       .replace(FilteredHttpEntrypointTraceInitializer.role, FilteredHttpEntrypointTraceInitializer))
       .configured(param.Label("zipkin-web"))
-      .serve(webServerPort(), newWebServer())
+      .serve(webServerPort(), proxyClient())
     onExit { server.close() }
 
     BootstrapTrace.complete()
