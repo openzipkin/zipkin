@@ -5,6 +5,7 @@ module.exports = {
     entry: [
         __dirname + '/js/main.js',
         __dirname + '/css/style-loader.js',
+        __dirname + '/static/static-loader.js'
     ],
     resolve: {
         modulesDirectories: ['node_modules']
@@ -26,7 +27,7 @@ module.exports = {
         }]
     },
     output: {
-        path: __dirname + '/dist',
+        path: __dirname + '/dist/static',
         filename: 'app.min.js',
         publicPath: '/'
     },
