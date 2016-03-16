@@ -19,21 +19,27 @@ package com.twitter.zipkin.query
 import ch.qos.logback.classic.{Level, Logger}
 import com.google.common.base.Charsets.UTF_8
 import com.google.common.io.{Files, Resources}
+import com.twitter.app.App
 import com.twitter.conversions.time._
-import com.twitter.ostrich.admin.RuntimeEnvironment
 import com.twitter.util.Eval
-import com.twitter.zipkin.BuildProperties
 import com.twitter.zipkin.builder.QueryServiceBuilder
 import org.slf4j.LoggerFactory
+import java.io.{File, FileNotFoundException}
 
-object Main {
+object Main extends App {
+  val scalaConfig = flag[String]("f", "path to scala configuration file. Searches for a file path first, then inside the jar.")
 
-  def main(args: Array[String]) = {
-    val runtime = RuntimeEnvironment(BuildProperties, args)
-
+  def main() {
     // Fallback to bundled config resources, if there's no file at the path specified as -f
-    val source = if (runtime.configFile.exists()) Files.toString(runtime.configFile, UTF_8)
-    else Resources.toString(getClass.getResource(runtime.configFile.toString), UTF_8)
+    val source = if (new File(scalaConfig()).exists()) {
+      Files.toString(new File(scalaConfig()), UTF_8)
+    } else {
+      val resource = getClass.getResource(scalaConfig())
+      if (resource == null) {
+        throw new FileNotFoundException("scala configuration file not found: " + scalaConfig())
+      }
+      Resources.toString(resource, UTF_8)
+    }
 
     val query = (new Eval).apply[QueryServiceBuilder](source)
     LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)

@@ -33,10 +33,6 @@ import com.twitter.zipkin.json.ZipkinJson
 import org.slf4j.LoggerFactory
 
 trait ZipkinWebFactory { self: App =>
-  private[this] val resourceDirs = Set(
-    "/"
-  )
-
   private[this] val typesMap = Map(
     "css" -> "text/css",
     "png" -> "image/png",
