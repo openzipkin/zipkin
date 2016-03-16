@@ -1,8 +1,7 @@
 import flight from 'flightjs';
-import config from '../config';
 
 export default flight.component(function environmentUI() {
   this.after('initialize', function() {
-    this.$node.text(config('environment'));
+    this.$node.text(this.attr.config('environment'));
   });
 });

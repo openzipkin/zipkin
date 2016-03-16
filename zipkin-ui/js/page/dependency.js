@@ -30,6 +30,6 @@ const DependencyPageComponent = component(function DependencyPage() {
   });
 });
 
-export default function initializeDependencies() {
-  DependencyPageComponent.attachTo('.content');
+export default function initializeDependencies(config) {
+  DependencyPageComponent.attachTo('.content', {config});
 }
