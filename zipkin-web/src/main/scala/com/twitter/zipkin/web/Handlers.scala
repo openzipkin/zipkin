@@ -1,5 +1,7 @@
 package com.twitter.zipkin.web
 
+import java.net.URL
+
 import com.google.common.io.ByteStreams
 import com.twitter.finagle.http.{Request, Response}
 import com.twitter.finagle.stats.{Stat, StatsReceiver}
@@ -91,31 +93,32 @@ class Handlers {
   }
 
   def handlePublic(
-    resourceDirs: Set[String],
     typesMap: Map[String, String]) =
     new Service[Request, Renderer] {
       private[this] var rendererCache = Map.empty[String, Future[Renderer]]
 
-      private[this] def getStream(path: String): Option[InputStream] = {
-        val resource = getClass.getResource(path)
-        if (resource == null || new File(resource.getPath).isDirectory) {
-          None
-        } else {
-          Option(resource.openStream())
-        }
-      }
+      /**
+        * Resolves the resource to return for the path requested by the browser
+        * @param path The path requested by the browser. Always starts with `/`
+        * @return The URL of the file referenced by the path if it has an extension (ie. contains a dot), `static/index.html`
+        *         otherwise (we use the same HTML to serve all the pages, the page generation logic is in JS based on
+        *         `window.location`). Returns `None` if the requested file doesn't exist.
+        */
+      private[this] def getResource(path: String): Option[URL] =
+        Option(getClass.getResource(path match {
+          case _ if path.split("/").last.contains(".") => s"/static$path"
+          case default => "/static/index.html"
+        }))
 
       private[this] def getRenderer(path: String): Option[Future[Renderer]] = {
         rendererCache.get(path) orElse {
           synchronized {
             rendererCache.get(path) orElse {
-              resourceDirs find(path.startsWith) flatMap { _ =>
-                getStream(path) map { input =>
-                  val typ = typesMap find { case (n, _) => path.endsWith(n) } map { _._2 } getOrElse("text/plain")
-                  val renderer = Future.value(StaticRenderer(input, typ))
-                  rendererCache += (path -> renderer)
-                  renderer
-                } orElse Option(Future(StaticRenderer(getClass.getResourceAsStream("/index.html"), "text/html")))
+              getResource(path) map { resource =>
+                val typ = typesMap find { case (n, _) => resource.getPath.endsWith(n) } map { _._2 } getOrElse("text/plain")
+                val renderer = Future.value(StaticRenderer(resource.openStream(), typ))
+                rendererCache += (path -> renderer)
+                renderer
               }
             }
           }

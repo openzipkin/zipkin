@@ -73,8 +73,7 @@ trait ZipkinWebFactory { self: App =>
     import handlers._
 
     Seq(
-      ("/", handlePublic(Set("/"), typesMap)),
-      // In preparation of moving static assets to zipkin-query
+      ("/", handlePublic(typesMap)),
       ("/health", handleRoute(queryClient, "/health")),
       ("/api/v1/dependencies", handleRoute(queryClient, "/api/v1/dependencies")),
       ("/api/v1/services", handleRoute(queryClient, "/api/v1/services")),
