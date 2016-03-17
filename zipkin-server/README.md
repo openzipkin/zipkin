@@ -67,6 +67,19 @@ Example usage:
 $ TRANSPORT_TYPE=kafka KAFKA_ZOOKEEPER=127.0.0.1:2181 ./mvnw -pl zipkin-server spring-boot:run
 ```
 
+Example targeting Kafka running in Docker:
+
+```bash
+$ export KAFKA_ZOOKEEPER=$(docker-machine ip `docker-machine active`)
+# Run Kafka in the background
+$ docker run -d -p 2181:2181 -p 9092:9092 \
+    --env ADVERTISED_HOST=$KAFKA_ZOOKEEPER \
+    --env AUTO_CREATE_TOPICS=true \
+    spotify/kafka
+# Start the zipkin server, which reads $KAFKA_ZOOKEEPER
+$ TRANSPORT_TYPE=kafka ./mvnw -pl zipkin-server spring-boot:run
+```
+
 ## Running with Docker
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin-java`.
 See [docker-zipkin-java](https://github.com/openzipkin/docker-zipkin-java) for details.

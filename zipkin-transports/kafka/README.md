@@ -3,8 +3,8 @@ This transport polls a Kafka 8.2.2+ topic for messages that contain
 TBinaryProtocol big-endian encoded lists of spans. These spans are
 pushed to a span consumer.
 
-`zipkin.kafka.KafkaConfig` includes defaults that will operate
-against a local Cassandra installation.
+`zipkin.kafka.KafkaConfig` includes defaults that will operate against a
+Kafka topic advertised in Zookeeper.
 
 
 ## Encoding spans into Kafka messages
