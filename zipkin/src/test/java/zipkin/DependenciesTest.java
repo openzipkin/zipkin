@@ -98,7 +98,7 @@ public abstract class DependenciesTest<T extends SpanStore> {
     processDependencies(trace);
 
     assertThat(store.getDependencies(today + 1000L, null))
-        .isEqualTo(dep.links);
+        .containsOnlyElementsOf(dep.links);
   }
 
   /** Edge-case when there are no spans, or instrumentation isn't logging annotations properly. */
@@ -121,7 +121,7 @@ public abstract class DependenciesTest<T extends SpanStore> {
     processDependencies(differentTraceId);
 
     assertThat(store.getDependencies(today + 1000L, null))
-        .isEqualTo(dep.links);
+        .containsOnlyElementsOf(dep.links);
   }
 
   /**
@@ -163,7 +163,7 @@ public abstract class DependenciesTest<T extends SpanStore> {
 
     assertThat(
         store.getDependencies((trace.get(0).timestamp + traceDuration) / 1000, traceDuration / 1000)
-    ).containsExactly(
+    ).containsOnly(
         new DependencyLink("trace-producer-one", "trace-producer-two", 1),
         new DependencyLink("trace-producer-two", "trace-producer-three", 1)
     );
@@ -177,7 +177,7 @@ public abstract class DependenciesTest<T extends SpanStore> {
     processDependencies(trace);
 
     assertThat(store.getDependencies(today + 1000L, null))
-        .isEqualTo(dep.links);
+        .containsOnlyElementsOf(dep.links);
   }
 
   @Test
@@ -193,7 +193,7 @@ public abstract class DependenciesTest<T extends SpanStore> {
     processDependencies(traceWithLoopback);
 
     assertThat(store.getDependencies(today + 1000L, null))
-        .containsExactly(new DependencyLink("zipkin-web", "zipkin-web", 1));
+        .containsOnly(new DependencyLink("zipkin-web", "zipkin-web", 1));
   }
 
   /**
@@ -205,7 +205,7 @@ public abstract class DependenciesTest<T extends SpanStore> {
     processDependencies(asList(trace.get(1), trace.get(2)));
 
     assertThat(store.getDependencies(today + 1000L, null))
-        .isEqualTo(dep.links);
+        .containsOnlyElementsOf(dep.links);
   }
 
   @Test
@@ -213,7 +213,7 @@ public abstract class DependenciesTest<T extends SpanStore> {
     processDependencies(trace);
 
     assertThat(store.getDependencies(today + 1000L, null))
-        .isEqualTo(dep.links);
+        .containsOnlyElementsOf(dep.links);
   }
 
   @Test
@@ -221,7 +221,7 @@ public abstract class DependenciesTest<T extends SpanStore> {
     processDependencies(trace);
 
     assertThat(store.getDependencies(dep.endTs, dep.endTs - dep.startTs))
-        .isEqualTo(dep.links);
+        .containsOnlyElementsOf(dep.links);
   }
 
   @Test
@@ -278,7 +278,7 @@ public abstract class DependenciesTest<T extends SpanStore> {
 
     processDependencies(trace);
 
-    assertThat(store.getDependencies(today + 1000L, null)).containsExactly(
+    assertThat(store.getDependencies(today + 1000L, null)).containsOnly(
         new DependencyLink("some-client", "zipkin-web", 1),
         new DependencyLink("zipkin-web", "zipkin-query", 1),
         new DependencyLink("zipkin-query", "zipkin-jdbc", 1)
@@ -324,7 +324,7 @@ public abstract class DependenciesTest<T extends SpanStore> {
     processDependencies(trace);
 
     assertThat(store.getDependencies(today + 1000L, null))
-        .containsExactly(new DependencyLink("zipkin-web", "zipkin-query", 1));
+        .containsOnly(new DependencyLink("zipkin-web", "zipkin-query", 1));
   }
 
   /**
@@ -341,14 +341,14 @@ public abstract class DependenciesTest<T extends SpanStore> {
     // A user looks at today's links.
     //  - Note: Using the smallest lookback avoids bumping into implementation around windowing.
     assertThat(store.getDependencies(dep.endTs, dep.endTs - dep.startTs))
-        .isEqualTo(dep.links);
+        .containsOnlyElementsOf(dep.links);
 
     // A user compares the links from those a day ago.
     assertThat(store.getDependencies(dep.endTs - day, dep.endTs - dep.startTs))
-        .isEqualTo(dep.links);
+        .containsOnlyElementsOf(dep.links);
 
     // A user looks at all links since data started
-    assertThat(store.getDependencies(dep.endTs, null)).containsExactly(
+    assertThat(store.getDependencies(dep.endTs, null)).containsOnly(
         new DependencyLink("zipkin-web", "zipkin-query", 2),
         new DependencyLink("zipkin-query", "zipkin-jdbc", 2)
     );

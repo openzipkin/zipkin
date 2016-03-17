@@ -264,22 +264,22 @@ public abstract class SpanStoreTest<T extends SpanStore> {
 
     // Min duration is inclusive and is applied by service.
     assertThat(store.getTraces(q.serviceName("service1").minDuration(targz.duration).build()))
-        .containsOnly(trace1);
+        .containsExactly(trace1);
 
     assertThat(store.getTraces(q.serviceName("service3").minDuration(targz.duration).build()))
-        .containsOnly(trace2);
+        .containsExactly(trace2);
 
     // Duration bounds aren't limited to root spans: they apply to all spans by service in a trace
     assertThat(store.getTraces(q.serviceName("service2").minDuration(zip.duration).maxDuration(tar.duration).build()))
-        .containsOnly(trace3, trace2, trace1); // service2 is in the middle of trace1 and 2, but root of trace3
+        .containsExactly(trace3, trace2, trace1); // service2 is in the middle of trace1 and 2, but root of trace3
 
     // Span name should apply to the duration filter
     assertThat(store.getTraces(q.serviceName("service2").spanName("zip").maxDuration(zip.duration).build()))
-        .containsOnly(trace3);
+        .containsExactly(trace3);
 
     // Max duration should filter our longer spans from the same service
     assertThat(store.getTraces(q.serviceName("service2").minDuration(gz.duration).maxDuration(zip.duration).build()))
-        .containsOnly(trace3);
+        .containsExactly(trace3);
   }
 
   /**

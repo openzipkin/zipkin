@@ -1,0 +1,78 @@
+{
+  "template": "${__INDEX__}-*",
+  "settings": {
+    "index.requests.cache.enable": true,
+    "analysis": {
+      "analyzer": {
+        "lowercase": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": [
+            "lowercase"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "_default_": {
+      "dynamic_templates": [
+        {
+          "strings": {
+            "mapping": {
+              "index": "not_analyzed",
+              "type": "string"
+            },
+            "match_mapping_type": "string",
+            "match": "*"
+          }
+        },
+        {
+          "value": {
+            "match": "value",
+            "mapping": {
+              "index": "not_analyzed",
+              "ignore_malformed": true,
+              "type": "string"
+            }
+          }
+        },
+        {
+          "timestamps": {
+            "match": "timestamp",
+            "mapping": {
+              "type": "long"
+            }
+          }
+        },
+        {
+          "serviceName": {
+            "match": "serviceName",
+            "mapping": {
+              "type": "string",
+              "analyzer": "lowercase"
+            }
+          }
+        },
+        {
+          "binaryAnnotations": {
+            "match": "binaryAnnotations",
+            "mapping": {
+              "type": "nested"
+            }
+          }
+        }
+      ],
+      "_all": {
+        "enabled": false
+      }
+    },
+    "span": {
+      "properties": {
+        "binaryAnnotations": {
+          "type": "nested"
+        }
+      }
+    }
+  }
+}

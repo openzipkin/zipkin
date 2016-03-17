@@ -69,9 +69,24 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>spanstore-elasticsearch</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>spanstore-jdbc</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <!-- Force guava version to 19.0 for elasticsearch because zipkin-common uses 16.0 -->
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>19.0</version>
+      <scope>test</scope>
+    </dependency>
+
 
     <!-- Dependencies for SpanStoreSpec -->
     <dependency>

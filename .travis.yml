@@ -42,6 +42,10 @@ before_install:
   - git config credential.helper "store --file=.git/credentials"
   - echo "https://$GH_TOKEN:@github.com" > .git/credentials
 
+  # Manually install elasticsearch until https://github.com/travis-ci/apt-source-whitelist/issues/190
+  - curl -SL https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/2.2.1/elasticsearch-2.2.1.tar.gz | tar xz
+  - elasticsearch-*/bin/elasticsearch -d > /dev/null
+
 script:
   # If we aren't a pull request, we are publishing either a snapshot or a release.
   #   We don't currently publish the benchmarks or interop modules, as they are test code only.

@@ -30,5 +30,6 @@
   <modules>
     <module>cassandra</module>
     <module>jdbc</module>
+    <module>elasticsearch</module>
   </modules>
 </project>
