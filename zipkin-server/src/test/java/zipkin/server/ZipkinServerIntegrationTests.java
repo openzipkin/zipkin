@@ -36,6 +36,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static zipkin.internal.Util.UTF_8;
 
 @SpringApplicationConfiguration(classes = ZipkinServer.class)
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -110,9 +111,34 @@ public class ZipkinServerIntegrationTests {
         .andExpect(status().isAccepted());
   }
 
+  @Test
+  public void readsRawTrace() throws Exception {
+    Span span = newSpan(1L, 2L, "get", "cs", "web");
+
+    // write the span to the server, twice
+    mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
+        .andExpect(status().isAccepted());
+    mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
+        .andExpect(status().isAccepted());
+
+    // sleep as the the storage operation is async
+    Thread.sleep(1500);
+
+    // Default will merge by span id
+    mockMvc.perform(get("/api/v1/trace/1"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(new String(Codec.JSON.writeSpans(asList(span)), UTF_8)));
+
+    // In the in-memory (or cassandra) stores, a raw read will show duplicate span rows.
+    mockMvc.perform(get("/api/v1/trace/1?raw"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(new String(Codec.JSON.writeSpans(asList(span, span)), UTF_8)));
+  }
+
   static Span newSpan(long traceId, long id, String spanName, String value, String service) {
     Endpoint endpoint = Endpoint.create(service, 127 << 24 | 1, 80);
     Annotation ann = Annotation.create(System.currentTimeMillis(), value, endpoint);
-    return new Span.Builder().id(id).traceId(traceId).name(spanName).addAnnotation(ann).build();
+    return new Span.Builder().id(id).traceId(traceId).name(spanName)
+        .timestamp(ann.timestamp).duration(1L).addAnnotation(ann).build();
   }
 }

@@ -71,8 +71,17 @@ final class HttpSpanStore implements SpanStore {
 
   @Override
   public List<Span> getTrace(long traceId) {
+    return getTrace(traceId, false);
+  }
+
+  @Override
+  public List<Span> getRawTrace(long traceId) {
+    return getTrace(traceId, true);
+  }
+
+  private List<Span> getTrace(long id, boolean raw) {
     Response response = call(new Request.Builder()
-        .url(baseUrl.resolve(String.format("/api/v1/trace/%016x", traceId)))
+        .url(baseUrl.resolve(String.format("/api/v1/trace/%016x%s", id, raw ? "?raw" : "")))
         .build());
     if (response.code() == 404) {
       return null;

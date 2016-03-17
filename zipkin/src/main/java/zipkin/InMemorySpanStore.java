@@ -110,9 +110,15 @@ public final class InMemorySpanStore implements SpanStore {
 
   @Override
   public synchronized List<Span> getTrace(long traceId) {
-    Collection<Span> spans = traceIdToSpans.get(traceId);
+    List<Span> spans = getRawTrace(traceId);
+    return spans == null ? null : CorrectForClockSkew.apply(MergeById.apply(spans));
+  }
+
+  @Override
+  public synchronized List<Span> getRawTrace(long traceId) {
+    List<Span> spans = (List<Span>) traceIdToSpans.get(traceId);
     if (spans == null || spans.isEmpty()) return null;
-    return CorrectForClockSkew.apply(MergeById.apply(spans));
+    return spans;
   }
 
   @Override

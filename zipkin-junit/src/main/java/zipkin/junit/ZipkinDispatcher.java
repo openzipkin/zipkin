@@ -62,7 +62,8 @@ final class ZipkinDispatcher extends Dispatcher {
       } else if (url.encodedPath().startsWith("/api/v1/trace/")) {
         String traceId = url.encodedPath().replace("/api/v1/trace/", "");
         long id = new Buffer().writeUtf8(traceId).readHexadecimalUnsignedLong();
-        List<Span> trace = store.getTrace(id);
+        List<Span> trace = url.queryParameterNames().contains("raw")
+            ? store.getRawTrace(id) : store.getTrace(id);
         if (trace != null) return jsonResponse(JSON_CODEC.writeSpans(trace));
       }
     } else if (request.getMethod().equals("POST")) {
