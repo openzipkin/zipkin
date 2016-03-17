@@ -38,6 +38,7 @@
     "eslint-plugin-react": "^4.2.1",
     "extract-text-webpack-plugin": "^1.0.1",
     "file-loader": "^0.8.5",
+    "html-webpack-plugin": "^2.10.0",
     "karma": "^0.13.21",
     "karma-chai": "^0.1.0",
     "karma-mocha": "^0.2.2",
