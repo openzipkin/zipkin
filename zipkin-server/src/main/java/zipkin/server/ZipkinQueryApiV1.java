@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.WebRequest;
 import zipkin.Codec;
 import zipkin.QueryRequest;
 import zipkin.Span;
@@ -149,9 +150,10 @@ public class ZipkinQueryApiV1 {
   }
 
   @RequestMapping(value = "/trace/{traceId}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
-  public byte[] getTrace(@PathVariable String traceId) {
+  public byte[] getTrace(@PathVariable String traceId, WebRequest request) {
     long id = lowerHexToUnsignedLong(traceId);
-    List<Span> trace = spanStore.getTrace(id);
+    String[] raw = request.getParameterValues("raw"); // RequestParam doesn't work for param w/o value
+    List<Span> trace = raw != null ? spanStore.getRawTrace(id) : spanStore.getTrace(id);
 
     if (trace == null) {
       throw new TraceNotFoundException(traceId, id);

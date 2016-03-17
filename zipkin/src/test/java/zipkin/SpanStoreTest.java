@@ -510,6 +510,33 @@ public abstract class SpanStoreTest<T extends SpanStore> {
     assertThat(adjusted.get(2).duration).isEqualTo(skewed.get(2).duration);
   }
 
+  @Test
+  public void rawTrace(){
+    Endpoint client = Endpoint.create("client", 192 << 24 | 168 << 16 | 1, 8080);
+    Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2, 8080);
+
+    Span span = new Span.Builder()
+        .traceId(1)
+        .name("method1")
+        .id(666)
+        .timestamp((today + 95) * 1000)
+        .duration(20 * 1000L)
+        .addAnnotation(Annotation.create((today + 100) * 1000, Constants.CLIENT_SEND, client))
+        .addAnnotation(Annotation.create((today + 95) * 1000, Constants.SERVER_RECV, frontend)) // before client sends
+        .addAnnotation(Annotation.create((today + 120) * 1000, Constants.SERVER_SEND, frontend)) // before client receives
+        .addAnnotation(Annotation.create((today + 135) * 1000, Constants.CLIENT_RECV, client)).build();
+
+    store.accept(asList(span));
+
+    // clock skew adjustment will affect the span returned by default
+    assertThat(store.getTrace(span.traceId))
+        .doesNotContain(span);
+
+    // the raw trace does not include any adjustments at query time, such as clock skew
+    assertThat(store.getRawTrace(span.traceId))
+        .containsExactly(span);
+  }
+
   static long clientDuration(Span span) {
     long[] timestamps = span.annotations.stream()
         .filter(a -> a.value.startsWith("c"))

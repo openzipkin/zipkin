@@ -61,6 +61,16 @@ public final class TraceWritesSpanStore implements SpanStore {
   }
 
   @Override
+  public List<Span> getRawTrace(long traceId) {
+    tracer.startNewSpan(component, "get-spans-by-trace-id");
+    try {
+      return delegate.getRawTrace(traceId);
+    } finally {
+      tracer.finishSpan();
+    }
+  }
+
+  @Override
   public List<String> getServiceNames() {
     tracer.startNewSpan(component, "get-service-names");
     try {

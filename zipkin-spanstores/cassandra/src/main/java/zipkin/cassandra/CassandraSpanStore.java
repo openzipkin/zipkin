@@ -132,7 +132,7 @@ public final class CassandraSpanStore implements SpanStore, AutoCloseable {
         repository.getSpansByTraceIds(traceIds.toArray(new Long[traceIds.size()]), maxTraceCols)
     ).values();
 
-    List<List<Span>> result = new LinkedList<>(); // merging will imply a different size
+    List<List<Span>> result = new ArrayList<>(encodedTraces.size());
     for (List<ByteBuffer> encodedTrace : encodedTraces) {
       List<Span> spans = new ArrayList<>(encodedTrace.size());
       for (ByteBuffer encodedSpan : encodedTrace) {
@@ -141,6 +141,22 @@ public final class CassandraSpanStore implements SpanStore, AutoCloseable {
       result.add(CorrectForClockSkew.apply(MergeById.apply(spans)));
     }
     Collections.sort(result, TRACE_DESCENDING);
+    return result;
+  }
+
+  @Override
+  public List<Span> getRawTrace(long traceId) {
+    // Synchronously get the encoded data, as there are no other requests to the backend needed.
+    Collection<List<ByteBuffer>> encodedTraces = getUnchecked(
+        repository.getSpansByTraceIds(new Long[] {traceId}, maxTraceCols)
+    ).values();
+    if (encodedTraces.isEmpty()) return null;
+
+    List<ByteBuffer> encodedTrace = encodedTraces.iterator().next();
+    List<Span> result = new ArrayList<>(encodedTrace.size());
+    for (ByteBuffer encodedSpan : encodedTrace) {
+      result.add(THRIFT_CODEC.readSpan(encodedSpan));
+    }
     return result;
   }
 

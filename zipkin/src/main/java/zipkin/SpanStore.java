@@ -46,6 +46,19 @@ public interface SpanStore extends SpanConsumer {
   List<Span> getTrace(long id);
 
   /**
+   * Retrieves spans that share a trace id, as returned from backend data store queries, with no
+   * ordering expectation.
+   *
+   * <p>This is different, but related to {@link #getTrace}. {@link #getTrace} cleans data by
+   * merging spans, adding timestamps and performing clock skew adjustment. This feature is for
+   * debugging zipkin logic or zipkin instrumentation.
+   *
+   * @return a list of spans with the same {@link Span#traceId}, or null if not present.
+   */
+  @Nullable
+  List<Span> getRawTrace(long traceId);
+
+  /**
    * Get all the {@link Endpoint#serviceName service names}.
    *
    * <p/> Results are sorted lexicographically

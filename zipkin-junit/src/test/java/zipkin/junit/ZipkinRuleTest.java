@@ -16,6 +16,7 @@ package zipkin.junit;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -80,6 +81,28 @@ public class ZipkinRuleTest {
     ).execute();
 
     assertThat(getResponse.code()).isEqualTo(200);
+  }
+
+  /** The raw query can show affects like redundant rows in the data store. */
+  @Test
+  public void storeSpans_readbackRaw() throws IOException {
+    // write the span to zipkin directly
+    zipkin.storeSpans(asList(span));
+    zipkin.storeSpans(asList(span));
+
+    // Default will merge by span id
+    Response defaultResponse = client.newCall(new Request.Builder()
+        .url(String.format("%s/api/v1/trace/%016x", zipkin.httpUrl(), span.traceId)).build()
+    ).execute();
+
+    assertThat(Codec.JSON.readSpans(defaultResponse.body().bytes())).hasSize(1);
+
+    // In the in-memory (or cassandra) stores, a raw read will show duplicate span rows.
+    Response rawResponse = client.newCall(new Request.Builder()
+        .url(String.format("%s/api/v1/trace/%016x?raw", zipkin.httpUrl(), span.traceId)).build()
+    ).execute();
+
+    assertThat(Codec.JSON.readSpans(rawResponse.body().bytes())).hasSize(2);
   }
 
   @Test

@@ -166,7 +166,7 @@ public final class JDBCSpanStore implements SpanStore {
     }
   }
 
-  List<List<Span>> getTraces(@Nullable QueryRequest request, @Nullable Long traceId) {
+  List<List<Span>> getTraces(@Nullable QueryRequest request, @Nullable Long traceId, boolean raw) {
     final Map<Long, List<Span>> spansWithoutAnnotations;
     final Map<Pair<?>, List<Record>> dbAnnotations;
     try (Connection conn = datasource.getConnection()) {
@@ -231,16 +231,16 @@ public final class JDBCSpanStore implements SpanStore {
         }
         trace.add(span.build());
       }
-      trace = CorrectForClockSkew.apply(trace);
+      if (!raw) trace = CorrectForClockSkew.apply(trace);
       result.add(trace);
     }
-    Collections.sort(result, (left, right) -> right.get(0).compareTo(left.get(0)));
+    if (!raw) Collections.sort(result, (left, right) -> right.get(0).compareTo(left.get(0)));
     return result;
   }
 
   @Override
   public List<List<Span>> getTraces(QueryRequest request) {
-    return getTraces(request, null);
+    return getTraces(request, null, false);
   }
 
   DSLContext context(Connection conn) {
@@ -253,7 +253,13 @@ public final class JDBCSpanStore implements SpanStore {
 
   @Override
   public List<Span> getTrace(long traceId) {
-    List<List<Span>> result = getTraces(null, traceId);
+    List<List<Span>> result = getTraces(null, traceId, false);
+    return result.isEmpty() ? null : result.get(0);
+  }
+
+  @Override
+  public List<Span> getRawTrace(long traceId) {
+    List<List<Span>> result = getTraces(null, traceId, true);
     return result.isEmpty() ? null : result.get(0);
   }
 
