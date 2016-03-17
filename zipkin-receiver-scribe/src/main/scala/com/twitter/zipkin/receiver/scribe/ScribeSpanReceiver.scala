@@ -22,6 +22,8 @@ import com.twitter.logging.Logger
 import com.twitter.scrooge.BinaryThriftStructSerializer
 import com.twitter.util.{Base64StringEncoder, Future, NonFatal, Return, Throw, Time}
 import com.twitter.zipkin.collector.{QueueFullException, SpanReceiver}
+import com.twitter.zipkin.common.Span
+import com.twitter.zipkin.conversions.thrift
 import com.twitter.zipkin.thriftscala.{LogEntry, ResultCode, Scribe, Span => ThriftSpan}
 import java.net.InetSocketAddress
 import java.util.concurrent.CancellationException
@@ -83,8 +85,8 @@ class ScribeReceiver(
     (cat, messagesStats.scope("perCategory").counter(cat))
   }.toMap
 
-  private[this] def entryToSpan(entry: LogEntry): Option[ThriftSpan] = try {
-    Some(deserializer.fromString(entry.message))
+  private[this] def entryToSpan(entry: LogEntry): Option[Span] = try {
+    Some(thrift.thriftSpanToSpan(deserializer.fromString(entry.message)).toSpan)
   } catch {
     case e: Exception => {
       // scribe doesn't have any ResultCode.ERROR or similar

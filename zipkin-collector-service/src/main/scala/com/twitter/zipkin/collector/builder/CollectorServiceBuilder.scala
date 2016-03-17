@@ -24,9 +24,9 @@ import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.collector.filter.{SamplerFilter, ServiceStatsFilter}
 import com.twitter.zipkin.collector.sampler.AdjustableGlobalSampler
 import com.twitter.zipkin.collector.{SpanReceiver, ZipkinCollector}
+import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.receiver.scribe.ScribeReceiver
 import com.twitter.zipkin.storage.Store
-import com.twitter.zipkin.thriftscala._
 import org.slf4j.LoggerFactory
 import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicReference
@@ -61,10 +61,8 @@ case class CollectorServiceBuilder[T](
 
     val sampler = new SamplerFilter(new AdjustableGlobalSampler(sampleRate))
 
-    import com.twitter.zipkin.conversions.thrift._
-
     val process = (spans: Seq[Span]) =>
-      store.spanStore.apply(ServiceStatsFilter(sampler(spans.map(_.toSpan))))
+      store.spanStore.apply(ServiceStatsFilter(sampler(spans)))
 
     val stats = serverBuilder.statsReceiver
     val impl = new ScribeReceiver(scribeCategories, process, stats)

@@ -6,7 +6,7 @@ import com.twitter.app.App
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.{Closable, Future, Time}
 import com.twitter.zipkin.collector.SpanReceiver
-import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
+import com.twitter.zipkin.common.Span
 import kafka.consumer.ConsumerConfig
 import kafka.serializer.Decoder
 
@@ -47,9 +47,9 @@ trait KafkaSpanReceiverFactory { self: App =>
   val kafkaAutoOffset = flag("zipkin.kafka.zk.autooffset", defaultKafkaAutoOffset, "kafka zk auto offset [smallest|largest]")
 
   def newKafkaSpanReceiver[T](
-    process: Seq[ThriftSpan] => Future[Unit],
+    process: Seq[Span] => Future[Unit],
     stats: StatsReceiver = DefaultStatsReceiver.scope("KafkaSpanReceiver"),
-    keyDecoder: Decoder[T] = KafkaProcessor.defaultKeyDecoder,
+    keyDecoder: Decoder[String] = KafkaProcessor.defaultKeyDecoder,
     valueDecoder: KafkaProcessor.KafkaDecoder = new SpanDecoder()
   ): SpanReceiver = new SpanReceiver {
 

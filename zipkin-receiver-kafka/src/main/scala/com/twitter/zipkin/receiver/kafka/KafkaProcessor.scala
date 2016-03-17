@@ -1,6 +1,6 @@
 package com.twitter.zipkin.receiver.kafka
 
-import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
+import com.twitter.zipkin.common.Span
 import com.twitter.util.{Closable, CloseAwaitably, FuturePool, Future, Time}
 import java.util.concurrent.{TimeUnit, Executors}
 import kafka.consumer.{Consumer, ConsumerConfig, ConsumerConnector}
@@ -8,14 +8,14 @@ import kafka.serializer.{Decoder, StringDecoder}
 
 object KafkaProcessor {
 
-  type KafkaDecoder = Decoder[List[ThriftSpan]]
+  type KafkaDecoder = Decoder[List[Span]]
 
   val defaultKeyDecoder = new StringDecoder()
 
   def apply[T](
     topics:Map[String, Int],
     config: ConsumerConfig,
-    process: Seq[ThriftSpan] => Future[Unit],
+    process: Seq[Span] => Future[Unit],
     keyDecoder: Decoder[T],
     valueDecoder: KafkaDecoder
   ): KafkaProcessor[T] = new KafkaProcessor(topics, config, process, keyDecoder, valueDecoder)
@@ -24,7 +24,7 @@ object KafkaProcessor {
 class KafkaProcessor[T](
   topics: Map[String, Int],
   config: ConsumerConfig,
-  process: Seq[ThriftSpan] => Future[Unit],
+  process: Seq[Span] => Future[Unit],
   keyDecoder: Decoder[T],
   valueDecoder: KafkaProcessor.KafkaDecoder
 ) extends Closable with CloseAwaitably {

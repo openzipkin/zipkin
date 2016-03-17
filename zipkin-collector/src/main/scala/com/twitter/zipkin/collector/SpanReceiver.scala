@@ -16,7 +16,7 @@
 package com.twitter.zipkin.collector
 
 import com.twitter.util.{Closable, CloseAwaitably, Future}
-import com.twitter.zipkin.thriftscala.Span
+import com.twitter.zipkin.common.Span
 
 /**
  * SpanReceivers are nothing special. They need only allow us to Await on them

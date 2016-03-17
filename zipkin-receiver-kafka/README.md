@@ -1,5 +1,7 @@
 ## Kafka Receiver
-This receiver polls a Kafka topic for messages that contain TBinaryProtocol big-endian encoded lists of spans.
+This transport polls a Kafka 8.2.2+ topic for messages that contain
+a list of spans in json or TBinaryProtocol big-endian encoding. These
+spans are pushed to a span consumer.
 
 ## Service Configuration
 
@@ -21,7 +23,19 @@ $ KAFKA_ZOOKEEPER=127.0.0.1:2181 KAFKA_TOPIC=notzipkin bin/collector
 ```
 
 ### Encoding spans into Kafka messages
+The message's binary data includes a list of spans. Supported encodings
+are the same as the http [POST /spans](http://zipkin.io/zipkin-api/#/paths/%252Fspans) body.
 
+#### Json
+The message's binary data is a list of spans in json. The first character must be '[' (decimal 91).
+
+Here's an example, sending a list of a single span to the zipkin topic:
+
+```bash
+$ kafka-console-producer.sh --broker-list $ADVERTISED_HOST:9092 --topic zipkin
+[{"traceId":"1","name":"bang","id":"2","timestamp":1234,"binaryAnnotations":[{"key":"lc","value":"bamm-bamm","endpoint":{"serviceName":"flintstones","ipv4":"127.0.0.1"}}]}]
+```
+#### Thrift
 The message's binary data includes a list header followed by N spans serialized in TBinaryProtocol
 
 ```
@@ -36,7 +50,7 @@ If using [zipkin-java](https://github.com/openzipkin/zipkin-java), `Codec.THRIFT
 implements the above.
 
 #### Legacy encoding
-Versions before 1.35 accepted a single span per message, as opposed to a list per message. This
+Versions before 1.35 accepted a single thrift span per message, as opposed to a list. This
 practice is deprecated, but still supported.
 
 ### Creating a custom Kafka Receiver process
@@ -47,10 +61,10 @@ spans from Kakfa into Cassandra:
 ```scala
 package com.twitter.zipkin.collector
 
-import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.server.TwitterServer
 import com.twitter.util.{Await, Future}
+import com.twitter.zipkin.common.Span
 import com.twitter.zipkin.cassandra.CassandraSpanStoreFactory
 import com.twitter.zipkin.receiver.kafka.KafkaSpanReceiverFactory
 import com.twitter.zipkin.storage.cassandra.CassandraSpanStore
@@ -65,7 +79,7 @@ object Main extends TwitterServer
   // you may want the admin port to be the same as the default collector
   override val defaultHttpPort = 9900
 
-  def newReceiver(process: Seq[ThriftSpan] => Future[Unit], stats: StatsReceiver): SpanReceiver = {
+  def newReceiver(process: Seq[Span] => Future[Unit], stats: StatsReceiver): SpanReceiver = {
     newKafkaSpanReceiver(receive, stats.scope("kafkaSpanReceiver"))
   }
 
