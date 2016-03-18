@@ -30,7 +30,7 @@
   <properties>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
-    <mockwebserver.version>3.1.2</mockwebserver.version>
+    <mockwebserver.version>3.2.0</mockwebserver.version>
   </properties>
 
   <dependencies>

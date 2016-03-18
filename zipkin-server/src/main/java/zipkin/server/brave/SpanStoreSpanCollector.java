@@ -69,19 +69,19 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
   private Span convert(com.twitter.zipkin.gen.Span span) {
     Span.Builder builder = new Span.Builder();
     builder.name(span.getName())
-        .id(span.id)
-        .parentId(span.isSetParent_id() ? span.parent_id : null)
-        .traceId(span.trace_id)
-        .timestamp(span.timestamp)
-        .duration(span.duration)
-        .debug(span.debug);
-    List<com.twitter.zipkin.gen.Annotation> annotations = span.annotations;
+        .id(span.getId())
+        .parentId(span.getParent_id() != null ? span.getParent_id() : null)
+        .traceId(span.getTrace_id())
+        .timestamp(span.getTimestamp())
+        .duration(span.getDuration())
+        .debug(span.isDebug());
+    List<com.twitter.zipkin.gen.Annotation> annotations = span.getAnnotations();
     if (annotations != null) {
       for (com.twitter.zipkin.gen.Annotation annotation : annotations) {
         builder.addAnnotation(convert(annotation));
       }
     }
-    List<com.twitter.zipkin.gen.BinaryAnnotation> binaries = span.binary_annotations;
+    List<com.twitter.zipkin.gen.BinaryAnnotation> binaries = span.getBinary_annotations();
     if (binaries != null) {
       for (com.twitter.zipkin.gen.BinaryAnnotation annotation : binaries) {
         builder.addBinaryAnnotation(convert(annotation));
@@ -113,7 +113,7 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
     return new BinaryAnnotation.Builder()
         .key(annotation.key)
         .value(annotation.getValue())
-        .type(convert(annotation.annotation_type))
+        .type(convert(annotation.type))
         .endpoint(convert(annotation.host))
         .build();
   }

@@ -28,6 +28,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
+    <zipkin-cassandra-core.version>1.38.0</zipkin-cassandra-core.version>
     <mockito.version>1.10.19</mockito.version>
   </properties>
 
@@ -41,7 +42,7 @@
     <dependency>
       <groupId>io.zipkin</groupId>
       <artifactId>zipkin-cassandra-core</artifactId>
-      <version>${zipkin-scala.version}</version>
+      <version>${zipkin-cassandra-core.version}</version>
     </dependency>
 
     <dependency>
