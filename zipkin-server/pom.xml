@@ -79,12 +79,14 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>spanstore-cassandra</artifactId>
+      <optional>true</optional>
     </dependency>
 
     <!-- JDBC backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>spanstore-jdbc</artifactId>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
