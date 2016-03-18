@@ -16,6 +16,7 @@
 
 import com.google.common.util.concurrent.Atomics
 import com.twitter.app.App
+import com.twitter.conversions.time._
 import com.twitter.zipkin.builder.Builder
 import com.twitter.zipkin.cassandra.CassandraSpanStoreFactory
 import com.twitter.zipkin.collector.builder.{CollectorServiceBuilder, ZipkinServerBuilder}
@@ -29,8 +30,11 @@ val sampleRate = sys.env.get("COLLECTOR_SAMPLE_RATE").getOrElse("1.0").toFloat
 
 object Factory extends App with CassandraSpanStoreFactory
 
+Factory.keyspace.parse(sys.env.get("CASSANDRA_KEYSPACE").getOrElse("zipkin"))
 Factory.ensureSchema.parse(sys.env.get("CASSANDRA_ENSURE_SCHEMA").getOrElse("true"))
 Factory.cassandraDest.parse(sys.env.get("CASSANDRA_CONTACT_POINTS").getOrElse("localhost"))
+Factory.cassandraSpanTtl.parse(sys.env.get("CASSANDRA_SPAN_TTL").map(_.+(".seconds")).getOrElse(7.days.toString))
+Factory.cassandraIndexTtl.parse(sys.env.get("CASSANDRA_INDEX_TTL").map(_.+(".seconds")).getOrElse(3.days.toString))
 
 val username = sys.env.get("CASSANDRA_USERNAME")
 val password = sys.env.get("CASSANDRA_PASSWORD")
