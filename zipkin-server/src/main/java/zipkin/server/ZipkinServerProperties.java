@@ -23,6 +23,12 @@ class ZipkinServerProperties {
     return store;
   }
 
+  private Ui ui = new Ui();
+
+  public Ui getUi() {
+    return ui;
+  }
+
   static class Store {
     enum Type {
       cassandra, mysql, mem
@@ -36,6 +42,27 @@ class ZipkinServerProperties {
 
     public void setType(Type type) {
       this.type = type;
+    }
+  }
+
+  static class Ui {
+    private String environment;
+    private int queryLimit = 10;
+
+    public String getEnvironment() {
+      return environment;
+    }
+
+    public void setEnvironment(String environment) {
+      this.environment = environment;
+    }
+
+    public int getQueryLimit() {
+      return queryLimit;
+    }
+
+    public void setQueryLimit(int queryLimit) {
+      this.queryLimit = queryLimit;
     }
   }
 }

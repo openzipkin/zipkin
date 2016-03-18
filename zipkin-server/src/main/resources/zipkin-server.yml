@@ -41,6 +41,12 @@ zipkin:
     lookback: ${QUERY_LOOKBACK:86400000}
   store:
     type: ${STORAGE_TYPE:mem}
+  # Values here are read by Zipkin UI's javascript at /config.json
+  ui:
+    # Default limit for Find Traces
+    query-limit: 10
+    # The value here becomes a label in the top-right corner
+    environment:
 server:
   port: ${QUERY_PORT:9411}
   compression:
