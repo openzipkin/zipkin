@@ -1,11 +1,11 @@
 var webpack = require('webpack');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
+var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
     entry: [
         __dirname + '/js/main.js',
-        __dirname + '/css/style-loader.js',
-        __dirname + '/static/static-loader.js'
+        __dirname + '/css/style-loader.js'
     ],
     resolve: {
         modulesDirectories: ['node_modules']
@@ -27,7 +27,7 @@ module.exports = {
         }]
     },
     output: {
-        path: __dirname + '/dist/static',
+        path: __dirname + '/build/resources/main/zipkin-ui/',
         filename: 'app.min.js',
         publicPath: '/'
     },
@@ -37,7 +37,8 @@ module.exports = {
             $: "jquery",
             jQuery: "jquery"
         }),
-        new ExtractTextPlugin("app.min.css", {allChunks: true})
+        new ExtractTextPlugin("app.min.css", {allChunks: true}),
+        new HtmlWebpackPlugin()
     ],
     devServer: {
         port: 9090,
