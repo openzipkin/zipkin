@@ -20,29 +20,18 @@ import java.net.InetSocketAddress
 import ch.qos.logback.classic.{Level, Logger}
 import com.twitter.app.App
 import com.twitter.finagle._
-import com.twitter.finagle.http.{HttpMuxer, Request, Response}
+import com.twitter.finagle.http.{Request, Response}
 import com.twitter.finagle.server.StackServer
-import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
+import com.twitter.finagle.stats.DefaultStatsReceiver
 import com.twitter.finagle.tracing.{DefaultTracer, NullTracer}
 import com.twitter.finagle.zipkin.thrift.{HttpZipkinTracer, RawZipkinTracer}
-import com.twitter.finatra.httpclient.HttpClient
-import com.twitter.finatra.json.FinatraObjectMapper
 import com.twitter.server.TwitterServer
 import com.twitter.util.Await
-import com.twitter.zipkin.json.ZipkinJson
 import org.slf4j.LoggerFactory
 
 trait ZipkinWebFactory { self: App =>
-  private[this] val typesMap = Map(
-    "css" -> "text/css",
-    "png" -> "image/png",
-    "js" -> "application/javascript",
-    "html" -> "text/html"
-  )
-
   val webServerPort = flag("zipkin.web.port", new InetSocketAddress(8080), "Listening port for the zipkin web frontend")
   val queryDest = flag("zipkin.web.query.dest", "127.0.0.1:9411", "Location of the query server")
-  val queryLimit = flag("zipkin.web.query.limit", 10, "Default query limit for trace results")
   val environment = flag("zipkin.web.environmentName", "", "The name of the environment Zipkin is running in")
 
   val logLevel = sys.env.get("WEB_LOG_LEVEL").getOrElse("INFO")
@@ -50,53 +39,9 @@ trait ZipkinWebFactory { self: App =>
     .asInstanceOf[Logger].setLevel(Level.toLevel(logLevel))
 
  /**
-  * Initialize a json-aware Finatra client, targeting the query host. Lazy to ensure
-  * we get the host after the [[queryDest]] flag has been parsed.
+  * Initialize an HTTP proxy service, targeting the query host.
   */
-  lazy val queryClient = new HttpClient(
-    httpService = Http.client.configured(param.Label("zipkin-web"))
-                             .newClient(queryDest()).toService,
-    defaultHeaders = Map(
-      "Host" -> queryDest(),
-      "Accept-Encoding" -> "gzip"
-    ),
-    mapper = new FinatraObjectMapper(ZipkinJson)
-  )
-
-  def newHandlers = new Handlers
-
-  def newWebServer(
-    queryClient: HttpClient = queryClient,
-    stats: StatsReceiver = DefaultStatsReceiver.scope("zipkin-web")
-  ): Service[Request, Response] = {
-    val handlers = newHandlers
-    import handlers._
-
-    Seq(
-      ("/", handlePublic(typesMap)),
-      ("/health", handleRoute(queryClient, "/health")),
-      ("/api/v1/dependencies", handleRoute(queryClient, "/api/v1/dependencies")),
-      ("/api/v1/services", handleRoute(queryClient, "/api/v1/services")),
-      ("/api/v1/spans", handleRoute(queryClient, "/api/v1/spans")),
-      ("/api/v1/trace/:id", handleTrace(queryClient)),
-      ("/api/v1/traces", handleRoute(queryClient, "/api/v1/traces")),
-      ("/config.json", handleConfig(Map(
-        "environment" -> environment(),
-        "queryLimit" -> queryLimit()
-      )))
-    ).foldLeft(new HttpMuxer) { case (m , (p, handler)) =>
-      val path = p.split("/").toList
-      val handlePath = path.takeWhile { t => !(t.startsWith(":") || t.startsWith("?:")) }
-      val suffix = if (p.endsWith("/") || p.contains(":")) "/" else ""
-
-      m.withHandler(handlePath.mkString("/") + suffix,
-        collectStats(handlePath.foldLeft(stats) { case (s, p) => s.scope(p) }) andThen
-        renderPage andThen
-        catchExceptions andThen
-        checkPath(path) andThen
-        handler)
-    }
-  }
+  def newWebServer(): Service[Request, Response] = Http.newService(queryDest())
 }
 
 object Main extends TwitterServer with ZipkinWebFactory {
@@ -117,7 +62,7 @@ object Main extends TwitterServer with ZipkinWebFactory {
     val server = Http.Server(StackServer.newStack
       .replace(FilteredHttpEntrypointTraceInitializer.role, FilteredHttpEntrypointTraceInitializer))
       .configured(param.Label("zipkin-web"))
-      .serve(webServerPort(), newWebServer(stats = statsReceiver.scope("zipkin-web")))
+      .serve(webServerPort(), newWebServer())
     onExit { server.close() }
 
     BootstrapTrace.complete()

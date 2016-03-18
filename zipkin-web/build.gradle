@@ -19,7 +19,6 @@ shadowJar {
 
 dependencies {
     compile project(':zipkin-common')
-    compile project(':zipkin-ui')
     compile "com.twitter:twitter-server_${scalaInterfaceVersion}:${commonVersions.twitterServer}"
     compile "com.twitter.finatra:finatra-httpclient_${scalaInterfaceVersion}:${commonVersions.finatra}"
     compile "ch.qos.logback:logback-core:${commonVersions.logback}"
