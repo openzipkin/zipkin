@@ -30,6 +30,8 @@ The following apply when `STORAGE_TYPE` is set to `cassandra`:
     * `CASSANDRA_MAX_CONNECTIONS`: Max pooled connections per datacenter-local host. Defaults to 8
     * `CASSANDRA_ENSURE_SCHEMA`: Ensuring that schema exists, if enabled tries to execute script /zipkin-cassandra-core/resources/cassandra-schema-cql3.txt. Defaults to true
     * `CASSANDRA_USERNAME` and `CASSANDRA_PASSWORD`: Cassandra authentication. Will throw an exception on startup if authentication fails. No default
+    * `CASSANDRA_SPAN_TTL`: Time-to-live in seconds for span data. Defaults to 604800 (7 days)
+    * `CASSANDRA_INDEX_TTL`: Time-to-live in seconds for index data. Defaults to 259200 (3 days)
 
 Example usage:
 

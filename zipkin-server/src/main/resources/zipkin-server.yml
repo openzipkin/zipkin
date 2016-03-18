@@ -11,6 +11,10 @@ cassandra:
   max-connections: ${CASSANDRA_MAX_CONNECTIONS:8}
   # Ensuring that schema exists, if enabled tries to execute script /zipkin-cassandra-core/resources/cassandra-schema-cql3.txt.
   ensure-schema: ${CASSANDRA_ENSURE_SCHEMA:true}
+  # 7 days in seconds
+  span-ttl: ${CASSANDRA_SPAN_TTL:604800}
+  # 3 days in seconds
+  index-ttl: ${CASSANDRA_INDEX_TTL:259200}
 mysql:
   host: ${MYSQL_HOST:localhost}
   port: ${MYSQL_TCP_PORT:3306}
@@ -53,7 +57,7 @@ spring:
     schema: classpath:/mysql.sql
 # Switch this on to create the schema on startup:
     initialize: false
-# Example of how to log codec failures
+# Example of how to log cassandra calls
 # logging:
 #     level:
-#         zipkin.server.ZipkinQueryApiV1: 'FINE'
+#         org.twitter.zipkin.storage.cassandra.Repository: 'DEBUG'

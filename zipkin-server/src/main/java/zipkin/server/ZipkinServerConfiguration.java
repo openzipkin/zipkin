@@ -89,7 +89,9 @@ public class ZipkinServerConfiguration {
           .maxConnections(cassandra.getMaxConnections())
           .ensureSchema(cassandra.isEnsureSchema())
           .username(cassandra.getUsername())
-          .password(cassandra.getPassword()).build();
+          .password(cassandra.getPassword())
+          .spanTtl(cassandra.getSpanTtl())
+          .indexTtl(cassandra.getIndexTtl()).build();
       return new CassandraSpanStore(config);
     } else {
       return new InMemorySpanStore();
