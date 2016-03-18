@@ -75,8 +75,8 @@ public class ZipkinServerConfiguration {
   }
 
   @Configuration
-  @ConditionalOnClass(Brave.class)
-  protected static class BraveSpanStoreEnhancer implements BeanPostProcessor {
+  @ConditionalOnClass(name = "com.github.kristofa.brave.Brave")
+  static class BraveSpanStoreEnhancer implements BeanPostProcessor {
 
     @Autowired(required = false)
     Brave brave;
@@ -161,7 +161,8 @@ public class ZipkinServerConfiguration {
     class KafkaEnabledCondition extends SpringBootCondition {
       @Override
       public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata a) {
-        return context.getEnvironment().getProperty("kafka.zookeeper").isEmpty() ?
+        String kafkaZookeeper = context.getEnvironment().getProperty("kafka.zookeeper");
+        return kafkaZookeeper == null || kafkaZookeeper.isEmpty() ?
             ConditionOutcome.noMatch("kafka.zookeeper isn't set") :
             ConditionOutcome.match();
       }
