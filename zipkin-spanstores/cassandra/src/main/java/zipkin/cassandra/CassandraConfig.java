@@ -111,15 +111,15 @@ public final class CassandraConfig {
       return this;
     }
 
-    /** Time-to-live in seconds for index data. Defaults to 3 days */
-    public Builder indexTtl(int indexTtl) {
-      this.indexTtl = indexTtl;
+    /** Time-to-live in seconds for span data. Defaults to 604800 (7 days) */
+    public Builder spanTtl(int spanTtl) {
+      this.spanTtl = spanTtl;
       return this;
     }
 
-    /** Time-to-live in seconds for span data. Defaults to 7 days */
-    public Builder spanTtl(int spanTtl) {
-      this.spanTtl = spanTtl;
+    /** Time-to-live in seconds for index data. Defaults to 259200 (3 days) */
+    public Builder indexTtl(int indexTtl) {
+      this.indexTtl = indexTtl;
       return this;
     }
 

@@ -13,6 +13,7 @@
  */
 package zipkin.server;
 
+import java.util.concurrent.TimeUnit;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("cassandra")
@@ -24,6 +25,8 @@ class ZipkinCassandraProperties {
   private boolean ensureSchema = true;
   private String username;
   private String password;
+  private int spanTtl = (int) TimeUnit.DAYS.toSeconds(7);
+  private int indexTtl = (int) TimeUnit.DAYS.toSeconds(3);
 
   public String getKeyspace() {
     return keyspace;
@@ -79,5 +82,21 @@ class ZipkinCassandraProperties {
 
   public void setPassword(String password) {
     this.password = "".equals(password) ? null : password;
+  }
+
+  public int getSpanTtl() {
+    return spanTtl;
+  }
+
+  public void setSpanTtl(int spanTtl) {
+    this.spanTtl = spanTtl;
+  }
+
+  public int getIndexTtl() {
+    return indexTtl;
+  }
+
+  public void setIndexTtl(int indexTtl) {
+    this.indexTtl = indexTtl;
   }
 }
