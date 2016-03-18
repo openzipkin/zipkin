@@ -16,8 +16,6 @@ package zipkin.kafka;
 import java.util.Collections;
 import java.util.List;
 import kafka.serializer.Decoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import zipkin.Codec;
 import zipkin.Span;
 
@@ -30,11 +28,18 @@ final class SpansDecoder implements Decoder<List<Span>> {
   @Override
   public List<Span> fromBytes(byte[] bytes) {
     try {
-      // Given the thrift encoding is TBinaryProtocol..
+      // In TBinaryProtocol encoding, the first byte is the TType, in a range 0-16
+      // .. If the first byte isn't in that range, it isn't a thrift.
+      //
+      // When byte(0) == '[' (91), assume it is a list of json-encoded spans
+      //
+      // When byte(0) <= 16, assume it is a TBinaryProtocol-encoded thrift
       // .. When serializing a Span (Struct), the first byte will be the type of a field
-      // .. When serializing a List[ThriftSpan], the first byte is the member type, TType.STRUCT
-      // Span has no STRUCT fields: we assume that if the first byte is TType.STRUCT is a list.
-      if (bytes[0] == 12 /* TType.STRUCT */) {
+      // .. When serializing a List[ThriftSpan], the first byte is the member type, TType.STRUCT(12)
+      // .. As ThriftSpan has no STRUCT fields: so, if the first byte is TType.STRUCT(12), it is a list.
+      if (bytes[0] == '[') {
+        return Codec.JSON.readSpans(bytes);
+      } else if (bytes[0] == 12 /* TType.STRUCT */) {
         return Codec.THRIFT.readSpans(bytes);
       } else {
         return Collections.singletonList(Codec.THRIFT.readSpan(bytes));

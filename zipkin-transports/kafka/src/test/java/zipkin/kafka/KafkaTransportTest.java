@@ -40,7 +40,7 @@ public class KafkaTransportTest {
 
   /** Ensures legacy encoding works: a single TBinaryProtocol encoded span */
   @Test
-  public void messageWithSingleSpan() throws Exception {
+  public void messageWithSingleThriftSpan() throws Exception {
     KafkaConfig config = KafkaConfig.builder()
         .zookeeper(kafka.zookeeperConnectionString())
         .topic("single_span").build();
@@ -58,15 +58,33 @@ public class KafkaTransportTest {
 
   /** Ensures list encoding works: a TBinaryProtocol encoded list of spans */
   @Test
-  public void messageWithMultipleSpans() throws Exception {
+  public void messageWithMultipleSpans_thrift() throws Exception {
     KafkaConfig config = KafkaConfig.builder()
         .zookeeper(kafka.zookeeperConnectionString())
-        .topic("multiple_spans").build();
+        .topic("multiple_spans_thrift").build();
 
     CompletableFuture<List<Span>> promise = new CompletableFuture<>();
 
     Producer<String, byte[]> producer = new Producer<>(kafka.producerConfigWithDefaultEncoder());
     producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span, span))));
+    producer.close();
+
+    try (KafkaTransport processor = new KafkaTransport(config, promise::complete)) {
+      assertThat(promise.get()).containsExactly(span, span);
+    }
+  }
+
+  /** Ensures list encoding works: a json encoded list of spans */
+  @Test
+  public void messageWithMultipleSpans_json() throws Exception {
+    KafkaConfig config = KafkaConfig.builder()
+        .zookeeper(kafka.zookeeperConnectionString())
+        .topic("multiple_spans_json").build();
+
+    CompletableFuture<List<Span>> promise = new CompletableFuture<>();
+
+    Producer<String, byte[]> producer = new Producer<>(kafka.producerConfigWithDefaultEncoder());
+    producer.send(new KeyedMessage<>(config.topic, Codec.JSON.writeSpans(asList(span, span))));
     producer.close();
 
     try (KafkaTransport processor = new KafkaTransport(config, promise::complete)) {
@@ -85,6 +103,7 @@ public class KafkaTransportTest {
 
     Producer<String, byte[]> producer = new Producer<>(kafka.producerConfigWithDefaultEncoder());
     producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span))));
+    producer.send(new KeyedMessage<>(config.topic, "[\"='".getBytes())); // screwed up json
     producer.send(new KeyedMessage<>(config.topic, "malformed".getBytes()));
     producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span))));
     producer.close();
