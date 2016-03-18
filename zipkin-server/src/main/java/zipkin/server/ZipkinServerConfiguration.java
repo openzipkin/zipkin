@@ -28,6 +28,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -45,7 +46,6 @@ import zipkin.cassandra.CassandraSpanStore;
 import zipkin.jdbc.JDBCSpanStore;
 import zipkin.kafka.KafkaConfig;
 import zipkin.kafka.KafkaTransport;
-import zipkin.server.ZipkinServerProperties.Store.Type;
 import zipkin.server.brave.TraceWritesSpanStore;
 
 @Configuration
@@ -55,16 +55,6 @@ public class ZipkinServerConfiguration {
 
   @Autowired
   ZipkinServerProperties server;
-
-  @Autowired
-  ZipkinCassandraProperties cassandra;
-
-  @Autowired(required = false)
-  DataSource datasource;
-
-  @Autowired(required = false)
-  @Qualifier("jdbcTraceListenerProvider")
-  ExecuteListenerProvider listener;
 
   @Bean
   @ConditionalOnMissingBean(Codec.Factory.class)
@@ -78,24 +68,10 @@ public class ZipkinServerConfiguration {
     return Sampler.create(rate);
   }
 
-  @Bean SpanStore spanStore() {
-    if (datasource != null && server.getStore().getType() == Type.mysql) {
-      return new JDBCSpanStore(datasource, new Settings().withRenderSchema(false), listener);
-    } else if (server.getStore().getType() == Type.cassandra) {
-      CassandraConfig config = new CassandraConfig.Builder()
-          .keyspace(cassandra.getKeyspace())
-          .contactPoints(cassandra.getContactPoints())
-          .localDc(cassandra.getLocalDc())
-          .maxConnections(cassandra.getMaxConnections())
-          .ensureSchema(cassandra.isEnsureSchema())
-          .username(cassandra.getUsername())
-          .password(cassandra.getPassword())
-          .spanTtl(cassandra.getSpanTtl())
-          .indexTtl(cassandra.getIndexTtl()).build();
-      return new CassandraSpanStore(config);
-    } else {
-      return new InMemorySpanStore();
-    }
+  @Bean
+  @ConditionalOnMissingBean(SpanStore.class)
+  SpanStore spanStore() {
+    return new InMemorySpanStore();
   }
 
   @Configuration
@@ -116,6 +92,43 @@ public class ZipkinServerConfiguration {
         return new TraceWritesSpanStore(brave, (SpanStore) bean);
       }
       return bean;
+    }
+  }
+
+  @Configuration
+  @ConditionalOnProperty(name = "zipkin.store.type", havingValue = "mysql")
+  @ConditionalOnClass(name = "zipkin.jdbc.JDBCSpanStore")
+  static class JDBCConfiguration {
+
+    @Autowired(required = false)
+    DataSource datasource;
+
+    @Autowired(required = false)
+    @Qualifier("jdbcTraceListenerProvider")
+    ExecuteListenerProvider listener;
+
+    @Bean SpanStore jdbcSpanStore() {
+      return new JDBCSpanStore(datasource, new Settings().withRenderSchema(false), listener);
+    }
+  }
+
+  @Configuration
+  @EnableConfigurationProperties(ZipkinCassandraProperties.class)
+  @ConditionalOnProperty(name = "zipkin.store.type", havingValue = "cassandra")
+  @ConditionalOnClass(name = "zipkin.cassandra.CassandraSpanStore")
+  static class CassandraConfiguration {
+    @Bean SpanStore cassandraSpanStore(ZipkinCassandraProperties cassandra) {
+      CassandraConfig config = new CassandraConfig.Builder()
+          .keyspace(cassandra.getKeyspace())
+          .contactPoints(cassandra.getContactPoints())
+          .localDc(cassandra.getLocalDc())
+          .maxConnections(cassandra.getMaxConnections())
+          .ensureSchema(cassandra.isEnsureSchema())
+          .username(cassandra.getUsername())
+          .password(cassandra.getPassword())
+          .spanTtl(cassandra.getSpanTtl())
+          .indexTtl(cassandra.getIndexTtl()).build();
+      return new CassandraSpanStore(config);
     }
   }
 
