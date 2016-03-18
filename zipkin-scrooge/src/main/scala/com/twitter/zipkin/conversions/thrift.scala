@@ -132,22 +132,19 @@ object thrift {
   implicit def spanToThriftSpan(s: Span) = new ThriftSpan(s)
   implicit def thriftSpanToSpan(s: thriftscala.Span) = new WrappedSpan(s)
 
-  def thriftListToThriftSpans(bytes: Array[Byte]) = {
+  def thriftListToSpans(bytes: Array[Byte])  = {
     val proto = new TBinaryProtocol(TArrayByteTransport(bytes))
     val _list = proto.readListBegin()
     if (_list.size > 10000) {
       throw new IllegalArgumentException(_list.size + " > 10000: possibly malformed thrift")
     }
-    val result = new ArrayBuffer[thriftscala.Span](_list.size)
+    val result = new ArrayBuffer[Span](_list.size)
     for (i <- 1 to _list.size) {
-      result += thriftscala.Span.decode(proto)
+      result += thriftSpanToSpan(thriftscala.Span.decode(proto)).toSpan
     }
     proto.readListEnd()
     result.toList
   }
-
-  def thriftListToSpans(bytes: Array[Byte]) =
-    thriftListToThriftSpans(bytes).map(thriftSpanToSpan(_).toSpan)
 
   class WrappedDependencyLink(dl: DependencyLink) {
     lazy val toThrift = thriftscala.DependencyLink(dl.parent, dl.child, dl.callCount)

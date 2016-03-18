@@ -18,19 +18,12 @@ package com.twitter.zipkin.collector
 import com.twitter.app.App
 import com.twitter.conversions.time._
 import com.twitter.finagle.stats.StatsReceiver
-import com.twitter.finagle.{Filter, Service}
+import com.twitter.finagle.Filter
 import com.twitter.util._
 import com.twitter.zipkin.common.Span
-import com.twitter.zipkin.conversions.thrift._
-import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.zipkin.storage.SpanStore
 
 sealed trait AwaitableCloser extends Closable with CloseAwaitably
-
-object SpanConvertingFilter extends Filter[Seq[ThriftSpan], Unit, Seq[Span], Unit] {
-  def apply(spans: Seq[ThriftSpan], svc: Service[Seq[Span], Unit]): Future[Unit] =
-    svc(spans.map(_.toSpan))
-}
 
 /**
  * A basic collector from which to create a server. Your collector will extend this
@@ -38,7 +31,7 @@ object SpanConvertingFilter extends Filter[Seq[ThriftSpan], Unit, Seq[Span], Uni
  * together.
  */
 trait ZipkinCollectorFactory {
-  def newReceiver(receive: Seq[ThriftSpan] => Future[Unit], stats: StatsReceiver): SpanReceiver
+  def newReceiver(receive: Seq[Span] => Future[Unit], stats: StatsReceiver): SpanReceiver
   def newSpanStore(stats: StatsReceiver): SpanStore
 
   // overwrite in the Main trait to add a SpanStore filter to the SpanStore
@@ -46,7 +39,7 @@ trait ZipkinCollectorFactory {
 
   def newCollector(stats: StatsReceiver): AwaitableCloser = new AwaitableCloser {
     val store = newSpanStore(stats)
-    val receiver = newReceiver(SpanConvertingFilter andThen spanStoreFilter andThen store, stats)
+    val receiver = newReceiver(spanStoreFilter andThen store, stats)
 
     def close(deadline: Time): Future[Unit] = closeAwaitably {
       Closable.sequence(receiver, store).close(deadline)
@@ -67,10 +60,10 @@ trait ZipkinQueuedCollectorFactory extends ZipkinCollectorFactory {
   override def newCollector(stats: StatsReceiver): AwaitableCloser = new AwaitableCloser {
     val store = newSpanStore(stats)
 
-    val queue = new ItemQueue[Seq[ThriftSpan], Unit](
+    val queue = new ItemQueue[Seq[Span], Unit](
       itemQueueMax(),
       itemQueueConcurrency(),
-      SpanConvertingFilter andThen spanStoreFilter andThen store,
+      spanStoreFilter andThen store,
       itemQueueTimeout(),
       stats.scope("ItemQueue"))
 
@@ -92,10 +85,10 @@ trait ZipkinBlockingQueuedCollectorFactory extends ZipkinQueuedCollectorFactory 
   override def newCollector(stats: StatsReceiver): AwaitableCloser = new AwaitableCloser {
     val store = newSpanStore(stats)
 
-    val blockingQueue = new BlockingItemQueue[Seq[ThriftSpan], Unit](
+    val blockingQueue = new BlockingItemQueue[Seq[Span], Unit](
       itemQueueMax(),
       itemQueueConcurrency(),
-      SpanConvertingFilter andThen spanStoreFilter andThen store,
+      spanStoreFilter andThen store,
       itemQueueTimeout(),
       itemQueueSleepOnFull(),
       stats.scope("BlockingItemQueue"))

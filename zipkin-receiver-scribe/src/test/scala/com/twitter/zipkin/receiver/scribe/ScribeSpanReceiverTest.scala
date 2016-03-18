@@ -40,14 +40,14 @@ class ScribeSpanReceiverTest extends FunSuite {
   val base64 = "CgABAAAAAAAAAHsLAAMAAAADYm9vCgAEAAAAAAAAAcgPAAYMAAAAAQoAAQAAAAAAAAABCwACAAAAA2JhaAAPAAgMAAAAAAIACQAA"
 
   test("processes entries") {
-    var recvdSpan: Option[Seq[ThriftSpan]] = None
+    var recvdSpan: Option[Seq[Span]] = None
     val receiver = new ScribeReceiver(Set(category), { s =>
       recvdSpan = Some(s)
       Future.Done
     })
     assert(Await.result(receiver.log(Seq(validList.head, validList.head))) === ResultCode.Ok)
     assert(!recvdSpan.isEmpty)
-    assert(recvdSpan.get.map(_.toSpan) === Seq(validSpan, validSpan))
+    assert(recvdSpan.get === Seq(validSpan, validSpan))
   }
 
   test("ok when scribe client cancels their request") {
@@ -96,7 +96,7 @@ class ScribeSpanReceiverTest extends FunSuite {
   }
 
   test("ignores bad categories") {
-    var recvdSpan: Option[ThriftSpan] = None
+    var recvdSpan: Option[Span] = None
     val receiver = new ScribeReceiver(Set("othercat"), { s =>
       recvdSpan = Some(s.head)
       Future.Done
@@ -106,7 +106,7 @@ class ScribeSpanReceiverTest extends FunSuite {
   }
 
   test("ignores bad messages") {
-    var recvdSpan: Option[ThriftSpan] = None
+    var recvdSpan: Option[Span] = None
     val receiver = new ScribeReceiver(Set(category), { s =>
       recvdSpan = Some(s.head)
       Future.Done
