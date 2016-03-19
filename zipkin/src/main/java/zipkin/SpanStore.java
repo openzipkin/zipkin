@@ -80,6 +80,10 @@ public interface SpanStore extends SpanConsumer {
    * the original endTs, even when bucketed. Using the daily example, if endTs was 11pm and lookback
    * was 25 hours, the implementation would query against 2 buckets.
    *
+   * <p>Some implementations parse {@link zipkin.internal.DependencyLinkSpan} from storage and call
+   * {@link zipkin.internal.DependencyLinker} to aggregate links. The reason is certain graph logic,
+   * such as skipping up the tree is difficult to implement as a storage query.
+   *
    * @param endTs only return links from spans where {@link Span#timestamp} are at or before this
    *              time in epoch milliseconds.
    * @param lookback only return links from spans where {@link Span#timestamp} are at or after
