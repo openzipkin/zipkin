@@ -2,7 +2,8 @@ import {
   traceSummary,
   getServiceName,
   traceSummariesToMustache,
-  mkDurationStr
+  mkDurationStr,
+  totalServiceTime
 } from '../../js/component_ui/traceSummary';
 import {Constants} from '../../js/component_ui/traceConstants';
 import {endpoint, annotation, span} from './traceTestHelpers';
@@ -308,5 +309,29 @@ describe('mkDurationStr', () => {
 
   it('should format seconds', () => {
     mkDurationStr(2534999).should.equal('2.535s');
+  });
+});
+
+describe('totalServiceTime', () => {
+  const time1 = {name: 'service', timestamp: 1456447911000000, duration: 1000};
+  const time2 = {name: 'service', timestamp: 1456447912000000, duration: 2000};
+  const time3 = {name: 'service', timestamp: 1456447913000000, duration: 3000};
+
+  it('should return zero on empty input', () => {
+    totalServiceTime([]).should.equal(0);
+  });
+
+  it('should return duration on single input', () => {
+    totalServiceTime([time1]).should.equal(time1.duration);
+  });
+
+  it('should sum on multiple inputs', () => {
+    totalServiceTime([time1, time2, time3]).should.equal(6000);
+  });
+
+  it('shouldnt infinitely recurse when duration is undefined', () => {
+    // when json form of span is missing the duration key
+    const undefinedDuration = {name: 'zipkin-web', timestamp: time1.timestamp, duration: undefined};
+    totalServiceTime([time1, time2, time3, undefinedDuration]).should.equal(6000);
   });
 });
