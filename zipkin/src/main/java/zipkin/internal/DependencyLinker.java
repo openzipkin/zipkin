@@ -36,8 +36,8 @@ public final class DependencyLinker {
   /**
    * @param spans spans where all spans have the same trace id
    */
-  public void putTrace(Iterator<DependencyLinkSpan> spans) {
-    if (!spans.hasNext()) return;
+  public DependencyLinker putTrace(Iterator<DependencyLinkSpan> spans) {
+    if (!spans.hasNext()) return this;
 
     Node.TreeBuilder<DependencyLinkSpan> builder = new Node.TreeBuilder<>();
     while (spans.hasNext()) {
@@ -78,7 +78,7 @@ public final class DependencyLinker {
         }
         parent = parent.parent();
       }
-      if (client == null) continue; // skip if no ancestors were servers
+      if (client == null || server == null) continue; // skip if no ancestors were servers
 
       Pair<String> key = Pair.create(client, server);
       if (linkMap.containsKey(key)) {
@@ -87,6 +87,7 @@ public final class DependencyLinker {
         linkMap.put(key, 1L);
       }
     }
+    return this;
   }
 
   public List<DependencyLink> link() {
