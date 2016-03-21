@@ -25,7 +25,11 @@ import org.junit.Test;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.Constants.CLIENT_RECV;
+import static zipkin.Constants.CLIENT_SEND;
 import static zipkin.Constants.LOCAL_COMPONENT;
+import static zipkin.Constants.SERVER_RECV;
+import static zipkin.Constants.SERVER_SEND;
 
 /**
  * Base test for {@link SpanStore} implementations. Subtypes should create a connection to a real
@@ -458,10 +462,10 @@ public abstract class SpanStoreTest<T extends SpanStore> {
         .traceId(1)
         .name("method1")
         .id(666)
-        .addAnnotation(Annotation.create((today + 100) * 1000, Constants.CLIENT_SEND, client))
-        .addAnnotation(Annotation.create((today + 95) * 1000, Constants.SERVER_RECV, frontend)) // before client sends
-        .addAnnotation(Annotation.create((today + 120) * 1000, Constants.SERVER_SEND, frontend)) // before client receives
-        .addAnnotation(Annotation.create((today + 135) * 1000, Constants.CLIENT_RECV, client)).build();
+        .addAnnotation(Annotation.create((today + 100) * 1000, CLIENT_SEND, client))
+        .addAnnotation(Annotation.create((today + 95) * 1000, SERVER_RECV, frontend)) // before client sends
+        .addAnnotation(Annotation.create((today + 120) * 1000, SERVER_SEND, frontend)) // before client receives
+        .addAnnotation(Annotation.create((today + 135) * 1000, CLIENT_RECV, client)).build();
 
     /** Intentionally not setting span.timestamp, duration */
     Span remoteChild = new Span.Builder()
@@ -469,10 +473,10 @@ public abstract class SpanStoreTest<T extends SpanStore> {
         .name("method2")
         .id(777)
         .parentId(666L)
-        .addAnnotation(Annotation.create((today + 100) * 1000, Constants.CLIENT_SEND, frontend))
-        .addAnnotation(Annotation.create((today + 115) * 1000, Constants.SERVER_RECV, backend))
-        .addAnnotation(Annotation.create((today + 120) * 1000, Constants.SERVER_SEND, backend))
-        .addAnnotation(Annotation.create((today + 115) * 1000, Constants.CLIENT_RECV, frontend)) // before server sent
+        .addAnnotation(Annotation.create((today + 100) * 1000, CLIENT_SEND, frontend))
+        .addAnnotation(Annotation.create((today + 115) * 1000, SERVER_RECV, backend))
+        .addAnnotation(Annotation.create((today + 120) * 1000, SERVER_SEND, backend))
+        .addAnnotation(Annotation.create((today + 115) * 1000, CLIENT_RECV, frontend)) // before server sent
         .build();
 
     /** Local spans must explicitly set timestamp */
@@ -510,31 +514,77 @@ public abstract class SpanStoreTest<T extends SpanStore> {
     assertThat(adjusted.get(2).duration).isEqualTo(skewed.get(2).duration);
   }
 
+  /**
+   * This test shows that regardless of whether span.timestamp and duration are set directly or
+   * derived from annotations, the client wins vs the server. This is important because the client
+   * holds the critical path of a shared span.
+   */
   @Test
-  public void rawTrace(){
+  public void clientTimestampAndDurationWinInSharedSpan() {
     Endpoint client = Endpoint.create("client", 192 << 24 | 168 << 16 | 1, 8080);
+    Endpoint server = Endpoint.create("server", 192 << 24 | 168 << 16 | 2, 8080);
+
+    long clientTimestamp = (today + 100) * 1000;
+    long clientDuration = 35 * 1000;
+
+    // both client and server set span.timestamp, duration
+    Span clientView = new Span.Builder().traceId(1).name("direct").id(666)
+        .timestamp(clientTimestamp).duration(clientDuration)
+        .addAnnotation(Annotation.create((today + 100) * 1000, CLIENT_SEND, client))
+        .addAnnotation(Annotation.create((today + 135) * 1000, CLIENT_RECV, client))
+        .build();
+
+    Span serverView = new Span.Builder().traceId(1).name("direct").id(666)
+        .timestamp((today + 105) * 1000).duration(25 * 1000L)
+        .addAnnotation(Annotation.create((today + 105) * 1000, SERVER_RECV, server))
+        .addAnnotation(Annotation.create((today + 130) * 1000, SERVER_SEND, server))
+        .build();
+
+    // neither client, nor server set span.timestamp, duration
+    Span clientViewDerived = new Span.Builder().traceId(1).name("derived").id(666)
+        .addAnnotation(Annotation.create(clientTimestamp, CLIENT_SEND, client))
+        .addAnnotation(Annotation.create(clientTimestamp + clientDuration, CLIENT_SEND, client))
+        .build();
+
+    Span serverViewDerived = new Span.Builder().traceId(1).name("derived").id(666)
+        .addAnnotation(Annotation.create((today + 105) * 1000, SERVER_RECV, server))
+        .addAnnotation(Annotation.create((today + 130) * 1000, SERVER_SEND, server))
+        .build();
+
+    store.accept(asList(serverView, serverViewDerived)); // server span hits the collection tier first
+    store.accept(asList(clientView, clientViewDerived)); // intentionally different collection event
+
+    for (Span span : store.getTrace(clientView.traceId)) {
+      assertThat(span.timestamp).isEqualTo(clientTimestamp);
+      assertThat(span.duration).isEqualTo(clientDuration);
+    }
+  }
+
+  // This supports the "raw trace" feature, which skips application-level data cleaning
+  @Test
+  public void rawTrace_doesntPerformQueryTimeAdjustment() {
     Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2, 8080);
+    Annotation sr = Annotation.create((today + 95) * 1000, SERVER_RECV, frontend);
+    Annotation ss = Annotation.create((today + 100) * 1000, SERVER_SEND, frontend);
 
-    Span span = new Span.Builder()
-        .traceId(1)
-        .name("method1")
-        .id(666)
-        .timestamp((today + 95) * 1000)
-        .duration(20 * 1000L)
-        .addAnnotation(Annotation.create((today + 100) * 1000, Constants.CLIENT_SEND, client))
-        .addAnnotation(Annotation.create((today + 95) * 1000, Constants.SERVER_RECV, frontend)) // before client sends
-        .addAnnotation(Annotation.create((today + 120) * 1000, Constants.SERVER_SEND, frontend)) // before client receives
-        .addAnnotation(Annotation.create((today + 135) * 1000, Constants.CLIENT_RECV, client)).build();
+    Span span = new Span.Builder().traceId(1).name("method1").id(666).build();
 
-    store.accept(asList(span));
+    // Simulate instrumentation that sends annotations one at-a-time.
+    // This should prevent the collection tier from being able to calculate duration.
+    store.accept(asList(new Span.Builder(span).addAnnotation(sr).build()));
+    store.accept(asList(new Span.Builder(span).addAnnotation(ss).build()));
 
-    // clock skew adjustment will affect the span returned by default
+    // Normally, span store implementations will merge spans by id and add duration by query time
     assertThat(store.getTrace(span.traceId))
-        .doesNotContain(span);
+        .containsExactly(new Span.Builder(span)
+            .timestamp(sr.timestamp)
+            .duration(ss.timestamp - sr.timestamp)
+            .annotations(asList(sr, ss)).build());
 
-    // the raw trace does not include any adjustments at query time, such as clock skew
-    assertThat(store.getRawTrace(span.traceId))
-        .containsExactly(span);
+    // Since a collector never saw both sides of the span, we'd not see duration in the raw trace.
+    for (Span raw : store.getRawTrace(span.traceId)) {
+      assertThat(raw.duration).isNull();
+    }
   }
 
   static long clientDuration(Span span) {
