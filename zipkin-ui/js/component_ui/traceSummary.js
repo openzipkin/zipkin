@@ -147,12 +147,15 @@ export function traceSummary(spans = []) {
   }
 }
 
-function totalServiceTime(stamps, acc = 0) {
-  if (stamps.length === 0) {
+export function totalServiceTime(stamps, acc = 0) {
+  // This is a recursive function that performs arithmetic on duration
+  // If duration is undefined, it will infinitely recurse. Filter out that case
+  const filtered = stamps.filter((s) => s.duration);
+  if (filtered.length === 0) {
     return acc;
   } else {
-    const ts = _(stamps).minBy((s) => s.timestamp);
-    const [current, next] = _(stamps)
+    const ts = _(filtered).minBy((s) => s.timestamp);
+    const [current, next] = _(filtered)
         .partition((t) =>
           t.timestamp >= ts.timestamp
           && t.timestamp + t.duration <= ts.timestamp + ts.duration)
