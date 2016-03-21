@@ -16,8 +16,9 @@ services:
 before_install:
   # Manually install cassandra until https://github.com/travis-ci/travis-ci/issues/3952
   # See https://github.com/openzipkin/zipkin/issues/706
-  - curl -SL http://downloads.datastax.com/community/dsc-cassandra-2.2.3-bin.tar.gz | tar xz
-  - dsc-cassandra-*/bin/cassandra > /dev/null
+  - curl -SL http://downloads.datastax.com/community/dsc-cassandra-2.2.5-bin.tar.gz | tar xz
+  - sed -i -e 's/INFO/WARN/g' dsc-cassandra-*/conf/logback.xml
+  - dsc-cassandra-*/bin/cassandra
   # install mysql schema
   - mysql -uroot -e 'SET GLOBAL innodb_file_format=Barracuda'
   - mysql -utravis -e 'create database if not exists zipkin'
