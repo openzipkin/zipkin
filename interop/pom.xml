@@ -42,11 +42,6 @@
       <artifactId>zipkin</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>spanstore-jdbc</artifactId>
-    </dependency>
-
     <!-- for ScalaSpanStoreAdapter -->
     <dependency>
       <groupId>io.zipkin</groupId>

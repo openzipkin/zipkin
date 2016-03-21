@@ -54,6 +54,7 @@
 
     <animal-sniffer-maven-plugin.version>1.15</animal-sniffer-maven-plugin.version>
     <maven-plugin.version>0.3.3</maven-plugin.version>
+    <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
     <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
     <maven-source-plugin.version>3.0.0</maven-source-plugin.version>
     <maven-javadoc-plugin.version>2.10.3</maven-javadoc-plugin.version>
@@ -227,6 +228,11 @@
           <configuration>
             <mainClass>${start-class}</mainClass>
           </configuration>
+        </plugin>
+
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin.version}</version>
         </plugin>
 
         <plugin>
