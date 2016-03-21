@@ -13,7 +13,6 @@
  */
 package zipkin.internal;
 
-import java.util.List;
 import zipkin.Annotation;
 import zipkin.Constants;
 import zipkin.Span;
@@ -30,39 +29,33 @@ public class ApplyTimestampAndDuration {
   // For spans that core client annotations, the distance between "cs" and "cr" should be the
   // authoritative duration. We are special-casing this to avoid setting incorrect duration
   // when there's skew between the client and the server.
-  public static Span apply(Span s) {
-    if ((s.timestamp == null || s.duration == null) && !s.annotations.isEmpty()) {
-      Long ts = s.timestamp;
-      Long dur = s.duration;
-      ts = ts != null ? ts : getFirstTimestamp(s.annotations);
-      if (dur == null) {
-        long lastTs = getLastTimestamp(s.annotations);
-        if (ts != lastTs) {
-          dur = lastTs - ts;
-        }
-      }
-      return new Span.Builder(s).timestamp(ts).duration(dur).build();
+  public static Span apply(Span span) {
+    // Don't overwrite authoritatively set timestamp and duration!
+    if (span.timestamp != null && span.duration != null) {
+      return span;
     }
-    return s;
-  }
 
-  static long getFirstTimestamp(List<Annotation> annotations) {
-    for (int i = 0, length = annotations.size(); i < length; i++) {
-      if (annotations.get(i).value.equals(Constants.CLIENT_SEND)) {
-        return annotations.get(i).timestamp;
-      }
+    // Only calculate span.timestamp and duration on complete spans. This avoids
+    // persisting an inaccurate timestamp due to a late arriving annotation.
+    if (span.annotations.size() < 2) {
+      return span;
     }
-    return annotations.get(0).timestamp;
-  }
 
-  static long getLastTimestamp(List<Annotation> annotations) {
-    int length = annotations.size();
-    for (int i = 0; i < length; i++) {
-      if (annotations.get(i).value.equals(Constants.CLIENT_RECV)) {
-        return annotations.get(i).timestamp;
+    // For spans that core client annotations, the distance between "cs" and "cr" should be the
+    // authoritative duration. We are special-casing this to avoid setting incorrect duration
+    // when there's skew between the client and the server.
+    Long first = span.annotations.get(0).timestamp;
+    Long last = span.annotations.get(span.annotations.size() - 1).timestamp;
+    for (Annotation annotation : span.annotations) {
+      if (annotation.value.equals(Constants.CLIENT_SEND)) {
+        first = annotation.timestamp;
+      } else if (annotation.value.equals(Constants.CLIENT_RECV)) {
+        last = annotation.timestamp;
       }
     }
-    return annotations.get(length - 1).timestamp;
+    long ts = span.timestamp != null ? span.timestamp : first;
+    Long dur = span.duration != null ? span.duration : last.equals(first) ? null : last - first;
+    return new Span.Builder(span).timestamp(ts).duration(dur).build();
   }
 
   private ApplyTimestampAndDuration() {

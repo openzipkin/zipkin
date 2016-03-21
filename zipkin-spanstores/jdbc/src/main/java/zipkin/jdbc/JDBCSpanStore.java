@@ -99,6 +99,7 @@ public final class JDBCSpanStore implements SpanStore {
       List<Query> inserts = new ArrayList<>();
 
       for (Span span : spans) {
+        Long authoritativeTimestamp = span.timestamp;
         span = ApplyTimestampAndDuration.apply(span);
         Long binaryAnnotationTimestamp = span.timestamp;
         if (binaryAnnotationTimestamp == null) { // fallback if we have no timestamp, yet
@@ -109,8 +110,8 @@ public final class JDBCSpanStore implements SpanStore {
         if (!span.name.equals("") && !span.name.equals("unknown")) {
           updateFields.put(ZIPKIN_SPANS.NAME, span.name);
         }
-        if (span.timestamp != null) {
-          updateFields.put(ZIPKIN_SPANS.START_TS, span.timestamp);
+        if (authoritativeTimestamp != null) {
+          updateFields.put(ZIPKIN_SPANS.START_TS, authoritativeTimestamp);
         }
         if (span.duration != null) {
           updateFields.put(ZIPKIN_SPANS.DURATION, span.duration);
@@ -229,7 +230,8 @@ public final class JDBCSpanStore implements SpanStore {
             }
           }
         }
-        trace.add(span.build());
+        Span rawSpan = span.build();
+        trace.add(raw ? rawSpan : ApplyTimestampAndDuration.apply(rawSpan));
       }
       if (!raw) trace = CorrectForClockSkew.apply(trace);
       result.add(trace);
