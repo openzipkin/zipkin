@@ -1,5 +1,16 @@
 # Run `travis lint` when changing this file to avoid breaking the build.
-sudo: false
+
+
+# Use a larger VM as we run a lot of services
+# https://docs.travis-ci.com/user/ci-environment/#Virtualization-environments
+sudo: required
+dist: trusty
+addons:
+  apt:
+    packages:
+    - mysql-server-5.6
+    - mysql-client-core-5.6
+    - mysql-client-5.6
 
 cache:
   directories:
@@ -18,11 +29,11 @@ before_install:
   # See https://github.com/openzipkin/zipkin/issues/706
   - curl -SL http://downloads.datastax.com/community/dsc-cassandra-2.2.5-bin.tar.gz | tar xz
   - sed -i -e 's/INFO/WARN/g' dsc-cassandra-*/conf/logback.xml
-  - dsc-cassandra-*/bin/cassandra
+  - sudo dsc-cassandra-*/bin/cassandra
   # install mysql schema
   - mysql -uroot -e 'SET GLOBAL innodb_file_format=Barracuda'
-  - mysql -utravis -e 'create database if not exists zipkin'
-  - mysql -utravis -Dzipkin < zipkin-spanstores/jdbc/src/main/resources/mysql.sql
+  - mysql -uroot -e 'create database if not exists zipkin'
+  - mysql -uroot -Dzipkin < zipkin-spanstores/jdbc/src/main/resources/mysql.sql
   # TODO: To release, setup git config and run `./mvnw -s ./.settings.xml release:prepare` locally.
   #       Once tag-driven automation is setup, these parameters will be used by travis.
   - git config user.name "$GH_USER"
@@ -37,7 +48,7 @@ script:
   - '[ "${TRAVIS_BRANCH}" = master ] && [ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s ./.settings.xml -Prelease -pl -:benchmarks,-:interop deploy -nsu'
   # If we are on a pull request, don't build javadoc or source jars (release profile), and certainly don't deploy!
   #   We also add the MYSQL_USER so that these tests will be invoked.
-  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || MYSQL_USER=travis ./mvnw install -nsu'
+  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || MYSQL_USER=root ./mvnw install -nsu'
 
 # Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
 # See https://github.com/travis-ci/travis-ci/issues/1532
