@@ -107,8 +107,8 @@ public final class Endpoint {
     }
 
     /** @see Endpoint#port */
-    public Builder port(short port) {
-      if (port != 0) {
+    public Builder port(Short port) {
+      if (port == null || port != 0) {
         this.port = port;
       }
       return this;

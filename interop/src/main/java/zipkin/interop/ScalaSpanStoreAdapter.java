@@ -88,6 +88,17 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
         }
       };
 
+  @Override
+  public Future<Seq<Seq<Span>>> getSpansByTraceIds(Seq<Object> input) {
+    java.util.List<java.util.List<zipkin.Span>> result = new ArrayList<>(input.size());
+    for (Iterator<Object> traceIds = input.iterator(); traceIds.hasNext();) {
+      java.util.List<zipkin.Span> span =
+          spanStore.getRawTrace(Long.valueOf(traceIds.next().toString()));
+      if (span != null) result.add(span);
+    }
+    return (Future) toSeqFuture(result);
+  }
+
   private static Future<Seq<List<Span>>> toSeqFuture(java.util.List<java.util.List<zipkin.Span>> traces) {
     ArrayList<List<Span>> result = new ArrayList<>(traces.size());
     for (java.util.List<zipkin.Span> trace : traces) {
