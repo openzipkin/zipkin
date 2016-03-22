@@ -58,6 +58,24 @@ Example usage:
 $ STORAGE_TYPE=mysql MYSQL_USER=root ./mvnw -pl zipkin-server spring-boot:run
 ```
 
+
+### Elasticsearch
+The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
+
+    * `ES_CLUSTER`: The name of the elasticsearch cluster to connect to. Defaults to "elasticsearch".
+    * `ES_HOSTS`: A comma separated list of elasticsearch hostnodes to connect to, in host:port
+                  format. The port should be the transport port, not the http port. Defaults to
+                  "localhost:9300". Only one of these hosts needs to be available to fetch the
+                  remaining nodes in the cluster. It is recommended to set this to all the master
+                  nodes of the cluster.
+    * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to zipkin.
+
+Example usage:
+
+```bash
+$ STORAGE_TYPE=elasticsearch ES_CLUSTER=monitoring ES_HOSTS=host1:9300,host2:9300 ./mvnw -pl zipkin-server spring-boot:run
+```
+
 ### Kafka
 The following apply when `KAFKA_ZOOKEEPER` is set:
 

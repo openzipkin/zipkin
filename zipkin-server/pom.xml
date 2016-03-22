@@ -91,6 +91,21 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- Elasticsearch backend -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>spanstore-elasticsearch</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Explicitly marked for Intellij -->
+    <dependency>
+      <groupId>org.elasticsearch</groupId>
+      <artifactId>elasticsearch</artifactId>
+      <version>${elasticsearch.version}</version>
+      <optional>true</optional>
+    </dependency>
+
     <!-- JDBC backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>

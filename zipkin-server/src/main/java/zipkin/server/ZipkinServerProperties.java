@@ -31,7 +31,7 @@ class ZipkinServerProperties {
 
   static class Store {
     enum Type {
-      cassandra, mysql, mem
+      cassandra, mysql, elasticsearch, mem
     }
 
     private Type type = Type.mem;

@@ -29,8 +29,8 @@ public interface Codec {
     Codec get(String mediaType);
   }
 
-  Codec JSON = new JsonCodec();
-  Codec THRIFT = new ThriftCodec();
+  JsonCodec JSON = new JsonCodec();
+  ThriftCodec THRIFT = new ThriftCodec();
 
   Factory FACTORY = new Factory() {
 

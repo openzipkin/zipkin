@@ -43,13 +43,15 @@ import zipkin.Sampler;
 import zipkin.SpanStore;
 import zipkin.cassandra.CassandraConfig;
 import zipkin.cassandra.CassandraSpanStore;
+import zipkin.elasticsearch.ElasticsearchConfig;
+import zipkin.elasticsearch.ElasticsearchSpanStore;
 import zipkin.jdbc.JDBCSpanStore;
 import zipkin.kafka.KafkaConfig;
 import zipkin.kafka.KafkaTransport;
 import zipkin.server.brave.TraceWritesSpanStore;
 
 @Configuration
-@EnableConfigurationProperties({ZipkinServerProperties.class, ZipkinCassandraProperties.class})
+@EnableConfigurationProperties(ZipkinServerProperties.class)
 @EnableAsync(proxyTargetClass = true)
 public class ZipkinServerConfiguration {
 
@@ -71,6 +73,11 @@ public class ZipkinServerConfiguration {
   @Bean
   @ConditionalOnMissingBean(SpanStore.class)
   SpanStore spanStore() {
+    if (server.getStore().getType() != ZipkinServerProperties.Store.Type.mem) {
+      throw new IllegalStateException("Attempted to set storage type to "
+          + server.getStore().getType() + " but could not initialize the spanstore for "
+          + "that storage type. Did you include it on the classpath?");
+    }
     return new InMemorySpanStore();
   }
 
@@ -129,6 +136,21 @@ public class ZipkinServerConfiguration {
           .spanTtl(cassandra.getSpanTtl())
           .indexTtl(cassandra.getIndexTtl()).build();
       return new CassandraSpanStore(config);
+    }
+  }
+
+  @Configuration
+  @EnableConfigurationProperties(ZipkinElasticsearchProperties.class)
+  @ConditionalOnProperty(name = "zipkin.store.type", havingValue = "elasticsearch")
+  @ConditionalOnClass(name = "zipkin.elasticsearch.ElasticsearchSpanStore")
+  static class ElasticsearchConfiguration {
+    @Bean SpanStore elasticsearchSpanStore(ZipkinElasticsearchProperties elasticsearch) {
+      ElasticsearchConfig config = new ElasticsearchConfig.Builder()
+          .cluster(elasticsearch.getCluster())
+          .hosts(elasticsearch.getHosts())
+          .index(elasticsearch.getIndex())
+          .build();
+      return new ElasticsearchSpanStore(config);
     }
   }
 

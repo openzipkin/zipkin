@@ -430,6 +430,26 @@ public final class JsonCodec implements Codec {
     }
   };
 
+  // Added since JSON-based storage usually works better with single documents rather than
+  // a large encoded list.
+  /** throws {@linkplain IllegalArgumentException} if the dependency link couldn't be decoded */
+  public DependencyLink readDependencyLink(byte[] bytes) {
+    checkArgument(bytes.length > 0, "Empty input reading DependencyLink");
+    try {
+      return DEPENDENCY_LINK_ADAPTER.fromJson(new Buffer().write(bytes));
+    } catch (IOException | RuntimeException e) {
+      throw exceptionReading("Span", bytes, e);
+    }
+  }
+
+  // Added since JSON-based storage usually works better with single documents rather than
+  // a large encoded list.
+  public byte[] writeDependencyLink(DependencyLink value) {
+    Buffer buffer = new Buffer();
+    write(DEPENDENCY_LINK_ADAPTER, value, buffer);
+    return buffer.readByteArray();
+  }
+
   @Override
   public List<DependencyLink> readDependencyLinks(byte[] bytes) {
     checkArgument(bytes.length > 0, "Empty input reading List<DependencyLink>");
