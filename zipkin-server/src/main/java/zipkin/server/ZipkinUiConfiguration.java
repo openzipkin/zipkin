@@ -13,13 +13,18 @@
  */
 package zipkin.server;
 
+import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
@@ -43,6 +48,30 @@ public class ZipkinUiConfiguration extends WebMvcConfigurerAdapter {
   @Override
   public void addResourceHandlers(ResourceHandlerRegistry registry) {
     registry.addResourceHandler("/**").addResourceLocations("classpath:/zipkin-ui/");
+  }
+
+  /**
+   * This opts out of adding charset to png resources.
+   *
+   * <p>By default, {@linkplain CharacterEncodingFilter} adds a charset qualifier to all resources,
+   * which helps, as javascript assets include extended character sets. However, the filter also
+   * adds charset to well-known binary ones like png. This creates confusing content types, such as
+   * "image/png;charset=UTF-8".
+   *
+   * See https://github.com/spring-projects/spring-boot/issues/5459
+   */
+  @Bean
+  @Order(Ordered.HIGHEST_PRECEDENCE)
+  public CharacterEncodingFilter characterEncodingFilter() {
+    CharacterEncodingFilter filter = new CharacterEncodingFilter() {
+      @Override
+      protected boolean shouldNotFilter(HttpServletRequest request) {
+        return request.getServletPath().endsWith(".png");
+      }
+    };
+    filter.setEncoding("UTF-8");
+    filter.setForceEncoding(true);
+    return filter;
   }
 
   @RestController
