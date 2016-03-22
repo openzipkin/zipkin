@@ -13,40 +13,34 @@
  */
 package zipkin.elasticsearch;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.elasticsearch.action.ListenableActionFuture;
-import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.Client;
 import zipkin.Codec;
 import zipkin.Span;
-import zipkin.SpanConsumer;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.JsonCodec;
+import zipkin.spanstore.guava.GuavaSpanConsumer;
 
 // Extracted for readability
-final class ElasticsearchSpanConsumer implements SpanConsumer {
+final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
+  /**
+   * Internal flag that allows you read-your-writes consistency during tests. With Elasticsearch,
+   * it is not sufficient to block on the {@link #accept(List)} future since the index also needs
+   * to be flushed.
+   */
+  @VisibleForTesting
+  static boolean FLUSH_ON_WRITES;
 
   static final JsonCodec JSON_CODEC = new JsonCodec();
-  /**
-   * Internal flag that allows you read-your-writes consistency during tests.
-   *
-   * <p>This is internal as collection endpoints are usually in different threads or not in the same
-   * process as query ones. Special-casing this allows tests to pass without changing {@link
-   * SpanConsumer#accept}.
-   *
-   * <p>Why not just change {@link SpanConsumer#accept} now? {@link SpanConsumer#accept} may indeed
-   * need to change, but when that occurs, we'd want to choose something that is widely supportable,
-   * and serving a specific use case. That api might not be a future, for example. Future is
-   * difficult, for example, properly supporting and testing cancel. Further, there are other async
-   * models such as callbacks that could be more supportable. Regardless, this work is best delayed
-   * until there's a worthwhile use-case vs up-fronting only due to tests, and prematurely choosing
-   * Future results.
-   */
-  static boolean BLOCK_ON_FUTURES;
 
   private final Client client;
   private final IndexNameFormatter indexNameFormatter;
@@ -57,16 +51,34 @@ final class ElasticsearchSpanConsumer implements SpanConsumer {
   }
 
   @Override
-  public void accept(List<Span> spans) {
+  public ListenableFuture<Void> accept(List<Span> spans) {
     BulkRequestBuilder request = client.prepareBulk();
     for (Span span : spans) {
       request.add(createSpanIndexRequest(ApplyTimestampAndDuration.apply(span)));
     }
-    ListenableActionFuture<BulkResponse> future = request.execute();
-    if (BLOCK_ON_FUTURES) {
-      future.actionGet();
-      client.admin().indices().flush(new FlushRequest()).actionGet();
+    ListenableFuture<Void> future = toVoidFuture(request.execute());
+    if (FLUSH_ON_WRITES) {
+      future = Futures.transformAsync(
+          future,
+          new AsyncFunction<Void, Void>() {
+            @Override public ListenableFuture<Void> apply(Void input) throws Exception {
+              return toVoidFuture(client.admin().indices()
+                  .prepareFlush(indexNameFormatter.catchAll())
+                  .execute());
+            }
+          });
     }
+    return future;
+  }
+
+  private static <T> ListenableFuture<Void> toVoidFuture(ListenableActionFuture<T> elasticFuture) {
+    return Futures.transform(
+        ElasticListenableFuture.of(elasticFuture),
+        new Function<T, Void>() {
+          @Override public Void apply(T input) {
+            return null;
+          }
+        });
   }
 
   private IndexRequestBuilder createSpanIndexRequest(Span span) {

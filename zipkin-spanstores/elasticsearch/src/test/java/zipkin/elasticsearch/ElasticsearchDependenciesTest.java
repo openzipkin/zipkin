@@ -20,18 +20,19 @@ import zipkin.DependencyLink;
 import zipkin.InMemorySpanStore;
 import zipkin.Span;
 import zipkin.SpanStore;
+import zipkin.spanstore.guava.BlockingGuavaSpanStore;
 
 import static zipkin.internal.Util.midnightUTC;
 
-public class ElasticsearchDependenciesTest extends DependenciesTest<ElasticsearchSpanStore> {
+public class ElasticsearchDependenciesTest extends DependenciesTest<SpanStore> {
 
   public ElasticsearchDependenciesTest() {
-    this.store = ElasticsearchTestGraph.INSTANCE.spanStore();
+    this.store = new BlockingGuavaSpanStore(ElasticsearchTestGraph.INSTANCE.spanStore());
   }
 
   @Override
   public void clear() {
-    store.clear();
+    ElasticsearchTestGraph.INSTANCE.spanStore().clear();
   }
 
   /**

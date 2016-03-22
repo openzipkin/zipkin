@@ -49,6 +49,7 @@ import zipkin.jdbc.JDBCSpanStore;
 import zipkin.kafka.KafkaConfig;
 import zipkin.kafka.KafkaTransport;
 import zipkin.server.brave.TraceWritesSpanStore;
+import zipkin.spanstore.guava.BlockingGuavaSpanStore;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinServerProperties.class)
@@ -150,7 +151,7 @@ public class ZipkinServerConfiguration {
           .hosts(elasticsearch.getHosts())
           .index(elasticsearch.getIndex())
           .build();
-      return new ElasticsearchSpanStore(config);
+      return new BlockingGuavaSpanStore(new ElasticsearchSpanStore(config));
     }
   }
 

@@ -14,21 +14,23 @@
     the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <groupId>io.zipkin.java</groupId>
     <artifactId>zipkin-spanstores</artifactId>
+    <groupId>io.zipkin.java</groupId>
     <version>0.9.4-SNAPSHOT</version>
   </parent>
+  <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>spanstore-cassandra</artifactId>
-  <name>SpanStore: Cassandra</name>
+  <artifactId>spanstore-guava</artifactId>
+  <name>SpanStore: Guava support library</name>
 
   <properties>
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.target>1.7</maven.compiler.target>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <zipkin-cassandra-core.version>1.38.0</zipkin-cassandra-core.version>
   </properties>
 
   <dependencies>
@@ -37,25 +39,23 @@
       <artifactId>zipkin</artifactId>
     </dependency>
 
-    <!-- for org.twitter.zipkin.storage.cassandra.Repository -->
     <dependency>
-      <groupId>io.zipkin</groupId>
-      <artifactId>zipkin-cassandra-core</artifactId>
-      <version>${zipkin-cassandra-core.version}</version>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
     </dependency>
 
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin</artifactId>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- To test nuance of load balancing behavior -->
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-core</artifactId>
+      <version>1.3</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

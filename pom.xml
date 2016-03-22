@@ -51,7 +51,9 @@
     <mariadb-java-client.version>1.3.6</mariadb-java-client.version>
     <elasticsearch.version>2.2.1</elasticsearch.version>
     <slf4j.version>1.7.19</slf4j.version>
+    <guava.version>19.0</guava.version>
     <junit.version>4.12</junit.version>
+    <mockito.version>1.10.19</mockito.version>
     <assertj.version>3.3.0</assertj.version>
 
     <animal-sniffer-maven-plugin.version>1.15</animal-sniffer-maven-plugin.version>
@@ -151,6 +153,12 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>spanstore-elasticsearch</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>spanstore-guava</artifactId>
         <version>${project.version}</version>
       </dependency>
 

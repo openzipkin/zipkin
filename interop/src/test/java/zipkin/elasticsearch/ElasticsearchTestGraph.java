@@ -15,6 +15,7 @@ package zipkin.elasticsearch;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.junit.AssumptionViolatedException;
+import zipkin.spanstore.guava.BlockingGuavaSpanStore;
 
 enum ElasticsearchTestGraph {
   INSTANCE;
@@ -23,7 +24,8 @@ enum ElasticsearchTestGraph {
 
   static {
     // Avoid race-conditions in travis by forcing read-your-writes consistency.
-    ElasticsearchSpanConsumer.BLOCK_ON_FUTURES = true;
+    BlockingGuavaSpanStore.BLOCK_ON_ACCEPT = true;
+    ElasticsearchSpanConsumer.FLUSH_ON_WRITES = true;
   }
 
   private AssumptionViolatedException ex;

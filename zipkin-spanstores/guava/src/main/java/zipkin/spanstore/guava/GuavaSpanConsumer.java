@@ -11,20 +11,21 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.elasticsearch;
+package zipkin.spanstore.guava;
 
-import zipkin.SpanStore;
-import zipkin.SpanStoreTest;
-import zipkin.spanstore.guava.BlockingGuavaSpanStore;
+import com.google.common.util.concurrent.ListenableFuture;
+import java.util.List;
+import zipkin.Span;
 
-public class ElasticsearchSpanStoreTest extends SpanStoreTest<SpanStore> {
+/**
+ * An interface that is equivalent to {@link zipkin.SpanConsumer} but exposes methods as
+ * {@link ListenableFuture} to allow asynchronous composition.
+ */
+// @FunctionalInterface
+public interface GuavaSpanConsumer {
 
-  public ElasticsearchSpanStoreTest() {
-    this.store = new BlockingGuavaSpanStore(ElasticsearchTestGraph.INSTANCE.spanStore());
-  }
-
-  @Override
-  public void clear() {
-    ElasticsearchTestGraph.INSTANCE.spanStore().clear();
-  }
+  /**
+   * Version of {@link zipkin.SpanConsumer#accept} that returns a {@link ListenableFuture}.
+   */
+  ListenableFuture<Void> accept(List<Span> spans);
 }

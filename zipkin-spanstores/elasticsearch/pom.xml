@@ -38,6 +38,10 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>spanstore-guava</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>org.elasticsearch</groupId>
