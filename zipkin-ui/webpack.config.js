@@ -28,7 +28,7 @@ module.exports = {
     },
     output: {
         path: __dirname + '/build/resources/main/zipkin-ui/',
-        filename: 'app.min.js',
+        filename: 'app-[hash].min.js',
         publicPath: '/'
     },
     devtool: 'source-map',
@@ -37,7 +37,7 @@ module.exports = {
             $: "jquery",
             jQuery: "jquery"
         }),
-        new ExtractTextPlugin("app.min.css", {allChunks: true}),
+        new ExtractTextPlugin("app-[hash].min.css", {allChunks: true}),
         new HtmlWebpackPlugin()
     ],
     devServer: {
