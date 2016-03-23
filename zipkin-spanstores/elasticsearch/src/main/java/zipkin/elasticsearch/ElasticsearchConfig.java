@@ -16,6 +16,8 @@ package zipkin.elasticsearch;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 
 import static zipkin.internal.Util.checkNotNull;
 
@@ -24,7 +26,7 @@ public class ElasticsearchConfig {
   public static final class Builder {
 
     private String cluster = "elasticsearch";
-    private String hosts = "localhost:9300";
+    private List<String> hosts = Collections.singletonList("localhost:9300");
     private String index = "zipkin";
 
     /**
@@ -39,7 +41,7 @@ public class ElasticsearchConfig {
      * A comma separated list of elasticsearch hostnodes to connect to, in host:port format. The
      * port should be the transport port, not the http port. Defaults to "localhost:9300".
      */
-    public Builder hosts(String hosts) {
+    public Builder hosts(List<String> hosts) {
       this.hosts = hosts;
       return this;
     }
@@ -58,7 +60,7 @@ public class ElasticsearchConfig {
   }
 
   final String clusterName;
-  final String hosts;
+  final List<String> hosts;
   final String index;
   final String indexTemplate;
 

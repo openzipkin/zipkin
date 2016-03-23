@@ -454,7 +454,7 @@ public class ElasticsearchSpanStore implements GuavaSpanStore {
         .actionGet();
   }
 
-  private static Client createClient(String hosts, String clusterName) {
+  private static Client createClient(List<String> hosts, String clusterName) {
     Settings settings = Settings.builder()
         .put("cluster.name", clusterName)
         .put("client.transport.sniff", true)
@@ -463,7 +463,7 @@ public class ElasticsearchSpanStore implements GuavaSpanStore {
     TransportClient client = TransportClient.builder()
         .settings(settings)
         .build();
-    for (String host : hosts.split(",")) {
+    for (String host : hosts) {
       HostAndPort hostAndPort = HostAndPort.fromString(host);
       try {
         client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(
