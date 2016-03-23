@@ -14,33 +14,33 @@
 package zipkin.elasticsearch;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Function;
+import com.google.common.base.Functions;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.Client;
 import zipkin.Codec;
 import zipkin.Span;
+import zipkin.async.AsyncSpanConsumer;
+import zipkin.async.Callback;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.internal.JsonCodec;
-import zipkin.spanstore.guava.GuavaSpanConsumer;
+
+import static zipkin.elasticsearch.ElasticFutures.onComplete;
+import static zipkin.elasticsearch.ElasticFutures.toGuava;
 
 // Extracted for readability
-final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
+final class ElasticsearchSpanConsumer implements AsyncSpanConsumer {
   /**
-   * Internal flag that allows you read-your-writes consistency during tests. With Elasticsearch,
-   * it is not sufficient to block on the {@link #accept(List)} future since the index also needs
-   * to be flushed.
+   * Internal flag that allows you read-your-writes consistency during tests. With Elasticsearch, it
+   * is not sufficient to block on the {@link #createSpanIndexRequest} future since the index also
+   * needs to be flushed.
    */
   @VisibleForTesting
   static boolean FLUSH_ON_WRITES;
-
-  static final JsonCodec JSON_CODEC = new JsonCodec();
 
   private final Client client;
   private final IndexNameFormatter indexNameFormatter;
@@ -51,34 +51,23 @@ final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
   }
 
   @Override
-  public ListenableFuture<Void> accept(List<Span> spans) {
+  public void accept(List<Span> spans, final Callback<Void> callback) {
     BulkRequestBuilder request = client.prepareBulk();
     for (Span span : spans) {
       request.add(createSpanIndexRequest(ApplyTimestampAndDuration.apply(span)));
     }
-    ListenableFuture<Void> future = toVoidFuture(request.execute());
-    if (FLUSH_ON_WRITES) {
-      future = Futures.transformAsync(
-          future,
-          new AsyncFunction<Void, Void>() {
-            @Override public ListenableFuture<Void> apply(Void input) throws Exception {
-              return toVoidFuture(client.admin().indices()
-                  .prepareFlush(indexNameFormatter.catchAll())
-                  .execute());
-            }
-          });
-    }
-    return future;
-  }
 
-  private static <T> ListenableFuture<Void> toVoidFuture(ListenableActionFuture<T> elasticFuture) {
-    return Futures.transform(
-        ElasticListenableFuture.of(elasticFuture),
-        new Function<T, Void>() {
-          @Override public Void apply(T input) {
-            return null;
-          }
-        });
+    ListenableFuture future = toGuava(request.execute());
+    if (FLUSH_ON_WRITES) {
+      future = Futures.transform(future, new AsyncFunction() {
+        @Override public ListenableFuture<?> apply(Object input) {
+          return toGuava(client.admin().indices()
+              .prepareFlush(indexNameFormatter.catchAll())
+              .execute());
+        }
+      });
+    }
+    onComplete(future, callback, Functions.<Void>constant(null));
   }
 
   private IndexRequestBuilder createSpanIndexRequest(Span span) {

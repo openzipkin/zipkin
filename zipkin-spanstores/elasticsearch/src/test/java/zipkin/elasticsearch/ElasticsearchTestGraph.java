@@ -15,7 +15,7 @@ package zipkin.elasticsearch;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.junit.AssumptionViolatedException;
-import zipkin.spanstore.guava.BlockingGuavaSpanStore;
+import zipkin.async.BlockingSpanStoreAdapter;
 
 enum ElasticsearchTestGraph {
   INSTANCE;
@@ -23,7 +23,7 @@ enum ElasticsearchTestGraph {
   static final ElasticsearchConfig CONFIG = new ElasticsearchConfig.Builder().build();
 
   static {
-    BlockingGuavaSpanStore.BLOCK_ON_ACCEPT = true;
+    BlockingSpanStoreAdapter.BLOCK_ON_ACCEPT = true;
     ElasticsearchSpanConsumer.FLUSH_ON_WRITES = true;
   }
 

@@ -22,9 +22,9 @@ import scala.collection.immutable.List;
 import zipkin.DependencyLink;
 import zipkin.InMemorySpanStore;
 import zipkin.SpanStore;
+import zipkin.async.BlockingSpanStoreAdapter;
 import zipkin.interop.ScalaDependencyStoreAdapter;
 import zipkin.interop.ScalaSpanStoreAdapter;
-import zipkin.spanstore.guava.BlockingGuavaSpanStore;
 
 import static zipkin.internal.Util.midnightUTC;
 
@@ -37,7 +37,7 @@ public class ElasticsearchScalaDependencyStoreTest extends DependencyStoreSpec {
   }
 
   public DependencyStore store() {
-    return new ScalaDependencyStoreAdapter(new BlockingGuavaSpanStore(spanStore));
+    return new ScalaDependencyStoreAdapter(new BlockingSpanStoreAdapter(spanStore));
   }
 
   @Override

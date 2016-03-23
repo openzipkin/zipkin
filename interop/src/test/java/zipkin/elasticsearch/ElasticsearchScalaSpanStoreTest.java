@@ -16,8 +16,8 @@ package zipkin.elasticsearch;
 import com.twitter.zipkin.storage.SpanStore;
 import com.twitter.zipkin.storage.SpanStoreSpec;
 import org.junit.BeforeClass;
+import zipkin.async.BlockingSpanStoreAdapter;
 import zipkin.interop.ScalaSpanStoreAdapter;
-import zipkin.spanstore.guava.BlockingGuavaSpanStore;
 
 public class ElasticsearchScalaSpanStoreTest extends SpanStoreSpec {
   private static ElasticsearchSpanStore spanStore;
@@ -28,7 +28,7 @@ public class ElasticsearchScalaSpanStoreTest extends SpanStoreSpec {
   }
 
   public SpanStore store() {
-    return new ScalaSpanStoreAdapter(new BlockingGuavaSpanStore(spanStore));
+    return new ScalaSpanStoreAdapter(new BlockingSpanStoreAdapter(spanStore));
   }
 
   public void clear() {

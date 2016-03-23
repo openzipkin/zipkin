@@ -41,6 +41,7 @@ import zipkin.Codec;
 import zipkin.InMemorySpanStore;
 import zipkin.Sampler;
 import zipkin.SpanStore;
+import zipkin.async.BlockingSpanStoreAdapter;
 import zipkin.cassandra.CassandraConfig;
 import zipkin.cassandra.CassandraSpanStore;
 import zipkin.elasticsearch.ElasticsearchConfig;
@@ -49,7 +50,6 @@ import zipkin.jdbc.JDBCSpanStore;
 import zipkin.kafka.KafkaConfig;
 import zipkin.kafka.KafkaTransport;
 import zipkin.server.brave.TraceWritesSpanStore;
-import zipkin.spanstore.guava.BlockingGuavaSpanStore;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinServerProperties.class)
@@ -151,7 +151,7 @@ public class ZipkinServerConfiguration {
           .hosts(elasticsearch.getHosts())
           .index(elasticsearch.getIndex())
           .build();
-      return new BlockingGuavaSpanStore(new ElasticsearchSpanStore(config));
+      return new BlockingSpanStoreAdapter(new ElasticsearchSpanStore(config));
     }
   }
 
