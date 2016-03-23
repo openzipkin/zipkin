@@ -11,11 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.spanstore.guava;
+package zipkin.async;
 
-import com.google.common.collect.ImmutableList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -23,6 +22,7 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.mockito.stubbing.Answer;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.DependencyLink;
@@ -30,12 +30,13 @@ import zipkin.Endpoint;
 import zipkin.QueryRequest;
 import zipkin.Span;
 
-import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 
-public class BlockingGuavaSpanStoreTest {
+public class BlockingSpanStoreAdapterTest {
 
   long spanId = 456;
   long today = System.currentTimeMillis();
@@ -89,13 +90,13 @@ public class BlockingGuavaSpanStoreTest {
       .annotations(asList(ann5, ann8))
       .addBinaryAnnotation(BinaryAnnotation.create("BAH2", "BEH2", ep)).build();
 
-  List<Span> trace1 = ImmutableList.of(span1, span2, span3);
+  List<Span> trace1 = asList(span1, span2, span3);
 
-  List<Span> trace2 = ImmutableList.of(span4, span5);
+  List<Span> trace2 = asList(span4, span5);
 
-  List<List<Span>> traces = ImmutableList.of(trace1, trace2);
+  List<List<Span>> traces = asList(trace1, trace2);
 
-  List<DependencyLink> deps = ImmutableList.of(
+  List<DependencyLink> deps = asList(
       new DependencyLink.Builder().parent("zipkin-web").child("zipkin-query").callCount(1).build(),
       new DependencyLink.Builder().parent("zipkin-query").child("zipkin-foo").callCount(10).build()
   );
@@ -107,94 +108,124 @@ public class BlockingGuavaSpanStoreTest {
   public ExpectedException thrown = ExpectedException.none();
 
   @Mock
-  private GuavaSpanStore delegate;
+  private AsyncSpanStore delegate;
 
-  private BlockingGuavaSpanStore spanStore;
+  private BlockingSpanStoreAdapter spanStore;
 
   @Before
   public void setUp() {
-    spanStore = new BlockingGuavaSpanStore(delegate);
+    spanStore = new BlockingSpanStoreAdapter(delegate);
   }
 
   @Test
   public void getTraces_success() {
     QueryRequest request = new QueryRequest.Builder("service").endTs(1000L).build();
-    when(delegate.getTraces(request)).thenReturn(immediateFuture(traces));
+    doAnswer(answer(c -> c.onSuccess(traces)))
+        .when(delegate).getTraces(eq(request), any(Callback.class));
+
     assertThat(spanStore.getTraces(request)).containsExactlyElementsOf(traces);
   }
+
 
   @Test
   public void getTraces_exception() {
     QueryRequest request = new QueryRequest.Builder("service").endTs(1000L).build();
-    when(delegate.getTraces(request)).thenThrow(new IllegalStateException("failed"));
-    thrown.expect(IllegalStateException.class);;
+    doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
+        .when(delegate).getTraces(eq(request), any(Callback.class));
+
+    thrown.expect(IllegalStateException.class);
     spanStore.getTraces(request);
   }
 
   @Test
   public void getTrace_success() {
-    when(delegate.getTrace(1L)).thenReturn(immediateFuture(trace1));
+    doAnswer(answer(c -> c.onSuccess(trace1)))
+        .when(delegate).getTrace(eq(1L), any(Callback.class));
+
     assertThat(spanStore.getTrace(1L)).containsExactlyElementsOf(trace1);
   }
 
   @Test
   public void getTrace_exception() {
-    when(delegate.getTrace(1L)).thenThrow(new IllegalStateException("failed"));
-    thrown.expect(IllegalStateException.class);;
+    doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
+        .when(delegate).getTrace(eq(1L), any(Callback.class));
+
+    thrown.expect(IllegalStateException.class);
     spanStore.getTrace(1L);
   }
 
   @Test
   public void getRawTrace_success() {
-    when(delegate.getRawTrace(1L)).thenReturn(immediateFuture(trace1));
+    doAnswer(answer(c -> c.onSuccess(trace1)))
+        .when(delegate).getRawTrace(eq(1L), any(Callback.class));
+
     assertThat(spanStore.getRawTrace(1L)).containsExactlyElementsOf(trace1);
   }
 
   @Test
   public void getRawTrace_exception() {
-    when(delegate.getRawTrace(1L)).thenThrow(new IllegalStateException("failed"));
+    doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
+        .when(delegate).getRawTrace(eq(1L), any(Callback.class));
+
     thrown.expect(IllegalStateException.class);;
     spanStore.getRawTrace(1L);
   }
 
   @Test
-  public void getServiceNamees_success() {
-    when(delegate.getServiceNames())
-        .thenReturn(immediateFuture(Arrays.asList("service1", "service2")));
+  public void getServiceNames_success() {
+    doAnswer(answer(c -> c.onSuccess(asList("service1", "service2"))))
+        .when(delegate).getServiceNames(any(Callback.class));
+
     assertThat(spanStore.getServiceNames()).containsExactly("service1", "service2");
   }
 
   @Test
   public void getServiceNames_exception() {
-    when(delegate.getServiceNames()).thenThrow(new IllegalStateException("failed"));
-    thrown.expect(IllegalStateException.class);;
+    doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
+        .when(delegate).getServiceNames(any(Callback.class));
+
+    thrown.expect(IllegalStateException.class);
     spanStore.getServiceNames();
   }
 
   @Test
   public void getSpanNames_success() {
-    when(delegate.getSpanNames("service")).thenReturn(immediateFuture(
-        Arrays.asList("span1", "span2")));
+    doAnswer(answer(c -> c.onSuccess(asList("span1", "span2"))))
+        .when(delegate).getSpanNames(eq("service"), any(Callback.class));
+
     assertThat(spanStore.getSpanNames("service")).containsExactly("span1", "span2");
   }
 
   @Test
   public void getSpanNames_exception() {
-    when(delegate.getSpanNames("service")).thenThrow(new IllegalStateException("failed"));
-    thrown.expect(IllegalStateException.class);;
+    doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
+        .when(delegate).getSpanNames(eq("service"), any(Callback.class));
+
+    thrown.expect(IllegalStateException.class);
     spanStore.getSpanNames("service");
   }
 
   @Test
   public void getDependencies_success() {
-    when(delegate.getDependencies(1L, 0L)).thenReturn(immediateFuture(deps));
+    doAnswer(answer(c -> c.onSuccess(deps)))
+        .when(delegate).getDependencies(eq(1L), eq(0L), any(Callback.class));
+
     assertThat(spanStore.getDependencies(1L, 0L)).containsExactlyElementsOf(deps);
   }
 
   @Test
   public void getDependencies_exception() {
-    when(delegate.getDependencies(1L, 0L)).thenThrow(new IllegalStateException("failed"));
+    doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
+        .when(delegate).getDependencies(eq(1L), eq(0L), any(Callback.class));
+
     thrown.expect(IllegalStateException.class);;
     spanStore.getDependencies(1L, 0L);
+  }
+
+  static <T> Answer answer(Consumer<Callback<T>> onCallback) {
+    return invocation -> {
+      onCallback.accept((Callback) invocation.getArguments()[invocation.getArguments().length - 1]);
+      return null;
+    };
   }
 }

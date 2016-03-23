@@ -15,12 +15,12 @@ package zipkin.elasticsearch;
 
 import zipkin.SpanStore;
 import zipkin.SpanStoreTest;
-import zipkin.spanstore.guava.BlockingGuavaSpanStore;
+import zipkin.async.BlockingSpanStoreAdapter;
 
 public class ElasticsearchSpanStoreTest extends SpanStoreTest<SpanStore> {
 
   public ElasticsearchSpanStoreTest() {
-    this.store = new BlockingGuavaSpanStore(ElasticsearchTestGraph.INSTANCE.spanStore());
+    this.store = new BlockingSpanStoreAdapter(ElasticsearchTestGraph.INSTANCE.spanStore());
   }
 
   @Override
