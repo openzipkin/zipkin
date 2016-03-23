@@ -30,9 +30,10 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
   }
 
   override val server = new EmbeddedHttpServer(
-    new ZipkinQueryServer(spanStore, dependencyStore),
-    // We are using fake times, so make sure default lookback doesn't interfere
-    extraArgs = Seq( "-zipkin.queryService.lookback", lookbackOverride.toString)
+    new ZipkinQueryServer(spanStore, dependencyStore), extraArgs = Seq(
+      // We are using fake times, so make sure default lookback doesn't interfere
+      "-zipkin.queryService.lookback", lookbackOverride.toString
+    )
   )
 
   val ep1 = Endpoint(123, 123, "service1")
@@ -200,6 +201,30 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
         """.stripMargin)
 
     assert(response.headerMap.get("Cache-Control") == Some("max-age=300, must-revalidate"))
+  }
+
+  "client-routed resources are cached for 1 minute" in {
+    // TODO: assets from zipkin-UI don't resolve into the classpath even if you set doc.root
+    // Since we are testing cache-control, we'll whistle by the 404 here
+    val response = server.httpGet(path = "/dependency", andExpect = NotFound)
+
+    assert(response.headerMap.get("Cache-Control") == Some("max-age=60, must-revalidate"))
+  }
+
+  "static assets are cached for a year" in {
+    // TODO: assets from zipkin-UI don't resolve into the classpath even if you set doc.root
+    // Since we are testing cache-control, we'll whistle by the 404 here
+    val response = server.httpGet(path = "/614fad616d014daf5367e068505cad35.png", andExpect = NotFound)
+
+    assert(response.headerMap.get("Cache-Control") == Some("max-age=31536000, must-revalidate"))
+  }
+
+  "normal api responses are not cached" in {
+    app.injector.instance[SpanStore].apply(allSpans)
+
+    val response = server.httpGet(path = "/api/v1/traces?serviceName=service1")
+
+    assert(response.headerMap.get("Cache-Control") == None)
   }
 
   "get span names" in {
