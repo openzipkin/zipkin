@@ -13,6 +13,8 @@
  */
 package zipkin.server;
 
+import java.util.Collections;
+import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("elasticsearch")
@@ -24,11 +26,10 @@ public class ZipkinElasticsearchProperties {
   private String cluster = "elasticsearch";
 
   /**
-   * A comma separated list of elasticsearch hostnodes to connect to, in host:port
-   * format. The port should be the transport port, not the http port. Defaults to
-   * "localhost:9300".
+   * A list of elasticsearch hostnodes to connect to, in host:port format. The port should be the
+   * transport port, not the http port. Defaults to "localhost:9300".
    */
-  private String hosts = "localhost:9300";
+  private List<String> hosts = Collections.singletonList("localhost:9300");
 
   /**
    * The index prefix to use when generating daily index names. Defaults to zipkin.
@@ -44,11 +45,11 @@ public class ZipkinElasticsearchProperties {
     return this;
   }
 
-  public String getHosts() {
+  public List<String> getHosts() {
     return hosts;
   }
 
-  public ZipkinElasticsearchProperties setHosts(String hosts) {
+  public ZipkinElasticsearchProperties setHosts(List<String> hosts) {
     this.hosts = hosts;
     return this;
   }
