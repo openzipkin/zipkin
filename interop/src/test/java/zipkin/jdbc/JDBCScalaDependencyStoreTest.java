@@ -19,8 +19,11 @@ import com.twitter.zipkin.storage.DependencyStoreSpec;
 import java.sql.SQLException;
 import org.junit.BeforeClass;
 import scala.collection.immutable.List;
+import zipkin.async.BlockingToAsyncSpanStoreAdapter;
 import zipkin.interop.ScalaDependencyStoreAdapter;
-import zipkin.interop.ScalaSpanStoreAdapter;
+import zipkin.interop.AsyncToScalaSpanStoreAdapter;
+
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 public class JDBCScalaDependencyStoreTest extends DependencyStoreSpec {
   private static JDBCSpanStore spanStore;
@@ -31,12 +34,12 @@ public class JDBCScalaDependencyStoreTest extends DependencyStoreSpec {
   }
 
   public DependencyStore store() {
-    return new ScalaDependencyStoreAdapter(spanStore);
+    return new ScalaDependencyStoreAdapter(new BlockingToAsyncSpanStoreAdapter(spanStore, directExecutor()));
   }
 
   @Override
   public void processDependencies(List<Span> spans) {
-    new ScalaSpanStoreAdapter(spanStore).apply(spans);
+    new AsyncToScalaSpanStoreAdapter(new BlockingToAsyncSpanStoreAdapter(spanStore, directExecutor())).apply(spans);
   }
 
   public void clear() {

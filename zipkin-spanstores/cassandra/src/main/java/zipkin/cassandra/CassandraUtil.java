@@ -14,6 +14,9 @@
 
 package zipkin.cassandra;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
@@ -90,5 +93,46 @@ final class CassandraUtil {
       }
     }
     return result;
+  }
+
+  static <K, V> Function<Map<K, V>, Set<K>> keyset() {
+    return (Function) KeySet.INSTANCE;
+  }
+
+  enum KeySet implements Function<Map<Object, ?>, Set<Object>> {
+    INSTANCE;
+
+    @Override public Set<Object> apply(Map<Object, ?> input) {
+      return input.keySet();
+    }
+  }
+
+  static <K, V> Function<List<Map<K, V>>, Set<K>> intersectKeySets() {
+    return (Function) IntersectKeySets.INSTANCE;
+  }
+
+  enum IntersectKeySets implements Function<List<Map<Object, ?>>, Set<Object>> {
+    INSTANCE;
+
+    @Override public Set<Object> apply(List<Map<Object, ?>> input) {
+      Set<Object> traceIds = Sets.newLinkedHashSet(input.get(0).keySet());
+      for (int i = 1; i < input.size(); i++) {
+        traceIds.retainAll(input.get(i).keySet());
+      }
+      return traceIds;
+    }
+  }
+
+  static <E extends Comparable> Function<Iterable<E>, List<E>> toSortedList() {
+    return (Function) ToSortedList.INSTANCE;
+  }
+
+  enum ToSortedList implements Function<Iterable<Comparable>, List<Comparable>> {
+    INSTANCE;
+
+    @Override
+    public List<Comparable> apply(Iterable<Comparable> input) {
+      return Ordering.natural().sortedCopy(input);
+    }
   }
 }

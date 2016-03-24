@@ -18,12 +18,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import zipkin.async.BlockingSpanStoreAdapter.CallbackCaptor;
+import zipkin.async.AsyncToBlockingSpanStoreAdapter.CallbackCaptor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.core.Is.isA;
 
-/** Tests for the internal class used by {@link BlockingSpanStoreAdapter} */
+/** Tests for the internal class used by {@link AsyncToBlockingSpanStoreAdapter} */
 public class CallbackCaptorTest {
 
   @Rule

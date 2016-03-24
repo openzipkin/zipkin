@@ -27,11 +27,16 @@ import zipkin.internal.Nullable;
  * A {@link GuavaSpanStore} derived from an {@link AsyncSpanStore}. Used by callers who prefer to
  * compose futures.
  */
-public final class AsyncGuavaSpanStoreAdapter implements GuavaSpanStore {
+public final class GuavaSpanStoreAdapter implements GuavaSpanStore {
+
+  public static GuavaSpanStore create(AsyncSpanStore delegate) {
+    return delegate instanceof GuavaSpanStore
+        ? (GuavaSpanStore) delegate : new GuavaSpanStoreAdapter(delegate);
+  }
 
   private final AsyncSpanStore delegate;
 
-  public AsyncGuavaSpanStoreAdapter(AsyncSpanStore delegate) {
+  GuavaSpanStoreAdapter(AsyncSpanStore delegate) {
     this.delegate = delegate;
   }
 

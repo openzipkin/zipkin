@@ -14,17 +14,12 @@
 
 package zipkin.elasticsearch;
 
-import com.google.common.base.Function;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ListenableActionFuture;
-import zipkin.async.Callback;
 
 final class ElasticFutures {
-
   static <T> ListenableFuture<T> toGuava(ListenableActionFuture<T> elasticFuture) {
     final SettableFuture<T> future = SettableFuture.create();
     elasticFuture.addListener(new ActionListener<T>() {
@@ -37,47 +32,5 @@ final class ElasticFutures {
       }
     });
     return future;
-  }
-
-  static <A, C> void onComplete(
-      ListenableActionFuture<A> future,
-      final Callback<C> callback,
-      final Function<A, C> successTransformationFn
-  ) {
-    future.addListener(new ActionListener<A>() {
-
-      @Override public void onResponse(A a) {
-        try {
-          callback.onSuccess(successTransformationFn.apply(a));
-        } catch (Error | RuntimeException e) {
-          callback.onError(e);
-        }
-      }
-
-      @Override public void onFailure(Throwable e) {
-        callback.onError(e);
-      }
-    });
-  }
-
-  static <A, C> void onComplete(
-      ListenableFuture<A> future,
-      final Callback<C> callback,
-      final Function<A, C> successTransformationFn
-  ) {
-    Futures.addCallback(future, new FutureCallback<A>() {
-
-      @Override public void onSuccess(A result) {
-        try {
-          callback.onSuccess(successTransformationFn.apply(result));
-        } catch (Error | RuntimeException e) {
-          callback.onError(e);
-        }
-      }
-
-      @Override public void onFailure(Throwable t) {
-        callback.onError(t);
-      }
-    });
   }
 }

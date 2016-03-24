@@ -26,7 +26,7 @@ import zipkin.internal.Nullable;
  * A {@link SpanStore} implementation that can take a {@link AsyncSpanStore} and call its methods
  * with blocking, for use in callers that need a normal {@link SpanStore}.
  */
-public final class BlockingSpanStoreAdapter implements SpanStore {
+public final class AsyncToBlockingSpanStoreAdapter implements SpanStore {
   /**
    * Internal flag that allows you read-your-writes consistency during tests.
    *
@@ -38,7 +38,7 @@ public final class BlockingSpanStoreAdapter implements SpanStore {
 
   private final AsyncSpanStore delegate;
 
-  public BlockingSpanStoreAdapter(AsyncSpanStore delegate) {
+  public AsyncToBlockingSpanStoreAdapter(AsyncSpanStore delegate) {
     this.delegate = delegate;
   }
 
@@ -85,6 +85,10 @@ public final class BlockingSpanStoreAdapter implements SpanStore {
     CallbackCaptor<List<DependencyLink>> captor = new CallbackCaptor<>();
     delegate.getDependencies(endTs, lookback, captor);
     return captor.get();
+  }
+
+  @Override public String toString() {
+    return delegate.toString();
   }
 
   static final class CallbackCaptor<V> implements Callback<V> {

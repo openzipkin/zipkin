@@ -11,25 +11,20 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.junit;
+package zipkin.interop;
 
-import org.junit.Rule;
-import zipkin.SpanStore;
-import zipkin.SpanStoreTest;
+import java.io.Closeable;
+import java.io.IOException;
+import zipkin.async.AsyncSpanStore;
 
-/** Tests the http interface of {@link ZipkinRule}. */
-public class ZipkinRuleSpanStoreTest extends SpanStoreTest {
+final class CloseAdapter {
 
-  @Rule
-  public ZipkinRule server = new ZipkinRule();
-  HttpSpanStore store = new HttpSpanStore(server.httpUrl());
-
-  @Override protected SpanStore store() {
-    return store;
-  }
-
-  @Override
-  public void clear() {
-    // no need.. the test rule does this
+  public static void closeQuietly(AsyncSpanStore spanStore) {
+    if (spanStore instanceof Closeable) {
+      try {
+        ((Closeable) spanStore).close();
+      } catch (IOException ignored) {
+      }
+    }
   }
 }

@@ -44,6 +44,11 @@
     </dependency>
 
     <dependency>
+      <groupId>io.zipkin.java</groupId>
+      <artifactId>spanstore-guava</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>${slf4j.version}</version>

@@ -20,14 +20,14 @@ import zipkin.DependencyLink;
 import zipkin.InMemorySpanStore;
 import zipkin.Span;
 import zipkin.SpanStore;
-import zipkin.async.BlockingSpanStoreAdapter;
+import zipkin.async.AsyncToBlockingSpanStoreAdapter;
 
 import static zipkin.internal.Util.midnightUTC;
 
-public class ElasticsearchDependenciesTest extends DependenciesTest<SpanStore> {
+public class ElasticsearchDependenciesTest extends DependenciesTest {
 
-  public ElasticsearchDependenciesTest() {
-    this.store = new BlockingSpanStoreAdapter(ElasticsearchTestGraph.INSTANCE.spanStore());
+  @Override protected SpanStore store() {
+    return new AsyncToBlockingSpanStoreAdapter(ElasticsearchTestGraph.INSTANCE.spanStore());
   }
 
   @Override

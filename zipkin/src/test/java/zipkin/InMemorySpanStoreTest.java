@@ -13,9 +13,11 @@
  */
 package zipkin;
 
-public class InMemorySpanStoreTest extends SpanStoreTest<InMemorySpanStore> {
-  public InMemorySpanStoreTest() {
-    store = new InMemorySpanStore();
+public class InMemorySpanStoreTest extends SpanStoreTest {
+  private final InMemorySpanStore store = new InMemorySpanStore();
+
+  @Override protected SpanStore store() {
+    return store;
   }
 
   @Override

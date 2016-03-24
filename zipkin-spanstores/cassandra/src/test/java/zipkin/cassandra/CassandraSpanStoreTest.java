@@ -13,16 +13,18 @@
  */
 package zipkin.cassandra;
 
+import zipkin.SpanStore;
 import zipkin.SpanStoreTest;
+import zipkin.async.AsyncToBlockingSpanStoreAdapter;
 
-public class CassandraSpanStoreTest extends SpanStoreTest<CassandraSpanStore> {
+public class CassandraSpanStoreTest extends SpanStoreTest {
 
-  public CassandraSpanStoreTest() {
-    this.store = CassandraTestGraph.INSTANCE.spanStore();
+  @Override protected SpanStore store() {
+    return new AsyncToBlockingSpanStoreAdapter(CassandraTestGraph.INSTANCE.spanStore());
   }
 
   @Override
   public void clear() {
-    store.clear();
+    CassandraTestGraph.INSTANCE.spanStore().clear();
   }
 }

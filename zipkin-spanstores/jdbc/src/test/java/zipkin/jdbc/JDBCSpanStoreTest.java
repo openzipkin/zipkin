@@ -14,12 +14,19 @@
 package zipkin.jdbc;
 
 import java.sql.SQLException;
+import zipkin.SpanStore;
 import zipkin.SpanStoreTest;
 
-public class JDBCSpanStoreTest extends SpanStoreTest<JDBCSpanStore> {
+public class JDBCSpanStoreTest extends SpanStoreTest {
+
+  private final JDBCSpanStore store;
 
   public JDBCSpanStoreTest() throws SQLException {
-    store = new JDBCTestGraph().spanStore;
+    this.store = new JDBCTestGraph().spanStore;
+  }
+
+  @Override protected SpanStore store() {
+    return store;
   }
 
   @Override

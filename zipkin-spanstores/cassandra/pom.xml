@@ -58,5 +58,9 @@
       <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.zipkin.java</groupId>
+      <artifactId>spanstore-guava</artifactId>
+    </dependency>
   </dependencies>
 </project>
