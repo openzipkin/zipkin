@@ -263,11 +263,13 @@ public class ElasticsearchSpanStore extends GuavaToAsyncSpanStoreAdapter
             .setQuery(matchAllQuery())
             .setSize(0)
             .addAggregation(AggregationBuilders.terms("annotationServiceName_agg")
-                .field("annotations.endpoint.serviceName"))
+                .field("annotations.endpoint.serviceName")
+                .size(0))
             .addAggregation(AggregationBuilders.nested("binaryAnnotations_agg")
                 .path("binaryAnnotations")
                 .subAggregation(AggregationBuilders.terms("binaryAnnotationsServiceName_agg")
-                    .field("binaryAnnotations.endpoint.serviceName")));
+                    .field("binaryAnnotations.endpoint.serviceName")
+                    .size(0)));
 
     return transform(toGuava(elasticRequest.execute()), ConvertServiceNamesResponse.INSTANCE);
   }
@@ -318,7 +320,8 @@ public class ElasticsearchSpanStore extends GuavaToAsyncSpanStoreAdapter
         .setSize(0)
         .addAggregation(AggregationBuilders.terms("name_agg")
             .order(Order.term(true))
-            .field("name"));
+            .field("name")
+            .size(0));
 
     return transform(toGuava(elasticRequest.execute()), ConvertSpanNameResponse.INSTANCE);
   }

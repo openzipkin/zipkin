@@ -13,6 +13,7 @@
  */
 package zipkin;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -165,12 +166,42 @@ public abstract class SpanStoreTest {
   }
 
   @Test
+  public void getSpanNames_allReturned() {
+    // Assure a default spanstore limit isn't hit by assuming if 50 are returned, all are returned
+    List<String> spanNames = new ArrayList<>();
+    for (int i = 0; i < 50; i++) {
+      String suffix = i < 10 ? "0" + i : String.valueOf(i);
+      store().accept(asList(new Span.Builder(span1).id(i).name("yak" + suffix).build()));
+      spanNames.add("yak" + suffix);
+    }
+
+    // should be in order
+    assertThat(store().getSpanNames("service")).containsOnlyElementsOf(spanNames);
+  }
+
+  @Test
   public void getAllServiceNames() {
     BinaryAnnotation yak = BinaryAnnotation.address("sa", Endpoint.create("yak", 127 << 24 | 1, 8080));
     store().accept(asList(new Span.Builder(span1).addBinaryAnnotation(yak).build(), span4));
 
     // should be in order
     assertThat(store().getServiceNames()).containsExactly("service", "yak");
+  }
+
+  @Test
+  public void getAllServiceNames__allReturned() {
+    // Assure a default spanstore limit isn't hit by assuming if 50 are returned, all are returned
+    List<String> serviceNames = new ArrayList<>();
+    serviceNames.add("service");
+    for (int i = 0; i < 50; i++) {
+      String suffix = i < 10 ? "0" + i : String.valueOf(i);
+      BinaryAnnotation yak =
+          BinaryAnnotation.address("sa", Endpoint.create("yak" + suffix, 127 << 24 | 1, 8080));
+      store().accept(asList(new Span.Builder(span1).id(i).addBinaryAnnotation(yak).build()));
+      serviceNames.add("yak" + suffix);
+    }
+
+    assertThat(store().getServiceNames()).containsOnlyElementsOf(serviceNames);
   }
 
   /**
