@@ -30,12 +30,15 @@ import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.QueryRequest;
 import zipkin.Span;
-import zipkin.internal.Util;
 
 import static zipkin.internal.Util.UTF_8;
 
 final class CassandraUtil {
-  static final CharsetEncoder UTF8_ENCODER = Util.UTF_8.newEncoder();
+  static final ThreadLocal<CharsetEncoder> UTF8_ENCODER = new ThreadLocal<CharsetEncoder>() {
+    @Override protected CharsetEncoder initialValue() {
+      return UTF_8.newEncoder();
+    }
+  };
 
   /**
    * Returns keys that concatenate the serviceName associated with an annotation, a binary
@@ -84,7 +87,7 @@ final class CassandraUtil {
     List<ByteBuffer> result = new ArrayList<>(strings.size());
     for (String string : strings) {
       try {
-        result.add(UTF8_ENCODER.encode(CharBuffer.wrap(string)));
+        result.add(UTF8_ENCODER.get().encode(CharBuffer.wrap(string)));
       } catch (CharacterCodingException ignored) {
         // don't die if the encoding is unknown
       }
