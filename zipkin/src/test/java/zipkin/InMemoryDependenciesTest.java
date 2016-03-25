@@ -15,10 +15,11 @@ package zipkin;
 
 import java.util.List;
 
-public class InMemoryDependenciesTest extends DependenciesTest<InMemorySpanStore> {
+public class InMemoryDependenciesTest extends DependenciesTest {
+  private final InMemorySpanStore store = new InMemorySpanStore();
 
-  public InMemoryDependenciesTest() {
-    this.store = new InMemorySpanStore();
+  @Override protected SpanStore store() {
+    return store;
   }
 
   @Override

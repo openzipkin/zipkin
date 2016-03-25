@@ -15,12 +15,12 @@ package zipkin.elasticsearch;
 
 import zipkin.SpanStore;
 import zipkin.SpanStoreTest;
-import zipkin.async.BlockingSpanStoreAdapter;
+import zipkin.async.AsyncToBlockingSpanStoreAdapter;
 
-public class ElasticsearchSpanStoreTest extends SpanStoreTest<SpanStore> {
+public class ElasticsearchSpanStoreTest extends SpanStoreTest {
 
-  public ElasticsearchSpanStoreTest() {
-    this.store = new BlockingSpanStoreAdapter(ElasticsearchTestGraph.INSTANCE.spanStore());
+  @Override protected SpanStore store() {
+    return new AsyncToBlockingSpanStoreAdapter(ElasticsearchTestGraph.INSTANCE.spanStore());
   }
 
   @Override

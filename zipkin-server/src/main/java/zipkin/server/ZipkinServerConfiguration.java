@@ -41,7 +41,7 @@ import zipkin.Codec;
 import zipkin.InMemorySpanStore;
 import zipkin.Sampler;
 import zipkin.SpanStore;
-import zipkin.async.BlockingSpanStoreAdapter;
+import zipkin.async.AsyncToBlockingSpanStoreAdapter;
 import zipkin.cassandra.CassandraConfig;
 import zipkin.cassandra.CassandraSpanStore;
 import zipkin.elasticsearch.ElasticsearchConfig;
@@ -136,7 +136,7 @@ public class ZipkinServerConfiguration {
           .password(cassandra.getPassword())
           .spanTtl(cassandra.getSpanTtl())
           .indexTtl(cassandra.getIndexTtl()).build();
-      return new CassandraSpanStore(config);
+      return new AsyncToBlockingSpanStoreAdapter(new CassandraSpanStore(config));
     }
   }
 
@@ -151,7 +151,7 @@ public class ZipkinServerConfiguration {
           .hosts(elasticsearch.getHosts())
           .index(elasticsearch.getIndex())
           .build();
-      return new BlockingSpanStoreAdapter(new ElasticsearchSpanStore(config));
+      return new AsyncToBlockingSpanStoreAdapter(new ElasticsearchSpanStore(config));
     }
   }
 

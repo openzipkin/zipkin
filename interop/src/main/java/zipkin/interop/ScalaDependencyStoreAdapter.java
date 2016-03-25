@@ -22,19 +22,21 @@ import scala.Option;
 import scala.collection.JavaConversions;
 import scala.collection.Seq;
 import scala.runtime.BoxedUnit;
-import zipkin.SpanStore;
+import zipkin.async.AsyncSpanStore;
+
+import static zipkin.interop.CloseAdapter.closeQuietly;
 
 /**
- * Adapts {@link SpanStore} to a scala {@link com.twitter.zipkin.storage.DependencyStore} in order
- * to test against its {@link com.twitter.zipkin.storage.DependencyStoreSpec} for interoperability
- * reasons.
+ * Adapts {@link AsyncSpanStore} to a scala {@link com.twitter.zipkin.storage.DependencyStore} in
+ * order to test against its {@link com.twitter.zipkin.storage.DependencyStoreSpec} for
+ * interoperability reasons.
  *
  * <p/> This implementation uses json to ensure structures are compatible.
  */
 public final class ScalaDependencyStoreAdapter extends com.twitter.zipkin.storage.DependencyStore {
-  private final SpanStore spanStore;
+  private final AsyncSpanStore spanStore;
 
-  public ScalaDependencyStoreAdapter(SpanStore spanStore) {
+  public ScalaDependencyStoreAdapter(AsyncSpanStore spanStore) {
     this.spanStore = spanStore;
   }
 
@@ -45,14 +47,21 @@ public final class ScalaDependencyStoreAdapter extends com.twitter.zipkin.storag
 
   @Override
   public Future<Seq<DependencyLink>> getDependencies(long endTs, Option<Object> lookback) {
-    List<zipkin.DependencyLink> input = spanStore.getDependencies(endTs,
-        lookback.isDefined() ? (Long) lookback.get() : null
-    );
-    List<DependencyLink> links = new ArrayList<>(input.size());
-    for (zipkin.DependencyLink link : input) {
-      links.add(convert(link));
+    GetDependenciesCallback callback = new GetDependenciesCallback();
+    spanStore.getDependencies(endTs, lookback.isDefined() ? (Long) lookback.get() : null, callback);
+    return callback.promise;
+  }
+
+  static final class GetDependenciesCallback
+      extends CallbackWithPromise<List<zipkin.DependencyLink>, Seq<DependencyLink>> {
+
+    @Override protected Seq<DependencyLink> convertToScala(List<zipkin.DependencyLink> input) {
+      List<DependencyLink> links = new ArrayList<>(input.size());
+      for (zipkin.DependencyLink link : input) {
+        links.add(new DependencyLink(link.parent, link.child, link.callCount));
+      }
+      return JavaConversions.asScalaBuffer(links).seq();
     }
-    return Future.value(JavaConversions.asScalaBuffer(links).seq());
   }
 
   @Override
@@ -62,10 +71,6 @@ public final class ScalaDependencyStoreAdapter extends com.twitter.zipkin.storag
 
   @Override
   public void close() {
-    // noop
-  }
-
-  private static DependencyLink convert(zipkin.DependencyLink input) {
-    return new DependencyLink(input.parent, input.child, input.callCount);
+    closeQuietly(spanStore);
   }
 }

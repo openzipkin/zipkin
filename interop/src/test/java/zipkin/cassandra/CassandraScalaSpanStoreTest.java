@@ -16,7 +16,7 @@ package zipkin.cassandra;
 import com.twitter.zipkin.storage.SpanStore;
 import com.twitter.zipkin.storage.SpanStoreSpec;
 import org.junit.BeforeClass;
-import zipkin.interop.ScalaSpanStoreAdapter;
+import zipkin.interop.AsyncToScalaSpanStoreAdapter;
 
 public class CassandraScalaSpanStoreTest extends SpanStoreSpec {
   private static CassandraSpanStore spanStore;
@@ -27,7 +27,7 @@ public class CassandraScalaSpanStoreTest extends SpanStoreSpec {
   }
 
   public SpanStore store() {
-    return new ScalaSpanStoreAdapter(spanStore);
+    return new AsyncToScalaSpanStoreAdapter(spanStore);
   }
 
   public void clear() {

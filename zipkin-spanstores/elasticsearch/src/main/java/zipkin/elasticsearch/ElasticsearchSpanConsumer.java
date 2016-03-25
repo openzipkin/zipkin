@@ -14,9 +14,9 @@
 package zipkin.elasticsearch;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -25,15 +25,16 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.Client;
 import zipkin.Codec;
 import zipkin.Span;
-import zipkin.async.AsyncSpanConsumer;
-import zipkin.async.Callback;
 import zipkin.internal.ApplyTimestampAndDuration;
+import zipkin.spanstore.guava.GuavaSpanConsumer;
 
-import static zipkin.elasticsearch.ElasticFutures.onComplete;
+import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.elasticsearch.ElasticFutures.toGuava;
 
 // Extracted for readability
-final class ElasticsearchSpanConsumer implements AsyncSpanConsumer {
+final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
+  private static final Function<Object, Void> TO_VOID = Functions.<Void>constant(null);
+
   /**
    * Internal flag that allows you read-your-writes consistency during tests. With Elasticsearch, it
    * is not sufficient to block on the {@link #createSpanIndexRequest} future since the index also
@@ -51,23 +52,22 @@ final class ElasticsearchSpanConsumer implements AsyncSpanConsumer {
   }
 
   @Override
-  public void accept(List<Span> spans, final Callback<Void> callback) {
+  public ListenableFuture<Void> accept(List<Span> spans) {
     BulkRequestBuilder request = client.prepareBulk();
     for (Span span : spans) {
       request.add(createSpanIndexRequest(ApplyTimestampAndDuration.apply(span)));
     }
-
-    ListenableFuture future = toGuava(request.execute());
+    ListenableFuture<?> future = toGuava(request.execute());
     if (FLUSH_ON_WRITES) {
-      future = Futures.transform(future, new AsyncFunction() {
-        @Override public ListenableFuture<?> apply(Object input) {
+      future = transform(future, new AsyncFunction() {
+        @Override public ListenableFuture apply(Object input) {
           return toGuava(client.admin().indices()
               .prepareFlush(indexNameFormatter.catchAll())
               .execute());
         }
       });
     }
-    onComplete(future, callback, Functions.<Void>constant(null));
+    return transform(future, TO_VOID);
   }
 
   private IndexRequestBuilder createSpanIndexRequest(Span span) {

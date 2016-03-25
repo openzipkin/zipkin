@@ -21,10 +21,8 @@ import org.junit.BeforeClass;
 import scala.collection.immutable.List;
 import zipkin.DependencyLink;
 import zipkin.InMemorySpanStore;
-import zipkin.SpanStore;
-import zipkin.async.BlockingSpanStoreAdapter;
+import zipkin.interop.AsyncToScalaSpanStoreAdapter;
 import zipkin.interop.ScalaDependencyStoreAdapter;
-import zipkin.interop.ScalaSpanStoreAdapter;
 
 import static zipkin.internal.Util.midnightUTC;
 
@@ -37,13 +35,13 @@ public class ElasticsearchScalaDependencyStoreTest extends DependencyStoreSpec {
   }
 
   public DependencyStore store() {
-    return new ScalaDependencyStoreAdapter(new BlockingSpanStoreAdapter(spanStore));
+    return new ScalaDependencyStoreAdapter(spanStore);
   }
 
   @Override
   public void processDependencies(List<Span> input) {
-    SpanStore mem = new InMemorySpanStore();
-    new ScalaSpanStoreAdapter(mem).apply(input);
+    InMemorySpanStore mem = new InMemorySpanStore();
+    new AsyncToScalaSpanStoreAdapter(mem).apply(input);
     java.util.List<DependencyLink>
         links = mem.getDependencies(today() + TimeUnit.DAYS.toMillis(1), null);
 

@@ -17,11 +17,18 @@ import java.sql.SQLException;
 import java.util.List;
 import zipkin.DependenciesTest;
 import zipkin.Span;
+import zipkin.SpanStore;
 
-public class JDBCDependenciesTest extends DependenciesTest<JDBCSpanStore> {
+public class JDBCDependenciesTest extends DependenciesTest {
+
+  private final JDBCSpanStore store;
 
   public JDBCDependenciesTest() throws SQLException {
     this.store = new JDBCTestGraph().spanStore;
+  }
+
+  @Override protected SpanStore store() {
+    return store;
   }
 
   @Override

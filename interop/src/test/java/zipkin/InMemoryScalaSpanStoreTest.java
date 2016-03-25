@@ -15,13 +15,13 @@ package zipkin;
 
 import com.twitter.zipkin.storage.SpanStore;
 import com.twitter.zipkin.storage.SpanStoreSpec;
-import zipkin.interop.ScalaSpanStoreAdapter;
+import zipkin.interop.AsyncToScalaSpanStoreAdapter;
 
 public class InMemoryScalaSpanStoreTest extends SpanStoreSpec {
   private InMemorySpanStore mem = new InMemorySpanStore();
 
   public SpanStore store() {
-    return new ScalaSpanStoreAdapter(mem);
+    return new AsyncToScalaSpanStoreAdapter(mem);
   }
 
   public void clear() {

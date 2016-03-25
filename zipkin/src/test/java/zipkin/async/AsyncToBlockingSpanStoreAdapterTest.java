@@ -13,7 +13,6 @@
  */
 package zipkin.async;
 
-import java.util.List;
 import java.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Rule;
@@ -23,83 +22,17 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.stubbing.Answer;
-import zipkin.Annotation;
-import zipkin.BinaryAnnotation;
-import zipkin.DependencyLink;
-import zipkin.Endpoint;
 import zipkin.QueryRequest;
-import zipkin.Span;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static zipkin.TestObjects.LINKS;
+import static zipkin.TestObjects.TRACE;
 
-public class BlockingSpanStoreAdapterTest {
-
-  long spanId = 456;
-  long today = System.currentTimeMillis();
-  Endpoint ep = Endpoint.create("service", 127 << 24 | 1, 8080);
-
-  Annotation ann1 = Annotation.create((today + 1) * 1000, "cs", ep);
-  Annotation ann2 = Annotation.create((today + 2) * 1000, "sr", null);
-  Annotation ann3 = Annotation.create((today + 10) * 1000, "custom", ep);
-  Annotation ann4 = Annotation.create((today + 20) * 1000, "custom", ep);
-  Annotation ann5 = Annotation.create((today + 5) * 1000, "custom", ep);
-  Annotation ann6 = Annotation.create((today + 6) * 1000, "custom", ep);
-  Annotation ann7 = Annotation.create((today + 7) * 1000, "custom", ep);
-  Annotation ann8 = Annotation.create((today + 8) * 1000, "custom", ep);
-
-  Span span1 = new Span.Builder()
-      .traceId(123)
-      .name("methodcall")
-      .id(spanId)
-      .timestamp(ann1.timestamp).duration(9000L)
-      .annotations(asList(ann1, ann3))
-      .addBinaryAnnotation(BinaryAnnotation.create("BAH", "BEH", ep)).build();
-
-  Span span2 = new Span.Builder()
-      .traceId(456)
-      .name("methodcall")
-      .id(spanId)
-      .timestamp(ann2.timestamp)
-      .addAnnotation(ann2)
-      .addBinaryAnnotation(BinaryAnnotation.create("BAH2", "BEH2", ep)).build();
-
-  Span span3 = new Span.Builder()
-      .traceId(789)
-      .name("methodcall")
-      .id(spanId)
-      .timestamp(ann2.timestamp).duration(18000L)
-      .annotations(asList(ann2, ann3, ann4))
-      .addBinaryAnnotation(BinaryAnnotation.create("BAH2", "BEH2", ep)).build();
-
-  Span span4 = new Span.Builder()
-      .traceId(999)
-      .name("methodcall")
-      .id(spanId)
-      .timestamp(ann6.timestamp).duration(1000L)
-      .annotations(asList(ann6, ann7)).build();
-
-  Span span5 = new Span.Builder()
-      .traceId(999)
-      .name("methodcall")
-      .id(spanId)
-      .timestamp(ann5.timestamp).duration(3000L)
-      .annotations(asList(ann5, ann8))
-      .addBinaryAnnotation(BinaryAnnotation.create("BAH2", "BEH2", ep)).build();
-
-  List<Span> trace1 = asList(span1, span2, span3);
-
-  List<Span> trace2 = asList(span4, span5);
-
-  List<List<Span>> traces = asList(trace1, trace2);
-
-  List<DependencyLink> deps = asList(
-      new DependencyLink.Builder().parent("zipkin-web").child("zipkin-query").callCount(1).build(),
-      new DependencyLink.Builder().parent("zipkin-query").child("zipkin-foo").callCount(10).build()
-  );
+public class AsyncToBlockingSpanStoreAdapterTest {
 
   @Rule
   public MockitoRule mocks = MockitoJUnit.rule();
@@ -110,20 +43,20 @@ public class BlockingSpanStoreAdapterTest {
   @Mock
   private AsyncSpanStore delegate;
 
-  private BlockingSpanStoreAdapter spanStore;
+  private AsyncToBlockingSpanStoreAdapter spanStore;
 
   @Before
   public void setUp() {
-    spanStore = new BlockingSpanStoreAdapter(delegate);
+    spanStore = new AsyncToBlockingSpanStoreAdapter(delegate);
   }
 
   @Test
   public void getTraces_success() {
     QueryRequest request = new QueryRequest.Builder("service").endTs(1000L).build();
-    doAnswer(answer(c -> c.onSuccess(traces)))
+    doAnswer(answer(c -> c.onSuccess(asList(TRACE))))
         .when(delegate).getTraces(eq(request), any(Callback.class));
 
-    assertThat(spanStore.getTraces(request)).containsExactlyElementsOf(traces);
+    assertThat(spanStore.getTraces(request)).containsExactly(TRACE);
   }
 
 
@@ -139,10 +72,10 @@ public class BlockingSpanStoreAdapterTest {
 
   @Test
   public void getTrace_success() {
-    doAnswer(answer(c -> c.onSuccess(trace1)))
+    doAnswer(answer(c -> c.onSuccess(TRACE)))
         .when(delegate).getTrace(eq(1L), any(Callback.class));
 
-    assertThat(spanStore.getTrace(1L)).containsExactlyElementsOf(trace1);
+    assertThat(spanStore.getTrace(1L)).isEqualTo(TRACE);
   }
 
   @Test
@@ -156,10 +89,10 @@ public class BlockingSpanStoreAdapterTest {
 
   @Test
   public void getRawTrace_success() {
-    doAnswer(answer(c -> c.onSuccess(trace1)))
+    doAnswer(answer(c -> c.onSuccess(TRACE)))
         .when(delegate).getRawTrace(eq(1L), any(Callback.class));
 
-    assertThat(spanStore.getRawTrace(1L)).containsExactlyElementsOf(trace1);
+    assertThat(spanStore.getRawTrace(1L)).isEqualTo(TRACE);
   }
 
   @Test
@@ -207,10 +140,10 @@ public class BlockingSpanStoreAdapterTest {
 
   @Test
   public void getDependencies_success() {
-    doAnswer(answer(c -> c.onSuccess(deps)))
+    doAnswer(answer(c -> c.onSuccess(LINKS)))
         .when(delegate).getDependencies(eq(1L), eq(0L), any(Callback.class));
 
-    assertThat(spanStore.getDependencies(1L, 0L)).containsExactlyElementsOf(deps);
+    assertThat(spanStore.getDependencies(1L, 0L)).containsExactlyElementsOf(LINKS);
   }
 
   @Test

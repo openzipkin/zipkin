@@ -42,7 +42,7 @@
       <artifactId>zipkin</artifactId>
     </dependency>
 
-    <!-- for ScalaSpanStoreAdapter -->
+    <!-- for AsyncToScalaSpanStoreAdapter -->
     <dependency>
       <groupId>io.zipkin</groupId>
       <artifactId>zipkin-common</artifactId>
@@ -59,6 +59,12 @@
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
       <version>${libthrift.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>spanstore-guava</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <dependency>

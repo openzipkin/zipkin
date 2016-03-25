@@ -23,19 +23,20 @@ import zipkin.DependencyLink;
 import zipkin.InMemorySpanStore;
 import zipkin.Span;
 import zipkin.SpanStore;
+import zipkin.async.AsyncToBlockingSpanStoreAdapter;
 import zipkin.internal.Dependencies;
 
 import static zipkin.internal.Util.midnightUTC;
 
-public class CassandraDependenciesTest extends DependenciesTest<CassandraSpanStore> {
+public class CassandraDependenciesTest extends DependenciesTest {
 
-  public CassandraDependenciesTest() {
-    this.store = CassandraTestGraph.INSTANCE.spanStore();
+  @Override protected SpanStore store() {
+    return new AsyncToBlockingSpanStoreAdapter(CassandraTestGraph.INSTANCE.spanStore());
   }
 
   @Override
   public void clear() {
-    store.clear();
+    CassandraTestGraph.INSTANCE.spanStore().clear();
   }
 
   /**
@@ -58,6 +59,6 @@ public class CassandraDependenciesTest extends DependenciesTest<CassandraSpanSto
     Dependencies deps = Dependencies.create(midnight, midnight /* ignored */, links);
     ByteBuffer thrift = deps.toThrift();
     // Block on the future to get read-your-writes consistency during tests
-    Futures.getUnchecked(store.repository.storeDependencies(midnight, thrift));
+    Futures.getUnchecked(CassandraTestGraph.INSTANCE.spanStore().repository.storeDependencies(midnight, thrift));
   }
 }
