@@ -1,10 +1,19 @@
 # zipkin-server
-The hosts the Zipkin [Api](http://zipkin.io/zipkin-api/#/) and [UI](https://github.com/openzipkin/zipkin/tree/master/zipkin-ui).
+zipkin-server is a [Spring Boot](http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/) application, packaged as an executable jar. You need JRE 8+ to start zipkin-server.
 
-Span storage and transports are configurable. By default storage is
-in-memory and the http span transport (POST /spans endpoint) is enabled.
+Span storage and transports are configurable. By default, storage is
+in-memory, the http span transport (POST /spans endpoint) is enabled,
+and the server listens on port 9411.
 
-Note that the server requires minimum JRE 8.
+## Endpoints
+
+The following endpoints are defined for Zipkin:
+* / - [UI](https://github.com/openzipkin/zipkin/tree/master/zipkin-ui)
+* /config.json - [Configuration for the UI](#configuration-for-the-ui)
+* /api/v1 - [Api](http://zipkin.io/zipkin-api/#/)
+* /health - Returns 200 status if OK
+
+There are more [built-in endpoints](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-endpoints.html) provided by Spring Boot, such as `/metrics`. To comprehensively list endpoints, `GET /mappings`.
 
 ## Running locally
 
@@ -13,15 +22,28 @@ To run the server from the currently checked out source, enter the following.
 $ ./mvnw -pl zipkin-server spring-boot:run
 ```
 
+## Configuration for the UI
+Zipkin has a web UI, which is enabled by default when you depend on `io.zipkin:zipkin-ui`. This UI is automatically included in the exec jar, and is hosted by default on port 9411.
+
+When the UI loads, it reads default configuration from the `/config.json` endpoint. These values can be overridden by system properties.
+
+Attribute | Property | Description
+--- | --- | ---
+environment | zipkin.ui.environment | The value here becomes a label in the top-right corner. Not required.
+defaultLookback | zipkin.ui.default-lookback | Default duration in millis to look back when finding traces or dependency links. Affects the "Start time" element in the UI. Defaults to 604800000 (7 days in millis).
+queryLimit | zipkin.ui.query-limit |  Default limit for Find Traces. Defaults to 10.
+
+For example, if using docker you can set `JAVA_OPTS="-Dzipkin.ui.query-limit=100"` to affect `$.queryLimit` in `/config.json`.
+
 ## Environment Variables
 zipkin-server is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/master/zipkin-query-service).
 
-The following environment variables from zipkin-scala are honored.
+[yaml configuration](zipkin-server/src/main/resources/zipkin-server.yml) binds the following environment variables from zipkin-scala:
 
     * `QUERY_PORT`: Listen port for the http api and web ui; Defaults to 9411
     * `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
     * `QUERY_LOOKBACK`: How many milliseconds queries look back from endTs; Defaults to 7 days
-    * `STORAGE_TYPE`: SpanStore implementation: one of `mem` or `mysql`
+    * `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra`, `elasticsearch`
     * `COLLECTOR_PORT`: Listen port for the scribe thrift api; Defaults to 9410 
     * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 
@@ -58,7 +80,6 @@ Example usage:
 ```bash
 $ STORAGE_TYPE=mysql MYSQL_USER=root ./mvnw -pl zipkin-server spring-boot:run
 ```
-
 
 ### Elasticsearch
 The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
