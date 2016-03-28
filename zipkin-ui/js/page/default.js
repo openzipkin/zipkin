@@ -27,12 +27,14 @@ const DefaultPageComponent = component(function DefaultPage() {
       const limit = query.limit || this.attr.config('queryLimit');
       const minDuration = query.minDuration;
       const endTs = query.endTs || new Date().getTime();
+      const startTs = query.startTs || (endTs - this.attr.config('defaultLookback'));
       const serviceName = query.serviceName || '';
       const annotationQuery = query.annotationQuery || '';
       const queryWasPerformed = serviceName && serviceName.length > 0;
       this.$node.html(defaultTemplate({
         limit,
         minDuration,
+        startTs,
         endTs,
         serviceName,
         annotationQuery,
@@ -49,7 +51,8 @@ const DefaultPageComponent = component(function DefaultPage() {
       InfoButtonUI.attachTo('button.info-request');
       TraceFiltersUI.attachTo('#trace-filters');
       TracesUI.attachTo('#traces');
-      TimeStampUI.attachTo('#time-stamp');
+      TimeStampUI.attachTo('#end-ts');
+      TimeStampUI.attachTo('#start-ts');
       BackToTop.attachTo('#backToTop');
       GoToTraceUI.attachTo('#traceIdQueryForm');
 

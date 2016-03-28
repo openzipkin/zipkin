@@ -2,7 +2,8 @@ import $ from 'jquery';
 
 const defaults = {
   environment: '',
-  queryLimit: 15
+  queryLimit: 15,
+  defaultLookback: 24 * 60 * 60 * 1000 // 24 hours
 };
 
 export default function loadConfig() {
