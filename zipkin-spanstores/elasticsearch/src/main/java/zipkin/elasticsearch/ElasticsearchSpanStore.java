@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
@@ -49,8 +48,6 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.RangeQueryBuilder;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptService.ScriptType;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.nested.Nested;
@@ -58,7 +55,6 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Order;
 import org.elasticsearch.search.aggregations.metrics.sum.Sum;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
-import org.elasticsearch.search.aggregations.pipeline.PipelineAggregatorBuilders;
 import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.QueryRequest;
@@ -148,27 +144,22 @@ public class ElasticsearchSpanStore extends GuavaToAsyncSpanStoreAdapter
     List<String> strings = computeIndices(beginMillis, endMillis);
     final String[] indices = strings.toArray(new String[strings.size()]);
     // We need to filter to traces that contain at least one span that matches the request,
-    // but we need to order by timestamp of the first span, regardless of if it matched the
-    // filter or not. Normal queries usually will apply a filter first, meaning we wouldn't be
-    // able to "backtrack" to state with non-filtered spans to do the ordering properly, which
-    // is important to respect request.limit. Luckily, pipeline aggregations can help - we
-    // aggregate unfiltered trace ids, ordered by their min timestamp. We then apply a pipeline
-    // aggregation which applies the filter, and then removes parent buckets based on whether any
-    // documents matched the filter, effectively "backtracking".
+    // but the zipkin API is supposed to order traces by first span, regardless of if it was
+    // filtered or not. This is not possible without either multiple, heavyweight queries
+    // or complex multiple indexing, defeating much of the elegance of using elasticsearch for this.
+    // So we fudge and order on the first span among the filtered spans - in practice, there should
+    // be no significant difference in user experience since span start times are usually very
+    // close to each other in human time.
     SearchRequestBuilder elasticRequest =
         client.prepareSearch(indices)
             .setIndicesOptions(IndicesOptions.lenientExpandOpen())
             .setTypes(ElasticsearchConstants.SPAN)
-            .setQuery(matchAllQuery())
+            .setQuery(boolQuery().must(matchAllQuery()).filter(filter))
             .setSize(0)
             .addAggregation(
                 AggregationBuilders.terms("traceId_agg")
                     .field("traceId")
                     .subAggregation(AggregationBuilders.min("timestamps_agg").field("timestamp"))
-                    .subAggregation(AggregationBuilders.filter("filtered_agg").filter(filter))
-                    .subAggregation(PipelineAggregatorBuilders.having("bucket_filter")
-                        .setBucketsPathsMap(ImmutableMap.of("_count", "filtered_agg._count"))
-                        .script(new Script("_count > 0", ScriptType.INLINE, "expression", null)))
                     .order(Order.aggregation("timestamps_agg", false))
                     .size(request.limit));
 
