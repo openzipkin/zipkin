@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.java</groupId>
     <artifactId>zipkin-spanstores</artifactId>
-    <version>0.9.4-SNAPSHOT</version>
+    <version>0.10.0</version>
   </parent>
 
   <artifactId>spanstore-cassandra</artifactId>
