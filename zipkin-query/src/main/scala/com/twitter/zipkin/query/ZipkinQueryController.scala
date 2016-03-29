@@ -1,6 +1,7 @@
 package com.twitter.zipkin.query
 
 import com.fasterxml.jackson.core.`type`.TypeReference
+import com.twitter.conversions.time._
 import com.twitter.finagle.http.{Fields, Request}
 import com.twitter.finagle.tracing.SpanId
 import com.twitter.finatra.annotations.Flag
@@ -17,6 +18,7 @@ import com.twitter.zipkin.storage.{DependencyStore, SpanStore}
 import java.io.ByteArrayInputStream
 import java.util.zip.GZIPInputStream
 import javax.inject.Inject
+import org.apache.commons.io.FilenameUtils._
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
@@ -34,11 +36,13 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
   }
 
   get("/config.json") { request: Request =>
-    response.ok(Map(
+    val resp = response.ok(Map(
       "environment" -> environment,
       "queryLimit" -> queryLimit,
       "defaultLookback" -> defaultLookback
     )).contentType("application/json")
+    resp.cacheControl = 10.minutes
+    resp
   }
 
   post("/api/v1/spans") { request: Request =>
@@ -110,11 +114,21 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
     dependencyStore.getDependencies(request.endTs, request.lookback.orElse(Some(defaultLookback)))
   }
 
+  /** This is a hacked version of "fileOrIndex" which sets cache control */
   get("/:*") { request: Request =>
-    response.ok.fileOrIndex(
-    request.params("*"),
-    "index.html"
-    )
+    if (isFile(request.params("*"))) { // Ex. /8b55a822e72b8fd5e2ee069236f2d797.png
+      val resp = response.ok().file(request.params("*"))
+      // We set a long max-age on other resources, knowing they are all hashed paths. Any
+      // update to index.html will include links to new hashed paths, orphaning the former.
+      resp.cacheControl = 365.days
+      resp
+    } else { // Ex /dependency
+      val resp = response.ok().file("index.html")
+      // We need a short max-age on index.html so that users don't need to flush the cache
+      // to see a new version of zipkin.
+      resp.cacheControl = 1.minute
+      resp
+    }
   }
 
   val jsonSpansReader = ZipkinJson.readerFor(new TypeReference[Seq[JsonSpan]] {})
@@ -126,6 +140,10 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
     } finally {
       gis.close()
     }
+  }
+
+  private def isFile(requestPath: String) = {
+    getExtension(requestPath).nonEmpty
   }
 }
 
