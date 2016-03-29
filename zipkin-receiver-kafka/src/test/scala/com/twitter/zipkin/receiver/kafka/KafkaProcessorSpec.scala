@@ -1,5 +1,6 @@
 package com.twitter.zipkin.receiver.kafka
 
+import java.io.IOException
 import java.util.concurrent.LinkedBlockingQueue
 
 import com.github.charithe.kafka.KafkaJunitRule
@@ -100,6 +101,33 @@ class KafkaProcessorSpec extends JUnitSuite {
     producer.send(new KeyedMessage(topic, encodeThrift(span)))
     producer.send(new KeyedMessage(topic, "[\"='".getBytes())) // screwed up json
     producer.send(new KeyedMessage(topic, "malformed".getBytes()))
+    producer.send(new KeyedMessage(topic, encodeThrift(span)))
+    producer.close()
+
+    for (elem <- 1 until 2)
+      assert(recvdSpans.take() == Seq(span))
+
+    Await.result(service.close())
+  }
+
+  /** Guards against errors that leak from storage, such as InvalidQueryException */
+  @Test def skipsOnException() {
+    val topic = "exception"
+    val recvdSpans = new LinkedBlockingQueue[Seq[Span]](3)
+
+    val service = KafkaProcessor(Map(topic -> 1), kafkaRule.consumerConfig(), { s =>
+      if (recvdSpans.size() == 1) {
+        Future.exception(new IOException("storage fell over"))
+      } else {
+        recvdSpans.add(s)
+        Future.value(true)
+      }
+    }, codec, codec)
+
+    val producer = new Producer[Array[Byte], Array[Byte]](kafkaRule.producerConfigWithDefaultEncoder())
+
+    producer.send(new KeyedMessage(topic, encodeThrift(span)))
+    producer.send(new KeyedMessage(topic, encodeThrift(span))) // tossed on error
     producer.send(new KeyedMessage(topic, encodeThrift(span)))
     producer.close()
 
