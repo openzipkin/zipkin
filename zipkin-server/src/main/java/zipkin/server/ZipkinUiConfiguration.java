@@ -13,23 +13,27 @@
  */
 package zipkin.server;
 
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ResponseEntity;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
 /**
  * Zipkin-UI is a single-page application that reads configuration from /config.json.
@@ -40,14 +44,31 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
  *
  * <p>Under the scenes the JavaScript code looks at {@code window.location} to figure out what the
  * UI should do. This is handled by a route api defined in the crossroads library.
+ *
+ * <h3>Caching</h3>
+ * <p>This includes a hard-coded cache policy, consistent with zipkin-scala.
+ * <ul>
+ *   <li>1 minute for index.html</li>
+ *   <li>10 minute for /config.json</li>
+ *   <li>365 days for hashed resources (ex /app-e12b3bbb7e5a572f270d.min.js)</li>
+ * </ul>
+ * Since index.html links to hashed resource names, any change to it will orphan old resources.
+ * That's why hashed resource age can be 365 days.
  */
 @Configuration
 @ConditionalOnResource(resources = "classpath:zipkin-ui") // from io.zipkin:zipkin-ui
 public class ZipkinUiConfiguration extends WebMvcConfigurerAdapter {
 
+  @Autowired
+  ZipkinServerProperties server;
+  @Value("classpath:zipkin-ui/index.html")
+  Resource indexHtml;
+
   @Override
   public void addResourceHandlers(ResourceHandlerRegistry registry) {
-    registry.addResourceHandler("/**").addResourceLocations("classpath:/zipkin-ui/");
+    registry.addResourceHandler("/**")
+        .addResourceLocations("classpath:/zipkin-ui/")
+        .setCachePeriod((int) TimeUnit.DAYS.toSeconds(365));
   }
 
   /**
@@ -74,30 +95,32 @@ public class ZipkinUiConfiguration extends WebMvcConfigurerAdapter {
     return filter;
   }
 
-  @RestController
-  public static class ZipkinUi {
+  @RequestMapping(value = "/config.json", method = GET, produces = APPLICATION_JSON_VALUE)
+  public ResponseEntity<ZipkinServerProperties.Ui> serveUiConfig() {
+    return ResponseEntity.ok()
+        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES))
+        .body(server.getUi());
+  }
 
-    @Autowired
-    ZipkinServerProperties server;
+  @RequestMapping(value = "/index.html", method = GET)
+  public ResponseEntity<Resource> serveIndex() {
+    return ResponseEntity.ok()
+        .cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES))
+        .body(indexHtml);
+  }
 
-    @RequestMapping(value = "/config.json", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
-    public ZipkinServerProperties.Ui getUiConfig() {
-      return server.getUi();
-    }
-
-    /**
-     * This cherry-picks well-known routes the single-page app serves, and forwards to that as
-     * opposed to returning a 404.
-     */
-    // TODO This approach requires maintenance when new UI routes are added. Change to the following:
-    // If the path is a a file w/an extension, treat normally.
-    // Otherwise instead of returning 404, forward to the index.
-    // See https://github.com/twitter/finatra/blob/458c6b639c3afb4e29873d123125eeeb2b02e2cd/http/src/main/scala/com/twitter/finatra/http/response/ResponseBuilder.scala#L321
-    @RequestMapping(value = {"/", "/traces/{id}", "/dependency"}, method = RequestMethod.GET)
-    public ModelAndView forwardUiEndpoints(ModelMap model) {
-      // Note: RequestMapping "/" requires us to use ModelAndView result vs just a string.
-      // When "/" is mapped, the server literally returns "forward:/index.html" vs forwarding.
-      return new ModelAndView("forward:/index.html", model);
-    }
+  /**
+   * This cherry-picks well-known routes the single-page app serves, and forwards to that as opposed
+   * to returning a 404.
+   */
+  // TODO This approach requires maintenance when new UI routes are added. Change to the following:
+  // If the path is a a file w/an extension, treat normally.
+  // Otherwise instead of returning 404, forward to the index.
+  // See https://github.com/twitter/finatra/blob/458c6b639c3afb4e29873d123125eeeb2b02e2cd/http/src/main/scala/com/twitter/finatra/http/response/ResponseBuilder.scala#L321
+  @RequestMapping(value = {"/", "/traces/{id}", "/dependency"}, method = GET)
+  public ModelAndView forwardUiEndpoints(ModelMap model) {
+    // Note: RequestMapping "/" requires us to use ModelAndView result vs just a string.
+    // When "/" is mapped, the server literally returns "forward:/index.html" vs forwarding.
+    return new ModelAndView("forward:/index.html", model);
   }
 }

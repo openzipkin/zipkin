@@ -13,6 +13,7 @@
  */
 package zipkin.server;
 
+import java.util.concurrent.TimeUnit;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("zipkin")
@@ -48,6 +49,15 @@ class ZipkinServerProperties {
   static class Ui {
     private String environment;
     private int queryLimit = 10;
+    private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
+
+    public int getDefaultLookback() {
+      return defaultLookback;
+    }
+
+    public void setDefaultLookback(int defaultLookback) {
+      this.defaultLookback = defaultLookback;
+    }
 
     public String getEnvironment() {
       return environment;
