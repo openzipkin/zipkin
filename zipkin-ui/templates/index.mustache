@@ -10,7 +10,14 @@
       </select>
     </div>
 
-    <div id="time-stamp" class="form-group">
+    <div id="start-ts" class="form-group">
+      <label for="timeStamp">Start time</label>
+      <input class="form-control input-sm date-input" type="text">
+      <input class="form-control input-sm time-input" type="text">
+      <input class="timestamp-value" id="startTs" name="startTs" type="hidden" value="{{startTs}}">
+    </div>
+
+    <div id="end-ts" class="form-group">
       <label for="timeStamp">End time</label>
       <input class="form-control input-sm date-input" type="text">
       <input class="form-control input-sm time-input" type="text">
