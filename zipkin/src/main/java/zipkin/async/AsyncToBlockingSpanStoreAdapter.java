@@ -14,12 +14,11 @@
 package zipkin.async;
 
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 import zipkin.DependencyLink;
 import zipkin.QueryRequest;
 import zipkin.Span;
 import zipkin.SpanStore;
+import zipkin.internal.CallbackCaptor;
 import zipkin.internal.Nullable;
 
 /**
@@ -27,28 +26,10 @@ import zipkin.internal.Nullable;
  * with blocking, for use in callers that need a normal {@link SpanStore}.
  */
 public final class AsyncToBlockingSpanStoreAdapter implements SpanStore {
-  /**
-   * Internal flag that allows you read-your-writes consistency during tests.
-   *
-   * <p>This is internal as collection endpoints are usually in different threads or not in the same
-   * process as query ones. Special-casing this allows tests to pass without changing {@link
-   * AsyncSpanConsumer#accept}.
-   */
-  public static boolean BLOCK_ON_ACCEPT;
-
   private final AsyncSpanStore delegate;
 
   public AsyncToBlockingSpanStoreAdapter(AsyncSpanStore delegate) {
     this.delegate = delegate;
-  }
-
-  // Only method that does not actually block even in synchronous spanstores.
-  @Override public void accept(List<Span> spans) {
-    CallbackCaptor<Void> captor = new CallbackCaptor<>();
-    delegate.accept(spans, captor);
-    if (BLOCK_ON_ACCEPT) {
-      captor.get();
-    }
   }
 
   @Override public List<List<Span>> getTraces(QueryRequest request) {
@@ -89,51 +70,5 @@ public final class AsyncToBlockingSpanStoreAdapter implements SpanStore {
 
   @Override public String toString() {
     return delegate.toString();
-  }
-
-  static final class CallbackCaptor<V> implements Callback<V> {
-    // countDown + ref as BlockingQueue forbids null
-    CountDownLatch countDown = new CountDownLatch(1);
-    AtomicReference<Object> ref = new AtomicReference<>();
-
-    /**
-     * Blocks until {@link Callback#onSuccess(Object)} or {@link Callback#onError(Throwable)}.
-     *
-     * <p>Returns the successful value if {@link Callback#onSuccess(Object)} was called. <p>Throws
-     * if {@link Callback#onError(Throwable)} was called.
-     */
-    @Nullable V get() {
-      boolean interrupted = false;
-      try {
-        while (true) {
-          try {
-            countDown.await();
-            Object result = ref.get();
-            if (result instanceof Throwable) {
-              if (result instanceof Error) throw (Error) result;
-              if (result instanceof RuntimeException) throw (RuntimeException) result;
-              throw new RuntimeException((Exception) result);
-            }
-            return (V) result;
-          } catch (InterruptedException e) {
-            interrupted = true;
-          }
-        }
-      } finally {
-        if (interrupted) {
-          Thread.currentThread().interrupt();
-        }
-      }
-    }
-
-    @Override public void onSuccess(@Nullable V value) {
-      ref.set(value);
-      countDown.countDown();
-    }
-
-    @Override public void onError(Throwable t) {
-      ref.set(t);
-      countDown.countDown();
-    }
   }
 }

@@ -27,7 +27,7 @@ public class ElasticsearchScalaSpanStoreTest extends SpanStoreSpec {
   }
 
   public SpanStore store() {
-    return new AsyncToScalaSpanStoreAdapter(spanStore);
+    return new AsyncToScalaSpanStoreAdapter(spanStore, spanStore);
   }
 
   public void clear() {

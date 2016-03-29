@@ -26,19 +26,20 @@ import zipkin.BinaryAnnotation.Type;
 import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.SpanStore;
+import zipkin.async.AsyncSpanConsumer;
 
 /**
  * A Brave {@link SpanCollector} that forwards to the local {@link SpanStore}.
  */
 public class SpanStoreSpanCollector implements SpanCollector, Flushable {
-  private final SpanStore spanStore;
+  private final AsyncSpanConsumer consumer;
   // TODO: should we put a bound on this queue?
   // Since this is only used for internal tracing in zipkin, maybe it's ok
   private final BlockingQueue<Span> queue = new LinkedBlockingQueue<>();
   private final int limit = 200;
 
-  public SpanStoreSpanCollector(SpanStore spanStore) {
-    this.spanStore = spanStore;
+  public SpanStoreSpanCollector(AsyncSpanConsumer consumer) {
+    this.consumer = consumer;
   }
 
   public void collect(Span span) {
@@ -62,7 +63,7 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
       }
     }
     if (!spans.isEmpty()) {
-      spanStore.accept(spans);
+      consumer.accept(spans, AsyncSpanConsumer.NOOP_CALLBACK);
     }
   }
 

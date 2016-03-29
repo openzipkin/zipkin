@@ -28,12 +28,7 @@ import zipkin.internal.Nullable;
  *
  * @see zipkin.SpanStore
  */
-public interface AsyncSpanStore extends AsyncSpanConsumer {
-
-  /**
-   * Version of {@link zipkin.SpanStore#accept} that accepts {@link Callback<Void>}.
-   */
-  @Override void accept(List<Span> spans, Callback<Void> callback);
+public interface AsyncSpanStore {
 
   /**
    * Version of {@link zipkin.SpanStore#getTraces} that accepts {@link Callback}.

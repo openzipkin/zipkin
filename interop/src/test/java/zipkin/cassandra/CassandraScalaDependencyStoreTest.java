@@ -44,7 +44,7 @@ public class CassandraScalaDependencyStoreTest extends DependencyStoreSpec {
   @Override
   public void processDependencies(List<Span> input) {
     InMemorySpanStore mem = new InMemorySpanStore();
-    new AsyncToScalaSpanStoreAdapter(mem).apply(input);
+    new AsyncToScalaSpanStoreAdapter(mem, mem).apply(input);
     java.util.List<DependencyLink>
         links = mem.getDependencies(today() + TimeUnit.DAYS.toMillis(1), null);
 

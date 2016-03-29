@@ -34,6 +34,7 @@ import scala.math.Ordering$;
 import scala.runtime.AbstractFunction1;
 import scala.runtime.BoxedUnit;
 import zipkin.Codec;
+import zipkin.async.AsyncSpanConsumer;
 import zipkin.async.AsyncSpanStore;
 import zipkin.internal.Nullable;
 
@@ -47,15 +48,17 @@ import static zipkin.interop.CloseAdapter.closeQuietly;
  */
 public final class AsyncToScalaSpanStoreAdapter extends com.twitter.zipkin.storage.SpanStore {
   private final AsyncSpanStore spanStore;
+  private final AsyncSpanConsumer spanConsumer;
 
-  public AsyncToScalaSpanStoreAdapter(AsyncSpanStore spanStore) {
+  public AsyncToScalaSpanStoreAdapter(AsyncSpanStore spanStore, AsyncSpanConsumer spanConsumer) {
     this.spanStore = spanStore;
+    this.spanConsumer = spanConsumer;
   }
 
   @Override
   public Future<BoxedUnit> apply(Seq<Span> input) {
     VoidCallback callback = new VoidCallback();
-    spanStore.accept(invert(input), callback);
+    spanConsumer.accept(invert(input), callback);
     return callback.promise;
   }
 

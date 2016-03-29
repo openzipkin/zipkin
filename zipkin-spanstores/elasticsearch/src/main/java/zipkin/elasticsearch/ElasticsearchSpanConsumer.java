@@ -26,13 +26,13 @@ import org.elasticsearch.client.Client;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.spanstore.guava.GuavaSpanConsumer;
+import zipkin.spanstore.guava.GuavaAsyncSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.elasticsearch.ElasticFutures.toGuava;
 
 // Extracted for readability
-final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
+final class ElasticsearchSpanConsumer implements GuavaAsyncSpanConsumer {
   private static final Function<Object, Void> TO_VOID = Functions.<Void>constant(null);
 
   /**

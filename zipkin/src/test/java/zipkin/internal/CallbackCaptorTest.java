@@ -11,19 +11,17 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.async;
+package zipkin.internal;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import zipkin.async.AsyncToBlockingSpanStoreAdapter.CallbackCaptor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.core.Is.isA;
 
-/** Tests for the internal class used by {@link AsyncToBlockingSpanStoreAdapter} */
 public class CallbackCaptorTest {
 
   @Rule

@@ -11,20 +11,25 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.server;
+package zipkin.async;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import org.springframework.context.annotation.Import;
-import zipkin.server.brave.BraveConfiguration;
+import static zipkin.internal.Util.checkNotNull;
 
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@Import({ZipkinServerConfiguration.class, BraveConfiguration.class, ZipkinQueryApiV1.class, ZipkinHttpTransport.class, ZipkinUiConfiguration.class})
-public @interface EnableZipkinServer {
+abstract class CallbackRunnable<V> implements Runnable {
+  final Callback<V> callback;
 
+  protected CallbackRunnable(Callback<V> callback) {
+    this.callback = checkNotNull(callback, "callback");
+  }
+
+  abstract V complete();
+
+  @Override public void run() {
+    try {
+      callback.onSuccess(complete());
+    } catch (RuntimeException | Error e) {
+      callback.onError(e);
+      if (e instanceof Error) throw e;
+    }
+  }
 }

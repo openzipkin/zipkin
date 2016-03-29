@@ -21,7 +21,7 @@ public class InMemoryScalaSpanStoreTest extends SpanStoreSpec {
   private InMemorySpanStore mem = new InMemorySpanStore();
 
   public SpanStore store() {
-    return new AsyncToScalaSpanStoreAdapter(mem);
+    return new AsyncToScalaSpanStoreAdapter(mem, mem);
   }
 
   public void clear() {

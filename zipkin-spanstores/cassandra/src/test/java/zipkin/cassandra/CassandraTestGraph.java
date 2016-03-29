@@ -15,7 +15,6 @@ package zipkin.cassandra;
 
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import org.junit.AssumptionViolatedException;
-import zipkin.async.AsyncToBlockingSpanStoreAdapter;
 
 enum CassandraTestGraph {
   INSTANCE;
@@ -24,8 +23,6 @@ enum CassandraTestGraph {
       .keyspace("test_zipkin_spanstore").build();
 
   static {
-    // Avoid race-conditions in travis by forcing read-your-writes consistency.
-    AsyncToBlockingSpanStoreAdapter.BLOCK_ON_ACCEPT = true;
     // Ensure the repository's local cache of service names expire quickly
     System.setProperty("zipkin.store.cassandra.internal.writtenNamesTtl", "1");
   }

@@ -47,7 +47,7 @@ public class ElasticsearchDependenciesTest extends DependenciesTest {
    */
   @Override
   public void processDependencies(List<Span> spans) {
-    SpanStore mem = new InMemorySpanStore();
+    InMemorySpanStore mem = new InMemorySpanStore();
     mem.accept(spans);
     List<DependencyLink> links = mem.getDependencies(today + TimeUnit.DAYS.toMillis(1), null);
 

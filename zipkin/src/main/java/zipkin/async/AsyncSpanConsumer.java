@@ -14,22 +14,32 @@
 package zipkin.async;
 
 import java.util.List;
+import zipkin.Codec;
+import zipkin.Sampler;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 
 /**
- * An interface that is equivalent to {@link zipkin.SpanConsumer} but accepts a {@link
- * Callback<Void>} to allow bridging to async libraries.
+ * Spans are created in instrumentation, transported out-of-band, and eventually persisted. A span
+ * consumer is a stage along that pipeline. A common consumption case in zipkin is to write spans to
+ * storage after applying sampling policy.
  *
- * <p>Note: This is not considered a user-level Api, rather an Spi that can be used to bind
- * user-level abstractions such as futures or observables.
- *
- * @see zipkin.SpanConsumer
+ * <p>This accepts a {@link Callback<Void>} to allow bridging to async libraries.
  */
 // @FunctionalInterface
 public interface AsyncSpanConsumer {
+  Callback<Void> NOOP_CALLBACK = new Callback<Void>() {
+    @Override public void onSuccess(@Nullable Void value) {
+    }
+
+    @Override public void onError(Throwable t) {
+    }
+  };
 
   /**
-   * Version of {@link zipkin.SpanConsumer#accept} that accepts a {@link Callback<Void>}.
+   * Receives a list of spans {@link Codec#readSpans(byte[]) decoded} from a transport.
+   *
+   * @param spans may be subject to a {@link Sampler#isSampled(long) sampling policy}.
    */
   void accept(List<Span> spans, Callback<Void> callback);
 }

@@ -14,10 +14,10 @@
 package zipkin.async;
 
 import java.util.List;
-import java.util.concurrent.Executor;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -25,7 +25,7 @@ import zipkin.DependencyLink;
 import zipkin.QueryRequest;
 import zipkin.Span;
 import zipkin.SpanStore;
-import zipkin.internal.Nullable;
+import zipkin.internal.CallbackCaptor;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,144 +38,133 @@ public class BlockingToAsyncSpanStoreAdapterTest {
   @Rule
   public MockitoRule mocks = MockitoJUnit.rule();
 
-  @Mock
-  private SpanStore delegate;
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
 
-  private AsyncSpanStore spanStore;
+  @Mock
+  private SpanStore spanStore;
+
+  private AsyncSpanStore asyncSpanStore;
 
   @Before
   public void setUp() {
     // run on calling thread so we don't have to make a complex callback captor
-    spanStore = new BlockingToAsyncSpanStoreAdapter(delegate, new Executor() {
-      @Override public void execute(Runnable command) {
-        command.run();
-      }
-    });
+    asyncSpanStore = new BlockingToAsyncSpanStoreAdapter(spanStore, Runnable::run);
   }
 
   @Test
   public void getTraces_success() {
     QueryRequest request = new QueryRequest.Builder("zipkin-web").build();
-    when(delegate.getTraces(request)).thenReturn(asList(TRACE));
+    when(spanStore.getTraces(request)).thenReturn(asList(TRACE));
 
     CallbackCaptor<List<List<Span>>> captor = new CallbackCaptor<>();
-    spanStore.getTraces(request, captor);
+    asyncSpanStore.getTraces(request, captor);
     assertThat(captor.get()).isEqualTo(asList(TRACE));
   }
 
   @Test
   public void getTraces_exception() {
+    thrown.expect(IllegalStateException.class);
     QueryRequest request = new QueryRequest.Builder("service").build();
-    when(delegate.getTraces(request)).thenThrow(new IllegalStateException("failed"));
+    when(spanStore.getTraces(request)).thenThrow(new IllegalStateException("failed"));
 
     CallbackCaptor<List<List<Span>>> captor = new CallbackCaptor<>();
-    spanStore.getTraces(request, captor);
-    assertThat(captor.get()).isInstanceOf(IllegalStateException.class);
+    asyncSpanStore.getTraces(request, captor);
+    captor.get();
   }
 
   @Test
   public void getTrace_success() {
-    when(delegate.getTrace(1L)).thenReturn(TRACE);
+    when(spanStore.getTrace(1L)).thenReturn(TRACE);
 
     CallbackCaptor<List<Span>> captor = new CallbackCaptor<>();
-    spanStore.getTrace(1L, captor);
+    asyncSpanStore.getTrace(1L, captor);
     assertThat(captor.get()).isEqualTo(TRACE);
   }
 
   @Test
   public void getTrace_exception() {
-    when(delegate.getTrace(1L)).thenThrow(new IllegalStateException("failed"));
+    thrown.expect(IllegalStateException.class);
+    when(spanStore.getTrace(1L)).thenThrow(new IllegalStateException("failed"));
 
     CallbackCaptor<List<Span>> captor = new CallbackCaptor<>();
-    spanStore.getTrace(1L, captor);
-    assertThat(captor.get()).isInstanceOf(IllegalStateException.class);
+    asyncSpanStore.getTrace(1L, captor);
+    captor.get();
   }
 
   @Test
   public void getRawTrace_success() {
-    when(delegate.getRawTrace(1L)).thenReturn(TRACE);
+    when(spanStore.getRawTrace(1L)).thenReturn(TRACE);
 
     CallbackCaptor<List<Span>> captor = new CallbackCaptor<>();
-    spanStore.getRawTrace(1L, captor);
+    asyncSpanStore.getRawTrace(1L, captor);
     assertThat(captor.get()).isEqualTo(TRACE);
   }
 
   @Test
   public void getRawTrace_exception() {
-    when(delegate.getRawTrace(1L)).thenThrow(new IllegalStateException("failed"));
+    thrown.expect(IllegalStateException.class);
+    when(spanStore.getRawTrace(1L)).thenThrow(new IllegalStateException("failed"));
 
     CallbackCaptor<List<Span>> captor = new CallbackCaptor<>();
-    spanStore.getRawTrace(1L, captor);
-    assertThat(captor.get()).isInstanceOf(IllegalStateException.class);
+    asyncSpanStore.getRawTrace(1L, captor);
+    captor.get();
   }
 
   @Test
   public void getServiceNames_success() {
-    when(delegate.getServiceNames()).thenReturn(asList("service1"));
+    when(spanStore.getServiceNames()).thenReturn(asList("service1"));
 
     CallbackCaptor<List<String>> captor = new CallbackCaptor<>();
-    spanStore.getServiceNames(captor);
+    asyncSpanStore.getServiceNames(captor);
     assertThat(captor.get()).isEqualTo(asList("service1"));
   }
 
   @Test
   public void getServiceNames_exception() {
-    when(delegate.getServiceNames()).thenThrow(new IllegalStateException("failed"));
+    thrown.expect(IllegalStateException.class);
+    when(spanStore.getServiceNames()).thenThrow(new IllegalStateException("failed"));
 
     CallbackCaptor<List<String>> captor = new CallbackCaptor<>();
-    spanStore.getServiceNames(captor);
-    assertThat(captor.get()).isInstanceOf(IllegalStateException.class);
+    asyncSpanStore.getServiceNames(captor);
+    captor.get();
   }
 
   @Test
   public void getSpanNames_success() {
-    when(delegate.getSpanNames("service1")).thenReturn(asList("span1"));
+    when(spanStore.getSpanNames("service1")).thenReturn(asList("span1"));
 
     CallbackCaptor<List<String>> captor = new CallbackCaptor<>();
-    spanStore.getSpanNames("service1", captor);
+    asyncSpanStore.getSpanNames("service1", captor);
     assertThat(captor.get()).isEqualTo(asList("span1"));
   }
 
   @Test
   public void getSpanNames_exception() {
-    when(delegate.getSpanNames("service1")).thenThrow(new IllegalStateException("failed"));
+    thrown.expect(IllegalStateException.class);
+    when(spanStore.getSpanNames("service1")).thenThrow(new IllegalStateException("failed"));
 
     CallbackCaptor<List<String>> captor = new CallbackCaptor<>();
-    spanStore.getSpanNames("service1", captor);
-    assertThat(captor.get()).isInstanceOf(IllegalStateException.class);
+    asyncSpanStore.getSpanNames("service1", captor);
+    captor.get();
   }
 
   @Test
   public void getDependencies_success() {
-    when(delegate.getDependencies(1L, null)).thenReturn(LINKS);
+    when(spanStore.getDependencies(1L, null)).thenReturn(LINKS);
 
     CallbackCaptor<List<DependencyLink>> captor = new CallbackCaptor<>();
-    spanStore.getDependencies(1L, null, captor);
+    asyncSpanStore.getDependencies(1L, null, captor);
     assertThat(captor.get()).isEqualTo(LINKS);
   }
 
   @Test
   public void getDependencies_exception() {
-    when(delegate.getDependencies(1L, null)).thenThrow(new IllegalStateException("failed"));
+    thrown.expect(IllegalStateException.class);
+    when(spanStore.getDependencies(1L, null)).thenThrow(new IllegalStateException("failed"));
 
     CallbackCaptor<List<DependencyLink>> captor = new CallbackCaptor<>();
-    spanStore.getDependencies(1L, null, captor);
-    assertThat(captor.get()).isInstanceOf(IllegalStateException.class);
-  }
-
-  private static final class CallbackCaptor<V> implements Callback<V> {
-    Object ref = null;
-
-    @Nullable Object get() {
-      return ref;
-    }
-
-    @Override public void onSuccess(@Nullable V value) {
-      ref = value;
-    }
-
-    @Override public void onError(Throwable t) {
-      ref = t;
-    }
+    asyncSpanStore.getDependencies(1L, null, captor);
+    captor.get();
   }
 }

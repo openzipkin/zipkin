@@ -11,14 +11,20 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin;
+package zipkin.async;
 
 import org.junit.Test;
+import zipkin.BinaryAnnotation;
+import zipkin.Constants;
+import zipkin.Endpoint;
+import zipkin.InMemorySpanStore;
+import zipkin.Sampler;
+import zipkin.Span;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
-public class SamplingSpanStoreConsumerTest {
+public class SamplingAsyncSpanConsumerTest {
 
   private InMemorySpanStore spanStore = new InMemorySpanStore();
   private Sampler neverSample = Sampler.create(0f);
@@ -35,18 +41,18 @@ public class SamplingSpanStoreConsumerTest {
 
   @Test
   public void debugFlagWins() {
-    SpanConsumer writer = SamplingSpanStoreConsumer.create(neverSample, spanStore);
+    AsyncSpanConsumer consumer = SamplingAsyncSpanConsumer.create(neverSample, spanStore);
 
-    writer.accept(asList(builder.debug(true).build()));
+    consumer.accept(asList(builder.debug(true).build()), AsyncSpanConsumer.NOOP_CALLBACK);
 
     assertThat(spanStore.getServiceNames()).containsExactly("service");
   }
 
   @Test
   public void unsampledSpansArentStored() {
-    SpanConsumer writer = SamplingSpanStoreConsumer.create(neverSample, spanStore);
+    AsyncSpanConsumer consumer = SamplingAsyncSpanConsumer.create(neverSample, spanStore);
 
-    writer.accept(asList(builder.build()));
+    consumer.accept(asList(builder.build()), AsyncSpanConsumer.NOOP_CALLBACK);
 
     assertThat(spanStore.getServiceNames()).isEmpty();
   }

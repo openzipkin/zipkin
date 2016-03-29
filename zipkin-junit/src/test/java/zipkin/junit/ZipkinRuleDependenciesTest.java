@@ -18,6 +18,7 @@ import org.junit.Rule;
 import zipkin.DependenciesTest;
 import zipkin.Span;
 import zipkin.SpanStore;
+import zipkin.internal.CallbackCaptor;
 
 /** Tests the http interface of {@link ZipkinRule}. */
 public class ZipkinRuleDependenciesTest extends DependenciesTest {
@@ -37,6 +38,8 @@ public class ZipkinRuleDependenciesTest extends DependenciesTest {
 
   @Override
   protected void processDependencies(List<Span> spans) {
-    store.accept(spans);
+    CallbackCaptor<Void> captor = new CallbackCaptor<>();
+    store.accept(spans, captor);
+    captor.get(); // block on complete
   }
 }
