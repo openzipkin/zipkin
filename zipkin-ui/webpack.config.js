@@ -1,6 +1,7 @@
 var webpack = require('webpack');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
+var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
     entry: [
@@ -38,7 +39,10 @@ module.exports = {
             jQuery: "jquery"
         }),
         new ExtractTextPlugin("app-[hash].min.css", {allChunks: true}),
-        new HtmlWebpackPlugin()
+        new HtmlWebpackPlugin(),
+        new CopyWebpackPlugin([
+            { from: 'static' }
+        ])
     ],
     devServer: {
         port: 9090,
