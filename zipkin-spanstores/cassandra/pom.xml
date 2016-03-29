@@ -28,7 +28,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <zipkin-cassandra-core.version>1.38.0</zipkin-cassandra-core.version>
+    <zipkin-cassandra-core.version>1.39.0</zipkin-cassandra-core.version>
   </properties>
 
   <dependencies>

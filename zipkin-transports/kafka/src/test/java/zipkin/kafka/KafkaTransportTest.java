@@ -25,6 +25,7 @@ import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Endpoint;
 import zipkin.Span;
+import zipkin.SpanConsumer;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,7 +36,7 @@ public class KafkaTransportTest {
 
   Endpoint endpoint = Endpoint.create("web", 127 << 24 | 1, 80);
   Annotation ann = Annotation.create(System.currentTimeMillis() * 1000, SERVER_RECV, endpoint);
-  Span span = new Span.Builder().id(1L).traceId(1L).timestamp(ann.timestamp).name("get")
+  Span span = new Span.Builder().traceId(1L).id(2L).timestamp(ann.timestamp).name("get")
       .addAnnotation(ann).build();
 
   /** Ensures legacy encoding works: a single TBinaryProtocol encoded span */
@@ -97,7 +98,7 @@ public class KafkaTransportTest {
   public void skipsMalformedData() throws Exception {
     KafkaConfig config = KafkaConfig.builder()
         .zookeeper(kafka.zookeeperConnectionString())
-        .topic("malformed").build();
+        .topic("decoder-exception").build();
 
     LinkedBlockingQueue<List<Span>> recvdSpans = new LinkedBlockingQueue<>();
 
@@ -109,6 +110,35 @@ public class KafkaTransportTest {
     producer.close();
 
     try (KafkaTransport processor = new KafkaTransport(config, recvdSpans::add)) {
+      assertThat(recvdSpans.take()).containsExactly(span);
+      // the only way we could read this, is if the malformed spans were skipped.
+      assertThat(recvdSpans.take()).containsExactly(span);
+    }
+  }
+
+  /** Guards against errors that leak from storage, such as InvalidQueryException */
+  @Test
+  public void skipsOnConsumerException() throws Exception {
+    KafkaConfig config = KafkaConfig.builder()
+        .zookeeper(kafka.zookeeperConnectionString())
+        .topic("consumer-exception").build();
+
+    LinkedBlockingQueue<List<Span>> recvdSpans = new LinkedBlockingQueue<>();
+    SpanConsumer consumer = (spans) -> {
+      if (recvdSpans.size() == 1) {
+        throw new RuntimeException("storage fell over");
+      } else {
+        recvdSpans.add(spans);
+      }
+    };
+
+    Producer<String, byte[]> producer = new Producer<>(kafka.producerConfigWithDefaultEncoder());
+    producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span))));
+    producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span)))); // tossed on error
+    producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span))));
+    producer.close();
+
+    try (KafkaTransport processor = new KafkaTransport(config, consumer)) {
       assertThat(recvdSpans.take()).containsExactly(span);
       // the only way we could read this, is if the malformed span was skipped.
       assertThat(recvdSpans.take()).containsExactly(span);

@@ -33,7 +33,7 @@
     <libthrift.version>0.9.3</libthrift.version>
     <scalatest.version>2.2.5</scalatest.version>
     <!-- Which implementation version are the span stores compatible with -->
-    <zipkin-scala.version>1.38.1</zipkin-scala.version>
+    <zipkin-scala.version>1.39.0</zipkin-scala.version>
   </properties>
 
   <dependencies>

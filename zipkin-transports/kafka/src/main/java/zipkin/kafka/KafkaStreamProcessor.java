@@ -13,16 +13,20 @@
  */
 package zipkin.kafka;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Logger;
 import kafka.consumer.ConsumerIterator;
 import kafka.consumer.KafkaStream;
 import zipkin.Span;
 import zipkin.SpanConsumer;
 
-final class KafkaStreamProcessor implements Runnable {
+import static java.util.logging.Level.WARNING;
 
-  private final KafkaStream<String, List<Span>> stream;
-  private final SpanConsumer spanConsumer;
+final class KafkaStreamProcessor implements Runnable {
+  final Logger logger = Logger.getLogger(KafkaStreamProcessor.class.getName());
+  final KafkaStream<String, List<Span>> stream;
+  final SpanConsumer spanConsumer;
 
   KafkaStreamProcessor(KafkaStream<String, List<Span>> stream, SpanConsumer spanConsumer) {
     this.stream = stream;
@@ -35,7 +39,19 @@ final class KafkaStreamProcessor implements Runnable {
     while (messages.hasNext()) {
       List<Span> spans = messages.next().message();
       if (spans.isEmpty()) continue;
-      spanConsumer.accept(spans);
+      try {
+        spanConsumer.accept(spans);
+      } catch (RuntimeException e) {
+        // The exception could be related to a span being huge. Instead of filling logs,
+        // print trace id, span id pairs
+        StringBuilder message = new StringBuilder("unhandled error processing traceId -> spanId: ");
+        for (Iterator<Span> iterator = spans.iterator(); iterator.hasNext(); ) {
+          Span span = iterator.next();
+          message.append(span.traceId).append(" -> ").append(span.id);
+          if (iterator.hasNext()) message.append(",");
+        }
+        logger.log(WARNING, message.toString(), e);
+      }
     }
   }
 }
