@@ -15,6 +15,7 @@ package zipkin.kafka;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 import kafka.serializer.Decoder;
 import zipkin.Codec;
 import zipkin.Span;
@@ -24,6 +25,7 @@ import zipkin.Span;
  * list. Malformed input is ignored.
  */
 final class SpansDecoder implements Decoder<List<Span>> {
+  final Logger logger = Logger.getLogger(SpansDecoder.class.getName());
 
   @Override
   public List<Span> fromBytes(byte[] bytes) {
@@ -44,8 +46,8 @@ final class SpansDecoder implements Decoder<List<Span>> {
       } else {
         return Collections.singletonList(Codec.THRIFT.readSpan(bytes));
       }
-    } catch (IllegalArgumentException ignored) {
-      // binary decoding messages aren't useful enough to clutter logs with.
+    } catch (RuntimeException e) {
+      logger.fine("malformed message: " + e.getMessage());
       return Collections.emptyList();
     }
   }
