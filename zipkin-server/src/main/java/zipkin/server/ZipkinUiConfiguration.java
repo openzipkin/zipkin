@@ -27,6 +27,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -56,6 +57,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
  * That's why hashed resource age can be 365 days.
  */
 @Configuration
+@RestController
 @ConditionalOnResource(resources = "classpath:zipkin-ui") // from io.zipkin:zipkin-ui
 public class ZipkinUiConfiguration extends WebMvcConfigurerAdapter {
 
