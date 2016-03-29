@@ -29,7 +29,7 @@
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
     <brave.version>3.5.0</brave.version>
-    <zipkin-ui.version>1.38.1</zipkin-ui.version>
+    <zipkin-ui.version>1.39.0</zipkin-ui.version>
     <start-class>zipkin.server.ZipkinServer</start-class>
     <maven-invoker-plugin.version>2.0.0</maven-invoker-plugin.version>
   </properties>

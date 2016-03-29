@@ -45,12 +45,15 @@ zipkin:
     lookback: ${QUERY_LOOKBACK:86400000}
   store:
     type: ${STORAGE_TYPE:mem}
-  # Values here are read by Zipkin UI's javascript at /config.json
   ui:
+    ## Values below here are mapped to ZipkinServerProperties.UI, served as /config.json
     # Default limit for Find Traces
     query-limit: 10
     # The value here becomes a label in the top-right corner
     environment:
+    # Default duration to look back when finding traces or dependency links.
+    # Affects the "Start time" element in the UI. 7 days in millis
+    default-lookback: ${QUERY_LOOKBACK:604800000}
 server:
   port: ${QUERY_PORT:9411}
   compression:
@@ -59,6 +62,10 @@ server:
     # Includes dynamic json content and large static assets from zipkin-ui
     mime-types: application/json,application/javascript,text/css,image/svg
 spring:
+  mvc:
+    favicon:
+      # zipkin has its own favicon
+      enabled: false
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
     url: jdbc:mysql://${mysql.host}:${mysql.port}/${mysql.db}?autoReconnect=true&useSSL=${mysql.use-ssl}

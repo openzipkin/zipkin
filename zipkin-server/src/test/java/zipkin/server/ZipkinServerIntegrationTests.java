@@ -35,6 +35,7 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static zipkin.internal.Util.UTF_8;
 
@@ -133,6 +134,17 @@ public class ZipkinServerIntegrationTests {
     mockMvc.perform(get("/api/v1/trace/1?raw"))
         .andExpect(status().isOk())
         .andExpect(content().string(new String(Codec.JSON.writeSpans(asList(span, span)), UTF_8)));
+  }
+
+  /** The zipkin-ui is a single-page app. This prevents reloading all resources on each click. */
+  @Test
+  public void setsMaxAgeOnUiResources() throws Exception {
+    mockMvc.perform(get("/favicon.ico"))
+        .andExpect(header().string("Cache-Control", "max-age=31536000"));
+    mockMvc.perform(get("/config.json"))
+        .andExpect(header().string("Cache-Control", "max-age=600"));
+    mockMvc.perform(get("/index.html"))
+        .andExpect(header().string("Cache-Control", "max-age=60"));
   }
 
   static Span newSpan(long traceId, long id, String spanName, String value, String service) {
