@@ -18,6 +18,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.concurrent.Executor;
 import javax.sql.DataSource;
 import org.jooq.ExecuteListenerProvider;
 import org.jooq.conf.Settings;
@@ -26,6 +27,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,12 +38,15 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import zipkin.Codec;
 import zipkin.InMemorySpanStore;
 import zipkin.Sampler;
 import zipkin.SpanStore;
+import zipkin.async.AsyncSpanConsumer;
 import zipkin.async.AsyncToBlockingSpanStoreAdapter;
+import zipkin.async.BlockingToAsyncSpanConsumerAdapter;
+import zipkin.async.SamplingAsyncSpanConsumer;
 import zipkin.cassandra.CassandraConfig;
 import zipkin.cassandra.CassandraSpanStore;
 import zipkin.elasticsearch.ElasticsearchConfig;
@@ -49,11 +54,10 @@ import zipkin.elasticsearch.ElasticsearchSpanStore;
 import zipkin.jdbc.JDBCSpanStore;
 import zipkin.kafka.KafkaConfig;
 import zipkin.kafka.KafkaTransport;
-import zipkin.server.brave.TraceWritesSpanStore;
+import zipkin.server.brave.TracedSpanStore;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinServerProperties.class)
-@EnableAsync(proxyTargetClass = true)
 public class ZipkinServerConfiguration {
 
   @Autowired
@@ -73,7 +77,7 @@ public class ZipkinServerConfiguration {
 
   @Bean
   @ConditionalOnMissingBean(SpanStore.class)
-  SpanStore spanStore() {
+  InMemorySpanStore inMemorySpanStore() {
     if (server.getStore().getType() != ZipkinServerProperties.Store.Type.mem) {
       throw new IllegalStateException("Attempted to set storage type to "
           + server.getStore().getType() + " but could not initialize the spanstore for "
@@ -82,7 +86,40 @@ public class ZipkinServerConfiguration {
     return new InMemorySpanStore();
   }
 
+  @Bean
+  @ConditionalOnBean(InMemorySpanStore.class)
+  SpanStore spanStore() {
+    return inMemorySpanStore();
+  }
+
+  @Bean
+  @ConditionalOnBean(InMemorySpanStore.class)
+  AsyncSpanConsumer spanConsumer(Sampler sampler) {
+    return SamplingAsyncSpanConsumer.create(sampler, inMemorySpanStore());
+  }
+
+  /**
+   * This wraps a {@link SpanStore} bean named "spanStore" so that it can be traced.
+   *
+   * This works by overriding the bean. If you have beans who subtype {@link SpanStore}, spring will
+   * register it against all interfaces. However, you cannot narrow the type when overriding. To
+   * allow it to be overridden, make sure it is provided as {@link SpanStore} and named "spanStore".
+   *
+   * <p>Ex.
+   * <pre>{@code
+   *   @Bean
+   *   FooSpanStore fooSpanStore() {
+   *     return new FooSpanStore();
+   *   }
+   *
+   *   @Bean
+   *   SpanStore spanStore() {
+   *     return fooSpanStore();
+   *   }
+   * }</pre>
+   */
   @Configuration
+  @ConditionalOnBean(value = SpanStore.class, name = "spanStore")
   @ConditionalOnClass(name = "com.github.kristofa.brave.Brave")
   static class BraveSpanStoreEnhancer implements BeanPostProcessor {
 
@@ -96,8 +133,8 @@ public class ZipkinServerConfiguration {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) {
-      if (bean instanceof SpanStore && brave != null) {
-        return new TraceWritesSpanStore(brave, (SpanStore) bean);
+      if (bean instanceof SpanStore && brave != null && beanName.equals("spanStore")) {
+        return new TracedSpanStore(brave, (SpanStore) bean);
       }
       return bean;
     }
@@ -108,15 +145,33 @@ public class ZipkinServerConfiguration {
   @ConditionalOnClass(name = "zipkin.jdbc.JDBCSpanStore")
   static class JDBCConfiguration {
 
-    @Autowired(required = false)
+    @Autowired
     DataSource datasource;
 
     @Autowired(required = false)
     @Qualifier("jdbcTraceListenerProvider")
     ExecuteListenerProvider listener;
 
-    @Bean SpanStore jdbcSpanStore() {
+    @Bean JDBCSpanStore jdbcSpanStore() {
       return new JDBCSpanStore(datasource, new Settings().withRenderSchema(false), listener);
+    }
+
+    @Bean SpanStore spanStore() {
+      return jdbcSpanStore();
+    }
+
+    @Bean @ConditionalOnMissingBean(Executor.class)
+    public Executor executor() {
+      ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+      executor.setThreadNamePrefix("JDBCSpanStore-");
+      executor.initialize();
+      return executor;
+    }
+
+    @Bean AsyncSpanConsumer spanConsumer(Sampler sampler) {
+      JDBCSpanStore jdbc = jdbcSpanStore();
+      AsyncSpanConsumer async = new BlockingToAsyncSpanConsumerAdapter(jdbc::accept, executor());
+      return SamplingAsyncSpanConsumer.create(sampler, async);
     }
   }
 
@@ -125,7 +180,11 @@ public class ZipkinServerConfiguration {
   @ConditionalOnProperty(name = "zipkin.store.type", havingValue = "cassandra")
   @ConditionalOnClass(name = "zipkin.cassandra.CassandraSpanStore")
   static class CassandraConfiguration {
-    @Bean SpanStore cassandraSpanStore(ZipkinCassandraProperties cassandra) {
+
+    @Autowired
+    ZipkinCassandraProperties cassandra;
+
+    @Bean CassandraSpanStore cassandraSpanStore() {
       CassandraConfig config = new CassandraConfig.Builder()
           .keyspace(cassandra.getKeyspace())
           .contactPoints(cassandra.getContactPoints())
@@ -136,7 +195,15 @@ public class ZipkinServerConfiguration {
           .password(cassandra.getPassword())
           .spanTtl(cassandra.getSpanTtl())
           .indexTtl(cassandra.getIndexTtl()).build();
-      return new AsyncToBlockingSpanStoreAdapter(new CassandraSpanStore(config));
+      return new CassandraSpanStore(config);
+    }
+
+    @Bean SpanStore spanStore() {
+      return new AsyncToBlockingSpanStoreAdapter(cassandraSpanStore());
+    }
+
+    @Bean AsyncSpanConsumer spanConsumer(Sampler sampler) {
+      return SamplingAsyncSpanConsumer.create(sampler, cassandraSpanStore());
     }
   }
 
@@ -145,13 +212,25 @@ public class ZipkinServerConfiguration {
   @ConditionalOnProperty(name = "zipkin.store.type", havingValue = "elasticsearch")
   @ConditionalOnClass(name = "zipkin.elasticsearch.ElasticsearchSpanStore")
   static class ElasticsearchConfiguration {
-    @Bean SpanStore elasticsearchSpanStore(ZipkinElasticsearchProperties elasticsearch) {
+
+    @Autowired
+    ZipkinElasticsearchProperties elasticsearch;
+
+    @Bean ElasticsearchSpanStore elasticsearchSpanStore() {
       ElasticsearchConfig config = new ElasticsearchConfig.Builder()
           .cluster(elasticsearch.getCluster())
           .hosts(elasticsearch.getHosts())
           .index(elasticsearch.getIndex())
           .build();
-      return new AsyncToBlockingSpanStoreAdapter(new ElasticsearchSpanStore(config));
+      return new ElasticsearchSpanStore(config);
+    }
+
+    @Bean SpanStore spanStore() {
+      return new AsyncToBlockingSpanStoreAdapter(elasticsearchSpanStore());
+    }
+
+    @Bean AsyncSpanConsumer spanConsumer(Sampler sampler) {
+      return SamplingAsyncSpanConsumer.create(sampler, elasticsearchSpanStore());
     }
   }
 
@@ -163,13 +242,13 @@ public class ZipkinServerConfiguration {
   @EnableConfigurationProperties(ZipkinKafkaProperties.class)
   @ConditionalOnKafkaZookeeper
   static class KafkaConfiguration {
-    @Bean KafkaTransport kafkaTransport(ZipkinKafkaProperties kafka, ZipkinSpanWriter writer) {
+    @Bean KafkaTransport kafkaTransport(ZipkinKafkaProperties kafka, AsyncSpanConsumer consumer) {
       KafkaConfig config = KafkaConfig.builder()
           .topic(kafka.getTopic())
           .zookeeper(kafka.getZookeeper())
           .groupId(kafka.getGroupId())
           .streams(kafka.getStreams()).build();
-      return new KafkaTransport(config, writer);
+      return new KafkaTransport(config, consumer);
     }
   }
 

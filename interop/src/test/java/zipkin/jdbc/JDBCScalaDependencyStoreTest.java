@@ -19,27 +19,32 @@ import com.twitter.zipkin.storage.DependencyStoreSpec;
 import java.sql.SQLException;
 import org.junit.BeforeClass;
 import scala.collection.immutable.List;
+import zipkin.async.AsyncSpanConsumer;
+import zipkin.async.AsyncSpanStore;
+import zipkin.async.BlockingToAsyncSpanConsumerAdapter;
 import zipkin.async.BlockingToAsyncSpanStoreAdapter;
-import zipkin.interop.ScalaDependencyStoreAdapter;
 import zipkin.interop.AsyncToScalaSpanStoreAdapter;
-
-import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+import zipkin.interop.ScalaDependencyStoreAdapter;
 
 public class JDBCScalaDependencyStoreTest extends DependencyStoreSpec {
   private static JDBCSpanStore spanStore;
+  private static AsyncSpanStore asyncStore;
+  private static AsyncSpanConsumer asyncConsumer;
 
   @BeforeClass
   public static void setupDB() throws SQLException {
     spanStore = new JDBCTestGraph().spanStore;
+    asyncStore = new BlockingToAsyncSpanStoreAdapter(spanStore, Runnable::run);
+    asyncConsumer = new BlockingToAsyncSpanConsumerAdapter(spanStore::accept, Runnable::run);
   }
 
   public DependencyStore store() {
-    return new ScalaDependencyStoreAdapter(new BlockingToAsyncSpanStoreAdapter(spanStore, directExecutor()));
+    return new ScalaDependencyStoreAdapter(asyncStore);
   }
 
   @Override
   public void processDependencies(List<Span> spans) {
-    new AsyncToScalaSpanStoreAdapter(new BlockingToAsyncSpanStoreAdapter(spanStore, directExecutor())).apply(spans);
+    new AsyncToScalaSpanStoreAdapter(asyncStore, asyncConsumer).apply(spans);
   }
 
   public void clear() {

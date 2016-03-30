@@ -24,13 +24,13 @@ import org.twitter.zipkin.storage.cassandra.Repository;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.spanstore.guava.GuavaSpanConsumer;
+import zipkin.spanstore.guava.GuavaAsyncSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.cassandra.CassandraUtil.annotationKeys;
 
 // Extracted for readability
-final class CassandraSpanConsumer implements GuavaSpanConsumer {
+final class CassandraSpanConsumer implements GuavaAsyncSpanConsumer {
   private static final Function<Object, Void> TO_VOID = Functions.<Void>constant(null);
 
   private final Repository repository;

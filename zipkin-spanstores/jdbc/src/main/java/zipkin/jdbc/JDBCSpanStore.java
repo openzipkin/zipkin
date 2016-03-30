@@ -90,7 +90,7 @@ public final class JDBCSpanStore implements SpanStore {
     }
   }
 
-  @Override
+  /** Blocking version of {@link zipkin.async.AsyncSpanConsumer#accept} */
   public void accept(List<Span> spans) {
     if (spans.isEmpty()) return;
     try (Connection conn = datasource.getConnection()) {

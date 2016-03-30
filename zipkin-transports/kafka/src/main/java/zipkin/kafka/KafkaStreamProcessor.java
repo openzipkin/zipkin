@@ -19,16 +19,16 @@ import java.util.logging.Logger;
 import kafka.consumer.ConsumerIterator;
 import kafka.consumer.KafkaStream;
 import zipkin.Span;
-import zipkin.SpanConsumer;
+import zipkin.async.AsyncSpanConsumer;
 
 import static java.util.logging.Level.WARNING;
 
 final class KafkaStreamProcessor implements Runnable {
   final Logger logger = Logger.getLogger(KafkaStreamProcessor.class.getName());
   final KafkaStream<String, List<Span>> stream;
-  final SpanConsumer spanConsumer;
+  final AsyncSpanConsumer spanConsumer;
 
-  KafkaStreamProcessor(KafkaStream<String, List<Span>> stream, SpanConsumer spanConsumer) {
+  KafkaStreamProcessor(KafkaStream<String, List<Span>> stream, AsyncSpanConsumer spanConsumer) {
     this.stream = stream;
     this.spanConsumer = spanConsumer;
   }
@@ -40,7 +40,7 @@ final class KafkaStreamProcessor implements Runnable {
       List<Span> spans = messages.next().message();
       if (spans.isEmpty()) continue;
       try {
-        spanConsumer.accept(spans);
+        spanConsumer.accept(spans, AsyncSpanConsumer.NOOP_CALLBACK);
       } catch (RuntimeException e) {
         // The exception could be related to a span being huge. Instead of filling logs,
         // print trace id, span id pairs

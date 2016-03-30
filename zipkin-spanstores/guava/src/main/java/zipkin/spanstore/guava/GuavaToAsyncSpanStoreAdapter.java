@@ -23,6 +23,7 @@ import java.util.List;
 import zipkin.DependencyLink;
 import zipkin.QueryRequest;
 import zipkin.Span;
+import zipkin.async.AsyncSpanConsumer;
 import zipkin.async.AsyncSpanStore;
 import zipkin.async.Callback;
 import zipkin.internal.Nullable;
@@ -38,7 +39,7 @@ import static zipkin.internal.Util.checkNotNull;
  * <p>In implementation, this adds the zipkin callback to the future's listeners.
  */
 public abstract class GuavaToAsyncSpanStoreAdapter extends ForwardingObject
-    implements AsyncSpanStore {
+    implements AsyncSpanStore, AsyncSpanConsumer {
   protected static final ListenableFuture<List<String>> EMPTY_LIST =
       immediateFuture(Collections.<String>emptyList());
   protected static final Ordering<List<Span>> TRACE_DESCENDING = Ordering.from(new Comparator<List<Span>>() {

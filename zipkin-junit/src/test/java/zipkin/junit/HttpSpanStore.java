@@ -15,6 +15,7 @@ package zipkin.junit;
 
 import java.io.IOException;
 import java.util.List;
+import okhttp3.Call;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -25,6 +26,8 @@ import zipkin.DependencyLink;
 import zipkin.QueryRequest;
 import zipkin.Span;
 import zipkin.SpanStore;
+import zipkin.async.AsyncSpanConsumer;
+import zipkin.async.Callback;
 import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
 
@@ -33,7 +36,7 @@ import zipkin.internal.Nullable;
  *
  * <p>Intentionally synchronous to reuse span store tests as http interface tests.
  */
-final class HttpSpanStore implements SpanStore {
+final class HttpSpanStore implements SpanStore, AsyncSpanConsumer {
 
   static final JsonCodec JSON_CODEC = new JsonCodec();
   private final OkHttpClient client = new OkHttpClient();
@@ -47,12 +50,20 @@ final class HttpSpanStore implements SpanStore {
   }
 
   @Override
-  public void accept(List<Span> spans) {
+  public void accept(List<Span> spans, final Callback<Void> callback) {
     byte[] spansInJson = JSON_CODEC.writeSpans(spans);
-    call(new Request.Builder()
+    client.newCall(new Request.Builder()
         .url(baseUrl.resolve("/api/v1/spans"))
         .post(RequestBody.create(MediaType.parse("application/json"), spansInJson)).build()
-    );
+    ).enqueue(new okhttp3.Callback() {
+      @Override public void onFailure(Call call, IOException e) {
+        callback.onError(e);
+      }
+
+      @Override public void onResponse(Call call, Response response) throws IOException {
+        callback.onSuccess(null);
+      }
+    });
   }
 
   @Override

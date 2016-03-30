@@ -16,16 +16,7 @@ package zipkin;
 import java.util.List;
 import zipkin.internal.Nullable;
 
-public interface SpanStore extends SpanConsumer {
-
-  /**
-   * Schedules a write of spans to storage. Sampling should occur prior to invoking this.
-   *
-   * <p>It is implementation-specific whether or not spans with the same id are merged.
-   */
-  // Collection as there's no implementation that decodes lazily and knowing span count helps.
-  @Override
-  void accept(List<Span> spans);
+public interface SpanStore {
 
   /**
    * Get the available trace information from the storage system. Spans in trace are sorted by the

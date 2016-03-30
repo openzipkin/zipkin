@@ -24,8 +24,7 @@ import zipkin.internal.Nullable;
 import static zipkin.internal.Util.checkNotNull;
 
 /**
- * A {@link AsyncSpanStore} derived from an {@link SpanStore}. Used to adapt to other composition
- * libraries.
+ * This allows you to build an {@link AsyncSpanStore} from a blocking api.
  *
  * <p>In implementation, this runs blocking calls in a thread.
  */
@@ -37,19 +36,6 @@ public final class BlockingToAsyncSpanStoreAdapter implements AsyncSpanStore {
   public BlockingToAsyncSpanStoreAdapter(SpanStore spanStore, Executor executor) {
     this.spanStore = checkNotNull(spanStore, "spanStore");
     this.executor = checkNotNull(executor, "executor");
-  }
-
-  @Override public void accept(final List<Span> spans, Callback<Void> callback) {
-    executor.execute(new CallbackRunnable<Void>(callback) {
-      @Override Void complete() {
-        spanStore.accept(spans);
-        return null;
-      }
-
-      @Override public String toString() {
-        return "Accept(" + spans + ")";
-      }
-    });
   }
 
   @Override public void getTraces(final QueryRequest request, Callback<List<List<Span>>> callback) {
@@ -127,24 +113,5 @@ public final class BlockingToAsyncSpanStoreAdapter implements AsyncSpanStore {
 
   @Override public String toString() {
     return spanStore.toString();
-  }
-
-  static abstract class CallbackRunnable<V> implements Runnable {
-    final Callback<V> callback;
-
-    protected CallbackRunnable(Callback<V> callback) {
-      this.callback = checkNotNull(callback, "callback");
-    }
-
-    abstract V complete();
-
-    @Override public void run() {
-      try {
-        callback.onSuccess(complete());
-      } catch (RuntimeException | Error e) {
-        callback.onError(e);
-        if (e instanceof Error) throw e;
-      }
-    }
   }
 }

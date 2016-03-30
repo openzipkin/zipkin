@@ -16,6 +16,7 @@ package zipkin.junit;
 import org.junit.Rule;
 import zipkin.SpanStore;
 import zipkin.SpanStoreTest;
+import zipkin.async.AsyncSpanConsumer;
 
 /** Tests the http interface of {@link ZipkinRule}. */
 public class ZipkinRuleSpanStoreTest extends SpanStoreTest {
@@ -25,6 +26,10 @@ public class ZipkinRuleSpanStoreTest extends SpanStoreTest {
   HttpSpanStore store = new HttpSpanStore(server.httpUrl());
 
   @Override protected SpanStore store() {
+    return store;
+  }
+
+  @Override protected AsyncSpanConsumer consumer() {
     return store;
   }
 

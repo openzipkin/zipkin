@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import zipkin.async.AsyncSpanConsumer;
 import zipkin.async.AsyncSpanStore;
 import zipkin.async.Callback;
 import zipkin.internal.ApplyTimestampAndDuration;
@@ -43,13 +44,12 @@ import static zipkin.internal.Util.sortedList;
  *
  * <p>All {@link Callback callbacks} execute on the calling thread.
  */
-public final class InMemorySpanStore implements SpanStore, AsyncSpanStore {
+public final class InMemorySpanStore implements SpanStore, AsyncSpanStore, AsyncSpanConsumer {
   private final Multimap<Long, Span> traceIdToSpans = new LinkedListMultimap<>();
   private final Multimap<String, Pair<Long>> serviceToTraceIdTimeStamp = new SortedByValue2Descending<>();
   private final Multimap<String, String> serviceToSpanNames = new LinkedHashSetMultimap<>();
   private int acceptedSpanCount;
 
-  @Override
   public synchronized void accept(List<Span> spans) {
     for (Span span : spans) {
       span = ApplyTimestampAndDuration.apply(span);

@@ -18,14 +18,14 @@ import java.util.List;
 import zipkin.Span;
 
 /**
- * An interface that is equivalent to {@link zipkin.SpanConsumer} but exposes methods as
+ * An interface that is equivalent to {@link zipkin.async.AsyncSpanConsumer} but exposes methods as
  * {@link ListenableFuture} to allow asynchronous composition.
  */
 // @FunctionalInterface
-public interface GuavaSpanConsumer {
+public interface GuavaAsyncSpanConsumer {
 
   /**
-   * Version of {@link zipkin.SpanConsumer#accept} that returns a {@link ListenableFuture}.
+   * Version of {@link zipkin.async.AsyncSpanConsumer} that returns a {@link ListenableFuture}.
    */
   ListenableFuture<Void> accept(List<Span> spans);
 }

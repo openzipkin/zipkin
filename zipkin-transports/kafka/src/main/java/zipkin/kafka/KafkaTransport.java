@@ -14,25 +14,24 @@
 package zipkin.kafka;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import kafka.javaapi.consumer.ConsumerConnector;
 import kafka.serializer.StringDecoder;
-import zipkin.SpanConsumer;
+import zipkin.async.AsyncSpanConsumer;
 
 import static kafka.consumer.Consumer.createJavaConsumerConnector;
 
 /**
  * This transport polls a Kafka topic for messages that contain TBinaryProtocol big-endian encoded
- * lists of spans. These spans are pushed to a {@link SpanConsumer#accept(List) span consumer}.
+ * lists of spans. These spans are pushed to a {@link AsyncSpanConsumer#accept span consumer}.
  */
 public final class KafkaTransport implements AutoCloseable {
 
   final ExecutorService pool;
 
-  public KafkaTransport(KafkaConfig config, SpanConsumer spanConsumer) {
+  public KafkaTransport(KafkaConfig config, AsyncSpanConsumer spanConsumer) {
     this.pool = config.streams == 1
         ? Executors.newSingleThreadExecutor()
         : Executors.newFixedThreadPool(config.streams);

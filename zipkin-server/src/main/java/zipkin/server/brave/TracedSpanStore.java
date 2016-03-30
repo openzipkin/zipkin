@@ -22,20 +22,15 @@ import zipkin.Span;
 import zipkin.SpanStore;
 import zipkin.internal.Nullable;
 
-public final class TraceWritesSpanStore implements SpanStore {
+public final class TracedSpanStore implements SpanStore {
   private final LocalTracer tracer;
   private final SpanStore delegate;
   private final String component;
 
-  public TraceWritesSpanStore(Brave brave, SpanStore delegate) {
+  public TracedSpanStore(Brave brave, SpanStore delegate) {
     this.tracer = brave.localTracer();
     this.delegate = delegate;
     this.component = delegate.getClass().getSimpleName();
-  }
-
-  @Override
-  public void accept(List<Span> spans) {
-    delegate.accept(spans); // don't trace writes
   }
 
   @Override

@@ -32,7 +32,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import zipkin.Endpoint;
-import zipkin.SpanStore;
+import zipkin.async.AsyncSpanConsumer;
 
 @Configuration
 @ConditionalOnClass(ServerTracer.class)
@@ -68,12 +68,12 @@ public class BraveConfiguration {
   }
 
   /**
-   * @param spanStore lazy to avoid circular reference: the collector uses the same span store as
-   * the query api.
+   * @param spanConsumer lazy to avoid circular reference: the collector uses the same span store as
+   * the http transport.
    */
   @Bean
-  SpanStoreSpanCollector spanCollector(@Lazy SpanStore spanStore) {
-    return new SpanStoreSpanCollector(spanStore);
+  SpanStoreSpanCollector spanCollector(@Lazy AsyncSpanConsumer spanConsumer) {
+    return new SpanStoreSpanCollector(spanConsumer);
   }
 
   @Bean

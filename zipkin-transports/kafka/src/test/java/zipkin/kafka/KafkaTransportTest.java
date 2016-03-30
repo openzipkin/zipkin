@@ -15,7 +15,6 @@ package zipkin.kafka;
 
 import com.github.charithe.kafka.KafkaJunitRule;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
@@ -25,7 +24,7 @@ import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Endpoint;
 import zipkin.Span;
-import zipkin.SpanConsumer;
+import zipkin.async.AsyncSpanConsumer;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,6 +38,13 @@ public class KafkaTransportTest {
   Span span = new Span.Builder().traceId(1L).id(2L).timestamp(ann.timestamp).name("get")
       .addAnnotation(ann).build();
 
+
+  LinkedBlockingQueue<List<Span>> recvdSpans = new LinkedBlockingQueue<>();
+  AsyncSpanConsumer consumer = (spans, callback) -> {
+    recvdSpans.add(spans);
+    callback.onSuccess(null);
+  };
+
   /** Ensures legacy encoding works: a single TBinaryProtocol encoded span */
   @Test
   public void messageWithSingleThriftSpan() throws Exception {
@@ -46,14 +52,12 @@ public class KafkaTransportTest {
         .zookeeper(kafka.zookeeperConnectionString())
         .topic("single_span").build();
 
-    CompletableFuture<List<Span>> promise = new CompletableFuture<>();
-
     Producer<String, byte[]> producer = new Producer<>(kafka.producerConfigWithDefaultEncoder());
     producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpan(span)));
     producer.close();
 
-    try (KafkaTransport processor = new KafkaTransport(config, promise::complete)) {
-      assertThat(promise.get()).containsOnly(span);
+    try (KafkaTransport processor = new KafkaTransport(config, consumer)) {
+      assertThat(recvdSpans.take()).containsExactly(span);
     }
   }
 
@@ -64,14 +68,12 @@ public class KafkaTransportTest {
         .zookeeper(kafka.zookeeperConnectionString())
         .topic("multiple_spans_thrift").build();
 
-    CompletableFuture<List<Span>> promise = new CompletableFuture<>();
-
     Producer<String, byte[]> producer = new Producer<>(kafka.producerConfigWithDefaultEncoder());
     producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span, span))));
     producer.close();
 
-    try (KafkaTransport processor = new KafkaTransport(config, promise::complete)) {
-      assertThat(promise.get()).containsExactly(span, span);
+    try (KafkaTransport processor = new KafkaTransport(config, consumer)) {
+      assertThat(recvdSpans.take()).containsExactly(span, span);
     }
   }
 
@@ -82,14 +84,12 @@ public class KafkaTransportTest {
         .zookeeper(kafka.zookeeperConnectionString())
         .topic("multiple_spans_json").build();
 
-    CompletableFuture<List<Span>> promise = new CompletableFuture<>();
-
     Producer<String, byte[]> producer = new Producer<>(kafka.producerConfigWithDefaultEncoder());
     producer.send(new KeyedMessage<>(config.topic, Codec.JSON.writeSpans(asList(span, span))));
     producer.close();
 
-    try (KafkaTransport processor = new KafkaTransport(config, promise::complete)) {
-      assertThat(promise.get()).containsExactly(span, span);
+    try (KafkaTransport processor = new KafkaTransport(config, consumer)) {
+      assertThat(recvdSpans.take()).containsExactly(span, span);
     }
   }
 
@@ -100,8 +100,6 @@ public class KafkaTransportTest {
         .zookeeper(kafka.zookeeperConnectionString())
         .topic("decoder-exception").build();
 
-    LinkedBlockingQueue<List<Span>> recvdSpans = new LinkedBlockingQueue<>();
-
     Producer<String, byte[]> producer = new Producer<>(kafka.producerConfigWithDefaultEncoder());
     producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span))));
     producer.send(new KeyedMessage<>(config.topic, "[\"='".getBytes())); // screwed up json
@@ -109,7 +107,7 @@ public class KafkaTransportTest {
     producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span))));
     producer.close();
 
-    try (KafkaTransport processor = new KafkaTransport(config, recvdSpans::add)) {
+    try (KafkaTransport processor = new KafkaTransport(config, consumer)) {
       assertThat(recvdSpans.take()).containsExactly(span);
       // the only way we could read this, is if the malformed spans were skipped.
       assertThat(recvdSpans.take()).containsExactly(span);
@@ -123,12 +121,12 @@ public class KafkaTransportTest {
         .zookeeper(kafka.zookeeperConnectionString())
         .topic("consumer-exception").build();
 
-    LinkedBlockingQueue<List<Span>> recvdSpans = new LinkedBlockingQueue<>();
-    SpanConsumer consumer = (spans) -> {
+    consumer = (spans, callback) -> {
       if (recvdSpans.size() == 1) {
-        throw new RuntimeException("storage fell over");
+        callback.onError(new RuntimeException("storage fell over"));
       } else {
         recvdSpans.add(spans);
+        callback.onSuccess(null);
       }
     };
 

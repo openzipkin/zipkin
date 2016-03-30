@@ -13,8 +13,14 @@
  */
 package zipkin;
 
+import zipkin.async.AsyncSpanConsumer;
+
 public class InMemorySpanStoreTest extends SpanStoreTest {
   private final InMemorySpanStore store = new InMemorySpanStore();
+
+  @Override protected AsyncSpanConsumer consumer() {
+    return store;
+  }
 
   @Override protected SpanStore store() {
     return store;

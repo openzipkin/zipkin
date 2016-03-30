@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
+import zipkin.async.AsyncSpanConsumer;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.Dependencies;
 
@@ -47,7 +48,7 @@ public abstract class DependenciesTest {
   public abstract void clear();
 
   /**
-   * Implementations should at least {@link SpanStore#accept(List) store} the input. If dependency
+   * Implementations should at least {@link AsyncSpanConsumer#accept store} the input. If dependency
    * processing is a separate job, it should complete before returning from this method.
    */
   protected abstract void processDependencies(List<Span> spans);

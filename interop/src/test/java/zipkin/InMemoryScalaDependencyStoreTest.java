@@ -30,7 +30,7 @@ public class InMemoryScalaDependencyStoreTest extends DependencyStoreSpec {
 
   @Override
   public void processDependencies(List<Span> spans) {
-    new AsyncToScalaSpanStoreAdapter(mem).apply(spans);
+    new AsyncToScalaSpanStoreAdapter(mem, mem).apply(spans);
   }
 
   public void clear() {

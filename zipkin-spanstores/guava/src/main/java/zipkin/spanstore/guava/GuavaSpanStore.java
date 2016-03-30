@@ -26,13 +26,7 @@ import zipkin.internal.Nullable;
  *
  * @see zipkin.SpanStore
  */
-public interface GuavaSpanStore extends GuavaSpanConsumer {
-
-  /**
-   * Version of {@link zipkin.SpanStore#accept} that returns {@link ListenableFuture}.
-   */
-  @Override
-  ListenableFuture<Void> accept(List<Span> spans);
+public interface GuavaSpanStore extends GuavaAsyncSpanConsumer {
 
   /**
    * Version of {@link zipkin.SpanStore#getTraces} that returns {@link ListenableFuture}.

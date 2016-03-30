@@ -24,6 +24,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.stubbing.Answer;
 import zipkin.QueryRequest;
+import zipkin.async.AsyncSpanConsumer;
 import zipkin.async.AsyncSpanStore;
 import zipkin.async.Callback;
 
@@ -45,20 +46,23 @@ public class GuavaSpanStoreAdapterTest {
   public ExpectedException thrown = ExpectedException.none();
 
   @Mock
-  private AsyncSpanStore delegate;
+  private AsyncSpanStore asyncSpanStore;
+
+  @Mock
+  private AsyncSpanConsumer asyncSpanConsumer;
 
   private GuavaSpanStore spanStore;
 
   @Before
   public void setUp() throws Exception {
-    spanStore = new GuavaSpanStoreAdapter(delegate);
+    spanStore = new GuavaSpanStoreAdapter(asyncSpanStore, asyncSpanConsumer);
   }
 
   @Test
   public void getTraces_success() throws Exception {
     QueryRequest request = new QueryRequest.Builder("service").endTs(1000L).build();
     doAnswer(answer(c -> c.onSuccess(asList(TRACE))))
-        .when(delegate).getTraces(eq(request), any(Callback.class));
+        .when(asyncSpanStore).getTraces(eq(request), any(Callback.class));
 
     assertThat(spanStore.getTraces(request).get()).containsExactly(TRACE);
   }
@@ -67,7 +71,7 @@ public class GuavaSpanStoreAdapterTest {
   public void getTraces_exception() throws Exception {
     QueryRequest request = new QueryRequest.Builder("service").endTs(1000L).build();
     doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
-        .when(delegate).getTraces(eq(request), any(Callback.class));
+        .when(asyncSpanStore).getTraces(eq(request), any(Callback.class));
 
     thrown.expect(ExecutionException.class);
     thrown.expectCause(isA(IllegalStateException.class));
@@ -77,7 +81,7 @@ public class GuavaSpanStoreAdapterTest {
   @Test
   public void getTrace_success() throws Exception {
     doAnswer(answer(c -> c.onSuccess(TRACE)))
-        .when(delegate).getTrace(eq(1L), any(Callback.class));
+        .when(asyncSpanStore).getTrace(eq(1L), any(Callback.class));
 
     assertThat(spanStore.getTrace(1L).get()).isEqualTo(TRACE);
   }
@@ -85,7 +89,7 @@ public class GuavaSpanStoreAdapterTest {
   @Test
   public void getTrace_exception() throws Exception {
     doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
-        .when(delegate).getTrace(eq(1L), any(Callback.class));
+        .when(asyncSpanStore).getTrace(eq(1L), any(Callback.class));
 
     thrown.expect(ExecutionException.class);
     thrown.expectCause(isA(IllegalStateException.class));
@@ -95,7 +99,7 @@ public class GuavaSpanStoreAdapterTest {
   @Test
   public void getRawTrace_success() throws Exception {
     doAnswer(answer(c -> c.onSuccess(TRACE)))
-        .when(delegate).getRawTrace(eq(1L), any(Callback.class));
+        .when(asyncSpanStore).getRawTrace(eq(1L), any(Callback.class));
 
     assertThat(spanStore.getRawTrace(1L).get()).isEqualTo(TRACE);
   }
@@ -103,7 +107,7 @@ public class GuavaSpanStoreAdapterTest {
   @Test
   public void getRawTrace_exception() throws Exception {
     doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
-        .when(delegate).getRawTrace(eq(1L), any(Callback.class));
+        .when(asyncSpanStore).getRawTrace(eq(1L), any(Callback.class));
 
     thrown.expect(ExecutionException.class);
     thrown.expectCause(isA(IllegalStateException.class));
@@ -113,7 +117,7 @@ public class GuavaSpanStoreAdapterTest {
   @Test
   public void getServiceNames_success() throws Exception {
     doAnswer(answer(c -> c.onSuccess(asList("service1", "service2"))))
-        .when(delegate).getServiceNames(any(Callback.class));
+        .when(asyncSpanStore).getServiceNames(any(Callback.class));
 
     assertThat(spanStore.getServiceNames().get()).containsExactly("service1", "service2");
   }
@@ -121,7 +125,7 @@ public class GuavaSpanStoreAdapterTest {
   @Test
   public void getServiceNames_exception() throws Exception {
     doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
-        .when(delegate).getServiceNames(any(Callback.class));
+        .when(asyncSpanStore).getServiceNames(any(Callback.class));
 
     thrown.expect(ExecutionException.class);
     thrown.expectCause(isA(IllegalStateException.class));
@@ -131,7 +135,7 @@ public class GuavaSpanStoreAdapterTest {
   @Test
   public void getSpanNames_success() throws Exception {
     doAnswer(answer(c -> c.onSuccess(asList("span1", "span2"))))
-        .when(delegate).getSpanNames(eq("service"), any(Callback.class));
+        .when(asyncSpanStore).getSpanNames(eq("service"), any(Callback.class));
 
     assertThat(spanStore.getSpanNames("service").get()).containsExactly("span1", "span2");
   }
@@ -139,7 +143,7 @@ public class GuavaSpanStoreAdapterTest {
   @Test
   public void getSpanNames_exception() throws Exception {
     doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
-        .when(delegate).getSpanNames(eq("service"), any(Callback.class));
+        .when(asyncSpanStore).getSpanNames(eq("service"), any(Callback.class));
 
     thrown.expect(ExecutionException.class);
     thrown.expectCause(isA(IllegalStateException.class));
@@ -149,7 +153,7 @@ public class GuavaSpanStoreAdapterTest {
   @Test
   public void getDependencies_success() throws Exception {
     doAnswer(answer(c -> c.onSuccess(LINKS)))
-        .when(delegate).getDependencies(eq(1L), eq(0L), any(Callback.class));
+        .when(asyncSpanStore).getDependencies(eq(1L), eq(0L), any(Callback.class));
 
     assertThat(spanStore.getDependencies(1L, 0L).get()).containsExactlyElementsOf(LINKS);
   }
@@ -157,7 +161,7 @@ public class GuavaSpanStoreAdapterTest {
   @Test
   public void getDependencies_exception() throws Exception {
     doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
-        .when(delegate).getDependencies(eq(1L), eq(0L), any(Callback.class));
+        .when(asyncSpanStore).getDependencies(eq(1L), eq(0L), any(Callback.class));
 
     thrown.expect(ExecutionException.class);
     thrown.expectCause(isA(IllegalStateException.class));
