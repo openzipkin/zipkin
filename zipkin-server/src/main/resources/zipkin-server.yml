@@ -70,7 +70,9 @@ spring:
     exclude:
       # otherwise we might initialize even when not needed (ex when storage type is cassandra)
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-# Example of how to log cassandra calls
 # logging:
-#     level:
-#         org.twitter.zipkin.storage.cassandra.Repository: 'DEBUG'
+#   level:
+#     # investigate /api/v1/dependencies
+#     zipkin.internal.DependencyLinker: 'DEBUG'
+#     # log cassandra calls
+#     org.twitter.zipkin.storage.cassandra.Repository: 'DEBUG'
