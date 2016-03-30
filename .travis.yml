@@ -46,6 +46,11 @@ before_install:
   - curl -SL https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/2.2.1/elasticsearch-2.2.1.tar.gz | tar xz
   - elasticsearch-*/bin/elasticsearch -d > /dev/null
 
+  # Manually install and run zk+kafka as it isn't an available service
+  - curl -SL http://www.us.apache.org/dist/kafka/0.8.2.2/kafka_2.11-0.8.2.2.tgz | tar xz
+  - nohup bash -c "cd kafka_* && bin/zookeeper-server-start.sh config/zookeeper.properties >/dev/null 2>&1 &"
+  - nohup bash -c "cd kafka_* && bin/kafka-server-start.sh config/server.properties >/dev/null 2>&1 &"
+
 script:
   # If we aren't a pull request, we are publishing either a snapshot or a release.
   #   We don't currently publish the benchmarks or interop modules, as they are test code only.

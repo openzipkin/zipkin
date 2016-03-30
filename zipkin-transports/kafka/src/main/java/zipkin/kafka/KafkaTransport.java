@@ -29,13 +29,14 @@ import static kafka.consumer.Consumer.createJavaConsumerConnector;
  */
 public final class KafkaTransport implements AutoCloseable {
 
+  final ConsumerConnector connector;
   final ExecutorService pool;
 
   public KafkaTransport(KafkaConfig config, AsyncSpanConsumer spanConsumer) {
     this.pool = config.streams == 1
         ? Executors.newSingleThreadExecutor()
         : Executors.newFixedThreadPool(config.streams);
-    ConsumerConnector connector = createJavaConsumerConnector(config.forConsumer());
+    connector = createJavaConsumerConnector(config.forConsumer());
 
     Map<String, Integer> topicCountMap = new LinkedHashMap<>(1);
     topicCountMap.put(config.topic, config.streams);
@@ -49,5 +50,6 @@ public final class KafkaTransport implements AutoCloseable {
   @Override
   public void close() {
     pool.shutdown();
+    connector.shutdown();
   }
 }

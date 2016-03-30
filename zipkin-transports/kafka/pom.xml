@@ -14,7 +14,9 @@
     the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -31,8 +33,6 @@
     <!-- This is pinned to Kafka 0.8.x client as 0.9.x brokers work with them, but not visa-versa
          http://docs.confluent.io/2.0.0/upgrade.html -->
     <kafka.version>0.8.2.2</kafka.version>
-    <!-- pinned to 0.8.2.2 -->
-    <kafka-junit.version>1.7</kafka-junit.version>
   </properties>
 
   <dependencies>
@@ -45,24 +45,19 @@
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka_2.11</artifactId>
       <version>${kafka.version}</version>
-      <!-- excludes eagerly bound logger dependencies,
-           so that they don't leak into zipkin-server -->
+      <!-- don't eagerly bind slf4j -->
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-log4j12</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
 
     <dependency>
-      <groupId>com.github.charithe</groupId>
-      <artifactId>kafka-junit</artifactId>
-      <version>${kafka-junit.version}</version>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
