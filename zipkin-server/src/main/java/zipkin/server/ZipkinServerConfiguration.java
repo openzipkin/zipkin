@@ -32,6 +32,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceBuilder;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ConditionContext;
@@ -141,23 +143,41 @@ public class ZipkinServerConfiguration {
   }
 
   @Configuration
+  @EnableConfigurationProperties(ZipkinMySQLProperties.class)
   @ConditionalOnProperty(name = "zipkin.store.type", havingValue = "mysql")
   @ConditionalOnClass(name = "zipkin.jdbc.JDBCSpanStore")
   static class JDBCConfiguration {
 
     @Autowired
-    DataSource datasource;
+    ZipkinMySQLProperties mysql;
 
     @Autowired(required = false)
     @Qualifier("jdbcTraceListenerProvider")
     ExecuteListenerProvider listener;
 
-    @Bean JDBCSpanStore jdbcSpanStore() {
-      return new JDBCSpanStore(datasource, new Settings().withRenderSchema(false), listener);
+    @Bean
+    @ConditionalOnMissingBean(DataSource.class)
+    DataSource dataSource() {
+      StringBuilder url = new StringBuilder("jdbc:mysql://");
+      url.append(mysql.getHost()).append(":").append(mysql.getPort());
+      url.append("/").append(mysql.getDb());
+      url.append("?autoReconnect=true");
+      url.append("&useSSL=").append(mysql.isUseSsl());
+      url.append("&maxActive=").append(mysql.getMaxActive());
+      return DataSourceBuilder.create()
+          .driverClassName("org.mariadb.jdbc.Driver")
+          .url(url.toString())
+          .username(mysql.getUsername())
+          .password(mysql.getPassword())
+          .build();
     }
 
-    @Bean SpanStore spanStore() {
-      return jdbcSpanStore();
+    @Bean JDBCSpanStore jdbcSpanStore(DataSource dataSource) {
+      return new JDBCSpanStore(dataSource, new Settings().withRenderSchema(false), listener);
+    }
+
+    @Bean SpanStore spanStore(JDBCSpanStore jdbc) {
+      return jdbc;
     }
 
     @Bean @ConditionalOnMissingBean(Executor.class)
@@ -168,8 +188,7 @@ public class ZipkinServerConfiguration {
       return executor;
     }
 
-    @Bean AsyncSpanConsumer spanConsumer(Sampler sampler) {
-      JDBCSpanStore jdbc = jdbcSpanStore();
+    @Bean AsyncSpanConsumer spanConsumer(JDBCSpanStore jdbc, Sampler sampler) {
       AsyncSpanConsumer async = new BlockingToAsyncSpanConsumerAdapter(jdbc::accept, executor());
       return SamplingAsyncSpanConsumer.create(sampler, async);
     }
