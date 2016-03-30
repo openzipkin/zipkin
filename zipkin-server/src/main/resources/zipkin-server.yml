@@ -66,15 +66,10 @@ spring:
     favicon:
       # zipkin has its own favicon
       enabled: false
-  datasource:
-    driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mysql://${mysql.host}:${mysql.port}/${mysql.db}?autoReconnect=true&useSSL=${mysql.use-ssl}
-    username: ${mysql.username}
-    password: ${mysql.password}
-    max-active: ${mysql.max-active}
-    schema: classpath:/mysql.sql
-# Switch this on to create the schema on startup:
-    initialize: false
+  autoconfigure:
+    exclude:
+      # otherwise we might initialize even when not needed (ex when storage type is cassandra)
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 # Example of how to log cassandra calls
 # logging:
 #     level:

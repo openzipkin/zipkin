@@ -15,7 +15,6 @@ package zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
 import java.net.InetAddress;
-import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import org.jooq.ExecuteContext;
@@ -26,16 +25,21 @@ import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.jooq.tools.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin.Endpoint;
+import zipkin.server.ZipkinMySQLProperties;
 
 /** Sets up the JDBC tracing in Brave as an initialization. */
+@EnableConfigurationProperties(ZipkinMySQLProperties.class)
 @ConditionalOnProperty(name = "zipkin.store.type", havingValue = "mysql")
 @Configuration
 public class JDBCTracerConfiguration extends DefaultExecuteListener {
+
+  @Autowired
+  ZipkinMySQLProperties mysql;
 
   @Bean
   ExecuteListenerProvider jdbcTraceListenerProvider() {
@@ -45,10 +49,9 @@ public class JDBCTracerConfiguration extends DefaultExecuteListener {
   /** Attach the IP of the remote datasource, knowing that DNS may invalidate this */
   @Bean
   @Qualifier("jdbc")
-  Endpoint jdbc(@Value("${spring.datasource.url}") String jdbcUrl) throws UnknownHostException {
-    URI url = URI.create(jdbcUrl.substring(5)); // strip "jdbc:"
-    int ipv4 = ByteBuffer.wrap(InetAddress.getByName(url.getHost()).getAddress()).getInt();
-    return Endpoint.create("spanstore-jdbc", ipv4, url.getPort());
+  Endpoint jdbc() throws UnknownHostException {
+    int ipv4 = ByteBuffer.wrap(InetAddress.getByName(mysql.getHost()).getAddress()).getInt();
+    return Endpoint.create("spanstore-jdbc", ipv4, mysql.getPort());
   }
 
   @Autowired
