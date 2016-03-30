@@ -34,7 +34,7 @@ import zipkin.server.ZipkinMySQLProperties;
 
 /** Sets up the JDBC tracing in Brave as an initialization. */
 @EnableConfigurationProperties(ZipkinMySQLProperties.class)
-@ConditionalOnProperty(name = "zipkin.store.type", havingValue = "mysql")
+@ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
 @Configuration
 public class JDBCTracerConfiguration extends DefaultExecuteListener {
 
@@ -51,7 +51,7 @@ public class JDBCTracerConfiguration extends DefaultExecuteListener {
   @Qualifier("jdbc")
   Endpoint jdbc() throws UnknownHostException {
     int ipv4 = ByteBuffer.wrap(InetAddress.getByName(mysql.getHost()).getAddress()).getInt();
-    return Endpoint.create("spanstore-jdbc", ipv4, mysql.getPort());
+    return Endpoint.create("mysql", ipv4, mysql.getPort());
   }
 
   @Autowired

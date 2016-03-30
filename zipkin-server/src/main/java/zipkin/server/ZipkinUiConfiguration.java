@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -57,12 +58,13 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
  * That's why hashed resource age can be 365 days.
  */
 @Configuration
+@EnableConfigurationProperties(ZipkinUIProperties.class)
 @RestController
 @ConditionalOnResource(resources = "classpath:zipkin-ui") // from io.zipkin:zipkin-ui
 public class ZipkinUiConfiguration extends WebMvcConfigurerAdapter {
 
   @Autowired
-  ZipkinServerProperties server;
+  ZipkinUIProperties ui;
   @Value("classpath:zipkin-ui/index.html")
   Resource indexHtml;
 
@@ -98,10 +100,10 @@ public class ZipkinUiConfiguration extends WebMvcConfigurerAdapter {
   }
 
   @RequestMapping(value = "/config.json", method = GET, produces = APPLICATION_JSON_VALUE)
-  public ResponseEntity<ZipkinServerProperties.Ui> serveUiConfig() {
+  public ResponseEntity<ZipkinUIProperties> serveUiConfig() {
     return ResponseEntity.ok()
         .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES))
-        .body(server.getUi());
+        .body(ui);
   }
 
   @RequestMapping(value = "/index.html", method = GET)
