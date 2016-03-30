@@ -13,5 +13,7 @@ _site/
 .idea
 *.iml
 *.swp
-# .travis.yml installs cassandra in the pwd
+# .travis.yml installs things
 dsc-cassandra-*
+elasticsearch-*
+kafka_*
