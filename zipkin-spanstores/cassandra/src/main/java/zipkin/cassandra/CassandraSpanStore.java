@@ -44,7 +44,6 @@ import zipkin.spanstore.guava.GuavaToAsyncSpanStoreAdapter;
 
 import static com.google.common.util.concurrent.Futures.allAsList;
 import static com.google.common.util.concurrent.Futures.transform;
-import static com.google.common.util.concurrent.Futures.transformAsync;
 import static java.lang.String.format;
 import static zipkin.cassandra.CassandraUtil.annotationKeys;
 import static zipkin.cassandra.CassandraUtil.intersectKeySets;
@@ -120,7 +119,7 @@ public final class CassandraSpanStore extends GuavaToAsyncSpanStoreAdapter
       // We achieve the AND goal, by intersecting each of the key sets.
       traceIds = transform(allAsList(futureKeySetsToIntersect), intersectKeySets());
     }
-    return transformAsync(traceIds, new AsyncFunction<Set<Long>, List<List<Span>>>() {
+    return transform(traceIds, new AsyncFunction<Set<Long>, List<List<Span>>>() {
       @Override
       public ListenableFuture<List<List<Span>>> apply(Set<Long> traceIds) {
         return transform(repository.getSpansByTraceIds(traceIds.toArray(new Long[traceIds.size()]),
