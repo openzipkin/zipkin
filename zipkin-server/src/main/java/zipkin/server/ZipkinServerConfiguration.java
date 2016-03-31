@@ -33,7 +33,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceBuilder;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ConditionContext;
@@ -59,11 +58,11 @@ import zipkin.kafka.KafkaTransport;
 import zipkin.server.brave.TracedSpanStore;
 
 @Configuration
-@EnableConfigurationProperties(ZipkinServerProperties.class)
 public class ZipkinServerConfiguration {
 
   @Autowired
-  ZipkinServerProperties server;
+  @Value("${zipkin.storage.type}")
+  String storageType;
 
   @Bean
   @ConditionalOnMissingBean(Codec.Factory.class)
@@ -80,9 +79,9 @@ public class ZipkinServerConfiguration {
   @Bean
   @ConditionalOnMissingBean(SpanStore.class)
   InMemorySpanStore inMemorySpanStore() {
-    if (server.getStore().getType() != ZipkinServerProperties.Store.Type.mem) {
+    if (!storageType.equals("mem")) {
       throw new IllegalStateException("Attempted to set storage type to "
-          + server.getStore().getType() + " but could not initialize the spanstore for "
+          + storageType + " but could not initialize the spanstore for "
           + "that storage type. Did you include it on the classpath?");
     }
     return new InMemorySpanStore();
@@ -121,7 +120,6 @@ public class ZipkinServerConfiguration {
    * }</pre>
    */
   @Configuration
-  @ConditionalOnBean(value = SpanStore.class, name = "spanStore")
   @ConditionalOnClass(name = "com.github.kristofa.brave.Brave")
   static class BraveSpanStoreEnhancer implements BeanPostProcessor {
 
@@ -144,7 +142,7 @@ public class ZipkinServerConfiguration {
 
   @Configuration
   @EnableConfigurationProperties(ZipkinMySQLProperties.class)
-  @ConditionalOnProperty(name = "zipkin.store.type", havingValue = "mysql")
+  @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
   @ConditionalOnClass(name = "zipkin.jdbc.JDBCSpanStore")
   static class JDBCConfiguration {
 
@@ -196,7 +194,7 @@ public class ZipkinServerConfiguration {
 
   @Configuration
   @EnableConfigurationProperties(ZipkinCassandraProperties.class)
-  @ConditionalOnProperty(name = "zipkin.store.type", havingValue = "cassandra")
+  @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "cassandra")
   @ConditionalOnClass(name = "zipkin.cassandra.CassandraSpanStore")
   static class CassandraConfiguration {
 
@@ -228,7 +226,7 @@ public class ZipkinServerConfiguration {
 
   @Configuration
   @EnableConfigurationProperties(ZipkinElasticsearchProperties.class)
-  @ConditionalOnProperty(name = "zipkin.store.type", havingValue = "elasticsearch")
+  @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
   @ConditionalOnClass(name = "zipkin.elasticsearch.ElasticsearchSpanStore")
   static class ElasticsearchConfiguration {
 

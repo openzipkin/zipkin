@@ -43,7 +43,7 @@ zipkin:
   query:
     # 7 days in millis
     lookback: ${QUERY_LOOKBACK:86400000}
-  store:
+  storage:
     type: ${STORAGE_TYPE:mem}
   ui:
     ## Values below here are mapped to ZipkinServerProperties.UI, served as /config.json
