@@ -151,7 +151,7 @@ class AnormSpanStore(val db: DB,
             |AND trace_id IN (%s)
           """.stripMargin.format(traceIdsString))
           .as((long("span_id") ~ long("trace_id") ~ str("endpoint_service_name") ~
-          str("a_key") ~ db.bytes("a_value") ~
+          str("a_key") ~ get[Option[Array[Byte]]]("a_value") ~
           int("a_type") ~ get[Option[Int]]("endpoint_ipv4") ~
           get[Option[Int]]("endpoint_port") map {
           case a~b~c~d~e~f~g~h => DBBinaryAnnotation(a, b, c, d, e, f, g, h)
@@ -176,7 +176,7 @@ class AnormSpanStore(val db: DB,
               case (Some(ipv4), Some(port)) => Some(Endpoint(ipv4, port.toShort, binAnno.serviceName))
               case _ => None
             }
-            val value = ByteBuffer.wrap(binAnno.value)
+            val value = binAnno.value.map(ByteBuffer.wrap).getOrElse(ByteBuffer.allocate(0))
             val annotationType = AnnotationType.fromInt(binAnno.annotationTypeValue)
             BinaryAnnotation(binAnno.key, value, annotationType, host)
           }
@@ -344,5 +344,5 @@ class AnormSpanStore(val db: DB,
 
   case class DBSpan(spanId: Long, parentId: Option[Long], traceId: Long, spanName: String, debug: Option[Boolean], timestamp: Option[Long], duration: Option[Long])
   case class DBAnnotation(spanId: Long, traceId: Long, serviceName: String, value: String, ipv4: Option[Int], port: Option[Int], timestamp: Long)
-  case class DBBinaryAnnotation(spanId: Long, traceId: Long, serviceName: String, key: String, value: Array[Byte], annotationTypeValue: Int, ipv4: Option[Int], port: Option[Int])
+  case class DBBinaryAnnotation(spanId: Long, traceId: Long, serviceName: String, key: String, value: Option[Array[Byte]], annotationTypeValue: Int, ipv4: Option[Int], port: Option[Int])
 }

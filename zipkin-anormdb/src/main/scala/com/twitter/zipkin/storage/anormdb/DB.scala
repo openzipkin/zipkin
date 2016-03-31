@@ -225,7 +225,7 @@ case class DB(dbconfig: DBConfig = new DBConfig()) {
    * Implicitly convert an Anorm row to a byte array.
    */
   def rowToByteArray: Column[Array[Byte]] = {
-    Column.nonNull[Array[Byte]] { (value, meta) =>
+    Column.nonNull1[Array[Byte]] { (value, meta) =>
       val MetaDataItem(qualified, nullable, clazz) = meta
       valueToByteArrayOption(value) match {
         case Some(bytes) => Right(bytes)
