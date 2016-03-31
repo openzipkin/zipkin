@@ -26,10 +26,11 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 public class SamplingAsyncSpanConsumerTest {
 
-  private InMemorySpanStore spanStore = new InMemorySpanStore();
-  private Sampler neverSample = Sampler.create(0f);
+  InMemorySpanStore store = new InMemorySpanStore();
+  AsyncSpanConsumer consumer = new BlockingToAsyncSpanConsumerAdapter(store::accept, Runnable::run);
+  Sampler neverSample = Sampler.create(0f);
 
-  private Span.Builder builder = new Span.Builder()
+  Span.Builder builder = new Span.Builder()
       .traceId(1234L)
       .id(1235L)
       .parentId(1234L)
@@ -41,19 +42,19 @@ public class SamplingAsyncSpanConsumerTest {
 
   @Test
   public void debugFlagWins() {
-    AsyncSpanConsumer consumer = SamplingAsyncSpanConsumer.create(neverSample, spanStore);
+    AsyncSpanConsumer samplingConsumer = SamplingAsyncSpanConsumer.create(neverSample, consumer);
 
-    consumer.accept(asList(builder.debug(true).build()), AsyncSpanConsumer.NOOP_CALLBACK);
+    samplingConsumer.accept(asList(builder.debug(true).build()), AsyncSpanConsumer.NOOP_CALLBACK);
 
-    assertThat(spanStore.getServiceNames()).containsExactly("service");
+    assertThat(store.getServiceNames()).containsExactly("service");
   }
 
   @Test
   public void unsampledSpansArentStored() {
-    AsyncSpanConsumer consumer = SamplingAsyncSpanConsumer.create(neverSample, spanStore);
+    AsyncSpanConsumer samplingConsumer = SamplingAsyncSpanConsumer.create(neverSample, consumer);
 
-    consumer.accept(asList(builder.build()), AsyncSpanConsumer.NOOP_CALLBACK);
+    samplingConsumer.accept(asList(builder.build()), AsyncSpanConsumer.NOOP_CALLBACK);
 
-    assertThat(spanStore.getServiceNames()).isEmpty();
+    assertThat(store.getServiceNames()).isEmpty();
   }
 }

@@ -17,20 +17,25 @@ import com.twitter.zipkin.common.Span;
 import com.twitter.zipkin.storage.DependencyStore;
 import com.twitter.zipkin.storage.DependencyStoreSpec;
 import scala.collection.immutable.List;
+import zipkin.async.AsyncSpanConsumer;
+import zipkin.async.BlockingToAsyncSpanConsumerAdapter;
+import zipkin.async.BlockingToAsyncSpanStoreAdapter;
 import zipkin.interop.ScalaDependencyStoreAdapter;
 import zipkin.interop.AsyncToScalaSpanStoreAdapter;
 
 public class InMemoryScalaDependencyStoreTest extends DependencyStoreSpec {
-  private InMemorySpanStore mem = new InMemorySpanStore();
+  InMemorySpanStore mem = new InMemorySpanStore();
+  BlockingToAsyncSpanStoreAdapter store = new BlockingToAsyncSpanStoreAdapter(mem, Runnable::run);
+  AsyncSpanConsumer consumer = new BlockingToAsyncSpanConsumerAdapter(mem::accept, Runnable::run);
 
   @Override
   public DependencyStore store() {
-    return new ScalaDependencyStoreAdapter(mem);
+    return new ScalaDependencyStoreAdapter(store);
   }
 
   @Override
   public void processDependencies(List<Span> spans) {
-    new AsyncToScalaSpanStoreAdapter(mem, mem).apply(spans);
+    new AsyncToScalaSpanStoreAdapter(store, consumer).apply(spans);
   }
 
   public void clear() {

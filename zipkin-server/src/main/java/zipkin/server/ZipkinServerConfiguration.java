@@ -59,10 +59,6 @@ import zipkin.server.brave.TracedSpanStore;
 @Configuration
 public class ZipkinServerConfiguration {
 
-  @Autowired
-  @Value("${zipkin.storage.type}")
-  String storageType;
-
   @Bean
   @ConditionalOnMissingBean(Codec.Factory.class)
   Codec.Factory codecFactory() {
@@ -117,30 +113,31 @@ public class ZipkinServerConfiguration {
   }
 
   @Configuration
-  @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mem")
+  // "matchIfMissing = true" ensures this is used when there's no configured storage type
+  @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mem", matchIfMissing = true)
+  @ConditionalOnMissingBean({SpanStore.class, AsyncSpanConsumer.class})
   static class InMemoryConfiguration {
-
-    @Bean InMemorySpanStore inMemorySpanStore() {
-      return new InMemorySpanStore();
-    }
+    final InMemorySpanStore mem = new InMemorySpanStore();
 
     @Bean SpanStore spanStore() {
-      return inMemorySpanStore();
+      return mem;
     }
 
     @Bean AsyncSpanConsumer spanConsumer(Sampler sampler) {
-      return SamplingAsyncSpanConsumer.create(sampler, inMemorySpanStore());
+      AsyncSpanConsumer async = new BlockingToAsyncSpanConsumerAdapter(mem::accept, Runnable::run);
+      return SamplingAsyncSpanConsumer.create(sampler, async);
     }
   }
 
   @Configuration
   @EnableConfigurationProperties(ZipkinMySQLProperties.class)
   @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
+  @ConditionalOnMissingBean({SpanStore.class, AsyncSpanConsumer.class})
   static class JDBCConfiguration {
     @Autowired(required = false)
     DataSource dataSource;
 
-    @Autowired
+    @Autowired(required = false)
     ZipkinMySQLProperties mysql;
 
     @Autowired(required = false)
@@ -191,6 +188,7 @@ public class ZipkinServerConfiguration {
   @Configuration
   @EnableConfigurationProperties(ZipkinCassandraProperties.class)
   @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "cassandra")
+  @ConditionalOnMissingBean({SpanStore.class, AsyncSpanConsumer.class})
   static class CassandraConfiguration {
 
     @Autowired
@@ -222,6 +220,7 @@ public class ZipkinServerConfiguration {
   @Configuration
   @EnableConfigurationProperties(ZipkinElasticsearchProperties.class)
   @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
+  @ConditionalOnMissingBean({SpanStore.class, AsyncSpanConsumer.class})
   static class ElasticsearchConfiguration {
 
     @Autowired

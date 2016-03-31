@@ -20,14 +20,18 @@ import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.InMemorySpanStore;
+import zipkin.async.AsyncSpanConsumer;
+import zipkin.async.BlockingToAsyncSpanConsumerAdapter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SpanStoreSpanCollectorTest {
 
-  private InMemorySpanStore spanStore = new InMemorySpanStore();
-  private SpanStoreSpanCollector collector = new SpanStoreSpanCollector(spanStore);
-  private Span.Builder builder = new Span.Builder()
+  InMemorySpanStore store = new InMemorySpanStore();
+  AsyncSpanConsumer consumer = new BlockingToAsyncSpanConsumerAdapter(store::accept, Runnable::run);
+  SpanStoreSpanCollector collector = new SpanStoreSpanCollector(consumer);
+
+  Span.Builder builder = new Span.Builder()
       .traceId(1234L)
       .id(1235L)
       .parentId(1234L)
@@ -41,7 +45,7 @@ public class SpanStoreSpanCollectorTest {
   public void addOne() {
     collector.collect(builder.build());
     collector.flush();
-    assertThat(spanStore.getServiceNames()).containsExactly("service");
+    assertThat(store.getServiceNames()).containsExactly("service");
   }
 
   @Test
@@ -50,7 +54,7 @@ public class SpanStoreSpanCollectorTest {
       collector.collect(builder.id(1234L + i).build());
     }
     collector.flush();
-    List<Span> result = spanStore.getTrace(1234L);
+    List<Span> result = store.getTrace(1234L);
     assertThat(result).hasSize(500);
   }
 }

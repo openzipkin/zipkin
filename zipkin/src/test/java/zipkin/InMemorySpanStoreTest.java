@@ -14,12 +14,13 @@
 package zipkin;
 
 import zipkin.async.AsyncSpanConsumer;
+import zipkin.async.BlockingToAsyncSpanConsumerAdapter;
 
 public class InMemorySpanStoreTest extends SpanStoreTest {
   private final InMemorySpanStore store = new InMemorySpanStore();
 
   @Override protected AsyncSpanConsumer consumer() {
-    return store;
+    return new BlockingToAsyncSpanConsumerAdapter(store::accept, Runnable::run);
   }
 
   @Override protected SpanStore store() {

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import zipkin.async.AsyncSpanConsumer;
 import zipkin.async.AsyncSpanStore;
 import zipkin.async.Callback;
 import zipkin.internal.ApplyTimestampAndDuration;
@@ -44,12 +43,13 @@ import static zipkin.internal.Util.sortedList;
  *
  * <p>All {@link Callback callbacks} execute on the calling thread.
  */
-public final class InMemorySpanStore implements SpanStore, AsyncSpanStore, AsyncSpanConsumer {
+public final class InMemorySpanStore implements SpanStore {
   private final Multimap<Long, Span> traceIdToSpans = new LinkedListMultimap<>();
   private final Multimap<String, Pair<Long>> serviceToTraceIdTimeStamp = new SortedByValue2Descending<>();
   private final Multimap<String, String> serviceToSpanNames = new LinkedHashSetMultimap<>();
   private int acceptedSpanCount;
 
+  /** Blocking version of {@link zipkin.async.AsyncSpanConsumer#accept} */
   public synchronized void accept(List<Span> spans) {
     for (Span span : spans) {
       span = ApplyTimestampAndDuration.apply(span);
@@ -68,16 +68,6 @@ public final class InMemorySpanStore implements SpanStore, AsyncSpanStore, Async
 
   public synchronized int acceptedSpanCount() {
     return acceptedSpanCount;
-  }
-
-  @Override public void accept(List<Span> spans, Callback<Void> callback) {
-    try {
-      accept(spans);
-      callback.onSuccess(null);
-    } catch (RuntimeException | Error e) {
-      callback.onError(e);
-      if (e instanceof Error) throw e;
-    }
   }
 
   public synchronized List<Long> traceIds() {
@@ -125,28 +115,10 @@ public final class InMemorySpanStore implements SpanStore, AsyncSpanStore, Async
     }
   };
 
-  @Override public void getTraces(QueryRequest request, Callback<List<List<Span>>> callback) {
-    try {
-      callback.onSuccess(getTraces(request));
-    } catch (RuntimeException | Error e) {
-      callback.onError(e);
-      if (e instanceof Error) throw e;
-    }
-  }
-
   @Override
   public synchronized List<Span> getTrace(long traceId) {
     List<Span> spans = getRawTrace(traceId);
     return spans == null ? null : CorrectForClockSkew.apply(MergeById.apply(spans));
-  }
-
-  @Override public void getTrace(long id, Callback<List<Span>> callback) {
-    try {
-      callback.onSuccess(getTrace(id));
-    } catch (RuntimeException | Error e) {
-      callback.onError(e);
-      if (e instanceof Error) throw e;
-    }
   }
 
   @Override
@@ -156,27 +128,9 @@ public final class InMemorySpanStore implements SpanStore, AsyncSpanStore, Async
     return spans;
   }
 
-  @Override public void getRawTrace(long traceId, Callback<List<Span>> callback) {
-    try {
-      callback.onSuccess(getRawTrace(traceId));
-    } catch (RuntimeException | Error e) {
-      callback.onError(e);
-      if (e instanceof Error) throw e;
-    }
-  }
-
   @Override
   public synchronized List<String> getServiceNames() {
     return sortedList(serviceToTraceIdTimeStamp.keySet());
-  }
-
-  @Override public void getServiceNames(Callback<List<String>> callback) {
-    try {
-      callback.onSuccess(getServiceNames());
-    } catch (RuntimeException | Error e) {
-      callback.onError(e);
-      if (e instanceof Error) throw e;
-    }
   }
 
   @Override
@@ -184,15 +138,6 @@ public final class InMemorySpanStore implements SpanStore, AsyncSpanStore, Async
     if (service == null) return Collections.emptyList();
     service = service.toLowerCase(); // service names are always lowercase!
     return sortedList(serviceToSpanNames.get(service));
-  }
-
-  @Override public void getSpanNames(String serviceName, Callback<List<String>> callback) {
-    try {
-      callback.onSuccess(getSpanNames(serviceName));
-    } catch (RuntimeException | Error e) {
-      callback.onError(e);
-      if (e instanceof Error) throw e;
-    }
   }
 
   @Override
@@ -237,16 +182,6 @@ public final class InMemorySpanStore implements SpanStore, AsyncSpanStore, Async
       linksBuilder.putTrace(linkSpans.iterator());
     }
     return linksBuilder.link();
-  }
-
-  @Override public void getDependencies(long endTs, @Nullable Long lookback,
-      Callback<List<DependencyLink>> callback) {
-    try {
-      callback.onSuccess(getDependencies(endTs, lookback));
-    } catch (RuntimeException | Error e) {
-      callback.onError(e);
-      if (e instanceof Error) throw e;
-    }
   }
 
   private static boolean test(QueryRequest request, List<Span> spans) {

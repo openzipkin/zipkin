@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("zipkin.ui")
-public class ZipkinUIProperties {
+public class ZipkinUiProperties {
   private String environment;
   private int queryLimit = 10;
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
