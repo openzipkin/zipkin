@@ -5,6 +5,8 @@
 ```bash
 # Barracuda supports compression (In AWS RDS, this must be assigned in a parameter group)
 $ mysql -uroot -e "SET GLOBAL innodb_file_format=Barracuda"
+# If using MySQL 5.7, you'll need to disable ONLY_FULL_GROUP_BY
+$ mysql -uroot -e "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))"
 # This command should work even in RDS, and return "Barracuda"
 $ mysql -uroot -e "show global variables like 'innodb_file_format'"
 
