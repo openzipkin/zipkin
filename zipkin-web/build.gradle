@@ -12,6 +12,7 @@ jar.manifest.attributes 'Main-Class': mainClassName
 
 tasks.build.dependsOn(shadowJar)
 artifacts.zipkinUpload shadowJar
+configurations.zipkinUpload.artifacts.removeAll { it.archiveTask.is jar }
 
 shadowJar {
   exclude 'META-INF/LICENSE' // jackson's META-INF/LICENSE conflicts with the directory META-INF/license
