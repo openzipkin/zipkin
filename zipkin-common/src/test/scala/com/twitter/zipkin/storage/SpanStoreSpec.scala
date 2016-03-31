@@ -266,6 +266,21 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     )
   }
 
+  /** Make sure empty binary annotation values don't crash */
+  @Test def getTraces_binaryAnnotationWithEmptyValue() {
+    val span = Span(1, "call1", 1, None, Some((today + 1) * 1000), None, binaryAnnotations =
+      List(BinaryAnnotation("empty", "", Some(ep))))
+
+    result(store(Seq(span)))
+
+    result(store.getTraces(QueryRequest("service"))) should be(
+      Seq(List(span))
+    )
+    result(store.getTracesByIds(List(1L))) should be(
+      Seq(List(span))
+    )
+  }
+
   /**
    * It is expected that [[com.twitter.zipkin.storage.SpanStore.apply]] will
    * receive the same span id multiple times with different annotations. At

@@ -100,6 +100,13 @@ class JsonConversionTest extends FunSuite with Matchers {
     JsonBinaryAnnotation(JsonBinaryAnnotation.invert(convert)) should be(convert)
   }
 
+  test("string with null value coerses to empty") {
+    val ann = BinaryAnnotation("key", null, AnnotationType.String, None)
+    val convert = JsonBinaryAnnotation(ann)
+    assert(convert.value === "")
+    JsonBinaryAnnotation(JsonBinaryAnnotation.invert(convert)) should be(convert)
+  }
+
   test("boolean's annotation type is implicit") {
     val unqualified = JsonBinaryAnnotation("key", true, None, None)
     val qualified = JsonBinaryAnnotation("key", true, Some("BOOL"), None)

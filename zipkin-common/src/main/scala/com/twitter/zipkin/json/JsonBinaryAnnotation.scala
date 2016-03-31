@@ -6,8 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.base.CaseFormat.{UPPER_CAMEL, UPPER_UNDERSCORE}
 import com.google.common.io.BaseEncoding
 import com.twitter.io.Charsets.Utf8
-import com.twitter.zipkin.common._
 import com.twitter.zipkin.common.AnnotationType._
+import com.twitter.zipkin.common._
 
 case class JsonBinaryAnnotation(key: String,
                                 value: Any,
@@ -28,7 +28,7 @@ object JsonBinaryAnnotation extends (BinaryAnnotation => JsonBinaryAnnotation) {
         case I32.value => (Some("I32"), b.value.getInt(0))
         case I64.value => (Some("I64"), b.value.getLong(0))
         case Double.value => (Some("DOUBLE"), b.value.getDouble(0))
-        case String.value => (None, new String(b.value.array(), b.value.position(), b.value.remaining(), Utf8))
+        case String.value => (None, if (b.value == null) "" else new String(b.value.array(), b.value.position(), b.value.remaining(), Utf8))
         case _ => throw new Exception("Unsupported annotation type: %s".format(b))
       }
     } catch {
