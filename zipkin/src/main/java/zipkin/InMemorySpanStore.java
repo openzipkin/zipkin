@@ -210,7 +210,7 @@ public final class InMemorySpanStore implements SpanStore, AsyncSpanStore, Async
       if (trace.isEmpty()) continue;
 
       List<DependencyLinkSpan> linkSpans = new LinkedList<>();
-      for (Span s : trace) {
+      for (Span s : MergeById.apply(trace)) {
         Long timestamp = s.timestamp;
         if (timestamp == null ||
             timestamp < (endTs - lookback) ||

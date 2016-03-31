@@ -459,6 +459,28 @@ public abstract class DependenciesTest {
     );
   }
 
+  @Test
+  public void unmergedSpans() {
+    List<Span> trace = asList(
+        new Span.Builder().traceId(1L).parentId(1L).id(2L).name("get").timestamp((today + 100) * 1000)
+            .addAnnotation(Annotation.create((today + 100) * 1000, SERVER_RECV, zipkinQueryNoPort))
+            .addAnnotation(Annotation.create((today + 250) * 1000, SERVER_SEND, zipkinQueryNoPort))
+            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, zipkinWeb))
+            .build(),
+        new Span.Builder().traceId(1L).parentId(1L).id(2L).name("get").timestamp((today + 50) * 1000)
+            .addAnnotation(Annotation.create((today + 50) * 1000, CLIENT_SEND, zipkinWeb))
+            .addAnnotation(Annotation.create((today + 300) * 1000, CLIENT_RECV, zipkinWeb))
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, zipkinQuery))
+            .build()
+    );
+
+    processDependencies(trace);
+
+    assertThat(store().getDependencies(today + 1000, null)).containsOnly(
+        new DependencyLink("zipkin-web", "zipkin-query", 1)
+    );
+  }
+
   /** rebases a trace backwards a day with different trace and span id. */
   List<Span> subtractDay(List<Span> trace) {
     return trace.stream()
