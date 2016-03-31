@@ -392,6 +392,25 @@ public abstract class SpanStoreTest {
         .containsExactly(asList(barAndFooAndBazAndQux));
   }
 
+  /** Make sure empty binary annotation values don't crash */
+  @Test
+  public void getTraces_binaryAnnotationWithEmptyValue() {
+    Span span = new Span.Builder()
+        .traceId(1)
+        .name("call1")
+        .id(1)
+        .timestamp((today + 1) * 1000)
+        .addBinaryAnnotation(BinaryAnnotation.create("empty", "", ep)).build();
+
+    store(span);
+
+    assertThat(store().getTraces((new QueryRequest.Builder("service").build())))
+        .containsExactly(asList(span));
+
+    assertThat(store().getTrace(1L))
+        .containsExactly(span);
+  }
+
   /**
    * It is expected that [[com.twitter.zipkin.storage.SpanStore.apply]] will receive the same span
    * id multiple times with different annotations. At query time, these must be merged.
