@@ -137,6 +137,8 @@ public class ZipkinServerConfiguration {
   @EnableConfigurationProperties(ZipkinMySQLProperties.class)
   @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
   static class JDBCConfiguration {
+    @Autowired(required = false)
+    DataSource dataSource;
 
     @Autowired
     ZipkinMySQLProperties mysql;
@@ -145,9 +147,15 @@ public class ZipkinServerConfiguration {
     @Qualifier("jdbcTraceListenerProvider")
     ExecuteListenerProvider listener;
 
-    @Bean
-    @ConditionalOnMissingBean(DataSource.class)
-    DataSource dataSource() {
+    @Bean JDBCSpanStore jdbcSpanStore() {
+      // TODO: add an integration test that proves this works
+      if (dataSource == null) {
+        dataSource = initializeFromMySQLProperties();
+      }
+      return new JDBCSpanStore(dataSource, new Settings().withRenderSchema(false), listener);
+    }
+
+    DataSource initializeFromMySQLProperties() {
       StringBuilder url = new StringBuilder("jdbc:mysql://");
       url.append(mysql.getHost()).append(":").append(mysql.getPort());
       url.append("/").append(mysql.getDb());
@@ -160,10 +168,6 @@ public class ZipkinServerConfiguration {
           .username(mysql.getUsername())
           .password(mysql.getPassword())
           .build();
-    }
-
-    @Bean JDBCSpanStore jdbcSpanStore(DataSource dataSource) {
-      return new JDBCSpanStore(dataSource, new Settings().withRenderSchema(false), listener);
     }
 
     @Bean SpanStore spanStore(JDBCSpanStore jdbc) {
