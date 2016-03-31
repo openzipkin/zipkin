@@ -23,6 +23,9 @@ import org.junit.BeforeClass;
 import scala.collection.immutable.List;
 import zipkin.DependencyLink;
 import zipkin.InMemorySpanStore;
+import zipkin.async.AsyncSpanConsumer;
+import zipkin.async.BlockingToAsyncSpanConsumerAdapter;
+import zipkin.async.BlockingToAsyncSpanStoreAdapter;
 import zipkin.internal.Dependencies;
 import zipkin.interop.AsyncToScalaSpanStoreAdapter;
 import zipkin.interop.ScalaDependencyStoreAdapter;
@@ -44,7 +47,9 @@ public class CassandraScalaDependencyStoreTest extends DependencyStoreSpec {
   @Override
   public void processDependencies(List<Span> input) {
     InMemorySpanStore mem = new InMemorySpanStore();
-    new AsyncToScalaSpanStoreAdapter(mem, mem).apply(input);
+    BlockingToAsyncSpanStoreAdapter store = new BlockingToAsyncSpanStoreAdapter(mem, Runnable::run);
+    AsyncSpanConsumer consumer = new BlockingToAsyncSpanConsumerAdapter(mem::accept, Runnable::run);
+    new AsyncToScalaSpanStoreAdapter(store, consumer).apply(input);
     java.util.List<DependencyLink>
         links = mem.getDependencies(today() + TimeUnit.DAYS.toMillis(1), null);
 
