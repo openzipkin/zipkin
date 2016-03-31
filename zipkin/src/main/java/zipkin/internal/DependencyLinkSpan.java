@@ -13,6 +13,7 @@
  */
 package zipkin.internal;
 
+import static java.lang.String.format;
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.internal.Util.equal;
 
@@ -36,18 +37,29 @@ public final class DependencyLinkSpan {
   final Kind kind;
   @Nullable
   final Long parentId;
-  final long spanId;
+  final long id;
   @Nullable
   final String service;
   @Nullable
   final String peerService;
 
-  DependencyLinkSpan(Kind kind, Long parentId, long spanId, String service, String peerService) {
+  DependencyLinkSpan(Kind kind, Long parentId, long id, String service, String peerService) {
     this.kind = checkNotNull(kind, "kind");
     this.parentId = parentId;
-    this.spanId = spanId;
+    this.id = id;
     this.service = service;
     this.peerService = peerService;
+  }
+
+  @Override public String toString() {
+    StringBuilder json = new StringBuilder("{\"kind\": ").append(kind).append("");
+    if (parentId != null) {
+      json.append(", \"parentId\": ").append(format("%016x", parentId)).append("");
+    }
+    json.append(", \"id\": ").append(format("%016x", id)).append("");
+    if (service != null) json.append(", \"service\": ").append(service).append("");
+    if (peerService != null) json.append(", \"peerService\": ").append(peerService).append("");
+    return json.append("}").toString();
   }
 
   public static final class Builder {

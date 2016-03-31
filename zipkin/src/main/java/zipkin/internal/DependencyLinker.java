@@ -18,7 +18,10 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import zipkin.DependencyLink;
+
+import static java.util.logging.Level.FINE;
 
 /**
  * This parses a span tree into dependency links used by Web UI. Ex. http://zipkin/dependency
@@ -30,6 +33,7 @@ import zipkin.DependencyLink;
  * services.
  */
 public final class DependencyLinker {
+  private static final Logger logger = Logger.getLogger(DependencyLinker.class.getName());
 
   private final Map<Pair<String>, Long> linkMap = new LinkedHashMap<>();
 
@@ -42,45 +46,63 @@ public final class DependencyLinker {
     Node.TreeBuilder<DependencyLinkSpan> builder = new Node.TreeBuilder<>();
     while (spans.hasNext()) {
       DependencyLinkSpan next = spans.next();
-      builder.addNode(next.parentId, next.spanId, next);
+      builder.addNode(next.parentId, next.id, next);
     }
     Node<DependencyLinkSpan> tree = builder.build();
 
-    // find any nodes who have
+    if (logger.isLoggable(FINE)) logger.fine("traversing trace tree, breadth-first");
     for (Iterator<Node<DependencyLinkSpan>> i = tree.traverse(); i.hasNext(); ) {
       Node<DependencyLinkSpan> current = i.next();
-      String server;
-      String client;
+      if (logger.isLoggable(FINE)) {
+        logger.fine("processing " + current.value());
+      }
+      String child;
+      String parent;
       switch (current.value().kind) {
         case SERVER:
-          server = current.value().service;
-          client = current.value().peerService;
+          child = current.value().service;
+          parent = current.value().peerService;
           if (current == tree) { // we are the root-most span.
-            if (client == null) {
-              continue; // skip if we can't read the root's uninstrumented client
+            if (parent == null) {
+              logger.fine("root's peer is unknown; skipping");
+              continue;
             }
           }
           break;
         case CLIENT:
-          server = current.value().peerService;
-          client = current.value().service;
+          child = current.value().peerService;
+          parent = current.value().service;
           break;
         default:
-          continue; // skip if we are missing the server's name
+          logger.fine("non-rpc span; skipping");
+          continue;
+      }
+
+      if (logger.isLoggable(FINE) && parent == null) {
+        logger.fine("cannot determine parent, looking for first server ancestor");
       }
 
       // Local spans may be between the current node and its remote ancestor
       // Look up the stack until we see a service name, and assume that's the client
-      Node<DependencyLinkSpan> parent = current.parent();
-      while (parent != null && client == null) {
-        if (parent.value().kind == DependencyLinkSpan.Kind.SERVER) {
-          client = parent.value().service;
+      Node<DependencyLinkSpan> ancestor = current.parent();
+      while (ancestor != null && parent == null) {
+        if (logger.isLoggable(FINE)) {
+          logger.fine("processing ancestor " + ancestor.value());
         }
-        parent = parent.parent();
+        if (ancestor.value().kind == DependencyLinkSpan.Kind.SERVER) {
+          parent = ancestor.value().service;
+        }
+        ancestor = ancestor.parent();
       }
-      if (client == null || server == null) continue; // skip if no ancestors were servers
 
-      Pair<String> key = Pair.create(client, server);
+      if (parent == null || child == null) {
+        logger.fine("cannot find server ancestor; skipping");
+        continue;
+      } else if (logger.isLoggable(FINE)) {
+        logger.fine("incrementing link " + parent + " -> " + child);
+      }
+
+      Pair<String> key = Pair.create(parent, child);
       if (linkMap.containsKey(key)) {
         linkMap.put(key, linkMap.get(key) + 1);
       } else {
