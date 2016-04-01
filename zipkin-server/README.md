@@ -18,10 +18,11 @@ zipkin-server is a drop-in replacement for the [scala query service](https://git
 
 The following environment variables from zipkin-scala are honored.
 
-    * `QUERY_PORT`: Listen lookback for the query http api; Defaults to 9411
+    * `QUERY_PORT`: Listen port for the http api and web ui; Defaults to 9411
     * `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
     * `QUERY_LOOKBACK`: How many milliseconds queries look back from endTs; Defaults to 7 days
     * `STORAGE_TYPE`: SpanStore implementation: one of `mem` or `mysql`
+    * `COLLECTOR_PORT`: Listen port for the scribe thrift api; Defaults to 9410 
     * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 
 ### Cassandra

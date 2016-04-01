@@ -55,6 +55,8 @@ import zipkin.elasticsearch.ElasticsearchSpanStore;
 import zipkin.jdbc.JDBCSpanStore;
 import zipkin.kafka.KafkaConfig;
 import zipkin.kafka.KafkaTransport;
+import zipkin.scribe.ScribeConfig;
+import zipkin.scribe.ScribeTransport;
 import zipkin.server.brave.TracedSpanStore;
 
 import static zipkin.StorageAdapters.asyncToBlocking;
@@ -257,6 +259,23 @@ public class ZipkinServerConfiguration {
       AsyncSpanConsumer consumer =
           guavaToAsync(new ElasticsearchSpanConsumer(connection(), config()));
       return makeSampled(consumer, sampler);
+    }
+  }
+
+  /**
+   * This transport accepts Scribe logs in a specified category. Each log entry is expected to
+   * contain a single span, which is TBinaryProtocol big-endian, then base64 encoded. Decoded spans
+   * are stored asynchronously.
+   */
+  @Configuration
+  @EnableConfigurationProperties(ZipkinScribeProperties.class)
+  @ConditionalOnClass(name = "zipkin.scribe.ScribeTransport")
+  static class ScribeConfiguration {
+    @Bean ScribeTransport scribe(ZipkinScribeProperties scribe, AsyncSpanConsumer consumer) {
+      ScribeConfig config = ScribeConfig.builder()
+          .category(scribe.getCategory())
+          .port(scribe.getPort()).build();
+      return new ScribeTransport(config, consumer);
     }
   }
 

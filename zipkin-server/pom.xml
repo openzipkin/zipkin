@@ -126,6 +126,13 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- Scribe transport -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>transport-scribe</artifactId>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Trace api controller activity with Brave -->
     <dependency>
       <groupId>com.github.kristofa</groupId>

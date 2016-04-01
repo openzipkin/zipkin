@@ -19,16 +19,33 @@
 
   <parent>
     <groupId>io.zipkin.java</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>zipkin-transports</artifactId>
     <version>0.10.5-SNAPSHOT</version>
   </parent>
 
-  <artifactId>zipkin-transports</artifactId>
-  <name>Zipkin Span Transports</name>
-  <packaging>pom</packaging>
+  <artifactId>transport-scribe</artifactId>
+  <name>Span Transport: Scribe</name>
 
-  <modules>
-    <module>scribe</module>
-    <module>kafka</module>
-  </modules>
+  <properties>
+    <main.basedir>${project.basedir}/..</main.basedir>
+    <swift.version>0.18.0</swift.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>storage-guava</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.facebook.swift</groupId>
+      <artifactId>swift-service</artifactId>
+      <version>${swift.version}</version>
+    </dependency>
+  </dependencies>
 </project>
