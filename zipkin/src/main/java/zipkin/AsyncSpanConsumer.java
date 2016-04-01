@@ -11,12 +11,9 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.async;
+package zipkin;
 
 import java.util.List;
-import zipkin.Codec;
-import zipkin.Sampler;
-import zipkin.Span;
 import zipkin.internal.Nullable;
 
 /**

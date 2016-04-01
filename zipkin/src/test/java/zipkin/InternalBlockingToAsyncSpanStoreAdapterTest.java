@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.async;
+package zipkin;
 
 import java.util.List;
 import org.junit.Before;
@@ -21,10 +21,6 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import zipkin.DependencyLink;
-import zipkin.QueryRequest;
-import zipkin.Span;
-import zipkin.SpanStore;
 import zipkin.internal.CallbackCaptor;
 
 import static java.util.Arrays.asList;
@@ -33,7 +29,7 @@ import static org.mockito.Mockito.when;
 import static zipkin.TestObjects.LINKS;
 import static zipkin.TestObjects.TRACE;
 
-public class BlockingToAsyncSpanStoreAdapterTest {
+public class InternalBlockingToAsyncSpanStoreAdapterTest {
 
   @Rule
   public MockitoRule mocks = MockitoJUnit.rule();
@@ -49,7 +45,7 @@ public class BlockingToAsyncSpanStoreAdapterTest {
   @Before
   public void setUp() {
     // run on calling thread so we don't have to make a complex callback captor
-    asyncSpanStore = new BlockingToAsyncSpanStoreAdapter(spanStore, Runnable::run);
+    asyncSpanStore = new InternalBlockingToAsyncSpanStoreAdapter(spanStore, Runnable::run);
   }
 
   @Test

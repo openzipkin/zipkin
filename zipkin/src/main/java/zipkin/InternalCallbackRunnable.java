@@ -11,14 +11,14 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.async;
+package zipkin;
 
 import static zipkin.internal.Util.checkNotNull;
 
-abstract class CallbackRunnable<V> implements Runnable {
+abstract class InternalCallbackRunnable<V> implements Runnable {
   final Callback<V> callback;
 
-  protected CallbackRunnable(Callback<V> callback) {
+  protected InternalCallbackRunnable(Callback<V> callback) {
     this.callback = checkNotNull(callback, "callback");
   }
 

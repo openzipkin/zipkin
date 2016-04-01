@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
-import zipkin.async.AsyncSpanConsumer;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.Dependencies;
 

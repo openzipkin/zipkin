@@ -15,17 +15,19 @@ package zipkin.cassandra;
 
 import zipkin.SpanStore;
 import zipkin.SpanStoreTest;
-import zipkin.async.AsyncSpanConsumer;
-import zipkin.async.AsyncToBlockingSpanStoreAdapter;
+import zipkin.AsyncSpanConsumer;
+
+import static zipkin.StorageAdapters.asyncToBlocking;
+import static zipkin.spanstore.guava.GuavaStorageAdapters.guavaToAsync;
 
 public class CassandraSpanStoreTest extends SpanStoreTest {
 
   @Override protected SpanStore store() {
-    return new AsyncToBlockingSpanStoreAdapter(CassandraTestGraph.INSTANCE.spanStore());
+    return asyncToBlocking(guavaToAsync(CassandraTestGraph.INSTANCE.spanStore()));
   }
 
   @Override protected AsyncSpanConsumer consumer() {
-    return CassandraTestGraph.INSTANCE.spanStore();
+    return guavaToAsync(CassandraTestGraph.INSTANCE.spanConsumer());
   }
 
   @Override

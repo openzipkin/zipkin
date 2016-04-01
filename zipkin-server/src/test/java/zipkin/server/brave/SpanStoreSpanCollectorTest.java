@@ -15,20 +15,20 @@ package zipkin.server.brave;
 
 import java.util.List;
 import org.junit.Test;
+import zipkin.AsyncSpanConsumer;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
-import zipkin.Span;
 import zipkin.InMemorySpanStore;
-import zipkin.async.AsyncSpanConsumer;
-import zipkin.async.BlockingToAsyncSpanConsumerAdapter;
+import zipkin.Span;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.StorageAdapters.blockingToAsync;
 
 public class SpanStoreSpanCollectorTest {
 
   InMemorySpanStore store = new InMemorySpanStore();
-  AsyncSpanConsumer consumer = new BlockingToAsyncSpanConsumerAdapter(store::accept, Runnable::run);
+  AsyncSpanConsumer consumer = blockingToAsync(store::accept, Runnable::run);
   SpanStoreSpanCollector collector = new SpanStoreSpanCollector(consumer);
 
   Span.Builder builder = new Span.Builder()

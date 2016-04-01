@@ -25,7 +25,7 @@ import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Endpoint;
 import zipkin.Span;
-import zipkin.async.AsyncSpanConsumer;
+import zipkin.AsyncSpanConsumer;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;

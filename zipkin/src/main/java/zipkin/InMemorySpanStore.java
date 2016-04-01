@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import zipkin.async.AsyncSpanStore;
-import zipkin.async.Callback;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.CorrectForClockSkew;
 import zipkin.internal.DependencyLinkSpan;
@@ -49,7 +47,7 @@ public final class InMemorySpanStore implements SpanStore {
   private final Multimap<String, String> serviceToSpanNames = new LinkedHashSetMultimap<>();
   private int acceptedSpanCount;
 
-  /** Blocking version of {@link zipkin.async.AsyncSpanConsumer#accept} */
+  /** Blocking version of {@link AsyncSpanConsumer#accept} */
   public synchronized void accept(List<Span> spans) {
     for (Span span : spans) {
       span = ApplyTimestampAndDuration.apply(span);

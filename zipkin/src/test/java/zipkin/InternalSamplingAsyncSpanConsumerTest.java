@@ -11,24 +11,18 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.async;
+package zipkin;
 
 import org.junit.Test;
-import zipkin.BinaryAnnotation;
-import zipkin.Constants;
-import zipkin.Endpoint;
-import zipkin.InMemorySpanStore;
-import zipkin.Sampler;
-import zipkin.Span;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
-public class SamplingAsyncSpanConsumerTest {
+public class InternalSamplingAsyncSpanConsumerTest {
 
   InMemorySpanStore store = new InMemorySpanStore();
-  AsyncSpanConsumer consumer = new BlockingToAsyncSpanConsumerAdapter(store::accept, Runnable::run);
-  Sampler neverSample = Sampler.create(0f);
+  AsyncSpanConsumer consumer = StorageAdapters.blockingToAsync(store::accept, Runnable::run);
+  Sampler never = Sampler.create(0f);
 
   Span.Builder builder = new Span.Builder()
       .traceId(1234L)
@@ -42,7 +36,7 @@ public class SamplingAsyncSpanConsumerTest {
 
   @Test
   public void debugFlagWins() {
-    AsyncSpanConsumer samplingConsumer = SamplingAsyncSpanConsumer.create(neverSample, consumer);
+    AsyncSpanConsumer samplingConsumer = new InternalSamplingAsyncSpanConsumer(consumer, never);
 
     samplingConsumer.accept(asList(builder.debug(true).build()), AsyncSpanConsumer.NOOP_CALLBACK);
 
@@ -51,7 +45,7 @@ public class SamplingAsyncSpanConsumerTest {
 
   @Test
   public void unsampledSpansArentStored() {
-    AsyncSpanConsumer samplingConsumer = SamplingAsyncSpanConsumer.create(neverSample, consumer);
+    AsyncSpanConsumer samplingConsumer = new InternalSamplingAsyncSpanConsumer(consumer, never);
 
     samplingConsumer.accept(asList(builder.build()), AsyncSpanConsumer.NOOP_CALLBACK);
 

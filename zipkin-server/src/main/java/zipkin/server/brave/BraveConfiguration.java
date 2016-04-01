@@ -32,7 +32,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import zipkin.Endpoint;
-import zipkin.async.AsyncSpanConsumer;
+import zipkin.AsyncSpanConsumer;
 
 @Configuration
 @ConditionalOnClass(ServerTracer.class)

@@ -13,18 +13,20 @@
  */
 package zipkin.elasticsearch;
 
+import zipkin.AsyncSpanConsumer;
 import zipkin.SpanStore;
 import zipkin.SpanStoreTest;
-import zipkin.async.AsyncSpanConsumer;
-import zipkin.async.AsyncToBlockingSpanStoreAdapter;
+
+import static zipkin.StorageAdapters.asyncToBlocking;
+import static zipkin.spanstore.guava.GuavaStorageAdapters.guavaToAsync;
 
 public class ElasticsearchSpanStoreTest extends SpanStoreTest {
   @Override protected SpanStore store() {
-    return new AsyncToBlockingSpanStoreAdapter(ElasticsearchTestGraph.INSTANCE.spanStore());
+    return asyncToBlocking(guavaToAsync(ElasticsearchTestGraph.INSTANCE.spanStore()));
   }
 
   @Override protected AsyncSpanConsumer consumer() {
-    return ElasticsearchTestGraph.INSTANCE.spanStore();
+    return guavaToAsync(ElasticsearchTestGraph.INSTANCE.spanConsumer());
   }
 
   @Override

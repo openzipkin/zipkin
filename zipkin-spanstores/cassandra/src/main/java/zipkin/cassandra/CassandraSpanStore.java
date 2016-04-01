@@ -18,12 +18,15 @@ import com.datastax.driver.core.Session;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,9 +43,9 @@ import zipkin.internal.MergeById;
 import zipkin.internal.Nullable;
 import zipkin.internal.Pair;
 import zipkin.spanstore.guava.GuavaSpanStore;
-import zipkin.spanstore.guava.GuavaToAsyncSpanStoreAdapter;
 
 import static com.google.common.util.concurrent.Futures.allAsList;
+import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.transform;
 import static java.lang.String.format;
 import static zipkin.cassandra.CassandraUtil.annotationKeys;
@@ -55,33 +58,33 @@ import static zipkin.internal.Util.midnightUTC;
  * CQL3 implementation of a span store.
  *
  * <p>This uses zipkin-cassandra-core which packages "/cassandra-schema-cql3.txt"
+ *
+ * <p>Temporarily exposed until we make a storage component
+ *
+ * <p>See https://github.com/openzipkin/zipkin-java/issues/135
  */
-public final class CassandraSpanStore extends GuavaToAsyncSpanStoreAdapter
-    implements GuavaSpanStore, AutoCloseable {
+public final class CassandraSpanStore implements GuavaSpanStore, AutoCloseable {
+  static final ListenableFuture<List<String>> EMPTY_LIST =
+      immediateFuture(Collections.<String>emptyList());
+  static final Ordering<List<Span>> TRACE_DESCENDING = Ordering.from(new Comparator<List<Span>>() {
+    @Override
+    public int compare(List<Span> left, List<Span> right) {
+      return right.get(0).compareTo(left.get(0));
+    }
+  });
 
   private final String keyspace;
   private final int indexTtl;
   private final int maxTraceCols;
   private final Cluster cluster;
-  private final CassandraSpanConsumer spanConsumer;
   @VisibleForTesting final Repository repository;
 
-  public CassandraSpanStore(CassandraConfig config) {
+  public CassandraSpanStore(Cluster cluster, CassandraConfig config) {
     this.keyspace = config.keyspace;
     this.indexTtl = config.indexTtl;
     this.maxTraceCols = config.maxTraceCols;
-    this.cluster = config.toCluster();
+    this.cluster = cluster;
     this.repository = new Repository(config.keyspace, cluster, config.ensureSchema);
-    this.spanConsumer = new CassandraSpanConsumer(repository, config.spanTtl, config.indexTtl);
-  }
-
-  @Override protected GuavaSpanStore delegate() {
-    return this;
-  }
-
-  @Override
-  public ListenableFuture<Void> accept(List<Span> spans) {
-    return spanConsumer.accept(spans);
   }
 
   @Override
@@ -246,6 +249,5 @@ public final class CassandraSpanStore extends GuavaToAsyncSpanStoreAdapter
   @Override
   public void close() {
     repository.close();
-    cluster.close();
   }
 }

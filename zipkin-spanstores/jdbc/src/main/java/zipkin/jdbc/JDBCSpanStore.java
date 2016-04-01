@@ -41,6 +41,7 @@ import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultConfiguration;
 import org.jooq.tools.jdbc.JDBCUtils;
 import zipkin.Annotation;
+import zipkin.AsyncSpanConsumer;
 import zipkin.BinaryAnnotation;
 import zipkin.BinaryAnnotation.Type;
 import zipkin.DependencyLink;
@@ -90,7 +91,7 @@ public final class JDBCSpanStore implements SpanStore {
     }
   }
 
-  /** Blocking version of {@link zipkin.async.AsyncSpanConsumer#accept} */
+  /** Blocking version of {@link AsyncSpanConsumer#accept} */
   public void accept(List<Span> spans) {
     if (spans.isEmpty()) return;
     try (Connection conn = datasource.getConnection()) {

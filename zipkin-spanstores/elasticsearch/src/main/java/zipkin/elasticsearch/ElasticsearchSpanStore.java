@@ -17,15 +17,14 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.net.HostAndPort;
+import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -41,10 +40,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.RangeQueryBuilder;
@@ -64,8 +60,8 @@ import zipkin.internal.MergeById;
 import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 import zipkin.spanstore.guava.GuavaSpanStore;
-import zipkin.spanstore.guava.GuavaToAsyncSpanStoreAdapter;
 
+import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.transform;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
@@ -75,30 +71,32 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
 import static zipkin.elasticsearch.ElasticFutures.toGuava;
 
-public class ElasticsearchSpanStore extends GuavaToAsyncSpanStoreAdapter
-    implements GuavaSpanStore, AutoCloseable {
+/**
+ *
+ * <p>Temporarily exposed until we make a storage component
+ *
+ * <p>See https://github.com/openzipkin/zipkin-java/issues/135
+ */
+public class ElasticsearchSpanStore implements GuavaSpanStore {
   static final long ONE_DAY_IN_MILLIS = TimeUnit.DAYS.toMillis(1);
+  static final ListenableFuture<List<String>> EMPTY_LIST =
+      immediateFuture(Collections.<String>emptyList());
+  static final Ordering<List<Span>> TRACE_DESCENDING = Ordering.from(new Comparator<List<Span>>() {
+    @Override
+    public int compare(List<Span> left, List<Span> right) {
+      return right.get(0).compareTo(left.get(0));
+    }
+  });
 
   private final Client client;
   private final IndexNameFormatter indexNameFormatter;
-  private final ElasticsearchSpanConsumer spanConsumer;
   private final String indexTemplate;
 
-  public ElasticsearchSpanStore(ElasticsearchConfig config) {
-    this.client = createClient(config.hosts, config.clusterName);
-    this.indexNameFormatter = new IndexNameFormatter(config.index);
-    this.spanConsumer = new ElasticsearchSpanConsumer(client, indexNameFormatter);
+  public ElasticsearchSpanStore(Client client, ElasticsearchConfig config) {
+    this.client = client;
+    this.indexNameFormatter = config.indexNameFormatter;
     this.indexTemplate = config.indexTemplate;
-
     checkForIndexTemplate();
-  }
-
-  @Override protected GuavaSpanStore delegate() {
-    return this;
-  }
-
-  @Override public ListenableFuture<Void> accept(List<Span> spans) {
-    return spanConsumer.accept(spans);
   }
 
   @Override public ListenableFuture<List<List<Span>>> getTraces(QueryRequest request) {
@@ -223,10 +221,6 @@ public class ElasticsearchSpanStore extends GuavaToAsyncSpanStoreAdapter
         .setSize(10000)
         .setQuery(termsQuery("traceId", traceIdsStr));
     return Futures.transform(toGuava(elasticRequest.execute()), ConvertTracesResponse.INSTANCE);
-  }
-
-  @Override public void close() {
-    client.close();
   }
 
   enum ConvertTracesResponse implements Function<SearchResponse, List<List<Span>>> {
@@ -425,29 +419,5 @@ public class ElasticsearchSpanStore extends GuavaToAsyncSpanStoreAdapter
     }
     client.admin().indices().putTemplate(
         new PutIndexTemplateRequest("zipkin_template").source(indexTemplate)).actionGet();
-  }
-
-  private static Client createClient(List<String> hosts, String clusterName) {
-    Settings settings = Settings.builder()
-        .put("cluster.name", clusterName)
-        .put("client.transport.sniff", true)
-        .build();
-
-    TransportClient client = TransportClient.builder()
-        .settings(settings)
-        .build();
-    for (String host : hosts) {
-      HostAndPort hostAndPort = HostAndPort.fromString(host);
-      try {
-        client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(
-            hostAndPort.getHostText()), hostAndPort.getPort()));
-      } catch (UnknownHostException e) {
-        // Hosts may be down transiently, we should still try to connect. If all of them happen
-        // to be down we will fail later when trying to use the client when checking the index
-        // template.
-        continue;
-      }
-    }
-    return client;
   }
 }

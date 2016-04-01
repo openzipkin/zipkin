@@ -17,11 +17,11 @@ import com.twitter.zipkin.storage.SpanStore;
 import com.twitter.zipkin.storage.SpanStoreSpec;
 import java.sql.SQLException;
 import org.junit.BeforeClass;
-import zipkin.async.AsyncSpanConsumer;
-import zipkin.async.AsyncSpanStore;
-import zipkin.async.BlockingToAsyncSpanConsumerAdapter;
-import zipkin.async.BlockingToAsyncSpanStoreAdapter;
+import zipkin.AsyncSpanConsumer;
+import zipkin.AsyncSpanStore;
 import zipkin.interop.AsyncToScalaSpanStoreAdapter;
+
+import static zipkin.StorageAdapters.blockingToAsync;
 
 public class JDBCScalaSpanStoreTest extends SpanStoreSpec {
   private static JDBCSpanStore store;
@@ -31,8 +31,8 @@ public class JDBCScalaSpanStoreTest extends SpanStoreSpec {
   @BeforeClass
   public static void setupDB() throws SQLException {
     store = new JDBCTestGraph().spanStore;
-    asyncStore = new BlockingToAsyncSpanStoreAdapter(store, Runnable::run);
-    asyncConsumer = new BlockingToAsyncSpanConsumerAdapter(store::accept, Runnable::run);
+    asyncStore = blockingToAsync(store, Runnable::run);
+    asyncConsumer = blockingToAsync(store::accept, Runnable::run);
   }
 
   public SpanStore store() {

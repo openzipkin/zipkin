@@ -14,10 +14,11 @@
 package zipkin.jdbc;
 
 import java.sql.SQLException;
+import zipkin.AsyncSpanConsumer;
 import zipkin.SpanStore;
 import zipkin.SpanStoreTest;
-import zipkin.async.AsyncSpanConsumer;
-import zipkin.async.BlockingToAsyncSpanConsumerAdapter;
+
+import static zipkin.StorageAdapters.blockingToAsync;
 
 public class JDBCSpanStoreTest extends SpanStoreTest {
 
@@ -28,7 +29,7 @@ public class JDBCSpanStoreTest extends SpanStoreTest {
   }
 
   @Override protected AsyncSpanConsumer consumer() {
-    return new BlockingToAsyncSpanConsumerAdapter(store::accept, Runnable::run);
+    return blockingToAsync(store::accept, Runnable::run);
   }
 
   @Override protected SpanStore store() {

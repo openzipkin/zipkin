@@ -34,8 +34,8 @@ import scala.math.Ordering$;
 import scala.runtime.AbstractFunction1;
 import scala.runtime.BoxedUnit;
 import zipkin.Codec;
-import zipkin.async.AsyncSpanConsumer;
-import zipkin.async.AsyncSpanStore;
+import zipkin.AsyncSpanConsumer;
+import zipkin.AsyncSpanStore;
 import zipkin.internal.Nullable;
 
 import static zipkin.interop.CloseAdapter.closeQuietly;

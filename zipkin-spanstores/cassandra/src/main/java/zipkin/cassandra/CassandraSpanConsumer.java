@@ -13,6 +13,7 @@
  */
 package zipkin.cassandra;
 
+import com.datastax.driver.core.Cluster;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.util.concurrent.Futures;
@@ -24,23 +25,27 @@ import org.twitter.zipkin.storage.cassandra.Repository;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.spanstore.guava.GuavaAsyncSpanConsumer;
+import zipkin.spanstore.guava.GuavaSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.cassandra.CassandraUtil.annotationKeys;
 
-// Extracted for readability
-final class CassandraSpanConsumer implements GuavaAsyncSpanConsumer {
+/**
+ * <p>Temporarily exposed until we make a storage component
+ *
+ * <p>See https://github.com/openzipkin/zipkin-java/issues/135
+ */
+public final class CassandraSpanConsumer implements GuavaSpanConsumer, AutoCloseable {
   private static final Function<Object, Void> TO_VOID = Functions.<Void>constant(null);
 
   private final Repository repository;
   private final int spanTtl;
   private final int indexTtl;
 
-  CassandraSpanConsumer(Repository repository, int spanTtl, int indexTtl) {
-    this.repository = repository;
-    this.spanTtl = spanTtl;
-    this.indexTtl = indexTtl;
+  public CassandraSpanConsumer(Cluster cluster, CassandraConfig config) {
+    this.repository = new Repository(config.keyspace, cluster, config.ensureSchema);
+    this.spanTtl = config.spanTtl;
+    this.indexTtl = config.indexTtl;
   }
 
   @Override
@@ -100,5 +105,10 @@ final class CassandraSpanConsumer implements GuavaAsyncSpanConsumer {
       }
     }
     return transform(Futures.allAsList(futures), TO_VOID);
+  }
+
+  @Override
+  public void close() {
+    repository.close();
   }
 }

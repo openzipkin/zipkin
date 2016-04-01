@@ -79,7 +79,7 @@ public class CassandraConfigTest {
         .contactPoints("1.1.1.1:9142")
         .build();
 
-    assertThat(config.toCluster().getConfiguration().getProtocolOptions().getPort())
+    assertThat(config.connect().getConfiguration().getProtocolOptions().getPort())
         .isEqualTo(9142);
   }
 
@@ -89,7 +89,7 @@ public class CassandraConfigTest {
         .contactPoints("1.1.1.1:9143,2.2.2.2:9143")
         .build();
 
-    assertThat(config.toCluster().getConfiguration().getProtocolOptions().getPort())
+    assertThat(config.connect().getConfiguration().getProtocolOptions().getPort())
         .isEqualTo(9143);
   }
 
@@ -99,7 +99,7 @@ public class CassandraConfigTest {
         .contactPoints("1.1.1.1:9143,2.2.2.2")
         .build();
 
-    assertThat(config.toCluster().getConfiguration().getProtocolOptions().getPort())
+    assertThat(config.connect().getConfiguration().getProtocolOptions().getPort())
         .isEqualTo(9042);
   }
 
@@ -111,7 +111,7 @@ public class CassandraConfigTest {
         .build();
 
     Authenticator authenticator =
-        config.toCluster().getConfiguration().getProtocolOptions().getAuthProvider()
+        config.connect().getConfiguration().getProtocolOptions().getAuthProvider()
             .newAuthenticator(new InetSocketAddress("localhost", 8080));
 
     byte[] SASLhandshake = {0, 'b', 'o', 'b', 0, 's', 'e', 'c', 'r', 'e', 't'};
@@ -123,7 +123,7 @@ public class CassandraConfigTest {
   public void authProvider_defaultsToNone() {
     CassandraConfig config = CassandraConfig.builder().build();
 
-    assertThat(config.toCluster().getConfiguration().getProtocolOptions().getAuthProvider())
+    assertThat(config.connect().getConfiguration().getProtocolOptions().getAuthProvider())
         .isEqualTo(AuthProvider.NONE);
   }
 
@@ -144,7 +144,7 @@ public class CassandraConfigTest {
   }
 
   static RoundRobinPolicy toRoundRobinPolicy(CassandraConfig config) {
-    return (RoundRobinPolicy) ((LatencyAwarePolicy) ((TokenAwarePolicy) config.toCluster()
+    return (RoundRobinPolicy) ((LatencyAwarePolicy) ((TokenAwarePolicy) config.connect()
         .getConfiguration()
         .getPolicies()
         .getLoadBalancingPolicy())
@@ -168,7 +168,7 @@ public class CassandraConfigTest {
   }
 
   static DCAwareRoundRobinPolicy toDCAwareRoundRobinPolicy(CassandraConfig config) {
-    return (DCAwareRoundRobinPolicy) ((LatencyAwarePolicy) ((TokenAwarePolicy) config.toCluster()
+    return (DCAwareRoundRobinPolicy) ((LatencyAwarePolicy) ((TokenAwarePolicy) config.connect()
         .getConfiguration()
         .getPolicies()
         .getLoadBalancingPolicy())
@@ -179,7 +179,7 @@ public class CassandraConfigTest {
   public void maxConnections_defaultsTo8() {
     CassandraConfig config = CassandraConfig.builder().build();
 
-    PoolingOptions poolingOptions = config.toCluster().getConfiguration().getPoolingOptions();
+    PoolingOptions poolingOptions = config.connect().getConfiguration().getPoolingOptions();
 
     assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL)).isEqualTo(8);
   }
@@ -188,7 +188,7 @@ public class CassandraConfigTest {
   public void maxConnections_setsMaxConnectionsPerDatacenterLocalHost() {
     CassandraConfig config = CassandraConfig.builder().maxConnections(16).build();
 
-    PoolingOptions poolingOptions = config.toCluster().getConfiguration().getPoolingOptions();
+    PoolingOptions poolingOptions = config.connect().getConfiguration().getPoolingOptions();
 
     assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL)).isEqualTo(16);
   }

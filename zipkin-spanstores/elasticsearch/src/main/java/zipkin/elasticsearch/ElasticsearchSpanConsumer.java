@@ -26,13 +26,18 @@ import org.elasticsearch.client.Client;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.spanstore.guava.GuavaAsyncSpanConsumer;
+import zipkin.spanstore.guava.GuavaSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.elasticsearch.ElasticFutures.toGuava;
+import static zipkin.internal.Util.checkNotNull;
 
-// Extracted for readability
-final class ElasticsearchSpanConsumer implements GuavaAsyncSpanConsumer {
+/**
+ * <p>Temporarily exposed until we make a storage component
+ *
+ * <p>See https://github.com/openzipkin/zipkin-java/issues/135
+ */
+public final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
   private static final Function<Object, Void> TO_VOID = Functions.<Void>constant(null);
 
   /**
@@ -46,9 +51,9 @@ final class ElasticsearchSpanConsumer implements GuavaAsyncSpanConsumer {
   private final Client client;
   private final IndexNameFormatter indexNameFormatter;
 
-  ElasticsearchSpanConsumer(Client client, IndexNameFormatter indexNameFormatter) {
-    this.client = client;
-    this.indexNameFormatter = indexNameFormatter;
+  public ElasticsearchSpanConsumer(Client client, ElasticsearchConfig config) {
+    this.client = checkNotNull(client, "client");
+    this.indexNameFormatter = checkNotNull(config, "config").indexNameFormatter;
   }
 
   @Override

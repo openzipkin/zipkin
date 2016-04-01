@@ -13,6 +13,7 @@
  */
 package zipkin.elasticsearch;
 
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.junit.AssumptionViolatedException;
 
@@ -20,6 +21,7 @@ enum ElasticsearchTestGraph {
   INSTANCE;
 
   static final ElasticsearchConfig CONFIG = new ElasticsearchConfig.Builder().build();
+  static final Client CLIENT = CONFIG.connect();
 
   static {
     ElasticsearchSpanConsumer.FLUSH_ON_WRITES = true;
@@ -28,16 +30,29 @@ enum ElasticsearchTestGraph {
   private AssumptionViolatedException ex;
   private ElasticsearchSpanStore spanStore;
 
-  /** A lot of tech debt here because the spanstore constructor performs I/O. */
   synchronized ElasticsearchSpanStore spanStore() {
     if (ex != null) throw ex;
     if (this.spanStore == null) {
       try {
-        this.spanStore = new ElasticsearchSpanStore(CONFIG);
+        this.spanStore = new ElasticsearchSpanStore(CLIENT, CONFIG);
       } catch (NoNodeAvailableException e) {
         throw ex = new AssumptionViolatedException(e.getMessage());
       }
     }
     return spanStore;
+  }
+
+  private ElasticsearchSpanConsumer spanConsumer;
+
+  synchronized ElasticsearchSpanConsumer spanConsumer() {
+    if (ex != null) throw ex;
+    if (this.spanConsumer == null) {
+      try {
+        this.spanConsumer = new ElasticsearchSpanConsumer(CLIENT, CONFIG);
+      } catch (NoNodeAvailableException e) {
+        throw ex = new AssumptionViolatedException(e.getMessage());
+      }
+    }
+    return spanConsumer;
   }
 }

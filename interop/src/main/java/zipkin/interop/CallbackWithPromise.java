@@ -15,7 +15,7 @@ package zipkin.interop;
 
 import com.twitter.util.Promise;
 import com.twitter.util.Promise$;
-import zipkin.async.Callback;
+import zipkin.Callback;
 import zipkin.internal.Nullable;
 
 /**

@@ -24,9 +24,8 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.stubbing.Answer;
 import zipkin.QueryRequest;
-import zipkin.async.AsyncSpanConsumer;
-import zipkin.async.AsyncSpanStore;
-import zipkin.async.Callback;
+import zipkin.AsyncSpanStore;
+import zipkin.Callback;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,7 +36,7 @@ import static org.mockito.Mockito.doAnswer;
 import static zipkin.TestObjects.LINKS;
 import static zipkin.TestObjects.TRACE;
 
-public class GuavaSpanStoreAdapterTest {
+public class InternalGuavaSpanStoreAdapterTest {
 
   @Rule
   public MockitoRule mocks = MockitoJUnit.rule();
@@ -48,14 +47,11 @@ public class GuavaSpanStoreAdapterTest {
   @Mock
   private AsyncSpanStore asyncSpanStore;
 
-  @Mock
-  private AsyncSpanConsumer asyncSpanConsumer;
-
   private GuavaSpanStore spanStore;
 
   @Before
   public void setUp() throws Exception {
-    spanStore = new GuavaSpanStoreAdapter(asyncSpanStore, asyncSpanConsumer);
+    spanStore = new InternalGuavaSpanStoreAdapter(asyncSpanStore);
   }
 
   @Test

@@ -22,7 +22,7 @@ import scala.Option;
 import scala.collection.JavaConversions;
 import scala.collection.Seq;
 import scala.runtime.BoxedUnit;
-import zipkin.async.AsyncSpanStore;
+import zipkin.AsyncSpanStore;
 
 import static zipkin.interop.CloseAdapter.closeQuietly;
 

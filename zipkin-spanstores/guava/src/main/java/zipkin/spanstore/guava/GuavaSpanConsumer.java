@@ -15,17 +15,18 @@ package zipkin.spanstore.guava;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
+import zipkin.AsyncSpanConsumer;
 import zipkin.Span;
 
 /**
- * An interface that is equivalent to {@link zipkin.async.AsyncSpanConsumer} but exposes methods as
+ * An interface that is equivalent to {@link AsyncSpanConsumer} but exposes methods as
  * {@link ListenableFuture} to allow asynchronous composition.
  */
 // @FunctionalInterface
-public interface GuavaAsyncSpanConsumer {
+public interface GuavaSpanConsumer {
 
   /**
-   * Version of {@link zipkin.async.AsyncSpanConsumer} that returns a {@link ListenableFuture}.
+   * Version of {@link AsyncSpanConsumer} that returns a {@link ListenableFuture}.
    */
   ListenableFuture<Void> accept(List<Span> spans);
 }
