@@ -52,8 +52,12 @@ object Main extends App with ZipkinSpanGenerator {
    * we get the host after the [[queryDest]] flag has been parsed.
    */
   lazy val queryClient = new HttpClient(
-    httpService =
-      Http.client.configured(param.Label("zipkin-query")).newClient(queryDest()).toService,
+    httpService = Http.client.configured(param.Label("zipkin-tracegen"))
+      .newClient(queryDest()).toService,
+    defaultHeaders = Map(
+      "Host" -> queryDest(),
+      "Accept-Encoding" -> "gzip"
+    ),
     mapper = new FinatraObjectMapper(ZipkinJson)
   )
 
