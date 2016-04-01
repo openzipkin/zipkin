@@ -26,7 +26,7 @@ import zipkin.BinaryAnnotation.Type;
 import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.SpanStore;
-import zipkin.async.AsyncSpanConsumer;
+import zipkin.AsyncSpanConsumer;
 
 /**
  * A Brave {@link SpanCollector} that forwards to the local {@link SpanStore}.

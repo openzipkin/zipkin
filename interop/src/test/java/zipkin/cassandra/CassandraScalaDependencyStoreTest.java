@@ -21,16 +21,17 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import org.junit.BeforeClass;
 import scala.collection.immutable.List;
+import zipkin.AsyncSpanConsumer;
+import zipkin.AsyncSpanStore;
 import zipkin.DependencyLink;
 import zipkin.InMemorySpanStore;
-import zipkin.async.AsyncSpanConsumer;
-import zipkin.async.BlockingToAsyncSpanConsumerAdapter;
-import zipkin.async.BlockingToAsyncSpanStoreAdapter;
 import zipkin.internal.Dependencies;
 import zipkin.interop.AsyncToScalaSpanStoreAdapter;
 import zipkin.interop.ScalaDependencyStoreAdapter;
 
+import static zipkin.StorageAdapters.blockingToAsync;
 import static zipkin.internal.Util.midnightUTC;
+import static zipkin.spanstore.guava.GuavaStorageAdapters.guavaToAsync;
 
 public class CassandraScalaDependencyStoreTest extends DependencyStoreSpec {
   private static CassandraSpanStore spanStore;
@@ -41,14 +42,14 @@ public class CassandraScalaDependencyStoreTest extends DependencyStoreSpec {
   }
 
   public DependencyStore store() {
-    return new ScalaDependencyStoreAdapter(spanStore);
+    return new ScalaDependencyStoreAdapter(guavaToAsync(spanStore));
   }
 
   @Override
   public void processDependencies(List<Span> input) {
     InMemorySpanStore mem = new InMemorySpanStore();
-    BlockingToAsyncSpanStoreAdapter store = new BlockingToAsyncSpanStoreAdapter(mem, Runnable::run);
-    AsyncSpanConsumer consumer = new BlockingToAsyncSpanConsumerAdapter(mem::accept, Runnable::run);
+    AsyncSpanStore store = blockingToAsync(mem, Runnable::run);
+    AsyncSpanConsumer consumer = blockingToAsync(mem::accept, Runnable::run);
     new AsyncToScalaSpanStoreAdapter(store, consumer).apply(input);
     java.util.List<DependencyLink>
         links = mem.getDependencies(today() + TimeUnit.DAYS.toMillis(1), null);

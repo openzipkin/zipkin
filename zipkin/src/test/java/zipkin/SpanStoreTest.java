@@ -22,7 +22,6 @@ import java.util.TimeZone;
 import java.util.TreeSet;
 import org.junit.Before;
 import org.junit.Test;
-import zipkin.async.AsyncSpanConsumer;
 import zipkin.internal.CallbackCaptor;
 
 import static java.util.Arrays.asList;

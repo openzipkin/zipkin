@@ -11,24 +11,29 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin;
+package zipkin.spanstore.guava;
 
-import com.twitter.zipkin.storage.SpanStore;
-import com.twitter.zipkin.storage.SpanStoreSpec;
-import zipkin.interop.AsyncToScalaSpanStoreAdapter;
+import com.google.common.util.concurrent.FutureCallback;
+import zipkin.Callback;
 
-import static zipkin.StorageAdapters.blockingToAsync;
+import static zipkin.internal.Util.checkNotNull;
 
-public class InMemoryScalaSpanStoreTest extends SpanStoreSpec {
-  InMemorySpanStore mem = new InMemorySpanStore();
-  AsyncSpanStore store = blockingToAsync(mem, Runnable::run);
-  AsyncSpanConsumer consumer = blockingToAsync(mem::accept, Runnable::run);
+final class InternalForwardingCallback<T> implements FutureCallback<T> {
+  final Callback<T> delegate;
 
-  public SpanStore store() {
-    return new AsyncToScalaSpanStoreAdapter(store, consumer);
+  InternalForwardingCallback(Callback<T> delegate) {
+    this.delegate = checkNotNull(delegate, "callback");
   }
 
-  public void clear() {
-    mem.clear();
+  @Override public void onSuccess(T t) {
+    delegate.onSuccess(t);
+  }
+
+  @Override public void onFailure(Throwable throwable) {
+    delegate.onError(throwable);
+  }
+
+  @Override public String toString() {
+    return delegate.toString();
   }
 }

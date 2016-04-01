@@ -14,10 +14,17 @@
 package zipkin.elasticsearch;
 
 import com.google.common.io.Resources;
+import com.google.common.net.HostAndPort;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
 import static zipkin.internal.Util.checkNotNull;
 
@@ -61,14 +68,13 @@ public class ElasticsearchConfig {
 
   final String clusterName;
   final List<String> hosts;
-  final String index;
   final String indexTemplate;
+  final IndexNameFormatter indexNameFormatter;
 
   ElasticsearchConfig(Builder builder) {
     clusterName = checkNotNull(builder.cluster, "builder.cluster");
     hosts = checkNotNull(builder.hosts, "builder.hosts");
-    index = checkNotNull(builder.index, "builder.index");
-
+    String index = checkNotNull(builder.index, "builder.index");
     try {
       indexTemplate = Resources.toString(
           Resources.getResource("zipkin/elasticsearch/zipkin_template.json"),
@@ -77,5 +83,35 @@ public class ElasticsearchConfig {
     } catch (IOException e) {
       throw new AssertionError("Error reading jar resource, shouldn't happen.", e);
     }
+    indexNameFormatter = new IndexNameFormatter(index);
+  }
+
+  /**
+   * Temporarily exposed until we make a storage component
+   *
+   * <p>See https://github.com/openzipkin/zipkin-java/issues/135
+   */
+  public Client connect() {
+    Settings settings = Settings.builder()
+        .put("cluster.name", clusterName)
+        .put("client.transport.sniff", true)
+        .build();
+
+    TransportClient client = TransportClient.builder()
+        .settings(settings)
+        .build();
+    for (String host : hosts) {
+      HostAndPort hostAndPort = HostAndPort.fromString(host);
+      try {
+        client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(
+            hostAndPort.getHostText()), hostAndPort.getPort()));
+      } catch (UnknownHostException e) {
+        // Hosts may be down transiently, we should still try to connect. If all of them happen
+        // to be down we will fail later when trying to use the client when checking the index
+        // template.
+        continue;
+      }
+    }
+    return client;
   }
 }

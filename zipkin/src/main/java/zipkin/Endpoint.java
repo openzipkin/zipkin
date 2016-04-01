@@ -31,7 +31,7 @@ import static zipkin.internal.Util.checkNotNull;
 public final class Endpoint {
 
   public static Endpoint create(String serviceName, int ipv4, int port) {
-    return new Endpoint(serviceName, ipv4, (short) (port & 0xffff));
+    return new Endpoint(serviceName, ipv4, port == 0 ? null : (short) (port & 0xffff));
   }
 
   public static Endpoint create(String serviceName, int ipv4) {

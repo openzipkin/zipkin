@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 import kafka.consumer.ConsumerIterator;
 import kafka.consumer.KafkaStream;
 import zipkin.Span;
-import zipkin.async.AsyncSpanConsumer;
+import zipkin.AsyncSpanConsumer;
 
 import static java.util.logging.Level.WARNING;
 

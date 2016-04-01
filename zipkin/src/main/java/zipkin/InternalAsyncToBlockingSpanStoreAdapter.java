@@ -11,24 +11,16 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.async;
+package zipkin;
 
 import java.util.List;
-import zipkin.DependencyLink;
-import zipkin.QueryRequest;
-import zipkin.Span;
-import zipkin.SpanStore;
 import zipkin.internal.CallbackCaptor;
 import zipkin.internal.Nullable;
 
-/**
- * A {@link SpanStore} implementation that can take a {@link AsyncSpanStore} and call its methods
- * with blocking, for use in callers that need a normal {@link SpanStore}.
- */
-public final class AsyncToBlockingSpanStoreAdapter implements SpanStore {
-  private final AsyncSpanStore delegate;
+final class InternalAsyncToBlockingSpanStoreAdapter implements SpanStore {
+  final AsyncSpanStore delegate;
 
-  public AsyncToBlockingSpanStoreAdapter(AsyncSpanStore delegate) {
+  InternalAsyncToBlockingSpanStoreAdapter(AsyncSpanStore delegate) {
     this.delegate = delegate;
   }
 

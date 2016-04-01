@@ -11,38 +11,27 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.async;
+package zipkin;
 
 import java.util.List;
 import java.util.concurrent.Executor;
-import zipkin.Span;
+import zipkin.StorageAdapters.SpanConsumer;
 
 import static zipkin.internal.Util.checkNotNull;
 
-/**
- * This allows you to build an {@link AsyncSpanConsumer} from a blocking api.
- *
- * <p>In implementation, this runs blocking calls in a thread.
- */
-public final class BlockingToAsyncSpanConsumerAdapter implements AsyncSpanConsumer {
-
-  public interface SpanConsumer {
-    /** Like {@link AsyncSpanConsumer#accept}, except blocking. Invoked by an executor. */
-    void accept(List<Span> spans);
-  }
-
-  final SpanConsumer spanConsumer;
+final class InternalBlockingToAsyncSpanConsumerAdapter implements AsyncSpanConsumer {
+  final SpanConsumer delegate;
   final Executor executor;
 
-  public BlockingToAsyncSpanConsumerAdapter(SpanConsumer spanConsumer, Executor executor) {
-    this.spanConsumer = checkNotNull(spanConsumer, "spanConsumer");
+  InternalBlockingToAsyncSpanConsumerAdapter(SpanConsumer delegate, Executor executor) {
+    this.delegate = checkNotNull(delegate, "delegate");
     this.executor = checkNotNull(executor, "executor");
   }
 
   @Override public void accept(final List<Span> spans, Callback<Void> callback) {
-    executor.execute(new CallbackRunnable<Void>(callback) {
+    executor.execute(new InternalCallbackRunnable<Void>(callback) {
       @Override Void complete() {
-        spanConsumer.accept(spans);
+        delegate.accept(spans);
         return null;
       }
 
@@ -53,6 +42,6 @@ public final class BlockingToAsyncSpanConsumerAdapter implements AsyncSpanConsum
   }
 
   @Override public String toString() {
-    return spanConsumer.toString();
+    return delegate.toString();
   }
 }

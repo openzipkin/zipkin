@@ -13,6 +13,7 @@
  */
 package zipkin.server;
 
+import com.datastax.driver.core.Cluster;
 import com.github.kristofa.brave.Brave;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -20,6 +21,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.Executor;
 import javax.sql.DataSource;
+import org.elasticsearch.client.Client;
 import org.jooq.ExecuteListenerProvider;
 import org.jooq.conf.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,22 +41,26 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
 import zipkin.InMemorySpanStore;
 import zipkin.Sampler;
 import zipkin.SpanStore;
-import zipkin.async.AsyncSpanConsumer;
-import zipkin.async.AsyncToBlockingSpanStoreAdapter;
-import zipkin.async.BlockingToAsyncSpanConsumerAdapter;
-import zipkin.async.SamplingAsyncSpanConsumer;
 import zipkin.cassandra.CassandraConfig;
+import zipkin.cassandra.CassandraSpanConsumer;
 import zipkin.cassandra.CassandraSpanStore;
 import zipkin.elasticsearch.ElasticsearchConfig;
+import zipkin.elasticsearch.ElasticsearchSpanConsumer;
 import zipkin.elasticsearch.ElasticsearchSpanStore;
 import zipkin.jdbc.JDBCSpanStore;
 import zipkin.kafka.KafkaConfig;
 import zipkin.kafka.KafkaTransport;
 import zipkin.server.brave.TracedSpanStore;
+
+import static zipkin.StorageAdapters.asyncToBlocking;
+import static zipkin.StorageAdapters.blockingToAsync;
+import static zipkin.StorageAdapters.makeSampled;
+import static zipkin.spanstore.guava.GuavaStorageAdapters.guavaToAsync;
 
 @Configuration
 public class ZipkinServerConfiguration {
@@ -76,7 +82,8 @@ public class ZipkinServerConfiguration {
    *
    * This works by overriding the bean. If you have beans who subtype {@link SpanStore}, spring will
    * register it against all interfaces. However, you cannot narrow the type when overriding. To
-   * allow it to be overridden, make sure it is provided as {@link SpanStore} and named "spanStore".
+   * allow it to be overridden, make sure it is provided as {@link SpanStore} and named
+   * "spanStore".
    *
    * <p>Ex.
    * <pre>{@code
@@ -124,8 +131,8 @@ public class ZipkinServerConfiguration {
     }
 
     @Bean AsyncSpanConsumer spanConsumer(Sampler sampler) {
-      AsyncSpanConsumer async = new BlockingToAsyncSpanConsumerAdapter(mem::accept, Runnable::run);
-      return SamplingAsyncSpanConsumer.create(sampler, async);
+      AsyncSpanConsumer consumer = blockingToAsync(mem::accept, Runnable::run);
+      return makeSampled(consumer, sampler);
     }
   }
 
@@ -180,8 +187,8 @@ public class ZipkinServerConfiguration {
     }
 
     @Bean AsyncSpanConsumer spanConsumer(JDBCSpanStore jdbc, Sampler sampler) {
-      AsyncSpanConsumer async = new BlockingToAsyncSpanConsumerAdapter(jdbc::accept, executor());
-      return SamplingAsyncSpanConsumer.create(sampler, async);
+      AsyncSpanConsumer consumer = blockingToAsync(jdbc::accept, executor());
+      return makeSampled(consumer, sampler);
     }
   }
 
@@ -194,8 +201,8 @@ public class ZipkinServerConfiguration {
     @Autowired
     ZipkinCassandraProperties cassandra;
 
-    @Bean CassandraSpanStore cassandraSpanStore() {
-      CassandraConfig config = new CassandraConfig.Builder()
+    @Bean CassandraConfig config() {
+      return new CassandraConfig.Builder()
           .keyspace(cassandra.getKeyspace())
           .contactPoints(cassandra.getContactPoints())
           .localDc(cassandra.getLocalDc())
@@ -205,15 +212,19 @@ public class ZipkinServerConfiguration {
           .password(cassandra.getPassword())
           .spanTtl(cassandra.getSpanTtl())
           .indexTtl(cassandra.getIndexTtl()).build();
-      return new CassandraSpanStore(config);
+    }
+
+    @Bean Cluster connection() {
+      return config().connect();
     }
 
     @Bean SpanStore spanStore() {
-      return new AsyncToBlockingSpanStoreAdapter(cassandraSpanStore());
+      return asyncToBlocking(guavaToAsync(new CassandraSpanStore(connection(), config())));
     }
 
     @Bean AsyncSpanConsumer spanConsumer(Sampler sampler) {
-      return SamplingAsyncSpanConsumer.create(sampler, cassandraSpanStore());
+      AsyncSpanConsumer consumer = guavaToAsync(new CassandraSpanConsumer(connection(), config()));
+      return makeSampled(consumer, sampler);
     }
   }
 
@@ -226,21 +237,26 @@ public class ZipkinServerConfiguration {
     @Autowired
     ZipkinElasticsearchProperties elasticsearch;
 
-    @Bean ElasticsearchSpanStore elasticsearchSpanStore() {
-      ElasticsearchConfig config = new ElasticsearchConfig.Builder()
+    @Bean ElasticsearchConfig config() {
+      return new ElasticsearchConfig.Builder()
           .cluster(elasticsearch.getCluster())
           .hosts(elasticsearch.getHosts())
           .index(elasticsearch.getIndex())
           .build();
-      return new ElasticsearchSpanStore(config);
+    }
+
+    @Bean Client connection() {
+      return config().connect();
     }
 
     @Bean SpanStore spanStore() {
-      return new AsyncToBlockingSpanStoreAdapter(elasticsearchSpanStore());
+      return asyncToBlocking(guavaToAsync(new ElasticsearchSpanStore(connection(), config())));
     }
 
     @Bean AsyncSpanConsumer spanConsumer(Sampler sampler) {
-      return SamplingAsyncSpanConsumer.create(sampler, elasticsearchSpanStore());
+      AsyncSpanConsumer consumer =
+          guavaToAsync(new ElasticsearchSpanConsumer(connection(), config()));
+      return makeSampled(consumer, sampler);
     }
   }
 

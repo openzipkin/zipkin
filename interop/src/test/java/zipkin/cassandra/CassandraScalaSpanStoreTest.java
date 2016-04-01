@@ -16,21 +16,27 @@ package zipkin.cassandra;
 import com.twitter.zipkin.storage.SpanStore;
 import com.twitter.zipkin.storage.SpanStoreSpec;
 import org.junit.BeforeClass;
+import zipkin.AsyncSpanConsumer;
+import zipkin.AsyncSpanStore;
 import zipkin.interop.AsyncToScalaSpanStoreAdapter;
 
+import static zipkin.spanstore.guava.GuavaStorageAdapters.guavaToAsync;
+
 public class CassandraScalaSpanStoreTest extends SpanStoreSpec {
-  private static CassandraSpanStore spanStore;
+  private static AsyncSpanStore spanStore;
+  private static AsyncSpanConsumer spanConsumer;
 
   @BeforeClass
   public static void setupDB() {
-    spanStore = CassandraTestGraph.INSTANCE.spanStore();
+    spanStore = guavaToAsync(CassandraTestGraph.INSTANCE.spanStore());
+    spanConsumer = guavaToAsync(CassandraTestGraph.INSTANCE.spanConsumer());
   }
 
   public SpanStore store() {
-    return new AsyncToScalaSpanStoreAdapter(spanStore, spanStore);
+    return new AsyncToScalaSpanStoreAdapter(spanStore, spanConsumer);
   }
 
   public void clear() {
-    spanStore.clear();
+    CassandraTestGraph.INSTANCE.spanStore().clear();
   }
 }

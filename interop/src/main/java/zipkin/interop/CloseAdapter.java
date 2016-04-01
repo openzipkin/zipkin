@@ -15,7 +15,7 @@ package zipkin.interop;
 
 import java.io.Closeable;
 import java.io.IOException;
-import zipkin.async.AsyncSpanStore;
+import zipkin.AsyncSpanStore;
 
 final class CloseAdapter {
 

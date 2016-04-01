@@ -19,66 +19,62 @@ import java.util.List;
 import zipkin.DependencyLink;
 import zipkin.QueryRequest;
 import zipkin.Span;
-import zipkin.async.AsyncSpanConsumer;
-import zipkin.async.AsyncSpanStore;
-import zipkin.async.Callback;
+import zipkin.AsyncSpanStore;
+import zipkin.Callback;
 import zipkin.internal.Nullable;
 
+import static zipkin.internal.Util.checkNotNull;
+
 /**
- * A {@link GuavaSpanStore} derived from an {@link AsyncSpanStore} and an {@link AsyncSpanConsumer}.
- * Used by callers who prefer to compose futures.
+ * A {@link GuavaSpanStore} derived from an {@link AsyncSpanStore}. Used by callers who prefer to
+ * compose futures.
  */
-public final class GuavaSpanStoreAdapter implements GuavaSpanStore {
+final class InternalGuavaSpanStoreAdapter implements GuavaSpanStore {
+  final AsyncSpanStore delegate;
 
-  private final AsyncSpanStore asyncSpanStore;
-  private final AsyncSpanConsumer asyncSpanConsumer;
-
-  public GuavaSpanStoreAdapter(AsyncSpanStore asyncSpanStore, AsyncSpanConsumer asyncSpanConsumer) {
-    this.asyncSpanStore = asyncSpanStore;
-    this.asyncSpanConsumer = asyncSpanConsumer;
-  }
-
-  @Override public ListenableFuture<Void> accept(List<Span> spans) {
-    CallbackListenableFuture<Void> result = new CallbackListenableFuture<>();
-    asyncSpanConsumer.accept(spans, result);
-    return result;
+  InternalGuavaSpanStoreAdapter(AsyncSpanStore delegate) {
+    this.delegate = checkNotNull(delegate, "delegate");
   }
 
   @Override public ListenableFuture<List<List<Span>>> getTraces(QueryRequest request) {
     CallbackListenableFuture<List<List<Span>>> result = new CallbackListenableFuture<>();
-    asyncSpanStore.getTraces(request, result);
+    delegate.getTraces(request, result);
     return result;
   }
 
   @Override public ListenableFuture<List<Span>> getTrace(long id) {
     CallbackListenableFuture<List<Span>> result = new CallbackListenableFuture<>();
-    asyncSpanStore.getTrace(id, result);
+    delegate.getTrace(id, result);
     return result;
   }
 
   @Override public ListenableFuture<List<Span>> getRawTrace(long traceId) {
     CallbackListenableFuture<List<Span>> result = new CallbackListenableFuture<>();
-    asyncSpanStore.getRawTrace(traceId, result);
+    delegate.getRawTrace(traceId, result);
     return result;
   }
 
   @Override public ListenableFuture<List<String>> getServiceNames() {
     CallbackListenableFuture<List<String>> result = new CallbackListenableFuture<>();
-    asyncSpanStore.getServiceNames(result);
+    delegate.getServiceNames(result);
     return result;
   }
 
   @Override public ListenableFuture<List<String>> getSpanNames(String serviceName) {
     CallbackListenableFuture<List<String>> result = new CallbackListenableFuture<>();
-    asyncSpanStore.getSpanNames(serviceName, result);
+    delegate.getSpanNames(serviceName, result);
     return result;
   }
 
   @Override public ListenableFuture<List<DependencyLink>> getDependencies(long endTs,
       @Nullable Long lookback) {
     CallbackListenableFuture<List<DependencyLink>> result = new CallbackListenableFuture<>();
-    asyncSpanStore.getDependencies(endTs, lookback, result);
+    delegate.getDependencies(endTs, lookback, result);
     return result;
+  }
+
+  @Override public String toString() {
+    return delegate.toString();
   }
 
   static final class CallbackListenableFuture<V> extends AbstractFuture<V> implements Callback<V> {

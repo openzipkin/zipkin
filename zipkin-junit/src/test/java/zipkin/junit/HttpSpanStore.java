@@ -26,8 +26,8 @@ import zipkin.DependencyLink;
 import zipkin.QueryRequest;
 import zipkin.Span;
 import zipkin.SpanStore;
-import zipkin.async.AsyncSpanConsumer;
-import zipkin.async.Callback;
+import zipkin.AsyncSpanConsumer;
+import zipkin.Callback;
 import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
 

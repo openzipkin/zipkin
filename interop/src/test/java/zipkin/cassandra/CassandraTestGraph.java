@@ -13,6 +13,7 @@
  */
 package zipkin.cassandra;
 
+import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import org.junit.AssumptionViolatedException;
 
@@ -21,6 +22,7 @@ enum CassandraTestGraph {
 
   static final CassandraConfig CONFIG = new CassandraConfig.Builder()
       .keyspace("test_zipkin_spanstore").build();
+  static final Cluster CLUSTER = CONFIG.connect();
 
   static {
     // Ensure the repository's local cache of service names expire quickly
@@ -35,11 +37,26 @@ enum CassandraTestGraph {
     if (ex != null) throw ex;
     if (this.spanStore == null) {
       try {
-        this.spanStore = new CassandraSpanStore(CONFIG);
+        this.spanStore = new CassandraSpanStore(CLUSTER, CONFIG);
       } catch (NoHostAvailableException e) {
         throw ex = new AssumptionViolatedException(e.getMessage());
       }
     }
     return spanStore;
+  }
+
+  private CassandraSpanConsumer spanConsumer;
+
+  /** A lot of tech debt here because the repository constructor performs I/O. */
+  synchronized CassandraSpanConsumer spanConsumer() {
+    if (ex != null) throw ex;
+    if (this.spanConsumer == null) {
+      try {
+        this.spanConsumer = new CassandraSpanConsumer(CLUSTER, CONFIG);
+      } catch (NoHostAvailableException e) {
+        throw ex = new AssumptionViolatedException(e.getMessage());
+      }
+    }
+    return spanConsumer;
   }
 }

@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.async;
+package zipkin;
 
 import java.util.function.Consumer;
 import org.junit.Before;
@@ -22,7 +22,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.stubbing.Answer;
-import zipkin.QueryRequest;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,7 +31,7 @@ import static org.mockito.Mockito.doAnswer;
 import static zipkin.TestObjects.LINKS;
 import static zipkin.TestObjects.TRACE;
 
-public class AsyncToBlockingSpanStoreAdapterTest {
+public class InternalAsyncToBlockingSpanStoreAdapterTest {
 
   @Rule
   public MockitoRule mocks = MockitoJUnit.rule();
@@ -43,11 +42,11 @@ public class AsyncToBlockingSpanStoreAdapterTest {
   @Mock
   private AsyncSpanStore delegate;
 
-  private AsyncToBlockingSpanStoreAdapter spanStore;
+  private InternalAsyncToBlockingSpanStoreAdapter spanStore;
 
   @Before
   public void setUp() {
-    spanStore = new AsyncToBlockingSpanStoreAdapter(delegate);
+    spanStore = new InternalAsyncToBlockingSpanStoreAdapter(delegate);
   }
 
   @Test

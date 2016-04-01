@@ -19,12 +19,12 @@ import com.twitter.zipkin.storage.DependencyStoreSpec;
 import java.sql.SQLException;
 import org.junit.BeforeClass;
 import scala.collection.immutable.List;
-import zipkin.async.AsyncSpanConsumer;
-import zipkin.async.AsyncSpanStore;
-import zipkin.async.BlockingToAsyncSpanConsumerAdapter;
-import zipkin.async.BlockingToAsyncSpanStoreAdapter;
+import zipkin.AsyncSpanConsumer;
+import zipkin.AsyncSpanStore;
 import zipkin.interop.AsyncToScalaSpanStoreAdapter;
 import zipkin.interop.ScalaDependencyStoreAdapter;
+
+import static zipkin.StorageAdapters.blockingToAsync;
 
 public class JDBCScalaDependencyStoreTest extends DependencyStoreSpec {
   private static JDBCSpanStore spanStore;
@@ -34,8 +34,8 @@ public class JDBCScalaDependencyStoreTest extends DependencyStoreSpec {
   @BeforeClass
   public static void setupDB() throws SQLException {
     spanStore = new JDBCTestGraph().spanStore;
-    asyncStore = new BlockingToAsyncSpanStoreAdapter(spanStore, Runnable::run);
-    asyncConsumer = new BlockingToAsyncSpanConsumerAdapter(spanStore::accept, Runnable::run);
+    asyncStore = blockingToAsync(spanStore, Runnable::run);
+    asyncConsumer = blockingToAsync(spanStore::accept, Runnable::run);
   }
 
   public DependencyStore store() {

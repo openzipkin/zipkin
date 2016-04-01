@@ -152,7 +152,12 @@ public final class CassandraConfig {
     this.password = builder.password;
   }
 
-  Cluster toCluster() {
+  /**
+   * Temporarily exposed until we make a storage component
+   *
+   * <p>See https://github.com/openzipkin/zipkin-java/issues/135
+   */
+  public Cluster connect() {
     Cluster.Builder builder = Cluster.builder();
     List<InetSocketAddress> contactPoints = parseContactPoints();
     int defaultPort = findConnectPort(contactPoints);
