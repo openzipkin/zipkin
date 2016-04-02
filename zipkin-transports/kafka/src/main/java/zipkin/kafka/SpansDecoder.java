@@ -15,17 +15,17 @@ package zipkin.kafka;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 import kafka.serializer.Decoder;
 import zipkin.Codec;
 import zipkin.Span;
+import zipkin.internal.SpanConsumerLogger;
 
 /**
  * Conditionally decodes depending on whether the input bytes are encoded as a single span or a
  * list. Malformed input is ignored.
  */
 final class SpansDecoder implements Decoder<List<Span>> {
-  final Logger logger = Logger.getLogger(SpansDecoder.class.getName());
+  final SpanConsumerLogger logger = new SpanConsumerLogger(KafkaStreamProcessor.class);
 
   @Override
   public List<Span> fromBytes(byte[] bytes) {
@@ -47,7 +47,7 @@ final class SpansDecoder implements Decoder<List<Span>> {
         return Collections.singletonList(Codec.THRIFT.readSpan(bytes));
       }
     } catch (RuntimeException e) {
-      logger.fine("malformed message: " + e.getMessage());
+      logger.errorDecoding(e);
       return Collections.emptyList();
     }
   }
