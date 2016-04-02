@@ -44,6 +44,11 @@ case class QueryServiceBuilder(override val defaultFinatraHttpPort: String = "0.
 
   override def postWarmup() {
     super.postWarmup()
-    BootstrapTrace.complete()
+    try {
+      BootstrapTrace.complete()
+    } catch {
+      case e => log.warning("Unable to trace bootstrap due to %s(%s)"
+        .format(e.getClass.getSimpleName, if (e.getMessage == null) "" else e.getMessage))
+    }
   }
 }
