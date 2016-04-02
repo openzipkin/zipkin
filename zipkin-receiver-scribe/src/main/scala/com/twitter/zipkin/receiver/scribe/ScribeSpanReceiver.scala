@@ -117,6 +117,8 @@ class ScribeReceiver(
           // It is not an error if the scribe client decided to cancel its request.
           // See Finagle FAQ's first entry http://twitter.github.io/finagle/guide/FAQ.html
           case (_: CancellationException, _: CancelledRequestException) => ok
+          // This is a non-standard exception, only possible when using ZipkinQueuedCollectorFactory
+          // i.e. zipkin-collector-service won't see this, as it doesn't use ^^
           case (_: QueueFullException, _) => pushbackCounter.incr(); tryLater
           case _ =>
             log.warning("Sending TryLater due to %s(%s)"
