@@ -87,14 +87,14 @@
     <!-- Cassandra backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>spanstore-cassandra</artifactId>
+      <artifactId>storage-cassandra</artifactId>
       <optional>true</optional>
     </dependency>
 
     <!-- Elasticsearch backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>spanstore-elasticsearch</artifactId>
+      <artifactId>storage-elasticsearch</artifactId>
       <optional>true</optional>
     </dependency>
 
@@ -109,7 +109,7 @@
     <!-- JDBC backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>spanstore-jdbc</artifactId>
+      <artifactId>storage-jdbc</artifactId>
       <optional>true</optional>
     </dependency>
 

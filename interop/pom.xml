@@ -63,19 +63,19 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>spanstore-cassandra</artifactId>
+      <artifactId>storage-cassandra</artifactId>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>spanstore-elasticsearch</artifactId>
+      <artifactId>storage-elasticsearch</artifactId>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>spanstore-jdbc</artifactId>
+      <artifactId>storage-jdbc</artifactId>
       <scope>test</scope>
     </dependency>
 

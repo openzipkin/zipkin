@@ -27,7 +27,7 @@
     <module>zipkin-junit</module>
     <module>benchmarks</module>
     <module>interop</module>
-    <module>zipkin-spanstores</module>
+    <module>zipkin-storage</module>
     <module>zipkin-transports</module>
     <module>zipkin-server</module>
   </modules>
@@ -144,25 +144,25 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>spanstore-cassandra</artifactId>
+        <artifactId>storage-cassandra</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>spanstore-jdbc</artifactId>
+        <artifactId>storage-jdbc</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>spanstore-elasticsearch</artifactId>
+        <artifactId>storage-elasticsearch</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>spanstore-guava</artifactId>
+        <artifactId>storage-guava</artifactId>
         <version>${project.version}</version>
       </dependency>
 
