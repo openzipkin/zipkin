@@ -23,8 +23,8 @@
     <version>0.10.5-SNAPSHOT</version>
   </parent>
 
-  <artifactId>zipkin-spanstores</artifactId>
-  <name>SpanStores</name>
+  <artifactId>zipkin-storage</artifactId>
+  <name>Storage</name>
   <packaging>pom</packaging>
 
   <modules>

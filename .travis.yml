@@ -33,7 +33,7 @@ before_install:
   # install mysql schema
   - mysql -uroot -e 'SET GLOBAL innodb_file_format=Barracuda'
   - mysql -uroot -e 'create database if not exists zipkin'
-  - mysql -uroot -Dzipkin < zipkin-spanstores/jdbc/src/main/resources/mysql.sql
+  - mysql -uroot -Dzipkin < zipkin-storage/jdbc/src/main/resources/mysql.sql
   # TODO: To release, setup git config and run `./mvnw -s ./.settings.xml release:prepare` locally.
   #       Once tag-driven automation is setup, these parameters will be used by travis.
   - git config user.name "$GH_USER"

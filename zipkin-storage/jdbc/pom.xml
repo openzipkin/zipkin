@@ -19,12 +19,12 @@
 
   <parent>
     <groupId>io.zipkin.java</groupId>
-    <artifactId>zipkin-spanstores</artifactId>
+    <artifactId>zipkin-storage</artifactId>
     <version>0.10.5-SNAPSHOT</version>
   </parent>
 
-  <artifactId>spanstore-jdbc</artifactId>
-  <name>SpanStore: JDBC</name>
+  <artifactId>storage-jdbc</artifactId>
+  <name>Storage: JDBC</name>
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
