@@ -36,6 +36,9 @@ kafka:
   group-id: ${KAFKA_GROUP_ID:zipkin}
   # Count of consumer threads consuming the topic
   streams: ${KAFKA_STREAMS:1}
+scribe:
+  category: zipkin
+  port: ${COLLECTOR_PORT:9410}
 zipkin:
   collector:
     # percentage to traces to retain
@@ -70,8 +73,10 @@ spring:
     exclude:
       # otherwise we might initialize even when not needed (ex when storage type is cassandra)
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-# logging:
-#   level:
+logging:
+  level:
+    # Silence Invalid method name: '__can__finagle__trace__v3__'
+    com.facebook.swift.service.ThriftServiceProcessor: 'OFF'
 #     # investigate /api/v1/dependencies
 #     zipkin.internal.DependencyLinker: 'DEBUG'
 #     # log cassandra calls

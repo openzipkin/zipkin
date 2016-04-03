@@ -34,7 +34,7 @@ final class KafkaStreamProcessor implements Runnable {
   public void run() {
     ConsumerIterator<String, List<Span>> messages = stream.iterator();
     while (messages.hasNext()) {
-      List<Span> spans = messages.next().message();
+      final List<Span> spans = messages.next().message();
       if (spans.isEmpty()) continue;
       try {
         spanConsumer.accept(spans, logger.acceptSpansCallback(spans));
