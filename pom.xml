@@ -30,6 +30,7 @@
     <module>zipkin-storage</module>
     <module>zipkin-transports</module>
     <module>zipkin-server</module>
+    <module>centralsync-maven-plugin</module>
   </modules>
 
   <properties>
@@ -139,6 +140,12 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-junit</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>centralsync-maven-plugin</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -300,7 +307,6 @@
     </pluginManagement>
 
     <plugins>
-
       <!-- Ensures checksums are added to published jars -->
       <plugin>
         <artifactId>maven-install-plugin</artifactId>
@@ -361,6 +367,12 @@
           <!-- to match zipkin-scala (openzipkin/zipkin) -->
           <tagNameFormat>@{project.version}</tagNameFormat>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <artifactId>centralsync-maven-plugin</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <version>${project.version}</version>
       </plugin>
     </plugins>
   </build>
