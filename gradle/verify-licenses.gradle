@@ -31,6 +31,7 @@ downloadLicenses {
 	ext.bsd = license('BSD License', 'http://www.opensource.org/licenses/bsd-license.php')
 	ext.bsd3Clause = license('BSD 3-Clause', 'http://opensource.org/licenses/BSD-3-Clause')
 	ext.cddl = license('CDDL v1.0', 'https://glassfish.java.net/public/CDDLv1.0.html')
+	ext.epl = license('Eclipse Public License - v 1.0', 'https://www.eclipse.org/legal/epl-v10.html')
 
 	aliases = [
 			(apache) : [
@@ -54,6 +55,8 @@ downloadLicenses {
 	licenses = [
 			(group('io.zipkin')): apache,
 			'javax.servlet:servlet-api:2.5': cddl,   // see any .java file in the source .jar at http://search.maven.org/#artifactdetails|javax.servlet|servlet-api|2.5|jar
+                        // jnr-posix is used by cassandra-driver-core until 3.0 https://github.com/openzipkin/zipkin/issues/952
+                        'com.github.jnr:jnr-posix:3.0.29': epl, // recently changed: see https://github.com/jnr/jnr-posix/blob/jnr-posix-3.0.29/LICENSE.txt
 			// Even though it'd be nice to just say "org.apache.*", that's not currently supported
 			// see https://github.com/hierynomus/license-gradle-plugin/blob/067175d2d0ce5213c9cbab9968856b0feb7ed8d5/src/main/groovy/nl/javadude/gradle/plugins/license/LicenseResolver.groovy#L56-L59
 			// and https://github.com/hierynomus/license-gradle-plugin/issues/100

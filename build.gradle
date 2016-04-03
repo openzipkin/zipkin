@@ -237,7 +237,7 @@ subprojects { subproject ->
     dependencies {
         testCompile 'junit:junit:4.12'
         testCompile 'org.mockito:mockito-all:1.10.19'
-        testCompile "org.scalatest:scalatest_${scalaInterfaceVersion}:2.2.5"
+        testCompile "org.scalatest:scalatest_${scalaInterfaceVersion}:2.2.6"
         testRuntime "org.slf4j:slf4j-simple:${commonVersions.slf4j}"
     }
 }
