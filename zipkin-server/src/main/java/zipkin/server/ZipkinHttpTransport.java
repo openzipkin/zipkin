@@ -15,8 +15,6 @@ package zipkin.server;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,9 +24,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
 import zipkin.Span;
-import zipkin.AsyncSpanConsumer;
+import zipkin.internal.SpanConsumerLogger;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static zipkin.internal.Util.checkNotNull;
@@ -39,9 +38,9 @@ import static zipkin.internal.Util.gunzip;
  */
 @RestController
 public class ZipkinHttpTransport {
-  static final Logger LOGGER = Logger.getLogger(ZipkinHttpTransport.class.getName());
   static final String APPLICATION_THRIFT = "application/x-thrift";
 
+  private final SpanConsumerLogger logger = new SpanConsumerLogger(ZipkinHttpTransport.class);
   private final AsyncSpanConsumer spanConsumer;
   private final Codec jsonCodec;
   private final Codec thriftCodec;
@@ -71,26 +70,29 @@ public class ZipkinHttpTransport {
     return validateAndStoreSpans(encoding, thriftCodec, body);
   }
 
-  private ResponseEntity<?> validateAndStoreSpans(String encoding, Codec codec, byte[] body) {
+  ResponseEntity<?> validateAndStoreSpans(String encoding, Codec codec, byte[] body) {
     if (encoding != null && encoding.contains("gzip")) {
       try {
         body = gunzip(body);
       } catch (IOException e) {
-        String message = e.getMessage();
-        if (message == null) message = "Error gunzipping spans";
-        return ResponseEntity.badRequest().body(message);
+        String message = logger.error("Cannot gunzip spans", e);
+        return ResponseEntity.badRequest().body(message + "\n"); // newline for prettier curl
       }
     }
     List<Span> spans;
     try {
       spans = codec.readSpans(body);
-    } catch (IllegalArgumentException e) {
-      if (LOGGER.isLoggable(Level.FINE)) {
-        LOGGER.log(Level.FINE, e.getMessage(), e);
-      }
-      return ResponseEntity.badRequest().body(e.getMessage() + "\n"); // newline for prettier curl
+    } catch (RuntimeException e) {
+      String message = logger.errorDecoding(e);
+      return ResponseEntity.badRequest().body(message + "\n"); // newline for prettier curl
     }
-    spanConsumer.accept(spans, AsyncSpanConsumer.NOOP_CALLBACK);
+    if (spans.isEmpty()) return ResponseEntity.accepted().build();
+    try {
+      spanConsumer.accept(spans, logger.acceptSpansCallback(spans));
+    } catch (RuntimeException e) {
+      String message = logger.errorAcceptingSpans(spans, e);
+      return ResponseEntity.status(500).body(message + "\n"); // newline for prettier curl
+    }
     return ResponseEntity.accepted().build();
   }
 }
