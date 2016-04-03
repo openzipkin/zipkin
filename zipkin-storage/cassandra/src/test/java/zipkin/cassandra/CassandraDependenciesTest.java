@@ -13,31 +13,30 @@
  */
 package zipkin.cassandra;
 
-import com.google.common.util.concurrent.Futures;
-import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import org.twitter.zipkin.storage.cassandra.Repository;
 import zipkin.DependenciesTest;
 import zipkin.DependencyLink;
 import zipkin.InMemorySpanStore;
+import zipkin.InMemoryStorage;
 import zipkin.Span;
-import zipkin.SpanStore;
-import zipkin.internal.Dependencies;
+import zipkin.StorageComponent;
 
-import static zipkin.StorageAdapters.asyncToBlocking;
+import static java.util.concurrent.TimeUnit.DAYS;
 import static zipkin.internal.Util.midnightUTC;
-import static zipkin.spanstore.guava.GuavaStorageAdapters.guavaToAsync;
 
 public class CassandraDependenciesTest extends DependenciesTest {
+  private final CassandraStorage storage;
 
-  @Override protected SpanStore store() {
-    return asyncToBlocking(guavaToAsync(CassandraTestGraph.INSTANCE.spanStore()));
+  public CassandraDependenciesTest() {
+    this.storage = CassandraTestGraph.INSTANCE.storage.get();
   }
 
-  @Override
-  public void clear() {
-    CassandraTestGraph.INSTANCE.spanStore().clear();
+  @Override protected StorageComponent storage() {
+    return storage;
+  }
+
+  @Override public void clear() {
+    storage.clear();
   }
 
   /**
@@ -45,21 +44,18 @@ public class CassandraDependenciesTest extends DependenciesTest {
    * pre-aggregated links.
    *
    * <p>This uses {@link InMemorySpanStore} to prepare links and {@link
-   * Repository#storeDependencies(long, ByteBuffer)} to store them.
+   * CassandraStorage#writeDependencyLinks(List, long)} to store them.
    *
    * <p>Note: The zipkin-dependencies-spark doesn't use any of these classes: it reads and writes to
    * the keyspace directly.
    */
   @Override
   public void processDependencies(List<Span> spans) {
-    InMemorySpanStore mem = new InMemorySpanStore();
-    mem.accept(spans);
-    List<DependencyLink> links = mem.getDependencies(today + TimeUnit.DAYS.toMillis(1), null);
+    InMemoryStorage mem = new InMemoryStorage();
+    mem.spanConsumer().accept(spans);
+    List<DependencyLink> links = mem.spanStore().getDependencies(today + DAYS.toMillis(1), null);
 
     long midnight = midnightUTC(spans.get(0).timestamp / 1000);
-    Dependencies deps = Dependencies.create(midnight, midnight /* ignored */, links);
-    ByteBuffer thrift = deps.toThrift();
-    // Block on the future to get read-your-writes consistency during tests
-    Futures.getUnchecked(CassandraTestGraph.INSTANCE.spanStore().repository.storeDependencies(midnight, thrift));
+    storage.writeDependencyLinks(links, midnight);
   }
 }

@@ -15,13 +15,19 @@ package zipkin.kafka;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import kafka.consumer.ConsumerConfig;
 import kafka.javaapi.consumer.ConsumerConnector;
 import kafka.serializer.StringDecoder;
 import zipkin.AsyncSpanConsumer;
+import zipkin.Sampler;
+import zipkin.StorageComponent;
+import zipkin.internal.Lazy;
 
 import static kafka.consumer.Consumer.createJavaConsumerConnector;
+import static zipkin.internal.Util.checkNotNull;
 
 /**
  * This transport polls a Kafka topic for messages that contain TBinaryProtocol big-endian encoded
@@ -29,21 +35,70 @@ import static kafka.consumer.Consumer.createJavaConsumerConnector;
  */
 public final class KafkaTransport implements AutoCloseable {
 
+  /** Configuration including defaults needed to consume spans from a Kafka topic. */
+  public static final class Builder {
+    String topic = "zipkin";
+    String zookeeper;
+    String groupId = "zipkin";
+    int streams = 1;
+
+    /** Topic zipkin spans will be consumed from. Defaults to "zipkin" */
+    public Builder topic(String topic) {
+      this.topic = checkNotNull(topic, "topic");
+      return this;
+    }
+
+    /** The zookeeper connect string, ex. 127.0.0.1:2181. No default */
+    public Builder zookeeper(String zookeeper) {
+      this.zookeeper = checkNotNull(zookeeper, "zookeeper");
+      return this;
+    }
+
+    /** The consumer group this process is consuming on behalf of. Defaults to "zipkin" */
+    public Builder groupId(String groupId) {
+      this.groupId = checkNotNull(groupId, "groupId");
+      return this;
+    }
+
+    /** Count of threads/streams consuming the topic. Defaults to 1 */
+    public Builder streams(int streams) {
+      this.streams = streams;
+      return this;
+    }
+
+    public KafkaTransport writeTo(StorageComponent storage, Sampler sampler) {
+      checkNotNull(storage, "storage");
+      checkNotNull(sampler, "sampler");
+      return new KafkaTransport(this, new Lazy<AsyncSpanConsumer>() {
+        @Override protected AsyncSpanConsumer compute() {
+          return checkNotNull(storage.asyncSpanConsumer(sampler), storage + ".asyncSpanConsumer()");
+        }
+      });
+    }
+  }
+
   final ConsumerConnector connector;
   final ExecutorService pool;
 
-  public KafkaTransport(KafkaConfig config, AsyncSpanConsumer spanConsumer) {
-    this.pool = config.streams == 1
-        ? Executors.newSingleThreadExecutor()
-        : Executors.newFixedThreadPool(config.streams);
-    connector = createJavaConsumerConnector(config.forConsumer());
-
+  KafkaTransport(Builder builder, Lazy<AsyncSpanConsumer> consumer) {
     Map<String, Integer> topicCountMap = new LinkedHashMap<>(1);
-    topicCountMap.put(config.topic, config.streams);
+    topicCountMap.put(builder.topic, builder.streams);
+
+    Properties props = new Properties();
+    props.put("zookeeper.connect", builder.zookeeper);
+    props.put("group.id", builder.groupId);
+    // Same default as zipkin-scala, and keeps tests from hanging
+    props.put("auto.offset.reset", "smallest");
+
+    connector = createJavaConsumerConnector(new ConsumerConfig(props));
+
+    pool = builder.streams == 1
+        ? Executors.newSingleThreadExecutor()
+        : Executors.newFixedThreadPool(builder.streams);
 
     connector.createMessageStreams(topicCountMap, new StringDecoder(null), new SpansDecoder())
-        .get(config.topic).forEach(stream ->
-        pool.execute(new KafkaStreamProcessor(stream, spanConsumer))
+        .get(builder.topic).forEach(stream ->
+        pool.execute(new KafkaStreamProcessor(stream, consumer))
     );
   }
 

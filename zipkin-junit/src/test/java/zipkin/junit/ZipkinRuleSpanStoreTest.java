@@ -14,23 +14,18 @@
 package zipkin.junit;
 
 import org.junit.Rule;
-import zipkin.SpanStore;
 import zipkin.SpanStoreTest;
-import zipkin.AsyncSpanConsumer;
+import zipkin.StorageComponent;
 
 /** Tests the http interface of {@link ZipkinRule}. */
 public class ZipkinRuleSpanStoreTest extends SpanStoreTest {
 
   @Rule
   public ZipkinRule server = new ZipkinRule();
-  HttpSpanStore store = new HttpSpanStore(server.httpUrl());
+  HttpStorage storage = new HttpStorage(server.httpUrl());
 
-  @Override protected SpanStore store() {
-    return store;
-  }
-
-  @Override protected AsyncSpanConsumer consumer() {
-    return store;
+  @Override protected StorageComponent storage() {
+    return storage;
   }
 
   @Override

@@ -21,22 +21,27 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import okio.Buffer;
+import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
 import zipkin.DependencyLink;
-import zipkin.InMemorySpanStore;
+import zipkin.InMemoryStorage;
 import zipkin.QueryRequest;
+import zipkin.Sampler;
 import zipkin.Span;
-import zipkin.internal.JsonCodec;
+import zipkin.SpanStore;
+import zipkin.internal.SpanConsumerLogger;
 
 import static zipkin.internal.Util.gunzip;
 
 final class ZipkinDispatcher extends Dispatcher {
-  static final JsonCodec JSON_CODEC = new JsonCodec();
-  private final InMemorySpanStore store;
+  private final SpanConsumerLogger logger = new SpanConsumerLogger(ZipkinRule.class);
+  private final SpanStore store;
+  private final AsyncSpanConsumer consumer;
   private final MockWebServer server;
 
-  ZipkinDispatcher(InMemorySpanStore store, MockWebServer server) {
-    this.store = store;
+  ZipkinDispatcher(InMemoryStorage storage, MockWebServer server) {
+    this.store = storage.spanStore();
+    this.consumer = storage.asyncSpanConsumer(Sampler.ALWAYS_SAMPLE);
     this.server = server;
   }
 
@@ -47,24 +52,24 @@ final class ZipkinDispatcher extends Dispatcher {
       if (url.encodedPath().equals("/health")) {
         return new MockResponse().setBody("OK\n");
       } else if (url.encodedPath().equals("/api/v1/services")) {
-        return jsonResponse(JSON_CODEC.writeStrings(store.getServiceNames()));
+        return jsonResponse(Codec.JSON.writeStrings(store.getServiceNames()));
       } else if (url.encodedPath().equals("/api/v1/spans")) {
         String serviceName = url.queryParameter("serviceName");
-        return jsonResponse(JSON_CODEC.writeStrings(store.getSpanNames(serviceName)));
+        return jsonResponse(Codec.JSON.writeStrings(store.getSpanNames(serviceName)));
       } else if (url.encodedPath().equals("/api/v1/dependencies")) {
         Long endTs = maybeLong(url.queryParameter("endTs"));
         Long lookback = maybeLong(url.queryParameter("lookback"));
         List<DependencyLink> result = store.getDependencies(endTs, lookback);
-        return jsonResponse(JSON_CODEC.writeDependencyLinks(result));
+        return jsonResponse(Codec.JSON.writeDependencyLinks(result));
       } else if (url.encodedPath().equals("/api/v1/traces")) {
         QueryRequest queryRequest = toQueryRequest(url);
-        return jsonResponse(JSON_CODEC.writeTraces(store.getTraces(queryRequest)));
+        return jsonResponse(Codec.JSON.writeTraces(store.getTraces(queryRequest)));
       } else if (url.encodedPath().startsWith("/api/v1/trace/")) {
         String traceId = url.encodedPath().replace("/api/v1/trace/", "");
         long id = new Buffer().writeUtf8(traceId).readHexadecimalUnsignedLong();
         List<Span> trace = url.queryParameterNames().contains("raw")
             ? store.getRawTrace(id) : store.getTrace(id);
-        if (trace != null) return jsonResponse(JSON_CODEC.writeSpans(trace));
+        if (trace != null) return jsonResponse(Codec.JSON.writeSpans(trace));
       }
     } else if (request.getMethod().equals("POST")) {
       if (url.encodedPath().equals("/api/v1/spans")) {
@@ -75,16 +80,22 @@ final class ZipkinDispatcher extends Dispatcher {
           try {
             body = gunzip(body);
           } catch (IOException e) {
-            String message = e.getMessage();
-            if (message == null) message = "Error gunzipping spans";
+            String message = logger.error("Cannot gunzip spans", e);
             return new MockResponse().setResponseCode(400).setBody(message);
           }
         }
 
         String type = request.getHeader("Content-Type");
-        Codec codec = type != null && type.contains("/x-thrift") ? Codec.THRIFT : JSON_CODEC;
+        Codec codec = type != null && type.contains("/x-thrift") ? Codec.THRIFT : Codec.JSON;
         List<Span> spans = codec.readSpans(body);
-        store.accept(spans);
+
+        if (spans.isEmpty()) return new MockResponse().setResponseCode(202);
+        try {
+          consumer.accept(spans, logger.acceptSpansCallback(spans));
+        } catch (RuntimeException e) {
+          String message = logger.errorAcceptingSpans(spans, e);
+          return new MockResponse().setResponseCode(500).setBody(message);
+        }
         return new MockResponse().setResponseCode(202);
       }
     } else { // unsupported method

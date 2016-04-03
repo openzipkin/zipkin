@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin.internal.ApplyTimestampAndDuration;
+import zipkin.internal.CallbackCaptor;
 import zipkin.internal.Dependencies;
 
 import static java.util.Arrays.asList;
@@ -40,17 +41,26 @@ import static zipkin.internal.Util.midnightUTC;
 public abstract class DependenciesTest {
 
   /** Should maintain state between multiple calls within a test. */
-  protected abstract SpanStore store();
+  protected abstract StorageComponent storage();
 
-  /** Clears the span store between tests. */
+  SpanStore store() {
+    return storage().spanStore();
+  }
+
+  /** Clears store between tests. */
   @Before
   public abstract void clear();
 
   /**
-   * Implementations should at least {@link AsyncSpanConsumer#accept store} the input. If dependency
-   * processing is a separate job, it should complete before returning from this method.
+   * Override if dependency processing is a separate job: it should complete before returning from
+   * this method.
    */
-  protected abstract void processDependencies(List<Span> spans);
+  protected void processDependencies(List<Span> spans) {
+    // Blocks until the callback completes to allow read-your-writes consistency during tests.
+    CallbackCaptor<Void> captor = new CallbackCaptor<>();
+    storage().asyncSpanConsumer(Sampler.ALWAYS_SAMPLE).accept(spans, captor);
+    captor.get(); // block on result
+  }
 
   /** Notably, the cassandra implementation has day granularity */
   protected long day = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);

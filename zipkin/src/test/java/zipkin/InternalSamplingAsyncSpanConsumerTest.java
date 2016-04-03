@@ -21,7 +21,7 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 public class InternalSamplingAsyncSpanConsumerTest {
 
   InMemorySpanStore store = new InMemorySpanStore();
-  AsyncSpanConsumer consumer = StorageAdapters.blockingToAsync(store::accept, Runnable::run);
+  AsyncSpanConsumer consumer = StorageAdapters.blockingToAsync(store.spanConsumer, Runnable::run);
   Sampler never = Sampler.create(0f);
 
   Span.Builder builder = new Span.Builder()

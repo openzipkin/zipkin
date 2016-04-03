@@ -13,33 +13,23 @@
  */
 package zipkin.junit;
 
-import java.util.List;
 import org.junit.Rule;
 import zipkin.DependenciesTest;
-import zipkin.Span;
-import zipkin.SpanStore;
-import zipkin.internal.CallbackCaptor;
+import zipkin.StorageComponent;
 
 /** Tests the http interface of {@link ZipkinRule}. */
 public class ZipkinRuleDependenciesTest extends DependenciesTest {
 
   @Rule
   public ZipkinRule server = new ZipkinRule();
-  HttpSpanStore store = new HttpSpanStore(server.httpUrl());
+  HttpStorage storage = new HttpStorage(server.httpUrl());
 
-  @Override protected SpanStore store() {
-    return store;
+  @Override protected StorageComponent storage() {
+    return storage;
   }
 
   @Override
   public void clear() {
     // no need.. the test rule does this
-  }
-
-  @Override
-  protected void processDependencies(List<Span> spans) {
-    CallbackCaptor<Void> captor = new CallbackCaptor<>();
-    store.accept(spans, captor);
-    captor.get(); // block on complete
   }
 }

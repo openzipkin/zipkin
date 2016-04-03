@@ -13,55 +13,44 @@
  */
 package zipkin.cassandra;
 
-import com.google.common.util.concurrent.Futures;
 import com.twitter.zipkin.common.Span;
 import com.twitter.zipkin.storage.DependencyStore;
 import com.twitter.zipkin.storage.DependencyStoreSpec;
-import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import org.junit.BeforeClass;
 import scala.collection.immutable.List;
-import zipkin.AsyncSpanConsumer;
-import zipkin.AsyncSpanStore;
 import zipkin.DependencyLink;
-import zipkin.InMemorySpanStore;
-import zipkin.internal.Dependencies;
-import zipkin.interop.AsyncToScalaSpanStoreAdapter;
+import zipkin.InMemoryStorage;
 import zipkin.interop.ScalaDependencyStoreAdapter;
+import zipkin.interop.ScalaSpanStoreAdapter;
 
-import static zipkin.StorageAdapters.blockingToAsync;
 import static zipkin.internal.Util.midnightUTC;
 import static zipkin.spanstore.guava.GuavaStorageAdapters.guavaToAsync;
 
 public class CassandraScalaDependencyStoreTest extends DependencyStoreSpec {
-  private static CassandraSpanStore spanStore;
+  private static CassandraStorage storage;
 
   @BeforeClass
   public static void setupDB() {
-    spanStore = CassandraTestGraph.INSTANCE.spanStore();
+    storage = CassandraTestGraph.INSTANCE.storage.get();
   }
 
   public DependencyStore store() {
-    return new ScalaDependencyStoreAdapter(guavaToAsync(spanStore));
+    return new ScalaDependencyStoreAdapter(guavaToAsync(storage.guavaSpanStore()));
   }
 
   @Override
   public void processDependencies(List<Span> input) {
-    InMemorySpanStore mem = new InMemorySpanStore();
-    AsyncSpanStore store = blockingToAsync(mem, Runnable::run);
-    AsyncSpanConsumer consumer = blockingToAsync(mem::accept, Runnable::run);
-    new AsyncToScalaSpanStoreAdapter(store, consumer).apply(input);
+    InMemoryStorage mem = new InMemoryStorage();
+    new ScalaSpanStoreAdapter(mem).apply(input);
     java.util.List<DependencyLink>
-        links = mem.getDependencies(today() + TimeUnit.DAYS.toMillis(1), null);
+        links = mem.spanStore().getDependencies(today() + TimeUnit.DAYS.toMillis(1), null);
 
     long midnight = midnightUTC(((long) input.apply(0).timestamp().get()) / 1000);
-    Dependencies deps = Dependencies.create(midnight, midnight /* ignored */, links);
-    ByteBuffer thrift = deps.toThrift();
-    // Block on the future to get read-your-writes consistency during tests
-    Futures.getUnchecked(CassandraTestGraph.INSTANCE.spanStore().repository.storeDependencies(midnight, thrift));
+    storage.writeDependencyLinks(links, midnight);
   }
 
   public void clear() {
-    CassandraTestGraph.INSTANCE.spanStore().clear();
+    storage.clear();
   }
 }

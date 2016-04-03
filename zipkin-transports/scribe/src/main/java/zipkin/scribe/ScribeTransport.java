@@ -15,8 +15,12 @@ package zipkin.scribe;
 
 import com.facebook.swift.codec.ThriftCodecManager;
 import com.facebook.swift.service.ThriftServer;
+import com.facebook.swift.service.ThriftServerConfig;
 import com.facebook.swift.service.ThriftServiceProcessor;
 import zipkin.AsyncSpanConsumer;
+import zipkin.Sampler;
+import zipkin.StorageComponent;
+import zipkin.internal.Lazy;
 import zipkin.spanstore.guava.GuavaSpanConsumer;
 
 import static java.util.Collections.emptyList;
@@ -28,15 +32,42 @@ import static zipkin.internal.Util.checkNotNull;
  * to an {@link GuavaSpanConsumer#accept asynchronous span consumer}.
  */
 public final class ScribeTransport implements AutoCloseable {
+
+  /** Configuration including defaults needed to receive spans from a Scribe category. */
+  public static final class Builder {
+    String category = "zipkin";
+    int port = 9410;
+
+    /** Category zipkin spans will be consumed from. Defaults to "zipkin" */
+    public Builder category(String category) {
+      this.category = checkNotNull(category, "category");
+      return this;
+    }
+
+    /** The port to listen on. Defaults to 9410 */
+    public Builder port(int port) {
+      this.port = port;
+      return this;
+    }
+
+    public ScribeTransport writeTo(StorageComponent storage, Sampler sampler) {
+      checkNotNull(storage, "storage");
+      checkNotNull(sampler, "sampler");
+      return new ScribeTransport(this, new Lazy<AsyncSpanConsumer>() {
+        @Override protected AsyncSpanConsumer compute() {
+          return checkNotNull(storage.asyncSpanConsumer(sampler), storage + ".asyncSpanConsumer()");
+        }
+      });
+    }
+  }
+
   final ThriftServer server;
 
-  public ScribeTransport(ScribeConfig config, AsyncSpanConsumer consumer) {
-    checkNotNull(config, "config");
-    checkNotNull(consumer, "consumer");
-    ScribeSpanConsumer scribe = new ScribeSpanConsumer(consumer, config.category);
+  ScribeTransport(Builder builder, Lazy<AsyncSpanConsumer> consumer) {
+    ScribeSpanConsumer scribe = new ScribeSpanConsumer(builder.category, consumer);
     ThriftServiceProcessor processor =
         new ThriftServiceProcessor(new ThriftCodecManager(), emptyList(), scribe);
-    server = new ThriftServer(processor, config.forThriftServer()).start();
+    server = new ThriftServer(processor, new ThriftServerConfig().setPort(builder.port)).start();
   }
 
   @Override

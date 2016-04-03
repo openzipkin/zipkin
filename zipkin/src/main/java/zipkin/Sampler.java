@@ -41,7 +41,7 @@ public abstract class Sampler {
     return new ProbabilisticSampler(rate);
   }
 
-  static final Sampler ALWAYS_SAMPLE = new Sampler() {
+  public static final Sampler ALWAYS_SAMPLE = new Sampler() {
     @Override
     public boolean isSampled(long traceId) {
       return true;
@@ -53,7 +53,7 @@ public abstract class Sampler {
     }
   };
 
-  static final Sampler NEVER_SAMPLE = new Sampler() {
+  public static final Sampler NEVER_SAMPLE = new Sampler() {
     @Override
     public boolean isSampled(long traceId) {
       return false;

@@ -31,33 +31,31 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class CassandraConfigTest {
+public class ClusterProviderTest {
 
   @Test
   public void contactPoints_defaultsToLocalhost() {
-    CassandraConfig config = CassandraConfig.builder().build();
+    ClusterProvider cluster = new ClusterProvider(new CassandraStorage.Builder());
 
-    assertThat(config.parseContactPoints())
+    assertThat(cluster.parseContactPoints())
         .containsExactly(new InetSocketAddress("127.0.0.1", 9042));
   }
 
   @Test
   public void contactPoints_defaultsToPort9042() {
-    CassandraConfig config = CassandraConfig.builder()
-        .contactPoints("1.1.1.1")
-        .build();
+    ClusterProvider cluster = new ClusterProvider(new CassandraStorage.Builder()
+        .contactPoints("1.1.1.1"));
 
-    assertThat(config.parseContactPoints())
+    assertThat(cluster.parseContactPoints())
         .containsExactly(new InetSocketAddress("1.1.1.1", 9042));
   }
 
   @Test
   public void contactPoints_defaultsToPort9042_multi() {
-    CassandraConfig config = CassandraConfig.builder()
-        .contactPoints("1.1.1.1:9143,2.2.2.2")
-        .build();
+    ClusterProvider cluster = new ClusterProvider(new CassandraStorage.Builder()
+        .contactPoints("1.1.1.1:9143,2.2.2.2"));
 
-    assertThat(config.parseContactPoints()).containsExactly(
+    assertThat(cluster.parseContactPoints()).containsExactly(
         new InetSocketAddress("1.1.1.1", 9143),
         new InetSocketAddress("2.2.2.2", 9042)
     );
@@ -65,53 +63,48 @@ public class CassandraConfigTest {
 
   @Test
   public void contactPoints_hostAndPort() {
-    CassandraConfig config = CassandraConfig.builder()
-        .contactPoints("1.1.1.1:9142")
-        .build();
+    ClusterProvider cluster = new ClusterProvider(new CassandraStorage.Builder()
+        .contactPoints("1.1.1.1:9142"));
 
-    assertThat(config.parseContactPoints())
+    assertThat(cluster.parseContactPoints())
         .containsExactly(new InetSocketAddress("1.1.1.1", 9142));
   }
 
   @Test
   public void connectPort_singleContactPoint() {
-    CassandraConfig config = CassandraConfig.builder()
-        .contactPoints("1.1.1.1:9142")
-        .build();
+    ClusterProvider cluster = new ClusterProvider(new CassandraStorage.Builder()
+        .contactPoints("1.1.1.1:9142"));
 
-    assertThat(config.connect().getConfiguration().getProtocolOptions().getPort())
+    assertThat(cluster.get().getConfiguration().getProtocolOptions().getPort())
         .isEqualTo(9142);
   }
 
   @Test
   public void connectPort_whenContactPointsHaveSamePort() {
-    CassandraConfig config = CassandraConfig.builder()
-        .contactPoints("1.1.1.1:9143,2.2.2.2:9143")
-        .build();
+    ClusterProvider cluster = new ClusterProvider(new CassandraStorage.Builder()
+        .contactPoints("1.1.1.1:9143,2.2.2.2:9143"));
 
-    assertThat(config.connect().getConfiguration().getProtocolOptions().getPort())
+    assertThat(cluster.get().getConfiguration().getProtocolOptions().getPort())
         .isEqualTo(9143);
   }
 
   @Test
   public void connectPort_whenContactPointsHaveMixedPorts_coercesToDefault() {
-    CassandraConfig config = CassandraConfig.builder()
-        .contactPoints("1.1.1.1:9143,2.2.2.2")
-        .build();
+    ClusterProvider cluster = new ClusterProvider(new CassandraStorage.Builder()
+        .contactPoints("1.1.1.1:9143,2.2.2.2"));
 
-    assertThat(config.connect().getConfiguration().getProtocolOptions().getPort())
+    assertThat(cluster.get().getConfiguration().getProtocolOptions().getPort())
         .isEqualTo(9042);
   }
 
   @Test
   public void usernamePassword_impliesNullDelimitedUtf8Bytes() {
-    CassandraConfig config = CassandraConfig.builder()
+    ClusterProvider cluster = new ClusterProvider(new CassandraStorage.Builder()
         .username("bob")
-        .password("secret")
-        .build();
+        .password("secret"));
 
     Authenticator authenticator =
-        config.connect().getConfiguration().getProtocolOptions().getAuthProvider()
+        cluster.get().getConfiguration().getProtocolOptions().getAuthProvider()
             .newAuthenticator(new InetSocketAddress("localhost", 8080));
 
     byte[] SASLhandshake = {0, 'b', 'o', 'b', 0, 's', 'e', 'c', 'r', 'e', 't'};
@@ -121,17 +114,17 @@ public class CassandraConfigTest {
 
   @Test
   public void authProvider_defaultsToNone() {
-    CassandraConfig config = CassandraConfig.builder().build();
+    ClusterProvider cluster = new ClusterProvider(new CassandraStorage.Builder());
 
-    assertThat(config.connect().getConfiguration().getProtocolOptions().getAuthProvider())
+    assertThat(cluster.get().getConfiguration().getProtocolOptions().getAuthProvider())
         .isEqualTo(AuthProvider.NONE);
   }
 
   @Test
   public void loadBalancing_defaultsToRoundRobin() {
-    CassandraConfig config = CassandraConfig.builder().build();
+    ClusterProvider cluster = new ClusterProvider(new CassandraStorage.Builder());
 
-    RoundRobinPolicy policy = toRoundRobinPolicy(config);
+    RoundRobinPolicy policy = toRoundRobinPolicy(cluster);
 
     Host foo = mock(Host.class);
     when(foo.getDatacenter()).thenReturn("foo");
@@ -143,8 +136,8 @@ public class CassandraConfigTest {
     assertThat(policy.distance(bar)).isEqualTo(HostDistance.LOCAL);
   }
 
-  static RoundRobinPolicy toRoundRobinPolicy(CassandraConfig config) {
-    return (RoundRobinPolicy) ((LatencyAwarePolicy) ((TokenAwarePolicy) config.connect()
+  static RoundRobinPolicy toRoundRobinPolicy(ClusterProvider cluster) {
+    return (RoundRobinPolicy) ((LatencyAwarePolicy) ((TokenAwarePolicy) cluster.get()
         .getConfiguration()
         .getPolicies()
         .getLoadBalancingPolicy())
@@ -153,9 +146,9 @@ public class CassandraConfigTest {
 
   @Test
   public void loadBalancing_settingLocalDcIgnoresOtherDatacenters() {
-    CassandraConfig config = CassandraConfig.builder().localDc("bar").build();
+    ClusterProvider cluster = new ClusterProvider(new CassandraStorage.Builder().localDc("bar"));
 
-    DCAwareRoundRobinPolicy policy = toDCAwareRoundRobinPolicy(config);
+    DCAwareRoundRobinPolicy policy = toDCAwareRoundRobinPolicy(cluster);
 
     Host foo = mock(Host.class);
     when(foo.getDatacenter()).thenReturn("foo");
@@ -167,8 +160,8 @@ public class CassandraConfigTest {
     assertThat(policy.distance(bar)).isEqualTo(HostDistance.LOCAL);
   }
 
-  static DCAwareRoundRobinPolicy toDCAwareRoundRobinPolicy(CassandraConfig config) {
-    return (DCAwareRoundRobinPolicy) ((LatencyAwarePolicy) ((TokenAwarePolicy) config.connect()
+  static DCAwareRoundRobinPolicy toDCAwareRoundRobinPolicy(ClusterProvider cluster) {
+    return (DCAwareRoundRobinPolicy) ((LatencyAwarePolicy) ((TokenAwarePolicy) cluster.get()
         .getConfiguration()
         .getPolicies()
         .getLoadBalancingPolicy())
@@ -177,18 +170,19 @@ public class CassandraConfigTest {
 
   @Test
   public void maxConnections_defaultsTo8() {
-    CassandraConfig config = CassandraConfig.builder().build();
+    ClusterProvider cluster = new ClusterProvider(new CassandraStorage.Builder());
 
-    PoolingOptions poolingOptions = config.connect().getConfiguration().getPoolingOptions();
+    PoolingOptions poolingOptions = cluster.get().getConfiguration().getPoolingOptions();
 
     assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL)).isEqualTo(8);
   }
 
   @Test
   public void maxConnections_setsMaxConnectionsPerDatacenterLocalHost() {
-    CassandraConfig config = CassandraConfig.builder().maxConnections(16).build();
+    ClusterProvider cluster =
+        new ClusterProvider(new CassandraStorage.Builder().maxConnections(16));
 
-    PoolingOptions poolingOptions = config.connect().getConfiguration().getPoolingOptions();
+    PoolingOptions poolingOptions = cluster.get().getConfiguration().getPoolingOptions();
 
     assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL)).isEqualTo(16);
   }

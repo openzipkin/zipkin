@@ -16,19 +16,14 @@ package zipkin;
 import java.util.List;
 
 public class InMemoryDependenciesTest extends DependenciesTest {
-  private final InMemorySpanStore store = new InMemorySpanStore();
+  final InMemoryStorage storage = new InMemoryStorage();
 
-  @Override protected SpanStore store() {
-    return store;
+  @Override protected StorageComponent storage() {
+    return storage;
   }
 
   @Override
   public void clear() {
-    store.clear();
-  }
-
-  @Override
-  protected void processDependencies(List<Span> spans) {
-    store.accept(spans);
+    storage.clear();
   }
 }

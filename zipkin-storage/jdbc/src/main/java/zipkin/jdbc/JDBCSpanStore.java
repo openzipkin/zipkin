@@ -26,22 +26,13 @@ import javax.sql.DataSource;
 import org.jooq.Condition;
 import org.jooq.Cursor;
 import org.jooq.DSLContext;
-import org.jooq.ExecuteListenerProvider;
-import org.jooq.InsertSetMoreStep;
-import org.jooq.Query;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Record5;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectOffsetStep;
 import org.jooq.Table;
-import org.jooq.TableField;
-import org.jooq.conf.Settings;
-import org.jooq.impl.DSL;
-import org.jooq.impl.DefaultConfiguration;
-import org.jooq.tools.jdbc.JDBCUtils;
 import zipkin.Annotation;
-import zipkin.AsyncSpanConsumer;
 import zipkin.BinaryAnnotation;
 import zipkin.BinaryAnnotation.Type;
 import zipkin.DependencyLink;
@@ -64,108 +55,77 @@ import static zipkin.Constants.CLIENT_ADDR;
 import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.internal.Util.UTF_8;
-import static zipkin.internal.Util.checkNotNull;
 import static zipkin.jdbc.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
-public final class JDBCSpanStore implements SpanStore {
-
-  static {
-    System.setProperty("org.jooq.no-logo", "true");
-  }
-
+final class JDBCSpanStore implements SpanStore {
   private final DataSource datasource;
-  private final Settings settings;
-  private final ExecuteListenerProvider listenerProvider;
+  private final DSLContexts context;
 
-  public JDBCSpanStore(DataSource datasource, Settings settings, @Nullable ExecuteListenerProvider listenerProvider) {
-    this.datasource = checkNotNull(datasource, "datasource");
-    this.settings = checkNotNull(settings, "settings");
-    this.listenerProvider = listenerProvider;
+  JDBCSpanStore(DataSource datasource, DSLContexts context) {
+    this.datasource = datasource;
+    this.context = context;
   }
 
-  void clear() throws SQLException {
-    try (Connection conn = datasource.getConnection()) {
-      context(conn).truncate(ZIPKIN_SPANS).execute();
-      context(conn).truncate(ZIPKIN_ANNOTATIONS).execute();
+  static Endpoint endpoint(Record a) {
+    String serviceName = a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME);
+    if (serviceName == null) {
+      return null;
     }
+    Short port = a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT);
+    return port != null ?
+        Endpoint.create(serviceName, a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4), port.intValue())
+        : Endpoint.create(serviceName, a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4));
   }
 
-  /** Blocking version of {@link AsyncSpanConsumer#accept} */
-  public void accept(List<Span> spans) {
-    if (spans.isEmpty()) return;
-    try (Connection conn = datasource.getConnection()) {
-      DSLContext create = context(conn);
+  private static SelectOffsetStep<Record1<Long>> toTraceIdQuery(DSLContext context,
+      QueryRequest request) {
+    long endTs = (request.endTs > 0 && request.endTs != Long.MAX_VALUE) ? request.endTs * 1000
+        : System.currentTimeMillis() * 1000;
 
-      List<Query> inserts = new ArrayList<>();
+    Table<?> table = ZIPKIN_SPANS.join(ZIPKIN_ANNOTATIONS)
+        .on(ZIPKIN_SPANS.TRACE_ID.eq(ZIPKIN_ANNOTATIONS.TRACE_ID).and(
+            ZIPKIN_SPANS.ID.eq(ZIPKIN_ANNOTATIONS.SPAN_ID)));
 
-      for (Span span : spans) {
-        Long authoritativeTimestamp = span.timestamp;
-        span = ApplyTimestampAndDuration.apply(span);
-        Long binaryAnnotationTimestamp = span.timestamp;
-        if (binaryAnnotationTimestamp == null) { // fallback if we have no timestamp, yet
-          binaryAnnotationTimestamp = System.currentTimeMillis() * 1000;
-        }
-
-        Map<TableField<Record, ?>, Object> updateFields = new LinkedHashMap<>();
-        if (!span.name.equals("") && !span.name.equals("unknown")) {
-          updateFields.put(ZIPKIN_SPANS.NAME, span.name);
-        }
-        if (authoritativeTimestamp != null) {
-          updateFields.put(ZIPKIN_SPANS.START_TS, authoritativeTimestamp);
-        }
-        if (span.duration != null) {
-          updateFields.put(ZIPKIN_SPANS.DURATION, span.duration);
-        }
-
-        InsertSetMoreStep<Record> insertSpan = create.insertInto(ZIPKIN_SPANS)
-            .set(ZIPKIN_SPANS.TRACE_ID, span.traceId)
-            .set(ZIPKIN_SPANS.ID, span.id)
-            .set(ZIPKIN_SPANS.PARENT_ID, span.parentId)
-            .set(ZIPKIN_SPANS.NAME, span.name)
-            .set(ZIPKIN_SPANS.DEBUG, span.debug)
-            .set(ZIPKIN_SPANS.START_TS, span.timestamp)
-            .set(ZIPKIN_SPANS.DURATION, span.duration);
-
-        inserts.add(updateFields.isEmpty() ?
-            insertSpan.onDuplicateKeyIgnore() :
-            insertSpan.onDuplicateKeyUpdate().set(updateFields));
-
-        for (Annotation annotation : span.annotations) {
-          InsertSetMoreStep<Record> insert = create.insertInto(ZIPKIN_ANNOTATIONS)
-              .set(ZIPKIN_ANNOTATIONS.TRACE_ID, span.traceId)
-              .set(ZIPKIN_ANNOTATIONS.SPAN_ID, span.id)
-              .set(ZIPKIN_ANNOTATIONS.A_KEY, annotation.value)
-              .set(ZIPKIN_ANNOTATIONS.A_TYPE, -1)
-              .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, annotation.timestamp);
-          if (annotation.endpoint != null) {
-            insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, annotation.endpoint.serviceName);
-            insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, annotation.endpoint.ipv4);
-            insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT, annotation.endpoint.port);
-          }
-          inserts.add(insert.onDuplicateKeyIgnore());
-        }
-
-        for (BinaryAnnotation annotation : span.binaryAnnotations) {
-          InsertSetMoreStep<Record> insert = create.insertInto(ZIPKIN_ANNOTATIONS)
-              .set(ZIPKIN_ANNOTATIONS.TRACE_ID, span.traceId)
-              .set(ZIPKIN_ANNOTATIONS.SPAN_ID, span.id)
-              .set(ZIPKIN_ANNOTATIONS.A_KEY, annotation.key)
-              .set(ZIPKIN_ANNOTATIONS.A_VALUE, annotation.value)
-              .set(ZIPKIN_ANNOTATIONS.A_TYPE, annotation.type.value)
-              .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, binaryAnnotationTimestamp);
-          if (annotation.endpoint != null) {
-            insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, annotation.endpoint.serviceName);
-            insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, annotation.endpoint.ipv4);
-            insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT, annotation.endpoint.port);
-          }
-          inserts.add(insert.onDuplicateKeyIgnore());
-        }
-      }
-      create.batch(inserts).execute();
-    } catch (SQLException e) {
-      throw new RuntimeException(e); // TODO
+    Map<String, ZipkinAnnotations> keyToTables = new LinkedHashMap<>();
+    int i = 0;
+    for (String key : request.binaryAnnotations.keySet()) {
+      keyToTables.put(key, ZIPKIN_ANNOTATIONS.as("a" + i++));
+      table = join(table, keyToTables.get(key), key, STRING.value);
     }
+
+    for (String key : request.annotations) {
+      keyToTables.put(key, ZIPKIN_ANNOTATIONS.as("a" + i++));
+      table = join(table, keyToTables.get(key), key, -1);
+    }
+
+    SelectConditionStep<Record1<Long>> dsl = context.selectDistinct(ZIPKIN_SPANS.TRACE_ID)
+        .from(table)
+        .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(request.serviceName))
+        .and(ZIPKIN_SPANS.START_TS.between(endTs - request.lookback * 1000, endTs));
+
+    if (request.spanName != null) {
+      dsl.and(ZIPKIN_SPANS.NAME.eq(request.spanName));
+    }
+
+    if (request.minDuration != null && request.maxDuration != null) {
+      dsl.and(ZIPKIN_SPANS.DURATION.between(request.minDuration, request.maxDuration));
+    } else if (request.minDuration != null) {
+      dsl.and(ZIPKIN_SPANS.DURATION.greaterOrEqual(request.minDuration));
+    }
+
+    for (Map.Entry<String, String> entry : request.binaryAnnotations.entrySet()) {
+      dsl.and(keyToTables.get(entry.getKey()).A_VALUE.eq(entry.getValue().getBytes(UTF_8)));
+    }
+    return dsl.orderBy(ZIPKIN_SPANS.START_TS.desc()).limit(request.limit);
+  }
+
+  static Table<?> join(Table<?> table, ZipkinAnnotations joinTable, String key, int type) {
+    return table.join(joinTable)
+        .on(ZIPKIN_SPANS.TRACE_ID.eq(joinTable.TRACE_ID))
+        .and(ZIPKIN_SPANS.ID.eq(joinTable.SPAN_ID))
+        .and(joinTable.A_TYPE.eq(type))
+        .and(joinTable.A_KEY.eq(key));
   }
 
   List<List<Span>> getTraces(@Nullable QueryRequest request, @Nullable Long traceId, boolean raw) {
@@ -174,12 +134,13 @@ public final class JDBCSpanStore implements SpanStore {
     try (Connection conn = datasource.getConnection()) {
       Condition traceIdCondition;
       if (request != null) {
-        List<Long> traceIds = toTraceIdQuery(context(conn), request).fetch(ZIPKIN_SPANS.TRACE_ID);
+        List<Long> traceIds =
+            toTraceIdQuery(context.get(conn), request).fetch(ZIPKIN_SPANS.TRACE_ID);
         traceIdCondition = ZIPKIN_SPANS.TRACE_ID.in(traceIds);
       } else {
         traceIdCondition = ZIPKIN_SPANS.TRACE_ID.eq(traceId);
       }
-      spansWithoutAnnotations = context(conn)
+      spansWithoutAnnotations = context.get(conn)
           .selectFrom(ZIPKIN_SPANS).where(traceIdCondition)
           .stream()
           .map(r -> new Span.Builder()
@@ -191,9 +152,10 @@ public final class JDBCSpanStore implements SpanStore {
               .duration(r.getValue(ZIPKIN_SPANS.DURATION))
               .debug(r.getValue(ZIPKIN_SPANS.DEBUG))
               .build())
-          .collect(groupingBy((Span s) -> s.traceId, LinkedHashMap::new, Collectors.<Span>toList()));
+          .collect(
+              groupingBy((Span s) -> s.traceId, LinkedHashMap::new, Collectors.<Span>toList()));
 
-      dbAnnotations = context(conn)
+      dbAnnotations = context.get(conn)
           .selectFrom(ZIPKIN_ANNOTATIONS)
           .where(ZIPKIN_ANNOTATIONS.TRACE_ID.in(spansWithoutAnnotations.keySet()))
           .orderBy(ZIPKIN_ANNOTATIONS.A_TIMESTAMP.asc(), ZIPKIN_ANNOTATIONS.A_KEY.asc())
@@ -201,7 +163,8 @@ public final class JDBCSpanStore implements SpanStore {
           .collect(groupingBy((Record a) -> Pair.create(
               a.getValue(ZIPKIN_ANNOTATIONS.TRACE_ID),
               a.getValue(ZIPKIN_ANNOTATIONS.SPAN_ID)
-          ), LinkedHashMap::new, Collectors.<Record>toList())); // LinkedHashMap preserves order while grouping
+              ), LinkedHashMap::new,
+              Collectors.<Record>toList())); // LinkedHashMap preserves order while grouping
     } catch (SQLException e) {
       throw new RuntimeException("Error querying for " + request + ": " + e.getMessage());
     }
@@ -246,14 +209,6 @@ public final class JDBCSpanStore implements SpanStore {
     return getTraces(request, null, false);
   }
 
-  DSLContext context(Connection conn) {
-    return DSL.using(new DefaultConfiguration()
-        .set(conn)
-        .set(JDBCUtils.dialect(conn))
-        .set(settings)
-        .set(listenerProvider));
-  }
-
   @Override
   public List<Span> getTrace(long traceId) {
     List<List<Span>> result = getTraces(null, traceId, false);
@@ -269,7 +224,7 @@ public final class JDBCSpanStore implements SpanStore {
   @Override
   public List<String> getServiceNames() {
     try (Connection conn = datasource.getConnection()) {
-      return context(conn)
+      return context.get(conn)
           .selectDistinct(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME)
           .from(ZIPKIN_ANNOTATIONS)
           .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.isNotNull()
@@ -285,7 +240,7 @@ public final class JDBCSpanStore implements SpanStore {
     if (serviceName == null) return emptyList();
     serviceName = serviceName.toLowerCase(); // service names are always lowercase!
     try (Connection conn = datasource.getConnection()) {
-      return context(conn)
+      return context.get(conn)
           .selectDistinct(ZIPKIN_SPANS.NAME)
           .from(ZIPKIN_SPANS)
           .join(ZIPKIN_ANNOTATIONS)
@@ -304,7 +259,7 @@ public final class JDBCSpanStore implements SpanStore {
     endTs = endTs * 1000;
     try (Connection conn = datasource.getConnection()) {
       // Lazy fetching the cursor prevents us from buffering the whole dataset in memory.
-      Cursor<Record5<Long, Long, Long, String, String>> cursor = context(conn)
+      Cursor<Record5<Long, Long, Long, String, String>> cursor = context.get(conn)
           .selectDistinct(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.PARENT_ID, ZIPKIN_SPANS.ID,
               ZIPKIN_ANNOTATIONS.A_KEY, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME)
           // left joining allows us to keep a mapping of all span ids, not just ones that have
@@ -335,65 +290,5 @@ public final class JDBCSpanStore implements SpanStore {
     } catch (SQLException e) {
       throw new RuntimeException("Error querying dependencies for endTs " + endTs + " and lookback " + lookback + ": " + e.getMessage());
     }
-  }
-
-  static Endpoint endpoint(Record a) {
-    String serviceName = a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME);
-    if (serviceName == null) {
-      return null;
-    }
-    Short port = a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT);
-    return port != null ?
-        Endpoint.create(serviceName, a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4), port.intValue())
-        : Endpoint.create(serviceName, a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4));
-  }
-
-  private static SelectOffsetStep<Record1<Long>> toTraceIdQuery(DSLContext context, QueryRequest request) {
-    long endTs = (request.endTs > 0 && request.endTs != Long.MAX_VALUE) ? request.endTs * 1000
-        : System.currentTimeMillis() * 1000;
-
-    Table<?> table = ZIPKIN_SPANS.join(ZIPKIN_ANNOTATIONS)
-        .on(ZIPKIN_SPANS.TRACE_ID.eq(ZIPKIN_ANNOTATIONS.TRACE_ID).and(
-            ZIPKIN_SPANS.ID.eq(ZIPKIN_ANNOTATIONS.SPAN_ID)));
-
-    Map<String, ZipkinAnnotations> keyToTables = new LinkedHashMap<>();
-    int i = 0;
-    for (String key : request.binaryAnnotations.keySet()) {
-      keyToTables.put(key, ZIPKIN_ANNOTATIONS.as("a" + i++));
-      table = join(table, keyToTables.get(key), key, STRING.value);
-    }
-
-    for (String key : request.annotations) {
-      keyToTables.put(key, ZIPKIN_ANNOTATIONS.as("a" + i++));
-      table = join(table, keyToTables.get(key), key, -1);
-    }
-
-    SelectConditionStep<Record1<Long>> dsl = context.selectDistinct(ZIPKIN_SPANS.TRACE_ID)
-        .from(table)
-        .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(request.serviceName))
-        .and(ZIPKIN_SPANS.START_TS.between(endTs - request.lookback * 1000, endTs));
-
-    if (request.spanName != null) {
-      dsl.and(ZIPKIN_SPANS.NAME.eq(request.spanName));
-    }
-
-    if (request.minDuration != null && request.maxDuration != null) {
-      dsl.and(ZIPKIN_SPANS.DURATION.between(request.minDuration, request.maxDuration));
-    } else if (request.minDuration != null){
-      dsl.and(ZIPKIN_SPANS.DURATION.greaterOrEqual(request.minDuration));
-    }
-
-    for (Map.Entry<String, String> entry : request.binaryAnnotations.entrySet()) {
-      dsl.and(keyToTables.get(entry.getKey()).A_VALUE.eq(entry.getValue().getBytes(UTF_8)));
-    }
-    return dsl.orderBy(ZIPKIN_SPANS.START_TS.desc()).limit(request.limit);
-  }
-
-  static Table<?> join(Table<?> table, ZipkinAnnotations joinTable, String key, int type) {
-    return table.join(joinTable)
-        .on(ZIPKIN_SPANS.TRACE_ID.eq(joinTable.TRACE_ID))
-        .and(ZIPKIN_SPANS.ID.eq(joinTable.SPAN_ID))
-        .and(joinTable.A_TYPE.eq(type))
-        .and(joinTable.A_KEY.eq(key));
   }
 }

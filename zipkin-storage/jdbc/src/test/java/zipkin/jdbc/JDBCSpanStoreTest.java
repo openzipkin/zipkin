@@ -13,35 +13,23 @@
  */
 package zipkin.jdbc;
 
-import java.sql.SQLException;
-import zipkin.AsyncSpanConsumer;
-import zipkin.SpanStore;
 import zipkin.SpanStoreTest;
-
-import static zipkin.StorageAdapters.blockingToAsync;
+import zipkin.StorageComponent;
 
 public class JDBCSpanStoreTest extends SpanStoreTest {
 
-  private final JDBCSpanStore store;
+  private final JDBCStorage storage;
 
-  public JDBCSpanStoreTest() throws SQLException {
-    this.store = new JDBCTestGraph().spanStore;
+  public JDBCSpanStoreTest() {
+    this.storage = JDBCTestGraph.INSTANCE.storage.get();
   }
 
-  @Override protected AsyncSpanConsumer consumer() {
-    return blockingToAsync(store::accept, Runnable::run);
-  }
-
-  @Override protected SpanStore store() {
-    return store;
+  @Override protected StorageComponent storage() {
+    return storage;
   }
 
   @Override
   public void clear() {
-    try {
-      store.clear();
-    } catch (SQLException e) {
-      throw new AssertionError(e);
-    }
+    storage.clear();
   }
 }

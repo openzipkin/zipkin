@@ -18,16 +18,17 @@ import kafka.consumer.ConsumerIterator;
 import kafka.consumer.KafkaStream;
 import zipkin.AsyncSpanConsumer;
 import zipkin.Span;
+import zipkin.internal.Lazy;
 import zipkin.internal.SpanConsumerLogger;
 
 final class KafkaStreamProcessor implements Runnable {
   final SpanConsumerLogger logger = new SpanConsumerLogger(KafkaStreamProcessor.class);
   final KafkaStream<String, List<Span>> stream;
-  final AsyncSpanConsumer spanConsumer;
+  final Lazy<AsyncSpanConsumer> consumer;
 
-  KafkaStreamProcessor(KafkaStream<String, List<Span>> stream, AsyncSpanConsumer spanConsumer) {
+  KafkaStreamProcessor(KafkaStream<String, List<Span>> stream, Lazy<AsyncSpanConsumer> consumer) {
     this.stream = stream;
-    this.spanConsumer = spanConsumer;
+    this.consumer = consumer;
   }
 
   @Override
@@ -37,7 +38,7 @@ final class KafkaStreamProcessor implements Runnable {
       final List<Span> spans = messages.next().message();
       if (spans.isEmpty()) continue;
       try {
-        spanConsumer.accept(spans, logger.acceptSpansCallback(spans));
+        consumer.get().accept(spans, logger.acceptSpansCallback(spans));
       } catch (RuntimeException e) {
         logger.errorAcceptingSpans(spans, e);
       }

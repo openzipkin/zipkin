@@ -13,14 +13,10 @@
  */
 package zipkin.cassandra;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Session;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -28,7 +24,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,23 +42,13 @@ import zipkin.spanstore.guava.GuavaSpanStore;
 import static com.google.common.util.concurrent.Futures.allAsList;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.transform;
-import static java.lang.String.format;
 import static zipkin.cassandra.CassandraUtil.annotationKeys;
 import static zipkin.cassandra.CassandraUtil.intersectKeySets;
 import static zipkin.cassandra.CassandraUtil.keyset;
 import static zipkin.cassandra.CassandraUtil.toSortedList;
 import static zipkin.internal.Util.midnightUTC;
 
-/**
- * CQL3 implementation of a span store.
- *
- * <p>This uses zipkin-cassandra-core which packages "/cassandra-schema-cql3.txt"
- *
- * <p>Temporarily exposed until we make a storage component
- *
- * <p>See https://github.com/openzipkin/zipkin-java/issues/135
- */
-public final class CassandraSpanStore implements GuavaSpanStore, AutoCloseable {
+final class CassandraSpanStore implements GuavaSpanStore {
   static final ListenableFuture<List<String>> EMPTY_LIST =
       immediateFuture(Collections.<String>emptyList());
   static final Ordering<List<Span>> TRACE_DESCENDING = Ordering.from(new Comparator<List<Span>>() {
@@ -73,18 +58,14 @@ public final class CassandraSpanStore implements GuavaSpanStore, AutoCloseable {
     }
   });
 
-  private final String keyspace;
+  private final Repository repository;
   private final int indexTtl;
   private final int maxTraceCols;
-  private final Cluster cluster;
-  @VisibleForTesting final Repository repository;
 
-  public CassandraSpanStore(Cluster cluster, CassandraConfig config) {
-    this.keyspace = config.keyspace;
-    this.indexTtl = config.indexTtl;
-    this.maxTraceCols = config.maxTraceCols;
-    this.cluster = cluster;
-    this.repository = new Repository(config.keyspace, cluster, config.ensureSchema);
+  CassandraSpanStore(Repository repository, int indexTtl, int maxTraceCols) {
+    this.repository = repository;
+    this.indexTtl = indexTtl;
+    this.maxTraceCols = maxTraceCols;
   }
 
   @Override
@@ -224,30 +205,5 @@ public final class CassandraSpanStore implements GuavaSpanStore, AutoCloseable {
       }
       return result;
     }
-  }
-
-  /** Used for testing */
-  void clear() {
-    try (Session session = cluster.connect()) {
-      List<ListenableFuture<?>> futures = new LinkedList<>();
-      for (String cf : ImmutableList.of(
-          "traces",
-          "dependencies",
-          "service_names",
-          "span_names",
-          "service_name_index",
-          "service_span_name_index",
-          "annotations_index",
-          "span_duration_index"
-      )) {
-        futures.add(session.executeAsync(format("TRUNCATE %s.%s", keyspace, cf)));
-      }
-      Futures.getUnchecked(Futures.allAsList(futures));
-    }
-  }
-
-  @Override
-  public void close() {
-    repository.close();
   }
 }

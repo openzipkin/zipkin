@@ -22,10 +22,12 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.Timeout;
 import zipkin.Annotation;
+import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
 import zipkin.Endpoint;
 import zipkin.Span;
-import zipkin.AsyncSpanConsumer;
+import zipkin.internal.Lazy;
+import zipkin.kafka.KafkaTransport.Builder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,11 +51,11 @@ public class KafkaTransportTest {
   /** Ensures legacy encoding works: a single TBinaryProtocol encoded span */
   @Test
   public void messageWithSingleThriftSpan() throws Exception {
-    KafkaConfig config = configForTopic("single_span");
+    Builder builder = builder("single_span");
 
-    producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpan(span)));
+    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpan(span)));
 
-    try (KafkaTransport processor = new KafkaTransport(config, consumer)) {
+    try (KafkaTransport processor = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactly(span);
     }
   }
@@ -61,11 +63,11 @@ public class KafkaTransportTest {
   /** Ensures list encoding works: a TBinaryProtocol encoded list of spans */
   @Test
   public void messageWithMultipleSpans_thrift() throws Exception {
-    KafkaConfig config = configForTopic("multiple_spans_thrift");
+    Builder builder = builder("multiple_spans_thrift");
 
-    producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span, span))));
+    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(asList(span, span))));
 
-    try (KafkaTransport processor = new KafkaTransport(config, consumer)) {
+    try (KafkaTransport processor = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactly(span, span);
     }
   }
@@ -73,11 +75,11 @@ public class KafkaTransportTest {
   /** Ensures list encoding works: a json encoded list of spans */
   @Test
   public void messageWithMultipleSpans_json() throws Exception {
-    KafkaConfig config = configForTopic("multiple_spans_json");
+    Builder builder = builder("multiple_spans_json");
 
-    producer.send(new KeyedMessage<>(config.topic, Codec.JSON.writeSpans(asList(span, span))));
+    producer.send(new KeyedMessage<>(builder.topic, Codec.JSON.writeSpans(asList(span, span))));
 
-    try (KafkaTransport processor = new KafkaTransport(config, consumer)) {
+    try (KafkaTransport processor = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactly(span, span);
     }
   }
@@ -85,14 +87,14 @@ public class KafkaTransportTest {
   /** Ensures malformed spans don't hang the processor */
   @Test
   public void skipsMalformedData() throws Exception {
-    KafkaConfig config = configForTopic("decoder_exception");
+    Builder builder = builder("decoder_exception");
 
-    producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span))));
-    producer.send(new KeyedMessage<>(config.topic, "[\"='".getBytes())); // screwed up json
-    producer.send(new KeyedMessage<>(config.topic, "malformed".getBytes()));
-    producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span))));
+    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(asList(span))));
+    producer.send(new KeyedMessage<>(builder.topic, "[\"='".getBytes())); // screwed up json
+    producer.send(new KeyedMessage<>(builder.topic, "malformed".getBytes()));
+    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(asList(span))));
 
-    try (KafkaTransport processor = new KafkaTransport(config, consumer)) {
+    try (KafkaTransport processor = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactly(span);
       // the only way we could read this, is if the malformed spans were skipped.
       assertThat(recvdSpans.take()).containsExactly(span);
@@ -103,7 +105,7 @@ public class KafkaTransportTest {
   @Test
   @Ignore // TODO: figure out why this breaks travis
   public void skipsOnConsumerException() throws Exception {
-    KafkaConfig config = configForTopic("consumer_exception");
+    Builder builder = builder("consumer_exception");
 
     consumer = (spans, callback) -> {
       if (recvdSpans.size() == 1) {
@@ -114,18 +116,23 @@ public class KafkaTransportTest {
       }
     };
 
-    producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span))));
-    producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span)))); // tossed on error
-    producer.send(new KeyedMessage<>(config.topic, Codec.THRIFT.writeSpans(asList(span))));
+    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(asList(span))));
+    producer.send(new KeyedMessage<>(builder.topic,
+        Codec.THRIFT.writeSpans(asList(span)))); // tossed on error
+    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(asList(span))));
 
-    try (KafkaTransport processor = new KafkaTransport(config, consumer)) {
+    try (KafkaTransport processor = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactly(span);
       // the only way we could read this, is if the malformed span was skipped.
       assertThat(recvdSpans.take()).containsExactly(span);
     }
   }
 
-  KafkaConfig configForTopic(String topic) {
-    return KafkaConfig.builder().zookeeper("127.0.0.1:2181").topic(topic).build();
+  Builder builder(String topic) {
+    return new Builder().zookeeper("127.0.0.1:2181").topic(topic);
+  }
+
+  KafkaTransport newKafkaTransport(Builder builder, final AsyncSpanConsumer consumer) {
+    return new KafkaTransport(builder, Lazy.of(consumer));
   }
 }

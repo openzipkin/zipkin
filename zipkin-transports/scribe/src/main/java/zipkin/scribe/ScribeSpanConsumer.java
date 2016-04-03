@@ -23,18 +23,17 @@ import zipkin.AsyncSpanConsumer;
 import zipkin.Callback;
 import zipkin.Codec;
 import zipkin.Span;
+import zipkin.internal.Lazy;
 import zipkin.internal.SpanConsumerLogger;
-
-import static zipkin.internal.Util.checkNotNull;
 
 final class ScribeSpanConsumer implements Scribe {
   final SpanConsumerLogger logger = new SpanConsumerLogger(ScribeSpanConsumer.class);
-  final AsyncSpanConsumer spanConsumer;
   final String category;
+  final Lazy<AsyncSpanConsumer> consumer;
 
-  ScribeSpanConsumer(AsyncSpanConsumer spanConsumer, String category) {
-    this.spanConsumer = checkNotNull(spanConsumer, "spanConsumer");
-    this.category = checkNotNull(category, "category");
+  ScribeSpanConsumer(String category, Lazy<AsyncSpanConsumer> consumer) {
+    this.category = category;
+    this.consumer = consumer;
   }
 
   @Override
@@ -55,7 +54,7 @@ final class ScribeSpanConsumer implements Scribe {
 
     ErrorLoggingFuture result = new ErrorLoggingFuture(logger, spans);
     try {
-      spanConsumer.accept(spans, result);
+      consumer.get().accept(spans, result);
     } catch (RuntimeException e) {
       result.onError(e);
     }

@@ -16,6 +16,7 @@ package zipkin.server;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,7 +27,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
+import zipkin.Sampler;
 import zipkin.Span;
+import zipkin.StorageComponent;
 import zipkin.internal.SpanConsumerLogger;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -41,13 +44,15 @@ public class ZipkinHttpTransport {
   static final String APPLICATION_THRIFT = "application/x-thrift";
 
   private final SpanConsumerLogger logger = new SpanConsumerLogger(ZipkinHttpTransport.class);
-  private final AsyncSpanConsumer spanConsumer;
+  private final AsyncSpanConsumer consumer;
   private final Codec jsonCodec;
   private final Codec thriftCodec;
 
+  /** lazy so transient storage errors don't crash bootstrap */
+  @Lazy
   @Autowired
-  public ZipkinHttpTransport(AsyncSpanConsumer spanConsumer, Codec.Factory codecFactory) {
-    this.spanConsumer = spanConsumer;
+  ZipkinHttpTransport(StorageComponent storage, Sampler sampler, Codec.Factory codecFactory) {
+    this.consumer = storage.asyncSpanConsumer(sampler);
     this.jsonCodec = checkNotNull(codecFactory.get(APPLICATION_JSON_VALUE), APPLICATION_JSON_VALUE);
     this.thriftCodec = checkNotNull(codecFactory.get(APPLICATION_THRIFT), APPLICATION_THRIFT);
   }
@@ -88,7 +93,7 @@ public class ZipkinHttpTransport {
     }
     if (spans.isEmpty()) return ResponseEntity.accepted().build();
     try {
-      spanConsumer.accept(spans, logger.acceptSpansCallback(spans));
+      consumer.accept(spans, logger.acceptSpansCallback(spans));
     } catch (RuntimeException e) {
       String message = logger.errorAcceptingSpans(spans, e);
       return ResponseEntity.status(500).body(message + "\n"); // newline for prettier curl

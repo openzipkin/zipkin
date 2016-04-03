@@ -40,20 +40,22 @@ import static zipkin.Constants.SERVER_SEND;
  * <p/>This is a replacement for {@code com.twitter.zipkin.storage.SpanStoreSpec}.
  */
 public abstract class SpanStoreTest {
-  /** Should maintain state between multiple calls within a test. */
-  protected abstract AsyncSpanConsumer consumer();
 
   /** Should maintain state between multiple calls within a test. */
-  protected abstract SpanStore store();
+  protected abstract StorageComponent storage();
+
+  SpanStore store() {
+    return storage().spanStore();
+  }
 
   /** Blocks until the callback completes to allow read-your-writes consistency during tests. */
-  void store(Span... spans) {
+  void accept(Span... spans) {
     CallbackCaptor<Void> captor = new CallbackCaptor<>();
-    consumer().accept(asList(spans), captor);
+    storage().asyncSpanConsumer(Sampler.ALWAYS_SAMPLE).accept(asList(spans), captor);
     captor.get(); // block on result
   }
 
-  /** Clears the span store between tests. */
+  /** Clears store between tests. */
   @Before
   public abstract void clear();
 
@@ -137,7 +139,7 @@ public abstract class SpanStoreTest {
 
   @Test
   public void getTrace() {
-    store(span1, span2);
+    accept(span1, span2);
     assertThat(store().getTrace(span1.traceId)).isEqualTo(asList(span1));
   }
 
@@ -152,7 +154,7 @@ public abstract class SpanStoreTest {
    */
   @Test
   public void tracesRetrieveInOrderDesc() {
-    store(span2, new Span.Builder(span1).annotations(asList(ann3, ann1)).build());
+    accept(span2, new Span.Builder(span1).annotations(asList(ann3, ann1)).build());
 
     assertThat(store().getTraces(new QueryRequest.Builder("service").build()))
         .containsOnly(asList(span2), asList(span1));
@@ -161,7 +163,7 @@ public abstract class SpanStoreTest {
   /** Legacy instrumentation will not set timestamp and duration explicitly */
   @Test
   public void derivesTimestampAndDurationFromAnnotations() {
-    store(new Span.Builder(span1).timestamp(null).duration(null).build());
+    accept(new Span.Builder(span1).timestamp(null).duration(null).build());
 
     assertThat(store().getTrace(span1.traceId))
         .containsOnly(span1);
@@ -169,7 +171,7 @@ public abstract class SpanStoreTest {
 
   @Test
   public void getSpanNames() {
-    store(new Span.Builder(span1).name("yak").build(), span4);
+    accept(new Span.Builder(span1).name("yak").build(), span4);
 
     // should be in order
     assertThat(store().getSpanNames("service")).containsExactly("methodcall", "yak");
@@ -181,7 +183,7 @@ public abstract class SpanStoreTest {
     List<String> spanNames = new ArrayList<>();
     for (int i = 0; i < 50; i++) {
       String suffix = i < 10 ? "0" + i : String.valueOf(i);
-      store(new Span.Builder(span1).id(i).name("yak" + suffix).build());
+      accept(new Span.Builder(span1).id(i).name("yak" + suffix).build());
       spanNames.add("yak" + suffix);
     }
 
@@ -192,7 +194,7 @@ public abstract class SpanStoreTest {
   @Test
   public void getAllServiceNames() {
     BinaryAnnotation yak = BinaryAnnotation.address("sa", Endpoint.create("yak", 127 << 24 | 1, 8080));
-    store(new Span.Builder(span1).addBinaryAnnotation(yak).build(), span4);
+    accept(new Span.Builder(span1).addBinaryAnnotation(yak).build(), span4);
 
     // should be in order
     assertThat(store().getServiceNames()).containsExactly("service", "yak");
@@ -207,7 +209,7 @@ public abstract class SpanStoreTest {
       String suffix = i < 10 ? "0" + i : String.valueOf(i);
       BinaryAnnotation yak =
           BinaryAnnotation.address("sa", Endpoint.create("yak" + suffix, 127 << 24 | 1, 8080));
-      store(new Span.Builder(span1).id(i).addBinaryAnnotation(yak).build());
+      accept(new Span.Builder(span1).id(i).addBinaryAnnotation(yak).build());
       serviceNames.add("yak" + suffix);
     }
 
@@ -215,7 +217,7 @@ public abstract class SpanStoreTest {
   }
 
   /**
-   * This would only happen when the storage layer is bootstrapping, or has been purged.
+   * This would only happen when the store layer is bootstrapping, or has been purged.
    */
   @Test
   public void allShouldWorkWhenEmpty() {
@@ -231,7 +233,7 @@ public abstract class SpanStoreTest {
    */
   @Test
   public void allShouldWorkWhenNoAnnotationsYet() {
-    store(spanEmptyServiceName);
+    accept(spanEmptyServiceName);
 
     QueryRequest.Builder q = new QueryRequest.Builder("service");
     assertThat(store().getTraces(q.build())).isEmpty();
@@ -242,7 +244,7 @@ public abstract class SpanStoreTest {
 
   @Test
   public void getTraces_spanName() {
-    store(span1);
+    accept(span1);
 
     QueryRequest.Builder q = new QueryRequest.Builder("service");
     assertThat(store().getTraces(q.build()))
@@ -261,7 +263,7 @@ public abstract class SpanStoreTest {
         .timestamp(today * 1000 + 100L).duration(200L)
         .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "archiver", ep)).build();
 
-    store(localTrace);
+    accept(localTrace);
 
     assertThat(store().getTraces(new QueryRequest.Builder("service").build()))
         .containsExactly(asList(localTrace));
@@ -295,9 +297,9 @@ public abstract class SpanStoreTest {
         new Span.Builder(gz).traceId(2L).timestamp(today * 1000 + 260L).binaryAnnotations(asList(archiver1)).build());
     List<Span> trace3 = asList(zip);
 
-    store(trace1.toArray(new Span[0]));
-    store(trace2.toArray(new Span[0]));
-    store(trace3.toArray(new Span[0]));
+    accept(trace1.toArray(new Span[0]));
+    accept(trace2.toArray(new Span[0]));
+    accept(trace3.toArray(new Span[0]));
 
     long lookback = 12L * 60 * 60 * 1000; // 12hrs, instead of 7days
     long endTs = today + 1; // greater than all timestamps above
@@ -315,7 +317,8 @@ public abstract class SpanStoreTest {
         .containsExactly(trace3, trace2, trace1); // service2 is in the middle of trace1 and 2, but root of trace3
 
     // Span name should apply to the duration filter
-    assertThat(store().getTraces(q.serviceName("service2").spanName("zip").maxDuration(zip.duration).build()))
+    assertThat(
+        store().getTraces(q.serviceName("service2").spanName("zip").maxDuration(zip.duration).build()))
         .containsExactly(trace3);
 
     // Max duration should filter our longer spans from the same service
@@ -330,13 +333,13 @@ public abstract class SpanStoreTest {
   @Test
   public void getTraces_absentWhenNoTimestamp() {
     // store the binary annotations
-    store(new Span.Builder(span1).timestamp(null).duration(null).annotations(emptyList()).build());
+    accept(new Span.Builder(span1).timestamp(null).duration(null).annotations(emptyList()).build());
 
     assertThat(store().getTraces(new QueryRequest.Builder("service").build())).isEmpty();
     assertThat(store().getTraces(new QueryRequest.Builder("service").serviceName("methodcall").build())).isEmpty();
 
     // now store the timestamped annotations
-    store(new Span.Builder(span1).binaryAnnotations(emptyList()).build());
+    accept(new Span.Builder(span1).binaryAnnotations(emptyList()).build());
 
     assertThat(store().getTraces(new QueryRequest.Builder("service").build()))
         .containsExactly(asList(span1));
@@ -346,14 +349,15 @@ public abstract class SpanStoreTest {
 
   @Test
   public void getTraces_annotation() {
-    store(span1);
+    accept(span1);
 
     // fetch by time based annotation, find trace
     assertThat(store().getTraces(new QueryRequest.Builder("service").addAnnotation("custom").build()))
         .containsExactly(asList(span1));
 
     // should find traces by the key and value annotation
-    assertThat(store().getTraces(new QueryRequest.Builder("service").addBinaryAnnotation("BAH", "BEH").build()))
+    assertThat(
+        store().getTraces(new QueryRequest.Builder("service").addBinaryAnnotation("BAH", "BEH").build()))
         .containsExactly(asList(span1));
   }
 
@@ -379,7 +383,7 @@ public abstract class SpanStoreTest {
         .addBinaryAnnotation(BinaryAnnotation.create("baz", "qux", ep))
         .build();
 
-    store(foo, barAndFoo, fooAndBazAndQux, barAndFooAndBazAndQux);
+    accept(foo, barAndFoo, fooAndBazAndQux, barAndFooAndBazAndQux);
 
     assertThat(store().getTraces(new QueryRequest.Builder("service").addAnnotation("foo").build()))
         .containsExactly(asList(barAndFooAndBazAndQux), asList(fooAndBazAndQux), asList(barAndFoo), asList(foo));
@@ -401,7 +405,7 @@ public abstract class SpanStoreTest {
         .timestamp((today + 1) * 1000)
         .addBinaryAnnotation(BinaryAnnotation.create("empty", "", ep)).build();
 
-    store(span);
+    accept(span);
 
     assertThat(store().getTraces((new QueryRequest.Builder("service").build())))
         .containsExactly(asList(span));
@@ -416,7 +420,7 @@ public abstract class SpanStoreTest {
    */
   @Test
   public void getTraces_mergesSpans() {
-    store(span1, span4, span5); // span4, span5 have the same span id
+    accept(span1, span4, span5); // span4, span5 have the same span id
 
     SortedSet<Annotation> mergedAnnotations = new TreeSet<>(span4.annotations);
     mergedAnnotations.addAll(span5.annotations);
@@ -434,7 +438,7 @@ public abstract class SpanStoreTest {
   /** limit should apply to traces closest to endTs */
   @Test
   public void getTraces_limit() {
-    store(span1, span3); // span1's timestamp is 1000, span3's timestamp is 2000
+    accept(span1, span3); // span1's timestamp is 1000, span3's timestamp is 2000
 
     assertThat(store().getTraces(new QueryRequest.Builder("service").limit(1).build()))
         .containsExactly(asList(span3));
@@ -443,7 +447,7 @@ public abstract class SpanStoreTest {
   /** Traces whose root span has timestamps before or at endTs are returned */
   @Test
   public void getTraces_endTsAndLookback() {
-    store(span1, span3); // span1's timestamp is 1000, span3's timestamp is 2000
+    accept(span1, span3); // span1's timestamp is 1000, span3's timestamp is 2000
 
     assertThat(store().getTraces(new QueryRequest.Builder("service").endTs(today + 1L).build()))
         .containsExactly(asList(span1));
@@ -456,35 +460,39 @@ public abstract class SpanStoreTest {
   /** Traces whose root span has timestamps between (endTs - lookback) and endTs are returned */
   @Test
   public void getTraces_lookback() {
-    store(span1, span3); // span1's timestamp is 1000, span3's timestamp is 2000
+    accept(span1, span3); // span1's timestamp is 1000, span3's timestamp is 2000
 
-    assertThat(store().getTraces(new QueryRequest.Builder("service").endTs(today + 1L).lookback(1L).build()))
+    assertThat(
+        store().getTraces(new QueryRequest.Builder("service").endTs(today + 1L).lookback(1L).build()))
         .containsExactly(asList(span1));
-    assertThat(store().getTraces(new QueryRequest.Builder("service").endTs(today + 2L).lookback(1L).build()))
+    assertThat(
+        store().getTraces(new QueryRequest.Builder("service").endTs(today + 2L).lookback(1L).build()))
         .containsExactly(asList(span3), asList(span1));
-    assertThat(store().getTraces(new QueryRequest.Builder("service").endTs(today + 3L).lookback(1L).build()))
+    assertThat(
+        store().getTraces(new QueryRequest.Builder("service").endTs(today + 3L).lookback(1L).build()))
         .containsExactly(asList(span3));
-    assertThat(store().getTraces(new QueryRequest.Builder("service").endTs(today + 3L).lookback(2L).build()))
+    assertThat(
+        store().getTraces(new QueryRequest.Builder("service").endTs(today + 3L).lookback(2L).build()))
         .containsExactly(asList(span3), asList(span1));
   }
 
   @Test
   public void getAllServiceNames_emptyServiceName() {
-    store(spanEmptyServiceName);
+    accept(spanEmptyServiceName);
 
     assertThat(store().getServiceNames()).isEmpty();
   }
 
   @Test
   public void getSpanNames_emptySpanName() {
-    store(spanEmptySpanName);
+    accept(spanEmptySpanName);
 
     assertThat(store().getSpanNames(spanEmptySpanName.name)).isEmpty();
   }
 
   @Test
   public void spanNamesGoLowercase() {
-    store(span1);
+    accept(span1);
 
     assertThat(store().getTraces(new QueryRequest.Builder("service").spanName("MeThOdCaLl").build()))
         .containsOnly(asList(span1));
@@ -492,7 +500,7 @@ public abstract class SpanStoreTest {
 
   @Test
   public void serviceNamesGoLowercase() {
-    store(span1);
+    accept(span1);
 
     assertThat(store().getSpanNames("SeRvIcE")).containsExactly("methodcall");
 
@@ -505,7 +513,7 @@ public abstract class SpanStoreTest {
    * happens-before without using timestamps. The easiest clock skew to correct is where a child
    * appears to happen before the parent.
    *
-   * <p/>It doesn't matter if clock-skew correction happens at storage or query time, as long as it
+   * <p/>It doesn't matter if clock-skew correction happens at store or query time, as long as it
    * occurs by the time results are returned.
    *
    * <p/>Span stores who don't support this can override and disable this test, noting in the README
@@ -556,7 +564,7 @@ public abstract class SpanStoreTest {
         .isLessThanOrEqualTo(skewed.get(2).timestamp); // local span
 
     // Regardless of when clock skew is corrected, it should be corrected before traces return
-    store(parent, remoteChild, localChild);
+    accept(parent, remoteChild, localChild);
     List<Span> adjusted = store().getTrace(1L);
 
     // After correction, the child happens after the parent
@@ -611,8 +619,8 @@ public abstract class SpanStoreTest {
         .addAnnotation(Annotation.create((today + 130) * 1000, SERVER_SEND, server))
         .build();
 
-    store(serverView, serverViewDerived); // server span hits the collection tier first
-    store(clientView, clientViewDerived); // intentionally different collection event
+    accept(serverView, serverViewDerived); // server span hits the collection tier first
+    accept(clientView, clientViewDerived); // intentionally different collection event
 
     for (Span span : store().getTrace(clientView.traceId)) {
       assertThat(span.timestamp).isEqualTo(clientTimestamp);
@@ -631,8 +639,8 @@ public abstract class SpanStoreTest {
 
     // Simulate instrumentation that sends annotations one at-a-time.
     // This should prevent the collection tier from being able to calculate duration.
-    store(new Span.Builder(span).addAnnotation(sr).build());
-    store(new Span.Builder(span).addAnnotation(ss).build());
+    accept(new Span.Builder(span).addAnnotation(sr).build());
+    accept(new Span.Builder(span).addAnnotation(ss).build());
 
     // Normally, span store implementations will merge spans by id and add duration by query time
     assertThat(store().getTrace(span.traceId))
