@@ -57,8 +57,8 @@ install:
 
 script:
   # If we aren't a pull request, we are publishing either a snapshot or a release.
-  #   We don't currently publish the benchmarks or interop modules, as they are test code only.
-  - '[ "${TRAVIS_BRANCH}" = master ] && [ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s ./.settings.xml -Prelease -pl -:benchmarks,-:interop deploy -nsu'
+  #   We don't currently publish internal modules such as benchmarks and interop modules.
+  - '[ "${TRAVIS_BRANCH}" = master ] && [ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s ./.settings.xml -Prelease -pl -:benchmarks,-:interop,-:centralsync-maven-plugin deploy -nsu'
   # If we are on a pull request, don't build javadoc or source jars (release profile), and certainly don't deploy!
   #   We also add the MYSQL_USER so that these tests will be invoked.
   - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || MYSQL_USER=root ./mvnw install -nsu'
