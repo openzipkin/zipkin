@@ -52,13 +52,13 @@ public final class DependencyLinkSpan {
   }
 
   @Override public String toString() {
-    StringBuilder json = new StringBuilder("{\"kind\": ").append(kind).append("");
+    StringBuilder json = new StringBuilder("{\"kind\": \"").append(kind).append('\"');
     if (parentId != null) {
-      json.append(", \"parentId\": ").append(format("%016x", parentId)).append("");
+      json.append(", \"parentId\": \"").append(format("%016x", parentId)).append('\"');
     }
-    json.append(", \"id\": ").append(format("%016x", id)).append("");
-    if (service != null) json.append(", \"service\": ").append(service).append("");
-    if (peerService != null) json.append(", \"peerService\": ").append(peerService).append("");
+    json.append(", \"id\": \"").append(format("%016x", id)).append('\"');
+    if (service != null) json.append(", \"service\": \"").append(service).append('\"');
+    if (peerService != null) json.append(", \"peerService\": \"").append(peerService).append('\"');
     return json.append("}").toString();
   }
 

@@ -24,30 +24,30 @@ public class DependencyLinkSpanTest {
   @Test
   public void testToString() {
     assertThat(new DependencyLinkSpan.Builder(null, 1L).build())
-        .hasToString("{\"kind\": UNKNOWN, \"id\": 0000000000000001}");
+        .hasToString("{\"kind\": \"UNKNOWN\", \"id\": \"0000000000000001\"}");
 
     assertThat(new DependencyLinkSpan.Builder(1L, 2L).build())
-        .hasToString("{\"kind\": UNKNOWN, \"parentId\": 0000000000000001, \"id\": 0000000000000002}");
+        .hasToString("{\"kind\": \"UNKNOWN\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\"}");
 
     assertThat(new DependencyLinkSpan.Builder(1L, 2L)
         .srService("processor")
         .caService("kinesis").build())
-        .hasToString("{\"kind\": SERVER, \"parentId\": 0000000000000001, \"id\": 0000000000000002, \"service\": processor, \"peerService\": kinesis}");
+        .hasToString("{\"kind\": \"SERVER\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\", \"service\": \"processor\", \"peerService\": \"kinesis\"}");
 
     // It is invalid to log "ca" without "sr", so marked as unknown
     assertThat(new DependencyLinkSpan.Builder(1L, 2L)
         .caService("kinesis").build())
-        .hasToString("{\"kind\": UNKNOWN, \"parentId\": 0000000000000001, \"id\": 0000000000000002}");
+        .hasToString("{\"kind\": \"UNKNOWN\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\"}");
 
     assertThat(new DependencyLinkSpan.Builder(1L, 2L)
         .saService("mysql").build())
-        .hasToString("{\"kind\": CLIENT, \"parentId\": 0000000000000001, \"id\": 0000000000000002, \"peerService\": mysql}");
+        .hasToString("{\"kind\": \"CLIENT\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\", \"peerService\": \"mysql\"}");
 
     // arbitrary 2-sided span
     assertThat(new DependencyLinkSpan.Builder(1L, 2L)
         .caService("shell-script")
         .saService("mysql").build())
-        .hasToString("{\"kind\": CLIENT, \"parentId\": 0000000000000001, \"id\": 0000000000000002, \"service\": shell-script, \"peerService\": mysql}");
+        .hasToString("{\"kind\": \"CLIENT\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\", \"service\": \"shell-script\", \"peerService\": \"mysql\"}");
   }
 
   @Test
