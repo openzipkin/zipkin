@@ -25,13 +25,16 @@ enum ElasticsearchTestGraph {
   }
 
   final Lazy<ElasticsearchStorage> storage = new Lazy<ElasticsearchStorage>() {
+    public AssumptionViolatedException ex;
+
     @Override protected ElasticsearchStorage compute() {
+      if (ex != null) throw ex;
       ElasticsearchStorage result = new ElasticsearchStorage.Builder().build();
       try {
         result.spanStore().getServiceNames();
         return result;
       } catch (NoNodeAvailableException e) {
-        throw new AssumptionViolatedException(e.getMessage());
+        throw ex = new AssumptionViolatedException(e.getMessage());
       }
     }
   };

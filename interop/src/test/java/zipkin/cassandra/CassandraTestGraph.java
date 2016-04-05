@@ -26,13 +26,16 @@ enum CassandraTestGraph {
   }
 
   final Lazy<CassandraStorage> storage = new Lazy<CassandraStorage>() {
+    AssumptionViolatedException ex = null;
+
     @Override protected CassandraStorage compute() {
+      if (ex != null) throw ex;
       CassandraStorage result = new CassandraStorage.Builder().keyspace("test_zipkin").build();
       try {
         result.spanStore().getServiceNames();
         return result;
       } catch (NoHostAvailableException e) {
-        throw new AssumptionViolatedException(e.getMessage());
+        throw ex = new AssumptionViolatedException(e.getMessage());
       }
     }
   };
