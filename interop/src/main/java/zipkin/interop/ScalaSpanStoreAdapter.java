@@ -33,26 +33,29 @@ import scala.math.Ordering;
 import scala.math.Ordering$;
 import scala.runtime.AbstractFunction1;
 import scala.runtime.BoxedUnit;
-import zipkin.Codec;
 import zipkin.AsyncSpanConsumer;
 import zipkin.AsyncSpanStore;
+import zipkin.Codec;
+import zipkin.Sampler;
+import zipkin.StorageComponent;
 import zipkin.internal.Nullable;
 
 import static zipkin.interop.CloseAdapter.closeQuietly;
 
 /**
- * Adapts {@link AsyncSpanStore} to a scala {@link com.twitter.zipkin.storage.SpanStore} in order to
- * test against its {@link com.twitter.zipkin.storage.SpanStoreSpec} for interoperability reasons.
+ * Adapts a {@link StorageComponent} to a scala {@link com.twitter.zipkin.storage.SpanStore} in
+ * order to test against its {@link com.twitter.zipkin.storage.SpanStoreSpec} for interoperability
+ * reasons.
  *
- * <p/> This implementation uses thrift TBinaryProtocol to ensure structures are compatible.
+ * <p>This implementation uses thrift TBinaryProtocol to ensure structures are compatible.
  */
-public final class AsyncToScalaSpanStoreAdapter extends com.twitter.zipkin.storage.SpanStore {
+public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.SpanStore {
   private final AsyncSpanStore spanStore;
   private final AsyncSpanConsumer spanConsumer;
 
-  public AsyncToScalaSpanStoreAdapter(AsyncSpanStore spanStore, AsyncSpanConsumer spanConsumer) {
-    this.spanStore = spanStore;
-    this.spanConsumer = spanConsumer;
+  public ScalaSpanStoreAdapter(StorageComponent storage) {
+    this.spanStore = storage.asyncSpanStore();
+    this.spanConsumer = storage.asyncSpanConsumer(Sampler.ALWAYS_SAMPLE);
   }
 
   @Override

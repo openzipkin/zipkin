@@ -42,7 +42,7 @@
       <artifactId>zipkin</artifactId>
     </dependency>
 
-    <!-- for AsyncToScalaSpanStoreAdapter -->
+    <!-- for ScalaSpanStoreAdapter -->
     <dependency>
       <groupId>io.zipkin</groupId>
       <artifactId>zipkin-common</artifactId>

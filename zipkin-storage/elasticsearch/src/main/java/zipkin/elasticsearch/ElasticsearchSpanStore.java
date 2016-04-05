@@ -13,7 +13,6 @@
  */
 package zipkin.elasticsearch;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -30,12 +29,6 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.flush.FlushRequest;
-import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesRequest;
-import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesResponse;
-import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.IndicesOptions;
@@ -71,13 +64,7 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
 import static zipkin.elasticsearch.ElasticFutures.toGuava;
 
-/**
- *
- * <p>Temporarily exposed until we make a storage component
- *
- * <p>See https://github.com/openzipkin/zipkin-java/issues/135
- */
-public class ElasticsearchSpanStore implements GuavaSpanStore {
+final class ElasticsearchSpanStore implements GuavaSpanStore {
   static final long ONE_DAY_IN_MILLIS = TimeUnit.DAYS.toMillis(1);
   static final ListenableFuture<List<String>> EMPTY_LIST =
       immediateFuture(Collections.<String>emptyList());
@@ -90,13 +77,10 @@ public class ElasticsearchSpanStore implements GuavaSpanStore {
 
   private final Client client;
   private final IndexNameFormatter indexNameFormatter;
-  private final String indexTemplate;
 
-  public ElasticsearchSpanStore(Client client, ElasticsearchConfig config) {
+  ElasticsearchSpanStore(Client client, IndexNameFormatter indexNameFormatter) {
     this.client = client;
-    this.indexNameFormatter = config.indexNameFormatter;
-    this.indexTemplate = config.indexTemplate;
-    checkForIndexTemplate();
+    this.indexNameFormatter = indexNameFormatter;
   }
 
   @Override public ListenableFuture<List<List<Span>>> getTraces(QueryRequest request) {
@@ -373,29 +357,6 @@ public class ElasticsearchSpanStore implements GuavaSpanStore {
     }
   }
 
-  @VisibleForTesting void clear() {
-    client.admin().indices().delete(new DeleteIndexRequest(indexNameFormatter.catchAll()))
-        .actionGet();
-    client.admin().indices().flush(new FlushRequest()).actionGet();
-  }
-
-  @VisibleForTesting void writeDependencyLinks(List<DependencyLink> links, long timestampMillis) {
-    timestampMillis = Util.midnightUTC(timestampMillis);
-    BulkRequestBuilder request = client.prepareBulk();
-    for (DependencyLink link : links) {
-      request.add(client.prepareIndex(
-          indexNameFormatter.indexNameForTimestamp(timestampMillis),
-          ElasticsearchConstants.DEPENDENCY_LINK)
-          .setSource(
-              "parent", link.parent,
-              "child", link.child,
-              "parent_child", link.parent + "|" + link.child,  // For aggregating callCount
-              "callCount", link.callCount));
-    }
-    request.execute().actionGet();
-    client.admin().indices().flush(new FlushRequest()).actionGet();
-  }
-
   private List<String> computeIndices(long beginMillis, long endMillis) {
     beginMillis = Util.midnightUTC(beginMillis);
     endMillis = Util.midnightUTC(endMillis);
@@ -408,16 +369,5 @@ public class ElasticsearchSpanStore implements GuavaSpanStore {
       indices.add(indexNameFormatter.indexNameForTimestamp(currentMillis));
     }
     return indices;
-  }
-
-  private void checkForIndexTemplate() {
-    GetIndexTemplatesResponse existingTemplates =
-        client.admin().indices().getTemplates(new GetIndexTemplatesRequest("zipkin_template"))
-            .actionGet();
-    if (!existingTemplates.getIndexTemplates().isEmpty()) {
-      return;
-    }
-    client.admin().indices().putTemplate(
-        new PutIndexTemplateRequest("zipkin_template").source(indexTemplate)).actionGet();
   }
 }

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import zipkin.StorageAdapters.SpanConsumer;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.CorrectForClockSkew;
 import zipkin.internal.DependencyLinkSpan;
@@ -36,43 +37,43 @@ import zipkin.internal.Util;
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.sortedList;
 
-/**
- * This implements both {@link SpanStore} and {@link AsyncSpanStore} for convenience.
- *
- * <p>All {@link Callback callbacks} execute on the calling thread.
- */
 public final class InMemorySpanStore implements SpanStore {
   private final Multimap<Long, Span> traceIdToSpans = new LinkedListMultimap<>();
-  private final Multimap<String, Pair<Long>> serviceToTraceIdTimeStamp = new SortedByValue2Descending<>();
+  private final Multimap<String, Pair<Long>> serviceToTraceIdTimeStamp =
+      new SortedByValue2Descending<>();
   private final Multimap<String, String> serviceToSpanNames = new LinkedHashSetMultimap<>();
-  private int acceptedSpanCount;
+  volatile int acceptedSpanCount;
 
-  /** Blocking version of {@link AsyncSpanConsumer#accept} */
-  public synchronized void accept(List<Span> spans) {
-    for (Span span : spans) {
-      span = ApplyTimestampAndDuration.apply(span);
-      Pair<Long> traceIdTimeStamp =
-          Pair.create(span.traceId, span.timestamp == null ? Long.MIN_VALUE : span.timestamp);
-      String spanName = span.name;
-      traceIdToSpans.put(span.traceId, span);
-      acceptedSpanCount++;
+  final SpanConsumer spanConsumer = new SpanConsumer() {
+    @Override public void accept(List<Span> spans) {
+      for (Span span : spans) {
+        span = ApplyTimestampAndDuration.apply(span);
+        Pair<Long> traceIdTimeStamp =
+            Pair.create(span.traceId, span.timestamp == null ? Long.MIN_VALUE : span.timestamp);
+        String spanName = span.name;
+        synchronized (InMemorySpanStore.this) {
+          traceIdToSpans.put(span.traceId, span);
+          acceptedSpanCount++;
 
-      for (String serviceName : span.serviceNames()) {
-        serviceToTraceIdTimeStamp.put(serviceName, traceIdTimeStamp);
-        serviceToSpanNames.put(serviceName, spanName);
+          for (String serviceName : span.serviceNames()) {
+            serviceToTraceIdTimeStamp.put(serviceName, traceIdTimeStamp);
+            serviceToSpanNames.put(serviceName, spanName);
+          }
+        }
       }
     }
-  }
 
-  public synchronized int acceptedSpanCount() {
-    return acceptedSpanCount;
-  }
+    @Override public String toString() {
+      return "InMemorySpanConsumer";
+    }
+  };
 
   public synchronized List<Long> traceIds() {
     return Util.sortedList(traceIdToSpans.keySet());
   }
 
-  public synchronized void clear() {
+  synchronized void clear() {
+    acceptedSpanCount = 0;
     traceIdToSpans.clear();
     serviceToTraceIdTimeStamp.clear();
   }
@@ -200,7 +201,7 @@ public final class InMemorySpanStore implements SpanStore {
     for (Span span : spans) {
       currentServiceNames.clear();
 
-      for (Annotation a: span.annotations) {
+      for (Annotation a : span.annotations) {
         annotations.remove(a.value);
         if (a.endpoint != null) {
           serviceNames.add(a.endpoint.serviceName);
@@ -208,7 +209,7 @@ public final class InMemorySpanStore implements SpanStore {
         }
       }
 
-      for (BinaryAnnotation b: span.binaryAnnotations) {
+      for (BinaryAnnotation b : span.binaryAnnotations) {
         if (b.type == BinaryAnnotation.Type.STRING &&
             new String(b.value, UTF_8).equals(binaryAnnotations.get(b.key))) {
           binaryAnnotations.remove(b.key);
@@ -221,7 +222,8 @@ public final class InMemorySpanStore implements SpanStore {
 
       if (currentServiceNames.contains(request.serviceName) && !testedDuration) {
         if (request.minDuration != null && request.maxDuration != null) {
-          testedDuration = span.duration >= request.minDuration && span.duration <= request.maxDuration;
+          testedDuration =
+              span.duration >= request.minDuration && span.duration <= request.maxDuration;
         } else if (request.minDuration != null) {
           testedDuration = span.duration >= request.minDuration;
         }
@@ -240,8 +242,7 @@ public final class InMemorySpanStore implements SpanStore {
 
   static final class LinkedListMultimap<K, V> extends Multimap<K, V> {
 
-    @Override
-    Collection<V> valueContainer() {
+    @Override Collection<V> valueContainer() {
       return new LinkedList<>();
     }
   }
@@ -249,8 +250,7 @@ public final class InMemorySpanStore implements SpanStore {
   /** QueryRequest.limit needs trace ids are returned in timestamp descending order. */
   static final class SortedByValue2Descending<K> extends Multimap<K, Pair<Long>> {
 
-    @Override
-    Set<Pair<Long>> valueContainer() {
+    @Override Set<Pair<Long>> valueContainer() {
       return new TreeSet<>(VALUE_2_DESCENDING);
     }
 
@@ -264,8 +264,7 @@ public final class InMemorySpanStore implements SpanStore {
 
   static final class LinkedHashSetMultimap<K, V> extends Multimap<K, V> {
 
-    @Override
-    Collection<V> valueContainer() {
+    @Override Collection<V> valueContainer() {
       return new LinkedHashSet<>();
     }
   }

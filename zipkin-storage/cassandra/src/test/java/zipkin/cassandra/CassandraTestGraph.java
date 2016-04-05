@@ -13,50 +13,27 @@
  */
 package zipkin.cassandra;
 
-import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import org.junit.AssumptionViolatedException;
+import zipkin.internal.Lazy;
 
 enum CassandraTestGraph {
   INSTANCE;
-
-  static final CassandraConfig CONFIG = new CassandraConfig.Builder()
-      .keyspace("test_zipkin_spanstore").build();
-  static final Cluster CLUSTER = CONFIG.connect();
 
   static {
     // Ensure the repository's local cache of service names expire quickly
     System.setProperty("zipkin.store.cassandra.internal.writtenNamesTtl", "1");
   }
 
-  private AssumptionViolatedException ex;
-  private CassandraSpanStore spanStore;
-
-  /** A lot of tech debt here because the repository constructor performs I/O. */
-  synchronized CassandraSpanStore spanStore() {
-    if (ex != null) throw ex;
-    if (this.spanStore == null) {
+  final Lazy<CassandraStorage> storage = new Lazy<CassandraStorage>() {
+    @Override protected CassandraStorage compute() {
+      CassandraStorage result = new CassandraStorage.Builder().keyspace("test_zipkin").build();
       try {
-        this.spanStore = new CassandraSpanStore(CLUSTER, CONFIG);
+        result.spanStore().getServiceNames();
+        return result;
       } catch (NoHostAvailableException e) {
-        throw ex = new AssumptionViolatedException(e.getMessage());
+        throw new AssumptionViolatedException(e.getMessage());
       }
     }
-    return spanStore;
-  }
-
-  private CassandraSpanConsumer spanConsumer;
-
-  /** A lot of tech debt here because the repository constructor performs I/O. */
-  synchronized CassandraSpanConsumer spanConsumer() {
-    if (ex != null) throw ex;
-    if (this.spanConsumer == null) {
-      try {
-        this.spanConsumer = new CassandraSpanConsumer(CLUSTER, CONFIG);
-      } catch (NoHostAvailableException e) {
-        throw ex = new AssumptionViolatedException(e.getMessage());
-      }
-    }
-    return spanConsumer;
-  }
+  };
 }

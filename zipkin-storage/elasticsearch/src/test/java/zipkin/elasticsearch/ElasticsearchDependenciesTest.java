@@ -14,26 +14,30 @@
 package zipkin.elasticsearch;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import zipkin.DependenciesTest;
 import zipkin.DependencyLink;
 import zipkin.InMemorySpanStore;
+import zipkin.InMemoryStorage;
 import zipkin.Span;
-import zipkin.SpanStore;
+import zipkin.StorageComponent;
 
-import static zipkin.StorageAdapters.asyncToBlocking;
+import static java.util.concurrent.TimeUnit.DAYS;
 import static zipkin.internal.Util.midnightUTC;
-import static zipkin.spanstore.guava.GuavaStorageAdapters.guavaToAsync;
 
 public class ElasticsearchDependenciesTest extends DependenciesTest {
 
-  @Override protected SpanStore store() {
-    return asyncToBlocking(guavaToAsync(ElasticsearchTestGraph.INSTANCE.spanStore()));
+  private final ElasticsearchStorage storage;
+
+  public ElasticsearchDependenciesTest() {
+    this.storage = ElasticsearchTestGraph.INSTANCE.storage.get();
   }
 
-  @Override
-  public void clear() {
-    ElasticsearchTestGraph.INSTANCE.spanStore().clear();
+  @Override protected StorageComponent storage() {
+    return storage;
+  }
+
+  @Override public void clear() {
+    storage.clear();
   }
 
   /**
@@ -41,19 +45,18 @@ public class ElasticsearchDependenciesTest extends DependenciesTest {
    * pre-aggregated links.
    *
    * <p>This uses {@link InMemorySpanStore} to prepare links and {@link
-   * ElasticsearchSpanStore#writeDependencyLinks(List, long)}} to store them.
+   * ElasticsearchStorage#writeDependencyLinks(List, long)}} to store them.
    *
    * <p>Note: The zipkin-dependencies-spark doesn't yet support writing dependency links to
    * elasticsearch, until it does this span store cannot be used for dependency links.
    */
   @Override
   public void processDependencies(List<Span> spans) {
-    InMemorySpanStore mem = new InMemorySpanStore();
-    mem.accept(spans);
-    List<DependencyLink> links = mem.getDependencies(today + TimeUnit.DAYS.toMillis(1), null);
+    InMemoryStorage mem = new InMemoryStorage();
+    mem.spanConsumer().accept(spans);
+    List<DependencyLink> links = mem.spanStore().getDependencies(today + DAYS.toMillis(1), null);
 
     long midnight = midnightUTC(spans.get(0).timestamp / 1000);
-    ElasticsearchTestGraph.INSTANCE.spanStore().writeDependencyLinks(
-        links, midnight);
+    storage.writeDependencyLinks(links, midnight);
   }
 }

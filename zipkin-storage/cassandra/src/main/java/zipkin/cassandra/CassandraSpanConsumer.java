@@ -13,7 +13,6 @@
  */
 package zipkin.cassandra;
 
-import com.datastax.driver.core.Cluster;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.util.concurrent.Futures;
@@ -30,22 +29,17 @@ import zipkin.spanstore.guava.GuavaSpanConsumer;
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.cassandra.CassandraUtil.annotationKeys;
 
-/**
- * <p>Temporarily exposed until we make a storage component
- *
- * <p>See https://github.com/openzipkin/zipkin-java/issues/135
- */
-public final class CassandraSpanConsumer implements GuavaSpanConsumer, AutoCloseable {
+final class CassandraSpanConsumer implements GuavaSpanConsumer {
   private static final Function<Object, Void> TO_VOID = Functions.<Void>constant(null);
 
   private final Repository repository;
   private final int spanTtl;
   private final int indexTtl;
 
-  public CassandraSpanConsumer(Cluster cluster, CassandraConfig config) {
-    this.repository = new Repository(config.keyspace, cluster, config.ensureSchema);
-    this.spanTtl = config.spanTtl;
-    this.indexTtl = config.indexTtl;
+  CassandraSpanConsumer(Repository repository, int spanTtl, int indexTtl) {
+    this.repository = repository;
+    this.spanTtl = spanTtl;
+    this.indexTtl = indexTtl;
   }
 
   @Override
@@ -105,10 +99,5 @@ public final class CassandraSpanConsumer implements GuavaSpanConsumer, AutoClose
       }
     }
     return transform(Futures.allAsList(futures), TO_VOID);
-  }
-
-  @Override
-  public void close() {
-    repository.close();
   }
 }

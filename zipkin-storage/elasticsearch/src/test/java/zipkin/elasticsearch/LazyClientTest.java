@@ -11,24 +11,22 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.jdbc;
+package zipkin.elasticsearch;
 
-import zipkin.DependenciesTest;
-import zipkin.StorageComponent;
+import org.junit.Test;
 
-public class JDBCDependenciesTest extends DependenciesTest {
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 
-  private final JDBCStorage storage;
+public class LazyClientTest {
 
-  public JDBCDependenciesTest() {
-    this.storage = JDBCTestGraph.INSTANCE.storage.get();
-  }
+  @Test
+  public void testToString() {
+    LazyClient lazyClient = new LazyClient(new ElasticsearchStorage.Builder()
+        .cluster("cluster")
+        .hosts(asList("host1", "host2")));
 
-  @Override protected StorageComponent storage() {
-    return storage;
-  }
-
-  @Override public void clear() {
-    storage.clear();
+    assertThat(lazyClient)
+        .hasToString("{\"clusterName\": \"cluster\", \"hosts\": [\"host1\", \"host2\"]}");
   }
 }

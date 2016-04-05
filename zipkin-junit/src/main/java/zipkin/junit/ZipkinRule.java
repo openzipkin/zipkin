@@ -28,7 +28,7 @@ import okio.GzipSink;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import zipkin.InMemorySpanStore;
+import zipkin.InMemoryStorage;
 import zipkin.Span;
 
 import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
@@ -43,14 +43,14 @@ import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
  */
 public final class ZipkinRule implements TestRule {
 
-  private final InMemorySpanStore store = new InMemorySpanStore();
+  private final InMemoryStorage storage = new InMemoryStorage();
   private final MockWebServer server = new MockWebServer();
   private final BlockingQueue<MockResponse> failureQueue = new LinkedBlockingQueue<>();
   private final AtomicInteger receivedSpanBytes = new AtomicInteger();
 
   public ZipkinRule() {
     Dispatcher dispatcher = new Dispatcher() {
-      final ZipkinDispatcher successDispatch = new ZipkinDispatcher(store, server);
+      final ZipkinDispatcher successDispatch = new ZipkinDispatcher(storage, server);
 
       @Override
       public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
@@ -101,7 +101,7 @@ public final class ZipkinRule implements TestRule {
    * count: it corresponds directly to what's reported by instrumentation.
    */
   public int receivedSpanCount() {
-    return store.acceptedSpanCount();
+    return storage.acceptedSpanCount();
   }
 
   /**
@@ -119,7 +119,7 @@ public final class ZipkinRule implements TestRule {
    * you'd add the parent here.
    */
   public ZipkinRule storeSpans(List<Span> spans) {
-    store.accept(spans);
+    storage.spanConsumer().accept(spans);
     return this;
   }
 
@@ -141,10 +141,10 @@ public final class ZipkinRule implements TestRule {
 
   /** Retrieves all traces this zipkin server has received. */
   public List<List<Span>> getTraces() {
-    List<Long> traceIds = store.traceIds();
+    List<Long> traceIds = storage.spanStore().traceIds();
     List<List<Span>> result = new ArrayList<>(traceIds.size());
     for (long traceId : traceIds) {
-      result.add(store.getTrace(traceId));
+      result.add(storage.spanStore().getTrace(traceId));
     }
     return result;
   }

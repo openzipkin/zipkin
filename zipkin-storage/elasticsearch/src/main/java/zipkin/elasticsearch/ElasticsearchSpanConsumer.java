@@ -13,7 +13,6 @@
  */
 package zipkin.elasticsearch;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.util.concurrent.AsyncFunction;
@@ -30,30 +29,16 @@ import zipkin.spanstore.guava.GuavaSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.elasticsearch.ElasticFutures.toGuava;
-import static zipkin.internal.Util.checkNotNull;
 
-/**
- * <p>Temporarily exposed until we make a storage component
- *
- * <p>See https://github.com/openzipkin/zipkin-java/issues/135
- */
-public final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
+final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
   private static final Function<Object, Void> TO_VOID = Functions.<Void>constant(null);
-
-  /**
-   * Internal flag that allows you read-your-writes consistency during tests. With Elasticsearch, it
-   * is not sufficient to block on the {@link #createSpanIndexRequest} future since the index also
-   * needs to be flushed.
-   */
-  @VisibleForTesting
-  static boolean FLUSH_ON_WRITES;
 
   private final Client client;
   private final IndexNameFormatter indexNameFormatter;
 
-  public ElasticsearchSpanConsumer(Client client, ElasticsearchConfig config) {
-    this.client = checkNotNull(client, "client");
-    this.indexNameFormatter = checkNotNull(config, "config").indexNameFormatter;
+  ElasticsearchSpanConsumer(Client client, IndexNameFormatter indexNameFormatter) {
+    this.client = client;
+    this.indexNameFormatter = indexNameFormatter;
   }
 
   @Override
@@ -63,7 +48,7 @@ public final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
       request.add(createSpanIndexRequest(ApplyTimestampAndDuration.apply(span)));
     }
     ListenableFuture<?> future = toGuava(request.execute());
-    if (FLUSH_ON_WRITES) {
+    if (ElasticsearchStorage.FLUSH_ON_WRITES) {
       future = transform(future, new AsyncFunction() {
         @Override public ListenableFuture apply(Object input) {
           return toGuava(client.admin().indices()

@@ -15,55 +15,27 @@ package zipkin.junit;
 
 import java.io.IOException;
 import java.util.List;
-import okhttp3.Call;
 import okhttp3.HttpUrl;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
+import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.QueryRequest;
 import zipkin.Span;
 import zipkin.SpanStore;
-import zipkin.AsyncSpanConsumer;
-import zipkin.Callback;
-import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
 
 /**
  * Implements the span store interface by forwarding requests over http.
- *
- * <p>Intentionally synchronous to reuse span store tests as http interface tests.
  */
-final class HttpSpanStore implements SpanStore, AsyncSpanConsumer {
-
-  static final JsonCodec JSON_CODEC = new JsonCodec();
-  private final OkHttpClient client = new OkHttpClient();
+final class HttpSpanStore implements SpanStore {
+  private final OkHttpClient client;
   private final HttpUrl baseUrl;
 
-  /**
-   * @param baseUrl Ex "http://localhost:9411"
-   */
-  HttpSpanStore(String baseUrl) {
-    this.baseUrl = HttpUrl.parse(baseUrl);
-  }
-
-  @Override
-  public void accept(List<Span> spans, final Callback<Void> callback) {
-    byte[] spansInJson = JSON_CODEC.writeSpans(spans);
-    client.newCall(new Request.Builder()
-        .url(baseUrl.resolve("/api/v1/spans"))
-        .post(RequestBody.create(MediaType.parse("application/json"), spansInJson)).build()
-    ).enqueue(new okhttp3.Callback() {
-      @Override public void onFailure(Call call, IOException e) {
-        callback.onError(e);
-      }
-
-      @Override public void onResponse(Call call, Response response) throws IOException {
-        callback.onSuccess(null);
-      }
-    });
+  HttpSpanStore(OkHttpClient client, HttpUrl baseUrl) {
+    this.client = client;
+    this.baseUrl = baseUrl;
   }
 
   @Override
@@ -77,7 +49,7 @@ final class HttpSpanStore implements SpanStore, AsyncSpanConsumer {
     maybeAddQueryParam(url, "lookback", request.lookback);
     maybeAddQueryParam(url, "limit", request.limit);
     Response response = call(new Request.Builder().url(url.build()).build());
-    return JSON_CODEC.readTraces(responseBytes(response));
+    return Codec.JSON.readTraces(responseBytes(response));
   }
 
   @Override
@@ -97,21 +69,21 @@ final class HttpSpanStore implements SpanStore, AsyncSpanConsumer {
     if (response.code() == 404) {
       return null;
     }
-    return JSON_CODEC.readSpans(responseBytes(response));
+    return Codec.JSON.readSpans(responseBytes(response));
   }
 
   @Override
   public List<String> getServiceNames() {
     Response response = call(new Request.Builder()
         .url(baseUrl.resolve("/api/v1/services")).build());
-    return JSON_CODEC.readStrings(responseBytes(response));
+    return Codec.JSON.readStrings(responseBytes(response));
   }
 
   @Override
   public List<String> getSpanNames(String serviceName) {
     Response response = call(new Request.Builder()
         .url(baseUrl.resolve("/api/v1/spans?serviceName=" + serviceName)).build());
-    return JSON_CODEC.readStrings(responseBytes(response));
+    return Codec.JSON.readStrings(responseBytes(response));
   }
 
   @Override
@@ -119,7 +91,7 @@ final class HttpSpanStore implements SpanStore, AsyncSpanConsumer {
     HttpUrl.Builder url = baseUrl.newBuilder("/api/v1/dependencies?endTs=" + endTs);
     if (lookback != null) url.addQueryParameter("lookback", lookback.toString());
     Response response = call(new Request.Builder().url(url.build()).build());
-    return JSON_CODEC.readDependencyLinks(responseBytes(response));
+    return Codec.JSON.readDependencyLinks(responseBytes(response));
   }
 
   Response call(Request request) {

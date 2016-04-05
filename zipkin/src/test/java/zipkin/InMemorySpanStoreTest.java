@@ -13,21 +13,15 @@
  */
 package zipkin;
 
-import static zipkin.StorageAdapters.blockingToAsync;
-
 public class InMemorySpanStoreTest extends SpanStoreTest {
-  private final InMemorySpanStore store = new InMemorySpanStore();
+  final InMemoryStorage storage = new InMemoryStorage();
 
-  @Override protected AsyncSpanConsumer consumer() {
-    return blockingToAsync(store::accept, Runnable::run);
-  }
-
-  @Override protected SpanStore store() {
-    return store;
+  @Override protected StorageComponent storage() {
+    return storage;
   }
 
   @Override
   public void clear() {
-    store.clear();
+    storage.clear();
   }
 }

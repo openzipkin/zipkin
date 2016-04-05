@@ -15,28 +15,21 @@ package zipkin.elasticsearch;
 
 import com.twitter.zipkin.storage.SpanStore;
 import com.twitter.zipkin.storage.SpanStoreSpec;
-import org.junit.BeforeClass;
-import zipkin.AsyncSpanConsumer;
-import zipkin.AsyncSpanStore;
-import zipkin.interop.AsyncToScalaSpanStoreAdapter;
-
-import static zipkin.spanstore.guava.GuavaStorageAdapters.guavaToAsync;
+import zipkin.interop.ScalaSpanStoreAdapter;
 
 public class ElasticsearchScalaSpanStoreTest extends SpanStoreSpec {
-  private static AsyncSpanStore spanStore;
-  private static AsyncSpanConsumer spanConsumer;
 
-  @BeforeClass
-  public static void setupDB() {
-    spanStore = guavaToAsync(ElasticsearchTestGraph.INSTANCE.spanStore());
-    spanConsumer = guavaToAsync(ElasticsearchTestGraph.INSTANCE.spanConsumer());
+  private final ElasticsearchStorage storage;
+
+  public ElasticsearchScalaSpanStoreTest() {
+    this.storage = ElasticsearchTestGraph.INSTANCE.storage.get();
   }
 
   public SpanStore store() {
-    return new AsyncToScalaSpanStoreAdapter(spanStore, spanConsumer);
+    return new ScalaSpanStoreAdapter(storage);
   }
 
   public void clear() {
-    ElasticsearchTestGraph.INSTANCE.spanStore().clear();
+    storage.clear();
   }
 }

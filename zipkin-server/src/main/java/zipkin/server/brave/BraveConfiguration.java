@@ -27,12 +27,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import zipkin.Endpoint;
-import zipkin.AsyncSpanConsumer;
+import zipkin.StorageComponent;
 
 @Configuration
 @ConditionalOnClass(ServerTracer.class)
@@ -68,12 +67,11 @@ public class BraveConfiguration {
   }
 
   /**
-   * @param spanConsumer lazy to avoid circular reference: the collector uses the same span store as
-   * the http transport.
+   * @param component gives lazy access to async span consumer, to avoid crashin
    */
   @Bean
-  SpanStoreSpanCollector spanCollector(@Lazy AsyncSpanConsumer spanConsumer) {
-    return new SpanStoreSpanCollector(spanConsumer);
+  SpanStoreSpanCollector spanCollector(StorageComponent component) {
+    return new SpanStoreSpanCollector(component);
   }
 
   @Bean

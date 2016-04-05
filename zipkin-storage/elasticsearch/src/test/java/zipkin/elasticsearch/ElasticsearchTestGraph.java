@@ -13,46 +13,26 @@
  */
 package zipkin.elasticsearch;
 
-import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.junit.AssumptionViolatedException;
+import zipkin.internal.Lazy;
 
 enum ElasticsearchTestGraph {
   INSTANCE;
 
-  static final ElasticsearchConfig CONFIG = new ElasticsearchConfig.Builder().build();
-  static final Client CLIENT = CONFIG.connect();
-
   static {
-    ElasticsearchSpanConsumer.FLUSH_ON_WRITES = true;
+    ElasticsearchStorage.FLUSH_ON_WRITES = true;
   }
 
-  private AssumptionViolatedException ex;
-  private ElasticsearchSpanStore spanStore;
-
-  synchronized ElasticsearchSpanStore spanStore() {
-    if (ex != null) throw ex;
-    if (this.spanStore == null) {
+  final Lazy<ElasticsearchStorage> storage = new Lazy<ElasticsearchStorage>() {
+    @Override protected ElasticsearchStorage compute() {
+      ElasticsearchStorage result = new ElasticsearchStorage.Builder().build();
       try {
-        this.spanStore = new ElasticsearchSpanStore(CLIENT, CONFIG);
+        result.spanStore().getServiceNames();
+        return result;
       } catch (NoNodeAvailableException e) {
-        throw ex = new AssumptionViolatedException(e.getMessage());
+        throw new AssumptionViolatedException(e.getMessage());
       }
     }
-    return spanStore;
-  }
-
-  private ElasticsearchSpanConsumer spanConsumer;
-
-  synchronized ElasticsearchSpanConsumer spanConsumer() {
-    if (ex != null) throw ex;
-    if (this.spanConsumer == null) {
-      try {
-        this.spanConsumer = new ElasticsearchSpanConsumer(CLIENT, CONFIG);
-      } catch (NoNodeAvailableException e) {
-        throw ex = new AssumptionViolatedException(e.getMessage());
-      }
-    }
-    return spanConsumer;
-  }
+  };
 }

@@ -21,25 +21,27 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import zipkin.Annotation;
+import zipkin.AsyncSpanConsumer;
 import zipkin.BinaryAnnotation;
 import zipkin.BinaryAnnotation.Type;
 import zipkin.Endpoint;
+import zipkin.Sampler;
 import zipkin.Span;
 import zipkin.SpanStore;
-import zipkin.AsyncSpanConsumer;
+import zipkin.StorageComponent;
 
 /**
  * A Brave {@link SpanCollector} that forwards to the local {@link SpanStore}.
  */
 public class SpanStoreSpanCollector implements SpanCollector, Flushable {
-  private final AsyncSpanConsumer consumer;
+  private final StorageComponent storage;
   // TODO: should we put a bound on this queue?
   // Since this is only used for internal tracing in zipkin, maybe it's ok
   private final BlockingQueue<Span> queue = new LinkedBlockingQueue<>();
   private final int limit = 200;
 
-  public SpanStoreSpanCollector(AsyncSpanConsumer consumer) {
-    this.consumer = consumer;
+  public SpanStoreSpanCollector(StorageComponent storage) {
+    this.storage = storage;
   }
 
   public void collect(Span span) {
@@ -62,9 +64,8 @@ public class SpanStoreSpanCollector implements SpanCollector, Flushable {
         spans.add(span);
       }
     }
-    if (!spans.isEmpty()) {
-      consumer.accept(spans, AsyncSpanConsumer.NOOP_CALLBACK);
-    }
+    if (spans.isEmpty()) return;
+    storage.asyncSpanConsumer(Sampler.ALWAYS_SAMPLE).accept(spans, AsyncSpanConsumer.NOOP_CALLBACK);
   }
 
   private Span convert(com.twitter.zipkin.gen.Span span) {
