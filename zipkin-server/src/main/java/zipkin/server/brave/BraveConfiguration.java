@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -50,8 +51,7 @@ public class BraveConfiguration {
   /** This gets the lanIP without trying to lookup its name. */
   // http://stackoverflow.com/questions/8765578/get-local-ip-address-without-connecting-to-the-internet
   @Bean
-  @Scope
-  Endpoint local(@Value("${server.port:9411}") int port) {
+  @Scope Endpoint local(@Value("${server.port:9411}") int port) {
     int ipv4;
     try {
       ipv4 = Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
@@ -67,16 +67,17 @@ public class BraveConfiguration {
   }
 
   /**
-   * @param component gives lazy access to async span consumer, to avoid crashin
+   * @param component lazy to avoid circular reference: the collector uses the same span store as
+   * the http transport. component instead of asyncSpanConsumer to prevent storage-related failures
+   * from crashing bootstrap.
    */
-  @Bean
-  SpanStoreSpanCollector spanCollector(StorageComponent component) {
+  @Bean SpanStoreSpanCollector spanCollector(@Lazy StorageComponent component) {
     return new SpanStoreSpanCollector(component);
   }
 
   @Bean
-  @Scope
-  Brave brave(@Qualifier("local") Endpoint localEndpoint, SpanStoreSpanCollector spanCollector) {
+  @Scope Brave brave(@Qualifier("local") Endpoint localEndpoint,
+      SpanStoreSpanCollector spanCollector) {
     return new Brave.Builder(localEndpoint.ipv4, localEndpoint.port, localEndpoint.serviceName)
         .traceFilters(Collections.emptyList()) // sample all
         .spanCollector(spanCollector).build();
