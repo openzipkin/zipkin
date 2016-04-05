@@ -46,6 +46,13 @@
       <groupId>com.facebook.swift</groupId>
       <artifactId>swift-service</artifactId>
       <version>${swift.version}</version>
+      <exclusions>
+        <!-- airlift:configuration includes bval-jsr303, which can easily conflict -->
+        <exclusion>
+          <groupId>io.airlift</groupId>
+          <artifactId>configuration</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 </project>
