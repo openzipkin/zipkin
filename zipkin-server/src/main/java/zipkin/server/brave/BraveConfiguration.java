@@ -63,7 +63,7 @@ public class BraveConfiguration {
     } catch (Exception ignored) {
       ipv4 = 127 << 24 | 1;
     }
-    return Endpoint.create("zipkin-query", ipv4, port);
+    return Endpoint.create("zipkin-server", ipv4, port);
   }
 
   /**
