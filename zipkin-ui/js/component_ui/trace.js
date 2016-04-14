@@ -5,8 +5,7 @@ import $ from 'jquery';
 
 // extracted for testing. this code mutates spans and spansToShow
 export function showSpans(spans, parents, children, spansToShow) {
-  // mimic a Set
-  const idsToShow = {};
+  const idsToShow = new Set();
   $.each(spansToShow, (i, $spanToShow) => {
     if ($spanToShow.inFilters === 0) {
       $spanToShow.show().addClass('highlight');
@@ -16,7 +15,7 @@ export function showSpans(spans, parents, children, spansToShow) {
     $spanToShow.inFilters += 1;
 
     $.each(children[$spanToShow.id], (idx, cId) => {
-      idsToShow[cId] = true;
+      idsToShow.add(cId);
       spans[cId].openParents += 1;
     });
     $.each(parents[$spanToShow.id], (idx, pId) => {
@@ -24,12 +23,12 @@ export function showSpans(spans, parents, children, spansToShow) {
       trace id may not be a span id. Also, it is possible to lose the root
       span data (i.e. a headless trace) */
       if (spans[pId]) {
-        idsToShow[pId] = true;
+        idsToShow.add(pId);
         spans[pId].openChildren += 1;
       }
     });
   });
-  $.each(idsToShow, id => spans[id].show());
+  idsToShow.forEach(id => spans[id].show());
 }
 
 export default component(function trace() {
