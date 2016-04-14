@@ -51,6 +51,10 @@ before_install:
   - nohup bash -c "cd kafka_* && bin/zookeeper-server-start.sh config/zookeeper.properties >/dev/null 2>&1 &"
   - nohup bash -c "cd kafka_* && bin/kafka-server-start.sh config/server.properties >/dev/null 2>&1 &"
 
+install:
+  # Override default travis to use the maven wrapper
+  - ./mvnw install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+
 script:
   # If we aren't a pull request, we are publishing either a snapshot or a release.
   #   We don't currently publish the benchmarks or interop modules, as they are test code only.
