@@ -4,13 +4,14 @@ module.exports = function(config) {
   config.set({
     frameworks: ['mocha', 'chai'],
     files: [
+      'node_modules/babel-polyfill/dist/polyfill.js',
       'test/*test.js',
       'test/**/*test.js'
     ],
 
     preprocessors: {
-      '*test.js': ['webpack', 'sourcemap'],
-      '**/*test.js': ['webpack', 'sourcemap']
+      '*test.js': ['babel', 'webpack', 'sourcemap'],
+      '**/*test.js': ['babel', 'webpack', 'sourcemap']
     },
 
     client: {
@@ -47,6 +48,7 @@ module.exports = function(config) {
     },
 
     plugins: [
+      require('karma-babel-preprocessor'),
       require('karma-webpack'),
       require('karma-mocha'),
       require('karma-chai'),
