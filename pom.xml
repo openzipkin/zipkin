@@ -30,6 +30,7 @@
     <module>zipkin-storage</module>
     <module>zipkin-transports</module>
     <module>zipkin-server</module>
+    <module>centralsync-maven-plugin</module>
   </modules>
 
   <properties>
@@ -59,6 +60,7 @@
     <junit.version>4.12</junit.version>
     <mockito.version>1.10.19</mockito.version>
     <assertj.version>3.3.0</assertj.version>
+    <okhttp.version>3.2.0</okhttp.version>
 
     <animal-sniffer-maven-plugin.version>1.15</animal-sniffer-maven-plugin.version>
     <maven-plugin.version>0.3.3</maven-plugin.version>
@@ -144,6 +146,12 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>centralsync-maven-plugin</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>storage-cassandra</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -188,6 +196,18 @@
         <groupId>com.squareup.moshi</groupId>
         <artifactId>moshi</artifactId>
         <version>${moshi.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp</artifactId>
+        <version>${okhttp.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>mockwebserver</artifactId>
+        <version>${okhttp.version}</version>
       </dependency>
 
       <dependency>
@@ -300,7 +320,6 @@
     </pluginManagement>
 
     <plugins>
-
       <!-- Ensures checksums are added to published jars -->
       <plugin>
         <artifactId>maven-install-plugin</artifactId>
@@ -361,6 +380,12 @@
           <!-- to match zipkin-scala (openzipkin/zipkin) -->
           <tagNameFormat>@{project.version}</tagNameFormat>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <artifactId>centralsync-maven-plugin</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <version>${project.version}</version>
       </plugin>
     </plugins>
   </build>
