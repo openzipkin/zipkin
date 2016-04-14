@@ -3,6 +3,35 @@ import {component} from 'flightjs';
 import queryString from 'query-string';
 import $ from 'jquery';
 
+// extracted for testing. this code mutates spans and spansToShow
+export function showSpans(spans, parents, children, spansToShow) {
+  // mimic a Set
+  const idsToShow = {};
+  $.each(spansToShow, (i, $spanToShow) => {
+    if ($spanToShow.inFilters === 0) {
+      $spanToShow.show().addClass('highlight');
+    }
+    $spanToShow.expanded = true;
+    $spanToShow.$expander.text('-');
+    $spanToShow.inFilters += 1;
+
+    $.each(children[$spanToShow.id], (idx, cId) => {
+      idsToShow[cId] = true;
+      spans[cId].openParents += 1;
+    });
+    $.each(parents[$spanToShow.id], (idx, pId) => {
+      /* Parent may not be found for a number of reasons. For example, the
+      trace id may not be a span id. Also, it is possible to lose the root
+      span data (i.e. a headless trace) */
+      if (spans[pId]) {
+        idsToShow[pId] = true;
+        spans[pId].openChildren += 1;
+      }
+    });
+  });
+  $.each(idsToShow, id => spans[id].show());
+}
+
 export default component(function trace() {
   this.spans = {};
   this.parents = {};
@@ -75,27 +104,7 @@ export default component(function trace() {
   };
 
   this.expandSpans = function(spans) {
-    const self = this;
-    const toShow = {};
-    $.each(spans, (i, $span) => {
-      if ($span.inFilters === 0) {
-        $span.show().addClass('highlight');
-      }
-      $span.expanded = true;
-      $span.$expander.text('-');
-      $span.inFilters += 1;
-
-      $.each(self.children[$span.id], (idx, cId) => {
-        toShow[cId] = true;
-        self.spans[cId].openParents += 1;
-      });
-      $.each(self.parents[$span.id], (idx, pId) => {
-        toShow[pId] = true;
-        self.spans[pId].openChildren += 1;
-      });
-    });
-
-    $.each(toShow, id => self.spans[id].show());
+    showSpans(this.spans, this.parents, this.children, spans);
   };
 
   this.filterRemoved = function(e, data) {
