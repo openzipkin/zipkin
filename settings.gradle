@@ -49,13 +49,7 @@ def includes = [
 ////////////
 
 'zipkin-thrift',
-'zipkin-scrooge',
-
-//////////
-// Misc //
-//////////
-
-'zipkin-sampler'
+'zipkin-scrooge'
 ]
 
 if (System.getenv('PUBLISHING') == null) {
