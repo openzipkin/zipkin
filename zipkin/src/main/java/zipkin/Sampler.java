@@ -16,84 +16,75 @@ package zipkin;
 import static zipkin.internal.Util.checkArgument;
 
 /**
- * Sampler is responsible for deciding if a particular trace should be "sampled", i.e. recorded in
- * permanent storage.
+ * Sampler decides if a particular trace should be "sampled", i.e. recorded in permanent storage.
+ * This involves a consistent decision based on the span's trace ID with one notable exception:
+ * {@link Span#debug Debug} spans are always stored.
  *
- * <p>Zipkin v1 uses before-the-fact sampling. This means that the decision to keep or drop the
- * trace is made before any work is measured, or annotations are added. As such, the input parameter
- * to zipkin v1 samplers is the trace ID (64-bit random number).
+ * <h3>Trace ID sampling algorithm</h3>
+ *
+ * <p>Accepts a percentage of trace ids by comparing their absolute value against a boundary. eg
+ * {@code isSampled == abs(traceId) <= boundary}
+ *
+ * <p>While idempotent, this implementation's sample rate won't exactly match the input rate because
+ * trace ids are not perfectly distributed across 64bits. For example, tests have shown an error
+ * rate of 3% when trace ids are {@link java.util.Random#nextLong random}.
  */
-// abstract for factory-method support on Java language level 7
 public abstract class Sampler {
-
-  /** Returns true if the trace ID should be recorded. */
-  public abstract boolean isSampled(long traceId);
+  public static final Sampler ALWAYS_SAMPLE = Sampler.create(1.0f);
 
   /**
-   * Returns a sampler, given a rate expressed as a percentage.
+   * Boundary to compare against trace IDs.
    *
+   * <p>If rate is between 0.0 and 1.0, {@code boundary = (Long.MAX_VALUE * rate)}. {@link
+   * #isSampled(Span)} returns true when spans are not debug and {@code abs(traceId) <= boundary}
+   */
+  protected abstract long boundary();
+
+  /**
    * @param rate minimum sample rate is 0.0001, or 0.01% of traces
-   * @see ProbabilisticSampler
    */
   public static Sampler create(float rate) {
-    if (rate == 0.0) return NEVER_SAMPLE;
-    if (rate == 1.0) return ALWAYS_SAMPLE;
-    return new ProbabilisticSampler(rate);
+    checkArgument(rate >= 0 && rate <= 1, "rate should be between 0 and 1: was %s", rate);
+    final long boundary = (long) (Long.MAX_VALUE * rate); // safe cast as less <= 1
+    return new Sampler() {
+      @Override protected long boundary() {
+        return boundary;
+      }
+    };
   }
 
-  public static final Sampler ALWAYS_SAMPLE = new Sampler() {
-    @Override
-    public boolean isSampled(long traceId) {
+  /**
+   * Returns true if the span should be recorded to storage.
+   *
+   * <p>Zipkin v1 allows storage-layer sampling, which can help prevent spikes in traffic from
+   * overloading the system. {@link Span#debug Debug} spans are always stored.
+   */
+  public boolean isSampled(Span span) {
+    if (span.debug != null && span.debug) {
       return true;
     }
-
-    @Override
-    public String toString() {
-      return "ALWAYS_SAMPLE";
-    }
-  };
-
-  public static final Sampler NEVER_SAMPLE = new Sampler() {
-    @Override
-    public boolean isSampled(long traceId) {
-      return false;
-    }
-
-    @Override
-    public String toString() {
-      return "NEVER_SAMPLE";
-    }
-  };
+    return isSampled(span.traceId);
+  }
 
   /**
-   * Accepts a percentage of trace ids by comparing their absolute value against a boundary. eg
-   * {@code iSampled == abs(traceId) < boundary}
+   * Returns true if a trace should be measured.
    *
-   * <p>While idempotent, this implementation's sample rate won't exactly match the input rate
-   * because trace ids are not perfectly distributed across 64bits. For example, tests have shown an
-   * error rate of 3% when trace ids are {@link java.util.Random#nextLong random}.
+   * <p>Zipkin v1 instrumentation uses before-the-fact sampling. This means that the decision to
+   * keep or drop the trace is made before any work is measured, or annotations are added. As such,
+   * the input parameter to zipkin v1 samplers is the trace ID (64-bit random number).
    */
-  public static final class ProbabilisticSampler extends Sampler {
+  public boolean isSampled(long traceId) {
+    // The absolute value of Long.MIN_VALUE is larger than a long, so Math.abs returns identity.
+    // This converts to MAX_VALUE to avoid always dropping when traceId == Long.MIN_VALUE
+    long t = traceId == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(traceId);
+    return t <= boundary();
+  }
 
-    /** {@link #isSampled(long)} returns true when abs(traceId) < boundary */
-    private final long boundary;
+  @Override
+  public String toString() {
+    return "Sampler(" + boundary() + ")";
+  }
 
-    public ProbabilisticSampler(float rate) {
-      checkArgument(rate > 0 && rate < 1, "rate should be between 0 and 1: was %s", rate);
-      this.boundary = (long) (Long.MAX_VALUE * rate); // safe cast as less than 1
-    }
-
-    @Override
-    public boolean isSampled(long traceId) {
-      // The absolute value of Long.MIN_VALUE is larger than a long, so Math.abs returns identity.
-      // This converts to MAX_VALUE to avoid always dropping when traceId == Long.MIN_VALUE
-      long t = traceId == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(traceId);
-      return t < boundary;
-    }
-
-    @Override
-    public String toString() {
-      return "ProbabilisticSampler(" + boundary + ")";
-    }
+  protected Sampler() {
   }
 }

@@ -31,7 +31,7 @@ final class InternalSamplingAsyncSpanConsumer implements AsyncSpanConsumer {
   public void accept(List<Span> input, Callback<Void> callback) {
     List<Span> sampled = new ArrayList<>(input.size());
     for (Span s : input) {
-      if ((s.debug != null && s.debug) || sampler.isSampled(s.traceId)) sampled.add(s);
+      if (sampler.isSampled(s)) sampled.add(s);
     }
     asyncConsumer.accept(sampled, callback);
   }
