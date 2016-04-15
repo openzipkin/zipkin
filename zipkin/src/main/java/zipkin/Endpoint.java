@@ -14,6 +14,7 @@
 package zipkin;
 
 import java.net.InetSocketAddress;
+import java.util.Locale;
 import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
 import zipkin.internal.Util;
@@ -75,7 +76,8 @@ public final class Endpoint {
   public final Short port;
 
   Endpoint(String serviceName, int ipv4, Short port) {
-    this.serviceName = checkNotNull(serviceName, "serviceName").toLowerCase();
+    this.serviceName = checkNotNull(serviceName, "serviceName").isEmpty() ? ""
+        : serviceName.toLowerCase(Locale.ROOT);
     this.ipv4 = ipv4;
     this.port = port;
   }

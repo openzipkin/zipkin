@@ -13,11 +13,10 @@
  */
 package zipkin;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 import zipkin.internal.JsonCodec;
@@ -25,7 +24,7 @@ import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.internal.Util.equal;
-import static zipkin.internal.Util.sortedList;
+import static zipkin.internal.Util.list;
 
 /**
  * A trace is a series of spans (often RPC calls) which form a latency tree.
@@ -133,36 +132,29 @@ public final class Span implements Comparable<Span> {
   @Nullable
   public final Boolean debug;
 
-  Span(long traceId,
-       String name,
-       long id,
-       @Nullable Long parentId,
-       @Nullable Long timestamp,
-       @Nullable Long duration,
-       Collection<Annotation> annotations,
-       Collection<BinaryAnnotation> binaryAnnotations,
-       @Nullable Boolean debug) {
-    this.traceId = traceId;
-    this.name = checkNotNull(name, "name").toLowerCase();
-    this.id = id;
-    this.parentId = parentId;
-    this.timestamp = timestamp;
-    this.duration = duration;
-    this.annotations = sortedList(annotations);
-    this.binaryAnnotations = Collections.unmodifiableList(new ArrayList<>(binaryAnnotations));
-    this.debug = debug;
+  Span(Builder builder) {
+    this.traceId = builder.traceId;
+    this.name = checkNotNull(builder.name, "name").isEmpty() ? ""
+        : builder.name.toLowerCase(Locale.ROOT);
+    this.id = builder.id;
+    this.parentId = builder.parentId;
+    this.timestamp = builder.timestamp;
+    this.duration = builder.duration;
+    this.annotations = list(builder.annotations);
+    this.binaryAnnotations = list(builder.binaryAnnotations);
+    this.debug = builder.debug;
   }
 
   public static final class Builder {
-    private Long traceId;
-    private String name;
-    private Long id;
-    private Long parentId;
-    private Long timestamp;
-    private Long duration;
-    private final TreeSet<Annotation> annotations = new TreeSet<>();
-    private final LinkedHashSet<BinaryAnnotation> binaryAnnotations = new LinkedHashSet<>();
-    private Boolean debug;
+    Long traceId;
+    String name;
+    Long id;
+    Long parentId;
+    Long timestamp;
+    Long duration;
+    Collection<Annotation> annotations;
+    Collection<BinaryAnnotation> binaryAnnotations;
+    Boolean debug;
 
     public Builder() {
     }
@@ -174,8 +166,12 @@ public final class Span implements Comparable<Span> {
       this.parentId = source.parentId;
       this.timestamp = source.timestamp;
       this.duration = source.duration;
-      this.annotations.addAll(source.annotations);
-      this.binaryAnnotations.addAll(source.binaryAnnotations);
+      if (!source.annotations.isEmpty()) {
+        this.annotations(source.annotations);
+      }
+      if (!source.binaryAnnotations.isEmpty()) {
+        this.binaryAnnotations(source.binaryAnnotations);
+      }
       this.debug = source.debug;
     }
 
@@ -208,8 +204,12 @@ public final class Span implements Comparable<Span> {
         this.duration = Math.max(thisEndTs, thatEndTs) - this.timestamp;
       }
 
-      this.annotations.addAll(that.annotations);
-      this.binaryAnnotations.addAll(that.binaryAnnotations);
+      for (Annotation a: that.annotations) {
+        addAnnotation(a);
+      }
+      for (BinaryAnnotation a: that.binaryAnnotations) {
+        addBinaryAnnotation(a);
+      }
       if (this.debug == null) {
         this.debug = that.debug;
       }
@@ -258,14 +258,16 @@ public final class Span implements Comparable<Span> {
      * @see Span#annotations
      */
     public Builder annotations(Collection<Annotation> annotations) {
-      this.annotations.clear();
-      this.annotations.addAll(annotations);
+      this.annotations = new TreeSet<>(annotations);
       return this;
     }
 
     /** @see Span#annotations */
     public Builder addAnnotation(Annotation annotation) {
-      this.annotations.add(annotation);
+      if (annotations == null) {
+        annotations = new TreeSet<>();
+      }
+      annotations.add(annotation);
       return this;
     }
 
@@ -275,14 +277,16 @@ public final class Span implements Comparable<Span> {
      * @see Span#binaryAnnotations
      */
     public Builder binaryAnnotations(Collection<BinaryAnnotation> binaryAnnotations) {
-      this.binaryAnnotations.clear();
-      this.binaryAnnotations.addAll(binaryAnnotations);
+      this.binaryAnnotations = new LinkedHashSet<>(binaryAnnotations);
       return this;
     }
 
     /** @see Span#binaryAnnotations */
     public Builder addBinaryAnnotation(BinaryAnnotation binaryAnnotation) {
-      this.binaryAnnotations.add(binaryAnnotation);
+      if (binaryAnnotations == null) {
+        binaryAnnotations = new LinkedHashSet<>();
+      }
+      binaryAnnotations.add(binaryAnnotation);
       return this;
     }
 
@@ -293,7 +297,7 @@ public final class Span implements Comparable<Span> {
     }
 
     public Span build() {
-      return new Span(this.traceId, this.name, this.id, this.parentId, this.timestamp, this.duration, this.annotations, this.binaryAnnotations, this.debug);
+      return new Span(this);
     }
   }
 

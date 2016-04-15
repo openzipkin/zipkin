@@ -65,9 +65,13 @@ public final class Util {
     return reference;
   }
 
+  public static <T> List<T> list(@Nullable Collection<T> input) {
+    if (input == null || input.isEmpty()) return Collections.emptyList();
+    return Collections.unmodifiableList(new ArrayList<>(input));
+  }
+
   public static <T extends Comparable<? super T>> List<T> sortedList(@Nullable Collection<T> input) {
     if (input == null || input.isEmpty()) return Collections.emptyList();
-    if (input.size() == 1) return Collections.singletonList(input.iterator().next());
     List<T> result = new ArrayList<>(input);
     Collections.sort(result);
     return Collections.unmodifiableList(result);
