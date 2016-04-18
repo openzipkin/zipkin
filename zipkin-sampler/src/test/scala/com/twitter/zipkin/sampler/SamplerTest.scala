@@ -16,39 +16,39 @@
 package com.twitter.zipkin.sampler
 
 import java.util.Random
+import java.util.concurrent.atomic.AtomicLong
 
-import com.twitter.util.Var
 import org.scalatest.FunSuite
 
 class SamplerTest extends FunSuite {
   val rnd = new Random(1L)
 
-  test("is permissive when the rate is 1") {
-    val sampler = new Sampler(Var(1.0))
+  test("is permissive when the boundary is max") {
+    val sampler = new Sampler(new AtomicLong(Long.MaxValue))
     assert(sampler(Long.MaxValue))
     assert(sampler(Long.MinValue))
     assert(sampler(rnd.nextLong()))
   }
 
-  test("is exclusive when the rate is 0") {
-    val sampler = new Sampler(Var(0.0))
+  test("is exclusive when the boundary is min") {
+    val sampler = new Sampler(new AtomicLong(Long.MinValue))
     assert(!sampler(Long.MaxValue))
     assert(!sampler(Long.MinValue))
     assert(!sampler(rnd.nextLong()))
   }
 
   test("samples based on the given number") {
-    val sampler = new Sampler(Var(0.5))
-    assert(sampler(Long.MaxValue))
-    assert(!sampler((Long.MaxValue * 0.5).toLong))
+    val sampler = new Sampler(new AtomicLong((Long.MaxValue * 0.5f).toLong))
+    assert(sampler((Long.MaxValue * 0.4f).toLong))
+    assert(!sampler((Long.MaxValue * 0.6f).toLong))
   }
 
-  test("will update based on the given Var") {
-    val v = Var(0.0)
+  test("will update based on the given new AtomicReference") {
+    val v = new AtomicLong(Long.MinValue)
     val sampler = new Sampler(v)
     assert(!sampler(Long.MaxValue))
 
-    v.update(1.0)
+    v.set(Long.MaxValue)
     assert(sampler(Long.MaxValue))
   }
 }

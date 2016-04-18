@@ -20,14 +20,16 @@ import com.twitter.finagle.{Filter, Service}
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
 import com.twitter.util.Future
 import com.twitter.zipkin.common.Span
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A sampling filter to be placed in front of a SpanStore. This takes a `sample` function that will
  * calculate whether the span should be sampled based on its traceId. If a span has its `debug` flag
  * set the function will be bypassed and the span stored regardless of the sampling rate.
  */
-class SpanSamplerFilter(
+private[sampler] class SpanSamplerFilter(
   sample: Long => Boolean,
+  spanCount: AtomicInteger,
   stats: StatsReceiver = DefaultStatsReceiver.scope("SpanSamplerFilter")
 ) extends Filter[Seq[Span], Unit, Seq[Span], Unit] {
   private[this] val DebugCounter = stats.counter("debugFlag")
@@ -36,11 +38,13 @@ class SpanSamplerFilter(
   def apply(spans: Seq[Span], store: Service[Seq[Span], Unit]): Future[Unit] =
     store(spans collect {
       case span if span.debug.getOrElse(false) =>
+        spanCount.incrementAndGet()
         DebugCounter.incr()
         if (span.parentId.isEmpty && !span.serviceName.isEmpty)
           DebugStats.counter(span.serviceName.get).incr()
         span
       case span if sample(span.traceId) =>
+        spanCount.incrementAndGet()
         span
     })
 }

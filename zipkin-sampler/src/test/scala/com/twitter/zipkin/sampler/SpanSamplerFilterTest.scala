@@ -15,6 +15,8 @@
  */
 package com.twitter.zipkin.sampler
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import com.twitter.finagle.Service
 import com.twitter.util.{Await, Future}
 import com.twitter.zipkin.common._
@@ -22,6 +24,7 @@ import org.scalatest.FunSuite
 
 class SpanSamplerFilterTest extends FunSuite {
   test("filters spans based on their traceId") {
+    val spanCount = new AtomicInteger
     val spans = Seq(
       Span(0, "svc", 123L),
       Span(1, "svc", 123L),
@@ -31,7 +34,7 @@ class SpanSamplerFilterTest extends FunSuite {
 
     var rcvdSpans = Seq.empty[Span]
 
-    val svc = new SpanSamplerFilter(_ > 2) andThen Service.mk[Seq[Span], Unit] { spans =>
+    val svc = new SpanSamplerFilter(_ > 2, spanCount) andThen Service.mk[Seq[Span], Unit] { spans =>
       rcvdSpans = spans
       Future.Done
     }
@@ -39,9 +42,11 @@ class SpanSamplerFilterTest extends FunSuite {
     Await.ready(svc(spans))
 
     assert(rcvdSpans === spans.drop(3))
+    assert(spanCount.get() === 2)
   }
 
   test("will not filter debug spans") {
+    val spanCount = new AtomicInteger
     val spans = Seq(
       Span(0, "svc", 123L, debug = Some(true)),
       Span(1, "svc", 123L, debug = Some(true)),
@@ -49,7 +54,7 @@ class SpanSamplerFilterTest extends FunSuite {
 
     var rcvdSpans = Seq.empty[Span]
 
-    val svc = new SpanSamplerFilter(_  => false) andThen Service.mk[Seq[Span], Unit] { spans =>
+    val svc = new SpanSamplerFilter(_  => false, spanCount) andThen Service.mk[Seq[Span], Unit] { spans =>
       rcvdSpans = spans
       Future.Done
     }
@@ -57,5 +62,6 @@ class SpanSamplerFilterTest extends FunSuite {
     Await.ready(svc(spans))
 
     assert(rcvdSpans === spans.take(2))
+    assert(spanCount.get() === 2)
   }
 }
