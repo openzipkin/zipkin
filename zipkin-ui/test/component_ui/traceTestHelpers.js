@@ -28,27 +28,23 @@ export function span(traceId,
   };
 }
 
-export function traceDetailSpan() {
-  return {
-    openParents: 0,
-    openChildren: 0,
-    shown: false,
-    show() {this.shown = true;}
-  };
-}
-
-export function spanToShow(id) {
-  const shownText = [];
-  const showClasses = [];
+export function traceDetailSpan(id) {
+  const expanderText = [];
+  const classes = new Set();
   return {
     id,
     inFilters: 0,
-    shownText,
+    openParents: 0,
+    openChildren: 0,
+    shown: false,
+    show() {this.shown = true;},
+    hidden: false,
+    hide() {this.hidden = true;},
+    expanderText,
     expanded: false,
-    $expander: {text: t => shownText.push(t)},
-    showClasses,
-    show() {
-      return {addClass: c => showClasses.push(c)};
-    }
+    $expander: {text: t => expanderText.push(t)},
+    classes,
+    addClass: c => classes.add(c),
+    removeClass: c => classes.delete(c)
   };
 }
