@@ -33,6 +33,17 @@ class AdaptiveSamplerTest extends JUnitSuite with Tolerance {
     assert(spanStore.spans.size === (90 +- 10)) // TODO: see if there's a way to tighten this up!
   }
 
+  @Test def ignoresBadRateReadFromZookeeper() {
+    val spanStore = new InMemorySpanStore
+
+    // Simulates a bad rate, set from zookeeper
+    client.setData().forPath("/sampleRate", Array[Byte]('1','.','9'))
+
+    result(sampler.apply(hundredSpans, Service.mk(spanStore)))
+
+    assert(spanStore.spans.size === 100) // default is retain all
+  }
+
   @Test def exportsStoreRateToZookeeperOnInterval() {
     result(sampler.apply(hundredSpans, Service.mk(_ => Future.Unit)))
 
@@ -72,7 +83,6 @@ object AdaptiveSamplerTest {
   val zookeeper = new TestingServer()
   lazy val client = newClient(zookeeper.getConnectString, new RetryOneTime(200 /* ms */))
   lazy val sampler = TestAdaptiveSampler.newAdaptiveSamplerFilter()
-    .asInstanceOf[AdaptiveSamplerFilter]
 
   @BeforeClass def beforeAll() {
     zookeeper.start()

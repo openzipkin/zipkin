@@ -17,33 +17,27 @@
 package com.twitter.zipkin.sampler
 
 import com.twitter.finagle.stats.{DefaultStatsReceiver, StatsReceiver}
-import com.twitter.util.{Var, Witness}
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicLong
 
 /**
- * A sampler is essentially a function from Long => Boolean. Using a provided Var[Double] the sampler
+ * A sampler is essentially a function from Long => Boolean. Using a provided rate, the sampler
  * will calculate whether the provided value should be sampled or not.
  */
-class Sampler(
-  rateVar: Var[Double],
+private[sampler] class Sampler(
+  boundary: AtomicLong,
   stats: StatsReceiver = DefaultStatsReceiver.scope("Sampler")
 ) extends (Long => Boolean) {
-  private[this] val rate = new AtomicReference[Double](1.0)
-  rateVar.changes.register(Witness(rate))
-  stats.addGauge("rate") { rate.get.toFloat }
 
   private[this] val allowedCounter = stats.counter("allowed")
   private[this] val deniedCounter = stats.counter("denied")
   private[this] val zerosCounter = stats.counter("zeros")
 
   def apply(traceId: Long): Boolean = {
-    val curRate = rate.get
-
-    val allow = (curRate == 1) || {
-      val t = if (traceId == Long.MinValue) Long.MaxValue else math.abs(traceId)
-      if (t == 0) zerosCounter.incr()
-      t > Long.MaxValue * (1 - curRate)
-    }
+    // The absolute value of Long.MIN_VALUE is larger than a long, so Math.abs returns identity.
+    // This converts to MAX_VALUE to avoid always dropping when traceId == Long.MIN_VALUE
+    val t = if (traceId == Long.MinValue) Long.MaxValue else math.abs(traceId)
+    if (t == 0) zerosCounter.incr()
+    val allow = t <= boundary.get
     if (allow) allowedCounter.incr() else deniedCounter.incr()
     allow
   }
