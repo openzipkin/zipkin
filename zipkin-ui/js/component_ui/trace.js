@@ -3,32 +3,71 @@ import {component} from 'flightjs';
 import queryString from 'query-string';
 import $ from 'jquery';
 
-// extracted for testing. this code mutates spans and spansToShow
-export function showSpans(spans, parents, children, spansToShow) {
-  const idsToShow = new Set();
-  $.each(spansToShow, (i, $spanToShow) => {
-    if ($spanToShow.inFilters === 0) {
-      $spanToShow.show().addClass('highlight');
+// extracted for testing. this code mutates spans and selectedSpans
+export function showSpans(spans, parents, children, selectedSpans) {
+  const family = new Set();
+  $.each(selectedSpans, (i, $selected) => {
+    if ($selected.inFilters === 0) {
+      $selected.show();
+      $selected.addClass('highlight');
     }
-    $spanToShow.expanded = true;
-    $spanToShow.$expander.text('-');
-    $spanToShow.inFilters += 1;
+    $selected.expanded = true;
+    $selected.$expander.text('-');
+    $selected.inFilters += 1;
 
-    $.each(children[$spanToShow.id], (idx, cId) => {
-      idsToShow.add(cId);
+    $.each(children[$selected.id], (j, cId) => {
+      family.add(cId);
       spans[cId].openParents += 1;
     });
-    $.each(parents[$spanToShow.id], (idx, pId) => {
+    $.each(parents[$selected.id], (j, pId) => {
       /* Parent may not be found for a number of reasons. For example, the
       trace id may not be a span id. Also, it is possible to lose the root
       span data (i.e. a headless trace) */
       if (spans[pId]) {
-        idsToShow.add(pId);
+        family.add(pId);
         spans[pId].openChildren += 1;
       }
     });
   });
-  idsToShow.forEach(id => spans[id].show());
+  family.forEach(id => spans[id].show());
+}
+
+function hideSpan(span) {
+  if (span.inFilters > 0 || span.openChildren > 0 || span.openParents > 0) return;
+  span.hide();
+}
+
+// extracted for testing. this code mutates spans and selectedSpans
+export function hideSpans(spans, parents, children, selectedSpans, childrenOnly) {
+  const family = new Set();
+  $.each(selectedSpans, (i, $selected) => {
+    $selected.inFilters -= 1;
+
+    if (!childrenOnly && $selected.inFilters === 0) {
+      $selected.removeClass('highlight');
+      hideSpan($selected);
+    }
+
+    $selected.expanded = false;
+    $selected.$expander.text('+');
+
+    $.each(children[$selected.id], (j, cId) => {
+      family.add(cId);
+      spans[cId].openParents -= 1;
+    });
+    if (!childrenOnly) {
+      $.each(parents[$selected.id], (j, pId) => {
+        /* Parent may not be found for a number of reasons. For example, the
+        trace id may not be a span id. Also, it is possible to lose the root
+        span data (i.e. a headless trace) */
+        if (spans[pId]) {
+          family.add(pId);
+          spans[pId].openChildren -= 1;
+        }
+      });
+    }
+  });
+  family.forEach(id => hideSpan(spans[id]));
 }
 
 export default component(function trace() {
@@ -116,37 +155,7 @@ export default component(function trace() {
   };
 
   this.collapseSpans = function(spans, childrenOnly) {
-    const self = this;
-    const toHide = {};
-
-    $.each(spans, (i, $span) => {
-      $span.inFilters -= 1;
-      if (!childrenOnly && $span.inFilters === 0) {
-        $span.removeClass('highlight');
-        self.hideSpan($span);
-      }
-
-      $span.expanded = false;
-      $span.$expander.text('+');
-
-      $.each(self.children[$span.id], (j, cId) => {
-        toHide[cId] = true;
-        self.spans[cId].openParents -= 1;
-      });
-      if (!childrenOnly) {
-        $.each(self.parents[$span.id], (j, pId) => {
-          toHide[pId] = true;
-          self.spans[pId].openChildren -= 1;
-        });
-      }
-    });
-
-    $.each(toHide, id => this.hideSpan(this.spans[id]));
-  };
-
-  this.hideSpan = function($span) {
-    if ($span.inFilters > 0 || $span.openChildren > 0 || $span.openParents > 0) return;
-    $span.hide();
+    hideSpans(this.spans, this.parents, this.children, spans, childrenOnly);
   };
 
   this.handleClick = function(e) {
@@ -292,18 +301,7 @@ export default component(function trace() {
     const self = this;
     self.actingOnAll = true;
     this.showSpinnerAround(() => {
-      $.each(self.spans, (id, $span) => {
-        $span.inFilters = 0;
-        $span.show().addClass('highlight');
-        $span.expanded = true;
-        $span.$expander.text('-');
-        $.each(self.children[id], (i, cId) => { self.spans[cId].openParents += 1; });
-        $.each(self.parents[id], (i, pId) => { self.spans[pId].openChildren += 1; });
-      });
-      /* Emulates getAllSpans(serviceNames) by looping on getSpansByService(svc)*/
-      $.each(self.spansByService, (svc) => {
-        $.each(self.getSpansByService(svc), (i, $span) => { $span.inFilters += 1; });
-      });
+      showSpans(self.spans, self.parents, self.children, self.spans);
       self.triggerForAllServices('uiAddServiceNameFilter');
     });
     self.actingOnAll = false;
