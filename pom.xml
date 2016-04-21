@@ -27,6 +27,7 @@
     <module>zipkin-junit</module>
     <module>benchmarks</module>
     <module>interop</module>
+    <module>zipkin-samplers</module>
     <module>zipkin-storage</module>
     <module>zipkin-transports</module>
     <module>zipkin-server</module>
@@ -147,6 +148,12 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>centralsync-maven-plugin</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>sampler-zookeeper</artifactId>
         <version>${project.version}</version>
       </dependency>
 
