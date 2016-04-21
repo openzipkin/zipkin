@@ -16,6 +16,7 @@
  */
 package com.twitter.zipkin.sampler
 
+import java.util.Collections.emptyMap
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 
 import com.google.common.collect.EvictingQueue
@@ -59,7 +60,7 @@ class AdaptiveSampleRate(
   boundary: AtomicLong,
   spanCount: AtomicInteger,
   zookeeperConnect: String,
-  zookeeperAuthInfo: java.util.Map[String, Array[Byte]], // map to avoid needing an option type
+  zookeeperAuthInfo: java.util.Map[String, Array[Byte]] = emptyMap(), // map to avoid needing an option type
   zookeeperBasePath: String = "/com/twitter/zipkin/sampler/adaptive",
   updateFreq: Int = 30,
   windowSize: Int = 30.minutes.inSeconds,
@@ -155,7 +156,12 @@ class AdaptiveSampleRate(
     zkClient
   )
 
-  override def close = Await.ready(closer.close())
+  /** Waits up to a second for a graceful shutdown. */
+  override def close = try {
+    Await.result(closer.close(1.second), 1.second)
+  } catch {
+    case NonFatal(e) => log.debug(e, "Failed to close AdaptiveSampleRate")
+  }
 
   def translateNode[T](name: String, default: T, f: String => T): Array[Byte] => T = { bytes =>
     if (bytes.length == 0) {
