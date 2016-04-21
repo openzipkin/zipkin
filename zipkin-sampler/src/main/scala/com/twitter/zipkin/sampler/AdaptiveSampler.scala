@@ -29,8 +29,6 @@ import com.twitter.io.Charsets
 import com.twitter.util._
 import com.twitter.zipkin.common.Span
 
-import scala.collection.JavaConversions
-
 /**
  * The adaptive sampler optimizes sampling towards a global rate. This state
  * is maintained in ZooKeeper.

@@ -1,6 +1,7 @@
 package com.twitter.zipkin.sampler
 
 import java.util.Random
+import java.util.concurrent.atomic.{AtomicLong, AtomicInteger}
 
 import com.twitter.app.App
 import com.twitter.finagle.Service
@@ -31,6 +32,10 @@ class AdaptiveSamplerTest extends JUnitSuite with Tolerance {
     result(sampler.apply(hundredSpans, Service.mk(spanStore)))
 
     assert(spanStore.spans.size === (90 +- 10)) // TODO: see if there's a way to tighten this up!
+  }
+
+  @Test def closeOnBadServerDoesntHang() {
+    new AdaptiveSampleRate(new AtomicLong(), new AtomicInteger(), "127.0.0.1:8800").close()
   }
 
   @Test def ignoresBadRateReadFromZookeeper() {
