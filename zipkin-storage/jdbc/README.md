@@ -7,6 +7,9 @@ The implementation uses JOOQ to generate MySQL SQL commands. It is only tested o
 
 The schema is the same as [zipkin-scala](https://github.com/openzipkin/zipkin/tree/master/zipkin-anormdb).
 
+`zipkin.elasticsearch.JDBCStorage.Builder` includes defaults that will
+operate against a given Datasource.
+
 ## Applying the schema
 
 ```bash

@@ -3,8 +3,8 @@ This transport polls a Kafka 8.2.2+ topic for messages that contain
 a list of spans in json or TBinaryProtocol big-endian encoding. These
 spans are pushed to a span consumer.
 
-`zipkin.kafka.KafkaConfig` includes defaults that will operate against a
-Kafka topic advertised in Zookeeper.
+`zipkin.kafka.KafkaTransport.Builder` includes defaults that will
+operate against a Kafka topic advertised in Zookeeper.
 
 ### Encoding spans into Kafka messages
 The message's binary data includes a list of spans. Supported encodings
