@@ -13,7 +13,7 @@
 # the License.
 #
 
-set -ex
+set -euo pipefail
 
 build_started_by_tag() {
   if [ "${TRAVIS_TAG}" == "" ]; then
@@ -58,17 +58,39 @@ check_travis_branch_equals_travis_tag() {
   fi
 }
 
+check_tag_equals_version_in_pom() {
+    snapshot_version_in_pom="$(./mvnw -Dexec.executable='echo' -Dexec.args='${project.version}' --non-recursive exec:exec | grep -Ev '(^\[|Download\w+:)')"
+    version_in_pom="$(echo "${snapshot_version_in_pom}" | sed 's/-SNAPSHOT//')"
+    version_in_tag="${TRAVIS_TAG}"
+
+    if [ "$version_in_pom" != "$version_in_tag" ]; then
+        echo "Version in pom.xml doesn't match version in git tag, bailing out."
+        echo "  Snapshot Version parsed from pom.xml: ${snapshot_version_in_pom}"
+        echo "  Release version parsed from pom.xml: ${version_in_pom}"
+        echo "  Release version in git tag: ${version_in_tag}"
+        exit 1
+    else
+        echo "Version in pom.xml matches git tag (${version_in_tag})"
+    fi
+}
+
 # We don't currently publish internal modules such as benchmarks and interop modules.
 maven_release_args="--batch-mode -s ./.settings.xml -Prelease -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -nsu"
 
 #----------------------
 # MAIN
 #----------------------
+### While work in progress under review to avoid problems
+echo "publish.sh under review, exiting to avoid badness"
+exit
+### Remove after review
+
 MYSQL_USER=root ./mvnw install -nsu
 
 is_pull_request && exit
 if build_started_by_tag; then
   check_travis_branch_equals_travis_tag
+  check_tag_equals_version_in_pom
   ./mvnw $maven_release_args release:prepare
   ./mvnw $maven_release_args release:perform
 elif is_travis_branch_master; then
