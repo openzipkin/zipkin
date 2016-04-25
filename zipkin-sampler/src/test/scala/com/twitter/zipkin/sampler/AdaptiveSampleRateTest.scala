@@ -20,10 +20,10 @@ import com.twitter.finagle.stats.NullStatsReceiver
 import com.twitter.util.{MockTimer, Time, Var}
 import org.scalatest.FunSuite
 
-class StoreRateCheckTest extends FunSuite {
-  test("fails when the request rate is non-positive") {
+class AdaptiveSampleRateTest extends FunSuite {
+  test("fails when the target store rate is non-positive") {
     val rate = Var(1)
-    val check = new StoreRateCheck[Unit](rate)
+    val check = new TargetStoreRateCheck[Unit](rate)
     assert(check(Some(())).isDefined)
 
     rate.update(0)
@@ -60,8 +60,8 @@ class StoreRateCheckTest extends FunSuite {
   }
 
   test("fail unless enough outliers are encountered") {
-    val rate = Var(10)
-    val check = new OutlierCheck(rate, 2, 0.1)
+    val targetRate = Var(10)
+    val check = new OutlierCheck(targetRate, 2, 0.1)
 
     assert(check(Some(Seq())).isEmpty)
     assert(check(Some(Seq(10, 10, 10))).isEmpty)
