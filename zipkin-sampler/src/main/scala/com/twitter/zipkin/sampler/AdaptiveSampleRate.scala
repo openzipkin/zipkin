@@ -129,10 +129,10 @@ class AdaptiveSampleRate(
 
   val calculator =
     { v: Int => Some(buffer.pushAndSnap(v)) } andThen
-      new StoreRateCheck[Seq[Int]](storeRate, stats.scope("storeRateCheck"), log) andThen
+      new TargetStoreRateCheck[Seq[Int]](targetStoreRate, stats.scope("targetStoreRateCheck"), log) andThen
       new SufficientDataCheck[Int](sufficientWindowSize / updateFreq, stats.scope("sufficientDataCheck"), log) andThen
       new ValidDataCheck[Int](_ > 0, stats.scope("validDataCheck"), log) andThen
-      new OutlierCheck(storeRate, outlierThreshold / updateFreq, stats = stats.scope("outlierCheck"), log = log) andThen
+      new OutlierCheck(targetStoreRate, outlierThreshold / updateFreq, stats = stats.scope("outlierCheck"), log = log) andThen
       new CalculateSampleRate(targetStoreRate, sampleRateVar, stats = stats.scope("sampleRateCalculator"), log = log) andThen
       isLeader andThen
       cooldown
@@ -257,21 +257,21 @@ class GlobalSampleRateUpdater(
     dataWatcher.close(deadline)
 }
 
-class StoreRateCheck[T](
-  storeRate: Var[Int],
-  stats: StatsReceiver = DefaultStatsReceiver.scope("storeRateCheck"),
-  log: Logger = Logger.get("StoreRateCheck")
+class TargetStoreRateCheck[T](
+  targetStoreRate: Var[Int],
+  stats: StatsReceiver = DefaultStatsReceiver.scope("targetStoreRateCheck"),
+  log: Logger = Logger.get("TargetStoreRateCheck")
 ) extends (Option[T] => Option[T]) {
-  private[this] val currentStoreRate = new AtomicInteger(0)
-  storeRate.changes.register(Witness(currentStoreRate.set(_)))
-  stats.addGauge("currentStoreRate") { currentStoreRate.get }
+  private[this] val currentTargetStoreRate = new AtomicInteger(0)
+  targetStoreRate.changes.register(Witness(currentTargetStoreRate.set(_)))
+  stats.addGauge("currentTargetStoreRate") { currentTargetStoreRate.get }
 
   private[this] val validCounter = stats.counter("valid")
   private[this] val invalidCounter = stats.counter("invalid")
 
   def apply(in: Option[T]): Option[T] =
     in filter { _ =>
-      val valid = currentStoreRate.get > 0
+      val valid = currentTargetStoreRate.get > 0
       (if (valid) validCounter else invalidCounter).incr()
       valid
     }
@@ -330,25 +330,25 @@ class CooldownCheck[T](
 }
 
 class OutlierCheck(
-  storeRate: Var[Int],
+  targetStoreRate: Var[Int],
   requiredDataPoints: Int,
   threshold: Double = 0.15,
   stats: StatsReceiver = DefaultStatsReceiver.scope("outlierCheck"),
   log: Logger = Logger.get("OutlierCheck")
 ) extends (Option[Seq[Int]] => Option[Seq[Int]]) {
-  /** holds the current value of [[storeRate]] */
-  private[this] val currentStoreRate = new AtomicInteger(0)
-  storeRate.changes.register(Witness(currentStoreRate.set(_)))
+  /** holds the current value of [[targetStoreRate]] */
+  private[this] val currentTargetStoreRate = new AtomicInteger(0)
+  targetStoreRate.changes.register(Witness(currentTargetStoreRate.set(_)))
 
   def apply(in: Option[Seq[Int]]): Option[Seq[Int]] =
     in filter { buf =>
-      val outliers = buf.segmentLength(isOut(currentStoreRate.get, _), buf.length - requiredDataPoints)
+      val outliers = buf.segmentLength(isOut(currentTargetStoreRate.get, _), buf.length - requiredDataPoints)
       log.debug("checking for outliers: " + outliers + " " + requiredDataPoints)
       outliers == requiredDataPoints
     }
 
-  private[this] def isOut(curRate: Int, datum: Int): Boolean =
-    math.abs(datum - curRate) > curRate * threshold
+  private[this] def isOut(targetRate: Int, rate: Int): Boolean =
+    math.abs(rate - targetRate) > targetRate * threshold
 }
 
 object DiscountedAverage extends (Seq[Int] => Double) {
