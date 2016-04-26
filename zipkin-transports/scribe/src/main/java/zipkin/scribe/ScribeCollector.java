@@ -27,11 +27,11 @@ import static java.util.Collections.emptyList;
 import static zipkin.internal.Util.checkNotNull;
 
 /**
- * This transport accepts Scribe logs in a specified category. Each log entry is expected to contain
+ * This collector accepts Scribe logs in a specified category. Each log entry is expected to contain
  * a single span, which is TBinaryProtocol big-endian, then base64 encoded. These spans are chained
  * to an {@link GuavaSpanConsumer#accept asynchronous span consumer}.
  */
-public final class ScribeTransport implements AutoCloseable {
+public final class ScribeCollector implements AutoCloseable {
 
   /** Configuration including defaults needed to receive spans from a Scribe category. */
   public static final class Builder {
@@ -50,10 +50,10 @@ public final class ScribeTransport implements AutoCloseable {
       return this;
     }
 
-    public ScribeTransport writeTo(StorageComponent storage, Sampler sampler) {
+    public ScribeCollector writeTo(StorageComponent storage, Sampler sampler) {
       checkNotNull(storage, "storage");
       checkNotNull(sampler, "sampler");
-      return new ScribeTransport(this, new Lazy<AsyncSpanConsumer>() {
+      return new ScribeCollector(this, new Lazy<AsyncSpanConsumer>() {
         @Override protected AsyncSpanConsumer compute() {
           return checkNotNull(storage.asyncSpanConsumer(sampler), storage + ".asyncSpanConsumer()");
         }
@@ -63,7 +63,7 @@ public final class ScribeTransport implements AutoCloseable {
 
   final ThriftServer server;
 
-  ScribeTransport(Builder builder, Lazy<AsyncSpanConsumer> consumer) {
+  ScribeCollector(Builder builder, Lazy<AsyncSpanConsumer> consumer) {
     ScribeSpanConsumer scribe = new ScribeSpanConsumer(builder.category, consumer);
     ThriftServiceProcessor processor =
         new ThriftServiceProcessor(new ThriftCodecManager(), emptyList(), scribe);

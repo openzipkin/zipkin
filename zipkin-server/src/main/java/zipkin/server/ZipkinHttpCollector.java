@@ -40,18 +40,18 @@ import static zipkin.internal.Util.gunzip;
  * Implements the POST /api/v1/spans endpoint used by instrumentation.
  */
 @RestController
-public class ZipkinHttpTransport {
+public class ZipkinHttpCollector {
   static final String APPLICATION_THRIFT = "application/x-thrift";
 
-  private final SpanConsumerLogger logger = new SpanConsumerLogger(ZipkinHttpTransport.class);
+  private final SpanConsumerLogger logger = new SpanConsumerLogger(ZipkinHttpCollector.class);
   private final AsyncSpanConsumer consumer;
   private final Codec jsonCodec;
   private final Codec thriftCodec;
 
   /** lazy so transient storage errors don't crash bootstrap */
   @Lazy
-  @Autowired
-  ZipkinHttpTransport(StorageComponent storage, Sampler sampler, Codec.Factory codecFactory) {
+  @Autowired ZipkinHttpCollector(StorageComponent storage, Sampler sampler,
+      Codec.Factory codecFactory) {
     this.consumer = storage.asyncSpanConsumer(sampler);
     this.jsonCodec = checkNotNull(codecFactory.get(APPLICATION_JSON_VALUE), APPLICATION_JSON_VALUE);
     this.thriftCodec = checkNotNull(codecFactory.get(APPLICATION_THRIFT), APPLICATION_THRIFT);

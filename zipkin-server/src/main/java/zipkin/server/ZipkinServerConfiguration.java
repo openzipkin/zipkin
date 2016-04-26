@@ -47,8 +47,8 @@ import zipkin.StorageComponent;
 import zipkin.cassandra.CassandraStorage;
 import zipkin.elasticsearch.ElasticsearchStorage;
 import zipkin.jdbc.JDBCStorage;
-import zipkin.kafka.KafkaTransport;
-import zipkin.scribe.ScribeTransport;
+import zipkin.kafka.KafkaCollector;
+import zipkin.scribe.ScribeCollector;
 import zipkin.server.brave.TracedSpanStore;
 
 @Configuration
@@ -187,33 +187,33 @@ public class ZipkinServerConfiguration {
   }
 
   /**
-   * This transport accepts Scribe logs in a specified category. Each log entry is expected to
+   * This collector accepts Scribe logs in a specified category. Each log entry is expected to
    * contain a single span, which is TBinaryProtocol big-endian, then base64 encoded. Decoded spans
    * are stored asynchronously.
    */
   @Configuration
   @EnableConfigurationProperties(ZipkinScribeProperties.class)
-  @ConditionalOnClass(name = "zipkin.scribe.ScribeTransport")
+  @ConditionalOnClass(name = "zipkin.scribe.ScribeCollector")
   static class ScribeConfiguration {
-    @Bean ScribeTransport scribe(ZipkinScribeProperties scribe, Sampler sampler,
+    @Bean ScribeCollector scribe(ZipkinScribeProperties scribe, Sampler sampler,
         StorageComponent storage) {
-      return new ScribeTransport.Builder()
+      return new ScribeCollector.Builder()
           .category(scribe.getCategory())
           .port(scribe.getPort()).writeTo(storage, sampler);
     }
   }
 
   /**
-   * This transport consumes a topic, decodes spans from thrift messages and stores them subject to
+   * This collector consumes a topic, decodes spans from thrift messages and stores them subject to
    * sampling policy.
    */
   @Configuration
   @EnableConfigurationProperties(ZipkinKafkaProperties.class)
   @ConditionalOnKafkaZookeeper
   static class KafkaConfiguration {
-    @Bean KafkaTransport kafka(ZipkinKafkaProperties kafka, Sampler sampler,
+    @Bean KafkaCollector kafka(ZipkinKafkaProperties kafka, Sampler sampler,
         StorageComponent storage) {
-      return new KafkaTransport.Builder()
+      return new KafkaCollector.Builder()
           .topic(kafka.getTopic())
           .zookeeper(kafka.getZookeeper())
           .groupId(kafka.getGroupId())
@@ -228,7 +228,7 @@ public class ZipkinServerConfiguration {
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
   @Conditional(ConditionalOnKafkaZookeeper.KafkaEnabledCondition.class)
-  @ConditionalOnClass(name = "zipkin.kafka.KafkaTransport") @interface ConditionalOnKafkaZookeeper {
+  @ConditionalOnClass(name = "zipkin.kafka.KafkaCollector") @interface ConditionalOnKafkaZookeeper {
     class KafkaEnabledCondition extends SpringBootCondition {
       @Override
       public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata a) {

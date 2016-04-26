@@ -27,13 +27,13 @@ import zipkin.Codec;
 import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.internal.Lazy;
-import zipkin.kafka.KafkaTransport.Builder;
+import zipkin.kafka.KafkaCollector.Builder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.Constants.SERVER_RECV;
 
-public class KafkaTransportTest {
+public class KafkaCollectorTest {
   @ClassRule public static Timeout globalTimeout = Timeout.seconds(10);
   Producer<String, byte[]> producer = KafkaTestGraph.INSTANCE.producer();
 
@@ -55,7 +55,7 @@ public class KafkaTransportTest {
 
     producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpan(span)));
 
-    try (KafkaTransport processor = newKafkaTransport(builder, consumer)) {
+    try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactly(span);
     }
   }
@@ -67,7 +67,7 @@ public class KafkaTransportTest {
 
     producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(asList(span, span))));
 
-    try (KafkaTransport processor = newKafkaTransport(builder, consumer)) {
+    try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactly(span, span);
     }
   }
@@ -79,7 +79,7 @@ public class KafkaTransportTest {
 
     producer.send(new KeyedMessage<>(builder.topic, Codec.JSON.writeSpans(asList(span, span))));
 
-    try (KafkaTransport processor = newKafkaTransport(builder, consumer)) {
+    try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactly(span, span);
     }
   }
@@ -94,7 +94,7 @@ public class KafkaTransportTest {
     producer.send(new KeyedMessage<>(builder.topic, "malformed".getBytes()));
     producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(asList(span))));
 
-    try (KafkaTransport processor = newKafkaTransport(builder, consumer)) {
+    try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactly(span);
       // the only way we could read this, is if the malformed spans were skipped.
       assertThat(recvdSpans.take()).containsExactly(span);
@@ -121,7 +121,7 @@ public class KafkaTransportTest {
         Codec.THRIFT.writeSpans(asList(span)))); // tossed on error
     producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(asList(span))));
 
-    try (KafkaTransport processor = newKafkaTransport(builder, consumer)) {
+    try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactly(span);
       // the only way we could read this, is if the malformed span was skipped.
       assertThat(recvdSpans.take()).containsExactly(span);
@@ -132,7 +132,7 @@ public class KafkaTransportTest {
     return new Builder().zookeeper("127.0.0.1:2181").topic(topic);
   }
 
-  KafkaTransport newKafkaTransport(Builder builder, final AsyncSpanConsumer consumer) {
-    return new KafkaTransport(builder, Lazy.of(consumer));
+  KafkaCollector newKafkaTransport(Builder builder, final AsyncSpanConsumer consumer) {
+    return new KafkaCollector(builder, Lazy.of(consumer));
   }
 }
