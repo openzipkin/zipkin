@@ -25,14 +25,17 @@ import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.jooq.tools.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import zipkin.Endpoint;
 import zipkin.server.ZipkinMySQLProperties;
 
 /** Sets up the JDBC tracing in Brave as an initialization. */
+@ConditionalOnBean(Brave.class)
 @EnableConfigurationProperties(ZipkinMySQLProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
 @Configuration
@@ -55,6 +58,7 @@ public class JDBCTracerConfiguration extends DefaultExecuteListener {
   }
 
   @Autowired
+  @Lazy // to unwind a circular dep: we are tracing the storage used by brave
   Brave brave;
   @Autowired
   @Qualifier("jdbc")
@@ -64,7 +68,6 @@ public class JDBCTracerConfiguration extends DefaultExecuteListener {
   public void renderEnd(ExecuteContext ctx) {
     if (ctx.type() == ExecuteType.READ) { // Don't log writes (so as to not loop on collector)
       brave.clientTracer().startNewSpan("query");
-      brave.clientTracer().setCurrentClientServiceName("zipkin-server");
       String[] batchSQL = ctx.batchSQL();
       if (!StringUtils.isBlank(ctx.sql())) {
         brave.clientTracer().submitBinaryAnnotation("jdbc.query", ctx.sql());

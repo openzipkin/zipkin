@@ -22,6 +22,19 @@ To run the server from the currently checked out source, enter the following.
 $ ./mvnw -pl zipkin-server spring-boot:run
 ```
 
+## Self-Tracing
+Self tracing exists to help troubleshoot performance of the zipkin-server.
+
+When Brave dependencies are in the classpath, and `zipkin.self-tracing.enabled=true`,
+Zipkin will self-trace calls to the api.
+
+[yaml configuration](zipkin-server/src/main/resources/zipkin-server.yml) binds the following environment variables to spring properties:
+
+Variable | Property | Description
+--- | --- | ---
+SELF_TRACING_ENABLED | zipkin.self-tracing.enabled | Set to false to disable self-tracing. Defaults to true
+SELF_TRACING_FLUSH_INTERVAL | zipkin.self-tracing.flush-interval | Interval in seconds to flush self-tracing data to storage. Defaults to 1
+
 ## Configuration for the UI
 Zipkin has a web UI, which is enabled by default when you depend on `io.zipkin:zipkin-ui`. This UI is automatically included in the exec jar, and is hosted by default on port 9411.
 

@@ -20,33 +20,22 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Collections;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import zipkin.Endpoint;
 import zipkin.StorageComponent;
 
 @Configuration
 @ConditionalOnClass(ServerTracer.class)
+@ConditionalOnProperty(name = "zipkin.self-tracing.enabled", havingValue = "true")
 @Import({ApiTracerConfiguration.class, JDBCTracerConfiguration.class})
-@EnableScheduling
 public class BraveConfiguration {
-
-  @Autowired
-  SpanStoreSpanCollector spanCollector;
-
-  @Scheduled(fixedDelayString = "${zipkin.collector.delayMillisec:1000}")
-  public void flushSpans() {
-    spanCollector.flush();
-  }
 
   /** This gets the lanIP without trying to lookup its name. */
   // http://stackoverflow.com/questions/8765578/get-local-ip-address-without-connecting-to-the-internet
@@ -66,20 +55,15 @@ public class BraveConfiguration {
     return Endpoint.create("zipkin-server", ipv4, port);
   }
 
-  /**
-   * @param component lazy to avoid circular reference: the collector uses the same span store as
-   * the http transport. component instead of asyncSpanConsumer to prevent storage-related failures
-   * from crashing bootstrap.
-   */
-  @Bean SpanStoreSpanCollector spanCollector(@Lazy StorageComponent component) {
-    return new SpanStoreSpanCollector(component);
+  @Bean SpanStoreSpanCollector spanCollector(StorageComponent storage,
+      @Value("${zipkin.self-tracing.flush-interval:1}") int flushInterval) {
+    return new SpanStoreSpanCollector(storage, flushInterval);
   }
 
   @Bean
   @Scope Brave brave(@Qualifier("local") Endpoint localEndpoint,
       SpanStoreSpanCollector spanCollector) {
     return new Brave.Builder(localEndpoint.ipv4, localEndpoint.port, localEndpoint.serviceName)
-        .traceFilters(Collections.emptyList()) // sample all
         .spanCollector(spanCollector).build();
   }
 }
