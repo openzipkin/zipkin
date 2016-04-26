@@ -28,7 +28,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <brave.version>3.5.0</brave.version>
+    <brave.version>3.6.0</brave.version>
     <zipkin-ui.version>1.39.6</zipkin-ui.version>
     <start-class>zipkin.server.ZipkinServer</start-class>
     <maven-invoker-plugin.version>2.0.0</maven-invoker-plugin.version>
@@ -137,13 +137,6 @@
     <dependency>
       <groupId>com.github.kristofa</groupId>
       <artifactId>brave-spring-web-servlet-interceptor</artifactId>
-      <version>${brave.version}</version>
-      <optional>true</optional>
-    </dependency>
-
-    <dependency>
-      <groupId>com.github.kristofa</groupId>
-      <artifactId>brave-spancollector-scribe</artifactId>
       <version>${brave.version}</version>
       <optional>true</optional>
     </dependency>

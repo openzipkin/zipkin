@@ -40,6 +40,11 @@ scribe:
   category: zipkin
   port: ${COLLECTOR_PORT:9410}
 zipkin:
+  self-tracing:
+    # Set to false to disable self-tracing. Defaults to true
+    enabled: ${SELF_TRACING_ENABLED:true}
+    # Interval in seconds to flush self-tracing data to storage.
+    flush-interval: ${SELF_TRACING_FLUSH_INTERVAL:1}
   collector:
     # percentage to traces to retain
     sample-rate: ${COLLECTOR_SAMPLE_RATE:1.0}

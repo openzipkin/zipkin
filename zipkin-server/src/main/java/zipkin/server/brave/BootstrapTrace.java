@@ -17,6 +17,7 @@ import com.github.kristofa.brave.Brave;
 import com.github.kristofa.brave.LocalTracer;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEvent;
 
@@ -34,12 +35,16 @@ public enum BootstrapTrace {
     if (event instanceof ApplicationReadyEvent) {
       long duration = microsSinceInit(); // get duration now, as below logic might skew things.
       ApplicationReadyEvent ready = (ApplicationReadyEvent) event;
-      LocalTracer tracer = ready.getApplicationContext().getBeanFactory()
-                                .getBean(Brave.class).localTracer();
+      try {
+        LocalTracer tracer = ready.getApplicationContext().getBeanFactory()
+            .getBean(Brave.class).localTracer();
 
-      tracer.startNewSpan("spring-boot", "bootstrap", timestamp);
-      annotations.forEach(tracer::submitAnnotation);
-      tracer.finishSpan(duration);
+        tracer.startNewSpan("spring-boot", "bootstrap", timestamp);
+        annotations.forEach(tracer::submitAnnotation);
+        tracer.finishSpan(duration);
+      } catch (NoSuchBeanDefinitionException ignored) {
+        // Brave is optional
+      }
     }
   }
 

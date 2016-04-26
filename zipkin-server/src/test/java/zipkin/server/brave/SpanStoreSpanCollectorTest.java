@@ -13,45 +13,29 @@
  */
 package zipkin.server.brave;
 
-import java.util.List;
+import org.junit.Rule;
 import org.junit.Test;
-import zipkin.BinaryAnnotation;
-import zipkin.Constants;
-import zipkin.Endpoint;
+import org.junit.rules.ExpectedException;
 import zipkin.InMemoryStorage;
-import zipkin.Span;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class SpanStoreSpanCollectorTest {
 
   InMemoryStorage mem = new InMemoryStorage();
-  SpanStoreSpanCollector collector = new SpanStoreSpanCollector(mem);
 
-  Span.Builder builder = new Span.Builder()
-      .traceId(1234L)
-      .id(1235L)
-      .parentId(1234L)
-      .name("md5")
-      .timestamp(System.currentTimeMillis() * 1000)
-      .duration(150L)
-      .addBinaryAnnotation(BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "digest",
-          Endpoint.create("service", 127 << 24 | 1, 8080)));
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
 
   @Test
-  public void addOne() {
-    collector.collect(builder.build());
-    collector.flush();
-    assertThat(mem.spanStore().getServiceNames()).containsExactly("service");
+  public void flushIntervalCantBeZero() {
+    thrown.expect(IllegalArgumentException.class);
+
+    new SpanStoreSpanCollector(mem, 0);
   }
 
   @Test
-  public void addMany() {
-    for (int i = 0; i < 500; i++) {
-      collector.collect(builder.id(1234L + i).build());
-    }
-    collector.flush();
-    List<Span> result = mem.spanStore().getTrace(1234L);
-    assertThat(result).hasSize(500);
+  public void flushIntervalCantBeNegative() {
+    thrown.expect(IllegalArgumentException.class);
+
+    new SpanStoreSpanCollector(mem, -1);
   }
 }
