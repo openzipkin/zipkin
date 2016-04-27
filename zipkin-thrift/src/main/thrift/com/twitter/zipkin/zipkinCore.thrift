@@ -131,7 +131,7 @@ const string HTTP_METHOD = "http.method"
  * of distinct URIs less. For example, one can query for the same resource, regardless of signing
  * parameters encoded in the query line. This does not reduce cardinality to a HTTP single route.
  * For example, it is common to express a route as an http URI template like
- * /resource/{resource_id}. In systems where only equals queries are available, searching for
+ * "/resource/{resource_id}". In systems where only equals queries are available, searching for
  * http/path=/resource won't match if the actual request was /resource/abcd-ff.
  *
  * Historical note: This was commonly expressed as "http.uri" in zipkin, eventhough it was most
