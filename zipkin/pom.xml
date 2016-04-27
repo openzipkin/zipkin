@@ -32,6 +32,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.squareup.okio</groupId>
+      <artifactId>okio</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>com.squareup.moshi</groupId>
       <artifactId>moshi</artifactId>
     </dependency>

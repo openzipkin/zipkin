@@ -1,0 +1,29 @@
+{
+  "traceId": "5af7183fb1d4cf5f",
+  "name": "get-traces",
+  "id": "6b221d5bc9e6496c",
+  "parentId": "5af7183fb1d4cf5f",
+  "timestamp": 1461750040358000,
+  "duration": 15495,
+  "annotations": [],
+  "binaryAnnotations": [
+    {
+      "key": "lc",
+      "value": "JDBCSpanStore",
+      "endpoint": {
+        "serviceName": "zipkin-server",
+        "ipv4": "172.19.0.3",
+        "port": 9411
+      }
+    },
+    {
+      "key": "request",
+      "value": "QueryRequest{serviceName=zipkin-server, spanName=null, annotations=[], binaryAnnotations={}, minDuration=null, maxDuration=null, endTs=1461750033209, lookback=604800000, limit=10}",
+      "endpoint": {
+        "serviceName": "zipkin-server",
+        "ipv4": "172.19.0.3",
+        "port": 9411
+      }
+    }
+  ]
+}
