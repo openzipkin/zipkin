@@ -58,15 +58,30 @@ check_travis_branch_equals_travis_tag() {
   fi
 }
 
+check_release_tag() {
+    tag="${TRAVIS_TAG}"
+    if [[ "$tag" =~ ^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ ]]; then
+        echo "Build started by version tag $tag. During the release process tags like this"
+        echo "are created by the 'release' Maven plugin. Nothing to do here."
+        exit 0
+    elif [[ ! "$tag" =~ ^release-[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ ]]; then
+        echo "You must specify a tag of the format 'release-0.0.0' to release this project."
+        echo "The provided tag ${tag} doesn't match that. Aborting."
+        exit 1
+    fi
+}
+
 check_tag_equals_version_in_pom() {
     snapshot_version_in_pom="$(./mvnw -Dexec.executable='echo' -Dexec.args='${project.version}' --non-recursive exec:exec | grep -Ev '(^\[|Download\w+:)')"
-    version_in_pom="$(echo "${snapshot_version_in_pom}" | sed 's/-SNAPSHOT//')"
-    version_in_tag="${TRAVIS_TAG}"
+    version_in_pom="$(echo "${snapshot_version_in_pom}" | sed 's/-SNAPSHOT$//')"
+    tag="${TRAVIS_TAG}"
+    version_in_tag="$(echo "${tag}" | sed 's/^release-//')"
 
     if [ "$version_in_pom" != "$version_in_tag" ]; then
         echo "Version in pom.xml doesn't match version in git tag, bailing out."
         echo "  Snapshot Version parsed from pom.xml: ${snapshot_version_in_pom}"
         echo "  Release version parsed from pom.xml: ${version_in_pom}"
+        echo "  Git tag: ${tag}"
         echo "  Release version in git tag: ${version_in_tag}"
         exit 1
     else
@@ -80,17 +95,18 @@ maven_release_args="--batch-mode -s ./.settings.xml -Prelease -pl -:benchmarks,-
 #----------------------
 # MAIN
 #----------------------
-### While work in progress under review to avoid problems
-echo "publish.sh under review, exiting to avoid badness"
-exit
-### Remove after review
+
+if build_started_by_tag; then
+  check_travis_branch_equals_travis_tag
+  check_release_tag
+  check_tag_equals_version_in_pom
+fi
 
 MYSQL_USER=root ./mvnw install -nsu
 
-is_pull_request && exit
-if build_started_by_tag; then
-  check_travis_branch_equals_travis_tag
-  check_tag_equals_version_in_pom
+if is_pull_request; then
+  true
+elif build_started_by_tag; then
   ./mvnw $maven_release_args release:prepare
   ./mvnw $maven_release_args release:perform
 elif is_travis_branch_master; then
