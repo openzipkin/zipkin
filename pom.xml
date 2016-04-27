@@ -423,6 +423,8 @@
             <configuration>
               <failOnError>false</failOnError>
               <excludePackageNames>zipkin.internal,zipkin.internal.*</excludePackageNames>
+              <!-- hush pedantic warnings: we don't put param and return on everything! -->
+              <additionalparam>-Xdoclint:none</additionalparam>
             </configuration>
             <executions>
               <execution>
