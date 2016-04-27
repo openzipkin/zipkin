@@ -96,4 +96,20 @@ public class SpanTest {
         .containsOnly(WEB_ENDPOINT.serviceName);
   }
 
+  /** This helps tests not flake out when binary annotations aren't returned in insertion order */
+  @Test
+  public void sortsBinaryAnnotationsByKey() {
+    BinaryAnnotation foo = BinaryAnnotation.create("foo", "bar", WEB_ENDPOINT);
+    BinaryAnnotation baz = BinaryAnnotation.create("baz", "qux", WEB_ENDPOINT);
+    Span span = new Span.Builder()
+        .traceId(12345)
+        .id(666)
+        .name("methodcall")
+        .addBinaryAnnotation(foo)
+        .addBinaryAnnotation(baz)
+        .build();
+
+    assertThat(span.binaryAnnotations)
+        .containsExactly(baz, foo);
+  }
 }

@@ -14,17 +14,16 @@
 package zipkin;
 
 import java.util.Collection;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.TreeSet;
 import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.internal.Util.equal;
-import static zipkin.internal.Util.list;
+import static zipkin.internal.Util.sortedList;
 
 /**
  * A trace is a series of spans (often RPC calls) which form a latency tree.
@@ -140,8 +139,8 @@ public final class Span implements Comparable<Span> {
     this.parentId = builder.parentId;
     this.timestamp = builder.timestamp;
     this.duration = builder.duration;
-    this.annotations = list(builder.annotations);
-    this.binaryAnnotations = list(builder.binaryAnnotations);
+    this.annotations = sortedList(builder.annotations);
+    this.binaryAnnotations = sortedList(builder.binaryAnnotations);
     this.debug = builder.debug;
   }
 
@@ -152,8 +151,9 @@ public final class Span implements Comparable<Span> {
     Long parentId;
     Long timestamp;
     Long duration;
-    Collection<Annotation> annotations;
-    Collection<BinaryAnnotation> binaryAnnotations;
+    // Not LinkedHashSet, as the constructor makes a sorted copy
+    HashSet<Annotation> annotations;
+    HashSet<BinaryAnnotation> binaryAnnotations;
     Boolean debug;
 
     public Builder() {
@@ -258,14 +258,14 @@ public final class Span implements Comparable<Span> {
      * @see Span#annotations
      */
     public Builder annotations(Collection<Annotation> annotations) {
-      this.annotations = new TreeSet<>(annotations);
+      this.annotations = new HashSet<>(annotations);
       return this;
     }
 
     /** @see Span#annotations */
     public Builder addAnnotation(Annotation annotation) {
       if (annotations == null) {
-        annotations = new TreeSet<>();
+        annotations = new HashSet<>();
       }
       annotations.add(annotation);
       return this;
@@ -277,14 +277,14 @@ public final class Span implements Comparable<Span> {
      * @see Span#binaryAnnotations
      */
     public Builder binaryAnnotations(Collection<BinaryAnnotation> binaryAnnotations) {
-      this.binaryAnnotations = new LinkedHashSet<>(binaryAnnotations);
+      this.binaryAnnotations = new HashSet<>(binaryAnnotations);
       return this;
     }
 
     /** @see Span#binaryAnnotations */
     public Builder addBinaryAnnotation(BinaryAnnotation binaryAnnotation) {
       if (binaryAnnotations == null) {
-        binaryAnnotations = new LinkedHashSet<>();
+        binaryAnnotations = new HashSet<>();
       }
       binaryAnnotations.add(binaryAnnotation);
       return this;
@@ -363,7 +363,7 @@ public final class Span implements Comparable<Span> {
 
   /** Returns the distinct {@link Endpoint#serviceName service names} that logged to this span. */
   public Set<String> serviceNames() {
-    Set<String> result = new LinkedHashSet<>();
+    Set<String> result = new HashSet<>();
     for (Annotation a : annotations) {
       if (a.endpoint == null) continue;
       if (a.endpoint.serviceName.isEmpty()) continue;

@@ -49,8 +49,9 @@ public class SpanBenchmarks {
   }
 
   @Benchmark
-  public Span buildMinimalClientSpan() {
-    Endpoint client = Endpoint.create("", 172 << 24 | 17 << 16 | 3);
+  public Span buildClientOnlySpan() {
+    Endpoint client = Endpoint.create("query", 172 << 24 | 17 << 16 | 3);
+    Endpoint mysql = Endpoint.create("mysql", 172 << 24 | 17 << 16 | 4, 3306);
     return new Span.Builder()
         .traceId(1L)
         .name("")
@@ -59,6 +60,7 @@ public class SpanBenchmarks {
         .duration(31000L)
         .addAnnotation(Annotation.create(1444438900948000L, Constants.CLIENT_SEND, client))
         .addAnnotation(Annotation.create(1444438900979000L, Constants.CLIENT_RECV, client))
+        .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, mysql))
         .build();
   }
 
