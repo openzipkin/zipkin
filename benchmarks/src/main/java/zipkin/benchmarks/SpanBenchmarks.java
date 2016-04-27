@@ -42,44 +42,51 @@ import zipkin.Span;
 @State(Scope.Thread)
 @Threads(1)
 public class SpanBenchmarks {
+  // endpoints are almost always cached, so caching here to record more accurate performance
+  static final Endpoint web = Endpoint.create("web", 124 << 24 | 13 << 16 | 90 << 8 | 3);
+  static final Endpoint app = Endpoint.create("app", 172 << 24 | 17 << 16 | 2, 8080);
+  static final Endpoint db = Endpoint.create("db", 172 << 24 | 17 << 16 | 2, 3306);
 
   @Benchmark
-  public Span buildMinimalSpan() {
-    return new Span.Builder().traceId(1L).id(1L).name("").build();
-  }
-
-  @Benchmark
-  public Span buildClientOnlySpan() {
-    Endpoint client = Endpoint.create("query", 172 << 24 | 17 << 16 | 3);
-    Endpoint mysql = Endpoint.create("mysql", 172 << 24 | 17 << 16 | 4, 3306);
+  public Span buildLocalSpan() {
     return new Span.Builder()
         .traceId(1L)
-        .name("")
         .id(1L)
+        .name("work")
         .timestamp(1444438900948000L)
         .duration(31000L)
-        .addAnnotation(Annotation.create(1444438900948000L, Constants.CLIENT_SEND, client))
-        .addAnnotation(Annotation.create(1444438900979000L, Constants.CLIENT_RECV, client))
-        .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, mysql))
+        .addBinaryAnnotation(BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "worker", app))
         .build();
   }
 
   @Benchmark
-  public Span buildRPCSpan() {
-    Endpoint web = Endpoint.create("web", 172 << 24 | 17 << 16 | 3, 8080);
-    Endpoint query = Endpoint.create("query", 172 << 24 | 17 << 16 | 3, 9411);
-    return new Span.Builder() // web calls query
+  public Span buildClientOnlySpan() {
+    return new Span.Builder()
         .traceId(1L)
-        .name("get")
+        .id(1L)
+        .name("")
+        .timestamp(1444438900948000L)
+        .duration(31000L)
+        .addAnnotation(Annotation.create(1444438900948000L, Constants.CLIENT_SEND, app))
+        .addAnnotation(Annotation.create(1444438900979000L, Constants.CLIENT_RECV, app))
+        .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, db))
+        .build();
+  }
+
+  @Benchmark
+  public Span buildRpcSpan() {
+    return new Span.Builder() // web calls app
+        .traceId(1L)
         .id(2L)
         .parentId(1L)
+        .name("get")
         .timestamp(1444438900941000L)
         .duration(77000L)
         .addAnnotation(Annotation.create(1444438900941000L, Constants.CLIENT_SEND, web))
-        .addAnnotation(Annotation.create(1444438900947000L, Constants.SERVER_RECV, query))
-        .addAnnotation(Annotation.create(1444438901017000L, Constants.SERVER_SEND, query))
+        .addAnnotation(Annotation.create(1444438900947000L, Constants.SERVER_RECV, app))
+        .addAnnotation(Annotation.create(1444438901017000L, Constants.SERVER_SEND, app))
         .addAnnotation(Annotation.create(1444438901018000L, Constants.CLIENT_RECV, web))
-        .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, query))
+        .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, app))
         .addBinaryAnnotation(BinaryAnnotation.address(Constants.CLIENT_ADDR, web))
         .build();
   }

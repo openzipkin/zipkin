@@ -15,7 +15,7 @@ package zipkin.internal;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -65,11 +65,12 @@ public final class Util {
     return reference;
   }
 
-  public static <T extends Comparable<? super T>> List<T> sortedList(@Nullable Collection<T> input) {
-    if (input == null || input.isEmpty()) return Collections.emptyList();
-    if (input.size() == 1) return Collections.singletonList(input.iterator().next());
-    List<T> result = new ArrayList<>(input);
-    Collections.sort(result);
+  public static <T extends Comparable<? super T>> List<T> sortedList(@Nullable Collection<T> in) {
+    if (in == null || in.isEmpty()) return Collections.emptyList();
+    if (in.size() == 1) return Collections.singletonList(in.iterator().next());
+    Object[] array = in.toArray();
+    Arrays.sort(array);
+    List result = Arrays.asList(array);
     return Collections.unmodifiableList(result);
   }
 

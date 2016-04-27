@@ -19,6 +19,7 @@ import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import com.squareup.moshi.Moshi;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -432,6 +433,7 @@ public final class JsonCodec implements Codec {
 
   // Added since JSON-based storage usually works better with single documents rather than
   // a large encoded list.
+
   /** throws {@linkplain IllegalArgumentException} if the dependency link couldn't be decoded */
   public DependencyLink readDependencyLink(byte[] bytes) {
     checkArgument(bytes.length > 0, "Empty input reading DependencyLink");
@@ -489,9 +491,14 @@ public final class JsonCodec implements Codec {
 
   static <T> List<T> readList(JsonAdapter<T> adapter, byte[] bytes) {
     JsonReader reader = JsonReader.of(new Buffer().write(bytes));
-    List<T> result = new LinkedList<>(); // cause we don't know how long it will be
+    List<T> result;
     try {
       reader.beginArray();
+      if (reader.hasNext()) {
+        result = new LinkedList<>(); // cause we don't know how long it will be
+      } else {
+        result = Collections.emptyList();
+      }
       while (reader.hasNext()) {
         result.add(adapter.fromJson(reader));
       }
@@ -505,9 +512,10 @@ public final class JsonCodec implements Codec {
   static <T> byte[] writeList(JsonAdapter<T> adapter, List<T> values) {
     Buffer buffer = new Buffer();
     buffer.writeUtf8CodePoint('[');
-    for (Iterator<T> i = values.iterator(); i.hasNext(); ) {
-      write(adapter, i.next(), buffer);
-      if (i.hasNext()) buffer.writeUtf8CodePoint(',');
+    int length = values.size();
+    for (int i = 0; i < length; ) {
+      write(adapter, values.get(i++), buffer);
+      if (i < length) buffer.writeUtf8CodePoint(',');
     }
     buffer.writeUtf8CodePoint(']');
     return buffer.readByteArray();

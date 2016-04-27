@@ -1,0 +1,48 @@
+{
+  "traceId": "5af7183fb1d4cf5f",
+  "name": "query",
+  "id": "352bff9a74ca9ad2",
+  "parentId": "6b221d5bc9e6496c",
+  "timestamp": 1461750040359000,
+  "duration": 5000,
+  "annotations": [
+    {
+      "endpoint": {
+        "serviceName": "zipkin-server",
+        "ipv4": "172.19.0.3",
+        "port": 9411
+      },
+      "timestamp": 1461750040359000,
+      "value": "cs"
+    },
+    {
+      "endpoint": {
+        "serviceName": "zipkin-server",
+        "ipv4": "172.19.0.3",
+        "port": 9411
+      },
+      "timestamp": 1461750040364000,
+      "value": "cr"
+    }
+  ],
+  "binaryAnnotations": [
+    {
+      "key": "jdbc.query",
+      "value": "select distinct `zipkin_spans`.`trace_id` from `zipkin_spans` join `zipkin_annotations` on (`zipkin_spans`.`trace_id` = `zipkin_annotations`.`trace_id` and `zipkin_spans`.`id` = `zipkin_annotations`.`span_id`) where (`zipkin_annotations`.`endpoint_service_name` = ? and `zipkin_spans`.`start_ts` between ? and ?) order by `zipkin_spans`.`start_ts` desc limit ?",
+      "endpoint": {
+        "serviceName": "zipkin-server",
+        "ipv4": "172.19.0.3",
+        "port": 9411
+      }
+    },
+    {
+      "key": "sa",
+      "value": true,
+      "endpoint": {
+        "serviceName": "mysql",
+        "ipv4": "172.19.0.2",
+        "port": 3306
+      }
+    }
+  ]
+}

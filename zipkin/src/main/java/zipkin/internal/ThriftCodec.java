@@ -17,6 +17,7 @@ import java.io.EOFException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import okio.Buffer;
 import zipkin.Annotation;
@@ -438,6 +439,8 @@ public final class ThriftCodec implements Codec {
   static <T> List<T> readList(ThriftReader<T> reader, ByteBuffer bytes) {
     byte ignoredType = bytes.get();
     int length = guardLength(bytes, CONTAINER_LENGTH_LIMIT);
+    if (length == 0) return Collections.emptyList();
+    if (length == 1) return Collections.singletonList(reader.read(bytes));
     List<T> result = new ArrayList<>(length);
     for (int i = 0; i < length; i++) {
       result.add(reader.read(bytes));
@@ -446,8 +449,9 @@ public final class ThriftCodec implements Codec {
   }
 
   static <T> void writeList(ThriftWriter<T> writer, List<T> value, Buffer buffer) {
-    writeListBegin(buffer, value.size());
-    for (int i = 0, length = value.size(); i < length; i++) {
+    int length = value.size();
+    writeListBegin(buffer, length);
+    for (int i = 0; i < length; i++) {
       writer.write(value.get(i), buffer);
     }
   }
