@@ -30,10 +30,10 @@ import static kafka.consumer.Consumer.createJavaConsumerConnector;
 import static zipkin.internal.Util.checkNotNull;
 
 /**
- * This transport polls a Kafka topic for messages that contain TBinaryProtocol big-endian encoded
+ * This collector polls a Kafka topic for messages that contain TBinaryProtocol big-endian encoded
  * lists of spans. These spans are pushed to a {@link AsyncSpanConsumer#accept span consumer}.
  */
-public final class KafkaTransport implements AutoCloseable {
+public final class KafkaCollector implements AutoCloseable {
 
   /** Configuration including defaults needed to consume spans from a Kafka topic. */
   public static final class Builder {
@@ -66,10 +66,10 @@ public final class KafkaTransport implements AutoCloseable {
       return this;
     }
 
-    public KafkaTransport writeTo(StorageComponent storage, Sampler sampler) {
+    public KafkaCollector writeTo(StorageComponent storage, Sampler sampler) {
       checkNotNull(storage, "storage");
       checkNotNull(sampler, "sampler");
-      return new KafkaTransport(this, new Lazy<AsyncSpanConsumer>() {
+      return new KafkaCollector(this, new Lazy<AsyncSpanConsumer>() {
         @Override protected AsyncSpanConsumer compute() {
           return checkNotNull(storage.asyncSpanConsumer(sampler), storage + ".asyncSpanConsumer()");
         }
@@ -80,7 +80,7 @@ public final class KafkaTransport implements AutoCloseable {
   final ConsumerConnector connector;
   final ExecutorService pool;
 
-  KafkaTransport(Builder builder, Lazy<AsyncSpanConsumer> consumer) {
+  KafkaCollector(Builder builder, Lazy<AsyncSpanConsumer> consumer) {
     Map<String, Integer> topicCountMap = new LinkedHashMap<>(1);
     topicCountMap.put(builder.topic, builder.streams);
 

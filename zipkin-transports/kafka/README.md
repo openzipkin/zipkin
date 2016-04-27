@@ -1,16 +1,18 @@
 # transport-kafka
-This transport polls a Kafka 8.2.2+ topic for messages that contain
+
+## KafkaCollector
+This collector polls a Kafka 8.2.2+ topic for messages that contain
 a list of spans in json or TBinaryProtocol big-endian encoding. These
 spans are pushed to a span consumer.
 
-`zipkin.kafka.KafkaTransport.Builder` includes defaults that will
+`zipkin.kafka.KafkaCollector.Builder` includes defaults that will
 operate against a Kafka topic advertised in Zookeeper.
 
-### Encoding spans into Kafka messages
+## Encoding spans into Kafka messages
 The message's binary data includes a list of spans. Supported encodings
 are the same as the http [POST /spans](http://zipkin.io/zipkin-api/#/paths/%252Fspans) body.
 
-#### Json
+### Json
 The message's binary data is a list of spans in json. The first character must be '[' (decimal 91).
 
 `Codec.JSON.writeSpans(spans)` performs the correct json encoding.
@@ -22,7 +24,7 @@ $ kafka-console-producer.sh --broker-list $ADVERTISED_HOST:9092 --topic zipkin
 [{"traceId":"1","name":"bang","id":"2","timestamp":1234,"binaryAnnotations":[{"key":"lc","value":"bamm-bamm","endpoint":{"serviceName":"flintstones","ipv4":"127.0.0.1"}}]}]
 ```
 
-#### Thrift
+### Thrift
 The message's binary data includes a list header followed by N spans serialized in TBinaryProtocol
 
 `Codec.THRIFT.writeSpans(spans)` encodes spans in the following fashion:
