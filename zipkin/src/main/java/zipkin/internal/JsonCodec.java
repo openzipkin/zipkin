@@ -46,7 +46,7 @@ import static zipkin.internal.Util.checkArgument;
  *   <li>Ensures the order and naming of the fields in json is stable</li>
  * </ul>
  *
- * <p/> There is the up-front cost of creating this, and maintenance of this to consider. However,
+ * <p> There is the up-front cost of creating this, and maintenance of this to consider. However,
  * this should be easy to justify as these objects don't change much at all.
  */
 public final class JsonCodec implements Codec {

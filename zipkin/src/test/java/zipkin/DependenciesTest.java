@@ -36,7 +36,7 @@ import static zipkin.internal.Util.midnightUTC;
  * Base test for {@link SpanStore} implementations that support dependency aggregation. Subtypes
  * should create a connection to a real backend, even if that backend is in-process.
  *
- * <p/>This is a replacement for {@code com.twitter.zipkin.storage.DependencyStoreSpec}.
+ * <p>This is a replacement for {@code com.twitter.zipkin.storage.DependencyStoreSpec}.
  */
 public abstract class DependenciesTest {
 

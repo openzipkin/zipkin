@@ -25,11 +25,11 @@ import static zipkin.internal.Util.checkArgument;
 /**
  * Invoking this request retrieves traces matching the below filters.
  *
- * <p/> Results should be filtered against {@link #endTs}, subject to {@link #limit} and {@link
+ * <p> Results should be filtered against {@link #endTs}, subject to {@link #limit} and {@link
  * #lookback}. For example, if endTs is 10:20 today, limit is 10, and lookback is 7 days, traces
  * returned should be those nearest to 10:20 today, not 10:20 a week ago.
  *
- * <p/> Time units of {@link #endTs} and {@link #lookback} are milliseconds as opposed to
+ * <p> Time units of {@link #endTs} and {@link #lookback} are milliseconds as opposed to
  * microseconds, the grain of {@link Span#timestamp}. Milliseconds is a more familiar and supported
  * granularity for query, index and windowing functions.
  */
@@ -45,7 +45,7 @@ public final class QueryRequest {
   /**
    * Include traces whose {@link zipkin.Span#annotations} include a value in this set.
    *
-   * <p/> This is an AND condition against the set, as well against {@link #binaryAnnotations}
+   * <p> This is an AND condition against the set, as well against {@link #binaryAnnotations}
    */
   public final List<String> annotations;
 
@@ -53,7 +53,7 @@ public final class QueryRequest {
    * Include traces whose {@link zipkin.Span#binaryAnnotations} include a String whose key and
    * value are an entry in this set.
    *
-   * <p/> This is an AND condition against the set, as well against {@link #annotations}
+   * <p> This is an AND condition against the set, as well against {@link #annotations}
    */
   public final Map<String, String> binaryAnnotations;
 

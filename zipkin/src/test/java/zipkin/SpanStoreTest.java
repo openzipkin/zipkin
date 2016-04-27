@@ -37,7 +37,7 @@ import static zipkin.Constants.SERVER_SEND;
  * Base test for {@link SpanStore} implementations. Subtypes should create a connection to a real
  * backend, even if that backend is in-process.
  *
- * <p/>This is a replacement for {@code com.twitter.zipkin.storage.SpanStoreSpec}.
+ * <p>This is a replacement for {@code com.twitter.zipkin.storage.SpanStoreSpec}.
  */
 public abstract class SpanStoreTest {
 
@@ -513,10 +513,10 @@ public abstract class SpanStoreTest {
    * happens-before without using timestamps. The easiest clock skew to correct is where a child
    * appears to happen before the parent.
    *
-   * <p/>It doesn't matter if clock-skew correction happens at store or query time, as long as it
+   * <p>It doesn't matter if clock-skew correction happens at store or query time, as long as it
    * occurs by the time results are returned.
    *
-   * <p/>Span stores who don't support this can override and disable this test, noting in the README
+   * <p>Span stores who don't support this can override and disable this test, noting in the README
    * the limitation.
    */
   @Test

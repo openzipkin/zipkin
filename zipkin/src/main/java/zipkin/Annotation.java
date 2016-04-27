@@ -22,7 +22,7 @@ import static zipkin.internal.Util.equal;
 /**
  * Associates an event that explains latency with a timestamp.
  *
- * <p/>Unlike log statements, annotations are often codes: Ex. {@link Constants#SERVER_RECV "sr"}.
+ * <p>Unlike log statements, annotations are often codes: Ex. {@link Constants#SERVER_RECV "sr"}.
  */
 public final class Annotation implements Comparable<Annotation> {
 
@@ -33,7 +33,7 @@ public final class Annotation implements Comparable<Annotation> {
   /**
    * Microseconds from epoch.
    *
-   * <p/>This value should be set directly by instrumentation, using the most precise value
+   * <p>This value should be set directly by instrumentation, using the most precise value
    * possible. For example, {@code gettimeofday} or syncing {@link System#nanoTime} against a tick
    * of {@link System#currentTimeMillis}.
    */

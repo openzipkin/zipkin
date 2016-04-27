@@ -20,7 +20,7 @@ import zipkin.Span;
 /**
  * <h3>Derived timestamp and duration</h3>
  *
- * <p/>Instrumentation should log timestamp and duration, but since these fields are recent
+ * <p>Instrumentation should log timestamp and duration, but since these fields are recent
  * (Nov-2015), a lot of tracers will not. Accordingly, this will backfill timestamp and duration to
  * if possible, based on interpretation of annotations.
  */

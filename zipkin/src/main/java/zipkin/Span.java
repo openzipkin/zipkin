@@ -29,15 +29,15 @@ import static zipkin.internal.Util.list;
 /**
  * A trace is a series of spans (often RPC calls) which form a latency tree.
  *
- * <p/>Spans are usually created by instrumentation in RPC clients or servers, but can also
+ * <p>Spans are usually created by instrumentation in RPC clients or servers, but can also
  * represent in-process activity. Annotations in spans are similar to log statements, and are
  * sometimes created directly by application developers to indicate events of interest, such as a
  * cache miss.
  *
- * <p/>The root span is where {@link #parentId} is null; it usually has the longest {@link #duration} in the
+ * <p>The root span is where {@link #parentId} is null; it usually has the longest {@link #duration} in the
  * trace.
  *
- * <p/>Span identifiers are packed into longs, but should be treated opaquely. String encoding is
+ * <p>Span identifiers are packed into longs, but should be treated opaquely. String encoding is
  * fixed-width lower-hex, to avoid signed interpretation.
  */
 public final class Span implements Comparable<Span> {
@@ -49,14 +49,14 @@ public final class Span implements Comparable<Span> {
   /**
    * Span name in lowercase, rpc method for example.
    *
-   * <p/>Conventionally, when the span name isn't known, name = "unknown".
+   * <p>Conventionally, when the span name isn't known, name = "unknown".
    */
   public final String name;
 
   /**
    * Unique 8-byte identifier of this span within a trace.
    *
-   * <p/>A span is uniquely identified in storage by ({@linkplain #traceId}, {@code #id}).
+   * <p>A span is uniquely identified in storage by ({@linkplain #traceId}, {@code #id}).
    */
   public final long id;
 
@@ -69,18 +69,18 @@ public final class Span implements Comparable<Span> {
   /**
    * Epoch microseconds of the start of this span, possibly absent if this an incomplete span.
    *
-   * <p/>This value should be set directly by instrumentation, using the most precise value
+   * <p>This value should be set directly by instrumentation, using the most precise value
    * possible. For example, {@code gettimeofday} or syncing {@link System#nanoTime} against a tick
    * of {@link System#currentTimeMillis}.
    *
-   * <p/>For compatibilty with instrumentation that precede this field, collectors or span stores
+   * <p>For compatibilty with instrumentation that precede this field, collectors or span stores
    * can derive this via Annotation.timestamp. For example, {@link Constants#SERVER_RECV}.timestamp
    * or {@link Constants#CLIENT_SEND}.timestamp.
    *
-   * <p/>Timestamp is nullable for input only. Spans without a timestamp cannot be presented in a
+   * <p>Timestamp is nullable for input only. Spans without a timestamp cannot be presented in a
    * timeline: Span stores should not output spans missing a timestamp.
    *
-   * <p/>There are two known edge-cases where this could be absent: both cases exist when a
+   * <p>There are two known edge-cases where this could be absent: both cases exist when a
    * collector receives a span in parts and a binary annotation precedes a timestamp. This is
    * possible when..
    * <ul>
@@ -94,19 +94,19 @@ public final class Span implements Comparable<Span> {
   /**
    * Measurement in microseconds of the critical path, if known.
    *
-   * <p/>This value should be set directly, as opposed to implicitly via annotation timestamps.
+   * <p>This value should be set directly, as opposed to implicitly via annotation timestamps.
    * Doing so encourages precision decoupled from problems of clocks, such as skew or NTP updates
    * causing time to move backwards.
    *
-   * <p/>For compatibility with instrumentation that precede this field, collectors or span stores
+   * <p>For compatibility with instrumentation that precede this field, collectors or span stores
    * can derive this by subtracting {@link Annotation#timestamp}. For example, {@link
    * Constants#SERVER_SEND}.timestamp - {@link Constants#SERVER_RECV}.timestamp.
    *
-   * <p/>If this field is persisted as unset, zipkin will continue to work, except duration query
+   * <p>If this field is persisted as unset, zipkin will continue to work, except duration query
    * support will be implementation-specific. Similarly, setting this field non-atomically is
    * implementation-specific.
    *
-   * <p/>This field is i64 vs i32 to support spans longer than 35 minutes.
+   * <p>This field is i64 vs i32 to support spans longer than 35 minutes.
    */
   @Nullable
   public final Long duration;
@@ -114,7 +114,7 @@ public final class Span implements Comparable<Span> {
   /**
    * Associates events that explain latency with a timestamp.
    *
-   * <p/>Unlike log statements, annotations are often codes: for example {@link
+   * <p>Unlike log statements, annotations are often codes: for example {@link
    * Constants#SERVER_RECV}. Annotations are sorted ascending by timestamp.
    */
   public final List<Annotation> annotations;
@@ -122,7 +122,7 @@ public final class Span implements Comparable<Span> {
   /**
    * Tags a span with context, usually to support query or aggregation.
    *
-   * <p/>example, a binary annotation key could be {@link TraceKeys#HTTP_PATH "http.path"}.
+   * <p>example, a binary annotation key could be {@link TraceKeys#HTTP_PATH "http.path"}.
    */
   public final List<BinaryAnnotation> binaryAnnotations;
 

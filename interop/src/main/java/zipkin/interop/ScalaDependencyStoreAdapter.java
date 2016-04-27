@@ -31,7 +31,7 @@ import static zipkin.interop.CloseAdapter.closeQuietly;
  * order to test against its {@link com.twitter.zipkin.storage.DependencyStoreSpec} for
  * interoperability reasons.
  *
- * <p/> This implementation uses json to ensure structures are compatible.
+ * <p> This implementation uses json to ensure structures are compatible.
  */
 public final class ScalaDependencyStoreAdapter extends com.twitter.zipkin.storage.DependencyStore {
   private final AsyncSpanStore spanStore;
