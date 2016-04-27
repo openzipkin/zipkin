@@ -50,7 +50,7 @@ public class InternalBlockingToAsyncSpanStoreAdapterTest {
 
   @Test
   public void getTraces_success() {
-    QueryRequest request = new QueryRequest.Builder("zipkin-web").build();
+    QueryRequest request = new QueryRequest.Builder("zipkin-ui").build();
     when(spanStore.getTraces(request)).thenReturn(asList(TRACE));
 
     CallbackCaptor<List<List<Span>>> captor = new CallbackCaptor<>();

@@ -26,7 +26,10 @@ bytes = Codec.THRIFT.writeSpan(span);
 ```
 
 ## Server
-The [spring-boot server](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-server) receives spans via HTTP POST and respond to queries from zipkin-web. It is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/master/zipkin-query-service), passing the same tests (via the interop module).
+The [zipkin server](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-server)
+receives spans via HTTP POST and respond to queries from its UI.
+
+The server is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/master/zipkin-query-service), passing the same tests (via the interop module).
 
 To run the server from the currently checked out source, enter the following.
 ```bash

@@ -40,7 +40,7 @@ public final class Endpoint {
   }
 
   /**
-   * Classifier of a source or destination in lowercase, such as "zipkin-web".
+   * Classifier of a source or destination in lowercase, such as "zipkin-server".
    *
    * <p>This is the primary parameter for trace lookup, so should be intuitive as possible, for
    * example, matching names in service discovery.

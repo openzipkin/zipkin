@@ -17,7 +17,7 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin.TestObjects.WEB_ENDPOINT;
+import static zipkin.TestObjects.APP_ENDPOINT;
 
 public class SpanTest {
 
@@ -33,7 +33,7 @@ public class SpanTest {
         .traceId(1L)
         .name("")
         .id(1L)
-        .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, WEB_ENDPOINT))
+        .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, APP_ENDPOINT))
         .build();
 
     Span part2 = new Span.Builder()
@@ -42,8 +42,8 @@ public class SpanTest {
         .id(1L)
         .timestamp(1444438900939000L)
         .duration(376000L)
-        .addAnnotation(Annotation.create(1444438900939000L, Constants.SERVER_RECV, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create(1444438901315000L, Constants.SERVER_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create(1444438900939000L, Constants.SERVER_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create(1444438901315000L, Constants.SERVER_SEND, APP_ENDPOINT))
         .build();
 
     Span expected = new Span.Builder(part2)
@@ -75,11 +75,11 @@ public class SpanTest {
         .traceId(1L)
         .name("GET")
         .id(1L)
-        .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, WEB_ENDPOINT))
+        .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, APP_ENDPOINT))
         .build();
 
     assertThat(span.serviceNames())
-        .containsOnly(WEB_ENDPOINT.serviceName);
+        .containsOnly(APP_ENDPOINT.serviceName);
   }
 
   @Test
@@ -89,18 +89,18 @@ public class SpanTest {
         .id(666)
         .name("methodcall")
         .addAnnotation(Annotation.create(1L, "test", Endpoint.create("", 127 << 24 | 1)))
-        .addAnnotation(Annotation.create(2L, Constants.SERVER_RECV, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create(2L, Constants.SERVER_RECV, APP_ENDPOINT))
         .build();
 
     assertThat(span.serviceNames())
-        .containsOnly(WEB_ENDPOINT.serviceName);
+        .containsOnly(APP_ENDPOINT.serviceName);
   }
 
   /** This helps tests not flake out when binary annotations aren't returned in insertion order */
   @Test
   public void sortsBinaryAnnotationsByKey() {
-    BinaryAnnotation foo = BinaryAnnotation.create("foo", "bar", WEB_ENDPOINT);
-    BinaryAnnotation baz = BinaryAnnotation.create("baz", "qux", WEB_ENDPOINT);
+    BinaryAnnotation foo = BinaryAnnotation.create("foo", "bar", APP_ENDPOINT);
+    BinaryAnnotation baz = BinaryAnnotation.create("baz", "qux", APP_ENDPOINT);
     Span span = new Span.Builder()
         .traceId(12345)
         .id(666)

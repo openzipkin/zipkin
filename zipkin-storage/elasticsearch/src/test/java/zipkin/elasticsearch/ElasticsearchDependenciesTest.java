@@ -21,7 +21,8 @@ import zipkin.InMemoryStorage;
 import zipkin.Span;
 import zipkin.StorageComponent;
 
-import static java.util.concurrent.TimeUnit.DAYS;
+import static zipkin.TestObjects.DAY;
+import static zipkin.TestObjects.TODAY;
 import static zipkin.internal.Util.midnightUTC;
 
 public class ElasticsearchDependenciesTest extends DependenciesTest {
@@ -54,7 +55,7 @@ public class ElasticsearchDependenciesTest extends DependenciesTest {
   public void processDependencies(List<Span> spans) {
     InMemoryStorage mem = new InMemoryStorage();
     mem.spanConsumer().accept(spans);
-    List<DependencyLink> links = mem.spanStore().getDependencies(today + DAYS.toMillis(1), null);
+    List<DependencyLink> links = mem.spanStore().getDependencies(TODAY + DAY, null);
 
     long midnight = midnightUTC(spans.get(0).timestamp / 1000);
     storage.writeDependencyLinks(links, midnight);

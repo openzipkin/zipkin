@@ -14,65 +14,63 @@
 package zipkin;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import zipkin.internal.ApplyTimestampAndDuration;
+import zipkin.internal.Dependencies;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static zipkin.Constants.CLIENT_ADDR;
+import static zipkin.Constants.CLIENT_RECV;
+import static zipkin.Constants.CLIENT_SEND;
+import static zipkin.Constants.SERVER_ADDR;
+import static zipkin.Constants.SERVER_RECV;
+import static zipkin.Constants.SERVER_SEND;
+import static zipkin.internal.Util.midnightUTC;
 
 public final class TestObjects {
 
-  public static final long WEB_SPAN_ID = -692101025335252320L;
-  public static final long QUERY_SPAN_ID = -7842865617155193778L;
-  public static final long JDBC_SPAN_ID = 8207293009014896295L;
+  /** Notably, the cassandra implementation has day granularity */
+  public static final long DAY = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);
+
+  // Use real time, as most span-stores have TTL logic which looks back several days.
+  public static final long TODAY = midnightUTC(System.currentTimeMillis());
+
   public static final Endpoint WEB_ENDPOINT =
-      Endpoint.create("zipkin-web", 172 << 24 | 17 << 16 | 3, 8080);
-  public static final Endpoint QUERY_ENDPOINT =
-      Endpoint.create("zipkin-query", 172 << 24 | 17 << 16 | 2, 9411);
-  public static final Endpoint JDBC_ENDPOINT =
-      Endpoint.create("zipkin-jdbc", 172 << 24 | 17 << 16 | 2);
+      Endpoint.create("web", 124 << 24 | 13 << 16 | 90 << 8 | 3);
+  public static final Endpoint APP_ENDPOINT =
+      Endpoint.create("app", 172 << 24 | 17 << 16 | 2, 8080);
+  public static final Endpoint DB_ENDPOINT =
+      Endpoint.create("db", 172 << 24 | 17 << 16 | 2, 3306);
+
+  static final long WEB_SPAN_ID = -692101025335252320L;
+  static final long APP_SPAN_ID = -7842865617155193778L;
+  static final long DB_SPAN_ID = 8207293009014896295L;
 
   public static final List<Span> TRACE = asList(
-      new Span.Builder() // browser calls web
-          .traceId(WEB_SPAN_ID)
-          .name("get")
-          .id(WEB_SPAN_ID)
-          .timestamp(1444438900939000L)
-          .duration(376000L)
-          .addAnnotation(Annotation.create(1444438900939000L, Constants.SERVER_RECV, WEB_ENDPOINT))
-          .addAnnotation(Annotation.create(1444438901315000L, Constants.SERVER_SEND, WEB_ENDPOINT))
-          .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, WEB_ENDPOINT))
+      new Span.Builder().traceId(WEB_SPAN_ID).id(WEB_SPAN_ID).name("get")
+          .addAnnotation(Annotation.create(TODAY * 1000, SERVER_RECV, WEB_ENDPOINT))
+          .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, WEB_ENDPOINT))
           .build(),
-      new Span.Builder() // web calls query
-          .traceId(WEB_SPAN_ID)
-          .name("get")
-          .id(QUERY_SPAN_ID)
-          .parentId(WEB_SPAN_ID)
-          .timestamp(1444438900941000L)
-          .duration(77000L)
-          .addAnnotation(Annotation.create(1444438900941000L, Constants.CLIENT_SEND, WEB_ENDPOINT))
-          .addAnnotation(
-              Annotation.create(1444438900947000L, Constants.SERVER_RECV, QUERY_ENDPOINT))
-          .addAnnotation(
-              Annotation.create(1444438901017000L, Constants.SERVER_SEND, QUERY_ENDPOINT))
-          .addAnnotation(Annotation.create(1444438901018000L, Constants.CLIENT_RECV, WEB_ENDPOINT))
-          .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, QUERY_ENDPOINT))
-          .addBinaryAnnotation(BinaryAnnotation.address(Constants.CLIENT_ADDR, WEB_ENDPOINT))
+      new Span.Builder().traceId(WEB_SPAN_ID).parentId(WEB_SPAN_ID).id(APP_SPAN_ID).name("get")
+          .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+          .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
+          .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
+          .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
+          .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, WEB_ENDPOINT))
+          .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, APP_ENDPOINT))
           .build(),
-      new Span.Builder() // query calls jdbc
-          .traceId(WEB_SPAN_ID)
-          .name("query")
-          .id(JDBC_SPAN_ID)
-          .parentId(QUERY_SPAN_ID)
-          .timestamp(1444438900948000L)
-          .duration(31000L)
-          .addAnnotation(
-              Annotation.create(1444438900948000L, Constants.CLIENT_SEND, QUERY_ENDPOINT))
-          .addAnnotation(
-              Annotation.create(1444438900979000L, Constants.CLIENT_RECV, QUERY_ENDPOINT))
-          .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, JDBC_ENDPOINT))
+      new Span.Builder().traceId(WEB_SPAN_ID).parentId(APP_SPAN_ID).id(DB_SPAN_ID).name("query")
+          .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
+          .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, APP_ENDPOINT))
+          .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, APP_ENDPOINT))
+          .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, DB_ENDPOINT))
           .build()
-  );
+  ).stream().map(ApplyTimestampAndDuration::apply).collect(toList());
 
   public static final List<DependencyLink> LINKS = asList(
-      new DependencyLink.Builder().parent("zipkin-web").child("zipkin-query").callCount(1).build(),
-      new DependencyLink.Builder().parent("zipkin-query").child("zipkin-jdbc").callCount(10).build()
+      new DependencyLink.Builder().parent("web").child("app").callCount(1).build(),
+      new DependencyLink.Builder().parent("app").child("db").callCount(1).build()
   );
+  public static final Dependencies DEPENDENCIES = Dependencies.create(TODAY, TODAY + 1000, LINKS);
 }
