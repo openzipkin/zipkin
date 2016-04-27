@@ -1,0 +1,21 @@
+<configuration>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <!-- encoders are assigned the type
+         ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="zipkin.sampler.zookeeper" level="DEBUG"/>
+
+  <!-- don't waste logs when ZK check fails -->
+  <logger name="org.apache.zookeeper.ClientCnxn" level="OFF"/>
+  <logger name="org.apache.zookeeper.server.NIOServerCnxn" level="OFF"/>
+  <logger name="org.apache.zookeeper.server.quorum" level="OFF"/>
+
+  <root level="WARN">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>
