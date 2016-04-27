@@ -20,12 +20,14 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import java.util.stream.IntStream;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin.internal.CallbackCaptor;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.Constants.CLIENT_RECV;
 import static zipkin.Constants.CLIENT_SEND;
@@ -626,6 +628,34 @@ public abstract class SpanStoreTest {
       assertThat(span.timestamp).isEqualTo(clientTimestamp);
       assertThat(span.duration).isEqualTo(clientDuration);
     }
+  }
+
+  // Bugs have happened in the past where trace limit was mistaken for span count.
+  @Test
+  public void traceWithManySpans() {
+    Span[] trace = new Span[101];
+    trace[0] = TestObjects.TRACE.get(0);
+
+    IntStream.range(0, 100).forEach(i -> {
+      Span s = TestObjects.TRACE.get(1);
+      trace[i + 1] = new Span.Builder(s)
+          .id(s.id + i)
+          .timestamp(s.timestamp + i)
+          .annotations(s.annotations.stream()
+              .map(a -> Annotation.create(a.timestamp + i, a.value, a.endpoint))
+              .collect(toList()))
+          .build();
+    });
+
+    accept(trace);
+
+    String serviceName = trace[1].annotations.get(0).endpoint.serviceName;
+    assertThat(store().getTraces(new QueryRequest.Builder(serviceName).build()))
+        .containsExactly(asList(trace));
+    assertThat(store().getTrace(trace[0].traceId))
+        .containsExactly(trace);
+    assertThat(store().getRawTrace(trace[0].traceId))
+        .containsAll(asList(trace)); // order isn't guaranteed in raw trace
   }
 
   // This supports the "raw trace" feature, which skips application-level data cleaning

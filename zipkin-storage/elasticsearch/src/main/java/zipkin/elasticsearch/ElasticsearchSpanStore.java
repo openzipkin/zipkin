@@ -65,6 +65,16 @@ import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
 import static zipkin.elasticsearch.ElasticFutures.toGuava;
 
 final class ElasticsearchSpanStore implements GuavaSpanStore {
+  /**
+   * The maximum count of raw spans returned in a trace query.
+   *
+   * <p>Not configurable as it implies adjustments to the index template (index.max_result_window)
+   * and user settings
+   *
+   * <p> See https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-from-size.html
+   */
+  static final int MAX_RAW_SPANS = 10000; // the default elasticsearch allowed limit
+
   static final long ONE_DAY_IN_MILLIS = TimeUnit.DAYS.toMillis(1);
   static final ListenableFuture<List<String>> EMPTY_LIST =
       immediateFuture(Collections.<String>emptyList());
@@ -175,6 +185,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
   @Override public ListenableFuture<List<Span>> getRawTrace(long traceId) {
     SearchRequestBuilder elasticRequest = client.prepareSearch(indexNameFormatter.catchAll())
         .setTypes(ElasticsearchConstants.SPAN)
+        .setSize(MAX_RAW_SPANS)
         .setQuery(termQuery("traceId", String.format("%016x", traceId)));
 
     return transform(toGuava(elasticRequest.execute()), new Function<SearchResponse, List<Span>>() {
@@ -199,10 +210,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     SearchRequestBuilder elasticRequest = client.prepareSearch(indices)
         .setIndicesOptions(IndicesOptions.lenientExpandOpen())
         .setTypes(ElasticsearchConstants.SPAN)
-        // TODO: This is the default maximum size of an elasticsearch result set.
-        // Need to determine whether this is enough by zipkin standards or should
-        // increase it in the index template.
-        .setSize(10000)
+        .setSize(MAX_RAW_SPANS)
         .setQuery(termsQuery("traceId", traceIdsStr));
     return Futures.transform(toGuava(elasticRequest.execute()), ConvertTracesResponse.INSTANCE);
   }
