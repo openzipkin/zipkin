@@ -27,13 +27,13 @@ public class ZipkinDispatcherTest {
   @Test
   public void toQueryRequest() {
     HttpUrl url = baseUrl.newBuilder()
-        .addQueryParameter("serviceName", "zipkin-web")
+        .addQueryParameter("serviceName", "zipkin-server")
         .addQueryParameter("spanName", "get")
         .addQueryParameter("limit", "1000").build();
 
     QueryRequest request = ZipkinDispatcher.toQueryRequest(url);
 
-    assertThat(request.serviceName).isEqualTo("zipkin-web");
+    assertThat(request.serviceName).isEqualTo("zipkin-server");
     assertThat(request.spanName).isEqualTo("get");
     assertThat(request.limit).isEqualTo(1000);
   }
@@ -41,7 +41,7 @@ public class ZipkinDispatcherTest {
   @Test
   public void toQueryRequest_parseAnnotations() {
     HttpUrl url = baseUrl.newBuilder()
-        .addQueryParameter("serviceName", "zipkin-web")
+        .addQueryParameter("serviceName", "zipkin-server")
         .addQueryParameter("annotationQuery", "finagle.retry and finagle.timeout").build();
 
     QueryRequest request = ZipkinDispatcher.toQueryRequest(url);

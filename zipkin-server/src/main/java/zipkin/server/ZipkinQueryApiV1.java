@@ -36,7 +36,7 @@ import static zipkin.internal.Util.checkNotNull;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
 
 /**
- * Implements the json api used by {@code zipkin-web}.
+ * Implements the json api used by the Zipkin UI
  *
  * See com.twitter.zipkin.query.ZipkinQueryController
  */

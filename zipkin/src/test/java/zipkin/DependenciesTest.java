@@ -14,12 +14,9 @@
 package zipkin;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
-import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.CallbackCaptor;
-import zipkin.internal.Dependencies;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -30,7 +27,8 @@ import static zipkin.Constants.CLIENT_SEND;
 import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
-import static zipkin.internal.Util.midnightUTC;
+import static zipkin.TestObjects.LINKS;
+import static zipkin.TestObjects.*;
 
 /**
  * Base test for {@link SpanStore} implementations that support dependency aggregation. Subtypes
@@ -62,59 +60,22 @@ public abstract class DependenciesTest {
     captor.get(); // block on result
   }
 
-  /** Notably, the cassandra implementation has day granularity */
-  protected long day = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);
-
-  // Use real time, as most span-stores have TTL logic which looks back several days.
-  protected long today = midnightUTC(System.currentTimeMillis());
-
-  Endpoint zipkinWeb = Endpoint.create("zipkin-web", 172 << 24 | 17 << 16 | 3, 8080);
-  Endpoint zipkinQuery = Endpoint.create("zipkin-query", 172 << 24 | 17 << 16 | 2, 9411);
-  Endpoint zipkinQueryNoPort = new Endpoint.Builder(zipkinQuery).port(null).build();
-  Endpoint zipkinJdbc = Endpoint.create("zipkin-jdbc", 172 << 24 | 17 << 16 | 2, 0);
-
-  List<Span> trace = asList(
-      new Span.Builder().traceId(1L).id(1L).name("get")
-          .addAnnotation(Annotation.create(today * 1000, SERVER_RECV, zipkinWeb))
-          .addAnnotation(Annotation.create((today + 350) * 1000, SERVER_SEND, zipkinWeb))
-          .build(),
-      new Span.Builder().traceId(1L).parentId(1L).id(2L).name("get")
-          .addAnnotation(Annotation.create((today + 50) * 1000, CLIENT_SEND, zipkinWeb))
-          .addAnnotation(Annotation.create((today + 100) * 1000, SERVER_RECV, zipkinQueryNoPort))
-          .addAnnotation(Annotation.create((today + 250) * 1000, SERVER_SEND, zipkinQueryNoPort))
-          .addAnnotation(Annotation.create((today + 300) * 1000, CLIENT_RECV, zipkinWeb))
-          .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, zipkinWeb))
-          .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, zipkinQuery))
-          .build(),
-      new Span.Builder().traceId(1L).parentId(2L).id(3L).name("query")
-          .addAnnotation(Annotation.create((today + 150) * 1000, CLIENT_SEND, zipkinQuery))
-          .addAnnotation(Annotation.create((today + 200) * 1000, CLIENT_RECV, zipkinQuery))
-          .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, zipkinQuery))
-          .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, zipkinJdbc))
-          .build()
-  ).stream().map(ApplyTimestampAndDuration::apply).collect(toList());
-
-  Dependencies dep = Dependencies.create(today, today + 1000, asList(
-      new DependencyLink("zipkin-web", "zipkin-query", 1),
-      new DependencyLink("zipkin-query", "zipkin-jdbc", 1)
-  ));
-
   /**
    * Normally, the root-span is where trace id == span id and parent id == null. The default is to
    * look back one day from today.
    */
   @Test
   public void getDependencies() {
-    processDependencies(trace);
+    processDependencies(TRACE);
 
-    assertThat(store().getDependencies(today + 1000L, null))
-        .containsOnlyElementsOf(dep.links);
+    assertThat(store().getDependencies(TODAY + 1000L, null))
+        .containsOnlyElementsOf(LINKS);
   }
 
   /** Edge-case when there are no spans, or instrumentation isn't logging annotations properly. */
   @Test
   public void empty() {
-    assertThat(store().getDependencies(today + 1000L, null))
+    assertThat(store().getDependencies(TODAY + 1000L, null))
         .isEmpty();
   }
 
@@ -125,13 +86,13 @@ public abstract class DependenciesTest {
    */
   @Test
   public void traceIdIsOpaque() {
-    List<Span> differentTraceId = trace.stream()
+    List<Span> differentTraceId = TRACE.stream()
         .map(s -> new Span.Builder(s).traceId(Long.MAX_VALUE).build())
         .collect(toList());
     processDependencies(differentTraceId);
 
-    assertThat(store().getDependencies(today + 1000L, null))
-        .containsOnlyElementsOf(dep.links);
+    assertThat(store().getDependencies(TODAY + 1000L, null))
+        .containsOnlyElementsOf(LINKS);
   }
 
   /**
@@ -184,26 +145,26 @@ public abstract class DependenciesTest {
    */
   @Test
   public void getDependenciesMultiLevel() {
-    processDependencies(trace);
+    processDependencies(TRACE);
 
-    assertThat(store().getDependencies(today + 1000L, null))
-        .containsOnlyElementsOf(dep.links);
+    assertThat(store().getDependencies(TODAY + 1000L, null))
+        .containsOnlyElementsOf(LINKS);
   }
 
   @Test
   public void dependencies_loopback() {
     List<Span> traceWithLoopback = asList(
-        trace.get(0),
-        new Span.Builder(trace.get(1))
-            .annotations(trace.get(1).annotations.stream()
-                .map(a -> Annotation.create(a.timestamp, a.value, zipkinWeb)).collect(toList()))
+        TRACE.get(0),
+        new Span.Builder(TRACE.get(1))
+            .annotations(TRACE.get(1).annotations.stream()
+                .map(a -> Annotation.create(a.timestamp, a.value, WEB_ENDPOINT)).collect(toList()))
             .binaryAnnotations(asList())
             .build());
 
     processDependencies(traceWithLoopback);
 
-    assertThat(store().getDependencies(today + 1000L, null))
-        .containsOnly(new DependencyLink("zipkin-web", "zipkin-web", 1));
+    assertThat(store().getDependencies(TODAY + 1000L, null))
+        .containsOnly(new DependencyLink("web", "web", 1));
   }
 
   /**
@@ -212,41 +173,41 @@ public abstract class DependenciesTest {
    */
   @Test
   public void dependencies_headlessTrace() {
-    processDependencies(asList(trace.get(1), trace.get(2)));
+    processDependencies(asList(TRACE.get(1), TRACE.get(2)));
 
-    assertThat(store().getDependencies(today + 1000L, null))
-        .containsOnlyElementsOf(dep.links);
+    assertThat(store().getDependencies(TODAY + 1000L, null))
+        .containsOnlyElementsOf(LINKS);
   }
 
   @Test
   public void looksBackIndefinitely() {
-    processDependencies(trace);
+    processDependencies(TRACE);
 
-    assertThat(store().getDependencies(today + 1000L, null))
-        .containsOnlyElementsOf(dep.links);
+    assertThat(store().getDependencies(TODAY + 1000L, null))
+        .containsOnlyElementsOf(LINKS);
   }
 
   @Test
   public void insideTheInterval() {
-    processDependencies(trace);
+    processDependencies(TRACE);
 
-    assertThat(store().getDependencies(dep.endTs, dep.endTs - dep.startTs))
-        .containsOnlyElementsOf(dep.links);
+    assertThat(store().getDependencies(DEPENDENCIES.endTs, DEPENDENCIES.endTs - DEPENDENCIES.startTs))
+        .containsOnlyElementsOf(LINKS);
   }
 
   @Test
   public void endTimeBeforeData() {
-    processDependencies(trace);
+    processDependencies(TRACE);
 
-    assertThat(store().getDependencies(today - day, null))
+    assertThat(store().getDependencies(TODAY - DAY, null))
         .isEmpty();
   }
 
   @Test
   public void lookbackAfterData() {
-    processDependencies(trace);
+    processDependencies(TRACE);
 
-    assertThat(store().getDependencies(today + 2 * day, day))
+    assertThat(store().getDependencies(TODAY + 2 * DAY, DAY))
         .isEmpty();
   }
 
@@ -265,33 +226,33 @@ public abstract class DependenciesTest {
 
     List<Span> trace = asList(
         new Span.Builder().traceId(20L).id(20L).name("get")
-            .timestamp(today * 1000).duration(350L * 1000)
-            .addAnnotation(Annotation.create(today * 1000, SERVER_RECV, zipkinWeb))
-            .addAnnotation(Annotation.create((today + 350) * 1000, SERVER_SEND, zipkinWeb))
+            .timestamp(TODAY * 1000).duration(350L * 1000)
+            .addAnnotation(Annotation.create(TODAY * 1000, SERVER_RECV, WEB_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, WEB_ENDPOINT))
             .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, someClient))
             .build(),
         new Span.Builder().traceId(20L).parentId(20L).id(21L).name("get")
-            .timestamp((today + 50L) * 1000).duration(250L * 1000)
-            .addAnnotation(Annotation.create((today + 50) * 1000, CLIENT_SEND, zipkinWeb))
-            .addAnnotation(Annotation.create((today + 100) * 1000, SERVER_RECV, zipkinQuery))
-            .addAnnotation(Annotation.create((today + 250) * 1000, SERVER_SEND, zipkinQuery))
-            .addAnnotation(Annotation.create((today + 300) * 1000, CLIENT_RECV, zipkinWeb))
+            .timestamp((TODAY + 50L) * 1000).duration(250L * 1000)
+            .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
             .build(),
         new Span.Builder().traceId(20L).parentId(21L).id(22L).name("get")
-            .timestamp((today + 150L) * 1000).duration(50L * 1000)
-            .addAnnotation(Annotation.create((today + 150) * 1000, CLIENT_SEND, zipkinQuery))
-            .addAnnotation(Annotation.create((today + 200) * 1000, CLIENT_RECV, zipkinQuery))
-            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, zipkinQuery))
-            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, zipkinJdbc))
+            .timestamp((TODAY + 150L) * 1000).duration(50L * 1000)
+            .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, APP_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, APP_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, DB_ENDPOINT))
             .build()
     );
 
     processDependencies(trace);
 
-    assertThat(store().getDependencies(today + 1000L, null)).containsOnly(
-        new DependencyLink("some-client", "zipkin-web", 1),
-        new DependencyLink("zipkin-web", "zipkin-query", 1),
-        new DependencyLink("zipkin-query", "zipkin-jdbc", 1)
+    assertThat(store().getDependencies(TODAY + 1000L, null)).containsOnly(
+        new DependencyLink("some-client", "web", 1),
+        new DependencyLink("web", "app", 1),
+        new DependencyLink("app", "db", 1)
     );
   }
 
@@ -311,56 +272,55 @@ public abstract class DependenciesTest {
    */
   @Test
   public void noClientSendAddrAnnotations() {
-
     List<Span> trace = asList(
         new Span.Builder().traceId(20L).id(20L).name("get")
-            .timestamp(today * 1000).duration(350L * 1000)
-            .addAnnotation(Annotation.create(today * 1000, SERVER_RECV, zipkinWeb))
-            .addAnnotation(Annotation.create((today + 350) * 1000, SERVER_SEND, zipkinWeb))
+            .timestamp(TODAY * 1000).duration(350L * 1000)
+            .addAnnotation(Annotation.create(TODAY * 1000, SERVER_RECV, WEB_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, WEB_ENDPOINT))
             .binaryAnnotations(asList( // finagle also sends SA/CA itself
-                BinaryAnnotation.address(SERVER_ADDR, zipkinWeb),
-                BinaryAnnotation.address(CLIENT_ADDR, zipkinWeb)))
+                BinaryAnnotation.address(SERVER_ADDR, WEB_ENDPOINT),
+                BinaryAnnotation.address(CLIENT_ADDR, WEB_ENDPOINT)))
             .build(),
         new Span.Builder().traceId(20L).parentId(20L).id(21L).name("get")
-            .timestamp((today + 150L) * 1000).duration(50L * 1000)
-            .addAnnotation(Annotation.create((today + 150) * 1000, CLIENT_SEND, zipkinQuery))
-            .addAnnotation(Annotation.create((today + 200) * 1000, CLIENT_RECV, zipkinQuery))
+            .timestamp((TODAY + 150L) * 1000).duration(50L * 1000)
+            .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, APP_ENDPOINT))
             .binaryAnnotations(asList( // finagle also no SR on some condition and CA with itself
-                BinaryAnnotation.address(SERVER_ADDR, zipkinQuery),
-                BinaryAnnotation.address(CLIENT_ADDR, zipkinQuery)))
+                BinaryAnnotation.address(SERVER_ADDR, APP_ENDPOINT),
+                BinaryAnnotation.address(CLIENT_ADDR, APP_ENDPOINT)))
             .build()
     );
 
     processDependencies(trace);
 
-    assertThat(store().getDependencies(today + 1000L, null))
-        .containsOnly(new DependencyLink("zipkin-web", "zipkin-query", 1));
+    assertThat(store().getDependencies(TODAY + 1000L, null))
+        .containsOnly(new DependencyLink("web", "app", 1));
   }
 
   /**
    * This test shows that dependency links can be filtered at daily granularity. This allows the UI
-   * to look for dependency intervals besides today.
+   * to look for dependency intervals besides TODAY.
    */
   @Test
   public void canSearchForIntervalsBesidesToday() {
     // Let's pretend we have two days of data processed
     //  - Note: calling this twice allows test implementations to consider timestamps
-    processDependencies(subtractDay(trace));
-    processDependencies(trace);
+    processDependencies(subtractDay(TRACE));
+    processDependencies(TRACE);
 
     // A user looks at today's links.
     //  - Note: Using the smallest lookback avoids bumping into implementation around windowing.
-    assertThat(store().getDependencies(dep.endTs, dep.endTs - dep.startTs))
-        .containsOnlyElementsOf(dep.links);
+    assertThat(store().getDependencies(DEPENDENCIES.endTs, DEPENDENCIES.endTs - DEPENDENCIES.startTs))
+        .containsOnlyElementsOf(LINKS);
 
     // A user compares the links from those a day ago.
-    assertThat(store().getDependencies(dep.endTs - day, dep.endTs - dep.startTs))
-        .containsOnlyElementsOf(dep.links);
+    assertThat(store().getDependencies(DEPENDENCIES.endTs - DAY, DEPENDENCIES.endTs - DEPENDENCIES.startTs))
+        .containsOnlyElementsOf(LINKS);
 
     // A user looks at all links since data started
-    assertThat(store().getDependencies(dep.endTs, null)).containsOnly(
-        new DependencyLink("zipkin-web", "zipkin-query", 2),
-        new DependencyLink("zipkin-query", "zipkin-jdbc", 2)
+    assertThat(store().getDependencies(DEPENDENCIES.endTs, null)).containsOnly(
+        new DependencyLink("web", "app", 2),
+        new DependencyLink("app", "db", 2)
     );
   }
 
@@ -370,25 +330,25 @@ public abstract class DependenciesTest {
     Endpoint someClient = Endpoint.create("some-client", 172 << 24 | 17 << 16 | 4, 80);
     List<Span> trace = asList(
         new Span.Builder().traceId(20L).id(20L).name("get")
-            .timestamp(today * 1000).duration(350L * 1000)
+            .timestamp(TODAY * 1000).duration(350L * 1000)
             .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, someClient))
-            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, zipkinWeb)).build(),
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, WEB_ENDPOINT)).build(),
         new Span.Builder().traceId(20L).parentId(20L).id(21L).name("get")
-            .timestamp((today + 50) * 1000).duration(250L * 1000)
-            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, zipkinWeb))
-            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, zipkinQuery)).build(),
+            .timestamp((TODAY + 50) * 1000).duration(250L * 1000)
+            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, WEB_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, APP_ENDPOINT)).build(),
         new Span.Builder().traceId(20L).parentId(21L).id(22L).name("get")
-            .timestamp((today + 150) * 1000).duration(50L * 1000)
-            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, zipkinQuery))
-            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, zipkinJdbc)).build()
+            .timestamp((TODAY + 150) * 1000).duration(50L * 1000)
+            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, APP_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, DB_ENDPOINT)).build()
     );
 
     processDependencies(trace);
 
-    assertThat(store().getDependencies(today + 1000, null)).containsOnly(
-        new DependencyLink("some-client", "zipkin-web", 1),
-        new DependencyLink("zipkin-web", "zipkin-query", 1),
-        new DependencyLink("zipkin-query", "zipkin-jdbc", 1)
+    assertThat(store().getDependencies(TODAY + 1000, null)).containsOnly(
+        new DependencyLink("some-client", "web", 1),
+        new DependencyLink("web", "app", 1),
+        new DependencyLink("app", "db", 1)
     );
   }
 
@@ -402,39 +362,39 @@ public abstract class DependenciesTest {
   public void intermediateSpans() {
     List<Span> trace = asList(
         new Span.Builder().traceId(20L).id(20L).name("get")
-            .timestamp(today * 1000).duration(350L * 1000)
-            .addAnnotation(Annotation.create(today * 1000, SERVER_RECV, zipkinWeb))
-            .addAnnotation(Annotation.create((today + 350) * 1000, SERVER_SEND, zipkinWeb)).build(),
+            .timestamp(TODAY * 1000).duration(350L * 1000)
+            .addAnnotation(Annotation.create(TODAY * 1000, SERVER_RECV, WEB_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, WEB_ENDPOINT)).build(),
         new Span.Builder().traceId(20L).parentId(20L).id(21L).name("call")
-            .timestamp((today + 25) * 1000).duration(325L * 1000)
+            .timestamp((TODAY + 25) * 1000).duration(325L * 1000)
             .addBinaryAnnotation(
-                BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "depth2", zipkinWeb)).build(),
+                BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "depth2", WEB_ENDPOINT)).build(),
         new Span.Builder().traceId(20L).parentId(21L).id(22L).name("get")
-            .timestamp((today + 50) * 1000).duration(250L * 1000)
-            .addAnnotation(Annotation.create((today + 50) * 1000, CLIENT_SEND, zipkinWeb))
-            .addAnnotation(Annotation.create((today + 100) * 1000, SERVER_RECV, zipkinQuery))
-            .addAnnotation(Annotation.create((today + 250) * 1000, SERVER_SEND, zipkinQuery))
-            .addAnnotation(Annotation.create((today + 300) * 1000, CLIENT_RECV, zipkinWeb)).build(),
+            .timestamp((TODAY + 50) * 1000).duration(250L * 1000)
+            .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT)).build(),
         new Span.Builder().traceId(20L).parentId(22L).id(23L).name("call")
-            .timestamp((today + 110) * 1000).duration(130L * 1000)
+            .timestamp((TODAY + 110) * 1000).duration(130L * 1000)
             .addBinaryAnnotation(
-                BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "depth4", zipkinQuery)).build(),
+                BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "depth4", APP_ENDPOINT)).build(),
         new Span.Builder().traceId(20L).parentId(23L).id(24L).name("call")
-            .timestamp((today + 125) * 1000).duration(105L * 1000)
+            .timestamp((TODAY + 125) * 1000).duration(105L * 1000)
             .addBinaryAnnotation(
-                BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "depth5", zipkinQuery)).build(),
+                BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "depth5", APP_ENDPOINT)).build(),
         new Span.Builder().traceId(20L).parentId(24L).id(25L).name("get")
-            .timestamp((today + 150) * 1000).duration(50L * 1000)
-            .addAnnotation(Annotation.create((today + 150) * 1000, CLIENT_SEND, zipkinQuery))
-            .addAnnotation(Annotation.create((today + 200) * 1000, CLIENT_RECV, zipkinQuery))
-            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, zipkinJdbc)).build()
+            .timestamp((TODAY + 150) * 1000).duration(50L * 1000)
+            .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, APP_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, DB_ENDPOINT)).build()
     );
 
     processDependencies(trace);
 
-    assertThat(store().getDependencies(today + 1000, null)).containsOnly(
-        new DependencyLink("zipkin-web", "zipkin-query", 1),
-        new DependencyLink("zipkin-query", "zipkin-jdbc", 1)
+    assertThat(store().getDependencies(TODAY + 1000, null)).containsOnly(
+        new DependencyLink("web", "app", 1),
+        new DependencyLink("app", "db", 1)
     );
   }
 
@@ -448,45 +408,45 @@ public abstract class DependenciesTest {
   public void duplicateAddress() {
     List<Span> trace = asList(
         new Span.Builder().traceId(20L).id(20L).name("get")
-            .timestamp(today * 1000).duration(350L * 1000)
-            .addAnnotation(Annotation.create(today * 1000, SERVER_RECV, zipkinWeb))
-            .addAnnotation(Annotation.create((today + 350) * 1000, SERVER_SEND, zipkinWeb))
-            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, zipkinWeb))
-            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, zipkinWeb)).build(),
+            .timestamp(TODAY * 1000).duration(350L * 1000)
+            .addAnnotation(Annotation.create(TODAY * 1000, SERVER_RECV, WEB_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, WEB_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, WEB_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, WEB_ENDPOINT)).build(),
         new Span.Builder().traceId(20L).parentId(21L).id(22L).name("get")
-            .timestamp((today + 50) * 1000).duration(250L * 1000)
-            .addAnnotation(Annotation.create((today + 50) * 1000, CLIENT_SEND, zipkinWeb))
-            .addAnnotation(Annotation.create((today + 300) * 1000, CLIENT_RECV, zipkinWeb))
-            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, zipkinQuery))
-            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, zipkinQuery)).build()
+            .timestamp((TODAY + 50) * 1000).duration(250L * 1000)
+            .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, APP_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, APP_ENDPOINT)).build()
     );
 
     processDependencies(trace);
 
-    assertThat(store().getDependencies(today + 1000, null)).containsOnly(
-        new DependencyLink("zipkin-web", "zipkin-query", 1)
+    assertThat(store().getDependencies(TODAY + 1000, null)).containsOnly(
+        new DependencyLink("web", "app", 1)
     );
   }
 
   @Test
   public void unmergedSpans() {
     List<Span> trace = asList(
-        new Span.Builder().traceId(1L).parentId(1L).id(2L).name("get").timestamp((today + 100) * 1000)
-            .addAnnotation(Annotation.create((today + 100) * 1000, SERVER_RECV, zipkinQueryNoPort))
-            .addAnnotation(Annotation.create((today + 250) * 1000, SERVER_SEND, zipkinQueryNoPort))
-            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, zipkinWeb))
+        new Span.Builder().traceId(1L).parentId(1L).id(2L).name("get").timestamp((TODAY + 100) * 1000)
+            .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, WEB_ENDPOINT))
             .build(),
-        new Span.Builder().traceId(1L).parentId(1L).id(2L).name("get").timestamp((today + 50) * 1000)
-            .addAnnotation(Annotation.create((today + 50) * 1000, CLIENT_SEND, zipkinWeb))
-            .addAnnotation(Annotation.create((today + 300) * 1000, CLIENT_RECV, zipkinWeb))
-            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, zipkinQuery))
+        new Span.Builder().traceId(1L).parentId(1L).id(2L).name("get").timestamp((TODAY + 50) * 1000)
+            .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, APP_ENDPOINT))
             .build()
     );
 
     processDependencies(trace);
 
-    assertThat(store().getDependencies(today + 1000, null)).containsOnly(
-        new DependencyLink("zipkin-web", "zipkin-query", 1)
+    assertThat(store().getDependencies(TODAY + 1000, null)).containsOnly(
+        new DependencyLink("web", "app", 1)
     );
   }
 
@@ -497,9 +457,9 @@ public abstract class DependenciesTest {
             .traceId(s.traceId + 100)
             .parentId(s.parentId != null ? s.parentId + 100 : null)
             .id(s.id + 100)
-            .timestamp(s.timestamp != null ? s.timestamp - (day * 1000) : null)
+            .timestamp(s.timestamp != null ? s.timestamp - (DAY * 1000) : null)
             .annotations(s.annotations.stream()
-                .map(a -> Annotation.create(a.timestamp - (day * 1000), a.value, a.endpoint))
+                .map(a -> Annotation.create(a.timestamp - (DAY * 1000), a.value, a.endpoint))
                 .collect(toList()))
             .build()
         ).collect(toList());
