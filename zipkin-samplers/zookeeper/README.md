@@ -47,5 +47,5 @@ Path | Owner | Description
 
 ## More information
 More details are available in the [javadoc](./src/main/java/zipkin/sampler/zookeeper/ZooKeeperSampler.java)
-The sampling implementation was initially based on [zipkin-scala](https://github.com/openzipkin/zipkin/tree/1.39.6/zipkin-sampler).
+The sampling implementation was initially based on [zipkin-scala](https://github.com/openzipkin/zipkin/tree/1.39.7/zipkin-sampler).
 
