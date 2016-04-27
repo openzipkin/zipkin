@@ -19,7 +19,7 @@ trait CollectAnnotationQueries {
    * Only return maximum of limit trace ids from before the endTs.
    */
   protected def getTraceIdsByName(
-    serviceName: String,
+    serviceName: Option[String],
     spanName: Option[String],
     endTs: Long,
     lookback: Long,
@@ -32,7 +32,7 @@ trait CollectAnnotationQueries {
    * Only return maximum of limit trace ids from before the endTs.
    */
   protected def getTraceIdsByAnnotation(
-    serviceName: String,
+    serviceName: Option[String],
     annotation: String,
     value: Option[ByteBuffer],
     endTs: Long,
@@ -42,7 +42,7 @@ trait CollectAnnotationQueries {
 
   /** Only return traces where [[Span.duration]] is between minDuration and maxDuration */
   protected def getTraceIdsByDuration(
-    serviceName: String,
+    serviceName: Option[String],
     spanName: Option[String],
     minDuration: Long,
     maxDuration: Option[Long],

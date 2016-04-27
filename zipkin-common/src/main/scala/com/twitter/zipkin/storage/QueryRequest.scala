@@ -34,7 +34,7 @@ import scala.util.hashing.MurmurHash3
  * @param limit maximum number of traces to return. Defaults to 10.
  */
 // This is not a case-class as we need to enforce serviceName and spanName as lowercase
-class QueryRequest(_serviceName: String,
+class QueryRequest(_serviceName: Option[String] = None,
                    _spanName: Option[String] = None,
                    val annotations: Set[String] = Set.empty,
                    val binaryAnnotations: Set[(String, String)] = Set.empty,
@@ -45,7 +45,7 @@ class QueryRequest(_serviceName: String,
                    val limit: Int = 10) {
 
   /** Mandatory [[com.twitter.zipkin.common.Endpoint.serviceName]] */
-  val serviceName: String = _serviceName.toLowerCase
+  val serviceName: Option[String] = _serviceName.map(_.toLowerCase)
 
   /** When present, only include traces with this [[com.twitter.zipkin.common.Span.name]] */
   val spanName: Option[String] = _spanName.map(_.toLowerCase)
@@ -56,7 +56,7 @@ class QueryRequest(_serviceName: String,
    */
   val lookback: Long = Math.min(_lookback.getOrElse(endTs), endTs)
 
-  checkArgument(serviceName.nonEmpty, "serviceName was empty")
+  checkArgument(serviceName.map(_.nonEmpty).getOrElse(true), "serviceName was empty")
   checkArgument(spanName.map(_.nonEmpty).getOrElse(true), "spanName was empty")
   checkArgument(minDuration.map(_ > 0).getOrElse(true),
     () => "minDuration should be positive: was " + minDuration.get)
@@ -80,7 +80,7 @@ class QueryRequest(_serviceName: String,
   }
 
   def copy(
-    serviceName: String = this.serviceName,
+    serviceName: Option[String] = this.serviceName,
     spanName: Option[String] = this.spanName,
     annotations: Set[String] = this.annotations,
     binaryAnnotations: Set[(String, String)] = this.binaryAnnotations,
@@ -94,7 +94,7 @@ class QueryRequest(_serviceName: String,
 
 object QueryRequest {
   def apply(
-    serviceName: String,
+    serviceName: Option[String] = None,
     spanName: Option[String] = None,
     annotations: Set[String] = Set.empty,
     binaryAnnotations: Set[(String, String)] = Set.empty,

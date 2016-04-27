@@ -17,6 +17,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -69,8 +70,10 @@ public final class Repository implements AutoCloseable {
     private final PreparedStatement insertDependencies;
     private final PreparedStatement selectServiceNames;
     private final PreparedStatement insertServiceName;
+    private final PreparedStatement selectAllSpanNames;
     private final PreparedStatement selectSpanNames;
     private final PreparedStatement insertSpanName;
+    private final PreparedStatement selectTraceIds;
     private final PreparedStatement selectTraceIdsByServiceName;
     private final PreparedStatement insertTraceIdByServiceName;
     private final PreparedStatement selectTraceIdsBySpanName;
@@ -151,6 +154,12 @@ public final class Repository implements AutoCloseable {
                     .value("service_name", QueryBuilder.bindMarker("service_name"))
                     .using(QueryBuilder.ttl(QueryBuilder.bindMarker("ttl_"))));
 
+        selectAllSpanNames = session.prepare(
+                QueryBuilder.select("span_name")
+                        .from("span_names")
+                        .where(QueryBuilder.eq("bucket", QueryBuilder.bindMarker("bucket")))
+                        .limit(QueryBuilder.bindMarker("limit_")));
+
         selectSpanNames = session.prepare(
                 QueryBuilder.select("span_name")
                     .from("span_names")
@@ -165,6 +174,16 @@ public final class Repository implements AutoCloseable {
                     .value("bucket", QueryBuilder.bindMarker("bucket"))
                     .value("span_name", QueryBuilder.bindMarker("span_name"))
                     .using(QueryBuilder.ttl(QueryBuilder.bindMarker("ttl_"))));
+
+        selectTraceIds = session.prepare(
+                QueryBuilder.select("ts", "trace_id")
+                        .from("service_name_index")
+                        .where(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
+                        .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
+                        .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
+                        .limit(QueryBuilder.bindMarker("limit_"))
+                        .orderBy(QueryBuilder.desc("ts")));
+
 
         selectTraceIdsByServiceName = session.prepare(
                 QueryBuilder.select("ts", "trace_id")
@@ -443,6 +462,29 @@ public final class Repository implements AutoCloseable {
                 .replace(":ttl_", String.valueOf(ttl));
     }
 
+    public ListenableFuture<Set<String>> getAllSpanNames() {
+        try {
+            BoundStatement bound = selectAllSpanNames.bind()
+                    .setInt("bucket", 0)
+                    // no one is ever going to browse so many span names
+                    .setInt("limit_", 1000);
+
+            return Futures.transform(
+                    session.executeAsync(bound),
+                    (ResultSet input) -> {
+                        Set<String> spanNames = new HashSet<>();
+                        for (Row row : input) {
+                            spanNames.add(row.getString("span_name"));
+                        }
+                        return spanNames.size() < 1000 ? spanNames : Collections.singleton("too many span names");
+                    }
+            );
+        } catch (RuntimeException ex) {
+            LOG.error("failed", ex);
+            throw ex;
+        }
+    }
+
     public ListenableFuture<Set<String>> getSpanNames(String serviceName) {
         Preconditions.checkNotNull(serviceName);
         serviceName = serviceName.toLowerCase(); // service names are always lowercase!
@@ -515,6 +557,33 @@ public final class Repository implements AutoCloseable {
                 .replace(":service_name", serviceName)
                 .replace(":span_name", spanName)
                 .replace(":ttl_", String.valueOf(ttl));
+    }
+
+    public ListenableFuture<Map<Long,Long>> getAllTraceIds(long endTs, long lookback, int limit) {
+        long startTs = endTs - lookback;
+        try {
+            BoundStatement bound = selectTraceIds.bind()
+                    .setList("bucket", ALL_BUCKETS)
+                    .setBytesUnsafe("start_ts", serializeTs(startTs))
+                    .setBytesUnsafe("end_ts", serializeTs(endTs))
+                    .setInt("limit_", limit);
+
+            bound.setFetchSize(Integer.MAX_VALUE);
+
+            return Futures.transform(
+                    session.executeAsync(bound),
+                    (ResultSet input) -> {
+                        Map<Long,Long> traceIdsToTimestamps = new LinkedHashMap<>();
+                        for (Row row : input) {
+                            traceIdsToTimestamps.put(row.getLong("trace_id"), deserializeTs(row, "ts"));
+                        }
+                        return traceIdsToTimestamps;
+                    }
+            );
+        } catch (RuntimeException ex) {
+            LOG.error("failed", ex);
+            return Futures.immediateFailedFuture(ex);
+        }
     }
 
     public ListenableFuture<Map<Long,Long>> getTraceIdsByServiceName(String serviceName, long endTs, long lookback, int limit) {
@@ -774,7 +843,7 @@ public final class Repository implements AutoCloseable {
             IntFunction<ListenableFuture<List<DurationRow>>> oneBucketQuery = (bucket) -> {
                 BoundStatement bound = selectTraceIdsBySpanDuration.bind()
                         .setString("service_name", serviceName)
-                        .setString("span_name", spanName == null ? "" : spanName)
+                        .setString("span_name", spanName)
                         .setInt("time_bucket", bucket)
                         .setLong("max_duration", maxDuration)
                         .setLong("min_duration", minDuration);

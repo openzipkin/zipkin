@@ -31,7 +31,7 @@ class QueryExtractor @Inject()(@Flag("zipkin.queryService.limit") val defaultLim
    * on the GET parameters present
    */
   def apply(req: Request): Try[QueryRequest] = Try {
-    val serviceName = req.params.get("serviceName").getOrElse("")
+    val serviceName = req.params.get("serviceName")
     val spanName = req.params.get("spanName").flatMap(n => if (n == "all" || n == "") None else Some(n))
     val minDuration = req.params.get("minDuration").flatMap(d => if (d.isEmpty) None else Some(d.toLong))
     val maxDuration = req.params.get("maxDuration").flatMap(d => if (d.isEmpty) None else Some(d.toLong))
