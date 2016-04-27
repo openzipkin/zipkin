@@ -34,7 +34,7 @@ import static zipkin.internal.Util.equal;
  * server side due to rewriting, like "/api/v1/myresource" vs "/myresource. Via the host field, you
  * can see the different points of view, which often help in debugging.
  */
-public final class BinaryAnnotation {
+public final class BinaryAnnotation implements Comparable<BinaryAnnotation> {
 
   /** A subset of thrift base types, except BYTES. */
   public enum Type {
@@ -219,5 +219,12 @@ public final class BinaryAnnotation {
     h *= 1000003;
     h ^= (endpoint == null) ? 0 : endpoint.hashCode();
     return h;
+  }
+
+  /** Provides consistent iteration by {@link #key} */
+  @Override
+  public int compareTo(BinaryAnnotation that) {
+    if (this == that) return 0;
+    return key.compareTo(that.key);
   }
 }
