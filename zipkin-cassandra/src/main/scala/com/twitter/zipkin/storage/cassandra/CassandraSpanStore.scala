@@ -286,7 +286,7 @@ abstract class CassandraSpanStore(
       case (Some(x: String), Some(y: String)) =>
         repository.getTraceIdsBySpanName(x, y, endTs * 1000, lookback * 1000, limit)
       case (Some(x: String), None) => repository.getTraceIdsByServiceName(x, endTs * 1000, lookback * 1000, limit)
-      case (None, y) => repository.getAllTraceIds(endTs * 1000, lookback * 1000, limit)
+      case (None, _) => repository.getAllTraceIds(endTs * 1000, lookback * 1000, limit)
     })
 
     traceIdsFuture.map { traceIds =>

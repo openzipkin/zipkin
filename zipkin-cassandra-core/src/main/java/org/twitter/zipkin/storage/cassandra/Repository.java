@@ -157,7 +157,6 @@ public final class Repository implements AutoCloseable {
         selectAllSpanNames = session.prepare(
                 QueryBuilder.select("span_name")
                         .from("span_names")
-                        .where(QueryBuilder.eq("bucket", QueryBuilder.bindMarker("bucket")))
                         .limit(QueryBuilder.bindMarker("limit_")));
 
         selectSpanNames = session.prepare(
@@ -177,12 +176,11 @@ public final class Repository implements AutoCloseable {
 
         selectTraceIds = session.prepare(
                 QueryBuilder.select("ts", "trace_id")
-                        .from("service_name_index")
-                        .where(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
-                        .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
-                        .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
-                        .limit(QueryBuilder.bindMarker("limit_"))
-                        .orderBy(QueryBuilder.desc("ts")));
+                    .from("service_name_index")
+                    .where(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
+                    .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
+                    .limit(QueryBuilder.bindMarker("limit_"))
+                    .allowFiltering());
 
 
         selectTraceIdsByServiceName = session.prepare(
@@ -465,7 +463,6 @@ public final class Repository implements AutoCloseable {
     public ListenableFuture<Set<String>> getAllSpanNames() {
         try {
             BoundStatement bound = selectAllSpanNames.bind()
-                    .setInt("bucket", 0)
                     // no one is ever going to browse so many span names
                     .setInt("limit_", 1000);
 
@@ -563,7 +560,6 @@ public final class Repository implements AutoCloseable {
         long startTs = endTs - lookback;
         try {
             BoundStatement bound = selectTraceIds.bind()
-                    .setList("bucket", ALL_BUCKETS)
                     .setBytesUnsafe("start_ts", serializeTs(startTs))
                     .setBytesUnsafe("end_ts", serializeTs(endTs))
                     .setInt("limit_", limit);

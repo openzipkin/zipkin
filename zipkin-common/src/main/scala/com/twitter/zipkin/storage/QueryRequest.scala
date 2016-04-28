@@ -15,8 +15,8 @@ import scala.util.hashing.MurmurHash3
  * the grain of [[com.twitter.zipkin.common.Span.timestamp]]. Milliseconds is a more familiar and
  * supported granularity for query, index and windowing functions.
  *
- * @param _serviceName Mandatory [[com.twitter.zipkin.common.Endpoint.serviceName]] and constrains
- *                     all other parameters.
+ * @param _serviceName When present, only include traces with this [[com.twitter.zipkin.common.Endpoint.serviceName]]
+ *                     and constrains all other parameters.
  * @param _spanName When present, only include traces with this [[com.twitter.zipkin.common.Span.name]]
  * @param annotations Include traces whose [[com.twitter.zipkin.common.Span.annotations]] include a value in this set.
  *                    This is an AND condition against the set, as well against [[binaryAnnotations]]
@@ -44,7 +44,7 @@ class QueryRequest(_serviceName: Option[String] = None,
                    _lookback: Option[Long] = None,
                    val limit: Int = 10) {
 
-  /** Mandatory [[com.twitter.zipkin.common.Endpoint.serviceName]] */
+  /** When present, only include traces with this [[com.twitter.zipkin.common.Endpoint.serviceName]] */
   val serviceName: Option[String] = _serviceName.map(_.toLowerCase)
 
   /** When present, only include traces with this [[com.twitter.zipkin.common.Span.name]] */
