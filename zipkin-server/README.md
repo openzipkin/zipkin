@@ -127,7 +127,7 @@ The following apply when `KAFKA_ZOOKEEPER` is set:
 Example usage:
 
 ```bash
-$ TRANSPORT_TYPE=kafka KAFKA_ZOOKEEPER=127.0.0.1:2181 ./mvnw -pl zipkin-server spring-boot:run
+$ KAFKA_ZOOKEEPER=127.0.0.1:2181 ./mvnw -pl zipkin-server spring-boot:run
 ```
 
 Example targeting Kafka running in Docker:
@@ -140,7 +140,7 @@ $ docker run -d -p 2181:2181 -p 9092:9092 \
     --env AUTO_CREATE_TOPICS=true \
     spotify/kafka
 # Start the zipkin server, which reads $KAFKA_ZOOKEEPER
-$ TRANSPORT_TYPE=kafka ./mvnw -pl zipkin-server spring-boot:run
+$ ./mvnw -pl zipkin-server spring-boot:run
 ```
 
 ## Running with Docker
