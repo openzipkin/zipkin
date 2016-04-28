@@ -54,5 +54,12 @@
         </exclusion>
       </exclusions>
     </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

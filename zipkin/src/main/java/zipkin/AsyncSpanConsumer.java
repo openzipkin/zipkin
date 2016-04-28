@@ -34,7 +34,7 @@ public interface AsyncSpanConsumer {
   };
 
   /**
-   * Receives a list of spans {@link Codec#readSpans(byte[]) decoded} from a transport.
+   * Stores a list of spans {@link Codec#readSpans(byte[]) read} from a transport.
    *
    * @param spans may be subject to a {@link CollectorSampler#isSampled(long) sampling policy}.
    */

@@ -16,41 +16,51 @@ package zipkin.scribe;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import zipkin.AsyncSpanConsumer;
 import zipkin.Callback;
 import zipkin.Codec;
+import zipkin.CollectorMetrics;
 import zipkin.Span;
 import zipkin.internal.Lazy;
 import zipkin.internal.SpanConsumerLogger;
 
 final class ScribeSpanConsumer implements Scribe {
-  final SpanConsumerLogger logger = new SpanConsumerLogger(ScribeSpanConsumer.class);
   final String category;
   final Lazy<AsyncSpanConsumer> consumer;
+  final SpanConsumerLogger logger;
 
-  ScribeSpanConsumer(String category, Lazy<AsyncSpanConsumer> consumer) {
+  ScribeSpanConsumer(String category, Lazy<AsyncSpanConsumer> consumer, CollectorMetrics metrics) {
     this.category = category;
     this.consumer = consumer;
+    this.logger = new SpanConsumerLogger(ScribeSpanConsumer.class, metrics);
   }
 
   @Override
   public ListenableFuture<ResultCode> log(List<LogEntry> messages) {
+    logger.acceptedMessage();
+    AtomicInteger serializedBytes = new AtomicInteger(); // because of the lambda
     List<Span> spans;
     try {
       spans = messages.stream()
           .filter(m -> m.category.equals(category))
-          .map(e -> Base64.getMimeDecoder().decode(e.message)) // finagle-zipkin uses mime encoding
+          .map(m -> m.message.getBytes(StandardCharsets.ISO_8859_1))
+          .map(b -> Base64.getMimeDecoder().decode(b)) // finagle-zipkin uses mime encoding
+          .peek(b -> serializedBytes.addAndGet(b.length))
           .map(Codec.THRIFT::readSpan)
           .filter(s -> s != null).collect(Collectors.toList());
     } catch (RuntimeException e) {
-      logger.errorDecoding(e);
+      logger.errorReading(e);
       return Futures.immediateFailedFuture(e);
     }
+    logger.readBytes(serializedBytes.get());
 
     if (spans.isEmpty()) return Futures.immediateFuture(ResultCode.OK);
+    logger.readSpans(spans.size());
 
     ErrorLoggingFuture result = new ErrorLoggingFuture(logger, spans);
     try {

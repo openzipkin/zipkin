@@ -21,10 +21,13 @@ import static zipkin.internal.Util.checkNotNull;
 final class InternalSamplingAsyncSpanConsumer implements AsyncSpanConsumer {
   final AsyncSpanConsumer asyncConsumer;
   final CollectorSampler sampler;
+  final CollectorMetrics metrics;
 
-  InternalSamplingAsyncSpanConsumer(AsyncSpanConsumer asyncConsumer, CollectorSampler sampler) {
+  InternalSamplingAsyncSpanConsumer(AsyncSpanConsumer asyncConsumer, CollectorSampler sampler,
+      CollectorMetrics metrics) {
     this.asyncConsumer = checkNotNull(asyncConsumer, "asyncConsumer");
     this.sampler = checkNotNull(sampler, "sampler");
+    this.metrics = checkNotNull(metrics, "metrics");
   }
 
   @Override
@@ -33,6 +36,8 @@ final class InternalSamplingAsyncSpanConsumer implements AsyncSpanConsumer {
     for (Span s : input) {
       if (sampler.isSampled(s)) sampled.add(s);
     }
+    int dropped = input.size() - sampled.size();
+    if (dropped > 0) metrics.incrementSpansDropped(dropped);
     asyncConsumer.accept(sampled, callback);
   }
 }

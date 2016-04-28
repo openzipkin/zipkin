@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static zipkin.CollectorMetrics.NOOP_METRICS;
 
 public class InternalSamplingAsyncSpanConsumerTest {
 
@@ -36,7 +37,8 @@ public class InternalSamplingAsyncSpanConsumerTest {
 
   @Test
   public void debugFlagWins() {
-    AsyncSpanConsumer samplingConsumer = new InternalSamplingAsyncSpanConsumer(consumer, never);
+    AsyncSpanConsumer samplingConsumer = new InternalSamplingAsyncSpanConsumer(consumer, never,
+        NOOP_METRICS);
 
     samplingConsumer.accept(asList(builder.debug(true).build()), AsyncSpanConsumer.NOOP_CALLBACK);
 
@@ -45,7 +47,8 @@ public class InternalSamplingAsyncSpanConsumerTest {
 
   @Test
   public void unsampledSpansArentStored() {
-    AsyncSpanConsumer samplingConsumer = new InternalSamplingAsyncSpanConsumer(consumer, never);
+    AsyncSpanConsumer samplingConsumer = new InternalSamplingAsyncSpanConsumer(consumer, never,
+        NOOP_METRICS);
 
     samplingConsumer.accept(asList(builder.build()), AsyncSpanConsumer.NOOP_CALLBACK);
 

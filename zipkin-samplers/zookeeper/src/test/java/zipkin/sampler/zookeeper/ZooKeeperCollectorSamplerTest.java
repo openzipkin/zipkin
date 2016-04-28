@@ -13,13 +13,10 @@
  */
 package zipkin.sampler.zookeeper;
 
-import java.util.Random;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import zipkin.Annotation;
-import zipkin.Constants;
-import zipkin.Endpoint;
+import zipkin.CollectorMetrics;
 import zipkin.InMemoryStorage;
 import zipkin.Span;
 import zipkin.internal.CallbackCaptor;
@@ -27,6 +24,7 @@ import zipkin.internal.CallbackCaptor;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.withinPercentage;
+import static zipkin.TestObjects.LOTS_OF_SPANS;
 
 public class ZooKeeperCollectorSamplerTest {
   static final String PREFIX = "/" + ZooKeeperCollectorSamplerTest.class.getSimpleName();
@@ -34,6 +32,7 @@ public class ZooKeeperCollectorSamplerTest {
 
   InMemoryStorage storage = new InMemoryStorage();
   ZooKeeperCollectorSampler sampler;
+  CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
 
   @Before public void clear() throws Exception {
     if (sampler != null) {
@@ -49,14 +48,14 @@ public class ZooKeeperCollectorSamplerTest {
     // Simulates an existing sample rate, set from connectString
     zookeeper.create(PREFIX + "/sampleRate", "0.9");
 
-    accept(spans);
+    accept(LOTS_OF_SPANS);
 
     assertThat(storage.acceptedSpanCount())
-        .isCloseTo((int) (spans.length * 0.9), withinPercentage(3));
+        .isCloseTo((int) (LOTS_OF_SPANS.length * 0.9), withinPercentage(3));
   }
 
   @Test public void exportsStoreRateToZookeeperOnInterval() throws Exception {
-    accept(spans);
+    accept(LOTS_OF_SPANS);
 
     // Until the update interval, we'll see a store rate of zero
     assertThat(sampler.storeRate.get()).isZero();
@@ -66,7 +65,7 @@ public class ZooKeeperCollectorSamplerTest {
 
     // since update frequency is secondly, the rate exported to ZK will be the amount stored * 60
     assertThat(sampler.storeRate.get())
-        .isEqualTo(spans.length * 60);
+        .isEqualTo(LOTS_OF_SPANS.length * 60);
     assertThat(storeRateFromZooKeeper(sampler.groupMember))
         .isEqualTo(sampler.storeRate.get());
   }
@@ -74,25 +73,13 @@ public class ZooKeeperCollectorSamplerTest {
   /** Blocks until the callback completes to allow read-your-writes consistency during tests. */
   void accept(Span... spans) {
     CallbackCaptor<Void> captor = new CallbackCaptor<>();
-    storage.asyncSpanConsumer(sampler).accept(asList(spans), captor);
+    storage.asyncSpanConsumer(sampler, metrics).accept(asList(spans), captor);
     captor.get(); // block on result
   }
 
   int storeRateFromZooKeeper(String id) throws Exception {
     byte[] data = zookeeper.client.getData().forPath(PREFIX + "/storeRates/" + id);
     return data.length == 0 ? 0 : Integer.parseInt(new String(data));
-  }
-
-  /**
-   * Zipkin trace ids are random 64bit numbers. This creates a relatively large input to avoid
-   * flaking out due to PRNG nuance.
-   */
-  static Span[] spans = new Random().longs(100000).mapToObj(t -> span(t)).toArray(Span[]::new);
-
-  static Span span(long traceId) {
-    Endpoint e = Endpoint.create("service", 127 << 24 | 1, 8080);
-    Annotation ann = Annotation.create(System.currentTimeMillis() * 1000, Constants.SERVER_RECV, e);
-    return new Span.Builder().traceId(traceId).id(traceId).name("get").addAnnotation(ann).build();
   }
 }
 

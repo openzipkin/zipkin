@@ -15,6 +15,9 @@ package zipkin.kafka;
 
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import org.junit.ClassRule;
@@ -25,22 +28,22 @@ import zipkin.Annotation;
 import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
 import zipkin.Endpoint;
+import zipkin.InMemoryCollectorMetrics;
 import zipkin.Span;
+import zipkin.TestObjects;
 import zipkin.internal.Lazy;
 import zipkin.kafka.KafkaCollector.Builder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.Constants.SERVER_RECV;
+import static zipkin.TestObjects.TRACE;
 
 public class KafkaCollectorTest {
   @ClassRule public static Timeout globalTimeout = Timeout.seconds(10);
   Producer<String, byte[]> producer = KafkaTestGraph.INSTANCE.producer();
-
-  Endpoint endpoint = Endpoint.create("web", 127 << 24 | 1, 80);
-  Annotation ann = Annotation.create(System.currentTimeMillis() * 1000, SERVER_RECV, endpoint);
-  Span span = new Span.Builder().traceId(1L).id(2L).timestamp(ann.timestamp).name("get")
-      .addAnnotation(ann).build();
+  InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
+  InMemoryCollectorMetrics kafkaMetrics = metrics.forTransport("kafka");
 
   LinkedBlockingQueue<List<Span>> recvdSpans = new LinkedBlockingQueue<>();
   AsyncSpanConsumer consumer = (spans, callback) -> {
@@ -63,11 +66,16 @@ public class KafkaCollectorTest {
   public void messageWithSingleThriftSpan() throws Exception {
     Builder builder = builder("single_span");
 
-    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpan(span)));
+    byte[] bytes = Codec.THRIFT.writeSpan(TRACE.get(0));
+    producer.send(new KeyedMessage<>(builder.topic, bytes));
 
     try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
-      assertThat(recvdSpans.take()).containsExactly(span);
+      assertThat(recvdSpans.take()).containsExactly(TRACE.get(0));
     }
+
+    assertThat(kafkaMetrics.messages()).isEqualTo(1);
+    assertThat(kafkaMetrics.bytes()).isEqualTo(bytes.length);
+    assertThat(kafkaMetrics.spans()).isEqualTo(1);
   }
 
   /** Ensures list encoding works: a TBinaryProtocol encoded list of spans */
@@ -75,11 +83,16 @@ public class KafkaCollectorTest {
   public void messageWithMultipleSpans_thrift() throws Exception {
     Builder builder = builder("multiple_spans_thrift");
 
-    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(asList(span, span))));
+    byte[] bytes = Codec.THRIFT.writeSpans(TRACE);
+    producer.send(new KeyedMessage<>(builder.topic, bytes));
 
     try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
-      assertThat(recvdSpans.take()).containsExactly(span, span);
+      assertThat(recvdSpans.take()).containsExactlyElementsOf(TRACE);
     }
+
+    assertThat(kafkaMetrics.messages()).isEqualTo(1);
+    assertThat(kafkaMetrics.bytes()).isEqualTo(bytes.length);
+    assertThat(kafkaMetrics.spans()).isEqualTo(TestObjects.TRACE.size());
   }
 
   /** Ensures list encoding works: a json encoded list of spans */
@@ -87,11 +100,16 @@ public class KafkaCollectorTest {
   public void messageWithMultipleSpans_json() throws Exception {
     Builder builder = builder("multiple_spans_json");
 
-    producer.send(new KeyedMessage<>(builder.topic, Codec.JSON.writeSpans(asList(span, span))));
+    byte[] bytes = Codec.JSON.writeSpans(TRACE);
+    producer.send(new KeyedMessage<>(builder.topic, bytes));
 
     try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
-      assertThat(recvdSpans.take()).containsExactly(span, span);
+      assertThat(recvdSpans.take()).containsExactlyElementsOf(TRACE);
     }
+
+    assertThat(kafkaMetrics.messages()).isEqualTo(1);
+    assertThat(kafkaMetrics.bytes()).isEqualTo(bytes.length);
+    assertThat(kafkaMetrics.spans()).isEqualTo(TestObjects.TRACE.size());
   }
 
   /** Ensures malformed spans don't hang the processor */
@@ -99,26 +117,29 @@ public class KafkaCollectorTest {
   public void skipsMalformedData() throws Exception {
     Builder builder = builder("decoder_exception");
 
-    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(asList(span))));
+    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(TRACE)));
     producer.send(new KeyedMessage<>(builder.topic, "[\"='".getBytes())); // screwed up json
     producer.send(new KeyedMessage<>(builder.topic, "malformed".getBytes()));
-    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(asList(span))));
+    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(TRACE)));
 
     try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
-      assertThat(recvdSpans.take()).containsExactly(span);
+      assertThat(recvdSpans.take()).containsExactlyElementsOf(TRACE);
       // the only way we could read this, is if the malformed spans were skipped.
-      assertThat(recvdSpans.take()).containsExactly(span);
+      assertThat(recvdSpans.take()).containsExactlyElementsOf(TRACE);
     }
+
+    assertThat(kafkaMetrics.messagesDropped()).isEqualTo(2);
   }
 
   /** Guards against errors that leak from storage, such as InvalidQueryException */
   @Test
-  @Ignore // TODO: figure out why this breaks travis
   public void skipsOnConsumerException() throws Exception {
     Builder builder = builder("consumer_exception");
 
+    AtomicInteger counter = new AtomicInteger();
+
     consumer = (spans, callback) -> {
-      if (recvdSpans.size() == 1) {
+      if (counter.getAndIncrement() == 1) {
         callback.onError(new RuntimeException("storage fell over"));
       } else {
         recvdSpans.add(spans);
@@ -126,23 +147,24 @@ public class KafkaCollectorTest {
       }
     };
 
-    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(asList(span))));
-    producer.send(new KeyedMessage<>(builder.topic,
-        Codec.THRIFT.writeSpans(asList(span)))); // tossed on error
-    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(asList(span))));
+    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(TRACE)));
+    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(TRACE))); // tossed on error
+    producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(TRACE)));
 
     try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
-      assertThat(recvdSpans.take()).containsExactly(span);
+      assertThat(recvdSpans.take()).containsExactlyElementsOf(TRACE);
       // the only way we could read this, is if the malformed span was skipped.
-      assertThat(recvdSpans.take()).containsExactly(span);
+      assertThat(recvdSpans.take()).containsExactlyElementsOf(TRACE);
     }
+
+    assertThat(kafkaMetrics.spansDropped()).isEqualTo(TestObjects.TRACE.size());
   }
 
   Builder builder(String topic) {
-    return new Builder().zookeeper("127.0.0.1:2181").topic(topic);
+    return new Builder().metrics(metrics).zookeeper("127.0.0.1:2181").topic(topic);
   }
 
-  KafkaCollector newKafkaTransport(Builder builder, final AsyncSpanConsumer consumer) {
+  KafkaCollector newKafkaTransport(Builder builder, AsyncSpanConsumer consumer) {
     return new KafkaCollector(builder, Lazy.of(consumer));
   }
 }

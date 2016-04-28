@@ -28,6 +28,7 @@ import okio.GzipSink;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import zipkin.InMemoryCollectorMetrics;
 import zipkin.InMemoryStorage;
 import zipkin.Span;
 
@@ -44,13 +45,14 @@ import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
 public final class ZipkinRule implements TestRule {
 
   private final InMemoryStorage storage = new InMemoryStorage();
+  private final InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
   private final MockWebServer server = new MockWebServer();
   private final BlockingQueue<MockResponse> failureQueue = new LinkedBlockingQueue<>();
   private final AtomicInteger receivedSpanBytes = new AtomicInteger();
 
   public ZipkinRule() {
     Dispatcher dispatcher = new Dispatcher() {
-      final ZipkinDispatcher successDispatch = new ZipkinDispatcher(storage, server);
+      final ZipkinDispatcher successDispatch = new ZipkinDispatcher(storage, metrics, server);
 
       @Override
       public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
@@ -96,20 +98,9 @@ public final class ZipkinRule implements TestRule {
     return server.getRequestCount();
   }
 
-  /**
-   * Returns the count of spans decoded by the server. This number may be higher than unique span id
-   * count: it corresponds directly to what's reported by instrumentation.
-   */
-  public int receivedSpanCount() {
-    return storage.acceptedSpanCount();
-  }
-
-  /**
-   * Returns the amount of bytes received by the server. This number is affected by compression,
-   * thrift vs json, and if spans are sent in multiple waves, repeating data.
-   */
-  public int receivedSpanBytes() {
-    return receivedSpanBytes.get();
+  /** Use this to see how many spans or serialized bytes were collected on the http endpoint. */
+  public InMemoryCollectorMetrics collectorMetrics() {
+    return metrics;
   }
 
   /**

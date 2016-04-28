@@ -50,6 +50,13 @@
     </dependency>
 
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.apache.curator</groupId>
       <artifactId>curator-test</artifactId>
       <version>${curator.version}</version>

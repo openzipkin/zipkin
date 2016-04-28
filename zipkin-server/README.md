@@ -12,6 +12,7 @@ The following endpoints are defined for Zipkin:
 * /config.json - [Configuration for the UI](#configuration-for-the-ui)
 * /api/v1 - [Api](http://zipkin.io/zipkin-api/#/)
 * /health - Returns 200 status if OK
+* /metrics - Includes collector metrics broken down by transport type 
 
 There are more [built-in endpoints](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-endpoints.html) provided by Spring Boot, such as `/metrics`. To comprehensively list endpoints, `GET /mappings`.
 
@@ -21,6 +22,24 @@ To run the server from the currently checked out source, enter the following.
 ```bash
 $ ./mvnw -pl zipkin-server spring-boot:run
 ```
+
+## Metrics
+
+Metrics are exported to the path `/metrics` and extend [defaults reported by spring-boot](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html).
+
+### Collector
+
+Collector metrics are broken down by transport. The following are exported to the "/metrics" endpoint:
+
+Metric | Description
+--- | ---
+counter.zipkin_collector.messages.$transport | cumulative messages received; should relate to messages reported by instrumented apps
+counter.zipkin_collector.messages_dropped.$transport | cumulative messages dropped; reasons include client disconnects or malformed content
+counter.zipkin_collector.bytes.$transport | cumulative message bytes
+counter.zipkin_collector.spans.$transport | cumulative spans read; should relate to messages reported by instrumented apps
+counter.zipkin_collector.spans_dropped.$transport | cumulative spans dropped; reasons include sampling or storage failures
+gauge.zipkin_collector.message_spans.$transport | last count of spans in a message
+gauge.zipkin_collector.message_bytes.$transport | last count of bytes in a message
 
 ## Self-Tracing
 Self tracing exists to help troubleshoot performance of the zipkin-server.

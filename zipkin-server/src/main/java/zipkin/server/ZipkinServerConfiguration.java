@@ -25,6 +25,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.actuate.metrics.CounterService;
+import org.springframework.boot.actuate.metrics.GaugeService;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -40,6 +42,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import zipkin.Codec;
+import zipkin.CollectorMetrics;
 import zipkin.CollectorSampler;
 import zipkin.InMemoryStorage;
 import zipkin.SpanStore;
@@ -64,6 +67,12 @@ public class ZipkinServerConfiguration {
   @ConditionalOnMissingBean(CollectorSampler.class)
   CollectorSampler traceIdSampler(@Value("${zipkin.collector.sample-rate:1.0}") float rate) {
     return CollectorSampler.create(rate);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(CollectorMetrics.class)
+  CollectorMetrics metrics(CounterService counterService, GaugeService gaugeService) {
+    return new ActuateCollectorMetrics(counterService, gaugeService);
   }
 
   /**
@@ -196,10 +205,12 @@ public class ZipkinServerConfiguration {
   @ConditionalOnClass(name = "zipkin.scribe.ScribeCollector")
   static class ScribeConfiguration {
     @Bean ScribeCollector scribe(ZipkinScribeProperties scribe, CollectorSampler sampler,
-        StorageComponent storage) {
+        CollectorMetrics metrics, StorageComponent storage) {
       return new ScribeCollector.Builder()
+          .sampler(sampler)
+          .metrics(metrics)
           .category(scribe.getCategory())
-          .port(scribe.getPort()).writeTo(storage, sampler);
+          .port(scribe.getPort()).build(storage);
     }
   }
 
@@ -212,13 +223,15 @@ public class ZipkinServerConfiguration {
   @ConditionalOnKafkaZookeeper
   static class KafkaConfiguration {
     @Bean KafkaCollector kafka(ZipkinKafkaProperties kafka, CollectorSampler sampler,
-        StorageComponent storage) {
+        CollectorMetrics metrics, StorageComponent storage) {
       return new KafkaCollector.Builder()
+          .sampler(sampler)
+          .metrics(metrics)
           .topic(kafka.getTopic())
           .zookeeper(kafka.getZookeeper())
           .groupId(kafka.getGroupId())
           .streams(kafka.getStreams())
-          .maxMessageSize(kafka.getMaxMessageSize()).writeTo(storage, sampler);
+          .maxMessageSize(kafka.getMaxMessageSize()).build(storage);
     }
   }
 

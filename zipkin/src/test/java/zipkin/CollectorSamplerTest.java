@@ -53,7 +53,7 @@ public class CollectorSamplerTest {
     float sampleRate = 0.1f;
     CollectorSampler sampler = CollectorSampler.create(sampleRate);
 
-    long passCount = Stream.of(LOTS_OF_SPANS).filter(sampler::isSampled).count();
+    long passCount = Stream.of(LOTS_OF_SPANS).parallel().filter(sampler::isSampled).count();
 
     assertThat(passCount)
         .isCloseTo((long) (LOTS_OF_SPANS.length * sampleRate), withPercentage(3));
@@ -67,15 +67,15 @@ public class CollectorSamplerTest {
     CollectorSampler sampler1 = CollectorSampler.create(0.1f);
     CollectorSampler sampler2 = CollectorSampler.create(0.1f);
 
-    assertThat(Stream.of(LOTS_OF_SPANS).filter(sampler1::isSampled).toArray())
-        .containsExactly(Stream.of(LOTS_OF_SPANS).filter(sampler2::isSampled).toArray());
+    assertThat(Stream.of(LOTS_OF_SPANS).parallel().filter(sampler1::isSampled).toArray())
+        .containsExactly(Stream.of(LOTS_OF_SPANS).parallel().filter(sampler2::isSampled).toArray());
   }
 
   @Test
   public void zeroMeansDropAllTraces() {
     CollectorSampler sampler = CollectorSampler.create(0.0f);
 
-    assertThat(Stream.of(LOTS_OF_SPANS).filter(sampler::isSampled).findAny())
+    assertThat(Stream.of(LOTS_OF_SPANS).parallel().filter(sampler::isSampled).findAny())
         .isEmpty();
   }
 
@@ -83,8 +83,8 @@ public class CollectorSamplerTest {
   public void oneMeansKeepAllTraces() {
     CollectorSampler sampler = CollectorSampler.create(1.0f);
 
-    assertThat(Stream.of(LOTS_OF_SPANS).filter(sampler::isSampled).toArray())
-        .containsExactly(LOTS_OF_SPANS);
+    assertThat(Stream.of(LOTS_OF_SPANS).parallel().filter(sampler::isSampled).count())
+        .isEqualTo(LOTS_OF_SPANS.length);
   }
 
   @Test

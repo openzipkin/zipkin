@@ -15,13 +15,13 @@ package zipkin.spanstore.guava;
 
 import zipkin.AsyncSpanConsumer;
 import zipkin.AsyncSpanStore;
+import zipkin.CollectorMetrics;
 import zipkin.CollectorSampler;
 import zipkin.SpanStore;
 import zipkin.StorageComponent;
 
 import static zipkin.StorageAdapters.asyncToBlocking;
 import static zipkin.StorageAdapters.makeSampled;
-import static zipkin.internal.Util.checkNotNull;
 import static zipkin.spanstore.guava.GuavaStorageAdapters.guavaToAsync;
 
 public abstract class GuavaStorageComponent implements StorageComponent {
@@ -36,8 +36,9 @@ public abstract class GuavaStorageComponent implements StorageComponent {
 
   public abstract GuavaSpanStore guavaSpanStore();
 
-  @Override public AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler) {
-    return makeSampled(guavaToAsync(guavaSpanConsumer()), checkNotNull(sampler, "sampler"));
+  @Override
+  public AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler, CollectorMetrics metrics) {
+    return makeSampled(guavaToAsync(guavaSpanConsumer()), sampler, metrics);
   }
 
   public abstract GuavaSpanConsumer guavaSpanConsumer();

@@ -52,8 +52,7 @@ public void doesntAttemptToRetryOn400() throws IOException {
 Besides `httpRequestCount()`, there are two other counters that can
 help you assert instrumentation is doing what you think:
 
-* `receivedSpanCount()` - How many spans the server received.
-* `receivedSpanBytes()` - The cumulative bytes the server received.
+* `collectorMetrics()` - How many spans or bytes were collected on the http transport.
 
-These counters can validate aspects such as compression or that you are
-grouping spans by id before reporting them to the server.
+These counters can validate aspects such if you are grouping spans by id
+before reporting them to the server.
