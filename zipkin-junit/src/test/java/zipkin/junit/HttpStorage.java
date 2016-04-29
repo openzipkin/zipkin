@@ -18,7 +18,7 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import zipkin.AsyncSpanConsumer;
 import zipkin.AsyncSpanStore;
-import zipkin.Sampler;
+import zipkin.CollectorSampler;
 import zipkin.SpanStore;
 import zipkin.StorageComponent;
 
@@ -59,7 +59,7 @@ final class HttpStorage implements StorageComponent {
     return asyncSpanStore;
   }
 
-  @Override public AsyncSpanConsumer asyncSpanConsumer(Sampler sampler) {
+  @Override public AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler) {
     return makeSampled(consumer, checkNotNull(sampler, "sampler"));
   }
 

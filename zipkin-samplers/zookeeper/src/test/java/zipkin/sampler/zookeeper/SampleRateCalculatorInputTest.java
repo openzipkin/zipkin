@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SampleRateCalculatorInputTest {
 
   @Test public void presentWhenTargetIsPositive() {
-    SampleRateCalculatorInput rates = new SampleRateCalculatorInput(new ZooKeeperSampler.Builder()
+    SampleRateCalculatorInput rates = new SampleRateCalculatorInput(new ZooKeeperCollectorSampler.Builder()
         .windowSize(1)
         .updateFrequency(1)
         .sufficientWindowSize(1)
@@ -39,7 +39,7 @@ public class SampleRateCalculatorInputTest {
   }
 
   @Test public void emptyWhenInsufficientData() {
-    SampleRateCalculatorInput rates = new SampleRateCalculatorInput(new ZooKeeperSampler.Builder()
+    SampleRateCalculatorInput rates = new SampleRateCalculatorInput(new ZooKeeperCollectorSampler.Builder()
         .windowSize(3)
         .sufficientWindowSize(2)
         .updateFrequency(1)
@@ -56,7 +56,7 @@ public class SampleRateCalculatorInputTest {
   }
 
   @Test public void emptyWhenElementIsNotPositive() {
-    SampleRateCalculatorInput rates = new SampleRateCalculatorInput(new ZooKeeperSampler.Builder()
+    SampleRateCalculatorInput rates = new SampleRateCalculatorInput(new ZooKeeperCollectorSampler.Builder()
         .windowSize(1)
         .updateFrequency(1)
         .sufficientWindowSize(1)
@@ -73,7 +73,7 @@ public class SampleRateCalculatorInputTest {
   }
 
   @Test public void emptyUntilEnoughOutliers() {
-    SampleRateCalculatorInput rates = new SampleRateCalculatorInput(new ZooKeeperSampler.Builder()
+    SampleRateCalculatorInput rates = new SampleRateCalculatorInput(new ZooKeeperCollectorSampler.Builder()
         .windowSize(3)
         .sufficientWindowSize(1)
         .updateFrequency(1)

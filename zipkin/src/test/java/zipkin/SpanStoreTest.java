@@ -53,7 +53,7 @@ public abstract class SpanStoreTest {
   /** Blocks until the callback completes to allow read-your-writes consistency during tests. */
   void accept(Span... spans) {
     CallbackCaptor<Void> captor = new CallbackCaptor<>();
-    storage().asyncSpanConsumer(Sampler.ALWAYS_SAMPLE).accept(asList(spans), captor);
+    storage().asyncSpanConsumer(CollectorSampler.ALWAYS_SAMPLE).accept(asList(spans), captor);
     captor.get(); // block on result
   }
 

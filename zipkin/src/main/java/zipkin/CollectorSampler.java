@@ -16,42 +16,36 @@ package zipkin;
 import static zipkin.internal.Util.checkArgument;
 
 /**
- * Sampler decides if a particular trace should be "sampled", i.e. recorded in permanent storage.
- * This involves a consistent decision based on the span's trace ID with one notable exception:
- * {@link Span#debug Debug} spans are always stored.
+ * CollectorSampler decides if a particular trace should be "sampled", i.e. recorded in permanent
+ * storage. This involves a consistent decision based on the span's trace ID with one notable
+ * exception: {@link Span#debug Debug} spans are always stored.
  *
- * <h3>Trace ID sampling algorithm</h3>
+ * <h3>Implementation</h3>
  *
- * <p>Accepts a percentage of trace ids by comparing their absolute value against a boundary. eg
- * {@code isSampled == abs(traceId) <= boundary}
+ * <p>Accepts a percentage of trace ids by comparing their absolute value against a potentially
+ * dynamic boundary. eg {@code isSampled == abs(traceId) <= boundary}
  *
  * <p>While idempotent, this implementation's sample rate won't exactly match the input rate because
  * trace ids are not perfectly distributed across 64bits. For example, tests have shown an error
- * rate of 3% when trace ids are {@link java.util.Random#nextLong random}.
+ * rate of 3% when 100K trace ids are {@link java.util.Random#nextLong random}.
  */
-public abstract class Sampler {
-  public static final Sampler ALWAYS_SAMPLE = Sampler.create(1.0f);
-
-  /**
-   * Boundary to compare against trace IDs.
-   *
-   * <p>If rate is between 0.0 and 1.0, {@code boundary = (Long.MAX_VALUE * rate)}. {@link
-   * #isSampled(Span)} returns true when spans are not debug and {@code abs(traceId) <= boundary}
-   */
-  protected abstract long boundary();
+public abstract class CollectorSampler {
+  public static final CollectorSampler ALWAYS_SAMPLE = CollectorSampler.create(1.0f);
 
   /**
    * @param rate minimum sample rate is 0.0001, or 0.01% of traces
    */
-  public static Sampler create(float rate) {
+  public static CollectorSampler create(float rate) {
     checkArgument(rate >= 0 && rate <= 1, "rate should be between 0 and 1: was %s", rate);
     final long boundary = (long) (Long.MAX_VALUE * rate); // safe cast as less <= 1
-    return new Sampler() {
+    return new CollectorSampler() {
       @Override protected long boundary() {
         return boundary;
       }
     };
   }
+
+  protected abstract long boundary();
 
   /**
    * Returns true if the span should be recorded to storage.
@@ -63,28 +57,17 @@ public abstract class Sampler {
     if (span.debug != null && span.debug) {
       return true;
     }
-    return isSampled(span.traceId);
-  }
-
-  /**
-   * Returns true if a trace should be measured.
-   *
-   * <p>Zipkin v1 instrumentation uses before-the-fact sampling. This means that the decision to
-   * keep or drop the trace is made before any work is measured, or annotations are added. As such,
-   * the input parameter to zipkin v1 samplers is the trace ID (64-bit random number).
-   */
-  public boolean isSampled(long traceId) {
     // The absolute value of Long.MIN_VALUE is larger than a long, so Math.abs returns identity.
     // This converts to MAX_VALUE to avoid always dropping when traceId == Long.MIN_VALUE
-    long t = traceId == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(traceId);
+    long t = span.traceId == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(span.traceId);
     return t <= boundary();
   }
 
   @Override
   public String toString() {
-    return "Sampler(" + boundary() + ")";
+    return "CollectorSampler(" + boundary() + ")";
   }
 
-  protected Sampler() {
+  protected CollectorSampler() {
   }
 }

@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.List;
 import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
-import zipkin.Sampler;
+import zipkin.CollectorSampler;
 import zipkin.Span;
 import zipkin.SpanStore;
 import zipkin.StorageComponent;
@@ -47,6 +47,6 @@ public class SpanStoreSpanCollector extends AbstractSpanCollector {
   @Override
   protected void sendSpans(byte[] json) throws IOException {
     List<Span> spans = Codec.JSON.readSpans(json);
-    storage.asyncSpanConsumer(Sampler.ALWAYS_SAMPLE).accept(spans, AsyncSpanConsumer.NOOP_CALLBACK);
+    storage.asyncSpanConsumer(CollectorSampler.ALWAYS_SAMPLE).accept(spans, AsyncSpanConsumer.NOOP_CALLBACK);
   }
 }

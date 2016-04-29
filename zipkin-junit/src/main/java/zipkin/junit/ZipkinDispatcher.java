@@ -26,7 +26,7 @@ import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.InMemoryStorage;
 import zipkin.QueryRequest;
-import zipkin.Sampler;
+import zipkin.CollectorSampler;
 import zipkin.Span;
 import zipkin.SpanStore;
 import zipkin.internal.SpanConsumerLogger;
@@ -41,7 +41,7 @@ final class ZipkinDispatcher extends Dispatcher {
 
   ZipkinDispatcher(InMemoryStorage storage, MockWebServer server) {
     this.store = storage.spanStore();
-    this.consumer = storage.asyncSpanConsumer(Sampler.ALWAYS_SAMPLE);
+    this.consumer = storage.asyncSpanConsumer(CollectorSampler.ALWAYS_SAMPLE);
     this.server = server;
   }
 

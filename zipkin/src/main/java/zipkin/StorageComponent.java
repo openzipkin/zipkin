@@ -32,7 +32,7 @@ public interface StorageComponent extends AutoCloseable {
    * Used to store spans received on a transport such as Kafka. The provided consumer will retain
    * spans according to the sampler's policy.
    */
-  AsyncSpanConsumer asyncSpanConsumer(Sampler sampler);
+  AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler);
 
   /**
    * Closes any network resources created implicitly by the component.

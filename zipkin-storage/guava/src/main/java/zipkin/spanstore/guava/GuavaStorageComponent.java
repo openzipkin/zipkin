@@ -15,7 +15,7 @@ package zipkin.spanstore.guava;
 
 import zipkin.AsyncSpanConsumer;
 import zipkin.AsyncSpanStore;
-import zipkin.Sampler;
+import zipkin.CollectorSampler;
 import zipkin.SpanStore;
 import zipkin.StorageComponent;
 
@@ -36,7 +36,7 @@ public abstract class GuavaStorageComponent implements StorageComponent {
 
   public abstract GuavaSpanStore guavaSpanStore();
 
-  @Override public AsyncSpanConsumer asyncSpanConsumer(Sampler sampler) {
+  @Override public AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler) {
     return makeSampled(guavaToAsync(guavaSpanConsumer()), checkNotNull(sampler, "sampler"));
   }
 

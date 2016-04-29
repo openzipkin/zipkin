@@ -36,7 +36,7 @@ import scala.runtime.BoxedUnit;
 import zipkin.AsyncSpanConsumer;
 import zipkin.AsyncSpanStore;
 import zipkin.Codec;
-import zipkin.Sampler;
+import zipkin.CollectorSampler;
 import zipkin.StorageComponent;
 import zipkin.internal.Nullable;
 
@@ -55,7 +55,7 @@ public final class ScalaSpanStoreAdapter extends com.twitter.zipkin.storage.Span
 
   public ScalaSpanStoreAdapter(StorageComponent storage) {
     this.spanStore = storage.asyncSpanStore();
-    this.spanConsumer = storage.asyncSpanConsumer(Sampler.ALWAYS_SAMPLE);
+    this.spanConsumer = storage.asyncSpanConsumer(CollectorSampler.ALWAYS_SAMPLE);
   }
 
   @Override

@@ -31,7 +31,9 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-import zipkin.Sampler;
+import zipkin.BoundaryTraceIdSampler;
+import zipkin.CountingTraceIdSampler;
+import zipkin.TraceIdSampler;
 
 /**
  * <p>Zipkin v1 uses before-the-fact sampling. This means that the decision to keep or drop the
@@ -83,14 +85,26 @@ public class SamplerBenchmarks {
   }
 
   /**
-   * This measures the trace id sampler provided with zipkin-java
+   * This measures the boundary trace id sampler provided with zipkin-java
    */
   @Benchmark
-  public boolean traceIdSampler(Args args) {
-    return TRACE_ID_SAMPLER.isSampled(args.traceId);
+  public boolean traceIdSampler_boundary(Args args) {
+    return TRACE_ID_SAMPLER_BOUNDARY.isSampled(args.traceId);
   }
 
-  static final Sampler TRACE_ID_SAMPLER = Sampler.create(SAMPLE_RATE);
+  static final TraceIdSampler TRACE_ID_SAMPLER_BOUNDARY =
+      BoundaryTraceIdSampler.create(SAMPLE_RATE);
+
+  /**
+   * This measures the counting trace id sampler provided with zipkin-java
+   */
+  @Benchmark
+  public boolean traceIdSampler_counting(Args args) {
+    return TRACE_ID_SAMPLER_COUNTING.isSampled(args.traceId);
+  }
+
+  static final TraceIdSampler TRACE_ID_SAMPLER_COUNTING =
+      CountingTraceIdSampler.create(0.01f); // doesn't take high-precision
 
   /**
    * Zipkin collector's AdjustableGlobalSampler compares the absolute value of the trace id against

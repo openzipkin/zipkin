@@ -39,15 +39,15 @@ public class SampleRateUpdateGuardTest {
 
   @Test
   public void idempotentClose() throws Exception {
-    SampleRateUpdateGuard guard = guard(new ZooKeeperSampler.Builder());
+    SampleRateUpdateGuard guard = guard(new ZooKeeperCollectorSampler.Builder());
     guard.close();
     guard.close();
   }
 
   @Test
   public void passesWhenALeader() throws Exception {
-    SampleRateUpdateGuard guard1 = guard(new ZooKeeperSampler.Builder());
-    SampleRateUpdateGuard guard2 = guard(new ZooKeeperSampler.Builder());
+    SampleRateUpdateGuard guard1 = guard(new ZooKeeperCollectorSampler.Builder());
+    SampleRateUpdateGuard guard2 = guard(new ZooKeeperCollectorSampler.Builder());
 
     waitForALeader(guard1, guard2);
 
@@ -61,8 +61,8 @@ public class SampleRateUpdateGuardTest {
 
   @Test
   public void onlyPassesOncePerInterval() throws Exception {
-    SampleRateUpdateGuard guard1 = guard(new ZooKeeperSampler.Builder().updateFrequency(1));
-    SampleRateUpdateGuard guard2 = guard(new ZooKeeperSampler.Builder().updateFrequency(1));
+    SampleRateUpdateGuard guard1 = guard(new ZooKeeperCollectorSampler.Builder().updateFrequency(1));
+    SampleRateUpdateGuard guard2 = guard(new ZooKeeperCollectorSampler.Builder().updateFrequency(1));
 
     waitForALeader(guard1, guard2);
 
@@ -82,8 +82,8 @@ public class SampleRateUpdateGuardTest {
 
   @Test
   public void shouldElectOnlyOneLeader() throws Exception {
-    SampleRateUpdateGuard guard1 = guard(new ZooKeeperSampler.Builder());
-    SampleRateUpdateGuard guard2 = guard(new ZooKeeperSampler.Builder());
+    SampleRateUpdateGuard guard1 = guard(new ZooKeeperCollectorSampler.Builder());
+    SampleRateUpdateGuard guard2 = guard(new ZooKeeperCollectorSampler.Builder());
 
     waitForALeader(guard1, guard2);
 
@@ -94,8 +94,8 @@ public class SampleRateUpdateGuardTest {
 
   @Test
   public void shouldStillBeOneLeaderAfterZKFailure() throws Exception {
-    SampleRateUpdateGuard guard1 = guard(new ZooKeeperSampler.Builder());
-    SampleRateUpdateGuard guard2 = guard(new ZooKeeperSampler.Builder());
+    SampleRateUpdateGuard guard1 = guard(new ZooKeeperCollectorSampler.Builder());
+    SampleRateUpdateGuard guard2 = guard(new ZooKeeperCollectorSampler.Builder());
 
     waitForALeader(guard1, guard2);
 
@@ -114,8 +114,8 @@ public class SampleRateUpdateGuardTest {
 
   @Test
   public void electsNewLeaderOnClose() throws Exception {
-    SampleRateUpdateGuard guard1 = guard(new ZooKeeperSampler.Builder());
-    SampleRateUpdateGuard guard2 = guard(new ZooKeeperSampler.Builder());
+    SampleRateUpdateGuard guard1 = guard(new ZooKeeperCollectorSampler.Builder());
+    SampleRateUpdateGuard guard2 = guard(new ZooKeeperCollectorSampler.Builder());
 
     waitForALeader(guard1, guard2);
 
@@ -137,7 +137,7 @@ public class SampleRateUpdateGuardTest {
 
   int count = 0;
 
-  SampleRateUpdateGuard guard(ZooKeeperSampler.Builder builder) {
+  SampleRateUpdateGuard guard(ZooKeeperCollectorSampler.Builder builder) {
     builder.id("guard-" + count++);
     return closer.register(new SampleRateUpdateGuard(zookeeper.client, builder));
   }

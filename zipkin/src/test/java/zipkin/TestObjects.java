@@ -14,6 +14,7 @@
 package zipkin;
 
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.Dependencies;
@@ -73,4 +74,15 @@ public final class TestObjects {
       new DependencyLink.Builder().parent("app").child("db").callCount(1).build()
   );
   public static final Dependencies DEPENDENCIES = Dependencies.create(TODAY, TODAY + 1000, LINKS);
+
+  /**
+   * Zipkin trace ids are random 64bit numbers. This creates a relatively large input to avoid
+   * flaking out due to PRNG nuance.
+   */
+  public static final Span[] LOTS_OF_SPANS =
+      new Random().longs(100000).mapToObj(t -> span(t)).toArray(Span[]::new);
+
+  static Span span(long traceId) {
+    return new Span.Builder().traceId(traceId).id(traceId).name("").build();
+  }
 }

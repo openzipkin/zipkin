@@ -36,7 +36,7 @@ public interface AsyncSpanConsumer {
   /**
    * Receives a list of spans {@link Codec#readSpans(byte[]) decoded} from a transport.
    *
-   * @param spans may be subject to a {@link Sampler#isSampled(long) sampling policy}.
+   * @param spans may be subject to a {@link CollectorSampler#isSampled(long) sampling policy}.
    */
   void accept(List<Span> spans, Callback<Void> callback);
 }

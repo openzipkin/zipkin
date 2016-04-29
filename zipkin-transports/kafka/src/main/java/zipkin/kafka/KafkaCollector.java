@@ -22,7 +22,7 @@ import kafka.consumer.ConsumerConfig;
 import kafka.javaapi.consumer.ConsumerConnector;
 import kafka.serializer.StringDecoder;
 import zipkin.AsyncSpanConsumer;
-import zipkin.Sampler;
+import zipkin.CollectorSampler;
 import zipkin.StorageComponent;
 import zipkin.internal.Lazy;
 
@@ -66,7 +66,7 @@ public final class KafkaCollector implements AutoCloseable {
       return this;
     }
 
-    public KafkaCollector writeTo(StorageComponent storage, Sampler sampler) {
+    public KafkaCollector writeTo(StorageComponent storage, CollectorSampler sampler) {
       checkNotNull(storage, "storage");
       checkNotNull(sampler, "sampler");
       return new KafkaCollector(this, new Lazy<AsyncSpanConsumer>() {
