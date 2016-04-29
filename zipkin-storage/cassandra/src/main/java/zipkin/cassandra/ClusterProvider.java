@@ -26,7 +26,7 @@ import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import org.twitter.zipkin.storage.cassandra.ZipkinRetryPolicy;
+import zipkin.cassandra.internal.ZipkinRetryPolicy;
 
 final class ClusterProvider {
   final String contactPoints;

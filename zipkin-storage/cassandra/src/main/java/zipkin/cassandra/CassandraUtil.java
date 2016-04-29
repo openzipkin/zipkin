@@ -28,11 +28,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.twitter.zipkin.storage.cassandra.Repository;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.QueryRequest;
 import zipkin.Span;
+import zipkin.cassandra.internal.Repository;
 
 import static zipkin.internal.Util.UTF_8;
 

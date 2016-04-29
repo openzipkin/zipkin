@@ -14,7 +14,7 @@
 package zipkin.cassandra;
 
 import com.datastax.driver.core.Cluster;
-import org.twitter.zipkin.storage.cassandra.Repository;
+import zipkin.cassandra.internal.Repository;
 import zipkin.internal.Lazy;
 
 final class LazyRepository extends Lazy<Repository> implements AutoCloseable {

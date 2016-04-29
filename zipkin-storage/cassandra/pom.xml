@@ -28,7 +28,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <zipkin-cassandra-core.version>1.39.7</zipkin-cassandra-core.version>
+    <cassandra-driver-core.version>2.1.10.1</cassandra-driver-core.version>
   </properties>
 
   <dependencies>
@@ -37,11 +37,23 @@
       <artifactId>zipkin</artifactId>
     </dependency>
 
-    <!-- for org.twitter.zipkin.storage.cassandra.Repository -->
     <dependency>
-      <groupId>io.zipkin</groupId>
-      <artifactId>zipkin-cassandra-core</artifactId>
-      <version>${zipkin-cassandra-core.version}</version>
+      <groupId>com.datastax.cassandra</groupId>
+      <artifactId>cassandra-driver-core</artifactId>
+      <version>${cassandra-driver-core.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.github.jnr</groupId>
+          <artifactId>jnr-posix</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- Above is packaged with 3.0.27, which is licensed under CPL; 3.0.29 is licensed under EPL -->
+    <dependency>
+      <groupId>com.github.jnr</groupId>
+      <artifactId>jnr-posix</artifactId>
+      <version>3.0.29</version>
     </dependency>
 
     <dependency>
