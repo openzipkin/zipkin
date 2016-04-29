@@ -23,6 +23,6 @@ public class BoundaryTraceIdSamplerTest extends TraceIdSamplerTest {
   }
 
   @Override Percentage expectedErrorRate() {
-    return withPercentage(4);
+    return withPercentage(5);
   }
 }
