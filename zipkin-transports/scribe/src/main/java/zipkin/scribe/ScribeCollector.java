@@ -18,7 +18,7 @@ import com.facebook.swift.service.ThriftServer;
 import com.facebook.swift.service.ThriftServerConfig;
 import com.facebook.swift.service.ThriftServiceProcessor;
 import zipkin.AsyncSpanConsumer;
-import zipkin.Sampler;
+import zipkin.CollectorSampler;
 import zipkin.StorageComponent;
 import zipkin.internal.Lazy;
 import zipkin.spanstore.guava.GuavaSpanConsumer;
@@ -50,7 +50,7 @@ public final class ScribeCollector implements AutoCloseable {
       return this;
     }
 
-    public ScribeCollector writeTo(StorageComponent storage, Sampler sampler) {
+    public ScribeCollector writeTo(StorageComponent storage, CollectorSampler sampler) {
       checkNotNull(storage, "storage");
       checkNotNull(sampler, "sampler");
       return new ScribeCollector(this, new Lazy<AsyncSpanConsumer>() {

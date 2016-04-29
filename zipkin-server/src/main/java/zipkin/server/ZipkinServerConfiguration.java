@@ -40,8 +40,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import zipkin.Codec;
+import zipkin.CollectorSampler;
 import zipkin.InMemoryStorage;
-import zipkin.Sampler;
 import zipkin.SpanStore;
 import zipkin.StorageComponent;
 import zipkin.cassandra.CassandraStorage;
@@ -61,9 +61,9 @@ public class ZipkinServerConfiguration {
   }
 
   @Bean
-  @ConditionalOnMissingBean(Sampler.class)
-  Sampler traceIdSampler(@Value("${zipkin.collector.sample-rate:1.0}") float rate) {
-    return Sampler.create(rate);
+  @ConditionalOnMissingBean(CollectorSampler.class)
+  CollectorSampler traceIdSampler(@Value("${zipkin.collector.sample-rate:1.0}") float rate) {
+    return CollectorSampler.create(rate);
   }
 
   /**
@@ -195,7 +195,7 @@ public class ZipkinServerConfiguration {
   @EnableConfigurationProperties(ZipkinScribeProperties.class)
   @ConditionalOnClass(name = "zipkin.scribe.ScribeCollector")
   static class ScribeConfiguration {
-    @Bean ScribeCollector scribe(ZipkinScribeProperties scribe, Sampler sampler,
+    @Bean ScribeCollector scribe(ZipkinScribeProperties scribe, CollectorSampler sampler,
         StorageComponent storage) {
       return new ScribeCollector.Builder()
           .category(scribe.getCategory())
@@ -211,7 +211,7 @@ public class ZipkinServerConfiguration {
   @EnableConfigurationProperties(ZipkinKafkaProperties.class)
   @ConditionalOnKafkaZookeeper
   static class KafkaConfiguration {
-    @Bean KafkaCollector kafka(ZipkinKafkaProperties kafka, Sampler sampler,
+    @Bean KafkaCollector kafka(ZipkinKafkaProperties kafka, CollectorSampler sampler,
         StorageComponent storage) {
       return new KafkaCollector.Builder()
           .topic(kafka.getTopic())

@@ -37,7 +37,7 @@ final class SampleRateCalculatorInput
   private final int requiredOutliers;
   private final ArrayDeque<Map<String, Integer>> buffer;
 
-  SampleRateCalculatorInput(ZooKeeperSampler.Builder builder, AtomicInteger target) {
+  SampleRateCalculatorInput(ZooKeeperCollectorSampler.Builder builder, AtomicInteger target) {
     this.target = target;
     this.measurementsInWindow = builder.windowSize / builder.updateFrequency;
     this.sufficientThreshold = builder.sufficientWindowSize / builder.updateFrequency;

@@ -56,7 +56,7 @@ public abstract class DependenciesTest {
   protected void processDependencies(List<Span> spans) {
     // Blocks until the callback completes to allow read-your-writes consistency during tests.
     CallbackCaptor<Void> captor = new CallbackCaptor<>();
-    storage().asyncSpanConsumer(Sampler.ALWAYS_SAMPLE).accept(spans, captor);
+    storage().asyncSpanConsumer(CollectorSampler.ALWAYS_SAMPLE).accept(spans, captor);
     captor.get(); // block on result
   }
 

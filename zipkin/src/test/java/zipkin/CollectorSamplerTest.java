@@ -13,8 +13,6 @@
  */
 package zipkin;
 
-import java.util.Random;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.junit.Rule;
 import org.junit.Test;
@@ -22,16 +20,13 @@ import org.junit.rules.ExpectedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Percentage.withPercentage;
+import static zipkin.TestObjects.LOTS_OF_SPANS;
+import static zipkin.TestObjects.span;
 
-public class SamplerTest {
+public class CollectorSamplerTest {
+
   @Rule
   public ExpectedException thrown = ExpectedException.none();
-
-  /**
-   * Zipkin trace ids are random 64bit numbers. This creates a relatively large input to avoid
-   * flaking out due to PRNG nuance.
-   */
-  static Span[] spans = new Random().longs(100000).mapToObj(t -> span(t)).toArray(Span[]::new);
 
   /**
    * Math.abs(Long.MIN_VALUE) returns a negative, we coerse to Long.MAX_VALUE to avoid always
@@ -39,7 +34,7 @@ public class SamplerTest {
    */
   @Test
   public void mostNegativeNumberDefence() {
-    Sampler sampler = Sampler.create(0.1f);
+    CollectorSampler sampler = CollectorSampler.create(0.1f);
 
     assertThat(sampler.isSampled(span(Long.MIN_VALUE)))
         .isEqualTo(sampler.isSampled(span(Long.MAX_VALUE)));
@@ -47,7 +42,7 @@ public class SamplerTest {
 
   @Test
   public void debugWins() {
-    Sampler sampler = Sampler.create(0.0f);
+    CollectorSampler sampler = CollectorSampler.create(0.0f);
 
     assertThat(sampler.isSampled(new Span.Builder(span(Long.MIN_VALUE)).debug(true).build()))
         .isTrue();
@@ -56,12 +51,12 @@ public class SamplerTest {
   @Test
   public void retain10Percent() {
     float sampleRate = 0.1f;
-    Sampler sampler = Sampler.create(sampleRate);
+    CollectorSampler sampler = CollectorSampler.create(sampleRate);
 
-    long passCount = Stream.of(spans).filter(sampler::isSampled).count();
+    long passCount = Stream.of(LOTS_OF_SPANS).filter(sampler::isSampled).count();
 
     assertThat(passCount)
-        .isCloseTo((long) (spans.length * sampleRate), withPercentage(3));
+        .isCloseTo((long) (LOTS_OF_SPANS.length * sampleRate), withPercentage(3));
   }
 
   /**
@@ -69,27 +64,27 @@ public class SamplerTest {
    */
   @Test
   public void idempotent() {
-    Sampler sampler1 = Sampler.create(0.1f);
-    Sampler sampler2 = Sampler.create(0.1f);
+    CollectorSampler sampler1 = CollectorSampler.create(0.1f);
+    CollectorSampler sampler2 = CollectorSampler.create(0.1f);
 
-    assertThat(Stream.of(spans).filter(sampler1::isSampled).toArray())
-        .containsExactly(Stream.of(spans).filter(sampler2::isSampled).toArray());
+    assertThat(Stream.of(LOTS_OF_SPANS).filter(sampler1::isSampled).toArray())
+        .containsExactly(Stream.of(LOTS_OF_SPANS).filter(sampler2::isSampled).toArray());
   }
 
   @Test
   public void zeroMeansDropAllTraces() {
-    Sampler sampler = Sampler.create(0.0f);
+    CollectorSampler sampler = CollectorSampler.create(0.0f);
 
-    assertThat(Stream.of(spans).filter(sampler::isSampled).findAny())
+    assertThat(Stream.of(LOTS_OF_SPANS).filter(sampler::isSampled).findAny())
         .isEmpty();
   }
 
   @Test
   public void oneMeansKeepAllTraces() {
-    Sampler sampler = Sampler.create(1.0f);
+    CollectorSampler sampler = CollectorSampler.create(1.0f);
 
-    assertThat(Stream.of(spans).filter(sampler::isSampled).toArray())
-        .containsExactly(Stream.of(spans).toArray());
+    assertThat(Stream.of(LOTS_OF_SPANS).filter(sampler::isSampled).toArray())
+        .containsExactly(LOTS_OF_SPANS);
   }
 
   @Test
@@ -97,7 +92,7 @@ public class SamplerTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("rate should be between 0 and 1: was -1.0");
 
-    Sampler.create(-1.0f);
+    CollectorSampler.create(-1.0f);
   }
 
   @Test
@@ -105,10 +100,6 @@ public class SamplerTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("rate should be between 0 and 1: was 1.1");
 
-    Sampler.create(1.1f);
-  }
-
-  static Span span(long traceId) {
-    return new Span.Builder().traceId(traceId).id(traceId).name("").build();
+    CollectorSampler.create(1.1f);
   }
 }

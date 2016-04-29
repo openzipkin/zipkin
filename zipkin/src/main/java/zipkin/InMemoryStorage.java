@@ -45,7 +45,7 @@ public final class InMemoryStorage implements StorageComponent {
     return spanStore.spanConsumer;
   }
 
-  @Override public AsyncSpanConsumer asyncSpanConsumer(Sampler sampler) {
+  @Override public AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler) {
     return makeSampled(asyncConsumer, checkNotNull(sampler, "sampler"));
   }
 

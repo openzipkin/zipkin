@@ -22,7 +22,7 @@ public class InternalSamplingAsyncSpanConsumerTest {
 
   InMemorySpanStore store = new InMemorySpanStore();
   AsyncSpanConsumer consumer = StorageAdapters.blockingToAsync(store.spanConsumer, Runnable::run);
-  Sampler never = Sampler.create(0f);
+  CollectorSampler never = CollectorSampler.create(0f);
 
   Span.Builder builder = new Span.Builder()
       .traceId(1234L)

@@ -28,18 +28,18 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.withinPercentage;
 
-public class ZooKeeperSamplerTest {
-  static final String PREFIX = "/" + ZooKeeperSamplerTest.class.getSimpleName();
+public class ZooKeeperCollectorSamplerTest {
+  static final String PREFIX = "/" + ZooKeeperCollectorSamplerTest.class.getSimpleName();
   @Rule public ZooKeeperRule zookeeper = new ZooKeeperRule();
 
   InMemoryStorage storage = new InMemoryStorage();
-  ZooKeeperSampler sampler;
+  ZooKeeperCollectorSampler sampler;
 
   @Before public void clear() throws Exception {
     if (sampler != null) {
       sampler.close();
     }
-    sampler = new ZooKeeperSampler.Builder()
+    sampler = new ZooKeeperCollectorSampler.Builder()
         .basePath(PREFIX)
         .updateFrequency(1) // least possible value
         .build(zookeeper.client);

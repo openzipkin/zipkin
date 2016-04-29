@@ -20,9 +20,9 @@ import static zipkin.internal.Util.checkNotNull;
 
 final class InternalSamplingAsyncSpanConsumer implements AsyncSpanConsumer {
   final AsyncSpanConsumer asyncConsumer;
-  final Sampler sampler;
+  final CollectorSampler sampler;
 
-  InternalSamplingAsyncSpanConsumer(AsyncSpanConsumer asyncConsumer, Sampler sampler) {
+  InternalSamplingAsyncSpanConsumer(AsyncSpanConsumer asyncConsumer, CollectorSampler sampler) {
     this.asyncConsumer = checkNotNull(asyncConsumer, "asyncConsumer");
     this.sampler = checkNotNull(sampler, "sampler");
   }

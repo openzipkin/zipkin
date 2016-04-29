@@ -30,7 +30,7 @@ import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.framework.recipes.nodes.GroupMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import zipkin.Sampler;
+import zipkin.CollectorSampler;
 import zipkin.Span;
 import zipkin.internal.Util;
 
@@ -60,8 +60,8 @@ import static zipkin.internal.Util.checkNotNull;
  * <p>Algorithms and defaults are tuned to favor decreasing the sample rate vs increasing it. For
  * example, a surge in writes will fire a rate adjustment faster than a drop in writes.
  */
-public final class ZooKeeperSampler extends Sampler implements Closeable {
-  final static Logger log = LoggerFactory.getLogger(ZooKeeperSampler.class);
+public final class ZooKeeperCollectorSampler extends CollectorSampler implements Closeable {
+  final static Logger log = LoggerFactory.getLogger(ZooKeeperCollectorSampler.class);
 
   public static final class Builder {
     float initialRate = 1.0f;
@@ -125,10 +125,10 @@ public final class ZooKeeperSampler extends Sampler implements Closeable {
     /**
      * @param client must be started, and will not be closed on {@link #close()}
      */
-    public ZooKeeperSampler build(CuratorFramework client) {
+    public ZooKeeperCollectorSampler build(CuratorFramework client) {
       checkState(checkNotNull(client, "client").getState() == CuratorFrameworkState.STARTED,
           "%s is not started", client.getState());
-      return new ZooKeeperSampler(this, client);
+      return new ZooKeeperCollectorSampler(this, client);
     }
   }
 
@@ -138,7 +138,7 @@ public final class ZooKeeperSampler extends Sampler implements Closeable {
   final AtomicInteger storeRate;
   final Closer closer = Closer.create();
 
-  ZooKeeperSampler(Builder builder, CuratorFramework client) {
+  ZooKeeperCollectorSampler(Builder builder, CuratorFramework client) {
     groupMember = builder.id;
     boundary =
         new AtomicLong((long) (Long.MAX_VALUE * builder.initialRate)); // safe cast as less <= 1

@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
-import zipkin.Sampler;
+import zipkin.CollectorSampler;
 import zipkin.Span;
 import zipkin.StorageComponent;
 import zipkin.internal.SpanConsumerLogger;
@@ -50,7 +50,7 @@ public class ZipkinHttpCollector {
 
   /** lazy so transient storage errors don't crash bootstrap */
   @Lazy
-  @Autowired ZipkinHttpCollector(StorageComponent storage, Sampler sampler,
+  @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler,
       Codec.Factory codecFactory) {
     this.consumer = storage.asyncSpanConsumer(sampler);
     this.jsonCodec = checkNotNull(codecFactory.get(APPLICATION_JSON_VALUE), APPLICATION_JSON_VALUE);
