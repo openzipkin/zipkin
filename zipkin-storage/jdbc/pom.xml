@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.java</groupId>
     <artifactId>zipkin-storage</artifactId>
-    <version>0.14.1-SNAPSHOT</version>
+    <version>0.15.0</version>
   </parent>
 
   <artifactId>storage-jdbc</artifactId>
