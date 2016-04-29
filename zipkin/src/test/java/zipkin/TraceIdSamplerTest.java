@@ -68,7 +68,6 @@ public abstract class TraceIdSamplerTest {
   @Test
   public void rateCantBeNegative() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("rate should be between 0.0001 and 1: was -1.0");
 
     newSampler(-1.0f);
   }
@@ -76,7 +75,6 @@ public abstract class TraceIdSamplerTest {
   @Test
   public void rateCantBeOverOne() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("rate should be between 0.0001 and 1: was 1.1");
 
     newSampler(1.1f);
   }
