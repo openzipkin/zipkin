@@ -13,6 +13,9 @@
  */
 package zipkin;
 
+import java.util.BitSet;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static zipkin.internal.Util.checkArgument;
 
 /**
@@ -34,34 +37,35 @@ public final class CountingTraceIdSampler implements TraceIdSampler {
   public static TraceIdSampler create(final float rate) {
     if (rate == 0) return NEVER_SAMPLE;
     if (rate == 1.0) return ALWAYS_SAMPLE;
-    checkArgument(rate >= 0.01f && rate < 1.0f, "rate should be between 0.01 and 1: was %s", rate);
+    checkArgument(rate >= 0.0001f && rate < 1.0f, "rate should be between 0.0001 and 1: was %s", rate);
     return new CountingTraceIdSampler(rate);
   }
 
-  private final int outOf100;
+  private final AtomicInteger counter = new AtomicInteger(0);
+  private final BitSet sampleDecisions;
 
-  private int i = 0;
-  private boolean skipping = false;
-
+  /** Fills a bitset with decisions according to the supplied rate. */
   CountingTraceIdSampler(float rate) {
-    this.outOf100 = (int) (rate * 100.0f);
+    int outOf10000 = (int) (rate * 10000.0f);
+    this.sampleDecisions = new BitSet(10000);
+    for (int i = 0; i < outOf10000; i++) {
+      this.sampleDecisions.set(i);
+    }
   }
 
+  /** loops over the pre-canned decisions, resetting to zero when it gets to the end. */
   @Override
   public synchronized boolean isSampled(long traceIdIgnored) {
-    boolean result = !skipping;
-    i++;
-    if (i == outOf100) {
-      skipping = true;
-    } else if (i == 100) {
-      i = 0;
-      skipping = false;
+    final int i = counter.getAndIncrement();
+    boolean result = sampleDecisions.get(i);
+    if (i == 9999) {
+      counter.set(0);
     }
     return result;
   }
 
   @Override
   public String toString() {
-    return "CountingTraceIdSampler(" + outOf100 + ")";
+    return "CountingTraceIdSampler()";
   }
 }
