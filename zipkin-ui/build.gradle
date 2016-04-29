@@ -37,3 +37,7 @@ task npmLint(type: NpmTask) {
     dependsOn npmInstall
 }
 check.dependsOn npmLint
+
+install.repositories.mavenInstaller.pom*.whenConfigured {pom ->
+    pom.dependencies.clear()
+}
