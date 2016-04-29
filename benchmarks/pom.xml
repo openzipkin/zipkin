@@ -31,7 +31,7 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <jmh.version>1.12</jmh.version>
     <libthrift.version>0.9.3</libthrift.version>
-    <zipkin-scrooge.version>1.39.7</zipkin-scrooge.version>
+    <zipkin-scrooge.version>1.39.8</zipkin-scrooge.version>
   </properties>
 
   <dependencies>
