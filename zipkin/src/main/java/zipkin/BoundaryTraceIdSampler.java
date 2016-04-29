@@ -56,7 +56,7 @@ public final class BoundaryTraceIdSampler implements TraceIdSampler {
   @Override
   public boolean isSampled(long traceId) {
     long t = Math.abs(traceId ^ SALT);
-    return t % 10000 <= boundary; // Constant expression for readability
+    return t % 10000 <= boundary;
   }
 
   @Override
