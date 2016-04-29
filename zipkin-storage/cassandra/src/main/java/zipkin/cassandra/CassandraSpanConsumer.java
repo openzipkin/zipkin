@@ -20,9 +20,9 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
-import org.twitter.zipkin.storage.cassandra.Repository;
 import zipkin.Codec;
 import zipkin.Span;
+import zipkin.cassandra.internal.Repository;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.spanstore.guava.GuavaSpanConsumer;
 
