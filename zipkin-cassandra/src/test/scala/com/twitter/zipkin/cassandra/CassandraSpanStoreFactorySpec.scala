@@ -87,7 +87,7 @@ class CassandraSpanStoreFactorySpec extends FunSuite with Matchers with MockitoS
                          .getConfiguration()
                          .getProtocolOptions()
                          .getAuthProvider()
-                         .newAuthenticator(new InetSocketAddress("localhost", 8080))
+                         .newAuthenticator(new InetSocketAddress("localhost", 8080), null)
                          .initialResponse()
     authProvider should be(SASLhandshake)
   }

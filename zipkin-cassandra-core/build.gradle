@@ -5,11 +5,5 @@ repositories {
 }
 
 dependencies {
-    compile(group: 'com.datastax.cassandra', name: 'cassandra-driver-core', version: '2.1.10'){
-        exclude group: 'com.github.jnr', module: 'jnr-posix'
-    }
-    // above is packaged with 3.0.27, which is licensed under CPL; 3.0.29 is licensed under EPL
-    compile group: 'com.github.jnr', name: 'jnr-posix', version: '3.0.29'
-    testCompile group: 'com.datastax.cassandra', name: 'cassandra-driver-core', classifier: 'tests', version: '2.1.10'
-    testCompile group: 'org.apache.commons', name: 'commons-exec', version: '1.3'
+    compile(group: 'com.datastax.cassandra', name: 'cassandra-driver-core', version: '3.0.0')
 }
