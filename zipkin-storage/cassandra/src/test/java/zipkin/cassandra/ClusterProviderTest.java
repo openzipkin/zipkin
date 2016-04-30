@@ -105,7 +105,7 @@ public class ClusterProviderTest {
 
     Authenticator authenticator =
         cluster.get().getConfiguration().getProtocolOptions().getAuthProvider()
-            .newAuthenticator(new InetSocketAddress("localhost", 8080));
+            .newAuthenticator(new InetSocketAddress("localhost", 8080), null);
 
     byte[] SASLhandshake = {0, 'b', 'o', 'b', 0, 's', 'e', 'c', 'r', 'e', 't'};
     assertThat(authenticator.initialResponse())

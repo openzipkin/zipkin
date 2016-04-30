@@ -28,7 +28,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <cassandra-driver-core.version>2.1.10.1</cassandra-driver-core.version>
+    <cassandra-driver-core.version>3.0.0</cassandra-driver-core.version>
   </properties>
 
   <dependencies>
@@ -41,19 +41,6 @@
       <groupId>com.datastax.cassandra</groupId>
       <artifactId>cassandra-driver-core</artifactId>
       <version>${cassandra-driver-core.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.github.jnr</groupId>
-          <artifactId>jnr-posix</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <!-- Above is packaged with 3.0.27, which is licensed under CPL; 3.0.29 is licensed under EPL -->
-    <dependency>
-      <groupId>com.github.jnr</groupId>
-      <artifactId>jnr-posix</artifactId>
-      <version>3.0.29</version>
     </dependency>
 
     <dependency>
