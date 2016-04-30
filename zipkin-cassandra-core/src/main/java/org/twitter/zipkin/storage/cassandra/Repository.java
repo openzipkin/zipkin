@@ -3,13 +3,13 @@ package org.twitter.zipkin.storage.cassandra;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.TypeCodec;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.utils.Bytes;
 import com.google.common.base.Function;
@@ -113,7 +113,7 @@ public final class Repository implements AutoCloseable {
 
         metadata = Schema.readMetadata(keyspace, cluster);
         session = cluster.connect(keyspace);
-        protocolVersion = cluster.getConfiguration().getProtocolOptions().getProtocolVersionEnum();
+        protocolVersion = cluster.getConfiguration().getProtocolOptions().getProtocolVersion();
 
         insertSpan = session.prepare(
                 QueryBuilder
@@ -344,7 +344,7 @@ public final class Repository implements AutoCloseable {
         Date startFlooredToDay = new Date(epochDayMillis);
         try {
             BoundStatement bound = insertDependencies.bind()
-                    .setDate("day", startFlooredToDay)
+                    .setTimestamp("day", startFlooredToDay)
                     .setBytes("dependencies", dependencies);
 
             if (LOG.isDebugEnabled()) {
@@ -937,11 +937,11 @@ public final class Repository implements AutoCloseable {
 
     /** Truncates timestamp to milliseconds and converts to binary for using with setBytesUnsafe() to avoid allocating java.util.Date */
     private ByteBuffer serializeTs(long timestamp) {
-        return DataType.bigint().serialize(timestamp / 1000, protocolVersion);
+        return TypeCodec.bigint().serialize(timestamp / 1000, protocolVersion);
     }
 
     /** Reads timestamp binary value directly (getBytesUnsafe) to avoid allocating java.util.Date, and converts to microseconds. */
     private long deserializeTs(Row row, String name) {
-        return 1000L * (long) DataType.bigint().deserialize(row.getBytesUnsafe(name), protocolVersion);
+        return 1000L * (long) TypeCodec.bigint().deserialize(row.getBytesUnsafe(name), protocolVersion);
     }
 }
