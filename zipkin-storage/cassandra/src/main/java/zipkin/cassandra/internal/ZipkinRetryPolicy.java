@@ -14,9 +14,11 @@
 
 package zipkin.cassandra.internal;
 
+import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.WriteType;
+import com.datastax.driver.core.exceptions.DriverException;
 import com.datastax.driver.core.policies.RetryPolicy;
 
 /** This class was copied from org.twitter.zipkin.storage.cassandra.ZipkinRetryPolicy */
@@ -43,5 +45,21 @@ public final class ZipkinRetryPolicy implements RetryPolicy {
   public RetryDecision onUnavailable(Statement statement, ConsistencyLevel cl, int requiredReplica,
       int aliveReplica, int nbRetry) {
     return RetryDecision.retry(ConsistencyLevel.ONE);
+  }
+
+  @Override
+  public RetryDecision onRequestError(Statement statement, ConsistencyLevel cl,
+      DriverException e, int nbRetry) {
+    return RetryDecision.tryNextHost(ConsistencyLevel.ONE);
+  }
+
+  @Override
+  public void init(Cluster cluster) {
+    // nothing to do
+  }
+
+  @Override
+  public void close() {
+    // nothing to do
   }
 }
