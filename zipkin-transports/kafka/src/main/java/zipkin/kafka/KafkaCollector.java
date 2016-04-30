@@ -19,7 +19,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import kafka.consumer.ConsumerConfig;
-import kafka.javaapi.consumer.ConsumerConnector;
+import kafka.javaapi.consumer.ZookeeperConsumerConnector;
 import kafka.serializer.StringDecoder;
 import zipkin.AsyncSpanConsumer;
 import zipkin.CollectorSampler;
@@ -32,6 +32,9 @@ import static zipkin.internal.Util.checkNotNull;
 /**
  * This collector polls a Kafka topic for messages that contain TBinaryProtocol big-endian encoded
  * lists of spans. These spans are pushed to a {@link AsyncSpanConsumer#accept span consumer}.
+ *
+ * <p>This collector remains a Kafka 0.8.x consumer, while Zipkin systems update to 0.9+.
+ *
  */
 public final class KafkaCollector implements AutoCloseable {
 
@@ -41,6 +44,7 @@ public final class KafkaCollector implements AutoCloseable {
     String zookeeper;
     String groupId = "zipkin";
     int streams = 1;
+    int maxMessageSize = 1024 * 1024;
 
     /** Topic zipkin spans will be consumed from. Defaults to "zipkin" */
     public Builder topic(String topic) {
@@ -66,6 +70,12 @@ public final class KafkaCollector implements AutoCloseable {
       return this;
     }
 
+    /** Maximum size of a message containing spans in bytes. Defaults to 1 MiB */
+    public Builder maxMessageSize(int bytes) {
+      this.maxMessageSize = bytes;
+      return this;
+    }
+
     public KafkaCollector writeTo(StorageComponent storage, CollectorSampler sampler) {
       checkNotNull(storage, "storage");
       checkNotNull(sampler, "sampler");
@@ -77,20 +87,23 @@ public final class KafkaCollector implements AutoCloseable {
     }
   }
 
-  final ConsumerConnector connector;
+  final ZookeeperConsumerConnector connector;
   final ExecutorService pool;
 
   KafkaCollector(Builder builder, Lazy<AsyncSpanConsumer> consumer) {
     Map<String, Integer> topicCountMap = new LinkedHashMap<>(1);
     topicCountMap.put(builder.topic, builder.streams);
 
+    // Settings below correspond to "Old Consumer Configs"
+    // http://kafka.apache.org/documentation.html
     Properties props = new Properties();
     props.put("zookeeper.connect", builder.zookeeper);
     props.put("group.id", builder.groupId);
+    props.put("fetch.message.max.bytes", String.valueOf(builder.maxMessageSize));
     // Same default as zipkin-scala, and keeps tests from hanging
     props.put("auto.offset.reset", "smallest");
 
-    connector = createJavaConsumerConnector(new ConsumerConfig(props));
+    connector = (ZookeeperConsumerConnector) createJavaConsumerConnector(new ConsumerConfig(props));
 
     pool = builder.streams == 1
         ? Executors.newSingleThreadExecutor()

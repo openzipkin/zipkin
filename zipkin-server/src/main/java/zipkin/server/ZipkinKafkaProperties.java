@@ -21,6 +21,7 @@ class ZipkinKafkaProperties {
   private String zookeeper;
   private String groupId = "zipkin";
   private int streams = 1;
+  private int maxMessageSize = 1024 * 1024;
 
   public String getTopic() {
     return topic;
@@ -52,5 +53,13 @@ class ZipkinKafkaProperties {
 
   public void setStreams(int streams) {
     this.streams = streams;
+  }
+
+  public int getMaxMessageSize() {
+    return maxMessageSize;
+  }
+
+  public void setMaxMessageSize(int maxMessageSize) {
+    this.maxMessageSize = maxMessageSize;
   }
 }

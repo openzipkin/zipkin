@@ -117,12 +117,20 @@ The Scribe collector is enabled by default, configured by the following:
     * `COLLECTOR_PORT`: Listen port for the scribe thrift api; Defaults to 9410
 
 ### Kafka Collector
+This collector remains a Kafka 0.8.x consumer, while Zipkin systems update to 0.9+.
+
 The following apply when `KAFKA_ZOOKEEPER` is set:
 
-    * `KAFKA_ZOOKEEPER`: ZooKeeper host string, comma-separated host:port value. no default.
-    * `KAFKA_TOPIC`: Defaults to zipkin
-    * `KAFKA_GROUP_ID`: Consumer group this process is consuming on behalf of. Defaults to zipkin
-    * `KAFKA_STREAMS`: Count of consumer threads consuming the topic. defaults to 1.
+    * `KAFKA_TOPIC`: Topic zipkin spans will be consumed from. Defaults to "zipkin"
+    * `KAFKA_STREAMS`: Count of threads/streams consuming the topic. Defaults to 1
+
+Settings below correspond to "Old Consumer Configs" in [Kafka documentation](http://kafka.apache.org/documentation.html)
+
+Variable | Old Consumer Config | Description
+--- | --- | ---
+KAFKA_ZOOKEEPER | zookeeper.connect | The zookeeper connect string, ex. 127.0.0.1:2181. No default
+KAFKA_GROUP_ID | group.id | The consumer group this process is consuming on behalf of. Defaults to "zipkin"
+KAFKA_MAX_MESSAGE_SIZE | fetch.message.max.bytes | Maximum size of a message containing spans in bytes. Defaults to 1 MiB
 
 Example usage:
 

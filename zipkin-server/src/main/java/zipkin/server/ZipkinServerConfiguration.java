@@ -217,7 +217,8 @@ public class ZipkinServerConfiguration {
           .topic(kafka.getTopic())
           .zookeeper(kafka.getZookeeper())
           .groupId(kafka.getGroupId())
-          .streams(kafka.getStreams()).writeTo(storage, sampler);
+          .streams(kafka.getStreams())
+          .maxMessageSize(kafka.getMaxMessageSize()).writeTo(storage, sampler);
     }
   }
 
