@@ -19,12 +19,15 @@ object KafkaSpanReceiverFactory {
    * @param topic  the topic zipkin spans will be consumed from
    * @param groupId the consumer group this process is consuming on behalf of.
    * @param streams the count of consumer threads consuming the topic
+   * @param maxMessageSize maximum size of a message containing spans in bytes
    */
-  def factory(zookeeper: String, topic: String, groupId: String = "zipkin", streams: Int = 1) = {
+  def factory(zookeeper: String, topic: String, groupId: String = "zipkin", streams: Int = 1,
+              maxMessageSize: Int = 1024 * 1024) = {
     object KafkaFactory extends App with KafkaSpanReceiverFactory
     KafkaFactory.kafkaZookeeperConnect.parse(zookeeper)
     KafkaFactory.kafkaGroupId.parse(groupId)
     KafkaFactory.kafkaTopics.parse(topic + "=" + streams)
+    KafkaFactory.kafkaMaxMessageSize.parse(maxMessageSize.toString)
     (process: SpanReceiver.Processor) => KafkaFactory.newKafkaSpanReceiver(process)
   }
 }
@@ -37,6 +40,7 @@ trait KafkaSpanReceiverFactory { self: App =>
   val defaultKafkaSyncTime = "2000"
   val defaultKafkaAutoOffset = "smallest"
   val defaultKafkaTopics = Map("zipkin" -> 1)
+  val defaultKafkaMaxMessageSize = (1024 * 1024).toString
 
   val kafkaTopics = flag[Map[String, Int]]("zipkin.kafka.topics", defaultKafkaTopics, "kafka topics to collect from")
   val kafkaZookeeperConnect = flag("zipkin.kafka.server", defaultKafkaServer, "kafka zk connect string")
@@ -45,6 +49,7 @@ trait KafkaSpanReceiverFactory { self: App =>
   val kafkaSessionTimeout = flag("zipkin.kafka.zk.sessionTimeout", defaultKafkaSessionTimeout, "kafka zk session timeout in ms")
   val kafkaSyncTime = flag("zipkin.kafka.zk.syncTime", defaultKafkaSyncTime, "kafka zk sync time in ms")
   val kafkaAutoOffset = flag("zipkin.kafka.zk.autooffset", defaultKafkaAutoOffset, "kafka zk auto offset [smallest|largest]")
+  val kafkaMaxMessageSize = flag("zipkin.kafka.maxMessageSize", defaultKafkaMaxMessageSize, "Maximum size of a message containing spans in bytes")
 
   def newKafkaSpanReceiver[T](
     process: Seq[Span] => Future[Unit],
@@ -62,6 +67,7 @@ trait KafkaSpanReceiverFactory { self: App =>
       put("zookeeper.sync.time.ms", kafkaSyncTime())
       put("auto.offset.reset", kafkaAutoOffset())
       put("auto.commit.interval.ms", "10000")
+      put("fetch.message.max.bytes", kafkaMaxMessageSize())
     }
 
     val service = KafkaProcessor(kafkaTopics(), new ConsumerConfig(receiverProps), process, keyDecoder, valueDecoder)
