@@ -38,6 +38,7 @@ task npmLint(type: NpmTask) {
 }
 check.dependsOn npmLint
 
+// Strip out scala deps inherited from the base project
 install.repositories.mavenInstaller.pom*.whenConfigured {pom ->
     pom.dependencies.clear()
 }
