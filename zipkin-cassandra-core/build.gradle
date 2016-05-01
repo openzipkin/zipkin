@@ -7,3 +7,8 @@ repositories {
 dependencies {
     compile(group: 'com.datastax.cassandra', name: 'cassandra-driver-core', version: '3.0.0')
 }
+
+// Strip out scala deps inherited from the base project
+install.repositories.mavenInstaller.pom*.whenConfigured {pom ->
+    pom.dependencies.removeAll {dep -> dep.groupId != 'com.datastax.cassandra'}
+}
