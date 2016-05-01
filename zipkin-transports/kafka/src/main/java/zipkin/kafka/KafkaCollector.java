@@ -14,15 +14,18 @@
 package zipkin.kafka;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import kafka.consumer.ConsumerConfig;
 import kafka.javaapi.consumer.ZookeeperConsumerConnector;
-import kafka.serializer.StringDecoder;
 import zipkin.AsyncSpanConsumer;
+import zipkin.Callback;
+import zipkin.CollectorMetrics;
 import zipkin.CollectorSampler;
+import zipkin.Span;
 import zipkin.StorageComponent;
 import zipkin.internal.Lazy;
 
@@ -40,11 +43,28 @@ public final class KafkaCollector implements AutoCloseable {
 
   /** Configuration including defaults needed to consume spans from a Kafka topic. */
   public static final class Builder {
+    CollectorSampler sampler = CollectorSampler.ALWAYS_SAMPLE;
+    CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
     String topic = "zipkin";
     String zookeeper;
     String groupId = "zipkin";
     int streams = 1;
     int maxMessageSize = 1024 * 1024;
+
+    /**
+     * {@link CollectorSampler#isSampled(Span) samples spans} to reduce load on the storage system.
+     * Defaults to always sample.
+     */
+    public Builder sampler(CollectorSampler sampler) {
+      this.sampler = checkNotNull(sampler, "sampler");
+      return this;
+    }
+
+    /** Aggregates and reports collection metrics to a monitoring system. Defaults to no-op. */
+    public Builder metrics(CollectorMetrics metrics) {
+      this.metrics = checkNotNull(metrics, "metrics").forTransport("kafka");
+      return this;
+    }
 
     /** Topic zipkin spans will be consumed from. Defaults to "zipkin" */
     public Builder topic(String topic) {
@@ -76,12 +96,16 @@ public final class KafkaCollector implements AutoCloseable {
       return this;
     }
 
-    public KafkaCollector writeTo(StorageComponent storage, CollectorSampler sampler) {
+    /**
+     * @param storage Once spans are sampled, they are {@link AsyncSpanConsumer#accept(List,
+     * Callback) queued for storage} using this component.
+     */
+    public KafkaCollector build(StorageComponent storage) {
       checkNotNull(storage, "storage");
-      checkNotNull(sampler, "sampler");
       return new KafkaCollector(this, new Lazy<AsyncSpanConsumer>() {
         @Override protected AsyncSpanConsumer compute() {
-          return checkNotNull(storage.asyncSpanConsumer(sampler), storage + ".asyncSpanConsumer()");
+          AsyncSpanConsumer result = storage.asyncSpanConsumer(sampler, metrics);
+          return checkNotNull(result, storage + ".asyncSpanConsumer()");
         }
       });
     }
@@ -109,9 +133,9 @@ public final class KafkaCollector implements AutoCloseable {
         ? Executors.newSingleThreadExecutor()
         : Executors.newFixedThreadPool(builder.streams);
 
-    connector.createMessageStreams(topicCountMap, new StringDecoder(null), new SpansDecoder())
+    connector.createMessageStreams(topicCountMap)
         .get(builder.topic).forEach(stream ->
-        pool.execute(new KafkaStreamProcessor(stream, consumer))
+        pool.execute(new KafkaStreamProcessor(stream, consumer, builder.metrics))
     );
   }
 

@@ -21,14 +21,22 @@ import zipkin.internal.CallbackCaptor;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.CollectorMetrics.NOOP_METRICS;
+import static zipkin.CollectorSampler.ALWAYS_SAMPLE;
 import static zipkin.Constants.CLIENT_ADDR;
 import static zipkin.Constants.CLIENT_RECV;
 import static zipkin.Constants.CLIENT_SEND;
 import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
+import static zipkin.TestObjects.APP_ENDPOINT;
+import static zipkin.TestObjects.DAY;
+import static zipkin.TestObjects.DB_ENDPOINT;
+import static zipkin.TestObjects.DEPENDENCIES;
 import static zipkin.TestObjects.LINKS;
-import static zipkin.TestObjects.*;
+import static zipkin.TestObjects.TODAY;
+import static zipkin.TestObjects.TRACE;
+import static zipkin.TestObjects.WEB_ENDPOINT;
 
 /**
  * Base test for {@link SpanStore} implementations that support dependency aggregation. Subtypes
@@ -56,7 +64,7 @@ public abstract class DependenciesTest {
   protected void processDependencies(List<Span> spans) {
     // Blocks until the callback completes to allow read-your-writes consistency during tests.
     CallbackCaptor<Void> captor = new CallbackCaptor<>();
-    storage().asyncSpanConsumer(CollectorSampler.ALWAYS_SAMPLE).accept(spans, captor);
+    storage().asyncSpanConsumer(ALWAYS_SAMPLE, NOOP_METRICS).accept(spans, captor);
     captor.get(); // block on result
   }
 

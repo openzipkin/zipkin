@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 import zipkin.Callback;
+import zipkin.CollectorMetrics;
 import zipkin.Span;
 
 import static java.lang.String.format;
@@ -30,17 +31,46 @@ import static zipkin.internal.Util.checkNotNull;
 // internal until drift stops
 public final class SpanConsumerLogger {
   private final Logger logger;
+  private final CollectorMetrics metrics;
 
-  public SpanConsumerLogger(Class<?> clazz) {
+  public SpanConsumerLogger(Class<?> clazz, CollectorMetrics metrics) {
     this.logger = Logger.getLogger(checkNotNull(clazz, "class").getName());
+    this.metrics = checkNotNull(metrics, "metrics");
   }
 
-  public SpanConsumerLogger(Logger logger) {
+  // Visible for testing
+  SpanConsumerLogger(Logger logger, CollectorMetrics metrics) {
     this.logger = checkNotNull(logger, "logger");
+    this.metrics = checkNotNull(metrics, "metrics");
   }
 
-  public String errorDecoding(Throwable e) {
-    return error("Cannot decode spans", e);
+  /** @see CollectorMetrics#incrementMessages() */
+  public void acceptedMessage() {
+    metrics.incrementMessages();
+  }
+
+  /** @see CollectorMetrics#incrementMessagesDropped() () */
+  public void dropMessage() {
+    metrics.incrementMessagesDropped();
+  }
+
+  /** @see CollectorMetrics#incrementBytes(int) */
+  public void readBytes(int count) {
+    metrics.incrementBytes(count);
+  }
+
+  /** @see CollectorMetrics#incrementSpans(int) */
+  public void readSpans(int count) {
+    metrics.incrementSpans(count);
+  }
+
+  public String errorReading(Throwable e) {
+    return errorReading("Cannot decode spans", e);
+  }
+
+  public String errorReading(String message, Throwable e) {
+    metrics.incrementMessagesDropped();
+    return doError(message, e);
   }
 
   /**
@@ -48,10 +78,11 @@ public final class SpanConsumerLogger {
    * span ids to give logs more relevance.
    */
   public String errorAcceptingSpans(List<Span> spans, Throwable e) {
+    metrics.incrementSpansDropped(spans.size());
     // The exception could be related to a span being huge. Instead of filling logs,
     // print trace id, span id pairs
-    StringBuilder msg = appendSpanIds(spans, new StringBuilder("Cannot accept traceId -> spanId "));
-    return error(msg.toString(), e);
+    StringBuilder msg = appendSpanIds(spans, new StringBuilder("Cannot store traceId -> spanId "));
+    return doError(msg.toString(), e);
   }
 
   public Callback<Void> acceptSpansCallback(final List<Span> spans) {
@@ -70,7 +101,7 @@ public final class SpanConsumerLogger {
     };
   }
 
-  public String error(String message, Throwable e) {
+  String doError(String message, Throwable e) {
     message = format("%s due to %s(%s)", message, e.getClass().getSimpleName(),
         e.getMessage() == null ? "" : e.getMessage());
     logger.log(WARNING, message, e);

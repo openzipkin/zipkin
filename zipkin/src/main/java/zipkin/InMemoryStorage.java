@@ -18,7 +18,6 @@ import zipkin.StorageAdapters.SpanConsumer;
 
 import static zipkin.StorageAdapters.blockingToAsync;
 import static zipkin.StorageAdapters.makeSampled;
-import static zipkin.internal.Util.checkNotNull;
 
 /**
  * Test storage component that keeps all spans in memory, accepting them on the calling thread.
@@ -45,8 +44,9 @@ public final class InMemoryStorage implements StorageComponent {
     return spanStore.spanConsumer;
   }
 
-  @Override public AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler) {
-    return makeSampled(asyncConsumer, checkNotNull(sampler, "sampler"));
+  @Override
+  public AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler, CollectorMetrics metrics) {
+    return makeSampled(asyncConsumer, sampler, metrics);
   }
 
   public void clear() {

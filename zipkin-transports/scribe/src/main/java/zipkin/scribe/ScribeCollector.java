@@ -17,8 +17,12 @@ import com.facebook.swift.codec.ThriftCodecManager;
 import com.facebook.swift.service.ThriftServer;
 import com.facebook.swift.service.ThriftServerConfig;
 import com.facebook.swift.service.ThriftServiceProcessor;
+import java.util.List;
 import zipkin.AsyncSpanConsumer;
+import zipkin.Callback;
+import zipkin.CollectorMetrics;
 import zipkin.CollectorSampler;
+import zipkin.Span;
 import zipkin.StorageComponent;
 import zipkin.internal.Lazy;
 import zipkin.spanstore.guava.GuavaSpanConsumer;
@@ -35,8 +39,25 @@ public final class ScribeCollector implements AutoCloseable {
 
   /** Configuration including defaults needed to receive spans from a Scribe category. */
   public static final class Builder {
+    CollectorSampler sampler = CollectorSampler.ALWAYS_SAMPLE;
+    CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
     String category = "zipkin";
     int port = 9410;
+
+    /**
+     * {@link CollectorSampler#isSampled(Span) samples spans} to reduce load on the storage system.
+     * Defaults to always sample.
+     */
+    public Builder sampler(CollectorSampler sampler) {
+      this.sampler = checkNotNull(sampler, "sampler");
+      return this;
+    }
+
+    /** Aggregates and reports collection metrics to a monitoring system. Defaults to no-op. */
+    public Builder metrics(CollectorMetrics metrics) {
+      this.metrics = checkNotNull(metrics, "metrics").forTransport("scribe");
+      return this;
+    }
 
     /** Category zipkin spans will be consumed from. Defaults to "zipkin" */
     public Builder category(String category) {
@@ -50,12 +71,16 @@ public final class ScribeCollector implements AutoCloseable {
       return this;
     }
 
-    public ScribeCollector writeTo(StorageComponent storage, CollectorSampler sampler) {
+    /**
+     * @param storage Once spans are sampled, they are {@link AsyncSpanConsumer#accept(List,
+     * Callback) queued for storage} using this component.
+     */
+    public ScribeCollector build(StorageComponent storage) {
       checkNotNull(storage, "storage");
-      checkNotNull(sampler, "sampler");
       return new ScribeCollector(this, new Lazy<AsyncSpanConsumer>() {
         @Override protected AsyncSpanConsumer compute() {
-          return checkNotNull(storage.asyncSpanConsumer(sampler), storage + ".asyncSpanConsumer()");
+          AsyncSpanConsumer result = storage.asyncSpanConsumer(sampler, metrics);
+          return checkNotNull(result, storage + ".asyncSpanConsumer()");
         }
       });
     }
@@ -64,7 +89,7 @@ public final class ScribeCollector implements AutoCloseable {
   final ThriftServer server;
 
   ScribeCollector(Builder builder, Lazy<AsyncSpanConsumer> consumer) {
-    ScribeSpanConsumer scribe = new ScribeSpanConsumer(builder.category, consumer);
+    ScribeSpanConsumer scribe = new ScribeSpanConsumer(builder.category, consumer, builder.metrics);
     ThriftServiceProcessor processor =
         new ThriftServiceProcessor(new ThriftCodecManager(), emptyList(), scribe);
     server = new ThriftServer(processor, new ThriftServerConfig().setPort(builder.port)).start();

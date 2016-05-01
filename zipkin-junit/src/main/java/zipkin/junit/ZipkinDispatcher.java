@@ -23,26 +23,28 @@ import okhttp3.mockwebserver.RecordedRequest;
 import okio.Buffer;
 import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
+import zipkin.CollectorMetrics;
 import zipkin.DependencyLink;
-import zipkin.InMemoryStorage;
 import zipkin.QueryRequest;
-import zipkin.CollectorSampler;
 import zipkin.Span;
 import zipkin.SpanStore;
+import zipkin.StorageComponent;
 import zipkin.internal.SpanConsumerLogger;
 
+import static zipkin.CollectorSampler.ALWAYS_SAMPLE;
 import static zipkin.internal.Util.gunzip;
 
 final class ZipkinDispatcher extends Dispatcher {
-  private final SpanConsumerLogger logger = new SpanConsumerLogger(ZipkinRule.class);
   private final SpanStore store;
   private final AsyncSpanConsumer consumer;
   private final MockWebServer server;
+  private final SpanConsumerLogger logger;
 
-  ZipkinDispatcher(InMemoryStorage storage, MockWebServer server) {
+  ZipkinDispatcher(StorageComponent storage, CollectorMetrics metrics, MockWebServer server) {
     this.store = storage.spanStore();
-    this.consumer = storage.asyncSpanConsumer(CollectorSampler.ALWAYS_SAMPLE);
+    this.consumer = storage.asyncSpanConsumer(ALWAYS_SAMPLE, metrics);
     this.server = server;
+    this.logger = new SpanConsumerLogger(ZipkinRule.class, metrics);
   }
 
   @Override
@@ -73,23 +75,25 @@ final class ZipkinDispatcher extends Dispatcher {
       }
     } else if (request.getMethod().equals("POST")) {
       if (url.encodedPath().equals("/api/v1/spans")) {
-
+        logger.acceptedMessage();
         byte[] body = request.getBody().readByteArray();
         String encoding = request.getHeader("Content-Encoding");
         if (encoding != null && encoding.contains("gzip")) {
           try {
             body = gunzip(body);
           } catch (IOException e) {
-            String message = logger.error("Cannot gunzip spans", e);
+            String message = logger.errorReading("Cannot gunzip spans", e);
             return new MockResponse().setResponseCode(400).setBody(message);
           }
         }
+        logger.readBytes(body.length);
 
         String type = request.getHeader("Content-Type");
         Codec codec = type != null && type.contains("/x-thrift") ? Codec.THRIFT : Codec.JSON;
         List<Span> spans = codec.readSpans(body);
 
         if (spans.isEmpty()) return new MockResponse().setResponseCode(202);
+        logger.readSpans(spans.size());
         try {
           consumer.accept(spans, logger.acceptSpansCallback(spans));
         } catch (RuntimeException e) {

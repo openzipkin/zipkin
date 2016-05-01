@@ -28,6 +28,7 @@ import zipkin.BinaryAnnotation.Type;
 import zipkin.Codec;
 import zipkin.Constants;
 import zipkin.Endpoint;
+import zipkin.InMemoryCollectorMetrics;
 import zipkin.Span;
 import zipkin.internal.Lazy;
 import zipkin.scribe.Scribe.LogEntry;
@@ -36,19 +37,25 @@ import static com.google.common.base.Charsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.core.Is.isA;
+import static zipkin.CollectorMetrics.NOOP_METRICS;
+import static zipkin.TestObjects.TRACE;
 
 public class ScribeSpanConsumerTest {
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();
+  // scope to scribe as we aren't creating the consumer with the builder.
+  InMemoryCollectorMetrics scribeMetrics = new InMemoryCollectorMetrics().forTransport("scribe");
+
   List<Span> consumed = new ArrayList<>();
   AsyncSpanConsumer consumer = (input, callback) -> {
     callback.onSuccess(null);
     input.forEach(consumed::add);
   };
 
-  Span span = new Span.Builder().traceId(1L).id(1L).name("foo").build();
-  String encodedSpan = new String(Base64.getEncoder().encode(Codec.THRIFT.writeSpan(span)), UTF_8);
+  Span span = TRACE.get(0);
+  byte[] bytes = Codec.THRIFT.writeSpan(span);
+  String encodedSpan = new String(Base64.getEncoder().encode(bytes), UTF_8);
 
   @Test
   public void entriesWithSpansAreConsumed() throws Exception {
@@ -63,6 +70,10 @@ public class ScribeSpanConsumerTest {
 
     assertThat(consumed)
         .containsExactly(span);
+
+    assertThat(scribeMetrics.messages()).isEqualTo(1);
+    assertThat(scribeMetrics.bytes()).isEqualTo(bytes.length);
+    assertThat(scribeMetrics.spans()).isEqualTo(1);
   }
 
   @Test
@@ -78,6 +89,9 @@ public class ScribeSpanConsumerTest {
     entry.message = "hello world";
 
     scribe.log(asList(entry)).get();
+
+    assertThat(scribeMetrics.bytes()).isZero();
+    assertThat(scribeMetrics.spans()).isZero();
   }
 
   @Test
@@ -92,6 +106,8 @@ public class ScribeSpanConsumerTest {
     thrown.expectCause(isA(IllegalArgumentException.class));
 
     scribe.log(asList(entry)).get();
+
+    assertThat(scribeMetrics.messagesDropped()).isZero();
   }
 
   @Test
@@ -110,6 +126,8 @@ public class ScribeSpanConsumerTest {
     thrown.expectCause(isA(NullPointerException.class));
 
     scribe.log(asList(entry)).get();
+
+    assertThat(scribeMetrics.spansDropped()).isEqualTo(1);
   }
 
   @Test
@@ -128,6 +146,8 @@ public class ScribeSpanConsumerTest {
     thrown.expectCause(isA(NullPointerException.class));
 
     scribe.log(asList(entry)).get();
+
+    assertThat(scribeMetrics.spansDropped()).isEqualTo(1);
   }
 
   /** Finagle's zipkin tracer breaks on a column width with a trailing newline */
@@ -186,6 +206,6 @@ public class ScribeSpanConsumerTest {
   }
 
   ScribeSpanConsumer newScribeSpanConsumer(String category, AsyncSpanConsumer consumer) {
-    return new ScribeSpanConsumer(category, Lazy.of(consumer));
+    return new ScribeSpanConsumer(category, Lazy.of(consumer), scribeMetrics);
   }
 }

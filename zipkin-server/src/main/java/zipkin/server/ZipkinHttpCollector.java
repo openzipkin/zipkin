@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
+import zipkin.CollectorMetrics;
 import zipkin.CollectorSampler;
 import zipkin.Span;
 import zipkin.StorageComponent;
@@ -43,18 +44,19 @@ import static zipkin.internal.Util.gunzip;
 public class ZipkinHttpCollector {
   static final String APPLICATION_THRIFT = "application/x-thrift";
 
-  private final SpanConsumerLogger logger = new SpanConsumerLogger(ZipkinHttpCollector.class);
   private final AsyncSpanConsumer consumer;
   private final Codec jsonCodec;
   private final Codec thriftCodec;
+  private final SpanConsumerLogger logger;
 
   /** lazy so transient storage errors don't crash bootstrap */
   @Lazy
   @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler,
-      Codec.Factory codecFactory) {
-    this.consumer = storage.asyncSpanConsumer(sampler);
+      Codec.Factory codecFactory, CollectorMetrics metrics) {
+    this.consumer = storage.asyncSpanConsumer(sampler, metrics);
     this.jsonCodec = checkNotNull(codecFactory.get(APPLICATION_JSON_VALUE), APPLICATION_JSON_VALUE);
     this.thriftCodec = checkNotNull(codecFactory.get(APPLICATION_THRIFT), APPLICATION_THRIFT);
+    this.logger = new SpanConsumerLogger(ZipkinHttpCollector.class, metrics.forTransport("http"));
   }
 
   @RequestMapping(value = "/api/v1/spans", method = RequestMethod.POST)
@@ -63,6 +65,7 @@ public class ZipkinHttpCollector {
       @RequestHeader(value = "Content-Encoding", required = false) String encoding,
       @RequestBody byte[] body
   ) {
+    logger.acceptedMessage();
     return validateAndStoreSpans(encoding, jsonCodec, body);
   }
 
@@ -72,6 +75,7 @@ public class ZipkinHttpCollector {
       @RequestHeader(value = "Content-Encoding", required = false) String encoding,
       @RequestBody byte[] body
   ) {
+    logger.acceptedMessage();
     return validateAndStoreSpans(encoding, thriftCodec, body);
   }
 
@@ -80,18 +84,20 @@ public class ZipkinHttpCollector {
       try {
         body = gunzip(body);
       } catch (IOException e) {
-        String message = logger.error("Cannot gunzip spans", e);
+        String message = logger.errorReading("Cannot gunzip spans", e);
         return ResponseEntity.badRequest().body(message + "\n"); // newline for prettier curl
       }
     }
+    logger.readBytes(body.length);
     List<Span> spans;
     try {
       spans = codec.readSpans(body);
     } catch (RuntimeException e) {
-      String message = logger.errorDecoding(e);
+      String message = logger.errorReading(e);
       return ResponseEntity.badRequest().body(message + "\n"); // newline for prettier curl
     }
     if (spans.isEmpty()) return ResponseEntity.accepted().build();
+    logger.readSpans(spans.size());
     try {
       consumer.accept(spans, logger.acceptSpansCallback(spans));
     } catch (RuntimeException e) {

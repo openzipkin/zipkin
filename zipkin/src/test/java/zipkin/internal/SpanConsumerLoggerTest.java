@@ -23,6 +23,7 @@ import zipkin.Span;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.CollectorMetrics.NOOP_METRICS;
 
 public class SpanConsumerLoggerTest {
   List<String> messages = new ArrayList<>();
@@ -33,7 +34,7 @@ public class SpanConsumerLoggerTest {
       assertThat(level).isEqualTo(Level.WARNING);
       messages.add(msg);
     }
-  });
+  }, NOOP_METRICS);
 
   Span span1 = new Span.Builder().traceId(1L).id(1L).name("foo").build();
   Span span2 = new Span.Builder().traceId(1L).parentId(1L).id(2L).name("bar").build();
@@ -52,7 +53,7 @@ public class SpanConsumerLoggerTest {
 
     assertThat(messages)
         .containsExactly(
-            "Cannot accept traceId -> spanId [0000000000000001 -> 0000000000000001] due to RuntimeException()");
+            "Cannot store traceId -> spanId [0000000000000001 -> 0000000000000001] due to RuntimeException()");
   }
 
   @Test
@@ -62,7 +63,7 @@ public class SpanConsumerLoggerTest {
 
     assertThat(messages)
         .containsExactly(
-            "Cannot accept traceId -> spanId [0000000000000001 -> 0000000000000001] due to IllegalArgumentException(no beer)");
+            "Cannot store traceId -> spanId [0000000000000001 -> 0000000000000001] due to IllegalArgumentException(no beer)");
   }
 
   @Test
@@ -72,7 +73,7 @@ public class SpanConsumerLoggerTest {
     assertThat(messages)
         .containsExactly(message)
         .containsExactly(
-            "Cannot accept traceId -> spanId [0000000000000001 -> 0000000000000001] due to RuntimeException()");
+            "Cannot store traceId -> spanId [0000000000000001 -> 0000000000000001] due to RuntimeException()");
   }
 
   @Test
@@ -83,12 +84,12 @@ public class SpanConsumerLoggerTest {
     assertThat(messages)
         .containsExactly(message)
         .containsExactly(
-            "Cannot accept traceId -> spanId [0000000000000001 -> 0000000000000001] due to IllegalArgumentException(no beer)");
+            "Cannot store traceId -> spanId [0000000000000001 -> 0000000000000001] due to IllegalArgumentException(no beer)");
   }
 
   @Test
   public void errorDecoding_onErrorWithNullMessage() {
-    String message = logger.errorDecoding(new RuntimeException());
+    String message = logger.errorReading(new RuntimeException());
 
     assertThat(messages)
         .containsExactly(message)
@@ -98,7 +99,7 @@ public class SpanConsumerLoggerTest {
   @Test
   public void errorDecoding_onErrorWithMessage() {
     String message =
-        logger.errorDecoding(new IllegalArgumentException("no beer"));
+        logger.errorReading(new IllegalArgumentException("no beer"));
 
     assertThat(messages)
         .containsExactly(message)

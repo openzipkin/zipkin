@@ -28,6 +28,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Scope;
+import zipkin.CollectorMetrics;
+import zipkin.CollectorSampler;
 import zipkin.Endpoint;
 import zipkin.StorageComponent;
 
@@ -55,14 +57,15 @@ public class BraveConfiguration {
     return Endpoint.create("zipkin-server", ipv4, port);
   }
 
-  @Bean SpanStoreSpanCollector spanCollector(StorageComponent storage,
-      @Value("${zipkin.self-tracing.flush-interval:1}") int flushInterval) {
-    return new SpanStoreSpanCollector(storage, flushInterval);
+  @Bean LocalSpanCollector spanCollector(StorageComponent storage,
+      @Value("${zipkin.self-tracing.flush-interval:1}") int flushInterval,
+      CollectorSampler sampler, CollectorMetrics metrics) {
+    return new LocalSpanCollector(storage, flushInterval, sampler, metrics);
   }
 
   @Bean
   @Scope Brave brave(@Qualifier("local") Endpoint localEndpoint,
-      SpanStoreSpanCollector spanCollector) {
+      LocalSpanCollector spanCollector) {
     return new Brave.Builder(localEndpoint.ipv4, localEndpoint.port, localEndpoint.serviceName)
         .spanCollector(spanCollector).build();
   }

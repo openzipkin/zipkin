@@ -75,14 +75,23 @@ public final class TestObjects {
   );
   public static final Dependencies DEPENDENCIES = Dependencies.create(TODAY, TODAY + 1000, LINKS);
 
+  static final Span.Builder spanBuilder = spanBuilder();
+
+  /** Reuse a builder as it is significantly slows tests to create 100000 of these! */
+  static Span.Builder spanBuilder() {
+    Endpoint e = Endpoint.create("service", 127 << 24 | 1, 8080);
+    Annotation ann = Annotation.create(System.currentTimeMillis() * 1000, SERVER_RECV, e);
+    return new Span.Builder().name("get").addAnnotation(ann);
+  }
+
   /**
    * Zipkin trace ids are random 64bit numbers. This creates a relatively large input to avoid
    * flaking out due to PRNG nuance.
    */
   public static final Span[] LOTS_OF_SPANS =
-      new Random().longs(100000).mapToObj(t -> span(t)).toArray(Span[]::new);
+      new Random().longs(100_000).mapToObj(t -> span(t)).toArray(Span[]::new);
 
   static Span span(long traceId) {
-    return new Span.Builder().traceId(traceId).id(traceId).name("").build();
+    return spanBuilder.traceId(traceId).id(traceId).build();
   }
 }

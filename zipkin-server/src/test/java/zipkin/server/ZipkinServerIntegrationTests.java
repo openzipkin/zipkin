@@ -24,9 +24,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
-import zipkin.Annotation;
 import zipkin.Codec;
-import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.internal.Util;
 
@@ -36,7 +34,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static zipkin.TestObjects.TRACE;
 import static zipkin.internal.Util.UTF_8;
 
 @SpringApplicationConfiguration(classes = ZipkinServer.class)
@@ -56,10 +56,28 @@ public class ZipkinServerIntegrationTests {
 
   @Test
   public void writeSpans_noContentTypeIsJson() throws Exception {
-    byte[] body = Codec.JSON.writeSpans(asList(newSpan(1L, 1L, "foo", "an", "bar")));
+    byte[] body = Codec.JSON.writeSpans(TRACE);
     mockMvc
         .perform(post("/api/v1/spans").content(body))
         .andExpect(status().isAccepted());
+  }
+
+  @Test
+  public void writeSpans_updatesMetrics() throws Exception {
+    byte[] body = Codec.JSON.writeSpans(TRACE);
+    mockMvc.perform(post("/api/v1/spans").content(body));
+    mockMvc.perform(post("/api/v1/spans").content(body));
+
+    mockMvc
+        .perform(get("/metrics"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.['counter.zipkin_collector.messages.http']").value(2))
+        .andExpect(jsonPath("$.['counter.zipkin_collector.bytes.http']").value(body.length * 2))
+        .andExpect(jsonPath("$.['gauge.zipkin_collector.message_bytes.http']")
+            .value(Double.valueOf(body.length))) // most recent size
+        .andExpect(jsonPath("$.['counter.zipkin_collector.spans.http']").value(TRACE.size() * 2))
+        .andExpect(jsonPath("$.['gauge.zipkin_collector.message_spans.http']")
+            .value(Double.valueOf(TRACE.size()))); // most recent count
   }
 
   @Test
@@ -69,6 +87,18 @@ public class ZipkinServerIntegrationTests {
         .perform(post("/api/v1/spans").content(body))
         .andExpect(status().isBadRequest())
         .andExpect(content().string(startsWith("Malformed reading List<Span> from json: hello")));
+  }
+
+  @Test
+  public void writeSpans_malformedUpdatesMetrics() throws Exception {
+    byte[] body = {'h', 'e', 'l', 'l', 'o'};
+    mockMvc.perform(post("/api/v1/spans").content(body));
+
+    mockMvc
+        .perform(get("/metrics"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.['counter.zipkin_collector.messages.http']").value(1))
+        .andExpect(jsonPath("$.['counter.zipkin_collector.messages_dropped.http']").value(1));
   }
 
   @Test
@@ -82,7 +112,7 @@ public class ZipkinServerIntegrationTests {
 
   @Test
   public void writeSpans_contentTypeXThrift() throws Exception {
-    byte[] body = Codec.THRIFT.writeSpans(asList(newSpan(1L, 2L, "foo", "an", "bar")));
+    byte[] body = Codec.THRIFT.writeSpans(TRACE);
     mockMvc
         .perform(post("/api/v1/spans").content(body).contentType("application/x-thrift"))
         .andExpect(status().isAccepted());
@@ -105,7 +135,7 @@ public class ZipkinServerIntegrationTests {
   }
 
   public void writeSpans_gzipEncoded() throws Exception {
-    byte[] body = Codec.JSON.writeSpans(asList(newSpan(1L, 2L, "foo", "an", "bar")));
+    byte[] body = Codec.JSON.writeSpans(TRACE);
     byte[] gzippedBody = Util.gzip(body);
     mockMvc
         .perform(post("/api/v1/spans").content(gzippedBody).header("Content-Encoding", "gzip"))
@@ -114,7 +144,7 @@ public class ZipkinServerIntegrationTests {
 
   @Test
   public void readsRawTrace() throws Exception {
-    Span span = newSpan(1L, 2L, "get", "cs", "web");
+    Span span = TRACE.get(0);
 
     // write the span to the server, twice
     mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
@@ -145,12 +175,5 @@ public class ZipkinServerIntegrationTests {
         .andExpect(header().string("Cache-Control", "max-age=600"));
     mockMvc.perform(get("/index.html"))
         .andExpect(header().string("Cache-Control", "max-age=60"));
-  }
-
-  static Span newSpan(long traceId, long id, String spanName, String value, String service) {
-    Endpoint endpoint = Endpoint.create(service, 127 << 24 | 1, 80);
-    Annotation ann = Annotation.create(System.currentTimeMillis(), value, endpoint);
-    return new Span.Builder().id(id).traceId(traceId).name(spanName)
-        .timestamp(ann.timestamp).duration(1L).addAnnotation(ann).build();
   }
 }

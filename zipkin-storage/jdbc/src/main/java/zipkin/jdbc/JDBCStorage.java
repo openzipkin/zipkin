@@ -21,6 +21,7 @@ import org.jooq.ExecuteListenerProvider;
 import org.jooq.conf.Settings;
 import zipkin.AsyncSpanConsumer;
 import zipkin.AsyncSpanStore;
+import zipkin.CollectorMetrics;
 import zipkin.CollectorSampler;
 import zipkin.SpanStore;
 import zipkin.StorageAdapters.SpanConsumer;
@@ -100,8 +101,9 @@ public final class JDBCStorage implements StorageComponent {
     return spanConsumer;
   }
 
-  @Override public AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler) {
-    return makeSampled(asyncSpanConsumer, checkNotNull(sampler, "sampler"));
+  @Override
+  public AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler, CollectorMetrics metrics) {
+    return makeSampled(asyncSpanConsumer, sampler, metrics);
   }
 
   @Override public void close() {
