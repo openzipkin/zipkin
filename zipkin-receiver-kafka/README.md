@@ -13,6 +13,7 @@ It is enabled when the `KAFKA_ZOOKEEPER` environment variable is set. Here are t
    * `KAFKA_TOPIC`: Defaults to zipkin
    * `KAFKA_GROUP_ID`: Consumer group this process is consuming on behalf of. Defaults to zipkin
    * `KAFKA_STREAMS`: Count of consumer threads consuming the topic. defaults to 1.
+   * `KAFKA_MAX_MESSAGE_SIZE`: Maximum size of a message containing spans in bytes. Defaults to 1 MiB
 
 Example usage:
 

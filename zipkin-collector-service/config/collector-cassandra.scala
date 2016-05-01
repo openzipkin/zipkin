@@ -60,7 +60,8 @@ val kafkaReceiver = sys.env.get("KAFKA_ZOOKEEPER").map(
   KafkaSpanReceiverFactory.factory(_,
     sys.env.get("KAFKA_TOPIC").getOrElse("zipkin"),
     sys.env.get("KAFKA_GROUP_ID").getOrElse("zipkin"),
-    sys.env.get("KAFKA_STREAMS").getOrElse("1").toInt
+    sys.env.get("KAFKA_STREAMS").getOrElse("1").toInt,
+    sys.env.get("KAFKA_MAX_MESSAGE_SIZE").map(_.toInt).getOrElse(1024 * 1024)
   )
 )
 
