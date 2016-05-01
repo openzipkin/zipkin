@@ -48,6 +48,16 @@ public class KafkaCollectorTest {
     callback.onSuccess(null);
   };
 
+  @Test
+  public void canSetMaxMessageSize() throws Exception {
+    Builder builder = builder("max_message").maxMessageSize(1);
+
+    try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
+      assertThat(processor.connector.config().fetchMessageMaxBytes())
+          .isEqualTo(1);
+    }
+  }
+
   /** Ensures legacy encoding works: a single TBinaryProtocol encoded span */
   @Test
   public void messageWithSingleThriftSpan() throws Exception {

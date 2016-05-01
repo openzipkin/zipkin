@@ -36,6 +36,8 @@ kafka:
   group-id: ${KAFKA_GROUP_ID:zipkin}
   # Count of consumer threads consuming the topic
   streams: ${KAFKA_STREAMS:1}
+  # Maximum size of a message containing spans in bytes
+  max-message-size: ${KAFKA_MAX_MESSAGE_SIZE:1048576}
 scribe:
   category: zipkin
   port: ${COLLECTOR_PORT:9410}
