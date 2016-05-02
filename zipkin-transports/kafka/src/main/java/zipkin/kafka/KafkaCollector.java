@@ -20,6 +20,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import kafka.consumer.ConsumerConfig;
+import kafka.consumer.KafkaStream;
 import kafka.javaapi.consumer.ZookeeperConsumerConnector;
 import zipkin.AsyncSpanConsumer;
 import zipkin.Callback;
@@ -100,7 +101,7 @@ public final class KafkaCollector implements AutoCloseable {
      * @param storage Once spans are sampled, they are {@link AsyncSpanConsumer#accept(List,
      * Callback) queued for storage} using this component.
      */
-    public KafkaCollector build(StorageComponent storage) {
+    public KafkaCollector build(final StorageComponent storage) {
       checkNotNull(storage, "storage");
       return new KafkaCollector(this, new Lazy<AsyncSpanConsumer>() {
         @Override protected AsyncSpanConsumer compute() {
@@ -133,10 +134,9 @@ public final class KafkaCollector implements AutoCloseable {
         ? Executors.newSingleThreadExecutor()
         : Executors.newFixedThreadPool(builder.streams);
 
-    connector.createMessageStreams(topicCountMap)
-        .get(builder.topic).forEach(stream ->
-        pool.execute(new KafkaStreamProcessor(stream, consumer, builder.metrics))
-    );
+    for (KafkaStream<byte[], byte[]> stream : connector.createMessageStreams(topicCountMap).get(builder.topic)) {
+      pool.execute(new KafkaStreamProcessor(stream, consumer, builder.metrics));
+    }
   }
 
   @Override

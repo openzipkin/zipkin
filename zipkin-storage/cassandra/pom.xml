@@ -28,6 +28,8 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
+    <main.java.version>1.8</main.java.version>
+    <main.signature.artifact>java18</main.signature.artifact>
     <cassandra-driver-core.version>3.0.0</cassandra-driver-core.version>
   </properties>
 
@@ -35,6 +37,11 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>storage-guava</artifactId>
     </dependency>
 
     <dependency>
@@ -56,10 +63,6 @@
       <artifactId>mockito-core</artifactId>
       <version>${mockito.version}</version>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.zipkin.java</groupId>
-      <artifactId>storage-guava</artifactId>
     </dependency>
   </dependencies>
 </project>
