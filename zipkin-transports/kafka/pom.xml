@@ -27,7 +27,7 @@
   <name>Span Transport: Kafka</name>
 
   <properties>
-    <main.basedir>${project.basedir}/..</main.basedir>
+    <main.basedir>${project.basedir}/../..</main.basedir>
     <!-- This is pinned to Kafka 0.8.x client as 0.9.x brokers work with them, but not visa-versa
          http://docs.confluent.io/2.0.0/upgrade.html -->
     <kafka.version>0.8.2.2</kafka.version>

@@ -26,7 +26,7 @@
   <name>Storage: Guava support library</name>
 
   <properties>
-    <main.basedir>${project.basedir}/..</main.basedir>
+    <main.basedir>${project.basedir}/../..</main.basedir>
   </properties>
 
   <dependencies>

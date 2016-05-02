@@ -15,33 +15,59 @@
 package zipkin.cassandra;
 
 import com.google.common.base.Function;
-import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetEncoder;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.QueryRequest;
 import zipkin.Span;
-import zipkin.cassandra.internal.Repository;
 
 import static zipkin.internal.Util.UTF_8;
+import static zipkin.internal.Util.sortedList;
 
 final class CassandraUtil {
-  static final ThreadLocal<CharsetEncoder> UTF8_ENCODER = new ThreadLocal<CharsetEncoder>() {
-    @Override protected CharsetEncoder initialValue() {
-      return UTF_8.newEncoder();
+
+  // Time window covered by a single bucket of the Span Duration Index, in seconds. Default: 1hr
+  private static final long DURATION_INDEX_BUCKET_WINDOW_SECONDS
+      = Long.getLong("zipkin.store.cassandra.internal.durationIndexBucket", 60 * 60);
+
+  public static int durationIndexBucket(long ts) {
+    // if the window constant has microsecond precision, the division produces negative values
+    return (int) ((ts / DURATION_INDEX_BUCKET_WINDOW_SECONDS) / 1000000);
+  }
+
+  private static final ThreadLocal<CharsetEncoder> UTF8_ENCODER =
+      new ThreadLocal<CharsetEncoder>() {
+        @Override protected CharsetEncoder initialValue() {
+          return UTF_8.newEncoder();
+        }
+      };
+
+  static ByteBuffer toByteBuffer(String string) throws CharacterCodingException {
+    return UTF8_ENCODER.get().encode(CharBuffer.wrap(string));
+  }
+
+  static final ThreadLocal<SimpleDateFormat> DATE_FORMATTER = new ThreadLocal<SimpleDateFormat>() {
+    @Override protected SimpleDateFormat initialValue() {
+      SimpleDateFormat result = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
+      result.setTimeZone(TimeZone.getTimeZone("UTC"));
+      return result;
     }
   };
+
+  static String iso8601(long timestamp) {
+    return DATE_FORMATTER.get().format(new Date(timestamp / 1000));
+  }
 
   /**
    * Returns keys that concatenate the serviceName associated with an annotation, a binary
@@ -53,8 +79,7 @@ final class CassandraUtil {
    * @see QueryRequest#annotations
    * @see QueryRequest#binaryAnnotations
    */
-  static List<ByteBuffer> annotationKeys(Span span) {
-    // Perform distinct with strings, since ByteBuffers don't do content-based hashCodes
+  static List<String> annotationKeys(Span span) {
     Set<String> annotationKeys = new LinkedHashSet<>();
     for (Annotation a : span.annotations) {
       if (a.endpoint != null && !a.endpoint.serviceName.isEmpty()) {
@@ -69,11 +94,10 @@ final class CassandraUtil {
         annotationKeys.add(b.endpoint.serviceName + ":" + b.key + ":" + new String(b.value, UTF_8));
       }
     }
-    return toByteBuffers(annotationKeys);
+    return sortedList(annotationKeys);
   }
 
-  static List<ByteBuffer> annotationKeys(QueryRequest request) {
-    // Perform distinct with strings, since ByteBuffers don't deal do content-based hashCodes
+  static List<String> annotationKeys(QueryRequest request) {
     Set<String> annotationKeys = new LinkedHashSet<>();
     for (String a : request.annotations) {
       annotationKeys.add(request.serviceName + ":" + a);
@@ -81,24 +105,10 @@ final class CassandraUtil {
     for (Map.Entry<String, String> b : request.binaryAnnotations.entrySet()) {
       annotationKeys.add(request.serviceName + ":" + b.getKey() + ":" + b.getValue());
     }
-    return toByteBuffers(annotationKeys);
+    return sortedList(annotationKeys);
   }
 
-  /** Eventhough the input is always a string, {@link Repository} requires byte buffer inputs. */
-  private static List<ByteBuffer> toByteBuffers(Collection<String> strings) {
-    if (strings.isEmpty()) return Collections.emptyList();
-    List<ByteBuffer> result = new ArrayList<>(strings.size());
-    for (String string : strings) {
-      try {
-        result.add(UTF8_ENCODER.get().encode(CharBuffer.wrap(string)));
-      } catch (CharacterCodingException ignored) {
-        // don't die if the encoding is unknown
-      }
-    }
-    return result;
-  }
-
-  static <K, V> Function<Map<K, V>, Set<K>> keyset() {
+  static Function<Map<Long, Long>, Set<Long>> keyset() {
     return (Function) KeySet.INSTANCE;
   }
 
@@ -110,7 +120,7 @@ final class CassandraUtil {
     }
   }
 
-  static <K, V> Function<List<Map<K, V>>, Set<K>> intersectKeySets() {
+  static Function<List<Map<Long, Long>>, Set<Long>> intersectKeySets() {
     return (Function) IntersectKeySets.INSTANCE;
   }
 
@@ -123,19 +133,6 @@ final class CassandraUtil {
         traceIds.retainAll(input.get(i).keySet());
       }
       return traceIds;
-    }
-  }
-
-  static <E extends Comparable> Function<Iterable<E>, List<E>> toSortedList() {
-    return (Function) ToSortedList.INSTANCE;
-  }
-
-  enum ToSortedList implements Function<Iterable<Comparable>, List<Comparable>> {
-    INSTANCE;
-
-    @Override
-    public List<Comparable> apply(Iterable<Comparable> input) {
-      return Ordering.natural().sortedCopy(input);
     }
   }
 }

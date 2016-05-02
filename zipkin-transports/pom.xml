@@ -27,6 +27,10 @@
   <name>Zipkin Span Transports</name>
   <packaging>pom</packaging>
 
+  <properties>
+    <main.basedir>${project.basedir}/..</main.basedir>
+  </properties>
+
   <modules>
     <module>scribe</module>
     <module>kafka</module>

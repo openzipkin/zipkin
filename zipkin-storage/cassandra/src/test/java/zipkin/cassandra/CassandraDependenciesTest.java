@@ -44,8 +44,8 @@ public class CassandraDependenciesTest extends DependenciesTest {
    * The current implementation does not include dependency aggregation. It includes retrieval of
    * pre-aggregated links.
    *
-   * <p>This uses {@link InMemorySpanStore} to prepare links and {@link
-   * CassandraStorage#writeDependencyLinks(List, long)} to store them.
+   * <p>This uses {@link InMemorySpanStore} to prepare links and {@link CassandraDependenciesWriter}
+   * to store them.
    *
    * <p>Note: The zipkin-dependencies-spark doesn't use any of these classes: it reads and writes to
    * the keyspace directly.
@@ -57,6 +57,6 @@ public class CassandraDependenciesTest extends DependenciesTest {
     List<DependencyLink> links = mem.spanStore().getDependencies(TODAY + DAY, null);
 
     long midnight = midnightUTC(spans.get(0).timestamp / 1000);
-    storage.writeDependencyLinks(links, midnight);
+    new CassandraDependenciesWriter(storage.session.get()).write(links, midnight);
   }
 }
