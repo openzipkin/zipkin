@@ -68,7 +68,7 @@ abstract class SpanStore extends java.io.Closeable {
    *
    * <p/> Results are sorted lexicographically
    */
-  def getSpanNames(service: Option[String]): Future[Seq[String]]
+  def getSpanNames(service: String): Future[Seq[String]]
 
   /**
    * Store a list of spans, indexing as necessary.
@@ -187,8 +187,8 @@ class InMemorySpanStore extends SpanStore with CollectAnnotationQueries {
     spans.flatMap(_.serviceNames).distinct.toList.sorted
   }
 
-  override def getSpanNames(_serviceName: Option[String]): Future[Seq[String]] = call {
-    val serviceName = _serviceName.map(_.toLowerCase) // service names are always lowercase!
-    spansForService(serviceName).map(_.name).toList.distinct.sorted
+  override def getSpanNames(_serviceName: String): Future[Seq[String]] = call {
+    val serviceName = _serviceName.toLowerCase // service names are always lowercase!
+    spansForService(Some(serviceName)).map(_.name).toList.distinct.sorted
   }
 }

@@ -147,6 +147,6 @@ class ZipkinQueryController @Inject()(spanStore: SpanStore,
   }
 }
 
-case class GetSpanNamesRequest(@QueryParam serviceName: Option[String])
+case class GetSpanNamesRequest(@QueryParam serviceName: String)
 
 case class GetDependenciesRequest(@QueryParam endTs: Long, @QueryParam lookback: Option[Long])

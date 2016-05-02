@@ -97,7 +97,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store(Seq(span1.copy(name = "yak"), span3)))
 
     // should be in order
-    result(store.getSpanNames(Some("service"))) should be(List("methodcall", "yak"))
+    result(store.getSpanNames("service")) should be(List("methodcall", "yak"))
   }
 
   @Test def getAllServiceNames() {
@@ -352,7 +352,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   @Test def getSpanNames_emptySpanName() {
     result(store(Seq(spanEmptySpanName)))
 
-    result(store.getSpanNames(Some(spanEmptySpanName.name))) should be(empty)
+    result(store.getSpanNames(spanEmptySpanName.name)) should be(empty)
   }
 
   @Test def spanNamesGoLowercase() {
@@ -366,7 +366,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   @Test def serviceNamesGoLowercase() {
     result(store(Seq(span1)))
 
-    result(store.getSpanNames(Some("SeRvIcE"))) should be(List("methodcall"))
+    result(store.getSpanNames("SeRvIcE")) should be(List("methodcall"))
 
     result(store.getTraces(QueryRequest(Some("SeRvIcE")))) should be(
       Seq(Seq(span1))

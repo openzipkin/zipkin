@@ -33,7 +33,7 @@ public class SpanStoreInJava extends SpanStore {
     }
 
     @Override
-    public Future<Seq<String>> getSpanNames(Option<String> service) {
+    public Future<Seq<String>> getSpanNames(String service) {
         return null;
     }
 

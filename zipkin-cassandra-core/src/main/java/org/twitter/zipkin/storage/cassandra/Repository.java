@@ -70,7 +70,6 @@ public final class Repository implements AutoCloseable {
     private final PreparedStatement insertDependencies;
     private final PreparedStatement selectServiceNames;
     private final PreparedStatement insertServiceName;
-    private final PreparedStatement selectAllSpanNames;
     private final PreparedStatement selectSpanNames;
     private final PreparedStatement insertSpanName;
     private final PreparedStatement selectTraceIds;
@@ -153,11 +152,6 @@ public final class Repository implements AutoCloseable {
                     .insertInto("service_names")
                     .value("service_name", QueryBuilder.bindMarker("service_name"))
                     .using(QueryBuilder.ttl(QueryBuilder.bindMarker("ttl_"))));
-
-        selectAllSpanNames = session.prepare(
-                QueryBuilder.select("span_name")
-                        .from("span_names")
-                        .limit(QueryBuilder.bindMarker("limit_")));
 
         selectSpanNames = session.prepare(
                 QueryBuilder.select("span_name")
@@ -458,28 +452,6 @@ public final class Repository implements AutoCloseable {
         return insertServiceName.getQueryString()
                 .replace(":service_name", serviceName)
                 .replace(":ttl_", String.valueOf(ttl));
-    }
-
-    public ListenableFuture<Set<String>> getAllSpanNames() {
-        try {
-            BoundStatement bound = selectAllSpanNames.bind()
-                    // no one is ever going to browse so many span names
-                    .setInt("limit_", 1000);
-
-            return Futures.transform(
-                    session.executeAsync(bound),
-                    (ResultSet input) -> {
-                        Set<String> spanNames = new HashSet<>();
-                        for (Row row : input) {
-                            spanNames.add(row.getString("span_name"));
-                        }
-                        return spanNames.size() < 1000 ? spanNames : Collections.singleton("too many span names");
-                    }
-            );
-        } catch (RuntimeException ex) {
-            LOG.error("failed", ex);
-            throw ex;
-        }
     }
 
     public ListenableFuture<Set<String>> getSpanNames(String serviceName) {

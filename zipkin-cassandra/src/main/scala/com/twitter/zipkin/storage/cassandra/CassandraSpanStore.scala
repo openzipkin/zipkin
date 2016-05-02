@@ -263,12 +263,9 @@ abstract class CassandraSpanStore(
     FutureUtil.toFuture(repository.getServiceNames).map(_.asScala.toList.sorted)
   }
 
-  override def getSpanNames(service: Option[String]): Future[Seq[String]] = {
+  override def getSpanNames(service: String): Future[Seq[String]] = {
     QueryGetSpanNamesCounter.incr()
-    service match {
-      case Some(name) => FutureUtil.toFuture(repository.getSpanNames(name)).map(_.asScala.toList.sorted)
-      case None => FutureUtil.toFuture(repository.getAllSpanNames()).map(_.asScala.toList.sorted)
-    }
+    FutureUtil.toFuture(repository.getSpanNames(service)).map(_.asScala.toList.sorted)
   }
 
   override def getTraceIdsByName(
