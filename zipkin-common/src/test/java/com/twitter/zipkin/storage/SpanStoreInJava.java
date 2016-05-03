@@ -1,11 +1,11 @@
 package com.twitter.zipkin.storage;
 
-import com.twitter.util.Future;
-import com.twitter.zipkin.common.Span;
-import scala.Option;
 import scala.collection.Seq;
 import scala.collection.immutable.List;
 import scala.runtime.BoxedUnit;
+
+import com.twitter.util.Future;
+import com.twitter.zipkin.common.Span;
 
 /**
  * Shows that {@link SpanStore} is implementable in Java 7+.

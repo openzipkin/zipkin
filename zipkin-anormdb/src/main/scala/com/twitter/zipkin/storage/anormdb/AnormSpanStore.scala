@@ -354,14 +354,16 @@ class AnormSpanStore(val db: DB,
     val service = _service.toLowerCase // service names are always lowercase!
     implicit val (conn, borrowTime) = borrowConn()
     try {
+
       SQL(
         """SELECT DISTINCT name
           |FROM zipkin_spans t1
           |JOIN zipkin_annotations t2 ON (t1.trace_id = t2.trace_id and t1.id = t2.span_id)
-          |WHERE name <> ''
+          |WHERE t2.endpoint_service_name = {service} AND name <> ''
           |GROUP BY name
           |ORDER BY name
         """.stripMargin)
+        .on("service" -> service)
         .as(str("name") *)
 
     } finally {
