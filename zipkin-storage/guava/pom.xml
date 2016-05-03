@@ -18,7 +18,7 @@
   <parent>
     <artifactId>zipkin-storage</artifactId>
     <groupId>io.zipkin.java</groupId>
-    <version>0.16.1</version>
+    <version>0.16.2-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
