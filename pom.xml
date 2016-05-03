@@ -48,6 +48,7 @@
 
     <main.basedir>${project.basedir}</main.basedir>
 
+    <cassandra-driver-core.version>3.0.0</cassandra-driver-core.version>
     <moshi.version>1.1.0</moshi.version>
     <okio.version>1.7.0</okio.version>
     <spring-boot.version>1.3.3.RELEASE</spring-boot.version>
@@ -203,6 +204,13 @@
         <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-server</artifactId>
         <version>${project.version}</version>
+      </dependency>
+
+      <!-- Needs to be defined here or else spring-boot-dependencies will override it -->
+      <dependency>
+        <groupId>com.datastax.cassandra</groupId>
+        <artifactId>cassandra-driver-core</artifactId>
+        <version>${cassandra-driver-core.version}</version>
       </dependency>
 
       <dependency>
@@ -367,7 +375,7 @@
         <version>${license-maven-plugin.version}</version>
         <configuration>
           <!-- session.executionRootDirectory resolves properly even with nested modules -->
-          <header>${session.executionRootDirectory}/src/etc/header.txt</header>
+          <header>${main.basedir}/src/etc/header.txt</header>
           <excludes>
             <exclude>.travis.yml</exclude>
             <exclude>.gitignore</exclude>

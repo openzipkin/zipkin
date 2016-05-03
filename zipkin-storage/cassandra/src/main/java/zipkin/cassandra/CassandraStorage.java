@@ -14,20 +14,16 @@
 
 package zipkin.cassandra;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Session;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import zipkin.DependencyLink;
-import zipkin.internal.Dependencies;
+import zipkin.internal.Lazy;
 import zipkin.internal.Nullable;
-import zipkin.internal.Util;
 import zipkin.spanstore.guava.LazyGuavaStorageComponent;
 
 import static java.lang.String.format;
@@ -38,8 +34,8 @@ import static zipkin.internal.Util.checkNotNull;
  *
  * <p>This uses zipkin-cassandra-core which packages "/cassandra-schema-cql3.txt"
  */
-public final class CassandraStorage extends
-    LazyGuavaStorageComponent<CassandraSpanStore, CassandraSpanConsumer> {
+public final class CassandraStorage
+    extends LazyGuavaStorageComponent<CassandraSpanStore, CassandraSpanConsumer> {
 
   public static final class Builder {
     String keyspace = "zipkin";
@@ -50,6 +46,7 @@ public final class CassandraStorage extends
     String username;
     String password;
     int maxTraceCols = 100000;
+    int bucketCount = 10;
     int spanTtl = (int) TimeUnit.DAYS.toSeconds(7);
     int indexTtl = (int) TimeUnit.DAYS.toSeconds(3);
 
@@ -133,53 +130,51 @@ public final class CassandraStorage extends
   final int maxTraceCols;
   final int indexTtl;
   final int spanTtl;
-  final ClusterProvider clusterProvider;
-  final LazyRepository lazyRepository;
+  final int bucketCount;
+
+  final LazySession session;
+  final Lazy<Map<String, String>> metadata;
 
   CassandraStorage(Builder builder) {
     this.maxTraceCols = builder.maxTraceCols;
     this.indexTtl = builder.indexTtl;
     this.spanTtl = builder.spanTtl;
     this.keyspace = builder.keyspace;
-    this.clusterProvider = new ClusterProvider(builder);
-    this.lazyRepository = new LazyRepository(builder);
+    this.bucketCount = builder.bucketCount;
+    this.session = new LazySession(builder);
+    this.metadata = new Lazy<Map<String, String>>() {
+      @Override protected Map<String, String> compute() {
+        return Schema.readMetadata(keyspace, session.get());
+      }
+    };
   }
 
   @Override protected CassandraSpanStore computeGuavaSpanStore() {
-    return new CassandraSpanStore(lazyRepository.get(), indexTtl, maxTraceCols);
+    return new CassandraSpanStore(session.get(), bucketCount, indexTtl, maxTraceCols);
   }
 
   @Override protected CassandraSpanConsumer computeGuavaSpanConsumer() {
-    return new CassandraSpanConsumer(lazyRepository.get(), spanTtl, indexTtl);
+    return new CassandraSpanConsumer(session.get(), metadata.get(), bucketCount, spanTtl, indexTtl);
   }
 
   @Override public void close() {
-    lazyRepository.close();
-  }
-
-  @VisibleForTesting void writeDependencyLinks(List<DependencyLink> links, long timestampMillis) {
-    long midnight = Util.midnightUTC(timestampMillis);
-    Dependencies deps = Dependencies.create(midnight, midnight /* ignored */, links);
-    ByteBuffer thrift = deps.toThrift();
-    Futures.getUnchecked(lazyRepository.get().storeDependencies(midnight, thrift));
+    session.close();
   }
 
   @VisibleForTesting void clear() {
-    try (Cluster cluster = clusterProvider.get(); Session session = cluster.connect()) {
-      List<ListenableFuture<?>> futures = new LinkedList<>();
-      for (String cf : ImmutableList.of(
-          "traces",
-          "dependencies",
-          "service_names",
-          "span_names",
-          "service_name_index",
-          "service_span_name_index",
-          "annotations_index",
-          "span_duration_index"
-      )) {
-        futures.add(session.executeAsync(format("TRUNCATE %s.%s", keyspace, cf)));
-      }
-      Futures.getUnchecked(Futures.allAsList(futures));
+    List<ListenableFuture<?>> futures = new LinkedList<>();
+    for (String cf : ImmutableList.of(
+        "traces",
+        "dependencies",
+        "service_names",
+        "span_names",
+        "service_name_index",
+        "service_span_name_index",
+        "annotations_index",
+        "span_duration_index"
+    )) {
+      futures.add(session.get().executeAsync(format("TRUNCATE %s.%s", keyspace, cf)));
     }
+    Futures.getUnchecked(Futures.allAsList(futures));
   }
 }

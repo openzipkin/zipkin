@@ -87,4 +87,4 @@ logging:
 #     # investigate /api/v1/dependencies
 #     zipkin.internal.DependencyLinker: 'DEBUG'
 #     # log cassandra calls
-#     org.twitter.zipkin.storage.cassandra.Repository: 'DEBUG'
+#     zipkin.cassandra: 'DEBUG'

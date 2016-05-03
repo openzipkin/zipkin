@@ -47,7 +47,7 @@ public class CassandraScalaDependencyStoreTest extends DependencyStoreSpec {
         links = mem.spanStore().getDependencies(today() + TimeUnit.DAYS.toMillis(1), null);
 
     long midnight = midnightUTC(((long) input.apply(0).timestamp().get()) / 1000);
-    storage.writeDependencyLinks(links, midnight);
+    new CassandraDependenciesWriter(storage.session.get()).write(links, midnight);
   }
 
   public void clear() {

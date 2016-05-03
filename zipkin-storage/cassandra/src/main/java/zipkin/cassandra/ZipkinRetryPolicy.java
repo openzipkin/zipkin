@@ -12,7 +12,7 @@
  * the License.
  */
 
-package zipkin.cassandra.internal;
+package zipkin.cassandra;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -22,7 +22,7 @@ import com.datastax.driver.core.exceptions.DriverException;
 import com.datastax.driver.core.policies.RetryPolicy;
 
 /** This class was copied from org.twitter.zipkin.storage.cassandra.ZipkinRetryPolicy */
-public final class ZipkinRetryPolicy implements RetryPolicy {
+final class ZipkinRetryPolicy implements RetryPolicy {
 
   public static final ZipkinRetryPolicy INSTANCE = new ZipkinRetryPolicy();
 

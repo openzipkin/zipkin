@@ -16,34 +16,66 @@ package zipkin.cassandra;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
+import com.datastax.driver.core.Session;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LatencyAwarePolicy;
 import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
 import com.google.common.collect.Sets;
+import com.google.common.io.Closer;
 import com.google.common.net.HostAndPort;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import zipkin.cassandra.internal.ZipkinRetryPolicy;
 
-final class ClusterProvider {
+final class SessionProvider {
   final String contactPoints;
   final int maxConnections;
   final String localDc;
   final String username;
   final String password;
+  final boolean ensureSchema;
+  final String keyspace;
 
-  ClusterProvider(CassandraStorage.Builder builder) {
+  SessionProvider(CassandraStorage.Builder builder) {
     this.contactPoints = builder.contactPoints;
     this.maxConnections = builder.maxConnections;
     this.localDc = builder.localDc;
     this.username = builder.username;
     this.password = builder.password;
+    this.ensureSchema = builder.ensureSchema;
+    this.keyspace = builder.keyspace;
   }
 
-  Cluster get() {
+  /**
+   * Creates a session and ensures schema if configured. Closes the cluster and session if any
+   * exception occurred.
+   */
+  Session get() {
+    Closer closer = Closer.create();
+    try {
+      Cluster cluster = closer.register(buildCluster());
+      if (ensureSchema) {
+        Session session = closer.register(cluster.connect());
+        Schema.ensureExists(keyspace, session);
+        session.execute("USE " + keyspace);
+        return session;
+      } else {
+        return cluster.connect(keyspace);
+      }
+    } catch (RuntimeException e) {
+      try {
+        closer.close();
+      } catch (IOException ignored) {
+      }
+      throw e;
+    }
+  }
+
+  // Visible for testing
+  Cluster buildCluster() {
     Cluster.Builder builder = Cluster.builder();
     List<InetSocketAddress> contactPoints = parseContactPoints();
     int defaultPort = findConnectPort(contactPoints);

@@ -27,6 +27,10 @@
   <name>Storage</name>
   <packaging>pom</packaging>
 
+  <properties>
+    <main.basedir>${project.basedir}/..</main.basedir>
+  </properties>
+
   <modules>
     <module>cassandra</module>
     <module>jdbc</module>
