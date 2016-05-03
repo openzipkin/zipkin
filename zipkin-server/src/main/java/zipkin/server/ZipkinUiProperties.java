@@ -21,6 +21,7 @@ public class ZipkinUiProperties {
   private String environment;
   private int queryLimit = 10;
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
+  private String instrumented = ".*";
 
   public int getDefaultLookback() {
     return defaultLookback;
@@ -44,5 +45,13 @@ public class ZipkinUiProperties {
 
   public void setQueryLimit(int queryLimit) {
     this.queryLimit = queryLimit;
+  }
+
+  public String getInstrumented() {
+    return instrumented;
+  }
+
+  public void setInstrumented(String instrumented) {
+    this.instrumented = instrumented;
   }
 }
