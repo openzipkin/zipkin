@@ -20,8 +20,8 @@ import zipkin.internal.Lazy;
 final class LazySession extends Lazy<Session> implements Closeable {
   private final SessionProvider sessionProvider;
 
-  LazySession(CassandraStorage.Builder builder) {
-    this.sessionProvider = new SessionProvider(builder);
+  LazySession(SessionProvider sessionProvider) {
+    this.sessionProvider = sessionProvider;
   }
 
   @Override protected Session compute() {

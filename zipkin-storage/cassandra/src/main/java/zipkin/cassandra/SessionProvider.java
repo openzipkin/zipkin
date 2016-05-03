@@ -30,89 +30,98 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-final class SessionProvider {
-  final String contactPoints;
-  final int maxConnections;
-  final String localDc;
-  final String username;
-  final String password;
-  final boolean ensureSchema;
-  final String keyspace;
+/**
+ * Creates a session and ensures schema if configured. Closes the cluster and session if any
+ * exception occurred.
+ */
+public interface SessionProvider {
 
-  SessionProvider(CassandraStorage.Builder builder) {
-    this.contactPoints = builder.contactPoints;
-    this.maxConnections = builder.maxConnections;
-    this.localDc = builder.localDc;
-    this.username = builder.username;
-    this.password = builder.password;
-    this.ensureSchema = builder.ensureSchema;
-    this.keyspace = builder.keyspace;
-  }
+  Session get();
 
-  /**
-   * Creates a session and ensures schema if configured. Closes the cluster and session if any
-   * exception occurred.
-   */
-  Session get() {
-    Closer closer = Closer.create();
-    try {
-      Cluster cluster = closer.register(buildCluster());
-      if (ensureSchema) {
-        Session session = closer.register(cluster.connect());
-        Schema.ensureExists(keyspace, session);
-        session.execute("USE " + keyspace);
-        return session;
-      } else {
-        return cluster.connect(keyspace);
-      }
-    } catch (RuntimeException e) {
+  final class Default implements SessionProvider {
+    final String contactPoints;
+    final int maxConnections;
+    final String localDc;
+    final String username;
+    final String password;
+    final boolean ensureSchema;
+    final String keyspace;
+
+    public Default(CassandraStorage.Builder builder) {
+      this.contactPoints = builder.contactPoints;
+      this.maxConnections = builder.maxConnections;
+      this.localDc = builder.localDc;
+      this.username = builder.username;
+      this.password = builder.password;
+      this.ensureSchema = builder.ensureSchema;
+      this.keyspace = builder.keyspace;
+    }
+
+    /**
+     * Creates a session and ensures schema if configured. Closes the cluster and session if any
+     * exception occurred.
+     */
+    @Override public Session get() {
+      Closer closer = Closer.create();
       try {
-        closer.close();
-      } catch (IOException ignored) {
+        Cluster cluster = closer.register(buildCluster());
+        if (ensureSchema) {
+          Session session = closer.register(cluster.connect());
+          Schema.ensureExists(keyspace, session);
+          session.execute("USE " + keyspace);
+          return session;
+        } else {
+          return cluster.connect(keyspace);
+        }
+      } catch (RuntimeException e) {
+        try {
+          closer.close();
+        } catch (IOException ignored) {
+        }
+        throw e;
       }
-      throw e;
     }
-  }
 
-  // Visible for testing
-  Cluster buildCluster() {
-    Cluster.Builder builder = Cluster.builder();
-    List<InetSocketAddress> contactPoints = parseContactPoints();
-    int defaultPort = findConnectPort(contactPoints);
-    builder.addContactPointsWithPorts(contactPoints);
-    builder.withPort(defaultPort); // This ends up protocolOptions.port
-    if (username != null && password != null) {
-      builder.withCredentials(username, password);
+    // Visible for testing
+    Cluster buildCluster() {
+      Cluster.Builder builder = Cluster.builder();
+      List<InetSocketAddress> contactPoints = parseContactPoints();
+      int defaultPort = findConnectPort(contactPoints);
+      builder.addContactPointsWithPorts(contactPoints);
+      builder.withPort(defaultPort); // This ends up protocolOptions.port
+      if (username != null && password != null) {
+        builder.withCredentials(username, password);
+      }
+      builder.withRetryPolicy(ZipkinRetryPolicy.INSTANCE);
+      builder.withLoadBalancingPolicy(new TokenAwarePolicy(new LatencyAwarePolicy.Builder(
+          localDc != null
+              ? DCAwareRoundRobinPolicy.builder().withLocalDc(localDc).build()
+              : new RoundRobinPolicy()
+          // This can select remote, but LatencyAwarePolicy will prefer local
+      ).build()));
+      builder.withPoolingOptions(new PoolingOptions().setMaxConnectionsPerHost(
+          HostDistance.LOCAL, maxConnections
+      ));
+      return builder.build();
     }
-    builder.withRetryPolicy(ZipkinRetryPolicy.INSTANCE);
-    builder.withLoadBalancingPolicy(new TokenAwarePolicy(new LatencyAwarePolicy.Builder(
-        localDc != null
-            ? DCAwareRoundRobinPolicy.builder().withLocalDc(localDc).build()
-            : new RoundRobinPolicy()
-        // This can select remote, but LatencyAwarePolicy will prefer local
-    ).build()));
-    builder.withPoolingOptions(new PoolingOptions().setMaxConnectionsPerHost(
-        HostDistance.LOCAL, maxConnections
-    ));
-    return builder.build();
-  }
 
-  List<InetSocketAddress> parseContactPoints() {
-    List<InetSocketAddress> result = new LinkedList<>();
-    for (String contactPoint : contactPoints.split(",")) {
-      HostAndPort parsed = HostAndPort.fromString(contactPoint);
-      result.add(
-          new InetSocketAddress(parsed.getHostText(), parsed.getPortOrDefault(9042)));
+    List<InetSocketAddress> parseContactPoints() {
+      List<InetSocketAddress> result = new LinkedList<>();
+      for (String contactPoint : contactPoints.split(",")) {
+        HostAndPort parsed = HostAndPort.fromString(contactPoint);
+        result.add(
+            new InetSocketAddress(parsed.getHostText(), parsed.getPortOrDefault(9042)));
+      }
+      return result;
     }
-    return result;
-  }
 
-  /** Returns the consistent port across all contact points or 9042 */
-  static int findConnectPort(List<InetSocketAddress> contactPoints) {
-    Set<Integer> ports = Sets.newLinkedHashSet();
-    for (InetSocketAddress contactPoint : contactPoints) {
-      ports.add(contactPoint.getPort());
+    /** Returns the consistent port across all contact points or 9042 */
+    static int findConnectPort(List<InetSocketAddress> contactPoints) {
+      Set<Integer> ports = Sets.newLinkedHashSet();
+      for (InetSocketAddress contactPoint : contactPoints) {
+        ports.add(contactPoint.getPort());
+      }
+      return ports.size() == 1 ? ports.iterator().next() : 9042;
     }
-    return ports.size() == 1 ? ports.iterator().next() : 9042;
   }
 }

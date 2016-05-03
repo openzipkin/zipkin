@@ -33,9 +33,10 @@ final class Schema {
   private Schema() {
   }
 
-  static Map<String, String> readMetadata(String keyspace, Session session) {
+  static Map<String, String> readMetadata(Session session) {
     Map<String, String> metadata = new LinkedHashMap<>();
-    KeyspaceMetadata keyspaceMetadata = getKeyspaceMetadata(keyspace, session.getCluster());
+    KeyspaceMetadata keyspaceMetadata =
+        getKeyspaceMetadata(session.getLoggedKeyspace(), session.getCluster());
 
     Map<String, String> replication = keyspaceMetadata.getReplication();
     if ("SimpleStrategy".equals(replication.get("class")) && "1".equals(

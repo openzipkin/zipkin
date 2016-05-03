@@ -32,8 +32,6 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 @Configuration
-@ConditionalOnClass(DefaultSpanNameProvider.class) // makes brave-http an optional dep
-@ConditionalOnBean(Brave.class)
 public class ApiTracerConfiguration extends WebMvcConfigurerAdapter {
 
   @Autowired

@@ -88,14 +88,13 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     }
   };
 
-  CassandraSpanConsumer(Session session, Map<String, String> metadata, int bucketCount, int spanTtl,
-      int indexTtl) {
+  CassandraSpanConsumer(Session session, int bucketCount, int spanTtl, int indexTtl) {
     this.session = session;
     this.timestampCodec = new TimestampCodec(session);
     this.bucketCount = bucketCount;
     this.spanTtl = spanTtl;
     this.indexTtl = indexTtl;
-    this.metadata = metadata;
+    this.metadata = Schema.readMetadata(session);
     insertSpan = session.prepare(
         QueryBuilder
             .insertInto("traces")
