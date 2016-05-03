@@ -26,6 +26,7 @@ import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.storage.{CollectAnnotationQueries, IndexedTraceId, SpanStore}
 import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.zipkin.util.{FutureUtil, Util}
+import java.util
 import org.twitter.zipkin.storage.cassandra.Repository
 
 import scala.collection.JavaConverters._
@@ -277,14 +278,17 @@ abstract class CassandraSpanStore(
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByNameCounter.incr()
 
-    val traceIdsFuture = FutureUtil.toFuture((serviceName, spanName) match {
+    val traceIdsFuture = (serviceName, spanName) match {
       // if we have a span name, look up in the service + span name index
       // if not, look up by service name only
       case (Some(x: String), Some(y: String)) =>
-        repository.getTraceIdsBySpanName(x, y, endTs * 1000, lookback * 1000, limit)
-      case (Some(x: String), None) => repository.getTraceIdsByServiceName(x, endTs * 1000, lookback * 1000, limit)
-      case (None, _) => repository.getAllTraceIds(endTs * 1000, lookback * 1000, limit)
-    })
+        FutureUtil.toFuture(repository.getTraceIdsBySpanName(x, y, endTs * 1000, lookback * 1000, limit))
+      case (Some(x: String), None) =>
+        FutureUtil.toFuture(repository.getTraceIdsByServiceName(x, endTs * 1000, lookback * 1000, limit))
+      case (None, _) => FutureUtil.toFuture(repository.getServiceNames).flatMap { names =>
+        FutureUtil.toFuture(repository.getAllTraceIds(new util.ArrayList(names), endTs * 1000, lookback * 1000, limit))
+      }
+    }
 
     traceIdsFuture.map { traceIds =>
       traceIds.asScala
@@ -302,15 +306,32 @@ abstract class CassandraSpanStore(
     limit: Int
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByAnnotationCounter.incr()
+    serviceName match {
+      case Some(name) => FutureUtil.toFuture(
+        repository
+          .getTraceIdsByAnnotation(annotationKey(name, annotation, value), endTs * 1000, lookback * 1000, limit))
+        .map { traceIds =>
+          traceIds.asScala
+            .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
+            .toSeq
+        }
+      case None => FutureUtil.toFuture(repository.getServiceNames).flatMap { names =>
+        val futures: Seq[Future[util.Map[java.lang.Long, java.lang.Long]]] = names.asScala.toSeq.map { name =>
+          FutureUtil.toFuture(repository
+            .getTraceIdsByAnnotation(annotationKey(name, annotation, value), endTs * 1000, lookback * 1000, limit))
+        }
+        Future.collect(futures).map { traceIdsList =>
+          val traceIds = traceIdsList.map(_.asScala).reduce(_ ++ _)
+          traceIds
+            .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
+            .toSeq
+        }
 
-    FutureUtil.toFuture(
-      repository
-        .getTraceIdsByAnnotation(annotationKey(serviceName.getOrElse(""), annotation, value), endTs * 1000, lookback * 1000, limit))
-      .map { traceIds =>
-        traceIds.asScala
-          .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
-          .toSeq
       }
+
+    }
+
+
   }
 
   override protected def getTraceIdsByDuration(

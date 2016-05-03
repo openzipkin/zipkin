@@ -80,6 +80,7 @@ public final class Repository implements AutoCloseable {
     private final PreparedStatement selectTraceIdsByAnnotations;
     private final PreparedStatement insertTraceIdByAnnotation;
     private final PreparedStatement selectTraceIdsBySpanDuration;
+    private final PreparedStatement selectAllTraceIdsBySpanDuration;
     private final PreparedStatement insertTraceIdBySpanDuration;
     private final Map<String,String> metadata;
     private final ProtocolVersion protocolVersion;
@@ -171,11 +172,12 @@ public final class Repository implements AutoCloseable {
         selectTraceIds = session.prepare(
                 QueryBuilder.select("ts", "trace_id")
                     .from("service_name_index")
-                    .where(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
+                    .where(QueryBuilder.in("service_name", QueryBuilder.bindMarker("service_name")))
+                    .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
+                    .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
                     .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
                     .limit(QueryBuilder.bindMarker("limit_"))
-                    .allowFiltering());
-
+                    .orderBy(QueryBuilder.desc("ts")));
 
         selectTraceIdsByServiceName = session.prepare(
                 QueryBuilder.select("ts", "trace_id")
@@ -241,6 +243,15 @@ public final class Repository implements AutoCloseable {
                         .and(QueryBuilder.lte("duration", QueryBuilder.bindMarker("max_duration")))
                         .and(QueryBuilder.gte("duration", QueryBuilder.bindMarker("min_duration")))
                     .orderBy(QueryBuilder.desc("duration")));
+
+        selectAllTraceIdsBySpanDuration = session.prepare(
+                QueryBuilder.select("duration", "ts", "trace_id")
+                        .from("span_duration_index")
+                        .where(QueryBuilder.lte("duration", QueryBuilder.bindMarker("max_duration")))
+                        .and(QueryBuilder.gte("duration", QueryBuilder.bindMarker("min_duration")))
+                        .limit(QueryBuilder.bindMarker("limit_"))
+                        .allowFiltering());
+
 
         insertTraceIdBySpanDuration = session.prepare(
                 QueryBuilder
@@ -528,10 +539,12 @@ public final class Repository implements AutoCloseable {
                 .replace(":ttl_", String.valueOf(ttl));
     }
 
-    public ListenableFuture<Map<Long,Long>> getAllTraceIds(long endTs, long lookback, int limit) {
+    public ListenableFuture<Map<Long,Long>> getAllTraceIds(List<String> serviceNames, long endTs, long lookback, int limit) {
         long startTs = endTs - lookback;
         try {
             BoundStatement bound = selectTraceIds.bind()
+                    .setList("service_name", serviceNames)
+                    .setList("bucket", ALL_BUCKETS)
                     .setBytesUnsafe("start_ts", serializeTs(startTs))
                     .setBytesUnsafe("end_ts", serializeTs(endTs))
                     .setInt("limit_", limit);
@@ -809,12 +822,20 @@ public final class Repository implements AutoCloseable {
             }
 
             IntFunction<ListenableFuture<List<DurationRow>>> oneBucketQuery = (bucket) -> {
-                BoundStatement bound = selectTraceIdsBySpanDuration.bind()
-                        .setString("service_name", serviceName)
-                        .setString("span_name", spanName)
-                        .setInt("time_bucket", bucket)
-                        .setLong("max_duration", maxDuration)
-                        .setLong("min_duration", minDuration);
+                BoundStatement bound;
+                if (serviceName.equals("")) {
+                    bound = selectAllTraceIdsBySpanDuration.bind()
+                            .setLong("max_duration", maxDuration)
+                            .setLong("min_duration", minDuration)
+                            .setInt("limit_", limit);;
+                } else {
+                    bound = selectTraceIdsBySpanDuration.bind()
+                            .setString("service_name", serviceName)
+                            .setString("span_name", spanName)
+                            .setInt("time_bucket", bucket)
+                            .setLong("max_duration", maxDuration)
+                            .setLong("min_duration", minDuration);
+                }
                 // optimistically setting fetch size to 'limit' here. Since we are likely to filter some results
                 // because their timestamps are out of range, we may need to fetch again.
                 // TODO figure out better strategy

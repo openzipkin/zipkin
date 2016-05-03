@@ -254,6 +254,40 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     )
   }
 
+  @Test def getTraces_acrossServices() {
+
+    val services = (for(i <- 0 to 9) yield Endpoint(127 << 24 | i, 8080, s"service$i")).toSeq
+    val annotations = services.map(s => BinaryAnnotation(Constants.LocalComponent, "serviceAnnotation", Some(s)))
+
+    val earlySpans = (for(i <- 0 to 9) yield {
+      Span(i, s"span$i", i, None, Some(1L * 1000 + i), Some(1L), binaryAnnotations = annotations.lift(i).toList)
+    }).toSeq
+
+    val lateSpans = (for(i <- 0 to 9) yield {
+      Span(i+10, s"span${i+10}", i+10, None, Some(5L * 1000 + i), Some(1L), binaryAnnotations = annotations.lift(i).toList)
+    }).toSeq
+
+    result(store(earlySpans ++ lateSpans))
+
+    //sanity check
+    result(store.getTraces(QueryRequest(Some("service0")))) should be(
+      Seq(lateSpans.headOption.toList, earlySpans.headOption.toList)
+    )
+
+    result(store.getTraces(QueryRequest(None, limit = 10))) should be(
+      lateSpans.reverse.map(span => List(span))
+    )
+
+    result(store.getTraces(QueryRequest(None, endTs = 6L, lookback = Some(2L)))) should be(
+      lateSpans.reverse.map(span => List(span))
+    )
+
+    result(store.getTraces(QueryRequest(None, endTs = 3L))) should be(
+      earlySpans.reverse.map(span => List(span))
+    )
+
+  }
+
   @Test def getTraces_multipleAnnotationsBecomeAndFilter() {
     val foo = Span(1, "call1", 1, None, Some((today + 1) * 1000), None, List(Annotation((today + 1) * 1000, "foo", Some(ep))))
     // would be foo bar, except lexicographically bar precedes foo
