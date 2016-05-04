@@ -13,7 +13,6 @@
  */
 package zipkin.internal;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -22,9 +21,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
-import okio.Buffer;
-import okio.GzipSink;
-import okio.GzipSource;
 
 public final class Util {
   public static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -72,21 +68,6 @@ public final class Util {
     Arrays.sort(array);
     List result = Arrays.asList(array);
     return Collections.unmodifiableList(result);
-  }
-
-  public static byte[] gzip(byte[] bytes) throws IOException {
-    Buffer sink = new Buffer();
-    GzipSink gzipSink = new GzipSink(sink);
-    gzipSink.write(new Buffer().write(bytes), bytes.length);
-    gzipSink.close();
-    return sink.readByteArray();
-  }
-
-  public static byte[] gunzip(byte[] bytes) throws IOException {
-    Buffer result = new Buffer();
-    GzipSource source = new GzipSource(new Buffer().write(bytes));
-    while (source.read(result, Integer.MAX_VALUE) != -1) ;
-    return result.readByteArray();
   }
 
   /** For bucketed data floored to the day. For example, dependency links. */

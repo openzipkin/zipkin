@@ -21,6 +21,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import okio.Buffer;
+import okio.GzipSource;
 import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
 import zipkin.CollectorMetrics;
@@ -32,7 +33,6 @@ import zipkin.StorageComponent;
 import zipkin.internal.SpanConsumerLogger;
 
 import static zipkin.CollectorSampler.ALWAYS_SAMPLE;
-import static zipkin.internal.Util.gunzip;
 
 final class ZipkinDispatcher extends Dispatcher {
   private final SpanStore store;
@@ -80,7 +80,10 @@ final class ZipkinDispatcher extends Dispatcher {
         String encoding = request.getHeader("Content-Encoding");
         if (encoding != null && encoding.contains("gzip")) {
           try {
-            body = gunzip(body);
+            Buffer result = new Buffer();
+            GzipSource source = new GzipSource(new Buffer().write(body));
+            while (source.read(result, Integer.MAX_VALUE) != -1) ;
+            body = result.readByteArray();
           } catch (IOException e) {
             String message = logger.errorReading("Cannot gunzip spans", e);
             return new MockResponse().setResponseCode(400).setBody(message);
