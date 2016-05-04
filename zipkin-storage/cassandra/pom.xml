@@ -23,7 +23,7 @@
     <version>0.16.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>storage-cassandra</artifactId>
+  <artifactId>zipkin-storage-cassandra</artifactId>
   <name>Storage: Cassandra</name>
 
   <properties>
@@ -38,7 +38,7 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>storage-guava</artifactId>
+      <artifactId>zipkin-guava</artifactId>
     </dependency>
 
     <dependency>

@@ -89,14 +89,14 @@
     <!-- Cassandra backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>storage-cassandra</artifactId>
+      <artifactId>zipkin-storage-cassandra</artifactId>
       <optional>true</optional>
     </dependency>
 
     <!-- Elasticsearch backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>storage-elasticsearch</artifactId>
+      <artifactId>zipkin-storage-elasticsearch</artifactId>
       <optional>true</optional>
     </dependency>
 
@@ -111,7 +111,7 @@
     <!-- JDBC backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>storage-jdbc</artifactId>
+      <artifactId>zipkin-storage-jdbc</artifactId>
       <optional>true</optional>
     </dependency>
 
@@ -124,14 +124,14 @@
     <!-- Kafka transport -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>transport-kafka</artifactId>
+      <artifactId>zipkin-transport-kafka</artifactId>
       <optional>true</optional>
     </dependency>
 
     <!-- Scribe transport -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>transport-scribe</artifactId>
+      <artifactId>zipkin-transport-scribe</artifactId>
       <optional>true</optional>
     </dependency>
 

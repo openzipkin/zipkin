@@ -23,7 +23,7 @@
     <version>0.16.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>transport-scribe</artifactId>
+  <artifactId>zipkin-transport-scribe</artifactId>
   <name>Span Transport: Scribe</name>
 
   <properties>
@@ -41,7 +41,7 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>storage-guava</artifactId>
+      <artifactId>zipkin-guava</artifactId>
     </dependency>
 
     <dependency>

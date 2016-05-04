@@ -22,7 +22,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>storage-elasticsearch</artifactId>
+  <artifactId>zipkin-storage-elasticsearch</artifactId>
   <name>Storage: Elasticsearch</name>
 
   <properties>
@@ -43,7 +43,7 @@
 
     <dependency>
       <groupId>io.zipkin.java</groupId>
-      <artifactId>storage-guava</artifactId>
+      <artifactId>zipkin-guava</artifactId>
     </dependency>
 
     <dependency>

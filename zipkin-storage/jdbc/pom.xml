@@ -23,7 +23,7 @@
     <version>0.16.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>storage-jdbc</artifactId>
+  <artifactId>zipkin-storage-jdbc</artifactId>
   <name>Storage: JDBC</name>
 
   <properties>

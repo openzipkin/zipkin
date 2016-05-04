@@ -63,19 +63,19 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>storage-cassandra</artifactId>
+      <artifactId>zipkin-storage-cassandra</artifactId>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>storage-elasticsearch</artifactId>
+      <artifactId>zipkin-storage-elasticsearch</artifactId>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>storage-jdbc</artifactId>
+      <artifactId>zipkin-storage-jdbc</artifactId>
       <scope>test</scope>
     </dependency>
 

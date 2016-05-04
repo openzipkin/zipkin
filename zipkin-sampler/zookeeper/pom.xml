@@ -19,11 +19,11 @@
 
   <parent>
     <groupId>io.zipkin.java</groupId>
-    <artifactId>zipkin-samplers</artifactId>
+    <artifactId>zipkin-sampler</artifactId>
     <version>0.16.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>sampler-zookeeper</artifactId>
+  <artifactId>zipkin-sampler-zookeeper</artifactId>
   <name>Sampler: ZooKeeper</name>
 
   <properties>

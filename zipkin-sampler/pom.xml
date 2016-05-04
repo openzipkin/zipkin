@@ -23,8 +23,8 @@
     <version>0.16.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>zipkin-storage</artifactId>
-  <name>Storage</name>
+  <artifactId>zipkin-sampler</artifactId>
+  <name>Samplers</name>
   <packaging>pom</packaging>
 
   <properties>
@@ -32,8 +32,6 @@
   </properties>
 
   <modules>
-    <module>cassandra</module>
-    <module>jdbc</module>
-    <module>elasticsearch</module>
+    <module>zookeeper</module>
   </modules>
 </project>
