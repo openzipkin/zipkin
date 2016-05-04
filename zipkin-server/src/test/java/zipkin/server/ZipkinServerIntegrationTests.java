@@ -13,6 +13,8 @@
  */
 package zipkin.server;
 
+import okio.Buffer;
+import okio.GzipSink;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,7 +28,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import zipkin.Codec;
 import zipkin.Span;
-import zipkin.internal.Util;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -136,7 +137,13 @@ public class ZipkinServerIntegrationTests {
 
   public void writeSpans_gzipEncoded() throws Exception {
     byte[] body = Codec.JSON.writeSpans(TRACE);
-    byte[] gzippedBody = Util.gzip(body);
+
+    Buffer sink = new Buffer();
+    GzipSink gzipSink = new GzipSink(sink);
+    gzipSink.write(new Buffer().write(body), body.length);
+    gzipSink.close();
+    byte[] gzippedBody = sink.readByteArray();
+
     mockMvc
         .perform(post("/api/v1/spans").content(gzippedBody).header("Content-Encoding", "gzip"))
         .andExpect(status().isAccepted());

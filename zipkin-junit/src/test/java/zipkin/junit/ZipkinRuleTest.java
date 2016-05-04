@@ -22,18 +22,20 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okio.Buffer;
+import okio.ByteString;
+import okio.GzipSink;
+import okio.GzipSource;
 import org.junit.Rule;
 import org.junit.Test;
 import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Span;
-import zipkin.internal.Util;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin.TestObjects.TRACE;
-import static zipkin.internal.Util.gzip;
 
 public class ZipkinRuleTest {
 
@@ -155,7 +157,12 @@ public class ZipkinRuleTest {
   @Test
   public void gzippedSpans() throws IOException {
     byte[] spansInJson = Codec.JSON.writeSpans(TRACE);
-    byte[] gzippedJson = gzip(spansInJson);
+
+    Buffer sink = new Buffer();
+    GzipSink gzipSink = new GzipSink(sink);
+    gzipSink.write(new Buffer().write(spansInJson), spansInJson.length);
+    gzipSink.close();
+    ByteString gzippedJson = sink.readByteString();
 
     client.newCall(new Request.Builder()
         .url(zipkin.httpUrl() + "/api/v1/spans")
@@ -196,7 +203,10 @@ public class ZipkinRuleTest {
     assertThat(response.code()).isEqualTo(200);
     assertThat(response.body().contentLength()).isLessThan(annotation2K.length);
 
-    byte[] unzipped = Util.gunzip(response.body().bytes());
+    Buffer result = new Buffer();
+    GzipSource source = new GzipSource(response.body().source());
+    while (source.read(result, Integer.MAX_VALUE) != -1) ;
+    byte[] unzipped = result.readByteArray();
 
     assertThat(Codec.JSON.readSpans(unzipped)).isEqualTo(trace);
   }

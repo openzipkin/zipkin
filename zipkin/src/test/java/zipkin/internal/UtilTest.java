@@ -13,7 +13,6 @@
  */
 package zipkin.internal;
 
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -26,8 +25,6 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static zipkin.internal.Util.equal;
-import static zipkin.internal.Util.gunzip;
-import static zipkin.internal.Util.gzip;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
 import static zipkin.internal.Util.midnightUTC;
 
@@ -39,12 +36,6 @@ public class UtilTest {
     assertFalse(equal(null, "1"));
     assertFalse(equal("1", null));
     assertFalse(equal("1", "2"));
-  }
-
-  @Test
-  public void gzipTest() throws IOException {
-    assertThat(gunzip(gzip("hello".getBytes())))
-        .isEqualTo("hello".getBytes());
   }
 
   @Test

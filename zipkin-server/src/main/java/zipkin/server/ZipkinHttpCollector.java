@@ -13,8 +13,11 @@
  */
 package zipkin.server;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
@@ -35,7 +38,6 @@ import zipkin.internal.SpanConsumerLogger;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static zipkin.internal.Util.checkNotNull;
-import static zipkin.internal.Util.gunzip;
 
 /**
  * Implements the POST /api/v1/spans endpoint used by instrumentation.
@@ -105,5 +107,25 @@ public class ZipkinHttpCollector {
       return ResponseEntity.status(500).body(message + "\n"); // newline for prettier curl
     }
     return ResponseEntity.accepted().build();
+  }
+
+  private static final ThreadLocal<byte[]> GZIP_BUFFER = new ThreadLocal<byte[]>() {
+    @Override protected byte[] initialValue() {
+      return new byte[1024];
+    }
+  };
+
+  static byte[] gunzip(byte[] input) throws IOException {
+    Inflater inflater = new Inflater();
+    inflater.setInput(input);
+    try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream(input.length)) {
+      while (!inflater.finished()) {
+        int count = inflater.inflate(GZIP_BUFFER.get());
+        outputStream.write(GZIP_BUFFER.get(), 0, count);
+      }
+      return outputStream.toByteArray();
+    } catch (DataFormatException e) {
+      throw new IOException(e.getMessage(), e);
+    }
   }
 }
