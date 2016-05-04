@@ -64,6 +64,12 @@ zipkin:
     # Default duration to look back when finding traces or dependency links.
     # Affects the "Start time" element in the UI. 7 days in millis
     default-lookback: ${QUERY_LOOKBACK:604800000}
+    # Which sites this Zipkin UI covers. Regex syntax. (e.g. http:\/\/example.com\/.*)
+    # Multiple sites can be specified, e.g.
+    # - .*example1.com
+    # - .*example2.com
+    # Default is "match all websites"
+    instrumented: ${INSTRUMENTED:.*}
 server:
   port: ${QUERY_PORT:9411}
   compression:
