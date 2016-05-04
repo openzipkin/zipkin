@@ -66,7 +66,7 @@ defaultLookback | zipkin.ui.default-lookback | Default duration in millis to loo
 queryLimit | zipkin.ui.query-limit | Default limit for Find Traces. Defaults to 10.
 instrumented | zipkin.ui.instrumented | Which sites this Zipkin UI covers. Regex syntax. e.g. `http:\/\/example.com\/.*` Defaults to match all websites (`.*`).
 
-For example, if using docker you can set `JAVA_OPTS="-Dzipkin.ui.query-limit=100"` to affect `$.queryLimit` in `/config.json`.
+For example, if using docker you can set `JAVA_OPTS="-Dzipkin.ui.query-limit=100"` to affect `$.queryLimit` in `/config.json`. You can also use any other alternative [supported by Spring Boot](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html).
 
 ## Environment Variables
 zipkin-server is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/master/zipkin-query-service).
