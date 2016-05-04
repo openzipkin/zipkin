@@ -139,7 +139,6 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store(Seq(span1)))
 
     result(store.getTraces(QueryRequest())) should be(Seq(Seq(span1)))
-    result(store.getTraces(QueryRequest(None, Some("methodcall")))) should be(Seq(Seq(span1)))
 
     result(store.getTraces(QueryRequest(Some("service")))) should be(
       Seq(Seq(span1))
@@ -196,10 +195,6 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
       Seq(trace2)
     )
 
-    result(store.getTraces(q.copy(serviceName = None, minDuration = targz.duration))) should be(
-      Seq(trace2, trace1)
-    )
-
     // Duration bounds aren't limited to root spans: they apply to all spans by service in a trace
     result(store.getTraces(q.copy(serviceName = Some("service2"), minDuration = zip.duration, maxDuration = tar.duration))) should be(
       Seq(trace3, trace2, trace1) // service2 is in the middle of trace1 and 2, but root of trace3
@@ -244,12 +239,12 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store(Seq(span1)))
 
     // fetch by time based annotation, find trace
-    result(store.getTraces(QueryRequest(None, annotations = Set("custom")))) should be(
+    result(store.getTraces(QueryRequest(Some("service"), annotations = Set("custom")))) should be(
       Seq(Seq(span1))
     )
 
     // should find traces by the key and value annotation
-    result(store.getTraces(QueryRequest(None, binaryAnnotations = Set(("BAH", "BEH"))))) should be(
+    result(store.getTraces(QueryRequest(Some("service"), binaryAnnotations = Set(("BAH", "BEH"))))) should be(
       Seq(Seq(span1))
     )
   }

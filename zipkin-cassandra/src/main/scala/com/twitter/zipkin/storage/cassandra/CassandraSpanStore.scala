@@ -284,9 +284,11 @@ abstract class CassandraSpanStore(
       case (Some(x: String), Some(y: String)) =>
         FutureUtil.toFuture(repository.getTraceIdsBySpanName(x, y, endTs * 1000, lookback * 1000, limit))
       case (Some(x: String), None) =>
-        FutureUtil.toFuture(repository.getTraceIdsByServiceName(x, endTs * 1000, lookback * 1000, limit))
-      case (None, _) => FutureUtil.toFuture(repository.getServiceNames).flatMap { names =>
-        FutureUtil.toFuture(repository.getAllTraceIds(new util.ArrayList(names), endTs * 1000, lookback * 1000, limit))
+        FutureUtil.toFuture(repository.getTraceIdsByServiceName(Seq(x).asJava, endTs * 1000, lookback * 1000, limit))
+      case (None, Some(y: String)) =>
+        Future.exception(new UnsupportedOperationException)
+      case (None, None) => FutureUtil.toFuture(repository.getServiceNames).flatMap { names =>
+        FutureUtil.toFuture(repository.getTraceIdsByServiceName(new util.ArrayList(names), endTs * 1000, lookback * 1000, limit))
       }
     }
 
@@ -315,23 +317,8 @@ abstract class CassandraSpanStore(
             .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
             .toSeq
         }
-      case None => FutureUtil.toFuture(repository.getServiceNames).flatMap { names =>
-        val futures: Seq[Future[util.Map[java.lang.Long, java.lang.Long]]] = names.asScala.toSeq.map { name =>
-          FutureUtil.toFuture(repository
-            .getTraceIdsByAnnotation(annotationKey(name, annotation, value), endTs * 1000, lookback * 1000, limit))
-        }
-        Future.collect(futures).map { traceIdsList =>
-          val traceIds = traceIdsList.map(_.asScala).reduce(_ ++ _)
-          traceIds
-            .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
-            .toSeq
-        }
-
-      }
-
+      case None => Future.exception(new UnsupportedOperationException)
     }
-
-
   }
 
   override protected def getTraceIdsByDuration(
@@ -345,15 +332,17 @@ abstract class CassandraSpanStore(
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByDurationCounter.incr()
 
-    Future.exception(new UnsupportedOperationException)
-    FutureUtil.toFuture(
-      repository
-        .getTraceIdsByDuration(serviceName getOrElse "", spanName getOrElse "", minDuration, maxDuration getOrElse Long.MaxValue,
-          endTs * 1000, (endTs - lookback)  * 1000, limit, indexTtl.inSeconds))
-      .map { traceIds =>
-      traceIds.asScala
-        .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
-        .toSeq
+    serviceName match {
+      case Some(name) => FutureUtil.toFuture(
+        repository
+          .getTraceIdsByDuration(name, spanName getOrElse "", minDuration, maxDuration getOrElse Long.MaxValue,
+            endTs * 1000, (endTs - lookback)  * 1000, limit, indexTtl.inSeconds))
+        .map { traceIds =>
+          traceIds.asScala
+            .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
+            .toSeq
+        }
+      case None => Future.exception(new UnsupportedOperationException)
     }
   }
 }
