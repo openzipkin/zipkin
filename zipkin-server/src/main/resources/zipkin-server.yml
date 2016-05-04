@@ -69,7 +69,7 @@ zipkin:
     # - .*example1.com
     # - .*example2.com
     # Default is "match all websites"
-    instrumented: ${INSTRUMENTED:.*}
+    instrumented: .*
 server:
   port: ${QUERY_PORT:9411}
   compression:
