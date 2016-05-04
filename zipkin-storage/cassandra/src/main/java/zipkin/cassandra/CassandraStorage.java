@@ -20,9 +20,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import zipkin.internal.Lazy;
 import zipkin.internal.Nullable;
 import zipkin.spanstore.guava.LazyGuavaStorageComponent;
 
@@ -49,6 +47,13 @@ public final class CassandraStorage
     int bucketCount = 10;
     int spanTtl = (int) TimeUnit.DAYS.toSeconds(7);
     int indexTtl = (int) TimeUnit.DAYS.toSeconds(3);
+    SessionProvider sessionProvider = new SessionProvider.Default(this);
+
+    /** Override to control how sessions are created. */
+    public Builder sessionProvider(SessionProvider sessionProvider) {
+      this.sessionProvider = checkNotNull(sessionProvider, "sessionProvider");
+      return this;
+    }
 
     /** Keyspace to store span and index data. Defaults to "zipkin" */
     public Builder keyspace(String keyspace) {
@@ -126,27 +131,18 @@ public final class CassandraStorage
     }
   }
 
-  final String keyspace;
   final int maxTraceCols;
   final int indexTtl;
   final int spanTtl;
   final int bucketCount;
-
   final LazySession session;
-  final Lazy<Map<String, String>> metadata;
 
   CassandraStorage(Builder builder) {
     this.maxTraceCols = builder.maxTraceCols;
     this.indexTtl = builder.indexTtl;
     this.spanTtl = builder.spanTtl;
-    this.keyspace = builder.keyspace;
     this.bucketCount = builder.bucketCount;
-    this.session = new LazySession(builder);
-    this.metadata = new Lazy<Map<String, String>>() {
-      @Override protected Map<String, String> compute() {
-        return Schema.readMetadata(keyspace, session.get());
-      }
-    };
+    this.session = new LazySession(builder.sessionProvider);
   }
 
   @Override protected CassandraSpanStore computeGuavaSpanStore() {
@@ -154,7 +150,7 @@ public final class CassandraStorage
   }
 
   @Override protected CassandraSpanConsumer computeGuavaSpanConsumer() {
-    return new CassandraSpanConsumer(session.get(), metadata.get(), bucketCount, spanTtl, indexTtl);
+    return new CassandraSpanConsumer(session.get(), bucketCount, spanTtl, indexTtl);
   }
 
   @Override public void close() {
@@ -173,7 +169,7 @@ public final class CassandraStorage
         "annotations_index",
         "span_duration_index"
     )) {
-      futures.add(session.get().executeAsync(format("TRUNCATE %s.%s", keyspace, cf)));
+      futures.add(session.get().executeAsync(format("TRUNCATE %s", cf)));
     }
     Futures.getUnchecked(Futures.allAsList(futures));
   }

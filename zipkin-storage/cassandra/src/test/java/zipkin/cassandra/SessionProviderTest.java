@@ -35,7 +35,7 @@ public class SessionProviderTest {
 
   @Test
   public void contactPoints_defaultsToLocalhost() {
-    SessionProvider session = new SessionProvider(new CassandraStorage.Builder());
+    SessionProvider.Default session = new SessionProvider.Default(new CassandraStorage.Builder());
 
     assertThat(session.parseContactPoints())
         .containsExactly(new InetSocketAddress("127.0.0.1", 9042));
@@ -43,7 +43,7 @@ public class SessionProviderTest {
 
   @Test
   public void contactPoints_defaultsToPort9042() {
-    SessionProvider session = new SessionProvider(new CassandraStorage.Builder()
+    SessionProvider.Default session = new SessionProvider.Default(new CassandraStorage.Builder()
         .contactPoints("1.1.1.1"));
 
     assertThat(session.parseContactPoints())
@@ -52,7 +52,7 @@ public class SessionProviderTest {
 
   @Test
   public void contactPoints_defaultsToPort9042_multi() {
-    SessionProvider session = new SessionProvider(new CassandraStorage.Builder()
+    SessionProvider.Default session = new SessionProvider.Default(new CassandraStorage.Builder()
         .contactPoints("1.1.1.1:9143,2.2.2.2"));
 
     assertThat(session.parseContactPoints()).containsExactly(
@@ -63,7 +63,7 @@ public class SessionProviderTest {
 
   @Test
   public void contactPoints_hostAndPort() {
-    SessionProvider session = new SessionProvider(new CassandraStorage.Builder()
+    SessionProvider.Default session = new SessionProvider.Default(new CassandraStorage.Builder()
         .contactPoints("1.1.1.1:9142"));
 
     assertThat(session.parseContactPoints())
@@ -72,7 +72,7 @@ public class SessionProviderTest {
 
   @Test
   public void connectPort_singleContactPoint() {
-    SessionProvider session = new SessionProvider(new CassandraStorage.Builder()
+    SessionProvider.Default session = new SessionProvider.Default(new CassandraStorage.Builder()
         .contactPoints("1.1.1.1:9142"));
 
     assertThat(session.buildCluster().getConfiguration().getProtocolOptions().getPort())
@@ -81,7 +81,7 @@ public class SessionProviderTest {
 
   @Test
   public void connectPort_whenContactPointsHaveSamePort() {
-    SessionProvider session = new SessionProvider(new CassandraStorage.Builder()
+    SessionProvider.Default session = new SessionProvider.Default(new CassandraStorage.Builder()
         .contactPoints("1.1.1.1:9143,2.2.2.2:9143"));
 
     assertThat(session.buildCluster().getConfiguration().getProtocolOptions().getPort())
@@ -90,7 +90,7 @@ public class SessionProviderTest {
 
   @Test
   public void connectPort_whenContactPointsHaveMixedPorts_coercesToDefault() {
-    SessionProvider session = new SessionProvider(new CassandraStorage.Builder()
+    SessionProvider.Default session = new SessionProvider.Default(new CassandraStorage.Builder()
         .contactPoints("1.1.1.1:9143,2.2.2.2"));
 
     assertThat(session.buildCluster().getConfiguration().getProtocolOptions().getPort())
@@ -99,7 +99,7 @@ public class SessionProviderTest {
 
   @Test
   public void usernamePassword_impliesNullDelimitedUtf8Bytes() {
-    SessionProvider session = new SessionProvider(new CassandraStorage.Builder()
+    SessionProvider.Default session = new SessionProvider.Default(new CassandraStorage.Builder()
         .username("bob")
         .password("secret"));
 
@@ -114,7 +114,7 @@ public class SessionProviderTest {
 
   @Test
   public void authProvider_defaultsToNone() {
-    SessionProvider session = new SessionProvider(new CassandraStorage.Builder());
+    SessionProvider.Default session = new SessionProvider.Default(new CassandraStorage.Builder());
 
     assertThat(session.buildCluster().getConfiguration().getProtocolOptions().getAuthProvider())
         .isEqualTo(AuthProvider.NONE);
@@ -122,7 +122,7 @@ public class SessionProviderTest {
 
   @Test
   public void loadBalancing_defaultsToRoundRobin() {
-    SessionProvider session = new SessionProvider(new CassandraStorage.Builder());
+    SessionProvider.Default session = new SessionProvider.Default(new CassandraStorage.Builder());
 
     RoundRobinPolicy policy = toRoundRobinPolicy(session);
 
@@ -136,7 +136,7 @@ public class SessionProviderTest {
     assertThat(policy.distance(bar)).isEqualTo(HostDistance.LOCAL);
   }
 
-  static RoundRobinPolicy toRoundRobinPolicy(SessionProvider session) {
+  static RoundRobinPolicy toRoundRobinPolicy(SessionProvider.Default session) {
     return (RoundRobinPolicy) ((LatencyAwarePolicy) ((TokenAwarePolicy) session.buildCluster()
         .getConfiguration()
         .getPolicies()
@@ -146,7 +146,7 @@ public class SessionProviderTest {
 
   @Test
   public void loadBalancing_settingLocalDcIgnoresOtherDatacenters() {
-    SessionProvider session = new SessionProvider(new CassandraStorage.Builder().localDc("bar"));
+    SessionProvider.Default session = new SessionProvider.Default(new CassandraStorage.Builder().localDc("bar"));
 
     DCAwareRoundRobinPolicy policy = toDCAwareRoundRobinPolicy(session);
 
@@ -160,7 +160,7 @@ public class SessionProviderTest {
     assertThat(policy.distance(bar)).isEqualTo(HostDistance.LOCAL);
   }
 
-  static DCAwareRoundRobinPolicy toDCAwareRoundRobinPolicy(SessionProvider session) {
+  static DCAwareRoundRobinPolicy toDCAwareRoundRobinPolicy(SessionProvider.Default session) {
     return (DCAwareRoundRobinPolicy) ((LatencyAwarePolicy) ((TokenAwarePolicy) session.buildCluster()
         .getConfiguration()
         .getPolicies()
@@ -170,7 +170,7 @@ public class SessionProviderTest {
 
   @Test
   public void maxConnections_defaultsTo8() {
-    SessionProvider session = new SessionProvider(new CassandraStorage.Builder());
+    SessionProvider.Default session = new SessionProvider.Default(new CassandraStorage.Builder());
 
     PoolingOptions poolingOptions = session.buildCluster().getConfiguration().getPoolingOptions();
 
@@ -179,8 +179,8 @@ public class SessionProviderTest {
 
   @Test
   public void maxConnections_setsMaxConnectionsPerDatacenterLocalHost() {
-    SessionProvider session =
-        new SessionProvider(new CassandraStorage.Builder().maxConnections(16));
+    SessionProvider.Default session =
+        new SessionProvider.Default(new CassandraStorage.Builder().maxConnections(16));
 
     PoolingOptions poolingOptions = session.buildCluster().getConfiguration().getPoolingOptions();
 

@@ -34,7 +34,7 @@ import zipkin.Endpoint;
 import zipkin.StorageComponent;
 
 @Configuration
-@ConditionalOnClass(ServerTracer.class)
+@ConditionalOnClass(Brave.class)
 @ConditionalOnProperty(name = "zipkin.self-tracing.enabled", havingValue = "true")
 @Import({ApiTracerConfiguration.class, JDBCTracerConfiguration.class})
 public class BraveConfiguration {
@@ -63,9 +63,7 @@ public class BraveConfiguration {
     return new LocalSpanCollector(storage, flushInterval, sampler, metrics);
   }
 
-  @Bean
-  @Scope Brave brave(@Qualifier("local") Endpoint localEndpoint,
-      LocalSpanCollector spanCollector) {
+  @Bean Brave brave(@Qualifier("local") Endpoint localEndpoint, LocalSpanCollector spanCollector) {
     return new Brave.Builder(localEndpoint.ipv4, localEndpoint.port, localEndpoint.serviceName)
         .spanCollector(spanCollector).build();
   }

@@ -13,6 +13,7 @@
  */
 package zipkin.server;
 
+import com.datastax.driver.core.Session;
 import com.github.kristofa.brave.Brave;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -48,10 +49,13 @@ import zipkin.InMemoryStorage;
 import zipkin.SpanStore;
 import zipkin.StorageComponent;
 import zipkin.cassandra.CassandraStorage;
+import zipkin.cassandra.SessionProvider;
 import zipkin.elasticsearch.ElasticsearchStorage;
 import zipkin.jdbc.JDBCStorage;
 import zipkin.kafka.KafkaCollector;
 import zipkin.scribe.ScribeCollector;
+import zipkin.server.brave.LocalSpanCollector;
+import zipkin.server.brave.TracedSession;
 import zipkin.server.brave.TracedSpanStore;
 
 @Configuration
@@ -167,7 +171,11 @@ public class ZipkinServerConfiguration {
   @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "cassandra")
   @ConditionalOnMissingBean(StorageComponent.class)
   static class CassandraConfiguration {
-    @Bean StorageComponent storage(ZipkinCassandraProperties cassandra) {
+
+    @Autowired(required = false)
+    ZipkinCassandraProperties cassandra;
+
+    @Bean CassandraStorage.Builder builder() {
       return new CassandraStorage.Builder()
           .keyspace(cassandra.getKeyspace())
           .contactPoints(cassandra.getContactPoints())
@@ -177,7 +185,27 @@ public class ZipkinServerConfiguration {
           .username(cassandra.getUsername())
           .password(cassandra.getPassword())
           .spanTtl(cassandra.getSpanTtl())
-          .indexTtl(cassandra.getIndexTtl()).build();
+          .indexTtl(cassandra.getIndexTtl());
+    }
+
+    @Bean @ConditionalOnMissingBean StorageComponent storage(CassandraStorage.Builder builder) {
+      return builder.build();
+    }
+  }
+
+  /** Sets up the Cassandra tracing in Brave as an initialization. */
+  @ConditionalOnClass(name = "com.github.kristofa.brave.Brave")
+  @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "cassandra")
+  @Configuration
+  static class CassandraTracerConfiguration {
+    @Bean StorageComponent storage(CassandraStorage.Builder builder, @Lazy Brave brave, @Lazy LocalSpanCollector collector) {
+      return builder.sessionProvider(new SessionProvider() {
+        final SessionProvider delegate = new SessionProvider.Default(builder);
+
+        @Override public Session get() {
+          return TracedSession.create(delegate.get(), brave, collector);
+        }
+      }).build();
     }
   }
 
