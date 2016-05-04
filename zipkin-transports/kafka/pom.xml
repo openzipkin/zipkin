@@ -23,7 +23,7 @@
     <version>0.16.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>transport-kafka</artifactId>
+  <artifactId>zipkin-transport-kafka</artifactId>
   <name>Span Transport: Kafka</name>
 
   <properties>
