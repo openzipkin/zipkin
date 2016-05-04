@@ -63,7 +63,8 @@ Attribute | Property | Description
 --- | --- | ---
 environment | zipkin.ui.environment | The value here becomes a label in the top-right corner. Not required.
 defaultLookback | zipkin.ui.default-lookback | Default duration in millis to look back when finding traces or dependency links. Affects the "Start time" element in the UI. Defaults to 604800000 (7 days in millis).
-queryLimit | zipkin.ui.query-limit |  Default limit for Find Traces. Defaults to 10.
+queryLimit | zipkin.ui.query-limit | Default limit for Find Traces. Defaults to 10.
+instrumented | zipkin.ui.instrumented | Which sites this Zipkin UI covers. Regex syntax. e.g. `http:\/\/example.com\/.*` Defaults to match all websites (`.*`).
 
 For example, if using docker you can set `JAVA_OPTS="-Dzipkin.ui.query-limit=100"` to affect `$.queryLimit` in `/config.json`.
 
