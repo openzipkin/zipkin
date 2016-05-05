@@ -16,6 +16,7 @@ package zipkin.server;
 import java.util.Collections;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import zipkin.elasticsearch.ElasticsearchStorage;
 
 @ConfigurationProperties("elasticsearch")
 public class ZipkinElasticsearchProperties {
@@ -61,5 +62,12 @@ public class ZipkinElasticsearchProperties {
   public ZipkinElasticsearchProperties setIndex(String index) {
     this.index = index;
     return this;
+  }
+
+  public ElasticsearchStorage.Builder toBuilder() {
+    return ElasticsearchStorage.builder()
+        .cluster(cluster)
+        .hosts(hosts)
+        .index(index);
   }
 }

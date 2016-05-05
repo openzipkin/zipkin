@@ -25,19 +25,17 @@ import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.jooq.tools.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import zipkin.Endpoint;
+import zipkin.server.ConditionalOnSelfTracing;
 import zipkin.server.ZipkinMySQLProperties;
 
 /** Sets up the JDBC tracing in Brave as an initialization. */
-@ConditionalOnBean(Brave.class)
 @EnableConfigurationProperties(ZipkinMySQLProperties.class)
-@ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
+@ConditionalOnSelfTracing(storageType = "mysql")
 @Configuration
 public class JDBCTracerConfiguration extends DefaultExecuteListener {
 
@@ -45,7 +43,7 @@ public class JDBCTracerConfiguration extends DefaultExecuteListener {
   ZipkinMySQLProperties mysql;
 
   @Bean
-  ExecuteListenerProvider jdbcTraceListenerProvider() {
+  ExecuteListenerProvider tracingExecuteListenerProvider() {
     return new DefaultExecuteListenerProvider(this);
   }
 

@@ -36,7 +36,11 @@ import static zipkin.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
 public final class JDBCStorage implements StorageComponent {
 
-  public static final class Builder {
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public final static class Builder {
     private DataSource datasource;
     private Settings settings = new Settings().withRenderSchema(false);
     private ExecuteListenerProvider listenerProvider;
@@ -64,6 +68,9 @@ public final class JDBCStorage implements StorageComponent {
 
     public JDBCStorage build() {
       return new JDBCStorage(this);
+    }
+
+    Builder() {
     }
   }
 

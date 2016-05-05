@@ -37,6 +37,10 @@ import static zipkin.internal.Util.checkNotNull;
  */
 public final class ScribeCollector implements AutoCloseable {
 
+  public static Builder builder() {
+    return new Builder();
+  }
+
   /** Configuration including defaults needed to receive spans from a Scribe category. */
   public static final class Builder {
     CollectorSampler sampler = CollectorSampler.ALWAYS_SAMPLE;
@@ -83,6 +87,9 @@ public final class ScribeCollector implements AutoCloseable {
           return checkNotNull(result, storage + ".asyncSpanConsumer()");
         }
       });
+    }
+
+    Builder() {
     }
   }
 

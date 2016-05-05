@@ -25,7 +25,7 @@ import zipkin.spanstore.guava.LazyGuavaStorageComponent;
 
 import static zipkin.internal.Util.checkNotNull;
 
-public class ElasticsearchStorage
+public final class ElasticsearchStorage
     extends LazyGuavaStorageComponent<ElasticsearchSpanStore, ElasticsearchSpanConsumer> {
 
   /**
@@ -35,8 +35,11 @@ public class ElasticsearchStorage
   @VisibleForTesting
   static boolean FLUSH_ON_WRITES;
 
-  public static final class Builder {
+  public static Builder builder() {
+    return new Builder();
+  }
 
+  public static final class Builder {
     String cluster = "elasticsearch";
     List<String> hosts = Collections.singletonList("localhost:9300");
     String index = "zipkin";
@@ -68,6 +71,9 @@ public class ElasticsearchStorage
 
     public ElasticsearchStorage build() {
       return new ElasticsearchStorage(this);
+    }
+
+    Builder() {
     }
   }
 

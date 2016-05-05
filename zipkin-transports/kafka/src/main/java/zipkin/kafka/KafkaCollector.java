@@ -42,6 +42,10 @@ import static zipkin.internal.Util.checkNotNull;
  */
 public final class KafkaCollector implements AutoCloseable {
 
+  public static Builder builder() {
+    return new Builder();
+  }
+
   /** Configuration including defaults needed to consume spans from a Kafka topic. */
   public static final class Builder {
     CollectorSampler sampler = CollectorSampler.ALWAYS_SAMPLE;
@@ -109,6 +113,9 @@ public final class KafkaCollector implements AutoCloseable {
           return checkNotNull(result, storage + ".asyncSpanConsumer()");
         }
       });
+    }
+
+    Builder() {
     }
   }
 

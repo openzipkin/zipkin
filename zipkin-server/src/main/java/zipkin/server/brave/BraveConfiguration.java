@@ -14,7 +14,6 @@
 package zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
-import com.github.kristofa.brave.ServerTracer;
 import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -22,8 +21,6 @@ import java.net.NetworkInterface;
 import java.util.Collections;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -32,11 +29,11 @@ import zipkin.CollectorMetrics;
 import zipkin.CollectorSampler;
 import zipkin.Endpoint;
 import zipkin.StorageComponent;
+import zipkin.server.ConditionalOnSelfTracing;
 
 @Configuration
-@ConditionalOnClass(Brave.class)
-@ConditionalOnProperty(name = "zipkin.self-tracing.enabled", havingValue = "true")
-@Import({ApiTracerConfiguration.class, JDBCTracerConfiguration.class})
+@ConditionalOnSelfTracing
+@Import({ApiTracerConfiguration.class, JDBCTracerConfiguration.class, CassandraTracerConfiguration.class})
 public class BraveConfiguration {
 
   /** This gets the lanIP without trying to lookup its name. */

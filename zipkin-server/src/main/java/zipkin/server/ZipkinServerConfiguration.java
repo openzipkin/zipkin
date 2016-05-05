@@ -13,7 +13,6 @@
  */
 package zipkin.server;
 
-import com.datastax.driver.core.Session;
 import com.github.kristofa.brave.Brave;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -48,14 +47,10 @@ import zipkin.CollectorSampler;
 import zipkin.InMemoryStorage;
 import zipkin.SpanStore;
 import zipkin.StorageComponent;
-import zipkin.cassandra.CassandraStorage;
-import zipkin.cassandra.SessionProvider;
-import zipkin.elasticsearch.ElasticsearchStorage;
+import zipkin.cassandra.SessionFactory;
 import zipkin.jdbc.JDBCStorage;
 import zipkin.kafka.KafkaCollector;
 import zipkin.scribe.ScribeCollector;
-import zipkin.server.brave.LocalSpanCollector;
-import zipkin.server.brave.TracedSession;
 import zipkin.server.brave.TracedSpanStore;
 
 @Configuration
@@ -90,7 +85,7 @@ public class ZipkinServerConfiguration {
   }
 
   @Configuration
-  @ConditionalOnClass(name = "com.github.kristofa.brave.Brave")
+  @ConditionalOnSelfTracing
   static class BraveSpanStoreEnhancer implements BeanPostProcessor {
 
     @Autowired(required = false)
@@ -132,7 +127,7 @@ public class ZipkinServerConfiguration {
     ZipkinMySQLProperties mysql;
 
     @Autowired(required = false)
-    @Qualifier("jdbcTraceListenerProvider")
+    @Qualifier("tracingExecuteListenerProvider")
     ExecuteListenerProvider listener;
 
     @Bean @ConditionalOnMissingBean(Executor.class)
@@ -144,7 +139,7 @@ public class ZipkinServerConfiguration {
     }
 
     @Bean StorageComponent storage(Executor executor) {
-      return new JDBCStorage.Builder()
+      return JDBCStorage.builder()
           .executor(executor)
           .datasource(dataSource != null ? dataSource : initializeFromMySQLProperties())
           .listenerProvider(listener).build();
@@ -173,39 +168,13 @@ public class ZipkinServerConfiguration {
   static class CassandraConfiguration {
 
     @Autowired(required = false)
-    ZipkinCassandraProperties cassandra;
+    @Qualifier("tracingSessionFactory")
+    SessionFactory tracingSessionFactory;
 
-    @Bean CassandraStorage.Builder builder() {
-      return new CassandraStorage.Builder()
-          .keyspace(cassandra.getKeyspace())
-          .contactPoints(cassandra.getContactPoints())
-          .localDc(cassandra.getLocalDc())
-          .maxConnections(cassandra.getMaxConnections())
-          .ensureSchema(cassandra.isEnsureSchema())
-          .username(cassandra.getUsername())
-          .password(cassandra.getPassword())
-          .spanTtl(cassandra.getSpanTtl())
-          .indexTtl(cassandra.getIndexTtl());
-    }
-
-    @Bean @ConditionalOnMissingBean StorageComponent storage(CassandraStorage.Builder builder) {
-      return builder.build();
-    }
-  }
-
-  /** Sets up the Cassandra tracing in Brave as an initialization. */
-  @ConditionalOnClass(name = "com.github.kristofa.brave.Brave")
-  @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "cassandra")
-  @Configuration
-  static class CassandraTracerConfiguration {
-    @Bean StorageComponent storage(CassandraStorage.Builder builder, @Lazy Brave brave, @Lazy LocalSpanCollector collector) {
-      return builder.sessionProvider(new SessionProvider() {
-        final SessionProvider delegate = new SessionProvider.Default(builder);
-
-        @Override public Session get() {
-          return TracedSession.create(delegate.get(), brave, collector);
-        }
-      }).build();
+    @Bean StorageComponent storage(ZipkinCassandraProperties properties) {
+      return tracingSessionFactory == null
+          ? properties.toBuilder().build()
+          : properties.toBuilder().sessionFactory(tracingSessionFactory).build();
     }
   }
 
@@ -215,11 +184,7 @@ public class ZipkinServerConfiguration {
   @ConditionalOnMissingBean(StorageComponent.class)
   static class ElasticsearchConfiguration {
     @Bean StorageComponent storage(ZipkinElasticsearchProperties elasticsearch) {
-      return new ElasticsearchStorage.Builder()
-          .cluster(elasticsearch.getCluster())
-          .hosts(elasticsearch.getHosts())
-          .index(elasticsearch.getIndex())
-          .build();
+      return elasticsearch.toBuilder().build();
     }
   }
 
@@ -234,11 +199,7 @@ public class ZipkinServerConfiguration {
   static class ScribeConfiguration {
     @Bean ScribeCollector scribe(ZipkinScribeProperties scribe, CollectorSampler sampler,
         CollectorMetrics metrics, StorageComponent storage) {
-      return new ScribeCollector.Builder()
-          .sampler(sampler)
-          .metrics(metrics)
-          .category(scribe.getCategory())
-          .port(scribe.getPort()).build(storage);
+      return scribe.toBuilder().sampler(sampler).metrics(metrics).build(storage);
     }
   }
 
@@ -252,14 +213,7 @@ public class ZipkinServerConfiguration {
   static class KafkaConfiguration {
     @Bean KafkaCollector kafka(ZipkinKafkaProperties kafka, CollectorSampler sampler,
         CollectorMetrics metrics, StorageComponent storage) {
-      return new KafkaCollector.Builder()
-          .sampler(sampler)
-          .metrics(metrics)
-          .topic(kafka.getTopic())
-          .zookeeper(kafka.getZookeeper())
-          .groupId(kafka.getGroupId())
-          .streams(kafka.getStreams())
-          .maxMessageSize(kafka.getMaxMessageSize()).build(storage);
+      return kafka.toBuilder().sampler(sampler).metrics(metrics).build(storage);
     }
   }
 
