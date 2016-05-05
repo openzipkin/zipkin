@@ -35,6 +35,10 @@ import static zipkin.internal.Util.checkNotNull;
 public final class CassandraStorage
     extends LazyGuavaStorageComponent<CassandraSpanStore, CassandraSpanConsumer> {
 
+  public static Builder builder() {
+    return new Builder();
+  }
+
   public static final class Builder {
     String keyspace = "zipkin";
     String contactPoints = "localhost";
@@ -47,11 +51,11 @@ public final class CassandraStorage
     int bucketCount = 10;
     int spanTtl = (int) TimeUnit.DAYS.toSeconds(7);
     int indexTtl = (int) TimeUnit.DAYS.toSeconds(3);
-    SessionProvider sessionProvider = new SessionProvider.Default(this);
+    SessionFactory sessionFactory = new SessionFactory.Default();
 
     /** Override to control how sessions are created. */
-    public Builder sessionProvider(SessionProvider sessionProvider) {
-      this.sessionProvider = checkNotNull(sessionProvider, "sessionProvider");
+    public Builder sessionFactory(SessionFactory sessionFactory) {
+      this.sessionFactory = checkNotNull(sessionFactory, "sessionFactory");
       return this;
     }
 
@@ -129,20 +133,37 @@ public final class CassandraStorage
     public CassandraStorage build() {
       return new CassandraStorage(this);
     }
+
+    Builder() {
+    }
   }
 
   final int maxTraceCols;
   final int indexTtl;
   final int spanTtl;
   final int bucketCount;
+  final String contactPoints;
+  final int maxConnections;
+  final String localDc;
+  final String username;
+  final String password;
+  final boolean ensureSchema;
+  final String keyspace;
   final LazySession session;
 
   CassandraStorage(Builder builder) {
+    this.contactPoints = builder.contactPoints;
+    this.maxConnections = builder.maxConnections;
+    this.localDc = builder.localDc;
+    this.username = builder.username;
+    this.password = builder.password;
+    this.ensureSchema = builder.ensureSchema;
+    this.keyspace = builder.keyspace;
     this.maxTraceCols = builder.maxTraceCols;
     this.indexTtl = builder.indexTtl;
     this.spanTtl = builder.spanTtl;
     this.bucketCount = builder.bucketCount;
-    this.session = new LazySession(builder.sessionProvider);
+    this.session = new LazySession(builder.sessionFactory, this);
   }
 
   @Override protected CassandraSpanStore computeGuavaSpanStore() {

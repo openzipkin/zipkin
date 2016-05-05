@@ -15,9 +15,10 @@ package zipkin.server;
 
 import java.util.concurrent.TimeUnit;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import zipkin.cassandra.CassandraStorage;
 
 @ConfigurationProperties("cassandra")
-class ZipkinCassandraProperties {
+public class ZipkinCassandraProperties {
   private String keyspace = "zipkin";
   private String contactPoints = "localhost";
   private String localDc;
@@ -98,5 +99,18 @@ class ZipkinCassandraProperties {
 
   public void setIndexTtl(int indexTtl) {
     this.indexTtl = indexTtl;
+  }
+
+  public CassandraStorage.Builder toBuilder() {
+    return CassandraStorage.builder()
+        .keyspace(keyspace)
+        .contactPoints(contactPoints)
+        .localDc(localDc)
+        .maxConnections(maxConnections)
+        .ensureSchema(ensureSchema)
+        .username(username)
+        .password(password)
+        .spanTtl(spanTtl)
+        .indexTtl(indexTtl);
   }
 }

@@ -18,14 +18,16 @@ import java.io.Closeable;
 import zipkin.internal.Lazy;
 
 final class LazySession extends Lazy<Session> implements Closeable {
-  private final SessionProvider sessionProvider;
+  private final SessionFactory sessionFactory;
+  private final CassandraStorage storage;
 
-  LazySession(SessionProvider sessionProvider) {
-    this.sessionProvider = sessionProvider;
+  LazySession(SessionFactory sessionFactory, CassandraStorage storage) {
+    this.sessionFactory = sessionFactory;
+    this.storage = storage;
   }
 
   @Override protected Session compute() {
-    return sessionProvider.get();
+    return sessionFactory.create(storage);
   }
 
   @Override

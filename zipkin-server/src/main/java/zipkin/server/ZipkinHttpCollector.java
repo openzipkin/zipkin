@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
 import zipkin.CollectorMetrics;
 import zipkin.CollectorSampler;
@@ -46,19 +44,21 @@ import static zipkin.internal.Util.checkNotNull;
 public class ZipkinHttpCollector {
   static final String APPLICATION_THRIFT = "application/x-thrift";
 
-  private final AsyncSpanConsumer consumer;
+  private final StorageComponent storage;
+  private final CollectorSampler sampler;
+  private final CollectorMetrics metrics;
+  private final SpanConsumerLogger logger;
   private final Codec jsonCodec;
   private final Codec thriftCodec;
-  private final SpanConsumerLogger logger;
 
-  /** lazy so transient storage errors don't crash bootstrap */
-  @Lazy
   @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler,
       Codec.Factory codecFactory, CollectorMetrics metrics) {
-    this.consumer = storage.asyncSpanConsumer(sampler, metrics);
+    this.storage = storage;
+    this.sampler = sampler;
+    this.metrics = metrics;
+    this.logger = new SpanConsumerLogger(ZipkinHttpCollector.class, metrics.forTransport("http"));
     this.jsonCodec = checkNotNull(codecFactory.get(APPLICATION_JSON_VALUE), APPLICATION_JSON_VALUE);
     this.thriftCodec = checkNotNull(codecFactory.get(APPLICATION_THRIFT), APPLICATION_THRIFT);
-    this.logger = new SpanConsumerLogger(ZipkinHttpCollector.class, metrics.forTransport("http"));
   }
 
   @RequestMapping(value = "/api/v1/spans", method = RequestMethod.POST)
@@ -101,7 +101,7 @@ public class ZipkinHttpCollector {
     if (spans.isEmpty()) return ResponseEntity.accepted().build();
     logger.readSpans(spans.size());
     try {
-      consumer.accept(spans, logger.acceptSpansCallback(spans));
+      storage.asyncSpanConsumer(sampler, metrics).accept(spans, logger.acceptSpansCallback(spans));
     } catch (RuntimeException e) {
       String message = logger.errorAcceptingSpans(spans, e);
       return ResponseEntity.status(500).body(message + "\n"); // newline for prettier curl

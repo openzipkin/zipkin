@@ -34,44 +34,27 @@ import java.util.Set;
  * Creates a session and ensures schema if configured. Closes the cluster and session if any
  * exception occurred.
  */
-public interface SessionProvider {
+public interface SessionFactory {
 
-  Session get();
+  Session create(CassandraStorage storage);
 
-  final class Default implements SessionProvider {
-    final String contactPoints;
-    final int maxConnections;
-    final String localDc;
-    final String username;
-    final String password;
-    final boolean ensureSchema;
-    final String keyspace;
-
-    public Default(CassandraStorage.Builder builder) {
-      this.contactPoints = builder.contactPoints;
-      this.maxConnections = builder.maxConnections;
-      this.localDc = builder.localDc;
-      this.username = builder.username;
-      this.password = builder.password;
-      this.ensureSchema = builder.ensureSchema;
-      this.keyspace = builder.keyspace;
-    }
+  final class Default implements SessionFactory {
 
     /**
      * Creates a session and ensures schema if configured. Closes the cluster and session if any
      * exception occurred.
      */
-    @Override public Session get() {
+    @Override public Session create(CassandraStorage cassandra) {
       Closer closer = Closer.create();
       try {
-        Cluster cluster = closer.register(buildCluster());
-        if (ensureSchema) {
+        Cluster cluster = closer.register(buildCluster(cassandra));
+        if (cassandra.ensureSchema) {
           Session session = closer.register(cluster.connect());
-          Schema.ensureExists(keyspace, session);
-          session.execute("USE " + keyspace);
+          Schema.ensureExists(cassandra.keyspace, session);
+          session.execute("USE " + cassandra.keyspace);
           return session;
         } else {
-          return cluster.connect(keyspace);
+          return cluster.connect(cassandra.keyspace);
         }
       } catch (RuntimeException e) {
         try {
@@ -83,31 +66,31 @@ public interface SessionProvider {
     }
 
     // Visible for testing
-    Cluster buildCluster() {
+    static Cluster buildCluster(CassandraStorage cassandra) {
       Cluster.Builder builder = Cluster.builder();
-      List<InetSocketAddress> contactPoints = parseContactPoints();
+      List<InetSocketAddress> contactPoints = parseContactPoints(cassandra);
       int defaultPort = findConnectPort(contactPoints);
       builder.addContactPointsWithPorts(contactPoints);
       builder.withPort(defaultPort); // This ends up protocolOptions.port
-      if (username != null && password != null) {
-        builder.withCredentials(username, password);
+      if (cassandra.username != null && cassandra.password != null) {
+        builder.withCredentials(cassandra.username, cassandra.password);
       }
       builder.withRetryPolicy(ZipkinRetryPolicy.INSTANCE);
       builder.withLoadBalancingPolicy(new TokenAwarePolicy(new LatencyAwarePolicy.Builder(
-          localDc != null
-              ? DCAwareRoundRobinPolicy.builder().withLocalDc(localDc).build()
+          cassandra.localDc != null
+              ? DCAwareRoundRobinPolicy.builder().withLocalDc(cassandra.localDc).build()
               : new RoundRobinPolicy()
           // This can select remote, but LatencyAwarePolicy will prefer local
       ).build()));
       builder.withPoolingOptions(new PoolingOptions().setMaxConnectionsPerHost(
-          HostDistance.LOCAL, maxConnections
+          HostDistance.LOCAL, cassandra.maxConnections
       ));
       return builder.build();
     }
 
-    List<InetSocketAddress> parseContactPoints() {
+    static List<InetSocketAddress> parseContactPoints(CassandraStorage cassandra) {
       List<InetSocketAddress> result = new LinkedList<>();
-      for (String contactPoint : contactPoints.split(",")) {
+      for (String contactPoint : cassandra.contactPoints.split(",")) {
         HostAndPort parsed = HostAndPort.fromString(contactPoint);
         result.add(
             new InetSocketAddress(parsed.getHostText(), parsed.getPortOrDefault(9042)));

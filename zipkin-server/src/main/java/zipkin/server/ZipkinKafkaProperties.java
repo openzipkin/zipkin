@@ -14,9 +14,10 @@
 package zipkin.server;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import zipkin.kafka.KafkaCollector;
 
 @ConfigurationProperties("kafka")
-class ZipkinKafkaProperties {
+public class ZipkinKafkaProperties {
   private String topic = "zipkin";
   private String zookeeper;
   private String groupId = "zipkin";
@@ -61,5 +62,14 @@ class ZipkinKafkaProperties {
 
   public void setMaxMessageSize(int maxMessageSize) {
     this.maxMessageSize = maxMessageSize;
+  }
+
+  public KafkaCollector.Builder toBuilder() {
+    return KafkaCollector.builder()
+        .topic(topic)
+        .zookeeper(zookeeper)
+        .groupId(groupId)
+        .streams(streams)
+        .maxMessageSize(maxMessageSize);
   }
 }

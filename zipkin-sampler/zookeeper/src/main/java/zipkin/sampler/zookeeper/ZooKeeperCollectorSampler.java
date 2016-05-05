@@ -63,6 +63,10 @@ import static zipkin.internal.Util.checkNotNull;
 public final class ZooKeeperCollectorSampler extends CollectorSampler implements Closeable {
   final static Logger log = LoggerFactory.getLogger(ZooKeeperCollectorSampler.class);
 
+  public static Builder builder() {
+    return new Builder();
+  }
+
   public static final class Builder {
     float initialRate = 1.0f;
     String basePath = "/zipkin/sampler";
@@ -129,6 +133,9 @@ public final class ZooKeeperCollectorSampler extends CollectorSampler implements
       checkState(checkNotNull(client, "client").getState() == CuratorFrameworkState.STARTED,
           "%s is not started", client.getState());
       return new ZooKeeperCollectorSampler(this, client);
+    }
+
+    Builder() {
     }
   }
 
