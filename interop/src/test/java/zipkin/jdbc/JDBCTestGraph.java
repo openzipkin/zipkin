@@ -13,13 +13,16 @@
  */
 package zipkin.jdbc;
 
+import static zipkin.internal.Util.envOr;
+
 import java.sql.SQLException;
+import java.util.concurrent.Executor;
+
 import org.junit.AssumptionViolatedException;
 import org.mariadb.jdbc.MariaDbDataSource;
+
 import zipkin.internal.Lazy;
 import zipkin.internal.Nullable;
-
-import static zipkin.internal.Util.envOr;
 
 enum JDBCTestGraph {
   INSTANCE;
@@ -34,7 +37,7 @@ enum JDBCTestGraph {
       try {
         MariaDbDataSource dataSource = new MariaDbDataSource();
         dataSource.setUrl(mysqlUrl);
-        return new JDBCStorage.Builder().datasource(dataSource).executor(Runnable::run).build();
+        return new JDBCStorage.Builder().datasource(dataSource).executor(new InlineExecutor()).build();
       } catch (SQLException e) {
         throw new AssumptionViolatedException(e.getMessage());
       }
@@ -52,5 +55,12 @@ enum JDBCTestGraph {
 
     return String.format("jdbc:mysql://%s:%s/%s?user=%s&password=%s&autoReconnect=true",
         mysqlHost, mysqlPort, mysqlDb, mysqlUser, mysqlPass);
+  }
+
+  static class InlineExecutor implements Executor {
+    @Override
+    public void execute(Runnable command) {
+      command.run();
+    }
   }
 }
