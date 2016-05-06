@@ -56,7 +56,7 @@ public class InternalGuavaSpanStoreAdapterTest {
 
   @Test
   public void getTraces_success() throws Exception {
-    QueryRequest request = new QueryRequest.Builder("service").endTs(1000L).build();
+    QueryRequest request = QueryRequest.builder().build();
     doAnswer(answer(c -> c.onSuccess(asList(TRACE))))
         .when(asyncSpanStore).getTraces(eq(request), any(Callback.class));
 
@@ -65,7 +65,7 @@ public class InternalGuavaSpanStoreAdapterTest {
 
   @Test
   public void getTraces_exception() throws Exception {
-    QueryRequest request = new QueryRequest.Builder("service").endTs(1000L).build();
+    QueryRequest request = QueryRequest.builder().build();
     doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
         .when(asyncSpanStore).getTraces(eq(request), any(Callback.class));
 

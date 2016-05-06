@@ -69,7 +69,7 @@ final class DependencyLinkSpanIterator implements Iterator<DependencyLinkSpan> {
   public DependencyLinkSpan next() {
     Record5<Long, Long, Long, String, String> row = delegate.next();
 
-    DependencyLinkSpan.Builder result = new DependencyLinkSpan.Builder(
+    DependencyLinkSpan.Builder result = DependencyLinkSpan.builder(
         row.getValue(ZIPKIN_SPANS.PARENT_ID),
         row.getValue(ZIPKIN_SPANS.ID)
     );

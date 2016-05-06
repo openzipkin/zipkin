@@ -49,7 +49,7 @@ public class SpanBenchmarks {
 
   @Benchmark
   public Span buildLocalSpan() {
-    return new Span.Builder()
+    return Span.builder()
         .traceId(1L)
         .id(1L)
         .name("work")
@@ -61,7 +61,7 @@ public class SpanBenchmarks {
 
   @Benchmark
   public Span buildClientOnlySpan() {
-    return new Span.Builder()
+    return Span.builder()
         .traceId(1L)
         .id(1L)
         .name("")
@@ -75,7 +75,7 @@ public class SpanBenchmarks {
 
   @Benchmark
   public Span buildRpcSpan() {
-    return new Span.Builder() // web calls app
+    return Span.builder() // web calls app
         .traceId(1L)
         .id(2L)
         .parentId(1L)

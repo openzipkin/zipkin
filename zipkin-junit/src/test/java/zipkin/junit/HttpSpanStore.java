@@ -40,7 +40,8 @@ final class HttpSpanStore implements SpanStore {
 
   @Override
   public List<List<Span>> getTraces(QueryRequest request) {
-    HttpUrl.Builder url = baseUrl.newBuilder("/api/v1/traces?serviceName=" + request.serviceName);
+    HttpUrl.Builder url = baseUrl.newBuilder("/api/v1/traces");
+    maybeAddQueryParam(url, "serviceName", request.serviceName);
     maybeAddQueryParam(url, "spanName", request.spanName);
     maybeAddQueryParam(url, "annotationQuery", request.toAnnotationQuery());
     maybeAddQueryParam(url, "minDuration", request.minDuration);

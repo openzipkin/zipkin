@@ -23,20 +23,20 @@ public class SpanTest {
 
   @Test
   public void spanNamesLowercase() {
-    assertThat(new Span.Builder().traceId(1L).id(1L).name("GET").build().name)
+    assertThat(Span.builder().traceId(1L).id(1L).name("GET").build().name)
         .isEqualTo("get");
   }
 
   @Test
   public void mergeWhenBinaryAnnotationsSentSeparately() {
-    Span part1 = new Span.Builder()
+    Span part1 = Span.builder()
         .traceId(1L)
         .name("")
         .id(1L)
         .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, APP_ENDPOINT))
         .build();
 
-    Span part2 = new Span.Builder()
+    Span part2 = Span.builder()
         .traceId(1L)
         .name("get")
         .id(1L)
@@ -46,12 +46,12 @@ public class SpanTest {
         .addAnnotation(Annotation.create(1444438901315000L, Constants.SERVER_SEND, APP_ENDPOINT))
         .build();
 
-    Span expected = new Span.Builder(part2)
+    Span expected = part2.toBuilder()
         .addBinaryAnnotation(part1.binaryAnnotations.get(0))
         .build();
 
-    assertThat(new Span.Builder(part1).merge(part2).build()).isEqualTo(expected);
-    assertThat(new Span.Builder(part2).merge(part1).build()).isEqualTo(expected);
+    assertThat(part1.toBuilder().merge(part2).build()).isEqualTo(expected);
+    assertThat(part2.toBuilder().merge(part1).build()).isEqualTo(expected);
   }
 
   /**
@@ -61,17 +61,17 @@ public class SpanTest {
   @Test
   public void mergeOverridesDummySpanNames() {
     for (String nonName : Arrays.asList("", "unknown")) {
-      Span unknown = new Span.Builder().traceId(1).id(2).name(nonName).build();
-      Span get = new Span.Builder(unknown).name("get").build();
+      Span unknown = Span.builder().traceId(1).id(2).name(nonName).build();
+      Span get = unknown.toBuilder().name("get").build();
 
-      assertThat(new Span.Builder(unknown).merge(get).build().name).isEqualTo("get");
-      assertThat(new Span.Builder(get).merge(unknown).build().name).isEqualTo("get");
+      assertThat(unknown.toBuilder().merge(get).build().name).isEqualTo("get");
+      assertThat(get.toBuilder().merge(unknown).build().name).isEqualTo("get");
     }
   }
 
   @Test
   public void serviceNames_includeBinaryAnnotations() {
-    Span span = new Span.Builder()
+    Span span = Span.builder()
         .traceId(1L)
         .name("GET")
         .id(1L)
@@ -84,7 +84,7 @@ public class SpanTest {
 
   @Test
   public void serviceNames_ignoresAnnotationsWithEmptyServiceNames() {
-    Span span = new Span.Builder()
+    Span span = Span.builder()
         .traceId(12345)
         .id(666)
         .name("methodcall")
@@ -101,7 +101,7 @@ public class SpanTest {
   public void sortsBinaryAnnotationsByKey() {
     BinaryAnnotation foo = BinaryAnnotation.create("foo", "bar", APP_ENDPOINT);
     BinaryAnnotation baz = BinaryAnnotation.create("baz", "qux", APP_ENDPOINT);
-    Span span = new Span.Builder()
+    Span span = Span.builder()
         .traceId(12345)
         .id(666)
         .name("methodcall")

@@ -169,7 +169,7 @@ public class ScribeSpanConsumerTest {
     Endpoint zipkinQuery0 = Endpoint.create("zipkin-query", (127 << 24) | 1);
 
     assertThat(consumed).containsExactly(
-        new Span.Builder()
+        Span.builder()
             .traceId(-6054243957716233329L)
             .name("getTracesByIds")
             .id(-3615651937927048332L)

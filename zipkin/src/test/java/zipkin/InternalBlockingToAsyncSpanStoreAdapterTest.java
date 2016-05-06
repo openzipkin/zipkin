@@ -50,7 +50,7 @@ public class InternalBlockingToAsyncSpanStoreAdapterTest {
 
   @Test
   public void getTraces_success() {
-    QueryRequest request = new QueryRequest.Builder("zipkin-ui").build();
+    QueryRequest request = QueryRequest.builder().serviceName("zipkin-ui").build();
     when(spanStore.getTraces(request)).thenReturn(asList(TRACE));
 
     CallbackCaptor<List<List<Span>>> captor = new CallbackCaptor<>();
@@ -61,7 +61,7 @@ public class InternalBlockingToAsyncSpanStoreAdapterTest {
   @Test
   public void getTraces_exception() {
     thrown.expect(IllegalStateException.class);
-    QueryRequest request = new QueryRequest.Builder("service").build();
+    QueryRequest request = QueryRequest.builder().serviceName("service").build();
     when(spanStore.getTraces(request)).thenThrow(new IllegalStateException("failed"));
 
     CallbackCaptor<List<List<Span>>> captor = new CallbackCaptor<>();

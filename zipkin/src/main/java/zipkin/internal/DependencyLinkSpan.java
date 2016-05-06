@@ -62,6 +62,10 @@ public final class DependencyLinkSpan {
     return json.append("}").toString();
   }
 
+  public static Builder builder(Long parentId, long spanId){
+    return new Builder(parentId, spanId);
+  }
+
   public static final class Builder {
     private final Long parentId;
     private final long spanId;
@@ -69,7 +73,7 @@ public final class DependencyLinkSpan {
     private String caService;
     private String saService;
 
-    public Builder(Long parentId, long spanId) {
+    Builder(Long parentId, long spanId) {
       this.spanId = spanId;
       this.parentId = parentId;
     }

@@ -49,11 +49,11 @@ public final class TestObjects {
   static final long DB_SPAN_ID = 8207293009014896295L;
 
   public static final List<Span> TRACE = asList(
-      new Span.Builder().traceId(WEB_SPAN_ID).id(WEB_SPAN_ID).name("get")
+      Span.builder().traceId(WEB_SPAN_ID).id(WEB_SPAN_ID).name("get")
           .addAnnotation(Annotation.create(TODAY * 1000, SERVER_RECV, WEB_ENDPOINT))
           .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, WEB_ENDPOINT))
           .build(),
-      new Span.Builder().traceId(WEB_SPAN_ID).parentId(WEB_SPAN_ID).id(APP_SPAN_ID).name("get")
+      Span.builder().traceId(WEB_SPAN_ID).parentId(WEB_SPAN_ID).id(APP_SPAN_ID).name("get")
           .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
           .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
           .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
@@ -61,7 +61,7 @@ public final class TestObjects {
           .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, WEB_ENDPOINT))
           .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, APP_ENDPOINT))
           .build(),
-      new Span.Builder().traceId(WEB_SPAN_ID).parentId(APP_SPAN_ID).id(DB_SPAN_ID).name("query")
+      Span.builder().traceId(WEB_SPAN_ID).parentId(APP_SPAN_ID).id(DB_SPAN_ID).name("query")
           .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
           .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, APP_ENDPOINT))
           .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, APP_ENDPOINT))
@@ -70,8 +70,8 @@ public final class TestObjects {
   ).stream().map(ApplyTimestampAndDuration::apply).collect(toList());
 
   public static final List<DependencyLink> LINKS = asList(
-      new DependencyLink.Builder().parent("web").child("app").callCount(1).build(),
-      new DependencyLink.Builder().parent("app").child("db").callCount(1).build()
+      DependencyLink.builder().parent("web").child("app").callCount(1).build(),
+      DependencyLink.builder().parent("app").child("db").callCount(1).build()
   );
   public static final Dependencies DEPENDENCIES = Dependencies.create(TODAY, TODAY + 1000, LINKS);
 
@@ -81,7 +81,7 @@ public final class TestObjects {
   static Span.Builder spanBuilder() {
     Endpoint e = Endpoint.create("service", 127 << 24 | 1, 8080);
     Annotation ann = Annotation.create(System.currentTimeMillis() * 1000, SERVER_RECV, e);
-    return new Span.Builder().name("get").addAnnotation(ann);
+    return Span.builder().name("get").addAnnotation(ann);
   }
 
   /**

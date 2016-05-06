@@ -25,7 +25,7 @@ public class InternalSamplingAsyncSpanConsumerTest {
   AsyncSpanConsumer consumer = StorageAdapters.blockingToAsync(store.spanConsumer, Runnable::run);
   CollectorSampler never = CollectorSampler.create(0f);
 
-  Span.Builder builder = new Span.Builder()
+  Span.Builder builder = Span.builder()
       .traceId(1234L)
       .id(1235L)
       .parentId(1234L)

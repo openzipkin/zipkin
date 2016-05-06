@@ -82,15 +82,23 @@ public final class Endpoint {
     this.port = port;
   }
 
+  public Builder toBuilder(){
+    return new Builder(this);
+  }
+
+  public static Builder builder(){
+    return new Builder();
+  }
+
   public static final class Builder {
     private String serviceName;
     private Integer ipv4;
     private Short port;
 
-    public Builder() {
+    Builder() {
     }
 
-    public Builder(Endpoint source) {
+    Builder(Endpoint source) {
       this.serviceName = source.serviceName;
       this.ipv4 = source.ipv4;
       this.port = source.port;

@@ -112,7 +112,7 @@ final class ZipkinDispatcher extends Dispatcher {
   }
 
   static QueryRequest toQueryRequest(HttpUrl url) {
-    return new QueryRequest.Builder(url.queryParameter("serviceName"))
+    return QueryRequest.builder().serviceName(url.queryParameter("serviceName"))
                            .spanName(url.queryParameter("spanName"))
                            .parseAnnotationQuery(url.queryParameter("annotationQuery"))
                            .minDuration(maybeLong(url.queryParameter("minDuration")))

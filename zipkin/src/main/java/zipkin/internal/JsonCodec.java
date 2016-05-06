@@ -69,7 +69,7 @@ public final class JsonCodec implements Codec {
   public static final JsonAdapter<Endpoint> ENDPOINT_ADAPTER = new JsonAdapter<Endpoint>() {
     @Override
     public Endpoint fromJson(JsonReader reader) throws IOException {
-      Endpoint.Builder result = new Endpoint.Builder();
+      Endpoint.Builder result = Endpoint.builder();
       reader.beginObject();
       while (reader.hasNext()) {
         switch (reader.nextName()) {
@@ -122,7 +122,7 @@ public final class JsonCodec implements Codec {
 
     @Override
     public BinaryAnnotation fromJson(JsonReader reader) throws IOException {
-      BinaryAnnotation.Builder result = new BinaryAnnotation.Builder();
+      BinaryAnnotation.Builder result = BinaryAnnotation.builder();
       Double number = null;
       String string = null;
       BinaryAnnotation.Type type = BinaryAnnotation.Type.STRING;
@@ -233,7 +233,7 @@ public final class JsonCodec implements Codec {
   public static final JsonAdapter<Span> SPAN_ADAPTER = new JsonAdapter<Span>() {
     @Override
     public Span fromJson(JsonReader reader) throws IOException {
-      Span.Builder result = new Span.Builder();
+      Span.Builder result = Span.builder();
       reader.beginObject();
       while (reader.hasNext()) {
         switch (reader.nextName()) {
@@ -395,7 +395,7 @@ public final class JsonCodec implements Codec {
 
     @Override
     public DependencyLink fromJson(JsonReader reader) throws IOException {
-      DependencyLink.Builder result = new DependencyLink.Builder();
+      DependencyLink.Builder result = DependencyLink.builder();
       reader.beginObject();
       while (reader.hasNext()) {
         switch (reader.nextName()) {

@@ -95,7 +95,7 @@ public abstract class DependenciesTest {
   @Test
   public void traceIdIsOpaque() {
     List<Span> differentTraceId = TRACE.stream()
-        .map(s -> new Span.Builder(s).traceId(Long.MAX_VALUE).build())
+        .map(s -> s.toBuilder().traceId(Long.MAX_VALUE).build())
         .collect(toList());
     processDependencies(differentTraceId);
 
@@ -110,25 +110,25 @@ public abstract class DependenciesTest {
   @Test
   public void getDependenciesAllInstrumented() {
     Endpoint one = Endpoint.create("trace-producer-one", 127 << 24 | 1, 9410);
-    Endpoint onePort3001 = new Endpoint.Builder(one).port((short) 3001).build();
+    Endpoint onePort3001 = one.toBuilder().port((short) 3001).build();
     Endpoint two = Endpoint.create("trace-producer-two", 127 << 24 | 2, 9410);
-    Endpoint twoPort3002 = new Endpoint.Builder(two).port((short) 3002).build();
+    Endpoint twoPort3002 = two.toBuilder().port((short) 3002).build();
     Endpoint three = Endpoint.create("trace-producer-three", 127 << 24 | 3, 9410);
 
     List<Span> trace = asList(
-        new Span.Builder().traceId(10L).id(10L).name("get")
+        Span.builder().traceId(10L).id(10L).name("get")
             .timestamp(1445136539256150L).duration(1152579L)
             .addAnnotation(Annotation.create(1445136539256150L, SERVER_RECV, one))
             .addAnnotation(Annotation.create(1445136540408729L, SERVER_SEND, one))
             .build(),
-        new Span.Builder().traceId(10L).parentId(10L).id(20L).name("get")
+        Span.builder().traceId(10L).parentId(10L).id(20L).name("get")
             .timestamp(1445136539764798L).duration(639337L)
             .addAnnotation(Annotation.create(1445136539764798L, CLIENT_SEND, onePort3001))
             .addAnnotation(Annotation.create(1445136539816432L, SERVER_RECV, two))
             .addAnnotation(Annotation.create(1445136540401414L, SERVER_SEND, two))
             .addAnnotation(Annotation.create(1445136540404135L, CLIENT_RECV, onePort3001))
             .build(),
-        new Span.Builder().traceId(10L).parentId(20L).id(30L).name("get")
+        Span.builder().traceId(10L).parentId(20L).id(30L).name("get")
             .timestamp(1445136540025751L).duration(371298L)
             .addAnnotation(Annotation.create(1445136540025751L, CLIENT_SEND, twoPort3002))
             .addAnnotation(Annotation.create(1445136540072846L, SERVER_RECV, three))
@@ -163,7 +163,7 @@ public abstract class DependenciesTest {
   public void dependencies_loopback() {
     List<Span> traceWithLoopback = asList(
         TRACE.get(0),
-        new Span.Builder(TRACE.get(1))
+        TRACE.get(1).toBuilder()
             .annotations(TRACE.get(1).annotations.stream()
                 .map(a -> Annotation.create(a.timestamp, a.value, WEB_ENDPOINT)).collect(toList()))
             .binaryAnnotations(asList())
@@ -233,20 +233,20 @@ public abstract class DependenciesTest {
     Endpoint someClient = Endpoint.create("some-client", 172 << 24 | 17 << 16 | 4, 80);
 
     List<Span> trace = asList(
-        new Span.Builder().traceId(20L).id(20L).name("get")
+        Span.builder().traceId(20L).id(20L).name("get")
             .timestamp(TODAY * 1000).duration(350L * 1000)
             .addAnnotation(Annotation.create(TODAY * 1000, SERVER_RECV, WEB_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, WEB_ENDPOINT))
             .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, someClient))
             .build(),
-        new Span.Builder().traceId(20L).parentId(20L).id(21L).name("get")
+        Span.builder().traceId(20L).parentId(20L).id(21L).name("get")
             .timestamp((TODAY + 50L) * 1000).duration(250L * 1000)
             .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
             .build(),
-        new Span.Builder().traceId(20L).parentId(21L).id(22L).name("get")
+        Span.builder().traceId(20L).parentId(21L).id(22L).name("get")
             .timestamp((TODAY + 150L) * 1000).duration(50L * 1000)
             .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, APP_ENDPOINT))
@@ -281,7 +281,7 @@ public abstract class DependenciesTest {
   @Test
   public void noClientSendAddrAnnotations() {
     List<Span> trace = asList(
-        new Span.Builder().traceId(20L).id(20L).name("get")
+        Span.builder().traceId(20L).id(20L).name("get")
             .timestamp(TODAY * 1000).duration(350L * 1000)
             .addAnnotation(Annotation.create(TODAY * 1000, SERVER_RECV, WEB_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, WEB_ENDPOINT))
@@ -289,7 +289,7 @@ public abstract class DependenciesTest {
                 BinaryAnnotation.address(SERVER_ADDR, WEB_ENDPOINT),
                 BinaryAnnotation.address(CLIENT_ADDR, WEB_ENDPOINT)))
             .build(),
-        new Span.Builder().traceId(20L).parentId(20L).id(21L).name("get")
+        Span.builder().traceId(20L).parentId(20L).id(21L).name("get")
             .timestamp((TODAY + 150L) * 1000).duration(50L * 1000)
             .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, APP_ENDPOINT))
@@ -337,15 +337,15 @@ public abstract class DependenciesTest {
   public void noCoreAnnotations() {
     Endpoint someClient = Endpoint.create("some-client", 172 << 24 | 17 << 16 | 4, 80);
     List<Span> trace = asList(
-        new Span.Builder().traceId(20L).id(20L).name("get")
+        Span.builder().traceId(20L).id(20L).name("get")
             .timestamp(TODAY * 1000).duration(350L * 1000)
             .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, someClient))
             .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, WEB_ENDPOINT)).build(),
-        new Span.Builder().traceId(20L).parentId(20L).id(21L).name("get")
+        Span.builder().traceId(20L).parentId(20L).id(21L).name("get")
             .timestamp((TODAY + 50) * 1000).duration(250L * 1000)
             .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, WEB_ENDPOINT))
             .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, APP_ENDPOINT)).build(),
-        new Span.Builder().traceId(20L).parentId(21L).id(22L).name("get")
+        Span.builder().traceId(20L).parentId(21L).id(22L).name("get")
             .timestamp((TODAY + 150) * 1000).duration(50L * 1000)
             .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, APP_ENDPOINT))
             .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, DB_ENDPOINT)).build()
@@ -369,29 +369,29 @@ public abstract class DependenciesTest {
   @Test
   public void intermediateSpans() {
     List<Span> trace = asList(
-        new Span.Builder().traceId(20L).id(20L).name("get")
+        Span.builder().traceId(20L).id(20L).name("get")
             .timestamp(TODAY * 1000).duration(350L * 1000)
             .addAnnotation(Annotation.create(TODAY * 1000, SERVER_RECV, WEB_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, WEB_ENDPOINT)).build(),
-        new Span.Builder().traceId(20L).parentId(20L).id(21L).name("call")
+        Span.builder().traceId(20L).parentId(20L).id(21L).name("call")
             .timestamp((TODAY + 25) * 1000).duration(325L * 1000)
             .addBinaryAnnotation(
                 BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "depth2", WEB_ENDPOINT)).build(),
-        new Span.Builder().traceId(20L).parentId(21L).id(22L).name("get")
+        Span.builder().traceId(20L).parentId(21L).id(22L).name("get")
             .timestamp((TODAY + 50) * 1000).duration(250L * 1000)
             .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT)).build(),
-        new Span.Builder().traceId(20L).parentId(22L).id(23L).name("call")
+        Span.builder().traceId(20L).parentId(22L).id(23L).name("call")
             .timestamp((TODAY + 110) * 1000).duration(130L * 1000)
             .addBinaryAnnotation(
                 BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "depth4", APP_ENDPOINT)).build(),
-        new Span.Builder().traceId(20L).parentId(23L).id(24L).name("call")
+        Span.builder().traceId(20L).parentId(23L).id(24L).name("call")
             .timestamp((TODAY + 125) * 1000).duration(105L * 1000)
             .addBinaryAnnotation(
                 BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "depth5", APP_ENDPOINT)).build(),
-        new Span.Builder().traceId(20L).parentId(24L).id(25L).name("get")
+        Span.builder().traceId(20L).parentId(24L).id(25L).name("get")
             .timestamp((TODAY + 150) * 1000).duration(50L * 1000)
             .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, APP_ENDPOINT))
@@ -415,13 +415,13 @@ public abstract class DependenciesTest {
   @Test
   public void duplicateAddress() {
     List<Span> trace = asList(
-        new Span.Builder().traceId(20L).id(20L).name("get")
+        Span.builder().traceId(20L).id(20L).name("get")
             .timestamp(TODAY * 1000).duration(350L * 1000)
             .addAnnotation(Annotation.create(TODAY * 1000, SERVER_RECV, WEB_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, WEB_ENDPOINT))
             .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, WEB_ENDPOINT))
             .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, WEB_ENDPOINT)).build(),
-        new Span.Builder().traceId(20L).parentId(21L).id(22L).name("get")
+        Span.builder().traceId(20L).parentId(21L).id(22L).name("get")
             .timestamp((TODAY + 50) * 1000).duration(250L * 1000)
             .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
@@ -439,12 +439,12 @@ public abstract class DependenciesTest {
   @Test
   public void unmergedSpans() {
     List<Span> trace = asList(
-        new Span.Builder().traceId(1L).parentId(1L).id(2L).name("get").timestamp((TODAY + 100) * 1000)
+        Span.builder().traceId(1L).parentId(1L).id(2L).name("get").timestamp((TODAY + 100) * 1000)
             .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
             .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, WEB_ENDPOINT))
             .build(),
-        new Span.Builder().traceId(1L).parentId(1L).id(2L).name("get").timestamp((TODAY + 50) * 1000)
+        Span.builder().traceId(1L).parentId(1L).id(2L).name("get").timestamp((TODAY + 50) * 1000)
             .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
             .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
             .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, APP_ENDPOINT))
@@ -461,7 +461,7 @@ public abstract class DependenciesTest {
   /** rebases a trace backwards a day with different trace and span id. */
   List<Span> subtractDay(List<Span> trace) {
     return trace.stream()
-        .map(s -> new Span.Builder(s)
+        .map(s -> s.toBuilder()
             .traceId(s.traceId + 100)
             .parentId(s.parentId != null ? s.parentId + 100 : null)
             .id(s.id + 100)

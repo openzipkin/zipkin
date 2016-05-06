@@ -24,11 +24,9 @@ public class QueryRequestTest {
   public ExpectedException thrown = ExpectedException.none();
 
   @Test
-  public void serviceNameCantBeNull() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("serviceName was empty");
-
-    new QueryRequest.Builder((String) null).build();
+  public void serviceNameCanBeNull() {
+    assertThat(QueryRequest.builder().build().serviceName)
+        .isNull();
   }
 
   @Test
@@ -36,7 +34,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("serviceName was empty");
 
-    new QueryRequest.Builder("").build();
+    QueryRequest.builder().serviceName("").build();
   }
 
   @Test
@@ -44,7 +42,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("spanName was empty");
 
-    new QueryRequest.Builder("foo").spanName("").build();
+    QueryRequest.builder().serviceName("foo").spanName("").build();
   }
 
   @Test
@@ -52,7 +50,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("annotation was empty");
 
-    new QueryRequest.Builder("foo").addAnnotation("").build();
+    QueryRequest.builder().serviceName("foo").addAnnotation("").build();
   }
 
   @Test
@@ -60,7 +58,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("binary annotation key was empty");
 
-    new QueryRequest.Builder("foo").addBinaryAnnotation("", "bar").build();
+    QueryRequest.builder().serviceName("foo").addBinaryAnnotation("", "bar").build();
   }
 
   @Test
@@ -68,7 +66,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("binary annotation value was empty");
 
-    new QueryRequest.Builder("foo").addBinaryAnnotation("foo", "").build();
+    QueryRequest.builder().serviceName("foo").addBinaryAnnotation("foo", "").build();
   }
 
   @Test
@@ -76,7 +74,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("endTs should be positive, in epoch microseconds: was 0");
 
-    new QueryRequest.Builder("foo").endTs(0L).build();
+    QueryRequest.builder().serviceName("foo").endTs(0L).build();
   }
 
   @Test
@@ -84,7 +82,7 @@ public class QueryRequestTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("limit should be positive: was 0");
 
-    new QueryRequest.Builder("foo").limit(0).build();
+    QueryRequest.builder().serviceName("foo").limit(0).build();
   }
 
   @Test
@@ -92,7 +90,7 @@ public class QueryRequestTest {
     String annotationQuery = "http.method=GET and finagle.retry";
 
     QueryRequest request =
-        new QueryRequest.Builder("security-service").parseAnnotationQuery(annotationQuery).build();
+        QueryRequest.builder().serviceName("security-service").parseAnnotationQuery(annotationQuery).build();
 
     assertThat(request.binaryAnnotations)
         .containsEntry("http.method", "GET")
@@ -106,7 +104,7 @@ public class QueryRequestTest {
 
   @Test
   public void toAnnotationQueryWhenNoInputIsNull() {
-    QueryRequest request = new QueryRequest.Builder("security-service").build();
+    QueryRequest request = QueryRequest.builder().serviceName("security-service").build();
 
     assertThat(request.toAnnotationQuery())
         .isNull();

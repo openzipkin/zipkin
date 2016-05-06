@@ -85,18 +85,18 @@ public final class CorrectForClockSkew {
       if (a.endpoint == null) continue;
       if (skew.endpoint.ipv4 == a.endpoint.ipv4) {
         if (annotations == null) annotations = new ArrayList<>(span.annotations);
-        annotations.set(i, new Annotation.Builder(a).timestamp(a.timestamp - skew.skew).build());
+        annotations.set(i, a.toBuilder().timestamp(a.timestamp - skew.skew).build());
       }
     }
     if (annotations != null) {
-      return new Span.Builder(span).timestamp(annotations.get(0).timestamp).annotations(annotations).build();
+      return span.toBuilder().timestamp(annotations.get(0).timestamp).annotations(annotations).build();
     }
     // Search for a local span on the skewed endpoint
     for (int i = 0, length = span.binaryAnnotations.size(); i < length; i++) {
       BinaryAnnotation b = span.binaryAnnotations.get(i);
       if (b.endpoint == null) continue;
       if (b.key.equals(Constants.LOCAL_COMPONENT) && skew.endpoint.ipv4 == b.endpoint.ipv4) {
-        return new Span.Builder(span).timestamp(span.timestamp - skew.skew).build();
+        return span.toBuilder().timestamp(span.timestamp - skew.skew).build();
       }
     }
     return span;

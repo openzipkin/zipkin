@@ -135,16 +135,24 @@ public final class BinaryAnnotation implements Comparable<BinaryAnnotation> {
     this.endpoint = endpoint;
   }
 
+  public Builder toBuilder(){
+    return new Builder(this);
+  }
+
+  public static Builder builder(){
+    return new Builder();
+  }
+
   public static final class Builder {
     private String key;
     private byte[] value;
     private Type type;
     private Endpoint endpoint;
 
-    public Builder() {
+    Builder() {
     }
 
-    public Builder(BinaryAnnotation source) {
+    Builder(BinaryAnnotation source) {
       this.key = source.key;
       this.value = source.value;
       this.type = source.type;

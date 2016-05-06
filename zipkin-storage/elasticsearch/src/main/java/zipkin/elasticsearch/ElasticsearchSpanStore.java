@@ -358,7 +358,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
         // We would have no bucket if there wasn't a hit, so this should always be non-empty.
         SearchHit hit = hitsAgg.getHits().getAt(0);
         DependencyLink link = Codec.JSON.readDependencyLink(hit.getSourceRef().toBytes());
-        link = new DependencyLink.Builder(link).callCount((long) callCountAgg.getValue()).build();
+        link = link.toBuilder().callCount((long) callCountAgg.getValue()).build();
         links.add(link);
       }
       return links.build();

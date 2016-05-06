@@ -144,6 +144,14 @@ public final class Span implements Comparable<Span> {
     this.debug = builder.debug;
   }
 
+  public Builder toBuilder() {
+    return new Builder(this);
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
   public static final class Builder {
     Long traceId;
     String name;
@@ -156,10 +164,10 @@ public final class Span implements Comparable<Span> {
     HashSet<BinaryAnnotation> binaryAnnotations;
     Boolean debug;
 
-    public Builder() {
+    Builder() {
     }
 
-    public Builder(Span source) {
+    Builder(Span source) {
       this.traceId = source.traceId;
       this.name = source.name;
       this.id = source.id;

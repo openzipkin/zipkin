@@ -143,7 +143,7 @@ final class JDBCSpanStore implements SpanStore {
       spansWithoutAnnotations = context.get(conn)
           .selectFrom(ZIPKIN_SPANS).where(traceIdCondition)
           .stream()
-          .map(r -> new Span.Builder()
+          .map(r -> Span.builder()
               .traceId(r.getValue(ZIPKIN_SPANS.TRACE_ID))
               .name(r.getValue(ZIPKIN_SPANS.NAME))
               .id(r.getValue(ZIPKIN_SPANS.ID))
@@ -173,7 +173,7 @@ final class JDBCSpanStore implements SpanStore {
     for (List<Span> spans : spansWithoutAnnotations.values()) {
       List<Span> trace = new ArrayList<>(spans.size());
       for (Span s : spans) {
-        Span.Builder span = new Span.Builder(s);
+        Span.Builder span = s.toBuilder();
         Pair<?> key = Pair.create(s.traceId, s.id);
 
         if (dbAnnotations.containsKey(key)) {

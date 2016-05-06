@@ -36,8 +36,8 @@ public class SpanConsumerLoggerTest {
     }
   }, NOOP_METRICS);
 
-  Span span1 = new Span.Builder().traceId(1L).id(1L).name("foo").build();
-  Span span2 = new Span.Builder().traceId(1L).parentId(1L).id(2L).name("bar").build();
+  Span span1 = Span.builder().traceId(1L).id(1L).name("foo").build();
+  Span span2 = Span.builder().traceId(1L).parentId(1L).id(2L).name("bar").build();
 
   @Test
   public void acceptSpansCallback_toStringIncludesSpanIds() {

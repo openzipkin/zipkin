@@ -51,7 +51,7 @@ public class InternalAsyncToBlockingSpanStoreAdapterTest {
 
   @Test
   public void getTraces_success() {
-    QueryRequest request = new QueryRequest.Builder("service").endTs(1000L).build();
+    QueryRequest request = QueryRequest.builder().serviceName("service").endTs(1000L).build();
     doAnswer(answer(c -> c.onSuccess(asList(TRACE))))
         .when(delegate).getTraces(eq(request), any(Callback.class));
 
@@ -61,7 +61,7 @@ public class InternalAsyncToBlockingSpanStoreAdapterTest {
 
   @Test
   public void getTraces_exception() {
-    QueryRequest request = new QueryRequest.Builder("service").endTs(1000L).build();
+    QueryRequest request = QueryRequest.builder().serviceName("service").endTs(1000L).build();
     doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
         .when(delegate).getTraces(eq(request), any(Callback.class));
 

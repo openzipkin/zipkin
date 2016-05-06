@@ -35,7 +35,11 @@ import static zipkin.internal.Util.checkArgument;
  */
 public final class QueryRequest {
 
-  /** Mandatory {@link zipkin.Endpoint#serviceName} and constrains all other parameters. */
+  /**
+   * When present, corresponds to {@link zipkin.Endpoint#serviceName} and constrains all other
+   * parameters.
+   */
+  @Nullable
   public final String serviceName;
 
   /** When present, only include traces with this {@link zipkin.Span#name} */
@@ -120,11 +124,11 @@ public final class QueryRequest {
       long endTs,
       long lookback,
       int limit) {
-    checkArgument(serviceName != null && !serviceName.isEmpty(), "serviceName was empty");
+    checkArgument(serviceName == null || !serviceName.isEmpty(), "serviceName was empty");
     checkArgument(spanName == null || !spanName.isEmpty(), "spanName was empty");
     checkArgument(endTs > 0, "endTs should be positive, in epoch microseconds: was %d", endTs);
     checkArgument(limit > 0, "limit should be positive: was %d", limit);
-    this.serviceName = serviceName.toLowerCase();
+    this.serviceName = serviceName != null? serviceName.toLowerCase() : null;
     this.spanName = spanName != null ? spanName.toLowerCase() : null;
     this.annotations = annotations;
     for (String annotation : annotations) {
@@ -142,6 +146,14 @@ public final class QueryRequest {
     this.limit = limit;
   }
 
+  public Builder toBuilder() {
+    return new Builder(this);
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
   public static final class Builder {
     private String serviceName;
     private String spanName;
@@ -153,12 +165,10 @@ public final class QueryRequest {
     private Long lookback;
     private Integer limit;
 
-    /** @see QueryRequest#serviceName */
-    public Builder(String serviceName) {
-      this.serviceName = serviceName;
+    Builder(){
     }
 
-    public Builder(QueryRequest source) {
+    Builder(QueryRequest source) {
       this.serviceName = source.serviceName;
       this.spanName = source.spanName;
       this.annotations = source.annotations;
@@ -171,7 +181,7 @@ public final class QueryRequest {
     }
 
     /** @see QueryRequest#serviceName */
-    public Builder serviceName(String serviceName) {
+    public Builder serviceName(@Nullable String serviceName) {
       this.serviceName = serviceName;
       return this;
     }
@@ -287,7 +297,7 @@ public final class QueryRequest {
     }
     if (o instanceof QueryRequest) {
       QueryRequest that = (QueryRequest) o;
-      return (this.serviceName.equals(that.serviceName))
+      return ((this.serviceName == null) ? (that.serviceName == null) : this.serviceName.equals(that.serviceName))
           && ((this.spanName == null) ? (that.spanName == null) : this.spanName.equals(that.spanName))
           && ((this.annotations == null) ? (that.annotations == null) : this.annotations.equals(that.annotations))
           && ((this.binaryAnnotations == null) ? (that.binaryAnnotations == null) : this.binaryAnnotations.equals(that.binaryAnnotations))
@@ -304,7 +314,7 @@ public final class QueryRequest {
   public int hashCode() {
     int h = 1;
     h *= 1000003;
-    h ^= serviceName.hashCode();
+    h ^= (serviceName == null) ? 0 : serviceName.hashCode();
     h *= 1000003;
     h ^= (spanName == null) ? 0 : spanName.hashCode();
     h *= 1000003;
