@@ -94,3 +94,5 @@ logging:
 #     zipkin.internal.DependencyLinker: 'DEBUG'
 #     # log cassandra calls
 #     zipkin.cassandra: 'DEBUG'
+#     # log cassandra trace propagation
+#     com.datastax.driver.core.Message: 'TRACE'
