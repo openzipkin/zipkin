@@ -689,6 +689,47 @@ public abstract class SpanStoreTest {
     }
   }
 
+  @Test public void getTraces_acrossServices() {
+    List<BinaryAnnotation> annotations = IntStream.rangeClosed(1, 10).mapToObj(i ->
+        BinaryAnnotation.create(LOCAL_COMPONENT, "serviceAnnotation",
+            Endpoint.create("service" + i, 127 << 24 | i, 8080)))
+        .collect(Collectors.toList());
+
+    long gapBetweenSpans = 100;
+    List<Span> earlySpans = IntStream.rangeClosed(1, 10).mapToObj(i -> Span.builder().name("early")
+        .traceId(i).id(i).timestamp((today - i) * 1000).duration(1L)
+        .addBinaryAnnotation(annotations.get(i - 1)).build()).collect(toList());
+
+    List<Span> lateSpans = IntStream.rangeClosed(1, 10).mapToObj(i -> Span.builder().name("late")
+        .traceId(i + 10).id(i + 10).timestamp((today + gapBetweenSpans - i) * 1000).duration(1L)
+        .addBinaryAnnotation(annotations.get(i - 1)).build()).collect(toList());
+
+    accept(earlySpans.toArray(new Span[10]));
+    accept(lateSpans.toArray(new Span[10]));
+
+    List<Span>[] earlyTraces =
+        earlySpans.stream().map(Collections::singletonList).toArray(List[]::new);
+    List<Span>[] lateTraces =
+        lateSpans.stream().map(Collections::singletonList).toArray(List[]::new);
+
+    //sanity checks
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service1").build()))
+        .containsExactly(lateTraces[0], earlyTraces[0]);
+    assertThat(store().getTraces(QueryRequest.builder().limit(20).build()))
+        .hasSize(20);
+
+    assertThat(store().getTraces(QueryRequest.builder().limit(10).build()))
+        .containsExactly(lateTraces);
+
+    assertThat(store().getTraces(QueryRequest.builder().limit(20)
+        .endTs(today + gapBetweenSpans).lookback(gapBetweenSpans).build()))
+        .containsExactly(lateTraces);
+
+    assertThat(store().getTraces(QueryRequest.builder().limit(20)
+        .endTs(today).build()))
+        .containsExactly(earlyTraces);
+  }
+
   static long clientDuration(Span span) {
     long[] timestamps = span.annotations.stream()
         .filter(a -> a.value.startsWith("c"))

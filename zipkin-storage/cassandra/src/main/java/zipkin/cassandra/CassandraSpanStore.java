@@ -93,6 +93,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
   private final PreparedStatement selectTraceIdsBySpanName;
   private final PreparedStatement selectTraceIdsByAnnotations;
   private final PreparedStatement selectTraceIdsBySpanDuration;
+  private final Function<ResultSet, Map<Long, Long>> traceIdToTimestamp;
 
   CassandraSpanStore(Session session, int bucketCount, int indexTtl, int maxTraceCols) {
     this.session = session;
@@ -126,7 +127,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
     selectTraceIdsByServiceName = session.prepare(
         QueryBuilder.select("ts", "trace_id")
             .from("service_name_index")
-            .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
+            .where(QueryBuilder.in("service_name", QueryBuilder.bindMarker("service_name")))
             .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
             .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
             .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
@@ -162,12 +163,25 @@ final class CassandraSpanStore implements GuavaSpanStore {
             .and(QueryBuilder.lte("duration", QueryBuilder.bindMarker("max_duration")))
             .and(QueryBuilder.gte("duration", QueryBuilder.bindMarker("min_duration")))
             .orderBy(QueryBuilder.desc("duration")));
+
+    traceIdToTimestamp = new Function<ResultSet, Map<Long, Long>>() {
+      @Override public Map<Long, Long> apply(ResultSet input) {
+        Map<Long, Long> traceIdsToTimestamps = new LinkedHashMap<>();
+        for (Row row : input) {
+          traceIdsToTimestamps.put(row.getLong("trace_id"), timestampCodec.deserialize(row, "ts"));
+        }
+        return traceIdsToTimestamps;
+      }
+    };
   }
 
   /**
-   * This fans out into a potentially large amount of requests, particularly if duration is set,
-   * but also related to the amount of annotations queried. The returned future will fail if any
-   * of the inputs fail.
+   * This fans out into a potentially large amount of requests, particularly if duration is set, but
+   * also related to the amount of annotations queried. The returned future will fail if any of the
+   * inputs fail.
+   *
+   * <p>When {@link QueryRequest#serviceName service name} is unset, service names will be fetched
+   * eagerly, implying an additional query.
    *
    * <p>The duration query is the most expensive query in cassandra, as it turns into 1 request per
    * hour of {@link QueryRequest#lookback lookback}. Because many times lookback is set to a day,
@@ -176,17 +190,24 @@ final class CassandraSpanStore implements GuavaSpanStore {
    * <p>See https://github.com/openzipkin/zipkin-java/issues/200
    */
   @Override
-  public ListenableFuture<List<List<Span>>> getTraces(QueryRequest request) {
-    String spanName = spanName(request.spanName);
+  public ListenableFuture<List<List<Span>>> getTraces(final QueryRequest request) {
     ListenableFuture<Map<Long, Long>> traceIdToTimestamp;
     if (request.minDuration != null || request.maxDuration != null) {
       traceIdToTimestamp = getTraceIdsByDuration(request);
-    } else if (!spanName.isEmpty()) {
-      traceIdToTimestamp = getTraceIdsBySpanName(request.serviceName, spanName,
+    } else if (request.spanName != null) {
+      traceIdToTimestamp = getTraceIdsBySpanName(request.serviceName, request.spanName,
+          request.endTs * 1000, request.lookback * 1000, request.limit);
+    } else if (request.serviceName != null){
+      traceIdToTimestamp = getTraceIdsByServiceNames(Collections.singletonList(request.serviceName),
           request.endTs * 1000, request.lookback * 1000, request.limit);
     } else {
-      traceIdToTimestamp = getTraceIdsByServiceName(request.serviceName,
-          request.endTs * 1000, request.lookback * 1000, request.limit);
+      traceIdToTimestamp = transform(getServiceNames(),
+          new AsyncFunction<List<String>, Map<Long, Long>>() {
+            @Override public ListenableFuture<Map<Long, Long>> apply(List<String> serviceNames) {
+              return getTraceIdsByServiceNames(serviceNames,
+                  request.endTs * 1000, request.lookback * 1000, request.limit);
+            }
+          });
     }
 
     List<String> annotationKeys = annotationKeys(request);
@@ -420,14 +441,12 @@ final class CassandraSpanStore implements GuavaSpanStore {
         .replace(":service_name", serviceName);
   }
 
-  ListenableFuture<Map<Long, Long>> getTraceIdsByServiceName(String serviceName, long endTs,
+  ListenableFuture<Map<Long, Long>> getTraceIdsByServiceNames(List<String> serviceNames, long endTs,
       long lookback, int limit) {
-    checkNotNull(serviceName, "serviceName");
-    checkArgument(!serviceName.isEmpty(), "serviceName");
     long startTs = endTs - lookback;
     try {
       BoundStatement bound = selectTraceIdsByServiceName.bind()
-          .setString("service_name", serviceName)
+          .setList("service_name", serviceNames)
           .setSet("bucket", buckets)
           .setBytesUnsafe("start_ts", timestampCodec.serialize(startTs))
           .setBytesUnsafe("end_ts", timestampCodec.serialize(endTs))
@@ -436,32 +455,23 @@ final class CassandraSpanStore implements GuavaSpanStore {
       bound.setFetchSize(Integer.MAX_VALUE);
 
       if (LOG.isDebugEnabled()) {
-        LOG.debug(debugSelectTraceIdsByServiceName(serviceName, buckets, startTs, endTs, limit));
+        LOG.debug(debugSelectTraceIdsByServiceNames(serviceNames, buckets, startTs, endTs, limit));
       }
 
-      return transform(session.executeAsync(bound), new Function<ResultSet, Map<Long, Long>>() {
-            @Override public Map<Long, Long> apply(ResultSet input) {
-              Map<Long, Long> traceIdsToTimestamps = new LinkedHashMap<>();
-              for (Row row : input) {
-                traceIdsToTimestamps.put(row.getLong("trace_id"),
-                    timestampCodec.deserialize(row, "ts"));
-              }
-              return traceIdsToTimestamps;
-            }
-          }
-      );
+      return transform(session.executeAsync(bound), traceIdToTimestamp);
     } catch (RuntimeException ex) {
       LOG.error(
-          "failed " + debugSelectTraceIdsByServiceName(serviceName, buckets, startTs, endTs, limit),
+          "failed " + debugSelectTraceIdsByServiceNames(serviceNames, buckets, startTs, endTs,
+              limit),
           ex);
       return immediateFailedFuture(ex);
     }
   }
 
-  private String debugSelectTraceIdsByServiceName(String serviceName, Set<Integer> buckets,
+  private String debugSelectTraceIdsByServiceNames(List<String> serviceNames, Set<Integer> buckets,
       long startTs, long endTs, int limit) {
     return selectTraceIdsByServiceName.getQueryString()
-        .replace(":service_name", serviceName)
+        .replace(":service_name", serviceNames.toString())
         .replace(":bucket", buckets.toString())
         .replace(":start_ts", iso8601(startTs))
         .replace(":end_ts", iso8601(endTs))
@@ -470,9 +480,8 @@ final class CassandraSpanStore implements GuavaSpanStore {
 
   ListenableFuture<Map<Long, Long>> getTraceIdsBySpanName(String serviceName,
       String spanName, long endTs, long lookback, int limit) {
-    checkNotNull(serviceName, "serviceName");
-    checkArgument(!serviceName.isEmpty(), "serviceName");
-    checkArgument(!spanName.isEmpty(), "spanName");
+    checkArgument(serviceName != null, "serviceName required on spanName query");
+    checkArgument(spanName != null, "spanName required on spanName query");
     String serviceSpanName = serviceName + "." + spanName;
     long startTs = endTs - lookback;
     try {
@@ -486,17 +495,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
         LOG.debug(debugSelectTraceIdsBySpanName(serviceSpanName, startTs, endTs, limit));
       }
 
-      return transform(session.executeAsync(bound), new Function<ResultSet, Map<Long, Long>>() {
-            @Override public Map<Long, Long> apply(ResultSet input) {
-              Map<Long, Long> traceIdsToTimestamps = new LinkedHashMap<>();
-              for (Row row : input) {
-                traceIdsToTimestamps.put(row.getLong("trace_id"),
-                    timestampCodec.deserialize(row, "ts"));
-              }
-              return traceIdsToTimestamps;
-            }
-          }
-      );
+      return transform(session.executeAsync(bound), traceIdToTimestamp);
     } catch (RuntimeException ex) {
       LOG.error("failed " + debugSelectTraceIdsBySpanName(serviceSpanName, startTs, endTs, limit),
           ex);
@@ -561,6 +560,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
 
   /** Returns a map of trace id to timestamp (in microseconds) */
   ListenableFuture<Map<Long, Long>> getTraceIdsByDuration(QueryRequest request) {
+    checkArgument(request.serviceName != null, "serviceName required on duration query");
     long oldestData = (System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(indexTtl)) * 1000;
 
     long startTs = Math.max((request.endTs - request.lookback) * 1000, oldestData);

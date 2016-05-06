@@ -97,17 +97,18 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     long endMillis = request.endTs;
     long beginMillis = endMillis - request.lookback;
 
-    String serviceName = request.serviceName.toLowerCase();
-
     BoolQueryBuilder filter = boolQuery()
-        .must(boolQuery()
-            .should(termQuery("annotations.endpoint.serviceName", serviceName))
-            .should(nestedQuery(
-                "binaryAnnotations",
-                termQuery("binaryAnnotations.endpoint.serviceName", serviceName))))
         .must(rangeQuery("timestamp")
             .gte(TimeUnit.MILLISECONDS.toMicros(beginMillis))
             .lte(TimeUnit.MILLISECONDS.toMicros(endMillis)));
+
+    if (request.serviceName != null) {
+      filter.must(boolQuery()
+          .should(termQuery("annotations.endpoint.serviceName", request.serviceName))
+          .should(nestedQuery(
+              "binaryAnnotations",
+              termQuery("binaryAnnotations.endpoint.serviceName", request.serviceName))));
+    }
     if (request.spanName != null) {
       filter.must(termQuery("name", request.spanName));
     }
