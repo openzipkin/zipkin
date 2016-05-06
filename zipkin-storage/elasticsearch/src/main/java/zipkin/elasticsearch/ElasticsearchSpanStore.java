@@ -187,7 +187,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     SearchRequestBuilder elasticRequest = client.prepareSearch(indexNameFormatter.catchAll())
         .setTypes(ElasticsearchConstants.SPAN)
         .setSize(MAX_RAW_SPANS)
-        .setQuery(termQuery("traceId", String.format("%016x", traceId)));
+        .setQuery(termQuery("traceId", Util.toLowerHex(traceId)));
 
     return transform(toGuava(elasticRequest.execute()), new Function<SearchResponse, List<Span>>() {
       @Override public List<Span> apply(SearchResponse response) {
@@ -206,7 +206,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
   ListenableFuture<List<List<Span>>> getTracesByIds(Collection<Long> traceIds, String[] indices) {
     List<String> traceIdsStr = new ArrayList<>(traceIds.size());
     for (long traceId : traceIds) {
-      traceIdsStr.add(String.format("%016x", traceId));
+      traceIdsStr.add(Util.toLowerHex(traceId));
     }
     SearchRequestBuilder elasticRequest = client.prepareSearch(indices)
         .setIndicesOptions(IndicesOptions.lenientExpandOpen())

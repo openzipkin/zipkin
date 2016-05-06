@@ -20,12 +20,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.regex.Pattern;
 
 public final class Util {
   public static final Charset UTF_8 = Charset.forName("UTF-8");
   static final TimeZone UTC = TimeZone.getTimeZone("UTC");
-  static final Pattern HEX_ID_PATTERN = Pattern.compile("^[0-9a-f]{1,16}$");
 
   public static int envOr(String key, int fallback) {
     return System.getenv(key) != null ? Integer.parseInt(System.getenv(key)) : fallback;
@@ -83,17 +81,49 @@ public final class Util {
 
   /** Parses a 1 to 16 character lower-hex string with no prefix int an unsigned long. */
   public static long lowerHexToUnsignedLong(String lowerHex) {
-    if (!HEX_ID_PATTERN.matcher(lowerHex).matches()) {
-      throw new NumberFormatException(
-          lowerHex + " should be a 1 to 16 character lower-hex string with no prefix");
+    char[] array = lowerHex.toCharArray();
+    if (array.length < 1 || array.length > 16) {
+      throw isntLowerHexLong(lowerHex);
     }
-
     long result = 0;
-    for (char c : lowerHex.toCharArray()) {
+    for (char c : array) {
       result <<= 4;
-      result |= c <= '9' ? c - '0' : c - 'a' + 10;
+      if (c >= '0' && c <= '9') {
+        result |= c - '0';
+      } else if (c >= 'a' && c <= 'f') {
+        result |= c - 'a' + 10;
+      } else {
+        throw isntLowerHexLong(lowerHex);
+      }
     }
     return result;
+  }
+
+  static NumberFormatException isntLowerHexLong(String lowerHex) {
+    throw new NumberFormatException(
+        lowerHex + " should be a 1 to 16 character lower-hex string with no prefix");
+  }
+
+  /** Inspired by {@code okio.Buffer.writeLong} */
+  public static String toLowerHex(long v) {
+    char[] data = new char[16];
+    writeHexByte(data, 0,  (byte) ((v >>> 56L) & 0xff));
+    writeHexByte(data, 2,  (byte) ((v >>> 48L) & 0xff));
+    writeHexByte(data, 4,  (byte) ((v >>> 40L) & 0xff));
+    writeHexByte(data, 6,  (byte) ((v >>> 32L) & 0xff));
+    writeHexByte(data, 8,  (byte) ((v >>> 24L) & 0xff));
+    writeHexByte(data, 10, (byte) ((v >>> 16L) & 0xff));
+    writeHexByte(data, 12, (byte) ((v >>> 8L) & 0xff));
+    writeHexByte(data, 14, (byte)  (v & 0xff));
+    return new String(data);
+  }
+
+  static final char[] HEX_DIGITS =
+      {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+  static void writeHexByte(char[] data, int pos, byte b) {
+    data[pos + 0] = HEX_DIGITS[(b >> 4) & 0xf];
+    data[pos + 1] = HEX_DIGITS[b & 0xf];
   }
 
   private Util() {

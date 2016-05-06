@@ -55,14 +55,12 @@ public final class JsonCodec implements Codec {
   static final JsonAdapter<Long> HEX_LONG_ADAPTER = new JsonAdapter<Long>() {
     @Override
     public Long fromJson(JsonReader reader) throws IOException {
-      Buffer buffer = new Buffer();
-      buffer.writeUtf8(reader.nextString());
-      return buffer.readHexadecimalUnsignedLong();
+      return Util.lowerHexToUnsignedLong(reader.nextString());
     }
 
     @Override
     public void toJson(JsonWriter writer, Long value) throws IOException {
-      writer.value(String.format("%016x", value));
+      writer.value(Util.toLowerHex(value));
     }
   };
 

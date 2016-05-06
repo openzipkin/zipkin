@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import static zipkin.internal.Util.equal;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
 import static zipkin.internal.Util.midnightUTC;
+import static zipkin.internal.Util.toLowerHex;
 
 public class UtilTest {
   @Test
@@ -53,7 +54,7 @@ public class UtilTest {
   }
 
   @Test
-  public void lowerHexToUnsignedLongTest() throws ParseException {
+  public void lowerHexToUnsignedLongTest() {
     assertThat(lowerHexToUnsignedLong("ffffffffffffffff")).isEqualTo(-1);
     assertThat(lowerHexToUnsignedLong("0")).isEqualTo(0);
     assertThat(lowerHexToUnsignedLong(Long.toHexString(Long.MAX_VALUE))).isEqualTo(Long.MAX_VALUE);
@@ -78,5 +79,15 @@ public class UtilTest {
     } catch (NumberFormatException e) {
 
     }
+  }
+
+  @Test
+  public void toLowerHex_minValue() {
+    assertThat(toLowerHex(Long.MAX_VALUE)).isEqualTo("7fffffffffffffff");
+  }
+
+  @Test
+  public void toLowerHex_fixedLength() {
+    assertThat(toLowerHex(0L)).isEqualTo("0000000000000000");
   }
 }
