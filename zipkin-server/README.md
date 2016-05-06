@@ -57,7 +57,7 @@ SELF_TRACING_FLUSH_INTERVAL | zipkin.self-tracing.flush-interval | Interval in s
 ## Configuration for the UI
 Zipkin has a web UI, which is enabled by default when you depend on `io.zipkin:zipkin-ui`. This UI is automatically included in the exec jar, and is hosted by default on port 9411.
 
-When the UI loads, it reads default configuration from the `/config.json` endpoint. These values can be overridden by system properties.
+When the UI loads, it reads default configuration from the `/config.json` endpoint. These values can be overridden by system properties or any other alternative [supported by Spring Boot](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html).
 
 Attribute | Property | Description
 --- | --- | ---
@@ -66,7 +66,7 @@ defaultLookback | zipkin.ui.default-lookback | Default duration in millis to loo
 queryLimit | zipkin.ui.query-limit | Default limit for Find Traces. Defaults to 10.
 instrumented | zipkin.ui.instrumented | Which sites this Zipkin UI covers. Regex syntax. e.g. `http:\/\/example.com\/.*` Defaults to match all websites (`.*`).
 
-For example, if using docker you can set `JAVA_OPTS="-Dzipkin.ui.query-limit=100"` to affect `$.queryLimit` in `/config.json`. You can also use any other alternative [supported by Spring Boot](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html).
+For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 
 ## Environment Variables
 zipkin-server is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/master/zipkin-query-service).
