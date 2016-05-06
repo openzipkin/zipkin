@@ -26,7 +26,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
@@ -59,6 +58,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.DiscreteDomain.integers;
 import static com.google.common.util.concurrent.Futures.allAsList;
+import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.cassandra.CassandraUtil.annotationKeys;
@@ -164,6 +164,17 @@ final class CassandraSpanStore implements GuavaSpanStore {
             .orderBy(QueryBuilder.desc("duration")));
   }
 
+  /**
+   * This fans out into a potentially large amount of requests, particularly if duration is set,
+   * but also related to the amount of annotations queried. The returned future will fail if any
+   * of the inputs fail.
+   *
+   * <p>The duration query is the most expensive query in cassandra, as it turns into 1 request per
+   * hour of {@link QueryRequest#lookback lookback}. Because many times lookback is set to a day,
+   * this means 24 requests to the backend!
+   *
+   * <p>See https://github.com/openzipkin/zipkin-java/issues/200
+   */
   @Override
   public ListenableFuture<List<List<Span>>> getTraces(QueryRequest request) {
     String spanName = spanName(request.spanName);
@@ -265,7 +276,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
       );
     } catch (RuntimeException ex) {
       LOG.error("failed " + selectServiceNames.getQueryString(), ex);
-      return Futures.immediateFailedFuture(ex);
+      return immediateFailedFuture(ex);
     }
   }
 
@@ -314,7 +325,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
       return transform(session.executeAsync(bound), ConvertDependenciesResponse.INSTANCE);
     } catch (RuntimeException ex) {
       LOG.error("failed " + debugSelectDependencies(days), ex);
-      return Futures.immediateFailedFuture(ex);
+      return immediateFailedFuture(ex);
     }
   }
 
@@ -352,7 +363,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
   ListenableFuture<Map<Long, List<Span>>> getSpansByTraceIds(Long[] traceIds, int limit) {
     checkNotNull(traceIds, "traceIds");
     if (traceIds.length == 0) {
-      return Futures.immediateFuture(Collections.<Long, List<Span>>emptyMap());
+      return immediateFuture(Collections.<Long, List<Span>>emptyMap());
     }
 
     try {
@@ -385,7 +396,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
       );
     } catch (RuntimeException ex) {
       LOG.error("failed " + debugSelectTraces(traceIds, limit), ex);
-      return Futures.immediateFailedFuture(ex);
+      return immediateFailedFuture(ex);
     }
   }
 
@@ -443,7 +454,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
       LOG.error(
           "failed " + debugSelectTraceIdsByServiceName(serviceName, buckets, startTs, endTs, limit),
           ex);
-      return Futures.immediateFailedFuture(ex);
+      return immediateFailedFuture(ex);
     }
   }
 
@@ -489,7 +500,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
     } catch (RuntimeException ex) {
       LOG.error("failed " + debugSelectTraceIdsBySpanName(serviceSpanName, startTs, endTs, limit),
           ex);
-      return Futures.immediateFailedFuture(ex);
+      return immediateFailedFuture(ex);
     }
   }
 
@@ -534,7 +545,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
       LOG.error("failed " + debugSelectTraceIdsByAnnotations(annotationKey, buckets, startTs, endTs,
           limit),
           ex);
-      return Futures.immediateFailedCheckedFuture(ex);
+      return immediateFailedFuture(ex);
     }
   }
 
@@ -567,7 +578,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
       futures.add(oneBucketDurationQuery(request, i, startTs, endTs));
     }
 
-    return transform(Futures.successfulAsList(futures),
+    return transform(allAsList(futures),
         new Function<List<List<DurationRow>>, Map<Long, Long>>() {
           @Override public Map<Long, Long> apply(List<List<DurationRow>> input) {
             // find earliest startTs for each trace ID

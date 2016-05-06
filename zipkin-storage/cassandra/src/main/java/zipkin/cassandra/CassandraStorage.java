@@ -178,6 +178,7 @@ public final class CassandraStorage
     session.close();
   }
 
+  /** Truncates all the column families, or throws on any failure. */
   @VisibleForTesting void clear() {
     List<ListenableFuture<?>> futures = new LinkedList<>();
     for (String cf : ImmutableList.of(

@@ -156,6 +156,10 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
             .using(QueryBuilder.ttl(QueryBuilder.bindMarker("ttl_"))));
   }
 
+  /**
+   * This fans out into many requests, last count was 8 * spans.size. If any of these fail, the
+   * returned future will fail. Most callers drop or log the result.
+   */
   @Override
   public ListenableFuture<Void> accept(List<Span> spans) {
     List<ListenableFuture<?>> futures = new LinkedList<>();
@@ -198,8 +202,8 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
             futures.add(storeTraceIdByDuration(
                 serviceName, span.name, span.timestamp, span.duration, span.traceId, indexTtl));
             if (!span.name.isEmpty()) { // If span.name == "", this would be redundant
-              storeTraceIdByDuration(
-                  serviceName, "", span.timestamp, span.duration, span.traceId, indexTtl);
+              futures.add(storeTraceIdByDuration(
+                  serviceName, "", span.timestamp, span.duration, span.traceId, indexTtl));
             }
           }
         }
