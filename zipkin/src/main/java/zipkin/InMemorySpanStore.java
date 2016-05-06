@@ -161,7 +161,7 @@ public final class InMemorySpanStore implements SpanStore {
             timestamp > endTs) {
           continue;
         }
-        DependencyLinkSpan.Builder linkSpan = new DependencyLinkSpan.Builder(s.parentId, s.id);
+        DependencyLinkSpan.Builder linkSpan = DependencyLinkSpan.builder(s.parentId, s.id);
         for (BinaryAnnotation a : s.binaryAnnotations) {
           if (a.key.equals(Constants.CLIENT_ADDR) && a.endpoint != null) {
             linkSpan.caService(a.endpoint.serviceName);

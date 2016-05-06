@@ -44,7 +44,7 @@ public class CollectorSamplerTest {
   public void debugWins() {
     CollectorSampler sampler = CollectorSampler.create(0.0f);
 
-    assertThat(sampler.isSampled(new Span.Builder(span(Long.MIN_VALUE)).debug(true).build()))
+    assertThat(sampler.isSampled(span(Long.MIN_VALUE).toBuilder().debug(true).build()))
         .isTrue();
   }
 

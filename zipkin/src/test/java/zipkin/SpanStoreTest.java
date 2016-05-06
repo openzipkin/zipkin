@@ -15,11 +15,13 @@ package zipkin;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.Before;
 import org.junit.Test;
@@ -89,7 +91,7 @@ public abstract class SpanStoreTest {
   Annotation ann7 = Annotation.create((today + 7) * 1000, "custom", ep);
   Annotation ann8 = Annotation.create((today + 8) * 1000, "custom", ep);
 
-  Span span1 = new Span.Builder()
+  Span span1 = Span.builder()
       .traceId(123)
       .name("methodcall")
       .id(spanId)
@@ -97,7 +99,7 @@ public abstract class SpanStoreTest {
       .annotations(asList(ann1, ann3))
       .addBinaryAnnotation(BinaryAnnotation.create("BAH", "BEH", ep)).build();
 
-  Span span2 = new Span.Builder()
+  Span span2 = Span.builder()
       .traceId(456)
       .name("methodcall")
       .id(spanId)
@@ -105,7 +107,7 @@ public abstract class SpanStoreTest {
       .addAnnotation(ann2)
       .addBinaryAnnotation(BinaryAnnotation.create("BAH2", "BEH2", ep)).build();
 
-  Span span3 = new Span.Builder()
+  Span span3 = Span.builder()
       .traceId(789)
       .name("methodcall")
       .id(spanId)
@@ -113,14 +115,14 @@ public abstract class SpanStoreTest {
       .annotations(asList(ann2, ann3, ann4))
       .addBinaryAnnotation(BinaryAnnotation.create("BAH2", "BEH2", ep)).build();
 
-  Span span4 = new Span.Builder()
+  Span span4 = Span.builder()
       .traceId(999)
       .name("methodcall")
       .id(spanId)
       .timestamp(ann6.timestamp).duration(1000L)
       .annotations(asList(ann6, ann7)).build();
 
-  Span span5 = new Span.Builder()
+  Span span5 = Span.builder()
       .traceId(999)
       .name("methodcall")
       .id(spanId)
@@ -128,7 +130,7 @@ public abstract class SpanStoreTest {
       .annotations(asList(ann5, ann8))
       .addBinaryAnnotation(BinaryAnnotation.create("BAH2", "BEH2", ep)).build();
 
-  Span spanEmptySpanName = new Span.Builder()
+  Span spanEmptySpanName = Span.builder()
       .traceId(123)
       .name("")
       .id(spanId)
@@ -136,7 +138,7 @@ public abstract class SpanStoreTest {
       .timestamp(ann1.timestamp).duration(1000L)
       .annotations(asList(ann1, ann2)).build();
 
-  Span spanEmptyServiceName = new Span.Builder()
+  Span spanEmptyServiceName = Span.builder()
       .traceId(123)
       .name("spanname")
       .id(spanId).build();
@@ -158,16 +160,16 @@ public abstract class SpanStoreTest {
    */
   @Test
   public void tracesRetrieveInOrderDesc() {
-    accept(span2, new Span.Builder(span1).annotations(asList(ann3, ann1)).build());
+    accept(span2, span1.toBuilder().annotations(asList(ann3, ann1)).build());
 
-    assertThat(store().getTraces(new QueryRequest.Builder("service").build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").build()))
         .containsOnly(asList(span2), asList(span1));
   }
 
   /** Legacy instrumentation will not set timestamp and duration explicitly */
   @Test
   public void derivesTimestampAndDurationFromAnnotations() {
-    accept(new Span.Builder(span1).timestamp(null).duration(null).build());
+    accept(span1.toBuilder().timestamp(null).duration(null).build());
 
     assertThat(store().getTrace(span1.traceId))
         .containsOnly(span1);
@@ -175,7 +177,7 @@ public abstract class SpanStoreTest {
 
   @Test
   public void getSpanNames() {
-    accept(new Span.Builder(span1).name("yak").build(), span4);
+    accept(span1.toBuilder().name("yak").build(), span4);
 
     // should be in order
     assertThat(store().getSpanNames("service")).containsExactly("methodcall", "yak");
@@ -187,7 +189,7 @@ public abstract class SpanStoreTest {
     List<String> spanNames = new ArrayList<>();
     for (int i = 0; i < 50; i++) {
       String suffix = i < 10 ? "0" + i : String.valueOf(i);
-      accept(new Span.Builder(span1).id(i).name("yak" + suffix).build());
+      accept(span1.toBuilder().id(i).name("yak" + suffix).build());
       spanNames.add("yak" + suffix);
     }
 
@@ -198,7 +200,7 @@ public abstract class SpanStoreTest {
   @Test
   public void getAllServiceNames() {
     BinaryAnnotation yak = BinaryAnnotation.address("sa", Endpoint.create("yak", 127 << 24 | 1, 8080));
-    accept(new Span.Builder(span1).addBinaryAnnotation(yak).build(), span4);
+    accept(span1.toBuilder().addBinaryAnnotation(yak).build(), span4);
 
     // should be in order
     assertThat(store().getServiceNames()).containsExactly("service", "yak");
@@ -213,7 +215,7 @@ public abstract class SpanStoreTest {
       String suffix = i < 10 ? "0" + i : String.valueOf(i);
       BinaryAnnotation yak =
           BinaryAnnotation.address("sa", Endpoint.create("yak" + suffix, 127 << 24 | 1, 8080));
-      accept(new Span.Builder(span1).id(i).addBinaryAnnotation(yak).build());
+      accept(span1.toBuilder().id(i).addBinaryAnnotation(yak).build());
       serviceNames.add("yak" + suffix);
     }
 
@@ -225,7 +227,7 @@ public abstract class SpanStoreTest {
    */
   @Test
   public void allShouldWorkWhenEmpty() {
-    QueryRequest.Builder q = new QueryRequest.Builder("service");
+    QueryRequest.Builder q = QueryRequest.builder().serviceName("service");
     assertThat(store().getTraces(q.build())).isEmpty();
     assertThat(store().getTraces(q.spanName("methodcall").build())).isEmpty();
     assertThat(store().getTraces(q.addAnnotation("custom").build())).isEmpty();
@@ -239,7 +241,7 @@ public abstract class SpanStoreTest {
   public void allShouldWorkWhenNoAnnotationsYet() {
     accept(spanEmptyServiceName);
 
-    QueryRequest.Builder q = new QueryRequest.Builder("service");
+    QueryRequest.Builder q = QueryRequest.builder().serviceName("service");
     assertThat(store().getTraces(q.build())).isEmpty();
     assertThat(store().getTraces(q.spanName("methodcall").build())).isEmpty();
     assertThat(store().getTraces(q.addAnnotation("custom").build())).isEmpty();
@@ -250,7 +252,7 @@ public abstract class SpanStoreTest {
   public void getTraces_spanName() {
     accept(span1);
 
-    QueryRequest.Builder q = new QueryRequest.Builder("service");
+    QueryRequest.Builder q = QueryRequest.builder().serviceName("service");
     assertThat(store().getTraces(q.build()))
         .containsExactly(asList(span1));
     assertThat(store().getTraces(q.spanName("methodcall").build()))
@@ -263,13 +265,13 @@ public abstract class SpanStoreTest {
 
   @Test
   public void getTraces_serviceNameInBinaryAnnotation() {
-    Span localTrace = new Span.Builder().traceId(1L).name("targz").id(1L)
+    Span localTrace = Span.builder().traceId(1L).name("targz").id(1L)
         .timestamp(today * 1000 + 100L).duration(200L)
         .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "archiver", ep)).build();
 
     accept(localTrace);
 
-    assertThat(store().getTraces(new QueryRequest.Builder("service").build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").build()))
         .containsExactly(asList(localTrace));
   }
 
@@ -280,25 +282,25 @@ public abstract class SpanStoreTest {
     Endpoint service2 = Endpoint.create("service2", 127 << 24 | 2, 8080);
     Endpoint service3 = Endpoint.create("service3", 127 << 24 | 3, 8080);
 
-    BinaryAnnotation.Builder component = new BinaryAnnotation.Builder().key(LOCAL_COMPONENT).value("archiver");
+    BinaryAnnotation.Builder component = BinaryAnnotation.builder().key(LOCAL_COMPONENT).value("archiver");
     BinaryAnnotation archiver1 = component.endpoint(service1).build();
     BinaryAnnotation archiver2 = component.endpoint(service2).build();
     BinaryAnnotation archiver3 = component.endpoint(service3).build();
 
-    Span targz = new Span.Builder().traceId(1L).id(1L)
+    Span targz = Span.builder().traceId(1L).id(1L)
         .name("targz").timestamp(today * 1000 + 100L).duration(200L).addBinaryAnnotation(archiver1).build();
-    Span tar = new Span.Builder().traceId(1L).id(2L).parentId(1L)
+    Span tar = Span.builder().traceId(1L).id(2L).parentId(1L)
         .name("tar").timestamp(today * 1000 + 200L).duration(150L).addBinaryAnnotation(archiver2).build();
-    Span gz = new Span.Builder().traceId(1L).id(3L).parentId(1L)
+    Span gz = Span.builder().traceId(1L).id(3L).parentId(1L)
         .name("gz").timestamp(today * 1000 + 250L).duration(50L).addBinaryAnnotation(archiver3).build();
-    Span zip = new Span.Builder().traceId(3L).id(3L)
+    Span zip = Span.builder().traceId(3L).id(3L)
         .name("zip").timestamp(today * 1000 + 130L).duration(50L).addBinaryAnnotation(archiver2).build();
 
     List<Span> trace1 = asList(targz, tar, gz);
     List<Span> trace2 = asList(
-        new Span.Builder(targz).traceId(2L).timestamp(today * 1000 + 110L).binaryAnnotations(asList(archiver3)).build(),
-        new Span.Builder(tar).traceId(2L).timestamp(today * 1000 + 210L).binaryAnnotations(asList(archiver2)).build(),
-        new Span.Builder(gz).traceId(2L).timestamp(today * 1000 + 260L).binaryAnnotations(asList(archiver1)).build());
+        targz.toBuilder().traceId(2L).timestamp(today * 1000 + 110L).binaryAnnotations(asList(archiver3)).build(),
+        tar.toBuilder().traceId(2L).timestamp(today * 1000 + 210L).binaryAnnotations(asList(archiver2)).build(),
+        gz.toBuilder().traceId(2L).timestamp(today * 1000 + 260L).binaryAnnotations(asList(archiver1)).build());
     List<Span> trace3 = asList(zip);
 
     accept(trace1.toArray(new Span[0]));
@@ -307,7 +309,7 @@ public abstract class SpanStoreTest {
 
     long lookback = 12L * 60 * 60 * 1000; // 12hrs, instead of 7days
     long endTs = today + 1; // greater than all timestamps above
-    QueryRequest.Builder q = new QueryRequest.Builder("service1").lookback(lookback).endTs(endTs);
+    QueryRequest.Builder q = QueryRequest.builder().serviceName("service1").lookback(lookback).endTs(endTs);
 
     // Min duration is inclusive and is applied by service.
     assertThat(store().getTraces(q.serviceName("service1").minDuration(targz.duration).build()))
@@ -337,17 +339,17 @@ public abstract class SpanStoreTest {
   @Test
   public void getTraces_absentWhenNoTimestamp() {
     // store the binary annotations
-    accept(new Span.Builder(span1).timestamp(null).duration(null).annotations(emptyList()).build());
+    accept(span1.toBuilder().timestamp(null).duration(null).annotations(emptyList()).build());
 
-    assertThat(store().getTraces(new QueryRequest.Builder("service").build())).isEmpty();
-    assertThat(store().getTraces(new QueryRequest.Builder("service").serviceName("methodcall").build())).isEmpty();
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").build())).isEmpty();
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").serviceName("methodcall").build())).isEmpty();
 
     // now store the timestamped annotations
-    accept(new Span.Builder(span1).binaryAnnotations(emptyList()).build());
+    accept(span1.toBuilder().binaryAnnotations(emptyList()).build());
 
-    assertThat(store().getTraces(new QueryRequest.Builder("service").build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").build()))
         .containsExactly(asList(span1));
-    assertThat(store().getTraces(new QueryRequest.Builder("service").spanName("methodcall").build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").spanName("methodcall").build()))
         .containsExactly(asList(span1));
   }
 
@@ -356,31 +358,31 @@ public abstract class SpanStoreTest {
     accept(span1);
 
     // fetch by time based annotation, find trace
-    assertThat(store().getTraces(new QueryRequest.Builder("service").addAnnotation("custom").build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").addAnnotation("custom").build()))
         .containsExactly(asList(span1));
 
     // should find traces by the key and value annotation
     assertThat(
-        store().getTraces(new QueryRequest.Builder("service").addBinaryAnnotation("BAH", "BEH").build()))
+        store().getTraces(QueryRequest.builder().serviceName("service").addBinaryAnnotation("BAH", "BEH").build()))
         .containsExactly(asList(span1));
   }
 
   @Test
   public void getTraces_multipleAnnotationsBecomeAndFilter() {
-    Span foo = new Span.Builder().traceId(1).name("call1").id(1)
+    Span foo = Span.builder().traceId(1).name("call1").id(1)
         .timestamp((today + 1) * 1000)
         .addAnnotation(Annotation.create((today + 1) * 1000, "foo", ep)).build();
     // would be foo bar, except lexicographically bar precedes foo
-    Span barAndFoo = new Span.Builder().traceId(2).name("call2").id(2)
+    Span barAndFoo = Span.builder().traceId(2).name("call2").id(2)
         .timestamp((today + 2) * 1000)
         .addAnnotation(Annotation.create((today + 2) * 1000, "bar", ep))
         .addAnnotation(Annotation.create((today + 2) * 1000, "foo", ep)).build();
-    Span fooAndBazAndQux = new Span.Builder().traceId(3).name("call3").id(3)
+    Span fooAndBazAndQux = Span.builder().traceId(3).name("call3").id(3)
         .timestamp((today + 3) * 1000)
         .addAnnotation(Annotation.create((today + 3) * 1000, "foo", ep))
         .addBinaryAnnotation(BinaryAnnotation.create("baz", "qux", ep))
         .build();
-    Span barAndFooAndBazAndQux = new Span.Builder().traceId(4).name("call4").id(4)
+    Span barAndFooAndBazAndQux = Span.builder().traceId(4).name("call4").id(4)
         .timestamp((today + 4) * 1000)
         .addAnnotation(Annotation.create((today + 4) * 1000, "bar", ep))
         .addAnnotation(Annotation.create((today + 4) * 1000, "foo", ep))
@@ -389,20 +391,20 @@ public abstract class SpanStoreTest {
 
     accept(foo, barAndFoo, fooAndBazAndQux, barAndFooAndBazAndQux);
 
-    assertThat(store().getTraces(new QueryRequest.Builder("service").addAnnotation("foo").build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").addAnnotation("foo").build()))
         .containsExactly(asList(barAndFooAndBazAndQux), asList(fooAndBazAndQux), asList(barAndFoo), asList(foo));
 
-    assertThat(store().getTraces(new QueryRequest.Builder("service").addAnnotation("foo").addAnnotation("bar").build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").addAnnotation("foo").addAnnotation("bar").build()))
         .containsExactly(asList(barAndFooAndBazAndQux), asList(barAndFoo));
 
-    assertThat(store().getTraces(new QueryRequest.Builder("service").addAnnotation("foo").addAnnotation("bar").addBinaryAnnotation("baz", "qux").build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").addAnnotation("foo").addAnnotation("bar").addBinaryAnnotation("baz", "qux").build()))
         .containsExactly(asList(barAndFooAndBazAndQux));
   }
 
   /** Make sure empty binary annotation values don't crash */
   @Test
   public void getTraces_binaryAnnotationWithEmptyValue() {
-    Span span = new Span.Builder()
+    Span span = Span.builder()
         .traceId(1)
         .name("call1")
         .id(1)
@@ -411,7 +413,7 @@ public abstract class SpanStoreTest {
 
     accept(span);
 
-    assertThat(store().getTraces((new QueryRequest.Builder("service").build())))
+    assertThat(store().getTraces((QueryRequest.builder().serviceName("service").build())))
         .containsExactly(asList(span));
 
     assertThat(store().getTrace(1L))
@@ -429,13 +431,13 @@ public abstract class SpanStoreTest {
     SortedSet<Annotation> mergedAnnotations = new TreeSet<>(span4.annotations);
     mergedAnnotations.addAll(span5.annotations);
 
-    Span merged = new Span.Builder(span4)
+    Span merged = span4.toBuilder()
         .timestamp(mergedAnnotations.first().timestamp)
         .duration(mergedAnnotations.last().timestamp - mergedAnnotations.first().timestamp)
         .annotations(mergedAnnotations)
         .binaryAnnotations(span5.binaryAnnotations).build();
 
-    assertThat(store().getTraces(new QueryRequest.Builder("service").build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").build()))
         .containsExactly(asList(merged), asList(span1));
   }
 
@@ -444,7 +446,7 @@ public abstract class SpanStoreTest {
   public void getTraces_limit() {
     accept(span1, span3); // span1's timestamp is 1000, span3's timestamp is 2000
 
-    assertThat(store().getTraces(new QueryRequest.Builder("service").limit(1).build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").limit(1).build()))
         .containsExactly(asList(span3));
   }
 
@@ -453,11 +455,11 @@ public abstract class SpanStoreTest {
   public void getTraces_endTsAndLookback() {
     accept(span1, span3); // span1's timestamp is 1000, span3's timestamp is 2000
 
-    assertThat(store().getTraces(new QueryRequest.Builder("service").endTs(today + 1L).build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 1L).build()))
         .containsExactly(asList(span1));
-    assertThat(store().getTraces(new QueryRequest.Builder("service").endTs(today + 2L).build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 2L).build()))
         .containsExactly(asList(span3), asList(span1));
-    assertThat(store().getTraces(new QueryRequest.Builder("service").endTs(today + 3L).build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 3L).build()))
         .containsExactly(asList(span3), asList(span1));
   }
 
@@ -467,16 +469,16 @@ public abstract class SpanStoreTest {
     accept(span1, span3); // span1's timestamp is 1000, span3's timestamp is 2000
 
     assertThat(
-        store().getTraces(new QueryRequest.Builder("service").endTs(today + 1L).lookback(1L).build()))
+        store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 1L).lookback(1L).build()))
         .containsExactly(asList(span1));
     assertThat(
-        store().getTraces(new QueryRequest.Builder("service").endTs(today + 2L).lookback(1L).build()))
+        store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 2L).lookback(1L).build()))
         .containsExactly(asList(span3), asList(span1));
     assertThat(
-        store().getTraces(new QueryRequest.Builder("service").endTs(today + 3L).lookback(1L).build()))
+        store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 3L).lookback(1L).build()))
         .containsExactly(asList(span3));
     assertThat(
-        store().getTraces(new QueryRequest.Builder("service").endTs(today + 3L).lookback(2L).build()))
+        store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 3L).lookback(2L).build()))
         .containsExactly(asList(span3), asList(span1));
   }
 
@@ -498,7 +500,7 @@ public abstract class SpanStoreTest {
   public void spanNamesGoLowercase() {
     accept(span1);
 
-    assertThat(store().getTraces(new QueryRequest.Builder("service").spanName("MeThOdCaLl").build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").spanName("MeThOdCaLl").build()))
         .containsOnly(asList(span1));
   }
 
@@ -508,7 +510,7 @@ public abstract class SpanStoreTest {
 
     assertThat(store().getSpanNames("SeRvIcE")).containsExactly("methodcall");
 
-    assertThat(store().getTraces(new QueryRequest.Builder("SeRvIcE").build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("SeRvIcE").build()))
         .containsOnly(asList(span1));
   }
 
@@ -530,7 +532,7 @@ public abstract class SpanStoreTest {
     Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 3, 8080);
 
     /** Intentionally not setting span.timestamp, duration */
-    Span parent = new Span.Builder()
+    Span parent = Span.builder()
         .traceId(1)
         .name("method1")
         .id(666)
@@ -540,7 +542,7 @@ public abstract class SpanStoreTest {
         .addAnnotation(Annotation.create((today + 135) * 1000, CLIENT_RECV, client)).build();
 
     /** Intentionally not setting span.timestamp, duration */
-    Span remoteChild = new Span.Builder()
+    Span remoteChild = Span.builder()
         .traceId(1)
         .name("method2")
         .id(777)
@@ -552,7 +554,7 @@ public abstract class SpanStoreTest {
         .build();
 
     /** Local spans must explicitly set timestamp */
-    Span localChild = new Span.Builder()
+    Span localChild = Span.builder()
         .traceId(1)
         .name("local")
         .id(778)
@@ -600,25 +602,25 @@ public abstract class SpanStoreTest {
     long clientDuration = 35 * 1000;
 
     // both client and server set span.timestamp, duration
-    Span clientView = new Span.Builder().traceId(1).name("direct").id(666)
+    Span clientView = Span.builder().traceId(1).name("direct").id(666)
         .timestamp(clientTimestamp).duration(clientDuration)
         .addAnnotation(Annotation.create((today + 100) * 1000, CLIENT_SEND, client))
         .addAnnotation(Annotation.create((today + 135) * 1000, CLIENT_RECV, client))
         .build();
 
-    Span serverView = new Span.Builder().traceId(1).name("direct").id(666)
+    Span serverView = Span.builder().traceId(1).name("direct").id(666)
         .timestamp((today + 105) * 1000).duration(25 * 1000L)
         .addAnnotation(Annotation.create((today + 105) * 1000, SERVER_RECV, server))
         .addAnnotation(Annotation.create((today + 130) * 1000, SERVER_SEND, server))
         .build();
 
     // neither client, nor server set span.timestamp, duration
-    Span clientViewDerived = new Span.Builder().traceId(1).name("derived").id(666)
+    Span clientViewDerived = Span.builder().traceId(1).name("derived").id(666)
         .addAnnotation(Annotation.create(clientTimestamp, CLIENT_SEND, client))
         .addAnnotation(Annotation.create(clientTimestamp + clientDuration, CLIENT_SEND, client))
         .build();
 
-    Span serverViewDerived = new Span.Builder().traceId(1).name("derived").id(666)
+    Span serverViewDerived = Span.builder().traceId(1).name("derived").id(666)
         .addAnnotation(Annotation.create((today + 105) * 1000, SERVER_RECV, server))
         .addAnnotation(Annotation.create((today + 130) * 1000, SERVER_SEND, server))
         .build();
@@ -640,7 +642,7 @@ public abstract class SpanStoreTest {
 
     IntStream.range(0, 100).forEach(i -> {
       Span s = TestObjects.TRACE.get(1);
-      trace[i + 1] = new Span.Builder(s)
+      trace[i + 1] = s.toBuilder()
           .id(s.id + i)
           .timestamp(s.timestamp + i)
           .annotations(s.annotations.stream()
@@ -652,7 +654,7 @@ public abstract class SpanStoreTest {
     accept(trace);
 
     String serviceName = trace[1].annotations.get(0).endpoint.serviceName;
-    assertThat(store().getTraces(new QueryRequest.Builder(serviceName).build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName(serviceName).build()))
         .containsExactly(asList(trace));
     assertThat(store().getTrace(trace[0].traceId))
         .containsExactly(trace);
@@ -667,16 +669,16 @@ public abstract class SpanStoreTest {
     Annotation sr = Annotation.create((today + 95) * 1000, SERVER_RECV, frontend);
     Annotation ss = Annotation.create((today + 100) * 1000, SERVER_SEND, frontend);
 
-    Span span = new Span.Builder().traceId(1).name("method1").id(666).build();
+    Span span = Span.builder().traceId(1).name("method1").id(666).build();
 
     // Simulate instrumentation that sends annotations one at-a-time.
     // This should prevent the collection tier from being able to calculate duration.
-    accept(new Span.Builder(span).addAnnotation(sr).build());
-    accept(new Span.Builder(span).addAnnotation(ss).build());
+    accept(span.toBuilder().addAnnotation(sr).build());
+    accept(span.toBuilder().addAnnotation(ss).build());
 
     // Normally, span store implementations will merge spans by id and add duration by query time
     assertThat(store().getTrace(span.traceId))
-        .containsExactly(new Span.Builder(span)
+        .containsExactly(span.toBuilder()
             .timestamp(sr.timestamp)
             .duration(ss.timestamp - sr.timestamp)
             .annotations(asList(sr, ss)).build());

@@ -38,15 +38,23 @@ public final class DependencyLink {
     this.callCount = callCount;
   }
 
+  public Builder toBuilder(){
+    return new Builder(this);
+  }
+
+  public static Builder builder(){
+    return new Builder();
+  }
+
   public static final class Builder {
     private String parent;
     private String child;
     private long callCount;
 
-    public Builder() {
+    Builder() {
     }
 
-    public Builder(DependencyLink source) {
+    Builder(DependencyLink source) {
       this.parent = source.parent;
       this.child = source.child;
       this.callCount = source.callCount;

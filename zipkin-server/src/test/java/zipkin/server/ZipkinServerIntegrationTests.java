@@ -82,6 +82,16 @@ public class ZipkinServerIntegrationTests {
   }
 
   @Test
+  public void tracesQueryRequiresNoParameters() throws Exception {
+    byte[] body = Codec.JSON.writeSpans(TRACE);
+    mockMvc.perform(post("/api/v1/spans").content(body));
+
+    mockMvc.perform(get("/api/v1/traces"))
+        .andExpect(status().isOk())
+        .andExpect(content().string("[" + new String(body, UTF_8) + "]"));
+  }
+
+  @Test
   public void writeSpans_malformedJsonIsBadRequest() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
     mockMvc

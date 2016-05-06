@@ -78,7 +78,7 @@ public class ZipkinQueryApiV1 {
 
   @RequestMapping(value = "/traces", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getTraces(
-      @RequestParam(value = "serviceName", required = true) String serviceName,
+      @RequestParam(value = "serviceName", required = false) String serviceName,
       @RequestParam(value = "spanName", defaultValue = "all") String spanName,
       @RequestParam(value = "annotationQuery", required = false) String annotationQuery,
       @RequestParam(value = "minDuration", required = false) Long minDuration,
@@ -86,7 +86,8 @@ public class ZipkinQueryApiV1 {
       @RequestParam(value = "endTs", required = false) Long endTs,
       @RequestParam(value = "lookback", required = false) Long lookback,
       @RequestParam(value = "limit", required = false) Integer limit) {
-    QueryRequest queryRequest = new QueryRequest.Builder(serviceName)
+    QueryRequest queryRequest = QueryRequest.builder()
+        .serviceName(serviceName)
         .spanName(spanName)
         .parseAnnotationQuery(annotationQuery)
         .minDuration(minDuration)

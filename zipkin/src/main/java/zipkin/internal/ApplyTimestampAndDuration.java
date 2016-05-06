@@ -55,7 +55,7 @@ public class ApplyTimestampAndDuration {
     }
     long ts = span.timestamp != null ? span.timestamp : first;
     Long dur = span.duration != null ? span.duration : last.equals(first) ? null : last - first;
-    return new Span.Builder(span).timestamp(ts).duration(dur).build();
+    return span.toBuilder().timestamp(ts).duration(dur).build();
   }
 
   private ApplyTimestampAndDuration() {

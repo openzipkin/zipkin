@@ -39,7 +39,7 @@ public class MergeById {
       if (spansToMerge.size() == 1) {
         result.add(spansToMerge.get(0));
       } else {
-        Span.Builder builder = new Span.Builder(spansToMerge.get(0));
+        Span.Builder builder = spansToMerge.get(0).toBuilder();
         for (int i = 1, length = spansToMerge.size(); i < length; i++) {
           builder.merge(spansToMerge.get(i));
         }

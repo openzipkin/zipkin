@@ -113,7 +113,7 @@ public final class ThriftCodec implements Codec {
 
     @Override
     public Endpoint read(ByteBuffer bytes) {
-      Endpoint.Builder result = new Endpoint.Builder();
+      Endpoint.Builder result = Endpoint.builder();
       Field field;
 
       while (true) {
@@ -156,7 +156,7 @@ public final class ThriftCodec implements Codec {
 
     @Override
     public Annotation read(ByteBuffer bytes) {
-      Annotation.Builder result = new Annotation.Builder();
+      Annotation.Builder result = Annotation.builder();
       Field field;
       while (true) {
         field = Field.read(bytes);
@@ -202,7 +202,7 @@ public final class ThriftCodec implements Codec {
 
     @Override
     public BinaryAnnotation read(ByteBuffer bytes) {
-      BinaryAnnotation.Builder result = new BinaryAnnotation.Builder();
+      BinaryAnnotation.Builder result = BinaryAnnotation.builder();
       Field field;
 
       while (true) {
@@ -262,7 +262,7 @@ public final class ThriftCodec implements Codec {
 
     @Override
     public Span read(ByteBuffer bytes) {
-      Span.Builder result = new Span.Builder();
+      Span.Builder result = Span.builder();
       Field field;
 
       while (true) {
@@ -353,7 +353,7 @@ public final class ThriftCodec implements Codec {
 
     @Override
     public DependencyLink read(ByteBuffer bytes) {
-      DependencyLink.Builder result = new DependencyLink.Builder();
+      DependencyLink.Builder result = DependencyLink.builder();
       Field field;
 
       while (true) {

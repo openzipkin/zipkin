@@ -56,7 +56,7 @@ public class ZipkinServerTest {
     String service = "web";
     Endpoint endpoint = Endpoint.create(service, 127 << 24 | 1, 80);
     Annotation ann = Annotation.create(System.currentTimeMillis() * 1000, SERVER_RECV, endpoint);
-    Span span = new Span.Builder().id(1L).traceId(1L).name("get").addAnnotation(ann).build();
+    Span span = Span.builder().id(1L).traceId(1L).name("get").addAnnotation(ann).build();
 
     // write the span to the server
     mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))

@@ -190,7 +190,7 @@ public class ZipkinRuleTest {
     char[] annotation2K = new char[2048];
     Arrays.fill(annotation2K, 'a');
 
-    List<Span> trace = asList(new Span.Builder(TRACE.get(0)).addAnnotation(
+    List<Span> trace = asList(TRACE.get(0).toBuilder().addAnnotation(
             Annotation.create(System.currentTimeMillis(), new String(annotation2K), null)).build());
 
     zipkin.storeSpans(trace);

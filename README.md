@@ -12,7 +12,7 @@ Ex.
 ```java
 // your instrumentation makes a span
 archiver = BinaryAnnotation.create(LOCAL_COMPONENT, "archiver", Endpoint.create("service", 127 << 24 | 1));
-span = new Span.Builder()
+span = Span.builder()
     .traceId(1L)
     .name("targz")
     .id(1L)

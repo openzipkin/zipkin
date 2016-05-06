@@ -52,15 +52,23 @@ public final class Annotation implements Comparable<Annotation> {
     this.endpoint = endpoint;
   }
 
+  public Builder toBuilder(){
+    return new Builder(this);
+  }
+
+  public static Builder builder(){
+    return new Builder();
+  }
+
   public static final class Builder {
     private Long timestamp;
     private String value;
     private Endpoint endpoint;
 
-    public Builder() {
+    Builder() {
     }
 
-    public Builder(Annotation source) {
+    Builder(Annotation source) {
       this.timestamp = source.timestamp;
       this.value = source.value;
       this.endpoint = source.endpoint;
