@@ -14,10 +14,6 @@
 package zipkin.server;
 
 import com.github.kristofa.brave.Brave;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.util.concurrent.Executor;
 import javax.sql.DataSource;
 import org.jooq.ExecuteListenerProvider;
@@ -209,7 +205,8 @@ public class ZipkinServerConfiguration {
    */
   @Configuration
   @EnableConfigurationProperties(ZipkinKafkaProperties.class)
-  @ConditionalOnKafkaZookeeper
+  @Conditional(KafkaEnabledCondition.class)
+  @ConditionalOnClass(name = "zipkin.kafka.KafkaCollector")
   static class KafkaConfiguration {
     @Bean KafkaCollector kafka(ZipkinKafkaProperties kafka, CollectorSampler sampler,
         CollectorMetrics metrics, StorageComponent storage) {
@@ -221,18 +218,13 @@ public class ZipkinServerConfiguration {
    * This condition passes when Kafka classes are available and {@link
    * ZipkinKafkaProperties#getZookeeper()} is set.
    */
-  @Target(ElementType.TYPE)
-  @Retention(RetentionPolicy.RUNTIME)
-  @Conditional(ConditionalOnKafkaZookeeper.KafkaEnabledCondition.class)
-  @ConditionalOnClass(name = "zipkin.kafka.KafkaCollector") @interface ConditionalOnKafkaZookeeper {
-    class KafkaEnabledCondition extends SpringBootCondition {
-      @Override
-      public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata a) {
-        String kafkaZookeeper = context.getEnvironment().getProperty("kafka.zookeeper");
-        return kafkaZookeeper == null || kafkaZookeeper.isEmpty() ?
-            ConditionOutcome.noMatch("kafka.zookeeper isn't set") :
-            ConditionOutcome.match();
-      }
+  static class KafkaEnabledCondition extends SpringBootCondition {
+    @Override
+    public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata a) {
+      String kafkaZookeeper = context.getEnvironment().getProperty("kafka.zookeeper");
+      return kafkaZookeeper == null || kafkaZookeeper.isEmpty() ?
+          ConditionOutcome.noMatch("kafka.zookeeper isn't set") :
+          ConditionOutcome.match();
     }
   }
 }
