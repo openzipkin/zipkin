@@ -26,6 +26,7 @@ import com.twitter.zipkin.conversions.thrift._
 import com.twitter.zipkin.storage.{CollectAnnotationQueries, IndexedTraceId, SpanStore}
 import com.twitter.zipkin.thriftscala.{Span => ThriftSpan}
 import com.twitter.zipkin.util.{FutureUtil, Util}
+import java.util
 import org.twitter.zipkin.storage.cassandra.Repository
 
 import scala.collection.JavaConverters._
@@ -269,7 +270,7 @@ abstract class CassandraSpanStore(
   }
 
   override def getTraceIdsByName(
-    serviceName: String,
+    serviceName: Option[String],
     spanName: Option[String],
     endTs: Long,
     lookback: Long,
@@ -277,12 +278,19 @@ abstract class CassandraSpanStore(
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByNameCounter.incr()
 
-    val traceIdsFuture = FutureUtil.toFuture(spanName match {
+    val traceIdsFuture = (serviceName, spanName) match {
       // if we have a span name, look up in the service + span name index
       // if not, look up by service name only
-      case Some(x :String) => repository.getTraceIdsBySpanName(serviceName, x, endTs * 1000, lookback * 1000, limit)
-      case None => repository.getTraceIdsByServiceName(serviceName, endTs * 1000, lookback * 1000, limit)
-    })
+      case (Some(x: String), Some(y: String)) =>
+        FutureUtil.toFuture(repository.getTraceIdsBySpanName(x, y, endTs * 1000, lookback * 1000, limit))
+      case (Some(x: String), None) =>
+        FutureUtil.toFuture(repository.getTraceIdsByServiceName(Seq(x).asJava, endTs * 1000, lookback * 1000, limit))
+      case (None, Some(y: String)) =>
+        Future.exception(new UnsupportedOperationException)
+      case (None, None) => FutureUtil.toFuture(repository.getServiceNames).flatMap { names =>
+        FutureUtil.toFuture(repository.getTraceIdsByServiceName(new util.ArrayList(names), endTs * 1000, lookback * 1000, limit))
+      }
+    }
 
     traceIdsFuture.map { traceIds =>
       traceIds.asScala
@@ -292,7 +300,7 @@ abstract class CassandraSpanStore(
   }
 
   override def getTraceIdsByAnnotation(
-    serviceName: String,
+    serviceName: Option[String],
     annotation: String,
     value: Option[ByteBuffer],
     endTs: Long,
@@ -300,19 +308,21 @@ abstract class CassandraSpanStore(
     limit: Int
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByAnnotationCounter.incr()
-
-    FutureUtil.toFuture(
-      repository
-        .getTraceIdsByAnnotation(annotationKey(serviceName, annotation, value), endTs * 1000, lookback * 1000, limit))
-      .map { traceIds =>
-        traceIds.asScala
-          .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
-          .toSeq
-      }
+    serviceName match {
+      case Some(name) => FutureUtil.toFuture(
+        repository
+          .getTraceIdsByAnnotation(annotationKey(name, annotation, value), endTs * 1000, lookback * 1000, limit))
+        .map { traceIds =>
+          traceIds.asScala
+            .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
+            .toSeq
+        }
+      case None => Future.exception(new UnsupportedOperationException)
+    }
   }
 
   override protected def getTraceIdsByDuration(
-    serviceName: String,
+    serviceName: Option[String],
     spanName: Option[String],
     minDuration: Long,
     maxDuration: Option[Long],
@@ -322,15 +332,17 @@ abstract class CassandraSpanStore(
   ): Future[Seq[IndexedTraceId]] = {
     QueryGetTraceIdsByDurationCounter.incr()
 
-    Future.exception(new UnsupportedOperationException)
-    FutureUtil.toFuture(
-      repository
-        .getTraceIdsByDuration(serviceName, spanName getOrElse "", minDuration, maxDuration getOrElse Long.MaxValue,
-          endTs * 1000, (endTs - lookback)  * 1000, limit, indexTtl.inSeconds))
-      .map { traceIds =>
-      traceIds.asScala
-        .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
-        .toSeq
+    serviceName match {
+      case Some(name) => FutureUtil.toFuture(
+        repository
+          .getTraceIdsByDuration(name, spanName getOrElse "", minDuration, maxDuration getOrElse Long.MaxValue,
+            endTs * 1000, (endTs - lookback)  * 1000, limit, indexTtl.inSeconds))
+        .map { traceIds =>
+          traceIds.asScala
+            .map { case (traceId, ts) => IndexedTraceId(traceId, timestamp = ts) }
+            .toSeq
+        }
+      case None => Future.exception(new UnsupportedOperationException)
     }
   }
 }

@@ -111,10 +111,11 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
    * This would only happen when the storage layer is bootstrapping, or has been purged.
    */
   @Test def allShouldWorkWhenEmpty() {
-    result(store.getTraces(QueryRequest("service"))) should be(empty)
-    result(store.getTraces(QueryRequest("service", Some("methodcall")))) should be(empty)
-    result(store.getTraces(QueryRequest("service", annotations = Set("custom")))) should be(empty)
-    result(store.getTraces(QueryRequest("service", binaryAnnotations = Set(("BAH", "BEH"))))) should be(
+    result(store.getTraces(QueryRequest())) should be(empty)
+    result(store.getTraces(QueryRequest(Some("service")))) should be(empty)
+    result(store.getTraces(QueryRequest(Some("service"), Some("methodcall")))) should be(empty)
+    result(store.getTraces(QueryRequest(Some("service"), annotations = Set("custom")))) should be(empty)
+    result(store.getTraces(QueryRequest(Some("service"), binaryAnnotations = Set(("BAH", "BEH"))))) should be(
       empty
     )
   }
@@ -125,10 +126,11 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   @Test def allShouldWorkWhenNoAnnotationsYet() {
     result(store(Seq(spanEmptyServiceName)))
 
-    result(store.getTraces(QueryRequest("service"))) should be(empty)
-    result(store.getTraces(QueryRequest("service", Some("methodcall")))) should be(empty)
-    result(store.getTraces(QueryRequest("service", annotations = Set("custom")))) should be(empty)
-    result(store.getTraces(QueryRequest("service", binaryAnnotations = Set(("BAH", "BEH"))))) should be(
+    result(store.getTraces(QueryRequest())) should be(empty)
+    result(store.getTraces(QueryRequest(Some("service")))) should be(empty)
+    result(store.getTraces(QueryRequest(Some("service"), Some("methodcall")))) should be(empty)
+    result(store.getTraces(QueryRequest(Some("service"), annotations = Set("custom")))) should be(empty)
+    result(store.getTraces(QueryRequest(Some("service"), binaryAnnotations = Set(("BAH", "BEH"))))) should be(
       empty
     )
   }
@@ -136,15 +138,17 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   @Test def getTraces_spanName() {
     result(store(Seq(span1)))
 
-    result(store.getTraces(QueryRequest("service"))) should be(
+    result(store.getTraces(QueryRequest())) should be(Seq(Seq(span1)))
+
+    result(store.getTraces(QueryRequest(Some("service")))) should be(
       Seq(Seq(span1))
     )
-    result(store.getTraces(QueryRequest("service", Some("methodcall")))) should be(
+    result(store.getTraces(QueryRequest(Some("service"), Some("methodcall")))) should be(
       Seq(Seq(span1))
     )
-    result(store.getTraces(QueryRequest("badservice"))) should be(empty)
-    result(store.getTraces(QueryRequest("service", Some("badmethod")))) should be(empty)
-    result(store.getTraces(QueryRequest("badservice", Some("badmethod")))) should be(empty)
+    result(store.getTraces(QueryRequest(Some("badservice")))) should be(empty)
+    result(store.getTraces(QueryRequest(Some("service"), Some("badmethod")))) should be(empty)
+    result(store.getTraces(QueryRequest(Some("badservice"), Some("badmethod")))) should be(empty)
   }
 
   @Test def getTraces_serviceNameInBinaryAnnotation() {
@@ -153,7 +157,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
     result(store(localTrace))
 
-    result(store.getTraces(QueryRequest("service"))) should be(Seq(localTrace))
+    result(store.getTraces(QueryRequest(Some("service")))) should be(Seq(localTrace))
   }
 
   /** Shows that duration queries go against the root span, not the child */
@@ -181,28 +185,28 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
     val lookback = 12L * 60 * 60 * 1000 // 12hrs, instead of 7days
     val endTs = today + 1 // greater than all timestamps above
-    val q = QueryRequest("placeholder", lookback = Some(lookback), endTs = endTs)
+    val q = QueryRequest(Some("placeholder"), lookback = Some(lookback), endTs = endTs)
 
     // Min duration is inclusive and is applied by service.
-    result(store.getTraces(q.copy(serviceName = "service1", minDuration = targz.duration))) should be(
+    result(store.getTraces(q.copy(serviceName = Some("service1"), minDuration = targz.duration))) should be(
       Seq(trace1)
     )
-    result(store.getTraces(q.copy(serviceName = "service3", minDuration = targz.duration))) should be(
+    result(store.getTraces(q.copy(serviceName = Some("service3"), minDuration = targz.duration))) should be(
       Seq(trace2)
     )
 
     // Duration bounds aren't limited to root spans: they apply to all spans by service in a trace
-    result(store.getTraces(q.copy(serviceName = "service2", minDuration = zip.duration, maxDuration = tar.duration))) should be(
+    result(store.getTraces(q.copy(serviceName = Some("service2"), minDuration = zip.duration, maxDuration = tar.duration))) should be(
       Seq(trace3, trace2, trace1) // service2 is in the middle of trace1 and 2, but root of trace3
     )
 
     // Span name should apply to the duration filter
-    result(store.getTraces(q.copy(serviceName = "service2", spanName = Some("zip"), minDuration = zip.duration))) should be(
+    result(store.getTraces(q.copy(serviceName = Some("service2"), spanName = Some("zip"), minDuration = zip.duration))) should be(
       Seq(trace3)
     )
 
     // Max duration should filter our longer spans from the same service
-    result(store.getTraces(q.copy(serviceName = "service2", minDuration = gz.duration, maxDuration = zip.duration))) should be(
+    result(store.getTraces(q.copy(serviceName = Some("service2"), minDuration = gz.duration, maxDuration = zip.duration))) should be(
       Seq(trace3)
     )
   }
@@ -216,16 +220,17 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     // store the binary annotations
     result(store(Seq(span1.copy(timestamp = None, duration = None, annotations = List.empty))))
 
-    result(store.getTraces(QueryRequest("service"))) should be(empty)
-    result(store.getTraces(QueryRequest("service", Some("methodcall")))) should be(empty)
+    result(store.getTraces(QueryRequest())) should be(empty)
+    result(store.getTraces(QueryRequest(Some("service")))) should be(empty)
+    result(store.getTraces(QueryRequest(Some("service"), Some("methodcall")))) should be(empty)
 
     // now store the timestamped annotations
     result(store(Seq(span1.copy(binaryAnnotations = Seq.empty))))
 
-    result(store.getTraces(QueryRequest("service"))) should be(
+    result(store.getTraces(QueryRequest(Some("service")))) should be(
       Seq(Seq(span1))
     )
-    result(store.getTraces(QueryRequest("service", Some("methodcall")))) should be(
+    result(store.getTraces(QueryRequest(Some("service"), Some("methodcall")))) should be(
       Seq(Seq(span1))
     )
   }
@@ -234,14 +239,48 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     result(store(Seq(span1)))
 
     // fetch by time based annotation, find trace
-    result(store.getTraces(QueryRequest("service", annotations = Set("custom")))) should be(
+    result(store.getTraces(QueryRequest(Some("service"), annotations = Set("custom")))) should be(
       Seq(Seq(span1))
     )
 
     // should find traces by the key and value annotation
-    result(store.getTraces(QueryRequest("service", binaryAnnotations = Set(("BAH", "BEH"))))) should be(
+    result(store.getTraces(QueryRequest(Some("service"), binaryAnnotations = Set(("BAH", "BEH"))))) should be(
       Seq(Seq(span1))
     )
+  }
+
+  @Test def getTraces_acrossServices() {
+
+    val services = (for(i <- 0 to 9) yield Endpoint(127 << 24 | i, 8080, s"service$i")).toSeq
+    val annotations = services.map(s => BinaryAnnotation(Constants.LocalComponent, "serviceAnnotation", Some(s)))
+
+    val earlySpans = (for(i <- 0 to 9) yield {
+      Span(i, s"span$i", i, None, Some(1L * 1000 + i), Some(1L), binaryAnnotations = annotations.lift(i).toList)
+    }).toSeq
+
+    val lateSpans = (for(i <- 0 to 9) yield {
+      Span(i+10, s"span${i+10}", i+10, None, Some(5L * 1000 + i), Some(1L), binaryAnnotations = annotations.lift(i).toList)
+    }).toSeq
+
+    result(store(earlySpans ++ lateSpans))
+
+    //sanity check
+    result(store.getTraces(QueryRequest(Some("service0")))) should be(
+      Seq(lateSpans.headOption.toList, earlySpans.headOption.toList)
+    )
+
+    result(store.getTraces(QueryRequest(None, limit = 10))) should be(
+      lateSpans.reverse.map(span => List(span))
+    )
+
+    result(store.getTraces(QueryRequest(None, endTs = 6L, lookback = Some(2L)))) should be(
+      lateSpans.reverse.map(span => List(span))
+    )
+
+    result(store.getTraces(QueryRequest(None, endTs = 3L))) should be(
+      earlySpans.reverse.map(span => List(span))
+    )
+
   }
 
   @Test def getTraces_multipleAnnotationsBecomeAndFilter() {
@@ -253,15 +292,15 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
     result(store(Seq(foo, barAndFoo, fooAndBazAndQux, barAndFooAndBazAndQux)))
 
-    result(store.getTraces(QueryRequest("service", annotations = Set("foo")))) should be(
+    result(store.getTraces(QueryRequest(Some("service"), annotations = Set("foo")))) should be(
       Seq(List(barAndFooAndBazAndQux), List(fooAndBazAndQux), List(barAndFoo), List(foo))
     )
 
-    result(store.getTraces(QueryRequest("service", annotations = Set("foo", "bar")))) should be(
+    result(store.getTraces(QueryRequest(Some("service"), annotations = Set("foo", "bar")))) should be(
       Seq(List(barAndFooAndBazAndQux), List(barAndFoo))
     )
 
-    result(store.getTraces(QueryRequest("service", annotations = Set("foo", "bar"), binaryAnnotations = Set(("baz", "qux"))))) should be(
+    result(store.getTraces(QueryRequest(Some("service"), annotations = Set("foo", "bar"), binaryAnnotations = Set(("baz", "qux"))))) should be(
       Seq(List(barAndFooAndBazAndQux))
     )
   }
@@ -273,7 +312,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
     result(store(Seq(span)))
 
-    result(store.getTraces(QueryRequest("service"))) should be(
+    result(store.getTraces(QueryRequest())) should be(
       Seq(List(span))
     )
     result(store.getTracesByIds(List(1L))) should be(
@@ -304,33 +343,33 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
     val merged = client.copy(
       annotations = (client.annotations ::: server.annotations).sorted)
 
-    result(store.getTraces(QueryRequest("service1"))) should be(Seq(List(merged)))
+    result(store.getTraces(QueryRequest(Some("service1")))) should be(Seq(List(merged)))
   }
 
   /** limit should apply to traces closest to endTs */
   @Test def getTraces_limit() {
     result(store(Seq(span1, span3))) // span1's timestamp is 1000, span3's timestamp is 2000
 
-    result(store.getTraces(QueryRequest("service", limit = 1))) should be(Seq(List(span3)))
+    result(store.getTraces(QueryRequest(Some("service"), limit = 1))) should be(Seq(List(span3)))
   }
 
   /** Traces whose root span has timestamps before or at endTs are returned */
   @Test def getTraces_endTsAndLookback() {
     result(store(Seq(span1, span3))) // span1's timestamp is 1000, span3's timestamp is 2000
 
-    result(store.getTraces(QueryRequest("service", endTs = today + 1))) should be(Seq(List(span1)))
-    result(store.getTraces(QueryRequest("service", endTs = today + 2))) should be(Seq(List(span3), List(span1)))
-    result(store.getTraces(QueryRequest("service", endTs = today + 3))) should be(Seq(List(span3), List(span1)))
+    result(store.getTraces(QueryRequest(Some("service"), endTs = today + 1))) should be(Seq(List(span1)))
+    result(store.getTraces(QueryRequest(Some("service"), endTs = today + 2))) should be(Seq(List(span3), List(span1)))
+    result(store.getTraces(QueryRequest(Some("service"), endTs = today + 3))) should be(Seq(List(span3), List(span1)))
   }
 
   /** Traces whose root span has timestamps between (endTs - lookback) and endTs are returned */
   @Test def getTraces_lookback() {
     result(store(Seq(span1, span3))) // span1's timestamp is 1000, span3's timestamp is 2000
 
-    result(store.getTraces(QueryRequest("service", endTs = today + 1, lookback = Some(1)))) should be(Seq(List(span1)))
-    result(store.getTraces(QueryRequest("service", endTs = today + 2, lookback = Some(1)))) should be(Seq(List(span3), List(span1)))
-    result(store.getTraces(QueryRequest("service", endTs = today + 3, lookback = Some(1)))) should be(Seq(List(span3)))
-    result(store.getTraces(QueryRequest("service", endTs = today + 3, lookback = Some(2)))) should be(Seq(List(span3), List(span1)))
+    result(store.getTraces(QueryRequest(Some("service"), endTs = today + 1, lookback = Some(1)))) should be(Seq(List(span1)))
+    result(store.getTraces(QueryRequest(Some("service"), endTs = today + 2, lookback = Some(1)))) should be(Seq(List(span3), List(span1)))
+    result(store.getTraces(QueryRequest(Some("service"), endTs = today + 3, lookback = Some(1)))) should be(Seq(List(span3)))
+    result(store.getTraces(QueryRequest(Some("service"), endTs = today + 3, lookback = Some(2)))) should be(Seq(List(span3), List(span1)))
   }
 
   @Test def getAllServiceNames_emptyServiceName() {
@@ -348,7 +387,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
   @Test def spanNamesGoLowercase() {
     result(store(Seq(span1)))
 
-    result(store.getTraces(QueryRequest("service", Some("MeThOdCaLl")))) should be(
+    result(store.getTraces(QueryRequest(Some("service"), Some("MeThOdCaLl")))) should be(
       Seq(Seq(span1))
     )
   }
@@ -358,7 +397,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
     result(store.getSpanNames("SeRvIcE")) should be(List("methodcall"))
 
-    result(store.getTraces(QueryRequest("SeRvIcE"))) should be(
+    result(store.getTraces(QueryRequest(Some("SeRvIcE")))) should be(
       Seq(Seq(span1))
     )
   }
@@ -408,7 +447,7 @@ abstract class SpanStoreSpec extends JUnitSuite with Matchers {
 
     // Regardless of when clock skew is corrected, it should be corrected before traces return
     result(store(List(parent, remoteChild, localChild)))
-    val adjusted = result(store.getTraces(QueryRequest("frontend")))(0)
+    val adjusted = result(store.getTraces(QueryRequest(Some("frontend"))))(0)
 
     // After correction, children happen after their parent
     adjusted(0).timestamp.get should be <= adjusted(1).timestamp.get

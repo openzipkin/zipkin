@@ -190,12 +190,13 @@ class AnormSpanStore(val db: DB,
   }
 
   // TODO: rewrite or delete anorm, as its implementation unnecessarily uses sliced queries
-  val sliceQueryHeader =
+  val allTracesHeader =
     """SELECT t1.trace_id, start_ts
       |FROM zipkin_spans t1
       |JOIN zipkin_annotations t2 ON t1.trace_id = t2.trace_id AND t1.id = t2.span_id
-      |WHERE t2.endpoint_service_name = {service_name}
     """.stripMargin
+
+  val sliceQueryHeader = s"${allTracesHeader} WHERE t2.endpoint_service_name = {service_name}"
 
   val sliceQueryFooter =
     """AND start_ts BETWEEN {start_ts} AND {end_ts}
@@ -204,23 +205,28 @@ class AnormSpanStore(val db: DB,
       |LIMIT {limit}
     """.stripMargin
 
-  override def getTraceIdsByName(serviceName: String, spanName: Option[String],
+  override def getTraceIdsByName(serviceName: Option[String], spanName: Option[String],
     endTs: Long, lookback: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
-
     if (endTs <= 0 || limit <= 0) {
       Seq.empty
     }
     else {
       implicit val (conn, borrowTime) = borrowConn()
       try {
-        val result: List[(Long, Long)] = SQL(sliceQueryHeader +
-          "AND (name = {name} OR {name} = '')" + sliceQueryFooter)
-          .on("service_name" -> serviceName)
-          .on("name" -> spanName.getOrElse(""))
-          .on("start_ts" -> (endTs - lookback) * 1000)
-          .on("end_ts" -> endTs * 1000)
-          .on("limit" -> limit)
-          .as((long("trace_id") ~ long("start_ts") map flatten) *)
+        val query: SimpleSql[Row] = serviceName match {
+          case Some(name) => SQL(sliceQueryHeader +
+            "AND (name = {name} OR {name} = '')" + sliceQueryFooter)
+            .on("service_name" -> name)
+          case None => SQL(allTracesHeader +
+            "AND (name = {name} OR {name} = '')" + sliceQueryFooter)
+        }
+        val result: List[(Long, Long)] =
+          query.on("name" -> spanName.getOrElse(""))
+            .on("start_ts" -> (endTs - lookback) * 1000)
+            .on("end_ts" -> endTs * 1000)
+            .on("limit" -> limit)
+            .as((long("trace_id") ~ long("start_ts") map flatten) *)
+
         result map { case (tId, ts) =>
           IndexedTraceId(traceId = tId, timestamp = ts)
         }
@@ -230,20 +236,28 @@ class AnormSpanStore(val db: DB,
     }
   }
 
-  override def getTraceIdsByAnnotation(serviceName: String, annotation: String, value: Option[ByteBuffer],
+  override def getTraceIdsByAnnotation(serviceName: Option[String], annotation: String, value: Option[ByteBuffer],
     endTs: Long, lookback: Long, limit: Int): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
       implicit val (conn, borrowTime) = borrowConn()
       try {
         val result:List[(Long, Long)] = value match {
           // Binary annotations
           case Some(bytes) => {
-            SQL(sliceQueryHeader +
-              """AND t2.a_key = {annotation}
-                |AND t2.a_value = {value}
-                |AND t2.a_type != -1
-              """.stripMargin + sliceQueryFooter)
-              .on("service_name" -> serviceName)
-              .on("annotation" -> annotation)
+            val query:SimpleSql[Row] = serviceName match {
+              case Some(name) => SQL(sliceQueryHeader +
+                """AND t2.a_key = {annotation}
+                  |AND t2.a_value = {value}
+                  |AND t2.a_type != -1
+                """.stripMargin + sliceQueryFooter)
+                .on("service_name" -> name)
+              case None => SQL(allTracesHeader +
+                """AND t2.a_key = {annotation}
+                  |AND t2.a_value = {value}
+                  |AND t2.a_type != -1
+                """.stripMargin + sliceQueryFooter)
+            }
+
+            query.on("annotation" -> annotation)
               .on("value" -> Util.getArrayFromBuffer(bytes))
               .on("start_ts" -> (endTs - lookback) * 1000)
               .on("end_ts" -> endTs * 1000)
@@ -252,12 +266,19 @@ class AnormSpanStore(val db: DB,
           }
           // Normal annotations
           case None => {
-            SQL(sliceQueryHeader +
-              """AND t2.a_key = {annotation}
-                |AND t2.a_type = -1
-              """.stripMargin + sliceQueryFooter)
-              .on("service_name" -> serviceName)
-              .on("annotation" -> annotation)
+            val query:SimpleSql[Row] = serviceName match {
+              case Some(name) => SQL(sliceQueryHeader +
+                """AND t2.a_key = {annotation}
+                  |AND t2.a_type = -1
+                """.stripMargin + sliceQueryFooter)
+                .on("service_name" -> name)
+              case None => SQL(allTracesHeader +
+                """AND t2.a_key = {annotation}
+                  |AND t2.a_type = -1
+                """.stripMargin + sliceQueryFooter)
+            }
+
+            query.on("annotation" -> annotation)
               .on("start_ts" -> (endTs - lookback) * 1000)
               .on("end_ts" -> endTs * 1000)
               .on("limit" -> limit)
@@ -274,7 +295,7 @@ class AnormSpanStore(val db: DB,
   }
 
   override protected def getTraceIdsByDuration(
-    serviceName: String,
+    serviceName: Option[String],
     spanName: Option[String],
     minDuration: Long,
     maxDuration: Option[Long],
@@ -284,18 +305,26 @@ class AnormSpanStore(val db: DB,
   ): Future[Seq[IndexedTraceId]] = db.inNewThreadWithRecoverableRetry {
     implicit val (conn, borrowTime) = borrowConn()
     try {
-      val result: List[(Long, Long)] = SQL(sliceQueryHeader +
-        """AND (name = {name} OR {name} = '')
-          |AND duration BETWEEN {min_duration} AND {max_duration}
-        """.stripMargin + sliceQueryFooter)
-        .on("name" -> spanName.getOrElse(""))
-        .on("service_name" -> serviceName)
-        .on("min_duration" -> minDuration)
-        .on("max_duration" -> maxDuration.getOrElse(Long.MaxValue))
-        .on("start_ts" -> (endTs - lookback) * 1000)
-        .on("end_ts" -> endTs * 1000)
-        .on("limit" -> limit)
-        .as((long("trace_id") ~ long("start_ts") map flatten) *)
+      val query: SimpleSql[Row] = serviceName match {
+        case Some(name) => SQL(sliceQueryHeader +
+          """AND (name = {name} OR {name} = '')
+            |AND duration BETWEEN {min_duration} AND {max_duration}
+          """.stripMargin + sliceQueryFooter)
+          .on("service_name" -> name)
+        case None => SQL(allTracesHeader +
+          """AND (name = {name} OR {name} = '')
+            |AND duration BETWEEN {min_duration} AND {max_duration}
+          """.stripMargin + sliceQueryFooter)
+      }
+      val result: List[(Long, Long)] =
+        query.on("name" -> spanName.getOrElse(""))
+          .on("min_duration" -> minDuration)
+          .on("max_duration" -> maxDuration.getOrElse(Long.MaxValue))
+          .on("start_ts" -> (endTs - lookback) * 1000)
+          .on("end_ts" -> endTs * 1000)
+          .on("limit" -> limit)
+          .as((long("trace_id") ~ long("start_ts") map flatten) *)
+
       result map { case (tId, ts) =>
         IndexedTraceId(traceId = tId, timestamp = ts)
       }
