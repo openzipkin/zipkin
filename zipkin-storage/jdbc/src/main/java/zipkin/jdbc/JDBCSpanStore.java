@@ -101,8 +101,11 @@ final class JDBCSpanStore implements SpanStore {
 
     SelectConditionStep<Record1<Long>> dsl = context.selectDistinct(ZIPKIN_SPANS.TRACE_ID)
         .from(table)
-        .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(request.serviceName))
-        .and(ZIPKIN_SPANS.START_TS.between(endTs - request.lookback * 1000, endTs));
+        .where(ZIPKIN_SPANS.START_TS.between(endTs - request.lookback * 1000, endTs));
+
+    if (request.serviceName != null) {
+      dsl.and(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(request.serviceName));
+    }
 
     if (request.spanName != null) {
       dsl.and(ZIPKIN_SPANS.NAME.eq(request.spanName));

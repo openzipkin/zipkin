@@ -39,6 +39,7 @@ import static zipkin.internal.Util.sortedList;
 
 public final class InMemorySpanStore implements SpanStore {
   private final Multimap<Long, Span> traceIdToSpans = new LinkedListMultimap<>();
+  private final Set<Pair<Long>> traceIdTimeStamps = new TreeSet<>(VALUE_2_DESCENDING);
   private final Multimap<String, Pair<Long>> serviceToTraceIdTimeStamp =
       new SortedByValue2Descending<>();
   private final Multimap<String, String> serviceToSpanNames = new LinkedHashSetMultimap<>();
@@ -52,6 +53,7 @@ public final class InMemorySpanStore implements SpanStore {
             Pair.create(span.traceId, span.timestamp == null ? Long.MIN_VALUE : span.timestamp);
         String spanName = span.name;
         synchronized (InMemorySpanStore.this) {
+          traceIdTimeStamps.add(traceIdTimeStamp);
           traceIdToSpans.put(span.traceId, span);
           acceptedSpanCount++;
 
@@ -97,8 +99,9 @@ public final class InMemorySpanStore implements SpanStore {
     return result;
   }
 
-  Set<Long> traceIdsDescendingByTimestamp(String serviceName) {
-    Collection<Pair<Long>> traceIdTimestamps = serviceToTraceIdTimeStamp.get(serviceName);
+  Set<Long> traceIdsDescendingByTimestamp(@Nullable String serviceName) {
+    Collection<Pair<Long>> traceIdTimestamps = serviceName == null ? traceIdTimeStamps :
+        serviceToTraceIdTimeStamp.get(serviceName);
     if (traceIdTimestamps == null || traceIdTimestamps.isEmpty()) return Collections.emptySet();
     Set<Long> result = new LinkedHashSet<>();
     for (Pair<Long> traceIdTimestamp : traceIdTimestamps) {
@@ -183,7 +186,7 @@ public final class InMemorySpanStore implements SpanStore {
     return linksBuilder.link();
   }
 
-  private static boolean test(QueryRequest request, List<Span> spans) {
+  static boolean test(QueryRequest request, List<Span> spans) {
     Long timestamp = spans.get(0).timestamp;
     if (timestamp == null ||
         timestamp < (request.endTs - request.lookback) * 1000 ||
@@ -220,7 +223,8 @@ public final class InMemorySpanStore implements SpanStore {
         }
       }
 
-      if (currentServiceNames.contains(request.serviceName) && !testedDuration) {
+      if ((request.serviceName == null || currentServiceNames.contains(request.serviceName))
+          && !testedDuration) {
         if (request.minDuration != null && request.maxDuration != null) {
           testedDuration =
               span.duration >= request.minDuration && span.duration <= request.maxDuration;
@@ -233,7 +237,7 @@ public final class InMemorySpanStore implements SpanStore {
         spanName = null;
       }
     }
-    return serviceNames.contains(request.serviceName)
+    return (request.serviceName == null || serviceNames.contains(request.serviceName))
         && spanName == null
         && annotations.isEmpty()
         && binaryAnnotations.isEmpty()
@@ -247,19 +251,21 @@ public final class InMemorySpanStore implements SpanStore {
     }
   }
 
+  static final Comparator<Pair<Long>> VALUE_2_DESCENDING = new Comparator<Pair<Long>>() {
+    @Override
+    public int compare(Pair<Long> left, Pair<Long> right) {
+      int result = right._2.compareTo(left._2);
+      if (result != 0) return result;
+      return right._1.compareTo(left._1);
+    }
+  };
+
   /** QueryRequest.limit needs trace ids are returned in timestamp descending order. */
   static final class SortedByValue2Descending<K> extends Multimap<K, Pair<Long>> {
 
     @Override Set<Pair<Long>> valueContainer() {
       return new TreeSet<>(VALUE_2_DESCENDING);
     }
-
-    final Comparator<Pair<Long>> VALUE_2_DESCENDING = new Comparator<Pair<Long>>() {
-      @Override
-      public int compare(Pair<Long> left, Pair<Long> right) {
-        return right._2.compareTo(left._2);
-      }
-    };
   }
 
   static final class LinkedHashSetMultimap<K, V> extends Multimap<K, V> {
