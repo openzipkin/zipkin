@@ -87,6 +87,11 @@ public class UtilTest {
   }
 
   @Test
+  public void toLowerHex_midValue() {
+    assertThat(toLowerHex(3405691582L)).isEqualTo("00000000cafebabe");
+  }
+
+  @Test
   public void toLowerHex_fixedLength() {
     assertThat(toLowerHex(0L)).isEqualTo("0000000000000000");
   }
