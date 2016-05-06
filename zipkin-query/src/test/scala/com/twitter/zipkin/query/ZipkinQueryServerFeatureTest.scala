@@ -375,6 +375,267 @@ class ZipkinQueryServerFeatureTest extends FeatureTest with MockitoSugar with Be
         """.stripMargin)
   }
 
+  "find traces" in {
+    app.injector.instance[SpanStore].apply(allSpans)
+
+    // Notice annotations are in order by timestamp, and all spans came back
+    server.httpGet(
+      path = "/api/v1/traces",
+      andExpect = Ok,
+      withJsonBody =
+        """
+          |[
+          |  [
+          |    {
+          |      "traceId" : "0000000000000002",
+          |      "name" : "methodcall",
+          |      "id" : "0000000000000002",
+          |      "timestamp" : 101000,
+          |      "duration" : 400000,
+          |      "annotations" : [
+          |        {
+          |          "timestamp" : 101000,
+          |          "value" : "cs",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 501000,
+          |          "value" : "cr",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 101000,
+          |          "value" : "sr",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 501000,
+          |          "value" : "ss",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        }
+          |      ],
+          |      "binaryAnnotations" : [ ]
+          |    },
+          |    {
+          |      "traceId" : "0000000000000002",
+          |      "name" : "methodcall",
+          |      "id" : "000000000000029a",
+          |      "parentId" : "0000000000000002",
+          |      "timestamp" : 276000,
+          |      "duration" : 50000,
+          |      "annotations" : [
+          |        {
+          |          "timestamp" : 276000,
+          |          "value" : "cs",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 286000,
+          |          "value" : "sr",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 316000,
+          |          "value" : "ss",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 326000,
+          |          "value" : "cr",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        }
+          |      ],
+          |      "binaryAnnotations" : [ ]
+          |    }
+          |  ],
+          |  [
+          |    {
+          |      "traceId" : "0000000000000001",
+          |      "name" : "methodcall",
+          |      "id" : "000000000000029a",
+          |      "parentId" : "0000000000000002",
+          |      "timestamp" : 100000,
+          |      "duration" : 50000,
+          |      "annotations" : [
+          |        {
+          |          "timestamp" : 100000,
+          |          "value" : "cs",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 150000,
+          |          "value" : "cr",
+          |          "endpoint" : {
+          |            "serviceName" : "service1",
+          |            "ipv4" : "0.0.0.123",
+          |            "port" : 123
+          |          }
+          |        }
+          |      ],
+          |      "binaryAnnotations" : [ ]
+          |    }
+          |  ],
+          |  [
+          |    {
+          |      "traceId" : "0000000000000006",
+          |      "name" : "some-method",
+          |      "id" : "000000000000029d",
+          |      "parentId" : "0000000000000002",
+          |      "timestamp" : 100000,
+          |      "duration" : 50000,
+          |      "annotations" : [
+          |        {
+          |          "timestamp" : 100000,
+          |          "value" : "cs",
+          |          "endpoint" : {
+          |            "serviceName" : "service4",
+          |            "ipv4" : "0.0.1.200",
+          |            "port" : 456
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 150000,
+          |          "value" : "cr",
+          |          "endpoint" : {
+          |            "serviceName" : "service4",
+          |            "ipv4" : "0.0.1.200",
+          |            "port" : 456
+          |          }
+          |        }
+          |      ],
+          |      "binaryAnnotations" : [ ]
+          |    }
+          |  ],
+          |  [
+          |    {
+          |      "traceId" : "0000000000000003",
+          |      "name" : "methodcall",
+          |      "id" : "0000000000000003",
+          |      "timestamp" : 99000,
+          |      "duration" : 100000,
+          |      "annotations" : [
+          |        {
+          |          "timestamp" : 99000,
+          |          "value" : "cs",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 199000,
+          |          "value" : "cr",
+          |          "endpoint" : {
+          |            "serviceName" : "service2",
+          |            "ipv4" : "0.0.0.234",
+          |            "port" : 234
+          |          }
+          |        }
+          |      ],
+          |      "binaryAnnotations" : [ ]
+          |    }
+          |  ],
+          |  [
+          |    {
+          |      "traceId" : "0000000000000005",
+          |      "name" : "other-method",
+          |      "id" : "000000000000029a",
+          |      "parentId" : "0000000000000002",
+          |      "timestamp" : 60000,
+          |      "duration" : 40000,
+          |      "annotations" : [
+          |        {
+          |          "timestamp" : 60000,
+          |          "value" : "cs",
+          |          "endpoint" : {
+          |            "serviceName" : "service3",
+          |            "ipv4" : "0.0.1.89",
+          |            "port" : 345
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 65000,
+          |          "value" : "annotation",
+          |          "endpoint" : {
+          |            "serviceName" : "service3",
+          |            "ipv4" : "0.0.1.89",
+          |            "port" : 345
+          |          }
+          |        },
+          |        {
+          |          "timestamp" : 100000,
+          |          "value" : "cr",
+          |          "endpoint" : {
+          |            "serviceName" : "service3",
+          |            "ipv4" : "0.0.1.89",
+          |            "port" : 345
+          |          }
+          |        }
+          |      ],
+          |      "binaryAnnotations" : [
+          |        {
+          |          "key" : "annotation",
+          |          "value" : "ann",
+          |          "endpoint" : {
+          |            "serviceName" : "service3",
+          |            "ipv4" : "0.0.1.89",
+          |            "port" : 345
+          |          }
+          |        },
+          |        {
+          |          "key" : "binary",
+          |          "value" : "YW5u",
+          |          "type" : "BYTES",
+          |          "endpoint" : {
+          |            "serviceName" : "service3",
+          |            "ipv4" : "0.0.1.89",
+          |            "port" : 345
+          |          }
+          |        }
+          |      ]
+          |    }
+          |  ]
+          |]
+        """.stripMargin)
+  }
+
   "find traces missing service" in {
     server.httpGet(
       path = "/api/v1/traces?serviceName=",
