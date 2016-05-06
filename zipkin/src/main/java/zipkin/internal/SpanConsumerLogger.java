@@ -112,7 +112,7 @@ public final class SpanConsumerLogger {
     message.append("[");
     for (Iterator<Span> iterator = spans.iterator(); iterator.hasNext(); ) {
       Span span = iterator.next();
-      message.append(format("%016x", span.traceId)).append(" -> ").append(format("%016x", span.id));
+      message.append(Util.toLowerHex(span.traceId)).append(" -> ").append(Util.toLowerHex(span.id));
       if (iterator.hasNext()) message.append(", ");
     }
     return message.append("]");
