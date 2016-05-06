@@ -30,7 +30,7 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
-    <brave.version>3.6.0</brave.version>
+    <brave.version>3.7.0</brave.version>
     <zipkin-ui.version>1.40.0</zipkin-ui.version>
     <start-class>zipkin.server.ZipkinServer</start-class>
     <maven-invoker-plugin.version>2.0.0</maven-invoker-plugin.version>

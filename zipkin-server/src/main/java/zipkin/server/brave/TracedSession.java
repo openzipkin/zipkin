@@ -36,6 +36,7 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.reflect.Proxy.getInvocationHandler;
+import static java.util.Collections.singletonMap;
 import static zipkin.internal.Util.checkNotNull;
 
 /**
@@ -90,17 +91,18 @@ public final class TracedSession implements InvocationHandler, LatencyTracker {
       BoundStatement statement = (BoundStatement) args[0];
       SpanId spanId = brave.clientTracer().startNewSpan("bound-statement");
       // Only join traces, don't start them. This prevents LocalCollector's thread from amplifying.
-      if (spanId != null && spanId.getParentSpanId() == null) {
+      if (spanId != null && spanId.nullableParentId() == null) {
         brave.clientSpanThreadBinder().setCurrentSpan(null);
         spanId = null;
       }
       if (spanId == null) return method.invoke(target, args);
 
-      // Enable cassandra tracing, if supported
+      // o.a.c.tracing.Tracing.newSession must use the same format for the key zipkin
       if (version.compareTo(ProtocolVersion.V4) >= 0) {
         statement.enableTracing();
-        inject(spanId, statement);
+        statement.setOutgoingPayload(singletonMap("zipkin", ByteBuffer.wrap(spanId.bytes())));
       }
+
       brave.clientTracer().setClientSent(); // start the span and store it
       brave.clientTracer()
           .submitBinaryAnnotation("cql.query", statement.preparedStatement().getQueryString());
@@ -112,15 +114,6 @@ public final class TracedSession implements InvocationHandler, LatencyTracker {
       return target.executeAsync(statement);
     }
     return method.invoke(target, args);
-  }
-
-  /**
-   * Injects propagation info to the {@link BoundStatement#setOutgoingPayload(Map) statement's
-   * outgoing payload}. {@code org.apache.cassandra.tracing.Tracing.newSession(sessionId,
-   * customPayload)} must be able to extract this format.
-   */
-  void inject(SpanId spanId, BoundStatement statement) {
-    // TODO Settle on a propagation format and set statement.setOutgoingPayload
   }
 
   @Override public void update(Host host, Statement statement, Exception e, long nanos) {
