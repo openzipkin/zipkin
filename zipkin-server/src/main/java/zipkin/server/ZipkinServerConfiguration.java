@@ -34,20 +34,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import zipkin.Codec;
 import zipkin.CollectorMetrics;
 import zipkin.CollectorSampler;
 import zipkin.InMemoryStorage;
-import zipkin.SpanStore;
 import zipkin.StorageComponent;
 import zipkin.cassandra.SessionFactory;
 import zipkin.jdbc.JDBCStorage;
 import zipkin.kafka.KafkaCollector;
 import zipkin.scribe.ScribeCollector;
-import zipkin.server.brave.TracedSpanStore;
+import zipkin.server.brave.TracedStorageComponent;
 
 @Configuration
 public class ZipkinServerConfiguration {
@@ -70,19 +68,9 @@ public class ZipkinServerConfiguration {
     return new ActuateCollectorMetrics(counterService, gaugeService);
   }
 
-  /**
-   * SpanStore is explicitly marked as a bean, so that it can be wrapped with a {@link
-   * TracedSpanStore}.
-   *
-   * <p>Lazy to ensure that transient storage errors don't crash bootstrap.
-   */
-  @Bean @Lazy SpanStore spanStore(StorageComponent storage) {
-    return storage.spanStore();
-  }
-
   @Configuration
   @ConditionalOnSelfTracing
-  static class BraveSpanStoreEnhancer implements BeanPostProcessor {
+  static class BraveTracedStorageComponentEnhancer implements BeanPostProcessor {
 
     @Autowired(required = false)
     Brave brave;
@@ -94,8 +82,8 @@ public class ZipkinServerConfiguration {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) {
-      if (bean instanceof SpanStore && brave != null) {
-        return new TracedSpanStore(brave, (SpanStore) bean);
+      if (bean instanceof TracedStorageComponent && brave != null) {
+        return new TracedStorageComponent(brave, (TracedStorageComponent) bean);
       }
       return bean;
     }

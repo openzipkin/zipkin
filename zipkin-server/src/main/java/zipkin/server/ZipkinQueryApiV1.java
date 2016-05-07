@@ -30,6 +30,7 @@ import zipkin.Codec;
 import zipkin.QueryRequest;
 import zipkin.Span;
 import zipkin.SpanStore;
+import zipkin.StorageComponent;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static zipkin.internal.Util.checkNotNull;
@@ -54,8 +55,8 @@ public class ZipkinQueryApiV1 {
   /** lazy so transient storage errors don't crash bootstrap */
   @Lazy
   @Autowired
-  public ZipkinQueryApiV1(SpanStore spanStore, Codec.Factory codecFactory) {
-    this.spanStore = spanStore;
+  public ZipkinQueryApiV1(StorageComponent storage, Codec.Factory codecFactory) {
+    this.spanStore = storage.spanStore();
     this.jsonCodec = checkNotNull(codecFactory.get(APPLICATION_JSON_VALUE), APPLICATION_JSON_VALUE);
   }
 

@@ -40,6 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,13 +63,14 @@ import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.cassandra.CassandraUtil.annotationKeys;
+import static zipkin.cassandra.CassandraUtil.bindWithName;
 import static zipkin.cassandra.CassandraUtil.durationIndexBucket;
 import static zipkin.cassandra.CassandraUtil.intersectKeySets;
 import static zipkin.cassandra.CassandraUtil.iso8601;
 import static zipkin.cassandra.CassandraUtil.keyset;
 import static zipkin.internal.Util.midnightUTC;
 
-final class CassandraSpanStore implements GuavaSpanStore {
+public final class CassandraSpanStore implements GuavaSpanStore {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
 
   static final ListenableFuture<List<String>> EMPTY_LIST =
@@ -92,7 +94,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
   private final PreparedStatement selectTraceIdsByServiceName;
   private final PreparedStatement selectTraceIdsByServiceNames;
   private final PreparedStatement selectTraceIdsBySpanName;
-  private final PreparedStatement selectTraceIdsByAnnotations;
+  private final PreparedStatement selectTraceIdsByAnnotation;
   private final PreparedStatement selectTraceIdsBySpanDuration;
   private final Function<ResultSet, Map<Long, Long>> traceIdToTimestamp;
 
@@ -147,7 +149,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
             .limit(QueryBuilder.bindMarker("limit_"))
             .orderBy(QueryBuilder.desc("ts")));
 
-    selectTraceIdsByAnnotations = session.prepare(
+    selectTraceIdsByAnnotation = session.prepare(
         QueryBuilder.select("ts", "trace_id")
             .from("annotations_index")
             .where(QueryBuilder.eq("annotation", QueryBuilder.bindMarker("annotation")))
@@ -199,8 +201,8 @@ final class CassandraSpanStore implements GuavaSpanStore {
    * also related to the amount of annotations queried. The returned future will fail if any of the
    * inputs fail.
    *
-   * <p>When {@link QueryRequest#serviceName service name} is unset, service names will be fetched
-   * eagerly, implying an additional query.
+   * <p>When {@link QueryRequest#serviceName service name} is unset, service names will be
+   * fetched eagerly, implying an additional query.
    *
    * <p>The duration query is the most expensive query in cassandra, as it turns into 1 request per
    * hour of {@link QueryRequest#lookback lookback}. Because many times lookback is set to a day,
@@ -298,7 +300,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
 
   @Override public ListenableFuture<List<String>> getServiceNames() {
     try {
-      BoundStatement bound = selectServiceNames.bind();
+      BoundStatement bound = bindWithName(selectServiceNames, "select-service-names");
       if (LOG.isDebugEnabled()) {
         LOG.debug(selectServiceNames.getQueryString());
       }
@@ -324,7 +326,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
     serviceName = checkNotNull(serviceName, "serviceName").toLowerCase();
     int bucket = 0;
     try {
-      BoundStatement bound = selectSpanNames.bind()
+      BoundStatement bound = bindWithName(selectSpanNames, "select-span-names")
           .setString("service_name", serviceName)
           .setInt("bucket", bucket)
           // no one is ever going to browse so many span names
@@ -357,7 +359,8 @@ final class CassandraSpanStore implements GuavaSpanStore {
 
     List<Date> days = getDays(startEpochDayMillis, endEpochDayMillis);
     try {
-      BoundStatement bound = selectDependencies.bind().setList("days", days);
+      BoundStatement bound = bindWithName(selectDependencies, "select-dependencies")
+          .setList("days", days);
       if (LOG.isDebugEnabled()) {
         LOG.debug(debugSelectDependencies(days));
       }
@@ -407,7 +410,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
     }
 
     try {
-      BoundStatement bound = selectTraces.bind()
+      BoundStatement bound = bindWithName(selectTraces, "select-traces")
           .setSet("trace_id", traceIds)
           .setInt("limit_", limit);
 
@@ -469,13 +472,13 @@ final class CassandraSpanStore implements GuavaSpanStore {
       // This guards use of "in" query to give people a little more time to move off Cassandra 2.1
       // Note that it will still fail when serviceNames.size() > 1
       BoundStatement bound = serviceNames.size() == 1 ?
-          selectTraceIdsByServiceName.bind()
+          bindWithName(selectTraceIdsByServiceName, "select-trace-ids-by-service-name")
               .setString("service_name", serviceNames.get(0))
               .setSet("bucket", buckets)
               .setBytesUnsafe("start_ts", timestampCodec.serialize(startTs))
               .setBytesUnsafe("end_ts", timestampCodec.serialize(endTs))
               .setInt("limit_", limit) :
-          selectTraceIdsByServiceNames.bind()
+          bindWithName(selectTraceIdsByServiceNames, "select-trace-ids-by-service-names")
               .setList("service_name", serviceNames)
               .setSet("bucket", buckets)
               .setBytesUnsafe("start_ts", timestampCodec.serialize(startTs))
@@ -522,7 +525,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
     String serviceSpanName = serviceName + "." + spanName;
     long startTs = endTs - lookback;
     try {
-      BoundStatement bound = selectTraceIdsBySpanName.bind()
+      BoundStatement bound = bindWithName(selectTraceIdsBySpanName, "select-trace-ids-by-span-name")
           .setString("service_span_name", serviceSpanName)
           .setBytesUnsafe("start_ts", timestampCodec.serialize(startTs))
           .setBytesUnsafe("end_ts", timestampCodec.serialize(endTs))
@@ -553,17 +556,18 @@ final class CassandraSpanStore implements GuavaSpanStore {
       long endTs, long lookback, int limit) {
     long startTs = endTs - lookback;
     try {
-      BoundStatement bound = selectTraceIdsByAnnotations.bind()
-          .setBytes("annotation", CassandraUtil.toByteBuffer(annotationKey))
-          .setSet("bucket", buckets)
-          .setBytesUnsafe("start_ts", timestampCodec.serialize(startTs))
-          .setBytesUnsafe("end_ts", timestampCodec.serialize(endTs))
-          .setInt("limit_", limit);
+      BoundStatement bound =
+          bindWithName(selectTraceIdsByAnnotation, "select-trace-ids-by-annotation")
+              .setBytes("annotation", CassandraUtil.toByteBuffer(annotationKey))
+              .setSet("bucket", buckets)
+              .setBytesUnsafe("start_ts", timestampCodec.serialize(startTs))
+              .setBytesUnsafe("end_ts", timestampCodec.serialize(endTs))
+              .setInt("limit_", limit);
 
       bound.setFetchSize(Integer.MAX_VALUE);
 
       if (LOG.isDebugEnabled()) {
-        LOG.debug(debugSelectTraceIdsByAnnotations(annotationKey, buckets, startTs, endTs, limit));
+        LOG.debug(debugSelectTraceIdsByAnnotation(annotationKey, buckets, startTs, endTs, limit));
       }
 
       return transform(session.executeAsync(bound), new Function<ResultSet, Map<Long, Long>>() {
@@ -578,16 +582,16 @@ final class CassandraSpanStore implements GuavaSpanStore {
           }
       );
     } catch (CharacterCodingException | RuntimeException ex) {
-      LOG.error("failed " + debugSelectTraceIdsByAnnotations(annotationKey, buckets, startTs, endTs,
+      LOG.error("failed " + debugSelectTraceIdsByAnnotation(annotationKey, buckets, startTs, endTs,
           limit),
           ex);
       return immediateFailedFuture(ex);
     }
   }
 
-  private String debugSelectTraceIdsByAnnotations(String annotationKey, Set<Integer> buckets,
+  private String debugSelectTraceIdsByAnnotation(String annotationKey, Set<Integer> buckets,
       long startTs, long endTs, int limit) {
-    return selectTraceIdsByAnnotations.getQueryString()
+    return selectTraceIdsByAnnotation.getQueryString()
         .replace(":annotation", annotationKey)
         .replace(":bucket", buckets.toString())
         .replace(":start_ts", iso8601(startTs))
@@ -638,12 +642,13 @@ final class CassandraSpanStore implements GuavaSpanStore {
     long minDuration = request.minDuration;
     long maxDuration = request.maxDuration != null ? request.maxDuration : Long.MAX_VALUE;
     int limit = request.limit;
-    BoundStatement bound = selectTraceIdsBySpanDuration.bind()
-        .setInt("time_bucket", bucket)
-        .setString("service_name", serviceName)
-        .setString("span_name", spanName)
-        .setLong("min_duration", minDuration)
-        .setLong("max_duration", maxDuration);
+    BoundStatement bound =
+        bindWithName(selectTraceIdsBySpanDuration, "select-trace-ids-by-span-duration")
+            .setInt("time_bucket", bucket)
+            .setString("service_name", serviceName)
+            .setString("span_name", spanName)
+            .setLong("min_duration", minDuration)
+            .setLong("max_duration", maxDuration);
 
     // optimistically setting fetch size to 'limit' here. Since we are likely to filter some results
     // because their timestamps are out of range, we may need to fetch again.

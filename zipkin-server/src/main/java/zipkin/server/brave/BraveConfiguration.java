@@ -14,6 +14,8 @@
 package zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
+import com.github.kristofa.brave.ServerClientAndLocalSpanState;
+import com.github.kristofa.brave.ThreadLocalServerClientAndLocalSpanState;
 import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -60,8 +62,14 @@ public class BraveConfiguration {
     return new LocalSpanCollector(storage, flushInterval, sampler, metrics);
   }
 
-  @Bean Brave brave(@Qualifier("local") Endpoint localEndpoint, LocalSpanCollector spanCollector) {
-    return new Brave.Builder(localEndpoint.ipv4, localEndpoint.port, localEndpoint.serviceName)
-        .spanCollector(spanCollector).build();
+  @Bean ServerClientAndLocalSpanState braveState(@Qualifier("local") Endpoint localEndpoint) {
+    return new ThreadLocalServerClientAndLocalSpanState(localEndpoint.ipv4, localEndpoint.port,
+        localEndpoint.serviceName);
+  }
+
+  @Bean Brave brave(ServerClientAndLocalSpanState braveState, LocalSpanCollector spanCollector) {
+    return new Brave.Builder(braveState)
+        .spanCollector(spanCollector)
+        .build();
   }
 }

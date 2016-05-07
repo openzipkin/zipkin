@@ -30,6 +30,7 @@ import zipkin.DependencyLink;
 import zipkin.internal.Dependencies;
 import zipkin.internal.Util;
 
+import static zipkin.cassandra.CassandraUtil.bindWithName;
 import static zipkin.cassandra.CassandraUtil.iso8601;
 
 final class CassandraDependenciesWriter {
@@ -55,7 +56,7 @@ final class CassandraDependenciesWriter {
   ListenableFuture<?> storeDependencies(long epochDayMillis, ByteBuffer dependencies) {
     Date startFlooredToDay = new Date(epochDayMillis);
     try {
-      BoundStatement bound = insertDependencies.bind()
+      BoundStatement bound = bindWithName(insertDependencies, "insert-dependencies")
           .setTimestamp("day", startFlooredToDay)
           .setBytes("dependencies", dependencies);
 

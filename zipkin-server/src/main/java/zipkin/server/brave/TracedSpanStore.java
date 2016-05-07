@@ -13,7 +13,6 @@
  */
 package zipkin.server.brave;
 
-import com.github.kristofa.brave.Brave;
 import com.github.kristofa.brave.LocalTracer;
 import java.util.List;
 import zipkin.DependencyLink;
@@ -22,13 +21,13 @@ import zipkin.Span;
 import zipkin.SpanStore;
 import zipkin.internal.Nullable;
 
-public final class TracedSpanStore implements SpanStore {
+final class TracedSpanStore implements SpanStore {
   private final LocalTracer tracer;
   private final SpanStore delegate;
   private final String component;
 
-  public TracedSpanStore(Brave brave, SpanStore delegate) {
-    this.tracer = brave.localTracer();
+  TracedSpanStore(LocalTracer tracer, SpanStore delegate) {
+    this.tracer = tracer;
     this.delegate = delegate;
     this.component = delegate.getClass().getSimpleName();
   }
