@@ -105,9 +105,9 @@ MYSQL_USER=root ./mvnw install -nsu
 if is_pull_request; then
   true
 elif build_started_by_tag; then
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu release:prepare
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin release:perform
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests=true release:prepare
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests=true release:perform
 elif is_travis_branch_master; then
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin deploy
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests=true deploy
 fi
 
