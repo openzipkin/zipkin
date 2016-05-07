@@ -93,7 +93,7 @@ check_tag_equals_version_in_pom() {
 # MAIN
 #----------------------
 
-if build_started_by_tag; then
+if ! is_pull_request && build_started_by_tag; then
   check_travis_branch_equals_travis_tag
   check_release_tag
   check_tag_equals_version_in_pom
