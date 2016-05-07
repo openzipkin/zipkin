@@ -91,6 +91,9 @@ check_tag_equals_version_in_pom() {
 }
 
 safe_checkout_master() {
+  # We need to be on a branch for release:perform to be able to create commits, and we want that branch to be master.
+  # But we also want to make sure that we build and release exactly the tagged version, so we verify that the remote
+  # master is where our tag is.
   git checkout -B master
   commit_local_master="$(git show --pretty='format:%H' master)"
   commit_remote_master="$(git show --pretty='format:%H' origin/master)"
