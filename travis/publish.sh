@@ -108,6 +108,6 @@ elif build_started_by_tag; then
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu release:prepare
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin release:perform
 elif is_travis_branch_master; then
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu deploy
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin deploy
 fi
 
