@@ -18,7 +18,7 @@ set -x
 
 build_started_by_tag() {
   if [ "${TRAVIS_TAG}" == "" ]; then
-    echo "[Publishing] This build was not started by a tag, publishing publishing snapshot"
+    echo "[Publishing] This build was not started by a tag, publishing snapshot"
     return 1
   else
     echo "[Publishing] This build was started by the tag ${TRAVIS_TAG}, publishing release"
@@ -90,6 +90,16 @@ check_tag_equals_version_in_pom() {
     fi
 }
 
+safe_checkout_master() {
+  git checkout -B master
+  commit_local_master="$(git show --pretty='format:%H' master)"
+  commit_remote_master="$(git show --pretty='format:%H' origin/master)"
+  if [ "$commit_local_master" != "$commit_remote_master" ]; then
+    echo "Master on remote 'origin' has commits since the version under release, aborting"
+    exit 1
+  fi
+}
+
 #----------------------
 # MAIN
 #----------------------
@@ -105,9 +115,10 @@ MYSQL_USER=root ./mvnw install -nsu
 if is_pull_request; then
   true
 elif build_started_by_tag; then
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu release:prepare
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin release:perform
+  safe_checkout_master
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests=true release:prepare
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests=true release:perform
 elif is_travis_branch_master; then
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu deploy
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests=true deploy
 fi
 
