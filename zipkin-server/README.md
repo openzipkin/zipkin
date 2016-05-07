@@ -81,7 +81,8 @@ zipkin-server is a drop-in replacement for the [scala query service](https://git
     * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 
 ### Cassandra Storage
-The following apply when `STORAGE_TYPE` is set to `cassandra`:
+Zipkin's [Cassandra storage component](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-storage/cassandra)
+supports version 2.2+ and applies when `STORAGE_TYPE` is set to `cassandra`:
 
     * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "zipkin".
     * `CASSANDRA_CONTACT_POINTS`: Comma separated list of hosts / ip addresses part of Cassandra cluster. Defaults to localhost
