@@ -29,6 +29,11 @@
       <username>${env.BINTRAY_USER}</username>
       <password>${env.BINTRAY_KEY}</password>
     </server>
+    <server>
+      <id>github.com</id>
+      <username>${env.GH_USER}</username>
+      <password>${env.GH_TOKEN}</password>
+    </server>
   </servers>
 </settings>
 
