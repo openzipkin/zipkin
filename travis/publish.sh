@@ -18,7 +18,7 @@ set -x
 
 build_started_by_tag() {
   if [ "${TRAVIS_TAG}" == "" ]; then
-    echo "[Publishing] This build was not started by a tag, publishing publishing snapshot"
+    echo "[Publishing] This build was not started by a tag, publishing snapshot"
     return 1
   else
     echo "[Publishing] This build was started by the tag ${TRAVIS_TAG}, publishing release"
