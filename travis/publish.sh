@@ -120,9 +120,9 @@ if is_pull_request; then
   true
 elif build_started_by_tag; then
   safe_checkout_master
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests=true release:prepare
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests=true release:perform
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -Darguments="-DskipTests" release:prepare
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -Darguments="-DskipTests" release:perform
 elif is_travis_branch_master; then
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests=true deploy
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests deploy
 fi
 
