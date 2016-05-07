@@ -90,6 +90,16 @@ check_tag_equals_version_in_pom() {
     fi
 }
 
+safe_checkout_master() {
+  git checkout -B master
+  commit_local_master="$(git show --pretty='format:%H' master)"
+  commit_remote_master="$(git show --pretty='format:%H' origin/master)"
+  if [ "$commit_local_master" != "$commit_remote_master" ]; then
+    echo "Master on remote 'origin' has commits since the version under release, aborting"
+    exit 1
+  fi
+}
+
 #----------------------
 # MAIN
 #----------------------
@@ -105,6 +115,7 @@ MYSQL_USER=root ./mvnw install -nsu
 if is_pull_request; then
   true
 elif build_started_by_tag; then
+  safe_checkout_master
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests=true release:prepare
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests=true release:perform
 elif is_travis_branch_master; then
