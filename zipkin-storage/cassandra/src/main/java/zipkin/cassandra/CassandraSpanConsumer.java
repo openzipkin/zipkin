@@ -40,6 +40,7 @@ import zipkin.spanstore.guava.GuavaSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.cassandra.CassandraUtil.annotationKeys;
+import static zipkin.cassandra.CassandraUtil.bindWithName;
 import static zipkin.cassandra.CassandraUtil.durationIndexBucket;
 import static zipkin.cassandra.CassandraUtil.iso8601;
 
@@ -235,7 +236,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
             + "{}.traces", spanName, traceId, session.getLoggedKeyspace());
       }
 
-      BoundStatement bound = insertSpan.bind()
+      BoundStatement bound = bindWithName(insertSpan, "insert-span")
           .setLong("trace_id", traceId)
           .setBytesUnsafe("ts", timestampCodec.serialize(timestamp))
           .setString("span_name", spanName)
@@ -268,7 +269,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     Preconditions.checkArgument(!serviceName.isEmpty());
     if (writtenNames.get().add(serviceName)) {
       try {
-        BoundStatement bound = insertServiceName.bind()
+        BoundStatement bound = bindWithName(insertServiceName, "insert-service-name")
             .setString("service_name", serviceName)
             .setInt("ttl_", ttl);
 
@@ -301,7 +302,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     int bucket = 0;
     if (writtenNames.get().add(serviceName + "––" + spanName)) {
       try {
-        BoundStatement bound = insertSpanName.bind()
+        BoundStatement bound = bindWithName(insertSpanName, "insert-span-name")
             .setString("service_name", serviceName)
             .setInt("bucket", bucket)
             .setString("span_name", spanName)
@@ -336,12 +337,13 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     Preconditions.checkArgument(!serviceName.isEmpty());
     int bucket = RAND.nextInt(bucketCount);
     try {
-      BoundStatement bound = insertTraceIdByServiceName.bind()
-          .setInt("bucket", bucket)
-          .setString("service_name", serviceName)
-          .setBytesUnsafe("ts", timestampCodec.serialize(timestamp))
-          .setLong("trace_id", traceId)
-          .setInt("ttl_", ttl);
+      BoundStatement bound =
+          bindWithName(insertTraceIdByServiceName, "insert-trace-id-by-service-name")
+              .setInt("bucket", bucket)
+              .setString("service_name", serviceName)
+              .setBytesUnsafe("ts", timestampCodec.serialize(timestamp))
+              .setLong("trace_id", traceId)
+              .setInt("ttl_", ttl);
 
       if (LOG.isDebugEnabled()) {
         LOG.debug(debugInsertTraceIdByServiceName(bucket, serviceName, timestamp, traceId, ttl));
@@ -375,7 +377,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     try {
       String serviceSpanName = serviceName + "." + spanName;
 
-      BoundStatement bound = insertTraceIdBySpanName.bind()
+      BoundStatement bound = bindWithName(insertTraceIdBySpanName, "insert-trace-id-by-span-name")
           .setString("service_span_name", serviceSpanName)
           .setBytesUnsafe("ts", timestampCodec.serialize(timestamp))
           .setLong("trace_id", traceId)
@@ -404,7 +406,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       long traceId, int ttl) {
     int bucket = RAND.nextInt(bucketCount);
     try {
-      BoundStatement bound = insertTraceIdByAnnotation.bind()
+      BoundStatement bound = bindWithName(insertTraceIdByAnnotation, "insert-trace-id-by-annotation")
           .setInt("bucket", bucket)
           .setBytes("annotation", CassandraUtil.toByteBuffer(annotationKey))
           .setBytesUnsafe("ts", timestampCodec.serialize(timestamp))
@@ -438,14 +440,15 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       long timestamp, long duration, long traceId, int ttl) {
     int bucket = durationIndexBucket(timestamp);
     try {
-      BoundStatement bound = insertTraceIdBySpanDuration.bind()
-          .setInt("bucket", bucket)
-          .setString("service_name", serviceName)
-          .setString("span_name", spanName)
-          .setBytesUnsafe("ts", timestampCodec.serialize(timestamp))
-          .setLong("duration", duration)
-          .setLong("trace_id", traceId)
-          .setInt("ttl_", ttl);
+      BoundStatement bound =
+          bindWithName(insertTraceIdBySpanDuration, "insert-trace-id-by-span-duration")
+              .setInt("bucket", bucket)
+              .setString("service_name", serviceName)
+              .setString("span_name", spanName)
+              .setBytesUnsafe("ts", timestampCodec.serialize(timestamp))
+              .setLong("duration", duration)
+              .setLong("trace_id", traceId)
+              .setInt("ttl_", ttl);
 
       if (LOG.isDebugEnabled()) {
         LOG.debug(

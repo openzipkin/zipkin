@@ -13,29 +13,36 @@
  */
 package zipkin.server.brave;
 
-import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Host;
 import com.datastax.driver.core.LatencyTracker;
 import com.datastax.driver.core.ProtocolVersion;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.github.kristofa.brave.Brave;
+import com.github.kristofa.brave.ServerSpan;
+import com.github.kristofa.brave.ServerSpanThreadBinder;
 import com.github.kristofa.brave.SpanCollector;
 import com.github.kristofa.brave.SpanId;
+import com.google.common.reflect.AbstractInvocationHandler;
+import com.google.common.reflect.Reflection;
 import com.twitter.zipkin.gen.Annotation;
 import com.twitter.zipkin.gen.BinaryAnnotation;
 import com.twitter.zipkin.gen.Endpoint;
 import com.twitter.zipkin.gen.Span;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import zipkin.cassandra.NamedBoundStatement;
 
 import static com.google.common.base.Preconditions.checkState;
-import static java.lang.reflect.Proxy.getInvocationHandler;
 import static java.util.Collections.singletonMap;
 import static zipkin.internal.Util.checkNotNull;
 
@@ -43,14 +50,12 @@ import static zipkin.internal.Util.checkNotNull;
  * Creates traced sessions, which write directly to brave's collector to preserve the correct
  * duration.
  */
-public final class TracedSession implements InvocationHandler, LatencyTracker {
+public final class TracedSession extends AbstractInvocationHandler implements LatencyTracker {
 
   private final ProtocolVersion version;
 
   public static Session create(Session target, Brave brave, SpanCollector collector) {
-    TracedSession traced = new TracedSession(target, brave, collector);
-    return (Session) Proxy.newProxyInstance(Session.class.getClassLoader(),
-        new Class<?>[] {Session.class}, traced);
+    return Reflection.newProxy(Session.class, new TracedSession(target, brave, collector));
   }
 
   final Session target;
@@ -60,7 +65,7 @@ public final class TracedSession implements InvocationHandler, LatencyTracker {
    * Manual Propagation, as opposed to attempting to control the {@link
    * Cluster#register(LatencyTracker) latency tracker callback thread}.
    */
-  final Map<BoundStatement, Span> cache = new LinkedHashMap<>();
+  final Map<NamedBoundStatement, Span> cache = new LinkedHashMap<>();
 
   TracedSession(Session target, Brave brave, SpanCollector collector) {
     this.target = checkNotNull(target, "target");
@@ -70,32 +75,16 @@ public final class TracedSession implements InvocationHandler, LatencyTracker {
     target.getCluster().register(this);
   }
 
-  @Override
-  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-    switch (method.getName()) {
-      case "equals": // allow proxies to be equivalent
-        try {
-          Object that = args.length > 0 && args[0] != null ? getInvocationHandler(args[0]) : null;
-          return equals(that);
-        } catch (IllegalArgumentException e) {
-          return false;
-        }
-      case "hashCode":
-        return hashCode();
-      case "toString":
-        return toString();
-    }
+  @Override protected Object handleInvocation(Object proxy, Method method, Object[] args)
+      throws Throwable {
+    // Only join traces, don't start them. This prevents LocalCollector's thread from amplifying.
+    if (brave.serverSpanThreadBinder().getCurrentServerSpan() != null &&
+        brave.serverSpanThreadBinder().getCurrentServerSpan().getSpan() != null
+        // Only trace named statements for now, since that's what we use
+        && method.getName().equals("executeAsync") && args[0] instanceof NamedBoundStatement) {
+      NamedBoundStatement statement = (NamedBoundStatement) args[0];
 
-    /** Only trace bound statements for now, since that's what we use */
-    if (method.getName().equals("executeAsync") && args[0] instanceof BoundStatement) {
-      BoundStatement statement = (BoundStatement) args[0];
-      SpanId spanId = brave.clientTracer().startNewSpan("bound-statement");
-      // Only join traces, don't start them. This prevents LocalCollector's thread from amplifying.
-      if (spanId != null && spanId.nullableParentId() == null) {
-        brave.clientSpanThreadBinder().setCurrentSpan(null);
-        spanId = null;
-      }
-      if (spanId == null) return method.invoke(target, args);
+      SpanId spanId = brave.clientTracer().startNewSpan(statement.name);
 
       // o.a.c.tracing.Tracing.newSession must use the same format for the key zipkin
       if (version.compareTo(ProtocolVersion.V4) >= 0) {
@@ -111,12 +100,13 @@ public final class TracedSession implements InvocationHandler, LatencyTracker {
       }
       // let go of the client span as it is only used for the RPC (will have no local children)
       brave.clientSpanThreadBinder().setCurrentSpan(null);
-      return target.executeAsync(statement);
+      return new BraveResultSetFuture(target.executeAsync(statement), brave);
     }
     return method.invoke(target, args);
   }
 
   @Override public void update(Host host, Statement statement, Exception e, long nanos) {
+    if (!(statement instanceof NamedBoundStatement)) return;
     Span span = null;
     synchronized (cache) {
       span = cache.remove(statement);
@@ -162,5 +152,54 @@ public final class TracedSession implements InvocationHandler, LatencyTracker {
   }
 
   @Override public void onUnregister(Cluster cluster) {
+  }
+
+  static class BraveResultSetFuture<T> implements ResultSetFuture {
+    final ResultSetFuture delegate;
+    final ServerSpanThreadBinder threadBinder;
+    final ServerSpan currentSpan;
+
+    BraveResultSetFuture(ResultSetFuture delegate, Brave brave) {
+      this.delegate = delegate;
+      this.threadBinder = brave.serverSpanThreadBinder();
+      this.currentSpan = threadBinder.getCurrentServerSpan();
+    }
+
+    @Override public ResultSet getUninterruptibly() {
+      return delegate.getUninterruptibly();
+    }
+
+    @Override public ResultSet getUninterruptibly(long timeout, TimeUnit unit)
+        throws TimeoutException {
+      return delegate.getUninterruptibly(timeout, unit);
+    }
+
+    @Override public boolean cancel(boolean mayInterruptIfRunning) {
+      return delegate.cancel(mayInterruptIfRunning);
+    }
+
+    @Override public boolean isCancelled() {
+      return delegate.isCancelled();
+    }
+
+    @Override public boolean isDone() {
+      return delegate.isDone();
+    }
+
+    @Override public ResultSet get() throws InterruptedException, ExecutionException {
+      return delegate.get();
+    }
+
+    @Override public ResultSet get(long timeout, TimeUnit unit)
+        throws InterruptedException, ExecutionException, TimeoutException {
+      return delegate.get(timeout, unit);
+    }
+
+    @Override public void addListener(Runnable listener, Executor executor) {
+      delegate.addListener(() -> {
+        threadBinder.setCurrentSpan(currentSpan);
+        listener.run();
+      }, executor);
+    }
   }
 }

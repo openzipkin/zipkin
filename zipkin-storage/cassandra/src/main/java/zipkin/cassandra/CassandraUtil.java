@@ -14,6 +14,8 @@
 
 package zipkin.cassandra;
 
+import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.PreparedStatement;
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 import java.nio.ByteBuffer;
@@ -110,6 +112,10 @@ final class CassandraUtil {
 
   static Function<Map<Long, Long>, Set<Long>> keyset() {
     return (Function) KeySet.INSTANCE;
+  }
+
+  static BoundStatement bindWithName(PreparedStatement prepared, String name) {
+    return new NamedBoundStatement(prepared, name);
   }
 
   enum KeySet implements Function<Map<Object, ?>, Set<Object>> {
