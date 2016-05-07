@@ -95,6 +95,7 @@ safe_checkout_master() {
   # But we also want to make sure that we build and release exactly the tagged version, so we verify that the remote
   # master is where our tag is.
   git checkout -B master
+  git fetch origin
   commit_local_master="$(git show --pretty='format:%H' master)"
   commit_remote_master="$(git show --pretty='format:%H' origin/master)"
   if [ "$commit_local_master" != "$commit_remote_master" ]; then
