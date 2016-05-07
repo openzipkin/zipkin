@@ -15,6 +15,7 @@ package zipkin.cassandra;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -90,6 +91,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
   private final PreparedStatement selectServiceNames;
   private final PreparedStatement selectSpanNames;
   private final PreparedStatement selectTraceIdsByServiceName;
+  private final PreparedStatement selectTraceIdsByServiceNames;
   private final PreparedStatement selectTraceIdsBySpanName;
   private final PreparedStatement selectTraceIdsByAnnotations;
   private final PreparedStatement selectTraceIdsBySpanDuration;
@@ -99,7 +101,9 @@ final class CassandraSpanStore implements GuavaSpanStore {
     this.session = session;
     this.indexTtl = indexTtl;
     this.maxTraceCols = maxTraceCols;
-    this.timestampCodec = new TimestampCodec(session);
+    ProtocolVersion protocolVersion = session.getCluster()
+        .getConfiguration().getProtocolOptions().getProtocolVersion();
+    this.timestampCodec = new TimestampCodec(protocolVersion);
     this.buckets = ContiguousSet.create(Range.closedOpen(0, bucketCount), integers());
 
     selectTraces = session.prepare(
@@ -127,7 +131,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
     selectTraceIdsByServiceName = session.prepare(
         QueryBuilder.select("ts", "trace_id")
             .from("service_name_index")
-            .where(QueryBuilder.in("service_name", QueryBuilder.bindMarker("service_name")))
+            .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
             .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
             .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
             .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
@@ -163,6 +167,22 @@ final class CassandraSpanStore implements GuavaSpanStore {
             .and(QueryBuilder.lte("duration", QueryBuilder.bindMarker("max_duration")))
             .and(QueryBuilder.gte("duration", QueryBuilder.bindMarker("min_duration")))
             .orderBy(QueryBuilder.desc("duration")));
+
+    if (protocolVersion.compareTo(ProtocolVersion.V4) < 0) {
+      LOG.warn("Please update Cassandra to 2.2 or later, as some features may fail");
+      // Log vs failing on "Partition KEY part service_name cannot be restricted by IN relation"
+      selectTraceIdsByServiceNames = null;
+    } else {
+      selectTraceIdsByServiceNames = session.prepare(
+          QueryBuilder.select("ts", "trace_id")
+              .from("service_name_index")
+              .where(QueryBuilder.in("service_name", QueryBuilder.bindMarker("service_name")))
+              .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
+              .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
+              .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
+              .limit(QueryBuilder.bindMarker("limit_"))
+              .orderBy(QueryBuilder.desc("ts")));
+    }
 
     traceIdToTimestamp = new Function<ResultSet, Map<Long, Long>>() {
       @Override public Map<Long, Long> apply(ResultSet input) {
@@ -201,6 +221,8 @@ final class CassandraSpanStore implements GuavaSpanStore {
       traceIdToTimestamp = getTraceIdsByServiceNames(Collections.singletonList(request.serviceName),
           request.endTs * 1000, request.lookback * 1000, request.limit);
     } else {
+      checkArgument(selectTraceIdsByServiceNames != null,
+          "getTraces without serviceName requires Cassandra 2.2 or later");
       traceIdToTimestamp = transform(getServiceNames(),
           new AsyncFunction<List<String>, Map<Long, Long>>() {
             @Override public ListenableFuture<Map<Long, Long>> apply(List<String> serviceNames) {
@@ -443,14 +465,25 @@ final class CassandraSpanStore implements GuavaSpanStore {
 
   ListenableFuture<Map<Long, Long>> getTraceIdsByServiceNames(List<String> serviceNames, long endTs,
       long lookback, int limit) {
+    if (serviceNames.isEmpty()) return immediateFuture(Collections.<Long, Long>emptyMap());
+
     long startTs = endTs - lookback;
     try {
-      BoundStatement bound = selectTraceIdsByServiceName.bind()
-          .setList("service_name", serviceNames)
-          .setSet("bucket", buckets)
-          .setBytesUnsafe("start_ts", timestampCodec.serialize(startTs))
-          .setBytesUnsafe("end_ts", timestampCodec.serialize(endTs))
-          .setInt("limit_", limit);
+      // This guards use of "in" query to give people a little more time to move off Cassandra 2.1
+      // Note that it will still fail when serviceNames.size() > 1
+      BoundStatement bound = serviceNames.size() == 1 ?
+          selectTraceIdsByServiceName.bind()
+              .setString("service_name", serviceNames.get(0))
+              .setSet("bucket", buckets)
+              .setBytesUnsafe("start_ts", timestampCodec.serialize(startTs))
+              .setBytesUnsafe("end_ts", timestampCodec.serialize(endTs))
+              .setInt("limit_", limit) :
+          selectTraceIdsByServiceNames.bind()
+              .setList("service_name", serviceNames)
+              .setSet("bucket", buckets)
+              .setBytesUnsafe("start_ts", timestampCodec.serialize(startTs))
+              .setBytesUnsafe("end_ts", timestampCodec.serialize(endTs))
+              .setInt("limit_", limit);
 
       bound.setFetchSize(Integer.MAX_VALUE);
 
@@ -470,12 +503,19 @@ final class CassandraSpanStore implements GuavaSpanStore {
 
   private String debugSelectTraceIdsByServiceNames(List<String> serviceNames, Set<Integer> buckets,
       long startTs, long endTs, int limit) {
-    return selectTraceIdsByServiceName.getQueryString()
-        .replace(":service_name", serviceNames.toString())
-        .replace(":bucket", buckets.toString())
-        .replace(":start_ts", iso8601(startTs))
-        .replace(":end_ts", iso8601(endTs))
-        .replace(":limit_", String.valueOf(limit));
+    return serviceNames.size() == 1 ?
+        selectTraceIdsByServiceName.getQueryString()
+            .replace(":service_name", serviceNames.get(0))
+            .replace(":bucket", buckets.toString())
+            .replace(":start_ts", iso8601(startTs))
+            .replace(":end_ts", iso8601(endTs))
+            .replace(":limit_", String.valueOf(limit)) :
+        selectTraceIdsByServiceNames.getQueryString()
+            .replace(":service_name", serviceNames.toString())
+            .replace(":bucket", buckets.toString())
+            .replace(":start_ts", iso8601(startTs))
+            .replace(":end_ts", iso8601(endTs))
+            .replace(":limit_", String.valueOf(limit));
   }
 
   ListenableFuture<Map<Long, Long>> getTraceIdsBySpanName(String serviceName,
