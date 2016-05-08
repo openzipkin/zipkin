@@ -72,22 +72,8 @@ check_release_tag() {
     fi
 }
 
-check_tag_equals_version_in_pom() {
-    snapshot_version_in_pom="$(./mvnw -Dexec.executable='echo' -Dexec.args='${project.version}' --non-recursive exec:exec | grep -Ev '(^\[|Download\w+:)')"
-    version_in_pom="$(echo "${snapshot_version_in_pom}" | sed 's/-SNAPSHOT$//')"
-    tag="${TRAVIS_TAG}"
-    version_in_tag="$(echo "${tag}" | sed 's/^release-//')"
-
-    if [ "$version_in_pom" != "$version_in_tag" ]; then
-        echo "Version in pom.xml doesn't match version in git tag, bailing out."
-        echo "  Snapshot Version parsed from pom.xml: ${snapshot_version_in_pom}"
-        echo "  Release version parsed from pom.xml: ${version_in_pom}"
-        echo "  Git tag: ${tag}"
-        echo "  Release version in git tag: ${version_in_tag}"
-        exit 1
-    else
-        echo "Version in pom.xml matches git tag (${version_in_tag})"
-    fi
+release_version() {
+    echo "${TRAVIS_TAG}" | sed 's/^release-//'
 }
 
 safe_checkout_master() {
@@ -111,7 +97,6 @@ safe_checkout_master() {
 if ! is_pull_request && build_started_by_tag; then
   check_travis_branch_equals_travis_tag
   check_release_tag
-  check_tag_equals_version_in_pom
 fi
 
 MYSQL_USER=root ./mvnw install -nsu
@@ -120,7 +105,7 @@ if is_pull_request; then
   true
 elif build_started_by_tag; then
   safe_checkout_master
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -Darguments="-DskipTests" release:prepare
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion="$(release_version)" -Darguments="-DskipTests" release:prepare
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -Darguments="-DskipTests" release:perform
 elif is_travis_branch_master; then
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests deploy
