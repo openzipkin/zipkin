@@ -28,6 +28,7 @@ import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Endpoint;
 import zipkin.Span;
+import zipkin.server.ZipkinServer;
 
 import static java.util.Arrays.asList;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -39,7 +40,7 @@ import static zipkin.Constants.SERVER_RECV;
 @SpringApplicationConfiguration(classes = ZipkinServer.class)
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@TestPropertySource(properties = {"zipkin.store.type=mem", "spring.config.name=zipkin-server"})
+@TestPropertySource(properties = {"zipkin.storage.type=mem", "spring.config.name=zipkin-server"})
 public class ZipkinServerTest {
 
   @Autowired
