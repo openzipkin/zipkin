@@ -112,7 +112,6 @@ public final class ExecJarRule implements TestRule {
           base.evaluate();
         } finally {
           bootApp.destroy();
-          environment.clear();
         }
       }
     };
