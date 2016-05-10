@@ -27,49 +27,68 @@ import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import zipkin.server.ZipkinServer;
 
+/**
+ * This is a JUnit Rule that allows you to test your Spring Boot exec jar.
+ *
+ * <p>It will start on a random port, and waits until the server is started before your tests
+ * execute.
+ *
+ * <p>Often, the test classpath interferes with your ability to test your autoconfiguration, or
+ * environment mappings. This class forks a process and watches it. On failure, you can look at its
+ * {@link #consoleOutput() console output} for details.
+ */
 public final class ExecJarRule implements TestRule {
 
+  /**
+   * @param startClass the entrypoint class of the spring boot jar
+   */
+  public ExecJarRule(Class<?> startClass) {
+    this.startClass = startClass;
+    this.execJar = startClass.getProtectionDomain().getCodeSource().getLocation().getFile();
+  }
+
+  /** Adds a variable to the environment used by the forked boot app. */
   public ExecJarRule putEnvironment(String key, String value) {
     environment.put(key, value);
     return this;
   }
 
+  /** Returns stderr and stdout dumped into the same place */
   public String consoleOutput() {
     return String.join("\n", console);
   }
 
-  public synchronized int httpPort() throws IOException {
+  /** Lazy-chooses a server port, or returns the port the server started with */
+  public synchronized int port() throws IOException {
     if (port != null) return port;
     try (ServerSocket socket = ServerSocketFactory.getDefault().createServerSocket(0)) {
       return (this.port = socket.getLocalPort());
     }
   }
 
+  private final Class<?> startClass;
+  private final String execJar;
   private Map<String, String> environment = new LinkedHashMap<>();
   private Integer port;
-  private Process zipkin;
+  private Process bootApp;
   private ConcurrentLinkedQueue<String> console = new ConcurrentLinkedQueue<>();
 
   @Override public Statement apply(Statement base, Description description) {
     return new Statement() {
       public void evaluate() throws Throwable {
         try {
-          Class<?> startClass = ZipkinServer.class;
-          String jar = startClass.getProtectionDomain().getCodeSource().getLocation().getFile();
-
-          ProcessBuilder zipkinBuilder = new ProcessBuilder("java", "-jar", jar);
-          zipkinBuilder.environment().put("QUERY_PORT", String.valueOf(httpPort()));
-          zipkinBuilder.environment().putAll(environment);
-          zipkinBuilder.redirectErrorStream(true);
-          zipkin = zipkinBuilder.start();
+          ProcessBuilder bootBuilder = new ProcessBuilder("java", "-jar", execJar);
+          bootBuilder.environment().put("SERVER_PORT", String.valueOf(port()));
+          bootBuilder.environment().putAll(environment);
+          bootBuilder.redirectErrorStream(true);
+          bootApp = bootBuilder.start();
 
           CountDownLatch startedOrCrashed = new CountDownLatch(1);
           Thread consoleReader = new Thread(() -> {
             boolean foundStartMessage = false;
             try (BufferedReader reader =
-                     new BufferedReader(new InputStreamReader(zipkin.getInputStream()))) {
+                     new BufferedReader(new InputStreamReader(bootApp.getInputStream()))) {
               String line;
               while ((line = reader.readLine()) != null) {
                 if (line.indexOf("Started " + startClass.getSimpleName()) != -1) {
@@ -92,7 +111,7 @@ public final class ExecJarRule implements TestRule {
 
           base.evaluate();
         } finally {
-          zipkin.destroy();
+          bootApp.destroy();
           environment.clear();
         }
       }

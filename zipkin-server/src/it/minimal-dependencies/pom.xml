@@ -30,7 +30,7 @@
   <name>minimal-dependencies</name>
 
   <properties>
-    <start-class>zipkin.minimal.ZipkinServer</start-class>
+    <start-class>zipkin.server.ZipkinServer</start-class>
   </properties>
 
   <dependencyManagement>

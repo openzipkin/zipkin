@@ -18,6 +18,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import org.junit.Rule;
 import org.junit.Test;
+import zipkin.server.ZipkinServer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -25,7 +26,7 @@ import static org.junit.Assert.fail;
 public class DoesntCrashWhenCassandraIsDownTest {
 
   @Rule
-  public ExecJarRule zipkin = new ExecJarRule()
+  public ExecJarRule zipkin = new ExecJarRule(ZipkinServer.class)
       .putEnvironment("STORAGE_TYPE", "cassandra")
       .putEnvironment("CASSANDRA_CONTACT_POINTS", "idontexist");
 
@@ -33,7 +34,7 @@ public class DoesntCrashWhenCassandraIsDownTest {
   public void startsButReturns500QueryingStorage() {
     try {
       HttpURLConnection connection = (HttpURLConnection)
-          URI.create("http://localhost:" + zipkin.httpPort() + "/api/v1/services").toURL()
+          URI.create("http://localhost:" + zipkin.port() + "/api/v1/services").toURL()
               .openConnection();
 
       assertEquals(500, connection.getResponseCode());
