@@ -33,6 +33,9 @@ The server is a drop-in replacement for the [scala query service](https://github
 
 To run the server from the currently checked out source, enter the following.
 ```bash
+# Build the server
+$ ./mvnw -am -pl zipkin-server clean install -DskipTests
+# Run the server
 $ ./mvnw -pl zipkin-server spring-boot:run
 ```
 
