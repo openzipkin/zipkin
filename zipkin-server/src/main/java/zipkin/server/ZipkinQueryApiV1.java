@@ -16,7 +16,6 @@ package zipkin.server;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,7 +28,6 @@ import org.springframework.web.context.request.WebRequest;
 import zipkin.Codec;
 import zipkin.QueryRequest;
 import zipkin.Span;
-import zipkin.SpanStore;
 import zipkin.StorageComponent;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -49,32 +47,30 @@ public class ZipkinQueryApiV1 {
   @Value("${zipkin.query.lookback:86400000}")
   int defaultLookback = 86400000; // 7 days in millis
 
-  private final SpanStore spanStore;
+  private final StorageComponent storage;
   private final Codec jsonCodec;
 
-  /** lazy so transient storage errors don't crash bootstrap */
-  @Lazy
   @Autowired
   public ZipkinQueryApiV1(StorageComponent storage, Codec.Factory codecFactory) {
-    this.spanStore = storage.spanStore();
+    this.storage = storage; // don't cache spanStore here as it can cause the app to crash!
     this.jsonCodec = checkNotNull(codecFactory.get(APPLICATION_JSON_VALUE), APPLICATION_JSON_VALUE);
   }
 
   @RequestMapping(value = "/dependencies", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getDependencies(@RequestParam(value = "endTs", required = true) long endTs,
                                 @RequestParam(value = "lookback", required = false) Long lookback) {
-    return jsonCodec.writeDependencyLinks(spanStore.getDependencies(endTs, lookback != null ? lookback : defaultLookback));
+    return jsonCodec.writeDependencyLinks(storage.spanStore().getDependencies(endTs, lookback != null ? lookback : defaultLookback));
   }
 
   @RequestMapping(value = "/services", method = RequestMethod.GET)
   public List<String> getServiceNames() {
-    return spanStore.getServiceNames();
+    return storage.spanStore().getServiceNames();
   }
 
   @RequestMapping(value = "/spans", method = RequestMethod.GET)
   public List<String> getSpanNames(
       @RequestParam(value = "serviceName", required = true) String serviceName) {
-    return spanStore.getSpanNames(serviceName);
+    return storage.spanStore().getSpanNames(serviceName);
   }
 
   @RequestMapping(value = "/traces", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
@@ -97,14 +93,14 @@ public class ZipkinQueryApiV1 {
         .lookback(lookback != null ? lookback : defaultLookback)
         .limit(limit).build();
 
-    return jsonCodec.writeTraces(spanStore.getTraces(queryRequest));
+    return jsonCodec.writeTraces(storage.spanStore().getTraces(queryRequest));
   }
 
   @RequestMapping(value = "/trace/{traceId}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getTrace(@PathVariable String traceId, WebRequest request) {
     long id = lowerHexToUnsignedLong(traceId);
     String[] raw = request.getParameterValues("raw"); // RequestParam doesn't work for param w/o value
-    List<Span> trace = raw != null ? spanStore.getRawTrace(id) : spanStore.getTrace(id);
+    List<Span> trace = raw != null ? storage.spanStore().getRawTrace(id) : storage.spanStore().getTrace(id);
 
     if (trace == null) {
       throw new TraceNotFoundException(traceId, id);
