@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.java</groupId>
     <artifactId>zipkin-sampler</artifactId>
-    <version>0.18.3</version>
+    <version>0.18.4-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-sampler-zookeeper</artifactId>
