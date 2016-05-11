@@ -20,7 +20,20 @@ There are more [built-in endpoints](https://docs.spring.io/spring-boot/docs/curr
 
 To run the server from the currently checked out source, enter the following.
 ```bash
-$ ./mvnw -pl zipkin-server spring-boot:run
+# Build the server and also make its dependencies
+$ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
+# Run the server
+$ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
+```
+
+## Logging
+
+By default, zipkin writes log messages to the console at INFO level and above. You can adjust categories using the `--logging.level.XXX` parameter, or by adjusting [yaml configuration](zipkin-server/src/main/resources/zipkin-server.yml).
+
+For example, if you want to enable debug logging for all zipkin categories, you can start the server like so:
+
+```bash
+$ java -jar ./zipkin-server/target/zipkin-server-*exec.jar --logging.level.zipkin=DEBUG
 ```
 
 ## Metrics
@@ -96,7 +109,7 @@ supports version 2.2+ and applies when `STORAGE_TYPE` is set to `cassandra`:
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=cassandra CASSANDRA_CONTACT_POINTS=host1,host2 ./mvnw -pl zipkin-server spring-boot:run
+$ STORAGE_TYPE=cassandra CASSANDRA_CONTACT_POINTS=host1,host2 java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```
 
 ### MySQL Storage
@@ -112,7 +125,7 @@ The following apply when `STORAGE_TYPE` is set to `mysql`:
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=mysql MYSQL_USER=root ./mvnw -pl zipkin-server spring-boot:run
+$ STORAGE_TYPE=mysql MYSQL_USER=root java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```
 
 ### Elasticsearch Storage
@@ -129,7 +142,7 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=elasticsearch ES_CLUSTER=monitoring ES_HOSTS=host1:9300,host2:9300 ./mvnw -pl zipkin-server spring-boot:run
+$ STORAGE_TYPE=elasticsearch ES_CLUSTER=monitoring ES_HOSTS=host1:9300,host2:9300 java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```
 
 ### Scribe Collector
@@ -156,7 +169,7 @@ KAFKA_MAX_MESSAGE_SIZE | fetch.message.max.bytes | Maximum size of a message con
 Example usage:
 
 ```bash
-$ KAFKA_ZOOKEEPER=127.0.0.1:2181 ./mvnw -pl zipkin-server spring-boot:run
+$ KAFKA_ZOOKEEPER=127.0.0.1:2181 java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```
 
 Example targeting Kafka running in Docker:
@@ -169,7 +182,7 @@ $ docker run -d -p 2181:2181 -p 9092:9092 \
     --env AUTO_CREATE_TOPICS=true \
     spotify/kafka
 # Start the zipkin server, which reads $KAFKA_ZOOKEEPER
-$ ./mvnw -pl zipkin-server spring-boot:run
+$ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```
 
 ## Running with Docker
