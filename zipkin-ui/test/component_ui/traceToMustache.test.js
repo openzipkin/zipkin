@@ -133,4 +133,16 @@ describe('formatEndpoint', () => {
   it('should use 0 as default port', () => {
     formatEndpoint({ipv4: '150.151.152.153'}).should.equal('150.151.152.153:0');
   });
+
+  it('should put service name in parenthesis', () => {
+    formatEndpoint({ipv4: '150.151.152.153', port: 9042, serviceName: 'cassandra'}).should.equal(
+      '150.151.152.153:9042 (cassandra)'
+    );
+  });
+
+  it('should not show empty service name', () => {
+    formatEndpoint({ipv4: '150.151.152.153', port: 9042, serviceName: ''}).should.equal(
+      '150.151.152.153:9042'
+    );
+  });
 });
