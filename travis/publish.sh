@@ -115,6 +115,10 @@ if is_pull_request; then
 #   - If a version tag fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
 elif is_travis_branch_master || is_version_tag; then
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests deploy
+
+  # If the deployment succeeded, sync it to Maven Central
+  is_version_tag && ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin io.zipkin.java:centralsync-maven-plugin:sync
+
 # If we are on a release tag, the following will update any version references and push a version tag for deployment.
 elif build_started_by_tag; then
   safe_checkout_master
