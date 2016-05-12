@@ -18,13 +18,10 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import zipkin.AsyncSpanConsumer;
 import zipkin.AsyncSpanStore;
-import zipkin.CollectorMetrics;
-import zipkin.CollectorSampler;
 import zipkin.SpanStore;
 import zipkin.StorageComponent;
 
 import static zipkin.StorageAdapters.blockingToAsync;
-import static zipkin.StorageAdapters.makeSampled;
 
 /**
  * Test storage component that keeps all spans in memory, accepting them on the calling thread.
@@ -60,8 +57,8 @@ final class HttpStorage implements StorageComponent {
   }
 
   @Override
-  public AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler, CollectorMetrics metrics) {
-    return makeSampled(consumer, sampler, metrics);
+  public AsyncSpanConsumer asyncSpanConsumer() {
+    return consumer;
   }
 
   @Override public void close() {

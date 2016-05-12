@@ -17,31 +17,27 @@ import com.github.kristofa.brave.AbstractSpanCollector;
 import com.github.kristofa.brave.EmptySpanCollectorMetricsHandler;
 import com.github.kristofa.brave.SpanCollector;
 import com.twitter.zipkin.gen.SpanCodec;
-import java.util.List;
+import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
-import zipkin.CollectorMetrics;
-import zipkin.CollectorSampler;
-import zipkin.Span;
 import zipkin.SpanStore;
 import zipkin.StorageComponent;
-import zipkin.internal.SpanConsumerLogger;
+import zipkin.collector.Collector;
+import zipkin.collector.CollectorMetrics;
+import zipkin.collector.CollectorSampler;
 
 /**
  * A Brave {@link SpanCollector} that forwards to the local {@link SpanStore}.
  */
 public class LocalSpanCollector extends AbstractSpanCollector {
-  private final StorageComponent storage;
-  private final CollectorSampler sampler;
   private final CollectorMetrics metrics;
-  private final SpanConsumerLogger logger;
+  private final Collector collector;
 
   public LocalSpanCollector(StorageComponent storage, int flushInterval,
       CollectorSampler sampler, CollectorMetrics metrics) {
     super(SpanCodec.THRIFT, new EmptySpanCollectorMetricsHandler(), checkPositive(flushInterval));
-    this.storage = storage;
-    this.sampler = sampler;
     this.metrics = metrics.forTransport("local");
-    this.logger = new SpanConsumerLogger(LocalSpanCollector.class, this.metrics);
+    this.collector = Collector.builder(getClass())
+        .storage(storage).sampler(sampler).metrics(this.metrics).build();
   }
 
   private static int checkPositive(int flushInterval) {
@@ -53,15 +49,7 @@ public class LocalSpanCollector extends AbstractSpanCollector {
 
   @Override
   protected void sendSpans(byte[] thrift) {
-    logger.acceptedMessage();
-    logger.readBytes(thrift.length);
-    List<Span> spans = null;
-    try {
-      spans = Codec.THRIFT.readSpans(thrift);
-      logger.readSpans(spans.size());
-      storage.asyncSpanConsumer(sampler, metrics).accept(spans, logger.acceptSpansCallback(spans));
-    } catch (RuntimeException e) {
-      if (spans != null) logger.errorAcceptingSpans(spans, e);
-    }
+    metrics.incrementMessages();
+    collector.acceptSpans(thrift, Codec.THRIFT, AsyncSpanConsumer.NOOP_CALLBACK);
   }
 }

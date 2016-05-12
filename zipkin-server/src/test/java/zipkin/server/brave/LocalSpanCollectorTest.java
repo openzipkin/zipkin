@@ -27,8 +27,8 @@ import zipkin.TestObjects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static zipkin.CollectorMetrics.NOOP_METRICS;
-import static zipkin.CollectorSampler.ALWAYS_SAMPLE;
+import static zipkin.collector.CollectorMetrics.NOOP_METRICS;
+import static zipkin.collector.CollectorSampler.ALWAYS_SAMPLE;
 
 public class LocalSpanCollectorTest {
 
@@ -59,7 +59,7 @@ public class LocalSpanCollectorTest {
 
   @Test
   public void sendSpans_incrementsMetricsOnSuccess() throws IOException {
-    when(storage.asyncSpanConsumer(ALWAYS_SAMPLE, metrics))
+    when(storage.asyncSpanConsumer())
         .thenReturn((spans, callback) -> callback.onSuccess(null));
 
     byte[] bytes = Codec.THRIFT.writeSpans(TestObjects.TRACE);
@@ -74,7 +74,7 @@ public class LocalSpanCollectorTest {
 
   @Test
   public void sendSpans_incrementsMetricsOnQueuingError() throws IOException {
-    when(storage.asyncSpanConsumer(ALWAYS_SAMPLE, metrics))
+    when(storage.asyncSpanConsumer())
         .thenReturn((spans, callback) -> {
           throw new RuntimeException();
         });
@@ -89,7 +89,7 @@ public class LocalSpanCollectorTest {
 
   @Test
   public void sendSpans_incrementsMetricsOnCallbackError() throws IOException {
-    when(storage.asyncSpanConsumer(ALWAYS_SAMPLE, metrics))
+    when(storage.asyncSpanConsumer())
         .thenReturn((spans, callback) -> callback.onError(new RuntimeException()));
 
     byte[] bytes = Codec.THRIFT.writeSpans(TestObjects.TRACE);

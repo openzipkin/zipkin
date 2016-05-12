@@ -31,7 +31,6 @@ import zipkin.Span;
 import zipkin.StorageComponent;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static zipkin.internal.Util.checkNotNull;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
 
 /**
@@ -48,18 +47,16 @@ public class ZipkinQueryApiV1 {
   int defaultLookback = 86400000; // 7 days in millis
 
   private final StorageComponent storage;
-  private final Codec jsonCodec;
 
   @Autowired
-  public ZipkinQueryApiV1(StorageComponent storage, Codec.Factory codecFactory) {
+  public ZipkinQueryApiV1(StorageComponent storage) {
     this.storage = storage; // don't cache spanStore here as it can cause the app to crash!
-    this.jsonCodec = checkNotNull(codecFactory.get(APPLICATION_JSON_VALUE), APPLICATION_JSON_VALUE);
   }
 
   @RequestMapping(value = "/dependencies", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public byte[] getDependencies(@RequestParam(value = "endTs", required = true) long endTs,
                                 @RequestParam(value = "lookback", required = false) Long lookback) {
-    return jsonCodec.writeDependencyLinks(storage.spanStore().getDependencies(endTs, lookback != null ? lookback : defaultLookback));
+    return Codec.JSON.writeDependencyLinks(storage.spanStore().getDependencies(endTs, lookback != null ? lookback : defaultLookback));
   }
 
   @RequestMapping(value = "/services", method = RequestMethod.GET)
@@ -93,7 +90,7 @@ public class ZipkinQueryApiV1 {
         .lookback(lookback != null ? lookback : defaultLookback)
         .limit(limit).build();
 
-    return jsonCodec.writeTraces(storage.spanStore().getTraces(queryRequest));
+    return Codec.JSON.writeTraces(storage.spanStore().getTraces(queryRequest));
   }
 
   @RequestMapping(value = "/trace/{traceId}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
@@ -105,7 +102,7 @@ public class ZipkinQueryApiV1 {
     if (trace == null) {
       throw new TraceNotFoundException(traceId, id);
     }
-    return jsonCodec.writeSpans(trace);
+    return Codec.JSON.writeSpans(trace);
   }
 
   @ExceptionHandler(TraceNotFoundException.class)

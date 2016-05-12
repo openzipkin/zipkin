@@ -21,15 +21,11 @@ import org.jooq.ExecuteListenerProvider;
 import org.jooq.conf.Settings;
 import zipkin.AsyncSpanConsumer;
 import zipkin.AsyncSpanStore;
-import zipkin.CollectorMetrics;
-import zipkin.CollectorSampler;
 import zipkin.SpanStore;
-import zipkin.StorageAdapters.SpanConsumer;
 import zipkin.StorageComponent;
 import zipkin.internal.Nullable;
 
 import static zipkin.StorageAdapters.blockingToAsync;
-import static zipkin.StorageAdapters.makeSampled;
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.jdbc.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
@@ -83,7 +79,6 @@ public final class JDBCStorage implements StorageComponent {
   private final DSLContexts context;
   private final SpanStore spanStore;
   private final AsyncSpanStore asyncSpanStore;
-  private final SpanConsumer spanConsumer;
   private final AsyncSpanConsumer asyncSpanConsumer;
 
   JDBCStorage(JDBCStorage.Builder builder) {
@@ -92,8 +87,7 @@ public final class JDBCStorage implements StorageComponent {
     this.context = new DSLContexts(builder.settings, builder.listenerProvider);
     this.spanStore = new JDBCSpanStore(datasource, context);
     this.asyncSpanStore = blockingToAsync(spanStore, executor);
-    this.spanConsumer = new JDBCSpanConsumer(datasource, context);
-    this.asyncSpanConsumer = blockingToAsync(spanConsumer, executor);
+    this.asyncSpanConsumer = blockingToAsync(new JDBCSpanConsumer(datasource, context), executor);
   }
 
   @Override public SpanStore spanStore() {
@@ -104,13 +98,8 @@ public final class JDBCStorage implements StorageComponent {
     return asyncSpanStore;
   }
 
-  public SpanConsumer spanConsumer() {
-    return spanConsumer;
-  }
-
-  @Override
-  public AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler, CollectorMetrics metrics) {
-    return makeSampled(asyncSpanConsumer, sampler, metrics);
+  @Override public AsyncSpanConsumer asyncSpanConsumer() {
+    return asyncSpanConsumer;
   }
 
   @Override public void close() {

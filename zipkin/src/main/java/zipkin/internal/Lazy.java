@@ -16,36 +16,16 @@ package zipkin.internal;
 
 import zipkin.StorageComponent;
 
-import static zipkin.internal.Util.checkNotNull;
-
 /**
  * Memoizes the result of {@link #compute()}, used when {@link StorageComponent} needs to share a
  * stateful object that performs I/O in its constructor.
  */
 public abstract class Lazy<T> {
 
-  public static <T> Lazy<T> of(final T instance) {
-    checkNotNull(instance, "instance");
-    return new Lazy<T>() {
-      @Override protected T compute() {
-        return instance;
-      }
-
-      @Override public String toString() {
-        return instance.toString();
-      }
-    };
-  }
-
-  private volatile T instance = null;
+  volatile T instance = null;
 
   /** Remembers the result, if the operation completed unexceptionally. */
   protected abstract T compute();
-
-  /** Used to conditionally close resources. Returns null if the value hasn't been computed, yet. */
-  protected final @Nullable T maybeGet() {
-    return instance;
-  }
 
   /** Returns the same value, computing as necessary */
   public final T get() {

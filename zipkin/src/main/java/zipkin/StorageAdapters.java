@@ -43,13 +43,6 @@ public final class StorageAdapters {
     return new InternalAsyncToBlockingSpanStoreAdapter(delegate);
   }
 
-  /** Writes spans to storage, subject to sampling policy. */
-  public static AsyncSpanConsumer makeSampled(AsyncSpanConsumer delegate, CollectorSampler sampler,
-      CollectorMetrics metrics) {
-    if (delegate instanceof InternalSamplingAsyncSpanConsumer) return delegate;
-    return new InternalSamplingAsyncSpanConsumer(delegate, sampler, metrics);
-  }
-
   private StorageAdapters() {
   }
 }

@@ -28,9 +28,9 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import zipkin.internal.Lazy;
+import zipkin.internal.LazyCloseable;
 
-final class LazyClient extends Lazy<Client> implements AutoCloseable {
+final class LazyClient extends LazyCloseable<Client> {
   private final String clusterName;
   private final List<String> hosts;
   private final String indexTemplate;
@@ -92,7 +92,7 @@ final class LazyClient extends Lazy<Client> implements AutoCloseable {
 
   @Override
   public void close() {
-    Client maybeNull = maybeGet();
+    Client maybeNull = maybeNull();
     if (maybeNull != null) maybeNull.close();
   }
 }

@@ -13,6 +13,9 @@
  */
 package zipkin;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 /**
  * A component that provides storage interfaces used for spans and aggregations. Implementations are
  * free to provide other interfaces, but the ones declared here must be supported.
@@ -22,18 +25,13 @@ package zipkin;
  *
  * @see InMemoryStorage
  */
-public interface StorageComponent extends AutoCloseable {
+public interface StorageComponent extends Closeable {
 
   SpanStore spanStore();
 
   AsyncSpanStore asyncSpanStore();
 
-  /**
-   * Used to store spans received on a transport such as Kafka. The provided consumer will retain
-   * spans according to the sampler's policy. Unsampled spans will {@link
-   * CollectorMetrics#incrementSpansDropped(int) increment a counter}.
-   */
-  AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler, CollectorMetrics metrics);
+  AsyncSpanConsumer asyncSpanConsumer();
 
   /**
    * Closes any network resources created implicitly by the component.
@@ -41,5 +39,5 @@ public interface StorageComponent extends AutoCloseable {
    * <p>For example, if this created a connection, it would close it. If it was provided one, this
    * would close any sessions, but leave the connection open.
    */
-  @Override void close();
+  @Override void close() throws IOException;
 }

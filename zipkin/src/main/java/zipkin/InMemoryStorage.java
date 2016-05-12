@@ -17,7 +17,6 @@ import java.util.concurrent.Executor;
 import zipkin.StorageAdapters.SpanConsumer;
 
 import static zipkin.StorageAdapters.blockingToAsync;
-import static zipkin.StorageAdapters.makeSampled;
 
 /**
  * Test storage component that keeps all spans in memory, accepting them on the calling thread.
@@ -45,8 +44,8 @@ public final class InMemoryStorage implements StorageComponent {
   }
 
   @Override
-  public AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler, CollectorMetrics metrics) {
-    return makeSampled(asyncConsumer, sampler, metrics);
+  public AsyncSpanConsumer asyncSpanConsumer() {
+    return asyncConsumer;
   }
 
   public void clear() {

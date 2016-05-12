@@ -15,7 +15,7 @@ package zipkin.cassandra;
 
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import org.junit.AssumptionViolatedException;
-import zipkin.internal.Lazy;
+import zipkin.internal.LazyCloseable;
 
 enum CassandraTestGraph {
   INSTANCE;
@@ -25,7 +25,7 @@ enum CassandraTestGraph {
     System.setProperty("zipkin.store.cassandra.internal.writtenNamesTtl", "1");
   }
 
-  final Lazy<CassandraStorage> storage = new Lazy<CassandraStorage>() {
+  final LazyCloseable<CassandraStorage> storage = new LazyCloseable<CassandraStorage>() {
     AssumptionViolatedException ex = null;
 
     @Override protected CassandraStorage compute() {

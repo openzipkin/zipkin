@@ -28,9 +28,9 @@
     <module>zipkin-guava</module>
     <module>benchmarks</module>
     <module>interop</module>
-    <module>zipkin-sampler</module>
+    <module>zipkin-zookeeper</module>
     <module>zipkin-storage</module>
-    <module>zipkin-transports</module>
+    <module>zipkin-collector</module>
     <module>zipkin-server</module>
     <module>centralsync-maven-plugin</module>
   </modules>
@@ -161,7 +161,7 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-sampler-zookeeper</artifactId>
+        <artifactId>zipkin-zookeeper</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -191,13 +191,13 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-transport-kafka</artifactId>
+        <artifactId>zipkin-collector-kafka</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-transport-scribe</artifactId>
+        <artifactId>zipkin-collector-scribe</artifactId>
         <version>${project.version}</version>
       </dependency>
 

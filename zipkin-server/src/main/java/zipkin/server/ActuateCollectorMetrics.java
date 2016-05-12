@@ -15,7 +15,7 @@ package zipkin.server;
 
 import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.boot.actuate.metrics.GaugeService;
-import zipkin.CollectorMetrics;
+import zipkin.collector.CollectorMetrics;
 import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.checkNotNull;

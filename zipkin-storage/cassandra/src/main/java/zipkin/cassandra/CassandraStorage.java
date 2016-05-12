@@ -18,6 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -174,7 +175,7 @@ public final class CassandraStorage
     return new CassandraSpanConsumer(session.get(), bucketCount, spanTtl, indexTtl);
   }
 
-  @Override public void close() {
+  @Override public void close() throws IOException {
     session.close();
   }
 
