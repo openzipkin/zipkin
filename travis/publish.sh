@@ -59,17 +59,24 @@ check_travis_branch_equals_travis_tag() {
   fi
 }
 
-check_release_tag() {
+check_release_or_version_tag() {
     tag="${TRAVIS_TAG}"
-    if [[ "$tag" =~ ^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ ]]; then
-        echo "Build started by version tag $tag. During the release process tags like this"
-        echo "are created by the 'release' Maven plugin. Nothing to do here."
-        exit 0
+    if is_version_tag; then
+        echo "Build started by version tag $tag. Deploying."
     elif [[ ! "$tag" =~ ^release-[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ ]]; then
         echo "You must specify a tag of the format 'release-0.0.0' to release this project."
         echo "The provided tag ${tag} doesn't match that. Aborting."
         exit 1
     fi
+}
+
+is_version_tag() {
+  tag="${TRAVIS_TAG}"
+  if [[ "$tag" =~ ^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ ]]; then
+    return 0
+  else
+    return 1
+  fi
 }
 
 release_version() {
@@ -96,18 +103,21 @@ safe_checkout_master() {
 
 if ! is_pull_request && build_started_by_tag; then
   check_travis_branch_equals_travis_tag
-  check_release_tag
+  check_release_or_version_tag
 fi
 
 MYSQL_USER=root ./mvnw install -nsu
 
+# If we are on a pull request, our only job is to run tests, which happened above via ./mvnw install
 if is_pull_request; then
   true
+# If we are on master or a version tag, our only job is to deploy.
+#   - If a version tag fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
+elif is_travis_branch_master || is_version_tag; then
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests deploy
+# If we are on a release tag, the following will update any version references and push a version tag for deployment.
 elif build_started_by_tag; then
   safe_checkout_master
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion="$(release_version)" -Darguments="-DskipTests" release:prepare
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests deploy
-elif is_travis_branch_master; then
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests deploy
 fi
 
