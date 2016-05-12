@@ -24,6 +24,7 @@ import zipkin.internal.Nullable;
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.internal.Util.equal;
 import static zipkin.internal.Util.sortedList;
+import static zipkin.internal.Util.writeHexLong;
 
 /**
  * A trace is a series of spans (often RPC calls) which form a latency tree.
@@ -367,6 +368,18 @@ public final class Span implements Comparable<Span> {
         that.timestamp == null ? Long.MIN_VALUE : that.timestamp);
     if (byTimestamp != 0) return byTimestamp;
     return this.name.compareTo(that.name);
+  }
+
+  /** Returns {@code $traceId.$spanId<:$parentId} */
+  public String idString() {
+    char[] result = new char[(3 * 16) + 3]; // 3 ids and the constant delimiters
+    writeHexLong(result, 0, traceId);
+    result[16] = '.';
+    writeHexLong(result, 17, id);
+    result[33] = '<';
+    result[34] = ':';
+    writeHexLong(result, 35, parentId != null ? parentId : id);
+    return new String(result);
   }
 
   /** Returns the distinct {@link Endpoint#serviceName service names} that logged to this span. */

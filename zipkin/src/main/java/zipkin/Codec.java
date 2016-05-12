@@ -15,7 +15,6 @@ package zipkin;
 
 import java.util.List;
 import zipkin.internal.JsonCodec;
-import zipkin.internal.Nullable;
 import zipkin.internal.ThriftCodec;
 
 /**
@@ -23,27 +22,8 @@ import zipkin.internal.ThriftCodec;
  */
 public interface Codec {
 
-  interface Factory {
-    /** Returns a codec for the given media type (ex. "application/json") or null if not found. */
-    @Nullable
-    Codec get(String mediaType);
-  }
-
   JsonCodec JSON = new JsonCodec();
   ThriftCodec THRIFT = new ThriftCodec();
-
-  Factory FACTORY = new Factory() {
-
-    @Override
-    public Codec get(String mediaType) {
-      if (mediaType.startsWith("application/json")) {
-        return JSON;
-      } else if (mediaType.startsWith("application/x-thrift")) {
-        return THRIFT;
-      }
-      return null;
-    }
-  };
 
   /** throws {@linkplain IllegalArgumentException} if the span couldn't be decoded */
   Span readSpan(byte[] bytes);

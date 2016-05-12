@@ -15,7 +15,7 @@ package zipkin.elasticsearch;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.junit.AssumptionViolatedException;
-import zipkin.internal.Lazy;
+import zipkin.internal.LazyCloseable;
 
 enum ElasticsearchTestGraph {
   INSTANCE;
@@ -24,7 +24,7 @@ enum ElasticsearchTestGraph {
     ElasticsearchStorage.FLUSH_ON_WRITES = true;
   }
 
-  final Lazy<ElasticsearchStorage> storage = new Lazy<ElasticsearchStorage>() {
+  final LazyCloseable<ElasticsearchStorage> storage = new LazyCloseable<ElasticsearchStorage>() {
     public AssumptionViolatedException ex;
 
     @Override protected ElasticsearchStorage compute() {

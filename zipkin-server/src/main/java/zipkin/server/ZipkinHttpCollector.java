@@ -15,7 +15,6 @@ package zipkin.server;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.List;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,89 +23,81 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.async.DeferredResult;
+import zipkin.Callback;
 import zipkin.Codec;
-import zipkin.CollectorMetrics;
-import zipkin.CollectorSampler;
-import zipkin.Span;
 import zipkin.StorageComponent;
-import zipkin.internal.SpanConsumerLogger;
+import zipkin.collector.Collector;
+import zipkin.collector.CollectorMetrics;
+import zipkin.collector.CollectorSampler;
+import zipkin.internal.Nullable;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static zipkin.internal.Util.checkNotNull;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 /**
  * Implements the POST /api/v1/spans endpoint used by instrumentation.
  */
 @RestController
 public class ZipkinHttpCollector {
+  static final ResponseEntity<?> SUCCESS = ResponseEntity.accepted().build();
   static final String APPLICATION_THRIFT = "application/x-thrift";
 
-  private final StorageComponent storage;
-  private final CollectorSampler sampler;
-  private final CollectorMetrics metrics;
-  private final SpanConsumerLogger logger;
-  private final Codec jsonCodec;
-  private final Codec thriftCodec;
+  final CollectorMetrics metrics;
+  final Collector collector;
 
-  @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler,
-      Codec.Factory codecFactory, CollectorMetrics metrics) {
-    this.storage = storage;
-    this.sampler = sampler;
-    this.metrics = metrics;
-    this.logger = new SpanConsumerLogger(ZipkinHttpCollector.class, metrics.forTransport("http"));
-    this.jsonCodec = checkNotNull(codecFactory.get(APPLICATION_JSON_VALUE), APPLICATION_JSON_VALUE);
-    this.thriftCodec = checkNotNull(codecFactory.get(APPLICATION_THRIFT), APPLICATION_THRIFT);
+  @Autowired
+  ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics) {
+    this.metrics = metrics.forTransport("http");
+    this.collector = Collector.builder(getClass())
+        .storage(storage).sampler(sampler).metrics(metrics).build();
   }
 
-  @RequestMapping(value = "/api/v1/spans", method = RequestMethod.POST)
+  @RequestMapping(value = "/api/v1/spans", method = POST)
   @ResponseStatus(HttpStatus.ACCEPTED)
-  public ResponseEntity<?> uploadSpansJson(
+  public DeferredResult<ResponseEntity<?>> uploadSpansJson(
       @RequestHeader(value = "Content-Encoding", required = false) String encoding,
       @RequestBody byte[] body
   ) {
-    logger.acceptedMessage();
-    return validateAndStoreSpans(encoding, jsonCodec, body);
+    return validateAndStoreSpans(encoding, Codec.JSON, body);
   }
 
-  @RequestMapping(value = "/api/v1/spans", method = RequestMethod.POST, consumes = APPLICATION_THRIFT)
+  @RequestMapping(value = "/api/v1/spans", method = POST, consumes = APPLICATION_THRIFT)
   @ResponseStatus(HttpStatus.ACCEPTED)
-  public ResponseEntity<?> uploadSpansThrift(
+  public DeferredResult<ResponseEntity<?>> uploadSpansThrift(
       @RequestHeader(value = "Content-Encoding", required = false) String encoding,
       @RequestBody byte[] body
   ) {
-    logger.acceptedMessage();
-    return validateAndStoreSpans(encoding, thriftCodec, body);
+    return validateAndStoreSpans(encoding, Codec.THRIFT, body);
   }
 
-  ResponseEntity<?> validateAndStoreSpans(String encoding, Codec codec, byte[] body) {
+  DeferredResult<ResponseEntity<?>> validateAndStoreSpans(String encoding, Codec codec,
+      byte[] body) {
+    DeferredResult<ResponseEntity<?>> result = new DeferredResult<>();
+    metrics.incrementMessages();
     if (encoding != null && encoding.contains("gzip")) {
       try {
         body = gunzip(body);
       } catch (IOException e) {
-        String message = logger.errorReading("Cannot gunzip spans", e);
-        return ResponseEntity.badRequest().body(message + "\n"); // newline for prettier curl
+        metrics.incrementMessagesDropped();
+        result.setResult(ResponseEntity.badRequest().body("Cannot gunzip spans\n"));
+        return result;
       }
     }
-    logger.readBytes(body.length);
-    List<Span> spans;
-    try {
-      spans = codec.readSpans(body);
-    } catch (RuntimeException e) {
-      String message = logger.errorReading(e);
-      return ResponseEntity.badRequest().body(message + "\n"); // newline for prettier curl
-    }
-    if (spans.isEmpty()) return ResponseEntity.accepted().build();
-    logger.readSpans(spans.size());
-    try {
-      storage.asyncSpanConsumer(sampler, metrics).accept(spans, logger.acceptSpansCallback(spans));
-    } catch (RuntimeException e) {
-      String message = logger.errorAcceptingSpans(spans, e);
-      return ResponseEntity.status(500).body(message + "\n"); // newline for prettier curl
-    }
-    return ResponseEntity.accepted().build();
+    collector.acceptSpans(body, codec, new Callback<Void>() {
+      @Override public void onSuccess(@Nullable Void value) {
+        result.setResult(SUCCESS);
+      }
+
+      @Override public void onError(Throwable t) {
+        String message = t.getMessage();
+        result.setErrorResult(message.startsWith("Cannot store")
+            ? ResponseEntity.status(500).body(message + "\n")
+            : ResponseEntity.status(400).body(message + "\n"));
+      }
+    });
+    return result;
   }
 
   private static final ThreadLocal<byte[]> GZIP_BUFFER = new ThreadLocal<byte[]>() {

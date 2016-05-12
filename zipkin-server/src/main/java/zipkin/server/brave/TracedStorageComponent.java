@@ -14,10 +14,9 @@
 package zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
+import java.io.IOException;
 import zipkin.AsyncSpanConsumer;
 import zipkin.AsyncSpanStore;
-import zipkin.CollectorMetrics;
-import zipkin.CollectorSampler;
 import zipkin.SpanStore;
 import zipkin.StorageComponent;
 
@@ -39,11 +38,11 @@ public final class TracedStorageComponent implements StorageComponent {
   }
 
   @Override
-  public AsyncSpanConsumer asyncSpanConsumer(CollectorSampler sampler, CollectorMetrics metrics) {
-    return new TracedAsyncSpanConsumer(brave, delegate.asyncSpanConsumer(sampler, metrics));
+  public AsyncSpanConsumer asyncSpanConsumer() {
+    return new TracedAsyncSpanConsumer(brave, delegate.asyncSpanConsumer());
   }
 
-  @Override public void close() {
+  @Override public void close() throws IOException {
     delegate.close();
   }
 }

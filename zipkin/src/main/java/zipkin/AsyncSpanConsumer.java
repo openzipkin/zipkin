@@ -14,6 +14,7 @@
 package zipkin;
 
 import java.util.List;
+import zipkin.collector.CollectorSampler;
 import zipkin.internal.Nullable;
 
 /**
@@ -36,7 +37,7 @@ public interface AsyncSpanConsumer {
   /**
    * Stores a list of spans {@link Codec#readSpans(byte[]) read} from a transport.
    *
-   * @param spans may be subject to a {@link CollectorSampler#isSampled(long) sampling policy}.
+   * @param spans may be subject to a {@link CollectorSampler#isSampled(Span) sampling policy}.
    */
   void accept(List<Span> spans, Callback<Void> callback);
 }

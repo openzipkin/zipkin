@@ -31,8 +31,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin.CollectorMetrics.NOOP_METRICS;
-import static zipkin.CollectorSampler.ALWAYS_SAMPLE;
 import static zipkin.Constants.CLIENT_RECV;
 import static zipkin.Constants.CLIENT_SEND;
 import static zipkin.Constants.LOCAL_COMPONENT;
@@ -57,7 +55,7 @@ public abstract class SpanStoreTest {
   /** Blocks until the callback completes to allow read-your-writes consistency during tests. */
   void accept(Span... spans) {
     CallbackCaptor<Void> captor = new CallbackCaptor<>();
-    storage().asyncSpanConsumer(ALWAYS_SAMPLE, NOOP_METRICS).accept(asList(spans), captor);
+    storage().asyncSpanConsumer().accept(asList(spans), captor);
     captor.get(); // block on result
   }
 

@@ -107,15 +107,20 @@ public final class Util {
   /** Inspired by {@code okio.Buffer.writeLong} */
   public static String toLowerHex(long v) {
     char[] data = new char[16];
-    writeHexByte(data, 0,  (byte) ((v >>> 56L) & 0xff));
-    writeHexByte(data, 2,  (byte) ((v >>> 48L) & 0xff));
-    writeHexByte(data, 4,  (byte) ((v >>> 40L) & 0xff));
-    writeHexByte(data, 6,  (byte) ((v >>> 32L) & 0xff));
-    writeHexByte(data, 8,  (byte) ((v >>> 24L) & 0xff));
-    writeHexByte(data, 10, (byte) ((v >>> 16L) & 0xff));
-    writeHexByte(data, 12, (byte) ((v >>> 8L) & 0xff));
-    writeHexByte(data, 14, (byte)  (v & 0xff));
+    writeHexLong(data, 0, v);
     return new String(data);
+  }
+
+  /** Inspired by {@code okio.Buffer.writeLong} */
+  public static void writeHexLong(char[] data, int pos, long v) {
+    writeHexByte(data, pos + 0,  (byte) ((v >>> 56L) & 0xff));
+    writeHexByte(data, pos + 2,  (byte) ((v >>> 48L) & 0xff));
+    writeHexByte(data, pos + 4,  (byte) ((v >>> 40L) & 0xff));
+    writeHexByte(data, pos + 6,  (byte) ((v >>> 32L) & 0xff));
+    writeHexByte(data, pos + 8,  (byte) ((v >>> 24L) & 0xff));
+    writeHexByte(data, pos + 10, (byte) ((v >>> 16L) & 0xff));
+    writeHexByte(data, pos + 12, (byte) ((v >>> 8L) & 0xff));
+    writeHexByte(data, pos + 14, (byte)  (v & 0xff));
   }
 
   static final char[] HEX_DIGITS =

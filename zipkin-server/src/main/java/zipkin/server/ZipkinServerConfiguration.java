@@ -36,25 +36,18 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import zipkin.Codec;
-import zipkin.CollectorMetrics;
-import zipkin.CollectorSampler;
 import zipkin.InMemoryStorage;
 import zipkin.StorageComponent;
 import zipkin.cassandra.SessionFactory;
+import zipkin.collector.CollectorMetrics;
+import zipkin.collector.CollectorSampler;
 import zipkin.jdbc.JDBCStorage;
-import zipkin.kafka.KafkaCollector;
-import zipkin.scribe.ScribeCollector;
+import zipkin.collector.kafka.KafkaCollector;
+import zipkin.collector.scribe.ScribeCollector;
 import zipkin.server.brave.TracedStorageComponent;
 
 @Configuration
 public class ZipkinServerConfiguration {
-
-  @Bean
-  @ConditionalOnMissingBean(Codec.Factory.class)
-  Codec.Factory codecFactory() {
-    return Codec.FACTORY;
-  }
 
   @Bean
   @ConditionalOnMissingBean(CollectorSampler.class)
@@ -179,11 +172,12 @@ public class ZipkinServerConfiguration {
    */
   @Configuration
   @EnableConfigurationProperties(ZipkinScribeProperties.class)
-  @ConditionalOnClass(name = "zipkin.scribe.ScribeCollector")
+  @ConditionalOnClass(name = "zipkin.collector.scribe.ScribeCollector")
   static class ScribeConfiguration {
-    @Bean ScribeCollector scribe(ZipkinScribeProperties scribe, CollectorSampler sampler,
-        CollectorMetrics metrics, StorageComponent storage) {
-      return scribe.toBuilder().sampler(sampler).metrics(metrics).build(storage);
+    @Bean(initMethod = "start", destroyMethod = "close") ScribeCollector scribe(
+        ZipkinScribeProperties scribe, CollectorSampler sampler, CollectorMetrics metrics,
+        StorageComponent storage) {
+      return scribe.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
     }
   }
 
@@ -194,11 +188,12 @@ public class ZipkinServerConfiguration {
   @Configuration
   @EnableConfigurationProperties(ZipkinKafkaProperties.class)
   @Conditional(KafkaEnabledCondition.class)
-  @ConditionalOnClass(name = "zipkin.kafka.KafkaCollector")
+  @ConditionalOnClass(name = "zipkin.collector.kafka.KafkaCollector")
   static class KafkaConfiguration {
-    @Bean KafkaCollector kafka(ZipkinKafkaProperties kafka, CollectorSampler sampler,
-        CollectorMetrics metrics, StorageComponent storage) {
-      return kafka.toBuilder().sampler(sampler).metrics(metrics).build(storage);
+    @Bean(initMethod = "start", destroyMethod = "close") KafkaCollector kafka(
+        ZipkinKafkaProperties kafka, CollectorSampler sampler, CollectorMetrics metrics,
+        StorageComponent storage) {
+      return kafka.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
     }
   }
 

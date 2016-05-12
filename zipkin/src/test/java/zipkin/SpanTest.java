@@ -22,6 +22,22 @@ import static zipkin.TestObjects.APP_ENDPOINT;
 public class SpanTest {
 
   @Test
+  public void idString_withParent() {
+    Span withParent = Span.builder().name("foo").traceId(1).id(3).parentId(2L).build();
+
+    assertThat(withParent.idString())
+        .isEqualTo("0000000000000001.0000000000000003<:0000000000000002");
+  }
+
+  @Test
+  public void idString_noParent() {
+    Span noParent = Span.builder().name("foo").traceId(1).id(1).build();
+
+    assertThat(noParent.idString())
+        .isEqualTo("0000000000000001.0000000000000001<:0000000000000001");
+  }
+
+  @Test
   public void spanNamesLowercase() {
     assertThat(Span.builder().traceId(1L).id(1L).name("GET").build().name)
         .isEqualTo("get");

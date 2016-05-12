@@ -91,7 +91,7 @@ public final class TestObjects {
   public static final Span[] LOTS_OF_SPANS =
       new Random().longs(100_000).mapToObj(t -> span(t)).toArray(Span[]::new);
 
-  static Span span(long traceId) {
+  public static Span span(long traceId) {
     return spanBuilder.traceId(traceId).id(traceId).build();
   }
 }

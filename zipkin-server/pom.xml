@@ -124,14 +124,14 @@
     <!-- Kafka transport -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-transport-kafka</artifactId>
+      <artifactId>zipkin-collector-kafka</artifactId>
       <optional>true</optional>
     </dependency>
 
     <!-- Scribe transport -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-transport-scribe</artifactId>
+      <artifactId>zipkin-collector-scribe</artifactId>
       <optional>true</optional>
     </dependency>
 

@@ -14,10 +14,9 @@
 package zipkin.cassandra;
 
 import com.datastax.driver.core.Session;
-import java.io.Closeable;
-import zipkin.internal.Lazy;
+import zipkin.internal.LazyCloseable;
 
-final class LazySession extends Lazy<Session> implements Closeable {
+final class LazySession extends LazyCloseable<Session> {
   private final SessionFactory sessionFactory;
   private final CassandraStorage storage;
 
@@ -28,11 +27,5 @@ final class LazySession extends Lazy<Session> implements Closeable {
 
   @Override protected Session compute() {
     return sessionFactory.create(storage);
-  }
-
-  @Override
-  public void close() {
-    Session maybeNull = maybeGet();
-    if (maybeNull != null) maybeNull.close();
   }
 }

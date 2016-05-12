@@ -22,29 +22,27 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import okio.Buffer;
 import okio.GzipSource;
-import zipkin.AsyncSpanConsumer;
+import zipkin.Callback;
 import zipkin.Codec;
-import zipkin.CollectorMetrics;
 import zipkin.DependencyLink;
 import zipkin.QueryRequest;
 import zipkin.Span;
 import zipkin.SpanStore;
 import zipkin.StorageComponent;
-import zipkin.internal.SpanConsumerLogger;
-
-import static zipkin.CollectorSampler.ALWAYS_SAMPLE;
+import zipkin.collector.Collector;
+import zipkin.collector.CollectorMetrics;
 
 final class ZipkinDispatcher extends Dispatcher {
   private final SpanStore store;
-  private final AsyncSpanConsumer consumer;
+  private final Collector consumer;
+  private final CollectorMetrics metrics;
   private final MockWebServer server;
-  private final SpanConsumerLogger logger;
 
   ZipkinDispatcher(StorageComponent storage, CollectorMetrics metrics, MockWebServer server) {
     this.store = storage.spanStore();
-    this.consumer = storage.asyncSpanConsumer(ALWAYS_SAMPLE, metrics);
+    this.consumer = Collector.builder(getClass()).storage(storage).metrics(metrics).build();
+    this.metrics = metrics;
     this.server = server;
-    this.logger = new SpanConsumerLogger(ZipkinRule.class, metrics);
   }
 
   @Override
@@ -75,7 +73,7 @@ final class ZipkinDispatcher extends Dispatcher {
       }
     } else if (request.getMethod().equals("POST")) {
       if (url.encodedPath().equals("/api/v1/spans")) {
-        logger.acceptedMessage();
+        metrics.incrementMessages();
         byte[] body = request.getBody().readByteArray();
         String encoding = request.getHeader("Content-Encoding");
         if (encoding != null && encoding.contains("gzip")) {
@@ -85,25 +83,25 @@ final class ZipkinDispatcher extends Dispatcher {
             while (source.read(result, Integer.MAX_VALUE) != -1) ;
             body = result.readByteArray();
           } catch (IOException e) {
-            String message = logger.errorReading("Cannot gunzip spans", e);
-            return new MockResponse().setResponseCode(400).setBody(message);
+            metrics.incrementMessagesDropped();
+            return new MockResponse().setResponseCode(400).setBody("Cannot gunzip spans");
           }
         }
-        logger.readBytes(body.length);
-
         String type = request.getHeader("Content-Type");
         Codec codec = type != null && type.contains("/x-thrift") ? Codec.THRIFT : Codec.JSON;
-        List<Span> spans = codec.readSpans(body);
 
-        if (spans.isEmpty()) return new MockResponse().setResponseCode(202);
-        logger.readSpans(spans.size());
-        try {
-          consumer.accept(spans, logger.acceptSpansCallback(spans));
-        } catch (RuntimeException e) {
-          String message = logger.errorAcceptingSpans(spans, e);
-          return new MockResponse().setResponseCode(500).setBody(message);
-        }
-        return new MockResponse().setResponseCode(202);
+        final MockResponse result = new MockResponse();
+        consumer.acceptSpans(body, codec, new Callback<Void>() {
+          @Override public void onSuccess(Void value) {
+            result.setResponseCode(202);
+          }
+
+          @Override public void onError(Throwable t) {
+            String message = t.getMessage();
+            result.setBody(message).setResponseCode(message.startsWith("Cannot store") ? 500 : 400);
+          }
+        });
+        return result;
       }
     } else { // unsupported method
       return new MockResponse().setResponseCode(405);
@@ -113,13 +111,13 @@ final class ZipkinDispatcher extends Dispatcher {
 
   static QueryRequest toQueryRequest(HttpUrl url) {
     return QueryRequest.builder().serviceName(url.queryParameter("serviceName"))
-                           .spanName(url.queryParameter("spanName"))
-                           .parseAnnotationQuery(url.queryParameter("annotationQuery"))
-                           .minDuration(maybeLong(url.queryParameter("minDuration")))
-                           .maxDuration(maybeLong(url.queryParameter("maxDuration")))
-                           .endTs(maybeLong(url.queryParameter("endTs")))
-                           .lookback(maybeLong(url.queryParameter("lookback")))
-                           .limit(maybeInteger(url.queryParameter("limit"))).build();
+                                 .spanName(url.queryParameter("spanName"))
+                                 .parseAnnotationQuery(url.queryParameter("annotationQuery"))
+                                 .minDuration(maybeLong(url.queryParameter("minDuration")))
+                                 .maxDuration(maybeLong(url.queryParameter("maxDuration")))
+                                 .endTs(maybeLong(url.queryParameter("endTs")))
+                                 .lookback(maybeLong(url.queryParameter("lookback")))
+                                 .limit(maybeInteger(url.queryParameter("limit"))).build();
   }
 
   static Long maybeLong(String input) {

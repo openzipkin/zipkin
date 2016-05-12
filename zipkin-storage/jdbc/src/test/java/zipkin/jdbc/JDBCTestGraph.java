@@ -16,7 +16,7 @@ package zipkin.jdbc;
 import java.sql.SQLException;
 import org.junit.AssumptionViolatedException;
 import org.mariadb.jdbc.MariaDbDataSource;
-import zipkin.internal.Lazy;
+import zipkin.internal.LazyCloseable;
 import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.envOr;
@@ -24,7 +24,7 @@ import static zipkin.internal.Util.envOr;
 enum JDBCTestGraph {
   INSTANCE;
 
-  final Lazy<JDBCStorage> storage = new Lazy<JDBCStorage>() {
+  final LazyCloseable<JDBCStorage> storage = new LazyCloseable<JDBCStorage>() {
     @Override protected JDBCStorage compute() {
       String mysqlUrl = mysqlUrlFromEnv();
       if (mysqlUrl == null) {
