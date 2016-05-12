@@ -59,10 +59,12 @@ check_travis_branch_equals_travis_tag() {
   fi
 }
 
-check_release_or_version_tag() {
+check_release_tag() {
     tag="${TRAVIS_TAG}"
-    if is_version_tag; then
-        echo "Build started by version tag $tag. Deploying."
+    if [[ "$tag" =~ ^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ ]]; then
+        echo "Build started by version tag $tag. During the release process tags like this"
+        echo "are created by the 'release' Maven plugin. Nothing to do here."
+        exit 0
     elif [[ ! "$tag" =~ ^release-[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ ]]; then
         echo "You must specify a tag of the format 'release-0.0.0' to release this project."
         echo "The provided tag ${tag} doesn't match that. Aborting."
@@ -70,9 +72,10 @@ check_release_or_version_tag() {
     fi
 }
 
-is_version_tag() {
-  tag="${TRAVIS_TAG}"
-  if [[ "$tag" =~ ^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ ]]; then
+is_release_commit() {
+  project_version=$(./mvnw help:evaluate -N -Dexpression=project.version|grep -v '\[')
+  if [[ "$project_version" =~ ^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ ]]; then
+    echo "Build started by release commit $project_version. Will synchronize to maven central."
     return 0
   else
     return 1
@@ -103,7 +106,7 @@ safe_checkout_master() {
 
 if ! is_pull_request && build_started_by_tag; then
   check_travis_branch_equals_travis_tag
-  check_release_or_version_tag
+  check_release_tag
 fi
 
 MYSQL_USER=root ./mvnw install -nsu
@@ -111,13 +114,13 @@ MYSQL_USER=root ./mvnw install -nsu
 # If we are on a pull request, our only job is to run tests, which happened above via ./mvnw install
 if is_pull_request; then
   true
-# If we are on master or a version tag, our only job is to deploy.
-#   - If a version tag fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
-elif is_travis_branch_master || is_version_tag; then
+# If we are on master, we will deploy the latest snapshot or release version
+#   - If a release commit fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
+elif is_travis_branch_master; then
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests deploy
 
   # If the deployment succeeded, sync it to Maven Central. Note: this needs to be done once per project, not module, hence -N
-  if is_version_tag; then
+  if is_release_commit; then
     ./mvnw --batch-mode -s ./.settings.xml -nsu -N io.zipkin.java:centralsync-maven-plugin:sync
   fi
 

@@ -58,6 +58,12 @@ install:
 script:
   - ./travis/publish.sh
 
+# Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
+# See https://github.com/travis-ci/travis-ci/issues/1532
+branches:
+  except:
+    - /^[0-9]/
+
 env:
   global:
   # Ex. travis encrypt BINTRAY_USER=your_github_account
