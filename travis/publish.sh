@@ -106,7 +106,7 @@ if is_pull_request; then
 elif build_started_by_tag; then
   safe_checkout_master
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion="$(release_version)" -Darguments="-DskipTests" release:prepare
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -Darguments="-DskipTests" release:perform
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests deploy
 elif is_travis_branch_master; then
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks,-:interop,-:centralsync-maven-plugin -DskipTests deploy
 fi
