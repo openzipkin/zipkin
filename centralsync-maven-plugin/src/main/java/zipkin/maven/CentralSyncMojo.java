@@ -14,8 +14,10 @@
 package zipkin.maven;
 
 import java.io.IOException;
-import okhttp3.FormBody;
+import java.util.concurrent.TimeUnit;
+import okhttp3.Credentials;
 import okhttp3.HttpUrl;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -33,7 +35,9 @@ import org.apache.maven.settings.Settings;
  */
 @Mojo(name = "sync", defaultPhase = LifecyclePhase.DEPLOY)
 public class CentralSyncMojo extends AbstractMojo {
-  final OkHttpClient client = new OkHttpClient();
+  final OkHttpClient client = new OkHttpClient.Builder()
+      .readTimeout(10, TimeUnit.MINUTES) // central sync is synchronous and takes a long time
+      .build();
 
   @Parameter(defaultValue = "${project.version}", required = true)
   String version;
@@ -48,44 +52,43 @@ public class CentralSyncMojo extends AbstractMojo {
 
   /** settings/server/id containing the username and password */
   @Parameter
-  String serverId = "bintray";
+  String bintrayServerId = "bintray";
+
+  @Parameter
+  String sonatypeServerId = "sonatype";
 
   @Parameter
   String baseUrl = "https://api.bintray.com";
 
   @Parameter
-  String repository = "maven";
+  String subject = "openzipkin";
+
+  @Parameter
+  String repo = "maven";
 
   @Parameter
   String packageName = "zipkin-java";
 
   @Override
   public void execute() throws MojoExecutionException {
-    Server server = settings.getServer(serverId);
-    if (server == null) {
-      throw new IllegalStateException("settings/server/id " + serverId + " not found!");
-    }
-    if (server.getUsername() == null) {
-      throw new IllegalStateException("settings/server/" + serverId + "/username not found!");
-    }
-    if (server.getPassword() == null) {
-      throw new IllegalStateException("settings/server/" + serverId + "/password not found!");
-    }
+    Server bintray = verifyCredentialsPresent(bintrayServerId);
+    Server sonatype = verifyCredentialsPresent(sonatypeServerId);
 
-    RequestBody formBody = new FormBody.Builder()
-        .add("username", server.getUsername())
-        .add("password", server.getPassword())
-        .build();
     HttpUrl url = HttpUrl.parse(baseUrl).newBuilder()
         .addPathSegment("maven_central_sync")
-        .addPathSegment(repository)
+        .addPathSegment(subject)
+        .addPathSegment(repo)
         .addPathSegment(packageName)
         .addPathSegment("versions")
         .addPathSegment(version).build();
     Request request = new Request.Builder()
         .url(url)
+        .addHeader("Authorization", Credentials.basic(bintray.getUsername(), bintray.getPassword()))
         .addHeader("User-Agent", "openzipkin/zipkin-java release process, centralsync-maven-plugin")
-        .post(formBody)
+        .post(RequestBody.create(MediaType.parse("application/json"), "{\n"
+            + "  \"username\": \"" + sonatype.getUsername() + "\",\n"
+            + "  \"password\": \"" + sonatype.getPassword() + "\"\n"
+            + "}"))
         .build();
     if (dryRun) {
       getLog().info("(Dry run) Would Sync to Maven Central via: POST " + request.url());
@@ -93,9 +96,27 @@ public class CentralSyncMojo extends AbstractMojo {
     }
     try {
       Response response = client.newCall(request).execute();
-      getLog().info(response.body().string());
+      if (response.isSuccessful()) {
+        getLog().info(response.body().string());
+      } else {
+        throw new MojoExecutionException(request.url() + " failed: " + response);
+      }
     } catch (IOException e) {
-      throw new MojoExecutionException("API call failed", e);
+      throw new MojoExecutionException(request.url() + " failed: " + e.getMessage(), e);
     }
+  }
+
+  Server verifyCredentialsPresent(String id) {
+    Server server = settings.getServer(id);
+    if (server == null) {
+      throw new IllegalStateException("settings/server/id " + id + " not found!");
+    }
+    if (server.getUsername() == null) {
+      throw new IllegalStateException("settings/server/" + id + "/username not found!");
+    }
+    if (server.getPassword() == null) {
+      throw new IllegalStateException("settings/server/" + id + "/password not found!");
+    }
+    return server;
   }
 }
