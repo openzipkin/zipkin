@@ -42,6 +42,10 @@ public final class TracedStorageComponent implements StorageComponent {
     return new TracedAsyncSpanConsumer(brave, delegate.asyncSpanConsumer());
   }
 
+  @Override public CheckResult check() {
+    return delegate.check();
+  }
+
   @Override public void close() throws IOException {
     delegate.close();
   }

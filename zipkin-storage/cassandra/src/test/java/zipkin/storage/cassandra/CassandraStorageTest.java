@@ -11,21 +11,23 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage;
+package zipkin.storage.cassandra;
 
-import zipkin.Component;
+import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import org.junit.Test;
+import zipkin.Component.CheckResult;
 
-/**
- * A component that provides storage interfaces used for spans and aggregations. Implementations are
- * free to provide other interfaces, but the ones declared here must be supported.
- *
- * @see InMemoryStorage
- */
-public interface StorageComponent extends Component {
+import static org.assertj.core.api.Assertions.assertThat;
 
-  SpanStore spanStore();
+public class CassandraStorageTest {
 
-  AsyncSpanStore asyncSpanStore();
+  @Test
+  public void check_failsInsteadOfThrowing() {
+    CheckResult result =
+        CassandraStorage.builder().contactPoints("1.1.1.1").build().check();
 
-  AsyncSpanConsumer asyncSpanConsumer();
+    assertThat(result.ok).isFalse();
+    assertThat(result.exception)
+        .isInstanceOf(NoHostAvailableException.class);
+  }
 }

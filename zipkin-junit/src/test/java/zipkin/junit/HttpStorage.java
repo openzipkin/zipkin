@@ -61,6 +61,15 @@ final class HttpStorage implements StorageComponent {
     return consumer;
   }
 
+  @Override public CheckResult check() {
+    try {
+      spanStore.getServiceNames();
+    } catch (RuntimeException e){
+      return CheckResult.failed(e);
+    }
+    return CheckResult.OK;
+  }
+
   @Override public void close() {
     client.connectionPool().evictAll();
   }

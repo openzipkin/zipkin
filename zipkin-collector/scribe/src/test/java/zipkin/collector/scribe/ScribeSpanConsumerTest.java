@@ -219,6 +219,10 @@ public class ScribeSpanConsumerTest {
             return consumer;
           }
 
+          @Override public CheckResult check() {
+            return CheckResult.OK;
+          }
+
           @Override public void close() {
             throw new AssertionError();
           }

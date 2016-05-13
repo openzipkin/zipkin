@@ -27,6 +27,7 @@ import zipkin.storage.StorageComponent;
 
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.storage.StorageAdapters.blockingToAsync;
+import static zipkin.storage.jdbc.internal.generated.DefaultCatalog.DEFAULT_CATALOG;
 import static zipkin.storage.jdbc.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin.storage.jdbc.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
@@ -82,8 +83,8 @@ public final class JDBCStorage implements StorageComponent {
   private final AsyncSpanConsumer asyncSpanConsumer;
 
   JDBCStorage(JDBCStorage.Builder builder) {
-    this.datasource = builder.datasource;
-    this.executor = builder.executor;
+    this.datasource = checkNotNull(builder.datasource, "datasource");
+    this.executor = checkNotNull(builder.executor, "executor");
     this.context = new DSLContexts(builder.settings, builder.listenerProvider);
     this.spanStore = new JDBCSpanStore(datasource, context);
     this.asyncSpanStore = blockingToAsync(spanStore, executor);
@@ -100,6 +101,17 @@ public final class JDBCStorage implements StorageComponent {
 
   @Override public AsyncSpanConsumer asyncSpanConsumer() {
     return asyncSpanConsumer;
+  }
+
+  @Override public CheckResult check() {
+    try (Connection conn = datasource.getConnection()) {
+      if (!context.get(conn).meta().getSchemas().contains(DEFAULT_CATALOG.ZIPKIN)) {
+        throw new IllegalStateException("Zipkin schema is missing");
+      }
+    } catch (SQLException | RuntimeException e) {
+      return CheckResult.failed(e);
+    }
+    return CheckResult.OK;
   }
 
   @Override public void close() {

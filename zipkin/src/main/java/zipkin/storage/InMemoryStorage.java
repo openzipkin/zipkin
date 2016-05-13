@@ -55,6 +55,10 @@ public final class InMemoryStorage implements StorageComponent {
     return spanStore.acceptedSpanCount;
   }
 
+  @Override public CheckResult check() {
+    return CheckResult.OK;
+  }
+
   @Override public void close() {
   }
 }
