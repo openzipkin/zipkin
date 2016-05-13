@@ -17,8 +17,9 @@ import com.twitter.zipkin.common.Span;
 import com.twitter.zipkin.storage.DependencyStore;
 import com.twitter.zipkin.storage.DependencyStoreSpec;
 import scala.collection.immutable.List;
-import zipkin.interop.ScalaDependencyStoreAdapter;
-import zipkin.interop.ScalaSpanStoreAdapter;
+import zipkin.storage.interop.ScalaDependencyStoreAdapter;
+import zipkin.storage.interop.ScalaSpanStoreAdapter;
+import zipkin.storage.InMemoryStorage;
 
 public class InMemoryScalaDependencyStoreTest extends DependencyStoreSpec {
   InMemoryStorage mem = new InMemoryStorage();

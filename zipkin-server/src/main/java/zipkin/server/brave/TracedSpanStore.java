@@ -16,10 +16,10 @@ package zipkin.server.brave;
 import com.github.kristofa.brave.LocalTracer;
 import java.util.List;
 import zipkin.DependencyLink;
-import zipkin.QueryRequest;
 import zipkin.Span;
-import zipkin.SpanStore;
 import zipkin.internal.Nullable;
+import zipkin.storage.QueryRequest;
+import zipkin.storage.SpanStore;
 
 final class TracedSpanStore implements SpanStore {
   private final LocalTracer tracer;

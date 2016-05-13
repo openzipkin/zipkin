@@ -16,12 +16,12 @@ package zipkin.junit;
 import java.util.concurrent.Executor;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import zipkin.AsyncSpanConsumer;
-import zipkin.AsyncSpanStore;
-import zipkin.SpanStore;
-import zipkin.StorageComponent;
+import zipkin.storage.AsyncSpanConsumer;
+import zipkin.storage.AsyncSpanStore;
+import zipkin.storage.SpanStore;
+import zipkin.storage.StorageComponent;
 
-import static zipkin.StorageAdapters.blockingToAsync;
+import static zipkin.storage.StorageAdapters.blockingToAsync;
 
 /**
  * Test storage component that keeps all spans in memory, accepting them on the calling thread.

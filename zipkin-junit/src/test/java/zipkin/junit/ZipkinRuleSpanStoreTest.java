@@ -14,8 +14,8 @@
 package zipkin.junit;
 
 import org.junit.Rule;
-import zipkin.SpanStoreTest;
-import zipkin.StorageComponent;
+import zipkin.storage.SpanStoreTest;
+import zipkin.storage.StorageComponent;
 
 /** Tests the http interface of {@link ZipkinRule}. */
 public class ZipkinRuleSpanStoreTest extends SpanStoreTest {

@@ -15,10 +15,10 @@ package zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
 import java.util.List;
-import zipkin.AsyncSpanConsumer;
-import zipkin.Callback;
 import zipkin.Span;
 import zipkin.internal.Nullable;
+import zipkin.storage.AsyncSpanConsumer;
+import zipkin.storage.Callback;
 
 final class TracedAsyncSpanConsumer implements AsyncSpanConsumer {
   private final Brave brave;

@@ -16,13 +16,12 @@ package zipkin.server.brave;
 import com.datastax.driver.core.Session;
 import com.github.kristofa.brave.Brave;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
-import zipkin.cassandra.CassandraStorage;
-import zipkin.cassandra.SessionFactory;
 import zipkin.server.ConditionalOnSelfTracing;
+import zipkin.storage.cassandra.CassandraStorage;
+import zipkin.storage.cassandra.SessionFactory;
 
 /** Sets up the Cassandra tracing in Brave as an initialization. */
 @ConditionalOnSelfTracing(storageType = "cassandra")

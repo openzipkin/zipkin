@@ -16,10 +16,10 @@ package zipkin.collector;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
-import zipkin.AsyncSpanConsumer;
-import zipkin.Callback;
+import zipkin.storage.AsyncSpanConsumer;
+import zipkin.storage.Callback;
 import zipkin.Span;
-import zipkin.StorageComponent;
+import zipkin.storage.StorageComponent;
 
 /**
  * The collector represents the server-side of a transport. Its job is to take spans from a

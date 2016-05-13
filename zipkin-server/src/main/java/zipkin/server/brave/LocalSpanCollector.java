@@ -17,13 +17,13 @@ import com.github.kristofa.brave.AbstractSpanCollector;
 import com.github.kristofa.brave.EmptySpanCollectorMetricsHandler;
 import com.github.kristofa.brave.SpanCollector;
 import com.twitter.zipkin.gen.SpanCodec;
-import zipkin.AsyncSpanConsumer;
 import zipkin.Codec;
-import zipkin.SpanStore;
-import zipkin.StorageComponent;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
+import zipkin.storage.Callback;
+import zipkin.storage.SpanStore;
+import zipkin.storage.StorageComponent;
 
 /**
  * A Brave {@link SpanCollector} that forwards to the local {@link SpanStore}.
@@ -50,6 +50,6 @@ public class LocalSpanCollector extends AbstractSpanCollector {
   @Override
   protected void sendSpans(byte[] thrift) {
     metrics.incrementMessages();
-    collector.acceptSpans(thrift, Codec.THRIFT, AsyncSpanConsumer.NOOP_CALLBACK);
+    collector.acceptSpans(thrift, Codec.THRIFT, Callback.NOOP);
   }
 }

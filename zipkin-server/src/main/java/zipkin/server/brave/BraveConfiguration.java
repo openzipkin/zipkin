@@ -27,11 +27,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Scope;
+import zipkin.Endpoint;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
-import zipkin.Endpoint;
-import zipkin.StorageComponent;
 import zipkin.server.ConditionalOnSelfTracing;
+import zipkin.storage.StorageComponent;
 
 @Configuration
 @ConditionalOnSelfTracing

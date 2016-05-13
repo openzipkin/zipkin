@@ -17,10 +17,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
-import zipkin.Callback;
+import zipkin.storage.Callback;
 import zipkin.Codec;
 import zipkin.Span;
-import zipkin.StorageComponent;
+import zipkin.storage.StorageComponent;
 
 import static java.lang.String.format;
 import static java.util.logging.Level.WARNING;

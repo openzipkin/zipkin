@@ -20,7 +20,7 @@ import zipkin.Codec;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 
-import static zipkin.AsyncSpanConsumer.NOOP_CALLBACK;
+import static zipkin.storage.Callback.NOOP;
 
 /** Consumes spans from Kafka messages, ignoring malformed input */
 final class KafkaStreamProcessor implements Runnable {
@@ -57,12 +57,12 @@ final class KafkaStreamProcessor implements Runnable {
       // .. When serializing a List[ThriftSpan], the first byte is the member type, TType.STRUCT(12)
       // .. As ThriftSpan has no STRUCT fields: so, if the first byte is TType.STRUCT(12), it is a list.
       if (bytes[0] == '[') {
-        collector.acceptSpans(bytes, Codec.JSON, NOOP_CALLBACK);
+        collector.acceptSpans(bytes, Codec.JSON, NOOP);
       } else {
         if (bytes[0] == 12 /* TType.STRUCT */) {
-          collector.acceptSpans(bytes, Codec.THRIFT, NOOP_CALLBACK);
+          collector.acceptSpans(bytes, Codec.THRIFT, NOOP);
         } else {
-          collector.acceptSpans(Collections.singletonList(bytes), Codec.THRIFT, NOOP_CALLBACK);
+          collector.acceptSpans(Collections.singletonList(bytes), Codec.THRIFT, NOOP);
         }
       }
     }

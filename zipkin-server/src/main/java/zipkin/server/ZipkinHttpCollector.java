@@ -26,13 +26,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
-import zipkin.Callback;
 import zipkin.Codec;
-import zipkin.StorageComponent;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.Nullable;
+import zipkin.storage.Callback;
+import zipkin.storage.StorageComponent;
 
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 

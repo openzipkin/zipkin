@@ -10,6 +10,6 @@ will be stored in an index like zipkin-2016-03-19. There is no support for TTL t
 It is recommended instead to use [Elastic Curator](https://www.elastic.co/guide/en/elasticsearch/client/curator/current/about.html)
 to remove indices older than the point you are interested in.
 
-`zipkin.elasticsearch.ElasticsearchStorage.Builder` includes defaults
+`zipkin.storage.elasticsearch.ElasticsearchStorage.Builder` includes defaults
 that will operate against a local Elasticsearch installation.
 

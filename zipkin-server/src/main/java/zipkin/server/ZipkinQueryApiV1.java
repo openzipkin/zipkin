@@ -26,9 +26,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 import zipkin.Codec;
-import zipkin.QueryRequest;
 import zipkin.Span;
-import zipkin.StorageComponent;
+import zipkin.storage.QueryRequest;
+import zipkin.storage.StorageComponent;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
