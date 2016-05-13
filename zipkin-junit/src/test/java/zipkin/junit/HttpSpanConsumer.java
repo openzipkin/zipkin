@@ -22,10 +22,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import zipkin.AsyncSpanConsumer;
-import zipkin.Callback;
 import zipkin.Codec;
 import zipkin.Span;
+import zipkin.storage.AsyncSpanConsumer;
+import zipkin.storage.Callback;
 
 /**
  * Implements the span consumer interface by forwarding requests over http.

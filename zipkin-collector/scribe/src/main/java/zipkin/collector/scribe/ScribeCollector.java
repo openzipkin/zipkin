@@ -18,12 +18,12 @@ import com.facebook.swift.service.ThriftServer;
 import com.facebook.swift.service.ThriftServerConfig;
 import com.facebook.swift.service.ThriftServiceProcessor;
 import java.io.Closeable;
-import zipkin.StorageComponent;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorComponent;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
-import zipkin.spanstore.guava.GuavaSpanConsumer;
+import zipkin.storage.StorageComponent;
+import zipkin.storage.guava.GuavaSpanConsumer;
 
 import static java.util.Collections.emptyList;
 import static zipkin.internal.Util.checkNotNull;

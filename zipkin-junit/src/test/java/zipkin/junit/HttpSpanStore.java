@@ -21,10 +21,10 @@ import okhttp3.Request;
 import okhttp3.Response;
 import zipkin.Codec;
 import zipkin.DependencyLink;
-import zipkin.QueryRequest;
 import zipkin.Span;
-import zipkin.SpanStore;
 import zipkin.internal.Nullable;
+import zipkin.storage.QueryRequest;
+import zipkin.storage.SpanStore;
 
 /**
  * Implements the span store interface by forwarding requests over http.

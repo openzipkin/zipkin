@@ -14,8 +14,8 @@
 package zipkin.junit;
 
 import org.junit.Rule;
-import zipkin.DependenciesTest;
-import zipkin.StorageComponent;
+import zipkin.storage.DependenciesTest;
+import zipkin.storage.StorageComponent;
 
 /** Tests the http interface of {@link ZipkinRule}. */
 public class ZipkinRuleDependenciesTest extends DependenciesTest {

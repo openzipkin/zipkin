@@ -16,10 +16,10 @@ package zipkin.collector.zookeeper;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import zipkin.InMemoryStorage;
 import zipkin.Span;
 import zipkin.collector.Collector;
 import zipkin.internal.CallbackCaptor;
+import zipkin.storage.InMemoryStorage;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;

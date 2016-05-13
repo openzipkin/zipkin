@@ -16,7 +16,7 @@ package zipkin.server;
 import java.util.Collections;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import zipkin.elasticsearch.ElasticsearchStorage;
+import zipkin.storage.elasticsearch.ElasticsearchStorage;
 
 @ConfigurationProperties("elasticsearch")
 public class ZipkinElasticsearchProperties {

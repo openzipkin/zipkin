@@ -22,8 +22,8 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import zipkin.Codec;
 import zipkin.InMemoryCollectorMetrics;
-import zipkin.StorageComponent;
 import zipkin.TestObjects;
+import zipkin.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;

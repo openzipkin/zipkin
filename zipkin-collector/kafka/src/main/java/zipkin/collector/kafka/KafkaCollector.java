@@ -23,13 +23,13 @@ import java.util.concurrent.Executors;
 import kafka.consumer.ConsumerConfig;
 import kafka.consumer.KafkaStream;
 import kafka.javaapi.consumer.ZookeeperConsumerConnector;
-import zipkin.AsyncSpanConsumer;
-import zipkin.StorageComponent;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorComponent;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.LazyCloseable;
+import zipkin.storage.AsyncSpanConsumer;
+import zipkin.storage.StorageComponent;
 
 import static kafka.consumer.Consumer.createJavaConsumerConnector;
 import static zipkin.internal.Util.checkNotNull;

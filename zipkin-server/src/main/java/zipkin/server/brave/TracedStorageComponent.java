@@ -15,10 +15,10 @@ package zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
 import java.io.IOException;
-import zipkin.AsyncSpanConsumer;
-import zipkin.AsyncSpanStore;
-import zipkin.SpanStore;
-import zipkin.StorageComponent;
+import zipkin.storage.AsyncSpanConsumer;
+import zipkin.storage.AsyncSpanStore;
+import zipkin.storage.SpanStore;
+import zipkin.storage.StorageComponent;
 
 public final class TracedStorageComponent implements StorageComponent {
   private final Brave brave;

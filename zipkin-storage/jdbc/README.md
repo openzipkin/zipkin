@@ -7,7 +7,7 @@ The implementation uses JOOQ to generate MySQL SQL commands. It is only tested o
 
 The schema is the same as [zipkin-scala](https://github.com/openzipkin/zipkin/tree/master/zipkin-anormdb).
 
-`zipkin.elasticsearch.JDBCStorage.Builder` includes defaults that will
+`zipkin.storage.jdbc.JDBCStorage.Builder` includes defaults that will
 operate against a given Datasource.
 
 ## Applying the schema
@@ -28,6 +28,6 @@ $ mysql -uroot -Dzipkin < zipkin-storage/jdbc/src/main/resources/mysql.sql
 ## Generating the schema types
 
 ```bash
-$ rm -rf zipkin-storage/jdbc/src/main/java/zipkin/jdbc/internal/generated/
-$ ./mvnw -pl :storage-jdbc clean org.jooq:jooq-codegen-maven:generate com.mycila:license-maven-plugin:format
+$ rm -rf zipkin-storage/jdbc/src/main/java/zipkin/storage/jdbc/internal/generated/
+$ ./mvnw -pl :zipkin-storage-jdbc clean org.jooq:jooq-codegen-maven:generate com.mycila:license-maven-plugin:format
 ```

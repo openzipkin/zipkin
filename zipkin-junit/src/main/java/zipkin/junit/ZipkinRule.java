@@ -29,8 +29,8 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import zipkin.InMemoryCollectorMetrics;
-import zipkin.InMemoryStorage;
 import zipkin.Span;
+import zipkin.storage.InMemoryStorage;
 
 import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
 

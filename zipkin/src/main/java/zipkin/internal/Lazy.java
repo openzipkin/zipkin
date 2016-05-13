@@ -14,7 +14,7 @@
 
 package zipkin.internal;
 
-import zipkin.StorageComponent;
+import zipkin.storage.StorageComponent;
 
 /**
  * Memoizes the result of {@link #compute()}, used when {@link StorageComponent} needs to share a

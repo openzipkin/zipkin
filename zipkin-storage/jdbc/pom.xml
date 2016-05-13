@@ -28,7 +28,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <jooq.version>3.7.3</jooq.version>
+    <jooq.version>3.8.0</jooq.version>
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
   </properties>
@@ -106,7 +106,7 @@
                 <inputSchema>zipkin</inputSchema>
               </database>
               <target>
-                <packageName>zipkin.jdbc.internal.generated</packageName>
+                <packageName>zipkin.storage.jdbc.internal.generated</packageName>
                 <directory>src/main/java</directory>
               </target>
             </generator>

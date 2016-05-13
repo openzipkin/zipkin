@@ -30,8 +30,8 @@ import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.framework.recipes.nodes.GroupMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import zipkin.collector.CollectorSampler;
 import zipkin.Span;
+import zipkin.collector.CollectorSampler;
 import zipkin.internal.Util;
 
 import static com.google.common.base.Preconditions.checkState;

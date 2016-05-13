@@ -36,15 +36,15 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import zipkin.InMemoryStorage;
-import zipkin.StorageComponent;
-import zipkin.cassandra.SessionFactory;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
-import zipkin.jdbc.JDBCStorage;
 import zipkin.collector.kafka.KafkaCollector;
 import zipkin.collector.scribe.ScribeCollector;
 import zipkin.server.brave.TracedStorageComponent;
+import zipkin.storage.InMemoryStorage;
+import zipkin.storage.StorageComponent;
+import zipkin.storage.cassandra.SessionFactory;
+import zipkin.storage.jdbc.JDBCStorage;
 
 @Configuration
 public class ZipkinServerConfiguration {

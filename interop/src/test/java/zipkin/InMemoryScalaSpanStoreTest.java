@@ -15,7 +15,8 @@ package zipkin;
 
 import com.twitter.zipkin.storage.SpanStore;
 import com.twitter.zipkin.storage.SpanStoreSpec;
-import zipkin.interop.ScalaSpanStoreAdapter;
+import zipkin.storage.interop.ScalaSpanStoreAdapter;
+import zipkin.storage.InMemoryStorage;
 
 public class InMemoryScalaSpanStoreTest extends SpanStoreSpec {
   InMemoryStorage mem = new InMemoryStorage();

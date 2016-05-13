@@ -40,7 +40,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import zipkin.cassandra.NamedBoundStatement;
+import zipkin.storage.cassandra.NamedBoundStatement;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.singletonMap;

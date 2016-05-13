@@ -15,7 +15,7 @@ package zipkin.server;
 
 import java.util.concurrent.TimeUnit;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import zipkin.cassandra.CassandraStorage;
+import zipkin.storage.cassandra.CassandraStorage;
 
 @ConfigurationProperties("cassandra")
 public class ZipkinCassandraProperties {

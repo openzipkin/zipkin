@@ -7,6 +7,6 @@ The implementation uses the [Datastax Java Driver 3.x](https://github.com/datast
 
 The CQL schema is the same as [zipkin-scala](https://github.com/openzipkin/zipkin/tree/master/zipkin-cassandra).
 
-`zipkin.cassandra.CassandraStorage.Builder` includes defaults that will
+`zipkin.storage.cassandra.CassandraStorage.Builder` includes defaults that will
 operate against a local Cassandra installation.
 

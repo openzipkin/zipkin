@@ -22,15 +22,15 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import okio.Buffer;
 import okio.GzipSource;
-import zipkin.Callback;
 import zipkin.Codec;
 import zipkin.DependencyLink;
-import zipkin.QueryRequest;
 import zipkin.Span;
-import zipkin.SpanStore;
-import zipkin.StorageComponent;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
+import zipkin.storage.Callback;
+import zipkin.storage.QueryRequest;
+import zipkin.storage.SpanStore;
+import zipkin.storage.StorageComponent;
 
 final class ZipkinDispatcher extends Dispatcher {
   private final SpanStore store;

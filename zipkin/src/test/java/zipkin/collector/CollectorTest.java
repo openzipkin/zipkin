@@ -18,13 +18,13 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Test;
-import zipkin.Callback;
-import zipkin.InMemoryStorage;
+import zipkin.storage.Callback;
+import zipkin.storage.InMemoryStorage;
 import zipkin.Span;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin.AsyncSpanConsumer.NOOP_CALLBACK;
+import static zipkin.storage.Callback.NOOP;
 import static zipkin.TestObjects.span;
 
 public class CollectorTest {
@@ -112,7 +112,7 @@ public class CollectorTest {
 
   @Test
   public void debugFlagWins() {
-    collector.accept(asList(span(Long.MIN_VALUE).toBuilder().debug(true).build()), NOOP_CALLBACK);
+    collector.accept(asList(span(Long.MIN_VALUE).toBuilder().debug(true).build()), NOOP);
 
     assertThat(collector.storage.spanStore().getServiceNames()).containsExactly("service");
   }
@@ -123,7 +123,7 @@ public class CollectorTest {
         .sampler(CollectorSampler.create(0f))
         .storage(new InMemoryStorage()).build();
 
-    collector.accept(asList(span(Long.MIN_VALUE)), NOOP_CALLBACK);
+    collector.accept(asList(span(Long.MIN_VALUE)), NOOP);
 
     assertThat(collector.storage.spanStore().getServiceNames()).isEmpty();
   }

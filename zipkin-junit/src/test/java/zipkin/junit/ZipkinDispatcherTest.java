@@ -15,7 +15,7 @@ package zipkin.junit;
 
 import okhttp3.HttpUrl;
 import org.junit.Test;
-import zipkin.QueryRequest;
+import zipkin.storage.QueryRequest;
 import zipkin.TraceKeys;
 
 import static org.assertj.core.api.Assertions.assertThat;
