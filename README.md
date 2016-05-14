@@ -36,7 +36,7 @@ To run the server from the currently checked out source, enter the following.
 # Build the server and also make its dependencies
 $ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
 # Run the server
-$ ./mvnw -pl zipkin-server spring-boot:run
+$ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```
 
 Note that the server requires minimum JRE 8.
