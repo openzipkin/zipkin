@@ -53,6 +53,8 @@ zipkin:
   query:
     # 7 days in millis
     lookback: ${QUERY_LOOKBACK:86400000}
+    # The Cache-Control max-age (seconds) for /api/v1/services and /api/v1/spans
+    names-max-age: 300
   storage:
     type: ${STORAGE_TYPE:mem}
   ui:
