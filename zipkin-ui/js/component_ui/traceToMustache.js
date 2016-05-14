@@ -153,7 +153,6 @@ export default function traceToMustache(trace) {
           value: ConstantNames[a.value] || a.value,
           timestamp: a.timestamp,
           relativeTime: mkDurationStr(a.timestamp - traceTimestamp),
-          serviceName: a.endpoint && a.endpoint.serviceName ? a.endpoint.serviceName : null,
           width: 8
         })),
         binaryAnnotations
