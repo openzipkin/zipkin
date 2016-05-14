@@ -24,7 +24,7 @@ import static zipkin.internal.Util.checkNotNull;
  * component might return a query api.
  *
  * <p>Components are lazy with regards to I/O. They can be injected directly to other components so
- * as to avoid crashing the application graph if the a network service is unavailable.
+ * as to avoid crashing the application graph if a network service is unavailable.
  */
 public interface Component extends Closeable {
 
