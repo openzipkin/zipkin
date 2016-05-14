@@ -34,7 +34,10 @@ export default component(function spanPanel() {
       const $row = self.$binaryAnnotationTemplate.clone();
       $row.find('td').each(function() {
         const $this = $(this);
-        $this.text(anno[$this.data('key')]);
+        const maybeObject = anno[$this.data('key')];
+        // In case someone is storing escaped json as binary annotation values
+        // TODO: this class is not testable at the moment
+        $this.text($.type(maybeObject) === 'object' ? JSON.stringify(maybeObject) : maybeObject);
       });
       $binAnnoBody.append($row);
     });
