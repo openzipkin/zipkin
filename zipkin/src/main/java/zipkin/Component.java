@@ -50,7 +50,7 @@ public interface Component extends Closeable {
   final class CheckResult {
     public static final CheckResult OK = new CheckResult(true, null);
 
-    public static final CheckResult failed(@Nullable Exception exception) {
+    public static final CheckResult failed(Exception exception) {
       return new CheckResult(false, checkNotNull(exception, "exception"));
     }
 
