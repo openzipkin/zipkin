@@ -13,8 +13,8 @@
  */
 package zipkin.storage.elasticsearch;
 
-import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.junit.AssumptionViolatedException;
+import zipkin.Component.CheckResult;
 import zipkin.internal.LazyCloseable;
 
 enum ElasticsearchTestGraph {
@@ -30,12 +30,9 @@ enum ElasticsearchTestGraph {
     @Override protected ElasticsearchStorage compute() {
       if (ex != null) throw ex;
       ElasticsearchStorage result = new ElasticsearchStorage.Builder().build();
-      try {
-        result.spanStore().getServiceNames();
-        return result;
-      } catch (NoNodeAvailableException e) {
-        throw ex = new AssumptionViolatedException(e.getMessage());
-      }
+      CheckResult check = result.check();
+      if (check.ok) return result;
+      throw ex = new AssumptionViolatedException(check.exception.getMessage());
     }
   };
 }

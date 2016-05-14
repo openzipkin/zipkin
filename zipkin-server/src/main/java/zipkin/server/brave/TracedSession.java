@@ -32,6 +32,7 @@ import com.twitter.zipkin.gen.Annotation;
 import com.twitter.zipkin.gen.BinaryAnnotation;
 import com.twitter.zipkin.gen.Endpoint;
 import com.twitter.zipkin.gen.Span;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.LinkedHashMap;
@@ -102,7 +103,12 @@ public final class TracedSession extends AbstractInvocationHandler implements La
       brave.clientSpanThreadBinder().setCurrentSpan(null);
       return new BraveResultSetFuture(target.executeAsync(statement), brave);
     }
-    return method.invoke(target, args);
+    try {
+      return method.invoke(target, args);
+    } catch (InvocationTargetException e) {
+      if (e.getCause() instanceof RuntimeException) throw e.getCause();
+      throw e;
+    }
   }
 
   @Override public void update(Host host, Statement statement, Exception e, long nanos) {

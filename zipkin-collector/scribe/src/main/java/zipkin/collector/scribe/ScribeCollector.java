@@ -25,6 +25,7 @@ import zipkin.collector.CollectorSampler;
 import zipkin.storage.StorageComponent;
 import zipkin.storage.guava.GuavaSpanConsumer;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyList;
 import static zipkin.internal.Util.checkNotNull;
 
@@ -89,9 +90,19 @@ public final class ScribeCollector implements CollectorComponent, Closeable {
     server = new ThriftServer(processor, new ThriftServerConfig().setPort(builder.port));
   }
 
+  /** Will throw an exception if the {@link Builder#port(int) port} is already in use. */
   @Override public ScribeCollector start() {
     server.start();
     return this;
+  }
+
+  @Override public CheckResult check() {
+    try {
+      checkState(server.isRunning(), "server not running");
+    } catch (RuntimeException e) {
+      return CheckResult.failed(e);
+    }
+    return CheckResult.OK;
   }
 
   @Override

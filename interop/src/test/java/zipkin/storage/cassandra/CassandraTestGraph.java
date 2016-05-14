@@ -13,8 +13,8 @@
  */
 package zipkin.storage.cassandra;
 
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import org.junit.AssumptionViolatedException;
+import zipkin.Component.CheckResult;
 import zipkin.internal.LazyCloseable;
 
 enum CassandraTestGraph {
@@ -30,13 +30,10 @@ enum CassandraTestGraph {
 
     @Override protected CassandraStorage compute() {
       if (ex != null) throw ex;
-      CassandraStorage result = new CassandraStorage.Builder().keyspace("test_zipkin").build();
-      try {
-        result.spanStore().getServiceNames();
-        return result;
-      } catch (NoHostAvailableException e) {
-        throw ex = new AssumptionViolatedException(e.getMessage());
-      }
+      CassandraStorage result = CassandraStorage.builder().keyspace("test_zipkin").build();
+      CheckResult check = result.check();
+      if (check.ok) return result;
+      throw ex = new AssumptionViolatedException(check.exception.getMessage());
     }
   };
 }

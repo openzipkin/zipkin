@@ -11,21 +11,21 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage;
+package zipkin.server;
 
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import zipkin.Component;
 
-/**
- * A component that provides storage interfaces used for spans and aggregations. Implementations are
- * free to provide other interfaces, but the ones declared here must be supported.
- *
- * @see InMemoryStorage
- */
-public interface StorageComponent extends Component {
+public final class ZipkinHealthIndicator implements HealthIndicator {
+  final Component component;
 
-  SpanStore spanStore();
+  public ZipkinHealthIndicator(Component component) {
+    this.component = component;
+  }
 
-  AsyncSpanStore asyncSpanStore();
-
-  AsyncSpanConsumer asyncSpanConsumer();
+  @Override public Health health() {
+    Component.CheckResult result = component.check();
+    return result.ok ? Health.up().build() : Health.down(result.exception).build();
+  }
 }

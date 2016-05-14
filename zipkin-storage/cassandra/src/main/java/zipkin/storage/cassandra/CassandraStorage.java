@@ -14,6 +14,7 @@
 
 package zipkin.storage.cassandra;
 
+import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
@@ -173,6 +174,15 @@ public final class CassandraStorage
 
   @Override protected CassandraSpanConsumer computeGuavaSpanConsumer() {
     return new CassandraSpanConsumer(session.get(), bucketCount, spanTtl, indexTtl);
+  }
+
+  @Override public CheckResult check() {
+    try {
+      session.get().execute(QueryBuilder.select("trace_id").from("traces").limit(1));
+    } catch (RuntimeException e) {
+      return CheckResult.failed(e);
+    }
+    return CheckResult.OK;
   }
 
   @Override public void close() throws IOException {

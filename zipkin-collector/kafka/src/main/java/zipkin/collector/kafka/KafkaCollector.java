@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 import kafka.consumer.ConsumerConfig;
 import kafka.consumer.KafkaStream;
 import kafka.javaapi.consumer.ZookeeperConsumerConnector;
@@ -124,6 +125,17 @@ public final class KafkaCollector implements CollectorComponent, Closeable {
     return this;
   }
 
+  @Override public CheckResult check() {
+    try {
+      connector.get(); // make sure the connector didn't throw
+      CheckResult failure = streams.failure.get(); // check the streams didn't quit
+      if (failure != null) return failure;
+      return CheckResult.OK;
+    } catch (RuntimeException e) {
+      return CheckResult.failed(e);
+    }
+  }
+
   @Override
   public void close() throws IOException {
     streams.close();
@@ -134,7 +146,7 @@ public final class KafkaCollector implements CollectorComponent, Closeable {
 
     final ConsumerConfig config;
 
-    public LazyConnector(Builder builder) {
+    LazyConnector(Builder builder) {
       // Settings below correspond to "Old Consumer Configs"
       // http://kafka.apache.org/documentation.html
       Properties props = new Properties();
@@ -158,13 +170,14 @@ public final class KafkaCollector implements CollectorComponent, Closeable {
   }
 
   static final class LazyStreams extends LazyCloseable<ExecutorService> {
-    private final int streams;
-    private final String topic;
-    private final Collector collector;
-    private final CollectorMetrics metrics;
-    private final LazyCloseable<ZookeeperConsumerConnector> connector;
+    final int streams;
+    final String topic;
+    final Collector collector;
+    final CollectorMetrics metrics;
+    final LazyCloseable<ZookeeperConsumerConnector> connector;
+    final AtomicReference<CheckResult> failure = new AtomicReference<>();
 
-    public LazyStreams(Builder builder, LazyCloseable<ZookeeperConsumerConnector> connector) {
+    LazyStreams(Builder builder, LazyCloseable<ZookeeperConsumerConnector> connector) {
       this.streams = builder.streams;
       this.topic = builder.topic;
       this.collector = builder.delegate.build();
@@ -182,9 +195,21 @@ public final class KafkaCollector implements CollectorComponent, Closeable {
 
       for (KafkaStream<byte[], byte[]> stream : connector.get().createMessageStreams(topicCountMap)
           .get(topic)) {
-        pool.execute(new KafkaStreamProcessor(stream, collector, metrics));
+        pool.execute(guardFailures(new KafkaStreamProcessor(stream, collector, metrics)));
       }
       return pool;
+    }
+
+    Runnable guardFailures(final Runnable delegate) {
+      return new Runnable() {
+        @Override public void run() {
+          try {
+            delegate.run();
+          } catch (RuntimeException e) {
+            failure.set(CheckResult.failed(e));
+          }
+        }
+      };
     }
 
     @Override

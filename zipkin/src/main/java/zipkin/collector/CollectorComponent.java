@@ -13,23 +13,20 @@
  */
 package zipkin.collector;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.List;
+import zipkin.Component;
+import zipkin.Span;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
-import zipkin.Span;
 import zipkin.storage.StorageComponent;
 
 /**
  * The collector represents the server-side of a transport. Its job is to take spans from a
  * transport and store ones it has sampled.
  *
- * <p>This component is lazy with regards to I/O. It can be injected directly to other components so
- * as to avoid crashing the application graph if the storage backend is unavailable. You must call
- * {@link #start()} to start collecting spans.
+ * <p>Call {@link #start()} to start collecting spans.
  */
-public interface CollectorComponent extends Closeable {
+public interface CollectorComponent extends Component {
 
   /**
    * Starts the server-side of the transport, typically listening or looking up a queue.
@@ -59,12 +56,4 @@ public interface CollectorComponent extends Closeable {
 
     CollectorComponent build();
   }
-
-  /**
-   * Closes any network resources created implicitly by the component.
-   *
-   * <p>For example, if this created a connection, it would close it. If it was provided one, this
-   * would close any sessions, but leave the connection open.
-   */
-  @Override void close() throws IOException;
 }

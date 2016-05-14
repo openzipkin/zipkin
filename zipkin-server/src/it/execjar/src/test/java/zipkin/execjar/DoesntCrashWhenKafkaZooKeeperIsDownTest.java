@@ -23,25 +23,11 @@ import zipkin.server.ZipkinServer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class DoesntCrashWhenCassandraIsDownTest {
+public class DoesntCrashWhenKafkaZooKeeperIsDownTest {
 
   @Rule
   public ExecJarRule zipkin = new ExecJarRule(ZipkinServer.class)
-      .putEnvironment("STORAGE_TYPE", "cassandra")
-      .putEnvironment("CASSANDRA_CONTACT_POINTS", "idontexist");
-
-  @Test
-  public void startsButReturns500QueryingStorage() {
-    try {
-      HttpURLConnection connection = (HttpURLConnection)
-          URI.create("http://localhost:" + zipkin.port() + "/api/v1/services").toURL()
-              .openConnection();
-
-      assertEquals(500, connection.getResponseCode());
-    } catch (RuntimeException | IOException e) {
-      fail(String.format("unexpected error!%s%n%s", e.getMessage(), zipkin.consoleOutput()));
-    }
-  }
+      .putEnvironment("KAFKA_ZOOKEEPER", "idontexist");
 
   @Test
   public void startsButReturnsFailedHealthCheck() {

@@ -16,13 +16,17 @@ package zipkin.storage.elasticsearch;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
 import java.util.List;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import zipkin.DependencyLink;
 import zipkin.internal.Util;
 import zipkin.storage.guava.LazyGuavaStorageComponent;
 
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.util.concurrent.Futures.getUnchecked;
 import static zipkin.internal.Util.checkNotNull;
 
 public final class ElasticsearchStorage
@@ -114,6 +118,17 @@ public final class ElasticsearchStorage
     lazyClient.get().admin().indices().delete(new DeleteIndexRequest(indexNameFormatter.catchAll()))
         .actionGet();
     lazyClient.get().admin().indices().flush(new FlushRequest()).actionGet();
+  }
+
+  @Override public CheckResult check() {
+    try {
+      ClusterHealthResponse health = getUnchecked(lazyClient.get()
+          .admin().cluster().prepareHealth(indexNameFormatter.catchAll()).execute());
+      checkState(health.getStatus() != ClusterHealthStatus.RED, "Health status is RED");
+    } catch (RuntimeException e) {
+      return CheckResult.failed(e);
+    }
+    return CheckResult.OK;
   }
 
   @Override public void close() {

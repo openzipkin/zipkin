@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.boot.actuate.metrics.GaugeService;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
@@ -90,6 +91,10 @@ public class ZipkinServerConfiguration {
     @Bean StorageComponent storage() {
       return new InMemoryStorage();
     }
+  }
+
+  @Bean HealthIndicator zipkinStorage(StorageComponent storage) {
+    return new ZipkinHealthIndicator(storage);
   }
 
   @Configuration
@@ -174,10 +179,14 @@ public class ZipkinServerConfiguration {
   @EnableConfigurationProperties(ZipkinScribeProperties.class)
   @ConditionalOnClass(name = "zipkin.collector.scribe.ScribeCollector")
   static class ScribeConfiguration {
-    @Bean(initMethod = "start", destroyMethod = "close") ScribeCollector scribe(
-        ZipkinScribeProperties scribe, CollectorSampler sampler, CollectorMetrics metrics,
-        StorageComponent storage) {
+    /** The init method will block until the scribe port is listening, or crash on port conflict */
+    @Bean(initMethod = "start") ScribeCollector scribe(ZipkinScribeProperties scribe,
+        CollectorSampler sampler, CollectorMetrics metrics, StorageComponent storage) {
       return scribe.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
+    }
+
+    @Bean HealthIndicator zipkinScribeCollector(ScribeCollector scribe) {
+      return new ZipkinHealthIndicator(scribe);
     }
   }
 
@@ -190,10 +199,25 @@ public class ZipkinServerConfiguration {
   @Conditional(KafkaEnabledCondition.class)
   @ConditionalOnClass(name = "zipkin.collector.kafka.KafkaCollector")
   static class KafkaConfiguration {
-    @Bean(initMethod = "start", destroyMethod = "close") KafkaCollector kafka(
-        ZipkinKafkaProperties kafka, CollectorSampler sampler, CollectorMetrics metrics,
-        StorageComponent storage) {
-      return kafka.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
+    /**
+     * This launches a thread to run start. This prevents a several second hang, or worse crash if
+     * zookeeper isn't running, yet.
+     */
+    @Bean KafkaCollector kafka(ZipkinKafkaProperties kafka, CollectorSampler sampler,
+        CollectorMetrics metrics, StorageComponent storage) {
+      KafkaCollector result =
+          kafka.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
+
+      // don't use @Bean(initMethod = "start") as it can crash the process if zookeeper is down
+      Thread start = new Thread(result::start, "start " + result.getClass().getSimpleName());
+      start.setDaemon(true);
+      start.start();
+
+      return result;
+    }
+
+    @Bean HealthIndicator zipkinKafkaCollector(KafkaCollector kafka) {
+      return new ZipkinHealthIndicator(kafka);
     }
   }
 

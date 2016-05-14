@@ -18,8 +18,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
+import org.I0Itec.zkclient.exception.ZkTimeoutException;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.Timeout;
 import zipkin.Codec;
 import zipkin.InMemoryCollectorMetrics;
@@ -35,6 +38,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.TestObjects.TRACE;
 
 public class KafkaCollectorTest {
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
   @ClassRule public static Timeout globalTimeout = Timeout.seconds(10);
   Producer<String, byte[]> producer = KafkaTestGraph.INSTANCE.producer();
   InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
@@ -47,11 +52,29 @@ public class KafkaCollectorTest {
   };
 
   @Test
+  public void checkPasses() throws Exception {
+    try (KafkaCollector collector = newKafkaTransport(builder("check_passes"), consumer)) {
+      assertThat(collector.check().ok).isTrue();
+    }
+  }
+
+  @Test
+  public void start_failsOnInvalidZooKeeper() throws Exception {
+    thrown.expect(ZkTimeoutException.class);
+    thrown.expectMessage("Unable to connect to zookeeper server within timeout: 6000");
+
+    Builder builder = builder("fail_invalid_zk").zookeeper("1.1.1.1");
+
+    try (KafkaCollector collector = newKafkaTransport(builder, consumer)) {
+    }
+  }
+
+  @Test
   public void canSetMaxMessageSize() throws Exception {
     Builder builder = builder("max_message").maxMessageSize(1);
 
-    try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
-      assertThat(processor.connector.get().config().fetchMessageMaxBytes())
+    try (KafkaCollector collector = newKafkaTransport(builder, consumer)) {
+      assertThat(collector.connector.get().config().fetchMessageMaxBytes())
           .isEqualTo(1);
     }
   }
@@ -64,7 +87,7 @@ public class KafkaCollectorTest {
     byte[] bytes = Codec.THRIFT.writeSpan(TRACE.get(0));
     producer.send(new KeyedMessage<>(builder.topic, bytes));
 
-    try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
+    try (KafkaCollector collector = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactly(TRACE.get(0));
     }
 
@@ -81,7 +104,7 @@ public class KafkaCollectorTest {
     byte[] bytes = Codec.THRIFT.writeSpans(TRACE);
     producer.send(new KeyedMessage<>(builder.topic, bytes));
 
-    try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
+    try (KafkaCollector collector = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactlyElementsOf(TRACE);
     }
 
@@ -98,7 +121,7 @@ public class KafkaCollectorTest {
     byte[] bytes = Codec.JSON.writeSpans(TRACE);
     producer.send(new KeyedMessage<>(builder.topic, bytes));
 
-    try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
+    try (KafkaCollector collector = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactlyElementsOf(TRACE);
     }
 
@@ -107,7 +130,7 @@ public class KafkaCollectorTest {
     assertThat(kafkaMetrics.spans()).isEqualTo(TestObjects.TRACE.size());
   }
 
-  /** Ensures malformed spans don't hang the processor */
+  /** Ensures malformed spans don't hang the collector */
   @Test
   public void skipsMalformedData() throws Exception {
     Builder builder = builder("decoder_exception");
@@ -118,7 +141,7 @@ public class KafkaCollectorTest {
     producer.send(new KeyedMessage<>(builder.topic, "malformed".getBytes()));
     producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(TRACE)));
 
-    try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
+    try (KafkaCollector collector = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactlyElementsOf(TRACE);
       // the only way we could read this, is if the malformed spans were skipped.
       assertThat(recvdSpans.take()).containsExactlyElementsOf(TRACE);
@@ -147,7 +170,7 @@ public class KafkaCollectorTest {
     producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(TRACE))); // tossed on error
     producer.send(new KeyedMessage<>(builder.topic, Codec.THRIFT.writeSpans(TRACE)));
 
-    try (KafkaCollector processor = newKafkaTransport(builder, consumer)) {
+    try (KafkaCollector collector = newKafkaTransport(builder, consumer)) {
       assertThat(recvdSpans.take()).containsExactlyElementsOf(TRACE);
       // the only way we could read this, is if the malformed span was skipped.
       assertThat(recvdSpans.take()).containsExactlyElementsOf(TRACE);
@@ -172,6 +195,10 @@ public class KafkaCollectorTest {
 
       @Override public AsyncSpanConsumer asyncSpanConsumer() {
         return consumer;
+      }
+
+      @Override public CheckResult check() {
+        return CheckResult.OK;
       }
 
       @Override public void close() {
