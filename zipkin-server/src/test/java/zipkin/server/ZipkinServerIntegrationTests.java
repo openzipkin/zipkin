@@ -38,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static zipkin.TestObjects.TRACE;
+import static zipkin.TestObjects.span;
 import static zipkin.internal.Util.UTF_8;
 
 @SpringApplicationConfiguration(classes = ZipkinServer.class)
@@ -192,5 +193,32 @@ public class ZipkinServerIntegrationTests {
         .andExpect(header().string("Cache-Control", "max-age=600"));
     mockMvc.perform(get("/index.html"))
         .andExpect(header().string("Cache-Control", "max-age=60"));
+  }
+
+  @Test
+  public void doesntSetCacheControlOnNameEndpointsWhenLessThan4Services() throws Exception {
+    mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(TRACE)));
+
+    mockMvc.perform(get("/api/v1/services"))
+        .andExpect(status().isOk())
+        .andExpect(header().doesNotExist("Cache-Control"));
+
+    mockMvc.perform(get("/api/v1/spans?serviceName=web"))
+        .andExpect(status().isOk())
+        .andExpect(header().doesNotExist("Cache-Control"));
+  }
+
+  @Test
+  public void setsCacheControlOnNameEndpointsWhenMoreThan3Services() throws Exception {
+    mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(TRACE)));
+    mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span(1)))));
+
+    mockMvc.perform(get("/api/v1/services"))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Cache-Control", "max-age=300, must-revalidate"));
+
+    mockMvc.perform(get("/api/v1/spans?serviceName=web"))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Cache-Control", "max-age=300, must-revalidate"));
   }
 }

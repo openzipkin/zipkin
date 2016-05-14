@@ -14,9 +14,12 @@
 package zipkin.server;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,6 +49,11 @@ public class ZipkinQueryApiV1 {
   @Value("${zipkin.query.lookback:86400000}")
   int defaultLookback = 86400000; // 7 days in millis
 
+  /** The Cache-Control max-age (seconds) for /api/v1/services and /api/v1/spans */
+  @Value("${zipkin.query.names-max-age:300}")
+  int namesMaxAge = 300; // 5 minutes
+  volatile int serviceCount; // used as a threshold to start returning cache-control headers
+
   private final StorageComponent storage;
 
   @Autowired
@@ -60,14 +68,16 @@ public class ZipkinQueryApiV1 {
   }
 
   @RequestMapping(value = "/services", method = RequestMethod.GET)
-  public List<String> getServiceNames() {
-    return storage.spanStore().getServiceNames();
+  public ResponseEntity<List<String>> getServiceNames() {
+    List<String> serviceNames = storage.spanStore().getServiceNames();
+    serviceCount = serviceNames.size();
+    return maybeCacheNames(serviceNames);
   }
 
   @RequestMapping(value = "/spans", method = RequestMethod.GET)
-  public List<String> getSpanNames(
+  public ResponseEntity<List<String>> getSpanNames(
       @RequestParam(value = "serviceName", required = true) String serviceName) {
-    return storage.spanStore().getSpanNames(serviceName);
+    return maybeCacheNames(storage.spanStore().getSpanNames(serviceName));
   }
 
   @RequestMapping(value = "/traces", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
@@ -114,5 +124,18 @@ public class ZipkinQueryApiV1 {
     public TraceNotFoundException(String traceId, long id) {
       super("Cannot find trace for id=" + traceId + ", long value=" + id);
     }
+  }
+
+  /**
+   * We cache names if there are more than 3 services. This helps people getting started: if we
+   * cache empty results, users have more questions. We assume caching becomes a concern when zipkin
+   * is in active use, and active use usually implies more than 3 services.
+   */
+  ResponseEntity<List<String>> maybeCacheNames(List<String> names) {
+    ResponseEntity.BodyBuilder response = ResponseEntity.ok();
+    if (serviceCount > 3) {
+      response.cacheControl(CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate());
+    }
+    return response.body(names);
   }
 }
