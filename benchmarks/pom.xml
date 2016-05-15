@@ -30,13 +30,17 @@
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
     <jmh.version>1.12</jmh.version>
-    <zipkin-scrooge.version>1.40.1</zipkin-scrooge.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
 
     <dependency>
@@ -50,17 +54,6 @@
       <artifactId>jmh-generator-annprocess</artifactId>
       <version>${jmh.version}</version>
       <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>io.zipkin</groupId>
-      <artifactId>zipkin-scrooge</artifactId>
-      <version>${zipkin-scrooge.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.thrift</groupId>
-      <artifactId>libthrift</artifactId>
     </dependency>
   </dependencies>
 
