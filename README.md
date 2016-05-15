@@ -41,16 +41,16 @@ trace = storage.spanStore().getTrace(traceId);
 storage.close();
 ```
 
-### InMemoryStorage
+### In-Memory
 The [InMemoryStorage](https://github.com/openzipkin/zipkin-java/blob/master/zipkin/src/main/java/zipkin/storage/InMemoryStorage.java) component is packaged in zipkin's core library. It is not persistent, nor viable for realistic work loads. Its purpose is for testing, for example starting a server on your laptop without any database needed.
 
-### JDBCStorage
+### MySQL
 The [JDBCStorage](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-storage/jdbc) component currently is only tested with MySQL 5.6-7. It is designed to be easy to understand, and get started with. However, it has [known performance issues at larger scales](https://github.com/openzipkin/zipkin-java/issues/233). For example, queries will eventually take seconds to return if you put a lot of data into it.
 
-### CassandraStorage
+### Cassandra
 The [CassandraStorage](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-storage/cassandra) component is tested against Cassandra 2.2+. It is designed for larger scales of data. For example, it has manually implemented indexes to make querying larger data more performant.
 
-### ElasticsearchStorage
+### Elasticsearch
 The [ElasticsearchStorage](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-storage/elasticsearch) component is tested against Elasticsearch 2.3. It is designed for larger scales of data, and works on json directly. The Elasticsearch component is the newest option.
 
 ## Server
