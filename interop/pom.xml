@@ -29,8 +29,6 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <!-- override scrooge's thrift version so we don't need to declare a twitter-specific repo -->
-    <libthrift.version>0.9.3</libthrift.version>
     <scalatest.version>2.2.6</scalatest.version>
     <!-- Which implementation version are the span stores compatible with -->
     <zipkin-scala.version>1.40.1</zipkin-scala.version>
@@ -58,7 +56,6 @@
     <dependency>
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
-      <version>${libthrift.version}</version>
     </dependency>
 
     <dependency>

@@ -68,6 +68,8 @@
     -->
     <guava.version>18.0</guava.version>
     <junit.version>4.12</junit.version>
+    <!-- to ensure zipkin-scala doesn't crash the build looking for 0.5.0-1 -->
+    <libthrift.version>0.9.3</libthrift.version>
     <mockito.version>1.10.19</mockito.version>
     <assertj.version>3.3.0</assertj.version>
     <okhttp.version>3.2.0</okhttp.version>
@@ -249,6 +251,12 @@
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.thrift</groupId>
+        <artifactId>libthrift</artifactId>
+        <version>${libthrift.version}</version>
       </dependency>
 
       <dependency>
