@@ -45,13 +45,13 @@ storage.close();
 The [InMemoryStorage](https://github.com/openzipkin/zipkin-java/blob/master/zipkin/src/main/java/zipkin/storage/InMemoryStorage.java) component is packaged in zipkin's core library. It is not persistent, nor viable for realistic work loads. Its purpose is for testing, for example starting a server on your laptop without any database needed.
 
 ### MySQL
-The [JDBCStorage](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-storage/jdbc) component currently is only tested with MySQL 5.6-7. It is designed to be easy to understand, and get started with. However, it has [known performance issues at larger scales](https://github.com/openzipkin/zipkin-java/issues/233). For example, queries will eventually take seconds to return if you put a lot of data into it.
+The [JDBCStorage](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-storage/jdbc) component currently is only tested with MySQL 5.6-7. It is designed to be easy to understand, and get started with. For example, it deconstructs spans into columns, so you can perform ad-hoc queries using SQL. However, this component has [known performance issues](https://github.com/openzipkin/zipkin-java/issues/233): queries will eventually take seconds to return if you put a lot of data into it.
 
 ### Cassandra
-The [CassandraStorage](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-storage/cassandra) component is tested against Cassandra 2.2+. It is designed for larger scales of data. For example, it has manually implemented indexes to make querying larger data more performant.
+The [CassandraStorage](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-storage/cassandra) component is tested against Cassandra 2.2+. It stores spans as opaque thrifts which means you can't read them in cqlsh. However, it is designed for scale. For example, it has manually implemented indexes to make querying larger data more performant. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies-spark) to aggregate dependency links.
 
 ### Elasticsearch
-The [ElasticsearchStorage](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-storage/elasticsearch) component is tested against Elasticsearch 2.3. It is designed for larger scales of data, and works on json directly. The Elasticsearch component is the newest option.
+The [ElasticsearchStorage](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-storage/elasticsearch) component is tested against Elasticsearch 2.3. It stores spans as json and has been designed for larger scale. This store is the newest option, and does not yet [support dependency links](https://github.com/openzipkin/zipkin-dependencies-spark/issues/21).
 
 ## Server
 The [zipkin server](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-server)
