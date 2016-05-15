@@ -55,7 +55,7 @@ The [ElasticsearchStorage](https://github.com/openzipkin/zipkin-java/tree/master
 
 ## Server
 The [zipkin server](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-server)
-receives spans via HTTP POST and respond to queries from its UI.
+receives spans via HTTP POST and respond to queries from its UI. It can also run collectors, such as Scribe or Kafka.
 
 To run the server from the currently checked out source, enter the following.
 ```bash
