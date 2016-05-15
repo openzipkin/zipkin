@@ -79,7 +79,10 @@ function toSpanDepths(spans) {
   return treeDepths(entry, 1);
 }
 
-export function formatEndpoint({ipv4, port = 0}) {
+export function formatEndpoint({ipv4, port = 0, serviceName = ''}) {
+  if (serviceName) {
+    return `${ipv4}:${port} (${serviceName})`;
+  }
   return `${ipv4}:${port}`;
 }
 
@@ -150,7 +153,6 @@ export default function traceToMustache(trace) {
           value: ConstantNames[a.value] || a.value,
           timestamp: a.timestamp,
           relativeTime: mkDurationStr(a.timestamp - traceTimestamp),
-          serviceName: a.endpoint && a.endpoint.serviceName ? a.endpoint.serviceName : null,
           width: 8
         })),
         binaryAnnotations
