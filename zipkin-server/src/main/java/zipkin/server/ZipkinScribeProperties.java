@@ -16,7 +16,7 @@ package zipkin.server;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.collector.scribe.ScribeCollector;
 
-@ConfigurationProperties("scribe")
+@ConfigurationProperties("zipkin.collector.scribe")
 public class ZipkinScribeProperties {
   private String category = "zipkin";
   private int port = 9410;
