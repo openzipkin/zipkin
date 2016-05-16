@@ -24,6 +24,7 @@
 
   <modules>
     <module>zipkin</module>
+    <module>zipkin-ui</module>
     <module>zipkin-junit</module>
     <module>zipkin-guava</module>
     <module>benchmarks</module>
@@ -198,6 +199,12 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-collector-scribe</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-ui</artifactId>
         <version>${project.version}</version>
       </dependency>
 
