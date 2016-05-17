@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright 2015-2016 The OpenZipkin Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+    in compliance with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software distributed under the License
+    is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+    or implied. See the License for the specific language governing permissions and limitations under
+    the License.
+
+-->
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.zipkin.java</groupId>
+    <artifactId>parent</artifactId>
+    <version>0.20.2-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>zipkin-ui</artifactId>
+  <name>Zipkin UI</name>
+  <description>Repackages Zipkin UI jar until its source moves to this repository</description>
+
+  <properties>
+    <main.basedir>${project.basedir}/..</main.basedir>
+    <zipkin-ui.version>1.40.1</zipkin-ui.version>
+    <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
+    <build-helper-maven-plugin.version>1.9.1</build-helper-maven-plugin.version>
+  </properties>
+
+  <dependencies>
+    <!-- no dependencies as this is just javascript -->
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Extracts zipkin-ui so we can repackage it with a stable version -->
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${maven-dependency-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>unpack</id>
+            <phase>initialize</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>io.zipkin</groupId>
+                  <artifactId>zipkin-ui</artifactId>
+                  <version>${zipkin-ui.version}</version>
+                  <outputDirectory>${project.build.directory}/webpacked</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>${build-helper-maven-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>add-resource</id>
+            <goals>
+              <goal>add-resource</goal>
+            </goals>
+            <configuration>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/webpacked</directory>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
