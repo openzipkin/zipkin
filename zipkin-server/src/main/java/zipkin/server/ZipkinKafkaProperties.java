@@ -16,7 +16,7 @@ package zipkin.server;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.collector.kafka.KafkaCollector;
 
-@ConfigurationProperties("kafka")
+@ConfigurationProperties("zipkin.collector.kafka")
 public class ZipkinKafkaProperties {
   private String topic = "zipkin";
   private String zookeeper;
