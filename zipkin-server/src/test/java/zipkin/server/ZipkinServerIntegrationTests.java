@@ -28,7 +28,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import zipkin.Codec;
 import zipkin.Span;
+import zipkin.storage.InMemoryStorage;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -49,11 +51,18 @@ public class ZipkinServerIntegrationTests {
 
   @Autowired
   ConfigurableWebApplicationContext context;
-  private MockMvc mockMvc;
+  @Autowired
+  InMemoryStorage storage;
+  @Autowired
+  ActuateCollectorMetrics metrics;
+
+  MockMvc mockMvc;
 
   @Before
   public void init() {
     mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+    storage.clear();
+    metrics.forTransport("http").reset();
   }
 
   @Test
@@ -119,7 +128,7 @@ public class ZipkinServerIntegrationTests {
     mockMvc
         .perform(post("/api/v1/spans").content(body).header("Content-Encoding", "gzip"))
         .andExpect(status().isBadRequest())
-        .andExpect(content().string(startsWith("Error gunzipping spans")));
+        .andExpect(content().string(startsWith("Cannot gunzip spans")));
   }
 
   @Test
@@ -136,7 +145,7 @@ public class ZipkinServerIntegrationTests {
     mockMvc
         .perform(post("/api/v1/spans").content(body).contentType("application/x-thrift"))
         .andExpect(status().isBadRequest())
-        .andExpect(content().string(startsWith("Malformed reading List<Span> from TBinary: aGVsbG8=")));
+        .andExpect(content().string(startsWith("Malformed reading List<Span> from TBinary")));
   }
 
   @Test
@@ -174,12 +183,12 @@ public class ZipkinServerIntegrationTests {
     Thread.sleep(1500);
 
     // Default will merge by span id
-    mockMvc.perform(get("/api/v1/trace/1"))
+    mockMvc.perform(get(format("/api/v1/trace/%016x", span.traceId)))
         .andExpect(status().isOk())
         .andExpect(content().string(new String(Codec.JSON.writeSpans(asList(span)), UTF_8)));
 
     // In the in-memory (or cassandra) stores, a raw read will show duplicate span rows.
-    mockMvc.perform(get("/api/v1/trace/1?raw"))
+    mockMvc.perform(get(format("/api/v1/trace/%016x?raw", span.traceId)))
         .andExpect(status().isOk())
         .andExpect(content().string(new String(Codec.JSON.writeSpans(asList(span, span)), UTF_8)));
   }

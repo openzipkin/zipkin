@@ -31,6 +31,7 @@
     <module>zipkin-zookeeper</module>
     <module>zipkin-storage</module>
     <module>zipkin-collector</module>
+    <module>zipkin-autoconfigure</module>
     <module>zipkin-server</module>
     <module>centralsync-maven-plugin</module>
   </modules>
@@ -49,6 +50,7 @@
 
     <main.basedir>${project.basedir}</main.basedir>
 
+    <brave.version>3.7.0</brave.version>
     <cassandra-driver-core.version>3.0.1</cassandra-driver-core.version>
     <moshi.version>1.1.0</moshi.version>
     <okio.version>1.8.0</okio.version>
@@ -60,6 +62,7 @@
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
     <mariadb-java-client.version>1.4.4</mariadb-java-client.version>
+    <HikariCP.version>2.4.6</HikariCP.version>
     <elasticsearch.version>2.3.2</elasticsearch.version>
     <slf4j.version>1.7.21</slf4j.version>
     <logback.version>1.1.7</logback.version>
@@ -174,7 +177,19 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-storage-jdbc</artifactId>
+        <artifactId>zipkin-autoconfigure-storage-cassandra</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-storage-mysql</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-storage-mysql</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -186,7 +201,25 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-storage-elasticsearch</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-guava</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-ui</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-ui</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -198,13 +231,19 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-collector-kafka</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-collector-scribe</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-ui</artifactId>
+        <artifactId>zipkin-autoconfigure-collector-scribe</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -273,6 +312,12 @@
         <groupId>org.mariadb.jdbc</groupId>
         <artifactId>mariadb-java-client</artifactId>
         <version>${mariadb-java-client.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.zaxxer</groupId>
+        <artifactId>HikariCP</artifactId>
+        <version>${HikariCP.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -400,7 +445,7 @@
             <exclude>LICENSE</exclude>
             <exclude>**/*.md</exclude>
             <exclude>dsc-cassandra-*/**</exclude>
-            <exclude>elasticsearch-*/**</exclude>
+            <exclude>elasticsearch-2*/**</exclude>
             <exclude>kafka_*/**</exclude>
             <exclude>src/test/resources/**</exclude>
             <exclude>src/main/resources/**</exclude>

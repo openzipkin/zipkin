@@ -24,7 +24,7 @@ import zipkin.server.brave.BraveConfiguration;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import({ZipkinServerConfiguration.class, BraveConfiguration.class, ZipkinQueryApiV1.class, ZipkinHttpCollector.class, ZipkinUiConfiguration.class})
+@Import({ZipkinServerConfiguration.class, BraveConfiguration.class, ZipkinQueryApiV1.class, ZipkinHttpCollector.class})
 public @interface EnableZipkinServer {
 
 }

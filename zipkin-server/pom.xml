@@ -30,7 +30,6 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
-    <brave.version>3.7.0</brave.version>
     <start-class>zipkin.server.ZipkinServer</start-class>
     <maven-invoker-plugin.version>2.0.0</maven-invoker-plugin.version>
   </properties>
@@ -67,12 +66,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-jdbc</artifactId>
-      <optional>true</optional>
-    </dependency>
-
-    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
     </dependency>
@@ -80,14 +73,14 @@
     <!-- Static content for the web UI -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-ui</artifactId>
+      <artifactId>zipkin-autoconfigure-ui</artifactId>
       <optional>true</optional>
     </dependency>
 
     <!-- Cassandra backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-storage-cassandra</artifactId>
+      <artifactId>zipkin-autoconfigure-storage-cassandra</artifactId>
       <optional>true</optional>
     </dependency>
 
@@ -98,38 +91,24 @@
       <optional>true</optional>
     </dependency>
 
-    <!-- Explicitly marked for Intellij -->
-    <dependency>
-      <groupId>org.elasticsearch</groupId>
-      <artifactId>elasticsearch</artifactId>
-      <version>${elasticsearch.version}</version>
-      <optional>true</optional>
-    </dependency>
-
-    <!-- JDBC backend -->
+    <!-- MySQL backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-storage-jdbc</artifactId>
+      <artifactId>zipkin-autoconfigure-storage-mysql</artifactId>
       <optional>true</optional>
     </dependency>
 
-    <dependency>
-      <groupId>org.mariadb.jdbc</groupId>
-      <artifactId>mariadb-java-client</artifactId>
-      <optional>true</optional>
-    </dependency>
-
-    <!-- Kafka transport -->
+    <!-- Kafka Collector -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-collector-kafka</artifactId>
+      <artifactId>zipkin-autoconfigure-collector-kafka</artifactId>
       <optional>true</optional>
     </dependency>
 
-    <!-- Scribe transport -->
+    <!-- Scribe Collector -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-collector-scribe</artifactId>
+      <artifactId>zipkin-autoconfigure-collector-scribe</artifactId>
       <optional>true</optional>
     </dependency>
 

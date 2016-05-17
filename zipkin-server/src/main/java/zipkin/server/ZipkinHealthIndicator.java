@@ -13,19 +13,33 @@
  */
 package zipkin.server;
 
+import org.springframework.boot.actuate.health.CompositeHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import zipkin.Component;
 
-public final class ZipkinHealthIndicator implements HealthIndicator {
-  final Component component;
+final class ZipkinHealthIndicator extends CompositeHealthIndicator {
 
-  public ZipkinHealthIndicator(Component component) {
-    this.component = component;
+  ZipkinHealthIndicator(HealthAggregator healthAggregator) {
+    super(healthAggregator);
   }
 
-  @Override public Health health() {
-    Component.CheckResult result = component.check();
-    return result.ok ? Health.up().build() : Health.down(result.exception).build();
+  void addComponent(Component component) {
+    String healthName = component.getClass().getSimpleName();
+    addHealthIndicator(healthName, new ComponentHealthIndicator(component));
+  }
+
+  static final class ComponentHealthIndicator implements HealthIndicator {
+    final Component component;
+
+    ComponentHealthIndicator(Component component) {
+      this.component = component;
+    }
+
+    @Override public Health health() {
+      Component.CheckResult result = component.check();
+      return result.ok ? Health.up().build() : Health.down(result.exception).build();
+    }
   }
 }

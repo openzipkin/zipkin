@@ -33,7 +33,7 @@
 
   <modules>
     <module>cassandra</module>
-    <module>jdbc</module>
+    <module>mysql</module>
     <module>elasticsearch</module>
   </modules>
 </project>

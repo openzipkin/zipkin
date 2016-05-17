@@ -15,5 +15,5 @@ _site/
 *.swp
 # .travis.yml installs things
 dsc-cassandra-*
-elasticsearch-*
+elasticsearch-2*
 kafka_*
