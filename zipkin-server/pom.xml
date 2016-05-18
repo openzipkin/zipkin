@@ -87,7 +87,7 @@
     <!-- Elasticsearch backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-storage-elasticsearch</artifactId>
+      <artifactId>zipkin-autoconfigure-storage-elasticsearch</artifactId>
       <optional>true</optional>
     </dependency>
 

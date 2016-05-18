@@ -264,6 +264,11 @@
         <artifactId>jooq</artifactId>
         <version>${jooq.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.elasticsearch</groupId>
+        <artifactId>elasticsearch</artifactId>
+        <version>${elasticsearch.version}</version>
+      </dependency>
       <!-- End spring-boot-dependencies overrides -->
 
       <dependency>
