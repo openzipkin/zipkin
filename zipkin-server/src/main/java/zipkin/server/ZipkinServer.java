@@ -23,7 +23,7 @@ public class ZipkinServer {
 
   public static void main(String[] args) {
     new SpringApplicationBuilder(ZipkinServer.class)
-        .listeners(BootstrapTrace.INSTANCE::record)
+        .listeners(new RegisterZipkinHealthIndicators(), BootstrapTrace.INSTANCE::record)
         .properties("spring.config.name=zipkin-server").run(args);
   }
 }

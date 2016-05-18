@@ -35,7 +35,7 @@ import zipkin.storage.StorageComponent;
 
 @Configuration
 @ConditionalOnSelfTracing
-@Import({ApiTracerConfiguration.class, JDBCTracerConfiguration.class, CassandraTracerConfiguration.class})
+@Import(ApiTracerConfiguration.class)
 public class BraveConfiguration {
 
   /** This gets the lanIP without trying to lookup its name. */

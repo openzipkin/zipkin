@@ -71,7 +71,7 @@ final class ActuateCollectorMetrics implements CollectorMetrics {
     this.spansDropped = "zipkin_collector.spans_dropped" + footer;
   }
 
-  @Override public CollectorMetrics forTransport(String transportType) {
+  @Override public ActuateCollectorMetrics forTransport(String transportType) {
     checkNotNull(transportType, "transportType");
     return new ActuateCollectorMetrics(counterService, gaugeService, transportType);
   }
@@ -100,5 +100,16 @@ final class ActuateCollectorMetrics implements CollectorMetrics {
   public void incrementSpansDropped(int quantity) {
     for (int i = 0; i < quantity; i++)
       counterService.increment(spansDropped);
+  }
+
+  // visible for testing
+  void reset() {
+    counterService.reset(messages);
+    counterService.reset(messagesDropped);
+    counterService.reset(bytes);
+    counterService.reset(spans);
+    counterService.reset(spansDropped);
+    gaugeService.submit(messageSpans, 0);
+    gaugeService.submit(messageBytes, 0);
   }
 }
