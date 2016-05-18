@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.storage.cassandra.CassandraStorage;
 
-@ConfigurationProperties("zipkin.storage.cassandra")
+@ConfigurationProperties("cassandra")
 public class ZipkinCassandraStorageProperties {
   private String keyspace = "zipkin";
   private String contactPoints = "localhost";

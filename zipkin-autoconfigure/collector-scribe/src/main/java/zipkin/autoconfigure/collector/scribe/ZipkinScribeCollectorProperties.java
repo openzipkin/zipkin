@@ -16,7 +16,7 @@ package zipkin.autoconfigure.collector.scribe;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.collector.scribe.ScribeCollector;
 
-@ConfigurationProperties("zipkin.collector.scribe")
+@ConfigurationProperties("scribe")
 public class ZipkinScribeCollectorProperties {
   private String category = "zipkin";
   private int port = 9410;

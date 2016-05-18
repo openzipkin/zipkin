@@ -18,9 +18,8 @@ import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.storage.elasticsearch.ElasticsearchStorage;
 
-@ConfigurationProperties("zipkin.storage.elasticsearch")
+@ConfigurationProperties("elasticsearch")
 public class ZipkinElasticsearchStorageProperties {
-
   /**
    * The elasticsearch cluster to connect to, defaults to "elasticsearch".
    */
