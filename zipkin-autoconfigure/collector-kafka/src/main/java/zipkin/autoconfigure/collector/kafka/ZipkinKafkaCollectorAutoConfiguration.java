@@ -13,7 +13,6 @@
  */
 package zipkin.autoconfigure.collector.kafka;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -30,7 +29,6 @@ import zipkin.storage.StorageComponent;
 @Configuration
 @EnableConfigurationProperties(ZipkinKafkaCollectorProperties.class)
 @Conditional(KafkaZooKeeperSetCondition.class)
-@ConditionalOnProperty(value = "zipkin.collector.kafka.enabled", matchIfMissing = true)
 public class ZipkinKafkaCollectorAutoConfiguration {
 
   /**
