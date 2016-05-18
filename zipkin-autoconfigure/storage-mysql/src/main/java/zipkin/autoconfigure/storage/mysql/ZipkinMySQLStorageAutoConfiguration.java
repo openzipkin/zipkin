@@ -57,6 +57,8 @@ public class ZipkinMySQLStorageAutoConfiguration {
     result.setDriverClassName("org.mariadb.jdbc.Driver");
     result.setJdbcUrl(url.toString());
     result.setMaximumPoolSize(mysql.getMaxActive());
+    result.setUsername(mysql.getUsername());
+    result.setPassword(mysql.getPassword());
     return result;
   }
 
