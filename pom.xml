@@ -33,7 +33,6 @@
     <module>zipkin-collector</module>
     <module>zipkin-autoconfigure</module>
     <module>zipkin-server</module>
-    <module>centralsync-maven-plugin</module>
   </modules>
 
   <properties>
@@ -154,12 +153,6 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-junit</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>centralsync-maven-plugin</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -487,9 +480,12 @@
       </plugin>
 
       <plugin>
+        <groupId>io.zipkin.centralsync-maven-plugin</groupId>
         <artifactId>centralsync-maven-plugin</artifactId>
-        <groupId>${project.groupId}</groupId>
-        <version>${project.version}</version>
+        <version>0.1.0</version>
+        <configuration>
+          <packageName>zipkin-java</packageName>
+        </configuration>
       </plugin>
     </plugins>
   </build>
