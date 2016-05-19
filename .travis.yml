@@ -34,8 +34,7 @@ before_install:
   - mysql -uroot -e 'SET GLOBAL innodb_file_format=Barracuda'
   - mysql -uroot -e 'create database if not exists zipkin'
   - mysql -uroot -Dzipkin < zipkin-storage/mysql/src/main/resources/mysql.sql
-  # TODO: To release, setup git config and run `./mvnw -s ./.settings.xml release:prepare` locally.
-  #       Once tag-driven automation is setup, these parameters will be used by travis.
+  # parameters used during a release
   - git config user.name "$GH_USER"
   - git config user.email "$GH_USER_EMAIL"
   # setup https authentication credentials, used by ./mvnw release:prepare

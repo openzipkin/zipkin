@@ -11,9 +11,7 @@ in mind when choosing version numbers.
 
 1. **Push a git tag**
 
-   The tag should be of the format `release-N.M.L`, for example `release-0.18.1`. Note that the release automation
-   will verify that the version in the tag matches the version in `pom.xml` (minus `-SNAPSHOT`), and abort the release
-   if it's not.
+   The tag should be of the format `release-N.M.L`, for example `release-0.18.1`.
 
 1. **Wait for Travis CI**
 
