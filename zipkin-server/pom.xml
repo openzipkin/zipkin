@@ -114,7 +114,7 @@
 
     <!-- Trace api controller activity with Brave -->
     <dependency>
-      <groupId>com.github.kristofa</groupId>
+      <groupId>io.zipkin.brave</groupId>
       <artifactId>brave-spring-web-servlet-interceptor</artifactId>
       <version>${brave.version}</version>
       <optional>true</optional>

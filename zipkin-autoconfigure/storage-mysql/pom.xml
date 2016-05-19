@@ -49,7 +49,7 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.kristofa</groupId>
+      <groupId>io.zipkin.brave</groupId>
       <artifactId>brave-core</artifactId>
       <version>${brave.version}</version>
       <optional>true</optional>
