@@ -19,7 +19,6 @@ import zipkin.Span;
 import zipkin.storage.DependenciesTest;
 import zipkin.storage.InMemorySpanStore;
 import zipkin.storage.InMemoryStorage;
-import zipkin.storage.StorageComponent;
 
 import static zipkin.TestObjects.DAY;
 import static zipkin.TestObjects.TODAY;
@@ -32,7 +31,7 @@ public class CassandraDependenciesTest extends DependenciesTest {
     this.storage = CassandraTestGraph.INSTANCE.storage.get();
   }
 
-  @Override protected StorageComponent storage() {
+  @Override protected CassandraStorage storage() {
     return storage;
   }
 

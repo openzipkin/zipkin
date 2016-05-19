@@ -85,18 +85,33 @@ public class ZipkinCassandraStorageProperties {
     this.password = "".equals(password) ? null : password;
   }
 
+  /**
+   * @deprecated See {@link CassandraStorage.Builder#spanTtl(int)}
+   */
+  @Deprecated
   public int getSpanTtl() {
     return spanTtl;
   }
 
+  /**
+   * @deprecated See {@link CassandraStorage.Builder#spanTtl(int)}
+   */
+  @Deprecated
   public void setSpanTtl(int spanTtl) {
     this.spanTtl = spanTtl;
   }
 
+  /**
+   * @deprecated See {@link CassandraStorage.Builder#indexTtl(int)}
+   */
+  @Deprecated
   public int getIndexTtl() {
     return indexTtl;
   }
 
+  /**
+   * @deprecated See {@link CassandraStorage.Builder#indexTtl(int)}
+   */
   public void setIndexTtl(int indexTtl) {
     this.indexTtl = indexTtl;
   }
