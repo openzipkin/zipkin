@@ -49,7 +49,7 @@
 
     <main.basedir>${project.basedir}</main.basedir>
 
-    <brave.version>3.7.0</brave.version>
+    <brave.version>3.8.0</brave.version>
     <cassandra-driver-core.version>3.0.1</cassandra-driver-core.version>
     <moshi.version>1.1.0</moshi.version>
     <okio.version>1.8.0</okio.version>
