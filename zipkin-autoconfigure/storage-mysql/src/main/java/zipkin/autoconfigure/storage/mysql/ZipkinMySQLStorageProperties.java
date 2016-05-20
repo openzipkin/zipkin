@@ -15,7 +15,7 @@ package zipkin.autoconfigure.storage.mysql;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties("mysql")
+@ConfigurationProperties("zipkin.storage.mysql")
 public class ZipkinMySQLStorageProperties {
   private String host = "localhost";
   private int port = 3306;

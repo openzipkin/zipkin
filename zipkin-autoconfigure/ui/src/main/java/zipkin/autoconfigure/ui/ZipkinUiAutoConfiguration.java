@@ -60,7 +60,6 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 @Configuration
 @EnableConfigurationProperties(ZipkinUiProperties.class)
 @RestController
-@ConditionalOnResource(resources = "classpath:zipkin-ui") // from io.zipkin:zipkin-ui
 public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
 
   @Autowired
