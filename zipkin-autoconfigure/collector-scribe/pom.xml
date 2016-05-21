@@ -35,5 +35,12 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-collector-scribe</artifactId>
     </dependency>
+    <!-- Avoid javax.validation.ValidationException during tests -->
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-validator</artifactId>
+      <version>5.2.4.Final</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
