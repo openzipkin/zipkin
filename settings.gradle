@@ -58,7 +58,4 @@ def includes = [
 'zipkin-sampler'
 ]
 
-if (System.getenv('PUBLISHING') == null) {
-    includes.add('zipkin-tracegen')
-}
 include includes.toArray(new String[0])
