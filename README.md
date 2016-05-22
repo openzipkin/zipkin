@@ -3,6 +3,24 @@
 # zipkin-java
 This project is a native java port of [zipkin](https://github.com/openzipkin/zipkin), which was historically written in scala+finagle. This includes a dependency-free library and a [spring-boot](http://projects.spring.io/spring-boot/) replacement for zipkin's query and collector services. Storage options include in-memory, JDBC (mysql), Cassandra, and Elasticsearch.
 
+## Quick-start
+
+The quickest way to get started is to fetch the [latest release](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec) in a self-contained executable jar. Note that the server requires minimum JRE 8. For example:
+
+```
+wget -O zipkin.jar 'https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec'
+java -jar zipkin.jar
+```
+
+If you are familiar with Docker, you can also use the [`docker-zipkin-java`](https://github.com/openzipkin/docker-zipkin-java) project, which (in addition to being able to build docker images) provides scripts and a `docker-compose.yml` for launching pre-built images. To start `zipkin-server` on Docker:
+
+```
+git clone https://github.com/openzipkin/docker-zipkin-java
+cd docker-zipkin-java
+docker-compose up
+```
+
+
 ## Core Library
 The [core library](https://github.com/openzipkin/zipkin-java/tree/master/zipkin/src/main/java/io/zipkin) requires minimum language level 7. While currently only used by the server, we expect this library to be used in native instrumentation as well.
 
@@ -53,7 +71,7 @@ The [CassandraStorage](https://github.com/openzipkin/zipkin-java/tree/master/zip
 ### Elasticsearch
 The [ElasticsearchStorage](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-storage/elasticsearch) component is tested against Elasticsearch 2.3. It stores spans as json and has been designed for larger scale. This store is the newest option, and does not yet [support dependency links](https://github.com/openzipkin/zipkin-dependencies-spark/issues/21).
 
-## Server
+## Running the server from source
 The [zipkin server](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-server)
 receives spans via HTTP POST and respond to queries from its UI. It can also run collectors, such as Scribe or Kafka.
 
@@ -64,8 +82,6 @@ $ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
 # Run the server
 $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```
-
-Note that the server requires minimum JRE 8.
 
 ## Artifacts
 ### Library Releases
