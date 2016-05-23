@@ -20,6 +20,7 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import zipkin.DependencyLink;
 import zipkin.internal.Util;
@@ -87,6 +88,11 @@ public final class ElasticsearchStorage
   ElasticsearchStorage(Builder builder) {
     lazyClient = new LazyClient(builder);
     indexNameFormatter = new IndexNameFormatter(builder.index);
+  }
+
+  /** Lazy initializes or returns the client in use by this storage component. */
+  public Client client() {
+    return lazyClient.get();
   }
 
   @Override protected ElasticsearchSpanStore computeGuavaSpanStore() {

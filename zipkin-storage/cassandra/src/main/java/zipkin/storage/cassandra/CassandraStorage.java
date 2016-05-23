@@ -14,6 +14,7 @@
 
 package zipkin.storage.cassandra;
 
+import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -166,6 +167,11 @@ public final class CassandraStorage
     this.spanTtl = builder.spanTtl;
     this.bucketCount = builder.bucketCount;
     this.session = new LazySession(builder.sessionFactory, this);
+  }
+
+  /** Lazy initializes or returns the session in use by this storage component. */
+  public Session session() {
+    return session.get();
   }
 
   @Override protected CassandraSpanStore computeGuavaSpanStore() {
