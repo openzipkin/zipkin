@@ -91,6 +91,11 @@ public final class MySQLStorage implements StorageComponent {
     this.asyncSpanConsumer = blockingToAsync(new MySQLSpanConsumer(datasource, context), executor);
   }
 
+  /** Returns the session in use by this storage component. */
+  public DataSource datasource() {
+    return datasource;
+  }
+
   @Override public SpanStore spanStore() {
     return spanStore;
   }
