@@ -13,7 +13,6 @@ import TraceFiltersUI from '../component_ui/traceFilters';
 import TracesUI from '../component_ui/traces';
 import TimeStampUI from '../component_ui/timeStamp';
 import BackToTop from '../component_ui/backToTop';
-import GoToTraceUI from '../component_ui/goToTrace';
 import {defaultTemplate} from '../templates';
 
 const DefaultPageComponent = component(function DefaultPage() {
@@ -54,7 +53,6 @@ const DefaultPageComponent = component(function DefaultPage() {
       TimeStampUI.attachTo('#end-ts');
       TimeStampUI.attachTo('#start-ts');
       BackToTop.attachTo('#backToTop');
-      GoToTraceUI.attachTo('#traceIdQueryForm');
 
       $('.timeago').timeago();
     });
