@@ -28,7 +28,7 @@ $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 
 ## Logging
 
-By default, zipkin writes log messages to the console at INFO level and above. You can adjust categories using the `--logging.level.XXX` parameter, or by adjusting [yaml configuration](zipkin-server/src/main/resources/zipkin-server.yml).
+By default, zipkin writes log messages to the console at INFO level and above. You can adjust categories using the `--logging.level.XXX` parameter, or by adjusting [yaml configuration](src/main/resources/zipkin-server.yml).
 
 For example, if you want to enable debug logging for all zipkin categories, you can start the server like so:
 
