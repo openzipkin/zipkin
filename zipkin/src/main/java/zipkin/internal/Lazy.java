@@ -34,10 +34,19 @@ public abstract class Lazy<T> {
       synchronized (this) {
         result = instance;
         if (result == null) {
-          instance = result = compute();
+          instance = result = tryCompute();
         }
       }
     }
     return result;
+  }
+
+  /**
+   * This is called in a synchronized block when the value to memorize hasn't yet been computed.
+   *
+   * <p>Extracted only for LazyCloseable, hence package protection.
+   */
+  T tryCompute() {
+    return compute();
   }
 }
