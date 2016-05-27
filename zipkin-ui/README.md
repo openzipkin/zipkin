@@ -6,7 +6,7 @@ When looking at a trace, the browser is sent to the path `/traces/{id}`. For the
 app to serve that route, the server needs to forward the request to `index.html`. The same
 forwarding applies to `/dependencies` and any other routes the UI controls. 
 
-Under the scenes the JavaScript code looks at `window.location` to figure out what the
+Behind the scenes the JavaScript code looks at `window.location` to figure out what the
 UI should do. This is handled by a route api defined in the crossroads library.
 
 The suggested logic for serving the assets of Zipkin-UI is as follows:
@@ -27,3 +27,7 @@ Since many Zipkin servers are Java-based, it's convenient to distribute the UI a
 Gradle build tool. A `.jar` file is really only a `.zip` file, and can be treated as such. It can be opened by any
 program that can extract zip files.
 
+## How do I run against a proxy zipkin-backend?
+
+By specifying the `proxy` environment variable, you can point the zipkin-ui to a different backend, allowing you to access real data while developing locally.
+An example to run with npm would be `proxy=http://myzipkininstance.com:9411 npm run dev`. (note that prefixing with http:// and suffixing the port is mandatory)
