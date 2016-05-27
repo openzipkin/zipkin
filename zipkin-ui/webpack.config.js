@@ -3,6 +3,9 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 
+var proxyURL = process.env.proxy || "http://localhost:8080/";
+console.log("API requests are forwarded to " + proxyURL);
+
 module.exports = {
     entry: [
         __dirname + '/js/main.js',
@@ -45,9 +48,11 @@ module.exports = {
         ])
     ],
     devServer: {
+        historyApiFallback: true,
         port: 9090,
         proxy: {
-            "*": "http://localhost:8080"
+            "/api/*": proxyURL,
+            "/config.json": proxyURL
         }
     }
 };
