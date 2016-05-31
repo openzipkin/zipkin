@@ -10,6 +10,27 @@ The schema is the same as [zipkin-scala](https://github.com/openzipkin/zipkin/tr
 `zipkin.storage.mysql.MySQLStorage.Builder` includes defaults that will
 operate against a given Datasource.
 
+## Testing this component
+This module conditionally runs integration tests against a local MySQL instance.
+
+You minimally need to export the variable `MYSQL_USER` to run tests.
+Ex.
+```
+$ MYSQL_USER=root ./mvnw clean install -pl :zipkin-storage-mysql
+```
+
+If you run tests via Maven or otherwise without specifying `MYSQL_USER`,
+you'll notice tests are silently skipped.
+```
+Results :
+
+Tests run: 49, Failures: 0, Errors: 0, Skipped: 48
+```
+
+This behaviour is intentional: We don't want to burden developers with
+installing and running all storage options to test unrelated change.
+That said, all integration tests run on pull request via Travis.
+
 ## Exploring Zipkin Data
 
 When troubleshooting, it is important to note that zipkin ids are encoded as hex.
