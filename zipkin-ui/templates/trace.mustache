@@ -4,6 +4,7 @@
     <li class=''><a href='#'><strong>Services:</strong> <span class='badge'>{{services}}</span></a></li>
     <li class=''><a href='#'><strong>Depth:</strong> <span class='badge'>{{depth}}</span></a></li>
     <li class=''><a href='#'><strong>Total Spans:</strong> <span class='badge'>{{totalSpans}}</span></a></li>
+    <li class='navbar-right'><a href='/api/v1/trace/{{ traceId }}' id='traceJsonLink'><span class='btn btn-primary btn-xs badge'>JSON</span></a></li>
   </ul>
 
   <form class='form-inline' role='form'>
@@ -197,5 +198,20 @@
     {{/binaryAnnotations}}
   </div>
   {{/spansBackup}}
+</div>
+
+<div class='modal fade' id='jsonPanel'>
+  <div class='modal-dialog modal-lg'>
+    <div class='modal-content'>
+      <div class='modal-header'>
+        <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
+        <a href='#' class='save'><span class='glyphicon glyphicon-save' aria-hidden='true' aria-label='save'></span></a>
+        <h4 class='modal-title'></h4>
+      </div>
+      <div class='modal-body'>
+        <pre></pre>
+      </div>
+    </div>
+  </div>
 </div>
 
