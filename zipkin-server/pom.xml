@@ -119,6 +119,12 @@
       <version>${brave.version}</version>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>io.zipkin.brave</groupId>
+      <artifactId>brave-spancollector-local</artifactId>
+      <version>${brave.version}</version>
+      <optional>true</optional>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>

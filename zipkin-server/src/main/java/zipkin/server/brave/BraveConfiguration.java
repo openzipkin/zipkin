@@ -15,7 +15,9 @@ package zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
 import com.github.kristofa.brave.ServerClientAndLocalSpanState;
+import com.github.kristofa.brave.SpanCollectorMetricsHandler;
 import com.github.kristofa.brave.ThreadLocalServerClientAndLocalSpanState;
+import com.github.kristofa.brave.local.LocalSpanCollector;
 import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -29,7 +31,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Scope;
 import zipkin.Endpoint;
 import zipkin.collector.CollectorMetrics;
-import zipkin.collector.CollectorSampler;
 import zipkin.server.ConditionalOnSelfTracing;
 import zipkin.storage.StorageComponent;
 
@@ -58,8 +59,19 @@ public class BraveConfiguration {
 
   @Bean LocalSpanCollector spanCollector(StorageComponent storage,
       @Value("${zipkin.self-tracing.flush-interval:1}") int flushInterval,
-      CollectorSampler sampler, CollectorMetrics metrics) {
-    return new LocalSpanCollector(storage, flushInterval, sampler, metrics);
+      final CollectorMetrics metrics) {
+    LocalSpanCollector.Config config = LocalSpanCollector.Config.builder()
+        .flushInterval(flushInterval).build();
+    return LocalSpanCollector.create(storage, config, new SpanCollectorMetricsHandler() {
+      CollectorMetrics local = metrics.forTransport("local");
+      @Override public void incrementAcceptedSpans(int i) {
+        local.incrementSpans(i);
+      }
+
+      @Override public void incrementDroppedSpans(int i) {
+        local.incrementSpansDropped(i);
+      }
+    });
   }
 
   @Bean ServerClientAndLocalSpanState braveState(@Qualifier("local") Endpoint localEndpoint) {
