@@ -16,7 +16,6 @@ package zipkin.autoconfigure.storage.mysql.brave;
 import com.github.kristofa.brave.Brave;
 import com.github.kristofa.brave.ServerSpan;
 import com.github.kristofa.brave.ServerSpanState;
-import com.github.kristofa.brave.internal.zipkin.Endpoint;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -35,6 +34,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import zipkin.Endpoint;
 import zipkin.autoconfigure.storage.mysql.ZipkinMySQLStorageProperties;
 
 /** Sets up the MySQL tracing in Brave as an initialization. */
