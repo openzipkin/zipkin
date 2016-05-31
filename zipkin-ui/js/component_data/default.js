@@ -1,4 +1,5 @@
 import {component} from 'flightjs';
+import {errToStr} from '../../js/component_ui/error';
 import $ from 'jquery';
 import queryString from 'query-string';
 import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSummary';
@@ -22,13 +23,15 @@ export default component(function DefaultData() {
     if (serviceName) {
       $.ajax(`/api/v1/traces?${queryString.stringify(query)}`, {
         type: 'GET',
-        dataType: 'json',
-        success: traces => {
-          const modelview = {
-            traces: traceSummariesToMustache(serviceName, traces.map(traceSummary))
-          };
-          this.trigger('defaultPageModelView', modelview);
-        }
+        dataType: 'json'
+      }).done(traces => {
+        const modelview = {
+          traces: traceSummariesToMustache(serviceName, traces.map(traceSummary))
+        };
+        this.trigger('defaultPageModelView', modelview);
+      }).fail(e => {
+        this.trigger('defaultPageModelView', {traces: [],
+                                              queryError: errToStr(e)});
       });
     } else {
       this.trigger('defaultPageModelView', {traces: []});
