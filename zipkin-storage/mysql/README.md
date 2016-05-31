@@ -10,6 +10,16 @@ The schema is the same as [zipkin-scala](https://github.com/openzipkin/zipkin/tr
 `zipkin.storage.mysql.MySQLStorage.Builder` includes defaults that will
 operate against a given Datasource.
 
+## Exploring Zipkin Data
+
+When troubleshooting, it is important to note that zipkin ids are encoded as hex.
+If you want to view data in mysql, you'll need to use the hex function accordingly. 
+
+For example, all the below query the same trace using different tools:
+* zipkin-ui: `http://1.2.3.4:9411/traces/27960dafb1ea7454`
+* zipkin-api: `http://1.2.3.4:9411/api/v1/trace/27960dafb1ea7454?raw`
+* mysql: `select * from zipkin_spans where trace_id = x'27960dafb1ea7454';`
+
 ## Applying the schema
 
 ```bash
