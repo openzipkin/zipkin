@@ -138,7 +138,8 @@ public final class QueryRequest {
     this.binaryAnnotations = binaryAnnotations;
     for (Map.Entry<String, String> entry : binaryAnnotations.entrySet()) {
       checkArgument(!entry.getKey().isEmpty(), "binary annotation key was empty");
-      checkArgument(!entry.getValue().isEmpty(), "binary annotation value was empty");
+      checkArgument(!entry.getValue().isEmpty(),
+          "binary annotation value for %s was empty", entry.getKey());
     }
     this.minDuration = minDuration;
     this.maxDuration = maxDuration;
@@ -209,10 +210,7 @@ public final class QueryRequest {
             addAnnotation(ann);
           } else {
             String[] keyValue = ann.split("=");
-            if (keyValue.length < 2 || keyValue[1] == null) {
-              addAnnotation(ann);
-            }
-            addBinaryAnnotation(keyValue[0], keyValue[1]);
+            addBinaryAnnotation(keyValue[0], keyValue.length < 2 ? "" :keyValue[1]);
           }
         }
       }

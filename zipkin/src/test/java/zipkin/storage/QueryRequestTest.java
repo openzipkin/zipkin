@@ -64,7 +64,7 @@ public class QueryRequestTest {
   @Test
   public void binaryAnnotationValueCantBeEmpty() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("binary annotation value was empty");
+    thrown.expectMessage("binary annotation value for foo was empty");
 
     QueryRequest.builder().serviceName("foo").addBinaryAnnotation("foo", "").build();
   }
@@ -86,7 +86,7 @@ public class QueryRequestTest {
   }
 
   @Test
-  public void annotationQueryRoundTrip() {
+  public void annotationQuery_roundTrip() {
     String annotationQuery = "http.method=GET and finagle.retry";
 
     QueryRequest request =
@@ -100,6 +100,20 @@ public class QueryRequestTest {
 
     assertThat(request.toAnnotationQuery())
         .isEqualTo(annotationQuery);
+  }
+
+  @Test
+  public void annotationQuery_missingValue() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("binary annotation value for http.method was empty");
+
+    String annotationQuery = "http.method=";
+
+    QueryRequest request =
+        QueryRequest.builder().serviceName("security-service").parseAnnotationQuery(annotationQuery).build();
+
+    assertThat(request.annotations)
+        .containsExactly("http.method");
   }
 
   @Test
