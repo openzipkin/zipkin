@@ -121,13 +121,23 @@ public final class CassandraStorage
       return this;
     }
 
-    /** Time-to-live in seconds for span data. Defaults to 604800 (7 days) */
+    /**
+     * Time-to-live in seconds for span data. Defaults to 604800 (7 days)
+     *
+     * @deprecated current schema uses default ttls. This parameter will be removed in Zipkin 2
+     */
+    @Deprecated
     public Builder spanTtl(int spanTtl) {
       this.spanTtl = spanTtl;
       return this;
     }
 
-    /** Time-to-live in seconds for index data. Defaults to 259200 (3 days) */
+    /**
+     * Time-to-live in seconds for index data. Defaults to 259200 (3 days)
+     *
+     * @deprecated current schema uses default ttls. This parameter will be removed in Zipkin 2
+     */
+    @Deprecated
     public Builder indexTtl(int indexTtl) {
       this.indexTtl = indexTtl;
       return this;
@@ -142,7 +152,9 @@ public final class CassandraStorage
   }
 
   final int maxTraceCols;
+  @Deprecated
   final int indexTtl;
+  @Deprecated
   final int spanTtl;
   final int bucketCount;
   final String contactPoints;

@@ -20,7 +20,6 @@ import com.google.common.io.CharStreams;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,23 +29,41 @@ final class Schema {
 
   private static final String SCHEMA = "/cassandra-schema-cql3.txt";
 
+  private static final String UPGRADE_1 = "/cassandra-schema-cql3-upgrade-1.txt";
+
   private Schema() {
   }
 
-  static Map<String, String> readMetadata(Session session) {
-    Map<String, String> metadata = new LinkedHashMap<>();
-    KeyspaceMetadata keyspaceMetadata =
-        getKeyspaceMetadata(session.getLoggedKeyspace(), session.getCluster());
+  static Metadata readMetadata(Session session) {
+    KeyspaceMetadata keyspaceMetadata = getKeyspaceMetadata(session);
 
     Map<String, String> replication = keyspaceMetadata.getReplication();
     if ("SimpleStrategy".equals(replication.get("class")) && "1".equals(
         replication.get("replication_factor"))) {
       LOG.warn("running with RF=1, this is not suitable for production. Optimal is 3+");
     }
-    Map<String, String> tracesCompaction =
-        keyspaceMetadata.getTable("traces").getOptions().getCompaction();
-    metadata.put("traces.compaction.class", tracesCompaction.get("class"));
-    return metadata;
+    String compactionClass =
+        keyspaceMetadata.getTable("traces").getOptions().getCompaction().get("class");
+    boolean hasDefaultTtl = hasUpgrade1_defaultTtl(keyspaceMetadata);
+    if (!hasDefaultTtl) {
+      LOG.warn("schema lacks default ttls: apply {}, or set CassandraStorage.ensureSchema=true",
+          UPGRADE_1);
+    }
+    return new Metadata(compactionClass, hasDefaultTtl);
+  }
+
+  static final class Metadata {
+    final String compactionClass;
+    final boolean hasDefaultTtl;
+
+    Metadata(String compactionClass, boolean hasDefaultTtl) {
+      this.compactionClass = compactionClass;
+      this.hasDefaultTtl = hasDefaultTtl;
+    }
+  }
+
+  static KeyspaceMetadata getKeyspaceMetadata(Session session) {
+    return getKeyspaceMetadata(session.getLoggedKeyspace(), session.getCluster());
   }
 
   private static KeyspaceMetadata getKeyspaceMetadata(String keyspace, Cluster cluster) {
@@ -61,7 +78,26 @@ final class Schema {
   }
 
   static void ensureExists(String keyspace, Session session) {
-    try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(SCHEMA))) {
+    KeyspaceMetadata keyspaceMetadata = getKeyspaceMetadata(keyspace, session.getCluster());
+    if (keyspaceMetadata.getTable("traces") == null) {
+      LOG.info("Installing schema {}", SCHEMA);
+      applyCqlFile(keyspace, session, SCHEMA);
+    }
+    if (!hasUpgrade1_defaultTtl(keyspaceMetadata)) {
+      LOG.info("Upgrading schema {}", SCHEMA);
+      applyCqlFile(keyspace, session, UPGRADE_1);
+    }
+  }
+
+  static boolean hasUpgrade1_defaultTtl(KeyspaceMetadata keyspaceMetadata) {
+    // TODO: we need some approach to forward-check compatibility as well.
+    //  backward: this code knows the current schema is too old.
+    //  forward:  this code knows the current schema is too new.
+    return keyspaceMetadata.getTable("traces").getOptions().getDefaultTimeToLive() > 0;
+  }
+
+  static void applyCqlFile(String keyspace, Session session, String resource) {
+    try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(resource))) {
       for (String cmd : CharStreams.toString(reader).split(";")) {
         cmd = cmd.trim().replace(" zipkin", " " + keyspace);
         if (!cmd.isEmpty()) {

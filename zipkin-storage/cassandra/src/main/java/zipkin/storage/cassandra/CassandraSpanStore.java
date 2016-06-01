@@ -76,7 +76,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     }
   });
 
-  private final int indexTtl;
+  private final int durationTtl;
   private final int maxTraceCols;
   private final Session session;
   private final TimestampCodec timestampCodec;
@@ -94,7 +94,6 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
   CassandraSpanStore(Session session, int bucketCount, int indexTtl, int maxTraceCols) {
     this.session = session;
-    this.indexTtl = indexTtl;
     this.maxTraceCols = maxTraceCols;
     ProtocolVersion protocolVersion = session.getCluster()
         .getConfiguration().getProtocolOptions().getProtocolVersion();
@@ -152,6 +151,13 @@ public final class CassandraSpanStore implements GuavaSpanStore {
             .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
             .limit(QueryBuilder.bindMarker("limit_"))
             .orderBy(QueryBuilder.desc("ts")));
+
+    int durationDefaultTtl = Schema.getKeyspaceMetadata(session)
+        .getTable("span_duration_index")
+        .getOptions()
+        .getDefaultTimeToLive();
+
+    this.durationTtl = durationDefaultTtl == 0 ? indexTtl : durationDefaultTtl;
 
     selectTraceIdsBySpanDuration = session.prepare(
         QueryBuilder.select("duration", "ts", "trace_id")
@@ -596,7 +602,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
   /** Returns a map of trace id to timestamp (in microseconds) */
   ListenableFuture<Map<Long, Long>> getTraceIdsByDuration(QueryRequest request) {
     checkArgument(request.serviceName != null, "serviceName required on duration query");
-    long oldestData = (System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(indexTtl)) * 1000;
+    long oldestData = (System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(durationTtl)) * 1000;
 
     long startTs = Math.max((request.endTs - request.lookback) * 1000, oldestData);
     long endTs = Math.max(request.endTs * 1000, oldestData);

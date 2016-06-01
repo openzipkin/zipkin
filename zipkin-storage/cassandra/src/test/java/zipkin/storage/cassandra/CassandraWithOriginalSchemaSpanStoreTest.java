@@ -15,11 +15,11 @@ package zipkin.storage.cassandra;
 
 import zipkin.storage.SpanStoreTest;
 
-public class CassandraSpanStoreTest extends SpanStoreTest {
+public class CassandraWithOriginalSchemaSpanStoreTest extends SpanStoreTest {
   private final CassandraStorage storage;
 
-  public CassandraSpanStoreTest() {
-    this.storage = CassandraTestGraph.INSTANCE.storage.get();
+  public CassandraWithOriginalSchemaSpanStoreTest() {
+    this.storage = CassandraWithOriginalSchemaTestGraph.INSTANCE.storage.get();
   }
 
   @Override protected CassandraStorage storage() {
