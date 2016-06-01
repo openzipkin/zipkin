@@ -73,6 +73,11 @@
 </div>
 
 <div class="row">
+{{#queryError}}
+  <div class="alert alert-danger" id="query-error-msg">
+    <p>Error executing query: {{ queryError }}</p>
+  </div>
+{{/queryError}}
 {{^queryWasPerformed}}
   <div class="alert alert-info" id="help-msg">
     <p>Please select the criteria for your trace lookup.</p>
