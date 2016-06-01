@@ -51,7 +51,7 @@ public class ZipkinHttpCollector {
   ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics) {
     this.metrics = metrics.forTransport("http");
     this.collector = Collector.builder(getClass())
-        .storage(storage).sampler(sampler).metrics(metrics).build();
+        .storage(storage).sampler(sampler).metrics(this.metrics).build();
   }
 
   @RequestMapping(value = "/api/v1/spans", method = POST)
