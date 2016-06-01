@@ -5,6 +5,7 @@ import initializeTrace from './page/trace';
 import initializeDependency from './page/dependency';
 import CommonUI from './page/common';
 import loadConfig from './config';
+import {errToStr} from './component_ui/error';
 
 loadConfig().then(config => {
   debug.enable(true);
@@ -16,4 +17,8 @@ loadConfig().then(config => {
   crossroads.addRoute('traces/{id}', traceId => initializeTrace(traceId, config));
   crossroads.addRoute('dependency', () => initializeDependency(config));
   crossroads.parse(window.location.pathname);
+}, e => {
+  // TODO: better error message, but this is better than a blank screen...
+  const err = errToStr(e);
+  document.write(`Error loading config.json: ${err}`);
 });

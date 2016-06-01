@@ -39,6 +39,10 @@ body {
   cursor: pointer;
 }
 
+#errorPanel {
+  display: none;
+}
+
 #fullPageSpinner {
   display: none;
   position: absolute;
