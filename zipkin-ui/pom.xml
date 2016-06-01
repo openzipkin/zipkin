@@ -29,7 +29,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <zipkin-ui.version>1.40.1</zipkin-ui.version>
+    <zipkin-ui.version>1.40.2</zipkin-ui.version>
     <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
     <build-helper-maven-plugin.version>1.9.1</build-helper-maven-plugin.version>
   </properties>
