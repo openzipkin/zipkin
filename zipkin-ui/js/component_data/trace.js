@@ -9,7 +9,7 @@ export default component(function TraceData() {
       dataType: 'json',
       success: trace => {
         const modelview = traceToMustache(trace);
-        this.trigger('tracePageModelView', modelview);
+        this.trigger('tracePageModelView', {modelview, trace});
       }
     });
   });

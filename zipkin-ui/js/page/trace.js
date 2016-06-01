@@ -3,6 +3,7 @@ import $ from 'jquery';
 import TraceData from '../component_data/trace';
 import FilterAllServicesUI from '../component_ui/filterAllServices';
 import FullPageSpinnerUI from '../component_ui/fullPageSpinner';
+import JsonPanelUI from '../component_ui/jsonPanel';
 import ServiceFilterSearchUI from '../component_ui/serviceFilterSearch';
 import SpanPanelUI from '../component_ui/spanPanel';
 import TraceUI from '../component_ui/trace';
@@ -17,18 +18,26 @@ const TracePageComponent = component(function TracePage() {
     TraceData.attachTo(document, {
       traceId: this.attr.traceId
     });
-    this.on(document, 'tracePageModelView', function(ev, modelview) {
-      this.$node.html(traceTemplate(modelview));
+    this.on(document, 'tracePageModelView', function(ev, data) {
+      this.$node.html(traceTemplate(data.modelview));
 
       FilterAllServicesUI.attachTo('#filterAllServices', {
         totalServices: $('.trace-details.services span').length
       });
       FullPageSpinnerUI.attachTo('#fullPageSpinner');
+      JsonPanelUI.attachTo('#jsonPanel');
       ServiceFilterSearchUI.attachTo('#serviceFilterSearch');
       SpanPanelUI.attachTo('#spanPanel');
       TraceUI.attachTo('#trace-container');
       FilterLabelUI.attachTo('.service-filter-label');
       ZoomOut.attachTo('#zoomOutSpans');
+
+      this.$node.find('#traceJsonLink').click(e => {
+        e.preventDefault();
+        this.trigger('uiRequestJsonPanel', {title: `Trace ${this.attr.traceId}`,
+                                            obj: data.trace,
+                                            link: `/api/v1/trace/${this.attr.traceId}`});
+      });
 
       $('.annotation:not(.core)').tooltip({placement: 'left'});
     });

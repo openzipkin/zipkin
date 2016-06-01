@@ -88,6 +88,7 @@ export function formatEndpoint({ipv4, port = 0, serviceName = ''}) {
 
 export default function traceToMustache(trace) {
   const summary = traceSummary(trace);
+  const traceId = summary.traceId;
   const duration = mkDurationStr(summary.duration);
   const groupedTimestamps = getGroupedTimestamps(summary);
   const serviceDurations = getServiceDurations(groupedTimestamps);
@@ -167,6 +168,7 @@ export default function traceToMustache(trace) {
   const spansBackup = spans;
 
   return {
+    traceId,
     duration,
     services,
     depth,
