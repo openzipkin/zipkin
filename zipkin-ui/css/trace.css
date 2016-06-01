@@ -156,4 +156,12 @@
   max-width: 75%;
 }
 
+.modal-header .save {
+  float: right;
+  margin-right: 5px;
+}
+
+.save {
+  opacity: 0.2;
+}
 
