@@ -31,7 +31,7 @@ module.exports = {
         }]
     },
     output: {
-        path: __dirname + '/build/resources/main/zipkin-ui/',
+        path: __dirname + '/target/classes/zipkin-ui/',
         filename: 'app-[hash].min.js',
         publicPath: '/'
     },
