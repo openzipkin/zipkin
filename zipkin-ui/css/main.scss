@@ -1,0 +1,78 @@
+// Import Twitter Bootstrap
+$icon-font-path: "~bootstrap-sass/assets/fonts/bootstrap/";
+@import "~bootstrap-sass/assets/stylesheets/bootstrap";
+
+// We need to wait for this bug to be fixed: https://github.com/harvesthq/chosen/issues/2484
+// @import "~chosen-npm/dist/chosen.css";
+// workaround for now is to commit the css into our project:
+@import "../libs/chosen/chosen.css";
+
+@import "~bootstrap-datepicker/dist/css/bootstrap-datepicker3.css";
+
+@import "dependency";
+@import "summary";
+@import "trace";
+@import "traces";
+
+body {
+  padding-top: 50px;
+}
+
+.container {
+  width: 90%;
+  margin: 0 5%;
+}
+
+.content {
+  padding-top: 20px;
+}
+
+#annotationQuery {
+  margin: 5px 0;
+}
+
+.chosen-container .chosen-single {
+  height: 30px;
+}
+
+.service-filter-label {
+  cursor: pointer;
+}
+
+#errorPanel {
+  display: none;
+}
+
+#fullPageSpinner {
+  display: none;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0px;
+  padding-top: 10%;
+  background: rgba(256, 256, 256, 0.5);
+}
+
+#fullPageSpinner .progress {
+  margin-left: 25%;
+  width: 50%;
+}
+
+/*for page up button*/
+#backToTop {
+  background-color: #0084B4;
+}
+
+/*for zoomout button*/
+#zoomOutSpans {
+  background-color: #d9534f;
+}
+
+/*container for zoomout, pageup buttons*/
+#extraButtonsContainer {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  z-index: 100;
+}
+
