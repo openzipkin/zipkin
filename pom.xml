@@ -88,7 +88,7 @@
 
   <name>Zipkin (Parent)</name>
   <description>Zipkin Components written in Java</description>
-  <url>https://github.com/openzipkin/zipkin-java</url>
+  <url>https://github.com/openzipkin/zipkin</url>
   <inceptionYear>2015</inceptionYear>
 
   <organization>
@@ -105,9 +105,9 @@
   </licenses>
 
   <scm>
-    <url>https://github.com/openzipkin/zipkin-java</url>
-    <connection>scm:git:https://github.com/openzipkin/zipkin-java.git</connection>
-    <developerConnection>scm:git:https://github.com/openzipkin/zipkin-java.git</developerConnection>
+    <url>https://github.com/openzipkin/zipkin</url>
+    <connection>scm:git:https://github.com/openzipkin/zipkin.git</connection>
+    <developerConnection>scm:git:https://github.com/openzipkin/zipkin.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
 
@@ -122,7 +122,7 @@
   <distributionManagement>
     <repository>
       <id>bintray</id>
-      <url>https://api.bintray.com/maven/openzipkin/maven/zipkin-java/;publish=1</url>
+      <url>https://api.bintray.com/maven/openzipkin/maven/zipkin/;publish=1</url>
     </repository>
     <snapshotRepository>
       <id>jfrog-snapshots</id>
@@ -132,7 +132,7 @@
 
   <issueManagement>
     <system>Github</system>
-    <url>https://github.com/openzipkin/zipkin-java/issues</url>
+    <url>https://github.com/openzipkin/zipkin/issues</url>
   </issueManagement>
 
   <dependencyManagement>
@@ -497,7 +497,7 @@
         <artifactId>centralsync-maven-plugin</artifactId>
         <version>0.1.0</version>
         <configuration>
-          <packageName>zipkin-java</packageName>
+          <packageName>zipkin</packageName>
         </configuration>
       </plugin>
     </plugins>

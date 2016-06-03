@@ -94,7 +94,7 @@ zipkin-server is a drop-in replacement for the [scala query service](https://git
     * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 
 ### Cassandra Storage
-Zipkin's [Cassandra storage component](https://github.com/openzipkin/zipkin-java/tree/master/zipkin-storage/cassandra)
+Zipkin's [Cassandra storage component](https://github.com/openzipkin/zipkin/tree/master/zipkin-storage/cassandra)
 supports version 2.2+ and applies when `STORAGE_TYPE` is set to `cassandra`:
 
     * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "zipkin".
@@ -184,5 +184,5 @@ $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```
 
 ## Running with Docker
-Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin-java`.
+Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin`.
 See [docker-zipkin-java](https://github.com/openzipkin/docker-zipkin-java) for details.
