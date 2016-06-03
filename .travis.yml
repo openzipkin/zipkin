@@ -14,6 +14,8 @@ addons:
 
 cache:
   directories:
+  # zipkin-ui gets dependencies via NPM
+  - $HOME/.npm
   - $HOME/.m2
 
 language: java

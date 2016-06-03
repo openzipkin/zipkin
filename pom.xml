@@ -87,7 +87,7 @@
   </properties>
 
   <name>Zipkin (Parent)</name>
-  <description>Zipkin Components written in Java</description>
+  <description>Zipkin (Parent)</description>
   <url>https://github.com/openzipkin/zipkin</url>
   <inceptionYear>2015</inceptionYear>
 
