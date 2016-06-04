@@ -7,21 +7,21 @@ This project includes a dependency-free library and a [spring-boot](http://proje
 
 ## Quick-start
 
-The quickest way to get started is to fetch the [latest release](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec) in a self-contained executable jar. Note that the server requires minimum JRE 8. For example:
+The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec) as a self-contained executable jar. Note that the Zipkin requires minimum JRE 8. For example:
 
 ```
 wget -O zipkin.jar 'https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec'
 java -jar zipkin.jar
 ```
 
-If you are familiar with Docker, you can also use the [`docker-zipkin`](https://github.com/openzipkin/docker-zipkin) project, which (in addition to being able to build docker images) provides scripts and a `docker-compose.yml` for launching pre-built images. To start `zipkin-server` on Docker:
-
+You can also start Zipkin via Docker.
 ```
-git clone https://github.com/openzipkin/docker-zipkin-java
-cd docker-zipkin-java
-docker-compose up
+docker run -d -p 9411:9411 openzipkin/zipkin
 ```
 
+Once you've started, browse to http://your_host:9411 to find traces!
+
+Check out the [`zipkin-server`](/zipkin-server) documentation for configuration details, or [`docker-zipkin`](https://github.com/openzipkin/docker-zipkin) for how to use docker-compose.
 
 ## Core Library
 The [core library](https://github.com/openzipkin/zipkin/tree/master/zipkin/src/main/java/io/zipkin) requires minimum language level 7. While currently only used by the server, we expect this library to be used in native instrumentation as well.
