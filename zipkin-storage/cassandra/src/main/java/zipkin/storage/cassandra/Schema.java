@@ -63,10 +63,8 @@ final class Schema {
   }
 
   static KeyspaceMetadata getKeyspaceMetadata(Session session) {
-    return getKeyspaceMetadata(session.getLoggedKeyspace(), session.getCluster());
-  }
-
-  private static KeyspaceMetadata getKeyspaceMetadata(String keyspace, Cluster cluster) {
+    String keyspace = session.getLoggedKeyspace();
+    Cluster cluster = session.getCluster();
     KeyspaceMetadata keyspaceMetadata = cluster.getMetadata().getKeyspace(keyspace);
 
     if (keyspaceMetadata == null) {
@@ -78,10 +76,12 @@ final class Schema {
   }
 
   static void ensureExists(String keyspace, Session session) {
-    KeyspaceMetadata keyspaceMetadata = getKeyspaceMetadata(keyspace, session.getCluster());
-    if (keyspaceMetadata.getTable("traces") == null) {
+    KeyspaceMetadata keyspaceMetadata = session.getCluster().getMetadata().getKeyspace(keyspace);
+    if (keyspaceMetadata == null || keyspaceMetadata.getTable("traces") == null) {
       LOG.info("Installing schema {}", SCHEMA);
       applyCqlFile(keyspace, session, SCHEMA);
+      // refresh metadata since we've installed the schema
+      keyspaceMetadata = session.getCluster().getMetadata().getKeyspace(keyspace);
     }
     if (!hasUpgrade1_defaultTtl(keyspaceMetadata)) {
       LOG.info("Upgrading schema {}", SCHEMA);
