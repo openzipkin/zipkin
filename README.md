@@ -14,7 +14,7 @@ wget -O zipkin.jar 'https://search.maven.org/remote_content?g=io.zipkin.java&a=z
 java -jar zipkin.jar
 ```
 
-If you are familiar with Docker, you can also use the [`docker-zipkin-java`](https://github.com/openzipkin/docker-zipkin-java) project, which (in addition to being able to build docker images) provides scripts and a `docker-compose.yml` for launching pre-built images. To start `zipkin-server` on Docker:
+If you are familiar with Docker, you can also use the [`docker-zipkin`](https://github.com/openzipkin/docker-zipkin) project, which (in addition to being able to build docker images) provides scripts and a `docker-compose.yml` for launching pre-built images. To start `zipkin-server` on Docker:
 
 ```
 git clone https://github.com/openzipkin/docker-zipkin-java
