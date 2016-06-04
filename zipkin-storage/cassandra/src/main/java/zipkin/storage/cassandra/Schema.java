@@ -84,7 +84,7 @@ final class Schema {
       keyspaceMetadata = session.getCluster().getMetadata().getKeyspace(keyspace);
     }
     if (!hasUpgrade1_defaultTtl(keyspaceMetadata)) {
-      LOG.info("Upgrading schema {}", SCHEMA);
+      LOG.info("Upgrading schema {}", UPGRADE_1);
       applyCqlFile(keyspace, session, UPGRADE_1);
     }
   }
