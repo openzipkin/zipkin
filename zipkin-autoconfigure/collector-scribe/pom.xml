@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.java</groupId>
     <artifactId>zipkin-autoconfigure</artifactId>
-    <version>1.1.5-SNAPSHOT</version>
+    <version>1.1.5</version>
   </parent>
 
   <artifactId>zipkin-autoconfigure-collector-scribe</artifactId>
