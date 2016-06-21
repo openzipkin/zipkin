@@ -16,6 +16,7 @@ package zipkin.internal;
 import java.io.IOException;
 import java.util.List;
 import org.junit.Test;
+import zipkin.Codec;
 import zipkin.CodecTest;
 import zipkin.Span;
 import zipkin.TestObjects;
@@ -24,11 +25,10 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public final class JsonCodecTest extends CodecTest {
-  private final JsonCodec codec = new JsonCodec();
 
   @Override
   protected JsonCodec codec() {
-    return codec;
+    return Codec.JSON;
   }
 
   @Test
@@ -45,5 +45,117 @@ public final class JsonCodecTest extends CodecTest {
     byte[] bytes = codec().writeStrings(strings);
     assertThat(codec().readStrings(bytes))
         .isEqualTo(strings);
+  }
+
+  @Test
+  public void ignoreNull_parentId() {
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"parentId\": null\n"
+        + "}";
+
+    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+  }
+
+  @Test
+  public void ignoreNull_timestamp() {
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"timestamp\": null\n"
+        + "}";
+
+    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+  }
+
+  @Test
+  public void ignoreNull_duration() {
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"duration\": null\n"
+        + "}";
+
+    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+  }
+
+  @Test
+  public void ignoreNull_debug() {
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"debug\": null\n"
+        + "}";
+
+    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+  }
+
+  @Test
+  public void ignoreNull_annotation_endpoint() {
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"annotations\": [\n"
+        + "    {\n"
+        + "      \"timestamp\": 1461750491274000,\n"
+        + "      \"value\": \"cs\",\n"
+        + "      \"endpoint\": null\n"
+        + "    }\n"
+        + "  ]\n"
+        + "}";
+
+    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+  }
+
+  @Test
+  public void ignoreNull_binaryAnnotation_endpoint() {
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"binaryAnnotations\": [\n"
+        + "    {\n"
+        + "      \"key\": \"lc\",\n"
+        + "      \"value\": \"JDBCSpanStore\",\n"
+        + "      \"endpoint\": null\n"
+        + "    }\n"
+        + "  ]\n"
+        + "}";
+
+    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+  }
+
+  @Test
+  public void niceErrorOnNull_traceId() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Expected a string but was NULL at path $.traceId reading Span");
+
+    String json = "{\n"
+        + "  \"traceId\": null,\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\"\n"
+        + "}";
+
+    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+  }
+
+  @Test
+  public void niceErrorOnNull_id() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Expected a string but was NULL at path $.id reading Span");
+
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": null\n"
+        + "}";
+
+    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
   }
 }
