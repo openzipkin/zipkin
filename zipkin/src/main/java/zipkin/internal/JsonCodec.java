@@ -110,11 +110,16 @@ public final class JsonCodec implements Codec {
       }
       writer.endObject();
     }
-  };
+  }.nullSafe();
 
-  public static final JsonAdapter<Annotation> ANNOTATION_ADAPTER = new Moshi.Builder()
-      .add(Endpoint.class, ENDPOINT_ADAPTER.nullSafe())
-      .build().adapter(Annotation.class);
+  static final Moshi MOSHI = new Moshi.Builder()
+      .add(Endpoint.class, ENDPOINT_ADAPTER)
+      .build();
+
+  static final JsonAdapter<Long> NULLABLE_LONG_ADAPTER = MOSHI.adapter(Long.class);
+  static final JsonAdapter<Boolean> NULLABLE_BOOLEAN_ADAPTER = MOSHI.adapter(Boolean.class);
+
+  public static final JsonAdapter<Annotation> ANNOTATION_ADAPTER = MOSHI.adapter(Annotation.class);
 
   public static final JsonAdapter<BinaryAnnotation> BINARY_ANNOTATION_ADAPTER = new JsonAdapter<BinaryAnnotation>() {
 
@@ -245,13 +250,17 @@ public final class JsonCodec implements Codec {
             result.id(HEX_LONG_ADAPTER.fromJson(reader));
             break;
           case "parentId":
-            result.parentId(HEX_LONG_ADAPTER.fromJson(reader));
+            if (reader.peek() != JsonReader.Token.NULL) {
+              result.parentId(HEX_LONG_ADAPTER.fromJson(reader));
+            } else {
+              reader.skipValue();
+            }
             break;
           case "timestamp":
-            result.timestamp(reader.nextLong());
+            result.timestamp(NULLABLE_LONG_ADAPTER.fromJson(reader));
             break;
           case "duration":
-            result.duration(reader.nextLong());
+            result.duration(NULLABLE_LONG_ADAPTER.fromJson(reader));
             break;
           case "annotations":
             reader.beginArray();
@@ -268,7 +277,7 @@ public final class JsonCodec implements Codec {
             reader.endArray();
             break;
           case "debug":
-            result.debug(reader.nextBoolean());
+            result.debug(NULLABLE_BOOLEAN_ADAPTER.fromJson(reader));
             break;
           default:
             reader.skipValue();
