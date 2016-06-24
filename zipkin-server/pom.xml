@@ -112,6 +112,13 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- Prometheus metrics -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-autoconfigure-metrics-prometheus</artifactId>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Trace api controller activity with Brave -->
     <dependency>
       <groupId>io.zipkin.brave</groupId>

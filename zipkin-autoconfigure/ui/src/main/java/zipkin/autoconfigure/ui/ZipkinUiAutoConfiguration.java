@@ -64,6 +64,7 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
 
   @Autowired
   ZipkinUiProperties ui;
+
   @Value("classpath:zipkin-ui/index.html")
   Resource indexHtml;
 

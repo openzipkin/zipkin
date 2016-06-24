@@ -200,6 +200,12 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-metrics-prometheus</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-guava</artifactId>
         <version>${project.version}</version>
       </dependency>
