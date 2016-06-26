@@ -16,6 +16,7 @@ package zipkin.storage.elasticsearch;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +29,7 @@ import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.storage.guava.GuavaSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
+import static zipkin.storage.elasticsearch.ElasticFutures.toGuava;
 
 final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
   private static final Function<Object, Void> TO_VOID = Functions.<Void>constant(null);
@@ -42,24 +44,35 @@ final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
 
   @Override
   public ListenableFuture<Void> accept(List<Span> spans) {
-    BulkRequestBuilder request = client.prepareBulk();
-    for (Span span : spans) {
-      request.add(createSpanIndexRequest(ApplyTimestampAndDuration.apply(span)));
+    if (spans.isEmpty()) return Futures.immediateFuture(null);
+
+    // Create a bulk request when there is more than one span to store
+    ListenableFuture<?> future;
+    if (spans.size() == 1) {
+      future = toGuava(createSpanIndexRequest(spans.get(0)).execute());
+    } else {
+      BulkRequestBuilder request = client.prepareBulk();
+      for (Span span : spans) {
+        request.add(createSpanIndexRequest(span));
+      }
+      future = toGuava(request.execute());
     }
-    ListenableFuture<?> future = ElasticFutures.toGuava(request.execute());
+
     if (ElasticsearchStorage.FLUSH_ON_WRITES) {
       future = transform(future, new AsyncFunction() {
         @Override public ListenableFuture apply(Object input) {
-          return ElasticFutures.toGuava(client.admin().indices()
+          return toGuava(client.admin().indices()
               .prepareFlush(indexNameFormatter.catchAll())
               .execute());
         }
       });
     }
+
     return transform(future, TO_VOID);
   }
 
-  private IndexRequestBuilder createSpanIndexRequest(Span span) {
+  private IndexRequestBuilder createSpanIndexRequest(Span input) {
+    Span span = ApplyTimestampAndDuration.apply(input);
     long indexTimestampMillis;
     if (span.timestamp != null) {
       indexTimestampMillis = TimeUnit.MICROSECONDS.toMillis(span.timestamp);
