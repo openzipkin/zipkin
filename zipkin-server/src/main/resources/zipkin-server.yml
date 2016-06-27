@@ -49,6 +49,8 @@ zipkin:
       cluster: ${ES_CLUSTER:elasticsearch}
       hosts: ${ES_HOSTS:localhost:9300}
       index: ${ES_INDEX:zipkin}
+      index-shards: ${ES_INDEX_SHARDS:5}
+      index-replicas: ${ES_INDEX_REPLICAS:1}
     mysql:
       host: ${MYSQL_HOST:localhost}
       port: ${MYSQL_TCP_PORT:3306}

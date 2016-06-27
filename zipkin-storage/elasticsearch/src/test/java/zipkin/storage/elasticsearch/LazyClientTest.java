@@ -29,4 +29,24 @@ public class LazyClientTest {
     assertThat(lazyClient)
         .hasToString("{\"clusterName\": \"cluster\", \"hosts\": [\"host1\", \"host2\"]}");
   }
+
+  @Test
+  public void defaultShardAndReplicaCount() {
+    LazyClient lazyClient = new LazyClient(new ElasticsearchStorage.Builder());
+
+    assertThat(lazyClient.indexTemplate)
+        .contains("    \"index.number_of_shards\": 5,\n"
+            + "    \"index.number_of_replicas\": 1,");
+  }
+
+  @Test
+  public void overrideShardAndReplicaCount() {
+    LazyClient lazyClient = new LazyClient(new ElasticsearchStorage.Builder()
+        .indexShards(30)
+        .indexReplicas(0));
+
+    assertThat(lazyClient.indexTemplate)
+        .contains("    \"index.number_of_shards\": 30,\n"
+            + "    \"index.number_of_replicas\": 0,");
+  }
 }

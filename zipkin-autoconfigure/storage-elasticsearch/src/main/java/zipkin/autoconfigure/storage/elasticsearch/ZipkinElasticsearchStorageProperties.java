@@ -20,21 +20,16 @@ import zipkin.storage.elasticsearch.ElasticsearchStorage;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
 public class ZipkinElasticsearchStorageProperties {
-  /**
-   * The elasticsearch cluster to connect to, defaults to "elasticsearch".
-   */
+  /** @see ElasticsearchStorage.Builder#cluster(String) */
   private String cluster = "elasticsearch";
-
-  /**
-   * A list of elasticsearch hostnodes to connect to, in host:port format. The port should be the
-   * transport port, not the http port. Defaults to "localhost:9300".
-   */
+  /** @see ElasticsearchStorage.Builder#hosts(List) */
   private List<String> hosts = Collections.singletonList("localhost:9300");
-
-  /**
-   * The index prefix to use when generating daily index names. Defaults to zipkin.
-   */
+  /** @see ElasticsearchStorage.Builder#index(String) */
   private String index = "zipkin";
+  /** @see ElasticsearchStorage.Builder#indexShards(int) */
+  private int indexShards = 5;
+  /** @see ElasticsearchStorage.Builder#indexReplicas(int) */
+  private int indexReplicas = 1;
 
   public String getCluster() {
     return cluster;
@@ -63,10 +58,28 @@ public class ZipkinElasticsearchStorageProperties {
     return this;
   }
 
+  public int getIndexShards() {
+    return indexShards;
+  }
+
+  public void setIndexShards(int indexShards) {
+    this.indexShards = indexShards;
+  }
+
+  public int getIndexReplicas() {
+    return indexReplicas;
+  }
+
+  public void setIndexReplicas(int indexReplicas) {
+    this.indexReplicas = indexReplicas;
+  }
+
   public ElasticsearchStorage.Builder toBuilder() {
     return ElasticsearchStorage.builder()
         .cluster(cluster)
         .hosts(hosts)
-        .index(index);
+        .index(index)
+        .indexShards(indexShards)
+        .indexReplicas(indexReplicas);
   }
 }
