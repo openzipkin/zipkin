@@ -28,8 +28,8 @@ public class PrometheusMetricsAutoConfigurationTest {
 
     @Test
     public void correctHttpResponse() throws Exception {
-        final PublicMetrics publicMetrics = () -> Collections.singleton(new Metric<Number>("mem.free", 1024));
-        final ResponseEntity<String> response = responseForMetrics(publicMetrics);
+        PublicMetrics publicMetrics = () -> Collections.singleton(new Metric<Number>("mem.free", 1024));
+        ResponseEntity<String> response = responseForMetrics(publicMetrics);
 
         assertThat(response.getStatusCode(), equalTo(HttpStatus.OK));
         assertThat(response.getHeaders().getContentType().toString(),
@@ -39,10 +39,10 @@ public class PrometheusMetricsAutoConfigurationTest {
     @Test
     public void defaultsToGauge() throws Exception {
 
-        final PublicMetrics publicMetrics = () -> Collections.singleton(new Metric<Number>("mem.free", 1024));
-        final ResponseEntity<String> response = responseForMetrics(publicMetrics);
+        PublicMetrics publicMetrics = () -> Collections.singleton(new Metric<Number>("mem.free", 1024));
+        ResponseEntity<String> response = responseForMetrics(publicMetrics);
 
-        final String body = response.getBody();
+        String body = response.getBody();
 
         assertThat(body, equalTo(
                 "#TYPE mem_free gauge\n" +
@@ -53,10 +53,10 @@ public class PrometheusMetricsAutoConfigurationTest {
     @Test
     public void detectsCounters() throws Exception {
 
-        final PublicMetrics publicMetrics = () -> Collections.singleton(new Metric<Number>("counter_mem.free", 1024));
-        final ResponseEntity<String> response = responseForMetrics(publicMetrics);
+        PublicMetrics publicMetrics = () -> Collections.singleton(new Metric<Number>("counter_mem.free", 1024));
+        ResponseEntity<String> response = responseForMetrics(publicMetrics);
 
-        final String body = response.getBody();
+        String body = response.getBody();
 
         assertThat(body, equalTo(
                 "#TYPE mem_free counter\n" +
@@ -67,10 +67,10 @@ public class PrometheusMetricsAutoConfigurationTest {
     @Test
     public void detectsGauges() throws Exception {
 
-        final PublicMetrics publicMetrics = () -> Collections.singleton(new Metric<Number>("gauge_mem.free", 1024));
-        final ResponseEntity<String> response = responseForMetrics(publicMetrics);
+        PublicMetrics publicMetrics = () -> Collections.singleton(new Metric<Number>("gauge_mem.free", 1024));
+        ResponseEntity<String> response = responseForMetrics(publicMetrics);
 
-        final String body = response.getBody();
+        String body = response.getBody();
 
         assertThat(body, equalTo(
                 "#TYPE mem_free gauge\n" +
@@ -80,7 +80,7 @@ public class PrometheusMetricsAutoConfigurationTest {
 
 
     private ResponseEntity<String> responseForMetrics(PublicMetrics publicMetrics) {
-        final PrometheusMetricsAutoConfiguration pmc = new PrometheusMetricsAutoConfiguration(Collections.singleton(publicMetrics));
+        PrometheusMetricsAutoConfiguration pmc = new PrometheusMetricsAutoConfiguration(Collections.singleton(publicMetrics));
 
         return pmc.prometheusMetrics();
     }

@@ -33,10 +33,10 @@ public class PrometheusMetricsAutoConfiguration {
     private static final Pattern SANITIZE_PREFIX_PATTERN = Pattern.compile("^[^a-zA-Z_]");
     private static final Pattern SANITIZE_BODY_PATTERN = Pattern.compile("[^a-zA-Z0-9_]");
 
-    private Collection<PublicMetrics> publicMetrics;
+    private final Collection<PublicMetrics> publicMetrics;
 
     @Autowired
-    public PrometheusMetricsAutoConfiguration(final Collection<PublicMetrics> publicMetrics) {
+    public PrometheusMetricsAutoConfiguration(Collection<PublicMetrics> publicMetrics) {
         this.publicMetrics = publicMetrics;
     }
 
