@@ -31,3 +31,42 @@ program that can extract zip files.
 
 By specifying the `proxy` environment variable, you can point the zipkin-ui to a different backend, allowing you to access real data while developing locally.
 An example to run with npm would be `proxy=http://myzipkininstance.com:9411 npm run dev`. (note that prefixing with http:// and suffixing the port is mandatory)
+
+## What's the easiest way to develop against this locally?
+
+The maven install process already downloads everything needed to do development,
+so you don't need to install node/npm or whatever. Instead, you can use the
+`./npm.sh` shell script to perform npm operations. Here's how you launch zipkin
+server and webapp to work together:
+
+* In one terminal, go to the root of the zipkin repo and run this to build zipkin:
+
+```bash
+# In one terminal, build the server and also make its dependencies (run from the root of the zipkin repo)
+$ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
+# Run it!
+$ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
+```
+
+* In another terminal, launch the zipkin UI server:
+
+```bash
+# Do this in another terminal!
+$ cd zipkin-ui
+$ proxy=http://localhost:9411 ./npm.sh run dev
+```
+
+This runs an NPM development server, which will automatically rebuild the webapp
+when you change the source code. You should now be able to access your local
+copy of zipkin-ui at http://localhost:9090.
+
+#### What's an easy way to create new spans for testing?
+
+Using this setup, if you open the web UI and find a trace from zipkin-server,
+you can download a JSON blob by right clicking on the JSON button on the trace 
+page (top right) and doing a "Save As". Modify the span to your heart's content,
+and then you can submit the span(s) via curl:
+
+```bash
+$ curl -H "Content-Type: application/json" --data @span.json http://localhost:9411/api/v1/spans 
+```
