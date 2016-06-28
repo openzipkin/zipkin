@@ -23,6 +23,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetEncoder;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -35,6 +36,7 @@ import zipkin.Span;
 import zipkin.storage.QueryRequest;
 
 import static zipkin.internal.Util.UTF_8;
+import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.sortedList;
 
 final class CassandraUtil {
@@ -100,6 +102,10 @@ final class CassandraUtil {
   }
 
   static List<String> annotationKeys(QueryRequest request) {
+    if (request.annotations.isEmpty() && request.binaryAnnotations.isEmpty()) {
+      return Collections.emptyList();
+    }
+    checkArgument(request.serviceName != null, "serviceName needed with annotation query");
     Set<String> annotationKeys = new LinkedHashSet<>();
     for (String a : request.annotations) {
       annotationKeys.add(request.serviceName + ":" + a);

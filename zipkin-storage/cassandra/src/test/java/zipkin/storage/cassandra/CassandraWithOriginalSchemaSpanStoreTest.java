@@ -13,13 +13,29 @@
  */
 package zipkin.storage.cassandra;
 
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 import zipkin.storage.SpanStoreTest;
 
 public class CassandraWithOriginalSchemaSpanStoreTest extends SpanStoreTest {
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
+
   private final CassandraStorage storage;
 
   public CassandraWithOriginalSchemaSpanStoreTest() {
     this.storage = CassandraWithOriginalSchemaTestGraph.INSTANCE.storage.get();
+  }
+
+  /**
+   * The old schema PRIMARY KEY doesn't consider trace_id, so will only see bucket count traces to a
+   * service per millisecond.
+   */
+  @Override public void getTraces_manyTraces() {
+    thrown.expect(AssertionError.class);
+    thrown.expectMessage("Expected size:<1000> but was:<10>");
+
+    super.getTraces_manyTraces();
   }
 
   @Override protected CassandraStorage storage() {
