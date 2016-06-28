@@ -33,7 +33,7 @@ import zipkin.internal.LazyCloseable;
 final class LazyClient extends LazyCloseable<Client> {
   private final String clusterName;
   private final List<String> hosts;
-  private final String indexTemplate;
+  final String indexTemplate;
 
   LazyClient(ElasticsearchStorage.Builder builder) {
     this.clusterName = builder.cluster;
@@ -42,7 +42,9 @@ final class LazyClient extends LazyCloseable<Client> {
       this.indexTemplate = Resources.toString(
           Resources.getResource("zipkin/storage/elasticsearch/zipkin_template.json"),
           StandardCharsets.UTF_8)
-          .replace("${__INDEX__}", builder.index);
+          .replace("${__INDEX__}", builder.index)
+          .replace("${__NUMBER_OF_SHARDS__}", String.valueOf(builder.indexShards))
+          .replace("${__NUMBER_OF_REPLICAS__}", String.valueOf(builder.indexReplicas));
     } catch (IOException e) {
       throw new AssertionError("Error reading jar resource, shouldn't happen.", e);
     }

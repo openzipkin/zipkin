@@ -48,6 +48,8 @@ public final class ElasticsearchStorage
     String cluster = "elasticsearch";
     List<String> hosts = Collections.singletonList("localhost:9300");
     String index = "zipkin";
+    int indexShards = 5;
+    int indexReplicas = 1;
 
     /**
      * The elasticsearch cluster to connect to, defaults to "elasticsearch".
@@ -71,6 +73,33 @@ public final class ElasticsearchStorage
      */
     public Builder index(String index) {
       this.index = checkNotNull(index, "index");
+      return this;
+    }
+
+    /**
+     * The number of shards to split the index into. Each shard and its replicas are assigned to a
+     * machine in the cluster. Increasing the number of shards and machines in the cluster will
+     * improve read and write performance. Number of shards cannot be changed for existing indices,
+     * but new daily indices will pick up changes to the setting. Defaults to 5.
+     *
+     * <p>Corresponds to <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules.html">index.number_of_shards</a>
+     */
+    public Builder indexShards(int indexShards) {
+      this.indexShards = indexShards;
+      return this;
+    }
+
+    /**
+     * The number of replica copies of each shard in the index. Each shard and its replicas are
+     * assigned to a machine in the cluster. Increasing the number of replicas and machines in the
+     * cluster will improve read performance, but not write performance. Number of replicas can be
+     * changed for existing indices. Defaults to 1. It is highly discouraged to set this to 0 as it
+     * would mean a machine failure results in data loss.
+     *
+     * <p>Corresponds to <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules.html">index.number_of_replicas</a>
+     */
+    public Builder indexReplicas(int indexReplicas) {
+      this.indexReplicas = indexReplicas;
       return this;
     }
 

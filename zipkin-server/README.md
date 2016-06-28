@@ -139,7 +139,17 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                   remaining nodes in the cluster. It is recommended to set this to all the master
                   nodes of the cluster.
     * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to zipkin.
-
+    * `ES_INDEX_SHARDS`: The number of shards to split the index into. Each shard and its replicas
+                         are assigned to a machine in the cluster. Increasing the number of shards
+                         and machines in the cluster will improve read and write performance. Number
+                         of shards cannot be changed for existing indices, but new daily indices
+                         will pick up changes to the setting. Defaults to 5.
+    * `ES_INDEX_REPLICAS`: The number of replica copies of each shard in the index. Each shard and
+                           its replicas are assigned to a machine in the cluster. Increasing the
+                           number of replicas and machines in the cluster will improve read
+                           performance, but not write performance. Number of replicas can be changed
+                           for existing indices. Defaults to 1. It is highly discouraged to set this
+                           to 0 as it would mean a machine failure results in data loss.
 Example usage:
 
 ```bash
