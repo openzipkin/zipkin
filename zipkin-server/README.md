@@ -40,6 +40,9 @@ $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar --logging.level.zipki
 
 Metrics are exported to the path `/metrics` and extend [defaults reported by spring-boot](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html).
 
+Metrics are also exported to the path `/prometheus` if the `zipkin-autoconfigure-metrics-prometheus` is available in the classpath.
+See the prometheus metrics [README](../zipkin-autoconfigure/metrics-prometheus/README.md) for more information.
+
 ### Collector
 
 Collector metrics are broken down by transport. The following are exported to the "/metrics" endpoint:
