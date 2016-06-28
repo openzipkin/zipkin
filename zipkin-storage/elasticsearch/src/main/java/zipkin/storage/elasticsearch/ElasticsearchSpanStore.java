@@ -307,6 +307,9 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     INSTANCE;
 
     @Override public List<String> apply(SearchResponse response) {
+      if (response.getAggregations() == null) {
+        return Collections.emptyList();
+      }
       Terms namesAgg = response.getAggregations().get("name_agg");
       if (namesAgg == null) {
         return Collections.emptyList();
