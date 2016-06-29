@@ -14,7 +14,6 @@
 package zipkin.storage;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.GregorianCalendar;
@@ -277,34 +276,6 @@ public abstract class SpanStoreTest {
 
     assertThat(store().getTraces(QueryRequest.builder().serviceName("service").build()))
         .containsExactly(asList(localTrace));
-  }
-
-  /**
-   * Formerly, a bug was present where cassandra didn't index more than bucket count traces per
-   * millisecond. This stores a lot of spans to ensure indexes work under high-traffic scenarios.
-   */
-  @Test
-  public void getTraces_manyTraces() {
-    int traceCount = 1000;
-    Span span = TestObjects.LOTS_OF_SPANS[0];
-    Annotation a = span.annotations.get(0);
-
-    accept(Arrays.copyOfRange(TestObjects.LOTS_OF_SPANS, 0, traceCount));
-
-    assertThat(store().getTraces(new QueryRequest.Builder().limit(traceCount).build()))
-        .hasSize(traceCount);
-
-    QueryRequest.Builder builder =
-        QueryRequest.builder().limit(traceCount).serviceName(a.endpoint.serviceName);
-
-    assertThat(store().getTraces(builder.build()))
-        .hasSize(traceCount);
-
-    assertThat(store().getTraces(builder.spanName(span.name).build()))
-        .hasSize(traceCount);
-
-    assertThat(store().getTraces(builder.addAnnotation(a.value).build()))
-        .hasSize(traceCount);
   }
 
   /** Shows that duration queries go against the root span, not the child */

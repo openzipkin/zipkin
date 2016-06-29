@@ -80,9 +80,8 @@ public final class TestObjects {
   /** Reuse a builder as it is significantly slows tests to create 100000 of these! */
   static Span.Builder spanBuilder() {
     Endpoint e = Endpoint.create("service", 127 << 24 | 1, 8080);
-    Annotation sr = Annotation.create(System.currentTimeMillis() * 1000, SERVER_RECV, e);
-    Annotation ss = Annotation.create(sr.timestamp + 1000, SERVER_SEND, e);
-    return Span.builder().name("get").addAnnotation(sr).addAnnotation(ss);
+    Annotation ann = Annotation.create(System.currentTimeMillis() * 1000, SERVER_RECV, e);
+    return Span.builder().name("get").addAnnotation(ann);
   }
 
   /**

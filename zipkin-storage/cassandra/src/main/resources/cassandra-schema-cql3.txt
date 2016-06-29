@@ -1,21 +1,21 @@
 CREATE KEYSPACE IF NOT EXISTS zipkin WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
 
 CREATE TABLE IF NOT EXISTS zipkin.service_span_name_index (
-    service_span_name text,      // Endpoint.serviceName + "." + Span.name
-    ts                timestamp, // start timestamp of the span, truncated to millisecond precision
-    trace_id          bigint,    // trace ID. Included as a clustering column to avoid clashes (however unlikely)
-    PRIMARY KEY (service_span_name, ts, trace_id)
+    service_span_name text,
+    ts                timestamp,
+    trace_id          bigint,
+    PRIMARY KEY (service_span_name, ts)
 )
     WITH CLUSTERING ORDER BY (ts DESC)
     AND compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_window_size_seconds': '86400'}
     AND default_time_to_live =  259200;
 
 CREATE TABLE IF NOT EXISTS zipkin.service_name_index (
-    service_name      text,      // Endpoint.serviceName
-    bucket            int,       // avoids hot spots by distributing writes across each bucket, usually 0-9
-    ts                timestamp, // start timestamp of the span, truncated to millisecond precision
-    trace_id          bigint,    // trace ID. Included as a clustering column to avoid clashes (however unlikely)
-    PRIMARY KEY ((service_name, bucket), ts, trace_id)
+    service_name      text,
+    bucket            int,
+    ts                timestamp,
+    trace_id          bigint,
+    PRIMARY KEY ((service_name, bucket), ts)
 )
     WITH CLUSTERING ORDER BY (ts DESC)
     AND compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_window_size_seconds': '86400'}
@@ -31,11 +31,11 @@ CREATE TABLE IF NOT EXISTS zipkin.span_names (
     AND default_time_to_live =  259200;
 
 CREATE TABLE IF NOT EXISTS zipkin.annotations_index (
-    annotation     blob,      // Annotation.value or BinaryAnnotation.key
-    bucket         int,       // avoids hot spots by distributing writes across each bucket, usually 0-9
-    ts             timestamp, // start timestamp of the span, truncated to millisecond precision
-    trace_id       bigint,    // trace ID. Included as a clustering column to avoid clashes (however unlikely)
-    PRIMARY KEY ((annotation, bucket), ts, trace_id)
+    annotation     blob,
+    bucket         int,
+    ts             timestamp,
+    trace_id       bigint,
+    PRIMARY KEY ((annotation, bucket), ts)
 )
     WITH CLUSTERING ORDER BY (ts DESC)
     AND compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_window_size_seconds': '86400'}
