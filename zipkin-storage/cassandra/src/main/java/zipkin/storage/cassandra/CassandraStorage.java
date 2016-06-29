@@ -51,6 +51,15 @@ public final class CassandraStorage
     String username;
     String password;
     int maxTraceCols = 100000;
+    /**
+     * Used to avoid hot spots when writing indexes used to query by service name or annotation.
+     *
+     * <p>This controls the amount of buckets, or partitions writes to {@code service_name_index}
+     * and {@code annotations_index}. This must be the same for all query servers, and has
+     * historically always been 10.
+     *
+     * See https://github.com/openzipkin/zipkin/issues/623 for further explanation
+     */
     int bucketCount = 10;
     int spanTtl = (int) TimeUnit.DAYS.toSeconds(7);
     int indexTtl = (int) TimeUnit.DAYS.toSeconds(3);
