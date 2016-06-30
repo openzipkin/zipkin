@@ -128,4 +128,18 @@ public class SpanTest {
     assertThat(span.binaryAnnotations)
         .containsExactly(baz, foo);
   }
+
+  /** Catches common error when zero is passed instead of null for a timestamp */
+  @Test
+  public void coercesTimestampZeroToNull() {
+    Span span = Span.builder()
+        .traceId(1L)
+        .name("GET")
+        .id(1L)
+        .timestamp(0L)
+        .build();
+
+    assertThat(span.timestamp)
+        .isNull();
+  }
 }
