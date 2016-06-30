@@ -251,7 +251,7 @@ public final class Span implements Comparable<Span> {
 
     /** @see Span#timestamp */
     public Builder timestamp(@Nullable Long timestamp) {
-      this.timestamp = timestamp;
+      this.timestamp = timestamp != null && timestamp == 0 ? null : timestamp;
       return this;
     }
 
