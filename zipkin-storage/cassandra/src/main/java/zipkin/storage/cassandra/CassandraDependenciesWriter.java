@@ -17,22 +17,17 @@ import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.utils.Bytes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import zipkin.DependencyLink;
 import zipkin.internal.Dependencies;
 import zipkin.internal.Util;
 
 final class CassandraDependenciesWriter {
-  private static final Logger LOG = LoggerFactory.getLogger(CassandraDependenciesWriter.class);
-
   private final PreparedStatement insertDependencies;
   private final Session session;
 
@@ -57,19 +52,9 @@ final class CassandraDependenciesWriter {
           .setTimestamp("day", startFlooredToDay)
           .setBytes("dependencies", dependencies);
 
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(debugInsertDependencies(startFlooredToDay, dependencies));
-      }
       return session.executeAsync(bound);
     } catch (RuntimeException ex) {
-      LOG.error("failed " + debugInsertDependencies(startFlooredToDay, dependencies), ex);
       return Futures.immediateFailedFuture(ex);
     }
-  }
-
-  private String debugInsertDependencies(Date startFlooredToDay, ByteBuffer dependencies) {
-    return insertDependencies.getQueryString()
-        .replace(":day", CassandraUtil.iso8601(startFlooredToDay.getTime() * 1000))
-        .replace(":dependencies", Bytes.toHexString(dependencies));
   }
 }

@@ -16,6 +16,7 @@ package zipkin.storage.cassandra;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
+import com.datastax.driver.core.QueryLogger;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LatencyAwarePolicy;
@@ -48,6 +49,7 @@ public interface SessionFactory {
       Closer closer = Closer.create();
       try {
         Cluster cluster = closer.register(buildCluster(cassandra));
+        cluster.register(new QueryLogger.Builder().build());
         if (cassandra.ensureSchema) {
           Session session = closer.register(cluster.connect());
           Schema.ensureExists(cassandra.keyspace, session);

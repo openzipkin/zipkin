@@ -33,7 +33,10 @@ import static zipkin.internal.Util.checkNotNull;
 /**
  * CQL3 implementation of zipkin storage.
  *
- * <p>This uses zipkin-cassandra-core which packages "/cassandra-schema-cql3.txt"
+ * <p>Queries are logged to the category "com.datastax.driver.core.QueryLogger" when debug or trace
+ * is enabled via SLF4J. Trace level includes bound values.
+ *
+ * <p>Schema is installed by default from "/cassandra-schema-cql3.txt"
  */
 public final class CassandraStorage
     extends LazyGuavaStorageComponent<CassandraSpanStore, CassandraSpanConsumer> {

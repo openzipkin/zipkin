@@ -301,10 +301,6 @@ public final class CassandraSpanStore implements GuavaSpanStore {
   @Override public ListenableFuture<List<String>> getServiceNames() {
     try {
       BoundStatement bound = CassandraUtil.bindWithName(selectServiceNames, "select-service-names");
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(selectServiceNames.getQueryString());
-      }
-
       return transform(session.executeAsync(bound), new Function<ResultSet, List<String>>() {
             @Override public List<String> apply(ResultSet input) {
               Set<String> serviceNames = new HashSet<>();
@@ -316,7 +312,6 @@ public final class CassandraSpanStore implements GuavaSpanStore {
           }
       );
     } catch (RuntimeException ex) {
-      LOG.error("failed " + selectServiceNames.getQueryString(), ex);
       return immediateFailedFuture(ex);
     }
   }
@@ -332,10 +327,6 @@ public final class CassandraSpanStore implements GuavaSpanStore {
           // no one is ever going to browse so many span names
           .setInt("limit_", 1000);
 
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(debugSelectSpanNames(bucket, serviceName));
-      }
-
       return transform(session.executeAsync(bound), new Function<ResultSet, List<String>>() {
             @Override public List<String> apply(ResultSet input) {
               Set<String> spanNames = new HashSet<>();
@@ -347,8 +338,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
           }
       );
     } catch (RuntimeException ex) {
-      LOG.error("failed " + debugSelectSpanNames(bucket, serviceName), ex);
-      throw ex;
+      return immediateFailedFuture(ex);
     }
   }
 
@@ -361,12 +351,8 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     try {
       BoundStatement bound = CassandraUtil.bindWithName(selectDependencies, "select-dependencies")
           .setList("days", days);
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(debugSelectDependencies(days));
-      }
       return transform(session.executeAsync(bound), ConvertDependenciesResponse.INSTANCE);
     } catch (RuntimeException ex) {
-      LOG.error("failed " + debugSelectDependencies(days), ex);
       return immediateFailedFuture(ex);
     }
   }
@@ -416,10 +402,6 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
       bound.setFetchSize(Integer.MAX_VALUE);
 
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(debugSelectTraces(traceIds, limit));
-      }
-
       return transform(session.executeAsync(bound),
           new Function<ResultSet, Collection<List<Span>>>() {
             @Override public Collection<List<Span>> apply(ResultSet input) {
@@ -438,29 +420,8 @@ public final class CassandraSpanStore implements GuavaSpanStore {
           }
       );
     } catch (RuntimeException ex) {
-      LOG.error("failed " + debugSelectTraces(traceIds, limit), ex);
       return immediateFailedFuture(ex);
     }
-  }
-
-  private String debugSelectTraces(Set<Long> traceIds, int limit) {
-    return selectTraces.getQueryString()
-        .replace(":trace_id", traceIds.toString())
-        .replace(":limit_", String.valueOf(limit));
-  }
-
-  private String debugSelectDependencies(List<Date> days) {
-    StringBuilder dates = new StringBuilder(CassandraUtil.iso8601(days.get(0).getTime() * 1000));
-    if (days.size() > 1) {
-      dates.append(" until ").append(CassandraUtil.iso8601(days.get(days.size() - 1).getTime() * 1000));
-    }
-    return selectDependencies.getQueryString().replace(":days", dates.toString());
-  }
-
-  private String debugSelectSpanNames(int bucket, String serviceName) {
-    return selectSpanNames.getQueryString()
-        .replace(":bucket", String.valueOf(bucket))
-        .replace(":service_name", serviceName);
   }
 
   ListenableFuture<Map<Long, Long>> getTraceIdsByServiceNames(List<String> serviceNames, long endTs,
@@ -487,35 +448,10 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
       bound.setFetchSize(Integer.MAX_VALUE);
 
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(debugSelectTraceIdsByServiceNames(serviceNames, buckets, startTs, endTs, limit));
-      }
-
       return transform(session.executeAsync(bound), traceIdToTimestamp);
     } catch (RuntimeException ex) {
-      LOG.error(
-          "failed " + debugSelectTraceIdsByServiceNames(serviceNames, buckets, startTs, endTs,
-              limit),
-          ex);
       return immediateFailedFuture(ex);
     }
-  }
-
-  private String debugSelectTraceIdsByServiceNames(List<String> serviceNames, Set<Integer> buckets,
-      long startTs, long endTs, int limit) {
-    return serviceNames.size() == 1 ?
-        selectTraceIdsByServiceName.getQueryString()
-            .replace(":service_name", serviceNames.get(0))
-            .replace(":bucket", buckets.toString())
-            .replace(":start_ts", CassandraUtil.iso8601(startTs))
-            .replace(":end_ts", CassandraUtil.iso8601(endTs))
-            .replace(":limit_", String.valueOf(limit)) :
-        selectTraceIdsByServiceNames.getQueryString()
-            .replace(":service_name", serviceNames.toString())
-            .replace(":bucket", buckets.toString())
-            .replace(":start_ts", CassandraUtil.iso8601(startTs))
-            .replace(":end_ts", CassandraUtil.iso8601(endTs))
-            .replace(":limit_", String.valueOf(limit));
   }
 
   ListenableFuture<Map<Long, Long>> getTraceIdsBySpanName(String serviceName,
@@ -531,25 +467,10 @@ public final class CassandraSpanStore implements GuavaSpanStore {
           .setBytesUnsafe("end_ts", timestampCodec.serialize(endTs))
           .setInt("limit_", limit);
 
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(debugSelectTraceIdsBySpanName(serviceSpanName, startTs, endTs, limit));
-      }
-
       return transform(session.executeAsync(bound), traceIdToTimestamp);
     } catch (RuntimeException ex) {
-      LOG.error("failed " + debugSelectTraceIdsBySpanName(serviceSpanName, startTs, endTs, limit),
-          ex);
       return immediateFailedFuture(ex);
     }
-  }
-
-  private String debugSelectTraceIdsBySpanName(String serviceSpanName, long startTs, long endTs,
-      int limit) {
-    return selectTraceIdsBySpanName.getQueryString()
-        .replace(":service_span_name", serviceSpanName)
-        .replace(":start_ts", CassandraUtil.iso8601(startTs))
-        .replace(":end_ts", CassandraUtil.iso8601(endTs))
-        .replace(":limit_", String.valueOf(limit));
   }
 
   ListenableFuture<Map<Long, Long>> getTraceIdsByAnnotation(String annotationKey,
@@ -566,10 +487,6 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
       bound.setFetchSize(Integer.MAX_VALUE);
 
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(debugSelectTraceIdsByAnnotation(annotationKey, buckets, startTs, endTs, limit));
-      }
-
       return transform(session.executeAsync(bound), new Function<ResultSet, Map<Long, Long>>() {
             @Override public Map<Long, Long> apply(ResultSet input) {
               Map<Long, Long> traceIdsToTimestamps = new LinkedHashMap<>();
@@ -582,21 +499,8 @@ public final class CassandraSpanStore implements GuavaSpanStore {
           }
       );
     } catch (CharacterCodingException | RuntimeException ex) {
-      LOG.error("failed " + debugSelectTraceIdsByAnnotation(annotationKey, buckets, startTs, endTs,
-          limit),
-          ex);
       return immediateFailedFuture(ex);
     }
-  }
-
-  private String debugSelectTraceIdsByAnnotation(String annotationKey, Set<Integer> buckets,
-      long startTs, long endTs, int limit) {
-    return selectTraceIdsByAnnotation.getQueryString()
-        .replace(":annotation", annotationKey)
-        .replace(":bucket", buckets.toString())
-        .replace(":start_ts", CassandraUtil.iso8601(startTs))
-        .replace(":end_ts", CassandraUtil.iso8601(endTs))
-        .replace(":limit_", String.valueOf(limit));
   }
 
   /** Returns a map of trace id to timestamp (in microseconds) */
@@ -654,16 +558,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     // because their timestamps are out of range, we may need to fetch again.
     // TODO figure out better strategy
     bound.setFetchSize(limit);
-    if (LOG.isDebugEnabled()) {
-      LOG.debug(debugSelectTraceIdsByDuration(
-          bucket,
-          request.serviceName,
-          request.spanName,
-          request.minDuration,
-          request.maxDuration,
-          request.limit
-      ));
-    }
+
     return transform(session.executeAsync(bound), new Function<ResultSet, List<DurationRow>>() {
       @Override public List<DurationRow> apply(ResultSet rs) {
         ImmutableList.Builder<DurationRow> result = ImmutableList.builder();
@@ -676,17 +571,6 @@ public final class CassandraSpanStore implements GuavaSpanStore {
         return result.build();
       }
     });
-  }
-
-  private String debugSelectTraceIdsByDuration(int bucket, String serviceName, String spanName,
-      long minDuration, long maxDuration, int limit) {
-    return selectTraceIdsBySpanDuration.getQueryString()
-        .replace(":time_bucket", String.valueOf(bucket))
-        .replace(":service_name", serviceName)
-        .replace(":span_name", spanName)
-        .replace(":min_duration", String.valueOf(minDuration))
-        .replace(":max_duration", String.valueOf(maxDuration))
-        .replace(":limit_", String.valueOf(limit));
   }
 
   class DurationRow {

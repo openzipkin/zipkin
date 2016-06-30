@@ -28,7 +28,7 @@ $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 
 ## Logging
 
-By default, zipkin writes log messages to the console at INFO level and above. You can adjust categories using the `--logging.level.XXX` parameter, or by adjusting [yaml configuration](src/main/resources/zipkin-server.yml).
+By default, zipkin writes log messages to the console at INFO level and above. You can adjust categories using the `--logging.level.XXX` parameter, a `-Dlogging.level.XXX` system property, or by adjusting [yaml configuration](src/main/resources/zipkin-server.yml).
 
 For example, if you want to enable debug logging for all zipkin categories, you can start the server like so:
 
@@ -97,7 +97,7 @@ zipkin-server is a drop-in replacement for the [scala query service](https://git
     * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 
 ### Cassandra Storage
-Zipkin's [Cassandra storage component](https://github.com/openzipkin/zipkin/tree/master/zipkin-storage/cassandra)
+Zipkin's [Cassandra storage component](../zipkin-storage/cassandra)
 supports version 2.2+ and applies when `STORAGE_TYPE` is set to `cassandra`:
 
     * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "zipkin".
@@ -110,9 +110,8 @@ supports version 2.2+ and applies when `STORAGE_TYPE` is set to `cassandra`:
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=cassandra CASSANDRA_CONTACT_POINTS=host1,host2 java -jar ./zipkin-server/target/zipkin-server-*exec.jar
+$ STORAGE_TYPE=cassandra java -jar ./zipkin-server/target/zipkin-server-*exec.jar --logging.level.com.datastax.driver.core.QueryLogger=trace
 ```
-
 ### MySQL Storage
 The following apply when `STORAGE_TYPE` is set to `mysql`:
 

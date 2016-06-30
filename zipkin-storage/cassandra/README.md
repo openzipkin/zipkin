@@ -10,6 +10,12 @@ The CQL schema is the same as [zipkin-scala](https://github.com/openzipkin/zipki
 `zipkin.storage.cassandra.CassandraStorage.Builder` includes defaults that will
 operate against a local Cassandra installation.
 
+## Logging
+Queries are logged to the category "com.datastax.driver.core.QueryLogger" when debug or trace is
+enabled via SLF4J. Trace level includes bound values.
+
+See [Logging Query Latencies](http://docs.datastax.com/en/developer/java-driver/2.1/supplemental/manual/logging/#logging-query-latencies) for more details.
+
 ## Testing this component
 This module conditionally runs integration tests against a local Cassandra instance.
 

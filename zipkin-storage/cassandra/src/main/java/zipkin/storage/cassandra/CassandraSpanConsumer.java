@@ -19,10 +19,8 @@ import com.datastax.driver.core.RegularStatement;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.utils.Bytes;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
-import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.nio.ByteBuffer;
@@ -43,7 +41,6 @@ import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.storage.cassandra.CassandraUtil.annotationKeys;
 import static zipkin.storage.cassandra.CassandraUtil.bindWithName;
 import static zipkin.storage.cassandra.CassandraUtil.durationIndexBucket;
-import static zipkin.storage.cassandra.CassandraUtil.iso8601;
 
 final class CassandraSpanConsumer implements GuavaSpanConsumer {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanConsumer.class);
@@ -221,56 +218,36 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
   /**
    * Store the span in the underlying storage for later retrieval.
    */
-  ListenableFuture<?> storeSpan(long traceId, long timestamp, String spanName, ByteBuffer span) {
-    Preconditions.checkNotNull(spanName);
-    Preconditions.checkArgument(!spanName.isEmpty());
-
+  ListenableFuture<?> storeSpan(long traceId, long timestamp, String key, ByteBuffer span) {
     try {
       if (0 == timestamp && metadata.compactionClass.contains("DateTieredCompactionStrategy")) {
         LOG.warn("Span {} in trace {} had no timestamp. "
             + "If this happens a lot consider switching back to SizeTieredCompactionStrategy for "
-            + "{}.traces", spanName, traceId, session.getLoggedKeyspace());
+            + "{}.traces", key, traceId, session.getLoggedKeyspace());
       }
 
       BoundStatement bound = bindWithName(insertSpan, "insert-span")
           .setLong("trace_id", traceId)
           .setBytesUnsafe("ts", timestampCodec.serialize(timestamp))
-          .setString("span_name", spanName)
+          .setString("span_name", key)
           .setBytes("span", span);
       if (!metadata.hasDefaultTtl) bound.setInt("ttl_", spanTtl);
 
-      if (LOG.isDebugEnabled()) LOG.debug(debugInsertSpan(traceId, timestamp, spanName, span));
-
       return session.executeAsync(bound);
     } catch (RuntimeException ex) {
-      LOG.error("failed " + debugInsertSpan(traceId, timestamp, spanName, span), ex);
       return Futures.immediateFailedFuture(ex);
     }
   }
 
-  private String debugInsertSpan(long traceId, long timestamp, String spanName, ByteBuffer span) {
-    return insertSpan.getQueryString()
-        .replace(":trace_id", String.valueOf(traceId))
-        .replace(":ts", String.valueOf(timestamp))
-        .replace(":span_name", spanName)
-        .replace(":span", Bytes.toHexString(span))
-        .replace(":ttl_", String.valueOf(spanTtl)); // no-op when using default ttls
-  }
-
   ListenableFuture<?> storeServiceName(String serviceName) {
-    Preconditions.checkNotNull(serviceName);
-    Preconditions.checkArgument(!serviceName.isEmpty());
     if (writtenNames.get().add(serviceName)) {
       try {
         BoundStatement bound = bindWithName(insertServiceName, "insert-service-name")
             .setString("service_name", serviceName);
         if (!metadata.hasDefaultTtl) bound.setInt("ttl_", indexTtl);
 
-        if (LOG.isDebugEnabled()) LOG.debug(debugInsertServiceName(serviceName));
-
         return session.executeAsync(bound);
       } catch (RuntimeException ex) {
-        LOG.error("failed " + debugInsertServiceName(serviceName), ex);
         writtenNames.get().remove(serviceName);
         throw ex;
       }
@@ -279,17 +256,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     }
   }
 
-  private String debugInsertServiceName(String serviceName) {
-    return insertServiceName.getQueryString()
-        .replace(":service_name", serviceName)
-        .replace(":ttl_", String.valueOf(indexTtl)); // no-op when using default ttls
-  }
-
   ListenableFuture<?> storeSpanName(String serviceName, String spanName) {
-    Preconditions.checkNotNull(serviceName);
-    Preconditions.checkArgument(!serviceName.isEmpty());
-    Preconditions.checkNotNull(spanName);
-    Preconditions.checkArgument(!spanName.isEmpty());
     int bucket = 0;
     if (writtenNames.get().add(serviceName + "––" + spanName)) {
       try {
@@ -299,11 +266,8 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
             .setString("span_name", spanName);
         if (!metadata.hasDefaultTtl) bound.setInt("ttl_", indexTtl);
 
-        if (LOG.isDebugEnabled()) LOG.debug(debugInsertSpanName(bucket, serviceName, spanName));
-
         return session.executeAsync(bound);
       } catch (RuntimeException ex) {
-        LOG.error("failed " + debugInsertSpanName(bucket, serviceName, spanName), ex);
         writtenNames.get().remove(serviceName + "––" + spanName);
         return Futures.immediateFailedFuture(ex);
       }
@@ -312,17 +276,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     }
   }
 
-  private String debugInsertSpanName(int bucket, String serviceName, String spanName) {
-    return insertSpanName.getQueryString()
-        .replace(":bucket", String.valueOf(bucket))
-        .replace(":service_name", serviceName)
-        .replace(":span_name", spanName)
-        .replace(":ttl_", String.valueOf(indexTtl)); // no-op when using default ttls
-  }
-
   ListenableFuture<?> storeTraceIdByServiceName(String serviceName, long timestamp, long traceId) {
-    Preconditions.checkNotNull(serviceName);
-    Preconditions.checkArgument(!serviceName.isEmpty());
     int bucket = RAND.nextInt(bucketCount);
     try {
       BoundStatement bound =
@@ -333,34 +287,14 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
               .setLong("trace_id", traceId);
       if (!metadata.hasDefaultTtl) bound.setInt("ttl_", indexTtl);
 
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(debugInsertTraceIdByServiceName(bucket, serviceName, timestamp, traceId));
-      }
-
       return session.executeAsync(bound);
     } catch (RuntimeException ex) {
-      LOG.error(
-          "failed " + debugInsertTraceIdByServiceName(bucket, serviceName, timestamp, traceId), ex);
       return Futures.immediateFailedFuture(ex);
     }
   }
 
-  private String debugInsertTraceIdByServiceName(int bucket, String serviceName, long timestamp,
-      long traceId) {
-    return insertTraceIdByServiceName.getQueryString()
-        .replace(":bucket", String.valueOf(bucket))
-        .replace(":service_name", serviceName)
-        .replace(":ts", iso8601(timestamp))
-        .replace(":trace_id", String.valueOf(traceId))
-        .replace(":ttl_", String.valueOf(indexTtl)); // no-op when using default ttls
-  }
-
   ListenableFuture<?> storeTraceIdBySpanName(String serviceName, String spanName, long timestamp,
       long traceId) {
-    Preconditions.checkNotNull(serviceName);
-    Preconditions.checkArgument(!serviceName.isEmpty());
-    Preconditions.checkNotNull(spanName);
-    Preconditions.checkArgument(!spanName.isEmpty());
     String serviceSpanName = serviceName + "." + spanName;
 
     try {
@@ -370,22 +304,10 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
           .setLong("trace_id", traceId);
       if (!metadata.hasDefaultTtl) bound.setInt("ttl_", indexTtl);
 
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(debugInsertTraceIdBySpanName(serviceSpanName, timestamp, traceId));
-      }
       return session.executeAsync(bound);
     } catch (RuntimeException ex) {
-      LOG.error("failed " + debugInsertTraceIdBySpanName(serviceSpanName, timestamp, traceId), ex);
       return Futures.immediateFailedFuture(ex);
     }
-  }
-
-  private String debugInsertTraceIdBySpanName(String serviceSpanName, long timestamp, long traceId) {
-    return insertTraceIdBySpanName.getQueryString()
-        .replace(":service_span_name", serviceSpanName)
-        .replace(":ts", String.valueOf(timestamp))
-        .replace(":trace_id", String.valueOf(traceId))
-        .replace(":ttl_", String.valueOf(indexTtl)); // no-op when using default ttls
   }
 
   ListenableFuture<?> storeTraceIdByAnnotation(String annotationKey, long timestamp, long traceId) {
@@ -398,26 +320,10 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
           .setLong("trace_id", traceId);
       if (!metadata.hasDefaultTtl) bound.setInt("ttl_", indexTtl);
 
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(debugInsertTraceIdByAnnotation(bucket, annotationKey, timestamp, traceId));
-      }
       return session.executeAsync(bound);
     } catch (CharacterCodingException | RuntimeException ex) {
-      LOG.error(
-          "failed " + debugInsertTraceIdByAnnotation(bucket, annotationKey, timestamp, traceId),
-          ex);
       return Futures.immediateFailedFuture(ex);
     }
-  }
-
-  private String debugInsertTraceIdByAnnotation(int bucket, String annotationKey, long timestamp,
-      long traceId) {
-    return insertTraceIdByAnnotation.getQueryString()
-        .replace(":bucket", String.valueOf(bucket))
-        .replace(":annotation", annotationKey)
-        .replace(":ts", iso8601(timestamp))
-        .replace(":trace_id", String.valueOf(traceId))
-        .replace(":ttl_", String.valueOf(indexTtl)); // no-op when using default ttls
   }
 
   ListenableFuture<?> storeTraceIdByDuration(String serviceName, String spanName,
@@ -434,29 +340,9 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
               .setLong("trace_id", traceId);
       if (!metadata.hasDefaultTtl) bound.setInt("ttl_", indexTtl);
 
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(
-            debugInsertTraceIdBySpanDuration(bucket, serviceName, spanName, timestamp, duration,
-                traceId));
-      }
       return session.executeAsync(bound);
     } catch (RuntimeException ex) {
-      LOG.error(
-          "failed " + debugInsertTraceIdBySpanDuration(bucket, serviceName, spanName, timestamp,
-              duration, traceId));
       return Futures.immediateFailedFuture(ex);
     }
-  }
-
-  private String debugInsertTraceIdBySpanDuration(int bucket, String serviceName, String spanName,
-      long timestamp, long duration, long traceId) {
-    return insertTraceIdBySpanDuration.getQueryString()
-        .replace(":bucket", String.valueOf(bucket))
-        .replace(":service_name", serviceName)
-        .replace(":span_name", spanName)
-        .replace(":ts", iso8601(timestamp))
-        .replace(":duration", String.valueOf(duration))
-        .replace(":trace_id", String.valueOf(traceId))
-        .replace(":ttl_", String.valueOf(indexTtl)); // no-op when using default ttls
   }
 }
