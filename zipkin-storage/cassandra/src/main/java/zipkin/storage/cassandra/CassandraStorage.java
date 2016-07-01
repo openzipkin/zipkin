@@ -36,6 +36,9 @@ import static zipkin.internal.Util.checkNotNull;
  * <p>Queries are logged to the category "com.datastax.driver.core.QueryLogger" when debug or trace
  * is enabled via SLF4J. Trace level includes bound values.
  *
+ * <p>Redundant requests to store service or span names are ignored for an hour to reduce load. This
+ * feature is implemented by {@link DeduplicatingExecutor}.
+ *
  * <p>Schema is installed by default from "/cassandra-schema-cql3.txt"
  */
 public final class CassandraStorage

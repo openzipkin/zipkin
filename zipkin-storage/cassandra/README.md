@@ -16,6 +16,10 @@ enabled via SLF4J. Trace level includes bound values.
 
 See [Logging Query Latencies](http://docs.datastax.com/en/developer/java-driver/2.1/supplemental/manual/logging/#logging-query-latencies) for more details.
 
+## Performance notes
+
+Redundant requests to store service or span names are ignored for an hour to reduce load.
+
 ## Testing this component
 This module conditionally runs integration tests against a local Cassandra instance.
 
