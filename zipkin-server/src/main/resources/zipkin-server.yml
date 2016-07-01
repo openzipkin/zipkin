@@ -96,7 +96,7 @@ logging:
     com.facebook.swift.service.ThriftServiceProcessor: 'OFF'
 #     # investigate /api/v1/dependencies
 #     zipkin.internal.DependencyLinker: 'DEBUG'
-#     # log cassandra calls
-#     zipkin.storage.cassandra: 'DEBUG'
+#     # log cassandra queries (DEBUG is without values)
+#     com.datastax.driver.core.QueryLogger: 'TRACE'
 #     # log cassandra trace propagation
 #     com.datastax.driver.core.Message: 'TRACE'

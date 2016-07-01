@@ -9,7 +9,7 @@
   </appender>
 
   <!-- Note: this will dump a large amount of data in the logs -->
-  <!--<logger name="zipkin.cassandra" level="DEBUG" />-->
+  <!--<logger name="com.datastax.driver.core.QueryLogger" level="TRACE" />-->
 
   <root level="info">
     <appender-ref ref="STDOUT" />
