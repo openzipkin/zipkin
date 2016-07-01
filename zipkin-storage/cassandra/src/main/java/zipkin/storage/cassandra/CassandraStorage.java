@@ -212,6 +212,7 @@ public final class CassandraStorage
 
   /** Truncates all the column families, or throws on any failure. */
   @VisibleForTesting void clear() {
+    guavaSpanConsumer().clear();
     List<ListenableFuture<?>> futures = new LinkedList<>();
     for (String cf : ImmutableList.of(
         "traces",

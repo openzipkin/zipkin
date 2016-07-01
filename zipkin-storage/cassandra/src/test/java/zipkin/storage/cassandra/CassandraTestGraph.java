@@ -20,11 +20,6 @@ import zipkin.internal.LazyCloseable;
 enum CassandraTestGraph {
   INSTANCE;
 
-  static {
-    // Ensure the repository's local cache of service names expire quickly
-    System.setProperty("zipkin.store.cassandra.internal.writtenNamesTtl", "1");
-  }
-
   final LazyCloseable<CassandraStorage> storage = new LazyCloseable<CassandraStorage>() {
     AssumptionViolatedException ex = null;
 
