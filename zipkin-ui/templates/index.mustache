@@ -86,7 +86,7 @@
 {{#queryWasPerformed}}
   <ul id="traces">
   {{#traces}}
-    <li class="trace" data-traceId="{{traceId}}" data-duration="{{duration}}" data-timestamp="{{timestamp}}" data-service-percentage="{{servicePercentage}}">
+    <li class="trace {{infoClass}}" data-traceId="{{traceId}}" data-duration="{{duration}}" data-timestamp="{{timestamp}}" data-service-percentage="{{servicePercentage}}">
       <a href="/traces/{{traceId}}?serviceName={{serviceName}}">
         <div class="bar-block">
           <span class="bar-graphic" style="width:{{width}}%;"></span>

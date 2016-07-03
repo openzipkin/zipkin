@@ -6,6 +6,10 @@ export function annotation(timestamp, value, ep) {
   return {timestamp, value, endpoint: ep};
 }
 
+export function binaryAnnotation(key, value, ep) {
+  return {key, value, endpoint: ep};
+}
+
 export function span(traceId,
                      name,
                      id,

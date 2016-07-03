@@ -106,6 +106,22 @@
   background-color: #0084B4;
 }
 
+#traces li.trace-error-transient .bar-graphic {
+  background-color: #fcf8e3;;
+}
+
+#traces li.trace-error-transient:hover .bar-graphic {
+  background-color: #8a6d3b;
+}
+
+#traces li.trace-error-critical .bar-graphic {
+  background-color: #f2dede;
+}
+
+#traces li.trace-error-critical:hover .bar-graphic {
+  background-color: #a94442;
+}
+
 #traces li .bar-label {
   position: relative;
   margin-left: 6px;
@@ -124,6 +140,24 @@
 #traces li:hover .bar-label {
   color: #FFF;
   background-color: rgba(0,132,180,.35);
+}
+
+#traces li.trace-error-transient .bar-label {
+  color: #8a6d3b;
+}
+
+#traces li.trace-error-transient:hover .bar-label {
+  color: #FFF;
+  background-color: rgba(138,109,59,.35);
+}
+
+#traces li.trace-error-critical .bar-label {
+  color: #a94442;
+}
+
+#traces li.trace-error-critical:hover .bar-label {
+  color: #FFF;
+  background-color: rgba(169,68,66,.35);
 }
 
 #traces li div span.label {

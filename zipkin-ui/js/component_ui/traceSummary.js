@@ -124,6 +124,24 @@ function getSpanTimestamps(spans) {
   }))).value();
 }
 
+
+// returns 'critical' if one of the spans has an ERROR binary annotation, else
+// returns 'transient' if one of the spans has an ERROR annotation, else
+// returns 'none'
+export function getTraceErrorType(spans) {
+  let traceType = 'none';
+  for (let i = 0; i < spans.length; i++) {
+    const span = spans[i];
+    if (_(span.binaryAnnotations || []).findIndex(ann => ann.key === Constants.ERROR) !== -1) {
+      return 'critical';
+    } else if (traceType === 'none' &&
+               _(span.annotations || []).findIndex(ann => ann.value === Constants.ERROR) !== -1) {
+      traceType = 'transient';
+    }
+  }
+  return traceType;
+}
+
 function endpointEquals(e1, e2) {
   return e1.ipv4 === e2.ipv4 && e1.port === e2.port && e1.serviceName === e2.serviceName;
 }
@@ -137,12 +155,14 @@ export function traceSummary(spans = []) {
     const traceId = spans[0].traceId;
     const timestamp = spans[0].timestamp;
     const spanTimestamps = getSpanTimestamps(spans);
+    const errorType = getTraceErrorType(spans);
     return {
       traceId,
       timestamp,
       duration,
       spanTimestamps,
-      endpoints
+      endpoints,
+      errorType
     };
   }
 }
@@ -222,6 +242,7 @@ export function traceSummariesToMustache(serviceName = null, traceSummaries, utc
         10);
       const spanCount = _(groupedTimestamps).values().sumBy((sts) => sts.length);
       const width = parseInt(parseFloat(duration) / parseFloat(maxDuration) * 100, 10);
+      const infoClass = t.errorType === 'none' ? '' : `trace-error-${t.errorType}`;
 
       return {
         traceId: t.traceId,
@@ -232,7 +253,8 @@ export function traceSummariesToMustache(serviceName = null, traceSummaries, utc
         servicePercentage,
         spanCount,
         serviceDurations,
-        width
+        width,
+        infoClass
       };
     }).sort((t1, t2) => {
       const durationComparison = t2.duration - t1.duration;

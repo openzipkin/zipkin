@@ -10,6 +10,7 @@ const SERVER_ADDR = 'sa';
 const CLIENT_ADDR = 'ca';
 const WIRE_SEND = 'ws';
 const WIRE_RECEIVE = 'wr';
+const ERROR = 'error';
 const LOCAL_COMPONENT = 'lc';
 const CORE_CLIENT = [CLIENT_RECEIVE, CLIENT_RECEIVE_FRAGMENT, CLIENT_SEND, CLIENT_SEND_FRAGMENT];
 const CORE_SERVER = [SERVER_RECEIVE, SERVER_RECEIVE_FRAGMENT, SERVER_SEND, SERVER_SEND_FRAGMENT];
@@ -30,6 +31,7 @@ export const Constants = {
   CLIENT_ADDR,
   CORE_CLIENT,
   CORE_SERVER,
+  ERROR,
   LOCAL_COMPONENT,
   CORE_ADDRESS,
   CORE_WIRE,
@@ -51,3 +53,4 @@ ConstantNames[SERVER_ADDR] = 'Server Address';
 ConstantNames[WIRE_SEND] = 'Wire Send';
 ConstantNames[WIRE_RECEIVE] = 'Wire Receive';
 ConstantNames[LOCAL_COMPONENT] = 'Local Component';
+// Don't add ERROR to ConstantNames -- css coloring depends on constant name 'error'

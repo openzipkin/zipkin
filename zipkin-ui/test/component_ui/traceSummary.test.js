@@ -1,12 +1,13 @@
 import {
   traceSummary,
   getServiceName,
+  getTraceErrorType,
   traceSummariesToMustache,
   mkDurationStr,
   totalServiceTime
 } from '../../js/component_ui/traceSummary';
 import {Constants} from '../../js/component_ui/traceConstants';
-import {endpoint, annotation, span} from './traceTestHelpers';
+import {endpoint, annotation, binaryAnnotation, span} from './traceTestHelpers';
 
 chai.config.truncateThreshold = 0;
 
@@ -132,6 +133,118 @@ describe('get service name of a span', () => {
       }]
     };
     getServiceName(testSpan).should.equal('localservice');
+  });
+});
+
+describe('getTraceErrorType', () => {
+  const annotationsNoError = [
+    annotation(100, Constants.CLIENT_SEND, ep1),
+    annotation(150, Constants.CLIENT_RECEIVE, ep1)
+  ];
+
+  const annotationsHasError = [
+    annotation(100, Constants.CLIENT_SEND, ep1),
+    annotation(150, Constants.CLIENT_RECEIVE, ep1),
+    annotation(200, Constants.ERROR, ep1)
+  ];
+
+  const binaryAnnotationsNoError = [
+    binaryAnnotation('key', 'value', ep1)
+  ];
+
+  const binaryAnnotationsHasError = [
+    binaryAnnotation('key', 'value', ep1),
+    binaryAnnotation(Constants.ERROR, 'bad stuff happened', ep1)
+  ];
+
+  it('should return none if annotations and binary annotations are null', () => {
+    const testSpans = [
+      span(12345, 'name', 12345)
+    ];
+    expect(getTraceErrorType(testSpans)).to.equal('none');
+  });
+
+  it('should return none if annotations and binary annotations are null', () => {
+    const testSpans = [
+      span(12345, 'name', 12345),
+      span(12346, 'name', 12346)
+    ];
+    expect(getTraceErrorType(testSpans)).to.equal('none');
+  });
+
+  it('should return none if ann=noError and binAnn=null', () => {
+    const testSpans = [
+      span(12345, 'name', 12345, null, null, null,
+           null, binaryAnnotationsNoError)
+    ];
+    expect(getTraceErrorType(testSpans)).to.equal('none');
+  });
+
+  it('should return none if ann=noError and binAnn=null', () => {
+    const testSpans = [
+      span(12345, 'name', 12345, null, null, null,
+           annotationsNoError, binaryAnnotationsNoError)
+    ];
+    expect(getTraceErrorType(testSpans)).to.equal('none');
+  });
+
+  it('should return none if second span has ann=noError and binAnn=noError', () => {
+    const testSpans = [
+      span(123456, 'name', 123456),
+      span(12345, 'name', 12345, null, null, null,
+           annotationsNoError, binaryAnnotationsNoError)
+    ];
+    expect(getTraceErrorType(testSpans)).to.equal('none');
+  });
+
+  it('should return critical if ann=null and bin=error', () => {
+    const testSpans = [
+      span(12345, 'name', 12345, null, null, null,
+           null, binaryAnnotationsHasError)
+    ];
+    expect(getTraceErrorType(testSpans)).to.equal('critical');
+  });
+
+  it('should return critical if ann=noError and bin=error', () => {
+    const testSpans = [
+      span(12345, 'name', 12345, null, null, null,
+           annotationsNoError, binaryAnnotationsHasError)
+    ];
+    expect(getTraceErrorType(testSpans)).to.equal('critical');
+  });
+
+  it('should return critical if ann=error and bin=error', () => {
+    const testSpans = [
+      span(12345, 'name', 12345, null, null, null,
+           annotationsHasError, binaryAnnotationsHasError)
+    ];
+    expect(getTraceErrorType(testSpans)).to.equal('critical');
+  });
+
+  it('should return critical if span1 has ann=error and span2 has binAnn=error', () => {
+    const testSpans = [
+      span(12345, 'name', 12345, null, null, null,
+           annotationsHasError, null),
+      span(123456, 'name', 123456, null, null, null,
+            null, binaryAnnotationsHasError)
+    ];
+    expect(getTraceErrorType(testSpans)).to.equal('critical');
+  });
+
+  it('should return transient if ann=error and bin=null', () => {
+    const testSpans = [
+      span(12345, 'name', 12345, null, null, null,
+           annotationsHasError, null)
+    ];
+    expect(getTraceErrorType(testSpans)).to.equal('transient');
+  });
+
+  it('should return transient if ann=error and bin=noError', () => {
+    const testSpans = [
+      span(12345, 'name', 12345, null, null, null,
+           annotationsHasError, binaryAnnotationsNoError)
+    ];
+    expect(getTraceErrorType(testSpans)).to.equal('transient');
   });
 });
 

@@ -1,5 +1,6 @@
 import {component} from 'flightjs';
 import $ from 'jquery';
+import {Constants} from './traceConstants';
 
 export default component(function spanPanel() {
   this.$annotationTemplate = null;
@@ -16,6 +17,9 @@ export default component(function spanPanel() {
     const $annoBody = this.$node.find('#annotations tbody').text('');
     $.each(span.annotations, (i, anno) => {
       const $row = self.$annotationTemplate.clone();
+      if (anno.value === Constants.ERROR) {
+        $row.addClass('anno-error-transient');
+      }
       $row.find('td').each(function() {
         const $this = $(this);
         $this.text(anno[$this.data('key')]);
@@ -32,6 +36,9 @@ export default component(function spanPanel() {
     const $binAnnoBody = this.$node.find('#binaryAnnotations tbody').text('');
     $.each(span.binaryAnnotations, (i, anno) => {
       const $row = self.$binaryAnnotationTemplate.clone();
+      if (anno.key === Constants.ERROR) {
+        $row.addClass('anno-error-critical');
+      }
       $row.find('td').each(function() {
         const $this = $(this);
         const maybeObject = anno[$this.data('key')];
