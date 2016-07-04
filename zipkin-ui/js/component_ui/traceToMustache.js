@@ -106,8 +106,12 @@ export default function traceToMustache(trace) {
       const spanStartTs = span.timestamp || traceTimestamp;
       const spanDepth = spanDepths[span.id] || 1;
       const width = (span.duration || 0) / summary.duration * 100;
+      let errorType = 'none';
 
       const binaryAnnotations = span.binaryAnnotations.map((a) => {
+        if (a.key === Constants.ERROR) {
+          errorType = 'critical';
+        }
         if (Constants.CORE_ADDRESS.indexOf(a.key) !== -1) {
           return {
             ...a,
@@ -123,6 +127,12 @@ export default function traceToMustache(trace) {
           return a;
         }
       });
+
+      if (errorType !== 'critical') {
+        if (_(span.annotations || []).findIndex(ann => ann.value === Constants.ERROR) !== -1) {
+          errorType = 'transient';
+        }
+      }
 
       const localComponentAnnotation = _(span.binaryAnnotations)
           .find((s) => s.key === Constants.LOCAL_COMPONENT);
@@ -156,7 +166,8 @@ export default function traceToMustache(trace) {
           relativeTime: mkDurationStr(a.timestamp - traceTimestamp),
           width: 8
         })),
-        binaryAnnotations
+        binaryAnnotations,
+        errorType
       };
     }
   ).value();
