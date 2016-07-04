@@ -15,6 +15,7 @@ package zipkin.junit;
 
 import okhttp3.HttpUrl;
 import org.junit.Test;
+import zipkin.Constants;
 import zipkin.storage.QueryRequest;
 import zipkin.TraceKeys;
 
@@ -42,12 +43,12 @@ public class ZipkinDispatcherTest {
   public void toQueryRequest_parseAnnotations() {
     HttpUrl url = baseUrl.newBuilder()
         .addQueryParameter("serviceName", "zipkin-server")
-        .addQueryParameter("annotationQuery", "finagle.retry and finagle.timeout").build();
+        .addQueryParameter("annotationQuery", "error and finagle.timeout").build();
 
     QueryRequest request = ZipkinDispatcher.toQueryRequest(url);
 
     assertThat(request.annotations)
-        .containsExactly("finagle.retry", "finagle.timeout");
+        .containsExactly(Constants.ERROR, "finagle.timeout");
   }
 
   @Test

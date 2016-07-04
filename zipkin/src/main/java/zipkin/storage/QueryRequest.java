@@ -92,7 +92,7 @@ public final class QueryRequest {
   public final int limit;
 
   /**
-   * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and finagle.retry"
+   * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and error"
    *
    * @see QueryRequest.Builder#parseAnnotationQuery(String)
    */
@@ -199,7 +199,7 @@ public final class QueryRequest {
     }
 
     /**
-     * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and finagle.retry"
+     * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and error"
      *
      * @see QueryRequest#toAnnotationQuery()
      */
