@@ -16,6 +16,8 @@ package zipkin.storage;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import zipkin.Constants;
+import zipkin.TraceKeys;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -87,16 +89,16 @@ public class QueryRequestTest {
 
   @Test
   public void annotationQuery_roundTrip() {
-    String annotationQuery = "http.method=GET and finagle.retry";
+    String annotationQuery = "http.method=GET and error";
 
     QueryRequest request =
         QueryRequest.builder().serviceName("security-service").parseAnnotationQuery(annotationQuery).build();
 
     assertThat(request.binaryAnnotations)
-        .containsEntry("http.method", "GET")
+        .containsEntry(TraceKeys.HTTP_METHOD, "GET")
         .hasSize(1);
     assertThat(request.annotations)
-        .containsExactly("finagle.retry");
+        .containsExactly(Constants.ERROR);
 
     assertThat(request.toAnnotationQuery())
         .isEqualTo(annotationQuery);
@@ -113,7 +115,7 @@ public class QueryRequestTest {
         QueryRequest.builder().serviceName("security-service").parseAnnotationQuery(annotationQuery).build();
 
     assertThat(request.annotations)
-        .containsExactly("http.method");
+        .containsExactly(TraceKeys.HTTP_METHOD);
   }
 
   @Test

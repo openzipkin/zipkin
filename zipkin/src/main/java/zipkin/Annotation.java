@@ -39,7 +39,10 @@ public final class Annotation implements Comparable<Annotation> {
    */
   public final long timestamp;
 
-  /** Usually a short tag indicating an event, like {@link Constants#SERVER_RECV "sr"}. or "finagle.retry" */
+  /**
+   * Usually a short tag indicating an event, like {@link Constants#SERVER_RECV "sr"}. or {@link
+   * Constants#ERROR "error"}
+   */
   public final String value;
 
   /** The host that recorded {@link #value}, primarily for query by service name. */

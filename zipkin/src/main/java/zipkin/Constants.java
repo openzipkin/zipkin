@@ -138,6 +138,23 @@ public final class Constants {
   public static final String LOCAL_COMPONENT = "lc";
 
   /**
+   * When an {@link Annotation#value}, this indicates when an error occurred. When a {@link
+   * BinaryAnnotation#key}, the value is a human readable message associated with an error.
+   *
+   * <p>Due to transient errors, an ERROR annotation should not be interpreted as a span failure,
+   * even the annotation might explain additional latency. Instrumentation should add the ERROR
+   * binary annotation when the operation failed and couldn't be recovered.
+   *
+   * <p>Here's an example: A span has an ERROR annotation, added when a WIRE_SEND failed. Another
+   * WIRE_SEND succeeded, so there's no ERROR binary annotation on the span because the overall
+   * operation succeeded.
+   *
+   * <p>Note that RPC spans often include both client and server hosts: It is possible that only one
+   * side perceived the error.
+   */
+  public static final String ERROR = "error";
+
+  /**
    * When present, {@link BinaryAnnotation#endpoint} indicates a client address ("ca") in a span.
    * Most likely, there's only one. Multiple addresses are possible when a client changes its ip or
    * port within a span.

@@ -102,7 +102,8 @@ public final class BinaryAnnotation implements Comparable<BinaryAnnotation> {
   }
 
   /**
-   * Name used to lookup spans, such as {@link TraceKeys#HTTP_PATH "http.path"} or "finagle.version".
+   * Name used to lookup spans, such as {@link TraceKeys#HTTP_PATH "http.path"} or {@link
+   * Constants#ERROR "error"}
    */
   public final String key;
   /**
