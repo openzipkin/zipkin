@@ -13,7 +13,13 @@
  */
 package zipkin.storage.cassandra;
 
+import org.junit.Test;
+import zipkin.Span;
+import zipkin.TestObjects;
+import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.storage.SpanStoreTest;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class CassandraSpanStoreTest extends SpanStoreTest {
   private final CassandraStorage storage;
@@ -28,5 +34,20 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
 
   @Override public void clear() {
     storage.clear();
+  }
+
+  /** Cassandra indexing is performed separately, allowing the raw span to be stored unaltered. */
+  @Test
+  public void rawTraceStoredWithoutAdjustments() {
+    Span rawSpan = TestObjects.TRACE.get(0).toBuilder().timestamp(null).duration(null).build();
+    accept(rawSpan);
+
+    // At query time, timestamp and duration are added.
+    assertThat(store().getTrace(rawSpan.traceId))
+        .containsExactly(ApplyTimestampAndDuration.apply(rawSpan));
+
+    // Unlike other stores, Cassandra can show that timestamp and duration weren't reported
+    assertThat(store().getRawTrace(rawSpan.traceId))
+        .containsExactly(rawSpan);
   }
 }
