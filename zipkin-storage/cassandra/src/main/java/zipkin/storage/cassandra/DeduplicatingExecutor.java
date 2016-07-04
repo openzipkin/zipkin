@@ -23,6 +23,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +49,7 @@ import static zipkin.internal.Util.checkNotNull;
 class DeduplicatingExecutor { // not final for testing
 
   private final Session session;
-  private final LoadingCache<BoundStatementKey, ListenableFuture<?>> cache;
+  private final LoadingCache<BoundStatementKey, ListenableFuture<Void>> cache;
 
   /**
    * @param session which conditionally executes bound statements
@@ -63,20 +64,26 @@ class DeduplicatingExecutor { // not final for testing
             return nanoTime();
           }
         })
-        .build(new CacheLoader<BoundStatementKey, ListenableFuture<?>>() {
-          @Override public ListenableFuture<?> load(final BoundStatementKey key) {
-            ListenableFuture<?> result = executeAsync(key.statement);
-            // Adds a guard that invalidates the future if in error state.
-            Futures.addCallback(result, new FutureCallback<Object>() {
+        // TODO: maximum size or weight
+        .build(new CacheLoader<BoundStatementKey, ListenableFuture<Void>>() {
+          @Override public ListenableFuture<Void> load(final BoundStatementKey key) {
+            ListenableFuture<?> cassandraFuture = executeAsync(key.statement);
+
+            // Drop the cassandra future so that we don't hold references to cassandra state for
+            // long periods of time.
+            final SettableFuture<Void> disconnectedFuture = SettableFuture.create();
+            Futures.addCallback(cassandraFuture, new FutureCallback<Object>() {
 
               @Override public void onSuccess(Object result) {
+                disconnectedFuture.set(null);
               }
 
               @Override public void onFailure(Throwable t) {
                 cache.invalidate(key);
+                disconnectedFuture.setException(t);
               }
             });
-            return result;
+            return disconnectedFuture;
           }
         });
   }
@@ -91,10 +98,10 @@ class DeduplicatingExecutor { // not final for testing
    * @param key determines equivalence of the bound statement
    * @return future of work initiated by this or a previous request
    */
-  ListenableFuture<?> maybeExecuteAsync(BoundStatement statement, Object key) {
+  ListenableFuture<Void> maybeExecuteAsync(BoundStatement statement, Object key) {
     BoundStatementKey cacheKey = new BoundStatementKey(statement, key);
     try {
-      ListenableFuture<?> result = cache.get(new BoundStatementKey(statement, key));
+      ListenableFuture<Void> result = cache.get(new BoundStatementKey(statement, key));
       // A future could be constructed directly (i.e. immediate future), get the value to
       // see if it was exceptional. If so, the catch block will invalidate that key.
       if (result.isDone()) result.get();
