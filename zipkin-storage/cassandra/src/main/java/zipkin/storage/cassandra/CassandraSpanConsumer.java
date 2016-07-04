@@ -140,10 +140,12 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
    * returned future will fail. Most callers drop or log the result.
    */
   @Override
-  public ListenableFuture<Void> accept(List<Span> spans) {
+  public ListenableFuture<Void> accept(List<Span> rawSpans) {
     List<ListenableFuture<?>> futures = new LinkedList<>();
-    for (Span span : spans) {
-      span = ApplyTimestampAndDuration.apply(span);
+    for (Span rawSpan : rawSpans) {
+      // indexing occurs by timestamp, so derive one if not present.
+      Span span = ApplyTimestampAndDuration.apply(rawSpan);
+
       futures.add(storeSpan(
           span.traceId,
           span.timestamp != null ? span.timestamp : 0L,
@@ -151,7 +153,8 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
               span.id,
               span.annotations.hashCode(),
               span.binaryAnnotations.hashCode()),
-          ByteBuffer.wrap(Codec.THRIFT.writeSpan(span))));
+          // store the raw span without any adjustments
+          ByteBuffer.wrap(Codec.THRIFT.writeSpan(rawSpan))));
 
       for (String serviceName : span.serviceNames()) {
         // SpanStore.getServiceNames

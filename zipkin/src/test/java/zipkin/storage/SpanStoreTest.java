@@ -53,12 +53,12 @@ public abstract class SpanStoreTest {
   /** Should maintain state between multiple calls within a test. */
   protected abstract StorageComponent storage();
 
-  SpanStore store() {
+  protected SpanStore store() {
     return storage().spanStore();
   }
 
   /** Blocks until the callback completes to allow read-your-writes consistency during tests. */
-  void accept(Span... spans) {
+  protected void accept(Span... spans) {
     CallbackCaptor<Void> captor = new CallbackCaptor<>();
     storage().asyncSpanConsumer().accept(asList(spans), captor);
     captor.get(); // block on result
@@ -688,6 +688,7 @@ public abstract class SpanStoreTest {
 
     // Since a collector never saw both sides of the span, we'd not see duration in the raw trace.
     for (Span raw : store().getRawTrace(span.traceId)) {
+      assertThat(raw.timestamp).isNull();
       assertThat(raw.duration).isNull();
     }
   }
