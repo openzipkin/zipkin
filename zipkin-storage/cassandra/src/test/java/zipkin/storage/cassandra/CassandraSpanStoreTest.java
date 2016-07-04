@@ -14,6 +14,7 @@
 package zipkin.storage.cassandra;
 
 import org.junit.Test;
+import zipkin.Constants;
 import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.internal.ApplyTimestampAndDuration;
@@ -34,6 +35,29 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
 
   @Override public void clear() {
     storage.clear();
+  }
+
+  /**
+   * Core/Boundary annotations like "sr" aren't queryable, and don't add value to users. Address
+   * annotations, like "sa", don't have string values, so are similarly not queryable. Skipping
+   * indexing of such annotations dramatically reduces the load on cassandra and size of indexes.
+   */
+  @Test
+  public void doesntIndexCoreOrNonStringAnnotations() {
+    Span span = TestObjects.TRACE.get(1);
+
+    assertThat(span.annotations)
+        .extracting(a -> a.value)
+        .matches(Constants.CORE_ANNOTATIONS::containsAll);
+
+    assertThat(span.binaryAnnotations)
+        .extracting(b -> b.key)
+        .containsOnly(Constants.SERVER_ADDR, Constants.CLIENT_ADDR);
+
+    accept(span);
+
+    assertThat(storage.session().execute("SELECT * from annotations_index"))
+        .isEmpty();
   }
 
   /** Cassandra indexing is performed separately, allowing the raw span to be stored unaltered. */

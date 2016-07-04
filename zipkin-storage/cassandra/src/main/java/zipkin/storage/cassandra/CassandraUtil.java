@@ -22,15 +22,13 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetEncoder;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
+import zipkin.Constants;
 import zipkin.Span;
 import zipkin.storage.QueryRequest;
 
@@ -59,18 +57,6 @@ final class CassandraUtil {
     return UTF8_ENCODER.get().encode(CharBuffer.wrap(string));
   }
 
-  static final ThreadLocal<SimpleDateFormat> DATE_FORMATTER = new ThreadLocal<SimpleDateFormat>() {
-    @Override protected SimpleDateFormat initialValue() {
-      SimpleDateFormat result = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
-      result.setTimeZone(TimeZone.getTimeZone("UTC"));
-      return result;
-    }
-  };
-
-  static String iso8601(long timestamp) {
-    return DATE_FORMATTER.get().format(new Date(timestamp / 1000));
-  }
-
   /**
    * Returns keys that concatenate the serviceName associated with an annotation, a binary
    * annotation key, or a binary annotation key with value.
@@ -84,6 +70,9 @@ final class CassandraUtil {
   static List<String> annotationKeys(Span span) {
     Set<String> annotationKeys = new LinkedHashSet<>();
     for (Annotation a : span.annotations) {
+      // don't index core annotations as they aren't queryable
+      if (Constants.CORE_ANNOTATIONS.contains(a.value)) continue;
+
       if (a.endpoint != null && !a.endpoint.serviceName.isEmpty()) {
         annotationKeys.add(a.endpoint.serviceName + ":" + a.value);
       }
@@ -101,7 +90,7 @@ final class CassandraUtil {
 
   static List<String> annotationKeys(QueryRequest request) {
     Set<String> annotationKeys = new LinkedHashSet<>();
-    for (String a : request.annotations) {
+    for (String a : request.annotations) { // doesn't include CORE_ANNOTATIONS
       annotationKeys.add(request.serviceName + ":" + a);
     }
     for (Map.Entry<String, String> b : request.binaryAnnotations.entrySet()) {
