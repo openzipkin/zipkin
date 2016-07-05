@@ -125,7 +125,7 @@ public final class Endpoint {
     }
 
     public Endpoint build() {
-      return new Endpoint(serviceName, ipv4, port);
+      return new Endpoint(serviceName, checkNotNull(ipv4, "ipv4"), port);
     }
   }
 
