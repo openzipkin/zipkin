@@ -17,9 +17,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin.Constants;
-import zipkin.TraceKeys;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.TraceKeys.HTTP_METHOD;
 
 public class QueryRequestTest {
   @Rule
@@ -53,6 +53,18 @@ public class QueryRequestTest {
     thrown.expectMessage("annotation was empty");
 
     QueryRequest.builder().serviceName("foo").addAnnotation("").build();
+  }
+
+  /**
+   * Particularly in the case of cassandra, indexing boundary annotations isn't fruitful work, and
+   * not helpful to users. Nevertheless we should ensure an unlikely caller gets an exception.
+   */
+  @Test
+  public void annotationCantBeCore() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("queries cannot be refined by core annotations: sr");
+
+    QueryRequest.builder().serviceName("foo").addAnnotation(Constants.SERVER_RECV).build();
   }
 
   @Test
@@ -95,7 +107,7 @@ public class QueryRequestTest {
         QueryRequest.builder().serviceName("security-service").parseAnnotationQuery(annotationQuery).build();
 
     assertThat(request.binaryAnnotations)
-        .containsEntry(TraceKeys.HTTP_METHOD, "GET")
+        .containsEntry(HTTP_METHOD, "GET")
         .hasSize(1);
     assertThat(request.annotations)
         .containsExactly(Constants.ERROR);
@@ -115,7 +127,7 @@ public class QueryRequestTest {
         QueryRequest.builder().serviceName("security-service").parseAnnotationQuery(annotationQuery).build();
 
     assertThat(request.annotations)
-        .containsExactly(TraceKeys.HTTP_METHOD);
+        .containsExactly(HTTP_METHOD);
   }
 
   @Test

@@ -13,7 +13,13 @@
  */
 package zipkin;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import zipkin.storage.QueryRequest;
+
 public final class Constants {
+
   /**
    * The client sent ("cs") a request to a server. There is only one send per span. For example, if
    * there's a transport error, each attempt can be logged as a {@link #WIRE_SEND} annotation.
@@ -167,6 +173,17 @@ public final class Constants {
    * fails to a different server ip or port.
    */
   public static final String SERVER_ADDR = "sa";
+
+  /**
+   * Zipkin's core annotations indicate when a client or server operation began or ended.
+   *
+   * <p>These annotations are used to derive span timestamps and durations or highlight common
+   * latency explaining events. However, they aren't intuitive as {@link QueryRequest storage
+   * queries}, so needn't be indexed.
+   */
+  public static final List<String> CORE_ANNOTATIONS = Collections.unmodifiableList(
+      Arrays.asList(CLIENT_SEND, CLIENT_RECV, SERVER_SEND, SERVER_RECV, WIRE_SEND, WIRE_RECV,
+          CLIENT_SEND_FRAGMENT, CLIENT_RECV_FRAGMENT, SERVER_SEND_FRAGMENT, SERVER_RECV_FRAGMENT));
 
   private Constants() {
   }

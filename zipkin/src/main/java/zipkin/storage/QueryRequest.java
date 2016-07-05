@@ -21,6 +21,7 @@ import java.util.Map;
 import zipkin.Span;
 import zipkin.internal.Nullable;
 
+import static zipkin.Constants.CORE_ANNOTATIONS;
 import static zipkin.internal.Util.checkArgument;
 
 /**
@@ -134,6 +135,8 @@ public final class QueryRequest {
     this.annotations = annotations;
     for (String annotation : annotations) {
       checkArgument(!annotation.isEmpty(), "annotation was empty");
+      checkArgument(!CORE_ANNOTATIONS.contains(annotation),
+          "queries cannot be refined by core annotations: %s", annotation);
     }
     this.binaryAnnotations = binaryAnnotations;
     for (Map.Entry<String, String> entry : binaryAnnotations.entrySet()) {
