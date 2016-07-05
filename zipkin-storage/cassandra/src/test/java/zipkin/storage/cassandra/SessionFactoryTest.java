@@ -31,25 +31,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static zipkin.storage.cassandra.SessionFactory.Default.buildCluster;
+import static zipkin.storage.cassandra.SessionFactory.Default.parseContactPoints;
 
 public class SessionFactoryTest {
-  SessionFactory.Default session = new SessionFactory.Default();
 
   @Test
   public void contactPoints_defaultsToLocalhost() {
-    assertThat(session.parseContactPoints(CassandraStorage.builder().build()))
+    assertThat(parseContactPoints(CassandraStorage.builder().build()))
         .containsExactly(new InetSocketAddress("127.0.0.1", 9042));
   }
 
   @Test
   public void contactPoints_defaultsToPort9042() {
-    assertThat(session.parseContactPoints(CassandraStorage.builder().contactPoints("1.1.1.1").build()))
+    assertThat(parseContactPoints(CassandraStorage.builder().contactPoints("1.1.1.1").build()))
         .containsExactly(new InetSocketAddress("1.1.1.1", 9042));
   }
 
   @Test
   public void contactPoints_defaultsToPort9042_multi() {
-    assertThat(session.parseContactPoints(
+    assertThat(parseContactPoints(
         CassandraStorage.builder().contactPoints("1.1.1.1:9143,2.2.2.2").build()))
         .containsExactly(
             new InetSocketAddress("1.1.1.1", 9143),
@@ -59,7 +59,7 @@ public class SessionFactoryTest {
 
   @Test
   public void contactPoints_hostAndPort() {
-    assertThat(session.parseContactPoints(CassandraStorage.builder().contactPoints("1.1.1.1:9142").build()))
+    assertThat(parseContactPoints(CassandraStorage.builder().contactPoints("1.1.1.1:9142").build()))
         .containsExactly(new InetSocketAddress("1.1.1.1", 9142));
   }
 

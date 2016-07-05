@@ -113,11 +113,11 @@ public final class Dependencies {
         field = Field.read(bytes);
         if (field.type == TYPE_STOP) break;
 
-        if (field.equals(START_TS)) {
+        if (field.isEqualTo(START_TS)) {
           startTs = bytes.getLong();
-        } else if (field.equals(END_TS)) {
+        } else if (field.isEqualTo(END_TS)) {
           endTs = bytes.getLong();
-        } else if (field.equals(LINKS)) {
+        } else if (field.isEqualTo(LINKS)) {
           links = DEPENDENCY_LINKS_ADAPTER.read(bytes);
         } else {
           skip(bytes, field.type);

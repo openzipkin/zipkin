@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.storage.cassandra.SessionFactory.Default.buildCluster;
 
 public class EnsureSchemaTest {
 
@@ -34,8 +35,7 @@ public class EnsureSchemaTest {
   public TestName name = new TestName();
 
   @BeforeClass public static void checkCassandraIsUp() {
-    try (Cluster cluster = new SessionFactory.Default().buildCluster(
-        CassandraStorage.builder().build());
+    try (Cluster cluster = buildCluster(CassandraStorage.builder().build());
          Session session = cluster.newSession()) {
       session.execute("SELECT now() FROM system.local");
     } catch (RuntimeException e) {
@@ -51,8 +51,7 @@ public class EnsureSchemaTest {
   @Before
   public void connectAndDropKeyspace() {
     keyspace = name.getMethodName().toLowerCase();
-    cluster = closer.register(new SessionFactory.Default()
-        .buildCluster(CassandraStorage.builder().keyspace(keyspace).build()));
+    cluster = closer.register(buildCluster(CassandraStorage.builder().keyspace(keyspace).build()));
     session = closer.register(cluster.newSession());
     session.execute("DROP KEYSPACE IF EXISTS " + keyspace);
     assertThat(session.getCluster().getMetadata().getKeyspace(keyspace)).isNull();

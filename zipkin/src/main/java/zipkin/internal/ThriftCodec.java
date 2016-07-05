@@ -120,11 +120,11 @@ public final class ThriftCodec implements Codec {
         field = Field.read(bytes);
         if (field.type == TYPE_STOP) break;
 
-        if (field.equals(IPV4)) {
+        if (field.isEqualTo(IPV4)) {
           result.ipv4(bytes.getInt());
-        } else if (field.equals(PORT)) {
+        } else if (field.isEqualTo(PORT)) {
           result.port(bytes.getShort());
-        } else if (field.equals(SERVICE_NAME)) {
+        } else if (field.isEqualTo(SERVICE_NAME)) {
           result.serviceName(readUtf8(bytes));
         } else {
           skip(bytes, field.type);
@@ -162,11 +162,11 @@ public final class ThriftCodec implements Codec {
         field = Field.read(bytes);
         if (field.type == TYPE_STOP) break;
 
-        if (field.equals(TIMESTAMP)) {
+        if (field.isEqualTo(TIMESTAMP)) {
           result.timestamp(bytes.getLong());
-        } else if (field.equals(VALUE)) {
+        } else if (field.isEqualTo(VALUE)) {
           result.value(readUtf8(bytes));
-        } else if (field.equals(ENDPOINT)) {
+        } else if (field.isEqualTo(ENDPOINT)) {
           result.endpoint(ENDPOINT_ADAPTER.read(bytes));
         } else {
           skip(bytes, field.type);
@@ -209,13 +209,13 @@ public final class ThriftCodec implements Codec {
         field = Field.read(bytes);
         if (field.type == TYPE_STOP) break;
 
-        if (field.equals(KEY)) {
+        if (field.isEqualTo(KEY)) {
           result.key(readUtf8(bytes));
-        } else if (field.equals(VALUE)) {
+        } else if (field.isEqualTo(VALUE)) {
           result.value(readByteArray(bytes));
-        } else if (field.equals(TYPE)) {
+        } else if (field.isEqualTo(TYPE)) {
           result.type(BinaryAnnotation.Type.fromValue(bytes.getInt()));
-        } else if (field.equals(ENDPOINT)) {
+        } else if (field.isEqualTo(ENDPOINT)) {
           result.endpoint(ENDPOINT_ADAPTER.read(bytes));
         } else {
           skip(bytes, field.type);
@@ -269,23 +269,23 @@ public final class ThriftCodec implements Codec {
         field = Field.read(bytes);
         if (field.type == TYPE_STOP) break;
 
-        if (field.equals(TRACE_ID)) {
+        if (field.isEqualTo(TRACE_ID)) {
           result.traceId(bytes.getLong());
-        } else if (field.equals(NAME)) {
+        } else if (field.isEqualTo(NAME)) {
           result.name(readUtf8(bytes));
-        } else if (field.equals(ID)) {
+        } else if (field.isEqualTo(ID)) {
           result.id(bytes.getLong());
-        } else if (field.equals(PARENT_ID)) {
+        } else if (field.isEqualTo(PARENT_ID)) {
           result.parentId(bytes.getLong());
-        } else if (field.equals(ANNOTATIONS)) {
+        } else if (field.isEqualTo(ANNOTATIONS)) {
           result.annotations(ANNOTATIONS_ADAPTER.read(bytes));
-        } else if (field.equals(BINARY_ANNOTATIONS)) {
+        } else if (field.isEqualTo(BINARY_ANNOTATIONS)) {
           result.binaryAnnotations(BINARY_ANNOTATIONS_ADAPTER.read(bytes));
-        } else if (field.equals(DEBUG)) {
+        } else if (field.isEqualTo(DEBUG)) {
           result.debug(bytes.get() == 1);
-        } else if (field.equals(TIMESTAMP)) {
+        } else if (field.isEqualTo(TIMESTAMP)) {
           result.timestamp(bytes.getLong());
-        } else if (field.equals(DURATION)) {
+        } else if (field.isEqualTo(DURATION)) {
           result.duration(bytes.getLong());
         } else {
           skip(bytes, field.type);
@@ -360,11 +360,11 @@ public final class ThriftCodec implements Codec {
         field = Field.read(bytes);
         if (field.type == TYPE_STOP) break;
 
-        if (field.equals(PARENT)) {
+        if (field.isEqualTo(PARENT)) {
           result.parent(readUtf8(bytes));
-        } else if (field.equals(CHILD)) {
+        } else if (field.isEqualTo(CHILD)) {
           result.child(readUtf8(bytes));
-        } else if (field.equals(CALL_COUNT)) {
+        } else if (field.isEqualTo(CALL_COUNT)) {
           result.callCount(bytes.getLong());
         } else {
           skip(bytes, field.type);
@@ -506,7 +506,7 @@ public final class ThriftCodec implements Codec {
       return new Field(type, type == TYPE_STOP ? TYPE_STOP : bytes.getShort());
     }
 
-    boolean equals(Field that) {
+    boolean isEqualTo(Field that) {
       return this.type == that.type && this.id == that.id;
     }
   }
