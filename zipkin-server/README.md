@@ -36,6 +36,8 @@ For example, if you want to enable debug logging for all zipkin categories, you 
 $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar --logging.level.zipkin=DEBUG
 ```
 
+Under the covers, the server uses [Spring Boot - Logback integration](http://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html#howto-configure-logback-for-logging). For example, you can add `--logging.exception-conversion-word=%wEx{full}` to dump full stack traces instead of truncated ones.
+
 ## Metrics
 
 Metrics are exported to the path `/metrics` and extend [defaults reported by spring-boot](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html).
