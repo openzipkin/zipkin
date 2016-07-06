@@ -172,6 +172,8 @@ public final class JsonCodec implements Codec {
           return result.value(string.getBytes(UTF_8)).build();
         case BYTES:
           return result.value(ByteString.decodeBase64(string).toByteArray()).build();
+        default:
+          break;
       }
       Buffer buffer = new Buffer();
       switch (type) {

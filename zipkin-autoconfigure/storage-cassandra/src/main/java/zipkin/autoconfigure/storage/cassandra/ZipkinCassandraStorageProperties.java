@@ -112,6 +112,7 @@ public class ZipkinCassandraStorageProperties {
   /**
    * @deprecated See {@link CassandraStorage.Builder#indexTtl(int)}
    */
+  @Deprecated
   public void setIndexTtl(int indexTtl) {
     this.indexTtl = indexTtl;
   }

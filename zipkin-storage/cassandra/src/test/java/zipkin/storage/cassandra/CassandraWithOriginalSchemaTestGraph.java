@@ -15,10 +15,11 @@ package zipkin.storage.cassandra;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
-import org.assertj.core.api.exception.RuntimeIOException;
 import org.junit.AssumptionViolatedException;
 import zipkin.Component.CheckResult;
 import zipkin.internal.LazyCloseable;
+
+import static zipkin.storage.cassandra.SessionFactory.Default.buildCluster;
 
 enum CassandraWithOriginalSchemaTestGraph {
   INSTANCE;
@@ -33,7 +34,7 @@ enum CassandraWithOriginalSchemaTestGraph {
           .keyspace("test_zipkin_original").build();
 
       // Install the old schema
-      try (Cluster cluster = new SessionFactory.Default().buildCluster(result);
+      try (Cluster cluster = buildCluster(result);
            Session session = cluster.newSession()) {
         Schema.applyCqlFile(result.keyspace, session, "/cassandra-schema-cql3-original.txt");
       } catch (RuntimeException e) {

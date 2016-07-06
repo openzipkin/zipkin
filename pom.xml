@@ -84,6 +84,10 @@
     <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
     <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
     <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
+
+    <!-- Catch common Java mistakes as compile-time errors -->
+    <plexus-compiler-javac-errorprone.version>2.8</plexus-compiler-javac-errorprone.version>
+    <errorprone.version>2.0.9</errorprone.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
@@ -414,6 +418,23 @@
             </configuration>
           </execution>
         </executions>
+        <configuration>
+          <compilerId>javac-with-errorprone</compilerId>
+          <forceJavacCompilerUse>true</forceJavacCompilerUse>
+          <showWarnings>true</showWarnings>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-compiler-javac-errorprone</artifactId>
+            <version>${plexus-compiler-javac-errorprone.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>com.google.errorprone</groupId>
+            <artifactId>error_prone_core</artifactId>
+            <version>${errorprone.version}</version>
+          </dependency>
+        </dependencies>
       </plugin>
 
       <plugin>
