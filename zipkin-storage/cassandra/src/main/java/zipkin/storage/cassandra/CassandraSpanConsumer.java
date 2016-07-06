@@ -84,19 +84,19 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
 
     insertServiceName = session.prepare(
         maybeUseTtl(QueryBuilder
-            .insertInto("service_names")
+            .insertInto(Tables.SERVICE_NAMES)
             .value("service_name", QueryBuilder.bindMarker("service_name"))));
 
     insertSpanName = session.prepare(
         maybeUseTtl(QueryBuilder
-            .insertInto("span_names")
+            .insertInto(Tables.SPAN_NAMES)
             .value("service_name", QueryBuilder.bindMarker("service_name"))
             .value("bucket", 0) // bucket is deprecated on this index
             .value("span_name", QueryBuilder.bindMarker("span_name"))));
 
     insertTraceIdByServiceName = session.prepare(
         maybeUseTtl(QueryBuilder
-            .insertInto("service_name_index")
+            .insertInto(Tables.SERVICE_NAME_INDEX)
             .value("service_name", QueryBuilder.bindMarker("service_name"))
             .value("bucket", QueryBuilder.bindMarker("bucket"))
             .value("ts", QueryBuilder.bindMarker("ts"))
@@ -104,14 +104,14 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
 
     insertTraceIdBySpanName = session.prepare(
         maybeUseTtl(QueryBuilder
-            .insertInto("service_span_name_index")
+            .insertInto(Tables.SERVICE_SPAN_NAME_INDEX)
             .value("service_span_name", QueryBuilder.bindMarker("service_span_name"))
             .value("ts", QueryBuilder.bindMarker("ts"))
             .value("trace_id", QueryBuilder.bindMarker("trace_id"))));
 
     insertTraceIdByAnnotation = session.prepare(
         maybeUseTtl(QueryBuilder
-            .insertInto("annotations_index")
+            .insertInto(Tables.ANNOTATIONS_INDEX)
             .value("annotation", QueryBuilder.bindMarker("annotation"))
             .value("bucket", QueryBuilder.bindMarker("bucket"))
             .value("ts", QueryBuilder.bindMarker("ts"))
@@ -126,6 +126,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
             .value("duration", QueryBuilder.bindMarker("duration"))
             .value("ts", QueryBuilder.bindMarker("ts"))
             .value("trace_id", QueryBuilder.bindMarker("trace_id"))));
+
     deduplicatingExecutor = new DeduplicatingExecutor(session, WRITTEN_NAMES_TTL);
   }
 
