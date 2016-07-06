@@ -220,11 +220,11 @@ public final class CassandraStorage
     for (String cf : ImmutableList.of(
         "traces",
         "dependencies",
-        "service_names",
-        "span_names",
-        "service_name_index",
-        "service_span_name_index",
-        "annotations_index",
+        Tables.SERVICE_NAMES,
+        Tables.SPAN_NAMES,
+        Tables.SERVICE_NAME_INDEX,
+        Tables.SERVICE_SPAN_NAME_INDEX,
+        Tables.ANNOTATIONS_INDEX,
         "span_duration_index"
     )) {
       futures.add(session.get().executeAsync(format("TRUNCATE %s", cf)));

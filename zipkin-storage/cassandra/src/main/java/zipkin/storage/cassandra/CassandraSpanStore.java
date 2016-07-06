@@ -113,18 +113,18 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
     selectServiceNames = session.prepare(
         QueryBuilder.select("service_name")
-            .from("service_names"));
+            .from(Tables.SERVICE_NAMES));
 
     selectSpanNames = session.prepare(
         QueryBuilder.select("span_name")
-            .from("span_names")
+            .from(Tables.SPAN_NAMES)
             .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
             .and(QueryBuilder.eq("bucket", QueryBuilder.bindMarker("bucket")))
             .limit(QueryBuilder.bindMarker("limit_")));
 
     selectTraceIdsByServiceName = session.prepare(
         QueryBuilder.select("ts", "trace_id")
-            .from("service_name_index")
+            .from(Tables.SERVICE_NAME_INDEX)
             .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
             .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
             .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
@@ -134,7 +134,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
     selectTraceIdsBySpanName = session.prepare(
         QueryBuilder.select("ts", "trace_id")
-            .from("service_span_name_index")
+            .from(Tables.SERVICE_SPAN_NAME_INDEX)
             .where(
                 QueryBuilder.eq("service_span_name", QueryBuilder.bindMarker("service_span_name")))
             .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
@@ -144,7 +144,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
     selectTraceIdsByAnnotation = session.prepare(
         QueryBuilder.select("ts", "trace_id")
-            .from("annotations_index")
+            .from(Tables.ANNOTATIONS_INDEX)
             .where(QueryBuilder.eq("annotation", QueryBuilder.bindMarker("annotation")))
             .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
             .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
@@ -176,7 +176,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     } else {
       selectTraceIdsByServiceNames = session.prepare(
           QueryBuilder.select("ts", "trace_id")
-              .from("service_name_index")
+              .from(Tables.SERVICE_NAME_INDEX)
               .where(QueryBuilder.in("service_name", QueryBuilder.bindMarker("service_name")))
               .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
               .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
