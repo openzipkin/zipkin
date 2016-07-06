@@ -13,14 +13,52 @@
  */
 package zipkin.storage.cassandra;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import zipkin.Constants;
 import zipkin.Span;
 import zipkin.TestObjects;
+import zipkin.TraceKeys;
+import zipkin.storage.QueryRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class CassandraUtilTest {
+
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
+
+  @Test
+  public void annotationKeys_emptyRequest() {
+    assertThat(CassandraUtil.annotationKeys(QueryRequest.builder().build()))
+        .isEmpty();
+  }
+
+  @Test
+  public void annotationKeys_serviceNameRequired() {
+    thrown.expect(IllegalArgumentException.class);
+
+    CassandraUtil.annotationKeys(QueryRequest.builder().addAnnotation("sr").build());
+  }
+
+  @Test
+  public void annotationKeys() {
+    assertThat(CassandraUtil.annotationKeys(QueryRequest.builder()
+        .serviceName("service")
+        .addAnnotation(Constants.ERROR)
+        .addBinaryAnnotation(TraceKeys.HTTP_METHOD, "GET").build()))
+        .containsExactly("service:error", "service:http.method:GET");
+  }
+
+  @Test
+  public void annotationKeys_dedupes() {
+    assertThat(CassandraUtil.annotationKeys(QueryRequest.builder()
+        .serviceName("service")
+        .addAnnotation(Constants.ERROR)
+        .addAnnotation(Constants.ERROR).build()))
+        .containsExactly("service:error");
+  }
 
   @Test
   public void annotationKeys_skipsCoreAndAddressAnnotations() throws Exception {
