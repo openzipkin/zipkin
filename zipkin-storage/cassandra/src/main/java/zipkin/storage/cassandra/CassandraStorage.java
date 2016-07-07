@@ -17,6 +17,7 @@ package zipkin.storage.cassandra;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.CacheBuilderSpec;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -57,6 +58,9 @@ public final class CassandraStorage
     String username;
     String password;
     int maxTraceCols = 100000;
+    int indexCacheMax = 100000;
+    int indexCacheTtl = 60;
+
     /**
      * Used to avoid hot spots when writing indexes used to query by service name or annotation.
      *
@@ -158,6 +162,39 @@ public final class CassandraStorage
       return this;
     }
 
+    /**
+     * Indicates the maximum trace index metadata entries to cache. Zero disables the feature.
+     * Defaults to 100000.
+     *
+     * <p>This is used to obviate redundant inserts into {@link Tables#SERVICE_NAME_INDEX}, {@link
+     * Tables#SERVICE_SPAN_NAME_INDEX} and {@link Tables#ANNOTATIONS_INDEX}.
+     *
+     * <p>Corresponds to the count of rows inserted into between {@link #indexCacheTtl} and now.
+     * This is bounded so that collectors that get large trace volume don't run out of memory before
+     * {@link #indexCacheTtl} passes.
+     *
+     * <p>Note: It is hard to estimate precisely how many is the right number, particularly as
+     * binary annotation values are included in partition keys (meaning each cache entry can vary in
+     * size considerably). A good guess might be 5 x spans per indexCacheTtl, memory permitting.
+     */
+    public Builder indexCacheMax(int indexCacheMax) {
+      this.indexCacheMax = indexCacheMax;
+      return this;
+    }
+
+    /**
+     * Indicates how long in seconds to cache trace index metadata. Defaults to 1 minute. This is
+     * only read when {@link #indexCacheMax} is greater than zero.
+     *
+     * <p>You should pick a value that is longer than the gap between the root span's timestamp and
+     * its latest descendant span's timestamp. More simply, if 95% of your trace durations are under
+     * 1 minute, use 1 minute.
+     */
+    public Builder indexCacheTtl(int indexCacheTtl) {
+      this.indexCacheTtl = indexCacheTtl;
+      return this;
+    }
+
     public CassandraStorage build() {
       return new CassandraStorage(this);
     }
@@ -179,6 +216,7 @@ public final class CassandraStorage
   final String password;
   final boolean ensureSchema;
   final String keyspace;
+  final CacheBuilderSpec indexCacheSpec;
   final LazySession session;
 
   CassandraStorage(Builder builder) {
@@ -194,6 +232,10 @@ public final class CassandraStorage
     this.spanTtl = builder.spanTtl;
     this.bucketCount = builder.bucketCount;
     this.session = new LazySession(builder.sessionFactory, this);
+    this.indexCacheSpec = builder.indexCacheMax == 0
+        ? null
+        : CacheBuilderSpec.parse("maximumSize=" + builder.indexCacheMax
+            + ",expireAfterWrite=" + builder.indexCacheTtl + "s");
   }
 
   /** Lazy initializes or returns the session in use by this storage component. */
@@ -206,7 +248,7 @@ public final class CassandraStorage
   }
 
   @Override protected CassandraSpanConsumer computeGuavaSpanConsumer() {
-    return new CassandraSpanConsumer(session.get(), bucketCount, spanTtl, indexTtl);
+    return new CassandraSpanConsumer(session.get(), bucketCount, spanTtl, indexTtl, indexCacheSpec);
   }
 
   @Override public CheckResult check() {

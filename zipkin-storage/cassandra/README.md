@@ -5,8 +5,6 @@ This CQL-based Cassandra 2.2+ storage component includes a `GuavaSpanStore` and 
 
 The implementation uses the [Datastax Java Driver 3.x](https://github.com/datastax/java-driver).
 
-The CQL schema is the same as [zipkin-scala](https://github.com/openzipkin/zipkin/tree/master/zipkin-cassandra).
-
 `zipkin.storage.cassandra.CassandraStorage.Builder` includes defaults that will
 operate against a local Cassandra installation.
 
@@ -14,11 +12,15 @@ operate against a local Cassandra installation.
 Queries are logged to the category "com.datastax.driver.core.QueryLogger" when debug or trace is
 enabled via SLF4J. Trace level includes bound values.
 
-See [Logging Query Latencies](http://docs.datastax.com/en/developer/java-driver/2.1/supplemental/manual/logging/#logging-query-latencies) for more details.
+See [Logging Query Latencies](http://docs.datastax.com/en/developer/java-driver/3.0/supplemental/manual/logging/#logging-query-latencies) for more details.
 
 ## Performance notes
 
 Redundant requests to store service or span names are ignored for an hour to reduce load.
+
+Indexing of traces are optimized by default. This reduces writes to Cassandra at the cost of memory
+needed to cache state. This cache is tunable based on your typical trace duration and span count.
+See [CassandraStorage](src/main/java/zipkin/storage/cassandra/CassandraStorage.java) for details.
 
 ## Testing this component
 This module conditionally runs integration tests against a local Cassandra instance.

@@ -45,6 +45,10 @@ zipkin:
       span-ttl: ${CASSANDRA_SPAN_TTL:604800}
       # 3 days in seconds
       index-ttl: ${CASSANDRA_INDEX_TTL:259200}
+      # the maximum trace index metadata entries to cache
+      index-cache-max: ${CASSANDRA_INDEX_CACHE_MAX:100000}
+      # how long to cache index metadata about a trace. 1 minute in seconds
+      index-cache-ttl: ${CASSANDRA_INDEX_CACHE_TTL:60}
     elasticsearch:
       cluster: ${ES_CLUSTER:elasticsearch}
       hosts: ${ES_HOSTS:localhost:9300}

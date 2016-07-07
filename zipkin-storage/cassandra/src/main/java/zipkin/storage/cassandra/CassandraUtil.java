@@ -69,7 +69,7 @@ final class CassandraUtil {
    * @see QueryRequest#annotations
    * @see QueryRequest#binaryAnnotations
    */
-  static List<String> annotationKeys(Span span) {
+  static Set<String> annotationKeys(Span span) {
     Set<String> annotationKeys = new LinkedHashSet<>();
     for (Annotation a : span.annotations) {
       // don't index core annotations as they aren't queryable
@@ -87,7 +87,7 @@ final class CassandraUtil {
         annotationKeys.add(b.endpoint.serviceName + ":" + b.key + ":" + new String(b.value, UTF_8));
       }
     }
-    return sortedList(annotationKeys);
+    return annotationKeys;
   }
 
   static List<String> annotationKeys(QueryRequest request) {
