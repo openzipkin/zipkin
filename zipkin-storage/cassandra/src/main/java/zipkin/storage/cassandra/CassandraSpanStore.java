@@ -153,7 +153,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
             .orderBy(QueryBuilder.desc("ts")));
 
     int durationDefaultTtl = Schema.getKeyspaceMetadata(session)
-        .getTable("span_duration_index")
+        .getTable(Tables.SPAN_DURATION_INDEX)
         .getOptions()
         .getDefaultTimeToLive();
 
@@ -161,7 +161,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
     selectTraceIdsBySpanDuration = session.prepare(
         QueryBuilder.select("duration", "ts", "trace_id")
-            .from("span_duration_index")
+            .from(Tables.SPAN_DURATION_INDEX)
             .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
             .and(QueryBuilder.eq("span_name", QueryBuilder.bindMarker("span_name")))
             .and(QueryBuilder.eq("bucket", QueryBuilder.bindMarker("time_bucket")))

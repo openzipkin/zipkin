@@ -144,8 +144,19 @@ public final class QueryRequest {
       checkArgument(!entry.getValue().isEmpty(),
           "binary annotation value for %s was empty", entry.getKey());
     }
-    this.minDuration = minDuration;
-    this.maxDuration = maxDuration;
+    if (minDuration != null) {
+      checkArgument(minDuration > 0, "minDuration must be a positive number of microseconds");
+      this.minDuration = minDuration;
+      if (maxDuration != null) {
+        checkArgument(maxDuration >= minDuration, "maxDuration should be >= minDuration");
+        this.maxDuration = maxDuration;
+      } else {
+        this.maxDuration = null;
+      }
+    } else {
+      checkArgument(maxDuration == null, "maxDuration is only valid with minDuration");
+      this.minDuration = this.maxDuration = null;
+    }
     this.endTs = endTs;
     this.lookback = lookback;
     this.limit = limit;

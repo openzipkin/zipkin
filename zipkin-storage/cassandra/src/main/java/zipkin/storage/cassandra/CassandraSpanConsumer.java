@@ -119,7 +119,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
 
     insertTraceIdBySpanDuration = session.prepare(
         maybeUseTtl(QueryBuilder
-            .insertInto("span_duration_index")
+            .insertInto(Tables.SPAN_DURATION_INDEX)
             .value("service_name", QueryBuilder.bindMarker("service_name"))
             .value("span_name", QueryBuilder.bindMarker("span_name"))
             .value("bucket", QueryBuilder.bindMarker("bucket"))
@@ -176,7 +176,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
           }
 
           // QueryRequest.min/maxDuration
-          if (span.duration != null) {
+          if (span.duration != null && span.duration > 0) {
             // Contract for Repository.storeTraceIdByDuration is to store the span twice, once with
             // the span name and another with empty string.
             futures.add(storeTraceIdByDuration(
