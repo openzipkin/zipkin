@@ -13,7 +13,6 @@
  */
 package zipkin.storage.elasticsearch;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -22,15 +21,20 @@ final class IndexNameFormatter {
   private static final String DAILY_INDEX_FORMAT = "yyyy-MM-dd";
 
   private final String index;
-  private final DateFormat dateFormat;
+  // SimpleDateFormat isn't thread-safe
+  private final ThreadLocal<SimpleDateFormat> dateFormat;
 
   IndexNameFormatter(String index) {
     this.index = index;
-    this.dateFormat = new SimpleDateFormat(DAILY_INDEX_FORMAT);
+    this.dateFormat = new ThreadLocal<SimpleDateFormat>() {
+      @Override protected SimpleDateFormat initialValue() {
+        return new SimpleDateFormat(DAILY_INDEX_FORMAT);
+      }
+    };
   }
 
   String indexNameForTimestamp(long timestampMillis) {
-    return index + "-" + dateFormat.format(new Date(timestampMillis));
+    return index + "-" + dateFormat.get().format(new Date(timestampMillis));
   }
 
   String catchAll() {

@@ -112,7 +112,8 @@ public final class ElasticsearchStorage
   }
 
   private final LazyClient lazyClient;
-  private final IndexNameFormatter indexNameFormatter;
+  @VisibleForTesting
+  final IndexNameFormatter indexNameFormatter;
 
   ElasticsearchStorage(Builder builder) {
     lazyClient = new LazyClient(builder);
