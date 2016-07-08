@@ -81,6 +81,8 @@ final class Tables {
    */
   static final String ANNOTATIONS_INDEX = "annotations_index";
 
+  static final String SPAN_DURATION_INDEX = "span_duration_index";
+
   private Tables() {
   }
 }

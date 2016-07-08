@@ -109,6 +109,9 @@ public final class Span implements Comparable<Span> {
    * <p>This field is i64 vs i32 to support spans longer than 35 minutes.
    */
   @Nullable
+  // TODO: should this be permitted to be zero?
+  // i.e. should we say durations <1 microsecond should roud up to 1 microsecond?
+  // Reason is that sometimes instrumentation accidentally store 0L when they mean null
   public final Long duration;
 
   /**

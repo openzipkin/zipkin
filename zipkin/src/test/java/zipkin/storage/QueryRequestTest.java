@@ -137,4 +137,28 @@ public class QueryRequestTest {
     assertThat(request.toAnnotationQuery())
         .isNull();
   }
+
+  @Test
+  public void minDuration_mustBePositive() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("minDuration must be a positive number of microseconds");
+
+    QueryRequest.builder().serviceName("foo").minDuration(0L).build();
+  }
+
+  @Test
+  public void maxDuration_onlyWithMinDuration() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("maxDuration is only valid with minDuration");
+
+    QueryRequest.builder().serviceName("foo").maxDuration(0L).build();
+  }
+
+  @Test
+  public void maxDuration_greaterThanOrEqualToMinDuration() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("maxDuration should be >= minDuration");
+
+    QueryRequest.builder().serviceName("foo").minDuration(1L).maxDuration(0L).build();
+  }
 }
