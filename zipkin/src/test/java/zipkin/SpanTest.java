@@ -142,4 +142,21 @@ public class SpanTest {
     assertThat(span.timestamp)
         .isNull();
   }
+
+  /**
+   * Catches common error when zero is passed instead of null for a duration. Durations of less than
+   * a microsecond must be recorded as 1.
+   */
+  @Test
+  public void coercesDurationZeroToNull() {
+    Span span = Span.builder()
+        .traceId(1L)
+        .name("GET")
+        .id(1L)
+        .duration(0L)
+        .build();
+
+    assertThat(span.duration)
+        .isNull();
+  }
 }
