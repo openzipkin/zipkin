@@ -10,6 +10,7 @@
 
   <!-- Note: this will dump a large amount of data in the logs -->
   <!--<logger name="com.datastax.driver.core.QueryLogger" level="TRACE" />-->
+  <!--<logger name="zipkin.storage.cassandra" level="DEBUG" />-->
 
   <root level="info">
     <appender-ref ref="STDOUT" />

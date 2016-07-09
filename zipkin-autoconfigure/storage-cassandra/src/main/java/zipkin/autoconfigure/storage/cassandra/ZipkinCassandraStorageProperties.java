@@ -28,6 +28,10 @@ public class ZipkinCassandraStorageProperties {
   private String password;
   private int spanTtl = (int) TimeUnit.DAYS.toSeconds(7);
   private int indexTtl = (int) TimeUnit.DAYS.toSeconds(3);
+  /** See {@link CassandraStorage.Builder#indexCacheMax(int)} */
+  private int indexCacheMax = 100000;
+  /** See {@link CassandraStorage.Builder#indexCacheTtl(int)} */
+  private int indexCacheTtl = 60;
 
   public String getKeyspace() {
     return keyspace;
@@ -117,6 +121,22 @@ public class ZipkinCassandraStorageProperties {
     this.indexTtl = indexTtl;
   }
 
+  public int getIndexCacheMax() {
+    return indexCacheMax;
+  }
+
+  public void setIndexCacheMax(int indexCacheMax) {
+    this.indexCacheMax = indexCacheMax;
+  }
+
+  public int getIndexCacheTtl() {
+    return indexCacheTtl;
+  }
+
+  public void setIndexCacheTtl(int indexCacheTtl) {
+    this.indexCacheTtl = indexCacheTtl;
+  }
+
   public CassandraStorage.Builder toBuilder() {
     return CassandraStorage.builder()
         .keyspace(keyspace)
@@ -127,6 +147,8 @@ public class ZipkinCassandraStorageProperties {
         .username(username)
         .password(password)
         .spanTtl(spanTtl)
-        .indexTtl(indexTtl);
+        .indexTtl(indexTtl)
+        .indexCacheMax(indexCacheMax)
+        .indexCacheTtl(indexCacheTtl);
   }
 }
