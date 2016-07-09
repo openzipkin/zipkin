@@ -20,7 +20,6 @@ import zipkin.Constants;
 import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStoreTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,12 +70,12 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
   }
 
   /**
-   * {@link Span#duration} == 0 is likely to be a mistake. Since {@link QueryRequest#minDuration}
-   * must be positive, it is not helpful to index rows with duration zero.
+   * {@link Span#duration} == 0 is likely to be a mistake, and coerces to null. It is not helpful to
+   * index rows who have no duration.
    */
   @Test
-  public void doesntIndexZeroDurationSpans() {
-    Span span = TestObjects.TRACE.get(1).toBuilder().duration(0L).build();
+  public void doesntIndexSpansMissingDuration() {
+    Span span = Span.builder().traceId(1L).id(1L).name("GET").duration(0L).build();
 
     accept(span);
 

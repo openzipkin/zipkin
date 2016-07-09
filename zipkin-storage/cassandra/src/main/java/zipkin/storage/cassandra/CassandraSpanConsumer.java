@@ -176,7 +176,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
           }
 
           // QueryRequest.min/maxDuration
-          if (span.duration != null && span.duration > 0) {
+          if (span.duration != null) {
             // Contract for Repository.storeTraceIdByDuration is to store the span twice, once with
             // the span name and another with empty string.
             futures.add(storeTraceIdByDuration(

@@ -92,11 +92,12 @@ public final class Span implements Comparable<Span> {
   public final Long timestamp;
 
   /**
-   * Measurement in microseconds of the critical path, if known.
+   * Measurement in microseconds of the critical path, if known. Durations of less than one
+   * microsecond must be rounded up to 1 microsecond.
    *
-   * <p>This value should be set directly, as opposed to implicitly via annotation timestamps.
-   * Doing so encourages precision decoupled from problems of clocks, such as skew or NTP updates
-   * causing time to move backwards.
+   * <p>This value should be set directly, as opposed to implicitly via annotation timestamps. Doing
+   * so encourages precision decoupled from problems of clocks, such as skew or NTP updates causing
+   * time to move backwards.
    *
    * <p>For compatibility with instrumentation that precede this field, collectors or span stores
    * can derive this by subtracting {@link Annotation#timestamp}. For example, {@link
@@ -109,9 +110,6 @@ public final class Span implements Comparable<Span> {
    * <p>This field is i64 vs i32 to support spans longer than 35 minutes.
    */
   @Nullable
-  // TODO: should this be permitted to be zero?
-  // i.e. should we say durations <1 microsecond should roud up to 1 microsecond?
-  // Reason is that sometimes instrumentation accidentally store 0L when they mean null
   public final Long duration;
 
   /**
@@ -254,13 +252,13 @@ public final class Span implements Comparable<Span> {
 
     /** @see Span#timestamp */
     public Builder timestamp(@Nullable Long timestamp) {
-      this.timestamp = timestamp != null && timestamp == 0 ? null : timestamp;
+      this.timestamp = timestamp != null && timestamp == 0L ? null : timestamp;
       return this;
     }
 
     /** @see Span#duration */
     public Builder duration(@Nullable Long duration) {
-      this.duration = duration;
+      this.duration = duration != null && duration == 0L ? null : duration;
       return this;
     }
 
