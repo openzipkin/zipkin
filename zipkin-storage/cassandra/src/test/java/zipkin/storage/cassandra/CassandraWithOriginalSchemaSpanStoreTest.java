@@ -18,4 +18,15 @@ public class CassandraWithOriginalSchemaSpanStoreTest extends CassandraSpanStore
   public CassandraWithOriginalSchemaSpanStoreTest() {
     super(CassandraWithOriginalSchemaTestGraph.INSTANCE.storage.get());
   }
+
+  /**
+   * The PRIMARY KEY of {@link Tables#SERVICE_NAME_INDEX} doesn't consider trace_id, so will only
+   * see bucket count traces to a service per millisecond.
+   */
+  @Override public void getTraces_manyTraces() {
+    thrown.expect(AssertionError.class);
+    thrown.expectMessage("Expected size:<1000> but was:<10>");
+
+    super.getTraces_manyTraces();
+  }
 }
