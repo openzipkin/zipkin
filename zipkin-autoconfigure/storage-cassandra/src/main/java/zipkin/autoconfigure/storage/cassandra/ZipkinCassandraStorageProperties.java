@@ -32,6 +32,8 @@ public class ZipkinCassandraStorageProperties {
   private int indexCacheMax = 100000;
   /** See {@link CassandraStorage.Builder#indexCacheTtl(int)} */
   private int indexCacheTtl = 60;
+  /** See {@link CassandraStorage.Builder#indexFetchMultiplier(int)} */
+  private int indexFetchMultiplier = 3;
 
   public String getKeyspace() {
     return keyspace;
@@ -137,6 +139,14 @@ public class ZipkinCassandraStorageProperties {
     this.indexCacheTtl = indexCacheTtl;
   }
 
+  public int getIndexFetchMultiplier() {
+    return indexFetchMultiplier;
+  }
+
+  public void setIndexFetchMultiplier(int indexFetchMultiplier) {
+    this.indexFetchMultiplier = indexFetchMultiplier;
+  }
+
   public CassandraStorage.Builder toBuilder() {
     return CassandraStorage.builder()
         .keyspace(keyspace)
@@ -149,6 +159,7 @@ public class ZipkinCassandraStorageProperties {
         .spanTtl(spanTtl)
         .indexTtl(indexTtl)
         .indexCacheMax(indexCacheMax)
-        .indexCacheTtl(indexCacheTtl);
+        .indexCacheTtl(indexCacheTtl)
+        .indexFetchMultiplier(indexFetchMultiplier);
   }
 }
