@@ -14,19 +14,7 @@ enabled via SLF4J. Trace level includes bound values.
 
 See [Logging Query Latencies](http://docs.datastax.com/en/developer/java-driver/3.0/supplemental/manual/logging/#logging-query-latencies) for more details.
 
-## Performance notes
-
-Redundant requests to store service or span names are ignored for an hour to reduce load.
-
-Indexing of traces are optimized by default. This reduces writes to Cassandra at the cost of memory
-needed to cache state. This cache is tunable based on your typical trace duration and span count.
-
-User-supplied query limits are over-fetched according to a configured index fetch multiplier in
-attempts to mitigate redundant data returned from index queries.
-
-See [CassandraStorage](src/main/java/zipkin/storage/cassandra/CassandraStorage.java) for details.
-
-## Testing this component
+## Testing
 This module conditionally runs integration tests against a local Cassandra instance.
 
 Tests are configured to automatically access Cassandra started with its defaults.
@@ -43,3 +31,20 @@ Tests run: 62, Failures: 0, Errors: 0, Skipped: 48
 This behaviour is intentional: We don't want to burden developers with
 installing and running all storage options to test unrelated change.
 That said, all integration tests run on pull request via Travis.
+
+## Tuning
+This component is tuned to help reduce the size of indexes needed to perform query operations. The most important aspects are described below. See [CassandraStorage](src/main/java/zipkin/storage/cassandra/CassandraStorage.java) for details.
+
+### Service and span name indexing
+Redundant requests to store service or span names are ignored for an hour to reduce load.
+
+### Trace indexing
+Indexing of traces are optimized by default. This reduces writes to Cassandra at the cost of memory
+needed to cache state. This cache is tunable based on your typical trace duration and span count.
+
+[Core annotations](https://github.com/openzipkin/zipkin/blob/master/zipkin/src/main/java/zipkin/Constants.java#L184), ex "sr", are not written to `annotations_index`, as they aren't intended for use in user queries. This significantly reduces
+writes per trace.
+
+### Over-fetching on Trace indexes
+User-supplied query limits are over-fetched according to a configured index fetch multiplier in
+attempts to mitigate redundant data returned from index queries.
