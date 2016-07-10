@@ -20,6 +20,10 @@ Redundant requests to store service or span names are ignored for an hour to red
 
 Indexing of traces are optimized by default. This reduces writes to Cassandra at the cost of memory
 needed to cache state. This cache is tunable based on your typical trace duration and span count.
+
+User-supplied query limits are over-fetched according to a configured index fetch multiplier in
+attempts to mitigate redundant data returned from index queries.
+
 See [CassandraStorage](src/main/java/zipkin/storage/cassandra/CassandraStorage.java) for details.
 
 ## Testing this component

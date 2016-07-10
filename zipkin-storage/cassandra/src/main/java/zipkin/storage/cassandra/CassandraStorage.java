@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import zipkin.internal.Nullable;
+import zipkin.storage.QueryRequest;
 import zipkin.storage.guava.LazyGuavaStorageComponent;
 
 import static java.lang.String.format;
@@ -60,6 +61,7 @@ public final class CassandraStorage
     int maxTraceCols = 100000;
     int indexCacheMax = 100000;
     int indexCacheTtl = 60;
+    int indexFetchMultiplier = 3;
 
     /**
      * Used to avoid hot spots when writing indexes used to query by service name or annotation.
@@ -195,6 +197,21 @@ public final class CassandraStorage
       return this;
     }
 
+    /**
+     * How many more index rows to fetch than the user-supplied query limit. Defaults to 3.
+     *
+     * <p>Backend requests will request {@link QueryRequest#limit} times this factor rows from
+     * Cassandra indexes in attempts to return {@link QueryRequest#limit} traces.
+     *
+     * <p>Indexing in cassandra will usually have more rows than trace identifiers due to factors
+     * including table design and collection implementation. As there's no way to DISTINCT out
+     * duplicates server-side, this over-fetches client-side when {@code indexFetchMultiplier} > 1.
+     */
+    public Builder indexFetchMultiplier(int indexFetchMultiplier) {
+      this.indexFetchMultiplier = indexFetchMultiplier;
+      return this;
+    }
+
     public CassandraStorage build() {
       return new CassandraStorage(this);
     }
@@ -217,6 +234,7 @@ public final class CassandraStorage
   final boolean ensureSchema;
   final String keyspace;
   final CacheBuilderSpec indexCacheSpec;
+  final int indexFetchMultiplier;
   final LazySession session;
 
   CassandraStorage(Builder builder) {
@@ -236,6 +254,7 @@ public final class CassandraStorage
         ? null
         : CacheBuilderSpec.parse("maximumSize=" + builder.indexCacheMax
             + ",expireAfterWrite=" + builder.indexCacheTtl + "s");
+    this.indexFetchMultiplier = builder.indexFetchMultiplier;
   }
 
   /** Lazy initializes or returns the session in use by this storage component. */
@@ -244,7 +263,8 @@ public final class CassandraStorage
   }
 
   @Override protected CassandraSpanStore computeGuavaSpanStore() {
-    return new CassandraSpanStore(session.get(), bucketCount, indexTtl, maxTraceCols);
+    return new CassandraSpanStore(session.get(), bucketCount, indexTtl, maxTraceCols,
+        indexFetchMultiplier);
   }
 
   @Override protected CassandraSpanConsumer computeGuavaSpanConsumer() {

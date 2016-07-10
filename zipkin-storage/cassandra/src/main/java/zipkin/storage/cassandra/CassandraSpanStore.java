@@ -22,6 +22,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Function;
 import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
@@ -78,6 +79,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
   private final int durationTtl;
   private final int maxTraceCols;
+  private final int indexFetchMultiplier;
   private final Session session;
   private final TimestampCodec timestampCodec;
   private final Set<Integer> buckets;
@@ -92,9 +94,11 @@ public final class CassandraSpanStore implements GuavaSpanStore {
   private final PreparedStatement selectTraceIdsBySpanDuration;
   private final Function<ResultSet, Map<Long, Long>> traceIdToTimestamp;
 
-  CassandraSpanStore(Session session, int bucketCount, int indexTtl, int maxTraceCols) {
+  CassandraSpanStore(Session session, int bucketCount, int indexTtl, int maxTraceCols,
+      int indexFetchMultiplier) {
     this.session = session;
     this.maxTraceCols = maxTraceCols;
+    this.indexFetchMultiplier = indexFetchMultiplier;
     ProtocolVersion protocolVersion = session.getCluster()
         .getConfiguration().getProtocolOptions().getProtocolVersion();
     this.timestampCodec = new TimestampCodec(protocolVersion);
@@ -212,15 +216,17 @@ public final class CassandraSpanStore implements GuavaSpanStore {
    */
   @Override
   public ListenableFuture<List<List<Span>>> getTraces(final QueryRequest request) {
+    // Over fetch on indexes as they don't return distinct (trace id, timestamp) rows.
+    final int traceIndexFetchSize = request.limit * indexFetchMultiplier;
     ListenableFuture<Map<Long, Long>> traceIdToTimestamp;
     if (request.minDuration != null || request.maxDuration != null) {
-      traceIdToTimestamp = getTraceIdsByDuration(request);
+      traceIdToTimestamp = getTraceIdsByDuration(request, traceIndexFetchSize);
     } else if (request.spanName != null) {
       traceIdToTimestamp = getTraceIdsBySpanName(request.serviceName, request.spanName,
-          request.endTs * 1000, request.lookback * 1000, request.limit);
+          request.endTs * 1000, request.lookback * 1000, traceIndexFetchSize);
     } else if (request.serviceName != null) {
       traceIdToTimestamp = getTraceIdsByServiceNames(Collections.singletonList(request.serviceName),
-          request.endTs * 1000, request.lookback * 1000, request.limit);
+          request.endTs * 1000, request.lookback * 1000, traceIndexFetchSize);
     } else {
       checkArgument(selectTraceIdsByServiceNames != null,
           "getTraces without serviceName requires Cassandra 2.2 or later");
@@ -228,7 +234,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
           new AsyncFunction<List<String>, Map<Long, Long>>() {
             @Override public ListenableFuture<Map<Long, Long>> apply(List<String> serviceNames) {
               return getTraceIdsByServiceNames(serviceNames,
-                  request.endTs * 1000, request.lookback * 1000, request.limit);
+                  request.endTs * 1000, request.lookback * 1000, traceIndexFetchSize);
             }
           });
     }
@@ -242,18 +248,19 @@ public final class CassandraSpanStore implements GuavaSpanStore {
       traceIds = Futures.transform(traceIdToTimestamp, CassandraUtil.keyset());
     } else {
       // While a valid port of the scala cassandra span store (from zipkin 1.35), there is a fault.
-      // each annotation key is an intersection, which means we are likely to return < limit.
+      // each annotation key is an intersection, meaning we likely return < traceIndexFetchSize.
       List<ListenableFuture<Map<Long, Long>>> futureKeySetsToIntersect = new ArrayList<>();
       futureKeySetsToIntersect.add(traceIdToTimestamp);
       for (String annotationKey : annotationKeys) {
         futureKeySetsToIntersect.add(getTraceIdsByAnnotation(annotationKey,
-            request.endTs * 1000, request.lookback * 1000, request.limit));
+            request.endTs * 1000, request.lookback * 1000, traceIndexFetchSize));
       }
       // We achieve the AND goal, by intersecting each of the key sets.
       traceIds = Futures.transform(allAsList(futureKeySetsToIntersect), CassandraUtil.intersectKeySets());
     }
     return transform(traceIds, new AsyncFunction<Set<Long>, List<List<Span>>>() {
       @Override public ListenableFuture<List<List<Span>>> apply(Set<Long> traceIds) {
+        traceIds = FluentIterable.from(traceIds).limit(request.limit).toSet();
         return transform(getSpansByTraceIds(traceIds, maxTraceCols), AdjustTraces.INSTANCE);
       }
 
@@ -504,7 +511,8 @@ public final class CassandraSpanStore implements GuavaSpanStore {
   }
 
   /** Returns a map of trace id to timestamp (in microseconds) */
-  ListenableFuture<Map<Long, Long>> getTraceIdsByDuration(QueryRequest request) {
+  ListenableFuture<Map<Long, Long>> getTraceIdsByDuration(QueryRequest request,
+      int indexFetchSize) {
     checkArgument(request.serviceName != null, "serviceName required on duration query");
     long oldestData = (System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(durationTtl)) * 1000;
 
@@ -520,7 +528,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
     List<ListenableFuture<List<DurationRow>>> futures = new ArrayList<>();
     for (int i = startBucket; i <= endBucket; i++) { // range closed
-      futures.add(oneBucketDurationQuery(request, i, startTs, endTs));
+      futures.add(oneBucketDurationQuery(request, i, startTs, endTs, indexFetchSize));
     }
 
     return transform(allAsList(futures),
@@ -540,12 +548,11 @@ public final class CassandraSpanStore implements GuavaSpanStore {
   }
 
   ListenableFuture<List<DurationRow>> oneBucketDurationQuery(QueryRequest request, int bucket,
-      final long startTs, final long endTs) {
+      final long startTs, final long endTs, int indexFetchSize) {
     String serviceName = request.serviceName;
     String spanName = spanName(request.spanName);
     long minDuration = request.minDuration;
     long maxDuration = request.maxDuration != null ? request.maxDuration : Long.MAX_VALUE;
-    int limit = request.limit;
     BoundStatement bound =
         CassandraUtil.bindWithName(selectTraceIdsBySpanDuration, "select-trace-ids-by-span-duration")
             .setInt("time_bucket", bucket)
@@ -554,10 +561,10 @@ public final class CassandraSpanStore implements GuavaSpanStore {
             .setLong("min_duration", minDuration)
             .setLong("max_duration", maxDuration);
 
-    // optimistically setting fetch size to 'limit' here. Since we are likely to filter some results
-    // because their timestamps are out of range, we may need to fetch again.
+    // optimistically setting fetch size to 'indexFetchSize' here. Since we are likely to filter
+    // some results because their timestamps are out of range, we may need to fetch again.
     // TODO figure out better strategy
-    bound.setFetchSize(limit);
+    bound.setFetchSize(indexFetchSize);
 
     return transform(session.executeAsync(bound), new Function<ResultSet, List<DurationRow>>() {
       @Override public List<DurationRow> apply(ResultSet rs) {

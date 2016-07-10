@@ -13,14 +13,19 @@
  */
 package zipkin.storage.cassandra;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import zipkin.Annotation;
 import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.internal.ApplyTimestampAndDuration;
+import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStoreTest;
 
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class CassandraSpanStoreTest extends SpanStoreTest {
@@ -60,14 +65,38 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
         .containsExactly(rawSpan);
   }
 
-  /**
-   * The PRIMARY KEY of {@link Tables#SERVICE_NAME_INDEX} doesn't consider trace_id, so will only
-   * see bucket count traces to a service per millisecond.
-   */
-  @Override public void getTraces_manyTraces() {
-    thrown.expect(AssertionError.class);
-    thrown.expectMessage("Expected size:<1000> but was:<10>");
+  @Test
+  public void overFetchesToCompensateForDuplicateIndexData() {
+    int traceCount = 100;
 
-    super.getTraces_manyTraces();
+    List<Span> spans = new ArrayList<>();
+    for (int i = 0; i < traceCount; i++) {
+      final long delta = i * 1000; // all timestamps happen a millisecond later
+      for (Span s : TestObjects.TRACE) {
+        spans.add(TestObjects.TRACE.get(0).toBuilder()
+            .traceId(s.traceId + i * 10)
+            .id(s.id + i * 10)
+            .timestamp(s.timestamp + delta)
+            .annotations(s.annotations.stream()
+                .map(a -> Annotation.create(a.timestamp + delta, a.value, a.endpoint))
+                .collect(toList()))
+            .build());
+      }
+    }
+
+    accept(spans.toArray(new Span[0]));
+
+    // Index ends up containing more rows than services * trace count, and cannot be de-duped
+    // in a server-side query.
+    assertThat(rowCount(Tables.SERVICE_NAME_INDEX))
+        .isGreaterThan(traceCount * store().getServiceNames().size());
+
+    // Implementation over-fetches on the index to allow the user to receive unsurprising results.
+    assertThat(store().getTraces(QueryRequest.builder().limit(traceCount).build()))
+        .hasSize(traceCount);
+  }
+
+  long rowCount(String table) {
+    return storage.session().execute("SELECT COUNT(*) from " + table).one().getLong(0);
   }
 }
