@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS zipkin_annotations (
   `a_type` INT NOT NULL COMMENT 'BinaryAnnotation.type() or -1 if Annotation',
   `a_timestamp` BIGINT COMMENT 'Used to implement TTL; Annotation.timestamp or zipkin_spans.timestamp',
   `endpoint_ipv4` INT COMMENT 'Null when Binary/Annotation.endpoint is null',
+  `endpoint_ipv6` BINARY(16) COMMENT 'Null when Binary/Annotation.endpoint is null, or no IPv6 address',
   `endpoint_port` SMALLINT COMMENT 'Null when Binary/Annotation.endpoint is null',
   `endpoint_service_name` VARCHAR(255) COMMENT 'Null when Binary/Annotation.endpoint is null'
 ) ENGINE=InnoDB ROW_FORMAT=COMPRESSED;
@@ -32,4 +33,3 @@ ALTER TABLE zipkin_annotations ADD INDEX(`trace_id`) COMMENT 'for getTraces/ById
 ALTER TABLE zipkin_annotations ADD INDEX(`endpoint_service_name`) COMMENT 'for getTraces and getServiceNames';
 ALTER TABLE zipkin_annotations ADD INDEX(`a_type`) COMMENT 'for getTraces';
 ALTER TABLE zipkin_annotations ADD INDEX(`a_key`) COMMENT 'for getTraces';
-ALTER TABLE zipkin_annotations ADD INDEX(`endpoint_ipv4`) COMMENT 'for getTraces ordering';

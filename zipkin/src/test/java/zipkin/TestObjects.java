@@ -37,8 +37,12 @@ public final class TestObjects {
   // Use real time, as most span-stores have TTL logic which looks back several days.
   public static final long TODAY = midnightUTC(System.currentTimeMillis());
 
-  public static final Endpoint WEB_ENDPOINT =
-      Endpoint.create("web", 124 << 24 | 13 << 16 | 90 << 8 | 3);
+  public static final Endpoint WEB_ENDPOINT = Endpoint.builder()
+      .serviceName("web")
+      .ipv4(124 << 24 | 13 << 16 | 90 << 8 | 3)
+      // Cheat so we don't have to catch an exception here
+      .ipv6(sun.net.util.IPAddressUtil.textToNumericFormatV6("2001:db8::c001"))
+      .port((short) 80).build();
   public static final Endpoint APP_ENDPOINT =
       Endpoint.create("app", 172 << 24 | 17 << 16 | 2, 8080);
   public static final Endpoint DB_ENDPOINT =

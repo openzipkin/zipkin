@@ -143,7 +143,8 @@ export function getTraceErrorType(spans) {
 }
 
 function endpointEquals(e1, e2) {
-  return e1.ipv4 === e2.ipv4 && e1.port === e2.port && e1.serviceName === e2.serviceName;
+  return (e1.ipv4 === e2.ipv4 || e1.ipv6 === e2.ipv6)
+    && e1.port === e2.port && e1.serviceName === e2.serviceName;
 }
 
 export function traceSummary(spans = []) {

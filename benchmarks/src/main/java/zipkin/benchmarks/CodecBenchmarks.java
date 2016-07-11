@@ -98,7 +98,7 @@ public class CodecBenchmarks {
     return Codec.THRIFT.writeSpan(clientSpan);
   }
 
-  static final byte[] rpcSpanJson = read("/span-client.json");
+  static final byte[] rpcSpanJson = read("/span-rpc.json");
   static final Span rpcSpan = Codec.JSON.readSpan(rpcSpanJson);
   static final byte[] rpcSpanThrift = Codec.THRIFT.writeSpan(rpcSpan);
 
@@ -120,6 +120,30 @@ public class CodecBenchmarks {
   @Benchmark
   public byte[] writeRpcSpan_thrift_java() {
     return Codec.THRIFT.writeSpan(rpcSpan);
+  }
+
+  static final byte[] rpcV6SpanJson = read("/span-rpc-ipv6.json");
+  static final Span rpcV6Span = Codec.JSON.readSpan(rpcV6SpanJson);
+  static final byte[] rpcV6SpanThrift = Codec.THRIFT.writeSpan(rpcV6Span);
+
+  @Benchmark
+  public Span readRpcV6Span_json_java() {
+    return Codec.JSON.readSpan(rpcV6SpanJson);
+  }
+
+  @Benchmark
+  public Span readRpcV6Span_thrift_java() {
+    return Codec.THRIFT.readSpan(rpcV6SpanThrift);
+  }
+
+  @Benchmark
+  public byte[] writeRpcV6Span_json_java() {
+    return Codec.JSON.writeSpan(rpcV6Span);
+  }
+
+  @Benchmark
+  public byte[] writeRpcV6Span_thrift_java() {
+    return Codec.THRIFT.writeSpan(rpcV6Span);
   }
 
   // Convenience main entry-point

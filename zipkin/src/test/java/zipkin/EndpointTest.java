@@ -32,11 +32,9 @@ public class EndpointTest {
   }
 
   @Test
-  public void messageWhenMissingIpv4() {
-    thrown.expect(NullPointerException.class);
-    thrown.expectMessage("ipv4");
-
-    Endpoint.builder().serviceName("foo").build();
+  public void missingIpv4CoercesTo0() {
+    assertThat(Endpoint.builder().serviceName("foo").build().ipv4)
+        .isEqualTo(0);
   }
 
   @Test

@@ -14,6 +14,7 @@
 package zipkin.internal;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -83,7 +84,7 @@ public final class CorrectForClockSkew {
     for (int i = 0, length = span.annotations.size(); i < length; i++) {
       Annotation a = span.annotations.get(i);
       if (a.endpoint == null) continue;
-      if (skew.endpoint.ipv4 == a.endpoint.ipv4) {
+      if (ipsMatch(skew.endpoint, a.endpoint)) {
         if (annotations == null) annotations = new ArrayList<>(span.annotations);
         annotations.set(i, a.toBuilder().timestamp(a.timestamp - skew.skew).build());
       }
@@ -95,11 +96,16 @@ public final class CorrectForClockSkew {
     for (int i = 0, length = span.binaryAnnotations.size(); i < length; i++) {
       BinaryAnnotation b = span.binaryAnnotations.get(i);
       if (b.endpoint == null) continue;
-      if (b.key.equals(Constants.LOCAL_COMPONENT) && skew.endpoint.ipv4 == b.endpoint.ipv4) {
+      if (b.key.equals(Constants.LOCAL_COMPONENT) && ipsMatch(skew.endpoint, b.endpoint)) {
         return span.toBuilder().timestamp(span.timestamp - skew.skew).build();
       }
     }
     return span;
+  }
+
+  static boolean ipsMatch(Endpoint skew, Endpoint that) {
+    return (skew.ipv6 != null && Arrays.equals(skew.ipv6, that.ipv6))
+        || (skew.ipv4 != 0 && skew.ipv4 == that.ipv4);
   }
 
   /** Use client/server annotations to determine if there's clock skew. */

@@ -14,7 +14,9 @@
 package zipkin.storage.mysql;
 
 import java.sql.SQLException;
+import java.sql.SQLSyntaxErrorException;
 import javax.sql.DataSource;
+import org.jooq.exception.DataAccessException;
 import org.junit.Test;
 import zipkin.Component.CheckResult;
 
@@ -37,5 +39,48 @@ public class MySQLStorageTest {
     assertThat(result.ok).isFalse();
     assertThat(result.exception)
         .isInstanceOf(SQLException.class);
+  }
+
+  @Test
+  public void hasIpv6_falseWhenKnownSQLState() throws SQLException {
+    SQLSyntaxErrorException sqlException = new SQLSyntaxErrorException(
+        "Unknown column 'zipkin_annotations.endpoint_ipv6' in 'field list'",
+        "42S22", 1054);
+    DataSource dataSource = mock(DataSource.class);
+
+    // cheats to lower mock count: this exception is really thrown during execution of the query
+    when(dataSource.getConnection()).thenThrow(
+        new DataAccessException(sqlException.getMessage(), sqlException));
+
+    Boolean result = MySQLStorage.builder()
+        .executor(Runnable::run)
+        .datasource(dataSource)
+        .build().hasIpv6.get();
+
+    assertThat(result).isFalse();
+  }
+
+  /**
+   * This returns false instead of failing when the SQLState code doesn't imply the column is
+   * missing. This is to prevent zipkin from crashing due to scenarios we haven't thought up, yet.
+   * The root error goes into the log in this case.
+   */
+  @Test
+  public void hasIpv6_falseWhenUnknownSQLState() throws SQLException {
+    SQLSyntaxErrorException sqlException = new SQLSyntaxErrorException(
+        "java.sql.SQLSyntaxErrorException: Table 'zipkin.zipkin_annotations' doesn't exist",
+        "42S02", 1146);
+    DataSource dataSource = mock(DataSource.class);
+
+    // cheats to lower mock count: this exception is really thrown during execution of the query
+    when(dataSource.getConnection()).thenThrow(
+        new DataAccessException(sqlException.getMessage(), sqlException));
+
+    Boolean result = MySQLStorage.builder()
+        .executor(Runnable::run)
+        .datasource(dataSource)
+        .build().hasIpv6.get();
+
+    assertThat(result).isFalse();
   }
 }
