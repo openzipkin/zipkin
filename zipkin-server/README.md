@@ -166,6 +166,7 @@ $ STORAGE_TYPE=elasticsearch ES_CLUSTER=monitoring ES_HOSTS=host1:9300,host2:930
 ### Scribe Collector
 The Scribe collector is enabled by default, configured by the following:
 
+    * `SCRIBE_ENABLED`: Set to false to prevent scribe from starting; Defaults to true
     * `COLLECTOR_PORT`: Listen port for the scribe thrift api; Defaults to 9410
 
 ### Kafka Collector
