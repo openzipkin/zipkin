@@ -60,7 +60,9 @@ gauge.zipkin_collector.message_spans.$transport | last count of spans in a messa
 gauge.zipkin_collector.message_bytes.$transport | last count of bytes in a message
 
 ## Self-Tracing
-Self tracing exists to help troubleshoot performance of the zipkin-server.
+Self tracing exists to help troubleshoot performance of the zipkin-server. Production deployments
+who enable self-tracing should lower the sample rate from 1.0 (100%) to a much smaller rate, like
+0.001 (0.1% or 1 out of 1000).
 
 When Brave dependencies are in the classpath, and `zipkin.self-tracing.enabled=true`,
 Zipkin will self-trace calls to the api.
@@ -70,6 +72,7 @@ Zipkin will self-trace calls to the api.
 Variable | Property | Description
 --- | --- | ---
 SELF_TRACING_ENABLED | zipkin.self-tracing.enabled | Set to false to disable self-tracing. Defaults to true
+SELF_TRACING_SAMPLE_RATE`: Percentage of self-traces to retain, defaults to always sample (1.0).
 SELF_TRACING_FLUSH_INTERVAL | zipkin.self-tracing.flush-interval | Interval in seconds to flush self-tracing data to storage. Defaults to 1
 
 ## Configuration for the UI

@@ -26,6 +26,7 @@ import com.github.kristofa.brave.ServerSpan;
 import com.github.kristofa.brave.ServerSpanThreadBinder;
 import com.github.kristofa.brave.SpanCollector;
 import com.github.kristofa.brave.SpanId;
+import com.google.common.collect.Maps;
 import com.google.common.reflect.AbstractInvocationHandler;
 import com.google.common.reflect.Reflection;
 import com.twitter.zipkin.gen.Annotation;
@@ -35,15 +36,15 @@ import com.twitter.zipkin.gen.Span;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin.storage.cassandra.NamedBoundStatement;
 
-import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.singletonMap;
 import static zipkin.internal.Util.checkNotNull;
 
@@ -52,6 +53,7 @@ import static zipkin.internal.Util.checkNotNull;
  * duration.
  */
 public final class TracedSession extends AbstractInvocationHandler implements LatencyTracker {
+  private static final Logger LOG = LoggerFactory.getLogger(TracedSession.class);
 
   private final ProtocolVersion version;
 
@@ -66,7 +68,7 @@ public final class TracedSession extends AbstractInvocationHandler implements La
    * Manual Propagation, as opposed to attempting to control the {@link
    * Cluster#register(LatencyTracker) latency tracker callback thread}.
    */
-  final Map<NamedBoundStatement, Span> cache = new LinkedHashMap<>();
+  final Map<NamedBoundStatement, Span> cache = Maps.newConcurrentMap();
 
   TracedSession(Session target, Brave brave, SpanCollector collector) {
     this.target = checkNotNull(target, "target");
@@ -96,9 +98,7 @@ public final class TracedSession extends AbstractInvocationHandler implements La
       brave.clientTracer().setClientSent(); // start the span and store it
       brave.clientTracer()
           .submitBinaryAnnotation("cql.query", statement.preparedStatement().getQueryString());
-      synchronized (cache) {
-        cache.put(statement, brave.clientSpanThreadBinder().getCurrentClientSpan());
-      }
+      cache.put(statement, brave.clientSpanThreadBinder().getCurrentClientSpan());
       // let go of the client span as it is only used for the RPC (will have no local children)
       brave.clientSpanThreadBinder().setCurrentSpan(null);
       return new BraveResultSetFuture(target.executeAsync(statement), brave);
@@ -113,12 +113,11 @@ public final class TracedSession extends AbstractInvocationHandler implements La
 
   @Override public void update(Host host, Statement statement, Exception e, long nanos) {
     if (!(statement instanceof NamedBoundStatement)) return;
-    Span span = null;
-    synchronized (cache) {
-      span = cache.remove(statement);
-    }
+    Span span = cache.remove(statement);
     if (span == null) {
-      checkState(!statement.isTracing(), "%s not in the cache eventhough tracing is on", statement);
+      if (statement.isTracing()) {
+        LOG.warn("{} not in the cache eventhough tracing is on", statement);
+      }
       return;
     }
     span.setDuration(nanos / 1000); // TODO: allow client tracer to end with duration
@@ -163,12 +162,12 @@ public final class TracedSession extends AbstractInvocationHandler implements La
   static class BraveResultSetFuture<T> implements ResultSetFuture {
     final ResultSetFuture delegate;
     final ServerSpanThreadBinder threadBinder;
-    final ServerSpan currentSpan;
+    final ServerSpan parent;
 
     BraveResultSetFuture(ResultSetFuture delegate, Brave brave) {
       this.delegate = delegate;
       this.threadBinder = brave.serverSpanThreadBinder();
-      this.currentSpan = threadBinder.getCurrentServerSpan();
+      this.parent = threadBinder.getCurrentServerSpan();
     }
 
     @Override public ResultSet getUninterruptibly() {
@@ -203,8 +202,12 @@ public final class TracedSession extends AbstractInvocationHandler implements La
 
     @Override public void addListener(Runnable listener, Executor executor) {
       delegate.addListener(() -> {
-        threadBinder.setCurrentSpan(currentSpan);
-        listener.run();
+        threadBinder.setCurrentSpan(parent);
+        try {
+          listener.run();
+        } finally {
+          threadBinder.setCurrentSpan(null);
+        }
       }, executor);
     }
   }

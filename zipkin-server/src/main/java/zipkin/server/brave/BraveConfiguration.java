@@ -13,7 +13,9 @@
  */
 package zipkin.server.brave;
 
+import com.github.kristofa.brave.BoundarySampler;
 import com.github.kristofa.brave.Brave;
+import com.github.kristofa.brave.Sampler;
 import com.github.kristofa.brave.ServerClientAndLocalSpanState;
 import com.github.kristofa.brave.SpanCollectorMetricsHandler;
 import com.github.kristofa.brave.ThreadLocalServerClientAndLocalSpanState;
@@ -64,6 +66,7 @@ public class BraveConfiguration {
         .flushInterval(flushInterval).build();
     return LocalSpanCollector.create(storage, config, new SpanCollectorMetricsHandler() {
       CollectorMetrics local = metrics.forTransport("local");
+
       @Override public void incrementAcceptedSpans(int i) {
         local.incrementSpans(i);
       }
@@ -79,8 +82,10 @@ public class BraveConfiguration {
         localEndpoint.serviceName);
   }
 
-  @Bean Brave brave(ServerClientAndLocalSpanState braveState, LocalSpanCollector spanCollector) {
+  @Bean Brave brave(ServerClientAndLocalSpanState braveState, LocalSpanCollector spanCollector,
+      @Value("${zipkin.self-tracing.sample-rate:1.0}") float rate) {
     return new Brave.Builder(braveState)
+        .traceSampler(rate < 0.01 ? BoundarySampler.create(rate) : Sampler.create(rate))
         .spanCollector(spanCollector)
         .build();
   }
