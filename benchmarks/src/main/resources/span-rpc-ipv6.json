@@ -1,0 +1,130 @@
+{
+  "traceId": "83c138a4ee0f3de9",
+  "name": "get",
+  "id": "d673d7abe80d2f3f",
+  "parentId": "83c138a4ee0f3de9",
+  "timestamp": 1461750491274000,
+  "duration": 51000,
+  "annotations": [
+    {
+      "timestamp": 1461750491274000,
+      "value": "cs",
+      "endpoint": {
+        "serviceName": "zipkin-web",
+        "ipv6": "2001:db8::c001"
+      }
+    },
+    {
+      "timestamp": 1461750491274000,
+      "value": "ws",
+      "endpoint": {
+        "serviceName": "zipkin-web",
+        "ipv6": "2001:db8::c001"
+      }
+    },
+    {
+      "timestamp": 1461750491298000,
+      "value": "sr",
+      "endpoint": {
+        "serviceName": "zipkin-query",
+        "ipv6": "2001:db8::c002",
+        "port": 9411
+      }
+    },
+    {
+      "timestamp": 1461750491302000,
+      "value": "ss",
+      "endpoint": {
+        "serviceName": "zipkin-query",
+        "ipv6": "2001:db8::c002",
+        "port": 9411
+      }
+    },
+    {
+      "timestamp": 1461750491325000,
+      "value": "cr",
+      "endpoint": {
+        "serviceName": "zipkin-web",
+        "ipv6": "2001:db8::c001"
+      }
+    },
+    {
+      "timestamp": 1461750491325000,
+      "value": "wr",
+      "endpoint": {
+        "serviceName": "zipkin-web",
+        "ipv6": "2001:db8::c001"
+      }
+    }
+  ],
+  "binaryAnnotations": [
+    {
+      "key": "http.path",
+      "value": "/api/v1/traces",
+      "endpoint": {
+        "serviceName": "zipkin-query",
+        "ipv6": "2001:db8::c002"
+      }
+    },
+    {
+      "key": "srv/finagle.version",
+      "value": "6.34.0",
+      "endpoint": {
+        "serviceName": "zipkin-query",
+        "ipv6": "2001:db8::c002"
+      }
+    },
+    {
+      "key": "sa",
+      "value": true,
+      "endpoint": {
+        "serviceName": "zipkin-query",
+        "ipv6": "2001:db8::c002",
+        "port": 9411
+      }
+    },
+    {
+      "key": "ca",
+      "value": true,
+      "endpoint": {
+        "serviceName": "zipkin-query",
+        "ipv6": "2001:db8::c002",
+        "port": 42291
+      }
+    },
+    {
+      "key": "http.uri",
+      "value": "/api/v1/traces",
+      "endpoint": {
+        "serviceName": "zipkin-web",
+        "ipv6": "2001:db8::c001"
+      }
+    },
+    {
+      "key": "clnt/finagle.version",
+      "value": "6.34.0",
+      "endpoint": {
+        "serviceName": "zipkin-web",
+        "ipv6": "2001:db8::c001"
+      }
+    },
+    {
+      "key": "sa",
+      "value": true,
+      "endpoint": {
+        "serviceName": "zipkin-query",
+        "ipv6": "2001:db8::c002",
+        "port": 9411
+      }
+    },
+    {
+      "key": "ca",
+      "value": true,
+      "endpoint": {
+        "serviceName": "zipkin-web",
+        "ipv6": "2001:db8::c001",
+        "port": 42291
+      }
+    }
+  ]
+}

@@ -79,9 +79,15 @@ function toSpanDepths(spans) {
   return treeDepths(entry, 1);
 }
 
-export function formatEndpoint({ipv4, port = 0, serviceName = ''}) {
+export function formatEndpoint({ipv4, ipv6, port = 0, serviceName = ''}) {
   if (serviceName) {
+    if (ipv6) {
+      return `[${ipv6}]:${port} (${serviceName})`;
+    }
     return `${ipv4}:${port} (${serviceName})`;
+  }
+  if (ipv6) {
+    return `[${ipv6}]:${port}`;
   }
   return `${ipv4}:${port}`;
 }

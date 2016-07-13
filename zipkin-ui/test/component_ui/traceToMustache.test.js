@@ -145,4 +145,14 @@ describe('formatEndpoint', () => {
       '150.151.152.153:9042'
     );
   });
+
+  it('should put ipv6 in brackets', () => {
+    formatEndpoint({ipv6: '2001:db8::c001', port: 9042, serviceName: 'cassandra'}).should.equal(
+      '[2001:db8::c001]:9042 (cassandra)'
+    );
+
+    formatEndpoint({ipv6: '2001:db8::c001', port: 9042}).should.equal(
+      '[2001:db8::c001]:9042'
+    );
+  });
 });

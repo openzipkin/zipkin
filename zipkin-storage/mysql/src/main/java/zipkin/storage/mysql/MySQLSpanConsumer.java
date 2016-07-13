@@ -29,6 +29,7 @@ import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
+import zipkin.internal.Lazy;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.StorageAdapters;
 
@@ -38,10 +39,12 @@ import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_
 final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
   private final DataSource datasource;
   private final DSLContexts context;
+  private final Lazy<Boolean> hasIpv6;
 
-  MySQLSpanConsumer(DataSource datasource, DSLContexts context) {
+  MySQLSpanConsumer(DataSource datasource, DSLContexts context, Lazy<Boolean> hasIpv6) {
     this.datasource = datasource;
     this.context = context;
+    this.hasIpv6 = hasIpv6;
   }
 
   /** Blocking version of {@link AsyncSpanConsumer#accept} */
@@ -94,6 +97,9 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
           if (annotation.endpoint != null) {
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, annotation.endpoint.serviceName);
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, annotation.endpoint.ipv4);
+            if (annotation.endpoint.ipv6 != null && hasIpv6.get()) {
+              insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6, annotation.endpoint.ipv6);
+            }
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT, annotation.endpoint.port);
           }
           inserts.add(insert.onDuplicateKeyIgnore());
@@ -110,6 +116,9 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
           if (annotation.endpoint != null) {
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, annotation.endpoint.serviceName);
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, annotation.endpoint.ipv4);
+            if (annotation.endpoint.ipv6 != null && hasIpv6.get()) {
+              insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6, annotation.endpoint.ipv6);
+            }
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT, annotation.endpoint.port);
           }
           inserts.add(insert.onDuplicateKeyIgnore());

@@ -110,6 +110,7 @@ public final class ThriftCodec implements Codec {
     final Field IPV4 = new Field(TYPE_I32, 1);
     final Field PORT = new Field(TYPE_I16, 2);
     final Field SERVICE_NAME = new Field(TYPE_STRING, 3);
+    final Field IPV6 = new Field(TYPE_STRING, 4);
 
     @Override
     public Endpoint read(ByteBuffer bytes) {
@@ -126,6 +127,8 @@ public final class ThriftCodec implements Codec {
           result.port(bytes.getShort());
         } else if (field.isEqualTo(SERVICE_NAME)) {
           result.serviceName(readUtf8(bytes));
+        } else if (field.isEqualTo(IPV6)) {
+          result.ipv6(readByteArray(bytes));
         } else {
           skip(bytes, field.type);
         }
@@ -143,6 +146,13 @@ public final class ThriftCodec implements Codec {
 
       SERVICE_NAME.write(buffer);
       writeUtf8(buffer, value.serviceName);
+
+      if (value.ipv6 != null) {
+        IPV6.write(buffer);
+        assert value.ipv6.length == 16;
+        buffer.writeInt(value.ipv6.length);
+        buffer.write(value.ipv6);
+      }
 
       buffer.writeByte(TYPE_STOP);
     }

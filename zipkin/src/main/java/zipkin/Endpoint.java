@@ -13,12 +13,13 @@
  */
 package zipkin;
 
-import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.Locale;
 import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 
+import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.checkNotNull;
 
 /**
@@ -32,11 +33,11 @@ import static zipkin.internal.Util.checkNotNull;
 public final class Endpoint {
 
   public static Endpoint create(String serviceName, int ipv4, int port) {
-    return new Endpoint(serviceName, ipv4, port == 0 ? null : (short) (port & 0xffff));
+    return new Endpoint(serviceName, ipv4, null, port == 0 ? null : (short) (port & 0xffff));
   }
 
   public static Endpoint create(String serviceName, int ipv4) {
-    return new Endpoint(serviceName, ipv4, null);
+    return new Endpoint(serviceName, ipv4, null, null);
   }
 
   /**
@@ -57,7 +58,7 @@ public final class Endpoint {
   public final String serviceName;
 
   /**
-   * IPv4 endpoint address packed into 4 bytes.
+   * IPv4 endpoint address packed into 4 bytes or zero if unknown.
    *
    * <p>Ex for the IP 1.2.3.4, it would be {@code (1 << 24) | (2 << 16) | (3 << 8) | 4}
    *
@@ -66,19 +67,29 @@ public final class Endpoint {
   public final int ipv4;
 
   /**
-   * IPv4 port or null, if not known.
+   * IPv6 endpoint address packed into 16 bytes or null if unknown.
+   *
+   * @see java.net.Inet6Address#getAddress()
+   * @since Zipkin 1.4
+   */
+  @Nullable
+  public final byte[] ipv6;
+
+  /**
+   * Port of the IP's socket or null, if not known.
    *
    * <p>Note: this is to be treated as an unsigned integer, so watch for negatives.
    *
-   * @see InetSocketAddress#getPort()
+   * @see java.net.InetSocketAddress#getPort()
    */
   @Nullable
   public final Short port;
 
-  Endpoint(String serviceName, int ipv4, Short port) {
+  Endpoint(String serviceName, int ipv4, byte[] ipv6, Short port) {
     this.serviceName = checkNotNull(serviceName, "serviceName").isEmpty() ? ""
         : serviceName.toLowerCase(Locale.ROOT);
     this.ipv4 = ipv4;
+    this.ipv6 = ipv6;
     this.port = port;
   }
 
@@ -93,6 +104,7 @@ public final class Endpoint {
   public static final class Builder {
     private String serviceName;
     private Integer ipv4;
+    private byte[] ipv6;
     private Short port;
 
     Builder() {
@@ -116,6 +128,15 @@ public final class Endpoint {
       return this;
     }
 
+    /** @see Endpoint#ipv6 */
+    public Builder ipv6(byte[] ipv6) {
+      if (ipv6 != null) {
+        checkArgument(ipv6.length == 16, "ipv6 addresses are 16 bytes: " + ipv6.length);
+        this.ipv6 = ipv6;
+      }
+      return this;
+    }
+
     /** @see Endpoint#port */
     public Builder port(Short port) {
       if (port == null || port != 0) {
@@ -125,7 +146,7 @@ public final class Endpoint {
     }
 
     public Endpoint build() {
-      return new Endpoint(serviceName, checkNotNull(ipv4, "ipv4"), port);
+      return new Endpoint(serviceName, ipv4 == null ? 0 : ipv4, ipv6, port);
     }
   }
 
@@ -143,6 +164,7 @@ public final class Endpoint {
       Endpoint that = (Endpoint) o;
       return (this.serviceName.equals(that.serviceName))
           && (this.ipv4 == that.ipv4)
+          && (Arrays.equals(this.ipv6, that.ipv6))
           && Util.equal(this.port, that.port);
     }
     return false;
@@ -155,6 +177,8 @@ public final class Endpoint {
     h ^= serviceName.hashCode();
     h *= 1000003;
     h ^= ipv4;
+    h *= 1000003;
+    h ^= Arrays.hashCode(ipv6);
     h *= 1000003;
     h ^= (port == null) ? 0 : port.hashCode();
     return h;

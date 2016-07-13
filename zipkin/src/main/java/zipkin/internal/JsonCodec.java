@@ -19,6 +19,7 @@ import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import com.squareup.moshi.Moshi;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -82,6 +83,12 @@ public final class JsonCodec implements Codec {
             }
             result.ipv4(ipv4);
             break;
+          case "ipv6":
+            String input = reader.nextString();
+            // Shouldn't hit DNS, because it's an IP string literal.
+            byte[] ipv6 = InetAddress.getByName(input).getAddress();
+            result.ipv6(ipv6);
+            break;
           case "port":
             result.port((short) reader.nextInt());
             break;
@@ -107,6 +114,9 @@ public final class JsonCodec implements Codec {
       if (value.port != null) {
         int port = value.port & 0xffff;
         if (port != 0) writer.name("port").value(port);
+      }
+      if (value.ipv6 != null) {
+        writer.name("ipv6").value(InetAddress.getByAddress(value.ipv6).getHostAddress());
       }
       writer.endObject();
     }

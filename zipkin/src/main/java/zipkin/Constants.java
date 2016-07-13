@@ -157,6 +157,8 @@ public final class Constants {
    *
    * <p>Note that RPC spans often include both client and server hosts: It is possible that only one
    * side perceived the error.
+   *
+   * @since Zipkin 1.3
    */
   public static final String ERROR = "error";
 

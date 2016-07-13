@@ -16,6 +16,7 @@ package zipkin.storage.mysql;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -26,6 +27,7 @@ import javax.sql.DataSource;
 import org.jooq.Condition;
 import org.jooq.Cursor;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Record5;
@@ -42,6 +44,7 @@ import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.CorrectForClockSkew;
 import zipkin.internal.DependencyLinkSpan;
 import zipkin.internal.DependencyLinker;
+import zipkin.internal.Lazy;
 import zipkin.internal.Nullable;
 import zipkin.internal.Pair;
 import zipkin.storage.QueryRequest;
@@ -59,23 +62,33 @@ import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.Z
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
 final class MySQLSpanStore implements SpanStore {
-  private final DataSource datasource;
-  private final DSLContexts context;
+  static final Field<?>[] ANNOTATION_FIELDS_WITHOUT_IPV6;
 
-  MySQLSpanStore(DataSource datasource, DSLContexts context) {
-    this.datasource = datasource;
-    this.context = context;
+  static {
+    ArrayList<Field<?>> list = new ArrayList(Arrays.asList(ZIPKIN_ANNOTATIONS.fields()));
+    list.remove(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6);
+    list.trimToSize();
+    ANNOTATION_FIELDS_WITHOUT_IPV6 = list.toArray(new Field<?>[list.size()]);
   }
 
-  static Endpoint endpoint(Record a) {
+  private final DataSource datasource;
+  private final DSLContexts context;
+  private final Lazy<Boolean> hasIpv6;
+
+  MySQLSpanStore(DataSource datasource, DSLContexts context, Lazy<Boolean> hasIpv6) {
+    this.datasource = datasource;
+    this.context = context;
+    this.hasIpv6 = hasIpv6;
+  }
+
+  private Endpoint endpoint(Record a) {
     String serviceName = a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME);
-    if (serviceName == null) {
-      return null;
-    }
-    Short port = a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT);
-    return port != null ?
-        Endpoint.create(serviceName, a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4), port.intValue())
-        : Endpoint.create(serviceName, a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4));
+    if (serviceName == null) return null;
+    return Endpoint.builder()
+        .serviceName(serviceName)
+        .port(a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT))
+        .ipv4(a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4))
+        .ipv6(hasIpv6.get() ? a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6) : null).build();
   }
 
   private static SelectOffsetStep<Record1<Long>> toTraceIdQuery(DSLContext context,
@@ -159,7 +172,8 @@ final class MySQLSpanStore implements SpanStore {
               groupingBy((Span s) -> s.traceId, LinkedHashMap::new, Collectors.<Span>toList()));
 
       dbAnnotations = context.get(conn)
-          .selectFrom(ZIPKIN_ANNOTATIONS)
+          .select(hasIpv6.get() ? ZIPKIN_ANNOTATIONS.fields() : ANNOTATION_FIELDS_WITHOUT_IPV6)
+          .from(ZIPKIN_ANNOTATIONS)
           .where(ZIPKIN_ANNOTATIONS.TRACE_ID.in(spansWithoutAnnotations.keySet()))
           .orderBy(ZIPKIN_ANNOTATIONS.A_TIMESTAMP.asc(), ZIPKIN_ANNOTATIONS.A_KEY.asc())
           .stream()

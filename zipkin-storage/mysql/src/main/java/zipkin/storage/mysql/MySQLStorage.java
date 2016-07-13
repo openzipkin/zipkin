@@ -19,6 +19,7 @@ import java.util.concurrent.Executor;
 import javax.sql.DataSource;
 import org.jooq.ExecuteListenerProvider;
 import org.jooq.conf.Settings;
+import zipkin.internal.Lazy;
 import zipkin.internal.Nullable;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.AsyncSpanStore;
@@ -78,6 +79,7 @@ public final class MySQLStorage implements StorageComponent {
   private final DataSource datasource;
   private final Executor executor;
   private final DSLContexts context;
+  final Lazy<Boolean> hasIpv6;
   private final SpanStore spanStore;
   private final AsyncSpanStore asyncSpanStore;
   private final AsyncSpanConsumer asyncSpanConsumer;
@@ -86,9 +88,10 @@ public final class MySQLStorage implements StorageComponent {
     this.datasource = checkNotNull(builder.datasource, "datasource");
     this.executor = checkNotNull(builder.executor, "executor");
     this.context = new DSLContexts(builder.settings, builder.listenerProvider);
-    this.spanStore = new MySQLSpanStore(datasource, context);
+    this.hasIpv6 = new HasIpv6(datasource, context);
+    this.spanStore = new MySQLSpanStore(datasource, context, hasIpv6);
     this.asyncSpanStore = blockingToAsync(spanStore, executor);
-    this.asyncSpanConsumer = blockingToAsync(new MySQLSpanConsumer(datasource, context), executor);
+    this.asyncSpanConsumer = blockingToAsync(new MySQLSpanConsumer(datasource, context, hasIpv6), executor);
   }
 
   /** Returns the session in use by this storage component. */
@@ -128,7 +131,7 @@ public final class MySQLStorage implements StorageComponent {
     try (Connection conn = datasource.getConnection()) {
       context.get(conn).truncate(ZIPKIN_SPANS).execute();
       context.get(conn).truncate(ZIPKIN_ANNOTATIONS).execute();
-    } catch (SQLException e) {
+    } catch (SQLException | RuntimeException e) {
       throw new AssertionError(e);
     }
   }

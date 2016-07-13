@@ -30,6 +30,7 @@
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
     <jmh.version>1.12</jmh.version>
+    <libthrift.version>0.9.3</libthrift.version>
   </properties>
 
   <dependencies>
@@ -41,6 +42,12 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.thrift</groupId>
+      <artifactId>libthrift</artifactId>
+      <version>${libthrift.version}</version>
     </dependency>
 
     <dependency>
