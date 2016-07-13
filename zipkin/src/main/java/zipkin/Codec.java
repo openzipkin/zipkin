@@ -37,6 +37,11 @@ public interface Codec {
 
   byte[] writeTraces(List<List<Span>> value);
 
+  /** throws {@linkplain IllegalArgumentException} if the dependency link couldn't be decoded */
+  DependencyLink readDependencyLink(byte[] bytes);
+
+  byte[] writeDependencyLink(DependencyLink value);
+
   /** throws {@linkplain IllegalArgumentException} if the dependency links couldn't be decoded */
   List<DependencyLink> readDependencyLinks(byte[] bytes);
 

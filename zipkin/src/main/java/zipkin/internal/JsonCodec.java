@@ -454,6 +454,7 @@ public final class JsonCodec implements Codec {
   // a large encoded list.
 
   /** throws {@linkplain IllegalArgumentException} if the dependency link couldn't be decoded */
+  @Override
   public DependencyLink readDependencyLink(byte[] bytes) {
     checkArgument(bytes.length > 0, "Empty input reading DependencyLink");
     try {
@@ -465,6 +466,7 @@ public final class JsonCodec implements Codec {
 
   // Added since JSON-based storage usually works better with single documents rather than
   // a large encoded list.
+  @Override
   public byte[] writeDependencyLink(DependencyLink value) {
     Buffer buffer = new Buffer();
     write(DEPENDENCY_LINK_ADAPTER, value, buffer);

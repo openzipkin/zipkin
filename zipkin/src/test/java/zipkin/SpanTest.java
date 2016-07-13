@@ -13,7 +13,11 @@
  */
 package zipkin;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
+import okio.Buffer;
+import okio.ByteString;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -158,5 +162,29 @@ public class SpanTest {
 
     assertThat(span.duration)
         .isNull();
+  }
+
+  @Test
+  public void serialization() throws Exception {
+    Span span = TestObjects.TRACE.get(0);
+
+    Buffer buffer = new Buffer();
+    new ObjectOutputStream(buffer.outputStream()).writeObject(span);
+
+    assertThat(new ObjectInputStream(buffer.inputStream()).readObject())
+        .isEqualTo(span);
+  }
+
+  @Test
+  public void serializationUsesThrift() throws Exception {
+    Span span = TestObjects.TRACE.get(0);
+
+    Buffer buffer = new Buffer();
+    new ObjectOutputStream(buffer.outputStream()).writeObject(span);
+
+    byte[] thrift = Codec.THRIFT.writeSpan(span);
+
+    assertThat(buffer.indexOf(ByteString.of(thrift)))
+        .isPositive();
   }
 }

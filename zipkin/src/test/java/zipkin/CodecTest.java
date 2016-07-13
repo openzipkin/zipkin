@@ -52,6 +52,14 @@ public abstract class CodecTest {
   }
 
   @Test
+  public void dependencyLinkRoundTrip() throws IOException {
+    DependencyLink link = DependencyLink.create("foo", "bar", 2);
+    byte[] bytes = codec().writeDependencyLink(link);
+    assertThat(codec().readDependencyLink(bytes))
+        .isEqualTo(link);
+  }
+
+  @Test
   public void dependencyLinksRoundTrip() throws IOException {
     List<DependencyLink> links = asList(
         DependencyLink.create("foo", "bar", 2),

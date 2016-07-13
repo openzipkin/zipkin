@@ -13,11 +13,15 @@
  */
 package zipkin;
 
+import java.io.ObjectStreamException;
+import java.io.Serializable;
+import java.io.StreamCorruptedException;
 import zipkin.internal.JsonCodec;
 
 import static zipkin.internal.Util.checkNotNull;
 
-public final class DependencyLink {
+public final class DependencyLink implements Serializable {
+  private static final long serialVersionUID = 0L;
 
   public static DependencyLink create(String parent, String child, long callCount) {
     return new DependencyLink(parent, child, callCount);
@@ -109,5 +113,28 @@ public final class DependencyLink {
     h *= 1000003;
     h ^= (callCount >>> 32) ^ callCount;
     return h;
+  }
+
+  // Since this is an immutable object, and we have thrift handy, defer to a serialization proxy.
+  final Object writeReplace() throws ObjectStreamException {
+    return new SerializedForm(Codec.THRIFT.writeDependencyLink(this));
+  }
+
+  static final class SerializedForm implements Serializable {
+    private static final long serialVersionUID = 0L;
+
+    private final byte[] bytes;
+
+    SerializedForm(byte[] bytes) {
+      this.bytes = bytes;
+    }
+
+    Object readResolve() throws ObjectStreamException {
+      try {
+        return Codec.THRIFT.readDependencyLink(bytes);
+      } catch (IllegalArgumentException e) {
+        throw new StreamCorruptedException(e.getMessage());
+      }
+    }
   }
 }
