@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
-import zipkin.Constants;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
@@ -168,21 +167,7 @@ public final class InMemorySpanStore implements SpanStore {
             timestamp > endTs) {
           continue;
         }
-        DependencyLinkSpan.Builder linkSpan = DependencyLinkSpan.builder(s.parentId, s.id);
-        for (BinaryAnnotation a : s.binaryAnnotations) {
-          if (a.key.equals(Constants.CLIENT_ADDR) && a.endpoint != null) {
-            linkSpan.caService(a.endpoint.serviceName);
-          } else if (a.key.equals(Constants.SERVER_ADDR) && a.endpoint != null) {
-            linkSpan.saService(a.endpoint.serviceName);
-          }
-        }
-        for (Annotation a : s.annotations) {
-          if (a.value.equals(Constants.SERVER_RECV) && a.endpoint != null) {
-            linkSpan.srService(a.endpoint.serviceName);
-            break;
-          }
-        }
-        linkSpans.add(linkSpan.build());
+        linkSpans.add(DependencyLinkSpan.from(s));
       }
 
       linksBuilder.putTrace(linkSpans.iterator());
