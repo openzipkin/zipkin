@@ -13,7 +13,11 @@
  */
 package zipkin.internal;
 
-import static java.lang.String.format;
+import zipkin.Annotation;
+import zipkin.BinaryAnnotation;
+import zipkin.Constants;
+import zipkin.Span;
+
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.internal.Util.equal;
 
@@ -64,6 +68,24 @@ public final class DependencyLinkSpan {
 
   public static Builder builder(Long parentId, long spanId){
     return new Builder(parentId, spanId);
+  }
+
+  public static DependencyLinkSpan from(Span s) {
+    DependencyLinkSpan.Builder linkSpan = DependencyLinkSpan.builder(s.parentId, s.id);
+    for (BinaryAnnotation a : s.binaryAnnotations) {
+      if (a.key.equals(Constants.CLIENT_ADDR) && a.endpoint != null) {
+        linkSpan.caService(a.endpoint.serviceName);
+      } else if (a.key.equals(Constants.SERVER_ADDR) && a.endpoint != null) {
+        linkSpan.saService(a.endpoint.serviceName);
+      }
+    }
+    for (Annotation a : s.annotations) {
+      if (a.value.equals(Constants.SERVER_RECV) && a.endpoint != null) {
+        linkSpan.srService(a.endpoint.serviceName);
+        break;
+      }
+    }
+    return linkSpan.build();
   }
 
   public static final class Builder {
