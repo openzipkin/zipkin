@@ -406,6 +406,16 @@ public final class ThriftCodec implements Codec {
 
   static final ThriftAdapter<List<DependencyLink>> DEPENDENCY_LINKS_ADAPTER = new ListAdapter<>(DEPENDENCY_LINK_ADAPTER);
 
+  @Override
+  public DependencyLink readDependencyLink(byte[] bytes) {
+    return read(DEPENDENCY_LINK_ADAPTER, ByteBuffer.wrap(bytes));
+  }
+
+  @Override
+  public byte[] writeDependencyLink(DependencyLink value) {
+    return write(DEPENDENCY_LINK_ADAPTER, value);
+  }
+
   /**
    * Added for DataStax Cassandra driver, which returns data in ByteBuffers. The implementation
    * takes care not to re-buffer the data.

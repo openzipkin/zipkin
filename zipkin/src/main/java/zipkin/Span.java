@@ -13,6 +13,9 @@
  */
 package zipkin;
 
+import java.io.ObjectStreamException;
+import java.io.Serializable;
+import java.io.StreamCorruptedException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -40,7 +43,9 @@ import static zipkin.internal.Util.writeHexLong;
  * <p>Span identifiers are packed into longs, but should be treated opaquely. String encoding is
  * fixed-width lower-hex, to avoid signed interpretation.
  */
-public final class Span implements Comparable<Span> {
+public final class Span implements Comparable<Span>, Serializable {
+  private static final long serialVersionUID = 0L;
+
   /**
    * Unique 8-byte identifier for a trace, set on all spans within it.
    */
@@ -397,5 +402,28 @@ public final class Span implements Comparable<Span> {
       result.add(a.endpoint.serviceName);
     }
     return result;
+  }
+
+  // Since this is an immutable object, and we have thrift handy, defer to a serialization proxy.
+  final Object writeReplace() throws ObjectStreamException {
+    return new SerializedForm(Codec.THRIFT.writeSpan(this));
+  }
+
+  static final class SerializedForm implements Serializable {
+    private static final long serialVersionUID = 0L;
+
+    private final byte[] bytes;
+
+    SerializedForm(byte[] bytes) {
+      this.bytes = bytes;
+    }
+
+    Object readResolve() throws ObjectStreamException {
+      try {
+        return Codec.THRIFT.readSpan(bytes);
+      } catch (IllegalArgumentException e) {
+        throw new StreamCorruptedException(e.getMessage());
+      }
+    }
   }
 }
