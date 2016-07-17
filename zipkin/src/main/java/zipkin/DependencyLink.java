@@ -42,11 +42,11 @@ public final class DependencyLink implements Serializable {
     this.callCount = callCount;
   }
 
-  public Builder toBuilder(){
+  public Builder toBuilder() {
     return new Builder(this);
   }
 
-  public static Builder builder(){
+  public static Builder builder() {
     return new Builder();
   }
 

@@ -29,7 +29,7 @@ enum ElasticsearchTestGraph {
 
     @Override protected ElasticsearchStorage compute() {
       if (ex != null) throw ex;
-      ElasticsearchStorage result = new ElasticsearchStorage.Builder().build();
+      ElasticsearchStorage result = new ElasticsearchStorage.Builder().index("test_zipkin").build();
       CheckResult check = result.check();
       if (check.ok) return result;
       throw ex = new AssumptionViolatedException(check.exception.getMessage());

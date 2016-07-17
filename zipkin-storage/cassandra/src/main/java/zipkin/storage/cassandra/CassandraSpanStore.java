@@ -50,9 +50,9 @@ import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.CorrectForClockSkew;
 import zipkin.internal.Dependencies;
+import zipkin.internal.DependencyLinker;
 import zipkin.internal.MergeById;
 import zipkin.internal.Nullable;
-import zipkin.internal.Pair;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.guava.GuavaSpanStore;
 
@@ -368,24 +368,14 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     INSTANCE;
 
     @Override public List<DependencyLink> apply(ResultSet rs) {
-      // Combine the dependency links from startEpochDayMillis until endEpochDayMillis
-      Map<Pair<String>, Long> links = new LinkedHashMap<>();
-
+      ImmutableList.Builder<DependencyLink> unmerged = ImmutableList.builder();
       for (Row row : rs) {
         ByteBuffer encodedDayOfDependencies = row.getBytes("dependencies");
         for (DependencyLink link : Dependencies.fromThrift(encodedDayOfDependencies).links) {
-          Pair<String> parentChild = Pair.create(link.parent, link.child);
-          long callCount = links.containsKey(parentChild) ? links.get(parentChild) : 0L;
-          callCount += link.callCount;
-          links.put(parentChild, callCount);
+          unmerged.add(link);
         }
       }
-
-      List<DependencyLink> result = new ArrayList<>(links.size());
-      for (Map.Entry<Pair<String>, Long> link : links.entrySet()) {
-        result.add(DependencyLink.create(link.getKey()._1, link.getKey()._2, link.getValue()));
-      }
-      return result;
+      return DependencyLinker.merge(unmerged.build());
     }
   }
 
