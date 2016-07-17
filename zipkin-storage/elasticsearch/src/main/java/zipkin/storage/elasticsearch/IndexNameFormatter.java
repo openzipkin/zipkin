@@ -15,6 +15,7 @@ package zipkin.storage.elasticsearch;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 final class IndexNameFormatter {
 
@@ -28,7 +29,9 @@ final class IndexNameFormatter {
     this.index = index;
     this.dateFormat = new ThreadLocal<SimpleDateFormat>() {
       @Override protected SimpleDateFormat initialValue() {
-        return new SimpleDateFormat(DAILY_INDEX_FORMAT);
+        SimpleDateFormat result = new SimpleDateFormat(DAILY_INDEX_FORMAT);
+        result.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return result;
       }
     };
   }
