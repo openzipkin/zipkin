@@ -169,4 +169,18 @@ public class DependencyLinkerTest {
           .isEmpty();
     }
   }
+
+  @Test
+  public void merge() {
+    List<DependencyLink> links = asList(
+        DependencyLink.create("client", "server", 2L),
+        DependencyLink.create("client", "server", 2L),
+        DependencyLink.create("client", "client", 1L)
+    );
+
+    assertThat(DependencyLinker.merge(links)).containsExactly(
+        DependencyLink.create("client", "server", 4L),
+        DependencyLink.create("client", "client", 1L)
+    );
+  }
 }

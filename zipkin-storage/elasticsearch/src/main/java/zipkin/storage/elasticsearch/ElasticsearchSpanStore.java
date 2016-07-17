@@ -42,12 +42,11 @@ import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.nested.Nested;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Order;
-import org.elasticsearch.search.aggregations.metrics.sum.Sum;
-import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
 import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.CorrectForClockSkew;
+import zipkin.internal.DependencyLinker;
 import zipkin.internal.MergeById;
 import zipkin.internal.Nullable;
 import zipkin.internal.Util;
@@ -332,12 +331,6 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
         strings.toArray(new String[strings.size()]))
         .setIndicesOptions(IndicesOptions.lenientExpandOpen())
         .setTypes(ElasticsearchConstants.DEPENDENCY_LINK)
-        .addAggregation(AggregationBuilders.terms("parent_child_agg")
-            .field("parent_child")
-            .subAggregation(AggregationBuilders.topHits("hits_agg")
-                .setSize(1))
-            .subAggregation(AggregationBuilders.sum("callCount_agg")
-                .field("callCount")))
         .setQuery(matchAllQuery());
 
     return Futures.transform(ElasticFutures.toGuava(elasticRequest.execute()), ConvertDependenciesResponse.INSTANCE);
@@ -347,24 +340,17 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     INSTANCE;
 
     @Override public List<DependencyLink> apply(SearchResponse response) {
-      if (response.getAggregations() == null) {
+      if (response.getHits() == null) {
         return Collections.emptyList();
       }
-      Terms parentChildAgg = response.getAggregations().get("parent_child_agg");
-      if (parentChildAgg == null) {
-        return Collections.emptyList();
-      }
-      ImmutableList.Builder<DependencyLink> links = ImmutableList.builder();
-      for (Terms.Bucket bucket : parentChildAgg.getBuckets()) {
-        TopHits hitsAgg = bucket.getAggregations().get("hits_agg");
-        Sum callCountAgg = bucket.getAggregations().get("callCount_agg");
-        // We would have no bucket if there wasn't a hit, so this should always be non-empty.
-        SearchHit hit = hitsAgg.getHits().getAt(0);
+
+      ImmutableList.Builder<DependencyLink> unmerged = ImmutableList.builder();
+      for (SearchHit hit : response.getHits()) {
         DependencyLink link = Codec.JSON.readDependencyLink(hit.getSourceRef().toBytes());
-        link = link.toBuilder().callCount((long) callCountAgg.getValue()).build();
-        links.add(link);
+        unmerged.add(link);
       }
-      return links.build();
+
+      return DependencyLinker.merge(unmerged.build());
     }
   }
 

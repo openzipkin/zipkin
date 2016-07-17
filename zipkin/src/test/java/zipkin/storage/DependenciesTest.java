@@ -84,6 +84,16 @@ public abstract class DependenciesTest {
         .containsOnlyElementsOf(LINKS);
   }
 
+  /** It should be safe to run dependency link jobs twice */
+  @Test
+  public void replayOverwrites() {
+    processDependencies(TRACE);
+    processDependencies(TRACE);
+
+    assertThat(store().getDependencies(TODAY + 1000L, null))
+        .containsOnlyElementsOf(LINKS);
+  }
+
   /** Edge-case when there are no spans, or instrumentation isn't logging annotations properly. */
   @Test
   public void empty() {

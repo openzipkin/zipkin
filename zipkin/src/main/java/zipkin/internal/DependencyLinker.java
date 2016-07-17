@@ -29,8 +29,7 @@ import static java.util.logging.Level.FINE;
  * <p>This implementation traverses the tree, and only creates links between {@link
  * DependencyLinkSpan.Kind#SERVER server} spans. One exception is at the bottom of the trace tree.
  * {@link DependencyLinkSpan.Kind#CLIENT client} spans that record their {@link
- * DependencyLinkSpan#peerService peer} are included, as this accounts for uninstrumented
- * services.
+ * DependencyLinkSpan#peerService peer} are included, as this accounts for uninstrumented services.
  */
 public final class DependencyLinker {
   private static final Logger logger = Logger.getLogger(DependencyLinker.class.getName());
@@ -117,6 +116,24 @@ public final class DependencyLinker {
     List<DependencyLink> result = new ArrayList<>(linkMap.size());
     for (Map.Entry<Pair<String>, Long> entry : linkMap.entrySet()) {
       result.add(DependencyLink.create(entry.getKey()._1, entry.getKey()._2, entry.getValue()));
+    }
+    return result;
+  }
+
+  /** links are merged by mapping to parent/child and summing corresponding links */
+  public static List<DependencyLink> merge(Iterable<DependencyLink> in) {
+    Map<Pair<String>, Long> links = new LinkedHashMap<>();
+
+    for (DependencyLink link : in) {
+      Pair<String> parentChild = Pair.create(link.parent, link.child);
+      long callCount = links.containsKey(parentChild) ? links.get(parentChild) : 0L;
+      callCount += link.callCount;
+      links.put(parentChild, callCount);
+    }
+
+    List<DependencyLink> result = new ArrayList<>(links.size());
+    for (Map.Entry<Pair<String>, Long> link : links.entrySet()) {
+      result.add(DependencyLink.create(link.getKey()._1, link.getKey()._2, link.getValue()));
     }
     return result;
   }

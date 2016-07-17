@@ -140,10 +140,10 @@ public final class ElasticsearchStorage
       request.add(lazyClient.get().prepareIndex(
           indexNameFormatter.indexNameForTimestamp(midnight),
           ElasticsearchConstants.DEPENDENCY_LINK)
+          .setId(link.parent + "|" + link.child) // Unique constraint
           .setSource(
               "parent", link.parent,
               "child", link.child,
-              "parent_child", link.parent + "|" + link.child,  // For aggregating callCount
               "callCount", link.callCount));
     }
     request.execute().actionGet();
