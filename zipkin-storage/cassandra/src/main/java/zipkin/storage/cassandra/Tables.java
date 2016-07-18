@@ -72,7 +72,7 @@ final class Tables {
    *
    * <p>To keep the size of this index reasonable, {@link zipkin.Constants#CORE_ANNOTATIONS} are not
    * indexed. For example, "service:sr" won't be stored, as it isn't supported to search by core
-   * annotations.
+   * annotations. Also, binary annotation values longer than 256 characters are not indexed.
    *
    * <p>Lookups are by equals (not partial match), so it is expected that {@link zipkin.Annotation}
    * and {@link zipkin.BinaryAnnotation} keys and values will be low or bounded cardinality. To

@@ -39,6 +39,14 @@ import static zipkin.internal.Util.sortedList;
 
 final class CassandraUtil {
 
+  /**
+   * Zipkin's {@link QueryRequest#binaryAnnotations} are equals match. Not all binary annotations
+   * are lookup keys. For example, sql query isn't something that is likely to be looked up by value
+   * and indexing that could add a potentially kilobyte partition key on {@link
+   * Tables#ANNOTATIONS_INDEX}
+   */
+  static final int LONGEST_VALUE_TO_INDEX = 256;
+
   // Time window covered by a single bucket of the Span Duration Index, in seconds. Default: 1hr
   private static final long DURATION_INDEX_BUCKET_WINDOW_SECONDS
       = Long.getLong("zipkin.store.cassandra.internal.durationIndexBucket", 60 * 60);
@@ -82,7 +90,11 @@ final class CassandraUtil {
     for (BinaryAnnotation b : span.binaryAnnotations) {
       if (b.type == BinaryAnnotation.Type.STRING
           && b.endpoint != null
-          && !b.endpoint.serviceName.isEmpty()) {
+          && !b.endpoint.serviceName.isEmpty()
+          && b.value.length <= LONGEST_VALUE_TO_INDEX * 4) { // UTF_8 is up to 4bytes/char
+        String value = new String(b.value, UTF_8);
+        if (value.length() > LONGEST_VALUE_TO_INDEX) continue;
+
         annotationKeys.add(b.endpoint.serviceName + ":" + b.key);
         annotationKeys.add(b.endpoint.serviceName + ":" + b.key + ":" + new String(b.value, UTF_8));
       }
