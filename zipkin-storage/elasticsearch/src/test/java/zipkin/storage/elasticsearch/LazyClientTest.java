@@ -13,6 +13,10 @@
  */
 package zipkin.storage.elasticsearch;
 
+import org.elasticsearch.client.transport.NoNodeAvailableException;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.transport.TransportAddress;
+import org.junit.AssumptionViolatedException;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
@@ -48,5 +52,19 @@ public class LazyClientTest {
     assertThat(lazyClient.indexTemplate)
         .contains("    \"index.number_of_shards\": 30,\n"
             + "    \"index.number_of_replicas\": 0,");
+  }
+
+  @Test
+  public void portDefaultsTo9300() {
+    try (LazyClient lazyClient = new LazyClient(new ElasticsearchStorage.Builder()
+        .hosts(asList("localhost")))) {
+
+      assertThat(((TransportClient) lazyClient.get()).transportAddresses())
+          .extracting(TransportAddress::getPort)
+          .containsOnly(9300);
+
+    } catch (NoNodeAvailableException e) {
+      throw new AssumptionViolatedException(e.getMessage());
+    }
   }
 }

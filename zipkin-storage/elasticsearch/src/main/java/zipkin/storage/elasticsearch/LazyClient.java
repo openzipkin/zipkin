@@ -60,7 +60,7 @@ final class LazyClient extends LazyCloseable<Client> {
         .settings(settings)
         .build();
     for (String host : hosts) {
-      HostAndPort hostAndPort = HostAndPort.fromString(host);
+      HostAndPort hostAndPort = HostAndPort.fromString(host).withDefaultPort(9300);
       try {
         client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(
             hostAndPort.getHostText()), hostAndPort.getPort()));
