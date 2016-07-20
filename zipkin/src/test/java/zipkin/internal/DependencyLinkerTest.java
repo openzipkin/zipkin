@@ -44,9 +44,9 @@ public class DependencyLinkerTest {
   @Test
   public void doesntLinkUnknownRootSpans() {
     List<DependencyLinkSpan> unknownRootSpans = asList(
-        new DependencyLinkSpan(Kind.UNKNOWN, null, 1L, null, null),
-        new DependencyLinkSpan(Kind.UNKNOWN, null, 1L, "server", "client"),
-        new DependencyLinkSpan(Kind.UNKNOWN, null, 1L, "client", "server")
+        new DependencyLinkSpan(1L, null, 1L, Kind.UNKNOWN, null, null),
+        new DependencyLinkSpan(1L, null, 1L, Kind.UNKNOWN, "server", "client"),
+        new DependencyLinkSpan(1L, null, 1L, Kind.UNKNOWN, "client", "server")
     );
 
     for (DependencyLinkSpan span : unknownRootSpans) {
@@ -63,8 +63,8 @@ public class DependencyLinkerTest {
   @Test
   public void linksSpansDirectedByKind() {
     List<DependencyLinkSpan> validRootSpans = asList(
-        new DependencyLinkSpan(Kind.SERVER, null, 1L, "server", "client"),
-        new DependencyLinkSpan(Kind.CLIENT, null, 1L, "client", "server")
+        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, "server", "client"),
+        new DependencyLinkSpan(1L, null, 1L, Kind.CLIENT, "client", "server")
     );
 
     for (DependencyLinkSpan span : validRootSpans) {
@@ -77,9 +77,9 @@ public class DependencyLinkerTest {
   @Test
   public void callsAgainstTheSameLinkIncreasesCallCount_span() {
     List<DependencyLinkSpan> trace = asList(
-        new DependencyLinkSpan(Kind.SERVER, null, 1L, "client", null),
-        new DependencyLinkSpan(Kind.CLIENT, 1L, 2L, null, "server"),
-        new DependencyLinkSpan(Kind.CLIENT, 1L, 3L, null, "server")
+        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, "client", null),
+        new DependencyLinkSpan(1L, 1L, 2L, Kind.CLIENT, null, "server"),
+        new DependencyLinkSpan(1L, 1L, 3L, Kind.CLIENT, null, "server")
     );
 
     assertThat(new DependencyLinker()
@@ -90,8 +90,8 @@ public class DependencyLinkerTest {
   @Test
   public void callsAgainstTheSameLinkIncreasesCallCount_trace() {
     List<DependencyLinkSpan> trace = asList(
-        new DependencyLinkSpan(Kind.SERVER, null, 1L, "client", null),
-        new DependencyLinkSpan(Kind.CLIENT, 1L, 2L, null, "server")
+        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, "client", null),
+        new DependencyLinkSpan(1L, 1L, 2L, Kind.CLIENT, null, "server")
     );
 
     assertThat(new DependencyLinker()
@@ -108,12 +108,12 @@ public class DependencyLinkerTest {
   public void singleHostSpansResultInASingleCallCount() {
     List<List<DependencyLinkSpan>> singleLinks = asList(
         asList(
-            new DependencyLinkSpan(Kind.CLIENT, null, 1L, "client", "server"),
-            new DependencyLinkSpan(Kind.SERVER, 1L, 2L, "server", null)
+            new DependencyLinkSpan(1L, null, 1L, Kind.CLIENT, "client", "server"),
+            new DependencyLinkSpan(1L, 1L, 2L, Kind.SERVER, "server", null)
         ),
         asList(
-            new DependencyLinkSpan(Kind.SERVER, null, 1L, "client", null),
-            new DependencyLinkSpan(Kind.CLIENT, 1L, 2L, "client", "server")
+            new DependencyLinkSpan(3L, null, 3L, Kind.SERVER, "client", null),
+            new DependencyLinkSpan(3L, 3L, 4L, Kind.CLIENT, "client", "server")
         )
     );
 
@@ -131,10 +131,11 @@ public class DependencyLinkerTest {
   @Test
   public void intermediatedClientSpansMissingLocalServiceNameLinkToNearestServer() {
     List<DependencyLinkSpan> trace = asList(
-        new DependencyLinkSpan(Kind.SERVER, null, 1L, "client", null),
-        new DependencyLinkSpan(Kind.UNKNOWN, 1L, 2L, null, null), // possibly a local fan-out span
-        new DependencyLinkSpan(Kind.CLIENT, 2L, 3L, null, "server"),
-        new DependencyLinkSpan(Kind.CLIENT, 2L, 4L, null, "server")
+        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, "client", null),
+        new DependencyLinkSpan(1L, 1L, 2L, Kind.UNKNOWN, null, null),
+        // possibly a local fan-out span
+        new DependencyLinkSpan(1L, 2L, 3L, Kind.CLIENT, null, "server"),
+        new DependencyLinkSpan(1L, 2L, 4L, Kind.CLIENT, null, "server")
     );
 
     assertThat(new DependencyLinker()
@@ -146,8 +147,8 @@ public class DependencyLinkerTest {
   @Test
   public void linksLoopbackSpans() {
     List<DependencyLinkSpan> validRootSpans = asList(
-        new DependencyLinkSpan(Kind.SERVER, null, 1L, "service", "service"),
-        new DependencyLinkSpan(Kind.CLIENT, null, 1L, "service", "service")
+        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, "service", "service"),
+        new DependencyLinkSpan(2L, null, 2L, Kind.CLIENT, "service", "service")
     );
 
     for (DependencyLinkSpan span : validRootSpans) {
@@ -164,12 +165,12 @@ public class DependencyLinkerTest {
   @Test
   public void cannotLinkSingleSpanWithoutBothServiceNames() {
     List<DependencyLinkSpan> incompleteRootSpans = asList(
-        new DependencyLinkSpan(Kind.SERVER, null, 1L, null, null),
-        new DependencyLinkSpan(Kind.SERVER, null, 1L, "server", null),
-        new DependencyLinkSpan(Kind.SERVER, null, 1L, null, "client"),
-        new DependencyLinkSpan(Kind.CLIENT, null, 1L, null, null),
-        new DependencyLinkSpan(Kind.CLIENT, null, 1L, "client", null),
-        new DependencyLinkSpan(Kind.CLIENT, null, 1L, null, "server")
+        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, null, null),
+        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, "server", null),
+        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, null, "client"),
+        new DependencyLinkSpan(1L, null, 1L, Kind.CLIENT, null, null),
+        new DependencyLinkSpan(1L, null, 1L, Kind.CLIENT, "client", null),
+        new DependencyLinkSpan(1L, null, 1L, Kind.CLIENT, null, "server")
     );
 
     for (DependencyLinkSpan span : incompleteRootSpans) {

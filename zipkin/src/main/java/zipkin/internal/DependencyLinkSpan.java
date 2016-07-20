@@ -27,7 +27,6 @@ import static zipkin.internal.Util.equal;
  */
 // fields not exposed as public to further discourage use as a general type
 public final class DependencyLinkSpan {
-
   /**
    * Indicates the primary span type.
    */
@@ -38,40 +37,71 @@ public final class DependencyLinkSpan {
     UNKNOWN
   }
 
-  final Kind kind;
+  final long traceId;
   @Nullable
   final Long parentId;
   final long id;
+  final Kind kind;
   @Nullable
   final String service;
   @Nullable
   final String peerService;
 
-  DependencyLinkSpan(Kind kind, Long parentId, long id, String service, String peerService) {
-    this.kind = checkNotNull(kind, "kind");
+  DependencyLinkSpan(long traceId, Long parentId, long id, Kind kind, String service,
+      String peerService) {
+    this.traceId = traceId;
     this.parentId = parentId;
     this.id = id;
+    this.kind = checkNotNull(kind, "kind");
     this.service = service;
     this.peerService = peerService;
   }
 
   @Override public String toString() {
-    StringBuilder json = new StringBuilder("{\"kind\": \"").append(kind).append('\"');
+    StringBuilder json = new StringBuilder();
+    json.append("{\"traceId\": \"").append(Util.toLowerHex(traceId)).append('\"');
     if (parentId != null) {
       json.append(", \"parentId\": \"").append(Util.toLowerHex(parentId)).append('\"');
     }
     json.append(", \"id\": \"").append(Util.toLowerHex(id)).append('\"');
+    json.append(", \"kind\": \"").append(kind).append('\"');
     if (service != null) json.append(", \"service\": \"").append(service).append('\"');
     if (peerService != null) json.append(", \"peerService\": \"").append(peerService).append('\"');
     return json.append("}").toString();
   }
 
-  public static Builder builder(Long parentId, long spanId){
-    return new Builder(parentId, spanId);
+  /** Only considers ID fields, as these spans are not expected to repeat */
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) return true;
+    if (o instanceof Span) {
+      Span that = (Span) o;
+      return (this.traceId == that.traceId)
+          && equal(this.parentId, that.parentId)
+          && (this.id == that.id);
+    }
+    return false;
+  }
+
+  /** Only considers ID fields, as these spans are not expected to repeat */
+  @Override
+  public int hashCode() {
+    int h = 1;
+    h *= 1000003;
+    h ^= (traceId >>> 32) ^ traceId;
+    h *= 1000003;
+    h ^= (parentId == null) ? 0 : parentId.hashCode();
+    h *= 1000003;
+    h ^= (id >>> 32) ^ id;
+    return h;
+  }
+
+  public static Builder builder(long traceId, Long parentId, long spanId) {
+    return new Builder(traceId, parentId, spanId);
   }
 
   public static DependencyLinkSpan from(Span s) {
-    DependencyLinkSpan.Builder linkSpan = DependencyLinkSpan.builder(s.parentId, s.id);
+    DependencyLinkSpan.Builder linkSpan = DependencyLinkSpan.builder(s.traceId, s.parentId, s.id);
     for (BinaryAnnotation a : s.binaryAnnotations) {
       if (a.key.equals(Constants.CLIENT_ADDR) && a.endpoint != null) {
         linkSpan.caService(a.endpoint.serviceName);
@@ -89,13 +119,15 @@ public final class DependencyLinkSpan {
   }
 
   public static final class Builder {
+    private final long traceId;
     private final Long parentId;
     private final long spanId;
     private String srService;
     private String caService;
     private String saService;
 
-    Builder(Long parentId, long spanId) {
+    Builder(long traceId, Long parentId, long spanId) {
+      this.traceId = traceId;
       this.spanId = spanId;
       this.parentId = parentId;
     }
@@ -134,11 +166,11 @@ public final class DependencyLinkSpan {
         caService = null;
       }
       if (srService != null) {
-        return new DependencyLinkSpan(Kind.SERVER, parentId, spanId, srService, caService);
+        return new DependencyLinkSpan(traceId, parentId, spanId, Kind.SERVER, srService, caService);
       } else if (saService != null) {
-        return new DependencyLinkSpan(Kind.CLIENT, parentId, spanId, caService, saService);
+        return new DependencyLinkSpan(traceId, parentId, spanId, Kind.CLIENT, caService, saService);
       }
-      return new DependencyLinkSpan(Kind.UNKNOWN, parentId, spanId, null, null);
+      return new DependencyLinkSpan(traceId, parentId, spanId, Kind.UNKNOWN, null, null);
     }
   }
 }
