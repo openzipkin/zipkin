@@ -13,10 +13,10 @@
  */
 package zipkin.server;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.zip.DataFormatException;
-import java.util.zip.Inflater;
+import java.util.zip.GZIPInputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,8 +47,8 @@ public class ZipkinHttpCollector {
   final CollectorMetrics metrics;
   final Collector collector;
 
-  @Autowired
-  ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics) {
+  @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler,
+      CollectorMetrics metrics) {
     this.metrics = metrics.forTransport("http");
     this.collector = Collector.builder(getClass())
         .storage(storage).sampler(sampler).metrics(this.metrics).build();
@@ -81,7 +81,8 @@ public class ZipkinHttpCollector {
         body = gunzip(body);
       } catch (IOException e) {
         metrics.incrementMessagesDropped();
-        result.setResult(ResponseEntity.badRequest().body("Cannot gunzip spans\n"));
+        result.setResult(
+            ResponseEntity.badRequest().body("Cannot gunzip spans: " + e.getMessage() + "\n"));
         return result;
       }
     }
@@ -107,16 +108,14 @@ public class ZipkinHttpCollector {
   };
 
   static byte[] gunzip(byte[] input) throws IOException {
-    Inflater inflater = new Inflater();
-    inflater.setInput(input);
+    GZIPInputStream in = new GZIPInputStream(new ByteArrayInputStream(input));
     try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream(input.length)) {
-      while (!inflater.finished()) {
-        int count = inflater.inflate(GZIP_BUFFER.get());
-        outputStream.write(GZIP_BUFFER.get(), 0, count);
+      byte[] buf = GZIP_BUFFER.get();
+      int len;
+      while ((len = in.read(buf)) > 0) {
+        outputStream.write(buf, 0, len);
       }
       return outputStream.toByteArray();
-    } catch (DataFormatException e) {
-      throw new IOException(e.getMessage(), e);
     }
   }
 }
