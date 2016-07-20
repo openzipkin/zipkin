@@ -63,6 +63,7 @@ import static com.google.common.util.concurrent.Futures.allAsList;
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.transform;
+import static zipkin.internal.Util.getDays;
 import static zipkin.internal.Util.midnightUTC;
 
 public final class CassandraSpanStore implements GuavaSpanStore {
@@ -351,10 +352,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
   @Override public ListenableFuture<List<DependencyLink>> getDependencies(long endTs,
       @Nullable Long lookback) {
-    long endEpochDayMillis = midnightUTC(endTs);
-    long startEpochDayMillis = midnightUTC(endTs - (lookback != null ? lookback : endTs));
-
-    List<Date> days = getDays(startEpochDayMillis, endEpochDayMillis);
+    List<Date> days = getDays(endTs, lookback);
     try {
       BoundStatement bound = CassandraUtil.bindWithName(selectDependencies, "select-dependencies")
           .setList("days", days);
@@ -584,13 +582,5 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     @Override public String toString() {
       return String.format("trace_id=%d, duration=%d, timestamp=%d", trace_id, duration, timestamp);
     }
-  }
-
-  private static List<Date> getDays(long from, long to) {
-    List<Date> days = new ArrayList<>();
-    for (long time = from; time <= to; time += TimeUnit.DAYS.toMillis(1)) {
-      days.add(new Date(time));
-    }
-    return days;
   }
 }

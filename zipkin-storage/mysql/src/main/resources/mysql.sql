@@ -33,3 +33,12 @@ ALTER TABLE zipkin_annotations ADD INDEX(`trace_id`) COMMENT 'for getTraces/ById
 ALTER TABLE zipkin_annotations ADD INDEX(`endpoint_service_name`) COMMENT 'for getTraces and getServiceNames';
 ALTER TABLE zipkin_annotations ADD INDEX(`a_type`) COMMENT 'for getTraces';
 ALTER TABLE zipkin_annotations ADD INDEX(`a_key`) COMMENT 'for getTraces';
+
+CREATE TABLE IF NOT EXISTS zipkin_dependencies (
+  `day` DATE NOT NULL,
+  `parent` VARCHAR(255) NOT NULL,
+  `child` VARCHAR(255) NOT NULL,
+  `call_count` BIGINT
+) ENGINE=InnoDB ROW_FORMAT=COMPRESSED;
+
+ALTER TABLE zipkin_dependencies ADD UNIQUE KEY(`day`, `parent`, `child`);

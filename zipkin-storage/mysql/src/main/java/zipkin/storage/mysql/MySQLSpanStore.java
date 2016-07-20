@@ -18,6 +18,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -58,7 +59,9 @@ import static zipkin.Constants.CLIENT_ADDR;
 import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.internal.Util.UTF_8;
+import static zipkin.internal.Util.getDays;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
+import static zipkin.storage.mysql.internal.generated.tables.ZipkinDependencies.ZIPKIN_DEPENDENCIES;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
 final class MySQLSpanStore implements SpanStore {
@@ -74,11 +77,14 @@ final class MySQLSpanStore implements SpanStore {
   private final DataSource datasource;
   private final DSLContexts context;
   private final Lazy<Boolean> hasIpv6;
+  private final Lazy<Boolean> hasPreAggregatedDependencies;
 
-  MySQLSpanStore(DataSource datasource, DSLContexts context, Lazy<Boolean> hasIpv6) {
+  MySQLSpanStore(DataSource datasource, DSLContexts context, Lazy<Boolean> hasIpv6,
+      Lazy<Boolean> hasPreAggregatedDependencies) {
     this.datasource = datasource;
     this.context = context;
     this.hasIpv6 = hasIpv6;
+    this.hasPreAggregatedDependencies = hasPreAggregatedDependencies;
   }
 
   private Endpoint endpoint(Record a) {
@@ -273,39 +279,56 @@ final class MySQLSpanStore implements SpanStore {
 
   @Override
   public List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback) {
-    endTs = endTs * 1000;
     try (Connection conn = datasource.getConnection()) {
-      // Lazy fetching the cursor prevents us from buffering the whole dataset in memory.
-      Cursor<Record5<Long, Long, Long, String, String>> cursor = context.get(conn)
-          .selectDistinct(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.PARENT_ID, ZIPKIN_SPANS.ID,
-              ZIPKIN_ANNOTATIONS.A_KEY, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME)
-          // left joining allows us to keep a mapping of all span ids, not just ones that have
-          // special annotations. We need all span ids to reconstruct the trace tree. We need
-          // the whole trace tree so that we can accurately skip local spans.
-          .from(ZIPKIN_SPANS.leftJoin(ZIPKIN_ANNOTATIONS)
-              .on(ZIPKIN_SPANS.TRACE_ID.eq(ZIPKIN_ANNOTATIONS.TRACE_ID).and(
-                  ZIPKIN_SPANS.ID.eq(ZIPKIN_ANNOTATIONS.SPAN_ID)))
-              .and(ZIPKIN_ANNOTATIONS.A_KEY.in(CLIENT_ADDR, SERVER_RECV, SERVER_ADDR)))
-          .where(lookback == null ?
-              ZIPKIN_SPANS.START_TS.lessOrEqual(endTs) :
-              ZIPKIN_SPANS.START_TS.between(endTs - lookback * 1000, endTs))
-          // Grouping so that later code knows when a span or trace is finished.
-          .groupBy(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.ID, ZIPKIN_ANNOTATIONS.A_KEY).fetchLazy();
-
-      Iterator<Iterator<DependencyLinkSpan>> traces =
-          new DependencyLinkSpanIterator.ByTraceId(cursor.iterator());
-
-      if (!traces.hasNext()) return Collections.emptyList();
-
-      DependencyLinker linker = new DependencyLinker();
-
-      while (traces.hasNext()) {
-        linker.putTrace(traces.next());
+      if (hasPreAggregatedDependencies.get()) {
+        List<Date> days = getDays(endTs, lookback);
+        List<DependencyLink> unmerged = context.get(conn)
+            .selectFrom(ZIPKIN_DEPENDENCIES)
+            .where(ZIPKIN_DEPENDENCIES.DAY.in(days))
+            .fetch((Record l) -> DependencyLink.create(
+                l.get(ZIPKIN_DEPENDENCIES.PARENT),
+                l.get(ZIPKIN_DEPENDENCIES.CHILD),
+                l.get(ZIPKIN_DEPENDENCIES.CALL_COUNT))
+            );
+        return DependencyLinker.merge(unmerged);
+      } else {
+        return aggregateDependencies(endTs, lookback, conn);
       }
-
-      return linker.link();
     } catch (SQLException e) {
       throw new RuntimeException("Error querying dependencies for endTs " + endTs + " and lookback " + lookback + ": " + e.getMessage());
     }
+  }
+
+  List<DependencyLink> aggregateDependencies(long endTs, @Nullable Long lookback, Connection conn) {
+    endTs = endTs * 1000;
+    // Lazy fetching the cursor prevents us from buffering the whole dataset in memory.
+    Cursor<Record5<Long, Long, Long, String, String>> cursor = context.get(conn)
+        .selectDistinct(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.PARENT_ID, ZIPKIN_SPANS.ID,
+            ZIPKIN_ANNOTATIONS.A_KEY, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME)
+        // left joining allows us to keep a mapping of all span ids, not just ones that have
+        // special annotations. We need all span ids to reconstruct the trace tree. We need
+        // the whole trace tree so that we can accurately skip local spans.
+        .from(ZIPKIN_SPANS.leftJoin(ZIPKIN_ANNOTATIONS)
+            .on(ZIPKIN_SPANS.TRACE_ID.eq(ZIPKIN_ANNOTATIONS.TRACE_ID).and(
+                ZIPKIN_SPANS.ID.eq(ZIPKIN_ANNOTATIONS.SPAN_ID)))
+            .and(ZIPKIN_ANNOTATIONS.A_KEY.in(CLIENT_ADDR, SERVER_RECV, SERVER_ADDR)))
+        .where(lookback == null ?
+            ZIPKIN_SPANS.START_TS.lessOrEqual(endTs) :
+            ZIPKIN_SPANS.START_TS.between(endTs - lookback * 1000, endTs))
+        // Grouping so that later code knows when a span or trace is finished.
+        .groupBy(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.ID, ZIPKIN_ANNOTATIONS.A_KEY).fetchLazy();
+
+    Iterator<Iterator<DependencyLinkSpan>> traces =
+        new DependencyLinkSpanIterator.ByTraceId(cursor.iterator());
+
+    if (!traces.hasNext()) return Collections.emptyList();
+
+    DependencyLinker linker = new DependencyLinker();
+
+    while (traces.hasNext()) {
+      linker.putTrace(traces.next());
+    }
+
+    return linker.link();
   }
 }
