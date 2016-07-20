@@ -13,9 +13,11 @@
  */
 package zipkin.storage.cassandra;
 
+import com.google.common.collect.ImmutableList;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Span;
 import zipkin.TestObjects;
@@ -74,5 +76,22 @@ public class CassandraUtilTest {
 
     assertThat(CassandraUtil.annotationKeys(span))
         .isEmpty();
+  }
+
+  @Test
+  public void annotationKeys_skipsBinaryAnnotationsLongerThan256chars() throws Exception {
+    // example long value
+    String arn =
+        "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012";
+    // example too long value
+    String url =
+        "http://webservices.amazon.com/onca/xml?AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE&AssociateTag=mytag-20&ItemId=0679722769&Operation=ItemLookup&ResponseGroup=Images%2CItemAttributes%2COffers%2CReviews&Service=AWSECommerceService&Timestamp=2014-08-18T12%3A00%3A00Z&Version=2013-08-01&Signature=j7bZM0LXZ9eXeZruTqWm2DIvDYVUU3wxPPpp%2BiXxzQc%3D";
+    Span span = TestObjects.TRACE.get(1).toBuilder().binaryAnnotations(ImmutableList.of(
+        BinaryAnnotation.create("aws.arn", arn, TestObjects.WEB_ENDPOINT),
+        BinaryAnnotation.create(TraceKeys.HTTP_URL, url, TestObjects.WEB_ENDPOINT)
+    )).build();
+
+    assertThat(CassandraUtil.annotationKeys(span))
+        .containsOnly("web:aws.arn", "web:aws.arn:" + arn);
   }
 }

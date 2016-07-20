@@ -42,8 +42,10 @@ Redundant requests to store service or span names are ignored for an hour to red
 Indexing of traces are optimized by default. This reduces writes to Cassandra at the cost of memory
 needed to cache state. This cache is tunable based on your typical trace duration and span count.
 
-[Core annotations](https://github.com/openzipkin/zipkin/blob/master/zipkin/src/main/java/zipkin/Constants.java#L184), ex "sr", are not written to `annotations_index`, as they aren't intended for use in user queries. This significantly reduces
-writes per trace.
+[Core annotations](https://github.com/openzipkin/zipkin/blob/master/zipkin/src/main/java/zipkin/Constants.java#L184),
+ex "sr", are not written to `annotations_index`, as they aren't intended for use in user queries.
+Also, binary annotation values longer than 256 characters are not indexed. These optimizations
+significantly limit writes per trace.
 
 ### Over-fetching on Trace indexes
 User-supplied query limits are over-fetched according to a configured index fetch multiplier in
