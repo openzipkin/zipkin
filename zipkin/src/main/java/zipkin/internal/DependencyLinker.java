@@ -16,10 +16,12 @@ package zipkin.internal;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import zipkin.DependencyLink;
+import zipkin.Span;
 
 import static java.util.logging.Level.FINE;
 
@@ -35,6 +37,19 @@ public final class DependencyLinker {
   private static final Logger logger = Logger.getLogger(DependencyLinker.class.getName());
 
   private final Map<Pair<String>, Long> linkMap = new LinkedHashMap<>();
+
+  /**
+   * @param spans spans where all spans have the same trace id
+   */
+  public DependencyLinker putTrace(List<Span> spans) {
+    if (spans.isEmpty()) return this;
+
+    List<DependencyLinkSpan> linkSpans = new LinkedList<>();
+    for (Span s : MergeById.apply(spans)) {
+      linkSpans.add(DependencyLinkSpan.from(s));
+    }
+    return putTrace(linkSpans.iterator());
+  }
 
   /**
    * @param spans spans where all spans have the same trace id

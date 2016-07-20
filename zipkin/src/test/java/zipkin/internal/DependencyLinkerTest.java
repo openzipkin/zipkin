@@ -16,6 +16,7 @@ package zipkin.internal;
 import java.util.List;
 import org.junit.Test;
 import zipkin.DependencyLink;
+import zipkin.TestObjects;
 import zipkin.internal.DependencyLinkSpan.Kind;
 
 import static java.util.Arrays.asList;
@@ -26,6 +27,14 @@ public class DependencyLinkerTest {
   @Test
   public void baseCase() {
     assertThat(new DependencyLinker().link()).isEmpty();
+  }
+
+  @Test
+  public void linksSpans() {
+    assertThat(new DependencyLinker().putTrace(TestObjects.TRACE).link()).containsExactly(
+        DependencyLink.create("web", "app", 1L),
+        DependencyLink.create("app", "db", 1L)
+    );
   }
 
   /**
