@@ -83,4 +83,24 @@ public class MySQLStorageTest {
 
     assertThat(result).isFalse();
   }
+
+  @Test
+  public void hasDependencies_missing() throws SQLException {
+    SQLSyntaxErrorException sqlException = new SQLSyntaxErrorException(
+        "SQL [select count(*) from `zipkin_dependencies`]; Table 'zipkin.zipkin_dependencies' doesn't exist\n"
+            + "  Query is : select count(*) from `zipkin_dependencies`",
+        "42S02", 1146);
+    DataSource dataSource = mock(DataSource.class);
+
+    // cheats to lower mock count: this exception is really thrown during execution of the query
+    when(dataSource.getConnection()).thenThrow(
+        new DataAccessException(sqlException.getMessage(), sqlException));
+
+    Boolean result = MySQLStorage.builder()
+        .executor(Runnable::run)
+        .datasource(dataSource)
+        .build().hasPreAggregatedDependencies.get();
+
+    assertThat(result).isFalse();
+  }
 }

@@ -24,16 +24,17 @@ import zipkin.internal.Nullable;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.SpanStore;
+import zipkin.storage.StorageAdapters;
 import zipkin.storage.StorageComponent;
 
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.storage.StorageAdapters.blockingToAsync;
 import static zipkin.storage.mysql.internal.generated.DefaultCatalog.DEFAULT_CATALOG;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
+import static zipkin.storage.mysql.internal.generated.tables.ZipkinDependencies.ZIPKIN_DEPENDENCIES;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
 public final class MySQLStorage implements StorageComponent {
-
   public static Builder builder() {
     return new Builder();
   }
@@ -80,8 +81,10 @@ public final class MySQLStorage implements StorageComponent {
   private final Executor executor;
   private final DSLContexts context;
   final Lazy<Boolean> hasIpv6;
+  final Lazy<Boolean> hasPreAggregatedDependencies;
   private final SpanStore spanStore;
   private final AsyncSpanStore asyncSpanStore;
+  private final MySQLSpanConsumer spanConsumer;
   private final AsyncSpanConsumer asyncSpanConsumer;
 
   MySQLStorage(MySQLStorage.Builder builder) {
@@ -89,14 +92,20 @@ public final class MySQLStorage implements StorageComponent {
     this.executor = checkNotNull(builder.executor, "executor");
     this.context = new DSLContexts(builder.settings, builder.listenerProvider);
     this.hasIpv6 = new HasIpv6(datasource, context);
-    this.spanStore = new MySQLSpanStore(datasource, context, hasIpv6);
+    this.hasPreAggregatedDependencies = new HasPreAggregatedDependencies(datasource, context);
+    this.spanStore = new MySQLSpanStore(datasource, context, hasIpv6, hasPreAggregatedDependencies);
     this.asyncSpanStore = blockingToAsync(spanStore, executor);
-    this.asyncSpanConsumer = blockingToAsync(new MySQLSpanConsumer(datasource, context, hasIpv6), executor);
+    this.spanConsumer = new MySQLSpanConsumer(datasource, context, hasIpv6);
+    this.asyncSpanConsumer = blockingToAsync(spanConsumer, executor);
   }
 
   /** Returns the session in use by this storage component. */
   public DataSource datasource() {
     return datasource;
+  }
+
+  public StorageAdapters.SpanConsumer spanConsumer() {
+    return spanConsumer;
   }
 
   @Override public SpanStore spanStore() {
@@ -131,6 +140,7 @@ public final class MySQLStorage implements StorageComponent {
     try (Connection conn = datasource.getConnection()) {
       context.get(conn).truncate(ZIPKIN_SPANS).execute();
       context.get(conn).truncate(ZIPKIN_ANNOTATIONS).execute();
+      context.get(conn).truncate(ZIPKIN_DEPENDENCIES).execute();
     } catch (SQLException | RuntimeException e) {
       throw new AssertionError(e);
     }

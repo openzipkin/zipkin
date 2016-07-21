@@ -14,12 +14,15 @@
 package zipkin.internal;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 public final class Util {
   public static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -77,6 +80,17 @@ public final class Util {
     day.set(Calendar.MINUTE, 0);
     day.set(Calendar.HOUR_OF_DAY, 0);
     return day.getTimeInMillis();
+  }
+
+  public static List<Date> getDays(long endTs, @Nullable Long lookback) {
+    long to = midnightUTC(endTs);
+    long from = midnightUTC(endTs - (lookback != null ? lookback : endTs));
+
+    List<Date> days = new ArrayList<>();
+    for (long time = from; time <= to; time += TimeUnit.DAYS.toMillis(1)) {
+      days.add(new Date(time));
+    }
+    return days;
   }
 
   /** Parses a 1 to 16 character lower-hex string with no prefix int an unsigned long. */
