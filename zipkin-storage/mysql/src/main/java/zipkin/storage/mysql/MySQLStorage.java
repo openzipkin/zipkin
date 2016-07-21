@@ -24,7 +24,6 @@ import zipkin.internal.Nullable;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.SpanStore;
-import zipkin.storage.StorageAdapters;
 import zipkin.storage.StorageComponent;
 
 import static zipkin.internal.Util.checkNotNull;
@@ -84,7 +83,6 @@ public final class MySQLStorage implements StorageComponent {
   final Lazy<Boolean> hasPreAggregatedDependencies;
   private final SpanStore spanStore;
   private final AsyncSpanStore asyncSpanStore;
-  private final MySQLSpanConsumer spanConsumer;
   private final AsyncSpanConsumer asyncSpanConsumer;
 
   MySQLStorage(MySQLStorage.Builder builder) {
@@ -95,17 +93,13 @@ public final class MySQLStorage implements StorageComponent {
     this.hasPreAggregatedDependencies = new HasPreAggregatedDependencies(datasource, context);
     this.spanStore = new MySQLSpanStore(datasource, context, hasIpv6, hasPreAggregatedDependencies);
     this.asyncSpanStore = blockingToAsync(spanStore, executor);
-    this.spanConsumer = new MySQLSpanConsumer(datasource, context, hasIpv6);
+    MySQLSpanConsumer spanConsumer = new MySQLSpanConsumer(datasource, context, hasIpv6);
     this.asyncSpanConsumer = blockingToAsync(spanConsumer, executor);
   }
 
   /** Returns the session in use by this storage component. */
   public DataSource datasource() {
     return datasource;
-  }
-
-  public StorageAdapters.SpanConsumer spanConsumer() {
-    return spanConsumer;
   }
 
   @Override public SpanStore spanStore() {
