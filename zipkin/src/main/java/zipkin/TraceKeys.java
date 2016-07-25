@@ -99,6 +99,12 @@ public final class TraceKeys {
    */
   public static final String HTTP_RESPONSE_SIZE = "http.response.size";
 
+  /**
+   * The query executed for SQL call.  Ex. "select * from customers where id = ?"
+   * <p>Used to filter by SQL query.
+   */
+  public static final String SQL_QUERY = "sql.query";
+
   private TraceKeys() {
   }
 }
