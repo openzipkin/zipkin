@@ -37,6 +37,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import zipkin.Endpoint;
 import zipkin.autoconfigure.storage.mysql.ZipkinMySQLStorageProperties;
 
+import static zipkin.TraceKeys.SQL_QUERY;
+
 /** Sets up the MySQL tracing in Brave as an initialization. */
 @ConditionalOnBean(Brave.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
@@ -89,9 +91,9 @@ public class TraceZipkinMySQLStorageAutoConfiguration extends DefaultExecuteList
     brave.clientTracer().startNewSpan(ctx.type().toString().toLowerCase());
     String[] batchSQL = ctx.batchSQL();
     if (!StringUtils.isBlank(ctx.sql())) {
-      brave.clientTracer().submitBinaryAnnotation("jdbc.query", ctx.sql());
+      brave.clientTracer().submitBinaryAnnotation(SQL_QUERY, ctx.sql());
     } else if (batchSQL.length > 0 && batchSQL[batchSQL.length - 1] != null) {
-      brave.clientTracer().submitBinaryAnnotation("jdbc.query", StringUtils.join(batchSQL, '\n'));
+      brave.clientTracer().submitBinaryAnnotation(SQL_QUERY, StringUtils.join(batchSQL, '\n'));
     }
     brave.clientTracer()
         .setClientSent(mysqlEndpoint.ipv4, mysqlEndpoint.port, mysqlEndpoint.serviceName);
