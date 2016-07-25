@@ -1,7 +1,7 @@
 zipkin:
   self-tracing:
-    # Set to false to disable self-tracing.
-    enabled: ${SELF_TRACING_ENABLED:true}
+    # Set to true to enable self-tracing.
+    enabled: ${SELF_TRACING_ENABLED:false}
     # percentage to self-traces to retain
     sample-rate: ${SELF_TRACING_SAMPLE_RATE:1.0}
     # Interval in seconds to flush self-tracing data to storage.
