@@ -49,7 +49,7 @@ public class ZipkinQueryApiV1 {
 
   @Autowired
   @Value("${zipkin.query.lookback:86400000}")
-  int defaultLookback = 86400000; // 7 days in millis
+  int defaultLookback = 86400000; // 1 day in millis
 
   /** The Cache-Control max-age (seconds) for /api/v1/services and /api/v1/spans */
   @Value("${zipkin.query.names-max-age:300}")

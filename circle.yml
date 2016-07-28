@@ -15,11 +15,16 @@
 machine:
   services:
     - mysql
-    - cassandra
     - elasticsearch
   java:
     version: openjdk8
   post:
+    # Manually install very recent version of cassandra; unless we create a user we have to run it as root
+    # uncomment below when datastax has version 3.9 available. at time of commit, latest was 3.7
+    #- curl -SL http://www-us.apache.org/dist/cassandra/3.9/apache-cassandra-3.9-bin.tar.gz | tar xz
+    - curl -SL http://cassci.datastax.com/job/trunk/lastSuccessfulBuild/artifact/build/apache-cassandra-3.10-SNAPSHOT-bin.tar.gz | tar xz
+    - sed -i -e 's/INFO/WARN/g' apache-cassandra-*/conf/logback.xml
+    - sudo ./apache-cassandra-*/bin/cassandra -R
     - curl -SL http://www.us.apache.org/dist/kafka/0.8.2.2/kafka_2.11-0.8.2.2.tgz | tar xz
     - ./kafka_*/bin/zookeeper-server-start.sh ./kafka_*/config/zookeeper.properties:
         background: true

@@ -1,0 +1,77 @@
+#    Copyright 2015-2016 The OpenZipkin Authors
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+#    in compliance with the License. You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software distributed under the License
+#    is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+#    or implied. See the License for the specific language governing permissions and limitations under
+#    the License.
+#
+###
+### Stress test for zipkin3 service_span_name_index table
+###
+### Stress testing is done using the `cassandra-stress` tool
+###
+### For example
+###  cassandra-stress  user profile=trace_by_service_span-stress.yaml ops\(insert=1\)  duration=1m  -rate threads=4 throttle=50/s
+###
+### after a benchmark has been run with only writes, a mixed read-write benchmark can be run with
+###  cassandra-stress  user profile=trace_by_service_span-stress.yaml ops\(insert=1,select=1,by_duration=1\)  duration=1m  -rate threads=4 throttle=50/s
+
+# Keyspace Name
+keyspace: zipkin3
+
+# Table name
+table: trace_by_service_span
+
+
+### Column Distribution Specifications ###
+
+columnspec:
+  - name: service_name
+    size: uniform(5..20)
+    population: uniform(1..100)
+
+  - name: span_name
+    size: uniform(5..20)
+    population: uniform(1..100)
+
+  - name: bucket
+    size: fixed(12)
+    population: fixed(123456789012)
+
+  - name: ts
+    size: fixed(12)
+    population: uniform(1..10k)
+
+  - name: trace_id
+    size: fixed(32)
+    population: uniform(1..10k)
+
+  - name: duration
+    size: fixed(12)
+    population: uniform(1..10k)
+
+
+
+### Batch Ratio Distribution Specifications ###
+
+insert:
+  partitions: fixed(1)            # 1 pertition key at a time inserts to model a message being generated
+  select:  fixed(1)/1000
+  batchtype: UNLOGGED             # Unlogged batches
+
+
+#
+# A set of basic queries
+#
+queries:
+   select:
+    cql: SELECT * FROM trace_by_service_span WHERE service_name = ? AND span_name = ? AND bucket = ? LIMIT 1
+    fields: samerow
+   by_duration:
+    cql: SELECT * FROM trace_by_service_span WHERE service_name = ? AND span_name = ? AND bucket = ? AND duration < ? LIMIT 1
+    fields: samerow

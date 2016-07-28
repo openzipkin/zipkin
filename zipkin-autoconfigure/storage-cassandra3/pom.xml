@@ -19,22 +19,30 @@
 
   <parent>
     <groupId>io.zipkin.java</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>zipkin-autoconfigure</artifactId>
     <version>1.8.5-SNAPSHOT</version>
   </parent>
 
-  <artifactId>zipkin-storage</artifactId>
-  <name>Storage</name>
-  <packaging>pom</packaging>
+  <artifactId>zipkin-autoconfigure-storage-cassandra3</artifactId>
+  <name>Auto Configuration: Cassandra 3 Storage</name>
 
   <properties>
-    <main.basedir>${project.basedir}/..</main.basedir>
+    <main.basedir>${project.basedir}/../..</main.basedir>
+    <main.java.version>1.8</main.java.version>
+    <main.signature.artifact>java18</main.signature.artifact>
   </properties>
 
-  <modules>
-    <module>cassandra</module>
-    <module>cassandra3</module>
-    <module>mysql</module>
-    <module>elasticsearch</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-storage-cassandra3</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.zipkin.brave</groupId>
+      <artifactId>brave-core</artifactId>
+      <version>${brave.version}</version>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
 </project>
