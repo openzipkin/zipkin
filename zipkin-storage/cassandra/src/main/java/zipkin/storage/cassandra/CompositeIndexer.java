@@ -38,8 +38,6 @@ final class CompositeIndexer {
         CacheBuilder.from(spec).<PartitionKeyToTraceId, Pair<Long>>build().asMap();
     Indexer.Factory factory = new Indexer.Factory(session, indexTtl, sharedState);
     this.indexers = ImmutableSet.of(
-        factory.create(new InsertTraceIdByServiceName(bucketCount)),
-        factory.create(new InsertTraceIdBySpanName()),
         factory.create(new InsertTraceIdByAnnotation(bucketCount))
     );
   }

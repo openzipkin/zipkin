@@ -1,0 +1,21 @@
+
+// upgrade the span_duration_index table to cluster by time (sorting by duration done by zipkin server instead)
+
+DROP TABLE zipkin.span_duration_index;
+
+DROP TABLE zipkin.service_span_name_index;
+
+DROP TABLE zipkin.service_name_index;
+
+CREATE TABLE zipkin.span_duration_index (
+    service_name  text,      // service name
+    span_name     text,      // span name, or blank for queries without span name
+    bucket        int,       // time bucket, calculated as ts/interval (in microseconds), for some pre-configured interval like 1 day.
+    ts            timeuuid, // start timestamp of the span, truncated to millisecond precision
+    trace_id      bigint,    // trace ID
+    duration      bigint,    // span duration, in microseconds
+    PRIMARY KEY ((service_name, span_name, bucket), ts)
+)
+    WITH CLUSTERING ORDER BY (ts DESC)
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_window_size_seconds': '86400'}
+    AND default_time_to_live =  259200;
