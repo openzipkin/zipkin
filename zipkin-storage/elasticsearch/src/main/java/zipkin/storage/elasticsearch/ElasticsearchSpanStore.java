@@ -117,8 +117,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
       // In our index template, we make sure the binaryAnnotation value is indexed as string,
       // meaning non-string values won't even be indexed at all. This means that we can only
       // match string values here, which happens to be exactly what we want.
-      filter.must(nestedQuery("binaryAnnotations",
-          boolQuery()
+      filter.must(nestedQuery("binaryAnnotations", boolQuery()
               .must(termQuery("binaryAnnotations.key", annotation.getKey()))
               .must(termQuery("binaryAnnotations.value",
                   annotation.getValue()))));

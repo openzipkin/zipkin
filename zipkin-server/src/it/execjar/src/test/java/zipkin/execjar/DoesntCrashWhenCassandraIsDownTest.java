@@ -18,7 +18,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import org.junit.Rule;
 import org.junit.Test;
-import zipkin.server.ZipkinServer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -26,7 +25,7 @@ import static org.junit.Assert.fail;
 public class DoesntCrashWhenCassandraIsDownTest {
 
   @Rule
-  public ExecJarRule zipkin = new ExecJarRule(ZipkinServer.class)
+  public ExecJarRule zipkin = new ExecJarRule()
       .putEnvironment("STORAGE_TYPE", "cassandra")
       .putEnvironment("CASSANDRA_CONTACT_POINTS", "idontexist");
 

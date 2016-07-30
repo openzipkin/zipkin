@@ -29,7 +29,7 @@ import zipkin.storage.InMemoryStorage;
 import zipkin.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.test.EnvironmentTestUtils.addEnvironment;
+import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class ZipkinKafkaCollectorAutoConfigurationTests {
 
