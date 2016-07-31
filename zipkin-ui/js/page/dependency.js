@@ -18,7 +18,8 @@ const DependencyPageComponent = component(function DependencyPage() {
 
     const {startTs, endTs} = queryString.parse(location.search);
     $('#endTs').val(endTs || moment().valueOf());
-    $('#startTs').val(startTs || moment().valueOf() - this.attr.config('defaultLookback'));
+    // When #1185 is complete, the only visible granularity is day
+    $('#startTs').val(startTs || moment().valueOf() - 86400000);
 
     DependencyData.attachTo('#dependency-container');
     DependencyGraphUI.attachTo('#dependency-container');
