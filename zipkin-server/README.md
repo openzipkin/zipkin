@@ -83,7 +83,7 @@ When the UI loads, it reads default configuration from the `/config.json` endpoi
 Attribute | Property | Description
 --- | --- | ---
 environment | zipkin.ui.environment | The value here becomes a label in the top-right corner. Not required.
-defaultLookback | zipkin.ui.default-lookback | Default duration in millis to look back when finding traces or dependency links. Affects the "Start time" element in the UI. Defaults to 604800000 (7 days in millis).
+defaultLookback | zipkin.ui.default-lookback | Default duration in millis to look back when finding traces. Affects the "Start time" element in the UI. Defaults to 3600000 (1 hour in millis).
 queryLimit | zipkin.ui.query-limit | Default limit for Find Traces. Defaults to 10.
 instrumented | zipkin.ui.instrumented | Which sites this Zipkin UI covers. Regex syntax. e.g. `http:\/\/example.com\/.*` Defaults to match all websites (`.*`).
 
@@ -96,7 +96,7 @@ zipkin-server is a drop-in replacement for the [scala query service](https://git
 
     * `QUERY_PORT`: Listen port for the http api and web ui; Defaults to 9411
     * `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
-    * `QUERY_LOOKBACK`: How many milliseconds queries look back from endTs; Defaults to 7 days
+    * `QUERY_LOOKBACK`: How many milliseconds queries can look back from endTs; Defaults to 7 days
     * `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra`, `elasticsearch`
     * `COLLECTOR_PORT`: Listen port for the scribe thrift api; Defaults to 9410 
     * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).

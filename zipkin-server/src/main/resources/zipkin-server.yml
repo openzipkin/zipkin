@@ -74,9 +74,9 @@ zipkin:
     query-limit: 10
     # The value here becomes a label in the top-right corner
     environment:
-    # Default duration to look back when finding traces or dependency links.
-    # Affects the "Start time" element in the UI. 7 days in millis
-    default-lookback: ${QUERY_LOOKBACK:604800000}
+    # Default duration to look back when finding traces.
+    # Affects the "Start time" element in the UI. 1 hour in millis
+    default-lookback: 3600000
     # Which sites this Zipkin UI covers. Regex syntax. (e.g. http:\/\/example.com\/.*)
     # Multiple sites can be specified, e.g.
     # - .*example1.com
