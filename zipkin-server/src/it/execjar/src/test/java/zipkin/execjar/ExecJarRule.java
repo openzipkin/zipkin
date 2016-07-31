@@ -27,6 +27,7 @@ import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.springframework.boot.loader.JarLauncher;
 
 /**
  * This is a JUnit Rule that allows you to test your Spring Boot exec jar.
@@ -40,12 +41,8 @@ import org.junit.runners.model.Statement;
  */
 public final class ExecJarRule implements TestRule {
 
-  /**
-   * @param startClass the entrypoint class of the spring boot jar
-   */
-  public ExecJarRule(Class<?> startClass) {
-    this.startClass = startClass;
-    this.execJar = startClass.getProtectionDomain().getCodeSource().getLocation().getFile();
+  public ExecJarRule() {
+    this.execJar = JarLauncher.class.getProtectionDomain().getCodeSource().getLocation().getFile();
   }
 
   /** Adds a variable to the environment used by the forked boot app. */
@@ -67,7 +64,6 @@ public final class ExecJarRule implements TestRule {
     }
   }
 
-  private final Class<?> startClass;
   private final String execJar;
   private Map<String, String> environment = new LinkedHashMap<>();
   private Integer port;
@@ -91,7 +87,7 @@ public final class ExecJarRule implements TestRule {
                      new BufferedReader(new InputStreamReader(bootApp.getInputStream()))) {
               String line;
               while ((line = reader.readLine()) != null) {
-                if (line.indexOf("Started " + startClass.getSimpleName()) != -1) {
+                if (line.indexOf("JVM running for") != -1) {
                   foundStartMessage = true;
                   startedOrCrashed.countDown();
                 }

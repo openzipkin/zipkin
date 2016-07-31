@@ -19,7 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -43,7 +43,7 @@ import static zipkin.TestObjects.TRACE;
 import static zipkin.TestObjects.span;
 import static zipkin.internal.Util.UTF_8;
 
-@SpringApplicationConfiguration(classes = ZipkinServer.class)
+@SpringBootTest(classes = ZipkinServer.class)
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @TestPropertySource(properties = {"zipkin.store.type=mem", "spring.config.name=zipkin-server"})
