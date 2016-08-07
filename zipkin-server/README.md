@@ -12,6 +12,7 @@ The following endpoints are defined for Zipkin:
 * /config.json - [Configuration for the UI](#configuration-for-the-ui)
 * /api/v1 - [Api](http://zipkin.io/zipkin-api/#/)
 * /health - Returns 200 status if OK
+* /info - Provides the version of the running instance
 * /metrics - Includes collector metrics broken down by transport type 
 
 There are more [built-in endpoints](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-endpoints.html) provided by Spring Boot, such as `/metrics`. To comprehensively list endpoints, `GET /mappings`.

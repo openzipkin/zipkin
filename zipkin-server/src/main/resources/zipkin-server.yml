@@ -99,6 +99,11 @@ spring:
     exclude:
       # otherwise we might initialize even when not needed (ex when storage type is cassandra)
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+
+info:
+  zipkin:
+    version: "@project.version@"
+
 logging:
   level:
     # Silence Invalid method name: '__can__finagle__trace__v3__'
