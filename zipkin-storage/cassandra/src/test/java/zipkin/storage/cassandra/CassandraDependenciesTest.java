@@ -16,6 +16,7 @@ package zipkin.storage.cassandra;
 import java.util.List;
 import zipkin.DependencyLink;
 import zipkin.Span;
+import zipkin.internal.MergeById;
 import zipkin.storage.DependenciesTest;
 import zipkin.storage.InMemorySpanStore;
 import zipkin.storage.InMemoryStorage;
@@ -55,7 +56,8 @@ public class CassandraDependenciesTest extends DependenciesTest {
     mem.spanConsumer().accept(spans);
     List<DependencyLink> links = mem.spanStore().getDependencies(TODAY + DAY, null);
 
-    long midnight = midnightUTC(spans.get(0).timestamp / 1000);
+    // This gets or derives a timestamp from the spans
+    long midnight = midnightUTC(MergeById.apply(spans).get(0).timestamp / 1000);
     new CassandraDependenciesWriter(storage.session.get()).write(links, midnight);
   }
 }
