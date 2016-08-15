@@ -10,6 +10,10 @@ will be stored in an index like zipkin-2016-03-19. There is no support for TTL t
 It is recommended instead to use [Elastic Curator](https://www.elastic.co/guide/en/elasticsearch/client/curator/current/about.html)
 to remove indices older than the point you are interested in.
 
+Zipkin's timestamps are in epoch microseconds, which is not a supported date type in Elasticsearch.
+In consideration of tools like like Kibana, this component adds "timestamp_millis" when writing
+spans. This is mapped to the Elasticsearch date type, so can be used to any date-based queries.
+
 `zipkin.storage.elasticsearch.ElasticsearchStorage.Builder` includes defaults
 that will operate against a local Elasticsearch installation.
 
