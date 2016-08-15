@@ -71,6 +71,29 @@
             <configuration>
               <shadeTestJar>false</shadeTestJar>
               <minimizeJar>true</minimizeJar>
+              <filters>
+                <filter>
+                  <artifact>com.squareup.moshi:moshi</artifact>
+                  <includes>
+                    <include>com/squareup/moshi/BufferedSinkJsonWriter*</include>
+                    <include>com/squareup/moshi/BufferedSourceJsonReader*</include>
+                    <!-- don't get zipkin/internal/moshi/JsonAdapter$Factory.class -->
+                    <include>com/squareup/moshi/JsonAdapter.class</include>
+                    <include>com/squareup/moshi/JsonAdapter$?.class</include>
+                    <include>com/squareup/moshi/JsonDataException*</include>
+                    <include>com/squareup/moshi/JsonReader*</include>
+                    <include>com/squareup/moshi/JsonScope*</include>
+                    <include>com/squareup/moshi/JsonWriter*</include>
+                  </includes>
+                </filter>
+                <filter>
+                  <!-- don't include pom files, some are kilobytes -->
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/**</exclude>
+                  </excludes>
+                </filter>
+              </filters>
               <relocations>
                 <relocation>
                   <pattern>okio</pattern>

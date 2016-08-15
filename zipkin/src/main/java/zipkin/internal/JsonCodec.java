@@ -17,7 +17,6 @@ import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonDataException;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
-import com.squareup.moshi.Moshi;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Collections;
@@ -122,14 +121,75 @@ public final class JsonCodec implements Codec {
     }
   }.nullSafe();
 
-  static final Moshi MOSHI = new Moshi.Builder()
-      .add(Endpoint.class, ENDPOINT_ADAPTER)
-      .build();
+  static final JsonAdapter<Long> NULLABLE_LONG_ADAPTER = new JsonAdapter<Long>() {
+    @Override public Long fromJson(JsonReader reader) throws IOException {
+      return reader.nextLong();
+    }
 
-  static final JsonAdapter<Long> NULLABLE_LONG_ADAPTER = MOSHI.adapter(Long.class);
-  static final JsonAdapter<Boolean> NULLABLE_BOOLEAN_ADAPTER = MOSHI.adapter(Boolean.class);
+    @Override public void toJson(JsonWriter writer, Long value) throws IOException {
+      writer.value(value.longValue());
+    }
 
-  public static final JsonAdapter<Annotation> ANNOTATION_ADAPTER = MOSHI.adapter(Annotation.class);
+    @Override public String toString() {
+      return "Long";
+    }
+  }.nullSafe();
+
+  static final JsonAdapter<Boolean> NULLABLE_BOOLEAN_ADAPTER = new JsonAdapter<Boolean>() {
+    @Override public Boolean fromJson(JsonReader reader) throws IOException {
+      return reader.nextBoolean();
+    }
+
+    @Override public void toJson(JsonWriter writer, Boolean value) throws IOException {
+      writer.value(value.booleanValue());
+    }
+
+    @Override public String toString() {
+      return "Boolean";
+    }
+  }.nullSafe();
+
+  public static final JsonAdapter<Annotation> ANNOTATION_ADAPTER = new JsonAdapter<Annotation>() {
+    @Override
+    public Annotation fromJson(JsonReader reader) throws IOException {
+      Annotation.Builder result = Annotation.builder();
+      reader.beginObject();
+      while (reader.hasNext()) {
+        switch (reader.nextName()) {
+          case "timestamp":
+            result.timestamp(reader.nextLong());
+            break;
+          case "value":
+            result.value(reader.nextString());
+            break;
+          case "endpoint":
+            result.endpoint(ENDPOINT_ADAPTER.fromJson(reader));
+            break;
+          default:
+            reader.skipValue();
+        }
+      }
+      reader.endObject();
+      return result.build();
+    }
+
+    @Override
+    public void toJson(JsonWriter writer, Annotation value) throws IOException {
+      writer.beginObject();
+      writer.name("timestamp").value(value.timestamp);
+      writer.name("value").value(value.value);
+      if (value.endpoint != null) {
+        writer.name("endpoint");
+        ENDPOINT_ADAPTER.toJson(writer, value.endpoint);
+      }
+      writer.endObject();
+    }
+
+    @Override
+    public String toString() {
+      return "Annotation";
+    }
+  };
 
   public static final JsonAdapter<BinaryAnnotation> BINARY_ANNOTATION_ADAPTER = new JsonAdapter<BinaryAnnotation>() {
 
