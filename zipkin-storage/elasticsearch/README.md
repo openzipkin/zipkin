@@ -1,9 +1,9 @@
 # storage-elasticsearch
 
 This Elasticsearch 2 storage component includes a `GuavaSpanStore` and `GuavaSpanConsumer`.
-`GuavaSpanStore.getDependencies()` returns pre-aggregated dependency links (ex via [zipkin-dependencies-spark](https://github.com/openzipkin/zipkin-dependencies-spark)).
+Until [zipkin-dependencies](https://github.com/openzipkin/zipkin-dependencies) is run, `ElasticsearchSpanStore.getDependencies()` will return empty.
 
-The implementation uses Elasticsearch Java API's [node client](https://www.elastic.co/guide/en/elasticsearch/guide/master/_talking_to_elasticsearch.html#_java_api) for optimal performance.
+The implementation uses Elasticsearch Java API's [transport client](https://www.elastic.co/guide/en/elasticsearch/guide/master/_talking_to_elasticsearch.html#_java_api) for optimal performance.
 
 Spans are stored into daily indices, for example spans with a timestamp falling on 2016/03/19
 will be stored in an index like zipkin-2016-03-19. There is no support for TTL through this SpanStore.
