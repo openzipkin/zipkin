@@ -13,6 +13,7 @@
  */
 package zipkin.storage.elasticsearch;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.util.concurrent.AsyncFunction;
@@ -32,6 +33,7 @@ import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.storage.elasticsearch.ElasticFutures.toGuava;
 
 final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
+  private static final byte[] TIMESTAMP_MILLIS_PREFIX = "{\"timestamp_millis\":".getBytes();
   private static final Function<Object, Void> TO_VOID = Functions.<Void>constant(null);
 
   private final Client client;
@@ -73,14 +75,39 @@ final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
 
   private IndexRequestBuilder createSpanIndexRequest(Span input) {
     Span span = ApplyTimestampAndDuration.apply(input);
-    long indexTimestampMillis;
+    long timestampMillis;
+    final byte[] spanBytes;
     if (span.timestamp != null) {
-      indexTimestampMillis = TimeUnit.MICROSECONDS.toMillis(span.timestamp);
+      timestampMillis = TimeUnit.MICROSECONDS.toMillis(span.timestamp);
+      spanBytes = prefixWithTimestampMillis(Codec.JSON.writeSpan(span), timestampMillis);
     } else {
-      indexTimestampMillis = System.currentTimeMillis();
+      timestampMillis = System.currentTimeMillis();
+      spanBytes = Codec.JSON.writeSpan(span);
     }
-    String spanIndex = indexNameFormatter.indexNameForTimestamp(indexTimestampMillis);
+    String spanIndex = indexNameFormatter.indexNameForTimestamp(timestampMillis);
     return client.prepareIndex(spanIndex, ElasticsearchConstants.SPAN)
-        .setSource(Codec.JSON.writeSpan(span));
+        .setSource(spanBytes);
+  }
+
+  /**
+   * In order to allow systems like Kibana to search by timestamp, we add a field "timestamp_millis"
+   * when storing. The cheapest way to do this without changing the codec is prefixing it to the
+   * json. For example. {"traceId":"... becomes {"timestamp_millis":12345,"traceId":"...
+   */
+  @VisibleForTesting
+  static byte[] prefixWithTimestampMillis(byte[] input, long timestampMillis) {
+    String dateAsString = Long.toString(timestampMillis);
+    byte[] newSpanBytes =
+        new byte[TIMESTAMP_MILLIS_PREFIX.length + dateAsString.length() + input.length];
+    int pos = 0;
+    System.arraycopy(TIMESTAMP_MILLIS_PREFIX, 0, newSpanBytes, pos, TIMESTAMP_MILLIS_PREFIX.length);
+    pos += TIMESTAMP_MILLIS_PREFIX.length;
+    for (int i = 0, length = dateAsString.length(); i < length; i++) {
+      newSpanBytes[pos++] = (byte) dateAsString.charAt(i);
+    }
+    newSpanBytes[pos++] = ',';
+    // starting at position 1 discards the old head of '{'
+    System.arraycopy(input, 1, newSpanBytes, pos, input.length - 1);
+    return newSpanBytes;
   }
 }

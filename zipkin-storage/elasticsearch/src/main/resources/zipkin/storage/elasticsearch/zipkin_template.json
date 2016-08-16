@@ -40,14 +40,6 @@
           }
         },
         {
-          "timestamps": {
-            "match": "timestamp",
-            "mapping": {
-              "type": "long"
-            }
-          }
-        },
-        {
           "serviceName": {
             "match": "serviceName",
             "mapping": {
@@ -71,6 +63,10 @@
     },
     "span": {
       "properties": {
+        "timestamp_millis": {
+          "type":   "date",
+          "format": "epoch_millis"
+        },
         "binaryAnnotations": {
           "type": "nested"
         }

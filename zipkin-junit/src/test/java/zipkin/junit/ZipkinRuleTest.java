@@ -14,7 +14,6 @@
 package zipkin.junit;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.util.Arrays;
 import java.util.List;
 import okhttp3.MediaType;
@@ -128,8 +127,8 @@ public class ZipkinRuleTest {
 
     try {
       postSpans(TRACE);
-      failBecauseExceptionWasNotThrown(ConnectException.class);
-    } catch (ConnectException expected) {
+      failBecauseExceptionWasNotThrown(IOException.class);
+    } catch (IOException expected) { // not always a ConnectException!
     }
 
     // Zipkin didn't store the spans, as they shouldn't have been readable, due to disconnect

@@ -95,6 +95,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     long endMillis = request.endTs;
     long beginMillis = endMillis - request.lookback;
 
+    // TODO: once timestamp_millis is sufficiently deployed, switch this logic to use it
     BoolQueryBuilder filter = boolQuery()
         .must(rangeQuery("timestamp")
             .gte(TimeUnit.MILLISECONDS.toMicros(beginMillis))

@@ -19,9 +19,11 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin.Annotation;
+import zipkin.Codec;
 import zipkin.Span;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
 import static zipkin.TestObjects.DAY;
@@ -95,6 +97,38 @@ public class ElasticsearchSpanConsumerTest {
     // make sure the span went into an index corresponding to collection time
     assertThat(indexFromToday.getHits().getTotalHits())
         .isEqualTo(1);
+  }
+
+  @Test
+  public void searchByTimestampMillis() {
+    Span span = Span.builder().timestamp(TODAY * 1000).traceId(20L).id(20L).name("get").build();
+
+    accept(span);
+
+    SearchResponse indexFromToday = storage.client()
+        .prepareSearch(storage.indexNameFormatter.indexNameForTimestamp(TODAY))
+        .setTypes(ElasticsearchConstants.SPAN)
+        .setQuery(termQuery("timestamp_millis", TODAY))
+        .get();
+
+    assertThat(indexFromToday.getHits().getTotalHits())
+        .isEqualTo(1);
+  }
+
+  @Test
+  public void prefixWithTimestampMillis() {
+    Span span = Span.builder().traceId(20L).id(20L).name("get")
+        .timestamp(TODAY * 1000).build();
+
+    byte[] result =
+        ElasticsearchSpanConsumer.prefixWithTimestampMillis(Codec.JSON.writeSpan(span), TODAY);
+
+    String json = new String(result);
+    assertThat(json)
+        .startsWith("{\"timestamp_millis\":" + Long.toString(TODAY) + ",\"traceId\":");
+
+    assertThat(Codec.JSON.readSpan(json.getBytes()))
+        .isEqualTo(span); // ignores timestamp_millis field
   }
 
   void accept(Span span) {
