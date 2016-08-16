@@ -16,7 +16,10 @@ in mind when choosing version numbers.
 1. **Wait for Travis CI**
 
    This part is controlled by [`travis/publish.sh`](travis/publish.sh). It creates a bunch of new commits, bumps
-   the version, publishes artifacts, and syncs to Maven Central.
+   the version, publishes artifacts, syncs to Maven Central, and publishes Javaocs to http://zipkin.io/zipkin
+   into a versioned subdirectory.
+   (Note: Javaocs are also published on all builds of master; due to versioning, it doesn't overwrite docs built
+   for releases.)
 
 1. **Publish `docker-zipkin-java`**
 

@@ -93,3 +93,6 @@ Snapshots are uploaded to [JFrog](http://oss.jfrog.org/artifactory/oss-snapshot-
 ### Docker Images
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin`.
 See [docker-zipkin-java](https://github.com/openzipkin/docker-zipkin-java) for details.
+### Javadocs
+http://zipkin.io/zipkin contains versioned folders with JavaDocs published on each (non-PR) build, as well
+as releases.
