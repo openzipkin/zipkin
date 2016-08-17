@@ -1,0 +1,3 @@
+zipkin.storage.jdbc
+zipkin.storage.jdbc.internal.generated
+zipkin.storage.jdbc.internal.generated.tables
