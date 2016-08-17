@@ -11,13 +11,19 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.collector;
+package zipkin;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import zipkin.collector.CollectorMetrics;
 
 import static zipkin.internal.Util.checkNotNull;
 
+/**
+ * @deprecated this class was accidentally put in the package "zipkin" instead of
+ * "zipkin.collector". Will be removed in Zipkin 2.
+ */
+@Deprecated
 public final class InMemoryCollectorMetrics implements CollectorMetrics {
 
   private final ConcurrentHashMap<String, AtomicInteger> metrics;
