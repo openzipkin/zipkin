@@ -17,3 +17,5 @@ _site/
 dsc-cassandra-*
 elasticsearch-2*
 kafka_*
+# temporary directory used by travis/publish.sh for building gh-pages
+/javadoc-builddir

@@ -72,8 +72,12 @@ check_release_tag() {
     fi
 }
 
+print_project_version() {
+  ./mvnw help:evaluate -N -Dexpression=project.version|grep -v '\['
+}
+
 is_release_commit() {
-  project_version=$(./mvnw help:evaluate -N -Dexpression=project.version|grep -v '\[')
+  project_version="$(print_project_version)"
   if [[ "$project_version" =~ ^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ ]]; then
     echo "Build started by release commit $project_version. Will synchronize to maven central."
     return 0
@@ -100,6 +104,38 @@ safe_checkout_master() {
   fi
 }
 
+javadoc_to_gh_pages() {
+  version="$(print_project_version)"
+  rm -rf javadoc-builddir
+  builddir="javadoc-builddir/$version"
+
+  # Collect javadoc for all modules
+  for jar in $(find . -name "*${version}-javadoc.jar"); do
+    module="$(echo "$jar" | sed "s~.*/\(.*\)-${version}-javadoc.jar~\1~")"
+    this_builddir="$builddir/$module"
+    mkdir -p "$this_builddir"
+    unzip "$jar" -d "$this_builddir"
+    # Build a simple module-level index
+    echo "<li><a href=\"${module}/index.html\">${module}</a></li>" >> "${builddir}/index.html"
+  done
+
+  # Update gh-pages
+  git checkout gh-pages
+  rm -rf "$version"
+  mv "javadoc-builddir/$version" ./
+  rm -rf "javadoc-builddir"
+
+  # Update simple version-level index
+  if ! grep "$version" index.html 2>/dev/null; then
+    echo "<li><a href=\"${version}/index.html\">${version}</a></li>" >> index.html
+  fi
+
+  git add "$version"
+  git add index.html
+  git commit -m "Automatically updated javadocs for $version"
+  git push
+}
+
 #----------------------
 # MAIN
 #----------------------
@@ -114,6 +150,7 @@ MYSQL_USER=root ./mvnw install -nsu
 # If we are on a pull request, our only job is to run tests, which happened above via ./mvnw install
 if is_pull_request; then
   true
+
 # If we are on master, we will deploy the latest snapshot or release version
 #   - If a release commit fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
 elif is_travis_branch_master; then
@@ -122,11 +159,13 @@ elif is_travis_branch_master; then
   # If the deployment succeeded, sync it to Maven Central. Note: this needs to be done once per project, not module, hence -N
   if is_release_commit; then
     ./mvnw --batch-mode -s ./.settings.xml -nsu -N io.zipkin.centralsync-maven-plugin:centralsync-maven-plugin:sync
+    javadoc_to_gh_pages
   fi
 
 # If we are on a release tag, the following will update any version references and push a version tag for deployment.
 elif build_started_by_tag; then
   safe_checkout_master
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion="$(release_version)" -Darguments="-DskipTests" release:prepare
+  javadoc_to_gh_pages
 fi
 
