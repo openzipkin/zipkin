@@ -19,7 +19,7 @@ import static zipkin.internal.Util.checkNotNull;
 public final class Pair<T> {
 
   public static <T> Pair<T> create(T _1, T _2) {
-    return new Pair<>(_1, _2);
+    return new Pair<T>(_1, _2);
   }
 
   public final T _1;

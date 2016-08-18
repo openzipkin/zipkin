@@ -27,37 +27,37 @@ final class InternalAsyncToBlockingSpanStoreAdapter implements SpanStore {
   }
 
   @Override public List<List<Span>> getTraces(QueryRequest request) {
-    CallbackCaptor<List<List<Span>>> captor = new CallbackCaptor<>();
+    CallbackCaptor<List<List<Span>>> captor = new CallbackCaptor<List<List<Span>>>();
     delegate.getTraces(request, captor);
     return captor.get();
   }
 
   @Override public List<Span> getTrace(long id) {
-    CallbackCaptor<List<Span>> captor = new CallbackCaptor<>();
+    CallbackCaptor<List<Span>> captor = new CallbackCaptor<List<Span>>();
     delegate.getTrace(id, captor);
     return captor.get();
   }
 
   @Override public List<Span> getRawTrace(long traceId) {
-    CallbackCaptor<List<Span>> captor = new CallbackCaptor<>();
+    CallbackCaptor<List<Span>> captor = new CallbackCaptor<List<Span>>();
     delegate.getRawTrace(traceId, captor);
     return captor.get();
   }
 
   @Override public List<String> getServiceNames() {
-    CallbackCaptor<List<String>> captor = new CallbackCaptor<>();
+    CallbackCaptor<List<String>> captor = new CallbackCaptor<List<String>>();
     delegate.getServiceNames(captor);
     return captor.get();
   }
 
   @Override public List<String> getSpanNames(String serviceName) {
-    CallbackCaptor<List<String>> captor = new CallbackCaptor<>();
+    CallbackCaptor<List<String>> captor = new CallbackCaptor<List<String>>();
     delegate.getSpanNames(serviceName, captor);
     return captor.get();
   }
 
   @Override public List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback) {
-    CallbackCaptor<List<DependencyLink>> captor = new CallbackCaptor<>();
+    CallbackCaptor<List<DependencyLink>> captor = new CallbackCaptor<List<DependencyLink>>();
     delegate.getDependencies(endTs, lookback, captor);
     return captor.get();
   }

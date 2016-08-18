@@ -16,8 +16,8 @@ package zipkin;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
-import zipkin.internal.JsonCodec;
 
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkNotNull;
 
 public final class DependencyLink implements Serializable {
@@ -86,7 +86,7 @@ public final class DependencyLink implements Serializable {
 
   @Override
   public String toString() {
-    return JsonCodec.DEPENDENCY_LINK_ADAPTER.toJson(this);
+    return new String(Codec.JSON.writeDependencyLink(this), UTF_8);
   }
 
   @Override

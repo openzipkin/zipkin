@@ -57,7 +57,7 @@ public final class Node<V> {
 
   public Node<V> addChild(Node<V> child) {
     child.parent = this;
-    if (children.equals(Collections.emptyList())) children = new LinkedList<>();
+    if (children.equals(Collections.emptyList())) children = new LinkedList<Node<V>>();
     children.add(child);
     return this;
   }
@@ -69,11 +69,11 @@ public final class Node<V> {
 
   /** Traverses the tree, breadth-first. */
   public Iterator<Node<V>> traverse() {
-    return new BreadthFirstIterator<>(this);
+    return new BreadthFirstIterator<V>(this);
   }
 
   static final class BreadthFirstIterator<V> implements Iterator<Node<V>> {
-    private final Queue<Node<V>> queue = new ArrayDeque<>();
+    private final Queue<Node<V>> queue = new ArrayDeque<Node<V>>();
 
     BreadthFirstIterator(Node<V> root) {
       queue.add(root);
@@ -101,7 +101,7 @@ public final class Node<V> {
    * @param trace spans that belong to the same {@link Span#traceId trace}, in any order.
    */
   static Node<Span> constructTree(List<Span> trace) {
-    TreeBuilder<Span> treeBuilder = new TreeBuilder<>();
+    TreeBuilder<Span> treeBuilder = new TreeBuilder<Span>();
     for (Span s : trace) {
       treeBuilder.addNode(s.parentId, s.id, s);
     }
@@ -118,9 +118,9 @@ public final class Node<V> {
     Node<V> rootNode = null;
 
     // Nodes representing the trace tree
-    Map<Long, Node<V>> idToNode = new LinkedHashMap<>();
+    Map<Long, Node<V>> idToNode = new LinkedHashMap<Long, Node<V>>();
     // Collect the parent-child relationships between all spans.
-    Map<Long, Long> idToParent = new LinkedHashMap<>(idToNode.size());
+    Map<Long, Long> idToParent = new LinkedHashMap<Long, Long>(idToNode.size());
 
     public void addNode(Long parentId, long id, @Nullable V value) {
       Node<V> node = new Node<V>().value(value);

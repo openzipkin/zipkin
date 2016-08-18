@@ -20,7 +20,7 @@ import zipkin.storage.Callback;
 public final class CallbackCaptor<V> implements Callback<V> {
   // countDown + ref as BlockingQueue forbids null
   final CountDownLatch countDown = new CountDownLatch(1);
-  final AtomicReference<Object> ref = new AtomicReference<>();
+  final AtomicReference<Object> ref = new AtomicReference<Object>();
 
   /**
    * Blocks until {@link Callback#onSuccess(Object)} or {@link Callback#onError(Throwable)}.

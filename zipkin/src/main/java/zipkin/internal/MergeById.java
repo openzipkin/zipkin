@@ -26,8 +26,8 @@ import static zipkin.internal.Util.sortedList;
 public class MergeById {
 
   public static List<Span> apply(Collection<Span> spans) {
-    List<Span> result = new ArrayList<>(spans.size());
-    Map<Long, List<Span>> spanIdToSpans = new LinkedHashMap<>();
+    List<Span> result = new ArrayList<Span>(spans.size());
+    Map<Long, List<Span>> spanIdToSpans = new LinkedHashMap<Long, List<Span>>();
     for (Span span : spans) {
       if (!spanIdToSpans.containsKey(span.id)) {
         spanIdToSpans.put(span.id, new LinkedList<Span>());

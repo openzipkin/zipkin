@@ -24,9 +24,9 @@ Once you've started, browse to http://your_host:9411 to find traces!
 Check out the [`zipkin-server`](/zipkin-server) documentation for configuration details, or [`docker-zipkin`](https://github.com/openzipkin/docker-zipkin) for how to use docker-compose.
 
 ## Core Library
-The [core library](https://github.com/openzipkin/zipkin/tree/master/zipkin/src/main/java/io/zipkin) requires minimum language level 7. While currently only used by the server, we expect this library to be used in native instrumentation as well.
+The [core library](https://github.com/openzipkin/zipkin/tree/master/zipkin/src/main/java/io/zipkin) is used by both Zipkin instrumentation and the Zipkin server. Its minimum Java language level is 6, in efforts to support those writing agent instrumentation.
 
-This includes built-in codec for both thrift and json structs. Direct dependencies on thrift or moshi (json library) are avoided by minifying and repackaging classes used. The result is a 190k jar which won't conflict with any library you use.
+This includes built-in codec for both thrift and json structs. A direct dependency on gson (json library) is avoided by minifying and repackaging classes used. The result is a 155k jar which won't conflict with any library you use.
 
 Ex.
 ```java

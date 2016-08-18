@@ -99,7 +99,7 @@ public final class Collector {
   }
 
   public void acceptSpans(List<byte[]> serializedSpans, Codec codec, Callback<Void> callback) {
-    List<Span> spans = new ArrayList<>(serializedSpans.size());
+    List<Span> spans = new ArrayList<Span>(serializedSpans.size());
     try {
       int bytesRead = 0;
       for (byte[] serializedSpan : serializedSpans) {
@@ -137,7 +137,7 @@ public final class Collector {
   }
 
   List<Span> sample(List<Span> input) {
-    List<Span> sampled = new ArrayList<>(input.size());
+    List<Span> sampled = new ArrayList<Span>(input.size());
     for (Span s : input) {
       if (sampler.isSampled(s)) sampled.add(s);
     }

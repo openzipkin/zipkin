@@ -15,7 +15,6 @@ package zipkin.internal;
 
 import java.nio.ByteBuffer;
 import java.util.List;
-import okio.Buffer;
 import zipkin.DependencyLink;
 
 import static zipkin.internal.ThriftCodec.DEPENDENCY_LINKS_ADAPTER;
@@ -139,7 +138,7 @@ public final class Dependencies {
       LINKS.write(buffer);
       DEPENDENCY_LINKS_ADAPTER.write(value.links, buffer);
 
-      buffer.writeByte(TYPE_STOP);
+      buffer.write(TYPE_STOP);
     }
 
     @Override

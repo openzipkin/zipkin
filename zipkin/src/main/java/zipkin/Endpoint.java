@@ -15,7 +15,6 @@ package zipkin;
 
 import java.util.Arrays;
 import java.util.Locale;
-import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 
@@ -148,11 +147,6 @@ public final class Endpoint {
     public Endpoint build() {
       return new Endpoint(serviceName, ipv4 == null ? 0 : ipv4, ipv6, port);
     }
-  }
-
-  @Override
-  public String toString() {
-    return JsonCodec.ENDPOINT_ADAPTER.toJson(this);
   }
 
   @Override

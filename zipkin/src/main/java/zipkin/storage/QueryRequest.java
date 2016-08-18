@@ -173,8 +173,8 @@ public final class QueryRequest {
   public static final class Builder {
     private String serviceName;
     private String spanName;
-    private List<String> annotations = new LinkedList<>();
-    private Map<String, String> binaryAnnotations = new LinkedHashMap<>();
+    private List<String> annotations = new LinkedList<String>();
+    private Map<String, String> binaryAnnotations = new LinkedHashMap<String, String>();
     private Long minDuration;
     private Long maxDuration;
     private Long endTs;

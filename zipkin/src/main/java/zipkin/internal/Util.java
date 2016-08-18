@@ -86,7 +86,7 @@ public final class Util {
     long to = midnightUTC(endTs);
     long from = midnightUTC(endTs - (lookback != null ? lookback : endTs));
 
-    List<Date> days = new ArrayList<>();
+    List<Date> days = new ArrayList<Date>();
     for (long time = from; time <= to; time += TimeUnit.DAYS.toMillis(1)) {
       days.add(new Date(time));
     }
@@ -143,6 +143,13 @@ public final class Util {
   static void writeHexByte(char[] data, int pos, byte b) {
     data[pos + 0] = HEX_DIGITS[(b >> 4) & 0xf];
     data[pos + 1] = HEX_DIGITS[b & 0xf];
+  }
+
+  // throwable ctor not present in JRE 6
+  static AssertionError assertionError(String message, Throwable cause) {
+    AssertionError error = new AssertionError(message);
+    error.initCause(cause);
+    throw error;
   }
 
   private Util() {

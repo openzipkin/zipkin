@@ -41,11 +41,11 @@ import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.sortedList;
 
 public final class InMemorySpanStore implements SpanStore {
-  private final Multimap<Long, Span> traceIdToSpans = new LinkedListMultimap<>();
-  private final Set<Pair<Long>> traceIdTimeStamps = new TreeSet<>(VALUE_2_DESCENDING);
+  private final Multimap<Long, Span> traceIdToSpans = new LinkedListMultimap<Long, Span>();
+  private final Set<Pair<Long>> traceIdTimeStamps = new TreeSet<Pair<Long>>(VALUE_2_DESCENDING);
   private final Multimap<String, Pair<Long>> serviceToTraceIdTimeStamp =
-      new SortedByValue2Descending<>();
-  private final Multimap<String, String> serviceToSpanNames = new LinkedHashSetMultimap<>();
+      new SortedByValue2Descending<String>();
+  private final Multimap<String, String> serviceToSpanNames = new LinkedHashSetMultimap<String, String>();
   volatile int acceptedSpanCount;
 
   final StorageAdapters.SpanConsumer spanConsumer = new StorageAdapters.SpanConsumer() {
@@ -88,7 +88,7 @@ public final class InMemorySpanStore implements SpanStore {
     Set<Long> traceIds = traceIdsDescendingByTimestamp(request.serviceName);
     if (traceIds == null || traceIds.isEmpty()) return Collections.emptyList();
 
-    List<List<Span>> result = new ArrayList<>(traceIds.size());
+    List<List<Span>> result = new ArrayList<List<Span>>(traceIds.size());
     for (long traceId : traceIds) {
       List<Span> next = getTrace(traceId);
       if (next != null && test(request, next)) {
@@ -106,7 +106,7 @@ public final class InMemorySpanStore implements SpanStore {
     Collection<Pair<Long>> traceIdTimestamps = serviceName == null ? traceIdTimeStamps :
         serviceToTraceIdTimeStamp.get(serviceName);
     if (traceIdTimestamps == null || traceIdTimestamps.isEmpty()) return Collections.emptySet();
-    Set<Long> result = new LinkedHashSet<>();
+    Set<Long> result = new LinkedHashSet<Long>();
     for (Pair<Long> traceIdTimestamp : traceIdTimestamps) {
       result.add(traceIdTimestamp._1);
     }
@@ -159,7 +159,7 @@ public final class InMemorySpanStore implements SpanStore {
     for (Collection<Span> trace : traceIdToSpans.delegate.values()) {
       if (trace.isEmpty()) continue;
 
-      List<DependencyLinkSpan> linkSpans = new LinkedList<>();
+      List<DependencyLinkSpan> linkSpans = new LinkedList<DependencyLinkSpan>();
       for (Span s : MergeById.apply(trace)) {
         Long timestamp = s.timestamp;
         if (timestamp == null ||
@@ -182,14 +182,14 @@ public final class InMemorySpanStore implements SpanStore {
         timestamp > request.endTs * 1000) {
       return false;
     }
-    Set<String> serviceNames = new LinkedHashSet<>();
+    Set<String> serviceNames = new LinkedHashSet<String>();
     boolean testedDuration = request.minDuration == null && request.maxDuration == null;
 
     String spanName = request.spanName;
-    Set<String> annotations = new LinkedHashSet<>(request.annotations);
-    Map<String, String> binaryAnnotations = new LinkedHashMap<>(request.binaryAnnotations);
+    Set<String> annotations = new LinkedHashSet<String>(request.annotations);
+    Map<String, String> binaryAnnotations = new LinkedHashMap<String, String>(request.binaryAnnotations);
 
-    Set<String> currentServiceNames = new LinkedHashSet<>();
+    Set<String> currentServiceNames = new LinkedHashSet<String>();
     for (Span span : spans) {
       currentServiceNames.clear();
 
@@ -236,7 +236,7 @@ public final class InMemorySpanStore implements SpanStore {
   static final class LinkedListMultimap<K, V> extends Multimap<K, V> {
 
     @Override Collection<V> valueContainer() {
-      return new LinkedList<>();
+      return new LinkedList<V>();
     }
   }
 
@@ -253,19 +253,19 @@ public final class InMemorySpanStore implements SpanStore {
   static final class SortedByValue2Descending<K> extends Multimap<K, Pair<Long>> {
 
     @Override Set<Pair<Long>> valueContainer() {
-      return new TreeSet<>(VALUE_2_DESCENDING);
+      return new TreeSet<Pair<Long>>(VALUE_2_DESCENDING);
     }
   }
 
   static final class LinkedHashSetMultimap<K, V> extends Multimap<K, V> {
 
     @Override Collection<V> valueContainer() {
-      return new LinkedHashSet<>();
+      return new LinkedHashSet<V>();
     }
   }
 
   static abstract class Multimap<K, V> {
-    private final Map<K, Collection<V>> delegate = new LinkedHashMap<>();
+    private final Map<K, Collection<V>> delegate = new LinkedHashMap<K, Collection<V>>();
 
     abstract Collection<V> valueContainer();
 
