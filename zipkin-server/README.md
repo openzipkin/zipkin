@@ -17,6 +17,18 @@ The following endpoints are defined for Zipkin:
 
 There are more [built-in endpoints](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-endpoints.html) provided by Spring Boot, such as `/metrics`. To comprehensively list endpoints, `GET /mappings`.
 
+### CORS (Cross-origin Resource Sharing)
+
+By default, all endpoints under `/api/v1` are configured to **allow** cross-origin requests.
+
+This can be changed by modifying the YAML configuration file (`zipkin.query.allowed-origins`) or by setting an environment variable.
+
+For example, to allow CORS requests from `http://foo.bar.com`:
+
+```
+ZIPKIN_QUERY_ALLOWED_ORIGINS=http://foo.bar.com
+```
+
 ## Running locally
 
 To run the server from the currently checked out source, enter the following.

@@ -29,6 +29,9 @@ zipkin:
     lookback: ${QUERY_LOOKBACK:86400000}
     # The Cache-Control max-age (seconds) for /api/v1/services and /api/v1/spans
     names-max-age: 300
+    # CORS allowed-origins.
+    allowed-origins: "*"
+
   storage:
     type: ${STORAGE_TYPE:mem}
     cassandra:
@@ -83,6 +86,7 @@ zipkin:
     # - .*example2.com
     # Default is "match all websites"
     instrumented: .*
+
 server:
   port: ${QUERY_PORT:9411}
   compression:
@@ -90,6 +94,7 @@ server:
     # compresses any response over min-response-size (default is 2KiB)
     # Includes dynamic json content and large static assets from zipkin-ui
     mime-types: application/json,application/javascript,text/css,image/svg
+
 spring:
   mvc:
     favicon:

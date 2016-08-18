@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,6 +44,7 @@ import static zipkin.internal.Util.lowerHexToUnsignedLong;
  */
 @RestController
 @RequestMapping("/api/v1")
+@CrossOrigin("${zipkin.query.allowed-origins:*}")
 public class ZipkinQueryApiV1 {
 
   @Autowired

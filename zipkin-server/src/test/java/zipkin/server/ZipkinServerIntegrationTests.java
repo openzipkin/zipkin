@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -229,5 +230,12 @@ public class ZipkinServerIntegrationTests {
     mockMvc.perform(get("/api/v1/spans?serviceName=web"))
         .andExpect(status().isOk())
         .andExpect(header().string("Cache-Control", "max-age=300, must-revalidate"));
+  }
+
+  @Test
+  public void shouldAllowAnyOriginByDefault() throws Exception {
+    mockMvc.perform(get("/api/v1/traces")
+        .header(HttpHeaders.ORIGIN, "foo.example.com"))
+           .andExpect(status().isOk());
   }
 }
