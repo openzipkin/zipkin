@@ -51,7 +51,6 @@
 
     <brave.version>3.9.0</brave.version>
     <cassandra-driver-core.version>3.1.0</cassandra-driver-core.version>
-    <moshi.version>1.2.0</moshi.version>
     <okio.version>1.9.0</okio.version>
     <jooq.version>3.8.4</jooq.version>
     <spring-boot.version>1.4.0.RELEASE</spring-boot.version>
@@ -274,12 +273,6 @@
         <version>${elasticsearch.version}</version>
       </dependency>
       <!-- End spring-boot-dependencies overrides -->
-
-      <dependency>
-        <groupId>com.squareup.moshi</groupId>
-        <artifactId>moshi</artifactId>
-        <version>${moshi.version}</version>
-      </dependency>
 
       <dependency>
         <groupId>com.squareup.okhttp3</groupId>

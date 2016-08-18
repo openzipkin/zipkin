@@ -27,9 +27,9 @@ abstract class InternalCallbackRunnable<V> implements Runnable {
   @Override public void run() {
     try {
       callback.onSuccess(complete());
-    } catch (RuntimeException | Error e) {
+    } catch (Throwable e) {
       callback.onError(e);
-      if (e instanceof Error) throw e;
+      if (e instanceof Error) throw (Error) e;
     }
   }
 }

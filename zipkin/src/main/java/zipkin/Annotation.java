@@ -13,7 +13,6 @@
  */
 package zipkin;
 
-import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.checkNotNull;
@@ -101,11 +100,6 @@ public final class Annotation implements Comparable<Annotation> {
   }
 
   @Override
-  public String toString() {
-    return JsonCodec.ANNOTATION_ADAPTER.toJson(this);
-  }
-
-  @Override
   public boolean equals(Object o) {
     if (o == this) {
       return true;
@@ -135,7 +129,7 @@ public final class Annotation implements Comparable<Annotation> {
   @Override
   public int compareTo(Annotation that) {
     if (this == that) return 0;
-    int byTimestamp = Long.compare(timestamp, that.timestamp);
+    int byTimestamp = timestamp < that.timestamp ? -1 : timestamp == that.timestamp ? 0 : 1;
     if (byTimestamp != 0) return byTimestamp;
     return value.compareTo(that.value);
   }

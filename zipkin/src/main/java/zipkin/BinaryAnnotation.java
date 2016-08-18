@@ -14,7 +14,6 @@
 package zipkin;
 
 import java.util.Arrays;
-import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 
@@ -194,11 +193,6 @@ public final class BinaryAnnotation implements Comparable<BinaryAnnotation> {
     public BinaryAnnotation build() {
       return new BinaryAnnotation(key, value, type, endpoint);
     }
-  }
-
-  @Override
-  public String toString() {
-    return JsonCodec.BINARY_ANNOTATION_ADAPTER.toJson(this);
   }
 
   @Override

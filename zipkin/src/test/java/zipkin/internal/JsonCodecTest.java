@@ -16,6 +16,7 @@ package zipkin.internal;
 import java.io.IOException;
 import java.util.List;
 import org.junit.Test;
+import zipkin.BinaryAnnotation;
 import zipkin.Codec;
 import zipkin.CodecTest;
 import zipkin.Span;
@@ -134,7 +135,7 @@ public final class JsonCodecTest extends CodecTest {
   @Test
   public void niceErrorOnNull_traceId() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Expected a string but was NULL at path $.traceId reading Span");
+    thrown.expectMessage("Expected a string but was NULL");
 
     String json = "{\n"
         + "  \"traceId\": null,\n"
@@ -148,7 +149,7 @@ public final class JsonCodecTest extends CodecTest {
   @Test
   public void niceErrorOnNull_id() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Expected a string but was NULL at path $.id reading Span");
+    thrown.expectMessage("Expected a string but was NULL");
 
     String json = "{\n"
         + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
@@ -157,5 +158,65 @@ public final class JsonCodecTest extends CodecTest {
         + "}";
 
     Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+  }
+
+  @Test
+  public void binaryAnnotation_long() {
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"binaryAnnotations\": [\n"
+        + "    {\n"
+        + "      \"key\": \"num\",\n"
+        + "      \"value\": 123456789,\n"
+        + "      \"type\": \"I64\"\n"
+        + "    }\n"
+        + "  ]\n"
+        + "}";
+
+    Span span = Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+    assertThat(span.binaryAnnotations)
+        .containsExactly(BinaryAnnotation.builder()
+            .key("num")
+            .type(BinaryAnnotation.Type.I64)
+            .value(toBytes(123456789))
+            .build());
+
+    assertThat(Codec.JSON.readSpan(Codec.JSON.writeSpan(span)))
+        .isEqualTo(span);
+  }
+
+  @Test
+  public void binaryAnnotation_double() {
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"binaryAnnotations\": [\n"
+        + "    {\n"
+        + "      \"key\": \"num\",\n"
+        + "      \"value\": 1.23456789,\n"
+        + "      \"type\": \"DOUBLE\"\n"
+        + "    }\n"
+        + "  ]\n"
+        + "}";
+
+    Span span = Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+    assertThat(span.binaryAnnotations)
+        .containsExactly(BinaryAnnotation.builder()
+            .key("num")
+            .type(BinaryAnnotation.Type.DOUBLE)
+            .value(toBytes(Double.doubleToRawLongBits(1.23456789)))
+            .build());
+
+    assertThat(Codec.JSON.readSpan(Codec.JSON.writeSpan(span)))
+        .isEqualTo(span);
+  }
+
+  static byte[] toBytes(long v) {
+    okio.Buffer buffer = new okio.Buffer();
+    buffer.writeLong(v);
+    return buffer.readByteArray();
   }
 }

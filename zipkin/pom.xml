@@ -28,17 +28,21 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
+    <main.java.version>1.6</main.java.version>
+    <main.signature.artifact>java16</main.signature.artifact>
   </properties>
 
   <dependencies>
     <dependency>
-      <groupId>com.squareup.okio</groupId>
-      <artifactId>okio</artifactId>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.7</version>
     </dependency>
 
     <dependency>
-      <groupId>com.squareup.moshi</groupId>
-      <artifactId>moshi</artifactId>
+      <groupId>com.squareup.okio</groupId>
+      <artifactId>okio</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
@@ -73,17 +77,13 @@
               <minimizeJar>true</minimizeJar>
               <filters>
                 <filter>
-                  <artifact>com.squareup.moshi:moshi</artifact>
+                  <artifact>com.google.code.gson:gson</artifact>
                   <includes>
-                    <include>com/squareup/moshi/BufferedSinkJsonWriter*</include>
-                    <include>com/squareup/moshi/BufferedSourceJsonReader*</include>
-                    <!-- don't get zipkin/internal/moshi/JsonAdapter$Factory.class -->
-                    <include>com/squareup/moshi/JsonAdapter.class</include>
-                    <include>com/squareup/moshi/JsonAdapter$?.class</include>
-                    <include>com/squareup/moshi/JsonDataException*</include>
-                    <include>com/squareup/moshi/JsonReader*</include>
-                    <include>com/squareup/moshi/JsonScope*</include>
-                    <include>com/squareup/moshi/JsonWriter*</include>
+                    <include>com/google/gson/stream/JsonReader*.class</include>
+                    <include>com/google/gson/stream/JsonToken.class</include>
+                    <include>com/google/gson/stream/JsonWriter.class</include>
+                    <include>com/google/gson/stream/MalformedJsonException.class</include>
+                    <include>com/google/gson/internal/JsonReaderInternalAccess.class</include>
                   </includes>
                 </filter>
                 <filter>
@@ -96,12 +96,8 @@
               </filters>
               <relocations>
                 <relocation>
-                  <pattern>okio</pattern>
-                  <shadedPattern>zipkin.internal.okio</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>com.squareup.moshi</pattern>
-                  <shadedPattern>zipkin.internal.moshi</shadedPattern>
+                  <pattern>com.google.gson</pattern>
+                  <shadedPattern>zipkin.internal.gson</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
@@ -109,7 +105,6 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <executions>
           <execution>

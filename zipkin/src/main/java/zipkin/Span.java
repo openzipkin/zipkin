@@ -21,9 +21,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
 
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.internal.Util.equal;
 import static zipkin.internal.Util.sortedList;
@@ -273,14 +273,14 @@ public final class Span implements Comparable<Span>, Serializable {
      * @see Span#annotations
      */
     public Builder annotations(Collection<Annotation> annotations) {
-      this.annotations = new HashSet<>(annotations);
+      this.annotations = new HashSet<Annotation>(annotations);
       return this;
     }
 
     /** @see Span#annotations */
     public Builder addAnnotation(Annotation annotation) {
       if (annotations == null) {
-        annotations = new HashSet<>();
+        annotations = new HashSet<Annotation>();
       }
       annotations.add(annotation);
       return this;
@@ -292,14 +292,14 @@ public final class Span implements Comparable<Span>, Serializable {
      * @see Span#binaryAnnotations
      */
     public Builder binaryAnnotations(Collection<BinaryAnnotation> binaryAnnotations) {
-      this.binaryAnnotations = new HashSet<>(binaryAnnotations);
+      this.binaryAnnotations = new HashSet<BinaryAnnotation>(binaryAnnotations);
       return this;
     }
 
     /** @see Span#binaryAnnotations */
     public Builder addBinaryAnnotation(BinaryAnnotation binaryAnnotation) {
       if (binaryAnnotations == null) {
-        binaryAnnotations = new HashSet<>();
+        binaryAnnotations = new HashSet<BinaryAnnotation>();
       }
       binaryAnnotations.add(binaryAnnotation);
       return this;
@@ -318,7 +318,7 @@ public final class Span implements Comparable<Span>, Serializable {
 
   @Override
   public String toString() {
-    return JsonCodec.SPAN_ADAPTER.toJson(this);
+    return new String(Codec.JSON.writeSpan(this), UTF_8);
   }
 
   @Override
@@ -369,9 +369,9 @@ public final class Span implements Comparable<Span>, Serializable {
   @Override
   public int compareTo(Span that) {
     if (this == that) return 0;
-    int byTimestamp = Long.compare(
-        this.timestamp == null ? Long.MIN_VALUE : this.timestamp,
-        that.timestamp == null ? Long.MIN_VALUE : that.timestamp);
+    long x = this.timestamp == null ? Long.MIN_VALUE : this.timestamp;
+    long y = that.timestamp == null ? Long.MIN_VALUE : that.timestamp;
+    int byTimestamp = x < y ? -1 : x == y ? 0 : 1;
     if (byTimestamp != 0) return byTimestamp;
     return this.name.compareTo(that.name);
   }
@@ -390,7 +390,7 @@ public final class Span implements Comparable<Span>, Serializable {
 
   /** Returns the distinct {@link Endpoint#serviceName service names} that logged to this span. */
   public Set<String> serviceNames() {
-    Set<String> result = new HashSet<>();
+    Set<String> result = new HashSet<String>();
     for (Annotation a : annotations) {
       if (a.endpoint == null) continue;
       if (a.endpoint.serviceName.isEmpty()) continue;

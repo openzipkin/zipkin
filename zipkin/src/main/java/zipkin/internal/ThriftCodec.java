@@ -19,7 +19,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import okio.Buffer;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Codec;
@@ -28,6 +27,7 @@ import zipkin.Endpoint;
 import zipkin.Span;
 
 import static zipkin.internal.Util.UTF_8;
+import static zipkin.internal.Util.assertionError;
 import static zipkin.internal.Util.checkArgument;
 
 /**
@@ -43,7 +43,7 @@ public final class ThriftCodec implements Codec {
   static final int STRING_LENGTH_LIMIT = 1 * 1024 * 1024;
   static final int CONTAINER_LENGTH_LIMIT = 10 * 1000;
   // break vs recursing infinitely when skipping data
-  private static int MAX_SKIP_DEPTH = 2147483647;
+  static final int MAX_SKIP_DEPTH = 2147483647;
 
   // taken from org.apache.thrift.protocol.TType
   static final byte TYPE_STOP = 0;
@@ -145,7 +145,7 @@ public final class ThriftCodec implements Codec {
       buffer.writeShort(value.port == null ? 0 : value.port);
 
       SERVICE_NAME.write(buffer);
-      writeUtf8(buffer, value.serviceName);
+      buffer.writeUtf8(value.serviceName);
 
       if (value.ipv6 != null) {
         IPV6.write(buffer);
@@ -154,7 +154,7 @@ public final class ThriftCodec implements Codec {
         buffer.write(value.ipv6);
       }
 
-      buffer.writeByte(TYPE_STOP);
+      buffer.write(TYPE_STOP);
     }
   };
 
@@ -192,14 +192,14 @@ public final class ThriftCodec implements Codec {
 
       if (value.value != null) {
         VALUE.write(buffer);
-        writeUtf8(buffer, value.value);
+        buffer.writeUtf8(value.value);
       }
 
       if (value.endpoint != null) {
         ENDPOINT.write(buffer);
         ENDPOINT_ADAPTER.write(value.endpoint, buffer);
       }
-      buffer.writeByte(TYPE_STOP);
+      buffer.write(TYPE_STOP);
     }
   };
 
@@ -237,7 +237,7 @@ public final class ThriftCodec implements Codec {
     @Override
     public void write(BinaryAnnotation value, Buffer buffer) {
       KEY.write(buffer);
-      writeUtf8(buffer, value.key);
+      buffer.writeUtf8(value.key);
 
       VALUE.write(buffer);
       buffer.writeInt(value.value.length);
@@ -251,12 +251,12 @@ public final class ThriftCodec implements Codec {
         ENDPOINT_ADAPTER.write(value.endpoint, buffer);
       }
 
-      buffer.writeByte(TYPE_STOP);
+      buffer.write(TYPE_STOP);
     }
   };
 
-  static final ThriftAdapter<List<Annotation>> ANNOTATIONS_ADAPTER = new ListAdapter<>(ANNOTATION_ADAPTER);
-  static final ThriftAdapter<List<BinaryAnnotation>> BINARY_ANNOTATIONS_ADAPTER = new ListAdapter<>(BINARY_ANNOTATION_ADAPTER);
+  static final ThriftAdapter<List<Annotation>> ANNOTATIONS_ADAPTER = new ListAdapter<Annotation>(ANNOTATION_ADAPTER);
+  static final ThriftAdapter<List<BinaryAnnotation>> BINARY_ANNOTATIONS_ADAPTER = new ListAdapter<BinaryAnnotation>(BINARY_ANNOTATION_ADAPTER);
 
   static final ThriftAdapter<Span> SPAN_ADAPTER = new ThriftAdapter<Span>() {
 
@@ -312,7 +312,7 @@ public final class ThriftCodec implements Codec {
       buffer.writeLong(value.traceId);
 
       NAME.write(buffer);
-      writeUtf8(buffer, value.name);
+      buffer.writeUtf8(value.name);
 
       ID.write(buffer);
       buffer.writeLong(value.id);
@@ -330,7 +330,7 @@ public final class ThriftCodec implements Codec {
 
       if (value.debug != null) {
         DEBUG.write(buffer);
-        buffer.writeByte(value.debug ? 1 : 0);
+        buffer.write(value.debug ? 1 : 0);
       }
 
       if (value.timestamp != null) {
@@ -343,7 +343,7 @@ public final class ThriftCodec implements Codec {
         buffer.writeLong(value.duration);
       }
 
-      buffer.writeByte(TYPE_STOP);
+      buffer.write(TYPE_STOP);
     }
 
     @Override
@@ -352,8 +352,8 @@ public final class ThriftCodec implements Codec {
     }
   };
 
-  static final ThriftAdapter<List<Span>> SPANS_ADAPTER = new ListAdapter<>(SPAN_ADAPTER);
-  static final ThriftAdapter<List<List<Span>>> TRACES_ADAPTER = new ListAdapter<>(SPANS_ADAPTER);
+  static final ThriftAdapter<List<Span>> SPANS_ADAPTER = new ListAdapter<Span>(SPAN_ADAPTER);
+  static final ThriftAdapter<List<List<Span>>> TRACES_ADAPTER = new ListAdapter<List<Span>>(SPANS_ADAPTER);
 
   static final ThriftAdapter<DependencyLink> DEPENDENCY_LINK_ADAPTER = new ThriftAdapter<DependencyLink>() {
 
@@ -387,15 +387,15 @@ public final class ThriftCodec implements Codec {
     @Override
     public void write(DependencyLink value, Buffer buffer) {
       PARENT.write(buffer);
-      writeUtf8(buffer, value.parent);
+      buffer.writeUtf8(value.parent);
 
       CHILD.write(buffer);
-      writeUtf8(buffer, value.child);
+      buffer.writeUtf8(value.child);
 
       CALL_COUNT.write(buffer);
       buffer.writeLong(value.callCount);
 
-      buffer.writeByte(TYPE_STOP);
+      buffer.write(TYPE_STOP);
     }
 
     @Override
@@ -404,7 +404,7 @@ public final class ThriftCodec implements Codec {
     }
   };
 
-  static final ThriftAdapter<List<DependencyLink>> DEPENDENCY_LINKS_ADAPTER = new ListAdapter<>(DEPENDENCY_LINK_ADAPTER);
+  static final ThriftAdapter<List<DependencyLink>> DEPENDENCY_LINKS_ADAPTER = new ListAdapter<DependencyLink>(DEPENDENCY_LINK_ADAPTER);
 
   @Override
   public DependencyLink readDependencyLink(byte[] bytes) {
@@ -451,9 +451,9 @@ public final class ThriftCodec implements Codec {
     try {
       writer.write(value, buffer);
     } catch (RuntimeException e) {
-      throw new AssertionError("Could not write " + value + " as TBinary", e);
+      throw assertionError("Could not write " + value + " as TBinary", e);
     }
-    return buffer.readByteArray();
+    return buffer.toByteArray();
   }
 
   static <T> List<T> readList(ThriftReader<T> reader, ByteBuffer bytes) {
@@ -461,7 +461,7 @@ public final class ThriftCodec implements Codec {
     int length = guardLength(bytes, CONTAINER_LENGTH_LIMIT);
     if (length == 0) return Collections.emptyList();
     if (length == 1) return Collections.singletonList(reader.read(bytes));
-    List<T> result = new ArrayList<>(length);
+    List<T> result = new ArrayList<T>(length);
     for (int i = 0; i < length; i++) {
       result.add(reader.read(bytes));
     }
@@ -517,7 +517,7 @@ public final class ThriftCodec implements Codec {
     }
 
     void write(Buffer buffer) {
-      buffer.writeByte(type);
+      buffer.write(type);
       buffer.writeShort(id);
     }
 
@@ -605,13 +605,7 @@ public final class ThriftCodec implements Codec {
   }
 
   static void writeListBegin(Buffer buffer, int size) {
-    buffer.writeByte(TYPE_STRUCT);
+    buffer.write(TYPE_STRUCT);
     buffer.writeInt(size);
-  }
-
-  static void writeUtf8(Buffer buffer, String string) {
-    Buffer temp = new Buffer().writeUtf8(string);
-    buffer.writeInt((int) temp.size());
-    buffer.write(temp, temp.size());
   }
 }
