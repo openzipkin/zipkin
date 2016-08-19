@@ -44,6 +44,8 @@
         <version>${frontend-maven-plugin.version}</version>
         <configuration>
           <installDirectory>target</installDirectory>
+          <nodeVersion>v5.5.0</nodeVersion>
+          <npmVersion>3.6.0</npmVersion>
         </configuration>
         <executions>
           <execution>
@@ -51,10 +53,6 @@
             <goals>
               <goal>install-node-and-npm</goal>
             </goals>
-            <configuration>
-              <nodeVersion>v5.5.0</nodeVersion>
-              <npmVersion>3.6.0</npmVersion>
-            </configuration>
           </execution>
           <execution>
             <id>npm install</id>
