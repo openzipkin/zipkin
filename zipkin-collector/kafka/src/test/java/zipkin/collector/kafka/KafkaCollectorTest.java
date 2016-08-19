@@ -40,7 +40,7 @@ import static zipkin.TestObjects.TRACE;
 public class KafkaCollectorTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none();
-  @ClassRule public static Timeout globalTimeout = Timeout.seconds(10);
+  @ClassRule public static Timeout globalTimeout = Timeout.seconds(20);
   Producer<String, byte[]> producer = KafkaTestGraph.INSTANCE.producer();
   InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
   InMemoryCollectorMetrics kafkaMetrics = metrics.forTransport("kafka");
