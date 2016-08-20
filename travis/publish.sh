@@ -113,6 +113,12 @@ javadoc_to_gh_pages() {
   for jar in $(find . -name "*${version}-javadoc.jar"); do
     module="$(echo "$jar" | sed "s~.*/\(.*\)-${version}-javadoc.jar~\1~")"
     this_builddir="$builddir/$module"
+    if [ -d "$this_builddir" ]; then
+        # Skip modules we've already processed.
+        # We may find multiple instances of the same javadoc jar because of, for instance,
+        # integration tests copying jars around.
+        continue
+    fi
     mkdir -p "$this_builddir"
     unzip "$jar" -d "$this_builddir"
     # Build a simple module-level index
