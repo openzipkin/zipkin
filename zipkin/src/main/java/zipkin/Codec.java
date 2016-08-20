@@ -46,4 +46,18 @@ public interface Codec {
   List<DependencyLink> readDependencyLinks(byte[] bytes);
 
   byte[] writeDependencyLinks(List<DependencyLink> value);
+
+  /**
+   * Combines a list of pre-encoded values into an encoded list. For example, in thrift, this would
+   * be length-prefixed, whereas in json, this would be comma-separated and enclosed by brackets.
+   *
+   * <p>This will be less efficient than calling {@link #writeSpans(List)}, as the latter can reuse
+   * an internal buffer for each encode operation. Only use this when you need to process spans
+   * encoded in a different scope, or encoded with a different library.
+   *
+   * <p>The primary use of this is batch reporting spans. For example, spans are {@link
+   * #writeSpan(Span) written} one-by-one into a queue. This queue is drained up to a byte
+   * threshold. Then, the list is encoded with this function and reported out-of-process.
+   */
+  byte[] gather(List<byte[]> value);
 }

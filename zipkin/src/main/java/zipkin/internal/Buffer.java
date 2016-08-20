@@ -19,44 +19,52 @@ import java.util.Arrays;
 /** Similar to {@link java.io.ByteArrayInputStream}, except specialized and unsynchronized */
 final class Buffer extends OutputStream {
   static final int MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
-  private byte[] buf = new byte[128];
-  private int count;
+  private byte[] buf;
+  private int pos;
+
+  Buffer() {
+    this(128);
+  }
+
+  Buffer(int initialLength) {
+    buf = new byte[initialLength];
+  }
 
   @Override public void write(int v) {
-    ensureCapacity(count + 1);
-    buf[count++] = (byte) v;
+    ensureCapacity(pos + 1);
+    buf[pos++] = (byte) v;
   }
 
   @Override public void write(byte[] v) {
-    ensureCapacity(count + v.length);
-    System.arraycopy(v, 0, buf, count, v.length);
-    count += v.length;
+    ensureCapacity(pos + v.length);
+    System.arraycopy(v, 0, buf, pos, v.length);
+    pos += v.length;
   }
 
   void writeShort(int v) {
-    ensureCapacity(count + 2);
+    ensureCapacity(pos + 2);
     write((v >>> 8L) & 0xff);
     write(v & 0xff);
   }
 
   void writeInt(int v) {
-    ensureCapacity(count + 4);
-    buf[count++] = (byte) ((v >>> 24L) & 0xff);
-    buf[count++] = (byte) ((v >>> 16L) & 0xff);
-    buf[count++] = (byte) ((v >>> 8L) & 0xff);
-    buf[count++] = (byte) (v & 0xff);
+    ensureCapacity(pos + 4);
+    buf[pos++] = (byte) ((v >>> 24L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 16L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 8L) & 0xff);
+    buf[pos++] = (byte) (v & 0xff);
   }
 
   void writeLong(long v) {
-    ensureCapacity(count + 8);
-    buf[count++] = (byte) ((v >>> 56L) & 0xff);
-    buf[count++] = (byte) ((v >>> 48L) & 0xff);
-    buf[count++] = (byte) ((v >>> 40L) & 0xff);
-    buf[count++] = (byte) ((v >>> 32L) & 0xff);
-    buf[count++] = (byte) ((v >>> 24L) & 0xff);
-    buf[count++] = (byte) ((v >>> 16L) & 0xff);
-    buf[count++] = (byte) ((v >>> 8L) & 0xff);
-    buf[count++] = (byte) (v & 0xff);
+    ensureCapacity(pos + 8);
+    buf[pos++] = (byte) ((v >>> 56L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 48L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 40L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 32L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 24L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 16L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 8L) & 0xff);
+    buf[pos++] = (byte) (v & 0xff);
   }
 
   /** Writes a length-prefixed string */
@@ -66,8 +74,9 @@ final class Buffer extends OutputStream {
     write(temp);
   }
 
+  /** Shares the internal buffer, if it is fully written */
   byte[] toByteArray() {
-    return Arrays.copyOf(buf, count);
+    return pos == buf.length ? buf : Arrays.copyOf(buf, pos);
   }
 
   /** Doubles up to {@link #MAX_ARRAY_LENGTH} if necessary */

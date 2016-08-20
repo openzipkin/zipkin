@@ -14,6 +14,7 @@
 package zipkin;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
@@ -42,6 +43,17 @@ public abstract class CodecTest {
     byte[] bytes = codec().writeSpans(TestObjects.TRACE);
     assertThat(codec().readSpans(bytes))
         .isEqualTo(TestObjects.TRACE);
+  }
+
+  @Test
+  public void gatherSpans() throws IOException {
+    List<byte[]> spans = new ArrayList<>(TestObjects.TRACE.size());
+    for (Span span: TestObjects.TRACE) {
+      spans.add(codec().writeSpan(span));
+    }
+
+    assertThat(codec().gather(spans))
+        .isEqualTo(codec().writeSpans(TestObjects.TRACE));
   }
 
   @Test

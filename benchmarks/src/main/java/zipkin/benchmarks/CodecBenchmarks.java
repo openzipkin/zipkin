@@ -17,6 +17,8 @@ import com.google.common.io.ByteStreams;
 import com.twitter.zipkin.thriftjava.Annotation;
 import com.twitter.zipkin.thriftjava.BinaryAnnotation;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.thrift.TDeserializer;
 import org.apache.thrift.TException;
@@ -197,6 +199,42 @@ public class CodecBenchmarks {
   @Benchmark
   public byte[] writeRpcV6Span_thrift_libthrift() throws TException {
     return serialize(rpcV6SpanLibThrift);
+  }
+
+  @Benchmark
+  public byte[] write100Spans_thrift() {
+    return write100Spans(Codec.THRIFT);
+  }
+
+  @Benchmark
+  public byte[] write100Spans_json() {
+    return write100Spans(Codec.JSON);
+  }
+
+  @Benchmark
+  public byte[] writeAndGather100Spans_thrift() {
+    return writeAndGather100Spans(Codec.THRIFT);
+  }
+
+  @Benchmark
+  public byte[] writeAndGather100Spans_json() {
+    return writeAndGather100Spans(Codec.JSON);
+  }
+
+  static byte[] write100Spans(Codec codec) {
+    List<Span> spans = new ArrayList<>(100);
+    for (int i = 0; i < 100; i++) {
+      spans.add(clientSpan);
+    }
+    return codec.writeSpans(spans);
+  }
+
+  static byte[] writeAndGather100Spans(Codec codec) {
+    List<byte[]> spans = new ArrayList<>(100);
+    for (int i = 0; i < 100; i++) {
+      spans.add(codec.writeSpan(clientSpan));
+    }
+    return codec.gather(spans);
   }
 
   // Convenience main entry-point
