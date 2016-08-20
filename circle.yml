@@ -54,3 +54,19 @@ test:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
 
+# If a release commit fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
+deployment:
+  # Commits to master trigger a -SNAPSHOT release
+  master:
+    branch: master
+    owner: openzipkin
+    commands:
+      - ./circleci/publish-snapshot.sh
+      - ./circleci/javadoc-to-gh-pages.sh
+  # Release tags trigger a non-SNAPSHOT release
+  release:
+    tag: /^release-[0-9]+\.[0-9]+\.[0-9]\.$/
+    owner: openzipkin
+    commands:
+      - ./circleci/publish-stable.sh
+      - ./circleci/javadoc-to-gh-pages.sh $CIRCLE_TAG

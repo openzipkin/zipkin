@@ -13,9 +13,7 @@
 # the License.
 #
 
-set -xeuo pipefail
+set -xueo pipefail
 
-# Read filename arguments, passed in by CircleCI. This is our integration with the
-# runtime-based balancing of tests across parallel test executors that CircleCI does.
-tests="$(echo "$@" | xargs basename -s .java | tr '\n' ',' | sed -e 's/,$//')"
-./mvnw -Dtest="$tests" -DfailIfNoTests=false test
+# Upload snapshot release to Bintray
+./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks -DskipTests deploy
