@@ -130,6 +130,10 @@ javadoc_to_gh_pages() {
     echo "<li><a href=\"${version}/index.html\">${version}</a></li>" >> index.html
   fi
 
+  # Ensure links are ordered by versions, latest on top
+  sort -rV index.html > index.html.sorted
+  mv index.html.sorted index.html
+
   git add "$version"
   git add index.html
   git commit -m "Automatically updated javadocs for $version"
