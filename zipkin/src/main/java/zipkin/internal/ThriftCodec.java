@@ -436,6 +436,22 @@ public final class ThriftCodec implements Codec {
     return write(DEPENDENCY_LINKS_ADAPTER, value);
   }
 
+  @Override
+  public byte[] gather(List<byte[]> values) {
+    int sizeOfArray = 5;
+    int length = values.size();
+    for (int i = 0; i < length; i++) {
+      sizeOfArray += values.get(i).length;
+    }
+
+    Buffer buffer = new Buffer(sizeOfArray);
+    writeListBegin(buffer, length);
+    for (int i = 0; i < length; i++) {
+      buffer.write(values.get(i));
+    }
+    return buffer.toByteArray();
+  }
+
   static <T> T read(ThriftReader<T> reader, ByteBuffer bytes) {
     checkArgument(bytes.remaining() > 0, "Empty input reading %s", reader);
     try {

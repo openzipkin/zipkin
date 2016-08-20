@@ -529,6 +529,24 @@ public final class JsonCodec implements Codec {
     return writeList(DEPENDENCY_LINK_ADAPTER, value);
   }
 
+  @Override public byte[] gather(List<byte[]> values) {
+    int sizeOfArray = 2;
+    int length = values.size();
+    for (int i = 0; i < length; ) {
+      sizeOfArray += values.get(i++).length;
+      if (i < length) sizeOfArray++;
+    }
+
+    Buffer out = new Buffer(sizeOfArray);
+    out.write('[');
+    for (int i = 0; i < length; ) {
+      out.write(values.get(i++));
+      if (i < length) out.write(',');
+    }
+    out.write(']');
+    return out.toByteArray();
+  }
+
   static final JsonAdapter<String> STRING_ADAPTER = new JsonAdapter<String>() {
     @Override
     public String fromJson(JsonReader reader) throws IOException {
