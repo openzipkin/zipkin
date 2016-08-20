@@ -13,7 +13,6 @@
  */
 package zipkin.collector.kafka;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,7 +40,7 @@ import static zipkin.internal.Util.checkNotNull;
  *
  * <p>This collector remains a Kafka 0.8.x consumer, while Zipkin systems update to 0.9+.
  */
-public final class KafkaCollector implements CollectorComponent, Closeable {
+public final class KafkaCollector implements CollectorComponent {
 
   public static Builder builder() {
     return new Builder();
