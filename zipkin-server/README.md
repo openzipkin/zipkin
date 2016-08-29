@@ -2,12 +2,23 @@
 zipkin-server is a [Spring Boot](http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/) application, packaged as an executable jar. You need JRE 8+ to start zipkin-server.
 
 Span storage and collectors are configurable. By default, storage is
-in-memory, the http collector (POST /spans endpoint) is enabled, and
-the server listens on port 9411.
+in-memory, the http collector (POST /api/v1/spans endpoint) is enabled,
+and the server listens on port 9411.
+
+## Quick-start
+
+The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec) as a self-contained executable jar. Note that the Zipkin requires minimum JRE 8. For example:
+
+```
+wget -O zipkin.jar 'https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec'
+java -jar zipkin.jar
+```
+
+Once you've started, browse to http://your_host:9411 to find traces!
 
 ## Endpoints
 
-The following endpoints are defined for Zipkin:
+The following endpoints are defined under the base url http://your_host:9411
 * / - [UI](https://github.com/openzipkin/zipkin/tree/master/zipkin-ui)
 * /config.json - [Configuration for the UI](#configuration-for-the-ui)
 * /api/v1 - [Api](http://zipkin.io/zipkin-api/#/)
@@ -29,16 +40,6 @@ For example, to allow CORS requests from `http://foo.bar.com`:
 ZIPKIN_QUERY_ALLOWED_ORIGINS=http://foo.bar.com
 ```
 
-## Running locally
-
-To run the server from the currently checked out source, enter the following.
-```bash
-# Build the server and also make its dependencies
-$ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
-# Run the server
-$ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
-```
-
 ## Logging
 
 By default, zipkin writes log messages to the console at INFO level and above. You can adjust categories using the `--logging.level.XXX` parameter, a `-Dlogging.level.XXX` system property, or by adjusting [yaml configuration](src/main/resources/zipkin-server.yml).
@@ -46,7 +47,7 @@ By default, zipkin writes log messages to the console at INFO level and above. Y
 For example, if you want to enable debug logging for all zipkin categories, you can start the server like so:
 
 ```bash
-$ java -jar ./zipkin-server/target/zipkin-server-*exec.jar --logging.level.zipkin=DEBUG
+$ java -jar zipkin.jar --logging.level.zipkin=DEBUG
 ```
 
 Under the covers, the server uses [Spring Boot - Logback integration](http://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html#howto-configure-logback-for-logging). For example, you can add `--logging.exception-conversion-word=%wEx{full}` to dump full stack traces instead of truncated ones.
@@ -134,7 +135,7 @@ The following are tuning parameters which may not concern all users:
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=cassandra java -jar ./zipkin-server/target/zipkin-server-*exec.jar --logging.level.com.datastax.driver.core.QueryLogger=trace
+$ STORAGE_TYPE=cassandra java -jar zipkin.jar --logging.level.com.datastax.driver.core.QueryLogger=trace
 ```
 ### MySQL Storage
 The following apply when `STORAGE_TYPE` is set to `mysql`:
@@ -149,7 +150,7 @@ The following apply when `STORAGE_TYPE` is set to `mysql`:
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=mysql MYSQL_USER=root java -jar ./zipkin-server/target/zipkin-server-*exec.jar
+$ STORAGE_TYPE=mysql MYSQL_USER=root java -jar zipkin.jar
 ```
 
 ### Elasticsearch Storage
@@ -176,7 +177,7 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=elasticsearch ES_CLUSTER=monitoring ES_HOSTS=host1:9300,host2:9300 java -jar ./zipkin-server/target/zipkin-server-*exec.jar
+$ STORAGE_TYPE=elasticsearch ES_CLUSTER=monitoring ES_HOSTS=host1:9300,host2:9300 java -jar zipkin.jar
 ```
 
 ### Scribe Collector
@@ -204,7 +205,7 @@ KAFKA_MAX_MESSAGE_SIZE | fetch.message.max.bytes | Maximum size of a message con
 Example usage:
 
 ```bash
-$ KAFKA_ZOOKEEPER=127.0.0.1:2181 java -jar ./zipkin-server/target/zipkin-server-*exec.jar
+$ KAFKA_ZOOKEEPER=127.0.0.1:2181 java -jar zipkin.jar
 ```
 
 Example targeting Kafka running in Docker:
@@ -217,9 +218,19 @@ $ docker run -d -p 2181:2181 -p 9092:9092 \
     --env AUTO_CREATE_TOPICS=true \
     spotify/kafka
 # Start the zipkin server, which reads $KAFKA_ZOOKEEPER
-$ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
+$ java -jar zipkin.jar
 ```
 
 ## Running with Docker
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin`.
 See [docker-zipkin-java](https://github.com/openzipkin/docker-zipkin-java) for details.
+
+## Building locally
+
+To build and run the server from the currently checked out source, enter the following.
+```bash
+# Build the server and also make its dependencies
+$ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
+# Run the server
+$ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
+```
