@@ -126,6 +126,15 @@ public final class Dependencies {
       return Dependencies.create(startTs, endTs, links);
     }
 
+    @Override public int sizeInBytes(Dependencies value) {
+      int sizeInBytes = 0;
+      sizeInBytes += 3 + 8; // START_TS
+      sizeInBytes += 3 + 8; // END_TS
+      sizeInBytes += 3 + DEPENDENCY_LINKS_ADAPTER.sizeInBytes(value.links);
+      sizeInBytes++; //TYPE_STOP
+      return sizeInBytes;
+    }
+
     @Override
     public void write(Dependencies value, Buffer buffer) {
 
