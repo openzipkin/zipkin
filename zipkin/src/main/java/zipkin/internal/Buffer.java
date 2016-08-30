@@ -20,54 +20,82 @@ import java.util.Arrays;
 final class Buffer extends OutputStream {
   static final int MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
   private byte[] buf = new byte[128];
-  private int count;
+  private int pos;
 
   @Override public void write(int v) {
-    ensureCapacity(count + 1);
-    buf[count++] = (byte) v;
+    ensureCapacity(pos + 1);
+    buf[pos++] = (byte) v;
   }
 
   @Override public void write(byte[] v) {
-    ensureCapacity(count + v.length);
-    System.arraycopy(v, 0, buf, count, v.length);
-    count += v.length;
+    ensureCapacity(pos + v.length);
+    System.arraycopy(v, 0, buf, pos, v.length);
+    pos += v.length;
   }
 
-  void writeShort(int v) {
-    ensureCapacity(count + 2);
+  Buffer writeShort(int v) {
+    ensureCapacity(pos + 2);
     write((v >>> 8L) & 0xff);
     write(v & 0xff);
+    return this;
   }
 
-  void writeInt(int v) {
-    ensureCapacity(count + 4);
-    buf[count++] = (byte) ((v >>> 24L) & 0xff);
-    buf[count++] = (byte) ((v >>> 16L) & 0xff);
-    buf[count++] = (byte) ((v >>> 8L) & 0xff);
-    buf[count++] = (byte) (v & 0xff);
+  Buffer writeInt(int v) {
+    ensureCapacity(pos + 4);
+    buf[pos++] = (byte) ((v >>> 24L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 16L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 8L) & 0xff);
+    buf[pos++] = (byte) (v & 0xff);
+    return this;
   }
 
-  void writeLong(long v) {
-    ensureCapacity(count + 8);
-    buf[count++] = (byte) ((v >>> 56L) & 0xff);
-    buf[count++] = (byte) ((v >>> 48L) & 0xff);
-    buf[count++] = (byte) ((v >>> 40L) & 0xff);
-    buf[count++] = (byte) ((v >>> 32L) & 0xff);
-    buf[count++] = (byte) ((v >>> 24L) & 0xff);
-    buf[count++] = (byte) ((v >>> 16L) & 0xff);
-    buf[count++] = (byte) ((v >>> 8L) & 0xff);
-    buf[count++] = (byte) (v & 0xff);
+  Buffer writeLong(long v) {
+    ensureCapacity(pos + 8);
+    buf[pos++] = (byte) ((v >>> 56L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 48L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 40L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 32L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 24L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 16L) & 0xff);
+    buf[pos++] = (byte) ((v >>> 8L) & 0xff);
+    buf[pos++] = (byte) (v & 0xff);
+    return this;
   }
 
   /** Writes a length-prefixed string */
-  void writeUtf8(String v) {
-    byte[] temp = v.getBytes(Util.UTF_8);
-    writeInt(temp.length);
-    write(temp);
+  Buffer writeLengthPrefixed(String v) {
+    boolean ascii = isAscii(v);
+    if (ascii) {
+      writeInt(v.length());
+      return writeAscii(v);
+    } else {
+      byte[] temp = v.getBytes(Util.UTF_8);
+      writeInt(temp.length);
+      write(temp);
+    }
+    return this;
+  }
+
+  Buffer writeAscii(String v) {
+    int length = v.length();
+    ensureCapacity(pos + length);
+    for (char i = 0; i < length; i++) {
+      buf[pos++] = (byte) v.charAt(i);
+    }
+    return this;
+  }
+
+  static boolean isAscii(String v) {
+    for (int i = 0, length = v.length(); i < length; i++) {
+      if (v.charAt(i) >= 0x80) {
+        return false;
+      }
+    }
+    return true;
   }
 
   byte[] toByteArray() {
-    return Arrays.copyOf(buf, count);
+    return Arrays.copyOf(buf, pos);
   }
 
   /** Doubles up to {@link #MAX_ARRAY_LENGTH} if necessary */

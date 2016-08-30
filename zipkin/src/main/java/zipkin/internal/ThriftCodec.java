@@ -145,7 +145,7 @@ public final class ThriftCodec implements Codec {
       buffer.writeShort(value.port == null ? 0 : value.port);
 
       SERVICE_NAME.write(buffer);
-      buffer.writeUtf8(value.serviceName);
+      buffer.writeLengthPrefixed(value.serviceName);
 
       if (value.ipv6 != null) {
         IPV6.write(buffer);
@@ -192,7 +192,7 @@ public final class ThriftCodec implements Codec {
 
       if (value.value != null) {
         VALUE.write(buffer);
-        buffer.writeUtf8(value.value);
+        buffer.writeLengthPrefixed(value.value);
       }
 
       if (value.endpoint != null) {
@@ -237,7 +237,7 @@ public final class ThriftCodec implements Codec {
     @Override
     public void write(BinaryAnnotation value, Buffer buffer) {
       KEY.write(buffer);
-      buffer.writeUtf8(value.key);
+      buffer.writeLengthPrefixed(value.key);
 
       VALUE.write(buffer);
       buffer.writeInt(value.value.length);
@@ -312,7 +312,7 @@ public final class ThriftCodec implements Codec {
       buffer.writeLong(value.traceId);
 
       NAME.write(buffer);
-      buffer.writeUtf8(value.name);
+      buffer.writeLengthPrefixed(value.name);
 
       ID.write(buffer);
       buffer.writeLong(value.id);
@@ -387,10 +387,10 @@ public final class ThriftCodec implements Codec {
     @Override
     public void write(DependencyLink value, Buffer buffer) {
       PARENT.write(buffer);
-      buffer.writeUtf8(value.parent);
+      buffer.writeLengthPrefixed(value.parent);
 
       CHILD.write(buffer);
-      buffer.writeUtf8(value.child);
+      buffer.writeLengthPrefixed(value.child);
 
       CALL_COUNT.write(buffer);
       buffer.writeLong(value.callCount);
