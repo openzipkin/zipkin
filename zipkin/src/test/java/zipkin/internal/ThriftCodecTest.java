@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import org.junit.Test;
-import zipkin.Codec;
 import zipkin.CodecTest;
 import zipkin.DependencyLink;
 import zipkin.Span;
@@ -41,6 +40,25 @@ public final class ThriftCodecTest extends CodecTest {
       assertThat(codec().readSpan(ByteBuffer.wrap(bytes)))
           .isEqualTo(span);
     }
+  }
+
+  @Test
+  public void sizeInBytes_span() throws IOException {
+    Span span = TestObjects.LOTS_OF_SPANS[0];
+    assertThat(ThriftCodec.SPAN_ADAPTER.sizeInBytes(span))
+        .isEqualTo(codec().writeSpan(span).length);
+  }
+
+  @Test
+  public void sizeInBytes_trace() throws IOException {
+    assertThat(ThriftCodec.SPANS_ADAPTER.sizeInBytes(TestObjects.TRACE))
+        .isEqualTo(codec().writeSpans(TestObjects.TRACE).length);
+  }
+
+  @Test
+  public void sizeInBytes_links() throws IOException {
+    assertThat(ThriftCodec.DEPENDENCY_LINKS_ADAPTER.sizeInBytes(TestObjects.LINKS))
+        .isEqualTo(codec().writeDependencyLinks(TestObjects.LINKS).length);
   }
 
   @Test

@@ -95,6 +95,8 @@ public final class ThriftCodec implements Codec {
   }
 
   interface ThriftWriter<T> {
+    int sizeInBytes(T value);
+
     void write(T value, Buffer buffer);
   }
 
@@ -134,6 +136,16 @@ public final class ThriftCodec implements Codec {
         }
       }
       return result.build();
+    }
+
+    @Override public int sizeInBytes(Endpoint value) {
+      int sizeInBytes = 0;
+      sizeInBytes += 3 + 4;// IPV4
+      sizeInBytes += 3 + 2;// PORT
+      sizeInBytes += 3 + 4 + Buffer.utf8SizeInBytes(value.serviceName);
+      if (value.ipv6 != null) sizeInBytes += 3 + 4 + 16;
+      sizeInBytes++; //TYPE_STOP
+      return sizeInBytes;
     }
 
     @Override
@@ -185,15 +197,22 @@ public final class ThriftCodec implements Codec {
       return result.build();
     }
 
+    @Override public int sizeInBytes(Annotation value) {
+      int sizeInBytes = 0;
+      sizeInBytes += 3 + 8;// TIMESTAMP
+      sizeInBytes += 3 + 4 + Buffer.utf8SizeInBytes(value.value);
+      if (value.endpoint != null) sizeInBytes += 3 + ENDPOINT_ADAPTER.sizeInBytes(value.endpoint);
+      sizeInBytes++; //TYPE_STOP
+      return sizeInBytes;
+    }
+
     @Override
     public void write(Annotation value, Buffer buffer) {
       TIMESTAMP.write(buffer);
       buffer.writeLong(value.timestamp);
 
-      if (value.value != null) {
-        VALUE.write(buffer);
-        buffer.writeLengthPrefixed(value.value);
-      }
+      VALUE.write(buffer);
+      buffer.writeLengthPrefixed(value.value);
 
       if (value.endpoint != null) {
         ENDPOINT.write(buffer);
@@ -232,6 +251,16 @@ public final class ThriftCodec implements Codec {
         }
       }
       return result.build();
+    }
+
+    @Override public int sizeInBytes(BinaryAnnotation value) {
+      int sizeInBytes = 0;
+      sizeInBytes += 3 + 4 + Buffer.utf8SizeInBytes(value.key);
+      sizeInBytes += 3 + 4 + value.value.length;
+      sizeInBytes += 3 + 4; // TYPE
+      if (value.endpoint != null)  sizeInBytes += 3 + ENDPOINT_ADAPTER.sizeInBytes(value.endpoint);
+      sizeInBytes++; //TYPE_STOP
+      return sizeInBytes;
     }
 
     @Override
@@ -305,6 +334,22 @@ public final class ThriftCodec implements Codec {
       return result.build();
     }
 
+    @Override public int sizeInBytes(Span value) {
+      int sizeInBytes = 0;
+      sizeInBytes += 3 + 8;// TRACE_ID
+      sizeInBytes += 3 + 4 + Buffer.utf8SizeInBytes(value.name);
+      sizeInBytes += 3 + 8;// ID
+      if (value.parentId != null) sizeInBytes += 3 + 8;
+      sizeInBytes += 3 + ANNOTATIONS_ADAPTER.sizeInBytes(value.annotations);
+      sizeInBytes += 3 + BINARY_ANNOTATIONS_ADAPTER.sizeInBytes(value.binaryAnnotations);
+
+      if (value.debug != null && value.debug) sizeInBytes += 3 + 1;
+      if (value.timestamp != null) sizeInBytes += 3 + 8;
+      if (value.duration != null) sizeInBytes += 3 + 8;
+      sizeInBytes++; //TYPE_STOP
+      return sizeInBytes;
+    }
+
     @Override
     public void write(Span value, Buffer buffer) {
 
@@ -328,9 +373,9 @@ public final class ThriftCodec implements Codec {
       BINARY_ANNOTATIONS.write(buffer);
       BINARY_ANNOTATIONS_ADAPTER.write(value.binaryAnnotations, buffer);
 
-      if (value.debug != null) {
+      if (value.debug != null && value.debug) {
         DEBUG.write(buffer);
-        buffer.write(value.debug ? 1 : 0);
+        buffer.write(1);
       }
 
       if (value.timestamp != null) {
@@ -382,6 +427,15 @@ public final class ThriftCodec implements Codec {
       }
 
       return result.build();
+    }
+
+    @Override public int sizeInBytes(DependencyLink value) {
+      int sizeInBytes = 0;
+      sizeInBytes += 3 + 4 + Buffer.utf8SizeInBytes(value.parent);
+      sizeInBytes += 3 + 4 + Buffer.utf8SizeInBytes(value.child);
+      sizeInBytes += 3 + 8; // CALL_COUNT
+      sizeInBytes++; //TYPE_STOP
+      return sizeInBytes;
     }
 
     @Override
@@ -447,7 +501,7 @@ public final class ThriftCodec implements Codec {
 
   /** Inability to encode is a programming bug. */
   static <T> byte[] write(ThriftWriter<T> writer, T value) {
-    Buffer buffer = new Buffer();
+    Buffer buffer = new Buffer(writer.sizeInBytes(value));
     try {
       writer.write(value, buffer);
     } catch (RuntimeException e) {
@@ -486,6 +540,14 @@ public final class ThriftCodec implements Codec {
     @Override
     public List<T> read(ByteBuffer bytes) {
       return readList(adapter, bytes);
+    }
+
+    @Override public int sizeInBytes(List<T> value) {
+      int sizeInBytes = 5; // TYPE_STRUCT + length prefix
+      for (int i = 0, length = value.size(); i < length; i++) {
+        sizeInBytes += adapter.sizeInBytes(value.get(i));
+      }
+      return sizeInBytes;
     }
 
     @Override

@@ -19,8 +19,16 @@ import java.util.Arrays;
 /** Similar to {@link java.io.ByteArrayInputStream}, except specialized and unsynchronized */
 final class Buffer extends OutputStream {
   static final int MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
-  private byte[] buf = new byte[128];
+  private byte[] buf;
   private int pos;
+
+  Buffer() {
+    this(128);
+  }
+
+  Buffer(int size) {
+    buf = new byte[size];
+  }
 
   @Override public void write(int v) {
     ensureCapacity(pos + 1);
@@ -62,6 +70,25 @@ final class Buffer extends OutputStream {
     return this;
   }
 
+  static int utf8SizeInBytes(String string) {
+    // Adapted from http://stackoverflow.com/questions/8511490/calculating-length-in-utf-8-of-java-string-without-actually-encoding-it
+    int sizeInBytes = 0;
+    for (int i = 0, len = string.length(); i < len; i++) {
+      char ch = string.charAt(i);
+      if (ch < 0x80) {
+        sizeInBytes++; // 7-bit character
+      } else if (ch < 0x800) {
+        sizeInBytes += 2; // 11-bit character
+      } else if (Character.isHighSurrogate(ch)) {
+        sizeInBytes += 4; // Must be largest UTF-8 character
+        i++;
+      } else {
+        sizeInBytes += 3; // Assume 16-bit character
+      }
+    }
+    return sizeInBytes;
+  }
+
   /** Writes a length-prefixed string */
   Buffer writeLengthPrefixed(String v) {
     boolean ascii = isAscii(v);
@@ -95,6 +122,7 @@ final class Buffer extends OutputStream {
   }
 
   byte[] toByteArray() {
+    if (pos == buf.length) return buf;
     return Arrays.copyOf(buf, pos);
   }
 
