@@ -28,6 +28,8 @@ public interface Codec {
   /** throws {@linkplain IllegalArgumentException} if the span couldn't be decoded */
   Span readSpan(byte[] bytes);
 
+  int sizeInBytes(Span value);
+
   byte[] writeSpan(Span value);
 
   /** throws {@linkplain IllegalArgumentException} if the spans couldn't be decoded */

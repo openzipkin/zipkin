@@ -24,9 +24,11 @@ import static java.util.stream.Collectors.toList;
 import static zipkin.Constants.CLIENT_ADDR;
 import static zipkin.Constants.CLIENT_RECV;
 import static zipkin.Constants.CLIENT_SEND;
+import static zipkin.Constants.ERROR;
 import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.midnightUTC;
 
 public final class TestObjects {
@@ -68,8 +70,10 @@ public final class TestObjects {
       Span.builder().traceId(WEB_SPAN_ID).parentId(APP_SPAN_ID).id(DB_SPAN_ID).name("query")
           .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
           .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, APP_ENDPOINT))
+          .addAnnotation(Annotation.create((TODAY + 200) * 1000, "⻩", APP_ENDPOINT))
           .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, APP_ENDPOINT))
           .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, DB_ENDPOINT))
+          .addBinaryAnnotation(BinaryAnnotation.create(ERROR, "\uD83D\uDCA9", APP_ENDPOINT))
           .build()
   ).stream().map(ApplyTimestampAndDuration::apply).collect(toList());
 

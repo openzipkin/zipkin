@@ -147,7 +147,7 @@ public final class Dependencies {
       LINKS.write(buffer);
       DEPENDENCY_LINKS_ADAPTER.write(value.links, buffer);
 
-      buffer.write(TYPE_STOP);
+      buffer.writeByte(TYPE_STOP);
     }
 
     @Override
