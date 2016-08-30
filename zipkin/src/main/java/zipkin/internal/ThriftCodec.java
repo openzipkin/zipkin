@@ -74,6 +74,10 @@ public final class ThriftCodec implements Codec {
     return read(SPAN_ADAPTER, ByteBuffer.wrap(bytes));
   }
 
+  @Override public int sizeInBytes(Span value) {
+    return SPAN_ADAPTER.sizeInBytes(value);
+  }
+
   @Override
   public byte[] writeSpan(Span value) {
     return write(SPAN_ADAPTER, value);
@@ -94,17 +98,11 @@ public final class ThriftCodec implements Codec {
     return write(TRACES_ADAPTER, value);
   }
 
-  interface ThriftWriter<T> {
-    int sizeInBytes(T value);
-
-    void write(T value, Buffer buffer);
-  }
-
   interface ThriftReader<T> {
     T read(ByteBuffer bytes);
   }
 
-  interface ThriftAdapter<T> extends ThriftReader<T>, ThriftWriter<T> {
+  interface ThriftAdapter<T> extends ThriftReader<T>, Buffer.Writer<T> {
   }
 
   static final ThriftAdapter<Endpoint> ENDPOINT_ADAPTER = new ThriftAdapter<Endpoint>() {
@@ -166,7 +164,7 @@ public final class ThriftCodec implements Codec {
         buffer.write(value.ipv6);
       }
 
-      buffer.write(TYPE_STOP);
+      buffer.writeByte(TYPE_STOP);
     }
   };
 
@@ -218,7 +216,7 @@ public final class ThriftCodec implements Codec {
         ENDPOINT.write(buffer);
         ENDPOINT_ADAPTER.write(value.endpoint, buffer);
       }
-      buffer.write(TYPE_STOP);
+      buffer.writeByte(TYPE_STOP);
     }
   };
 
@@ -280,7 +278,7 @@ public final class ThriftCodec implements Codec {
         ENDPOINT_ADAPTER.write(value.endpoint, buffer);
       }
 
-      buffer.write(TYPE_STOP);
+      buffer.writeByte(TYPE_STOP);
     }
   };
 
@@ -375,7 +373,7 @@ public final class ThriftCodec implements Codec {
 
       if (value.debug != null && value.debug) {
         DEBUG.write(buffer);
-        buffer.write(1);
+        buffer.writeByte(1);
       }
 
       if (value.timestamp != null) {
@@ -388,7 +386,7 @@ public final class ThriftCodec implements Codec {
         buffer.writeLong(value.duration);
       }
 
-      buffer.write(TYPE_STOP);
+      buffer.writeByte(TYPE_STOP);
     }
 
     @Override
@@ -449,7 +447,7 @@ public final class ThriftCodec implements Codec {
       CALL_COUNT.write(buffer);
       buffer.writeLong(value.callCount);
 
-      buffer.write(TYPE_STOP);
+      buffer.writeByte(TYPE_STOP);
     }
 
     @Override
@@ -500,7 +498,7 @@ public final class ThriftCodec implements Codec {
   }
 
   /** Inability to encode is a programming bug. */
-  static <T> byte[] write(ThriftWriter<T> writer, T value) {
+  static <T> byte[] write(Buffer.Writer<T> writer, T value) {
     Buffer buffer = new Buffer(writer.sizeInBytes(value));
     try {
       writer.write(value, buffer);
@@ -522,7 +520,7 @@ public final class ThriftCodec implements Codec {
     return result;
   }
 
-  static <T> void writeList(ThriftWriter<T> writer, List<T> value, Buffer buffer) {
+  static <T> void writeList(Buffer.Writer<T> writer, List<T> value, Buffer buffer) {
     int length = value.size();
     writeListBegin(buffer, length);
     for (int i = 0; i < length; i++) {
@@ -579,7 +577,7 @@ public final class ThriftCodec implements Codec {
     }
 
     void write(Buffer buffer) {
-      buffer.write(type);
+      buffer.writeByte(type);
       buffer.writeShort(id);
     }
 
@@ -667,7 +665,7 @@ public final class ThriftCodec implements Codec {
   }
 
   static void writeListBegin(Buffer buffer, int size) {
-    buffer.write(TYPE_STRUCT);
+    buffer.writeByte(TYPE_STRUCT);
     buffer.writeInt(size);
   }
 }

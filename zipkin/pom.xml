@@ -81,7 +81,6 @@
                   <includes>
                     <include>com/google/gson/stream/JsonReader*.class</include>
                     <include>com/google/gson/stream/JsonToken.class</include>
-                    <include>com/google/gson/stream/JsonWriter.class</include>
                     <include>com/google/gson/stream/MalformedJsonException.class</include>
                     <include>com/google/gson/internal/JsonReaderInternalAccess.class</include>
                   </includes>

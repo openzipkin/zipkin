@@ -18,6 +18,7 @@ import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import zipkin.internal.JsonCodec;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +35,14 @@ public abstract class CodecTest {
       byte[] bytes = codec().writeSpan(span);
       assertThat(codec().readSpan(bytes))
           .isEqualTo(span);
+    }
+  }
+
+  @Test
+  public void sizeInBytes() throws IOException {
+    for (Span span : TestObjects.TRACE) {
+      assertThat(codec().sizeInBytes(span))
+          .isEqualTo(codec().writeSpan(span).length);
     }
   }
 

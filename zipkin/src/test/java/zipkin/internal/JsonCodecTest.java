@@ -214,6 +214,19 @@ public final class JsonCodecTest extends CodecTest {
         .isEqualTo(span);
   }
 
+  @Test
+  public void sizeInBytes_span() throws IOException {
+    Span span = TestObjects.LOTS_OF_SPANS[0];
+    assertThat(JsonCodec.SPAN_ADAPTER.sizeInBytes(span))
+        .isEqualTo(codec().writeSpan(span).length);
+  }
+
+  @Test
+  public void sizeInBytes_link() throws IOException {
+    assertThat(JsonCodec.DEPENDENCY_LINK_ADAPTER.sizeInBytes(TestObjects.LINKS.get(0)))
+        .isEqualTo(codec().writeDependencyLink(TestObjects.LINKS.get(0)).length);
+  }
+
   static byte[] toBytes(long v) {
     okio.Buffer buffer = new okio.Buffer();
     buffer.writeLong(v);
