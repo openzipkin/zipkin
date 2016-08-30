@@ -35,5 +35,6 @@
     <module>cassandra</module>
     <module>mysql</module>
     <module>elasticsearch</module>
+    <module>elasticsearch-rest</module>
   </modules>
 </project>
