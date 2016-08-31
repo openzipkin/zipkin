@@ -6,8 +6,8 @@ import {Constants} from './traceConstants';
 
 function endpointsForSpan(span) {
   return _.union(
-    span.annotations.map(a => a.endpoint),
-    span.binaryAnnotations.map(a => a.endpoint)
+    (span.annotations || []).map(a => a.endpoint),
+    (span.binaryAnnotations || []).map(a => a.endpoint)
   ).filter(h => h != null);
 }
 
