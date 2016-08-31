@@ -16,6 +16,7 @@ package zipkin.collector.zookeeper;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import zipkin.Span;
 import zipkin.collector.Collector;
 import zipkin.internal.CallbackCaptor;
@@ -27,8 +28,8 @@ import static org.assertj.core.api.Assertions.withinPercentage;
 import static zipkin.TestObjects.LOTS_OF_SPANS;
 
 public class ZooKeeperCollectorSamplerTest {
-  static final String PREFIX = "/" + ZooKeeperCollectorSamplerTest.class.getSimpleName();
   @Rule public ZooKeeperRule zookeeper = new ZooKeeperRule();
+  @Rule public TestName testName = new TestName();
 
   Collector collector;
   InMemoryStorage storage = new InMemoryStorage();
@@ -39,8 +40,8 @@ public class ZooKeeperCollectorSamplerTest {
       sampler.close();
     }
     sampler = new ZooKeeperCollectorSampler.Builder()
-        .basePath(PREFIX)
-        .updateFrequency(1) // least possible value
+        .basePath(basePath())
+        .updateFrequency(2) // 1 is least, but larger in case the build is slow and 1 causes flakes
         .build(zookeeper.client);
     collector = Collector.builder(getClass())
         .sampler(sampler)
@@ -49,7 +50,7 @@ public class ZooKeeperCollectorSamplerTest {
 
   @Test public void sampleRateReadFromZookeeper() throws Exception {
     // Simulates an existing sample rate, set from connectString
-    zookeeper.create(PREFIX + "/sampleRate", "0.9");
+    zookeeper.create(basePath() + "/sampleRate", "0.9");
 
     accept(LOTS_OF_SPANS);
 
@@ -63,12 +64,12 @@ public class ZooKeeperCollectorSamplerTest {
     // Until the update interval, we'll see a store rate of zero
     assertThat(sampler.storeRate.get()).isZero();
 
-    // Await until update interval passes (1 second + fudge)
-    Thread.sleep(1000); // let the update interval pass
+    // Await until update interval passes (2 seconds + fudge)
+    Thread.sleep(2100); // let the update interval pass
 
-    // since update frequency is secondly, the rate exported to ZK will be the amount stored * 60
+    // since update frequency is every 2 seconds, the rate exported to ZK will be the amount * 30
     assertThat(sampler.storeRate.get())
-        .isEqualTo(LOTS_OF_SPANS.length * 60);
+        .isEqualTo(LOTS_OF_SPANS.length * 30);
     assertThat(storeRateFromZooKeeper(sampler.groupMember))
         .isEqualTo(sampler.storeRate.get());
   }
@@ -81,8 +82,12 @@ public class ZooKeeperCollectorSamplerTest {
   }
 
   int storeRateFromZooKeeper(String id) throws Exception {
-    byte[] data = zookeeper.client.getData().forPath(PREFIX + "/storeRates/" + id);
+    byte[] data = zookeeper.client.getData().forPath(basePath() + "/storeRates/" + id);
     return data.length == 0 ? 0 : Integer.parseInt(new String(data));
+  }
+
+  private String basePath() {
+    return "/" + testName.getMethodName();
   }
 }
 
