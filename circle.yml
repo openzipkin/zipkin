@@ -1,0 +1,72 @@
+#
+# Copyright 2015-2016 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+machine:
+  services:
+    - mysql
+    - cassandra
+    - elasticsearch
+  java:
+    version: openjdk8
+  post:
+    - curl -SL http://www.us.apache.org/dist/kafka/0.8.2.2/kafka_2.11-0.8.2.2.tgz | tar xz
+    - ./kafka_*/bin/zookeeper-server-start.sh ./kafka_*/config/zookeeper.properties:
+        background: true
+    - ./kafka_*/bin/kafka-server-start.sh ./kafka_*/config/server.properties:
+        background: true
+  environment:
+    MYSQL_USER: ubuntu
+    MYSQL_DB: circle_test
+
+dependencies:
+  override:
+    - sudo apt-get install xsltproc
+    - ./circleci/go-offline.sh
+    - ./mvnw frontend:install-node-and-npm frontend:npm -pl zipkin-ui
+  cache_directories:
+    - "~/.npm"
+    - "zipkin-ui/node_modules"
+
+database:
+  override:
+    - mysql -u ubuntu -e 'SET GLOBAL innodb_file_format=Barracuda'
+    - mysql -u ubuntu -e "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))"
+    - mysql -u ubuntu circle_test < zipkin-storage/mysql/src/main/resources/mysql.sql
+
+test:
+  override:
+    - ./circleci/test.sh:
+        parallel: true
+        files:
+          - "**/test/**/*Test.java"
+  post:
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    - find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+
+# If a release commit fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
+deployment:
+  # Commits to master trigger a -SNAPSHOT release
+  master:
+    branch: master
+    owner: openzipkin
+    commands:
+      - ./circleci/publish-snapshot.sh
+      - ./circleci/javadoc-to-gh-pages.sh
+  # Release tags trigger a non-SNAPSHOT release
+  release:
+    tag: /^release-[0-9]+\.[0-9]+\.[0-9]\.$/
+    owner: openzipkin
+    commands:
+      - ./circleci/publish-stable.sh
+      - ./circleci/javadoc-to-gh-pages.sh $CIRCLE_TAG
