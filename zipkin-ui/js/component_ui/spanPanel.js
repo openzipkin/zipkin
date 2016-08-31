@@ -15,7 +15,7 @@ export default component(function spanPanel() {
     this.$node.find('.service-names').text(span.serviceNames);
 
     const $annoBody = this.$node.find('#annotations tbody').text('');
-    $.each(span.annotations, (i, anno) => {
+    $.each((span.annotations || []), (i, anno) => {
       const $row = self.$annotationTemplate.clone();
       if (anno.value === Constants.ERROR) {
         $row.addClass('anno-error-transient');
@@ -34,7 +34,7 @@ export default component(function spanPanel() {
     });
 
     const $binAnnoBody = this.$node.find('#binaryAnnotations tbody').text('');
-    $.each(span.binaryAnnotations, (i, anno) => {
+    $.each((span.binaryAnnotations || []), (i, anno) => {
       const $row = self.$binaryAnnotationTemplate.clone();
       if (anno.key === Constants.ERROR) {
         $row.addClass('anno-error-critical');

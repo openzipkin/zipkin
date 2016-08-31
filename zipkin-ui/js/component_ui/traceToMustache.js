@@ -114,7 +114,7 @@ export default function traceToMustache(trace) {
       const width = (span.duration || 0) / summary.duration * 100;
       let errorType = 'none';
 
-      const binaryAnnotations = span.binaryAnnotations.map((a) => {
+      const binaryAnnotations = (span.binaryAnnotations || []).map((a) => {
         if (a.key === Constants.ERROR) {
           errorType = 'critical';
         }
@@ -140,7 +140,7 @@ export default function traceToMustache(trace) {
         }
       }
 
-      const localComponentAnnotation = _(span.binaryAnnotations)
+      const localComponentAnnotation = _(span.binaryAnnotations || [])
           .find((s) => s.key === Constants.LOCAL_COMPONENT);
       if (localComponentAnnotation && localComponentAnnotation.endpoint) {
         binaryAnnotations.push({
@@ -163,7 +163,7 @@ export default function traceToMustache(trace) {
         depth: (spanDepth + 1) * 5,
         depthClass: (spanDepth - 1) % 6,
         children: (groupByParentId[span.id] || []).map((s) => s.id).join(','),
-        annotations: span.annotations.map((a) => ({
+        annotations: (span.annotations || []).map((a) => ({
           isCore: Constants.CORE_ANNOTATIONS.indexOf(a.value) !== -1,
           left: (a.timestamp - spanStartTs) / span.duration * 100,
           endpoint: a.endpoint ? formatEndpoint(a.endpoint) : null,

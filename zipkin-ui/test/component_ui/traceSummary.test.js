@@ -86,7 +86,6 @@ describe('get service name of a span', () => {
 
   it('should get service name from some server annotation', () => {
     const testSpan = {
-      binaryAnnotations: [],
       annotations: [{
         value: Constants.SERVER_RECEIVE_FRAGMENT,
         endpoint: {
@@ -375,25 +374,20 @@ describe('traceSummariesToMustache', () => {
       name: 'get',
       id: '6ff1c14161f7bde1',
       timestamp: 1457186441657000,
-      duration: 4000,
-      annotations: [], binaryAnnotations: []}]);
+      duration: 4000}]);
     const summary2 = traceSummary([{
       traceId: traceId2,
       name: 'get',
       id: '9ed44141f679130b',
       timestamp: 1457186568026000,
-      duration: 4000,
-      annotations: [],
-      binaryAnnotations: []
+      duration: 4000
     }]);
     const summary3 = traceSummary([{
       traceId: traceId3,
       name: 'get',
       id: '6677567324735',
       timestamp: 1457186568027000,
-      duration: 3000,
-      annotations: [],
-      binaryAnnotations: []
+      duration: 3000
     }]);
 
     const model = traceSummariesToMustache(null, [summary1, summary2, summary3]);
