@@ -68,10 +68,10 @@ The [InMemoryStorage](https://github.com/openzipkin/zipkin/blob/master/zipkin/sr
 The [JDBCStorage](https://github.com/openzipkin/zipkin/tree/master/zipkin-storage/jdbc) component currently is only tested with MySQL 5.6-7. It is designed to be easy to understand, and get started with. For example, it deconstructs spans into columns, so you can perform ad-hoc queries using SQL. However, this component has [known performance issues](https://github.com/openzipkin/zipkin/issues/233): queries will eventually take seconds to return if you put a lot of data into it.
 
 ### Cassandra
-The [CassandraStorage](https://github.com/openzipkin/zipkin/tree/master/zipkin-storage/cassandra) component is tested against Cassandra 2.2+. It stores spans as opaque thrifts which means you can't read them in cqlsh. However, it is designed for scale. For example, it has manually implemented indexes to make querying larger data more performant. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies-spark) to aggregate dependency links.
+The [CassandraStorage](https://github.com/openzipkin/zipkin/tree/master/zipkin-storage/cassandra) component is tested against Cassandra 2.2+. It stores spans as opaque thrifts which means you can't read them in cqlsh. However, it is designed for scale. For example, it has manually implemented indexes to make querying larger data more performant. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
 
 ### Elasticsearch
-The [ElasticsearchStorage](https://github.com/openzipkin/zipkin/tree/master/zipkin-storage/elasticsearch) component is tested against Elasticsearch 2.3. It stores spans as json and has been designed for larger scale. This store is the newest option, and does not yet [support dependency links](https://github.com/openzipkin/zipkin-dependencies-spark/issues/21).
+The [ElasticsearchStorage](https://github.com/openzipkin/zipkin/tree/master/zipkin-storage/elasticsearch) component is tested against Elasticsearch 2.3. It stores spans as json and has been designed for larger scale. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
 
 ## Running the server from source
 The [zipkin server](https://github.com/openzipkin/zipkin/tree/master/zipkin-server)
