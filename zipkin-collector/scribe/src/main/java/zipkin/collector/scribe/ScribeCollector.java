@@ -42,7 +42,7 @@ public final class ScribeCollector implements CollectorComponent {
   /** Configuration including defaults needed to receive spans from a Scribe category. */
   public static final class Builder implements CollectorComponent.Builder {
     Collector.Builder delegate = Collector.builder(ScribeCollector.class);
-    CollectorMetrics metrics;
+    CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
     String category = "zipkin";
     int port = 9410;
 
