@@ -17,6 +17,7 @@ set -euo pipefail
 
 echo > versions
 echo > download
+echo > index.html
 
 curl 'http://search.maven.org/solrsearch/select?q=g:"io.zipkin.java"+AND+l:javadoc&wt=json&rows=713' > data.json
 for url in $(cat data.json | jq '.response.docs | map("http://search.maven.org/remotecontent?filepath=io/zipkin/java/" + .a + "/" + .v + "/" + .a + "-" + .v + "-javadoc.jar") | join("\n")' -r); do
@@ -28,7 +29,7 @@ done
 
 cat download | xargs -n3 -P30 wget -L -c
 
-for version in $(uniq versions | sort -rV); do
+for version in $(sort -rVu versions); do
   rm -rf javadoc-builddir
   builddir="javadoc-builddir/$version"
 
@@ -48,9 +49,7 @@ for version in $(uniq versions | sort -rV); do
   rm -rf "javadoc-builddir"
 
   # Update simple version-level index
-  if ! grep "$version" index.html 2>/dev/null; then
-    echo "<li><a href=\"${version}/index.html\">${version}</a></li>" >> index.html
-  fi
+  echo "<li><a href=\"${version}/index.html\">${version}</a></li>" >> index.html
 done
 
 cat versions | xargs git add
