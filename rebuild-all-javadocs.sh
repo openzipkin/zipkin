@@ -19,7 +19,7 @@ echo > versions
 echo > download
 echo > index.html
 
-curl 'http://search.maven.org/solrsearch/select?q=g:"io.zipkin.java"+AND+l:javadoc&wt=json&rows=713' > data.json
+curl 'http://search.maven.org/solrsearch/select?q=g:"io.zipkin.java"+AND+l:javadoc&wt=json&rows=999999' > data.json
 for url in $(cat data.json | jq '.response.docs | map("http://search.maven.org/remotecontent?filepath=io/zipkin/java/" + .a + "/" + .v + "/" + .a + "-" + .v + "-javadoc.jar") | join("\n")' -r); do
     module=$(echo $url | sed -e 's~.*io/zipkin/java/\([^/]*\)/.*~\1~')
     version=$(echo $url | sed -e "s~.*${module}/\([0-9.]*\)/.*~\1~")
