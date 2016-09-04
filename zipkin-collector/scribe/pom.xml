@@ -30,7 +30,6 @@
     <main.basedir>${project.basedir}/../..</main.basedir>
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
-    <swift.version>0.19.2</swift.version>
   </properties>
 
   <dependencies>
@@ -47,7 +46,7 @@
     <dependency>
       <groupId>com.facebook.swift</groupId>
       <artifactId>swift-service</artifactId>
-      <version>${swift.version}</version>
+      <version>0.21.1</version>
       <exclusions>
         <!-- airlift:configuration includes bval-jsr303, which can easily conflict -->
         <exclusion>
