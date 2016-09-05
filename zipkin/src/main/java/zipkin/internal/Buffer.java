@@ -118,6 +118,108 @@ final class Buffer {
     return true;
   }
 
+  /*
+   * Escaping logic adapted from Moshi, which we couldn't use due to language level
+   *
+   * From RFC 7159, "All Unicode characters may be placed within the
+   * quotation marks except for the characters that must be escaped:
+   * quotation mark, reverse solidus, and the control characters
+   * (U+0000 through U+001F)."
+   *
+   * We also escape '\u2028' and '\u2029', which JavaScript interprets as
+   * newline characters. This prevents eval() from failing with a syntax
+   * error. http://code.google.com/p/google-gson/issues/detail?id=341
+   */
+  private static final String[] REPLACEMENT_CHARS;
+
+  static {
+    REPLACEMENT_CHARS = new String[128];
+    for (int i = 0; i <= 0x1f; i++) {
+      REPLACEMENT_CHARS[i] = String.format("\\u%04x", (int) i);
+    }
+    REPLACEMENT_CHARS['"'] = "\\\"";
+    REPLACEMENT_CHARS['\\'] = "\\\\";
+    REPLACEMENT_CHARS['\t'] = "\\t";
+    REPLACEMENT_CHARS['\b'] = "\\b";
+    REPLACEMENT_CHARS['\n'] = "\\n";
+    REPLACEMENT_CHARS['\r'] = "\\r";
+    REPLACEMENT_CHARS['\f'] = "\\f";
+  }
+
+  private static final String U2028 = "\\u2028";
+  private static final String U2029 = "\\u2029";
+
+  static int jsonEscapedSizeInBytes(byte[] v) {
+    for (int i = 0; i < v.length; i++) {
+      int current = v[i] & 0xFF;
+      if (i >= 2 &&
+          // Is this the end of a u2028 or u2028 UTF-8 codepoint?
+          // 0xE2 0x80 0xA8 == u2028; 0xE2 0x80 0xA9 == u2028
+          (current == 0xA8 || current == 0xA9)
+          && (v[i - 1] & 0xFF) == 0x80
+          && (v[i - 2] & 0xFF) == 0xE2) {
+        return jsonEscapedSizeInBytes(new String(v, Util.UTF_8));
+      } else if (current < 0x80) {
+        if (REPLACEMENT_CHARS[current] != null) {
+          return jsonEscapedSizeInBytes(new String(v, Util.UTF_8));
+        }
+      }
+    }
+    return v.length; // must be a string we don't need to escape.
+  }
+
+  static int jsonEscapedSizeInBytes(String v) {
+    boolean ascii = true;
+    int escapingOverhead = 0;
+    for (int i = 0, length = v.length(); i < length; i++) {
+      char c = v.charAt(i);
+      if (c == '\u2028' || c == '\u2029') {
+        escapingOverhead += 5;
+      } else if (c >= 0x80) {
+        ascii = false;
+      } else {
+        String maybeReplacement = REPLACEMENT_CHARS[c];
+        if (maybeReplacement != null) escapingOverhead += maybeReplacement.length() - 1;
+      }
+    }
+    if (ascii) return asciiSizeInBytes(v) + escapingOverhead;
+    return utf8SizeInBytes(v) + escapingOverhead;
+  }
+
+  Buffer writeJsonEscaped(String v) {
+    int afterReplacement = 0;
+    int length = v.length();
+    StringBuilder builder = null;
+    for (int i = 0; i < length; i++) {
+      char c = v.charAt(i);
+      String replacement;
+      if (c < 0x80) {
+        replacement = REPLACEMENT_CHARS[c];
+        if (replacement == null) continue;
+      } else if (c == '\u2028') {
+        replacement = U2028;
+      } else if (c == '\u2029') {
+        replacement = U2029;
+      } else {
+        continue;
+      }
+      if (afterReplacement < i) { // write characters between the last replacement and now
+        if (builder == null) builder = new StringBuilder();
+        builder.append(v, afterReplacement, i);
+      }
+      if (builder == null) builder = new StringBuilder();
+      builder.append(replacement);
+      afterReplacement = i + 1;
+    }
+    if (builder == null) { // then we didn't escape anything
+      return writeUtf8(v);
+    }
+    if (afterReplacement < length) {
+      builder.append(v, afterReplacement, length);
+    }
+    return writeUtf8(builder.toString());
+  }
+
   Buffer writeUtf8(String v) {
     if (isAscii(v)) return writeAscii(v);
     byte[] temp = v.getBytes(Util.UTF_8);
