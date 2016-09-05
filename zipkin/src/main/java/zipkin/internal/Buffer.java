@@ -149,7 +149,7 @@ final class Buffer {
   private static final String U2028 = "\\u2028";
   private static final String U2029 = "\\u2029";
 
-  static int jsonEscapedSizeInBytes(byte[] v) {
+  static boolean needsJsonEscaping(byte[] v) {
     for (int i = 0; i < v.length; i++) {
       int current = v[i] & 0xFF;
       if (i >= 2 &&
@@ -158,14 +158,16 @@ final class Buffer {
           (current == 0xA8 || current == 0xA9)
           && (v[i - 1] & 0xFF) == 0x80
           && (v[i - 2] & 0xFF) == 0xE2) {
-        return jsonEscapedSizeInBytes(new String(v, Util.UTF_8));
-      } else if (current < 0x80) {
-        if (REPLACEMENT_CHARS[current] != null) {
-          return jsonEscapedSizeInBytes(new String(v, Util.UTF_8));
-        }
+        return true;
+      } else if (current < 0x80 && REPLACEMENT_CHARS[current] != null) {
+        return true;
       }
     }
-    return v.length; // must be a string we don't need to escape.
+    return false; // must be a string we don't need to escape.
+  }
+
+  static int jsonEscapedSizeInBytes(byte[] v) {
+    return needsJsonEscaping(v) ? jsonEscapedSizeInBytes(new String(v, Util.UTF_8)) : v.length;
   }
 
   static int jsonEscapedSizeInBytes(String v) {
@@ -184,6 +186,10 @@ final class Buffer {
     }
     if (ascii) return asciiSizeInBytes(v) + escapingOverhead;
     return utf8SizeInBytes(v) + escapingOverhead;
+  }
+
+  Buffer writeJsonEscaped(byte[] v) {
+    return needsJsonEscaping(v) ? writeJsonEscaped(new String(v, Util.UTF_8)) : write(v);
   }
 
   Buffer writeJsonEscaped(String v) {

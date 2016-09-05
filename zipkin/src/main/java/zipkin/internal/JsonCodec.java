@@ -278,7 +278,7 @@ public final class JsonCodec implements Codec {
           b.writeAscii(value.value[0] == 1 ? "true" : "false");
           break;
         case STRING:
-          b.writeByte('"').write(value.value).writeByte('"');
+          b.writeByte('"').writeJsonEscaped(value.value).writeByte('"');
           break;
         case BYTES:
           b.writeByte('"').writeBase64Url(value.value).writeByte('"');

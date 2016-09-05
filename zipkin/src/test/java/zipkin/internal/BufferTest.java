@@ -135,7 +135,7 @@ public class BufferTest {
   }
 
   @Test
-  public void writeJsonEscaped() throws IOException {
+  public void writeJsonEscaped_string() throws IOException {
     assertThat(writeJsonEscaped(new String(new char[] {0, 'a', 1})))
         .isEqualTo("\\u0000a\\u0001");
     assertThat(writeJsonEscaped(new String(new char[] {'"', '\\', '\t', '\b'})))
@@ -148,7 +148,26 @@ public class BufferTest {
         .isEqualTo("\\\"foo");
   }
 
+  @Test
+  public void writeJsonEscaped_bytes() throws IOException {
+    assertThat(writeJsonEscaped(new byte[] {0, 'a', 1}))
+        .isEqualTo("\\u0000a\\u0001");
+    assertThat(writeJsonEscaped(new byte[] {'"', '\\', '\t', '\b'}))
+        .isEqualTo("\\\"\\\\\\t\\b");
+    assertThat(writeJsonEscaped(new byte[] {'\n', '\r', '\f'}))
+        .isEqualTo("\\n\\r\\f");
+    assertThat(writeJsonEscaped("\u2028 and \u2029".getBytes(UTF_8)))
+        .isEqualTo("\\u2028 and \\u2029");
+    assertThat(writeJsonEscaped("\"foo".getBytes(UTF_8)))
+        .isEqualTo("\\\"foo");
+  }
+
   static String writeJsonEscaped(String v) {
+    byte[] buffered = new Buffer(jsonEscapedSizeInBytes(v)).writeJsonEscaped(v).toByteArray();
+    return new String(buffered, UTF_8);
+  }
+
+  static String writeJsonEscaped(byte[] v) {
     byte[] buffered = new Buffer(jsonEscapedSizeInBytes(v)).writeJsonEscaped(v).toByteArray();
     return new String(buffered, UTF_8);
   }
