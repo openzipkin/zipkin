@@ -19,7 +19,7 @@
 
   <groupId>io.zipkin.java</groupId>
   <artifactId>parent</artifactId>
-  <version>1.8.4</version>
+  <version>1.8.5-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -112,7 +112,7 @@
     <url>https://github.com/openzipkin/zipkin</url>
     <connection>scm:git:https://github.com/openzipkin/zipkin.git</connection>
     <developerConnection>scm:git:https://github.com/openzipkin/zipkin.git</developerConnection>
-    <tag>1.8.4</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <developers>
