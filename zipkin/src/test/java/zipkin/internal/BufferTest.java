@@ -14,16 +14,12 @@
 package zipkin.internal;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import org.junit.Test;
 import sun.net.util.IPAddressUtil;
-import zipkin.BinaryAnnotation;
-import zipkin.Span;
-import zipkin.TestObjects;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.internal.Buffer.asciiSizeInBytes;
+import static zipkin.internal.Buffer.jsonEscapedSizeInBytes;
 import static zipkin.internal.Util.UTF_8;
 
 public class BufferTest {
@@ -107,6 +103,53 @@ public class BufferTest {
 
   static String writeAscii(long v) {
     byte[] buffered = new Buffer(Buffer.asciiSizeInBytes(v)).writeAscii(v).toByteArray();
+    return new String(buffered, UTF_8);
+  }
+
+  @Test
+  public void jsonEscapedSizeInBytes_string() throws IOException {
+    assertThat(jsonEscapedSizeInBytes(new String(new char[] {0, 'a', 1})))
+        .isEqualTo(13);
+    assertThat(jsonEscapedSizeInBytes(new String(new char[] {'"', '\\', '\t', '\b'})))
+        .isEqualTo(8);
+    assertThat(jsonEscapedSizeInBytes(new String(new char[] {'\n', '\r', '\f'})))
+        .isEqualTo(6);
+    assertThat(jsonEscapedSizeInBytes("\u2028 and \u2029"))
+        .isEqualTo(17);
+    assertThat(jsonEscapedSizeInBytes("\"foo"))
+        .isEqualTo(5);
+  }
+
+  @Test
+  public void jsonEscapedSizeInBytes_bytes() throws IOException {
+    assertThat(jsonEscapedSizeInBytes(new byte[] {0, 'a', 1}))
+        .isEqualTo(13);
+    assertThat(jsonEscapedSizeInBytes(new byte[] {'"', '\\', '\t', '\b'}))
+        .isEqualTo(8);
+    assertThat(jsonEscapedSizeInBytes(new byte[] {'\n', '\r', '\f'}))
+        .isEqualTo(6);
+    assertThat(jsonEscapedSizeInBytes("\u2028 and \u2029".getBytes(UTF_8)))
+        .isEqualTo(17);
+    assertThat(jsonEscapedSizeInBytes("\"foo".getBytes(UTF_8)))
+        .isEqualTo(5);
+  }
+
+  @Test
+  public void writeJsonEscaped() throws IOException {
+    assertThat(writeJsonEscaped(new String(new char[] {0, 'a', 1})))
+        .isEqualTo("\\u0000a\\u0001");
+    assertThat(writeJsonEscaped(new String(new char[] {'"', '\\', '\t', '\b'})))
+        .isEqualTo("\\\"\\\\\\t\\b");
+    assertThat(writeJsonEscaped(new String(new char[] {'\n', '\r', '\f'})))
+        .isEqualTo("\\n\\r\\f");
+    assertThat(writeJsonEscaped("\u2028 and \u2029"))
+        .isEqualTo("\\u2028 and \\u2029");
+    assertThat(writeJsonEscaped("\"foo"))
+        .isEqualTo("\\\"foo");
+  }
+
+  static String writeJsonEscaped(String v) {
+    byte[] buffered = new Buffer(jsonEscapedSizeInBytes(v)).writeJsonEscaped(v).toByteArray();
     return new String(buffered, UTF_8);
   }
 }

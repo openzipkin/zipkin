@@ -76,6 +76,29 @@ public abstract class CodecTest {
         .isEqualTo(span);
   }
 
+  /**
+   * This isn't a test of what we "should" accept as a span, rather that characters that
+   * trip-up json don't fail in codec.
+   */
+  @Test
+  public void specialCharsInJson() throws IOException {
+    // service name is surrounded by control characters
+    Endpoint e = Endpoint.create(new String(new char[] {0, 'a', 1}), 0);
+    Span worstSpanInTheWorld = Span.builder().traceId(1L).id(1L)
+        // name is terrible
+        .name(new String(new char[] {'"', '\\', '\t', '\b', '\n', '\r', '\f'}))
+        // annotation value includes some json newline characters
+        .addAnnotation(Annotation.create(1L, "\u2028 and \u2029", e))
+        // binary annotation key includes a quote and value newlines
+        .addBinaryAnnotation(BinaryAnnotation.create("\"foo",
+            "Database error: ORA-00942:\u2028 and \u2029 table or view does not exist\n", e))
+        .build();
+
+    byte[] bytes = codec().writeSpan(worstSpanInTheWorld);
+    assertThat(codec().readSpan(bytes))
+        .isEqualTo(worstSpanInTheWorld);
+  }
+
   @Test
   public void binaryAnnotation_double() throws IOException {
     Span span = TestObjects.LOTS_OF_SPANS[0].toBuilder().binaryAnnotations(asList(
@@ -168,7 +191,7 @@ public abstract class CodecTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Malformed reading Span from ");
 
-    codec().readSpan(new byte[]{'h', 'e', 'l', 'l', 'o'});
+    codec().readSpan(new byte[] {'h', 'e', 'l', 'l', 'o'});
   }
 
   /**
@@ -179,7 +202,7 @@ public abstract class CodecTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Malformed reading List<Span> from ");
 
-    codec().readSpans(new byte[]{'h', 'e', 'l', 'l', 'o'});
+    codec().readSpans(new byte[] {'h', 'e', 'l', 'l', 'o'});
   }
 
   @Test
@@ -187,6 +210,6 @@ public abstract class CodecTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Malformed reading List<DependencyLink> from ");
 
-    codec().readDependencyLinks(new byte[]{'h', 'e', 'l', 'l', 'o'});
+    codec().readDependencyLinks(new byte[] {'h', 'e', 'l', 'l', 'o'});
   }
 }

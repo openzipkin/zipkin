@@ -37,6 +37,7 @@ import static java.lang.Double.doubleToRawLongBits;
 import static zipkin.internal.Buffer.asciiSizeInBytes;
 import static zipkin.internal.Buffer.base64UrlSizeInBytes;
 import static zipkin.internal.Buffer.ipv6SizeInBytes;
+import static zipkin.internal.Buffer.jsonEscapedSizeInBytes;
 import static zipkin.internal.Buffer.utf8SizeInBytes;
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.assertionError;
@@ -92,7 +93,7 @@ public final class JsonCodec implements Codec {
     @Override public int sizeInBytes(Endpoint value) {
       int sizeInBytes = 0;
       sizeInBytes += asciiSizeInBytes(",\"endpoint\":{\"serviceName\":\"");
-      sizeInBytes += utf8SizeInBytes(value.serviceName) + 1; // for end quote
+      sizeInBytes += jsonEscapedSizeInBytes(value.serviceName) + 1; // for end quote
       if (value.ipv4 != 0) {
         sizeInBytes += asciiSizeInBytes(",\"ipv4\":\"");
         sizeInBytes += asciiSizeInBytes(value.ipv4 >> 24 & 0xff) + 1; // for dot
@@ -111,7 +112,7 @@ public final class JsonCodec implements Codec {
 
     @Override public void write(Endpoint value, Buffer b) {
       b.writeAscii(",\"endpoint\":{\"serviceName\":\"");
-      b.writeUtf8(value.serviceName).writeByte('"');
+      b.writeJsonEscaped(value.serviceName).writeByte('"');
       if (value.ipv4 != 0) {
         b.writeAscii(",\"ipv4\":\"");
         b.writeAscii(value.ipv4 >> 24 & 0xff).writeByte('.');
@@ -153,14 +154,14 @@ public final class JsonCodec implements Codec {
     @Override public int sizeInBytes(Annotation value) {
       int sizeInBytes = 0;
       sizeInBytes += asciiSizeInBytes("{\"timestamp\":") + asciiSizeInBytes(value.timestamp);
-      sizeInBytes += asciiSizeInBytes(",\"value\":\"") + utf8SizeInBytes(value.value) + 1;
+      sizeInBytes += asciiSizeInBytes(",\"value\":\"") + jsonEscapedSizeInBytes(value.value) + 1;
       if (value.endpoint != null) sizeInBytes += ENDPOINT_ADAPTER.sizeInBytes(value.endpoint);
       return ++sizeInBytes;// end curly-brace
     }
 
     @Override public void write(Annotation value, Buffer b) {
       b.writeAscii("{\"timestamp\":").writeAscii(value.timestamp);
-      b.writeAscii(",\"value\":\"").writeUtf8(value.value).writeByte('"');
+      b.writeAscii(",\"value\":\"").writeJsonEscaped(value.value).writeByte('"');
       if (value.endpoint != null) ENDPOINT_ADAPTER.write(value.endpoint, b);
       b.writeByte('}');
     }
@@ -235,14 +236,14 @@ public final class JsonCodec implements Codec {
 
     @Override public int sizeInBytes(BinaryAnnotation value) {
       int sizeInBytes = 0;
-      sizeInBytes += asciiSizeInBytes("{\"key\":\"") + utf8SizeInBytes(value.key);
+      sizeInBytes += asciiSizeInBytes("{\"key\":\"") + jsonEscapedSizeInBytes(value.key);
       sizeInBytes += asciiSizeInBytes("\",\"value\":");
       switch (value.type) {
         case BOOL:
           sizeInBytes += asciiSizeInBytes(value.value[0] == 1 ? "true" : "false");
           break;
         case STRING:
-          sizeInBytes += value.value.length +2; //for quotes
+          sizeInBytes += jsonEscapedSizeInBytes(value.value) + 2; //for quotes
           break;
         case BYTES:
           sizeInBytes += base64UrlSizeInBytes(value.value) +2; //for quotes
@@ -270,7 +271,7 @@ public final class JsonCodec implements Codec {
     }
 
     @Override public void write(BinaryAnnotation value, Buffer b) {
-      b.writeAscii("{\"key\":\"").writeUtf8(value.key);
+      b.writeAscii("{\"key\":\"").writeJsonEscaped(value.key);
       b.writeAscii("\",\"value\":");
       switch (value.type) {
         case BOOL:
@@ -350,7 +351,7 @@ public final class JsonCodec implements Codec {
       int sizeInBytes = 0;
       sizeInBytes += asciiSizeInBytes("{\"traceId\":\"") + 16; // fixed-width hex
       sizeInBytes += asciiSizeInBytes("\",\"id\":\"") + 16;
-      sizeInBytes += asciiSizeInBytes("\",\"name\":\"") + utf8SizeInBytes(value.name) + 1;
+      sizeInBytes += asciiSizeInBytes("\",\"name\":\"") + jsonEscapedSizeInBytes(value.name) + 1;
       if (value.parentId != null) {
         sizeInBytes += asciiSizeInBytes(",\"parentId\":\"") + 16 + 1;
       }
@@ -377,7 +378,7 @@ public final class JsonCodec implements Codec {
     @Override public void write(Span value, Buffer b) {
       b.writeAscii("{\"traceId\":\"").writeLowerHex(value.traceId);
       b.writeAscii("\",\"id\":\"").writeLowerHex(value.id);
-      b.writeAscii("\",\"name\":\"").writeUtf8(value.name).writeByte('"');
+      b.writeAscii("\",\"name\":\"").writeJsonEscaped(value.name).writeByte('"');
       if (value.parentId != null) {
         b.writeAscii(",\"parentId\":\"").writeLowerHex(value.parentId).writeByte('"');
       }
@@ -505,15 +506,15 @@ public final class JsonCodec implements Codec {
 
     @Override public int sizeInBytes(DependencyLink value) {
       int sizeInBytes = 0;
-      sizeInBytes += asciiSizeInBytes("{\"parent\":\"") + utf8SizeInBytes(value.parent);
-      sizeInBytes += asciiSizeInBytes("\",\"child\":\"") + utf8SizeInBytes(value.child);
+      sizeInBytes += asciiSizeInBytes("{\"parent\":\"") + jsonEscapedSizeInBytes(value.parent);
+      sizeInBytes += asciiSizeInBytes("\",\"child\":\"") + jsonEscapedSizeInBytes(value.child);
       sizeInBytes += asciiSizeInBytes("\",\"callCount\":") + asciiSizeInBytes(value.callCount);
       return ++sizeInBytes;// end curly-brace
     }
 
     @Override public void write(DependencyLink value, Buffer b) {
-      b.writeAscii("{\"parent\":\"").writeUtf8(value.parent);
-      b.writeAscii("\",\"child\":\"").writeUtf8(value.child);
+      b.writeAscii("{\"parent\":\"").writeJsonEscaped(value.parent);
+      b.writeAscii("\",\"child\":\"").writeJsonEscaped(value.child);
       b.writeAscii("\",\"callCount\":").writeAscii(value.callCount).writeByte('}');
     }
 
@@ -558,11 +559,11 @@ public final class JsonCodec implements Codec {
     }
 
     @Override public int sizeInBytes(String value) {
-      return utf8SizeInBytes(value) + 2; // For quotes
+      return jsonEscapedSizeInBytes(value) + 2; // For quotes
     }
 
     @Override public void write(String value, Buffer buffer) {
-      buffer.writeByte('"').writeUtf8(value).writeByte('"');
+      buffer.writeByte('"').writeJsonEscaped(value).writeByte('"');
     }
   };
 
