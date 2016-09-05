@@ -126,6 +126,7 @@ javadoc_to_gh_pages() {
   done
 
   # Update gh-pages
+  git fetch origin
   git checkout gh-pages
   rm -rf "$version"
   mv "javadoc-builddir/$version" ./
