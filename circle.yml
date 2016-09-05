@@ -58,3 +58,4 @@ test:
 notify:
   webhooks:
     - url: https://webhooks.gitter.im/e/e63be97ca10d2fbd09c3
+
