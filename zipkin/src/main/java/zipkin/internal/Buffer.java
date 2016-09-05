@@ -13,8 +13,6 @@
  */
 package zipkin.internal;
 
-import static zipkin.internal.Util.checkArgument;
-
 final class Buffer {
   interface Writer<T> {
     int sizeInBytes(T value);
@@ -220,7 +218,14 @@ final class Buffer {
    */
   static int asciiSizeInBytes(long v) {
     if (v == 0) return 1;
-    return //
+    if (v == Long.MIN_VALUE) return 20;
+
+    boolean negative = false;
+    if (v < 0) {
+      v = -v; // making this positive allows us to compare using less-than
+      negative = true;
+    }
+    int width =
         v < 100000000L
             ? v < 10000L
             ? v < 100L
@@ -239,18 +244,27 @@ final class Buffer {
                     : v < 100000000000000000L
                         ? v < 10000000000000000L ? 16 : 17
                         : v < 1000000000000000000L ? 18 : 19;
+    return negative ? width + 1 : width; // conditionally add room for negative sign
   }
 
   Buffer writeAscii(long v) {
     if (v == 0) return writeByte('0');
-    checkArgument(v > 0, "Expected %s to be unsigned", v);
+    if (v == Long.MIN_VALUE) return writeAscii("-9223372036854775808");
+
     int width = asciiSizeInBytes(v);
     int pos = this.pos += width; // We write backwards from right to left.
+
+    boolean negative = false;
+    if (v < 0) {
+      negative = true;
+      v = -v; // needs to be positive so we can use this for an array index
+    }
     while (v != 0) {
       int digit = (int) (v % 10);
       buf[--pos] = HEX_DIGITS[digit];
       v /= 10;
     }
+    if (negative) buf[--pos] = '-';
     return this;
   }
 

@@ -14,11 +14,11 @@
 package zipkin;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import zipkin.internal.JsonCodec;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,6 +44,66 @@ public abstract class CodecTest {
       assertThat(codec().sizeInBytes(span))
           .isEqualTo(codec().writeSpan(span).length);
     }
+  }
+
+  @Test
+  public void binaryAnnotation_long() throws IOException {
+    Span span = TestObjects.LOTS_OF_SPANS[0].toBuilder().binaryAnnotations(asList(
+        BinaryAnnotation.builder()
+            .key("Long.zero")
+            .type(BinaryAnnotation.Type.I64)
+            .value(ByteBuffer.allocate(8).putLong(0, 0L).array())
+            .build(),
+        BinaryAnnotation.builder()
+            .key("Long.negative")
+            .type(BinaryAnnotation.Type.I64)
+            .value(ByteBuffer.allocate(8).putLong(0, -1005656679588439279L).array())
+            .build(),
+        BinaryAnnotation.builder()
+            .key("Long.MIN_VALUE")
+            .type(BinaryAnnotation.Type.I64)
+            .value(ByteBuffer.allocate(8).putLong(0, Long.MIN_VALUE).array())
+            .build(),
+        BinaryAnnotation.builder()
+            .key("Long.MAX_VALUE")
+            .type(BinaryAnnotation.Type.I64)
+            .value(ByteBuffer.allocate(8).putLong(0, Long.MAX_VALUE).array())
+            .build()
+    )).build();
+
+    byte[] bytes = codec().writeSpan(span);
+    assertThat(codec().readSpan(bytes))
+        .isEqualTo(span);
+  }
+
+  @Test
+  public void binaryAnnotation_double() throws IOException {
+    Span span = TestObjects.LOTS_OF_SPANS[0].toBuilder().binaryAnnotations(asList(
+        BinaryAnnotation.builder()
+            .key("Double.zero")
+            .type(BinaryAnnotation.Type.DOUBLE)
+            .value(ByteBuffer.allocate(8).putDouble(0, 0.0).array())
+            .build(),
+        BinaryAnnotation.builder()
+            .key("Double.negative")
+            .type(BinaryAnnotation.Type.DOUBLE)
+            .value(ByteBuffer.allocate(8).putDouble(0, -1.005656679588439279).array())
+            .build(),
+        BinaryAnnotation.builder()
+            .key("Double.MIN_VALUE")
+            .type(BinaryAnnotation.Type.DOUBLE)
+            .value(ByteBuffer.allocate(8).putDouble(0, Double.MIN_VALUE).array())
+            .build(),
+        BinaryAnnotation.builder()
+            .key("Double.MAX_VALUE")
+            .type(BinaryAnnotation.Type.I64)
+            .value(ByteBuffer.allocate(8).putDouble(0, Double.MAX_VALUE).array())
+            .build()
+    )).build();
+
+    byte[] bytes = codec().writeSpan(span);
+    assertThat(codec().readSpan(bytes))
+        .isEqualTo(span);
   }
 
   @Test
