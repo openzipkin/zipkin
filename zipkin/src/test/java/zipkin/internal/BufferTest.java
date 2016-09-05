@@ -13,10 +13,17 @@
  */
 package zipkin.internal;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import org.junit.Test;
 import sun.net.util.IPAddressUtil;
+import zipkin.BinaryAnnotation;
+import zipkin.Span;
+import zipkin.TestObjects;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.internal.Buffer.asciiSizeInBytes;
 import static zipkin.internal.Util.UTF_8;
 
 public class BufferTest {
@@ -75,6 +82,31 @@ public class BufferTest {
   static String writeIpV6(String address) {
     byte[] ipv6 = IPAddressUtil.textToNumericFormatV6(address);
     byte[] buffered = new Buffer(Buffer.ipv6SizeInBytes(ipv6)).writeIpV6(ipv6).toByteArray();
+    return new String(buffered, UTF_8);
+  }
+
+  @Test
+  public void asciiSizeInBytes_long() throws IOException {
+    assertThat(asciiSizeInBytes(0L)).isEqualTo(1);
+    assertThat(asciiSizeInBytes(-1005656679588439279L)).isEqualTo(20);
+    assertThat(asciiSizeInBytes(-9223372036854775808L /* Long.MIN_VALUE */)).isEqualTo(20);
+    assertThat(asciiSizeInBytes(123456789L)).isEqualTo(9);
+  }
+
+  @Test
+  public void writeAscii_long() throws IOException {
+    assertThat(writeAscii(-1005656679588439279L))
+        .isEqualTo("-1005656679588439279");
+    assertThat(writeAscii(0L))
+        .isEqualTo("0");
+    assertThat(writeAscii(-9223372036854775808L /* Long.MIN_VALUE */))
+        .isEqualTo("-9223372036854775808");
+    assertThat(writeAscii(123456789L))
+        .isEqualTo("123456789");
+  }
+
+  static String writeAscii(long v) {
+    byte[] buffered = new Buffer(Buffer.asciiSizeInBytes(v)).writeAscii(v).toByteArray();
     return new String(buffered, UTF_8);
   }
 }

@@ -170,7 +170,7 @@ public final class JsonCodec implements Codec {
     @Override
     public BinaryAnnotation fromJson(JsonReader reader) throws IOException {
       BinaryAnnotation.Builder result = BinaryAnnotation.builder();
-      Double number = null;
+      String number = null;
       String string = null;
       Type type = Type.STRING;
       reader.beginObject();
@@ -188,7 +188,7 @@ public final class JsonCodec implements Codec {
               string = reader.nextString();
               break;
             case NUMBER:
-              number = reader.nextDouble();
+              number = reader.nextString();
               break;
             default:
               throw new MalformedJsonException(
@@ -217,13 +217,15 @@ public final class JsonCodec implements Codec {
       }
       final byte[] value;
       if (type == Type.I16) {
-        short v = number.shortValue();
+        short v = Short.parseShort(number);
         value = ByteBuffer.allocate(2).putShort(0, v).array();
       } else if (type == Type.I32) {
-        int v = number.intValue();
+        int v = Integer.parseInt(number);
         value = ByteBuffer.allocate(4).putInt(0, v).array();
       } else if (type == Type.I64 || type == Type.DOUBLE) {
-        long v = type == Type.I64 ? number.longValue() : doubleToRawLongBits(number);
+        long v = type == Type.I64
+            ? Long.parseLong(number)
+            : doubleToRawLongBits(Double.parseDouble(number));
         value = ByteBuffer.allocate(8).putLong(0, v).array();
       } else {
         throw new AssertionError("BinaryAnnotationType " + type + " was added, but not handled");
