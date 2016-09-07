@@ -57,6 +57,21 @@ zipkin:
       index-cache-ttl: ${CASSANDRA_INDEX_CACHE_TTL:60}
       # how many more index rows to fetch than the user-supplied query limit
       index-fetch-multiplier: ${CASSANDRA_INDEX_FETCH_MULTIPLIER:3}
+    cassandra3:
+      # Comma separated list of hosts / ip addresses part of Cassandra cluster.
+      contact-points: ${CASSANDRA3_CONTACT_POINTS:localhost}
+      # Name of the datacenter that will be considered "local" for latency load balancing. When unset, load-balancing is round-robin.
+      local-dc: ${CASSANDRA3_LOCAL_DC:}
+      # Will throw an exception on startup if authentication fails.
+      username: ${CASSANDRA3_USERNAME:}
+      password: ${CASSANDRA3_PASSWORD:}
+      keyspace: ${CASSANDRA3_KEYSPACE:zipkin3}
+      # Max pooled connections per datacenter-local host.
+      max-connections: ${CASSANDRA3_MAX_CONNECTIONS:8}
+      # Ensuring that schema exists, if enabled tries to execute script /cassandra3-schema.cql
+      ensure-schema: ${CASSANDRA3_ENSURE_SCHEMA:true}
+      # how many more index rows to fetch than the user-supplied query limit
+      index-fetch-multiplier: ${CASSANDRA3_INDEX_FETCH_MULTIPLIER:3}
     elasticsearch:
       cluster: ${ES_CLUSTER:elasticsearch}
       hosts: ${ES_HOSTS:localhost:9300}

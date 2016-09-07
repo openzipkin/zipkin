@@ -180,6 +180,18 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-storage-cassandra3</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-storage-cassandra3</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-storage-mysql</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -260,6 +272,11 @@
       <dependency>
         <groupId>com.datastax.cassandra</groupId>
         <artifactId>cassandra-driver-core</artifactId>
+        <version>${cassandra-driver-core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.datastax.cassandra</groupId>
+        <artifactId>cassandra-driver-mapping</artifactId>
         <version>${cassandra-driver-core.version}</version>
       </dependency>
       <dependency>
@@ -476,7 +493,7 @@
             <exclude>**/.idea/**</exclude>
             <exclude>LICENSE</exclude>
             <exclude>**/*.md</exclude>
-            <exclude>dsc-cassandra-*/**</exclude>
+            <exclude>apache-cassandra-*/**</exclude>
             <exclude>elasticsearch-2*/**</exclude>
             <exclude>kafka_*/**</exclude>
             <exclude>src/test/resources/**</exclude>

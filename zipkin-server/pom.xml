@@ -84,6 +84,13 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- Cassandra 3 backend -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-autoconfigure-storage-cassandra3</artifactId>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Elasticsearch backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>

@@ -36,6 +36,7 @@
     <module>collector-kafka</module>
     <module>collector-scribe</module>
     <module>storage-cassandra</module>
+    <module>storage-cassandra3</module>
     <module>storage-elasticsearch</module>
     <module>storage-mysql</module>
     <module>metrics-prometheus</module>
