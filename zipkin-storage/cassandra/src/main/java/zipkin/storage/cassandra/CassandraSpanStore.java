@@ -20,11 +20,11 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.base.Function;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.util.concurrent.AsyncFunction;
@@ -64,7 +64,6 @@ import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.internal.Util.getDays;
-import static zipkin.internal.Util.midnightUTC;
 
 public final class CassandraSpanStore implements GuavaSpanStore {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
@@ -83,7 +82,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
   private final int indexFetchMultiplier;
   private final Session session;
   private final TimestampCodec timestampCodec;
-  private final Set<Integer> buckets;
+  private final Set<Integer> selectTraceIdsByAnnotationBuckets;
   private final PreparedStatement selectTraces;
   private final PreparedStatement selectDependencies;
   private final PreparedStatement selectServiceNames;
@@ -103,7 +102,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     ProtocolVersion protocolVersion = session.getCluster()
         .getConfiguration().getProtocolOptions().getProtocolVersion();
     this.timestampCodec = new TimestampCodec(protocolVersion);
-    this.buckets = ContiguousSet.create(Range.closedOpen(0, bucketCount), integers());
+    this.selectTraceIdsByAnnotationBuckets = ContiguousSet.create(Range.closedOpen(0, bucketCount), integers());
 
     selectTraces = session.prepare(
         QueryBuilder.select("trace_id", "span")
@@ -129,8 +128,9 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
     selectTraceIdsByServiceName = session.prepare(
         QueryBuilder.select("ts", "trace_id")
-            .from(Tables.SERVICE_NAME_INDEX)
+            .from(Tables.SPAN_DURATION_INDEX)
             .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
+            .and(QueryBuilder.eq("span_name", QueryBuilder.bindMarker("span_name")))
             .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
             .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
             .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
@@ -139,9 +139,10 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
     selectTraceIdsBySpanName = session.prepare(
         QueryBuilder.select("ts", "trace_id")
-            .from(Tables.SERVICE_SPAN_NAME_INDEX)
-            .where(
-                QueryBuilder.eq("service_span_name", QueryBuilder.bindMarker("service_span_name")))
+            .from(Tables.SPAN_DURATION_INDEX)
+            .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
+            .and(QueryBuilder.eq("span_name", QueryBuilder.bindMarker("span_name")))
+            .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("time_bucket")))
             .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
             .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
             .limit(QueryBuilder.bindMarker("limit_"))
@@ -169,10 +170,9 @@ public final class CassandraSpanStore implements GuavaSpanStore {
             .from(Tables.SPAN_DURATION_INDEX)
             .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
             .and(QueryBuilder.eq("span_name", QueryBuilder.bindMarker("span_name")))
-            .and(QueryBuilder.eq("bucket", QueryBuilder.bindMarker("time_bucket")))
-            .and(QueryBuilder.lte("duration", QueryBuilder.bindMarker("max_duration")))
-            .and(QueryBuilder.gte("duration", QueryBuilder.bindMarker("min_duration")))
-            .orderBy(QueryBuilder.desc("duration")));
+            .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("time_bucket")))
+            .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_time")))
+            .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_time"))));
 
     if (protocolVersion.compareTo(ProtocolVersion.V4) < 0) {
       LOG.warn("Please update Cassandra to 2.2 or later, as some features may fail");
@@ -181,8 +181,9 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     } else {
       selectTraceIdsByServiceNames = session.prepare(
           QueryBuilder.select("ts", "trace_id")
-              .from(Tables.SERVICE_NAME_INDEX)
+              .from(Tables.SPAN_DURATION_INDEX)
               .where(QueryBuilder.in("service_name", QueryBuilder.bindMarker("service_name")))
+              .and(QueryBuilder.eq("span_name", QueryBuilder.bindMarker("span_name")))
               .and(QueryBuilder.in("bucket", QueryBuilder.bindMarker("bucket")))
               .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
               .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
@@ -427,18 +428,29 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     try {
       // This guards use of "in" query to give people a little more time to move off Cassandra 2.1
       // Note that it will still fail when serviceNames.size() > 1
+
+      int startBucket = CassandraUtil.durationIndexBucket(startTs);
+      int endBucket = CassandraUtil.durationIndexBucket(endTs);
+      if (startBucket > endBucket) {
+        throw new IllegalArgumentException(
+          "Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");
+      }
+      Set<Integer> buckets = ContiguousSet.create(Range.closedOpen(startBucket, endBucket), integers());
+
       BoundStatement bound = serviceNames.size() == 1 ?
           CassandraUtil.bindWithName(selectTraceIdsByServiceName, "select-trace-ids-by-service-name")
               .setString("service_name", serviceNames.get(0))
+              .setString("span_name", "")
               .setSet("bucket", buckets)
-              .setBytesUnsafe("start_ts", timestampCodec.serialize(startTs))
-              .setBytesUnsafe("end_ts", timestampCodec.serialize(endTs))
+              .setUUID("start_time", UUIDs.startOf(startTs))
+              .setUUID("end_time", UUIDs.endOf(endTs))
               .setInt("limit_", limit) :
           CassandraUtil.bindWithName(selectTraceIdsByServiceNames, "select-trace-ids-by-service-names")
               .setList("service_name", serviceNames)
+              .setString("span_name", "")
               .setSet("bucket", buckets)
-              .setBytesUnsafe("start_ts", timestampCodec.serialize(startTs))
-              .setBytesUnsafe("end_ts", timestampCodec.serialize(endTs))
+              .setUUID("start_time", UUIDs.startOf(startTs))
+              .setUUID("end_time", UUIDs.endOf(endTs))
               .setInt("limit_", limit);
 
       bound.setFetchSize(Integer.MAX_VALUE);
@@ -453,13 +465,22 @@ public final class CassandraSpanStore implements GuavaSpanStore {
       String spanName, long endTs, long lookback, int limit) {
     checkArgument(serviceName != null, "serviceName required on spanName query");
     checkArgument(spanName != null, "spanName required on spanName query");
-    String serviceSpanName = serviceName + "." + spanName;
     long startTs = endTs - lookback;
     try {
+      int startBucket = CassandraUtil.durationIndexBucket(startTs);
+      int endBucket = CassandraUtil.durationIndexBucket(endTs);
+      if (startBucket > endBucket) {
+        throw new IllegalArgumentException(
+          "Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");
+      }
+      Set<Integer> buckets = ContiguousSet.create(Range.closedOpen(startBucket, endBucket), integers());
+
       BoundStatement bound = CassandraUtil.bindWithName(selectTraceIdsBySpanName, "select-trace-ids-by-span-name")
-          .setString("service_span_name", serviceSpanName)
-          .setBytesUnsafe("start_ts", timestampCodec.serialize(startTs))
-          .setBytesUnsafe("end_ts", timestampCodec.serialize(endTs))
+          .setString("service_name", serviceName)
+          .setString("span_name", spanName)
+          .setSet("bucket", buckets)
+          .setUUID("start_time", UUIDs.startOf(startTs))
+          .setUUID("end_time", UUIDs.endOf(endTs))
           .setInt("limit_", limit);
 
       return transform(session.executeAsync(bound), traceIdToTimestamp);
@@ -475,7 +496,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
       BoundStatement bound =
           CassandraUtil.bindWithName(selectTraceIdsByAnnotation, "select-trace-ids-by-annotation")
               .setBytes("annotation", CassandraUtil.toByteBuffer(annotationKey))
-              .setSet("bucket", buckets)
+              .setSet("bucket", selectTraceIdsByAnnotationBuckets)
               .setBytesUnsafe("start_ts", timestampCodec.serialize(startTs))
               .setBytesUnsafe("end_ts", timestampCodec.serialize(endTs))
               .setInt("limit_", limit);
@@ -499,8 +520,10 @@ public final class CassandraSpanStore implements GuavaSpanStore {
   }
 
   /** Returns a map of trace id to timestamp (in microseconds) */
-  ListenableFuture<Map<Long, Long>> getTraceIdsByDuration(QueryRequest request,
-      int indexFetchSize) {
+  ListenableFuture<Map<Long, Long>> getTraceIdsByDuration(
+          final QueryRequest request,
+          final int indexFetchSize) {
+
     checkArgument(request.serviceName != null, "serviceName required on duration query");
     long oldestData = (System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(durationTtl)) * 1000;
 
@@ -513,18 +536,15 @@ public final class CassandraSpanStore implements GuavaSpanStore {
       throw new IllegalArgumentException(
           "Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");
     }
+    Set<Integer> buckets = ContiguousSet.create(Range.closedOpen(startBucket, endBucket), integers());
 
-    List<ListenableFuture<List<DurationRow>>> futures = new ArrayList<>();
-    for (int i = startBucket; i <= endBucket; i++) { // range closed
-      futures.add(oneBucketDurationQuery(request, i, startTs, endTs, indexFetchSize));
-    }
-
-    return transform(allAsList(futures),
-        new Function<List<List<DurationRow>>, Map<Long, Long>>() {
-          @Override public Map<Long, Long> apply(List<List<DurationRow>> input) {
+    return transform(
+        oneBucketDurationQuery(request, buckets, startTs, endTs, indexFetchSize),
+        new Function<List<DurationRow>, Map<Long, Long>>() {
+          @Override public Map<Long, Long> apply(List<DurationRow> input) {
             // find earliest startTs for each trace ID
             Map<Long, Long> result = new LinkedHashMap<>();
-            for (DurationRow row : Iterables.concat(input)) {
+            for (DurationRow row : input) {
               Long oldValue = result.get(row.trace_id);
               if (oldValue == null || oldValue > row.timestamp) {
                 result.put(row.trace_id, row.timestamp);
@@ -535,35 +555,43 @@ public final class CassandraSpanStore implements GuavaSpanStore {
         });
   }
 
-  ListenableFuture<List<DurationRow>> oneBucketDurationQuery(QueryRequest request, int bucket,
-      final long startTs, final long endTs, int indexFetchSize) {
+  ListenableFuture<List<DurationRow>> oneBucketDurationQuery(
+          final QueryRequest request,
+          final Set<Integer> buckets,
+          final long startTs,
+          final long endTs,
+          final int indexFetchSize) {
+
     String serviceName = request.serviceName;
     String spanName = spanName(request.spanName);
-    long minDuration = request.minDuration;
-    long maxDuration = request.maxDuration != null ? request.maxDuration : Long.MAX_VALUE;
+    final long minDuration = request.minDuration;
+    final long maxDuration = request.maxDuration != null ? request.maxDuration : Long.MAX_VALUE;
+
     BoundStatement bound =
         CassandraUtil.bindWithName(selectTraceIdsBySpanDuration, "select-trace-ids-by-span-duration")
-            .setInt("time_bucket", bucket)
+            .setSet("time_bucket", buckets)
             .setString("service_name", serviceName)
             .setString("span_name", spanName)
-            .setLong("min_duration", minDuration)
-            .setLong("max_duration", maxDuration);
+            .setUUID("start_time", UUIDs.startOf(startTs))
+            .setUUID("end_time", UUIDs.endOf(endTs));
 
     // optimistically setting fetch size to 'indexFetchSize' here. Since we are likely to filter
     // some results because their timestamps are out of range, we may need to fetch again.
-    // TODO figure out better strategy
+    // TODO remove when most users have upgraded schema
     bound.setFetchSize(indexFetchSize);
 
     return transform(session.executeAsync(bound), new Function<ResultSet, List<DurationRow>>() {
-      @Override public List<DurationRow> apply(ResultSet rs) {
-        ImmutableList.Builder<DurationRow> result = ImmutableList.builder();
+      @Override
+      public List<DurationRow> apply(ResultSet rs) {
+        List<DurationRow> result = new ArrayList<>();
         for (Row input : rs) {
           DurationRow row = new DurationRow(input);
-          if (row.timestamp >= startTs && row.timestamp <= endTs) {
+          assert row.timestamp >= startTs && row.timestamp <= endTs;
+          if (row.duration >= minDuration && row.duration <= maxDuration) {
             result.add(row);
           }
         }
-        return result.build();
+        return result;
       }
     });
   }
@@ -576,7 +604,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     DurationRow(Row row) {
       trace_id = row.getLong("trace_id");
       duration = row.getLong("duration");
-      timestamp = timestampCodec.deserialize(row, "ts");
+      timestamp = UUIDs.unixTimestamp(row.getUUID("ts"));
     }
 
     @Override public String toString() {

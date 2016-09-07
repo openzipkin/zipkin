@@ -37,26 +37,6 @@ final class Tables {
   static final String SPAN_NAMES = "span_names";
 
   /**
-   * This index supports trace id lookups by {@link QueryRequest#serviceName}, within the interval
-   * of {@link QueryRequest#endTs} - {@link QueryRequest#lookback}.
-   *
-   * <p>The cardinality of {@link Endpoint#serviceName} values is expected to be stable and low. To
-   * avoid hot partitions, the partition key is {@link Endpoint#serviceName} with abucket (random
-   * number between 0 and 9).
-   */
-  static final String SERVICE_NAME_INDEX = "service_name_index";
-
-  /**
-   * This index supports trace id lookups by {@link QueryRequest#serviceName} and {@link
-   * QueryRequest#spanName}, within the interval of {@link QueryRequest#endTs} - {@link
-   * QueryRequest#lookback}.
-   *
-   * <p>The partition key is "{@link Endpoint#serviceName $serviceName}.{@link zipkin.Span#name
-   * $spanName}", which is expected to be diverse enough to not cause hot partitions.
-   */
-  static final String SERVICE_SPAN_NAME_INDEX = "service_span_name_index";
-
-  /**
    * This index supports trace id lookups by {@link QueryRequest#annotations} or {@link
    * QueryRequest#binaryAnnotations}, within the interval of {@link QueryRequest#endTs} - {@link
    * QueryRequest#lookback}.

@@ -293,8 +293,6 @@ public final class CassandraStorage
         "dependencies",
         Tables.SERVICE_NAMES,
         Tables.SPAN_NAMES,
-        Tables.SERVICE_NAME_INDEX,
-        Tables.SERVICE_SPAN_NAME_INDEX,
         Tables.ANNOTATIONS_INDEX,
         Tables.SPAN_DURATION_INDEX
     )) {

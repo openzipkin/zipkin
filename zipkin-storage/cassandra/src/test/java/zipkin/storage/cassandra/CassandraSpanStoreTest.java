@@ -88,7 +88,7 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
 
     // Index ends up containing more rows than services * trace count, and cannot be de-duped
     // in a server-side query.
-    assertThat(rowCount(Tables.SERVICE_NAME_INDEX))
+    assertThat(rowCount(Tables.SPAN_DURATION_INDEX))
         .isGreaterThan(traceCount * store().getServiceNames().size());
 
     // Implementation over-fetches on the index to allow the user to receive unsurprising results.

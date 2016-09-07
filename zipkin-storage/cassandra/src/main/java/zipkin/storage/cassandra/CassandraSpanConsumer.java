@@ -19,6 +19,7 @@ import com.datastax.driver.core.RegularStatement;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -29,6 +30,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin.Codec;
@@ -207,9 +209,12 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
               .setInt("bucket", bucket)
               .setString("service_name", serviceName)
               .setString("span_name", spanName)
-              .setBytesUnsafe("ts", timestampCodec.serialize(timestamp))
+              .setUUID("ts", new UUID(
+                      UUIDs.startOf(timestamp).getMostSignificantBits(),
+                      UUIDs.timeBased().getLeastSignificantBits()))
               .setLong("duration", duration)
               .setLong("trace_id", traceId);
+      
       if (indexTtl != null) bound.setInt("ttl_", indexTtl);
 
       return session.executeAsync(bound);
