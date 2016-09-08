@@ -14,9 +14,9 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import java.util.List;
-import org.elasticsearch.action.admin.indices.flush.FlushRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.MergeById;
@@ -66,18 +66,14 @@ public class ElasticsearchDependenciesTest extends DependenciesTest {
 
   @VisibleForTesting void writeDependencyLinks(List<DependencyLink> links, long timestampMillis) {
     long midnight = Util.midnightUTC(timestampMillis);
-    BulkRequestBuilder request = storage.client().prepareBulk();
-    for (DependencyLink link : links) {
-      request.add(storage.client().prepareIndex(
-          storage.indexNameFormatter.indexNameForTimestamp(midnight),
-          ElasticsearchConstants.DEPENDENCY_LINK)
-          .setId(link.parent + "|" + link.child) // Unique constraint
-          .setSource(
-              "parent", link.parent,
-              "child", link.child,
-              "callCount", link.callCount));
-    }
-    request.execute().actionGet();
-    storage.client().admin().indices().flush(new FlushRequest()).actionGet();
+    storage.client().indexDependencies(storage.indexNameFormatter.indexNameForTimestamp(midnight),
+        Lists.transform(links, link -> new InternalElasticsearchClient.IndexableLink(
+                link.parent + "|" + link.child, // unique constraint
+                ImmutableMap.of(
+                    "parent", link.parent,
+                    "child", link.child,
+                    "callCount", link.callCount
+                )
+            )));
   }
 }

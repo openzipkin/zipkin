@@ -14,7 +14,6 @@
 package zipkin.storage.elasticsearch;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
-import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.junit.AssumptionViolatedException;
 import org.junit.Test;
@@ -27,11 +26,14 @@ public class LazyClientTest {
   @Test
   public void testToString() {
     LazyClient lazyClient = new LazyClient(new ElasticsearchStorage.Builder()
+        .client(new NativeClient.Builder()
         .cluster("cluster")
-        .hosts(asList("host1", "host2")));
+        .hosts(asList("host1", "host2"))
+        .build()));
 
     assertThat(lazyClient)
-        .hasToString("{\"clusterName\": \"cluster\", \"hosts\": [\"host1\", \"host2\"]}");
+        .hasToString("{\"clientFactory\": "
+            + "{\"clusterName\": \"cluster\", \"hosts\": [\"host1\", \"host2\"]}}");
   }
 
   @Test
@@ -55,14 +57,13 @@ public class LazyClientTest {
   }
 
   @Test
-  public void portDefaultsTo9300() {
+  public void nativePortDefaultsTo9300() {
     try (LazyClient lazyClient = new LazyClient(new ElasticsearchStorage.Builder()
-        .hosts(asList("localhost")))) {
+        .client(new NativeClient.Builder().hosts(asList("localhost")).build()))) {
 
-      assertThat(((TransportClient) lazyClient.get()).transportAddresses())
+      assertThat(((NativeClient) lazyClient.get()).transportAddresses())
           .extracting(TransportAddress::getPort)
           .containsOnly(9300);
-
     } catch (NoNodeAvailableException e) {
       throw new AssumptionViolatedException(e.getMessage());
     }

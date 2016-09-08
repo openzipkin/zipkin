@@ -17,12 +17,13 @@ import java.util.Collections;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.storage.elasticsearch.ElasticsearchStorage;
+import zipkin.storage.elasticsearch.NativeClient;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
 public class ZipkinElasticsearchStorageProperties {
-  /** @see ElasticsearchStorage.Builder#cluster(String) */
+  /** @see NativeClient.Builder#cluster(String) */
   private String cluster = "elasticsearch";
-  /** @see ElasticsearchStorage.Builder#hosts(List) */
+  /** @see NativeClient.Builder#hosts(List) */
   private List<String> hosts = Collections.singletonList("localhost:9300");
   /** @see ElasticsearchStorage.Builder#index(String) */
   private String index = "zipkin";
@@ -76,8 +77,9 @@ public class ZipkinElasticsearchStorageProperties {
 
   public ElasticsearchStorage.Builder toBuilder() {
     return ElasticsearchStorage.builder()
-        .cluster(cluster)
-        .hosts(hosts)
+        .client(NativeClient.builder()
+            .cluster(cluster)
+            .hosts(hosts).build())
         .index(index)
         .indexShards(indexShards)
         .indexReplicas(indexReplicas);

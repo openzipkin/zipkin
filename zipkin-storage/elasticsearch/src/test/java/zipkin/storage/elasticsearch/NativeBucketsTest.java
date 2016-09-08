@@ -21,14 +21,13 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import zipkin.storage.elasticsearch.ElasticsearchSpanStore.ConvertSpanNameResponse;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ConvertSpanNameResponseTest {
+public class NativeBucketsTest {
 
   @Rule
   public MockitoRule mocks = MockitoJUnit.rule();
@@ -41,7 +40,7 @@ public class ConvertSpanNameResponseTest {
 
   @Test
   public void emptyWhenAggregatesAreNull() {
-    assertThat(ConvertSpanNameResponse.INSTANCE.apply(response))
+    assertThat(new NativeClient.NativeBuckets(response).getBucketKeys("foo"))
         .isEmpty();
   }
 
@@ -49,7 +48,7 @@ public class ConvertSpanNameResponseTest {
   public void emptyWhenMissingNameAgg() {
     when(response.getAggregations()).thenReturn(aggregations);
 
-    assertThat(ConvertSpanNameResponse.INSTANCE.apply(response))
+    assertThat(new NativeClient.NativeBuckets(response).getBucketKeys("foo"))
         .isEmpty();
   }
 
@@ -62,7 +61,7 @@ public class ConvertSpanNameResponseTest {
     when(terms.getBuckets()).thenReturn(asList(bucket));
     when(bucket.getKeyAsString()).thenReturn("service");
 
-    assertThat(ConvertSpanNameResponse.INSTANCE.apply(response))
+    assertThat(new NativeClient.NativeBuckets(response).getBucketKeys("name_agg"))
         .containsExactly("service");
   }
 }
