@@ -28,7 +28,3 @@ ALTER TABLE zipkin.service_names
 ALTER TABLE zipkin.traces
     WITH compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_window_size_seconds': '86400'}
     AND default_time_to_live =  604800;
-
-ALTER TABLE zipkin.span_duration_index
-    WITH compaction = {'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy', 'max_window_size_seconds': '86400'}
-    AND default_time_to_live =  259200;
