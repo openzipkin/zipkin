@@ -26,10 +26,10 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.Client;
 import zipkin.Codec;
 import zipkin.Span;
-import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.storage.guava.GuavaSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
+import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.storage.elasticsearch.ElasticFutures.toGuava;
 
 final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
@@ -73,12 +73,12 @@ final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
     return transform(future, TO_VOID);
   }
 
-  private IndexRequestBuilder createSpanIndexRequest(Span input) {
-    Span span = ApplyTimestampAndDuration.apply(input);
-    long timestampMillis;
+  private IndexRequestBuilder createSpanIndexRequest(Span span) {
+    Long timestamp = guessTimestamp(span);
+    long timestampMillis; // which index to store this span into
     final byte[] spanBytes;
-    if (span.timestamp != null) {
-      timestampMillis = TimeUnit.MICROSECONDS.toMillis(span.timestamp);
+    if (timestamp != null) {
+      timestampMillis = TimeUnit.MICROSECONDS.toMillis(timestamp);
       spanBytes = prefixWithTimestampMillis(Codec.JSON.writeSpan(span), timestampMillis);
     } else {
       timestampMillis = System.currentTimeMillis();

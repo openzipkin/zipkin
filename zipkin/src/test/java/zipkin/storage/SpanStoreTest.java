@@ -694,26 +694,56 @@ public abstract class SpanStoreTest {
         .containsAll(asList(trace)); // order isn't guaranteed in raw trace
   }
 
-  // This supports the "raw trace" feature, which skips application-level data cleaning
+  /**
+   * Spans report depth-first. Make sure the client timestamp is preferred when instrumentation
+   * don't add a timestamp.
+   */
   @Test
-  public void rawTrace_doesntPerformQueryTimeAdjustment() {
+  public void whenSpanTimestampIsMissingClientSendIsPreferred() {
     Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2, 8080);
-    Annotation sr = Annotation.create((today + 95) * 1000, SERVER_RECV, frontend);
-    Annotation ss = Annotation.create((today + 100) * 1000, SERVER_SEND, frontend);
+    Annotation cs = Annotation.create((today + 50) * 1000, CLIENT_SEND, frontend);
+    Annotation cr = Annotation.create((today + 150) * 1000, CLIENT_RECV, frontend);
+
+    Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 2, 8080);
+    Annotation sr = Annotation.create((today + 95) * 1000, SERVER_RECV, backend);
+    Annotation ss = Annotation.create((today + 100) * 1000, SERVER_SEND, backend);
 
     Span span = Span.builder().traceId(1).name("method1").id(666).build();
 
+    // Simulate the server-side of a shared span arriving first
+    accept(span.toBuilder().addAnnotation(sr).addAnnotation(ss).build());
+    accept(span.toBuilder().addAnnotation(cs).addAnnotation(cr).build());
+
+    // Make sure that the client's timestamp won
+    assertThat(store().getTrace(span.traceId))
+        .containsExactly(span.toBuilder()
+            .timestamp(cs.timestamp)
+            .duration(cr.timestamp - cs.timestamp)
+            .annotations(asList(cs, sr, ss, cr)).build());
+  }
+
+  // This supports the "raw trace" feature, which skips application-level data cleaning
+  @Test
+  public void rawTrace_doesntPerformQueryTimeAdjustment() {
+    Endpoint producer = Endpoint.create("producer", 192 << 24 | 168 << 16 | 1, 8080);
+    Annotation ms = Annotation.create((today + 95) * 1000, "ms", producer);
+
+    Endpoint consumer = Endpoint.create("consumer", 192 << 24 | 168 << 16 | 2, 8080);
+    Annotation mr = Annotation.create((today + 100) * 1000, "mr", consumer);
+
+    Span span = Span.builder().traceId(1).name("message").id(666).build();
+
     // Simulate instrumentation that sends annotations one at-a-time.
     // This should prevent the collection tier from being able to calculate duration.
-    accept(span.toBuilder().addAnnotation(sr).build());
-    accept(span.toBuilder().addAnnotation(ss).build());
+    accept(span.toBuilder().addAnnotation(ms).build());
+    accept(span.toBuilder().addAnnotation(mr).build());
 
     // Normally, span store implementations will merge spans by id and add duration by query time
     assertThat(store().getTrace(span.traceId))
         .containsExactly(span.toBuilder()
-            .timestamp(sr.timestamp)
-            .duration(ss.timestamp - sr.timestamp)
-            .annotations(asList(sr, ss)).build());
+            .timestamp(ms.timestamp)
+            .duration(mr.timestamp - ms.timestamp)
+            .annotations(asList(ms, mr)).build());
 
     // Since a collector never saw both sides of the span, we'd not see duration in the raw trace.
     for (Span raw : store().getRawTrace(span.traceId)) {

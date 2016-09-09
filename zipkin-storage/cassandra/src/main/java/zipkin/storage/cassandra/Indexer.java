@@ -36,6 +36,7 @@ import zipkin.storage.QueryRequest;
 
 import static com.google.common.base.CaseFormat.LOWER_HYPHEN;
 import static com.google.common.base.CaseFormat.UPPER_CAMEL;
+import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.storage.cassandra.CassandraUtil.bindWithName;
 
 /**
@@ -82,10 +83,11 @@ final class Indexer {
     // First parse each span into partition keys used to support query requests
     Builder<PartitionKeyToTraceId, Long> parsed = ImmutableSetMultimap.builder();
     for (Span span : spans) {
-      if (span.timestamp == null) continue;
+      Long timestamp = guessTimestamp(span);
+      if (timestamp == null) continue;
       for (String partitionKey : index.partitionKeys(span)) {
         parsed.put(new PartitionKeyToTraceId(index.table(), partitionKey, span.traceId),
-            1000 * (span.timestamp / 1000)); // index precision is millis
+            1000 * (timestamp / 1000)); // index precision is millis
       }
     }
 

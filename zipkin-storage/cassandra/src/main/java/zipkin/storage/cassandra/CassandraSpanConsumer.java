@@ -33,12 +33,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin.Codec;
 import zipkin.Span;
-import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.Nullable;
 import zipkin.internal.Pair;
 import zipkin.storage.guava.GuavaSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
+import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.storage.cassandra.CassandraUtil.bindWithName;
 import static zipkin.storage.cassandra.CassandraUtil.durationIndexBucket;
 
@@ -119,20 +119,20 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     ImmutableSet.Builder<ListenableFuture<?>> futures = ImmutableSet.builder();
 
     ImmutableList.Builder<Span> spans = ImmutableList.builder();
-    for (Span rawSpan : rawSpans) {
+    for (Span span : rawSpans) {
       // indexing occurs by timestamp, so derive one if not present.
-      Span span = ApplyTimestampAndDuration.apply(rawSpan);
+      Long timestamp = guessTimestamp(span);
       spans.add(span);
 
       futures.add(storeSpan(
           span.traceId,
-          span.timestamp != null ? span.timestamp : 0L,
+          timestamp != null ? timestamp : 0L,
           String.format("%d_%d_%d",
               span.id,
               span.annotations.hashCode(),
               span.binaryAnnotations.hashCode()),
           // store the raw span without any adjustments
-          ByteBuffer.wrap(Codec.THRIFT.writeSpan(rawSpan))));
+          ByteBuffer.wrap(Codec.THRIFT.writeSpan(span))));
 
       for (String serviceName : span.serviceNames()) {
         // SpanStore.getServiceNames
