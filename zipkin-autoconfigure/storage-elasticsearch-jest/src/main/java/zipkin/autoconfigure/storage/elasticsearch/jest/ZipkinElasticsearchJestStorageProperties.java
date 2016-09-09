@@ -11,19 +11,21 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.autoconfigure.storage.elasticsearch;
+package zipkin.autoconfigure.storage.elasticsearch.jest;
 
 import java.util.Collections;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.storage.elasticsearch.ElasticsearchStorage;
+import zipkin.storage.elasticsearch.jest.RestClient;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
-public class ZipkinElasticsearchStorageProperties {
-  /** The elasticsearch cluster to connect to, defaults to "elasticsearch". */
-  private String cluster = "elasticsearch";
-  /** A List of hosts to connect to, e.g.  */
-  private List<String> hosts = Collections.singletonList("localhost:9300");
+public class ZipkinElasticsearchJestStorageProperties {
+  /**
+   * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port
+   * format. Defaults to "http://localhost:9200".
+   */
+  private List<String> hosts = Collections.singletonList("http://localhost:9200");
   /** The index prefix to use when generating daily index names. Defaults to zipkin. */
   private String index = "zipkin";
   /** Number of shards (horizontal scaling factor) per index. Defaults to 5. */
@@ -31,20 +33,11 @@ public class ZipkinElasticsearchStorageProperties {
   /** Number of replicas (redundancy factor) per index. Defaults to 1.` */
   private int indexReplicas = 1;
 
-  public String getCluster() {
-    return cluster;
-  }
-
-  public ZipkinElasticsearchStorageProperties setCluster(String cluster) {
-    this.cluster = cluster;
-    return this;
-  }
-
   public List<String> getHosts() {
     return hosts;
   }
 
-  public ZipkinElasticsearchStorageProperties setHosts(List<String> hosts) {
+  public ZipkinElasticsearchJestStorageProperties setHosts(List<String> hosts) {
     this.hosts = hosts;
     return this;
   }
@@ -53,7 +46,7 @@ public class ZipkinElasticsearchStorageProperties {
     return index;
   }
 
-  public ZipkinElasticsearchStorageProperties setIndex(String index) {
+  public ZipkinElasticsearchJestStorageProperties setIndex(String index) {
     this.index = index;
     return this;
   }
@@ -75,8 +68,7 @@ public class ZipkinElasticsearchStorageProperties {
   }
 
   public ElasticsearchStorage.Builder toBuilder() {
-    return ElasticsearchStorage.builder()
-        .cluster(cluster)
+    return ElasticsearchStorage.builder(new RestClient.Builder())
         .hosts(hosts)
         .index(index)
         .indexShards(indexShards)

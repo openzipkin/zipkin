@@ -28,7 +28,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.elasticsearch.action.ActionListener;
@@ -95,7 +95,7 @@ final class NativeClient extends InternalElasticsearchClient {
 
     @Override public Builder flushOnWrites(boolean flushOnWrites) {
       this.flushOnWrites = flushOnWrites;
-      return null;
+      return this;
     }
 
     @Override public Factory buildFactory() {
@@ -106,7 +106,7 @@ final class NativeClient extends InternalElasticsearchClient {
     }
   }
 
-  static final class Factory implements InternalElasticsearchClient.Factory {
+  private static final class Factory implements InternalElasticsearchClient.Factory {
     final String cluster;
     final List<String> hosts;
     final boolean flushOnWrites;
@@ -117,7 +117,7 @@ final class NativeClient extends InternalElasticsearchClient {
       this.flushOnWrites = builder.flushOnWrites;
     }
 
-    @Override public InternalElasticsearchClient create() {
+    @Override public InternalElasticsearchClient create(String allIndices) {
       Settings settings = Settings.builder()
           .put("cluster.name", cluster)
           .put("lazyClient.transport.sniff", true)
@@ -256,7 +256,7 @@ final class NativeClient extends InternalElasticsearchClient {
 
     // Create a bulk request when there is more than one span to store
     ListenableFuture<?> future;
-    final Set<String> indices = new HashSet<>();
+    final Set<String> indices = new LinkedHashSet<>();
     if (spans.size() == 1) {
       IndexableSpan span = getOnlyElement(spans);
       future = toGuava(toIndexRequest(span).execute());

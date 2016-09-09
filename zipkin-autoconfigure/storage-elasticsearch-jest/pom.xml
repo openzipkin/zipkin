@@ -19,41 +19,26 @@
 
   <parent>
     <groupId>io.zipkin.java</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>zipkin-autoconfigure</artifactId>
     <version>1.11.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>zipkin-autoconfigure</artifactId>
-  <name>Auto Configuration</name>
-  <packaging>pom</packaging>
+  <artifactId>zipkin-autoconfigure-storage-elasticsearch-jest</artifactId>
+  <name>Auto Configuration: Elasticsearch Storage (Jest)</name>
 
   <properties>
-    <main.basedir>${project.basedir}/..</main.basedir>
+    <main.basedir>${project.basedir}/../..</main.basedir>
   </properties>
-
-  <modules>
-    <module>ui</module>
-    <module>collector-kafka</module>
-    <module>collector-scribe</module>
-    <module>storage-cassandra</module>
-    <module>storage-cassandra3</module>
-    <module>storage-elasticsearch</module>
-    <module>storage-elasticsearch-jest</module>
-    <module>storage-mysql</module>
-    <module>metrics-prometheus</module>
-  </modules>
 
   <dependencies>
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-autoconfigure</artifactId>
-      <version>${spring-boot.version}</version>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-storage-elasticsearch-jest</artifactId>
     </dependency>
+
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-test</artifactId>
-      <version>${spring-boot.version}</version>
-      <scope>test</scope>
+      <groupId>io.zipkin.java</groupId>
+      <artifactId>zipkin-autoconfigure-storage-elasticsearch</artifactId>
     </dependency>
   </dependencies>
 </project>

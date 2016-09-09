@@ -25,7 +25,7 @@ import zipkin.storage.elasticsearch.ElasticsearchStorage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
-public class ZipkinElasticsearchStorageAutoConfigurationTests {
+public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();
@@ -74,6 +74,21 @@ public class ZipkinElasticsearchStorageAutoConfigurationTests {
     context.refresh();
 
     assertThat(context.getBean(ZipkinElasticsearchStorageProperties.class).getHosts())
-        .containsExactly("host1:9300:host2:9300");
+        .containsExactly("host1:9300", "host2:9300");
+  }
+
+  @Test
+  public void doesntProvidesStorageComponent_whenHostsAreUrls() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:http://host1:9200"
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchStorageAutoConfiguration.class);
+    context.refresh();
+
+    thrown.expect(NoSuchBeanDefinitionException.class);
+    context.getBean(ElasticsearchStorage.class);
   }
 }
