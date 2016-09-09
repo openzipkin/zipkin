@@ -48,7 +48,7 @@ public abstract class InternalElasticsearchClient implements Closeable {
   protected static final String DEPENDENCY_LINK = "dependencylink";
 
   protected interface Factory {
-    InternalElasticsearchClient create();
+    InternalElasticsearchClient create(String allIndices);
   }
 
   // abstract class so we can hide flushOnWrites

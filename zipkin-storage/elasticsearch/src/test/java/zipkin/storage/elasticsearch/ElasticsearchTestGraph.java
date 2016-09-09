@@ -13,10 +13,8 @@
  */
 package zipkin.storage.elasticsearch;
 
-import java.util.List;
 import org.junit.AssumptionViolatedException;
 import zipkin.Component.CheckResult;
-import zipkin.DependencyLink;
 import zipkin.internal.LazyCloseable;
 
 enum ElasticsearchTestGraph {

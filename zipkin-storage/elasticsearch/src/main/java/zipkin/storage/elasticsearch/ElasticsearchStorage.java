@@ -14,6 +14,7 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
 import java.util.List;
 import zipkin.storage.guava.LazyGuavaStorageComponent;
 
@@ -143,7 +144,7 @@ public final class ElasticsearchStorage
     return CheckResult.OK;
   }
 
-  @Override public void close() {
+  @Override public void close() throws IOException {
     lazyClient.close();
   }
 

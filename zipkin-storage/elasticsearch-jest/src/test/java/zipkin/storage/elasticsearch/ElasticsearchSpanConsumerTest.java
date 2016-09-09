@@ -14,26 +14,16 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ObjectArrays;
 import com.google.common.util.concurrent.Futures;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Span;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import zipkin.storage.elasticsearch.jest.ElasticsearchJestTestGraph;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
@@ -49,7 +39,7 @@ public class ElasticsearchSpanConsumerTest {
   private final ElasticsearchStorage storage;
 
   public ElasticsearchSpanConsumerTest() {
-    this.storage = ElasticsearchTestGraph.INSTANCE.storage.get();
+    this.storage = ElasticsearchJestTestGraph.INSTANCE.storage.get();
   }
 
   @Before

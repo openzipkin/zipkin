@@ -95,7 +95,7 @@ final class NativeClient extends InternalElasticsearchClient {
 
     @Override public Builder flushOnWrites(boolean flushOnWrites) {
       this.flushOnWrites = flushOnWrites;
-      return null;
+      return this;
     }
 
     @Override public Factory buildFactory() {
@@ -106,7 +106,7 @@ final class NativeClient extends InternalElasticsearchClient {
     }
   }
 
-  static final class Factory implements InternalElasticsearchClient.Factory {
+  private static final class Factory implements InternalElasticsearchClient.Factory {
     final String cluster;
     final List<String> hosts;
     final boolean flushOnWrites;
@@ -117,7 +117,7 @@ final class NativeClient extends InternalElasticsearchClient {
       this.flushOnWrites = builder.flushOnWrites;
     }
 
-    @Override public InternalElasticsearchClient create() {
+    @Override public InternalElasticsearchClient create(String allIndices) {
       Settings settings = Settings.builder()
           .put("cluster.name", cluster)
           .put("lazyClient.transport.sniff", true)
@@ -149,9 +149,9 @@ final class NativeClient extends InternalElasticsearchClient {
   }
 
   final TransportClient client;
-  final boolean flushOnWrites;
+  private final boolean flushOnWrites;
 
-  NativeClient(TransportClient client, boolean flushOnWrites) {
+  private NativeClient(TransportClient client, boolean flushOnWrites) {
     this.client = client;
     this.flushOnWrites = flushOnWrites;
   }
