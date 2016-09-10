@@ -33,6 +33,7 @@
           "value": {
             "match": "value",
             "mapping": {
+              "match_mapping_type": "string",
               "index": "not_analyzed",
               "ignore_malformed": true,
               "type": "string"
