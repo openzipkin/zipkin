@@ -34,12 +34,12 @@ import org.slf4j.LoggerFactory;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Span;
-import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.storage.cassandra3.Schema.AnnotationUDT;
 import zipkin.storage.cassandra3.Schema.BinaryAnnotationUDT;
 import zipkin.storage.guava.GuavaSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
+import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.storage.cassandra3.CassandraUtil.bindWithName;
 import static zipkin.storage.cassandra3.CassandraUtil.durationIndexBucket;
 
@@ -89,21 +89,21 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
   public ListenableFuture<Void> accept(List<Span> rawSpans) {
     ImmutableSet.Builder<ListenableFuture<?>> futures = ImmutableSet.builder();
 
-    for (Span rawSpan : rawSpans) {
+    for (Span span : rawSpans) {
       // indexing occurs by timestamp, so derive one if not present.
-      Span span = ApplyTimestampAndDuration.apply(rawSpan);
-      futures.add(storeSpan(rawSpan, span));
+      Long timestamp = guessTimestamp(span);
+      futures.add(storeSpan(span, timestamp));
 
       for (String serviceName : span.serviceNames()) {
         // QueryRequest.min/maxDuration
-        if (span.timestamp != null) {
+        if (timestamp != null) {
           // Contract for Repository.storeServiceSpanName is to store the span twice, once with
           // the span name and another with empty string.
-          futures.add(storeServiceSpanName(serviceName, span.name, span.timestamp, span.duration,
+          futures.add(storeServiceSpanName(serviceName, span.name, timestamp, span.duration,
               span.traceId));
           if (!span.name.isEmpty()) { // If span.name == "", this would be redundant
             futures.add(
-                storeServiceSpanName(serviceName, "", span.timestamp, span.duration, span.traceId));
+                storeServiceSpanName(serviceName, "", timestamp, span.duration, span.traceId));
           }
         }
       }
@@ -114,9 +114,9 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
   /**
    * Store the span in the underlying storage for later retrieval.
    */
-  ListenableFuture<?> storeSpan(Span rawSpan, Span span) {
+  ListenableFuture<?> storeSpan(Span span, Long timestamp) {
     try {
-      if ((null == span.timestamp || 0 == span.timestamp)
+      if ((null == timestamp || 0 == timestamp)
           && metadata.compactionClass.contains("TimeWindowCompactionStrategy")) {
 
         LOG.warn("Span {} in trace {} had no timestamp. "
@@ -137,7 +137,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       BoundStatement bound = bindWithName(insertSpan, "insert-span")
           .setVarint("trace_id", BigInteger.valueOf(span.traceId))
           .setUUID("ts_uuid", new UUID(
-              UUIDs.startOf(null != span.timestamp ? (span.timestamp / 1000) : 0)
+              UUIDs.startOf(null != timestamp ? (timestamp / 1000) : 0)
                   .getMostSignificantBits(),
               UUIDs.random().getLeastSignificantBits()))
           .setLong("id", span.id)
@@ -146,11 +146,11 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
           .setList("binary_annotations", binaryAnnotations)
           .setString("all_annotations", Joiner.on(',').join(annotationKeys));
 
-      if (null != rawSpan.timestamp) {
-        bound = bound.setLong("ts", rawSpan.timestamp);
+      if (null != span.timestamp) {
+        bound = bound.setLong("ts", span.timestamp);
       }
-      if (null != rawSpan.duration) {
-        bound = bound.setLong("duration", rawSpan.duration);
+      if (null != span.duration) {
+        bound = bound.setLong("duration", span.duration);
       }
       if (null != span.parentId) {
         bound = bound.setLong("parent_id", span.parentId);

@@ -46,7 +46,8 @@ public class ApplyTimestampAndDuration {
     // when there's skew between the client and the server.
     Long first = span.annotations.get(0).timestamp;
     Long last = span.annotations.get(span.annotations.size() - 1).timestamp;
-    for (Annotation annotation : span.annotations) {
+    for (int i = 0, length = span.annotations.size(); i < length; i++) {
+      Annotation annotation = span.annotations.get(i);
       if (annotation.value.equals(Constants.CLIENT_SEND)) {
         first = annotation.timestamp;
       } else if (annotation.value.equals(Constants.CLIENT_RECV)) {
@@ -56,6 +57,31 @@ public class ApplyTimestampAndDuration {
     long ts = span.timestamp != null ? span.timestamp : first;
     Long dur = span.duration != null ? span.duration : last.equals(first) ? null : last - first;
     return span.toBuilder().timestamp(ts).duration(dur).build();
+  }
+
+  /**
+   * Instrumentation should set {@link Span#timestamp} when recording a span so that guess-work
+   * isn't needed. Since a lot of instrumentation don't, we have to make some guesses.
+   *
+   * <pre><ul>
+   *   <li>If there is a {@link Constants#CLIENT_SEND}, use that</li>
+   *   <li>Fall back to {@link Constants#SERVER_RECV}, if a root span</li>
+   *   <li>Otherwise, return null</li>
+   * </ul></pre>
+   */
+  public static Long guessTimestamp(Span span) {
+    if (span.timestamp != null || span.annotations.isEmpty()) return span.timestamp;
+    boolean isRoot = span.parentId == null;
+    Long rootServerRecv = null;
+    for (int i = 0, length = span.annotations.size(); i < length; i++) {
+      Annotation annotation = span.annotations.get(i);
+      if (annotation.value.equals(Constants.CLIENT_SEND)) {
+        return annotation.timestamp;
+      } else if (annotation.value.equals(Constants.SERVER_RECV) && isRoot) {
+        rootServerRecv = annotation.timestamp;
+      }
+    }
+    return rootServerRecv;
   }
 
   private ApplyTimestampAndDuration() {

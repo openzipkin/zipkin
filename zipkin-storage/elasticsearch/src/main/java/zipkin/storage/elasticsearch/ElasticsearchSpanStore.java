@@ -95,11 +95,10 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     long endMillis = request.endTs;
     long beginMillis = endMillis - request.lookback;
 
-    // TODO: once timestamp_millis is sufficiently deployed, switch this logic to use it
     BoolQueryBuilder filter = boolQuery()
-        .must(rangeQuery("timestamp")
-            .gte(TimeUnit.MILLISECONDS.toMicros(beginMillis))
-            .lte(TimeUnit.MILLISECONDS.toMicros(endMillis)));
+        .must(rangeQuery("timestamp_millis")
+            .gte(beginMillis)
+            .lte(endMillis));
 
     if (request.serviceName != null) {
       filter.must(boolQuery()
@@ -150,7 +149,8 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
             .addAggregation(
                 AggregationBuilders.terms("traceId_agg")
                     .field("traceId")
-                    .subAggregation(AggregationBuilders.min("timestamps_agg").field("timestamp"))
+                    .subAggregation(AggregationBuilders.min("timestamps_agg")
+                        .field("timestamp_millis"))
                     .order(Order.aggregation("timestamps_agg", false))
                     .size(request.limit));
 
