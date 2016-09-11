@@ -214,8 +214,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
       futureKeySetsToIntersect.add(traceIdToTimestamp);
       for (String annotationKey : annotationKeys) {
         futureKeySetsToIntersect
-            .add(getTraceIdsByAnnotation(annotationKey, request.endTs, request.lookback,
-                traceIndexFetchSize));
+            .add(getTraceIdsByAnnotation(annotationKey, request.endTs, request.lookback, traceIndexFetchSize));
       }
       // We achieve the AND goal, by intersecting each of the key sets.
       traceIds =
@@ -225,8 +224,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
     return transform(traceIds, new AsyncFunction<Collection<BigInteger>, List<List<Span>>>() {
       @Override public ListenableFuture<List<List<Span>>> apply(Collection<BigInteger> traceIds) {
         traceIds = FluentIterable.from(traceIds).limit(request.limit).toSet();
-        return transform(getSpansByTraceIds(ImmutableSet.copyOf(traceIds), maxTraceCols),
-            AdjustTraces.INSTANCE);
+        return transform(getSpansByTraceIds(ImmutableSet.copyOf(traceIds), maxTraceCols), AdjustTraces.INSTANCE);
       }
 
       @Override public String toString() {
@@ -355,8 +353,6 @@ final class CassandraSpanStore implements GuavaSpanStore {
           .setSet("trace_id", traceIds)
           .setInt("limit_", limit);
 
-      bound.setFetchSize(Integer.MAX_VALUE);
-
       return transform(session.executeAsync(bound),
           new Function<ResultSet, Collection<List<Span>>>() {
             @Override public Collection<List<Span>> apply(ResultSet input) {
@@ -480,8 +476,6 @@ final class CassandraSpanStore implements GuavaSpanStore {
               .setUUID("start_ts", UUIDs.startOf(startTsMillis))
               .setUUID("end_ts", UUIDs.endOf(endTsMillis))
               .setInt("limit_", limit);
-
-      bound.setFetchSize(Integer.MAX_VALUE);
 
       return transform(session.executeAsync(bound),
           new Function<ResultSet, Map<BigInteger, Long>>() {
