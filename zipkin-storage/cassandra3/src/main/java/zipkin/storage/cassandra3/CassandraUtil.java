@@ -57,8 +57,15 @@ final class CassandraUtil {
   }
 
   /**
-   * Returns keys that concatenate the serviceName associated with an annotation, a binary
-   * annotation key, or a binary annotation key with value.
+   * Returns keys that concatenate the serviceName associated with an annotation or a binary
+   * annotation.
+   *
+   * <p>Note: Annotations are delimited with colons while Binary Annotations are delimited with
+   * semi-colons. This is because the returned keys are joined on comma and queried with LIKE. For
+   * example, a span with the annotation "foo" and a binary annotation "bar" -> "baz" would end up
+   * in a cell "service:foo,service:bar:baz". A query for the annotation "bar" would satisfy as
+   * "service:bar" is a substring of that cell. This is imprecise. By joining binary annotations on
+   * semicolon, this mismatch cannot happen.
    *
    * <p>Note: in the case of binary annotations, only string types are returned, as that's the only
    * queryable type, per {@link QueryRequest#binaryAnnotations}.
@@ -77,16 +84,16 @@ final class CassandraUtil {
       }
     }
     for (BinaryAnnotation b : span.binaryAnnotations) {
-      if (b.type == BinaryAnnotation.Type.STRING
-          && b.endpoint != null
-          && !b.endpoint.serviceName.isEmpty()
-          && b.value.length <= LONGEST_VALUE_TO_INDEX * 4) { // UTF_8 is up to 4bytes/char
-        String value = new String(b.value, UTF_8);
-        if (value.length() > LONGEST_VALUE_TO_INDEX) continue;
-
-        annotationKeys.add(b.endpoint.serviceName + ":" + b.key);
-        annotationKeys.add(b.endpoint.serviceName + ":" + b.key + ":" + new String(b.value, UTF_8));
+      if (b.type != BinaryAnnotation.Type.STRING
+          || b.endpoint == null
+          || b.endpoint.serviceName.isEmpty()
+          || b.value.length > LONGEST_VALUE_TO_INDEX * 4) { // UTF_8 is up to 4bytes/char
+        continue;
       }
+      String value = new String(b.value, UTF_8);
+      if (value.length() > LONGEST_VALUE_TO_INDEX) continue;
+
+      annotationKeys.add(b.endpoint.serviceName + ";" + b.key + ";" + new String(b.value, UTF_8));
     }
     return annotationKeys;
   }
@@ -101,7 +108,7 @@ final class CassandraUtil {
       annotationKeys.add(request.serviceName + ":" + a);
     }
     for (Map.Entry<String, String> b : request.binaryAnnotations.entrySet()) {
-      annotationKeys.add(request.serviceName + ":" + b.getKey() + ":" + b.getValue());
+      annotationKeys.add(request.serviceName + ";" + b.getKey() + ";" + b.getValue());
     }
     return sortedList(annotationKeys);
   }

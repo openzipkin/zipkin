@@ -42,6 +42,8 @@ import static zipkin.Constants.CLIENT_SEND;
 import static zipkin.Constants.LOCAL_COMPONENT;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
+import static zipkin.TestObjects.APP_ENDPOINT;
+import static zipkin.TestObjects.WEB_ENDPOINT;
 
 /**
  * Base test for {@link SpanStore} implementations. Subtypes should create a connection to a real
@@ -431,6 +433,73 @@ public abstract class SpanStoreTest {
 
     assertThat(store().getTraces(QueryRequest.builder().serviceName("service").addAnnotation("foo").addAnnotation("bar").addBinaryAnnotation("baz", "qux").build()))
         .containsExactly(asList(barAndFooAndBazAndQux));
+  }
+
+  /**
+   * This test makes sure that annotation queries pay attention to which host logged an annotation.
+   */
+  @Test
+  public void getTraces_differentiateOnServiceName() {
+    Span trace1 = Span.builder().traceId(1).name("get").id(1)
+        .timestamp((today + 1) * 1000)
+        .addAnnotation(Annotation.create((today + 1) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, SERVER_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, SERVER_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, CLIENT_RECV, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, "web", WEB_ENDPOINT))
+        .addBinaryAnnotation(BinaryAnnotation.create("local", "web", WEB_ENDPOINT))
+        .addBinaryAnnotation(BinaryAnnotation.create("web-b", "web", WEB_ENDPOINT))
+        .build();
+
+    Span trace2 = Span.builder().traceId(2).name("get").id(2)
+        .timestamp((today + 2) * 1000)
+        .addAnnotation(Annotation.create((today + 1) * 1000, CLIENT_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, SERVER_RECV, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, SERVER_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, CLIENT_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, "app", APP_ENDPOINT))
+        .addBinaryAnnotation(BinaryAnnotation.create("local", "app", APP_ENDPOINT))
+        .addBinaryAnnotation(BinaryAnnotation.create("app-b", "app", APP_ENDPOINT))
+        .build();
+
+    accept(trace1, trace2);
+
+    assertThat(store().getTraces(QueryRequest.builder().build()))
+        .containsExactly(asList(trace2), asList(trace1));
+
+    // We only return traces where the service specified caused the annotation queried.
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("web").addAnnotation("web").build()))
+        .containsExactly(asList(trace1));
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("app").addAnnotation("web").build()))
+        .isEmpty();
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("app").addAnnotation("app").build()))
+        .containsExactly(asList(trace2));
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("web").addAnnotation("app").build()))
+        .isEmpty();
+
+    // Binary annotations are not returned for annotation queries
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("web").addAnnotation("web-b").build()))
+        .isEmpty();
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("app").addAnnotation("web-b").build()))
+        .isEmpty();
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("app").addAnnotation("app-b").build()))
+        .isEmpty();
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("web").addAnnotation("app-b").build()))
+        .isEmpty();
+
+    // We only return traces where the service specified caused the binary value queried.
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("web")
+        .addBinaryAnnotation("local", "web").build()))
+        .containsExactly(asList(trace1));
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("app")
+        .addBinaryAnnotation("local", "web").build()))
+        .isEmpty();
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("app")
+        .addBinaryAnnotation("local", "app").build()))
+        .containsExactly(asList(trace2));
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("web")
+        .addBinaryAnnotation("local", "app").build()))
+        .isEmpty();
   }
 
   /** Make sure empty binary annotation values don't crash */

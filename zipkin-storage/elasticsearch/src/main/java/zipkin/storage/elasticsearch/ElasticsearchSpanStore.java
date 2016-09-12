@@ -102,7 +102,8 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
 
     if (request.serviceName != null) {
       filter.must(boolQuery()
-          .should(termQuery("annotations.endpoint.serviceName", request.serviceName))
+          .should(nestedQuery(
+              "annotations", termQuery("annotations.endpoint.serviceName", request.serviceName)))
           .should(nestedQuery(
               "binaryAnnotations",
               termQuery("binaryAnnotations.endpoint.serviceName", request.serviceName))));
@@ -111,16 +112,29 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
       filter.must(termQuery("name", request.spanName));
     }
     for (String annotation : request.annotations) {
-      filter.must(termQuery("annotations.value", annotation));
+      BoolQueryBuilder annotationQuery = boolQuery()
+              .must(termQuery("annotations.value", annotation));
+
+      if (request.serviceName != null) {
+        annotationQuery.must(termQuery("annotations.endpoint.serviceName", request.serviceName));
+      }
+
+      filter.must(nestedQuery("annotations", annotationQuery));
     }
-    for (Map.Entry<String, String> annotation : request.binaryAnnotations.entrySet()) {
+    for (Map.Entry<String, String> kv : request.binaryAnnotations.entrySet()) {
       // In our index template, we make sure the binaryAnnotation value is indexed as string,
       // meaning non-string values won't even be indexed at all. This means that we can only
       // match string values here, which happens to be exactly what we want.
-      filter.must(nestedQuery("binaryAnnotations", boolQuery()
-              .must(termQuery("binaryAnnotations.key", annotation.getKey()))
-              .must(termQuery("binaryAnnotations.value",
-                  annotation.getValue()))));
+      BoolQueryBuilder binaryAnnotationQuery = boolQuery()
+          .must(termQuery("binaryAnnotations.key", kv.getKey()))
+          .must(termQuery("binaryAnnotations.value", kv.getValue()));
+
+      if (request.serviceName != null) {
+        binaryAnnotationQuery.must(
+            termQuery("binaryAnnotations.endpoint.serviceName", request.serviceName));
+      }
+
+      filter.must(nestedQuery("binaryAnnotations", binaryAnnotationQuery));
     }
 
     if (request.minDuration != null) {
@@ -287,9 +301,13 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
       return EMPTY_LIST;
     }
     serviceName = serviceName.toLowerCase();
+
     QueryBuilder filter = boolQuery()
-        .should(termQuery("annotations.endpoint.serviceName", serviceName))
-        .should(termQuery("binaryAnnotations.endpoint.serviceName", serviceName));
+        .should(nestedQuery(
+            "annotations", termQuery("annotations.endpoint.serviceName", serviceName)))
+        .should(nestedQuery(
+            "binaryAnnotations", termQuery("binaryAnnotations.endpoint.serviceName", serviceName)));
+
     SearchRequestBuilder elasticRequest = client.prepareSearch(indexNameFormatter.catchAll())
         .setTypes(ElasticsearchConstants.SPAN)
         .setQuery(boolQuery().must(matchAllQuery()).filter(filter))

@@ -50,6 +50,14 @@
           }
         },
         {
+          "annotations": {
+            "match": "annotations",
+            "mapping": {
+              "type": "nested"
+            }
+          }
+        },
+        {
           "binaryAnnotations": {
             "match": "binaryAnnotations",
             "mapping": {
@@ -67,6 +75,9 @@
         "timestamp_millis": {
           "type":   "date",
           "format": "epoch_millis"
+        },
+        "annotations": {
+          "type": "nested"
         },
         "binaryAnnotations": {
           "type": "nested"

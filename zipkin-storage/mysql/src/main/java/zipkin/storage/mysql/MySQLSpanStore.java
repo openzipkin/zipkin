@@ -35,6 +35,7 @@ import org.jooq.Record5;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectOffsetStep;
 import org.jooq.Table;
+import org.jooq.TableOnConditionStep;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.BinaryAnnotation.Type;
@@ -106,16 +107,24 @@ final class MySQLSpanStore implements SpanStore {
         .on(ZIPKIN_SPANS.TRACE_ID.eq(ZIPKIN_ANNOTATIONS.TRACE_ID).and(
             ZIPKIN_SPANS.ID.eq(ZIPKIN_ANNOTATIONS.SPAN_ID)));
 
-    Map<String, ZipkinAnnotations> keyToTables = new LinkedHashMap<>();
     int i = 0;
-    for (String key : request.binaryAnnotations.keySet()) {
-      keyToTables.put(key, ZIPKIN_ANNOTATIONS.as("a" + i++));
-      table = join(table, keyToTables.get(key), key, STRING.value);
+    for (String key : request.annotations) {
+      ZipkinAnnotations aTable = ZIPKIN_ANNOTATIONS.as("a" + i++);
+      table = maybeOnService(table.join(aTable)
+          .on(ZIPKIN_SPANS.TRACE_ID.eq(aTable.TRACE_ID))
+          .and(ZIPKIN_SPANS.ID.eq(aTable.SPAN_ID))
+          .and(aTable.A_TYPE.eq(-1))
+          .and(aTable.A_KEY.eq(key)), aTable, request.serviceName);
     }
 
-    for (String key : request.annotations) {
-      keyToTables.put(key, ZIPKIN_ANNOTATIONS.as("a" + i++));
-      table = join(table, keyToTables.get(key), key, -1);
+    for (Map.Entry<String, String> kv : request.binaryAnnotations.entrySet()) {
+      ZipkinAnnotations aTable = ZIPKIN_ANNOTATIONS.as("a" + i++);
+      table = maybeOnService(table.join(aTable)
+          .on(ZIPKIN_SPANS.TRACE_ID.eq(aTable.TRACE_ID))
+          .and(ZIPKIN_SPANS.ID.eq(aTable.SPAN_ID))
+          .and(aTable.A_TYPE.eq(STRING.value))
+          .and(aTable.A_KEY.eq(kv.getKey()))
+          .and(aTable.A_VALUE.eq(kv.getValue().getBytes(UTF_8))), aTable, request.serviceName);
     }
 
     SelectConditionStep<Record1<Long>> dsl = context.selectDistinct(ZIPKIN_SPANS.TRACE_ID)
@@ -135,19 +144,13 @@ final class MySQLSpanStore implements SpanStore {
     } else if (request.minDuration != null) {
       dsl.and(ZIPKIN_SPANS.DURATION.greaterOrEqual(request.minDuration));
     }
-
-    for (Map.Entry<String, String> entry : request.binaryAnnotations.entrySet()) {
-      dsl.and(keyToTables.get(entry.getKey()).A_VALUE.eq(entry.getValue().getBytes(UTF_8)));
-    }
     return dsl.orderBy(ZIPKIN_SPANS.START_TS.desc()).limit(request.limit);
   }
 
-  static Table<?> join(Table<?> table, ZipkinAnnotations joinTable, String key, int type) {
-    return table.join(joinTable)
-        .on(ZIPKIN_SPANS.TRACE_ID.eq(joinTable.TRACE_ID))
-        .and(ZIPKIN_SPANS.ID.eq(joinTable.SPAN_ID))
-        .and(joinTable.A_TYPE.eq(type))
-        .and(joinTable.A_KEY.eq(key));
+  static Table<?> maybeOnService(TableOnConditionStep<Record> table,
+      ZipkinAnnotations aTable, String serviceName) {
+    if (serviceName == null) return table;
+    return table.and(aTable.ENDPOINT_SERVICE_NAME.eq(serviceName));
   }
 
   List<List<Span>> getTraces(@Nullable QueryRequest request, @Nullable Long traceId, boolean raw) {
