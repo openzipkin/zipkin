@@ -20,6 +20,7 @@ import zipkin.internal.PeekingIterator;
 import zipkin.storage.mysql.internal.generated.tables.ZipkinSpans;
 
 import static zipkin.Constants.CLIENT_ADDR;
+import static zipkin.Constants.CLIENT_SEND;
 import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
@@ -102,6 +103,9 @@ final class DependencyLinkSpanIterator implements Iterator<DependencyLinkSpan> {
     switch (key) {
       case CLIENT_ADDR:
         span.caService(value);
+        break;
+      case CLIENT_SEND:
+        span.csService(value);
         break;
       case SERVER_ADDR:
         span.saService(value);

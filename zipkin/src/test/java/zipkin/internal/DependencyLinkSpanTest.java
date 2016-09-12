@@ -123,6 +123,36 @@ public class DependencyLinkSpanTest {
     assertThat(span.peerService).isEqualTo("service1");
   }
 
+  /**
+   * {@link Constants#CLIENT_SEND} indicates the peer, which is a client in the case of a server
+   * span
+   */
+  @Test
+  public void whenSrAndCsServiceExists_caIsThePeer() {
+    DependencyLinkSpan span = DependencyLinkSpan.builder(1L, null, 1L)
+        .csService("service1")
+        .srService("service2")
+        .build();
+
+    assertThat(span.kind).isEqualTo(Kind.SERVER);
+    assertThat(span.service).isEqualTo("service2");
+    assertThat(span.peerService).isEqualTo("service1");
+  }
+
+  /** {@link Constants#CLIENT_ADDR} is more authoritative than {@link Constants#CLIENT_SEND} */
+  @Test
+  public void whenCrAndCaServiceExists_caIsThePeer() {
+    DependencyLinkSpan span = DependencyLinkSpan.builder(1L, null, 1L)
+        .csService("foo")
+        .caService("service1")
+        .srService("service2")
+        .build();
+
+    assertThat(span.kind).isEqualTo(Kind.SERVER);
+    assertThat(span.service).isEqualTo("service2");
+    assertThat(span.peerService).isEqualTo("service1");
+  }
+
   @Test
   public void specialCasesFinagleLocalSocketLabeling() {
     // Finagle labels two sides of the same socket ("ca", "sa") with the local service name.
