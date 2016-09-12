@@ -92,6 +92,6 @@ public class CassandraUtilTest {
     )).build();
 
     assertThat(CassandraUtil.annotationKeys(span))
-        .containsOnly("web:aws.arn", "web:aws.arn:" + arn);
+        .containsOnly("web:aws.arn:" + arn);
   }
 }

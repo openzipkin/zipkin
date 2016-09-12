@@ -52,7 +52,7 @@ public class CassandraUtilTest {
         .serviceName("service")
         .addAnnotation(Constants.ERROR)
         .addBinaryAnnotation(TraceKeys.HTTP_METHOD, "GET").build()))
-        .containsExactly("service:error", "service:http.method:GET");
+        .containsExactly("service:error", "service;http.method;GET");
   }
 
   @Test
@@ -95,6 +95,6 @@ public class CassandraUtilTest {
     )).build();
 
     assertThat(CassandraUtil.annotationKeys(span))
-        .containsOnly("web:aws.arn", "web:aws.arn:" + arn);
+        .containsOnly("web;aws.arn;" + arn);
   }
 }
