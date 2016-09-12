@@ -75,10 +75,10 @@ public final class Span implements Comparable<Span>, Serializable {
    * Epoch microseconds of the start of this span, possibly absent if this an incomplete span.
    *
    * <p>This value should be set directly by instrumentation, using the most precise value
-   * possible. For example, {@code gettimeofday} or syncing {@link System#nanoTime} against a tick
-   * of {@link System#currentTimeMillis}.
+   * possible. For example, {@code gettimeofday} or multiplying {@link System#currentTimeMillis} by
+   * 1000.
    *
-   * <p>For compatibilty with instrumentation that precede this field, collectors or span stores
+   * <p>For compatibility with instrumentation that precede this field, collectors or span stores
    * can derive this via Annotation.timestamp. For example, {@link Constants#SERVER_RECV}.timestamp
    * or {@link Constants#CLIENT_SEND}.timestamp.
    *
