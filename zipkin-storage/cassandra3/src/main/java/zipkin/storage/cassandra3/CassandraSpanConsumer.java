@@ -99,8 +99,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
         if (timestamp != null) {
           // Contract for Repository.storeServiceSpanName is to store the span twice, once with
           // the span name and another with empty string.
-          futures.add(storeServiceSpanName(serviceName, span.name, timestamp, span.duration,
-              span.traceId));
+          futures.add(storeServiceSpanName(serviceName, span.name, timestamp, span.duration, span.traceId));
           if (!span.name.isEmpty()) { // If span.name == "", this would be redundant
             futures.add(
                 storeServiceSpanName(serviceName, "", timestamp, span.duration, span.traceId));

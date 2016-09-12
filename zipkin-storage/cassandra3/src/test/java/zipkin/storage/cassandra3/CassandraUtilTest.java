@@ -52,7 +52,7 @@ public class CassandraUtilTest {
         .serviceName("service")
         .addAnnotation(Constants.ERROR)
         .addBinaryAnnotation(TraceKeys.HTTP_METHOD, "GET").build()))
-        .containsExactly("service:error", "service:http.method:GET");
+        .containsExactly("error", "http.method:GET", "service");
   }
 
   @Test
@@ -62,7 +62,7 @@ public class CassandraUtilTest {
         .serviceName("service")
         .addAnnotation(Constants.ERROR)
         .addAnnotation(Constants.ERROR).build()))
-        .containsExactly("service:error");
+        .containsExactly( "error", "service");
   }
 
   @Test
@@ -78,7 +78,7 @@ public class CassandraUtilTest {
         .containsOnly(Constants.SERVER_ADDR, Constants.CLIENT_ADDR);
 
     assertThat(CassandraUtil.annotationKeys(span))
-        .isEmpty();
+        .containsExactly("web", "ca", "app", "sa");
   }
 
   @Test
@@ -95,6 +95,9 @@ public class CassandraUtilTest {
     )).build();
 
     assertThat(CassandraUtil.annotationKeys(span))
-        .containsOnly("web:aws.arn", "web:aws.arn:" + arn);
+        .containsOnly(
+                "web",
+                "aws.arn:" + arn,
+                TraceKeys.HTTP_URL + ":" + url.substring(0, CassandraUtil.LONGEST_VALUE_TO_INDEX));
   }
 }
