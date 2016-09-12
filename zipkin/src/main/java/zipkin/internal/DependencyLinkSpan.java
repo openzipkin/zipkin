@@ -112,7 +112,8 @@ public final class DependencyLinkSpan {
     for (Annotation a : s.annotations) {
       if (a.value.equals(Constants.SERVER_RECV) && a.endpoint != null) {
         linkSpan.srService(a.endpoint.serviceName);
-        break;
+      } else if (a.value.equals(Constants.CLIENT_SEND) && a.endpoint != null) {
+        linkSpan.csService(a.endpoint.serviceName);
       }
     }
     return linkSpan.build();
@@ -123,6 +124,7 @@ public final class DependencyLinkSpan {
     private final Long parentId;
     private final long spanId;
     private String srService;
+    private String csService;
     private String caService;
     private String saService;
 
@@ -138,6 +140,15 @@ public final class DependencyLinkSpan {
      */
     public Builder srService(String srService) {
       this.srService = srService;
+      return this;
+    }
+
+    /**
+     * {@link zipkin.Constants#CLIENT_SEND} is read to see calls into the root span from
+     * instrumented clients.
+     */
+    public Builder csService(String csService) {
+      this.csService = csService;
       return this;
     }
 
@@ -162,10 +173,11 @@ public final class DependencyLinkSpan {
     public DependencyLinkSpan build() {
       // Finagle labels two sides of the same socket ("ca", "sa") with the same name.
       // Skip the client side, so it isn't mistaken for a loopback request
-      if (equal(saService, caService)) {
-        caService = null;
-      }
+      if (equal(saService, caService)) caService = null;
+
       if (srService != null) {
+        // The client address is more authoritative than the client send owner.
+        if (caService == null) caService = csService;
         return new DependencyLinkSpan(traceId, parentId, spanId, Kind.SERVER, srService, caService);
       } else if (saService != null) {
         return new DependencyLinkSpan(traceId, parentId, spanId, Kind.CLIENT, caService, saService);

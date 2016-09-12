@@ -320,6 +320,33 @@ public abstract class DependenciesTest {
     );
   }
 
+  @Test
+  public void instrumentedClientAndServer() {
+    List<Span> trace = asList(
+        Span.builder().traceId(10L).id(10L).name("get")
+            .timestamp((TODAY + 50L) * 1000).duration(250L * 1000)
+            .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
+            .build(),
+        Span.builder().traceId(10L).parentId(10L).id(11L).name("get")
+            .timestamp((TODAY + 150L) * 1000).duration(50L * 1000)
+            .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, APP_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, APP_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, DB_ENDPOINT))
+            .build()
+    );
+
+    processDependencies(trace);
+
+    assertThat(store().getDependencies(TODAY + 1000L, null)).containsOnly(
+        DependencyLink.create("web", "app", 1),
+        DependencyLink.create("app", "db", 1)
+    );
+  }
+
   /**
    * This test confirms that the span store can detect dependency indicated by SERVER_RECV or
    * SERVER_ADDR only. Some of implementations such as finagle don't send CLIENT_SEND and
