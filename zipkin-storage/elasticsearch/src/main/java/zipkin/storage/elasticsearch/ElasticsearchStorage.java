@@ -107,7 +107,7 @@ public final class ElasticsearchStorage
     }
   }
 
-  private final LazyClient lazyClient;
+  final LazyClient lazyClient;
   @VisibleForTesting
   final IndexNameFormatter indexNameFormatter;
 
