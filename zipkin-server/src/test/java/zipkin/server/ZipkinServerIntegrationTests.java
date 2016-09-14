@@ -194,6 +194,22 @@ public class ZipkinServerIntegrationTests {
         .andExpect(content().string(new String(Codec.JSON.writeSpans(asList(span, span)), UTF_8)));
   }
 
+  @Test
+  public void downgrades128BitTraceIdToLower64Bits() throws Exception {
+    Span span = TRACE.get(0);
+
+    mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
+        .andExpect(status().isAccepted());
+
+    // sleep as the the storage operation is async
+    Thread.sleep(1500);
+
+    // Tosses high bits
+    mockMvc.perform(get(format("/api/v1/trace/48485a3953bb6124%016x", span.traceId)))
+        .andExpect(status().isOk())
+        .andExpect(content().string(new String(Codec.JSON.writeSpans(asList(span)), UTF_8)));
+  }
+
   /** The zipkin-ui is a single-page app. This prevents reloading all resources on each click. */
   @Test
   public void setsMaxAgeOnUiResources() throws Exception {

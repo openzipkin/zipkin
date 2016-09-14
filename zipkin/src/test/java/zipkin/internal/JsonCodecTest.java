@@ -24,6 +24,7 @@ import zipkin.TestObjects;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.internal.Util.UTF_8;
 
 public final class JsonCodecTest extends CodecTest {
 
@@ -49,6 +50,23 @@ public final class JsonCodecTest extends CodecTest {
   }
 
   @Test
+  public void tolerates128bitTraceIds_byTossingHighBits() {
+    byte[] with128BitTraceId = ("{\n"
+        + "  \"traceId\": \"48485a3953bb61246b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\"\n"
+        + "}").getBytes(UTF_8);
+    byte[] withLower64bitsTraceId = ("{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\"\n"
+        + "}").getBytes(UTF_8);
+
+    assertThat(Codec.JSON.readSpan(with128BitTraceId))
+        .isEqualTo(Codec.JSON.readSpan(withLower64bitsTraceId));
+  }
+
+  @Test
   public void ignoreNull_parentId() {
     String json = "{\n"
         + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
@@ -57,7 +75,7 @@ public final class JsonCodecTest extends CodecTest {
         + "  \"parentId\": null\n"
         + "}";
 
-    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+    Codec.JSON.readSpan(json.getBytes(UTF_8));
   }
 
   @Test
@@ -69,7 +87,7 @@ public final class JsonCodecTest extends CodecTest {
         + "  \"timestamp\": null\n"
         + "}";
 
-    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+    Codec.JSON.readSpan(json.getBytes(UTF_8));
   }
 
   @Test
@@ -81,7 +99,7 @@ public final class JsonCodecTest extends CodecTest {
         + "  \"duration\": null\n"
         + "}";
 
-    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+    Codec.JSON.readSpan(json.getBytes(UTF_8));
   }
 
   @Test
@@ -93,7 +111,7 @@ public final class JsonCodecTest extends CodecTest {
         + "  \"debug\": null\n"
         + "}";
 
-    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+    Codec.JSON.readSpan(json.getBytes(UTF_8));
   }
 
   @Test
@@ -111,7 +129,7 @@ public final class JsonCodecTest extends CodecTest {
         + "  ]\n"
         + "}";
 
-    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+    Codec.JSON.readSpan(json.getBytes(UTF_8));
   }
 
   @Test
@@ -129,7 +147,7 @@ public final class JsonCodecTest extends CodecTest {
         + "  ]\n"
         + "}";
 
-    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+    Codec.JSON.readSpan(json.getBytes(UTF_8));
   }
 
   @Test
@@ -143,7 +161,7 @@ public final class JsonCodecTest extends CodecTest {
         + "  \"id\": \"6b221d5bc9e6496c\"\n"
         + "}";
 
-    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+    Codec.JSON.readSpan(json.getBytes(UTF_8));
   }
 
   @Test
@@ -157,7 +175,7 @@ public final class JsonCodecTest extends CodecTest {
         + "  \"id\": null\n"
         + "}";
 
-    Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+    Codec.JSON.readSpan(json.getBytes(UTF_8));
   }
 
   @Test
@@ -175,7 +193,7 @@ public final class JsonCodecTest extends CodecTest {
         + "  ]\n"
         + "}";
 
-    Span span = Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+    Span span = Codec.JSON.readSpan(json.getBytes(UTF_8));
     assertThat(span.binaryAnnotations)
         .containsExactly(BinaryAnnotation.builder()
             .key("num")
@@ -202,7 +220,7 @@ public final class JsonCodecTest extends CodecTest {
         + "  ]\n"
         + "}";
 
-    Span span = Codec.JSON.readSpan(json.getBytes(Util.UTF_8));
+    Span span = Codec.JSON.readSpan(json.getBytes(UTF_8));
     assertThat(span.binaryAnnotations)
         .containsExactly(BinaryAnnotation.builder()
             .key("num")
