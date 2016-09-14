@@ -19,15 +19,11 @@ import java.util.List;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
-import zipkin.DependencyLink;
-import zipkin.internal.Util;
 import zipkin.storage.guava.LazyGuavaStorageComponent;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.util.concurrent.Futures.getUnchecked;
 import static zipkin.internal.Util.checkNotNull;
 
 public final class ElasticsearchStorage
@@ -126,40 +122,23 @@ public final class ElasticsearchStorage
   }
 
   @Override protected ElasticsearchSpanStore computeGuavaSpanStore() {
-    return new ElasticsearchSpanStore(lazyClient.get(), indexNameFormatter);
+    return new ElasticsearchSpanStore(client(), indexNameFormatter);
   }
 
   @Override protected ElasticsearchSpanConsumer computeGuavaSpanConsumer() {
-    return new ElasticsearchSpanConsumer(lazyClient.get(), indexNameFormatter);
-  }
-
-  @VisibleForTesting void writeDependencyLinks(List<DependencyLink> links, long timestampMillis) {
-    long midnight = Util.midnightUTC(timestampMillis);
-    BulkRequestBuilder request = lazyClient.get().prepareBulk();
-    for (DependencyLink link : links) {
-      request.add(lazyClient.get().prepareIndex(
-          indexNameFormatter.indexNameForTimestamp(midnight),
-          ElasticsearchConstants.DEPENDENCY_LINK)
-          .setId(link.parent + "|" + link.child) // Unique constraint
-          .setSource(
-              "parent", link.parent,
-              "child", link.child,
-              "callCount", link.callCount));
-    }
-    request.execute().actionGet();
-    lazyClient.get().admin().indices().flush(new FlushRequest()).actionGet();
+    return new ElasticsearchSpanConsumer(client(), indexNameFormatter);
   }
 
   @VisibleForTesting void clear() {
-    lazyClient.get().admin().indices().delete(new DeleteIndexRequest(indexNameFormatter.catchAll()))
+    client().admin().indices().delete(new DeleteIndexRequest(indexNameFormatter.catchAll()))
         .actionGet();
-    lazyClient.get().admin().indices().flush(new FlushRequest()).actionGet();
+    client().admin().indices().flush(new FlushRequest()).actionGet();
   }
 
   @Override public CheckResult check() {
     try {
-      ClusterHealthResponse health = getUnchecked(lazyClient.get()
-          .admin().cluster().prepareHealth(indexNameFormatter.catchAll()).execute());
+      ClusterHealthResponse health =
+          client().admin().cluster().prepareHealth(indexNameFormatter.catchAll()).get();
       checkState(health.getStatus() != ClusterHealthStatus.RED, "Health status is RED");
     } catch (RuntimeException e) {
       return CheckResult.failed(e);
