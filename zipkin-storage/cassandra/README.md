@@ -50,3 +50,28 @@ significantly limit writes per trace.
 ### Over-fetching on Trace indexes
 User-supplied query limits are over-fetched according to a configured index fetch multiplier in
 attempts to mitigate redundant data returned from index queries.
+
+## Cassandra 2.1
+While not supported, here are some notes if you are running the original
+schema on Cassandra 2.1.
+
+### GET /api/v1/traces without the serviceName query will fail
+The zipkin-ui always specifies a service name, but the http api permits
+leaving it out. This won't work in Cassandra 2.1
+
+### Disable `CASSANDRA_ENSURE_SCHEMA`
+Upgrades assume features that are present in Cassandra 2.2+. Do not have
+zipkin upgrade your schema if you are running Cassandra 2.1.
+
+If using zipkin-server, set `CASSANDRA_ENSURE_SCHEMA=false`.
+
+Manually running below will add default ttls to the original schema.
+```
+ALTER TABLE zipkin.traces WITH default_time_to_live = 604800;
+ALTER TABLE zipkin.service_span_name_index WITH default_time_to_live = 259200;
+ALTER TABLE zipkin.service_name_index WITH default_time_to_live = 259200;
+ALTER TABLE zipkin.span_names WITH default_time_to_live = 259200;
+ALTER TABLE zipkin.annotations_index WITH default_time_to_live = 259200;
+ALTER TABLE zipkin.dependencies WITH default_time_to_live = 259200;
+ALTER TABLE zipkin.service_names WITH default_time_to_live = 259200;
+```
