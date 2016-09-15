@@ -31,6 +31,7 @@ import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Span;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
@@ -58,7 +59,7 @@ public class ZipkinRuleTest {
   @Test
   public void healthIsOK() throws IOException {
     Response getResponse = client.newCall(new Request.Builder()
-        .url(zipkin.httpUrl() +"/health").build()
+        .url(zipkin.httpUrl() + "/health").build()
     ).execute();
 
     assertThat(getResponse.code()).isEqualTo(200);
@@ -72,7 +73,7 @@ public class ZipkinRuleTest {
 
     // read trace id using the the http api
     Response getResponse = client.newCall(new Request.Builder()
-        .url(String.format("%s/api/v1/trace/%016x", zipkin.httpUrl(), traceId)).build()
+        .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), traceId)).build()
     ).execute();
 
     assertThat(getResponse.code()).isEqualTo(200);
@@ -87,17 +88,28 @@ public class ZipkinRuleTest {
 
     // Default will merge by span id
     Response defaultResponse = client.newCall(new Request.Builder()
-        .url(String.format("%s/api/v1/trace/%016x", zipkin.httpUrl(), traceId)).build()
+        .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), traceId)).build()
     ).execute();
 
     assertThat(Codec.JSON.readSpans(defaultResponse.body().bytes())).hasSize(TRACE.size());
 
     // In the in-memory (or cassandra) stores, a raw read will show duplicate span rows.
     Response rawResponse = client.newCall(new Request.Builder()
-        .url(String.format("%s/api/v1/trace/%016x?raw", zipkin.httpUrl(), traceId)).build()
+        .url(format("%s/api/v1/trace/%016x?raw", zipkin.httpUrl(), traceId)).build()
     ).execute();
 
     assertThat(Codec.JSON.readSpans(rawResponse.body().bytes())).hasSize(TRACE.size() * 2);
+  }
+
+  @Test
+  public void downgrades128BitTraceIdToLower64Bits() throws Exception {
+    zipkin.storeSpans(TRACE);
+
+    Response getResponse = client.newCall(new Request.Builder()
+        .url(format("%s/api/v1/trace/48485a3953bb6124%016x", zipkin.httpUrl(), traceId)).build()
+    ).execute();
+
+    assertThat(getResponse.code()).isEqualTo(200);
   }
 
   @Test
@@ -195,7 +207,7 @@ public class ZipkinRuleTest {
     zipkin.storeSpans(trace);
 
     Response response = client.newCall(new Request.Builder()
-            .url(String.format("%s/api/v1/trace/%016x", zipkin.httpUrl(), traceId))
+            .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), traceId))
             .addHeader("Accept-Encoding", "gzip").build()
     ).execute();
 
