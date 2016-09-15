@@ -32,6 +32,8 @@ import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
 import zipkin.storage.StorageComponent;
 
+import static zipkin.internal.Util.lowerHexToUnsignedLong;
+
 final class ZipkinDispatcher extends Dispatcher {
   private final SpanStore store;
   private final Collector consumer;
@@ -66,7 +68,7 @@ final class ZipkinDispatcher extends Dispatcher {
         return jsonResponse(Codec.JSON.writeTraces(store.getTraces(queryRequest)));
       } else if (url.encodedPath().startsWith("/api/v1/trace/")) {
         String traceId = url.encodedPath().replace("/api/v1/trace/", "");
-        long id = new Buffer().writeUtf8(traceId).readHexadecimalUnsignedLong();
+        long id = lowerHexToUnsignedLong(traceId);
         List<Span> trace = url.queryParameterNames().contains("raw")
             ? store.getRawTrace(id) : store.getTrace(id);
         if (trace != null) return jsonResponse(Codec.JSON.writeSpans(trace));
