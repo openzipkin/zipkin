@@ -31,8 +31,8 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import zipkin.internal.LazyCloseable;
 
 final class LazyClient extends LazyCloseable<Client> {
-  private final String clusterName;
-  private final List<String> hosts;
+  final String clusterName;
+  final List<String> hosts;
   final String indexTemplate;
 
   LazyClient(ElasticsearchStorage.Builder builder) {

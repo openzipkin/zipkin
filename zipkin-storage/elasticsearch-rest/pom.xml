@@ -18,12 +18,12 @@
   <parent>
     <groupId>io.zipkin.java</groupId>
     <artifactId>zipkin-storage</artifactId>
-    <version>1.11.2-SNAPSHOT</version>
+    <version>1.11.1-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>zipkin-storage-elasticsearch</artifactId>
-  <name>Storage: Elasticsearch</name>
+  <artifactId>zipkin-storage-elasticsearch-rest</artifactId>
+  <name>Storage: Elasticsearch Rest</name>
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
@@ -37,38 +37,25 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-guava</artifactId>
+      <artifactId>zipkin-storage-elasticsearch</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.elasticsearch</groupId>
-      <artifactId>elasticsearch</artifactId>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>3.4.1</version>
     </dependency>
 
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <version>${logback.version}</version>
-      <scope>test</scope>
+      <groupId>com.squareup.moshi</groupId>
+      <artifactId>moshi</artifactId>
+      <version>1.2.0</version>
     </dependency>
 
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
       <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
