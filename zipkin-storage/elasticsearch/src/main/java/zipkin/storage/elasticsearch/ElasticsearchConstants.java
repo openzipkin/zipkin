@@ -18,5 +18,6 @@ final class ElasticsearchConstants {
   static final String SPAN = "span";
   static final String DEPENDENCY_LINK = "dependencylink";
 
-  private ElasticsearchConstants() {}
+  private ElasticsearchConstants() {
+  }
 }

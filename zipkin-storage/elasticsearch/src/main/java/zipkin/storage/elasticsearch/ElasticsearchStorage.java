@@ -14,16 +14,15 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.Collections;
-import java.util.List;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.flush.FlushRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.health.ClusterHealthStatus;
+import com.google.common.base.Supplier;
+import com.google.common.collect.Iterables;
+import java.util.Arrays;
+import zipkin.storage.elasticsearch.InternalElasticsearchClient.ClientFactory;
+import zipkin.storage.elasticsearch.InternalElasticsearchClient.HealthStatus;
 import zipkin.storage.guava.LazyGuavaStorageComponent;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static zipkin.internal.Util.checkNotNull;
 
 public final class ElasticsearchStorage
@@ -41,28 +40,10 @@ public final class ElasticsearchStorage
   }
 
   public static final class Builder {
-    String cluster = "elasticsearch";
-    List<String> hosts = Collections.singletonList("localhost:9300");
+    ClientFactory clientFactory = NativeClient.builder().build();
     String index = "zipkin";
     int indexShards = 5;
     int indexReplicas = 1;
-
-    /**
-     * The elasticsearch cluster to connect to, defaults to "elasticsearch".
-     */
-    public Builder cluster(String cluster) {
-      this.cluster = checkNotNull(cluster, "cluster");
-      return this;
-    }
-
-    /**
-     * A comma separated list of elasticsearch hostnodes to connect to, in host:port format. The
-     * port should be the transport port, not the http port. Defaults to "localhost:9300".
-     */
-    public Builder hosts(List<String> hosts) {
-      this.hosts = checkNotNull(hosts, "hosts");
-      return this;
-    }
 
     /**
      * The index prefix to use when generating daily index names. Defaults to zipkin.
@@ -99,6 +80,16 @@ public final class ElasticsearchStorage
       return this;
     }
 
+    /**
+     * The client supplier to consume for connectivity to elasticsearch. Defaults to using the
+     * transport-client based {@link NativeClient}, but can be overriden with a HTTP-speaking client
+     * (e.g. for use in cloud environments where the transport protocol is not exposed).
+     */
+    public Builder client(ClientFactory clientFactory) {
+      this.clientFactory = clientFactory;
+      return this;
+    }
+
     public ElasticsearchStorage build() {
       return new ElasticsearchStorage(this);
     }
@@ -117,7 +108,7 @@ public final class ElasticsearchStorage
   }
 
   /** Lazy initializes or returns the client in use by this storage component. */
-  public Client client() {
+  @VisibleForTesting InternalElasticsearchClient client() {
     return lazyClient.get();
   }
 
@@ -130,16 +121,13 @@ public final class ElasticsearchStorage
   }
 
   @VisibleForTesting void clear() {
-    client().admin().indices().delete(new DeleteIndexRequest(indexNameFormatter.catchAll()))
-        .actionGet();
-    client().admin().indices().flush(new FlushRequest()).actionGet();
+    lazyClient.get().clear(getOnlyElement(Arrays.asList(indexNameFormatter.catchAll())));
   }
 
   @Override public CheckResult check() {
     try {
-      ClusterHealthResponse health =
-          client().admin().cluster().prepareHealth(indexNameFormatter.catchAll()).get();
-      checkState(health.getStatus() != ClusterHealthStatus.RED, "Health status is RED");
+      HealthStatus status = client().clusterHealth(indexNameFormatter.catchAll());
+      checkState(status != HealthStatus.RED, "Health status is RED");
     } catch (RuntimeException e) {
       return CheckResult.failed(e);
     }
