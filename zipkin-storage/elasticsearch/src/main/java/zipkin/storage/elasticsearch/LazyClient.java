@@ -13,22 +13,18 @@
  */
 package zipkin.storage.elasticsearch;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import zipkin.internal.LazyCloseable;
-import zipkin.storage.elasticsearch.InternalElasticsearchClient.ClientFactory;
 
 final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
-  private final ClientFactory clientFactory;
-  private final String[] allIndices;
+  private final InternalElasticsearchClient.Factory clientFactory;
   private final String indexTemplateName;
-  @VisibleForTesting final String indexTemplate;
+  final String indexTemplate;
 
   LazyClient(ElasticsearchStorage.Builder builder) {
-    this.clientFactory = builder.clientFactory;
-    this.allIndices = new IndexNameFormatter(builder.index).catchAll();
+    this.clientFactory = builder.clientBuilder.buildFactory();
     this.indexTemplateName = builder.index + "_template"; // should be 1:1 with indices
     try {
       this.indexTemplate = Resources.toString(
@@ -43,13 +39,13 @@ final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
   }
 
   @Override protected InternalElasticsearchClient compute() {
-    InternalElasticsearchClient client = clientFactory.create(allIndices);
+    InternalElasticsearchClient client = clientFactory.create();
     client.ensureTemplate(indexTemplateName, indexTemplate);
     return client;
   }
 
   @Override public String toString() {
-    return "{\"clientFactory\": " + clientFactory + "}";
+    return clientFactory.toString();
   }
 
   @Override

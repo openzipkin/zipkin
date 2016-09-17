@@ -24,8 +24,7 @@ public class ElasticsearchStorageTest {
   @Test
   public void check_failsInsteadOfThrowing() {
     CheckResult result =
-        ElasticsearchStorage.builder().client(NativeClient.builder().cluster("1.1.1.1").build())
-            .build().check();
+        ElasticsearchStorage.builder().cluster("1.1.1.1").build().check();
 
     assertThat(result.ok).isFalse();
     assertThat(result.exception)

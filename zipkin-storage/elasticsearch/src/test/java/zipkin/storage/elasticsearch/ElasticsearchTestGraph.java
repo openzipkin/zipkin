@@ -13,27 +13,25 @@
  */
 package zipkin.storage.elasticsearch;
 
+import java.util.List;
 import org.junit.AssumptionViolatedException;
 import zipkin.Component.CheckResult;
+import zipkin.DependencyLink;
 import zipkin.internal.LazyCloseable;
 
 enum ElasticsearchTestGraph {
   INSTANCE;
-
-  static {
-    ElasticsearchStorage.FLUSH_ON_WRITES = true;
-  }
 
   final LazyCloseable<ElasticsearchStorage> storage = new LazyCloseable<ElasticsearchStorage>() {
     public AssumptionViolatedException ex;
 
     @Override protected ElasticsearchStorage compute() {
       if (ex != null) throw ex;
-      ElasticsearchStorage result =
-          new ElasticsearchStorage.Builder().index("test_zipkin_native").build();
+      ElasticsearchStorage result = ElasticsearchStorage.builder()
+          .index("test_zipkin_native").flushOnWrites(true).build();
       CheckResult check = result.check();
       if (check.ok) return result;
-      throw ex = new AssumptionViolatedException("cluster was not healthy", check.exception);
+      throw ex = new AssumptionViolatedException(check.exception.getMessage());
     }
   };
 }

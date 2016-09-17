@@ -25,20 +25,17 @@ public class LazyClientTest {
 
   @Test
   public void testToString() {
-    LazyClient lazyClient = new LazyClient(new ElasticsearchStorage.Builder()
-        .client(new NativeClient.Builder()
+    LazyClient lazyClient = new LazyClient(ElasticsearchStorage.builder()
         .cluster("cluster")
-        .hosts(asList("host1", "host2"))
-        .build()));
+        .hosts(asList("host1", "host2")));
 
     assertThat(lazyClient)
-        .hasToString("{\"clientFactory\": "
-            + "{\"clusterName\": \"cluster\", \"hosts\": [\"host1\", \"host2\"]}}");
+        .hasToString("{\"clusterName\": \"cluster\", \"hosts\": [\"host1\", \"host2\"]}");
   }
 
   @Test
   public void defaultShardAndReplicaCount() {
-    LazyClient lazyClient = new LazyClient(new ElasticsearchStorage.Builder());
+    LazyClient lazyClient = new LazyClient(ElasticsearchStorage.builder());
 
     assertThat(lazyClient.indexTemplate)
         .contains("    \"index.number_of_shards\": 5,\n"
@@ -47,7 +44,7 @@ public class LazyClientTest {
 
   @Test
   public void overrideShardAndReplicaCount() {
-    LazyClient lazyClient = new LazyClient(new ElasticsearchStorage.Builder()
+    LazyClient lazyClient = new LazyClient(ElasticsearchStorage.builder()
         .indexShards(30)
         .indexReplicas(0));
 
@@ -57,13 +54,14 @@ public class LazyClientTest {
   }
 
   @Test
-  public void nativePortDefaultsTo9300() {
-    try (LazyClient lazyClient = new LazyClient(new ElasticsearchStorage.Builder()
-        .client(new NativeClient.Builder().hosts(asList("localhost")).build()))) {
+  public void portDefaultsTo9300() {
+    try (LazyClient lazyClient = new LazyClient(ElasticsearchStorage.builder()
+        .hosts(asList("localhost")))) {
 
-      assertThat(((NativeClient) lazyClient.get()).transportAddresses())
+      assertThat(((NativeClient) lazyClient.get()).client.transportAddresses())
           .extracting(TransportAddress::getPort)
           .containsOnly(9300);
+
     } catch (NoNodeAvailableException e) {
       throw new AssumptionViolatedException(e.getMessage());
     }

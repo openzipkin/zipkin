@@ -13,7 +13,6 @@
  */
 package zipkin.storage.elasticsearch;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
@@ -46,9 +45,9 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
@@ -60,29 +59,27 @@ import zipkin.DependencyLink;
 import zipkin.Span;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.util.concurrent.Futures.getUnchecked;
 import static com.google.common.util.concurrent.Futures.transform;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
-import static zipkin.storage.elasticsearch.ElasticsearchSpanStore.MAX_RAW_SPANS;
 
 /**
- * An implementation of {@link InternalElasticsearchClient} that wraps a {@link org.elasticsearch.client.Client}
+ * An implementation of {@link InternalElasticsearchClient} that wraps a {@link
+ * org.elasticsearch.client.Client}
  */
-public final class NativeClient implements InternalElasticsearchClient {
+final class NativeClient extends InternalElasticsearchClient {
 
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  public static final class Builder implements ClientFactory {
+  static final class Builder implements InternalElasticsearchClient.Builder {
     String cluster = "elasticsearch";
     List<String> hosts = Collections.singletonList("localhost:9300");
+    boolean flushOnWrites;
 
     /**
      * The elasticsearch cluster to connect to, defaults to "elasticsearch".
      */
-    public Builder cluster(String cluster) {
+    @Override public Builder cluster(String cluster) {
       this.cluster = checkNotNull(cluster, "cluster");
       return this;
     }
@@ -91,19 +88,36 @@ public final class NativeClient implements InternalElasticsearchClient {
      * A comma separated list of elasticsearch hostnodes to connect to, in host:port format. The
      * port should be the transport port, not the http port. Defaults to "localhost:9300".
      */
-    public Builder hosts(List<String> hosts) {
+    @Override public Builder hosts(List<String> hosts) {
       this.hosts = checkNotNull(hosts, "hosts");
       return this;
     }
 
-    public ClientFactory build() {
-      return this;
+    @Override public Builder flushOnWrites(boolean flushOnWrites) {
+      this.flushOnWrites = flushOnWrites;
+      return null;
+    }
+
+    @Override public Factory buildFactory() {
+      return new Factory(this);
     }
 
     Builder() {
     }
+  }
 
-    @Override public InternalElasticsearchClient create(String[] allIndices) {
+  static final class Factory implements InternalElasticsearchClient.Factory {
+    final String cluster;
+    final List<String> hosts;
+    final boolean flushOnWrites;
+
+    Factory(Builder builder) {
+      this.cluster = builder.cluster;
+      this.hosts = ImmutableList.copyOf(builder.hosts);
+      this.flushOnWrites = builder.flushOnWrites;
+    }
+
+    @Override public InternalElasticsearchClient create() {
       Settings settings = Settings.builder()
           .put("cluster.name", cluster)
           .put("lazyClient.transport.sniff", true)
@@ -124,7 +138,7 @@ public final class NativeClient implements InternalElasticsearchClient {
           continue;
         }
       }
-      return new NativeClient(client);
+      return new NativeClient(client, flushOnWrites);
     }
 
     @Override public String toString() {
@@ -134,10 +148,12 @@ public final class NativeClient implements InternalElasticsearchClient {
     }
   }
 
-  private final TransportClient client;
+  final TransportClient client;
+  final boolean flushOnWrites;
 
-  private NativeClient(TransportClient client) {
+  NativeClient(TransportClient client, boolean flushOnWrites) {
     this.client = client;
+    this.flushOnWrites = flushOnWrites;
   }
 
   @Override
@@ -159,26 +175,12 @@ public final class NativeClient implements InternalElasticsearchClient {
   }
 
   @Override
-  public void indexDependencies(String index, List<IndexableLink> links) {
-    BulkRequestBuilder request = client.prepareBulk();
-    for (IndexableLink link : links) {
-      request.add(client.prepareIndex(
-          index,
-          ElasticsearchConstants.DEPENDENCY_LINK)
-          .setId(link.id)
-          .setSource(link.data));
-    }
-    request.execute().actionGet();
-    client.admin().indices().flush(new FlushRequest(index)).actionGet();
-  }
-
-  @Override
   public ListenableFuture<Buckets> scanTraces(String[] indices, QueryBuilder query,
       AbstractAggregationBuilder... aggregations) {
     SearchRequestBuilder elasticRequest =
         client.prepareSearch(indices)
             .setIndicesOptions(IndicesOptions.lenientExpandOpen())
-            .setTypes(ElasticsearchConstants.SPAN)
+            .setTypes(SPAN)
             .setQuery(query)
             .setSize(0);
 
@@ -201,7 +203,7 @@ public final class NativeClient implements InternalElasticsearchClient {
   public ListenableFuture<List<Span>> findSpans(String[] indices, QueryBuilder query) {
     SearchRequestBuilder elasticRequest = client.prepareSearch(indices)
         .setIndicesOptions(IndicesOptions.lenientExpandOpen())
-        .setTypes(ElasticsearchConstants.SPAN)
+        .setTypes(SPAN)
         .setSize(MAX_RAW_SPANS)
         .setQuery(query);
 
@@ -226,20 +228,17 @@ public final class NativeClient implements InternalElasticsearchClient {
     SearchRequestBuilder elasticRequest = client.prepareSearch(
         indices)
         .setIndicesOptions(IndicesOptions.lenientExpandOpen())
-        .setTypes(ElasticsearchConstants.DEPENDENCY_LINK)
+        .setTypes(DEPENDENCY_LINK)
         .setQuery(matchAllQuery());
 
     return transform(toGuava(elasticRequest.execute()), ConvertDependenciesResponse.INSTANCE);
   }
 
-  private enum ConvertDependenciesResponse
-      implements Function<SearchResponse, Collection<DependencyLink>> {
+  enum ConvertDependenciesResponse implements Function<SearchResponse, Collection<DependencyLink>> {
     INSTANCE;
 
     @Override public Collection<DependencyLink> apply(SearchResponse response) {
-      if (response.getHits() == null) {
-        return Collections.emptyList();
-      }
+      if (response.getHits() == null) return ImmutableList.of();
 
       ImmutableList.Builder<DependencyLink> unmerged = ImmutableList.builder();
       for (SearchHit hit : response.getHits()) {
@@ -261,21 +260,17 @@ public final class NativeClient implements InternalElasticsearchClient {
     if (spans.size() == 1) {
       IndexableSpan span = getOnlyElement(spans);
       future = toGuava(toIndexRequest(span).execute());
-      if (ElasticsearchStorage.FLUSH_ON_WRITES) {
-        indices.add(span.index);
-      }
+      if (flushOnWrites) indices.add(span.index);
     } else {
       BulkRequestBuilder request = client.prepareBulk();
       for (IndexableSpan span : spans) {
         request.add(toIndexRequest(span));
-        if (ElasticsearchStorage.FLUSH_ON_WRITES) {
-          indices.add(span.index);
-        }
+        if (flushOnWrites) indices.add(span.index);
       }
       future = toGuava(request.execute());
     }
 
-    if (ElasticsearchStorage.FLUSH_ON_WRITES) {
+    if (flushOnWrites) {
       future = transform(future, new AsyncFunction() {
         @Override public ListenableFuture apply(Object input) {
           return toGuava(client.admin().indices()
@@ -289,25 +284,20 @@ public final class NativeClient implements InternalElasticsearchClient {
   }
 
   private IndexRequestBuilder toIndexRequest(IndexableSpan span) {
-    return client.prepareIndex(span.index, ElasticsearchConstants.SPAN).setSource(span.data);
+    return client.prepareIndex(span.index, SPAN).setSource(span.data);
   }
 
   private static final Function<Object, Void> TO_VOID = Functions.constant(null);
 
-  @Override
-  public HealthStatus clusterHealth(String... indices) {
+  @Override protected void ensureClusterReady(String catchAll) {
     ClusterHealthResponse health = getUnchecked(client
-        .admin().cluster().prepareHealth(indices).execute());
+        .admin().cluster().prepareHealth(catchAll).execute());
 
-    return InternalElasticsearchClient.HealthStatus.valueOf(health.getStatus().name());
+    checkState(health.getStatus() != ClusterHealthStatus.RED, "Health status is RED");
   }
 
   @Override public void close() {
     client.close();
-  }
-
-  @VisibleForTesting List<TransportAddress> transportAddresses() {
-    return client.transportAddresses();
   }
 
   static <T> ListenableFuture<T> toGuava(ListenableActionFuture<T> elasticFuture) {
@@ -324,7 +314,6 @@ public final class NativeClient implements InternalElasticsearchClient {
     return future;
   }
 
-  @VisibleForTesting
   static class NativeBuckets implements Buckets {
     private final SearchResponse response;
 

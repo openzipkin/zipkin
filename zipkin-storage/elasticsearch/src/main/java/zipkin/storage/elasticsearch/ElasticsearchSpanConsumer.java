@@ -15,7 +15,7 @@ package zipkin.storage.elasticsearch;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
-import com.google.common.collect.FluentIterable;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -40,29 +40,25 @@ final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
 
   @Override
   public ListenableFuture<Void> accept(List<Span> spans) {
-    return client.indexSpans(
-        FluentIterable.from(spans).transform(new Function<Span, IndexableSpan>() {
-          @Override
-          public IndexableSpan apply(Span span) {
-            return createSpanIndexRequest(span);
-          }
-        }).toList());
+    return client.indexSpans(Lists.transform(spans, createSpanIndexRequest));
   }
 
-  private IndexableSpan createSpanIndexRequest(Span span) {
-    Long timestamp = guessTimestamp(span);
-    long timestampMillis; // which index to store this span into
-    final byte[] spanBytes;
-    if (timestamp != null) {
-      timestampMillis = TimeUnit.MICROSECONDS.toMillis(timestamp);
-      spanBytes = prefixWithTimestampMillis(Codec.JSON.writeSpan(span), timestampMillis);
-    } else {
-      timestampMillis = System.currentTimeMillis();
-      spanBytes = Codec.JSON.writeSpan(span);
+  final Function<Span, IndexableSpan> createSpanIndexRequest = new Function<Span, IndexableSpan>() {
+    @Override public IndexableSpan apply(Span input) {
+      Long timestamp = guessTimestamp(input);
+      long timestampMillis; // which index to store this span into
+      final byte[] spanBytes;
+      if (timestamp != null) {
+        timestampMillis = TimeUnit.MICROSECONDS.toMillis(timestamp);
+        spanBytes = prefixWithTimestampMillis(Codec.JSON.writeSpan(input), timestampMillis);
+      } else {
+        timestampMillis = System.currentTimeMillis();
+        spanBytes = Codec.JSON.writeSpan(input);
+      }
+      String spanIndex = indexNameFormatter.indexNameForTimestamp(timestampMillis);
+      return new IndexableSpan(spanIndex, spanBytes);
     }
-    String spanIndex = indexNameFormatter.indexNameForTimestamp(timestampMillis);
-    return new IndexableSpan(spanIndex, spanBytes);
-  }
+  };
 
   /**
    * In order to allow systems like Kibana to search by timestamp, we add a field "timestamp_millis"
