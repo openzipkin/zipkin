@@ -14,7 +14,6 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.base.Function;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
@@ -57,16 +56,6 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
 
 final class ElasticsearchSpanStore implements GuavaSpanStore {
-  /**
-   * The maximum count of raw spans returned in a trace query.
-   *
-   * <p>Not configurable as it implies adjustments to the index template (index.max_result_window)
-   * and user settings
-   *
-   * <p> See https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-from-size.html
-   */
-  static final int MAX_RAW_SPANS = 10000; // the default elasticsearch allowed limit
-
   static final long ONE_DAY_IN_MILLIS = TimeUnit.DAYS.toMillis(1);
   static final ListenableFuture<List<String>> EMPTY_LIST =
       immediateFuture(Collections.<String>emptyList());
@@ -79,11 +68,13 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
 
   private final InternalElasticsearchClient client;
   private final IndexNameFormatter indexNameFormatter;
+  private final String[] catchAll;
 
   ElasticsearchSpanStore(InternalElasticsearchClient client,
       IndexNameFormatter indexNameFormatter) {
     this.client = client;
     this.indexNameFormatter = indexNameFormatter;
+    this.catchAll = new String[] {indexNameFormatter.catchAll()};
   }
 
   @Override public ListenableFuture<List<List<Span>>> getTraces(QueryRequest request) {
@@ -183,9 +174,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
   }
 
   @Override public ListenableFuture<List<Span>> getRawTrace(long traceId) {
-
-    return client.findSpans(indexNameFormatter.catchAll(),
-        termQuery("traceId", Util.toLowerHex(traceId)));
+    return client.findSpans(catchAll, termQuery("traceId", Util.toLowerHex(traceId)));
   }
 
   ListenableFuture<List<List<Span>>> getTracesByIds(Collection<Long> traceIds, String[] indices) {
@@ -201,8 +190,9 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     INSTANCE;
 
     @Override public List<List<Span>> apply(List<Span> response) {
+      if (response == null) return ImmutableList.of();
       ArrayListMultimap<Long, Span> groupedSpans = ArrayListMultimap.create();
-      for (Span span : MoreObjects.firstNonNull(response, ImmutableList.<Span>of())) {
+      for (Span span : response) {
         groupedSpans.put(span.traceId, span);
       }
       List<List<Span>> result = new ArrayList<>(groupedSpans.size());
@@ -214,7 +204,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
   }
 
   @Override public ListenableFuture<List<String>> getServiceNames() {
-    return Futures.transform(client.scanTraces(indexNameFormatter.catchAll(), matchAllQuery(),
+    return Futures.transform(client.scanTraces(catchAll, matchAllQuery(),
         AggregationBuilders.terms("annotationServiceName_agg")
             .field("annotations.endpoint.serviceName")
             .size(0),
@@ -257,7 +247,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
         .should(nestedQuery(
             "binaryAnnotations", termQuery("binaryAnnotations.endpoint.serviceName", serviceName)));
 
-    return Futures.transform(client.scanTraces(indexNameFormatter.catchAll(),
+    return Futures.transform(client.scanTraces(catchAll,
         boolQuery().must(matchAllQuery()).filter(filter),
         AggregationBuilders.terms("name_agg")
             .order(Order.term(true))

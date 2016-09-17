@@ -14,9 +14,9 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -27,24 +27,55 @@ import zipkin.Span;
 /**
  * Common interface for different protocol implementations communicating with Elasticsearch.
  *
- * Due to the difficulties of shoehorning auth over the native Elasticsearch protocol, many PaaS
+ * <p>Due to the difficulties of shoehorning auth over the native Elasticsearch protocol, many PaaS
  * providers (like AWS) only offer REST interfaces to ElasticSearch (presumably they meet their
  * security requirements with an HTTP proxy layer).
  *
- * That means, in order to support both aaS elasticsearch and "native" elasticsearch, we require a
- * shim.
+ * <p>That means, in order to support both aaS elasticsearch and "native" elasticsearch, we require
+ * a shim.
  */
-interface InternalElasticsearchClient extends AutoCloseable {
-
+public abstract class InternalElasticsearchClient implements Closeable {
   /**
-   * Ensures the existence of a template, creating it if it does not exist.
+   * The maximum count of raw spans returned in a trace query.
+   *
+   * <p>Not configurable as it implies adjustments to the index template (index.max_result_window)
+   * and user settings
+   *
+   * <p> See https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-from-size.html
    */
-  void ensureTemplate(String name, String indexTemplate);
+  protected static final int MAX_RAW_SPANS = 10000; // the default elasticsearch allowed limit
+  protected static final String SPAN = "span";
+  protected static final String DEPENDENCY_LINK = "dependencylink";
 
-  /**
-   * Deletes the specified index (or indices, if a pattern is supplied)
-   */
-  void clear(String index);
+  protected interface Factory {
+    InternalElasticsearchClient create();
+  }
+
+  // abstract class so we can hide flushOnWrites
+  protected interface Builder {
+    /** The elasticsearch cluster to connect to, defaults to "elasticsearch". */
+    Builder cluster(String cluster);
+
+    /**
+     * A comma separated list of elasticsearch host to connect to, in a transport-specific format.
+     * For example, for the native client, this would default to "localhost:9300".
+     */
+    Builder hosts(List<String> hosts);
+
+    /**
+     * Internal flag that allows you read-your-writes consistency during tests. With Elasticsearch,
+     * it is not sufficient to block on futures since the index also needs to be flushed.
+     */
+    Builder flushOnWrites(boolean flushOnWrites);
+
+    Factory buildFactory();
+  }
+
+  /** Ensures the existence of a template, creating it if it does not exist. */
+  protected abstract void ensureTemplate(String name, String indexTemplate);
+
+  /** Deletes the specified index pattern is supplied */
+  protected abstract void clear(String index);
 
   /**
    * Scans the given indices with the given query and aggregates. If aggregating all traces,
@@ -55,10 +86,10 @@ interface InternalElasticsearchClient extends AutoCloseable {
    *
    * Will never return results; this interface is for aggregation only.
    */
-  ListenableFuture<Buckets> scanTraces(String[] indices, QueryBuilder query,
+  protected abstract ListenableFuture<Buckets> scanTraces(String[] indices, QueryBuilder query,
       AbstractAggregationBuilder... aggregations);
 
-  interface Buckets {
+  protected interface Buckets {
     /**
      * Retrieves the aggregation bucket keys from the aggregation at name[>nestedPath]
      *
@@ -66,6 +97,7 @@ interface InternalElasticsearchClient extends AutoCloseable {
      * interface wraps the ugliness of dealing with different aggregation APIs while leaving control
      * of the aggregation keys in the hands of the caller.
      */
+    // TODO(adrian): revisit once the other implementation is in: can we avoid varags?
     List<String> getBucketKeys(String name, String... nestedPath);
   }
 
@@ -76,7 +108,7 @@ interface InternalElasticsearchClient extends AutoCloseable {
    * NB: This call is _lenient_ in its index selection, and only will match open indexes, cf.
    * {@link IndicesOptions#lenientExpandOpen()}.
    */
-  ListenableFuture<List<Span>> findSpans(String[] indices, QueryBuilder query);
+  protected abstract ListenableFuture<List<Span>> findSpans(String[] indices, QueryBuilder query);
 
   /**
    * Retrieves all dependency links in the given indices. Useful for gathering dependencies from
@@ -85,32 +117,18 @@ interface InternalElasticsearchClient extends AutoCloseable {
    * NB: This call is _lenient_ in its index selection, and only will match open indexes, cf.
    * {@link IndicesOptions#lenientExpandOpen()} }.
    */
-  ListenableFuture<Collection<DependencyLink>> findDependencies(String[] indices);
-
-  /**
-   * Indexes the given dependency links, flushing unconditionally.
-   */
-  void indexDependencies(String index, List<IndexableLink> links);
-
-  final class IndexableLink {
-    final String id;
-    final Map<String, ?> data;
-
-    public IndexableLink(String id, Map<String, ?> data) {
-      this.id = id;
-      this.data = data;
-    }
-  }
+  // TODO(adrian): revisit once the other implementation is in: why we are using arrays vs lists?
+  protected abstract ListenableFuture<Collection<DependencyLink>> findDependencies(String[] indices);
 
   /**
    * Indexes the given spans, flushing depending on the value of
-   * {@link ElasticsearchStorage#FLUSH_ON_WRITES}
+   * {@link Builder#flushOnWrites(boolean)}
    */
-  ListenableFuture<Void> indexSpans(List<IndexableSpan> spans);
+  protected abstract ListenableFuture<Void> indexSpans(List<IndexableSpan> spans);
 
-  final class IndexableSpan {
-    final String index;
-    final byte[] data;
+  protected static final class IndexableSpan {
+    public final String index;
+    public final byte[] data;
 
     IndexableSpan(String index, byte[] data) {
       this.index = index;
@@ -119,23 +137,13 @@ interface InternalElasticsearchClient extends AutoCloseable {
   }
 
   /**
-   * Cluster health status
-   */
-  HealthStatus clusterHealth(String... indices);
-
-  @SuppressWarnings("unused") enum HealthStatus {
-    GREEN, YELLOW, RED
-  }
-
-  /**
-   * See {@link AutoCloseable#close()}
+   * Throws an exception if the health status is red, or a connection couldn't be made.
    *
-   * Overridden to remove checked exceptions.
+   * @param catchAll See {@link IndexNameFormatter#catchAll()}
    */
-  @Override
-  void close();
+  protected abstract void ensureClusterReady(String catchAll);
 
-  interface ClientFactory {
-    InternalElasticsearchClient create(String[] allIndices);
-  }
+  /** Overridden to remove checked exceptions. */
+  @Override
+  public abstract void close();
 }

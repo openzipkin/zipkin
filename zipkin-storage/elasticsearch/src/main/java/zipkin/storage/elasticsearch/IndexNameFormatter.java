@@ -40,7 +40,7 @@ final class IndexNameFormatter {
     return index + "-" + dateFormat.get().format(new Date(timestampMillis));
   }
 
-  String[] catchAll() {
-    return new String[] {index + "-*"};
+  String catchAll() {
+    return index + "-*";
   }
 }

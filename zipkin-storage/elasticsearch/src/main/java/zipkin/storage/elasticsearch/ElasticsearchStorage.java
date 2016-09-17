@@ -14,36 +14,53 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Supplier;
-import com.google.common.collect.Iterables;
-import java.util.Arrays;
-import zipkin.storage.elasticsearch.InternalElasticsearchClient.ClientFactory;
-import zipkin.storage.elasticsearch.InternalElasticsearchClient.HealthStatus;
+import java.util.List;
 import zipkin.storage.guava.LazyGuavaStorageComponent;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.getOnlyElement;
 import static zipkin.internal.Util.checkNotNull;
 
 public final class ElasticsearchStorage
     extends LazyGuavaStorageComponent<ElasticsearchSpanStore, ElasticsearchSpanConsumer> {
 
-  /**
-   * Internal flag that allows you read-your-writes consistency during tests. With Elasticsearch, it
-   * is not sufficient to block on futures since the index also needs to be flushed.
-   */
-  @VisibleForTesting
-  static boolean FLUSH_ON_WRITES;
-
   public static Builder builder() {
-    return new Builder();
+    return new Builder(new NativeClient.Builder());
+  }
+
+  /**
+   * The client supplier to consume for connectivity to elasticsearch. Defaults to using the
+   * transport-client based {@link NativeClient}, but can be overriden with a HTTP-speaking client
+   * (e.g. for use in cloud environments where the transport protocol is not exposed).
+   */
+  public static Builder builder(InternalElasticsearchClient.Builder clientBuilder) {
+    return new Builder(checkNotNull(clientBuilder, "clientBuilder"));
   }
 
   public static final class Builder {
-    ClientFactory clientFactory = NativeClient.builder().build();
+    Builder(InternalElasticsearchClient.Builder clientBuilder) {
+      this.clientBuilder = clientBuilder;
+    }
+
+    final InternalElasticsearchClient.Builder clientBuilder;
     String index = "zipkin";
     int indexShards = 5;
     int indexReplicas = 1;
+
+    /**
+     * The elasticsearch cluster to connect to, defaults to "elasticsearch".
+     */
+    public Builder cluster(String cluster) {
+      this.clientBuilder.cluster(cluster);
+      return this;
+    }
+
+    /**
+     * A comma separated list of elasticsearch host to connect to, in a transport-specific format.
+     * For example, for the native client, this would default to "localhost:9300".
+     */
+    public Builder hosts(List<String> hosts) {
+      this.clientBuilder.hosts(hosts);
+      return this;
+    }
 
     /**
      * The index prefix to use when generating daily index names. Defaults to zipkin.
@@ -80,21 +97,14 @@ public final class ElasticsearchStorage
       return this;
     }
 
-    /**
-     * The client supplier to consume for connectivity to elasticsearch. Defaults to using the
-     * transport-client based {@link NativeClient}, but can be overriden with a HTTP-speaking client
-     * (e.g. for use in cloud environments where the transport protocol is not exposed).
-     */
-    public Builder client(ClientFactory clientFactory) {
-      this.clientFactory = clientFactory;
+    // punch a hole so that tests don't need to share a static variable
+    @VisibleForTesting  Builder flushOnWrites(boolean flushOnWrites) {
+      this.clientBuilder.flushOnWrites(flushOnWrites);
       return this;
     }
 
     public ElasticsearchStorage build() {
       return new ElasticsearchStorage(this);
-    }
-
-    Builder() {
     }
   }
 
@@ -121,13 +131,12 @@ public final class ElasticsearchStorage
   }
 
   @VisibleForTesting void clear() {
-    lazyClient.get().clear(getOnlyElement(Arrays.asList(indexNameFormatter.catchAll())));
+    lazyClient.get().clear(indexNameFormatter.catchAll());
   }
 
   @Override public CheckResult check() {
     try {
-      HealthStatus status = client().clusterHealth(indexNameFormatter.catchAll());
-      checkState(status != HealthStatus.RED, "Health status is RED");
+      client().ensureClusterReady(indexNameFormatter.catchAll());
     } catch (RuntimeException e) {
       return CheckResult.failed(e);
     }
