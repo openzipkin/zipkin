@@ -28,7 +28,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.elasticsearch.action.ActionListener;
@@ -256,7 +256,7 @@ final class NativeClient extends InternalElasticsearchClient {
 
     // Create a bulk request when there is more than one span to store
     ListenableFuture<?> future;
-    final Set<String> indices = new HashSet<>();
+    final Set<String> indices = new LinkedHashSet<>();
     if (spans.size() == 1) {
       IndexableSpan span = getOnlyElement(spans);
       future = toGuava(toIndexRequest(span).execute());

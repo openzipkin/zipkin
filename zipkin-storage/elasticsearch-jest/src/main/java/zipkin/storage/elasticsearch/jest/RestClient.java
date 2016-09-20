@@ -20,7 +20,6 @@ import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.ObjectArrays;
-import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -29,7 +28,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
 import io.searchbox.action.Action;
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestClientFactory;
@@ -52,10 +50,9 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -100,8 +97,8 @@ public final class RestClient extends InternalElasticsearchClient {
     }
 
     /**
-     * A comma separated list of elasticsearch hostnodes to connect to, in http://host:port or
-     * https://host:port format. Defaults to "http://localhost:9200".
+     * A list of elasticsearch hostnodes to connect to, in http://host:port or https://host:port
+     * format. Defaults to "http://localhost:9200".
      */
     @Override public Builder hosts(List<String> hosts) {
       this.hosts = checkNotNull(hosts, "hosts");
@@ -144,8 +141,8 @@ public final class RestClient extends InternalElasticsearchClient {
     factory.setHttpClientConfig(new HttpClientConfig.Builder(f.hosts)
         .defaultMaxTotalConnectionPerRoute(6) // matches "regular" TransportClient node conns
         .maxTotalConnection(6 * 10) // would be 20 otherwise, or ~3 routes
-        .connTimeout(Ints.checkedCast(TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS)))
-        .readTimeout(Ints.checkedCast(TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS)))
+        .connTimeout(10 * 1000)
+        .readTimeout(10 * 1000)
         .multiThreaded(true)
         .gson(
             new GsonBuilder()
@@ -256,7 +253,7 @@ public final class RestClient extends InternalElasticsearchClient {
 
     // Create a bulk request when there is more than one span to store
     ListenableFuture<?> future;
-    final Set<String> indices = new HashSet<>();
+    final Set<String> indices = new LinkedHashSet<>();
     if (spans.size() == 1) {
       IndexableSpan span = getOnlyElement(spans);
       future = toGuava(toIndexRequest(span));
@@ -285,24 +282,27 @@ public final class RestClient extends InternalElasticsearchClient {
     return transform(future, Functions.<Void>constant(null));
   }
 
-  @Override protected void ensureClusterReady(final String catchAll) {
-    class IndicesHealth extends Health {
-      private IndicesHealth(Builder builder) {
-        super(builder);
-      }
-
-      @Override
-      protected String buildURI() {
-        return super.buildURI() + catchAll;
-      }
-    }
-
-    String status = executeUnchecked(new IndicesHealth(new Health.Builder()))
+  @Override protected void ensureClusterReady(String catchAll) {
+    String status = executeUnchecked(new IndicesHealth(new Health.Builder(), catchAll))
         .getJsonObject().get("status").getAsString();
     checkState(!"RED".equalsIgnoreCase(status), "Health status is RED");
   }
 
-  private Index toIndexRequest(IndexableSpan span) {
+  static class IndicesHealth extends Health {
+    final String catchAll;
+
+    private IndicesHealth(Builder builder, String catchAll) {
+      super(builder);
+      this.catchAll = catchAll;
+    }
+
+    @Override
+    protected String buildURI() {
+      return super.buildURI() + catchAll;
+    }
+  }
+
+  private static Index toIndexRequest(IndexableSpan span) {
     return new Index.Builder(new String(span.data, Charsets.UTF_8))
         .index(span.index)
         .type(SPAN)

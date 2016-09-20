@@ -31,7 +31,7 @@ public enum ElasticsearchJestTestGraph {
           ElasticsearchStorage result =
               ElasticsearchStorage.builder(new RestClient.Builder()
                   .hosts(ImmutableList.of("http://localhost:9200")).flushOnWrites(true))
-                  .index("test_zipkin_" + System.currentTimeMillis()).build();
+                  .index("test_zipkin_http").build();
           CheckResult check = result.check();
           if (check.ok) return result;
           throw ex = new AssumptionViolatedException(check.exception.getMessage(), check.exception);

@@ -55,7 +55,7 @@ public final class ElasticsearchStorage
     }
 
     /**
-     * A comma separated list of elasticsearch host to connect to, in a transport-specific format.
+     * A List of elasticsearch hosts to connect to, in a transport-specific format.
      * For example, for the native client, this would default to "localhost:9300".
      */
     public Builder hosts(List<String> hosts) {
