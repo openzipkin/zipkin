@@ -22,7 +22,10 @@ export default component(function spanPanel() {
       }
       $row.find('td').each(function() {
         const $this = $(this);
-        $this.text(anno[$this.data('key')]);
+        const maybeObject = anno[$this.data('key')];
+        // In case someone is storing escaped json as an annotation value
+        // TODO: this class is not testable at the moment
+        $this.text($.type(maybeObject) === 'object' ? JSON.stringify(maybeObject) : maybeObject);
       });
       $annoBody.append($row);
     });
