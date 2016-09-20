@@ -149,9 +149,9 @@ final class NativeClient extends InternalElasticsearchClient {
   }
 
   final TransportClient client;
-  private final boolean flushOnWrites;
+  final boolean flushOnWrites;
 
-  private NativeClient(TransportClient client, boolean flushOnWrites) {
+  NativeClient(TransportClient client, boolean flushOnWrites) {
     this.client = client;
     this.flushOnWrites = flushOnWrites;
   }

@@ -324,7 +324,8 @@ public final class RestClient extends InternalElasticsearchClient {
 
     @Override
     protected String buildURI() {
-      return super.buildURI() + "?ignore_unavailable=true&allow_no_indices=true&";
+      return super.buildURI() + "?ignore_unavailable=true&allow_no_indices=true"
+          + "&expand_wildcards=open";
     }
   }
 
@@ -351,8 +352,7 @@ public final class RestClient extends InternalElasticsearchClient {
     INSTANCE;
 
     @Override
-    public Span deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-        throws JsonParseException {
+    public Span deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
       return Codec.JSON.readSpan(json.toString().getBytes(Charsets.UTF_8));
     }
   }
@@ -362,8 +362,7 @@ public final class RestClient extends InternalElasticsearchClient {
 
     @Override
     public DependencyLink deserialize(JsonElement json, Type typeOfT,
-        JsonDeserializationContext context)
-        throws JsonParseException {
+        JsonDeserializationContext context) {
       return Codec.JSON.readDependencyLink(json.toString().getBytes(Charsets.UTF_8));
     }
   }
