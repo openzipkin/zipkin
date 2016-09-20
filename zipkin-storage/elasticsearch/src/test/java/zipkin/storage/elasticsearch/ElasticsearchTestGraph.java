@@ -31,7 +31,7 @@ enum ElasticsearchTestGraph {
           .index("test_zipkin_native").flushOnWrites(true).build();
       CheckResult check = result.check();
       if (check.ok) return result;
-      throw ex = new AssumptionViolatedException(check.exception.getMessage());
+      throw ex = new AssumptionViolatedException(check.exception.getMessage(), check.exception);
     }
   };
 }

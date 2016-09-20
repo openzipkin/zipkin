@@ -36,7 +36,7 @@ enum MySQLTestGraph {
         dataSource.setUrl(mysqlUrl);
         return new MySQLStorage.Builder().datasource(dataSource).executor(Runnable::run).build();
       } catch (SQLException e) {
-        throw new AssumptionViolatedException(e.getMessage());
+        throw new AssumptionViolatedException(e.getMessage(), e);
       }
     }
   };
