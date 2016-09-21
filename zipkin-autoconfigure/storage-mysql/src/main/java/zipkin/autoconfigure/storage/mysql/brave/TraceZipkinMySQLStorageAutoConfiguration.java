@@ -70,7 +70,7 @@ public class TraceZipkinMySQLStorageAutoConfiguration extends DefaultExecuteList
   @Bean
   @Qualifier("mysql") Endpoint mysql() throws UnknownHostException {
     int ipv4 = ByteBuffer.wrap(InetAddress.getByName(mysql.getHost()).getAddress()).getInt();
-    return Endpoint.create("mysql", ipv4, mysql.getPort());
+    return Endpoint.builder().serviceName("mysql").ipv4(ipv4).port(mysql.getPort()).build();
   }
 
   @Autowired

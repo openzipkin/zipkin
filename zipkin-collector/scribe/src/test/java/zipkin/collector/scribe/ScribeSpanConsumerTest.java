@@ -162,8 +162,9 @@ public class ScribeSpanConsumerTest {
     Arrays.fill(as, 'a');
     String reallyLongAnnotation = new String(as);
 
-    Endpoint zipkinQuery = Endpoint.create("zipkin-query", (127 << 24) | 1, 9411);
-    Endpoint zipkinQuery0 = Endpoint.create("zipkin-query", (127 << 24) | 1);
+    Endpoint zipkinQuery =
+        Endpoint.builder().serviceName("zipkin-query").ipv4(127 << 24 | 1).port(9411).build();
+    Endpoint zipkinQuery0 = zipkinQuery.toBuilder().port(null).build();
 
     assertThat(consumed).containsExactly(
         Span.builder()
@@ -182,7 +183,7 @@ public class ScribeSpanConsumerTest {
             .addBinaryAnnotation(binaryAnnotation("srv/mux/enabled", true, zipkinQuery0))
             .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, zipkinQuery))
             .addBinaryAnnotation(BinaryAnnotation.address(Constants.CLIENT_ADDR,
-                Endpoint.create("zipkin-query", (127 << 24) | 1, 63840)))
+                zipkinQuery.toBuilder().port(63840).build()))
             .addBinaryAnnotation(binaryAnnotation("numIds", 1, zipkinQuery))
             .debug(false)
             .build());

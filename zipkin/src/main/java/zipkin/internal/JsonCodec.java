@@ -81,7 +81,7 @@ public final class JsonCodec implements Codec {
           // Shouldn't hit DNS, because it's an IP string literal.
           result.ipv6(Inet6Address.getByName(input).getAddress());
         } else if (nextName.equals("port")) {
-          result.port((short) reader.nextInt());
+          result.port(reader.nextInt());
         } else {
           reader.skipValue();
         }

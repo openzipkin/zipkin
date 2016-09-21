@@ -44,8 +44,10 @@ import zipkin.Span;
 public class SpanBenchmarks {
   // endpoints are almost always cached, so caching here to record more accurate performance
   static final Endpoint web = Endpoint.create("web", 124 << 24 | 13 << 16 | 90 << 8 | 3);
-  static final Endpoint app = Endpoint.create("app", 172 << 24 | 17 << 16 | 2, 8080);
-  static final Endpoint db = Endpoint.create("db", 172 << 24 | 17 << 16 | 2, 3306);
+  static final Endpoint app =
+      Endpoint.builder().serviceName("app").ipv4(172 << 24 | 17 << 16 | 2).port(8080).build();
+  static final Endpoint db =
+      Endpoint.builder().serviceName("db").ipv4(172 << 24 | 17 << 16 | 2).port(3306).build();
 
   @Benchmark
   public Span buildLocalSpan() {

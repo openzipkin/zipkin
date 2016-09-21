@@ -25,10 +25,12 @@ import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 
 public class ApplyTimestampAndDurationTest {
 
-  Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2, 8080);
+  Endpoint frontend =
+      Endpoint.builder().serviceName("frontend").ipv4(192 << 24 | 12 << 16 | 1).port(8080).build();
   Annotation cs = Annotation.create((50) * 1000, CLIENT_SEND, frontend);
 
-  Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 2, 8080);
+  Endpoint backend =
+        Endpoint.builder().serviceName("backend").ipv4(192 << 24 | 12 << 16 | 2).port(8080).build();
   Annotation sr = Annotation.create((95) * 1000, SERVER_RECV, backend);
 
   Span.Builder span = Span.builder().traceId(1).name("method1").id(666);

@@ -56,7 +56,7 @@ public class BraveConfiguration {
     } catch (Exception ignored) {
       ipv4 = 127 << 24 | 1;
     }
-    return Endpoint.create("zipkin-server", ipv4, port);
+    return Endpoint.builder().serviceName("zipkin-server").ipv4(ipv4).port(port).build();
   }
 
   @Bean LocalSpanCollector spanCollector(StorageComponent storage,

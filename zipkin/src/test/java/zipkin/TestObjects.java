@@ -46,9 +46,9 @@ public final class TestObjects {
       .ipv6(sun.net.util.IPAddressUtil.textToNumericFormatV6("2001:db8::c001"))
       .port((short) 80).build();
   public static final Endpoint APP_ENDPOINT =
-      Endpoint.create("app", 172 << 24 | 17 << 16 | 2, 8080);
+      Endpoint.builder().serviceName("app").ipv4(172 << 24 | 17 << 16 | 2).port(8080).build();
   public static final Endpoint DB_ENDPOINT =
-      Endpoint.create("db", 172 << 24 | 17 << 16 | 2, 3306);
+      Endpoint.builder().serviceName("db").ipv4(172 << 24 | 17 << 16 | 2).port(3306).build();
   public static final Endpoint NO_IP_ENDPOINT = Endpoint.builder().serviceName("no_ip").build();
 
   static final long WEB_SPAN_ID = -692101025335252320L;
@@ -88,7 +88,7 @@ public final class TestObjects {
 
   /** Reuse a builder as it is significantly slows tests to create 100000 of these! */
   static Span.Builder spanBuilder() {
-    Endpoint e = Endpoint.create("service", 127 << 24 | 1, 8080);
+    Endpoint e = Endpoint.builder().serviceName("service").ipv4(127 << 24 | 1).port(8080).build();
     Annotation sr = Annotation.create(System.currentTimeMillis() * 1000, SERVER_RECV, e);
     Annotation ss = Annotation.create(sr.timestamp + 1000, SERVER_SEND, e);
     BinaryAnnotation ba = BinaryAnnotation.create(TraceKeys.HTTP_METHOD, "GET", e);

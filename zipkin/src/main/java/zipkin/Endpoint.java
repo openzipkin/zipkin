@@ -31,6 +31,10 @@ import static zipkin.internal.Util.checkNotNull;
  */
 public final class Endpoint {
 
+  /**
+   * @deprecated as leads to null pointer exceptions on port. Use {@link #builder()} instead.
+   */
+  @Deprecated
   public static Endpoint create(String serviceName, int ipv4, int port) {
     return new Endpoint(serviceName, ipv4, null, port == 0 ? null : (short) (port & 0xffff));
   }
@@ -133,6 +137,21 @@ public final class Endpoint {
         checkArgument(ipv6.length == 16, "ipv6 addresses are 16 bytes: " + ipv6.length);
         this.ipv6 = ipv6;
       }
+      return this;
+    }
+
+    /**
+     * Use this to set the port to an externally defined value.
+     *
+     * <p>Don't pass {@link Endpoint#port} to this method, as it may result in a
+     * NullPointerException. Instead, use {@link Endpoint#toBuilder()} or {@link #port(Short)}.
+     *
+     * @param port port associated with the endpoint. zero coerces to null (unknown)
+     * @see Endpoint#port
+     */
+    public Builder port(int port) {
+      checkArgument(port >= 0 && port <= 0xffff, "invalid port %s", port);
+      this.port = port == 0 ? null : (short) (port & 0xffff);
       return this;
     }
 
