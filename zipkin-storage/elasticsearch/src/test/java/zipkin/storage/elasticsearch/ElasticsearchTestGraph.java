@@ -13,10 +13,8 @@
  */
 package zipkin.storage.elasticsearch;
 
-import java.util.List;
 import org.junit.AssumptionViolatedException;
 import zipkin.Component.CheckResult;
-import zipkin.DependencyLink;
 import zipkin.internal.LazyCloseable;
 
 enum ElasticsearchTestGraph {
@@ -28,7 +26,7 @@ enum ElasticsearchTestGraph {
     @Override protected ElasticsearchStorage compute() {
       if (ex != null) throw ex;
       ElasticsearchStorage result = ElasticsearchStorage.builder()
-          .index("test_zipkin_native").flushOnWrites(true).build();
+          .index("test_zipkin_transport").flushOnWrites(true).build();
       CheckResult check = result.check();
       if (check.ok) return result;
       throw ex = new AssumptionViolatedException(check.exception.getMessage(), check.exception);

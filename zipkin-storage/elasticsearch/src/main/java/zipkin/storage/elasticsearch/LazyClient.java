@@ -22,10 +22,12 @@ final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
   private final InternalElasticsearchClient.Factory clientFactory;
   private final String indexTemplateName;
   final String indexTemplate;
+  private final String allIndices;
 
   LazyClient(ElasticsearchStorage.Builder builder) {
     this.clientFactory = builder.clientBuilder.buildFactory();
     this.indexTemplateName = builder.index + "_template"; // should be 1:1 with indices
+    this.allIndices = new IndexNameFormatter(builder.index).catchAll();
     try {
       this.indexTemplate = Resources.toString(
           Resources.getResource("zipkin/storage/elasticsearch/zipkin_template.json"),
@@ -39,7 +41,7 @@ final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
   }
 
   @Override protected InternalElasticsearchClient compute() {
-    InternalElasticsearchClient client = clientFactory.create();
+    InternalElasticsearchClient client = clientFactory.create(allIndices);
     client.ensureTemplate(indexTemplateName, indexTemplate);
     return client;
   }
