@@ -157,11 +157,11 @@ $ STORAGE_TYPE=mysql MYSQL_USER=root java -jar zipkin.jar
 The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
 
     * `ES_CLUSTER`: The name of the elasticsearch cluster to connect to. Defaults to "elasticsearch".
-    * `ES_HOSTS`: A comma separated list of elasticsearch hostnodes to connect to, in host:port
-                  format. The port should be the transport port, not the http port. Defaults to
-                  "localhost:9300". Only one of these hosts needs to be available to fetch the
-                  remaining nodes in the cluster. It is recommended to set this to all the master
-                  nodes of the cluster.
+    * `ES_HOSTS`: A comma separated list of elasticsearch hostnodes to connect to. When in host:port
+                  format, they should use the transport port, not the http port. To use http, specify
+                  base urls, ex. http://host:9200. Defaults to "localhost:9300". When not using http,
+                  Only one of the hosts needs to be available to fetch the remaining nodes in the
+                  cluster. It is recommended to set this to all the master nodes of the cluster.
     * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to zipkin.
     * `ES_INDEX_SHARDS`: The number of shards to split the index into. Each shard and its replicas
                          are assigned to a machine in the cluster. Increasing the number of shards
@@ -176,6 +176,12 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                            to 0 as it would mean a machine failure results in data loss.
 Example usage:
 
+To connect with http:
+```bash
+$ STORAGE_TYPE=elasticsearch ES_HOSTS=http://localhost:9200 java -jar zipkin.jar
+```
+
+Or to use transport client.
 ```bash
 $ STORAGE_TYPE=elasticsearch ES_CLUSTER=monitoring ES_HOSTS=host1:9300,host2:9300 java -jar zipkin.jar
 ```
