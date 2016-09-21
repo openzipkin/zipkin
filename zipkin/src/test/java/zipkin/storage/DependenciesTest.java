@@ -124,11 +124,11 @@ public abstract class DependenciesTest {
    */
   @Test
   public void getDependenciesAllInstrumented() {
-    Endpoint one = Endpoint.create("trace-producer-one", 127 << 24 | 1, 9410);
+    Endpoint one = Endpoint.create("trace-producer-one", 127 << 24 | 1);
     Endpoint onePort3001 = one.toBuilder().port((short) 3001).build();
-    Endpoint two = Endpoint.create("trace-producer-two", 127 << 24 | 2, 9410);
+    Endpoint two = Endpoint.create("trace-producer-two", 127 << 24 | 2);
     Endpoint twoPort3002 = two.toBuilder().port((short) 3002).build();
-    Endpoint three = Endpoint.create("trace-producer-three", 127 << 24 | 3, 9410);
+    Endpoint three = Endpoint.create("trace-producer-three", 127 << 24 | 3);
 
     List<Span> trace = asList(
         Span.builder().traceId(10L).id(10L).name("get")
@@ -168,11 +168,11 @@ public abstract class DependenciesTest {
    */
   @Test
   public void getDependencies_noTimestamps() {
-    Endpoint one = Endpoint.create("trace-producer-one", 127 << 24 | 1, 9410);
+    Endpoint one = Endpoint.create("trace-producer-one", 127 << 24 | 1);
     Endpoint onePort3001 = one.toBuilder().port((short) 3001).build();
-    Endpoint two = Endpoint.create("trace-producer-two", 127 << 24 | 2, 9410);
+    Endpoint two = Endpoint.create("trace-producer-two", 127 << 24 | 2);
     Endpoint twoPort3002 = two.toBuilder().port((short) 3002).build();
-    Endpoint three = Endpoint.create("trace-producer-three", 127 << 24 | 3, 9410);
+    Endpoint three = Endpoint.create("trace-producer-three", 127 << 24 | 3);
 
     List<Span> trace = asList(
         Span.builder().traceId(10L).id(10L).name("get")
@@ -286,7 +286,7 @@ public abstract class DependenciesTest {
    */
   @Test
   public void notInstrumentedClientAndServer() {
-    Endpoint someClient = Endpoint.create("some-client", 172 << 24 | 17 << 16 | 4, 80);
+    Endpoint someClient = Endpoint.create("some-client", 172 << 24 | 17 << 16 | 4);
 
     List<Span> trace = asList(
         Span.builder().traceId(20L).id(20L).name("get")
@@ -418,7 +418,7 @@ public abstract class DependenciesTest {
   /** This test confirms that core ("sr", "cs", "cr", "ss") annotations are not required. */
   @Test
   public void noCoreAnnotations() {
-    Endpoint someClient = Endpoint.create("some-client", 172 << 24 | 17 << 16 | 4, 80);
+    Endpoint someClient = Endpoint.create("some-client", 172 << 24 | 17 << 16 | 4);
     List<Span> trace = asList(
         Span.builder().traceId(20L).id(20L).name("get")
             .timestamp(TODAY * 1000).duration(350L * 1000)

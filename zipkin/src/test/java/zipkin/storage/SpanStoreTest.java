@@ -85,7 +85,7 @@ public abstract class SpanStoreTest {
   // Use real time, as most span-stores have TTL logic which looks back several days.
   long today = midnight();
 
-  Endpoint ep = Endpoint.create("service", 127 << 24 | 1, 8080);
+  Endpoint ep = Endpoint.create("service", 127 << 24 | 1);
 
   long spanId = 456;
   Annotation ann1 = Annotation.create((today + 1) * 1000, "cs", ep);
@@ -205,7 +205,7 @@ public abstract class SpanStoreTest {
 
   @Test
   public void getAllServiceNames() {
-    BinaryAnnotation yak = BinaryAnnotation.address("sa", Endpoint.create("yak", 127 << 24 | 1, 8080));
+    BinaryAnnotation yak = BinaryAnnotation.address("sa", Endpoint.create("yak", 127 << 24 | 1));
     accept(span1.toBuilder().addBinaryAnnotation(yak).build(), span4);
 
     // should be in order
@@ -220,7 +220,7 @@ public abstract class SpanStoreTest {
     for (int i = 0; i < 50; i++) {
       String suffix = i < 10 ? "0" + i : String.valueOf(i);
       BinaryAnnotation yak =
-          BinaryAnnotation.address("sa", Endpoint.create("yak" + suffix, 127 << 24 | 1, 8080));
+          BinaryAnnotation.address("sa", Endpoint.create("yak" + suffix, 127 << 24 | 1));
       accept(span1.toBuilder().id(i).addBinaryAnnotation(yak).build());
       serviceNames.add("yak" + suffix);
     }
@@ -312,9 +312,9 @@ public abstract class SpanStoreTest {
   /** Shows that duration queries go against the root span, not the child */
   @Test
   public void getTraces_duration() {
-    Endpoint service1 = Endpoint.create("service1", 127 << 24 | 1, 8080);
-    Endpoint service2 = Endpoint.create("service2", 127 << 24 | 2, 8080);
-    Endpoint service3 = Endpoint.create("service3", 127 << 24 | 3, 8080);
+    Endpoint service1 = Endpoint.create("service1", 127 << 24 | 1);
+    Endpoint service2 = Endpoint.create("service2", 127 << 24 | 2);
+    Endpoint service3 = Endpoint.create("service3", 127 << 24 | 3);
 
     BinaryAnnotation.Builder component = BinaryAnnotation.builder().key(LOCAL_COMPONENT).value("archiver");
     BinaryAnnotation archiver1 = component.endpoint(service1).build();
@@ -628,9 +628,9 @@ public abstract class SpanStoreTest {
    */
   @Test
   public void correctsClockSkew() {
-    Endpoint client = Endpoint.create("client", 192 << 24 | 168 << 16 | 1, 8080);
-    Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2, 8080);
-    Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 3, 8080);
+    Endpoint client = Endpoint.create("client", 192 << 24 | 168 << 16 | 1);
+    Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2);
+    Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 3);
 
     /** Intentionally not setting span.timestamp, duration */
     Span parent = Span.builder()
@@ -696,8 +696,8 @@ public abstract class SpanStoreTest {
    */
   @Test
   public void clientTimestampAndDurationWinInSharedSpan() {
-    Endpoint client = Endpoint.create("client", 192 << 24 | 168 << 16 | 1, 8080);
-    Endpoint server = Endpoint.create("server", 192 << 24 | 168 << 16 | 2, 8080);
+    Endpoint client = Endpoint.create("client", 192 << 24 | 168 << 16 | 1);
+    Endpoint server = Endpoint.create("server", 192 << 24 | 168 << 16 | 2);
 
     long clientTimestamp = (today + 100) * 1000;
     long clientDuration = 35 * 1000;
@@ -769,11 +769,11 @@ public abstract class SpanStoreTest {
    */
   @Test
   public void whenSpanTimestampIsMissingClientSendIsPreferred() {
-    Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2, 8080);
+    Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2);
     Annotation cs = Annotation.create((today + 50) * 1000, CLIENT_SEND, frontend);
     Annotation cr = Annotation.create((today + 150) * 1000, CLIENT_RECV, frontend);
 
-    Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 2, 8080);
+    Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 2);
     Annotation sr = Annotation.create((today + 95) * 1000, SERVER_RECV, backend);
     Annotation ss = Annotation.create((today + 100) * 1000, SERVER_SEND, backend);
 
@@ -794,10 +794,10 @@ public abstract class SpanStoreTest {
   // This supports the "raw trace" feature, which skips application-level data cleaning
   @Test
   public void rawTrace_doesntPerformQueryTimeAdjustment() {
-    Endpoint producer = Endpoint.create("producer", 192 << 24 | 168 << 16 | 1, 8080);
+    Endpoint producer = Endpoint.create("producer", 192 << 24 | 168 << 16 | 1);
     Annotation ms = Annotation.create((today + 95) * 1000, "ms", producer);
 
-    Endpoint consumer = Endpoint.create("consumer", 192 << 24 | 168 << 16 | 2, 8080);
+    Endpoint consumer = Endpoint.create("consumer", 192 << 24 | 168 << 16 | 2);
     Annotation mr = Annotation.create((today + 100) * 1000, "mr", consumer);
 
     Span span = Span.builder().traceId(1).name("message").id(666).build();
@@ -824,7 +824,7 @@ public abstract class SpanStoreTest {
   @Test public void getTraces_acrossServices() {
     List<BinaryAnnotation> annotations = IntStream.rangeClosed(1, 10).mapToObj(i ->
         BinaryAnnotation.create(LOCAL_COMPONENT, "serviceAnnotation",
-            Endpoint.create("service" + i, 127 << 24 | i, 8080)))
+            Endpoint.create("service" + i, 127 << 24 | i)))
         .collect(Collectors.toList());
 
     long gapBetweenSpans = 100;
