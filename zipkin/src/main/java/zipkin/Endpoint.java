@@ -116,6 +116,7 @@ public final class Endpoint {
     Builder(Endpoint source) {
       this.serviceName = source.serviceName;
       this.ipv4 = source.ipv4;
+      this.ipv6 = source.ipv6;
       this.port = source.port;
     }
 
