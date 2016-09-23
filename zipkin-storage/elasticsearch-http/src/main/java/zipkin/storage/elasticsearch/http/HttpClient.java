@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.ObjectArrays;
@@ -48,12 +49,16 @@ import io.searchbox.indices.Flush;
 import io.searchbox.indices.template.GetTemplate;
 import io.searchbox.indices.template.PutTemplate;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -87,6 +92,8 @@ public final class HttpClient extends InternalElasticsearchClient {
 
   public static final class Builder implements InternalElasticsearchClient.Builder {
     List<String> hosts = Collections.singletonList("http://localhost:9200");
+    List<HttpRequestInterceptor> preInterceptors = new ArrayList<>();
+    List<HttpRequestInterceptor> postInterceptors = new ArrayList<>();
     boolean flushOnWrites;
 
     /**
@@ -106,6 +113,21 @@ public final class HttpClient extends InternalElasticsearchClient {
       return this;
     }
 
+    /** Adds a request interceptor to the end of the chain */
+    public Builder addPostInterceptor(HttpRequestInterceptor interceptor) {
+      postInterceptors.add(interceptor);
+      return this;
+    }
+
+    /**
+     * Adds a request interceptor ahead of the default chain (but after other calls to this method)
+     */
+    public Builder addPreInterceptor(HttpRequestInterceptor interceptor) {
+      preInterceptors.add(interceptor);
+      return this;
+    }
+
+
     @Override public Builder flushOnWrites(boolean flushOnWrites) {
       this.flushOnWrites = flushOnWrites;
       return this;
@@ -121,15 +143,26 @@ public final class HttpClient extends InternalElasticsearchClient {
 
   private static final class Factory implements InternalElasticsearchClient.Factory {
     final List<String> hosts;
+    final List<HttpRequestInterceptor> preInterceptors;
+    final List<HttpRequestInterceptor> postInterceptors;
     final boolean flushOnWrites;
 
     Factory(Builder builder) {
       this.hosts = ImmutableList.copyOf(builder.hosts);
+      this.preInterceptors = ImmutableList.copyOf(builder.preInterceptors);
+      this.postInterceptors = ImmutableList.copyOf(builder.postInterceptors);
       this.flushOnWrites = builder.flushOnWrites;
     }
 
     @Override public InternalElasticsearchClient create(String allIndices) {
       return new HttpClient(this, allIndices);
+    }
+
+    @Override public String toString() {
+      StringBuilder json =
+          new StringBuilder("{\"hosts\": [\"").append(Joiner.on("\", \"").join(hosts))
+              .append("\"]");
+      return json.append("}").toString();
     }
   }
 
@@ -138,7 +171,8 @@ public final class HttpClient extends InternalElasticsearchClient {
   private final boolean flushOnWrites;
 
   private HttpClient(Factory f, String allIndices) {
-    JestClientFactory factory = new JestClientFactory();
+    JestClientFactory factory = new JestClientFactoryWithInterceptors(f.preInterceptors,
+        f.postInterceptors);
     factory.setHttpClientConfig(new HttpClientConfig.Builder(f.hosts)
         .defaultMaxTotalConnectionPerRoute(6) // matches "regular" TransportClient node conns
         .maxTotalConnection(6 * 10) // would be 20 otherwise, or ~3 routes
@@ -186,9 +220,10 @@ public final class HttpClient extends InternalElasticsearchClient {
     }
 
     return transform(toGuava(
-        new LenientSearch(new Search.Builder(elasticQuery.toString())
+        lenientSearch(elasticQuery.toString())
             .addIndex(Arrays.asList(indices))
-            .addType(SPAN))
+            .addType(SPAN)
+            .build()
     ), AsRestBuckets.INSTANCE);
   }
 
@@ -208,10 +243,12 @@ public final class HttpClient extends InternalElasticsearchClient {
     }
 
     return transform(toGuava(
-        new LenientSearch(new Search.Builder(new SearchSourceBuilder().query(query).size(
-            InternalElasticsearchClient.MAX_RAW_SPANS).toString())
+        lenientSearch(new SearchSourceBuilder().query(query)
+            .size(InternalElasticsearchClient.MAX_RAW_SPANS)
+            .toString())
             .addIndex(Arrays.asList(indices))
-            .addType(SPAN))), new Function<SearchResult, List<Span>>() {
+            .addType(SPAN)
+            .build()), new Function<SearchResult, List<Span>>() {
       @Override public List<Span> apply(SearchResult input) {
         if (input.getTotal() == 0) return null;
 
@@ -232,11 +269,11 @@ public final class HttpClient extends InternalElasticsearchClient {
       indices = allIndices;
     }
 
-    Search.Builder search = new Search.Builder(new SearchSourceBuilder().query(query).toString())
+    Search.Builder search = lenientSearch(new SearchSourceBuilder().query(query).toString())
         .addIndex(Arrays.asList(indices))
         .addType(DEPENDENCY_LINK);
 
-    return transform(toGuava(new LenientSearch(search)),
+    return transform(toGuava(search.build()),
         new Function<SearchResult, Collection<DependencyLink>>() {
           @Override public Collection<DependencyLink> apply(SearchResult input) {
             ImmutableList.Builder<DependencyLink> builder = ImmutableList.builder();
@@ -294,7 +331,7 @@ public final class HttpClient extends InternalElasticsearchClient {
 
     IndicesHealth(Builder builder, String catchAll) {
       super(builder);
-      this.catchAll = catchAll;
+      this.catchAll = checkNotNull(catchAll, "catchAll");
       this.setURI(this.buildURI());
     }
 
@@ -324,16 +361,11 @@ public final class HttpClient extends InternalElasticsearchClient {
   /**
    * A Search request that matches the behavior of {@link IndicesOptions#lenientExpandOpen()}
    */
-  private static final class LenientSearch extends Search {
-    LenientSearch(Search.Builder builder) {
-      super(builder);
-    }
-
-    @Override
-    protected String buildURI() {
-      return super.buildURI() + "?ignore_unavailable=true&allow_no_indices=true"
-          + "&expand_wildcards=open";
-    }
+  private static Search.Builder lenientSearch(String query) {
+    return new Search.Builder(query)
+        .setParameter("ignore_unavailable", "true")
+        .setParameter("allow_no_indices", "true")
+        .setParameter("expand_wildcards", "open");
   }
 
   private <T extends JestResult> ListenableFuture<T> toGuava(Action<T> action) {
@@ -400,6 +432,37 @@ public final class HttpClient extends InternalElasticsearchClient {
           return input.getKey();
         }
       });
+    }
+  }
+
+  private static class JestClientFactoryWithInterceptors extends JestClientFactory {
+    private final List<HttpRequestInterceptor> preInterceptors;
+    private final List<HttpRequestInterceptor> postInterceptors;
+
+    private JestClientFactoryWithInterceptors(List<HttpRequestInterceptor> preInterceptors,
+        List<HttpRequestInterceptor> postInterceptors) {
+      this.preInterceptors = preInterceptors;
+      this.postInterceptors = postInterceptors;
+    }
+
+    @Override protected HttpClientBuilder configureHttpClient(HttpClientBuilder builder) {
+      for (HttpRequestInterceptor preInterceptor : preInterceptors) {
+        builder.addInterceptorFirst(preInterceptor);
+      }
+      for (HttpRequestInterceptor postInterceptor : postInterceptors) {
+        builder.addInterceptorLast(postInterceptor);
+      }
+      return builder;
+    }
+
+    @Override protected HttpAsyncClientBuilder configureHttpClient(HttpAsyncClientBuilder builder) {
+      for (HttpRequestInterceptor preInterceptor : preInterceptors) {
+        builder.addInterceptorFirst(preInterceptor);
+      }
+      for (HttpRequestInterceptor postInterceptor : postInterceptors) {
+        builder.addInterceptorLast(postInterceptor);
+      }
+      return builder;
     }
   }
 }
