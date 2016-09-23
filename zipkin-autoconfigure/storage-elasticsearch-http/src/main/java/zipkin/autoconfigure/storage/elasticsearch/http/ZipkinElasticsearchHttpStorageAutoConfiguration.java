@@ -33,15 +33,15 @@ import zipkin.storage.StorageComponent;
 import static com.google.common.base.Preconditions.checkArgument;
 
 @Configuration
-@EnableConfigurationProperties(ZipkinHttpElasticsearchStorageProperties.class)
+@EnableConfigurationProperties(ZipkinElasticsearchHttpStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
 @Conditional({
-    ZipkinHttpElasticsearchStorageAutoConfiguration.HostsAreUrls.class,
-    ZipkinHttpElasticsearchStorageAutoConfiguration.HostsArentAwsUrls.class
+    ZipkinElasticsearchHttpStorageAutoConfiguration.HostsAreUrls.class,
+    ZipkinElasticsearchHttpStorageAutoConfiguration.HostsArentAwsUrls.class
 })
 @ConditionalOnMissingBean(StorageComponent.class)
-public class ZipkinHttpElasticsearchStorageAutoConfiguration {
-  @Bean StorageComponent storage(ZipkinHttpElasticsearchStorageProperties elasticsearch) {
+public class ZipkinElasticsearchHttpStorageAutoConfiguration {
+  @Bean StorageComponent storage(ZipkinElasticsearchHttpStorageProperties elasticsearch) {
     return elasticsearch.toBuilder().build();
   }
 
