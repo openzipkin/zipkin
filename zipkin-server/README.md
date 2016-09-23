@@ -162,6 +162,16 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                   base urls, ex. http://host:9200. Defaults to "localhost:9300". When not using http,
                   Only one of the hosts needs to be available to fetch the remaining nodes in the
                   cluster. It is recommended to set this to all the master nodes of the cluster.
+                  
+                  If the http URL is an AWS-hosted elasticsearch installation (e.g.
+                  https://search-domain-xyzzy.us-west-2.es.amazonaws.com) then Zipkin will attempt to 
+                  use the default AWS credential provider (env variables, system properties, config
+                  files, or ec2 profiles) to sign outbound requests to the cluster.
+    * `ES_AWS_DOMAIN`: The name of the AWS-hosted elasticsearch domain to use. Supercedes any set 
+                       `ES_HOSTS`. Triggers the same request signing behavior as with `ES_HOSTS`, but
+                       requires the additional IAM permission to describe the given domain.
+    * `ES_AWS_REGION`: An optional override to the default region lookup to search for the domain 
+                       given in `ES_AWS_DOMAIN`. Ignored if only `ES_HOSTS` is present. 
     * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to zipkin.
     * `ES_INDEX_SHARDS`: The number of shards to split the index into. Each shard and its replicas
                          are assigned to a machine in the cluster. Increasing the number of shards
