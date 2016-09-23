@@ -23,15 +23,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.autoconfigure.storage.elasticsearch.ZipkinElasticsearchStorageProperties;
-import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinHttpElasticsearchStorageAutoConfiguration;
+import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageAutoConfiguration;
 import zipkin.storage.elasticsearch.ElasticsearchStorage;
 import zipkin.storage.elasticsearch.LazyDomainLookup;
 import zipkin.storage.elasticsearch.http.HttpClient;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
-public class ZipkinAwsElasticsearchStorageProperties {
+public class ZipkinElasticsearchAwsStorageProperties {
 
-  final Logger logger = LoggerFactory.getLogger(ZipkinAwsElasticsearchStorageProperties.class);
+  final Logger logger = LoggerFactory.getLogger(ZipkinElasticsearchAwsStorageProperties.class);
 
   /**
    * A List of hosts to connect to, e.g. "https://search-domain-xyzzy.us-west-2.es.amazonaws.com"
@@ -82,7 +82,7 @@ public class ZipkinAwsElasticsearchStorageProperties {
     return hosts;
   }
 
-  public ZipkinAwsElasticsearchStorageProperties setHosts(List<String> hosts) {
+  public ZipkinElasticsearchAwsStorageProperties setHosts(List<String> hosts) {
     this.hosts = hosts;
     return this;
   }
@@ -91,7 +91,7 @@ public class ZipkinAwsElasticsearchStorageProperties {
     return index;
   }
 
-  public ZipkinAwsElasticsearchStorageProperties setIndex(String index) {
+  public ZipkinElasticsearchAwsStorageProperties setIndex(String index) {
     this.index = index;
     return this;
   }
@@ -131,7 +131,7 @@ public class ZipkinAwsElasticsearchStorageProperties {
     if (aws.domain.isPresent()) {
       region = aws.region.or(LazyRegion.INSTANCE);
     } else {
-      region = ZipkinHttpElasticsearchStorageAutoConfiguration.regionFromAwsUrls(this.hosts).get();
+      region = ZipkinElasticsearchHttpStorageAutoConfiguration.regionFromAwsUrls(this.hosts).get();
     }
     HttpClient.Builder httpBuilder = new HttpClient.Builder()
         .addPostInterceptor(

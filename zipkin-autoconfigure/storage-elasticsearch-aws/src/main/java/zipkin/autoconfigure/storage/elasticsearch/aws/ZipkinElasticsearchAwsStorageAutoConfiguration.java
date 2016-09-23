@@ -25,22 +25,22 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin.autoconfigure.storage.elasticsearch.ZipkinElasticsearchStorageAutoConfiguration;
-import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinHttpElasticsearchStorageAutoConfiguration;
+import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageAutoConfiguration;
 import zipkin.storage.StorageComponent;
 
-import static zipkin.autoconfigure.storage.elasticsearch.http.ZipkinHttpElasticsearchStorageAutoConfiguration.regionFromAwsUrls;
+import static zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageAutoConfiguration.regionFromAwsUrls;
 
 @Configuration
-@EnableConfigurationProperties(ZipkinAwsElasticsearchStorageProperties.class)
+@EnableConfigurationProperties(ZipkinElasticsearchAwsStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
 @AutoConfigureBefore({
     ZipkinElasticsearchStorageAutoConfiguration.class,
-    ZipkinHttpElasticsearchStorageAutoConfiguration.class
+    ZipkinElasticsearchHttpStorageAutoConfiguration.class
 })
-@Conditional(ZipkinAwsElasticsearchStorageAutoConfiguration.AwsMagic.class)
+@Conditional(ZipkinElasticsearchAwsStorageAutoConfiguration.AwsMagic.class)
 @ConditionalOnMissingBean(StorageComponent.class)
-public class ZipkinAwsElasticsearchStorageAutoConfiguration {
-  @Bean StorageComponent storage(ZipkinAwsElasticsearchStorageProperties elasticsearch) {
+public class ZipkinElasticsearchAwsStorageAutoConfiguration {
+  @Bean StorageComponent storage(ZipkinElasticsearchAwsStorageProperties elasticsearch) {
     return elasticsearch.toBuilder().build();
   }
 
