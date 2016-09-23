@@ -202,8 +202,9 @@ Or to use the Amazon Elasticsearch Service.
 $ aws es describe-elasticsearch-domain --domain-name mydomain|jq .DomainStatus.Endpoint
 "search-mydomain-2rlih66ibw43ftlk4342ceeewu.ap-southeast-1.es.amazonaws.com"
 $ STORAGE_TYPE=elasticsearch ES_HOSTS=https://search-mydomain-2rlih66ibw43ftlk4342ceeewu.ap-southeast-1.es.amazonaws.com java -jar zipkin.jar
-# or if you don't know the url already
-$ STORAGE_TYPE=elasticsearch ES_AWS_DOMAIN=mycluster ES_AWS_REGION=ap-southeast-1 java -jar zipkin.jar
+
+# Or you can have zipkin implicitly lookup your domain's URL
+$ STORAGE_TYPE=elasticsearch ES_AWS_DOMAIN=mydomain ES_AWS_REGION=ap-southeast-1 java -jar zipkin.jar
 ```
 
 ### Scribe Collector
