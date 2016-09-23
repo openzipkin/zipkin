@@ -20,7 +20,7 @@ import zipkin.storage.elasticsearch.ElasticsearchStorage;
 import zipkin.storage.elasticsearch.http.HttpClient;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
-public class ZipkinElasticsearchHttpStorageProperties {
+public class ZipkinHttpElasticsearchStorageProperties {
   /**
    * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port
    * format. Defaults to "http://localhost:9200".
@@ -37,7 +37,7 @@ public class ZipkinElasticsearchHttpStorageProperties {
     return hosts;
   }
 
-  public ZipkinElasticsearchHttpStorageProperties setHosts(List<String> hosts) {
+  public ZipkinHttpElasticsearchStorageProperties setHosts(List<String> hosts) {
     this.hosts = hosts;
     return this;
   }
@@ -46,7 +46,7 @@ public class ZipkinElasticsearchHttpStorageProperties {
     return index;
   }
 
-  public ZipkinElasticsearchHttpStorageProperties setIndex(String index) {
+  public ZipkinHttpElasticsearchStorageProperties setIndex(String index) {
     this.index = index;
     return this;
   }

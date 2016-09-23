@@ -11,9 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.autoconfigure.storage.elasticsearch;
+package zipkin.autoconfigure.storage.elasticsearch.aws;
 
-import java.net.URI;
+import java.util.Arrays;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -23,39 +24,41 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
+import zipkin.autoconfigure.storage.elasticsearch.ZipkinElasticsearchStorageAutoConfiguration;
+import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinHttpElasticsearchStorageAutoConfiguration;
 import zipkin.storage.StorageComponent;
 
+import static zipkin.autoconfigure.storage.elasticsearch.http.ZipkinHttpElasticsearchStorageAutoConfiguration.regionFromAwsUrls;
+
 @Configuration
-@EnableConfigurationProperties(ZipkinElasticsearchStorageProperties.class)
+@EnableConfigurationProperties(ZipkinAwsElasticsearchStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
-@Conditional(ZipkinElasticsearchStorageAutoConfiguration.HostsArentUrls.class)
+@AutoConfigureBefore({
+    ZipkinElasticsearchStorageAutoConfiguration.class,
+    ZipkinHttpElasticsearchStorageAutoConfiguration.class
+})
+@Conditional(ZipkinAwsElasticsearchStorageAutoConfiguration.AwsMagic.class)
 @ConditionalOnMissingBean(StorageComponent.class)
-public class ZipkinElasticsearchStorageAutoConfiguration {
-  @Bean StorageComponent storage(ZipkinElasticsearchStorageProperties elasticsearch) {
+public class ZipkinAwsElasticsearchStorageAutoConfiguration {
+  @Bean StorageComponent storage(ZipkinAwsElasticsearchStorageProperties elasticsearch) {
     return elasticsearch.toBuilder().build();
   }
 
-  static final class HostsArentUrls implements Condition {
+  static final class AwsMagic implements Condition {
     @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata md) {
       String hosts = condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.hosts");
-      if (hosts == null) return true; // default host is not a url
-      return !hostsAreUrls(hosts);
+      String domain = condition.getEnvironment()
+          .getProperty("zipkin.storage.elasticsearch.aws.domain");
+
+      // If neither hosts nor domain, no AWS magic
+      if (isEmpty(hosts) && isEmpty(domain)) return false;
+
+      // Either we have a domain, or we check the hosts auto-detection magic
+      return !isEmpty(domain) || regionFromAwsUrls(Arrays.asList(hosts.split(","))).isPresent();
     }
   }
 
-  public static boolean hostsAreUrls(String hostsProperty) {
-    if (!hostsProperty.startsWith("http")) return false;
-    for (String host : hostsProperty.split(",")) {
-      String maybeScheme;
-      try {
-        maybeScheme = URI.create(host).getScheme();
-      } catch (IllegalArgumentException ex) {
-        return false;
-      }
-      if (!"http".equals(maybeScheme) && !"https".equals(maybeScheme)) {
-        return false;
-      }
-    }
-    return true;
+  private static boolean isEmpty(String s) {
+    return s == null || s.isEmpty();
   }
 }
