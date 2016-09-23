@@ -23,6 +23,9 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import zipkin.DependencyLink;
 import zipkin.Span;
+import zipkin.internal.Lazy;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Common interface for different protocol implementations communicating with Elasticsearch.
@@ -51,24 +54,32 @@ public abstract class InternalElasticsearchClient implements Closeable {
     InternalElasticsearchClient create(String allIndices);
   }
 
-  // abstract class so we can hide flushOnWrites
-  protected interface Builder {
+  protected static abstract class Builder {
     /** The elasticsearch cluster to connect to, defaults to "elasticsearch". */
-    Builder cluster(String cluster);
+    public abstract Builder cluster(String cluster);
 
     /**
      * A comma separated list of elasticsearch host to connect to, in a transport-specific format.
      * For example, for the native client, this would default to "localhost:9300".
      */
-    Builder hosts(List<String> hosts);
+    public abstract Builder hosts(Lazy<List<String>> hosts);
 
     /**
      * Internal flag that allows you read-your-writes consistency during tests. With Elasticsearch,
      * it is not sufficient to block on futures since the index also needs to be flushed.
      */
-    Builder flushOnWrites(boolean flushOnWrites);
+    public abstract Builder flushOnWrites(boolean flushOnWrites);
 
-    Factory buildFactory();
+    public final Builder hosts(final List<String> hosts) {
+      checkNotNull(hosts, "hosts");
+      return hosts(new Lazy<List<String>>() {
+        @Override protected List<String> compute() {
+          return hosts;
+        }
+      });
+    }
+
+    protected abstract Factory buildFactory();
   }
 
   /** Ensures the existence of a template, creating it if it does not exist. */

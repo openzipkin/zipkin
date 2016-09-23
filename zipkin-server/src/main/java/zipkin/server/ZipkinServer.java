@@ -14,11 +14,10 @@
 package zipkin.server;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.elasticsearch.jest.JestAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import zipkin.server.brave.BootstrapTrace;
 
-@SpringBootApplication(exclude = JestAutoConfiguration.class)
+@SpringBootApplication
 @EnableZipkinServer
 public class ZipkinServer {
 

@@ -67,7 +67,7 @@ public class ZipkinElasticsearchHttpStorageProperties {
     this.indexReplicas = indexReplicas;
   }
 
-  public ElasticsearchStorage.Builder toBuilder() {
+  ElasticsearchStorage.Builder toBuilder() {
     return ElasticsearchStorage.builder(new HttpClient.Builder())
         .hosts(hosts)
         .index(index)

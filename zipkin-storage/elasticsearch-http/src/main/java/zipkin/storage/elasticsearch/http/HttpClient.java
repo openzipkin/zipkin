@@ -13,7 +13,6 @@
  */
 package zipkin.storage.elasticsearch.http;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -67,6 +66,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Span;
+import zipkin.internal.Lazy;
 import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -90,11 +90,14 @@ public final class HttpClient extends InternalElasticsearchClient {
    */
   private static final int MAX_INDICES = 100;
 
-  public static final class Builder implements InternalElasticsearchClient.Builder {
-    List<String> hosts = Collections.singletonList("http://localhost:9200");
-    List<HttpRequestInterceptor> preInterceptors = new ArrayList<>();
+  public static final class Builder extends InternalElasticsearchClient.Builder {
+    Lazy<List<String>> hosts;
     List<HttpRequestInterceptor> postInterceptors = new ArrayList<>();
     boolean flushOnWrites;
+
+    public Builder() {
+      hosts(Collections.singletonList("http://localhost:9200"));
+    }
 
     /**
      * Unnecessary, but we'll check it's not null for consistency's sake.
@@ -108,7 +111,7 @@ public final class HttpClient extends InternalElasticsearchClient {
      * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port
      * format. Defaults to "http://localhost:9200".
      */
-    @Override public Builder hosts(List<String> hosts) {
+    @Override public Builder hosts(Lazy<List<String>> hosts) {
       this.hosts = checkNotNull(hosts, "hosts");
       return this;
     }
@@ -119,15 +122,6 @@ public final class HttpClient extends InternalElasticsearchClient {
       return this;
     }
 
-    /**
-     * Adds a request interceptor ahead of the default chain (but after other calls to this method)
-     */
-    public Builder addPreInterceptor(HttpRequestInterceptor interceptor) {
-      preInterceptors.add(interceptor);
-      return this;
-    }
-
-
     @Override public Builder flushOnWrites(boolean flushOnWrites) {
       this.flushOnWrites = flushOnWrites;
       return this;
@@ -136,20 +130,15 @@ public final class HttpClient extends InternalElasticsearchClient {
     @Override public Factory buildFactory() {
       return new Factory(this);
     }
-
-    public Builder() {
-    }
   }
 
   private static final class Factory implements InternalElasticsearchClient.Factory {
-    final List<String> hosts;
-    final List<HttpRequestInterceptor> preInterceptors;
+    final Lazy<List<String>> hosts;
     final List<HttpRequestInterceptor> postInterceptors;
     final boolean flushOnWrites;
 
     Factory(Builder builder) {
-      this.hosts = ImmutableList.copyOf(builder.hosts);
-      this.preInterceptors = ImmutableList.copyOf(builder.preInterceptors);
+      this.hosts = builder.hosts;
       this.postInterceptors = ImmutableList.copyOf(builder.postInterceptors);
       this.flushOnWrites = builder.flushOnWrites;
     }
@@ -159,21 +148,19 @@ public final class HttpClient extends InternalElasticsearchClient {
     }
 
     @Override public String toString() {
-      StringBuilder json =
-          new StringBuilder("{\"hosts\": [\"").append(Joiner.on("\", \"").join(hosts))
-              .append("\"]");
-      return json.append("}").toString();
+      return new StringBuilder("{\"hosts\": [\"").append(Joiner.on("\", \"").join(hosts.get()))
+              .append("\"]}").toString();
     }
   }
 
-  @VisibleForTesting final JestClient client;
-  private final String[] allIndices;
-  private final boolean flushOnWrites;
+  final JestClient client;
+  final String[] allIndices;
+  final boolean flushOnWrites;
 
-  private HttpClient(Factory f, String allIndices) {
-    JestClientFactory factory = new JestClientFactoryWithInterceptors(f.preInterceptors,
+  HttpClient(Factory f, String allIndices) {
+    JestClientFactory factory = new JestClientFactoryWithInterceptors(Collections.<HttpRequestInterceptor>emptyList(),
         f.postInterceptors);
-    factory.setHttpClientConfig(new HttpClientConfig.Builder(f.hosts)
+    factory.setHttpClientConfig(new HttpClientConfig.Builder(f.hosts.get())
         .defaultMaxTotalConnectionPerRoute(6) // matches "regular" TransportClient node conns
         .maxTotalConnection(6 * 10) // would be 20 otherwise, or ~3 routes
         .connTimeout(10 * 1000)

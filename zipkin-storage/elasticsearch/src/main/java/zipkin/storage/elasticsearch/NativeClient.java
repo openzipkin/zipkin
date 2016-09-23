@@ -57,6 +57,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Span;
+import zipkin.internal.Lazy;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -71,10 +72,14 @@ import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
  */
 final class NativeClient extends InternalElasticsearchClient {
 
-  static final class Builder implements InternalElasticsearchClient.Builder {
+  static final class Builder extends InternalElasticsearchClient.Builder {
     String cluster = "elasticsearch";
-    List<String> hosts = Collections.singletonList("localhost:9300");
+    Lazy<List<String>> hosts;
     boolean flushOnWrites;
+
+    Builder() {
+      hosts(Collections.singletonList("localhost:9300"));
+    }
 
     /**
      * The elasticsearch cluster to connect to, defaults to "elasticsearch".
@@ -88,7 +93,7 @@ final class NativeClient extends InternalElasticsearchClient {
      * A comma separated list of elasticsearch hostnodes to connect to, in host:port format. The
      * port should be the transport port, not the http port. Defaults to "localhost:9300".
      */
-    @Override public Builder hosts(List<String> hosts) {
+    @Override public Builder hosts(Lazy<List<String>> hosts) {
       this.hosts = checkNotNull(hosts, "hosts");
       return this;
     }
@@ -98,22 +103,19 @@ final class NativeClient extends InternalElasticsearchClient {
       return this;
     }
 
-    @Override public Factory buildFactory() {
+    @Override protected Factory buildFactory() {
       return new Factory(this);
-    }
-
-    Builder() {
     }
   }
 
   private static final class Factory implements InternalElasticsearchClient.Factory {
     final String cluster;
-    final List<String> hosts;
+    final Lazy<List<String>> hosts;
     final boolean flushOnWrites;
 
     Factory(Builder builder) {
       this.cluster = builder.cluster;
-      this.hosts = ImmutableList.copyOf(builder.hosts);
+      this.hosts = builder.hosts;
       this.flushOnWrites = builder.flushOnWrites;
     }
 
@@ -126,7 +128,7 @@ final class NativeClient extends InternalElasticsearchClient {
       TransportClient client = TransportClient.builder()
           .settings(settings)
           .build();
-      for (String host : hosts) {
+      for (String host : hosts.get()) {
         HostAndPort hostAndPort = HostAndPort.fromString(host).withDefaultPort(9300);
         try {
           client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(
@@ -143,7 +145,7 @@ final class NativeClient extends InternalElasticsearchClient {
 
     @Override public String toString() {
       StringBuilder json = new StringBuilder("{\"clusterName\": \"").append(cluster).append("\"");
-      json.append(", \"hosts\": [\"").append(Joiner.on("\", \"").join(hosts)).append("\"]");
+      json.append(", \"hosts\": [\"").append(Joiner.on("\", \"").join(hosts.get())).append("\"]");
       return json.append("}").toString();
     }
   }

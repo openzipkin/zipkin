@@ -120,8 +120,9 @@ spring:
       enabled: false
   autoconfigure:
     exclude:
-      # otherwise we might initialize even when not needed (ex when storage type is cassandra)
+      # otherwise we might initialize even when not needed (ex when storage type is cassandra or elasticsearch)
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.jest.JestAutoConfiguration
 
 info:
   zipkin:
