@@ -35,7 +35,7 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
     return elasticsearch.toBuilder().build();
   }
 
-  public static final class HostsArentUrls implements Condition {
+  static final class HostsArentUrls implements Condition {
     @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata md) {
       String hosts = condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.hosts");
       if (hosts == null) return true; // default host is not a url

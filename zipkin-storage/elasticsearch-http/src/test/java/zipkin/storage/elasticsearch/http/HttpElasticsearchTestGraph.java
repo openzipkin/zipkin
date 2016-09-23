@@ -29,8 +29,8 @@ public enum HttpElasticsearchTestGraph {
         @Override protected ElasticsearchStorage compute() {
           if (ex != null) throw ex;
           ElasticsearchStorage result =
-              ElasticsearchStorage.builder(new HttpClient.Builder()
-                  .hosts(ImmutableList.of("http://localhost:9200")).flushOnWrites(true))
+              ElasticsearchStorage.builder(new HttpClient.Builder().flushOnWrites(true)
+                  .hosts(ImmutableList.of("http://localhost:9200")))
                   .index("test_zipkin_http").build();
           CheckResult check = result.check();
           if (check.ok) return result;

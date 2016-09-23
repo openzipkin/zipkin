@@ -105,6 +105,13 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- Elasticsearch aws support -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-autoconfigure-storage-elasticsearch-aws</artifactId>
+      <optional>true</optional>
+    </dependency>
+
     <!-- MySQL backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>

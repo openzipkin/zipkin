@@ -20,13 +20,13 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinHttpElasticsearchStorageAutoConfiguration;
+import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageAutoConfiguration;
 import zipkin.storage.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
-public class ZipkinHttpElasticsearchStorageAutoConfigurationTest {
+public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();
@@ -45,7 +45,7 @@ public class ZipkinHttpElasticsearchStorageAutoConfigurationTest {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:cassandra");
     context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinHttpElasticsearchStorageAutoConfiguration.class);
+        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
@@ -60,7 +60,22 @@ public class ZipkinHttpElasticsearchStorageAutoConfigurationTest {
         "zipkin.storage.elasticsearch.hosts:http://host1:9200"
     );
     context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinHttpElasticsearchStorageAutoConfiguration.class);
+        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(ElasticsearchStorage.class)).isNotNull();
+  }
+
+  @Test
+  public void doesntProvidesStorageComponent_whenStorageTypeElasticsearchAndHostsAreAwsUrls() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:"
+            + "http://search-domain-xyzzy.us-west-2.es.amazonaws.com:9200"
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
     context.refresh();
 
     assertThat(context.getBean(ElasticsearchStorage.class)).isNotNull();
@@ -71,7 +86,7 @@ public class ZipkinHttpElasticsearchStorageAutoConfigurationTest {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:elasticsearch");
     context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinHttpElasticsearchStorageAutoConfiguration.class);
+        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
