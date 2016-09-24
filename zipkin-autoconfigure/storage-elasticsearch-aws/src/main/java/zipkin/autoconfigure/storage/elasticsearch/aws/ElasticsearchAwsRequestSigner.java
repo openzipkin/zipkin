@@ -37,36 +37,25 @@ import org.apache.http.client.methods.HttpRequestWrapper;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.protocol.HttpContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Performs aws v4 signing on an apache http request
  */
-final class AwsSignatureInterceptor implements HttpRequestInterceptor {
-  static final Logger log = LoggerFactory.getLogger(AwsSignatureInterceptor.class);
-
-  final AWS4Signer signer;
+final class ElasticsearchAwsRequestSigner implements HttpRequestInterceptor {
+  final String region;
   final AWSCredentialsProvider credentialsProvider;
 
-  AwsSignatureInterceptor(String serviceName, String region,
-      AWSCredentialsProvider credentialsProvider) {
-    this.signer = new AWS4Signer();
-    this.signer.setServiceName(serviceName);
-    this.signer.setRegionName(region);
+  ElasticsearchAwsRequestSigner(String region, AWSCredentialsProvider credentialsProvider) {
+    this.region = region;
     this.credentialsProvider = credentialsProvider;
   }
 
   @Override
   public void process(HttpRequest hr, HttpContext hc) {
-    AWSCredentials creds;
-    try {
-      creds = credentialsProvider.getCredentials();
-    } catch (RuntimeException ace) {
-      log.debug("Unable to load AWS credentials", ace);
-      return;
-    }
-
+    AWSCredentials creds = credentialsProvider.getCredentials();
+    AWS4Signer signer = new AWS4Signer();
+    signer.setServiceName("es");
+    signer.setRegionName(region);
     signer.sign(new SignableHttpRequest(hr, hc), creds);
   }
 

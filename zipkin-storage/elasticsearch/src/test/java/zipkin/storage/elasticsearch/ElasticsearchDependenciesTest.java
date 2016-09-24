@@ -14,6 +14,7 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
 import java.util.List;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -43,7 +44,7 @@ public class ElasticsearchDependenciesTest extends DependenciesTest {
     return storage;
   }
 
-  @Override public void clear() {
+  @Override public void clear() throws IOException {
     storage.clear();
   }
 

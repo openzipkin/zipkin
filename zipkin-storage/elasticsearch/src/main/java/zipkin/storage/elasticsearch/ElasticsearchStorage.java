@@ -14,6 +14,7 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import java.util.List;
 import zipkin.storage.guava.LazyGuavaStorageComponent;
@@ -99,7 +100,7 @@ public final class ElasticsearchStorage
     }
 
     // punch a hole so that tests don't need to share a static variable
-    @VisibleForTesting  Builder flushOnWrites(boolean flushOnWrites) {
+    @VisibleForTesting Builder flushOnWrites(boolean flushOnWrites) {
       this.clientBuilder.flushOnWrites(flushOnWrites);
       return this;
     }
@@ -131,14 +132,16 @@ public final class ElasticsearchStorage
     return new ElasticsearchSpanConsumer(client(), indexNameFormatter);
   }
 
-  @VisibleForTesting void clear() {
+  @VisibleForTesting void clear() throws IOException {
     lazyClient.get().clear(indexNameFormatter.catchAll());
   }
 
   @Override public CheckResult check() {
     try {
       client().ensureClusterReady(indexNameFormatter.catchAll());
-    } catch (RuntimeException e) {
+    } catch (UncheckedExecutionException e) { // we have to wrap on LazyClient.compute()
+      return CheckResult.failed((Exception) e.getCause());
+    } catch (Exception e) {
       return CheckResult.failed(e);
     }
     return CheckResult.OK;

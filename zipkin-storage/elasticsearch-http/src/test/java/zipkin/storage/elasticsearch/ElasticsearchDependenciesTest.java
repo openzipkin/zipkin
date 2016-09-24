@@ -44,7 +44,7 @@ public class ElasticsearchDependenciesTest extends DependenciesTest {
     return storage;
   }
 
-  @Override public void clear() {
+  @Override public void clear() throws IOException {
     storage.clear();
   }
 

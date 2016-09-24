@@ -47,6 +47,7 @@ import io.searchbox.indices.DeleteIndex;
 import io.searchbox.indices.Flush;
 import io.searchbox.indices.template.GetTemplate;
 import io.searchbox.indices.template.PutTemplate;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,7 +73,6 @@ import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.getOnlyElement;
-import static com.google.common.util.concurrent.Futures.getUnchecked;
 import static com.google.common.util.concurrent.Futures.transform;
 
 /**
@@ -178,19 +178,18 @@ public final class HttpClient extends InternalElasticsearchClient {
   }
 
   @Override
-  public void ensureTemplate(String name, String indexTemplate) {
-    JestResult existingTemplate = getUnchecked(toGuava(new GetTemplate.Builder(name).build()));
+  public void ensureTemplate(String name, String indexTemplate) throws IOException {
+    JestResult existingTemplate = client.execute(new GetTemplate.Builder(name).build());
     if (existingTemplate.isSucceeded()) {
       return;
     }
-    PutTemplate action = new PutTemplate.Builder(name, indexTemplate).build();
-    executeUnchecked(action);
+    client.execute(new PutTemplate.Builder(name, indexTemplate).build());
   }
 
   @Override
-  public void clear(String index) {
-    executeUnchecked(new DeleteIndex.Builder(index).build());
-    executeUnchecked(new Flush.Builder().addIndex(index).build());
+  public void clear(String index) throws IOException {
+    client.execute(new DeleteIndex.Builder(index).build());
+    client.execute(new Flush.Builder().addIndex(index).build());
   }
 
   @Override
@@ -307,8 +306,8 @@ public final class HttpClient extends InternalElasticsearchClient {
     return transform(future, Functions.<Void>constant(null));
   }
 
-  @Override protected void ensureClusterReady(String catchAll) {
-    String status = executeUnchecked(new IndicesHealth(new Health.Builder(), catchAll))
+  @Override protected void ensureClusterReady(String catchAll) throws IOException {
+    String status = client.execute(new IndicesHealth(new Health.Builder(), catchAll))
         .getJsonObject().get("status").getAsString();
     checkState(!"RED".equalsIgnoreCase(status), "Health status is RED");
   }
@@ -369,10 +368,6 @@ public final class HttpClient extends InternalElasticsearchClient {
     @Override public void failed(Exception ex) {
       setException(ex);
     }
-  }
-
-  private <T extends JestResult> T executeUnchecked(Action<T> action) {
-    return getUnchecked(toGuava(action));
   }
 
   private enum SpanDeserializer implements JsonDeserializer<Span> {

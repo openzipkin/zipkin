@@ -14,6 +14,7 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.io.Resources;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import zipkin.internal.LazyCloseable;
@@ -42,7 +43,12 @@ final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
 
   @Override protected InternalElasticsearchClient compute() {
     InternalElasticsearchClient client = clientFactory.create(allIndices);
-    client.ensureTemplate(indexTemplateName, indexTemplate);
+    try {
+      client.ensureTemplate(indexTemplateName, indexTemplate);
+    } catch (IOException e) {
+      client.close();
+      throw new UncheckedExecutionException(e);
+    }
     return client;
   }
 

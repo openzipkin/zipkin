@@ -13,6 +13,7 @@
  */
 package zipkin.storage;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -69,7 +70,7 @@ public abstract class SpanStoreTest {
 
   /** Clears store between tests. */
   @Before
-  public abstract void clear();
+  public abstract void clear() throws IOException;
 
   /** Notably, the cassandra implementation has day granularity */
   static long midnight(){
