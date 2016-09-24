@@ -15,6 +15,7 @@ package zipkin.storage.elasticsearch;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import org.junit.Before;
@@ -43,7 +44,7 @@ public class ElasticsearchSpanConsumerTest {
   }
 
   @Before
-  public void clear() {
+  public void clear() throws IOException {
     storage.clear();
   }
 

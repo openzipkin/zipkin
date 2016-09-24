@@ -13,6 +13,7 @@
  */
 package zipkin.storage.elasticsearch;
 
+import java.io.IOException;
 import zipkin.storage.SpanStoreTest;
 import zipkin.storage.StorageComponent;
 
@@ -30,7 +31,7 @@ public class ElasticsearchSpanStoreTest extends SpanStoreTest {
     return storage;
   }
 
-  @Override public void clear() {
+  @Override public void clear() throws IOException {
     storage.clear();
   }
 }

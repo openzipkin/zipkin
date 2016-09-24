@@ -15,6 +15,7 @@ package zipkin.storage.elasticsearch;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import org.elasticsearch.action.support.IndicesOptions;
@@ -83,10 +84,10 @@ public abstract class InternalElasticsearchClient implements Closeable {
   }
 
   /** Ensures the existence of a template, creating it if it does not exist. */
-  protected abstract void ensureTemplate(String name, String indexTemplate);
+  protected abstract void ensureTemplate(String name, String indexTemplate) throws IOException;
 
   /** Deletes the specified index pattern is supplied */
-  protected abstract void clear(String index);
+  protected abstract void clear(String index) throws IOException;
 
   /**
    * Scans the given indices with the given query and aggregates. If aggregating all traces,
@@ -152,7 +153,7 @@ public abstract class InternalElasticsearchClient implements Closeable {
    *
    * @param catchAll See {@link IndexNameFormatter#catchAll()}
    */
-  protected abstract void ensureClusterReady(String catchAll);
+  protected abstract void ensureClusterReady(String catchAll) throws IOException;
 
   /** Overridden to remove checked exceptions. */
   @Override

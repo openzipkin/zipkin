@@ -128,10 +128,9 @@ public class ZipkinElasticsearchAwsStorageProperties {
     } else {
       region = ZipkinElasticsearchHttpStorageAutoConfiguration.regionFromAwsUrls(hosts).get();
     }
-    HttpClient.Builder httpBuilder = new HttpClient.Builder()
-        .addPostInterceptor(
-            new AwsSignatureInterceptor("es", region, new DefaultAWSCredentialsProviderChain())
-        );
+    ElasticsearchAwsRequestSigner signer =
+        new ElasticsearchAwsRequestSigner(region, new DefaultAWSCredentialsProviderChain());
+    HttpClient.Builder httpBuilder = new HttpClient.Builder().addPostInterceptor(signer);
 
     if (aws.domain != null) {
       httpBuilder.hosts(new ElasticsearchDomainEndpoint(aws.domain, region));

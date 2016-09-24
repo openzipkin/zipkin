@@ -13,6 +13,7 @@
  */
 package zipkin.storage;
 
+import java.io.IOException;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +61,7 @@ public abstract class DependenciesTest {
 
   /** Clears store between tests. */
   @Before
-  public abstract void clear();
+  public abstract void clear() throws IOException;
 
   /**
    * Override if dependency processing is a separate job: it should complete before returning from
