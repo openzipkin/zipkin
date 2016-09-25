@@ -18,16 +18,14 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.ObjectArrays;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import io.searchbox.action.Action;
 import io.searchbox.action.GenericResultAbstractAction;
 import io.searchbox.client.JestClient;
@@ -40,9 +38,6 @@ import io.searchbox.core.Bulk;
 import io.searchbox.core.Index;
 import io.searchbox.core.Search;
 import io.searchbox.core.SearchResult;
-import io.searchbox.core.search.aggregation.MetricAggregation;
-import io.searchbox.core.search.aggregation.RootAggregation;
-import io.searchbox.core.search.aggregation.TermsAggregation;
 import io.searchbox.indices.DeleteIndex;
 import io.searchbox.indices.Flush;
 import io.searchbox.indices.template.GetTemplate;
@@ -51,10 +46,11 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -68,11 +64,11 @@ import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.Lazy;
+import zipkin.internal.Util;
 import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.util.concurrent.Futures.transform;
 
 /**
@@ -193,7 +189,7 @@ public final class HttpClient extends InternalElasticsearchClient {
   }
 
   @Override
-  public ListenableFuture<Buckets> scanTraces(String[] indices, QueryBuilder query,
+  public ListenableFuture<List<String>> collectBucketKeys(String[] indices, QueryBuilder query,
       AbstractAggregationBuilder... aggregations) {
     if (indices.length > MAX_INDICES) {
       query = QueryBuilders.indicesQuery(query, indices).noMatchQuery("none");
@@ -210,14 +206,44 @@ public final class HttpClient extends InternalElasticsearchClient {
             .addIndex(Arrays.asList(indices))
             .addType(SPAN)
             .build()
-    ), AsRestBuckets.INSTANCE);
+    ), BucketKeys.INSTANCE);
   }
 
-  private enum AsRestBuckets implements Function<SearchResult, Buckets> {
+  /** grabs any "key" from the json result */
+  enum BucketKeys implements Function<SearchResult, List<String>> {
     INSTANCE;
 
-    @Override public Buckets apply(SearchResult input) {
-      return new RestBuckets(input);
+    @Override public List<String> apply(SearchResult input) {
+      Set<String> result = new LinkedHashSet<>();
+      JsonObject object = input.getJsonObject();
+      visitObject(object, result);
+      return Util.sortedList(result);
+    }
+
+    static void visitObject(JsonObject object, Set<String> result) {
+      if (object == null) return;
+      for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+        String nextName = entry.getKey();
+        switch (nextName) {
+          case "key":
+            result.add(entry.getValue().getAsString());
+            break;
+          default:
+            visitNextOrSkip(entry.getValue(), result);
+        }
+      }
+    }
+
+    static void visitNextOrSkip(JsonElement next, Set<String> result) {
+      if (next.isJsonArray()) {
+        for (JsonElement foo : next.getAsJsonArray()) {
+          if (foo.isJsonObject()) {
+            visitObject(foo.getAsJsonObject(), result);
+          }
+        }
+      } else if (next.isJsonObject()) {
+        visitObject(next.getAsJsonObject(), result);
+      }
     }
   }
 
@@ -236,7 +262,7 @@ public final class HttpClient extends InternalElasticsearchClient {
             .addType(SPAN)
             .build()), new Function<SearchResult, List<Span>>() {
       @Override public List<Span> apply(SearchResult input) {
-        if (input.getTotal() == 0) return null;
+        if (input.getTotal() == null || input.getTotal() == 0) return null;
 
         ImmutableList.Builder<Span> builder = ImmutableList.builder();
         for (SearchResult.Hit<Span, ?> hit : input.getHits(Span.class)) {
@@ -248,7 +274,7 @@ public final class HttpClient extends InternalElasticsearchClient {
   }
 
   @Override
-  public ListenableFuture<Collection<DependencyLink>> findDependencies(String[] indices) {
+  public ListenableFuture<List<DependencyLink>> findDependencies(String[] indices) {
     QueryBuilder query = QueryBuilders.matchAllQuery();
     if (indices.length > MAX_INDICES) {
       query = QueryBuilders.indicesQuery(query, indices).noMatchQuery("none");
@@ -260,8 +286,8 @@ public final class HttpClient extends InternalElasticsearchClient {
         .addType(DEPENDENCY_LINK);
 
     return transform(toGuava(search.build()),
-        new Function<SearchResult, Collection<DependencyLink>>() {
-          @Override public Collection<DependencyLink> apply(SearchResult input) {
+        new Function<SearchResult, List<DependencyLink>>() {
+          @Override public List<DependencyLink> apply(SearchResult input) {
             ImmutableList.Builder<DependencyLink> builder = ImmutableList.builder();
             for (SearchResult.Hit<DependencyLink, ?> hit : input.getHits(DependencyLink.class)) {
               builder.add(hit.source);
@@ -271,40 +297,47 @@ public final class HttpClient extends InternalElasticsearchClient {
         });
   }
 
-  @Override
-  public ListenableFuture<Void> indexSpans(List<IndexableSpan> spans) {
-    if (spans.isEmpty()) return Futures.immediateFuture(null);
+  @Override protected BulkSpanIndexer bulkSpanIndexer() {
+    return new SpanBytesBulkSpanIndexer() {
+      final List<Index> indexRequests = new LinkedList<>();
+      final Set<String> indices = new LinkedHashSet<>();
 
-    // Create a bulk request when there is more than one span to store
-    ListenableFuture<?> future;
-    final Set<String> indices = new LinkedHashSet<>();
-    if (spans.size() == 1) {
-      IndexableSpan span = getOnlyElement(spans);
-      future = toGuava(toIndexRequest(span));
-      if (flushOnWrites) {
-        indices.add(span.index);
+      @Override protected void add(String index, byte[] spanBytes) {
+        indexRequests.add(new Index.Builder(new String(spanBytes, Charsets.UTF_8))
+            .index(index)
+            .type(SPAN)
+            .build());
+
+        if (flushOnWrites) indices.add(index);
       }
-    } else {
-      Bulk.Builder batch = new Bulk.Builder();
-      for (IndexableSpan span : spans) {
-        batch.addAction(toIndexRequest(span));
-        if (flushOnWrites) {
-          indices.add(span.index);
+
+      // Creates a bulk request when there is more than one span to store
+      @Override public ListenableFuture<Void> execute() {
+        ListenableFuture<?> future;
+        if (indexRequests.size() == 1) {
+          future = toGuava(indexRequests.get(0));
+        } else {
+          Bulk.Builder batch = new Bulk.Builder();
+          for (Index span : indexRequests) {
+            batch.addAction(span);
+          }
+          future = toGuava(batch.build());
         }
+
+        if (!indices.isEmpty()) {
+          future = transform(future, new AsyncFunction() {
+            @Override public ListenableFuture apply(Object input) {
+              return toGuava(new Flush.Builder().addIndex(indices).build());
+            }
+          });
+        }
+
+        return transform(future, TO_VOID);
       }
-      future = toGuava(batch.build());
-    }
-
-    if (flushOnWrites) {
-      future = transform(future, new AsyncFunction() {
-        @Override public ListenableFuture apply(Object input) {
-          return toGuava(new Flush.Builder().addIndex(indices).build());
-        }
-      });
-    }
-
-    return transform(future, Functions.<Void>constant(null));
+    };
   }
+
+  private static final Function<Object, Void> TO_VOID = Functions.constant(null);
 
   @Override protected void ensureClusterReady(String catchAll) throws IOException {
     String status = client.execute(new IndicesHealth(new Health.Builder(), catchAll))
@@ -330,13 +363,6 @@ public final class HttpClient extends InternalElasticsearchClient {
     protected String buildURI() {
       return super.buildURI() + "/_cluster/health/" + catchAll;
     }
-  }
-
-  private static Index toIndexRequest(IndexableSpan span) {
-    return new Index.Builder(new String(span.data, Charsets.UTF_8))
-        .index(span.index)
-        .type(SPAN)
-        .build();
   }
 
   @Override
@@ -386,34 +412,6 @@ public final class HttpClient extends InternalElasticsearchClient {
     public DependencyLink deserialize(JsonElement json, Type typeOfT,
         JsonDeserializationContext context) {
       return Codec.JSON.readDependencyLink(json.toString().getBytes(Charsets.UTF_8));
-    }
-  }
-
-  private static class RestBuckets implements Buckets {
-    final SearchResult response;
-
-    RestBuckets(SearchResult response) {
-      this.response = response;
-    }
-
-    @Override
-    public List<String> getBucketKeys(String name, String... nestedPath) {
-      String[] path = ObjectArrays.concat(name, nestedPath);
-      MetricAggregation aggregation = response.getAggregations();
-
-      for (int i = 0; i < path.length - 1 && aggregation != null; i++) {
-        aggregation = aggregation.getAggregation(path[i], RootAggregation.class);
-      }
-      if (aggregation == null) return ImmutableList.of();
-
-      TermsAggregation t = aggregation.getTermsAggregation(path[path.length - 1]);
-      if (t == null) return ImmutableList.of();
-      return Lists.transform(t.getBuckets(), new Function<TermsAggregation.Entry, String>() {
-        @Override
-        public String apply(TermsAggregation.Entry input) {
-          return input.getKey();
-        }
-      });
     }
   }
 

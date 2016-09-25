@@ -205,9 +205,10 @@ public abstract class SpanStoreTest {
   }
 
   @Test
-  public void getAllServiceNames() {
+  public void getAllServiceNames_mergesAnnotation_andBinaryAnnotation() {
+    // creates a span with mutual exclusive endpoints in binary annotations and annotations
     BinaryAnnotation yak = BinaryAnnotation.address("sa", Endpoint.create("yak", 127 << 24 | 1));
-    accept(span1.toBuilder().addBinaryAnnotation(yak).build(), span4);
+    accept(span1.toBuilder().binaryAnnotations(asList(yak)).build());
 
     // should be in order
     assertThat(store().getServiceNames()).containsExactly("service", "yak");
