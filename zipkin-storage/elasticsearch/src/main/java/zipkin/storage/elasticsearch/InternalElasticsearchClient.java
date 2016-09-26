@@ -16,17 +16,18 @@ package zipkin.storage.elasticsearch;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
+import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.Lazy;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static zipkin.storage.elasticsearch.ElasticsearchSpanConsumer.prefixWithTimestampMillis;
 
 /**
  * Common interface for different protocol implementations communicating with Elasticsearch.
@@ -90,34 +91,22 @@ public abstract class InternalElasticsearchClient implements Closeable {
   protected abstract void clear(String index) throws IOException;
 
   /**
-   * Scans the given indices with the given query and aggregates. If aggregating all traces,
-   * pass {@link QueryBuilders#matchAllQuery()}
+   * Scans the given indices with the given query and aggregates a sorted list of unique bucket
+   * keys.
    *
-   * NB: This call is _lenient_ in its index selection, and only will match open indexes, cf.
-   * {@link IndicesOptions#lenientExpandOpen()} }.
+   * <p>If aggregating all traces, pass {@link QueryBuilders#matchAllQuery()}
    *
-   * Will never return results; this interface is for aggregation only.
+   * <p>NB: This call is _lenient_ in its index selection, and only will match open indexes, cf.
+   * {@link IndicesOptions#lenientExpandOpen()}.
    */
-  protected abstract ListenableFuture<Buckets> scanTraces(String[] indices, QueryBuilder query,
-      AbstractAggregationBuilder... aggregations);
-
-  protected interface Buckets {
-    /**
-     * Retrieves the aggregation bucket keys from the aggregation at name[>nestedPath]
-     *
-     * The elasticsearch store only uses this one attribute of any aggregations, and so this
-     * interface wraps the ugliness of dealing with different aggregation APIs while leaving control
-     * of the aggregation keys in the hands of the caller.
-     */
-    // TODO(adrian): revisit once the other implementation is in: can we avoid varags?
-    List<String> getBucketKeys(String name, String... nestedPath);
-  }
+  protected abstract ListenableFuture<List<String>> collectBucketKeys(String[] indices,
+      QueryBuilder query, AbstractAggregationBuilder... aggregations);
 
   /**
    * Retrieves spans from the given indices. Pass {@link QueryBuilders#matchAllQuery()} for all
    * spans.
    *
-   * NB: This call is _lenient_ in its index selection, and only will match open indexes, cf.
+   * <p>NB: This call is _lenient_ in its index selection, and only will match open indexes, cf.
    * {@link IndicesOptions#lenientExpandOpen()}.
    */
   protected abstract ListenableFuture<List<Span>> findSpans(String[] indices, QueryBuilder query);
@@ -126,26 +115,42 @@ public abstract class InternalElasticsearchClient implements Closeable {
    * Retrieves all dependency links in the given indices. Useful for gathering dependencies from
    * a (time-bounded) set of "recent" indices.
    *
-   * NB: This call is _lenient_ in its index selection, and only will match open indexes, cf.
+   * <p>NB: This call is _lenient_ in its index selection, and only will match open indexes, cf.
    * {@link IndicesOptions#lenientExpandOpen()} }.
    */
-  // TODO(adrian): revisit once the other implementation is in: why we are using arrays vs lists?
-  protected abstract ListenableFuture<Collection<DependencyLink>> findDependencies(String[] indices);
+  protected abstract ListenableFuture<List<DependencyLink>> findDependencies(String[] indices);
 
   /**
-   * Indexes the given spans, flushing depending on the value of
-   * {@link Builder#flushOnWrites(boolean)}
+   * Indexes the spans, flushing depending on the value of {@link Builder#flushOnWrites(boolean)}
    */
-  protected abstract ListenableFuture<Void> indexSpans(List<IndexableSpan> spans);
+  protected abstract BulkSpanIndexer bulkSpanIndexer();
 
-  protected static final class IndexableSpan {
-    public final String index;
-    public final byte[] data;
+  public interface BulkSpanIndexer {
+    /**
+     * In order to allow systems like Kibana to search by timestamp, we add a field
+     * "timestamp_millis" when storing a span that has a timestamp. The cheapest way to do this
+     * without changing the codec is prefixing it to the json.
+     *
+     * <p>For example. {"traceId":".. becomes {"timestamp_millis":12345,"traceId":"...
+     */
+    void add(String index, Span span, Long timestampMillis) throws IOException;
 
-    IndexableSpan(String index, byte[] data) {
-      this.index = index;
-      this.data = data;
+    ListenableFuture<Void> execute();
+  }
+
+  protected static abstract class SpanBytesBulkSpanIndexer implements BulkSpanIndexer {
+
+    @Override public final void add(String index, Span span, Long timestampMillis) {
+      final byte[] spanBytes;
+      if (timestampMillis != null) {
+        spanBytes = prefixWithTimestampMillis(Codec.JSON.writeSpan(span), timestampMillis);
+      } else {
+        spanBytes = Codec.JSON.writeSpan(span);
+      }
+      add(index, spanBytes);
     }
+
+    abstract protected void add(String index, byte[] spanBytes);
   }
 
   /**

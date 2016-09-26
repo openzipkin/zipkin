@@ -14,20 +14,21 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import zipkin.Codec;
 import zipkin.Span;
-import zipkin.storage.elasticsearch.InternalElasticsearchClient.IndexableSpan;
+import zipkin.storage.elasticsearch.InternalElasticsearchClient.BulkSpanIndexer;
 import zipkin.storage.guava.GuavaSpanConsumer;
 
+import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 
 final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
   private static final byte[] TIMESTAMP_MILLIS_PREFIX = "{\"timestamp_millis\":".getBytes();
+  private static final ListenableFuture<Void> VOID = immediateFuture(null);
 
   private final InternalElasticsearchClient client;
   private final IndexNameFormatter indexNameFormatter;
@@ -38,27 +39,31 @@ final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
     this.indexNameFormatter = indexNameFormatter;
   }
 
-  @Override
-  public ListenableFuture<Void> accept(List<Span> spans) {
-    return client.indexSpans(Lists.transform(spans, createSpanIndexRequest));
+  @Override public ListenableFuture<Void> accept(List<Span> spans) {
+    if (spans.isEmpty()) return VOID;
+    try {
+      return indexSpans(client.bulkSpanIndexer(), spans).execute();
+    } catch (Exception e) {
+      return Futures.immediateFailedFuture(e);
+    }
   }
 
-  final Function<Span, IndexableSpan> createSpanIndexRequest = new Function<Span, IndexableSpan>() {
-    @Override public IndexableSpan apply(Span input) {
-      Long timestamp = guessTimestamp(input);
-      long timestampMillis; // which index to store this span into
-      final byte[] spanBytes;
+  BulkSpanIndexer indexSpans(BulkSpanIndexer indexer, List<Span> spans) throws IOException {
+    for (Span span : spans) {
+      Long timestamp = guessTimestamp(span);
+      Long timestampMillis;
+      String index; // which index to store this span into
       if (timestamp != null) {
         timestampMillis = TimeUnit.MICROSECONDS.toMillis(timestamp);
-        spanBytes = prefixWithTimestampMillis(Codec.JSON.writeSpan(input), timestampMillis);
+        index = indexNameFormatter.indexNameForTimestamp(timestampMillis);
       } else {
-        timestampMillis = System.currentTimeMillis();
-        spanBytes = Codec.JSON.writeSpan(input);
+        timestampMillis = null;
+        index = indexNameFormatter.indexNameForTimestamp(System.currentTimeMillis());
       }
-      String spanIndex = indexNameFormatter.indexNameForTimestamp(timestampMillis);
-      return new IndexableSpan(spanIndex, spanBytes);
+      indexer.add(index, span, timestampMillis);
     }
-  };
+    return indexer;
+  }
 
   /**
    * In order to allow systems like Kibana to search by timestamp, we add a field "timestamp_millis"
