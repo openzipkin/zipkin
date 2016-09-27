@@ -20,16 +20,17 @@ import zipkin.Span;
 import zipkin.internal.Nullable;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
+import zipkin.storage.StorageComponent;
 
 final class TracedSpanStore implements SpanStore {
   private final LocalTracer tracer;
   private final SpanStore delegate;
   private final String component;
 
-  TracedSpanStore(LocalTracer tracer, SpanStore delegate) {
+  TracedSpanStore(LocalTracer tracer, StorageComponent component) {
     this.tracer = tracer;
-    this.delegate = delegate;
-    this.component = delegate.getClass().getSimpleName();
+    this.delegate = component.spanStore();
+    this.component = component.getClass().getSimpleName();
   }
 
   @Override

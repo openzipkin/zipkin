@@ -64,8 +64,8 @@ public class ZipkinServerConfiguration {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) {
-      if (bean instanceof TracedStorageComponent && brave != null) {
-        return new TracedStorageComponent(brave, (TracedStorageComponent) bean);
+      if (bean instanceof StorageComponent && brave != null) {
+        return new TracedStorageComponent(brave, (StorageComponent) bean);
       }
       return bean;
     }

@@ -30,7 +30,7 @@ public final class TracedStorageComponent implements StorageComponent {
   }
 
   @Override public SpanStore spanStore() {
-    return new TracedSpanStore(brave.localTracer(), delegate.spanStore());
+    return new TracedSpanStore(brave.localTracer(), delegate);
   }
 
   @Override public AsyncSpanStore asyncSpanStore() {
