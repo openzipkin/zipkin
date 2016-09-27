@@ -33,14 +33,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin.Codec;
 import zipkin.Span;
-import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.Nullable;
 import zipkin.internal.Pair;
 import zipkin.storage.guava.GuavaSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
+import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.storage.cassandra.CassandraUtil.bindWithName;
-import static zipkin.storage.cassandra.CassandraUtil.durationIndexBucket;
 
 final class CassandraSpanConsumer implements GuavaSpanConsumer {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanConsumer.class);
@@ -58,7 +57,6 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
   private final PreparedStatement insertSpan;
   private final PreparedStatement insertServiceName;
   private final PreparedStatement insertSpanName;
-  private final PreparedStatement insertTraceIdBySpanDuration;
   private final Schema.Metadata metadata;
   private final DeduplicatingExecutor deduplicatingExecutor;
   private final CompositeIndexer indexer;
@@ -90,16 +88,6 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
             .value("bucket", 0) // bucket is deprecated on this index
             .value("span_name", QueryBuilder.bindMarker("span_name"))));
 
-    insertTraceIdBySpanDuration = session.prepare(
-        maybeUseTtl(QueryBuilder
-            .insertInto(Tables.SPAN_DURATION_INDEX)
-            .value("service_name", QueryBuilder.bindMarker("service_name"))
-            .value("span_name", QueryBuilder.bindMarker("span_name"))
-            .value("bucket", QueryBuilder.bindMarker("bucket"))
-            .value("duration", QueryBuilder.bindMarker("duration"))
-            .value("ts", QueryBuilder.bindMarker("ts"))
-            .value("trace_id", QueryBuilder.bindMarker("trace_id"))));
-
     deduplicatingExecutor = new DeduplicatingExecutor(session, WRITTEN_NAMES_TTL);
     indexer = new CompositeIndexer(session, indexCacheSpec, bucketCount, this.indexTtl);
   }
@@ -119,20 +107,20 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     ImmutableSet.Builder<ListenableFuture<?>> futures = ImmutableSet.builder();
 
     ImmutableList.Builder<Span> spans = ImmutableList.builder();
-    for (Span rawSpan : rawSpans) {
+    for (Span span : rawSpans) {
       // indexing occurs by timestamp, so derive one if not present.
-      Span span = ApplyTimestampAndDuration.apply(rawSpan);
+      Long timestamp = guessTimestamp(span);
       spans.add(span);
 
       futures.add(storeSpan(
           span.traceId,
-          span.timestamp != null ? span.timestamp : 0L,
+          timestamp != null ? timestamp : 0L,
           String.format("%d_%d_%d",
               span.id,
               span.annotations.hashCode(),
               span.binaryAnnotations.hashCode()),
           // store the raw span without any adjustments
-          ByteBuffer.wrap(Codec.THRIFT.writeSpan(rawSpan))));
+          ByteBuffer.wrap(Codec.THRIFT.writeSpan(span))));
 
       for (String serviceName : span.serviceNames()) {
         // SpanStore.getServiceNames
@@ -140,18 +128,6 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
         if (!span.name.isEmpty()) {
           // SpanStore.getSpanNames
           futures.add(storeSpanName(serviceName, span.name));
-        }
-
-        // QueryRequest.min/maxDuration
-        if (span.timestamp != null && span.duration != null) {
-          // Contract for Repository.storeTraceIdByDuration is to store the span twice, once with
-          // the span name and another with empty string.
-          futures.add(storeTraceIdByDuration(
-              serviceName, span.name, span.timestamp, span.duration, span.traceId));
-          if (!span.name.isEmpty()) { // If span.name == "", this would be redundant
-            futures.add(storeTraceIdByDuration(
-                serviceName, "", span.timestamp, span.duration, span.traceId));
-          }
         }
       }
     }
@@ -196,26 +172,6 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
         .setString("span_name", spanName);
     if (indexTtl != null) bound.setInt("ttl_", indexTtl);
     return deduplicatingExecutor.maybeExecuteAsync(bound, Pair.create(serviceName, spanName));
-  }
-
-  ListenableFuture<?> storeTraceIdByDuration(String serviceName, String spanName,
-      long timestamp, long duration, long traceId) {
-    int bucket = durationIndexBucket(timestamp);
-    try {
-      BoundStatement bound =
-          bindWithName(insertTraceIdBySpanDuration, "insert-trace-id-by-span-duration")
-              .setInt("bucket", bucket)
-              .setString("service_name", serviceName)
-              .setString("span_name", spanName)
-              .setBytesUnsafe("ts", timestampCodec.serialize(timestamp))
-              .setLong("duration", duration)
-              .setLong("trace_id", traceId);
-      if (indexTtl != null) bound.setInt("ttl_", indexTtl);
-
-      return session.executeAsync(bound);
-    } catch (RuntimeException ex) {
-      return Futures.immediateFailedFuture(ex);
-    }
   }
 
   /** Clears any caches */

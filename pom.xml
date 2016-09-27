@@ -19,7 +19,7 @@
 
   <groupId>io.zipkin.java</groupId>
   <artifactId>parent</artifactId>
-  <version>1.8.5-SNAPSHOT</version>
+  <version>1.12.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -49,7 +49,7 @@
 
     <main.basedir>${project.basedir}</main.basedir>
 
-    <brave.version>3.9.0</brave.version>
+    <brave.version>3.11.0</brave.version>
     <cassandra-driver-core.version>3.1.0</cassandra-driver-core.version>
     <okio.version>1.9.0</okio.version>
     <jooq.version>3.8.4</jooq.version>
@@ -61,7 +61,7 @@
     -->
     <mariadb-java-client.version>1.4.6</mariadb-java-client.version>
     <HikariCP.version>2.4.7</HikariCP.version>
-    <elasticsearch.version>2.3.4</elasticsearch.version>
+    <elasticsearch.version>2.4.0</elasticsearch.version>
     <slf4j.version>1.7.21</slf4j.version>
     <logback.version>1.1.7</logback.version>
     <!-- be careful to not eagerly update as we can break other storage or transports!
@@ -180,6 +180,18 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-storage-cassandra3</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-storage-cassandra3</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-storage-mysql</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -198,7 +210,25 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-storage-elasticsearch-http</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-autoconfigure-storage-elasticsearch</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-storage-elasticsearch-http</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-storage-elasticsearch-aws</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -260,6 +290,11 @@
       <dependency>
         <groupId>com.datastax.cassandra</groupId>
         <artifactId>cassandra-driver-core</artifactId>
+        <version>${cassandra-driver-core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.datastax.cassandra</groupId>
+        <artifactId>cassandra-driver-mapping</artifactId>
         <version>${cassandra-driver-core.version}</version>
       </dependency>
       <dependency>
@@ -476,7 +511,7 @@
             <exclude>**/.idea/**</exclude>
             <exclude>LICENSE</exclude>
             <exclude>**/*.md</exclude>
-            <exclude>dsc-cassandra-*/**</exclude>
+            <exclude>apache-cassandra-*/**</exclude>
             <exclude>elasticsearch-2*/**</exclude>
             <exclude>kafka_*/**</exclude>
             <exclude>src/test/resources/**</exclude>

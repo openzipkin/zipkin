@@ -62,19 +62,6 @@ public class CassandraSpanConsumerTest {
   }
 
   /**
-   * {@link Span#duration} == 0 is likely to be a mistake, and coerces to null. It is not helpful to
-   * index rows who have no duration.
-   */
-  @Test
-  public void doesntIndexSpansMissingDuration() {
-    Span span = Span.builder().traceId(1L).id(1L).name("get").duration(0L).build();
-
-    accept(span);
-
-    assertThat(rowCount(Tables.SPAN_DURATION_INDEX)).isZero();
-  }
-
-  /**
    * Simulates a trace with a step pattern, where each span starts a millisecond after the prior
    * one. The consumer code optimizes index inserts to only represent the interval represented by
    * the trace as opposed to each individual timestamp.

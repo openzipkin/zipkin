@@ -40,7 +40,7 @@ enum KafkaTestGraph {
         new ZkClient("127.0.0.1:2181", 1000);
         producer.send(new KeyedMessage<>("test", new byte[0]));
       } catch (FailedToSendMessageException | ZkTimeoutException e) {
-        throw ex = new AssumptionViolatedException(e.getMessage());
+        throw ex = new AssumptionViolatedException(e.getMessage(), e);
       }
     }
     return producer;

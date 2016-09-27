@@ -33,6 +33,7 @@
           "value": {
             "match": "value",
             "mapping": {
+              "match_mapping_type": "string",
               "index": "not_analyzed",
               "ignore_malformed": true,
               "type": "string"
@@ -45,6 +46,14 @@
             "mapping": {
               "type": "string",
               "analyzer": "lowercase"
+            }
+          }
+        },
+        {
+          "annotations": {
+            "match": "annotations",
+            "mapping": {
+              "type": "nested"
             }
           }
         },
@@ -66,6 +75,9 @@
         "timestamp_millis": {
           "type":   "date",
           "format": "epoch_millis"
+        },
+        "annotations": {
+          "type": "nested"
         },
         "binaryAnnotations": {
           "type": "nested"

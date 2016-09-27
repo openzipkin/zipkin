@@ -13,6 +13,7 @@
  */
 package zipkin.storage;
 
+import java.io.IOException;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +61,7 @@ public abstract class DependenciesTest {
 
   /** Clears store between tests. */
   @Before
-  public abstract void clear();
+  public abstract void clear() throws IOException;
 
   /**
    * Override if dependency processing is a separate job: it should complete before returning from
@@ -124,11 +125,11 @@ public abstract class DependenciesTest {
    */
   @Test
   public void getDependenciesAllInstrumented() {
-    Endpoint one = Endpoint.create("trace-producer-one", 127 << 24 | 1, 9410);
+    Endpoint one = Endpoint.create("trace-producer-one", 127 << 24 | 1);
     Endpoint onePort3001 = one.toBuilder().port((short) 3001).build();
-    Endpoint two = Endpoint.create("trace-producer-two", 127 << 24 | 2, 9410);
+    Endpoint two = Endpoint.create("trace-producer-two", 127 << 24 | 2);
     Endpoint twoPort3002 = two.toBuilder().port((short) 3002).build();
-    Endpoint three = Endpoint.create("trace-producer-three", 127 << 24 | 3, 9410);
+    Endpoint three = Endpoint.create("trace-producer-three", 127 << 24 | 3);
 
     List<Span> trace = asList(
         Span.builder().traceId(10L).id(10L).name("get")
@@ -168,11 +169,11 @@ public abstract class DependenciesTest {
    */
   @Test
   public void getDependencies_noTimestamps() {
-    Endpoint one = Endpoint.create("trace-producer-one", 127 << 24 | 1, 9410);
+    Endpoint one = Endpoint.create("trace-producer-one", 127 << 24 | 1);
     Endpoint onePort3001 = one.toBuilder().port((short) 3001).build();
-    Endpoint two = Endpoint.create("trace-producer-two", 127 << 24 | 2, 9410);
+    Endpoint two = Endpoint.create("trace-producer-two", 127 << 24 | 2);
     Endpoint twoPort3002 = two.toBuilder().port((short) 3002).build();
-    Endpoint three = Endpoint.create("trace-producer-three", 127 << 24 | 3, 9410);
+    Endpoint three = Endpoint.create("trace-producer-three", 127 << 24 | 3);
 
     List<Span> trace = asList(
         Span.builder().traceId(10L).id(10L).name("get")
@@ -286,7 +287,7 @@ public abstract class DependenciesTest {
    */
   @Test
   public void notInstrumentedClientAndServer() {
-    Endpoint someClient = Endpoint.create("some-client", 172 << 24 | 17 << 16 | 4, 80);
+    Endpoint someClient = Endpoint.create("some-client", 172 << 24 | 17 << 16 | 4);
 
     List<Span> trace = asList(
         Span.builder().traceId(20L).id(20L).name("get")
@@ -315,6 +316,33 @@ public abstract class DependenciesTest {
 
     assertThat(store().getDependencies(TODAY + 1000L, null)).containsOnly(
         DependencyLink.create("some-client", "web", 1),
+        DependencyLink.create("web", "app", 1),
+        DependencyLink.create("app", "db", 1)
+    );
+  }
+
+  @Test
+  public void instrumentedClientAndServer() {
+    List<Span> trace = asList(
+        Span.builder().traceId(10L).id(10L).name("get")
+            .timestamp((TODAY + 50L) * 1000).duration(250L * 1000)
+            .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
+            .build(),
+        Span.builder().traceId(10L).parentId(10L).id(11L).name("get")
+            .timestamp((TODAY + 150L) * 1000).duration(50L * 1000)
+            .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, APP_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, APP_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, DB_ENDPOINT))
+            .build()
+    );
+
+    processDependencies(trace);
+
+    assertThat(store().getDependencies(TODAY + 1000L, null)).containsOnly(
         DependencyLink.create("web", "app", 1),
         DependencyLink.create("app", "db", 1)
     );
@@ -391,7 +419,7 @@ public abstract class DependenciesTest {
   /** This test confirms that core ("sr", "cs", "cr", "ss") annotations are not required. */
   @Test
   public void noCoreAnnotations() {
-    Endpoint someClient = Endpoint.create("some-client", 172 << 24 | 17 << 16 | 4, 80);
+    Endpoint someClient = Endpoint.create("some-client", 172 << 24 | 17 << 16 | 4);
     List<Span> trace = asList(
         Span.builder().traceId(20L).id(20L).name("get")
             .timestamp(TODAY * 1000).duration(350L * 1000)

@@ -24,7 +24,7 @@ Once you've started, browse to http://your_host:9411 to find traces!
 Check out the [`zipkin-server`](/zipkin-server) documentation for configuration details, or [`docker-zipkin`](https://github.com/openzipkin/docker-zipkin) for how to use docker-compose.
 
 ## Core Library
-The [core library](https://github.com/openzipkin/zipkin/tree/master/zipkin/src/main/java/io/zipkin) is used by both Zipkin instrumentation and the Zipkin server. Its minimum Java language level is 6, in efforts to support those writing agent instrumentation.
+The [core library](zipkin/src/main/java/zipkin) is used by both Zipkin instrumentation and the Zipkin server. Its minimum Java language level is 6, in efforts to support those writing agent instrumentation.
 
 This includes built-in codec for both thrift and json structs. A direct dependency on gson (json library) is avoided by minifying and repackaging classes used. The result is a 155k jar which won't conflict with any library you use.
 
@@ -46,7 +46,7 @@ bytes = Codec.THRIFT.writeSpan(span);
 ```
 
 ## Storage Component
-Zipkin includes a [StorageComponent](https://github.com/openzipkin/zipkin/blob/master/zipkin/src/main/java/zipkin/storage/StorageComponent.java), used to store and query spans and dependency links. This is used by the server and those making custom servers, collectors, or span reporters. For this reason, storage components have minimal dependencies; many run on Java 7.
+Zipkin includes a [StorageComponent](zipkin/src/main/java/zipkin/storage/StorageComponent.java), used to store and query spans and dependency links. This is used by the server and those making custom servers, collectors, or span reporters. For this reason, storage components have minimal dependencies; many run on Java 7.
 
 Ex.
 ```java
@@ -62,19 +62,19 @@ storage.close();
 ```
 
 ### In-Memory
-The [InMemoryStorage](https://github.com/openzipkin/zipkin/blob/master/zipkin/src/main/java/zipkin/storage/InMemoryStorage.java) component is packaged in zipkin's core library. It is not persistent, nor viable for realistic work loads. Its purpose is for testing, for example starting a server on your laptop without any database needed.
+The [InMemoryStorage](zipkin/src/main/java/zipkin/storage/InMemoryStorage.java) component is packaged in zipkin's core library. It is not persistent, nor viable for realistic work loads. Its purpose is for testing, for example starting a server on your laptop without any database needed.
 
 ### MySQL
-The [JDBCStorage](https://github.com/openzipkin/zipkin/tree/master/zipkin-storage/jdbc) component currently is only tested with MySQL 5.6-7. It is designed to be easy to understand, and get started with. For example, it deconstructs spans into columns, so you can perform ad-hoc queries using SQL. However, this component has [known performance issues](https://github.com/openzipkin/zipkin/issues/233): queries will eventually take seconds to return if you put a lot of data into it.
+The [MySQLStorage](zipkin-storage/mysql) component currently is only tested with MySQL 5.6-7. It is designed to be easy to understand, and get started with. For example, it deconstructs spans into columns, so you can perform ad-hoc queries using SQL. However, this component has [known performance issues](https://github.com/openzipkin/zipkin/issues/233): queries will eventually take seconds to return if you put a lot of data into it.
 
 ### Cassandra
-The [CassandraStorage](https://github.com/openzipkin/zipkin/tree/master/zipkin-storage/cassandra) component is tested against Cassandra 2.2+. It stores spans as opaque thrifts which means you can't read them in cqlsh. However, it is designed for scale. For example, it has manually implemented indexes to make querying larger data more performant. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
+The [CassandraStorage](zipkin-storage/cassandra) component is tested against Cassandra 2.2+. It stores spans as opaque thrifts which means you can't read them in cqlsh. However, it is designed for scale. For example, it has manually implemented indexes to make querying larger data more performant. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
 
 ### Elasticsearch
-The [ElasticsearchStorage](https://github.com/openzipkin/zipkin/tree/master/zipkin-storage/elasticsearch) component is tested against Elasticsearch 2.3. It stores spans as json and has been designed for larger scale. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
+The [ElasticsearchStorage](zipkin-storage/elasticsearch) component is tested against Elasticsearch 2.3. It stores spans as json and has been designed for larger scale. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
 
 ## Running the server from source
-The [zipkin server](https://github.com/openzipkin/zipkin/tree/master/zipkin-server)
+The [zipkin server](zipkin-server)
 receives spans via HTTP POST and respond to queries from its UI. It can also run collectors, such as Scribe or Kafka.
 
 To run the server from the currently checked out source, enter the following.
@@ -92,7 +92,7 @@ Releases are uploaded to [Bintray](https://bintray.com/openzipkin/maven/zipkin).
 Snapshots are uploaded to [JFrog](http://oss.jfrog.org/artifactory/oss-snapshot-local) after commits to master.
 ### Docker Images
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin`.
-See [docker-zipkin-java](https://github.com/openzipkin/docker-zipkin-java) for details.
+See [docker-zipkin](https://github.com/openzipkin/docker-zipkin) for details.
 ### Javadocs
 http://zipkin.io/zipkin contains versioned folders with JavaDocs published on each (non-PR) build, as well
 as releases.

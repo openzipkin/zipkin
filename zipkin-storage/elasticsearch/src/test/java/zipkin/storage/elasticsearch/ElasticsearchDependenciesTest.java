@@ -13,11 +13,16 @@
  */
 package zipkin.storage.elasticsearch;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
 import java.util.List;
+import org.elasticsearch.action.admin.indices.flush.FlushRequest;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.client.transport.TransportClient;
 import zipkin.DependencyLink;
 import zipkin.Span;
-import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.MergeById;
+import zipkin.internal.Util;
 import zipkin.storage.DependenciesTest;
 import zipkin.storage.InMemorySpanStore;
 import zipkin.storage.InMemoryStorage;
@@ -39,7 +44,7 @@ public class ElasticsearchDependenciesTest extends DependenciesTest {
     return storage;
   }
 
-  @Override public void clear() {
+  @Override public void clear() throws IOException {
     storage.clear();
   }
 
@@ -47,8 +52,8 @@ public class ElasticsearchDependenciesTest extends DependenciesTest {
    * The current implementation does not include dependency aggregation. It includes retrieval of
    * pre-aggregated links.
    *
-   * <p>This uses {@link InMemorySpanStore} to prepare links and {@link
-   * ElasticsearchStorage#writeDependencyLinks(List, long)}} to store them.
+   * <p>This uses {@link InMemorySpanStore} to prepare links and {@link #writeDependencyLinks(List,
+   * long)}} to store them.
    */
   @Override
   public void processDependencies(List<Span> spans) {
@@ -58,6 +63,24 @@ public class ElasticsearchDependenciesTest extends DependenciesTest {
 
     // This gets or derives a timestamp from the spans
     long midnight = midnightUTC(MergeById.apply(spans).get(0).timestamp / 1000);
-    storage.writeDependencyLinks(links, midnight);
+    writeDependencyLinks(links, midnight);
+  }
+
+  @VisibleForTesting void writeDependencyLinks(List<DependencyLink> links, long timestampMillis) {
+    long midnight = Util.midnightUTC(timestampMillis);
+    TransportClient client = ((NativeClient) storage.client()).client;
+    BulkRequestBuilder request = client.prepareBulk();
+    for (DependencyLink link : links) {
+      request.add(client.prepareIndex(
+          storage.indexNameFormatter.indexNameForTimestamp(midnight),
+          ElasticsearchConstants.DEPENDENCY_LINK)
+          .setId(link.parent + "|" + link.child) // Unique constraint
+          .setSource(
+              "parent", link.parent,
+              "child", link.child,
+              "callCount", link.callCount));
+    }
+    request.execute().actionGet();
+    client.admin().indices().flush(new FlushRequest()).actionGet();
   }
 }

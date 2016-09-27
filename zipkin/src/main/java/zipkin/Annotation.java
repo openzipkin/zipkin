@@ -32,9 +32,8 @@ public final class Annotation implements Comparable<Annotation> {
   /**
    * Microseconds from epoch.
    *
-   * <p>This value should be set directly by instrumentation, using the most precise value
-   * possible. For example, {@code gettimeofday} or syncing {@link System#nanoTime} against a tick
-   * of {@link System#currentTimeMillis}.
+   * <p>This value should be set directly by instrumentation, using the most precise value possible.
+   * For example, {@code gettimeofday} or multiplying {@link System#currentTimeMillis} by 1000.
    */
   public final long timestamp;
 

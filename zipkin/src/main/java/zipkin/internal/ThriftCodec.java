@@ -124,7 +124,7 @@ public final class ThriftCodec implements Codec {
         if (field.isEqualTo(IPV4)) {
           result.ipv4(bytes.getInt());
         } else if (field.isEqualTo(PORT)) {
-          result.port(bytes.getShort());
+          result.port(Short.valueOf(bytes.getShort()));
         } else if (field.isEqualTo(SERVICE_NAME)) {
           result.serviceName(readUtf8(bytes));
         } else if (field.isEqualTo(IPV6)) {

@@ -295,8 +295,7 @@ public final class CassandraStorage
         Tables.SPAN_NAMES,
         Tables.SERVICE_NAME_INDEX,
         Tables.SERVICE_SPAN_NAME_INDEX,
-        Tables.ANNOTATIONS_INDEX,
-        Tables.SPAN_DURATION_INDEX
+        Tables.ANNOTATIONS_INDEX
     )) {
       futures.add(session.get().executeAsync(format("TRUNCATE %s", cf)));
     }

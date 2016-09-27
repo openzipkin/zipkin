@@ -14,39 +14,35 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.Collections;
+import com.google.common.util.concurrent.UncheckedExecutionException;
+import java.io.IOException;
 import java.util.List;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.flush.FlushRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.health.ClusterHealthStatus;
-import zipkin.DependencyLink;
-import zipkin.internal.Util;
 import zipkin.storage.guava.LazyGuavaStorageComponent;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.util.concurrent.Futures.getUnchecked;
 import static zipkin.internal.Util.checkNotNull;
 
 public final class ElasticsearchStorage
     extends LazyGuavaStorageComponent<ElasticsearchSpanStore, ElasticsearchSpanConsumer> {
 
-  /**
-   * Internal flag that allows you read-your-writes consistency during tests. With Elasticsearch, it
-   * is not sufficient to block on futures since the index also needs to be flushed.
-   */
-  @VisibleForTesting
-  static boolean FLUSH_ON_WRITES;
-
   public static Builder builder() {
-    return new Builder();
+    return new Builder(new NativeClient.Builder());
+  }
+
+  /**
+   * The client supplier to consume for connectivity to elasticsearch. Defaults to using the
+   * transport-client based {@link NativeClient}, but can be overriden with a HTTP-speaking client
+   * (e.g. for use in cloud environments where the transport protocol is not exposed).
+   */
+  public static Builder builder(InternalElasticsearchClient.Builder clientBuilder) {
+    return new Builder(checkNotNull(clientBuilder, "clientBuilder"));
   }
 
   public static final class Builder {
-    String cluster = "elasticsearch";
-    List<String> hosts = Collections.singletonList("localhost:9300");
+    Builder(InternalElasticsearchClient.Builder clientBuilder) {
+      this.clientBuilder = clientBuilder;
+    }
+
+    final InternalElasticsearchClient.Builder clientBuilder;
     String index = "zipkin";
     int indexShards = 5;
     int indexReplicas = 1;
@@ -55,16 +51,16 @@ public final class ElasticsearchStorage
      * The elasticsearch cluster to connect to, defaults to "elasticsearch".
      */
     public Builder cluster(String cluster) {
-      this.cluster = checkNotNull(cluster, "cluster");
+      this.clientBuilder.cluster(cluster);
       return this;
     }
 
     /**
-     * A comma separated list of elasticsearch hostnodes to connect to, in host:port format. The
-     * port should be the transport port, not the http port. Defaults to "localhost:9300".
+     * A List of elasticsearch hosts to connect to, in a transport-specific format.
+     * For example, for the native client, this would default to "localhost:9300".
      */
     public Builder hosts(List<String> hosts) {
-      this.hosts = checkNotNull(hosts, "hosts");
+      this.clientBuilder.hosts(hosts);
       return this;
     }
 
@@ -103,11 +99,14 @@ public final class ElasticsearchStorage
       return this;
     }
 
-    public ElasticsearchStorage build() {
-      return new ElasticsearchStorage(this);
+    // punch a hole so that tests don't need to share a static variable
+    @VisibleForTesting Builder flushOnWrites(boolean flushOnWrites) {
+      this.clientBuilder.flushOnWrites(flushOnWrites);
+      return this;
     }
 
-    Builder() {
+    public ElasticsearchStorage build() {
+      return new ElasticsearchStorage(this);
     }
   }
 
@@ -121,53 +120,34 @@ public final class ElasticsearchStorage
   }
 
   /** Lazy initializes or returns the client in use by this storage component. */
-  public Client client() {
+  @VisibleForTesting InternalElasticsearchClient client() {
     return lazyClient.get();
   }
 
   @Override protected ElasticsearchSpanStore computeGuavaSpanStore() {
-    return new ElasticsearchSpanStore(lazyClient.get(), indexNameFormatter);
+    return new ElasticsearchSpanStore(client(), indexNameFormatter);
   }
 
   @Override protected ElasticsearchSpanConsumer computeGuavaSpanConsumer() {
-    return new ElasticsearchSpanConsumer(lazyClient.get(), indexNameFormatter);
+    return new ElasticsearchSpanConsumer(client(), indexNameFormatter);
   }
 
-  @VisibleForTesting void writeDependencyLinks(List<DependencyLink> links, long timestampMillis) {
-    long midnight = Util.midnightUTC(timestampMillis);
-    BulkRequestBuilder request = lazyClient.get().prepareBulk();
-    for (DependencyLink link : links) {
-      request.add(lazyClient.get().prepareIndex(
-          indexNameFormatter.indexNameForTimestamp(midnight),
-          ElasticsearchConstants.DEPENDENCY_LINK)
-          .setId(link.parent + "|" + link.child) // Unique constraint
-          .setSource(
-              "parent", link.parent,
-              "child", link.child,
-              "callCount", link.callCount));
-    }
-    request.execute().actionGet();
-    lazyClient.get().admin().indices().flush(new FlushRequest()).actionGet();
-  }
-
-  @VisibleForTesting void clear() {
-    lazyClient.get().admin().indices().delete(new DeleteIndexRequest(indexNameFormatter.catchAll()))
-        .actionGet();
-    lazyClient.get().admin().indices().flush(new FlushRequest()).actionGet();
+  @VisibleForTesting void clear() throws IOException {
+    lazyClient.get().clear(indexNameFormatter.catchAll());
   }
 
   @Override public CheckResult check() {
     try {
-      ClusterHealthResponse health = getUnchecked(lazyClient.get()
-          .admin().cluster().prepareHealth(indexNameFormatter.catchAll()).execute());
-      checkState(health.getStatus() != ClusterHealthStatus.RED, "Health status is RED");
-    } catch (RuntimeException e) {
+      client().ensureClusterReady(indexNameFormatter.catchAll());
+    } catch (UncheckedExecutionException e) { // we have to wrap on LazyClient.compute()
+      return CheckResult.failed((Exception) e.getCause());
+    } catch (Exception e) {
       return CheckResult.failed(e);
     }
     return CheckResult.OK;
   }
 
-  @Override public void close() {
+  @Override public void close() throws IOException {
     lazyClient.close();
   }
 

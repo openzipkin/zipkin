@@ -14,15 +14,30 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ObjectArrays;
 import com.google.common.util.concurrent.Futures;
-import org.elasticsearch.action.search.SearchResponse;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Span;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
@@ -39,12 +54,13 @@ public class ElasticsearchSpanConsumerTest {
   }
 
   @Before
-  public void clear() {
+  public void clear() throws IOException {
     storage.clear();
   }
 
   @Test
-  public void spanGoesIntoADailyIndex_whenTimestampIsDerived() {
+  public void spanGoesIntoADailyIndex_whenTimestampIsDerived()
+      throws ExecutionException, InterruptedException {
     long twoDaysAgo = (TODAY - 2 * DAY);
 
     Span span = Span.builder().traceId(20L).id(20L).name("get")
@@ -54,18 +70,19 @@ public class ElasticsearchSpanConsumerTest {
 
     accept(span);
 
-    SearchResponse indexFromTwoDaysAgo = storage.client()
-        .prepareSearch(storage.indexNameFormatter.indexNameForTimestamp(twoDaysAgo))
-        .setTypes(ElasticsearchConstants.SPAN)
+    List<Span> indexFromTwoDaysAgo = storage.client()
+        .findSpans(new String[] {storage.indexNameFormatter.indexNameForTimestamp(twoDaysAgo)},
+            matchAllQuery())
         .get();
 
     // make sure the span went into an index corresponding to its first annotation timestamp
-    assertThat(indexFromTwoDaysAgo.getHits().getTotalHits())
+    assertThat(indexFromTwoDaysAgo.size())
         .isEqualTo(1);
   }
 
   @Test
-  public void spanGoesIntoADailyIndex_whenTimestampIsExplicit() {
+  public void spanGoesIntoADailyIndex_whenTimestampIsExplicit()
+      throws ExecutionException, InterruptedException {
     long twoDaysAgo = (TODAY - 2 * DAY);
 
     Span span = Span.builder().traceId(20L).id(20L).name("get")
@@ -73,45 +90,45 @@ public class ElasticsearchSpanConsumerTest {
 
     accept(span);
 
-    SearchResponse indexFromTwoDaysAgo = storage.client()
-        .prepareSearch(storage.indexNameFormatter.indexNameForTimestamp(twoDaysAgo))
-        .setTypes(ElasticsearchConstants.SPAN)
+    List<Span> indexFromTwoDaysAgo = storage.client()
+        .findSpans(new String[] {storage.indexNameFormatter.indexNameForTimestamp(twoDaysAgo)},
+            matchAllQuery())
         .get();
 
     // make sure the span went into an index corresponding to its timestamp, not collection time
-    assertThat(indexFromTwoDaysAgo.getHits().getTotalHits())
+    assertThat(indexFromTwoDaysAgo.size())
         .isEqualTo(1);
   }
 
   @Test
-  public void spanGoesIntoADailyIndex_fallsBackToTodayWhenNoTimestamps() {
+  public void spanGoesIntoADailyIndex_fallsBackToTodayWhenNoTimestamps()
+      throws ExecutionException, InterruptedException {
     Span span = Span.builder().traceId(20L).id(20L).name("get").build();
 
     accept(span);
 
-    SearchResponse indexFromToday = storage.client()
-        .prepareSearch(storage.indexNameFormatter.indexNameForTimestamp(TODAY))
-        .setTypes(ElasticsearchConstants.SPAN)
+    List<Span> indexFromToday = storage.client()
+        .findSpans(new String[] {storage.indexNameFormatter.indexNameForTimestamp(TODAY)},
+            matchAllQuery())
         .get();
 
     // make sure the span went into an index corresponding to collection time
-    assertThat(indexFromToday.getHits().getTotalHits())
+    assertThat(indexFromToday.size())
         .isEqualTo(1);
   }
 
   @Test
-  public void searchByTimestampMillis() {
+  public void searchByTimestampMillis() throws ExecutionException, InterruptedException {
     Span span = Span.builder().timestamp(TODAY * 1000).traceId(20L).id(20L).name("get").build();
 
     accept(span);
 
-    SearchResponse indexFromToday = storage.client()
-        .prepareSearch(storage.indexNameFormatter.indexNameForTimestamp(TODAY))
-        .setTypes(ElasticsearchConstants.SPAN)
-        .setQuery(termQuery("timestamp_millis", TODAY))
+    List<Span> indexFromToday = storage.client()
+        .findSpans(new String[] {storage.indexNameFormatter.indexNameForTimestamp(TODAY)},
+            termQuery("timestamp_millis", TODAY))
         .get();
 
-    assertThat(indexFromToday.getHits().getTotalHits())
+    assertThat(indexFromToday.size())
         .isEqualTo(1);
   }
 

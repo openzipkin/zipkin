@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.java</groupId>
     <artifactId>parent</artifactId>
-    <version>1.8.5-SNAPSHOT</version>
+    <version>1.12.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-autoconfigure</artifactId>
@@ -36,7 +36,10 @@
     <module>collector-kafka</module>
     <module>collector-scribe</module>
     <module>storage-cassandra</module>
+    <module>storage-cassandra3</module>
     <module>storage-elasticsearch</module>
+    <module>storage-elasticsearch-http</module>
+    <module>storage-elasticsearch-aws</module>
     <module>storage-mysql</module>
     <module>metrics-prometheus</module>
   </modules>

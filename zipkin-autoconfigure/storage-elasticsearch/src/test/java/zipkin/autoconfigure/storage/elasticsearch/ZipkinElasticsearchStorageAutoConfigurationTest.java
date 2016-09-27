@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.autoconfigure.storage.cassandra;
+package zipkin.autoconfigure.storage.elasticsearch;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -20,12 +20,12 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin.storage.cassandra.CassandraStorage;
+import zipkin.storage.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
-public class ZipkinCassandraStorageAutoConfigurationTests {
+public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();
@@ -40,40 +40,55 @@ public class ZipkinCassandraStorageAutoConfigurationTests {
   }
 
   @Test
-  public void doesntProvidesStorageComponent_whenStorageTypeNotCassandra() {
-    context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.storage.type:elasticsearch");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinCassandraStorageAutoConfiguration.class);
-    context.refresh();
-
-    thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(CassandraStorage.class);
-  }
-
-  @Test
-  public void providesStorageComponent_whenStorageTypeCassandra() {
+  public void doesntProvidesStorageComponent_whenStorageTypeNotElasticsearch() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:cassandra");
     context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinCassandraStorageAutoConfiguration.class);
+        ZipkinElasticsearchStorageAutoConfiguration.class);
     context.refresh();
 
-    assertThat(context.getBean(CassandraStorage.class)).isNotNull();
+    thrown.expect(NoSuchBeanDefinitionException.class);
+    context.getBean(ElasticsearchStorage.class);
   }
 
   @Test
-  public void canOverridesProperty_contactPoints() {
+  public void providesStorageComponent_whenStorageTypeElasticsearch() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context,
-        "zipkin.storage.type:cassandra",
-        "zipkin.storage.cassandra.contact-points:host1,host2" // note snake-case supported
-    );
+    addEnvironment(context, "zipkin.storage.type:elasticsearch");
     context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinCassandraStorageAutoConfiguration.class);
+        ZipkinElasticsearchStorageAutoConfiguration.class);
     context.refresh();
 
-    assertThat(context.getBean(ZipkinCassandraStorageProperties.class).getContactPoints())
-        .isEqualTo("host1,host2");
+    assertThat(context.getBean(ElasticsearchStorage.class)).isNotNull();
+  }
+
+  @Test
+  public void canOverridesProperty_hostsWithList() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:host1:9300,host2:9300"
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(ZipkinElasticsearchStorageProperties.class).getHosts())
+        .containsExactly("host1:9300", "host2:9300");
+  }
+
+  @Test
+  public void doesntProvidesStorageComponent_whenHostsAreUrls() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:http://host1:9200"
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchStorageAutoConfiguration.class);
+    context.refresh();
+
+    thrown.expect(NoSuchBeanDefinitionException.class);
+    context.getBean(ElasticsearchStorage.class);
   }
 }

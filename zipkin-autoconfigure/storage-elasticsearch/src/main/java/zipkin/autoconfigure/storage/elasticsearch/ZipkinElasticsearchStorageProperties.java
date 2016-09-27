@@ -20,15 +20,15 @@ import zipkin.storage.elasticsearch.ElasticsearchStorage;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
 public class ZipkinElasticsearchStorageProperties {
-  /** @see ElasticsearchStorage.Builder#cluster(String) */
+  /** The elasticsearch cluster to connect to, defaults to "elasticsearch". */
   private String cluster = "elasticsearch";
-  /** @see ElasticsearchStorage.Builder#hosts(List) */
+  /** A List of hosts to connect to, e.g.  */
   private List<String> hosts = Collections.singletonList("localhost:9300");
-  /** @see ElasticsearchStorage.Builder#index(String) */
+  /** The index prefix to use when generating daily index names. Defaults to zipkin. */
   private String index = "zipkin";
-  /** @see ElasticsearchStorage.Builder#indexShards(int) */
+  /** Number of shards (horizontal scaling factor) per index. Defaults to 5. */
   private int indexShards = 5;
-  /** @see ElasticsearchStorage.Builder#indexReplicas(int) */
+  /** Number of replicas (redundancy factor) per index. Defaults to 1.` */
   private int indexReplicas = 1;
 
   public String getCluster() {

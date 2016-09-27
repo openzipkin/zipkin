@@ -54,13 +54,19 @@ public class UtilTest {
   }
 
   @Test
+  public void lowerHexToUnsignedLong_downgrades128bitIdsByDroppingHighBits() {
+    assertThat(lowerHexToUnsignedLong("463ac35c9f6413ad48485a3953bb6124"))
+        .isEqualTo(lowerHexToUnsignedLong("48485a3953bb6124"));
+  }
+
+  @Test
   public void lowerHexToUnsignedLongTest() {
     assertThat(lowerHexToUnsignedLong("ffffffffffffffff")).isEqualTo(-1);
     assertThat(lowerHexToUnsignedLong("0")).isEqualTo(0);
     assertThat(lowerHexToUnsignedLong(Long.toHexString(Long.MAX_VALUE))).isEqualTo(Long.MAX_VALUE);
 
     try {
-      lowerHexToUnsignedLong("fffffffffffffffff"); // too long
+      lowerHexToUnsignedLong("fffffffffffffffffffffffffffffffff"); // too long
       failBecauseExceptionWasNotThrown(NumberFormatException.class);
     } catch (NumberFormatException e) {
 

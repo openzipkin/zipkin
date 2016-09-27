@@ -28,7 +28,7 @@ enum CassandraTestGraph {
       CassandraStorage result = CassandraStorage.builder().keyspace("test_zipkin").build();
       CheckResult check = result.check();
       if (check.ok) return result;
-      throw ex = new AssumptionViolatedException(check.exception.getMessage());
+      throw ex = new AssumptionViolatedException(check.exception.getMessage(), check.exception);
     }
   };
 }

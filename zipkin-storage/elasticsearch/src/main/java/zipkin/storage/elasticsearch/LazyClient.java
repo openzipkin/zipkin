@@ -13,31 +13,22 @@
  */
 package zipkin.storage.elasticsearch;
 
-import com.google.common.base.Joiner;
 import com.google.common.io.Resources;
-import com.google.common.net.HostAndPort;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesRequest;
-import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesResponse;
-import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import zipkin.internal.LazyCloseable;
 
-final class LazyClient extends LazyCloseable<Client> {
-  private final String clusterName;
-  private final List<String> hosts;
+final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
+  private final InternalElasticsearchClient.Factory clientFactory;
+  private final String indexTemplateName;
   final String indexTemplate;
+  private final String allIndices;
 
   LazyClient(ElasticsearchStorage.Builder builder) {
-    this.clusterName = builder.cluster;
-    this.hosts = builder.hosts;
+    this.clientFactory = builder.clientBuilder.buildFactory();
+    this.indexTemplateName = builder.index + "_template"; // should be 1:1 with indices
+    this.allIndices = new IndexNameFormatter(builder.index).catchAll();
     try {
       this.indexTemplate = Resources.toString(
           Resources.getResource("zipkin/storage/elasticsearch/zipkin_template.json"),
@@ -50,51 +41,24 @@ final class LazyClient extends LazyCloseable<Client> {
     }
   }
 
-  @Override protected Client compute() {
-    Settings settings = Settings.builder()
-        .put("cluster.name", clusterName)
-        .put("lazyClient.transport.sniff", true)
-        .build();
-
-    TransportClient client = TransportClient.builder()
-        .settings(settings)
-        .build();
-    for (String host : hosts) {
-      HostAndPort hostAndPort = HostAndPort.fromString(host).withDefaultPort(9300);
-      try {
-        client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(
-            hostAndPort.getHostText()), hostAndPort.getPort()));
-      } catch (UnknownHostException e) {
-        // Hosts may be down transiently, we should still try to connect. If all of them happen
-        // to be down we will fail later when trying to use the client when checking the index
-        // template.
-        continue;
-      }
+  @Override protected InternalElasticsearchClient compute() {
+    InternalElasticsearchClient client = clientFactory.create(allIndices);
+    try {
+      client.ensureTemplate(indexTemplateName, indexTemplate);
+    } catch (IOException e) {
+      client.close();
+      throw new UncheckedExecutionException(e);
     }
-    checkForIndexTemplate(client, indexTemplate);
     return client;
   }
 
-  static void checkForIndexTemplate(Client client, String indexTemplate) {
-    GetIndexTemplatesResponse existingTemplates =
-        client.admin().indices().getTemplates(new GetIndexTemplatesRequest("zipkin_template"))
-            .actionGet();
-    if (!existingTemplates.getIndexTemplates().isEmpty()) {
-      return;
-    }
-    client.admin().indices().putTemplate(
-        new PutIndexTemplateRequest("zipkin_template").source(indexTemplate)).actionGet();
-  }
-
   @Override public String toString() {
-    StringBuilder json = new StringBuilder("{\"clusterName\": \"").append(clusterName).append("\"");
-    json.append(", \"hosts\": [\"").append(Joiner.on("\", \"").join(hosts)).append("\"]");
-    return json.append("}").toString();
+    return clientFactory.toString();
   }
 
   @Override
   public void close() {
-    Client maybeNull = maybeNull();
+    InternalElasticsearchClient maybeNull = maybeNull();
     if (maybeNull != null) maybeNull.close();
   }
 }

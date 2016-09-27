@@ -20,19 +20,16 @@ import zipkin.internal.LazyCloseable;
 enum ElasticsearchTestGraph {
   INSTANCE;
 
-  static {
-    ElasticsearchStorage.FLUSH_ON_WRITES = true;
-  }
-
   final LazyCloseable<ElasticsearchStorage> storage = new LazyCloseable<ElasticsearchStorage>() {
     public AssumptionViolatedException ex;
 
     @Override protected ElasticsearchStorage compute() {
       if (ex != null) throw ex;
-      ElasticsearchStorage result = new ElasticsearchStorage.Builder().index("test_zipkin").build();
+      ElasticsearchStorage result = ElasticsearchStorage.builder()
+          .index("test_zipkin_transport").flushOnWrites(true).build();
       CheckResult check = result.check();
       if (check.ok) return result;
-      throw ex = new AssumptionViolatedException(check.exception.getMessage());
+      throw ex = new AssumptionViolatedException(check.exception.getMessage(), check.exception);
     }
   };
 }

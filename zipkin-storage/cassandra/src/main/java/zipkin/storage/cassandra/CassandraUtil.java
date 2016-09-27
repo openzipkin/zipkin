@@ -47,15 +47,6 @@ final class CassandraUtil {
    */
   static final int LONGEST_VALUE_TO_INDEX = 256;
 
-  // Time window covered by a single bucket of the Span Duration Index, in seconds. Default: 1hr
-  private static final long DURATION_INDEX_BUCKET_WINDOW_SECONDS
-      = Long.getLong("zipkin.store.cassandra.internal.durationIndexBucket", 60 * 60);
-
-  public static int durationIndexBucket(long ts) {
-    // if the window constant has microsecond precision, the division produces negative values
-    return (int) ((ts / DURATION_INDEX_BUCKET_WINDOW_SECONDS) / 1000000);
-  }
-
   private static final ThreadLocal<CharsetEncoder> UTF8_ENCODER =
       new ThreadLocal<CharsetEncoder>() {
         @Override protected CharsetEncoder initialValue() {
@@ -68,8 +59,8 @@ final class CassandraUtil {
   }
 
   /**
-   * Returns keys that concatenate the serviceName associated with an annotation, a binary
-   * annotation key, or a binary annotation key with value.
+   * Returns keys that concatenate the serviceName associated with an annotation or a binary
+   * annotation.
    *
    * <p>Note: in the case of binary annotations, only string types are returned, as that's the only
    * queryable type, per {@link QueryRequest#binaryAnnotations}.
@@ -95,7 +86,6 @@ final class CassandraUtil {
         String value = new String(b.value, UTF_8);
         if (value.length() > LONGEST_VALUE_TO_INDEX) continue;
 
-        annotationKeys.add(b.endpoint.serviceName + ":" + b.key);
         annotationKeys.add(b.endpoint.serviceName + ":" + b.key + ":" + new String(b.value, UTF_8));
       }
     }

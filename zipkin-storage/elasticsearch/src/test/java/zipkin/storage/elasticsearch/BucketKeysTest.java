@@ -13,7 +13,9 @@
  */
 package zipkin.storage.elasticsearch;
 
+import java.util.Collection;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.junit.Rule;
@@ -21,27 +23,27 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import zipkin.storage.elasticsearch.ElasticsearchSpanStore.ConvertSpanNameResponse;
+import zipkin.storage.elasticsearch.NativeClient.BucketKeys;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ConvertSpanNameResponseTest {
+public class BucketKeysTest {
 
   @Rule
   public MockitoRule mocks = MockitoJUnit.rule();
 
   @Mock
-  private SearchResponse response;
+  public SearchResponse response;
 
   @Mock
-  private Aggregations aggregations;
+  public Aggregations aggregations;
 
   @Test
   public void emptyWhenAggregatesAreNull() {
-    assertThat(ConvertSpanNameResponse.INSTANCE.apply(response))
+    assertThat(BucketKeys.INSTANCE.apply(response))
         .isEmpty();
   }
 
@@ -49,7 +51,7 @@ public class ConvertSpanNameResponseTest {
   public void emptyWhenMissingNameAgg() {
     when(response.getAggregations()).thenReturn(aggregations);
 
-    assertThat(ConvertSpanNameResponse.INSTANCE.apply(response))
+    assertThat(BucketKeys.INSTANCE.apply(response))
         .isEmpty();
   }
 
@@ -57,12 +59,14 @@ public class ConvertSpanNameResponseTest {
   public void namesAggBucketKeysAreSpanNames() {
     when(response.getAggregations()).thenReturn(aggregations);
     Terms terms = mock(Terms.class);
-    when(aggregations.get("name_agg")).thenReturn(terms);
+    Collection<Aggregation> list = asList(terms);
+    when(aggregations.iterator()).thenReturn(list.iterator());
+
     Terms.Bucket bucket = mock(Terms.Bucket.class);
     when(terms.getBuckets()).thenReturn(asList(bucket));
     when(bucket.getKeyAsString()).thenReturn("service");
 
-    assertThat(ConvertSpanNameResponse.INSTANCE.apply(response))
+    assertThat(BucketKeys.INSTANCE.apply(response))
         .containsExactly("service");
   }
 }

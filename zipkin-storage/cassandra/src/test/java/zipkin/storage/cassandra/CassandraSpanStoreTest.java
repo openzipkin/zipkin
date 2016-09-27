@@ -15,6 +15,8 @@ package zipkin.storage.cassandra;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.AssumptionViolatedException;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -29,6 +31,7 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class CassandraSpanStoreTest extends SpanStoreTest {
+
   @Rule
   public ExpectedException thrown = ExpectedException.none();
 
@@ -98,5 +101,11 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
 
   long rowCount(String table) {
     return storage.session().execute("SELECT COUNT(*) from " + table).one().getLong(0);
+  }
+
+  @Test
+  @Override
+  public void getTraces_duration() {
+    throw new AssumptionViolatedException("Upgrade to cassandra3 if you want duration queries");
   }
 }

@@ -27,12 +27,13 @@ import org.jooq.Record;
 import org.jooq.TableField;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
+import zipkin.Constants;
 import zipkin.Span;
-import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.Lazy;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.StorageAdapters;
 
+import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
@@ -56,19 +57,16 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
       List<Query> inserts = new ArrayList<>();
 
       for (Span span : spans) {
-        Long authoritativeTimestamp = span.timestamp;
-        span = ApplyTimestampAndDuration.apply(span);
-        Long binaryAnnotationTimestamp = span.timestamp;
-        if (binaryAnnotationTimestamp == null) { // fallback if we have no timestamp, yet
-          binaryAnnotationTimestamp = System.currentTimeMillis() * 1000;
-        }
+        Long overridingTimestamp = authoritativeTimestamp(span);
+        Long timestamp = overridingTimestamp != null ? overridingTimestamp : guessTimestamp(span);
 
         Map<TableField<Record, ?>, Object> updateFields = new LinkedHashMap<>();
         if (!span.name.equals("") && !span.name.equals("unknown")) {
           updateFields.put(ZIPKIN_SPANS.NAME, span.name);
         }
-        if (authoritativeTimestamp != null) {
-          updateFields.put(ZIPKIN_SPANS.START_TS, authoritativeTimestamp);
+        // replace any tentative timestamp with the authoritative one.
+        if (overridingTimestamp != null) {
+          updateFields.put(ZIPKIN_SPANS.START_TS, overridingTimestamp);
         }
         if (span.duration != null) {
           updateFields.put(ZIPKIN_SPANS.DURATION, span.duration);
@@ -80,7 +78,7 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
             .set(ZIPKIN_SPANS.PARENT_ID, span.parentId)
             .set(ZIPKIN_SPANS.NAME, span.name)
             .set(ZIPKIN_SPANS.DEBUG, span.debug)
-            .set(ZIPKIN_SPANS.START_TS, span.timestamp)
+            .set(ZIPKIN_SPANS.START_TS, timestamp)
             .set(ZIPKIN_SPANS.DURATION, span.duration);
 
         inserts.add(updateFields.isEmpty() ?
@@ -112,7 +110,7 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
               .set(ZIPKIN_ANNOTATIONS.A_KEY, annotation.key)
               .set(ZIPKIN_ANNOTATIONS.A_VALUE, annotation.value)
               .set(ZIPKIN_ANNOTATIONS.A_TYPE, annotation.type.value)
-              .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, binaryAnnotationTimestamp);
+              .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, timestamp);
           if (annotation.endpoint != null) {
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, annotation.endpoint.serviceName);
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, annotation.endpoint.ipv4);
@@ -128,5 +126,17 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
     } catch (SQLException e) {
       throw new RuntimeException(e); // TODO
     }
+  }
+
+  /** When performing updates, don't overwrite an authoritative timestamp with a guess! */
+  static Long authoritativeTimestamp(Span span) {
+    if (span.timestamp != null) return span.timestamp;
+    for (int i = 0, length = span.annotations.size(); i < length; i++) {
+      Annotation a = span.annotations.get(i);
+      if (a.value.equals(Constants.CLIENT_SEND)) {
+        return a.timestamp;
+      }
+    }
+    return null;
   }
 }

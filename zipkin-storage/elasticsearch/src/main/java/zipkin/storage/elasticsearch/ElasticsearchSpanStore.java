@@ -26,23 +26,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.IndicesOptions;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.RangeQueryBuilder;
-import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.nested.Nested;
-import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Order;
-import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.CorrectForClockSkew;
@@ -63,16 +53,6 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
 
 final class ElasticsearchSpanStore implements GuavaSpanStore {
-  /**
-   * The maximum count of raw spans returned in a trace query.
-   *
-   * <p>Not configurable as it implies adjustments to the index template (index.max_result_window)
-   * and user settings
-   *
-   * <p> See https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-from-size.html
-   */
-  static final int MAX_RAW_SPANS = 10000; // the default elasticsearch allowed limit
-
   static final long ONE_DAY_IN_MILLIS = TimeUnit.DAYS.toMillis(1);
   static final ListenableFuture<List<String>> EMPTY_LIST =
       immediateFuture(Collections.<String>emptyList());
@@ -83,27 +63,30 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     }
   });
 
-  private final Client client;
+  private final InternalElasticsearchClient client;
   private final IndexNameFormatter indexNameFormatter;
+  private final String[] catchAll;
 
-  ElasticsearchSpanStore(Client client, IndexNameFormatter indexNameFormatter) {
+  ElasticsearchSpanStore(InternalElasticsearchClient client,
+      IndexNameFormatter indexNameFormatter) {
     this.client = client;
     this.indexNameFormatter = indexNameFormatter;
+    this.catchAll = new String[] {indexNameFormatter.catchAll()};
   }
 
   @Override public ListenableFuture<List<List<Span>>> getTraces(QueryRequest request) {
     long endMillis = request.endTs;
     long beginMillis = endMillis - request.lookback;
 
-    // TODO: once timestamp_millis is sufficiently deployed, switch this logic to use it
     BoolQueryBuilder filter = boolQuery()
-        .must(rangeQuery("timestamp")
-            .gte(TimeUnit.MILLISECONDS.toMicros(beginMillis))
-            .lte(TimeUnit.MILLISECONDS.toMicros(endMillis)));
+        .must(rangeQuery("timestamp_millis")
+            .gte(beginMillis)
+            .lte(endMillis));
 
     if (request.serviceName != null) {
       filter.must(boolQuery()
-          .should(termQuery("annotations.endpoint.serviceName", request.serviceName))
+          .should(nestedQuery(
+              "annotations", termQuery("annotations.endpoint.serviceName", request.serviceName)))
           .should(nestedQuery(
               "binaryAnnotations",
               termQuery("binaryAnnotations.endpoint.serviceName", request.serviceName))));
@@ -112,16 +95,29 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
       filter.must(termQuery("name", request.spanName));
     }
     for (String annotation : request.annotations) {
-      filter.must(termQuery("annotations.value", annotation));
+      BoolQueryBuilder annotationQuery = boolQuery()
+          .must(termQuery("annotations.value", annotation));
+
+      if (request.serviceName != null) {
+        annotationQuery.must(termQuery("annotations.endpoint.serviceName", request.serviceName));
+      }
+
+      filter.must(nestedQuery("annotations", annotationQuery));
     }
-    for (Map.Entry<String, String> annotation : request.binaryAnnotations.entrySet()) {
+    for (Map.Entry<String, String> kv : request.binaryAnnotations.entrySet()) {
       // In our index template, we make sure the binaryAnnotation value is indexed as string,
       // meaning non-string values won't even be indexed at all. This means that we can only
       // match string values here, which happens to be exactly what we want.
-      filter.must(nestedQuery("binaryAnnotations", boolQuery()
-              .must(termQuery("binaryAnnotations.key", annotation.getKey()))
-              .must(termQuery("binaryAnnotations.value",
-                  annotation.getValue()))));
+      BoolQueryBuilder binaryAnnotationQuery = boolQuery()
+          .must(termQuery("binaryAnnotations.key", kv.getKey()))
+          .must(termQuery("binaryAnnotations.value", kv.getValue()));
+
+      if (request.serviceName != null) {
+        binaryAnnotationQuery.must(
+            termQuery("binaryAnnotations.endpoint.serviceName", request.serviceName));
+      }
+
+      filter.must(nestedQuery("binaryAnnotations", binaryAnnotationQuery));
     }
 
     if (request.minDuration != null) {
@@ -141,31 +137,21 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     // So we fudge and order on the first span among the filtered spans - in practice, there should
     // be no significant difference in user experience since span start times are usually very
     // close to each other in human time.
-    SearchRequestBuilder elasticRequest =
-        client.prepareSearch(indices)
-            .setIndicesOptions(IndicesOptions.lenientExpandOpen())
-            .setTypes(ElasticsearchConstants.SPAN)
-            .setQuery(boolQuery().must(matchAllQuery()).filter(filter))
-            .setSize(0)
-            .addAggregation(
-                AggregationBuilders.terms("traceId_agg")
-                    .field("traceId")
-                    .subAggregation(AggregationBuilders.min("timestamps_agg").field("timestamp"))
-                    .order(Order.aggregation("timestamps_agg", false))
-                    .size(request.limit));
+    ListenableFuture<List<String>> traceIds =
+        client.collectBucketKeys(indices,
+            boolQuery().must(matchAllQuery()).filter(filter),
+            AggregationBuilders.terms("traceId_agg")
+                .field("traceId")
+                .subAggregation(AggregationBuilders.min("timestamps_agg")
+                    .field("timestamp_millis"))
+                .order(Order.aggregation("timestamps_agg", false))
+                .size(request.limit));
 
-    ListenableFuture<SearchResponse> traceIds = ElasticFutures.toGuava(elasticRequest.execute());
-
-    return transform(traceIds, new AsyncFunction<SearchResponse, List<List<Span>>>() {
-          @Override public ListenableFuture<List<List<Span>>> apply(SearchResponse input) {
-            if (input.getAggregations() == null
-                || input.getAggregations().get("traceId_agg") == null) {
-              return Futures.immediateFuture(Collections.<List<Span>>emptyList());
-            }
-            Terms traceIdsAgg = input.getAggregations().get("traceId_agg");
-            List<Long> traceIds = new ArrayList<>();
-            for (Terms.Bucket bucket : traceIdsAgg.getBuckets()) {
-              traceIds.add(Util.lowerHexToUnsignedLong(bucket.getKeyAsString()));
+    return transform(traceIds, new AsyncFunction<List<String>, List<List<Span>>>() {
+          @Override public ListenableFuture<List<List<Span>>> apply(List<String> input) {
+            List<Long> traceIds = new ArrayList<>(input.size());
+            for (String bucket : input) {
+              traceIds.add(Util.lowerHexToUnsignedLong(bucket));
             }
             return getTracesByIds(traceIds, indices);
           }
@@ -182,23 +168,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
   }
 
   @Override public ListenableFuture<List<Span>> getRawTrace(long traceId) {
-    SearchRequestBuilder elasticRequest = client.prepareSearch(indexNameFormatter.catchAll())
-        .setTypes(ElasticsearchConstants.SPAN)
-        .setSize(MAX_RAW_SPANS)
-        .setQuery(termQuery("traceId", Util.toLowerHex(traceId)));
-
-    return Futures.transform(ElasticFutures.toGuava(elasticRequest.execute()), new Function<SearchResponse, List<Span>>() {
-      @Override public List<Span> apply(SearchResponse response) {
-        if (response.getHits().totalHits() == 0) {
-          return null;
-        }
-        ImmutableList.Builder<Span> trace = ImmutableList.builder();
-        for (SearchHit hit : response.getHits()) {
-          trace.add(Codec.JSON.readSpan(hit.getSourceRef().toBytes()));
-        }
-        return trace.build();
-      }
-    });
+    return client.findSpans(catchAll, termQuery("traceId", Util.toLowerHex(traceId)));
   }
 
   ListenableFuture<List<List<Span>>> getTracesByIds(Collection<Long> traceIds, String[] indices) {
@@ -206,22 +176,17 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     for (long traceId : traceIds) {
       traceIdsStr.add(Util.toLowerHex(traceId));
     }
-    SearchRequestBuilder elasticRequest = client.prepareSearch(indices)
-        .setIndicesOptions(IndicesOptions.lenientExpandOpen())
-        .setTypes(ElasticsearchConstants.SPAN)
-        .setSize(MAX_RAW_SPANS)
-        .setQuery(termsQuery("traceId", traceIdsStr));
-    return Futures.transform(ElasticFutures.toGuava(elasticRequest.execute()), ConvertTracesResponse.INSTANCE);
+    return Futures.transform(client.findSpans(indices, termsQuery("traceId", traceIdsStr)),
+        ConvertTracesResponse.INSTANCE);
   }
 
-  enum ConvertTracesResponse implements Function<SearchResponse, List<List<Span>>> {
+  enum ConvertTracesResponse implements Function<List<Span>, List<List<Span>>> {
     INSTANCE;
 
-    @Override public List<List<Span>> apply(SearchResponse response) {
-
+    @Override public List<List<Span>> apply(List<Span> response) {
+      if (response == null) return ImmutableList.of();
       ArrayListMultimap<Long, Span> groupedSpans = ArrayListMultimap.create();
-      for (SearchHit hit : response.getHits()) {
-        Span span = Codec.JSON.readSpan(hit.getSourceRef().toBytes());
+      for (Span span : response) {
         groupedSpans.put(span.traceId, span);
       }
       List<List<Span>> result = new ArrayList<>(groupedSpans.size());
@@ -233,53 +198,17 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
   }
 
   @Override public ListenableFuture<List<String>> getServiceNames() {
-    SearchRequestBuilder elasticRequest =
-        client.prepareSearch(indexNameFormatter.catchAll())
-            .setTypes(ElasticsearchConstants.SPAN)
-            .setQuery(matchAllQuery())
-            .setSize(0)
-            .addAggregation(AggregationBuilders.terms("annotationServiceName_agg")
+    return client.collectBucketKeys(catchAll, matchAllQuery(),
+        AggregationBuilders.nested("annotations_agg")
+            .path("annotations")
+            .subAggregation(AggregationBuilders.terms("annotationsServiceName_agg")
                 .field("annotations.endpoint.serviceName")
-                .size(0))
-            .addAggregation(AggregationBuilders.nested("binaryAnnotations_agg")
-                .path("binaryAnnotations")
-                .subAggregation(AggregationBuilders.terms("binaryAnnotationsServiceName_agg")
-                    .field("binaryAnnotations.endpoint.serviceName")
-                    .size(0)));
-
-    return Futures.transform(ElasticFutures.toGuava(elasticRequest.execute()), ConvertServiceNamesResponse.INSTANCE);
-  }
-
-  enum ConvertServiceNamesResponse implements Function<SearchResponse, List<String>> {
-    INSTANCE;
-
-    @Override public List<String> apply(SearchResponse response) {
-      if (response.getAggregations() == null) {
-        return Collections.emptyList();
-      }
-      SortedSet<String> serviceNames = new TreeSet<>();
-      Terms annotationServiceNamesAgg = response.getAggregations().get("annotationServiceName_agg");
-      if (annotationServiceNamesAgg != null) {
-        for (Terms.Bucket bucket : annotationServiceNamesAgg.getBuckets()) {
-          if (!bucket.getKeyAsString().isEmpty()) {
-            serviceNames.add(bucket.getKeyAsString());
-          }
-        }
-      }
-      Nested binaryAnnotationsAgg = response.getAggregations().get("binaryAnnotations_agg");
-      if (binaryAnnotationsAgg != null && binaryAnnotationsAgg.getAggregations() != null) {
-        Terms binaryAnnotationServiceNamesAgg = binaryAnnotationsAgg.getAggregations()
-            .get("binaryAnnotationsServiceName_agg");
-        if (binaryAnnotationServiceNamesAgg != null) {
-          for (Terms.Bucket bucket : binaryAnnotationServiceNamesAgg.getBuckets()) {
-            if (!bucket.getKeyAsString().isEmpty()) {
-              serviceNames.add(bucket.getKeyAsString());
-            }
-          }
-        }
-      }
-      return ImmutableList.copyOf(serviceNames);
-    }
+                .size(0)),
+        AggregationBuilders.nested("binaryAnnotations_agg")
+            .path("binaryAnnotations")
+            .subAggregation(AggregationBuilders.terms("binaryAnnotationsServiceName_agg")
+                .field("binaryAnnotations.endpoint.serviceName")
+                .size(0)));
   }
 
   @Override public ListenableFuture<List<String>> getSpanNames(String serviceName) {
@@ -287,38 +216,19 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
       return EMPTY_LIST;
     }
     serviceName = serviceName.toLowerCase();
+
     QueryBuilder filter = boolQuery()
-        .should(termQuery("annotations.endpoint.serviceName", serviceName))
-        .should(termQuery("binaryAnnotations.endpoint.serviceName", serviceName));
-    SearchRequestBuilder elasticRequest = client.prepareSearch(indexNameFormatter.catchAll())
-        .setTypes(ElasticsearchConstants.SPAN)
-        .setQuery(boolQuery().must(matchAllQuery()).filter(filter))
-        .setSize(0)
-        .addAggregation(AggregationBuilders.terms("name_agg")
+        .should(nestedQuery(
+            "annotations", termQuery("annotations.endpoint.serviceName", serviceName)))
+        .should(nestedQuery(
+            "binaryAnnotations", termQuery("binaryAnnotations.endpoint.serviceName", serviceName)));
+
+    return client.collectBucketKeys(catchAll,
+        boolQuery().must(matchAllQuery()).filter(filter),
+        AggregationBuilders.terms("name_agg")
             .order(Order.term(true))
             .field("name")
             .size(0));
-
-    return Futures.transform(ElasticFutures.toGuava(elasticRequest.execute()), ConvertSpanNameResponse.INSTANCE);
-  }
-
-  enum ConvertSpanNameResponse implements Function<SearchResponse, List<String>> {
-    INSTANCE;
-
-    @Override public List<String> apply(SearchResponse response) {
-      if (response.getAggregations() == null) {
-        return Collections.emptyList();
-      }
-      Terms namesAgg = response.getAggregations().get("name_agg");
-      if (namesAgg == null) {
-        return Collections.emptyList();
-      }
-      ImmutableList.Builder<String> spanNames = ImmutableList.builder();
-      for (Terms.Bucket bucket : namesAgg.getBuckets()) {
-        spanNames.add(bucket.getKeyAsString());
-      }
-      return spanNames.build();
-    }
   }
 
   @Override public ListenableFuture<List<DependencyLink>> getDependencies(long endMillis,
@@ -326,32 +236,16 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     long beginMillis = lookback != null ? endMillis - lookback : 0;
     // We just return all dependencies in the days that fall within endTs and lookback as
     // dependency links themselves don't have timestamps.
-    List<String> strings = computeIndices(beginMillis, endMillis);
-    SearchRequestBuilder elasticRequest = client.prepareSearch(
-        strings.toArray(new String[strings.size()]))
-        .setIndicesOptions(IndicesOptions.lenientExpandOpen())
-        .setTypes(ElasticsearchConstants.DEPENDENCY_LINK)
-        .setQuery(matchAllQuery());
-
-    return Futures.transform(ElasticFutures.toGuava(elasticRequest.execute()), ConvertDependenciesResponse.INSTANCE);
-  }
-
-  enum ConvertDependenciesResponse implements Function<SearchResponse, List<DependencyLink>> {
-    INSTANCE;
-
-    @Override public List<DependencyLink> apply(SearchResponse response) {
-      if (response.getHits() == null) {
-        return Collections.emptyList();
-      }
-
-      ImmutableList.Builder<DependencyLink> unmerged = ImmutableList.builder();
-      for (SearchHit hit : response.getHits()) {
-        DependencyLink link = Codec.JSON.readDependencyLink(hit.getSourceRef().toBytes());
-        unmerged.add(link);
-      }
-
-      return DependencyLinker.merge(unmerged.build());
-    }
+    List<String> indices = computeIndices(beginMillis, endMillis);
+    return Futures.transform(client.findDependencies(indices.toArray(new String[indices.size()])),
+        new Function<List<DependencyLink>, List<DependencyLink>>() {
+          @Override
+          public List<DependencyLink> apply(List<DependencyLink> input) {
+            return input == null
+                ? Collections.<DependencyLink>emptyList()
+                : DependencyLinker.merge(input);
+          }
+        });
   }
 
   private List<String> computeIndices(long beginMillis, long endMillis) {

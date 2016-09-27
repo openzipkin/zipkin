@@ -13,6 +13,7 @@
  */
 package zipkin.storage;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -42,6 +43,8 @@ import static zipkin.Constants.CLIENT_SEND;
 import static zipkin.Constants.LOCAL_COMPONENT;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
+import static zipkin.TestObjects.APP_ENDPOINT;
+import static zipkin.TestObjects.WEB_ENDPOINT;
 
 /**
  * Base test for {@link SpanStore} implementations. Subtypes should create a connection to a real
@@ -67,7 +70,7 @@ public abstract class SpanStoreTest {
 
   /** Clears store between tests. */
   @Before
-  public abstract void clear();
+  public abstract void clear() throws IOException;
 
   /** Notably, the cassandra implementation has day granularity */
   static long midnight(){
@@ -83,7 +86,7 @@ public abstract class SpanStoreTest {
   // Use real time, as most span-stores have TTL logic which looks back several days.
   long today = midnight();
 
-  Endpoint ep = Endpoint.create("service", 127 << 24 | 1, 8080);
+  Endpoint ep = Endpoint.create("service", 127 << 24 | 1);
 
   long spanId = 456;
   Annotation ann1 = Annotation.create((today + 1) * 1000, "cs", ep);
@@ -202,9 +205,10 @@ public abstract class SpanStoreTest {
   }
 
   @Test
-  public void getAllServiceNames() {
-    BinaryAnnotation yak = BinaryAnnotation.address("sa", Endpoint.create("yak", 127 << 24 | 1, 8080));
-    accept(span1.toBuilder().addBinaryAnnotation(yak).build(), span4);
+  public void getAllServiceNames_mergesAnnotation_andBinaryAnnotation() {
+    // creates a span with mutual exclusive endpoints in binary annotations and annotations
+    BinaryAnnotation yak = BinaryAnnotation.address("sa", Endpoint.create("yak", 127 << 24 | 1));
+    accept(span1.toBuilder().binaryAnnotations(asList(yak)).build());
 
     // should be in order
     assertThat(store().getServiceNames()).containsExactly("service", "yak");
@@ -218,7 +222,7 @@ public abstract class SpanStoreTest {
     for (int i = 0; i < 50; i++) {
       String suffix = i < 10 ? "0" + i : String.valueOf(i);
       BinaryAnnotation yak =
-          BinaryAnnotation.address("sa", Endpoint.create("yak" + suffix, 127 << 24 | 1, 8080));
+          BinaryAnnotation.address("sa", Endpoint.create("yak" + suffix, 127 << 24 | 1));
       accept(span1.toBuilder().id(i).addBinaryAnnotation(yak).build());
       serviceNames.add("yak" + suffix);
     }
@@ -310,9 +314,9 @@ public abstract class SpanStoreTest {
   /** Shows that duration queries go against the root span, not the child */
   @Test
   public void getTraces_duration() {
-    Endpoint service1 = Endpoint.create("service1", 127 << 24 | 1, 8080);
-    Endpoint service2 = Endpoint.create("service2", 127 << 24 | 2, 8080);
-    Endpoint service3 = Endpoint.create("service3", 127 << 24 | 3, 8080);
+    Endpoint service1 = Endpoint.create("service1", 127 << 24 | 1);
+    Endpoint service2 = Endpoint.create("service2", 127 << 24 | 2);
+    Endpoint service3 = Endpoint.create("service3", 127 << 24 | 3);
 
     BinaryAnnotation.Builder component = BinaryAnnotation.builder().key(LOCAL_COMPONENT).value("archiver");
     BinaryAnnotation archiver1 = component.endpoint(service1).build();
@@ -431,6 +435,73 @@ public abstract class SpanStoreTest {
 
     assertThat(store().getTraces(QueryRequest.builder().serviceName("service").addAnnotation("foo").addAnnotation("bar").addBinaryAnnotation("baz", "qux").build()))
         .containsExactly(asList(barAndFooAndBazAndQux));
+  }
+
+  /**
+   * This test makes sure that annotation queries pay attention to which host logged an annotation.
+   */
+  @Test
+  public void getTraces_differentiateOnServiceName() {
+    Span trace1 = Span.builder().traceId(1).name("get").id(1)
+        .timestamp((today + 1) * 1000)
+        .addAnnotation(Annotation.create((today + 1) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, SERVER_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, SERVER_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, CLIENT_RECV, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, "web", WEB_ENDPOINT))
+        .addBinaryAnnotation(BinaryAnnotation.create("local", "web", WEB_ENDPOINT))
+        .addBinaryAnnotation(BinaryAnnotation.create("web-b", "web", WEB_ENDPOINT))
+        .build();
+
+    Span trace2 = Span.builder().traceId(2).name("get").id(2)
+        .timestamp((today + 2) * 1000)
+        .addAnnotation(Annotation.create((today + 1) * 1000, CLIENT_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, SERVER_RECV, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, SERVER_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, CLIENT_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 1) * 1000, "app", APP_ENDPOINT))
+        .addBinaryAnnotation(BinaryAnnotation.create("local", "app", APP_ENDPOINT))
+        .addBinaryAnnotation(BinaryAnnotation.create("app-b", "app", APP_ENDPOINT))
+        .build();
+
+    accept(trace1, trace2);
+
+    assertThat(store().getTraces(QueryRequest.builder().build()))
+        .containsExactly(asList(trace2), asList(trace1));
+
+    // We only return traces where the service specified caused the annotation queried.
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("web").addAnnotation("web").build()))
+        .containsExactly(asList(trace1));
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("app").addAnnotation("web").build()))
+        .isEmpty();
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("app").addAnnotation("app").build()))
+        .containsExactly(asList(trace2));
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("web").addAnnotation("app").build()))
+        .isEmpty();
+
+    // Binary annotations are not returned for annotation queries
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("web").addAnnotation("web-b").build()))
+        .isEmpty();
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("app").addAnnotation("web-b").build()))
+        .isEmpty();
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("app").addAnnotation("app-b").build()))
+        .isEmpty();
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("web").addAnnotation("app-b").build()))
+        .isEmpty();
+
+    // We only return traces where the service specified caused the binary value queried.
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("web")
+        .addBinaryAnnotation("local", "web").build()))
+        .containsExactly(asList(trace1));
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("app")
+        .addBinaryAnnotation("local", "web").build()))
+        .isEmpty();
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("app")
+        .addBinaryAnnotation("local", "app").build()))
+        .containsExactly(asList(trace2));
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("web")
+        .addBinaryAnnotation("local", "app").build()))
+        .isEmpty();
   }
 
   /** Make sure empty binary annotation values don't crash */
@@ -559,9 +630,9 @@ public abstract class SpanStoreTest {
    */
   @Test
   public void correctsClockSkew() {
-    Endpoint client = Endpoint.create("client", 192 << 24 | 168 << 16 | 1, 8080);
-    Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2, 8080);
-    Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 3, 8080);
+    Endpoint client = Endpoint.create("client", 192 << 24 | 168 << 16 | 1);
+    Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2);
+    Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 3);
 
     /** Intentionally not setting span.timestamp, duration */
     Span parent = Span.builder()
@@ -627,8 +698,8 @@ public abstract class SpanStoreTest {
    */
   @Test
   public void clientTimestampAndDurationWinInSharedSpan() {
-    Endpoint client = Endpoint.create("client", 192 << 24 | 168 << 16 | 1, 8080);
-    Endpoint server = Endpoint.create("server", 192 << 24 | 168 << 16 | 2, 8080);
+    Endpoint client = Endpoint.create("client", 192 << 24 | 168 << 16 | 1);
+    Endpoint server = Endpoint.create("server", 192 << 24 | 168 << 16 | 2);
 
     long clientTimestamp = (today + 100) * 1000;
     long clientDuration = 35 * 1000;
@@ -694,26 +765,56 @@ public abstract class SpanStoreTest {
         .containsAll(asList(trace)); // order isn't guaranteed in raw trace
   }
 
-  // This supports the "raw trace" feature, which skips application-level data cleaning
+  /**
+   * Spans report depth-first. Make sure the client timestamp is preferred when instrumentation
+   * don't add a timestamp.
+   */
   @Test
-  public void rawTrace_doesntPerformQueryTimeAdjustment() {
-    Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2, 8080);
-    Annotation sr = Annotation.create((today + 95) * 1000, SERVER_RECV, frontend);
-    Annotation ss = Annotation.create((today + 100) * 1000, SERVER_SEND, frontend);
+  public void whenSpanTimestampIsMissingClientSendIsPreferred() {
+    Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2);
+    Annotation cs = Annotation.create((today + 50) * 1000, CLIENT_SEND, frontend);
+    Annotation cr = Annotation.create((today + 150) * 1000, CLIENT_RECV, frontend);
+
+    Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 2);
+    Annotation sr = Annotation.create((today + 95) * 1000, SERVER_RECV, backend);
+    Annotation ss = Annotation.create((today + 100) * 1000, SERVER_SEND, backend);
 
     Span span = Span.builder().traceId(1).name("method1").id(666).build();
 
+    // Simulate the server-side of a shared span arriving first
+    accept(span.toBuilder().addAnnotation(sr).addAnnotation(ss).build());
+    accept(span.toBuilder().addAnnotation(cs).addAnnotation(cr).build());
+
+    // Make sure that the client's timestamp won
+    assertThat(store().getTrace(span.traceId))
+        .containsExactly(span.toBuilder()
+            .timestamp(cs.timestamp)
+            .duration(cr.timestamp - cs.timestamp)
+            .annotations(asList(cs, sr, ss, cr)).build());
+  }
+
+  // This supports the "raw trace" feature, which skips application-level data cleaning
+  @Test
+  public void rawTrace_doesntPerformQueryTimeAdjustment() {
+    Endpoint producer = Endpoint.create("producer", 192 << 24 | 168 << 16 | 1);
+    Annotation ms = Annotation.create((today + 95) * 1000, "ms", producer);
+
+    Endpoint consumer = Endpoint.create("consumer", 192 << 24 | 168 << 16 | 2);
+    Annotation mr = Annotation.create((today + 100) * 1000, "mr", consumer);
+
+    Span span = Span.builder().traceId(1).name("message").id(666).build();
+
     // Simulate instrumentation that sends annotations one at-a-time.
     // This should prevent the collection tier from being able to calculate duration.
-    accept(span.toBuilder().addAnnotation(sr).build());
-    accept(span.toBuilder().addAnnotation(ss).build());
+    accept(span.toBuilder().addAnnotation(ms).build());
+    accept(span.toBuilder().addAnnotation(mr).build());
 
     // Normally, span store implementations will merge spans by id and add duration by query time
     assertThat(store().getTrace(span.traceId))
         .containsExactly(span.toBuilder()
-            .timestamp(sr.timestamp)
-            .duration(ss.timestamp - sr.timestamp)
-            .annotations(asList(sr, ss)).build());
+            .timestamp(ms.timestamp)
+            .duration(mr.timestamp - ms.timestamp)
+            .annotations(asList(ms, mr)).build());
 
     // Since a collector never saw both sides of the span, we'd not see duration in the raw trace.
     for (Span raw : store().getRawTrace(span.traceId)) {
@@ -725,7 +826,7 @@ public abstract class SpanStoreTest {
   @Test public void getTraces_acrossServices() {
     List<BinaryAnnotation> annotations = IntStream.rangeClosed(1, 10).mapToObj(i ->
         BinaryAnnotation.create(LOCAL_COMPONENT, "serviceAnnotation",
-            Endpoint.create("service" + i, 127 << 24 | i, 8080)))
+            Endpoint.create("service" + i, 127 << 24 | i)))
         .collect(Collectors.toList());
 
     long gapBetweenSpans = 100;

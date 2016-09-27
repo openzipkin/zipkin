@@ -38,12 +38,12 @@ enum CassandraWithOriginalSchemaTestGraph {
            Session session = cluster.newSession()) {
         Schema.applyCqlFile(result.keyspace, session, "/cassandra-schema-cql3-original.txt");
       } catch (RuntimeException e) {
-        throw ex = new AssumptionViolatedException(e.getMessage());
+        throw ex = new AssumptionViolatedException(e.getMessage(), e);
       }
 
       CheckResult check = result.check();
       if (check.ok) return result;
-      throw ex = new AssumptionViolatedException(check.exception.getMessage());
+      throw ex = new AssumptionViolatedException(check.exception.getMessage(), check.exception);
     }
   };
 }

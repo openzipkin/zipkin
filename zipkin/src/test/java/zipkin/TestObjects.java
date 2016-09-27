@@ -46,9 +46,10 @@ public final class TestObjects {
       .ipv6(sun.net.util.IPAddressUtil.textToNumericFormatV6("2001:db8::c001"))
       .port((short) 80).build();
   public static final Endpoint APP_ENDPOINT =
-      Endpoint.create("app", 172 << 24 | 17 << 16 | 2, 8080);
+      Endpoint.builder().serviceName("app").ipv4(172 << 24 | 17 << 16 | 2).port(8080).build();
   public static final Endpoint DB_ENDPOINT =
-      Endpoint.create("db", 172 << 24 | 17 << 16 | 2, 3306);
+      Endpoint.builder().serviceName("db").ipv4(172 << 24 | 17 << 16 | 2).port(3306).build();
+  public static final Endpoint NO_IP_ENDPOINT = Endpoint.builder().serviceName("no_ip").build();
 
   static final long WEB_SPAN_ID = -692101025335252320L;
   static final long APP_SPAN_ID = -7842865617155193778L;
@@ -70,10 +71,10 @@ public final class TestObjects {
       Span.builder().traceId(WEB_SPAN_ID).parentId(APP_SPAN_ID).id(DB_SPAN_ID).name("query")
           .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
           .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, APP_ENDPOINT))
-          .addAnnotation(Annotation.create((TODAY + 200) * 1000, "⻩", APP_ENDPOINT))
+          .addAnnotation(Annotation.create((TODAY + 190) * 1000, "⻩", NO_IP_ENDPOINT))
           .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, APP_ENDPOINT))
           .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, DB_ENDPOINT))
-          .addBinaryAnnotation(BinaryAnnotation.create(ERROR, "\uD83D\uDCA9", APP_ENDPOINT))
+          .addBinaryAnnotation(BinaryAnnotation.create(ERROR, "\uD83D\uDCA9", NO_IP_ENDPOINT))
           .build()
   ).stream().map(ApplyTimestampAndDuration::apply).collect(toList());
 
@@ -87,7 +88,7 @@ public final class TestObjects {
 
   /** Reuse a builder as it is significantly slows tests to create 100000 of these! */
   static Span.Builder spanBuilder() {
-    Endpoint e = Endpoint.create("service", 127 << 24 | 1, 8080);
+    Endpoint e = Endpoint.builder().serviceName("service").ipv4(127 << 24 | 1).port(8080).build();
     Annotation sr = Annotation.create(System.currentTimeMillis() * 1000, SERVER_RECV, e);
     Annotation ss = Annotation.create(sr.timestamp + 1000, SERVER_SEND, e);
     BinaryAnnotation ba = BinaryAnnotation.create(TraceKeys.HTTP_METHOD, "GET", e);

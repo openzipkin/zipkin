@@ -27,8 +27,8 @@ import java.util.TreeSet;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.DependencyLink;
+import zipkin.Endpoint;
 import zipkin.Span;
-import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.CorrectForClockSkew;
 import zipkin.internal.DependencyLinkSpan;
 import zipkin.internal.DependencyLinker;
@@ -37,6 +37,7 @@ import zipkin.internal.Nullable;
 import zipkin.internal.Pair;
 import zipkin.internal.Util;
 
+import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.sortedList;
 
@@ -51,9 +52,9 @@ public final class InMemorySpanStore implements SpanStore {
   final StorageAdapters.SpanConsumer spanConsumer = new StorageAdapters.SpanConsumer() {
     @Override public void accept(List<Span> spans) {
       for (Span span : spans) {
-        span = ApplyTimestampAndDuration.apply(span);
+        Long timestamp = guessTimestamp(span);
         Pair<Long> traceIdTimeStamp =
-            Pair.create(span.traceId, span.timestamp == null ? Long.MIN_VALUE : span.timestamp);
+            Pair.create(span.traceId, timestamp == null ? Long.MIN_VALUE : timestamp);
         String spanName = span.name;
         synchronized (InMemorySpanStore.this) {
           traceIdTimeStamps.add(traceIdTimeStamp);
@@ -194,7 +195,9 @@ public final class InMemorySpanStore implements SpanStore {
       currentServiceNames.clear();
 
       for (Annotation a : span.annotations) {
-        annotations.remove(a.value);
+        if (appliesToServiceName(a.endpoint, request.serviceName)) {
+          annotations.remove(a.value);
+        }
         if (a.endpoint != null) {
           serviceNames.add(a.endpoint.serviceName);
           currentServiceNames.add(a.endpoint.serviceName);
@@ -202,7 +205,8 @@ public final class InMemorySpanStore implements SpanStore {
       }
 
       for (BinaryAnnotation b : span.binaryAnnotations) {
-        if (b.type == BinaryAnnotation.Type.STRING &&
+        if (appliesToServiceName(b.endpoint, request.serviceName) &&
+            b.type == BinaryAnnotation.Type.STRING &&
             new String(b.value, UTF_8).equals(binaryAnnotations.get(b.key))) {
           binaryAnnotations.remove(b.key);
         }
@@ -231,6 +235,12 @@ public final class InMemorySpanStore implements SpanStore {
         && annotations.isEmpty()
         && binaryAnnotations.isEmpty()
         && testedDuration;
+  }
+
+  private static boolean appliesToServiceName(Endpoint endpoint, String serviceName) {
+    if (serviceName == null) return true;
+    if (endpoint == null) return true;
+    return endpoint.serviceName.equals(serviceName);
   }
 
   static final class LinkedListMultimap<K, V> extends Multimap<K, V> {

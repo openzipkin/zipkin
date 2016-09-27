@@ -24,7 +24,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.util.concurrent.AsyncFunction;
@@ -42,7 +41,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin.Codec;
@@ -64,7 +62,6 @@ import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.internal.Util.getDays;
-import static zipkin.internal.Util.midnightUTC;
 
 public final class CassandraSpanStore implements GuavaSpanStore {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
@@ -78,7 +75,6 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     }
   });
 
-  private final int durationTtl;
   private final int maxTraceCols;
   private final int indexFetchMultiplier;
   private final Session session;
@@ -92,7 +88,6 @@ public final class CassandraSpanStore implements GuavaSpanStore {
   private final PreparedStatement selectTraceIdsByServiceNames;
   private final PreparedStatement selectTraceIdsBySpanName;
   private final PreparedStatement selectTraceIdsByAnnotation;
-  private final PreparedStatement selectTraceIdsBySpanDuration;
   private final Function<ResultSet, Map<Long, Long>> traceIdToTimestamp;
 
   CassandraSpanStore(Session session, int bucketCount, int indexTtl, int maxTraceCols,
@@ -157,23 +152,6 @@ public final class CassandraSpanStore implements GuavaSpanStore {
             .limit(QueryBuilder.bindMarker("limit_"))
             .orderBy(QueryBuilder.desc("ts")));
 
-    int durationDefaultTtl = Schema.getKeyspaceMetadata(session)
-        .getTable(Tables.SPAN_DURATION_INDEX)
-        .getOptions()
-        .getDefaultTimeToLive();
-
-    this.durationTtl = durationDefaultTtl == 0 ? indexTtl : durationDefaultTtl;
-
-    selectTraceIdsBySpanDuration = session.prepare(
-        QueryBuilder.select("duration", "ts", "trace_id")
-            .from(Tables.SPAN_DURATION_INDEX)
-            .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
-            .and(QueryBuilder.eq("span_name", QueryBuilder.bindMarker("span_name")))
-            .and(QueryBuilder.eq("bucket", QueryBuilder.bindMarker("time_bucket")))
-            .and(QueryBuilder.lte("duration", QueryBuilder.bindMarker("max_duration")))
-            .and(QueryBuilder.gte("duration", QueryBuilder.bindMarker("min_duration")))
-            .orderBy(QueryBuilder.desc("duration")));
-
     if (protocolVersion.compareTo(ProtocolVersion.V4) < 0) {
       LOG.warn("Please update Cassandra to 2.2 or later, as some features may fail");
       // Log vs failing on "Partition KEY part service_name cannot be restricted by IN relation"
@@ -202,27 +180,18 @@ public final class CassandraSpanStore implements GuavaSpanStore {
   }
 
   /**
-   * This fans out into a potentially large amount of requests, particularly if duration is set, but
-   * also related to the amount of annotations queried. The returned future will fail if any of the
-   * inputs fail.
+   * This fans out into a potentially large amount of requests related to the amount of annotations
+   * queried. The returned future will fail if any of the inputs fail.
    *
    * <p>When {@link QueryRequest#serviceName service name} is unset, service names will be
    * fetched eagerly, implying an additional query.
-   *
-   * <p>The duration query is the most expensive query in cassandra, as it turns into 1 request per
-   * hour of {@link QueryRequest#lookback lookback}. Because many times lookback is set to a day,
-   * this means 24 requests to the backend!
-   *
-   * <p>See https://github.com/openzipkin/zipkin-java/issues/200
    */
   @Override
   public ListenableFuture<List<List<Span>>> getTraces(final QueryRequest request) {
     // Over fetch on indexes as they don't return distinct (trace id, timestamp) rows.
     final int traceIndexFetchSize = request.limit * indexFetchMultiplier;
     ListenableFuture<Map<Long, Long>> traceIdToTimestamp;
-    if (request.minDuration != null || request.maxDuration != null) {
-      traceIdToTimestamp = getTraceIdsByDuration(request, traceIndexFetchSize);
-    } else if (request.spanName != null) {
+    if (request.spanName != null) {
       traceIdToTimestamp = getTraceIdsBySpanName(request.serviceName, request.spanName,
           request.endTs * 1000, request.lookback * 1000, traceIndexFetchSize);
     } else if (request.serviceName != null) {
@@ -495,92 +464,6 @@ public final class CassandraSpanStore implements GuavaSpanStore {
       );
     } catch (CharacterCodingException | RuntimeException ex) {
       return immediateFailedFuture(ex);
-    }
-  }
-
-  /** Returns a map of trace id to timestamp (in microseconds) */
-  ListenableFuture<Map<Long, Long>> getTraceIdsByDuration(QueryRequest request,
-      int indexFetchSize) {
-    checkArgument(request.serviceName != null, "serviceName required on duration query");
-    long oldestData = (System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(durationTtl)) * 1000;
-
-    long startTs = Math.max((request.endTs - request.lookback) * 1000, oldestData);
-    long endTs = Math.max(request.endTs * 1000, oldestData);
-
-    int startBucket = CassandraUtil.durationIndexBucket(startTs);
-    int endBucket = CassandraUtil.durationIndexBucket(endTs);
-    if (startBucket > endBucket) {
-      throw new IllegalArgumentException(
-          "Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");
-    }
-
-    List<ListenableFuture<List<DurationRow>>> futures = new ArrayList<>();
-    for (int i = startBucket; i <= endBucket; i++) { // range closed
-      futures.add(oneBucketDurationQuery(request, i, startTs, endTs, indexFetchSize));
-    }
-
-    return transform(allAsList(futures),
-        new Function<List<List<DurationRow>>, Map<Long, Long>>() {
-          @Override public Map<Long, Long> apply(List<List<DurationRow>> input) {
-            // find earliest startTs for each trace ID
-            Map<Long, Long> result = new LinkedHashMap<>();
-            for (DurationRow row : Iterables.concat(input)) {
-              Long oldValue = result.get(row.trace_id);
-              if (oldValue == null || oldValue > row.timestamp) {
-                result.put(row.trace_id, row.timestamp);
-              }
-            }
-            return Collections.unmodifiableMap(result);
-          }
-        });
-  }
-
-  ListenableFuture<List<DurationRow>> oneBucketDurationQuery(QueryRequest request, int bucket,
-      final long startTs, final long endTs, int indexFetchSize) {
-    String serviceName = request.serviceName;
-    String spanName = spanName(request.spanName);
-    long minDuration = request.minDuration;
-    long maxDuration = request.maxDuration != null ? request.maxDuration : Long.MAX_VALUE;
-    BoundStatement bound =
-        CassandraUtil.bindWithName(selectTraceIdsBySpanDuration, "select-trace-ids-by-span-duration")
-            .setInt("time_bucket", bucket)
-            .setString("service_name", serviceName)
-            .setString("span_name", spanName)
-            .setLong("min_duration", minDuration)
-            .setLong("max_duration", maxDuration);
-
-    // optimistically setting fetch size to 'indexFetchSize' here. Since we are likely to filter
-    // some results because their timestamps are out of range, we may need to fetch again.
-    // TODO figure out better strategy
-    bound.setFetchSize(indexFetchSize);
-
-    return transform(session.executeAsync(bound), new Function<ResultSet, List<DurationRow>>() {
-      @Override public List<DurationRow> apply(ResultSet rs) {
-        ImmutableList.Builder<DurationRow> result = ImmutableList.builder();
-        for (Row input : rs) {
-          DurationRow row = new DurationRow(input);
-          if (row.timestamp >= startTs && row.timestamp <= endTs) {
-            result.add(row);
-          }
-        }
-        return result.build();
-      }
-    });
-  }
-
-  class DurationRow {
-    Long trace_id;
-    Long duration;
-    Long timestamp; // inflated back to microseconds
-
-    DurationRow(Row row) {
-      trace_id = row.getLong("trace_id");
-      duration = row.getLong("duration");
-      timestamp = timestampCodec.deserialize(row, "ts");
-    }
-
-    @Override public String toString() {
-      return String.format("trace_id=%d, duration=%d, timestamp=%d", trace_id, duration, timestamp);
     }
   }
 }
