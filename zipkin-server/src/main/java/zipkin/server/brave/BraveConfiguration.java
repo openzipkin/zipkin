@@ -15,21 +15,20 @@ package zipkin.server.brave;
 
 import com.github.kristofa.brave.BoundarySampler;
 import com.github.kristofa.brave.Brave;
+import com.github.kristofa.brave.InheritableServerClientAndLocalSpanState;
 import com.github.kristofa.brave.Sampler;
 import com.github.kristofa.brave.ServerClientAndLocalSpanState;
 import com.github.kristofa.brave.SpanCollectorMetricsHandler;
-import com.github.kristofa.brave.ThreadLocalServerClientAndLocalSpanState;
 import com.github.kristofa.brave.local.LocalSpanCollector;
-import java.math.BigInteger;
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import zipkin.Endpoint;
 import zipkin.collector.CollectorMetrics;
@@ -45,21 +44,30 @@ public class BraveConfiguration {
   // http://stackoverflow.com/questions/8765578/get-local-ip-address-without-connecting-to-the-internet
   @Bean
   @Scope Endpoint local(@Value("${server.port:9411}") int port) {
-    int ipv4;
+    Endpoint.Builder builder = Endpoint.builder()
+        .serviceName("zipkin-server")
+        .port(port == -1 ? 0 : port);
     try {
-      ipv4 = Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
+      byte[] address = Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
           .flatMap(i -> Collections.list(i.getInetAddresses()).stream())
-          .filter(ip -> ip instanceof Inet4Address && ip.isSiteLocalAddress())
-          .map(InetAddress::getAddress)
-          .map(bytes -> new BigInteger(bytes).intValue())
-          .findAny().get();
+          .filter(ip -> ip.isSiteLocalAddress())
+          .findAny().get().getAddress();
+      if (address.length == 4) {
+        builder.ipv4(ByteBuffer.wrap(address).getInt());
+      } else if (address.length == 16) {
+        builder.ipv6(address);
+      }
     } catch (Exception ignored) {
-      ipv4 = 127 << 24 | 1;
+      builder.ipv4(127 << 24 | 1);
     }
-    return Endpoint.builder().serviceName("zipkin-server").ipv4(ipv4).port(port).build();
+    return builder.build();
   }
 
-  @Bean LocalSpanCollector spanCollector(StorageComponent storage,
+  // Note: there's a chicken or egg problem here. TracedStorageComponent wraps StorageComponent with
+  // Brave. During initialization, if we eagerly reference StorageComponent from within Brave,
+  // BraveTracedStorageComponentEnhancer won't be able to process it. TL;DR; if you take out Lazy
+  // here, self-tracing will not affect the storage component, which reduces its effectiveness.
+  @Bean LocalSpanCollector spanCollector(@Lazy StorageComponent storage,
       @Value("${zipkin.self-tracing.flush-interval:1}") int flushInterval,
       final CollectorMetrics metrics) {
     LocalSpanCollector.Config config = LocalSpanCollector.Config.builder()
@@ -77,9 +85,14 @@ public class BraveConfiguration {
     });
   }
 
-  @Bean ServerClientAndLocalSpanState braveState(@Qualifier("local") Endpoint localEndpoint) {
-    return new ThreadLocalServerClientAndLocalSpanState(localEndpoint.ipv4, localEndpoint.port,
-        localEndpoint.serviceName);
+  @Bean ServerClientAndLocalSpanState braveState(@Qualifier("local") Endpoint local) {
+    com.twitter.zipkin.gen.Endpoint braveEndpoint = com.twitter.zipkin.gen.Endpoint.builder()
+        .ipv4(local.ipv4)
+        .ipv6(local.ipv6)
+        .port(local.port)
+        .serviceName(local.serviceName)
+        .build();
+    return new InheritableServerClientAndLocalSpanState(braveEndpoint);
   }
 
   @Bean Brave brave(ServerClientAndLocalSpanState braveState, LocalSpanCollector spanCollector,
