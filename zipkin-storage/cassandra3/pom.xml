@@ -52,6 +52,12 @@
     </dependency>
 
     <dependency>
+      <groupId>com.github.jkutner</groupId>
+      <artifactId>env-keystore</artifactId>
+      <version>0.1.0</version>
+    </dependency>
+
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
       <type>test-jar</type>
