@@ -21,6 +21,6 @@ in mind when choosing version numbers.
    (Note: Javaocs are also published on all builds of master; due to versioning, it doesn't overwrite docs built
    for releases.)
 
-1. **Publish `docker-zipkin-java`**
+1. **Publish `docker-zipkin`**
 
-   Refer to [docker-zipkin-java/RELEASE.md](https://github.com/openzipkin/docker-zipkin-java/blob/master/RELEASE.md).
+   Refer to [docker-zipkin/RELEASE.md](https://github.com/openzipkin/docker-zipkin/blob/master/RELEASE.md).

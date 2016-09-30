@@ -5,7 +5,7 @@ This MySQL storage component includes a blocking `SpanStore` and span consumer f
 
 The implementation uses JOOQ to generate MySQL SQL commands. It is only tested on MySQL 5.6-5.7.
 
-The schema is the same as [zipkin-scala](https://github.com/openzipkin/zipkin/tree/master/zipkin-anormdb).
+See the [schema DDL](src/main/resources/mysql.sql).
 
 `zipkin.storage.mysql.MySQLStorage.Builder` includes defaults that will
 operate against a given Datasource.

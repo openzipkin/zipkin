@@ -19,7 +19,7 @@ Once you've started, browse to http://your_host:9411 to find traces!
 ## Endpoints
 
 The following endpoints are defined under the base url http://your_host:9411
-* / - [UI](https://github.com/openzipkin/zipkin/tree/master/zipkin-ui)
+* / - [UI](../zipkin-ui)
 * /config.json - [Configuration for the UI](#configuration-for-the-ui)
 * /api/v1 - [Api](http://zipkin.io/zipkin-api/#/)
 * /health - Returns 200 status if OK
@@ -81,7 +81,7 @@ who enable self-tracing should lower the sample rate from 1.0 (100%) to a much s
 When Brave dependencies are in the classpath, and `zipkin.self-tracing.enabled=true`,
 Zipkin will self-trace calls to the api.
 
-[yaml configuration](zipkin-server/src/main/resources/zipkin-server.yml) binds the following environment variables to spring properties:
+[yaml configuration](src/main/resources/zipkin-server.yml) binds the following environment variables to spring properties:
 
 Variable | Property | Description
 --- | --- | ---
@@ -104,9 +104,9 @@ instrumented | zipkin.ui.instrumented | Which sites this Zipkin UI covers. Regex
 For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 
 ## Environment Variables
-zipkin-server is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/master/zipkin-query-service).
+zipkin-server is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/scala/zipkin-query-service).
 
-[yaml configuration](zipkin-server/src/main/resources/zipkin-server.yml) binds the following environment variables from zipkin-scala:
+[yaml configuration](src/main/resources/zipkin-server.yml) binds the following environment variables from zipkin-scala:
 
     * `QUERY_PORT`: Listen port for the http api and web ui; Defaults to 9411
     * `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
@@ -250,7 +250,7 @@ $ java -jar zipkin.jar
 
 ## Running with Docker
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin`.
-See [docker-zipkin-java](https://github.com/openzipkin/docker-zipkin-java) for details.
+See [docker-zipkin](https://github.com/openzipkin/docker-zipkin) for details.
 
 ## Building locally
 
