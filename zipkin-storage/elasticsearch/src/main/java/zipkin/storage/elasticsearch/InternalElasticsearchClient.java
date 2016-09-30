@@ -52,11 +52,11 @@ public abstract class InternalElasticsearchClient implements Closeable {
   protected static final String SPAN = "span";
   protected static final String DEPENDENCY_LINK = "dependencylink";
 
-  protected interface Factory {
+  public interface Factory {
     InternalElasticsearchClient create(String allIndices);
   }
 
-  protected static abstract class Builder {
+  public static abstract class Builder {
     /** The elasticsearch cluster to connect to, defaults to "elasticsearch". */
     public abstract Builder cluster(String cluster);
 
@@ -81,7 +81,7 @@ public abstract class InternalElasticsearchClient implements Closeable {
       });
     }
 
-    protected abstract Factory buildFactory();
+    public abstract Factory buildFactory();
   }
 
   /** Ensures the existence of a template, creating it if it does not exist. */
@@ -135,22 +135,22 @@ public abstract class InternalElasticsearchClient implements Closeable {
      */
     void add(String index, Span span, Long timestampMillis) throws IOException;
 
-    ListenableFuture<Void> execute();
+    ListenableFuture<Void> execute() throws IOException;
   }
 
   protected static abstract class SpanBytesBulkSpanIndexer implements BulkSpanIndexer {
 
     @Override public final void add(String index, Span span, Long timestampMillis) {
-      final byte[] spanBytes;
-      if (timestampMillis != null) {
-        spanBytes = prefixWithTimestampMillis(Codec.JSON.writeSpan(span), timestampMillis);
-      } else {
-        spanBytes = Codec.JSON.writeSpan(span);
-      }
-      add(index, spanBytes);
+      add(index, toSpanBytes(span, timestampMillis));
     }
 
     abstract protected void add(String index, byte[] spanBytes);
+  }
+
+  public static byte[] toSpanBytes(Span span, Long timestampMillis) {
+    return timestampMillis != null
+        ? prefixWithTimestampMillis(Codec.JSON.writeSpan(span), timestampMillis)
+        : Codec.JSON.writeSpan(span);
   }
 
   /**

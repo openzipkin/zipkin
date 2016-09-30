@@ -11,33 +11,36 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage.elasticsearch.http;
+package zipkin.moshi;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import io.searchbox.core.SearchResult;
+import com.squareup.moshi.JsonReader;
+import java.io.IOException;
+import java.util.Set;
+import okio.Buffer;
 import org.junit.Test;
-import zipkin.storage.elasticsearch.http.HttpClient.BucketKeys;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class BucketKeysTest {
-  final Gson gson = new Gson();
-
-  SearchResult result = new SearchResult(gson);
+public class JsonReadersTest {
 
   @Test
-  public void emptyWhenNoHits() {
-    result.setJsonObject(gson.fromJson(
-        "{\"took\":1,\"timed_out\":false,\"_shards\":{\"total\":0,\"successful\":0,\"failed\":0},\"hits\":{\"total\":0,\"max_score\":0.0,\"hits\":[]}}"
-        , JsonObject.class));
-    assertThat(BucketKeys.INSTANCE.apply(result))
-        .isEmpty();
+  public void enterPath_nullOnNoInput() throws IOException {
+    assertThat(JsonReaders.enterPath(JsonReader.of(new Buffer()), "message"))
+        .isNull();
   }
 
   @Test
-  public void spanNameAggregation() {
-    result.setJsonObject(gson.fromJson("{\n"
+  public void collectValuesNamed_emptyWhenNotFound() throws IOException {
+    Set<String> result = JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8(
+        "{\"took\":1,\"timed_out\":false,\"_shards\":{\"total\":0,\"successful\":0,\"failed\":0},\"hits\":{\"total\":0,\"max_score\":0.0,\"hits\":[]}}"
+    )), "key");
+
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  public void collectValuesNamed_mergesArrays() throws IOException {
+    Set<String> result = JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8("{\n"
         + "  \"took\": 1,\n"
         + "  \"timed_out\": false,\n"
         + "  \"_shards\": {\n"
@@ -66,15 +69,14 @@ public class BucketKeysTest {
         + "      ]\n"
         + "    }\n"
         + "  }\n"
-        + "}", JsonObject.class));
+        + "}")), "key");
 
-    assertThat(BucketKeys.INSTANCE.apply(result))
-        .containsExactly("methodcall", "yak");
+    assertThat(result).containsExactly("methodcall", "yak");
   }
 
   @Test
-  public void serviceNameAggregation_mergesAnnotationAndBinaryAnnotation() {
-    result.setJsonObject(gson.fromJson("{\n"
+  public void collectValuesNamed_mergesChildren() throws IOException {
+    Set<String> result = JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8("{\n"
         + "  \"took\": 4,\n"
         + "  \"timed_out\": false,\n"
         + "  \"_shards\": {\n"
@@ -115,15 +117,14 @@ public class BucketKeysTest {
         + "      }\n"
         + "    }\n"
         + "  }\n"
-        + "}", JsonObject.class));
+        + "}")), "key");
 
-    assertThat(BucketKeys.INSTANCE.apply(result))
-        .containsExactly("service", "yak");
+    assertThat(result).containsExactly("yak", "service");
   }
 
   @Test
-  public void traceIdAggregation() {
-    result.setJsonObject(gson.fromJson("{\n"
+  public void collectValuesNamed_nested() throws IOException {
+    Set<String> result = JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8("{\n"
         + "  \"took\": 49,\n"
         + "  \"timed_out\": false,\n"
         + "  \"_shards\": {\n"
@@ -152,9 +153,8 @@ public class BucketKeysTest {
         + "      ]\n"
         + "    }\n"
         + "  }\n"
-        + "}", JsonObject.class));
+        + "}")), "key");
 
-    assertThat(BucketKeys.INSTANCE.apply(result))
-        .containsExactly("000000000000007b");
+    assertThat(result).containsExactly("000000000000007b");
   }
 }

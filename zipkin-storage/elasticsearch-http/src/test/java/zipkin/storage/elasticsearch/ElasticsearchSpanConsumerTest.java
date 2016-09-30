@@ -23,7 +23,6 @@ import org.junit.Test;
 import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Span;
-
 import zipkin.storage.elasticsearch.http.HttpElasticsearchTestGraph;
 
 import static org.assertj.core.api.Assertions.assertThat;

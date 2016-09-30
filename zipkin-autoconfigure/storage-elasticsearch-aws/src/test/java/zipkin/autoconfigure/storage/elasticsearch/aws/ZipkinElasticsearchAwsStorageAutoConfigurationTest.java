@@ -13,6 +13,7 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.aws;
 
+import okhttp3.OkHttpClient;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,7 +21,6 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin.storage.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -40,7 +40,7 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
   }
 
   @Test
-  public void doesntProvidesStorageComponent_whenStorageTypeNotElasticsearch() {
+  public void doesntProvideAWSSignatureVersion4_whenStorageTypeNotElasticsearch() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:cassandra");
     context.register(PropertyPlaceholderAutoConfiguration.class,
@@ -48,11 +48,11 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(ElasticsearchStorage.class);
+    context.getBean(AWSSignatureVersion4.class);
   }
 
   @Test
-  public void providesStorageComponent_whenStorageTypeElasticsearchAndHostsAreAwsUrls() {
+  public void providesAWSSignatureVersion4_whenStorageTypeElasticsearchAndHostsAreAwsUrls() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context,
         "zipkin.storage.type:elasticsearch",
@@ -62,11 +62,13 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
         ZipkinElasticsearchAwsStorageAutoConfiguration.class);
     context.refresh();
 
-    assertThat(context.getBean(ElasticsearchStorage.class)).isNotNull();
+    assertThat(context.getBean(OkHttpClient.class).networkInterceptors())
+        .extracting(i -> i.getClass())
+        .contains((Class) AWSSignatureVersion4.class);
   }
 
   @Test
-  public void providesStorageComponent_whenStorageTypeElasticsearchAndDomain() {
+  public void providesAWSSignatureVersion4_whenStorageTypeElasticsearchAndDomain() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context,
         "zipkin.storage.type:elasticsearch",
@@ -77,11 +79,13 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
         ZipkinElasticsearchAwsStorageAutoConfiguration.class);
     context.refresh();
 
-    assertThat(context.getBean(ElasticsearchStorage.class)).isNotNull();
+    assertThat(context.getBean(OkHttpClient.class).networkInterceptors())
+        .extracting(i -> i.getClass())
+        .contains((Class) AWSSignatureVersion4.class);
   }
 
   @Test
-  public void doesntProvidesStorageComponent_whenStorageTypeElasticsearchAndHostsNotUrls() {
+  public void doesntProvidesAWSSignatureVersion4_whenStorageTypeElasticsearchAndHostsNotUrls() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:elasticsearch");
     context.register(PropertyPlaceholderAutoConfiguration.class,
@@ -89,11 +93,11 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(ElasticsearchStorage.class);
+    context.getBean(AWSSignatureVersion4.class);
   }
 
   @Test
-  public void doesntProvidesStorageComponent_whenStorageTypeElasticsearchAndHostsNotAwsUrls() {
+  public void doesntProvideAWSSignatureVersion4_whenStorageTypeElasticsearchAndHostsNotAwsUrls() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context,
         "zipkin.storage.type:elasticsearch",
@@ -104,6 +108,6 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(ElasticsearchStorage.class);
+    context.getBean(AWSSignatureVersion4.class);
   }
 }
