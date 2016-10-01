@@ -72,4 +72,30 @@ public class EndpointTest {
     assertThat(Endpoint.builder().serviceName("fFf").ipv4(127 << 24 | 1).build().serviceName)
         .isEqualTo("fff");
   }
+
+  @Test
+  public void testToStringIsJson_minimal() {
+    assertThat(Endpoint.builder().serviceName("foo").build())
+        .hasToString("{\"serviceName\":\"foo\"}");
+  }
+
+  @Test
+  public void testToStringIsJson_ipv4() {
+    assertThat(Endpoint.builder().serviceName("foo").ipv4(127 << 24 | 1).build())
+        .hasToString("{\"serviceName\":\"foo\",\"ipv4\":\"127.0.0.1\"}");
+  }
+
+  @Test
+  public void testToStringIsJson_ipv4Port() {
+    assertThat(Endpoint.builder().serviceName("foo").ipv4(127 << 24 | 1).port(80).build())
+        .hasToString("{\"serviceName\":\"foo\",\"ipv4\":\"127.0.0.1\",\"port\":80}");
+  }
+
+  @Test
+  public void testToStringIsJson_ipv6() {
+    assertThat(Endpoint.builder().serviceName("foo")
+        // Cheat so we don't have to catch an exception here
+        .ipv6(sun.net.util.IPAddressUtil.textToNumericFormatV6("2001:db8::c001")).build())
+        .hasToString("{\"serviceName\":\"foo\",\"ipv6\":\"2001:db8::c001\"}");
+  }
 }

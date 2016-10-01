@@ -60,6 +60,8 @@ import static zipkin.internal.Util.lowerHexToUnsignedLong;
  * this should be easy to justify as these objects don't change much at all.
  */
 public final class JsonCodec implements Codec {
+  static final String ENDPOINT_HEADER = ",\"endpoint\":";
+
   static final JsonAdapter<Endpoint> ENDPOINT_ADAPTER = new JsonAdapter<Endpoint>() {
     @Override
     public Endpoint fromJson(JsonReader reader) throws IOException {
@@ -92,7 +94,7 @@ public final class JsonCodec implements Codec {
 
     @Override public int sizeInBytes(Endpoint value) {
       int sizeInBytes = 0;
-      sizeInBytes += asciiSizeInBytes(",\"endpoint\":{\"serviceName\":\"");
+      sizeInBytes += asciiSizeInBytes("{\"serviceName\":\"");
       sizeInBytes += jsonEscapedSizeInBytes(value.serviceName) + 1; // for end quote
       if (value.ipv4 != 0) {
         sizeInBytes += asciiSizeInBytes(",\"ipv4\":\"");
@@ -111,7 +113,7 @@ public final class JsonCodec implements Codec {
     }
 
     @Override public void write(Endpoint value, Buffer b) {
-      b.writeAscii(",\"endpoint\":{\"serviceName\":\"");
+      b.writeAscii("{\"serviceName\":\"");
       b.writeJsonEscaped(value.serviceName).writeByte('"');
       if (value.ipv4 != 0) {
         b.writeAscii(",\"ipv4\":\"");
@@ -155,14 +157,19 @@ public final class JsonCodec implements Codec {
       int sizeInBytes = 0;
       sizeInBytes += asciiSizeInBytes("{\"timestamp\":") + asciiSizeInBytes(value.timestamp);
       sizeInBytes += asciiSizeInBytes(",\"value\":\"") + jsonEscapedSizeInBytes(value.value) + 1;
-      if (value.endpoint != null) sizeInBytes += ENDPOINT_ADAPTER.sizeInBytes(value.endpoint);
+      if (value.endpoint != null) {
+        sizeInBytes += ENDPOINT_HEADER.length() + ENDPOINT_ADAPTER.sizeInBytes(value.endpoint);
+      }
       return ++sizeInBytes;// end curly-brace
     }
 
     @Override public void write(Annotation value, Buffer b) {
       b.writeAscii("{\"timestamp\":").writeAscii(value.timestamp);
       b.writeAscii(",\"value\":\"").writeJsonEscaped(value.value).writeByte('"');
-      if (value.endpoint != null) ENDPOINT_ADAPTER.write(value.endpoint, b);
+      if (value.endpoint != null) {
+        b.writeAscii(ENDPOINT_HEADER);
+        ENDPOINT_ADAPTER.write(value.endpoint, b);
+      }
       b.writeByte('}');
     }
   };
@@ -266,7 +273,9 @@ public final class JsonCodec implements Codec {
       if (value.type != BinaryAnnotation.Type.STRING && value.type != BinaryAnnotation.Type.BOOL) {
         sizeInBytes += asciiSizeInBytes(",\"type\":\"") + utf8SizeInBytes(value.type.name()) + 1;
       }
-      if (value.endpoint != null) sizeInBytes += ENDPOINT_ADAPTER.sizeInBytes(value.endpoint);
+      if (value.endpoint != null) {
+        sizeInBytes += ENDPOINT_HEADER.length() + ENDPOINT_ADAPTER.sizeInBytes(value.endpoint);
+      }
       return ++sizeInBytes;// end curly-brace
     }
 
@@ -301,7 +310,10 @@ public final class JsonCodec implements Codec {
       if (value.type != BinaryAnnotation.Type.STRING && value.type != BinaryAnnotation.Type.BOOL) {
         b.writeAscii(",\"type\":\"").writeAscii(value.type.name()).writeByte('"');
       }
-      if (value.endpoint != null) ENDPOINT_ADAPTER.write(value.endpoint, b);
+      if (value.endpoint != null) {
+        b.writeAscii(ENDPOINT_HEADER);
+        ENDPOINT_ADAPTER.write(value.endpoint, b);
+      }
       b.writeByte('}');
     }
   };
@@ -424,6 +436,11 @@ public final class JsonCodec implements Codec {
   @Override
   public byte[] writeSpan(Span value) {
     return write(SPAN_ADAPTER, value);
+  }
+
+  /** Exposed for {@link Endpoint#toString()} */
+  public static byte[] writeEndpoint(Endpoint value) {
+    return write(ENDPOINT_ADAPTER, value);
   }
 
   @Override
