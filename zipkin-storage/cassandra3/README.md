@@ -48,7 +48,7 @@ A SASI index on its 'all_annotations' column permits full-text searches against 
 A SASI index on the 'duration' column.
 A materialized view of the 'trace_by_service_span' table exists as 'trace_by_service'.
 
-[Core annotations](../zipkin/src/main/java/zipkin/Constants.java#L184),
+[Core annotations](../../zipkin/src/main/java/zipkin/Constants.java#L186-L188),
 ex "sr", and non-string annotations, are not written to the `all_annotations` SASI, as they aren't intended for use in user queries.
 
 ### Time-To_live

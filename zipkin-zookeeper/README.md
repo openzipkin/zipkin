@@ -46,6 +46,6 @@ Path | Owner | Description
 /election | each sampler | This path is used to determine or elect a new leader.
 
 ## More information
-More details are available in the [javadoc](./src/main/java/zipkin/sampler/zookeeper/ZooKeeperSampler.java)
-The sampling implementation was initially based on [zipkin-scala](https://github.com/openzipkin/zipkin/tree/1.39.7/zipkin-sampler).
+More details are available in the [javadoc](src/main/java/zipkin/collector/zookeeper/ZooKeeperCollectorSampler.java)
+The sampling implementation was initially based on [zipkin-scala](https://github.com/openzipkin/zipkin/tree/scala/zipkin-sampler).
 
