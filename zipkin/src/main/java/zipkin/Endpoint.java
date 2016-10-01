@@ -15,9 +15,11 @@ package zipkin;
 
 import java.util.Arrays;
 import java.util.Locale;
+import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.checkNotNull;
 
@@ -196,5 +198,10 @@ public final class Endpoint {
     h *= 1000003;
     h ^= (port == null) ? 0 : port.hashCode();
     return h;
+  }
+
+  @Override
+  public String toString() {
+    return new String(JsonCodec.writeEndpoint(this), UTF_8);
   }
 }
