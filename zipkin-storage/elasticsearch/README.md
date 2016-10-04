@@ -14,6 +14,13 @@ Zipkin's timestamps are in epoch microseconds, which is not a supported date typ
 In consideration of tools like like Kibana, this component adds "timestamp_millis" when writing
 spans. This is mapped to the Elasticsearch date type, so can be used to any date-based queries.
 
+If you are investigating a span, you'll also notice the "collector_timestamp_millis" field. This
+is the epoch timestamp that the collector wrote before sending to storage. A gap between
+"timestamp_millis" and "collector_timestamp_millis" is normal. For example, a span cannot be reported
+until it is complete (span.timestamp + span.duration). Next, reporters often buffer for a second
+or so before sending a message onto the transport. Also, there is transport delay prior to a collector
+receiving that message. Finally, there may be clock skew between the reporter and the collector.
+
 `zipkin.storage.elasticsearch.ElasticsearchStorage.Builder` includes defaults
 that will operate against a local Elasticsearch installation.
 

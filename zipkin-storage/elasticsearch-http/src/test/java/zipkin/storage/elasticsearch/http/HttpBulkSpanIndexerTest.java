@@ -58,7 +58,7 @@ public class HttpBulkSpanIndexerTest {
   }
 
   @Test
-  public void writesSpanNaturallyWhenNoTimestamp() throws Exception {
+  public void writesCollectorTimestampMillis() throws Exception {
     es.enqueue(new MockResponse());
 
     indexer.add("test_zipkin_http-2016-10-01", TestObjects.LOTS_OF_SPANS[0], (Long) null);
@@ -66,6 +66,18 @@ public class HttpBulkSpanIndexerTest {
 
     RecordedRequest request = es.takeRequest();
     assertThat(request.getBody().readByteString().utf8())
-        .endsWith(new String(Codec.JSON.writeSpan(TestObjects.LOTS_OF_SPANS[0]), UTF_8) + "\n");
+        .contains("\"collector_timestamp_millis\"");
+  }
+
+  @Test
+  public void doesntWriteTimestampMillisWhenNoTimestamp() throws Exception {
+    es.enqueue(new MockResponse());
+
+    indexer.add("test_zipkin_http-2016-10-01", TestObjects.LOTS_OF_SPANS[0], (Long) null);
+    indexer.execute().get();
+
+    RecordedRequest request = es.takeRequest();
+    assertThat(request.getBody().readByteString().utf8())
+        .doesNotContain("\"timestamp_millis\"");
   }
 }

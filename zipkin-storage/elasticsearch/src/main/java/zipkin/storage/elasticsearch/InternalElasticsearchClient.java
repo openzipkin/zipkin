@@ -27,7 +27,7 @@ import zipkin.Span;
 import zipkin.internal.Lazy;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static zipkin.storage.elasticsearch.ElasticsearchSpanConsumer.prefixWithTimestampMillis;
+import static zipkin.storage.elasticsearch.ElasticsearchSpanConsumer.prefixWithTimestamps;
 
 /**
  * Common interface for different protocol implementations communicating with Elasticsearch.
@@ -148,9 +148,8 @@ public abstract class InternalElasticsearchClient implements Closeable {
   }
 
   public static byte[] toSpanBytes(Span span, Long timestampMillis) {
-    return timestampMillis != null
-        ? prefixWithTimestampMillis(Codec.JSON.writeSpan(span), timestampMillis)
-        : Codec.JSON.writeSpan(span);
+    return prefixWithTimestamps(Codec.JSON.writeSpan(span), timestampMillis,
+        System.currentTimeMillis());
   }
 
   /**
