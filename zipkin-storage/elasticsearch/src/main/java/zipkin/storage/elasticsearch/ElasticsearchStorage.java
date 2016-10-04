@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import java.util.List;
+import zipkin.internal.Lazy;
 import zipkin.storage.guava.LazyGuavaStorageComponent;
 
 import static zipkin.internal.Util.checkNotNull;

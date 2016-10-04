@@ -13,72 +13,50 @@
  */
 package zipkin.storage.elasticsearch.http;
 
-import com.google.common.base.Charsets;
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.AbstractFuture;
-import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import io.searchbox.action.Action;
-import io.searchbox.action.GenericResultAbstractAction;
-import io.searchbox.client.JestClient;
-import io.searchbox.client.JestClientFactory;
-import io.searchbox.client.JestResult;
-import io.searchbox.client.JestResultHandler;
-import io.searchbox.client.config.HttpClientConfig;
-import io.searchbox.cluster.Health;
-import io.searchbox.core.Bulk;
-import io.searchbox.core.Index;
-import io.searchbox.core.Search;
-import io.searchbox.core.SearchResult;
-import io.searchbox.indices.DeleteIndex;
-import io.searchbox.indices.Flush;
-import io.searchbox.indices.template.GetTemplate;
-import io.searchbox.indices.template.PutTemplate;
+import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.JsonReader;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import okhttp3.Call;
+import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.Lazy;
 import zipkin.internal.Util;
 import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.util.concurrent.Futures.transform;
+import static zipkin.moshi.JsonReaders.collectValuesNamed;
+import static zipkin.moshi.JsonReaders.enterPath;
 
 /**
- * An implementation of {@link InternalElasticsearchClient} that wraps a {@link
- * io.searchbox.client.JestClient}
+ * This is an http client based on Elasticsearch's rest api.
+ *
+ * <p>This currently uses elasticsearch classes to construct the queries, though this may change in
+ * the future, particularly to support multiple versions of elasticsearch without classpath
+ * conflicts.
  */
-public final class HttpClient extends InternalElasticsearchClient {
+final class HttpClient extends InternalElasticsearchClient {
+  static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
 
   /**
-   * Because the {@link HttpClient} is forced to send the index names in the URL, too many indices
+   * Because the Http api requires sending index names in the URL, too many indices
    * (or long names) can quickly exceed the 4096-byte limit commonly imposed on a single HTTP line.
    * This limit is not entirely within the control of Elasticsearch, either, as it may be imposed by
    * arbitrary HTTP-speaking middleware along the request's route. Some more details can be found on
@@ -86,56 +64,14 @@ public final class HttpClient extends InternalElasticsearchClient {
    */
   private static final int MAX_INDICES = 100;
 
-  public static final class Builder extends InternalElasticsearchClient.Builder {
-    Lazy<List<String>> hosts;
-    List<HttpRequestInterceptor> postInterceptors = new ArrayList<>();
-    boolean flushOnWrites;
-
-    public Builder() {
-      hosts(Collections.singletonList("http://localhost:9200"));
-    }
-
-    /**
-     * Unnecessary, but we'll check it's not null for consistency's sake.
-     */
-    @Override public Builder cluster(String cluster) {
-      checkNotNull(cluster, "cluster");
-      return this;
-    }
-
-    /**
-     * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port
-     * format. Defaults to "http://localhost:9200".
-     */
-    @Override public Builder hosts(Lazy<List<String>> hosts) {
-      this.hosts = checkNotNull(hosts, "hosts");
-      return this;
-    }
-
-    /** Adds a request interceptor to the end of the chain */
-    public Builder addPostInterceptor(HttpRequestInterceptor interceptor) {
-      postInterceptors.add(interceptor);
-      return this;
-    }
-
-    @Override public Builder flushOnWrites(boolean flushOnWrites) {
-      this.flushOnWrites = flushOnWrites;
-      return this;
-    }
-
-    @Override public Factory buildFactory() {
-      return new Factory(this);
-    }
-  }
-
-  private static final class Factory implements InternalElasticsearchClient.Factory {
+  static final class Factory implements InternalElasticsearchClient.Factory {
     final Lazy<List<String>> hosts;
-    final List<HttpRequestInterceptor> postInterceptors;
+    final OkHttpClient client;
     final boolean flushOnWrites;
 
-    Factory(Builder builder) {
+    Factory(HttpClientBuilder builder) {
       this.hosts = builder.hosts;
-      this.postInterceptors = ImmutableList.copyOf(builder.postInterceptors);
+      this.client = builder.client;
       this.flushOnWrites = builder.flushOnWrites;
     }
 
@@ -145,304 +81,197 @@ public final class HttpClient extends InternalElasticsearchClient {
 
     @Override public String toString() {
       return new StringBuilder("{\"hosts\": [\"").append(Joiner.on("\", \"").join(hosts.get()))
-              .append("\"]}").toString();
+          .append("\"]}").toString();
     }
   }
 
-  final JestClient client;
-  final String[] allIndices;
+  final OkHttpClient http;
+  final HttpUrl baseUrl;
   final boolean flushOnWrites;
 
+  final String[] allIndices;
+
   HttpClient(Factory f, String allIndices) {
-    JestClientFactory factory = new JestClientFactoryWithInterceptors(Collections.<HttpRequestInterceptor>emptyList(),
-        f.postInterceptors);
-    factory.setHttpClientConfig(new HttpClientConfig.Builder(f.hosts.get())
-        .defaultMaxTotalConnectionPerRoute(6) // matches "regular" TransportClient node conns
-        .maxTotalConnection(6 * 10) // would be 20 otherwise, or ~3 routes
-        .connTimeout(10 * 1000)
-        .readTimeout(10 * 1000)
-        .multiThreaded(true)
-        .gson(
-            new GsonBuilder()
-                .registerTypeAdapter(Span.class, SpanDeserializer.INSTANCE)
-                .registerTypeAdapter(DependencyLink.class, DependencyLinkDeserializer.INSTANCE)
-                .create())
-        .build());
-    this.client = factory.getObject();
+    List<String> hosts = f.hosts.get();
+    checkArgument(hosts.size() == 1, "Only a single hostname is supported %s", hosts);
+    // TODO: provided the hosts all have the same port, and they are all http (not https), we could
+    // implement okhttp3.Dns to collect all the supplied hosts' IP addresses.
+    this.baseUrl = HttpUrl.parse(hosts.get(0));
+    this.http = f.client;
     this.flushOnWrites = f.flushOnWrites;
     this.allIndices = new String[] {allIndices};
   }
 
-  @Override
-  public void ensureTemplate(String name, String indexTemplate) throws IOException {
-    JestResult existingTemplate = client.execute(new GetTemplate.Builder(name).build());
-    if (existingTemplate.isSucceeded()) {
-      return;
+  /**
+   * This is a blocking call, used inside a lazy. That's because no writes should occur until the
+   * template is available.
+   */
+  @Override protected void ensureTemplate(String name, String indexTemplate) throws IOException {
+    HttpUrl templateUrl = baseUrl.newBuilder("_template").addPathSegment(name).build();
+    Request request = new Request.Builder().url(templateUrl).tag("get-template").build();
+
+    try (Response response = http.newCall(request).execute()) {
+      if (response.isSuccessful()) {
+        return;
+      }
     }
-    client.execute(new PutTemplate.Builder(name, indexTemplate).build());
+
+    Call putTemplate = http.newCall(new Request.Builder()
+        .url(templateUrl)
+        .put(RequestBody.create(APPLICATION_JSON, indexTemplate))
+        .tag("update-template").build());
+
+    try (Response response = putTemplate.execute()) {
+      if (!response.isSuccessful()) {
+        throw new IllegalStateException(response.body().string());
+      }
+    }
+  }
+
+  /** This is a blocking call, only used in tests. */
+  @Override protected void clear(String index) throws IOException {
+    Request deleteRequest = new Request.Builder()
+        .url(baseUrl.newBuilder().addPathSegment(index).build())
+        .delete().tag("delete-index").build();
+
+    try (Response response = http.newCall(deleteRequest).execute()) {
+      if (!response.isSuccessful()) {
+        throw new IllegalStateException("response failed: " + response);
+      }
+    }
+
+    flush(index);
+  }
+
+  /** This is a blocking call, only used in tests. */
+  void flush(String index) throws IOException {
+    Request flushRequest = new Request.Builder()
+        .url(baseUrl.newBuilder().addPathSegment(index).addPathSegment("_flush").build())
+        .post(RequestBody.create(APPLICATION_JSON, ""))
+        .tag("flush-index").build();
+
+    try (Response response = http.newCall(flushRequest).execute()) {
+      if (!response.isSuccessful()) {
+        throw new IllegalStateException("response failed: " + response);
+      }
+    }
   }
 
   @Override
-  public void clear(String index) throws IOException {
-    client.execute(new DeleteIndex.Builder(index).build());
-    client.execute(new Flush.Builder().addIndex(index).build());
-  }
-
-  @Override
-  public ListenableFuture<List<String>> collectBucketKeys(String[] indices, QueryBuilder query,
-      AbstractAggregationBuilder... aggregations) {
+  protected ListenableFuture<List<String>> collectBucketKeys(String[] indices,
+      QueryBuilder query, AbstractAggregationBuilder... aggregations) {
     if (indices.length > MAX_INDICES) {
       query = QueryBuilders.indicesQuery(query, indices).noMatchQuery("none");
       indices = allIndices;
     }
-    SearchSourceBuilder elasticQuery = new SearchSourceBuilder().query(query).size(0);
 
+    SearchSourceBuilder elasticQuery = new SearchSourceBuilder().query(query).size(0);
     for (AbstractAggregationBuilder aggregation : aggregations) {
       elasticQuery.aggregation(aggregation);
     }
 
-    return transform(toGuava(
-        lenientSearch(elasticQuery.toString())
-            .addIndex(Arrays.asList(indices))
-            .addType(SPAN)
-            .build()
-    ), BucketKeys.INSTANCE);
+    Call searchRequest = http.newCall(new Request.Builder().url(lenientSearch(indices, SPAN))
+        .post(RequestBody.create(APPLICATION_JSON, elasticQuery.toString()))
+        .tag("search-spansAggregations").build());
+
+    return new CallbackListenableFuture<List<String>>(searchRequest) {
+      List<String> convert(ResponseBody responseBody) throws IOException {
+        Set<String> result = collectValuesNamed(JsonReader.of(responseBody.source()), "key");
+        return Util.sortedList(result);
+      }
+    }.enqueue();
   }
 
-  /** grabs any "key" from the json result */
-  enum BucketKeys implements Function<SearchResult, List<String>> {
-    INSTANCE;
-
-    @Override public List<String> apply(SearchResult input) {
-      Set<String> result = new LinkedHashSet<>();
-      JsonObject object = input.getJsonObject();
-      visitObject(object, result);
-      return Util.sortedList(result);
-    }
-
-    static void visitObject(JsonObject object, Set<String> result) {
-      if (object == null) return;
-      for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
-        String nextName = entry.getKey();
-        switch (nextName) {
-          case "key":
-            result.add(entry.getValue().getAsString());
-            break;
-          default:
-            visitNextOrSkip(entry.getValue(), result);
-        }
-      }
-    }
-
-    static void visitNextOrSkip(JsonElement next, Set<String> result) {
-      if (next.isJsonArray()) {
-        for (JsonElement foo : next.getAsJsonArray()) {
-          if (foo.isJsonObject()) {
-            visitObject(foo.getAsJsonObject(), result);
-          }
-        }
-      } else if (next.isJsonObject()) {
-        visitObject(next.getAsJsonObject(), result);
-      }
-    }
-  }
-
-  @Override
-  public ListenableFuture<List<Span>> findSpans(String[] indices, QueryBuilder query) {
+  @Override protected ListenableFuture<List<Span>> findSpans(String[] indices, QueryBuilder query) {
     if (indices.length > MAX_INDICES) {
       query = QueryBuilders.indicesQuery(query, indices).noMatchQuery("none");
       indices = allIndices;
     }
 
-    return transform(toGuava(
-        lenientSearch(new SearchSourceBuilder().query(query)
-            .size(InternalElasticsearchClient.MAX_RAW_SPANS)
-            .toString())
-            .addIndex(Arrays.asList(indices))
-            .addType(SPAN)
-            .build()), new Function<SearchResult, List<Span>>() {
-      @Override public List<Span> apply(SearchResult input) {
-        if (input.getTotal() == null || input.getTotal() == 0) return null;
+    String body = new SearchSourceBuilder().query(query).size(MAX_RAW_SPANS).toString();
+    Call searchRequest = http.newCall(new Request.Builder().url(lenientSearch(indices, SPAN))
+        .post(RequestBody.create(APPLICATION_JSON, body))
+        .tag("search-spans").build());
 
-        ImmutableList.Builder<Span> builder = ImmutableList.builder();
-        for (SearchResult.Hit<Span, ?> hit : input.getHits(Span.class)) {
-          builder.add(hit.source);
-        }
-        return builder.build();
-      }
-    });
+    return new SearchResultFuture(searchRequest, ZipkinAdapters.SPAN_ADAPTER).enqueue();
   }
 
   @Override
-  public ListenableFuture<List<DependencyLink>> findDependencies(String[] indices) {
+  protected ListenableFuture<List<DependencyLink>> findDependencies(String[] indices) {
     QueryBuilder query = QueryBuilders.matchAllQuery();
     if (indices.length > MAX_INDICES) {
       query = QueryBuilders.indicesQuery(query, indices).noMatchQuery("none");
       indices = allIndices;
     }
 
-    Search.Builder search = lenientSearch(new SearchSourceBuilder().query(query).toString())
-        .addIndex(Arrays.asList(indices))
-        .addType(DEPENDENCY_LINK);
+    String body = new SearchSourceBuilder().query(query).toString();
+    Call searchRequest =
+        http.newCall(new Request.Builder().url(lenientSearch(indices, DEPENDENCY_LINK))
+            .post(RequestBody.create(APPLICATION_JSON, body))
+            .tag("search-dependencyLink").build());
 
-    return transform(toGuava(search.build()),
-        new Function<SearchResult, List<DependencyLink>>() {
-          @Override public List<DependencyLink> apply(SearchResult input) {
-            ImmutableList.Builder<DependencyLink> builder = ImmutableList.builder();
-            for (SearchResult.Hit<DependencyLink, ?> hit : input.getHits(DependencyLink.class)) {
-              builder.add(hit.source);
-            }
-            return builder.build();
-          }
-        });
+    return new SearchResultFuture(searchRequest, ZipkinAdapters.DEPENDENCY_LINK_ADAPTER).enqueue();
   }
 
   @Override protected BulkSpanIndexer bulkSpanIndexer() {
-    return new SpanBytesBulkSpanIndexer() {
-      final List<Index> indexRequests = new LinkedList<>();
-      final Set<String> indices = new LinkedHashSet<>();
-
-      @Override protected void add(String index, byte[] spanBytes) {
-        indexRequests.add(new Index.Builder(new String(spanBytes, Charsets.UTF_8))
-            .index(index)
-            .type(SPAN)
-            .build());
-
-        if (flushOnWrites) indices.add(index);
-      }
-
-      // Creates a bulk request when there is more than one span to store
-      @Override public ListenableFuture<Void> execute() {
-        ListenableFuture<?> future;
-        if (indexRequests.size() == 1) {
-          future = toGuava(indexRequests.get(0));
-        } else {
-          Bulk.Builder batch = new Bulk.Builder();
-          for (Index span : indexRequests) {
-            batch.addAction(span);
-          }
-          future = toGuava(batch.build());
-        }
-
-        if (!indices.isEmpty()) {
-          future = transform(future, new AsyncFunction() {
-            @Override public ListenableFuture apply(Object input) {
-              return toGuava(new Flush.Builder().addIndex(indices).build());
-            }
-          });
-        }
-
-        return transform(future, TO_VOID);
-      }
-    };
+    return new HttpBulkSpanIndexer(this, SPAN);
   }
 
-  private static final Function<Object, Void> TO_VOID = Functions.constant(null);
-
+  /** This is blocking so that we can determine if the cluster is healthy or not */
   @Override protected void ensureClusterReady(String catchAll) throws IOException {
-    String status = client.execute(new IndicesHealth(new Health.Builder(), catchAll))
-        .getJsonObject().get("status").getAsString();
-    checkState(!"RED".equalsIgnoreCase(status), "Health status is RED");
-  }
+    Call getHealth = http.newCall(
+        new Request.Builder().url(baseUrl.resolve("/_cluster/health/" + catchAll))
+            .tag("get-cluster-health").build());
 
-  private static final class IndicesHealth extends GenericResultAbstractAction {
-    final String catchAll;
-
-    IndicesHealth(Builder builder, String catchAll) {
-      super(builder);
-      this.catchAll = checkNotNull(catchAll, "catchAll");
-      this.setURI(this.buildURI());
-    }
-
-    @Override
-    public String getRestMethodName() {
-      return "GET";
-    }
-
-    @Override
-    protected String buildURI() {
-      return super.buildURI() + "/_cluster/health/" + catchAll;
-    }
-  }
-
-  @Override
-  public void close() {
-    client.shutdownClient();
-  }
-
-  /**
-   * A Search request that matches the behavior of {@link IndicesOptions#lenientExpandOpen()}
-   */
-  private static Search.Builder lenientSearch(String query) {
-    return new Search.Builder(query)
-        .setParameter("ignore_unavailable", "true")
-        .setParameter("allow_no_indices", "true")
-        .setParameter("expand_wildcards", "open");
-  }
-
-  private <T extends JestResult> ListenableFuture<T> toGuava(Action<T> action) {
-    final JestFuture<T> future = new JestFuture<T>();
-    client.executeAsync(action, future);
-    return future;
-  }
-
-  static final class JestFuture<T> extends AbstractFuture<T> implements JestResultHandler<T> {
-    @Override public void completed(T result) {
-      set(result);
-    }
-
-    @Override public void failed(Exception ex) {
-      setException(ex);
-    }
-  }
-
-  private enum SpanDeserializer implements JsonDeserializer<Span> {
-    INSTANCE;
-
-    @Override
-    public Span deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
-      return Codec.JSON.readSpan(json.toString().getBytes(Charsets.UTF_8));
-    }
-  }
-
-  private enum DependencyLinkDeserializer implements JsonDeserializer<DependencyLink> {
-    INSTANCE;
-
-    @Override
-    public DependencyLink deserialize(JsonElement json, Type typeOfT,
-        JsonDeserializationContext context) {
-      return Codec.JSON.readDependencyLink(json.toString().getBytes(Charsets.UTF_8));
-    }
-  }
-
-  private static class JestClientFactoryWithInterceptors extends JestClientFactory {
-    private final List<HttpRequestInterceptor> preInterceptors;
-    private final List<HttpRequestInterceptor> postInterceptors;
-
-    private JestClientFactoryWithInterceptors(List<HttpRequestInterceptor> preInterceptors,
-        List<HttpRequestInterceptor> postInterceptors) {
-      this.preInterceptors = preInterceptors;
-      this.postInterceptors = postInterceptors;
-    }
-
-    @Override protected HttpClientBuilder configureHttpClient(HttpClientBuilder builder) {
-      for (HttpRequestInterceptor preInterceptor : preInterceptors) {
-        builder.addInterceptorFirst(preInterceptor);
+    try (Response response = getHealth.execute()) {
+      if (response.isSuccessful()) {
+        JsonReader status = enterPath(JsonReader.of(response.body().source()), "status");
+        checkState(status != null, "Health status couldn't be read %s", response);
+        checkState(!"RED".equalsIgnoreCase(status.nextString()), "Health status is RED");
+        return;
       }
-      for (HttpRequestInterceptor postInterceptor : postInterceptors) {
-        builder.addInterceptorLast(postInterceptor);
-      }
-      return builder;
+    }
+  }
+
+  @Override public void close() {
+    // don't close the client because we didn't create it!
+  }
+
+  /** Matches the behavior of {@link IndicesOptions#lenientExpandOpen()} */
+  HttpUrl lenientSearch(String[] indices, String type) {
+    return baseUrl.newBuilder()
+        .addPathSegment(Joiner.on(',').join(indices))
+        .addPathSegment(type)
+        .addPathSegment("_search")
+        // keep these in alphabetical order as it simplifies amazon signatures!
+        .addQueryParameter("allow_no_indices", "true")
+        .addQueryParameter("expand_wildcards", "open")
+        .addQueryParameter("ignore_unavailable", "true").build();
+  }
+
+  static final class SearchResultFuture<T> extends CallbackListenableFuture<List<T>> {
+    final JsonAdapter<T> adapter;
+
+    public SearchResultFuture(Call searchRequest, JsonAdapter<T> adapter) {
+      super(searchRequest);
+      this.adapter = adapter;
     }
 
-    @Override protected HttpAsyncClientBuilder configureHttpClient(HttpAsyncClientBuilder builder) {
-      for (HttpRequestInterceptor preInterceptor : preInterceptors) {
-        builder.addInterceptorFirst(preInterceptor);
+    List<T> convert(ResponseBody responseBody) throws IOException {
+      JsonReader hits = enterPath(JsonReader.of(responseBody.source()), "hits", "hits");
+      if (hits == null || hits.peek() != JsonReader.Token.BEGIN_ARRAY) return null;
+
+      List<T> result = new ArrayList<>();
+      hits.beginArray();
+      while (hits.hasNext()) {
+        JsonReader source = enterPath(hits, "_source");
+        if (source != null) {
+          result.add(adapter.fromJson(source));
+        }
+        hits.endObject();
       }
-      for (HttpRequestInterceptor postInterceptor : postInterceptors) {
-        builder.addInterceptorLast(postInterceptor);
-      }
-      return builder;
+      hits.endArray();
+      return result.isEmpty() ? null : result;
     }
   }
 }

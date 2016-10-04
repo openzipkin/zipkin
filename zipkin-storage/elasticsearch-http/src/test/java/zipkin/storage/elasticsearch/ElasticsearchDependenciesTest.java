@@ -72,7 +72,7 @@ public class ElasticsearchDependenciesTest extends DependenciesTest {
     try {
       HttpElasticsearchDependencyWriter.writeDependencyLinks(storage.client(), links, index,
           ElasticsearchConstants.DEPENDENCY_LINK);
-    } catch (IOException ex) {
+    } catch (Exception ex) {
       throw Throwables.propagate(ex);
     }
   }

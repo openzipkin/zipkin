@@ -102,7 +102,7 @@ final class NativeClient extends InternalElasticsearchClient {
       return this;
     }
 
-    @Override protected Factory buildFactory() {
+    @Override public Factory buildFactory() {
       return new Factory(this);
     }
   }

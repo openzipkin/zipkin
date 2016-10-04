@@ -74,7 +74,8 @@ zipkin:
       index-fetch-multiplier: ${CASSANDRA3_INDEX_FETCH_MULTIPLIER:3}
     elasticsearch:
       cluster: ${ES_CLUSTER:elasticsearch}
-      hosts: ${ES_HOSTS:localhost:9300}
+      # host is left unset intentionally, to defer the decision
+      hosts: ${ES_HOSTS:}
       aws:
         domain: ${ES_AWS_DOMAIN:}
         region: ${ES_AWS_REGION:}

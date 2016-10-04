@@ -13,40 +13,52 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.aws;
 
-import com.amazonaws.services.elasticsearch.AWSElasticsearch;
-import com.amazonaws.services.elasticsearch.AWSElasticsearchClientBuilder;
-import com.amazonaws.services.elasticsearch.model.DescribeElasticsearchDomainRequest;
-import com.amazonaws.services.elasticsearch.model.DescribeElasticsearchDomainResult;
-import com.google.common.collect.ImmutableList;
+import com.squareup.moshi.JsonReader;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Logger;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import zipkin.internal.Lazy;
 
+import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.checkNotNull;
+import static zipkin.moshi.JsonReaders.enterPath;
 
 final class ElasticsearchDomainEndpoint extends Lazy<List<String>> {
-  static final Logger log = LoggerFactory.getLogger(ElasticsearchDomainEndpoint.class);
-  final String domain;
-  final String region;
+  static final Logger log = Logger.getLogger(ElasticsearchDomainEndpoint.class.getName());
 
-  ElasticsearchDomainEndpoint(String domain, String region) {
-    this.domain = checkNotNull(domain, "domain");
-    this.region = checkNotNull(region, "region");
+  final OkHttpClient client;
+  final Request describeElasticsearchDomain;
+
+  ElasticsearchDomainEndpoint(OkHttpClient client, HttpUrl baseUrl, String domain) {
+    this.client = checkNotNull(client, "client");
+    this.describeElasticsearchDomain = new Request.Builder().url(checkNotNull(baseUrl, "baseUrl")
+        .newBuilder("2015-01-01/es/domain")
+        .addPathSegment(checkNotNull(domain, "domain")).build()).build();
   }
 
   @Override protected List<String> compute() {
-    log.debug("looking up endpoint for region {} and domain {}", region, domain);
-    AWSElasticsearch es = AWSElasticsearchClientBuilder.standard().withRegion(region).build();
-    DescribeElasticsearchDomainResult result = es.describeElasticsearchDomain(
-        new DescribeElasticsearchDomainRequest().withDomainName(domain));
-    es.shutdown();
+    try (Response response = client.newCall(describeElasticsearchDomain).execute()) {
+      if (!response.isSuccessful()) {
+        throw new IllegalStateException(response.body().string());
+      }
 
-    String endpoint = result.getDomainStatus().getEndpoint();
-    if (!endpoint.startsWith("https://")) {
-      endpoint = "https://" + endpoint;
+      JsonReader endpointReader =
+          enterPath(JsonReader.of(response.body().source()), "DomainStatus", "Endpoint");
+      checkArgument(endpointReader != null, "DomainStatus.Endpoint wasn't present in response");
+
+      String endpoint = endpointReader.nextString();
+      if (!endpoint.startsWith("https://")) {
+        endpoint = "https://" + endpoint;
+      }
+      log.fine("using endpoint " + endpoint);
+      return Collections.singletonList(endpoint);
+    } catch (IOException e) {
+      throw new IllegalStateException("couldn't lookup domain endpoint", e);
     }
-    log.debug("using endpoint {}", endpoint);
-    return ImmutableList.of(endpoint);
   }
 }

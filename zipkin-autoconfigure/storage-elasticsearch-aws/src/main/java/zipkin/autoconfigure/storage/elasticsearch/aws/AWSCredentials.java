@@ -11,26 +11,24 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage.elasticsearch;
+package zipkin.autoconfigure.storage.elasticsearch.aws;
 
-import java.io.IOException;
-import zipkin.storage.SpanStoreTest;
-import zipkin.storage.StorageComponent;
-import zipkin.storage.elasticsearch.http.HttpElasticsearchTestGraph;
+import zipkin.internal.Nullable;
 
-public class ElasticsearchSpanStoreTest extends SpanStoreTest {
+import static zipkin.internal.Util.checkNotNull;
 
-  private final ElasticsearchStorage storage;
-
-  public ElasticsearchSpanStoreTest() {
-    this.storage = HttpElasticsearchTestGraph.INSTANCE.storage.get();
+final class AWSCredentials {
+  interface Provider {
+    AWSCredentials get();
   }
 
-  @Override protected StorageComponent storage() {
-    return storage;
-  }
+  final String accessKey;
+  final String secretKey;
+  @Nullable final String sessionToken;
 
-  @Override public void clear() throws IOException {
-    storage.clear();
+  AWSCredentials(String accessKey, String secretKey, String sessionToken) {
+    this.accessKey = checkNotNull(accessKey, "accessKey");
+    this.secretKey = checkNotNull(secretKey, "secretKey");
+    this.sessionToken = sessionToken;
   }
 }

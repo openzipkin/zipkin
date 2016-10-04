@@ -153,6 +153,12 @@
       <version>${brave.version}</version>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>io.zipkin.brave</groupId>
+      <artifactId>brave-okhttp</artifactId>
+      <version>${brave.version}</version>
+      <optional>true</optional>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -164,12 +170,6 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
       <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.squareup.okio</groupId>
-      <artifactId>okio</artifactId>
       <scope>test</scope>
     </dependency>
 

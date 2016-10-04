@@ -14,6 +14,7 @@
 package zipkin.storage.elasticsearch.http;
 
 import com.google.common.collect.ImmutableList;
+import okhttp3.OkHttpClient;
 import org.junit.AssumptionViolatedException;
 import zipkin.Component.CheckResult;
 import zipkin.internal.LazyCloseable;
@@ -28,10 +29,11 @@ public enum HttpElasticsearchTestGraph {
 
         @Override protected ElasticsearchStorage compute() {
           if (ex != null) throw ex;
-          ElasticsearchStorage result =
-              ElasticsearchStorage.builder(new HttpClient.Builder().flushOnWrites(true)
+          ElasticsearchStorage result = ElasticsearchStorage.builder(
+              HttpClientBuilder.create(new OkHttpClient())
+                  .flushOnWrites(true)
                   .hosts(ImmutableList.of("http://localhost:9200")))
-                  .index("test_zipkin_http").build();
+              .index("test_zipkin_http").build();
           CheckResult check = result.check();
           if (check.ok) return result;
           throw ex = new AssumptionViolatedException(check.exception.getMessage(), check.exception);

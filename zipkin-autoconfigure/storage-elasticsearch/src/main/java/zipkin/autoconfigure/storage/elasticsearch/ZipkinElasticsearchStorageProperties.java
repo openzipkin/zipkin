@@ -13,17 +13,18 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch;
 
-import java.util.Collections;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import zipkin.internal.Nullable;
 import zipkin.storage.elasticsearch.ElasticsearchStorage;
+import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
 public class ZipkinElasticsearchStorageProperties {
   /** The elasticsearch cluster to connect to, defaults to "elasticsearch". */
   private String cluster = "elasticsearch";
-  /** A List of hosts to connect to, e.g.  */
-  private List<String> hosts = Collections.singletonList("localhost:9300");
+  /** A List of transport-specific hosts to connect to, e.g. "localhost:9300" */
+  private List<String> hosts; // initialize to null to defer default to transport
   /** The index prefix to use when generating daily index names. Defaults to zipkin. */
   private String index = "zipkin";
   /** Number of shards (horizontal scaling factor) per index. Defaults to 5. */
@@ -45,7 +46,9 @@ public class ZipkinElasticsearchStorageProperties {
   }
 
   public ZipkinElasticsearchStorageProperties setHosts(List<String> hosts) {
-    this.hosts = hosts;
+    if (hosts != null && !hosts.isEmpty()) {
+      this.hosts = hosts;
+    }
     return this;
   }
 
@@ -74,10 +77,13 @@ public class ZipkinElasticsearchStorageProperties {
     this.indexReplicas = indexReplicas;
   }
 
-  public ElasticsearchStorage.Builder toBuilder() {
-    return ElasticsearchStorage.builder()
-        .cluster(cluster)
-        .hosts(hosts)
+  ElasticsearchStorage.Builder toBuilder(
+      @Nullable InternalElasticsearchClient.Builder clientBuilder) {
+    ElasticsearchStorage.Builder result = clientBuilder != null
+        ? ElasticsearchStorage.builder(clientBuilder)
+        : ElasticsearchStorage.builder();
+    if (hosts != null) result.hosts(hosts);
+    return result.cluster(cluster)
         .index(index)
         .indexShards(indexShards)
         .indexReplicas(indexReplicas);

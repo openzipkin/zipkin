@@ -13,78 +13,61 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.http;
 
-import com.google.common.base.Optional;
-import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-import zipkin.autoconfigure.storage.elasticsearch.ZipkinElasticsearchStorageAutoConfiguration;
-import zipkin.storage.StorageComponent;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import zipkin.storage.elasticsearch.InternalElasticsearchClient;
+import zipkin.storage.elasticsearch.http.HttpClientBuilder;
 
 @Configuration
-@EnableConfigurationProperties(ZipkinElasticsearchHttpStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
-@Conditional({
-    ZipkinElasticsearchHttpStorageAutoConfiguration.HostsAreUrls.class,
-    ZipkinElasticsearchHttpStorageAutoConfiguration.HostsArentAwsUrls.class
-})
-@ConditionalOnMissingBean(StorageComponent.class)
+@Conditional(ZipkinElasticsearchHttpStorageAutoConfiguration.HostsAreUrls.class)
 public class ZipkinElasticsearchHttpStorageAutoConfiguration {
-  @Bean StorageComponent storage(ZipkinElasticsearchHttpStorageProperties elasticsearch) {
-    return elasticsearch.toBuilder().build();
+
+  @Autowired(required = false)
+  @Qualifier("zipkinElasticsearchHttpAuthentication")
+  Interceptor zipkinElasticsearchHttpAuthentication;
+
+  @Autowired(required = false)
+  @Qualifier("zipkinElasticsearchHttp")
+  OkHttpClient.Builder elasticsearchOkHttpClientBuilder;
+
+  @Bean
+  @Qualifier("zipkinElasticsearchHttp")
+  @ConditionalOnMissingBean
+  OkHttpClient elasticsearchOkHttpClient() {
+    OkHttpClient.Builder builder = elasticsearchOkHttpClientBuilder != null
+        ? elasticsearchOkHttpClientBuilder
+        : new OkHttpClient.Builder();
+
+    if (zipkinElasticsearchHttpAuthentication != null) {
+      builder.addNetworkInterceptor(zipkinElasticsearchHttpAuthentication);
+    }
+    return builder.build();
   }
 
+  @Bean
+  @ConditionalOnMissingBean
+  InternalElasticsearchClient.Builder clientBuilder(
+      @Qualifier("zipkinElasticsearchHttp") OkHttpClient client) {
+    return HttpClientBuilder.create(client);
+  }
+
+  /** cheap check to see if we are likely to include urls */
   static final class HostsAreUrls implements Condition {
     @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata md) {
       String hosts = condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.hosts");
       if (hosts == null) return false;
-      return ZipkinElasticsearchStorageAutoConfiguration.hostsAreUrls(hosts);
+      return hosts.contains("http://") || hosts.contains("https://");
     }
-  }
-
-  static final class HostsArentAwsUrls implements Condition {
-    @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata md) {
-      String hosts = condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.hosts");
-      if (hosts == null) return true;
-      return !regionFromAwsUrls(Arrays.asList(hosts.split(","))).isPresent();
-    }
-  }
-
-  /**
-   * Only here for consumption by {@link HostsArentAwsUrls}; ideally we could find a way to express
-   * a hierarchy of autoconfigurations in spring without each parent needing to turn themselves off
-   * for their children, but there seems to be no reliable way to order autoconfigure'd classes
-   * (neither @AutoConfigureBefore nor @AutoConfigureAfter seemd to have the desired effect)
-   */
-  private static final Pattern AWS_URL =
-      Pattern.compile("^https://[^.]+\\.([^.]+)\\.es\\.amazonaws\\.com", Pattern.CASE_INSENSITIVE);
-
-  public static Optional<String> regionFromAwsUrls(List<String> hosts) {
-    Optional<String> awsRegion = Optional.absent();
-    for (String url : hosts) {
-        Matcher matcher = AWS_URL.matcher(url);
-        if (matcher.find()) {
-          String matched = matcher.group(1);
-          checkArgument(awsRegion.or(matched).equals(matched),
-              "too many regions: saw '%s' and '%s'", awsRegion, matched);
-          awsRegion = Optional.of(matcher.group(1));
-        } else {
-          checkArgument(!awsRegion.isPresent(),
-              "mismatched regions; saw '%s' but no awsRegion found in '%s'", awsRegion.orNull(),
-              url);
-        }
-      }
-    return awsRegion;
   }
 }
