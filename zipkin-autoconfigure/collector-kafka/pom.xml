@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.java</groupId>
     <artifactId>zipkin-autoconfigure</artifactId>
-    <version>1.13.1-SNAPSHOT</version>
+    <version>1.13.1</version>
   </parent>
 
   <artifactId>zipkin-autoconfigure-collector-kafka</artifactId>
