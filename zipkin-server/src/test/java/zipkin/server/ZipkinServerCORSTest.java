@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -56,6 +57,11 @@ public class ZipkinServerCORSTest {
     mockMvc.perform(get("/api/v1/traces")
         .header(HttpHeaders.ORIGIN, "foo.example.com"))
            .andExpect(status().isOk());
+
+    mockMvc.perform(post("/api/v1/spans")
+        .content("[]")
+        .header(HttpHeaders.ORIGIN, "foo.example.com"))
+          .andExpect(status().isAccepted());
   }
 
   @Test
@@ -64,5 +70,10 @@ public class ZipkinServerCORSTest {
     mockMvc.perform(get("/api/v1/traces")
         .header(HttpHeaders.ORIGIN, "bar.example.com"))
            .andExpect(status().isForbidden());
+
+    mockMvc.perform(post("/api/v1/spans")
+        .content("[]")
+        .header(HttpHeaders.ORIGIN, "bar.example.com"))
+         .andExpect(status().isForbidden());
   }
 }
