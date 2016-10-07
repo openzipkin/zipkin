@@ -24,6 +24,9 @@ zipkin:
       enabled: ${SCRIBE_ENABLED:true}
       category: zipkin
       port: ${COLLECTOR_PORT:9410}
+    sqs:
+      # SQS queue url to collect spans from
+      queue-url: ${SQS_QUEUE_URL:}
   query:
     # 7 days in millis
     lookback: ${QUERY_LOOKBACK:86400000}
