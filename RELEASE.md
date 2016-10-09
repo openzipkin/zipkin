@@ -24,3 +24,25 @@ in mind when choosing version numbers.
 1. **Publish `docker-zipkin`**
 
    Refer to [docker-zipkin/RELEASE.md](https://github.com/openzipkin/docker-zipkin/blob/master/RELEASE.md).
+   
+## Credentials
+
+Credentials of various kind are needed for the release process to work. If you notice something
+failing due to unauthorized, re-encrypt them using instructions at the bottom of the `.travis.yml`
+
+Ex You'll see comments like this:
+```yaml
+env:
+  global:
+  # Ex. travis encrypt BINTRAY_USER=your_github_account
+  - secure: "VeTO...
+```
+
+To re-encrypt, you literally run the commands with relevant values and replace the "secure" key with the output:
+
+```bash
+$ travis encrypt BINTRAY_USER=adrianmole
+Please add the following to your .travis.yml file:
+
+  secure: "mQnECL+dXc5l9wCYl/wUz+AaYFGt/1G31NAZcTLf2RbhKo8mUenc4hZNjHCEv+4ZvfYLd/NoTNMhTCxmtBMz1q4CahPKLWCZLoRD1ExeXwRymJPIhxZUPzx9yHPHc5dmgrSYOCJLJKJmHiOl9/bJi123456="
+```
