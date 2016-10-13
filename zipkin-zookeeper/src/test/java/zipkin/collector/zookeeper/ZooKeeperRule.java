@@ -44,25 +44,39 @@ final class ZooKeeperRule implements TestRule {
   @Override public Statement apply(Statement base, Description description) {
     return new Statement() {
       public void evaluate() throws Throwable {
-        try {
-          cluster = new TestingCluster(3);
-          cluster.start();
-
-          client = newClient(cluster.getConnectString(), new RetryOneTime(200 /* ms */));
-          client.start();
-
-          checkState(client.blockUntilConnected(5, TimeUnit.SECONDS),
-              "failed to connect to zookeeper in 5 seconds");
-
-          base.evaluate();
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-          throw new IllegalStateException("Interrupted while connecting to ZooKeeper", e);
-        } finally {
-          client.close();
-          cluster.close();
+        for (int i = 1; i <= 3; i++) {
+          try {
+            doEvaluate(base);
+            break;
+          } catch (Throwable e) {
+            if (i == 3) {
+              throw e;
+            }
+            Thread.sleep(1000);
+          }
         }
       }
     };
+  }
+
+  void doEvaluate(Statement base) throws Throwable {
+    try {
+      cluster = new TestingCluster(3);
+      cluster.start();
+
+      client = newClient(cluster.getConnectString(), new RetryOneTime(200 /* ms */));
+      client.start();
+
+      checkState(client.blockUntilConnected(5, TimeUnit.SECONDS),
+          "failed to connect to zookeeper in 5 seconds");
+
+      base.evaluate();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Interrupted while connecting to ZooKeeper", e);
+    } finally {
+      client.close();
+      cluster.close();
+    }
   }
 }
