@@ -13,6 +13,7 @@
  */
 package zipkin.storage.elasticsearch;
 
+import java.io.IOException;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.junit.AssumptionViolatedException;
@@ -54,7 +55,7 @@ public class LazyClientTest {
   }
 
   @Test
-  public void portDefaultsTo9300() {
+  public void portDefaultsTo9300() throws IOException {
     try (LazyClient lazyClient = new LazyClient(ElasticsearchStorage.builder()
         .hosts(asList("localhost")))) {
 
