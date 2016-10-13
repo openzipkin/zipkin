@@ -13,6 +13,8 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.http;
 
+import java.util.Collections;
+import java.util.List;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,8 +36,8 @@ import zipkin.storage.elasticsearch.http.HttpClientBuilder;
 public class ZipkinElasticsearchHttpStorageAutoConfiguration {
 
   @Autowired(required = false)
-  @Qualifier("zipkinElasticsearchHttpAuthentication")
-  Interceptor zipkinElasticsearchHttpAuthentication;
+  @Qualifier("zipkinElasticsearchHttp")
+  List<Interceptor> networkInterceptors = Collections.emptyList();
 
   @Autowired(required = false)
   @Qualifier("zipkinElasticsearchHttp")
@@ -49,8 +51,8 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
         ? elasticsearchOkHttpClientBuilder
         : new OkHttpClient.Builder();
 
-    if (zipkinElasticsearchHttpAuthentication != null) {
-      builder.addNetworkInterceptor(zipkinElasticsearchHttpAuthentication);
+    for (Interceptor interceptor : networkInterceptors) {
+      builder.addNetworkInterceptor(interceptor);
     }
     return builder.build();
   }

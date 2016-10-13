@@ -13,7 +13,7 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.aws;
 
-import okhttp3.OkHttpClient;
+import okhttp3.Interceptor;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -62,9 +62,8 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
         ZipkinElasticsearchAwsStorageAutoConfiguration.class);
     context.refresh();
 
-    assertThat(context.getBean(OkHttpClient.class).networkInterceptors())
-        .extracting(i -> i.getClass())
-        .contains((Class) AWSSignatureVersion4.class);
+    assertThat(context.getBean(Interceptor.class))
+        .isInstanceOf(AWSSignatureVersion4.class);
   }
 
   @Test
@@ -79,9 +78,8 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
         ZipkinElasticsearchAwsStorageAutoConfiguration.class);
     context.refresh();
 
-    assertThat(context.getBean(OkHttpClient.class).networkInterceptors())
-        .extracting(i -> i.getClass())
-        .contains((Class) AWSSignatureVersion4.class);
+    assertThat(context.getBean(Interceptor.class))
+        .isInstanceOf(AWSSignatureVersion4.class);
   }
 
   @Test
