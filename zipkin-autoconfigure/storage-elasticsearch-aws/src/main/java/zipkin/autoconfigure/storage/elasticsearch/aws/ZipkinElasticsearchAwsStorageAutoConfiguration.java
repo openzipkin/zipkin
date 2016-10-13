@@ -24,8 +24,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import okhttp3.HttpUrl;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -38,6 +38,7 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin.autoconfigure.storage.elasticsearch.ZipkinElasticsearchStorageProperties;
+import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageAutoConfiguration;
 import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 import zipkin.storage.elasticsearch.http.HttpClientBuilder;
 
@@ -50,28 +51,20 @@ import static java.lang.String.format;
     ZipkinElasticsearchAwsStorageProperties.class
 })
 @Conditional(ZipkinElasticsearchAwsStorageAutoConfiguration.AwsMagic.class)
-public class ZipkinElasticsearchAwsStorageAutoConfiguration {
+public class ZipkinElasticsearchAwsStorageAutoConfiguration extends
+    ZipkinElasticsearchHttpStorageAutoConfiguration {
   static final Pattern AWS_URL =
       Pattern.compile("^https://[^.]+\\.([^.]+)\\.es\\.amazonaws\\.com", Pattern.CASE_INSENSITIVE);
   static final Logger log =
       Logger.getLogger(ZipkinElasticsearchAwsStorageAutoConfiguration.class.getName());
 
-  @Autowired(required = false)
-  @Qualifier("zipkinElasticsearchHttp")
-  OkHttpClient.Builder elasticsearchOkHttpClientBuilder;
-
   @Bean
   @Qualifier("zipkinElasticsearchHttp")
-  OkHttpClient elasticsearchOkHttpClient(
+  Interceptor awsSignatureVersion4(
       ZipkinElasticsearchStorageProperties es,
       ZipkinElasticsearchAwsStorageProperties aws,
       AWSCredentials.Provider credentials) {
-    OkHttpClient.Builder builder = elasticsearchOkHttpClientBuilder != null
-        ? elasticsearchOkHttpClientBuilder
-        : new OkHttpClient.Builder();
-
-    builder.addNetworkInterceptor(new AWSSignatureVersion4(region(es, aws), "es", credentials));
-    return builder.build();
+    return new AWSSignatureVersion4(region(es, aws), "es", credentials);
   }
 
   @Bean String region(ZipkinElasticsearchStorageProperties es,
@@ -124,7 +117,7 @@ public class ZipkinElasticsearchAwsStorageAutoConfiguration {
   InternalElasticsearchClient.Builder clientBuilder(
       ZipkinElasticsearchStorageProperties es,
       ZipkinElasticsearchAwsStorageProperties aws,
-      @Qualifier("elasticsearchOkHttpClient") OkHttpClient client) {
+      @Qualifier("zipkinElasticsearchHttp") OkHttpClient client) {
     String domain = aws.getDomain();
     String region = region(es, aws);
 
