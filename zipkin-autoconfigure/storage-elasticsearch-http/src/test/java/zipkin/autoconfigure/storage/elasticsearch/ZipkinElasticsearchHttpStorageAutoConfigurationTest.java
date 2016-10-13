@@ -13,13 +13,18 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch;
 
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageAutoConfiguration;
 import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 
@@ -76,5 +81,38 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
 
     thrown.expect(NoSuchBeanDefinitionException.class);
     context.getBean(InternalElasticsearchClient.Builder.class);
+  }
+
+  @Configuration
+  static class InterceptorConfiguration {
+
+    static Interceptor one = chain -> null;
+    static Interceptor two = chain -> null;
+
+    @Bean @Qualifier("zipkinElasticsearchHttp") Interceptor one() {
+      return one;
+    }
+
+    @Bean @Qualifier("zipkinElasticsearchHttp") Interceptor two() {
+      return two;
+    }
+  }
+
+  /** Ensures we can wire up network interceptors, such as for logging or authentication */
+  @Test
+  public void usesInterceptorsQualifiedWith_zipkinElasticsearchHttp() {
+
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:http://host1:9200"
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchHttpStorageAutoConfiguration.class,
+        InterceptorConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(OkHttpClient.class).networkInterceptors())
+        .containsExactly(InterceptorConfiguration.one, InterceptorConfiguration.two);
   }
 }
