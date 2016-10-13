@@ -15,18 +15,15 @@ package zipkin.autoconfigure.storage.elasticsearch.aws;
 
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.Buffer;
+import okio.ByteString;
 
 import static java.lang.String.format;
 import static zipkin.internal.Util.checkNotNull;
@@ -152,8 +149,8 @@ final class AWSSignatureVersion4 implements Interceptor {
     Buffer toSign = toSign(timestamp, credentialScope, canonicalString);
 
     // TODO: this key is invalid when the secret key or the date change. both are very infrequent
-    byte[] signatureKey = signatureKey(credentials.secretKey, yyyyMMdd);
-    String signature = hex(hmacSHA256(toSign.readByteArray(), signatureKey));
+    ByteString signatureKey = signatureKey(credentials.secretKey, yyyyMMdd);
+    String signature = toSign.readByteString().hmacSha256(signatureKey).hex();
 
     String authorization = new StringBuilder().append("AWS4-HMAC-SHA256 Credential=")
         .append(credentials.accessKey).append('/').append(credentialScope)
@@ -163,47 +160,12 @@ final class AWSSignatureVersion4 implements Interceptor {
     return builder.header("authorization", authorization).build();
   }
 
-  byte[] signatureKey(String secretKey, String yyyyMMdd) {
-    byte[] kSecret = asciiToByteArray("AWS4" + secretKey);
-    byte[] kDate = hmacSHA256(asciiToByteArray(yyyyMMdd), kSecret);
-    byte[] kRegion = hmacSHA256(asciiToByteArray(region), kDate);
-    byte[] kService = hmacSHA256(asciiToByteArray(service), kRegion);
-    byte[] kSigning = hmacSHA256(asciiToByteArray("aws4_request"), kService);
+  ByteString signatureKey(String secretKey, String yyyyMMdd) {
+    ByteString kSecret = ByteString.encodeUtf8("AWS4" + secretKey);
+    ByteString kDate = ByteString.encodeUtf8(yyyyMMdd).hmacSha256(kSecret);
+    ByteString kRegion = ByteString.encodeUtf8(region).hmacSha256(kDate);
+    ByteString kService = ByteString.encodeUtf8(service).hmacSha256(kRegion);
+    ByteString kSigning = ByteString.encodeUtf8("aws4_request").hmacSha256(kService);
     return kSigning;
-  }
-
-  byte[] hmacSHA256(byte[] data, byte[] key) {
-    try {
-      String algorithm = "HmacSHA256";
-      Mac mac = Mac.getInstance(algorithm);
-      mac.init(new SecretKeySpec(key, algorithm));
-      return mac.doFinal(data);
-    } catch (NoSuchAlgorithmException e) {
-      throw new AssertionError(e);
-    } catch (InvalidKeyException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  byte[] asciiToByteArray(String ascii) {
-    int length = ascii.length();
-    byte[] result = new byte[length];
-    for (int i = 0; i < length; i++) {
-      result[i] = (byte) ascii.charAt(i);
-    }
-    return result;
-  }
-
-  static final char[] HEX_DIGITS =
-      {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-
-  static String hex(byte[] v) {
-    char[] data = new char[v.length * 2];
-    int i = 0;
-    for (byte b : v) {
-      data[i++] = HEX_DIGITS[(b >> 4) & 0xf];
-      data[i++] = HEX_DIGITS[b & 0xf];
-    }
-    return new String(data);
   }
 }
