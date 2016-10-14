@@ -155,6 +155,8 @@ public final class Cassandra3Storage
     }
   }
 
+  public static final String SELF_TRACING_KEY = "zipkin-self-traced";
+
   final int maxTraceCols;
   final String contactPoints;
   final int maxConnections;

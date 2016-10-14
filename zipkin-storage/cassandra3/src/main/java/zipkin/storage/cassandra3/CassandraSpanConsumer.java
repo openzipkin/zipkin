@@ -25,8 +25,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -40,6 +43,7 @@ import zipkin.storage.guava.GuavaSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.storage.cassandra3.CassandraUtil.bindWithName;
 import static zipkin.storage.cassandra3.CassandraUtil.durationIndexBucket;
 
@@ -99,11 +103,9 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
         if (timestamp != null) {
           // Contract for Repository.storeServiceSpanName is to store the span twice, once with
           // the span name and another with empty string.
-          futures.add(storeServiceSpanName(serviceName, span.name, timestamp, span.duration,
-              span.traceId));
+          futures.add(storeServiceSpanName(serviceName, span.name, timestamp, span));
           if (!span.name.isEmpty()) { // If span.name == "", this would be redundant
-            futures.add(
-                storeServiceSpanName(serviceName, "", timestamp, span.duration, span.traceId));
+            futures.add(storeServiceSpanName(serviceName, "", timestamp, span));
           }
         }
       }
@@ -155,20 +157,35 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       if (null != span.parentId) {
         bound = bound.setLong("parent_id", span.parentId);
       }
-
+      markSelfTracedSpans(bound, span);
       return session.executeAsync(bound);
     } catch (RuntimeException ex) {
       return Futures.immediateFailedFuture(ex);
     }
   }
 
-  ListenableFuture<?> storeServiceSpanName(
-      String serviceName,
-      String spanName,
-      long timestamp_micro,
-      Long duration,
-      long traceId) {
+  private static void markSelfTracedSpans(BoundStatement bound, Span span) {
+    if (isSelfTracedSpan(span)) {
+        Map<String,ByteBuffer> payload = new HashMap<>();
+        if (null != bound.getOutgoingPayload()) {
+            payload.putAll(bound.getOutgoingPayload());
+        }
+        payload.put(Cassandra3Storage.SELF_TRACING_KEY, ByteBuffer.wrap(new byte[]{1}));
+        bound.setOutgoingPayload(payload);
+    }
+  }
 
+  private static boolean isSelfTracedSpan(Span span) {
+      for (BinaryAnnotation ba : span.binaryAnnotations) {
+          if (Cassandra3Storage.SELF_TRACING_KEY.equals(ba.key)) {
+              assert "true".equals(new String(ba.value, UTF_8));
+              return true;
+          }
+      }
+      return false;
+  }
+
+  ListenableFuture<?> storeServiceSpanName(String serviceName, String spanName, long timestamp_micro, Span span) {
     int bucket = durationIndexBucket(timestamp_micro);
     try {
       BoundStatement bound =
@@ -179,11 +196,12 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
               .setUUID("ts", new UUID(
                   UUIDs.startOf(timestamp_micro / 1000).getMostSignificantBits(),
                   UUIDs.random().getLeastSignificantBits()))
-              .setVarint("trace_id", BigInteger.valueOf(traceId));
+              .setVarint("trace_id", BigInteger.valueOf(span.traceId));
 
-      if (null != duration) {
-        bound = bound.setLong("duration", duration);
+      if (null != span.duration) {
+        bound = bound.setLong("duration", span.duration);
       }
+      markSelfTracedSpans(bound, span);
 
       return session.executeAsync(bound);
     } catch (RuntimeException ex) {
