@@ -29,10 +29,6 @@ final class HttpBulkSpanIndexer extends HttpBulkIndexer<Span> implements
 
   @Override public void add(String index, Span span, Long timestampMillis) throws IOException {
     String id = null; // Allow ES to choose an ID
-    if (timestampMillis == null) {
-      super.add(index, span, id);
-      return;
-    }
     writeIndexMetadata(index, id);
     body.write(toSpanBytes(span, timestampMillis));
     body.writeByte('\n');

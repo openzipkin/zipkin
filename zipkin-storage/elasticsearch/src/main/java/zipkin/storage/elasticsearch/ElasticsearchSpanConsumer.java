@@ -27,6 +27,8 @@ import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 
 final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
+  private static final byte[] COLLECTOR_TIMESTAMP_MILLIS_PREFIX =
+      "{\"collector_timestamp_millis\":".getBytes();
   private static final byte[] TIMESTAMP_MILLIS_PREFIX = "{\"timestamp_millis\":".getBytes();
   private static final ListenableFuture<Void> VOID = immediateFuture(null);
 
@@ -66,24 +68,46 @@ final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
   }
 
   /**
-   * In order to allow systems like Kibana to search by timestamp, we add a field "timestamp_millis"
-   * when storing. The cheapest way to do this without changing the codec is prefixing it to the
-   * json. For example. {"traceId":"... becomes {"timestamp_millis":12345,"traceId":"...
+   * In order to allow systems like Kibana to search by timestamp, we add "timestamp_millis" to the
+   * span. In order to help people understand transport lag, we add "collector_timestamp_millis".
+   * The cheapest way to do this without changing the codec is prefixing it to the json.
+   *
+   * <p>
+   * {"traceId":"... -> {"timestamp_millis":12345,"collector_timestamp_millis":12346,"traceId":"...
+   *
+   * @param span authoritative {@link Span#timestamp} truncated to milliseconds
+   * @param now value of {@link System#currentTimeMillis()}
    */
   @VisibleForTesting
-  static byte[] prefixWithTimestampMillis(byte[] input, long timestampMillis) {
-    String dateAsString = Long.toString(timestampMillis);
-    byte[] newSpanBytes =
-        new byte[TIMESTAMP_MILLIS_PREFIX.length + dateAsString.length() + input.length];
+  static byte[] prefixWithTimestamps(byte[] input, Long span, long now) {
+    String nowAsString = Long.toString(now);
+    int length = COLLECTOR_TIMESTAMP_MILLIS_PREFIX.length + nowAsString.length() + input.length;
+
     int pos = 0;
-    System.arraycopy(TIMESTAMP_MILLIS_PREFIX, 0, newSpanBytes, pos, TIMESTAMP_MILLIS_PREFIX.length);
-    pos += TIMESTAMP_MILLIS_PREFIX.length;
-    for (int i = 0, length = dateAsString.length(); i < length; i++) {
-      newSpanBytes[pos++] = (byte) dateAsString.charAt(i);
+    byte[] result;
+    if (span != null) {
+      String spanAsString = Long.toString(span);
+      length += TIMESTAMP_MILLIS_PREFIX.length + spanAsString.length();
+      result = new byte[length];
+      pos = foo(TIMESTAMP_MILLIS_PREFIX, 0, spanAsString, result, pos);
+      pos = foo(COLLECTOR_TIMESTAMP_MILLIS_PREFIX, 1, nowAsString, result, pos);
+    } else {
+      result = new byte[length];
+      pos = foo(COLLECTOR_TIMESTAMP_MILLIS_PREFIX, 0, nowAsString, result, pos);
     }
-    newSpanBytes[pos++] = ',';
     // starting at position 1 discards the old head of '{'
-    System.arraycopy(input, 1, newSpanBytes, pos, input.length - 1);
-    return newSpanBytes;
+    System.arraycopy(input, 1, result, pos, input.length - 1);
+    return result;
+  }
+
+  static int foo(byte[] bytes, int bytesPos, String ascii, byte[] dest, int destPos) {
+    int bytesLength = bytes.length - bytesPos;
+    System.arraycopy(bytes, bytesPos, dest, destPos, bytesLength);
+    destPos += bytesLength;
+    for (int i = 0, length = ascii.length(); i < length; i++) {
+      dest[destPos++] = (byte) ascii.charAt(i);
+    }
+    dest[destPos++] = ',';
+    return destPos;
   }
 }

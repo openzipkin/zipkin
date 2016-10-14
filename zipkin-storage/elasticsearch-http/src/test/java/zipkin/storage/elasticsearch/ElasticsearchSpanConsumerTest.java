@@ -21,7 +21,6 @@ import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin.Annotation;
-import zipkin.Codec;
 import zipkin.Span;
 import zipkin.storage.elasticsearch.http.HttpElasticsearchTestGraph;
 
@@ -119,22 +118,6 @@ public class ElasticsearchSpanConsumerTest {
 
     assertThat(indexFromToday.size())
         .isEqualTo(1);
-  }
-
-  @Test
-  public void prefixWithTimestampMillis() {
-    Span span = Span.builder().traceId(20L).id(20L).name("get")
-        .timestamp(TODAY * 1000).build();
-
-    byte[] result =
-        ElasticsearchSpanConsumer.prefixWithTimestampMillis(Codec.JSON.writeSpan(span), TODAY);
-
-    String json = new String(result);
-    assertThat(json)
-        .startsWith("{\"timestamp_millis\":" + Long.toString(TODAY) + ",\"traceId\":");
-
-    assertThat(Codec.JSON.readSpan(json.getBytes()))
-        .isEqualTo(span); // ignores timestamp_millis field
   }
 
   void accept(Span span) {
