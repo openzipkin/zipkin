@@ -40,11 +40,14 @@ import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_
 final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
   private final DataSource datasource;
   private final DSLContexts context;
+  private final Lazy<Boolean> hasTraceIdHigh;
   private final Lazy<Boolean> hasIpv6;
 
-  MySQLSpanConsumer(DataSource datasource, DSLContexts context, Lazy<Boolean> hasIpv6) {
+  MySQLSpanConsumer(DataSource datasource, DSLContexts context, Lazy<Boolean> hasTraceIdHigh,
+      Lazy<Boolean> hasIpv6) {
     this.datasource = datasource;
     this.context = context;
+    this.hasTraceIdHigh = hasTraceIdHigh;
     this.hasIpv6 = hasIpv6;
   }
 
@@ -80,6 +83,10 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
             .set(ZIPKIN_SPANS.DEBUG, span.debug)
             .set(ZIPKIN_SPANS.START_TS, timestamp)
             .set(ZIPKIN_SPANS.DURATION, span.duration);
+
+        if (span.traceIdHigh != 0 && hasTraceIdHigh.get()) {
+          insertSpan.set(ZIPKIN_SPANS.TRACE_ID_HIGH, span.traceIdHigh);
+        }
 
         inserts.add(updateFields.isEmpty() ?
             insertSpan.onDuplicateKeyIgnore() :

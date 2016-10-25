@@ -80,6 +80,7 @@ public final class MySQLStorage implements StorageComponent {
   private final Executor executor;
   private final DSLContexts context;
   final Lazy<Boolean> hasIpv6;
+  final Lazy<Boolean> hasTraceIdHigh;
   final Lazy<Boolean> hasPreAggregatedDependencies;
   private final SpanStore spanStore;
   private final AsyncSpanStore asyncSpanStore;
@@ -90,10 +91,13 @@ public final class MySQLStorage implements StorageComponent {
     this.executor = checkNotNull(builder.executor, "executor");
     this.context = new DSLContexts(builder.settings, builder.listenerProvider);
     this.hasIpv6 = new HasIpv6(datasource, context);
+    this.hasTraceIdHigh = new HasTraceIdHigh(datasource, context);
     this.hasPreAggregatedDependencies = new HasPreAggregatedDependencies(datasource, context);
-    this.spanStore = new MySQLSpanStore(datasource, context, hasIpv6, hasPreAggregatedDependencies);
+    this.spanStore = new MySQLSpanStore(datasource, context, hasTraceIdHigh, hasIpv6,
+        hasPreAggregatedDependencies);
     this.asyncSpanStore = blockingToAsync(spanStore, executor);
-    MySQLSpanConsumer spanConsumer = new MySQLSpanConsumer(datasource, context, hasIpv6);
+    MySQLSpanConsumer spanConsumer =
+        new MySQLSpanConsumer(datasource, context, hasTraceIdHigh, hasIpv6);
     this.asyncSpanConsumer = blockingToAsync(spanConsumer, executor);
   }
 

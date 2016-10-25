@@ -364,10 +364,15 @@ final class CassandraSpanStore implements GuavaSpanStore {
                   spans.put(traceId, new ArrayList<Span>());
                 }
                 Span.Builder builder = Span.builder()
-                    .traceId(row.getVarint("trace_id").longValue())
                     .id(row.getLong("id"))
                     .name(row.getString("span_name"))
                     .duration(row.getLong("duration"));
+
+                // Sets a 64 bit trace id, or split a 128-bit one into high and low bits
+                if (traceId.bitLength() > 63) {
+                  builder.traceIdHigh(traceId.shiftRight(64).longValue());
+                }
+                builder.traceId(traceId.longValue());
 
                 if (!row.isNull("ts")) {
                   builder = builder.timestamp(row.getLong("ts"));

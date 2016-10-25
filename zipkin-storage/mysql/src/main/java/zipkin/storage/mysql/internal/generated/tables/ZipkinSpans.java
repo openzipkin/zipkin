@@ -42,7 +42,7 @@ import zipkin.storage.mysql.internal.generated.Zipkin;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinSpans extends TableImpl<Record> {
 
-    private static final long serialVersionUID = 1408994496;
+    private static final long serialVersionUID = -709545889;
 
     /**
      * The reference instance of <code>zipkin.zipkin_spans</code>
@@ -56,6 +56,11 @@ public class ZipkinSpans extends TableImpl<Record> {
     public Class<Record> getRecordType() {
         return Record.class;
     }
+
+    /**
+     * The column <code>zipkin.zipkin_spans.trace_id_high</code>. If non zero, this means the trace uses 128 bit traceIds instead of 64 bit
+     */
+    public final TableField<Record, Long> TRACE_ID_HIGH = createField("trace_id_high", org.jooq.impl.SQLDataType.BIGINT.nullable(false).defaultValue(org.jooq.impl.DSL.inline("0", org.jooq.impl.SQLDataType.BIGINT)), this, "If non zero, this means the trace uses 128 bit traceIds instead of 64 bit");
 
     /**
      * The column <code>zipkin.zipkin_spans.trace_id</code>.

@@ -12,6 +12,18 @@
           "filter": [
             "lowercase"
           ]
+        },
+        "traceId_analyzer": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": "traceId_filter"
+        }
+      },
+      "filter": {
+        "traceId_filter": {
+          "type": "pattern_capture",
+          "patterns": ["([0-9a-f]{1,16})$"],
+          "preserve_original": true
         }
       }
     }
@@ -72,6 +84,10 @@
     },
     "span": {
       "properties": {
+        "traceId": {
+          "type": "string",
+          "analyzer": "traceId_analyzer"
+        },
         "timestamp_millis": {
           "type":   "date",
           "format": "epoch_millis"

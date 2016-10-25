@@ -1,4 +1,5 @@
 CREATE TABLE IF NOT EXISTS zipkin_spans (
+  `trace_id_high` BIGINT NOT NULL DEFAULT 0 COMMENT 'If non zero, this means the trace uses 128 bit traceIds instead of 64 bit',
   `trace_id` BIGINT NOT NULL,
   `id` BIGINT NOT NULL,
   `name` VARCHAR(255) NOT NULL,
