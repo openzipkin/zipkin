@@ -84,6 +84,10 @@ public final class Endpoint {
    * Port of the IP's socket or null, if not known.
    *
    * <p>Note: this is to be treated as an unsigned integer, so watch for negatives.
+   * <p>Ex.
+   * <pre>{@code
+   * Integer unsignedPort = endpoint.port == null ? null : endpoint.port & 0xffff;
+   * }</pre>
    *
    * @see java.net.InetSocketAddress#getPort()
    */

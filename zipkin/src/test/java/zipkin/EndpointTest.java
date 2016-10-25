@@ -45,8 +45,13 @@ public class EndpointTest {
 
   @Test
   public void builderWithPort_highest() {
-    assertThat(Endpoint.builder().serviceName("foo").port(65535).build().port)
+    short port = Endpoint.builder().serviceName("foo").port(65535).build().port;
+
+    assertThat(port)
         .isEqualTo((short) -1); // an unsigned short of 65535 is the same as -1
+
+    assertThat(port & 0xffff)
+        .isEqualTo(65535);
   }
 
   /** The integer arg of port should be a whole number */
