@@ -19,11 +19,24 @@ import java.util.Arrays;
 import okio.Buffer;
 import okio.ByteString;
 import org.junit.Test;
+import zipkin.internal.Util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.TestObjects.APP_ENDPOINT;
 
 public class SpanTest {
+
+  @Test
+  public void traceIdHigh() {
+    Span with128BitId = Span.builder()
+        .traceId(Util.lowerHexToUnsignedLong("48485a3953bb6124"))
+        .traceIdHigh(Util.lowerHexToUnsignedLong("463ac35c9f6413ad"))
+        .id(1)
+        .name("foo").build();
+
+    assertThat(with128BitId.idString())
+        .isEqualTo("463ac35c9f6413ad48485a3953bb6124.0000000000000001<:0000000000000001");
+  }
 
   @Test
   public void idString_withParent() {

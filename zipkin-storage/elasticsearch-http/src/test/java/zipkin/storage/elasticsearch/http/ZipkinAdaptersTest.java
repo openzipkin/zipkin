@@ -24,6 +24,7 @@ import zipkin.DependencyLink;
 import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.TestObjects;
+import zipkin.internal.Util;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -266,5 +267,23 @@ public class ZipkinAdaptersTest {
     bytes.write(Codec.JSON.writeDependencyLink(link));
     assertThat(ZipkinAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(bytes))
         .isEqualTo(link);
+  }
+
+  @Test
+  public void readsTraceIdHighFromTraceIdField() throws IOException {
+    String with128BitTraceId = ("{\n"
+        + "  \"traceId\": \"48485a3953bb61246b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\"\n"
+        + "}");
+    String withLower64bitsTraceId = ("{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\"\n"
+        + "}");
+
+    assertThat(ZipkinAdapters.SPAN_ADAPTER.fromJson(with128BitTraceId))
+        .isEqualTo(ZipkinAdapters.SPAN_ADAPTER.fromJson(withLower64bitsTraceId).toBuilder()
+            .traceIdHigh(Util.lowerHexToUnsignedLong("48485a3953bb6124")).build());
   }
 }

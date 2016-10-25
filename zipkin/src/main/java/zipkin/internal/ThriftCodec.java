@@ -288,6 +288,7 @@ public final class ThriftCodec implements Codec {
   static final ThriftAdapter<Span> SPAN_ADAPTER = new ThriftAdapter<Span>() {
 
     final Field TRACE_ID = new Field(TYPE_I64, 1);
+    final Field TRACE_ID_HIGH = new Field(TYPE_I64, 12);
     final Field NAME = new Field(TYPE_STRING, 3);
     final Field ID = new Field(TYPE_I64, 4);
     final Field PARENT_ID = new Field(TYPE_I64, 5);
@@ -306,7 +307,9 @@ public final class ThriftCodec implements Codec {
         field = Field.read(bytes);
         if (field.type == TYPE_STOP) break;
 
-        if (field.isEqualTo(TRACE_ID)) {
+        if (field.isEqualTo(TRACE_ID_HIGH)) {
+          result.traceIdHigh(bytes.getLong());
+        } else if (field.isEqualTo(TRACE_ID)) {
           result.traceId(bytes.getLong());
         } else if (field.isEqualTo(NAME)) {
           result.name(readUtf8(bytes));
@@ -334,6 +337,7 @@ public final class ThriftCodec implements Codec {
 
     @Override public int sizeInBytes(Span value) {
       int sizeInBytes = 0;
+      if (value.traceIdHigh != 0) sizeInBytes += 3 + 8;
       sizeInBytes += 3 + 8;// TRACE_ID
       sizeInBytes += 3 + 4 + Buffer.utf8SizeInBytes(value.name);
       sizeInBytes += 3 + 8;// ID
@@ -350,6 +354,11 @@ public final class ThriftCodec implements Codec {
 
     @Override
     public void write(Span value, Buffer buffer) {
+
+      if (value.traceIdHigh != 0) {
+        TRACE_ID_HIGH.write(buffer);
+        buffer.writeLong(value.traceIdHigh);
+      }
 
       TRACE_ID.write(buffer);
       buffer.writeLong(value.traceId);

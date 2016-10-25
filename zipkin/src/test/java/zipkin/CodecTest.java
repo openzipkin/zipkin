@@ -47,6 +47,25 @@ public abstract class CodecTest {
   }
 
   @Test
+  public void spanRoundTrip_128bitTraceId() throws IOException {
+    for (Span span : TestObjects.TRACE) {
+      span = span.toBuilder().traceIdHigh(12345L).build();
+      byte[] bytes = codec().writeSpan(span);
+      assertThat(codec().readSpan(bytes))
+          .isEqualTo(span);
+    }
+  }
+
+  @Test
+  public void sizeInBytes_128bitTraceId() throws IOException {
+    for (Span span : TestObjects.TRACE) {
+      span = span.toBuilder().traceIdHigh(12345L).build();
+      assertThat(codec().sizeInBytes(span))
+          .isEqualTo(codec().writeSpan(span).length);
+    }
+  }
+
+  @Test
   public void binaryAnnotation_long() throws IOException {
     Span span = TestObjects.LOTS_OF_SPANS[0].toBuilder().binaryAnnotations(asList(
         BinaryAnnotation.builder()

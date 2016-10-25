@@ -326,7 +326,11 @@ public final class JsonCodec implements Codec {
       while (reader.hasNext()) {
         String nextName = reader.nextName();
         if (nextName.equals("traceId")) {
-          result.traceId(lowerHexToUnsignedLong(reader.nextString()));
+          String traceId = reader.nextString();
+          if (traceId.length() == 32) {
+            result.traceIdHigh(lowerHexToUnsignedLong(traceId, 0));
+          }
+          result.traceId(lowerHexToUnsignedLong(traceId));
         } else if (nextName.equals("name")) {
           result.name(reader.nextString());
         } else if (nextName.equals("id")) {
@@ -361,6 +365,7 @@ public final class JsonCodec implements Codec {
 
     @Override public int sizeInBytes(Span value) {
       int sizeInBytes = 0;
+      if (value.traceIdHigh != 0) sizeInBytes += 16;
       sizeInBytes += asciiSizeInBytes("{\"traceId\":\"") + 16; // fixed-width hex
       sizeInBytes += asciiSizeInBytes("\",\"id\":\"") + 16;
       sizeInBytes += asciiSizeInBytes("\",\"name\":\"") + jsonEscapedSizeInBytes(value.name) + 1;
@@ -388,7 +393,11 @@ public final class JsonCodec implements Codec {
     }
 
     @Override public void write(Span value, Buffer b) {
-      b.writeAscii("{\"traceId\":\"").writeLowerHex(value.traceId);
+      b.writeAscii("{\"traceId\":\"");
+      if (value.traceIdHigh != 0) {
+        b.writeLowerHex(value.traceIdHigh);
+      }
+      b.writeLowerHex(value.traceId);
       b.writeAscii("\",\"id\":\"").writeLowerHex(value.id);
       b.writeAscii("\",\"name\":\"").writeJsonEscaped(value.name).writeByte('"');
       if (value.parentId != null) {
