@@ -19,6 +19,7 @@ import org.junit.Test;
 import zipkin.BinaryAnnotation;
 import zipkin.Codec;
 import zipkin.CodecTest;
+import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.TestObjects;
 
@@ -239,6 +240,33 @@ public final class JsonCodecTest extends CodecTest {
             .type(BinaryAnnotation.Type.DOUBLE)
             .value(toBytes(Double.doubleToRawLongBits(1.23456789)))
             .build());
+
+    assertThat(Codec.JSON.readSpan(Codec.JSON.writeSpan(span)))
+        .isEqualTo(span);
+  }
+
+  @Test
+  public void endpointHighPort() {
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"binaryAnnotations\": [\n"
+        + "    {\n"
+        + "      \"key\": \"foo\",\n"
+        + "      \"value\": \"bar\",\n"
+        + "      \"endpoint\": {\n"
+        + "        \"serviceName\": \"service\",\n"
+        + "        \"port\": 65535\n"
+        + "      }\n"
+        + "    }\n"
+        + "  ]\n"
+        + "}";
+
+    Span span = Codec.JSON.readSpan(json.getBytes(UTF_8));
+    assertThat(span.binaryAnnotations)
+        .containsExactly(BinaryAnnotation.create("foo", "bar",
+            Endpoint.builder().serviceName("service").port(65535).build()));
 
     assertThat(Codec.JSON.readSpan(Codec.JSON.writeSpan(span)))
         .isEqualTo(span);

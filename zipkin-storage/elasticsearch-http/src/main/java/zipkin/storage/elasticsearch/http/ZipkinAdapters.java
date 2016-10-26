@@ -156,7 +156,7 @@ final class ZipkinAdapters {
             result.ipv6(ipv6);
             break;
           case "port":
-            result.port((short) reader.nextInt());
+            result.port(reader.nextInt());
             break;
           default:
             reader.skipValue();
