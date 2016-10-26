@@ -43,7 +43,7 @@ public class ThriftCodecInteropTest {
         .ipv6(Inet6Address.getByName("2001:db8::c001").getAddress())
         .port((short) 80).build();
 
-    zipkin.Span zipkinSpan = zipkin.Span.builder().traceId(1L).id(1L).name("get")
+    zipkin.Span zipkinSpan = zipkin.Span.builder().traceId(1L).traceIdHigh(2L).id(1L).name("get")
         .addAnnotation(zipkin.Annotation.create(1000, SERVER_RECV, zipkinEndpoint))
         .addAnnotation(zipkin.Annotation.create(1350, SERVER_SEND, zipkinEndpoint))
         .build();
@@ -56,7 +56,7 @@ public class ThriftCodecInteropTest {
 
     Span thriftSpan = new Span(1L, "get", 1L, asList(
         new Annotation(1000, SERVER_RECV).setHost(thriftEndpoint),
-        new Annotation(1350, SERVER_SEND).setHost(thriftEndpoint)), asList());
+        new Annotation(1350, SERVER_SEND).setHost(thriftEndpoint)), asList()).setTrace_id_high(2L);
 
     assertThat(serializer.serialize(thriftSpan))
         .isEqualTo(Codec.THRIFT.writeSpan(zipkinSpan));

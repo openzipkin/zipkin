@@ -355,11 +355,6 @@ public final class ThriftCodec implements Codec {
     @Override
     public void write(Span value, Buffer buffer) {
 
-      if (value.traceIdHigh != 0) {
-        TRACE_ID_HIGH.write(buffer);
-        buffer.writeLong(value.traceIdHigh);
-      }
-
       TRACE_ID.write(buffer);
       buffer.writeLong(value.traceId);
 
@@ -393,6 +388,11 @@ public final class ThriftCodec implements Codec {
       if (value.duration != null) {
         DURATION.write(buffer);
         buffer.writeLong(value.duration);
+      }
+
+      if (value.traceIdHigh != 0) {
+        TRACE_ID_HIGH.write(buffer);
+        buffer.writeLong(value.traceIdHigh);
       }
 
       buffer.writeByte(TYPE_STOP);
