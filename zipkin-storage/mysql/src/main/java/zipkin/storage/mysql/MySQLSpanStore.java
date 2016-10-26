@@ -67,24 +67,32 @@ import static zipkin.storage.mysql.internal.generated.tables.ZipkinDependencies.
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
 final class MySQLSpanStore implements SpanStore {
+  static final Field<?>[] SPAN_FIELDS_WITHOUT_TRACE_ID_HIGH;
   static final Field<?>[] ANNOTATION_FIELDS_WITHOUT_IPV6;
 
   static {
-    ArrayList<Field<?>> list = new ArrayList(Arrays.asList(ZIPKIN_ANNOTATIONS.fields()));
+    ArrayList<Field<?>> list = new ArrayList(Arrays.asList(ZIPKIN_SPANS.fields()));
+    list.remove(ZIPKIN_SPANS.TRACE_ID_HIGH);
+    list.trimToSize();
+    SPAN_FIELDS_WITHOUT_TRACE_ID_HIGH = list.toArray(new Field<?>[0]);
+
+    list = new ArrayList(Arrays.asList(ZIPKIN_ANNOTATIONS.fields()));
     list.remove(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6);
     list.trimToSize();
-    ANNOTATION_FIELDS_WITHOUT_IPV6 = list.toArray(new Field<?>[list.size()]);
+    ANNOTATION_FIELDS_WITHOUT_IPV6 = list.toArray(new Field<?>[0]);
   }
 
   private final DataSource datasource;
   private final DSLContexts context;
+  private final Lazy<Boolean> hasTraceIdHigh;
   private final Lazy<Boolean> hasIpv6;
   private final Lazy<Boolean> hasPreAggregatedDependencies;
 
-  MySQLSpanStore(DataSource datasource, DSLContexts context, Lazy<Boolean> hasIpv6,
-      Lazy<Boolean> hasPreAggregatedDependencies) {
+  MySQLSpanStore(DataSource datasource, DSLContexts context, Lazy<Boolean> hasTraceIdHigh,
+      Lazy<Boolean> hasIpv6, Lazy<Boolean> hasPreAggregatedDependencies) {
     this.datasource = datasource;
     this.context = context;
+    this.hasTraceIdHigh = hasTraceIdHigh;
     this.hasIpv6 = hasIpv6;
     this.hasPreAggregatedDependencies = hasPreAggregatedDependencies;
   }
@@ -167,9 +175,11 @@ final class MySQLSpanStore implements SpanStore {
         traceIdCondition = ZIPKIN_SPANS.TRACE_ID.eq(traceId);
       }
       spansWithoutAnnotations = context.get(conn)
-          .selectFrom(ZIPKIN_SPANS).where(traceIdCondition)
+          .select(hasTraceIdHigh.get() ? ZIPKIN_SPANS.fields() : SPAN_FIELDS_WITHOUT_TRACE_ID_HIGH)
+          .from(ZIPKIN_SPANS).where(traceIdCondition)
           .stream()
           .map(r -> Span.builder()
+              .traceIdHigh(hasTraceIdHigh.get() ? r.getValue(ZIPKIN_SPANS.TRACE_ID_HIGH) : 0)
               .traceId(r.getValue(ZIPKIN_SPANS.TRACE_ID))
               .name(r.getValue(ZIPKIN_SPANS.NAME))
               .id(r.getValue(ZIPKIN_SPANS.ID))

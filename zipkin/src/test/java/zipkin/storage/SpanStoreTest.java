@@ -523,6 +523,28 @@ public abstract class SpanStoreTest {
         .containsExactly(span);
   }
 
+  /** This tests that the 128bit trace id is read back from storage. */
+  @Test
+  public void getTraces_128BitTraceId() {
+    Span span = span1.toBuilder().traceIdHigh(1).build();
+
+    accept(span);
+
+    assertThat(store().getTraces(QueryRequest.builder().build()))
+        .containsExactly(asList(span));
+  }
+
+  /** This tests that the existing getTrace api can read traces which reported 128bit trace ids. */
+  @Test
+  public void getTrace_retrieves128bitTraceIdByLower64Bits() {
+    Span span = span1.toBuilder().traceIdHigh(1).build();
+
+    accept(span);
+
+    assertThat(store().getTrace(span.traceId))
+        .containsExactly(span);
+  }
+
   /**
    * It is expected that [[com.twitter.zipkin.storage.SpanStore.apply]] will receive the same span
    * id multiple times with different annotations. At query time, these must be merged.

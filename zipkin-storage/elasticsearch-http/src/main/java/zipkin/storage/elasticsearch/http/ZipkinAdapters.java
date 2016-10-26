@@ -29,6 +29,7 @@ import zipkin.Span;
 import zipkin.internal.Util;
 
 import static zipkin.internal.Util.UTF_8;
+import static zipkin.internal.Util.lowerHexToUnsignedLong;
 
 /**
  * Read-only json adapters resurrected from before we switched to Java 6 as storage components can
@@ -48,7 +49,11 @@ final class ZipkinAdapters {
         }
         switch (nextName) {
           case "traceId":
-            result.traceId(Util.lowerHexToUnsignedLong(reader.nextString()));
+            String traceId = reader.nextString();
+            if (traceId.length() == 32) {
+              result.traceIdHigh(lowerHexToUnsignedLong(traceId, 0));
+            }
+            result.traceId(lowerHexToUnsignedLong(traceId));
             break;
           case "name":
             result.name(reader.nextString());

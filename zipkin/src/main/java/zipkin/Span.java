@@ -47,7 +47,25 @@ public final class Span implements Comparable<Span>, Serializable {
   private static final long serialVersionUID = 0L;
 
   /**
+   * When non-zero, the trace containing this span uses 128-bit trace identifiers.
+   *
+   * <p>{@code traceIdHigh} corresponds to the high bits in big-endian format and {@link #traceId}
+   * corresponds to the low bits.
+   *
+   * <p>Ex. to convert the two fields to a 128bit opaque id array, you'd use code like below.
+   * <pre>{@code
+   * ByteBuffer traceId128 = ByteBuffer.allocate(16);
+   * traceId128.putLong(span.traceIdHigh);
+   * traceId128.putLong(span.traceId);
+   * traceBytes = traceId128.array();
+   * }</pre>
+   */
+  public final long traceIdHigh;
+
+  /**
    * Unique 8-byte identifier for a trace, set on all spans within it.
+   *
+   * @see #traceIdHigh for notes about 128-bit trace identifiers
    */
   public final long traceId;
 
@@ -140,6 +158,7 @@ public final class Span implements Comparable<Span>, Serializable {
 
   Span(Builder builder) {
     this.traceId = builder.traceId;
+    this.traceIdHigh = builder.traceIdHigh != null ? builder.traceIdHigh : 0L;
     this.name = checkNotNull(builder.name, "name").isEmpty() ? ""
         : builder.name.toLowerCase(Locale.ROOT);
     this.id = builder.id;
@@ -161,6 +180,7 @@ public final class Span implements Comparable<Span>, Serializable {
 
   public static final class Builder {
     Long traceId;
+    Long traceIdHigh;
     String name;
     Long id;
     Long parentId;
@@ -176,6 +196,7 @@ public final class Span implements Comparable<Span>, Serializable {
 
     Builder(Span source) {
       this.traceId = source.traceId;
+      this.traceIdHigh = source.traceIdHigh;
       this.name = source.name;
       this.id = source.id;
       this.parentId = source.parentId;
@@ -194,6 +215,9 @@ public final class Span implements Comparable<Span>, Serializable {
       if (this.traceId == null) {
         this.traceId = that.traceId;
       }
+      if (this.traceIdHigh == 0) {
+        this.traceIdHigh = that.traceIdHigh;
+      }
       if (this.name == null || this.name.length() == 0 || this.name.equals("unknown")) {
         this.name = that.name;
       }
@@ -205,7 +229,8 @@ public final class Span implements Comparable<Span>, Serializable {
       }
 
       // Single timestamp makes duration easy: just choose max
-      if (this.timestamp == null || that.timestamp == null || this.timestamp.equals(that.timestamp)) {
+      if (this.timestamp == null || that.timestamp == null || this.timestamp.equals(
+          that.timestamp)) {
         this.timestamp = this.timestamp != null ? this.timestamp : that.timestamp;
         if (this.duration == null) {
           this.duration = that.duration;
@@ -219,10 +244,10 @@ public final class Span implements Comparable<Span>, Serializable {
         this.duration = Math.max(thisEndTs, thatEndTs) - this.timestamp;
       }
 
-      for (Annotation a: that.annotations) {
+      for (Annotation a : that.annotations) {
         addAnnotation(a);
       }
-      for (BinaryAnnotation a: that.binaryAnnotations) {
+      for (BinaryAnnotation a : that.binaryAnnotations) {
         addBinaryAnnotation(a);
       }
       if (this.debug == null) {
@@ -240,6 +265,12 @@ public final class Span implements Comparable<Span>, Serializable {
     /** @see Span#traceId */
     public Builder traceId(long traceId) {
       this.traceId = traceId;
+      return this;
+    }
+
+    /** @see Span#traceIdHigh */
+    public Builder traceIdHigh(long traceIdHigh) {
+      this.traceIdHigh = traceIdHigh;
       return this;
     }
 
@@ -328,7 +359,8 @@ public final class Span implements Comparable<Span>, Serializable {
     }
     if (o instanceof Span) {
       Span that = (Span) o;
-      return (this.traceId == that.traceId)
+      return (this.traceIdHigh == that.traceIdHigh)
+          && (this.traceId == that.traceId)
           && (this.name.equals(that.name))
           && (this.id == that.id)
           && equal(this.parentId, that.parentId)
@@ -344,6 +376,8 @@ public final class Span implements Comparable<Span>, Serializable {
   @Override
   public int hashCode() {
     int h = 1;
+    h *= 1000003;
+    h ^= (traceIdHigh >>> 32) ^ traceIdHigh;
     h *= 1000003;
     h ^= (traceId >>> 32) ^ traceId;
     h *= 1000003;
@@ -376,15 +410,24 @@ public final class Span implements Comparable<Span>, Serializable {
     return this.name.compareTo(that.name);
   }
 
-  /** Returns {@code $traceId.$spanId<:$parentId} */
+  /** Returns {@code $traceId.$spanId<:$parentId or $spanId} */
   public String idString() {
-    char[] result = new char[(3 * 16) + 3]; // 3 ids and the constant delimiters
-    writeHexLong(result, 0, traceId);
-    result[16] = '.';
-    writeHexLong(result, 17, id);
-    result[33] = '<';
-    result[34] = ':';
-    writeHexLong(result, 35, parentId != null ? parentId : id);
+    int resultLength = (3 * 16) + 3; // 3 ids and the constant delimiters
+    if (traceIdHigh != 0) resultLength += 16;
+    char[] result = new char[resultLength];
+    int pos = 0;
+    if (traceIdHigh != 0) {
+      writeHexLong(result, pos, traceIdHigh);
+      pos += 16;
+    }
+    writeHexLong(result, pos, traceId);
+    pos += 16;
+    result[pos++] = '.';
+    writeHexLong(result, pos, id);
+    pos += 16;
+    result[pos++] = '<';
+    result[pos++] = ':';
+    writeHexLong(result, pos, parentId != null ? parentId : id);
     return new String(result);
   }
 

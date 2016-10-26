@@ -50,7 +50,18 @@ public final class JsonCodecTest extends CodecTest {
   }
 
   @Test
-  public void tolerates128bitTraceIds_byTossingHighBits() {
+  public void writesTraceIdHighIntoTraceIdField() {
+    Span with128BitTraceId = Span.builder()
+        .traceIdHigh(Util.lowerHexToUnsignedLong("48485a3953bb6124"))
+        .traceId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
+        .id(1).name("").build();
+
+    assertThat(new String(Codec.JSON.writeSpan(with128BitTraceId), Util.UTF_8))
+        .startsWith("{\"traceId\":\"48485a3953bb61246b221d5bc9e6496c\"");
+  }
+
+  @Test
+  public void readsTraceIdHighFromTraceIdField() {
     byte[] with128BitTraceId = ("{\n"
         + "  \"traceId\": \"48485a3953bb61246b221d5bc9e6496c\",\n"
         + "  \"name\": \"get-traces\",\n"
@@ -63,7 +74,8 @@ public final class JsonCodecTest extends CodecTest {
         + "}").getBytes(UTF_8);
 
     assertThat(Codec.JSON.readSpan(with128BitTraceId))
-        .isEqualTo(Codec.JSON.readSpan(withLower64bitsTraceId));
+        .isEqualTo(Codec.JSON.readSpan(withLower64bitsTraceId).toBuilder()
+            .traceIdHigh(Util.lowerHexToUnsignedLong("48485a3953bb6124")).build());
   }
 
   @Test

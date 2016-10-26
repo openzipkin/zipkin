@@ -92,7 +92,8 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     for (Span span : rawSpans) {
       // indexing occurs by timestamp, so derive one if not present.
       Long timestamp = guessTimestamp(span);
-      futures.add(storeSpan(span, timestamp));
+      BigInteger traceId = traceId(span);
+      futures.add(storeSpan(span, traceId, timestamp));
 
       for (String serviceName : span.serviceNames()) {
         // QueryRequest.min/maxDuration
@@ -100,10 +101,9 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
           // Contract for Repository.storeServiceSpanName is to store the span twice, once with
           // the span name and another with empty string.
           futures.add(storeServiceSpanName(serviceName, span.name, timestamp, span.duration,
-              span.traceId));
+              traceId));
           if (!span.name.isEmpty()) { // If span.name == "", this would be redundant
-            futures.add(
-                storeServiceSpanName(serviceName, "", timestamp, span.duration, span.traceId));
+            futures.add(storeServiceSpanName(serviceName, "", timestamp, span.duration, traceId));
           }
         }
       }
@@ -114,7 +114,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
   /**
    * Store the span in the underlying storage for later retrieval.
    */
-  ListenableFuture<?> storeSpan(Span span, Long timestamp) {
+  ListenableFuture<?> storeSpan(Span span, BigInteger traceId, Long timestamp) {
     try {
       if ((null == timestamp || 0 == timestamp)
           && metadata.compactionClass.contains("TimeWindowCompactionStrategy")) {
@@ -135,7 +135,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       Set<String> annotationKeys = CassandraUtil.annotationKeys(span);
 
       BoundStatement bound = bindWithName(insertSpan, "insert-span")
-          .setVarint("trace_id", BigInteger.valueOf(span.traceId))
+          .setVarint("trace_id", traceId)
           .setUUID("ts_uuid", new UUID(
               UUIDs.startOf(null != timestamp ? (timestamp / 1000) : 0)
                   .getMostSignificantBits(),
@@ -167,7 +167,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       String spanName,
       long timestamp_micro,
       Long duration,
-      long traceId) {
+      BigInteger traceId) {
 
     int bucket = durationIndexBucket(timestamp_micro);
     try {
@@ -179,7 +179,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
               .setUUID("ts", new UUID(
                   UUIDs.startOf(timestamp_micro / 1000).getMostSignificantBits(),
                   UUIDs.random().getLeastSignificantBits()))
-              .setVarint("trace_id", BigInteger.valueOf(traceId));
+              .setVarint("trace_id", traceId);
 
       if (null != duration) {
         bound = bound.setLong("duration", duration);
@@ -189,5 +189,11 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     } catch (RuntimeException ex) {
       return Futures.immediateFailedFuture(ex);
     }
+  }
+
+  static BigInteger traceId(Span span) {
+    return span.traceIdHigh != 0
+        ? BigInteger.valueOf(span.traceIdHigh).shiftLeft(64).or(BigInteger.valueOf(span.traceId))
+        : BigInteger.valueOf(span.traceId);
   }
 }
