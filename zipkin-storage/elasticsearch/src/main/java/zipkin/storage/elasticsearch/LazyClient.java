@@ -55,10 +55,4 @@ final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
   @Override public String toString() {
     return clientFactory.toString();
   }
-
-  @Override
-  public void close() {
-    InternalElasticsearchClient maybeNull = maybeNull();
-    if (maybeNull != null) maybeNull.close();
-  }
 }
