@@ -260,6 +260,29 @@ public class ZipkinAdaptersTest {
   }
 
   @Test
+  public void endpointHighPort() throws IOException {
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"binaryAnnotations\": [\n"
+        + "    {\n"
+        + "      \"key\": \"foo\",\n"
+        + "      \"value\": \"bar\",\n"
+        + "      \"endpoint\": {\n"
+        + "        \"serviceName\": \"service\",\n"
+        + "        \"port\": 65535\n"
+        + "      }\n"
+        + "    }\n"
+        + "  ]\n"
+        + "}";
+
+    assertThat(SPAN_ADAPTER.fromJson(json).binaryAnnotations)
+        .containsExactly(BinaryAnnotation.create("foo", "bar",
+            Endpoint.builder().serviceName("service").port(65535).build()));
+  }
+
+  @Test
   public void dependencyLinkRoundTrip() throws IOException {
     DependencyLink link = DependencyLink.create("foo", "bar", 2);
 
