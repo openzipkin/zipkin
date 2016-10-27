@@ -18,6 +18,7 @@ import org.junit.Test;
 import zipkin.DependencyLink;
 import zipkin.TestObjects;
 import zipkin.internal.DependencyLinkSpan.Kind;
+import zipkin.internal.DependencyLinkSpan.TraceId;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,9 +45,9 @@ public class DependencyLinkerTest {
   @Test
   public void doesntLinkUnknownRootSpans() {
     List<DependencyLinkSpan> unknownRootSpans = asList(
-        new DependencyLinkSpan(1L, null, 1L, Kind.UNKNOWN, null, null),
-        new DependencyLinkSpan(1L, null, 1L, Kind.UNKNOWN, "server", "client"),
-        new DependencyLinkSpan(1L, null, 1L, Kind.UNKNOWN, "client", "server")
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.UNKNOWN, null, null),
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.UNKNOWN, "server", "client"),
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.UNKNOWN, "client", "server")
     );
 
     for (DependencyLinkSpan span : unknownRootSpans) {
@@ -63,8 +64,8 @@ public class DependencyLinkerTest {
   @Test
   public void linksSpansDirectedByKind() {
     List<DependencyLinkSpan> validRootSpans = asList(
-        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, "server", "client"),
-        new DependencyLinkSpan(1L, null, 1L, Kind.CLIENT, "client", "server")
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "server", "client"),
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.CLIENT, "client", "server")
     );
 
     for (DependencyLinkSpan span : validRootSpans) {
@@ -77,9 +78,9 @@ public class DependencyLinkerTest {
   @Test
   public void callsAgainstTheSameLinkIncreasesCallCount_span() {
     List<DependencyLinkSpan> trace = asList(
-        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, "client", null),
-        new DependencyLinkSpan(1L, 1L, 2L, Kind.CLIENT, null, "server"),
-        new DependencyLinkSpan(1L, 1L, 3L, Kind.CLIENT, null, "server")
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "client", null),
+        new DependencyLinkSpan(new TraceId(0L, 1L), 1L, 2L, Kind.CLIENT, null, "server"),
+        new DependencyLinkSpan(new TraceId(0L, 1L), 1L, 3L, Kind.CLIENT, null, "server")
     );
 
     assertThat(new DependencyLinker()
@@ -90,8 +91,8 @@ public class DependencyLinkerTest {
   @Test
   public void callsAgainstTheSameLinkIncreasesCallCount_trace() {
     List<DependencyLinkSpan> trace = asList(
-        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, "client", null),
-        new DependencyLinkSpan(1L, 1L, 2L, Kind.CLIENT, null, "server")
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "client", null),
+        new DependencyLinkSpan(new TraceId(0L, 1L), 1L, 2L, Kind.CLIENT, null, "server")
     );
 
     assertThat(new DependencyLinker()
@@ -108,12 +109,12 @@ public class DependencyLinkerTest {
   public void singleHostSpansResultInASingleCallCount() {
     List<List<DependencyLinkSpan>> singleLinks = asList(
         asList(
-            new DependencyLinkSpan(1L, null, 1L, Kind.CLIENT, "client", "server"),
-            new DependencyLinkSpan(1L, 1L, 2L, Kind.SERVER, "server", null)
+            new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.CLIENT, "client", "server"),
+            new DependencyLinkSpan(new TraceId(0L, 1L), 1L, 2L, Kind.SERVER, "server", null)
         ),
         asList(
-            new DependencyLinkSpan(3L, null, 3L, Kind.SERVER, "client", null),
-            new DependencyLinkSpan(3L, 3L, 4L, Kind.CLIENT, "client", "server")
+            new DependencyLinkSpan(new TraceId(0L, 3L), null, 3L, Kind.SERVER, "client", null),
+            new DependencyLinkSpan(new TraceId(0L, 3L), 3L, 4L, Kind.CLIENT, "client", "server")
         )
     );
 
@@ -131,11 +132,11 @@ public class DependencyLinkerTest {
   @Test
   public void intermediatedClientSpansMissingLocalServiceNameLinkToNearestServer() {
     List<DependencyLinkSpan> trace = asList(
-        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, "client", null),
-        new DependencyLinkSpan(1L, 1L, 2L, Kind.UNKNOWN, null, null),
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "client", null),
+        new DependencyLinkSpan(new TraceId(0L, 1L), 1L, 2L, Kind.UNKNOWN, null, null),
         // possibly a local fan-out span
-        new DependencyLinkSpan(1L, 2L, 3L, Kind.CLIENT, null, "server"),
-        new DependencyLinkSpan(1L, 2L, 4L, Kind.CLIENT, null, "server")
+        new DependencyLinkSpan(new TraceId(0L, 1L), 2L, 3L, Kind.CLIENT, null, "server"),
+        new DependencyLinkSpan(new TraceId(0L, 1L), 2L, 4L, Kind.CLIENT, null, "server")
     );
 
     assertThat(new DependencyLinker()
@@ -147,8 +148,8 @@ public class DependencyLinkerTest {
   @Test
   public void linksLoopbackSpans() {
     List<DependencyLinkSpan> validRootSpans = asList(
-        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, "service", "service"),
-        new DependencyLinkSpan(2L, null, 2L, Kind.CLIENT, "service", "service")
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "service", "service"),
+        new DependencyLinkSpan(new TraceId(0L, 2L), null, 2L, Kind.CLIENT, "service", "service")
     );
 
     for (DependencyLinkSpan span : validRootSpans) {
@@ -165,12 +166,12 @@ public class DependencyLinkerTest {
   @Test
   public void cannotLinkSingleSpanWithoutBothServiceNames() {
     List<DependencyLinkSpan> incompleteRootSpans = asList(
-        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, null, null),
-        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, "server", null),
-        new DependencyLinkSpan(1L, null, 1L, Kind.SERVER, null, "client"),
-        new DependencyLinkSpan(1L, null, 1L, Kind.CLIENT, null, null),
-        new DependencyLinkSpan(1L, null, 1L, Kind.CLIENT, "client", null),
-        new DependencyLinkSpan(1L, null, 1L, Kind.CLIENT, null, "server")
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, null, null),
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "server", null),
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, null, "client"),
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.CLIENT, null, null),
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.CLIENT, "client", null),
+        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.CLIENT, null, "server")
     );
 
     for (DependencyLinkSpan span : incompleteRootSpans) {

@@ -27,6 +27,41 @@ import static zipkin.internal.Util.equal;
  */
 // fields not exposed as public to further discourage use as a general type
 public final class DependencyLinkSpan {
+
+  /** Unique 8 or 16-byte identifier for a trace, set on all spans within it. */
+  static final class TraceId {
+
+    /** 0 may imply 8-byte identifiers are in use */
+    final long hi;
+    final long lo;
+
+    TraceId(long hi, long lo) {
+      this.hi = hi;
+      this.lo = lo;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == this) return true;
+      if (o instanceof TraceId) {
+        TraceId that = (TraceId) o;
+        return (this.hi == that.hi)
+            && (this.lo == that.lo);
+      }
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      int h = 1;
+      h *= 1000003;
+      h ^= (hi >>> 32) ^ hi;
+      h *= 1000003;
+      h ^= (lo >>> 32) ^ lo;
+      return h;
+    }
+  }
+
   /**
    * Indicates the primary span type.
    */
@@ -37,7 +72,7 @@ public final class DependencyLinkSpan {
     UNKNOWN
   }
 
-  final long traceId;
+  final TraceId traceId;
   @Nullable
   final Long parentId;
   final long id;
@@ -47,7 +82,7 @@ public final class DependencyLinkSpan {
   @Nullable
   final String peerService;
 
-  DependencyLinkSpan(long traceId, Long parentId, long id, Kind kind, String service,
+  DependencyLinkSpan(TraceId traceId, Long parentId, long id, Kind kind, String service,
       String peerService) {
     this.traceId = traceId;
     this.parentId = parentId;
@@ -59,7 +94,11 @@ public final class DependencyLinkSpan {
 
   @Override public String toString() {
     StringBuilder json = new StringBuilder();
-    json.append("{\"traceId\": \"").append(Util.toLowerHex(traceId)).append('\"');
+    json.append("{\"traceId\": \"");
+    if (traceId.hi != 0) {
+      json.append(Util.toLowerHex(traceId.hi));
+    }
+    json.append(Util.toLowerHex(traceId.lo)).append('\"');
     if (parentId != null) {
       json.append(", \"parentId\": \"").append(Util.toLowerHex(parentId)).append('\"');
     }
@@ -74,9 +113,9 @@ public final class DependencyLinkSpan {
   @Override
   public boolean equals(Object o) {
     if (o == this) return true;
-    if (o instanceof Span) {
-      Span that = (Span) o;
-      return (this.traceId == that.traceId)
+    if (o instanceof DependencyLinkSpan) {
+      DependencyLinkSpan that = (DependencyLinkSpan) o;
+      return equal(this.traceId, that.traceId)
           && equal(this.parentId, that.parentId)
           && (this.id == that.id);
     }
@@ -88,7 +127,7 @@ public final class DependencyLinkSpan {
   public int hashCode() {
     int h = 1;
     h *= 1000003;
-    h ^= (traceId >>> 32) ^ traceId;
+    h ^= traceId.hashCode();
     h *= 1000003;
     h ^= (parentId == null) ? 0 : parentId.hashCode();
     h *= 1000003;
@@ -96,12 +135,13 @@ public final class DependencyLinkSpan {
     return h;
   }
 
-  public static Builder builder(long traceId, Long parentId, long spanId) {
-    return new Builder(traceId, parentId, spanId);
+  public static Builder builder(long traceIdHigh, long traceId, Long parentId, long spanId) {
+    return new Builder(new TraceId(traceIdHigh, traceId), parentId, spanId);
   }
 
   public static DependencyLinkSpan from(Span s) {
-    DependencyLinkSpan.Builder linkSpan = DependencyLinkSpan.builder(s.traceId, s.parentId, s.id);
+    TraceId traceId = new TraceId(s.traceIdHigh, s.traceId);
+    DependencyLinkSpan.Builder linkSpan = new DependencyLinkSpan.Builder(traceId, s.parentId, s.id);
     for (BinaryAnnotation a : s.binaryAnnotations) {
       if (a.key.equals(Constants.CLIENT_ADDR) && a.endpoint != null) {
         linkSpan.caService(a.endpoint.serviceName);
@@ -120,7 +160,7 @@ public final class DependencyLinkSpan {
   }
 
   public static final class Builder {
-    private final long traceId;
+    private final TraceId traceId;
     private final Long parentId;
     private final long spanId;
     private String srService;
@@ -128,7 +168,7 @@ public final class DependencyLinkSpan {
     private String caService;
     private String saService;
 
-    Builder(long traceId, Long parentId, long spanId) {
+    Builder(TraceId traceId, Long parentId, long spanId) {
       this.traceId = traceId;
       this.spanId = spanId;
       this.parentId = parentId;

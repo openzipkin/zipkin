@@ -14,8 +14,9 @@
 package zipkin.storage.mysql;
 
 import java.util.Iterator;
-import org.jooq.Record5;
+import org.jooq.Record;
 import zipkin.internal.DependencyLinkSpan;
+import zipkin.internal.Nullable;
 import zipkin.internal.PeekingIterator;
 import zipkin.storage.mysql.internal.generated.tables.ZipkinSpans;
 
@@ -25,17 +26,26 @@ import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 
-/** Convenience that lazy converts rows into {@linkplain DependencyLinkSpan} objects. */
+/**
+ * Convenience that lazy converts rows into {@linkplain DependencyLinkSpan} objects.
+ *
+ * <p>Out-of-date schemas may be missing the trace_id_high field. When present, this becomes {@link
+ * DependencyLinkSpan.TraceId#hi} used as the left-most 16 characters of the traceId in logging
+ * statements.
+ */
 final class DependencyLinkSpanIterator implements Iterator<DependencyLinkSpan> {
 
   /** Assumes the input records are sorted by trace id, span id */
   static final class ByTraceId implements Iterator<Iterator<DependencyLinkSpan>> {
-    final PeekingIterator<Record5<Long, Long, Long, String, String>> delegate;
+    final PeekingIterator<Record> delegate;
+    final boolean hasTraceIdHigh;
 
-    Long currentTraceId;
+    @Nullable Long currentTraceIdHi;
+    long currentTraceIdLo;
 
-    ByTraceId(Iterator<Record5<Long, Long, Long, String, String>> delegate) {
+    ByTraceId(Iterator<Record> delegate, boolean hasTraceIdHigh) {
       this.delegate = new PeekingIterator<>(delegate);
+      this.hasTraceIdHigh = hasTraceIdHigh;
     }
 
     @Override public boolean hasNext() {
@@ -43,8 +53,9 @@ final class DependencyLinkSpanIterator implements Iterator<DependencyLinkSpan> {
     }
 
     @Override public Iterator<DependencyLinkSpan> next() {
-      currentTraceId = delegate.peek().getValue(ZipkinSpans.ZIPKIN_SPANS.TRACE_ID);
-      return new DependencyLinkSpanIterator(delegate, currentTraceId);
+      currentTraceIdHi = hasTraceIdHigh ? traceIdHigh(delegate) : null;
+      currentTraceIdLo = delegate.peek().getValue(ZipkinSpans.ZIPKIN_SPANS.TRACE_ID);
+      return new DependencyLinkSpanIterator(delegate, currentTraceIdHi, currentTraceIdLo);
     }
 
     @Override public void remove() {
@@ -52,26 +63,30 @@ final class DependencyLinkSpanIterator implements Iterator<DependencyLinkSpan> {
     }
   }
 
-  final PeekingIterator<Record5<Long, Long, Long, String, String>> delegate;
-  final Long traceId;
+  final PeekingIterator<Record> delegate;
+  @Nullable final Long traceIdHi;
+  final long traceIdLo;
 
-  DependencyLinkSpanIterator(PeekingIterator<Record5<Long, Long, Long, String, String>> delegate,
-      Long traceId) {
+  DependencyLinkSpanIterator(PeekingIterator<Record> delegate, Long traceIdHi, long traceIdLo) {
     this.delegate = delegate;
-    this.traceId = traceId;
+    this.traceIdHi = traceIdHi;
+    this.traceIdLo = traceIdLo;
   }
 
   @Override
   public boolean hasNext() {
-    return delegate.hasNext() && delegate.peek().getValue(ZipkinSpans.ZIPKIN_SPANS.TRACE_ID).equals(traceId);
+    return delegate.hasNext()
+        && (traceIdHi == null || traceIdHi.equals(traceIdHigh(delegate)))
+        && delegate.peek().getValue(ZipkinSpans.ZIPKIN_SPANS.TRACE_ID) == traceIdLo;
   }
 
   @Override
   public DependencyLinkSpan next() {
-    Record5<Long, Long, Long, String, String> row = delegate.next();
+    Record row = delegate.next();
 
     DependencyLinkSpan.Builder result = DependencyLinkSpan.builder(
-        traceId,
+        traceIdHi != null ? traceIdHi : 0L,
+        traceIdLo,
         row.getValue(ZipkinSpans.ZIPKIN_SPANS.PARENT_ID),
         row.getValue(ZipkinSpans.ZIPKIN_SPANS.ID)
     );
@@ -81,7 +96,7 @@ final class DependencyLinkSpanIterator implements Iterator<DependencyLinkSpan> {
         row.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME));
 
     while (hasNext()) {
-      Record5<Long, Long, Long, String, String> next = delegate.peek();
+      Record next = delegate.peek();
       if (next == null) {
         continue;
       }
@@ -118,5 +133,9 @@ final class DependencyLinkSpanIterator implements Iterator<DependencyLinkSpan> {
   @Override
   public void remove() {
     throw new UnsupportedOperationException();
+  }
+
+  static long traceIdHigh(PeekingIterator<Record> delegate) {
+    return delegate.peek().getValue(ZipkinSpans.ZIPKIN_SPANS.TRACE_ID_HIGH);
   }
 }
