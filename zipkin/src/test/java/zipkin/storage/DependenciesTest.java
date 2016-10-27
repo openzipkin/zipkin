@@ -14,6 +14,7 @@
 package zipkin.storage;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,6 +82,21 @@ public abstract class DependenciesTest {
   @Test
   public void getDependencies() {
     processDependencies(TRACE);
+
+    assertThat(store().getDependencies(TODAY + 1000L, null))
+        .containsOnlyElementsOf(LINKS);
+  }
+
+  /**
+   * This tests that dependency linking ignores the high-bits of the trace ID when grouping spans
+   * for dependency links. This allows environments with 64-bit instrumentation to participate in
+   * the same trace as 128-bit instrumentation.
+   */
+  @Test
+  public void getDependencies_mixedTraceIdLength() {
+    List<Span> mixedTrace = new ArrayList<>(TRACE);
+    mixedTrace.set(1, TRACE.get(1).toBuilder().traceIdHigh(2).build());
+    processDependencies(mixedTrace);
 
     assertThat(store().getDependencies(TODAY + 1000L, null))
         .containsOnlyElementsOf(LINKS);

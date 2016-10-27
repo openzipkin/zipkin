@@ -31,10 +31,10 @@ import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Record1;
-import org.jooq.Record5;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectOffsetStep;
 import org.jooq.Table;
+import org.jooq.TableField;
 import org.jooq.TableOnConditionStep;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
@@ -67,20 +67,16 @@ import static zipkin.storage.mysql.internal.generated.tables.ZipkinDependencies.
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
 final class MySQLSpanStore implements SpanStore {
-  static final Field<?>[] SPAN_FIELDS_WITHOUT_TRACE_ID_HIGH;
-  static final Field<?>[] ANNOTATION_FIELDS_WITHOUT_IPV6;
-
-  static {
-    ArrayList<Field<?>> list = new ArrayList(Arrays.asList(ZIPKIN_SPANS.fields()));
-    list.remove(ZIPKIN_SPANS.TRACE_ID_HIGH);
-    list.trimToSize();
-    SPAN_FIELDS_WITHOUT_TRACE_ID_HIGH = list.toArray(new Field<?>[0]);
-
-    list = new ArrayList(Arrays.asList(ZIPKIN_ANNOTATIONS.fields()));
-    list.remove(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6);
-    list.trimToSize();
-    ANNOTATION_FIELDS_WITHOUT_IPV6 = list.toArray(new Field<?>[0]);
-  }
+  static final Field<?>[] SPAN_FIELDS_WITHOUT_TRACE_ID_HIGH =
+      fieldsExcept(ZIPKIN_SPANS.fields(), ZIPKIN_SPANS.TRACE_ID_HIGH);
+  static final Field<?>[] ANNOTATION_FIELDS_WITHOUT_IPV6 =
+      fieldsExcept(ZIPKIN_ANNOTATIONS.fields(), ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6);
+  static final Field<?>[] LINK_FIELDS = new Field<?>[] {
+      ZIPKIN_SPANS.TRACE_ID_HIGH, ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.PARENT_ID, ZIPKIN_SPANS.ID,
+      ZIPKIN_ANNOTATIONS.A_KEY, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME
+  };
+  static final Field<?>[] LINK_FIELDS_WITHOUT_TRACE_ID_HIGH =
+      fieldsExcept(LINK_FIELDS, ZIPKIN_SPANS.TRACE_ID_HIGH);
 
   private final DataSource datasource;
   private final DSLContexts context;
@@ -316,13 +312,14 @@ final class MySQLSpanStore implements SpanStore {
   List<DependencyLink> aggregateDependencies(long endTs, @Nullable Long lookback, Connection conn) {
     endTs = endTs * 1000;
     // Lazy fetching the cursor prevents us from buffering the whole dataset in memory.
-    Cursor<Record5<Long, Long, Long, String, String>> cursor = context.get(conn)
-        .selectDistinct(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.PARENT_ID, ZIPKIN_SPANS.ID,
-            ZIPKIN_ANNOTATIONS.A_KEY, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME)
+    Cursor<Record> cursor = context.get(conn)
+        .selectDistinct(hasTraceIdHigh.get() ? LINK_FIELDS : LINK_FIELDS_WITHOUT_TRACE_ID_HIGH)
         // left joining allows us to keep a mapping of all span ids, not just ones that have
         // special annotations. We need all span ids to reconstruct the trace tree. We need
         // the whole trace tree so that we can accurately skip local spans.
         .from(ZIPKIN_SPANS.leftJoin(ZIPKIN_ANNOTATIONS)
+            // NOTE: we are intentionally grouping only on the low-bits of trace id. This buys time
+            // for applications to upgrade to 128-bit instrumentation.
             .on(ZIPKIN_SPANS.TRACE_ID.eq(ZIPKIN_ANNOTATIONS.TRACE_ID).and(
                 ZIPKIN_SPANS.ID.eq(ZIPKIN_ANNOTATIONS.SPAN_ID)))
             .and(ZIPKIN_ANNOTATIONS.A_KEY.in(CLIENT_SEND, CLIENT_ADDR, SERVER_RECV, SERVER_ADDR)))
@@ -333,7 +330,7 @@ final class MySQLSpanStore implements SpanStore {
         .groupBy(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.ID, ZIPKIN_ANNOTATIONS.A_KEY).fetchLazy();
 
     Iterator<Iterator<DependencyLinkSpan>> traces =
-        new DependencyLinkSpanIterator.ByTraceId(cursor.iterator());
+        new DependencyLinkSpanIterator.ByTraceId(cursor.iterator(), hasTraceIdHigh.get());
 
     if (!traces.hasNext()) return Collections.emptyList();
 
@@ -344,5 +341,12 @@ final class MySQLSpanStore implements SpanStore {
     }
 
     return linker.link();
+  }
+
+  static Field<?>[] fieldsExcept(Field<?>[] fields, TableField<Record, ?> exclude) {
+    ArrayList<Field<?>> list = new ArrayList(Arrays.asList(fields));
+    list.remove(exclude);
+    list.trimToSize();
+    return list.toArray(new Field<?>[0]);
   }
 }
