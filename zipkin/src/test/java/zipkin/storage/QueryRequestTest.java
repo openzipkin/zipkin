@@ -105,9 +105,26 @@ public class QueryRequestTest {
 
     QueryRequest request =
         QueryRequest.builder().serviceName("security-service").parseAnnotationQuery(annotationQuery).build();
-
+    
     assertThat(request.binaryAnnotations)
         .containsEntry(HTTP_METHOD, "GET")
+        .hasSize(1);
+    assertThat(request.annotations)
+        .containsExactly(Constants.ERROR);
+
+    assertThat(request.toAnnotationQuery())
+        .isEqualTo(annotationQuery);
+  }
+
+  @Test
+  public void annotationQuery_complexValue() {
+    String annotationQuery = "http.method=GET=1 and error";
+
+    QueryRequest request =
+        QueryRequest.builder().serviceName("security-service").parseAnnotationQuery(annotationQuery).build();
+    
+    assertThat(request.binaryAnnotations)
+        .containsEntry(HTTP_METHOD, "GET=1")
         .hasSize(1);
     assertThat(request.annotations)
         .containsExactly(Constants.ERROR);
