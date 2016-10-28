@@ -224,8 +224,7 @@ public final class QueryRequest {
           if (idx == -1) {
             addAnnotation(ann);
           } else {
-            String[] keyValue = ann.split("=");
-            addBinaryAnnotation(ann.substring(0, idx), keyValue.length < 2 ? "" : ann.substring(idx+1));
+            addBinaryAnnotation(ann.substring(0, idx), (idx == ann.length() - 1) ? "" : ann.substring(idx + 1));
           }
         }
       }

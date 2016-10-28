@@ -105,7 +105,7 @@ public class QueryRequestTest {
 
     QueryRequest request =
         QueryRequest.builder().serviceName("security-service").parseAnnotationQuery(annotationQuery).build();
-    
+
     assertThat(request.binaryAnnotations)
         .containsEntry(HTTP_METHOD, "GET")
         .hasSize(1);
@@ -122,7 +122,7 @@ public class QueryRequestTest {
 
     QueryRequest request =
         QueryRequest.builder().serviceName("security-service").parseAnnotationQuery(annotationQuery).build();
-    
+
     assertThat(request.binaryAnnotations)
         .containsEntry(HTTP_METHOD, "GET=1")
         .hasSize(1);
