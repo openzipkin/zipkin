@@ -220,11 +220,11 @@ public final class QueryRequest {
     public Builder parseAnnotationQuery(String annotationQuery) {
       if (annotationQuery != null && !annotationQuery.isEmpty()) {
         for (String ann : annotationQuery.split(" and ")) {
-          if (ann.indexOf('=') == -1) {
+          int idx = ann.indexOf('=');
+          if (idx == -1) {
             addAnnotation(ann);
           } else {
-            String[] keyValue = ann.split("=");
-            addBinaryAnnotation(keyValue[0], keyValue.length < 2 ? "" :keyValue[1]);
+            addBinaryAnnotation(ann.substring(0, idx), (idx == ann.length() - 1) ? "" : ann.substring(idx + 1));
           }
         }
       }
