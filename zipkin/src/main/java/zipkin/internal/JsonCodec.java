@@ -60,6 +60,7 @@ import static zipkin.internal.Util.lowerHexToUnsignedLong;
  * this should be easy to justify as these objects don't change much at all.
  */
 public final class JsonCodec implements Codec {
+  static final long MAX_SAFE_INTEGER = 9007199254740991L;  // 53 bits
   static final String ENDPOINT_HEADER = ",\"endpoint\":";
 
   static final JsonAdapter<Endpoint> ENDPOINT_ADAPTER = new JsonAdapter<Endpoint>() {
@@ -231,6 +232,7 @@ public final class JsonCodec implements Codec {
         int v = Integer.parseInt(number);
         value = ByteBuffer.allocate(4).putInt(0, v).array();
       } else if (type == Type.I64 || type == Type.DOUBLE) {
+        if (number == null) number = string;
         long v = type == Type.I64
             ? Long.parseLong(number)
             : doubleToRawLongBits(Double.parseDouble(number));
@@ -262,7 +264,9 @@ public final class JsonCodec implements Codec {
           sizeInBytes += asciiSizeInBytes(ByteBuffer.wrap(value.value).getInt());
           break;
         case I64:
-          sizeInBytes += asciiSizeInBytes(ByteBuffer.wrap(value.value).getLong());
+          long number = ByteBuffer.wrap(value.value).getLong();
+          sizeInBytes += asciiSizeInBytes(number);
+          if (number > MAX_SAFE_INTEGER) sizeInBytes += 2; //for quotes
           break;
         case DOUBLE:
           double wrapped = Double.longBitsToDouble(ByteBuffer.wrap(value.value).getLong());
@@ -299,7 +303,10 @@ public final class JsonCodec implements Codec {
           b.writeAscii(ByteBuffer.wrap(value.value).getInt());
           break;
         case I64:
-          b.writeAscii(ByteBuffer.wrap(value.value).getLong());
+          long number = ByteBuffer.wrap(value.value).getLong();
+          if (number > MAX_SAFE_INTEGER) b.writeByte('"');
+          b.writeAscii(number);
+          if (number > MAX_SAFE_INTEGER) b.writeByte('"');
           break;
         case DOUBLE:
           double wrapped = Double.longBitsToDouble(ByteBuffer.wrap(value.value).getLong());

@@ -28,6 +28,7 @@ import zipkin.internal.Util;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.storage.elasticsearch.http.ZipkinAdapters.SPAN_ADAPTER;
 
 public class ZipkinAdaptersTest {
@@ -308,5 +309,25 @@ public class ZipkinAdaptersTest {
     assertThat(ZipkinAdapters.SPAN_ADAPTER.fromJson(with128BitTraceId))
         .isEqualTo(ZipkinAdapters.SPAN_ADAPTER.fromJson(withLower64bitsTraceId).toBuilder()
             .traceIdHigh(Util.lowerHexToUnsignedLong("48485a3953bb6124")).build());
+  }
+
+  @Test
+  public void binaryAnnotation_long_max() throws IOException {
+    String json = ("{"
+        + "  \"traceId\": \"6b221d5bc9e6496c\","
+        + "  \"id\": \"6b221d5bc9e6496c\","
+        + "  \"name\": \"get-traces\","
+        + "  \"binaryAnnotations\": ["
+        + "    {"
+        + "      \"key\": \"num\","
+        + "      \"value\": \"9223372036854775807\","
+        + "      \"type\": \"I64\""
+        + "    }"
+        + "  ]"
+        + "}").replaceAll("\\s", "");
+
+    Span span = ZipkinAdapters.SPAN_ADAPTER.fromJson(json);
+    assertThat(span.binaryAnnotations).extracting(b -> ByteBuffer.wrap(b.value).getLong())
+        .containsExactly(9223372036854775807L);
   }
 }
