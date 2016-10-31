@@ -18,7 +18,7 @@
     <parent>
         <artifactId>zipkin-autoconfigure</artifactId>
         <groupId>io.zipkin.java</groupId>
-        <version>1.14.2</version>
+        <version>1.14.3-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
