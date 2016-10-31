@@ -42,8 +42,8 @@ final class Schema {
 
   static final String TABLE_TRACES = "traces";
   static final String TABLE_TRACE_BY_SERVICE_SPAN = "trace_by_service_span";
+  static final String TABLE_SERVICE_SPANS = "span_name_by_service";
   static final String TABLE_DEPENDENCIES = "dependencies";
-  static final String VIEW_TRACE_BY_SERVICE = "trace_by_service";
 
   static final String DEFAULT_KEYSPACE = "zipkin3";
   private static final String SCHEMA_RESOURCE = "/cassandra3-schema.cql";

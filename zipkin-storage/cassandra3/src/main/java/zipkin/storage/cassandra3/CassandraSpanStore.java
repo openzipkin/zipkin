@@ -23,9 +23,9 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.base.Function;
 import com.google.common.collect.ContiguousSet;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.util.concurrent.AsyncFunction;
@@ -67,6 +67,7 @@ import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.internal.Util.getDays;
 import static zipkin.storage.cassandra3.Schema.TABLE_TRACES;
 import static zipkin.storage.cassandra3.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
+import static zipkin.storage.cassandra3.Schema.TABLE_SERVICE_SPANS;
 
 final class CassandraSpanStore implements GuavaSpanStore {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
@@ -116,11 +117,11 @@ final class CassandraSpanStore implements GuavaSpanStore {
     selectServiceNames = session.prepare(
         QueryBuilder.select("service_name")
             .distinct()
-            .from(Schema.VIEW_TRACE_BY_SERVICE));
+            .from(TABLE_SERVICE_SPANS));
 
     selectSpanNames = session.prepare(
         QueryBuilder.select("span_name")
-            .from(Schema.VIEW_TRACE_BY_SERVICE)
+            .from(TABLE_SERVICE_SPANS)
             .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
             .limit(QueryBuilder.bindMarker("limit_")));
 
@@ -223,8 +224,9 @@ final class CassandraSpanStore implements GuavaSpanStore {
     }
     return transform(traceIds, new AsyncFunction<Collection<BigInteger>, List<List<Span>>>() {
       @Override public ListenableFuture<List<List<Span>>> apply(Collection<BigInteger> traceIds) {
-        traceIds = FluentIterable.from(traceIds).limit(request.limit).toSet();
-        return transform(getSpansByTraceIds(ImmutableSet.copyOf(traceIds), maxTraceCols), AdjustTraces.INSTANCE);
+        ImmutableSet<BigInteger> set = ImmutableSet.copyOf(traceIds);
+        set = ImmutableSet.copyOf(Iterators.limit(set.iterator(), request.limit));
+        return transform(getSpansByTraceIds(set, maxTraceCols), AdjustTraces.INSTANCE);
       }
 
       @Override public String toString() {
