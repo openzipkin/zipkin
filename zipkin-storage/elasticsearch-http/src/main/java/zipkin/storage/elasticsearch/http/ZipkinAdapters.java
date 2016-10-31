@@ -235,6 +235,7 @@ final class ZipkinAdapters {
           break;
         case I64:
         case DOUBLE:
+          if (number == null) number = string;
           long v = type == BinaryAnnotation.Type.I64
               ? Long.parseLong(number)
               : Double.doubleToRawLongBits(Double.parseDouble(number));

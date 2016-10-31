@@ -219,6 +219,26 @@ public final class JsonCodecTest extends CodecTest {
   }
 
   @Test
+  public void binaryAnnotation_long_max() {
+    String json = ("{"
+        + "  \"traceId\": \"6b221d5bc9e6496c\","
+        + "  \"id\": \"6b221d5bc9e6496c\","
+        + "  \"name\": \"get-traces\","
+        + "  \"binaryAnnotations\": ["
+        + "    {"
+        + "      \"key\": \"num\","
+        + "      \"value\": \"9223372036854775807\","
+        + "      \"type\": \"I64\""
+        + "    }"
+        + "  ]"
+        + "}").replaceAll("\\s", "");
+
+    Span span = Codec.JSON.readSpan(json.getBytes(UTF_8));
+    assertThat(new String(Codec.JSON.writeSpan(span), UTF_8))
+        .isEqualTo(json);
+  }
+
+  @Test
   public void binaryAnnotation_double() {
     String json = "{\n"
         + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
