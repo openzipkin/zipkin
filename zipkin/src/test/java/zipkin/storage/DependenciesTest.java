@@ -149,23 +149,23 @@ public abstract class DependenciesTest {
 
     List<Span> trace = asList(
         Span.builder().traceId(10L).id(10L).name("get")
-            .timestamp(1445136539256150L).duration(1152579L)
-            .addAnnotation(Annotation.create(1445136539256150L, SERVER_RECV, one))
-            .addAnnotation(Annotation.create(1445136540408729L, SERVER_SEND, one))
+            .timestamp(1477898539256150L).duration(1152579L)
+            .addAnnotation(Annotation.create(1477898539256150L, SERVER_RECV, one))
+            .addAnnotation(Annotation.create(1477898540408729L, SERVER_SEND, one))
             .build(),
         Span.builder().traceId(10L).parentId(10L).id(20L).name("get")
-            .timestamp(1445136539764798L).duration(639337L)
-            .addAnnotation(Annotation.create(1445136539764798L, CLIENT_SEND, onePort3001))
-            .addAnnotation(Annotation.create(1445136539816432L, SERVER_RECV, two))
-            .addAnnotation(Annotation.create(1445136540401414L, SERVER_SEND, two))
-            .addAnnotation(Annotation.create(1445136540404135L, CLIENT_RECV, onePort3001))
+            .timestamp(1477898539764798L).duration(639337L)
+            .addAnnotation(Annotation.create(1477898539764798L, CLIENT_SEND, onePort3001))
+            .addAnnotation(Annotation.create(1477898539816432L, SERVER_RECV, two))
+            .addAnnotation(Annotation.create(1477898540401414L, SERVER_SEND, two))
+            .addAnnotation(Annotation.create(1477898540404135L, CLIENT_RECV, onePort3001))
             .build(),
         Span.builder().traceId(10L).parentId(20L).id(30L).name("get")
-            .timestamp(1445136540025751L).duration(371298L)
-            .addAnnotation(Annotation.create(1445136540025751L, CLIENT_SEND, twoPort3002))
-            .addAnnotation(Annotation.create(1445136540072846L, SERVER_RECV, three))
-            .addAnnotation(Annotation.create(1445136540394644L, SERVER_SEND, three))
-            .addAnnotation(Annotation.create(1445136540397049L, CLIENT_RECV, twoPort3002))
+            .timestamp(1477898540025751L).duration(371298L)
+            .addAnnotation(Annotation.create(1477898540025751L, CLIENT_SEND, twoPort3002))
+            .addAnnotation(Annotation.create(1477898540072846L, SERVER_RECV, three))
+            .addAnnotation(Annotation.create(1477898540394644L, SERVER_SEND, three))
+            .addAnnotation(Annotation.create(1477898540397049L, CLIENT_RECV, twoPort3002))
             .build()
     );
     processDependencies(trace);
@@ -193,20 +193,20 @@ public abstract class DependenciesTest {
 
     List<Span> trace = asList(
         Span.builder().traceId(10L).id(10L).name("get")
-            .addAnnotation(Annotation.create(1445136539256150L, SERVER_RECV, one))
-            .addAnnotation(Annotation.create(1445136540408729L, SERVER_SEND, one))
+            .addAnnotation(Annotation.create(1477898539256150L, SERVER_RECV, one))
+            .addAnnotation(Annotation.create(1477898540408729L, SERVER_SEND, one))
             .build(),
         Span.builder().traceId(10L).parentId(10L).id(20L).name("get")
-            .addAnnotation(Annotation.create(1445136539764798L, CLIENT_SEND, onePort3001))
-            .addAnnotation(Annotation.create(1445136539816432L, SERVER_RECV, two))
-            .addAnnotation(Annotation.create(1445136540401414L, SERVER_SEND, two))
-            .addAnnotation(Annotation.create(1445136540404135L, CLIENT_RECV, onePort3001))
+            .addAnnotation(Annotation.create(1477898539764798L, CLIENT_SEND, onePort3001))
+            .addAnnotation(Annotation.create(1477898539816432L, SERVER_RECV, two))
+            .addAnnotation(Annotation.create(1477898540401414L, SERVER_SEND, two))
+            .addAnnotation(Annotation.create(1477898540404135L, CLIENT_RECV, onePort3001))
             .build(),
         Span.builder().traceId(10L).parentId(20L).id(30L).name("get")
-            .addAnnotation(Annotation.create(1445136540025751L, CLIENT_SEND, twoPort3002))
-            .addAnnotation(Annotation.create(1445136540072846L, SERVER_RECV, three))
-            .addAnnotation(Annotation.create(1445136540394644L, SERVER_SEND, three))
-            .addAnnotation(Annotation.create(1445136540397049L, CLIENT_RECV, twoPort3002))
+            .addAnnotation(Annotation.create(1477898540025751L, CLIENT_SEND, twoPort3002))
+            .addAnnotation(Annotation.create(1477898540072846L, SERVER_RECV, three))
+            .addAnnotation(Annotation.create(1477898540394644L, SERVER_SEND, three))
+            .addAnnotation(Annotation.create(1477898540397049L, CLIENT_RECV, twoPort3002))
             .build()
     );
     processDependencies(trace);

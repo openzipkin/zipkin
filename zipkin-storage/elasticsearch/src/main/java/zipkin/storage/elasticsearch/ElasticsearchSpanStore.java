@@ -63,6 +63,9 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     }
   });
 
+  /** To not produce unnecessarily long queries, we don't look back further than first ES support */
+  static final long EARLIEST_MS = 1456790400000L; // March 2016
+
   private final InternalElasticsearchClient client;
   private final IndexNameFormatter indexNameFormatter;
   private final String[] catchAll;
@@ -76,7 +79,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
 
   @Override public ListenableFuture<List<List<Span>>> getTraces(QueryRequest request) {
     long endMillis = request.endTs;
-    long beginMillis = endMillis - request.lookback;
+    long beginMillis = Math.max(endMillis - request.lookback, EARLIEST_MS);
 
     BoolQueryBuilder filter = boolQuery()
         .must(rangeQuery("timestamp_millis")
@@ -233,7 +236,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
 
   @Override public ListenableFuture<List<DependencyLink>> getDependencies(long endMillis,
       @Nullable Long lookback) {
-    long beginMillis = lookback != null ? endMillis - lookback : 0;
+    long beginMillis = lookback != null ? Math.max(endMillis - lookback, EARLIEST_MS) : EARLIEST_MS;
     // We just return all dependencies in the days that fall within endTs and lookback as
     // dependency links themselves don't have timestamps.
     List<String> indices = computeIndices(beginMillis, endMillis);
