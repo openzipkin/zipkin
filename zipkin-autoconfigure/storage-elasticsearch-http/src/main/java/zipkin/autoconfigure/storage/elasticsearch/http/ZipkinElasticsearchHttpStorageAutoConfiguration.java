@@ -13,11 +13,7 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.http;
 
-import java.util.Collections;
-import java.util.List;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -34,28 +30,6 @@ import zipkin.storage.elasticsearch.http.HttpClientBuilder;
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
 @Conditional(ZipkinElasticsearchHttpStorageAutoConfiguration.HostsAreUrls.class)
 public class ZipkinElasticsearchHttpStorageAutoConfiguration {
-
-  @Autowired(required = false)
-  @Qualifier("zipkinElasticsearchHttp")
-  List<Interceptor> networkInterceptors = Collections.emptyList();
-
-  @Autowired(required = false)
-  @Qualifier("zipkinElasticsearchHttp")
-  OkHttpClient.Builder elasticsearchOkHttpClientBuilder;
-
-  @Bean
-  @Qualifier("zipkinElasticsearchHttp")
-  @ConditionalOnMissingBean
-  OkHttpClient elasticsearchOkHttpClient() {
-    OkHttpClient.Builder builder = elasticsearchOkHttpClientBuilder != null
-        ? elasticsearchOkHttpClientBuilder
-        : new OkHttpClient.Builder();
-
-    for (Interceptor interceptor : networkInterceptors) {
-      builder.addNetworkInterceptor(interceptor);
-    }
-    return builder.build();
-  }
 
   @Bean
   @ConditionalOnMissingBean

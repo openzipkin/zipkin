@@ -13,7 +13,6 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.aws;
 
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import org.junit.After;
 import org.junit.Rule;
@@ -22,6 +21,7 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchOkHttpAutoConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -60,6 +60,7 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
         "zipkin.storage.elasticsearch.hosts:https://search-domain-xyzzy.us-west-2.es.amazonaws.com"
     );
     context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchOkHttpAutoConfiguration.class,
         ZipkinElasticsearchAwsStorageAutoConfiguration.class);
     context.refresh();
 
@@ -77,6 +78,7 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
         "zipkin.storage.elasticsearch.aws.region:us-west-2"
     );
     context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchOkHttpAutoConfiguration.class,
         ZipkinElasticsearchAwsStorageAutoConfiguration.class);
     context.refresh();
 
