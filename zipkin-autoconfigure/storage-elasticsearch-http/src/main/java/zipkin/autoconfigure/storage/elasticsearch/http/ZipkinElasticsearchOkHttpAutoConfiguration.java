@@ -25,7 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * This is auto-configures the {@linkplain OkHttpClient} used for Elasticsearch.
+ * This auto-configures the {@linkplain OkHttpClient} used for Elasticsearch.
  *
  * <p>Here are the major features:
  * <pre><ul>
@@ -35,7 +35,7 @@ import org.springframework.context.annotation.Configuration;
  *
  * <p>This bean will register even if the http transport isn't in use (ex using Elasticsearch's
  * native api). This is a complexity tradeoff as detecting if http is strictly needed is not
- * straight-forward. For example, eventhough the hosts might contain http urls, in the case
+ * straight-forward. For example, even though the hosts might contain http urls, in the case
  * of Amazon, the hosts collection can be blank (lookup host by domain name).
  */
 @Configuration
