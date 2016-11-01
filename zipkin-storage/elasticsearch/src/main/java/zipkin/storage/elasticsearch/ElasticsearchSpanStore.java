@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.Set;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -53,7 +53,6 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
 
 final class ElasticsearchSpanStore implements GuavaSpanStore {
-  static final long ONE_DAY_IN_MILLIS = TimeUnit.DAYS.toMillis(1);
   static final ListenableFuture<List<String>> EMPTY_LIST =
       immediateFuture(Collections.<String>emptyList());
   static final Ordering<List<Span>> TRACE_DESCENDING = Ordering.from(new Comparator<List<Span>>() {
@@ -131,8 +130,8 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
       filter.must(durationQuery);
     }
 
-    List<String> strings = computeIndices(beginMillis, endMillis);
-    final String[] indices = strings.toArray(new String[strings.size()]);
+    Set<String> strings = indexNameFormatter.indexNamePatternsForRange(beginMillis, endMillis);
+    final String[] indices = strings.toArray(new String[0]);
     // We need to filter to traces that contain at least one span that matches the request,
     // but the zipkin API is supposed to order traces by first span, regardless of if it was
     // filtered or not. This is not possible without either multiple, heavyweight queries
@@ -239,8 +238,8 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     long beginMillis = lookback != null ? Math.max(endMillis - lookback, EARLIEST_MS) : EARLIEST_MS;
     // We just return all dependencies in the days that fall within endTs and lookback as
     // dependency links themselves don't have timestamps.
-    List<String> indices = computeIndices(beginMillis, endMillis);
-    return Futures.transform(client.findDependencies(indices.toArray(new String[indices.size()])),
+    Set<String> indices = indexNameFormatter.indexNamePatternsForRange(beginMillis, endMillis);
+    return Futures.transform(client.findDependencies(indices.toArray(new String[0])),
         new Function<List<DependencyLink>, List<DependencyLink>>() {
           @Override
           public List<DependencyLink> apply(List<DependencyLink> input) {
@@ -249,19 +248,5 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
                 : DependencyLinker.merge(input);
           }
         });
-  }
-
-  private List<String> computeIndices(long beginMillis, long endMillis) {
-    beginMillis = Util.midnightUTC(beginMillis);
-    endMillis = Util.midnightUTC(endMillis);
-
-    List<String> indices = new ArrayList<>();
-    // If a leap second is involved, the same index will be specified twice.
-    // It shouldn't be a big deal.
-    for (long currentMillis = beginMillis; currentMillis <= endMillis;
-        currentMillis += ONE_DAY_IN_MILLIS) {
-      indices.add(indexNameFormatter.indexNameForTimestamp(currentMillis));
-    }
-    return indices;
   }
 }
