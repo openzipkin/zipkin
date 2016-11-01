@@ -26,6 +26,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageAutoConfiguration;
+import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchOkHttpAutoConfiguration;
 import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,6 +66,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.elasticsearch.hosts:http://host1:9200"
     );
     context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchOkHttpAutoConfiguration.class,
         ZipkinElasticsearchHttpStorageAutoConfiguration.class);
     context.refresh();
 
@@ -108,6 +110,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.elasticsearch.hosts:http://host1:9200"
     );
     context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchOkHttpAutoConfiguration.class,
         ZipkinElasticsearchHttpStorageAutoConfiguration.class,
         InterceptorConfiguration.class);
     context.refresh();

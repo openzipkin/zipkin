@@ -38,7 +38,6 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin.autoconfigure.storage.elasticsearch.ZipkinElasticsearchStorageProperties;
-import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageAutoConfiguration;
 import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 import zipkin.storage.elasticsearch.http.HttpClientBuilder;
 
@@ -51,8 +50,7 @@ import static java.lang.String.format;
     ZipkinElasticsearchAwsStorageProperties.class
 })
 @Conditional(ZipkinElasticsearchAwsStorageAutoConfiguration.AwsMagic.class)
-public class ZipkinElasticsearchAwsStorageAutoConfiguration extends
-    ZipkinElasticsearchHttpStorageAutoConfiguration {
+public class ZipkinElasticsearchAwsStorageAutoConfiguration {
   static final Pattern AWS_URL =
       Pattern.compile("^https://[^.]+\\.([^.]+)\\.es\\.amazonaws\\.com", Pattern.CASE_INSENSITIVE);
   static final Logger log =
