@@ -55,15 +55,6 @@ import static zipkin.moshi.JsonReaders.enterPath;
 final class HttpClient extends InternalElasticsearchClient {
   static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
 
-  /**
-   * Because the Http api requires sending index names in the URL, too many indices
-   * (or long names) can quickly exceed the 4096-byte limit commonly imposed on a single HTTP line.
-   * This limit is not entirely within the control of Elasticsearch, either, as it may be imposed by
-   * arbitrary HTTP-speaking middleware along the request's route. Some more details can be found on
-   * this "wontfix" issue: https://github.com/elastic/elasticsearch/issues/7298
-   */
-  private static final int MAX_INDICES = 100;
-
   static final class Factory implements InternalElasticsearchClient.Factory {
     final Lazy<List<String>> hosts;
     final OkHttpClient client;
@@ -160,11 +151,6 @@ final class HttpClient extends InternalElasticsearchClient {
   @Override
   protected ListenableFuture<List<String>> collectBucketKeys(String[] indices,
       QueryBuilder query, AbstractAggregationBuilder... aggregations) {
-    if (indices.length > MAX_INDICES) {
-      query = QueryBuilders.indicesQuery(query, indices).noMatchQuery("none");
-      indices = allIndices;
-    }
-
     SearchSourceBuilder elasticQuery = new SearchSourceBuilder().query(query).size(0);
     for (AbstractAggregationBuilder aggregation : aggregations) {
       elasticQuery.aggregation(aggregation);
@@ -183,11 +169,6 @@ final class HttpClient extends InternalElasticsearchClient {
   }
 
   @Override protected ListenableFuture<List<Span>> findSpans(String[] indices, QueryBuilder query) {
-    if (indices.length > MAX_INDICES) {
-      query = QueryBuilders.indicesQuery(query, indices).noMatchQuery("none");
-      indices = allIndices;
-    }
-
     String body = new SearchSourceBuilder().query(query).size(MAX_RAW_SPANS).toString();
     Call searchRequest = http.newCall(new Request.Builder().url(lenientSearch(indices, SPAN))
         .post(RequestBody.create(APPLICATION_JSON, body))
@@ -199,11 +180,6 @@ final class HttpClient extends InternalElasticsearchClient {
   @Override
   protected ListenableFuture<List<DependencyLink>> findDependencies(String[] indices) {
     QueryBuilder query = QueryBuilders.matchAllQuery();
-    if (indices.length > MAX_INDICES) {
-      query = QueryBuilders.indicesQuery(query, indices).noMatchQuery("none");
-      indices = allIndices;
-    }
-
     String body = new SearchSourceBuilder().query(query).toString();
     Call searchRequest =
         http.newCall(new Request.Builder().url(lenientSearch(indices, DEPENDENCY_LINK))
