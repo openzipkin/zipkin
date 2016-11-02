@@ -356,23 +356,21 @@ final class CassandraSpanStore implements GuavaSpanStore {
       return transform(session.executeAsync(bound),
           new Function<ResultSet, Collection<List<Span>>>() {
             @Override public Collection<List<Span>> apply(ResultSet input) {
-              Map<BigInteger, List<Span>> spans = new LinkedHashMap<>();
+              // ensures spans with mixed trace ID length return in the same trace
+              Map<Long, List<Span>> groupedByTraceIdLo = new LinkedHashMap<>();
 
               for (Row row : input) {
                 BigInteger traceId = row.getVarint("trace_id");
-                if (!spans.containsKey(traceId)) {
-                  spans.put(traceId, new ArrayList<Span>());
+                long traceIdLo = traceId.longValue();
+                if (!groupedByTraceIdLo.containsKey(traceIdLo)) {
+                  groupedByTraceIdLo.put(traceIdLo, new ArrayList<Span>());
                 }
                 Span.Builder builder = Span.builder()
                     .id(row.getLong("id"))
                     .name(row.getString("span_name"))
                     .duration(row.getLong("duration"));
 
-                // Sets a 64 bit trace id, or split a 128-bit one into high and low bits
-                if (traceId.bitLength() > 63) {
-                  builder.traceIdHigh(traceId.shiftRight(64).longValue());
-                }
-                builder.traceId(traceId.longValue());
+                CassandraUtil.injectTraceId(builder, traceId);
 
                 if (!row.isNull("ts")) {
                   builder = builder.timestamp(row.getLong("ts"));
@@ -390,10 +388,10 @@ final class CassandraSpanStore implements GuavaSpanStore {
                     BinaryAnnotationUDT.class)) {
                   builder = builder.addBinaryAnnotation(udt.toBinaryAnnotation());
                 }
-                spans.get(traceId).add(builder.build());
+                groupedByTraceIdLo.get(traceIdLo).add(builder.build());
               }
 
-              return spans.values();
+              return groupedByTraceIdLo.values();
             }
           }
       );
