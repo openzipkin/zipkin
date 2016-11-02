@@ -92,7 +92,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     for (Span span : rawSpans) {
       // indexing occurs by timestamp, so derive one if not present.
       Long timestamp = guessTimestamp(span);
-      BigInteger traceId = traceId(span);
+      BigInteger traceId = CassandraUtil.extractTraceId(span);
       futures.add(storeSpan(span, traceId, timestamp));
 
       for (String serviceName : span.serviceNames()) {
@@ -189,11 +189,5 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     } catch (RuntimeException ex) {
       return Futures.immediateFailedFuture(ex);
     }
-  }
-
-  static BigInteger traceId(Span span) {
-    return span.traceIdHigh != 0
-        ? BigInteger.valueOf(span.traceIdHigh).shiftLeft(64).or(BigInteger.valueOf(span.traceId))
-        : BigInteger.valueOf(span.traceId);
   }
 }

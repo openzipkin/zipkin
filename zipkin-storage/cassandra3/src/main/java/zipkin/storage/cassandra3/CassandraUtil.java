@@ -19,6 +19,7 @@ import com.datastax.driver.core.PreparedStatement;
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -119,6 +120,26 @@ final class CassandraUtil {
 
   static BoundStatement bindWithName(PreparedStatement prepared, String name) {
     return new NamedBoundStatement(prepared, name);
+  }
+
+  /** Extracts an up-to 128-bit number from {@link Span#traceIdHigh} and {@link Span#traceId} */
+  static BigInteger extractTraceId(Span span) {
+    if (span.traceIdHigh != 0) {
+      ByteBuffer bytes = ByteBuffer.allocate(16).putLong(span.traceIdHigh).putLong(span.traceId);
+      return new BigInteger(bytes.array());
+    }
+    return BigInteger.valueOf(span.traceId);
+  }
+
+  /** Sets a 64 bit trace id, or splits a 128-bit one into high and low bits */
+  static Span.Builder injectTraceId(Span.Builder builder, BigInteger traceId) {
+    if (traceId.bitLength() > 63) {
+      builder.traceId(traceId.longValue());
+      builder.traceIdHigh(traceId.shiftRight(64).longValue());
+    } else {
+      builder.traceId(traceId.longValue());
+    }
+    return builder;
   }
 
   /** Used to assign a friendly name when tracing and debugging */

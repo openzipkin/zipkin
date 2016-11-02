@@ -14,18 +14,26 @@
 package zipkin.storage.cassandra3;
 
 import com.google.common.collect.ImmutableList;
+import java.math.BigInteger;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.runners.Enclosed;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.TraceKeys;
+import zipkin.internal.Util;
 import zipkin.storage.QueryRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(Enclosed.class)
 public class CassandraUtilTest {
 
   @Rule
@@ -96,5 +104,31 @@ public class CassandraUtilTest {
 
     assertThat(CassandraUtil.annotationKeys(span))
         .containsOnly("web;aws.arn;" + arn);
+  }
+
+  @RunWith(Parameterized.class)
+  public static class TraceIdCodecTest {
+    @Parameters(name = "traceId={0}")
+    public static Object[] traceIds() {
+      return new Object[] {
+          "0000000000000000ff1c4625acae1983",
+          "032142b8731f3226ff1c4625acae1983",
+          "f26275921cef644dffb092c15b079cda",
+          "5a3b4868cea01275de309d96c358cea9",
+      };
+    }
+
+    @Parameter
+    public String traceId;
+
+    @Test public void extractAndInject() {
+      Span span = TestObjects.TRACE.get(0).toBuilder()
+          .traceIdHigh(Util.lowerHexToUnsignedLong(traceId, 0))
+          .traceId(Util.lowerHexToUnsignedLong(traceId))
+          .build();
+      BigInteger traceId = CassandraUtil.extractTraceId(span);
+      Span copy = CassandraUtil.injectTraceId(span.toBuilder(), traceId).build();
+      assertThat(copy).isEqualTo(span);
+    }
   }
 }

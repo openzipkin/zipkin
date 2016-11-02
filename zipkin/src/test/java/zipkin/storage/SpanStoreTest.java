@@ -534,6 +534,18 @@ public abstract class SpanStoreTest {
         .containsExactly(asList(span));
   }
 
+  @Test
+  public void getTraces_128BitTraceId_mixed() {
+    List<Span> trace = new ArrayList<>(TestObjects.TRACE);
+    trace.set(0, trace.get(0).toBuilder().traceIdHigh(1).build());
+    // pretend the others downgraded to 64-bit trace IDs
+
+    accept(trace.toArray(new Span[0]));
+
+    assertThat(store().getTraces(QueryRequest.builder().build()))
+        .containsExactly(trace);
+  }
+
   /** This tests that the existing getTrace api can read traces which reported 128bit trace ids. */
   @Test
   public void getTrace_retrieves128bitTraceIdByLower64Bits() {
@@ -543,6 +555,18 @@ public abstract class SpanStoreTest {
 
     assertThat(store().getTrace(span.traceId))
         .containsExactly(span);
+  }
+
+  @Test
+  public void getTrace_retrieves128bitTraceIdByLower64Bits_mixed() {
+    List<Span> trace = new ArrayList<>(TestObjects.TRACE);
+    trace.set(0, trace.get(0).toBuilder().traceIdHigh(1).build());
+    // pretend the others downgraded to 64-bit trace IDs
+
+    accept(trace.toArray(new Span[0]));
+
+    assertThat(store().getTrace(trace.get(0).traceId))
+        .containsExactlyElementsOf(trace);
   }
 
   /**

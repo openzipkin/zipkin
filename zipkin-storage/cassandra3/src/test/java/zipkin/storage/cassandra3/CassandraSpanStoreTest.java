@@ -109,6 +109,12 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
   public void getTrace_retrieves128bitTraceIdByLower64Bits() {
   }
 
+  @Override
+  @Test
+  @Ignore("fetch by lower 64-bit isn't supported in cassandra3")
+  public void getTrace_retrieves128bitTraceIdByLower64Bits_mixed() {
+  }
+
   long rowCount(String table) {
     return storage.session().execute("SELECT COUNT(*) from " + table).one().getLong(0);
   }
