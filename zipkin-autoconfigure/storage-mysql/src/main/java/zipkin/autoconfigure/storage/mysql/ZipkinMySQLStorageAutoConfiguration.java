@@ -53,6 +53,7 @@ public class ZipkinMySQLStorageAutoConfiguration {
     url.append("/").append(mysql.getDb());
     url.append("?autoReconnect=true");
     url.append("&useSSL=").append(mysql.isUseSsl());
+    url.append("&useUnicode=yes&characterEncoding=UTF-8");
     HikariDataSource result = new HikariDataSource();
     result.setDriverClassName("org.mariadb.jdbc.Driver");
     result.setJdbcUrl(url.toString());

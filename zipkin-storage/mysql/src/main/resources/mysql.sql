@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS zipkin_spans (
   `debug` BIT(1),
   `start_ts` BIGINT COMMENT 'Span.timestamp(): epoch micros used for endTs query and to implement TTL',
   `duration` BIGINT COMMENT 'Span.duration(): micros used for minDuration and maxDuration query'
-) ENGINE=InnoDB ROW_FORMAT=COMPRESSED;
+) ENGINE=InnoDB ROW_FORMAT=COMPRESSED CHARACTER SET=utf8 COLLATE utf8_general_ci;
 
 ALTER TABLE zipkin_spans ADD UNIQUE KEY(`trace_id`, `id`) COMMENT 'ignore insert on duplicate';
 ALTER TABLE zipkin_spans ADD INDEX(`trace_id`, `id`) COMMENT 'for joining with zipkin_annotations';
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS zipkin_annotations (
   `endpoint_ipv6` BINARY(16) COMMENT 'Null when Binary/Annotation.endpoint is null, or no IPv6 address',
   `endpoint_port` SMALLINT COMMENT 'Null when Binary/Annotation.endpoint is null',
   `endpoint_service_name` VARCHAR(255) COMMENT 'Null when Binary/Annotation.endpoint is null'
-) ENGINE=InnoDB ROW_FORMAT=COMPRESSED;
+) ENGINE=InnoDB ROW_FORMAT=COMPRESSED CHARACTER SET=utf8 COLLATE utf8_general_ci;
 
 ALTER TABLE zipkin_annotations ADD UNIQUE KEY(`trace_id`, `span_id`, `a_key`, `a_timestamp`) COMMENT 'Ignore insert on duplicate';
 ALTER TABLE zipkin_annotations ADD INDEX(`trace_id`, `span_id`) COMMENT 'for joining with zipkin_spans';
@@ -40,6 +40,6 @@ CREATE TABLE IF NOT EXISTS zipkin_dependencies (
   `parent` VARCHAR(255) NOT NULL,
   `child` VARCHAR(255) NOT NULL,
   `call_count` BIGINT
-) ENGINE=InnoDB ROW_FORMAT=COMPRESSED;
+) ENGINE=InnoDB ROW_FORMAT=COMPRESSED CHARACTER SET=utf8 COLLATE utf8_general_ci;
 
 ALTER TABLE zipkin_dependencies ADD UNIQUE KEY(`day`, `parent`, `child`);
