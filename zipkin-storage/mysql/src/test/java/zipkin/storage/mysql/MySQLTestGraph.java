@@ -50,7 +50,7 @@ enum MySQLTestGraph {
     String mysqlPass = envOr("MYSQL_PASS", "");
     String mysqlDb = envOr("MYSQL_DB", "zipkin");
 
-    return String.format("jdbc:mysql://%s:%s/%s?user=%s&password=%s&autoReconnect=true",
+    return String.format("jdbc:mysql://%s:%s/%s?user=%s&password=%s&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8",
         mysqlHost, mysqlPort, mysqlDb, mysqlUser, mysqlPass);
   }
 }
