@@ -63,6 +63,25 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>3.2.0</version>
+        <configuration>
+          <obrRepository>NONE</obrRepository>
+          <instructions>
+            <_include>-bnd.bnd</_include>
+          </instructions>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>manifest</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>    
       <!-- Use of okio and moshi are internal only -->
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
@@ -87,7 +106,7 @@
                 </filter>
                 <filter>
                   <!-- don't include pom files, some are kilobytes -->
-                  <artifact>*:*</artifact>
+                  <artifact>com*:*</artifact>
                   <excludes>
                     <exclude>META-INF/**</exclude>
                   </excludes>
@@ -107,6 +126,18 @@
         <artifactId>maven-jar-plugin</artifactId>
         <executions>
           <execution>
+            <id>default-jar</id>
+            <configuration>
+              <archive>
+                <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+              </archive>
+            </configuration>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>default-test-jar</id>
             <goals>
               <goal>test-jar</goal>
             </goals>
