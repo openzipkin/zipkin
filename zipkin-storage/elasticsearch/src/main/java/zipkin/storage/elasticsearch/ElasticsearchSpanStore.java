@@ -148,11 +148,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
 
     return transform(traceIds, new AsyncFunction<List<String>, List<List<Span>>>() {
           @Override public ListenableFuture<List<List<Span>>> apply(List<String> input) {
-            List<Long> traceIds = new ArrayList<>(input.size());
-            for (String bucket : input) {
-              traceIds.add(Util.lowerHexToUnsignedLong(bucket));
-            }
-            return getTracesByIds(traceIds, indices);
+            return getTracesByIds(input, indices);
           }
         }
     );
@@ -170,12 +166,8 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
     return client.findSpans(catchAll, termQuery("traceId", Util.toLowerHex(traceId)));
   }
 
-  ListenableFuture<List<List<Span>>> getTracesByIds(Collection<Long> traceIds, String[] indices) {
-    List<String> traceIdsStr = new ArrayList<>(traceIds.size());
-    for (long traceId : traceIds) {
-      traceIdsStr.add(Util.toLowerHex(traceId));
-    }
-    return Futures.transform(client.findSpans(indices, termsQuery("traceId", traceIdsStr)),
+  ListenableFuture<List<List<Span>>> getTracesByIds(Collection<String> traceIds, String[] indices) {
+    return Futures.transform(client.findSpans(indices, termsQuery("traceId", traceIds)),
         ConvertTracesResponse.INSTANCE);
   }
 
@@ -202,12 +194,12 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
             .path("annotations")
             .subAggregation(AggregationBuilders.terms("annotationsServiceName_agg")
                 .field("annotations.endpoint.serviceName")
-                .size(0)),
+                .size(Integer.MAX_VALUE)),
         AggregationBuilders.nested("binaryAnnotations_agg")
             .path("binaryAnnotations")
             .subAggregation(AggregationBuilders.terms("binaryAnnotationsServiceName_agg")
                 .field("binaryAnnotations.endpoint.serviceName")
-                .size(0)));
+                .size(Integer.MAX_VALUE)));
   }
 
   @Override public ListenableFuture<List<String>> getSpanNames(String serviceName) {
@@ -227,7 +219,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
         AggregationBuilders.terms("name_agg")
             .order(Order.term(true))
             .field("name")
-            .size(0));
+            .size(Integer.MAX_VALUE));
   }
 
   @Override public ListenableFuture<List<DependencyLink>> getDependencies(long endMillis,
