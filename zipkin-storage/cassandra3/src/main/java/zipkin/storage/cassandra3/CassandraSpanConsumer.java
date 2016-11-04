@@ -34,23 +34,29 @@ import org.slf4j.LoggerFactory;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Span;
+import zipkin.internal.Pair;
 import zipkin.storage.cassandra3.Schema.AnnotationUDT;
 import zipkin.storage.cassandra3.Schema.BinaryAnnotationUDT;
 import zipkin.storage.guava.GuavaSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
+import static zipkin.internal.Util.checkNotNull;
 import static zipkin.storage.cassandra3.CassandraUtil.bindWithName;
 import static zipkin.storage.cassandra3.CassandraUtil.durationIndexBucket;
 
 final class CassandraSpanConsumer implements GuavaSpanConsumer {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanConsumer.class);
   private static final Function<Object, Void> TO_VOID = Functions.<Void>constant(null);
+  private static final long WRITTEN_NAMES_TTL
+      = Long.getLong("zipkin.store.cassandra3.internal.writtenNamesTtl", 60 * 60 * 1000);
 
   private final Session session;
   private final PreparedStatement insertSpan;
+  private final PreparedStatement insertTraceServiceSpanName;
   private final PreparedStatement insertServiceSpanName;
   private final Schema.Metadata metadata;
+  private final DeduplicatingExecutor deduplicatingExecutor;
 
   CassandraSpanConsumer(Session session) {
     this.session = session;
@@ -70,7 +76,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
             .value("binary_annotations", QueryBuilder.bindMarker("binary_annotations"))
             .value("all_annotations", QueryBuilder.bindMarker("all_annotations")));
 
-    insertServiceSpanName = session.prepare(
+    insertTraceServiceSpanName = session.prepare(
         QueryBuilder
             .insertInto(Schema.TABLE_TRACE_BY_SERVICE_SPAN)
             .value("service_name", QueryBuilder.bindMarker("service_name"))
@@ -79,6 +85,14 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
             .value("ts", QueryBuilder.bindMarker("ts"))
             .value("trace_id", QueryBuilder.bindMarker("trace_id"))
             .value("duration", QueryBuilder.bindMarker("duration")));
+
+    insertServiceSpanName = session.prepare(
+        QueryBuilder
+            .insertInto(Schema.TABLE_SERVICE_SPANS)
+            .value("service_name", QueryBuilder.bindMarker("service_name"))
+            .value("span_name", QueryBuilder.bindMarker("span_name")));
+
+    deduplicatingExecutor = new DeduplicatingExecutor(session, WRITTEN_NAMES_TTL);
   }
 
   /**
@@ -98,12 +112,13 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       for (String serviceName : span.serviceNames()) {
         // QueryRequest.min/maxDuration
         if (timestamp != null) {
-          // Contract for Repository.storeServiceSpanName is to store the span twice, once with
+          // Contract for Repository.storeTraceServiceSpanName is to store the span twice, once with
           // the span name and another with empty string.
-          futures.add(storeServiceSpanName(serviceName, span.name, timestamp, span.duration,
+          futures.add(storeTraceServiceSpanName(serviceName, span.name, timestamp, span.duration,
               traceId));
           if (!span.name.isEmpty()) { // If span.name == "", this would be redundant
-            futures.add(storeServiceSpanName(serviceName, "", timestamp, span.duration, traceId));
+            futures.add(storeTraceServiceSpanName(serviceName, "", timestamp, span.duration, traceId));
+            futures.add(storeServiceSpanName(serviceName, span.name));
           }
         }
       }
@@ -162,7 +177,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     }
   }
 
-  ListenableFuture<?> storeServiceSpanName(
+  ListenableFuture<?> storeTraceServiceSpanName(
       String serviceName,
       String spanName,
       long timestamp_micro,
@@ -170,24 +185,98 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       BigInteger traceId) {
 
     int bucket = durationIndexBucket(timestamp_micro);
+    UUID ts = new UUID(
+        UUIDs.startOf(timestamp_micro / 1000).getMostSignificantBits(),
+        UUIDs.random().getLeastSignificantBits());
     try {
       BoundStatement bound =
-          bindWithName(insertServiceSpanName, "insert-service-span-name")
+          bindWithName(insertTraceServiceSpanName, "insert-service-span-name")
               .setString("service_name", serviceName)
               .setString("span_name", spanName)
               .setInt("bucket", bucket)
-              .setUUID("ts", new UUID(
-                  UUIDs.startOf(timestamp_micro / 1000).getMostSignificantBits(),
-                  UUIDs.random().getLeastSignificantBits()))
+              .setUUID("ts", ts)
               .setVarint("trace_id", traceId);
 
       if (null != duration) {
         bound = bound.setLong("duration", duration);
       }
 
-      return session.executeAsync(bound);
+      return deduplicatingExecutor.maybeExecuteAsync(bound,
+          new TraceServiceSpanNameKey(serviceName, spanName, bucket, ts));
+
     } catch (RuntimeException ex) {
       return Futures.immediateFailedFuture(ex);
     }
   }
+
+  ListenableFuture<?> storeServiceSpanName(
+      String serviceName,
+      String spanName
+  ) {
+    try {
+      BoundStatement bound = bindWithName(insertServiceSpanName, "insert-service-span-name")
+          .setString("service_name", serviceName)
+          .setString("span_name", spanName);
+
+      return deduplicatingExecutor.maybeExecuteAsync(bound, Pair.create(serviceName, spanName));
+    } catch (RuntimeException ex) {
+      return Futures.immediateFailedFuture(ex);
+    }
+  }
+
+  static BigInteger traceId(Span span) {
+    return span.traceIdHigh != 0
+        ? BigInteger.valueOf(span.traceIdHigh).shiftLeft(64).or(BigInteger.valueOf(span.traceId))
+        : BigInteger.valueOf(span.traceId);
+  }
+
+  final class TraceServiceSpanNameKey {
+
+    final String serviceName;
+    final String spanName;
+    final int bucket;
+    final UUID ts;
+
+    TraceServiceSpanNameKey(String serviceName, String spanName, int bucket, UUID ts) {
+      this.serviceName = serviceName;
+      this.spanName = spanName;
+      this.bucket = bucket;
+      this.ts = ts;
+    }
+
+    @Override
+    public String toString() {
+      return "(" + serviceName + ", " + spanName + ", " + bucket + ", " + ts + " )";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == this) {
+        return true;
+      }
+      if (o instanceof TraceServiceSpanNameKey) {
+        TraceServiceSpanNameKey that = (TraceServiceSpanNameKey) o;
+        return this.serviceName.equals(that.serviceName) &&
+               this.spanName.equals(that.spanName) &&
+               this.bucket == that.bucket &&
+               this.ts.equals(that.ts);
+      }
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      int h = 1;
+      h *= 1000003;
+      h ^= this.serviceName.hashCode();
+      h *= 1000003;
+      h ^= this.spanName.hashCode();
+      h *= 1000003;
+      h ^= this.bucket;
+      h *= 1000003;
+      h ^= this.ts.hashCode();
+      return h;
+    }
+  }
+
 }
