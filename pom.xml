@@ -426,6 +426,33 @@
           <artifactId>maven-shade-plugin</artifactId>
           <version>${maven-shade-plugin.version}</version>
         </plugin>
+        <plugin>
+                <groupId>org.eclipse.m2e</groupId>
+                <artifactId>lifecycle-mapping</artifactId>
+                <version>1.0.0</version>
+                <configuration>
+                    <lifecycleMappingMetadata>
+                        <pluginExecutions>
+                            <pluginExecution>
+                                <pluginExecutionFilter>
+                                    <groupId>org.apache.maven.plugins</groupId>
+                                    <artifactId>maven-compiler-plugin</artifactId>
+                                    <versionRange>[3.3,)</versionRange>
+                                    <goals>
+                                        <goal>compile</goal>
+                                        <goal>testCompile</goal>
+                                    </goals>
+                                </pluginExecutionFilter>
+                                <action>
+                                    <configurator>
+                                        <id>org.eclipse.m2e.jdt.javaConfigurator</id>
+                                    </configurator>
+                                </action>
+                            </pluginExecution>
+                        </pluginExecutions>
+                    </lifecycleMappingMetadata>
+                </configuration>
+            </plugin>
       </plugins>
     </pluginManagement>
 
