@@ -30,7 +30,7 @@ import org.jooq.Cursor;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
-import org.jooq.Record1;
+import org.jooq.Record2;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectOffsetStep;
 import org.jooq.Table;
@@ -103,7 +103,7 @@ final class MySQLSpanStore implements SpanStore {
         .ipv6(hasIpv6.get() ? a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6) : null).build();
   }
 
-  private static SelectOffsetStep<Record1<Long>> toTraceIdQuery(DSLContext context,
+  private static SelectOffsetStep<Record2<Long, Long>> toTraceIdQuery(DSLContext context,
       QueryRequest request) {
     long endTs = (request.endTs > 0 && request.endTs != Long.MAX_VALUE) ? request.endTs * 1000
         : System.currentTimeMillis() * 1000;
@@ -132,7 +132,8 @@ final class MySQLSpanStore implements SpanStore {
           .and(aTable.A_VALUE.eq(kv.getValue().getBytes(UTF_8))), aTable, request.serviceName);
     }
 
-    SelectConditionStep<Record1<Long>> dsl = context.selectDistinct(ZIPKIN_SPANS.TRACE_ID)
+    SelectConditionStep<Record2<Long, Long>> dsl = context
+        .select(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.START_TS.max())
         .from(table)
         .where(ZIPKIN_SPANS.START_TS.between(endTs - request.lookback * 1000, endTs));
 
@@ -149,7 +150,9 @@ final class MySQLSpanStore implements SpanStore {
     } else if (request.minDuration != null) {
       dsl.and(ZIPKIN_SPANS.DURATION.greaterOrEqual(request.minDuration));
     }
-    return dsl.orderBy(ZIPKIN_SPANS.START_TS.desc()).limit(request.limit);
+    return dsl.groupBy(ZIPKIN_SPANS.TRACE_ID)
+        .orderBy(ZIPKIN_SPANS.START_TS.max().desc())
+        .limit(request.limit);
   }
 
   static Table<?> maybeOnService(TableOnConditionStep<Record> table,
