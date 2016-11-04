@@ -41,7 +41,6 @@ import zipkin.storage.guava.GuavaSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
-import static zipkin.internal.Util.checkNotNull;
 import static zipkin.storage.cassandra3.CassandraUtil.bindWithName;
 import static zipkin.storage.cassandra3.CassandraUtil.durationIndexBucket;
 
@@ -224,13 +223,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     }
   }
 
-  static BigInteger traceId(Span span) {
-    return span.traceIdHigh != 0
-        ? BigInteger.valueOf(span.traceIdHigh).shiftLeft(64).or(BigInteger.valueOf(span.traceId))
-        : BigInteger.valueOf(span.traceId);
-  }
-
-  final class TraceServiceSpanNameKey {
+  static final class TraceServiceSpanNameKey {
 
     final String serviceName;
     final String spanName;
