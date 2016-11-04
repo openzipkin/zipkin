@@ -1,0 +1,8 @@
+Import-Package: \
+	!com.google.gson.stream,\
+	*
+Export-Package: \
+	zipkin,\
+	zipkin.collector,\
+	zipkin.internal,\
+	zipkin.storage
