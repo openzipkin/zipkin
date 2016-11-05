@@ -330,7 +330,7 @@ final class MySQLSpanStore implements SpanStore {
             ZIPKIN_SPANS.START_TS.lessOrEqual(endTs) :
             ZIPKIN_SPANS.START_TS.between(endTs - lookback * 1000, endTs))
         // Grouping so that later code knows when a span or trace is finished.
-        .groupBy(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.ID, ZIPKIN_ANNOTATIONS.A_KEY).fetchLazy();
+        .groupBy(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.ID, ZIPKIN_ANNOTATIONS.A_KEY, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME).fetchLazy();
 
     Iterator<Iterator<DependencyLinkSpan>> traces =
         new DependencyLinkSpanIterator.ByTraceId(cursor.iterator(), hasTraceIdHigh.get());
