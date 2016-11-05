@@ -56,7 +56,6 @@ dependencies:
 database:
   override:
     - mysql -u ubuntu -e 'SET GLOBAL innodb_file_format=Barracuda'
-    - mysql -u ubuntu -e "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))"
     - mysql -u ubuntu circle_test < zipkin-storage/mysql/src/main/resources/mysql.sql
 
 test:
