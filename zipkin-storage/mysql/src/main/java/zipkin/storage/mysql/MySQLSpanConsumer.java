@@ -99,6 +99,9 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
               .set(ZIPKIN_ANNOTATIONS.A_KEY, annotation.value)
               .set(ZIPKIN_ANNOTATIONS.A_TYPE, -1)
               .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, annotation.timestamp);
+          if (span.traceIdHigh != 0 && hasTraceIdHigh.get()) {
+            insert.set(ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, span.traceIdHigh);
+          }
           if (annotation.endpoint != null) {
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, annotation.endpoint.serviceName);
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, annotation.endpoint.ipv4);
@@ -118,6 +121,9 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
               .set(ZIPKIN_ANNOTATIONS.A_VALUE, annotation.value)
               .set(ZIPKIN_ANNOTATIONS.A_TYPE, annotation.type.value)
               .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, timestamp);
+          if (span.traceIdHigh != 0 && hasTraceIdHigh.get()) {
+            insert.set(ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, span.traceIdHigh);
+          }
           if (annotation.endpoint != null) {
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, annotation.endpoint.serviceName);
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, annotation.endpoint.ipv4);
