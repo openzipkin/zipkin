@@ -216,6 +216,7 @@ public final class Cassandra3Storage
     for (String cf : ImmutableList.of(
         Schema.TABLE_TRACES,
         Schema.TABLE_TRACE_BY_SERVICE_SPAN,
+        Schema.TABLE_SERVICE_SPANS,
         Schema.TABLE_DEPENDENCIES
     )) {
       futures.add(session.get().executeAsync(format("TRUNCATE %s", cf)));
