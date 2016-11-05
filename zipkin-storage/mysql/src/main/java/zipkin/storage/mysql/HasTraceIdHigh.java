@@ -44,7 +44,14 @@ final class HasTraceIdHigh extends Lazy<Boolean> {
       if (e.sqlState().equals("42S22")) {
         LOG.warning(
             "zipkin_spans.trace_id_high doesn't exist, so 128-bit trace ids are not supported. " +
-                "Execute: alter table zipkin_spans add `trace_id_high` BIGINT NOT NULL DEFAULT 0");
+                "Execute: ALTER TABLE zipkin_spans ADD `trace_id_high` BIGINT NOT NULL DEFAULT 0;\n"
+                + "ALTER TABLE zipkin_annotations ADD `trace_id_high` BIGINT NOT NULL DEFAULT 0;\n"
+                + "ALTER TABLE zipkin_spans"
+                + "   DROP INDEX trace_id,\n"
+                + "   ADD UNIQUE KEY(`trace_id_high`, `trace_id`, `id`);\n"
+                + "ALTER TABLE zipkin_annotations\n"
+                + "   DROP INDEX trace_id,\n"
+                + "   ADD UNIQUE KEY(`trace_id_high`, `trace_id`, `span_id`, `a_key`, `a_timestamp`);");
         return false;
       }
       problemReading(e);
