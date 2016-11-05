@@ -77,6 +77,12 @@ final class MySQLSpanStore implements SpanStore {
   };
   static final Field<?>[] LINK_FIELDS_WITHOUT_TRACE_ID_HIGH =
       fieldsExcept(LINK_FIELDS, ZIPKIN_SPANS.TRACE_ID_HIGH);
+  static final Field<?>[] LINK_GROUP_FIELDS = new Field<?>[] {
+      ZIPKIN_SPANS.TRACE_ID_HIGH, ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.ID, ZIPKIN_ANNOTATIONS.A_KEY,
+      ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME
+  };
+  static final Field<?>[] LINK_GROUP_FIELDS_WITHOUT_TRACE_ID_HIGH =
+      fieldsExcept(LINK_GROUP_FIELDS, ZIPKIN_SPANS.TRACE_ID_HIGH);
 
   private final DataSource datasource;
   private final DSLContexts context;
@@ -330,7 +336,9 @@ final class MySQLSpanStore implements SpanStore {
             ZIPKIN_SPANS.START_TS.lessOrEqual(endTs) :
             ZIPKIN_SPANS.START_TS.between(endTs - lookback * 1000, endTs))
         // Grouping so that later code knows when a span or trace is finished.
-        .groupBy(ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.ID, ZIPKIN_ANNOTATIONS.A_KEY, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME).fetchLazy();
+        .groupBy(hasTraceIdHigh.get()
+            ? LINK_GROUP_FIELDS
+            : LINK_GROUP_FIELDS_WITHOUT_TRACE_ID_HIGH).fetchLazy();
 
     Iterator<Iterator<DependencyLinkSpan>> traces =
         new DependencyLinkSpanIterator.ByTraceId(cursor.iterator(), hasTraceIdHigh.get());
