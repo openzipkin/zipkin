@@ -27,7 +27,7 @@ for url in $(cat data.json | jq '.response.docs | map("http://search.maven.org/r
     echo "$url -O $module-$version-javadoc.jar" >> download
 done
 
-cat download | xargs -n3 -P30 wget -L -c
+cat download | xargs -n3 -P10 wget -L -c
 
 for version in $(sort -rVu versions); do
   rm -rf javadoc-builddir
