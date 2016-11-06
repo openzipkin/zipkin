@@ -1,5 +1,10 @@
 CREATE KEYSPACE IF NOT EXISTS zipkin3 WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
 
+CREATE TYPE IF NOT EXISTS zipkin3.trace_id (
+    high    bigint,
+    low     bigint
+);
+
 CREATE TYPE IF NOT EXISTS zipkin3.endpoint (
     service_name text,
     ipv4         inet,
@@ -21,7 +26,7 @@ CREATE TYPE IF NOT EXISTS zipkin3.binary_annotation (
 );
 
 CREATE TABLE IF NOT EXISTS zipkin3.traces (
-    trace_id            varint,
+    trace_id            frozen<trace_id>,
     ts_uuid             timeuuid,
     id                  bigint,
     ts                  bigint,
@@ -39,12 +44,12 @@ CREATE TABLE IF NOT EXISTS zipkin3.traces (
 
 
 CREATE TABLE IF NOT EXISTS zipkin3.trace_by_service_span (
-    service_name  text,      //-- service name
-    span_name     text,      //-- span name, or blank for queries without span name
-    bucket        int,       //-- time bucket, calculated as ts/interval (in microseconds), for some pre-configured interval like 1 day.
-    ts            timeuuid,  //-- start timestamp of the span, truncated to millisecond precision
-    trace_id      varint,    //-- trace ID
-    duration      bigint,    //-- span duration, in microseconds
+    service_name  text,             //-- service name
+    span_name     text,             //-- span name, or blank for queries without span name
+    bucket        int,              //-- time bucket, calculated as ts/interval (in microseconds), for some pre-configured interval like 1 day.
+    ts            timeuuid,         //-- start timestamp of the span, truncated to millisecond precision
+    trace_id      frozen<trace_id>, //-- trace ID
+    duration      bigint,           //-- span duration, in microseconds
     PRIMARY KEY ((service_name, span_name, bucket), ts)
 )
    WITH CLUSTERING ORDER BY (ts DESC)
