@@ -24,7 +24,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -36,19 +35,17 @@ import zipkin.BinaryAnnotation;
 import zipkin.Span;
 import zipkin.storage.cassandra3.Schema.AnnotationUDT;
 import zipkin.storage.cassandra3.Schema.BinaryAnnotationUDT;
+import zipkin.storage.cassandra3.Schema.TraceIdUDT;
 import zipkin.storage.guava.GuavaSpanConsumer;
 
+import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.storage.cassandra3.CassandraUtil.bindWithName;
 import static zipkin.storage.cassandra3.CassandraUtil.durationIndexBucket;
-import static com.google.common.util.concurrent.Futures.transform;
 
 final class CassandraSpanConsumer implements GuavaSpanConsumer {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanConsumer.class);
   private static final Function<Object, Void> TO_VOID = Functions.<Void>constant(null);
-
-  private static final long WRITTEN_NAMES_TTL
-      = Long.getLong("zipkin.store.cassandra3.internal.writtenNamesTtl", 60 * 60 * 1000);
 
   private final Session session;
   private final PreparedStatement insertSpan;
@@ -102,7 +99,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     for (Span span : rawSpans) {
       // indexing occurs by timestamp, so derive one if not present.
       Long timestamp = guessTimestamp(span);
-      BigInteger traceId = CassandraUtil.extractTraceId(span);
+      TraceIdUDT traceId = new TraceIdUDT(span.traceIdHigh, span.traceId);
       futures.add(storeSpan(span, traceId, timestamp));
 
       for (String serviceName : span.serviceNames()) {
@@ -125,7 +122,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
   /**
    * Store the span in the underlying storage for later retrieval.
    */
-  ListenableFuture<?> storeSpan(Span span, BigInteger traceId, Long timestamp) {
+  ListenableFuture<?> storeSpan(Span span, TraceIdUDT traceId, Long timestamp) {
     try {
       if ((null == timestamp || 0 == timestamp)
           && metadata.compactionClass.contains("TimeWindowCompactionStrategy")) {
@@ -145,8 +142,14 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       }
       Set<String> annotationKeys = CassandraUtil.annotationKeys(span);
 
+      // TODO: To index a 128-bit trace such that it can be looked up with its lower 64bits, we
+      // could save it twice (like below). See #1364
+      // if (SUPPORT_64_BIT_IDS && traceId.getHigh() != 0L) {
+      //  storeSpan(span, new TraceIdUDT(0L, traceId.getLow()), timestamp);
+      // }
+
       BoundStatement bound = bindWithName(insertSpan, "insert-span")
-          .setVarint("trace_id", traceId)
+          .set("trace_id", traceId, TraceIdUDT.class)
           .setUUID("ts_uuid", new UUID(
               UUIDs.startOf(null != timestamp ? (timestamp / 1000) : 0)
                   .getMostSignificantBits(),
@@ -178,7 +181,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       String spanName,
       long timestamp_micro,
       Long duration,
-      BigInteger traceId) {
+      TraceIdUDT traceId) {
 
     int bucket = durationIndexBucket(timestamp_micro);
     UUID ts = new UUID(
@@ -191,7 +194,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
               .setString("span_name", spanName)
               .setInt("bucket", bucket)
               .setUUID("ts", ts)
-              .setVarint("trace_id", traceId);
+              .set("trace_id", traceId, TraceIdUDT.class);
 
       if (null != duration) {
         bound = bound.setLong("duration", duration);

@@ -37,6 +37,8 @@ import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Endpoint;
 
+import static zipkin.internal.Util.writeHexLong;
+
 final class Schema {
   private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
 
@@ -107,6 +109,71 @@ final class Schema {
       }
     } catch (IOException ex) {
       LOG.error(ex.getMessage(), ex);
+    }
+  }
+
+  @UDT(keyspace = DEFAULT_KEYSPACE + "_udts", name = "trace_id")
+  static final class TraceIdUDT {
+
+    private long high;
+    private long low;
+
+    TraceIdUDT() {
+      this.high = 0L;
+      this.low = 0L;
+    }
+
+    TraceIdUDT(long high, long low) {
+        this.high = high;
+        this.low = low;
+    }
+
+    Long getHigh() {
+      return high;
+    }
+
+    long getLow() {
+      return low;
+    }
+
+    void setHigh(Long high) {
+      this.high = high;
+    }
+
+    void setLow(long low) {
+      this.low = low;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == this) return true;
+      if (o instanceof TraceIdUDT) {
+        TraceIdUDT that = (TraceIdUDT) o;
+        return (this.high == that.high) && (this.low == that.low);
+      }
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      int h = 1;
+      h *= 1000003;
+      h ^= (high >>> 32) ^ high;
+      h *= 1000003;
+      h ^= (low >>> 32) ^ low;
+      return h;
+    }
+
+    @Override
+    public String toString() {
+      char[] result = new char[high != 0 ? 32 : 16];
+      int pos = 0;
+      if (high != 0) {
+        writeHexLong(result, pos, high);
+        pos += 16;
+      }
+      writeHexLong(result, pos, low);
+      return new String(result);
     }
   }
 
