@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS zipkin3.traces (
     duration            bigint,
     annotations         list<frozen<annotation>>,
     binary_annotations  list<frozen<binary_annotation>>,
-    all_annotations     text, // can't do SASI on set<text>: comma-joined until CASSANDRA-11182
+    all_annotations     text, //-- can't do SASI on set<text>: comma-joined until CASSANDRA-11182
     PRIMARY KEY (trace_id, ts_uuid, id)
 )
     WITH CLUSTERING ORDER BY (ts_uuid DESC)
@@ -38,29 +38,28 @@ CREATE TABLE IF NOT EXISTS zipkin3.traces (
     AND default_time_to_live =  604800;
 
 
-CREATE TABLE zipkin3.trace_by_service_span (
-    service_name  text,      // service name
-    span_name     text,      // span name, or blank for queries without span name
-    bucket        int,       // time bucket, calculated as ts/interval (in microseconds), for some pre-configured interval like 1 day.
-    ts            timeuuid,  // start timestamp of the span, truncated to millisecond precision
-    trace_id      varint,    // trace ID
-    duration      bigint,    // span duration, in microseconds
+CREATE TABLE IF NOT EXISTS zipkin3.trace_by_service_span (
+    service_name  text,      //-- service name
+    span_name     text,      //-- span name, or blank for queries without span name
+    bucket        int,       //-- time bucket, calculated as ts/interval (in microseconds), for some pre-configured interval like 1 day.
+    ts            timeuuid,  //-- start timestamp of the span, truncated to millisecond precision
+    trace_id      varint,    //-- trace ID
+    duration      bigint,    //-- span duration, in microseconds
     PRIMARY KEY ((service_name, span_name, bucket), ts)
 )
    WITH CLUSTERING ORDER BY (ts DESC)
     AND compaction = {'class': 'org.apache.cassandra.db.compaction.TimeWindowCompactionStrategy'}
     AND default_time_to_live =  259200;
 
+CREATE TABLE IF NOT EXISTS zipkin3.span_name_by_service (
+    service_name text,
+    span_name    text,
+    PRIMARY KEY (service_name, span_name)
+)
+    WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}
+    AND default_time_to_live =  259200;
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS zipkin3.trace_by_service
-    AS SELECT service_name, span_name, bucket, ts, trace_id FROM trace_by_service_span
-            WHERE service_name is not null AND span_name is not null AND bucket is not null AND ts is not null
-            PRIMARY KEY (service_name, bucket, span_name, ts)
-        WITH CLUSTERING ORDER BY (bucket DESC, ts DESC)
-    AND compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}
-        AND default_time_to_live =  259200;
-
-CREATE CUSTOM INDEX ON zipkin3.traces (all_annotations) USING 'org.apache.cassandra.index.sasi.SASIIndex'
+CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin3.traces (all_annotations) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {
     'mode': 'CONTAINS',
     'analyzed': 'true',
@@ -68,7 +67,7 @@ CREATE CUSTOM INDEX ON zipkin3.traces (all_annotations) USING 'org.apache.cassan
     'case_sensitive': 'false'
    };
 
-CREATE CUSTOM INDEX ON zipkin3.trace_by_service_span (duration) USING 'org.apache.cassandra.index.sasi.SASIIndex'
+CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin3.trace_by_service_span (duration) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {'mode': 'PREFIX'};
 
 
@@ -80,3 +79,5 @@ CREATE TABLE IF NOT EXISTS zipkin3.dependencies (
     WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}
     AND default_time_to_live =  259200;
 
+//-- Empty span name list in UI with Cassandra3 storage component – https://github.com/openzipkin/zipkin/issues/1360
+DROP MATERIALIZED VIEW IF EXISTS zipkin3.trace_by_service;
