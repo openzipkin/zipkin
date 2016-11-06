@@ -177,6 +177,4 @@ elif is_travis_branch_master; then
 elif build_started_by_tag; then
   safe_checkout_master
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion="$(release_version)" -Darguments="-DskipTests" release:prepare
-  javadoc_to_gh_pages
 fi
-
