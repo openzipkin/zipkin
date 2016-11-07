@@ -111,6 +111,16 @@ public class CollectorTest {
   }
 
   @Test
+  public void errorDecoding_doesntWrapMalformedException() {
+    String message =
+        collector.errorReading(new IllegalArgumentException("Malformed reading spans")).getMessage();
+
+    assertThat(messages)
+        .containsExactly(message)
+        .containsExactly("Malformed reading spans");
+  }
+
+  @Test
   public void debugFlagWins() {
     collector.accept(asList(span(Long.MIN_VALUE).toBuilder().debug(true).build()), NOOP);
 

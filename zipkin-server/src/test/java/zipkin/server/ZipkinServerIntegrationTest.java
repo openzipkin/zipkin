@@ -25,6 +25,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import zipkin.Codec;
@@ -34,6 +36,7 @@ import zipkin.storage.InMemoryStorage;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.startsWith;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -47,8 +50,8 @@ import static zipkin.internal.Util.UTF_8;
 @SpringBootTest(classes = ZipkinServer.class)
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@TestPropertySource(properties = {"zipkin.store.type=mem", "spring.config.name=zipkin-server"})
-public class ZipkinServerIntegrationTests {
+@TestPropertySource(properties = {"zipkin.store.type=mem", "spring.config.name=zipkin-server", "zipkin.collector.scribe.enabled=false"})
+public class ZipkinServerIntegrationTest {
 
   @Autowired
   ConfigurableWebApplicationContext context;
@@ -69,8 +72,7 @@ public class ZipkinServerIntegrationTests {
   @Test
   public void writeSpans_noContentTypeIsJson() throws Exception {
     byte[] body = Codec.JSON.writeSpans(TRACE);
-    mockMvc
-        .perform(post("/api/v1/spans").content(body))
+    performAsync(post("/api/v1/spans").content(body))
         .andExpect(status().isAccepted());
   }
 
@@ -95,7 +97,7 @@ public class ZipkinServerIntegrationTests {
   @Test
   public void tracesQueryRequiresNoParameters() throws Exception {
     byte[] body = Codec.JSON.writeSpans(TRACE);
-    mockMvc.perform(post("/api/v1/spans").content(body));
+    performAsync(post("/api/v1/spans").content(body));
 
     mockMvc.perform(get("/api/v1/traces"))
         .andExpect(status().isOk())
@@ -105,8 +107,7 @@ public class ZipkinServerIntegrationTests {
   @Test
   public void writeSpans_malformedJsonIsBadRequest() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
-    mockMvc
-        .perform(post("/api/v1/spans").content(body))
+    performAsync(post("/api/v1/spans").content(body))
         .andExpect(status().isBadRequest())
         .andExpect(content().string(startsWith("Malformed reading List<Span> from json: hello")));
   }
@@ -126,8 +127,7 @@ public class ZipkinServerIntegrationTests {
   @Test
   public void writeSpans_malformedGzipIsBadRequest() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
-    mockMvc
-        .perform(post("/api/v1/spans").content(body).header("Content-Encoding", "gzip"))
+    performAsync(post("/api/v1/spans").content(body).header("Content-Encoding", "gzip"))
         .andExpect(status().isBadRequest())
         .andExpect(content().string(startsWith("Cannot gunzip spans")));
   }
@@ -135,16 +135,14 @@ public class ZipkinServerIntegrationTests {
   @Test
   public void writeSpans_contentTypeXThrift() throws Exception {
     byte[] body = Codec.THRIFT.writeSpans(TRACE);
-    mockMvc
-        .perform(post("/api/v1/spans").content(body).contentType("application/x-thrift"))
+    performAsync(post("/api/v1/spans").content(body).contentType("application/x-thrift"))
         .andExpect(status().isAccepted());
   }
 
   @Test
   public void writeSpans_malformedThriftIsBadRequest() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
-    mockMvc
-        .perform(post("/api/v1/spans").content(body).contentType("application/x-thrift"))
+    performAsync(post("/api/v1/spans").content(body).contentType("application/x-thrift"))
         .andExpect(status().isBadRequest())
         .andExpect(content().string(startsWith("Malformed reading List<Span> from TBinary")));
   }
@@ -175,9 +173,9 @@ public class ZipkinServerIntegrationTests {
     Span span = TRACE.get(0);
 
     // write the span to the server, twice
-    mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
+    performAsync(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
         .andExpect(status().isAccepted());
-    mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
+    performAsync(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
         .andExpect(status().isAccepted());
 
     // sleep as the the storage operation is async
@@ -198,7 +196,7 @@ public class ZipkinServerIntegrationTests {
   public void downgrades128BitTraceIdToLower64Bits() throws Exception {
     Span span = TRACE.get(0);
 
-    mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
+    performAsync(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
         .andExpect(status().isAccepted());
 
     // sleep as the the storage operation is async
@@ -223,7 +221,8 @@ public class ZipkinServerIntegrationTests {
 
   @Test
   public void doesntSetCacheControlOnNameEndpointsWhenLessThan4Services() throws Exception {
-    mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(TRACE)));
+    performAsync(post("/api/v1/spans")
+        .content("[" + new String(Codec.JSON.writeSpan(TRACE.get(0)), UTF_8) + "]"));
 
     mockMvc.perform(get("/api/v1/services"))
         .andExpect(status().isOk())
@@ -253,5 +252,9 @@ public class ZipkinServerIntegrationTests {
     mockMvc.perform(get("/api/v1/traces")
         .header(HttpHeaders.ORIGIN, "foo.example.com"))
            .andExpect(status().isOk());
+  }
+
+  ResultActions performAsync(MockHttpServletRequestBuilder request) throws Exception {
+    return mockMvc.perform(asyncDispatch(mockMvc.perform(request).andReturn()));
   }
 }

@@ -22,6 +22,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import zipkin.Annotation;
@@ -31,6 +33,7 @@ import zipkin.Span;
 import zipkin.server.ZipkinServer;
 
 import static java.util.Arrays.asList;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -40,7 +43,7 @@ import static zipkin.Constants.SERVER_RECV;
 @SpringBootTest(classes = ZipkinServer.class)
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@TestPropertySource(properties = {"zipkin.storage.type=mem", "spring.config.name=zipkin-server"})
+@TestPropertySource(properties = {"zipkin.storage.type=mem", "zipkin.collector.scribe.enabled=false", "spring.config.name=zipkin-server"})
 public class ZipkinServerTest {
 
   @Autowired
@@ -60,7 +63,7 @@ public class ZipkinServerTest {
     Span span = Span.builder().id(1L).traceId(1L).name("get").addAnnotation(ann).build();
 
     // write the span to the server
-    mockMvc.perform(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
+    performAsync(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
         .andExpect(status().isAccepted());
 
     // sleep as the the storage operation is async
@@ -70,5 +73,9 @@ public class ZipkinServerTest {
     mockMvc.perform(get("/api/v1/spans?serviceName=" + service))
         .andExpect(status().isOk())
         .andExpect(content().string("[\"" + span.name + "\"]"));
+  }
+
+  ResultActions performAsync(MockHttpServletRequestBuilder request) throws Exception {
+    return mockMvc.perform(asyncDispatch(mockMvc.perform(request).andReturn()));
   }
 }

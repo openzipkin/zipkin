@@ -31,7 +31,7 @@ import zipkin.storage.StorageComponent;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
-public class ZipkinScribeCollectorAutoConfigurationTests {
+public class ZipkinScribeCollectorAutoConfigurationTest {
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();
