@@ -104,8 +104,6 @@ final class DefaultSessionFactory implements Cassandra3Storage.SessionFactory {
 
   // Visible for testing
   static Cluster buildCluster(Cassandra3Storage cassandra) {
-    LOG.error("building cassandra3 cluster");
-
     Cluster.Builder builder = Cluster.builder();
     List<InetSocketAddress> contactPoints = parseContactPoints(cassandra);
     int defaultPort = findConnectPort(contactPoints);
@@ -125,9 +123,7 @@ final class DefaultSessionFactory implements Cassandra3Storage.SessionFactory {
         HostDistance.LOCAL, cassandra.maxConnections
     ));
     // https://github.com/datastax/java-driver/tree/3.x/manual/ssl#driver-configuration
-    LOG.error("building cassandra3 ssl options");
     SSLOptions sslOptions = buildSSLOptions();
-    LOG.error("built cassandra3 ssl options; {}", sslOptions);
     return builder.withSSL(sslOptions).build();
   }
 
@@ -137,8 +133,6 @@ final class DefaultSessionFactory implements Cassandra3Storage.SessionFactory {
       String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
       TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
       tmf.init(ts);
-
-      LOG.error("using keystore; {}", ts);
 
       SSLContext sslContext = SSLContext.getInstance("TLS");
       sslContext.init(null, tmf.getTrustManagers(), new SecureRandom());
