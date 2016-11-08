@@ -18,15 +18,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.SettableListenableFuture;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.async.DeferredResult;
 import zipkin.Codec;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
@@ -57,8 +56,7 @@ public class ZipkinHttpCollector {
   }
 
   @RequestMapping(value = "/api/v1/spans", method = POST)
-  @ResponseStatus(HttpStatus.ACCEPTED)
-  public DeferredResult<ResponseEntity<?>> uploadSpansJson(
+  public ListenableFuture<ResponseEntity<?>> uploadSpansJson(
       @RequestHeader(value = "Content-Encoding", required = false) String encoding,
       @RequestBody byte[] body
   ) {
@@ -66,36 +64,33 @@ public class ZipkinHttpCollector {
   }
 
   @RequestMapping(value = "/api/v1/spans", method = POST, consumes = APPLICATION_THRIFT)
-  @ResponseStatus(HttpStatus.ACCEPTED)
-  public DeferredResult<ResponseEntity<?>> uploadSpansThrift(
+  public ListenableFuture<ResponseEntity<?>> uploadSpansThrift(
       @RequestHeader(value = "Content-Encoding", required = false) String encoding,
       @RequestBody byte[] body
   ) {
     return validateAndStoreSpans(encoding, Codec.THRIFT, body);
   }
 
-  DeferredResult<ResponseEntity<?>> validateAndStoreSpans(String encoding, Codec codec,
+  ListenableFuture<ResponseEntity<?>> validateAndStoreSpans(String encoding, Codec codec,
       byte[] body) {
-    DeferredResult<ResponseEntity<?>> result = new DeferredResult<>();
+    SettableListenableFuture<ResponseEntity<?>> result = new SettableListenableFuture<>();
     metrics.incrementMessages();
     if (encoding != null && encoding.contains("gzip")) {
       try {
         body = gunzip(body);
       } catch (IOException e) {
         metrics.incrementMessagesDropped();
-        result.setResult(
-            ResponseEntity.badRequest().body("Cannot gunzip spans: " + e.getMessage() + "\n"));
-        return result;
+        result.set(ResponseEntity.badRequest().body("Cannot gunzip spans: " + e.getMessage() + "\n"));
       }
     }
     collector.acceptSpans(body, codec, new Callback<Void>() {
       @Override public void onSuccess(@Nullable Void value) {
-        result.setResult(SUCCESS);
+        result.set(SUCCESS);
       }
 
       @Override public void onError(Throwable t) {
-        String message = t.getMessage();
-        result.setErrorResult(message.startsWith("Cannot store")
+        String message = t.getMessage() == null ? t.getClass().getSimpleName() : t.getMessage();
+        result.set(t.getMessage() == null || message.startsWith("Cannot store")
             ? ResponseEntity.status(500).body(message + "\n")
             : ResponseEntity.status(400).body(message + "\n"));
       }

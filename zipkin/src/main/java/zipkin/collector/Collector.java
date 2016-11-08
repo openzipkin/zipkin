@@ -17,9 +17,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
-import zipkin.storage.Callback;
 import zipkin.Codec;
 import zipkin.Span;
+import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
 
 import static java.lang.String.format;
@@ -184,10 +184,16 @@ public final class Collector {
   }
 
   RuntimeException doError(String message, Throwable e) {
-    message = format("%s due to %s(%s)", message, e.getClass().getSimpleName(),
-        e.getMessage() == null ? "" : e.getMessage());
-    logger.log(WARNING, message, e);
-    return new RuntimeException(message, e);
+    if (e instanceof RuntimeException && e.getMessage() != null && e.getMessage()
+        .startsWith("Malformed")) {
+      logger.log(WARNING, e.getMessage(), e);
+      return (RuntimeException) e;
+    } else {
+      message = format("%s due to %s(%s)", message, e.getClass().getSimpleName(),
+          e.getMessage() == null ? "" : e.getMessage());
+      logger.log(WARNING, message, e);
+      return new RuntimeException(message, e);
+    }
   }
 
   static StringBuilder appendSpanIds(List<Span> spans, StringBuilder message) {

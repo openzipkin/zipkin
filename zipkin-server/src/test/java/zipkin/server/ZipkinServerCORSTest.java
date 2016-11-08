@@ -23,9 +23,12 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -38,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = ZipkinServer.class)
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@TestPropertySource(properties = {"zipkin.storage.type=mem", "spring.config.name=zipkin-server", "zipkin.query.allowed-origins=foo.example.com"})
+@TestPropertySource(properties = {"zipkin.storage.type=mem", "spring.config.name=zipkin-server", "zipkin.collector.scribe.enabled=false", "zipkin.query.allowed-origins=foo.example.com"})
 public class ZipkinServerCORSTest {
 
   @Autowired
@@ -58,7 +61,7 @@ public class ZipkinServerCORSTest {
         .header(HttpHeaders.ORIGIN, "foo.example.com"))
            .andExpect(status().isOk());
 
-    mockMvc.perform(post("/api/v1/spans")
+    performAsync(post("/api/v1/spans")
         .content("[]")
         .header(HttpHeaders.ORIGIN, "foo.example.com"))
           .andExpect(status().isAccepted());
@@ -75,5 +78,9 @@ public class ZipkinServerCORSTest {
         .content("[]")
         .header(HttpHeaders.ORIGIN, "bar.example.com"))
          .andExpect(status().isForbidden());
+  }
+
+  ResultActions performAsync(MockHttpServletRequestBuilder request) throws Exception {
+    return mockMvc.perform(asyncDispatch(mockMvc.perform(request).andReturn()));
   }
 }

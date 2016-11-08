@@ -31,10 +31,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 import zipkin.Codec;
 import zipkin.Span;
+import zipkin.internal.Util;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.StorageComponent;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
 
 /**
@@ -83,7 +85,7 @@ public class ZipkinQueryApiV1 {
   }
 
   @RequestMapping(value = "/traces", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
-  public byte[] getTraces(
+  public String getTraces(
       @RequestParam(value = "serviceName", required = false) String serviceName,
       @RequestParam(value = "spanName", defaultValue = "all") String spanName,
       @RequestParam(value = "annotationQuery", required = false) String annotationQuery,
@@ -102,11 +104,11 @@ public class ZipkinQueryApiV1 {
         .lookback(lookback != null ? lookback : defaultLookback)
         .limit(limit).build();
 
-    return Codec.JSON.writeTraces(storage.spanStore().getTraces(queryRequest));
+    return new String(Codec.JSON.writeTraces(storage.spanStore().getTraces(queryRequest)), UTF_8);
   }
 
   @RequestMapping(value = "/trace/{traceId}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
-  public byte[] getTrace(@PathVariable String traceId, WebRequest request) {
+  public String getTrace(@PathVariable String traceId, WebRequest request) {
     long id = lowerHexToUnsignedLong(traceId);
     String[] raw = request.getParameterValues("raw"); // RequestParam doesn't work for param w/o value
     List<Span> trace = raw != null ? storage.spanStore().getRawTrace(id) : storage.spanStore().getTrace(id);
@@ -114,7 +116,7 @@ public class ZipkinQueryApiV1 {
     if (trace == null) {
       throw new TraceNotFoundException(traceId, id);
     }
-    return Codec.JSON.writeSpans(trace);
+    return new String(Codec.JSON.writeSpans(trace), UTF_8);
   }
 
   @ExceptionHandler(TraceNotFoundException.class)

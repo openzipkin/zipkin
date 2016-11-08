@@ -25,7 +25,7 @@ import zipkin.storage.mysql.MySQLStorage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
-public class ZipkinMySQLStorageAutoConfigurationTests {
+public class ZipkinMySQLStorageAutoConfigurationTest {
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();
