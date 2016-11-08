@@ -94,11 +94,7 @@ public final class DependencyLinkSpan {
 
   @Override public String toString() {
     StringBuilder json = new StringBuilder();
-    json.append("{\"traceId\": \"");
-    if (traceId.hi != 0) {
-      json.append(Util.toLowerHex(traceId.hi));
-    }
-    json.append(Util.toLowerHex(traceId.lo)).append('\"');
+    json.append("{\"traceId\": \"").append(Util.toLowerHex(traceId.hi, traceId.lo)).append('\"');
     if (parentId != null) {
       json.append(", \"parentId\": \"").append(Util.toLowerHex(parentId)).append('\"');
     }
@@ -135,8 +131,8 @@ public final class DependencyLinkSpan {
     return h;
   }
 
-  public static Builder builder(long traceIdHigh, long traceId, Long parentId, long spanId) {
-    return new Builder(new TraceId(traceIdHigh, traceId), parentId, spanId);
+  public static Builder builder(long traceIdHigh, long traceIdLow, Long parentId, long spanId) {
+    return new Builder(new TraceId(traceIdHigh, traceIdLow), parentId, spanId);
   }
 
   public static DependencyLinkSpan from(Span s) {

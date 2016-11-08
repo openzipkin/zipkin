@@ -15,6 +15,7 @@ package zipkin.internal;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,9 +24,10 @@ import zipkin.Span;
 
 import static zipkin.internal.Util.sortedList;
 
-public class MergeById {
+public final class MergeById {
 
   public static List<Span> apply(Collection<Span> spans) {
+    if (spans == null || spans.isEmpty()) return Collections.emptyList();
     List<Span> result = new ArrayList<Span>(spans.size());
     Map<Long, List<Span>> spanIdToSpans = new LinkedHashMap<Long, List<Span>>();
     for (Span span : spans) {

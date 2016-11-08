@@ -40,15 +40,12 @@ import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_
 final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
   private final DataSource datasource;
   private final DSLContexts context;
-  private final Lazy<Boolean> hasTraceIdHigh;
-  private final Lazy<Boolean> hasIpv6;
+  private final Schema schema;
 
-  MySQLSpanConsumer(DataSource datasource, DSLContexts context, Lazy<Boolean> hasTraceIdHigh,
-      Lazy<Boolean> hasIpv6) {
+  MySQLSpanConsumer(DataSource datasource, DSLContexts context, Schema schema) {
     this.datasource = datasource;
     this.context = context;
-    this.hasTraceIdHigh = hasTraceIdHigh;
-    this.hasIpv6 = hasIpv6;
+    this.schema = schema;
   }
 
   /** Blocking version of {@link AsyncSpanConsumer#accept} */
@@ -84,7 +81,7 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
             .set(ZIPKIN_SPANS.START_TS, timestamp)
             .set(ZIPKIN_SPANS.DURATION, span.duration);
 
-        if (span.traceIdHigh != 0 && hasTraceIdHigh.get()) {
+        if (span.traceIdHigh != 0 && schema.hasTraceIdHigh) {
           insertSpan.set(ZIPKIN_SPANS.TRACE_ID_HIGH, span.traceIdHigh);
         }
 
@@ -99,13 +96,13 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
               .set(ZIPKIN_ANNOTATIONS.A_KEY, annotation.value)
               .set(ZIPKIN_ANNOTATIONS.A_TYPE, -1)
               .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, annotation.timestamp);
-          if (span.traceIdHigh != 0 && hasTraceIdHigh.get()) {
+          if (span.traceIdHigh != 0 && schema.hasTraceIdHigh) {
             insert.set(ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, span.traceIdHigh);
           }
           if (annotation.endpoint != null) {
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, annotation.endpoint.serviceName);
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, annotation.endpoint.ipv4);
-            if (annotation.endpoint.ipv6 != null && hasIpv6.get()) {
+            if (annotation.endpoint.ipv6 != null && schema.hasIpv6) {
               insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6, annotation.endpoint.ipv6);
             }
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT, annotation.endpoint.port);
@@ -121,13 +118,13 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
               .set(ZIPKIN_ANNOTATIONS.A_VALUE, annotation.value)
               .set(ZIPKIN_ANNOTATIONS.A_TYPE, annotation.type.value)
               .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, timestamp);
-          if (span.traceIdHigh != 0 && hasTraceIdHigh.get()) {
+          if (span.traceIdHigh != 0 && schema.hasTraceIdHigh) {
             insert.set(ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, span.traceIdHigh);
           }
           if (annotation.endpoint != null) {
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, annotation.endpoint.serviceName);
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, annotation.endpoint.ipv4);
-            if (annotation.endpoint.ipv6 != null && hasIpv6.get()) {
+            if (annotation.endpoint.ipv6 != null && schema.hasIpv6) {
               insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6, annotation.endpoint.ipv6);
             }
             insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT, annotation.endpoint.port);

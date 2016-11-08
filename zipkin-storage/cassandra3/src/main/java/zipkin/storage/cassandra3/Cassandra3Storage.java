@@ -26,6 +26,7 @@ import java.util.List;
 import zipkin.internal.LazyCloseable;
 import zipkin.internal.Nullable;
 import zipkin.storage.QueryRequest;
+import zipkin.storage.StorageComponent;
 import zipkin.storage.guava.LazyGuavaStorageComponent;
 
 import static java.lang.String.format;
@@ -55,7 +56,8 @@ public final class Cassandra3Storage
     return new Builder();
   }
 
-  public static final class Builder {
+  public static final class Builder implements StorageComponent.Builder {
+    boolean strictTraceId = true;
     String keyspace = Schema.DEFAULT_KEYSPACE;
     String contactPoints = "localhost";
     String localDc;
@@ -66,6 +68,12 @@ public final class Cassandra3Storage
     int maxTraceCols = 100000;
     int indexFetchMultiplier = 3;
     SessionFactory sessionFactory = SessionFactory.DEFAULT;
+
+    /** {@inheritDoc} */
+    @Override public Builder strictTraceId(boolean strictTraceId) {
+      this.strictTraceId = strictTraceId;
+      return this;
+    }
 
     /** Override to control how sessions are created. */
     public Builder sessionFactory(SessionFactory sessionFactory) {
@@ -147,7 +155,7 @@ public final class Cassandra3Storage
       return this;
     }
 
-    public Cassandra3Storage build() {
+    @Override public Cassandra3Storage build() {
       return new Cassandra3Storage(this);
     }
 
@@ -164,6 +172,7 @@ public final class Cassandra3Storage
   final boolean ensureSchema;
   final String keyspace;
   final int indexFetchMultiplier;
+  final boolean strictTraceId;
   final LazyCloseable<Session> session;
 
   Cassandra3Storage(Builder builder) {
@@ -176,6 +185,7 @@ public final class Cassandra3Storage
     this.keyspace = builder.keyspace;
     this.maxTraceCols = builder.maxTraceCols;
     this.indexFetchMultiplier = builder.indexFetchMultiplier;
+    this.strictTraceId = builder.strictTraceId;
     final SessionFactory sessionFactory = builder.sessionFactory;
     this.session = new LazyCloseable<Session>() {
       @Override protected Session compute() {
@@ -190,11 +200,12 @@ public final class Cassandra3Storage
   }
 
   @Override protected CassandraSpanStore computeGuavaSpanStore() {
-    return new CassandraSpanStore(session.get(), maxTraceCols, indexFetchMultiplier);
+    return new CassandraSpanStore(session.get(), maxTraceCols, indexFetchMultiplier,
+        strictTraceId);
   }
 
   @Override protected CassandraSpanConsumer computeGuavaSpanConsumer() {
-    return new CassandraSpanConsumer(session.get());
+    return new CassandraSpanConsumer(session.get(), strictTraceId);
   }
 
   @Override public CheckResult check() {

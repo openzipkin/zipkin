@@ -73,39 +73,39 @@ public class InternalBlockingToAsyncSpanStoreAdapterTest {
 
   @Test
   public void getTrace_success() {
-    when(spanStore.getTrace(1L)).thenReturn(TRACE);
+    when(spanStore.getTrace(1L, 2L)).thenReturn(TRACE);
 
     CallbackCaptor<List<Span>> captor = new CallbackCaptor<>();
-    asyncSpanStore.getTrace(1L, captor);
+    asyncSpanStore.getTrace(1L, 2L, captor);
     assertThat(captor.get()).isEqualTo(TRACE);
   }
 
   @Test
   public void getTrace_exception() {
     thrown.expect(IllegalStateException.class);
-    when(spanStore.getTrace(1L)).thenThrow(new IllegalStateException("failed"));
+    when(spanStore.getTrace(1L, 2L)).thenThrow(new IllegalStateException("failed"));
 
     CallbackCaptor<List<Span>> captor = new CallbackCaptor<>();
-    asyncSpanStore.getTrace(1L, captor);
+    asyncSpanStore.getTrace(1L, 2L, captor);
     captor.get();
   }
 
   @Test
   public void getRawTrace_success() {
-    when(spanStore.getRawTrace(1L)).thenReturn(TRACE);
+    when(spanStore.getRawTrace(1L, 2L)).thenReturn(TRACE);
 
     CallbackCaptor<List<Span>> captor = new CallbackCaptor<>();
-    asyncSpanStore.getRawTrace(1L, captor);
+    asyncSpanStore.getRawTrace(1L, 2L, captor);
     assertThat(captor.get()).isEqualTo(TRACE);
   }
 
   @Test
   public void getRawTrace_exception() {
     thrown.expect(IllegalStateException.class);
-    when(spanStore.getRawTrace(1L)).thenThrow(new IllegalStateException("failed"));
+    when(spanStore.getRawTrace(1L, 2L)).thenThrow(new IllegalStateException("failed"));
 
     CallbackCaptor<List<Span>> captor = new CallbackCaptor<>();
-    asyncSpanStore.getRawTrace(1L, captor);
+    asyncSpanStore.getRawTrace(1L, 2L, captor);
     captor.get();
   }
 

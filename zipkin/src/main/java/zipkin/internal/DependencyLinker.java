@@ -14,6 +14,7 @@
 package zipkin.internal;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -41,7 +42,7 @@ public final class DependencyLinker {
   /**
    * @param spans spans where all spans have the same trace id
    */
-  public DependencyLinker putTrace(List<Span> spans) {
+  public DependencyLinker putTrace(Collection<Span> spans) {
     if (spans.isEmpty()) return this;
 
     List<DependencyLinkSpan> linkSpans = new LinkedList<DependencyLinkSpan>();

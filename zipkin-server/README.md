@@ -248,6 +248,61 @@ $ docker run -d -p 2181:2181 -p 9092:9092 \
 $ java -jar zipkin.jar
 ```
 
+### 128-bit trace IDs
+
+Zipkin supports 64 and 128-bit trace identifiers, typically serialized
+as 16 or 32 character hex strings. By default, spans reported to zipkin
+with the same trace ID will be considered in the same trace.
+
+For example, `463ac35c9f6413ad48485a3953bb6124` is a 128-bit trace ID,
+while `48485a3953bb6124` is a 64-bit one.
+
+Note: Span (or parent) IDs within a trace are 64-bit regardless of the
+length or value of their trace ID.
+
+#### Migrating from 64 to 128-bit trace IDs
+
+Unless you only issue 128-bit traces when all applications support them,
+the process of updating applications from 64 to 128-bit trace IDs results
+in a mixed state. This mixed state is mitigated by the setting
+`STRICT_TRACE_ID=false`, explained below. Once a migration is complete,
+remove the setting `STRICT_TRACE_ID=false` or set it to true.
+
+Here are a few trace IDs the help what happens during this setting.
+
+* Trace ID A: 463ac35c9f6413ad48485a3953bb6124
+* Trace ID B: 48485a3953bb6124
+* Trace ID C: 463ac35c9f6413adf1a48a8cff464e0e
+* Trace ID D: 463ac35c9f6413ad
+
+In a 64-bit environment, trace IDs will look like B or D above. When an
+application upgrades to 128-bit instrumentation and decides to create a
+128-bit trace, its trace IDs will look like A or C above.
+
+Applications who aren't yet 128-bit capable typically only retain the
+right-most 16 characters of the trace ID. When this happens, the same
+trace could be reported as trace ID A or trace ID B.
+
+By default, Zipkin will think these are different trace IDs, as they are
+different strings. During a transition from 64-128 bit trace IDs, spans
+would appear split across two IDs. For example, it might start as trace
+ID A, but the next hop might truncate it to trace ID B. This would render
+the system unusable for applications performing upgrades.
+
+One way to address this problem is to not use 128-bit trace IDs until
+all applications support them. This prevents a mixed scenario at the cost
+of coordination. Another way is to set `STRICT_TRACE_ID=false`.
+
+When `STRICT_TRACE_ID=false`, only the right-most 16 of a 32 character
+trace ID are considered when grouping or retrieving traces. This setting
+should only be applied when transitioning from 64 to 128-bit trace IDs
+and removed once the transition is complete.
+
+See https://github.com/openzipkin/b3-propagation/issues/6 for the status
+of known open source libraries on 128-bit trace identifiers.
+
+See `zipkin.storage.StorageComponent.Builder` for even more details!
+
 ## Running with Docker
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin`.
 See [docker-zipkin](https://github.com/openzipkin/docker-zipkin) for details.

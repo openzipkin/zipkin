@@ -115,7 +115,8 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       futures.add(storeSpan(
           span.traceId,
           timestamp != null ? timestamp : 0L,
-          String.format("%d_%d_%d",
+          String.format("%s%d_%d_%d",
+              span.traceIdHigh == 0 ? "" : span.traceIdHigh + "_",
               span.id,
               span.annotations.hashCode(),
               span.binaryAnnotations.hashCode()),

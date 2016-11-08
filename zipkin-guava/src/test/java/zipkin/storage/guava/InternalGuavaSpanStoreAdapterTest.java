@@ -77,37 +77,37 @@ public class InternalGuavaSpanStoreAdapterTest {
   @Test
   public void getTrace_success() throws Exception {
     doAnswer(answer(c -> c.onSuccess(TRACE)))
-        .when(asyncSpanStore).getTrace(eq(1L), any(Callback.class));
+        .when(asyncSpanStore).getTrace(eq(1L), eq(2L), any(Callback.class));
 
-    assertThat(spanStore.getTrace(1L).get()).isEqualTo(TRACE);
+    assertThat(spanStore.getTrace(1L, 2L).get()).isEqualTo(TRACE);
   }
 
   @Test
   public void getTrace_exception() throws Exception {
     doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
-        .when(asyncSpanStore).getTrace(eq(1L), any(Callback.class));
+        .when(asyncSpanStore).getTrace(eq(1L), eq(2L), any(Callback.class));
 
     thrown.expect(ExecutionException.class);
     thrown.expectCause(isA(IllegalStateException.class));
-    spanStore.getTrace(1L).get();
+    spanStore.getTrace(1L, 2L).get();
   }
 
   @Test
   public void getRawTrace_success() throws Exception {
     doAnswer(answer(c -> c.onSuccess(TRACE)))
-        .when(asyncSpanStore).getRawTrace(eq(1L), any(Callback.class));
+        .when(asyncSpanStore).getRawTrace(eq(1L), eq(2L), any(Callback.class));
 
-    assertThat(spanStore.getRawTrace(1L).get()).isEqualTo(TRACE);
+    assertThat(spanStore.getRawTrace(1L, 2L).get()).isEqualTo(TRACE);
   }
 
   @Test
   public void getRawTrace_exception() throws Exception {
     doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
-        .when(asyncSpanStore).getRawTrace(eq(1L), any(Callback.class));
+        .when(asyncSpanStore).getRawTrace(eq(1L), eq(2L), any(Callback.class));
 
     thrown.expect(ExecutionException.class);
     thrown.expectCause(isA(IllegalStateException.class));
-    spanStore.getRawTrace(1L).get();
+    spanStore.getRawTrace(1L, 2L).get();
   }
 
   @Test

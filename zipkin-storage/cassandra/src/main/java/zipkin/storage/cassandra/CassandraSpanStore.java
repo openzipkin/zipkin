@@ -21,9 +21,12 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.util.concurrent.AsyncFunction;
@@ -34,9 +37,9 @@ import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +52,7 @@ import zipkin.Span;
 import zipkin.internal.CorrectForClockSkew;
 import zipkin.internal.Dependencies;
 import zipkin.internal.DependencyLinker;
+import zipkin.internal.GroupByTraceId;
 import zipkin.internal.MergeById;
 import zipkin.internal.Nullable;
 import zipkin.storage.QueryRequest;
@@ -68,15 +72,10 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
   static final ListenableFuture<List<String>> EMPTY_LIST =
       immediateFuture(Collections.<String>emptyList());
-  static final Ordering<List<Span>> TRACE_DESCENDING = Ordering.from(new Comparator<List<Span>>() {
-    @Override
-    public int compare(List<Span> left, List<Span> right) {
-      return right.get(0).compareTo(left.get(0));
-    }
-  });
 
   private final int maxTraceCols;
   private final int indexFetchMultiplier;
+  private final boolean strictTraceId;
   private final Session session;
   private final TimestampCodec timestampCodec;
   private final Set<Integer> buckets;
@@ -90,11 +89,13 @@ public final class CassandraSpanStore implements GuavaSpanStore {
   private final PreparedStatement selectTraceIdsByAnnotation;
   private final Function<ResultSet, Map<Long, Long>> traceIdToTimestamp;
 
-  CassandraSpanStore(Session session, int bucketCount, int indexTtl, int maxTraceCols,
-      int indexFetchMultiplier) {
+  CassandraSpanStore(Session session, int bucketCount, int maxTraceCols, int indexFetchMultiplier,
+      boolean strictTraceId) {
     this.session = session;
     this.maxTraceCols = maxTraceCols;
     this.indexFetchMultiplier = indexFetchMultiplier;
+    this.strictTraceId = strictTraceId;
+
     ProtocolVersion protocolVersion = session.getCluster()
         .getConfiguration().getProtocolOptions().getProtocolVersion();
     this.timestampCodec = new TimestampCodec(protocolVersion);
@@ -230,8 +231,19 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     }
     return transform(traceIds, new AsyncFunction<Set<Long>, List<List<Span>>>() {
       @Override public ListenableFuture<List<List<Span>>> apply(Set<Long> traceIds) {
-        traceIds = FluentIterable.from(traceIds).limit(request.limit).toSet();
-        return transform(getSpansByTraceIds(traceIds, maxTraceCols), AdjustTraces.INSTANCE);
+        traceIds = ImmutableSet.copyOf(Iterators.limit(traceIds.iterator(), request.limit));
+        return transform(getSpansByTraceIds(traceIds, maxTraceCols),
+            new Function<List<Span>, List<List<Span>>>() {
+              @Override public List<List<Span>> apply(List<Span> input) {
+                // Indexes only contain Span.traceId, so our matches are imprecise on Span.traceIdHigh
+                return FluentIterable.from(GroupByTraceId.apply(input, strictTraceId, true))
+                    .filter(new Predicate<List<Span>>() {
+                      @Override public boolean apply(List<Span> input) {
+                        return input.get(0).traceIdHigh == 0 || request.test(input);
+                      }
+                    }).toList();
+              }
+            });
       }
 
       @Override public String toString() {
@@ -240,39 +252,47 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     });
   }
 
-  static String spanName(String nullableSpanName) {
-    return nullableSpanName != null ? nullableSpanName : "";
-  }
-
-  enum AdjustTraces implements Function<Collection<List<Span>>, List<List<Span>>> {
-    INSTANCE;
-
-    @Override public List<List<Span>> apply(Collection<List<Span>> unmerged) {
-      List<List<Span>> result = new ArrayList<>(unmerged.size());
-      for (List<Span> spans : unmerged) {
-        result.add(CorrectForClockSkew.apply(MergeById.apply(spans)));
-      }
-      return TRACE_DESCENDING.immutableSortedCopy(result);
-    }
-  }
-
   @Override public ListenableFuture<List<Span>> getRawTrace(long traceId) {
-    return transform(getSpansByTraceIds(Collections.singleton(traceId), maxTraceCols),
-        new Function<Collection<List<Span>>, List<Span>>() {
-          @Override public List<Span> apply(Collection<List<Span>> encodedTraces) {
-            if (encodedTraces.isEmpty()) return null;
-            return encodedTraces.iterator().next();
+    return getRawTrace(0L, traceId);
+  }
+
+  /**
+   * Since the schema doesn't have a unique index on {@link Span#traceIdHigh}, we have to filter
+   * client-side.
+   */
+  @Override public ListenableFuture<List<Span>> getRawTrace(final long traceIdHigh, long traceIdLow) {
+    return transform(getSpansByTraceIds(Collections.singleton(traceIdLow), maxTraceCols),
+        new Function<List<Span>, List<Span>>() {
+          @Override public List<Span> apply(List<Span> input) {
+            if (strictTraceId) {
+              Iterator<Span> spans = input.iterator();
+              while (spans.hasNext()) {
+                long nextTraceIdHigh = spans.next().traceIdHigh;
+                if (nextTraceIdHigh != 0L && nextTraceIdHigh != traceIdHigh) {
+                  spans.remove();
+                }
+              }
+            }
+            return input.isEmpty() ? null : input;
           }
         });
   }
 
   @Override public ListenableFuture<List<Span>> getTrace(long traceId) {
-    return transform(getRawTrace(traceId), new Function<List<Span>, List<Span>>() {
-      @Override public List<Span> apply(List<Span> input) {
-        if (input == null || input.isEmpty()) return null;
-        return ImmutableList.copyOf(CorrectForClockSkew.apply(MergeById.apply(input)));
-      }
-    });
+    return getTrace(0L, traceId);
+  }
+
+  @Override public ListenableFuture<List<Span>> getTrace(long traceIdHigh, long traceIdLow) {
+    return transform(getRawTrace(traceIdHigh, traceIdLow), AdjustTrace.INSTANCE);
+  }
+
+  enum AdjustTrace implements Function<Collection<Span>, List<Span>> {
+    INSTANCE;
+
+    @Override public List<Span> apply(Collection<Span> input) {
+      List<Span> result = CorrectForClockSkew.apply(MergeById.apply(input));
+      return result.isEmpty() ? null : result;
+    }
   }
 
   @Override public ListenableFuture<List<String>> getServiceNames() {
@@ -352,11 +372,10 @@ public final class CassandraSpanStore implements GuavaSpanStore {
    * The return list will contain only spans that have been found, thus the return list may not
    * match the provided list of ids.
    */
-  ListenableFuture<Collection<List<Span>>> getSpansByTraceIds(Set<Long> traceIds, int limit) {
+  ListenableFuture<List<Span>> getSpansByTraceIds(Set<Long> traceIds, int limit) {
     checkNotNull(traceIds, "traceIds");
     if (traceIds.isEmpty()) {
-      Collection<List<Span>> result = Collections.emptyList();
-      return immediateFuture(result);
+      return immediateFuture(Collections.<Span>emptyList());
     }
 
     try {
@@ -367,19 +386,13 @@ public final class CassandraSpanStore implements GuavaSpanStore {
       bound.setFetchSize(Integer.MAX_VALUE);
 
       return transform(session.executeAsync(bound),
-          new Function<ResultSet, Collection<List<Span>>>() {
-            @Override public Collection<List<Span>> apply(ResultSet input) {
-              Map<Long, List<Span>> spans = new LinkedHashMap<>();
-
+          new Function<ResultSet, List<Span>>() {
+            @Override public List<Span> apply(ResultSet input) {
+              List<Span> result = new ArrayList<Span>(input.getAvailableWithoutFetching());
               for (Row row : input) {
-                long traceId = row.getLong("trace_id");
-                if (!spans.containsKey(traceId)) {
-                  spans.put(traceId, new ArrayList<Span>());
-                }
-                spans.get(traceId).add(Codec.THRIFT.readSpan(row.getBytes("span")));
+                result.add(Codec.THRIFT.readSpan(row.getBytes("span")));
               }
-
-              return spans.values();
+              return result;
             }
           }
       );

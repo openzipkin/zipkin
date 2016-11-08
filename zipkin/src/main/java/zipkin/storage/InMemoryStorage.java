@@ -21,14 +21,45 @@ import static zipkin.storage.StorageAdapters.blockingToAsync;
  * Test storage component that keeps all spans in memory, accepting them on the calling thread.
  */
 public final class InMemoryStorage implements StorageComponent {
-  final InMemorySpanStore spanStore = new InMemorySpanStore();
-  final Executor callingThread = new Executor() {
-    @Override public void execute(Runnable command) {
-      command.run();
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static final class Builder implements StorageComponent.Builder {
+    boolean strictTraceId = true;
+
+    /** {@inheritDoc} */
+    @Override public Builder strictTraceId(boolean strictTraceId) {
+      this.strictTraceId = strictTraceId;
+      return this;
     }
-  };
-  final AsyncSpanStore asyncSpanStore = blockingToAsync(spanStore, callingThread);
-  final AsyncSpanConsumer asyncConsumer = blockingToAsync(spanStore.spanConsumer, callingThread);
+
+    @Override
+    public InMemoryStorage build() {
+      return new InMemoryStorage(this);
+    }
+  }
+
+  final InMemorySpanStore spanStore;
+  final AsyncSpanStore asyncSpanStore;
+  final AsyncSpanConsumer asyncConsumer;
+
+  // Historical constructor
+  public InMemoryStorage() {
+    this(new Builder());
+  }
+
+  InMemoryStorage(Builder builder) {
+    spanStore = new InMemorySpanStore(builder);
+    final Executor callingThread = new Executor() {
+      @Override public void execute(Runnable command) {
+        command.run();
+      }
+    };
+    asyncSpanStore = blockingToAsync(spanStore, callingThread);
+    asyncConsumer = blockingToAsync(spanStore.spanConsumer, callingThread);
+  }
 
   @Override public InMemorySpanStore spanStore() {
     return spanStore;

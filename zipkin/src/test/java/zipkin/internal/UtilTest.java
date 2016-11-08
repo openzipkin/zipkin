@@ -101,4 +101,14 @@ public class UtilTest {
   public void toLowerHex_fixedLength() {
     assertThat(toLowerHex(0L)).isEqualTo("0000000000000000");
   }
+
+  @Test public void toLowerHex_whenNotHigh_16Chars() {
+    assertThat(toLowerHex(0L, 12345678L))
+        .hasToString("0000000000bc614e");
+  }
+
+  @Test public void toLowerHex_whenHigh_32Chars() {
+    assertThat(toLowerHex(1234L, 5678L))
+        .hasToString("00000000000004d2000000000000162e");
+  }
 }

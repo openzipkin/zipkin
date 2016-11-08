@@ -20,22 +20,13 @@ import java.util.logging.Logger;
 import javax.sql.DataSource;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
-import zipkin.internal.Lazy;
 
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 
-final class HasIpv6 extends Lazy<Boolean> {
+final class HasIpv6 {
   private static final Logger LOG = Logger.getLogger(HasIpv6.class.getName());
 
-  final DataSource datasource;
-  final DSLContexts context;
-
-  HasIpv6(DataSource datasource, DSLContexts context) {
-    this.datasource = datasource;
-    this.context = context;
-  }
-
-  @Override protected Boolean compute() {
+  static boolean test(DataSource datasource, DSLContexts context) {
     try (Connection conn = datasource.getConnection()) {
       DSLContext dsl = context.get(conn);
       dsl.select(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6).from(ZIPKIN_ANNOTATIONS).limit(1).fetchAny();

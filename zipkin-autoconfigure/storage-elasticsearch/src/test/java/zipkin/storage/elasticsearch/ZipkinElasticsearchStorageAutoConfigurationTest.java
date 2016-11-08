@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.autoconfigure.storage.elasticsearch;
+package zipkin.storage.elasticsearch;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -20,7 +20,8 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin.storage.elasticsearch.ElasticsearchStorage;
+import zipkin.autoconfigure.storage.elasticsearch.ZipkinElasticsearchStorageAutoConfiguration;
+import zipkin.autoconfigure.storage.elasticsearch.ZipkinElasticsearchStorageProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -75,5 +76,27 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
     assertThat(context.getBean(ZipkinElasticsearchStorageProperties.class).getHosts())
         .containsExactly("host1:9300", "host2:9300");
+  }
+
+  @Test
+  public void strictTraceId_defaultsToTrue() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.storage.type:elasticsearch");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchStorageAutoConfiguration.class);
+    context.refresh();
+    assertThat(context.getBean(ElasticsearchStorage.class).strictTraceId).isTrue();
+  }
+
+  @Test
+  public void strictTraceId_canSetToFalse() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.storage.type:elasticsearch");
+    addEnvironment(context, "zipkin.storage.strict-trace-id:false");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(ElasticsearchStorage.class).strictTraceId).isFalse();
   }
 }

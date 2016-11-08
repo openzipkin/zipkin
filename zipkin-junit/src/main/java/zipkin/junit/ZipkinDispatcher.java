@@ -67,10 +67,12 @@ final class ZipkinDispatcher extends Dispatcher {
         QueryRequest queryRequest = toQueryRequest(url);
         return jsonResponse(Codec.JSON.writeTraces(store.getTraces(queryRequest)));
       } else if (url.encodedPath().startsWith("/api/v1/trace/")) {
-        String traceId = url.encodedPath().replace("/api/v1/trace/", "");
-        long id = lowerHexToUnsignedLong(traceId);
+        String traceIdHex = url.encodedPath().replace("/api/v1/trace/", "");
+        long traceIdHigh = traceIdHex.length() == 32 ? lowerHexToUnsignedLong(traceIdHex, 0) : 0L;
+        long traceIdLow = lowerHexToUnsignedLong(traceIdHex);
         List<Span> trace = url.queryParameterNames().contains("raw")
-            ? store.getRawTrace(id) : store.getTrace(id);
+            ? store.getRawTrace(traceIdHigh, traceIdLow)
+            : store.getTrace(traceIdHigh, traceIdLow);
         if (trace != null) return jsonResponse(Codec.JSON.writeSpans(trace));
       }
     } else if (request.getMethod().equals("POST")) {

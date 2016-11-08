@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.autoconfigure.storage.cassandra;
+package zipkin.storage.cassandra;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -20,7 +20,8 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin.storage.cassandra.CassandraStorage;
+import zipkin.autoconfigure.storage.cassandra.ZipkinCassandraStorageAutoConfiguration;
+import zipkin.autoconfigure.storage.cassandra.ZipkinCassandraStorageProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -75,5 +76,27 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
 
     assertThat(context.getBean(ZipkinCassandraStorageProperties.class).getContactPoints())
         .isEqualTo("host1,host2");
+  }
+
+  @Test
+  public void strictTraceId_defaultsToTrue() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.storage.type:cassandra");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinCassandraStorageAutoConfiguration.class);
+    context.refresh();
+    assertThat(context.getBean(CassandraStorage.class).strictTraceId).isTrue();
+  }
+
+  @Test
+  public void strictTraceId_canSetToFalse() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.storage.type:cassandra");
+    addEnvironment(context, "zipkin.storage.strict-trace-id:false");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinCassandraStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(CassandraStorage.class).strictTraceId).isFalse();
   }
 }

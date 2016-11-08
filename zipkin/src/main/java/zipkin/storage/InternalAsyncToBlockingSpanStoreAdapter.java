@@ -32,15 +32,23 @@ final class InternalAsyncToBlockingSpanStoreAdapter implements SpanStore {
     return captor.get();
   }
 
-  @Override public List<Span> getTrace(long id) {
+  @Override @Deprecated public List<Span> getTrace(long id) {
+   return getTrace(0L, id);
+  }
+
+  @Override public List<Span> getTrace(long traceIdHigh, long traceIdLow) {
     CallbackCaptor<List<Span>> captor = new CallbackCaptor<List<Span>>();
-    delegate.getTrace(id, captor);
+    delegate.getTrace(traceIdHigh, traceIdLow, captor);
     return captor.get();
   }
 
-  @Override public List<Span> getRawTrace(long traceId) {
+  @Override @Deprecated public List<Span> getRawTrace(long traceId) {
+    return getRawTrace(0L, traceId);
+  }
+
+  @Override public List<Span> getRawTrace(long traceIdHigh, long traceIdLow) {
     CallbackCaptor<List<Span>> captor = new CallbackCaptor<List<Span>>();
-    delegate.getRawTrace(traceId, captor);
+    delegate.getRawTrace(traceIdHigh, traceIdLow, captor);
     return captor.get();
   }
 

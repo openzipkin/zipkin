@@ -18,6 +18,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import java.util.List;
 import zipkin.internal.Lazy;
+import zipkin.storage.StorageComponent;
 import zipkin.storage.guava.LazyGuavaStorageComponent;
 
 import static zipkin.internal.Util.checkNotNull;
@@ -38,15 +39,23 @@ public final class ElasticsearchStorage
     return new Builder(checkNotNull(clientBuilder, "clientBuilder"));
   }
 
-  public static final class Builder {
+  public static final class Builder implements StorageComponent.Builder {
     Builder(InternalElasticsearchClient.Builder clientBuilder) {
       this.clientBuilder = clientBuilder;
     }
 
     final InternalElasticsearchClient.Builder clientBuilder;
+    // TODO: Tokenize traceId only when this is false.
+    boolean strictTraceId = true;
     String index = "zipkin";
     int indexShards = 5;
     int indexReplicas = 1;
+
+    /** {@inheritDoc} */
+    @Override public Builder strictTraceId(boolean strictTraceId) {
+      this.strictTraceId = strictTraceId;
+      return this;
+    }
 
     /**
      * The elasticsearch cluster to connect to, defaults to "elasticsearch".
@@ -106,7 +115,7 @@ public final class ElasticsearchStorage
       return this;
     }
 
-    public ElasticsearchStorage build() {
+    @Override public ElasticsearchStorage build() {
       return new ElasticsearchStorage(this);
     }
   }
@@ -114,10 +123,12 @@ public final class ElasticsearchStorage
   private final LazyClient lazyClient;
   @VisibleForTesting
   final IndexNameFormatter indexNameFormatter;
+  final boolean strictTraceId;
 
   ElasticsearchStorage(Builder builder) {
     lazyClient = new LazyClient(builder);
     indexNameFormatter = new IndexNameFormatter(builder.index);
+    strictTraceId = builder.strictTraceId;
   }
 
   /** Lazy initializes or returns the client in use by this storage component. */
@@ -126,7 +137,7 @@ public final class ElasticsearchStorage
   }
 
   @Override protected ElasticsearchSpanStore computeGuavaSpanStore() {
-    return new ElasticsearchSpanStore(client(), indexNameFormatter);
+    return new ElasticsearchSpanStore(client(), indexNameFormatter, strictTraceId);
   }
 
   @Override protected ElasticsearchSpanConsumer computeGuavaSpanConsumer() {

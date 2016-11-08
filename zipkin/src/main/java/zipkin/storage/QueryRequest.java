@@ -15,13 +15,19 @@ package zipkin.storage;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import zipkin.Annotation;
+import zipkin.BinaryAnnotation;
+import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.internal.Nullable;
 
 import static zipkin.Constants.CORE_ANNOTATIONS;
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkArgument;
 
 /**
@@ -346,5 +352,71 @@ public final class QueryRequest {
     h *= 1000003;
     h ^= limit;
     return h;
+  }
+
+  /** Tests the supplied trace against the current request */
+  public boolean test(List<Span> spans) {
+    Long timestamp = spans.get(0).timestamp;
+    if (timestamp == null ||
+        timestamp < (endTs - lookback) * 1000 ||
+        timestamp > endTs * 1000) {
+      return false;
+    }
+    Set<String> serviceNames = new LinkedHashSet<String>();
+    boolean testedDuration = minDuration == null && maxDuration == null;
+
+    String spanNameToMatch = spanName;
+    Set<String> annotationsToMatch = new LinkedHashSet<String>(annotations);
+    Map<String, String> binaryAnnotationsToMatch = new LinkedHashMap<String, String>(binaryAnnotations);
+
+    Set<String> currentServiceNames = new LinkedHashSet<String>();
+    for (Span span : spans) {
+      currentServiceNames.clear();
+
+      for (Annotation a : span.annotations) {
+        if (appliesToServiceName(a.endpoint, serviceName)) {
+          annotationsToMatch.remove(a.value);
+        }
+        if (a.endpoint != null) {
+          serviceNames.add(a.endpoint.serviceName);
+          currentServiceNames.add(a.endpoint.serviceName);
+        }
+      }
+
+      for (BinaryAnnotation b : span.binaryAnnotations) {
+        if (appliesToServiceName(b.endpoint, serviceName) &&
+            b.type == BinaryAnnotation.Type.STRING &&
+            new String(b.value, UTF_8).equals(binaryAnnotationsToMatch.get(b.key))) {
+          binaryAnnotationsToMatch.remove(b.key);
+        }
+        if (b.endpoint != null) {
+          serviceNames.add(b.endpoint.serviceName);
+          currentServiceNames.add(b.endpoint.serviceName);
+        }
+      }
+
+      if ((serviceName == null || currentServiceNames.contains(serviceName))
+          && !testedDuration) {
+        if (minDuration != null && maxDuration != null) {
+          testedDuration =
+              span.duration >= minDuration && span.duration <= maxDuration;
+        } else if (minDuration != null) {
+          testedDuration = span.duration >= minDuration;
+        }
+      }
+
+      if (span.name.equals(spanNameToMatch)) {
+        spanNameToMatch = null;
+      }
+    }
+    return (serviceName == null || serviceNames.contains(serviceName))
+        && spanNameToMatch == null
+        && annotationsToMatch.isEmpty()
+        && binaryAnnotationsToMatch.isEmpty()
+        && testedDuration;
+  }
+
+  private static boolean appliesToServiceName(Endpoint endpoint, String serviceName) {
+    return serviceName == null || endpoint == null || endpoint.serviceName.equals(serviceName);
   }
 }

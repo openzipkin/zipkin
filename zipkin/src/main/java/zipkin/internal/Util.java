@@ -132,6 +132,18 @@ public final class Util {
         lowerHex + " should be a 1 to 32 character lower-hex string with no prefix");
   }
 
+  /** Returns 16 or 32 character hex string depending on if {@code high} is zero. */
+  public static String toLowerHex(long high, long low) {
+    char[] result = new char[high != 0 ? 32 : 16];
+    int pos = 0;
+    if (high != 0) {
+      writeHexLong(result, pos, high);
+      pos += 16;
+    }
+    writeHexLong(result, pos, low);
+    return new String(result);
+  }
+
   /** Inspired by {@code okio.Buffer.writeLong} */
   public static String toLowerHex(long v) {
     char[] data = new char[16];

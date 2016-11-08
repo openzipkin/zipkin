@@ -31,7 +31,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 import zipkin.Codec;
 import zipkin.Span;
-import zipkin.internal.Util;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.StorageComponent;
 
@@ -107,14 +106,16 @@ public class ZipkinQueryApiV1 {
     return new String(Codec.JSON.writeTraces(storage.spanStore().getTraces(queryRequest)), UTF_8);
   }
 
-  @RequestMapping(value = "/trace/{traceId}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
-  public String getTrace(@PathVariable String traceId, WebRequest request) {
-    long id = lowerHexToUnsignedLong(traceId);
+  @RequestMapping(value = "/trace/{traceIdHex}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
+  public String getTrace(@PathVariable String traceIdHex, WebRequest request) {
+    long traceIdHigh = traceIdHex.length() == 32 ? lowerHexToUnsignedLong(traceIdHex, 0) : 0L;
+    long traceIdLow = lowerHexToUnsignedLong(traceIdHex);
     String[] raw = request.getParameterValues("raw"); // RequestParam doesn't work for param w/o value
-    List<Span> trace = raw != null ? storage.spanStore().getRawTrace(id) : storage.spanStore().getTrace(id);
-
+    List<Span> trace = raw != null
+        ? storage.spanStore().getRawTrace(traceIdHigh, traceIdLow)
+        : storage.spanStore().getTrace(traceIdHigh, traceIdLow);
     if (trace == null) {
-      throw new TraceNotFoundException(traceId, id);
+      throw new TraceNotFoundException(traceIdHex, traceIdHigh, traceIdLow);
     }
     return new String(Codec.JSON.writeSpans(trace), UTF_8);
   }
@@ -125,8 +126,9 @@ public class ZipkinQueryApiV1 {
   }
 
   static class TraceNotFoundException extends RuntimeException {
-    public TraceNotFoundException(String traceId, long id) {
-      super("Cannot find trace for id=" + traceId + ", long value=" + id);
+    public TraceNotFoundException(String traceIdHex, Long traceIdHigh, long traceId) {
+      super(String.format("Cannot find trace for id=%s,  parsed value=%s", traceIdHex,
+          traceIdHigh != null ? traceIdHigh + "," + traceId : traceId));
     }
   }
 

@@ -15,7 +15,6 @@ package zipkin.storage.cassandra3;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -39,10 +38,6 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
     this.storage = Cassandra3TestGraph.INSTANCE.storage.get();
   }
 
-  CassandraSpanStoreTest(Cassandra3Storage storage) {
-    this.storage = storage;
-  }
-
   @Override protected Cassandra3Storage storage() {
     return storage;
   }
@@ -58,11 +53,11 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
     accept(rawSpan);
 
     // At query time, timestamp and duration are added.
-    assertThat(store().getTrace(rawSpan.traceId))
+    assertThat(store().getTrace(rawSpan.traceIdHigh, rawSpan.traceId))
         .containsExactly(ApplyTimestampAndDuration.apply(rawSpan));
 
     // Unlike other stores, Cassandra can show that timestamp and duration weren't reported
-    assertThat(store().getRawTrace(rawSpan.traceId))
+    assertThat(store().getRawTrace(rawSpan.traceIdHigh, rawSpan.traceId))
         .containsExactly(rawSpan);
   }
 
@@ -96,23 +91,6 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
     assertThat(
         store().getTraces(QueryRequest.builder().lookback(86400000L).limit(traceCount).build()))
         .hasSize(traceCount);
-  }
-
-  /**
-   * Currently, trace ids are stored as a variable-length number (as opposed to a 2 part hi/lo
-   * 128bit id). In order to support query by low 64 bits, we need to split this up somehow or add a
-   * separate index.
-   */
-  @Override
-  @Test
-  @Ignore("fetch by lower 64-bit isn't supported in cassandra3")
-  public void getTrace_retrieves128bitTraceIdByLower64Bits() {
-  }
-
-  @Override
-  @Test
-  @Ignore("fetch by lower 64-bit isn't supported in cassandra3")
-  public void getTrace_retrieves128bitTraceIdByLower64Bits_mixed() {
   }
 
   long rowCount(String table) {

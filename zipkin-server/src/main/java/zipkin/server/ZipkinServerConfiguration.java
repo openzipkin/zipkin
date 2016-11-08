@@ -76,8 +76,8 @@ public class ZipkinServerConfiguration {
   @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mem", matchIfMissing = true)
   @ConditionalOnMissingBean(StorageComponent.class)
   static class InMemoryConfiguration {
-    @Bean StorageComponent storage() {
-      return new InMemoryStorage();
+    @Bean StorageComponent storage(@Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId) {
+      return InMemoryStorage.builder().strictTraceId(strictTraceId).build();
     }
   }
 }

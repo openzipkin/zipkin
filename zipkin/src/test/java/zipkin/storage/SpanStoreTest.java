@@ -16,12 +16,9 @@ package zipkin.storage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.SortedSet;
-import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -33,6 +30,7 @@ import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.internal.CallbackCaptor;
+import zipkin.internal.Util;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -73,18 +71,8 @@ public abstract class SpanStoreTest {
   public abstract void clear() throws IOException;
 
   /** Notably, the cassandra implementation has day granularity */
-  static long midnight(){
-    Calendar date = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-    // reset hour, minutes, seconds and millis
-    date.set(Calendar.HOUR_OF_DAY, 0);
-    date.set(Calendar.MINUTE, 0);
-    date.set(Calendar.SECOND, 0);
-    date.set(Calendar.MILLISECOND, 0);
-    return date.getTimeInMillis();
-  }
-
   // Use real time, as most span-stores have TTL logic which looks back several days.
-  long today = midnight();
+  long today = Util.midnightUTC(System.currentTimeMillis());
 
   Endpoint ep = Endpoint.create("service", 127 << 24 | 1);
 
@@ -151,14 +139,51 @@ public abstract class SpanStoreTest {
       .id(spanId).build();
 
   @Test
-  public void getTrace() {
+  public void getTrace_noTraceIdHighDefaultsToZero() {
+    span1 = TestObjects.TRACE.get(0).toBuilder().traceIdHigh(0L).build();
+    span2 = span1.toBuilder().traceId(1111L).build();
+
     accept(span1, span2);
     assertThat(store().getTrace(span1.traceId)).isEqualTo(asList(span1));
+    assertThat(store().getTrace(0L, span1.traceId)).isEqualTo(asList(span1));
+  }
+
+  @Test
+  public void getTrace_128() {
+    span1 = span1.toBuilder().traceIdHigh(1L).build();
+    span2 = span1.toBuilder().traceIdHigh(2L).build();
+
+    accept(span1, span2);
+
+    assertThat(store().getTrace(span1.traceIdHigh, span1.traceId))
+        .isEqualTo(asList(span1));
+
+    assertThat(store().getTrace(span2.traceIdHigh, span2.traceId))
+        .isEqualTo(asList(span2));
+  }
+
+  @Test
+  public void getTraces_128() {
+    Span span1 = TestObjects.TRACE.get(0).toBuilder().traceIdHigh(1L)
+        .binaryAnnotations(asList(BinaryAnnotation.create("key", "value1", WEB_ENDPOINT))).build();
+    Span span2 = span1.toBuilder().traceIdHigh(2L)
+        .binaryAnnotations(asList(BinaryAnnotation.create("key", "value2", WEB_ENDPOINT))).build();
+
+    accept(span1, span2);
+
+    assertThat(
+        store().getTraces(QueryRequest.builder().serviceName(WEB_ENDPOINT.serviceName)
+            .addBinaryAnnotation("key", "value2")
+            .build()))
+        .containsExactly(asList(span2));
   }
 
   @Test
   public void getTrace_nullWhenNotFound() {
-    assertThat(store().getTrace(111111L)).isNull();
+    assertThat(store().getTrace(0L, 111111L)).isNull();
+    assertThat(store().getTrace(222222L, 111111L)).isNull();
+    assertThat(store().getRawTrace(0L, 111111L)).isNull();
+    assertThat(store().getRawTrace(222222L, 111111L)).isNull();
   }
 
   /**
@@ -178,7 +203,7 @@ public abstract class SpanStoreTest {
   public void derivesTimestampAndDurationFromAnnotations() {
     accept(span1.toBuilder().timestamp(null).duration(null).build());
 
-    assertThat(store().getTrace(span1.traceId))
+    assertThat(store().getTrace(span1.traceIdHigh, span1.traceId))
         .containsOnly(span1);
   }
 
@@ -269,6 +294,17 @@ public abstract class SpanStoreTest {
     assertThat(store().getTraces(q.spanName("badmethod").build())).isEmpty();
     assertThat(store().getTraces(q.serviceName("badservice").build())).isEmpty();
     assertThat(store().getTraces(q.spanName(null).build())).isEmpty();
+  }
+
+  @Test
+  public void getTraces_spanName_128() {
+    span1 = span1.toBuilder().traceIdHigh(1L).name("foo").build();
+    span2 = span1.toBuilder().traceIdHigh(2L).name("bar").build();
+    accept(span1, span2);
+
+    QueryRequest.Builder q = QueryRequest.builder().serviceName("service");
+    assertThat(store().getTraces(q.spanName(span1.name).build()))
+        .containsExactly(asList(span1));
   }
 
   @Test
@@ -519,7 +555,7 @@ public abstract class SpanStoreTest {
     assertThat(store().getTraces((QueryRequest.builder().serviceName("service").build())))
         .containsExactly(asList(span));
 
-    assertThat(store().getTrace(1L))
+    assertThat(store().getTrace(span.traceIdHigh, span.traceId))
         .containsExactly(span);
   }
 
@@ -532,41 +568,6 @@ public abstract class SpanStoreTest {
 
     assertThat(store().getTraces(QueryRequest.builder().build()))
         .containsExactly(asList(span));
-  }
-
-  @Test
-  public void getTraces_128BitTraceId_mixed() {
-    List<Span> trace = new ArrayList<>(TestObjects.TRACE);
-    trace.set(0, trace.get(0).toBuilder().traceIdHigh(1).build());
-    // pretend the others downgraded to 64-bit trace IDs
-
-    accept(trace.toArray(new Span[0]));
-
-    assertThat(store().getTraces(QueryRequest.builder().build()))
-        .containsExactly(trace);
-  }
-
-  /** This tests that the existing getTrace api can read traces which reported 128bit trace ids. */
-  @Test
-  public void getTrace_retrieves128bitTraceIdByLower64Bits() {
-    Span span = span1.toBuilder().traceIdHigh(1).build();
-
-    accept(span);
-
-    assertThat(store().getTrace(span.traceId))
-        .containsExactly(span);
-  }
-
-  @Test
-  public void getTrace_retrieves128bitTraceIdByLower64Bits_mixed() {
-    List<Span> trace = new ArrayList<>(TestObjects.TRACE);
-    trace.set(0, trace.get(0).toBuilder().traceIdHigh(1).build());
-    // pretend the others downgraded to 64-bit trace IDs
-
-    accept(trace.toArray(new Span[0]));
-
-    assertThat(store().getTrace(trace.get(0).traceId))
-        .containsExactlyElementsOf(trace);
   }
 
   /**
@@ -720,7 +721,7 @@ public abstract class SpanStoreTest {
 
     // Regardless of when clock skew is corrected, it should be corrected before traces return
     accept(parent, remoteChild, localChild);
-    List<Span> adjusted = store().getTrace(1L);
+    List<Span> adjusted = store().getTrace(localChild.traceIdHigh, localChild.traceId);
 
     // After correction, the child happens after the parent
     assertThat(adjusted.get(0).timestamp)
@@ -777,7 +778,7 @@ public abstract class SpanStoreTest {
     accept(serverView, serverViewDerived); // server span hits the collection tier first
     accept(clientView, clientViewDerived); // intentionally different collection event
 
-    for (Span span : store().getTrace(clientView.traceId)) {
+    for (Span span : store().getTrace(clientView.traceIdHigh, clientView.traceId)) {
       assertThat(span.timestamp).isEqualTo(clientTimestamp);
       assertThat(span.duration).isEqualTo(clientDuration);
     }
@@ -805,9 +806,9 @@ public abstract class SpanStoreTest {
     String serviceName = trace[1].annotations.get(0).endpoint.serviceName;
     assertThat(store().getTraces(QueryRequest.builder().serviceName(serviceName).build()))
         .containsExactly(asList(trace));
-    assertThat(store().getTrace(trace[0].traceId))
+    assertThat(store().getTrace(trace[0].traceIdHigh, trace[0].traceId))
         .containsExactly(trace);
-    assertThat(store().getRawTrace(trace[0].traceId))
+    assertThat(store().getRawTrace(trace[0].traceIdHigh, trace[0].traceId))
         .containsAll(asList(trace)); // order isn't guaranteed in raw trace
   }
 
@@ -832,7 +833,7 @@ public abstract class SpanStoreTest {
     accept(span.toBuilder().addAnnotation(cs).addAnnotation(cr).build());
 
     // Make sure that the client's timestamp won
-    assertThat(store().getTrace(span.traceId))
+    assertThat(store().getTrace(span1.traceIdHigh, span.traceId))
         .containsExactly(span.toBuilder()
             .timestamp(cs.timestamp)
             .duration(cr.timestamp - cs.timestamp)
@@ -856,14 +857,14 @@ public abstract class SpanStoreTest {
     accept(span.toBuilder().addAnnotation(mr).build());
 
     // Normally, span store implementations will merge spans by id and add duration by query time
-    assertThat(store().getTrace(span.traceId))
+    assertThat(store().getTrace(span1.traceIdHigh, span.traceId))
         .containsExactly(span.toBuilder()
             .timestamp(ms.timestamp)
             .duration(mr.timestamp - ms.timestamp)
             .annotations(asList(ms, mr)).build());
 
     // Since a collector never saw both sides of the span, we'd not see duration in the raw trace.
-    for (Span raw : store().getRawTrace(span.traceId)) {
+    for (Span raw : store().getRawTrace(span1.traceIdHigh, span.traceId)) {
       assertThat(raw.timestamp).isNull();
       assertThat(raw.duration).isNull();
     }

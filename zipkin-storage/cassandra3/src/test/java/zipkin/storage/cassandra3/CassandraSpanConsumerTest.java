@@ -79,7 +79,7 @@ public class CassandraSpanConsumerTest {
     // sanity check base case
     clear();
 
-    CassandraSpanConsumer withoutOptimization = new CassandraSpanConsumer(storage.session());
+    CassandraSpanConsumer withoutOptimization = new CassandraSpanConsumer(storage.session(), false);
     Futures.getUnchecked(withoutOptimization.accept(ImmutableList.copyOf(trace)));
     assertThat(rowCount(Schema.TABLE_TRACE_BY_SERVICE_SPAN)).isGreaterThanOrEqualTo(201L);
     assertThat(rowCount(Schema.TABLE_TRACE_BY_SERVICE_SPAN)).isGreaterThanOrEqualTo(201L);

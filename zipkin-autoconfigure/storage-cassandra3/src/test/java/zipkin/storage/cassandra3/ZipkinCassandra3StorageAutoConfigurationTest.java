@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.autoconfigure.storage.cassandra3;
+package zipkin.storage.cassandra3;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -20,7 +20,8 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin.storage.cassandra3.Cassandra3Storage;
+import zipkin.autoconfigure.storage.cassandra3.ZipkinCassandra3StorageAutoConfiguration;
+import zipkin.autoconfigure.storage.cassandra3.ZipkinCassandra3StorageProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -75,5 +76,27 @@ public class ZipkinCassandra3StorageAutoConfigurationTest {
 
     assertThat(context.getBean(ZipkinCassandra3StorageProperties.class).getContactPoints())
         .isEqualTo("host1,host2");
+  }
+
+  @Test
+  public void strictTraceId_defaultsToTrue() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.storage.type:cassandra3");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinCassandra3StorageAutoConfiguration.class);
+    context.refresh();
+    assertThat(context.getBean(Cassandra3Storage.class).strictTraceId).isTrue();
+  }
+
+  @Test
+  public void strictTraceId_canSetToFalse() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.storage.type:cassandra3");
+    addEnvironment(context, "zipkin.storage.strict-trace-id:false");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinCassandra3StorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(Cassandra3Storage.class).strictTraceId).isFalse();
   }
 }

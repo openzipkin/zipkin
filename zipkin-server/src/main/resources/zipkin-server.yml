@@ -33,6 +33,7 @@ zipkin:
     allowed-origins: "*"
 
   storage:
+    strict-trace-id: ${STRICT_TRACE_ID:true}
     type: ${STORAGE_TYPE:mem}
     cassandra:
       # Comma separated list of hosts / ip addresses part of Cassandra cluster.

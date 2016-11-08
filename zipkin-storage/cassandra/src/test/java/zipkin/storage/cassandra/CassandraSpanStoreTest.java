@@ -60,11 +60,11 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
     accept(rawSpan);
 
     // At query time, timestamp and duration are added.
-    assertThat(store().getTrace(rawSpan.traceId))
+    assertThat(store().getTrace(rawSpan.traceIdHigh, rawSpan.traceId))
         .containsExactly(ApplyTimestampAndDuration.apply(rawSpan));
 
     // Unlike other stores, Cassandra can show that timestamp and duration weren't reported
-    assertThat(store().getRawTrace(rawSpan.traceId))
+    assertThat(store().getRawTrace(rawSpan.traceIdHigh, rawSpan.traceId))
         .containsExactly(rawSpan);
   }
 

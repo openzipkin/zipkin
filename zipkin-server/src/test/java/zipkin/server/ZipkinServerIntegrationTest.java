@@ -193,19 +193,20 @@ public class ZipkinServerIntegrationTest {
   }
 
   @Test
-  public void downgrades128BitTraceIdToLower64Bits() throws Exception {
-    Span span = TRACE.get(0);
+  public void getBy128BitId() throws Exception {
+    Span span1 = TRACE.get(0).toBuilder().traceIdHigh(1L).build();
+    Span span2 = span1.toBuilder().traceIdHigh(2L).build();
 
-    performAsync(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
+    performAsync(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span1, span2))))
         .andExpect(status().isAccepted());
 
     // sleep as the the storage operation is async
     Thread.sleep(1500);
 
     // Tosses high bits
-    mockMvc.perform(get(format("/api/v1/trace/48485a3953bb6124%016x", span.traceId)))
+    mockMvc.perform(get(format("/api/v1/trace/%016x%016x", span2.traceIdHigh, span2.traceId)))
         .andExpect(status().isOk())
-        .andExpect(content().string(new String(Codec.JSON.writeSpans(asList(span)), UTF_8)));
+        .andExpect(content().string(new String(Codec.JSON.writeSpans(asList(span2)), UTF_8)));
   }
 
   /** The zipkin-ui is a single-page app. This prevents reloading all resources on each click. */
