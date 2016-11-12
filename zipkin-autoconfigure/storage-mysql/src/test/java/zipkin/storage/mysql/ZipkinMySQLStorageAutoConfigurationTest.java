@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.autoconfigure.storage.mysql;
+package zipkin.storage.mysql;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -20,7 +20,8 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin.storage.mysql.MySQLStorage;
+import zipkin.autoconfigure.storage.mysql.ZipkinMySQLStorageAutoConfiguration;
+import zipkin.autoconfigure.storage.mysql.ZipkinMySQLStorageProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -75,5 +76,27 @@ public class ZipkinMySQLStorageAutoConfigurationTest {
 
     assertThat(context.getBean(ZipkinMySQLStorageProperties.class).getUsername())
         .isEqualTo("robot");
+  }
+
+  @Test
+  public void strictTraceId_defaultsToTrue() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.storage.type:mysql");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinMySQLStorageAutoConfiguration.class);
+    context.refresh();
+    assertThat(context.getBean(MySQLStorage.class).strictTraceId).isTrue();
+  }
+
+  @Test
+  public void strictTraceId_canSetToFalse() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.storage.type:mysql");
+    addEnvironment(context, "zipkin.storage.strict-trace-id:false");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinMySQLStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(MySQLStorage.class).strictTraceId).isFalse();
   }
 }

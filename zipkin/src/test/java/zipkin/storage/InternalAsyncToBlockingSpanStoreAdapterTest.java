@@ -72,35 +72,35 @@ public class InternalAsyncToBlockingSpanStoreAdapterTest {
   @Test
   public void getTrace_success() {
     doAnswer(answer(c -> c.onSuccess(TRACE)))
-        .when(delegate).getTrace(eq(1L), any(Callback.class));
+        .when(delegate).getTrace(eq(1L), eq(2L), any(Callback.class));
 
-    assertThat(spanStore.getTrace(1L)).isEqualTo(TRACE);
+    assertThat(spanStore.getTrace(1L, 2L)).isEqualTo(TRACE);
   }
 
   @Test
   public void getTrace_exception() {
     doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
-        .when(delegate).getTrace(eq(1L), any(Callback.class));
+        .when(delegate).getTrace(eq(1L), eq(2L), any(Callback.class));
 
     thrown.expect(IllegalStateException.class);
-    spanStore.getTrace(1L);
+    spanStore.getTrace(1L, 2L);
   }
 
   @Test
   public void getRawTrace_success() {
     doAnswer(answer(c -> c.onSuccess(TRACE)))
-        .when(delegate).getRawTrace(eq(1L), any(Callback.class));
+        .when(delegate).getRawTrace(eq(1L), eq(2L), any(Callback.class));
 
-    assertThat(spanStore.getRawTrace(1L)).isEqualTo(TRACE);
+    assertThat(spanStore.getRawTrace(1L, 2L)).isEqualTo(TRACE);
   }
 
   @Test
   public void getRawTrace_exception() {
     doAnswer(answer(c -> c.onError(new IllegalStateException("failed"))))
-        .when(delegate).getRawTrace(eq(1L), any(Callback.class));
+        .when(delegate).getRawTrace(eq(1L), eq(2L), any(Callback.class));
 
     thrown.expect(IllegalStateException.class);;
-    spanStore.getRawTrace(1L);
+    spanStore.getRawTrace(1L, 2L);
   }
 
   @Test

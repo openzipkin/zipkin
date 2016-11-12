@@ -37,7 +37,7 @@ import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Endpoint;
 
-import static zipkin.internal.Util.writeHexLong;
+import static zipkin.internal.Util.toLowerHex;
 
 final class Schema {
   private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
@@ -166,14 +166,7 @@ final class Schema {
 
     @Override
     public String toString() {
-      char[] result = new char[high != 0 ? 32 : 16];
-      int pos = 0;
-      if (high != 0) {
-        writeHexLong(result, pos, high);
-        pos += 16;
-      }
-      writeHexLong(result, pos, low);
-      return new String(result);
+      return toLowerHex(high, low);
     }
   }
 

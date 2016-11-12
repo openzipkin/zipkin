@@ -20,38 +20,30 @@ import java.util.logging.Logger;
 import javax.sql.DataSource;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
-import zipkin.internal.Lazy;
 
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
-final class HasTraceIdHigh extends Lazy<Boolean> {
-  private static final Logger LOG = Logger.getLogger(HasTraceIdHigh.class.getName());
+final class HasTraceIdHigh {
+  static final Logger LOG = Logger.getLogger(HasTraceIdHigh.class.getName());
+  static final String MESSAGE =
+      "zipkin_spans.trace_id_high doesn't exist, so 128-bit trace ids are not supported. " +
+          "Execute: ALTER TABLE zipkin_spans ADD `trace_id_high` BIGINT NOT NULL DEFAULT 0;\n"
+          + "ALTER TABLE zipkin_annotations ADD `trace_id_high` BIGINT NOT NULL DEFAULT 0;\n"
+          + "ALTER TABLE zipkin_spans"
+          + "   DROP INDEX trace_id,\n"
+          + "   ADD UNIQUE KEY(`trace_id_high`, `trace_id`, `id`);\n"
+          + "ALTER TABLE zipkin_annotations\n"
+          + "   DROP INDEX trace_id,\n"
+          + "   ADD UNIQUE KEY(`trace_id_high`, `trace_id`, `span_id`, `a_key`, `a_timestamp`);";
 
-  final DataSource datasource;
-  final DSLContexts context;
-
-  HasTraceIdHigh(DataSource datasource, DSLContexts context) {
-    this.datasource = datasource;
-    this.context = context;
-  }
-
-  @Override protected Boolean compute() {
+  static boolean test(DataSource datasource, DSLContexts context) {
     try (Connection conn = datasource.getConnection()) {
       DSLContext dsl = context.get(conn);
       dsl.select(ZIPKIN_SPANS.TRACE_ID_HIGH).from(ZIPKIN_SPANS).limit(1).fetchAny();
       return true;
     } catch (DataAccessException e) {
       if (e.sqlState().equals("42S22")) {
-        LOG.warning(
-            "zipkin_spans.trace_id_high doesn't exist, so 128-bit trace ids are not supported. " +
-                "Execute: ALTER TABLE zipkin_spans ADD `trace_id_high` BIGINT NOT NULL DEFAULT 0;\n"
-                + "ALTER TABLE zipkin_annotations ADD `trace_id_high` BIGINT NOT NULL DEFAULT 0;\n"
-                + "ALTER TABLE zipkin_spans"
-                + "   DROP INDEX trace_id,\n"
-                + "   ADD UNIQUE KEY(`trace_id_high`, `trace_id`, `id`);\n"
-                + "ALTER TABLE zipkin_annotations\n"
-                + "   DROP INDEX trace_id,\n"
-                + "   ADD UNIQUE KEY(`trace_id_high`, `trace_id`, `span_id`, `a_key`, `a_timestamp`);");
+        LOG.warning(MESSAGE);
         return false;
       }
       problemReading(e);

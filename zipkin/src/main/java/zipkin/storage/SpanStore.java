@@ -27,6 +27,9 @@ public interface SpanStore {
    *
    * <p> Results are sorted in order of the first span's timestamp, and contain up to {@link
    * QueryRequest#limit} elements.
+   *
+   * <p>If {@link StorageComponent.Builder#strictTraceId(boolean)} is enabled, spans with the
+   * same 64-bit trace ID will be grouped together.
    */
   List<List<Span>> getTraces(QueryRequest request);
 
@@ -34,21 +37,51 @@ public interface SpanStore {
    * Get the available trace information from the storage system. Spans in trace are sorted by the
    * first annotation timestamp in that span. First event should be first in the spans list.
    *
-   * @return a list of spans with the same {@link Span#traceId}, or null if not present.
+   * <p>When {@link StorageComponent.Builder#strictTraceId(boolean)} is true, spans with the
+   * same {@code traceIdLow} are returned even if the {@code traceIdHigh is different}.
+   *
+   * @param traceIdHigh The upper 64-bits of the trace ID. See {@link Span#traceIdHigh}
+   * @param traceIdLow The lower 64-bits of the trace ID. See {@link Span#traceId}
+   * @return a list of spans with the same 128-bit trace ID, or null if not present.
+   * @since 1.15
    */
   @Nullable
-  List<Span> getTrace(long id);
+  List<Span> getTrace(long traceIdHigh, long traceIdLow);
 
   /**
-   * Retrieves spans that share a trace id, as returned from backend data store queries, with no
-   * ordering expectation.
+   * Retrieves spans that share a 128-bit trace id, as returned from backend data store queries,
+   * with no ordering expectation.
    *
    * <p>This is different, but related to {@link #getTrace}. {@link #getTrace} cleans data by
    * merging spans, adding timestamps and performing clock skew adjustment. This feature is for
    * debugging zipkin logic or zipkin instrumentation.
    *
-   * @return a list of spans with the same {@link Span#traceId}, or null if not present.
+   * <p>When {@link StorageComponent.Builder#strictTraceId(boolean)} is true, spans with the
+   * same {@code traceIdLow} are returned even if the {@code traceIdHigh is different}.
+   *
+   * @param traceIdHigh The upper 64-bits of the trace ID. See {@link Span#traceIdHigh}
+   * @param traceIdLow The lower 64-bits of the trace ID. See {@link Span#traceId}
+   * @return a list of spans with the same 128-bit trace ID, or null if not present.
+   * @since 1.15
    */
+  @Nullable
+  List<Span> getRawTrace(long traceIdHigh, long traceIdLow);
+
+  /**
+   * This calls {@link #getTrace(long, long)} with {@code traceIdHigh} set to zero.
+   *
+   * @deprecated Please switch to {@link #getTrace(long, long)}
+   */
+  @Deprecated
+  @Nullable
+  List<Span> getTrace(long traceId);
+
+  /**
+   * This calls {@link #getRawTrace(long, long)} with {@code traceIdHigh} set to zero.
+   *
+   * @deprecated Please switch to {@link #getRawTrace(long, long)}
+   */
+  @Deprecated
   @Nullable
   List<Span> getRawTrace(long traceId);
 
@@ -79,11 +112,11 @@ public interface SpanStore {
    * such as skipping up the tree is difficult to implement as a storage query.
    *
    * @param endTs only return links from spans where {@link Span#timestamp} are at or before this
-   *              time in epoch milliseconds.
+   * time in epoch milliseconds.
    * @param lookback only return links from spans where {@link Span#timestamp} are at or after
-   *                 (endTs - lookback) in milliseconds. Defaults to endTs.
+   * (endTs - lookback) in milliseconds. Defaults to endTs.
    * @return dependency links in an interval contained by (endTs - lookback) or empty if none are
-   *         found
+   * found
    */
   List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback);
 }

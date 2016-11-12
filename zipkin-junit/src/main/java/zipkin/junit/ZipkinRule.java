@@ -14,7 +14,6 @@
 package zipkin.junit;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -31,6 +30,7 @@ import org.junit.runners.model.Statement;
 import zipkin.Span;
 import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.storage.InMemoryStorage;
+import zipkin.storage.QueryRequest;
 
 import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
 
@@ -132,12 +132,7 @@ public final class ZipkinRule implements TestRule {
 
   /** Retrieves all traces this zipkin server has received. */
   public List<List<Span>> getTraces() {
-    List<Long> traceIds = storage.spanStore().traceIds();
-    List<List<Span>> result = new ArrayList<>(traceIds.size());
-    for (long traceId : traceIds) {
-      result.add(storage.spanStore().getTrace(traceId));
-    }
-    return result;
+    return storage.spanStore().getTraces(QueryRequest.builder().limit(Integer.MAX_VALUE).build());
   }
 
   /**

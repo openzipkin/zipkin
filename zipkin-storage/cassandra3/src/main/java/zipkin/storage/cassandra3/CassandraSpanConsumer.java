@@ -48,13 +48,15 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
   private static final Function<Object, Void> TO_VOID = Functions.<Void>constant(null);
 
   private final Session session;
+  private final boolean strictTraceId;
   private final PreparedStatement insertSpan;
   private final PreparedStatement insertTraceServiceSpanName;
   private final PreparedStatement insertServiceSpanName;
   private final Schema.Metadata metadata;
 
-  CassandraSpanConsumer(Session session) {
+  CassandraSpanConsumer(Session session, boolean strictTraceId) {
     this.session = session;
+    this.strictTraceId = strictTraceId;
     this.metadata = Schema.readMetadata(session);
 
     insertSpan = session.prepare(
@@ -142,11 +144,9 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       }
       Set<String> annotationKeys = CassandraUtil.annotationKeys(span);
 
-      // TODO: To index a 128-bit trace such that it can be looked up with its lower 64bits, we
-      // could save it twice (like below). See #1364
-      // if (SUPPORT_64_BIT_IDS && traceId.getHigh() != 0L) {
-      //  storeSpan(span, new TraceIdUDT(0L, traceId.getLow()), timestamp);
-      // }
+      if (!strictTraceId && traceId.getHigh() != 0L) {
+        storeSpan(span, new TraceIdUDT(0L, traceId.getLow()), timestamp);
+      }
 
       BoundStatement bound = bindWithName(insertSpan, "insert-span")
           .set("trace_id", traceId, TraceIdUDT.class)

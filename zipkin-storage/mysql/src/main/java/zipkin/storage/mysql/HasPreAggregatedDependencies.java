@@ -20,7 +20,6 @@ import java.util.logging.Logger;
 import javax.sql.DataSource;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
-import zipkin.internal.Lazy;
 
 import static org.jooq.impl.DSL.count;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinDependencies.ZIPKIN_DEPENDENCIES;
@@ -29,18 +28,10 @@ import static zipkin.storage.mysql.internal.generated.tables.ZipkinDependencies.
  * Returns true when the zipkin_dependencies table exists and has data in it, implying the spark job
  * has been run.
  */
-final class HasPreAggregatedDependencies extends Lazy<Boolean> {
+final class HasPreAggregatedDependencies {
   private static final Logger LOG = Logger.getLogger(HasPreAggregatedDependencies.class.getName());
 
-  final DataSource datasource;
-  final DSLContexts context;
-
-  HasPreAggregatedDependencies(DataSource datasource, DSLContexts context) {
-    this.datasource = datasource;
-    this.context = context;
-  }
-
-  @Override protected Boolean compute() {
+  static boolean test(DataSource datasource, DSLContexts context) {
     try (Connection conn = datasource.getConnection()) {
       DSLContext dsl = context.get(conn);
       return dsl.select(count()).from(ZIPKIN_DEPENDENCIES).fetchAny().value1() > 0;

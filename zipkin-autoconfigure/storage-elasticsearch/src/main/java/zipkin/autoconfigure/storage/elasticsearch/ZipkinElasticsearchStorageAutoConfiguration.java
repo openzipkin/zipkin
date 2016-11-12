@@ -14,6 +14,7 @@
 package zipkin.autoconfigure.storage.elasticsearch;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -30,7 +31,8 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
   @Autowired(required = false)
   InternalElasticsearchClient.Builder clientBuilder;
 
-  @Bean StorageComponent storage(ZipkinElasticsearchStorageProperties elasticsearch) {
-    return elasticsearch.toBuilder(clientBuilder).build();
+  @Bean StorageComponent storage(ZipkinElasticsearchStorageProperties elasticsearch,
+      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId) {
+    return elasticsearch.toBuilder(clientBuilder).strictTraceId(strictTraceId).build();
   }
 }

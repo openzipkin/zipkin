@@ -14,16 +14,13 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.base.Function;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Ordering;
+import com.google.common.base.Predicate;
+import com.google.common.collect.FluentIterable;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +34,7 @@ import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.CorrectForClockSkew;
 import zipkin.internal.DependencyLinker;
+import zipkin.internal.GroupByTraceId;
 import zipkin.internal.MergeById;
 import zipkin.internal.Nullable;
 import zipkin.internal.Util;
@@ -55,25 +53,21 @@ import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
 final class ElasticsearchSpanStore implements GuavaSpanStore {
   static final ListenableFuture<List<String>> EMPTY_LIST =
       immediateFuture(Collections.<String>emptyList());
-  static final Ordering<List<Span>> TRACE_DESCENDING = Ordering.from(new Comparator<List<Span>>() {
-    @Override
-    public int compare(List<Span> left, List<Span> right) {
-      return right.get(0).compareTo(left.get(0));
-    }
-  });
 
   private final InternalElasticsearchClient client;
   private final IndexNameFormatter indexNameFormatter;
   private final String[] catchAll;
+  private final boolean strictTraceId;
 
-  ElasticsearchSpanStore(InternalElasticsearchClient client,
-      IndexNameFormatter indexNameFormatter) {
+  ElasticsearchSpanStore(InternalElasticsearchClient client, IndexNameFormatter indexNameFormatter,
+      boolean strictTraceId) {
     this.client = client;
     this.indexNameFormatter = indexNameFormatter;
     this.catchAll = new String[] {indexNameFormatter.catchAll()};
+    this.strictTraceId = strictTraceId;
   }
 
-  @Override public ListenableFuture<List<List<Span>>> getTraces(QueryRequest request) {
+  @Override public ListenableFuture<List<List<Span>>> getTraces(final QueryRequest request) {
     long endMillis = request.endTs;
     long beginMillis = endMillis - request.lookback;
 
@@ -148,44 +142,53 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
 
     return transform(traceIds, new AsyncFunction<List<String>, List<List<Span>>>() {
           @Override public ListenableFuture<List<List<Span>>> apply(List<String> input) {
-            return getTracesByIds(input, indices);
+            return getTracesByIds(input, indices, request);
           }
         }
     );
   }
 
   @Override public ListenableFuture<List<Span>> getTrace(long traceId) {
-    return transform(getRawTrace(traceId), new Function<List<Span>, List<Span>>() {
-      @Override public List<Span> apply(List<Span> input) {
-        return input == null ? null : CorrectForClockSkew.apply(MergeById.apply(input));
-      }
-    });
+    return getTrace(0L, traceId);
+  }
+
+  @Override public ListenableFuture<List<Span>> getTrace(long traceIdHigh, long traceIdLow) {
+    return transform(getRawTrace(traceIdHigh, traceIdLow), AdjustTrace.INSTANCE);
+  }
+
+  enum AdjustTrace implements Function<Collection<Span>, List<Span>> {
+    INSTANCE;
+
+    @Override public List<Span> apply(Collection<Span> input) {
+      List<Span> result = CorrectForClockSkew.apply(MergeById.apply(input));
+      return result.isEmpty() ? null : result;
+    }
   }
 
   @Override public ListenableFuture<List<Span>> getRawTrace(long traceId) {
-    return client.findSpans(catchAll, termQuery("traceId", Util.toLowerHex(traceId)));
+    return getRawTrace(0L, traceId);
   }
 
-  ListenableFuture<List<List<Span>>> getTracesByIds(Collection<String> traceIds, String[] indices) {
+  @Override public ListenableFuture<List<Span>> getRawTrace(long traceIdHigh, long traceIdLow) {
+    String traceIdHex = Util.toLowerHex(strictTraceId ? traceIdHigh : 0L, traceIdLow);
+    return client.findSpans(catchAll, termQuery("traceId", traceIdHex));
+  }
+
+  ListenableFuture<List<List<Span>>> getTracesByIds(Collection<String> traceIds, String[] indices,
+      final QueryRequest request) {
     return Futures.transform(client.findSpans(indices, termsQuery("traceId", traceIds)),
-        ConvertTracesResponse.INSTANCE);
-  }
-
-  enum ConvertTracesResponse implements Function<List<Span>, List<List<Span>>> {
-    INSTANCE;
-
-    @Override public List<List<Span>> apply(List<Span> response) {
-      if (response == null) return ImmutableList.of();
-      ArrayListMultimap<Long, Span> groupedSpans = ArrayListMultimap.create();
-      for (Span span : response) {
-        groupedSpans.put(span.traceId, span);
-      }
-      List<List<Span>> result = new ArrayList<>(groupedSpans.size());
-      for (Long traceId : groupedSpans.keySet()) {
-        result.add(CorrectForClockSkew.apply(MergeById.apply(groupedSpans.get(traceId))));
-      }
-      return TRACE_DESCENDING.immutableSortedCopy(result);
-    }
+        new Function<List<Span>, List<List<Span>>>() {
+          @Override public List<List<Span>> apply(List<Span> input) {
+            if (input == null) return Collections.emptyList();
+            // Due to tokenization of the trace ID, our matches are imprecise on Span.traceIdHigh
+            return FluentIterable.from(GroupByTraceId.apply(input, strictTraceId, true))
+                .filter(new Predicate<List<Span>>() {
+                  @Override public boolean apply(List<Span> input) {
+                    return input.get(0).traceIdHigh == 0 || request.test(input);
+                  }
+                }).toList();
+          }
+        });
   }
 
   @Override public ListenableFuture<List<String>> getServiceNames() {

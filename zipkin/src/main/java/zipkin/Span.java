@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import zipkin.internal.Nullable;
+import zipkin.storage.StorageComponent;
 
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkNotNull;
@@ -40,8 +41,8 @@ import static zipkin.internal.Util.writeHexLong;
  * <p>The root span is where {@link #parentId} is null; it usually has the longest {@link #duration} in the
  * trace.
  *
- * <p>Span identifiers are packed into longs, but should be treated opaquely. String encoding is
- * fixed-width lower-hex, to avoid signed interpretation.
+ * <p>Span identifiers are packed into longs, but should be treated opaquely. ID encoding is
+ * 16 or 32 character lower-hex, to avoid signed interpretation.
  */
 public final class Span implements Comparable<Span>, Serializable {
   private static final long serialVersionUID = 0L;
@@ -59,6 +60,8 @@ public final class Span implements Comparable<Span>, Serializable {
    * traceId128.putLong(span.traceId);
    * traceBytes = traceId128.array();
    * }</pre>
+   *
+   * @see StorageComponent.Builder#strictTraceId(boolean)
    */
   public final long traceIdHigh;
 

@@ -102,11 +102,12 @@ public class ZipkinRuleTest {
   }
 
   @Test
-  public void downgrades128BitTraceIdToLower64Bits() throws Exception {
-    zipkin.storeSpans(TRACE);
+  public void getBy128BitTraceId() throws Exception {
+    Span span = TRACE.get(0).toBuilder().traceIdHigh(traceId).build();
+    zipkin.storeSpans(asList(span));
 
     Response getResponse = client.newCall(new Request.Builder()
-        .url(format("%s/api/v1/trace/48485a3953bb6124%016x", zipkin.httpUrl(), traceId)).build()
+        .url(format("%s/api/v1/trace/%016x%016x", zipkin.httpUrl(), traceId, traceId)).build()
     ).execute();
 
     assertThat(getResponse.code()).isEqualTo(200);

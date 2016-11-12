@@ -35,7 +35,11 @@ final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
           StandardCharsets.UTF_8)
           .replace("${__INDEX__}", builder.index)
           .replace("${__NUMBER_OF_SHARDS__}", String.valueOf(builder.indexShards))
-          .replace("${__NUMBER_OF_REPLICAS__}", String.valueOf(builder.indexReplicas));
+          .replace("${__NUMBER_OF_REPLICAS__}", String.valueOf(builder.indexReplicas))
+          // only analyse/tokenize traceId when strictTraceId == false
+          .replace("${__TRACE_ID_MAPPING__}", builder.strictTraceId
+              ? "{ \"type\": \"string\" }"
+              : "{ \"type\": \"string\", \"analyzer\": \"traceId_analyzer\" }");
     } catch (IOException e) {
       throw new AssertionError("Error reading jar resource, shouldn't happen.", e);
     }

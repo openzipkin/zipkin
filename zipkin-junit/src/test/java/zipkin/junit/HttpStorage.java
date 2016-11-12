@@ -24,7 +24,10 @@ import zipkin.storage.StorageComponent;
 import static zipkin.storage.StorageAdapters.blockingToAsync;
 
 /**
- * Test storage component that keeps all spans in memory, accepting them on the calling thread.
+ * Test storage component that forwards requests to an HTTP endpoint.
+ *
+ * <p>Note: this inherits the {@link StorageComponent.Builder#strictTraceId(boolean)} from the
+ * backend.
  */
 final class HttpStorage implements StorageComponent {
   private final OkHttpClient client;

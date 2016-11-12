@@ -47,9 +47,13 @@ final class TracedSpanStore implements SpanStore {
 
   @Override
   public List<Span> getTrace(long traceId) {
+    return getTrace(0L, traceId);
+  }
+
+  @Override public List<Span> getTrace(long traceIdHigh, long traceIdLow) {
     tracer.startNewSpan(component, "get-trace");
     try {
-      return delegate.getTrace(traceId);
+      return delegate.getTrace(traceIdHigh, traceIdLow);
     } finally {
       tracer.finishSpan();
     }
@@ -57,9 +61,13 @@ final class TracedSpanStore implements SpanStore {
 
   @Override
   public List<Span> getRawTrace(long traceId) {
-    tracer.startNewSpan(component, "get-spans-by-trace-id");
+    return getRawTrace(0L, traceId);
+  }
+
+  @Override public List<Span> getRawTrace(long traceIdHigh, long traceIdLow) {
+    tracer.startNewSpan(component, "get-raw-trace");
     try {
-      return delegate.getRawTrace(traceId);
+      return delegate.getRawTrace(traceIdHigh, traceIdLow);
     } finally {
       tracer.finishSpan();
     }

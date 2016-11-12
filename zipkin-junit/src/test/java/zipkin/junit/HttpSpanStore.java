@@ -23,6 +23,7 @@ import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.Nullable;
+import zipkin.internal.Util;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
 
@@ -55,17 +56,26 @@ final class HttpSpanStore implements SpanStore {
 
   @Override
   public List<Span> getTrace(long traceId) {
-    return getTrace(traceId, false);
+    return getTrace(0L, traceId);
+  }
+
+  @Override public List<Span> getTrace(long traceIdHigh, long traceIdLow) {
+    return getTrace(traceIdHigh, traceIdLow, false);
   }
 
   @Override
   public List<Span> getRawTrace(long traceId) {
-    return getTrace(traceId, true);
+    return getRawTrace(0L, traceId);
   }
 
-  private List<Span> getTrace(long id, boolean raw) {
+  @Override public List<Span> getRawTrace(long traceIdHigh, long traceIdLow) {
+    return getTrace(traceIdHigh, traceIdLow, true);
+  }
+
+  private List<Span> getTrace(long traceIdHigh, long traceIdLow, boolean raw) {
+    String traceIdHex = Util.toLowerHex(traceIdHigh, traceIdLow);
     Response response = call(new Request.Builder()
-        .url(baseUrl.resolve(String.format("/api/v1/trace/%016x%s", id, raw ? "?raw" : "")))
+        .url(baseUrl.resolve(String.format("/api/v1/trace/%s%s", traceIdHex, raw ? "?raw" : "")))
         .build());
     if (response.code() == 404) {
       return null;

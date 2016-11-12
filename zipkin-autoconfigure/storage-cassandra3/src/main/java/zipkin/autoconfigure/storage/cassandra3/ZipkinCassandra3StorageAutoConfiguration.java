@@ -15,12 +15,14 @@ package zipkin.autoconfigure.storage.cassandra3;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin.storage.StorageComponent;
+import zipkin.storage.cassandra3.Cassandra3Storage;
 import zipkin.storage.cassandra3.Cassandra3Storage.SessionFactory;
 
 /**
@@ -40,9 +42,11 @@ public class ZipkinCassandra3StorageAutoConfiguration {
   @Qualifier("tracingSessionFactory")
   SessionFactory tracingSessionFactory;
 
-  @Bean StorageComponent storage(ZipkinCassandra3StorageProperties properties) {
+  @Bean StorageComponent storage(ZipkinCassandra3StorageProperties properties,
+      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId) {
+    Cassandra3Storage.Builder builder = properties.toBuilder().strictTraceId(strictTraceId);
     return tracingSessionFactory == null
-        ? properties.toBuilder().build()
-        : properties.toBuilder().sessionFactory(tracingSessionFactory).build();
+        ? builder.build()
+        : builder.sessionFactory(tracingSessionFactory).build();
   }
 }

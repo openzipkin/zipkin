@@ -35,7 +35,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -50,6 +49,7 @@ import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.CorrectForClockSkew;
 import zipkin.internal.DependencyLinker;
+import zipkin.internal.GroupByTraceId;
 import zipkin.internal.MergeById;
 import zipkin.internal.Nullable;
 import zipkin.storage.QueryRequest;
@@ -65,25 +65,25 @@ import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.transform;
 import static zipkin.internal.Util.getDays;
+import static zipkin.storage.cassandra3.Schema.TABLE_SERVICE_SPANS;
 import static zipkin.storage.cassandra3.Schema.TABLE_TRACES;
 import static zipkin.storage.cassandra3.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
-import static zipkin.storage.cassandra3.Schema.TABLE_SERVICE_SPANS;
 
 final class CassandraSpanStore implements GuavaSpanStore {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
 
   static final ListenableFuture<List<String>> EMPTY_LIST =
       immediateFuture(Collections.<String>emptyList());
-
-  static final Ordering<List<Span>> TRACE_DESCENDING = Ordering.from(new Comparator<List<Span>>() {
-    @Override
-    public int compare(List<Span> left, List<Span> right) {
-      return right.get(0).compareTo(left.get(0));
-    }
-  });
+  static final Function<List<Span>, List<Span>> OR_NULL =
+      new Function<List<Span>, List<Span>>() {
+        @Override public List<Span> apply(List<Span> input) {
+          return input.isEmpty() ? null : input;
+        }
+      };
 
   private final int maxTraceCols;
   private final int indexFetchMultiplier;
+  private final boolean strictTraceId;
   private final Session session;
   private final PreparedStatement selectTraces;
   private final PreparedStatement selectDependencies;
@@ -97,10 +97,12 @@ final class CassandraSpanStore implements GuavaSpanStore {
   private final int traceTtl;
   private final int indexTtl;
 
-  CassandraSpanStore(Session session, int maxTraceCols, int indexFetchMultiplier) {
+  CassandraSpanStore(Session session, int maxTraceCols, int indexFetchMultiplier,
+      boolean strictTraceId) {
     this.session = session;
     this.maxTraceCols = maxTraceCols;
     this.indexFetchMultiplier = indexFetchMultiplier;
+    this.strictTraceId = strictTraceId;
 
     selectTraces = session.prepare(
         QueryBuilder.select("trace_id", "id", "ts", "span_name", "parent_id", "duration",
@@ -225,9 +227,14 @@ final class CassandraSpanStore implements GuavaSpanStore {
     }
     return transform(traceIds, new AsyncFunction<Collection<TraceIdUDT>, List<List<Span>>>() {
       @Override public ListenableFuture<List<List<Span>>> apply(Collection<TraceIdUDT> traceIds) {
-        ImmutableSet<TraceIdUDT> set = ImmutableSet.copyOf(traceIds);
-        set = ImmutableSet.copyOf(Iterators.limit(set.iterator(), request.limit));
-        return transform(getSpansByTraceIds(set, maxTraceCols), AdjustTraces.INSTANCE);
+        ImmutableSet<TraceIdUDT> set =
+            ImmutableSet.copyOf(Iterators.limit(traceIds.iterator(), request.limit));
+        return transform(getSpansByTraceIds(set, maxTraceCols),
+            new Function<List<Span>, List<List<Span>>>() {
+              @Override public List<List<Span>> apply(List<Span> input) {
+                return GroupByTraceId.apply(input, strictTraceId, true);
+              }
+            });
       }
 
       @Override public String toString() {
@@ -236,37 +243,30 @@ final class CassandraSpanStore implements GuavaSpanStore {
     });
   }
 
-  enum AdjustTraces implements Function<Collection<List<Span>>, List<List<Span>>> {
-    INSTANCE;
-
-    @Override public List<List<Span>> apply(Collection<List<Span>> unmerged) {
-      List<List<Span>> result = new ArrayList<>(unmerged.size());
-      for (List<Span> spans : unmerged) {
-        result.add(CorrectForClockSkew.apply(MergeById.apply(spans)));
-      }
-      return TRACE_DESCENDING.immutableSortedCopy(result);
-    }
+  @Override public ListenableFuture<List<Span>> getRawTrace(long traceId) {
+    return getRawTrace(0L, traceId);
   }
 
-  @Override public ListenableFuture<List<Span>> getRawTrace(long traceId) {
-    return transform(
-        // TODO: This won't return 128-bit trace by their lower 64bits until #1364
-        getSpansByTraceIds(Collections.singleton(new TraceIdUDT(0L, traceId)), maxTraceCols),
-        new Function<Collection<List<Span>>, List<Span>>() {
-          @Override public List<Span> apply(Collection<List<Span>> encodedTraces) {
-            if (encodedTraces.isEmpty()) return null;
-            return encodedTraces.iterator().next();
-          }
-        });
+  @Override public ListenableFuture<List<Span>> getRawTrace(long traceIdHigh, long traceIdLow) {
+    TraceIdUDT traceIdUDT = new TraceIdUDT(strictTraceId ? 0L : traceIdHigh, traceIdLow);
+    return transform(getSpansByTraceIds(Collections.singleton(traceIdUDT), maxTraceCols), OR_NULL);
   }
 
   @Override public ListenableFuture<List<Span>> getTrace(long traceId) {
-    return transform(getRawTrace(traceId), new Function<List<Span>, List<Span>>() {
-      @Override public List<Span> apply(List<Span> input) {
-        if (input == null || input.isEmpty()) return null;
-        return ImmutableList.copyOf(CorrectForClockSkew.apply(MergeById.apply(input)));
-      }
-    });
+    return getTrace(0L, traceId);
+  }
+
+  @Override public ListenableFuture<List<Span>> getTrace(long traceIdHigh, long traceIdLow) {
+    return transform(getRawTrace(traceIdHigh, traceIdLow), AdjustTrace.INSTANCE);
+  }
+
+  enum AdjustTrace implements Function<Collection<Span>, List<Span>> {
+    INSTANCE;
+
+    @Override public List<Span> apply(Collection<Span> input) {
+      List<Span> result = CorrectForClockSkew.apply(MergeById.apply(input));
+      return result.isEmpty() ? null : result;
+    }
   }
 
   @Override public ListenableFuture<List<String>> getServiceNames() {
@@ -346,10 +346,10 @@ final class CassandraSpanStore implements GuavaSpanStore {
    * The return list will contain only spans that have been found, thus the return list may not
    * match the provided list of ids.
    */
-  ListenableFuture<Collection<List<Span>>> getSpansByTraceIds(Set<TraceIdUDT> traceIds, int limit) {
+  ListenableFuture<List<Span>> getSpansByTraceIds(Set<TraceIdUDT> traceIds, int limit) {
     checkNotNull(traceIds, "traceIds");
     if (traceIds.isEmpty()) {
-      return immediateFuture((Collection<List<Span>>) Collections.<List<Span>>emptyList());
+      return immediateFuture(Collections.<Span>emptyList());
     }
 
     try {
@@ -358,16 +358,11 @@ final class CassandraSpanStore implements GuavaSpanStore {
           .setInt("limit_", limit);
 
       return transform(session.executeAsync(bound),
-          new Function<ResultSet, Collection<List<Span>>>() {
-            @Override public Collection<List<Span>> apply(ResultSet input) {
-              // ensures spans with mixed trace ID length return in the same trace
-              Map<Long, List<Span>> groupedByTraceIdLo = new LinkedHashMap<>();
-
+          new Function<ResultSet, List<Span>>() {
+            @Override public List<Span> apply(ResultSet input) {
+              List<Span> result = new ArrayList<Span>(input.getAvailableWithoutFetching());
               for (Row row : input) {
                 TraceIdUDT traceId = row.get("trace_id", TraceIdUDT.class);
-                if (!groupedByTraceIdLo.containsKey(traceId.getLow())) {
-                  groupedByTraceIdLo.put(traceId.getLow(), new ArrayList<Span>());
-                }
                 Span.Builder builder = Span.builder()
                     .traceIdHigh(traceId.getHigh())
                     .traceId(traceId.getLow())
@@ -391,10 +386,10 @@ final class CassandraSpanStore implements GuavaSpanStore {
                     BinaryAnnotationUDT.class)) {
                   builder = builder.addBinaryAnnotation(udt.toBinaryAnnotation());
                 }
-                groupedByTraceIdLo.get(traceId.getLow()).add(builder.build());
+                result.add(builder.build());
               }
 
-              return groupedByTraceIdLo.values();
+              return result;
             }
           }
       );

@@ -93,7 +93,7 @@ public abstract class DependenciesTest {
    * the same trace as 128-bit instrumentation.
    */
   @Test
-  public void getDependencies_mixedTraceIdLength() {
+  public void getDependencies_strictTraceId() {
     List<Span> mixedTrace = new ArrayList<>(TRACE);
     mixedTrace.set(1, TRACE.get(1).toBuilder().traceIdHigh(2).build());
     processDependencies(mixedTrace);
