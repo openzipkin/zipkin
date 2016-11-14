@@ -21,7 +21,7 @@ export default component(function DefaultData() {
     const query = convertToApiQuery(window.location.search);
     const serviceName = query.serviceName;
     if (serviceName) {
-      $.ajax(`/api/v1/traces?${queryString.stringify(query)}`, {
+      $.ajax(`/zipkin/api/v1/traces?${queryString.stringify(query)}`, {
         type: 'GET',
         dataType: 'json'
       }).done(traces => {

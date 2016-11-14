@@ -33,7 +33,7 @@ module.exports = {
     output: {
         path: __dirname + '/target/classes/zipkin-ui/',
         filename: 'app-[hash].min.js',
-        publicPath: '/'
+        publicPath: '/zipkin/'
     },
     devtool: 'source-map',
     plugins: [

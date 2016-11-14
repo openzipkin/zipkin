@@ -7,7 +7,7 @@ const defaults = {
 };
 
 export default function loadConfig() {
-  return $.ajax('/config.json', {
+  return $.ajax('./config.json', {
     type: 'GET',
     dataType: 'json'
   }).then(data => function config(key) {

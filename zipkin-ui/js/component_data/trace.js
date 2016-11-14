@@ -5,7 +5,7 @@ import traceToMustache from '../../js/component_ui/traceToMustache';
 
 export default component(function TraceData() {
   this.after('initialize', function() {
-    $.ajax(`/api/v1/trace/${this.attr.traceId}`, {
+    $.ajax(`/zipkin/api/v1/trace/${this.attr.traceId}`, {
       type: 'GET',
       dataType: 'json'
     }).done(trace => {
