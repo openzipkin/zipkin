@@ -39,17 +39,24 @@ perform query operations. The most important aspects are described below.
 See [Cassandra3Storage](src/main/java/zipkin/storage/cassandra3/Cassandra3Storage.java) for details.
 
 ### Trace indexing
+Indexing in CQL is simplified by SASI, for example, reducing the number
+of tables from 7 down to 4. SASI also moves some write-amplification from
+CassandraSpanConsumer into C*.
 
-Indexing in CQL is simplified by using both MATERIALIZED VIEWs and SASI.
-This has reduced the number of tables from 7 down to 2. This also reduces the write-amplification in CassandraSpanConsumer.
-This write amplification now happens internally to C*, and is visible in the increase write latency (although write latency
-remains performant at single digit milliseconds).
-A SASI index on its 'all_annotations' column permits full-text searches against annotations.
-A SASI index on the 'duration' column.
-A materialized view of the 'trace_by_service_span' table exists as 'trace_by_service'.
+CassandraSpanConsumer directly writes to the tables `traces`,
+`trace_by_service_span` and `span_name_by_service`. The latter two
+amplify writes by a factor of the distinct service names in a span.
+Other amplification happens internally to C*, visible in the increase
+write latency (although write latency remains performant at single digit
+milliseconds).
 
-[Core annotations](../../zipkin/src/main/java/zipkin/Constants.java#L186-L188),
-ex "sr", and non-string annotations, are not written to the `all_annotations` SASI, as they aren't intended for use in user queries.
+* A SASI index on its 'all_annotations' column permits full-text searches against annotations.
+* A SASI index on the 'duration' column.
+
+Note: [Core annotations](../../zipkin/src/main/java/zipkin/Constants.java#L186-L188),
+ex "sr", non-string annotations, and values longer than 256 characters
+are not written to the `all_annotations` SASI, as they aren't intended
+for use in user queries.
 
 ### Time-To_live
 Time-To-Live is default now at the table level. It can not be overridden in write requests.

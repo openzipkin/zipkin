@@ -320,6 +320,28 @@ public abstract class SpanStoreTest {
   }
 
   /**
+   * While large spans are discouraged, and maybe not indexed, we should be able to read them back.
+   */
+  @Test
+  public void readsBackLargeValues() {
+    char[] kilobyteOfText = new char[1024];
+    Arrays.fill(kilobyteOfText, 'a');
+
+    // Make a span that's over 1KiB in size
+    Span span = Span.builder().traceId(1L).name("big").id(1L)
+        .timestamp(today * 1000 + 100L).duration(200L)
+        .addBinaryAnnotation(BinaryAnnotation.create("a", new String(kilobyteOfText), ep)).build();
+
+    accept(span);
+
+    // read back to ensure the data wasn't truncated
+    assertThat(store().getTraces(QueryRequest.builder().build()))
+        .containsExactly(asList(span));
+    assertThat(store().getTrace(span.traceIdHigh, span.traceId))
+        .isEqualTo(asList(span));
+  }
+
+  /**
    * Formerly, a bug was present where cassandra didn't index more than bucket count traces per
    * millisecond. This stores a lot of spans to ensure indexes work under high-traffic scenarios.
    */
