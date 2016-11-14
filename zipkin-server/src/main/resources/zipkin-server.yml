@@ -58,6 +58,8 @@ zipkin:
       index-cache-ttl: ${CASSANDRA_INDEX_CACHE_TTL:60}
       # how many more index rows to fetch than the user-supplied query limit
       index-fetch-multiplier: ${CASSANDRA_INDEX_FETCH_MULTIPLIER:3}
+      # Using ssl for connection, rely on Keystore
+      use-ssl: ${CASSANDRA_USE_SSL:false}
     cassandra3:
       # Comma separated list of hosts / ip addresses part of Cassandra cluster.
       contact-points: ${CASSANDRA3_CONTACT_POINTS:localhost}
