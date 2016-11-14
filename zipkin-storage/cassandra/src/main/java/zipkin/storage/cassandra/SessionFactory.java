@@ -87,6 +87,9 @@ public interface SessionFactory {
       builder.withPoolingOptions(new PoolingOptions().setMaxConnectionsPerHost(
           HostDistance.LOCAL, cassandra.maxConnections
       ));
+      if (cassandra.useSSL) {
+        builder = builder.withSSL();
+      }
       return builder.build();
     }
 

@@ -58,6 +58,7 @@ public final class CassandraStorage
     String localDc;
     int maxConnections = 8;
     boolean ensureSchema = true;
+    boolean useSSL = false;
     String username;
     String password;
     int maxTraceCols = 100000;
@@ -124,6 +125,15 @@ public final class CassandraStorage
      */
     public Builder ensureSchema(boolean ensureSchema) {
       this.ensureSchema = ensureSchema;
+      return this;
+    }
+
+    /**
+     * Use ssl for connection.
+     * Defaults to false.
+     */
+    public Builder useSSL(boolean useSSL) {
+      this.useSSL = useSSL;
       return this;
     }
 
@@ -240,6 +250,7 @@ public final class CassandraStorage
   final String username;
   final String password;
   final boolean ensureSchema;
+  final boolean useSSL;
   final String keyspace;
   final CacheBuilderSpec indexCacheSpec;
   final int indexFetchMultiplier;
@@ -253,6 +264,7 @@ public final class CassandraStorage
     this.username = builder.username;
     this.password = builder.password;
     this.ensureSchema = builder.ensureSchema;
+    this.useSSL = builder.useSSL;
     this.keyspace = builder.keyspace;
     this.maxTraceCols = builder.maxTraceCols;
     this.strictTraceId = builder.strictTraceId;
