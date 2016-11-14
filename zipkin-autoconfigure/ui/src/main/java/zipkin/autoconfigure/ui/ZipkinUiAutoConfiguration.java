@@ -125,6 +125,6 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
   public ModelAndView forwardUiEndpoints(ModelMap model) {
     // Note: RequestMapping "/" requires us to use ModelAndView result vs just a string.
     // When "/" is mapped, the server literally returns "forward:/index.html" vs forwarding.
-    return new ModelAndView("forward:/index.html", model);
+    return new ModelAndView("forward:/zipkin/index.html", model);
   }
 }
