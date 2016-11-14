@@ -24,6 +24,7 @@ public class ZipkinCassandraStorageProperties {
   private String localDc;
   private int maxConnections = 8;
   private boolean ensureSchema = true;
+  private boolean useSSL = false;
   private String username;
   private String password;
   private int spanTtl = (int) TimeUnit.DAYS.toSeconds(7);
@@ -73,6 +74,14 @@ public class ZipkinCassandraStorageProperties {
 
   public void setEnsureSchema(boolean ensureSchema) {
     this.ensureSchema = ensureSchema;
+  }
+
+  public boolean isUseSSL() {
+    return useSSL;
+  }
+
+  public void setUseSSL(boolean useSSL) {
+    this.useSSL = useSSL;
   }
 
   public String getUsername() {
