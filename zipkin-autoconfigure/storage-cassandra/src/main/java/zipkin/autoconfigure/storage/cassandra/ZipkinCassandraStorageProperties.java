@@ -163,6 +163,7 @@ public class ZipkinCassandraStorageProperties {
         .localDc(localDc)
         .maxConnections(maxConnections)
         .ensureSchema(ensureSchema)
+        .useSsl(useSsl)
         .username(username)
         .password(password)
         .spanTtl(spanTtl)
