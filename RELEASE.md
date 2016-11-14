@@ -11,7 +11,7 @@ in mind when choosing version numbers.
 
 1. **Push a git tag**
 
-   The tag should be of the format `release-N.M.L`, for example `release-0.18.1`.
+   The tag should be of the format `release-N.M.L`, ex `git tag release-1.18.1; git push origin release-1.18.1`.
 
 1. **Wait for Travis CI**
 
