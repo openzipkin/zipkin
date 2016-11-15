@@ -13,31 +13,34 @@
  */
 package zipkin.storage.cassandra3;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.HostDistance;
-import com.datastax.driver.core.KeyspaceMetadata;
-import com.datastax.driver.core.PoolingOptions;
-import com.datastax.driver.core.QueryLogger;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.TypeCodec;
+import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LatencyAwarePolicy;
 import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
 import com.datastax.driver.mapping.MappingManager;
+import com.github.jkutner.EnvKeyStore;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closer;
 import com.google.common.net.HostAndPort;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin.storage.cassandra3.Schema.AnnotationUDT;
 import zipkin.storage.cassandra3.Schema.BinaryAnnotationUDT;
 import zipkin.storage.cassandra3.Schema.EndpointUDT;
 import zipkin.storage.cassandra3.Schema.TraceIdUDT;
 import zipkin.storage.cassandra3.Schema.TypeCodecImpl;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 import static zipkin.storage.cassandra3.Schema.DEFAULT_KEYSPACE;
 
@@ -46,6 +49,7 @@ import static zipkin.storage.cassandra3.Schema.DEFAULT_KEYSPACE;
  * exception occurred.
  */
 final class DefaultSessionFactory implements Cassandra3Storage.SessionFactory {
+  private static final Logger LOG = LoggerFactory.getLogger(DefaultSessionFactory.class);
 
   /**
    * Creates a session and ensures schema if configured. Closes the cluster and session if any
@@ -123,7 +127,25 @@ final class DefaultSessionFactory implements Cassandra3Storage.SessionFactory {
     builder.withPoolingOptions(new PoolingOptions().setMaxConnectionsPerHost(
         HostDistance.LOCAL, cassandra.maxConnections
     ));
-    return builder.build();
+    // https://github.com/datastax/java-driver/tree/3.x/manual/ssl#driver-configuration
+    SSLOptions sslOptions = buildSSLOptions();
+    return builder.withSSL(sslOptions).build();
+  }
+
+  private static SSLOptions buildSSLOptions() {
+    try {
+      KeyStore ts = EnvKeyStore.create("CASSANDRA_TRUSTED_CERT").keyStore();
+      String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+      TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
+      tmf.init(ts);
+
+      SSLContext sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(null, tmf.getTrustManagers(), new SecureRandom());
+
+      return JdkSSLOptions.builder().withSSLContext(sslContext).build();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   static List<InetSocketAddress> parseContactPoints(Cassandra3Storage cassandra) {
