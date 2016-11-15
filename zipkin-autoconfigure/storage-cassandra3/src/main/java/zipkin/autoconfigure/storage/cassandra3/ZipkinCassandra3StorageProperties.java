@@ -26,6 +26,7 @@ public class ZipkinCassandra3StorageProperties {
   private String localDc;
   private int maxConnections = 8;
   private boolean ensureSchema = true;
+  private boolean useSsl = false;
   private String username;
   private String password;
   /** See {@link Cassandra3Storage.Builder#indexFetchMultiplier(int)} */
@@ -71,6 +72,14 @@ public class ZipkinCassandra3StorageProperties {
     this.ensureSchema = ensureSchema;
   }
 
+  public boolean isUseSsl() {
+    return useSsl;
+  }
+
+  public void setUseSsl(boolean useSsl) {
+    this.useSsl = useSsl;
+  }
+
   public String getUsername() {
     return username;
   }
@@ -102,6 +111,7 @@ public class ZipkinCassandra3StorageProperties {
         .localDc(localDc)
         .maxConnections(maxConnections)
         .ensureSchema(ensureSchema)
+        .useSsl(useSsl)
         .username(username)
         .password(password)
         .indexFetchMultiplier(indexFetchMultiplier);

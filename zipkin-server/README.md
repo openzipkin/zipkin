@@ -24,7 +24,7 @@ The following endpoints are defined under the base url http://your_host:9411
 * /api/v1 - [Api](http://zipkin.io/zipkin-api/#/)
 * /health - Returns 200 status if OK
 * /info - Provides the version of the running instance
-* /metrics - Includes collector metrics broken down by transport type 
+* /metrics - Includes collector metrics broken down by transport type
 
 There are more [built-in endpoints](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-endpoints.html) provided by Spring Boot, such as `/metrics`. To comprehensively list endpoints, `GET /mappings`.
 
@@ -112,7 +112,7 @@ zipkin-server is a drop-in replacement for the [scala query service](https://git
     * `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
     * `QUERY_LOOKBACK`: How many milliseconds queries can look back from endTs; Defaults to 7 days
     * `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra`, `elasticsearch`
-    * `COLLECTOR_PORT`: Listen port for the scribe thrift api; Defaults to 9410 
+    * `COLLECTOR_PORT`: Listen port for the scribe thrift api; Defaults to 9410
     * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 
 ### Cassandra Storage
@@ -124,6 +124,7 @@ supports version 2.2+ and applies when `STORAGE_TYPE` is set to `cassandra`:
     * `CASSANDRA_LOCAL_DC`: Name of the datacenter that will be considered "local" for latency load balancing. When unset, load-balancing is round-robin.
     * `CASSANDRA_ENSURE_SCHEMA`: Ensuring cassandra has the latest schema. If enabled tries to execute scripts in the classpath prefixed with `cassandra-schema-cql3`. Defaults to true
     * `CASSANDRA_USERNAME` and `CASSANDRA_PASSWORD`: Cassandra authentication. Will throw an exception on startup if authentication fails. No default
+    * `CASSANDRA_USE_SSL`: Requires `javax.net.ssl.trustStore` and `javax.net.ssl.trustStorePassword`, defaults to false.
 
 The following are tuning parameters which may not concern all users:
 
@@ -162,16 +163,16 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                   base urls, ex. http://host:9200. Defaults to "localhost:9300". When not using http,
                   Only one of the hosts needs to be available to fetch the remaining nodes in the
                   cluster. It is recommended to set this to all the master nodes of the cluster.
-                  
+
                   If the http URL is an AWS-hosted elasticsearch installation (e.g.
-                  https://search-domain-xyzzy.us-west-2.es.amazonaws.com) then Zipkin will attempt to 
+                  https://search-domain-xyzzy.us-west-2.es.amazonaws.com) then Zipkin will attempt to
                   use the default AWS credential provider (env variables, system properties, config
                   files, or ec2 profiles) to sign outbound requests to the cluster.
-    * `ES_AWS_DOMAIN`: The name of the AWS-hosted elasticsearch domain to use. Supercedes any set 
+    * `ES_AWS_DOMAIN`: The name of the AWS-hosted elasticsearch domain to use. Supercedes any set
                        `ES_HOSTS`. Triggers the same request signing behavior as with `ES_HOSTS`, but
                        requires the additional IAM permission to describe the given domain.
-    * `ES_AWS_REGION`: An optional override to the default region lookup to search for the domain 
-                       given in `ES_AWS_DOMAIN`. Ignored if only `ES_HOSTS` is present. 
+    * `ES_AWS_REGION`: An optional override to the default region lookup to search for the domain
+                       given in `ES_AWS_DOMAIN`. Ignored if only `ES_HOSTS` is present.
     * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to zipkin.
     * `ES_INDEX_SHARDS`: The number of shards to split the index into. Each shard and its replicas
                          are assigned to a machine in the cluster. Increasing the number of shards
