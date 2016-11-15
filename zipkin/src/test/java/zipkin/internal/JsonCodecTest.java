@@ -293,6 +293,32 @@ public final class JsonCodecTest extends CodecTest {
   }
 
   @Test
+  public void mappedIPv6toIPv4() {
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"binaryAnnotations\": [\n"
+        + "    {\n"
+        + "      \"key\": \"foo\",\n"
+        + "      \"value\": \"bar\",\n"
+        + "      \"endpoint\": {\n"
+        + "        \"serviceName\": \"service\",\n"
+        + "        \"port\": 65535,\n"
+        + "        \"ipv6\": \"::ffff:192.0.2.128\"\n"
+        + "      }\n"
+        + "    }\n"
+        + "  ]\n"
+        + "}";
+
+    Span span = Codec.JSON.readSpan(json.getBytes(UTF_8));
+    assertThat(span.binaryAnnotations.get(0).endpoint.ipv6)
+        .isNull();
+    assertThat(span.binaryAnnotations.get(0).endpoint.ipv4)
+        .isEqualTo((192 << 24) | (0 << 16) | (2 << 8) | 128); // 192.0.2.128
+  }
+
+  @Test
   public void sizeInBytes_span() throws IOException {
     Span span = TestObjects.LOTS_OF_SPANS[0];
     assertThat(JsonCodec.SPAN_ADAPTER.sizeInBytes(span))

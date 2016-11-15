@@ -19,6 +19,7 @@ import com.google.gson.stream.MalformedJsonException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.Inet6Address;
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -73,16 +74,18 @@ public final class JsonCodec implements Codec {
         if (nextName.equals("serviceName")) {
           result.serviceName(reader.nextString());
         } else if (nextName.equals("ipv4")) {
-          String[] ipv4String = reader.nextString().split("\\.", 5);
-          int ipv4 = 0;
-          for (String part : ipv4String) {
-            ipv4 = ipv4 << 8 | (Integer.parseInt(part) & 0xff);
-          }
-          result.ipv4(ipv4);
+          result.ipv4(parseIPv4Address(reader.nextString()));
         } else if (nextName.equals("ipv6")) {
           String input = reader.nextString();
           // Shouldn't hit DNS, because it's an IP string literal.
-          result.ipv6(Inet6Address.getByName(input).getAddress());
+          InetAddress addr = Inet6Address.getByName(input);
+          //  InetAddress.getByName returns an Inet4Address for
+          //  IPv4-mapped IPv6 addresses such as ::ffff:192.0.2.128
+          if (addr instanceof Inet6Address) {
+            result.ipv6(addr.getAddress());
+          } else {
+            result.ipv4(parseIPv4Address(addr.getHostAddress()));
+          }
         } else if (nextName.equals("port")) {
           result.port(reader.nextInt());
         } else {
@@ -91,6 +94,15 @@ public final class JsonCodec implements Codec {
       }
       reader.endObject();
       return result.build();
+    }
+
+    private int parseIPv4Address(String input) {
+      String[] ipv4String = input.split("\\.", 5);
+      int ipv4 = 0;
+      for (String part : ipv4String) {
+          ipv4 = ipv4 << 8 | (Integer.parseInt(part) & 0xff);
+      }
+      return ipv4;
     }
 
     @Override public int sizeInBytes(Endpoint value) {
