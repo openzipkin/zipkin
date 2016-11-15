@@ -18,10 +18,12 @@ import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.io.Resources;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
@@ -29,6 +31,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ListenableActionFuture;
@@ -45,6 +48,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.common.io.FastStringReader;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -63,6 +67,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Futures.getUnchecked;
 import static com.google.common.util.concurrent.Futures.transform;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 
 /**
@@ -75,6 +80,7 @@ final class NativeClient extends InternalElasticsearchClient {
     String cluster = "elasticsearch";
     Lazy<List<String>> hosts;
     boolean flushOnWrites;
+    String clientVersion;
 
     Builder() {
       hosts(Collections.singletonList("localhost:9300"));
@@ -103,17 +109,27 @@ final class NativeClient extends InternalElasticsearchClient {
     }
 
     @Override public Factory buildFactory() {
+      try {
+        String properties =
+            Resources.toString(Resources.getResource("es-build.properties"), UTF_8);
+        Properties props = new Properties();
+        props.load(new FastStringReader(properties));
+        clientVersion = props.getProperty("version", "2.x");
+      } catch (IOException ignored) {
+      }
       return new Factory(this);
     }
   }
 
   private static final class Factory implements InternalElasticsearchClient.Factory {
     final String cluster;
+    final String clientVersion;
     final Lazy<List<String>> hosts;
     final boolean flushOnWrites;
 
     Factory(Builder builder) {
       this.cluster = builder.cluster;
+      this.clientVersion = builder.clientVersion;
       this.hosts = builder.hosts;
       this.flushOnWrites = builder.flushOnWrites;
     }
@@ -136,10 +152,9 @@ final class NativeClient extends InternalElasticsearchClient {
           // Hosts may be down transiently, we should still try to connect. If all of them happen
           // to be down we will fail later when trying to use the client when checking the index
           // template.
-          continue;
         }
       }
-      return new NativeClient(client, flushOnWrites);
+      return new NativeClient(client, clientVersion, flushOnWrites);
     }
 
     @Override public String toString() {
@@ -150,11 +165,18 @@ final class NativeClient extends InternalElasticsearchClient {
   }
 
   final TransportClient client;
+  final String clientVersion;
   final boolean flushOnWrites;
 
-  NativeClient(TransportClient client, boolean flushOnWrites) {
+  NativeClient(TransportClient client, String clientVersion, boolean flushOnWrites) {
     this.client = client;
+    this.clientVersion = clientVersion;
     this.flushOnWrites = flushOnWrites;
+  }
+
+  /** Since the wire protocol doesn't support version negotiation, return the library version */
+  @Override protected String getVersion() throws IOException {
+    return clientVersion;
   }
 
   @Override

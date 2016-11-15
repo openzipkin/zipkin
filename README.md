@@ -73,6 +73,8 @@ The [CassandraStorage](zipkin-storage/cassandra) component is tested against Cas
 ### Elasticsearch
 The [ElasticsearchStorage](zipkin-storage/elasticsearch) component is tested against Elasticsearch 2.3. It stores spans as json and has been designed for larger scale. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
 
+Note: The storage type `elasticsearch-http` supports both 2.x and 5.x versions of Elasticsearch.
+
 ## Running the server from source
 The [zipkin server](zipkin-server)
 receives spans via HTTP POST and respond to queries from its UI. It can also run collectors, such as Scribe or Kafka.

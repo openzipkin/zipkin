@@ -27,17 +27,19 @@ final class HttpBulkSpanIndexer extends HttpBulkIndexer<Span> implements
     super(delegate, spanType);
   }
 
-  @Override public void add(String index, Span span, Long timestampMillis) throws IOException {
+  @Override
+  public HttpBulkSpanIndexer add(String index, Span span, Long timestampMillis) throws IOException {
     String id = null; // Allow ES to choose an ID
     if (timestampMillis == null) {
       super.add(index, span, id);
-      return;
+      return this;
     }
     writeIndexMetadata(index, id);
     body.write(toSpanBytes(span, timestampMillis));
     body.writeByte('\n');
 
     if (client.flushOnWrites) indices.add(index);
+    return this;
   }
 
   @Override byte[] toJsonBytes(Span span) {

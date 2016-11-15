@@ -27,8 +27,7 @@
         {
           "strings": {
             "mapping": {
-              "type": "string",
-              "index": "not_analyzed",
+              KEYWORD,
               "ignore_above": 256
             },
             "match_mapping_type": "string",
@@ -39,9 +38,8 @@
           "value": {
             "match": "value",
             "mapping": {
-              "type": "string",
               "match_mapping_type": "string",
-              "index": "not_analyzed",
+              KEYWORD,
               "ignore_above": 256,
               "ignore_malformed": true
             }

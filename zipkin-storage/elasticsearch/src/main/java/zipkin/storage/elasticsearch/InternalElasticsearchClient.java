@@ -84,6 +84,9 @@ public abstract class InternalElasticsearchClient implements Closeable {
     public abstract Factory buildFactory();
   }
 
+  /** Returns the Elasticsearch version of the transport. */
+  protected abstract String getVersion() throws IOException;
+
   /** Ensures the existence of a template, creating it if it does not exist. */
   protected abstract void ensureTemplate(String name, String indexTemplate) throws IOException;
 
@@ -133,15 +136,16 @@ public abstract class InternalElasticsearchClient implements Closeable {
      *
      * <p>For example. {"traceId":".. becomes {"timestamp_millis":12345,"traceId":"...
      */
-    void add(String index, Span span, Long timestampMillis) throws IOException;
+    BulkSpanIndexer add(String index, Span span, Long timestampMillis) throws IOException;
 
     ListenableFuture<Void> execute() throws IOException;
   }
 
   protected static abstract class SpanBytesBulkSpanIndexer implements BulkSpanIndexer {
 
-    @Override public final void add(String index, Span span, Long timestampMillis) {
+    @Override public final BulkSpanIndexer add(String index, Span span, Long timestampMillis) {
       add(index, toSpanBytes(span, timestampMillis));
+      return this;
     }
 
     abstract protected void add(String index, byte[] spanBytes);

@@ -24,6 +24,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class JsonReadersTest {
 
   @Test
+  public void enterPath_nested() throws IOException {
+    assertThat(JsonReaders.enterPath(JsonReader.of(new Buffer().writeUtf8("{\n"
+        + "  \"name\" : \"Kamal\",\n"
+        + "  \"cluster_name\" : \"elasticsearch\",\n"
+        + "  \"version\" : {\n"
+        + "    \"number\" : \"2.4.0\",\n"
+        + "    \"build_hash\" : \"ce9f0c7394dee074091dd1bc4e9469251181fc55\",\n"
+        + "    \"build_timestamp\" : \"2016-08-29T09:14:17Z\",\n"
+        + "    \"build_snapshot\" : false,\n"
+        + "    \"lucene_version\" : \"5.5.2\"\n"
+        + "  },\n"
+        + "  \"tagline\" : \"You Know, for Search\"\n"
+        + "}")), "version", "number").nextString())
+        .isEqualTo("2.4.0");
+  }
+
+  @Test
   public void enterPath_nullOnNoInput() throws IOException {
     assertThat(JsonReaders.enterPath(JsonReader.of(new Buffer()), "message"))
         .isNull();

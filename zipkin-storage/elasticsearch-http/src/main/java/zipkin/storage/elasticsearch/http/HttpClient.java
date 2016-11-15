@@ -59,11 +59,13 @@ final class HttpClient extends InternalElasticsearchClient {
     final Lazy<List<String>> hosts;
     final OkHttpClient client;
     final boolean flushOnWrites;
+    final String pipeline;
 
     Factory(HttpClientBuilder builder) {
       this.hosts = builder.hosts;
       this.client = builder.client;
       this.flushOnWrites = builder.flushOnWrites;
+      this.pipeline = builder.pipeline;
     }
 
     @Override public InternalElasticsearchClient create(String allIndices) {
@@ -79,6 +81,7 @@ final class HttpClient extends InternalElasticsearchClient {
   final OkHttpClient http;
   final HttpUrl baseUrl;
   final boolean flushOnWrites;
+  final String pipeline;
 
   final String[] allIndices;
 
@@ -90,7 +93,22 @@ final class HttpClient extends InternalElasticsearchClient {
     this.baseUrl = HttpUrl.parse(hosts.get(0));
     this.http = f.client;
     this.flushOnWrites = f.flushOnWrites;
+    this.pipeline = f.pipeline;
     this.allIndices = new String[] {allIndices};
+  }
+
+  @Override protected String getVersion() throws IOException {
+    Request getNode = new Request.Builder().url(baseUrl).tag("get-node").build();
+
+    try (Response response = http.newCall(getNode).execute()) {
+      if (!response.isSuccessful()) {
+        throw new IllegalStateException(response.body().string());
+      }
+
+      JsonReader version = enterPath(JsonReader.of(response.body().source()), "version", "number");
+      if (version == null) throw new IllegalStateException(".version.number not in response");
+      return version.nextString();
+    }
   }
 
   /**

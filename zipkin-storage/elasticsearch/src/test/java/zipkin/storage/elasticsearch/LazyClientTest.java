@@ -14,6 +14,7 @@
 package zipkin.storage.elasticsearch;
 
 import java.io.IOException;
+import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateRequest;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.junit.AssumptionViolatedException;
@@ -38,7 +39,7 @@ public class LazyClientTest {
   public void defaultShardAndReplicaCount() {
     LazyClient lazyClient = new LazyClient(ElasticsearchStorage.builder());
 
-    assertThat(lazyClient.indexTemplate)
+    assertThat(lazyClient.versionSpecificTemplate("2.4.0"))
         .contains("    \"index.number_of_shards\": 5,\n"
             + "    \"index.number_of_replicas\": 1,");
   }
@@ -49,9 +50,55 @@ public class LazyClientTest {
         .indexShards(30)
         .indexReplicas(0));
 
-    assertThat(lazyClient.indexTemplate)
+    assertThat(lazyClient.versionSpecificTemplate("2.4.0"))
         .contains("    \"index.number_of_shards\": 30,\n"
             + "    \"index.number_of_replicas\": 0,");
+  }
+
+  @Test
+  public void defaultsToUnanalyzedTraceId_2x() {
+    LazyClient lazyClient = new LazyClient(ElasticsearchStorage.builder());
+
+    PutIndexTemplateRequest request =
+        new PutIndexTemplateRequest("zipkin").source(lazyClient.versionSpecificTemplate("2.4.0"));
+
+    assertThat(request.mappings().get("span"))
+        .contains("\"traceId\":{\"type\":\"string\",\"index\":\"not_analyzed\"}");
+  }
+
+  @Test
+  public void defaultsToKeywordTraceId_5x() {
+    LazyClient lazyClient = new LazyClient(ElasticsearchStorage.builder());
+
+    PutIndexTemplateRequest request =
+        new PutIndexTemplateRequest("zipkin").source(lazyClient.versionSpecificTemplate("5.0.0"));
+
+    assertThat(request.mappings().get("span"))
+        .contains("\"traceId\":{\"type\":\"keyword\"}");
+  }
+
+  @Test
+  public void tokenizedTraceId_2x() {
+    LazyClient lazyClient = new LazyClient(ElasticsearchStorage.builder().strictTraceId(false));
+
+    PutIndexTemplateRequest request =
+        new PutIndexTemplateRequest("zipkin").source(lazyClient.versionSpecificTemplate("2.4.0"));
+
+    assertThat(request.mappings().get("span"))
+        .contains("\"traceId\":{\"type\":\"string\",\"analyzer\":\"traceId_analyzer\"}");
+  }
+
+  /** Also notice, fielddata must be true in this case (which is expensive) */
+  @Test
+  public void tokenizedTraceId_5x() {
+    LazyClient lazyClient = new LazyClient(ElasticsearchStorage.builder().strictTraceId(false));
+
+    PutIndexTemplateRequest request =
+        new PutIndexTemplateRequest("zipkin").source(lazyClient.versionSpecificTemplate("5.0.0"));
+
+    assertThat(request.mappings().get("span"))
+        .contains(
+            "\"traceId\":{\"type\":\"string\",\"fielddata\":\"true\",\"analyzer\":\"traceId_analyzer\"}");
   }
 
   @Test
@@ -62,7 +109,6 @@ public class LazyClientTest {
       assertThat(((NativeClient) lazyClient.get()).client.transportAddresses())
           .extracting(TransportAddress::getPort)
           .containsOnly(9300);
-
     } catch (NoNodeAvailableException e) {
       throw new AssumptionViolatedException(e.getMessage());
     }
