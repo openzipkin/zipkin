@@ -6,13 +6,6 @@
     "index.requests.cache.enable": true,
     "analysis": {
       "analyzer": {
-        "lowercase": {
-          "type": "custom",
-          "tokenizer": "keyword",
-          "filter": [
-            "lowercase"
-          ]
-        },
         "traceId_analyzer": {
           "type": "custom",
           "tokenizer": "keyword",
@@ -34,8 +27,9 @@
         {
           "strings": {
             "mapping": {
+              "type": "string",
               "index": "not_analyzed",
-              "type": "string"
+              "ignore_above": 256
             },
             "match_mapping_type": "string",
             "match": "*"
@@ -45,19 +39,11 @@
           "value": {
             "match": "value",
             "mapping": {
+              "type": "string",
               "match_mapping_type": "string",
               "index": "not_analyzed",
-              "ignore_malformed": true,
-              "type": "string"
-            }
-          }
-        },
-        {
-          "serviceName": {
-            "match": "serviceName",
-            "mapping": {
-              "type": "string",
-              "analyzer": "lowercase"
+              "ignore_above": 256,
+              "ignore_malformed": true
             }
           }
         },
