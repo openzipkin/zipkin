@@ -75,6 +75,8 @@ zipkin:
       ensure-schema: ${CASSANDRA3_ENSURE_SCHEMA:true}
       # how many more index rows to fetch than the user-supplied query limit
       index-fetch-multiplier: ${CASSANDRA3_INDEX_FETCH_MULTIPLIER:3}
+      # Using ssl for connection, rely on Keystore
+      use-ssl: ${CASSANDRA3_USE_SSL:false}
     elasticsearch:
       cluster: ${ES_CLUSTER:elasticsearch}
       # host is left unset intentionally, to defer the decision

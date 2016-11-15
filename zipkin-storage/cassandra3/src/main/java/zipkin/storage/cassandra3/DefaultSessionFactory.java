@@ -123,6 +123,10 @@ final class DefaultSessionFactory implements Cassandra3Storage.SessionFactory {
     builder.withPoolingOptions(new PoolingOptions().setMaxConnectionsPerHost(
         HostDistance.LOCAL, cassandra.maxConnections
     ));
+    if (cassandra.useSsl) {
+      builder = builder.withSSL();
+    }
+
     return builder.build();
   }
 
