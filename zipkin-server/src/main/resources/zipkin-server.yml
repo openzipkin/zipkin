@@ -81,6 +81,7 @@ zipkin:
       cluster: ${ES_CLUSTER:elasticsearch}
       # host is left unset intentionally, to defer the decision
       hosts: ${ES_HOSTS:}
+      pipeline: ${ES_PIPELINE:}
       aws:
         domain: ${ES_AWS_DOMAIN:}
         region: ${ES_AWS_REGION:}

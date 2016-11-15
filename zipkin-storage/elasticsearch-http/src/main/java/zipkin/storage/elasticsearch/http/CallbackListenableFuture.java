@@ -40,13 +40,28 @@ class CallbackListenableFuture<V> extends AbstractFuture<V> implements okhttp3.C
     call.cancel();
   }
 
-  @Override public void onResponse(Call call, Response response) throws IOException {
+  /** Note: this runs on the {@link okhttp3.OkHttpClient#dispatcher() dispatcher} thread! */
+  @Override public void onResponse(Call call, Response response) {
     try (ResponseBody responseBody = response.body()) {
       if (response.isSuccessful()) {
         set(convert(responseBody));
       } else {
         setException(new IllegalStateException("response failed: " + response));
       }
+    } catch (Throwable t) {
+      propagateIfFatal(t);
+      setException(t);
+    }
+  }
+
+  // Taken from RxJava, which was taken from scala
+  static void propagateIfFatal(Throwable t) {
+    if (t instanceof VirtualMachineError) {
+      throw (VirtualMachineError) t;
+    } else if (t instanceof ThreadDeath) {
+      throw (ThreadDeath) t;
+    } else if (t instanceof LinkageError) {
+      throw (LinkageError) t;
     }
   }
 

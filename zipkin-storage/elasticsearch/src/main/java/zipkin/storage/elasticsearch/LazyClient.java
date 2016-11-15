@@ -22,7 +22,7 @@ import zipkin.internal.LazyCloseable;
 final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
   private final InternalElasticsearchClient.Factory clientFactory;
   private final String indexTemplateName;
-  final String indexTemplate;
+  private final String indexTemplate;
   private final String allIndices;
 
   LazyClient(ElasticsearchStorage.Builder builder) {
@@ -36,10 +36,8 @@ final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
           .replace("${__INDEX__}", builder.index)
           .replace("${__NUMBER_OF_SHARDS__}", String.valueOf(builder.indexShards))
           .replace("${__NUMBER_OF_REPLICAS__}", String.valueOf(builder.indexReplicas))
-          // only analyse/tokenize traceId when strictTraceId == false
           .replace("${__TRACE_ID_MAPPING__}", builder.strictTraceId
-              ? "{ \"type\": \"string\" }"
-              : "{ \"type\": \"string\", \"analyzer\": \"traceId_analyzer\" }");
+              ? "{ KEYWORD }" : "{ \"type\": \"string\", \"analyzer\": \"traceId_analyzer\" }");
     } catch (IOException e) {
       throw new AssertionError("Error reading jar resource, shouldn't happen.", e);
     }
@@ -48,12 +46,27 @@ final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
   @Override protected InternalElasticsearchClient compute() {
     InternalElasticsearchClient client = clientFactory.create(allIndices);
     try {
-      client.ensureTemplate(indexTemplateName, indexTemplate);
+      String version = client.getVersion();
+      String versionSpecificTemplate = versionSpecificTemplate(version);
+      client.ensureTemplate(indexTemplateName, versionSpecificTemplate);
     } catch (IOException e) {
       client.close();
       throw new UncheckedExecutionException(e);
     }
     return client;
+  }
+
+  String versionSpecificTemplate(String version) {
+    if (version.startsWith("2")) {
+      return indexTemplate
+          .replace("KEYWORD", "\"type\": \"string\", \"index\": \"not_analyzed\"");
+    } else if (version.startsWith("5")) {
+      return indexTemplate
+          .replace("KEYWORD", "\"type\": \"keyword\"")
+          .replace("\"analyzer\": \"traceId_analyzer\" }", "\"fielddata\": \"true\", \"analyzer\": \"traceId_analyzer\" }");
+    } else {
+      throw new IllegalStateException("Elasticsearch 2.x and 5.x are supported, was: " + version);
+    }
   }
 
   @Override public String toString() {

@@ -19,12 +19,12 @@ import okhttp3.OkHttpClient;
 import zipkin.internal.Lazy;
 import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static zipkin.internal.Util.checkNotNull;
 
 public final class HttpClientBuilder extends InternalElasticsearchClient.Builder {
   final OkHttpClient client;
   Lazy<List<String>> hosts;
-  boolean compressionEnabled = true;
+  String pipeline;
   boolean flushOnWrites;
 
   public static HttpClientBuilder create(OkHttpClient client) {
@@ -53,9 +53,14 @@ public final class HttpClientBuilder extends InternalElasticsearchClient.Builder
     return this;
   }
 
-  /** Default true. true implies that spans will be gzipped before transport. */
-  public HttpClientBuilder compressionEnabled(boolean compressionEnabled) {
-    this.compressionEnabled = compressionEnabled;
+  /**
+   * Only valid when the destination is Elasticsearch 5.x. Indicates the ingest pipeline used before
+   * spans are indexed. No default.
+   *
+   * <p>See https://www.elastic.co/guide/en/elasticsearch/reference/master/pipeline.html
+   */
+  public HttpClientBuilder pipeline(String pipeline) {
+    this.pipeline = pipeline;
     return this;
   }
 

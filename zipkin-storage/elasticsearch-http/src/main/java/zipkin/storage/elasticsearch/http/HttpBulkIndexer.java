@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import okhttp3.Call;
+import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -72,11 +73,14 @@ abstract class HttpBulkIndexer<T> {
 
   /** Creates a bulk request when there is more than one object to store */
   public ListenableFuture<Void> execute() throws IOException { // public to allow interface retrofit
-    Request.Builder request = new Request.Builder().url(client.baseUrl.resolve("/_bulk")).tag(tag);
-    request.post(RequestBody.create(APPLICATION_JSON, body.readByteString()));
-    Call post = client.http.newCall(request.build());
+    HttpUrl url = client.pipeline != null
+        ? client.baseUrl.newBuilder("_bulk").addQueryParameter("pipeline", client.pipeline).build()
+        : client.baseUrl.resolve("_bulk");
 
-    return new CallbackListenableFuture<Void>(post) {
+    Request request = new Request.Builder().url(url).tag(tag)
+        .post(RequestBody.create(APPLICATION_JSON, body.readByteString())).build();
+
+    return new CallbackListenableFuture<Void>(client.http.newCall(request)) {
       @Override Void convert(ResponseBody responseBody) throws IOException {
         if (!indices.isEmpty()) {
           client.flush(Joiner.on(',').join(indices));

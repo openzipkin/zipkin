@@ -14,27 +14,13 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ObjectArrays;
-import com.google.common.util.concurrent.Futures;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Span;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
@@ -59,8 +45,7 @@ public class ElasticsearchSpanConsumerTest {
   }
 
   @Test
-  public void spanGoesIntoADailyIndex_whenTimestampIsDerived()
-      throws ExecutionException, InterruptedException {
+  public void spanGoesIntoADailyIndex_whenTimestampIsDerived() throws Exception {
     long twoDaysAgo = (TODAY - 2 * DAY);
 
     Span span = Span.builder().traceId(20L).id(20L).name("get")
@@ -81,8 +66,7 @@ public class ElasticsearchSpanConsumerTest {
   }
 
   @Test
-  public void spanGoesIntoADailyIndex_whenTimestampIsExplicit()
-      throws ExecutionException, InterruptedException {
+  public void spanGoesIntoADailyIndex_whenTimestampIsExplicit() throws Exception {
     long twoDaysAgo = (TODAY - 2 * DAY);
 
     Span span = Span.builder().traceId(20L).id(20L).name("get")
@@ -101,8 +85,7 @@ public class ElasticsearchSpanConsumerTest {
   }
 
   @Test
-  public void spanGoesIntoADailyIndex_fallsBackToTodayWhenNoTimestamps()
-      throws ExecutionException, InterruptedException {
+  public void spanGoesIntoADailyIndex_fallsBackToTodayWhenNoTimestamps() throws Exception {
     Span span = Span.builder().traceId(20L).id(20L).name("get").build();
 
     accept(span);
@@ -118,7 +101,7 @@ public class ElasticsearchSpanConsumerTest {
   }
 
   @Test
-  public void searchByTimestampMillis() throws ExecutionException, InterruptedException {
+  public void searchByTimestampMillis() throws Exception {
     Span span = Span.builder().timestamp(TODAY * 1000).traceId(20L).id(20L).name("get").build();
 
     accept(span);
@@ -148,7 +131,7 @@ public class ElasticsearchSpanConsumerTest {
         .isEqualTo(span); // ignores timestamp_millis field
   }
 
-  void accept(Span span) {
-    Futures.getUnchecked(storage.computeGuavaSpanConsumer().accept(ImmutableList.of(span)));
+  void accept(Span span) throws Exception {
+    storage.guavaSpanConsumer().accept(ImmutableList.of(span)).get();
   }
 }

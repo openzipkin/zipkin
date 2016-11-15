@@ -15,6 +15,7 @@ package zipkin.autoconfigure.storage.elasticsearch.http;
 
 import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -34,8 +35,9 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   InternalElasticsearchClient.Builder clientBuilder(
-      @Qualifier("zipkinElasticsearchHttp") OkHttpClient client) {
-    return HttpClientBuilder.create(client);
+      @Qualifier("zipkinElasticsearchHttp") OkHttpClient client,
+      @Value("${zipkin.storage.elasticsearch.pipeline:}") String pipeline) {
+    return HttpClientBuilder.create(client).pipeline(pipeline.isEmpty() ? null : pipeline);
   }
 
   /** cheap check to see if we are likely to include urls */

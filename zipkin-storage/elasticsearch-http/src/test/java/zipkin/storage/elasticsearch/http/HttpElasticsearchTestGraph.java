@@ -25,7 +25,7 @@ public enum HttpElasticsearchTestGraph {
 
   public final LazyCloseable<ElasticsearchStorage> storage =
       new LazyCloseable<ElasticsearchStorage>() {
-        public AssumptionViolatedException ex;
+        AssumptionViolatedException ex;
 
         @Override protected ElasticsearchStorage compute() {
           if (ex != null) throw ex;

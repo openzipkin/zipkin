@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.autoconfigure.storage.elasticsearch;
+package zipkin.storage.elasticsearch.http;
 
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -27,7 +27,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageAutoConfiguration;
 import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchOkHttpAutoConfiguration;
-import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -55,7 +54,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(InternalElasticsearchClient.Builder.class);
+    context.getBean(HttpClientBuilder.class);
   }
 
   @Test
@@ -70,7 +69,24 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         ZipkinElasticsearchHttpStorageAutoConfiguration.class);
     context.refresh();
 
-    assertThat(context.getBean(InternalElasticsearchClient.Builder.class)).isNotNull();
+    assertThat(context.getBean(HttpClientBuilder.class)).isNotNull();
+  }
+
+  @Test
+  public void configuresPipeline() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:http://host1:9200",
+        "zipkin.storage.elasticsearch.pipeline:zipkin"
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchOkHttpAutoConfiguration.class,
+        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(HttpClientBuilder.class).pipeline)
+        .isEqualTo("zipkin");
   }
 
   @Test
@@ -82,7 +98,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(InternalElasticsearchClient.Builder.class);
+    context.getBean(HttpClientBuilder.class);
   }
 
   @Configuration
@@ -111,7 +127,6 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
     );
     context.register(PropertyPlaceholderAutoConfiguration.class,
         ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class,
         InterceptorConfiguration.class);
     context.refresh();
 
