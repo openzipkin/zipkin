@@ -344,7 +344,7 @@ describe('traceSummariesToMustache', () => {
       }],
       binaryAnnotations: [{
         key: 'http.path',
-        value: '/api/v1/services',
+        value: '/zipkin/api/v1/services',
         endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1'}
       }, {
         key: 'srv/finagle.version',
