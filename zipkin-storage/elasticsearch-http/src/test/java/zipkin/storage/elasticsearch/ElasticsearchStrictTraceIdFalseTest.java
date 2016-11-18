@@ -31,7 +31,7 @@ public class ElasticsearchStrictTraceIdFalseTest extends StrictTraceIdFalseTest 
     storage = ElasticsearchStorage.builder(
         HttpClientBuilder.create(new OkHttpClient())
             .flushOnWrites(true)
-            .hosts(ImmutableList.of("http://localhost:9200")))
+            .hosts(ImmutableList.of(HttpElasticsearchTestGraph.INSTANCE.endpoint.get())))
         .strictTraceId(false)
         .index("test_zipkin_http_mixed").build();
   }
