@@ -26,7 +26,7 @@ import zipkin.storage.elasticsearch.ElasticsearchStorage;
 public enum HttpElasticsearchTestGraph {
   INSTANCE;
 
-  public Lazy<String> endpoint =
+  public final Lazy<String> endpoint =
     new Lazy<String>() {
 
       @Override
@@ -37,7 +37,9 @@ public enum HttpElasticsearchTestGraph {
               .withExposedPorts(9200)
               .waitingFor(new HttpWaitStrategy().forPath("/"));
           container.start();
-          return String.format("http://%s:%d", container.getContainerIpAddress(), container.getMappedPort(9200));
+          String url = String.format("http://%s:%d", container.getContainerIpAddress(), container.getMappedPort(9200));
+          System.out.println("Will use TestContainers Elasticsearch instance running at " + url);
+          return url;
         } catch (Exception e) {
           // Use localhost if we failed to start a container (i.e. Docker is not available)
           return "http://localhost:9200";
