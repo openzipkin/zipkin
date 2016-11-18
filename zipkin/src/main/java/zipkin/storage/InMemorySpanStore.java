@@ -83,6 +83,10 @@ public final class InMemorySpanStore implements SpanStore {
     }
   };
 
+  /**
+   * @deprecated use {@link #getRawTraces()}
+   */
+  @Deprecated
   public synchronized List<Long> traceIds() {
     return sortedList(traceIdToSpans.keySet());
   }
@@ -91,6 +95,21 @@ public final class InMemorySpanStore implements SpanStore {
     acceptedSpanCount = 0;
     traceIdToSpans.clear();
     serviceToTraceIdTimeStamp.clear();
+  }
+
+  /**
+   * Used for testing. Returns all traces unconditionally.
+   */
+  public synchronized List<List<Span>> getRawTraces() {
+    List<List<Span>> result = new ArrayList<List<Span>>();
+    for (long traceId : traceIdToSpans.keySet()) {
+      Collection<Span> sameTraceId = traceIdToSpans.get(traceId);
+      for (List<Span> next : GroupByTraceId.apply(sameTraceId, strictTraceId, false)) {
+        result.add(next);
+      }
+    }
+    Collections.sort(result, TRACE_DESCENDING);
+    return result;
   }
 
   @Override

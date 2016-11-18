@@ -30,7 +30,6 @@ import org.junit.runners.model.Statement;
 import zipkin.Span;
 import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.storage.InMemoryStorage;
-import zipkin.storage.QueryRequest;
 
 import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
 
@@ -132,7 +131,7 @@ public final class ZipkinRule implements TestRule {
 
   /** Retrieves all traces this zipkin server has received. */
   public List<List<Span>> getTraces() {
-    return storage.spanStore().getTraces(QueryRequest.builder().limit(Integer.MAX_VALUE).build());
+    return storage.spanStore().getRawTraces();
   }
 
   /**

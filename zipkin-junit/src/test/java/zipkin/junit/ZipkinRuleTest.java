@@ -56,6 +56,18 @@ public class ZipkinRuleTest {
         .containsOnly(TRACE);
   }
 
+  /** The rule is here to help debugging. Even partial spans should be returned */
+  @Test
+  public void getTraces_whenMissingTimestamps() throws IOException {
+    Span span = Span.builder().traceId(traceId).id(traceId).name("foo").build();
+    // write the span to the zipkin using http
+    assertThat(postSpans(asList(span)).code()).isEqualTo(202);
+
+    // read the traces directly
+    assertThat(zipkin.getTraces())
+        .containsOnly(asList(span));
+  }
+
   @Test
   public void healthIsOK() throws IOException {
     Response getResponse = client.newCall(new Request.Builder()
