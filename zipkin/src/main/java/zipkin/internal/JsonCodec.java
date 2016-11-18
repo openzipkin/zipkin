@@ -19,8 +19,8 @@ import com.google.gson.stream.MalformedJsonException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.InetAddress;
 import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Iterator;
@@ -653,10 +653,35 @@ public final class JsonCodec implements Codec {
     try {
       writer.write(value, b);
     } catch (RuntimeException e) {
-      throw assertionError("Could not write " + value + " as json", e);
+      byte[] bytes = b.toByteArray();
+      int lengthWritten = bytes.length;
+      for (int i = 0; i < bytes.length; i++) {
+        if (bytes[i] == 0) {
+          lengthWritten = i;
+          break;
+        }
+      }
+
+      final byte[] bytesWritten;
+      if (lengthWritten == bytes.length) {
+        bytesWritten = bytes;
+      } else {
+        bytesWritten = new byte[lengthWritten];
+        System.arraycopy(bytes, 0, bytesWritten, 0, lengthWritten);
+      }
+
+      String written = new String(bytesWritten, UTF_8);
+      // Don't use value directly in the message, as its toString might be implemented using this
+      // method. If that's the case, we'd stack overflow. Instead, emit what we've written so far.
+      String message = String.format(
+          "Bug found using %s to write %s as json. Wrote %s/%s bytes: %s",
+          writer.getClass().getSimpleName(), value.getClass().getSimpleName(), lengthWritten,
+          bytes.length, written);
+      throw assertionError(message, e);
     }
     return b.toByteArray();
   }
+
 
   static <T> int sizeInBytes(Buffer.Writer<T> writer, List<T> value) {
     int sizeInBytes = overheadInBytes(value);
