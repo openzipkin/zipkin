@@ -30,7 +30,7 @@ import java.util.List;
 public class ElasticsearchV2TransportTest {
 
   private static final LazyElasticsearchTransportStorage storage =
-      new LazyElasticsearchTransportStorage("elasticsearch:2.4.1");
+      new LazyElasticsearchTransportStorage("openzipkin/zipkin-elasticsearch:1.16.1");
 
   @AfterClass
   public static void destroy() throws Exception {

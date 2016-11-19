@@ -29,7 +29,7 @@ import java.util.List;
 public class ElasticsearchV2HttpTest {
 
   private static final LazyElasticsearchHttpStorage storage =
-      new LazyElasticsearchHttpStorage("elasticsearch:2.4.1");
+      new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch:1.16.1");
 
   @AfterClass
   public static void destroy() throws Exception {
