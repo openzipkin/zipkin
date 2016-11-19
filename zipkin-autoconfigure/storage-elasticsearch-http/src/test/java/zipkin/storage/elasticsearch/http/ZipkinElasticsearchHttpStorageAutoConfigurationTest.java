@@ -131,6 +131,6 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
     context.refresh();
 
     assertThat(context.getBean(OkHttpClient.class).networkInterceptors())
-        .containsExactly(InterceptorConfiguration.one, InterceptorConfiguration.two);
+        .containsOnlyOnce(InterceptorConfiguration.one, InterceptorConfiguration.two);
   }
 }
