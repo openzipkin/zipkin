@@ -13,23 +13,17 @@
  */
 package zipkin.storage.elasticsearch;
 
-import java.io.IOException;
-import zipkin.storage.SpanStoreTest;
-import zipkin.storage.StorageComponent;
+import com.google.common.collect.ImmutableList;
 
-public class ElasticsearchSpanStoreTest extends SpanStoreTest {
+public class LazyElasticsearchTransportStorage extends LazyElasticsearchStorage {
 
-  private final ElasticsearchStorage storage;
-
-  public ElasticsearchSpanStoreTest() {
-    this.storage = ElasticsearchTestGraph.INSTANCE.storage.get();
+  public LazyElasticsearchTransportStorage(String image) {
+    super(image);
   }
 
-  @Override protected StorageComponent storage() {
-    return storage;
-  }
-
-  @Override public void clear() throws IOException {
-    storage.clear();
+  @Override public ElasticsearchStorage.Builder computeStorageBuilder() {
+    return ElasticsearchStorage.builder()
+        .hosts(ImmutableList.of(getEndpoint(9300)))
+        .index("test_zipkin_transport").flushOnWrites(true);
   }
 }

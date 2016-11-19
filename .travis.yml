@@ -41,9 +41,8 @@ before_install:
   - git config credential.helper "store --file=.git/credentials"
   - echo "https://$GH_TOKEN:@github.com" > .git/credentials
 
-  # Manually install elasticsearch 5 (since 2.x is default in travis)
-  - curl -SL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.0.0.tar.gz | tar xz
-  - elasticsearch-*/bin/elasticsearch -d > /dev/null
+  # Required for Elasticsearch 5 (See https://github.com/docker-library/docs/tree/master/elasticsearch#host-setup)
+  - sudo sysctl -w vm.max_map_count=262144
 
   # Manually install and run zk+kafka as it isn't an available service
   - curl -SL http://www.us.apache.org/dist/kafka/0.8.2.2/kafka_2.11-0.8.2.2.tgz | tar xz
