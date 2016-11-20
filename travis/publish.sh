@@ -126,7 +126,7 @@ javadoc_to_gh_pages() {
   done
 
   # Update gh-pages
-  git fetch origin gh-pages:origin/gh-pages
+  git fetch origin gh-pages:gh-pages
   git checkout gh-pages
   rm -rf "$version"
   mv "javadoc-builddir/$version" ./
@@ -144,7 +144,7 @@ javadoc_to_gh_pages() {
   git add "$version"
   git add index.html
   git commit -m "Automatically updated javadocs for $version"
-  git push
+  git push origin gh-pages
 }
 
 #----------------------
