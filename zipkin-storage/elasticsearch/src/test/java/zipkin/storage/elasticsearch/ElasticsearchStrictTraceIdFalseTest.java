@@ -13,21 +13,29 @@
  */
 package zipkin.storage.elasticsearch;
 
-import java.io.IOException;
-import zipkin.storage.StrictTraceIdFalseTest;
+import org.junit.AssumptionViolatedException;
+import zipkin.Component;
 import zipkin.storage.StorageComponent;
 
-public class ElasticsearchStrictTraceIdFalseTest extends StrictTraceIdFalseTest {
+import java.io.IOException;
+
+public abstract class ElasticsearchStrictTraceIdFalseTest extends zipkin.storage.StrictTraceIdFalseTest {
 
   private final ElasticsearchStorage storage;
 
-  public ElasticsearchStrictTraceIdFalseTest() throws IOException {
-    // verify all works ok
-    ElasticsearchTestGraph.INSTANCE.storage.get().check();
-    storage = ElasticsearchStorage.builder()
+  public ElasticsearchStrictTraceIdFalseTest() {
+    storage = storageBuilder()
         .strictTraceId(false)
-        .index("test_zipkin_transport_mixed").flushOnWrites(true).build();
+        .index("test_zipkin_transport_mixed")
+        .build();
+
+    Component.CheckResult check = storage.check();
+    if (!check.ok) {
+      throw new AssumptionViolatedException(check.exception.getMessage(), check.exception);
+    }
   }
+
+  protected abstract ElasticsearchStorage.Builder storageBuilder();
 
   @Override protected StorageComponent storage() {
     return storage;

@@ -13,9 +13,6 @@
  */
 package zipkin.storage.elasticsearch;
 
-import com.google.common.annotations.VisibleForTesting;
-import java.io.IOException;
-import java.util.List;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
@@ -26,26 +23,20 @@ import zipkin.internal.Util;
 import zipkin.storage.DependenciesTest;
 import zipkin.storage.InMemorySpanStore;
 import zipkin.storage.InMemoryStorage;
-import zipkin.storage.StorageComponent;
+
+import java.io.IOException;
+import java.util.List;
 
 import static zipkin.TestObjects.DAY;
 import static zipkin.TestObjects.TODAY;
 import static zipkin.internal.Util.midnightUTC;
 
-public class ElasticsearchDependenciesTest extends DependenciesTest {
+public abstract class ElasticsearchDependenciesTest extends DependenciesTest {
 
-  private final ElasticsearchStorage storage;
-
-  public ElasticsearchDependenciesTest() {
-    this.storage = ElasticsearchTestGraph.INSTANCE.storage.get();
-  }
-
-  @Override protected StorageComponent storage() {
-    return storage;
-  }
+  protected abstract ElasticsearchStorage storage();
 
   @Override public void clear() throws IOException {
-    storage.clear();
+    storage().clear();
   }
 
   /**
@@ -55,8 +46,7 @@ public class ElasticsearchDependenciesTest extends DependenciesTest {
    * <p>This uses {@link InMemorySpanStore} to prepare links and {@link #writeDependencyLinks(List,
    * long)}} to store them.
    */
-  @Override
-  public void processDependencies(List<Span> spans) {
+  @Override public void processDependencies(List<Span> spans) {
     InMemoryStorage mem = new InMemoryStorage();
     mem.spanConsumer().accept(spans);
     List<DependencyLink> links = mem.spanStore().getDependencies(TODAY + DAY, null);
@@ -66,13 +56,13 @@ public class ElasticsearchDependenciesTest extends DependenciesTest {
     writeDependencyLinks(links, midnight);
   }
 
-  @VisibleForTesting void writeDependencyLinks(List<DependencyLink> links, long timestampMillis) {
+  protected void writeDependencyLinks(List<DependencyLink> links, long timestampMillis) {
     long midnight = Util.midnightUTC(timestampMillis);
-    TransportClient client = ((NativeClient) storage.client()).client;
+    TransportClient client = ((NativeClient) storage().client()).client;
     BulkRequestBuilder request = client.prepareBulk();
     for (DependencyLink link : links) {
       request.add(client.prepareIndex(
-          storage.indexNameFormatter.indexNameForTimestamp(midnight),
+          storage().indexNameFormatter.indexNameForTimestamp(midnight),
           ElasticsearchConstants.DEPENDENCY_LINK)
           .setId(link.parent + "|" + link.child) // Unique constraint
           .setSource(

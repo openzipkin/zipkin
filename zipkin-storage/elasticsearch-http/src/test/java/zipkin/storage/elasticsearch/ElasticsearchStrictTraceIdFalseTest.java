@@ -13,28 +13,29 @@
  */
 package zipkin.storage.elasticsearch;
 
-import com.google.common.collect.ImmutableList;
-import java.io.IOException;
-import okhttp3.OkHttpClient;
-import zipkin.storage.StrictTraceIdFalseTest;
+import org.junit.AssumptionViolatedException;
+import zipkin.Component;
 import zipkin.storage.StorageComponent;
-import zipkin.storage.elasticsearch.http.HttpClientBuilder;
-import zipkin.storage.elasticsearch.http.HttpElasticsearchTestGraph;
 
-public class ElasticsearchStrictTraceIdFalseTest extends StrictTraceIdFalseTest {
+import java.io.IOException;
+
+public abstract class ElasticsearchStrictTraceIdFalseTest extends zipkin.storage.StrictTraceIdFalseTest {
 
   private final ElasticsearchStorage storage;
 
-  public ElasticsearchStrictTraceIdFalseTest() throws IOException {
-    // verify all works ok
-    HttpElasticsearchTestGraph.INSTANCE.storage.get().check();
-    storage = ElasticsearchStorage.builder(
-        HttpClientBuilder.create(new OkHttpClient())
-            .flushOnWrites(true)
-            .hosts(ImmutableList.of("http://localhost:9200")))
+  public ElasticsearchStrictTraceIdFalseTest() {
+    storage = storageBuilder()
         .strictTraceId(false)
-        .index("test_zipkin_http_mixed").build();
+        .index("test_zipkin_http_mixed")
+        .build();
+
+    Component.CheckResult check = storage.check();
+    if (!check.ok) {
+      throw new AssumptionViolatedException(check.exception.getMessage(), check.exception);
+    }
   }
+
+  protected abstract ElasticsearchStorage.Builder storageBuilder();
 
   @Override protected StorageComponent storage() {
     return storage;
