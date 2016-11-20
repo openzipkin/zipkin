@@ -60,7 +60,7 @@ public class LazyElasticsearchTransportStorage extends LazyCloseable<Elasticsear
     ElasticsearchStorage.Builder builder = ElasticsearchStorage.builder()
         .index("test_zipkin_transport").flushOnWrites(true);
 
-    if (container.isRunning()) {
+    if (container != null && container.isRunning()) {
       String endpoint = String.format("%s:%d", container.getContainerIpAddress(), container.getMappedPort(9300));
       builder.hosts(ImmutableList.of(endpoint));
     } else {

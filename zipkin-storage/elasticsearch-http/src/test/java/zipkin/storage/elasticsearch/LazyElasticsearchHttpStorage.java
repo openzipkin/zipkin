@@ -62,7 +62,7 @@ public class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchSto
     ElasticsearchStorage.Builder builder = ElasticsearchStorage.builder(HttpClientBuilder.create(new OkHttpClient()))
         .index("test_zipkin_http").flushOnWrites(true);
 
-    if (container.isRunning()) {
+    if (container != null && container.isRunning()) {
       String endpoint = String.format("http://%s:%d", container.getContainerIpAddress(), container.getMappedPort(9200));
       builder.hosts(ImmutableList.of(endpoint));
     } else {
