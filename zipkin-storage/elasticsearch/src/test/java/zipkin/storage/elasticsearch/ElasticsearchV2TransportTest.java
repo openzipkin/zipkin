@@ -13,52 +13,23 @@
  */
 package zipkin.storage.elasticsearch;
 
-import org.elasticsearch.action.admin.indices.flush.FlushRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.client.transport.TransportClient;
-import org.junit.AfterClass;
+import org.junit.ClassRule;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
-import zipkin.DependencyLink;
-import zipkin.internal.Util;
-import zipkin.storage.StorageComponent;
 
 import java.io.IOException;
-import java.util.List;
 
 @RunWith(Enclosed.class)
 public class ElasticsearchV2TransportTest {
 
-  private static final LazyElasticsearchTransportStorage storage =
+  @ClassRule
+  public static LazyElasticsearchTransportStorage storage =
       new LazyElasticsearchTransportStorage("openzipkin/zipkin-elasticsearch:1.16.1");
-
-  @AfterClass
-  public static void destroy() throws Exception {
-    storage.close();
-  }
 
   public static class DependenciesTest extends ElasticsearchDependenciesTest {
 
     @Override protected ElasticsearchStorage storage() {
       return storage.get();
-    }
-
-    protected void writeDependencyLinks(List<DependencyLink> links, long timestampMillis) {
-      long midnight = Util.midnightUTC(timestampMillis);
-      TransportClient client = ((NativeClient) storage().client()).client;
-      BulkRequestBuilder request = client.prepareBulk();
-      for (DependencyLink link : links) {
-        request.add(client.prepareIndex(
-            storage().indexNameFormatter.indexNameForTimestamp(midnight),
-            ElasticsearchConstants.DEPENDENCY_LINK)
-            .setId(link.parent + "|" + link.child) // Unique constraint
-            .setSource(
-                "parent", link.parent,
-                "child", link.child,
-                "callCount", link.callCount));
-      }
-      request.execute().actionGet();
-      client.admin().indices().flush(new FlushRequest()).actionGet();
     }
   }
 
@@ -80,24 +51,10 @@ public class ElasticsearchV2TransportTest {
     }
   }
 
-  public static class StrictTraceIdFalseTest extends zipkin.storage.StrictTraceIdFalseTest {
+  public static class StrictTraceIdFalseTest extends ElasticsearchStrictTraceIdFalseTest {
 
-    private final ElasticsearchStorage storage;
-
-    public StrictTraceIdFalseTest() throws IOException {
-      // verify all works ok
-      ElasticsearchV2TransportTest.storage.get();
-      storage = ElasticsearchV2TransportTest.storage.computeStorageBuilder()
-          .strictTraceId(false)
-          .index("test_zipkin_transport_mixed").build();
-    }
-
-    @Override protected StorageComponent storage() {
-      return storage;
-    }
-
-    @Override public void clear() throws IOException {
-      storage.clear();
+    @Override protected ElasticsearchStorage.Builder storageBuilder() {
+      return ElasticsearchV2TransportTest.storage.computeStorageBuilder();
     }
   }
 }

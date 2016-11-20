@@ -13,9 +13,7 @@
  */
 package zipkin.storage.elasticsearch;
 
-import org.elasticsearch.action.admin.indices.flush.FlushRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.client.transport.TransportClient;
+import com.google.common.base.Throwables;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.MergeById;
@@ -23,6 +21,7 @@ import zipkin.internal.Util;
 import zipkin.storage.DependenciesTest;
 import zipkin.storage.InMemorySpanStore;
 import zipkin.storage.InMemoryStorage;
+import zipkin.storage.elasticsearch.http.HttpElasticsearchDependencyWriter;
 
 import java.io.IOException;
 import java.util.List;
@@ -58,19 +57,12 @@ public abstract class ElasticsearchDependenciesTest extends DependenciesTest {
 
   protected void writeDependencyLinks(List<DependencyLink> links, long timestampMillis) {
     long midnight = Util.midnightUTC(timestampMillis);
-    TransportClient client = ((NativeClient) storage().client()).client;
-    BulkRequestBuilder request = client.prepareBulk();
-    for (DependencyLink link : links) {
-      request.add(client.prepareIndex(
-          storage().indexNameFormatter.indexNameForTimestamp(midnight),
-          ElasticsearchConstants.DEPENDENCY_LINK)
-          .setId(link.parent + "|" + link.child) // Unique constraint
-          .setSource(
-              "parent", link.parent,
-              "child", link.child,
-              "callCount", link.callCount));
+    String index = storage().indexNameFormatter.indexNameForTimestamp(midnight);
+    try {
+      HttpElasticsearchDependencyWriter.writeDependencyLinks(storage().client(), links, index,
+          ElasticsearchConstants.DEPENDENCY_LINK);
+    } catch (Exception ex) {
+      throw Throwables.propagate(ex);
     }
-    request.execute().actionGet();
-    client.admin().indices().flush(new FlushRequest()).actionGet();
   }
 }

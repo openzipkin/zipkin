@@ -13,44 +13,24 @@
  */
 package zipkin.storage.elasticsearch;
 
-import com.google.common.base.Throwables;
-import org.junit.AfterClass;
+import org.junit.ClassRule;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
-import zipkin.DependencyLink;
-import zipkin.internal.Util;
 import zipkin.storage.SpanStoreTest;
-import zipkin.storage.elasticsearch.http.HttpElasticsearchDependencyWriter;
 
 import java.io.IOException;
-import java.util.List;
 
 @RunWith(Enclosed.class)
 public class ElasticsearchV5HttpTest {
 
-  private static final LazyElasticsearchHttpStorage storage =
+  @ClassRule
+  public static LazyElasticsearchHttpStorage storage =
       new LazyElasticsearchHttpStorage("elasticsearch:5.0.1");
-
-  @AfterClass
-  public static void destroy() throws Exception {
-    storage.close();
-  }
 
   public static class DependenciesTest extends ElasticsearchDependenciesTest {
 
     @Override protected ElasticsearchStorage storage() {
       return storage.get();
-    }
-
-    @Override protected void writeDependencyLinks(List<DependencyLink> links, long timestampMillis) {
-      long midnight = Util.midnightUTC(timestampMillis);
-      String index = storage.get().indexNameFormatter.indexNameForTimestamp(midnight);
-      try {
-        HttpElasticsearchDependencyWriter.writeDependencyLinks(storage.get().client(), links, index,
-            ElasticsearchConstants.DEPENDENCY_LINK);
-      } catch (Exception ex) {
-        throw Throwables.propagate(ex);
-      }
     }
   }
 
@@ -72,24 +52,10 @@ public class ElasticsearchV5HttpTest {
     }
   }
 
-  public static class StrictTraceIdFalseTest extends zipkin.storage.StrictTraceIdFalseTest {
+  public static class StrictTraceIdFalseTest extends ElasticsearchStrictTraceIdFalseTest {
 
-    private final ElasticsearchStorage storage;
-
-    public StrictTraceIdFalseTest() throws IOException {
-      // verify all works ok
-      ElasticsearchV5HttpTest.storage.get();
-      storage = ElasticsearchV5HttpTest.storage.computeStorageBuilder()
-          .strictTraceId(false)
-          .index("test_zipkin_http_mixed").build();
-    }
-
-    @Override protected ElasticsearchStorage storage() {
-      return storage;
-    }
-
-    @Override public void clear() throws IOException {
-      storage().clear();
+    @Override protected ElasticsearchStorage.Builder storageBuilder() {
+      return ElasticsearchV5HttpTest.storage.computeStorageBuilder();
     }
   }
 }
