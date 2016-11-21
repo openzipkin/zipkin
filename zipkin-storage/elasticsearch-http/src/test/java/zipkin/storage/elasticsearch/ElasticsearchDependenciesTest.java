@@ -14,6 +14,8 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.base.Throwables;
+import java.io.IOException;
+import java.util.List;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.MergeById;
@@ -22,9 +24,6 @@ import zipkin.storage.DependenciesTest;
 import zipkin.storage.InMemorySpanStore;
 import zipkin.storage.InMemoryStorage;
 import zipkin.storage.elasticsearch.http.HttpElasticsearchDependencyWriter;
-
-import java.io.IOException;
-import java.util.List;
 
 import static zipkin.TestObjects.DAY;
 import static zipkin.TestObjects.TODAY;

@@ -13,11 +13,10 @@
  */
 package zipkin.storage.elasticsearch;
 
+import java.io.IOException;
 import org.junit.ClassRule;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
-
-import java.io.IOException;
 
 @RunWith(Enclosed.class)
 public class ElasticsearchV2TransportTest {

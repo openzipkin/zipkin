@@ -14,21 +14,22 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.collect.ImmutableList;
+import java.io.IOException;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Span;
 
-import java.io.IOException;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
-import static zipkin.TestObjects.*;
+import static zipkin.TestObjects.DAY;
+import static zipkin.TestObjects.TODAY;
+import static zipkin.TestObjects.WEB_ENDPOINT;
 
 public abstract class ElasticsearchSpanConsumerTest {
 
