@@ -15,6 +15,7 @@ package zipkin.storage.elasticsearch;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import java.io.IOException;
 import okhttp3.OkHttpClient;
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
@@ -26,9 +27,8 @@ import zipkin.Component;
 import zipkin.internal.LazyCloseable;
 import zipkin.storage.elasticsearch.http.HttpClientBuilder;
 
-import java.io.IOException;
-
-public class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchStorage> implements TestRule {
+public class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchStorage>
+    implements TestRule {
 
   final String image;
 
@@ -59,11 +59,13 @@ public class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchSto
   }
 
   public ElasticsearchStorage.Builder computeStorageBuilder() {
-    ElasticsearchStorage.Builder builder = ElasticsearchStorage.builder(HttpClientBuilder.create(new OkHttpClient()))
-        .index("test_zipkin_http").flushOnWrites(true);
+    ElasticsearchStorage.Builder builder =
+        ElasticsearchStorage.builder(HttpClientBuilder.create(new OkHttpClient()))
+            .index("test_zipkin_http").flushOnWrites(true);
 
     if (container != null && container.isRunning()) {
-      String endpoint = String.format("http://%s:%d", container.getContainerIpAddress(), container.getMappedPort(9200));
+      String endpoint = String.format("http://%s:%d", container.getContainerIpAddress(),
+          container.getMappedPort(9200));
       builder.hosts(ImmutableList.of(endpoint));
     } else {
       // Use localhost if we failed to start a container (i.e. Docker is not available)

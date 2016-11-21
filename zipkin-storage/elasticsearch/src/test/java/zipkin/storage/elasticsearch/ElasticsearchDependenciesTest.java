@@ -13,6 +13,8 @@
  */
 package zipkin.storage.elasticsearch;
 
+import java.io.IOException;
+import java.util.List;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
@@ -23,9 +25,6 @@ import zipkin.internal.Util;
 import zipkin.storage.DependenciesTest;
 import zipkin.storage.InMemorySpanStore;
 import zipkin.storage.InMemoryStorage;
-
-import java.io.IOException;
-import java.util.List;
 
 import static zipkin.TestObjects.DAY;
 import static zipkin.TestObjects.TODAY;

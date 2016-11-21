@@ -15,6 +15,7 @@ package zipkin.storage.elasticsearch;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import java.io.IOException;
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -24,9 +25,8 @@ import org.testcontainers.containers.wait.HttpWaitStrategy;
 import zipkin.Component;
 import zipkin.internal.LazyCloseable;
 
-import java.io.IOException;
-
-public class LazyElasticsearchTransportStorage extends LazyCloseable<ElasticsearchStorage> implements TestRule {
+public class LazyElasticsearchTransportStorage extends LazyCloseable<ElasticsearchStorage>
+    implements TestRule {
 
   final String image;
 
@@ -61,7 +61,8 @@ public class LazyElasticsearchTransportStorage extends LazyCloseable<Elasticsear
         .index("test_zipkin_transport").flushOnWrites(true);
 
     if (container != null && container.isRunning()) {
-      String endpoint = String.format("%s:%d", container.getContainerIpAddress(), container.getMappedPort(9300));
+      String endpoint =
+          String.format("%s:%d", container.getContainerIpAddress(), container.getMappedPort(9300));
       builder.hosts(ImmutableList.of(endpoint));
     } else {
       // Use localhost if we failed to start a container (i.e. Docker is not available)

@@ -13,19 +13,18 @@
  */
 package zipkin.storage.elasticsearch;
 
+import java.io.IOException;
 import org.junit.ClassRule;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import zipkin.storage.SpanStoreTest;
-
-import java.io.IOException;
 
 @RunWith(Enclosed.class)
 public class ElasticsearchV5HttpTest {
 
   @ClassRule
   public static LazyElasticsearchHttpStorage storage =
-      new LazyElasticsearchHttpStorage("elasticsearch:5.0.1");
+      new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch5:1.16.1");
 
   public static class DependenciesTest extends ElasticsearchDependenciesTest {
 
