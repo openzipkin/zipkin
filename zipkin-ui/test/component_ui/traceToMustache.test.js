@@ -52,6 +52,12 @@ describe('traceToMustache', () => {
     modelview.services.should.equal(3);
   });
 
+  it('should show logsUrl', () => {
+    const logsUrl = 'http/url.com';
+    const modelview = traceToMustache(trace, logsUrl);
+    modelview.logsUrl.should.equal(logsUrl);
+  });
+
   it('should show service counts', () => {
     const modelview = traceToMustache(trace);
     modelview.serviceCounts.should.eql([{

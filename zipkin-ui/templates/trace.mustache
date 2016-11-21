@@ -4,6 +4,9 @@
     <li class=''><a href='#'><strong>Services:</strong> <span class='badge'>{{services}}</span></a></li>
     <li class=''><a href='#'><strong>Depth:</strong> <span class='badge'>{{depth}}</span></a></li>
     <li class=''><a href='#'><strong>Total Spans:</strong> <span class='badge'>{{totalSpans}}</span></a></li>
+    {{#logsUrl}}
+    <li class='navbar-right'><a href='{{ logsUrl }}' id='traceLogsLink'><span class='btn btn-primary btn-xs badge'>Logs</span></a></li>
+    {{/logsUrl}}
     <li class='navbar-right'><a href='/api/v1/trace/{{ traceId }}' id='traceJsonLink'><span class='btn btn-primary btn-xs badge'>JSON</span></a></li>
   </ul>
 
