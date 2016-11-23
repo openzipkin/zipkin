@@ -1,0 +1,147 @@
+zipkin:
+  self-tracing:
+    # Set to true to enable self-tracing.
+    enabled: ${SELF_TRACING_ENABLED:false}
+    # percentage to self-traces to retain
+    sample-rate: ${SELF_TRACING_SAMPLE_RATE:1.0}
+    # Interval in seconds to flush self-tracing data to storage.
+    flush-interval: ${SELF_TRACING_FLUSH_INTERVAL:1}
+  collector:
+    # percentage to traces to retain
+    sample-rate: ${COLLECTOR_SAMPLE_RATE:1.0}
+    kafka:
+      # ZooKeeper host string, comma-separated host:port value.
+      zookeeper: ${KAFKA_ZOOKEEPER:}
+      # Name of topic to poll for spans
+      topic: ${KAFKA_TOPIC:zipkin}
+      # Consumer group this process is consuming on behalf of.
+      group-id: ${KAFKA_GROUP_ID:zipkin}
+      # Count of consumer threads consuming the topic
+      streams: ${KAFKA_STREAMS:1}
+      # Maximum size of a message containing spans in bytes
+      max-message-size: ${KAFKA_MAX_MESSAGE_SIZE:1048576}
+    scribe:
+      enabled: ${SCRIBE_ENABLED:true}
+      category: zipkin
+      port: ${COLLECTOR_PORT:9410}
+  query:
+    # 7 days in millis
+    lookback: ${QUERY_LOOKBACK:86400000}
+    # The Cache-Control max-age (seconds) for /api/v1/services and /api/v1/spans
+    names-max-age: 300
+    # CORS allowed-origins.
+    allowed-origins: "*"
+
+  storage:
+    strict-trace-id: ${STRICT_TRACE_ID:true}
+    type: ${STORAGE_TYPE:mem}
+    cassandra:
+      # Comma separated list of hosts / ip addresses part of Cassandra cluster.
+      contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
+      # Name of the datacenter that will be considered "local" for latency load balancing. When unset, load-balancing is round-robin.
+      local-dc: ${CASSANDRA_LOCAL_DC:}
+      # Will throw an exception on startup if authentication fails.
+      username: ${CASSANDRA_USERNAME:}
+      password: ${CASSANDRA_PASSWORD:}
+      keyspace: ${CASSANDRA_KEYSPACE:zipkin}
+      # Max pooled connections per datacenter-local host.
+      max-connections: ${CASSANDRA_MAX_CONNECTIONS:8}
+      # Ensuring that schema exists, if enabled tries to execute script /zipkin-cassandra-core/resources/cassandra-schema-cql3.txt.
+      ensure-schema: ${CASSANDRA_ENSURE_SCHEMA:true}
+      # 7 days in seconds
+      span-ttl: ${CASSANDRA_SPAN_TTL:604800}
+      # 3 days in seconds
+      index-ttl: ${CASSANDRA_INDEX_TTL:259200}
+      # the maximum trace index metadata entries to cache
+      index-cache-max: ${CASSANDRA_INDEX_CACHE_MAX:100000}
+      # how long to cache index metadata about a trace. 1 minute in seconds
+      index-cache-ttl: ${CASSANDRA_INDEX_CACHE_TTL:60}
+      # how many more index rows to fetch than the user-supplied query limit
+      index-fetch-multiplier: ${CASSANDRA_INDEX_FETCH_MULTIPLIER:3}
+      # Using ssl for connection, rely on Keystore
+      use-ssl: ${CASSANDRA_USE_SSL:false}
+    cassandra3:
+      # Comma separated list of hosts / ip addresses part of Cassandra cluster.
+      contact-points: ${CASSANDRA3_CONTACT_POINTS:localhost}
+      # Name of the datacenter that will be considered "local" for latency load balancing. When unset, load-balancing is round-robin.
+      local-dc: ${CASSANDRA3_LOCAL_DC:}
+      # Will throw an exception on startup if authentication fails.
+      username: ${CASSANDRA3_USERNAME:}
+      password: ${CASSANDRA3_PASSWORD:}
+      keyspace: ${CASSANDRA3_KEYSPACE:zipkin3}
+      # Max pooled connections per datacenter-local host.
+      max-connections: ${CASSANDRA3_MAX_CONNECTIONS:8}
+      # Ensuring that schema exists, if enabled tries to execute script /cassandra3-schema.cql
+      ensure-schema: ${CASSANDRA3_ENSURE_SCHEMA:true}
+      # how many more index rows to fetch than the user-supplied query limit
+      index-fetch-multiplier: ${CASSANDRA3_INDEX_FETCH_MULTIPLIER:3}
+      # Using ssl for connection, rely on Keystore
+      use-ssl: ${CASSANDRA3_USE_SSL:false}
+    elasticsearch:
+      cluster: ${ES_CLUSTER:elasticsearch}
+      # host is left unset intentionally, to defer the decision
+      hosts: ${ES_HOSTS:}
+      pipeline: ${ES_PIPELINE:}
+      aws:
+        domain: ${ES_AWS_DOMAIN:}
+        region: ${ES_AWS_REGION:}
+      index: ${ES_INDEX:zipkin}
+      index-shards: ${ES_INDEX_SHARDS:5}
+      index-replicas: ${ES_INDEX_REPLICAS:1}
+    mysql:
+      host: ${MYSQL_HOST:localhost}
+      port: ${MYSQL_TCP_PORT:3306}
+      username: ${MYSQL_USER:}
+      password: ${MYSQL_PASS:}
+      db: ${MYSQL_DB:zipkin}
+      max-active: ${MYSQL_MAX_CONNECTIONS:10}
+      use-ssl: ${MYSQL_USE_SSL:false}
+  ui:
+    ## Values below here are mapped to ZipkinUiProperties, served as /config.json
+    # Default limit for Find Traces
+    query-limit: 10
+    # The value here becomes a label in the top-right corner
+    environment:
+    # Default duration to look back when finding traces.
+    # Affects the "Start time" element in the UI. 1 hour in millis
+    default-lookback: 3600000
+    # Which sites this Zipkin UI covers. Regex syntax. (e.g. http:\/\/example.com\/.*)
+    # Multiple sites can be specified, e.g.
+    # - .*example1.com
+    # - .*example2.com
+    # Default is "match all websites"
+    instrumented: .*
+
+server:
+  port: ${QUERY_PORT:9411}
+  compression:
+    enabled: true
+    # compresses any response over min-response-size (default is 2KiB)
+    # Includes dynamic json content and large static assets from zipkin-ui
+    mime-types: application/json,application/javascript,text/css,image/svg
+
+spring:
+  mvc:
+    favicon:
+      # zipkin has its own favicon
+      enabled: false
+  autoconfigure:
+    exclude:
+      # otherwise we might initialize even when not needed (ex when storage type is cassandra or elasticsearch)
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.jest.JestAutoConfiguration
+
+info:
+  zipkin:
+    version: "@project.version@"
+
+logging:
+  level:
+    # Silence Invalid method name: '__can__finagle__trace__v3__'
+    com.facebook.swift.service.ThriftServiceProcessor: 'OFF'
+#     # investigate /api/v1/dependencies
+#     zipkin.internal.DependencyLinker: 'DEBUG'
+#     # log cassandra queries (DEBUG is without values)
+#     com.datastax.driver.core.QueryLogger: 'TRACE'
+#     # log cassandra trace propagation
+#     com.datastax.driver.core.Message: 'TRACE'
