@@ -42,7 +42,7 @@ ZIPKIN_QUERY_ALLOWED_ORIGINS=http://foo.bar.com
 
 ## Logging
 
-By default, zipkin writes log messages to the console at INFO level and above. You can adjust categories using the `--logging.level.XXX` parameter, a `-Dlogging.level.XXX` system property, or by adjusting [yaml configuration](src/main/resources/zipkin-server.yml).
+By default, zipkin writes log messages to the console at INFO level and above. You can adjust categories using the `--logging.level.XXX` parameter, a `-Dlogging.level.XXX` system property, or by adjusting [yaml configuration](src/main/resources/zipkin-server-shared.yml).
 
 For example, if you want to enable debug logging for all zipkin categories, you can start the server like so:
 
@@ -81,7 +81,7 @@ who enable self-tracing should lower the sample rate from 1.0 (100%) to a much s
 When Brave dependencies are in the classpath, and `zipkin.self-tracing.enabled=true`,
 Zipkin will self-trace calls to the api.
 
-[yaml configuration](src/main/resources/zipkin-server.yml) binds the following environment variables to spring properties:
+[yaml configuration](src/main/resources/zipkin-server-shared.yml) binds the following environment variables to spring properties:
 
 Variable | Property | Description
 --- | --- | ---
@@ -106,7 +106,7 @@ For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `
 ## Environment Variables
 zipkin-server is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/scala/zipkin-query-service).
 
-[yaml configuration](src/main/resources/zipkin-server.yml) binds the following environment variables from zipkin-scala:
+[yaml configuration](src/main/resources/zipkin-server-shared.yml) binds the following environment variables from zipkin-scala:
 
     * `QUERY_PORT`: Listen port for the http api and web ui; Defaults to 9411
     * `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
