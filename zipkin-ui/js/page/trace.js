@@ -16,7 +16,8 @@ const TracePageComponent = component(function TracePage() {
     window.document.title = 'Zipkin - Traces';
 
     TraceData.attachTo(document, {
-      traceId: this.attr.traceId
+      traceId: this.attr.traceId,
+      logsUrl: this.attr.config('logsUrl')
     });
     this.on(document, 'tracePageModelView', function(ev, data) {
       this.$node.html(traceTemplate(data.modelview));

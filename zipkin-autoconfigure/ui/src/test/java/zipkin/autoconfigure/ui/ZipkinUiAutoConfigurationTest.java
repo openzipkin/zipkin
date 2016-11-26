@@ -34,22 +34,56 @@ public class ZipkinUiAutoConfigurationTest {
 
   @Test
   public void indexHtmlFromClasspath() {
-    context = new AnnotationConfigApplicationContext();
-    context.register(PropertyPlaceholderAutoConfiguration.class, ZipkinUiAutoConfiguration.class);
-    context.refresh();
+    context = createContext();
 
     assertThat(context.getBean(ZipkinUiAutoConfiguration.class).indexHtml)
         .isNotNull();
   }
 
+
   @Test
   public void canOverridesProperty_defaultLookback() {
-    context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.ui.defaultLookback:100");
-    context.register(PropertyPlaceholderAutoConfiguration.class, ZipkinUiAutoConfiguration.class);
-    context.refresh();
+    context = createContextWithOverridenProperty("zipkin.ui.defaultLookback:100");
 
     assertThat(context.getBean(ZipkinUiProperties.class).getDefaultLookback())
         .isEqualTo(100);
+  }
+
+
+  @Test
+  public void canOverrideProperty_logsUrl() {
+    final String url = "http://mycompany.com/kibana";
+    context = createContextWithOverridenProperty("zipkin.ui.logs-url:"+ url);
+
+    assertThat(context.getBean(ZipkinUiProperties.class).getLogsUrl()).isEqualTo(url);
+  }
+
+  @Test
+  public void logsUrlIsNullIfOverridenByEmpty() {
+    context = createContextWithOverridenProperty("zipkin.ui.logs-url:");
+
+    assertThat(context.getBean(ZipkinUiProperties.class).getLogsUrl()).isNull();
+  }
+
+  @Test
+  public void logsUrlIsNullByDefault() {
+    context = createContext();
+
+    assertThat(context.getBean(ZipkinUiProperties.class).getLogsUrl()).isNull();
+  }
+
+  private static AnnotationConfigApplicationContext createContext() {
+    AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+    context.register(PropertyPlaceholderAutoConfiguration.class, ZipkinUiAutoConfiguration.class);
+    context.refresh();
+    return context;
+  }
+
+  private static AnnotationConfigApplicationContext createContextWithOverridenProperty(String pair) {
+    AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, pair);
+    context.register(PropertyPlaceholderAutoConfiguration.class, ZipkinUiAutoConfiguration.class);
+    context.refresh();
+    return context;
   }
 }

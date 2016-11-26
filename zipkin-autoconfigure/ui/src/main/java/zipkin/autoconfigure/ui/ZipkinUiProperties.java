@@ -15,6 +15,7 @@ package zipkin.autoconfigure.ui;
 
 import java.util.concurrent.TimeUnit;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.StringUtils;
 
 @ConfigurationProperties("zipkin.ui")
 public class ZipkinUiProperties {
@@ -22,6 +23,7 @@ public class ZipkinUiProperties {
   private int queryLimit = 10;
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
   private String instrumented = ".*";
+  private String logsUrl = null;
 
   public int getDefaultLookback() {
     return defaultLookback;
@@ -53,5 +55,15 @@ public class ZipkinUiProperties {
 
   public void setInstrumented(String instrumented) {
     this.instrumented = instrumented;
+  }
+
+  public String getLogsUrl() {
+    return logsUrl;
+  }
+
+  public void setLogsUrl(String logsUrl) {
+    if (!StringUtils.isEmpty(logsUrl)) {
+      this.logsUrl = logsUrl;
+    }
   }
 }

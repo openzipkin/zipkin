@@ -111,7 +111,9 @@ zipkin:
     # - .*example2.com
     # Default is "match all websites"
     instrumented: .*
-
+    # Url of the logs associated with a given request.
+    # It will be formatted with the trace id if your url contains {traceId} (e.g. http://kibana/trace{traceId})
+    logs-url: ${LOGS_URL:}
 server:
   port: ${QUERY_PORT:9411}
   compression:
