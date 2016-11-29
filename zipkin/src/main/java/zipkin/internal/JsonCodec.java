@@ -191,15 +191,19 @@ public final class JsonCodec implements Codec {
     @Override
     public BinaryAnnotation fromJson(JsonReader reader) throws IOException {
       BinaryAnnotation.Builder result = BinaryAnnotation.builder();
+      String key = null;
+      Type type = Type.STRING;
+      boolean valueSet = false;
       String number = null;
       String string = null;
-      Type type = Type.STRING;
+
       reader.beginObject();
       while (reader.hasNext()) {
         String nextName = reader.nextName();
         if (nextName.equals("key")) {
-          result.key(reader.nextString());
+          result.key(key = reader.nextString());
         } else if (nextName.equals("value")) {
+          valueSet = true;
           switch (reader.peek()) {
             case BOOLEAN:
               type = Type.BOOL;
@@ -223,6 +227,11 @@ public final class JsonCodec implements Codec {
         } else {
           reader.skipValue();
         }
+      }
+      if (key == null) {
+        throw new MalformedJsonException("No key at " + reader.getPath());
+      } else if (!valueSet) {
+        throw new MalformedJsonException("No value for key " + key + " at " + reader.getPath());
       }
       reader.endObject();
       result.type(type);
