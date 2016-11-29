@@ -371,6 +371,44 @@ public final class JsonCodecTest extends CodecTest {
   }
 
   @Test
+  public void missingKey() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("No key at $.binaryAnnotations[0]");
+
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"binaryAnnotations\": [\n"
+        + "    {\n"
+        + "      \"value\": \"bar\"\n"
+        + "    }\n"
+        + "  ]\n"
+        + "}";
+
+    Codec.JSON.readSpan(json.getBytes(UTF_8));
+  }
+
+  @Test
+  public void missingValue() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("No value for key foo at $.binaryAnnotations[0]");
+
+    String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"binaryAnnotations\": [\n"
+        + "    {\n"
+        + "      \"key\": \"foo\"\n"
+        + "    }\n"
+        + "  ]\n"
+        + "}";
+
+    Codec.JSON.readSpan(json.getBytes(UTF_8));
+  }
+
+  @Test
   public void sizeInBytes_span() throws IOException {
     Span span = TestObjects.LOTS_OF_SPANS[0];
     assertThat(JsonCodec.SPAN_ADAPTER.sizeInBytes(span))
