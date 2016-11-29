@@ -87,11 +87,11 @@ final class HttpClient extends InternalElasticsearchClient {
 
   HttpClient(Factory f, String allIndices) {
     List<String> hosts = f.hosts.get();
-    checkArgument(hosts.size() == 1, "Only a single hostname is supported %s", hosts);
-    // TODO: provided the hosts all have the same port, and they are all http (not https), we could
-    // implement okhttp3.Dns to collect all the supplied hosts' IP addresses.
+    checkArgument(!hosts.isEmpty(), "no hosts configured");
+    this.http = hosts.size() == 1
+        ? f.client
+        : f.client.newBuilder().dns(PseudoAddressRecordSet.create(hosts, f.client.dns())).build();
     this.baseUrl = HttpUrl.parse(hosts.get(0));
-    this.http = f.client;
     this.flushOnWrites = f.flushOnWrites;
     this.pipeline = f.pipeline;
     this.allIndices = new String[] {allIndices};
