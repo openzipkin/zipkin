@@ -156,6 +156,13 @@ $ STORAGE_TYPE=mysql MYSQL_USER=root java -jar zipkin.jar
 ```
 
 ### Elasticsearch Storage
+Zipkin's [Elasticsearch storage component](../zipkin-storage/elasticsearch)
+supports version 2.x and applies when `STORAGE_TYPE` is set to `elasticsearch`
+
+When the value of `ES_HOSTS` includes an Http URL (ex http://elasticsearch:9200),
+Zipkin's [Elasticsearch Http storage component](../zipkin-storage/elasticsearch-http)
+is used, which supports versions 2.x and 5.x.
+
 The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
 
     * `ES_CLUSTER`: The name of the elasticsearch cluster to connect to. Defaults to "elasticsearch".
