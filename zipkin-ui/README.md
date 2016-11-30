@@ -70,3 +70,21 @@ and then you can submit the span(s) via curl:
 ```bash
 $ curl -H "Content-Type: application/json" --data @span.json http://localhost:9411/api/v1/spans 
 ```
+
+#### How do I find logs associated with a particular trace
+
+Since zipkin provides a correlation id (the trace id), it's a good pattern to add it in your logs.
+If you use zipkin, it's very likely that you have distributed logging sytem also and a way to query your logs (e.g. ELK stack).
+
+One convenient way to switch from a trace to its logs is to get a button which directly links a trace to its logs.
+
+This feature can be activated by setting the property zipkin.ui.logs-url or its corresponding environment variable:
+
+`ZIPKIN_UI_LOGS_URL=http://kibana.company.com/query={traceId}`
+
+where `{traceId}` will be contextually replaced by the trace id.
+
+If this feature is activated, you'll see on the trace detail page an additional button named `logs`.
+
+![Logs Button]
+(https://cloud.githubusercontent.com/assets/9842366/20482538/6e35ca66-afed-11e6-90e9-1e28f66d985e.png)
