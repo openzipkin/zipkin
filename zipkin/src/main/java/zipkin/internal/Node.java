@@ -57,7 +57,7 @@ public final class Node<V> {
 
   public Node<V> addChild(Node<V> child) {
     child.parent = this;
-    if (children.equals(Collections.emptyList())) children = new LinkedList<Node<V>>();
+    if (children.equals(Collections.emptyList())) children = new LinkedList<>();
     children.add(child);
     return this;
   }
@@ -69,11 +69,11 @@ public final class Node<V> {
 
   /** Traverses the tree, breadth-first. */
   public Iterator<Node<V>> traverse() {
-    return new BreadthFirstIterator<V>(this);
+    return new BreadthFirstIterator<>(this);
   }
 
   static final class BreadthFirstIterator<V> implements Iterator<Node<V>> {
-    private final Queue<Node<V>> queue = new ArrayDeque<Node<V>>();
+    private final Queue<Node<V>> queue = new ArrayDeque<>();
 
     BreadthFirstIterator(Node<V> root) {
       queue.add(root);
@@ -101,7 +101,7 @@ public final class Node<V> {
    * @param trace spans that belong to the same {@link Span#traceId trace}, in any order.
    */
   static Node<Span> constructTree(List<Span> trace) {
-    TreeBuilder<Span> treeBuilder = new TreeBuilder<Span>();
+    TreeBuilder<Span> treeBuilder = new TreeBuilder<>();
     for (Span s : trace) {
       treeBuilder.addNode(s.parentId, s.id, s);
     }
@@ -118,9 +118,9 @@ public final class Node<V> {
     Node<V> rootNode = null;
 
     // Nodes representing the trace tree
-    Map<Long, Node<V>> idToNode = new LinkedHashMap<Long, Node<V>>();
+    Map<Long, Node<V>> idToNode = new LinkedHashMap<>();
     // Collect the parent-child relationships between all spans.
-    Map<Long, Long> idToParent = new LinkedHashMap<Long, Long>(idToNode.size());
+    Map<Long, Long> idToParent = new LinkedHashMap<>(idToNode.size());
 
     public void addNode(Long parentId, long id, @Nullable V value) {
       Node<V> node = new Node<V>().value(value);
@@ -146,7 +146,7 @@ public final class Node<V> {
           parent.addChild(node);
         }
       }
-      return rootNode != null ? rootNode : new Node<V>();
+      return rootNode != null ? rootNode : new Node<>();
     }
   }
 }

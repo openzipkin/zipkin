@@ -45,7 +45,7 @@ public final class CorrectForClockSkew {
       if (s.parentId == null) {
         Node<Span> tree = Node.constructTree(spans);
         adjust(tree, null);
-        List<Span> result = new ArrayList<Span>(spans.size());
+        List<Span> result = new ArrayList<>(spans.size());
         for (Iterator<Node<Span>> i = tree.traverse(); i.hasNext();) {
           result.add(i.next().value());
         }
@@ -85,7 +85,7 @@ public final class CorrectForClockSkew {
       Annotation a = span.annotations.get(i);
       if (a.endpoint == null) continue;
       if (ipsMatch(skew.endpoint, a.endpoint)) {
-        if (annotations == null) annotations = new ArrayList<Annotation>(span.annotations);
+        if (annotations == null) annotations = new ArrayList<>(span.annotations);
         annotations.set(i, a.toBuilder().timestamp(a.timestamp - skew.skew).build());
       }
     }
@@ -145,7 +145,7 @@ public final class CorrectForClockSkew {
 
   /** Get the annotations as a map with value to annotation bindings. */
   static Map<String, Annotation> asMap(List<Annotation> annotations) {
-    Map<String, Annotation> result = new LinkedHashMap<String, Annotation>(annotations.size());
+    Map<String, Annotation> result = new LinkedHashMap<>(annotations.size());
     for (Annotation a : annotations) {
       result.put(a.value, a);
     }

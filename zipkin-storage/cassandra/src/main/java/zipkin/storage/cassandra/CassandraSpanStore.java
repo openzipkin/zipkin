@@ -169,14 +169,12 @@ public final class CassandraSpanStore implements GuavaSpanStore {
               .orderBy(QueryBuilder.desc("ts")));
     }
 
-    traceIdToTimestamp = new Function<ResultSet, Map<Long, Long>>() {
-      @Override public Map<Long, Long> apply(ResultSet input) {
-        Map<Long, Long> traceIdsToTimestamps = new LinkedHashMap<>();
-        for (Row row : input) {
-          traceIdsToTimestamps.put(row.getLong("trace_id"), timestampCodec.deserialize(row, "ts"));
-        }
-        return traceIdsToTimestamps;
+    traceIdToTimestamp = input -> {
+      Map<Long, Long> result = new LinkedHashMap<>();
+      for (Row row : input) {
+        result.put(row.getLong("trace_id"), timestampCodec.deserialize(row, "ts"));
       }
+      return result;
     };
   }
 
@@ -237,11 +235,8 @@ public final class CassandraSpanStore implements GuavaSpanStore {
               @Override public List<List<Span>> apply(List<Span> input) {
                 // Indexes only contain Span.traceId, so our matches are imprecise on Span.traceIdHigh
                 return FluentIterable.from(GroupByTraceId.apply(input, strictTraceId, true))
-                    .filter(new Predicate<List<Span>>() {
-                      @Override public boolean apply(List<Span> input) {
-                        return input.get(0).traceIdHigh == 0 || request.test(input);
-                      }
-                    }).toList();
+                    .filter(trace -> trace.get(0).traceIdHigh == 0 || request.test(trace))
+                    .toList();
               }
             });
       }
@@ -388,7 +383,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
       return transform(session.executeAsync(bound),
           new Function<ResultSet, List<Span>>() {
             @Override public List<Span> apply(ResultSet input) {
-              List<Span> result = new ArrayList<Span>(input.getAvailableWithoutFetching());
+              List<Span> result = new ArrayList<>(input.getAvailableWithoutFetching());
               for (Row row : input) {
                 result.add(Codec.THRIFT.readSpan(row.getBytes("span")));
               }

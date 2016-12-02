@@ -25,27 +25,23 @@ import zipkin.Span;
 
 public final class GroupByTraceId {
 
-  public static final Comparator<List<Span>> TRACE_DESCENDING = new Comparator<List<Span>>() {
-    @Override
-    public int compare(List<Span> left, List<Span> right) {
-      return right.get(0).compareTo(left.get(0));
-    }
-  };
+  public static final Comparator<List<Span>> TRACE_DESCENDING =
+      (left, right) -> right.get(0).compareTo(left.get(0));
 
   public static List<List<Span>> apply(Collection<Span> input, boolean strictTraceId,
       boolean adjust) {
     if (input == null || input.isEmpty()) return Collections.emptyList();
 
-    Map<Pair<Long>, List<Span>> groupedByTraceId = new LinkedHashMap<Pair<Long>, List<Span>>();
+    Map<Pair<Long>, List<Span>> groupedByTraceId = new LinkedHashMap<>();
     for (Span span : input) {
       Pair<Long> traceId = Pair.create(strictTraceId ? span.traceIdHigh : 0L, span.traceId);
       if (!groupedByTraceId.containsKey(traceId)) {
-        groupedByTraceId.put(traceId, new LinkedList<Span>());
+        groupedByTraceId.put(traceId, new LinkedList<>());
       }
       groupedByTraceId.get(traceId).add(span);
     }
 
-    List<List<Span>> result = new ArrayList<List<Span>>(groupedByTraceId.size());
+    List<List<Span>> result = new ArrayList<>(groupedByTraceId.size());
     for (List<Span> sameTraceId : groupedByTraceId.values()) {
       result.add(adjust ? CorrectForClockSkew.apply(MergeById.apply(sameTraceId)) : sameTraceId);
     }

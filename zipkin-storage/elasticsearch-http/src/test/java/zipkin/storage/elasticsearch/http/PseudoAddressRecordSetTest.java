@@ -14,9 +14,7 @@
 package zipkin.storage.elasticsearch.http;
 
 import com.google.common.net.InetAddresses;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.List;
 import okhttp3.Dns;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,10 +27,8 @@ public class PseudoAddressRecordSetTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none();
 
-  Dns underlying = new Dns() {
-    @Override public List<InetAddress> lookup(String hostname) throws UnknownHostException {
-      throw new UnsupportedOperationException();
-    }
+  Dns underlying = hostname -> {
+    throw new UnsupportedOperationException();
   };
 
   @Test
@@ -66,11 +62,9 @@ public class PseudoAddressRecordSetTest {
 
   @Test
   public void onlyLooksUpHostnames() throws UnknownHostException {
-    underlying = new Dns() {
-      @Override public List<InetAddress> lookup(String hostname) throws UnknownHostException {
-        assertThat(hostname).isEqualTo("myhost");
-        return asList(InetAddresses.forString("2.2.2.2"));
-      }
+    underlying = hostname -> {
+      assertThat(hostname).isEqualTo("myhost");
+      return asList(InetAddresses.forString("2.2.2.2"));
     };
 
     Dns result = PseudoAddressRecordSet.create(asList("http://1.1.1.1:9200", "http://myhost:9200"),

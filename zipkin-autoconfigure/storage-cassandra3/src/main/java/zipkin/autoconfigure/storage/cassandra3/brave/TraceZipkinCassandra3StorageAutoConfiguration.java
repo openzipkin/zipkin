@@ -13,7 +13,6 @@
  */
 package zipkin.autoconfigure.storage.cassandra3.brave;
 
-import com.datastax.driver.core.Session;
 import com.github.kristofa.brave.Brave;
 import com.github.kristofa.brave.SpanCollector;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,10 +38,6 @@ public class TraceZipkinCassandra3StorageAutoConfiguration {
   @Autowired @Lazy SpanCollector collector;
 
   @Bean SessionFactory tracingSessionFactory() {
-    return new SessionFactory() {
-      @Override public Session create(Cassandra3Storage storage) {
-        return TracedSession.create(delegate.create(storage), brave, collector);
-      }
-    };
+    return storage -> TracedSession.create(delegate.create(storage), brave, collector);
   }
 }

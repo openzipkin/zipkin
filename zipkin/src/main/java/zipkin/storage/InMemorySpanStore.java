@@ -40,12 +40,12 @@ import static zipkin.internal.Util.sortedList;
 
 /** Internally, spans are indexed on 64-bit trace ID */
 public final class InMemorySpanStore implements SpanStore {
-  private final Multimap<Long, Span> traceIdToSpans = new LinkedListMultimap<Long, Span>();
-  private final Set<Pair<Long>> traceIdTimeStamps = new TreeSet<Pair<Long>>(VALUE_2_DESCENDING);
+  private final Multimap<Long, Span> traceIdToSpans = new LinkedListMultimap<>();
+  private final Set<Pair<Long>> traceIdTimeStamps = new TreeSet<>(VALUE_2_DESCENDING);
   private final Multimap<String, Pair<Long>> serviceToTraceIdTimeStamp =
-      new SortedByValue2Descending<String>();
+      new SortedByValue2Descending<>();
   private final Multimap<String, String> serviceToSpanNames =
-      new LinkedHashSetMultimap<String, String>();
+      new LinkedHashSetMultimap<>();
   private final boolean strictTraceId;
   volatile int acceptedSpanCount;
 
@@ -101,7 +101,7 @@ public final class InMemorySpanStore implements SpanStore {
    * Used for testing. Returns all traces unconditionally.
    */
   public synchronized List<List<Span>> getRawTraces() {
-    List<List<Span>> result = new ArrayList<List<Span>>();
+    List<List<Span>> result = new ArrayList<>();
     for (long traceId : traceIdToSpans.keySet()) {
       Collection<Span> sameTraceId = traceIdToSpans.get(traceId);
       for (List<Span> next : GroupByTraceId.apply(sameTraceId, strictTraceId, false)) {
@@ -117,7 +117,7 @@ public final class InMemorySpanStore implements SpanStore {
     Set<Long> traceIdsInTimerange = traceIdsDescendingByTimestamp(request);
     if (traceIdsInTimerange.isEmpty()) return Collections.emptyList();
 
-    List<List<Span>> result = new ArrayList<List<Span>>();
+    List<List<Span>> result = new ArrayList<>();
     for (Iterator<Long> traceId = traceIdsInTimerange.iterator();
         traceId.hasNext() && result.size() < request.limit; ) {
       Collection<Span> sameTraceId = traceIdToSpans.get(traceId.next());
@@ -139,7 +139,7 @@ public final class InMemorySpanStore implements SpanStore {
     long startTs = endTs - request.lookback * 1000;
 
     if (traceIdTimestamps == null || traceIdTimestamps.isEmpty()) return Collections.emptySet();
-    Set<Long> result = new LinkedHashSet<Long>();
+    Set<Long> result = new LinkedHashSet<>();
     for (Pair<Long> traceIdTimestamp : traceIdTimestamps) {
       if (traceIdTimestamp._2 >= startTs || traceIdTimestamp._2 <= endTs) {
         result.add(traceIdTimestamp._1);
@@ -167,7 +167,7 @@ public final class InMemorySpanStore implements SpanStore {
     if (spans == null || spans.isEmpty()) return null;
     if (!strictTraceId) return sortedList(spans);
 
-    List<Span> filtered = new ArrayList<Span>(spans);
+    List<Span> filtered = new ArrayList<>(spans);
     Iterator<Span> iterator = filtered.iterator();
     while (iterator.hasNext()) {
       if (iterator.next().traceIdHigh != traceIdHigh) {
@@ -205,34 +205,31 @@ public final class InMemorySpanStore implements SpanStore {
 
   static final class LinkedListMultimap<K, V> extends Multimap<K, V> {
     @Override Collection<V> valueContainer() {
-      return new LinkedList<V>();
+      return new LinkedList<>();
     }
   }
 
-  static final Comparator<Pair<Long>> VALUE_2_DESCENDING = new Comparator<Pair<Long>>() {
-    @Override
-    public int compare(Pair<Long> left, Pair<Long> right) {
-      int result = right._2.compareTo(left._2);
-      if (result != 0) return result;
-      return right._1.compareTo(left._1);
-    }
+  static final Comparator<Pair<Long>> VALUE_2_DESCENDING = (left, right) -> {
+    int result = right._2.compareTo(left._2);
+    if (result != 0) return result;
+    return right._1.compareTo(left._1);
   };
 
   /** QueryRequest.limit needs trace ids are returned in timestamp descending order. */
   static final class SortedByValue2Descending<K> extends Multimap<K, Pair<Long>> {
     @Override Set<Pair<Long>> valueContainer() {
-      return new TreeSet<Pair<Long>>(VALUE_2_DESCENDING);
+      return new TreeSet<>(VALUE_2_DESCENDING);
     }
   }
 
   static final class LinkedHashSetMultimap<K, V> extends Multimap<K, V> {
     @Override Collection<V> valueContainer() {
-      return new LinkedHashSet<V>();
+      return new LinkedHashSet<>();
     }
   }
 
   static abstract class Multimap<K, V> {
-    private final Map<K, Collection<V>> delegate = new LinkedHashMap<K, Collection<V>>();
+    private final Map<K, Collection<V>> delegate = new LinkedHashMap<>();
 
     abstract Collection<V> valueContainer();
 

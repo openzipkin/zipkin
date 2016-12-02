@@ -518,12 +518,12 @@ public final class JsonCodec implements Codec {
 
   public List<List<Span>> readTraces(byte[] bytes) {
     JsonReader reader = jsonReader(bytes);
-    List<List<Span>> result = new LinkedList<List<Span>>(); // cause we don't know how long it will be
+    List<List<Span>> result = new LinkedList<>(); // cause we don't know how long it will be
     try {
       reader.beginArray();
       while (reader.hasNext()) {
         reader.beginArray();
-        List<Span> trace = new LinkedList<Span>(); // cause we don't know how long it will be
+        List<Span> trace = new LinkedList<>(); // cause we don't know how long it will be
         while (reader.hasNext()) {
           trace.add(SPAN_ADAPTER.fromJson(reader));
         }
@@ -638,7 +638,7 @@ public final class JsonCodec implements Codec {
     try {
       reader.beginArray();
       if (reader.hasNext()) {
-        result = new LinkedList<T>(); // cause we don't know how long it will be
+        result = new LinkedList<>(); // cause we don't know how long it will be
       } else {
         result = Collections.emptyList();
       }

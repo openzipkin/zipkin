@@ -235,6 +235,16 @@
           <classifier>exec</classifier>
         </configuration>
       </plugin>
+      <!-- disable retrolambda since this module uses java 8 types -->
+      <plugin>
+        <groupId>net.orfjackal.retrolambda</groupId>
+        <artifactId>retrolambda-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>

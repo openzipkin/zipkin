@@ -307,14 +307,14 @@ public final class Span implements Comparable<Span>, Serializable {
      * @see Span#annotations
      */
     public Builder annotations(Collection<Annotation> annotations) {
-      this.annotations = new HashSet<Annotation>(annotations);
+      this.annotations = new HashSet<>(annotations);
       return this;
     }
 
     /** @see Span#annotations */
     public Builder addAnnotation(Annotation annotation) {
       if (annotations == null) {
-        annotations = new HashSet<Annotation>();
+        annotations = new HashSet<>();
       }
       annotations.add(annotation);
       return this;
@@ -326,14 +326,14 @@ public final class Span implements Comparable<Span>, Serializable {
      * @see Span#binaryAnnotations
      */
     public Builder binaryAnnotations(Collection<BinaryAnnotation> binaryAnnotations) {
-      this.binaryAnnotations = new HashSet<BinaryAnnotation>(binaryAnnotations);
+      this.binaryAnnotations = new HashSet<>(binaryAnnotations);
       return this;
     }
 
     /** @see Span#binaryAnnotations */
     public Builder addBinaryAnnotation(BinaryAnnotation binaryAnnotation) {
       if (binaryAnnotations == null) {
-        binaryAnnotations = new HashSet<BinaryAnnotation>();
+        binaryAnnotations = new HashSet<>();
       }
       binaryAnnotations.add(binaryAnnotation);
       return this;
@@ -436,7 +436,7 @@ public final class Span implements Comparable<Span>, Serializable {
 
   /** Returns the distinct {@link Endpoint#serviceName service names} that logged to this span. */
   public Set<String> serviceNames() {
-    Set<String> result = new HashSet<String>();
+    Set<String> result = new HashSet<>();
     for (Annotation a : annotations) {
       if (a.endpoint == null) continue;
       if (a.endpoint.serviceName.isEmpty()) continue;
