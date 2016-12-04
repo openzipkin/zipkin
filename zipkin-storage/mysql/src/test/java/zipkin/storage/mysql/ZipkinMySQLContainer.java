@@ -58,8 +58,7 @@ public class ZipkinMySQLContainer extends GenericContainer<ZipkinMySQLContainer>
     return dataSource;
   }
 
-  @Override
-  protected void containerIsStarting(InspectContainerResponse containerInfo) {
+  @Override protected void containerIsStarting(InspectContainerResponse containerInfo) {
     try {
       dataSource = new MariaDbDataSource(
           getContainerIpAddress(),
@@ -73,8 +72,7 @@ public class ZipkinMySQLContainer extends GenericContainer<ZipkinMySQLContainer>
     }
   }
 
-  @Override
-  protected void containerIsStarted(InspectContainerResponse containerInfo) {
+  @Override protected void containerIsStarted(InspectContainerResponse containerInfo) {
     String[] scripts = {
         // Drop all previously created tables in zipkin.*
         "drop_zipkin_tables.sql",
