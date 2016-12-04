@@ -83,15 +83,6 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- this dependency is needed because TestContainers will use the driver to verify that container is started -->
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>5.1.35</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
-
   <build>
     <pluginManagement>
       <plugins>

@@ -13,47 +13,31 @@
  */
 package zipkin.storage.mysql;
 
-import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.mariadb.jdbc.MariaDbDataSource;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.jdbc.ext.ScriptUtils;
-import org.testcontainers.shaded.com.google.common.base.Charsets;
-import org.testcontainers.shaded.com.google.common.io.Resources;
 import zipkin.internal.LazyCloseable;
-import zipkin.internal.Nullable;
 
-import java.net.URL;
-import java.sql.Connection;
-import java.sql.SQLException;
-
+import static org.junit.Assume.assumeTrue;
 import static zipkin.internal.Util.envOr;
 
 public class LazyMySQLStorage extends LazyCloseable<MySQLStorage>
     implements TestRule {
 
-  final String image;
+  final String version;
 
-  MySQLContainer container;
+  ZipkinMySQLContainer container;
 
-  public LazyMySQLStorage(String image) {
-    this.image = image;
+  public LazyMySQLStorage(String version) {
+    this.version = version;
   }
 
   @Override protected MySQLStorage compute() {
     try {
-      container = new MySQLContainer(image)
-          .withConfigurationOverride("mysql_conf_override/");
+      container = new ZipkinMySQLContainer(version);
       container.start();
-
-      URL resource = Resources.getResource("mysql.sql");
-      String sql = Resources.toString(resource, Charsets.UTF_8);
-      try (Connection connection = container.createConnection("")) {
-        ScriptUtils.executeSqlScript(connection, "mysql.sql", sql);
-      }
-      System.out.println("Will use TestContainers Elasticsearch instance");
+      System.out.println("Will use TestContainers MySQL instance");
     } catch (Exception e) {
       // Ignored
     }
@@ -63,24 +47,23 @@ public class LazyMySQLStorage extends LazyCloseable<MySQLStorage>
   }
 
   public MySQLStorage.Builder computeStorageBuilder() {
-    MariaDbDataSource dataSource = new MariaDbDataSource();
+    final MariaDbDataSource dataSource;
 
-    try {
-      if (container != null && container.isRunning()) {
-         dataSource.setUrl(container.getJdbcUrl());
-         dataSource.setUserName(container.getUsername());
-         dataSource.setPassword(container.getPassword());
-      } else {
-        String mysqlUrl = mysqlUrlFromEnv();
-        if (mysqlUrl == null) {
-          throw new AssumptionViolatedException(
-              "Minimally, the environment variable MYSQL_USER must be set");
-        }
-        dataSource.setUrl(mysqlUrl);
-      }
-    } catch (SQLException e) {
-      throw new AssumptionViolatedException(e.getMessage(), e);
+    if (container != null && container.getDataSource() != null) {
+      dataSource = container.getDataSource();
+    } else {
+      dataSource = new MariaDbDataSource();
+
+      dataSource.setUser(System.getenv("MYSQL_USER"));
+      assumeTrue("Minimally, the environment variable MYSQL_USER must be set", dataSource.getUser() != null);
+
+      dataSource.setServerName(envOr("MYSQL_HOST", "localhost"));
+      dataSource.setPort(envOr("MYSQL_TCP_PORT", 3306));
+      dataSource.setDatabaseName(envOr("MYSQL_DB", "zipkin"));
+      dataSource.setPassword(envOr("MYSQL_PASS", ""));
     }
+
+    dataSource.setProperties("autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8");
 
     return new MySQLStorage.Builder()
         .datasource(dataSource)
@@ -109,18 +92,5 @@ public class LazyMySQLStorage extends LazyCloseable<MySQLStorage>
         }
       }
     };
-  }
-
-  @Nullable
-  private static String mysqlUrlFromEnv() {
-    if (System.getenv("MYSQL_USER") == null) return null;
-    String mysqlHost = envOr("MYSQL_HOST", "localhost");
-    int mysqlPort = envOr("MYSQL_TCP_PORT", 3306);
-    String mysqlUser = envOr("MYSQL_USER", "");
-    String mysqlPass = envOr("MYSQL_PASS", "");
-    String mysqlDb = envOr("MYSQL_DB", "zipkin");
-
-    return String.format("jdbc:mysql://%s:%s/%s?user=%s&password=%s&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8",
-        mysqlHost, mysqlPort, mysqlDb, mysqlUser, mysqlPass);
   }
 }
