@@ -12,6 +12,7 @@
 # the License.
 #
 
+# NOTE: we don't use Docker-based testing in CircleCI (as we do in TravisCI) to keep both ways for now.
 machine:
   services:
     - mysql
