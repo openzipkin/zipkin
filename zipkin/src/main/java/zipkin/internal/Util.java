@@ -86,7 +86,7 @@ public final class Util {
     long to = midnightUTC(endTs);
     long from = midnightUTC(endTs - (lookback != null ? lookback : endTs));
 
-    List<Date> days = new ArrayList<Date>();
+    List<Date> days = new ArrayList<>();
     for (long time = from; time <= to; time += TimeUnit.DAYS.toMillis(1)) {
       days.add(new Date(time));
     }

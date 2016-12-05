@@ -105,6 +105,16 @@
           </execution>
         </executions>
       </plugin>
+      <!-- disable retrolambda as this module doesn't include Java -->
+      <plugin>
+        <groupId>net.orfjackal.retrolambda</groupId>
+        <artifactId>retrolambda-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>

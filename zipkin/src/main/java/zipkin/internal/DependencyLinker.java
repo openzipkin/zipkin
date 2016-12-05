@@ -37,7 +37,7 @@ import static java.util.logging.Level.FINE;
 public final class DependencyLinker {
   private static final Logger logger = Logger.getLogger(DependencyLinker.class.getName());
 
-  private final Map<Pair<String>, Long> linkMap = new LinkedHashMap<Pair<String>, Long>();
+  private final Map<Pair<String>, Long> linkMap = new LinkedHashMap<>();
 
   /**
    * @param spans spans where all spans have the same trace id
@@ -45,7 +45,7 @@ public final class DependencyLinker {
   public DependencyLinker putTrace(Collection<Span> spans) {
     if (spans.isEmpty()) return this;
 
-    List<DependencyLinkSpan> linkSpans = new LinkedList<DependencyLinkSpan>();
+    List<DependencyLinkSpan> linkSpans = new LinkedList<>();
     for (Span s : MergeById.apply(spans)) {
       linkSpans.add(DependencyLinkSpan.from(s));
     }
@@ -58,7 +58,7 @@ public final class DependencyLinker {
   public DependencyLinker putTrace(Iterator<DependencyLinkSpan> spans) {
     if (!spans.hasNext()) return this;
 
-    Node.TreeBuilder<DependencyLinkSpan> builder = new Node.TreeBuilder<DependencyLinkSpan>();
+    Node.TreeBuilder<DependencyLinkSpan> builder = new Node.TreeBuilder<>();
     while (spans.hasNext()) {
       DependencyLinkSpan next = spans.next();
       builder.addNode(next.parentId, next.id, next);
@@ -129,7 +129,7 @@ public final class DependencyLinker {
 
   public List<DependencyLink> link() {
     // links are merged by mapping to parent/child and summing corresponding links
-    List<DependencyLink> result = new ArrayList<DependencyLink>(linkMap.size());
+    List<DependencyLink> result = new ArrayList<>(linkMap.size());
     for (Map.Entry<Pair<String>, Long> entry : linkMap.entrySet()) {
       result.add(DependencyLink.create(entry.getKey()._1, entry.getKey()._2, entry.getValue()));
     }
@@ -138,7 +138,7 @@ public final class DependencyLinker {
 
   /** links are merged by mapping to parent/child and summing corresponding links */
   public static List<DependencyLink> merge(Iterable<DependencyLink> in) {
-    Map<Pair<String>, Long> links = new LinkedHashMap<Pair<String>, Long>();
+    Map<Pair<String>, Long> links = new LinkedHashMap<>();
 
     for (DependencyLink link : in) {
       Pair<String> parentChild = Pair.create(link.parent, link.child);
@@ -147,7 +147,7 @@ public final class DependencyLinker {
       links.put(parentChild, callCount);
     }
 
-    List<DependencyLink> result = new ArrayList<DependencyLink>(links.size());
+    List<DependencyLink> result = new ArrayList<>(links.size());
     for (Map.Entry<Pair<String>, Long> link : links.entrySet()) {
       result.add(DependencyLink.create(link.getKey()._1, link.getKey()._2, link.getValue()));
     }

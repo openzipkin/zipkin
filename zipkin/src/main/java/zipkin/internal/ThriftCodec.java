@@ -282,8 +282,10 @@ public final class ThriftCodec implements Codec {
     }
   };
 
-  static final ThriftAdapter<List<Annotation>> ANNOTATIONS_ADAPTER = new ListAdapter<Annotation>(ANNOTATION_ADAPTER);
-  static final ThriftAdapter<List<BinaryAnnotation>> BINARY_ANNOTATIONS_ADAPTER = new ListAdapter<BinaryAnnotation>(BINARY_ANNOTATION_ADAPTER);
+  static final ThriftAdapter<List<Annotation>> ANNOTATIONS_ADAPTER =
+      new ListAdapter<>(ANNOTATION_ADAPTER);
+  static final ThriftAdapter<List<BinaryAnnotation>> BINARY_ANNOTATIONS_ADAPTER =
+      new ListAdapter<>(BINARY_ANNOTATION_ADAPTER);
 
   static final ThriftAdapter<Span> SPAN_ADAPTER = new ThriftAdapter<Span>() {
 
@@ -404,8 +406,8 @@ public final class ThriftCodec implements Codec {
     }
   };
 
-  static final ThriftAdapter<List<Span>> SPANS_ADAPTER = new ListAdapter<Span>(SPAN_ADAPTER);
-  static final ThriftAdapter<List<List<Span>>> TRACES_ADAPTER = new ListAdapter<List<Span>>(SPANS_ADAPTER);
+  static final ThriftAdapter<List<Span>> SPANS_ADAPTER = new ListAdapter<>(SPAN_ADAPTER);
+  static final ThriftAdapter<List<List<Span>>> TRACES_ADAPTER = new ListAdapter<>(SPANS_ADAPTER);
 
   static final ThriftAdapter<DependencyLink> DEPENDENCY_LINK_ADAPTER = new ThriftAdapter<DependencyLink>() {
 
@@ -465,7 +467,8 @@ public final class ThriftCodec implements Codec {
     }
   };
 
-  static final ThriftAdapter<List<DependencyLink>> DEPENDENCY_LINKS_ADAPTER = new ListAdapter<DependencyLink>(DEPENDENCY_LINK_ADAPTER);
+  static final ThriftAdapter<List<DependencyLink>> DEPENDENCY_LINKS_ADAPTER =
+      new ListAdapter<>(DEPENDENCY_LINK_ADAPTER);
 
   @Override
   public DependencyLink readDependencyLink(byte[] bytes) {
@@ -522,7 +525,7 @@ public final class ThriftCodec implements Codec {
     int length = guardLength(bytes, CONTAINER_LENGTH_LIMIT);
     if (length == 0) return Collections.emptyList();
     if (length == 1) return Collections.singletonList(reader.read(bytes));
-    List<T> result = new ArrayList<T>(length);
+    List<T> result = new ArrayList<>(length);
     for (int i = 0; i < length; i++) {
       result.add(reader.read(bytes));
     }

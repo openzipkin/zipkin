@@ -28,11 +28,11 @@ public final class MergeById {
 
   public static List<Span> apply(Collection<Span> spans) {
     if (spans == null || spans.isEmpty()) return Collections.emptyList();
-    List<Span> result = new ArrayList<Span>(spans.size());
-    Map<Long, List<Span>> spanIdToSpans = new LinkedHashMap<Long, List<Span>>();
+    List<Span> result = new ArrayList<>(spans.size());
+    Map<Long, List<Span>> spanIdToSpans = new LinkedHashMap<>();
     for (Span span : spans) {
       if (!spanIdToSpans.containsKey(span.id)) {
-        spanIdToSpans.put(span.id, new LinkedList<Span>());
+        spanIdToSpans.put(span.id, new LinkedList<>());
       }
       spanIdToSpans.get(span.id).add(span);
     }

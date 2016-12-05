@@ -14,7 +14,6 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.base.Function;
-import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
@@ -182,11 +181,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
             if (input == null) return Collections.emptyList();
             // Due to tokenization of the trace ID, our matches are imprecise on Span.traceIdHigh
             return FluentIterable.from(GroupByTraceId.apply(input, strictTraceId, true))
-                .filter(new Predicate<List<Span>>() {
-                  @Override public boolean apply(List<Span> input) {
-                    return input.get(0).traceIdHigh == 0 || request.test(input);
-                  }
-                }).toList();
+                .filter(trace -> trace.get(0).traceIdHigh == 0 || request.test(trace)).toList();
           }
         });
   }

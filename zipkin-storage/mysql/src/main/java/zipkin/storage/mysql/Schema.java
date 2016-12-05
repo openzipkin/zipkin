@@ -80,7 +80,7 @@ final class Schema {
 
   /** Returns a mutable list */
   static <T> List<T> list(T... elements) {
-    return new ArrayList<T>(Arrays.asList(elements));
+    return new ArrayList<>(Arrays.asList(elements));
   }
 
   Condition spanTraceIdCondition(SelectOffsetStep<? extends Record> traceIdQuery) {

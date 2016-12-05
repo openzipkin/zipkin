@@ -115,7 +115,7 @@ public class LazyCloseableTest {
 
   static class TestLazyCloseable<T> extends LazyCloseable<T> {
     static <T> TestLazyCloseable<T> create(Supplier<T> delegate) {
-      return new TestLazyCloseable<T>(delegate);
+      return new TestLazyCloseable<>(delegate);
     }
 
     final Supplier<T> delegate;

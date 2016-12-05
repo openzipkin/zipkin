@@ -43,10 +43,6 @@
     <main.java.version>1.7</main.java.version>
     <main.signature.artifact>java17</main.signature.artifact>
 
-    <!-- default bytecode version for src/test -->
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
-
     <main.basedir>${project.basedir}</main.basedir>
 
     <brave.version>3.13.0</brave.version>
@@ -433,33 +429,51 @@
           <artifactId>maven-shade-plugin</artifactId>
           <version>${maven-shade-plugin.version}</version>
         </plugin>
+
         <plugin>
-                <groupId>org.eclipse.m2e</groupId>
-                <artifactId>lifecycle-mapping</artifactId>
-                <version>1.0.0</version>
-                <configuration>
-                    <lifecycleMappingMetadata>
-                        <pluginExecutions>
-                            <pluginExecution>
-                                <pluginExecutionFilter>
-                                    <groupId>org.apache.maven.plugins</groupId>
-                                    <artifactId>maven-compiler-plugin</artifactId>
-                                    <versionRange>[3.3,)</versionRange>
-                                    <goals>
-                                        <goal>compile</goal>
-                                        <goal>testCompile</goal>
-                                    </goals>
-                                </pluginExecutionFilter>
-                                <action>
-                                    <configurator>
-                                        <id>org.eclipse.m2e.jdt.javaConfigurator</id>
-                                    </configurator>
-                                </action>
-                            </pluginExecution>
-                        </pluginExecutions>
-                    </lifecycleMappingMetadata>
-                </configuration>
-            </plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <versionRange>[3.3,)</versionRange>
+                    <goals>
+                      <goal>compile</goal>
+                      <goal>testCompile</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <configurator>
+                      <id>org.eclipse.m2e.jdt.javaConfigurator</id>
+                    </configurator>
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>net.orfjackal.retrolambda</groupId>
+          <artifactId>retrolambda-maven-plugin</artifactId>
+          <version>2.3.0</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>process-main</goal>
+              </goals>
+              <configuration>
+                <target>${main.java.version}</target>
+                <fork>false</fork>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
     </pluginManagement>
 
@@ -467,21 +481,10 @@
       <plugin>
         <inherited>true</inherited>
         <artifactId>maven-compiler-plugin</artifactId>
-        <executions>
-          <!-- Ensure main source tree compiles to Java ${main.java.version} bytecode. -->
-          <execution>
-            <id>default-compile</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <source>${main.java.version}</source>
-              <target>${main.java.version}</target>
-            </configuration>
-          </execution>
-        </executions>
         <configuration>
+          <!-- Retrolambda will rewrite lambdas as ${main.java.version} bytecode -->
+          <source>1.8</source>
+          <target>1.8</target>
           <compilerId>javac-with-errorprone</compilerId>
           <forceJavacCompilerUse>true</forceJavacCompilerUse>
           <showWarnings>true</showWarnings>
@@ -498,6 +501,12 @@
             <version>${errorprone.version}</version>
           </dependency>
         </dependencies>
+      </plugin>
+
+      <!-- Explicitly disable when using java version 1.8+ or not using java -->
+      <plugin>
+        <groupId>net.orfjackal.retrolambda</groupId>
+        <artifactId>retrolambda-maven-plugin</artifactId>
       </plugin>
 
       <plugin>

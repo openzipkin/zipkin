@@ -27,7 +27,7 @@ final class InternalAsyncToBlockingSpanStoreAdapter implements SpanStore {
   }
 
   @Override public List<List<Span>> getTraces(QueryRequest request) {
-    CallbackCaptor<List<List<Span>>> captor = new CallbackCaptor<List<List<Span>>>();
+    CallbackCaptor<List<List<Span>>> captor = new CallbackCaptor<>();
     delegate.getTraces(request, captor);
     return captor.get();
   }
@@ -37,7 +37,7 @@ final class InternalAsyncToBlockingSpanStoreAdapter implements SpanStore {
   }
 
   @Override public List<Span> getTrace(long traceIdHigh, long traceIdLow) {
-    CallbackCaptor<List<Span>> captor = new CallbackCaptor<List<Span>>();
+    CallbackCaptor<List<Span>> captor = new CallbackCaptor<>();
     delegate.getTrace(traceIdHigh, traceIdLow, captor);
     return captor.get();
   }
@@ -47,25 +47,25 @@ final class InternalAsyncToBlockingSpanStoreAdapter implements SpanStore {
   }
 
   @Override public List<Span> getRawTrace(long traceIdHigh, long traceIdLow) {
-    CallbackCaptor<List<Span>> captor = new CallbackCaptor<List<Span>>();
+    CallbackCaptor<List<Span>> captor = new CallbackCaptor<>();
     delegate.getRawTrace(traceIdHigh, traceIdLow, captor);
     return captor.get();
   }
 
   @Override public List<String> getServiceNames() {
-    CallbackCaptor<List<String>> captor = new CallbackCaptor<List<String>>();
+    CallbackCaptor<List<String>> captor = new CallbackCaptor<>();
     delegate.getServiceNames(captor);
     return captor.get();
   }
 
   @Override public List<String> getSpanNames(String serviceName) {
-    CallbackCaptor<List<String>> captor = new CallbackCaptor<List<String>>();
+    CallbackCaptor<List<String>> captor = new CallbackCaptor<>();
     delegate.getSpanNames(serviceName, captor);
     return captor.get();
   }
 
   @Override public List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback) {
-    CallbackCaptor<List<DependencyLink>> captor = new CallbackCaptor<List<DependencyLink>>();
+    CallbackCaptor<List<DependencyLink>> captor = new CallbackCaptor<>();
     delegate.getDependencies(endTs, lookback, captor);
     return captor.get();
   }

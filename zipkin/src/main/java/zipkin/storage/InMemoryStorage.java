@@ -13,8 +13,6 @@
  */
 package zipkin.storage;
 
-import java.util.concurrent.Executor;
-
 import static zipkin.storage.StorageAdapters.blockingToAsync;
 
 /**
@@ -52,13 +50,8 @@ public final class InMemoryStorage implements StorageComponent {
 
   InMemoryStorage(Builder builder) {
     spanStore = new InMemorySpanStore(builder);
-    final Executor callingThread = new Executor() {
-      @Override public void execute(Runnable command) {
-        command.run();
-      }
-    };
-    asyncSpanStore = blockingToAsync(spanStore, callingThread);
-    asyncConsumer = blockingToAsync(spanStore.spanConsumer, callingThread);
+    asyncSpanStore = blockingToAsync(spanStore, Runnable::run);
+    asyncConsumer = blockingToAsync(spanStore.spanConsumer, Runnable::run);
   }
 
   @Override public InMemorySpanStore spanStore() {

@@ -34,7 +34,7 @@ public final class InMemoryCollectorMetrics implements CollectorMetrics {
   private final String spansDropped;
 
   public InMemoryCollectorMetrics() {
-    this(new ConcurrentHashMap<String, AtomicInteger>(), null);
+    this(new ConcurrentHashMap<>(), null);
   }
 
   InMemoryCollectorMetrics(ConcurrentHashMap<String, AtomicInteger> metrics, String transport) {
