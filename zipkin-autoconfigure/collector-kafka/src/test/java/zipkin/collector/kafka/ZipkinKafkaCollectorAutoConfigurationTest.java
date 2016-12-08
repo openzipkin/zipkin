@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.autoconfigure.collector.kafka;
+package zipkin.collector.kafka;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -22,9 +22,10 @@ import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfigurati
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import zipkin.autoconfigure.collector.kafka.ZipkinKafkaCollectorAutoConfiguration;
+import zipkin.autoconfigure.collector.kafka.ZipkinKafkaCollectorProperties;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
-import zipkin.collector.kafka.KafkaCollector;
 import zipkin.storage.InMemoryStorage;
 import zipkin.storage.StorageComponent;
 
@@ -68,7 +69,7 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
   }
 
   @Test
-  public void canOverridesProperty_port() {
+  public void canOverrideProperty_topic() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context,
         "zipkin.collector.kafka.zookeeper:localhost",
@@ -80,6 +81,21 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
 
     assertThat(context.getBean(ZipkinKafkaCollectorProperties.class).getTopic())
         .isEqualTo("zapkin");
+  }
+
+  @Test
+  public void overrideWithNestedProperties() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.collector.kafka.zookeeper:localhost",
+        "zipkin.collector.kafka.overrides.auto.offset.reset:largest"
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinKafkaCollectorAutoConfiguration.class, InMemoryConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(KafkaCollector.class).connector.config.autoOffsetReset())
+        .isEqualTo("largest");
   }
 
   @Configuration
