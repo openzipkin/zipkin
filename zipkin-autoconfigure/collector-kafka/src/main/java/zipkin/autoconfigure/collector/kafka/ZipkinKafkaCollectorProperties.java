@@ -13,6 +13,9 @@
  */
 package zipkin.autoconfigure.collector.kafka;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Properties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.collector.kafka.KafkaCollector;
 
@@ -23,6 +26,7 @@ public class ZipkinKafkaCollectorProperties {
   private String groupId = "zipkin";
   private int streams = 1;
   private int maxMessageSize = 1024 * 1024;
+  private Map<String, String> overrides = new LinkedHashMap<>();
 
   public String getTopic() {
     return topic;
@@ -64,12 +68,21 @@ public class ZipkinKafkaCollectorProperties {
     this.maxMessageSize = maxMessageSize;
   }
 
+  public Map<String, String> getOverrides() {
+    return overrides;
+  }
+
+  public void setOverrides(Map<String, String> overrides) {
+    this.overrides = overrides;
+  }
+
   public KafkaCollector.Builder toBuilder() {
     return KafkaCollector.builder()
         .topic(topic)
         .zookeeper(zookeeper)
         .groupId(groupId)
         .streams(streams)
-        .maxMessageSize(maxMessageSize);
+        .maxMessageSize(maxMessageSize)
+        .overrides(overrides);
   }
 }

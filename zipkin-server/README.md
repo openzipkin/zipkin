@@ -259,6 +259,19 @@ $ docker run -d -p 2181:2181 -p 9092:9092 \
 $ java -jar zipkin.jar
 ```
 
+#### Overriding other properties
+You may need to override other consumer properties than what zipkin
+explicitly defines. In such case, you need to prefix that property name
+with "zipkin.collector.kafka.overrides" and pass it as a CLI argument or
+system property.
+
+For example, to override "overrides.auto.offset.reset", you can set a
+prefixed system property:
+
+```bash
+$ KAFKA_ZOOKEEPER=127.0.0.1:2181 java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
+```
+
 ### 128-bit trace IDs
 
 Zipkin supports 64 and 128-bit trace identifiers, typically serialized

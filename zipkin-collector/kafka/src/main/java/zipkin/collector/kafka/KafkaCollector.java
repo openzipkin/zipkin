@@ -32,6 +32,8 @@ import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.StorageComponent;
 
 import static kafka.consumer.Consumer.createJavaConsumerConnector;
+import static org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET_CONFIG;
+import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
 import static zipkin.internal.Util.checkNotNull;
 
 /**
@@ -48,13 +50,11 @@ public final class KafkaCollector implements CollectorComponent {
 
   /** Configuration including defaults needed to consume spans from a Kafka topic. */
   public static final class Builder implements CollectorComponent.Builder {
+    final Properties properties = new Properties();
     Collector.Builder delegate = Collector.builder(KafkaCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
     String topic = "zipkin";
-    String zookeeper;
-    String groupId = "zipkin";
     int streams = 1;
-    int maxMessageSize = 1024 * 1024;
 
     @Override public Builder storage(StorageComponent storage) {
       delegate.storage(storage);
@@ -80,13 +80,13 @@ public final class KafkaCollector implements CollectorComponent {
 
     /** The zookeeper connect string, ex. 127.0.0.1:2181. No default */
     public Builder zookeeper(String zookeeper) {
-      this.zookeeper = checkNotNull(zookeeper, "zookeeper");
+      properties.put("zookeeper.connect", checkNotNull(zookeeper, "zookeeper"));
       return this;
     }
 
     /** The consumer group this process is consuming on behalf of. Defaults to "zipkin" */
     public Builder groupId(String groupId) {
-      this.groupId = checkNotNull(groupId, "groupId");
+      properties.put(GROUP_ID_CONFIG, checkNotNull(groupId, "groupId"));
       return this;
     }
 
@@ -98,7 +98,26 @@ public final class KafkaCollector implements CollectorComponent {
 
     /** Maximum size of a message containing spans in bytes. Defaults to 1 MiB */
     public Builder maxMessageSize(int bytes) {
-      this.maxMessageSize = bytes;
+      properties.put("fetch.message.max.bytes", String.valueOf(bytes));
+      return this;
+    }
+
+    /**
+     * By default, a consumer will be built from properties derived from builder defaults,
+     * as well "auto.offset.reset" -> "smallest". Any properties set here will override the
+     * consumer config.
+     *
+     * <p>For example: Only consume spans since you connected by setting the below.
+     * <pre>{@code
+     * Map<String, String> overrides = new LinkedHashMap<>();
+     * overrides.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "largest");
+     * builder.overrides(overrides);
+     * }</pre>
+     *
+     * @see org.apache.kafka.clients.consumer.ConsumerConfig
+     */
+    public final Builder overrides(Map<String, String> overrides) {
+      properties.putAll(checkNotNull(overrides, "overrides"));
       return this;
     }
 
@@ -107,10 +126,16 @@ public final class KafkaCollector implements CollectorComponent {
     }
 
     Builder() {
+      // Settings below correspond to "Old Consumer Configs"
+      // http://kafka.apache.org/documentation.html
+      properties.put(GROUP_ID_CONFIG, "zipkin");
+      properties.put("fetch.message.max.bytes", String.valueOf(1024 * 1024));
+      // Same default as zipkin-scala, and keeps tests from hanging
+      properties.put(AUTO_OFFSET_RESET_CONFIG, "smallest");
     }
   }
 
-  final LazyCloseable<ZookeeperConsumerConnector> connector;
+  final LazyConnector connector;
   final LazyStreams streams;
 
   KafkaCollector(Builder builder) {
@@ -146,15 +171,7 @@ public final class KafkaCollector implements CollectorComponent {
     final ConsumerConfig config;
 
     LazyConnector(Builder builder) {
-      // Settings below correspond to "Old Consumer Configs"
-      // http://kafka.apache.org/documentation.html
-      Properties props = new Properties();
-      props.put("zookeeper.connect", builder.zookeeper);
-      props.put("group.id", builder.groupId);
-      props.put("fetch.message.max.bytes", String.valueOf(builder.maxMessageSize));
-      // Same default as zipkin-scala, and keeps tests from hanging
-      props.put("auto.offset.reset", "smallest");
-      this.config = new ConsumerConfig(props);
+      this.config = new ConsumerConfig(builder.properties);
     }
 
     @Override protected ZookeeperConsumerConnector compute() {
