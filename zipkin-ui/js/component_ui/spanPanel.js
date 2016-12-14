@@ -5,6 +5,7 @@ import {Constants} from './traceConstants';
 export default component(function spanPanel() {
   this.$annotationTemplate = null;
   this.$binaryAnnotationTemplate = null;
+  this.$moreInfoTemplate = null;
 
   this.show = function(e, span) {
     const self = this;
@@ -57,6 +58,16 @@ export default component(function spanPanel() {
       $binAnnoBody.append($row);
     });
 
+    const $moreInfoBody = this.$node.find('#moreInfo tbody').text('');
+    const moreInfo = [['traceId', span.traceId],
+                       ['spanId', span.id]];
+    $.each(moreInfo, (i, pair) => {
+      const $row = self.$moreInfoTemplate.clone();
+      $row.find('.key').text(pair[0]);
+      $row.find('.value').text(pair[1]);
+      $moreInfoBody.append($row);
+    });
+
     this.$node.modal('show');
   };
 
@@ -64,6 +75,7 @@ export default component(function spanPanel() {
     this.$node.modal('hide');
     this.$annotationTemplate = this.$node.find('#annotations tbody tr').remove();
     this.$binaryAnnotationTemplate = this.$node.find('#binaryAnnotations tbody tr').remove();
+    this.$moreInfoTemplate = this.$node.find('#moreInfo tbody tr').remove();
     this.on(document, 'uiRequestSpanPanel', this.show);
   });
 });

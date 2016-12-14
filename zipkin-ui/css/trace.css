@@ -194,6 +194,11 @@
   max-width: 75%;
 }
 
+#spanPanel #debugInfo td.value {
+  word-break: break-all;
+  max-width: 75%;
+}
+
 .modal-header .save {
   float: right;
   margin-right: 5px;
