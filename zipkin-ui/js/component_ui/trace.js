@@ -454,7 +454,7 @@ export default component(function trace() {
     if (serviceName !== undefined) {
       this.trigger(document, 'uiAddServiceNameFilter', {value: serviceName});
     } else {
-      this.expandSpans([this.spans[this.$node.find('.span:nth(1)').data('id')]]);
+      this.trigger(document, 'uiExpandAllSpans');
     }
   });
 });
