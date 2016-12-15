@@ -19,10 +19,11 @@
 </div>
 
 <div id="service-data-modal-container">
-  <div class="modal" id="serviceModal">
+  <div class="modal" id="serviceModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
           <h3 class="modal-title">
             <span id="serviceModalTitle">[title]</span>
           </h3>
@@ -46,10 +47,11 @@
     </div>
   </div>
 
-  <div class="modal" id="dependencyModal">
+  <div class="modal" id="dependencyModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
           <h3 class="modal-title text-center">
             <div id="dependencyModalParent">[parent]</div>
             <div class=""><span class="glyphicon glyphicon-arrow-down"></span></div>
