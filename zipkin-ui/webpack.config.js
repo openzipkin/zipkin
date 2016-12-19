@@ -6,7 +6,7 @@ var CopyWebpackPlugin = require('copy-webpack-plugin');
 var proxyURL = process.env.proxy || "http://localhost:8080/";
 console.log("API requests are forwarded to " + proxyURL);
 
-module.exports = {
+var webpackConfig = {
     entry: [
         __dirname + '/js/main.js',
         __dirname + '/css/style-loader.js'
@@ -56,3 +56,5 @@ module.exports = {
         }
     }
 };
+
+module.exports = webpackConfig;

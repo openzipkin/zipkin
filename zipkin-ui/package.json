@@ -8,7 +8,7 @@
     "test": "node node_modules/karma/bin/karma start --single-run",
     "test-watch": "node node_modules/karma/bin/karma start",
     "lint": "node node_modules/eslint/bin/eslint js test",
-    "build": "node node_modules/webpack/bin/webpack.js --bail"
+    "build": "node node_modules/webpack/bin/webpack.js --bail --optimize-minimize --optimize-occurrence-order --optimize-dedupe"
   },
   "author": "",
   "license": "Apache-2.0",
