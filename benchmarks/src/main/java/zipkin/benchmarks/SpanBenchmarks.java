@@ -49,6 +49,8 @@ public class SpanBenchmarks {
   static final Endpoint db =
       Endpoint.builder().serviceName("db").ipv4(172 << 24 | 17 << 16 | 2).port(3306).build();
 
+  final Span.Builder sharedBuilder = Span.builder();
+
   @Benchmark
   public Span buildLocalSpan() {
     return Span.builder()
@@ -64,6 +66,20 @@ public class SpanBenchmarks {
   @Benchmark
   public Span buildClientOnlySpan() {
     return Span.builder()
+        .traceId(1L)
+        .id(1L)
+        .name("")
+        .timestamp(1444438900948000L)
+        .duration(31000L)
+        .addAnnotation(Annotation.create(1444438900948000L, Constants.CLIENT_SEND, app))
+        .addAnnotation(Annotation.create(1444438900979000L, Constants.CLIENT_RECV, app))
+        .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, db))
+        .build();
+  }
+
+  @Benchmark
+  public Span buildClientOnlySpan_clear() {
+    return sharedBuilder.clear()
         .traceId(1L)
         .id(1L)
         .name("")
