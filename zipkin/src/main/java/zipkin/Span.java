@@ -197,6 +197,19 @@ public final class Span implements Comparable<Span>, Serializable {
     Builder() {
     }
 
+    public Builder clear() {
+      traceId = null;
+      traceIdHigh = null;
+      name = null;
+      id = null;
+      parentId = null;
+      timestamp = null;
+      if (annotations != null) annotations.clear();
+      if (binaryAnnotations != null) binaryAnnotations.clear();
+      debug = null;
+      return this;
+    }
+
     Builder(Span source) {
       this.traceId = source.traceId;
       this.traceIdHigh = source.traceIdHigh;
