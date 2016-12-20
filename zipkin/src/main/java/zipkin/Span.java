@@ -254,8 +254,8 @@ public final class Span implements Comparable<Span>, Serializable {
           this.duration = Math.max(this.duration, that.duration);
         }
       } else {
-        // We have 2 different timestamps and we don't know which one is authoritative as there
-        // can be a clock skew. Setting it to null here so that it can be applied later.
+        // We have 2 different timestamps and we don't know which one is authoritative.
+        // Setting it to null here so that it can be applied later.
         this.timestamp = null;
         this.duration = null;
       }
