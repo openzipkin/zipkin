@@ -22,6 +22,10 @@ import org.junit.Test;
 import zipkin.internal.Util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.Constants.CLIENT_RECV;
+import static zipkin.Constants.CLIENT_SEND;
+import static zipkin.Constants.SERVER_RECV;
+import static zipkin.Constants.SERVER_SEND;
 import static zipkin.TestObjects.APP_ENDPOINT;
 
 public class SpanTest {
@@ -85,6 +89,48 @@ public class SpanTest {
 
     assertThat(part1.toBuilder().merge(part2).build()).isEqualTo(expected);
     assertThat(part2.toBuilder().merge(part1).build()).isEqualTo(expected);
+  }
+
+  /**
+   * Test merging of client and server spans into a single span, with a clock skew. Final timestamp
+   * and duration for the span should be same as client.
+   */
+  @Test
+  public void timestampAndDurationMergeWithClockSkew() {
+
+    long today = Util.midnightUTC(System.currentTimeMillis());
+
+    long clientTimestamp = (today + 100) * 1000;
+    long clientDuration = 35 * 1000;
+
+    long serverTimestamp = (today + 200) * 1000;
+    long serverDuration = 30 * 1000;
+
+    Span clientPart = Span.builder()
+        .traceId(1L)
+        .name("test")
+        .id(1L)
+        .timestamp(clientTimestamp).duration(clientDuration)
+        .addAnnotation(Annotation.create(clientTimestamp, CLIENT_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create(clientTimestamp + clientDuration, CLIENT_RECV, APP_ENDPOINT))
+        .build();
+
+
+    Span serverPart = Span.builder()
+        .traceId(1L)
+        .name("test")
+        .id(1L)
+        .timestamp(serverTimestamp).duration(serverDuration)
+        .addAnnotation(Annotation.create(serverTimestamp, SERVER_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create(serverTimestamp + serverDuration, SERVER_SEND, APP_ENDPOINT))
+        .build();
+
+    Span completeSpan = clientPart.toBuilder()
+        .merge(serverPart)
+        .build();
+
+    assertThat(completeSpan.timestamp).isEqualTo(clientTimestamp);
+    assertThat(completeSpan.duration).isEqualTo(clientDuration);
   }
 
   /**
