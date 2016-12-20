@@ -32,9 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin.Span;
 import zipkin.collector.CollectorSampler;
-import zipkin.internal.Util;
 
 import static com.google.common.base.Preconditions.checkState;
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.checkNotNull;
 
@@ -186,7 +186,7 @@ public final class ZooKeeperCollectorSampler extends CollectorSampler implements
       log.debug("Store rates was: {} now {}", oldValue, newValue);
       if (oldValue != newValue) {
         storeRate.set(newValue);
-        storeRateGroup.setThisData(Integer.valueOf(newValue).toString().getBytes());
+        storeRateGroup.setThisData(Integer.valueOf(newValue).toString().getBytes(UTF_8));
       }
     }, 0, builder.updateFrequency, TimeUnit.SECONDS);
 
@@ -209,7 +209,7 @@ public final class ZooKeeperCollectorSampler extends CollectorSampler implements
       byte[] bytes = cache.getCurrentData().getData();
       if (bytes.length == 0) return;
       try {
-        targetStoreRate.set(Integer.valueOf(new String(bytes, Util.UTF_8)));
+        targetStoreRate.set(Integer.valueOf(new String(bytes, UTF_8)));
       } catch (NumberFormatException e) {
         log.warn("Error parsing target store rate {}", e.getMessage());
         return;

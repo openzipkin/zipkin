@@ -653,7 +653,7 @@ public final class JsonCodec implements Codec {
   }
 
   private static JsonReader jsonReader(byte[] bytes) {
-    return new JsonReader(new InputStreamReader(new ByteArrayInputStream(bytes)));
+    return new JsonReader(new InputStreamReader(new ByteArrayInputStream(bytes), UTF_8));
   }
 
   /** Inability to encode is a programming bug. */

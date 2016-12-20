@@ -40,6 +40,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
+import static zipkin.internal.Util.UTF_8;
 
 /**
  * Elasticsearch indexing is via {@link TransportClient}. Json is written into a command via {@link
@@ -55,7 +56,7 @@ import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 @State(Scope.Thread)
 @Threads(1)
 public class ElasticsearchBenchmarks {
-  static final byte[] TIMESTAMP_MILLIS_PREFIX = "{\"timestamp_millis\":".getBytes();
+  static final byte[] TIMESTAMP_MILLIS_PREFIX = "{\"timestamp_millis\":".getBytes(UTF_8);
   static final long TIMESTAMP_MILLIS = 146175049127L;
   static final byte[] tinySpan = read("/span-local.json");
   // client+server spans aren't "normal" because a collector usually only processes spans reported
@@ -127,11 +128,11 @@ public class ElasticsearchBenchmarks {
 
   // Convenience main entry-point
   public static void main(String[] args) throws RunnerException {
-    if (!new String(prefix_byteArray("{\"count\":1}".getBytes()))
+    if (!new String(prefix_byteArray("{\"count\":1}".getBytes(UTF_8)), UTF_8)
         .equals("{\"timestamp_millis\":" + Long.toString(TIMESTAMP_MILLIS) + ",\"count\":1}")) {
       throw new IllegalStateException("buggy code");
     }
-    if (!new String(prefix_channelBuffer("{\"count\":1}".getBytes()).toByteBuffer().array())
+    if (!new String(prefix_channelBuffer("{\"count\":1}".getBytes(UTF_8)).toByteBuffer().array(), UTF_8)
         .equals("{\"timestamp_millis\":" + Long.toString(TIMESTAMP_MILLIS) + ",\"count\":1}")) {
       throw new IllegalStateException("buggy code");
     }

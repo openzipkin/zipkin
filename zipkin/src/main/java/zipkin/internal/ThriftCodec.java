@@ -505,7 +505,7 @@ public final class ThriftCodec implements Codec {
     try {
       return reader.read(bytes);
     } catch (RuntimeException e) {
-      throw exceptionReading(reader.toString(), bytes, e);
+      throw exceptionReading(reader.toString(), e);
     }
   }
 
@@ -571,11 +571,11 @@ public final class ThriftCodec implements Codec {
     }
   }
 
-  static IllegalArgumentException exceptionReading(String type, ByteBuffer bytes, Exception e) {
+  static IllegalArgumentException exceptionReading(String type, Exception e) {
     String cause = e.getMessage() == null ? "Error" : e.getMessage();
     if (e instanceof EOFException) cause = "EOF";
     if (e instanceof IllegalStateException || e instanceof BufferUnderflowException) cause = "Malformed";
-    String message = String.format("%s reading %s from TBinary: ", cause, type, bytes);
+    String message = String.format("%s reading %s from TBinary", cause, type);
     throw new IllegalArgumentException(message, e);
   }
 

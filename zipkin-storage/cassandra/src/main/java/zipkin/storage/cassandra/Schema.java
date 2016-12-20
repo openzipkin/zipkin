@@ -24,6 +24,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static zipkin.internal.Util.UTF_8;
+
 final class Schema {
   private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
 
@@ -97,7 +99,7 @@ final class Schema {
   }
 
   static void applyCqlFile(String keyspace, Session session, String resource) {
-    try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(resource))) {
+    try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(resource), UTF_8)) {
       for (String cmd : CharStreams.toString(reader).split(";")) {
         cmd = cmd.trim().replace(" zipkin", " " + keyspace);
         if (!cmd.isEmpty()) {

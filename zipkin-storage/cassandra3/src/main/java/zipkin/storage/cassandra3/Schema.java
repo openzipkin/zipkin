@@ -37,6 +37,7 @@ import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Endpoint;
 
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.toLowerHex;
 
 final class Schema {
@@ -100,7 +101,7 @@ final class Schema {
   }
 
   static void applyCqlFile(String keyspace, Session session, String resource) {
-    try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(resource))) {
+    try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(resource), UTF_8)) {
       for (String cmd : CharStreams.toString(reader).split(";")) {
         cmd = cmd.trim().replace(" " + DEFAULT_KEYSPACE, " " + keyspace);
         if (!cmd.isEmpty()) {
