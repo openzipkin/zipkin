@@ -15,7 +15,6 @@ package zipkin.server;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import zipkin.server.brave.BootstrapTrace;
 
 @SpringBootApplication
 @EnableZipkinServer
@@ -23,7 +22,7 @@ public class ZipkinServer {
 
   public static void main(String[] args) {
     new SpringApplicationBuilder(ZipkinServer.class)
-        .listeners(new RegisterZipkinHealthIndicators(), BootstrapTrace.INSTANCE::record)
+        .listeners(new RegisterZipkinHealthIndicators())
         .properties("spring.config.name=zipkin-server").run(args);
   }
 }
