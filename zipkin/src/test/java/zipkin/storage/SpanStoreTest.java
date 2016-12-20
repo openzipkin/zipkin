@@ -807,8 +807,8 @@ public abstract class SpanStoreTest {
   }
 
   /**
-   * This test shows this even if there is clock skew between client and server, span.timestamp and
-   * duration is computed properly when we merge client and server part of a span.
+   * Test merging of client and server spans into a single span, with a clock skew. Final timestamp
+   * and duration for the span should be computed from the CLIENT_SEND and CLIENT_RECV.
    */
   @Test
   public void timeStampAndDurationWithClockSkew() {
