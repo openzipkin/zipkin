@@ -121,7 +121,7 @@ public final class KafkaCollector implements CollectorComponent {
       return this;
     }
 
-    public KafkaCollector build() {
+    @Override public KafkaCollector build() {
       return new KafkaCollector(this);
     }
 

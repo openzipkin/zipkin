@@ -25,9 +25,10 @@ import zipkin.storage.guava.GuavaSpanConsumer;
 
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
+import static zipkin.internal.Util.UTF_8;
 
 final class ElasticsearchSpanConsumer implements GuavaSpanConsumer {
-  private static final byte[] TIMESTAMP_MILLIS_PREFIX = "{\"timestamp_millis\":".getBytes();
+  private static final byte[] TIMESTAMP_MILLIS_PREFIX = "{\"timestamp_millis\":".getBytes(UTF_8);
   private static final ListenableFuture<Void> VOID = immediateFuture(null);
 
   private final InternalElasticsearchClient client;

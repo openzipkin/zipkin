@@ -179,7 +179,7 @@ final class HttpClient extends InternalElasticsearchClient {
         .tag("search-spansAggregations").build());
 
     return new CallbackListenableFuture<List<String>>(searchRequest) {
-      List<String> convert(ResponseBody responseBody) throws IOException {
+      @Override List<String> convert(ResponseBody responseBody) throws IOException {
         Set<String> result = collectValuesNamed(JsonReader.of(responseBody.source()), "key");
         return Util.sortedList(result);
       }
@@ -246,12 +246,12 @@ final class HttpClient extends InternalElasticsearchClient {
   static final class SearchResultFuture<T> extends CallbackListenableFuture<List<T>> {
     final JsonAdapter<T> adapter;
 
-    public SearchResultFuture(Call searchRequest, JsonAdapter<T> adapter) {
+    SearchResultFuture(Call searchRequest, JsonAdapter<T> adapter) {
       super(searchRequest);
       this.adapter = adapter;
     }
 
-    List<T> convert(ResponseBody responseBody) throws IOException {
+    @Override List<T> convert(ResponseBody responseBody) throws IOException {
       JsonReader hits = enterPath(JsonReader.of(responseBody.source()), "hits", "hits");
       if (hits == null || hits.peek() != JsonReader.Token.BEGIN_ARRAY) return null;
 

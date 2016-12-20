@@ -22,11 +22,13 @@ package com.twitter.zipkin.thriftjava;
 
 import java.util.Map;
 import java.util.HashMap;
+import javax.annotation.Generated;
 import org.apache.thrift.TEnum;
 
 /**
  * A subset of thrift base types, except BYTES.
  */
+@Generated("thrift")
 public enum AnnotationType implements org.apache.thrift.TEnum {
   /**
    * Set to 0x01 when key is CLIENT_ADDR or SERVER_ADDR
