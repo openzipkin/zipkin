@@ -789,7 +789,7 @@ public abstract class SpanStoreTest {
     // neither client, nor server set span.timestamp, duration
     Span clientViewDerived = Span.builder().traceId(1).name("derived").id(666)
         .addAnnotation(Annotation.create(clientTimestamp, CLIENT_SEND, client))
-        .addAnnotation(Annotation.create(clientTimestamp + clientDuration, CLIENT_SEND, client))
+        .addAnnotation(Annotation.create(clientTimestamp + clientDuration, CLIENT_RECV, client))
         .build();
 
     Span serverViewDerived = Span.builder().traceId(1).name("derived").id(666)
@@ -799,6 +799,43 @@ public abstract class SpanStoreTest {
 
     accept(serverView, serverViewDerived); // server span hits the collection tier first
     accept(clientView, clientViewDerived); // intentionally different collection event
+
+    for (Span span : store().getTrace(clientView.traceIdHigh, clientView.traceId)) {
+      assertThat(span.timestamp).isEqualTo(clientTimestamp);
+      assertThat(span.duration).isEqualTo(clientDuration);
+    }
+  }
+
+  /**
+   * This test shows this even if there is clock skew between client and server, span.timestamp and
+   * duration is computed properly when we merge client and server part of a span.
+   */
+  @Test
+  public void timeStampAndDurationWithClockSkew() {
+    Endpoint client = Endpoint.create("client", 192 << 24 | 168 << 16 | 1);
+    Endpoint server = Endpoint.create("server", 192 << 24 | 168 << 16 | 2);
+
+    long clientTimestamp = (today + 100) * 1000;
+    long clientDuration = 35 * 1000;
+
+    long serverTimestamp = (today + 200) * 1000;
+    long serverDuration = 30 * 1000;
+
+    // both client and server set span.timestamp, duration
+    Span clientView = Span.builder().traceId(1).name("direct").id(666)
+        .timestamp(clientTimestamp).duration(clientDuration)
+        .addAnnotation(Annotation.create(clientTimestamp, CLIENT_SEND, client))
+        .addAnnotation(Annotation.create(clientTimestamp + clientDuration, CLIENT_RECV, client))
+        .build();
+
+    Span serverView = Span.builder().traceId(1).name("direct").id(666)
+        .timestamp(serverTimestamp).duration(serverDuration)
+        .addAnnotation(Annotation.create(serverTimestamp, SERVER_RECV, server))
+        .addAnnotation(Annotation.create(serverTimestamp + serverDuration, SERVER_SEND, server))
+        .build();
+
+    accept(serverView);
+    accept(clientView);
 
     for (Span span : store().getTrace(clientView.traceIdHigh, clientView.traceId)) {
       assertThat(span.timestamp).isEqualTo(clientTimestamp);
