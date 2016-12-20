@@ -11,14 +11,19 @@ export default component(function spanName() {
   };
 
   this.render = function(spans) {
+    this.$node.empty();
+    this.$node.append($($.parseHTML('<option value="all">all</option>')));
+
     const selectedSpanName = queryString.parse(window.location.search).spanName;
-    const html =
-      '<option value="all">all</option>' +
-      $.map(spans, span => {
-        const selected = span === selectedSpanName ? 'selected' : '';
-        return `<option value='${span}' ${selected}>${span}</option>`;
-      }).join('');
-    this.$node.html(html);
+    $.each(spans, (i, span) => {
+      const option = $($.parseHTML('<option/>'));
+      option.val(span);
+      option.text(span);
+      if (span === selectedSpanName) {
+        option.prop('selected', true);
+      }
+      this.$node.append(option);
+    });
   };
 
   this.after('initialize', function() {
