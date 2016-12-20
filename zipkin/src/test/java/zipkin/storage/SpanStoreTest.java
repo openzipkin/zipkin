@@ -806,43 +806,6 @@ public abstract class SpanStoreTest {
     }
   }
 
-  /**
-   * Test merging of client and server spans into a single span, with a clock skew. Final timestamp
-   * and duration for the span should be computed from the CLIENT_SEND and CLIENT_RECV.
-   */
-  @Test
-  public void timeStampAndDurationWithClockSkew() {
-    Endpoint client = Endpoint.create("client", 192 << 24 | 168 << 16 | 1);
-    Endpoint server = Endpoint.create("server", 192 << 24 | 168 << 16 | 2);
-
-    long clientTimestamp = (today + 100) * 1000;
-    long clientDuration = 35 * 1000;
-
-    long serverTimestamp = (today + 200) * 1000;
-    long serverDuration = 30 * 1000;
-
-    // both client and server set span.timestamp, duration
-    Span clientView = Span.builder().traceId(1).name("direct").id(666)
-        .timestamp(clientTimestamp).duration(clientDuration)
-        .addAnnotation(Annotation.create(clientTimestamp, CLIENT_SEND, client))
-        .addAnnotation(Annotation.create(clientTimestamp + clientDuration, CLIENT_RECV, client))
-        .build();
-
-    Span serverView = Span.builder().traceId(1).name("direct").id(666)
-        .timestamp(serverTimestamp).duration(serverDuration)
-        .addAnnotation(Annotation.create(serverTimestamp, SERVER_RECV, server))
-        .addAnnotation(Annotation.create(serverTimestamp + serverDuration, SERVER_SEND, server))
-        .build();
-
-    accept(serverView);
-    accept(clientView);
-
-    for (Span span : store().getTrace(clientView.traceIdHigh, clientView.traceId)) {
-      assertThat(span.timestamp).isEqualTo(clientTimestamp);
-      assertThat(span.duration).isEqualTo(clientDuration);
-    }
-  }
-
   // Bugs have happened in the past where trace limit was mistaken for span count.
   @Test
   public void traceWithManySpans() {

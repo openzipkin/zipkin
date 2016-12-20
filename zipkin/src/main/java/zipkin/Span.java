@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.Nullable;
 import zipkin.storage.StorageComponent;
 
@@ -244,6 +245,16 @@ public final class Span implements Comparable<Span>, Serializable {
         this.parentId = that.parentId;
       }
 
+      for (Annotation a : that.annotations) {
+        addAnnotation(a);
+      }
+      for (BinaryAnnotation a : that.binaryAnnotations) {
+        addBinaryAnnotation(a);
+      }
+      if (this.debug == null) {
+        this.debug = that.debug;
+      }
+
       // Single timestamp makes duration easy: just choose max
       if (this.timestamp == null || that.timestamp == null || this.timestamp.equals(
           that.timestamp)) {
@@ -254,21 +265,12 @@ public final class Span implements Comparable<Span>, Serializable {
           this.duration = Math.max(this.duration, that.duration);
         }
       } else {
-        // We have 2 different timestamps and we don't know which one is authoritative.
-        // Setting it to null here so that it can be applied later.
+        // We have 2 different timestamps. Use ApplyTimestampAndDuration to compute final timestamp.
         this.timestamp = null;
         this.duration = null;
+        return ApplyTimestampAndDuration.apply(this.build()).toBuilder();
       }
 
-      for (Annotation a : that.annotations) {
-        addAnnotation(a);
-      }
-      for (BinaryAnnotation a : that.binaryAnnotations) {
-        addBinaryAnnotation(a);
-      }
-      if (this.debug == null) {
-        this.debug = that.debug;
-      }
       return this;
     }
 
