@@ -789,7 +789,7 @@ public abstract class SpanStoreTest {
     // neither client, nor server set span.timestamp, duration
     Span clientViewDerived = Span.builder().traceId(1).name("derived").id(666)
         .addAnnotation(Annotation.create(clientTimestamp, CLIENT_SEND, client))
-        .addAnnotation(Annotation.create(clientTimestamp + clientDuration, CLIENT_SEND, client))
+        .addAnnotation(Annotation.create(clientTimestamp + clientDuration, CLIENT_RECV, client))
         .build();
 
     Span serverViewDerived = Span.builder().traceId(1).name("derived").id(666)

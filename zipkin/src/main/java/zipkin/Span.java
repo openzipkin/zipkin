@@ -253,11 +253,16 @@ public final class Span implements Comparable<Span>, Serializable {
         } else if (that.duration != null) {
           this.duration = Math.max(this.duration, that.duration);
         }
-      } else { // duration might need to be recalculated, since we have 2 different timestamps
-        long thisEndTs = this.duration != null ? this.timestamp + this.duration : this.timestamp;
-        long thatEndTs = that.duration != null ? that.timestamp + that.duration : that.timestamp;
-        this.timestamp = Math.min(this.timestamp, that.timestamp);
-        this.duration = Math.max(thisEndTs, thatEndTs) - this.timestamp;
+      } else {
+        // We have 2 different timestamps. If we have client data in either one of them, use that,
+        // else set timestamp and duration to null
+        if (containsAnnotation(that.annotations, Constants.CLIENT_SEND)) {
+          this.timestamp = that.timestamp;
+          this.duration = that.duration;
+        } else if (!containsAnnotation(this.annotations, Constants.CLIENT_SEND)) {
+          this.timestamp = null;
+          this.duration = null;
+        }
       }
 
       for (Annotation a : that.annotations) {
@@ -270,6 +275,17 @@ public final class Span implements Comparable<Span>, Serializable {
         this.debug = that.debug;
       }
       return this;
+    }
+
+    private static boolean containsAnnotation(Collection<Annotation> annotations, String value) {
+      if (annotations != null) {
+        for (Annotation annotation : annotations) {
+          if (annotation.value.equals(value)) {
+            return true;
+          }
+        }
+      }
+      return false;
     }
 
     /** @see Span#name */
