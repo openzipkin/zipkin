@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.Nullable;
 import zipkin.storage.StorageComponent;
 
@@ -245,16 +244,6 @@ public final class Span implements Comparable<Span>, Serializable {
         this.parentId = that.parentId;
       }
 
-      for (Annotation a : that.annotations) {
-        addAnnotation(a);
-      }
-      for (BinaryAnnotation a : that.binaryAnnotations) {
-        addBinaryAnnotation(a);
-      }
-      if (this.debug == null) {
-        this.debug = that.debug;
-      }
-
       // Single timestamp makes duration easy: just choose max
       if (this.timestamp == null || that.timestamp == null || this.timestamp.equals(
           that.timestamp)) {
@@ -265,13 +254,38 @@ public final class Span implements Comparable<Span>, Serializable {
           this.duration = Math.max(this.duration, that.duration);
         }
       } else {
-        // We have 2 different timestamps. Use ApplyTimestampAndDuration to compute final timestamp.
-        this.timestamp = null;
-        this.duration = null;
-        return ApplyTimestampAndDuration.apply(this.build()).toBuilder();
+        // We have 2 different timestamps. If we have client data in either one of them, use that,
+        // else set timestamp and duration to null
+        if (containsAnnotation(that.annotations, Constants.CLIENT_SEND)) {
+          this.timestamp = that.timestamp;
+          this.duration = that.duration;
+        } else if (!containsAnnotation(this.annotations, Constants.CLIENT_SEND)) {
+          this.timestamp = null;
+          this.duration = null;
+        }
       }
 
+      for (Annotation a : that.annotations) {
+        addAnnotation(a);
+      }
+      for (BinaryAnnotation a : that.binaryAnnotations) {
+        addBinaryAnnotation(a);
+      }
+      if (this.debug == null) {
+        this.debug = that.debug;
+      }
       return this;
+    }
+
+    private static boolean containsAnnotation(Collection<Annotation> annotations, String value) {
+      if (annotations != null) {
+        for (Annotation annotation : annotations) {
+          if (annotation.value.equals(value)) {
+            return true;
+          }
+        }
+      }
+      return false;
     }
 
     /** @see Span#name */
