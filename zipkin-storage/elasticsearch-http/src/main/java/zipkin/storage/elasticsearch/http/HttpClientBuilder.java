@@ -26,6 +26,7 @@ public final class HttpClientBuilder extends InternalElasticsearchClient.Builder
   Lazy<List<String>> hosts;
   String pipeline;
   boolean flushOnWrites;
+  int maxRequests = 64;
 
   public static HttpClientBuilder create(OkHttpClient client) {
     return new HttpClientBuilder(client);
@@ -50,6 +51,12 @@ public final class HttpClientBuilder extends InternalElasticsearchClient.Builder
    */
   @Override public HttpClientBuilder hosts(Lazy<List<String>> hosts) {
     this.hosts = checkNotNull(hosts, "hosts");
+    return this;
+  }
+
+  /** Sets maximum in-flight requests from this process to any Elasticsearch host. Defaults to 64 */
+  public HttpClientBuilder maxRequests(int maxRequests) {
+    this.maxRequests = maxRequests;
     return this;
   }
 

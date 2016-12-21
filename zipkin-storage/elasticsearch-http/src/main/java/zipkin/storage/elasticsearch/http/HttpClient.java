@@ -60,12 +60,15 @@ final class HttpClient extends InternalElasticsearchClient {
     final OkHttpClient client;
     final boolean flushOnWrites;
     final String pipeline;
+    final int maxRequests;
+
 
     Factory(HttpClientBuilder builder) {
       this.hosts = builder.hosts;
       this.client = builder.client;
       this.flushOnWrites = builder.flushOnWrites;
       this.pipeline = builder.pipeline;
+      this.maxRequests = builder.maxRequests;
     }
 
     @Override public InternalElasticsearchClient create(String allIndices) {
@@ -91,6 +94,8 @@ final class HttpClient extends InternalElasticsearchClient {
     this.http = hosts.size() == 1
         ? f.client
         : f.client.newBuilder().dns(PseudoAddressRecordSet.create(hosts, f.client.dns())).build();
+    this.http.dispatcher().setMaxRequests(f.maxRequests);
+    this.http.dispatcher().setMaxRequestsPerHost(f.maxRequests);
     this.baseUrl = HttpUrl.parse(hosts.get(0));
     this.flushOnWrites = f.flushOnWrites;
     this.pipeline = f.pipeline;
