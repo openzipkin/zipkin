@@ -36,8 +36,11 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
   @ConditionalOnMissingBean
   InternalElasticsearchClient.Builder clientBuilder(
       @Qualifier("zipkinElasticsearchHttp") OkHttpClient client,
-      @Value("${zipkin.storage.elasticsearch.pipeline:}") String pipeline) {
-    return HttpClientBuilder.create(client).pipeline(pipeline.isEmpty() ? null : pipeline);
+      @Value("${zipkin.storage.elasticsearch.pipeline:}") String pipeline,
+      @Value("${zipkin.storage.elasticsearch.max-requests:64}") int maxRequests) {
+    return HttpClientBuilder.create(client)
+        .pipeline(pipeline.isEmpty() ? null : pipeline)
+        .maxRequests(maxRequests);
   }
 
   /** cheap check to see if we are likely to include urls */

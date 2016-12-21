@@ -82,6 +82,7 @@ zipkin:
       # host is left unset intentionally, to defer the decision
       hosts: ${ES_HOSTS:}
       pipeline: ${ES_PIPELINE:}
+      max-requests: ${ES_MAX_REQUESTS:64}
       aws:
         domain: ${ES_AWS_DOMAIN:}
         region: ${ES_AWS_REGION:}
