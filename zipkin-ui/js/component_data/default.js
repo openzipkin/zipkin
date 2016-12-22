@@ -21,12 +21,15 @@ export default component(function DefaultData() {
     const query = convertToApiQuery(window.location.search);
     const serviceName = query.serviceName;
     if (serviceName) {
-      $.ajax(`/api/v1/traces?${queryString.stringify(query)}`, {
+      const apiURL = `/api/v1/traces?${queryString.stringify(query)}`;
+      $.ajax(apiURL, {
         type: 'GET',
         dataType: 'json'
       }).done(traces => {
         const modelview = {
-          traces: traceSummariesToMustache(serviceName, traces.map(traceSummary))
+          traces: traceSummariesToMustache(serviceName, traces.map(traceSummary)),
+          apiURL,
+          rawResponse: traces
         };
         this.trigger('defaultPageModelView', modelview);
       }).fail(e => {

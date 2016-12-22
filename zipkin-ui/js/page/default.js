@@ -9,6 +9,7 @@ import ServiceNameUI from '../component_ui/serviceName';
 import SpanNameUI from '../component_ui/spanName';
 import InfoPanelUI from '../component_ui/infoPanel';
 import InfoButtonUI from '../component_ui/infoButton';
+import JsonPanelUI from '../component_ui/jsonPanel';
 import TraceFiltersUI from '../component_ui/traceFilters';
 import TracesUI from '../component_ui/traces';
 import TimeStampUI from '../component_ui/timeStamp';
@@ -39,6 +40,7 @@ const DefaultPageComponent = component(function DefaultPage() {
         annotationQuery,
         queryWasPerformed,
         count: modelView.traces.length,
+        apiURL: modelView.apiURL,
         ...modelView
       }));
 
@@ -48,6 +50,7 @@ const DefaultPageComponent = component(function DefaultPage() {
       SpanNameUI.attachTo('#spanName');
       InfoPanelUI.attachTo('#infoPanel');
       InfoButtonUI.attachTo('button.info-request');
+      JsonPanelUI.attachTo('#jsonPanel');
       TraceFiltersUI.attachTo('#trace-filters');
       TracesUI.attachTo('#traces');
       TimeStampUI.attachTo('#end-ts');
@@ -55,6 +58,13 @@ const DefaultPageComponent = component(function DefaultPage() {
       BackToTop.attachTo('#backToTop');
 
       $('.timeago').timeago();
+
+      this.$node.find('#rawResultsJsonLink').click(e => {
+        e.preventDefault();
+        this.trigger('uiRequestJsonPanel', {title: 'Search Results',
+                                            obj: modelView.rawResponse,
+                                            link: modelView.apiURL});
+      });
     });
 
     DefaultData.attachTo(document);
