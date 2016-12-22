@@ -103,7 +103,7 @@ final class Buffer {
 
   Buffer writeAscii(String v) {
     int length = v.length();
-    for (char i = 0; i < length; i++) {
+    for (int i = 0; i < length; i++) {
       buf[pos++] = (byte) v.charAt(i);
     }
     return this;
