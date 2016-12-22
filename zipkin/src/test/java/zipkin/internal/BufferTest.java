@@ -14,6 +14,7 @@
 package zipkin.internal;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import org.junit.Test;
 import sun.net.util.IPAddressUtil;
 
@@ -170,5 +171,17 @@ public class BufferTest {
   static String writeJsonEscaped(byte[] v) {
     byte[] buffered = new Buffer(jsonEscapedSizeInBytes(v)).writeJsonEscaped(v).toByteArray();
     return new String(buffered, UTF_8);
+  }
+
+  // Test creating Buffer for a long string
+  @Test
+  public void writeString() throws UnsupportedEncodingException {
+    StringBuffer stringBuffer = new StringBuffer();
+    for (int i = 0 ; i < 100000 ; i ++) {
+      stringBuffer.append("a");
+    }
+    String string = stringBuffer.toString();
+    byte[] buffered = new Buffer(Buffer.asciiSizeInBytes(string)).writeAscii(string).toByteArray();
+    assertThat(new String(buffered, "US-ASCII")).isEqualTo(string);
   }
 }
