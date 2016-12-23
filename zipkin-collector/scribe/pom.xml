@@ -46,7 +46,7 @@
     <dependency>
       <groupId>com.facebook.swift</groupId>
       <artifactId>swift-service</artifactId>
-      <version>0.21.1</version>
+      <version>0.23.1</version>
       <exclusions>
         <!-- airlift:configuration includes bval-jsr303, which can easily conflict -->
         <exclusion>
