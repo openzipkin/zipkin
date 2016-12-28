@@ -31,7 +31,9 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import zipkin.Annotation;
 import zipkin.Codec;
+import zipkin.Constants;
 import zipkin.Span;
 import zipkin.internal.Nullable;
 import zipkin.internal.Pair;
@@ -112,9 +114,12 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       Long timestamp = guessTimestamp(span);
       spans.add(span);
 
+      boolean isServerRecvSpan = isServerRecvSpan(span);
+
       futures.add(storeSpan(
           span.traceId,
           timestamp != null ? timestamp : 0L,
+          isServerRecvSpan,
           String.format("%s%d_%d_%d",
               span.traceIdHigh == 0 ? "" : span.traceIdHigh + "_",
               span.id,
@@ -136,12 +141,24 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     return transform(Futures.allAsList(futures.build()), TO_VOID);
   }
 
+  private static boolean isServerRecvSpan(Span span) {
+    for (int i = 0, length = span.annotations.size(); i < length; i++) {
+      Annotation annotation = span.annotations.get(i);
+      if (annotation.value.equals(Constants.SERVER_RECV)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /**
    * Store the span in the underlying storage for later retrieval.
    */
-  ListenableFuture<?> storeSpan(long traceId, long timestamp, String key, ByteBuffer span) {
+  ListenableFuture<?> storeSpan(long traceId, long timestamp, boolean isServerRecvSpan, String key, ByteBuffer span) {
     try {
-      if (0 == timestamp && metadata.compactionClass.contains("DateTieredCompactionStrategy")) {
+      // If we couldn't guess the timestamp, that probably means that there was a missing timestamp.
+      // However, tracers are supposed to put a timestamp *only* on the span originator (not on SR annotation)
+      if (0 == timestamp && !isServerRecvSpan && metadata.compactionClass.contains("DateTieredCompactionStrategy")) {
         LOG.warn("Span {} in trace {} had no timestamp. "
             + "If this happens a lot consider switching back to SizeTieredCompactionStrategy for "
             + "{}.traces", key, traceId, session.getLoggedKeyspace());
