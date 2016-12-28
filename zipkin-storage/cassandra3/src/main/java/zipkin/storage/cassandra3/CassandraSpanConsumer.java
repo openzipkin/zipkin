@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
+import zipkin.Constants;
 import zipkin.Span;
 import zipkin.storage.cassandra3.Schema.AnnotationUDT;
 import zipkin.storage.cassandra3.Schema.BinaryAnnotationUDT;
@@ -102,7 +103,8 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       // indexing occurs by timestamp, so derive one if not present.
       Long timestamp = guessTimestamp(span);
       TraceIdUDT traceId = new TraceIdUDT(span.traceIdHigh, span.traceId);
-      futures.add(storeSpan(span, traceId, timestamp));
+      boolean isServerRecvSpan = isServerRecvSpan(span);
+      futures.add(storeSpan(span, traceId, isServerRecvSpan, timestamp));
 
       for (String serviceName : span.serviceNames()) {
         // QueryRequest.min/maxDuration
@@ -121,12 +123,23 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
     return transform(Futures.allAsList(futures.build()), TO_VOID);
   }
 
+  private static boolean isServerRecvSpan(Span span) {
+    for (int i = 0, length = span.annotations.size(); i < length; i++) {
+      Annotation annotation = span.annotations.get(i);
+      if (annotation.value.equals(Constants.SERVER_RECV)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /**
    * Store the span in the underlying storage for later retrieval.
    */
-  ListenableFuture<?> storeSpan(Span span, TraceIdUDT traceId, Long timestamp) {
+  ListenableFuture<?> storeSpan(Span span, TraceIdUDT traceId, boolean isServerRecvSpan, Long timestamp) {
     try {
       if ((null == timestamp || 0 == timestamp)
+          && !isServerRecvSpan
           && metadata.compactionClass.contains("TimeWindowCompactionStrategy")) {
 
         LOG.warn("Span {} in trace {} had no timestamp. "
@@ -145,7 +158,7 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       Set<String> annotationKeys = CassandraUtil.annotationKeys(span);
 
       if (!strictTraceId && traceId.getHigh() != 0L) {
-        storeSpan(span, new TraceIdUDT(0L, traceId.getLow()), timestamp);
+        storeSpan(span, new TraceIdUDT(0L, traceId.getLow()), isServerRecvSpan, timestamp);
       }
 
       BoundStatement bound = bindWithName(insertSpan, "insert-span")
