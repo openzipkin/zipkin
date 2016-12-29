@@ -47,7 +47,12 @@ export default component(function spanPanel() {
         const maybeObject = anno[$this.data('key')];
         // In case someone is storing escaped json as binary annotation values
         // TODO: this class is not testable at the moment
-        $this.text($.type(maybeObject) === 'object' ? JSON.stringify(maybeObject) : maybeObject);
+        const type = $.type(maybeObject);
+        if (type === 'object' || type === 'array') {
+          $this.append(`<pre>${JSON.stringify(maybeObject, null, 2)}</pre>`);
+        } else {
+          $this.text(maybeObject);
+        }
       });
       $binAnnoBody.append($row);
     });
