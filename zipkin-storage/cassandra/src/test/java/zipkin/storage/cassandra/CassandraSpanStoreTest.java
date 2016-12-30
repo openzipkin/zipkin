@@ -15,15 +15,20 @@ package zipkin.storage.cassandra;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
+
 import org.junit.AssumptionViolatedException;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin.Annotation;
+import zipkin.BinaryAnnotation;
+import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.internal.ApplyTimestampAndDuration;
+import zipkin.internal.Util;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStoreTest;
 
@@ -97,6 +102,33 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
     // Implementation over-fetches on the index to allow the user to receive unsurprising results.
     assertThat(store().getTraces(QueryRequest.builder().limit(traceCount).build()))
         .hasSize(traceCount);
+  }
+
+  @Test
+  public void searchingByAnnotationShouldFilterBeforeLimiting() {
+    long now = System.currentTimeMillis();
+
+    int queryLimit = 2;
+    Endpoint endpoint = TestObjects.LOTS_OF_SPANS[0].annotations.get(0).endpoint;
+    BinaryAnnotation ba = BinaryAnnotation.create("host.name", "host1", endpoint);
+
+    int nbTraceFetched = queryLimit * storage.indexFetchMultiplier;
+    IntStream.range(0, nbTraceFetched).forEach(i ->
+            accept(TestObjects.LOTS_OF_SPANS[i++].toBuilder().timestamp(now - (i * 1000)).build())
+    );
+    // Add two traces with the binary annotation we're looking for
+    IntStream.range(nbTraceFetched, nbTraceFetched + 2).forEach(i ->
+            accept(TestObjects.LOTS_OF_SPANS[i++].toBuilder().timestamp(now - (i * 1000))
+                    .addBinaryAnnotation(ba)
+                    .build())
+    );
+    QueryRequest queryRequest =
+            QueryRequest.builder()
+                    .addBinaryAnnotation(ba.key, new String(ba.value, Util.UTF_8))
+                    .serviceName(endpoint.serviceName)
+                    .limit(queryLimit)
+                    .build();
+    assertThat(store().getTraces(queryRequest)).hasSize(queryLimit);
   }
 
   long rowCount(String table) {

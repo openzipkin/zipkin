@@ -219,7 +219,9 @@ public final class CassandraSpanStore implements GuavaSpanStore {
       // While a valid port of the scala cassandra span store (from zipkin 1.35), there is a fault.
       // each annotation key is an intersection, meaning we likely return < traceIndexFetchSize.
       List<ListenableFuture<Map<Long, Long>>> futureKeySetsToIntersect = new ArrayList<>();
-      futureKeySetsToIntersect.add(traceIdToTimestamp);
+      if (request.spanName != null) {
+        futureKeySetsToIntersect.add(traceIdToTimestamp);
+      }
       for (String annotationKey : annotationKeys) {
         futureKeySetsToIntersect.add(getTraceIdsByAnnotation(annotationKey,
             request.endTs * 1000, request.lookback * 1000, traceIndexFetchSize));
