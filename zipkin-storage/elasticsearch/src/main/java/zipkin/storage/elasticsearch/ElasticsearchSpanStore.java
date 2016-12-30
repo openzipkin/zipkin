@@ -214,10 +214,7 @@ final class ElasticsearchSpanStore implements GuavaSpanStore {
 
     return client.collectBucketKeys(catchAll,
         boolQuery().must(matchAllQuery()).filter(filter),
-        AggregationBuilders.terms("name_agg")
-            .order(Order.term(true))
-            .field("name")
-            .size(Integer.MAX_VALUE));
+        AggregationBuilders.terms("name_agg").field("name").size(Integer.MAX_VALUE));
   }
 
   @Override public ListenableFuture<List<DependencyLink>> getDependencies(long endMillis,
