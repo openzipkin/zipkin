@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,10 +14,26 @@
 package zipkin.internal;
 
 import org.junit.Test;
+import zipkin.Annotation;
+import zipkin.Constants;
 import zipkin.Endpoint;
+import zipkin.Span;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static zipkin.Constants.CLIENT_RECV;
+import static zipkin.Constants.CLIENT_SEND;
+import static zipkin.Constants.SERVER_RECV;
+import static zipkin.Constants.SERVER_SEND;
+import static zipkin.TestObjects.APP_ENDPOINT;
+import static zipkin.TestObjects.WEB_ENDPOINT;
+import static zipkin.internal.CorrectForClockSkew.asMap;
+import static zipkin.internal.CorrectForClockSkew.getTimestamp;
 import static zipkin.internal.CorrectForClockSkew.ipsMatch;
 
 public class CorrectForClockSkewTest {
@@ -71,5 +87,42 @@ public class CorrectForClockSkewTest {
     assertTrue(ipsMatch(ipv4, ipv4));
     assertTrue(ipsMatch(both, ipv4));
     assertTrue(ipsMatch(ipv4, both));
+  }
+
+  @Test
+  public void clockSkewIsCorrectedIfRpcSpanSendsAfterClientReceive() {
+    long now = System.currentTimeMillis();
+
+    final long traceId = 1L;
+    final long rootSpanId = 1L;
+    final long rpcSpanId = 2L;
+    Span rootSpan = Span.builder()
+            .traceId(traceId).id(rootSpanId).name("root").timestamp(now * 1000)
+            .addAnnotation(Annotation.create(now * 1000, SERVER_RECV, WEB_ENDPOINT))
+            .addAnnotation(Annotation.create((now + 350) * 1000, SERVER_SEND, WEB_ENDPOINT))
+            .build();
+    long skew = 50000;
+    long clientSendTimestamp = (now + 50) * 1000;
+    Span rpcSpan = Span.builder()
+            .traceId(traceId).id(rpcSpanId).parentId(rootSpanId).name("rpc")
+            .addAnnotation(Annotation.create(clientSendTimestamp, CLIENT_SEND, WEB_ENDPOINT))
+            .addAnnotation(Annotation.create((now + 50 + skew) * 1000, SERVER_RECV, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((now + 150 + skew) * 1000, SERVER_SEND, APP_ENDPOINT))
+            .addAnnotation(Annotation.create((now + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
+            .build();
+    List<Span> adjustedSpans = CorrectForClockSkew.apply(Arrays.asList(rpcSpan, rootSpan));
+
+    Span adjustedRpcSpan = adjustedSpans.stream().filter(s -> s.id == rpcSpanId).findFirst().get();
+    long adjustedRpcSpanSRTimestamp = getTimestamp(asMap(adjustedRpcSpan.annotations), Constants.SERVER_RECV);
+
+    long serverDuration = getSpanDuration(rpcSpan, Constants.SERVER_RECV, Constants.SERVER_SEND);
+    long clientDuration = getSpanDuration(rpcSpan, Constants.CLIENT_SEND, Constants.CLIENT_RECV);
+    long expectedSkew = (clientDuration - serverDuration) / 2L;
+    assertEquals(clientSendTimestamp + expectedSkew, adjustedRpcSpanSRTimestamp);
+  }
+
+  private long getSpanDuration(Span span, String beginAnnotation, String endAnnotation) {
+    Map<String, Annotation> annotationsAsMap = asMap(span.annotations);
+    return getTimestamp(annotationsAsMap, endAnnotation) - getTimestamp(annotationsAsMap, beginAnnotation);
   }
 }
