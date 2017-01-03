@@ -46,3 +46,20 @@ Please add the following to your .travis.yml file:
 
   secure: "mQnECL+dXc5l9wCYl/wUz+AaYFGt/1G31NAZcTLf2RbhKo8mUenc4hZNjHCEv+4ZvfYLd/NoTNMhTCxmtBMz1q4CahPKLWCZLoRD1ExeXwRymJPIhxZUPzx9yHPHc5dmgrSYOCJLJKJmHiOl9/bJi123456="
 ```
+
+## First release of the year
+
+The license plugin verifies license headers of files include a copyright notice indicating the years a file was affected.
+This information is taken from git history. There's a once-a-year problem with files that include version numbers (pom.xml).
+When a release tag is made, it increments version numbers, then commits them to git. On the first release of the year,
+further commands will fail due to the version increments invalidating the copyright statement. The way to sort this out is
+the following:
+
+Before you do the first release of the year, move the SNAPSHOT version back and forth from whatever the current is.
+In-between, re-apply the licenses.
+```bash
+$ ./mvnw versions:set -DnewVersion=1.3.3-SNAPSHOT -DgenerateBackupPoms=false
+$ ./mvnw com.mycila:license-maven-plugin:format
+$ ./mvnw versions:set -DnewVersion=1.3.2-SNAPSHOT -DgenerateBackupPoms=false
+$ git commit -am"Adjusts copyright headers for this year"
+```
