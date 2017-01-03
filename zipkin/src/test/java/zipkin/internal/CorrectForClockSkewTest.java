@@ -21,9 +21,8 @@ import zipkin.Span;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static zipkin.Constants.CLIENT_RECV;
@@ -31,12 +30,13 @@ import static zipkin.Constants.CLIENT_SEND;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
 import static zipkin.TestObjects.APP_ENDPOINT;
+import static zipkin.TestObjects.DB_ENDPOINT;
 import static zipkin.TestObjects.WEB_ENDPOINT;
-import static zipkin.internal.CorrectForClockSkew.asMap;
-import static zipkin.internal.CorrectForClockSkew.getTimestamp;
 import static zipkin.internal.CorrectForClockSkew.ipsMatch;
 
 public class CorrectForClockSkewTest {
+  private static final long networkLatency = 10L;
+
   Endpoint ipv6 = Endpoint.builder()
       .serviceName("web")
       // Cheat so we don't have to catch an exception here
@@ -91,38 +91,62 @@ public class CorrectForClockSkewTest {
 
   @Test
   public void clockSkewIsCorrectedIfRpcSpanSendsAfterClientReceive() {
-    long now = System.currentTimeMillis();
-
-    final long traceId = 1L;
-    final long rootSpanId = 1L;
-    final long rpcSpanId = 2L;
-    Span rootSpan = Span.builder()
-            .traceId(traceId).id(rootSpanId).name("root").timestamp(now * 1000)
-            .addAnnotation(Annotation.create(now * 1000, SERVER_RECV, WEB_ENDPOINT))
-            .addAnnotation(Annotation.create((now + 350) * 1000, SERVER_SEND, WEB_ENDPOINT))
-            .build();
-    long skew = 50000;
-    long clientSendTimestamp = (now + 50) * 1000;
-    Span rpcSpan = Span.builder()
-            .traceId(traceId).id(rpcSpanId).parentId(rootSpanId).name("rpc")
-            .addAnnotation(Annotation.create(clientSendTimestamp, CLIENT_SEND, WEB_ENDPOINT))
-            .addAnnotation(Annotation.create((now + 50 + skew) * 1000, SERVER_RECV, APP_ENDPOINT))
-            .addAnnotation(Annotation.create((now + 150 + skew) * 1000, SERVER_SEND, APP_ENDPOINT))
-            .addAnnotation(Annotation.create((now + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
-            .build();
-    List<Span> adjustedSpans = CorrectForClockSkew.apply(Arrays.asList(rpcSpan, rootSpan));
-
-    Span adjustedRpcSpan = adjustedSpans.stream().filter(s -> s.id == rpcSpanId).findFirst().get();
-    long adjustedRpcSpanSRTimestamp = getTimestamp(asMap(adjustedRpcSpan.annotations), Constants.SERVER_RECV);
-
-    long serverDuration = getSpanDuration(rpcSpan, Constants.SERVER_RECV, Constants.SERVER_SEND);
-    long clientDuration = getSpanDuration(rpcSpan, Constants.CLIENT_SEND, Constants.CLIENT_RECV);
-    long expectedSkew = (clientDuration - serverDuration) / 2L;
-    assertEquals(clientSendTimestamp + expectedSkew, adjustedRpcSpanSRTimestamp);
+    assertClockSkewIsCorrectlyApplied(50000);
   }
 
-  private long getSpanDuration(Span span, String beginAnnotation, String endAnnotation) {
-    Map<String, Annotation> annotationsAsMap = asMap(span.annotations);
-    return getTimestamp(annotationsAsMap, endAnnotation) - getTimestamp(annotationsAsMap, beginAnnotation);
+  @Test
+  public void clockSkewIsCorrectedIfRpcSpanSendsBeforeClientSend() {
+    assertClockSkewIsCorrectlyApplied(-50000);
+  }
+
+  private static void assertClockSkewIsCorrectlyApplied(long skew) {
+    long now = System.currentTimeMillis();
+
+    long rpcClientSendTs = now + 50L;
+    long dbClientSendTimestamp = now + 60 + skew;
+
+    long rootDuration = 350L;
+    long rpcDuration = 250L;
+    long dbDuration = 40L;
+
+    Span rootSpan = createRootSpan(WEB_ENDPOINT, now, rootDuration);
+    Span rpcSpan = createChildSpan(rootSpan, WEB_ENDPOINT, APP_ENDPOINT, rpcClientSendTs, rpcDuration, skew);
+    Span tierSpan = createChildSpan(rpcSpan, APP_ENDPOINT, DB_ENDPOINT, dbClientSendTimestamp, dbDuration, skew);
+
+    List<Span> adjustedSpans = CorrectForClockSkew.apply(Arrays.asList(rpcSpan, rootSpan, tierSpan));
+
+    Span adjustedRpcSpan = adjustedSpans.stream().filter(s -> s.id == rpcSpan.id).findFirst().get();
+    assertAnnotationTimestampEquals(rpcClientSendTs + networkLatency, adjustedRpcSpan, Constants.SERVER_RECV);
+    assertAnnotationTimestampEquals(adjustedRpcSpan.timestamp, adjustedRpcSpan, Constants.CLIENT_SEND);
+
+    Span adjustedTierSpan = adjustedSpans.stream().filter(s -> s.id == tierSpan.id).findFirst().get();
+    assertAnnotationTimestampEquals(adjustedTierSpan.timestamp, adjustedTierSpan, Constants.CLIENT_SEND);
+  }
+
+  private static Span createRootSpan(Endpoint endPoint, long beginTs, long duration) {
+    return Span.builder()
+            .traceId(1L).id(1L).name("root").timestamp(beginTs)
+            .addAnnotation(Annotation.create(beginTs, SERVER_RECV, endPoint))
+            .addAnnotation(Annotation.create(beginTs + duration, SERVER_SEND, endPoint))
+            .build();
+  }
+  private static Span createChildSpan(Span parentSpan, Endpoint from, Endpoint to, long beginTs, long duration, long skew) {
+    long spanId = parentSpan.id + 1;
+    long networkLatency = 10L;
+    return Span.builder()
+            .traceId(parentSpan.traceId).id(spanId).parentId(parentSpan.id).name("span" + spanId).timestamp(beginTs)
+            .addAnnotation(Annotation.create(beginTs, CLIENT_SEND, from))
+            .addAnnotation(Annotation.create(beginTs + skew + networkLatency, SERVER_RECV, to))
+            .addAnnotation(Annotation.create(beginTs + skew + duration - networkLatency, SERVER_SEND, to))
+            .addAnnotation(Annotation.create(beginTs + duration, CLIENT_RECV, from))
+            .build();
+  }
+
+  private static void assertAnnotationTimestampEquals(long expectedTimestamp, Span span, String annotation) {
+    assertThat(span.annotations)
+            .filteredOn(a -> a.value.equals(annotation))
+            .extracting(a -> a.timestamp)
+            .first()
+            .isEqualTo(expectedTimestamp);
   }
 }
