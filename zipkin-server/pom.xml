@@ -143,16 +143,18 @@
     <!-- Trace api controller activity with Brave -->
     <dependency>
       <groupId>io.zipkin.brave</groupId>
+      <artifactId>brave</artifactId>
+      <version>${brave.version}</version>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>io.zipkin.brave</groupId>
       <artifactId>brave-spring-web-servlet-interceptor</artifactId>
       <version>${brave.version}</version>
       <optional>true</optional>
     </dependency>
-    <dependency>
-      <groupId>io.zipkin.brave</groupId>
-      <artifactId>brave-spancollector-local</artifactId>
-      <version>${brave.version}</version>
-      <optional>true</optional>
-    </dependency>
+
     <dependency>
       <groupId>io.zipkin.brave</groupId>
       <artifactId>brave-okhttp</artifactId>

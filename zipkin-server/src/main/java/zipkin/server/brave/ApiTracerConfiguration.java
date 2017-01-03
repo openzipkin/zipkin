@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,10 +14,6 @@
 package zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
-import com.github.kristofa.brave.ServerRequestInterceptor;
-import com.github.kristofa.brave.ServerResponseInterceptor;
-import com.github.kristofa.brave.ServerTracer;
-import com.github.kristofa.brave.http.DefaultSpanNameProvider;
 import com.github.kristofa.brave.spring.ServletHandlerInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -34,10 +30,6 @@ public class ApiTracerConfiguration extends WebMvcConfigurerAdapter {
 
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
-    ServerTracer tracer = brave.serverTracer();
-    ServletHandlerInterceptor traceInterceptor = new ServletHandlerInterceptor(
-        new ServerRequestInterceptor(tracer), new ServerResponseInterceptor(tracer),
-        new DefaultSpanNameProvider(), brave.serverSpanThreadBinder());
-    registry.addInterceptor(traceInterceptor);
+    registry.addInterceptor(ServletHandlerInterceptor.create(brave));
   }
 }

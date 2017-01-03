@@ -45,7 +45,7 @@
 
     <main.basedir>${project.basedir}</main.basedir>
 
-    <brave.version>3.16.0</brave.version>
+    <brave.version>4.0.0</brave.version>
     <cassandra-driver-core.version>3.1.2</cassandra-driver-core.version>
     <okio.version>1.11.0</okio.version>
     <jooq.version>3.8.6</jooq.version>
@@ -368,6 +368,17 @@
       </dependency>
 
       <!-- Don't bring in brave's transitive dep on zipkin -->
+      <dependency>
+        <groupId>io.zipkin.brave</groupId>
+        <artifactId>brave</artifactId>
+        <version>${brave.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>zipkin</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
       <dependency>
         <groupId>io.zipkin.brave</groupId>
         <artifactId>brave-core</artifactId>
