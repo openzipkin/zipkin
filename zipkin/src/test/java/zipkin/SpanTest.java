@@ -149,6 +149,16 @@ public class SpanTest {
   }
 
   @Test
+  public void mergeTraceIdHigh() {
+    Span span = Span.builder()
+        .merge(Span.builder().traceId(1).id(2).name("foo").traceIdHigh(1L).build())
+        .build();
+
+    assertThat(span.name).isEqualTo("foo");
+    assertThat(span.traceIdHigh).isEqualTo(1L);
+  }
+
+  @Test
   public void serviceNames_includeBinaryAnnotations() {
     Span span = Span.builder()
         .traceId(1L)

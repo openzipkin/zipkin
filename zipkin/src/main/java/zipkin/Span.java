@@ -233,7 +233,7 @@ public final class Span implements Comparable<Span>, Serializable {
       if (this.traceId == null) {
         this.traceId = that.traceId;
       }
-      if (this.traceIdHigh == 0) {
+      if (this.traceIdHigh == null || this.traceIdHigh == 0) {
         this.traceIdHigh = that.traceIdHigh;
       }
       if (this.name == null || this.name.length() == 0 || this.name.equals("unknown")) {
