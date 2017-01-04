@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -233,7 +233,7 @@ public final class Span implements Comparable<Span>, Serializable {
       if (this.traceId == null) {
         this.traceId = that.traceId;
       }
-      if (this.traceIdHigh == 0) {
+      if (this.traceIdHigh == null || this.traceIdHigh == 0) {
         this.traceIdHigh = that.traceIdHigh;
       }
       if (this.name == null || this.name.length() == 0 || this.name.equals("unknown")) {

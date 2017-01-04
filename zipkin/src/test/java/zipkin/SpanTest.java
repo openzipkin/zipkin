@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -146,6 +146,16 @@ public class SpanTest {
       assertThat(unknown.toBuilder().merge(get).build().name).isEqualTo("get");
       assertThat(get.toBuilder().merge(unknown).build().name).isEqualTo("get");
     }
+  }
+
+  @Test
+  public void mergeTraceIdHigh() {
+    Span span = Span.builder()
+        .merge(Span.builder().traceId(1).id(2).name("foo").traceIdHigh(1L).build())
+        .build();
+
+    assertThat(span.name).isEqualTo("foo");
+    assertThat(span.traceIdHigh).isEqualTo(1L);
   }
 
   @Test
