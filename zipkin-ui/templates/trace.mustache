@@ -44,8 +44,9 @@
   <div
     id='{{spanId}}'
     class='span service-span depth-{{depthClass}}'
-    data-keys='id,spanName,serviceNames,serviceName,durationStr,duration'
+    data-keys='id,traceId,spanName,serviceNames,serviceName,durationStr,duration'
     data-id='{{spanId}}'
+    data-trace-id='{{traceId}}'
     data-parent-id='{{parentId}}'
     data-span-name='{{spanName}}'
     data-service-name='{{serviceName}}'
@@ -134,6 +135,18 @@
             </tr>
           </tbody>
         </table>
+
+        <button class="btn btn-info btn-xs pull-right" type="button" data-toggle="collapse"
+                data-target="#moreInfo" aria-expanded="false" aria-controls="moreInfo">More Info</button>
+        <hr/>
+        <table id='moreInfo' class='table table-striped collapse'>
+          <tbody>
+            <tr>
+              <td class='key' data-key='key'></td>
+              <td class='value' data-key='value'></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -153,8 +166,9 @@
   <div
     id='{{spanId}}'
     class='span service-span depth-{{depthClass}}'
-    data-keys='id,spanName,serviceNames,serviceName,durationStr,duration'
+    data-keys='id,traceId,spanName,serviceNames,serviceName,durationStr,duration'
     data-id='{{spanId}}'
+    data-trace-id='{{traceId}}'
     data-parent-id='{{parentId}}'
     data-span-name='{{spanName}}'
     data-service-name='{{serviceName}}'
