@@ -70,11 +70,39 @@ public final class CorrectForClockSkew {
     if (skew != null) {
       // the current span's skew may be a different endpoint than skewFromParent, adjust again.
       node.value(adjustTimestamps(node.value(), skew));
+    } else {
+      if (skewFromParent != null && isLocalSpan(node.value())) {
+        //Propagate skewFromParent to local spans
+         skew = skewFromParent;
+      }
     }
     // propagate skew to any children
     for (Node<Span> child : node.children()) {
       adjust(child, skew);
     }
+  }
+
+  static boolean isLocalSpan(Span span) {
+    Endpoint endPoint = null;
+    for (int i = 0, length = span.annotations.size(); i < length; i++) {
+      Annotation annotation = span.annotations.get(i);
+      if (endPoint == null) {
+        endPoint = annotation.endpoint;
+      }
+      if (endPoint != null && !endPoint.equals(annotation.endpoint)) {
+        return false;
+      }
+    }
+    for (int i = 0, length = span.binaryAnnotations.size(); i < length; i++) {
+      BinaryAnnotation binaryAnnotation = span.binaryAnnotations.get(i);
+      if (endPoint == null) {
+        endPoint = binaryAnnotation.endpoint;
+      }
+      if (endPoint != null && !endPoint.equals(binaryAnnotation.endpoint)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /** If any annotation has an IP with skew associated, adjust accordingly. */

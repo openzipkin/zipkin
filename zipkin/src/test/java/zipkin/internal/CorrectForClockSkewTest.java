@@ -15,14 +15,17 @@ package zipkin.internal;
 
 import org.junit.Test;
 import zipkin.Annotation;
+import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.Span;
+import zipkin.TestObjects;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static zipkin.Constants.CLIENT_RECV;
@@ -33,9 +36,11 @@ import static zipkin.TestObjects.APP_ENDPOINT;
 import static zipkin.TestObjects.DB_ENDPOINT;
 import static zipkin.TestObjects.WEB_ENDPOINT;
 import static zipkin.internal.CorrectForClockSkew.ipsMatch;
+import static zipkin.internal.CorrectForClockSkew.isLocalSpan;
 
 public class CorrectForClockSkewTest {
   private static final long networkLatency = 10L;
+  private static final long now = System.currentTimeMillis();
 
   Endpoint ipv6 = Endpoint.builder()
       .serviceName("web")
@@ -90,6 +95,17 @@ public class CorrectForClockSkewTest {
   }
 
   @Test
+  public void spanWithSameEndPointIsLocalSpan() {
+    assertTrue(isLocalSpan(TestObjects.TRACE.get(0)));
+  }
+
+  @Test
+  public void spanWithLCAnnotationIsLocalSpan() {
+    Span localSpan = createLocalSpan(TestObjects.TRACE.get(0), WEB_ENDPOINT, 0, 0);
+    assertTrue(isLocalSpan(localSpan));
+  }
+
+  @Test
   public void clockSkewIsCorrectedIfRpcSpanSendsAfterClientReceive() {
     assertClockSkewIsCorrectlyApplied(50000);
   }
@@ -99,9 +115,25 @@ public class CorrectForClockSkewTest {
     assertClockSkewIsCorrectlyApplied(-50000);
   }
 
-  private static void assertClockSkewIsCorrectlyApplied(long skew) {
-    long now = System.currentTimeMillis();
+  @Test
+  public void clockSkewIsPropagatedToLocalSpans() {
+    long networkLatency = 10L;
+    Span rootSpan = createRootSpan(WEB_ENDPOINT, now, 2000L);
+    long skew = -50000L;
+    Span rpcSpan = createChildSpan(rootSpan, WEB_ENDPOINT, APP_ENDPOINT, now + networkLatency, 1000L, skew);
+    Span localSpan = createLocalSpan(rpcSpan, APP_ENDPOINT, rpcSpan.timestamp + 5, 200L);
+    Span embeddedLocalSpan = createLocalSpan(localSpan, APP_ENDPOINT, localSpan.timestamp + 10, 100L);
 
+    List<Span> adjustedSpans = CorrectForClockSkew.apply(Arrays.asList(rpcSpan, rootSpan, localSpan, embeddedLocalSpan));
+
+    Span adjustedLocalSpan = adjustedSpans.stream().filter(s -> s.id == localSpan.id).findFirst().get();
+    assertEquals(localSpan.timestamp - skew, adjustedLocalSpan.timestamp.longValue());
+
+    Span adjustedEmbeddedLocalSpan = adjustedSpans.stream().filter(s -> s.id == embeddedLocalSpan.id).findFirst().get();
+    assertEquals(embeddedLocalSpan.timestamp - skew, adjustedEmbeddedLocalSpan.timestamp.longValue());
+  }
+
+  private static void assertClockSkewIsCorrectlyApplied(long skew) {
     long rpcClientSendTs = now + 50L;
     long dbClientSendTimestamp = now + 60 + skew;
 
@@ -139,6 +171,14 @@ public class CorrectForClockSkewTest {
             .addAnnotation(Annotation.create(beginTs + skew + networkLatency, SERVER_RECV, to))
             .addAnnotation(Annotation.create(beginTs + skew + duration - networkLatency, SERVER_SEND, to))
             .addAnnotation(Annotation.create(beginTs + duration, CLIENT_RECV, from))
+            .build();
+  }
+
+  private static Span createLocalSpan(Span parentSpan, Endpoint endPoint, long beginTs, long duration) {
+    long spanId = parentSpan.id + 1;
+    return Span.builder().traceId(parentSpan.traceId).id(spanId).parentId(parentSpan.id).name("localcomponent" + spanId)
+            .timestamp(beginTs).duration(duration)
+            .addBinaryAnnotation(BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "localComponent" + spanId, endPoint))
             .build();
   }
 
