@@ -2,6 +2,30 @@ import {component} from 'flightjs';
 import $ from 'jquery';
 import {Constants} from './traceConstants';
 
+// annotations are named events which shouldn't hold json. If someone passed
+// json, format as a single line. That way the rows corresponding to timestamps
+// aren't disrupted.
+export function formatAnnotationValue(value) {
+  const type = $.type(value);
+  if (type === 'object' || type === 'array') {
+    return JSON.stringify(value);
+  } else {
+    return value;
+  }
+}
+
+// Binary annotations are tags, and sometimes the values are large, for example
+// json representing a query or a stack trace. Format these so that they don't
+// scroll off the side of the screen.
+export function formatBinaryAnnotationValue(value) {
+  const type = $.type(value);
+  if (type === 'object' || type === 'array') {
+    return `<pre>${JSON.stringify(value, null, 2)}</pre>`;
+  } else {
+    return value;
+  }
+}
+
 export default component(function spanPanel() {
   this.$annotationTemplate = null;
   this.$binaryAnnotationTemplate = null;
@@ -23,10 +47,9 @@ export default component(function spanPanel() {
       }
       $row.find('td').each(function() {
         const $this = $(this);
-        const maybeObject = anno[$this.data('key')];
-        // In case someone is storing escaped json as an annotation value
-        // TODO: this class is not testable at the moment
-        $this.text($.type(maybeObject) === 'object' ? JSON.stringify(maybeObject) : maybeObject);
+        const unformattedValue = anno[$this.data('key')];
+        const value = formatAnnotationValue(unformattedValue);
+        $this.append(value);
       });
       $annoBody.append($row);
     });
@@ -45,15 +68,9 @@ export default component(function spanPanel() {
       }
       $row.find('td').each(function() {
         const $this = $(this);
-        const maybeObject = anno[$this.data('key')];
-        // In case someone is storing escaped json as binary annotation values
-        // TODO: this class is not testable at the moment
-        const type = $.type(maybeObject);
-        if (type === 'object' || type === 'array') {
-          $this.append(`<pre>${JSON.stringify(maybeObject, null, 2)}</pre>`);
-        } else {
-          $this.text(maybeObject);
-        }
+        const unformattedValue = anno[$this.data('key')];
+        const value = formatBinaryAnnotationValue(unformattedValue);
+        $this.append(value);
       });
       $binAnnoBody.append($row);
     });
