@@ -2,6 +2,10 @@ import {component} from 'flightjs';
 import $ from 'jquery';
 import {Constants} from './traceConstants';
 
+// Normal values are formatted in traceToMustache. However, Quoted json values
+// end up becoming javascript objects later. For this reason, we have to guard
+// and stringify as necessary.
+
 // annotations are named events which shouldn't hold json. If someone passed
 // json, format as a single line. That way the rows corresponding to timestamps
 // aren't disrupted.
@@ -47,9 +51,11 @@ export default component(function spanPanel() {
       }
       $row.find('td').each(function() {
         const $this = $(this);
-        const unformattedValue = anno[$this.data('key')];
-        const value = formatAnnotationValue(unformattedValue);
-        $this.append(value);
+        const propertyName = $this.data('key');
+        const text = propertyName === 'value'
+          ? formatAnnotationValue(anno.value)
+          : anno[propertyName];
+        $this.append(text);
       });
       $annoBody.append($row);
     });
@@ -68,9 +74,11 @@ export default component(function spanPanel() {
       }
       $row.find('td').each(function() {
         const $this = $(this);
-        const unformattedValue = anno[$this.data('key')];
-        const value = formatBinaryAnnotationValue(unformattedValue);
-        $this.append(value);
+        const propertyName = $this.data('key');
+        const text = propertyName === 'value'
+          ? formatBinaryAnnotationValue(anno.value)
+          : anno[propertyName];
+        $this.append(text);
       });
       $binAnnoBody.append($row);
     });
