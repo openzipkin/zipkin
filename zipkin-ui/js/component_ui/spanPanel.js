@@ -2,6 +2,14 @@ import {component} from 'flightjs';
 import $ from 'jquery';
 import {Constants} from './traceConstants';
 
+// Annotation values that contain the word "error" hint of a transient error.
+// This adds a class when that's the case.
+export function maybeMarkTransientError(row, anno) {
+  if (/error/i.test(anno.value)) {
+    row.addClass('anno-error-transient');
+  }
+}
+
 // annotations are named events which shouldn't hold json. If someone passed
 // json, format as a single line. That way the rows corresponding to timestamps
 // aren't disrupted.
@@ -42,9 +50,7 @@ export default component(function spanPanel() {
     const $annoBody = this.$node.find('#annotations tbody').text('');
     $.each((span.annotations || []), (i, anno) => {
       const $row = self.$annotationTemplate.clone();
-      if (anno.value === Constants.ERROR) {
-        $row.addClass('anno-error-transient');
-      }
+      maybeMarkTransientError($row, anno);
       $row.find('td').each(function() {
         const $this = $(this);
         const unformattedValue = anno[$this.data('key')];
