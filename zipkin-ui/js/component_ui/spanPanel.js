@@ -2,6 +2,14 @@ import {component} from 'flightjs';
 import $ from 'jquery';
 import {Constants} from './traceConstants';
 
+// Annotation values that contain the word "error" hint of a transient error.
+// This adds a class when that's the case.
+export function maybeMarkTransientError(row, anno) {
+  if (/error/i.test(anno.value)) {
+    row.addClass('anno-error-transient');
+  }
+}
+
 // Normal values are formatted in traceToMustache. However, Quoted json values
 // end up becoming javascript objects later. For this reason, we have to guard
 // and stringify as necessary.
@@ -46,9 +54,7 @@ export default component(function spanPanel() {
     const $annoBody = this.$node.find('#annotations tbody').text('');
     $.each((span.annotations || []), (i, anno) => {
       const $row = self.$annotationTemplate.clone();
-      if (anno.value === Constants.ERROR) {
-        $row.addClass('anno-error-transient');
-      }
+      maybeMarkTransientError($row, anno);
       $row.find('td').each(function() {
         const $this = $(this);
         const propertyName = $this.data('key');
