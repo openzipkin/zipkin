@@ -21,14 +21,16 @@ services:
   - docker
 
 before_install:
-  # We don't install cassandra as it flakes too much. Instead we defer to circleci to test it
-  # See https://github.com/openzipkin/zipkin/issues/1356
   # parameters used during a release
-  - git config user.name "$GH_USER"
-  - git config user.email "$GH_USER_EMAIL"
+  # allocate commits to CI, not the owner of the deploy key
+  - git config user.name "zipkinci"
+  - git config user.email "zipkinci+zipkin-dev@googlegroups.com"
   # setup https authentication credentials, used by ./mvnw release:prepare
   - git config credential.helper "store --file=.git/credentials"
   - echo "https://$GH_TOKEN:@github.com" > .git/credentials
+
+  # We don't install cassandra as it flakes too much. Instead we defer to circleci to test it
+  # See https://github.com/openzipkin/zipkin/issues/1356
 
   # Required for Elasticsearch 5 (See https://github.com/docker-library/docs/tree/master/elasticsearch#host-setup)
   - sudo sysctl -w vm.max_map_count=262144
@@ -57,10 +59,6 @@ env:
   - secure: "Ce34YTvUPNNmPaM98FWG9+QGI9aW9DBuWIvc5viCsNhlxGywWujlzvKFj2LVjdAp3ft8tpCd79ZHe3hMrfZ/SAzsT2qwNcAsUmE9YgjAFKyS7TS2CP2PMS+U7iFchCBZnCv7L6LUCClQa+pMBrSNNOJxDGK3woDxkf1FjgOY6hQ="
   # Ex. travis encrypt BINTRAY_KEY=xxx-https://bintray.com/profile/edit-xxx --add
   - secure: "gIWukQGUH6VoOldxuvYHaIeTGC4QBja5+ZUJPIhx5BlcXWweGwBlVeTTvBzdvYb3qcTjdr+tCDyonKuDsfxzxkPL7+aMK4f1Wxk8YyFouzrx/S2H9di3h4MptUk8S8JpAq7S5itWbb0fz0+R1qzCgDZR7ZBMpJWty2UIKho7zoo="
-  # Ex. travis encrypt GH_USER_EMAIL=for_github@domain.com --add
-  - secure: "L+KzRZyN7eXmKj0rQC7cb/ajyD5yIYevcxGJS9G1DE93WBn77FfTO/0obfaCx8F1WD3is9FKpfqpG8SP3z8vcz3UTFMsEdNCDbz4X71UbiNQH8GFOzY7heHB+Uk9SRC/3ElFdGYrWFhE0BFiliyvgCLvE5fmW7imSNE8+rMRXSE="
-  # Ex. travis encrypt GH_USER=your_github_account --add
-  - secure: "CQlsIF1ixcNRS6qwk5QZgGJ62BO1n5CJcpA4TvbF/KFb7XiT6GF4DaJyPjiOtD9n3+x1pRq9bdx5VLu2zCEC/gyWom2JRYOZAu4BgUaPGgxo+8XFZ9JytS04UgS3XmXbjBG8w1rkqbxTpblSes3Xe4egzHUF7eaEpZQkTpjJFrw="
   # Ex. travis encrypt GH_TOKEN=XXX-https://github.com/settings/tokens-XXX --add
   - secure: "K6Ksogtv97Him8sPIYTLAQ6nGtaED+PQL8UB9hxaC0JxPyOp6uRjfOWSuazg7zFmWkuBnmqDb4/pA0lE0KzRof+Jx36eQE6YJA30hQ7a3mumuSMC+Dl2+eBHQ9xtL1KyS2uIktNL+znhZlHmrbTND+HCyhirdCQ4UR6RdRRf/Mg="
   # Ex. travis encrypt SONATYPE_USER=your_sonatype_account
