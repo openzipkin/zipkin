@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.java</groupId>
     <artifactId>zipkin-autoconfigure</artifactId>
-    <version>1.19.1</version>
+    <version>1.19.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-autoconfigure-storage-elasticsearch</artifactId>
