@@ -115,9 +115,9 @@
 
   <developers>
     <developer>
-      <id>adriancole</id>
-      <name>Adrian Cole</name>
-      <email>acole@pivotal.io</email>
+      <id>zipkin-dev</id>
+      <name>Zipkin developers google group</name>
+      <url>https://groups.google.com/forum/#!forum/zipkin-dev</url>
     </developer>
   </developers>
 
