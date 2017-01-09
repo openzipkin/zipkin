@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package zipkin.autoconfigure.storage.mysql.brave;
 import com.github.kristofa.brave.Brave;
 import com.github.kristofa.brave.ServerSpan;
 import com.github.kristofa.brave.ServerSpanState;
+import com.twitter.zipkin.gen.Endpoint;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -34,7 +35,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import zipkin.Endpoint;
 import zipkin.autoconfigure.storage.mysql.ZipkinMySQLStorageProperties;
 
 import static zipkin.TraceKeys.SQL_QUERY;
@@ -96,7 +96,7 @@ public class TraceZipkinMySQLStorageAutoConfiguration extends DefaultExecuteList
       brave.clientTracer().submitBinaryAnnotation(SQL_QUERY, StringUtils.join(batchSQL, '\n'));
     }
     brave.clientTracer()
-        .setClientSent(mysqlEndpoint.ipv4, mysqlEndpoint.port, mysqlEndpoint.serviceName);
+        .setClientSent(mysqlEndpoint);
   }
 
   @Override

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -25,14 +25,10 @@ import com.datastax.driver.core.Statement;
 import com.github.kristofa.brave.Brave;
 import com.github.kristofa.brave.ServerSpan;
 import com.github.kristofa.brave.ServerSpanThreadBinder;
-import com.github.kristofa.brave.SpanCollector;
 import com.github.kristofa.brave.SpanId;
 import com.google.common.collect.Maps;
 import com.google.common.reflect.AbstractInvocationHandler;
 import com.google.common.reflect.Reflection;
-import com.twitter.zipkin.gen.Annotation;
-import com.twitter.zipkin.gen.BinaryAnnotation;
-import com.twitter.zipkin.gen.Endpoint;
 import com.twitter.zipkin.gen.Span;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -58,23 +54,21 @@ public final class TracedSession extends AbstractInvocationHandler implements La
 
   private final ProtocolVersion version;
 
-  public static Session create(Session target, Brave brave, SpanCollector collector) {
-    return Reflection.newProxy(Session.class, new TracedSession(target, brave, collector));
+  public static Session create(Session target, Brave brave) {
+    return Reflection.newProxy(Session.class, new TracedSession(target, brave));
   }
 
   final Session target;
   final Brave brave;
-  final SpanCollector collector;
   /**
    * Manual Propagation, as opposed to attempting to control the {@link
    * Cluster#register(LatencyTracker) latency tracker callback thread}.
    */
   final Map<BoundStatement, Span> cache = Maps.newConcurrentMap();
 
-  TracedSession(Session target, Brave brave, SpanCollector collector) {
+  TracedSession(Session target, Brave brave) {
     this.target = checkNotNull(target, "target");
     this.brave = checkNotNull(brave, "brave");
-    this.collector = checkNotNull(collector, "collector");
     this.version = target.getCluster().getConfiguration().getProtocolOptions().getProtocolVersion();
     target.getCluster().register(this);
   }
@@ -121,17 +115,17 @@ public final class TracedSession extends AbstractInvocationHandler implements La
       }
       return;
     }
-    span.setDuration(nanos / 1000); // TODO: allow client tracer to end with duration
-    Endpoint local = span.getAnnotations().get(0).host; // TODO: expose in brave
-    long endTs = span.getTimestamp() + span.getDuration();
-    span.addToAnnotations(Annotation.create(endTs, "cr", local));
-    if (e != null) {
-      span.addToBinary_annotations(BinaryAnnotation.create(Constants.ERROR, e.getMessage(), local));
+    Span previous = brave.clientSpanThreadBinder().getCurrentClientSpan();
+    brave.clientSpanThreadBinder().setCurrentSpan(span);
+    try {
+      if (e != null) {
+        brave.clientTracer().submitBinaryAnnotation(Constants.ERROR, e.getMessage());
+      }
+    } finally {
+      // TODO: on brave 4, set host to remote address
+      brave.clientTracer().setClientReceived();
+      brave.clientSpanThreadBinder().setCurrentSpan(previous);
     }
-    int ipv4 = ByteBuffer.wrap(host.getAddress().getAddress()).getInt();
-    Endpoint endpoint = Endpoint.create("cassandra3", ipv4, host.getSocketAddress().getPort());
-    span.addToBinary_annotations(BinaryAnnotation.address("sa", endpoint));
-    collector.collect(span);
   }
 
   @Override

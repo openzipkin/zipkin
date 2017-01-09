@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,14 +14,12 @@
 package zipkin.autoconfigure.storage.cassandra3.brave;
 
 import com.github.kristofa.brave.Brave;
-import com.github.kristofa.brave.SpanCollector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
-import zipkin.storage.cassandra3.Cassandra3Storage;
 import zipkin.storage.cassandra3.Cassandra3Storage.SessionFactory;
 
 /** Sets up the Cassandra tracing in Brave as an initialization. */
@@ -35,9 +33,8 @@ public class TraceZipkinCassandra3StorageAutoConfiguration {
 
   // Lazy to unwind a circular dep: we are tracing the storage used by brave
   @Autowired @Lazy Brave brave;
-  @Autowired @Lazy SpanCollector collector;
 
   @Bean SessionFactory tracingSessionFactory() {
-    return storage -> TracedSession.create(delegate.create(storage), brave, collector);
+    return storage -> TracedSession.create(delegate.create(storage), brave);
   }
 }
