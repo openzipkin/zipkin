@@ -118,20 +118,18 @@ export default function traceToMustache(trace, logsUrl = undefined) {
         if (a.key === Constants.ERROR) {
           errorType = 'critical';
         }
+        const key = ConstantNames[a.key] || a.key;
         if (Constants.CORE_ADDRESS.indexOf(a.key) !== -1) {
           return {
             ...a,
-            key: ConstantNames[a.key],
+            key,
             value: formatEndpoint(a.endpoint)
           };
-        } else if (ConstantNames[a.key]) {
-          return {
-            ...a,
-            key: ConstantNames[a.key]
-          };
-        } else {
-          return a;
         }
+        return {
+          ...a,
+          key
+        };
       });
 
       if (errorType !== 'critical') {
