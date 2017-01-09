@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -33,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.Constants.CLIENT_ADDR;
 import static zipkin.Constants.CLIENT_RECV;
 import static zipkin.Constants.CLIENT_SEND;
+import static zipkin.Constants.LOCAL_COMPONENT;
 import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
@@ -476,7 +477,7 @@ public abstract class DependenciesTest {
         Span.builder().traceId(20L).parentId(20L).id(21L).name("call")
             .timestamp((TODAY + 25) * 1000).duration(325L * 1000)
             .addBinaryAnnotation(
-                BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "depth2", WEB_ENDPOINT)).build(),
+                BinaryAnnotation.create(LOCAL_COMPONENT, "depth2", WEB_ENDPOINT)).build(),
         Span.builder().traceId(20L).parentId(21L).id(22L).name("get")
             .timestamp((TODAY + 50) * 1000).duration(250L * 1000)
             .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
@@ -486,11 +487,11 @@ public abstract class DependenciesTest {
         Span.builder().traceId(20L).parentId(22L).id(23L).name("call")
             .timestamp((TODAY + 110) * 1000).duration(130L * 1000)
             .addBinaryAnnotation(
-                BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "depth4", APP_ENDPOINT)).build(),
+                BinaryAnnotation.create(LOCAL_COMPONENT, "depth4", APP_ENDPOINT)).build(),
         Span.builder().traceId(20L).parentId(23L).id(24L).name("call")
             .timestamp((TODAY + 125) * 1000).duration(105L * 1000)
             .addBinaryAnnotation(
-                BinaryAnnotation.create(Constants.LOCAL_COMPONENT, "depth5", APP_ENDPOINT)).build(),
+                BinaryAnnotation.create(LOCAL_COMPONENT, "depth5", APP_ENDPOINT)).build(),
         Span.builder().traceId(20L).parentId(24L).id(25L).name("get")
             .timestamp((TODAY + 150) * 1000).duration(50L * 1000)
             .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
@@ -555,6 +556,48 @@ public abstract class DependenciesTest {
 
     assertThat(store().getDependencies(TODAY + 1000, null)).containsOnly(
         DependencyLink.create("web", "app", 1)
+    );
+  }
+
+  /**
+   * Span starts on one host and ends on the other. In both cases, a response is neither sent nor
+   * received.
+   */
+  @Test
+  public void oneway() {
+    List<Span> trace = asList(
+        Span.builder().traceId(10L).id(10L).name("")
+            .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+            .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
+            .build()
+    );
+
+    processDependencies(trace);
+
+    assertThat(store().getDependencies(TODAY + 1000L, null)).containsOnly(
+        DependencyLink.create("web", "app", 1)
+    );
+  }
+
+  /** Async span starts from an uninstrumented source. */
+  @Test
+  public void oneway_noClient() {
+    Endpoint kafka = Endpoint.create("kafka", 172 << 24 | 17 << 16 | 4);
+
+    List<Span> trace = asList(
+        Span.builder().traceId(10L).id(10L).name("receive")
+            .addAnnotation(Annotation.create((TODAY) * 1000, SERVER_RECV, APP_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, kafka))
+            .build(),
+        Span.builder().traceId(10L).parentId(10L).id(11L).name("process")
+            .timestamp((TODAY + 25) * 1000).duration(325L * 1000)
+            .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "", APP_ENDPOINT)).build()
+    );
+
+    processDependencies(trace);
+
+    assertThat(store().getDependencies(TODAY + 1000L, null)).containsOnly(
+        DependencyLink.create("kafka", "app", 1)
     );
   }
 

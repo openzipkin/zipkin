@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -27,6 +27,7 @@ import zipkin.storage.elasticsearch.http.HttpElasticsearchDependencyWriter;
 
 import static zipkin.TestObjects.DAY;
 import static zipkin.TestObjects.TODAY;
+import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.internal.Util.midnightUTC;
 
 public abstract class ElasticsearchDependenciesTest extends DependenciesTest {
@@ -50,7 +51,7 @@ public abstract class ElasticsearchDependenciesTest extends DependenciesTest {
     List<DependencyLink> links = mem.spanStore().getDependencies(TODAY + DAY, null);
 
     // This gets or derives a timestamp from the spans
-    long midnight = midnightUTC(MergeById.apply(spans).get(0).timestamp / 1000);
+    long midnight = midnightUTC(guessTimestamp(MergeById.apply(spans).get(0)) / 1000);
     writeDependencyLinks(links, midnight);
   }
 
