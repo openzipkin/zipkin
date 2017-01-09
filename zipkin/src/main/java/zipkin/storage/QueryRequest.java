@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Endpoint;
 import zipkin.Span;
+import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.Nullable;
 
 import static zipkin.Constants.CORE_ANNOTATIONS;
@@ -356,7 +357,7 @@ public final class QueryRequest {
 
   /** Tests the supplied trace against the current request */
   public boolean test(List<Span> spans) {
-    Long timestamp = spans.get(0).timestamp;
+    Long timestamp = ApplyTimestampAndDuration.guessTimestamp(spans.get(0));
     if (timestamp == null ||
         timestamp < (endTs - lookback) * 1000 ||
         timestamp > endTs * 1000) {
