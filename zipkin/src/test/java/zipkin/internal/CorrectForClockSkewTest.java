@@ -37,6 +37,7 @@ import static zipkin.Constants.SERVER_SEND;
 import static zipkin.TestObjects.APP_ENDPOINT;
 import static zipkin.TestObjects.DB_ENDPOINT;
 import static zipkin.TestObjects.WEB_ENDPOINT;
+import static zipkin.internal.CorrectForClockSkew.getClockSkew;
 import static zipkin.internal.CorrectForClockSkew.ipsMatch;
 import static zipkin.internal.CorrectForClockSkew.isLocalSpan;
 
@@ -64,6 +65,94 @@ public class CorrectForClockSkewTest {
     assertFalse(ipsMatch(noIp, ipv6));
     assertFalse(ipsMatch(ipv4, noIp));
     assertFalse(ipsMatch(ipv6, noIp));
+  }
+
+  /**
+   * Instrumentation bugs might result in spans that look like clock skew is at play. When skew
+   * appears on the same host, we assume it is an instrumentation bug (rather than make it worse
+   * by adjusting it!)
+   */
+  @Test
+  public void getClockSkew_mustBeOnDifferentHosts() {
+    Span span = Span.builder()
+        .traceId(1L).parentId(2L).id(3L).name("")
+        .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create(20, SERVER_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create(40, CLIENT_RECV, WEB_ENDPOINT))
+        .build();
+
+    assertThat(getClockSkew(span)).isNull();
+  }
+
+  @Test
+  public void getClockSkew_endpointIsServer() {
+    Span span = Span.builder()
+        .traceId(1L).parentId(2L).id(3L).name("")
+        .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create(20, SERVER_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create(40, CLIENT_RECV, WEB_ENDPOINT))
+        .build();
+
+    assertThat(getClockSkew(span).endpoint).isEqualTo(APP_ENDPOINT);
+  }
+
+  /**
+   * Skew is relative to the server receive and centered by the difference between the server
+   * duration and the client duration.
+   */
+  @Test
+  public void getClockSkew_includesSplitTheLatency() {
+    Span span = Span.builder()
+        .traceId(1L).parentId(2L).id(3L).name("")
+        .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create(20, SERVER_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create(40, CLIENT_RECV, WEB_ENDPOINT))
+        .build();
+
+    assertThat(getClockSkew(span).skew).isEqualTo(-15);
+  }
+
+  /** We can't currently correct async spans, where the server lets go early. */
+  @Test
+  public void getClockSkew_onlyWhenClientDurationIsLongerThanServer() {
+    Span span = Span.builder()
+        .traceId(1L).parentId(2L).id(3L).name("")
+        .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create(20, SERVER_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create(25, CLIENT_RECV, WEB_ENDPOINT))
+        .build();
+
+    assertThat(getClockSkew(span)).isNull();
+  }
+
+  @Test
+  public void getClockSkew_basedOnServer() {
+    Span span = Span.builder()
+        .traceId(1L).parentId(2L).id(3L).name("")
+        .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create(20, SERVER_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create(40, CLIENT_RECV, WEB_ENDPOINT))
+        .build();
+
+    assertThat(getClockSkew(span).endpoint).isEqualTo(APP_ENDPOINT);
+  }
+
+  @Test
+  public void getClockSkew_requiresCoreAnnotationsToHaveEndpoints() {
+    Span span = Span.builder()
+        .traceId(1L).parentId(2L).id(3L).name("")
+        .addAnnotation(Annotation.create(20, CLIENT_SEND, null))
+        .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, null))
+        .addAnnotation(Annotation.create(20, SERVER_SEND, null))
+        .addAnnotation(Annotation.create(40, CLIENT_RECV, null))
+        .build();
+
+    assertThat(getClockSkew(span)).isNull();
   }
 
   @Test

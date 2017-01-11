@@ -148,30 +148,34 @@ public final class CorrectForClockSkew {
   static ClockSkew getClockSkew(Span span) {
     Map<String, Annotation> annotations = asMap(span.annotations);
 
-    Long clientSend = getTimestamp(annotations, Constants.CLIENT_SEND);
-    Long clientRecv = getTimestamp(annotations, Constants.CLIENT_RECV);
-    Long serverRecv = getTimestamp(annotations, Constants.SERVER_RECV);
-    Long serverSend = getTimestamp(annotations, Constants.SERVER_SEND);
+    Annotation clientSend = annotations.get(Constants.CLIENT_SEND);
+    Annotation clientRecv = annotations.get(Constants.CLIENT_RECV);
+    Annotation serverRecv = annotations.get(Constants.SERVER_RECV);
+    Annotation serverSend = annotations.get(Constants.SERVER_SEND);
 
     if (clientSend == null || clientRecv == null || serverRecv == null || serverSend == null) {
       return null;
     }
 
-    Endpoint server = annotations.get(Constants.SERVER_RECV).endpoint;
-    server = server == null ? annotations.get(Constants.SERVER_SEND).endpoint : server;
+    Endpoint server = serverRecv.endpoint != null ? serverRecv.endpoint: serverSend.endpoint;
     if (server == null) return null;
+    Endpoint client = clientSend.endpoint != null ? clientSend.endpoint: clientRecv.endpoint;
+    if (client == null) return null;
 
-    long clientDuration = clientRecv - clientSend;
-    long serverDuration = serverSend - serverRecv;
+    // There's no skew if the RPC is going to itself
+    if (ipsMatch(server, client)) return null;
 
-    // There is only clock skew if CS is after SR or CR is before SS
-    boolean csAhead = clientSend < serverRecv;
-    boolean crAhead = clientRecv > serverSend;
-    if (serverDuration > clientDuration || (csAhead && crAhead)) {
-      return null;
-    }
+    long clientDuration = clientRecv.timestamp - clientSend.timestamp;
+    long serverDuration = serverSend.timestamp - serverRecv.timestamp;
+    // We assume latency is half the difference between the client and server duration.
+    // This breaks if client duration is smaller than server (due to async return for example).
+    if (clientDuration < serverDuration) return null;
+
     long latency = (clientDuration - serverDuration) / 2;
-    long skew = serverRecv - latency - clientSend;
+    // We can't see skew when send happens before receive
+    if (latency < 0) return null;
+
+    long skew = serverRecv.timestamp - latency - clientSend.timestamp;
     if (skew != 0L) {
       return new ClockSkew(server, skew);
     }
@@ -185,12 +189,6 @@ public final class CorrectForClockSkew {
       result.put(a.value, a);
     }
     return result;
-  }
-
-  @Nullable
-  static Long getTimestamp(Map<String, Annotation> annotations, String value) {
-    Annotation result = annotations.get(value);
-    return result != null ? result.timestamp : null;
   }
 
   private CorrectForClockSkew() {
