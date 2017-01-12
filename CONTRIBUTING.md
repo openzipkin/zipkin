@@ -11,7 +11,8 @@ By contributing your code, you agree to license your contribution under the term
 
 All files are released with the Apache 2.0 license.
 
-If you are adding a new file it should have a header like below. This can be automatically added by running `./mvnw com.mycila:license-maven-plugin:format`.
+If you are adding a new file it should have a header like below. This can be automatically added by running
+`./mvnw com.mycila:license-maven-plugin:format -pl -:zipkin-ui`.
 
 ```
 /**
