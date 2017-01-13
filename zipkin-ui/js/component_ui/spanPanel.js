@@ -91,7 +91,8 @@ export default component(function spanPanel() {
 
     const $moreInfoBody = this.$node.find('#moreInfo tbody').text('');
     const moreInfo = [['traceId', span.traceId],
-                       ['spanId', span.id]];
+                      ['spanId', span.id],
+                      ['parentId', span.parentId]];
     $.each(moreInfo, (i, pair) => {
       const $row = self.$moreInfoTemplate.clone();
       $row.find('.key').text(pair[0]);

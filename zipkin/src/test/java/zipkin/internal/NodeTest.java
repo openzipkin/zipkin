@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,9 @@
 package zipkin.internal;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import org.junit.Test;
 import zipkin.Span;
@@ -77,5 +79,24 @@ public class NodeTest {
     Node<Span> child = root.children().iterator().next();
     assertThat(child.children()).extracting(Node::value)
         .containsExactly(TestObjects.TRACE.get(2));
+  }
+
+  @Test
+  public void constructsTraceTree_noChildLeftBehind() {
+    List<Span> spans = Arrays.
+      asList(
+             Span.builder().traceId(137L).id(1L).name("root-0").build(),
+             Span.builder().traceId(137L).parentId(1L).id(2L).name("child-0").build(),
+             Span.builder().traceId(137L).parentId(1L).id(3L).name("child-1").build(),
+             Span.builder().traceId(137L).id(4L).name("lost-0").build(),
+             Span.builder().traceId(137L).id(5L).name("lost-1").build());
+    int treeSize = 0;
+    Node<Span> tree = Node.constructTree(spans);
+    Iterator<Node<Span>> iter = tree.traverse();
+    while (iter.hasNext()) {
+      iter.next();
+      treeSize++;
+    }
+    assertThat(treeSize).isEqualTo(spans.size());
   }
 }
