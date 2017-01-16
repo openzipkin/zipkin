@@ -461,6 +461,33 @@ public abstract class DependenciesTest {
     );
   }
 
+  /** Some use empty string for the {@link Constants#CLIENT_ADDR} to defer naming to the server. */
+  @Test
+  public void noEmptyLinks() {
+    Endpoint someClient = Endpoint.create("", 172 << 24 | 17 << 16 | 4);
+    List<Span> trace = asList(
+        Span.builder().traceId(20L).id(20L).name("get")
+            .timestamp(TODAY * 1000).duration(350L * 1000)
+            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, someClient))
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, WEB_ENDPOINT)).build(),
+        Span.builder().traceId(20L).parentId(20L).id(21L).name("get")
+            .timestamp((TODAY + 50) * 1000).duration(250L * 1000)
+            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, WEB_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, APP_ENDPOINT)).build(),
+        Span.builder().traceId(20L).parentId(21L).id(22L).name("get")
+            .timestamp((TODAY + 150) * 1000).duration(50L * 1000)
+            .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, APP_ENDPOINT))
+            .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, DB_ENDPOINT)).build()
+    );
+
+    processDependencies(trace);
+
+    assertThat(store().getDependencies(TODAY + 1000, null)).containsOnly(
+        DependencyLink.create("web", "app", 1),
+        DependencyLink.create("app", "db", 1)
+    );
+  }
+
   /**
    * This test confirms that the span store can process trace with intermediate spans like the below
    * properly.

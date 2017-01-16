@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -181,5 +181,20 @@ public class DependencyLinkSpanTest {
     assertThat(span.kind).isEqualTo(Kind.SERVER);
     assertThat(span.service).isEqualTo("service");
     assertThat(span.peerService).isNull();
+  }
+
+  /** Service links to empty string are confusing and offer no value. */
+  @Test
+  public void emptyToNull() {
+    DependencyLinkSpan.Builder builder = DependencyLinkSpan.builder(0L, 1L, null, 1L)
+        .caService("")
+        .csService("")
+        .saService("")
+        .srService("");
+
+    assertThat(builder.caService).isNull();
+    assertThat(builder.csService).isNull();
+    assertThat(builder.saService).isNull();
+    assertThat(builder.srService).isNull();
   }
 }
