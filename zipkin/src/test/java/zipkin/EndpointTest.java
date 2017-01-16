@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,8 @@
  */
 package zipkin;
 
+import java.net.Inet6Address;
+import java.net.UnknownHostException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -52,6 +54,101 @@ public class EndpointTest {
 
     assertThat(port & 0xffff)
         .isEqualTo(65535);
+  }
+
+  @Test
+  public void ipv6() throws UnknownHostException {
+    byte[] ipv6 = Inet6Address.getByName("2001:db8::c001").getAddress();
+
+    Endpoint endpoint = Endpoint.builder().serviceName("foo").ipv6(ipv6).build();
+
+    assertThat(endpoint.ipv4)
+        .isEqualTo(0);
+    assertThat(endpoint.ipv6)
+        .isEqualTo(ipv6);
+  }
+
+  @Test
+  public void ipv6_mappedIpv4() throws UnknownHostException {
+    // ::FFFF:1.2.3.4
+    byte[] ipv6_mapped = new byte[16];
+    ipv6_mapped[10] = (byte) 0xff;
+    ipv6_mapped[11] = (byte) 0xff;
+    ipv6_mapped[12] = (byte) 1;
+    ipv6_mapped[13] = (byte) 2;
+    ipv6_mapped[14] = (byte) 3;
+    ipv6_mapped[15] = (byte) 4;
+
+    Endpoint endpoint = Endpoint.builder().serviceName("foo").ipv6(ipv6_mapped).build();
+
+    assertThat(endpoint.ipv4)
+        .isEqualTo(1 << 24 | 2 << 16 | 3 << 8 | 4);
+    assertThat(endpoint.ipv6)
+        .isNull();
+  }
+
+  @Test
+  public void ipv6_notMappedIpv4() throws UnknownHostException {
+    // ::FFEF:1.2.3.4
+    byte[] ipv6_mapped = new byte[16];
+    ipv6_mapped[10] = (byte) 0xff;
+    ipv6_mapped[11] = (byte) 0xef;
+    ipv6_mapped[12] = (byte) 1;
+    ipv6_mapped[13] = (byte) 2;
+    ipv6_mapped[14] = (byte) 3;
+    ipv6_mapped[15] = (byte) 4;
+
+    Endpoint endpoint = Endpoint.builder().serviceName("foo").ipv6(ipv6_mapped).build();
+
+    assertThat(endpoint.ipv4)
+        .isZero();
+    assertThat(endpoint.ipv6)
+        .isEqualTo(ipv6_mapped);
+  }
+
+  @Test
+  public void ipv6_compatIpv4() throws UnknownHostException {
+    // ::1.2.3.4
+    byte[] ipv6_mapped = new byte[16];
+    ipv6_mapped[12] = (byte) 1;
+    ipv6_mapped[13] = (byte) 2;
+    ipv6_mapped[14] = (byte) 3;
+    ipv6_mapped[15] = (byte) 4;
+
+    Endpoint endpoint = Endpoint.builder().serviceName("foo").ipv6(ipv6_mapped).build();
+
+    assertThat(endpoint.ipv4)
+        .isEqualTo(1 << 24 | 2 << 16 | 3 << 8 | 4);
+    assertThat(endpoint.ipv6)
+        .isNull();
+  }
+
+  /** This ensures we don't mistake IPv6 localhost for a mapped IPv4 0.0.0.1 */
+  @Test
+  public void ipv6_localhost() throws UnknownHostException {
+    byte[] ipv6_localhost = new byte[16];
+    ipv6_localhost[15] = 1;
+
+    Endpoint endpoint = Endpoint.builder().serviceName("foo").ipv6(ipv6_localhost).build();
+
+    assertThat(endpoint.ipv4)
+        .isZero();
+    assertThat(endpoint.ipv6)
+        .isEqualTo(ipv6_localhost);
+  }
+
+  /** This is an unusable compat Ipv4 of 0.0.0.2. This makes sure it isn't mistaken for localhost */
+  @Test
+  public void ipv6_notLocalhost() throws UnknownHostException {
+    byte[] ipv6_localhost = new byte[16];
+    ipv6_localhost[15] = 2;
+
+    Endpoint endpoint = Endpoint.builder().serviceName("foo").ipv6(ipv6_localhost).build();
+
+    assertThat(endpoint.ipv4)
+        .isEqualTo(2);
+    assertThat(endpoint.ipv6)
+        .isNull();
   }
 
   /** The integer arg of port should be a whole number */

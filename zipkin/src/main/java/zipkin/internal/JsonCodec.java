@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Iterator;
@@ -78,13 +77,13 @@ public final class JsonCodec implements Codec {
         } else if (nextName.equals("ipv6")) {
           String input = reader.nextString();
           // Shouldn't hit DNS, because it's an IP string literal.
-          InetAddress addr = Inet6Address.getByName(input);
+          byte[] addressBytes = Inet6Address.getByName(input).getAddress();
           //  InetAddress.getByName returns an Inet4Address for
           //  IPv4-mapped IPv6 addresses such as ::ffff:192.0.2.128
-          if (addr instanceof Inet6Address) {
-            result.ipv6(addr.getAddress());
-          } else {
-            result.ipv4(parseIPv4Address(addr.getHostAddress()));
+          if (addressBytes.length == 4) {
+            result.ipv4(ByteBuffer.wrap(addressBytes).getInt());
+          } else if (addressBytes.length == 16) {
+            result.ipv6(addressBytes);
           }
         } else if (nextName.equals("port")) {
           result.port(reader.nextInt());
@@ -94,15 +93,6 @@ public final class JsonCodec implements Codec {
       }
       reader.endObject();
       return result.build();
-    }
-
-    private int parseIPv4Address(String input) {
-      String[] ipv4String = input.split("\\.", 5);
-      int ipv4 = 0;
-      for (String part : ipv4String) {
-          ipv4 = ipv4 << 8 | (Integer.parseInt(part) & 0xff);
-      }
-      return ipv4;
     }
 
     @Override public int sizeInBytes(Endpoint value) {
@@ -691,6 +681,14 @@ public final class JsonCodec implements Codec {
     return b.toByteArray();
   }
 
+  static int parseIPv4Address(String input) {
+    String[] ipv4String = input.split("\\.", 5);
+    int ipv4 = 0;
+    for (String part : ipv4String) {
+      ipv4 = ipv4 << 8 | (Integer.parseInt(part) & 0xff);
+    }
+    return ipv4;
+  }
 
   static <T> int sizeInBytes(Buffer.Writer<T> writer, List<T> value) {
     int sizeInBytes = overheadInBytes(value);
