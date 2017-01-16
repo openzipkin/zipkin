@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -156,13 +156,13 @@ public final class DependencyLinkSpan {
   }
 
   public static final class Builder {
-    private final TraceId traceId;
-    private final Long parentId;
-    private final long spanId;
-    private String srService;
-    private String csService;
-    private String caService;
-    private String saService;
+    final TraceId traceId;
+    final Long parentId;
+    final long spanId;
+    String srService;
+    String csService;
+    String caService;
+    String saService;
 
     Builder(TraceId traceId, Long parentId, long spanId) {
       this.traceId = traceId;
@@ -175,6 +175,7 @@ public final class DependencyLinkSpan {
      * traditional span.
      */
     public Builder srService(String srService) {
+      if ("".equals(srService)) srService = null;
       this.srService = srService;
       return this;
     }
@@ -184,6 +185,7 @@ public final class DependencyLinkSpan {
      * instrumented clients.
      */
     public Builder csService(String csService) {
+      if ("".equals(csService)) csService = null;
       this.csService = csService;
       return this;
     }
@@ -193,6 +195,7 @@ public final class DependencyLinkSpan {
      * uninstrumented clients.
      */
     public Builder caService(String caService) {
+      if ("".equals(caService)) caService = null;
       this.caService = caService;
       return this;
     }
@@ -202,6 +205,7 @@ public final class DependencyLinkSpan {
      * un-instrumented server.
      */
     public Builder saService(String saService) {
+      if ("".equals(saService)) saService = null;
       this.saService = saService;
       return this;
     }
