@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 package zipkin;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Locale;
 import zipkin.internal.JsonCodec;
@@ -138,10 +139,34 @@ public final class Endpoint {
       return this;
     }
 
-    /** @see Endpoint#ipv6 */
+    /**
+     * When not null, this sets the {@link Endpoint#ipv6}, unless the input is an <a
+     * href="https://tools.ietf.org/html/rfc4291#section-2.5.5.2">IPv4-Compatible or IPv4-Mapped
+     * Embedded IPv6 Address</a>. In such case, {@link #ipv4(int)} is called with the embedded
+     * address.
+     *
+     * @see Endpoint#ipv6
+     */
     public Builder ipv6(byte[] ipv6) {
-      if (ipv6 != null) {
-        checkArgument(ipv6.length == 16, "ipv6 addresses are 16 bytes: " + ipv6.length);
+      if (ipv6 == null) return this;
+      checkArgument(ipv6.length == 16, "ipv6 addresses are 16 bytes: " + ipv6.length);
+      for (int i = 0; i < 10; i++) { // Embedded IPv4 addresses start with unset 80 bits
+        if (ipv6[i] != 0) {
+          this.ipv6 = ipv6;
+          return this;
+        }
+      }
+
+      ByteBuffer buf = ByteBuffer.wrap(ipv6, 10, 6);
+      short flag = buf.getShort();
+      if (flag == 0 || flag == -1) { // IPv4-Compatible or IPv4-Mapped
+        int ipv4 = buf.getInt();
+        if (flag == 0 && ipv4 == 1) {
+          this.ipv6 = ipv6; // ::1 is localhost, not an embedded compat address
+        } else {
+          this.ipv4 = ipv4;
+        }
+      } else {
         this.ipv6 = ipv6;
       }
       return this;
