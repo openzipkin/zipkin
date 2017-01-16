@@ -98,9 +98,10 @@ public class BraveConfiguration {
     return new InheritableServerClientAndLocalSpanState(braveEndpoint);
   }
 
-  @Bean Tracer braveTracer(Reporter<Span> reporter,
+  @Bean Tracer braveTracer(Reporter<Span> reporter, @Qualifier("local") Endpoint local,
       @Value("${zipkin.self-tracing.sample-rate:1.0}") float rate) {
     return Tracer.newBuilder()
+        .localEndpoint(local)
         .sampler(rate < 0.01 ? BoundarySampler.create(rate) : Sampler.create(rate))
         .reporter(reporter)
         .build();
