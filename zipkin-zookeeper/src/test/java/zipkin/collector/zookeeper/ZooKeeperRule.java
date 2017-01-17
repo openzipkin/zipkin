@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -25,6 +25,7 @@ import zipkin.internal.Util;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.apache.curator.framework.CuratorFrameworkFactory.newClient;
+import static zipkin.internal.Util.propagateIfFatal;
 
 final class ZooKeeperRule implements TestRule {
   TestingCluster cluster;
@@ -48,9 +49,10 @@ final class ZooKeeperRule implements TestRule {
           try {
             doEvaluate(base);
             break;
-          } catch (Throwable e) {
+          } catch (Throwable t) {
+            propagateIfFatal(t);
             if (i == 3) {
-              throw e;
+              throw t;
             }
             Thread.sleep(1000);
           }
