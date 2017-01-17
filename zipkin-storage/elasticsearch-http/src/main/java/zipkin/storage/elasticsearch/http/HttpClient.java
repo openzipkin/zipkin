@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -102,7 +102,7 @@ final class HttpClient extends InternalElasticsearchClient {
     this.allIndices = new String[] {allIndices};
   }
 
-  @Override protected String getVersion() throws IOException {
+  @Override protected String getVersion() {
     Request getNode = new Request.Builder().url(baseUrl).tag("get-node").build();
 
     try (Response response = http.newCall(getNode).execute()) {
@@ -113,6 +113,8 @@ final class HttpClient extends InternalElasticsearchClient {
       JsonReader version = enterPath(JsonReader.of(response.body().source()), "version", "number");
       if (version == null) throw new IllegalStateException(".version.number not in response");
       return version.nextString();
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not get version", e);
     }
   }
 
@@ -120,7 +122,7 @@ final class HttpClient extends InternalElasticsearchClient {
    * This is a blocking call, used inside a lazy. That's because no writes should occur until the
    * template is available.
    */
-  @Override protected void ensureTemplate(String name, String indexTemplate) throws IOException {
+  @Override protected void ensureTemplate(String name, String indexTemplate) {
     HttpUrl templateUrl = baseUrl.newBuilder("_template").addPathSegment(name).build();
     Request request = new Request.Builder().url(templateUrl).tag("get-template").build();
 
@@ -128,6 +130,8 @@ final class HttpClient extends InternalElasticsearchClient {
       if (response.isSuccessful()) {
         return;
       }
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not get " + templateUrl.encodedPath(), e);
     }
 
     Call putTemplate = http.newCall(new Request.Builder()
@@ -139,6 +143,8 @@ final class HttpClient extends InternalElasticsearchClient {
       if (!response.isSuccessful()) {
         throw new IllegalStateException(response.body().string());
       }
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not put " + templateUrl.encodedPath(), e);
     }
   }
 
@@ -217,7 +223,7 @@ final class HttpClient extends InternalElasticsearchClient {
   }
 
   /** This is blocking so that we can determine if the cluster is healthy or not */
-  @Override protected void ensureClusterReady(String catchAll) throws IOException {
+  @Override protected void ensureClusterReady(String catchAll) {
     Call getHealth = http.newCall(
         new Request.Builder().url(baseUrl.resolve("/_cluster/health/" + catchAll))
             .tag("get-cluster-health").build());
@@ -227,8 +233,9 @@ final class HttpClient extends InternalElasticsearchClient {
         JsonReader status = enterPath(JsonReader.of(response.body().source()), "status");
         checkState(status != null, "Health status couldn't be read %s", response);
         checkState(!"RED".equalsIgnoreCase(status.nextString()), "Health status is RED");
-        return;
       }
+    } catch (IOException e) {
+      throw new IllegalStateException("could not get " + getHealth.request().url(), e);
     }
   }
 

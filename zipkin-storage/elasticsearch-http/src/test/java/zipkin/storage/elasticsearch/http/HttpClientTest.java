@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin.TestObjects;
+import zipkin.internal.CallbackCaptor;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -137,10 +138,11 @@ public class HttpClientTest {
 
     es.enqueue(new MockResponse());
 
+    CallbackCaptor<Void> callback = new CallbackCaptor<>();
     client.bulkSpanIndexer()
         .add("zipkin-2016-10-01", TestObjects.TRACE.get(0), null)
-        .execute()
-        .get();
+        .execute(callback);
+    callback.get();
 
     RecordedRequest request = es.takeRequest();
     assertThat(request.getPath())

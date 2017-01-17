@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,7 +28,7 @@ final class HttpBulkSpanIndexer extends HttpBulkIndexer<Span> implements
   }
 
   @Override
-  public HttpBulkSpanIndexer add(String index, Span span, Long timestampMillis) throws IOException {
+  public HttpBulkSpanIndexer add(String index, Span span, Long timestampMillis) {
     String id = null; // Allow ES to choose an ID
     if (timestampMillis == null) {
       super.add(index, span, id);

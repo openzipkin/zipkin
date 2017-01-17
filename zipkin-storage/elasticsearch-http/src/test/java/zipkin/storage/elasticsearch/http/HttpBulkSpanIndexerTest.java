@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin.Codec;
 import zipkin.TestObjects;
+import zipkin.internal.CallbackCaptor;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +35,8 @@ public class HttpBulkSpanIndexerTest {
   public ExpectedException thrown = ExpectedException.none();
   @Rule
   public MockWebServer es = new MockWebServer();
+
+  CallbackCaptor<Void> callback = new CallbackCaptor<>();
 
   HttpBulkSpanIndexer indexer =
       new HttpBulkSpanIndexer((HttpClient) new HttpClientBuilder(new OkHttpClient())
@@ -50,7 +53,8 @@ public class HttpBulkSpanIndexerTest {
     es.enqueue(new MockResponse());
 
     indexer.add("test_zipkin_http-2016-10-01", TestObjects.LOTS_OF_SPANS[0], (Long) null);
-    indexer.execute().get();
+    indexer.execute(callback);
+    callback.get();
 
     RecordedRequest request = es.takeRequest();
     assertThat(request.getBody().readByteString().utf8())
@@ -62,7 +66,8 @@ public class HttpBulkSpanIndexerTest {
     es.enqueue(new MockResponse());
 
     indexer.add("test_zipkin_http-2016-10-01", TestObjects.LOTS_OF_SPANS[0], (Long) null);
-    indexer.execute().get();
+    indexer.execute(callback);
+    callback.get();
 
     RecordedRequest request = es.takeRequest();
     assertThat(request.getBody().readByteString().utf8())

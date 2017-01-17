@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,13 +14,11 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.base.Function;
-import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 import com.google.common.net.HostAndPort;
-import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import java.io.IOException;
@@ -34,6 +32,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -62,6 +61,7 @@ import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.Lazy;
 import zipkin.internal.Util;
+import zipkin.storage.Callback;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -175,7 +175,7 @@ final class NativeClient extends InternalElasticsearchClient {
   }
 
   /** Since the wire protocol doesn't support version negotiation, return the library version */
-  @Override protected String getVersion() throws IOException {
+  @Override protected String getVersion() {
     return clientVersion;
   }
 
@@ -300,41 +300,58 @@ final class NativeClient extends InternalElasticsearchClient {
   @Override protected BulkSpanIndexer bulkSpanIndexer() {
     return new SpanBytesBulkSpanIndexer() {
       final List<IndexRequestBuilder> indexRequests = new LinkedList<>();
-      final Set<String> indices = new LinkedHashSet<>();
+      final Set<String> indicesToFlush = new LinkedHashSet<>();
 
       @Override protected void add(String index, byte[] spanBytes) {
         indexRequests.add(client.prepareIndex(index, SPAN).setSource(spanBytes));
-        if (flushOnWrites) indices.add(index);
+        if (flushOnWrites) indicesToFlush.add(index);
       }
 
       // Creates a bulk request when there is more than one span to store
-      @Override public ListenableFuture<Void> execute() {
-        ListenableFuture<?> future;
+      @Override public void execute(final Callback<Void> callback) {
+        ActionListener callbackAdapter = new ActionListener() {
+          @Override public void onResponse(Object input) {
+            callback.onSuccess(null);
+          }
+
+          @Override public void onFailure(Throwable throwable) {
+            callback.onError(throwable);
+          }
+        };
+
+        // Conditionally create a bulk action depending on the count of index requests
+        ListenableActionFuture<? extends ActionResponse> future;
         if (indexRequests.size() == 1) {
-          future = toGuava(indexRequests.get(0).execute());
+          future = indexRequests.get(0).execute();
         } else {
           BulkRequestBuilder request = client.prepareBulk();
           for (IndexRequestBuilder span : indexRequests) {
             request.add(span);
           }
-          future = toGuava(request.execute());
-        }
-        if (!indices.isEmpty()) {
-          future = transform(future, new AsyncFunction() {
-            @Override public ListenableFuture apply(Object input) {
-              return toGuava(client.admin().indices()
-                  .prepareFlush(indices.toArray(new String[indices.size()]))
-                  .execute());
-            }
-          });
+          future = request.execute();
         }
 
-        return transform(future, TO_VOID);
+        // Unless we are in a unit test, this should always be true
+        if (indicesToFlush.isEmpty()) {
+          future.addListener(callbackAdapter);
+          return;
+        }
+
+        // If we are in a unit test, we need to flush so that we can read our writes
+        future.addListener(new ActionListener() {
+          @Override public void onResponse(Object input) {
+            client.admin().indices()
+                .prepareFlush(indicesToFlush.toArray(new String[indicesToFlush.size()]))
+                .execute().addListener(callbackAdapter);
+          }
+
+          @Override public void onFailure(Throwable throwable) {
+            callbackAdapter.onFailure(throwable);
+          }
+        });
       }
     };
   }
-
-  private static final Function<Object, Void> TO_VOID = Functions.constant(null);
 
   @Override protected void ensureClusterReady(String catchAll) {
     ClusterHealthResponse health = getUnchecked(client
