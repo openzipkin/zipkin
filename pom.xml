@@ -113,11 +113,12 @@
     <tag>HEAD</tag>
   </scm>
 
+  <!-- Developer section is needed for Maven Central, but doesn't need to include each person -->
   <developers>
     <developer>
-      <id>zipkin-dev</id>
-      <name>Zipkin developers google group</name>
-      <url>https://groups.google.com/forum/#!forum/zipkin-dev</url>
+      <id>openzipkin</id>
+      <name>OpenZipkin Gitter</name>
+      <url>https://gitter.im/openzipkin/zipkin</url>
     </developer>
   </developers>
 
