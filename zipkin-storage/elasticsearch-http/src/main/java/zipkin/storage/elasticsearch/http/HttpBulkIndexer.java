@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,19 +13,18 @@
  */
 package zipkin.storage.elasticsearch.http;
 
-import com.google.common.base.Joiner;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import okhttp3.Call;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import okio.Buffer;
+import zipkin.internal.Nullable;
+import zipkin.storage.Callback;
 
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
 // exposed to re-use for testing writes of dependency links
@@ -47,24 +46,23 @@ abstract class HttpBulkIndexer<T> {
     this.tag = "index-" + typeName;
   }
 
-  void add(String index, T object, String id) throws IOException {
+  void add(String index, T object, @Nullable String id) {
     writeIndexMetadata(index, id);
     writeDocument(object);
 
     if (client.flushOnWrites) indices.add(index);
   }
 
-  void writeIndexMetadata(String index, String id) throws IOException {
-    JsonWriter writer = JsonWriter.of(body);
-    writer.beginObject().name("index").beginObject();
-    writer.name("_index").value(index);
-    writer.name("_type").value(typeName);
-    writer.name("_id").value(id);
-    writer.endObject().endObject();
-    body.writeByte('\n');
+  void writeIndexMetadata(String index, @Nullable String id) {
+    body.writeUtf8("{\"index\":{\"_index\":\"").writeUtf8(index).writeByte('"');
+    body.writeUtf8(",\"_type\":\"").writeUtf8(typeName).writeByte('"');
+    if (id != null) {
+      body.writeUtf8(",\"_id\":\"").writeUtf8(id).writeByte('"');
+    }
+    body.writeUtf8("}}\n");
   }
 
-  void writeDocument(T object) throws IOException {
+  void writeDocument(T object) {
     body.write(toJsonBytes(object));
     body.writeByte('\n');
   }
@@ -72,7 +70,7 @@ abstract class HttpBulkIndexer<T> {
   abstract byte[] toJsonBytes(T object);
 
   /** Creates a bulk request when there is more than one object to store */
-  public ListenableFuture<Void> execute() throws IOException { // public to allow interface retrofit
+  public void execute(Callback<Void> callback) { // public to allow interface retrofit
     HttpUrl url = client.pipeline != null
         ? client.baseUrl.newBuilder("_bulk").addQueryParameter("pipeline", client.pipeline).build()
         : client.baseUrl.resolve("_bulk");
@@ -80,11 +78,15 @@ abstract class HttpBulkIndexer<T> {
     Request request = new Request.Builder().url(url).tag(tag)
         .post(RequestBody.create(APPLICATION_JSON, body.readByteString())).build();
 
-    return new CallbackListenableFuture<Void>(client.http.newCall(request)) {
+    new CallbackAdapter<Void>(client.http.newCall(request), callback) {
       @Override Void convert(ResponseBody responseBody) throws IOException {
-        if (!indices.isEmpty()) {
-          client.flush(Joiner.on(',').join(indices));
+        if (indices.isEmpty()) return null;
+        Iterator<String> index = indices.iterator();
+        StringBuilder indexString = new StringBuilder(index.next());
+        while (index.hasNext()) {
+          indexString.append(',').append(index.next());
         }
+        client.flush(indexString.toString());
         return null;
       }
     }.enqueue();

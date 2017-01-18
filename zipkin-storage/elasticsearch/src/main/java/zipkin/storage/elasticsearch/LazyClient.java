@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,6 @@
 package zipkin.storage.elasticsearch;
 
 import com.google.common.io.Resources;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import zipkin.internal.LazyCloseable;
@@ -49,9 +48,9 @@ final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
       String version = client.getVersion();
       String versionSpecificTemplate = versionSpecificTemplate(version);
       client.ensureTemplate(indexTemplateName, versionSpecificTemplate);
-    } catch (IOException e) {
+    } catch (RuntimeException e) {
       client.close();
-      throw new UncheckedExecutionException(e);
+      throw e;
     }
     return client;
   }
@@ -72,4 +71,5 @@ final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
   @Override public String toString() {
     return clientFactory.toString();
   }
+
 }

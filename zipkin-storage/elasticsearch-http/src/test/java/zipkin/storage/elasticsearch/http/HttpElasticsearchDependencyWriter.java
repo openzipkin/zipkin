@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,13 +16,14 @@ package zipkin.storage.elasticsearch.http;
 import java.util.List;
 import zipkin.Codec;
 import zipkin.DependencyLink;
+import zipkin.internal.CallbackCaptor;
 import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 public class HttpElasticsearchDependencyWriter {
   public static void writeDependencyLinks(InternalElasticsearchClient genericClient,
-      List<DependencyLink> links, String index, String type) throws Exception {
+      List<DependencyLink> links, String index, String type) {
     checkArgument(genericClient instanceof HttpClient, "");
     HttpClient client = (HttpClient) genericClient;
     HttpBulkIndexer<DependencyLink> indexer = new HttpBulkIndexer<DependencyLink>(client, type){
@@ -33,6 +34,8 @@ public class HttpElasticsearchDependencyWriter {
     for (DependencyLink link : links) {
       indexer.add(index, link, link.parent + "|" + link.child); // Unique constraint
     }
-    indexer.execute().get();
+    CallbackCaptor<Void> callback = new CallbackCaptor<>();
+    indexer.execute(callback);
+    callback.get();
   }
 }

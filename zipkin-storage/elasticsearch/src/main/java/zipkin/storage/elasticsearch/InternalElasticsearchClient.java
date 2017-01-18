@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -25,6 +25,7 @@ import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.Lazy;
+import zipkin.storage.Callback;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static zipkin.storage.elasticsearch.ElasticsearchSpanConsumer.prefixWithTimestampMillis;
@@ -85,10 +86,10 @@ public abstract class InternalElasticsearchClient implements Closeable {
   }
 
   /** Returns the Elasticsearch version of the transport. */
-  protected abstract String getVersion() throws IOException;
+  protected abstract String getVersion();
 
   /** Ensures the existence of a template, creating it if it does not exist. */
-  protected abstract void ensureTemplate(String name, String indexTemplate) throws IOException;
+  protected abstract void ensureTemplate(String name, String indexTemplate);
 
   /** Deletes the specified index pattern is supplied */
   protected abstract void clear(String index) throws IOException;
@@ -136,9 +137,9 @@ public abstract class InternalElasticsearchClient implements Closeable {
      *
      * <p>For example. {"traceId":".. becomes {"timestamp_millis":12345,"traceId":"...
      */
-    BulkSpanIndexer add(String index, Span span, Long timestampMillis) throws IOException;
+    BulkSpanIndexer add(String index, Span span, Long timestampMillis);
 
-    ListenableFuture<Void> execute() throws IOException;
+    void execute(Callback<Void> callback);
   }
 
   protected static abstract class SpanBytesBulkSpanIndexer implements BulkSpanIndexer {
@@ -162,7 +163,7 @@ public abstract class InternalElasticsearchClient implements Closeable {
    *
    * @param catchAll See {@link IndexNameFormatter#catchAll()}
    */
-  protected abstract void ensureClusterReady(String catchAll) throws IOException;
+  protected abstract void ensureClusterReady(String catchAll);
 
   /** Overridden to remove checked exceptions. */
   @Override
