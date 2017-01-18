@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,8 +19,11 @@ import zipkin.Endpoint;
 import zipkin.Span;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.Constants.CLIENT_RECV;
 import static zipkin.Constants.CLIENT_SEND;
 import static zipkin.Constants.SERVER_RECV;
+import static zipkin.Constants.SERVER_SEND;
+import static zipkin.internal.ApplyTimestampAndDuration.apply;
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 
 public class ApplyTimestampAndDurationTest {
@@ -28,12 +31,42 @@ public class ApplyTimestampAndDurationTest {
   Endpoint frontend =
       Endpoint.builder().serviceName("frontend").ipv4(192 << 24 | 12 << 16 | 1).port(8080).build();
   Annotation cs = Annotation.create((50) * 1000, CLIENT_SEND, frontend);
+  Annotation cr = Annotation.create((100) * 1000, CLIENT_RECV, frontend);
 
   Endpoint backend =
         Endpoint.builder().serviceName("backend").ipv4(192 << 24 | 12 << 16 | 2).port(8080).build();
-  Annotation sr = Annotation.create((95) * 1000, SERVER_RECV, backend);
+  Annotation sr = Annotation.create((70) * 1000, SERVER_RECV, backend);
+  Annotation ss = Annotation.create((80) * 1000, SERVER_SEND, backend);
 
   Span.Builder span = Span.builder().traceId(1).name("method1").id(666);
+
+  @Test
+  public void apply_onlyCs() {
+    assertThat(apply(span.addAnnotation(cs).build()).timestamp)
+        .isEqualTo(cs.timestamp);
+  }
+
+  @Test
+  public void apply_rpcSpan() {
+    assertThat(apply(span
+        .addAnnotation(cs)
+        .addAnnotation(sr)
+        .addAnnotation(ss)
+        .addAnnotation(cr).build()).duration)
+        .isEqualTo(cr.timestamp - cs.timestamp);
+  }
+
+  @Test
+  public void apply_serverOnly() {
+    assertThat(apply(span.addAnnotation(sr).addAnnotation(ss).build()).duration)
+        .isEqualTo(ss.timestamp - sr.timestamp);
+  }
+
+  @Test
+  public void apply_oneWay() {
+    assertThat(apply(span.addAnnotation(cs).addAnnotation(sr).build()).duration)
+        .isEqualTo(sr.timestamp - cs.timestamp);
+  }
 
   @Test
   public void bestTimestamp_isSpanTimestamp() {
