@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,6 +19,8 @@ import java.io.IOException;
 import okhttp3.Call;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+
+import static zipkin.internal.Util.propagateIfFatal;
 
 class CallbackListenableFuture<V> extends AbstractFuture<V> implements okhttp3.Callback {
   final Call call;
@@ -51,17 +53,6 @@ class CallbackListenableFuture<V> extends AbstractFuture<V> implements okhttp3.C
     } catch (Throwable t) {
       propagateIfFatal(t);
       setException(t);
-    }
-  }
-
-  // Taken from RxJava, which was taken from scala
-  static void propagateIfFatal(Throwable t) {
-    if (t instanceof VirtualMachineError) {
-      throw (VirtualMachineError) t;
-    } else if (t instanceof ThreadDeath) {
-      throw (ThreadDeath) t;
-    } else if (t instanceof LinkageError) {
-      throw (LinkageError) t;
     }
   }
 

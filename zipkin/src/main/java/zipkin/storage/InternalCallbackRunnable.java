@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package zipkin.storage;
 
 import static zipkin.internal.Util.checkNotNull;
+import static zipkin.internal.Util.propagateIfFatal;
 
 abstract class InternalCallbackRunnable<V> implements Runnable {
   final Callback<V> callback;
@@ -27,9 +28,9 @@ abstract class InternalCallbackRunnable<V> implements Runnable {
   @Override public void run() {
     try {
       callback.onSuccess(complete());
-    } catch (Throwable e) {
-      callback.onError(e);
-      if (e instanceof Error) throw (Error) e;
+    } catch (Throwable t) {
+      propagateIfFatal(t);
+      callback.onError(t);
     }
   }
 }

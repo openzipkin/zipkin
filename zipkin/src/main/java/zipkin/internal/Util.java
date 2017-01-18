@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -161,6 +161,17 @@ public final class Util {
     writeHexByte(data, pos + 10, (byte) ((v >>> 16L) & 0xff));
     writeHexByte(data, pos + 12, (byte) ((v >>> 8L) & 0xff));
     writeHexByte(data, pos + 14, (byte)  (v & 0xff));
+  }
+
+  // Taken from RxJava throwIfFatal, which was taken from scala
+  public static void propagateIfFatal(Throwable t) {
+    if (t instanceof VirtualMachineError) {
+      throw (VirtualMachineError) t;
+    } else if (t instanceof ThreadDeath) {
+      throw (ThreadDeath) t;
+    } else if (t instanceof LinkageError) {
+      throw (LinkageError) t;
+    }
   }
 
   static final char[] HEX_DIGITS =

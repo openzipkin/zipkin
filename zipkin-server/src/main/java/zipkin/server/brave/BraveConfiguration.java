@@ -48,6 +48,8 @@ import zipkin.reporter.Sender;
 import zipkin.server.ConditionalOnSelfTracing;
 import zipkin.storage.StorageComponent;
 
+import static zipkin.internal.Util.propagateIfFatal;
+
 @Configuration
 @ConditionalOnSelfTracing
 @Import(ApiTracerConfiguration.class)
@@ -140,9 +142,9 @@ public class BraveConfiguration {
           spans.add(Codec.THRIFT.readSpan(encodedSpan));
         }
         delegate.asyncSpanConsumer().accept(spans, new CallbackAdapter(callback));
-      } catch (Throwable e) {
-        callback.onError(e);
-        if (e instanceof Error) throw (Error) e;
+      } catch (Throwable t) {
+        propagateIfFatal(t);
+        callback.onError(t);
       }
     }
 
