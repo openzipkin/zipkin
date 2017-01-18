@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,30 +20,37 @@ import zipkin.Span;
 /**
  * <h3>Derived timestamp and duration</h3>
  *
- * <p>Instrumentation should log timestamp and duration, but since these fields are recent
- * (Nov-2015), a lot of tracers will not. Accordingly, this will backfill timestamp and duration to
- * if possible, based on interpretation of annotations.
+ * <p>Instrumentation should log timestamp and duration in most cases, but since these fields are
+ * recent (Nov-2015), a lot of tracers will not. They also will not log timestamp or duration in
+ * one-way spans ("cs", "sr"). This includes a utility to backfill timestamp and duration at query
+ * time. It also includes a utility to guess a timestamp, which is useful when indexing incomplete
+ * spans.
  */
 public class ApplyTimestampAndDuration {
 
-  // For spans that core client annotations, the distance between "cs" and "cr" should be the
-  // authoritative duration. We are special-casing this to avoid setting incorrect duration
-  // when there's skew between the client and the server.
+  /**
+   * For RPC two-way spans, the duration between "cs" and "cr" is authoritative. RPC one-way spans
+   * lack a response, so the duration is between "cs" and "sr". We special-case this to avoid
+   * setting incorrect duration when there's skew between the client and the server.
+   *
+   * <p>Note: this should only be used for query, not storage commands!
+   */
   public static Span apply(Span span) {
     // Don't overwrite authoritatively set timestamp and duration!
     if (span.timestamp != null && span.duration != null) {
       return span;
     }
 
-    // Only calculate span.timestamp and duration on complete spans. This avoids
-    // persisting an inaccurate timestamp due to a late arriving annotation.
+    // We cannot backfill duration on a span with less than two annotations. However, we can
+    // backfill timestamp.
     if (span.annotations.size() < 2) {
-      return span;
+      if (span.timestamp != null) return span;
+      Long guess = guessTimestamp(span);
+      if (guess == null) return span;
+      return span.toBuilder().timestamp(guess).build();
     }
 
-    // For spans that core client annotations, the distance between "cs" and "cr" should be the
-    // authoritative duration. We are special-casing this to avoid setting incorrect duration
-    // when there's skew between the client and the server.
+    // Prefer RPC one-way (cs -> sr) vs arbitrary annotations.
     Long first = span.annotations.get(0).timestamp;
     Long last = span.annotations.get(span.annotations.size() - 1).timestamp;
     for (int i = 0, length = span.annotations.size(); i < length; i++) {
