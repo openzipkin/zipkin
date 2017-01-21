@@ -22,7 +22,7 @@ export function formatAnnotationValue(value) {
   if (type === 'object' || type === 'array') {
     return JSON.stringify(value);
   } else {
-    return value;
+    return value.toString(); // prevents false from coercing to empty!
   }
 }
 
@@ -34,7 +34,7 @@ export function formatBinaryAnnotationValue(value) {
   if (type === 'object' || type === 'array') {
     return `<pre>${JSON.stringify(value, null, 2)}</pre>`;
   } else {
-    return value;
+    return value.toString(); // prevents false from coercing to empty!
   }
 }
 

@@ -48,6 +48,14 @@ describe('formatAnnotationValue', () => {
     formatAnnotationValue('foo').should.equal('foo');
   });
 
+  it('should return string when false', () => {
+    formatAnnotationValue(false).should.equal('false');
+  });
+
+  it('should return string when true', () => {
+    formatAnnotationValue(true).should.equal('true');
+  });
+
   it('should format object as one-line json', () => {
     formatAnnotationValue({foo: 'bar'}).should.equal(
       '{"foo":"bar"}'
@@ -64,6 +72,14 @@ describe('formatAnnotationValue', () => {
 describe('formatBinaryAnnotationValue', () => {
   it('should return same value when string', () => {
     formatBinaryAnnotationValue('foo').should.equal('foo');
+  });
+
+  it('should return string when false', () => {
+    formatBinaryAnnotationValue(false).should.equal('false');
+  });
+
+  it('should return string when true', () => {
+    formatBinaryAnnotationValue(true).should.equal('true');
   });
 
   it('should format object as pre-formatted multi-line json', () => {
