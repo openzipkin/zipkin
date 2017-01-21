@@ -95,12 +95,17 @@ describe('traceToMustache', () => {
         key: 'sa',
         value: true,
         endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
+      }, {
+        key: 'literally-false',
+        value: 'false',
+        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
       }]
     }];
     const {spans: [testSpan]} = traceToMustache(testTrace);
     testSpan.annotations[0].value.should.equal('Server Receive');
     testSpan.annotations[1].value.should.equal('Server Send');
     testSpan.binaryAnnotations[0].key.should.equal('Server Address');
+    testSpan.binaryAnnotations[1].value.should.equal('false');
   });
 
   it('should tolerate spans without annotations', () => {
