@@ -23,7 +23,7 @@ public class ElasticsearchV2TransportTest {
 
   @ClassRule
   public static LazyElasticsearchTransportStorage storage =
-      new LazyElasticsearchTransportStorage("openzipkin/zipkin-elasticsearch:1.19.0");
+      new LazyElasticsearchTransportStorage("openzipkin/zipkin-elasticsearch:1.19.2");
 
   public static class DependenciesTest extends ElasticsearchDependenciesTest {
 
