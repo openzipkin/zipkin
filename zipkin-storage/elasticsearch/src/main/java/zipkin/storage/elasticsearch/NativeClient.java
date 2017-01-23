@@ -251,7 +251,7 @@ final class NativeClient extends InternalElasticsearchClient {
     SearchRequestBuilder elasticRequest = client.prepareSearch(indices)
         .setIndicesOptions(IndicesOptions.lenientExpandOpen())
         .setTypes(SPAN)
-        .setSize(MAX_RAW_SPANS)
+        .setSize(MAX_RAW_ITEMS)
         .setQuery(query);
 
     return transform(toGuava(elasticRequest.execute()),
@@ -276,6 +276,7 @@ final class NativeClient extends InternalElasticsearchClient {
         indices)
         .setIndicesOptions(IndicesOptions.lenientExpandOpen())
         .setTypes(DEPENDENCY_LINK)
+        .setSize(MAX_RAW_ITEMS)
         .setQuery(matchAllQuery());
 
     return transform(toGuava(elasticRequest.execute()), ConvertDependenciesResponse.INSTANCE);
