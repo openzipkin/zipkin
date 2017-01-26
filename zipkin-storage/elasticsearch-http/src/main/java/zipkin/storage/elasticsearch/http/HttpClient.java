@@ -198,7 +198,7 @@ final class HttpClient extends InternalElasticsearchClient {
   }
 
   @Override protected ListenableFuture<List<Span>> findSpans(String[] indices, QueryBuilder query) {
-    String body = new SearchSourceBuilder().query(query).size(MAX_RAW_SPANS).toString();
+    String body = new SearchSourceBuilder().query(query).size(MAX_RESULT_WINDOW).toString();
     Call searchRequest = http.newCall(new Request.Builder().url(lenientSearch(indices, SPAN))
         .post(RequestBody.create(APPLICATION_JSON, body))
         .tag("search-spans").build());
@@ -209,7 +209,7 @@ final class HttpClient extends InternalElasticsearchClient {
   @Override
   protected ListenableFuture<List<DependencyLink>> findDependencies(String[] indices) {
     QueryBuilder query = QueryBuilders.matchAllQuery();
-    String body = new SearchSourceBuilder().query(query).toString();
+    String body = new SearchSourceBuilder().query(query).size(MAX_RESULT_WINDOW).toString();
     Call searchRequest =
         http.newCall(new Request.Builder().url(lenientSearch(indices, DEPENDENCY_LINK))
             .post(RequestBody.create(APPLICATION_JSON, body))

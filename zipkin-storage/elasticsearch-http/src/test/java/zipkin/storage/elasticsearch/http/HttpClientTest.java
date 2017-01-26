@@ -65,6 +65,7 @@ public class HttpClientTest {
             "/zipkin-2016-10-01,zipkin-2016-10-02/dependencylink/_search?allow_no_indices=true&expand_wildcards=open&ignore_unavailable=true");
     assertThat(request.getBody().buffer().readUtf8())
         .isEqualTo("{\n"
+            + "  \"size\" : 10000,\n"
             + "  \"query\" : {\n"
             + "    \"match_all\" : { }\n"
             + "  }\n"

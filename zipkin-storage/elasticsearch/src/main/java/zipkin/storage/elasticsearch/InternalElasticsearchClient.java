@@ -49,7 +49,7 @@ public abstract class InternalElasticsearchClient implements Closeable {
    *
    * <p> See https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-from-size.html
    */
-  protected static final int MAX_RAW_SPANS = 10000; // the default elasticsearch allowed limit
+  protected static final int MAX_RESULT_WINDOW = 10000; // the default elasticsearch allowed limit
   protected static final String SPAN = "span";
   protected static final String DEPENDENCY_LINK = "dependencylink";
 
