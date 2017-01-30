@@ -40,7 +40,6 @@ public final class ElasticsearchStorage
   }
 
   public static final class Builder implements StorageComponent.Builder {
-
     Builder(InternalElasticsearchClient.Builder clientBuilder) {
       this.clientBuilder = clientBuilder;
     }
