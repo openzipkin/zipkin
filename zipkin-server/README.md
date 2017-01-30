@@ -186,6 +186,7 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
     * `ES_AWS_REGION`: An optional override to the default region lookup to search for the domain
                        given in `ES_AWS_DOMAIN`. Ignored if only `ES_HOSTS` is present.
     * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to zipkin.
+    * `ES_DATE_SEPARATOR`: The date separator to use when generating daily index names. Defaults to '-'.
     * `ES_INDEX_SHARDS`: The number of shards to split the index into. Each shard and its replicas
                          are assigned to a machine in the cluster. Increasing the number of shards
                          and machines in the cluster will improve read and write performance. Number

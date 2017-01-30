@@ -27,7 +27,7 @@ final class LazyClient extends LazyCloseable<InternalElasticsearchClient> {
   LazyClient(ElasticsearchStorage.Builder builder) {
     this.clientFactory = builder.clientBuilder.buildFactory();
     this.indexTemplateName = builder.index + "_template"; // should be 1:1 with indices
-    this.allIndices = new IndexNameFormatter(builder.index).catchAll();
+    this.allIndices = new IndexNameFormatter(builder.index, builder.dateSeparator).catchAll();
     try {
       this.indexTemplate = Resources.toString(
           Resources.getResource("zipkin/storage/elasticsearch/zipkin_template.json"),
