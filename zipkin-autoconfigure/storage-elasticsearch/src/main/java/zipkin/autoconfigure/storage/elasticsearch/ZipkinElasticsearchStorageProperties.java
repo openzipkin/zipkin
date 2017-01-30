@@ -27,6 +27,8 @@ public class ZipkinElasticsearchStorageProperties {
   private List<String> hosts; // initialize to null to defer default to transport
   /** The index prefix to use when generating daily index names. Defaults to zipkin. */
   private String index = "zipkin";
+  /** The date separator used to create the index name. Default to -. */
+  private char dateSeparator = '-';
   /** Number of shards (horizontal scaling factor) per index. Defaults to 5. */
   private int indexShards = 5;
   /** Number of replicas (redundancy factor) per index. Defaults to 1.` */
@@ -69,6 +71,14 @@ public class ZipkinElasticsearchStorageProperties {
     this.indexShards = indexShards;
   }
 
+  public char getDateSeparator() {
+    return dateSeparator;
+  }
+
+  public void setDateSeparator(char dateSeparator) {
+    this.dateSeparator = dateSeparator;
+  }
+
   public int getIndexReplicas() {
     return indexReplicas;
   }
@@ -85,6 +95,7 @@ public class ZipkinElasticsearchStorageProperties {
     if (hosts != null) result.hosts(hosts);
     return result.cluster(cluster)
         .index(index)
+        .dateSeparator(dateSeparator)
         .indexShards(indexShards)
         .indexReplicas(indexReplicas);
   }

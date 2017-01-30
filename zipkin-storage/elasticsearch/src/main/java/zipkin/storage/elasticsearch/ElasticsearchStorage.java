@@ -40,6 +40,7 @@ public final class ElasticsearchStorage
   }
 
   public static final class Builder implements StorageComponent.Builder {
+
     Builder(InternalElasticsearchClient.Builder clientBuilder) {
       this.clientBuilder = clientBuilder;
     }
@@ -48,6 +49,7 @@ public final class ElasticsearchStorage
     // TODO: Tokenize traceId only when this is false.
     boolean strictTraceId = true;
     String index = "zipkin";
+    char dateSeparator = '-';
     int indexShards = 5;
     int indexReplicas = 1;
 
@@ -95,6 +97,11 @@ public final class ElasticsearchStorage
       return this;
     }
 
+    public Builder dateSeparator(char dateSeparator) {
+      this.dateSeparator = dateSeparator;
+      return this;
+    }
+
     /**
      * The number of replica copies of each shard in the index. Each shard and its replicas are
      * assigned to a machine in the cluster. Increasing the number of replicas and machines in the
@@ -127,7 +134,7 @@ public final class ElasticsearchStorage
 
   ElasticsearchStorage(Builder builder) {
     lazyClient = new LazyClient(builder);
-    indexNameFormatter = new IndexNameFormatter(builder.index);
+    indexNameFormatter = new IndexNameFormatter(builder.index, builder.dateSeparator);
     strictTraceId = builder.strictTraceId;
   }
 

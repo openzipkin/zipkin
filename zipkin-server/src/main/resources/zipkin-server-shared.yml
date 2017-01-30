@@ -87,6 +87,7 @@ zipkin:
         domain: ${ES_AWS_DOMAIN:}
         region: ${ES_AWS_REGION:}
       index: ${ES_INDEX:zipkin}
+      date-separator: ${ES_DATE-SEPARATOR:-}
       index-shards: ${ES_INDEX_SHARDS:5}
       index-replicas: ${ES_INDEX_REPLICAS:1}
     mysql:

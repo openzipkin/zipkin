@@ -13,7 +13,6 @@
  */
 package zipkin.storage.elasticsearch.http;
 
-import java.io.IOException;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.storage.elasticsearch.InternalElasticsearchClient;

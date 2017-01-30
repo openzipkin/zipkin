@@ -28,14 +28,16 @@ final class IndexNameFormatter {
   private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
   private final String index;
+  private final char dateSeparator;
   // SimpleDateFormat isn't thread-safe
   private final ThreadLocal<SimpleDateFormat> dateFormat;
 
-  IndexNameFormatter(String index) {
+  IndexNameFormatter(String index, char dateSeparator) {
     this.index = index;
+    this.dateSeparator = dateSeparator;
     this.dateFormat = new ThreadLocal<SimpleDateFormat>() {
       @Override protected SimpleDateFormat initialValue() {
-        SimpleDateFormat result = new SimpleDateFormat(DAILY_INDEX_FORMAT);
+        SimpleDateFormat result = new SimpleDateFormat(DAILY_INDEX_FORMAT.replace('-', dateSeparator));
         result.setTimeZone(TimeZone.getTimeZone("UTC"));
         return result;
       }
@@ -62,7 +64,7 @@ final class IndexNameFormatter {
         // attempt to compress a year
         current.set(Calendar.DAY_OF_YEAR, current.getActualMaximum(Calendar.DAY_OF_YEAR));
         if (current.compareTo(end) <= 0) {
-          indices.add(String.format("%s-%s-*", index, current.get(Calendar.YEAR)));
+          indices.add(String.format("%s-%s%c*", index, current.get(Calendar.YEAR), dateSeparator));
           current.add(Calendar.DATE, 1); // rollover to next year
           continue;
         } else {
@@ -72,9 +74,9 @@ final class IndexNameFormatter {
         // attempt to compress a month
         current.set(Calendar.DATE, current.getActualMaximum(Calendar.DATE));
         if (current.compareTo(end) <= 0) {
-          indices.add(String.format("%s-%s-%02d-*", index,
-              current.get(Calendar.YEAR),
-              current.get(Calendar.MONTH) + 1
+          indices.add(String.format("%s-%s%c%02d%c*", index,
+              current.get(Calendar.YEAR), dateSeparator,
+              current.get(Calendar.MONTH) + 1, dateSeparator
           ));
           current.add(Calendar.DATE, 1); // rollover to next month
           continue;
