@@ -11,39 +11,34 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage.elasticsearch;
+package zipkin.storage.elasticsearch.http.integration;
 
-import com.google.common.base.Throwables;
 import java.io.IOException;
 import java.util.List;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.MergeById;
-import zipkin.internal.Util;
 import zipkin.storage.DependenciesTest;
-import zipkin.storage.InMemorySpanStore;
 import zipkin.storage.InMemoryStorage;
-import zipkin.storage.elasticsearch.http.HttpElasticsearchDependencyWriter;
+import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
+import zipkin.storage.elasticsearch.http.InternalForTests;
 
 import static zipkin.TestObjects.DAY;
 import static zipkin.TestObjects.TODAY;
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.internal.Util.midnightUTC;
 
-public abstract class ElasticsearchDependenciesTest extends DependenciesTest {
+abstract class ElasticsearchHttpDependenciesTest extends DependenciesTest {
 
-  protected abstract ElasticsearchStorage storage();
+  protected abstract ElasticsearchHttpStorage storage();
 
   @Override public void clear() throws IOException {
-    storage().clear();
+    InternalForTests.clear(storage());
   }
 
   /**
    * The current implementation does not include dependency aggregation. It includes retrieval of
    * pre-aggregated links.
-   *
-   * <p>This uses {@link InMemorySpanStore} to prepare links and {@link #writeDependencyLinks(List,
-   * long)}} to store them.
    */
   @Override public void processDependencies(List<Span> spans) {
     InMemoryStorage mem = new InMemoryStorage();
@@ -51,18 +46,8 @@ public abstract class ElasticsearchDependenciesTest extends DependenciesTest {
     List<DependencyLink> links = mem.spanStore().getDependencies(TODAY + DAY, null);
 
     // This gets or derives a timestamp from the spans
-    long midnight = midnightUTC(guessTimestamp(MergeById.apply(spans).get(0)) / 1000);
-    writeDependencyLinks(links, midnight);
-  }
+    long midnightUTC = midnightUTC(guessTimestamp(MergeById.apply(spans).get(0)) / 1000);
 
-  protected void writeDependencyLinks(List<DependencyLink> links, long timestampMillis) {
-    long midnight = Util.midnightUTC(timestampMillis);
-    String index = storage().indexNameFormatter.indexNameForTimestamp(midnight);
-    try {
-      HttpElasticsearchDependencyWriter.writeDependencyLinks(storage().client(), links, index,
-          ElasticsearchConstants.DEPENDENCY_LINK);
-    } catch (Exception ex) {
-      throw Throwables.propagate(ex);
-    }
+    InternalForTests.writeDependencyLinks(storage(), links, midnightUTC);
   }
 }

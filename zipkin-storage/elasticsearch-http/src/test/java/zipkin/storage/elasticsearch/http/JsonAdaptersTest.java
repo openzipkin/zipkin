@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,10 +28,9 @@ import zipkin.internal.Util;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin.internal.Util.UTF_8;
-import static zipkin.storage.elasticsearch.http.ZipkinAdapters.SPAN_ADAPTER;
+import static zipkin.storage.elasticsearch.http.JsonAdapters.SPAN_ADAPTER;
 
-public class ZipkinAdaptersTest {
+public class JsonAdaptersTest {
   @Test
   public void ignoreNull_parentId() throws IOException {
     String json = "{\n"
@@ -289,7 +288,7 @@ public class ZipkinAdaptersTest {
 
     Buffer bytes = new Buffer();
     bytes.write(Codec.JSON.writeDependencyLink(link));
-    assertThat(ZipkinAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(bytes))
+    assertThat(JsonAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(bytes))
         .isEqualTo(link);
   }
 
@@ -306,8 +305,8 @@ public class ZipkinAdaptersTest {
         + "  \"id\": \"6b221d5bc9e6496c\"\n"
         + "}");
 
-    assertThat(ZipkinAdapters.SPAN_ADAPTER.fromJson(with128BitTraceId))
-        .isEqualTo(ZipkinAdapters.SPAN_ADAPTER.fromJson(withLower64bitsTraceId).toBuilder()
+    assertThat(JsonAdapters.SPAN_ADAPTER.fromJson(with128BitTraceId))
+        .isEqualTo(JsonAdapters.SPAN_ADAPTER.fromJson(withLower64bitsTraceId).toBuilder()
             .traceIdHigh(Util.lowerHexToUnsignedLong("48485a3953bb6124")).build());
   }
 
@@ -326,7 +325,7 @@ public class ZipkinAdaptersTest {
         + "  ]"
         + "}").replaceAll("\\s", "");
 
-    Span span = ZipkinAdapters.SPAN_ADAPTER.fromJson(json);
+    Span span = JsonAdapters.SPAN_ADAPTER.fromJson(json);
     assertThat(span.binaryAnnotations).extracting(b -> ByteBuffer.wrap(b.value).getLong())
         .containsExactly(9223372036854775807L);
   }

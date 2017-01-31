@@ -11,21 +11,21 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage.elasticsearch;
+package zipkin.storage.elasticsearch.http.integration;
 
+import java.io.IOException;
 import org.junit.AssumptionViolatedException;
 import zipkin.Component;
 import zipkin.storage.StorageComponent;
+import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
+import zipkin.storage.elasticsearch.http.InternalForTests;
 
-import java.io.IOException;
+abstract class ElasticsearchHttpStrictTraceIdFalseTest
+    extends zipkin.storage.StrictTraceIdFalseTest {
 
+  final ElasticsearchHttpStorage storage;
 
-@Deprecated
-abstract class ElasticsearchStrictTraceIdFalseTest extends zipkin.storage.StrictTraceIdFalseTest {
-
-  private final ElasticsearchStorage storage;
-
-  ElasticsearchStrictTraceIdFalseTest() {
+  ElasticsearchHttpStrictTraceIdFalseTest() {
     storage = storageBuilder()
         .strictTraceId(false)
         .index("test_zipkin_http_mixed")
@@ -37,13 +37,13 @@ abstract class ElasticsearchStrictTraceIdFalseTest extends zipkin.storage.Strict
     }
   }
 
-  protected abstract ElasticsearchStorage.Builder storageBuilder();
+  protected abstract ElasticsearchHttpStorage.Builder storageBuilder();
 
   @Override protected StorageComponent storage() {
     return storage;
   }
 
   @Override public void clear() throws IOException {
-    storage.clear();
+    InternalForTests.clear(storage);
   }
 }

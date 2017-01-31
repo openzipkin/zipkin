@@ -11,36 +11,49 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage.elasticsearch;
+package zipkin.storage.elasticsearch.http.integration;
 
-import com.google.common.collect.ImmutableList;
 import java.io.IOException;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+import okhttp3.Call;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin.Annotation;
-import zipkin.Codec;
 import zipkin.Span;
+import zipkin.internal.CallbackCaptor;
+import zipkin.internal.Util;
+import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
+import zipkin.storage.elasticsearch.http.InternalForTests;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
-import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
 import static zipkin.TestObjects.DAY;
 import static zipkin.TestObjects.TODAY;
 import static zipkin.TestObjects.WEB_ENDPOINT;
+import static zipkin.storage.elasticsearch.http.integration.LazyElasticsearchHttpStorage.INDEX;
 
-@Deprecated
-abstract class ElasticsearchSpanConsumerTest {
+abstract class ElasticsearchHttpSpanConsumerTest {
+  // we assume that buckets use a simple daily format.
+  SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+  ElasticsearchHttpSpanConsumerTest() {
+    dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+  }
 
   /** Should maintain state between multiple calls within a test. */
-  protected abstract ElasticsearchStorage storage();
+  abstract ElasticsearchHttpStorage storage();
 
   /** Clears store between tests. */
   @Before
   public void clear() throws IOException {
-    storage().clear();
+    InternalForTests.clear(storage());
   }
 
   @Test
@@ -54,14 +67,19 @@ abstract class ElasticsearchSpanConsumerTest {
 
     accept(span);
 
-    List<Span> indexFromTwoDaysAgo = storage().client()
-        .findSpans(new String[] {storage().indexNameFormatter.indexNameForTimestamp(twoDaysAgo)},
-            matchAllQuery())
-        .get();
-
     // make sure the span went into an index corresponding to its first annotation timestamp
-    assertThat(indexFromTwoDaysAgo.size())
-        .isEqualTo(1);
+    assertThat(findSpans(twoDaysAgo, span.traceId))
+        .contains("\"hits\":{\"total\":1");
+  }
+
+  String findSpans(long endTs, long traceId) throws IOException {
+    return new OkHttpClient().newCall(new Request.Builder().url(
+        HttpUrl.parse(baseUrl()).newBuilder()
+            .addPathSegment(INDEX + "-" + dateFormat.format(new Date(endTs)))
+            .addPathSegment("span")
+            .addPathSegment("_search")
+            .addQueryParameter("q", "traceId:" + Util.toLowerHex(traceId)).build())
+        .get().build()).execute().body().string();
   }
 
   @Test
@@ -73,14 +91,9 @@ abstract class ElasticsearchSpanConsumerTest {
 
     accept(span);
 
-    List<Span> indexFromTwoDaysAgo = storage().client()
-        .findSpans(new String[] {storage().indexNameFormatter.indexNameForTimestamp(twoDaysAgo)},
-            matchAllQuery())
-        .get();
-
     // make sure the span went into an index corresponding to its timestamp, not collection time
-    assertThat(indexFromTwoDaysAgo.size())
-        .isEqualTo(1);
+    assertThat(findSpans(twoDaysAgo, span.traceId))
+        .contains("\"hits\":{\"total\":1");
   }
 
   @Test
@@ -89,14 +102,9 @@ abstract class ElasticsearchSpanConsumerTest {
 
     accept(span);
 
-    List<Span> indexFromToday = storage().client()
-        .findSpans(new String[] {storage().indexNameFormatter.indexNameForTimestamp(TODAY)},
-            matchAllQuery())
-        .get();
-
     // make sure the span went into an index corresponding to collection time
-    assertThat(indexFromToday.size())
-        .isEqualTo(1);
+    assertThat(findSpans(TODAY, span.traceId))
+        .contains("\"hits\":{\"total\":1");
   }
 
   @Test
@@ -105,32 +113,23 @@ abstract class ElasticsearchSpanConsumerTest {
 
     accept(span);
 
-    List<Span> indexFromToday = storage().client()
-        .findSpans(new String[] {storage().indexNameFormatter.indexNameForTimestamp(TODAY)},
-            termQuery("timestamp_millis", TODAY))
-        .get();
+    Call searchRequest = new OkHttpClient().newCall(new Request.Builder().url(
+        HttpUrl.parse(baseUrl()).newBuilder()
+            .addPathSegment(INDEX + "-*")
+            .addPathSegment("span")
+            .addPathSegment("_search")
+            .addQueryParameter("q", "timestamp_millis:" + TODAY).build())
+        .get().tag("search-terms").build());
 
-    assertThat(indexFromToday.size())
-        .isEqualTo(1);
+    assertThat(searchRequest.execute().body().string())
+        .contains("\"hits\":{\"total\":1");
   }
 
-  @Test
-  public void prefixWithTimestampMillis() {
-    Span span = Span.builder().traceId(20L).id(20L).name("get")
-        .timestamp(TODAY * 1000).build();
-
-    byte[] result =
-        ElasticsearchSpanConsumer.prefixWithTimestampMillis(Codec.JSON.writeSpan(span), TODAY);
-
-    String json = new String(result);
-    assertThat(json)
-        .startsWith("{\"timestamp_millis\":" + Long.toString(TODAY) + ",\"traceId\":");
-
-    assertThat(Codec.JSON.readSpan(json.getBytes()))
-        .isEqualTo(span); // ignores timestamp_millis field
-  }
+  abstract String baseUrl();
 
   void accept(Span span) throws Exception {
-    storage().guavaSpanConsumer().accept(ImmutableList.of(span)).get();
+    CallbackCaptor<Void> callback = new CallbackCaptor<>();
+    storage().asyncSpanConsumer().accept(asList(span), callback);
+    callback.get();
   }
 }

@@ -41,7 +41,6 @@
     <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value</artifactId>
-      <version>1.3</version>
       <scope>provided</scope>
     </dependency>
 

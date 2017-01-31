@@ -11,44 +11,59 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage.elasticsearch;
+package zipkin.storage.elasticsearch.http.integration;
 
 import java.io.IOException;
 import org.junit.ClassRule;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import zipkin.storage.SpanStoreTest;
+import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
+import zipkin.storage.elasticsearch.http.InternalForTests;
 
-@Deprecated
 @RunWith(Enclosed.class)
-public class ElasticsearchV2HttpTest {
+public class ElasticsearchHttpV5Test {
 
   @ClassRule
   public static LazyElasticsearchHttpStorage storage =
-      new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch:1.19.2");
+      new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch5:1.19.2");
 
-  public static class SpanConsumerTest extends ElasticsearchSpanConsumerTest {
+  public static class HttpDependenciesTest
+      extends ElasticsearchHttpDependenciesTest {
 
-    @Override protected ElasticsearchStorage storage() {
+    @Override protected ElasticsearchHttpStorage storage() {
       return storage.get();
+    }
+  }
+
+  public static class HttpSpanConsumerTest
+      extends ElasticsearchHttpSpanConsumerTest {
+
+    @Override protected ElasticsearchHttpStorage storage() {
+      return storage.get();
+    }
+
+    @Override String baseUrl() {
+      return storage.baseUrl();
     }
   }
 
   public static class ElasticsearchSpanStoreTest extends SpanStoreTest {
 
-    @Override protected ElasticsearchStorage storage() {
+    @Override protected ElasticsearchHttpStorage storage() {
       return storage.get();
     }
 
     @Override public void clear() throws IOException {
-      storage().clear();
+      InternalForTests.clear(storage());
     }
   }
 
-  public static class StrictTraceIdFalseTest extends ElasticsearchStrictTraceIdFalseTest {
+  public static class HttpStrictTraceIdFalseTest
+      extends ElasticsearchHttpStrictTraceIdFalseTest {
 
-    @Override protected ElasticsearchStorage.Builder storageBuilder() {
-      return ElasticsearchV2HttpTest.storage.computeStorageBuilder();
+    @Override protected ElasticsearchHttpStorage.Builder storageBuilder() {
+      return ElasticsearchHttpV5Test.storage.computeStorageBuilder();
     }
   }
 }
