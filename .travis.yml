@@ -40,6 +40,9 @@ before_install:
   - nohup bash -c "cd kafka_* && bin/zookeeper-server-start.sh config/zookeeper.properties >/dev/null 2>&1 &"
   - nohup bash -c "cd kafka_* && bin/kafka-server-start.sh config/server.properties >/dev/null 2>&1 &"
 
+  # Quiet Maven invoker logs (Downloading... when running zipkin-server/src/it)
+  - echo "MAVEN_OPTS='-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'" > ~/.mavenrc
+
 install:
   # Override default travis to use the maven wrapper
   # skip license on travis due to #1512
