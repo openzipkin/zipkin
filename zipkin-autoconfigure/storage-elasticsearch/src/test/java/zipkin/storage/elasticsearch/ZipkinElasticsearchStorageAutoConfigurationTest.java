@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -49,7 +49,7 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(ElasticsearchStorage.class);
+    es();
   }
 
   @Test
@@ -60,7 +60,7 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
         ZipkinElasticsearchStorageAutoConfiguration.class);
     context.refresh();
 
-    assertThat(context.getBean(ElasticsearchStorage.class)).isNotNull();
+    assertThat(es()).isNotNull();
   }
 
   @Test
@@ -85,7 +85,7 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
     context.register(PropertyPlaceholderAutoConfiguration.class,
         ZipkinElasticsearchStorageAutoConfiguration.class);
     context.refresh();
-    assertThat(context.getBean(ElasticsearchStorage.class).strictTraceId).isTrue();
+    assertThat(es().strictTraceId).isTrue();
   }
 
   @Test
@@ -97,6 +97,52 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
         ZipkinElasticsearchStorageAutoConfiguration.class);
     context.refresh();
 
-    assertThat(context.getBean(ElasticsearchStorage.class).strictTraceId).isFalse();
+    assertThat(es().strictTraceId).isFalse();
+  }
+
+  @Test
+  public void dailyIndexFormat() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.storage.type:elasticsearch");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(es().indexNameFormatter.indexNameForTimestamp(0))
+        .isEqualTo("zipkin-1970-01-01");
+  }
+
+  @Test
+  public void dailyIndexFormat_overridingPrefix() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.index:zipkin_prod"
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(es().indexNameFormatter.indexNameForTimestamp(0))
+        .isEqualTo("zipkin_prod-1970-01-01");
+  }
+
+  @Test
+  public void dailyIndexFormat_overridingDateSeparator() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.date-separator:."
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(es().indexNameFormatter.indexNameForTimestamp(0))
+        .isEqualTo("zipkin-1970.01.01");
+  }
+
+  ElasticsearchStorage es() {
+    return context.getBean(ElasticsearchStorage.class);
   }
 }

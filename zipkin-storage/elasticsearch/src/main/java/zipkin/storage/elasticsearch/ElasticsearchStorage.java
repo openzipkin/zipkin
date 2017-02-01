@@ -48,6 +48,7 @@ public final class ElasticsearchStorage
     // TODO: Tokenize traceId only when this is false.
     boolean strictTraceId = true;
     String index = "zipkin";
+    char dateSeparator = '-';
     int indexShards = 5;
     int indexReplicas = 1;
 
@@ -96,6 +97,17 @@ public final class ElasticsearchStorage
     }
 
     /**
+     * The date separator to use when generating daily index names. Defaults to '-'.
+     *
+     * <p>By default, spans with a timestamp falling on 2016/03/19 end up in the index
+     * 'zipkin-2016-03-19'. When the date separator is '.', the index would be 'zipkin-2016.03.19'.
+     */
+    public Builder dateSeparator(char dateSeparator) {
+      this.dateSeparator = dateSeparator;
+      return this;
+    }
+
+    /**
      * The number of replica copies of each shard in the index. Each shard and its replicas are
      * assigned to a machine in the cluster. Increasing the number of replicas and machines in the
      * cluster will improve read performance, but not write performance. Number of replicas can be
@@ -127,7 +139,7 @@ public final class ElasticsearchStorage
 
   ElasticsearchStorage(Builder builder) {
     lazyClient = new LazyClient(builder);
-    indexNameFormatter = new IndexNameFormatter(builder.index);
+    indexNameFormatter = new IndexNameFormatter(builder.index, builder.dateSeparator);
     strictTraceId = builder.strictTraceId;
   }
 

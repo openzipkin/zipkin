@@ -9,10 +9,22 @@ The implementation uses Elasticsearch Java API's [transport client](https://www.
 that will operate against a local Elasticsearch installation.
 
 ## Indexes
-Spans are stored into daily indices, for example spans with a timestamp falling on 2016/03/19
-will be stored in an index like zipkin-2016-03-19. There is no support for TTL through this SpanStore.
-It is recommended instead to use [Elastic Curator](https://www.elastic.co/guide/en/elasticsearch/client/curator/current/about.html)
+Spans are stored into daily indices, for example spans with a timestamp
+falling on 2016/03/19 will be stored in the index named 'zipkin-2016-03-19'.
+There is no support for TTL through this SpanStore. It is recommended
+instead to use [Elastic Curator](https://www.elastic.co/guide/en/elasticsearch/client/curator/current/about.html)
 to remove indices older than the point you are interested in.
+
+### Customizing daily index format
+The daily index format can be adjusted in two ways. You can change the
+index prefix from 'zipkin' to something else. You can also change
+the date separator from '-' to something else.
+`ElasticsearchStorage.Builder.index` and `ElasticsearchStorage.Builder.dateSeparator`
+control the daily index format.
+
+For example, spans with a timestamp falling on 2016/03/19 end up in the
+index 'zipkin-2016-03-19'. When the date separator is '.', the index
+would be 'zipkin-2016.03.19'.
 
 ### String Mapping
 The Zipkin api implies aggregation and exact match (keyword) on string

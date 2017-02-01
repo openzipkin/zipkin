@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,7 +22,7 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class IndexNameFormatterTest {
-  IndexNameFormatter formatter = new IndexNameFormatter("zipkin");
+  IndexNameFormatter formatter = new IndexNameFormatter("zipkin", '-');
   DateFormat iso8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
 
   public IndexNameFormatterTest() {
@@ -116,6 +116,105 @@ public class IndexNameFormatterTest {
         "zipkin-2016-12-*",
         "zipkin-2017-*",
         "zipkin-2018-01-01"
+    );
+  }
+
+  @Test
+  public void indexNameForTimestampRange_other_sameDay() throws ParseException {
+    IndexNameFormatter formatter = new IndexNameFormatter("zipkin", '.');
+    long start = iso8601.parse("2016-11-01T01:01:01Z").getTime();
+    long end = iso8601.parse("2016-11-01T23:59:59Z").getTime();
+
+    assertThat(formatter.indexNamePatternsForRange(start, end))
+            .containsExactly("zipkin-2016.11.01");
+  }
+
+  @Test
+  public void indexNameForTimestampRange_other_sameMonth() throws ParseException {
+    IndexNameFormatter formatter = new IndexNameFormatter("zipkin", '.');
+    long start = iso8601.parse("2016-11-15T01:01:01Z").getTime();
+    long end = iso8601.parse("2016-11-16T23:59:59Z").getTime();
+
+    assertThat(formatter.indexNamePatternsForRange(start, end))
+            .containsExactly("zipkin-2016.11.15", "zipkin-2016.11.16");
+  }
+
+  @Test
+  public void indexNameForTimestampRange_sameMonth_other_startingAtOne() throws ParseException {
+    IndexNameFormatter formatter = new IndexNameFormatter("zipkin", '.');
+    long start = iso8601.parse("2016-11-1T01:01:01Z").getTime();
+    long end = iso8601.parse("2016-11-3T23:59:59Z").getTime();
+
+    assertThat(formatter.indexNamePatternsForRange(start, end))
+            .containsExactly("zipkin-2016.11.01", "zipkin-2016.11.02", "zipkin-2016.11.03");
+  }
+
+  @Test
+  public void indexNameForTimestampRange_other_nextMonth() throws ParseException {
+    IndexNameFormatter formatter = new IndexNameFormatter("zipkin", '.');
+    long start = iso8601.parse("2016-10-31T01:01:01Z").getTime();
+    long end = iso8601.parse("2016-11-01T23:59:59Z").getTime();
+
+    assertThat(formatter.indexNamePatternsForRange(start, end))
+            .containsExactly("zipkin-2016.10.31", "zipkin-2016.11.01");
+  }
+
+  @Test
+  public void indexNameForTimestampRange_other_compressesMonth() throws ParseException {
+    IndexNameFormatter formatter = new IndexNameFormatter("zipkin", '.');
+    long start = iso8601.parse("2016-10-01T01:01:01Z").getTime();
+    long end = iso8601.parse("2016-10-31T23:59:59Z").getTime();
+
+    assertThat(formatter.indexNamePatternsForRange(start, end))
+            .containsExactly("zipkin-2016.10.*");
+  }
+
+  @Test
+  public void indexNameForTimestampRange_other_skipMonths() throws ParseException {
+    IndexNameFormatter formatter = new IndexNameFormatter("zipkin", '.');
+    long start = iso8601.parse("2016-10-31T01:01:01Z").getTime();
+    long end = iso8601.parse("2016-12-01T23:59:59Z").getTime();
+
+    assertThat(formatter.indexNamePatternsForRange(start, end))
+            .containsExactly("zipkin-2016.10.31", "zipkin-2016.11.*", "zipkin-2016.12.01");
+  }
+
+  @Test
+  public void indexNameForTimestampRange_skipMonths_other_leapYear() throws ParseException {
+    IndexNameFormatter formatter = new IndexNameFormatter("zipkin", '.');
+    long start = iso8601.parse("2016-02-28T01:01:01Z").getTime();
+    long end = iso8601.parse("2016-04-01T23:59:59Z").getTime();
+
+    assertThat(formatter.indexNamePatternsForRange(start, end)).containsExactly(
+            "zipkin-2016.02.28",
+            "zipkin-2016.02.29",
+            "zipkin-2016.03.*",
+            "zipkin-2016.04.01"
+    );
+  }
+
+  @Test
+  public void indexNameForTimestampRange_other_compressesYear() throws ParseException {
+    IndexNameFormatter formatter = new IndexNameFormatter("zipkin", '.');
+    long start = iso8601.parse("2016-01-01T01:01:01Z").getTime();
+    long end = iso8601.parse("2016-12-31T23:59:59Z").getTime();
+
+    assertThat(formatter.indexNamePatternsForRange(start, end))
+            .containsExactly("zipkin-2016.*");
+  }
+
+  @Test
+  public void indexNameForTimestampRange_other_skipYears() throws ParseException {
+    IndexNameFormatter formatter = new IndexNameFormatter("zipkin", '.');
+    long start = iso8601.parse("2016-10-31T01:01:01Z").getTime();
+    long end = iso8601.parse("2018-01-01T23:59:59Z").getTime();
+
+    assertThat(formatter.indexNamePatternsForRange(start, end)).containsExactly(
+            "zipkin-2016.10.31",
+            "zipkin-2016.11.*",
+            "zipkin-2016.12.*",
+            "zipkin-2017.*",
+            "zipkin-2018.01.01"
     );
   }
 }
