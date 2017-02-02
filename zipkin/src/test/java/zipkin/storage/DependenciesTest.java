@@ -369,28 +369,29 @@ public abstract class DependenciesTest {
   @Test
   public void manyLinks() {
     int count = 1000; // Larger than 10, which is the default ES search limit that tripped this
+    List<Span> spans = new ArrayList<>(count);
     for (int i = 1; i <= count; i++) {
       Endpoint web = WEB_ENDPOINT.toBuilder().serviceName("web-" + i).build();
       Endpoint app = APP_ENDPOINT.toBuilder().serviceName("app-" + i).build();
       Endpoint db = DB_ENDPOINT.toBuilder().serviceName("db-" + i).build();
-      List<Span> trace = asList(
-          Span.builder().traceId(i).id(10L).name("get")
+
+      spans.add(Span.builder().traceId(i).id(10L).name("get")
               .timestamp((TODAY + 50L) * 1000).duration(250L * 1000)
               .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, web))
               .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, app))
               .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, app))
               .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, web))
-              .build(),
-          Span.builder().traceId(i).parentId(10L).id(11L).name("get")
+              .build());
+
+      spans.add(Span.builder().traceId(i).parentId(10L).id(11L).name("get")
               .timestamp((TODAY + 150L) * 1000).duration(50L * 1000)
               .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, app))
               .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, app))
               .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, db))
-              .build()
-      );
-
-      processDependencies(trace);
+              .build());
     }
+
+    processDependencies(spans);
 
     List<DependencyLink> links = store().getDependencies(TODAY + 1000L, null);
     assertThat(links).hasSize(count * 2); // web-? -> app-?, app-? -> db-?
