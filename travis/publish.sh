@@ -166,8 +166,7 @@ if is_pull_request; then
 # If we are on master, we will deploy the latest snapshot or release version
 #   - If a release commit fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
 elif is_travis_branch_master; then
-  # skip license on travis due to #1512
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks -DskipTests deploy -Dlicense.skip=true
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -pl -:benchmarks -DskipTests deploy
 
   # If the deployment succeeded, sync it to Maven Central. Note: this needs to be done once per project, not module, hence -N
   if is_release_commit; then
@@ -179,5 +178,5 @@ elif is_travis_branch_master; then
 elif build_started_by_tag; then
   safe_checkout_master
   # skip license on travis due to #1512
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion="$(release_version)" -Darguments="-DskipTests -Dlicense.skip=true" release:prepare -Dlicense.skip=true
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion="$(release_version)" -Darguments="-DskipTests -Dlicense.skip=true" release:prepare
 fi

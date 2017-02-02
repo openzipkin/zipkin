@@ -607,18 +607,6 @@
             <groupId>com.mycila</groupId>
             <artifactId>license-maven-plugin-git</artifactId>
             <version>${license-maven-plugin.version}</version>
-            <exclusions>
-              <!-- license-maven-plugin packages a really old version of jgit -->
-              <exclusion>
-                <groupId>org.eclipse.jgit</groupId>
-                <artifactId>*</artifactId>
-              </exclusion>
-            </exclusions>
-          </dependency>
-          <dependency>
-            <groupId>org.eclipse.jgit</groupId>
-            <artifactId>org.eclipse.jgit</artifactId>
-            <version>4.6.0.201612231935-r</version>
           </dependency>
         </dependencies>
         <executions>
@@ -659,6 +647,17 @@
       <id>release</id>
       <build>
         <plugins>
+          <!-- disable license plugin since it should have already checked things and #1512 -->
+          <plugin>
+            <groupId>com.mycila</groupId>
+            <artifactId>license-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+
           <!-- Creates source jar -->
           <plugin>
             <artifactId>maven-source-plugin</artifactId>
