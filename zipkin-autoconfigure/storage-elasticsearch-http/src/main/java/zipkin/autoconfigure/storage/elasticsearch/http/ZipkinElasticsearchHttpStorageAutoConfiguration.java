@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,37 +18,42 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-import zipkin.storage.elasticsearch.InternalElasticsearchClient;
-import zipkin.storage.elasticsearch.http.HttpClientBuilder;
+import zipkin.storage.StorageComponent;
+import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 
 @Configuration
+@EnableConfigurationProperties(ZipkinElasticsearchHttpStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
 @Conditional(ZipkinElasticsearchHttpStorageAutoConfiguration.HostsAreUrls.class)
+@ConditionalOnMissingBean(StorageComponent.class)
 public class ZipkinElasticsearchHttpStorageAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  InternalElasticsearchClient.Builder clientBuilder(
+  StorageComponent storage(ElasticsearchHttpStorage.Builder esHttpBuilder) {
+    return esHttpBuilder.build();
+  }
+
+  @Bean
+  ElasticsearchHttpStorage.Builder esHttpBuilder(
+      ZipkinElasticsearchHttpStorageProperties elasticsearch,
       @Qualifier("zipkinElasticsearchHttp") OkHttpClient client,
-      @Value("${zipkin.storage.elasticsearch.pipeline:}") String pipeline,
-      @Value("${zipkin.storage.elasticsearch.max-requests:64}") int maxRequests) {
-    return HttpClientBuilder.create(client)
-        .pipeline(pipeline.isEmpty() ? null : pipeline)
-        .maxRequests(maxRequests);
+      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId) {
+    return elasticsearch.toBuilder(client).strictTraceId(strictTraceId);
   }
 
   /** cheap check to see if we are likely to include urls */
   static final class HostsAreUrls implements Condition {
     @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata md) {
       String hosts = condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.hosts");
-      if (hosts == null) return false;
-      return hosts.contains("http://") || hosts.contains("https://");
+      return hosts != null && (hosts.contains("http://") || hosts.contains("https://"));
     }
   }
 }

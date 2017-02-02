@@ -15,33 +15,64 @@ package zipkin.storage.elasticsearch.http;
 
 import zipkin.Codec;
 import zipkin.Span;
-import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 
-import static zipkin.storage.elasticsearch.InternalElasticsearchClient.toSpanBytes;
+import static zipkin.internal.Util.UTF_8;
 
-final class HttpBulkSpanIndexer extends HttpBulkIndexer<Span> implements
-    InternalElasticsearchClient.BulkSpanIndexer {
+final class HttpBulkSpanIndexer extends HttpBulkIndexer<Span> {
 
-  HttpBulkSpanIndexer(HttpClient delegate, String spanType) {
-    super(delegate, spanType);
+  HttpBulkSpanIndexer(ElasticsearchHttpStorage es) {
+    super("span", es);
   }
 
-  @Override
-  public HttpBulkSpanIndexer add(String index, Span span, Long timestampMillis) {
+  /**
+   * In order to allow systems like Kibana to search by timestamp, we add a field
+   * "timestamp_millis" when storing a span that has a timestamp. The cheapest way to do this
+   * without changing the codec is prefixing it to the json.
+   *
+   * <p>For example. {"traceId":".. becomes {"timestamp_millis":12345,"traceId":"...
+   */
+  HttpBulkSpanIndexer add(String index, Span span, Long timestampMillis) {
     String id = null; // Allow ES to choose an ID
     if (timestampMillis == null) {
       super.add(index, span, id);
       return this;
     }
     writeIndexMetadata(index, id);
-    body.write(toSpanBytes(span, timestampMillis));
+    if (timestampMillis != null) {
+      body.write(prefixWithTimestampMillis(toJsonBytes(span), timestampMillis));
+    } else {
+      body.write(toJsonBytes(span));
+    }
     body.writeByte('\n');
 
-    if (client.flushOnWrites) indices.add(index);
+    if (flushOnWrites) indices.add(index);
     return this;
   }
 
   @Override byte[] toJsonBytes(Span span) {
     return Codec.JSON.writeSpan(span);
+  }
+
+  private static final byte[] TIMESTAMP_MILLIS_PREFIX = "{\"timestamp_millis\":".getBytes(UTF_8);
+
+  /**
+   * In order to allow systems like Kibana to search by timestamp, we add a field "timestamp_millis"
+   * when storing. The cheapest way to do this without changing the codec is prefixing it to the
+   * json. For example. {"traceId":"... becomes {"timestamp_millis":12345,"traceId":"...
+   */
+  static byte[] prefixWithTimestampMillis(byte[] input, long timestampMillis) {
+    String dateAsString = Long.toString(timestampMillis);
+    byte[] newSpanBytes =
+        new byte[TIMESTAMP_MILLIS_PREFIX.length + dateAsString.length() + input.length];
+    int pos = 0;
+    System.arraycopy(TIMESTAMP_MILLIS_PREFIX, 0, newSpanBytes, pos, TIMESTAMP_MILLIS_PREFIX.length);
+    pos += TIMESTAMP_MILLIS_PREFIX.length;
+    for (int i = 0, length = dateAsString.length(); i < length; i++) {
+      newSpanBytes[pos++] = (byte) dateAsString.charAt(i);
+    }
+    newSpanBytes[pos++] = ',';
+    // starting at position 1 discards the old head of '{'
+    System.arraycopy(input, 1, newSpanBytes, pos, input.length - 1);
+    return newSpanBytes;
   }
 }

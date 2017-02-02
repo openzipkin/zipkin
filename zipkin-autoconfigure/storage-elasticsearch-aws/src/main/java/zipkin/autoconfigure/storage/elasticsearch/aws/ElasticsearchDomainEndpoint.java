@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,13 +22,13 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import zipkin.internal.Lazy;
+import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 
 import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.moshi.JsonReaders.enterPath;
 
-final class ElasticsearchDomainEndpoint extends Lazy<List<String>> {
+final class ElasticsearchDomainEndpoint implements ElasticsearchHttpStorage.HostsSupplier {
   static final Logger log = Logger.getLogger(ElasticsearchDomainEndpoint.class.getName());
 
   final OkHttpClient client;
@@ -41,7 +41,7 @@ final class ElasticsearchDomainEndpoint extends Lazy<List<String>> {
         .addPathSegment(checkNotNull(domain, "domain")).build()).build();
   }
 
-  @Override protected List<String> compute() {
+  @Override public List<String> get() {
     try (Response response = client.newCall(describeElasticsearchDomain).execute()) {
       if (!response.isSuccessful()) {
         throw new IllegalStateException(response.body().string());

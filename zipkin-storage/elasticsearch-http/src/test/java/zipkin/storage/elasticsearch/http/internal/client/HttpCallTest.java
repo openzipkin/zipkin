@@ -11,16 +11,14 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage.elasticsearch.http;
+package zipkin.storage.elasticsearch.http.internal.client;
 
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.ResponseBody;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.After;
@@ -31,28 +29,26 @@ import zipkin.internal.CallbackCaptor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
-public class CallbackAdapterTest {
+public class HttpCallTest {
   @Rule
   public MockWebServer mws = new MockWebServer();
 
-  OkHttpClient client = new OkHttpClient();
-  CallbackCaptor<Void> callback = new CallbackCaptor<>();
-  Call call = client.newCall(new Request.Builder().url(mws.url("")).build());
+  HttpCall.Factory http = new HttpCall.Factory(new OkHttpClient(), mws.url(""));
+  Request request = new Request.Builder().url(http.baseUrl).build();
+  CallbackCaptor<Object> callback = new CallbackCaptor<>();
 
   @After
   public void close() throws IOException {
-    client.dispatcher().executorService().shutdownNow();
+    http.close();
   }
 
   @Test
   public void propagatesOnDispatcherThreadWhenFatal() throws Exception {
     mws.enqueue(new MockResponse());
 
-    new CallbackAdapter<Void>(call, callback) {
-      @Override Void convert(ResponseBody responseBody) throws IOException {
-        throw new LinkageError();
-      }
-    }.enqueue();
+    http.newCall(request, b -> {
+      throw new LinkageError();
+    }).submit(callback);
 
     SimpleTimeLimiter timeLimiter = new SimpleTimeLimiter();
     try {
@@ -66,11 +62,9 @@ public class CallbackAdapterTest {
   public void executionException_conversionException() throws Exception {
     mws.enqueue(new MockResponse());
 
-    new CallbackAdapter<Void>(call, callback) {
-      @Override Void convert(ResponseBody responseBody) throws IOException {
-        throw new IllegalArgumentException("eeek");
-      }
-    }.enqueue();
+    http.newCall(request, b -> {
+      throw new IllegalArgumentException("eeek");
+    }).submit(callback);
 
     try {
       callback.get();
@@ -84,7 +78,7 @@ public class CallbackAdapterTest {
   public void executionException_httpFailure() throws Exception {
     mws.enqueue(new MockResponse().setResponseCode(500));
 
-    new CallbackAdapter<Void>(call, callback).enqueue();
+    http.newCall(request, b -> null).submit(callback);
 
     try {
       callback.get();

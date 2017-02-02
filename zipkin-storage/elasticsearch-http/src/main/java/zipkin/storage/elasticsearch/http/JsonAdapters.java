@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -35,7 +35,7 @@ import static zipkin.internal.Util.lowerHexToUnsignedLong;
  * Read-only json adapters resurrected from before we switched to Java 6 as storage components can
  * be Java 7+
  */
-final class ZipkinAdapters {
+final class JsonAdapters {
   static final JsonAdapter<Span> SPAN_ADAPTER = new JsonAdapter<Span>() {
     @Override
     public Span fromJson(JsonReader reader) throws IOException {

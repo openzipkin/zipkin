@@ -35,14 +35,28 @@
       <artifactId>zipkin</artifactId>
     </dependency>
 
+    <!-- optional while HttpClientBuilder is still in use. Afterwards, they should be deleted -->
+    <!-- using provided since optional isn't treated as compile-only by IDEs -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-storage-elasticsearch</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.auto.value</groupId>
+      <artifactId>auto-value</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>

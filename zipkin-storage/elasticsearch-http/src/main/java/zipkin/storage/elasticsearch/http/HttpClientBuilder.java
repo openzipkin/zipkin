@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,6 @@
  */
 package zipkin.storage.elasticsearch.http;
 
-import java.util.Collections;
 import java.util.List;
 import okhttp3.OkHttpClient;
 import zipkin.internal.Lazy;
@@ -21,20 +20,19 @@ import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 
 import static zipkin.internal.Util.checkNotNull;
 
+/**
+ * @deprecated Please use {@link ElasticsearchHttpStorage} instead
+ */
+@Deprecated
 public final class HttpClientBuilder extends InternalElasticsearchClient.Builder {
-  final OkHttpClient client;
-  Lazy<List<String>> hosts;
-  String pipeline;
-  boolean flushOnWrites;
-  int maxRequests = 64;
+  final ElasticsearchHttpStorage.Builder builder;
 
   public static HttpClientBuilder create(OkHttpClient client) {
-    return new HttpClientBuilder(client);
+    return new HttpClientBuilder(ElasticsearchHttpStorage.builder(client));
   }
 
-  HttpClientBuilder(OkHttpClient client) {
-    this.client = checkNotNull(client, "client");
-    hosts(Collections.singletonList("http://localhost:9200"));
+  HttpClientBuilder(ElasticsearchHttpStorage.Builder builder) {
+    this.builder = builder;
   }
 
   /**
@@ -50,13 +48,13 @@ public final class HttpClientBuilder extends InternalElasticsearchClient.Builder
    * format. Defaults to "http://localhost:9200".
    */
   @Override public HttpClientBuilder hosts(Lazy<List<String>> hosts) {
-    this.hosts = checkNotNull(hosts, "hosts");
+    this.builder.hostsSupplier(() -> hosts.get());
     return this;
   }
 
   /** Sets maximum in-flight requests from this process to any Elasticsearch host. Defaults to 64 */
   public HttpClientBuilder maxRequests(int maxRequests) {
-    this.maxRequests = maxRequests;
+    this.builder.maxRequests(maxRequests);
     return this;
   }
 
@@ -67,13 +65,13 @@ public final class HttpClientBuilder extends InternalElasticsearchClient.Builder
    * <p>See https://www.elastic.co/guide/en/elasticsearch/reference/master/pipeline.html
    */
   public HttpClientBuilder pipeline(String pipeline) {
-    this.pipeline = pipeline;
+    this.builder.pipeline(pipeline);
     return this;
   }
 
   /** Visible for testing */
   @Override public HttpClientBuilder flushOnWrites(boolean flushOnWrites) {
-    this.flushOnWrites = flushOnWrites;
+    this.builder.flushOnWrites(flushOnWrites);
     return this;
   }
 

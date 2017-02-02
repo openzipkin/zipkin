@@ -37,11 +37,6 @@
     </dependency>
 
     <dependency>
-      <groupId>io.zipkin.java</groupId>
-      <artifactId>zipkin-autoconfigure-storage-elasticsearch</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>io.zipkin.brave</groupId>
       <artifactId>brave-okhttp</artifactId>
       <version>${brave.version}</version>
