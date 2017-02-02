@@ -42,7 +42,8 @@ before_install:
 
 install:
   # Override default travis to use the maven wrapper
-  - ./mvnw install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+  # skip license on travis due to #1512
+  - ./mvnw install -DskipTests=true -Dmaven.javadoc.skip=true -B -V -Dlicense.skip=true
 
 script:
   - ./travis/publish.sh
