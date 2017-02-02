@@ -179,5 +179,5 @@ elif is_travis_branch_master; then
 elif build_started_by_tag; then
   safe_checkout_master
   # skip license on travis due to #1512
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion="$(release_version)" -Darguments="-DskipTests -Dlicense.skip=true" release:prepare
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion="$(release_version)" -Darguments="-DskipTests -Dlicense.skip=true" release:prepare -Dlicense.skip=true
 fi
