@@ -145,9 +145,9 @@ public final class Node<V> {
       for (Map.Entry<Long, Long> entry : idToParent.entrySet()) {
         Node<V> node = idToNode.get(entry.getKey());
         Node<V> parent = idToNode.get(entry.getValue());
-        if (parent == null && rootNode == null) { // handle headless trace
-          rootNode = node;
-        } else if (parent == null) { // attribute missing parents to root
+        if (parent == null) { // handle headless trace
+          if (rootNode == null)
+            rootNode = new Node<>();
           rootNode.addChild(node);
         } else {
           parent.addChild(node);

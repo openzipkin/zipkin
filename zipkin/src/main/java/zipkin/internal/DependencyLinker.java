@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -68,12 +68,17 @@ public final class DependencyLinker {
     if (logger.isLoggable(FINE)) logger.fine("traversing trace tree, breadth-first");
     for (Iterator<Node<DependencyLinkSpan>> i = tree.traverse(); i.hasNext(); ) {
       Node<DependencyLinkSpan> current = i.next();
+      DependencyLinkSpan value = current.value();
       if (logger.isLoggable(FINE)) {
-        logger.fine("processing " + current.value());
+        logger.fine("processing " + value);
+      }
+      if (value == null) {
+        logger.fine("skipping synthetic node for broken span tree");
+        continue;
       }
       String child;
       String parent;
-      switch (current.value().kind) {
+      switch (value.kind) {
         case SERVER:
           child = current.value().service;
           parent = current.value().peerService;
@@ -104,8 +109,11 @@ public final class DependencyLinker {
         if (logger.isLoggable(FINE)) {
           logger.fine("processing ancestor " + ancestor.value());
         }
-        if (ancestor.value().kind == DependencyLinkSpan.Kind.SERVER) {
-          parent = ancestor.value().service;
+        DependencyLinkSpan ancestorLink = ancestor.value();
+        if (ancestorLink != null &&
+              ancestorLink.kind == DependencyLinkSpan.Kind.SERVER) {
+          parent = ancestorLink.service;
+          break;
         }
         ancestor = ancestor.parent();
       }
