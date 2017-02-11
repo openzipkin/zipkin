@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@ import java.io.StreamCorruptedException;
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkNotNull;
 
-public final class DependencyLink implements Serializable {
+public final class DependencyLink implements Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 
   public static DependencyLink create(String parent, String child, long callCount) {

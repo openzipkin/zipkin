@@ -13,13 +13,16 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.http;
 
+import java.io.Serializable;
 import java.util.List;
 import okhttp3.OkHttpClient;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
-public class ZipkinElasticsearchHttpStorageProperties {
+public class ZipkinElasticsearchHttpStorageProperties implements Serializable { // for Spark jobs
+  private static final long serialVersionUID = 0L;
+
   /** Indicates the ingest pipeline used before spans are indexed. no default */
   private String pipeline;
   /** A List of transport-specific hosts to connect to, e.g. "localhost:9300" */
