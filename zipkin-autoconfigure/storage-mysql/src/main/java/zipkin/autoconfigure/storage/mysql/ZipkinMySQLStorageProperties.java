@@ -13,7 +13,9 @@
  */
 package zipkin.autoconfigure.storage.mysql;
 
+import com.zaxxer.hikari.HikariDataSource;
 import java.io.Serializable;
+import javax.sql.DataSource;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("zipkin.storage.mysql")
@@ -82,5 +84,21 @@ public class ZipkinMySQLStorageProperties implements Serializable { // for Spark
 
   public void setUseSsl(boolean useSsl) {
     this.useSsl = useSsl;
+  }
+
+  public DataSource toDataSource() {
+    StringBuilder url = new StringBuilder("jdbc:mysql://");
+    url.append(getHost()).append(":").append(getPort());
+    url.append("/").append(getDb());
+    url.append("?autoReconnect=true");
+    url.append("&useSSL=").append(isUseSsl());
+    url.append("&useUnicode=yes&characterEncoding=UTF-8");
+    HikariDataSource result = new HikariDataSource();
+    result.setDriverClassName("org.mariadb.jdbc.Driver");
+    result.setJdbcUrl(url.toString());
+    result.setMaximumPoolSize(getMaxActive());
+    result.setUsername(getUsername());
+    result.setPassword(getPassword());
+    return result;
   }
 }
