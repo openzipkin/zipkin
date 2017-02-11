@@ -13,6 +13,7 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch;
 
+import java.io.Serializable;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.internal.Nullable;
@@ -20,7 +21,9 @@ import zipkin.storage.elasticsearch.ElasticsearchStorage;
 import zipkin.storage.elasticsearch.InternalElasticsearchClient;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
-public class ZipkinElasticsearchStorageProperties {
+public class ZipkinElasticsearchStorageProperties implements Serializable { // for Spark jobs
+  private static final long serialVersionUID = 0L;
+
   /** The elasticsearch cluster to connect to, defaults to "elasticsearch". */
   private String cluster = "elasticsearch";
   /** A List of transport-specific hosts to connect to, e.g. "localhost:9300" */

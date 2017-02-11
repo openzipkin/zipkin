@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,10 +13,13 @@
  */
 package zipkin.autoconfigure.storage.mysql;
 
+import java.io.Serializable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("zipkin.storage.mysql")
-public class ZipkinMySQLStorageProperties {
+public class ZipkinMySQLStorageProperties implements Serializable { // for Spark jobs
+  private static final long serialVersionUID = 0L;
+
   private String host = "localhost";
   private int port = 3306;
   private String username;
