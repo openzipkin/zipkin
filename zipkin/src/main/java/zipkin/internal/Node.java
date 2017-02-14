@@ -39,6 +39,7 @@ public final class Node<V> {
   private V value;
   /** mutable to avoid allocating lists for childless nodes */
   private List<Node<V>> children = Collections.emptyList();
+  private boolean missingRootDummyNode;
 
   /** Returns the parent, or null if root */
   @Nullable
@@ -70,6 +71,10 @@ public final class Node<V> {
   /** Traverses the tree, breadth-first. */
   public Iterator<Node<V>> traverse() {
     return new BreadthFirstIterator<>(this);
+  }
+
+  public boolean isSyntheticRootForPartialTree() {
+    return missingRootDummyNode;
   }
 
   static final class BreadthFirstIterator<V> implements Iterator<Node<V>> {
@@ -146,8 +151,10 @@ public final class Node<V> {
         Node<V> node = idToNode.get(entry.getKey());
         Node<V> parent = idToNode.get(entry.getValue());
         if (parent == null) { // handle headless trace
-          if (rootNode == null)
+          if (rootNode == null) {
             rootNode = new Node<>();
+            rootNode.missingRootDummyNode = true;
+          }
           rootNode.addChild(node);
         } else {
           parent.addChild(node);

@@ -72,7 +72,7 @@ public final class DependencyLinker {
       if (logger.isLoggable(FINE)) {
         logger.fine("processing " + currentSpan);
       }
-      if (currentSpan == null) {
+      if (current.isSyntheticRootForPartialTree()) {
         logger.fine("skipping synthetic node for broken span tree");
         continue;
       }
@@ -110,7 +110,7 @@ public final class DependencyLinker {
           logger.fine("processing ancestor " + ancestor.value());
         }
         DependencyLinkSpan ancestorLink = ancestor.value();
-        if (ancestorLink != null &&
+        if (!ancestor.isSyntheticRootForPartialTree() &&
               ancestorLink.kind == DependencyLinkSpan.Kind.SERVER) {
           parent = ancestorLink.service;
           break;
