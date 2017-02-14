@@ -183,9 +183,10 @@ public class DependencyLinkerTest {
 
   @Test
   public void doesntLinkUnrelatedSpansWhenMissingRootSpan() {
+    long missingParentId = 1;
     List<DependencyLinkSpan> trace = asList(
-        new DependencyLinkSpan(new TraceId(0L, 1L), 3L, 1L, Kind.SERVER, "service1", null),
-        new DependencyLinkSpan(new TraceId(0L, 1L), 3L, 2L, Kind.SERVER, "service2", null)
+        new DependencyLinkSpan(new TraceId(0L, 1L), missingParentId, 2L, Kind.SERVER, "service1", null),
+        new DependencyLinkSpan(new TraceId(0L, 1L), missingParentId, 3L, Kind.SERVER, "service2", null)
     );
 
     assertThat(new DependencyLinker()
