@@ -195,6 +195,19 @@ public class DependencyLinkerTest {
   }
 
   @Test
+  public void linksRelatedSpansWhenMissingRootSpan() {
+    long missingParentId = 1;
+    List<DependencyLinkSpan> trace = asList(
+        new DependencyLinkSpan(new TraceId(0L, 1L), missingParentId, 2L, Kind.SERVER, "service1", null),
+        new DependencyLinkSpan(new TraceId(0L, 1L), 2L, 3L, Kind.SERVER, "service2", null)
+    );
+
+    assertThat(new DependencyLinker()
+        .putTrace(trace.iterator()).link())
+        .containsOnly(DependencyLink.create("service1", "service2", 1L));
+  }
+
+  @Test
   public void merge() {
     List<DependencyLink> links = asList(
         DependencyLink.create("client", "server", 2L),
