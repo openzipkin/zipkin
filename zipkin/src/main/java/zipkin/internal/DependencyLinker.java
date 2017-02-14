@@ -68,20 +68,20 @@ public final class DependencyLinker {
     if (logger.isLoggable(FINE)) logger.fine("traversing trace tree, breadth-first");
     for (Iterator<Node<DependencyLinkSpan>> i = tree.traverse(); i.hasNext(); ) {
       Node<DependencyLinkSpan> current = i.next();
-      DependencyLinkSpan value = current.value();
+      DependencyLinkSpan currentSpan = current.value();
       if (logger.isLoggable(FINE)) {
-        logger.fine("processing " + value);
+        logger.fine("processing " + currentSpan);
       }
-      if (value == null) {
+      if (currentSpan == null) {
         logger.fine("skipping synthetic node for broken span tree");
         continue;
       }
       String child;
       String parent;
-      switch (value.kind) {
+      switch (currentSpan.kind) {
         case SERVER:
-          child = current.value().service;
-          parent = current.value().peerService;
+          child = currentSpan.service;
+          parent = currentSpan.peerService;
           if (current == tree) { // we are the root-most span.
             if (parent == null) {
               logger.fine("root's peer is unknown; skipping");
@@ -90,8 +90,8 @@ public final class DependencyLinker {
           }
           break;
         case CLIENT:
-          child = current.value().peerService;
-          parent = current.value().service;
+          child = currentSpan.peerService;
+          parent = currentSpan.service;
           break;
         default:
           logger.fine("non-rpc span; skipping");
