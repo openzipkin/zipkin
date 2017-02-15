@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -68,15 +68,20 @@ public final class DependencyLinker {
     if (logger.isLoggable(FINE)) logger.fine("traversing trace tree, breadth-first");
     for (Iterator<Node<DependencyLinkSpan>> i = tree.traverse(); i.hasNext(); ) {
       Node<DependencyLinkSpan> current = i.next();
+      DependencyLinkSpan currentSpan = current.value();
       if (logger.isLoggable(FINE)) {
-        logger.fine("processing " + current.value());
+        logger.fine("processing " + currentSpan);
+      }
+      if (current.isSyntheticRootForPartialTree()) {
+        logger.fine("skipping synthetic node for broken span tree");
+        continue;
       }
       String child;
       String parent;
-      switch (current.value().kind) {
+      switch (currentSpan.kind) {
         case SERVER:
-          child = current.value().service;
-          parent = current.value().peerService;
+          child = currentSpan.service;
+          parent = currentSpan.peerService;
           if (current == tree) { // we are the root-most span.
             if (parent == null) {
               logger.fine("root's peer is unknown; skipping");
@@ -85,8 +90,8 @@ public final class DependencyLinker {
           }
           break;
         case CLIENT:
-          child = current.value().peerService;
-          parent = current.value().service;
+          child = currentSpan.peerService;
+          parent = currentSpan.service;
           break;
         default:
           logger.fine("non-rpc span; skipping");
@@ -104,8 +109,11 @@ public final class DependencyLinker {
         if (logger.isLoggable(FINE)) {
           logger.fine("processing ancestor " + ancestor.value());
         }
-        if (ancestor.value().kind == DependencyLinkSpan.Kind.SERVER) {
-          parent = ancestor.value().service;
+        DependencyLinkSpan ancestorLink = ancestor.value();
+        if (!ancestor.isSyntheticRootForPartialTree() &&
+              ancestorLink.kind == DependencyLinkSpan.Kind.SERVER) {
+          parent = ancestorLink.service;
+          break;
         }
         ancestor = ancestor.parent();
       }

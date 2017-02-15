@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -179,6 +179,32 @@ public class DependencyLinkerTest {
           .putTrace(asList(span).iterator()).link())
           .isEmpty();
     }
+  }
+
+  @Test
+  public void doesntLinkUnrelatedSpansWhenMissingRootSpan() {
+    long missingParentId = 1;
+    List<DependencyLinkSpan> trace = asList(
+        new DependencyLinkSpan(new TraceId(0L, 1L), missingParentId, 2L, Kind.SERVER, "service1", null),
+        new DependencyLinkSpan(new TraceId(0L, 1L), missingParentId, 3L, Kind.SERVER, "service2", null)
+    );
+
+    assertThat(new DependencyLinker()
+        .putTrace(trace.iterator()).link())
+        .isEmpty();
+  }
+
+  @Test
+  public void linksRelatedSpansWhenMissingRootSpan() {
+    long missingParentId = 1;
+    List<DependencyLinkSpan> trace = asList(
+        new DependencyLinkSpan(new TraceId(0L, 1L), missingParentId, 2L, Kind.SERVER, "service1", null),
+        new DependencyLinkSpan(new TraceId(0L, 1L), 2L, 3L, Kind.SERVER, "service2", null)
+    );
+
+    assertThat(new DependencyLinker()
+        .putTrace(trace.iterator()).link())
+        .containsOnly(DependencyLink.create("service1", "service2", 1L));
   }
 
   @Test
