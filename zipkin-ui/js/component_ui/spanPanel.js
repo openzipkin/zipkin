@@ -19,7 +19,7 @@ export function maybeMarkTransientError(row, anno) {
 // aren't disrupted.
 export function formatAnnotationValue(value) {
   const type = $.type(value);
-  if (type === 'object' || type === 'array') {
+  if (type === 'object' || type === 'array' || value == null) {
     return JSON.stringify(value);
   } else {
     return value.toString(); // prevents false from coercing to empty!
@@ -31,7 +31,7 @@ export function formatAnnotationValue(value) {
 // scroll off the side of the screen.
 export function formatBinaryAnnotationValue(value) {
   const type = $.type(value);
-  if (type === 'object' || type === 'array') {
+  if (type === 'object' || type === 'array' || value == null) {
     return `<pre>${JSON.stringify(value, null, 2)}</pre>`;
   } else {
     return value.toString(); // prevents false from coercing to empty!
