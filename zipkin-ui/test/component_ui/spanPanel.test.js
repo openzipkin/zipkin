@@ -67,6 +67,10 @@ describe('formatAnnotationValue', () => {
       '[{"foo":"bar"},{"baz":"qux"}]'
     );
   });
+
+  it('should format null as json', () => {
+    formatAnnotationValue(null).should.equal('null');
+  });
 });
 
 describe('formatBinaryAnnotationValue', () => {
@@ -92,5 +96,9 @@ describe('formatBinaryAnnotationValue', () => {
     formatBinaryAnnotationValue([{foo: 'bar'}, {baz: 'qux'}]).should.equal(
       '<pre>[\n  {\n    "foo": "bar"\n  },\n  {\n    "baz": "qux"\n  }\n]</pre>'
     );
+  });
+
+  it('should format null as pre-formatted json', () => {
+    formatBinaryAnnotationValue(null).should.equal('<pre>null</pre>');
   });
 });
