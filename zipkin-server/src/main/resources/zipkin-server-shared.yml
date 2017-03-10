@@ -133,6 +133,21 @@ spring:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.elasticsearch.jest.JestAutoConfiguration
 
+security:
+  basic:
+    enabled: ${ZIPKIN_BASIC_SECURITY:false}
+    user:
+      name: ${ZIPKIN_BASIC_SECURITY_USERNAME:}
+      password: ${ZIPKIN_BASIC_SECURITY_PASSWORD:}
+
+management:
+  security:
+    basic:
+      enabled: ${ZIPKIN_BASIC_SECURITY:false}
+      user:
+        name: ${ZIPKIN_BASIC_SECURITY_USERNAME:}
+        password: ${ZIPKIN_BASIC_SECURITY_PASSWORD:}
+
 info:
   zipkin:
     version: "@project.version@"
