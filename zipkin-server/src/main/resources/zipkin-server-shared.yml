@@ -135,18 +135,12 @@ spring:
 
 security:
   basic:
-    enabled: ${ZIPKIN_BASIC_SECURITY:false}
-  user:
-    name: ${ZIPKIN_BASIC_SECURITY_USERNAME:}
-    password: ${ZIPKIN_BASIC_SECURITY_PASSWORD:}
+    enabled: false
 
 management:
   security:
     basic:
-      enabled: ${ZIPKIN_BASIC_SECURITY:false}
-    user:
-      name: ${ZIPKIN_BASIC_SECURITY_USERNAME:}
-      password: ${ZIPKIN_BASIC_SECURITY_PASSWORD:}
+      enabled: false
 
 info:
   zipkin:
