@@ -221,6 +221,13 @@ $ STORAGE_TYPE=elasticsearch ES_HOSTS=https://search-mydomain-2rlih66ibw43ftlk43
 $ STORAGE_TYPE=elasticsearch ES_AWS_DOMAIN=mydomain ES_AWS_REGION=ap-southeast-1 java -jar zipkin.jar
 ```
 
+#### Service and Span names query
+The [Zipkin query api v1](http://zipkin.io/zipkin-api/#/paths/%252Fservices) does not include
+a parameter for how far back to look for service or span names. In order
+to prevent excessive load, service and span name queries are limited by
+`QUERY_LOOKBACK`, which defaults to 24hrs (two daily buckets: one for
+today and one for yesterday)
+
 ### Scribe Collector
 The Scribe collector is enabled by default, configured by the following:
 

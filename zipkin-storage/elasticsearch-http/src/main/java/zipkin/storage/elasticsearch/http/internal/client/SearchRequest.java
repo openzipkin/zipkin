@@ -88,10 +88,6 @@ public final class SearchRequest {
     return new SearchRequest(indices, type);
   }
 
-  public SearchRequest nestedTermsEqual(Collection<String> nestedFields, String value) {
-    return query(_nestedTermsEqual(nestedFields, value));
-  }
-
   public SearchRequest term(String field, String value) {
     return query(new Term(field, value));
   }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,6 +20,8 @@ import okio.Buffer;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.storage.elasticsearch.TestResponses.SERVICE_NAMES;
+import static zipkin.storage.elasticsearch.TestResponses.SPAN_NAMES;
 
 public class JsonReadersTest {
 
@@ -57,84 +59,16 @@ public class JsonReadersTest {
 
   @Test
   public void collectValuesNamed_mergesArrays() throws IOException {
-    Set<String> result = JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8("{\n"
-        + "  \"took\": 1,\n"
-        + "  \"timed_out\": false,\n"
-        + "  \"_shards\": {\n"
-        + "    \"total\": 5,\n"
-        + "    \"successful\": 5,\n"
-        + "    \"failed\": 0\n"
-        + "  },\n"
-        + "  \"hits\": {\n"
-        + "    \"total\": 2,\n"
-        + "    \"max_score\": 0,\n"
-        + "    \"hits\": []\n"
-        + "  },\n"
-        + "  \"aggregations\": {\n"
-        + "    \"name_agg\": {\n"
-        + "      \"doc_count_error_upper_bound\": 0,\n"
-        + "      \"sum_other_doc_count\": 0,\n"
-        + "      \"buckets\": [\n"
-        + "        {\n"
-        + "          \"key\": \"methodcall\",\n"
-        + "          \"doc_count\": 1\n"
-        + "        },\n"
-        + "        {\n"
-        + "          \"key\": \"yak\",\n"
-        + "          \"doc_count\": 1\n"
-        + "        }\n"
-        + "      ]\n"
-        + "    }\n"
-        + "  }\n"
-        + "}")), "key");
+    Set<String> result =
+        JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8(SPAN_NAMES)), "key");
 
     assertThat(result).containsExactly("methodcall", "yak");
   }
 
   @Test
   public void collectValuesNamed_mergesChildren() throws IOException {
-    Set<String> result = JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8("{\n"
-        + "  \"took\": 4,\n"
-        + "  \"timed_out\": false,\n"
-        + "  \"_shards\": {\n"
-        + "    \"total\": 5,\n"
-        + "    \"successful\": 5,\n"
-        + "    \"failed\": 0\n"
-        + "  },\n"
-        + "  \"hits\": {\n"
-        + "    \"total\": 1,\n"
-        + "    \"max_score\": 0,\n"
-        + "    \"hits\": []\n"
-        + "  },\n"
-        + "  \"aggregations\": {\n"
-        + "    \"binaryAnnotations_agg\": {\n"
-        + "      \"doc_count\": 1,\n"
-        + "      \"binaryAnnotationsServiceName_agg\": {\n"
-        + "        \"doc_count_error_upper_bound\": 0,\n"
-        + "        \"sum_other_doc_count\": 0,\n"
-        + "        \"buckets\": [\n"
-        + "          {\n"
-        + "            \"key\": \"yak\",\n"
-        + "            \"doc_count\": 1\n"
-        + "          }\n"
-        + "        ]\n"
-        + "      }\n"
-        + "    },\n"
-        + "    \"annotations_agg\": {\n"
-        + "      \"doc_count\": 2,\n"
-        + "      \"annotationsServiceName_agg\": {\n"
-        + "        \"doc_count_error_upper_bound\": 0,\n"
-        + "        \"sum_other_doc_count\": 0,\n"
-        + "        \"buckets\": [\n"
-        + "          {\n"
-        + "            \"key\": \"service\",\n"
-        + "            \"doc_count\": 2\n"
-        + "          }\n"
-        + "        ]\n"
-        + "      }\n"
-        + "    }\n"
-        + "  }\n"
-        + "}")), "key");
+    Set<String> result =
+        JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8(SERVICE_NAMES)), "key");
 
     assertThat(result).containsExactly("yak", "service");
   }

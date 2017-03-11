@@ -45,8 +45,11 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
   ElasticsearchHttpStorage.Builder esHttpBuilder(
       ZipkinElasticsearchHttpStorageProperties elasticsearch,
       @Qualifier("zipkinElasticsearchHttp") OkHttpClient client,
-      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId) {
-    return elasticsearch.toBuilder(client).strictTraceId(strictTraceId);
+      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
+      @Value("${zipkin.query.lookback:86400000}") int namesLookback) {
+    return elasticsearch.toBuilder(client)
+        .strictTraceId(strictTraceId)
+        .namesLookback(namesLookback);
   }
 
   /** cheap check to see if we are likely to include urls */

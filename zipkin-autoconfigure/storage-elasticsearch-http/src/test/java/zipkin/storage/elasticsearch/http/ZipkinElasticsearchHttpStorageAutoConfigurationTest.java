@@ -13,6 +13,7 @@
  */
 package zipkin.storage.elasticsearch.http;
 
+import java.util.concurrent.TimeUnit;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import org.junit.After;
@@ -241,6 +242,22 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
 
     assertThat(es().indexNameFormatter().indexNameForTimestamp(0))
         .isEqualTo("zipkin-1970.01.01");
+  }
+
+  @Test
+  public void namesLookbackAssignedFromQueryLookback() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:http://host1:9200",
+        "zipkin.query.lookback:" + TimeUnit.DAYS.toMillis(2));
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchOkHttpAutoConfiguration.class,
+        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(es().namesLookback())
+        .isEqualTo((int) TimeUnit.DAYS.toMillis(2));
   }
 
   ElasticsearchHttpStorage es() {

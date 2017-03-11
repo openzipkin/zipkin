@@ -33,6 +33,7 @@ import org.springframework.util.SocketUtils;
 import zipkin.server.ZipkinServer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(
@@ -71,7 +72,7 @@ public class ZipkinServerTest {
 
       assertEquals("/", es.takeRequest().getPath()); // version
       assertEquals("/_template/zipkin_template", es.takeRequest().getPath());
-      assertEquals("/zipkin-*/span/_search", es.takeRequest().getPath().replaceAll("\\?.*", ""));
+      assertTrue(es.takeRequest().getPath().replaceAll("\\?.*", "").endsWith("/span/_search"));
     }
   }
 
