@@ -69,6 +69,10 @@
       <version>${jmh.version}</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>io.zipkin.java</groupId>
+      <artifactId>zipkin-server</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
