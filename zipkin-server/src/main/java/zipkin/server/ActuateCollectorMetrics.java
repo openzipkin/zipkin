@@ -18,9 +18,7 @@ import org.springframework.boot.actuate.metrics.Metric;
 import org.springframework.boot.actuate.metrics.buffer.BufferMetricReader;
 import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
 import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
-import org.springframework.lang.UsesJava8;
 import zipkin.collector.CollectorMetrics;
-import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.internal.Nullable;
 
 import java.util.ArrayList;
@@ -50,7 +48,6 @@ import static zipkin.internal.Util.checkNotNull;
  *
  * See https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html
  */
-@UsesJava8
 public final class ActuateCollectorMetrics implements CollectorMetrics, PublicMetrics
 {
   private final CounterBuffers counterBuffers;

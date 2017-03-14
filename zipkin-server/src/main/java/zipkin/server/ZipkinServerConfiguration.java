@@ -51,9 +51,9 @@ public class ZipkinServerConfiguration {
   CollectorMetrics metrics(Optional<CounterBuffers> counterBuffers, Optional<GaugeBuffers> gaugeBuffers) {
     // it is not guaranteed that BufferCounterService/CounterBuffers will be used,
     // for ex., com.datastax.cassandra:cassandra-driver-core brings com.codahale.metrics.MetricRegistry
-    // and as result DropwizardMetricServices is getting instantiated instead of standard Java8 BufferCounterService
-    // on top of it Cassandra driver heavily relies on Dropwizzard metrics and manually excluding it from pom.xml is not an option
-    // MetricsDropwizardAutoConfiguration can be manually excluded, but then Cassandra metrics won't be recorded
+    // and as result DropwizardMetricServices is getting instantiated instead of standard Java8 BufferCounterService.
+    // On top of it Cassandra driver heavily relies on Dropwizard metrics and manually excluding it from pom.xml is not an option.
+    // MetricsDropwizardAutoConfiguration can be manually excluded either, as Cassandra metrics won't be recorded.
     return new ActuateCollectorMetrics(counterBuffers.orElse(new CounterBuffers()),
                                        gaugeBuffers.orElse(new GaugeBuffers()));
   }
