@@ -45,12 +45,14 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
   final String[] allIndices;
   final IndexNameFormatter indexNameFormatter;
   final boolean strictTraceId;
+  final int namesLookback;
 
   ElasticsearchHttpSpanStore(ElasticsearchHttpStorage es) {
     this.search = new SearchCallFactory(es.http());
     this.allIndices = new String[] {es.indexNameFormatter().allIndices()};
     this.indexNameFormatter = es.indexNameFormatter();
     this.strictTraceId = es.strictTraceId();
+    this.namesLookback = es.namesLookback();
   }
 
   @Override public void getTraces(QueryRequest request, Callback<List<List<Span>>> callback) {
@@ -182,7 +184,14 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
   }
 
   @Override public void getServiceNames(Callback<List<String>> callback) {
-    SearchRequest request = SearchRequest.forIndicesAndType(asList(allIndices), SPAN)
+    long endMillis =  System.currentTimeMillis();
+    long beginMillis =  endMillis - namesLookback;
+
+    List<String> indices = indexNameFormatter.indexNamePatternsForRange(beginMillis, endMillis);
+    SearchRequest.Filters filters = new SearchRequest.Filters();
+    filters.addRange("timestamp_millis", beginMillis, endMillis);
+    SearchRequest request = SearchRequest.forIndicesAndType(indices, SPAN)
+        .filters(filters)
         .addAggregation(Aggregation.nestedTerms("annotations.endpoint.serviceName"))
         .addAggregation(Aggregation.nestedTerms("binaryAnnotations.endpoint.serviceName"));
 
@@ -195,11 +204,18 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
       return;
     }
 
-    SearchRequest request = SearchRequest.forIndicesAndType(asList(allIndices), SPAN)
-        .nestedTermsEqual(asList(
-            "annotations.endpoint.serviceName",
-            "binaryAnnotations.endpoint.serviceName"
-        ), serviceName.toLowerCase(Locale.ROOT))
+    long endMillis =  System.currentTimeMillis();
+    long beginMillis =  endMillis - namesLookback;
+
+    List<String> indices = indexNameFormatter.indexNamePatternsForRange(beginMillis, endMillis);
+    SearchRequest.Filters filters = new SearchRequest.Filters();
+    filters.addRange("timestamp_millis", beginMillis, endMillis);
+    filters.addNestedTerms(asList(
+        "annotations.endpoint.serviceName",
+        "binaryAnnotations.endpoint.serviceName"
+    ), serviceName.toLowerCase(Locale.ROOT));
+    SearchRequest request = SearchRequest.forIndicesAndType(indices, SPAN)
+        .filters(filters)
         .addAggregation(Aggregation.terms("name", Integer.MAX_VALUE));
 
     search.newCall(request, BodyConverters.SORTED_KEYS).submit(callback);

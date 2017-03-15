@@ -59,6 +59,7 @@ public abstract class ElasticsearchHttpStorage implements StorageComponent {
         .dateSeparator('-')
         .indexShards(5)
         .indexReplicas(1)
+        .namesLookback(86400000)
         .shutdownClientOnClose(false)
         .flushOnWrites(false);
   }
@@ -110,6 +111,12 @@ public abstract class ElasticsearchHttpStorage implements StorageComponent {
      * <p>See https://www.elastic.co/guide/en/elasticsearch/reference/master/pipeline.html
      */
     public abstract Builder pipeline(String pipeline);
+
+    /**
+     * Only return span and service names where all {@link zipkin.Span#timestamp} are at or after
+     * (now - lookback) in milliseconds. Defaults to 1 day (86400000).
+     */
+    public abstract Builder namesLookback(int namesLookback);
 
     /** Visible for testing */
     abstract Builder flushOnWrites(boolean flushOnWrites);
@@ -183,6 +190,8 @@ public abstract class ElasticsearchHttpStorage implements StorageComponent {
   abstract int indexReplicas();
 
   abstract IndexNameFormatter indexNameFormatter();
+
+  abstract int namesLookback();
 
   @Override public SpanStore spanStore() {
     return StorageAdapters.asyncToBlocking(asyncSpanStore());

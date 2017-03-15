@@ -97,6 +97,9 @@ collector in a different language, make sure you write span and service
 names in lowercase. Also, if there are any custom query tools, ensure
 inputs are downcased.
 
+Span and service name queries default to look back 24hrs (2 index days).
+This can be controlled by `ElasticsearchHttpStorage.Builder.namesLookback`
+
 ## Customizing the ingest pipeline
 
 When using Elasticsearch 5.x, you can setup an [ingest pipeline](https://www.elastic.co/guide/en/elasticsearch/reference/master/pipeline.html)
