@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,10 +13,17 @@
  */
 package zipkin.server;
 
-import org.springframework.boot.actuate.metrics.CounterService;
-import org.springframework.boot.actuate.metrics.GaugeService;
+import org.springframework.boot.actuate.endpoint.PublicMetrics;
+import org.springframework.boot.actuate.metrics.Metric;
+import org.springframework.boot.actuate.metrics.buffer.BufferMetricReader;
+import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
+import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
 import zipkin.collector.CollectorMetrics;
 import zipkin.internal.Nullable;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import static zipkin.internal.Util.checkNotNull;
 
@@ -41,10 +48,10 @@ import static zipkin.internal.Util.checkNotNull;
  *
  * See https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html
  */
-final class ActuateCollectorMetrics implements CollectorMetrics {
-
-  private final CounterService counterService;
-  private final GaugeService gaugeService;
+public final class ActuateCollectorMetrics implements CollectorMetrics, PublicMetrics
+{
+  private final CounterBuffers counterBuffers;
+  private final GaugeBuffers gaugeBuffers;
   private final String messages;
   private final String messagesDropped;
   private final String messageBytes;
@@ -52,64 +59,73 @@ final class ActuateCollectorMetrics implements CollectorMetrics {
   private final String bytes;
   private final String spans;
   private final String spansDropped;
+  private final BufferMetricReader reader;
 
-  ActuateCollectorMetrics(CounterService counterService, GaugeService gaugeService) {
-    this(counterService, gaugeService, null);
+  public ActuateCollectorMetrics(CounterBuffers counterBuffers, GaugeBuffers gaugeBuffers) {
+    this(counterBuffers, gaugeBuffers, null);
   }
 
-  ActuateCollectorMetrics(CounterService counterService, GaugeService gaugeService,
+  ActuateCollectorMetrics(CounterBuffers counterBuffers, GaugeBuffers gaugeBuffers,
       @Nullable String transport) {
-    this.counterService = counterService;
-    this.gaugeService = gaugeService;
+    this.counterBuffers = counterBuffers;
+    this.gaugeBuffers = gaugeBuffers;
+    this.reader = new BufferMetricReader(counterBuffers, gaugeBuffers);
     String footer = transport == null ? "" : "." + transport;
-    this.messages = "zipkin_collector.messages" + footer;
-    this.messagesDropped = "zipkin_collector.messages_dropped" + footer;
-    this.messageBytes = "zipkin_collector.message_bytes" + footer;
-    this.messageSpans = "zipkin_collector.message_spans" + footer;
-    this.bytes = "zipkin_collector.bytes" + footer;
-    this.spans = "zipkin_collector.spans" + footer;
-    this.spansDropped = "zipkin_collector.spans_dropped" + footer;
+    this.messages = "counter.zipkin_collector.messages" + footer;
+    this.messagesDropped = "counter.zipkin_collector.messages_dropped" + footer;
+    this.messageBytes = "gauge.zipkin_collector.message_bytes" + footer;
+    this.messageSpans = "gauge.zipkin_collector.message_spans" + footer;
+    this.bytes = "counter.zipkin_collector.bytes" + footer;
+    this.spans = "counter.zipkin_collector.spans" + footer;
+    this.spansDropped = "counter.zipkin_collector.spans_dropped" + footer;
   }
 
   @Override public ActuateCollectorMetrics forTransport(String transportType) {
     checkNotNull(transportType, "transportType");
-    return new ActuateCollectorMetrics(counterService, gaugeService, transportType);
+    return new ActuateCollectorMetrics(counterBuffers, gaugeBuffers, transportType);
+  }
+
+  @Override
+  public Collection<Metric<?>> metrics()
+  {
+    final Iterable<Metric<?>> metrics = reader.findAll();
+
+    final List<Metric<?>> result = new ArrayList<>();
+    metrics.forEach(result::add);
+    return result;
   }
 
   @Override public void incrementMessages() {
-    counterService.increment(messages);
+    counterBuffers.increment(messages, 1L);
   }
 
   @Override public void incrementMessagesDropped() {
-    counterService.increment(messagesDropped);
+    counterBuffers.increment(messagesDropped, 1L);
   }
 
   @Override public void incrementSpans(int quantity) {
-    gaugeService.submit(messageSpans, quantity);
-    for (int i = 0; i < quantity; i++)
-      counterService.increment(spans);
+    gaugeBuffers.set(messageSpans, quantity);
+    counterBuffers.increment(spans, quantity);
   }
 
   @Override public void incrementBytes(int quantity) {
-    gaugeService.submit(messageBytes, quantity);
-    for (int i = 0; i < quantity; i++)
-      counterService.increment(bytes);
+    gaugeBuffers.set(messageBytes, quantity);
+    counterBuffers.increment(bytes, quantity);
   }
 
   @Override
   public void incrementSpansDropped(int quantity) {
-    for (int i = 0; i < quantity; i++)
-      counterService.increment(spansDropped);
+    counterBuffers.increment(spansDropped, quantity);
   }
 
   // visible for testing
   void reset() {
-    counterService.reset(messages);
-    counterService.reset(messagesDropped);
-    counterService.reset(bytes);
-    counterService.reset(spans);
-    counterService.reset(spansDropped);
-    gaugeService.submit(messageSpans, 0);
-    gaugeService.submit(messageBytes, 0);
+    counterBuffers.reset(messages);
+    counterBuffers.reset(messagesDropped);
+    counterBuffers.reset(bytes);
+    counterBuffers.reset(spans);
+    counterBuffers.reset(spansDropped);
+    gaugeBuffers.set(messageSpans, 0);
+    gaugeBuffers.set(messageBytes, 0);
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,8 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.health.HealthAggregator;
-import org.springframework.boot.actuate.metrics.CounterService;
-import org.springframework.boot.actuate.metrics.GaugeService;
+import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
+import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -29,6 +29,8 @@ import zipkin.collector.CollectorSampler;
 import zipkin.server.brave.TracedStorageComponent;
 import zipkin.storage.InMemoryStorage;
 import zipkin.storage.StorageComponent;
+
+import java.util.Optional;
 
 @Configuration
 public class ZipkinServerConfiguration {
@@ -46,8 +48,14 @@ public class ZipkinServerConfiguration {
 
   @Bean
   @ConditionalOnMissingBean(CollectorMetrics.class)
-  CollectorMetrics metrics(CounterService counterService, GaugeService gaugeService) {
-    return new ActuateCollectorMetrics(counterService, gaugeService);
+  CollectorMetrics metrics(Optional<CounterBuffers> counterBuffers, Optional<GaugeBuffers> gaugeBuffers) {
+    // it is not guaranteed that BufferCounterService/CounterBuffers will be used,
+    // for ex., com.datastax.cassandra:cassandra-driver-core brings com.codahale.metrics.MetricRegistry
+    // and as result DropwizardMetricServices is getting instantiated instead of standard Java8 BufferCounterService.
+    // On top of it Cassandra driver heavily relies on Dropwizard metrics and manually excluding it from pom.xml is not an option.
+    // MetricsDropwizardAutoConfiguration can be manually excluded either, as Cassandra metrics won't be recorded.
+    return new ActuateCollectorMetrics(counterBuffers.orElse(new CounterBuffers()),
+                                       gaugeBuffers.orElse(new GaugeBuffers()));
   }
 
   @Configuration
