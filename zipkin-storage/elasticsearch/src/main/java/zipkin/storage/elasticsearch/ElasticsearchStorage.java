@@ -96,6 +96,11 @@ public final class ElasticsearchStorage
       return this;
     }
 
+    public Builder dateSeparator(char dateSeparator) {
+      this.dateSeparator = dateSeparator;
+      return this;
+    }
+
     /**
      * The date separator to use when generating daily index names. Defaults to '-'.
      *
