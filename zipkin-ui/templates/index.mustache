@@ -53,12 +53,7 @@
     <div class="pull-right">
       <span class="selector">Sort:
         <select class="sort-order js-sort-order">
-          <option value="service-percentage-desc">Service Percentage: Longest First</option>
-          <option value="service-percentage-asc">Service Percentage: Shortest First</option>
-          <option selected value="duration-desc">Longest First</option>
-          <option value="duration-asc">Shortest First</option>
-          <option value="timestamp-desc">Newest First</option>
-          <option value="timestamp-asc">Oldest First</option>
+          {{#sortOrderOptions}}<option value="{{value}}" {{sortOrderSelected}}>{{text}}</option>{{/sortOrderOptions}}
         </select>
       </span>
     </div>
