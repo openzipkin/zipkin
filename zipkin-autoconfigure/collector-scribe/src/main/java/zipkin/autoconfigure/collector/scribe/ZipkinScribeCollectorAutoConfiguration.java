@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -29,7 +29,7 @@ import zipkin.storage.StorageComponent;
  */
 @Configuration
 @EnableConfigurationProperties(ZipkinScribeCollectorProperties.class)
-@ConditionalOnProperty(value = "zipkin.collector.scribe.enabled", matchIfMissing = true)
+@ConditionalOnProperty(value = "zipkin.collector.scribe.enabled", havingValue = "true")
 public class ZipkinScribeCollectorAutoConfiguration {
   /** The init method will block until the scribe port is listening, or crash on port conflict */
   @Bean(initMethod = "start") ScribeCollector scribe(ZipkinScribeCollectorProperties scribe,
