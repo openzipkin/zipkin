@@ -48,6 +48,7 @@ const DefaultPageComponent = component(function DefaultPage() {
       const startTs = query.startTs || (endTs - this.attr.config('defaultLookback'));
       const serviceName = query.serviceName || '';
       const annotationQuery = query.annotationQuery || '';
+      const sortOrder = query.sortOrder || 'duration-desc';
       const queryWasPerformed = serviceName && serviceName.length > 0;
       this.$node.html(defaultTemplate({
         limit,
@@ -59,7 +60,7 @@ const DefaultPageComponent = component(function DefaultPage() {
         queryWasPerformed,
         count: modelView.traces.length,
         sortOrderOptions: sortOptions,
-        sortOrderSelected: sortSelected('duration-desc'),
+        sortOrderSelected: sortSelected(sortOrder),
         apiURL: modelView.apiURL,
         ...modelView
       }));

@@ -1,5 +1,5 @@
 <div class="row well well-sm">
-  <form class="form-inline" role="form">
+  <form class="form-inline" role="form" id="submitForm">
     <div class="form-group">
       <select data-placeholder="Service Name" class="form-control input-sm" style="width: 234px;" name="serviceName" id="serviceName">
       </select>
@@ -42,7 +42,6 @@
     <div class="clearfix"></div>
     <input type="text" class="form-control input-sm" id="annotationQuery" name="annotationQuery" value="{{annotationQuery}}" style="width: 100%" placeholder='Annotations Query (e.g. "finagle.timeout", "http.path=/foo/bar/ and cluster=foo and cache.miss")'>
   </form>
-{{#queryWasPerformed}}
   <div id="trace-filters">
     <div class="pull-left">
       <span>
@@ -52,7 +51,7 @@
     </div>
     <div class="pull-right">
       <span class="selector">Sort:
-        <select class="sort-order js-sort-order">
+        <select class="sort-order js-sort-order" form="submitForm" name="sortOrder">
           {{#sortOrderOptions}}<option value="{{value}}" {{sortOrderSelected}}>{{text}}</option>{{/sortOrderOptions}}
         </select>
       </span>
@@ -67,7 +66,6 @@
         <a href='{{apiURL}}' id='rawResultsJsonLink'><span class='btn btn-primary btn-xs badge'>JSON</span></a>
     </div>
   </div>
-{{/queryWasPerformed}}
 </div>
 
 <div class="row">
