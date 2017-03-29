@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -61,7 +61,7 @@ public interface CollectorMetrics {
    *
    * <p>For example, an implementation may by default report {@link #incrementSpans(int) incremented
    * spans} to the key "zipkin.collector.span.accepted". When {@code metrics.forTransport("kafka"}
-   * is called, the counter would report to "zipkin.collector.scribe.span.accepted"
+   * is called, the counter would report to "zipkin.collector.kafka.span.accepted"
    *
    * @param transportType ex "http", "scribe", "kafka"
    */

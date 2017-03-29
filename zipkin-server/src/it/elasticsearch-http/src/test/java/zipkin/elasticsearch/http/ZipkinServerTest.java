@@ -42,7 +42,6 @@ import static org.junit.Assert.assertTrue;
     properties = {
         "zipkin.storage.type=elasticsearch",
         "zipkin.storage.elasticsearch.hosts=http://localhost:${mock.elasticsearch.port}",
-        "zipkin.collector.scribe.enabled=false",
         "spring.config.name=zipkin-server"
     })
 @ContextConfiguration(initializers = ZipkinServerTest.RandomPortInitializer.class)

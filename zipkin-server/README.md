@@ -113,7 +113,6 @@ zipkin-server is a drop-in replacement for the [scala query service](https://git
     * `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
     * `QUERY_LOOKBACK`: How many milliseconds queries can look back from endTs; Defaults to 7 days
     * `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra`, `elasticsearch`
-    * `COLLECTOR_PORT`: Listen port for the scribe thrift api; Defaults to 9410
     * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 
 ### Cassandra Storage
@@ -229,9 +228,9 @@ to prevent excessive load, service and span name queries are limited by
 today and one for yesterday)
 
 ### Scribe Collector
-The Scribe collector is enabled by default, configured by the following:
+The Scribe collector is disabled by default, configured by the following:
 
-    * `SCRIBE_ENABLED`: Set to false to prevent scribe from starting; Defaults to true
+    * `SCRIBE_ENABLED`: Set to true to listen for scribe (thrift RPC); Defaults to false
     * `COLLECTOR_PORT`: Listen port for the scribe thrift api; Defaults to 9410
 
 ### Kafka Collector

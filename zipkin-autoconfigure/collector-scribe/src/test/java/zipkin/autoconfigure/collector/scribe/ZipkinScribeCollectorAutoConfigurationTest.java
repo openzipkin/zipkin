@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -46,9 +46,8 @@ public class ZipkinScribeCollectorAutoConfigurationTest {
   }
 
   @Test
-  public void doesntProvidesCollectorComponent_whenDisabled() {
+  public void doesntProvidesCollectorComponent_byDefault() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.collector.scribe.enabled:false");
     context.register(PropertyPlaceholderAutoConfiguration.class,
         ZipkinScribeCollectorAutoConfiguration.class, InMemoryConfiguration.class);
     context.refresh();
@@ -59,8 +58,9 @@ public class ZipkinScribeCollectorAutoConfigurationTest {
 
   /** Note: this will flake if you happen to be running a server on port 9410! */
   @Test
-  public void providesCollectorComponent() {
+  public void providesCollectorComponent_whenEnabled() {
     context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.collector.scribe.enabled:true");
     context.register(PropertyPlaceholderAutoConfiguration.class,
         ZipkinScribeCollectorAutoConfiguration.class, InMemoryConfiguration.class);
     context.refresh();
@@ -69,9 +69,12 @@ public class ZipkinScribeCollectorAutoConfigurationTest {
   }
 
   @Test
-  public void canOverridesProperty_port() {
+  public void canOverrideProperty_port() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.collector.scribe.port:9999");
+    addEnvironment(context,
+        "zipkin.collector.scribe.enabled:true",
+        "zipkin.collector.scribe.port:9999"
+    );
     context.register(PropertyPlaceholderAutoConfiguration.class,
         ZipkinScribeCollectorAutoConfiguration.class, InMemoryConfiguration.class);
     context.refresh();
