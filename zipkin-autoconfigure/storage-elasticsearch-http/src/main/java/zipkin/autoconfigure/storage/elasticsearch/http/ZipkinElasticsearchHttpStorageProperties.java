@@ -13,11 +13,12 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.http;
 
-import java.io.Serializable;
-import java.util.List;
 import okhttp3.OkHttpClient;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
+
+import java.io.Serializable;
+import java.util.List;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
 public class ZipkinElasticsearchHttpStorageProperties implements Serializable { // for Spark jobs
@@ -37,6 +38,11 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
   private int indexShards = 5;
   /** Number of replicas (redundancy factor) per index. Defaults to 1.` */
   private int indexReplicas = 1;
+
+  /** username and password fields for basic auth if configured */
+  private String basicAuthUserName;
+  private String basicAuthPassword;
+
 
   public String getPipeline() {
     return pipeline;
@@ -98,15 +104,31 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
     this.indexReplicas = indexReplicas;
   }
 
+  public String getBasicAuthUserName() {
+    return basicAuthUserName;
+  }
+
+  public void setBasicAuthUserName(String basicAuthUserName) {
+    this.basicAuthUserName = basicAuthUserName;
+  }
+
+  public String getBasicAuthPassword() {
+    return basicAuthPassword;
+  }
+
+  public void setBasicAuthPassword(String basicAuthPassword) {
+    this.basicAuthPassword = basicAuthPassword;
+  }
+
   public ElasticsearchHttpStorage.Builder toBuilder(OkHttpClient client) {
     ElasticsearchHttpStorage.Builder builder = ElasticsearchHttpStorage.builder(client);
     if (hosts != null) builder.hosts(hosts);
     return builder
-        .index(index)
-        .dateSeparator(dateSeparator)
-        .pipeline(pipeline)
-        .maxRequests(maxRequests)
-        .indexShards(indexShards)
-        .indexReplicas(indexReplicas);
+            .index(index)
+            .dateSeparator(dateSeparator)
+            .pipeline(pipeline)
+            .maxRequests(maxRequests)
+            .indexShards(indexShards)
+            .indexReplicas(indexReplicas);
   }
 }
