@@ -280,7 +280,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
 
 
   @Test
-  public void providesBasicAuthInterceptor_whenBasicAuthUserNameandPasswordNotConfigured() {
+  public void providesBasicAuthInterceptor_whenBasicAuthUserNameandPasswordConfigured() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context,
                    "zipkin.storage.type:elasticsearch",
