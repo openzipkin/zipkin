@@ -37,7 +37,6 @@
     <module>collector-scribe</module>
     <module>storage-cassandra</module>
     <module>storage-cassandra3</module>
-    <module>storage-elasticsearch</module>
     <module>storage-elasticsearch-http</module>
     <module>storage-elasticsearch-aws</module>
     <module>storage-mysql</module>
