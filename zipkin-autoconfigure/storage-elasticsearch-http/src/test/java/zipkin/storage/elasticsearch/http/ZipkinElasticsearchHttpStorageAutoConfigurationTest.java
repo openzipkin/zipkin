@@ -13,7 +13,6 @@
  */
 package zipkin.storage.elasticsearch.http;
 
-import java.util.concurrent.TimeUnit;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import org.junit.After;
@@ -26,9 +25,12 @@ import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfigurati
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import zipkin.autoconfigure.storage.elasticsearch.http.BasicAuthInterceptor;
 import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageAutoConfiguration;
 import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageProperties;
 import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchOkHttpAutoConfiguration;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -294,6 +296,42 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
 
     assertThat(es().namesLookback())
         .isEqualTo((int) TimeUnit.DAYS.toMillis(2));
+  }
+
+  @Test
+  public void doesntProvideBasicAuthInterceptor_whenBasicAuthUserNameandPasswordNotConfigured() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:http://host1:9200"
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchOkHttpAutoConfiguration.class,
+        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    context.refresh();
+
+    thrown.expect(NoSuchBeanDefinitionException.class);
+    context.getBean(BasicAuthInterceptor.class);
+  }
+
+  @Test
+  public void providesBasicAuthInterceptor_whenBasicAuthUserNameandPasswordConfigured() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:http://host1:9200",
+        "zipkin.storage.elasticsearch.username:somename",
+        "zipkin.storage.elasticsearch.password:pass"
+
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchOkHttpAutoConfiguration.class,
+        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(OkHttpClient.class).networkInterceptors())
+        .extracting(i -> i.getClass())
+        .contains((Class) BasicAuthInterceptor.class);
   }
 
   ElasticsearchHttpStorage es() {

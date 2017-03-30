@@ -13,6 +13,7 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.http;
 
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,7 +21,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin.storage.StorageComponent;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 
@@ -29,6 +34,13 @@ import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
 @ConditionalOnMissingBean(StorageComponent.class)
 public class ZipkinElasticsearchHttpStorageAutoConfiguration {
+
+  @Bean
+  @Qualifier("zipkinElasticsearchHttp")
+  @Conditional(BasicAuthRequired.class)
+  Interceptor basicAuthInterceptor(ZipkinElasticsearchHttpStorageProperties es) {
+    return new BasicAuthInterceptor(es);
+  }
 
   @Bean
   @ConditionalOnMissingBean
@@ -45,5 +57,19 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
     return elasticsearch.toBuilder(client)
         .strictTraceId(strictTraceId)
         .namesLookback(namesLookback);
+  }
+
+  static final class BasicAuthRequired implements Condition {
+    @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
+      String userName = condition.getEnvironment()
+          .getProperty("zipkin.storage.elasticsearch.username");
+      String password = condition.getEnvironment()
+          .getProperty("zipkin.storage.elasticsearch.password");
+      return !isEmpty(userName) && !isEmpty(password);
+    }
+  }
+
+  private static boolean isEmpty(String s) {
+    return s == null || s.isEmpty();
   }
 }
