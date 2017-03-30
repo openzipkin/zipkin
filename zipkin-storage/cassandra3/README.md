@@ -61,6 +61,9 @@ for use in user queries.
 ### Time-To_live
 Time-To-Live is default now at the table level. It can not be overridden in write requests.
 
+There's a different default TTL for trace data and indexes, 7 days vs 3 days respectively. The impact is that you can
+retrieve a trace by ID for up to 7 days, but you can only search the last 3 days of traces (ex by service name).
+
 ### Compaction
 Time-series data is compacted using TimeWindowCompactionStrategy, a known improved over DateTieredCompactionStrategy. Data is
 optimised for queries with a single day. The penalty of reading multiple days is small, a few disk seeks, compared to the
