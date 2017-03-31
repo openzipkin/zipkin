@@ -35,19 +35,6 @@
       <artifactId>zipkin</artifactId>
     </dependency>
 
-    <!-- optional while HttpClientBuilder is still in use. Afterwards, they should be deleted -->
-    <!-- using provided since optional isn't treated as compile-only by IDEs -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-storage-elasticsearch</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <optional>true</optional>
-    </dependency>
-
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
@@ -62,13 +49,21 @@
     <dependency>
       <groupId>com.squareup.moshi</groupId>
       <artifactId>moshi</artifactId>
-      <version>1.3.1</version>
+      <version>1.4.0</version>
     </dependency>
 
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
       <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- For HttpCallTest -->
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
       <scope>test</scope>
     </dependency>
 

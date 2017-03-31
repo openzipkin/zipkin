@@ -20,18 +20,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Condition;
-import org.springframework.context.annotation.ConditionContext;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin.storage.StorageComponent;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinElasticsearchHttpStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
-@Conditional(ZipkinElasticsearchHttpStorageAutoConfiguration.HostsAreUrls.class)
 @ConditionalOnMissingBean(StorageComponent.class)
 public class ZipkinElasticsearchHttpStorageAutoConfiguration {
 
@@ -50,13 +45,5 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
     return elasticsearch.toBuilder(client)
         .strictTraceId(strictTraceId)
         .namesLookback(namesLookback);
-  }
-
-  /** cheap check to see if we are likely to include urls */
-  static final class HostsAreUrls implements Condition {
-    @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata md) {
-      String hosts = condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.hosts");
-      return hosts != null && (hosts.contains("http://") || hosts.contains("https://"));
-    }
   }
 }

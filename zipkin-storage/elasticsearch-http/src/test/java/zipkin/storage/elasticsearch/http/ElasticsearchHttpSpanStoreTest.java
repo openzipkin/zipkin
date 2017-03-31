@@ -27,8 +27,8 @@ import zipkin.internal.Util;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin.storage.elasticsearch.TestResponses.SERVICE_NAMES;
-import static zipkin.storage.elasticsearch.TestResponses.SPAN_NAMES;
+import static zipkin.storage.elasticsearch.http.TestResponses.SERVICE_NAMES;
+import static zipkin.storage.elasticsearch.http.TestResponses.SPAN_NAMES;
 
 public class ElasticsearchHttpSpanStoreTest {
   @Rule

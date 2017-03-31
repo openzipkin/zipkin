@@ -38,6 +38,9 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
+      <!-- provided to not interfere with the guava version set by dependents -->
+      <scope>provided</scope>
     </dependency>
 
     <dependency>

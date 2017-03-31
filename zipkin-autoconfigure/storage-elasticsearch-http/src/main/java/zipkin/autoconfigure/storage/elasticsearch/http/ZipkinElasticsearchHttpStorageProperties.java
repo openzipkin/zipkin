@@ -14,18 +14,24 @@
 package zipkin.autoconfigure.storage.elasticsearch.http;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
 public class ZipkinElasticsearchHttpStorageProperties implements Serializable { // for Spark jobs
+  static final Logger log =
+      Logger.getLogger(ZipkinElasticsearchHttpStorageProperties.class.getName());
+
   private static final long serialVersionUID = 0L;
 
   /** Indicates the ingest pipeline used before spans are indexed. no default */
   private String pipeline;
-  /** A List of transport-specific hosts to connect to, e.g. "localhost:9300" */
+  /** A List of base urls to connect to. Defaults to http://localhost:9300 */
   private List<String> hosts; // initialize to null to defer default to transport
   /** The index prefix to use when generating daily index names. Defaults to zipkin. */
   private String index = "zipkin";
@@ -54,7 +60,23 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
 
   public void setHosts(List<String> hosts) {
     if (hosts != null && !hosts.isEmpty()) {
-      this.hosts = hosts;
+      List<String> converted = new ArrayList<>();
+      for (String host : hosts) {
+        if (host.startsWith("http://") || host.startsWith("https://")) {
+          converted.add(host);
+          continue;
+        }
+        int port = HttpUrl.parse("http://" + host).port();
+        if (port == 80) {
+          host += ":9200";
+        } else if (port == 9300) {
+          log.warning(
+              "Native transport no longer supported. Changing " + host + " to http port 9200");
+          host = host.replace(":9300", ":9200");
+        }
+        converted.add("http://" + host);
+      }
+      this.hosts = converted;
     }
   }
 
