@@ -17,6 +17,24 @@ import BackToTop from '../component_ui/backToTop';
 import {defaultTemplate} from '../templates';
 
 const DefaultPageComponent = component(function DefaultPage() {
+  const sortOptions = [
+    {value: 'service-percentage-desc', text: 'Service Percentage: Longest First'},
+    {value: 'service-percentage-asc', text: 'Service Percentage: Shortest First'},
+    {value: 'duration-desc', text: 'Longest First'},
+    {value: 'duration-asc', text: 'Shortest First'},
+    {value: 'timestamp-desc', text: 'Newest First'},
+    {value: 'timestamp-asc', text: 'Oldest First'}
+  ];
+
+  const sortSelected = function getSelector(selectedSortValue) {
+    return function selected() {
+      if (this.value === selectedSortValue) {
+        return 'selected';
+      }
+      return '';
+    };
+  };
+
   this.after('initialize', function() {
     window.document.title = 'Zipkin - Index';
     this.trigger(document, 'navigate', {route: 'index'});
@@ -30,6 +48,7 @@ const DefaultPageComponent = component(function DefaultPage() {
       const startTs = query.startTs || (endTs - this.attr.config('defaultLookback'));
       const serviceName = query.serviceName || '';
       const annotationQuery = query.annotationQuery || '';
+      const sortOrder = query.sortOrder || 'duration-desc';
       const queryWasPerformed = serviceName && serviceName.length > 0;
       this.$node.html(defaultTemplate({
         limit,
@@ -40,6 +59,8 @@ const DefaultPageComponent = component(function DefaultPage() {
         annotationQuery,
         queryWasPerformed,
         count: modelView.traces.length,
+        sortOrderOptions: sortOptions,
+        sortOrderSelected: sortSelected(sortOrder),
         apiURL: modelView.apiURL,
         ...modelView
       }));

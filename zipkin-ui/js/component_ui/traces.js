@@ -82,5 +82,7 @@ export default component(function traces() {
     this.on(document, 'uiAddServiceNameFilter', this.addFilter);
     this.on(document, 'uiRemoveServiceNameFilter', this.removeFilter);
     this.on(document, 'uiUpdateTraceSortOrder', this.updateSortOrder);
+    const sortOrderSelect = $('.sort-order');
+    this.updateSortOrder(null, {order: sortOrderSelect.val()});
   });
 });
