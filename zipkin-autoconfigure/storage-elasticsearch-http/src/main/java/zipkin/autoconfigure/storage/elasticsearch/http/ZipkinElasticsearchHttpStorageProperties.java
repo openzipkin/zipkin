@@ -43,7 +43,6 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
   private String basicAuthUserName;
   private String basicAuthPassword;
 
-
   public String getPipeline() {
     return pipeline;
   }
@@ -124,11 +123,11 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
     ElasticsearchHttpStorage.Builder builder = ElasticsearchHttpStorage.builder(client);
     if (hosts != null) builder.hosts(hosts);
     return builder
-            .index(index)
-            .dateSeparator(dateSeparator)
-            .pipeline(pipeline)
-            .maxRequests(maxRequests)
-            .indexShards(indexShards)
-            .indexReplicas(indexReplicas);
+        .index(index)
+        .dateSeparator(dateSeparator)
+        .pipeline(pipeline)
+        .maxRequests(maxRequests)
+        .indexShards(indexShards)
+        .indexReplicas(indexReplicas);
   }
 }
