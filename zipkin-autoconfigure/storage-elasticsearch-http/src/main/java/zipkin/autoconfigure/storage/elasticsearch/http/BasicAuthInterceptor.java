@@ -26,12 +26,12 @@ import java.io.IOException;
 
 import static zipkin.moshi.JsonReaders.enterPath;
 
-public class BasicAuthInterceptor implements Interceptor {
+final public class BasicAuthInterceptor implements Interceptor {
 
-    ZipkinElasticsearchHttpStorageProperties es;
+    private String basicCredentials;
 
     BasicAuthInterceptor(ZipkinElasticsearchHttpStorageProperties es) {
-        this.es = es;
+        basicCredentials = Credentials.basic(es.getBasicAuthUserName(), es.getBasicAuthPassword());
     }
 
     @Override
@@ -50,10 +50,9 @@ public class BasicAuthInterceptor implements Interceptor {
         return response;
     }
 
-    Request appendBasicAuthHeaderParameters(Request input) throws IOException {
+    private Request appendBasicAuthHeaderParameters(Request input) throws IOException {
 
         Request.Builder builder = input.newBuilder();
-        String credential = Credentials.basic(es.getBasicAuthUserName(), es.getBasicAuthPassword());
-        return builder.header("authorization", credential).build();
+        return builder.header("authorization", basicCredentials).build();
     }
 }
