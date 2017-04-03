@@ -26,33 +26,37 @@ import java.io.IOException;
 
 import static zipkin.moshi.JsonReaders.enterPath;
 
+/*
+adds basic auth username and password to every request per
+https://www.elastic.co/guide/en/x-pack/current/how-security-works.html
+*/
 final public class BasicAuthInterceptor implements Interceptor {
 
-    private String basicCredentials;
+  private String basicCredentials;
 
-    BasicAuthInterceptor(ZipkinElasticsearchHttpStorageProperties es) {
-        basicCredentials = Credentials.basic(es.getUsername(), es.getPassword());
+  BasicAuthInterceptor(ZipkinElasticsearchHttpStorageProperties es) {
+    basicCredentials = Credentials.basic(es.getUsername(), es.getPassword());
+  }
+
+  @Override
+  public Response intercept(Chain chain) throws IOException {
+
+    Request input = chain.request();
+    Request requestWithCredentials = appendBasicAuthHeaderParameters(input);
+    Response response = chain.proceed(requestWithCredentials);
+    if (response.code() == 403) {
+      try (ResponseBody body = response.body()) {
+        JsonReader message = enterPath(JsonReader.of(body.source()), "message");
+        if (message != null) throw new IllegalStateException(message.nextString());
+      }
+      throw new IllegalStateException(response.toString());
     }
+    return response;
+  }
 
-    @Override
-    public Response intercept(Chain chain) throws IOException {
+  private Request appendBasicAuthHeaderParameters(Request input) throws IOException {
 
-        Request input = chain.request();
-        Request requestWithCredentials = appendBasicAuthHeaderParameters(input);
-        Response response = chain.proceed(requestWithCredentials);
-        if (response.code() == 403) {
-            try (ResponseBody body = response.body()) {
-                JsonReader message = enterPath(JsonReader.of(body.source()), "message");
-                if (message != null) throw new IllegalStateException(message.nextString());
-            }
-            throw new IllegalStateException(response.toString());
-        }
-        return response;
-    }
-
-    private Request appendBasicAuthHeaderParameters(Request input) throws IOException {
-
-        Request.Builder builder = input.newBuilder();
-        return builder.header("authorization", basicCredentials).build();
-    }
+    Request.Builder builder = input.newBuilder();
+    return builder.header("authorization", basicCredentials).build();
+  }
 }
