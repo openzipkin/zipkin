@@ -38,8 +38,8 @@ final public class BasicAuthInterceptor implements Interceptor {
     public Response intercept(Chain chain) throws IOException {
 
         Request input = chain.request();
-        Request signed = appendBasicAuthHeaderParameters(input);
-        Response response = chain.proceed(signed);
+        Request requestWithCredentials = appendBasicAuthHeaderParameters(input);
+        Response response = chain.proceed(requestWithCredentials);
         if (response.code() == 403) {
             try (ResponseBody body = response.body()) {
                 JsonReader message = enterPath(JsonReader.of(body.source()), "message");
