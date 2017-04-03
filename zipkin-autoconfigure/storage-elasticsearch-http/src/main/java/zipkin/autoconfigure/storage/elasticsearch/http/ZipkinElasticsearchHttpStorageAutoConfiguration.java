@@ -73,9 +73,9 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
     public boolean matches(ConditionContext condition,
         AnnotatedTypeMetadata annotatedTypeMetadata) {
       String userName = condition.getEnvironment()
-          .getProperty("zipkin.storage.elasticsearch.basic-auth-user-name");
+          .getProperty("zipkin.storage.elasticsearch.username");
       String password = condition.getEnvironment()
-          .getProperty("zipkin.storage.elasticsearch.basic-auth-password");
+          .getProperty("zipkin.storage.elasticsearch.password");
       return !isEmpty(userName) && !isEmpty(password);
     }
   }

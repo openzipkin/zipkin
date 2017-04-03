@@ -285,8 +285,8 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
     addEnvironment(context,
                    "zipkin.storage.type:elasticsearch",
                    "zipkin.storage.elasticsearch.hosts:http://host1:9200",
-                   "zipkin.storage.elasticsearch.basic-auth-user-name:somename",
-                   "zipkin.storage.elasticsearch.basic-auth-password:pass"
+                   "zipkin.storage.elasticsearch.username:somename",
+                   "zipkin.storage.elasticsearch.password:pass"
 
     );
     context.register(PropertyPlaceholderAutoConfiguration.class,
