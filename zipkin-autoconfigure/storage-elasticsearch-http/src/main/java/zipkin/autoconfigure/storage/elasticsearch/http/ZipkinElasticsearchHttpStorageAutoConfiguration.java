@@ -39,7 +39,9 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
   @Bean
   @Qualifier("zipkinElasticsearchHttp")
   @Conditional(isBasicAuthRequired.class)
-  Interceptor basicAuthInterceptor(ZipkinElasticsearchHttpStorageProperties es) {return new BasicAuthInterceptor(es);}
+  Interceptor basicAuthInterceptor(ZipkinElasticsearchHttpStorageProperties es) {
+    return new BasicAuthInterceptor(es);
+  }
 
   @Bean
   @ConditionalOnMissingBean
@@ -49,13 +51,13 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
 
   @Bean
   ElasticsearchHttpStorage.Builder esHttpBuilder(
-          ZipkinElasticsearchHttpStorageProperties elasticsearch,
-          @Qualifier("zipkinElasticsearchHttp") OkHttpClient client,
-          @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
-          @Value("${zipkin.query.lookback:86400000}") int namesLookback) {
+      ZipkinElasticsearchHttpStorageProperties elasticsearch,
+      @Qualifier("zipkinElasticsearchHttp") OkHttpClient client,
+      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
+      @Value("${zipkin.query.lookback:86400000}") int namesLookback) {
     return elasticsearch.toBuilder(client)
-                        .strictTraceId(strictTraceId)
-                        .namesLookback(namesLookback);
+        .strictTraceId(strictTraceId)
+        .namesLookback(namesLookback);
   }
 
   /** cheap check to see if we are likely to include urls */
@@ -68,9 +70,12 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
 
   static final class isBasicAuthRequired implements Condition {
     @Override
-    public boolean matches(ConditionContext condition, AnnotatedTypeMetadata annotatedTypeMetadata) {
-      String userName = condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.basic-auth-user-name");
-      String password = condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.basic-auth-password");
+    public boolean matches(ConditionContext condition,
+        AnnotatedTypeMetadata annotatedTypeMetadata) {
+      String userName = condition.getEnvironment()
+          .getProperty("zipkin.storage.elasticsearch.basic-auth-user-name");
+      String password = condition.getEnvironment()
+          .getProperty("zipkin.storage.elasticsearch.basic-auth-password");
       return !isEmpty(userName) && !isEmpty(password);
     }
   }
