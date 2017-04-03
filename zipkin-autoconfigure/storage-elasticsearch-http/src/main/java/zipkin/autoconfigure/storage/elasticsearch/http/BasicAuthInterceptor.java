@@ -31,7 +31,7 @@ final public class BasicAuthInterceptor implements Interceptor {
     private String basicCredentials;
 
     BasicAuthInterceptor(ZipkinElasticsearchHttpStorageProperties es) {
-        basicCredentials = Credentials.basic(es.getBasicAuthUserName(), es.getBasicAuthPassword());
+        basicCredentials = Credentials.basic(es.getUsername(), es.getPassword());
     }
 
     @Override
