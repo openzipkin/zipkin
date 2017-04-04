@@ -68,6 +68,11 @@ describe('traceSummary', () => {
     summary.timestamp.should.equal(100);
     summary.duration.should.equal(400);
   });
+
+  it('should get total spans count', () => {
+    const summary = traceSummary(trace);
+    summary.totalSpans.should.equal(trace.length);
+  });
 });
 
 describe('get service name of a span', () => {
@@ -301,11 +306,6 @@ describe('traceSummariesToMustache', () => {
     model[0].servicePercentage.should.equal(50);
   });
 
-  it('should get span count', () => {
-    const model = traceSummariesToMustache(null, [summary]);
-    model[0].spanCount.should.equal(3);
-  });
-
   it('should format start time', () => {
     const model = traceSummariesToMustache(null, [summary], true);
     model[0].startTs.should.equal('02-26-2016T00:51:51.000+0000');
@@ -326,7 +326,7 @@ describe('traceSummariesToMustache', () => {
     model[0].timestamp.should.equal(summary.timestamp);
   });
 
-  it('should get correct spanCount', () => {
+  it('should get correct totalSpans', () => {
     const spans = [{
       traceId: 'd397ce70f5192a8b',
       name: 'get',
@@ -362,7 +362,7 @@ describe('traceSummariesToMustache', () => {
     }];
     const testSummary = traceSummary(spans);
     const model = traceSummariesToMustache(null, [testSummary])[0];
-    model.spanCount.should.equal(1);
+    model.totalSpans.should.equal(1);
   });
 
   it('should order traces by duration and tie-break using trace id', () => {
