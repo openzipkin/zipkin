@@ -197,8 +197,8 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                            performance, but not write performance. Number of replicas can be changed
                            for existing indices. Defaults to 1. It is highly discouraged to set this
                            to 0 as it would mean a machine failure results in data loss.
-    * `ES_USER` and `ES_PASS`: Elasticsearch basic authentication, which defaults to empty string. Use
-                               when X-Pack security (formerly Shield) is in place.
+    * `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch basic authentication, which defaults to empty string.
+                                       Use when X-Pack security (formerly Shield) is in place.
 
 Example usage:
 
