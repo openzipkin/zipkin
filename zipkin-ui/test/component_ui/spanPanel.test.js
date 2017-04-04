@@ -101,4 +101,10 @@ describe('formatBinaryAnnotationValue', () => {
   it('should format null as pre-formatted json', () => {
     formatBinaryAnnotationValue(null).should.equal('<pre>null</pre>');
   });
+
+  it('should format multi-line string as pre-formatted', () => {
+    formatBinaryAnnotationValue('foo\nbar\n').should.equal(
+      '<pre>foo\nbar\n</pre>'
+    );
+  });
 });

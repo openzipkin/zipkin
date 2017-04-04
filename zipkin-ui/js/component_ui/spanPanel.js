@@ -33,9 +33,10 @@ export function formatBinaryAnnotationValue(value) {
   const type = $.type(value);
   if (type === 'object' || type === 'array' || value == null) {
     return `<pre>${JSON.stringify(value, null, 2)}</pre>`;
-  } else {
-    return value.toString(); // prevents false from coercing to empty!
   }
+  const result = value.toString();
+  // Preformat if the text includes newlines
+  return result.indexOf('\n') === -1 ? result : `<pre>${result}</pre>`;
 }
 
 export default component(function spanPanel() {
