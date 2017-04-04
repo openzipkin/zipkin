@@ -43,6 +43,10 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
   private int indexShards = 5;
   /** Number of replicas (redundancy factor) per index. Defaults to 1.` */
   private int indexReplicas = 1;
+  /** username used for basic auth. Needed when Shield or X-Pack security is enabled */
+  private String username;
+  /** password used for basic auth. Needed when Shield or X-Pack security is enabled */
+  private String password;
 
   public String getPipeline() {
     return pipeline;
@@ -118,6 +122,22 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
 
   public void setIndexReplicas(int indexReplicas) {
     this.indexReplicas = indexReplicas;
+  }
+
+  public String getUsername() {
+    return username;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
   }
 
   public ElasticsearchHttpStorage.Builder toBuilder(OkHttpClient client) {

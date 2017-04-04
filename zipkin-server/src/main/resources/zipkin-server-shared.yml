@@ -89,6 +89,8 @@ zipkin:
       date-separator: ${ES_DATE_SEPARATOR:-}
       index-shards: ${ES_INDEX_SHARDS:5}
       index-replicas: ${ES_INDEX_REPLICAS:1}
+      username: ${ES_USERNAME:}
+      password: ${ES_PASSWORD:}
     mysql:
       host: ${MYSQL_HOST:localhost}
       port: ${MYSQL_TCP_PORT:3306}

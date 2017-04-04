@@ -13,6 +13,7 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.http;
 
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +32,13 @@ import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 public class ZipkinElasticsearchHttpStorageAutoConfiguration {
 
   @Bean
+  @Qualifier("zipkinElasticsearchHttp")
+  @Conditional(BasicAuthRequired.class)
+  Interceptor basicAuthInterceptor(ZipkinElasticsearchHttpStorageProperties es) {
+    return new BasicAuthInterceptor(es);
+  }
+
+  @Bean
   @ConditionalOnMissingBean
   StorageComponent storage(ElasticsearchHttpStorage.Builder esHttpBuilder) {
     return esHttpBuilder.build();
@@ -45,5 +53,21 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
     return elasticsearch.toBuilder(client)
         .strictTraceId(strictTraceId)
         .namesLookback(namesLookback);
+  }
+
+  static final class BasicAuthRequired implements Condition {
+    @Override
+    public boolean matches(ConditionContext condition,
+        AnnotatedTypeMetadata annotatedTypeMetadata) {
+      String userName = condition.getEnvironment()
+          .getProperty("zipkin.storage.elasticsearch.username");
+      String password = condition.getEnvironment()
+          .getProperty("zipkin.storage.elasticsearch.password");
+      return !isEmpty(userName) && !isEmpty(password);
+    }
+  }
+
+  private static boolean isEmpty(String s) {
+    return s == null || s.isEmpty();
   }
 }
