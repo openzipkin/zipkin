@@ -157,13 +157,15 @@ export function traceSummary(spans = []) {
     const timestamp = spans[0].timestamp;
     const spanTimestamps = getSpanTimestamps(spans);
     const errorType = getTraceErrorType(spans);
+    const totalSpans = spans.length;
     return {
       traceId,
       timestamp,
       duration,
       spanTimestamps,
       endpoints,
-      errorType
+      errorType,
+      totalSpans
     };
   }
 }
@@ -241,7 +243,6 @@ export function traceSummariesToMustache(serviceName = null, traceSummaries, utc
       const servicePercentage = parseInt(
           parseFloat(serviceTime) / parseFloat(t.duration) * 100,
         10);
-      const spanCount = _(groupedTimestamps).values().sumBy((sts) => sts.length);
       const width = parseInt(parseFloat(duration) / parseFloat(maxDuration) * 100, 10);
       const infoClass = t.errorType === 'none' ? '' : `trace-error-${t.errorType}`;
 
@@ -252,7 +253,7 @@ export function traceSummariesToMustache(serviceName = null, traceSummaries, utc
         duration,
         durationStr,
         servicePercentage,
-        spanCount,
+        totalSpans: t.totalSpans,
         serviceDurations,
         width,
         infoClass
