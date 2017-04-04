@@ -78,7 +78,6 @@ zipkin:
       # Using ssl for connection, rely on Keystore
       use-ssl: ${CASSANDRA3_USE_SSL:false}
     elasticsearch:
-      cluster: ${ES_CLUSTER:elasticsearch}
       # host is left unset intentionally, to defer the decision
       hosts: ${ES_HOSTS:}
       pipeline: ${ES_PIPELINE:}
@@ -131,9 +130,8 @@ spring:
       enabled: false
   autoconfigure:
     exclude:
-      # otherwise we might initialize even when not needed (ex when storage type is cassandra or elasticsearch)
+      # otherwise we might initialize even when not needed (ex when storage type is cassandra)
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.elasticsearch.jest.JestAutoConfiguration
 
 info:
   zipkin:

@@ -126,17 +126,53 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         .isEqualTo(200);
   }
 
+  /** This helps ensure old setups don't break (provided they have http port 9200 open) */
   @Test
-  public void doesntProvideStorageComponent_whenStorageTypeElasticsearchAndHostsNotUrls() {
+  public void coersesPort9300To9200() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.storage.type:elasticsearch");
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:host1:9300"
+    );
     context.register(PropertyPlaceholderAutoConfiguration.class,
         ZipkinElasticsearchOkHttpAutoConfiguration.class,
         ZipkinElasticsearchHttpStorageAutoConfiguration.class);
     context.refresh();
 
-    thrown.expect(NoSuchBeanDefinitionException.class);
-    es();
+    assertThat(es().hostsSupplier().get())
+        .containsExactly("http://host1:9200");
+  }
+
+  @Test
+  public void httpPrefixOptional() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:host1:9200"
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchOkHttpAutoConfiguration.class,
+        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(es().hostsSupplier().get())
+        .containsExactly("http://host1:9200");
+  }
+
+  @Test
+  public void defaultsToPort9200() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:host1"
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinElasticsearchOkHttpAutoConfiguration.class,
+        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(es().hostsSupplier().get())
+        .containsExactly("http://host1:9200");
   }
 
   @Configuration

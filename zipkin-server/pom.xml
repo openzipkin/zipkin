@@ -91,13 +91,6 @@
       <optional>true</optional>
     </dependency>
 
-    <!-- Elasticsearch backend -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-autoconfigure-storage-elasticsearch</artifactId>
-      <optional>true</optional>
-    </dependency>
-
     <!-- Elasticsearch http backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
