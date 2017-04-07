@@ -21,7 +21,7 @@ zipkin:
       # Maximum size of a message containing spans in bytes
       max-message-size: ${KAFKA_MAX_MESSAGE_SIZE:1048576}
     scribe:
-      enabled: ${SCRIBE_ENABLED:true}
+      enabled: ${SCRIBE_ENABLED:false}
       category: zipkin
       port: ${COLLECTOR_PORT:9410}
   query:
