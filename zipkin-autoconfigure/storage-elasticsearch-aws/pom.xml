@@ -28,7 +28,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <aws.sdk.version>1.11.69</aws.sdk.version>
+    <aws.sdk.version>1.11.117</aws.sdk.version>
   </properties>
 
   <dependencies>
@@ -41,13 +41,6 @@
       <artifactId>aws-java-sdk-core</artifactId>
       <groupId>com.amazonaws</groupId>
       <version>${aws.sdk.version}</version>
-      <exclusions>
-        <!-- provided by way of org.elasticsearch -->
-        <exclusion>
-          <groupId>joda-time</groupId>
-          <artifactId>joda-time</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <!-- Used indirectly by ProfileCredentialsProvider -->
     <dependency>
