@@ -220,13 +220,24 @@ export function mkDurationStr(duration) {
   }
 }
 
+function removeEmptyFromArray(array) {
+  const newArray = [];
+  for (let i = 0; i < array.length; i++) {
+    if (array[i]) {
+      newArray.push(array[i]);
+    }
+  }
+  return newArray;
+}
+
 export function traceSummariesToMustache(serviceName = null, traceSummaries, utc = false) {
   if (traceSummaries.length === 0) {
     return [];
   } else {
-    const maxDuration = Math.max(...traceSummaries.map((s) => s.duration)) / 1000;
+    const traceSummariesCleaned = removeEmptyFromArray(traceSummaries);
+    const maxDuration = Math.max(...traceSummariesCleaned.map((s) => s.duration)) / 1000;
 
-    return traceSummaries.map((t) => {
+    return traceSummariesCleaned.map((t) => {
       const duration = t.duration / 1000;
       const groupedTimestamps = getGroupedTimestamps(t);
       const serviceDurations = getServiceDurations(groupedTimestamps);
