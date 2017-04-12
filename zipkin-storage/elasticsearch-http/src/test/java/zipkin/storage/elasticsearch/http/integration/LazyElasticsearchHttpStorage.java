@@ -14,6 +14,8 @@
 package zipkin.storage.elasticsearch.http.integration;
 
 import java.util.Arrays;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -58,7 +60,14 @@ class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchHttpStorag
   }
 
   ElasticsearchHttpStorage.Builder computeStorageBuilder() {
-    ElasticsearchHttpStorage.Builder builder = ElasticsearchHttpStorage.builder().index(INDEX);
+    OkHttpClient ok = Boolean.valueOf(System.getenv("ES_DEBUG"))
+        ? new OkHttpClient.Builder()
+        .addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
+        .addNetworkInterceptor(chain -> chain.proceed( // logging interceptor doesn't gunzip
+            chain.request().newBuilder().removeHeader("Accept-Encoding").build()))
+        .build()
+        : new OkHttpClient();
+    ElasticsearchHttpStorage.Builder builder = ElasticsearchHttpStorage.builder(ok).index(INDEX);
     InternalForTests.flushOnWrites(builder);
     return builder.hosts(Arrays.asList(baseUrl()));
   }
