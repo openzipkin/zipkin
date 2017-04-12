@@ -139,3 +139,13 @@ This behaviour is intentional: We don't want to burden developers with
 installing and running all storage options to test unrelated change.
 That said, all integration tests run on pull request via Travis.
 
+### Debugging tests
+To see each http message sent to elasticsearch during testing, export the
+environment variable `ES_DEBUG=true`.
+
+Note: this will produce a lot of output!
+
+Ex.
+```bash
+ES_DEBUG=true ./mvnw clean install -pl zipkin-storage/elasticsearch-http/ --am
+```
