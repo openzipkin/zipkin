@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package zipkin.internal;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import org.junit.Test;
 import sun.net.util.IPAddressUtil;
 
@@ -36,6 +37,17 @@ public class BufferTest {
           throw new AssertionError(actual + " length != " + expected + " for " + codepoint);
         }
       }
+    }
+  }
+
+  /** Uses test data and codepoint wrapping trick from okhttp3.FormBodyTest */
+  @Test public void utf8_malformed() {
+    for (int codepoint : Arrays.asList(0xD800, 0xDFFF, 0xD83D)) {
+      String test = new String(new int[]{'a', codepoint, 'c'}, 0, 3);
+      assertThat(Buffer.utf8SizeInBytes(test))
+          .isEqualTo(3);
+      assertThat(new Buffer(3).writeUtf8(test).toByteArray())
+          .containsExactly('a', '?', 'c');
     }
   }
 

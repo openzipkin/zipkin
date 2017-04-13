@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -77,11 +77,18 @@ final class Buffer {
         sizeInBytes++; // 7-bit character
       } else if (ch < 0x800) {
         sizeInBytes += 2; // 11-bit character
-      } else if (Character.isHighSurrogate(ch)) {
-        sizeInBytes += 4; // Must be largest UTF-8 character
-        i++;
+      } else if (ch < 0xd800 || ch > 0xdfff) {
+        sizeInBytes += 3; // 16-bit character
       } else {
-        sizeInBytes += 3; // Assume 16-bit character
+        // malformed surrogate logic borrowed from okio.Utf8
+        int low = i + 1 < len ? string.charAt(i + 1) : 0;
+        if (ch > 0xdbff || low < 0xdc00 || low > 0xdfff) {
+          sizeInBytes++; // A malformed surrogate, which yields '?'.
+        } else {
+          // A 21-bit character
+          sizeInBytes += 4;
+          i++;
+        }
       }
     }
     return sizeInBytes;
