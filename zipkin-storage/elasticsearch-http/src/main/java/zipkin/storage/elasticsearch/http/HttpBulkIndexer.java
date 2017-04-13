@@ -29,8 +29,7 @@ import static zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage.APPLICA
 
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
 // exposed to re-use for testing writes of dependency links
-abstract class HttpBulkIndexer<T> {
-  final String typeName;
+final class HttpBulkIndexer {
   final String tag;
   final HttpCall.Factory http;
   final String pipeline;
@@ -40,22 +39,20 @@ abstract class HttpBulkIndexer<T> {
   final Buffer body = new Buffer();
   final Set<String> indices = new LinkedHashSet<>();
 
-  HttpBulkIndexer(String typeName, ElasticsearchHttpStorage es) {
-    this.typeName = typeName;
-    tag = "index-" + typeName;
+  HttpBulkIndexer(String tag, ElasticsearchHttpStorage es) {
+    this.tag = tag;
     http = es.http();
     pipeline = es.pipeline();
     flushOnWrites = es.flushOnWrites();
   }
 
-  void add(String index, T object, @Nullable String id) {
-    writeIndexMetadata(index, id);
-    writeDocument(object);
-
-    if (flushOnWrites) indices.add(index);
+  void add(String index, String typeName, byte[] document, @Nullable String id) {
+    writeIndexMetadata(index, typeName, id);
+    writeDocument(document);
   }
 
-  void writeIndexMetadata(String index, @Nullable String id) {
+  void writeIndexMetadata(String index, String typeName, @Nullable String id) {
+    if (flushOnWrites) indices.add(index);
     body.writeUtf8("{\"index\":{\"_index\":\"").writeUtf8(index).writeByte('"');
     body.writeUtf8(",\"_type\":\"").writeUtf8(typeName).writeByte('"');
     if (id != null) {
@@ -64,12 +61,10 @@ abstract class HttpBulkIndexer<T> {
     body.writeUtf8("}}\n");
   }
 
-  void writeDocument(T object) {
-    body.write(toJsonBytes(object));
+  void writeDocument(byte[] document) {
+    body.write(document);
     body.writeByte('\n');
   }
-
-  abstract byte[] toJsonBytes(T object);
 
   /** Creates a bulk request when there is more than one object to store */
   void execute(Callback<Void> callback) {

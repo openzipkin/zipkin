@@ -17,7 +17,6 @@ import java.io.IOException;
 import org.junit.ClassRule;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
-import zipkin.storage.SpanStoreTest;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 import zipkin.storage.elasticsearch.http.InternalForTests;
 
@@ -28,17 +27,13 @@ public class ElasticsearchHttpV2Test {
   public static LazyElasticsearchHttpStorage storage =
       new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch:1.19.2");
 
-  public static class HttpDependenciesTest
-      extends ElasticsearchHttpDependenciesTest {
-
+  public static class DependenciesTest extends ElasticsearchHttpDependenciesTest {
     @Override protected ElasticsearchHttpStorage storage() {
       return storage.get();
     }
   }
 
-  public static class HttpSpanConsumerTest
-      extends ElasticsearchHttpSpanConsumerTest {
-
+  public static class SpanConsumerTest extends ElasticsearchHttpSpanConsumerTest {
     @Override protected ElasticsearchHttpStorage storage() {
       return storage.get();
     }
@@ -48,22 +43,25 @@ public class ElasticsearchHttpV2Test {
     }
   }
 
-  public static class ElasticsearchSpanStoreTest extends SpanStoreTest {
-
+  public static class SpanStoreTest extends zipkin.storage.SpanStoreTest {
     @Override protected ElasticsearchHttpStorage storage() {
       return storage.get();
     }
 
     @Override public void clear() throws IOException {
-      InternalForTests.clear(storage.get());
+      InternalForTests.clear(storage());
     }
   }
 
-  public static class HttpStrictTraceIdFalseTest
-      extends ElasticsearchHttpStrictTraceIdFalseTest {
-
+  public static class StrictTraceIdFalseTest extends ElasticsearchHttpStrictTraceIdFalseTest {
     @Override protected ElasticsearchHttpStorage.Builder storageBuilder() {
       return ElasticsearchHttpV2Test.storage.computeStorageBuilder();
+    }
+  }
+
+  public static class NamesFallbackTest extends ElasticsearchHttpNamesFallbackTest {
+    @Override protected ElasticsearchHttpStorage storage() {
+      return storage.get();
     }
   }
 }

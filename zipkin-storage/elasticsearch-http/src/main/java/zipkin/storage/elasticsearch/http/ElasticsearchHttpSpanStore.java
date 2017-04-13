@@ -40,6 +40,7 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
 
   static final String SPAN = "span";
   static final String DEPENDENCY_LINK = "dependencylink";
+  static final String SERVICE_SPAN = "servicespan";
 
   final SearchCallFactory search;
   final String[] allIndices;
@@ -188,14 +189,28 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
     long beginMillis =  endMillis - namesLookback;
 
     List<String> indices = indexNameFormatter.indexNamePatternsForRange(beginMillis, endMillis);
-    SearchRequest.Filters filters = new SearchRequest.Filters();
-    filters.addRange("timestamp_millis", beginMillis, endMillis);
-    SearchRequest request = SearchRequest.forIndicesAndType(indices, SPAN)
-        .filters(filters)
-        .addAggregation(Aggregation.nestedTerms("annotations.endpoint.serviceName"))
-        .addAggregation(Aggregation.nestedTerms("binaryAnnotations.endpoint.serviceName"));
+    SearchRequest request = SearchRequest.forIndicesAndType(indices, SERVICE_SPAN)
+        .addAggregation(Aggregation.terms("serviceName", Integer.MAX_VALUE));
 
-    search.newCall(request, BodyConverters.SORTED_KEYS).submit(callback);
+    search.newCall(request, BodyConverters.SORTED_KEYS).submit(new Callback<List<String>>() {
+      @Override public void onSuccess(List<String> value) {
+        if (!value.isEmpty()) callback.onSuccess(value);
+
+        // Special cased code until sites update their collectors. What this does is do a more
+        // expensive nested query to get service names when the servicespan type returns nothing.
+        SearchRequest.Filters filters = new SearchRequest.Filters();
+        filters.addRange("timestamp_millis", beginMillis, endMillis);
+        SearchRequest request = SearchRequest.forIndicesAndType(indices, SPAN)
+            .filters(filters)
+            .addAggregation(Aggregation.nestedTerms("annotations.endpoint.serviceName"))
+            .addAggregation(Aggregation.nestedTerms("binaryAnnotations.endpoint.serviceName"));
+        search.newCall(request, BodyConverters.SORTED_KEYS).submit(callback);
+      }
+
+      @Override public void onError(Throwable t) {
+        callback.onError(t);
+      }
+    });
   }
 
   @Override public void getSpanNames(String serviceName, Callback<List<String>> callback) {
@@ -208,17 +223,33 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
     long beginMillis =  endMillis - namesLookback;
 
     List<String> indices = indexNameFormatter.indexNamePatternsForRange(beginMillis, endMillis);
-    SearchRequest.Filters filters = new SearchRequest.Filters();
-    filters.addRange("timestamp_millis", beginMillis, endMillis);
-    filters.addNestedTerms(asList(
-        "annotations.endpoint.serviceName",
-        "binaryAnnotations.endpoint.serviceName"
-    ), serviceName.toLowerCase(Locale.ROOT));
-    SearchRequest request = SearchRequest.forIndicesAndType(indices, SPAN)
-        .filters(filters)
-        .addAggregation(Aggregation.terms("name", Integer.MAX_VALUE));
 
-    search.newCall(request, BodyConverters.SORTED_KEYS).submit(callback);
+    SearchRequest request = SearchRequest.forIndicesAndType(indices, SERVICE_SPAN)
+        .term("serviceName", serviceName.toLowerCase(Locale.ROOT))
+        .addAggregation(Aggregation.terms("spanName", Integer.MAX_VALUE));
+
+    search.newCall(request, BodyConverters.SORTED_KEYS).submit(new Callback<List<String>>() {
+      @Override public void onSuccess(List<String> value) {
+        if (!value.isEmpty()) callback.onSuccess(value);
+
+        // Special cased code until sites update their collectors. What this does is do a more
+        // expensive nested query to get span names when the servicespan type returns nothing.
+        SearchRequest.Filters filters = new SearchRequest.Filters();
+        filters.addRange("timestamp_millis", beginMillis, endMillis);
+        filters.addNestedTerms(asList(
+            "annotations.endpoint.serviceName",
+            "binaryAnnotations.endpoint.serviceName"
+        ), serviceName.toLowerCase(Locale.ROOT));
+        SearchRequest request = SearchRequest.forIndicesAndType(indices, SPAN)
+            .filters(filters)
+            .addAggregation(Aggregation.terms("name", Integer.MAX_VALUE));
+        search.newCall(request, BodyConverters.SORTED_KEYS).submit(callback);
+      }
+
+      @Override public void onError(Throwable t) {
+        callback.onError(t);
+      }
+    });
   }
 
   @Override public void getDependencies(long endTs, @Nullable Long lookback,

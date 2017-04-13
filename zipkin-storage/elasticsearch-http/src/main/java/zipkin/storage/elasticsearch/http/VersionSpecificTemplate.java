@@ -99,7 +99,13 @@ final class VersionSpecificTemplate {
       + "        }\n"
       + "      }\n"
       + "    },\n"
-      + "    \"" + ElasticsearchHttpSpanStore.DEPENDENCY_LINK + "\": { \"enabled\": false }\n"
+      + "    \"" + ElasticsearchHttpSpanStore.DEPENDENCY_LINK + "\": { \"enabled\": false },\n"
+      + "    \"" + ElasticsearchHttpSpanStore.SERVICE_SPAN + "\": {\n"
+      + "      \"properties\": {\n"
+      + "        \"serviceName\": { KEYWORD },\n"
+      + "        \"spanName\": { KEYWORD }\n"
+      + "      }\n"
+      + "    }\n"
       + "  }\n"
       + "}";
 

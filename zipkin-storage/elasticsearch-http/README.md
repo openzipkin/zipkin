@@ -100,6 +100,36 @@ inputs are downcased.
 Span and service name queries default to look back 24hrs (2 index days).
 This can be controlled by `ElasticsearchHttpStorage.Builder.namesLookback`
 
+#### Index format
+Starting with Zipkin 1.23, service and span names are written to the
+same daily indexes as spans and dependency links as the document type
+"servicespan". This was added for performance reasons as formerly search
+was using relatively expensive nested queries.
+
+The documents themselves represent service and span name pairs. Only one
+document is present per daily index. This is to keep the documents from
+repeating at a multiplier of span count, which also simplifies query.
+This deduplication is enforced at write time by using an ID convention
+of the service and span name. Ex. `id = MyServiceName|MySpanName`
+
+The document is a simple structure, like:
+```json
+{
+  "serviceName": "MyServiceName",
+  "spanName": "MySpanName",
+}
+```
+
+The document does replicate data in the ID, but it is needed as you
+cannot query based on an ID expression.
+
+#### Notes for data written prior to Zipkin 1.23
+Before Zipkin 1.23, service and span names were nested queries against
+the span type. This was an expensive operation, which resulted in high
+latency particularly when the UI loads. When the "servicespan" type is
+missing from an index, or there's no results returned, a fallback nested
+query is invoked.
+
 ## Customizing the ingest pipeline
 
 When using Elasticsearch 5.x, you can setup an [ingest pipeline](https://www.elastic.co/guide/en/elasticsearch/reference/master/pipeline.html)
