@@ -32,13 +32,14 @@ final class VersionSpecificTemplate {
             ? "{ KEYWORD }" : "{ \"type\": \"string\", \"analyzer\": \"traceId_analyzer\" }");
   }
 
-  // pasted literal as the json isn't valid anyway, plus we don't have to do classpath lookup
+  /** Templatized due to version differences. Only fields used in search are declared */
   static final String INDEX_TEMPLATE = "{\n"
       + "  \"template\": \"${__INDEX__}-*\",\n"
       + "  \"settings\": {\n"
       + "    \"index.number_of_shards\": ${__NUMBER_OF_SHARDS__},\n"
       + "    \"index.number_of_replicas\": ${__NUMBER_OF_REPLICAS__},\n"
       + "    \"index.requests.cache.enable\": true,\n"
+      + "    \"index.mapper.dynamic\": false,\n"
       + "    \"analysis\": {\n"
       + "      \"analyzer\": {\n"
       + "        \"traceId_analyzer\": {\n"
@@ -58,64 +59,47 @@ final class VersionSpecificTemplate {
       + "  },\n"
       + "  \"mappings\": {\n"
       + "    \"_default_\": {\n"
-      + "      \"dynamic_templates\": [\n"
-      + "        {\n"
-      + "          \"strings\": {\n"
-      + "            \"mapping\": {\n"
-      + "              KEYWORD,\n"
-      + "              \"ignore_above\": 256\n"
-      + "            },\n"
-      + "            \"match_mapping_type\": \"string\",\n"
-      + "            \"match\": \"*\"\n"
-      + "          }\n"
-      + "        },\n"
-      + "        {\n"
-      + "          \"value\": {\n"
-      + "            \"match\": \"value\",\n"
-      + "            \"mapping\": {\n"
-      + "              \"match_mapping_type\": \"string\",\n"
-      + "              KEYWORD,\n"
-      + "              \"ignore_above\": 256,\n"
-      + "              \"ignore_malformed\": true\n"
-      + "            }\n"
-      + "          }\n"
-      + "        },\n"
-      + "        {\n"
-      + "          \"annotations\": {\n"
-      + "            \"match\": \"annotations\",\n"
-      + "            \"mapping\": {\n"
-      + "              \"type\": \"nested\"\n"
-      + "            }\n"
-      + "          }\n"
-      + "        },\n"
-      + "        {\n"
-      + "          \"binaryAnnotations\": {\n"
-      + "            \"match\": \"binaryAnnotations\",\n"
-      + "            \"mapping\": {\n"
-      + "              \"type\": \"nested\"\n"
-      + "            }\n"
-      + "          }\n"
-      + "        }\n"
-      + "      ],\n"
       + "      \"_all\": {\n"
       + "        \"enabled\": false\n"
       + "      }\n"
       + "    },\n"
-      + "    \"span\": {\n"
+      + "    \"" + ElasticsearchHttpSpanStore.SPAN + "\": {\n"
       + "      \"properties\": {\n"
       + "        \"traceId\": ${__TRACE_ID_MAPPING__},\n"
+      + "        \"name\": { KEYWORD },\n"
       + "        \"timestamp_millis\": {\n"
       + "          \"type\":   \"date\",\n"
       + "          \"format\": \"epoch_millis\"\n"
       + "        },\n"
+      + "        \"duration\": { \"type\": \"long\" },\n"
       + "        \"annotations\": {\n"
-      + "          \"type\": \"nested\"\n"
+      + "          \"type\": \"nested\",\n"
+      + "          \"dynamic\": false,\n"
+      + "          \"properties\": {\n"
+      + "            \"value\": { KEYWORD },\n"
+      + "            \"endpoint\": {\n"
+      + "              \"type\": \"object\",\n"
+      + "              \"dynamic\": false,\n"
+      + "              \"properties\": { \"serviceName\": { KEYWORD } }\n"
+      + "            }\n"
+      + "          }\n"
       + "        },\n"
       + "        \"binaryAnnotations\": {\n"
-      + "          \"type\": \"nested\"\n"
+      + "          \"type\": \"nested\",\n"
+      + "          \"dynamic\": false,\n"
+      + "          \"properties\": {\n"
+      + "            \"key\": { KEYWORD },\n"
+      + "            \"value\": { KEYWORD },\n"
+      + "            \"endpoint\": {\n"
+      + "              \"type\": \"object\",\n"
+      + "              \"dynamic\": false,\n"
+      + "              \"properties\": { \"serviceName\": { KEYWORD } }\n"
+      + "            }\n"
+      + "          }\n"
       + "        }\n"
       + "      }\n"
-      + "    }\n"
+      + "    },\n"
+      + "    \"" + ElasticsearchHttpSpanStore.DEPENDENCY_LINK + "\": { \"enabled\": false }\n"
       + "  }\n"
       + "}";
 
@@ -138,10 +122,12 @@ final class VersionSpecificTemplate {
   private String versionSpecificTemplate(String version) {
     if (version.startsWith("2")) {
       return indexTemplate
-          .replace("KEYWORD", "\"type\": \"string\", \"index\": \"not_analyzed\"");
+          .replace("KEYWORD",
+              "\"type\": \"string\", \"ignore_above\": 256, \"norms\": {\"enabled\": false }, \"index\": \"not_analyzed\"");
     } else if (version.startsWith("5")) {
       return indexTemplate
-          .replace("KEYWORD", "\"type\": \"keyword\"")
+          .replace("KEYWORD",
+              "\"type\": \"keyword\", \"ignore_above\": 256, \"norms\": false")
           .replace("\"analyzer\": \"traceId_analyzer\" }",
               "\"fielddata\": \"true\", \"analyzer\": \"traceId_analyzer\" }");
     } else {
