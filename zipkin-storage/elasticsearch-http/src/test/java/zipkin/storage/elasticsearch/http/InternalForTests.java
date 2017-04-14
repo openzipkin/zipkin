@@ -15,9 +15,13 @@ package zipkin.storage.elasticsearch.http;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.internal.CallbackCaptor;
+import zipkin.internal.Pair;
+import zipkin.storage.AsyncSpanConsumer;
 
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.DEPENDENCY_LINK;
 
@@ -26,14 +30,11 @@ public class InternalForTests {
   public static void writeDependencyLinks(ElasticsearchHttpStorage es, List<DependencyLink> links,
       long midnightUTC) {
     String index = es.indexNameFormatter().indexNameForTimestamp(midnightUTC);
-    HttpBulkIndexer<DependencyLink> indexer =
-        new HttpBulkIndexer<DependencyLink>(DEPENDENCY_LINK, es) {
-          @Override byte[] toJsonBytes(DependencyLink link) {
-            return Codec.JSON.writeDependencyLink(link);
-          }
-        };
+    HttpBulkIndexer indexer = new HttpBulkIndexer("index-links", es);
     for (DependencyLink link : links) {
-      indexer.add(index, link, link.parent + "|" + link.child); // Unique constraint
+      byte[] document = Codec.JSON.writeDependencyLink(link);
+      indexer.add(index, DEPENDENCY_LINK, document,
+          link.parent + "|" + link.child); // Unique constraint
     }
     CallbackCaptor<Void> callback = new CallbackCaptor<>();
     indexer.execute(callback);
@@ -46,5 +47,14 @@ public class InternalForTests {
 
   public static void flushOnWrites(ElasticsearchHttpStorage.Builder builder) {
     builder.flushOnWrites(true);
+  }
+
+  /** The old consumer didn't write to the "servicespan" type on ingest. */
+  public static AsyncSpanConsumer oldConsumer(ElasticsearchHttpStorage es) {
+    es.ensureIndexTemplate();
+    return new ElasticsearchHttpSpanConsumer(es) {
+      @Override void indexNames(HttpBulkIndexer ignored, Map<String, Set<Pair<String>>> ignored2) {
+      }
+    };
   }
 }
