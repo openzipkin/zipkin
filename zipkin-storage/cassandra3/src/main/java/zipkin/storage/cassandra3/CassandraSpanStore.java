@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,11 +19,13 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.base.Function;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Ordering;
@@ -32,12 +34,15 @@ import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.nio.ByteBuffer;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -87,7 +92,11 @@ final class CassandraSpanStore implements GuavaSpanStore {
   private final PreparedStatement selectTraceIdsByServiceSpanName;
   private final PreparedStatement selectTraceIdsByServiceSpanNameAndDuration;
   private final PreparedStatement selectTraceIdsByAnnotation;
-  private final Function<ResultSet, Map<TraceIdUDT, Long>> traceIdToTimestamp;
+  private final Function<Row, Map.Entry<TraceIdUDT, Long>> traceIdToTimestamp;
+  private final Function<Row, Map.Entry<TraceIdUDT, Long>> traceIdToLong;
+  private final Function<Row, String> rowToSpanName;
+  private final Function<Row, String> rowToServiceName;
+  private final Function<Row, Span> rowToSpan;
   private final Function<List<Map<TraceIdUDT, Long>>, Map<TraceIdUDT, Long>> collapseTraceIdMaps;
   private final int traceTtl;
   private final int indexTtl;
@@ -153,12 +162,46 @@ final class CassandraSpanStore implements GuavaSpanStore {
             .limit(QueryBuilder.bindMarker("limit_"))
             .allowFiltering());
 
-    traceIdToTimestamp = input -> {
-      Map<TraceIdUDT, Long> result = new LinkedHashMap<>();
-      for (Row row : input) {
-        result.put(row.get("trace_id", TraceIdUDT.class), UUIDs.unixTimestamp(row.getUUID("ts")));
+    traceIdToTimestamp = row ->
+      new AbstractMap.SimpleEntry<>(
+          row.get("trace_id", TraceIdUDT.class),
+          UUIDs.unixTimestamp(row.getUUID("ts")));
+
+    traceIdToLong = row ->
+        new AbstractMap.SimpleEntry<>(
+            row.get("trace_id", TraceIdUDT.class),
+            row.getLong("ts"));
+
+    rowToSpanName = row -> row.getString("span_name");
+
+    rowToServiceName = row -> row.getString("service_name");
+
+    rowToSpan = row -> {
+      TraceIdUDT traceId = row.get("trace_id", TraceIdUDT.class);
+      Span.Builder builder = Span.builder()
+          .traceIdHigh(traceId.getHigh())
+          .traceId(traceId.getLow())
+          .id(row.getLong("id"))
+          .name(row.getString("span_name"))
+          .duration(row.getLong("duration"));
+
+      if (!row.isNull("ts")) {
+        builder = builder.timestamp(row.getLong("ts"));
       }
-      return result;
+      if (!row.isNull("duration")) {
+        builder = builder.duration(row.getLong("duration"));
+      }
+      if (!row.isNull("parent_id")) {
+        builder = builder.parentId(row.getLong("parent_id"));
+      }
+      for (AnnotationUDT udt : row.getList("annotations", AnnotationUDT.class)) {
+        builder = builder.addAnnotation(udt.toAnnotation());
+      }
+      for (BinaryAnnotationUDT udt : row.getList("binary_annotations",
+          BinaryAnnotationUDT.class)) {
+        builder = builder.addBinaryAnnotation(udt.toBinaryAnnotation());
+      }
+      return builder.build();
     };
 
     collapseTraceIdMaps = input -> {
@@ -262,16 +305,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
   @Override public ListenableFuture<List<String>> getServiceNames() {
     try {
       BoundStatement bound = CassandraUtil.bindWithName(selectServiceNames, "select-service-names");
-      return transform(session.executeAsync(bound), new Function<ResultSet, List<String>>() {
-            @Override public List<String> apply(ResultSet input) {
-              Set<String> serviceNames = new LinkedHashSet<>();
-              for (Row row : input) {
-                serviceNames.add(row.getString("service_name"));
-              }
-              return Ordering.natural().sortedCopy(serviceNames);
-            }
-          }
-      );
+      return transform(session.executeAsync(bound), readResultAsOrderedSet(Collections.emptyList(), rowToServiceName));
     } catch (RuntimeException ex) {
       return immediateFailedFuture(ex);
     }
@@ -286,18 +320,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
           // no one is ever going to browse so many span names
           .setInt("limit_", 1000);
 
-      return transform(session.executeAsync(bound), new Function<ResultSet, List<String>>() {
-            @Override public List<String> apply(ResultSet input) {
-              Set<String> spanNames = new LinkedHashSet<>();
-              for (Row row : input) {
-                if (!row.getString("span_name").isEmpty()) {
-                  spanNames.add(row.getString("span_name"));
-                }
-              }
-              return Ordering.natural().sortedCopy(spanNames);
-            }
-          }
-      );
+      return transform(session.executeAsync(bound), readResultAsOrderedSet(Collections.emptyList(), rowToSpanName));
     } catch (RuntimeException ex) {
       return immediateFailedFuture(ex);
     }
@@ -343,46 +366,11 @@ final class CassandraSpanStore implements GuavaSpanStore {
     }
 
     try {
-      BoundStatement bound = CassandraUtil.bindWithName(selectTraces, "select-traces")
+      Statement bound = CassandraUtil.bindWithName(selectTraces, "select-traces")
           .setSet("trace_id", traceIds)
           .setInt("limit_", limit);
 
-      return transform(session.executeAsync(bound),
-          new Function<ResultSet, List<Span>>() {
-            @Override public List<Span> apply(ResultSet input) {
-              List<Span> result = new ArrayList<>(input.getAvailableWithoutFetching());
-              for (Row row : input) {
-                TraceIdUDT traceId = row.get("trace_id", TraceIdUDT.class);
-                Span.Builder builder = Span.builder()
-                    .traceIdHigh(traceId.getHigh())
-                    .traceId(traceId.getLow())
-                    .id(row.getLong("id"))
-                    .name(row.getString("span_name"))
-                    .duration(row.getLong("duration"));
-
-                if (!row.isNull("ts")) {
-                  builder = builder.timestamp(row.getLong("ts"));
-                }
-                if (!row.isNull("duration")) {
-                  builder = builder.duration(row.getLong("duration"));
-                }
-                if (!row.isNull("parent_id")) {
-                  builder = builder.parentId(row.getLong("parent_id"));
-                }
-                for (AnnotationUDT udt : row.getList("annotations", AnnotationUDT.class)) {
-                  builder = builder.addAnnotation(udt.toAnnotation());
-                }
-                for (BinaryAnnotationUDT udt : row.getList("binary_annotations",
-                    BinaryAnnotationUDT.class)) {
-                  builder = builder.addBinaryAnnotation(udt.toBinaryAnnotation());
-                }
-                result.add(builder.build());
-              }
-
-              return result;
-            }
-          }
-      );
+      return transform(session.executeAsync(bound), readResults(Collections.emptyList(), rowToSpan));
     } catch (RuntimeException ex) {
       return immediateFailedFuture(ex);
     }
@@ -440,8 +428,8 @@ final class CassandraSpanStore implements GuavaSpanStore {
                 .setLong("end_duration",
                     null != request.maxDuration ? request.maxDuration : Long.MAX_VALUE);
           }
-          bound.setFetchSize(Integer.MAX_VALUE);
-          futures.add(transform(session.executeAsync(bound), traceIdToTimestamp));
+          bound.setFetchSize(request.limit);
+          futures.add(transform(session.executeAsync(bound), readResultsAsMap(Collections.emptyMap(), traceIdToTimestamp)));
         }
       }
 
@@ -468,21 +456,101 @@ final class CassandraSpanStore implements GuavaSpanStore {
               .setUUID("end_ts", UUIDs.endOf(endTsMillis))
               .setInt("limit_", limit);
 
-      return transform(session.executeAsync(bound),
-          new Function<ResultSet, Map<TraceIdUDT, Long>>() {
-            @Override public Map<TraceIdUDT, Long> apply(ResultSet input) {
-              Map<TraceIdUDT, Long> traceIdsToTimestamps = new LinkedHashMap<>();
-              for (Row row : input) {
-                traceIdsToTimestamps.put(
-                        row.get("trace_id", TraceIdUDT.class),
-                        row.getLong("ts"));
-              }
-              return traceIdsToTimestamps;
-            }
-          }
-      );
+      return transform(session.executeAsync(bound), readResultsAsMap(Collections.emptyMap(), traceIdToLong));
     } catch (RuntimeException ex) {
       return immediateFailedFuture(ex);
     }
+  }
+
+  private static <K, T> AsyncFunction<ResultSet, Map<K, T>> readResultsAsMap(final Map<K, T> results,
+      Function<Row, Map.Entry<K, T>> rowMapper) {
+    return new AsyncFunction<ResultSet, Map<K, T>>() {
+      @Override public ListenableFuture<Map<K, T>> apply(ResultSet rs) throws Exception {
+        // How far we can go without triggering the blocking fetch:
+        int remainingInPage = rs.getAvailableWithoutFetching();
+
+        Map<K, T> newResults = new HashMap<>(results);
+
+        for (Row row : rs) {
+          Map.Entry<K, T> entry = rowMapper.apply(row);
+          newResults.put(entry.getKey(), entry.getValue());
+          if (--remainingInPage == 0) break;
+        }
+
+        boolean wasLastPage = rs.getExecutionInfo().getPagingState() == null;
+
+        Map<K, T> finalResults = ImmutableMap.copyOf(newResults);
+
+        if (wasLastPage) {
+          return Futures.immediateFuture(finalResults);
+        } else {
+          ListenableFuture<ResultSet> future = rs.fetchMoreResults();
+          return Futures.transform(future, readResultsAsMap(finalResults, rowMapper));
+        }
+      }
+    };
+  }
+
+  private static <T extends Comparable> AsyncFunction<ResultSet, List<T>> readResultAsOrderedSet(
+      final List<T> results, Function<Row, T> rowMapper) {
+    return new AsyncFunction<ResultSet, List<T>>() {
+      @Override
+      public ListenableFuture<List<T>> apply(ResultSet rs) throws Exception {
+
+        // How far we can go without triggering the blocking fetch:
+        int remainingInPage = rs.getAvailableWithoutFetching();
+
+        ImmutableSet.Builder<T> builder = ImmutableSet.builder();
+        builder.addAll(results);
+
+        for (Row row : rs) {
+          builder.add(rowMapper.apply(row));
+          if (--remainingInPage == 0) break;
+        }
+
+        boolean wasLastPage = rs.getExecutionInfo().getPagingState() == null;
+
+        List<T> orderedResults = Ordering.natural().sortedCopy(builder.build());
+        List<T> finalSet = ImmutableList.copyOf(orderedResults);
+
+        if (wasLastPage) {
+          return Futures.immediateFuture(finalSet);
+        } else {
+          ListenableFuture<ResultSet> future = rs.fetchMoreResults();
+          return Futures.transform(future, readResultAsOrderedSet(finalSet, rowMapper));
+        }
+      }
+    };
+  }
+
+  private static <T> AsyncFunction<ResultSet, List<T>> readResults(final List<T> results,
+      Function<Row, T> rowMapper) {
+    return new AsyncFunction<ResultSet, List<T>>() {
+      @Override
+      public ListenableFuture<List<T>> apply(ResultSet rs) throws Exception {
+
+        // How far we can go without triggering the blocking fetch:
+        int remainingInPage = rs.getAvailableWithoutFetching();
+
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        builder.addAll(results);
+
+        for (Row row : rs) {
+          builder.add(rowMapper.apply(row));
+          if (--remainingInPage == 0) break;
+        }
+
+        boolean wasLastPage = rs.getExecutionInfo().getPagingState() == null;
+
+        List<T> finalResults = builder.build();
+
+        if (wasLastPage) {
+          return Futures.immediateFuture(finalResults);
+        } else {
+          ListenableFuture<ResultSet> future = rs.fetchMoreResults();
+          return Futures.transform(future, readResults(finalResults, rowMapper));
+        }
+      }
+    };
   }
 }
