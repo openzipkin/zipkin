@@ -15,4 +15,5 @@
 
 set -ex
 tests="$(echo "$@" | xargs basename -s .java | tr '\n' ',' | sed -e 's/,$//')"
-./mvnw -Dtest="$tests" -DfailIfNoTests=false test
+# skip license on circleci due to #1512
+./mvnw -Dtest="$tests" -DfailIfNoTests=false test -Dlicense.skip=true
