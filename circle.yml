@@ -20,7 +20,7 @@ machine:
     version: openjdk8
   post:
     # Manually install very recent version of cassandra; unless we create a user we have to run it as root
-    - curl -SL http://www-us.apache.org/dist/cassandra/3.9/apache-cassandra-3.9-bin.tar.gz | tar xz
+    - curl -SL http://www-us.apache.org/dist/cassandra/3.10/apache-cassandra-3.10-bin.tar.gz | tar xz
     - sed -i -e 's/INFO/WARN/g' apache-cassandra-*/conf/logback.xml
     ## Apply system resource limits to Cassandra
     ## As seen at https://github.com/circleci/image-builder/blob/8d1bb13b614da27447da0cd70d292e867395316b/circleci-provision-scripts/misc.sh#L63-L65
