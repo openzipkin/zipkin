@@ -21,14 +21,13 @@ machine:
   post:
     # Manually install very recent version of cassandra; unless we create a user we have to run it as root
     - curl -SL http://www-us.apache.org/dist/cassandra/3.10/apache-cassandra-3.10-bin.tar.gz | tar xz
-    - sed -i -e 's/INFO/WARN/g' apache-cassandra-*/conf/logback.xml
     ## Apply system resource limits to Cassandra
     ## As seen at https://github.com/circleci/image-builder/blob/8d1bb13b614da27447da0cd70d292e867395316b/circleci-provision-scripts/misc.sh#L63-L65
-    - sed -i 's/system_memory_in_mb=.*/system_memory_in_mb=2048/' apache-cassandra-*/conf/cassandra-env.sh
+    - sed -i -e 's/system_memory_in_mb=.*/system_memory_in_mb=256/g' -e 's/half_system_memory_in_mb=.*/half_system_memory_in_mb=128/g' -e 's/quarter_system_memory_in_mb=.*/quarter_system_memory_in_mb=64/g' apache-cassandra-*/conf/cassandra-env.sh
     - sed -i 's/system_cpu_cores=.*/system_cpu_cores=1/' apache-cassandra-*/conf/cassandra-env.sh
-    - sed -i 's/JVM_OPTS="$JVM_OPTS -Xms${MAX_HEAP_SIZE}"/JVM_OPTS="$JVM_OPTS -Xms256M"/' apache-cassandra-*/conf/cassandra-env.sh
     ## And finally start up Cassandra
-    - sudo ./apache-cassandra-*/bin/cassandra -R
+    - MAX_HEAP_SIZE=256M HEAP_NEWSIZE=256M ./apache-cassandra-*/bin/cassandra -R -f:
+        background: true
     # Manually install Kafka and ZK
     - curl -SL http://www.us.apache.org/dist/kafka/0.8.2.2/kafka_2.11-0.8.2.2.tgz | tar xz
     - ./kafka_*/bin/zookeeper-server-start.sh ./kafka_*/config/zookeeper.properties:
