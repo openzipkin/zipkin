@@ -49,8 +49,8 @@
     <cassandra-driver-core.version>3.2.0</cassandra-driver-core.version>
     <okio.version>1.12.0</okio.version>
     <!-- important to keep this with spring-boot -->
-    <jooq.version>3.8.6</jooq.version>
-    <spring-boot.version>1.4.5.RELEASE</spring-boot.version>
+    <jooq.version>3.8.7</jooq.version>
+    <spring-boot.version>1.4.6.RELEASE</spring-boot.version>
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
 
@@ -60,7 +60,7 @@
     <mariadb-java-client.version>1.5.8</mariadb-java-client.version>
     <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
     <HikariCP.version>2.6.1</HikariCP.version>
-    <slf4j.version>1.7.22</slf4j.version>
+    <slf4j.version>1.7.25</slf4j.version>
     <logback.version>1.2.2</logback.version>
     <!-- Be careful to set this as a provided dep, so that it doesn't interfere with dependencies
          from other projects. For example, cassandra and spring boot set guava versions -->
