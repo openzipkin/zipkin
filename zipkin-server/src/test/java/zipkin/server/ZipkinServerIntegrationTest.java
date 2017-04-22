@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -50,7 +50,7 @@ import static zipkin.internal.Util.UTF_8;
 @SpringBootTest(classes = ZipkinServer.class)
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@TestPropertySource(properties = {"zipkin.store.type=mem", "spring.config.name=zipkin-server", "zipkin.collector.scribe.enabled=false"})
+@TestPropertySource(properties = {"zipkin.store.type=mem", "spring.config.name=zipkin-server"})
 public class ZipkinServerIntegrationTest {
 
   @Autowired
