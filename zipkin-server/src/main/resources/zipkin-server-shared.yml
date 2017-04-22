@@ -147,3 +147,9 @@ logging:
 #     com.datastax.driver.core.QueryLogger: 'TRACE'
 #     # log cassandra trace propagation
 #     com.datastax.driver.core.Message: 'TRACE'
+
+management:
+  security:
+    # do not lock-down metrics by default
+    # https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-1.5-Release-Notes#actuator-security
+    enabled: false

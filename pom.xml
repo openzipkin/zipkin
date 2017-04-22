@@ -49,8 +49,8 @@
     <cassandra-driver-core.version>3.2.0</cassandra-driver-core.version>
     <okio.version>1.12.0</okio.version>
     <!-- important to keep this with spring-boot -->
-    <jooq.version>3.8.7</jooq.version>
-    <spring-boot.version>1.4.6.RELEASE</spring-boot.version>
+    <jooq.version>3.9.1</jooq.version>
+    <spring-boot.version>1.5.3.RELEASE</spring-boot.version>
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
 
