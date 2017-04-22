@@ -25,7 +25,7 @@ zipkin:
       category: zipkin
       port: ${COLLECTOR_PORT:9410}
   query:
-    # 7 days in millis
+    # 1 day in millis
     lookback: ${QUERY_LOOKBACK:86400000}
     # The Cache-Control max-age (seconds) for /api/v1/services and /api/v1/spans
     names-max-age: 300
