@@ -71,11 +71,19 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
       if (timestamp != null) {
         timestampMillis = TimeUnit.MICROSECONDS.toMillis(timestamp);
         index = indexNameFormatter.indexNameForTimestamp(timestampMillis);
-        if (!span.name.isEmpty()) putServiceSpans(indexToServiceSpans, index, span);
       } else {
         timestampMillis = null;
-        index = indexNameFormatter.indexNameForTimestamp(System.currentTimeMillis());
+        // guessTimestamp is made for determining the span's authoritative timestamp. When choosing
+        // the index bucket, any annotation is better than using current time.
+        Long indexTimestamp = null;
+        for (int i = 0, length = span.annotations.size(); i < length; i++) {
+          indexTimestamp = span.annotations.get(i).timestamp / 1000;
+          break;
+        }
+        if (indexTimestamp == null) indexTimestamp = System.currentTimeMillis();
+        index = indexNameFormatter.indexNameForTimestamp(indexTimestamp);
       }
+      if (!span.name.isEmpty()) putServiceSpans(indexToServiceSpans, index, span);
       byte[] document = Codec.JSON.writeSpan(span);
       if (timestampMillis != null) document = prefixWithTimestampMillis(document, timestampMillis);
       indexer.add(index, ElasticsearchHttpSpanStore.SPAN, document, null /* Allow ES to choose an ID */);
