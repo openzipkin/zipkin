@@ -14,6 +14,7 @@
 package zipkin.storage.elasticsearch.http;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -22,6 +23,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import zipkin.Annotation;
+import zipkin.BinaryAnnotation;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.TestObjects;
@@ -29,7 +32,10 @@ import zipkin.internal.CallbackCaptor;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.Constants.CLIENT_SEND;
+import static zipkin.Constants.SERVER_RECV;
 import static zipkin.TestObjects.TODAY;
+import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanConsumer.prefixWithTimestampMillis;
 
@@ -42,8 +48,6 @@ public class ElasticsearchHttpSpanConsumerTest {
   ElasticsearchHttpStorage storage = ElasticsearchHttpStorage.builder()
       .hosts(asList(es.url("").toString()))
       .build();
-
-  String index = storage.indexNameFormatter().indexNameForTimestamp(TODAY);
 
   /** gets the index template so that each test doesn't have to */
   @Before
@@ -137,15 +141,73 @@ public class ElasticsearchHttpSpanConsumerTest {
   }
 
   @Test
-  public void indexesServiceSpan_implicitTimestamp() throws Exception {
+  public void indexesServiceSpan_basedOnGuessTimestamp() throws Exception {
     es.enqueue(new MockResponse());
 
-    Span span = TestObjects.LOTS_OF_SPANS[0];
+    Annotation cs = Annotation.create(
+        TimeUnit.DAYS.toMicros(365), // 1971-01-01
+        CLIENT_SEND,
+        TestObjects.APP_ENDPOINT
+    );
+
+    Span span = Span.builder().traceId(1L).id(1L).name("s").addAnnotation(cs).build();
+
+    // sanity check data
+    assertThat(span.timestamp).isNull();
+    assertThat(guessTimestamp(span)).isNotNull();
+
     accept(span);
 
-    assertThat(es.takeRequest().getBody().readByteString().utf8()).endsWith(
-        "\"_type\":\"servicespan\",\"_id\":\"service|get\"}}\n"
-            + "{\"serviceName\":\"service\",\"spanName\":\"get\"}\n"
+    // index timestamp is the server timestamp, not current time!
+    assertThat(es.takeRequest().getBody().readByteString().utf8()).contains(
+        "{\"index\":{\"_index\":\"zipkin-1971-01-01\",\"_type\":\"span\"}}\n",
+        "{\"index\":{\"_index\":\"zipkin-1971-01-01\",\"_type\":\"servicespan\",\"_id\":\"app|s\"}}\n"
+    );
+  }
+
+  @Test
+  public void indexesServiceSpan_basedOnAnnotationTimestamp() throws Exception {
+    es.enqueue(new MockResponse());
+
+    Annotation sr = Annotation.create(
+        TimeUnit.DAYS.toMicros(365), // 1971-01-01
+        SERVER_RECV,
+        TestObjects.APP_ENDPOINT
+    );
+
+    Span span = Span.builder().traceId(1L).id(2L).parentId(1L).name("s").addAnnotation(sr).build();
+
+    // sanity check data
+    assertThat(span.timestamp).isNull();
+    assertThat(guessTimestamp(span)).isNull();
+
+    accept(span);
+
+    // index timestamp is the server timestamp, not current time!
+    assertThat(es.takeRequest().getBody().readByteString().utf8()).contains(
+        "{\"index\":{\"_index\":\"zipkin-1971-01-01\",\"_type\":\"span\"}}\n",
+        "{\"index\":{\"_index\":\"zipkin-1971-01-01\",\"_type\":\"servicespan\",\"_id\":\"app|s\"}}\n"
+    );
+  }
+
+  @Test
+  public void indexesServiceSpan_currentTimestamp() throws Exception {
+    es.enqueue(new MockResponse());
+
+    Span span = Span.builder().traceId(1L).id(2L).parentId(1L).name("s")
+        .addBinaryAnnotation(BinaryAnnotation.create("f", "", TestObjects.APP_ENDPOINT))
+        .build();
+
+    // sanity check data
+    assertThat(span.timestamp).isNull();
+    assertThat(guessTimestamp(span)).isNull();
+
+    accept(span);
+
+    String today = storage.indexNameFormatter().indexNameForTimestamp(TODAY);
+    assertThat(es.takeRequest().getBody().readByteString().utf8()).contains(
+        "{\"index\":{\"_index\":\"" + today + "\",\"_type\":\"span\"}}\n",
+        "{\"index\":{\"_index\":\"" + today + "\",\"_type\":\"servicespan\",\"_id\":\"app|s\"}}\n"
     );
   }
 
