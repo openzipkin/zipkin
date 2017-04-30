@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.Collections;
 import okio.Buffer;
 import zipkin.Codec;
 import zipkin.Span;
@@ -37,6 +38,15 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
 
   final ElasticsearchHttpStorage es;
   final IndexNameFormatter indexNameFormatter;
+  private final static int MAX_CACHE_DAYS = 2;
+  private final static int MAX_CACHE_ENTRIES = 1000;
+
+  private final static Map<String, Set<Pair<String>>> indexToServiceSpansCache = new LinkedHashMap<String, Set<Pair<String>>>() {
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<String, Set<Pair<String>>> eldest) {
+      return size() > MAX_CACHE_DAYS;
+    }
+  };
 
   ElasticsearchHttpSpanConsumer(ElasticsearchHttpStorage es) {
     this.es = es;
@@ -48,9 +58,34 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
       callback.onSuccess(null);
       return;
     }
+    Map<String, Set<Pair<String>>> indexToServiceSpans = new LinkedHashMap<>();
     try {
       HttpBulkIndexer indexer = new HttpBulkIndexer("index-span", es);
-      Map<String, Set<Pair<String>>> indexToServiceSpans = indexSpans(indexer, spans);
+      indexToServiceSpans = indexSpans(indexer, spans);
+      
+      // remove already cached items from indexToServiceSpans, add new items to cache
+      for (Map.Entry<String, Set<Pair<String>>> entry : indexToServiceSpans.entrySet()) {
+        Set<Pair<String>> serviceSpansEntryCached = null;
+        synchronized(indexToServiceSpansCache) {
+          serviceSpansEntryCached = indexToServiceSpansCache.get(entry.getKey());
+        }
+        if (serviceSpansEntryCached == null) {
+          synchronized(indexToServiceSpansCache) {
+            indexToServiceSpansCache.put(entry.getKey(), serviceSpansEntryCached = Collections.newSetFromMap(new LinkedHashMap<Pair<String>, Boolean>() {
+              @Override
+              protected boolean removeEldestEntry(Map.Entry<Pair<String>, Boolean> eldest) {
+                return size() > MAX_CACHE_ENTRIES;
+              }
+            }));
+          }
+        }
+        Set<Pair<String>> serviceSpansEntry = entry.getValue();
+        synchronized(serviceSpansEntryCached) {
+          serviceSpansEntry.removeAll(serviceSpansEntryCached);
+          serviceSpansEntryCached.addAll(serviceSpansEntry);
+        }
+      }
+
       if (!indexToServiceSpans.isEmpty()) {
         indexNames(indexer, indexToServiceSpans);
       }
@@ -58,6 +93,19 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
     } catch (Throwable t) {
       propagateIfFatal(t);
       callback.onError(t);
+    
+      // remove recently added items from cache
+      for (Map.Entry<String, Set<Pair<String>>> entry : indexToServiceSpans.entrySet()) {
+        Set<Pair<String>> serviceSpansEntryCached = null;
+        synchronized (indexToServiceSpansCache) {
+          serviceSpansEntryCached = indexToServiceSpansCache.get(entry.getKey());
+        }
+        if (serviceSpansEntryCached == null || serviceSpansEntryCached.isEmpty()) continue;
+
+        synchronized (serviceSpansEntryCached) {
+          serviceSpansEntryCached.removeAll(entry.getValue());
+        }
+      }
     }
   }
 
