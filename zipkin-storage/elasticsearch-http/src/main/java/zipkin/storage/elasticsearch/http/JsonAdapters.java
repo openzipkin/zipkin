@@ -18,7 +18,6 @@ import com.squareup.moshi.JsonDataException;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
-import java.net.InetAddress;
 import okio.Buffer;
 import okio.ByteString;
 import zipkin.Annotation;
@@ -142,18 +141,8 @@ final class JsonAdapters {
             result.serviceName(reader.nextString());
             break;
           case "ipv4":
-            String[] ipv4String = reader.nextString().split("\\.", 5);
-            int ipv4 = 0;
-            for (String b : ipv4String) {
-              ipv4 = ipv4 << 8 | (Integer.parseInt(b) & 0xff);
-            }
-            result.ipv4(ipv4);
-            break;
           case "ipv6":
-            String input = reader.nextString();
-            // Shouldn't hit DNS, because it's an IP string literal.
-            byte[] ipv6 = InetAddress.getByName(input).getAddress();
-            result.ipv6(ipv6);
+            result.parseIp(reader.nextString());
             break;
           case "port":
             result.port(reader.nextInt());

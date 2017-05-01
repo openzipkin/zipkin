@@ -37,11 +37,10 @@ public class ThriftCodecInteropTest {
   @Test
   public void spanSerializationIsCompatible() throws UnknownHostException, TException {
 
-    zipkin.Endpoint zipkinEndpoint = zipkin.Endpoint.builder()
-        .serviceName("web")
-        .ipv4(124 << 24 | 13 << 16 | 90 << 8 | 3)
-        .ipv6(Inet6Address.getByName("2001:db8::c001").getAddress())
-        .port((short) 80).build();
+    zipkin.Endpoint.Builder builder = zipkin.Endpoint.builder().serviceName("web").port(80);
+    builder.parseIp("124.13.90.3");
+    builder.parseIp("2001:db8::c001");
+    zipkin.Endpoint zipkinEndpoint = builder.build();
 
     zipkin.Span zipkinSpan = zipkin.Span.builder().traceId(1L).traceIdHigh(2L).id(1L).name("get")
         .addAnnotation(zipkin.Annotation.create(1000, SERVER_RECV, zipkinEndpoint))

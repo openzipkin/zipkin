@@ -231,14 +231,9 @@ final class Schema {
     }
 
     private Endpoint toEndpoint() {
-      Endpoint.Builder builder = Endpoint.builder()
-          .serviceName(service_name)
-          .ipv4(ipv4 == null ? 0 : ByteBuffer.wrap(ipv4.getAddress()).getInt())
-          .port(port);
-
-      if (null != ipv6) {
-        builder = builder.ipv6(ipv6.getAddress());
-      }
+      Endpoint.Builder builder = Endpoint.builder().serviceName(service_name).port(port);
+      builder.parseIp(ipv4);
+      builder.parseIp(ipv6);
       return builder.build();
     }
   }

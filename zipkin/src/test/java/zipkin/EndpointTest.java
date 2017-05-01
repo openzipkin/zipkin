@@ -13,7 +13,9 @@
  */
 package zipkin;
 
+import java.net.Inet4Address;
 import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,10 +59,73 @@ public class EndpointTest {
   }
 
   @Test
+  public void builderWithPort_highest_short() {
+    short port = Endpoint.builder().serviceName("foo").port(new Short((short) 65535)).build().port;
+
+    assertThat(port)
+        .isEqualTo((short) -1); // an unsigned short of 65535 is the same as -1
+
+    assertThat(port & 0xffff)
+        .isEqualTo(65535);
+  }
+
+  @Test
+  public void ip_addr_ipv4() throws UnknownHostException {
+    Endpoint.Builder builder = Endpoint.builder().serviceName("foo");
+    assertThat(builder.parseIp(Inet4Address.getByName("1.2.3.4"))).isTrue();
+    Endpoint endpoint = builder.build();
+
+    assertThat(endpoint.ipv4)
+        .isEqualTo(1 << 24 | 2 << 16 | 3 << 8 | 4);
+    assertThat(endpoint.ipv6)
+        .isNull();
+  }
+
+  @Test
+  public void ip_string_ipv4() throws UnknownHostException {
+    Endpoint.Builder builder = Endpoint.builder().serviceName("foo");
+    assertThat(builder.parseIp("1.2.3.4")).isTrue();
+    Endpoint endpoint = builder.build();
+
+    assertThat(endpoint.ipv4)
+        .isEqualTo(1 << 24 | 2 << 16 | 3 << 8 | 4);
+    assertThat(endpoint.ipv6)
+        .isNull();
+  }
+
+  @Test
   public void ipv6() throws UnknownHostException {
     byte[] ipv6 = Inet6Address.getByName("2001:db8::c001").getAddress();
 
     Endpoint endpoint = Endpoint.builder().serviceName("foo").ipv6(ipv6).build();
+
+    assertThat(endpoint.ipv4)
+        .isEqualTo(0);
+    assertThat(endpoint.ipv6)
+        .isEqualTo(ipv6);
+  }
+
+  @Test
+  public void ip_addr_ipv6() throws UnknownHostException {
+    InetAddress ipv6 = Inet6Address.getByName("2001:db8::c001");
+
+    Endpoint.Builder builder = Endpoint.builder().serviceName("foo");
+    assertThat(builder.parseIp(ipv6)).isTrue();
+    Endpoint endpoint = builder.build();
+
+    assertThat(endpoint.ipv4)
+        .isEqualTo(0);
+    assertThat(endpoint.ipv6)
+        .isEqualTo(ipv6.getAddress());
+  }
+
+  @Test
+  public void ip_string_ipv6() throws UnknownHostException {
+    byte[] ipv6 = Inet6Address.getByName("2001:db8::c001").getAddress();
+
+    Endpoint.Builder builder = Endpoint.builder().serviceName("foo");
+    assertThat(builder.parseIp("2001:db8::c001")).isTrue();
+    Endpoint endpoint = builder.build();
 
     assertThat(endpoint.ipv4)
         .isEqualTo(0);
@@ -80,6 +145,30 @@ public class EndpointTest {
     ipv6_mapped[15] = (byte) 4;
 
     Endpoint endpoint = Endpoint.builder().serviceName("foo").ipv6(ipv6_mapped).build();
+
+    assertThat(endpoint.ipv4)
+        .isEqualTo(1 << 24 | 2 << 16 | 3 << 8 | 4);
+    assertThat(endpoint.ipv6)
+        .isNull();
+  }
+
+  @Test
+  public void ip_string_mappedIpv4() throws UnknownHostException {
+    Endpoint.Builder builder = Endpoint.builder().serviceName("foo");
+    assertThat(builder.parseIp("::FFFF:1.2.3.4")).isTrue();
+    Endpoint endpoint = builder.build();
+
+    assertThat(endpoint.ipv4)
+        .isEqualTo(1 << 24 | 2 << 16 | 3 << 8 | 4);
+    assertThat(endpoint.ipv6)
+        .isNull();
+  }
+
+  @Test
+  public void ip_string_compatIpv4() throws UnknownHostException {
+    Endpoint.Builder builder = Endpoint.builder().serviceName("foo");
+    assertThat(builder.parseIp("::0000:1.2.3.4")).isTrue();
+    Endpoint endpoint = builder.build();
 
     assertThat(endpoint.ipv4)
         .isEqualTo(1 << 24 | 2 << 16 | 3 << 8 | 4);
@@ -137,6 +226,22 @@ public class EndpointTest {
         .isEqualTo(ipv6_localhost);
   }
 
+  /** This ensures we don't mistake IPv6 localhost for a mapped IPv4 0.0.0.1 */
+  @Test
+  public void ip_string_ipv6_localhost() throws UnknownHostException {
+    byte[] ipv6_localhost = new byte[16];
+    ipv6_localhost[15] = 1;
+
+    Endpoint.Builder builder = Endpoint.builder().serviceName("foo");
+    assertThat(builder.parseIp("::1")).isTrue();
+    Endpoint endpoint = builder.build();
+
+    assertThat(endpoint.ipv4)
+        .isZero();
+    assertThat(endpoint.ipv6)
+        .isEqualTo(ipv6_localhost);
+  }
+
   /** This is an unusable compat Ipv4 of 0.0.0.2. This makes sure it isn't mistaken for localhost */
   @Test
   public void ipv6_notLocalhost() throws UnknownHostException {
@@ -154,10 +259,8 @@ public class EndpointTest {
   /** The integer arg of port should be a whole number */
   @Test
   public void builderWithPort_negativeIsInvalid() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("invalid port -1");
 
-    assertThat(Endpoint.builder().serviceName("foo").port(-1).build().port);
+    assertThat(Endpoint.builder().serviceName("foo").port(-1).build().port).isNull();
   }
 
   /** The integer arg of port should fit in a 16bit unsigned value */
@@ -166,7 +269,7 @@ public class EndpointTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("invalid port 65536");
 
-    assertThat(Endpoint.builder().serviceName("foo").port(65536).build().port);
+    Endpoint.builder().serviceName("foo").port(65536).build();
   }
 
   @Test
