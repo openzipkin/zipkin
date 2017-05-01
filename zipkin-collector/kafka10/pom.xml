@@ -19,21 +19,42 @@
 
   <parent>
     <groupId>io.zipkin.java</groupId>
-    <artifactId>parent</artifactId>
-    <version>1.25.1-SNAPSHOT</version>
+    <artifactId>zipkin-collector</artifactId>
+    <version>1.23.4-SNAPSHOT</version>
   </parent>
 
-  <artifactId>zipkin-collector</artifactId>
-  <name>Zipkin Collectors</name>
-  <packaging>pom</packaging>
+  <artifactId>zipkin-collector-kafka10</artifactId>
+  <name>Collector: Kafka 0.10</name>
 
   <properties>
-    <main.basedir>${project.basedir}/..</main.basedir>
+    <main.basedir>${project.basedir}/../..</main.basedir>
+    <kafka.version>0.10.2.1</kafka.version>
   </properties>
 
-  <modules>
-    <module>scribe</module>
-    <module>kafka</module>
-    <module>kafka10</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin</artifactId>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.kafka</groupId>
+        <artifactId>kafka-clients</artifactId>
+        <version>${kafka.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 </project>
