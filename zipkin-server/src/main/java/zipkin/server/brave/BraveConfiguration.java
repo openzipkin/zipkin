@@ -21,8 +21,8 @@ import com.github.kristofa.brave.InheritableServerClientAndLocalSpanState;
 import com.github.kristofa.brave.ServerClientAndLocalSpanState;
 import com.github.kristofa.brave.TracerAdapter;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -63,17 +63,12 @@ public class BraveConfiguration {
         .serviceName("zipkin-server")
         .port(port == -1 ? 0 : port);
     try {
-      byte[] address = Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
+      InetAddress address = Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
           .flatMap(i -> Collections.list(i.getInetAddresses()).stream())
           .filter(ip -> ip.isSiteLocalAddress())
-          .findAny().get().getAddress();
-      if (address.length == 4) {
-        builder.ipv4(ByteBuffer.wrap(address).getInt());
-      } else if (address.length == 16) {
-        builder.ipv6(address);
-      }
+          .findAny().get();
+      builder.parseIp(address);
     } catch (Exception ignored) {
-      builder.ipv4(127 << 24 | 1);
     }
     return builder.build();
   }
