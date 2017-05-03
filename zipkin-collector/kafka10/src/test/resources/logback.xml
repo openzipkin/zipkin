@@ -8,6 +8,10 @@
     </encoder>
   </appender>
 
+  <logger name="zipkin.collector.kafka10" level="DEBUG"/>
+  <logger name="com.github.charithe.kafka" level="INFO"/>
+  <logger name="org.apache.kafka.clients" level="INFO"/>
+
   <!-- don't waste logs when ZK check fails -->
   <logger name="org.apache.zookeeper.ClientCnxn" level="OFF"/>
 

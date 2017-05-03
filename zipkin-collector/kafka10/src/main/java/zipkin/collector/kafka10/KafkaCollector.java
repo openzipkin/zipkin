@@ -27,6 +27,10 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.Serdes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin.Codec;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorComponent;
@@ -49,6 +53,8 @@ import static zipkin.storage.Callback.NOOP;
  * <p>This collector uses a Kafka 0.10+ consumer.
  */
 public final class KafkaCollector implements CollectorComponent {
+
+  private static final Logger LOG = LoggerFactory.getLogger(KafkaCollector.class);
 
   public static Builder builder() {
     return new Builder();
@@ -135,6 +141,10 @@ public final class KafkaCollector implements CollectorComponent {
       // https://kafka.apache.org/documentation/#newconsumerconfigs
       properties.put(GROUP_ID_CONFIG, "zipkin");
       properties.put(AUTO_OFFSET_RESET_CONFIG, "earliest");
+      properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+          ByteArrayDeserializer.class.getName());
+      properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+          ByteArrayDeserializer.class.getName());
     }
   }
 

@@ -16,6 +16,9 @@ package zipkin.collector.kafka10;
 import java.util.Collections;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.common.errors.InterruptException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin.Codec;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
@@ -24,6 +27,8 @@ import static zipkin.storage.Callback.NOOP;
 
 /** Consumes spans from Kafka messages, ignoring malformed input */
 final class KafkaConsumerProcessor implements Runnable {
+  private static final Logger LOG = LoggerFactory.getLogger(KafkaConsumerProcessor.class);
+
   final Consumer<byte[], byte[]> kafkaConsumer;
   final Collector collector;
   final CollectorMetrics metrics;
@@ -37,35 +42,50 @@ final class KafkaConsumerProcessor implements Runnable {
 
   @Override
   public void run() {
-    while (!Thread.interrupted()) {
-      final ConsumerRecords<byte[], byte[]> consumerRecords = kafkaConsumer.poll(1000);
-      consumerRecords.forEach((cr) -> {
-        metrics.incrementMessages();
-        final byte[] bytes = cr.value();
+    try {
+      LOG.info("Kafka consumer starting polling loop.");
+      while (!Thread.interrupted()) {
+        final ConsumerRecords<byte[], byte[]> consumerRecords = kafkaConsumer.poll(1000);
+        LOG.debug("Kafka polling returned batch of {} messages.", consumerRecords.count());
+        consumerRecords.forEach((cr) -> {
+          metrics.incrementMessages();
+          final byte[] bytes = cr.value();
 
-        if (bytes.length == 0) {
-          metrics.incrementMessagesDropped();
-        } else {
-          // In TBinaryProtocol encoding, the first byte is the TType, in a range 0-16
-          // .. If the first byte isn't in that range, it isn't a thrift.
-          //
-          // When byte(0) == '[' (91), assume it is a list of json-encoded spans
-          //
-          // When byte(0) <= 16, assume it is a TBinaryProtocol-encoded thrift
-          // .. When serializing a Span (Struct), the first byte will be the type of a field
-          // .. When serializing a List[ThriftSpan], the first byte is the member type, TType.STRUCT(12)
-          // .. As ThriftSpan has no STRUCT fields: so, if the first byte is TType.STRUCT(12), it is a list.
-          if (bytes[0] == '[') {
-            collector.acceptSpans(bytes, Codec.JSON, NOOP);
+          if (bytes.length == 0) {
+            metrics.incrementMessagesDropped();
           } else {
-            if (bytes[0] == 12 /* TType.STRUCT */) {
-              collector.acceptSpans(bytes, Codec.THRIFT, NOOP);
+            // In TBinaryProtocol encoding, the first byte is the TType, in a range 0-16
+            // .. If the first byte isn't in that range, it isn't a thrift.
+            //
+            // When byte(0) == '[' (91), assume it is a list of json-encoded spans
+            //
+            // When byte(0) <= 16, assume it is a TBinaryProtocol-encoded thrift
+            // .. When serializing a Span (Struct), the first byte will be the type of a field
+            // .. When serializing a List[ThriftSpan], the first byte is the member type, TType.STRUCT(12)
+            // .. As ThriftSpan has no STRUCT fields: so, if the first byte is TType.STRUCT(12), it is a list.
+            if (bytes[0] == '[') {
+              collector.acceptSpans(bytes, Codec.JSON, NOOP);
             } else {
-              collector.acceptSpans(Collections.singletonList(bytes), Codec.THRIFT, NOOP);
+              if (bytes[0] == 12 /* TType.STRUCT */) {
+                collector.acceptSpans(bytes, Codec.THRIFT, NOOP);
+              } else {
+                collector.acceptSpans(Collections.singletonList(bytes), Codec.THRIFT, NOOP);
+              }
             }
           }
-        }
-      });
+        });
+      }
+    } catch (InterruptException e) {
+      // shutdown was initiated
+    } finally {
+      LOG.info("Kafka consumer polling loop stopped.");
+      LOG.info("Closing Kafka consumer...");
+      // todo attempting to close the consumer when the thread is in interrupted status goes nowhere
+      // todo this clears that status, but is that a legit thing to do if a thread has been interrupted
+      // todo (clear the status and continue some cleanup)?
+      Thread.interrupted();
+      kafkaConsumer.close();
+      LOG.info("Kafka consumer closed.");
     }
   }
 }
