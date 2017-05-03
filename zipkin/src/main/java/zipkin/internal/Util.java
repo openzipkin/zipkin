@@ -84,7 +84,8 @@ public final class Util {
 
   public static List<Date> getDays(long endTs, @Nullable Long lookback) {
     long to = midnightUTC(endTs);
-    long from = midnightUTC(endTs - (lookback != null ? lookback : endTs));
+    long startMillis = endTs - (lookback != null ? lookback : endTs);
+    long from = startMillis <= 0 ? 0 : midnightUTC(startMillis); // >= 1970
 
     List<Date> days = new ArrayList<>();
     for (long time = from; time <= to; time += TimeUnit.DAYS.toMillis(1)) {

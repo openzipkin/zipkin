@@ -16,7 +16,6 @@ package zipkin.storage.elasticsearch.http.integration;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.TimeZone;
 import okhttp3.Call;
 import okhttp3.HttpUrl;
@@ -25,17 +24,16 @@ import okhttp3.Request;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin.Annotation;
-import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.internal.CallbackCaptor;
 import zipkin.internal.Util;
-import zipkin.storage.QueryRequest;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 import zipkin.storage.elasticsearch.http.InternalForTests;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin.Constants.*;
+import static zipkin.Constants.SERVER_RECV;
+import static zipkin.Constants.SERVER_SEND;
 import static zipkin.TestObjects.DAY;
 import static zipkin.TestObjects.TODAY;
 import static zipkin.TestObjects.WEB_ENDPOINT;
@@ -151,28 +149,6 @@ abstract class ElasticsearchHttpSpanConsumerTest {
 
     assertThat(searchRequest.execute().body().string())
         .contains("\"hits\":{\"total\":1");
-  }
-  
-  @Test
-  public void traceIsSearchableBySRServiceName() throws Exception {
-    String clientServiceName = "public-webserver";
-    Span clientSpan = Span.builder().traceId(20L).id(22L).name("get").parentId(21L).timestamp(TODAY * 1000)
-            .addAnnotation(Annotation.create(TODAY * 1000, CLIENT_SEND, Endpoint.create(clientServiceName, 123456)))
-            .addAnnotation(Annotation.create((TODAY + 3) * 1000, CLIENT_RECV, Endpoint.create(clientServiceName, 123456)))
-            .build();
-
-    String serverServiceName = "petshop-service";
-    Span serverSpan = Span.builder().traceId(20L).id(22L).name("get").parentId(21L)
-            .addAnnotation(Annotation.create((TODAY + 1) * 1000, SERVER_RECV, Endpoint.create(serverServiceName, 654321)))
-            .addAnnotation(Annotation.create((TODAY + 2) * 1000, SERVER_RECV, Endpoint.create(serverServiceName, 654321)))
-            .build();
-
-    accept(serverSpan);
-    accept(clientSpan);
-
-    List<List<Span>> traces = storage().spanStore().getTraces(QueryRequest.builder().serviceName(serverServiceName).build());
-
-    assertThat(traces.size()).isEqualTo(1);
   }
 
   abstract String baseUrl();

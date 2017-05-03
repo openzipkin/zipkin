@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.assertj.core.groups.Tuple;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin.Annotation;
@@ -42,6 +43,7 @@ import static zipkin.Constants.LOCAL_COMPONENT;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
 import static zipkin.TestObjects.APP_ENDPOINT;
+import static zipkin.TestObjects.TODAY;
 import static zipkin.TestObjects.WEB_ENDPOINT;
 
 /**
@@ -931,6 +933,34 @@ public abstract class SpanStoreTest {
     assertThat(store().getTraces(QueryRequest.builder().limit(20)
         .endTs(today).build()))
         .containsExactly(earlyTraces);
+  }
+
+  /**
+   * Shared server-spans are not supposed to report timestamp, as that interferes with the
+   * authoritative timestamp of the caller. This makes sure that server spans can still be looked up
+   * when they didn't start a span.
+   */
+  @Test
+  public void traceIsSearchableBySRServiceName() throws Exception {
+    Span clientSpan = Span.builder().traceId(20L).id(22L).name("").parentId(21L)
+        .addAnnotation(Annotation.create((TODAY - 4) * 1000L, CLIENT_SEND, WEB_ENDPOINT))
+        .build();
+
+    Span serverSpan = Span.builder().traceId(20L).id(22L).name("get").parentId(21L)
+        .addAnnotation(Annotation.create(TODAY * 1000L, SERVER_RECV, APP_ENDPOINT))
+        .build();
+
+    accept(serverSpan, clientSpan);
+
+    List<List<Span>> traces = storage().spanStore().getTraces(
+        QueryRequest.builder().serviceName(APP_ENDPOINT.serviceName).build()
+    );
+
+    assertThat(traces)
+        .hasSize(1) // we can lookup by the server's name
+        .flatExtracting(l -> l)
+        .extracting(s -> s.timestamp, s -> s.duration)
+        .contains(Tuple.tuple((TODAY - 4) * 1000L, 4000L)); // but the client's timestamp wins
   }
 
   static long clientDuration(Span span) {

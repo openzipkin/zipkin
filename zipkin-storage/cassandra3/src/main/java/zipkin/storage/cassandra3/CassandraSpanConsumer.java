@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
-import zipkin.Constants;
 import zipkin.Span;
 import zipkin.storage.cassandra3.Schema.AnnotationUDT;
 import zipkin.storage.cassandra3.Schema.BinaryAnnotationUDT;
@@ -103,43 +102,29 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       // indexing occurs by timestamp, so derive one if not present.
       Long timestamp = guessTimestamp(span);
       TraceIdUDT traceId = new TraceIdUDT(span.traceIdHigh, span.traceId);
-      boolean isServerRecvSpan = isServerRecvSpan(span);
-      futures.add(storeSpan(span, traceId, isServerRecvSpan, timestamp));
+      futures.add(storeSpan(span, traceId, timestamp));
 
       for (String serviceName : span.serviceNames()) {
-        // QueryRequest.min/maxDuration
-        if (timestamp != null) {
-          // Contract for Repository.storeTraceServiceSpanName is to store the span twice, once with
-          // the span name and another with empty string.
-          futures.add(storeTraceServiceSpanName(serviceName, span.name, timestamp, span.duration,
-              traceId));
-          if (!span.name.isEmpty()) { // If span.name == "", this would be redundant
-            futures.add(storeTraceServiceSpanName(serviceName, "", timestamp, span.duration, traceId));
-          }
-          futures.add(storeServiceSpanName(serviceName, span.name));
+        if (timestamp == null) continue; // QueryRequest.min/maxDuration needs timestamp
+
+        // Contract for Repository.storeTraceServiceSpanName is to store the span twice, once with
+        // the span name and another with empty string.
+        futures.add(storeTraceServiceSpanName(serviceName, span.name, timestamp, span.duration, traceId));
+        if (!span.name.isEmpty()) { // If span.name == "", this would be redundant
+          futures.add(storeTraceServiceSpanName(serviceName, "", timestamp, span.duration, traceId));
         }
+        futures.add(storeServiceSpanName(serviceName, span.name));
       }
     }
     return transform(Futures.allAsList(futures.build()), TO_VOID);
   }
 
-  private static boolean isServerRecvSpan(Span span) {
-    for (int i = 0, length = span.annotations.size(); i < length; i++) {
-      Annotation annotation = span.annotations.get(i);
-      if (annotation.value.equals(Constants.SERVER_RECV)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   /**
    * Store the span in the underlying storage for later retrieval.
    */
-  ListenableFuture<?> storeSpan(Span span, TraceIdUDT traceId, boolean isServerRecvSpan, Long timestamp) {
+  ListenableFuture<?> storeSpan(Span span, TraceIdUDT traceId, Long timestamp) {
     try {
       if ((null == timestamp || 0 == timestamp)
-          && !isServerRecvSpan
           && metadata.compactionClass.contains("TimeWindowCompactionStrategy")) {
 
         LOG.warn("Span {} in trace {} had no timestamp. "
@@ -158,14 +143,13 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       Set<String> annotationKeys = CassandraUtil.annotationKeys(span);
 
       if (!strictTraceId && traceId.getHigh() != 0L) {
-        storeSpan(span, new TraceIdUDT(0L, traceId.getLow()), isServerRecvSpan, timestamp);
+        storeSpan(span, new TraceIdUDT(0L, traceId.getLow()), timestamp);
       }
 
       BoundStatement bound = bindWithName(insertSpan, "insert-span")
           .set("trace_id", traceId, TraceIdUDT.class)
           .setUUID("ts_uuid", new UUID(
-              UUIDs.startOf(null != timestamp ? (timestamp / 1000) : 0)
-                  .getMostSignificantBits(),
+              UUIDs.startOf(null != timestamp ? (timestamp / 1000) : 0).getMostSignificantBits(),
               UUIDs.random().getLeastSignificantBits()))
           .setLong("id", span.id)
           .setString("span_name", span.name)

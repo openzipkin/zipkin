@@ -123,6 +123,26 @@ public class ElasticsearchHttpSpanConsumerTest {
   }
 
   @Test
+  public void traceIsSearchableBySRServiceName() throws Exception {
+    es.enqueue(new MockResponse());
+
+    Span clientSpan = Span.builder().traceId(20L).id(22L).name("").parentId(21L).timestamp(0L)
+        .addAnnotation(Annotation.create(0, CLIENT_SEND, TestObjects.WEB_ENDPOINT))
+        .build();
+
+    Span serverSpan = Span.builder().traceId(20L).id(22L).name("get").parentId(21L)
+        .addAnnotation(Annotation.create(1000, SERVER_RECV, TestObjects.APP_ENDPOINT))
+        .build();
+
+    accept(serverSpan, clientSpan);
+
+    // make sure that both timestamps are in the index
+    assertThat(es.takeRequest().getBody().readByteString().utf8())
+        .contains("{\"timestamp_millis\":1")
+        .contains("{\"timestamp_millis\":0");
+  }
+
+  @Test
   public void indexesServiceSpan_multipleServices() throws Exception {
     es.enqueue(new MockResponse());
 
@@ -169,13 +189,13 @@ public class ElasticsearchHttpSpanConsumerTest {
   public void indexesServiceSpan_basedOnAnnotationTimestamp() throws Exception {
     es.enqueue(new MockResponse());
 
-    Annotation sr = Annotation.create(
+    Annotation foo = Annotation.create(
         TimeUnit.DAYS.toMicros(365), // 1971-01-01
-        SERVER_RECV,
+        "foo",
         TestObjects.APP_ENDPOINT
     );
 
-    Span span = Span.builder().traceId(1L).id(2L).parentId(1L).name("s").addAnnotation(sr).build();
+    Span span = Span.builder().traceId(1L).id(2L).parentId(1L).name("s").addAnnotation(foo).build();
 
     // sanity check data
     assertThat(span.timestamp).isNull();
@@ -230,9 +250,9 @@ public class ElasticsearchHttpSpanConsumerTest {
         .isEqualTo("/_bulk?pipeline=zipkin");
   }
 
-  void accept(Span span) throws Exception {
+  void accept(Span ... spans) throws Exception {
     CallbackCaptor<Void> callback = new CallbackCaptor<>();
-    storage.asyncSpanConsumer().accept(asList(span), callback);
+    storage.asyncSpanConsumer().accept(asList(spans), callback);
     callback.get();
   }
 }

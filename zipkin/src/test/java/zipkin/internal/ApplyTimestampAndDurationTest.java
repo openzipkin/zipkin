@@ -24,6 +24,7 @@ import static zipkin.Constants.CLIENT_SEND;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
 import static zipkin.internal.ApplyTimestampAndDuration.apply;
+import static zipkin.internal.ApplyTimestampAndDuration.authoritativeTimestamp;
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 
 public class ApplyTimestampAndDurationTest {
@@ -34,7 +35,7 @@ public class ApplyTimestampAndDurationTest {
   Annotation cr = Annotation.create((100) * 1000, CLIENT_RECV, frontend);
 
   Endpoint backend =
-        Endpoint.builder().serviceName("backend").ipv4(192 << 24 | 12 << 16 | 2).port(8080).build();
+      Endpoint.builder().serviceName("backend").ipv4(192 << 24 | 12 << 16 | 2).port(8080).build();
   Annotation sr = Annotation.create((70) * 1000, SERVER_RECV, backend);
   Annotation ss = Annotation.create((80) * 1000, SERVER_SEND, backend);
 
@@ -87,20 +88,44 @@ public class ApplyTimestampAndDurationTest {
   }
 
   @Test
-  public void bestTimestamp_isClientSideOFARootSpan() {
+  public void bestTimestamp_isClientSideOfASharedSpan() {
     assertThat(guessTimestamp(span.addAnnotation(cs).addAnnotation(sr).build()))
         .isEqualTo(cs.timestamp);
   }
 
   @Test
-  public void bestTimestamp_isNotAChildServerSpan() {
+  public void bestTimestamp_serverSideOfChildSpan() {
     assertThat(guessTimestamp(span.parentId(2L).addAnnotation(sr).build()))
+        .isEqualTo(sr.timestamp);
+  }
+
+  @Test
+  public void bestTimestamp_isClientSideOfAChildSpan() {
+    assertThat(guessTimestamp(span.parentId(2L).addAnnotation(sr).addAnnotation(cs).build()))
+        .isEqualTo(cs.timestamp);
+  }
+
+  @Test
+  public void bestTimestamp_isNotRandomAnnotation() {
+    assertThat(guessTimestamp(span.addAnnotation(sr.toBuilder().value("f").build()).build()))
         .isNull();
   }
 
   @Test
-  public void bestTimestamp_isAChildClientSpan() {
-    assertThat(guessTimestamp(span.parentId(2L).addAnnotation(cs).build()))
+  public void authoritativeTimestamp_isTimestamp() {
+    assertThat(authoritativeTimestamp(span.parentId(2L).timestamp(1L).addAnnotation(cs).build()))
+        .isEqualTo(1L);
+  }
+
+  @Test
+  public void authoritativeTimestamp_isClientSideOfAChildSpan() {
+    assertThat(authoritativeTimestamp(span.parentId(2L).addAnnotation(cs).build()))
         .isEqualTo(cs.timestamp);
+  }
+
+  @Test
+  public void authoritativeTimestamp_isNotServerSideOfChildSpan() {
+    assertThat(authoritativeTimestamp(span.parentId(2L).addAnnotation(sr).build()))
+        .isNull();
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -389,7 +389,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
   }
 
   ListenableFuture<Map<TraceIdUDT, Long>> getTraceIdsByServiceNames(QueryRequest request) {
-    long oldestData = indexTtl == 0 ? 0 : (System.currentTimeMillis() - indexTtl * 1000);
+    long oldestData = Math.max(System.currentTimeMillis() - indexTtl * 1000, 0); // >= 1970
     long startTsMillis = Math.max((request.endTs - request.lookback), oldestData);
     long endTsMillis = Math.max(request.endTs, oldestData);
 
@@ -456,7 +456,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
       long endTsMillis,
       long lookbackMillis,
       int limit) {
-    long oldestData = traceTtl == 0 ? 0 : (System.currentTimeMillis() - traceTtl * 1000);
+    long oldestData = Math.max(System.currentTimeMillis() - indexTtl * 1000, 0); // >= 1970
     long startTsMillis = Math.max((endTsMillis - lookbackMillis), oldestData);
     endTsMillis = Math.max(endTsMillis, oldestData);
 
