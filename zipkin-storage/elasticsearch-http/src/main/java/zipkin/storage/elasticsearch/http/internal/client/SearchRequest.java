@@ -60,15 +60,27 @@ public final class SearchRequest {
       return this;
     }
 
-    public Filters addNestedTerms(Map<String, String> nestedTerms) {
-      List<SearchRequest.Term> terms = new ArrayList<>();
-      String field = null;
-      for (Map.Entry<String, String> nestedTerm : nestedTerms.entrySet()) {
-        terms.add(new Term(field = nestedTerm.getKey(), nestedTerm.getValue()));
+    public Filters addNestedTerms(Map<String, String>... nestedTerms) {
+      if (nestedTerms.length == 1) {
+        add(mustMatchAllNestedTerms(nestedTerms[0]));
+        return this;
       }
-      add(new NestedBoolQuery(field.substring(0, field.indexOf('.')), "must", terms));
+      List<NestedBoolQuery> nestedBoolQueries = new ArrayList<>(nestedTerms.length);
+      for (Map<String, String> next : nestedTerms) {
+        nestedBoolQueries.add(mustMatchAllNestedTerms(next));
+      }
+      add(new SearchRequest.BoolQuery("should", nestedBoolQueries));
       return this;
     }
+  }
+
+  static NestedBoolQuery mustMatchAllNestedTerms(Map<String, String> next) {
+    List<Term> terms = new ArrayList<>();
+    String field = null;
+    for (Map.Entry<String, String> nestedTerm : next.entrySet()) {
+      terms.add(new Term(field = nestedTerm.getKey(), nestedTerm.getValue()));
+    }
+    return new NestedBoolQuery(field.substring(0, field.indexOf('.')), "must", terms);
   }
 
   public SearchRequest filters(Filters filters) {

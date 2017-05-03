@@ -495,6 +495,10 @@ public abstract class SpanStoreTest {
 
     assertThat(store().getTraces(QueryRequest.builder().serviceName("service").addAnnotation("foo").addAnnotation("bar").addBinaryAnnotation("baz", "qux").build()))
         .containsExactly(asList(barAndFooAndBazAndQux));
+
+    // ensure we can search only by tag/binaryAnnotation key
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").addAnnotation("baz").build()))
+        .containsExactly(asList(barAndFooAndBazAndQux), asList(fooAndBazAndQux));
   }
 
   /**
@@ -539,13 +543,13 @@ public abstract class SpanStoreTest {
     assertThat(store().getTraces(QueryRequest.builder().serviceName("web").addAnnotation("app").build()))
         .isEmpty();
 
-    // Binary annotations are not returned for annotation queries
+    // Binary annotations are returned for annotation queries
     assertThat(store().getTraces(QueryRequest.builder().serviceName("web").addAnnotation("web-b").build()))
-        .isEmpty();
+        .containsExactly(asList(trace1));
     assertThat(store().getTraces(QueryRequest.builder().serviceName("app").addAnnotation("web-b").build()))
         .isEmpty();
     assertThat(store().getTraces(QueryRequest.builder().serviceName("app").addAnnotation("app-b").build()))
-        .isEmpty();
+        .containsExactly(asList(trace2));
     assertThat(store().getTraces(QueryRequest.builder().serviceName("web").addAnnotation("app-b").build()))
         .isEmpty();
 

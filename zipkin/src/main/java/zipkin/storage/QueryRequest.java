@@ -56,7 +56,8 @@ public final class QueryRequest {
   public final String spanName;
 
   /**
-   * Include traces whose {@link zipkin.Span#annotations} include a value in this set.
+   * Include traces whose {@link zipkin.Span#annotations} include a value in this set, or where
+   * {@link zipkin.Span#binaryAnnotations} include a String whose key is in this set.
    *
    * <p> This is an AND condition against the set, as well against {@link #binaryAnnotations}
    */
@@ -232,7 +233,8 @@ public final class QueryRequest {
             addAnnotation(ann);
           } else {
             String[] keyValue = ann.split("=");
-            addBinaryAnnotation(ann.substring(0, idx), keyValue.length < 2 ? "" : ann.substring(idx+1));
+            addBinaryAnnotation(ann.substring(0, idx),
+                keyValue.length < 2 ? "" : ann.substring(idx + 1));
           }
         }
       }
@@ -389,6 +391,9 @@ public final class QueryRequest {
             b.type == BinaryAnnotation.Type.STRING &&
             new String(b.value, UTF_8).equals(binaryAnnotationsToMatch.get(b.key))) {
           binaryAnnotationsToMatch.remove(b.key);
+        }
+        if (appliesToServiceName(b.endpoint, serviceName)) {
+          annotationsToMatch.remove(b.key);
         }
         if (b.endpoint != null) {
           serviceNames.add(b.endpoint.serviceName);

@@ -126,8 +126,8 @@ public class QueryRequestTest {
   public void annotationQuery_complexValue() {
     String annotationQuery = "http.method=GET=1 and error";
 
-    QueryRequest request =
-        QueryRequest.builder().serviceName("security-service").parseAnnotationQuery(annotationQuery).build();
+    QueryRequest request = QueryRequest.builder().serviceName("security-service")
+        .parseAnnotationQuery(annotationQuery).build();
     
     assertThat(request.binaryAnnotations)
         .containsEntry(HTTP_METHOD, "GET=1")
