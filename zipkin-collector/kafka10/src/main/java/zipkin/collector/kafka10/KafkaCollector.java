@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -91,8 +91,8 @@ public final class KafkaCollector implements CollectorComponent {
     }
 
     /** The bootstrapServers connect string, ex. 127.0.0.1:9092. No default. */
-    public Builder bootstrapServers(String zookeeper) {
-      properties.put(BOOTSTRAP_SERVERS_CONFIG, checkNotNull(zookeeper, "bootstrapServers"));
+    public Builder bootstrapServers(String bootstrapServers) {
+      properties.put(BOOTSTRAP_SERVERS_CONFIG, checkNotNull(bootstrapServers, "bootstrapServers"));
       return this;
     }
 
