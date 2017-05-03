@@ -72,23 +72,34 @@ public class ApplyTimestampAndDuration {
    *
    * <pre><ul>
    *   <li>If there is a {@link Constants#CLIENT_SEND}, use that</li>
-   *   <li>Fall back to {@link Constants#SERVER_RECV}, if a root span</li>
+   *   <li>Fall back to {@link Constants#SERVER_RECV}</li>
    *   <li>Otherwise, return null</li>
    * </ul></pre>
    */
   public static Long guessTimestamp(Span span) {
     if (span.timestamp != null || span.annotations.isEmpty()) return span.timestamp;
-    boolean isRoot = span.parentId == null;
     Long rootServerRecv = null;
     for (int i = 0, length = span.annotations.size(); i < length; i++) {
       Annotation annotation = span.annotations.get(i);
       if (annotation.value.equals(Constants.CLIENT_SEND)) {
         return annotation.timestamp;
-      } else if (annotation.value.equals(Constants.SERVER_RECV) && isRoot) {
+      } else if (annotation.value.equals(Constants.SERVER_RECV)) {
         rootServerRecv = annotation.timestamp;
       }
     }
     return rootServerRecv;
+  }
+
+  /** When performing updates, don't overwrite an authoritative timestamp with a guess! */
+  public static Long authoritativeTimestamp(Span span) {
+    if (span.timestamp != null) return span.timestamp;
+    for (int i = 0, length = span.annotations.size(); i < length; i++) {
+      Annotation a = span.annotations.get(i);
+      if (a.value.equals(Constants.CLIENT_SEND)) {
+        return a.timestamp;
+      }
+    }
+    return null;
   }
 
   private ApplyTimestampAndDuration() {

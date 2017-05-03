@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -27,12 +27,11 @@ import org.jooq.Record;
 import org.jooq.TableField;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
-import zipkin.Constants;
 import zipkin.Span;
-import zipkin.internal.Lazy;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.StorageAdapters;
 
+import static zipkin.internal.ApplyTimestampAndDuration.authoritativeTimestamp;
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
@@ -136,17 +135,5 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
     } catch (SQLException e) {
       throw new RuntimeException(e); // TODO
     }
-  }
-
-  /** When performing updates, don't overwrite an authoritative timestamp with a guess! */
-  static Long authoritativeTimestamp(Span span) {
-    if (span.timestamp != null) return span.timestamp;
-    for (int i = 0, length = span.annotations.size(); i < length; i++) {
-      Annotation a = span.annotations.get(i);
-      if (a.value.equals(Constants.CLIENT_SEND)) {
-        return a.timestamp;
-      }
-    }
-    return null;
   }
 }

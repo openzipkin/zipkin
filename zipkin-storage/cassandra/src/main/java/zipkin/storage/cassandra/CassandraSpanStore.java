@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,7 +21,6 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Function;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
@@ -402,7 +401,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
       long lookback, int limit) {
     if (serviceNames.isEmpty()) return immediateFuture(Collections.<Long, Long>emptyMap());
 
-    long startTs = endTs - lookback;
+    long startTs = Math.max(endTs - lookback, 0); // >= 1970
     try {
       // This guards use of "in" query to give people a little more time to move off Cassandra 2.1
       // Note that it will still fail when serviceNames.size() > 1
@@ -433,7 +432,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     checkArgument(serviceName != null, "serviceName required on spanName query");
     checkArgument(spanName != null, "spanName required on spanName query");
     String serviceSpanName = serviceName + "." + spanName;
-    long startTs = endTs - lookback;
+    long startTs = Math.max(endTs - lookback, 0); // >= 1970
     try {
       BoundStatement bound = CassandraUtil.bindWithName(selectTraceIdsBySpanName, "select-trace-ids-by-span-name")
           .setString("service_span_name", serviceSpanName)
@@ -449,7 +448,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
 
   ListenableFuture<Map<Long, Long>> getTraceIdsByAnnotation(String annotationKey,
       long endTs, long lookback, int limit) {
-    long startTs = endTs - lookback;
+    long startTs = Math.max(endTs - lookback, 0); // >= 1970
     try {
       BoundStatement bound =
           CassandraUtil.bindWithName(selectTraceIdsByAnnotation, "select-trace-ids-by-annotation")
