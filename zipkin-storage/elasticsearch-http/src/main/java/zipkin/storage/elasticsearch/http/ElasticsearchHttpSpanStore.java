@@ -74,13 +74,17 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
     }
 
     for (String annotation : request.annotations) {
-      Map<String, String> nestedTerms = new LinkedHashMap<>();
-      nestedTerms.put("annotations.value", annotation);
+      Map<String, String> annotationValues = new LinkedHashMap<>();
+      annotationValues.put("annotations.value", annotation);
+      Map<String, String> binaryAnnotationKeys = new LinkedHashMap<>();
+      binaryAnnotationKeys.put("binaryAnnotations.key", annotation);
       if (request.serviceName != null) {
-        nestedTerms.put("annotations.endpoint.serviceName", request.serviceName);
+        annotationValues.put("annotations.endpoint.serviceName", request.serviceName);
+        binaryAnnotationKeys.put("binaryAnnotations.endpoint.serviceName", request.serviceName);
       }
-      filters.addNestedTerms(nestedTerms);
+      filters.addNestedTerms(annotationValues, binaryAnnotationKeys);
     }
+
     for (Map.Entry<String, String> kv : request.binaryAnnotations.entrySet()) {
       // In our index template, we make sure the binaryAnnotation value is indexed as string,
       // meaning non-string values won't even be indexed at all. This means that we can only
