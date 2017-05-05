@@ -278,6 +278,10 @@ prefixed system property:
 $ KAFKA_ZOOKEEPER=127.0.0.1:2181 java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
 ```
 
+### Kafka 0.10+ Collector
+
+todo: details
+
 ### 128-bit trace IDs
 
 Zipkin supports 64 and 128-bit trace identifiers, typically serialized

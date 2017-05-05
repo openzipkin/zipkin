@@ -119,6 +119,13 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- Kafka 0.10 Collector -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-autoconfigure-collector-kafka10</artifactId>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Scribe Collector -->
     <dependency>
       <groupId>${project.groupId}</groupId>

@@ -20,6 +20,13 @@ zipkin:
       streams: ${KAFKA_STREAMS:1}
       # Maximum size of a message containing spans in bytes
       max-message-size: ${KAFKA_MAX_MESSAGE_SIZE:1048576}
+    kafka10:
+      # Kafka boostrap broker list, comma-separated host:port values.
+      bootstrap-servers: ${KAFKA10_BOOTSTRAP_SERVERS:}
+      # Consumer group this process is consuming on behalf of.
+      group-id: ${KAFKA10_GROUP_ID:zipkin}
+      # Name of topic to poll for spans
+      topic: ${KAFKA10_TOPIC:zipkin}
     scribe:
       enabled: ${SCRIBE_ENABLED:false}
       category: zipkin
