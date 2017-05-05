@@ -86,25 +86,26 @@ describe('formatBinaryAnnotationValue', () => {
     formatBinaryAnnotationValue(true).should.equal('true');
   });
 
+
   it('should format object as pre-formatted multi-line json', () => {
     formatBinaryAnnotationValue({foo: 'bar'}).should.equal(
-      '<pre>{\n  "foo": "bar"\n}</pre>'
+      '<pre><code>{\n  "foo": "bar"\n}</code></pre>'
     );
   });
 
   it('should format array as pre-formatted multi-line json', () => {
     formatBinaryAnnotationValue([{foo: 'bar'}, {baz: 'qux'}]).should.equal(
-      '<pre>[\n  {\n    "foo": "bar"\n  },\n  {\n    "baz": "qux"\n  }\n]</pre>'
+      '<pre><code>[\n  {\n    "foo": "bar"\n  },\n  {\n    "baz": "qux"\n  }\n]</code></pre>'
     );
   });
 
   it('should format null as pre-formatted json', () => {
-    formatBinaryAnnotationValue(null).should.equal('<pre>null</pre>');
+    formatBinaryAnnotationValue(null).should.equal('<pre><code>null</code></pre>');
   });
 
   it('should format multi-line string as pre-formatted', () => {
     formatBinaryAnnotationValue('foo\nbar\n').should.equal(
-      '<pre>foo\nbar\n</pre>'
+      '<pre><code>foo\nbar\n</code></pre>'
     );
   });
 });
