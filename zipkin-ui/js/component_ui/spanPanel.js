@@ -32,7 +32,7 @@ export function formatAnnotationValue(value) {
 export function formatBinaryAnnotationValue(value) {
   const type = $.type(value);
   if (type === 'object' || type === 'array' || value == null) {
-    return `<pre>${JSON.stringify(value, null, 2)}</pre>`;
+    return `<pre><code>${JSON.stringify(value, null, 2)}</code></pre>`;
   }
   const result = value.toString();
   // Preformat if the text includes newlines
