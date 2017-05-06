@@ -108,11 +108,6 @@ public final class KafkaCollector implements CollectorComponent {
       return this;
     }
 
-    // todo Does this need to expose settings to limit fetch size? The consumer config points are not hard limits.
-    // see broker config message.max.bytes (default 1000012), consumer config
-    // max.partition.fetch.bytes (per partition max, default 1048576) and fetch.max.bytes
-    // (per fetch max, default 52428800)
-
     /**
      * By default, a consumer will be built from properties derived from builder defaults,
      * as well as "auto.offset.reset" -> "earliest". Any properties set here will override the
