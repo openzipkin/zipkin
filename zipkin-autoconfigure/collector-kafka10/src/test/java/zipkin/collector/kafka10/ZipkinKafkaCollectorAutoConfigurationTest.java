@@ -60,7 +60,7 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
   @Test
   public void providesCollectorComponent_whenBootstrapServersSet() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.collector.kafka10.bootstrap-servers:localhost:9091");
+    addEnvironment(context, "zipkin.collector.kafka.bootstrap-servers:localhost:9091");
     context.register(PropertyPlaceholderAutoConfiguration.class,
         ZipkinKafkaCollectorAutoConfiguration.class, InMemoryConfiguration.class);
     context.refresh();
@@ -72,8 +72,8 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
   public void canOverrideProperty_topic() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context,
-        "zipkin.collector.kafka10.bootstrap-servers:localhost:9091",
-        "zipkin.collector.kafka10.topic:zapkin"
+        "zipkin.collector.kafka.bootstrap-servers:localhost:9091",
+        "zipkin.collector.kafka.topic:zapkin"
     );
     context.register(PropertyPlaceholderAutoConfiguration.class,
         ZipkinKafkaCollectorAutoConfiguration.class, InMemoryConfiguration.class);
@@ -83,7 +83,7 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
         .isEqualTo("zapkin");
   }
 
-  // need to expose the underlying kafka consumers to enable this check
+  // todo need to expose the underlying kafka consumers to enable this check
   //@Test
   //public void overrideWithNestedProperties() {
   //  context = new AnnotationConfigApplicationContext();
