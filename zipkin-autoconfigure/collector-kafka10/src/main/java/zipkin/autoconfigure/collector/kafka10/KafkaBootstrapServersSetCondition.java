@@ -30,7 +30,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * }</pre>
  */
 final class KafkaBootstrapServersSetCondition extends SpringBootCondition {
-  static final String PROPERTY_NAME = "zipkin.collector.kafka10.bootstrap-servers";
+  static final String PROPERTY_NAME = "zipkin.collector.kafka.bootstrap-servers";
 
   @Override
   public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata a) {

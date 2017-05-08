@@ -18,7 +18,7 @@ import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.collector.kafka10.KafkaCollector;
 
-@ConfigurationProperties("zipkin.collector.kafka10")
+@ConfigurationProperties("zipkin.collector.kafka")
 public class ZipkinKafkaCollectorProperties {
   private String bootstrapServers;
   private String groupId = "zipkin";

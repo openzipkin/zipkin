@@ -292,8 +292,8 @@ Settings below correspond to "New Consumer Configs" in [Kafka documentation](htt
 
 Environment Variable | Property | New Consumer Config | Description
 --- | --- | --- | ---
-KAFKA_BOOTSTRAP_SERVERS | zipkin.collector.kafka10.bootstrap-servers | bootstrap.servers | Comma-separated list of brokers, ex. 127.0.0.1:9092. No default
-KAFKA_GROUP_ID | zipkin.collector.kafka10.group-id | group.id | The consumer group this process is consuming on behalf of. Defaults to "zipkin"
+KAFKA_BOOTSTRAP_SERVERS | zipkin.collector.kafka.bootstrap-servers | bootstrap.servers | Comma-separated list of brokers, ex. 127.0.0.1:9092. No default
+KAFKA_GROUP_ID | zipkin.collector.kafka.group-id | group.id | The consumer group this process is consuming on behalf of. Defaults to "zipkin"
 
 Example usage:
 
@@ -304,13 +304,13 @@ $ KAFKA_BOOTSTRAP_SERVERS=broker1:9092,broker2:9092 java -jar zipkin.jar
 #### Overriding other properties
 You may need to override other consumer properties, in addition to the ones with explicit
 properties defined by the collector. In this case, you need to prefix that property name
-with "zipkin.collector.kafka10.overrides" and pass it as a CLI argument or
+with `zipkin.collector.kafka.overrides` and pass it as a CLI argument or
 system property.
 
-For example, to override "auto.offset.reset", you can set a prefixed system property:
+For example, to override `auto.offset.reset`, you can set a prefixed system property:
 
 ```bash
-$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -Dzipkin.collector.kafka10.overrides.auto.offset.reset=latest -jar zipkin.jar
+$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -Dzipkin.collector.kafka.overrides.auto.offset.reset=latest -jar zipkin.jar
 ```
 
 ### 128-bit trace IDs
