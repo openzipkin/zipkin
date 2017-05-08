@@ -201,6 +201,8 @@ public class KafkaCollectorTest {
     assertThat(kafkaMetrics.spansDropped()).isEqualTo(TRACE.size());
   }
 
+  // todo need test for running multiple threads, which requires a topic with multiple partitions, control over partition assignment on produce, etc.
+
   private void produceSpans(String topic, byte[] spans) {
     kafka.helper().produce(topic, producer, Collections.singletonMap(null, spans));
   }

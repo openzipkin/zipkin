@@ -56,7 +56,7 @@ public final class KafkaCollector implements CollectorComponent {
     Collector.Builder delegate = Collector.builder(KafkaCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
     String topic = "zipkin";
-    int kafkaConsumerThreads = 1;
+    int streams = 1;
 
     @Override public Builder storage(StorageComponent storage) {
       delegate.storage(storage);
@@ -93,8 +93,8 @@ public final class KafkaCollector implements CollectorComponent {
     }
 
     /** Count of threads consuming the topic. Defaults to 1 */
-    public Builder kafkaConsumerThreads(int threads) {
-      this.kafkaConsumerThreads = threads;
+    public Builder streams(int streams) {
+      this.streams = streams;
       return this;
     }
 
@@ -160,7 +160,7 @@ public final class KafkaCollector implements CollectorComponent {
   }
 
   static final class LazyKafkaConsumers extends LazyCloseable<ExecutorService> {
-    final int kafkaConsumerThreads;
+    final int streams;
     final Properties properties;
     final String topic;
     final Collector collector;
@@ -168,7 +168,7 @@ public final class KafkaCollector implements CollectorComponent {
     final AtomicReference<CheckResult> failure = new AtomicReference<>();
 
     LazyKafkaConsumers(Builder builder) {
-      this.kafkaConsumerThreads = builder.kafkaConsumerThreads;
+      this.streams = builder.streams;
       this.properties = builder.properties;
       this.topic = builder.topic;
       this.collector = builder.delegate.build();
@@ -176,11 +176,11 @@ public final class KafkaCollector implements CollectorComponent {
     }
 
     @Override protected ExecutorService compute() {
-      ExecutorService pool = kafkaConsumerThreads == 1
+      ExecutorService pool = streams == 1
           ? Executors.newSingleThreadExecutor()
-          : Executors.newFixedThreadPool(kafkaConsumerThreads);
+          : Executors.newFixedThreadPool(streams);
 
-      for (int i = 0; i < kafkaConsumerThreads; i ++) {
+      for (int i = 0; i < streams; i ++) {
         Consumer<byte[], byte[]> kafkaConsumer = new KafkaConsumer<>(properties);
         kafkaConsumer.subscribe(Collections.singleton(topic));
         pool.execute(guardFailures(new KafkaConsumerProcessor(kafkaConsumer, collector, metrics)));

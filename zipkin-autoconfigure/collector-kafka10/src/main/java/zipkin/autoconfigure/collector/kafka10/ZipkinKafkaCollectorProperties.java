@@ -23,7 +23,7 @@ public class ZipkinKafkaCollectorProperties {
   private String bootstrapServers;
   private String groupId = "zipkin";
   private String topic = "zipkin";
-  private int consumerThreads = 1;
+  private int streams = 1;
   private Map<String, String> overrides = new LinkedHashMap<>();
 
   public String getBootstrapServers() {
@@ -50,12 +50,12 @@ public class ZipkinKafkaCollectorProperties {
     this.topic = topic;
   }
 
-  public int getConsumerThreads() {
-    return consumerThreads;
+  public int getStreams() {
+    return streams;
   }
 
-  public void setConsumerThreads(int consumerThreads) {
-    this.consumerThreads = consumerThreads;
+  public void setStreams(int streams) {
+    this.streams = streams;
   }
 
   public Map<String, String> getOverrides() {
@@ -71,7 +71,7 @@ public class ZipkinKafkaCollectorProperties {
         .bootstrapServers(bootstrapServers)
         .groupId(groupId)
         .topic(topic)
-        .kafkaConsumerThreads(consumerThreads)
+        .streams(streams)
         .overrides(overrides);
   }
 }
