@@ -26,7 +26,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * doesn't have an option to treat empty properties as unset.
  *
  * <pre>{@code
- * bootstrap-servers: ${KAFKA10_BOOTSTRAP_SERVERS:}
+ * bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
  * }</pre>
  */
 final class KafkaBootstrapServersSetCondition extends SpringBootCondition {
