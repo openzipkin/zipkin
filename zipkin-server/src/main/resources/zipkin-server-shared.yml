@@ -22,13 +22,13 @@ zipkin:
       max-message-size: ${KAFKA_MAX_MESSAGE_SIZE:1048576}
     kafka10:
       # Kafka boostrap broker list, comma-separated host:port values.
-      bootstrap-servers: ${KAFKA10_BOOTSTRAP_SERVERS:}
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
       # Consumer group this process is consuming on behalf of.
-      group-id: ${KAFKA10_GROUP_ID:zipkin}
+      group-id: ${KAFKA_GROUP_ID:zipkin}
       # Name of topic to poll for spans
-      topic: ${KAFKA10_TOPIC:zipkin}
+      topic: ${KAFKA_TOPIC:zipkin}
       # Number of consumer threads
-      consumer-threads: ${KAFKA10_CONSUMER_THREADS:1}
+      consumer-threads: ${KAFKA_CONSUMER_THREADS:1}
     scribe:
       enabled: ${SCRIBE_ENABLED:false}
       category: zipkin
