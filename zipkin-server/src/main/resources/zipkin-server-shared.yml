@@ -27,6 +27,8 @@ zipkin:
       group-id: ${KAFKA10_GROUP_ID:zipkin}
       # Name of topic to poll for spans
       topic: ${KAFKA10_TOPIC:zipkin}
+      # Number of consumer threads
+      consumer-threads: ${KAFKA10_CONSUMER_THREADS:1}
     scribe:
       enabled: ${SCRIBE_ENABLED:false}
       category: zipkin

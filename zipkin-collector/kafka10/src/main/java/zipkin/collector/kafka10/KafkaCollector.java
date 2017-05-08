@@ -15,7 +15,6 @@ package zipkin.collector.kafka10;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -24,14 +23,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.Serdes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import zipkin.Codec;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorComponent;
 import zipkin.collector.CollectorMetrics;
@@ -44,7 +37,6 @@ import static org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET
 import static org.apache.kafka.clients.consumer.ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
 import static zipkin.internal.Util.checkNotNull;
-import static zipkin.storage.Callback.NOOP;
 
 /**
  * This collector polls a Kafka topic for messages that contain TBinaryProtocol big-endian encoded
@@ -53,8 +45,6 @@ import static zipkin.storage.Callback.NOOP;
  * <p>This collector uses a Kafka 0.10+ consumer.
  */
 public final class KafkaCollector implements CollectorComponent {
-
-  private static final Logger LOG = LoggerFactory.getLogger(KafkaCollector.class);
 
   public static Builder builder() {
     return new Builder();
