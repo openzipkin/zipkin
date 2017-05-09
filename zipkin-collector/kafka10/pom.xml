@@ -50,6 +50,7 @@
       <version>${slf4j.version}</version>
     </dependency>
 
+    <!-- Binding test logging to logback. Logging in kafka-clients is based on slf4j-api. -->
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>

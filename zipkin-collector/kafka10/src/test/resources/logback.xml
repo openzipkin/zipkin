@@ -1,5 +1,4 @@
 <configuration>
-
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <!-- encoders are assigned the type
          ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
@@ -10,10 +9,9 @@
 
   <logger name="zipkin.collector.kafka10" level="DEBUG"/>
   <logger name="com.github.charithe.kafka" level="INFO"/>
-  <logger name="org.apache.kafka.clients" level="INFO"/>
 
-  <!-- don't waste logs when ZK check fails -->
-  <logger name="org.apache.zookeeper.ClientCnxn" level="OFF"/>
+  <!-- uncomment to include kafka consumer configuration in test logs -->
+  <!--<logger name="org.apache.kafka.clients" level="INFO"/>-->
 
   <root level="WARN">
     <appender-ref ref="STDOUT" />
