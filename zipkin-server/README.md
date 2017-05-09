@@ -280,6 +280,9 @@ $ KAFKA_ZOOKEEPER=127.0.0.1:2181 java -Dzipkin.collector.kafka.overrides.auto.of
 
 ### Kafka 0.10+ Collector
 
+_Warning:_ These instructions are no longer accurate. Updates are needed to account for the Kafka
+0.10+ collector now being packaged as an external module.
+
 This collector is implemented as a Kafka consumer supporting 0.10+ brokers. To activate this
 collector, configure one or more bootstrap brokers via the `KAFKA_BOOTSTRAP_SERVERS` environment
 variable or `zipkin.collector.kafka.bootstrap-servers` property.

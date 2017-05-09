@@ -36,4 +36,29 @@
       <artifactId>zipkin-collector-kafka10</artifactId>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${spring-boot.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <layout>MODULE</layout>
+          <classifier>module</classifier>
+          <!-- exclude dependencies already packaged in zipkin-server -->
+          <!-- https://github.com/spring-projects/spring-boot/issues/3426 transitive exclude doesn't work -->
+          <excludeGroupIds>org.springframework.boot,org.springframework,org.slf4j,commons-logging,com.google.code.gson</excludeGroupIds>
+          <excludeArtifactIds>zipkin</excludeArtifactIds>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

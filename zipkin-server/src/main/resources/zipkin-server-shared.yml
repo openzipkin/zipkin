@@ -10,19 +10,15 @@ zipkin:
     # percentage to traces to retain
     sample-rate: ${COLLECTOR_SAMPLE_RATE:1.0}
     kafka:
-      # ZooKeeper host string, comma-separated host:port value. Setting this activates the Kafka 0.8
-      # collector.
+      # ZooKeeper host string, comma-separated host:port value.
       zookeeper: ${KAFKA_ZOOKEEPER:}
-      # Kafka boostrap broker list, comma-separated host:port values. Setting this activates the
-      # Kafka 0.10+ collector.
-      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
       # Name of topic to poll for spans
       topic: ${KAFKA_TOPIC:zipkin}
       # Consumer group this process is consuming on behalf of.
       group-id: ${KAFKA_GROUP_ID:zipkin}
       # Count of consumer threads consuming the topic
       streams: ${KAFKA_STREAMS:1}
-      # Maximum size of a message containing spans in bytes. Only applies to Kafka 0.8 collector.
+      # Maximum size of a message containing spans in bytes
       max-message-size: ${KAFKA_MAX_MESSAGE_SIZE:1048576}
     scribe:
       enabled: ${SCRIBE_ENABLED:false}
