@@ -58,6 +58,18 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
   }
 
   @Test
+  public void providesCollectorComponent_whenBootstrapServersEmptyString() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.collector.kafka.bootstrap-servers:");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinKafkaCollectorAutoConfiguration.class, InMemoryConfiguration.class);
+    context.refresh();
+
+    thrown.expect(NoSuchBeanDefinitionException.class);
+    context.getBean(KafkaCollector.class);
+  }
+
+  @Test
   public void providesCollectorComponent_whenBootstrapServersSet() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.collector.kafka.bootstrap-servers:localhost:9091");
@@ -83,21 +95,20 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
         .isEqualTo("zapkin");
   }
 
-  // todo need to expose the underlying kafka consumers to enable this check
-  //@Test
-  //public void overrideWithNestedProperties() {
-  //  context = new AnnotationConfigApplicationContext();
-  //  addEnvironment(context,
-  //      "zipkin.collector.kafka.zookeeper:localhost",
-  //      "zipkin.collector.kafka.overrides.auto.offset.reset:largest"
-  //  );
-  //  context.register(PropertyPlaceholderAutoConfiguration.class,
-  //      ZipkinKafkaCollectorAutoConfiguration.class, InMemoryConfiguration.class);
-  //  context.refresh();
-  //
-  //  assertThat(context.getBean(KafkaCollector.class).connector.config.autoOffsetReset())
-  //      .isEqualTo("largest");
-  //}
+  @Test
+  public void canOverrideKafkaConsumerProperties() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+        "zipkin.collector.kafka.bootstrap-servers:localhost:9091",
+        "zipkin.collector.kafka.overrides.auto.offset.reset:earliest"
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+        ZipkinKafkaCollectorAutoConfiguration.class, InMemoryConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(KafkaCollector.class).kafkaConsumers.properties)
+        .containsEntry("auto.offset.reset", "earliest");
+  }
 
   @Configuration
   static class InMemoryConfiguration {
