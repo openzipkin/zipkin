@@ -45,12 +45,13 @@ zipkin-collector-kafka10, kafka-clients).
 Using PropertiesLauncher as the main class runs the Zipkin server executable jar the same as it
 would be if executed using `java -jar zipkin-server-exec.jar`, except it provides the option to
 load resources from outside the executable jar into the classpath. Those external resources are
-specified using the `loader.path` system property. In this case, is it configured to load the
-kafka10 collector module jar and the jar files contained in the `lib/` directory within that module
-jar.
+specified using the `loader.path` system property. In this case, it is configured to load the
+kafka10 collector module jar (`zipkin-autoconfigure-collector-kafka10-module.jar`) and the jar files
+contained in the `lib/` directory within that module jar 
+(`zipkin-autoconfigure-collector-kafka10-module.jar!/lib`).
 
 The `spring.profiles=kafka` system property causes configuration from 
-[zipkin-server-kafka.yml](src/main/resouces/zipkin-server-kafka.yml) to be loaded.
+[zipkin-server-kafka.yml](src/main/resources/zipkin-server-kafka.yml) to be loaded.
 
 For more information on how this works, see [Spring Boot's documentation on the executable jar
 format](https://docs.spring.io/spring-boot/docs/current/reference/html/executable-jar.html). The
@@ -62,7 +63,8 @@ has more detail on how the external module jar and the libraries it contains are
 The following configuration points apply apply when `KAFKA_BOOTSTRAP_SERVERS` or 
 `zipkin.collector.kafka.bootstrap-servers` is set. They can be configured by setting an environment
 variable or by setting a java system property using the `-Dproperty.name=value` command line 
-argument.
+argument. Some settings correspond to "New Consumer Configs" in 
+[Kafka documentation](https://kafka.apache.org/documentation/#newconsumerconfigs).
 
 Environment Variable | Property | New Consumer Config | Description
 --- | --- | --- | ---
@@ -71,15 +73,12 @@ Environment Variable | Property | New Consumer Config | Description
 `KAFKA_TOPIC` | `zipkin.collector.kafka.topic` | N/A | Topic zipkin spans will be consumed from. Defaults to `zipkin`
 `KAFKA_STREAMS` | `zipkin.collector.kafka.streams` | N/A | Count of threads consuming the topic. Defaults to `1`
 
-Some settings above correspond to "New Consumer Configs" in 
-[Kafka documentation](https://kafka.apache.org/documentation/#newconsumerconfigs).
-
 ### Other Kafka consumer properties
 You may need to set other 
-[Kafka consumer properties]((https://kafka.apache.org/documentation/#newconsumerconfigs)), in 
+[Kafka consumer properties](https://kafka.apache.org/documentation/#newconsumerconfigs), in 
 addition to the ones with explicit properties defined by the collector. In this case, you need to 
-prefix that property name with `zipkin.collector.kafka.overrides` and pass it as a CLI argument or 
-system property.
+prefix that property name with `zipkin.collector.kafka.overrides` and pass it as a system property
+argument.
 
 For example, to override `auto.offset.reset`, you can set a system property named
 `zipkin.collector.kafka.overrides.auto.offset.reset`:
