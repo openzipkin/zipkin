@@ -280,52 +280,9 @@ $ KAFKA_ZOOKEEPER=127.0.0.1:2181 java -Dzipkin.collector.kafka.overrides.auto.of
 
 ### Kafka 0.10+ Collector
 
-_Warning:_ These instructions are no longer accurate. Updates are needed to account for the Kafka
-0.10+ collector now being packaged as an external module.
+A collector supporting Kafka versions 0.10 and later is available as an external module.
 
-This collector is implemented as a Kafka consumer supporting 0.10+ brokers. To activate this
-collector, configure one or more bootstrap brokers via the `KAFKA_BOOTSTRAP_SERVERS` environment
-variable or `zipkin.collector.kafka.bootstrap-servers` property.
-
-The following configuration points apply apply when `KAFKA_BOOTSTRAP_SERVERS` or 
-`zipkin.collector.kafka.bootstrap-servers` is set:
-
-Environment Variable | Property | New Consumer Config | Description
---- | --- | --- | ---
-`KAFKA_BOOTSTRAP_SERVERS` | `zipkin.collector.kafka.bootstrap-servers` | bootstrap.servers | Comma-separated list of brokers, ex. 127.0.0.1:9092. No default
-`KAFKA_GROUP_ID` | `zipkin.collector.kafka.group-id` | group.id | The consumer group this process is consuming on behalf of. Defaults to `zipkin`
-`KAFKA_TOPIC` | `zipkin.collector.kafka.topic` | N/A | Topic zipkin spans will be consumed from. Defaults to `zipkin`
-`KAFKA_STREAMS` | `zipkin.collector.kafka.streams` | N/A | Count of threads consuming the topic. Defaults to `1`
-
-Some settings above correspond to "New Consumer Configs" in 
-[Kafka documentation](https://kafka.apache.org/documentation/#newconsumerconfigs).
-
-Example usage:
-
-```bash
-$ KAFKA_BOOTSTRAP_SERVERS=broker1:9092,broker2:9092 java -jar zipkin.jar
-```
-
-```bash
-$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -Dzipkin.collector.kafka.topic=zapkin -jar zipkin.jar
-```
-
-```bash
-$ java -Dzipkin.collector.kafka.bootstrap-servers=127.0.0.1:9092 -Dzipkin.collector.kafka.topic=zapkin -jar zipkin.jar
-```
-
-#### Overriding other properties
-You may need to override other 
-[Kafka consumer properties]((https://kafka.apache.org/documentation/#newconsumerconfigs)), in 
-addition to the ones with explicit properties defined by the collector. In this case, you need to 
-prefix that property name with `zipkin.collector.kafka.overrides` and pass it as a CLI argument or 
-system property.
-
-For example, to override `auto.offset.reset`, you can set a prefixed system property:
-
-```bash
-$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -Dzipkin.collector.kafka.overrides.auto.offset.reset=latest -jar zipkin.jar
-```
+See [zipkin-autoconfigure/collector-kafka10](../zipkin-autoconfigure/collector-kafka10/).
 
 ### 128-bit trace IDs
 
