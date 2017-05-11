@@ -57,10 +57,10 @@ public class KafkaCollectorTest {
   InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
   InMemoryCollectorMetrics kafkaMetrics = metrics.forTransport("kafka");
 
-  CopyOnWriteArraySet<String> threadsProvidingSpans = new CopyOnWriteArraySet<>();
+  CopyOnWriteArraySet<Thread> threadsProvidingSpans = new CopyOnWriteArraySet<>();
   LinkedBlockingQueue<List<Span>> receivedSpans = new LinkedBlockingQueue<>();
   AsyncSpanConsumer consumer = (spans, callback) -> {
-    threadsProvidingSpans.add(Thread.currentThread().getName());
+    threadsProvidingSpans.add(Thread.currentThread());
     receivedSpans.add(spans);
     callback.onSuccess(null);
   };
