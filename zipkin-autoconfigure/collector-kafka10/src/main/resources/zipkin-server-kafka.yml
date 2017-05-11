@@ -1,7 +1,7 @@
 zipkin:
   collector:
     kafka:
-      # Kafka boostrap broker list, comma-separated host:port values. Setting this activates the
+      # Kafka bootstrap broker list, comma-separated host:port values. Setting this activates the
       # Kafka 0.10+ collector.
       bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
       # Name of topic to poll for spans
