@@ -21,6 +21,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.curator.test.InstanceSpec;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
@@ -32,7 +33,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.Timeout;
 import zipkin.Codec;
-import zipkin.Component;
 import zipkin.Span;
 import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.collector.kafka10.KafkaCollector.Builder;
@@ -84,7 +84,7 @@ public class KafkaCollectorTest {
 
   @Test
   public void checkPasses() throws Exception {
-    try (KafkaCollector collector = newKafkaCollector(builder("check_passes"), consumer)) {
+    try (KafkaCollector collector = builder("check_passes").build()) {
       assertThat(collector.check().ok).isTrue();
     }
   }
@@ -96,13 +96,37 @@ public class KafkaCollectorTest {
 
     Builder builder = builder("fail_invalid_bootstrap_servers").bootstrapServers("1.1.1.1");
 
-    try (KafkaCollector collector = newKafkaCollector(builder, consumer)) {
-      Thread.sleep(TimeUnit.SECONDS.toMillis(15));
-      final Component.CheckResult checkResult = collector.check();
-      assertThat(checkResult.ok).isFalse();
-      if (checkResult.exception != null) {
-        checkResult.exception.printStackTrace();
-      }
+    try (KafkaCollector collector = builder.build()) {
+      collector.start();
+    }
+  }
+
+  /**
+   * If the Kafka broker(s) specified in the connection string are not available, the Kafka
+   * consumer library will attempt to reconnect indefinitely. The Kafka consumer will not throw
+   * an exception and does not expose the status of its connection to the Kafka broker(s) in its
+   * API. The only control over this behavior provided is setting the delay between reconnection
+   * attempts. This is controlled through the consumer config property "reconnect.backoff.ms",
+   * which defaults to a value of 50.
+   *
+   * In this case, "unavailable" means that the Kafka consumer cannot establish a connection to
+   * at least one of the hostname/IP and port combinations provided in the bootstrap
+   * brokers list.
+   *
+   * There is an opportunity to improve visibility by having {@link KafkaCollector#check()}
+   * interrogate the metrics provided by the Kafka consumer (see
+   * {@link org.apache.kafka.clients.consumer.KafkaConsumer#metrics()}) to determine whether
+   * connectivity to Kafka appears to be up based on observed activity.
+   */
+  @Test
+  public void reconnectsIndefinitelyAndReportsHealthyWhenKafkaUnavailable() throws Exception {
+    Builder builder = builder("fail_invalid_bootstrap_servers")
+        .bootstrapServers("localhost:" + InstanceSpec.getRandomPort());
+
+    try (KafkaCollector collector = builder.build()) {
+      collector.start();
+      Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+      assertThat(collector.check().ok).isTrue();
     }
   }
 
@@ -114,7 +138,8 @@ public class KafkaCollectorTest {
     byte[] bytes = Codec.THRIFT.writeSpan(TRACE.get(0));
     produceSpans(bytes, builder.topic);
 
-    try (KafkaCollector collector = newKafkaCollector(builder, consumer)) {
+    try (KafkaCollector collector = builder.build()) {
+      collector.start();
       assertThat(receivedSpans.take()).containsExactly(TRACE.get(0));
     }
 
@@ -131,7 +156,8 @@ public class KafkaCollectorTest {
     byte[] bytes = Codec.THRIFT.writeSpans(TRACE);
     produceSpans(bytes, builder.topic);
 
-    try (KafkaCollector collector = newKafkaCollector(builder, consumer)) {
+    try (KafkaCollector collector = builder.build()) {
+      collector.start();
       assertThat(receivedSpans.take()).containsExactlyElementsOf(TRACE);
     }
 
@@ -148,7 +174,8 @@ public class KafkaCollectorTest {
     byte[] bytes = Codec.JSON.writeSpans(TRACE);
     produceSpans(bytes, builder.topic);
 
-    try (KafkaCollector collector = newKafkaCollector(builder, consumer)) {
+    try (KafkaCollector collector = builder.build()) {
+      collector.start();
       assertThat(receivedSpans.take()).containsExactlyElementsOf(TRACE);
     }
 
@@ -168,7 +195,8 @@ public class KafkaCollectorTest {
     produceSpans("malformed".getBytes(), builder.topic);
     produceSpans(Codec.THRIFT.writeSpans(TRACE), builder.topic);
 
-    try (KafkaCollector collector = newKafkaCollector(builder, consumer)) {
+    try (KafkaCollector collector = builder.build()) {
+      collector.start();
       assertThat(receivedSpans.take()).containsExactlyElementsOf(TRACE);
       // the only way we could read this, is if the malformed spans were skipped.
       assertThat(receivedSpans.take()).containsExactlyElementsOf(TRACE);
@@ -180,24 +208,23 @@ public class KafkaCollectorTest {
   /** Guards against errors that leak from storage, such as InvalidQueryException */
   @Test
   public void skipsOnSpanConsumerException() throws Exception {
-    Builder builder = builder("consumer_exception");
-
     AtomicInteger counter = new AtomicInteger();
-
-    consumer = (spans, callback) -> {
+    final StorageComponent storage = buildStorage((spans, callback) -> {
       if (counter.getAndIncrement() == 1) {
         callback.onError(new RuntimeException("storage fell over"));
       } else {
         receivedSpans.add(spans);
         callback.onSuccess(null);
       }
-    };
+    });
+    Builder builder = builder("consumer_exception").storage(storage);
 
     produceSpans(Codec.THRIFT.writeSpans(TRACE), builder.topic);
     produceSpans(Codec.THRIFT.writeSpans(TRACE), builder.topic); // tossed on error
     produceSpans(Codec.THRIFT.writeSpans(TRACE), builder.topic);
 
-    try (KafkaCollector collector = newKafkaCollector(builder, consumer)) {
+    try (KafkaCollector collector = builder.build()) {
+      collector.start();
       assertThat(receivedSpans.take()).containsExactlyElementsOf(TRACE);
       // the only way we could read this, is if the malformed span was skipped.
       assertThat(receivedSpans.take()).containsExactlyElementsOf(TRACE);
@@ -213,7 +240,8 @@ public class KafkaCollectorTest {
     final byte[] traceBytes = Codec.THRIFT.writeSpans(TRACE);
     produceSpans(traceBytes, builder.topic, 0);
 
-    try (KafkaCollector collector = newKafkaCollector(builder, consumer)) {
+    try (KafkaCollector collector = builder.build()) {
+      collector.start();
       assertThat(receivedSpans.take()).containsExactlyElementsOf(TRACE);
       produceSpans(traceBytes, builder.topic, 1);
       assertThat(receivedSpans.take()).containsExactlyElementsOf(TRACE);
@@ -245,30 +273,31 @@ public class KafkaCollectorTest {
         .bootstrapServers(broker.getBrokerList().get())
         .topic(topic)
         .groupId(topic + "_group")
-        .streams(streams);
+        .streams(streams)
+        .storage(buildStorage(consumer));
   }
 
-  KafkaCollector newKafkaCollector(Builder builder, AsyncSpanConsumer consumer) {
-    return new KafkaCollector(builder.storage(new StorageComponent() {
-      @Override public SpanStore spanStore() {
-        throw new AssertionError();
-      }
+  private StorageComponent buildStorage(final AsyncSpanConsumer spanConsumer) {
+    return new StorageComponent() {
+        @Override public SpanStore spanStore() {
+          throw new AssertionError();
+        }
 
-      @Override public AsyncSpanStore asyncSpanStore() {
-        throw new AssertionError();
-      }
+        @Override public AsyncSpanStore asyncSpanStore() {
+          throw new AssertionError();
+        }
 
-      @Override public AsyncSpanConsumer asyncSpanConsumer() {
-        return consumer;
-      }
+        @Override public AsyncSpanConsumer asyncSpanConsumer() {
+          return spanConsumer;
+        }
 
-      @Override public CheckResult check() {
-        return CheckResult.OK;
-      }
+        @Override public CheckResult check() {
+          return CheckResult.OK;
+        }
 
-      @Override public void close() {
-        throw new AssertionError();
-      }
-    })).start();
+        @Override public void close() {
+          throw new AssertionError();
+        }
+      };
   }
 }
