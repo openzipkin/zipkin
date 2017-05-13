@@ -101,7 +101,8 @@ public final class TraceKeys {
 
   /**
    * The query executed for SQL call.  Ex. "select * from customers where id = ?"
-   * <p>Used to filter by SQL query.
+   *
+   * <p>Used to understand the complexity of a request
    */
   public static final String SQL_QUERY = "sql.query";
 
