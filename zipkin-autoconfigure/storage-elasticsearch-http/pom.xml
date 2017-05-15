@@ -35,6 +35,15 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-storage-elasticsearch-http</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>logging-interceptor</artifactId>
+      <version>${okhttp.version}</version>
+    </dependency>
 
     <dependency>
       <groupId>io.zipkin.brave</groupId>

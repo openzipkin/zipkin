@@ -13,8 +13,10 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.http;
 
+import java.util.logging.Logger;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -34,6 +36,15 @@ import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
 @ConditionalOnMissingBean(StorageComponent.class)
 public class ZipkinElasticsearchHttpStorageAutoConfiguration {
+
+  @Bean
+  @Qualifier("zipkinElasticsearchHttp")
+  @Conditional(HttpLoggingSet.class)
+  Interceptor loggingInterceptor(ZipkinElasticsearchHttpStorageProperties es) {
+    Logger logger = Logger.getLogger(ElasticsearchHttpStorage.class.getName());
+    return new HttpLoggingInterceptor(message -> logger.info(message))
+        .setLevel(es.getHttpLogging());
+  }
 
   @Bean
   @Qualifier("zipkinElasticsearchHttp")
@@ -57,6 +68,13 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
     return elasticsearch.toBuilder(client)
         .strictTraceId(strictTraceId)
         .namesLookback(namesLookback);
+  }
+
+  static final class HttpLoggingSet implements Condition {
+    @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
+      return !isEmpty(condition.getEnvironment()
+          .getProperty("zipkin.storage.elasticsearch.http-logging"));
+    }
   }
 
   static final class BasicAuthRequired implements Condition {
