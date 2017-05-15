@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,7 +28,6 @@ import zipkin.storage.StorageComponent;
 
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.storage.StorageAdapters.blockingToAsync;
-import static zipkin.storage.mysql.internal.generated.DefaultCatalog.DEFAULT_CATALOG;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinDependencies.ZIPKIN_DEPENDENCIES;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
@@ -121,9 +120,7 @@ public final class MySQLStorage implements StorageComponent {
 
   @Override public CheckResult check() {
     try (Connection conn = datasource.getConnection()) {
-      if (!context.get(conn).meta().getSchemas().contains(DEFAULT_CATALOG.ZIPKIN)) {
-        throw new IllegalStateException("Zipkin schema is missing");
-      }
+      context.get(conn).select(ZIPKIN_SPANS.TRACE_ID).from(ZIPKIN_SPANS).limit(1).execute();
     } catch (SQLException | RuntimeException e) {
       return CheckResult.failed(e);
     }
