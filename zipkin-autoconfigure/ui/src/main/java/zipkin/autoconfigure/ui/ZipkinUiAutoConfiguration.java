@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -59,6 +60,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
  */
 @Configuration
 @EnableConfigurationProperties(ZipkinUiProperties.class)
+@ConditionalOnProperty(name = "zipkin.ui.enabled", matchIfMissing = true)
 @RestController
 public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
 

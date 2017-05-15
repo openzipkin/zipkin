@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,8 @@ package zipkin.autoconfigure.ui;
 
 import org.junit.After;
 import org.junit.Test;
-import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,6 +71,13 @@ public class ZipkinUiAutoConfigurationTest {
     context = createContext();
 
     assertThat(context.getBean(ZipkinUiProperties.class).getLogsUrl()).isNull();
+  }
+
+  @Test(expected = NoSuchBeanDefinitionException.class)
+  public void canOverridesProperty_disable() {
+    context = createContextWithOverridenProperty("zipkin.ui.enabled:false");
+
+    context.getBean(ZipkinUiProperties.class);
   }
 
   private static AnnotationConfigApplicationContext createContext() {
