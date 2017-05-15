@@ -13,9 +13,17 @@
  */
 package zipkin.collector.kafka10;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.InterruptException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,18 +34,37 @@ import zipkin.collector.CollectorMetrics;
 import static zipkin.storage.Callback.NOOP;
 
 /** Consumes spans from Kafka messages, ignoring malformed input */
-final class KafkaConsumerProcessor implements Runnable {
-  private static final Logger LOG = LoggerFactory.getLogger(KafkaConsumerProcessor.class);
+final class KafkaCollectorWorker implements Runnable {
+  private static final Logger LOG = LoggerFactory.getLogger(KafkaCollectorWorker.class);
 
   final Consumer<byte[], byte[]> kafkaConsumer;
   final Collector collector;
   final CollectorMetrics metrics;
+  final AtomicReference<List<TopicPartition>> assignedPartitions =
+      new AtomicReference<>(Collections.emptyList());
 
-  KafkaConsumerProcessor(Consumer<byte[], byte[]> kafkaConsumer, Collector collector,
+  KafkaCollectorWorker(Properties kafkaConsumerConfig, String topic, Collector collector,
       CollectorMetrics metrics) {
-    this.kafkaConsumer = kafkaConsumer;
+    kafkaConsumer = new KafkaConsumer<>(kafkaConsumerConfig);
+    kafkaConsumer.subscribe(Collections.singleton(topic), new ConsumerRebalanceListener() {
+      @Override public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+        assignedPartitions.set(Collections.emptyList());
+      }
+
+      @Override public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+        assignedPartitions.set(Collections.unmodifiableList(new ArrayList<>(partitions)));
+      }
+    });
     this.collector = collector;
     this.metrics = metrics;
+  }
+
+  /**
+   * @return Kafka topic partitions currently assigned to this worker for processing. Returned
+   * list is not modifiable.
+   */
+  public List<TopicPartition> assignedPartitions() {
+    return assignedPartitions.get();
   }
 
   @Override

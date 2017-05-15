@@ -106,7 +106,7 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
         ZipkinKafkaCollectorAutoConfiguration.class, InMemoryConfiguration.class);
     context.refresh();
 
-    assertThat(context.getBean(KafkaCollector.class).kafkaConsumers.properties)
+    assertThat(context.getBean(KafkaCollector.class).kafkaWorkers.properties)
         .containsEntry("auto.offset.reset", "earliest");
   }
 

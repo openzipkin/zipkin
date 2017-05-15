@@ -237,11 +237,21 @@ public class KafkaCollectorTest {
   public void messagesDistributedAcrossMultipleThreadsSuccessfully() throws Exception {
     Builder builder = builder("multi_thread", 2);
 
-    final byte[] traceBytes = Codec.THRIFT.writeSpans(TRACE);
-    produceSpans(traceBytes, builder.topic, 0);
+    // Producing this empty message triggers auto-creation of the topic and gets things "warmed up"
+    // on the broker before the consumers subscribe. Without this, the topic is auto-created when
+    // the first consumer subscribes but there appears to be a race condition where the existence of
+    // the topic is not known to the partition assignor when the consumer group goes through its
+    // initial re-balance. As a result, no partitions are assigned, there are no further changes to
+    // group membership to trigger another re-balance, and no messages are consumed. This initial
+    // message is not necessary if the test broker is re-created for each test, but that increases
+    // execution time for the suite by a factor of 10x (2-3s to ~25s on my local machine).
+    produceSpans(new byte[0], builder.topic);
 
+    final byte[] traceBytes = Codec.THRIFT.writeSpans(TRACE);
     try (KafkaCollector collector = builder.build()) {
       collector.start();
+      waitForPartitionAssignments(collector);
+      produceSpans(traceBytes, builder.topic, 0);
       assertThat(receivedSpans.take()).containsExactlyElementsOf(TRACE);
       produceSpans(traceBytes, builder.topic, 1);
       assertThat(receivedSpans.take()).containsExactlyElementsOf(TRACE);
@@ -249,9 +259,23 @@ public class KafkaCollectorTest {
 
     assertThat(threadsProvidingSpans.size()).isEqualTo(2);
 
-    assertThat(kafkaMetrics.messages()).isEqualTo(2);
+    assertThat(kafkaMetrics.messages()).isEqualTo(3);
     assertThat(kafkaMetrics.bytes()).isEqualTo(traceBytes.length * 2);
     assertThat(kafkaMetrics.spans()).isEqualTo(TRACE.size() * 2);
+  }
+
+  /**
+   * Wait until all kafka consumers created by the collector have at least one partition
+   * assigned.
+   */
+  private void waitForPartitionAssignments(KafkaCollector collector) throws Exception {
+    long consumersWithAssignments = 0;
+    while (consumersWithAssignments < collector.kafkaWorkers.streams) {
+      Thread.sleep(10);
+      consumersWithAssignments = collector.kafkaWorkers.workers.stream()
+          .filter(w -> !w.assignedPartitions().isEmpty())
+          .count();
+    }
   }
 
   private void produceSpans(byte[] spans, String topic) {

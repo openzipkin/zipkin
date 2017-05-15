@@ -14,16 +14,14 @@
 package zipkin.collector.kafka10;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorComponent;
@@ -133,20 +131,20 @@ public final class KafkaCollector implements CollectorComponent {
     }
   }
 
-  final LazyKafkaConsumers kafkaConsumers;
+  final LazyKafkaWorkers kafkaWorkers;
 
   KafkaCollector(Builder builder) {
-    kafkaConsumers = new LazyKafkaConsumers(builder);
+    kafkaWorkers = new LazyKafkaWorkers(builder);
   }
 
   @Override public KafkaCollector start() {
-    kafkaConsumers.get();
+    kafkaWorkers.get();
     return this;
   }
 
   @Override public CheckResult check() {
     try {
-      CheckResult failure = kafkaConsumers.failure.get(); // check the kafkaConsumers didn't quit
+      CheckResult failure = kafkaWorkers.failure.get(); // check the kafka workers didn't quit
       if (failure != null) return failure;
       return CheckResult.OK;
     } catch (RuntimeException e) {
@@ -156,18 +154,19 @@ public final class KafkaCollector implements CollectorComponent {
 
   @Override
   public void close() throws IOException {
-    kafkaConsumers.close();
+    kafkaWorkers.close();
   }
 
-  static final class LazyKafkaConsumers extends LazyCloseable<ExecutorService> {
+  static final class LazyKafkaWorkers extends LazyCloseable<ExecutorService> {
     final int streams;
     final Properties properties;
     final String topic;
     final Collector collector;
     final CollectorMetrics metrics;
     final AtomicReference<CheckResult> failure = new AtomicReference<>();
+    final CopyOnWriteArrayList<KafkaCollectorWorker> workers = new CopyOnWriteArrayList<>();
 
-    LazyKafkaConsumers(Builder builder) {
+    LazyKafkaWorkers(Builder builder) {
       this.streams = builder.streams;
       this.properties = builder.properties;
       this.topic = builder.topic;
@@ -181,9 +180,10 @@ public final class KafkaCollector implements CollectorComponent {
           : Executors.newFixedThreadPool(streams);
 
       for (int i = 0; i < streams; i ++) {
-        Consumer<byte[], byte[]> kafkaConsumer = new KafkaConsumer<>(properties);
-        kafkaConsumer.subscribe(Collections.singleton(topic));
-        pool.execute(guardFailures(new KafkaConsumerProcessor(kafkaConsumer, collector, metrics)));
+        final KafkaCollectorWorker worker =
+            new KafkaCollectorWorker(properties, topic, collector, metrics);
+        workers.add(worker);
+        pool.execute(guardFailures(worker));
       }
 
       return pool;
