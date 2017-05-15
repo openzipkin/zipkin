@@ -60,7 +60,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
  */
 @Configuration
 @EnableConfigurationProperties(ZipkinUiProperties.class)
-@ConditionalOnProperty(value = "zipkin.ui.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "zipkin.ui.enabled", matchIfMissing = true)
 @RestController
 public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
 

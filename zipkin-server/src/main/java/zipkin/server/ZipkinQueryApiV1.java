@@ -47,7 +47,7 @@ import static zipkin.internal.Util.lowerHexToUnsignedLong;
 @RestController
 @RequestMapping("/api/v1")
 @CrossOrigin("${zipkin.query.allowed-origins:*}")
-@ConditionalOnProperty(value = "zipkin.query.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "zipkin.query.enabled", matchIfMissing = true)
 public class ZipkinQueryApiV1 {
 
   @Autowired
