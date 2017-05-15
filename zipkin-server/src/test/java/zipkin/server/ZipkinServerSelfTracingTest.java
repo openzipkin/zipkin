@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -27,8 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(classes = ZipkinServer.class, properties = {
     "zipkin.storage.type=mem",
     "spring.config.name=zipkin-server",
-    "zipkin.self-tracing.enabled=true",
-    "zipkin.collector.scribe.enabled=false"
+    "zipkin.self-tracing.enabled=true"
 })
 @RunWith(SpringRunner.class)
 public class ZipkinServerSelfTracingTest {

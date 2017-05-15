@@ -25,6 +25,7 @@ zipkin:
       category: zipkin
       port: ${COLLECTOR_PORT:9410}
   query:
+    enabled: ${QUERY_ENABLED:true}
     # 1 day in millis
     lookback: ${QUERY_LOOKBACK:86400000}
     # The Cache-Control max-age (seconds) for /api/v1/services and /api/v1/spans
@@ -100,6 +101,7 @@ zipkin:
       max-active: ${MYSQL_MAX_CONNECTIONS:10}
       use-ssl: ${MYSQL_USE_SSL:false}
   ui:
+    enabled: ${QUERY_ENABLED:true}
     ## Values below here are mapped to ZipkinUiProperties, served as /config.json
     # Default limit for Find Traces
     query-limit: 10

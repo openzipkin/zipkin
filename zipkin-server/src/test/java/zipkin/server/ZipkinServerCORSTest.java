@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = ZipkinServer.class)
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@TestPropertySource(properties = {"zipkin.storage.type=mem", "spring.config.name=zipkin-server", "zipkin.collector.scribe.enabled=false", "zipkin.query.allowed-origins=foo.example.com"})
+@TestPropertySource(properties = {"zipkin.storage.type=mem", "spring.config.name=zipkin-server", "zipkin.query.allowed-origins=foo.example.com"})
 public class ZipkinServerCORSTest {
 
   @Autowired

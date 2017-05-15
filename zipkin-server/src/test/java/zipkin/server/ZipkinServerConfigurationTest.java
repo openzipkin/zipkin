@@ -22,7 +22,7 @@ import org.springframework.boot.actuate.health.OrderedHealthAggregator;
 import org.springframework.boot.actuate.metrics.Metric;
 import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
 import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
-import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

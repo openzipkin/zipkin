@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +47,7 @@ import static zipkin.internal.Util.lowerHexToUnsignedLong;
 @RestController
 @RequestMapping("/api/v1")
 @CrossOrigin("${zipkin.query.allowed-origins:*}")
+@ConditionalOnProperty(value = "zipkin.query.enabled", havingValue = "true", matchIfMissing = true)
 public class ZipkinQueryApiV1 {
 
   @Autowired
