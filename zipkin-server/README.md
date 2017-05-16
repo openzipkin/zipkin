@@ -192,12 +192,18 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                            to 0 as it would mean a machine failure results in data loss.
     * `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch basic authentication, which defaults to empty string.
                                        Use when X-Pack security (formerly Shield) is in place.
-
+    * `ES_HTTP_LOGGING`: When set, controls the volume of HTTP logging of the Elasticsearch Api.
+                         Options are BASIC, HEADERS, BODY
 Example usage:
 
-To connect with http:
+To connect normally:
 ```bash
-$ STORAGE_TYPE=elasticsearch ES_HOSTS=http://localhost:9200 java -jar zipkin.jar
+$ STORAGE_TYPE=elasticsearch ES_HOSTS=http://myhost:9200 java -jar zipkin.jar
+```
+
+To log Elasticsearch api requests:
+```bash
+$ STORAGE_TYPE=elasticsearch ES_HTTP_LOGGING=BASIC java -jar zipkin.jar
 ```
 
 Or to use the Amazon Elasticsearch Service.

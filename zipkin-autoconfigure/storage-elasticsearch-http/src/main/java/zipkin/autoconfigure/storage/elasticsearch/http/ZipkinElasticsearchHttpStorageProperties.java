@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 
@@ -47,6 +48,8 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
   private String username;
   /** password used for basic auth. Needed when Shield or X-Pack security is enabled */
   private String password;
+  /** When set, controls the volume of HTTP logging of the Elasticsearch Api. Options are BASIC, HEADERS, BODY */
+  private HttpLoggingInterceptor.Level httpLogging;
 
   public String getPipeline() {
     return pipeline;
@@ -138,6 +141,14 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
 
   public void setPassword(String password) {
     this.password = password;
+  }
+
+  public HttpLoggingInterceptor.Level getHttpLogging() {
+    return httpLogging;
+  }
+
+  public void setHttpLogging(HttpLoggingInterceptor.Level httpLogging) {
+    this.httpLogging = httpLogging;
   }
 
   public ElasticsearchHttpStorage.Builder toBuilder(OkHttpClient client) {
