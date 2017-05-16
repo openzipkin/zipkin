@@ -22,7 +22,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorComponent;
 import zipkin.collector.CollectorMetrics;
@@ -43,6 +46,7 @@ import static zipkin.internal.Util.checkNotNull;
  * <p>This collector uses a Kafka 0.10+ consumer.
  */
 public final class KafkaCollector implements CollectorComponent {
+  private static final Logger LOG = LoggerFactory.getLogger(KafkaCollector.class);
 
   public static Builder builder() {
     return new Builder();
@@ -193,7 +197,11 @@ public final class KafkaCollector implements CollectorComponent {
       return () -> {
         try {
           delegate.run();
-        } catch (RuntimeException e) {
+        } catch (InterruptException e) {
+          LOG.info("Kafka collector worker was interrupted. This is expected during shutdown.", e);
+          failure.set(CheckResult.failed(e));
+        } catch(RuntimeException e) {
+          LOG.error("Kafka collector worker exited with exception.", e);
           failure.set(CheckResult.failed(e));
         }
       };

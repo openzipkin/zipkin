@@ -71,7 +71,7 @@ final class KafkaCollectorWorker implements Runnable {
   public void run() {
     try {
       LOG.info("Kafka consumer starting polling loop.");
-      while (!Thread.interrupted()) {
+      while (true) {
         final ConsumerRecords<byte[], byte[]> consumerRecords = kafkaConsumer.poll(1000);
         LOG.debug("Kafka polling returned batch of {} messages.", consumerRecords.count());
         consumerRecords.forEach((cr) -> {
@@ -102,14 +102,10 @@ final class KafkaCollectorWorker implements Runnable {
           }
         });
       }
-    } catch (InterruptException e) {
-      // shutdown was initiated
     } finally {
       LOG.info("Kafka consumer polling loop stopped.");
       LOG.info("Closing Kafka consumer...");
-      // todo attempting to close the consumer when the thread is in interrupted status goes nowhere
-      // todo this clears that status, but is that a legit thing to do if a thread has been interrupted
-      // todo (clear the status and continue some cleanup)?
+      // Clear interrupted status of the thread so the Kafka consumer can at least try to shutdown.
       Thread.interrupted();
       kafkaConsumer.close();
       LOG.info("Kafka consumer closed.");
