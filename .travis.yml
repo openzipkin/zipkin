@@ -29,9 +29,6 @@ before_install:
   - git config credential.helper "store --file=.git/credentials"
   - echo "https://$GH_TOKEN:@github.com" > .git/credentials
 
-  # We don't install cassandra as it flakes too much. Instead we defer to circleci to test it
-  # See https://github.com/openzipkin/zipkin/issues/1356
-
   # Required for Elasticsearch 5 (See https://github.com/docker-library/docs/tree/master/elasticsearch#host-setup)
   - sudo sysctl -w vm.max_map_count=262144
 
