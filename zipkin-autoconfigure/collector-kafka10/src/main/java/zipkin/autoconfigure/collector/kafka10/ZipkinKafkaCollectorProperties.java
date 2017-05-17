@@ -20,10 +20,15 @@ import zipkin.collector.kafka10.KafkaCollector;
 
 @ConfigurationProperties("zipkin.collector.kafka")
 public class ZipkinKafkaCollectorProperties {
+  /** Comma-separated list of Kafka bootstrap servers in the form [host]:[port],... */
   private String bootstrapServers;
-  private String groupId = "zipkin";
-  private String topic = "zipkin";
-  private int streams = 1;
+  /** Kafka consumer group id used by the collector. */
+  private String groupId;
+  /** Kafka topic span data will be retrieved from. */
+  private String topic;
+  /** Number of Kafka consumer threads to run. */
+  private Integer streams;
+  /** Additional Kafka consumer configuration. */
   private Map<String, String> overrides = new LinkedHashMap<>();
 
   public String getBootstrapServers() {
@@ -31,7 +36,7 @@ public class ZipkinKafkaCollectorProperties {
   }
 
   public void setBootstrapServers(String bootstrapServers) {
-    this.bootstrapServers = bootstrapServers;
+    this.bootstrapServers = emptyToNull(bootstrapServers);
   }
 
   public String getGroupId() {
@@ -39,7 +44,7 @@ public class ZipkinKafkaCollectorProperties {
   }
 
   public void setGroupId(String groupId) {
-    this.groupId = groupId;
+    this.groupId = emptyToNull(groupId);
   }
 
   public String getTopic() {
@@ -47,14 +52,14 @@ public class ZipkinKafkaCollectorProperties {
   }
 
   public void setTopic(String topic) {
-    this.topic = topic;
+    this.topic = emptyToNull(topic);
   }
 
-  public int getStreams() {
+  public Integer getStreams() {
     return streams;
   }
 
-  public void setStreams(int streams) {
+  public void setStreams(Integer streams) {
     this.streams = streams;
   }
 
@@ -67,11 +72,16 @@ public class ZipkinKafkaCollectorProperties {
   }
 
   public KafkaCollector.Builder toBuilder() {
-    return KafkaCollector.builder()
-        .bootstrapServers(bootstrapServers)
-        .groupId(groupId)
-        .topic(topic)
-        .streams(streams)
-        .overrides(overrides);
+    final KafkaCollector.Builder result = KafkaCollector.builder();
+    if (bootstrapServers != null) result.bootstrapServers(bootstrapServers);
+    if (groupId != null) result.groupId(groupId);
+    if (topic != null) result.topic(topic);
+    if (streams != null) result.streams(streams);
+    if (overrides != null) result.overrides(overrides);
+    return result;
+  }
+
+  private static String emptyToNull(String s) {
+    return "".equals(s) ? null : s;
   }
 }

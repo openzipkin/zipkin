@@ -1,13 +1,14 @@
-# Kafka 0.10+ Collector
+# Kafka 0.10+ Collector Auto-configure Module
 
-This collector is implemented as a Kafka consumer supporting Kafka brokers running version 0.10.0.0 
-or later. To activate this collector, reference the module jar when running the Zipkin server 
+This module provides support for running the kafak10 collector as a component of Zipkin server. To 
+activate this collector, reference the module jar when running the Zipkin server 
 and configure one or more bootstrap brokers via the `KAFKA_BOOTSTRAP_SERVERS` environment
 variable or `zipkin.collector.kafka.bootstrap-servers` property.
 
 ## Quick start
 
-The minimum version of Java required to run Zipkin server and the Kafka 0.10+ collector is JRE 8.
+JRE 8 is required to run Zipkin server. Note: The Kafka 0.10+ collector and this auto-configure
+module are compatible with Java 7 and later when used independent of Zipkin server.
 
 Fetch the latest released 
 [executable jar for Zipkin server](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec)

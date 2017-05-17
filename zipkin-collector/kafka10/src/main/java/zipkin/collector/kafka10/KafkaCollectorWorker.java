@@ -17,14 +17,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.errors.InterruptException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin.Codec;
@@ -40,13 +39,13 @@ final class KafkaCollectorWorker implements Runnable {
   final Consumer<byte[], byte[]> kafkaConsumer;
   final Collector collector;
   final CollectorMetrics metrics;
+  /** Kafka topic partitions currently assigned to this worker. List is not modifiable. */
   final AtomicReference<List<TopicPartition>> assignedPartitions =
       new AtomicReference<>(Collections.emptyList());
 
-  KafkaCollectorWorker(Properties kafkaConsumerConfig, String topic, Collector collector,
-      CollectorMetrics metrics) {
-    kafkaConsumer = new KafkaConsumer<>(kafkaConsumerConfig);
-    kafkaConsumer.subscribe(Collections.singleton(topic), new ConsumerRebalanceListener() {
+  KafkaCollectorWorker(KafkaCollector.Builder builder) {
+    kafkaConsumer = new KafkaConsumer<>(builder.properties);
+    kafkaConsumer.subscribe(Collections.singleton(builder.topic), new ConsumerRebalanceListener() {
       @Override public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
         assignedPartitions.set(Collections.emptyList());
       }
@@ -55,16 +54,8 @@ final class KafkaCollectorWorker implements Runnable {
         assignedPartitions.set(Collections.unmodifiableList(new ArrayList<>(partitions)));
       }
     });
-    this.collector = collector;
-    this.metrics = metrics;
-  }
-
-  /**
-   * @return Kafka topic partitions currently assigned to this worker for processing. Returned
-   * list is not modifiable.
-   */
-  public List<TopicPartition> assignedPartitions() {
-    return assignedPartitions.get();
+    this.collector = builder.delegate.build();
+    this.metrics = builder.metrics;
   }
 
   @Override
@@ -74,9 +65,9 @@ final class KafkaCollectorWorker implements Runnable {
       while (true) {
         final ConsumerRecords<byte[], byte[]> consumerRecords = kafkaConsumer.poll(1000);
         LOG.debug("Kafka polling returned batch of {} messages.", consumerRecords.count());
-        consumerRecords.forEach((cr) -> {
+        for (ConsumerRecord<byte[], byte[]> record : consumerRecords) {
           metrics.incrementMessages();
-          final byte[] bytes = cr.value();
+          final byte[] bytes = record.value();
 
           if (bytes.length == 0) {
             metrics.incrementMessagesDropped();
@@ -100,13 +91,11 @@ final class KafkaCollectorWorker implements Runnable {
               }
             }
           }
-        });
+        }
       }
     } finally {
       LOG.info("Kafka consumer polling loop stopped.");
       LOG.info("Closing Kafka consumer...");
-      // Clear interrupted status of the thread so the Kafka consumer can at least try to shutdown.
-      Thread.interrupted();
       kafkaConsumer.close();
       LOG.info("Kafka consumer closed.");
     }

@@ -19,3 +19,4 @@ _site/
 /kafka_*
 # temporary directory used by travis/publish.sh for building gh-pages
 /javadoc-builddir
+.DS_Store

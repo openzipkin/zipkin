@@ -237,15 +237,7 @@ public class KafkaCollectorTest {
   public void messagesDistributedAcrossMultipleThreadsSuccessfully() throws Exception {
     Builder builder = builder("multi_thread", 2);
 
-    // Producing this empty message triggers auto-creation of the topic and gets things "warmed up"
-    // on the broker before the consumers subscribe. Without this, the topic is auto-created when
-    // the first consumer subscribes but there appears to be a race condition where the existence of
-    // the topic is not known to the partition assignor when the consumer group goes through its
-    // initial re-balance. As a result, no partitions are assigned, there are no further changes to
-    // group membership to trigger another re-balance, and no messages are consumed. This initial
-    // message is not necessary if the test broker is re-created for each test, but that increases
-    // execution time for the suite by a factor of 10x (2-3s to ~25s on my local machine).
-    produceSpans(new byte[0], builder.topic);
+    warmUpTopic(builder.topic);
 
     final byte[] traceBytes = Codec.THRIFT.writeSpans(TRACE);
     try (KafkaCollector collector = builder.build()) {
@@ -265,6 +257,20 @@ public class KafkaCollectorTest {
   }
 
   /**
+   * Producing this empty message triggers auto-creation of the topic and gets things "warmed up"
+   * on the broker before the consumers subscribe. Without this, the topic is auto-created when
+   * the first consumer subscribes but there appears to be a race condition where the existence of
+   * the topic is not known to the partition assignor when the consumer group goes through its
+   * initial re-balance. As a result, no partitions are assigned, there are no further changes to
+   * group membership to trigger another re-balance, and no messages are consumed. This initial
+   * message is not necessary if the test broker is re-created for each test, but that increases
+   * execution time for the suite by a factor of 10x (2-3s to ~25s on my local machine).
+   */
+  private void warmUpTopic(String topic) {
+    produceSpans(new byte[0], topic);
+  }
+
+  /**
    * Wait until all kafka consumers created by the collector have at least one partition
    * assigned.
    */
@@ -273,7 +279,7 @@ public class KafkaCollectorTest {
     while (consumersWithAssignments < collector.kafkaWorkers.streams) {
       Thread.sleep(10);
       consumersWithAssignments = collector.kafkaWorkers.workers.stream()
-          .filter(w -> !w.assignedPartitions().isEmpty())
+          .filter(w -> !w.assignedPartitions.get().isEmpty())
           .count();
     }
   }

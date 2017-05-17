@@ -23,7 +23,6 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin.autoconfigure.collector.kafka10.ZipkinKafkaCollectorAutoConfiguration;
-import zipkin.autoconfigure.collector.kafka10.ZipkinKafkaCollectorProperties;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.storage.InMemoryStorage;
@@ -78,36 +77,6 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
     context.refresh();
 
     assertThat(context.getBean(KafkaCollector.class)).isNotNull();
-  }
-
-  @Test
-  public void canOverrideProperty_topic() {
-    context = new AnnotationConfigApplicationContext();
-    addEnvironment(context,
-        "zipkin.collector.kafka.bootstrap-servers:localhost:9091",
-        "zipkin.collector.kafka.topic:zapkin"
-    );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinKafkaCollectorAutoConfiguration.class, InMemoryConfiguration.class);
-    context.refresh();
-
-    assertThat(context.getBean(ZipkinKafkaCollectorProperties.class).getTopic())
-        .isEqualTo("zapkin");
-  }
-
-  @Test
-  public void canOverrideKafkaConsumerProperties() {
-    context = new AnnotationConfigApplicationContext();
-    addEnvironment(context,
-        "zipkin.collector.kafka.bootstrap-servers:localhost:9091",
-        "zipkin.collector.kafka.overrides.auto.offset.reset:earliest"
-    );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinKafkaCollectorAutoConfiguration.class, InMemoryConfiguration.class);
-    context.refresh();
-
-    assertThat(context.getBean(KafkaCollector.class).kafkaWorkers.properties)
-        .containsEntry("auto.offset.reset", "earliest");
   }
 
   @Configuration

@@ -163,19 +163,13 @@ public final class KafkaCollector implements CollectorComponent {
 
   static final class LazyKafkaWorkers extends LazyCloseable<ExecutorService> {
     final int streams;
-    final Properties properties;
-    final String topic;
-    final Collector collector;
-    final CollectorMetrics metrics;
+    final Builder builder;
     final AtomicReference<CheckResult> failure = new AtomicReference<>();
     final CopyOnWriteArrayList<KafkaCollectorWorker> workers = new CopyOnWriteArrayList<>();
 
     LazyKafkaWorkers(Builder builder) {
       this.streams = builder.streams;
-      this.properties = builder.properties;
-      this.topic = builder.topic;
-      this.collector = builder.delegate.build();
-      this.metrics = builder.metrics;
+      this.builder = builder;
     }
 
     @Override protected ExecutorService compute() {
@@ -184,8 +178,7 @@ public final class KafkaCollector implements CollectorComponent {
           : Executors.newFixedThreadPool(streams);
 
       for (int i = 0; i < streams; i ++) {
-        final KafkaCollectorWorker worker =
-            new KafkaCollectorWorker(properties, topic, collector, metrics);
+        final KafkaCollectorWorker worker = new KafkaCollectorWorker(builder);
         workers.add(worker);
         pool.execute(guardFailures(worker));
       }
@@ -213,7 +206,7 @@ public final class KafkaCollector implements CollectorComponent {
       if (maybeNull != null) {
         maybeNull.shutdownNow();
         try {
-          maybeNull.awaitTermination(5, TimeUnit.SECONDS);
+          maybeNull.awaitTermination(1, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
           // at least we tried
         }

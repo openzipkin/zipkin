@@ -233,6 +233,9 @@ The Scribe collector is disabled by default, configured by the following:
 ### Kafka Collector
 This collector remains a Kafka 0.8.x consumer, while Zipkin systems update to 0.9+.
 
+A collector supporting Kafka versions 0.10 and later is available as an external module. See 
+[zipkin-autoconfigure/collector-kafka10](../zipkin-autoconfigure/collector-kafka10/).
+
 The following apply when `KAFKA_ZOOKEEPER` is set:
 
     * `KAFKA_TOPIC`: Topic zipkin spans will be consumed from. Defaults to "zipkin"
@@ -277,12 +280,6 @@ prefixed system property:
 ```bash
 $ KAFKA_ZOOKEEPER=127.0.0.1:2181 java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
 ```
-
-### Kafka 0.10+ Collector
-
-A collector supporting Kafka versions 0.10 and later is available as an external module.
-
-See [zipkin-autoconfigure/collector-kafka10](../zipkin-autoconfigure/collector-kafka10/).
 
 ### 128-bit trace IDs
 
