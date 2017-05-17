@@ -34,6 +34,7 @@
   <modules>
     <module>ui</module>
     <module>collector-kafka</module>
+    <module>collector-kafka10</module>
     <module>collector-scribe</module>
     <module>storage-cassandra</module>
     <module>storage-cassandra3</module>

@@ -1,0 +1,12 @@
+zipkin:
+  collector:
+    kafka:
+      # Kafka bootstrap broker list, comma-separated host:port values. Setting this activates the
+      # Kafka 0.10+ collector.
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
+      # Name of topic to poll for spans
+      topic: ${KAFKA_TOPIC:zipkin}
+      # Consumer group this process is consuming on behalf of.
+      group-id: ${KAFKA_GROUP_ID:zipkin}
+      # Count of consumer threads consuming the topic
+      streams: ${KAFKA_STREAMS:1}
