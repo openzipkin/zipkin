@@ -39,6 +39,12 @@ public class DependencyLinkerTest {
     );
   }
 
+  /***
+   * This is the test to show null pointer exception occuring
+   * when we encounter a span which has itself as a parent
+   * TestObjects.TRACEWITHSAMEIDANDSAMEPARENTID is a test object to simulate.
+   */
+
   @Test(expected = NullPointerException.class)
   public void linksSpansShouldHandleNullSpans() {
 
