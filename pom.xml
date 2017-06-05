@@ -575,6 +575,7 @@
           <header>${main.basedir}/src/etc/header.txt</header>
           <excludes>
             <exclude>.travis.yml</exclude>
+            <exclude>.editorconfig</exclude>
             <exclude>.gitignore</exclude>
             <exclude>.mvn/**</exclude>
             <exclude>mvnw*</exclude>
