@@ -78,6 +78,32 @@ public final class TestObjects {
           .build()
   ).stream().map(ApplyTimestampAndDuration::apply).collect(toList());
 
+
+  // this object simulates
+  public static final List<Span> TRACEWITHSAMEIDANDSAMEPARENTID = asList(
+    Span.builder().traceId(WEB_SPAN_ID+1).id(WEB_SPAN_ID).name("get")
+      .addAnnotation(Annotation.create(TODAY * 1000, SERVER_RECV, WEB_ENDPOINT))
+      .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, WEB_ENDPOINT))
+      .build(),
+    Span.builder().traceId(WEB_SPAN_ID+1).parentId(WEB_SPAN_ID).id(WEB_SPAN_ID).name("get")
+      .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+      .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
+      .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
+      .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
+      .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, WEB_ENDPOINT))
+      .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, APP_ENDPOINT))
+      .build(),
+    Span.builder().traceId(WEB_SPAN_ID+1).parentId(WEB_SPAN_ID).id(WEB_SPAN_ID).name("query")
+      .addAnnotation(Annotation.create((TODAY + 150) * 1000, CLIENT_SEND, APP_ENDPOINT))
+      .addAnnotation(Annotation.create((TODAY + 200) * 1000, CLIENT_RECV, APP_ENDPOINT))
+      .addAnnotation(Annotation.create((TODAY + 190) * 1000, "⻩", NO_IP_ENDPOINT))
+      .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, APP_ENDPOINT))
+      .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, DB_ENDPOINT))
+      .addBinaryAnnotation(BinaryAnnotation.create(ERROR, "\uD83D\uDCA9", NO_IP_ENDPOINT))
+      .build()
+  ).stream().map(ApplyTimestampAndDuration::apply).collect(toList());
+
+
   public static final List<DependencyLink> LINKS = asList(
       DependencyLink.builder().parent("web").child("app").callCount(1).build(),
       DependencyLink.builder().parent("app").child("db").callCount(1).build()

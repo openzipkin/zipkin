@@ -111,7 +111,7 @@ public final class DependencyLinker {
         }
         DependencyLinkSpan ancestorLink = ancestor.value();
         if (!ancestor.isSyntheticRootForPartialTree() &&
-              ancestorLink.kind == DependencyLinkSpan.Kind.SERVER) {
+          ancestorLink.kind == DependencyLinkSpan.Kind.SERVER) {
           parent = ancestorLink.service;
           break;
         }
