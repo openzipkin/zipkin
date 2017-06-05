@@ -22,7 +22,7 @@ import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfigurati
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import zipkin.autoconfigure.collector.kafka10.ZipkinKafkaCollectorAutoConfiguration;
+import zipkin.autoconfigure.collector.kafka10.ZipkinKafka10CollectorAutoConfiguration;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.storage.InMemoryStorage;
@@ -31,7 +31,7 @@ import zipkin.storage.StorageComponent;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
-public class ZipkinKafkaCollectorAutoConfigurationTest {
+public class ZipkinKafka10CollectorAutoConfigurationTest {
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();
@@ -49,7 +49,7 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
   public void doesNotProvideCollectorComponent_whenBootstrapServersUnset() {
     context = new AnnotationConfigApplicationContext();
     context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinKafkaCollectorAutoConfiguration.class, InMemoryConfiguration.class);
+        ZipkinKafka10CollectorAutoConfiguration.class, InMemoryConfiguration.class);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
@@ -61,7 +61,7 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.collector.kafka.bootstrap-servers:");
     context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinKafkaCollectorAutoConfiguration.class, InMemoryConfiguration.class);
+        ZipkinKafka10CollectorAutoConfiguration.class, InMemoryConfiguration.class);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
@@ -73,7 +73,7 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.collector.kafka.bootstrap-servers:localhost:9091");
     context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinKafkaCollectorAutoConfiguration.class, InMemoryConfiguration.class);
+        ZipkinKafka10CollectorAutoConfiguration.class, InMemoryConfiguration.class);
     context.refresh();
 
     assertThat(context.getBean(KafkaCollector.class)).isNotNull();
