@@ -16,11 +16,13 @@ package zipkin.internal;
 import java.util.List;
 import org.junit.Test;
 import zipkin.DependencyLink;
+import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.internal.DependencyLinkSpan.Kind;
 import zipkin.internal.DependencyLinkSpan.TraceId;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class DependencyLinkerTest {
@@ -36,6 +38,29 @@ public class DependencyLinkerTest {
         DependencyLink.create("web", "app", 1L),
         DependencyLink.create("app", "db", 1L)
     );
+  }
+
+  /***
+   * This is the test to show null pointer exception occuring when we encounter a span which has
+   * itself as a parent
+   */
+
+  @Test(expected = NullPointerException.class)
+  public void shouldThrowException_When_SelfReferencing_Spans_Occur() {
+
+    long parentSpanID = -692101025335252320L;
+    long traceID = 8207293009014896295L;
+
+    List<Span> traces_with_self_referencing_spans = asList(
+      Span.builder().traceId(traceID).id(parentSpanID).name("get")
+        .build(),
+      Span.builder().traceId(traceID).parentId(parentSpanID).id(parentSpanID).name("get")
+        .build(),
+      Span.builder().traceId(traceID).parentId(parentSpanID).id(parentSpanID).name("query")
+        .build()
+    ).stream().map(ApplyTimestampAndDuration::apply).collect(toList());
+
+    new DependencyLinker().putTrace(traces_with_self_referencing_spans);
   }
 
   /**
