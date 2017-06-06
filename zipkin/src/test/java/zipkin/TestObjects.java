@@ -28,7 +28,6 @@ import static zipkin.Constants.ERROR;
 import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
-import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.midnightUTC;
 
 public final class TestObjects {
