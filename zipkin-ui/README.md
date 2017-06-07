@@ -86,5 +86,4 @@ where `{traceId}` will be contextually replaced by the trace id.
 
 If this feature is activated, you'll see on the trace detail page an additional button named `logs`.
 
-![Logs Button]
-(https://cloud.githubusercontent.com/assets/9842366/20482538/6e35ca66-afed-11e6-90e9-1e28f66d985e.png)
+![Logs Button](https://cloud.githubusercontent.com/assets/9842366/20482538/6e35ca66-afed-11e6-90e9-1e28f66d985e.png)
