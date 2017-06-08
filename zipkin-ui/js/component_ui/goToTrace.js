@@ -4,7 +4,7 @@ export default component(function goToTrace() {
   this.navigateToTrace = function(evt) {
     evt.preventDefault();
     const traceId = document.getElementById('traceIdQuery').value;
-    window.location.href = `/traces/${traceId}`;
+    window.location.href = `/zipkin/traces/${traceId}`;
   };
 
   this.after('initialize', function() {
