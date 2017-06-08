@@ -32,6 +32,10 @@ zipkin:
     names-max-age: 300
     # CORS allowed-origins.
     allowed-origins: "*"
+    # Internal cache for service names, updated by scheduler with fixed interval
+    # Prevents timeouts in UI
+    internal-service-names-cache-enabled: ${INTERNAL_SERVICE_NAMES_CACHE_ENABLED:false}
+    internal-service-names-cache-update-interval: ${INTERNAL_SERVICE_NAMES_CACHE_UPDATE_INTERVAL:300000} 
 
   storage:
     strict-trace-id: ${STRICT_TRACE_ID:true}

@@ -14,13 +14,17 @@
 package zipkin.server;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -59,7 +63,14 @@ public class ZipkinQueryApiV1 {
   int namesMaxAge = 300; // 5 minutes
   volatile int serviceCount; // used as a threshold to start returning cache-control headers
 
+  /** Internal cache for /api/v1/services, updated with fixed interval */
+  @Value("${zipkin.query.internal-service-names-cache-enabled:false}")
+  boolean internalServiceNamesCacheEnabled;
+  
+  private List<String> internalServiceNamesCache = new CopyOnWriteArrayList<String>();
+
   private final StorageComponent storage;
+  private static final Logger log = LoggerFactory.getLogger(ZipkinQueryApiV1.class);
 
   @Autowired
   public ZipkinQueryApiV1(StorageComponent storage) {
@@ -73,8 +84,21 @@ public class ZipkinQueryApiV1 {
   }
 
   @RequestMapping(value = "/services", method = RequestMethod.GET)
-  public ResponseEntity<List<String>> getServiceNames() {
-    List<String> serviceNames = storage.spanStore().getServiceNames();
+  public ResponseEntity<List<String>> getServiceNames(
+      @RequestParam(value = "nocache", required = false) String noCache) { // flush cache manually
+    List<String> serviceNames;
+    if (internalServiceNamesCacheEnabled) {
+        if (noCache != null || internalServiceNamesCache.size() == 0) {
+            serviceNames = storage.spanStore().getServiceNames();
+            internalServiceNamesCache = new CopyOnWriteArrayList<String>(serviceNames);
+        }
+        else {
+            serviceNames = internalServiceNamesCache;
+        }
+    }
+    else {
+        serviceNames = storage.spanStore().getServiceNames();
+    }
     serviceCount = serviceNames.size();
     return maybeCacheNames(serviceNames);
   }
@@ -145,5 +169,14 @@ public class ZipkinQueryApiV1 {
       response.cacheControl(CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate());
     }
     return response.body(names);
+  }
+
+  /** Updating internal cache for /api/v1/services */
+  @Scheduled(fixedRateString = "${zipkin.query.internal-service-names-cache-update-interval:300000}") // 5 minutes
+  public void updateInternalServiceNameCache() {
+      if (internalServiceNamesCacheEnabled) {
+          internalServiceNamesCache = new CopyOnWriteArrayList<String>(storage.spanStore().getServiceNames());
+          log.debug("Updated service names cache");
+      }
   }
 }
