@@ -52,11 +52,29 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- Test dependencies -->
+        <!-- Prometheus client -->
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <scope>test</scope>
+          <groupId>io.prometheus</groupId>
+          <artifactId>simpleclient</artifactId>
+          <version>0.0.23</version>
+        </dependency>
+        <!-- Prometheus Hotspot JVM metrics-->
+        <dependency>
+          <groupId>io.prometheus</groupId>
+          <artifactId>simpleclient_hotspot</artifactId>
+          <version>0.0.23</version>
+        </dependency>
+        <!-- Expose request times -->
+        <dependency>
+          <groupId>io.prometheus</groupId>
+          <artifactId>simpleclient_servlet</artifactId>
+          <version>0.0.23</version>
+        </dependency>
+        <!-- Prometheus Spring Boot integration -->
+        <dependency>
+          <groupId>io.prometheus</groupId>
+          <artifactId>simpleclient_spring_boot</artifactId>
+          <version>0.0.23</version>
         </dependency>
     </dependencies>
 
