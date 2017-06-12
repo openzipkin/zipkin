@@ -27,6 +27,7 @@
 
     <properties>
         <main.basedir>${project.basedir}/../..</main.basedir>
+        <prometheus_simpleclient.version>0.0.23</prometheus_simpleclient.version>
     </properties>
 
     <dependencyManagement>
@@ -56,25 +57,25 @@
         <dependency>
           <groupId>io.prometheus</groupId>
           <artifactId>simpleclient</artifactId>
-          <version>0.0.23</version>
+          <version>${prometheus_simpleclient.version}</version>
         </dependency>
         <!-- Prometheus Hotspot JVM metrics-->
         <dependency>
           <groupId>io.prometheus</groupId>
           <artifactId>simpleclient_hotspot</artifactId>
-          <version>0.0.23</version>
+          <version>${prometheus_simpleclient.version}</version>
         </dependency>
         <!-- Expose request times -->
         <dependency>
           <groupId>io.prometheus</groupId>
           <artifactId>simpleclient_servlet</artifactId>
-          <version>0.0.23</version>
+          <version>${prometheus_simpleclient.version}</version>
         </dependency>
         <!-- Prometheus Spring Boot integration -->
         <dependency>
           <groupId>io.prometheus</groupId>
           <artifactId>simpleclient_spring_boot</artifactId>
-          <version>0.0.23</version>
+          <version>${prometheus_simpleclient.version}</version>
         </dependency>
     </dependencies>
 
