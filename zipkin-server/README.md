@@ -115,7 +115,6 @@ zipkin-server is a drop-in replacement for the [scala query service](https://git
     * `QUERY_LOOKBACK`: How many milliseconds queries can look back from endTs; Defaults to 24 hours (two daily buckets: one for today and one for yesterday)
     * `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra`, `elasticsearch`
     * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
-    * `HTTP_COLLECTOR_ENABLED`: `false` disables the http collector; Defaults to true
 
 ### Cassandra Storage
 Zipkin's [Cassandra storage component](../zipkin-storage/cassandra)
@@ -224,6 +223,14 @@ a parameter for how far back to look for service or span names. In order
 to prevent excessive load, service and span name queries are limited by
 `QUERY_LOOKBACK`, which defaults to 24hrs (two daily buckets: one for
 today and one for yesterday)
+
+### HTTP Collector
+The HTTP collector is enabled by default. It accepts spans via `POST /api/v1/spans`. The HTTP 
+collector supports the following configuration:
+
+Property | Environment Variable | Description
+--- | --- | ---
+`zipkin.collector.http.enabled` | `HTTP_COLLECTOR_ENABLED` | `false` disables the HTTP collector. Defaults to `true`.
 
 ### Scribe Collector
 The Scribe collector is disabled by default, configured by the following:
