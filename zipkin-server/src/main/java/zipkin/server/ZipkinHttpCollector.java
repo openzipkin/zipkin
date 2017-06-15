@@ -18,6 +18,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.ListenableFuture;
@@ -44,6 +45,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
  */
 @RestController
 @CrossOrigin("${zipkin.query.allowed-origins:*}")
+@ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
 public class ZipkinHttpCollector {
   static final ResponseEntity<?> SUCCESS = ResponseEntity.accepted().build();
   static final String APPLICATION_THRIFT = "application/x-thrift";

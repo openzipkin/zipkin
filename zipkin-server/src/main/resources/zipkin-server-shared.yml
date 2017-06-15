@@ -9,6 +9,9 @@ zipkin:
   collector:
     # percentage to traces to retain
     sample-rate: ${COLLECTOR_SAMPLE_RATE:1.0}
+    http:
+      # Set to false to disable creation of spans via HTTP collector API
+      enabled: ${HTTP_COLLECTOR_ENABLED:true}
     kafka:
       # ZooKeeper host string, comma-separated host:port value.
       zookeeper: ${KAFKA_ZOOKEEPER:}

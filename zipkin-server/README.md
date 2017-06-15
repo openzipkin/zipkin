@@ -224,6 +224,14 @@ to prevent excessive load, service and span name queries are limited by
 `QUERY_LOOKBACK`, which defaults to 24hrs (two daily buckets: one for
 today and one for yesterday)
 
+### HTTP Collector
+The HTTP collector is enabled by default. It accepts spans via `POST /api/v1/spans`. The HTTP 
+collector supports the following configuration:
+
+Property | Environment Variable | Description
+--- | --- | ---
+`zipkin.collector.http.enabled` | `HTTP_COLLECTOR_ENABLED` | `false` disables the HTTP collector. Defaults to `true`.
+
 ### Scribe Collector
 The Scribe collector is disabled by default, configured by the following:
 
