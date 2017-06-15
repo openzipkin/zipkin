@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,12 +13,12 @@
  */
 package zipkin.storage.mysql;
 
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.rnorth.ducttape.unreliables.Unreliables;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.jdbc.ext.ScriptUtils;
-import org.testcontainers.shaded.com.github.dockerjava.api.command.InspectContainerResponse;
 import org.testcontainers.shaded.com.google.common.io.Resources;
 
 import javax.script.ScriptException;
