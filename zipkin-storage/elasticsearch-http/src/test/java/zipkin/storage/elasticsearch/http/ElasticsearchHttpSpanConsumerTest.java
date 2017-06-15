@@ -122,6 +122,22 @@ public class ElasticsearchHttpSpanConsumerTest {
     );
   }
 
+  /** Not a good span name, but better to test it than break mysteriously */
+  @Test
+  public void indexesServiceSpan_jsonInSpanName() throws Exception {
+    es.enqueue(new MockResponse());
+
+    String name = "{\"foo\":\"bar\"}";
+    String nameEscaped = "{\\\"foo\\\":\\\"bar\\\"}";
+
+    accept(TestObjects.TRACE.get(0).toBuilder().name(name).build());
+
+    assertThat(es.takeRequest().getBody().readByteString().utf8()).endsWith(
+      "\"_type\":\"servicespan\",\"_id\":\"web|" + nameEscaped + "\"}}\n"
+        + "{\"serviceName\":\"web\",\"spanName\":\"" + nameEscaped + "\"}\n"
+    );
+  }
+
   @Test
   public void traceIsSearchableBySRServiceName() throws Exception {
     es.enqueue(new MockResponse());

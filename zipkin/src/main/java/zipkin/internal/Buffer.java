@@ -200,6 +200,10 @@ final class Buffer {
   }
 
   Buffer writeJsonEscaped(String v) {
+    return writeUtf8(jsonEscape(v));
+  }
+
+  static String jsonEscape(String v) {
     int afterReplacement = 0;
     int length = v.length();
     StringBuilder builder = null;
@@ -224,13 +228,16 @@ final class Buffer {
       builder.append(replacement);
       afterReplacement = i + 1;
     }
+    String escaped;
     if (builder == null) { // then we didn't escape anything
-      return writeUtf8(v);
+      escaped = v;
+    } else {
+      if (afterReplacement < length) {
+        builder.append(v, afterReplacement, length);
+      }
+      escaped = builder.toString();
     }
-    if (afterReplacement < length) {
-      builder.append(v, afterReplacement, length);
-    }
-    return writeUtf8(builder.toString());
+    return escaped;
   }
 
   Buffer writeUtf8(String v) {

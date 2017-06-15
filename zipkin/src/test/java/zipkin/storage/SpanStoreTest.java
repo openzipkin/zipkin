@@ -967,6 +967,19 @@ public abstract class SpanStoreTest {
         .contains(Tuple.tuple((TODAY - 4) * 1000L, 4000L)); // but the client's timestamp wins
   }
 
+  /** Not a good span name, but better to test it than break mysteriously */
+  @Test
+  public void spanNameIsJson() {
+    String json = "{\"foo\":\"bar\"}";
+    Span withJsonSpanName = span1.toBuilder().name(json).build();
+
+    accept(withJsonSpanName);
+
+    assertThat(store().getTraces(QueryRequest.builder().spanName(json).build()))
+      .flatExtracting(t -> t)
+      .contains(withJsonSpanName);
+  }
+
   static long clientDuration(Span span) {
     long[] timestamps = span.annotations.stream()
         .filter(a -> a.value.startsWith("c"))

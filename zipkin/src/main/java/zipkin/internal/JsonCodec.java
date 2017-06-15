@@ -458,6 +458,11 @@ public final class JsonCodec implements Codec {
     return write(ENDPOINT_ADAPTER, value);
   }
 
+  /** Exposed for ElasticSearch HttpBulkIndexer */
+  public static String escape(String value) {
+    return Buffer.jsonEscape(value);
+  }
+
   @Override
   public List<Span> readSpans(byte[] bytes) {
     checkArgument(bytes.length > 0, "Empty input reading List<Span>");
