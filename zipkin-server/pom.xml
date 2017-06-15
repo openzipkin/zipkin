@@ -31,7 +31,7 @@
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
     <start-class>zipkin.server.ZipkinServer</start-class>
-    <maven-invoker-plugin.version>2.0.0</maven-invoker-plugin.version>
+    <maven-invoker-plugin.version>3.0.0</maven-invoker-plugin.version>
   </properties>
 
   <dependencyManagement>

@@ -31,7 +31,7 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
-    <jmh.version>1.18</jmh.version>
+    <jmh.version>1.19</jmh.version>
     <libthrift.version>0.10.0</libthrift.version>
   </properties>
 

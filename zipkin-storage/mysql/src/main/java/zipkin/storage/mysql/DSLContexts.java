@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package zipkin.storage.mysql;
 import java.sql.Connection;
 import org.jooq.DSLContext;
 import org.jooq.ExecuteListenerProvider;
+import org.jooq.SQLDialect;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultConfiguration;
@@ -36,7 +37,7 @@ final class DSLContexts {
   DSLContext get(Connection conn) {
     return DSL.using(new DefaultConfiguration()
         .set(conn)
-        .set(JDBCUtils.dialect(conn))
+        .set(SQLDialect.MYSQL)
         .set(settings)
         .set(listenerProvider));
   }

@@ -15,6 +15,7 @@ package zipkin.storage.cassandra3;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.utils.UUIDs;
@@ -142,10 +143,6 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
       }
       Set<String> annotationKeys = CassandraUtil.annotationKeys(span);
 
-      if (!strictTraceId && traceId.getHigh() != 0L) {
-        storeSpan(span, new TraceIdUDT(0L, traceId.getLow()), timestamp);
-      }
-
       BoundStatement bound = bindWithName(insertSpan, "insert-span")
           .set("trace_id", traceId, TraceIdUDT.class)
           .setUUID("ts_uuid", new UUID(
@@ -167,7 +164,16 @@ final class CassandraSpanConsumer implements GuavaSpanConsumer {
         bound = bound.setLong("parent_id", span.parentId);
       }
 
-      return session.executeAsync(bound);
+      ResultSetFuture result = session.executeAsync(bound);
+      if (!strictTraceId && traceId.getHigh() != 0L) {
+        // store the span twice, once for 128-bit ID and once for the lower 64 bits
+        return Futures.allAsList(
+          result,
+          storeSpan(span, new TraceIdUDT(0L, traceId.getLow()), timestamp)
+        );
+      } else {
+        return result;
+      }
     } catch (RuntimeException ex) {
       return Futures.immediateFailedFuture(ex);
     }
