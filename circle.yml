@@ -12,28 +12,11 @@
 # the License.
 #
 
-# NOTE: we don't use Docker-based testing in CircleCI (as we do in TravisCI) to keep both ways for now.
+# NOTE: Travis tests Elasticsearch and MySQL using Docker, and Kafka manually. We don't redundantly test them here
 machine:
-  services:
-    - mysql
   java:
     version: openjdk8
-  post:
-    # Manually install Kafka and ZK
-    - curl -SL http://www.us.apache.org/dist/kafka/0.8.2.2/kafka_2.11-0.8.2.2.tgz | tar xz
-    - ./kafka_*/bin/zookeeper-server-start.sh ./kafka_*/config/zookeeper.properties:
-        background: true
-    - ./kafka_*/bin/kafka-server-start.sh ./kafka_*/config/server.properties:
-        background: true
-    # Manually install Elasticsearch
-    - wget https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/2.2.1/elasticsearch-2.2.1.tar.gz
-    - tar -xvf elasticsearch-2.2.1.tar.gz
-    - elasticsearch-2.2.1/bin/elasticsearch: {background: true}
-    # Wait for ElasticSearch to come up
-    - sleep 10 && curl --retry 10 --retry-delay 5 -v http://127.0.0.1:9200/
   environment:
-    MYSQL_USER: ubuntu
-    MYSQL_DB: circle_test
     # Quiet Maven invoker logs (Downloading... when running zipkin-server/src/it)
     MAVEN_OPTS: -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
