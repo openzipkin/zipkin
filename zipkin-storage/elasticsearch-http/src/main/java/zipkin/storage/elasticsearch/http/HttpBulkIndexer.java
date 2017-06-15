@@ -21,6 +21,7 @@ import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
+import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
 import zipkin.storage.Callback;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
@@ -56,7 +57,7 @@ final class HttpBulkIndexer {
     body.writeUtf8("{\"index\":{\"_index\":\"").writeUtf8(index).writeByte('"');
     body.writeUtf8(",\"_type\":\"").writeUtf8(typeName).writeByte('"');
     if (id != null) {
-      body.writeUtf8(",\"_id\":\"").writeUtf8(id).writeByte('"');
+      body.writeUtf8(",\"_id\":\"").writeUtf8(JsonCodec.escape(id)).writeByte('"');
     }
     body.writeUtf8("}}\n");
   }
