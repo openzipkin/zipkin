@@ -129,3 +129,8 @@ $ java \
     -cp zipkin-server-exec.jar \
     org.springframework.boot.loader.PropertiesLauncher
 ```
+
+### Migration from Kafka < 0.8.1
+
+As explained [on kafka wiki](https://cwiki.apache.org/co\
+nfluence/display/KAFKA/Committing+and+fetching+consumer+offsets+in+Kafka), offsets were stored in ZooKeeper. This has changed and offsets are now stored directly in Kafka. You need to update offsets in Kafka 0.10 by following the instructions.
