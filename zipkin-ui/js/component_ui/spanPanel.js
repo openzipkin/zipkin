@@ -2,6 +2,21 @@ import {component} from 'flightjs';
 import $ from 'jquery';
 import {Constants} from './traceConstants';
 
+const entityMap = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+  '/': '&#x2F;',
+  '`': '&#x60;',
+  '=': '&#x3D;'
+};
+
+function escapeHtml(string) {
+  return String(string).replace(/[&<>"'`=\/]/g, s => entityMap[s]);
+}
+
 // Annotation values that contain the word "error" hint of a transient error.
 // This adds a class when that's the case.
 export function maybeMarkTransientError(row, anno) {
@@ -20,9 +35,9 @@ export function maybeMarkTransientError(row, anno) {
 export function formatAnnotationValue(value) {
   const type = $.type(value);
   if (type === 'object' || type === 'array' || value == null) {
-    return JSON.stringify(value);
+    return escapeHtml(JSON.stringify(value));
   } else {
-    return value.toString(); // prevents false from coercing to empty!
+    return escapeHtml(value.toString()); // prevents false from coercing to empty!
   }
 }
 
@@ -32,11 +47,12 @@ export function formatAnnotationValue(value) {
 export function formatBinaryAnnotationValue(value) {
   const type = $.type(value);
   if (type === 'object' || type === 'array' || value == null) {
-    return `<pre><code>${JSON.stringify(value, null, 2)}</code></pre>`;
+    return `<pre><code>${escapeHtml(JSON.stringify(value, null, 2))}</code></pre>`;
   }
   const result = value.toString();
   // Preformat if the text includes newlines
-  return result.indexOf('\n') === -1 ? result : `<pre><code>${result}</code></pre>`;
+  return result.indexOf('\n') === -1 ? escapeHtml(result)
+    : `<pre><code>${escapeHtml(result)}</code></pre>`;
 }
 
 export default component(function spanPanel() {
@@ -84,7 +100,7 @@ export default component(function spanPanel() {
         const propertyName = $this.data('key');
         const text = propertyName === 'value'
           ? formatBinaryAnnotationValue(anno.value)
-          : anno[propertyName];
+          : escapeHtml(anno[propertyName]);
         $this.append(text);
       });
       $binAnnoBody.append($row);
