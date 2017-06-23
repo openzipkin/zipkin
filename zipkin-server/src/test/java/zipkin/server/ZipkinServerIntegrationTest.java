@@ -212,11 +212,11 @@ public class ZipkinServerIntegrationTest {
   /** The zipkin-ui is a single-page app. This prevents reloading all resources on each click. */
   @Test
   public void setsMaxAgeOnUiResources() throws Exception {
-    mockMvc.perform(get("/favicon.ico"))
+    mockMvc.perform(get("/zipkin/favicon.ico"))
         .andExpect(header().string("Cache-Control", "max-age=31536000"));
-    mockMvc.perform(get("/config.json"))
+    mockMvc.perform(get("/zipkin/config.json"))
         .andExpect(header().string("Cache-Control", "max-age=600"));
-    mockMvc.perform(get("/index.html"))
+    mockMvc.perform(get("/zipkin/index.html"))
         .andExpect(header().string("Cache-Control", "max-age=60"));
   }
 
@@ -253,6 +253,18 @@ public class ZipkinServerIntegrationTest {
     mockMvc.perform(get("/api/v1/traces")
         .header(HttpHeaders.ORIGIN, "foo.example.com"))
            .andExpect(status().isOk());
+  }
+
+  @Test
+  public void forwardsApiForUi() throws Exception {
+    mockMvc.perform(get("/zipkin/api/v1/traces"))
+      .andExpect(status().isOk());
+  }
+
+  @Test
+  public void redirectsRootToZipkin() throws Exception {
+    mockMvc.perform(get("/"))
+      .andExpect(status().is(302));
   }
 
   ResultActions performAsync(MockHttpServletRequestBuilder request) throws Exception {

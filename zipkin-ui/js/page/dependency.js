@@ -12,7 +12,7 @@ import {dependenciesTemplate} from '../templates';
 const DependencyPageComponent = component(function DependencyPage() {
   this.after('initialize', function() {
     window.document.title = 'Zipkin - Dependency';
-    this.trigger(document, 'navigate', {route: 'dependency'});
+    this.trigger(document, 'navigate', {route: 'zipkin/dependency'});
 
     this.$node.html(dependenciesTemplate());
 

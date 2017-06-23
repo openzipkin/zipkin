@@ -18,7 +18,6 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +25,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,11 +35,12 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
 /**
- * Zipkin-UI is a single-page application that reads configuration from /config.json.
+ * Zipkin-UI is a single-page application mounted at /zipkin. For simplicity, assume paths mentioned
+ * below are relative to that. For example, the UI reads config.json, from the absolute path
+ * /zipkin/config.json
  *
  * <p>When looking at a trace, the browser is sent to the path "/traces/{id}". For the single-page
  * app to serve that route, the server needs to forward the request to "/index.html". The same
@@ -72,7 +73,7 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
 
   @Override
   public void addResourceHandlers(ResourceHandlerRegistry registry) {
-    registry.addResourceHandler("/**")
+    registry.addResourceHandler("/zipkin/**")
         .addResourceLocations("classpath:/zipkin-ui/")
         .setCachePeriod((int) TimeUnit.DAYS.toSeconds(365));
   }
@@ -101,14 +102,15 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
     return filter;
   }
 
-  @RequestMapping(value = "/config.json", method = GET, produces = APPLICATION_JSON_VALUE)
+  @RequestMapping(value = "/zipkin/config.json", method = GET)
   public ResponseEntity<ZipkinUiProperties> serveUiConfig() {
     return ResponseEntity.ok()
         .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES))
+        .contentType(MediaType.APPLICATION_JSON)
         .body(ui);
   }
 
-  @RequestMapping(value = "/index.html", method = GET)
+  @RequestMapping(value = "/zipkin/index.html", method = GET)
   public ResponseEntity<Resource> serveIndex() {
     return ResponseEntity.ok()
         .cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES))
@@ -123,10 +125,26 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
   // If the path is a a file w/an extension, treat normally.
   // Otherwise instead of returning 404, forward to the index.
   // See https://github.com/twitter/finatra/blob/458c6b639c3afb4e29873d123125eeeb2b02e2cd/http/src/main/scala/com/twitter/finatra/http/response/ResponseBuilder.scala#L321
-  @RequestMapping(value = {"/", "/traces/{id}", "/dependency"}, method = GET)
-  public ModelAndView forwardUiEndpoints(ModelMap model) {
-    // Note: RequestMapping "/" requires us to use ModelAndView result vs just a string.
-    // When "/" is mapped, the server literally returns "forward:/index.html" vs forwarding.
-    return new ModelAndView("forward:/index.html", model);
+  @RequestMapping(value = {"/zipkin/", "/zipkin/traces/{id}", "/zipkin/dependency"}, method = GET)
+  public ModelAndView forwardUiEndpoints() {
+    return new ModelAndView("forward:/zipkin/index.html");
+  }
+
+  /** The UI looks for the api relative to where it is mounted, under /zipkin */
+  @RequestMapping(value = "/zipkin/api/v1/**", method = GET)
+  public ModelAndView forwardApi() {
+    return new ModelAndView("forward:/api/v1/");
+  }
+
+  /** Borrow favicon from UI assets under /zipkin */
+  @RequestMapping(value = "/favicon.ico", method = GET)
+  public ModelAndView favicon() {
+    return new ModelAndView("forward:/zipkin/favicon.ico");
+  }
+
+  /** Make sure users who aren't familiar with /zipkin get to the right path */
+  @RequestMapping(value = "/", method = GET)
+  public ModelAndView redirectRoot() {
+    return new ModelAndView("redirect:/zipkin/");
   }
 }

@@ -13,9 +13,9 @@ loadConfig().then(config => {
 
   CommonUI.attachTo(window.document.body, {config});
 
-  crossroads.addRoute('', () => initializeDefault(config));
-  crossroads.addRoute('traces/{id}', traceId => initializeTrace(traceId, config));
-  crossroads.addRoute('dependency', () => initializeDependency(config));
+  crossroads.addRoute('zipkin/', () => initializeDefault(config));
+  crossroads.addRoute('zipkin/traces/{id}', traceId => initializeTrace(traceId, config));
+  crossroads.addRoute('zipkin/dependency', () => initializeDependency(config));
   crossroads.parse(window.location.pathname);
 }, e => {
   // TODO: better error message, but this is better than a blank screen...

@@ -37,7 +37,7 @@ const DefaultPageComponent = component(function DefaultPage() {
 
   this.after('initialize', function() {
     window.document.title = 'Zipkin - Index';
-    this.trigger(document, 'navigate', {route: 'index'});
+    this.trigger(document, 'navigate', {route: 'zipkin/index'});
 
     const query = queryString.parse(window.location.search);
 
