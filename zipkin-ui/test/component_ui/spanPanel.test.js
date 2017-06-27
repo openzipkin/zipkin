@@ -101,7 +101,7 @@ describe('formatBinaryAnnotationValue', () => {
   it('should format array as pre-formatted multi-line json', () => {
     formatBinaryAnnotationValue([{foo: 'bar'}, {baz: 'qux'}]).should.equal(
       '<pre><code>[\n  {\n    &quot;foo&quot;: &quot;bar&quot;\n  },\n'
-      + '{\n    &quot;baz&quot;: &quot;qux&quot;\n  }\n]</code></pre>'
+      + '  {\n    &quot;baz&quot;: &quot;qux&quot;\n  }\n]</code></pre>'
     );
   });
 
