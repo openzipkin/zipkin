@@ -576,6 +576,7 @@
           <excludes>
             <exclude>.travis.yml</exclude>
             <exclude>.editorconfig</exclude>
+            <exclude>.gitattributes</exclude>
             <exclude>.gitignore</exclude>
             <exclude>.mvn/**</exclude>
             <exclude>mvnw*</exclude>
@@ -583,6 +584,7 @@
             <exclude>**/.idea/**</exclude>
             <exclude>LICENSE</exclude>
             <exclude>**/*.md</exclude>
+            <exclude>bnd.bnd</exclude>
             <exclude>apache-cassandra-*/**</exclude>
             <exclude>elasticsearch-*/**</exclude>
             <exclude>kafka_*/**</exclude>
