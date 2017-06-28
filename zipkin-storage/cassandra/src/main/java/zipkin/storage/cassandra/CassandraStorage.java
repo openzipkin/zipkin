@@ -98,7 +98,7 @@ public final class CassandraStorage
       return this;
     }
 
-    /** Comma separated list of hosts / IPs part of Cassandra cluster. Defaults to localhost */
+    /** Comma separated list of host addresses part of Cassandra cluster. You can also specify a custom port with 'host:port'. Defaults to localhost on port 9042 **/
     public Builder contactPoints(String contactPoints) {
       this.contactPoints = checkNotNull(contactPoints, "contactPoints");
       return this;
