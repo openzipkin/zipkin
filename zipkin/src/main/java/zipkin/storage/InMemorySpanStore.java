@@ -18,12 +18,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import zipkin.DependencyLink;
 import zipkin.Span;
@@ -40,12 +39,34 @@ import static zipkin.internal.Util.sortedList;
 
 /** Internally, spans are indexed on 64-bit trace ID */
 public final class InMemorySpanStore implements SpanStore {
-  private final Multimap<Long, Span> traceIdToSpans = new LinkedListMultimap<>();
-  private final Set<Pair<Long>> traceIdTimeStamps = new TreeSet<>(VALUE_2_DESCENDING);
-  private final Multimap<String, Pair<Long>> serviceToTraceIdTimeStamp =
-      new SortedByValue2Descending<>();
-  private final Multimap<String, String> serviceToSpanNames =
-      new LinkedHashSetMultimap<>();
+  /**
+   * Primary source of data is this map, which includes spans ordered descending by timestamp. All
+   * other maps are derived from the span values here. This uses a list for the spans, so that it is
+   * visible (via /api/v1/trace/id?raw) when instrumentation report the same spans multiple times.
+   *
+   * <p>In the future, we will bound data. This implies some mechanism of cascading deletes based on
+   * the pair used as the key here. One implementation could be to make one dataset have a strong
+   * reference to the pair of (traceId, timestamp), and others weak. For example, making this a
+   * weak reference and traceIdToTraceIdTimeStamps a strong one. In that case, deleting the trace ID
+   * from traceIdToTraceIdTimeStamps would lead to a purge of spans at GC time.
+   */
+  private final SortedMultimap<Pair<Long>, Span> spansByTraceIdTimeStamp =
+      new LinkedListSortedMultimap<>(VALUE_2_DESCENDING);
+
+  /** This supports span lookup by {@link zipkin.Span#traceId lower 64-bits of the trace ID} */
+  private final SortedMultimap<Long, Pair<Long>> traceIdToTraceIdTimeStamps =
+      new LinkedHashSetSortedMultimap<>(Long::compareTo);
+  /**
+   * This supports span lookup by {@link zipkin.Endpoint#serviceName service name}.
+   *
+   * <p>QueryRequest.limit needs trace ids are returned in timestamp descending order.
+   */
+  private final SortedMultimap<String, Pair<Long>> serviceToTraceIdTimestamp =
+      new TreeSetSortedMultimap<>(String::compareTo, VALUE_2_DESCENDING);
+  /** This is an index of {@link Span#name} by {@link zipkin.Endpoint#serviceName service name} */
+  private final SortedMultimap<String, String> serviceToSpanNames =
+      new LinkedHashSetSortedMultimap<>(String::compareTo);
+
   private final boolean strictTraceId;
   volatile int acceptedSpanCount;
 
@@ -66,12 +87,12 @@ public final class InMemorySpanStore implements SpanStore {
             Pair.create(span.traceId, timestamp == null ? Long.MIN_VALUE : timestamp);
         String spanName = span.name;
         synchronized (InMemorySpanStore.this) {
-          traceIdTimeStamps.add(traceIdTimeStamp);
-          traceIdToSpans.put(span.traceId, span);
+          spansByTraceIdTimeStamp.put(traceIdTimeStamp, span);
+          traceIdToTraceIdTimeStamps.put(span.traceId, traceIdTimeStamp);
           acceptedSpanCount++;
 
           for (String serviceName : span.serviceNames()) {
-            serviceToTraceIdTimeStamp.put(serviceName, traceIdTimeStamp);
+            serviceToTraceIdTimestamp.put(serviceName, traceIdTimeStamp);
             serviceToSpanNames.put(serviceName, spanName);
           }
         }
@@ -88,14 +109,14 @@ public final class InMemorySpanStore implements SpanStore {
    */
   @Deprecated
   public synchronized List<Long> traceIds() {
-    return sortedList(traceIdToSpans.keySet());
+    return sortedList(traceIdToTraceIdTimeStamps.keySet());
   }
 
   synchronized void clear() {
     acceptedSpanCount = 0;
-    traceIdTimeStamps.clear();
-    traceIdToSpans.clear();
-    serviceToTraceIdTimeStamp.clear();
+    traceIdToTraceIdTimeStamps.clear();
+    spansByTraceIdTimeStamp.clear();
+    serviceToTraceIdTimestamp.clear();
     serviceToSpanNames.clear();
   }
 
@@ -104,8 +125,8 @@ public final class InMemorySpanStore implements SpanStore {
    */
   public synchronized List<List<Span>> getRawTraces() {
     List<List<Span>> result = new ArrayList<>();
-    for (long traceId : traceIdToSpans.keySet()) {
-      Collection<Span> sameTraceId = traceIdToSpans.get(traceId);
+    for (long traceId : traceIdToTraceIdTimeStamps.keySet()) {
+      Collection<Span> sameTraceId = spansByTraceId(traceId);
       for (List<Span> next : GroupByTraceId.apply(sameTraceId, strictTraceId, false)) {
         result.add(next);
       }
@@ -122,7 +143,7 @@ public final class InMemorySpanStore implements SpanStore {
     List<List<Span>> result = new ArrayList<>();
     for (Iterator<Long> traceId = traceIdsInTimerange.iterator();
         traceId.hasNext() && result.size() < request.limit; ) {
-      Collection<Span> sameTraceId = traceIdToSpans.get(traceId.next());
+      Collection<Span> sameTraceId = spansByTraceId(traceId.next());
       for (List<Span> next : GroupByTraceId.apply(sameTraceId, strictTraceId, true)) {
         if (request.test(next)) {
           result.add(next);
@@ -135,8 +156,9 @@ public final class InMemorySpanStore implements SpanStore {
 
   Set<Long> traceIdsDescendingByTimestamp(QueryRequest request) {
     Collection<Pair<Long>> traceIdTimestamps = request.serviceName != null
-        ? serviceToTraceIdTimeStamp.get(request.serviceName)
-        : traceIdTimeStamps;
+        ? serviceToTraceIdTimestamp.get(request.serviceName)
+        : spansByTraceIdTimeStamp.keySet();
+
     long endTs = request.endTs * 1000;
     long startTs = endTs - request.lookback * 1000;
 
@@ -165,7 +187,7 @@ public final class InMemorySpanStore implements SpanStore {
   }
 
   @Override public synchronized List<Span> getRawTrace(long traceIdHigh, long traceId) {
-    List<Span> spans = (List<Span>) traceIdToSpans.get(traceId);
+    List<Span> spans = (List<Span>) spansByTraceId(traceId);
     if (spans == null || spans.isEmpty()) return null;
     if (!strictTraceId) return sortedList(spans);
 
@@ -181,7 +203,7 @@ public final class InMemorySpanStore implements SpanStore {
 
   @Override
   public synchronized List<String> getServiceNames() {
-    return sortedList(serviceToTraceIdTimeStamp.keySet());
+    return sortedList(serviceToTraceIdTimestamp.keySet());
   }
 
   @Override
@@ -205,7 +227,11 @@ public final class InMemorySpanStore implements SpanStore {
     return linksBuilder.link();
   }
 
-  static final class LinkedListMultimap<K, V> extends Multimap<K, V> {
+  static final class LinkedListSortedMultimap<K, V> extends SortedMultimap<K, V> {
+    LinkedListSortedMultimap(Comparator<K> comparator) {
+      super(comparator);
+    }
+
     @Override Collection<V> valueContainer() {
       return new LinkedList<>();
     }
@@ -217,21 +243,35 @@ public final class InMemorySpanStore implements SpanStore {
     return right._1.compareTo(left._1);
   };
 
-  /** QueryRequest.limit needs trace ids are returned in timestamp descending order. */
-  static final class SortedByValue2Descending<K> extends Multimap<K, Pair<Long>> {
-    @Override Set<Pair<Long>> valueContainer() {
-      return new TreeSet<>(VALUE_2_DESCENDING);
+  static final class TreeSetSortedMultimap<K, V> extends SortedMultimap<K, V> {
+    final Comparator<V> valueComparator;
+
+    TreeSetSortedMultimap(Comparator<K> keyComparator, Comparator<V> valueComparator) {
+      super(keyComparator);
+      this.valueComparator = valueComparator;
+    }
+
+    @Override Set<V> valueContainer() {
+      return new TreeSet<>(valueComparator);
     }
   }
 
-  static final class LinkedHashSetMultimap<K, V> extends Multimap<K, V> {
+  static final class LinkedHashSetSortedMultimap<K, V> extends SortedMultimap<K, V> {
+    LinkedHashSetSortedMultimap(Comparator<K> comparator) {
+      super(comparator);
+    }
+
     @Override Collection<V> valueContainer() {
       return new LinkedHashSet<>();
     }
   }
 
-  static abstract class Multimap<K, V> {
-    private final Map<K, Collection<V>> delegate = new LinkedHashMap<>();
+  static abstract class SortedMultimap<K, V> {
+    private final TreeMap<K, Collection<V>> delegate;
+
+    SortedMultimap(Comparator<K> comparator) {
+      delegate = new TreeMap<>(comparator);
+    }
 
     abstract Collection<V> valueContainer();
 
@@ -258,7 +298,16 @@ public final class InMemorySpanStore implements SpanStore {
     }
 
     Collection<V> get(K key) {
-      return delegate.get(key);
+      Collection<V> result = delegate.get(key);
+      return result != null ? result : Collections.emptySet();
     }
+  }
+
+  private Collection<Span> spansByTraceId(long traceId) {
+    Collection<Span> sameTraceId = new ArrayList<>();
+    for (Pair<Long> traceIdTimestamp : traceIdToTraceIdTimeStamps.get(traceId)) {
+      sameTraceId.addAll(spansByTraceIdTimeStamp.get(traceIdTimestamp));
+    }
+    return sameTraceId;
   }
 }
