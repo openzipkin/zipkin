@@ -246,7 +246,7 @@ A collector supporting Kafka versions 0.10 and later is available as an external
 
 The following apply when `KAFKA_ZOOKEEPER` is set:
 
-    * `KAFKA_TOPIC`: Topic zipkin spans will be consumed from. Defaults to "zipkin"
+    * `KAFKA_TOPIC`: Topic zipkin spans will be consumed from. Defaults to "zipkin". When Kafka 0.10 is in use, multiple topics may be specified if comma delimited.
     * `KAFKA_STREAMS`: Count of threads/streams consuming the topic. Defaults to 1
 
 Settings below correspond to "Old Consumer Configs" in [Kafka documentation](http://kafka.apache.org/documentation.html)

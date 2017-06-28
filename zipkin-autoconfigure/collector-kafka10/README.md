@@ -71,7 +71,7 @@ Environment Variable | Property | New Consumer Config | Description
 --- | --- | --- | ---
 `KAFKA_BOOTSTRAP_SERVERS` | `zipkin.collector.kafka.bootstrap-servers` | bootstrap.servers | Comma-separated list of brokers, ex. 127.0.0.1:9092. No default
 `KAFKA_GROUP_ID` | `zipkin.collector.kafka.group-id` | group.id | The consumer group this process is consuming on behalf of. Defaults to `zipkin`
-`KAFKA_TOPIC` | `zipkin.collector.kafka.topic` | N/A | Topic zipkin spans will be consumed from. Defaults to `zipkin`
+`KAFKA_TOPIC` | `zipkin.collector.kafka.topic` | N/A | Comma-separated list of topics that zipkin spans will be consumed from. Defaults to `zipkin`
 `KAFKA_STREAMS` | `zipkin.collector.kafka.streams` | N/A | Count of threads consuming the topic. Defaults to `1`
 
 ### Other Kafka consumer properties
@@ -107,14 +107,14 @@ $ KAFKA_BOOTSTRAP_SERVERS=broker1:9092.local,broker2.local:9092 \
     org.springframework.boot.loader.PropertiesLauncher
 ```
 
-Alternate topic name:
+Alternate topic name(s):
 
 ```bash
 $ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
     java \
     -Dloader.path='zipkin-autoconfigure-collector-kafka10-module.jar,zipkin-autoconfigure-collector-kafka10-module.jar!/lib' \
     -Dspring.profiles.active=kafka \
-    -Dzipkin.collector.kafka.topic=zapkin \
+    -Dzipkin.collector.kafka.topic=zapkin,zipken \
     -cp zipkin-server-exec.jar \
     org.springframework.boot.loader.PropertiesLauncher
 ```
