@@ -65,7 +65,7 @@ zipkin:
       # Using ssl for connection, rely on Keystore
       use-ssl: ${CASSANDRA_USE_SSL:false}
     cassandra3:
-      # Comma separated list of 'host:port' addresses part of Cassandra cluster.
+      # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
       contact-points: ${CASSANDRA3_CONTACT_POINTS:localhost}
       # Name of the datacenter that will be considered "local" for latency load balancing. When unset, load-balancing is round-robin.
       local-dc: ${CASSANDRA3_LOCAL_DC:}
