@@ -76,8 +76,10 @@ public final class KafkaCollector implements CollectorComponent {
       return this;
     }
 
-    /** Topic zipkin spans will be consumed from. Defaults to "zipkin".
-     * Multiple topics may be specified if comma delimited.*/
+    /**
+     * Topic zipkin spans will be consumed from. Defaults to "zipkin". Multiple topics may be
+     * specified if comma delimited.
+     */
     public Builder topic(String topic) {
       this.topic = checkNotNull(topic, "topic");
       return this;

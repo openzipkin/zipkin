@@ -256,6 +256,15 @@ public class KafkaCollectorTest {
     assertThat(kafkaMetrics.spans()).isEqualTo(TRACE.size() * 2);
   }
 
+  @Test public void multipleTopicsCommaDelimited() throws Exception {
+    try (KafkaCollector collector = builder("topic1,topic2").build()) {
+      collector.start();
+
+      assertThat(collector.kafkaWorkers.workers.get(0).kafkaConsumer.subscription())
+        .containsExactly("topic1", "topic2");
+    }
+  }
+
   /**
    * Producing this empty message triggers auto-creation of the topic and gets things "warmed up"
    * on the broker before the consumers subscribe. Without this, the topic is auto-created when
