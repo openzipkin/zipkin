@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,36 +11,32 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage.cassandra3;
+package zipkin.storage.cassandra3.integration;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.ClassRule;
 import org.junit.Test;
 import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.storage.StrictTraceIdFalseTest;
 import zipkin.storage.StorageComponent;
+import zipkin.storage.cassandra3.Cassandra3Storage;
+import zipkin.storage.cassandra3.InternalForTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CassandraStrictTraceIdFalseTest extends StrictTraceIdFalseTest {
+abstract class CassandraStrictTraceIdFalseTest extends StrictTraceIdFalseTest {
 
-  private final Cassandra3Storage storage;
+  abstract protected Cassandra3Storage storage();
 
   public CassandraStrictTraceIdFalseTest() {
     // check everything is ok
-    Cassandra3TestGraph.INSTANCE.storage.get().check();
-    storage = Cassandra3Storage.builder()
-        .strictTraceId(false)
-        .keyspace("test_zipkin3_mixed").build();
-  }
-
-  @Override protected Cassandra3Storage storage() {
-    return storage;
+    storage().check();
   }
 
   @Override public void clear() {
-    storage.clear();
+    InternalForTests.clear(storage());
   }
 
   /**

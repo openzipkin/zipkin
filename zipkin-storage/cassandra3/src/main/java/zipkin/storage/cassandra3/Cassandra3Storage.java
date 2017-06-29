@@ -17,18 +17,13 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
 import zipkin.internal.LazyCloseable;
 import zipkin.internal.Nullable;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.StorageComponent;
 import zipkin.storage.guava.LazyGuavaStorageComponent;
 
-import static java.lang.String.format;
 import static zipkin.internal.Util.checkNotNull;
 
 /**
@@ -234,15 +229,13 @@ public final class Cassandra3Storage
 
   /** Truncates all the column families, or throws on any failure. */
   @VisibleForTesting void clear() {
-    List<ListenableFuture<?>> futures = new LinkedList<>();
     for (String cf : ImmutableList.of(
-        Schema.TABLE_TRACES,
-        Schema.TABLE_TRACE_BY_SERVICE_SPAN,
-        Schema.TABLE_SERVICE_SPANS,
-        Schema.TABLE_DEPENDENCIES
+      Schema.TABLE_TRACES,
+      Schema.TABLE_TRACE_BY_SERVICE_SPAN,
+      Schema.TABLE_SERVICE_SPANS,
+      Schema.TABLE_DEPENDENCIES
     )) {
-      futures.add(session.get().executeAsync(format("TRUNCATE %s", cf)));
+      session.get().execute("TRUNCATE " + cf);
     }
-    Futures.getUnchecked(Futures.allAsList(futures));
   }
 }
