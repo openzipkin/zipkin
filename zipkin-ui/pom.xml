@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.java</groupId>
     <artifactId>parent</artifactId>
-    <version>1.26.3-SNAPSHOT</version>
+    <version>1.27.0</version>
   </parent>
 
   <artifactId>zipkin-ui</artifactId>
