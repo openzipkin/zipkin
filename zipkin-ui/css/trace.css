@@ -38,7 +38,6 @@
 }
 
 #trace-container .span .handle {
-  width: 150px;
   overflow: hidden;
   white-space: nowrap;
   float: left;
