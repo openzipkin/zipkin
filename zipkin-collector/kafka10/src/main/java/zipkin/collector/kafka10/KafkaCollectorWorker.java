@@ -14,6 +14,7 @@
 package zipkin.collector.kafka10;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -45,7 +46,8 @@ final class KafkaCollectorWorker implements Runnable {
 
   KafkaCollectorWorker(KafkaCollector.Builder builder) {
     kafkaConsumer = new KafkaConsumer<>(builder.properties);
-    kafkaConsumer.subscribe(Collections.singleton(builder.topic), new ConsumerRebalanceListener() {
+    List<String> topics = Arrays.asList(builder.topic.split(","));
+    kafkaConsumer.subscribe(topics, new ConsumerRebalanceListener() {
       @Override public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
         assignedPartitions.set(Collections.emptyList());
       }
