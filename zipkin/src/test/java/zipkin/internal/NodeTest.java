@@ -14,7 +14,6 @@
 package zipkin.internal;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -22,9 +21,20 @@ import org.junit.Test;
 import zipkin.Span;
 import zipkin.TestObjects;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class NodeTest {
+  @Test(expected = NullPointerException.class)
+  public void addValue_nullNotAllowed() {
+    new Node<>().value(null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void addChild_selfNotAllowed() {
+    Node<Character> a = new Node<Character>().value('a');
+    a.addChild(a);
+  }
 
   /**
    * <p>The following tree should traverse in alphabetical order <pre>{@code
@@ -82,9 +92,8 @@ public class NodeTest {
   }
 
   @Test
-  public void constructsTraceTree_noChildLeftBehind() {
-    List<Span> spans = Arrays.
-      asList(
+  public void constructTree_noChildLeftBehind() {
+    List<Span> spans = asList(
              Span.builder().traceId(137L).id(1L).name("root-0").build(),
              Span.builder().traceId(137L).parentId(1L).id(2L).name("child-0").build(),
              Span.builder().traceId(137L).parentId(1L).id(3L).name("child-1").build(),
@@ -98,5 +107,30 @@ public class NodeTest {
       treeSize++;
     }
     assertThat(treeSize).isEqualTo(spans.size());
+  }
+
+  @Test public void constructTree_selfReferencingChildrenGoToRoot() {
+    Span s1 = Span.builder().traceId(137L).id(1L).name("s1").build();
+    Span s2 = Span.builder().traceId(137L).parentId(1L).id(2L).name("s2").build();
+    Span s3 = Span.builder().traceId(137L).parentId(3L).id(3L).name("s3").build();
+    Span s4 = Span.builder().traceId(137L).parentId(4L).id(4L).name("s4").build();
+
+    Node<Span> root = Node.constructTree(asList(s1, s2, s3, s4));
+    assertThat(root.value())
+      .isEqualTo(s1);
+    assertThat(root.children()).extracting(Node::value)
+      .containsExactly(s2, s3, s4);
+  }
+
+  @Test public void constructTree_selfReferencingChildrenGoToRoot_headless() {
+    Span s2 = Span.builder().traceId(137L).parentId(1L).id(2L).name("s2").build();
+    Span s3 = Span.builder().traceId(137L).parentId(3L).id(3L).name("s3").build();
+    Span s4 = Span.builder().traceId(137L).parentId(4L).id(4L).name("s4").build();
+
+    Node<Span> root = Node.constructTree(asList(s2, s3, s4));
+    assertThat(root.isSyntheticRootForPartialTree())
+      .isTrue();
+    assertThat(root.children()).extracting(Node::value)
+      .containsExactly(s2, s3, s4);
   }
 }

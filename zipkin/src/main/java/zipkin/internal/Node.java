@@ -24,6 +24,9 @@ import java.util.Map;
 import java.util.Queue;
 import zipkin.Span;
 
+import static zipkin.internal.Util.checkArgument;
+import static zipkin.internal.Util.checkNotNull;
+
 /**
  * Convenience type representing a tree. This is here because multiple facets in zipkin require
  * traversing the trace tree. For example, looking at network boundaries to correct clock skew, or
@@ -42,21 +45,22 @@ public final class Node<V> {
   private boolean missingRootDummyNode;
 
   /** Returns the parent, or null if root */
-  @Nullable
-  public Node<V> parent() {
+  @Nullable public Node<V> parent() {
     return parent;
   }
 
-  public V value() {
+  /** Returns the value, or null if {@link #isSyntheticRootForPartialTree} */
+  @Nullable public V value() {
     return value;
   }
 
   public Node<V> value(V newValue) {
-    this.value = newValue;
+    this.value = checkNotNull(newValue, "newValue");
     return this;
   }
 
   public Node<V> addChild(Node<V> child) {
+    checkArgument(child != this, "circular dependency on %s", this);
     child.parent = this;
     if (children.equals(Collections.emptyList())) children = new LinkedList<>();
     children.add(child);
@@ -127,17 +131,12 @@ public final class Node<V> {
     // Collect the parent-child relationships between all spans.
     Map<Long, Long> idToParent = new LinkedHashMap<>(idToNode.size());
 
-    public void addNode(Long parentId, long id, @Nullable V value) {
+    public void addNode(@Nullable Long parentId, long id, V value) {
       Node<V> node = new Node<V>().value(value);
-      if (parentId == null) {
-        // special-case root, and attribute missing parents to it. In
-        // other words, assume that the first root is the "real" root.
-        if (rootNode == null) {
-          rootNode = node;
-        } else {
-          idToNode.put(id, node);
-          idToParent.put(id, null);
-        }
+      // special-case root, and attribute missing parents to it. In
+      // other words, assume that the first root is the "real" root.
+      if (parentId == null && rootNode == null) {
+        rootNode = node;
       } else {
         idToNode.put(id, node);
         idToParent.put(id, parentId);
@@ -150,7 +149,7 @@ public final class Node<V> {
       for (Map.Entry<Long, Long> entry : idToParent.entrySet()) {
         Node<V> node = idToNode.get(entry.getKey());
         Node<V> parent = idToNode.get(entry.getValue());
-        if (parent == null) { // handle headless trace
+        if (parent == null || node == parent) { // handle headless or circular dep span
           if (rootNode == null) {
             rootNode = new Node<>();
             rootNode.missingRootDummyNode = true;
