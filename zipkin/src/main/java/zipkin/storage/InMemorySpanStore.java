@@ -283,13 +283,15 @@ public final class InMemorySpanStore implements SpanStore {
       Collection<V> valueContainer = delegate.get(key);
       if (valueContainer == null) {
         synchronized (delegate) {
-          if (!delegate.containsKey(key)) {
-            valueContainer = valueContainer();
-            delegate.put(key, valueContainer);
+          Collection<V> old = delegate.put(key, valueContainer = valueContainer());
+          if (old != null) { // lost race
+            valueContainer = old;
           }
         }
       }
-      valueContainer.add(value);
+      synchronized (delegate) {
+        valueContainer.add(value);
+      }
     }
 
     // not synchronized as only used for for testing
