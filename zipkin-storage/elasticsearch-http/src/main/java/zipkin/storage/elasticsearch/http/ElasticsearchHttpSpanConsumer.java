@@ -47,6 +47,7 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
       return size() > MAX_CACHE_DAYS;
     }
   };
+  private Map<String, Set<Pair<String>>> indexToServiceSpans = new LinkedHashMap<>();
 
   ElasticsearchHttpSpanConsumer(ElasticsearchHttpStorage es) {
     this.es = es;
@@ -54,11 +55,23 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
   }
 
   @Override public void accept(List<Span> spans, Callback<Void> callback) {
+    Callback<Void> callbackWrapper = new Callback<Void>() {
+        @Override
+        public void onSuccess(Void value) {
+            callback.onSuccess(value);
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            clearIndexToServiceSpansCache(indexToServiceSpans, indexToServiceSpansCache);
+            callback.onError(t);
+        }
+    };
+
     if (spans.isEmpty()) {
-      callback.onSuccess(null);
+      callbackWrapper.onSuccess(null);
       return;
     }
-    Map<String, Set<Pair<String>>> indexToServiceSpans = new LinkedHashMap<>();
     try {
       HttpBulkIndexer indexer = new HttpBulkIndexer("index-span", es);
       indexToServiceSpans = indexSpans(indexer, spans);
@@ -89,22 +102,23 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
       if (!indexToServiceSpans.isEmpty()) {
         indexNames(indexer, indexToServiceSpans);
       }
-      indexer.execute(callback);
+      indexer.execute(callbackWrapper);
     } catch (Throwable t) {
       propagateIfFatal(t);
-      callback.onError(t);
-    
-      // remove recently added items from cache
-      for (Map.Entry<String, Set<Pair<String>>> entry : indexToServiceSpans.entrySet()) {
-        Set<Pair<String>> serviceSpansEntryCached = null;
-        synchronized (indexToServiceSpansCache) {
-          serviceSpansEntryCached = indexToServiceSpansCache.get(entry.getKey());
-        }
-        if (serviceSpansEntryCached == null || serviceSpansEntryCached.isEmpty()) continue;
+      callbackWrapper.onError(t);
+    }
+  }
+  /** Remove recently added items from cache */
+  void clearIndexToServiceSpansCache(Map<String, Set<Pair<String>>> index, Map<String, Set<Pair<String>>> cache) {
+    for (Map.Entry<String, Set<Pair<String>>> entry : index.entrySet()) {
+      Set<Pair<String>> serviceSpansEntryCached = null;
+      synchronized (cache) {
+        serviceSpansEntryCached = cache.get(entry.getKey());
+      }
+      if (serviceSpansEntryCached == null || serviceSpansEntryCached.isEmpty()) continue;
 
-        synchronized (serviceSpansEntryCached) {
-          serviceSpansEntryCached.removeAll(entry.getValue());
-        }
+      synchronized (serviceSpansEntryCached) {
+        serviceSpansEntryCached.removeAll(entry.getValue());
       }
     }
   }

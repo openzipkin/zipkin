@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -65,6 +65,8 @@ public final class TestObjects {
           .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
           .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
           .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
+          .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, DB_ENDPOINT))
+          .addAnnotation(Annotation.create((TODAY + 400) * 1000, CLIENT_RECV, DB_ENDPOINT))
           .addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, WEB_ENDPOINT))
           .addBinaryAnnotation(BinaryAnnotation.address(SERVER_ADDR, APP_ENDPOINT))
           .build(),
