@@ -402,6 +402,10 @@ describe('mkDurationStr', () => {
     mkDurationStr(0).should.equal('');
   });
 
+  it('should return empty string on undefined duration', () => {
+    mkDurationStr().should.equal('');
+  });
+
   it('should format microseconds', () => {
     mkDurationStr(3).should.equal('3μ');
   });
