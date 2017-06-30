@@ -75,7 +75,7 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
     try {
       HttpBulkIndexer indexer = new HttpBulkIndexer("index-span", es);
       indexToServiceSpans = indexSpans(indexer, spans);
-      
+
       // remove already cached items from indexToServiceSpans, add new items to cache
       for (Map.Entry<String, Set<Pair<String>>> entry : indexToServiceSpans.entrySet()) {
         Set<Pair<String>> serviceSpansEntryCached = null;
@@ -108,7 +108,7 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
       callbackWrapper.onError(t);
     }
   }
-  /** Remove recently added items from cache */
+  /** Remove recently added items from servicespan cache */
   void clearIndexToServiceSpansCache(Map<String, Set<Pair<String>>> index, Map<String, Set<Pair<String>>> cache) {
     for (Map.Entry<String, Set<Pair<String>>> entry : index.entrySet()) {
       Set<Pair<String>> serviceSpansEntryCached = null;
@@ -121,6 +121,11 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
         serviceSpansEntryCached.removeAll(entry.getValue());
       }
     }
+  }
+
+  /** Clear servicespan cache (for testing purposes) */
+  void resetIndexToServiceSpansCache() {
+    indexToServiceSpansCache.clear();
   }
 
   /** Indexes spans and returns a mapping of indexes that may need a names update */
