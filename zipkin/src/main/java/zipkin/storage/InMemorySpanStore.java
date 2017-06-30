@@ -148,6 +148,53 @@ public final class InMemorySpanStore implements SpanStore {
     serviceToSpanNames.clear();
   }
 
+  /** Returns the count of spans evicted. */
+  int evictToRecoverSpans(int spansToRecover) {
+    int spansEvicted = 0;
+    while (spansToRecover > 0) {
+      int spansInOldestTrace = deleteOldestTrace();
+      spansToRecover -= spansInOldestTrace;
+      spansEvicted += spansInOldestTrace;
+    }
+    return spansEvicted;
+  }
+
+  /** Returns the count of spans evicted. */
+  private synchronized int deleteOldestTrace() {
+    int spansEvicted = 0;
+    long traceId = spansByTraceIdTimeStamp.delegate.lastKey()._1;
+    Collection<Pair<Long>> traceIdTimeStamps = traceIdToTraceIdTimeStamps.remove(traceId);
+    LinkedHashSet<String> serviceNames = new LinkedHashSet<>();
+    for (Iterator<Pair<Long>> traceIdTimeStampIter = traceIdTimeStamps.iterator();
+        traceIdTimeStampIter.hasNext(); ) {
+      Collection<Span> spans = spansByTraceIdTimeStamp.remove(traceIdTimeStampIter.next());
+      spansEvicted += spans.size();
+      for (Iterator<Span> spansIter = spans.iterator(); spansIter.hasNext(); ) {
+        Span span = spansIter.next();
+        serviceNames.addAll(span.serviceNames());
+      }
+    }
+    deleteServiceTraceIdTimeStamps(serviceNames, traceId);
+    return spansEvicted;
+  }
+
+  private void deleteServiceTraceIdTimeStamps(Collection<String> serviceNames, Long targetTraceId) {
+    for (Iterator<String> serviceNameIter = serviceNames.iterator(); serviceNameIter.hasNext(); ) {
+      String serviceName = serviceNameIter.next();
+      Collection<Pair<Long>> traceIdTimeStamps = serviceToTraceIdTimestamp.get(serviceName);
+      for (Iterator<Pair<Long>> traceIdTimeStampIter = traceIdTimeStamps.iterator();
+          traceIdTimeStampIter.hasNext(); ) {
+        if (traceIdTimeStampIter.next()._1.equals(targetTraceId)) {
+          traceIdTimeStampIter.remove();
+        }
+      }
+      if (traceIdTimeStamps.isEmpty()) {
+        serviceToTraceIdTimestamp.remove(serviceName);
+        serviceToSpanNames.remove(serviceName);
+      }
+    }
+  }
+
   /**
    * Used for testing. Returns all traces unconditionally.
    */
@@ -319,6 +366,12 @@ public final class InMemorySpanStore implements SpanStore {
       }
       synchronized (delegate) {
         valueContainer.add(value);
+      }
+    }
+
+    Collection<V> remove(K key) {
+      synchronized (delegate) {
+        return delegate.remove(key);
       }
     }
 
