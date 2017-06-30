@@ -37,7 +37,35 @@ import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.internal.GroupByTraceId.TRACE_DESCENDING;
 import static zipkin.internal.Util.sortedList;
 
-/** Internally, spans are indexed on 64-bit trace ID */
+/**
+ * Internally, spans are indexed on 64-bit trace ID
+ *
+ * <p>Here's an example of some traces in memory:
+ *
+ * <pre>{@code
+ * spansByTraceIdTimeStamp:
+ *    <aaaa,July 4> --> ( spanA(time:July 4, traceId:aaaa, service:foo, name:GET),
+ *                        spanB(time:July 4, traceId:aaaa, service:bar, name:GET) )
+ *    <cccc,July 4> --> ( spanC(time:July 4, traceId:aaaa, service:foo, name:GET) )
+ *    <bbbb,July 5> --> ( spanD(time:July 5, traceId:bbbb, service:biz, name:GET) )
+ *    <bbbb,July 6> --> ( spanE(time:July 6, traceId:bbbb) service:foo, name:POST )
+ *
+ * traceIdToTraceIdTimeStamps:
+ *    aaaa --> [ <aaaa,July 4> ]
+ *    bbbb --> [ <bbbb,July 5>, <bbbb,July 6> ]
+ *    cccc --> [ <cccc,July 4> ]
+ *
+ * serviceToTraceIdTimeStamp:
+ *    foo --> [ <aaaa,July 4>, <cccc,July 4>, <bbbb,July 6> ]
+ *    bar --> [ <aaaa,July 4> ]
+ *    biz --> [ <bbbb,July 5> ]
+ *
+ * serviceToSpanNames:
+ *    bar --> ( GET )
+ *    biz --> ( GET )
+ *    foo --> ( GET, POST )
+ * }</pre>
+ */
 public final class InMemorySpanStore implements SpanStore {
   /**
    * Primary source of data is this map, which includes spans ordered descending by timestamp. All
