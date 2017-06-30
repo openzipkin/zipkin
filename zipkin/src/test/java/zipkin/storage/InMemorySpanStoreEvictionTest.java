@@ -153,4 +153,33 @@ public class InMemorySpanStoreEvictionTest {
     assertThat(spansEvicted).isEqualTo(2);
     assertThat(store.getTraces(QueryRequest.builder().build())).isEmpty();
   }
+
+  /*
+ * This test does not use the default InMemoryStorage used by other tests
+ * because it needs one with a slightly different configuation.
+ *
+ * The purpose of this test it to ensure that the maxSpans setting is respected.
+ */
+  @Test
+  public void acceptAndEvict() {
+    final InMemoryStorage storageWith2MaxSpans = InMemoryStorage.builder().maxSpanCount(2).build();
+    assertThat(storageWith2MaxSpans.spanStore().getTraces(QueryRequest.builder().build()))
+      .isEmpty();
+
+    Span testSpan1 = span1.toBuilder().traceIdHigh(1L).build();
+    storageWith2MaxSpans.spanConsumer().accept(asList(testSpan1));
+    assertThat(storageWith2MaxSpans.spanStore().getTraces(QueryRequest.builder().build()))
+      .containsOnly(asList(testSpan1));
+
+    Span testSpan2 = span2.toBuilder().traceIdHigh(2L).build();
+    storageWith2MaxSpans.spanConsumer().accept(asList(testSpan2));
+    assertThat(storageWith2MaxSpans.spanStore().getTraces(QueryRequest.builder().build()))
+      .containsOnly(asList(testSpan1), asList(testSpan2));
+
+    // After adding third span, first will be evicted
+    Span testSpan3 = span3a.toBuilder().traceIdHigh(3L).build();
+    storageWith2MaxSpans.spanConsumer().accept(asList(testSpan3));
+    assertThat(storageWith2MaxSpans.spanStore().getTraces(QueryRequest.builder().build()))
+      .containsOnly(asList(testSpan2), asList(testSpan3));
+  }
 }

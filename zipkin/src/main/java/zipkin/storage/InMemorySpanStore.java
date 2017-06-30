@@ -96,6 +96,7 @@ public final class InMemorySpanStore implements SpanStore {
       new LinkedHashSetSortedMultimap<>(String::compareTo);
 
   private final boolean strictTraceId;
+  private final int maxSpanCount;
   volatile int acceptedSpanCount;
 
   // Historical constructor
@@ -105,11 +106,14 @@ public final class InMemorySpanStore implements SpanStore {
 
   InMemorySpanStore(InMemoryStorage.Builder builder) {
     this.strictTraceId = builder.strictTraceId;
+    this.maxSpanCount = builder.maxSpanCount;
   }
 
   final StorageAdapters.SpanConsumer spanConsumer = new StorageAdapters.SpanConsumer() {
     @Override public void accept(List<Span> spans) {
-      for (Span span : spans) {
+      int delta = spans.size();
+      int spansToRecover = (spansByTraceIdTimeStamp.size() + delta) - maxSpanCount;
+      evictToRecoverSpans(spansToRecover);      for (Span span : spans) {
         Long timestamp = guessTimestamp(span);
         Pair<Long> traceIdTimeStamp =
             Pair.create(span.traceId, timestamp == null ? Long.MIN_VALUE : timestamp);
@@ -343,6 +347,7 @@ public final class InMemorySpanStore implements SpanStore {
 
   static abstract class SortedMultimap<K, V> {
     private final TreeMap<K, Collection<V>> delegate;
+    private int size = 0;
 
     SortedMultimap(Comparator<K> comparator) {
       delegate = new TreeMap<>(comparator);
@@ -352,6 +357,10 @@ public final class InMemorySpanStore implements SpanStore {
 
     Set<K> keySet() {
       return delegate.keySet();
+    }
+
+    int size() {
+      return size;
     }
 
     void put(K key, V value) {
@@ -365,19 +374,22 @@ public final class InMemorySpanStore implements SpanStore {
         }
       }
       synchronized (delegate) {
-        valueContainer.add(value);
+        if (valueContainer.add(value)) size++;
       }
     }
 
     Collection<V> remove(K key) {
       synchronized (delegate) {
-        return delegate.remove(key);
+        Collection<V> value = delegate.remove(key);
+        if (value != null) size -= value.size();
+        return value;
       }
     }
 
     // not synchronized as only used for for testing
     void clear() {
       delegate.clear();
+      size = 0;
     }
 
     Collection<V> get(K key) {
