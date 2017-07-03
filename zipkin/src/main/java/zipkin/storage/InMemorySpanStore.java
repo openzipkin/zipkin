@@ -111,24 +111,7 @@ public final class InMemorySpanStore implements SpanStore {
 
   final StorageAdapters.SpanConsumer spanConsumer = new StorageAdapters.SpanConsumer() {
     @Override public void accept(List<Span> spans) {
-      int delta = spans.size();
-      int spansToRecover = (spansByTraceIdTimeStamp.size() + delta) - maxSpanCount;
-      evictToRecoverSpans(spansToRecover);      for (Span span : spans) {
-        Long timestamp = guessTimestamp(span);
-        Pair<Long> traceIdTimeStamp =
-            Pair.create(span.traceId, timestamp == null ? Long.MIN_VALUE : timestamp);
-        String spanName = span.name;
-        synchronized (InMemorySpanStore.this) {
-          spansByTraceIdTimeStamp.put(traceIdTimeStamp, span);
-          traceIdToTraceIdTimeStamps.put(span.traceId, traceIdTimeStamp);
-          acceptedSpanCount++;
-
-          for (String serviceName : span.serviceNames()) {
-            serviceToTraceIdTimestamp.put(serviceName, traceIdTimeStamp);
-            serviceToSpanNames.put(serviceName, spanName);
-          }
-        }
-      }
+      addSpans(spans);
     }
 
     @Override public String toString() {
@@ -152,8 +135,26 @@ public final class InMemorySpanStore implements SpanStore {
     serviceToSpanNames.clear();
   }
 
+  synchronized void addSpans(List<Span> spans) {
+    int delta = spans.size();
+    int spansToRecover = (spansByTraceIdTimeStamp.size() + delta) - maxSpanCount;
+    evictToRecoverSpans(spansToRecover);      for (Span span : spans) {
+      Long timestamp = guessTimestamp(span);
+      Pair<Long> traceIdTimeStamp =
+        Pair.create(span.traceId, timestamp == null ? Long.MIN_VALUE : timestamp);
+      String spanName = span.name;
+      spansByTraceIdTimeStamp.put(traceIdTimeStamp, span);
+      traceIdToTraceIdTimeStamps.put(span.traceId, traceIdTimeStamp);
+      acceptedSpanCount++;
+
+      for (String serviceName : span.serviceNames()) {
+        serviceToTraceIdTimestamp.put(serviceName, traceIdTimeStamp);
+        serviceToSpanNames.put(serviceName, spanName);
+      }
+    }
+  }
   /** Returns the count of spans evicted. */
-  int evictToRecoverSpans(int spansToRecover) {
+  synchronized int evictToRecoverSpans(int spansToRecover) {
     int spansEvicted = 0;
     while (spansToRecover > 0) {
       int spansInOldestTrace = deleteOldestTrace();
@@ -182,7 +183,7 @@ public final class InMemorySpanStore implements SpanStore {
     return spansEvicted;
   }
 
-  private void deleteServiceTraceIdTimeStamps(Collection<String> serviceNames, Long targetTraceId) {
+  private synchronized void deleteServiceTraceIdTimeStamps(Collection<String> serviceNames, Long targetTraceId) {
     for (Iterator<String> serviceNameIter = serviceNames.iterator(); serviceNameIter.hasNext(); ) {
       String serviceName = serviceNameIter.next();
       Collection<Pair<Long>> traceIdTimeStamps = serviceToTraceIdTimestamp.get(serviceName);
@@ -233,7 +234,7 @@ public final class InMemorySpanStore implements SpanStore {
     return result;
   }
 
-  Set<Long> traceIdsDescendingByTimestamp(QueryRequest request) {
+  synchronized Set<Long> traceIdsDescendingByTimestamp(QueryRequest request) {
     Collection<Pair<Long>> traceIdTimestamps = request.serviceName != null
         ? serviceToTraceIdTimestamp.get(request.serviceName)
         : spansByTraceIdTimeStamp.keySet();
@@ -251,17 +252,17 @@ public final class InMemorySpanStore implements SpanStore {
     return result;
   }
 
-  @Override public List<Span> getTrace(long traceId) {
+  @Override public synchronized List<Span> getTrace(long traceId) {
     return getTrace(0L, traceId);
   }
 
-  @Override public List<Span> getTrace(long traceIdHigh, long traceIdLow) {
+  @Override public synchronized List<Span> getTrace(long traceIdHigh, long traceIdLow) {
     List<Span> result = getRawTrace(traceIdHigh, traceIdLow);
     if (result == null) return null;
     return CorrectForClockSkew.apply(MergeById.apply(result));
   }
 
-  @Override public List<Span> getRawTrace(long traceId) {
+  @Override public synchronized List<Span> getRawTrace(long traceId) {
     return getRawTrace(0L, traceId);
   }
 
@@ -293,7 +294,7 @@ public final class InMemorySpanStore implements SpanStore {
   }
 
   @Override
-  public List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback) {
+  public synchronized List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback) {
     QueryRequest request = QueryRequest.builder()
         .endTs(endTs)
         .lookback(lookback)
