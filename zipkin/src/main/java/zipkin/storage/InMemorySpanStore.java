@@ -89,8 +89,8 @@ public final class InMemorySpanStore implements SpanStore {
    *
    * <p>QueryRequest.limit needs trace ids are returned in timestamp descending order.
    */
-  private final SortedMultimap<String, Pair<Long>> serviceToTraceIdTimestamp =
-      new TreeSetSortedMultimap<>(String::compareTo, VALUE_2_DESCENDING);
+  private final ServiceNameToTraceIdTimeStamp serviceToTraceIdTimestamp =
+      new ServiceNameToTraceIdTimeStamp();
   /** This is an index of {@link Span#name} by {@link zipkin.Endpoint#serviceName service name} */
   private final SortedMultimap<String, String> serviceToSpanNames =
       new LinkedHashSetSortedMultimap<>(String::compareTo);
@@ -179,25 +179,13 @@ public final class InMemorySpanStore implements SpanStore {
         serviceNames.addAll(span.serviceNames());
       }
     }
-    deleteServiceTraceIdTimeStamps(serviceNames, traceId);
-    return spansEvicted;
-  }
-
-  private synchronized void deleteServiceTraceIdTimeStamps(Collection<String> serviceNames, Long targetTraceId) {
     for (Iterator<String> serviceNameIter = serviceNames.iterator(); serviceNameIter.hasNext(); ) {
       String serviceName = serviceNameIter.next();
-      Collection<Pair<Long>> traceIdTimeStamps = serviceToTraceIdTimestamp.get(serviceName);
-      for (Iterator<Pair<Long>> traceIdTimeStampIter = traceIdTimeStamps.iterator();
-          traceIdTimeStampIter.hasNext(); ) {
-        if (traceIdTimeStampIter.next()._1.equals(targetTraceId)) {
-          traceIdTimeStampIter.remove();
-        }
-      }
-      if (traceIdTimeStamps.isEmpty()) {
-        serviceToTraceIdTimestamp.remove(serviceName);
+      if (serviceToTraceIdTimestamp.removeServiceIfTraceId(serviceName, traceId)) {
         serviceToSpanNames.remove(serviceName);
       }
     }
+    return spansEvicted;
   }
 
   /**
@@ -323,7 +311,37 @@ public final class InMemorySpanStore implements SpanStore {
     return right._1.compareTo(left._1);
   };
 
-  static final class TreeSetSortedMultimap<K, V> extends SortedMultimap<K, V> {
+  static final class ServiceNameToTraceIdTimeStamp extends TreeSetSortedMultimap<String, Pair<Long>> {
+    ServiceNameToTraceIdTimeStamp() {
+      super(String::compareTo, VALUE_2_DESCENDING);
+    }
+
+    @Override Set<Pair<Long>> valueContainer() {
+      return new TreeSet<>(valueComparator);
+    }
+
+    /**
+     * Deletes traceIdTimeStamps matching traceId for serviceName
+     * @return true if all traceIdTimeStamps have been removed for serviceName
+     */
+    boolean removeServiceIfTraceId(String serviceName, Long traceId) {
+      Collection<Pair<Long>> traceIdTimeStamps = get(serviceName);
+      for (Iterator<Pair<Long>> traceIdTimeStampIter = traceIdTimeStamps.iterator();
+        traceIdTimeStampIter.hasNext(); ) {
+        if (traceIdTimeStampIter.next()._1.equals(traceId)) {
+          traceIdTimeStampIter.remove();
+          size--;
+        }
+      }
+      if (traceIdTimeStamps.isEmpty()) {
+        remove(serviceName);
+        return true;
+      }
+      return false;
+    }
+  }
+
+  static class TreeSetSortedMultimap<K, V> extends SortedMultimap<K, V> {
     final Comparator<V> valueComparator;
 
     TreeSetSortedMultimap(Comparator<K> keyComparator, Comparator<V> valueComparator) {
@@ -348,7 +366,7 @@ public final class InMemorySpanStore implements SpanStore {
 
   static abstract class SortedMultimap<K, V> {
     private final TreeMap<K, Collection<V>> delegate;
-    private int size = 0;
+    int size = 0;
 
     SortedMultimap(Comparator<K> comparator) {
       delegate = new TreeMap<>(comparator);
