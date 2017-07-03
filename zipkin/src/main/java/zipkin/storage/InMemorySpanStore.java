@@ -168,20 +168,26 @@ public final class InMemorySpanStore implements SpanStore {
   private synchronized int deleteOldestTrace() {
     int spansEvicted = 0;
     long traceId = spansByTraceIdTimeStamp.delegate.lastKey()._1;
+    long latestTimeStamp = 0; // for ALL services names encountered
     Collection<Pair<Long>> traceIdTimeStamps = traceIdToTraceIdTimeStamps.remove(traceId);
     LinkedHashSet<String> serviceNames = new LinkedHashSet<>();
     for (Iterator<Pair<Long>> traceIdTimeStampIter = traceIdTimeStamps.iterator();
         traceIdTimeStampIter.hasNext(); ) {
-      Collection<Span> spans = spansByTraceIdTimeStamp.remove(traceIdTimeStampIter.next());
+      Pair<Long> traceIdTimeStamp = traceIdTimeStampIter.next();
+      latestTimeStamp = Math.max(latestTimeStamp, traceIdTimeStamp._2);
+      Collection<Span> spans = spansByTraceIdTimeStamp.remove(traceIdTimeStamp);
       spansEvicted += spans.size();
       for (Iterator<Span> spansIter = spans.iterator(); spansIter.hasNext(); ) {
         Span span = spansIter.next();
+        if (span.timestamp != null) {
+          latestTimeStamp = Math.max(latestTimeStamp, span.timestamp);
+        }
         serviceNames.addAll(span.serviceNames());
       }
     }
     for (Iterator<String> serviceNameIter = serviceNames.iterator(); serviceNameIter.hasNext(); ) {
       String serviceName = serviceNameIter.next();
-      if (serviceToTraceIdTimestamp.removeServiceIfTraceId(serviceName, traceId)) {
+      if (serviceToTraceIdTimestamp.removeServiceIfTraceId(serviceName, traceId, latestTimeStamp)) {
         serviceToSpanNames.remove(serviceName);
       }
     }
@@ -324,13 +330,17 @@ public final class InMemorySpanStore implements SpanStore {
      * Deletes traceIdTimeStamps matching traceId for serviceName
      * @return true if all traceIdTimeStamps have been removed for serviceName
      */
-    boolean removeServiceIfTraceId(String serviceName, Long traceId) {
-      Collection<Pair<Long>> traceIdTimeStamps = get(serviceName);
-      for (Iterator<Pair<Long>> traceIdTimeStampIter = traceIdTimeStamps.iterator();
-        traceIdTimeStampIter.hasNext(); ) {
-        if (traceIdTimeStampIter.next()._1.equals(traceId)) {
+    boolean removeServiceIfTraceId(String serviceName, Long traceId, Long latestTimestamp) {
+      TreeSet<Pair<Long>> traceIdTimeStamps = (TreeSet<Pair<Long>>) get(serviceName);
+      for (Iterator<Pair<Long>> traceIdTimeStampIter = traceIdTimeStamps.descendingIterator();
+          traceIdTimeStampIter.hasNext(); ) {
+        Pair<Long> traceIdTimeStamp = traceIdTimeStampIter.next();
+        if (traceIdTimeStamp._1.equals(traceId)) {
           traceIdTimeStampIter.remove();
           size--;
+        }
+        if (traceIdTimeStamp._2 > latestTimestamp) {
+          break;
         }
       }
       if (traceIdTimeStamps.isEmpty()) {
