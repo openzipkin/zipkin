@@ -21,9 +21,9 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.CorrectForClockSkew;
@@ -55,10 +55,10 @@ import static zipkin.internal.Util.sortedList;
  *    bbbb --> [ <bbbb,July 5>, <bbbb,July 6> ]
  *    cccc --> [ <cccc,July 4> ]
  *
- * serviceToTraceIdTimeStamp:
- *    foo --> [ <aaaa,July 4>, <cccc,July 4>, <bbbb,July 6> ]
- *    bar --> [ <aaaa,July 4> ]
- *    biz --> [ <bbbb,July 5> ]
+ * serviceToTraceIds:
+ *    foo --> [ <aaaa>, <cccc>, <bbbb> ]
+ *    bar --> [ <aaaa> ]
+ *    biz --> [ <bbbb> ]
  *
  * serviceToSpanNames:
  *    bar --> ( GET )
@@ -84,19 +84,14 @@ public final class InMemorySpanStore implements SpanStore {
   /** This supports span lookup by {@link zipkin.Span#traceId lower 64-bits of the trace ID} */
   private final SortedMultimap<Long, Pair<Long>> traceIdToTraceIdTimeStamps =
       new LinkedHashSetSortedMultimap<>(Long::compareTo);
-  /**
-   * This supports span lookup by {@link zipkin.Endpoint#serviceName service name}.
-   *
-   * <p>QueryRequest.limit needs trace ids are returned in timestamp descending order.
-   */
-  private final ServiceNameToTraceIdTimeStamp serviceToTraceIdTimestamp =
-      new ServiceNameToTraceIdTimeStamp();
+  /** This is an index of {@link Span#traceId} by {@link zipkin.Endpoint#serviceName service name} */
+  private final ServiceNameToTraceIds serviceToTraceIds = new ServiceNameToTraceIds();
   /** This is an index of {@link Span#name} by {@link zipkin.Endpoint#serviceName service name} */
   private final SortedMultimap<String, String> serviceToSpanNames =
       new LinkedHashSetSortedMultimap<>(String::compareTo);
 
   private final boolean strictTraceId;
-  private final int maxSpanCount;
+  final int maxSpanCount;
   volatile int acceptedSpanCount;
 
   // Historical constructor
@@ -111,6 +106,10 @@ public final class InMemorySpanStore implements SpanStore {
 
   final StorageAdapters.SpanConsumer spanConsumer = new StorageAdapters.SpanConsumer() {
     @Override public void accept(List<Span> spans) {
+      if (spans.isEmpty()) return;
+      if (spans.size() > maxSpanCount) {
+        spans = spans.subList(0, maxSpanCount);
+      }
       addSpans(spans);
     }
 
@@ -131,7 +130,7 @@ public final class InMemorySpanStore implements SpanStore {
     acceptedSpanCount = 0;
     traceIdToTraceIdTimeStamps.clear();
     spansByTraceIdTimeStamp.clear();
-    serviceToTraceIdTimestamp.clear();
+    serviceToTraceIds.clear();
     serviceToSpanNames.clear();
   }
 
@@ -149,14 +148,14 @@ public final class InMemorySpanStore implements SpanStore {
       acceptedSpanCount++;
 
       for (String serviceName : span.serviceNames()) {
-        serviceToTraceIdTimestamp.put(serviceName, traceIdTimeStamp);
+        serviceToTraceIds.put(serviceName, span.traceId);
         serviceToSpanNames.put(serviceName, spanName);
       }
     }
   }
 
   /** Returns the count of spans evicted. */
-  synchronized int evictToRecoverSpans(int spansToRecover) {
+  int evictToRecoverSpans(int spansToRecover) {
     int spansEvicted = 0;
     while (spansToRecover > 0) {
       int spansInOldestTrace = deleteOldestTrace();
@@ -167,31 +166,18 @@ public final class InMemorySpanStore implements SpanStore {
   }
 
   /** Returns the count of spans evicted. */
-  private synchronized int deleteOldestTrace() {
+  private int deleteOldestTrace() {
     int spansEvicted = 0;
     long traceId = spansByTraceIdTimeStamp.delegate.lastKey()._1;
-    long latestTimeStamp = 0; // for ALL services names encountered
     Collection<Pair<Long>> traceIdTimeStamps = traceIdToTraceIdTimeStamps.remove(traceId);
-    LinkedHashSet<String> serviceNames = new LinkedHashSet<>();
     for (Iterator<Pair<Long>> traceIdTimeStampIter = traceIdTimeStamps.iterator();
       traceIdTimeStampIter.hasNext(); ) {
       Pair<Long> traceIdTimeStamp = traceIdTimeStampIter.next();
-      latestTimeStamp = Math.max(latestTimeStamp, traceIdTimeStamp._2);
       Collection<Span> spans = spansByTraceIdTimeStamp.remove(traceIdTimeStamp);
       spansEvicted += spans.size();
-      for (Iterator<Span> spansIter = spans.iterator(); spansIter.hasNext(); ) {
-        Span span = spansIter.next();
-        if (span.timestamp != null) {
-          latestTimeStamp = Math.max(latestTimeStamp, span.timestamp);
-        }
-        serviceNames.addAll(span.serviceNames());
-      }
     }
-    for (Iterator<String> serviceNameIter = serviceNames.iterator(); serviceNameIter.hasNext(); ) {
-      String serviceName = serviceNameIter.next();
-      if (serviceToTraceIdTimestamp.removeServiceIfTraceId(serviceName, traceId, latestTimeStamp)) {
-        serviceToSpanNames.remove(serviceName);
-      }
+    for (String orphanedService : serviceToTraceIds.removeServiceIfTraceId(traceId)) {
+      serviceToSpanNames.remove(orphanedService);
     }
     return spansEvicted;
   }
@@ -230,9 +216,9 @@ public final class InMemorySpanStore implements SpanStore {
     return result;
   }
 
-  synchronized Set<Long> traceIdsDescendingByTimestamp(QueryRequest request) {
+  Set<Long> traceIdsDescendingByTimestamp(QueryRequest request) {
     Collection<Pair<Long>> traceIdTimestamps = request.serviceName != null
-        ? serviceToTraceIdTimestamp.get(request.serviceName)
+        ? traceIdTimestampsByServiceName(request.serviceName)
         : spansByTraceIdTimeStamp.keySet();
 
     long endTs = request.endTs * 1000;
@@ -279,7 +265,7 @@ public final class InMemorySpanStore implements SpanStore {
 
   @Override
   public synchronized List<String> getServiceNames() {
-    return sortedList(serviceToTraceIdTimestamp.keySet());
+    return sortedList(serviceToTraceIds.keySet());
   }
 
   @Override
@@ -319,38 +305,26 @@ public final class InMemorySpanStore implements SpanStore {
     return right._1.compareTo(left._1);
   };
 
-  static final class ServiceNameToTraceIdTimeStamp extends SortedMultimap<String, Pair<Long>> {
-    ServiceNameToTraceIdTimeStamp() {
+  static final class ServiceNameToTraceIds extends SortedMultimap<String, Long> {
+    ServiceNameToTraceIds() {
       super(String::compareTo);
     }
 
-    @Override Set<Pair<Long>> valueContainer() {
-      return new TreeSet<>(VALUE_2_DESCENDING);
+    @Override Set<Long> valueContainer() {
+      return new LinkedHashSet<>();
     }
 
-    /**
-     * Deletes traceIdTimeStamps matching traceId for serviceName
-     *
-     * @return true if all traceIdTimeStamps have been removed for serviceName
-     */
-    boolean removeServiceIfTraceId(String serviceName, Long traceId, Long latestTimestamp) {
-      TreeSet<Pair<Long>> traceIdTimeStamps = (TreeSet<Pair<Long>>) get(serviceName);
-      for (Iterator<Pair<Long>> traceIdTimeStampIter = traceIdTimeStamps.descendingIterator();
-        traceIdTimeStampIter.hasNext(); ) {
-        Pair<Long> traceIdTimeStamp = traceIdTimeStampIter.next();
-        if (traceIdTimeStamp._1.equals(traceId)) {
-          traceIdTimeStampIter.remove();
-          size--;
-        }
-        if (traceIdTimeStamp._2 > latestTimestamp) {
-          break;
+    /** Returns service names orphaned by removing the trace ID */
+    Set<String> removeServiceIfTraceId(long traceId) {
+      Set<String> result = new LinkedHashSet<>();
+      for (Map.Entry<String, Collection<Long>> entry : delegate.entrySet()) {
+        Collection<Long> traceIds = entry.getValue();
+        if (traceIds.remove(traceId) && traceIds.isEmpty()) {
+          result.add(entry.getKey());
         }
       }
-      if (traceIdTimeStamps.isEmpty()) {
-        remove(serviceName);
-        return true;
-      }
-      return false;
+      delegate.keySet().removeAll(result);
+      return result;
     }
   }
 
@@ -364,8 +338,9 @@ public final class InMemorySpanStore implements SpanStore {
     }
   }
 
+  // Not synchronized as every exposed method on the enclosing type is
   static abstract class SortedMultimap<K, V> {
-    private final TreeMap<K, Collection<V>> delegate;
+    final TreeMap<K, Collection<V>> delegate;
     int size = 0;
 
     SortedMultimap(Comparator<K> comparator) {
@@ -385,27 +360,17 @@ public final class InMemorySpanStore implements SpanStore {
     void put(K key, V value) {
       Collection<V> valueContainer = delegate.get(key);
       if (valueContainer == null) {
-        synchronized (delegate) {
-          Collection<V> old = delegate.put(key, valueContainer = valueContainer());
-          if (old != null) { // lost race
-            valueContainer = old;
-          }
-        }
+        delegate.put(key, valueContainer = valueContainer());
       }
-      synchronized (delegate) {
-        if (valueContainer.add(value)) size++;
-      }
+      if (valueContainer.add(value)) size++;
     }
 
     Collection<V> remove(K key) {
-      synchronized (delegate) {
-        Collection<V> value = delegate.remove(key);
-        if (value != null) size -= value.size();
-        return value;
-      }
+      Collection<V> value = delegate.remove(key);
+      if (value != null) size -= value.size();
+      return value;
     }
 
-    // not synchronized as only used for for testing
     void clear() {
       delegate.clear();
       size = 0;
@@ -423,5 +388,14 @@ public final class InMemorySpanStore implements SpanStore {
       sameTraceId.addAll(spansByTraceIdTimeStamp.get(traceIdTimestamp));
     }
     return sameTraceId;
+  }
+
+  private Collection<Pair<Long>> traceIdTimestampsByServiceName(String serviceName) {
+    List<Pair<Long>> traceIdTimestamps = new ArrayList<>();
+    for (long traceId : serviceToTraceIds.get(serviceName)) {
+      traceIdTimestamps.addAll(traceIdToTraceIdTimeStamps.get(traceId));
+    }
+    Collections.sort(traceIdTimestamps, VALUE_2_DESCENDING);
+    return traceIdTimestamps;
   }
 }
