@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -26,10 +26,16 @@ public final class InMemoryStorage implements StorageComponent {
 
   public static final class Builder implements StorageComponent.Builder {
     boolean strictTraceId = true;
+    int maxSpanCount = 500000;
 
     /** {@inheritDoc} */
     @Override public Builder strictTraceId(boolean strictTraceId) {
       this.strictTraceId = strictTraceId;
+      return this;
+    }
+
+    public Builder maxSpanCount(int maxSpanCount) {
+      this.maxSpanCount = maxSpanCount;
       return this;
     }
 

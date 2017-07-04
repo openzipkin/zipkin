@@ -84,8 +84,9 @@ public class ZipkinServerConfiguration {
   @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mem", matchIfMissing = true)
   @ConditionalOnMissingBean(StorageComponent.class)
   static class InMemoryConfiguration {
-    @Bean StorageComponent storage(@Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId) {
-      return InMemoryStorage.builder().strictTraceId(strictTraceId).build();
+    @Bean StorageComponent storage(@Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
+                                    @Value("${zipkin.storage.mem.max-spans:500000}") int maxSpans) {
+      return InMemoryStorage.builder().strictTraceId(strictTraceId).maxSpanCount(maxSpans).build();
     }
   }
 }
