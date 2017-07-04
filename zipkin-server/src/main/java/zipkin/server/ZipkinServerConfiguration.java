@@ -14,6 +14,7 @@
 package zipkin.server;
 
 import com.github.kristofa.brave.Brave;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -29,8 +30,6 @@ import zipkin.collector.CollectorSampler;
 import zipkin.server.brave.TracedStorageComponent;
 import zipkin.storage.InMemoryStorage;
 import zipkin.storage.StorageComponent;
-
-import java.util.Optional;
 
 @Configuration
 public class ZipkinServerConfiguration {
@@ -84,8 +83,9 @@ public class ZipkinServerConfiguration {
   @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mem", matchIfMissing = true)
   @ConditionalOnMissingBean(StorageComponent.class)
   static class InMemoryConfiguration {
-    @Bean StorageComponent storage(@Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
-                                    @Value("${zipkin.storage.mem.max-spans:500000}") int maxSpans) {
+    @Bean StorageComponent storage(
+      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
+      @Value("${zipkin.storage.mem.max-spans:500000}") int maxSpans) {
       return InMemoryStorage.builder().strictTraceId(strictTraceId).maxSpanCount(maxSpans).build();
     }
   }

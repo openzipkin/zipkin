@@ -13,6 +13,7 @@
  */
 package zipkin.storage;
 
+import static zipkin.internal.Util.checkArgument;
 import static zipkin.storage.StorageAdapters.blockingToAsync;
 
 /**
@@ -34,7 +35,9 @@ public final class InMemoryStorage implements StorageComponent {
       return this;
     }
 
+    /** Eldest traces are removed to ensure spans in memory don't exceed this value */
     public Builder maxSpanCount(int maxSpanCount) {
+      checkArgument(maxSpanCount > 0, "maxSpanCount <= 0");
       this.maxSpanCount = maxSpanCount;
       return this;
     }

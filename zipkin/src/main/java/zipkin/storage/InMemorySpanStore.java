@@ -138,7 +138,8 @@ public final class InMemorySpanStore implements SpanStore {
   synchronized void addSpans(List<Span> spans) {
     int delta = spans.size();
     int spansToRecover = (spansByTraceIdTimeStamp.size() + delta) - maxSpanCount;
-    evictToRecoverSpans(spansToRecover);      for (Span span : spans) {
+    evictToRecoverSpans(spansToRecover);
+    for (Span span : spans) {
       Long timestamp = guessTimestamp(span);
       Pair<Long> traceIdTimeStamp =
         Pair.create(span.traceId, timestamp == null ? Long.MIN_VALUE : timestamp);
@@ -153,6 +154,7 @@ public final class InMemorySpanStore implements SpanStore {
       }
     }
   }
+
   /** Returns the count of spans evicted. */
   synchronized int evictToRecoverSpans(int spansToRecover) {
     int spansEvicted = 0;
@@ -172,7 +174,7 @@ public final class InMemorySpanStore implements SpanStore {
     Collection<Pair<Long>> traceIdTimeStamps = traceIdToTraceIdTimeStamps.remove(traceId);
     LinkedHashSet<String> serviceNames = new LinkedHashSet<>();
     for (Iterator<Pair<Long>> traceIdTimeStampIter = traceIdTimeStamps.iterator();
-        traceIdTimeStampIter.hasNext(); ) {
+      traceIdTimeStampIter.hasNext(); ) {
       Pair<Long> traceIdTimeStamp = traceIdTimeStampIter.next();
       latestTimeStamp = Math.max(latestTimeStamp, traceIdTimeStamp._2);
       Collection<Span> spans = spansByTraceIdTimeStamp.remove(traceIdTimeStamp);
@@ -317,23 +319,24 @@ public final class InMemorySpanStore implements SpanStore {
     return right._1.compareTo(left._1);
   };
 
-  static final class ServiceNameToTraceIdTimeStamp extends TreeSetSortedMultimap<String, Pair<Long>> {
+  static final class ServiceNameToTraceIdTimeStamp extends SortedMultimap<String, Pair<Long>> {
     ServiceNameToTraceIdTimeStamp() {
-      super(String::compareTo, VALUE_2_DESCENDING);
+      super(String::compareTo);
     }
 
     @Override Set<Pair<Long>> valueContainer() {
-      return new TreeSet<>(valueComparator);
+      return new TreeSet<>(VALUE_2_DESCENDING);
     }
 
     /**
      * Deletes traceIdTimeStamps matching traceId for serviceName
+     *
      * @return true if all traceIdTimeStamps have been removed for serviceName
      */
     boolean removeServiceIfTraceId(String serviceName, Long traceId, Long latestTimestamp) {
       TreeSet<Pair<Long>> traceIdTimeStamps = (TreeSet<Pair<Long>>) get(serviceName);
       for (Iterator<Pair<Long>> traceIdTimeStampIter = traceIdTimeStamps.descendingIterator();
-          traceIdTimeStampIter.hasNext(); ) {
+        traceIdTimeStampIter.hasNext(); ) {
         Pair<Long> traceIdTimeStamp = traceIdTimeStampIter.next();
         if (traceIdTimeStamp._1.equals(traceId)) {
           traceIdTimeStampIter.remove();
@@ -348,19 +351,6 @@ public final class InMemorySpanStore implements SpanStore {
         return true;
       }
       return false;
-    }
-  }
-
-  static class TreeSetSortedMultimap<K, V> extends SortedMultimap<K, V> {
-    final Comparator<V> valueComparator;
-
-    TreeSetSortedMultimap(Comparator<K> keyComparator, Comparator<V> valueComparator) {
-      super(keyComparator);
-      this.valueComparator = valueComparator;
-    }
-
-    @Override Set<V> valueContainer() {
-      return new TreeSet<>(valueComparator);
     }
   }
 

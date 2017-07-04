@@ -18,14 +18,14 @@ import org.junit.Test;
 import zipkin.Annotation;
 import zipkin.Endpoint;
 import zipkin.Span;
-import zipkin.internal.Util;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.TestObjects.TODAY;
 
 public class InMemorySpanStoreEvictionTest {
-  final InMemoryStorage storage = new InMemoryStorage();
-  final InMemorySpanStore store = storage.spanStore();
+  InMemoryStorage storage = new InMemoryStorage();
+  InMemorySpanStore store = storage.spanStore();
   StorageAdapters.SpanConsumer consumer = store.spanConsumer;
 
   @Before
@@ -33,19 +33,17 @@ public class InMemorySpanStoreEvictionTest {
     storage.clear();
   }
 
-  long today = Util.midnightUTC(System.currentTimeMillis());
-
   Endpoint epA = Endpoint.create("serviceA", 127 << 24 | 1);
   Endpoint epB = Endpoint.create("serviceB", 127 << 24 | 1);
 
-  Annotation ann1 = Annotation.create((today + 1) * 1000, "sr", epA);
-  Annotation ann2 = Annotation.create((today + 2) * 1000, "ss", epA);
-  Annotation ann3 = Annotation.create((today + 3) * 1000, "sr", epA);
-  Annotation ann4 = Annotation.create((today + 4) * 1000, "ss", epA);
-  Annotation ann5 = Annotation.create((today + 5) * 1000, "sr", epA);
-  Annotation ann6 = Annotation.create((today + 6) * 1000, "ss", epA);
-  Annotation ann7 = Annotation.create((today + 7) * 1000, "sr", epB);
-  Annotation ann8 = Annotation.create((today + 8) * 1000, "ss", epB);
+  Annotation ann1 = Annotation.create((TODAY + 1) * 1000, "sr", epA);
+  Annotation ann2 = Annotation.create((TODAY + 2) * 1000, "ss", epA);
+  Annotation ann3 = Annotation.create((TODAY + 3) * 1000, "sr", epA);
+  Annotation ann4 = Annotation.create((TODAY + 4) * 1000, "ss", epA);
+  Annotation ann5 = Annotation.create((TODAY + 5) * 1000, "sr", epA);
+  Annotation ann6 = Annotation.create((TODAY + 6) * 1000, "ss", epA);
+  Annotation ann7 = Annotation.create((TODAY + 7) * 1000, "sr", epB);
+  Annotation ann8 = Annotation.create((TODAY + 8) * 1000, "ss", epB);
 
   Span span1 = Span.builder()
     .traceId(0x123)
@@ -154,15 +152,15 @@ public class InMemorySpanStoreEvictionTest {
     assertThat(store.getTraces(QueryRequest.builder().build())).isEmpty();
   }
 
-  /*
- * This test does not use the default InMemoryStorage used by other tests
- * because it needs one with a slightly different configuation.
- *
- * The purpose of this test it to ensure that the maxSpans setting is respected.
- */
+  /**
+   * This test does not use the default InMemoryStorage used by other tests
+   * because it needs one with a slightly different configuation.
+   *
+   * <p>The purpose of this test it to ensure that the maxSpans setting is respected.
+   */
   @Test
   public void acceptAndEvict() {
-    final InMemoryStorage storageWith2MaxSpans = InMemoryStorage.builder().maxSpanCount(2).build();
+    InMemoryStorage storageWith2MaxSpans = InMemoryStorage.builder().maxSpanCount(2).build();
     assertThat(storageWith2MaxSpans.spanStore().getTraces(QueryRequest.builder().build()))
       .isEmpty();
 
