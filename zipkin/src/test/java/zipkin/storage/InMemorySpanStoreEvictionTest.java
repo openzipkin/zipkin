@@ -18,13 +18,14 @@ import org.junit.Test;
 import zipkin.Annotation;
 import zipkin.Endpoint;
 import zipkin.Span;
+import zipkin.TestObjects;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.TestObjects.TODAY;
 
 public class InMemorySpanStoreEvictionTest {
-  InMemoryStorage storage = new InMemoryStorage();
+  InMemoryStorage storage = new InMemoryStorage.Builder().maxSpanCount(1000).build();
   InMemorySpanStore store = storage.spanStore();
   StorageAdapters.SpanConsumer consumer = store.spanConsumer;
 
@@ -76,6 +77,13 @@ public class InMemorySpanStoreEvictionTest {
     .duration(ann8.timestamp - ann7.timestamp)
     .id(0x654)
     .annotations(asList(ann7, ann8)).build();
+
+  @Test
+  public void dropsLargerThanMax() {
+    consumer.accept(asList(TestObjects.LOTS_OF_SPANS));
+    assertThat(store.acceptedSpanCount)
+      .isEqualTo(store.maxSpanCount);
+  }
 
   @Test
   public void evict_basic() {
