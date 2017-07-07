@@ -41,7 +41,7 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
   private final static int MAX_CACHE_DAYS = 2;
   private final static int MAX_CACHE_ENTRIES = 1000;
 
-  private final static Map<String, Set<Pair<String>>> indexToServiceSpansCache = new LinkedHashMap<String, Set<Pair<String>>>() {
+  final static Map<String, Set<Pair<String>>> indexToServiceSpansCache = new LinkedHashMap<String, Set<Pair<String>>>() {
     @Override
     protected boolean removeEldestEntry(Map.Entry<String, Set<Pair<String>>> eldest) {
       return size() > MAX_CACHE_DAYS;
