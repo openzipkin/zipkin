@@ -8,7 +8,7 @@ export default component(function spanNames() {
       this.trigger('dataSpanNames', {spans: []});
       return;
     }
-    $.ajax(`/api/v1/spans?serviceName=${serviceName}`, {
+    $.ajax(`/zipkin/api/v1/spans?serviceName=${serviceName}`, {
       type: 'GET',
       dataType: 'json'
     }).done(spans => {

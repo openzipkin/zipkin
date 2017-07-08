@@ -27,7 +27,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.filter.CharacterEncodingFilter;
@@ -36,6 +35,7 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.servlet.HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE;
 
 /**
  * Zipkin-UI is a single-page application mounted at /zipkin. For simplicity, assume paths mentioned
@@ -132,8 +132,9 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
 
   /** The UI looks for the api relative to where it is mounted, under /zipkin */
   @RequestMapping(value = "/zipkin/api/v1/**", method = GET)
-  public ModelAndView forwardApi() {
-    return new ModelAndView("forward:/api/v1/");
+  public ModelAndView forwardApi(HttpServletRequest request) {
+    String path = (String) request.getAttribute(PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+    return new ModelAndView("forward:" + path.replaceFirst("/zipkin", ""));
   }
 
   /** Borrow favicon from UI assets under /zipkin */
