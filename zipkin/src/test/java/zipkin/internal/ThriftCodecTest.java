@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -45,19 +45,19 @@ public final class ThriftCodecTest extends CodecTest {
   @Test
   public void sizeInBytes_span() throws IOException {
     Span span = TestObjects.LOTS_OF_SPANS[0];
-    assertThat(ThriftCodec.SPAN_ADAPTER.sizeInBytes(span))
+    assertThat(ThriftCodec.SPAN_WRITER.sizeInBytes(span))
         .isEqualTo(codec().writeSpan(span).length);
   }
 
   @Test
   public void sizeInBytes_trace() throws IOException {
-    assertThat(ThriftCodec.SPANS_ADAPTER.sizeInBytes(TestObjects.TRACE))
+    assertThat(ThriftCodec.listSizeInBytes(ThriftCodec.SPAN_WRITER, TestObjects.TRACE))
         .isEqualTo(codec().writeSpans(TestObjects.TRACE).length);
   }
 
   @Test
   public void sizeInBytes_links() throws IOException {
-    assertThat(ThriftCodec.DEPENDENCY_LINKS_ADAPTER.sizeInBytes(TestObjects.LINKS))
+    assertThat(ThriftCodec.listSizeInBytes(ThriftCodec.DEPENDENCY_LINK_ADAPTER, TestObjects.LINKS))
         .isEqualTo(codec().writeDependencyLinks(TestObjects.LINKS).length);
   }
 

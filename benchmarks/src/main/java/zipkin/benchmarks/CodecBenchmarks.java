@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,8 @@ import com.google.common.io.ByteStreams;
 import com.twitter.zipkin.thriftjava.Annotation;
 import com.twitter.zipkin.thriftjava.BinaryAnnotation;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.thrift.TDeserializer;
 import org.apache.thrift.TException;
@@ -98,6 +100,9 @@ public class CodecBenchmarks {
   static final byte[] clientSpanThrift = Codec.THRIFT.writeSpan(clientSpan);
   static final com.twitter.zipkin.thriftjava.Span clientSpanLibThrift =
       deserialize(clientSpanThrift);
+  static final List<Span> tenClientSpans = Collections.nCopies(10, clientSpan);
+  static final byte[] tenClientSpansJson = Codec.JSON.writeSpans(tenClientSpans);
+  static final byte[] tenClientSpansThrift = Codec.THRIFT.writeSpans(tenClientSpans);
 
   @Benchmark
   public Span readClientSpan_json_zipkin() {
@@ -105,8 +110,18 @@ public class CodecBenchmarks {
   }
 
   @Benchmark
+  public List<Span> readTenClientSpans_json_zipkin() {
+    return Codec.JSON.readSpans(tenClientSpansJson);
+  }
+
+  @Benchmark
   public Span readClientSpan_thrift_zipkin() {
     return Codec.THRIFT.readSpan(clientSpanThrift);
+  }
+
+  @Benchmark
+  public List<Span> readTenClientSpans_thrift_zipkin() {
+    return Codec.THRIFT.readSpans(tenClientSpansThrift);
   }
 
   @Benchmark
@@ -120,8 +135,18 @@ public class CodecBenchmarks {
   }
 
   @Benchmark
+  public byte[] writeTenClientSpans_json_zipkin() {
+    return Codec.JSON.writeSpans(tenClientSpans);
+  }
+
+  @Benchmark
   public byte[] writeClientSpan_thrift_zipkin() {
     return Codec.THRIFT.writeSpan(clientSpan);
+  }
+
+  @Benchmark
+  public byte[] writeTenClientSpans_thrift_zipkin() {
+    return Codec.THRIFT.writeSpans(tenClientSpans);
   }
 
   @Benchmark
@@ -202,7 +227,7 @@ public class CodecBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
-        .include(".*" + CodecBenchmarks.class.getSimpleName() + ".*")
+        .include(".*" + CodecBenchmarks.class.getSimpleName() + ".*lientSpan.*")
         .build();
 
     new Runner(opt).run();

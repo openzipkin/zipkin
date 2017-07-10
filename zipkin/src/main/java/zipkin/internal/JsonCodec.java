@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import zipkin.Annotation;
@@ -62,27 +61,26 @@ public final class JsonCodec implements Codec {
   static final long MAX_SAFE_INTEGER = 9007199254740991L;  // 53 bits
   static final String ENDPOINT_HEADER = ",\"endpoint\":";
 
-  static final JsonAdapter<Endpoint> ENDPOINT_ADAPTER = new JsonAdapter<Endpoint>() {
-    @Override
-    public Endpoint fromJson(JsonReader reader) throws IOException {
-      Endpoint.Builder result = Endpoint.builder();
-      reader.beginObject();
-      while (reader.hasNext()) {
-        String nextName = reader.nextName();
-        if (nextName.equals("serviceName")) {
-          result.serviceName(reader.nextString());
-        } else if (nextName.equals("ipv4") || nextName.equals("ipv6")) {
-          result.parseIp(reader.nextString());
-        } else if (nextName.equals("port")) {
-          result.port(reader.nextInt());
-        } else {
-          reader.skipValue();
-        }
+  static final JsonReaderAdapter<Endpoint> ENDPOINT_READER = reader -> {
+    Endpoint.Builder result = Endpoint.builder();
+    reader.beginObject();
+    while (reader.hasNext()) {
+      String nextName = reader.nextName();
+      if (nextName.equals("serviceName")) {
+        result.serviceName(reader.nextString());
+      } else if (nextName.equals("ipv4") || nextName.equals("ipv6")) {
+        result.parseIp(reader.nextString());
+      } else if (nextName.equals("port")) {
+        result.port(reader.nextInt());
+      } else {
+        reader.skipValue();
       }
-      reader.endObject();
-      return result.build();
     }
+    reader.endObject();
+    return result.build();
+  };
 
+  static final Buffer.Writer<Endpoint> ENDPOINT_WRITER = new Buffer.Writer<Endpoint>() {
     @Override public int sizeInBytes(Endpoint value) {
       int sizeInBytes = 0;
       sizeInBytes += asciiSizeInBytes("{\"serviceName\":\"");
@@ -123,33 +121,32 @@ public final class JsonCodec implements Codec {
     }
   };
 
-  static final JsonAdapter<Annotation> ANNOTATION_ADAPTER = new JsonAdapter<Annotation>() {
-    @Override
-    public Annotation fromJson(JsonReader reader) throws IOException {
-      Annotation.Builder result = Annotation.builder();
-      reader.beginObject();
-      while (reader.hasNext()) {
-        String nextName = reader.nextName();
-        if (nextName.equals("timestamp")) {
-          result.timestamp(reader.nextLong());
-        } else if (nextName.equals("value")) {
-          result.value(reader.nextString());
-        } else if (nextName.equals("endpoint") && reader.peek() != JsonToken.NULL) {
-          result.endpoint(ENDPOINT_ADAPTER.fromJson(reader));
-        } else {
-          reader.skipValue();
-        }
+  static final JsonReaderAdapter<Annotation> ANNOTATION_READER = reader -> {
+    Annotation.Builder result = Annotation.builder();
+    reader.beginObject();
+    while (reader.hasNext()) {
+      String nextName = reader.nextName();
+      if (nextName.equals("timestamp")) {
+        result.timestamp(reader.nextLong());
+      } else if (nextName.equals("value")) {
+        result.value(reader.nextString());
+      } else if (nextName.equals("endpoint") && reader.peek() != JsonToken.NULL) {
+        result.endpoint(ENDPOINT_READER.fromJson(reader));
+      } else {
+        reader.skipValue();
       }
-      reader.endObject();
-      return result.build();
     }
+    reader.endObject();
+    return result.build();
+  };
 
+  static final Buffer.Writer<Annotation> ANNOTATION_WRITER = new Buffer.Writer<Annotation>() {
     @Override public int sizeInBytes(Annotation value) {
       int sizeInBytes = 0;
       sizeInBytes += asciiSizeInBytes("{\"timestamp\":") + asciiSizeInBytes(value.timestamp);
       sizeInBytes += asciiSizeInBytes(",\"value\":\"") + jsonEscapedSizeInBytes(value.value) + 1;
       if (value.endpoint != null) {
-        sizeInBytes += ENDPOINT_HEADER.length() + ENDPOINT_ADAPTER.sizeInBytes(value.endpoint);
+        sizeInBytes += ENDPOINT_HEADER.length() + ENDPOINT_WRITER.sizeInBytes(value.endpoint);
       }
       return ++sizeInBytes;// end curly-brace
     }
@@ -159,89 +156,88 @@ public final class JsonCodec implements Codec {
       b.writeAscii(",\"value\":\"").writeJsonEscaped(value.value).writeByte('"');
       if (value.endpoint != null) {
         b.writeAscii(ENDPOINT_HEADER);
-        ENDPOINT_ADAPTER.write(value.endpoint, b);
+        ENDPOINT_WRITER.write(value.endpoint, b);
       }
       b.writeByte('}');
     }
   };
 
-  static final JsonAdapter<BinaryAnnotation> BINARY_ANNOTATION_ADAPTER = new JsonAdapter<BinaryAnnotation>() {
-    @Override
-    public BinaryAnnotation fromJson(JsonReader reader) throws IOException {
-      BinaryAnnotation.Builder result = BinaryAnnotation.builder();
-      String key = null;
-      Type type = Type.STRING;
-      boolean valueSet = false;
-      String number = null;
-      String string = null;
+  static final JsonReaderAdapter<BinaryAnnotation> BINARY_ANNOTATION_READER = reader -> {
+    BinaryAnnotation.Builder result = BinaryAnnotation.builder();
+    String key = null;
+    Type type = Type.STRING;
+    boolean valueSet = false;
+    String number = null;
+    String string = null;
 
-      reader.beginObject();
-      while (reader.hasNext()) {
-        String nextName = reader.nextName();
-        if (nextName.equals("key")) {
-          result.key(key = reader.nextString());
-        } else if (nextName.equals("value")) {
-          valueSet = true;
-          switch (reader.peek()) {
-            case BOOLEAN:
-              type = Type.BOOL;
-              result.value(reader.nextBoolean() ? new byte[] {1} : new byte[] {0});
-              break;
-            case STRING:
-              string = reader.nextString();
-              break;
-            case NUMBER:
-              number = reader.nextString();
-              break;
-            default:
-              throw new MalformedJsonException(
-                  "Expected value to be a boolean, string or number but was " + reader.peek()
-                      + " at path " + reader.getPath());
-          }
-        } else if (nextName.equals("type")) {
-          type = Type.valueOf(reader.nextString());
-        } else if (nextName.equals("endpoint") && reader.peek() != JsonToken.NULL) {
-          result.endpoint(ENDPOINT_ADAPTER.fromJson(reader));
-        } else {
-          reader.skipValue();
+    reader.beginObject();
+    while (reader.hasNext()) {
+      String nextName = reader.nextName();
+      if (nextName.equals("key")) {
+        result.key(key = reader.nextString());
+      } else if (nextName.equals("value")) {
+        valueSet = true;
+        switch (reader.peek()) {
+          case BOOLEAN:
+            type = Type.BOOL;
+            result.value(reader.nextBoolean() ? new byte[] {1} : new byte[] {0});
+            break;
+          case STRING:
+            string = reader.nextString();
+            break;
+          case NUMBER:
+            number = reader.nextString();
+            break;
+          default:
+            throw new MalformedJsonException(
+                "Expected value to be a boolean, string or number but was " + reader.peek()
+                    + " at path " + reader.getPath());
         }
-      }
-      if (key == null) {
-        throw new MalformedJsonException("No key at " + reader.getPath());
-      } else if (!valueSet) {
-        throw new MalformedJsonException("No value for key " + key + " at " + reader.getPath());
-      }
-      reader.endObject();
-      result.type(type);
-      switch (type) {
-        case BOOL:
-          return result.build();
-        case STRING:
-          return result.value(string.getBytes(UTF_8)).build();
-        case BYTES:
-          return result.value(Base64.decode(string)).build();
-        default:
-          break;
-      }
-      final byte[] value;
-      if (type == Type.I16) {
-        short v = Short.parseShort(number);
-        value = ByteBuffer.allocate(2).putShort(0, v).array();
-      } else if (type == Type.I32) {
-        int v = Integer.parseInt(number);
-        value = ByteBuffer.allocate(4).putInt(0, v).array();
-      } else if (type == Type.I64 || type == Type.DOUBLE) {
-        if (number == null) number = string;
-        long v = type == Type.I64
-            ? Long.parseLong(number)
-            : doubleToRawLongBits(Double.parseDouble(number));
-        value = ByteBuffer.allocate(8).putLong(0, v).array();
+      } else if (nextName.equals("type")) {
+        type = Type.valueOf(reader.nextString());
+      } else if (nextName.equals("endpoint") && reader.peek() != JsonToken.NULL) {
+        result.endpoint(ENDPOINT_READER.fromJson(reader));
       } else {
-        throw new AssertionError("BinaryAnnotationType " + type + " was added, but not handled");
+        reader.skipValue();
       }
-      return result.value(value).build();
     }
+    if (key == null) {
+      throw new MalformedJsonException("No key at " + reader.getPath());
+    } else if (!valueSet) {
+      throw new MalformedJsonException("No value for key " + key + " at " + reader.getPath());
+    }
+    reader.endObject();
+    result.type(type);
+    switch (type) {
+      case BOOL:
+        return result.build();
+      case STRING:
+        return result.value(string.getBytes(UTF_8)).build();
+      case BYTES:
+        return result.value(Base64.decode(string)).build();
+      default:
+        break;
+    }
+    final byte[] value;
+    if (type == Type.I16) {
+      short v = Short.parseShort(number);
+      value = ByteBuffer.allocate(2).putShort(0, v).array();
+    } else if (type == Type.I32) {
+      int v = Integer.parseInt(number);
+      value = ByteBuffer.allocate(4).putInt(0, v).array();
+    } else if (type == Type.I64 || type == Type.DOUBLE) {
+      if (number == null) number = string;
+      long v = type == Type.I64
+          ? Long.parseLong(number)
+          : doubleToRawLongBits(Double.parseDouble(number));
+      value = ByteBuffer.allocate(8).putLong(0, v).array();
+    } else {
+      throw new AssertionError("BinaryAnnotationType " + type + " was added, but not handled");
+    }
+    return result.value(value).build();
+  };
 
+  static final Buffer.Writer<BinaryAnnotation> BINARY_ANNOTATION_WRITER = new Buffer.Writer<BinaryAnnotation>() {
     @Override public int sizeInBytes(BinaryAnnotation value) {
       int sizeInBytes = 0;
       sizeInBytes += asciiSizeInBytes("{\"key\":\"") + jsonEscapedSizeInBytes(value.key);
@@ -277,7 +273,7 @@ public final class JsonCodec implements Codec {
         sizeInBytes += asciiSizeInBytes(",\"type\":\"") + utf8SizeInBytes(value.type.name()) + 1;
       }
       if (value.endpoint != null) {
-        sizeInBytes += ENDPOINT_HEADER.length() + ENDPOINT_ADAPTER.sizeInBytes(value.endpoint);
+        sizeInBytes += ENDPOINT_HEADER.length() + ENDPOINT_WRITER.sizeInBytes(value.endpoint);
       }
       return ++sizeInBytes;// end curly-brace
     }
@@ -318,57 +314,68 @@ public final class JsonCodec implements Codec {
       }
       if (value.endpoint != null) {
         b.writeAscii(ENDPOINT_HEADER);
-        ENDPOINT_ADAPTER.write(value.endpoint, b);
+        ENDPOINT_WRITER.write(value.endpoint, b);
       }
       b.writeByte('}');
     }
   };
 
-  static final JsonAdapter<Span> SPAN_ADAPTER = new JsonAdapter<Span>() {
-    @Override
-    public Span fromJson(JsonReader reader) throws IOException {
-      Span.Builder result = Span.builder();
+  static final class SpanReader implements JsonReaderAdapter<Span> {
+    Span.Builder builder;
+
+    @Override public Span fromJson(JsonReader reader) throws IOException {
+      if (builder == null) {
+        builder = Span.builder();
+      } else {
+        builder.clear();
+      }
       reader.beginObject();
       while (reader.hasNext()) {
         String nextName = reader.nextName();
         if (nextName.equals("traceId")) {
           String traceId = reader.nextString();
           if (traceId.length() == 32) {
-            result.traceIdHigh(lowerHexToUnsignedLong(traceId, 0));
+            builder.traceIdHigh(lowerHexToUnsignedLong(traceId, 0));
           }
-          result.traceId(lowerHexToUnsignedLong(traceId));
+          builder.traceId(lowerHexToUnsignedLong(traceId));
         } else if (nextName.equals("name")) {
-          result.name(reader.nextString());
+          builder.name(reader.nextString());
         } else if (nextName.equals("id")) {
-          result.id(lowerHexToUnsignedLong(reader.nextString()));
+          builder.id(lowerHexToUnsignedLong(reader.nextString()));
         } else if (nextName.equals("parentId") && reader.peek() != JsonToken.NULL) {
-          result.parentId(lowerHexToUnsignedLong(reader.nextString()));
+          builder.parentId(lowerHexToUnsignedLong(reader.nextString()));
         } else if (nextName.equals("timestamp") && reader.peek() != JsonToken.NULL) {
-          result.timestamp(reader.nextLong());
+          builder.timestamp(reader.nextLong());
         } else if (nextName.equals("duration") && reader.peek() != JsonToken.NULL) {
-          result.duration(reader.nextLong());
+          builder.duration(reader.nextLong());
         } else if (nextName.equals("annotations")) {
           reader.beginArray();
           while (reader.hasNext()) {
-            result.addAnnotation(ANNOTATION_ADAPTER.fromJson(reader));
+            builder.addAnnotation(ANNOTATION_READER.fromJson(reader));
           }
           reader.endArray();
         } else if (nextName.equals("binaryAnnotations")) {
           reader.beginArray();
           while (reader.hasNext()) {
-            result.addBinaryAnnotation(BINARY_ANNOTATION_ADAPTER.fromJson(reader));
+            builder.addBinaryAnnotation(BINARY_ANNOTATION_READER.fromJson(reader));
           }
           reader.endArray();
         } else if (nextName.equals("debug") && reader.peek() != JsonToken.NULL) {
-          if (reader.nextBoolean()) result.debug(true);
+          if (reader.nextBoolean()) builder.debug(true);
         } else {
           reader.skipValue();
         }
       }
       reader.endObject();
-      return result.build();
+      return builder.build();
     }
 
+    @Override public String toString(){
+      return "Span";
+    }
+  }
+
+  static final Buffer.Writer<Span> SPAN_WRITER = new Buffer.Writer<Span>() {
     @Override public int sizeInBytes(Span value) {
       int sizeInBytes = 0;
       if (value.traceIdHigh != 0) sizeInBytes += 16;
@@ -386,11 +393,11 @@ public final class JsonCodec implements Codec {
       }
       if (!value.annotations.isEmpty()) {
         sizeInBytes += asciiSizeInBytes(",\"annotations\":");
-        sizeInBytes += JsonCodec.sizeInBytes(ANNOTATION_ADAPTER, value.annotations);
+        sizeInBytes += JsonCodec.sizeInBytes(ANNOTATION_WRITER, value.annotations);
       }
       if (!value.binaryAnnotations.isEmpty()) {
         sizeInBytes += asciiSizeInBytes(",\"binaryAnnotations\":");
-        sizeInBytes += JsonCodec.sizeInBytes(BINARY_ANNOTATION_ADAPTER, value.binaryAnnotations);
+        sizeInBytes += JsonCodec.sizeInBytes(BINARY_ANNOTATION_WRITER, value.binaryAnnotations);
       }
       if (value.debug != null && value.debug) {
         sizeInBytes += asciiSizeInBytes(",\"debug\":true");
@@ -417,11 +424,11 @@ public final class JsonCodec implements Codec {
       }
       if (!value.annotations.isEmpty()) {
         b.writeAscii(",\"annotations\":");
-        writeList(ANNOTATION_ADAPTER, value.annotations, b);
+        writeList(ANNOTATION_WRITER, value.annotations, b);
       }
       if (!value.binaryAnnotations.isEmpty()) {
         b.writeAscii(",\"binaryAnnotations\":");
-        writeList(BINARY_ANNOTATION_ADAPTER, value.binaryAnnotations, b);
+        writeList(BINARY_ANNOTATION_WRITER, value.binaryAnnotations, b);
       }
       if (value.debug != null && value.debug) {
         b.writeAscii(",\"debug\":true");
@@ -436,26 +443,21 @@ public final class JsonCodec implements Codec {
 
   @Override
   public Span readSpan(byte[] bytes) {
-    checkArgument(bytes.length > 0, "Empty input reading Span");
-    try {
-      return SPAN_ADAPTER.fromJson(jsonReader(bytes));
-    } catch (Exception e) {
-      throw exceptionReading("Span", bytes, e);
-    }
+    return read(new SpanReader(), bytes);
   }
 
   @Override public int sizeInBytes(Span value) {
-    return SPAN_ADAPTER.sizeInBytes(value);
+    return SPAN_WRITER.sizeInBytes(value);
   }
 
   @Override
   public byte[] writeSpan(Span value) {
-    return write(SPAN_ADAPTER, value);
+    return write(SPAN_WRITER, value);
   }
 
   /** Exposed for {@link Endpoint#toString()} */
   public static byte[] writeEndpoint(Endpoint value) {
-    return write(ENDPOINT_ADAPTER, value);
+    return write(ENDPOINT_WRITER, value);
   }
 
   /** Exposed for ElasticSearch HttpBulkIndexer */
@@ -465,64 +467,63 @@ public final class JsonCodec implements Codec {
 
   @Override
   public List<Span> readSpans(byte[] bytes) {
-    checkArgument(bytes.length > 0, "Empty input reading List<Span>");
-    return readList(SPAN_ADAPTER, bytes);
+    return readList(new SpanReader(), bytes);
   }
 
   @Override
   public byte[] writeSpans(List<Span> value) {
-    if (value.isEmpty()) return new byte[] {'[', ']'};
-    Buffer result = new Buffer(sizeInBytes(SPAN_ADAPTER, value));
-    writeList(SPAN_ADAPTER, value, result);
-    return result.toByteArray();
+    return writeList(SPAN_WRITER, value);
   }
 
   @Override
   public byte[] writeTraces(List<List<Span>> traces) {
     // Get the encoded size of the nested list so that we don't need to grow the buffer
     int sizeInBytes = overheadInBytes(traces);
-    for (int i = 0; i < traces.size(); i++) {
+    for (int i = 0, length = traces.size(); i < length; i++) {
       List<Span> spans = traces.get(i);
       sizeInBytes += overheadInBytes(spans);
-      for (int j = 0; j < spans.size(); j++) {
-        sizeInBytes += SPAN_ADAPTER.sizeInBytes(spans.get(j));
+      for (int j = 0, jLength = spans.size(); j < jLength; j++) {
+        sizeInBytes += SPAN_WRITER.sizeInBytes(spans.get(j));
       }
     }
 
     Buffer out = new Buffer(sizeInBytes);
     out.writeByte('['); // start list of traces
-    for (Iterator<List<Span>> trace = traces.iterator(); trace.hasNext(); ) {
-      writeList(SPAN_ADAPTER, trace.next(), out);
-      if (trace.hasNext()) out.writeByte(',');
+    for (int i = 0, length = traces.size(); i < length; i++) {
+      writeList(SPAN_WRITER, traces.get(i), out);
+      if (i + 1 < length) out.writeByte(',');
     }
     out.writeByte(']'); // stop list of traces
     return out.toByteArray();
   }
 
   public List<List<Span>> readTraces(byte[] bytes) {
-    JsonReader reader = jsonReader(bytes);
-    List<List<Span>> result = new LinkedList<>(); // cause we don't know how long it will be
-    try {
+    return readList(new SpanListReader(), bytes);
+  }
+
+  static final class SpanListReader implements JsonReaderAdapter<List<Span>> {
+    SpanReader spanReader;
+
+    @Override public List<Span> fromJson(JsonReader reader) throws IOException {
       reader.beginArray();
-      while (reader.hasNext()) {
-        reader.beginArray();
-        List<Span> trace = new LinkedList<>(); // cause we don't know how long it will be
-        while (reader.hasNext()) {
-          trace.add(SPAN_ADAPTER.fromJson(reader));
-        }
+      if (!reader.hasNext()) {
         reader.endArray();
-        result.add(trace);
+        return Collections.emptyList();
       }
+      List<Span> result = new LinkedList<>(); // because we don't know how long it will be
+      if (spanReader == null) spanReader = new SpanReader();
+      while (reader.hasNext()) result.add(spanReader.fromJson(reader));
       reader.endArray();
       return result;
-    } catch (Exception e) {
-      throw exceptionReading("List<List<Span>>", bytes, e);
+    }
+
+    @Override public String toString() {
+      return "List<Span>";
     }
   }
 
-  static final JsonAdapter<DependencyLink> DEPENDENCY_LINK_ADAPTER = new JsonAdapter<DependencyLink>() {
-    @Override
-    public DependencyLink fromJson(JsonReader reader) throws IOException {
+  static final JsonReaderAdapter<DependencyLink> DEPENDENCY_LINK_READER = new JsonReaderAdapter<DependencyLink>() {
+    @Override public DependencyLink fromJson(JsonReader reader) throws IOException {
       DependencyLink.Builder result = DependencyLink.builder();
       reader.beginObject();
       while (reader.hasNext()) {
@@ -541,6 +542,12 @@ public final class JsonCodec implements Codec {
       return result.build();
     }
 
+    @Override public String toString() {
+      return "DependencyLink";
+    }
+  };
+
+  static final Buffer.Writer<DependencyLink> DEPENDENCY_LINK_WRITER = new Buffer.Writer<DependencyLink>() {
     @Override public int sizeInBytes(DependencyLink value) {
       int sizeInBytes = 0;
       sizeInBytes += asciiSizeInBytes("{\"parent\":\"") + jsonEscapedSizeInBytes(value.parent);
@@ -562,39 +569,35 @@ public final class JsonCodec implements Codec {
 
   @Override
   public DependencyLink readDependencyLink(byte[] bytes) {
-    checkArgument(bytes.length > 0, "Empty input reading DependencyLink");
-    try {
-      return DEPENDENCY_LINK_ADAPTER.fromJson(jsonReader(bytes));
-    } catch (Exception e) {
-      throw exceptionReading("Span", bytes, e);
-    }
+    return read(DEPENDENCY_LINK_READER, bytes);
   }
 
   @Override
   public byte[] writeDependencyLink(DependencyLink value) {
-    return write(DEPENDENCY_LINK_ADAPTER, value);
+    return write(DEPENDENCY_LINK_WRITER, value);
   }
 
   @Override
   public List<DependencyLink> readDependencyLinks(byte[] bytes) {
-    checkArgument(bytes.length > 0, "Empty input reading List<DependencyLink>");
-    return readList(DEPENDENCY_LINK_ADAPTER, bytes);
+    return readList(DEPENDENCY_LINK_READER, bytes);
   }
 
   @Override
   public byte[] writeDependencyLinks(List<DependencyLink> value) {
-    Buffer result = new Buffer(sizeInBytes(DEPENDENCY_LINK_ADAPTER, value));
-    writeList(DEPENDENCY_LINK_ADAPTER, value, result);
-    return result.toByteArray();
+    return writeList(DEPENDENCY_LINK_WRITER, value);
   }
 
-  static final JsonAdapter<String> STRING_ADAPTER = new JsonAdapter<String>() {
-
-    @Override
-    public String fromJson(JsonReader reader) throws IOException {
+  static final JsonReaderAdapter<String> STRING_READER = new JsonReaderAdapter<String>() {
+    @Override public String fromJson(JsonReader reader) throws IOException {
       return reader.nextString();
     }
 
+    @Override public String toString() {
+      return "String";
+    }
+  };
+
+  static final Buffer.Writer<String> STRING_WRITER = new Buffer.Writer<String>() {
     @Override public int sizeInBytes(String value) {
       return jsonEscapedSizeInBytes(value) + 2; // For quotes
     }
@@ -602,32 +605,37 @@ public final class JsonCodec implements Codec {
     @Override public void write(String value, Buffer buffer) {
       buffer.writeByte('"').writeJsonEscaped(value).writeByte('"');
     }
+
+    @Override public String toString() {
+      return "String";
+    }
   };
 
   public List<String> readStrings(byte[] bytes) {
-    checkArgument(bytes.length > 0, "Empty input reading List<String>");
-    return readList(STRING_ADAPTER, bytes);
+    return readList(STRING_READER, bytes);
   }
 
   public byte[] writeStrings(List<String> value) {
-    Buffer result = new Buffer(sizeInBytes(STRING_ADAPTER, value));
-    writeList(STRING_ADAPTER, value, result);
-    return result.toByteArray();
+    return writeList(STRING_WRITER, value);
   }
 
-  static <T> List<T> readList(JsonAdapter<T> adapter, byte[] bytes) {
+  static <T> T read(JsonReaderAdapter<T> adapter, byte[] bytes) {
+    checkArgument(bytes.length > 0, "Empty input reading %s", adapter);
+    try {
+      return adapter.fromJson(jsonReader(bytes));
+    } catch (Exception e) {
+      throw exceptionReading(adapter.toString(), bytes, e);
+    }
+  }
+
+  static <T> List<T> readList(JsonReaderAdapter<T> adapter, byte[] bytes) {
+    checkArgument(bytes.length > 0, "Empty input reading List<%s>", adapter);
     JsonReader reader = jsonReader(bytes);
     List<T> result;
     try {
       reader.beginArray();
-      if (reader.hasNext()) {
-        result = new LinkedList<>(); // cause we don't know how long it will be
-      } else {
-        result = Collections.emptyList();
-      }
-      while (reader.hasNext()) {
-        result.add(adapter.fromJson(reader));
-      }
+      result = reader.hasNext() ? new LinkedList<>() : Collections.emptyList();
+      while (reader.hasNext()) result.add(adapter.fromJson(reader));
       reader.endArray();
       return result;
     } catch (Exception e) {
@@ -635,7 +643,7 @@ public final class JsonCodec implements Codec {
     }
   }
 
-  private static JsonReader jsonReader(byte[] bytes) {
+  static JsonReader jsonReader(byte[] bytes) {
     return new JsonReader(new InputStreamReader(new ByteArrayInputStream(bytes), UTF_8));
   }
 
@@ -688,6 +696,13 @@ public final class JsonCodec implements Codec {
     return sizeInBytes;
   }
 
+  static <T> byte[] writeList(Buffer.Writer<T> writer, List<T> value) {
+    if (value.isEmpty()) return new byte[] {'[', ']'};
+    Buffer result = new Buffer(JsonCodec.sizeInBytes(writer, value));
+    writeList(writer, value, result);
+    return result.toByteArray();
+  }
+
   static <T> void writeList(Buffer.Writer<T> writer, List<T> value, Buffer b) {
     b.writeByte('[');
     for (int i = 0, length = value.size(); i < length; ) {
@@ -704,7 +719,7 @@ public final class JsonCodec implements Codec {
     throw new IllegalArgumentException(message, e);
   }
 
-  static abstract class JsonAdapter<T> implements Buffer.Writer<T> {
-    abstract T fromJson(JsonReader reader) throws IOException;
+  interface JsonReaderAdapter<T> {
+    T fromJson(JsonReader reader) throws IOException;
   }
 }
