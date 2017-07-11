@@ -16,6 +16,7 @@ package zipkin;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -189,9 +190,8 @@ public final class Span implements Comparable<Span>, Serializable { // for Spark
     Long parentId;
     Long timestamp;
     Long duration;
-    // Not LinkedHashSet, as the constructor makes a sorted copy
-    HashSet<Annotation> annotations;
-    HashSet<BinaryAnnotation> binaryAnnotations;
+    ArrayList<Annotation> annotations;
+    ArrayList<BinaryAnnotation> binaryAnnotations;
     Boolean debug;
     boolean isClientSpan; // internal
 
@@ -249,13 +249,25 @@ public final class Span implements Comparable<Span>, Serializable { // for Spark
       // When we move to span model 2, remove this code in favor of using Span.kind == CLIENT
       boolean thisIsClientSpan = this.isClientSpan;
       boolean thatIsClientSpan = false;
-      for (Annotation a : that.annotations) {
-        if (a.value.equals(Constants.CLIENT_SEND)) thatIsClientSpan = true;
-        addAnnotation(a);
+
+      // This guards to ensure we don't add duplicate annotations or binary annotations on merge
+      if (!that.annotations.isEmpty()) {
+        boolean thisHadNoAnnotations = this.annotations == null;
+        for (Annotation a : that.annotations) {
+          if (a.value.equals(Constants.CLIENT_SEND)) thatIsClientSpan = true;
+          if (thisHadNoAnnotations || !this.annotations.contains(a)) {
+            addAnnotation(a);
+          }
+        }
       }
 
-      for (BinaryAnnotation a : that.binaryAnnotations) {
-        addBinaryAnnotation(a);
+      if (!that.binaryAnnotations.isEmpty()) {
+        boolean thisHadNoBinaryAnnotations = this.binaryAnnotations == null;
+        for (BinaryAnnotation a : that.binaryAnnotations) {
+          if (thisHadNoBinaryAnnotations || !this.binaryAnnotations.contains(a)) {
+            addBinaryAnnotation(a);
+          }
+        }
       }
 
       // Single timestamp makes duration easy: just choose max
@@ -340,7 +352,7 @@ public final class Span implements Comparable<Span>, Serializable { // for Spark
 
     /** @see Span#annotations */
     public Builder addAnnotation(Annotation annotation) {
-      if (annotations == null) annotations = new HashSet<>();
+      if (annotations == null) annotations = new ArrayList<>(4);
       if (annotation.value.equals(Constants.CLIENT_SEND)) isClientSpan = true;
       annotations.add(annotation);
       return this;
@@ -359,7 +371,7 @@ public final class Span implements Comparable<Span>, Serializable { // for Spark
 
     /** @see Span#binaryAnnotations */
     public Builder addBinaryAnnotation(BinaryAnnotation binaryAnnotation) {
-      if (binaryAnnotations == null) binaryAnnotations = new HashSet<>();
+      if (binaryAnnotations == null) binaryAnnotations = new ArrayList<>(4);
       binaryAnnotations.add(binaryAnnotation);
       return this;
     }
