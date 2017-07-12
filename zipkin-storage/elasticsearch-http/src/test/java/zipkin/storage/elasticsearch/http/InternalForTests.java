@@ -43,6 +43,8 @@ public class InternalForTests {
 
   public static void clear(ElasticsearchHttpStorage es) throws IOException {
     es.clear();
+    // clear servicespan cache in order to prevent tests breaking
+    ((ElasticsearchHttpSpanConsumer)es.asyncSpanConsumer()).resetIndexToServiceSpansCache();
   }
 
   public static void flushOnWrites(ElasticsearchHttpStorage.Builder builder) {
