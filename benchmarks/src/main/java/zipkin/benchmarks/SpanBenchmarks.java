@@ -33,6 +33,8 @@ import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.Span;
+import zipkin.TraceKeys;
+import zipkin.internal.Util;
 
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
@@ -46,10 +48,12 @@ public class SpanBenchmarks {
   static final Endpoint web = Endpoint.create("web", 124 << 24 | 13 << 16 | 90 << 8 | 3);
   static final Endpoint app =
       Endpoint.builder().serviceName("app").ipv4(172 << 24 | 17 << 16 | 2).port(8080).build();
-  static final Endpoint db =
-      Endpoint.builder().serviceName("db").ipv4(172 << 24 | 17 << 16 | 2).port(3306).build();
 
-  final Span.Builder sharedBuilder = Span.builder();
+  final Span.Builder sharedBuilder;
+
+  public SpanBenchmarks() {
+    sharedBuilder = buildClientOnlySpan(Span.builder()).toBuilder();
+  }
 
   @Benchmark
   public Span buildLocalSpan() {
@@ -63,32 +67,41 @@ public class SpanBenchmarks {
         .build();
   }
 
+  static final long traceId = Util.lowerHexToUnsignedLong("86154a4ba6e91385");
+  static final long spanId = Util.lowerHexToUnsignedLong("4d1e00c0db9010db");
+  static final Endpoint frontend = Endpoint.create("frontend", 127 << 24 | 1);
+  static final Endpoint backend = Endpoint.builder()
+    .serviceName("backend")
+    .ipv4(192 << 24 | 168 << 16 | 99 << 8 | 101)
+    .port(9000)
+    .build();
+
   @Benchmark
   public Span buildClientOnlySpan() {
-    return Span.builder()
-        .traceId(1L)
-        .id(1L)
-        .name("")
-        .timestamp(1444438900948000L)
-        .duration(31000L)
-        .addAnnotation(Annotation.create(1444438900948000L, Constants.CLIENT_SEND, app))
-        .addAnnotation(Annotation.create(1444438900979000L, Constants.CLIENT_RECV, app))
-        .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, db))
-        .build();
+    return buildClientOnlySpan(Span.builder());
+  }
+
+  static Span buildClientOnlySpan(Span.Builder builder) {
+    return builder
+      .traceId(traceId)
+      .parentId(traceId)
+      .id(spanId)
+      .name("get")
+      .timestamp(1472470996199000L)
+      .duration(207000L)
+      .addAnnotation(Annotation.create(1472470996199000L, Constants.CLIENT_SEND, frontend))
+      .addAnnotation(Annotation.create(1472470996238000L, Constants.WIRE_SEND, frontend))
+      .addAnnotation(Annotation.create(1472470996403000L, Constants.WIRE_RECV, frontend))
+      .addAnnotation(Annotation.create(1472470996406000L, Constants.CLIENT_RECV, frontend))
+      .addBinaryAnnotation(BinaryAnnotation.create(TraceKeys.HTTP_PATH, "/api", frontend))
+      .addBinaryAnnotation(BinaryAnnotation.create("clnt/finagle.version", "6.45.0", frontend))
+      .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, backend))
+      .build();
   }
 
   @Benchmark
   public Span buildClientOnlySpan_clear() {
-    return sharedBuilder.clear()
-        .traceId(1L)
-        .id(1L)
-        .name("")
-        .timestamp(1444438900948000L)
-        .duration(31000L)
-        .addAnnotation(Annotation.create(1444438900948000L, Constants.CLIENT_SEND, app))
-        .addAnnotation(Annotation.create(1444438900979000L, Constants.CLIENT_RECV, app))
-        .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, db))
-        .build();
+    return buildClientOnlySpan(sharedBuilder.clear());
   }
 
   @Benchmark
