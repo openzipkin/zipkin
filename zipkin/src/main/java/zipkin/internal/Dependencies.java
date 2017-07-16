@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import zipkin.DependencyLink;
 
-import static zipkin.internal.ThriftCodec.DEPENDENCY_LINKS_ADAPTER;
+import static zipkin.internal.ThriftCodec.DEPENDENCY_LINK_ADAPTER;
 import static zipkin.internal.ThriftCodec.Field;
 import static zipkin.internal.ThriftCodec.TYPE_I64;
 import static zipkin.internal.ThriftCodec.TYPE_LIST;
@@ -117,7 +117,7 @@ public final class Dependencies {
         } else if (field.isEqualTo(END_TS)) {
           endTs = bytes.getLong();
         } else if (field.isEqualTo(LINKS)) {
-          links = DEPENDENCY_LINKS_ADAPTER.read(bytes);
+          links = ThriftCodec.readList(DEPENDENCY_LINK_ADAPTER, bytes);
         } else {
           skip(bytes, field.type);
         }
@@ -130,7 +130,7 @@ public final class Dependencies {
       int sizeInBytes = 0;
       sizeInBytes += 3 + 8; // START_TS
       sizeInBytes += 3 + 8; // END_TS
-      sizeInBytes += 3 + DEPENDENCY_LINKS_ADAPTER.sizeInBytes(value.links);
+      sizeInBytes += 3 + ThriftCodec.listSizeInBytes(DEPENDENCY_LINK_ADAPTER, value.links);
       sizeInBytes++; //TYPE_STOP
       return sizeInBytes;
     }
@@ -145,7 +145,7 @@ public final class Dependencies {
       buffer.writeLong(value.endTs);
 
       LINKS.write(buffer);
-      DEPENDENCY_LINKS_ADAPTER.write(value.links, buffer);
+      ThriftCodec.writeList(DEPENDENCY_LINK_ADAPTER, value.links, buffer);
 
       buffer.writeByte(TYPE_STOP);
     }

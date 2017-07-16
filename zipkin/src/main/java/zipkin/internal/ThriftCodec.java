@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -66,36 +66,52 @@ public final class ThriftCodec implements Codec {
    * @throws {@linkplain IllegalArgumentException} if the span couldn't be decoded
    */
   public Span readSpan(ByteBuffer bytes) {
-    return read(SPAN_ADAPTER, bytes);
+    return read(new SpanReader(), bytes);
   }
 
   @Override
   public Span readSpan(byte[] bytes) {
-    return read(SPAN_ADAPTER, ByteBuffer.wrap(bytes));
+    return read(new SpanReader(), ByteBuffer.wrap(bytes));
   }
 
   @Override public int sizeInBytes(Span value) {
-    return SPAN_ADAPTER.sizeInBytes(value);
+    return SPAN_WRITER.sizeInBytes(value);
   }
 
   @Override
   public byte[] writeSpan(Span value) {
-    return write(SPAN_ADAPTER, value);
+    return write(SPAN_WRITER, value);
   }
 
   @Override
   public List<Span> readSpans(byte[] bytes) {
-    return read(SPANS_ADAPTER, ByteBuffer.wrap(bytes));
+    return readList(new SpanReader(), ByteBuffer.wrap(bytes));
   }
 
   @Override
   public byte[] writeSpans(List<Span> value) {
-    return write(SPANS_ADAPTER, value);
+    return writeList(SPAN_WRITER, value);
   }
 
   @Override
-  public byte[] writeTraces(List<List<Span>> value) {
-    return write(TRACES_ADAPTER, value);
+  public byte[] writeTraces(List<List<Span>> values) {
+    int traceCount = values.size();
+    // Get the encoded size of the nested list so that we don't need to grow the buffer
+    int sizeInBytes = 5;
+    for (int i = 0; i < traceCount; i++) {
+      sizeInBytes += listSizeInBytes(SPAN_WRITER, values.get(i));
+    }
+
+    Buffer out = new Buffer(sizeInBytes);
+    writeListBegin(out, traceCount);
+    try {
+      for (int i = 0; i < traceCount; i++) {
+        writeList(SPAN_WRITER, values.get(i));
+      }
+    } catch (RuntimeException e) {
+      throw assertionError("Could not write " + values + " as TBinary", e);
+    }
+    return out.toByteArray();
   }
 
   interface ThriftReader<T> {
@@ -227,8 +243,7 @@ public final class ThriftCodec implements Codec {
     final Field TYPE = new Field(TYPE_I32, 3);
     final Field ENDPOINT = new Field(TYPE_STRUCT, 4);
 
-    @Override
-    public BinaryAnnotation read(ByteBuffer bytes) {
+    @Override public BinaryAnnotation read(ByteBuffer bytes) {
       BinaryAnnotation.Builder result = BinaryAnnotation.builder();
       Field field;
 
@@ -282,27 +297,28 @@ public final class ThriftCodec implements Codec {
     }
   };
 
-  static final ThriftAdapter<List<Annotation>> ANNOTATIONS_ADAPTER =
-      new ListAdapter<>(ANNOTATION_ADAPTER);
-  static final ThriftAdapter<List<BinaryAnnotation>> BINARY_ANNOTATIONS_ADAPTER =
-      new ListAdapter<>(BINARY_ANNOTATION_ADAPTER);
+  static final class SpanReader implements ThriftReader<Span> {
 
-  static final ThriftAdapter<Span> SPAN_ADAPTER = new ThriftAdapter<Span>() {
+    static final Field TRACE_ID = new Field(TYPE_I64, 1);
+    static final Field TRACE_ID_HIGH = new Field(TYPE_I64, 12);
+    static final Field NAME = new Field(TYPE_STRING, 3);
+    static final Field ID = new Field(TYPE_I64, 4);
+    static final Field PARENT_ID = new Field(TYPE_I64, 5);
+    static final Field ANNOTATIONS = new Field(TYPE_LIST, 6);
+    static final Field BINARY_ANNOTATIONS = new Field(TYPE_LIST, 8);
+    static final Field DEBUG = new Field(TYPE_BOOL, 9);
+    static final Field TIMESTAMP = new Field(TYPE_I64, 10);
+    static final Field DURATION = new Field(TYPE_I64, 11);
 
-    final Field TRACE_ID = new Field(TYPE_I64, 1);
-    final Field TRACE_ID_HIGH = new Field(TYPE_I64, 12);
-    final Field NAME = new Field(TYPE_STRING, 3);
-    final Field ID = new Field(TYPE_I64, 4);
-    final Field PARENT_ID = new Field(TYPE_I64, 5);
-    final Field ANNOTATIONS = new Field(TYPE_LIST, 6);
-    final Field BINARY_ANNOTATIONS = new Field(TYPE_LIST, 8);
-    final Field DEBUG = new Field(TYPE_BOOL, 9);
-    final Field TIMESTAMP = new Field(TYPE_I64, 10);
-    final Field DURATION = new Field(TYPE_I64, 11);
+    Span.Builder builder = Span.builder();
 
-    @Override
-    public Span read(ByteBuffer bytes) {
-      Span.Builder result = Span.builder();
+    @Override public Span read(ByteBuffer bytes) {
+      if (builder == null) {
+        builder = Span.builder();
+      } else {
+        builder.clear();
+      }
+
       Field field;
 
       while (true) {
@@ -310,33 +326,47 @@ public final class ThriftCodec implements Codec {
         if (field.type == TYPE_STOP) break;
 
         if (field.isEqualTo(TRACE_ID_HIGH)) {
-          result.traceIdHigh(bytes.getLong());
+          builder.traceIdHigh(bytes.getLong());
         } else if (field.isEqualTo(TRACE_ID)) {
-          result.traceId(bytes.getLong());
+          builder.traceId(bytes.getLong());
         } else if (field.isEqualTo(NAME)) {
-          result.name(readUtf8(bytes));
+          builder.name(readUtf8(bytes));
         } else if (field.isEqualTo(ID)) {
-          result.id(bytes.getLong());
+          builder.id(bytes.getLong());
         } else if (field.isEqualTo(PARENT_ID)) {
-          result.parentId(bytes.getLong());
+          builder.parentId(bytes.getLong());
         } else if (field.isEqualTo(ANNOTATIONS)) {
-          result.annotations(ANNOTATIONS_ADAPTER.read(bytes));
+          byte ignoredType = bytes.get();
+          int length = guardLength(bytes, CONTAINER_LENGTH_LIMIT);
+          for (int i = 0; i < length; i++) {
+            builder.addAnnotation(ANNOTATION_ADAPTER.read(bytes));
+          }
         } else if (field.isEqualTo(BINARY_ANNOTATIONS)) {
-          result.binaryAnnotations(BINARY_ANNOTATIONS_ADAPTER.read(bytes));
+          byte ignoredType = bytes.get();
+          int length = guardLength(bytes, CONTAINER_LENGTH_LIMIT);
+          for (int i = 0; i < length; i++) {
+            builder.addBinaryAnnotation(BINARY_ANNOTATION_ADAPTER.read(bytes));
+          }
         } else if (field.isEqualTo(DEBUG)) {
-          result.debug(bytes.get() == 1);
+          builder.debug(bytes.get() == 1);
         } else if (field.isEqualTo(TIMESTAMP)) {
-          result.timestamp(bytes.getLong());
+          builder.timestamp(bytes.getLong());
         } else if (field.isEqualTo(DURATION)) {
-          result.duration(bytes.getLong());
+          builder.duration(bytes.getLong());
         } else {
           skip(bytes, field.type);
         }
       }
 
-      return result.build();
+      return builder.build();
     }
 
+    @Override public String toString() {
+      return "Span";
+    }
+  }
+
+  static final Buffer.Writer<Span> SPAN_WRITER = new Buffer.Writer<Span>() {
     @Override public int sizeInBytes(Span value) {
       int sizeInBytes = 0;
       if (value.traceIdHigh != 0) sizeInBytes += 3 + 8;
@@ -344,9 +374,8 @@ public final class ThriftCodec implements Codec {
       sizeInBytes += 3 + 4 + Buffer.utf8SizeInBytes(value.name);
       sizeInBytes += 3 + 8;// ID
       if (value.parentId != null) sizeInBytes += 3 + 8;
-      sizeInBytes += 3 + ANNOTATIONS_ADAPTER.sizeInBytes(value.annotations);
-      sizeInBytes += 3 + BINARY_ANNOTATIONS_ADAPTER.sizeInBytes(value.binaryAnnotations);
-
+      sizeInBytes += 3 + listSizeInBytes(ANNOTATION_ADAPTER, value.annotations);
+      sizeInBytes += 3 + listSizeInBytes(BINARY_ANNOTATION_ADAPTER, value.binaryAnnotations);
       if (value.debug != null && value.debug) sizeInBytes += 3 + 1;
       if (value.timestamp != null) sizeInBytes += 3 + 8;
       if (value.duration != null) sizeInBytes += 3 + 8;
@@ -354,46 +383,45 @@ public final class ThriftCodec implements Codec {
       return sizeInBytes;
     }
 
-    @Override
-    public void write(Span value, Buffer buffer) {
-
-      TRACE_ID.write(buffer);
+    @Override public void write(Span value, Buffer buffer) {
+      SpanReader.TRACE_ID.write(buffer);
       buffer.writeLong(value.traceId);
 
-      NAME.write(buffer);
+      SpanReader.NAME.write(buffer);
       buffer.writeLengthPrefixed(value.name);
 
-      ID.write(buffer);
+      SpanReader.ID.write(buffer);
       buffer.writeLong(value.id);
 
       if (value.parentId != null) {
-        PARENT_ID.write(buffer);
+        SpanReader.PARENT_ID.write(buffer);
         buffer.writeLong(value.parentId);
       }
 
-      ANNOTATIONS.write(buffer);
-      ANNOTATIONS_ADAPTER.write(value.annotations, buffer);
+      // we write list fields even when empty to match finagle serialization
+      SpanReader.ANNOTATIONS.write(buffer);
+      writeList(ANNOTATION_ADAPTER, value.annotations, buffer);
 
-      BINARY_ANNOTATIONS.write(buffer);
-      BINARY_ANNOTATIONS_ADAPTER.write(value.binaryAnnotations, buffer);
+      SpanReader.BINARY_ANNOTATIONS.write(buffer);
+      writeList(BINARY_ANNOTATION_ADAPTER, value.binaryAnnotations, buffer);
 
       if (value.debug != null && value.debug) {
-        DEBUG.write(buffer);
+        SpanReader.DEBUG.write(buffer);
         buffer.writeByte(1);
       }
 
       if (value.timestamp != null) {
-        TIMESTAMP.write(buffer);
+        SpanReader.TIMESTAMP.write(buffer);
         buffer.writeLong(value.timestamp);
       }
 
       if (value.duration != null) {
-        DURATION.write(buffer);
+        SpanReader.DURATION.write(buffer);
         buffer.writeLong(value.duration);
       }
 
       if (value.traceIdHigh != 0) {
-        TRACE_ID_HIGH.write(buffer);
+        SpanReader.TRACE_ID_HIGH.write(buffer);
         buffer.writeLong(value.traceIdHigh);
       }
 
@@ -406,17 +434,13 @@ public final class ThriftCodec implements Codec {
     }
   };
 
-  static final ThriftAdapter<List<Span>> SPANS_ADAPTER = new ListAdapter<>(SPAN_ADAPTER);
-  static final ThriftAdapter<List<List<Span>>> TRACES_ADAPTER = new ListAdapter<>(SPANS_ADAPTER);
-
   static final ThriftAdapter<DependencyLink> DEPENDENCY_LINK_ADAPTER = new ThriftAdapter<DependencyLink>() {
 
     final Field PARENT = new Field(TYPE_STRING, 1);
     final Field CHILD = new Field(TYPE_STRING, 2);
     final Field CALL_COUNT = new Field(TYPE_I64, 4);
 
-    @Override
-    public DependencyLink read(ByteBuffer bytes) {
+    @Override public DependencyLink read(ByteBuffer bytes) {
       DependencyLink.Builder result = DependencyLink.builder();
       Field field;
 
@@ -447,8 +471,7 @@ public final class ThriftCodec implements Codec {
       return sizeInBytes;
     }
 
-    @Override
-    public void write(DependencyLink value, Buffer buffer) {
+    @Override public void write(DependencyLink value, Buffer buffer) {
       PARENT.write(buffer);
       buffer.writeLengthPrefixed(value.parent);
 
@@ -461,14 +484,10 @@ public final class ThriftCodec implements Codec {
       buffer.writeByte(TYPE_STOP);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "DependencyLink";
     }
   };
-
-  static final ThriftAdapter<List<DependencyLink>> DEPENDENCY_LINKS_ADAPTER =
-      new ListAdapter<>(DEPENDENCY_LINK_ADAPTER);
 
   @Override
   public DependencyLink readDependencyLink(byte[] bytes) {
@@ -487,17 +506,17 @@ public final class ThriftCodec implements Codec {
    * @throws {@linkplain IllegalArgumentException} if the links couldn't be decoded
    */
   public List<DependencyLink> readDependencyLinks(ByteBuffer bytes) {
-    return read(DEPENDENCY_LINKS_ADAPTER, bytes);
+    return readList(DEPENDENCY_LINK_ADAPTER, bytes);
   }
 
   @Override
   public List<DependencyLink> readDependencyLinks(byte[] bytes) {
-    return read(DEPENDENCY_LINKS_ADAPTER, ByteBuffer.wrap(bytes));
+    return readList(DEPENDENCY_LINK_ADAPTER, ByteBuffer.wrap(bytes));
   }
 
   @Override
   public byte[] writeDependencyLinks(List<DependencyLink> value) {
-    return write(DEPENDENCY_LINKS_ADAPTER, value);
+    return writeList(DEPENDENCY_LINK_ADAPTER, value);
   }
 
   static <T> T read(ThriftReader<T> reader, ByteBuffer bytes) {
@@ -521,15 +540,30 @@ public final class ThriftCodec implements Codec {
   }
 
   static <T> List<T> readList(ThriftReader<T> reader, ByteBuffer bytes) {
-    byte ignoredType = bytes.get();
-    int length = guardLength(bytes, CONTAINER_LENGTH_LIMIT);
-    if (length == 0) return Collections.emptyList();
-    if (length == 1) return Collections.singletonList(reader.read(bytes));
-    List<T> result = new ArrayList<>(length);
-    for (int i = 0; i < length; i++) {
-      result.add(reader.read(bytes));
+    checkArgument(bytes.remaining() > 0, "Empty input reading List<%s>", reader);
+    try {
+      byte ignoredType = bytes.get();
+      int length = guardLength(bytes, CONTAINER_LENGTH_LIMIT);
+      if (length == 0) return Collections.emptyList();
+      if (length == 1) return Collections.singletonList(reader.read(bytes));
+      List<T> result = new ArrayList<>(length);
+      for (int i = 0; i < length; i++) {
+        result.add(reader.read(bytes));
+      }
+      return result;
+    } catch (RuntimeException e) {
+      throw exceptionReading("List<" + reader + ">", e);
     }
-    return result;
+  }
+
+  static <T> byte[] writeList(Buffer.Writer<T> writer, List<T> value) {
+    Buffer result = new Buffer(listSizeInBytes(writer, value));
+    try {
+      writeList(writer, value, result);
+    } catch (RuntimeException e) {
+      throw assertionError("Could not write " + value + " as TBinary", e);
+    }
+    return result.toByteArray();
   }
 
   static <T> void writeList(Buffer.Writer<T> writer, List<T> value, Buffer buffer) {
@@ -540,35 +574,13 @@ public final class ThriftCodec implements Codec {
     }
   }
 
-  static final class ListAdapter<T> implements ThriftAdapter<List<T>> {
-    final ThriftAdapter<T> adapter;
-
-    ListAdapter(ThriftAdapter<T> adapter) {
-      this.adapter = adapter;
+  /** Encoding overhead is thrift type plus 32-bit length prefix */
+  static <T> int listSizeInBytes(Buffer.Writer<T> writer, List<T> values) {
+    int sizeInBytes = 5;
+    for (int i = 0, length = values.size(); i < length; i++) {
+      sizeInBytes += writer.sizeInBytes(values.get(i));
     }
-
-    @Override
-    public List<T> read(ByteBuffer bytes) {
-      return readList(adapter, bytes);
-    }
-
-    @Override public int sizeInBytes(List<T> value) {
-      int sizeInBytes = 5; // TYPE_STRUCT + length prefix
-      for (int i = 0, length = value.size(); i < length; i++) {
-        sizeInBytes += adapter.sizeInBytes(value.get(i));
-      }
-      return sizeInBytes;
-    }
-
-    @Override
-    public void write(List<T> value, Buffer buffer) {
-      writeList(adapter, value, buffer);
-    }
-
-    @Override
-    public String toString() {
-      return "List<" + adapter + ">";
-    }
+    return sizeInBytes;
   }
 
   static IllegalArgumentException exceptionReading(String type, Exception e) {

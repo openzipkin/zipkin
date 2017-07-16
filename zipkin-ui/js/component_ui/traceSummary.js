@@ -209,7 +209,7 @@ export function getServiceDurations(groupedTimestamps) {
 }
 
 export function mkDurationStr(duration) {
-  if (duration === 0) {
+  if (duration === 0 || typeof duration === 'undefined') {
     return '';
   } else if (duration < 1000) {
     return `${duration}μ`;

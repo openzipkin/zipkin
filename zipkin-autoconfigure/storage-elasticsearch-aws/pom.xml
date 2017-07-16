@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.java</groupId>
     <artifactId>zipkin-autoconfigure</artifactId>
-    <version>1.26.3-SNAPSHOT</version>
+    <version>1.28.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-autoconfigure-storage-elasticsearch-aws</artifactId>
@@ -28,7 +28,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <aws.sdk.version>1.11.117</aws.sdk.version>
+    <aws.sdk.version>1.11.160</aws.sdk.version>
   </properties>
 
   <dependencies>

@@ -395,15 +395,15 @@ describe('traceSummariesToMustache', () => {
     model[1].traceId.should.equal(traceId1);
     model[2].traceId.should.equal(traceId3);
   });
-
-  it('should tie-break a sort on duration using trace id', () => {
-
-  });
 });
 
 describe('mkDurationStr', () => {
   it('should return empty string on zero duration', () => {
     mkDurationStr(0).should.equal('');
+  });
+
+  it('should return empty string on undefined duration', () => {
+    mkDurationStr().should.equal('');
   });
 
   it('should format microseconds', () => {

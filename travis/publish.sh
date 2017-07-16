@@ -73,7 +73,7 @@ check_release_tag() {
 }
 
 print_project_version() {
-  ./mvnw help:evaluate -N -Dexpression=project.version|grep -v '\['
+  ./mvnw help:evaluate -N -Dexpression=project.version|sed -n '/^[0-9]/p'
 }
 
 is_release_commit() {

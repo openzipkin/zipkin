@@ -19,7 +19,7 @@
 
   <groupId>io.zipkin.java</groupId>
   <artifactId>parent</artifactId>
-  <version>1.26.3-SNAPSHOT</version>
+  <version>1.28.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -45,7 +45,7 @@
 
     <main.basedir>${project.basedir}</main.basedir>
 
-    <brave.version>4.3.3</brave.version>
+    <brave.version>4.5.1</brave.version>
     <cassandra-driver-core.version>3.3.0</cassandra-driver-core.version>
     <okio.version>1.13.0</okio.version>
     <!-- important to keep this in sync with spring-boot-dependencies -->
@@ -69,7 +69,7 @@
     <mockito.version>2.8.9</mockito.version>
     <assertj.version>3.8.0</assertj.version>
     <hamcrest.version>1.3</hamcrest.version>
-    <okhttp.version>3.8.0</okhttp.version>
+    <okhttp.version>3.8.1</okhttp.version>
     <testcontainers.version>1.3.1</testcontainers.version>
 
     <animal-sniffer-maven-plugin.version>1.15</animal-sniffer-maven-plugin.version>

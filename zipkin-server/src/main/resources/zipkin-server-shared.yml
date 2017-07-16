@@ -39,6 +39,12 @@ zipkin:
   storage:
     strict-trace-id: ${STRICT_TRACE_ID:true}
     type: ${STORAGE_TYPE:mem}
+    mem:
+      # Maximum number of spans to keep in memory.  When exceeded, oldest traces (and their spans) will be purged.
+      # A safe estimate is 1K of memory per span (each span with 2 annotations + 1 binary annotation), plus
+      # 100 MB for a safety buffer.  You'll need to verify in your own environment.
+      # Experimentally, it works with: max-spans of 500000 with JRE argument -Xmx600m.
+      max-spans: 500000
     cassandra:
       # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
       contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
