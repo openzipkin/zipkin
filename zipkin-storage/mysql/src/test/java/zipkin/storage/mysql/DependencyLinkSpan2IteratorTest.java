@@ -19,16 +19,15 @@ import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.junit.Test;
 import zipkin.Constants;
-import zipkin.internal.DependencyLinkSpan;
 import zipkin.internal.PeekingIterator;
+import zipkin.internal.Span2;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
-// TODO: this class temporarily uses reflection until zipkin2 span replaces DependencyLinkSpan
-public class DependencyLinkSpanIteratorTest {
+public class DependencyLinkSpan2IteratorTest {
   Long traceIdHigh = null;
   long traceId = 1L;
   Long parentId = null;
@@ -36,50 +35,50 @@ public class DependencyLinkSpanIteratorTest {
 
   /** You cannot make a dependency link unless you know the the local or peer endpoint. */
   @Test public void whenNoServiceLabelsExist_kindIsUnknown() {
-    DependencyLinkSpanIterator iterator = iterator(
+    DependencyLinkSpan2Iterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", null)
     );
 
-    DependencyLinkSpan span = iterator.next();
-    assertThat(span).extracting("kind").extracting(Object::toString).containsOnly("UNKNOWN");
-    assertThat(span).extracting("service").containsNull();
-    assertThat(span).extracting("peerService").containsNull();
+    Span2 span = iterator.next();
+    assertThat(span.kind()).isNull();
+    assertThat(span.localEndpoint()).isNull();
+    assertThat(span.remoteEndpoint()).isNull();
   }
 
-  @Test public void whenOnlyAddressLabelsExist_kindIsClient() {
-    DependencyLinkSpanIterator iterator = iterator(
+  @Test public void whenOnlyAddressLabelsExist_kindIsNull() {
+    DependencyLinkSpan2Iterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", "service1"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", "service2")
     );
-    DependencyLinkSpan span = iterator.next();
+    Span2 span = iterator.next();
 
-    assertThat(span).extracting("kind").extracting(Object::toString).containsOnly("CLIENT");
-    assertThat(span).extracting("service").containsOnly("service1");
-    assertThat(span).extracting("peerService").containsOnly("service2");
+    assertThat(span.kind()).isNull();
+    assertThat(span.localEndpoint().serviceName).isEqualTo("service1");
+    assertThat(span.remoteEndpoint().serviceName).isEqualTo("service2");
   }
 
   /** The linker is biased towards server spans, or client spans that know the peer localEndpoint(). */
   @Test public void whenServerLabelsAreMissing_kindIsUnknownAndLabelsAreCleared() {
-    DependencyLinkSpanIterator iterator = iterator(
+    DependencyLinkSpan2Iterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", "service1")
     );
-    DependencyLinkSpan span = iterator.next();
+    Span2 span = iterator.next();
 
-    assertThat(span).extracting("kind").extracting(Object::toString).containsOnly("UNKNOWN");
-    assertThat(span).extracting("service").containsNull();
-    assertThat(span).extracting("peerService").containsNull();
+    assertThat(span.kind()).isNull();
+    assertThat(span.localEndpoint()).isNull();
+    assertThat(span.remoteEndpoint()).isNull();
   }
 
   /** {@link Constants#SERVER_RECV} is only applied when the local span is acting as a server */
   @Test public void whenSrServiceExists_kindIsServer() {
-    DependencyLinkSpanIterator iterator = iterator(
+    DependencyLinkSpan2Iterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", "service")
     );
-    DependencyLinkSpan span = iterator.next();
+    Span2 span = iterator.next();
 
-    assertThat(span).extracting("kind").extracting(Object::toString).containsOnly("SERVER");
-    assertThat(span).extracting("service").containsOnly("service");
-    assertThat(span).extracting("peerService").containsNull();
+    assertThat(span.kind()).isEqualTo(Span2.Kind.SERVER);
+    assertThat(span.localEndpoint().serviceName).isEqualTo("service");
+    assertThat(span.remoteEndpoint()).isNull();
   }
 
   /**
@@ -87,15 +86,15 @@ public class DependencyLinkSpanIteratorTest {
    * span
    */
   @Test public void whenSrAndCaServiceExists_caIsThePeer() {
-    DependencyLinkSpanIterator iterator = iterator(
+    DependencyLinkSpan2Iterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", "service1"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", "service2")
     );
-    DependencyLinkSpan span = iterator.next();
+    Span2 span = iterator.next();
 
-    assertThat(span).extracting("kind").extracting(Object::toString).containsOnly("SERVER");
-    assertThat(span).extracting("service").containsOnly("service2");
-    assertThat(span).extracting("peerService").containsOnly("service1");
+    assertThat(span.kind()).isEqualTo(Span2.Kind.SERVER);
+    assertThat(span.localEndpoint().serviceName).isEqualTo("service2");
+    assertThat(span.remoteEndpoint().serviceName).isEqualTo("service1");
   }
 
   /**
@@ -103,57 +102,58 @@ public class DependencyLinkSpanIteratorTest {
    * span
    */
   @Test public void whenSrAndCsServiceExists_caIsThePeer() {
-    DependencyLinkSpanIterator iterator = iterator(
+    DependencyLinkSpan2Iterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", "service1"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", "service2")
     );
-    DependencyLinkSpan span = iterator.next();
+    Span2 span = iterator.next();
 
-    assertThat(span).extracting("kind").extracting(Object::toString).containsOnly("SERVER");
-    assertThat(span).extracting("service").containsOnly("service2");
-    assertThat(span).extracting("peerService").containsOnly("service1");
+    assertThat(span.kind()).isEqualTo(Span2.Kind.SERVER);
+    assertThat(span.localEndpoint().serviceName).isEqualTo("service2");
+    assertThat(span.remoteEndpoint().serviceName).isEqualTo("service1");
   }
 
   /** {@link Constants#CLIENT_ADDR} is more authoritative than {@link Constants#CLIENT_SEND} */
   @Test public void whenCrAndCaServiceExists_caIsThePeer() {
-    DependencyLinkSpanIterator iterator = iterator(
+    DependencyLinkSpan2Iterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", "foo"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", "service1"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", "service2")
     );
-    DependencyLinkSpan span = iterator.next();
+    Span2 span = iterator.next();
 
-    assertThat(span).extracting("kind").extracting(Object::toString).containsOnly("SERVER");
-    assertThat(span).extracting("service").containsOnly("service2");
-    assertThat(span).extracting("peerService").containsOnly("service1");
+    assertThat(span.kind()).isEqualTo(Span2.Kind.SERVER);
+    assertThat(span.localEndpoint().serviceName).isEqualTo("service2");
+    assertThat(span.remoteEndpoint().serviceName).isEqualTo("service1");
   }
 
   /** Finagle labels two sides of the same socket "ca", "sa" with the local endpoint name */
   @Test public void specialCasesFinagleLocalSocketLabeling_client() {
-    DependencyLinkSpanIterator iterator = iterator(
+    DependencyLinkSpan2Iterator iterator = iterator(
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", "service"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", "service"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", "service")
     );
-    DependencyLinkSpan span = iterator.next();
+    Span2 span = iterator.next();
 
     // When there's no "sr" annotation, we assume it is a client.
-    assertThat(span).extracting("kind").extracting(Object::toString).containsOnly("CLIENT");
-    assertThat(span).extracting("service").containsNull();
-    assertThat(span).extracting("peerService").containsOnly("service");
+    assertThat(span.kind()).isEqualTo(Span2.Kind.CLIENT);
+    assertThat(span.localEndpoint()).isNull();
+    assertThat(span.remoteEndpoint().serviceName).isEqualTo("service");
   }
 
   @Test public void specialCasesFinagleLocalSocketLabeling_server() {
-    DependencyLinkSpanIterator iterator = iterator(
+    DependencyLinkSpan2Iterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", "service"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", "service"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", "service")
     );
-    DependencyLinkSpan span = iterator.next();
+    Span2 span = iterator.next();
 
     // When there is an "sr" annotation, we know it is a server
-    assertThat(span).extracting("kind").extracting(Object::toString).containsOnly("SERVER");
-    assertThat(span).extracting("service").containsOnly("service");
-    assertThat(span).extracting("peerService").containsNull();
+    assertThat(span.kind()).isEqualTo(Span2.Kind.SERVER);
+    assertThat(span.localEndpoint().serviceName).isEqualTo("service");
+    assertThat(span.remoteEndpoint()).isNull();
   }
 
   /**
@@ -161,33 +161,33 @@ public class DependencyLinkSpanIteratorTest {
    * caller, than a client span lacking its receiver.
    */
   @Test public void csWithoutSaIsServer() {
-    DependencyLinkSpanIterator iterator = iterator(
+    DependencyLinkSpan2Iterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", "service1")
     );
-    DependencyLinkSpan span = iterator.next();
+    Span2 span = iterator.next();
 
-    assertThat(span).extracting("kind").extracting(Object::toString).containsOnly("SERVER");
-    assertThat(span).extracting("service").containsOnly("service1");
-    assertThat(span).extracting("peerService").containsNull();
+    assertThat(span.kind()).isEqualTo(Span2.Kind.SERVER);
+    assertThat(span.localEndpoint().serviceName).isEqualTo("service1");
+    assertThat(span.remoteEndpoint()).isNull();
   }
 
   /** Service links to empty string are confusing and offer no value. */
   @Test public void emptyToNull() {
-    DependencyLinkSpanIterator iterator = iterator(
+    DependencyLinkSpan2Iterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", ""),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", ""),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", ""),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", "")
     );
-    DependencyLinkSpan span = iterator.next();
+    Span2 span = iterator.next();
 
-    assertThat(span).extracting("kind").extracting(Object::toString).containsOnly("UNKNOWN");
-    assertThat(span).extracting("service").containsNull();
-    assertThat(span).extracting("peerService").containsNull();
+    assertThat(span.kind()).isNull();
+    assertThat(span.localEndpoint()).isNull();
+    assertThat(span.remoteEndpoint()).isNull();
   }
 
-  static DependencyLinkSpanIterator iterator(Record... records) {
-    return new DependencyLinkSpanIterator(
+  static DependencyLinkSpan2Iterator iterator(Record... records) {
+    return new DependencyLinkSpan2Iterator(
       new PeekingIterator<>(asList(records).iterator()), records[0].get(ZIPKIN_SPANS.TRACE_ID_HIGH),
       records[0].get(ZIPKIN_SPANS.TRACE_ID)
     );
