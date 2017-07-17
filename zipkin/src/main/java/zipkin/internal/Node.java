@@ -109,6 +109,16 @@ public final class Node<V> {
     }
   }
 
+  interface MergeFunction<V> {
+    V merge(@Nullable V existing, @Nullable V update);
+  }
+
+  static final MergeFunction FIRST_NOT_NULL = new MergeFunction() {
+    @Override public Object merge(Object existing, Object update) {
+      return existing != null ? existing : update;
+    }
+  };
+
   /**
    * Some operations do not require the entire span object. This creates a tree given (parent id,
    * id) pairs.
@@ -117,16 +127,21 @@ public final class Node<V> {
    */
   static final class TreeBuilder<V> {
     final Logger logger;
+    final MergeFunction<V> mergeFunction;
     final String traceId;
 
     TreeBuilder(Logger logger, String traceId) {
+      this(logger, FIRST_NOT_NULL, traceId);
+    }
+
+    TreeBuilder(Logger logger, MergeFunction<V> mergeFunction, String traceId) {
       this.logger = logger;
+      this.mergeFunction = mergeFunction;
       this.traceId = traceId;
     }
 
-    Node<V> rootNode = null;
     Long rootId = null;
-
+    Node<V> rootNode = null;
     // Nodes representing the trace tree
     Map<Long, Node<V>> idToNode = new LinkedHashMap<>();
     // Collect the parent-child relationships between all spans.
@@ -158,8 +173,11 @@ public final class Node<V> {
       if (parentId == null && rootNode == null) {
         rootNode = node;
         rootId = id;
+      } else if (parentId == null && rootId == id) {
+        rootNode.value(mergeFunction.merge(rootNode.value, node.value));
       } else {
-        idToNode.put(id, node);
+        Node<V> previous = idToNode.put(id, node);
+        if (previous != null) node.value(mergeFunction.merge(previous.value, node.value));
         idToParent.put(id, parentId);
       }
       return true;

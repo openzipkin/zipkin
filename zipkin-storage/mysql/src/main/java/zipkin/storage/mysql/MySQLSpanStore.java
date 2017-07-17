@@ -40,11 +40,11 @@ import zipkin.BinaryAnnotation.Type;
 import zipkin.DependencyLink;
 import zipkin.Endpoint;
 import zipkin.Span;
-import zipkin.internal.DependencyLinkSpan;
 import zipkin.internal.DependencyLinker;
 import zipkin.internal.GroupByTraceId;
 import zipkin.internal.Nullable;
 import zipkin.internal.Pair;
+import zipkin.internal.Span2;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
 import zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations;
@@ -324,8 +324,8 @@ final class MySQLSpanStore implements SpanStore {
         // Grouping so that later code knows when a span or trace is finished.
         .groupBy(schema.dependencyLinkGroupByFields).fetchLazy();
 
-    Iterator<Iterator<DependencyLinkSpan>> traces =
-        new DependencyLinkSpanIterator.ByTraceId(cursor.iterator(), schema.hasTraceIdHigh);
+    Iterator<Iterator<Span2>> traces =
+        new DependencyLinkSpan2Iterator.ByTraceId(cursor.iterator(), schema.hasTraceIdHigh);
 
     if (!traces.hasNext()) return Collections.emptyList();
 
