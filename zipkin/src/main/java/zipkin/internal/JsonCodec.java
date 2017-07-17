@@ -460,6 +460,16 @@ public final class JsonCodec implements Codec {
     return write(ENDPOINT_WRITER, value);
   }
 
+  /** Exposed for {@link Annotation#toString()} */
+  public static byte[] writeAnnotation(Annotation value) {
+    return write(ANNOTATION_WRITER, value);
+  }
+
+  /** Exposed for {@link BinaryAnnotation#toString()} */
+  public static byte[] writeBinaryAnnotation(BinaryAnnotation value) {
+    return write(BINARY_ANNOTATION_WRITER, value);
+  }
+
   /** Exposed for ElasticSearch HttpBulkIndexer */
   public static String escape(String value) {
     return Buffer.jsonEscape(value);
