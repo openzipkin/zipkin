@@ -41,24 +41,15 @@
   ],
   "binaryAnnotations": [
     {
-      "key": "ca",
-      "value": true,
-      "endpoint": {
-        "serviceName": "frontend",
-        "ipv4": "127.0.0.1",
-        "port": 49504
-      }
-    },
-    {
       "key": "clnt/finagle.version",
-      "value": "6.36.0",
+      "value": "6.45.0",
       "endpoint": {
         "serviceName": "frontend",
         "ipv4": "127.0.0.1"
       }
     },
     {
-      "key": "http.uri",
+      "key": "http.path",
       "value": "/api",
       "endpoint": {
         "serviceName": "frontend",
@@ -70,10 +61,9 @@
       "value": true,
       "endpoint": {
         "serviceName": "backend",
-        "ipv4": "127.0.0.1",
+        "ipv4": "192.168.99.101",
         "port": 9000
       }
     }
-  ],
-  "debug": false
+  ]
 }

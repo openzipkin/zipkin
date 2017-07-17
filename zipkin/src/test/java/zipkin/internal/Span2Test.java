@@ -13,6 +13,10 @@
  */
 package zipkin.internal;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import okio.Buffer;
+import okio.ByteString;
 import org.junit.Test;
 import zipkin.Annotation;
 
@@ -109,9 +113,25 @@ public class Span2Test {
       .isNull();
   }
 
-  // TODO: toString_isJson
+  @Test public void toString_isJson() {
+    assertThat(base.toString()).hasToString(
+      "{\"traceId\":\"0000000000000001\",\"id\":\"0000000000000001\",\"localEndpoint\":{\"serviceName\":\"app\",\"ipv4\":\"172.17.0.2\",\"port\":8080}}"
+    );
+  }
 
-  // TODO: serialization
+  @Test public void serialization() throws Exception {
+    Buffer buffer = new Buffer();
+    new ObjectOutputStream(buffer.outputStream()).writeObject(base);
 
-  // TODO: serializationUsesJson
+    assertThat(new ObjectInputStream(buffer.inputStream()).readObject())
+      .isEqualTo(base);
+  }
+
+  @Test public void serializationUsesJson() throws Exception {
+    Buffer buffer = new Buffer();
+    new ObjectOutputStream(buffer.outputStream()).writeObject(base);
+
+    assertThat(buffer.indexOf(ByteString.encodeUtf8(base.toString())))
+      .isPositive();
+  }
 }
