@@ -20,10 +20,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import zipkin.DependencyLink;
+import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.TestObjects;
-import zipkin.internal.DependencyLinkSpan.Kind;
-import zipkin.internal.DependencyLinkSpan.TraceId;
+import zipkin.internal.Span2.Kind;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,8 +50,8 @@ public class DependencyLinkerTest {
   @Test
   public void linksSpans() {
     assertThat(new DependencyLinker().putTrace(TestObjects.TRACE).link()).containsExactly(
-        DependencyLink.create("web", "app", 1L),
-        DependencyLink.create("app", "db", 1L)
+      DependencyLink.create("web", "app", 1L),
+      DependencyLink.create("app", "db", 1L)
     );
   }
 
@@ -70,70 +70,47 @@ public class DependencyLinkerTest {
   }
 
   /**
-   * The linker links a directed graph, if the span kind is unknown, we don't know the direction to
-   * link.
-   */
-  @Test
-  public void doesntLinkUnknownRootSpans() {
-    List<DependencyLinkSpan> unknownRootSpans = asList(
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.UNKNOWN, null, null),
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.UNKNOWN, "server", "client"),
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.UNKNOWN, "client", "server")
-    );
-
-    for (DependencyLinkSpan span : unknownRootSpans) {
-      assertThat(new DependencyLinker(logger)
-          .putTrace(asList(span).iterator()).link())
-          .isEmpty();
-    }
-
-    assertThat(messages).contains(
-      "non-rpc span; skipping"
-    );
-  }
-
-  /**
    * A root span can be a client-originated trace or a server receipt which knows its peer. In these
    * cases, the peer is known and kind establishes the direction.
    */
   @Test
   public void linksSpansDirectedByKind() {
-    List<DependencyLinkSpan> validRootSpans = asList(
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "server", "client"),
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.CLIENT, "client", "server")
+    List<Span2> validRootSpans = asList(
+      span2(0L, 1L, null, 1L, Kind.SERVER, "server", "client"),
+      span2(0L, 1L, null, 1L, Kind.CLIENT, "client", "server")
     );
 
-    for (DependencyLinkSpan span : validRootSpans) {
+    for (Span2 span : validRootSpans) {
       assertThat(new DependencyLinker()
-          .putTrace(asList(span).iterator()).link())
-          .containsOnly(DependencyLink.create("client", "server", 1L));
+        .putTrace(asList(span).iterator()).link())
+        .containsOnly(DependencyLink.create("client", "server", 1L));
     }
   }
 
   @Test
   public void callsAgainstTheSameLinkIncreasesCallCount_span() {
-    List<DependencyLinkSpan> trace = asList(
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "client", null),
-        new DependencyLinkSpan(new TraceId(0L, 1L), 1L, 2L, Kind.CLIENT, null, "server"),
-        new DependencyLinkSpan(new TraceId(0L, 1L), 1L, 3L, Kind.CLIENT, null, "server")
+    List<Span2> trace = asList(
+      span2(0L, 1L, null, 1L, Kind.SERVER, "client", null),
+      span2(0L, 1L, 1L, 2L, Kind.CLIENT, null, "server"),
+      span2(0L, 1L, 1L, 3L, Kind.CLIENT, null, "server")
     );
 
     assertThat(new DependencyLinker()
-        .putTrace(trace.iterator()).link())
-        .containsOnly(DependencyLink.create("client", "server", 2L));
+      .putTrace(trace.iterator()).link())
+      .containsOnly(DependencyLink.create("client", "server", 2L));
   }
 
   @Test
   public void callsAgainstTheSameLinkIncreasesCallCount_trace() {
-    List<DependencyLinkSpan> trace = asList(
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "client", null),
-        new DependencyLinkSpan(new TraceId(0L, 1L), 1L, 2L, Kind.CLIENT, null, "server")
+    List<Span2> trace = asList(
+      span2(0L, 1L, null, 1L, Kind.SERVER, "client", null),
+      span2(0L, 1L, 1L, 2L, Kind.CLIENT, null, "server")
     );
 
     assertThat(new DependencyLinker()
-        .putTrace(trace.iterator())
-        .putTrace(trace.iterator()).link())
-        .containsOnly(DependencyLink.create("client", "server", 2L));
+      .putTrace(trace.iterator())
+      .putTrace(trace.iterator()).link())
+      .containsOnly(DependencyLink.create("client", "server", 2L));
   }
 
   /**
@@ -142,22 +119,57 @@ public class DependencyLinkerTest {
    */
   @Test
   public void singleHostSpansResultInASingleCallCount() {
-    List<List<DependencyLinkSpan>> singleLinks = asList(
-        asList(
-            new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.CLIENT, "client", "server"),
-            new DependencyLinkSpan(new TraceId(0L, 1L), 1L, 2L, Kind.SERVER, "server", null)
-        ),
-        asList(
-            new DependencyLinkSpan(new TraceId(0L, 3L), null, 3L, Kind.SERVER, "client", null),
-            new DependencyLinkSpan(new TraceId(0L, 3L), 3L, 4L, Kind.CLIENT, "client", "server")
-        )
+    List<Span2> trace = asList(
+      span2(0L, 3L, null, 3L, Kind.CLIENT, "client", null),
+      span2(0L, 3L, 3L, 4L, Kind.SERVER, "server", "client")
     );
 
-    for (List<DependencyLinkSpan> trace : singleLinks) {
-      assertThat(new DependencyLinker()
-          .putTrace(trace.iterator()).link())
-          .containsOnly(DependencyLink.create("client", "server", 1L));
-    }
+    assertThat(new DependencyLinker()
+      .putTrace(trace.iterator()).link())
+      .containsOnly(DependencyLink.create("client", "server", 1L));
+  }
+
+  @Test
+  public void singleHostSpansResultInASingleCallCount_defersNameToServer() {
+    List<Span2> trace = asList(
+      span2(0L, 1L, null, 1L, Kind.CLIENT, "client", "server"),
+      span2(0L, 1L, 1L, 2L, Kind.SERVER, "server", null)
+    );
+
+    assertThat(new DependencyLinker(logger)
+      .putTrace(trace.iterator()).link())
+      .containsOnly(DependencyLink.create("client", "server", 1L));
+
+    assertThat(messages).contains("deferring link to rpc child span");
+    messages.clear();
+  }
+
+  @Test
+  public void singleHostSpans_multipleChildren() {
+    List<Span2> trace = asList(
+      span2(0L, 4L, null, 4L, Kind.CLIENT, "client", null),
+      span2(0L, 4L, 4L, 5L, Kind.SERVER, "server", "client"),
+      span2(0L, 4L, 4L, 6L, Kind.SERVER, "server", "client")
+    );
+
+    assertThat(new DependencyLinker()
+      .putTrace(trace.iterator()).link())
+      .containsOnly(DependencyLink.create("client", "server", 2L));
+  }
+
+  @Test
+  public void singleHostSpans_multipleChildren_defersNameToServer() {
+    List<Span2> trace = asList(
+      span2(0L, 1L, null, 1L, Kind.CLIENT, "client", "server"),
+      span2(0L, 1L, 1L, 2L, Kind.SERVER, "server", null),
+      span2(0L, 1L, 1L, 3L, Kind.SERVER, "server", null)
+    );
+
+    assertThat(new DependencyLinker(logger)
+      .putTrace(trace.iterator()).link())
+      .containsOnly(DependencyLink.create("client", "server", 2L));
+
+    assertThat(messages).contains("deferring link to rpc child span");
   }
 
   /**
@@ -166,32 +178,47 @@ public class DependencyLinkerTest {
    */
   @Test
   public void intermediatedClientSpansMissingLocalServiceNameLinkToNearestServer() {
-    List<DependencyLinkSpan> trace = asList(
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "client", null),
-        new DependencyLinkSpan(new TraceId(0L, 1L), 1L, 2L, Kind.UNKNOWN, null, null),
-        // possibly a local fan-out span
-        new DependencyLinkSpan(new TraceId(0L, 1L), 2L, 3L, Kind.CLIENT, null, "server"),
-        new DependencyLinkSpan(new TraceId(0L, 1L), 2L, 4L, Kind.CLIENT, null, "server")
+    List<Span2> trace = asList(
+      span2(0L, 1L, null, 1L, Kind.SERVER, "client", null),
+      span2(0L, 1L, 1L, 2L, null, null, null),
+      // possibly a local fan-out span
+      span2(0L, 1L, 2L, 3L, Kind.CLIENT, null, "server"),
+      span2(0L, 1L, 2L, 4L, Kind.CLIENT, null, "server")
     );
 
     assertThat(new DependencyLinker()
-        .putTrace(trace.iterator()).link())
-        .containsOnly(DependencyLink.create("client", "server", 2L));
+      .putTrace(trace.iterator()).link())
+      .containsOnly(DependencyLink.create("client", "server", 2L));
   }
 
   /** A loopback span is direction-agnostic, so can be linked properly regardless of kind. */
   @Test
   public void linksLoopbackSpans() {
-    List<DependencyLinkSpan> validRootSpans = asList(
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "service", "service"),
-        new DependencyLinkSpan(new TraceId(0L, 2L), null, 2L, Kind.CLIENT, "service", "service")
+    List<Span2> validRootSpans = asList(
+      span2(0L, 1L, null, 1L, Kind.SERVER, "service", "service"),
+      span2(0L, 2L, null, 2L, Kind.CLIENT, "service", "service")
     );
 
-    for (DependencyLinkSpan span : validRootSpans) {
+    for (Span2 span : validRootSpans) {
       assertThat(new DependencyLinker()
-          .putTrace(asList(span).iterator()).link())
-          .containsOnly(DependencyLink.create("service", "service", 1L));
+        .putTrace(asList(span).iterator()).link())
+        .containsOnly(DependencyLink.create("service", "service", 1L));
     }
+  }
+
+  @Test
+  public void noSpanKindTreatedSameAsClient() {
+    List<Span2> trace = asList(
+      span2(0L, 1L, null, 1L, null, "some-client", "web"),
+      span2(0L, 1L, 1L, 2L, null, "web", "app"),
+      span2(0L, 1L, 2L, 3L, null, "app", "db")
+    );
+
+    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+      DependencyLink.create("some-client", "web", 1L),
+      DependencyLink.create("web", "app", 1L),
+      DependencyLink.create("app", "db", 1L)
+    );
   }
 
   /**
@@ -200,33 +227,33 @@ public class DependencyLinkerTest {
    */
   @Test
   public void cannotLinkSingleSpanWithoutBothServiceNames() {
-    List<DependencyLinkSpan> incompleteRootSpans = asList(
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, null, null),
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "server", null),
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, null, "client"),
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.CLIENT, null, null),
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.CLIENT, "client", null),
-        new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.CLIENT, null, "server")
+    List<Span2> incompleteRootSpans = asList(
+      span2(0L, 1L, null, 1L, Kind.SERVER, null, null),
+      span2(0L, 1L, null, 1L, Kind.SERVER, "server", null),
+      span2(0L, 1L, null, 1L, Kind.SERVER, null, "client"),
+      span2(0L, 1L, null, 1L, Kind.CLIENT, null, null),
+      span2(0L, 1L, null, 1L, Kind.CLIENT, "client", null),
+      span2(0L, 1L, null, 1L, Kind.CLIENT, null, "server")
     );
 
-    for (DependencyLinkSpan span : incompleteRootSpans) {
+    for (Span2 span : incompleteRootSpans) {
       assertThat(new DependencyLinker(logger)
-          .putTrace(asList(span).iterator()).link())
-          .isEmpty();
+        .putTrace(asList(span).iterator()).link())
+        .isEmpty();
     }
   }
 
   @Test
   public void doesntLinkUnrelatedSpansWhenMissingRootSpan() {
     long missingParentId = 1;
-    List<DependencyLinkSpan> trace = asList(
-        new DependencyLinkSpan(new TraceId(0L, 1L), missingParentId, 2L, Kind.SERVER, "service1", null),
-        new DependencyLinkSpan(new TraceId(0L, 1L), missingParentId, 3L, Kind.SERVER, "service2", null)
+    List<Span2> trace = asList(
+      span2(0L, 1L, missingParentId, 2L, Kind.SERVER, "service1", null),
+      span2(0L, 1L, missingParentId, 3L, Kind.SERVER, "service2", null)
     );
 
     assertThat(new DependencyLinker(logger)
-        .putTrace(trace.iterator()).link())
-        .isEmpty();
+      .putTrace(trace.iterator()).link())
+      .isEmpty();
 
     assertThat(messages).contains(
       "skipping synthetic node for broken span tree"
@@ -236,14 +263,14 @@ public class DependencyLinkerTest {
   @Test
   public void linksRelatedSpansWhenMissingRootSpan() {
     long missingParentId = 1;
-    List<DependencyLinkSpan> trace = asList(
-        new DependencyLinkSpan(new TraceId(0L, 1L), missingParentId, 2L, Kind.SERVER, "service1", null),
-        new DependencyLinkSpan(new TraceId(0L, 1L), 2L, 3L, Kind.SERVER, "service2", null)
+    List<Span2> trace = asList(
+      span2(0L, 1L, missingParentId, 2L, Kind.SERVER, "service1", null),
+      span2(0L, 1L, 2L, 3L, Kind.SERVER, "service2", null)
     );
 
     assertThat(new DependencyLinker(logger)
-        .putTrace(trace.iterator()).link())
-        .containsOnly(DependencyLink.create("service1", "service2", 1L));
+      .putTrace(trace.iterator()).link())
+      .containsOnly(DependencyLink.create("service1", "service2", 1L));
 
     assertThat(messages).contains(
       "skipping synthetic node for broken span tree"
@@ -253,9 +280,9 @@ public class DependencyLinkerTest {
   /** Client+Server spans that don't share IDs are treated as server spans missing their peer */
   @Test
   public void linksSingleHostSpans() {
-    List<DependencyLinkSpan> singleHostSpans = asList(
-      new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "web", null),
-      new DependencyLinkSpan(new TraceId(0L, 1L), 1L, 2L, Kind.SERVER, "app", null)
+    List<Span2> singleHostSpans = asList(
+      span2(0L, 1L, null, 1L, Kind.SERVER, "web", null),
+      span2(0L, 1L, 1L, 2L, Kind.SERVER, "app", null)
     );
 
     assertThat(new DependencyLinker()
@@ -263,17 +290,45 @@ public class DependencyLinkerTest {
       .containsOnly(DependencyLink.create("web", "app", 1L));
   }
 
+  /** Creates a link when there's a span missing, in this case 2L which is an RPC from web to app */
+  @Test
+  public void missingSpan() {
+    List<Span2> singleHostSpans = asList(
+      span2(0L, 1L, null, 1L, Kind.SERVER, "web", null),
+      span2(0L, 1L, 1L, 2L, Kind.CLIENT, "app", null)
+    );
+
+    assertThat(new DependencyLinker(logger)
+      .putTrace(singleHostSpans.iterator()).link())
+      .containsOnly(DependencyLink.create("web", "app", 1L));
+
+    assertThat(messages).contains(
+      "detected missing link to client span"
+    );
+  }
+
   @Test
   public void merge() {
     List<DependencyLink> links = asList(
-        DependencyLink.create("client", "server", 2L),
-        DependencyLink.create("client", "server", 2L),
-        DependencyLink.create("client", "client", 1L)
+      DependencyLink.create("client", "server", 2L),
+      DependencyLink.create("client", "server", 2L),
+      DependencyLink.create("client", "client", 1L)
     );
 
     assertThat(DependencyLinker.merge(links)).containsExactly(
-        DependencyLink.create("client", "server", 4L),
-        DependencyLink.create("client", "client", 1L)
+      DependencyLink.create("client", "server", 4L),
+      DependencyLink.create("client", "client", 1L)
     );
+  }
+
+  static Span2 span2(long traceIdHigh, long traceId, @Nullable Long parentId, long id,
+    @Nullable Kind kind,
+    @Nullable String local, @Nullable String remote) {
+    Span2.Builder result = Span2.builder();
+    result.traceIdHigh(traceIdHigh).traceId(traceId).parentId(parentId).id(id);
+    result.kind(kind);
+    if (local != null) result.localEndpoint(Endpoint.builder().serviceName(local).build());
+    if (remote != null) result.remoteEndpoint(Endpoint.builder().serviceName(remote).build());
+    return result.build();
   }
 }
