@@ -80,7 +80,7 @@ public abstract class SpanStoreTest {
 
   long spanId = 456;
   Annotation ann1 = Annotation.create((today + 1) * 1000, "cs", ep);
-  Annotation ann2 = Annotation.create((today + 2) * 1000, "sr", null);
+  Annotation ann2 = Annotation.create((today + 2) * 1000, "sr", ep);
   Annotation ann3 = Annotation.create((today + 10) * 1000, "custom", ep);
   Annotation ann4 = Annotation.create((today + 20) * 1000, "custom", ep);
   Annotation ann5 = Annotation.create((today + 5) * 1000, "custom", ep);
