@@ -24,35 +24,41 @@ public class DependencyLinkSpanTest {
   @Test
   public void testToString() {
     assertThat(DependencyLinkSpan.builder(0L, 1L, null, 1L).build())
-        .hasToString("{\"traceId\": \"0000000000000001\", \"id\": \"0000000000000001\", \"kind\": \"UNKNOWN\"}");
+      .hasToString(
+        "{\"traceId\": \"0000000000000001\", \"id\": \"0000000000000001\", \"kind\": \"UNKNOWN\"}");
 
     assertThat(DependencyLinkSpan.builder(0L, 1L, 1L, 2L).build())
-        .hasToString("{\"traceId\": \"0000000000000001\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\", \"kind\": \"UNKNOWN\"}");
+      .hasToString(
+        "{\"traceId\": \"0000000000000001\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\", \"kind\": \"UNKNOWN\"}");
 
     assertThat(DependencyLinkSpan.builder(0L, 1L, 1L, 2L)
-        .srService("processor")
-        .caService("kinesis").build())
-        .hasToString("{\"traceId\": \"0000000000000001\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\", \"kind\": \"SERVER\", \"service\": \"processor\", \"peerService\": \"kinesis\"}");
+      .srService("processor")
+      .caService("kinesis").build())
+      .hasToString(
+        "{\"traceId\": \"0000000000000001\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\", \"kind\": \"SERVER\", \"service\": \"processor\", \"peerService\": \"kinesis\"}");
 
     // It is invalid to log "ca" without "sr", so marked as unknown
     assertThat(DependencyLinkSpan.builder(0L, 1L, 1L, 2L)
-        .caService("kinesis").build())
-        .hasToString("{\"traceId\": \"0000000000000001\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\", \"kind\": \"UNKNOWN\"}");
+      .caService("kinesis").build())
+      .hasToString(
+        "{\"traceId\": \"0000000000000001\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\", \"kind\": \"UNKNOWN\"}");
 
     assertThat(DependencyLinkSpan.builder(0L, 1L, 1L, 2L)
-        .saService("mysql").build())
-        .hasToString("{\"traceId\": \"0000000000000001\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\", \"kind\": \"CLIENT\", \"peerService\": \"mysql\"}");
+      .saService("mysql").build())
+      .hasToString(
+        "{\"traceId\": \"0000000000000001\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\", \"kind\": \"CLIENT\", \"peerService\": \"mysql\"}");
 
     // arbitrary 2-sided span
     assertThat(DependencyLinkSpan.builder(0L, 1L, 1L, 2L)
-        .caService("shell-script")
-        .saService("mysql").build())
-        .hasToString("{\"traceId\": \"0000000000000001\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\", \"kind\": \"CLIENT\", \"service\": \"shell-script\", \"peerService\": \"mysql\"}");
+      .caService("shell-script")
+      .saService("mysql").build())
+      .hasToString(
+        "{\"traceId\": \"0000000000000001\", \"parentId\": \"0000000000000001\", \"id\": \"0000000000000002\", \"kind\": \"CLIENT\", \"service\": \"shell-script\", \"peerService\": \"mysql\"}");
 
     // 128-bit trace ID
     assertThat(DependencyLinkSpan.builder(3L, 1L, null, 1L).build())
-        .hasToString("{\"traceId\": \"00000000000000030000000000000001\", \"id\": \"0000000000000001\", \"kind\": \"UNKNOWN\"}");
-
+      .hasToString(
+        "{\"traceId\": \"00000000000000030000000000000001\", \"id\": \"0000000000000001\", \"kind\": \"UNKNOWN\"}");
   }
 
   @Test
@@ -79,9 +85,9 @@ public class DependencyLinkSpanTest {
   @Test
   public void whenOnlyAddressLabelsExist_kindIsClient() {
     DependencyLinkSpan span = DependencyLinkSpan.builder(0L, 1L, null, 1L)
-        .caService("service1")
-        .saService("service2")
-        .build();
+      .caService("service1")
+      .saService("service2")
+      .build();
 
     assertThat(span.kind).isEqualTo(Kind.CLIENT);
     assertThat(span.service).isEqualTo("service1");
@@ -92,8 +98,8 @@ public class DependencyLinkSpanTest {
   @Test
   public void whenServerLabelsAreMissing_kindIsUnknownAndLabelsAreCleared() {
     DependencyLinkSpan span = DependencyLinkSpan.builder(0L, 1L, null, 1L)
-        .caService("service1")
-        .build();
+      .caService("service1")
+      .build();
 
     assertThat(span.kind).isEqualTo(Kind.UNKNOWN);
     assertThat(span.service).isNull();
@@ -104,8 +110,8 @@ public class DependencyLinkSpanTest {
   @Test
   public void whenSrServiceExists_kindIsServer() {
     DependencyLinkSpan span = DependencyLinkSpan.builder(0L, 1L, null, 1L)
-        .srService("service")
-        .build();
+      .srService("service")
+      .build();
 
     assertThat(span.kind).isEqualTo(Kind.SERVER);
     assertThat(span.service).isEqualTo("service");
@@ -119,9 +125,9 @@ public class DependencyLinkSpanTest {
   @Test
   public void whenSrAndCaServiceExists_caIsThePeer() {
     DependencyLinkSpan span = DependencyLinkSpan.builder(0L, 1L, null, 1L)
-        .caService("service1")
-        .srService("service2")
-        .build();
+      .caService("service1")
+      .srService("service2")
+      .build();
 
     assertThat(span.kind).isEqualTo(Kind.SERVER);
     assertThat(span.service).isEqualTo("service2");
@@ -135,9 +141,9 @@ public class DependencyLinkSpanTest {
   @Test
   public void whenSrAndCsServiceExists_caIsThePeer() {
     DependencyLinkSpan span = DependencyLinkSpan.builder(0L, 1L, null, 1L)
-        .csService("service1")
-        .srService("service2")
-        .build();
+      .csService("service1")
+      .srService("service2")
+      .build();
 
     assertThat(span.kind).isEqualTo(Kind.SERVER);
     assertThat(span.service).isEqualTo("service2");
@@ -148,10 +154,10 @@ public class DependencyLinkSpanTest {
   @Test
   public void whenCrAndCaServiceExists_caIsThePeer() {
     DependencyLinkSpan span = DependencyLinkSpan.builder(0L, 1L, null, 1L)
-        .csService("foo")
-        .caService("service1")
-        .srService("service2")
-        .build();
+      .csService("foo")
+      .caService("service1")
+      .srService("service2")
+      .build();
 
     assertThat(span.kind).isEqualTo(Kind.SERVER);
     assertThat(span.service).isEqualTo("service2");
@@ -162,9 +168,9 @@ public class DependencyLinkSpanTest {
   public void specialCasesFinagleLocalSocketLabeling() {
     // Finagle labels two sides of the same socket ("ca", "sa") with the local service name.
     DependencyLinkSpan span = DependencyLinkSpan.builder(0L, 1L, null, 1L)
-        .caService("service")
-        .saService("service")
-        .build();
+      .caService("service")
+      .saService("service")
+      .build();
 
     // When there's no "sr" annotation, we assume it is a client.
     assertThat(span.kind).isEqualTo(Kind.CLIENT);
@@ -172,10 +178,10 @@ public class DependencyLinkSpanTest {
     assertThat(span.peerService).isEqualTo("service");
 
     span = DependencyLinkSpan.builder(0L, 1L, null, 1L)
-        .srService("service")
-        .caService("service")
-        .saService("service")
-        .build();
+      .srService("service")
+      .caService("service")
+      .saService("service")
+      .build();
 
     // When there is an "sr" annotation, we know it is a server
     assertThat(span.kind).isEqualTo(Kind.SERVER);
@@ -183,14 +189,29 @@ public class DependencyLinkSpanTest {
     assertThat(span.peerService).isNull();
   }
 
+  /**
+   * <p>Dependency linker works backwards: it is easier to treat a "cs" as a server span lacking its
+   * caller, than a client span lacking its receiver.
+   */
+  @Test
+  public void csWithoutSaIsServer() {
+    DependencyLinkSpan span = DependencyLinkSpan.builder(0L, 1L, null, 1L)
+      .csService("service1")
+      .build();
+
+    assertThat(span.kind).isEqualTo(Kind.SERVER);
+    assertThat(span.service).isEqualTo("service1");
+    assertThat(span.peerService).isNull();
+  }
+
   /** Service links to empty string are confusing and offer no value. */
   @Test
   public void emptyToNull() {
     DependencyLinkSpan.Builder builder = DependencyLinkSpan.builder(0L, 1L, null, 1L)
-        .caService("")
-        .csService("")
-        .saService("")
-        .srService("");
+      .caService("")
+      .csService("")
+      .saService("")
+      .srService("");
 
     assertThat(builder.caService).isNull();
     assertThat(builder.csService).isNull();

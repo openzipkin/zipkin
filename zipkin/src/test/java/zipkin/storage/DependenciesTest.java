@@ -662,6 +662,26 @@ public abstract class DependenciesTest {
     );
   }
 
+  @Test
+  public void singleHostRPC() {
+    List<Span> trace = asList(
+      Span.builder().traceId(1L).parentId(1L).id(2L).name("get").timestamp((TODAY + 50) * 1000)
+        .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
+        .build(),
+      Span.builder().traceId(1L).parentId(2L).id(3L).name("get").timestamp((TODAY + 100) * 1000)
+        .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
+        .build()
+    );
+
+    processDependencies(trace);
+
+    assertThat(store().getDependencies(TODAY + 1000, null)).containsOnly(
+      DependencyLink.create("web", "app", 1)
+    );
+  }
+
   /** rebases a trace backwards a day with different trace and span id. */
   List<Span> subtractDay(List<Span> trace) {
     return trace.stream()
