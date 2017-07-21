@@ -16,6 +16,7 @@ package zipkin.storage.cassandra3.integration;
 import com.datastax.driver.core.Session;
 import java.io.IOException;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -77,6 +78,13 @@ public class CassandraTest {
 
     @Override protected Session session() {
       return storage.get().session();
+    }
+  }
+
+  @Ignore("TODO: get this working or explain why not")
+  public static class StrictTraceIdFalseTest extends CassandraStrictTraceIdFalseTest {
+    @Override protected Cassandra3Storage storage() {
+      return storage.get();
     }
   }
 }

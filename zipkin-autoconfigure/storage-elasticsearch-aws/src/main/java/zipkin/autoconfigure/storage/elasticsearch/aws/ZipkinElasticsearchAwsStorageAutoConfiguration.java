@@ -39,7 +39,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageProperties;
 import zipkin.storage.StorageComponent;
-import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 
 import static java.lang.String.format;
 import static zipkin.internal.Util.checkArgument;
