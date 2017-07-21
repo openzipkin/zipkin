@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -35,7 +35,10 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static zipkin.TestObjects.LOTS_OF_SPANS;
+import static zipkin.TestObjects.TODAY;
 import static zipkin.TestObjects.TRACE;
+import static zipkin.TestObjects.WEB_ENDPOINT;
 
 public class ZipkinRuleTest {
 
@@ -44,22 +47,21 @@ public class ZipkinRuleTest {
 
   OkHttpClient client = new OkHttpClient();
 
-  long traceId = TRACE.get(0).traceId;
-
   @Test
   public void getTraces_storedViaPost() throws IOException {
+    List<Span> trace = asList(TRACE.get(0));
     // write the span to the zipkin using http
-    assertThat(postSpans(TRACE).code()).isEqualTo(202);
+    assertThat(postSpans(trace).code()).isEqualTo(202);
 
     // read the traces directly
     assertThat(zipkin.getTraces())
-        .containsOnly(TRACE);
+        .containsOnly(trace);
   }
 
   /** The rule is here to help debugging. Even partial spans should be returned */
   @Test
   public void getTraces_whenMissingTimestamps() throws IOException {
-    Span span = Span.builder().traceId(traceId).id(traceId).name("foo").build();
+    Span span = Span.builder().traceId(1L).id(1L).name("foo").build();
     // write the span to the zipkin using http
     assertThat(postSpans(asList(span)).code()).isEqualTo(202);
 
@@ -85,7 +87,7 @@ public class ZipkinRuleTest {
 
     // read trace id using the the http api
     Response getResponse = client.newCall(new Request.Builder()
-        .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), traceId)).build()
+        .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), TRACE.get(0).traceId)).build()
     ).execute();
 
     assertThat(getResponse.code()).isEqualTo(200);
@@ -94,28 +96,32 @@ public class ZipkinRuleTest {
   /** The raw query can show affects like redundant rows in the data store. */
   @Test
   public void storeSpans_readbackRaw() throws IOException {
+    long traceId = LOTS_OF_SPANS[0].traceId;
+
     // write the span to zipkin directly
-    zipkin.storeSpans(TRACE);
-    zipkin.storeSpans(TRACE);
+    zipkin.storeSpans(asList(LOTS_OF_SPANS[0]));
+    zipkin.storeSpans(asList(LOTS_OF_SPANS[0]));
 
     // Default will merge by span id
     Response defaultResponse = client.newCall(new Request.Builder()
         .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), traceId)).build()
     ).execute();
 
-    assertThat(Codec.JSON.readSpans(defaultResponse.body().bytes())).hasSize(TRACE.size());
+    assertThat(Codec.JSON.readSpans(defaultResponse.body().bytes())).hasSize(1);
 
     // In the in-memory (or cassandra) stores, a raw read will show duplicate span rows.
     Response rawResponse = client.newCall(new Request.Builder()
         .url(format("%s/api/v1/trace/%016x?raw", zipkin.httpUrl(), traceId)).build()
     ).execute();
 
-    assertThat(Codec.JSON.readSpans(rawResponse.body().bytes())).hasSize(TRACE.size() * 2);
+    assertThat(Codec.JSON.readSpans(rawResponse.body().bytes())).hasSize(2);
   }
 
   @Test
   public void getBy128BitTraceId() throws Exception {
-    Span span = TRACE.get(0).toBuilder().traceIdHigh(traceId).build();
+    long traceId = LOTS_OF_SPANS[0].traceId;
+
+    Span span = LOTS_OF_SPANS[0].toBuilder().traceIdHigh(traceId).build();
     zipkin.storeSpans(asList(span));
 
     Response getResponse = client.newCall(new Request.Builder()
@@ -194,7 +200,6 @@ public class ZipkinRuleTest {
         .post(RequestBody.create(MediaType.parse("application/json"), gzippedJson)).build()
     ).execute();
 
-    assertThat(zipkin.getTraces()).containsOnly(TRACE);
     assertThat(zipkin.collectorMetrics().bytes()).isEqualTo(spansInJson.length);
   }
 
@@ -214,13 +219,13 @@ public class ZipkinRuleTest {
     char[] annotation2K = new char[2048];
     Arrays.fill(annotation2K, 'a');
 
-    List<Span> trace = asList(TRACE.get(0).toBuilder().addAnnotation(
-            Annotation.create(System.currentTimeMillis(), new String(annotation2K), null)).build());
+    List<Span> trace = asList(TRACE.get(0).toBuilder()
+      .addAnnotation(Annotation.create(TODAY, new String(annotation2K), WEB_ENDPOINT)).build());
 
     zipkin.storeSpans(trace);
 
     Response response = client.newCall(new Request.Builder()
-            .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), traceId))
+            .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), trace.get(0).traceId))
             .addHeader("Accept-Encoding", "gzip").build()
     ).execute();
 

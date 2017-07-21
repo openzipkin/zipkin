@@ -519,11 +519,11 @@ public abstract class SpanStoreTest {
 
     Span trace2 = Span.builder().traceId(2).name("get").id(2)
         .timestamp((today + 2) * 1000)
-        .addAnnotation(Annotation.create((today + 1) * 1000, CLIENT_SEND, APP_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 1) * 1000, SERVER_RECV, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 1) * 1000, SERVER_SEND, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 1) * 1000, CLIENT_RECV, APP_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 1) * 1000, "app", APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 2) * 1000, CLIENT_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 2) * 1000, SERVER_RECV, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 2) * 1000, SERVER_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 2) * 1000, CLIENT_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 2) * 1000, "app", APP_ENDPOINT))
         .addBinaryAnnotation(BinaryAnnotation.create("local", "app", APP_ENDPOINT))
         .addBinaryAnnotation(BinaryAnnotation.create("app-b", "app", APP_ENDPOINT))
         .build();
@@ -816,23 +816,21 @@ public abstract class SpanStoreTest {
   @Test
   public void traceWithManySpans() {
     Span[] trace = new Span[101];
-    trace[0] = TestObjects.TRACE.get(0);
+    trace[0] = Span.builder().traceId(0xf66529c8cc356aa0L).id(0x93288b4644570496L).name("get")
+      .timestamp(TODAY * 1000).duration(350 * 1000L)
+      .addAnnotation(Annotation.create(TODAY * 1000, SERVER_RECV, WEB_ENDPOINT))
+      .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, WEB_ENDPOINT))
+      .build();
 
-    IntStream.range(0, 100).forEach(i -> {
-      Span s = TestObjects.TRACE.get(1);
-      trace[i + 1] = s.toBuilder()
-          .id(s.id + i)
-          .timestamp(s.timestamp + i)
-          .annotations(s.annotations.stream()
-              .map(a -> Annotation.create(a.timestamp + i, a.value, a.endpoint))
-              .collect(toList()))
-          .build();
-    });
+    IntStream.range(1, trace.length).forEach(i ->
+      trace[i] = Span.builder().traceId(trace[0].traceId).parentId(trace[0].id).id(i).name("foo")
+        .timestamp((TODAY + i) * 1000).duration(10L)
+        .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "", WEB_ENDPOINT))
+        .build());
 
     accept(trace);
 
-    String serviceName = trace[1].annotations.get(0).endpoint.serviceName;
-    assertThat(store().getTraces(QueryRequest.builder().serviceName(serviceName).build()))
+    assertThat(store().getTraces(QueryRequest.builder().build()))
         .containsExactly(asList(trace));
     assertThat(store().getTrace(trace[0].traceIdHigh, trace[0].traceId))
         .containsExactly(trace);

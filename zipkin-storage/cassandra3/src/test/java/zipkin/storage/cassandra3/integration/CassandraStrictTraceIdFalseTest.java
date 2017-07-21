@@ -15,7 +15,6 @@ package zipkin.storage.cassandra3.integration;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.ClassRule;
 import org.junit.Test;
 import zipkin.Span;
 import zipkin.TestObjects;

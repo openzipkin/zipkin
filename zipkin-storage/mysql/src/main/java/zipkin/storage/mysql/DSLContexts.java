@@ -20,7 +20,6 @@ import org.jooq.SQLDialect;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultConfiguration;
-import org.jooq.tools.jdbc.JDBCUtils;
 import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.checkNotNull;

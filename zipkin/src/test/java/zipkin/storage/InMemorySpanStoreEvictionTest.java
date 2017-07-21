@@ -144,14 +144,12 @@ public class InMemorySpanStoreEvictionTest {
 
   @Test
   public void evict_oneTraceMultipleSpans() {
-    Span testSpan1 = span1.toBuilder().traceIdHigh(1L).traceId(123).
-      timestamp(ann1.timestamp).build();
-    Span testSpan2 = span2.toBuilder().traceIdHigh(2L).traceId(123).
-      timestamp(ann2.timestamp).build();
+    Span testSpan1 = span1;
+    Span testSpan2 = span2.toBuilder().traceId(span1.traceId).build();
 
     consumer.accept(asList(testSpan1, testSpan2));
     assertThat(store.getTraces(QueryRequest.builder().build()))
-      .containsOnly(asList(testSpan1), asList(testSpan2));
+      .containsOnly(asList(testSpan1, testSpan2));
 
     // Since both spans are a part of the same trace, getting down to
     // only one span means deleting both (the whole trace)
