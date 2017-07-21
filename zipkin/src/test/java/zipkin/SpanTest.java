@@ -15,6 +15,7 @@ package zipkin;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import okio.Buffer;
 import okio.ByteString;
@@ -62,6 +63,18 @@ public class SpanTest {
   public void spanNamesLowercase() {
     assertThat(Span.builder().traceId(1L).id(1L).name("GET").build().name)
         .isEqualTo("get");
+  }
+
+  @Test
+  public void clearBuilder_retainsEmptyCollections() {
+    Span.Builder builder = TestObjects.TRACE.get(1).toBuilder();
+
+    // clear should set everything null, but retain empty collections
+    Span.Builder expected = Span.builder();
+    expected.annotations = new ArrayList<>();
+    expected.binaryAnnotations = new ArrayList<>();
+    assertThat(builder.clear())
+      .isEqualToComparingFieldByField(expected);
   }
 
   @Test

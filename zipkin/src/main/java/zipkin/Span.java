@@ -205,6 +205,7 @@ public final class Span implements Comparable<Span>, Serializable { // for Spark
       id = null;
       parentId = null;
       timestamp = null;
+      duration = null;
       if (annotations != null) annotations.clear();
       if (binaryAnnotations != null) binaryAnnotations.clear();
       debug = null;
