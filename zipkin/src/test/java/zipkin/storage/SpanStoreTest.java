@@ -508,30 +508,37 @@ public abstract class SpanStoreTest {
   public void getTraces_differentiateOnServiceName() {
     Span trace1 = Span.builder().traceId(1).name("get").id(1)
         .timestamp((today + 1) * 1000)
+        .duration(3000L)
         .addAnnotation(Annotation.create((today + 1) * 1000, CLIENT_SEND, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 1) * 1000, SERVER_RECV, APP_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 1) * 1000, SERVER_SEND, APP_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 1) * 1000, CLIENT_RECV, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 1) * 1000, "web", WEB_ENDPOINT))
+        .addAnnotation(Annotation.create(((today + 1) * 1000) + 500, "web", WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 2) * 1000, SERVER_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 3) * 1000, SERVER_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 4) * 1000, CLIENT_RECV, WEB_ENDPOINT))
         .addBinaryAnnotation(BinaryAnnotation.create("local", "web", WEB_ENDPOINT))
         .addBinaryAnnotation(BinaryAnnotation.create("web-b", "web", WEB_ENDPOINT))
         .build();
 
     Span trace2 = Span.builder().traceId(2).name("get").id(2)
-        .timestamp((today + 2) * 1000)
-        .addAnnotation(Annotation.create((today + 2) * 1000, CLIENT_SEND, APP_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 2) * 1000, SERVER_RECV, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 2) * 1000, SERVER_SEND, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 2) * 1000, CLIENT_RECV, APP_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 2) * 1000, "app", APP_ENDPOINT))
+        .timestamp((today + 11) * 1000)
+        .duration(3000L)
+        .addAnnotation(Annotation.create((today + 11) * 1000, CLIENT_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create(((today + 11) * 1000) + 500, "app", APP_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 12) * 1000, SERVER_RECV, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 13) * 1000, SERVER_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((today + 14) * 1000, CLIENT_RECV, APP_ENDPOINT))
         .addBinaryAnnotation(BinaryAnnotation.create("local", "app", APP_ENDPOINT))
         .addBinaryAnnotation(BinaryAnnotation.create("app-b", "app", APP_ENDPOINT))
         .build();
 
     accept(trace1, trace2);
 
+    // Sanity check
+    assertThat(store().getTrace(trace1.traceIdHigh, trace1.traceId))
+        .containsExactly(trace1);
+    assertThat(store().getTrace(trace2.traceIdHigh, trace2.traceId))
+        .containsExactly(trace2);
     assertThat(store().getTraces(QueryRequest.builder().build()))
-        .containsExactly(asList(trace2), asList(trace1));
+         .containsExactly(asList(trace2), asList(trace1));
 
     // We only return traces where the service specified caused the annotation queried.
     assertThat(store().getTraces(QueryRequest.builder().serviceName("web").addAnnotation("web").build()))
