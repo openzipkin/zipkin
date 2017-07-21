@@ -222,6 +222,19 @@ public class DependencyLinkerTest {
         .containsOnly(DependencyLink.create("service1", "service2", 1L));
   }
 
+  /** Client+Server spans that don't share IDs are treated as server spans missing their peer */
+  @Test
+  public void linksSingleHostSpans() {
+    List<DependencyLinkSpan> singleHostSpans = asList(
+      new DependencyLinkSpan(new TraceId(0L, 1L), null, 1L, Kind.SERVER, "web", null),
+      new DependencyLinkSpan(new TraceId(0L, 1L), 1L, 2L, Kind.SERVER, "app", null)
+    );
+
+    assertThat(new DependencyLinker()
+      .putTrace(singleHostSpans.iterator()).link())
+      .containsOnly(DependencyLink.create("web", "app", 1L));
+  }
+
   @Test
   public void merge() {
     List<DependencyLink> links = asList(

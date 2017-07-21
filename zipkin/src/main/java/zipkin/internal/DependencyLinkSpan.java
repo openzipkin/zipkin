@@ -211,16 +211,19 @@ public final class DependencyLinkSpan {
     }
 
     public DependencyLinkSpan build() {
+      // The client address is more authoritative than the client send owner.
+      if (caService == null) caService = csService;
+
       // Finagle labels two sides of the same socket ("ca", "sa") with the same name.
       // Skip the client side, so it isn't mistaken for a loopback request
       if (equal(saService, caService)) caService = null;
 
       if (srService != null) {
-        // The client address is more authoritative than the client send owner.
-        if (caService == null) caService = csService;
         return new DependencyLinkSpan(traceId, parentId, spanId, Kind.SERVER, srService, caService);
       } else if (saService != null) {
         return new DependencyLinkSpan(traceId, parentId, spanId, Kind.CLIENT, caService, saService);
+      } else if (csService != null) {
+        return new DependencyLinkSpan(traceId, parentId, spanId, Kind.SERVER, caService, null);
       }
       return new DependencyLinkSpan(traceId, parentId, spanId, Kind.UNKNOWN, null, null);
     }
