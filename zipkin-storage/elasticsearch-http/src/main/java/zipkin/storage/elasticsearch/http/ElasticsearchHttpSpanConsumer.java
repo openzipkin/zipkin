@@ -13,25 +13,18 @@
  */
 package zipkin.storage.elasticsearch.http;
 
-import com.squareup.moshi.JsonWriter;
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import okio.Buffer;
-import zipkin.Codec;
 import zipkin.Span;
-import zipkin.internal.Pair;
+import zipkin.internal.Span2;
+import zipkin.internal.Span2Codec;
+import zipkin.internal.Span2Converter;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
 
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.propagateIfFatal;
-import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SERVICE_SPAN;
 
 class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final for testing
 
@@ -50,10 +43,7 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
     }
     try {
       HttpBulkIndexer indexer = new HttpBulkIndexer("index-span", es);
-      Map<String, Set<Pair<String>>> indexToServiceSpans = indexSpans(indexer, spans);
-      if (!indexToServiceSpans.isEmpty()) {
-        indexNames(indexer, indexToServiceSpans);
-      }
+      indexSpans(indexer, spans);
       indexer.execute(callback);
     } catch (Throwable t) {
       propagateIfFatal(t);
@@ -61,9 +51,7 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
     }
   }
 
-  /** Indexes spans and returns a mapping of indexes that may need a names update */
-  Map<String, Set<Pair<String>>> indexSpans(HttpBulkIndexer indexer, List<Span> spans) {
-    Map<String, Set<Pair<String>>> indexToServiceSpans = new LinkedHashMap<>();
+  void indexSpans(HttpBulkIndexer indexer, List<Span> spans) {
     for (Span span : spans) {
       Long timestamp = guessTimestamp(span);
       Long timestampMillis;
@@ -83,40 +71,11 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
         if (indexTimestamp == null) indexTimestamp = System.currentTimeMillis();
         index = indexNameFormatter.indexNameForTimestamp(indexTimestamp);
       }
-      if (!span.name.isEmpty()) putServiceSpans(indexToServiceSpans, index, span);
-      byte[] document = Codec.JSON.writeSpan(span);
-      if (timestampMillis != null) document = prefixWithTimestampMillis(document, timestampMillis);
-      indexer.add(index, ElasticsearchHttpSpanStore.SPAN, document, null /* Allow ES to choose an ID */);
-    }
-    return indexToServiceSpans;
-  }
-
-  void putServiceSpans(Map<String, Set<Pair<String>>> indexToServiceSpans, String index, Span s) {
-    Set<Pair<String>> serviceSpans = indexToServiceSpans.get(index);
-    if (serviceSpans == null) indexToServiceSpans.put(index, serviceSpans = new LinkedHashSet<>());
-    for (String serviceName : s.serviceNames()) {
-      serviceSpans.add(Pair.create(serviceName, s.name));
-    }
-  }
-
-  /**
-   * Adds service and span names to the pending batch. The id is "serviceName|spanName" to prevent
-   * a large order of duplicates ending up in the daily index. This also means queries do not need
-   * to deduplicate.
-   */
-  void indexNames(HttpBulkIndexer indexer, Map<String, Set<Pair<String>>> indexToServiceSpans)
-      throws IOException {
-    Buffer buffer = new Buffer();
-    for (Map.Entry<String, Set<Pair<String>>> entry : indexToServiceSpans.entrySet()) {
-      String index = entry.getKey();
-      for (Pair<String> serviceSpan : entry.getValue()) {
-        JsonWriter writer = JsonWriter.of(buffer);
-        writer.beginObject();
-        writer.name("serviceName").value(serviceSpan._1);
-        writer.name("spanName").value(serviceSpan._2);
-        writer.endObject();
-        byte[] document = buffer.readByteArray();
-        indexer.add(index, SERVICE_SPAN, document, serviceSpan._1 + "|" + serviceSpan._2);
+      for (Span2 span2 : Span2Converter.fromSpan(span)) {
+        byte[] document = Span2Codec.JSON.writeSpan(span2);
+        if (timestampMillis != null)
+          document = prefixWithTimestampMillis(document, timestampMillis);
+        indexer.add(index, ElasticsearchHttpSpanStore.SPAN2, document, null /* Allow ES to choose an ID */);
       }
     }
   }

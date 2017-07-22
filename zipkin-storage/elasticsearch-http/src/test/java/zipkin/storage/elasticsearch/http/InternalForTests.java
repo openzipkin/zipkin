@@ -48,13 +48,4 @@ public class InternalForTests {
   public static void flushOnWrites(ElasticsearchHttpStorage.Builder builder) {
     builder.flushOnWrites(true);
   }
-
-  /** The old consumer didn't write to the "servicespan" type on ingest. */
-  public static AsyncSpanConsumer oldConsumer(ElasticsearchHttpStorage es) {
-    es.ensureIndexTemplate();
-    return new ElasticsearchHttpSpanConsumer(es) {
-      @Override void indexNames(HttpBulkIndexer ignored, Map<String, Set<Pair<String>>> ignored2) {
-      }
-    };
-  }
 }

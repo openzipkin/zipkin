@@ -43,6 +43,7 @@ class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchHttpStorag
     try {
       container = new GenericContainer(image)
           .withExposedPorts(9200)
+          .withEnv("ES_JAVA_OPTS", "-Dmapper.allow_dots_in_name=true")
           .waitingFor(new HttpWaitStrategy().forPath("/"));
       container.start();
       System.out.println("Will use TestContainers Elasticsearch instance");

@@ -27,7 +27,7 @@ import zipkin.internal.Util;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SERVICE_SPAN;
+import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SPAN2;
 import static zipkin.storage.elasticsearch.http.TestResponses.SERVICE_NAMES;
 import static zipkin.storage.elasticsearch.http.TestResponses.SPAN_NAMES;
 
@@ -84,6 +84,6 @@ public class ElasticsearchHttpSpanStoreTest {
 
     RecordedRequest request = es.takeRequest();
     assertThat(request.getPath())
-        .startsWith("/" + indexesToSearch + "/" + SERVICE_SPAN + "/_search");
+        .startsWith("/" + indexesToSearch + "/" + SPAN2 + "/_search");
   }
 }
