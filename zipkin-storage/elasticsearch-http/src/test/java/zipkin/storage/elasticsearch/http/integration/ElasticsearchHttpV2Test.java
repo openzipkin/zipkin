@@ -25,7 +25,7 @@ public class ElasticsearchHttpV2Test {
 
   @ClassRule
   public static LazyElasticsearchHttpStorage storage =
-      new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch:1.19.2");
+      new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch:1.28.1");
 
   public static class DependenciesTest extends ElasticsearchHttpDependenciesTest {
     @Override protected ElasticsearchHttpStorage storage() {

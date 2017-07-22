@@ -25,10 +25,10 @@ import zipkin.BinaryAnnotation;
 import zipkin.DependencyLink;
 import zipkin.Endpoint;
 import zipkin.Span;
-import zipkin.internal.Util;
+import zipkin.internal.Span2;
+import zipkin.internal.Span2Converter;
 
 import static zipkin.internal.Util.UTF_8;
-import static zipkin.internal.Util.lowerHexToUnsignedLong;
 
 /**
  * Read-only json adapters resurrected from before we switched to Java 6 as storage components can
@@ -38,7 +38,7 @@ final class JsonAdapters {
   static final JsonAdapter<Span> SPAN_ADAPTER = new JsonAdapter<Span>() {
     @Override
     public Span fromJson(JsonReader reader) throws IOException {
-      Span.Builder result = Span.builder();
+      Span2.Builder result = Span2.builder();
       reader.beginObject();
       while (reader.hasNext()) {
         String nextName = reader.nextName();
@@ -48,20 +48,19 @@ final class JsonAdapters {
         }
         switch (nextName) {
           case "traceId":
-            String traceId = reader.nextString();
-            if (traceId.length() == 32) {
-              result.traceIdHigh(lowerHexToUnsignedLong(traceId, 0));
-            }
-            result.traceId(lowerHexToUnsignedLong(traceId));
+            result.traceId(reader.nextString());
+            break;
+          case "parentId":
+            result.parentId(reader.nextString());
+            break;
+          case "id":
+            result.id(reader.nextString());
+            break;
+          case "kind":
+            result.kind(Span2.Kind.valueOf(reader.nextString()));
             break;
           case "name":
             result.name(reader.nextString());
-            break;
-          case "id":
-            result.id(Util.lowerHexToUnsignedLong(reader.nextString()));
-            break;
-          case "parentId":
-            result.parentId(Util.lowerHexToUnsignedLong(reader.nextString()));
             break;
           case "timestamp":
             result.timestamp(reader.nextLong());
@@ -69,29 +68,39 @@ final class JsonAdapters {
           case "duration":
             result.duration(reader.nextLong());
             break;
+          case "localEndpoint":
+            result.localEndpoint(ENDPOINT_ADAPTER.fromJson(reader));
+            break;
+          case "remoteEndpoint":
+            result.remoteEndpoint(ENDPOINT_ADAPTER.fromJson(reader));
+            break;
           case "annotations":
             reader.beginArray();
             while (reader.hasNext()) {
-              result.addAnnotation(ANNOTATION_ADAPTER.fromJson(reader));
+              Annotation a = ANNOTATION_ADAPTER.fromJson(reader);
+              result.addAnnotation(a.timestamp, a.value);
             }
             reader.endArray();
             break;
-          case "binaryAnnotations":
-            reader.beginArray();
+          case "tags":
+            reader.beginObject();
             while (reader.hasNext()) {
-              result.addBinaryAnnotation(BINARY_ANNOTATION_ADAPTER.fromJson(reader));
+              result.putTag(reader.nextName(), reader.nextString());
             }
-            reader.endArray();
+            reader.endObject();
             break;
           case "debug":
             result.debug(reader.nextBoolean());
+            break;
+          case "shared":
+            result.shared(reader.nextBoolean());
             break;
           default:
             reader.skipValue();
         }
       }
       reader.endObject();
-      return result.build();
+      return Span2Converter.toSpan(result.build());
     }
 
     @Override

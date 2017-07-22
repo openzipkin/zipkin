@@ -13,7 +13,6 @@
  */
 package zipkin.storage.elasticsearch.http.integration;
 
-import java.io.IOException;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,11 +31,9 @@ abstract class ElasticsearchHttpNamesFallbackTest {
 
   /** Setup test data which has doesnt map the "servicespan" type */
   @Before
-  public void clear() throws IOException {
+  public void clear() throws Exception {
     InternalForTests.clear(storage());
-    CallbackCaptor<Void> callback = new CallbackCaptor<>();
-    InternalForTests.oldConsumer(storage()).accept(TestObjects.TRACE, callback);
-    callback.get();
+    accept(TestObjects.TRACE);
   }
 
   @Test
@@ -57,7 +54,7 @@ abstract class ElasticsearchHttpNamesFallbackTest {
 
   void accept(List<Span> trace) throws Exception {
     CallbackCaptor<Void> callback = new CallbackCaptor<>();
-    InternalForTests.oldConsumer(storage()).accept(trace, callback);
+    storage().asyncSpanConsumer().accept(trace, callback);
     callback.get();
   }
 }

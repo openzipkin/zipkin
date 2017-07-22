@@ -14,7 +14,6 @@
 package zipkin.storage.elasticsearch.http;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -24,7 +23,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin.Annotation;
-import zipkin.BinaryAnnotation;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.TestObjects;
@@ -35,7 +33,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.Constants.CLIENT_SEND;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.TestObjects.TODAY;
-import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanConsumer.prefixWithTimestampMillis;
 
@@ -110,35 +107,6 @@ public class ElasticsearchHttpSpanConsumerTest {
   }
 
   @Test
-  public void indexesServiceSpan_explicitTimestamp() throws Exception {
-    es.enqueue(new MockResponse());
-
-    Span span = TestObjects.TRACE.get(0);
-    accept(span);
-
-    assertThat(es.takeRequest().getBody().readByteString().utf8()).endsWith(
-        "\"_type\":\"servicespan\",\"_id\":\"web|get\"}}\n"
-            + "{\"serviceName\":\"web\",\"spanName\":\"get\"}\n"
-    );
-  }
-
-  /** Not a good span name, but better to test it than break mysteriously */
-  @Test
-  public void indexesServiceSpan_jsonInSpanName() throws Exception {
-    es.enqueue(new MockResponse());
-
-    String name = "{\"foo\":\"bar\"}";
-    String nameEscaped = "{\\\"foo\\\":\\\"bar\\\"}";
-
-    accept(TestObjects.TRACE.get(0).toBuilder().name(name).build());
-
-    assertThat(es.takeRequest().getBody().readByteString().utf8()).endsWith(
-      "\"_type\":\"servicespan\",\"_id\":\"web|" + nameEscaped + "\"}}\n"
-        + "{\"serviceName\":\"web\",\"spanName\":\"" + nameEscaped + "\"}\n"
-    );
-  }
-
-  @Test
   public void traceIsSearchableBySRServiceName() throws Exception {
     es.enqueue(new MockResponse());
 
@@ -156,95 +124,6 @@ public class ElasticsearchHttpSpanConsumerTest {
     assertThat(es.takeRequest().getBody().readByteString().utf8())
         .contains("{\"timestamp_millis\":1")
         .contains("{\"timestamp_millis\":0");
-  }
-
-  @Test
-  public void indexesServiceSpan_multipleServices() throws Exception {
-    es.enqueue(new MockResponse());
-
-    Span span = TestObjects.TRACE.get(1);
-    accept(span);
-
-    assertThat(es.takeRequest().getBody().readByteString().utf8())
-        .contains(
-            "\"_type\":\"servicespan\",\"_id\":\"app|get\"}}\n"
-                + "{\"serviceName\":\"app\",\"spanName\":\"get\"}\n"
-        )
-        .contains(
-            "\"_type\":\"servicespan\",\"_id\":\"web|get\"}}\n"
-                + "{\"serviceName\":\"web\",\"spanName\":\"get\"}\n"
-        );
-  }
-
-  @Test
-  public void indexesServiceSpan_basedOnGuessTimestamp() throws Exception {
-    es.enqueue(new MockResponse());
-
-    Annotation cs = Annotation.create(
-        TimeUnit.DAYS.toMicros(365), // 1971-01-01
-        CLIENT_SEND,
-        TestObjects.APP_ENDPOINT
-    );
-
-    Span span = Span.builder().traceId(1L).id(1L).name("s").addAnnotation(cs).build();
-
-    // sanity check data
-    assertThat(span.timestamp).isNull();
-    assertThat(guessTimestamp(span)).isNotNull();
-
-    accept(span);
-
-    // index timestamp is the server timestamp, not current time!
-    assertThat(es.takeRequest().getBody().readByteString().utf8()).contains(
-        "{\"index\":{\"_index\":\"zipkin-1971-01-01\",\"_type\":\"span\"}}\n",
-        "{\"index\":{\"_index\":\"zipkin-1971-01-01\",\"_type\":\"servicespan\",\"_id\":\"app|s\"}}\n"
-    );
-  }
-
-  @Test
-  public void indexesServiceSpan_basedOnAnnotationTimestamp() throws Exception {
-    es.enqueue(new MockResponse());
-
-    Annotation foo = Annotation.create(
-        TimeUnit.DAYS.toMicros(365), // 1971-01-01
-        "foo",
-        TestObjects.APP_ENDPOINT
-    );
-
-    Span span = Span.builder().traceId(1L).id(2L).parentId(1L).name("s").addAnnotation(foo).build();
-
-    // sanity check data
-    assertThat(span.timestamp).isNull();
-    assertThat(guessTimestamp(span)).isNull();
-
-    accept(span);
-
-    // index timestamp is the server timestamp, not current time!
-    assertThat(es.takeRequest().getBody().readByteString().utf8()).contains(
-        "{\"index\":{\"_index\":\"zipkin-1971-01-01\",\"_type\":\"span\"}}\n",
-        "{\"index\":{\"_index\":\"zipkin-1971-01-01\",\"_type\":\"servicespan\",\"_id\":\"app|s\"}}\n"
-    );
-  }
-
-  @Test
-  public void indexesServiceSpan_currentTimestamp() throws Exception {
-    es.enqueue(new MockResponse());
-
-    Span span = Span.builder().traceId(1L).id(2L).parentId(1L).name("s")
-        .addBinaryAnnotation(BinaryAnnotation.create("f", "", TestObjects.APP_ENDPOINT))
-        .build();
-
-    // sanity check data
-    assertThat(span.timestamp).isNull();
-    assertThat(guessTimestamp(span)).isNull();
-
-    accept(span);
-
-    String today = storage.indexNameFormatter().indexNameForTimestamp(TODAY);
-    assertThat(es.takeRequest().getBody().readByteString().utf8()).contains(
-        "{\"index\":{\"_index\":\"" + today + "\",\"_type\":\"span\"}}\n",
-        "{\"index\":{\"_index\":\"" + today + "\",\"_type\":\"servicespan\",\"_id\":\"app|s\"}}\n"
-    );
   }
 
   @Test
