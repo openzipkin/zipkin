@@ -447,6 +447,19 @@ public final class Span implements Comparable<Span>, Serializable { // for Spark
     return this.name.compareTo(that.name);
   }
 
+  /** Returns the hex representation of the span's trace ID */
+  public String traceIdString() {
+    if (traceIdHigh != 0) {
+      char[] result = new char[32];
+      writeHexLong(result, 0, traceIdHigh);
+      writeHexLong(result, 16, traceId);
+      return new String(result);
+    }
+    char[] result = new char[16];
+    writeHexLong(result, 0, traceId);
+    return new String(result);
+  }
+
   /** Returns {@code $traceId.$spanId<:$parentId or $spanId} */
   public String idString() {
     int resultLength = (3 * 16) + 3; // 3 ids and the constant delimiters

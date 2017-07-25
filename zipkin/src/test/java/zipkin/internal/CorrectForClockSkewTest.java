@@ -15,7 +15,10 @@ package zipkin.internal;
 
 import java.net.Inet6Address;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.junit.Test;
 import zipkin.Annotation;
@@ -42,6 +45,19 @@ import static zipkin.internal.CorrectForClockSkew.ipsMatch;
 import static zipkin.internal.CorrectForClockSkew.isLocalSpan;
 
 public class CorrectForClockSkewTest {
+  List<String> messages = new ArrayList<>();
+
+  Logger logger = new Logger("", null) {
+    {
+      setLevel(Level.ALL);
+    }
+
+    @Override public void log(Level level, String msg) {
+      assertThat(level).isEqualTo(Level.FINE);
+      messages.add(msg);
+    }
+  };
+
   static final long networkLatency = 10L;
   static final long now = System.currentTimeMillis();
 
@@ -224,6 +240,52 @@ public class CorrectForClockSkewTest {
     Span adjustedLocal2 = getById(adjustedSpans, local2.id);
     assertThat(local2.timestamp - skew)
         .isEqualTo(adjustedLocal2.timestamp.longValue());
+  }
+
+  @Test
+  public void skipsOnMissingRoot() {
+    long networkLatency = 10L;
+    Span rootSpan = createRootSpan(WEB_ENDPOINT, now, 2000L);
+    long skew = -50000L;
+    Span rpcSpan = childSpan(rootSpan, APP_ENDPOINT, now + networkLatency, 1000L, skew);
+    List<Span> spans = asList(rootSpan.toBuilder().parentId(-1L).build(), rpcSpan);
+
+    assertThat(CorrectForClockSkew.apply(logger, spans))
+      .isSameAs(spans);
+    assertThat(messages).containsExactly(
+      "skipping clock skew adjustment due to missing root span: traceId=0000000000000001"
+    );
+  }
+  @Test
+  public void skipsOnDuplicateRoot() {
+    long networkLatency = 10L;
+    Span rootSpan = createRootSpan(WEB_ENDPOINT, now, 2000L);
+    long skew = -50000L;
+    Span rpcSpan = childSpan(rootSpan, APP_ENDPOINT, now + networkLatency, 1000L, skew);
+    List<Span> spans = asList(rootSpan, rootSpan.toBuilder().id(-1).build(), rpcSpan);
+
+    assertThat(CorrectForClockSkew.apply(logger, spans))
+      .isSameAs(spans);
+    assertThat(messages).containsExactly(
+      "skipping redundant root span: traceId=0000000000000001, rootSpanId=0000000000000001, spanId=ffffffffffffffff",
+      "skipping clock skew adjustment due to data errors: traceId=0000000000000001"
+    );
+  }
+
+  @Test
+  public void skipsOnCycle() {
+    long networkLatency = 10L;
+    Span rootSpan = createRootSpan(WEB_ENDPOINT, now, 2000L);
+    long skew = -50000L;
+    Span rpcSpan = childSpan(rootSpan, APP_ENDPOINT, now + networkLatency, 1000L, skew);
+    List<Span> spans = asList(rootSpan, rpcSpan.toBuilder().parentId(rpcSpan.id).build());
+
+    assertThat(CorrectForClockSkew.apply(logger, spans))
+      .isSameAs(spans);
+    assertThat(messages).containsExactly(
+      "skipping circular dependency: traceId=0000000000000001, spanId=0000000000000002",
+      "skipping clock skew adjustment due to data errors: traceId=0000000000000001"
+    );
   }
 
   static void assertClockSkewIsCorrectlyApplied(long skew) {

@@ -19,16 +19,22 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.Span;
 
+import static java.lang.String.format;
+import static java.util.logging.Level.FINE;
+import static zipkin.internal.Util.toLowerHex;
+
 /**
  * Adjusts spans whose children happen before their parents, based on core annotation values.
  */
 public final class CorrectForClockSkew {
+  private static final Logger logger = Logger.getLogger(CorrectForClockSkew.class.getName());
 
   static class ClockSkew {
     final Endpoint endpoint;
@@ -41,18 +47,52 @@ public final class CorrectForClockSkew {
   }
 
   public static List<Span> apply(List<Span> spans) {
-    for (Span s : spans) {
-      if (s.parentId == null) {
-        Node<Span> tree = Node.constructTree(spans);
-        adjust(tree, null);
-        List<Span> result = new ArrayList<>(spans.size());
-        for (Iterator<Node<Span>> i = tree.traverse(); i.hasNext();) {
-          result.add(i.next().value());
+    return apply(logger, spans);
+  }
+
+  static List<Span> apply(Logger logger, List<Span> spans) {
+    if (spans.isEmpty()) return spans;
+
+    String traceId = spans.get(0).traceIdString();
+    Long rootSpanId = null;
+    Node.TreeBuilder<Span> treeBuilder = new Node.TreeBuilder<>(logger, traceId);
+
+    boolean dataError = false;
+    for (int i = 0, length = spans.size(); i < length; i++) {
+      Span next = spans.get(i);
+      if (next.parentId == null) {
+        if (rootSpanId != null) {
+          if (logger.isLoggable(FINE)) {
+            logger.fine(format("skipping redundant root span: traceId=%s, rootSpanId=%s, spanId=%s",
+              traceId, toLowerHex(rootSpanId), toLowerHex(next.id)));
+          }
+          dataError = true;
+          continue;
         }
-        return result;
+        rootSpanId = next.id;
       }
+      if (!treeBuilder.addNode(next.parentId, next.id, next)) dataError = true;
     }
-    return spans;
+
+    if (rootSpanId == null) {
+      if (logger.isLoggable(FINE)) {
+        logger.fine("skipping clock skew adjustment due to missing root span: traceId=" + traceId);
+      }
+      return spans;
+    } else if (dataError) {
+      if (logger.isLoggable(FINE)) {
+        logger.fine("skipping clock skew adjustment due to data errors: traceId=" + traceId);
+      }
+      return spans;
+    }
+
+    Node<Span> tree = treeBuilder.build();
+    adjust(tree, null);
+    List<Span> result = new ArrayList<>(spans.size());
+    for (Iterator<Node<Span>> i = tree.traverse(); i.hasNext(); ) {
+      result.add(i.next().value());
+    }
+    return result;
   }
 
   /**
@@ -73,7 +113,7 @@ public final class CorrectForClockSkew {
     } else {
       if (skewFromParent != null && isLocalSpan(node.value())) {
         //Propagate skewFromParent to local spans
-         skew = skewFromParent;
+        skew = skewFromParent;
       }
     }
     // propagate skew to any children
@@ -114,7 +154,7 @@ public final class CorrectForClockSkew {
       if (a.endpoint == null) continue;
       if (ipsMatch(skew.endpoint, a.endpoint)) {
         if (annotations == null) annotations = new ArrayList<>(span.annotations);
-        if (span.timestamp!= null && a.timestamp == span.timestamp) {
+        if (span.timestamp != null && a.timestamp == span.timestamp) {
           annotationTimestamp = a.timestamp;
         }
         annotations.set(i, a.toBuilder().timestamp(a.timestamp - skew.skew).build());
@@ -157,9 +197,9 @@ public final class CorrectForClockSkew {
       return null;
     }
 
-    Endpoint server = serverRecv.endpoint != null ? serverRecv.endpoint: serverSend.endpoint;
+    Endpoint server = serverRecv.endpoint != null ? serverRecv.endpoint : serverSend.endpoint;
     if (server == null) return null;
-    Endpoint client = clientSend.endpoint != null ? clientSend.endpoint: clientRecv.endpoint;
+    Endpoint client = clientSend.endpoint != null ? clientSend.endpoint : clientRecv.endpoint;
     if (client == null) return null;
 
     // There's no skew if the RPC is going to itself
