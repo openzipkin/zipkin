@@ -95,12 +95,29 @@ public abstract class DependenciesTest {
    */
   @Test
   public void getDependencies_strictTraceId() {
-    List<Span> mixedTrace = new ArrayList<>(TRACE);
-    mixedTrace.set(1, TRACE.get(1).toBuilder().traceIdHigh(2).build());
+    long traceIdHigh = Long.MAX_VALUE;
+    long traceId = Long.MIN_VALUE;
+    List<Span> mixedTrace = asList(
+      Span.builder().traceIdHigh(traceIdHigh).traceId(traceId).id(1L).name("get")
+        .addAnnotation(Annotation.create(TODAY * 1000, SERVER_RECV, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 350) * 1000, SERVER_SEND, WEB_ENDPOINT))
+        .build(),
+      // the server dropped traceIdHigh
+      Span.builder().traceId(traceId).parentId(1L).id(2L).name("get")
+        .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 250) * 1000, SERVER_SEND, APP_ENDPOINT))
+        .build(),
+      Span.builder().traceIdHigh(traceIdHigh).traceId(traceId).parentId(1L).id(2L).name("get")
+        .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 300) * 1000, CLIENT_RECV, WEB_ENDPOINT))
+        .build()
+    );
+
     processDependencies(mixedTrace);
 
-    assertThat(store().getDependencies(TODAY + 1000L, null))
-        .containsOnlyElementsOf(LINKS);
+    assertThat(store().getDependencies(TODAY + 1000L, null)).containsOnly(
+      DependencyLink.create("web", "app", 1)
+    );
   }
 
   /** It should be safe to run dependency link jobs twice */

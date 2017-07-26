@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -76,7 +76,8 @@ final class DependencyLinkSpanIterator implements Iterator<DependencyLinkSpan> {
   @Override
   public boolean hasNext() {
     return delegate.hasNext()
-        && (traceIdHi == null || traceIdHi.equals(traceIdHigh(delegate)))
+        // We don't have a query parameter for strictTraceId when fetching dependency links, so we
+        // ignore traceIdHigh. Otherwise, a single trace can appear as two, doubling callCount.
         && delegate.peek().getValue(ZipkinSpans.ZIPKIN_SPANS.TRACE_ID) == traceIdLo;
   }
 
