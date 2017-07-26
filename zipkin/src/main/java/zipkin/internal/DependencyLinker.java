@@ -25,6 +25,7 @@ import zipkin.DependencyLink;
 import zipkin.Span;
 
 import static java.util.logging.Level.FINE;
+import static zipkin.internal.Util.checkNotNull;
 
 /**
  * This parses a span tree into dependency links used by Web UI. Ex. http://zipkin/dependency
@@ -35,9 +36,16 @@ import static java.util.logging.Level.FINE;
  * DependencyLinkSpan#peerService peer} are included, as this accounts for uninstrumented services.
  */
 public final class DependencyLinker {
-  private static final Logger logger = Logger.getLogger(DependencyLinker.class.getName());
-
+  private final Logger logger;
   private final Map<Pair<String>, Long> linkMap = new LinkedHashMap<>();
+
+  public DependencyLinker() {
+    this(Logger.getLogger(DependencyLinker.class.getName()));
+  }
+
+  DependencyLinker(Logger logger) {
+    this.logger = logger;
+  }
 
   /**
    * @param spans spans where all spans have the same trace id
@@ -58,7 +66,11 @@ public final class DependencyLinker {
   public DependencyLinker putTrace(Iterator<DependencyLinkSpan> spans) {
     if (!spans.hasNext()) return this;
 
-    Node.TreeBuilder<DependencyLinkSpan> builder = new Node.TreeBuilder<>();
+    DependencyLinkSpan first = spans.next();
+    Node.TreeBuilder<DependencyLinkSpan> builder =
+      new Node.TreeBuilder<>(logger, first.traceId.toString());
+    builder.addNode(first.parentId, first.id, first);
+
     while (spans.hasNext()) {
       DependencyLinkSpan next = spans.next();
       builder.addNode(next.parentId, next.id, next);

@@ -22,10 +22,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import zipkin.Span;
+import java.util.logging.Logger;
 
+import static java.lang.String.format;
+import static java.util.logging.Level.FINE;
 import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.checkNotNull;
+import static zipkin.internal.Util.toLowerHex;
 
 /**
  * Convenience type representing a tree. This is here because multiple facets in zipkin require
@@ -107,40 +110,59 @@ public final class Node<V> {
   }
 
   /**
-   * @param trace spans that belong to the same {@link Span#traceId trace}, in any order.
-   */
-  static Node<Span> constructTree(List<Span> trace) {
-    TreeBuilder<Span> treeBuilder = new TreeBuilder<>();
-    for (Span s : trace) {
-      treeBuilder.addNode(s.parentId, s.id, s);
-    }
-    return treeBuilder.build();
-  }
-
-  /**
    * Some operations do not require the entire span object. This creates a tree given (parent id,
    * id) pairs.
    *
    * @param <V> same type as {@link Node#value}
    */
-  public static final class TreeBuilder<V> {
+  static final class TreeBuilder<V> {
+    final Logger logger;
+    final String traceId;
+
+    TreeBuilder(Logger logger, String traceId) {
+      this.logger = logger;
+      this.traceId = traceId;
+    }
+
     Node<V> rootNode = null;
+    Long rootId = null;
 
     // Nodes representing the trace tree
     Map<Long, Node<V>> idToNode = new LinkedHashMap<>();
     // Collect the parent-child relationships between all spans.
     Map<Long, Long> idToParent = new LinkedHashMap<>(idToNode.size());
 
-    public void addNode(@Nullable Long parentId, long id, V value) {
+    /** Returns false after logging to FINE if the value couldn't be added */
+    public boolean addNode(@Nullable Long parentId, long id, V value) {
+      if (parentId == null) {
+        if (rootId != null) {
+          if (logger.isLoggable(FINE)) {
+            logger.fine(format(
+              "attributing span missing parent to root: traceId=%s, rootSpanId=%s, spanId=%s",
+              traceId, toLowerHex(rootId), toLowerHex(id)));
+          }
+        } else {
+          rootId = id;
+        }
+      } else if (parentId == id) {
+        if (logger.isLoggable(FINE)) {
+          logger.fine(
+            format("skipping circular dependency: traceId=%s, spanId=%s", traceId, toLowerHex(id)));
+        }
+        return false;
+      }
+
       Node<V> node = new Node<V>().value(value);
       // special-case root, and attribute missing parents to it. In
       // other words, assume that the first root is the "real" root.
       if (parentId == null && rootNode == null) {
         rootNode = node;
+        rootId = id;
       } else {
         idToNode.put(id, node);
         idToParent.put(id, parentId);
       }
+      return true;
     }
 
     /** Builds a tree from calls to {@link #addNode}, or returns an empty tree. */
@@ -149,8 +171,11 @@ public final class Node<V> {
       for (Map.Entry<Long, Long> entry : idToParent.entrySet()) {
         Node<V> node = idToNode.get(entry.getKey());
         Node<V> parent = idToNode.get(entry.getValue());
-        if (parent == null || node == parent) { // handle headless or circular dep span
+        if (parent == null) { // handle headless
           if (rootNode == null) {
+            if (logger.isLoggable(FINE)) {
+              logger.fine("substituting dummy node for missing root span: traceId=" + traceId);
+            }
             rootNode = new Node<>();
             rootNode.missingRootDummyNode = true;
           }

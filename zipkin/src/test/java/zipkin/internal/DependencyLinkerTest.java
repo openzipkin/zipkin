@@ -13,7 +13,10 @@
  */
 package zipkin.internal;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import zipkin.DependencyLink;
@@ -26,6 +29,18 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class DependencyLinkerTest {
+  List<String> messages = new ArrayList<>();
+
+  Logger logger = new Logger("", null) {
+    {
+      setLevel(Level.ALL);
+    }
+
+    @Override public void log(Level level, String msg) {
+      assertThat(level).isEqualTo(Level.FINE);
+      messages.add(msg);
+    }
+  };
 
   @Test
   public void baseCase() {
@@ -40,16 +55,17 @@ public class DependencyLinkerTest {
     );
   }
 
-  /** This ensures a NPE isn't raised when children point to themselves as a parent. */
   @Test
-  public void allocatesSelfReferencingSpansToRoot() {
+  public void dropsSelfReferencingSpans() {
     List<Span> trace = TestObjects.TRACE.stream()
       .map(s -> s.toBuilder().parentId(s.parentId != null ? s.id : null).build())
       .collect(Collectors.toList());
 
-    assertThat(new DependencyLinker().putTrace(trace).link()).containsExactly(
-      DependencyLink.create("web", "app", 1L),
-      DependencyLink.create("app", "db", 1L)
+    assertThat(new DependencyLinker(logger).putTrace(trace).link()).isEmpty();
+
+    assertThat(messages).contains(
+      "skipping circular dependency: traceId=f66529c8cc356aa0, spanId=93288b464457044e",
+      "skipping circular dependency: traceId=f66529c8cc356aa0, spanId=71e62981f1e136a7"
     );
   }
 
@@ -66,10 +82,14 @@ public class DependencyLinkerTest {
     );
 
     for (DependencyLinkSpan span : unknownRootSpans) {
-      assertThat(new DependencyLinker()
+      assertThat(new DependencyLinker(logger)
           .putTrace(asList(span).iterator()).link())
           .isEmpty();
     }
+
+    assertThat(messages).contains(
+      "non-rpc span; skipping"
+    );
   }
 
   /**
@@ -190,7 +210,7 @@ public class DependencyLinkerTest {
     );
 
     for (DependencyLinkSpan span : incompleteRootSpans) {
-      assertThat(new DependencyLinker()
+      assertThat(new DependencyLinker(logger)
           .putTrace(asList(span).iterator()).link())
           .isEmpty();
     }
@@ -204,9 +224,13 @@ public class DependencyLinkerTest {
         new DependencyLinkSpan(new TraceId(0L, 1L), missingParentId, 3L, Kind.SERVER, "service2", null)
     );
 
-    assertThat(new DependencyLinker()
+    assertThat(new DependencyLinker(logger)
         .putTrace(trace.iterator()).link())
         .isEmpty();
+
+    assertThat(messages).contains(
+      "skipping synthetic node for broken span tree"
+    );
   }
 
   @Test
@@ -217,9 +241,13 @@ public class DependencyLinkerTest {
         new DependencyLinkSpan(new TraceId(0L, 1L), 2L, 3L, Kind.SERVER, "service2", null)
     );
 
-    assertThat(new DependencyLinker()
+    assertThat(new DependencyLinker(logger)
         .putTrace(trace.iterator()).link())
         .containsOnly(DependencyLink.create("service1", "service2", 1L));
+
+    assertThat(messages).contains(
+      "skipping synthetic node for broken span tree"
+    );
   }
 
   /** Client+Server spans that don't share IDs are treated as server spans missing their peer */

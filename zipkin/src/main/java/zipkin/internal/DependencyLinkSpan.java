@@ -20,6 +20,7 @@ import zipkin.Span;
 
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.internal.Util.equal;
+import static zipkin.internal.Util.writeHexLong;
 
 /**
  * Internal type used by {@link DependencyLinker linker} that holds the minimum state needed to
@@ -59,6 +60,19 @@ public final class DependencyLinkSpan {
       h *= 1000003;
       h ^= (lo >>> 32) ^ lo;
       return h;
+    }
+
+    /** Returns the hex representation of the span's trace ID */
+    @Override public String toString() {
+      if (hi != 0) {
+        char[] result = new char[32];
+        writeHexLong(result, 0, hi);
+        writeHexLong(result, 16, lo);
+        return new String(result);
+      }
+      char[] result = new char[16];
+      writeHexLong(result, 0, lo);
+      return new String(result);
     }
   }
 

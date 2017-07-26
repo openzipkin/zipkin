@@ -30,9 +30,31 @@ import static zipkin.Constants.SERVER_SEND;
 import static zipkin.TestObjects.APP_ENDPOINT;
 
 public class SpanTest {
+  @Test
+  public void traceIdString() {
+    Span with128BitId = Span.builder()
+      .traceId(Util.lowerHexToUnsignedLong("48485a3953bb6124"))
+      .id(1)
+      .name("foo").build();
+
+    assertThat(with128BitId.traceIdString())
+      .isEqualTo("48485a3953bb6124");
+  }
 
   @Test
-  public void traceIdHigh() {
+  public void traceIdString_high() {
+    Span with128BitId = Span.builder()
+      .traceId(Util.lowerHexToUnsignedLong("48485a3953bb6124"))
+      .traceIdHigh(Util.lowerHexToUnsignedLong("463ac35c9f6413ad"))
+      .id(1)
+      .name("foo").build();
+
+    assertThat(with128BitId.traceIdString())
+      .isEqualTo("463ac35c9f6413ad48485a3953bb6124");
+  }
+
+  @Test
+  public void idString_traceIdHigh() {
     Span with128BitId = Span.builder()
         .traceId(Util.lowerHexToUnsignedLong("48485a3953bb6124"))
         .traceIdHigh(Util.lowerHexToUnsignedLong("463ac35c9f6413ad"))
