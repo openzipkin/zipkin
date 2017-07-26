@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -110,6 +110,10 @@ public interface SpanStore {
    * <p>Some implementations parse {@link zipkin.internal.DependencyLinkSpan} from storage and call
    * {@link zipkin.internal.DependencyLinker} to aggregate links. The reason is certain graph logic,
    * such as skipping up the tree is difficult to implement as a storage query.
+   *
+   * <p>There's no parameter to indicate how to handle mixed ID length: this operates the same as if
+   * {@link StorageComponent.Builder#strictTraceId(boolean)} was set to false. This ensures call
+   * counts are not incremented twice due to one hop downgrading from 128 to 64-bit trace IDs.
    *
    * @param endTs only return links from spans where {@link Span#timestamp} are at or before this
    * time in epoch milliseconds.
