@@ -19,7 +19,7 @@
 
   <groupId>io.zipkin.java</groupId>
   <artifactId>parent</artifactId>
-  <version>1.20.2-SNAPSHOT</version>
+  <version>1.21.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
