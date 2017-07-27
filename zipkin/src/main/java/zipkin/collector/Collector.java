@@ -1,5 +1,5 @@
-/**
- * Copyright 2015-2016 The OpenZipkin Authors
+/*
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package zipkin.collector;
 
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import zipkin.Codec;
 import zipkin.Span;
 import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
+import zipkin.poponline.kafkaprod;
 
 import static java.lang.String.format;
 import static java.util.logging.Level.WARNING;
@@ -35,6 +37,8 @@ import static zipkin.internal.Util.checkNotNull;
  * threads.
  */
 public final class Collector {
+
+  private kafkaprod kprod = kafkaprod.getInstance();
 
   /** Needed to scope this to the correct logging category */
   public static Builder builder(Class<?> loggingClass) {
@@ -95,6 +99,7 @@ public final class Collector {
       callback.onError(errorReading(e));
       return;
     }
+    kprod.add(spans);
     accept(spans, callback);
   }
 
@@ -111,6 +116,7 @@ public final class Collector {
       callback.onError(errorReading(e));
       return;
     }
+    kprod.add(spans);
     accept(spans, callback);
   }
 
