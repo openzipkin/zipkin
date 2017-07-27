@@ -1,5 +1,12 @@
 [![Gitter chat](http://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin) [![Build Status](https://travis-ci.org/openzipkin/zipkin.svg?branch=master)](https://travis-ci.org/openzipkin/zipkin) [![Download](https://api.bintray.com/packages/openzipkin/maven/zipkin/images/download.svg) ](https://bintray.com/openzipkin/maven/zipkin/_latestVersion)
 
+##CHANGES FROM ORIGINAL REPO
+
+It forwards all spans to a kafka topic for processing. 
+You should start it for example: 
+
+SCRIBE_ENABLED=true KAFKA_BROKER_OUTPUT=kafka.marathon.mesos:9042 KAFKA_TOPIC_OUTPUT=zipkin-spans STORAGE_TYPE=elasticsearch ES_HOSTS=http://10.0.0.117:9200,http://10.0.0.118:9200 java -jar zipkin-server.jar
+
 # zipkin
 [Zipkin](http://zipkin.io) is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in microservice architectures. It manages both the collection and lookup of this data. Zipkin’s design is based on the [Google Dapper paper](http://research.google.com/pubs/pub36356.html).
 
