@@ -94,12 +94,11 @@ final class DependencyLinkSpanIterator implements Iterator<DependencyLinkSpan> {
         spanId
     );
 
-    while (hasNext()) {
-      Record next = delegate.peek();
-      if (next == null) continue;
-
-      if (spanId != next.getValue(ZipkinSpans.ZIPKIN_SPANS.ID)) break;
-      delegate.next(); // advance the iterator since we are in the same span id
+    while (hasNext()) { // there are more values for this trace
+      if (spanId != delegate.peek().getValue(ZipkinSpans.ZIPKIN_SPANS.ID)) {
+        break; // if we are in a new span
+      }
+      Record next = delegate.next(); // row for the same span
 
       String key = emptyToNull(next, ZIPKIN_ANNOTATIONS.A_KEY);
       String value = emptyToNull(next, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME);
