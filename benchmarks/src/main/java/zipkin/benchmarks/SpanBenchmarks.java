@@ -34,6 +34,7 @@ import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.TraceKeys;
+import zipkin.internal.Span2;
 import zipkin.internal.Util;
 
 @Measurement(iterations = 5, time = 1)
@@ -50,9 +51,11 @@ public class SpanBenchmarks {
       Endpoint.builder().serviceName("app").ipv4(172 << 24 | 17 << 16 | 2).port(8080).build();
 
   final Span.Builder sharedBuilder;
+  final Span2.Builder shared2Builder;
 
   public SpanBenchmarks() {
     sharedBuilder = buildClientOnlySpan(Span.builder()).toBuilder();
+    shared2Builder = buildClientOnlySpan2().toBuilder();
   }
 
   @Benchmark
@@ -102,6 +105,39 @@ public class SpanBenchmarks {
   @Benchmark
   public Span buildClientOnlySpan_clear() {
     return buildClientOnlySpan(sharedBuilder.clear());
+  }
+
+  @Benchmark
+  public Span2 buildClientOnlySpan2() {
+    return buildClientOnlySpan2(Span2.builder());
+  }
+
+  static Span2 buildClientOnlySpan2(Span2.Builder builder) {
+    return builder
+      .traceId(traceId)
+      .parentId(traceId)
+      .id(spanId)
+      .name("get")
+      .kind(Span2.Kind.CLIENT)
+      .localEndpoint(frontend)
+      .remoteEndpoint(backend)
+      .timestamp(1472470996199000L)
+      .duration(207000L)
+      .addAnnotation(1472470996238000L, Constants.WIRE_SEND)
+      .addAnnotation(1472470996403000L, Constants.WIRE_RECV)
+      .putTag(TraceKeys.HTTP_PATH, "/api")
+      .putTag("clnt/finagle.version", "6.45.0")
+      .build();
+  }
+
+  @Benchmark
+  public Span2 buildClientOnlySpan2_clear() {
+    return buildClientOnlySpan2(shared2Builder.clear());
+  }
+
+  @Benchmark
+  public Span2 buildClientOnlySpan2_clone() {
+    return shared2Builder.clone().build();
   }
 
   @Benchmark
