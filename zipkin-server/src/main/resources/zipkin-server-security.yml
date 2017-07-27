@@ -1,0 +1,14 @@
+security:
+  basic:
+    enabled: true
+  user:
+    name: ${ZIPKIN_BASIC_SECURITY_USERNAME:}
+    password: ${ZIPKIN_BASIC_SECURITY_PASSWORD:}
+
+management:
+  security:
+    basic:
+      enabled: true
+    user:
+      name: ${ZIPKIN_BASIC_SECURITY_USERNAME:}
+      password: ${ZIPKIN_BASIC_SECURITY_PASSWORD:}

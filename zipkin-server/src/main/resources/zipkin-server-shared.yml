@@ -145,6 +145,15 @@ spring:
       # otherwise we might initialize even when not needed (ex when storage type is cassandra)
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 
+security:
+  basic:
+    enabled: false
+
+management:
+  security:
+    basic:
+      enabled: false
+
 info:
   zipkin:
     version: "@project.version@"
