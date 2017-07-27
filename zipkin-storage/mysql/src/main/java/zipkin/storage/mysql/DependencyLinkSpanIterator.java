@@ -15,6 +15,7 @@ package zipkin.storage.mysql;
 
 import java.util.Iterator;
 import org.jooq.Record;
+import org.jooq.TableField;
 import zipkin.internal.DependencyLinkSpan;
 import zipkin.internal.Nullable;
 import zipkin.internal.PeekingIterator;
@@ -83,52 +84,41 @@ final class DependencyLinkSpanIterator implements Iterator<DependencyLinkSpan> {
 
   @Override
   public DependencyLinkSpan next() {
-    Record row = delegate.next();
+    Record row = delegate.peek();
 
+    long spanId = row.getValue(ZipkinSpans.ZIPKIN_SPANS.ID);
     DependencyLinkSpan.Builder result = DependencyLinkSpan.builder(
         traceIdHi != null ? traceIdHi : 0L,
         traceIdLo,
         row.getValue(ZipkinSpans.ZIPKIN_SPANS.PARENT_ID),
-        row.getValue(ZipkinSpans.ZIPKIN_SPANS.ID)
+        spanId
     );
-    parseClientAndServerNames(
-        result,
-        row.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
-        row.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME));
 
     while (hasNext()) {
       Record next = delegate.peek();
-      if (next == null) {
-        continue;
-      }
-      if (row.getValue(ZipkinSpans.ZIPKIN_SPANS.ID).equals(next.getValue(ZipkinSpans.ZIPKIN_SPANS.ID))) {
-        delegate.next(); // advance the iterator since we are in the same span id
-        parseClientAndServerNames(
-            result,
-            next.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
-            next.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME));
-      } else {
-        break;
+      if (next == null) continue;
+
+      if (spanId != next.getValue(ZipkinSpans.ZIPKIN_SPANS.ID)) break;
+      delegate.next(); // advance the iterator since we are in the same span id
+
+      String key = emptyToNull(next, ZIPKIN_ANNOTATIONS.A_KEY);
+      String value = emptyToNull(next, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME);
+      if (key == null || value == null) continue; // neither client nor server
+      switch (key) {
+        case CLIENT_ADDR:
+          result.caService(value);
+          break;
+        case CLIENT_SEND:
+          result.csService(value);
+          break;
+        case SERVER_ADDR:
+          result.saService(value);
+          break;
+        case SERVER_RECV:
+          result.srService(value);
       }
     }
     return result.build();
-  }
-
-  void parseClientAndServerNames(DependencyLinkSpan.Builder span, String key, String value) {
-    if (key == null) return; // neither client nor server
-    switch (key) {
-      case CLIENT_ADDR:
-        span.caService(value);
-        break;
-      case CLIENT_SEND:
-        span.csService(value);
-        break;
-      case SERVER_ADDR:
-        span.saService(value);
-        break;
-      case SERVER_RECV:
-        span.srService(value);
-    }
   }
 
   @Override
@@ -138,5 +128,10 @@ final class DependencyLinkSpanIterator implements Iterator<DependencyLinkSpan> {
 
   static long traceIdHigh(PeekingIterator<Record> delegate) {
     return delegate.peek().getValue(ZipkinSpans.ZIPKIN_SPANS.TRACE_ID_HIGH);
+  }
+
+  static String emptyToNull(Record next, TableField<Record, String> field) {
+    String result = next.getValue(field);
+    return result != null && !"".equals(result) ? result : null;
   }
 }
