@@ -14,6 +14,9 @@
 package zipkin.internal;
 
 import com.google.auto.value.AutoValue;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
+import java.io.StreamCorruptedException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -27,6 +30,7 @@ import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.TraceKeys;
 
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
 import static zipkin.internal.Util.sortedList;
@@ -54,7 +58,8 @@ import static zipkin.internal.Util.writeHexLong;
  * and smaller data.
  */
 @AutoValue
-public abstract class Span2 { // TODO: make serializable when needed between stages in Spark jobs
+public abstract class Span2 implements Serializable { // for Spark jobs
+  private static final long serialVersionUID = 0L;
 
   /** When non-zero, the trace containing this span uses 128-bit trace identifiers. */
   public abstract long traceIdHigh();
@@ -407,6 +412,35 @@ public abstract class Span2 { // TODO: make serializable when needed between sta
         debug,
         shared
       );
+    }
+  }
+
+  @Override
+  public String toString() {
+    return new String(Span2Codec.JSON.writeSpan(this), UTF_8);
+  }
+
+  // Since this is an immutable object, and we have json handy, defer to a serialization proxy.
+  final Object writeReplace() throws ObjectStreamException {
+    return new SerializedForm(Span2Codec.JSON.writeSpan(this));
+  }
+
+  static final class SerializedForm implements Serializable {
+    private static final long serialVersionUID = 0L;
+
+    private final byte[] bytes;
+
+    SerializedForm(byte[] bytes) {
+      this.bytes = bytes;
+    }
+
+    Object readResolve() throws ObjectStreamException {
+      try {
+        return Span2Codec.JSON.readSpan(bytes);
+      } catch (IllegalArgumentException e) {
+        e.printStackTrace();
+        throw new StreamCorruptedException(e.getMessage());
+      }
     }
   }
 }

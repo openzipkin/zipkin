@@ -1,0 +1,32 @@
+{
+  "traceId": "86154a4ba6e91385",
+  "parentId": "86154a4ba6e91385",
+  "id": "4d1e00c0db9010db",
+  "kind": "CLIENT",
+  "name": "get",
+  "timestamp": 1472470996199000,
+  "duration": 207000,
+  "localEndpoint": {
+    "serviceName": "frontend",
+    "ipv4": "127.0.0.1"
+  },
+  "remoteEndpoint": {
+    "serviceName": "backend",
+    "ipv4": "192.168.99.101",
+    "port": 9000
+  },
+  "annotations": [
+    {
+      "timestamp": 1472470996238000,
+      "value": "ws"
+    },
+    {
+      "timestamp": 1472470996403000,
+      "value": "wr"
+    }
+  ],
+  "tags": {
+    "http.path": "/api",
+    "clnt/finagle.version": "6.45.0"
+  }
+}
