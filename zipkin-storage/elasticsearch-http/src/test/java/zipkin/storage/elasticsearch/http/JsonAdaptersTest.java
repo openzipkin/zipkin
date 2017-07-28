@@ -293,6 +293,20 @@ public class JsonAdaptersTest {
   }
 
   @Test
+  public void dependencyLinkRoundTrip_withError() throws IOException {
+    DependencyLink link = DependencyLink.builder()
+      .parent("foo")
+      .child("bar")
+      .callCount(2)
+      .errorCount(1).build();
+
+    Buffer bytes = new Buffer();
+    bytes.write(Codec.JSON.writeDependencyLink(link));
+    assertThat(JsonAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(bytes))
+      .isEqualTo(link);
+  }
+
+  @Test
   public void readsTraceIdHighFromTraceIdField() throws IOException {
     String with128BitTraceId = ("{\n"
         + "  \"traceId\": \"48485a3953bb61246b221d5bc9e6496c\",\n"

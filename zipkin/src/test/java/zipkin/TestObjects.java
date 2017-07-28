@@ -77,8 +77,8 @@ public final class TestObjects {
   ).stream().map(ApplyTimestampAndDuration::apply).collect(toList());
 
   public static final List<DependencyLink> LINKS = asList(
-      DependencyLink.builder().parent("web").child("app").callCount(1).build(),
-      DependencyLink.builder().parent("app").child("db").callCount(1).build()
+    DependencyLink.builder().parent("web").child("app").callCount(1L).build(),
+    DependencyLink.builder().parent("app").child("db").callCount(1L).errorCount(1L).build()
   );
   public static final Dependencies DEPENDENCIES = Dependencies.create(TODAY, TODAY + 1000, LINKS);
 

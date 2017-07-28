@@ -24,6 +24,7 @@ function renderDependencyModal(event, data) {
   $modal.find('#dependencyModalParent').html($parentElement);
   $modal.find('#dependencyModalChild').html($childElement);
   $modal.find('#dependencyCallCount').text(data.callCount);
+  $modal.find('#dependencyErrorCount').text(data.errorCount || 0);
 
   $('#serviceModal').modal('hide');
   $modal.modal('show');

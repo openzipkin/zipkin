@@ -91,3 +91,15 @@ where `{traceId}` will be contextually replaced by the trace id.
 If this feature is activated, you'll see on the trace detail page an additional button named `logs`.
 
 ![Logs Button](https://cloud.githubusercontent.com/assets/9842366/20482538/6e35ca66-afed-11e6-90e9-1e28f66d985e.png)
+
+#### How do I adjust the error rates in the dependency graph
+
+By default, the /dependency endpoint colors a link yellow when the error
+rate is 50% or higher, or red when it 75% or higher. You can control
+these rates via the `dependency.low-error-rate` and `dependency.high-error-rate`
+properties:
+
+Ex. To make lines yellow when there's a 10% error rate, set:
+`ZIPKIN_UI_DEPENDENCY_LOW_ERROR_RATE=0.1`
+
+To disable coloring of lines, set both rates to a number higher than 1.

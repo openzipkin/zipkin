@@ -48,7 +48,7 @@ import zipkin.storage.mysql.internal.generated.Zipkin;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinDependencies extends TableImpl<Record> {
 
-    private static final long serialVersionUID = 2126223781;
+    private static final long serialVersionUID = 162657278;
 
     /**
      * The reference instance of <code>zipkin.zipkin_dependencies</code>
@@ -82,6 +82,11 @@ public class ZipkinDependencies extends TableImpl<Record> {
      * The column <code>zipkin.zipkin_dependencies.call_count</code>.
      */
     public final TableField<Record, Long> CALL_COUNT = createField("call_count", org.jooq.impl.SQLDataType.BIGINT, this, "");
+
+    /**
+     * The column <code>zipkin.zipkin_dependencies.error_count</code>.
+     */
+    public final TableField<Record, Long> ERROR_COUNT = createField("error_count", org.jooq.impl.SQLDataType.BIGINT, this, "");
 
     /**
      * Create a <code>zipkin.zipkin_dependencies</code> table reference

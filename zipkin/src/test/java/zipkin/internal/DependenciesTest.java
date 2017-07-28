@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -25,8 +25,8 @@ public final class DependenciesTest {
   @Test
   public void dependenciesRoundTrip() throws IOException {
     Dependencies dependencies = Dependencies.create(1L, 2L, asList(
-        DependencyLink.create("foo", "bar", 2),
-        DependencyLink.create("bar", "baz", 3)
+      DependencyLink.builder().parent("foo").child("bar").callCount(2L).build(),
+      DependencyLink.builder().parent("bar").child("baz").callCount(2L).errorCount(1L).build()
     ));
 
     ByteBuffer bytes = dependencies.toThrift();

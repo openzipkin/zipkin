@@ -14,16 +14,18 @@
 package zipkin.storage.mysql;
 
 import org.jooq.Record;
-import org.jooq.Record6;
+import org.jooq.Record7;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.junit.Test;
+import zipkin.BinaryAnnotation.Type;
 import zipkin.Constants;
 import zipkin.internal.PeekingIterator;
 import zipkin.internal.Span2;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
@@ -36,7 +38,7 @@ public class DependencyLinkSpan2IteratorTest {
   /** You cannot make a dependency link unless you know the the local or peer endpoint. */
   @Test public void whenNoServiceLabelsExist_kindIsUnknown() {
     DependencyLinkSpan2Iterator iterator = iterator(
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", null)
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", -1, null)
     );
 
     Span2 span = iterator.next();
@@ -47,8 +49,8 @@ public class DependencyLinkSpan2IteratorTest {
 
   @Test public void whenOnlyAddressLabelsExist_kindIsNull() {
     DependencyLinkSpan2Iterator iterator = iterator(
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", "service1"),
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", "service2")
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, "service1"),
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", Type.BOOL.value, "service2")
     );
     Span2 span = iterator.next();
 
@@ -60,7 +62,7 @@ public class DependencyLinkSpan2IteratorTest {
   /** The linker is biased towards server spans, or client spans that know the peer localEndpoint(). */
   @Test public void whenServerLabelsAreMissing_kindIsUnknownAndLabelsAreCleared() {
     DependencyLinkSpan2Iterator iterator = iterator(
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", "service1")
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, "service1")
     );
     Span2 span = iterator.next();
 
@@ -72,7 +74,7 @@ public class DependencyLinkSpan2IteratorTest {
   /** {@link Constants#SERVER_RECV} is only applied when the local span is acting as a server */
   @Test public void whenSrServiceExists_kindIsServer() {
     DependencyLinkSpan2Iterator iterator = iterator(
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", "service")
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", -1, "service")
     );
     Span2 span = iterator.next();
 
@@ -81,14 +83,35 @@ public class DependencyLinkSpan2IteratorTest {
     assertThat(span.remoteEndpoint()).isNull();
   }
 
+  @Test public void errorAnnotationIgnored() {
+    DependencyLinkSpan2Iterator iterator = iterator(
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "error", -1, "service")
+    );
+    Span2 span = iterator.next();
+
+    assertThat(span.tags()).isEmpty();
+    assertThat(span.annotations()).isEmpty();
+  }
+
+  @Test public void errorTagAdded() {
+    DependencyLinkSpan2Iterator iterator = iterator(
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "error", Type.STRING.value, "foo")
+    );
+    Span2 span = iterator.next();
+
+    assertThat(span.tags()).containsOnly(
+      entry("error", "")
+    );
+  }
+
   /**
    * {@link Constants#CLIENT_ADDR} indicates the peer, which is a client in the case of a server
    * span
    */
   @Test public void whenSrAndCaServiceExists_caIsThePeer() {
     DependencyLinkSpan2Iterator iterator = iterator(
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", "service1"),
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", "service2")
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, "service1"),
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", -1, "service2")
     );
     Span2 span = iterator.next();
 
@@ -103,8 +126,8 @@ public class DependencyLinkSpan2IteratorTest {
    */
   @Test public void whenSrAndCsServiceExists_caIsThePeer() {
     DependencyLinkSpan2Iterator iterator = iterator(
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", "service1"),
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", "service2")
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", -1, "service1"),
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", -1, "service2")
     );
     Span2 span = iterator.next();
 
@@ -116,9 +139,9 @@ public class DependencyLinkSpan2IteratorTest {
   /** {@link Constants#CLIENT_ADDR} is more authoritative than {@link Constants#CLIENT_SEND} */
   @Test public void whenCrAndCaServiceExists_caIsThePeer() {
     DependencyLinkSpan2Iterator iterator = iterator(
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", "foo"),
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", "service1"),
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", "service2")
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", -1, "foo"),
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, "service1"),
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", -1, "service2")
     );
     Span2 span = iterator.next();
 
@@ -127,12 +150,12 @@ public class DependencyLinkSpan2IteratorTest {
     assertThat(span.remoteEndpoint().serviceName).isEqualTo("service1");
   }
 
-  /** Finagle labels two sides of the same socket "ca", "sa" with the local endpoint name */
+  /** Finagle labels two sides of the same socket "ca", Type.BOOL.value, "sa" with the local endpoint name */
   @Test public void specialCasesFinagleLocalSocketLabeling_client() {
     DependencyLinkSpan2Iterator iterator = iterator(
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", "service"),
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", "service"),
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", "service")
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", -1, "service"),
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, "service"),
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", Type.BOOL.value, "service")
     );
     Span2 span = iterator.next();
 
@@ -144,9 +167,9 @@ public class DependencyLinkSpan2IteratorTest {
 
   @Test public void specialCasesFinagleLocalSocketLabeling_server() {
     DependencyLinkSpan2Iterator iterator = iterator(
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", "service"),
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", "service"),
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", "service")
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, "service"),
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", Type.BOOL.value, "service"),
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", -1, "service")
     );
     Span2 span = iterator.next();
 
@@ -162,7 +185,7 @@ public class DependencyLinkSpan2IteratorTest {
    */
   @Test public void csWithoutSaIsServer() {
     DependencyLinkSpan2Iterator iterator = iterator(
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", "service1")
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", -1, "service1")
     );
     Span2 span = iterator.next();
 
@@ -174,10 +197,10 @@ public class DependencyLinkSpan2IteratorTest {
   /** Service links to empty string are confusing and offer no value. */
   @Test public void emptyToNull() {
     DependencyLinkSpan2Iterator iterator = iterator(
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", ""),
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", ""),
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", ""),
-      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", "")
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, ""),
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", -1, ""),
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", Type.BOOL.value, ""),
+      newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", -1, "")
     );
     Span2 span = iterator.next();
 
@@ -193,9 +216,10 @@ public class DependencyLinkSpan2IteratorTest {
     );
   }
 
-  static Record6<Long, Long, Long, Long, String, String> newRecord() {
+  static Record7<Long, Long, Long, Long, String, Integer, String> newRecord() {
     return DSL.using(SQLDialect.MYSQL)
       .newRecord(ZIPKIN_SPANS.TRACE_ID_HIGH, ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.PARENT_ID,
-        ZIPKIN_SPANS.ID, ZIPKIN_ANNOTATIONS.A_KEY, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME);
+        ZIPKIN_SPANS.ID, ZIPKIN_ANNOTATIONS.A_KEY, ZIPKIN_ANNOTATIONS.A_TYPE,
+        ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME);
   }
 }

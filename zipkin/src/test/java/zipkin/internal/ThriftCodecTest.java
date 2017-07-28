@@ -65,7 +65,11 @@ public final class ThriftCodecTest extends CodecTest {
   public void readDependencyLinksFromByteBuffer() throws IOException {
     List<DependencyLink> links = asList(
         DependencyLink.create("foo", "bar", 2),
-        DependencyLink.create("bar", "baz", 3)
+        DependencyLink.builder()
+          .parent("bar")
+          .child("baz")
+          .callCount(3)
+          .errorCount(1).build()
     );
     byte[] bytes = codec().writeDependencyLinks(links);
     assertThat(codec().readDependencyLinks(ByteBuffer.wrap(bytes)))

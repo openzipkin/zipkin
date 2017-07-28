@@ -41,7 +41,6 @@ public class ZipkinUiAutoConfigurationTest {
         .isNotNull();
   }
 
-
   @Test
   public void canOverridesProperty_defaultLookback() {
     context = createContextWithOverridenProperty("zipkin.ui.defaultLookback:100");
@@ -49,7 +48,6 @@ public class ZipkinUiAutoConfigurationTest {
     assertThat(context.getBean(ZipkinUiProperties.class).getDefaultLookback())
         .isEqualTo(100);
   }
-
 
   @Test
   public void canOverrideProperty_logsUrl() {
@@ -78,6 +76,22 @@ public class ZipkinUiAutoConfigurationTest {
     context = createContextWithOverridenProperty("zipkin.ui.enabled:false");
 
     context.getBean(ZipkinUiProperties.class);
+  }
+
+  @Test
+  public void canOverrideProperty_dependencyLowErrorRate() {
+    context = createContextWithOverridenProperty("zipkin.ui.dependency.low-error-rate:0.1");
+
+    assertThat(context.getBean(ZipkinUiProperties.class).getDependency().getLowErrorRate())
+      .isEqualTo(0.1f);
+  }
+
+  @Test
+  public void canOverrideProperty_dependencyHighErrorRate() {
+    context = createContextWithOverridenProperty("zipkin.ui.dependency.high-error-rate:0.1");
+
+    assertThat(context.getBean(ZipkinUiProperties.class).getDependency().getHighErrorRate())
+      .isEqualTo(0.1f);
   }
 
   private static AnnotationConfigApplicationContext createContext() {

@@ -22,7 +22,7 @@ const DependencyPageComponent = component(function DependencyPage() {
     $('#startTs').val(startTs || moment().valueOf() - 86400000);
 
     DependencyData.attachTo('#dependency-container');
-    DependencyGraphUI.attachTo('#dependency-container');
+    DependencyGraphUI.attachTo('#dependency-container', {config: this.attr.config});
     ServiceDataModal.attachTo('#service-data-modal-container');
     TimeStampUI.attachTo('#end-ts');
     TimeStampUI.attachTo('#start-ts');

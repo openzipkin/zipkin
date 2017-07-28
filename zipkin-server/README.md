@@ -101,6 +101,8 @@ defaultLookback | zipkin.ui.default-lookback | Default duration in millis to loo
 queryLimit | zipkin.ui.query-limit | Default limit for Find Traces. Defaults to 10.
 instrumented | zipkin.ui.instrumented | Which sites this Zipkin UI covers. Regex syntax. e.g. `http:\/\/example.com\/.*` Defaults to match all websites (`.*`).
 logsUrl | zipkin.ui.logs-url | Logs query service url pattern. If specified, a button will appear on the trace page and will replace {traceId} in the url by the traceId. Not required.
+dependency.lowErrorRate | zipkin.ui.dependency.low-error-rate | The rate of error calls on a dependency link that turns it yellow. Defaults to 0.5 (50%) set to >1 to disable.
+dependency.highErrorRate | zipkin.ui.dependency.high-error-rate | The rate of error calls on a dependency link that turns it red. Defaults to 0.75 (75%) set to >1 to disable.
 
 For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 
@@ -225,7 +227,7 @@ to prevent excessive load, service and span name queries are limited by
 today and one for yesterday)
 
 ### HTTP Collector
-The HTTP collector is enabled by default. It accepts spans via `POST /api/v1/spans`. The HTTP 
+The HTTP collector is enabled by default. It accepts spans via `POST /api/v1/spans`. The HTTP
 collector supports the following configuration:
 
 Property | Environment Variable | Description
@@ -241,7 +243,7 @@ The Scribe collector is disabled by default, configured by the following:
 ### Kafka Collector
 This collector remains a Kafka 0.8.x consumer, while Zipkin systems update to 0.9+.
 
-A collector supporting Kafka versions 0.10 and later is available as an external module. See 
+A collector supporting Kafka versions 0.10 and later is available as an external module. See
 [zipkin-autoconfigure/collector-kafka10](../zipkin-autoconfigure/collector-kafka10/).
 
 The following apply when `KAFKA_ZOOKEEPER` is set:

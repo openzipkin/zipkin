@@ -33,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.Constants.CLIENT_ADDR;
 import static zipkin.Constants.CLIENT_RECV;
 import static zipkin.Constants.CLIENT_SEND;
+import static zipkin.Constants.ERROR;
 import static zipkin.Constants.LOCAL_COMPONENT;
 import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
@@ -479,8 +480,8 @@ public abstract class DependenciesTest {
 
     // A user looks at all links since data started
     assertThat(store().getDependencies(DEPENDENCIES.endTs, null)).containsOnly(
-        DependencyLink.create("web", "app", 2),
-        DependencyLink.create("app", "db", 2)
+      DependencyLink.builder().parent("web").child("app").callCount(2L).build(),
+      DependencyLink.builder().parent("app").child("db").callCount(2L).errorCount(2L).build()
     );
   }
 
@@ -654,6 +655,24 @@ public abstract class DependenciesTest {
 
     assertThat(store().getDependencies(TODAY + 1000L, null)).containsOnly(
         DependencyLink.create("web", "app", 1)
+    );
+  }
+
+  /** A timeline annotation named error is not a failed span. A tag/binary annotation is. */
+  @Test
+  public void annotationNamedErrorIsntError() {
+    List<Span> trace = asList(
+      Span.builder().traceId(10L).id(10L).name("")
+        .addAnnotation(Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 72) * 1000, ERROR, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 100) * 1000, SERVER_RECV, APP_ENDPOINT))
+        .build()
+    );
+
+    processDependencies(trace);
+
+    assertThat(store().getDependencies(TODAY + 1000L, null)).containsOnly(
+      DependencyLink.create("web", "app", 1)
     );
   }
 
