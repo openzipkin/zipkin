@@ -544,6 +544,8 @@ public final class JsonCodec implements Codec {
           result.child(reader.nextString());
         } else if (nextName.equals("callCount")) {
           result.callCount(reader.nextLong());
+        } else if (nextName.equals("errorCount")) {
+          result.errorCount(reader.nextLong());
         } else {
           reader.skipValue();
         }
@@ -563,13 +565,20 @@ public final class JsonCodec implements Codec {
       sizeInBytes += asciiSizeInBytes("{\"parent\":\"") + jsonEscapedSizeInBytes(value.parent);
       sizeInBytes += asciiSizeInBytes("\",\"child\":\"") + jsonEscapedSizeInBytes(value.child);
       sizeInBytes += asciiSizeInBytes("\",\"callCount\":") + asciiSizeInBytes(value.callCount);
+      if (value.errorCount > 0) {
+        sizeInBytes += asciiSizeInBytes(",\"errorCount\":") + asciiSizeInBytes(value.errorCount);
+      }
       return ++sizeInBytes;// end curly-brace
     }
 
     @Override public void write(DependencyLink value, Buffer b) {
       b.writeAscii("{\"parent\":\"").writeJsonEscaped(value.parent);
       b.writeAscii("\",\"child\":\"").writeJsonEscaped(value.child);
-      b.writeAscii("\",\"callCount\":").writeAscii(value.callCount).writeByte('}');
+      b.writeAscii("\",\"callCount\":").writeAscii(value.callCount);
+      if (value.errorCount > 0) {
+        b.writeAscii(",\"errorCount\":").writeAscii(value.errorCount);
+      }
+      b.writeByte('}');
     }
 
     @Override public String toString() {

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -29,41 +29,50 @@ import zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations;
 
 import static org.jooq.impl.DSL.row;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
+import static zipkin.storage.mysql.internal.generated.tables.ZipkinDependencies.ZIPKIN_DEPENDENCIES;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
 final class Schema {
   final List<Field<?>> spanIdFields;
   final List<Field<?>> spanFields;
   final List<Field<?>> annotationFields;
+  final List<Field<?>> dependencyLinkerFields;
+  final List<Field<?>> dependencyLinkerGroupByFields;
   final List<Field<?>> dependencyLinkFields;
-  final List<Field<?>> dependencyLinkGroupByFields;
   final boolean hasTraceIdHigh;
   final boolean hasPreAggregatedDependencies;
   final boolean hasIpv6;
+  final boolean hasErrorCount;
 
   Schema(DataSource datasource, DSLContexts context) {
     hasTraceIdHigh = HasTraceIdHigh.test(datasource, context);
     hasPreAggregatedDependencies = HasPreAggregatedDependencies.test(datasource, context);
     hasIpv6 = HasIpv6.test(datasource, context);
+    hasErrorCount = HasErrorCount.test(datasource, context);
 
     spanIdFields = list(ZIPKIN_SPANS.TRACE_ID_HIGH, ZIPKIN_SPANS.TRACE_ID);
     spanFields = list(ZIPKIN_SPANS.fields());
     annotationFields = list(ZIPKIN_ANNOTATIONS.fields());
-    dependencyLinkFields = list(
+    dependencyLinkFields = list(ZIPKIN_DEPENDENCIES.fields());
+    dependencyLinkerFields = list(
         ZIPKIN_SPANS.TRACE_ID_HIGH, ZIPKIN_SPANS.TRACE_ID, ZIPKIN_SPANS.PARENT_ID,
-        ZIPKIN_SPANS.ID, ZIPKIN_ANNOTATIONS.A_KEY, ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME
+        ZIPKIN_SPANS.ID, ZIPKIN_ANNOTATIONS.A_KEY, ZIPKIN_ANNOTATIONS.A_TYPE,
+        ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME
     );
-    dependencyLinkGroupByFields = new ArrayList<>(dependencyLinkFields);
-    dependencyLinkGroupByFields.remove(ZIPKIN_SPANS.PARENT_ID);
+    dependencyLinkerGroupByFields = new ArrayList<>(dependencyLinkerFields);
+    dependencyLinkerGroupByFields.remove(ZIPKIN_SPANS.PARENT_ID);
     if (!hasTraceIdHigh) {
       spanIdFields.remove(ZIPKIN_SPANS.TRACE_ID_HIGH);
       spanFields.remove(ZIPKIN_SPANS.TRACE_ID_HIGH);
       annotationFields.remove(ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH);
-      dependencyLinkFields.remove(ZIPKIN_SPANS.TRACE_ID_HIGH);
-      dependencyLinkGroupByFields.remove(ZIPKIN_SPANS.TRACE_ID_HIGH);
+      dependencyLinkerFields.remove(ZIPKIN_SPANS.TRACE_ID_HIGH);
+      dependencyLinkerGroupByFields.remove(ZIPKIN_SPANS.TRACE_ID_HIGH);
     }
     if (!hasIpv6) {
       annotationFields.remove(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6);
+    }
+    if (!hasErrorCount) {
+      dependencyLinkFields.remove(ZIPKIN_DEPENDENCIES.ERROR_COUNT);
     }
   }
 

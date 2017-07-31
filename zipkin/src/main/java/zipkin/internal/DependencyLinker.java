@@ -26,6 +26,7 @@ import zipkin.Span;
 import zipkin.internal.Span2.Kind;
 
 import static java.util.logging.Level.FINE;
+import static zipkin.Constants.ERROR;
 
 /**
  * This parses a span tree into dependency links used by Web UI. Ex. http://zipkin/dependency
@@ -38,7 +39,8 @@ import static java.util.logging.Level.FINE;
  */
 public final class DependencyLinker {
   private final Logger logger;
-  private final Map<Pair<String>, Long> linkMap = new LinkedHashMap<>();
+  private final Map<Pair<String>, Long> callCounts = new LinkedHashMap<>();
+  private final Map<Pair<String>, Long> errorCounts = new LinkedHashMap<>();
 
   public DependencyLinker() {
     this(Logger.getLogger(DependencyLinker.class.getName()));
@@ -61,24 +63,33 @@ public final class DependencyLinker {
     return putTrace(linkSpans.iterator());
   }
 
-  static final Node.MergeFunction<Span2> MERGE_RPC = new Node.MergeFunction<Span2>() {
-    @Override public Span2 merge(Span2 existing, Span2 update) {
-      if (existing == null) return update;
-      if (update == null) return existing;
-      if (existing.kind() == null) return update;
-      if (update.kind() == null) return existing;
-      Span2 server = existing.kind() == Kind.SERVER ? existing : update;
-      Span2 client = existing == server ? update : existing;
-      if (server.remoteEndpoint() != null && !"".equals(server.remoteEndpoint().serviceName)) {
-        return server;
+  static final Node.MergeFunction<Span2> MERGE_RPC = new MergeRpc();
+
+  static final class MergeRpc implements Node.MergeFunction<Span2> {
+    @Override public Span2 merge(Span2 left, Span2 right) {
+      if (left == null) return right;
+      if (right == null) return left;
+      if (left.kind() == null) {
+        return copyError(left, right);
       }
-      return server.toBuilder().remoteEndpoint(client.localEndpoint()).build();
+      if (right.kind() == null) {
+        return copyError(right, left);
+      }
+      Span2 server = left.kind() == Kind.SERVER ? left : right;
+      Span2 client = left == server ? right : left;
+      if (server.remoteEndpoint() != null && !"".equals(server.remoteEndpoint().serviceName)) {
+        return copyError(client, server);
+      }
+      return copyError(client, server).toBuilder().remoteEndpoint(client.localEndpoint()).build();
     }
 
-    @Override public String toString() {
-      return "MergeRpc";
+    static Span2 copyError(Span2 maybeError, Span2 result) {
+      if (maybeError.tags().containsKey(ERROR)) {
+        return result.toBuilder().putTag(ERROR, maybeError.tags().get(ERROR)).build();
+      }
+      return result;
     }
-  };
+  }
 
   /**
    * @param spans spans where all spans have the same trace id
@@ -152,18 +163,26 @@ public final class DependencyLinker {
         logger.fine("cannot determine parent, looking for first server ancestor");
       }
 
-      String rpcAncestor = findRpcAncestor(current);
-      if (rpcAncestor != null) {
+      boolean isError = currentSpan.tags().containsKey(ERROR);
 
-        // Local spans may be between the current node and its remote parent
-        if (parent == null) parent = rpcAncestor;
-
+      Span2 rpcAncestor = findRpcAncestor(current);
+      String rpcAncestorName;
+      if (rpcAncestor != null && (rpcAncestorName = serviceName(rpcAncestor)) != null) {
         // Some users accidentally put the remote service name on client annotations.
         // Check for this and backfill a link from the nearest remote to that service as necessary.
-        if (Kind.CLIENT.equals(kind) && serviceName != null && !rpcAncestor.equals(serviceName)) {
+        if (kind == Kind.CLIENT && serviceName != null && !rpcAncestorName.equals(serviceName)) {
           logger.fine("detected missing link to client span");
-          addLink(rpcAncestor, serviceName);
-          continue;
+          addLink(rpcAncestorName, serviceName, false); // we don't know if there's an error here
+        }
+
+        // Local spans may be between the current node and its remote parent
+        if (parent == null)  parent = rpcAncestorName;
+
+        // When an RPC is split between spans, we skip the child (server side). If our parent is a
+        // client, we need to check it for errors.
+        if (!isError && Kind.CLIENT.equals(rpcAncestor.kind()) &&
+          currentSpan.parentId() != null && currentSpan.parentId() == rpcAncestor.id()) {
+          isError = rpcAncestor.tags().containsKey(ERROR);
         }
       }
 
@@ -172,12 +191,12 @@ public final class DependencyLinker {
         continue;
       }
 
-      addLink(parent, child);
+      addLink(parent, child, isError);
     }
     return this;
   }
 
-  String findRpcAncestor(Node<Span2> current) {
+  Span2 findRpcAncestor(Node<Span2> current) {
     Node<Span2> ancestor = current.parent();
     while (ancestor != null) {
       if (logger.isLoggable(FINE)) {
@@ -185,50 +204,64 @@ public final class DependencyLinker {
       }
       if (!ancestor.isSyntheticRootForPartialTree()) {
         Span2 maybeRemote = ancestor.value();
-        if (maybeRemote.kind() != null) {
-          return serviceName(maybeRemote);
-        }
+        if (maybeRemote.kind() != null) return maybeRemote;
       }
       ancestor = ancestor.parent();
     }
     return null;
   }
 
-  void addLink(String parent, String child) {
+  void addLink(String parent, String child, boolean isError) {
     if (logger.isLoggable(FINE)) {
-      logger.fine("incrementing link " + parent + " -> " + child);
+      logger.fine("incrementing " + (isError ? "error " : "") + "link " + parent + " -> " + child);
     }
     Pair<String> key = Pair.create(parent, child);
-    if (linkMap.containsKey(key)) {
-      linkMap.put(key, linkMap.get(key) + 1);
+    if (callCounts.containsKey(key)) {
+      callCounts.put(key, callCounts.get(key) + 1);
     } else {
-      linkMap.put(key, 1L);
+      callCounts.put(key, 1L);
+    }
+    if (!isError) return;
+    if (errorCounts.containsKey(key)) {
+      errorCounts.put(key, errorCounts.get(key) + 1);
+    } else {
+      errorCounts.put(key, 1L);
     }
   }
 
   public List<DependencyLink> link() {
-    // links are merged by mapping to parent/child and summing corresponding links
-    List<DependencyLink> result = new ArrayList<>(linkMap.size());
-    for (Map.Entry<Pair<String>, Long> entry : linkMap.entrySet()) {
-      result.add(DependencyLink.create(entry.getKey()._1, entry.getKey()._2, entry.getValue()));
-    }
-    return result;
+    return link(callCounts, errorCounts);
   }
 
   /** links are merged by mapping to parent/child and summing corresponding links */
   public static List<DependencyLink> merge(Iterable<DependencyLink> in) {
-    Map<Pair<String>, Long> links = new LinkedHashMap<>();
+    Map<Pair<String>, Long> callCounts = new LinkedHashMap<>();
+    Map<Pair<String>, Long> errorCounts = new LinkedHashMap<>();
 
     for (DependencyLink link : in) {
       Pair<String> parentChild = Pair.create(link.parent, link.child);
-      long callCount = links.containsKey(parentChild) ? links.get(parentChild) : 0L;
+      long callCount = callCounts.containsKey(parentChild) ? callCounts.get(parentChild) : 0L;
       callCount += link.callCount;
-      links.put(parentChild, callCount);
+      callCounts.put(parentChild, callCount);
+      long errorCount = errorCounts.containsKey(parentChild) ? errorCounts.get(parentChild) : 0L;
+      errorCount += link.errorCount;
+      errorCounts.put(parentChild, errorCount);
     }
 
-    List<DependencyLink> result = new ArrayList<>(links.size());
-    for (Map.Entry<Pair<String>, Long> link : links.entrySet()) {
-      result.add(DependencyLink.create(link.getKey()._1, link.getKey()._2, link.getValue()));
+    return link(callCounts, errorCounts);
+  }
+
+  static List<DependencyLink> link(Map<Pair<String>, Long> callCounts,
+    Map<Pair<String>, Long> errorCounts) {
+    List<DependencyLink> result = new ArrayList<>(callCounts.size());
+    for (Map.Entry<Pair<String>, Long> entry : callCounts.entrySet()) {
+      Pair<String> parentChild = entry.getKey();
+      result.add(DependencyLink.builder()
+        .parent(parentChild._1)
+        .child(parentChild._2)
+        .callCount(entry.getValue())
+        .errorCount(errorCounts.containsKey(parentChild) ? errorCounts.get(parentChild) : 0L)
+        .build());
     }
     return result;
   }

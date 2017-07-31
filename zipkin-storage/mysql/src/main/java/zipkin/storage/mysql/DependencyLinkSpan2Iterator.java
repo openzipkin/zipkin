@@ -16,6 +16,8 @@ package zipkin.storage.mysql;
 import java.util.Iterator;
 import org.jooq.Record;
 import org.jooq.TableField;
+import zipkin.BinaryAnnotation.Type;
+import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.internal.Nullable;
 import zipkin.internal.PeekingIterator;
@@ -24,6 +26,7 @@ import zipkin.storage.mysql.internal.generated.tables.ZipkinSpans;
 
 import static zipkin.Constants.CLIENT_ADDR;
 import static zipkin.Constants.CLIENT_SEND;
+import static zipkin.Constants.ERROR;
 import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.internal.Util.equal;
@@ -91,6 +94,7 @@ final class DependencyLinkSpan2Iterator implements Iterator<Span2> {
     Record row = delegate.peek();
 
     long spanId = row.getValue(ZipkinSpans.ZIPKIN_SPANS.ID);
+    boolean error = false;
     String srService = null, csService = null, caService = null, saService = null;
     while (hasNext()) { // there are more values for this trace
       if (spanId != delegate.peek().getValue(ZipkinSpans.ZIPKIN_SPANS.ID)) {
@@ -113,6 +117,10 @@ final class DependencyLinkSpan2Iterator implements Iterator<Span2> {
           break;
         case SERVER_RECV:
           srService = value;
+          break;
+        case ERROR:
+          // a span is in error if it has a tag, not an annotation, of name "error"
+          error = Type.STRING.value == next.get(ZIPKIN_ANNOTATIONS.A_TYPE);
       }
     }
 
@@ -128,6 +136,10 @@ final class DependencyLinkSpan2Iterator implements Iterator<Span2> {
       .traceId(traceIdLo)
       .parentId(row.getValue(ZipkinSpans.ZIPKIN_SPANS.PARENT_ID))
       .id(spanId);
+
+    if (error) {
+      result.putTag(Constants.ERROR, "" /* actual value doesn't matter */);
+    }
 
     if (srService != null) {
       return result.kind(Span2.Kind.SERVER)

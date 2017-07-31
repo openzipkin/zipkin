@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -59,6 +59,38 @@ public class SchemaTest {
         new DataAccessException(sqlException.getMessage(), sqlException));
 
     assertThat(schema.hasIpv6).isFalse();
+  }
+
+  @Test
+  public void hasErrorCount_falseWhenKnownSQLState() throws SQLException {
+    SQLSyntaxErrorException sqlException = new SQLSyntaxErrorException(
+      "Unknown column 'zipkin_dependencies.error_count' in 'field list'",
+      "42S22", 1054);
+
+    // cheats to lower mock count: this exception is really thrown during execution of the query
+    when(dataSource.getConnection()).thenThrow(
+      new DataAccessException(sqlException.getMessage(), sqlException));
+
+    assertThat(schema.hasErrorCount).isFalse();
+  }
+
+  /**
+   * This returns false instead of failing when the SQLState code doesn't imply the column is
+   * missing. This is to prevent zipkin from crashing due to scenarios we haven't thought up, yet.
+   * The root error goes into the log in this case.
+   */
+  @Test
+  public void hasErrorCount_falseWhenUnknownSQLState() throws SQLException {
+    SQLSyntaxErrorException sqlException = new SQLSyntaxErrorException(
+      "java.sql.SQLSyntaxErrorException: Table 'zipkin.zipkin_dependencies' doesn't exist",
+      "42S02", 1146);
+    DataSource dataSource = mock(DataSource.class);
+
+    // cheats to lower mock count: this exception is really thrown during execution of the query
+    when(dataSource.getConnection()).thenThrow(
+      new DataAccessException(sqlException.getMessage(), sqlException));
+
+    assertThat(schema.hasErrorCount).isFalse();
   }
 
   @Test

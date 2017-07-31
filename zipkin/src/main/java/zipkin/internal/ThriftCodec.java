@@ -439,6 +439,7 @@ public final class ThriftCodec implements Codec {
     final Field PARENT = new Field(TYPE_STRING, 1);
     final Field CHILD = new Field(TYPE_STRING, 2);
     final Field CALL_COUNT = new Field(TYPE_I64, 4);
+    final Field ERROR_COUNT = new Field(TYPE_I64, 5);
 
     @Override public DependencyLink read(ByteBuffer bytes) {
       DependencyLink.Builder result = DependencyLink.builder();
@@ -454,6 +455,8 @@ public final class ThriftCodec implements Codec {
           result.child(readUtf8(bytes));
         } else if (field.isEqualTo(CALL_COUNT)) {
           result.callCount(bytes.getLong());
+        } else if (field.isEqualTo(ERROR_COUNT)) {
+          result.errorCount(bytes.getLong());
         } else {
           skip(bytes, field.type);
         }
@@ -467,6 +470,7 @@ public final class ThriftCodec implements Codec {
       sizeInBytes += 3 + 4 + Buffer.utf8SizeInBytes(value.parent);
       sizeInBytes += 3 + 4 + Buffer.utf8SizeInBytes(value.child);
       sizeInBytes += 3 + 8; // CALL_COUNT
+      if (value.errorCount > 0) sizeInBytes += 3 + 8; // ERROR_COUNT
       sizeInBytes++; //TYPE_STOP
       return sizeInBytes;
     }
@@ -480,6 +484,11 @@ public final class ThriftCodec implements Codec {
 
       CALL_COUNT.write(buffer);
       buffer.writeLong(value.callCount);
+
+      if (value.errorCount > 0) {
+        ERROR_COUNT.write(buffer);
+        buffer.writeLong(value.errorCount);
+      }
 
       buffer.writeByte(TYPE_STOP);
     }

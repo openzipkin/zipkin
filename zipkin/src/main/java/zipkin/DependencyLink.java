@@ -16,6 +16,7 @@ package zipkin;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
+import java.util.Locale;
 
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkNotNull;
@@ -23,8 +24,9 @@ import static zipkin.internal.Util.checkNotNull;
 public final class DependencyLink implements Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 
+  /** @deprecated please use {@link #builder()} */
   public static DependencyLink create(String parent, String child, long callCount) {
-    return new DependencyLink(parent, child, callCount);
+    return builder().parent(parent).child(child).callCount(callCount).build();
   }
 
   /** parent service name (caller) */
@@ -33,13 +35,17 @@ public final class DependencyLink implements Serializable { // for Spark jobs
   /** child service name (callee) */
   public final String child;
 
-  /** calls made during the duration (in milliseconds) of this link */
+  /** total traced calls made from {@link #parent} to {@link #child} */
   public final long callCount;
 
-  DependencyLink(String parent, String child, long callCount) {
-    this.parent = checkNotNull(parent, "parent").toLowerCase();
-    this.child = checkNotNull(child, "child").toLowerCase();
-    this.callCount = callCount;
+  /** How many {@link #callCount calls} are known to be {@link Constants#ERROR errors} */
+  public final long errorCount;
+
+  DependencyLink(Builder builder) {
+    parent = checkNotNull(builder.parent, "parent").toLowerCase(Locale.ROOT);
+    child = checkNotNull(builder.child, "child").toLowerCase(Locale.ROOT);
+    callCount = builder.callCount;
+    errorCount = builder.errorCount;
   }
 
   public Builder toBuilder() {
@@ -54,6 +60,7 @@ public final class DependencyLink implements Serializable { // for Spark jobs
     private String parent;
     private String child;
     private long callCount;
+    private long errorCount;
 
     Builder() {
     }
@@ -62,6 +69,7 @@ public final class DependencyLink implements Serializable { // for Spark jobs
       this.parent = source.parent;
       this.child = source.child;
       this.callCount = source.callCount;
+      this.errorCount = source.errorCount;
     }
 
     public Builder parent(String parent) {
@@ -79,8 +87,13 @@ public final class DependencyLink implements Serializable { // for Spark jobs
       return this;
     }
 
+    public Builder errorCount(long errorCount) {
+      this.errorCount = errorCount;
+      return this;
+    }
+
     public DependencyLink build() {
-      return new DependencyLink(parent, child, callCount);
+      return new DependencyLink(this);
     }
   }
 
@@ -91,14 +104,13 @@ public final class DependencyLink implements Serializable { // for Spark jobs
 
   @Override
   public boolean equals(Object o) {
-    if (o == this) {
-      return true;
-    }
+    if (o == this) return true;
     if (o instanceof DependencyLink) {
       DependencyLink that = (DependencyLink) o;
       return (this.parent.equals(that.parent))
           && (this.child.equals(that.child))
-          && (this.callCount == that.callCount);
+          && (this.callCount == that.callCount)
+          && (this.errorCount == that.errorCount);
     }
     return false;
   }
@@ -112,6 +124,8 @@ public final class DependencyLink implements Serializable { // for Spark jobs
     h ^= child.hashCode();
     h *= 1000003;
     h ^= (callCount >>> 32) ^ callCount;
+    h *= 1000003;
+    h ^= (errorCount >>> 32) ^ errorCount;
     return h;
   }
 

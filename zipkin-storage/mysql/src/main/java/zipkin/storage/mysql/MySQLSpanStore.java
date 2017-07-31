@@ -55,6 +55,7 @@ import static org.jooq.impl.DSL.row;
 import static zipkin.BinaryAnnotation.Type.STRING;
 import static zipkin.Constants.CLIENT_ADDR;
 import static zipkin.Constants.CLIENT_SEND;
+import static zipkin.Constants.ERROR;
 import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.internal.Util.UTF_8;
@@ -287,12 +288,15 @@ final class MySQLSpanStore implements SpanStore {
       if (schema.hasPreAggregatedDependencies) {
         List<Date> days = getDays(endTs, lookback);
         List<DependencyLink> unmerged = context.get(conn)
-            .selectFrom(ZIPKIN_DEPENDENCIES)
+            .select(schema.dependencyLinkFields)
+            .from(ZIPKIN_DEPENDENCIES)
             .where(ZIPKIN_DEPENDENCIES.DAY.in(days))
-            .fetch((Record l) -> DependencyLink.create(
-                l.get(ZIPKIN_DEPENDENCIES.PARENT),
-                l.get(ZIPKIN_DEPENDENCIES.CHILD),
-                l.get(ZIPKIN_DEPENDENCIES.CALL_COUNT))
+            .fetch((Record l) -> DependencyLink.builder()
+                .parent(l.get(ZIPKIN_DEPENDENCIES.PARENT))
+                .child(l.get(ZIPKIN_DEPENDENCIES.CHILD))
+                .callCount(l.get(ZIPKIN_DEPENDENCIES.CALL_COUNT))
+                .errorCount(maybeGet(l, ZIPKIN_DEPENDENCIES.ERROR_COUNT, 0L))
+                .build()
             );
         return DependencyLinker.merge(unmerged);
       } else {
@@ -308,7 +312,7 @@ final class MySQLSpanStore implements SpanStore {
     endTs = endTs * 1000;
     // Lazy fetching the cursor prevents us from buffering the whole dataset in memory.
     Cursor<Record> cursor = context.get(conn)
-        .selectDistinct(schema.dependencyLinkFields)
+        .selectDistinct(schema.dependencyLinkerFields)
         // left joining allows us to keep a mapping of all span ids, not just ones that have
         // special annotations. We need all span ids to reconstruct the trace tree. We need
         // the whole trace tree so that we can accurately skip local spans.
@@ -317,12 +321,12 @@ final class MySQLSpanStore implements SpanStore {
             // for applications to upgrade to 128-bit instrumentation.
             .on(ZIPKIN_SPANS.TRACE_ID.eq(ZIPKIN_ANNOTATIONS.TRACE_ID).and(
                 ZIPKIN_SPANS.ID.eq(ZIPKIN_ANNOTATIONS.SPAN_ID)))
-            .and(ZIPKIN_ANNOTATIONS.A_KEY.in(CLIENT_SEND, CLIENT_ADDR, SERVER_RECV, SERVER_ADDR)))
+            .and(ZIPKIN_ANNOTATIONS.A_KEY.in(CLIENT_SEND, CLIENT_ADDR, SERVER_RECV, SERVER_ADDR, ERROR)))
         .where(lookback == null ?
             ZIPKIN_SPANS.START_TS.lessOrEqual(endTs) :
             ZIPKIN_SPANS.START_TS.between(endTs - lookback * 1000, endTs))
         // Grouping so that later code knows when a span or trace is finished.
-        .groupBy(schema.dependencyLinkGroupByFields).fetchLazy();
+        .groupBy(schema.dependencyLinkerGroupByFields).fetchLazy();
 
     Iterator<Iterator<Span2>> traces =
         new DependencyLinkSpan2Iterator.ByTraceId(cursor.iterator(), schema.hasTraceIdHigh);

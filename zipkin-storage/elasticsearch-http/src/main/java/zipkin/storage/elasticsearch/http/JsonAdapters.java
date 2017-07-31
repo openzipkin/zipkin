@@ -259,6 +259,9 @@ final class JsonAdapters {
           case "callCount":
             result.callCount(reader.nextLong());
             break;
+          case "errorCount":
+            result.errorCount(reader.nextLong());
+            break;
           default:
             reader.skipValue();
         }

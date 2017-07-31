@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS zipkin_dependencies (
   `day` DATE NOT NULL,
   `parent` VARCHAR(255) NOT NULL,
   `child` VARCHAR(255) NOT NULL,
-  `call_count` BIGINT
+  `call_count` BIGINT,
+  `error_count` BIGINT
 ) ENGINE=InnoDB ROW_FORMAT=COMPRESSED CHARACTER SET=utf8 COLLATE utf8_general_ci;
 
 ALTER TABLE zipkin_dependencies ADD UNIQUE KEY(`day`, `parent`, `child`);
