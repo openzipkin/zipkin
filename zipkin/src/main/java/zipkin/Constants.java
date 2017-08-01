@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -79,6 +79,34 @@ public final class Constants {
    * {@link #CLIENT_ADDR}.
    */
   public static final String SERVER_RECV = "sr";
+
+  /**
+   * Message send ("ms") is a request to send a message to a destination, usually a broker. This may
+   * be the only annotation in a messaging span. If {@link #WIRE_SEND} exists in the same span,it
+   * follows this moment and clarifies delays sending the message, such as batching.
+   *
+   * <p>Unlike RPC annotations like {@link #CLIENT_SEND}, messaging spans never share a span ID. For
+   * example, "ms" should always be the parent of "mr".
+   *
+   * <p>{@link Annotation#endpoint} is not the destination, it is the host which logged the send
+   * event: the producer. When annotating MESSAGE_SEND, instrumentation should also tag the {@link
+   * #MESSAGE_ADDR}.
+   */
+  public static final String MESSAGE_SEND = "ms";
+
+  /**
+   * A consumer received ("mr") a message from a broker. This may be the only annotation in a
+   * messaging span. If {@link #WIRE_RECV} exists in the same span, it precedes this moment and
+   * clarifies any local queuing delay.
+   *
+   * <p>Unlike RPC annotations like {@link #SERVER_RECV}, messaging spans never share a span ID. For
+   * example, "mr" should always be a child of "ms" unless it is a root span.
+   *
+   * <p>{@link Annotation#endpoint} is not the broker, it is the host which logged the receive
+   * event: the consumer.  When annotating MESSAGE_RECV, instrumentation should also tag the {@link
+   * #MESSAGE_ADDR}.
+   */
+  public static final String MESSAGE_RECV = "mr";
 
   /**
    * Optionally logs an attempt to send a message on the wire. Multiple wire send events could
@@ -175,6 +203,9 @@ public final class Constants {
    * fails to a different server ip or port.
    */
   public static final String SERVER_ADDR = "sa";
+
+  /** Indicates the remote address of a messaging span, usually the broker. */
+  public static final String MESSAGE_ADDR = "ma";
 
   /**
    * Zipkin's core annotations indicate when a client or server operation began or ended.

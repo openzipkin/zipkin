@@ -32,6 +32,7 @@ public class Span2ConverterTest {
     .ipv4(192 << 24 | 168 << 16 | 99 << 8 | 101)
     .port(9000)
     .build();
+  Endpoint kafka = Endpoint.create("kafka", 0);
 
   @Test public void client() {
     Span2 simpleClient = Span2.builder()
@@ -72,8 +73,6 @@ public class Span2ConverterTest {
     assertThat(Span2Converter.fromSpan(client))
       .containsExactly(simpleClient);
   }
-
-  // TODO: loopback one-way
 
   @Test public void client_unfinished() {
     Span2 simpleClient = Span2.builder()
@@ -405,6 +404,256 @@ public class Span2ConverterTest {
 
     assertThat(Span2Converter.fromSpan(shared))
       .containsExactly(client, server);
+  }
+
+  @Test public void producer() {
+    Span span = Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
+      .id(Util.lowerHexToUnsignedLong("5b4185666d50f68b"))
+      .name("send")
+      .addAnnotation(Annotation.create(1472470996199000L, Constants.MESSAGE_SEND, frontend))
+      .build();
+
+    Span2 span2 = Span2.builder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .parentId("6b221d5bc9e6496c")
+      .id("5b4185666d50f68b")
+      .name("send")
+      .kind(Kind.PRODUCER)
+      .localEndpoint(frontend)
+      .timestamp(1472470996199000L)
+      .build();
+
+    assertThat(Span2Converter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  @Test public void producer_remote() {
+    Span span = Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
+      .id(Util.lowerHexToUnsignedLong("5b4185666d50f68b"))
+      .name("send")
+      .timestamp(1472470996199000L)
+      .addAnnotation(Annotation.create(1472470996199000L, Constants.MESSAGE_SEND, frontend))
+      .addBinaryAnnotation(BinaryAnnotation.address(Constants.MESSAGE_ADDR, kafka))
+      .build();
+
+    Span2 span2 = Span2.builder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .parentId("6b221d5bc9e6496c")
+      .id("5b4185666d50f68b")
+      .name("send")
+      .kind(Kind.PRODUCER)
+      .localEndpoint(frontend)
+      .timestamp(1472470996199000L)
+      .remoteEndpoint(kafka)
+      .build();
+
+    assertThat(Span2Converter.toSpan(span2))
+      .isEqualTo(span);
+    assertThat(Span2Converter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  @Test public void producer_duration() {
+    Span span = Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
+      .id(Util.lowerHexToUnsignedLong("5b4185666d50f68b"))
+      .name("send")
+      .timestamp(1472470996199000L)
+      .duration(51000L)
+      .addAnnotation(Annotation.create(1472470996199000L, Constants.MESSAGE_SEND, frontend))
+      .addAnnotation(Annotation.create(1472470996250000L, Constants.WIRE_SEND, frontend))
+      .build();
+
+    Span2 span2 = Span2.builder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .parentId("6b221d5bc9e6496c")
+      .id("5b4185666d50f68b")
+      .name("send")
+      .kind(Kind.PRODUCER)
+      .localEndpoint(frontend)
+      .timestamp(1472470996199000L)
+      .duration(51000L)
+      .build();
+
+    assertThat(Span2Converter.toSpan(span2))
+      .isEqualTo(span);
+    assertThat(Span2Converter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  @Test public void consumer() {
+    Span span = Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
+      .id(Util.lowerHexToUnsignedLong("5b4185666d50f68b"))
+      .name("send")
+      .timestamp(1472470996199000L)
+      .addAnnotation(Annotation.create(1472470996199000L, Constants.MESSAGE_RECV, frontend))
+      .build();
+
+    Span2 span2 = Span2.builder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .parentId("6b221d5bc9e6496c")
+      .id("5b4185666d50f68b")
+      .name("send")
+      .kind(Kind.CONSUMER)
+      .localEndpoint(frontend)
+      .timestamp(1472470996199000L)
+      .build();
+
+    assertThat(Span2Converter.toSpan(span2))
+      .isEqualTo(span);
+    assertThat(Span2Converter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  @Test public void consumer_remote() {
+    Span span = Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
+      .id(Util.lowerHexToUnsignedLong("5b4185666d50f68b"))
+      .name("send")
+      .timestamp(1472470996199000L)
+      .addAnnotation(Annotation.create(1472470996199000L, Constants.MESSAGE_RECV, frontend))
+      .addBinaryAnnotation(BinaryAnnotation.address(Constants.MESSAGE_ADDR, kafka))
+      .build();
+
+    Span2 span2 = Span2.builder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .parentId("6b221d5bc9e6496c")
+      .id("5b4185666d50f68b")
+      .name("send")
+      .kind(Kind.CONSUMER)
+      .localEndpoint(frontend)
+      .remoteEndpoint(kafka)
+      .timestamp(1472470996199000L)
+      .build();
+
+    assertThat(Span2Converter.toSpan(span2))
+      .isEqualTo(span);
+    assertThat(Span2Converter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  @Test public void consumer_duration() {
+    Span span = Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
+      .id(Util.lowerHexToUnsignedLong("5b4185666d50f68b"))
+      .name("send")
+      .timestamp(1472470996199000L)
+      .duration(51000L)
+      .addAnnotation(Annotation.create(1472470996199000L, Constants.WIRE_RECV, frontend))
+      .addAnnotation(Annotation.create(1472470996250000L, Constants.MESSAGE_RECV, frontend))
+      .build();
+
+    Span2 span2 = Span2.builder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .parentId("6b221d5bc9e6496c")
+      .id("5b4185666d50f68b")
+      .name("send")
+      .kind(Kind.CONSUMER)
+      .localEndpoint(frontend)
+      .timestamp(1472470996199000L)
+      .duration(51000L)
+      .build();
+
+    assertThat(Span2Converter.toSpan(span2))
+      .isEqualTo(span);
+    assertThat(Span2Converter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  /** shared span IDs for messaging spans isn't supported, but shouldn't break */
+  @Test public void producerAndConsumer() {
+    Span shared = Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
+      .id(Util.lowerHexToUnsignedLong("5b4185666d50f68b"))
+      .name("whatev")
+      .addAnnotation(Annotation.create(1472470996199000L, Constants.MESSAGE_SEND, frontend))
+      .addAnnotation(Annotation.create(1472470996238000L, Constants.WIRE_SEND, frontend))
+      .addAnnotation(Annotation.create(1472470996403000L, Constants.WIRE_RECV, backend))
+      .addAnnotation(Annotation.create(1472470996406000L, Constants.MESSAGE_RECV, backend))
+      .addBinaryAnnotation(BinaryAnnotation.address(Constants.MESSAGE_ADDR, kafka))
+      .build();
+
+    Span2.Builder builder = Span2.builder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .parentId("6b221d5bc9e6496c")
+      .id("5b4185666d50f68b")
+      .name("whatev");
+
+    Span2 producer = builder.clone()
+      .kind(Kind.PRODUCER)
+      .localEndpoint(frontend)
+      .remoteEndpoint(kafka)
+      .timestamp(1472470996199000L)
+      .duration(1472470996238000L - 1472470996199000L)
+      .build();
+
+    Span2 consumer = builder.clone()
+      .kind(Kind.CONSUMER)
+      .shared(true)
+      .localEndpoint(backend)
+      .remoteEndpoint(kafka)
+      .timestamp(1472470996403000L)
+      .duration(1472470996406000L - 1472470996403000L)
+      .build();
+
+    assertThat(Span2Converter.fromSpan(shared))
+      .containsExactly(producer, consumer);
+  }
+
+  /** shared span IDs for messaging spans isn't supported, but shouldn't break */
+  @Test public void producerAndConsumer_loopback_shared() {
+    Span shared = Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
+      .id(Util.lowerHexToUnsignedLong("5b4185666d50f68b"))
+      .name("message")
+      .addAnnotation(Annotation.create(1472470996199000L, Constants.MESSAGE_SEND, frontend))
+      .addAnnotation(Annotation.create(1472470996238000L, Constants.WIRE_SEND, frontend))
+      .addAnnotation(Annotation.create(1472470996403000L, Constants.WIRE_RECV, frontend))
+      .addAnnotation(Annotation.create(1472470996406000L, Constants.MESSAGE_RECV, frontend))
+      .build();
+
+    Span2.Builder builder = Span2.builder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .parentId("6b221d5bc9e6496c")
+      .id("5b4185666d50f68b")
+      .name("message");
+
+    Span2 producer = builder.clone()
+      .kind(Kind.PRODUCER)
+      .localEndpoint(frontend)
+      .timestamp(1472470996199000L)
+      .duration(1472470996238000L - 1472470996199000L)
+      .build();
+
+    Span2 consumer = builder.clone()
+      .kind(Kind.CONSUMER)
+      .shared(true)
+      .localEndpoint(frontend)
+      .timestamp(1472470996403000L)
+      .duration(1472470996406000L - 1472470996403000L)
+      .build();
+
+    assertThat(Span2Converter.fromSpan(shared))
+      .containsExactly(producer, consumer);
   }
 
   @Test public void dataMissingEndpointGoesOnFirstSpan() {

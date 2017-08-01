@@ -51,7 +51,8 @@ public final class Span2Converter {
 
   static final class Builders {
     final List<Span2.Builder> spans = new ArrayList<>();
-    Annotation cs = null, sr = null, ss = null, cr = null;
+    Annotation cs = null, sr = null, ss = null, cr = null, ms = null, mr = null, ws = null, wr =
+      null;
 
     Builders(Span source) {
       this.spans.add(newBuilder(source));
@@ -75,6 +76,16 @@ public final class Span2Converter {
           } else if (a.value.equals(Constants.CLIENT_RECV)) {
             currentSpan.kind(Kind.CLIENT);
             cr = a;
+          } else if (a.value.equals(Constants.MESSAGE_SEND)) {
+            currentSpan.kind(Kind.PRODUCER);
+            ms = a;
+          } else if (a.value.equals(Constants.MESSAGE_RECV)) {
+            currentSpan.kind(Kind.CONSUMER);
+            mr = a;
+          } else if (a.value.equals(Constants.WIRE_SEND)) {
+            ws = a;
+          } else if (a.value.equals(Constants.WIRE_RECV)) {
+            wr = a;
           } else {
             currentSpan.addAnnotation(a.timestamp, a.value);
           }
@@ -114,18 +125,45 @@ public final class Span2Converter {
             if (sr != null) next.timestamp(sr.timestamp);
           }
         }
-        revertCoreAnnotation(source, ss);
-        revertCoreAnnotation(source, cr);
 
         if (source.timestamp != null) {
           spans.get(0).timestamp(source.timestamp).duration(source.duration);
         }
       }
-    }
 
-    void revertCoreAnnotation(Span source, Annotation a) {
-      if (a == null) return;
-      forEndpoint(source, a.endpoint).kind(null).addAnnotation(a.timestamp, a.value);
+      // ms and mr are not supposed to be in the same span, but in case they are..
+      if (ms != null && mr != null) {
+        // special-case loopback: We need to make sure on loopback there are two span2s
+        Span2.Builder producer = forEndpoint(source, ms.endpoint);
+        Span2.Builder consumer;
+        if (closeEnough(ms.endpoint, mr.endpoint)) {
+          producer.kind(Kind.PRODUCER);
+          // fork a new span for the consumer side
+          consumer = newSpanBuilder(source, mr.endpoint).kind(Kind.CONSUMER);
+        } else {
+          consumer = forEndpoint(source, mr.endpoint);
+        }
+
+        consumer.shared(true);
+        if (wr != null) {
+          consumer.timestamp(wr.timestamp).duration(mr.timestamp - wr.timestamp);
+        } else {
+          consumer.timestamp(mr.timestamp);
+        }
+
+        producer.timestamp(ms.timestamp).duration(ws != null ? ws.timestamp - ms.timestamp : null);
+      } else if (ms != null) {
+        maybeTimestampDuration(source, ms, ws);
+      } else if (mr != null) {
+        if (wr != null) {
+          maybeTimestampDuration(source, wr, mr);
+        } else {
+          maybeTimestampDuration(source, mr, null);
+        }
+      } else {
+        if (ws != null) forEndpoint(source, ws.endpoint).addAnnotation(ws.timestamp, ws.value);
+        if (wr != null) forEndpoint(source, wr.endpoint).addAnnotation(wr.timestamp, wr.value);
+      }
     }
 
     void maybeTimestampDuration(Span source, Annotation begin, @Nullable Annotation end) {
@@ -139,7 +177,7 @@ public final class Span2Converter {
     }
 
     void processBinaryAnnotations(Span source) {
-      Endpoint ca = null, sa = null;
+      Endpoint ca = null, sa = null, ma = null;
       for (int i = 0, length = source.binaryAnnotations.size(); i < length; i++) {
         BinaryAnnotation b = source.binaryAnnotations.get(i);
         if (b.type == BOOL) {
@@ -147,6 +185,8 @@ public final class Span2Converter {
             ca = b.endpoint;
           } else if (Constants.SERVER_ADDR.equals(b.key)) {
             sa = b.endpoint;
+          } else if (Constants.MESSAGE_ADDR.equals(b.key)) {
+            ma = b.endpoint;
           }
           continue;
         }
@@ -164,6 +204,14 @@ public final class Span2Converter {
 
       if (sr != null && ca != null && !closeEnough(ca, sr.endpoint)) {
         forEndpoint(source, sr.endpoint).remoteEndpoint(ca);
+      }
+
+      if (ms != null && ma != null && !closeEnough(ma, ms.endpoint)) {
+        forEndpoint(source, ms.endpoint).remoteEndpoint(ma);
+      }
+
+      if (mr != null && ma != null && !closeEnough(ma, mr.endpoint)) {
+        forEndpoint(source, mr.endpoint).remoteEndpoint(ma);
       }
 
       // special-case when we are missing core annotations, but we have both address annotations
@@ -234,7 +282,8 @@ public final class Span2Converter {
       if (duration != 0L) result.duration(duration);
     }
 
-    Annotation cs = null, sr = null, ss = null, cr = null;
+    Annotation cs = null, sr = null, ss = null, cr = null, ms = null, mr = null, ws = null, wr =
+      null;
     String remoteEndpointType = null;
 
     if (in.kind() != null) {
@@ -255,6 +304,24 @@ public final class Span2Converter {
           }
           if (duration != 0L) {
             ss = Annotation.create(timestamp + duration, Constants.SERVER_SEND, in.localEndpoint());
+          }
+          break;
+        case PRODUCER:
+          remoteEndpointType = Constants.MESSAGE_ADDR;
+          if (timestamp != 0L) {
+            ms = Annotation.create(timestamp, Constants.MESSAGE_SEND, in.localEndpoint());
+          }
+          if (duration != 0L) {
+            ws = Annotation.create(timestamp + duration, Constants.WIRE_SEND, in.localEndpoint());
+          }
+          break;
+        case CONSUMER:
+          remoteEndpointType = Constants.MESSAGE_ADDR;
+          if (timestamp != 0L && duration != 0L) {
+            wr = Annotation.create(timestamp, Constants.WIRE_RECV, in.localEndpoint());
+            mr = Annotation.create(timestamp + duration, Constants.MESSAGE_RECV, in.localEndpoint());
+          } else if (timestamp != 0L) {
+            mr = Annotation.create(timestamp, Constants.MESSAGE_RECV, in.localEndpoint());
           }
           break;
         default:
@@ -280,6 +347,14 @@ public final class Span2Converter {
           ss = a;
         } else if (a.value.equals(Constants.CLIENT_RECV)) {
           cr = a;
+        } else if (a.value.equals(Constants.MESSAGE_SEND)) {
+          ms = a;
+        } else if (a.value.equals(Constants.MESSAGE_RECV)) {
+          mr = a;
+        } else if (a.value.equals(Constants.WIRE_SEND)) {
+          ws = a;
+        } else if (a.value.equals(Constants.WIRE_RECV)) {
+          wr = a;
         } else {
           wroteEndpoint = true;
           result.addAnnotation(a);
@@ -296,11 +371,22 @@ public final class Span2Converter {
         BinaryAnnotation.create(tag.getKey(), tag.getValue(), in.localEndpoint()));
     }
 
-    if (cs != null || sr != null || ss != null || cr != null) {
+    if (cs != null
+      || sr != null
+      || ss != null
+      || cr != null
+      || ws != null
+      || wr != null
+      || ms != null
+      || mr != null) {
       if (cs != null) result.addAnnotation(cs);
       if (sr != null) result.addAnnotation(sr);
       if (ss != null) result.addAnnotation(ss);
       if (cr != null) result.addAnnotation(cr);
+      if (ws != null) result.addAnnotation(ws);
+      if (wr != null) result.addAnnotation(wr);
+      if (ms != null) result.addAnnotation(ms);
+      if (mr != null) result.addAnnotation(mr);
       wroteEndpoint = true;
     } else if (in.localEndpoint() != null && in.remoteEndpoint() != null) {
       // special-case when we are missing core annotations, but we have both address annotations

@@ -70,6 +70,113 @@ public class DependencyLinkerTest {
     );
   }
 
+  @Test
+  public void messagingSpansDontLinkWithoutBroker_consumer() {
+    List<Span2> trace = asList(
+      span2(1L, null, 1L, Kind.PRODUCER, "producer", null, false),
+      span2(1L, 1L, 2L, Kind.CONSUMER, "consumer", "kafka", false)
+    );
+
+    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+      DependencyLink.builder().parent("kafka").child("consumer").callCount(1L).build()
+    );
+  }
+
+  @Test
+  public void messagingSpansDontLinkWithoutBroker_producer() {
+    List<Span2> trace = asList(
+      span2(1L, null, 1L, Kind.PRODUCER, "producer", "kafka", false),
+      span2(1L, 1L, 2L, Kind.CONSUMER, "consumer", null, false)
+    );
+
+    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+      DependencyLink.builder().parent("producer").child("kafka").callCount(1L).build()
+    );
+  }
+
+  @Test
+  public void messagingWithBroker_both_sides_same() {
+    List<Span2> trace = asList(
+      span2(1L, null, 1L, Kind.PRODUCER, "producer", "kafka", false),
+      span2(1L, 1L, 2L, Kind.CONSUMER, "consumer", "kafka", false)
+    );
+
+    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+      DependencyLink.builder().parent("producer").child("kafka").callCount(1L).build(),
+      DependencyLink.builder().parent("kafka").child("consumer").callCount(1L).build()
+    );
+  }
+
+  @Test
+  public void messagingWithBroker_different() {
+    List<Span2> trace = asList(
+      span2(1L, null, 1L, Kind.PRODUCER, "producer", "kafka1", false),
+      span2(1L, 1L, 2L, Kind.CONSUMER, "consumer", "kafka2", false)
+    );
+
+    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+      DependencyLink.builder().parent("producer").child("kafka1").callCount(1L).build(),
+      DependencyLink.builder().parent("kafka2").child("consumer").callCount(1L).build()
+    );
+  }
+
+  /** Shows we don't assume there's a direct link between producer and consumer. */
+  @Test
+  public void messagingWithoutBroker_noLinks() {
+    List<Span2> trace = asList(
+      span2(1L, null, 1L, Kind.PRODUCER, "producer", null, false),
+      span2(1L, 1L, 2L, Kind.CONSUMER, "consumer", null, false)
+    );
+
+    assertThat(new DependencyLinker().putTrace(trace.iterator()).link())
+      .isEmpty();
+  }
+
+  /** When a server is the child of a producer span, make a link as it is really an RPC */
+  @Test
+  public void producerLinksToServer_childSpan() {
+    List<Span2> trace = asList(
+      span2(1L, null, 1L, Kind.PRODUCER, "producer", null, false),
+      span2(1L, 1L, 2L, Kind.SERVER, "server", null, false)
+    );
+
+    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+      DependencyLink.builder().parent("producer").child("server").callCount(1L).build()
+    );
+  }
+
+  /**
+   * Servers most often join a span vs create a child. Make sure this works when a producer is used
+   * instead of a client.
+   */
+  @Test
+  public void producerLinksToServer_sameSpan() {
+    List<Span2> trace = asList(
+      span2(1L, null, 1L, Kind.PRODUCER, "producer", null, false),
+      span2(1L, null, 1L, Kind.SERVER, "server", null, false)
+        .toBuilder().shared(true).build()
+    );
+
+    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+      DependencyLink.builder().parent("producer").child("server").callCount(1L).build()
+    );
+  }
+
+  /**
+   * Client might be used for historical reasons instead of PRODUCER. Don't link as the server-side
+   * is authoritative.
+   */
+  @Test
+  public void clientDoesntLinkToConsumer_child() {
+    List<Span2> trace = asList(
+      span2(1L, null, 1L, Kind.CLIENT, "client", null, false),
+      span2(1L, 1L, 2L, Kind.CONSUMER, "consumer", null, false)
+    );
+
+    assertThat(new DependencyLinker().putTrace(trace.iterator()).link())
+      .isEmpty();
+  }
+
   /**
    * A root span can be a client-originated trace or a server receipt which knows its peer. In these
    * cases, the peer is known and kind establishes the direction.
@@ -79,6 +186,7 @@ public class DependencyLinkerTest {
     List<Span2> validRootSpans = asList(
       span2(1L, null, 1L, Kind.SERVER, "server", "client", false),
       span2(1L, null, 1L, Kind.CLIENT, "client", "server", false)
+        .toBuilder().shared(true).build()
     );
 
     for (Span2 span : validRootSpans) {
@@ -147,6 +255,7 @@ public class DependencyLinkerTest {
     List<Span2> trace = asList(
       span2(3L, null, 3L, Kind.CLIENT, "client", null, true),
       span2(3L, null, 3L, Kind.SERVER, "server", null, true)
+        .toBuilder().shared(true).build()
     );
 
     assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(

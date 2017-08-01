@@ -80,7 +80,25 @@ public abstract class Span2 implements Serializable { // for Spark jobs
   /** Indicates the primary span type. */
   public enum Kind {
     CLIENT,
-    SERVER
+    SERVER,
+    /**
+     * When present, {@link #timestamp()} is the moment a producer sent a message to a destination.
+     * {@link #duration()} represents delay sending the message, such as batching, while {@link
+     * #remoteEndpoint()} indicates the destination, such as a broker.
+     *
+     * <p>Unlike {@link #CLIENT}, messaging spans never share a span ID. For example, the {@link
+     * #CONSUMER} of the same message has {@link #parentId()} set to this span's {@link #id()}.
+     */
+    PRODUCER,
+    /**
+     * When present, {@link #timestamp()} is the moment a consumer received a message from an
+     * origin. {@link #duration()} represents delay consuming the message, such as from backlog,
+     * while {@link #remoteEndpoint()} indicates the origin, such as a broker.
+     *
+     * <p>Unlike {@link #SERVER}, messaging spans never share a span ID. For example, the {@link
+     * #PRODUCER} of this message is the {@link #parentId()} of this span.
+     */
+    CONSUMER
   }
 
   /** When present, used to interpret {@link #remoteEndpoint} */
