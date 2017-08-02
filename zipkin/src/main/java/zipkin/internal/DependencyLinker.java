@@ -141,6 +141,7 @@ public final class DependencyLinker {
       String parent;
       switch (kind) {
         case SERVER:
+        case CONSUMER:
           child = serviceName;
           parent = remoteServiceName;
           if (current == tree) { // we are the root-most span.
@@ -151,6 +152,7 @@ public final class DependencyLinker {
           }
           break;
         case CLIENT:
+        case PRODUCER:
           parent = serviceName;
           child = remoteServiceName;
           break;
@@ -159,11 +161,19 @@ public final class DependencyLinker {
           continue;
       }
 
+      boolean isError = currentSpan.tags().containsKey(ERROR);
+      if (kind == Kind.PRODUCER || kind == Kind.CONSUMER) {
+        if (parent == null || child == null) {
+          logger.fine("cannot link messaging span to its broker; skipping");
+        } else {
+          addLink(parent, child, isError);
+        }
+        continue;
+      }
+
       if (logger.isLoggable(FINE) && parent == null) {
         logger.fine("cannot determine parent, looking for first server ancestor");
       }
-
-      boolean isError = currentSpan.tags().containsKey(ERROR);
 
       Span2 rpcAncestor = findRpcAncestor(current);
       String rpcAncestorName;

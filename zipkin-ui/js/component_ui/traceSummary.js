@@ -42,75 +42,65 @@ export function getServiceNames(span) {
       .uniq().value();
 }
 
+function findServiceNameForBinaryAnnotation(span, key) {
+  const binaryAnnotation = _(span.binaryAnnotations || []).find((ann) =>
+            ann.key === key
+            && ann.endpoint != null
+            && ann.endpoint.serviceName != null
+            && ann.endpoint.serviceName !== '');
+  return binaryAnnotation ? binaryAnnotation.endpoint.serviceName : null;
+}
+
+function findServiceNameForAnnotation(span, values) {
+  const annotation = _(span.annotations || []).find((ann) =>
+            values.indexOf(ann.value) !== -1
+            && ann.endpoint != null
+            && ann.endpoint.serviceName != null
+            && ann.endpoint.serviceName !== '');
+  return annotation ? annotation.endpoint.serviceName : null;
+}
+
 export function getServiceName(span) {
   // Most authoritative is the label of the server's endpoint
-  const annotationFromServerAddr = _(span.binaryAnnotations || [])
-      .find((ann) =>
-        ann.key === Constants.SERVER_ADDR
-        && ann.endpoint != null
-        && ann.endpoint.serviceName != null
-        && ann.endpoint.serviceName !== '');
-  const serviceNameFromServerAddr = annotationFromServerAddr ?
-      annotationFromServerAddr.endpoint.serviceName : null;
-
-  if (serviceNameFromServerAddr) {
-    return serviceNameFromServerAddr;
+  const serverAddressServiceName = findServiceNameForBinaryAnnotation(span, Constants.SERVER_ADDR);
+  if (serverAddressServiceName) {
+    return serverAddressServiceName;
   }
 
   // Next, the label of any server annotation, logged by an instrumented server
-  const annotationFromServerSideAnnotations = _(span.annotations || [])
-      .find((ann) =>
-      Constants.CORE_SERVER.indexOf(ann.value) !== -1
-      && ann.endpoint != null
-      && ann.endpoint.serviceName != null
-      && ann.endpoint.serviceName !== '');
-  const serviceNameFromServerSideAnnotation = annotationFromServerSideAnnotations ?
-      annotationFromServerSideAnnotations.endpoint.serviceName : null;
+  const serverAnnotationServiceName = findServiceNameForAnnotation(span, Constants.CORE_SERVER);
+  if (serverAnnotationServiceName) {
+    return serverAnnotationServiceName;
+  }
 
-  if (serviceNameFromServerSideAnnotation) {
-    return serviceNameFromServerSideAnnotation;
+  // Next, the label of any messaging annotation, logged by an instrumented producer or consumer
+  const messageAnnotationServiceName = findServiceNameForAnnotation(span, Constants.CORE_MESSAGE);
+  if (messageAnnotationServiceName) {
+    return messageAnnotationServiceName;
   }
 
   // Next is the label of the client's endpoint
-  const annotationFromClientAddr = _(span.binaryAnnotations || [])
-      .find((ann) =>
-      ann.key === Constants.CLIENT_ADDR
-      && ann.endpoint != null
-      && ann.endpoint.serviceName != null
-      && ann.endpoint.serviceName !== '');
-  const serviceNameFromClientAddr = annotationFromClientAddr ?
-      annotationFromClientAddr.endpoint.serviceName : null;
-
-  if (serviceNameFromClientAddr) {
-    return serviceNameFromClientAddr;
+  const clientAddressServiceName = findServiceNameForBinaryAnnotation(span, Constants.CLIENT_ADDR);
+  if (clientAddressServiceName) {
+    return clientAddressServiceName;
   }
 
   // Next is the label of any client annotation, logged by an instrumented client
-  const annotationFromClientSideAnnotations = _(span.annotations || [])
-      .find((ann) =>
-      Constants.CORE_CLIENT.indexOf(ann.value) !== -1
-      && ann.endpoint != null
-      && ann.endpoint.serviceName != null
-      && ann.endpoint.serviceName !== '');
-  const serviceNameFromClientAnnotation = annotationFromClientSideAnnotations ?
-      annotationFromClientSideAnnotations.endpoint.serviceName : null;
+  const clientAnnotationServiceName = findServiceNameForAnnotation(span, Constants.CORE_CLIENT);
+  if (clientAnnotationServiceName) {
+    return clientAnnotationServiceName;
+  }
 
-  if (serviceNameFromClientAnnotation) {
-    return serviceNameFromClientAnnotation;
+  // Next is the label of the broker's endpoint
+  const brokerAddressServiceName = findServiceNameForBinaryAnnotation(span, Constants.MESSAGE_ADDR);
+  if (brokerAddressServiceName) {
+    return brokerAddressServiceName;
   }
 
   // Finally is the label of the local component's endpoint
-  const annotationFromLocalComponent = _(span.binaryAnnotations || [])
-      .find((ann) =>
-      ann.key === Constants.LOCAL_COMPONENT
-      && ann.endpoint != null
-      && ann.endpoint.serviceName != null
-      && ann.endpoint.serviceName !== '');
-  const serviceNameFromLocalComponent = annotationFromLocalComponent ?
-      annotationFromLocalComponent.endpoint.serviceName : null;
-
-  if (serviceNameFromLocalComponent) {
-    return serviceNameFromLocalComponent;
+  const localServiceName = findServiceNameForBinaryAnnotation(span, Constants.LOCAL_COMPONENT);
+  if (localServiceName) {
+    return localServiceName;
   }
 
   return null;
