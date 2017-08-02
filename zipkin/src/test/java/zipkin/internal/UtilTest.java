@@ -99,6 +99,15 @@ public class UtilTest {
     } catch (NumberFormatException e) {
 
     }
+
+    try {
+      lowerHexToUnsignedLong("48485A3953BB6124"); // uppercase
+      failBecauseExceptionWasNotThrown(NumberFormatException.class);
+    } catch (NumberFormatException e) {
+      assertThat(e).hasMessage(
+        "48485A3953BB6124 should be a 1 to 32 character lower-hex string with no prefix"
+      );
+    }
   }
 
   @Test

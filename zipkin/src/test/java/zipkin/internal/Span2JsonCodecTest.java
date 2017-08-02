@@ -106,6 +106,20 @@ public class Span2JsonCodecTest {
       .isEqualTo(worstSpanInTheWorld);
   }
 
+  @Test public void niceErrorOnUppercaseTraceId() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage(
+      "48485A3953BB6124 should be a 1 to 32 character lower-hex string with no prefix");
+
+    String json = "{\n"
+      + "  \"traceId\": \"48485A3953BB6124\",\n"
+      + "  \"name\": \"get-traces\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\"\n"
+      + "}";
+
+    codec.readSpan(json.getBytes(UTF_8));
+  }
+
   @Test public void decentErrorMessageOnEmptyInput_span() throws IOException {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Empty input reading Span2");

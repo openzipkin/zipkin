@@ -178,6 +178,21 @@ public final class JsonCodecTest extends CodecTest {
   }
 
   @Test
+  public void niceErrorOnUppercaseTraceId() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage(
+      "48485A3953BB6124 should be a 1 to 32 character lower-hex string with no prefix");
+
+    String json = "{\n"
+      + "  \"traceId\": \"48485A3953BB6124\",\n"
+      + "  \"name\": \"get-traces\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\"\n"
+      + "}";
+
+    Codec.JSON.readSpan(json.getBytes(UTF_8));
+  }
+
+  @Test
   public void doesntStackOverflowOnToBufferWriterBug_lessThanBytes() {
     thrown.expect(AssertionError.class);
     thrown.expectMessage("Bug found using FooWriter to write Foo as json. Wrote 1/2 bytes: a");
