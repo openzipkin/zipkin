@@ -890,25 +890,25 @@ public abstract class SpanStoreTest {
   // This supports the "raw trace" feature, which skips application-level data cleaning
   @Test
   public void rawTrace_doesntPerformQueryTimeAdjustment() {
-    Endpoint producer = Endpoint.create("producer", 192 << 24 | 168 << 16 | 1);
-    Annotation ms = Annotation.create((today + 95) * 1000, "ms", producer);
+    Endpoint sender = Endpoint.create("sender", 192 << 24 | 168 << 16 | 1);
+    Annotation send = Annotation.create((today + 95) * 1000, "send", sender);
 
-    Endpoint consumer = Endpoint.create("consumer", 192 << 24 | 168 << 16 | 2);
-    Annotation mr = Annotation.create((today + 100) * 1000, "mr", consumer);
+    Endpoint receiver = Endpoint.create("receiver", 192 << 24 | 168 << 16 | 2);
+    Annotation receive = Annotation.create((today + 100) * 1000, "receive", receiver);
 
-    Span span = Span.builder().traceId(1).name("message").id(666).build();
+    Span span = Span.builder().traceId(1).name("start").id(666).build();
 
     // Simulate instrumentation that sends annotations one at-a-time.
     // This should prevent the collection tier from being able to calculate duration.
-    accept(span.toBuilder().addAnnotation(ms).build());
-    accept(span.toBuilder().addAnnotation(mr).build());
+    accept(span.toBuilder().addAnnotation(send).build());
+    accept(span.toBuilder().addAnnotation(receive).build());
 
     // Normally, span store implementations will merge spans by id and add duration by query time
     assertThat(store().getTrace(span1.traceIdHigh, span.traceId))
         .containsExactly(span.toBuilder()
-            .timestamp(ms.timestamp)
-            .duration(mr.timestamp - ms.timestamp)
-            .annotations(asList(ms, mr)).build());
+            .timestamp(send.timestamp)
+            .duration(receive.timestamp - send.timestamp)
+            .annotations(asList(send, receive)).build());
 
     // Since a collector never saw both sides of the span, we'd not see duration in the raw trace.
     for (Span raw : store().getRawTrace(span1.traceIdHigh, span.traceId)) {
