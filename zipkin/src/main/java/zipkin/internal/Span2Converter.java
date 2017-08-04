@@ -282,12 +282,55 @@ public final class Span2Converter {
       if (duration != 0L) result.duration(duration);
     }
 
+    Kind kind = in.kind();
     Annotation cs = null, sr = null, ss = null, cr = null, ms = null, mr = null, ws = null, wr =
       null;
     String remoteEndpointType = null;
 
-    if (in.kind() != null) {
-      switch (in.kind()) {
+    boolean wroteEndpoint = false;
+
+    for (int i = 0, length = in.annotations().size(); i < length; i++) {
+      Annotation a = in.annotations().get(i);
+      if (in.localEndpoint() != null) {
+        a = a.toBuilder().endpoint(in.localEndpoint()).build();
+      }
+      if (a.value.length() == 2) {
+        if (a.value.equals(Constants.CLIENT_SEND)) {
+          kind = Kind.CLIENT;
+          cs = a;
+          remoteEndpointType = SERVER_ADDR;
+        } else if (a.value.equals(Constants.SERVER_RECV)) {
+          kind = Kind.SERVER;
+          sr = a;
+          remoteEndpointType = CLIENT_ADDR;
+        } else if (a.value.equals(Constants.SERVER_SEND)) {
+          kind = Kind.SERVER;
+          ss = a;
+        } else if (a.value.equals(Constants.CLIENT_RECV)) {
+          kind = Kind.CLIENT;
+          cr = a;
+        } else if (a.value.equals(Constants.MESSAGE_SEND)) {
+          kind = Kind.PRODUCER;
+          ms = a;
+        } else if (a.value.equals(Constants.MESSAGE_RECV)) {
+          kind = Kind.CONSUMER;
+          mr = a;
+        } else if (a.value.equals(Constants.WIRE_SEND)) {
+          ws = a;
+        } else if (a.value.equals(Constants.WIRE_RECV)) {
+          wr = a;
+        } else {
+          wroteEndpoint = true;
+          result.addAnnotation(a);
+        }
+      } else {
+        wroteEndpoint = true;
+        result.addAnnotation(a);
+      }
+    }
+
+    if (kind != null) {
+      switch (kind) {
         case CLIENT:
           remoteEndpointType = Constants.SERVER_ADDR;
           if (timestamp != 0L) {
@@ -326,42 +369,6 @@ public final class Span2Converter {
           break;
         default:
           throw new AssertionError("update kind mapping");
-      }
-    }
-
-    boolean wroteEndpoint = false;
-
-    for (int i = 0, length = in.annotations().size(); i < length; i++) {
-      Annotation a = in.annotations().get(i);
-      if (in.localEndpoint() != null) {
-        a = a.toBuilder().endpoint(in.localEndpoint()).build();
-      }
-      if (a.value.length() == 2) {
-        if (a.value.equals(Constants.CLIENT_SEND)) {
-          cs = a;
-          remoteEndpointType = SERVER_ADDR;
-        } else if (a.value.equals(Constants.SERVER_RECV)) {
-          sr = a;
-          remoteEndpointType = CLIENT_ADDR;
-        } else if (a.value.equals(Constants.SERVER_SEND)) {
-          ss = a;
-        } else if (a.value.equals(Constants.CLIENT_RECV)) {
-          cr = a;
-        } else if (a.value.equals(Constants.MESSAGE_SEND)) {
-          ms = a;
-        } else if (a.value.equals(Constants.MESSAGE_RECV)) {
-          mr = a;
-        } else if (a.value.equals(Constants.WIRE_SEND)) {
-          ws = a;
-        } else if (a.value.equals(Constants.WIRE_RECV)) {
-          wr = a;
-        } else {
-          wroteEndpoint = true;
-          result.addAnnotation(a);
-        }
-      } else {
-        wroteEndpoint = true;
-        result.addAnnotation(a);
       }
     }
 
