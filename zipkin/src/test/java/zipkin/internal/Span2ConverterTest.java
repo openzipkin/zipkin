@@ -103,6 +103,34 @@ public class Span2ConverterTest {
       .containsExactly(simpleClient);
   }
 
+  @Test public void client_kindInferredFromAnnotation() {
+    Span2 simpleClient = Span2.builder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .parentId("6b221d5bc9e6496c")
+      .id("5b4185666d50f68b")
+      .name("get")
+      .localEndpoint(frontend)
+      .timestamp(1472470996199000L)
+      .duration(1472470996238000L - 1472470996199000L)
+      .addAnnotation(1472470996199000L, Constants.CLIENT_SEND)
+      .build();
+
+    Span client = Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
+      .id(Util.lowerHexToUnsignedLong("5b4185666d50f68b"))
+      .name("get")
+      .timestamp(1472470996199000L)
+      .duration(1472470996238000L - 1472470996199000L)
+      .addAnnotation(Annotation.create(1472470996199000L, Constants.CLIENT_SEND, frontend))
+      .addAnnotation(Annotation.create(1472470996238000L, Constants.CLIENT_RECV, frontend))
+      .build();
+
+    assertThat(Span2Converter.toSpan(simpleClient))
+      .isEqualTo(client);
+  }
+
   @Test public void noAnnotationsExceptAddresses() {
     Span2 span2 = Span2.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
@@ -230,7 +258,6 @@ public class Span2ConverterTest {
       .id(2L)
       .name("foo")
       .timestamp(1472470996199000L)
-      .duration(207000L)
       .addAnnotation(1472470996199000L, "sr")
       .build();
 
@@ -239,7 +266,7 @@ public class Span2ConverterTest {
       .parentId(1L)
       .id(2L)
       .name("foo")
-      .timestamp(1472470996199000L).duration(207000L)
+      .timestamp(1472470996199000L)
       .addAnnotation(Annotation.create(1472470996199000L, "sr", null))
       .build();
 
