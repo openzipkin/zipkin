@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.Collections;
 import okio.Buffer;
 import zipkin.Codec;
 import zipkin.Span;
@@ -37,6 +38,16 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
 
   final ElasticsearchHttpStorage es;
   final IndexNameFormatter indexNameFormatter;
+  private final static int MAX_CACHE_DAYS = 2;
+  private final static int MAX_CACHE_ENTRIES = 1000;
+
+  final static Map<String, Set<Pair<String>>> indexToServiceSpansCache = new LinkedHashMap<String, Set<Pair<String>>>() {
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<String, Set<Pair<String>>> eldest) {
+      return size() > MAX_CACHE_DAYS;
+    }
+  };
+  private Map<String, Set<Pair<String>>> indexToServiceSpans = new LinkedHashMap<>();
 
   ElasticsearchHttpSpanConsumer(ElasticsearchHttpStorage es) {
     this.es = es;
@@ -44,21 +55,77 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
   }
 
   @Override public void accept(List<Span> spans, Callback<Void> callback) {
+    Callback<Void> callbackWrapper = new Callback<Void>() {
+        @Override
+        public void onSuccess(Void value) {
+            callback.onSuccess(value);
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            clearIndexToServiceSpansCache(indexToServiceSpans, indexToServiceSpansCache);
+            callback.onError(t);
+        }
+    };
+
     if (spans.isEmpty()) {
-      callback.onSuccess(null);
+      callbackWrapper.onSuccess(null);
       return;
     }
     try {
       HttpBulkIndexer indexer = new HttpBulkIndexer("index-span", es);
-      Map<String, Set<Pair<String>>> indexToServiceSpans = indexSpans(indexer, spans);
+      indexToServiceSpans = indexSpans(indexer, spans);
+
+      // remove already cached items from indexToServiceSpans, add new items to cache
+      for (Map.Entry<String, Set<Pair<String>>> entry : indexToServiceSpans.entrySet()) {
+        Set<Pair<String>> serviceSpansEntryCached = null;
+        synchronized(indexToServiceSpansCache) {
+          serviceSpansEntryCached = indexToServiceSpansCache.get(entry.getKey());
+        }
+        if (serviceSpansEntryCached == null) {
+          synchronized(indexToServiceSpansCache) {
+            indexToServiceSpansCache.put(entry.getKey(), serviceSpansEntryCached = Collections.newSetFromMap(new LinkedHashMap<Pair<String>, Boolean>() {
+              @Override
+              protected boolean removeEldestEntry(Map.Entry<Pair<String>, Boolean> eldest) {
+                return size() > MAX_CACHE_ENTRIES;
+              }
+            }));
+          }
+        }
+        Set<Pair<String>> serviceSpansEntry = entry.getValue();
+        synchronized(serviceSpansEntryCached) {
+          serviceSpansEntry.removeAll(serviceSpansEntryCached);
+          serviceSpansEntryCached.addAll(serviceSpansEntry);
+        }
+      }
+
       if (!indexToServiceSpans.isEmpty()) {
         indexNames(indexer, indexToServiceSpans);
       }
-      indexer.execute(callback);
+      indexer.execute(callbackWrapper);
     } catch (Throwable t) {
       propagateIfFatal(t);
-      callback.onError(t);
+      callbackWrapper.onError(t);
     }
+  }
+  /** Remove recently added items from servicespan cache */
+  void clearIndexToServiceSpansCache(Map<String, Set<Pair<String>>> index, Map<String, Set<Pair<String>>> cache) {
+    for (Map.Entry<String, Set<Pair<String>>> entry : index.entrySet()) {
+      Set<Pair<String>> serviceSpansEntryCached = null;
+      synchronized (cache) {
+        serviceSpansEntryCached = cache.get(entry.getKey());
+      }
+      if (serviceSpansEntryCached == null || serviceSpansEntryCached.isEmpty()) continue;
+
+      synchronized (serviceSpansEntryCached) {
+        serviceSpansEntryCached.removeAll(entry.getValue());
+      }
+    }
+  }
+
+  /** Clear servicespan cache (for testing purposes) */
+  void resetIndexToServiceSpansCache() {
+    indexToServiceSpansCache.clear();
   }
 
   /** Indexes spans and returns a mapping of indexes that may need a names update */

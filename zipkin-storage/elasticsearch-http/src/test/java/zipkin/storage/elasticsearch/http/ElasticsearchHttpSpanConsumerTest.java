@@ -14,6 +14,7 @@
 package zipkin.storage.elasticsearch.http;
 
 import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -29,6 +30,7 @@ import zipkin.Codec;
 import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.internal.CallbackCaptor;
+import zipkin.internal.Pair;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,6 +59,8 @@ public class ElasticsearchHttpSpanConsumerTest {
     storage.ensureIndexTemplate();
     es.takeRequest(); // get version
     es.takeRequest(); // get template
+    // clear servicespan cache in order to prevent tests breaking
+    ((ElasticsearchHttpSpanConsumer)storage.asyncSpanConsumer()).resetIndexToServiceSpansCache();
   }
 
   @After
@@ -264,6 +268,121 @@ public class ElasticsearchHttpSpanConsumerTest {
     RecordedRequest request = es.takeRequest();
     assertThat(request.getPath())
         .isEqualTo("/_bulk?pipeline=zipkin");
+  }
+
+  @Test
+  public void indexesServiceSpanCache() throws Exception {
+    es.enqueue(new MockResponse());
+
+    Span span1 = TestObjects.TRACE.get(0).toBuilder().traceId(10L).build();
+    accept(span1);
+
+    assertThat(es.takeRequest().getBody().readByteString().utf8())
+      .contains(
+        "\"_type\":\"servicespan\",\"_id\":\"web|get\"}}\n"
+          + "{\"serviceName\":\"web\",\"spanName\":\"get\"}\n"
+      );
+
+    es.enqueue(new MockResponse());
+
+    Span span2 = TestObjects.TRACE.get(1).toBuilder().traceId(11L).build();
+    accept(span2);
+
+    assertThat(es.takeRequest().getBody().readByteString().utf8())
+      .contains(
+        "\"_type\":\"servicespan\",\"_id\":\"app|get\"}}\n"
+          + "{\"serviceName\":\"app\",\"spanName\":\"get\"}\n"
+      )
+      .doesNotContain(
+        "\"_type\":\"servicespan\",\"_id\":\"web|get\"}}\n"
+          + "{\"serviceName\":\"web\",\"spanName\":\"get\"}\n"
+      );
+  }
+
+  @Test
+  public void indexesServiceSpanCache_failedConcurrency() throws Exception {
+    final Integer threadCount = 10;
+    List<String> testElemsForCache = Arrays.asList("a", "b", "c", "d", "e", "f", "g", "h", "k", "l");
+    Boolean broken = false;
+    for (int j = 0; j < 10; j++) {
+      List<Thread> getOrSet = new ArrayList<>(threadCount * 2);
+      for (int i = 0; i < threadCount; i++) {
+        getOrSet.add(new Thread(
+          () -> testElemsForCache.forEach(elem ->
+            ElasticsearchHttpSpanConsumer.indexToServiceSpansCache.put(elem,
+              new HashSet<Pair<String>>())
+          )
+        ));
+      }
+      for (int i = 0; i < threadCount; i++) {
+        getOrSet.add(new Thread(
+          () -> testElemsForCache.forEach(elem ->
+            ElasticsearchHttpSpanConsumer.indexToServiceSpansCache.remove(elem)
+          )
+        ));
+      }
+
+      Collections.shuffle(getOrSet);
+      getOrSet.forEach(Thread::start);
+      for (Thread thread : getOrSet) {
+        thread.join();
+      }
+
+      if (ElasticsearchHttpSpanConsumer.indexToServiceSpansCache.keySet().size() != testElemsForCache.size()
+        && ElasticsearchHttpSpanConsumer.indexToServiceSpansCache.keySet().size() != 0) {
+        broken = true;
+      }
+
+      ((ElasticsearchHttpSpanConsumer)storage.asyncSpanConsumer()).resetIndexToServiceSpansCache();
+    }
+    assert(broken);
+  }
+
+  @Test
+  public void indexesServiceSpanCache_failedConcurrencyOnSet() throws Exception {
+    final Integer threadCount = 10;
+    List<String> testElemsForCache = Arrays.asList("a", "b", "c", "d", "e", "f", "g", "h", "k", "l");
+    String key = "A";
+    Boolean broken = false;
+
+    ElasticsearchHttpSpanConsumer.indexToServiceSpansCache.put(key, Collections.newSetFromMap(new LinkedHashMap<Pair<String>, Boolean>() {
+      @Override
+      protected boolean removeEldestEntry(Map.Entry<Pair<String>, Boolean> eldest) {
+        return size() > 5;
+      }
+    }));
+
+    for (int j = 0; j < 10; j++) {
+      List<Thread> getOrSet = new ArrayList<>(threadCount * 2);
+      for (int i = 0; i < threadCount; i++) {
+        getOrSet.add(new Thread(
+          () -> {
+            Set<Pair<String>> serviceSpansEntryCached = ElasticsearchHttpSpanConsumer.indexToServiceSpansCache.get(key);
+            testElemsForCache.forEach(elem -> serviceSpansEntryCached.add(Pair.create(elem, elem)));
+          }
+        ));
+      }
+      for (int i = 0; i < threadCount; i++) {
+        getOrSet.add(new Thread(
+          () -> {
+            Set<Pair<String>> serviceSpansEntryCached = ElasticsearchHttpSpanConsumer.indexToServiceSpansCache.get(key);
+            testElemsForCache.forEach(elem -> serviceSpansEntryCached.remove(Pair.create(elem, elem)));
+          }
+        ));
+      }
+
+      Collections.shuffle(getOrSet);
+      getOrSet.forEach(Thread::start);
+      for (Thread thread : getOrSet) {
+        thread.join();
+      }
+
+      if (ElasticsearchHttpSpanConsumer.indexToServiceSpansCache.get(key).size() != testElemsForCache.size()
+        && ElasticsearchHttpSpanConsumer.indexToServiceSpansCache.get(key).size() != 0) {
+        broken = true;
+      }
+    }
+    assert(broken);
   }
 
   void accept(Span ... spans) throws Exception {
