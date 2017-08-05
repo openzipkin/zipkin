@@ -20,30 +20,25 @@ import okhttp3.mockwebserver.MockWebServer;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import zipkin.storage.elasticsearch.http.internal.LenientDoubleCallbackAsyncSpanStore;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ElasticsearchHttpStorageTest {
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
-  @Rule
-  public MockWebServer es = new MockWebServer();
+  @Rule public MockWebServer es = new MockWebServer();
 
   ElasticsearchHttpStorage storage = ElasticsearchHttpStorage.builder()
-      .hosts(asList(es.url("").toString()))
-      .build();
+    .hosts(asList(es.url("").toString()))
+    .build();
 
-  @After
-  public void close() throws IOException {
+  @After public void close() throws IOException {
     storage.close();
   }
 
-  @Test
-  public void memoizesIndexTemplate() throws Exception {
+  @Test public void memoizesIndexTemplate() throws Exception {
     es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"2.4.0\"}}"));
-    es.enqueue(new MockResponse()); // get template
+    es.enqueue(new MockResponse()); // get legacy template
     es.enqueue(new MockResponse()); // dependencies request
     es.enqueue(new MockResponse()); // dependencies request
 
@@ -52,10 +47,101 @@ public class ElasticsearchHttpStorageTest {
     storage.spanStore().getDependencies(endTs, TimeUnit.DAYS.toMillis(1));
 
     es.takeRequest(); // get version
-    es.takeRequest(); // get template
+    es.takeRequest(); // get legacy template
     assertThat(es.takeRequest().getPath())
-        .startsWith("/zipkin-2016-10-01,zipkin-2016-10-02/dependencylink/_search");
+      .startsWith("/zipkin-2016-10-01,zipkin-2016-10-02/dependencylink/_search");
     assertThat(es.takeRequest().getPath())
-        .startsWith("/zipkin-2016-10-01,zipkin-2016-10-02/dependencylink/_search");
+      .startsWith("/zipkin-2016-10-01,zipkin-2016-10-02/dependencylink/_search");
+  }
+
+  @Test public void ensureIndexTemplates_when6xNoLegacySupport() throws Exception {
+    es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"6.0.0\"}}"));
+    es.enqueue(new MockResponse()); // get span template
+    es.enqueue(new MockResponse()); // get dependency template
+
+    IndexTemplates templates = storage.ensureIndexTemplates();
+    assertThat(templates.legacy()).isNull();
+
+    // check this isn't the legacy consumer
+    assertThat(storage.asyncSpanConsumer())
+      .isInstanceOf(ElasticsearchHttpSpanConsumer.class);
+    // check this isn't the double reading span store
+    assertThat(storage.asyncSpanStore())
+      .isInstanceOf(ElasticsearchHttpSpanStore.class);
+
+    es.takeRequest(); // get version
+    es.takeRequest(); // get span template
+    es.takeRequest(); // get dependency template
+  }
+
+  @Test public void ensureIndexTemplates_when24OptIntoStoreWithMixedReads() throws Exception {
+    storage.close();
+    storage = ElasticsearchHttpStorage.builder()
+      .hosts(asList(es.url("").toString()))
+      .singleTypeIndexingEnabled(true)
+      .build();
+
+    es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"2.4.0\"}}"));
+    es.enqueue(new MockResponse()); // get span template
+    es.enqueue(new MockResponse()); // get dependency template
+
+    IndexTemplates templates = storage.ensureIndexTemplates();
+    assertThat(templates.legacy()).isNotNull(); // legacy template is supported
+
+    // check this isn't the legacy consumer
+    assertThat(storage.asyncSpanConsumer())
+      .isInstanceOf(ElasticsearchHttpSpanConsumer.class);
+    // check that we do double-reads on the legacy and new format
+    assertThat(storage.asyncSpanStore())
+      .isInstanceOf(LenientDoubleCallbackAsyncSpanStore.class);
+
+    es.takeRequest(); // get version
+    es.takeRequest(); // get span template
+    es.takeRequest(); // get dependency template
+  }
+
+  /**
+   * Eventhough 5.x supports single-type indexing without any modifications, the feature is opt-in
+   * which means we default to not do mixed reads.
+   */
+  @Test public void ensureIndexTemplates_when5xSingleTypeIndexSupport() throws Exception {
+    checkLegacyComponents(new MockResponse().setBody("{\"version\":{\"number\":\"5.0.0\"}}"));
+  }
+
+  @Test public void ensureIndexTemplates_when22SingleTypeIndexSupportUnsupported()
+    throws Exception {
+    storage.close();
+    storage = ElasticsearchHttpStorage.builder()
+      .hosts(asList(es.url("").toString()))
+      .singleTypeIndexingEnabled(true)
+      .build();
+
+    // Eventhough singleTypeIndexingEnabled, still legacy as Versions before 2.4 do not support "allow_dots_in_name"
+    checkLegacyComponents(new MockResponse().setBody("{\"version\":{\"number\":\"2.2.0\"}}"));
+  }
+
+  /**
+   * Versions in the 2.4+ range are mixed with regards to single-type indexes. For example, only
+   * 2.4+ using -Dmapper.allow_dots_in_name=true works. This disables support by default
+   * accordingly.
+   */
+  @Test public void ensureIndexTemplates_when2xSingleTypeIndexSupport() throws Exception {
+    checkLegacyComponents(new MockResponse().setBody("{\"version\":{\"number\":\"2.4.0\"}}"));
+  }
+
+  void checkLegacyComponents(MockResponse response) throws InterruptedException {
+    es.enqueue(response);
+    es.enqueue(new MockResponse()); // get legacy template
+
+    IndexTemplates templates = storage.ensureIndexTemplates();
+    assertThat(templates.legacy()).isNotNull();
+
+    assertThat(storage.asyncSpanConsumer())
+      .isInstanceOf(LegacyElasticsearchHttpSpanConsumer.class);
+    assertThat(storage.asyncSpanStore())
+      .isInstanceOf(LegacyElasticsearchHttpSpanStore.class);
+
+    es.takeRequest(); // get version
+    es.takeRequest(); // get legacy template
   }
 }

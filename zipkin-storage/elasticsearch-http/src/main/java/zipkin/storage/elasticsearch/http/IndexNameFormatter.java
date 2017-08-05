@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
+import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 
 @AutoValue
@@ -72,13 +73,14 @@ abstract class IndexNameFormatter {
    * <p>For example, if {@code beginMillis} is 2016-11-30 and {@code endMillis} is 2017-01-02, the
    * result will be 2016-11-30, 2016-12-*, 2017-01-01 and 2017-01-02.
    */
-  List<String> indexNamePatternsForRange(long beginMillis, long endMillis) {
+  List<String> formatTypeAndRange(@Nullable String type, long beginMillis, long endMillis) {
     GregorianCalendar current = midnightUTC(beginMillis);
     GregorianCalendar end = midnightUTC(endMillis);
     if (current.equals(end)) {
-      return Collections.singletonList(indexNameForTimestamp(current.getTimeInMillis()));
+      return Collections.singletonList(formatTypeAndTimestamp(type, current.getTimeInMillis()));
     }
 
+    String prefix = prefix(type);
     List<String> indices = new ArrayList<>();
     while (current.compareTo(end) <= 0) {
       if (current.get(Calendar.MONTH) == 0 && current.get(Calendar.DATE) == 1) {
@@ -86,7 +88,7 @@ abstract class IndexNameFormatter {
         current.set(Calendar.DAY_OF_YEAR, current.getActualMaximum(Calendar.DAY_OF_YEAR));
         if (current.compareTo(end) <= 0) {
           indices.add(
-              String.format("%s-%s%c*", index(), current.get(Calendar.YEAR), dateSeparator()));
+              String.format("%s-%s%c*", prefix, current.get(Calendar.YEAR), dateSeparator()));
           current.add(Calendar.DATE, 1); // rollover to next year
           continue;
         } else {
@@ -96,7 +98,7 @@ abstract class IndexNameFormatter {
         // attempt to compress a month
         current.set(Calendar.DATE, current.getActualMaximum(Calendar.DATE));
         if (current.compareTo(end) <= 0) {
-          indices.add(String.format("%s-%s%c%02d%c*", index(),
+          indices.add(String.format("%s-%s%c%02d%c*", prefix,
               current.get(Calendar.YEAR), dateSeparator(),
               current.get(Calendar.MONTH) + 1, dateSeparator()
           ));
@@ -106,7 +108,7 @@ abstract class IndexNameFormatter {
           current.set(Calendar.DATE, 1); // rollback to first of the month
         }
       }
-      indices.add(indexNameForTimestamp(current.getTimeInMillis()));
+      indices.add(formatTypeAndTimestamp(type, current.getTimeInMillis()));
       current.add(Calendar.DATE, 1);
     }
     return indices;
@@ -118,8 +120,12 @@ abstract class IndexNameFormatter {
     return result;
   }
 
-  String indexNameForTimestamp(long timestampMillis) {
-    return index() + "-" + dateFormat().get().format(new Date(timestampMillis));
+  String formatTypeAndTimestamp(@Nullable String type, long timestampMillis) {
+    return prefix(type) + "-" + dateFormat().get().format(new Date(timestampMillis));
+  }
+
+  private String prefix(@Nullable String type) {
+    return type != null ? index() + ":" + type : index();
   }
 
   // for testing
@@ -131,7 +137,7 @@ abstract class IndexNameFormatter {
     }
   }
 
-  String allIndices() {
-    return index() + "-*";
+  String formatType(@Nullable String type) {
+    return prefix(type) + "-*";
   }
 }

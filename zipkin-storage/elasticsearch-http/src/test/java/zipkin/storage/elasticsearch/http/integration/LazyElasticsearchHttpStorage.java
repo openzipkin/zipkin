@@ -20,7 +20,9 @@ import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.HttpWaitStrategy;
 import zipkin.Component;
 import zipkin.internal.LazyCloseable;
@@ -32,21 +34,31 @@ class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchHttpStorag
   static final String INDEX = "test_zipkin_http";
 
   final String image;
+  final boolean singleTypeIndexingEnabled;
 
   GenericContainer container;
 
   LazyElasticsearchHttpStorage(String image) {
+    this(image, false);
+  }
+
+  LazyElasticsearchHttpStorage(String image, boolean singleTypeIndexingEnabled) {
     this.image = image;
+    this.singleTypeIndexingEnabled = singleTypeIndexingEnabled;
   }
 
   @Override protected ElasticsearchHttpStorage compute() {
     try {
       container = new GenericContainer(image)
           .withExposedPorts(9200)
+          .withEnv("ES_JAVA_OPTS", "-Dmapper.allow_dots_in_name=true -Xms512m -Xmx512m")
           .waitingFor(new HttpWaitStrategy().forPath("/"));
       container.start();
-      System.out.println("Will use TestContainers Elasticsearch instance");
-    } catch (Exception e) {
+      if (Boolean.valueOf(System.getenv("ES_DEBUG"))) {
+        container.followOutput(new Slf4jLogConsumer(LoggerFactory.getLogger(image)));
+      }
+      System.out.println("Starting docker image " + image);
+    } catch (RuntimeException e) {
       // Ignore
     }
 
@@ -69,6 +81,7 @@ class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchHttpStorag
         : new OkHttpClient();
     ElasticsearchHttpStorage.Builder builder = ElasticsearchHttpStorage.builder(ok).index(INDEX);
     InternalForTests.flushOnWrites(builder);
+    if (singleTypeIndexingEnabled) InternalForTests.singleTypeIndexingEnabled(builder);
     return builder.hosts(Arrays.asList(baseUrl()));
   }
 
@@ -89,7 +102,10 @@ class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchHttpStorag
       ElasticsearchHttpStorage storage = maybeNull();
       if (storage != null) storage.close();
     } finally {
-      if (container != null) container.stop();
+      if (container != null) {
+        System.out.println("Stopping docker image " + image);
+        container.stop();
+      }
     }
   }
 

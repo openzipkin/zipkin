@@ -22,7 +22,7 @@ import zipkin.storage.StorageComponent;
 public class MySQLTest {
 
   @ClassRule
-  public static LazyMySQLStorage storage = new LazyMySQLStorage("1.19.2");
+  public static LazyMySQLStorage storage = new LazyMySQLStorage("1.29.1");
 
   public static class DependenciesTest extends zipkin.storage.DependenciesTest {
 

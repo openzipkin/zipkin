@@ -39,11 +39,11 @@ import static zipkin.TestObjects.TODAY;
 import static zipkin.TestObjects.WEB_ENDPOINT;
 import static zipkin.storage.elasticsearch.http.integration.LazyElasticsearchHttpStorage.INDEX;
 
-abstract class ElasticsearchHttpSpanConsumerTest {
+abstract class LegacyElasticsearchHttpSpanConsumerTest {
   // we assume that buckets use a simple daily format.
   SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-  ElasticsearchHttpSpanConsumerTest() {
+  LegacyElasticsearchHttpSpanConsumerTest() {
     dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
   }
 
@@ -75,9 +75,36 @@ abstract class ElasticsearchHttpSpanConsumerTest {
   String findSpans(long endTs, long traceId) throws IOException {
     return new OkHttpClient().newCall(new Request.Builder().url(
         HttpUrl.parse(baseUrl()).newBuilder()
-            .addPathSegment(INDEX + ":span-" + dateFormat.format(new Date(endTs)))
+            .addPathSegment(INDEX + "-" + dateFormat.format(new Date(endTs)))
+            .addPathSegment("span")
             .addPathSegment("_search")
             .addQueryParameter("q", "traceId:" + Util.toLowerHex(traceId)).build())
+        .get().build()).execute().body().string();
+  }
+
+  @Test
+  public void serviceSpanGoesIntoADailyIndex_whenTimestampIsDerived() throws Exception {
+    long twoDaysAgo = (TODAY - 2 * DAY);
+
+    Span span = Span.builder().traceId(20L).id(20L).name("get")
+        .addAnnotation(Annotation.create(twoDaysAgo * 1000, SERVER_RECV, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create(TODAY * 1000, SERVER_SEND, WEB_ENDPOINT))
+        .build();
+
+    accept(span);
+
+    // make sure the servicespan went into an index corresponding to its first annotation timestamp
+    assertThat(findServiceSpan(twoDaysAgo, WEB_ENDPOINT.serviceName))
+        .contains("\"hits\":{\"total\":1");
+  }
+
+  String findServiceSpan(long endTs, String serviceName) throws IOException {
+    return new OkHttpClient().newCall(new Request.Builder().url(
+        HttpUrl.parse(baseUrl()).newBuilder()
+            .addPathSegment(INDEX + "-" + dateFormat.format(new Date(endTs)))
+            .addPathSegment("servicespan")
+            .addPathSegment("_search")
+            .addQueryParameter("q", "serviceName:" + serviceName).build())
         .get().build()).execute().body().string();
   }
 
@@ -114,7 +141,8 @@ abstract class ElasticsearchHttpSpanConsumerTest {
 
     Call searchRequest = new OkHttpClient().newCall(new Request.Builder().url(
         HttpUrl.parse(baseUrl()).newBuilder()
-            .addPathSegment(INDEX + ":span-*")
+            .addPathSegment(INDEX + "-*")
+            .addPathSegment("span")
             .addPathSegment("_search")
             .addQueryParameter("q", "timestamp_millis:" + TODAY).build())
         .get().tag("search-terms").build());

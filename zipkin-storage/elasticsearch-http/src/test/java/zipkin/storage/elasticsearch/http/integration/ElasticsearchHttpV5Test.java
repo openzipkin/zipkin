@@ -25,7 +25,7 @@ public class ElasticsearchHttpV5Test {
 
   @ClassRule
   public static LazyElasticsearchHttpStorage storage =
-      new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch5:1.19.2");
+      new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch5:1.29.1");
 
   public static class DependenciesTest extends ElasticsearchHttpDependenciesTest {
     @Override protected ElasticsearchHttpStorage storage() {
@@ -33,7 +33,7 @@ public class ElasticsearchHttpV5Test {
     }
   }
 
-  public static class SpanConsumerTest extends ElasticsearchHttpSpanConsumerTest {
+  public static class SpanConsumerTest extends LegacyElasticsearchHttpSpanConsumerTest {
     @Override protected ElasticsearchHttpStorage storage() {
       return storage.get();
     }

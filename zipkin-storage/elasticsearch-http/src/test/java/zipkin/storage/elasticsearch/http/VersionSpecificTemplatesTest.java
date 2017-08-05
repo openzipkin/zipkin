@@ -24,7 +24,7 @@ import org.junit.rules.ExpectedException;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class VersionSpecificTemplateTest {
+public class VersionSpecificTemplatesTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none();
   @Rule
@@ -34,7 +34,8 @@ public class VersionSpecificTemplateTest {
       .hosts(asList(es.url("").toString()))
       .build();
 
-  VersionSpecificTemplate client = new VersionSpecificTemplate(storage);
+  VersionSpecificTemplates
+    client = new VersionSpecificTemplates(storage);
 
   @After
   public void close() throws IOException {
@@ -58,7 +59,7 @@ public class VersionSpecificTemplateTest {
         + "  \"tagline\" : \"You Know, for Search\"\n"
         + "}"));
 
-    assertThat(client.getVersion(storage.http())).isEqualTo("1.7.3");
+    assertThat(client.getVersion(storage.http())).isEqualTo(1.7f);
   }
 
   @Test
@@ -76,7 +77,7 @@ public class VersionSpecificTemplateTest {
         + "  \"tagline\" : \"You Know, for Search\"\n"
         + "}"));
 
-    assertThat(client.getVersion(storage.http())).isEqualTo("2.4.0");
+    assertThat(client.getVersion(storage.http())).isEqualTo(2.4f);
   }
 
   @Test
@@ -95,6 +96,25 @@ public class VersionSpecificTemplateTest {
         + "  \"tagline\" : \"You Know, for Search\"\n"
         + "}"));
 
-    assertThat(client.getVersion(storage.http())).isEqualTo("5.0.0");
+    assertThat(client.getVersion(storage.http())).isEqualTo(5.0f);
+  }
+
+  @Test
+  public void getVersion_6() throws Exception {
+    es.enqueue(new MockResponse().setBody("{\n"
+      +"  \"name\" : \"gZlGcWF\",\n"
+      +"  \"cluster_name\" : \"elasticsearch\",\n"
+      +"  \"cluster_uuid\" : \"QAiO5laPRquRvL8BzjDgYQ\",\n"
+      +"  \"version\" : {\n"
+      +"    \"number\" : \"6.0.0-alpha2\",\n"
+      +"    \"build_hash\" : \"0424099\",\n"
+      +"    \"build_date\" : \"2017-05-31T23:38:55.271Z\",\n"
+      +"    \"build_snapshot\" : false,\n"
+      +"    \"lucene_version\" : \"7.0.0\"\n"
+      +"  },\n"
+      +"  \"tagline\" : \"You Know, for Search\"\n"
+      +"}"));
+
+    assertThat(client.getVersion(storage.http())).isEqualTo(6.0f);
   }
 }

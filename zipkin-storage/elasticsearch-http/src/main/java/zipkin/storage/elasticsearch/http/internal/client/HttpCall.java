@@ -105,7 +105,8 @@ public final class HttpCall<V> {
         if (response.isSuccessful()) {
           delegate.onSuccess(bodyConverter.convert(content));
         } else {
-          delegate.onError(new IllegalStateException("response failed: " + content.readUtf8()));
+          delegate.onError(new IllegalStateException(
+            "response for " + response.request().tag() + " failed: " + content.readUtf8()));
         }
       } catch (Throwable t) {
         propagateIfFatal(t);

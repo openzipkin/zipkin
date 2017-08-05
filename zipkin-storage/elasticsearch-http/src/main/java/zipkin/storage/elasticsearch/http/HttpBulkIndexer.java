@@ -55,6 +55,7 @@ final class HttpBulkIndexer {
   void writeIndexMetadata(String index, String typeName, @Nullable String id) {
     if (flushOnWrites) indices.add(index);
     body.writeUtf8("{\"index\":{\"_index\":\"").writeUtf8(index).writeByte('"');
+    // the _type parameter is needed for Elasticsearch <6.x
     body.writeUtf8(",\"_type\":\"").writeUtf8(typeName).writeByte('"');
     if (id != null) {
       body.writeUtf8(",\"_id\":\"").writeUtf8(JsonCodec.escape(id)).writeByte('"');
@@ -77,6 +78,10 @@ final class HttpBulkIndexer {
         .post(RequestBody.create(APPLICATION_JSON, body.readByteString())).build();
 
     http.<Void>newCall(request, b -> {
+      String content = b.readUtf8();
+      if (content.indexOf("\"errors\":true") != -1) {
+        throw new IllegalStateException(content);
+      }
       if (indices.isEmpty()) return null;
       ElasticsearchHttpStorage.flush(http, join(indices));
       return null;
