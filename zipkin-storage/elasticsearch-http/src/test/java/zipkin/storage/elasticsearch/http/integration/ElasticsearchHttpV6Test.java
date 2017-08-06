@@ -21,11 +21,11 @@ import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 import zipkin.storage.elasticsearch.http.InternalForTests;
 
 @RunWith(Enclosed.class)
-public class ElasticsearchHttpV2Test {
+public class ElasticsearchHttpV6Test {
 
   @ClassRule
   public static LazyElasticsearchHttpStorage storage =
-      new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch:1.29.1");
+    new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch6:1.29.1");
 
   public static class DependenciesTest extends ElasticsearchHttpDependenciesTest {
     @Override protected ElasticsearchHttpStorage storage() {
@@ -33,7 +33,7 @@ public class ElasticsearchHttpV2Test {
     }
   }
 
-  public static class SpanConsumerTest extends LegacyElasticsearchHttpSpanConsumerTest {
+  public static class SpanConsumerTest extends ElasticsearchHttpSpanConsumerTest {
     @Override protected ElasticsearchHttpStorage storage() {
       return storage.get();
     }
@@ -55,13 +55,7 @@ public class ElasticsearchHttpV2Test {
 
   public static class StrictTraceIdFalseTest extends ElasticsearchHttpStrictTraceIdFalseTest {
     @Override protected ElasticsearchHttpStorage.Builder storageBuilder() {
-      return ElasticsearchHttpV2Test.storage.computeStorageBuilder();
-    }
-  }
-
-  public static class NamesFallbackTest extends ElasticsearchHttpNamesFallbackTest {
-    @Override protected ElasticsearchHttpStorage storage() {
-      return storage.get();
+      return ElasticsearchHttpV6Test.storage.computeStorageBuilder();
     }
   }
 }

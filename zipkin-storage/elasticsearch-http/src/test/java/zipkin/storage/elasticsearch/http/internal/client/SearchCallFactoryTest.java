@@ -41,7 +41,7 @@ public class SearchCallFactoryTest {
   public void lenientSearchOrdersQueryAlphabetically() throws Exception {
     es.enqueue(new MockResponse());
 
-    assertThat(client.lenientSearch(asList("zipkin-2016-10-01"), "span")
+    assertThat(client.lenientSearch(asList("zipkin:span-2016-10-01"), null)
         .queryParameterNames())
         .containsExactly("allow_no_indices", "expand_wildcards", "ignore_unavailable");
   }

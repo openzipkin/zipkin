@@ -20,8 +20,18 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import zipkin.internal.Nullable;
 
 public final class SearchRequest {
+
+  public static SearchRequest create(List<String> indices) {
+    return new SearchRequest(indices, null);
+  }
+
+  public static SearchRequest create(List<String> indices, String type) {
+    return new SearchRequest(indices, type);
+  }
+
   /**
    * The maximum results returned in a query. This only affects non-aggregation requests.
    *
@@ -32,7 +42,7 @@ public final class SearchRequest {
   static final int MAX_RESULT_WINDOW = 10000; // the default elasticsearch allowed limit
 
   transient final List<String> indices;
-  transient final String type;
+  @Nullable transient final String type;
 
   Integer size = MAX_RESULT_WINDOW;
   Boolean _source;
@@ -44,6 +54,18 @@ public final class SearchRequest {
     this.type = type;
   }
 
+  public static class Should extends LinkedList<Object> {
+    public Should addTerm(String field, String value) {
+      add(new Term(field, value));
+      return this;
+    }
+
+    public Should addExists(String field) {
+      add(new Exists(field));
+      return this;
+    }
+  }
+
   public static class Filters extends LinkedList<Object> {
     public Filters addRange(String field, long from, Long to) {
       add(new Range(field, from, to));
@@ -51,8 +73,14 @@ public final class SearchRequest {
     }
 
     public Filters addTerm(String field, String value) {
-      add(new Term(field, value));
+      add(new Terms(field, Collections.singletonList(value)));
       return this;
+    }
+
+    public Should should() {
+      Should result = new Should();
+      add(new SearchRequest.BoolQuery("should", result));
+      return result;
     }
 
     public Filters addNestedTerms(Collection<String> nestedFields, String value) {
@@ -72,32 +100,28 @@ public final class SearchRequest {
       add(new SearchRequest.BoolQuery("should", nestedBoolQueries));
       return this;
     }
-  }
 
-  static NestedBoolQuery mustMatchAllNestedTerms(Map<String, String> next) {
-    List<Term> terms = new ArrayList<>();
-    String field = null;
-    for (Map.Entry<String, String> nestedTerm : next.entrySet()) {
-      terms.add(new Term(field = nestedTerm.getKey(), nestedTerm.getValue()));
+    static SearchRequest.BoolQuery _nestedTermsEqual(Collection<String> nestedFields, String value) {
+      List<SearchRequest.NestedBoolQuery> conditions = new ArrayList<>();
+      for (String nestedField : nestedFields) {
+        conditions.add(new NestedBoolQuery(nestedField.substring(0, nestedField.indexOf('.')), "must",
+          new SearchRequest.Term(nestedField, value)));
+      }
+      return new SearchRequest.BoolQuery("should", conditions);
     }
-    return new NestedBoolQuery(field.substring(0, field.indexOf('.')), "must", terms);
+
+    static NestedBoolQuery mustMatchAllNestedTerms(Map<String, String> next) {
+      List<Term> terms = new ArrayList<>();
+      String field = null;
+      for (Map.Entry<String, String> nestedTerm : next.entrySet()) {
+        terms.add(new Term(field = nestedTerm.getKey(), nestedTerm.getValue()));
+      }
+      return new NestedBoolQuery(field.substring(0, field.indexOf('.')), "must", terms);
+    }
   }
 
   public SearchRequest filters(Filters filters) {
     return query(new BoolQuery("must", filters));
-  }
-
-  static SearchRequest.BoolQuery _nestedTermsEqual(Collection<String> nestedFields, String value) {
-    List<SearchRequest.NestedBoolQuery> conditions = new ArrayList<>();
-    for (String nestedField : nestedFields) {
-      conditions.add(new NestedBoolQuery(nestedField.substring(0, nestedField.indexOf('.')), "must",
-          new SearchRequest.Term(nestedField, value)));
-    }
-    return new SearchRequest.BoolQuery("should", conditions);
-  }
-
-  public static SearchRequest forIndicesAndType(List<String> indices, String type) {
-    return new SearchRequest(indices, type);
   }
 
   public SearchRequest term(String field, String value) {
@@ -133,6 +157,14 @@ public final class SearchRequest {
     }
   }
 
+  static class Exists {
+    final Map<String, String> exists;
+
+    Exists(String field) {
+      exists = Collections.singletonMap("field", field);
+    }
+  }
+
   static class Terms {
     final Map<String, List<String>> terms;
 
@@ -161,6 +193,14 @@ public final class SearchRequest {
     }
   }
 
+  static class BoolQuery {
+    final Map<String, Object> bool;
+
+    BoolQuery(String op, Object clause) {
+      bool = Collections.singletonMap(op, clause);
+    }
+  }
+
   static class NestedBoolQuery {
     final Map<String, Object> nested;
 
@@ -174,14 +214,6 @@ public final class SearchRequest {
       nested = new LinkedHashMap<>(2);
       nested.put("path", path);
       nested.put("query", new BoolQuery(condition, term));
-    }
-  }
-
-  static class BoolQuery {
-    final Map<String, Object> bool;
-
-    BoolQuery(String op, Object clause) {
-      bool = Collections.singletonMap(op, clause);
     }
   }
 }

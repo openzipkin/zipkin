@@ -8,6 +8,11 @@
     </encoder>
   </appender>
 
+  <logger name="org.testcontainers" level="INFO"/>
+  <logger name="org.apache.http" level="WARN"/>
+  <logger name="com.github.dockerjava" level="WARN"/>
+  <logger name="org.zeroturnaround.exec" level="WARN"/>
+
   <root level="info">
     <appender-ref ref="STDOUT" />
   </root>

@@ -18,7 +18,9 @@ import com.google.auto.value.extension.memoized.Memoized;
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -31,10 +33,14 @@ import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.SpanStore;
 import zipkin.storage.StorageAdapters;
 import zipkin.storage.StorageComponent;
+import zipkin.storage.elasticsearch.http.internal.LenientDoubleCallbackAsyncSpanStore;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
 
+import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.moshi.JsonReaders.enterPath;
+import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.DEPENDENCY;
+import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SPAN;
 
 @AutoValue
 public abstract class ElasticsearchHttpStorage implements StorageComponent {
@@ -61,7 +67,10 @@ public abstract class ElasticsearchHttpStorage implements StorageComponent {
         .indexReplicas(1)
         .namesLookback(86400000)
         .shutdownClientOnClose(false)
-        .flushOnWrites(false);
+        .flushOnWrites(false)
+        .singleTypeIndexingEnabled(
+          Boolean.valueOf(System.getenv("ES_EXPERIMENTAL_SPAN2"))
+        );
   }
 
   public static Builder builder() {
@@ -133,7 +142,8 @@ public abstract class ElasticsearchHttpStorage implements StorageComponent {
      * The date separator to use when generating daily index names. Defaults to '-'.
      *
      * <p>By default, spans with a timestamp falling on 2016/03/19 end up in the index
-     * 'zipkin-2016-03-19'. When the date separator is '.', the index would be 'zipkin-2016.03.19'.
+     * 'zipkin:span-2016-03-19'. When the date separator is '.', the index would be
+     * 'zipkin:span-2016.03.19'.
      */
     public final Builder dateSeparator(char dateSeparator) {
       indexNameFormatterBuilder().dateSeparator(dateSeparator);
@@ -160,6 +170,9 @@ public abstract class ElasticsearchHttpStorage implements StorageComponent {
      * <p>Corresponds to <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules.html">index.number_of_replicas</a>
      */
     public abstract Builder indexReplicas(int indexReplicas);
+
+    /** intentionally hidden for now */
+    abstract Builder singleTypeIndexingEnabled(boolean singleTypeIndexingEnabled);
 
     @Override public abstract Builder strictTraceId(boolean strictTraceId);
 
@@ -193,25 +206,45 @@ public abstract class ElasticsearchHttpStorage implements StorageComponent {
 
   abstract int namesLookback();
 
+  abstract boolean singleTypeIndexingEnabled();
+
   @Override public SpanStore spanStore() {
     return StorageAdapters.asyncToBlocking(asyncSpanStore());
   }
 
-  @Override
-  public AsyncSpanStore asyncSpanStore() {
-    ensureIndexTemplate();
-    return new ElasticsearchHttpSpanStore(this);
+  @Override public AsyncSpanStore asyncSpanStore() {
+    float version = ensureIndexTemplates().version();
+    if (version >= 6) { // then multi-type (legacy) index isn't possible
+      return new ElasticsearchHttpSpanStore(this);
+    } else if (version < 2.4 || !singleTypeIndexingEnabled()) { // don't fan out queries unnecessarily
+      return new LegacyElasticsearchHttpSpanStore(this);
+    } else { // fan out queries as we don't know if old legacy collectors are in use
+      return new LenientDoubleCallbackAsyncSpanStore(
+        new ElasticsearchHttpSpanStore(this),
+        new LegacyElasticsearchHttpSpanStore(this)
+      );
+    }
   }
 
-  @Override
-  public AsyncSpanConsumer asyncSpanConsumer() {
-    ensureIndexTemplate();
-    return new ElasticsearchHttpSpanConsumer(this);
+  @Override public AsyncSpanConsumer asyncSpanConsumer() {
+    // We only write once, so we detect which approach we should take
+    if (shouldUseSingleTypeIndexing(ensureIndexTemplates())) {
+      return new ElasticsearchHttpSpanConsumer(this);
+    } else {
+      return new LegacyElasticsearchHttpSpanConsumer(this);
+    }
   }
 
   /** This is a blocking call, only used in tests. */
   void clear() throws IOException {
-    clear(indexNameFormatter().allIndices());
+    Set<String> toClear = new LinkedHashSet<>();
+    if (shouldUseSingleTypeIndexing(ensureIndexTemplates())) {
+      toClear.add(indexNameFormatter().formatType(SPAN));
+      toClear.add(indexNameFormatter().formatType(DEPENDENCY));
+    } else {
+      toClear.add(indexNameFormatter().formatType(null));
+    }
+    for (String index : toClear) clear(index);
   }
 
   void clear(String index) throws IOException {
@@ -236,7 +269,7 @@ public abstract class ElasticsearchHttpStorage implements StorageComponent {
 
   /** This is blocking so that we can determine if the cluster is healthy or not */
   @Override public CheckResult check() {
-    return ensureClusterReady(indexNameFormatter().allIndices());
+    return ensureClusterReady(indexNameFormatter().formatType(SPAN));
   }
 
   CheckResult ensureClusterReady(String index) {
@@ -261,15 +294,26 @@ public abstract class ElasticsearchHttpStorage implements StorageComponent {
     }
   }
 
-  @Memoized // since there's a network call required to get the version
-  String indexTemplate() {
-    return new VersionSpecificTemplate(this).get(http());
+  @Memoized // since we don't want overlapping calls to apply the index templates
+  IndexTemplates ensureIndexTemplates() {
+    String index = indexNameFormatter().index();
+    IndexTemplates templates = new VersionSpecificTemplates(this).get(http());
+    if (shouldUseSingleTypeIndexing(templates)) {
+      EnsureIndexTemplate.apply(http(), index + ":" + SPAN + "_template", templates.span());
+      EnsureIndexTemplate.apply(http(), index + ":" + DEPENDENCY + "_template",
+        templates.dependency());
+    } else { // TODO: remove when we stop writing span1 format
+      checkArgument(templates.legacy() != null,
+        "multiple type template is null: version=%s, singleTypeIndexingEnabled=%s",
+        templates.version(), singleTypeIndexingEnabled());
+      EnsureIndexTemplate.apply(http(), index + "_template", templates.legacy());
+    }
+    return templates;
   }
 
-  @Memoized // since we don't want overlapping calls to apply the index template
-  boolean ensureIndexTemplate() {
-    EnsureIndexTemplate.apply(http(), indexNameFormatter().index() + "_template", indexTemplate());
-    return true; // as Memoized cannot return void
+  private boolean shouldUseSingleTypeIndexing(IndexTemplates templates) {
+    return (templates.span() != null && singleTypeIndexingEnabled())
+      || templates.version() >= 6;
   }
 
   @Memoized // hosts resolution might imply a network call, and we might make a new okhttp instance

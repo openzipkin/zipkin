@@ -21,7 +21,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SearchRequestTest {
-  SearchRequest request = SearchRequest.forIndicesAndType(asList("zipkin-2016.11.31"), "span");
+  SearchRequest request = SearchRequest.create(asList("zipkin-2016.11.31"));
   JsonAdapter<SearchRequest> adapter = new Moshi.Builder().build().adapter(SearchRequest.class);
 
   @Test

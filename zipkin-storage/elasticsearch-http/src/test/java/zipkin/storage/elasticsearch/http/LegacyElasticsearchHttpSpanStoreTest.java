@@ -26,48 +26,47 @@ import zipkin.internal.Util;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SPAN;
 import static zipkin.storage.elasticsearch.http.TestResponses.SERVICE_NAMES;
 import static zipkin.storage.elasticsearch.http.TestResponses.SPAN_NAMES;
 
-public class ElasticsearchHttpSpanStoreTest {
+public class LegacyElasticsearchHttpSpanStoreTest {
   @Rule public MockWebServer es = new MockWebServer();
 
   ElasticsearchHttpStorage storage = ElasticsearchHttpStorage.builder()
     .hosts(asList(es.url("").toString()))
     .build();
-  ElasticsearchHttpSpanStore spanStore = new ElasticsearchHttpSpanStore(storage);
+  LegacyElasticsearchHttpSpanStore spanStore = new LegacyElasticsearchHttpSpanStore(storage);
 
   @After public void close() throws IOException {
     storage.close();
   }
 
-  @Test public void serviceNames_defaultsTo24HrsAgo_6x() throws Exception {
+  @Test public void serviceNames_defaultsTo24HrsAgo() throws Exception {
     es.enqueue(new MockResponse().setBody(SERVICE_NAMES));
     spanStore.getServiceNames(new CallbackCaptor<>());
 
-    requestLimitedTo2DaysOfIndices_singleTypeIndex();
+    requestLimitedTo2DaysOfIndices_multiTypeIndex();
   }
 
-  @Test public void spanNames_defaultsTo24HrsAgo_6x() throws Exception {
+  @Test public void spanNames_defaultsTo24HrsAgo() throws Exception {
     es.enqueue(new MockResponse().setBody(SPAN_NAMES));
     spanStore.getSpanNames("foo", new CallbackCaptor<>());
 
-    requestLimitedTo2DaysOfIndices_singleTypeIndex();
+    requestLimitedTo2DaysOfIndices_multiTypeIndex();
   }
 
-  private void requestLimitedTo2DaysOfIndices_singleTypeIndex() throws Exception {
+  private void requestLimitedTo2DaysOfIndices_multiTypeIndex() throws Exception {
     long today = Util.midnightUTC(System.currentTimeMillis());
     long yesterday = today - TimeUnit.DAYS.toMillis(1);
 
     // 24 hrs ago always will fall into 2 days (ex. if it is 4:00pm, 24hrs ago is a different day)
     String indexesToSearch = ""
-      + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, yesterday)
+      + storage.indexNameFormatter().formatTypeAndTimestamp(null, yesterday)
       + ","
-      + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, today);
+      + storage.indexNameFormatter().formatTypeAndTimestamp(null, today);
 
     RecordedRequest request = es.takeRequest();
     assertThat(request.getPath())
-      .startsWith("/" + indexesToSearch + "/_search");
+      .startsWith("/" + indexesToSearch + "/servicespan/_search");
   }
 }

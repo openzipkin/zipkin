@@ -13,25 +13,21 @@
  */
 package zipkin.storage.elasticsearch.http;
 
-import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import okio.Buffer;
-import zipkin.Codec;
 import zipkin.Span;
-import zipkin.internal.Pair;
+import zipkin.internal.Nullable;
+import zipkin.internal.Span2;
+import zipkin.internal.Span2Codec;
+import zipkin.internal.Span2Converter;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
 
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.propagateIfFatal;
-import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SERVICE_SPAN;
+import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SPAN;
 
 class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final for testing
 
@@ -49,11 +45,8 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
       return;
     }
     try {
-      HttpBulkIndexer indexer = new HttpBulkIndexer("index-span", es);
-      Map<String, Set<Pair<String>>> indexToServiceSpans = indexSpans(indexer, spans);
-      if (!indexToServiceSpans.isEmpty()) {
-        indexNames(indexer, indexToServiceSpans);
-      }
+      BulkSpanIndexer indexer = newBulkSpanIndexer(es);
+      indexSpans(indexer, spans);
       indexer.execute(callback);
     } catch (Throwable t) {
       propagateIfFatal(t);
@@ -61,63 +54,54 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
     }
   }
 
-  /** Indexes spans and returns a mapping of indexes that may need a names update */
-  Map<String, Set<Pair<String>>> indexSpans(HttpBulkIndexer indexer, List<Span> spans) {
-    Map<String, Set<Pair<String>>> indexToServiceSpans = new LinkedHashMap<>();
+  void indexSpans(BulkSpanIndexer indexer, List<Span> spans) throws IOException {
     for (Span span : spans) {
       Long timestamp = guessTimestamp(span);
-      Long timestampMillis;
-      String index; // which index to store this span into
+      long indexTimestamp = 0L; // which index to store this span into
+      Long spanTimestamp;
       if (timestamp != null) {
-        timestampMillis = TimeUnit.MICROSECONDS.toMillis(timestamp);
-        index = indexNameFormatter.indexNameForTimestamp(timestampMillis);
+        indexTimestamp = spanTimestamp = TimeUnit.MICROSECONDS.toMillis(timestamp);
       } else {
-        timestampMillis = null;
+        spanTimestamp = null;
         // guessTimestamp is made for determining the span's authoritative timestamp. When choosing
         // the index bucket, any annotation is better than using current time.
-        Long indexTimestamp = null;
         for (int i = 0, length = span.annotations.size(); i < length; i++) {
           indexTimestamp = span.annotations.get(i).timestamp / 1000;
           break;
         }
-        if (indexTimestamp == null) indexTimestamp = System.currentTimeMillis();
-        index = indexNameFormatter.indexNameForTimestamp(indexTimestamp);
+        if (indexTimestamp == 0L) indexTimestamp = System.currentTimeMillis();
       }
-      if (!span.name.isEmpty()) putServiceSpans(indexToServiceSpans, index, span);
-      byte[] document = Codec.JSON.writeSpan(span);
-      if (timestampMillis != null) document = prefixWithTimestampMillis(document, timestampMillis);
-      indexer.add(index, ElasticsearchHttpSpanStore.SPAN, document, null /* Allow ES to choose an ID */);
-    }
-    return indexToServiceSpans;
-  }
-
-  void putServiceSpans(Map<String, Set<Pair<String>>> indexToServiceSpans, String index, Span s) {
-    Set<Pair<String>> serviceSpans = indexToServiceSpans.get(index);
-    if (serviceSpans == null) indexToServiceSpans.put(index, serviceSpans = new LinkedHashSet<>());
-    for (String serviceName : s.serviceNames()) {
-      serviceSpans.add(Pair.create(serviceName, s.name));
+      indexer.add(indexTimestamp, span, spanTimestamp);
     }
   }
 
-  /**
-   * Adds service and span names to the pending batch. The id is "serviceName|spanName" to prevent
-   * a large order of duplicates ending up in the daily index. This also means queries do not need
-   * to deduplicate.
-   */
-  void indexNames(HttpBulkIndexer indexer, Map<String, Set<Pair<String>>> indexToServiceSpans)
-      throws IOException {
-    Buffer buffer = new Buffer();
-    for (Map.Entry<String, Set<Pair<String>>> entry : indexToServiceSpans.entrySet()) {
-      String index = entry.getKey();
-      for (Pair<String> serviceSpan : entry.getValue()) {
-        JsonWriter writer = JsonWriter.of(buffer);
-        writer.beginObject();
-        writer.name("serviceName").value(serviceSpan._1);
-        writer.name("spanName").value(serviceSpan._2);
-        writer.endObject();
-        byte[] document = buffer.readByteArray();
-        indexer.add(index, SERVICE_SPAN, document, serviceSpan._1 + "|" + serviceSpan._2);
+
+  BulkSpanIndexer newBulkSpanIndexer(ElasticsearchHttpStorage es) {
+    return new BulkSpanIndexer(es);
+  }
+
+  static class BulkSpanIndexer {
+    final HttpBulkIndexer indexer;
+    final IndexNameFormatter indexNameFormatter;
+
+    BulkSpanIndexer(ElasticsearchHttpStorage es) {
+      this.indexer = new HttpBulkIndexer("index-span", es);
+      this.indexNameFormatter = es.indexNameFormatter();
+    }
+
+    void add(long indexTimestamp, Span span, @Nullable Long timestampMillis) {
+      String index = indexNameFormatter.formatTypeAndTimestamp(SPAN, indexTimestamp);
+      for (Span2 span2 : Span2Converter.fromSpan(span)) {
+        byte[] document = Span2Codec.JSON.writeSpan(span2);
+        if (timestampMillis != null) {
+          document = prefixWithTimestampMillis(document, timestampMillis);
+        }
+        indexer.add(index, SPAN, document, null /* Allow ES to choose an ID */);
       }
+    }
+
+    void execute(Callback<Void> callback) throws IOException {
+      indexer.execute(callback);
     }
   }
 

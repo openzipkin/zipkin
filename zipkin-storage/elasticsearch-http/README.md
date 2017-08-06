@@ -171,7 +171,8 @@ That said, all integration tests run on pull request via Travis.
 
 ### Debugging tests
 To see each http message sent to elasticsearch during testing, export the
-environment variable `ES_DEBUG=true`.
+environment variable `ES_DEBUG=true`. This will also show output from the
+docker container.
 
 Note: this will produce a lot of output!
 

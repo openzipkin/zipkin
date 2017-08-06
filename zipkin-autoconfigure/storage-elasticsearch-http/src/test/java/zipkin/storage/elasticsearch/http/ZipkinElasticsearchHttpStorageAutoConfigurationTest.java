@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
+import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SPAN;
 
 public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
 
@@ -246,8 +247,8 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         ZipkinElasticsearchHttpStorageAutoConfiguration.class);
     context.refresh();
 
-    assertThat(es().indexNameFormatter().indexNameForTimestamp(0))
-        .isEqualTo("zipkin-1970-01-01");
+    assertThat(es().indexNameFormatter().formatTypeAndTimestamp(SPAN, 0))
+        .isEqualTo("zipkin:span-1970-01-01");
   }
 
   @Test
@@ -262,8 +263,8 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         ZipkinElasticsearchHttpStorageAutoConfiguration.class);
     context.refresh();
 
-    assertThat(es().indexNameFormatter().indexNameForTimestamp(0))
-        .isEqualTo("zipkin_prod-1970-01-01");
+    assertThat(es().indexNameFormatter().formatTypeAndTimestamp(SPAN, 0))
+        .isEqualTo("zipkin_prod:span-1970-01-01");
   }
 
   @Test
@@ -278,8 +279,8 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         ZipkinElasticsearchHttpStorageAutoConfiguration.class);
     context.refresh();
 
-    assertThat(es().indexNameFormatter().indexNameForTimestamp(0))
-        .isEqualTo("zipkin-1970.01.01");
+    assertThat(es().indexNameFormatter().formatTypeAndTimestamp(SPAN, 0))
+        .isEqualTo("zipkin:span-1970.01.01");
   }
 
   @Test
