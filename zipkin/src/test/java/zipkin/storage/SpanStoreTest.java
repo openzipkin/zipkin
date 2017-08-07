@@ -994,7 +994,8 @@ public abstract class SpanStoreTest {
 
     accept(withJsonSpanName);
 
-    assertThat(store().getTraces(QueryRequest.builder().spanName(json).build()))
+    QueryRequest query = QueryRequest.builder().serviceName(ep.serviceName).spanName(json).build();
+    assertThat(store().getTraces(query))
       .extracting(t -> t.get(0).name)
       .containsExactly(json);
   }

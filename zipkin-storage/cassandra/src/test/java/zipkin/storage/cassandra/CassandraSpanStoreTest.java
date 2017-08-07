@@ -13,14 +13,12 @@
  */
 package zipkin.storage.cassandra;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
-
 import org.junit.AssumptionViolatedException;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Endpoint;
@@ -31,29 +29,25 @@ import zipkin.internal.Util;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStoreTest;
 
+import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CassandraSpanStoreTest extends SpanStoreTest {
-
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
+abstract class CassandraSpanStoreTest extends SpanStoreTest {
 
   private final CassandraStorage storage;
 
-  public CassandraSpanStoreTest() {
-    this.storage = CassandraTestGraph.INSTANCE.storage.get();
+  CassandraSpanStoreTest() {
+    storage = storageBuilder().build();
   }
 
-  CassandraSpanStoreTest(CassandraStorage storage) {
-    this.storage = storage;
-  }
+  abstract CassandraStorage.Builder storageBuilder();
 
-  @Override protected CassandraStorage storage() {
+  @Override protected final CassandraStorage storage() {
     return storage;
   }
 
-  @Override public void clear() {
+  @Override public final void clear() {
     storage.clear();
   }
 
@@ -111,7 +105,7 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
     Endpoint endpoint = TestObjects.LOTS_OF_SPANS[0].annotations.get(0).endpoint;
     BinaryAnnotation ba = BinaryAnnotation.create("host.name", "host1", endpoint);
 
-    int nbTraceFetched = queryLimit * storage.indexFetchMultiplier;
+    int nbTraceFetched = queryLimit * storage().indexFetchMultiplier;
     IntStream.range(0, nbTraceFetched).forEach(i ->
             accept(TestObjects.LOTS_OF_SPANS[i++].toBuilder().timestamp(now - (i * 1000)).build())
     );
@@ -131,12 +125,19 @@ public class CassandraSpanStoreTest extends SpanStoreTest {
   }
 
   long rowCount(String table) {
-    return storage.session().execute("SELECT COUNT(*) from " + table).one().getLong(0);
+    return storage().session().execute("SELECT COUNT(*) from " + table).one().getLong(0);
   }
 
   @Test
   @Override
   public void getTraces_duration() {
     throw new AssumptionViolatedException("Upgrade to cassandra3 if you want duration queries");
+  }
+
+  @Override protected void accept(Span... spans) {
+    // TODO: this avoids overrunning the cluster with BusyPoolException
+    for (List<Span> nextChunk : Lists.partition(asList(spans), 100)) {
+      super.accept(nextChunk.toArray(new Span[0]));
+    }
   }
 }

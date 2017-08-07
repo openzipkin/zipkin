@@ -15,19 +15,19 @@ package zipkin.storage.cassandra;
 
 import zipkin.storage.StrictTraceIdFalseTest;
 
-public class CassandraStrictTraceIdFalseTest extends StrictTraceIdFalseTest {
+abstract class CassandraStrictTraceIdFalseTest extends StrictTraceIdFalseTest {
 
   private final CassandraStorage storage;
 
-  public CassandraStrictTraceIdFalseTest() {
-    // check everything is ok
-    CassandraTestGraph.INSTANCE.storage.get().check();
-    storage = CassandraStorage.builder()
+  CassandraStrictTraceIdFalseTest() {
+    storage = storageBuilder()
         .strictTraceId(false)
         .keyspace("test_zipkin_mixed").build();
   }
 
-  @Override protected CassandraStorage storage() {
+  abstract CassandraStorage.Builder storageBuilder();
+
+  @Override protected final CassandraStorage storage() {
     return storage;
   }
 

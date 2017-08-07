@@ -19,7 +19,6 @@ import ch.qos.logback.core.Appender;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import java.util.stream.IntStream;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,18 +40,15 @@ import static zipkin.Constants.CLIENT_RECV;
 import static zipkin.Constants.CLIENT_SEND;
 import static zipkin.TestObjects.APP_ENDPOINT;
 
-public class CassandraSpanConsumerTest {
+abstract class CassandraSpanConsumerTest {
 
-  private final CassandraStorage storage;
   private final Appender mockAppender = mock(Appender.class);
 
-  public CassandraSpanConsumerTest() {
-    this.storage = CassandraTestGraph.INSTANCE.storage.get();
-  }
+  abstract protected CassandraStorage storage();
 
   @Before
   public void clear() {
-    storage.clear();
+    storage().clear();
     Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
     when(mockAppender.getName()).thenReturn(CassandraSpanConsumerTest.class.getName());
     root.addAppender(mockAppender);
@@ -140,10 +136,10 @@ public class CassandraSpanConsumerTest {
     clear();
 
     CassandraSpanConsumer withoutOptimization = new CassandraSpanConsumer(
-        storage.session(),
-        storage.bucketCount,
-        storage.spanTtl,
-        storage.indexTtl,
+        storage().session(),
+        storage().bucketCount,
+        storage().spanTtl,
+        storage().indexTtl,
         null /** Disables optimization, just like CassandraStorage.indexCacheMax = 0 would */
     );
     Futures.getUnchecked(withoutOptimization.accept(ImmutableList.copyOf(trace)));
@@ -152,10 +148,10 @@ public class CassandraSpanConsumerTest {
   }
 
   void accept(Span... spans) {
-    Futures.getUnchecked(storage.computeGuavaSpanConsumer().accept(ImmutableList.copyOf(spans)));
+    Futures.getUnchecked(storage().computeGuavaSpanConsumer().accept(ImmutableList.copyOf(spans)));
   }
 
   long rowCount(String table) {
-    return storage.session().execute("SELECT COUNT(*) from " + table).one().getLong(0);
+    return storage().session().execute("SELECT COUNT(*) from " + table).one().getLong(0);
   }
 }
