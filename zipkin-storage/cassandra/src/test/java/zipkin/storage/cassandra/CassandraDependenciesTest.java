@@ -25,20 +25,9 @@ import static zipkin.TestObjects.DAY;
 import static zipkin.TestObjects.TODAY;
 import static zipkin.internal.Util.midnightUTC;
 
-public class CassandraDependenciesTest extends DependenciesTest {
-  private final CassandraStorage storage;
+abstract class CassandraDependenciesTest extends DependenciesTest {
 
-  public CassandraDependenciesTest() {
-    this.storage = CassandraTestGraph.INSTANCE.storage.get();
-  }
-
-  @Override protected CassandraStorage storage() {
-    return storage;
-  }
-
-  @Override public void clear() {
-    storage.clear();
-  }
+  @Override abstract protected CassandraStorage storage();
 
   /**
    * The current implementation does not include dependency aggregation. It includes retrieval of
@@ -58,6 +47,6 @@ public class CassandraDependenciesTest extends DependenciesTest {
 
     // This gets or derives a timestamp from the spans
     long midnight = midnightUTC(MergeById.apply(spans).get(0).timestamp / 1000);
-    new CassandraDependenciesWriter(storage.session.get()).write(links, midnight);
+    new CassandraDependenciesWriter(storage().session.get()).write(links, midnight);
   }
 }
