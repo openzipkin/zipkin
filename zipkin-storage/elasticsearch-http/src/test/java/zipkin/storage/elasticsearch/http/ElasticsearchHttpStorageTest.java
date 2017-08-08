@@ -15,11 +15,14 @@ package zipkin.storage.elasticsearch.http;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import okhttp3.OkHttpClient;
+import okhttp3.internal.tls.SslClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
+import zipkin.Component;
 import zipkin.storage.elasticsearch.http.internal.LenientDoubleCallbackAsyncSpanStore;
 
 import static java.util.Arrays.asList;
@@ -143,5 +146,82 @@ public class ElasticsearchHttpStorageTest {
 
     es.takeRequest(); // get version
     es.takeRequest(); // get legacy template
+  }
+
+  String healthResponse = "{\n"
+    + "  \"cluster_name\": \"elasticsearch_zipkin\",\n"
+    + "  \"status\": \"yellow\",\n"
+    + "  \"timed_out\": false,\n"
+    + "  \"number_of_nodes\": 1,\n"
+    + "  \"number_of_data_nodes\": 1,\n"
+    + "  \"active_primary_shards\": 5,\n"
+    + "  \"active_shards\": 5,\n"
+    + "  \"relocating_shards\": 0,\n"
+    + "  \"initializing_shards\": 0,\n"
+    + "  \"unassigned_shards\": 5,\n"
+    + "  \"delayed_unassigned_shards\": 0,\n"
+    + "  \"number_of_pending_tasks\": 0,\n"
+    + "  \"number_of_in_flight_fetch\": 0,\n"
+    + "  \"task_max_waiting_in_queue_millis\": 0,\n"
+    + "  \"active_shards_percent_as_number\": 50\n"
+    + "}";
+
+  @Test public void check() throws Exception {
+    es.enqueue(new MockResponse().setBody(healthResponse));
+
+    assertThat(storage.check())
+      .isEqualTo(Component.CheckResult.OK);
+  }
+
+  @Test public void check_oneHostDown() throws Exception {
+    storage.close();
+    OkHttpClient client = new OkHttpClient.Builder()
+      .connectTimeout(100, TimeUnit.MILLISECONDS)
+      .build();
+    storage = ElasticsearchHttpStorage.builder(client)
+      .hosts(asList("http://1.2.3.4:" + es.getPort(), es.url("").toString()))
+      .build();
+
+    es.enqueue(new MockResponse().setBody(healthResponse));
+
+    assertThat(storage.check())
+      .isEqualTo(Component.CheckResult.OK);
+  }
+
+  @Test public void check_ssl() throws Exception {
+    storage.close();
+    SslClient sslClient = SslClient.localhost();
+    OkHttpClient client = new OkHttpClient.Builder()
+      .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
+      .build();
+    es.useHttps(sslClient.socketFactory, false);
+
+    storage = ElasticsearchHttpStorage.builder(client)
+      .hosts(asList(es.url("").toString()))
+      .build();
+
+    es.enqueue(new MockResponse().setBody(healthResponse));
+
+    assertThat(storage.check())
+      .isEqualTo(Component.CheckResult.OK);
+
+    assertThat(es.takeRequest().getTlsVersion())
+      .isNotNull();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void multipleSslNotYetSupported() throws Exception {
+    storage.close();
+    SslClient sslClient = SslClient.localhost();
+    OkHttpClient client = new OkHttpClient.Builder()
+      .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
+      .build();
+    es.useHttps(sslClient.socketFactory, false);
+
+    storage = ElasticsearchHttpStorage.builder(client)
+      .hosts(asList("https://1.2.3.4:" + es.getPort(), es.url("").toString()))
+      .build();
+
+    storage.check();
   }
 }
