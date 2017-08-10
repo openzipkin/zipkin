@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,18 +14,25 @@
 package zipkin.collector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Test;
+import zipkin.Codec;
+import zipkin.Span;
+import zipkin.internal.ApplyTimestampAndDuration;
+import zipkin.internal.Span2Codec;
+import zipkin.internal.Span2Converter;
 import zipkin.storage.Callback;
 import zipkin.storage.InMemoryStorage;
-import zipkin.Span;
+import zipkin.storage.QueryRequest;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin.storage.Callback.NOOP;
+import static zipkin.TestObjects.LOTS_OF_SPANS;
 import static zipkin.TestObjects.span;
+import static zipkin.storage.Callback.NOOP;
 
 public class CollectorTest {
   List<String> messages = new ArrayList<>();
@@ -38,14 +45,13 @@ public class CollectorTest {
     }
   }).storage(new InMemoryStorage()).build();
 
-  Span span1 = Span.builder().traceId(1L).id(1L).name("foo").build();
-  Span span2 = Span.builder().traceId(1L).parentId(1L).id(2L).name("bar").build();
+  Span span1 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
+  Span span2 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1]);
 
   @Test
   public void acceptSpansCallback_toStringIncludesSpanIds() {
     assertThat(collector.acceptSpansCallback(asList(span1, span2)))
-        .hasToString(
-            "AcceptSpans([0000000000000001.0000000000000001<:0000000000000001, 0000000000000001.0000000000000002<:0000000000000001])");
+      .hasToString("AcceptSpans([" + span1.idString() + ", " + span2.idString() + "])");
   }
 
   @Test
@@ -54,8 +60,7 @@ public class CollectorTest {
     callback.onError(new RuntimeException());
 
     assertThat(messages)
-        .containsExactly(
-            "Cannot store spans [0000000000000001.0000000000000001<:0000000000000001] due to RuntimeException()");
+      .containsExactly("Cannot store spans [" + span1.idString() + "] due to RuntimeException()");
   }
 
   @Test
@@ -64,8 +69,8 @@ public class CollectorTest {
     callback.onError(new IllegalArgumentException("no beer"));
 
     assertThat(messages)
-        .containsExactly(
-            "Cannot store spans [0000000000000001.0000000000000001<:0000000000000001] due to IllegalArgumentException(no beer)");
+      .containsExactly(
+        "Cannot store spans [" + span1.idString() + "] due to IllegalArgumentException(no beer)");
   }
 
   @Test
@@ -75,8 +80,7 @@ public class CollectorTest {
 
     assertThat(messages)
         .containsExactly(message)
-        .containsExactly(
-            "Cannot store spans [0000000000000001.0000000000000001<:0000000000000001] due to RuntimeException()");
+        .containsExactly("Cannot store spans [" + span1.idString() + "] due to RuntimeException()");
   }
 
   @Test
@@ -87,8 +91,8 @@ public class CollectorTest {
 
     assertThat(messages)
         .containsExactly(message)
-        .containsExactly(
-            "Cannot store spans [0000000000000001.0000000000000001<:0000000000000001] due to IllegalArgumentException(no beer)");
+      .containsExactly(
+        "Cannot store spans [" + span1.idString() + "] due to IllegalArgumentException(no beer)");
   }
 
   @Test
@@ -121,10 +125,39 @@ public class CollectorTest {
   }
 
   @Test
-  public void debugFlagWins() {
-    collector.accept(asList(span(Long.MIN_VALUE).toBuilder().debug(true).build()), NOOP);
+  public void acceptSpans_detectsThrift() {
+    collector.acceptSpans(Codec.THRIFT.writeSpan(span1), NOOP);
 
-    assertThat(collector.storage.spanStore().getServiceNames()).containsExactly("service");
+    assertThat(collector.storage.spanStore().getTraces(QueryRequest.builder().build()))
+      .hasSize(1);
+  }
+
+  @Test
+  public void acceptSpans_detectsThriftList() {
+    collector.acceptSpans(Codec.THRIFT.writeSpans(asList(span1, span2)), NOOP);
+
+    assertThat(collector.storage.spanStore().getTraces(QueryRequest.builder().build()))
+      .hasSize(2);
+  }
+
+  @Test
+  public void acceptSpans_detectsJsonList() {
+    collector.acceptSpans(Codec.JSON.writeSpans(asList(span1, span2)), NOOP);
+
+    assertThat(collector.storage.spanStore().getTraces(QueryRequest.builder().build()))
+      .hasSize(2);
+  }
+
+  @Test
+  public void acceptSpans_detectsJson2List() {
+    byte[] bytes = Span2Codec.JSON.writeSpans(Arrays.asList(
+      Span2Converter.fromSpan(span1).get(0),
+      Span2Converter.fromSpan(span2).get(0)
+    ));
+    collector.acceptSpans(bytes, NOOP);
+
+    assertThat(collector.storage.spanStore().getTraces(QueryRequest.builder().build()))
+      .hasSize(2);
   }
 
   @Test
@@ -136,5 +169,12 @@ public class CollectorTest {
     collector.accept(asList(span(Long.MIN_VALUE)), NOOP);
 
     assertThat(collector.storage.spanStore().getServiceNames()).isEmpty();
+  }
+
+  @Test
+  public void debugFlagWins() {
+    collector.accept(asList(span(Long.MIN_VALUE).toBuilder().debug(true).build()), NOOP);
+
+    assertThat(collector.storage.spanStore().getServiceNames()).containsExactly("service");
   }
 }

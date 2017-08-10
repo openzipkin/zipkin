@@ -15,6 +15,7 @@ package zipkin.collector.kafka10;
 
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import com.github.charithe.kafka.KafkaJunitRule;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -36,12 +37,16 @@ import zipkin.Codec;
 import zipkin.Span;
 import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.collector.kafka10.KafkaCollector.Builder;
+import zipkin.internal.ApplyTimestampAndDuration;
+import zipkin.internal.Span2Codec;
+import zipkin.internal.Span2Converter;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.SpanStore;
 import zipkin.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.TestObjects.LOTS_OF_SPANS;
 import static zipkin.TestObjects.TRACE;
 
 public class KafkaCollectorTest {
@@ -182,6 +187,33 @@ public class KafkaCollectorTest {
     assertThat(kafkaMetrics.messages()).isEqualTo(1);
     assertThat(kafkaMetrics.bytes()).isEqualTo(bytes.length);
     assertThat(kafkaMetrics.spans()).isEqualTo(TRACE.size());
+  }
+
+  /** Ensures list encoding works: a version 2 json encoded list of spans */
+  @Test
+  public void messageWithMultipleSpans_json2() throws Exception {
+    Builder builder = builder("multiple_spans_json2");
+
+    List<Span> spans = Arrays.asList(
+      ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]),
+      ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1])
+    );
+
+    byte[] bytes = Span2Codec.JSON.writeSpans(Arrays.asList(
+      Span2Converter.fromSpan(spans.get(0)).get(0),
+      Span2Converter.fromSpan(spans.get(1)).get(0)
+    ));
+
+    produceSpans(bytes, builder.topic);
+
+    try (KafkaCollector collector = builder.build()) {
+      collector.start();
+      assertThat(receivedSpans.take()).containsAll(spans);
+    }
+
+    assertThat(kafkaMetrics.messages()).isEqualTo(1);
+    assertThat(kafkaMetrics.bytes()).isEqualTo(bytes.length);
+    assertThat(kafkaMetrics.spans()).isEqualTo(spans.size());
   }
 
   /** Ensures malformed spans don't hang the collector */

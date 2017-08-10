@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -25,8 +25,10 @@ import okio.GzipSource;
 import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Span;
+import zipkin.SpanDecoder;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
+import zipkin.internal.Span2JsonDecoder;
 import zipkin.storage.Callback;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
@@ -35,6 +37,8 @@ import zipkin.storage.StorageComponent;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
 
 final class ZipkinDispatcher extends Dispatcher {
+  static final SpanDecoder JSON2_DECODER = new Span2JsonDecoder();
+
   private final SpanStore store;
   private final Collector consumer;
   private final CollectorMetrics metrics;
@@ -77,40 +81,48 @@ final class ZipkinDispatcher extends Dispatcher {
       }
     } else if (request.getMethod().equals("POST")) {
       if (url.encodedPath().equals("/api/v1/spans")) {
-        metrics.incrementMessages();
-        byte[] body = request.getBody().readByteArray();
-        String encoding = request.getHeader("Content-Encoding");
-        if (encoding != null && encoding.contains("gzip")) {
-          try {
-            Buffer result = new Buffer();
-            GzipSource source = new GzipSource(new Buffer().write(body));
-            while (source.read(result, Integer.MAX_VALUE) != -1) ;
-            body = result.readByteArray();
-          } catch (IOException e) {
-            metrics.incrementMessagesDropped();
-            return new MockResponse().setResponseCode(400).setBody("Cannot gunzip spans");
-          }
-        }
         String type = request.getHeader("Content-Type");
-        Codec codec = type != null && type.contains("/x-thrift") ? Codec.THRIFT : Codec.JSON;
-
-        final MockResponse result = new MockResponse();
-        consumer.acceptSpans(body, codec, new Callback<Void>() {
-          @Override public void onSuccess(Void value) {
-            result.setResponseCode(202);
-          }
-
-          @Override public void onError(Throwable t) {
-            String message = t.getMessage();
-            result.setBody(message).setResponseCode(message.startsWith("Cannot store") ? 500 : 400);
-          }
-        });
-        return result;
+        SpanDecoder decoder = type != null && type.contains("/x-thrift")
+          ? SpanDecoder.THRIFT_DECODER
+          : SpanDecoder.JSON_DECODER;
+        return acceptSpans(request, decoder);
+      } else if (url.encodedPath().equals("/api/v2/spans")) {
+        return acceptSpans(request, JSON2_DECODER);
       }
     } else { // unsupported method
       return new MockResponse().setResponseCode(405);
     }
     return new MockResponse().setResponseCode(404);
+  }
+
+  MockResponse acceptSpans(RecordedRequest request, SpanDecoder decoder) {
+    metrics.incrementMessages();
+    byte[] body = request.getBody().readByteArray();
+    String encoding = request.getHeader("Content-Encoding");
+    if (encoding != null && encoding.contains("gzip")) {
+      try {
+        Buffer result = new Buffer();
+        GzipSource source = new GzipSource(new Buffer().write(body));
+        while (source.read(result, Integer.MAX_VALUE) != -1) ;
+        body = result.readByteArray();
+      } catch (IOException e) {
+        metrics.incrementMessagesDropped();
+        return new MockResponse().setResponseCode(400).setBody("Cannot gunzip spans");
+      }
+    }
+
+    final MockResponse result = new MockResponse();
+    consumer.acceptSpans(body, decoder, new Callback<Void>() {
+      @Override public void onSuccess(Void value) {
+        result.setResponseCode(202);
+      }
+
+      @Override public void onError(Throwable t) {
+        String message = t.getMessage();
+        result.setBody(message).setResponseCode(message.startsWith("Cannot store") ? 500 : 400);
+      }
+    });
+    return result;
   }
 
   static QueryRequest toQueryRequest(HttpUrl url) {

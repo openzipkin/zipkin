@@ -27,11 +27,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import zipkin.Codec;
+import zipkin.Span;
+import zipkin.SpanDecoder;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.Nullable;
+import zipkin.internal.Span2JsonDecoder;
 import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
 
@@ -46,6 +48,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 public class ZipkinHttpCollector {
   static final ResponseEntity<?> SUCCESS = ResponseEntity.accepted().build();
   static final String APPLICATION_THRIFT = "application/x-thrift";
+  static final SpanDecoder JSON2_DECODER = new Span2JsonDecoder();
 
   final CollectorMetrics metrics;
   final Collector collector;
@@ -57,12 +60,20 @@ public class ZipkinHttpCollector {
         .storage(storage).sampler(sampler).metrics(this.metrics).build();
   }
 
+  @RequestMapping(value = "/api/v2/spans", method = POST)
+  public ListenableFuture<ResponseEntity<?>> uploadSpansJson2(
+    @RequestHeader(value = "Content-Encoding", required = false) String encoding,
+    @RequestBody byte[] body
+  ) {
+    return validateAndStoreSpans(encoding, JSON2_DECODER, body);
+  }
+
   @RequestMapping(value = "/api/v1/spans", method = POST)
   public ListenableFuture<ResponseEntity<?>> uploadSpansJson(
       @RequestHeader(value = "Content-Encoding", required = false) String encoding,
       @RequestBody byte[] body
   ) {
-    return validateAndStoreSpans(encoding, Codec.JSON, body);
+    return validateAndStoreSpans(encoding, SpanDecoder.JSON_DECODER, body);
   }
 
   @RequestMapping(value = "/api/v1/spans", method = POST, consumes = APPLICATION_THRIFT)
@@ -70,10 +81,10 @@ public class ZipkinHttpCollector {
       @RequestHeader(value = "Content-Encoding", required = false) String encoding,
       @RequestBody byte[] body
   ) {
-    return validateAndStoreSpans(encoding, Codec.THRIFT, body);
+    return validateAndStoreSpans(encoding, SpanDecoder.THRIFT_DECODER, body);
   }
 
-  ListenableFuture<ResponseEntity<?>> validateAndStoreSpans(String encoding, Codec codec,
+  ListenableFuture<ResponseEntity<?>> validateAndStoreSpans(String encoding, SpanDecoder decoder,
       byte[] body) {
     SettableListenableFuture<ResponseEntity<?>> result = new SettableListenableFuture<>();
     metrics.incrementMessages();
@@ -85,7 +96,7 @@ public class ZipkinHttpCollector {
         result.set(ResponseEntity.badRequest().body("Cannot gunzip spans: " + e.getMessage() + "\n"));
       }
     }
-    collector.acceptSpans(body, codec, new Callback<Void>() {
+    collector.acceptSpans(body, decoder, new Callback<Void>() {
       @Override public void onSuccess(@Nullable Void value) {
         result.set(SUCCESS);
       }
