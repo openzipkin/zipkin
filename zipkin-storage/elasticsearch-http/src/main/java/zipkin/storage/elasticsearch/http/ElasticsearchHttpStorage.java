@@ -216,7 +216,7 @@ public abstract class ElasticsearchHttpStorage implements StorageComponent {
     float version = ensureIndexTemplates().version();
     if (version >= 6) { // then multi-type (legacy) index isn't possible
       return new ElasticsearchHttpSpanStore(this);
-    } else if (version < 2.4 || !singleTypeIndexingEnabled()) { // don't fan out queries unnecessarily
+    } else if (version < 2 || !singleTypeIndexingEnabled()) { // don't fan out queries unnecessarily
       return new LegacyElasticsearchHttpSpanStore(this);
     } else { // fan out queries as we don't know if old legacy collectors are in use
       return new LenientDoubleCallbackAsyncSpanStore(

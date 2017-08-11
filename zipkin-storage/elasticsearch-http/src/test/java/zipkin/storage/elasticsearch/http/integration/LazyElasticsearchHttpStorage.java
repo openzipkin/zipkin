@@ -51,7 +51,6 @@ class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchHttpStorag
     try {
       container = new GenericContainer(image)
           .withExposedPorts(9200)
-          .withEnv("ES_JAVA_OPTS", "-Dmapper.allow_dots_in_name=true -Xms512m -Xmx512m")
           .waitingFor(new HttpWaitStrategy().forPath("/"));
       container.start();
       if (Boolean.valueOf(System.getenv("ES_DEBUG"))) {

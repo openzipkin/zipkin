@@ -73,7 +73,7 @@ public final class SearchRequest {
     }
 
     public Filters addTerm(String field, String value) {
-      add(new Terms(field, Collections.singletonList(value)));
+      add(new Term(field, value));
       return this;
     }
 
@@ -166,9 +166,9 @@ public final class SearchRequest {
   }
 
   static class Terms {
-    final Map<String, List<String>> terms;
+    final Map<String, Collection<String>> terms;
 
-    Terms(String field, List<String> values) {
+    Terms(String field, Collection<String> values) {
       this.terms = Collections.singletonMap(field, values);
     }
   }

@@ -69,11 +69,11 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
     }
 
     for (String annotation : request.annotations) {
-      filters.should().addTerm("annotations.value", annotation).addExists("tags." + annotation);
+      filters.addTerm("_q", annotation);
     }
 
     for (Map.Entry<String, String> kv : request.binaryAnnotations.entrySet()) {
-      filters.addTerm("tags." + kv.getKey(), kv.getValue());
+      filters.addTerm("_q", kv.getKey() + "=" + kv.getValue());
     }
 
     if (request.minDuration != null) {

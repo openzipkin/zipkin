@@ -26,6 +26,7 @@ import zipkin.internal.Nullable;
 import zipkin.internal.Pair;
 import zipkin.storage.Callback;
 
+import static zipkin.internal.Util.UTF_8;
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SPAN;
 
 /**
@@ -96,5 +97,28 @@ class LegacyElasticsearchHttpSpanConsumer extends ElasticsearchHttpSpanConsumer 
       }
       indexer.execute(callback);
     }
+  }
+
+  private static final byte[] TIMESTAMP_MILLIS_PREFIX = "{\"timestamp_millis\":".getBytes(UTF_8);
+
+  /**
+   * In order to allow systems like Kibana to search by timestamp, we add a field "timestamp_millis"
+   * when storing. The cheapest way to do this without changing the codec is prefixing it to the
+   * json. For example. {"traceId":"... becomes {"timestamp_millis":12345,"traceId":"...
+   */
+  static byte[] prefixWithTimestampMillis(byte[] input, long timestampMillis) {
+    String dateAsString = Long.toString(timestampMillis);
+    byte[] newSpanBytes =
+      new byte[TIMESTAMP_MILLIS_PREFIX.length + dateAsString.length() + input.length];
+    int pos = 0;
+    System.arraycopy(TIMESTAMP_MILLIS_PREFIX, 0, newSpanBytes, pos, TIMESTAMP_MILLIS_PREFIX.length);
+    pos += TIMESTAMP_MILLIS_PREFIX.length;
+    for (int i = 0, length = dateAsString.length(); i < length; i++) {
+      newSpanBytes[pos++] = (byte) dateAsString.charAt(i);
+    }
+    newSpanBytes[pos++] = ',';
+    // starting at position 1 discards the old head of '{'
+    System.arraycopy(input, 1, newSpanBytes, pos, input.length - 1);
+    return newSpanBytes;
   }
 }

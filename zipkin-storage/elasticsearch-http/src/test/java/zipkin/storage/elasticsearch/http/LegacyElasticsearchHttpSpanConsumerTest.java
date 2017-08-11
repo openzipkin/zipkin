@@ -36,7 +36,7 @@ import static zipkin.Constants.SERVER_RECV;
 import static zipkin.TestObjects.TODAY;
 import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.internal.Util.UTF_8;
-import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanConsumer.prefixWithTimestampMillis;
+import static zipkin.storage.elasticsearch.http.LegacyElasticsearchHttpSpanConsumer.prefixWithTimestampMillis;
 
 public class LegacyElasticsearchHttpSpanConsumerTest {
   @Rule public MockWebServer es = new MockWebServer();
