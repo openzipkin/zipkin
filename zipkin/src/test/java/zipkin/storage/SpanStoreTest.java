@@ -1000,6 +1000,20 @@ public abstract class SpanStoreTest {
       .containsExactly(json);
   }
 
+  /** Dots in tag names can create problems in storage which tries to make a tree out of them */
+  @Test
+  public void tagsWithNestedDots() {
+    Span tagsWithNestedDots = span1.toBuilder()
+      .addBinaryAnnotation(BinaryAnnotation.create("http.path", "/api", ep))
+      .addBinaryAnnotation(BinaryAnnotation.create("http.path.morepath", "/api/api", ep))
+      .build();
+
+    accept(tagsWithNestedDots);
+
+    assertThat(store().getRawTrace(span1.traceIdHigh, span1.traceId))
+      .containsExactly(tagsWithNestedDots);
+  }
+
   static long clientDuration(Span span) {
     long[] timestamps = span.annotations.stream()
         .filter(a -> a.value.startsWith("c"))

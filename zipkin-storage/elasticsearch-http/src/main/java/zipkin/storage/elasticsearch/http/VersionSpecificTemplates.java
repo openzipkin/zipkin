@@ -154,6 +154,7 @@ final class VersionSpecificTemplates {
     + "  },\n"
     + "  \"mappings\": {\n"
     + "    \"_default_\": {\n"
+    + "      DISABLE_ALL" // don't concat all fields into big string
     + "      \"dynamic_templates\": [\n"
     + "        {\n"
     + "          \"strings\": {\n"
@@ -168,6 +169,7 @@ final class VersionSpecificTemplates {
     + "      ]\n"
     + "    },\n"
     + "    \"" + SPAN + "\": {\n"
+    + "      \"_source\": {\"excludes\": [\"_q\"] },\n"
     + "      \"properties\": {\n"
     + "        \"traceId\": ${__TRACE_ID_MAPPING__},\n"
     + "        \"name\": { KEYWORD },\n"
@@ -186,17 +188,9 @@ final class VersionSpecificTemplates {
     + "          \"format\": \"epoch_millis\"\n"
     + "        },\n"
     + "        \"duration\": { \"type\": \"long\" },\n"
-    + "        \"annotations\": {\n"
-    + "          \"type\": \"object\",\n"
-    + "          \"dynamic\": false,\n"
-    + "          \"properties\": {\n"
-    + "            \"value\": { KEYWORD }\n"
-    + "          }\n"
-    + "        },\n"
-    + "        \"tags\": {\n"
-    + "          \"type\": \"object\",\n"
-    + "          \"dynamic\": true\n"
-    + "        }\n"
+    + "        \"annotations\": { \"enabled\": false },\n"
+    + "        \"tags\": { \"enabled\": false },\n"
+    + "        \"_q\": { KEYWORD }\n"
     + "      }\n"
     + "    }\n"
     + "  }\n"
@@ -219,8 +213,8 @@ final class VersionSpecificTemplates {
     return IndexTemplates.builder()
       .version(version)
       .legacy(version < 6 ? versionSpecificLegacyTemplate(version) : null)
-      .span(version > 2.4 ? versionSpecificSpanIndexTemplate(version) : null)
-      .dependency(version > 2.4 ? versionSpecificDependencyLinkIndexTemplate(version) : null)
+      .span(version >= 2 ? versionSpecificSpanIndexTemplate(version) : null)
+      .dependency(version >= 2 ? versionSpecificDependencyLinkIndexTemplate(version) : null)
       .build();
   }
 
@@ -231,7 +225,7 @@ final class VersionSpecificTemplates {
       if (version == null) throw new IllegalStateException(".version.number not in response");
       String versionString = version.nextString();
       float result = Float.valueOf(versionString.substring(0, 3));
-      if (result < 2.4) {
+      if (result < 2) {
         LOG.warning("Please upgrade to Elasticsearch 2.4 or later. version=" + versionString);
       }
       return result;
@@ -258,23 +252,25 @@ final class VersionSpecificTemplates {
   }
 
   private String versionSpecificSpanIndexTemplate(float version) {
-    if (version >= 2.4 && version < 3) {
+    if (version >= 2 && version < 3) {
       return spanIndexTemplate
         .replace("TEMPLATE", "template")
         .replace("STRING", "string")
+        .replace("DISABLE_ALL", "\"_all\": {\"enabled\": false},\n")
         .replace("KEYWORD",
           "\"type\": \"string\", \"norms\": {\"enabled\": false }, \"index\": \"not_analyzed\"");
     } else if (version >= 5) {
       return spanIndexTemplate
         .replace("TEMPLATE", version >= 6 ? "index_patterns" : "template")
         .replace("STRING", "text")
+        .replace("DISABLE_ALL", "") // _all isn't supported in 6.x anyway
         .replace("KEYWORD",
           "\"type\": \"keyword\", \"norms\": false")
         .replace("\"analyzer\": \"traceId_analyzer\" }",
           "\"fielddata\": \"true\", \"analyzer\": \"traceId_analyzer\" }");
     } else {
       throw new IllegalStateException(
-        "Elasticsearch 2.4+, 5.x and 6.x allow dots in field names, was: " + version);
+        "Elasticsearch 2.x, 5.x and 6.x are supported, was: " + version);
     }
   }
 

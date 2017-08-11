@@ -27,11 +27,9 @@ abstract class IndexTemplates {
   /** null when multi-type indexes are not supported */
   @Nullable abstract String legacy();
 
-  /** null when dots in field names are not supported */
-  @Nullable abstract String span();
+  abstract String span();
 
-  /** null when dots in field names are not supported */
-  @Nullable abstract String dependency();
+  abstract String dependency();
 
   @AutoValue.Builder interface Builder {
     Builder version(float version);

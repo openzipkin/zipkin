@@ -77,14 +77,14 @@ public class ElasticsearchHttpStorageTest {
     es.takeRequest(); // get dependency template
   }
 
-  @Test public void ensureIndexTemplates_when24OptIntoStoreWithMixedReads() throws Exception {
+  @Test public void ensureIndexTemplates_when2OptIntoStoreWithMixedReads() throws Exception {
     storage.close();
     storage = ElasticsearchHttpStorage.builder()
       .hosts(asList(es.url("").toString()))
       .singleTypeIndexingEnabled(true)
       .build();
 
-    es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"2.4.0\"}}"));
+    es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"2.2.0\"}}"));
     es.enqueue(new MockResponse()); // get span template
     es.enqueue(new MockResponse()); // get dependency template
 
@@ -109,18 +109,6 @@ public class ElasticsearchHttpStorageTest {
    */
   @Test public void ensureIndexTemplates_when5xSingleTypeIndexSupport() throws Exception {
     checkLegacyComponents(new MockResponse().setBody("{\"version\":{\"number\":\"5.0.0\"}}"));
-  }
-
-  @Test public void ensureIndexTemplates_when22SingleTypeIndexSupportUnsupported()
-    throws Exception {
-    storage.close();
-    storage = ElasticsearchHttpStorage.builder()
-      .hosts(asList(es.url("").toString()))
-      .singleTypeIndexingEnabled(true)
-      .build();
-
-    // Eventhough singleTypeIndexingEnabled, still legacy as Versions before 2.4 do not support "allow_dots_in_name"
-    checkLegacyComponents(new MockResponse().setBody("{\"version\":{\"number\":\"2.2.0\"}}"));
   }
 
   /**
