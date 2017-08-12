@@ -49,15 +49,15 @@
     <cassandra-driver-core.version>3.3.0</cassandra-driver-core.version>
     <okio.version>1.13.0</okio.version>
     <!-- important to keep this in sync with spring-boot-dependencies -->
-    <jooq.version>3.9.2</jooq.version>
-    <spring-boot.version>1.5.4.RELEASE</spring-boot.version>
+    <jooq.version>3.9.4</jooq.version>
+    <spring-boot.version>1.5.6.RELEASE</spring-boot.version>
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
 
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
     <!-- Version 2.x might conflict w/ Spring Boot's version -->
-    <mariadb-java-client.version>1.6.1</mariadb-java-client.version>
+    <mariadb-java-client.version>1.6.3</mariadb-java-client.version>
     <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
     <HikariCP.version>2.6.3</HikariCP.version>
     <slf4j.version>1.7.25</slf4j.version>
@@ -84,7 +84,7 @@
 
     <!-- Catch common Java mistakes as compile-time errors -->
     <plexus-compiler-javac-errorprone.version>2.8.2</plexus-compiler-javac-errorprone.version>
-    <errorprone.version>2.0.19</errorprone.version>
+    <errorprone.version>2.0.21</errorprone.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
