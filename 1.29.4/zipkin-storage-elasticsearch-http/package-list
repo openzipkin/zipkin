@@ -1,0 +1,4 @@
+zipkin.moshi
+zipkin.storage.elasticsearch.http
+zipkin.storage.elasticsearch.http.internal
+zipkin.storage.elasticsearch.http.internal.client
