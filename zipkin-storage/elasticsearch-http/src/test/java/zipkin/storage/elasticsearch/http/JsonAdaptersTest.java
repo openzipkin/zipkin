@@ -35,7 +35,7 @@ import static zipkin.storage.elasticsearch.http.JsonAdapters.SPAN_ADAPTER;
 
 public class JsonAdaptersTest {
   @Test
-  public void span2_ignoreNull_parentId() throws IOException {
+  public void span_ignoreNull_parentId() throws IOException {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
@@ -47,7 +47,7 @@ public class JsonAdaptersTest {
   }
 
   @Test
-  public void span2_ignoreNull_timestamp() throws IOException {
+  public void span_ignoreNull_timestamp() throws IOException {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
@@ -59,7 +59,7 @@ public class JsonAdaptersTest {
   }
 
   @Test
-  public void span2_ignoreNull_duration() throws IOException {
+  public void span_ignoreNull_duration() throws IOException {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
@@ -71,7 +71,7 @@ public class JsonAdaptersTest {
   }
 
   @Test
-  public void span2_ignoreNull_debug() throws IOException {
+  public void span_ignoreNull_debug() throws IOException {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
@@ -83,7 +83,7 @@ public class JsonAdaptersTest {
   }
 
   @Test
-  public void span2_ignoreNull_annotation_endpoint() throws IOException {
+  public void span_ignoreNull_annotation_endpoint() throws IOException {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
@@ -101,7 +101,7 @@ public class JsonAdaptersTest {
   }
 
   @Test
-  public void span2_tag_long_read() throws IOException {
+  public void span_tag_long_read() throws IOException {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
@@ -117,7 +117,7 @@ public class JsonAdaptersTest {
   }
 
   @Test
-  public void span2_tag_double_read() throws IOException {
+  public void span_tag_double_read() throws IOException {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
@@ -133,7 +133,7 @@ public class JsonAdaptersTest {
   }
 
   @Test
-  public void span2_roundTrip() throws IOException {
+  public void span_roundTrip() throws IOException {
     Span span = ApplyTimestampAndDuration.apply(TestObjects.LOTS_OF_SPANS[0]);
     Span2 span2 = Span2Converter.fromSpan(span).get(0);
     Buffer bytes = new Buffer();
@@ -147,7 +147,7 @@ public class JsonAdaptersTest {
    * trip-up json don't fail in SPAN_ADAPTER.
    */
   @Test
-  public void span2_specialCharsInJson() throws IOException {
+  public void span_specialCharsInJson() throws IOException {
     // service name is surrounded by control characters
     Endpoint e = Endpoint.create(new String(new char[] {0, 'a', 1}), 0);
     Span2 worstSpanInTheWorld = Span2.builder().traceId(1L).id(1L)
@@ -168,7 +168,7 @@ public class JsonAdaptersTest {
   }
 
   @Test
-  public void span2_endpointHighPort() throws IOException {
+  public void span_endpointHighPort() throws IOException {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
@@ -185,7 +185,40 @@ public class JsonAdaptersTest {
   }
 
   @Test
-  public void span2_readsTraceIdHighFromTraceIdField() throws IOException {
+  public void span_noServiceName() throws IOException {
+    String json = "{\n"
+      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+      + "  \"name\": \"get-traces\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\",\n"
+      + "  \"localEndpoint\": {\n"
+      + "    \"port\": 65535\n"
+      + "  }\n"
+      + "}";
+
+    assertThat(SPAN_ADAPTER.fromJson(json).binaryAnnotations)
+      .containsExactly(BinaryAnnotation.create("lc", "",
+        Endpoint.builder().serviceName("").port(65535).build()));
+  }
+
+  @Test
+  public void span_nullServiceName() throws IOException {
+    String json = "{\n"
+      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+      + "  \"name\": \"get-traces\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\",\n"
+      + "  \"localEndpoint\": {\n"
+      + "    \"serviceName\": NULL,\n"
+      + "    \"port\": 65535\n"
+      + "  }\n"
+      + "}";
+
+    assertThat(SPAN_ADAPTER.fromJson(json).binaryAnnotations)
+      .containsExactly(BinaryAnnotation.create("lc", "",
+        Endpoint.builder().serviceName("").port(65535).build()));
+  }
+
+  @Test
+  public void span_readsTraceIdHighFromTraceIdField() throws IOException {
     String with128BitTraceId = ("{\n"
       + "  \"traceId\": \"48485a3953bb61246b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"

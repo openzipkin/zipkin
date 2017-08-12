@@ -20,13 +20,13 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import zipkin.Endpoint;
 import zipkin.internal.JsonCodec.JsonReaderAdapter;
 
 import static zipkin.internal.Buffer.asciiSizeInBytes;
+import static zipkin.internal.Buffer.ipv6SizeInBytes;
 import static zipkin.internal.Buffer.jsonEscapedSizeInBytes;
 import static zipkin.internal.JsonCodec.ANNOTATION_WRITER;
-import static zipkin.internal.JsonCodec.ENDPOINT_READER;
-import static zipkin.internal.JsonCodec.ENDPOINT_WRITER;
 import static zipkin.internal.JsonCodec.writeList;
 
 /**
@@ -128,6 +128,81 @@ public final class Span2JsonCodec implements Span2Codec {
       return "Span2";
     }
   }
+
+  static final JsonReaderAdapter<Endpoint> ENDPOINT_READER = reader -> {
+    Endpoint.Builder result = Endpoint.builder().serviceName("");
+    reader.beginObject();
+    while (reader.hasNext()) {
+      String nextName = reader.nextName();
+      if (nextName.equals("serviceName") && reader.peek() != JsonToken.NULL) {
+        result.serviceName(reader.nextString());
+      } else if (nextName.equals("ipv4") || nextName.equals("ipv6")) {
+        result.parseIp(reader.nextString());
+      } else if (nextName.equals("port")) {
+        result.port(reader.nextInt());
+      } else {
+        reader.skipValue();
+      }
+    }
+    reader.endObject();
+    return result.build();
+  };
+
+  static final Buffer.Writer<Endpoint> ENDPOINT_WRITER = new Buffer.Writer<Endpoint>() {
+    @Override public int sizeInBytes(Endpoint value) {
+      int sizeInBytes = 1; // start curly-brace
+      if (!value.serviceName.isEmpty()) {
+        sizeInBytes += asciiSizeInBytes("\"serviceName\":\"");
+        sizeInBytes += jsonEscapedSizeInBytes(value.serviceName) + 1; // for end quote
+      }
+      if (value.ipv4 != 0) {
+        if (sizeInBytes != 1) sizeInBytes++;// comma
+        sizeInBytes += asciiSizeInBytes("\"ipv4\":\"");
+        sizeInBytes += asciiSizeInBytes(value.ipv4 >> 24 & 0xff) + 1; // for dot
+        sizeInBytes += asciiSizeInBytes(value.ipv4 >> 16 & 0xff) + 1; // for dot
+        sizeInBytes += asciiSizeInBytes(value.ipv4 >> 8 & 0xff) + 1; // for dot
+        sizeInBytes += asciiSizeInBytes(value.ipv4 & 0xff) + 1; // for end quote
+      }
+      if (value.ipv6 != null) {
+        if (sizeInBytes != 1) sizeInBytes++;// comma
+        sizeInBytes += asciiSizeInBytes("\"ipv6\":\"") + ipv6SizeInBytes(value.ipv6) + 1;
+      }
+      if (value.port != null && value.port != 0) {
+        if (sizeInBytes != 1) sizeInBytes++;// comma
+        sizeInBytes += asciiSizeInBytes("\"port\":") + asciiSizeInBytes(value.port & 0xffff);
+      }
+      return ++sizeInBytes;// end curly-brace
+    }
+
+    @Override public void write(Endpoint value, Buffer b) {
+      b.writeByte('{');
+      boolean wroteField = false;
+      if (!value.serviceName.isEmpty()) {
+        b.writeAscii("\"serviceName\":\"");
+        b.writeJsonEscaped(value.serviceName).writeByte('"');
+        wroteField = true;
+      }
+      if (value.ipv4 != 0) {
+        if (wroteField) b.writeByte(',');
+        b.writeAscii("\"ipv4\":\"");
+        b.writeAscii(value.ipv4 >> 24 & 0xff).writeByte('.');
+        b.writeAscii(value.ipv4 >> 16 & 0xff).writeByte('.');
+        b.writeAscii(value.ipv4 >> 8 & 0xff).writeByte('.');
+        b.writeAscii(value.ipv4 & 0xff).writeByte('"');
+        wroteField = true;
+      }
+      if (value.ipv6 != null) {
+        if (wroteField) b.writeByte(',');
+        b.writeAscii("\"ipv6\":\"").writeIpV6(value.ipv6).writeByte('"');
+        wroteField = true;
+      }
+      if (value.port != null && value.port != 0) {
+        if (wroteField) b.writeByte(',');
+        b.writeAscii("\"port\":").writeAscii(value.port & 0xffff);
+      }
+      b.writeByte('}');
+    }
+  };
 
   static final Buffer.Writer<Span2> SPAN_WRITER = new Buffer.Writer<Span2>() {
     @Override public int sizeInBytes(Span2 value) {
