@@ -15,6 +15,7 @@
 package zipkin;
 
 import java.util.List;
+import zipkin.internal.DetectingSpanDecoder;
 import zipkin.internal.JsonCodec;
 import zipkin.internal.ThriftCodec;
 
@@ -22,6 +23,8 @@ import zipkin.internal.ThriftCodec;
 public interface SpanDecoder {
   SpanDecoder JSON_DECODER = new JsonCodec();
   SpanDecoder THRIFT_DECODER = new ThriftCodec();
+  /** Detects the format of the encoded spans or throws IllegalArgumentException */
+  SpanDecoder DETECTING_DECODER = new DetectingSpanDecoder();
 
   /** throws {@linkplain IllegalArgumentException} if a span couldn't be decoded */
   Span readSpan(byte[] span);
