@@ -20,17 +20,13 @@ import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 import okio.Buffer;
 import okio.ByteString;
-import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
-import zipkin.DependencyLink;
-import zipkin.Endpoint;
 import zipkin.Span;
-import zipkin.internal.Span2;
-import zipkin.internal.Span2Converter;
 import zipkin.internal.Util;
 
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
+import static zipkin.storage.elasticsearch.http.JsonAdapters.ENDPOINT_ADAPTER;
 
 final class LegacyJsonAdapters {
   static final JsonAdapter<Span> SPAN_ADAPTER = new JsonAdapter<Span>() {
@@ -77,7 +73,7 @@ final class LegacyJsonAdapters {
           case "binaryAnnotations":
             reader.beginArray();
             while (reader.hasNext()) {
-              result.addBinaryAnnotation(JsonAdapters.BINARY_ANNOTATION_ADAPTER.fromJson(reader));
+              result.addBinaryAnnotation(BINARY_ANNOTATION_ADAPTER.fromJson(reader));
             }
             reader.endArray();
             break;
@@ -97,5 +93,86 @@ final class LegacyJsonAdapters {
       throw new UnsupportedOperationException();
     }
   };
-}
 
+  static final JsonAdapter<BinaryAnnotation> BINARY_ANNOTATION_ADAPTER = new JsonAdapter<BinaryAnnotation>() {
+    @Override
+    public BinaryAnnotation fromJson(JsonReader reader) throws IOException {
+      BinaryAnnotation.Builder result = BinaryAnnotation.builder();
+      String number = null;
+      String string = null;
+      BinaryAnnotation.Type type = BinaryAnnotation.Type.STRING;
+      reader.beginObject();
+      while (reader.hasNext()) {
+        switch (reader.nextName()) {
+          case "key":
+            result.key(reader.nextString());
+            break;
+          case "value":
+            switch (reader.peek()) {
+              case BOOLEAN:
+                type = BinaryAnnotation.Type.BOOL;
+                result.value(reader.nextBoolean() ? new byte[] {1} : new byte[] {0});
+                break;
+              case STRING:
+                string = reader.nextString();
+                break;
+              case NUMBER:
+                number = reader.nextString();
+                break;
+              default:
+                throw new JsonDataException(
+                  "Expected value to be a boolean, string or number but was " + reader.peek()
+                    + " at path " + reader.getPath());
+            }
+            break;
+          case "type":
+            type = BinaryAnnotation.Type.valueOf(reader.nextString());
+            break;
+          case "endpoint":
+            result.endpoint(ENDPOINT_ADAPTER.fromJson(reader));
+            break;
+          default:
+            reader.skipValue();
+        }
+      }
+      reader.endObject();
+      result.type(type);
+      switch (type) {
+        case BOOL:
+          return result.build();
+        case STRING:
+          return result.value(string.getBytes(UTF_8)).build();
+        case BYTES:
+          return result.value(ByteString.decodeBase64(string).toByteArray()).build();
+        default:
+          break;
+      }
+      Buffer buffer = new Buffer();
+      switch (type) {
+        case I16:
+          buffer.writeShort(Short.parseShort(number));
+          break;
+        case I32:
+          buffer.writeInt(Integer.parseInt(number));
+          break;
+        case I64:
+        case DOUBLE:
+          if (number == null) number = string;
+          long v = type == BinaryAnnotation.Type.I64
+            ? Long.parseLong(number)
+            : Double.doubleToRawLongBits(Double.parseDouble(number));
+          buffer.writeLong(v);
+          break;
+        default:
+          throw new AssertionError(
+            "BinaryAnnotationType " + type + " was added, but not handled");
+      }
+      return result.value(buffer.readByteArray()).build();
+    }
+
+    @Override
+    public void toJson(JsonWriter writer, BinaryAnnotation value) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+  };
+}

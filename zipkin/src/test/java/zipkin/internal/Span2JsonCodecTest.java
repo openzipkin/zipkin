@@ -305,4 +305,77 @@ public class Span2JsonCodecTest {
 
     codec.readSpan(json.getBytes(UTF_8));
   }
+
+  @Test public void readSpan_localEndpoint_noServiceName() {
+    String json = "{\n"
+      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+      + "  \"name\": \"get-traces\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\",\n"
+      + "  \"localEndpoint\": {\n"
+      + "    \"ipv4\": \"127.0.0.1\"\n"
+      + "  }\n"
+      + "}";
+
+    assertThat(codec.readSpan(json.getBytes(UTF_8)).localEndpoint())
+      .isEqualTo(Endpoint.create("", 127 << 24 | 1));
+  }
+
+  @Test public void readSpan_localEndpoint_nullServiceName() {
+    String json = "{\n"
+      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+      + "  \"name\": \"get-traces\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\",\n"
+      + "  \"localEndpoint\": {\n"
+      + "    \"serviceName\": null,\n"
+      + "    \"ipv4\": \"127.0.0.1\"\n"
+      + "  }\n"
+      + "}";
+
+    assertThat(codec.readSpan(json.getBytes(UTF_8)).localEndpoint())
+      .isEqualTo(Endpoint.create("", 127 << 24 | 1));
+  }
+
+  @Test public void readSpan_remoteEndpoint_noServiceName() {
+    String json = "{\n"
+      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+      + "  \"name\": \"get-traces\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\",\n"
+      + "  \"remoteEndpoint\": {\n"
+      + "    \"ipv4\": \"127.0.0.1\"\n"
+      + "  }\n"
+      + "}";
+
+    assertThat(codec.readSpan(json.getBytes(UTF_8)).remoteEndpoint())
+      .isEqualTo(Endpoint.create("", 127 << 24 | 1));
+  }
+
+  @Test public void readSpan_remoteEndpoint_nullServiceName() {
+    String json = "{\n"
+      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+      + "  \"name\": \"get-traces\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\",\n"
+      + "  \"remoteEndpoint\": {\n"
+      + "    \"serviceName\": null,\n"
+      + "    \"ipv4\": \"127.0.0.1\"\n"
+      + "  }\n"
+      + "}";
+
+    assertThat(codec.readSpan(json.getBytes(UTF_8)).remoteEndpoint())
+      .isEqualTo(Endpoint.create("", 127 << 24 | 1));
+  }
+
+  @Test public void spanRoundTrip_noRemoteServiceName() throws IOException {
+    span = span.toBuilder().remoteEndpoint(backend.toBuilder().serviceName("").build()).build();
+    byte[] bytes = codec.writeSpan(span);
+    assertThat(codec.readSpan(bytes))
+      .isEqualTo(span);
+  }
+
+  @Test public void doesntWriteEmptyServiceName() throws IOException {
+    String expected = "{\"ipv4\":\"127.0.0.1\"}";
+    Buffer b = new Buffer(expected.length());
+    Span2JsonCodec.ENDPOINT_WRITER.write(Endpoint.create("", 127 << 24 | 1), b);
+    assertThat(new String(b.toByteArray(), UTF_8))
+      .isEqualTo(expected);
+  }
 }
