@@ -28,7 +28,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <aws.sdk.version>1.11.160</aws.sdk.version>
+    <aws.sdk.version>1.11.176</aws.sdk.version>
   </properties>
 
   <dependencies>
