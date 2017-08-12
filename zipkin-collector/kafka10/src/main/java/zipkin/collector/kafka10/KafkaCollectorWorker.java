@@ -30,6 +30,8 @@ import org.slf4j.LoggerFactory;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 
+import static zipkin.SpanDecoder.DETECTING_DECODER;
+import static zipkin.SpanDecoder.THRIFT_DECODER;
 import static zipkin.storage.Callback.NOOP;
 
 /** Consumes spans from Kafka messages, ignoring malformed input */
@@ -73,7 +75,11 @@ final class KafkaCollectorWorker implements Runnable {
           if (bytes.length == 0) {
             metrics.incrementMessagesDropped();
           } else {
-            collector.acceptSpans(bytes, NOOP);
+            if (bytes[0] == '[' /* json list */ || bytes[0] == 12 /* thrift list */) {
+              collector.acceptSpans(bytes, DETECTING_DECODER, NOOP);
+            } else { // assume legacy single-span encoding
+              collector.acceptSpans(Collections.singletonList(bytes), THRIFT_DECODER, NOOP);
+            }
           }
         }
       }

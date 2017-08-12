@@ -14,19 +14,14 @@
 package zipkin.collector;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Test;
-import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.internal.Span2Codec;
-import zipkin.internal.Span2Converter;
 import zipkin.storage.Callback;
 import zipkin.storage.InMemoryStorage;
-import zipkin.storage.QueryRequest;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -122,42 +117,6 @@ public class CollectorTest {
     assertThat(messages)
         .containsExactly(message)
         .containsExactly("Malformed reading spans");
-  }
-
-  @Test
-  public void acceptSpans_detectsThrift() {
-    collector.acceptSpans(Codec.THRIFT.writeSpan(span1), NOOP);
-
-    assertThat(collector.storage.spanStore().getTraces(QueryRequest.builder().build()))
-      .hasSize(1);
-  }
-
-  @Test
-  public void acceptSpans_detectsThriftList() {
-    collector.acceptSpans(Codec.THRIFT.writeSpans(asList(span1, span2)), NOOP);
-
-    assertThat(collector.storage.spanStore().getTraces(QueryRequest.builder().build()))
-      .hasSize(2);
-  }
-
-  @Test
-  public void acceptSpans_detectsJsonList() {
-    collector.acceptSpans(Codec.JSON.writeSpans(asList(span1, span2)), NOOP);
-
-    assertThat(collector.storage.spanStore().getTraces(QueryRequest.builder().build()))
-      .hasSize(2);
-  }
-
-  @Test
-  public void acceptSpans_detectsJson2List() {
-    byte[] bytes = Span2Codec.JSON.writeSpans(Arrays.asList(
-      Span2Converter.fromSpan(span1).get(0),
-      Span2Converter.fromSpan(span2).get(0)
-    ));
-    collector.acceptSpans(bytes, NOOP);
-
-    assertThat(collector.storage.spanStore().getTraces(QueryRequest.builder().build()))
-      .hasSize(2);
   }
 
   @Test
