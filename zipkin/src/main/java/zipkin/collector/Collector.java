@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,11 +14,14 @@
 package zipkin.collector;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
-import zipkin.Codec;
 import zipkin.Span;
+import zipkin.SpanDecoder;
+import zipkin.internal.Span2JsonDecoder;
+import zipkin.internal.Util;
 import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
 
@@ -86,11 +89,46 @@ public final class Collector {
     this.metrics = builder.metrics == null ? CollectorMetrics.NOOP_METRICS : builder.metrics;
   }
 
-  public void acceptSpans(byte[] serializedSpans, Codec codec, Callback<Void> callback) {
+  /** zipkin v2 will have this tag, and others won't. */
+  static final byte[] LOCAL_ENDPOINT_TAG = "\"localEndpoint\"".getBytes(Util.UTF_8);
+  static final SpanDecoder JSON2_DECODER = new Span2JsonDecoder();
+
+  public void acceptSpans(byte[] bytes, Callback<Void> callback) {
+    // In TBinaryProtocol encoding, the first byte is the TType, in a range 0-16
+    // .. If the first byte isn't in that range, it isn't a thrift.
+    //
+    // When byte(0) == '[' (91), assume it is a list of json-encoded spans
+    //
+    // When byte(0) <= 16, assume it is a TBinaryProtocol-encoded thrift
+    // .. When serializing a Span (Struct), the first byte will be the type of a field
+    // .. When serializing a List[ThriftSpan], the first byte is the member type, TType.STRUCT(12)
+    // .. As ThriftSpan has no STRUCT fields: so, if the first byte is TType.STRUCT(12), it is a list.
+    if (bytes[0] == '[') {
+      bytes: // searches for a substring matching zipkin v2 format. otherwise assume it isn't.
+      for (int i = 0; i < bytes.length - LOCAL_ENDPOINT_TAG.length + 1; i++) {
+        for (int j = 0; j < LOCAL_ENDPOINT_TAG.length; j++) {
+          if (bytes[i + j] != LOCAL_ENDPOINT_TAG[j]) {
+            continue bytes;
+          }
+        }
+        acceptSpans(bytes, JSON2_DECODER, callback);
+        return;
+      }
+      acceptSpans(bytes, SpanDecoder.JSON_DECODER, callback);
+    } else {
+      if (bytes[0] == 12 /* TType.STRUCT */) {
+        acceptSpans(bytes, SpanDecoder.THRIFT_DECODER, callback);
+      } else {
+        acceptSpans(Collections.singletonList(bytes), SpanDecoder.THRIFT_DECODER, callback);
+      }
+    }
+  }
+
+  public void acceptSpans(byte[] serializedSpans, SpanDecoder decoder, Callback<Void> callback) {
     metrics.incrementBytes(serializedSpans.length);
     List<Span> spans;
     try {
-      spans = codec.readSpans(serializedSpans);
+      spans = decoder.readSpans(serializedSpans);
     } catch (RuntimeException e) {
       callback.onError(errorReading(e));
       return;
@@ -98,13 +136,14 @@ public final class Collector {
     accept(spans, callback);
   }
 
-  public void acceptSpans(List<byte[]> serializedSpans, Codec codec, Callback<Void> callback) {
+  public void acceptSpans(List<byte[]> serializedSpans, SpanDecoder decoder,
+    Callback<Void> callback) {
     List<Span> spans = new ArrayList<>(serializedSpans.size());
     try {
       int bytesRead = 0;
       for (byte[] serializedSpan : serializedSpans) {
         bytesRead += serializedSpan.length;
-        spans.add(codec.readSpan(serializedSpan));
+        spans.add(decoder.readSpan(serializedSpan));
       }
       metrics.incrementBytes(bytesRead);
     } catch (RuntimeException e) {

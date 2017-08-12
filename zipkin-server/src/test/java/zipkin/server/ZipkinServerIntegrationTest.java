@@ -13,6 +13,7 @@
  */
 package zipkin.server;
 
+import java.util.Collections;
 import okio.Buffer;
 import okio.GzipSink;
 import org.junit.Before;
@@ -31,6 +32,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import zipkin.Codec;
 import zipkin.Span;
+import zipkin.internal.ApplyTimestampAndDuration;
+import zipkin.internal.Span2Codec;
+import zipkin.internal.Span2Converter;
 import zipkin.storage.InMemoryStorage;
 
 import static java.lang.String.format;
@@ -43,6 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static zipkin.TestObjects.LOTS_OF_SPANS;
 import static zipkin.TestObjects.TRACE;
 import static zipkin.TestObjects.span;
 import static zipkin.internal.Util.UTF_8;
@@ -74,6 +79,26 @@ public class ZipkinServerIntegrationTest {
     byte[] body = Codec.JSON.writeSpans(TRACE);
     performAsync(post("/api/v1/spans").content(body))
         .andExpect(status().isAccepted());
+  }
+
+  @Test
+  public void writeSpans_version2() throws Exception {
+    Span span = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
+
+    byte[] bytes = Span2Codec.JSON.writeSpans(Collections.singletonList(
+      Span2Converter.fromSpan(span).get(0)
+    ));
+
+    performAsync(post("/api/v2/spans").content(bytes))
+      .andExpect(status().isAccepted());
+
+    // sleep as the the storage operation is async
+    Thread.sleep(1500);
+
+    // We read it back in span v1 format
+    mockMvc.perform(get(format("/api/v1/trace/" + span.traceIdString())))
+      .andExpect(status().isOk())
+      .andExpect(content().string(new String(Codec.JSON.writeSpans(asList(span)), UTF_8)));
   }
 
   @Test

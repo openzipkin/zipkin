@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 package zipkin.collector.kafka;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,12 +30,16 @@ import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.collector.kafka.KafkaCollector.Builder;
+import zipkin.internal.ApplyTimestampAndDuration;
+import zipkin.internal.Span2Codec;
+import zipkin.internal.Span2Converter;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.SpanStore;
 import zipkin.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.TestObjects.LOTS_OF_SPANS;
 import static zipkin.TestObjects.TRACE;
 
 public class KafkaCollectorTest {
@@ -128,6 +133,32 @@ public class KafkaCollectorTest {
     assertThat(kafkaMetrics.messages()).isEqualTo(1);
     assertThat(kafkaMetrics.bytes()).isEqualTo(bytes.length);
     assertThat(kafkaMetrics.spans()).isEqualTo(TestObjects.TRACE.size());
+  }
+
+  /** Ensures list encoding works: a version 2 json encoded list of spans */
+  @Test
+  public void messageWithMultipleSpans_json2() throws Exception {
+    Builder builder = builder("multiple_spans_json2");
+
+    List<Span> spans = Arrays.asList(
+      ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]),
+      ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1])
+    );
+
+    byte[] bytes = Span2Codec.JSON.writeSpans(Arrays.asList(
+      Span2Converter.fromSpan(spans.get(0)).get(0),
+      Span2Converter.fromSpan(spans.get(1)).get(0)
+    ));
+
+    producer.send(new KeyedMessage<>(builder.topic, bytes));
+
+    try (KafkaCollector collector = newKafkaTransport(builder, consumer)) {
+      assertThat(recvdSpans.take()).containsAll(spans);
+    }
+
+    assertThat(kafkaMetrics.messages()).isEqualTo(1);
+    assertThat(kafkaMetrics.bytes()).isEqualTo(bytes.length);
+    assertThat(kafkaMetrics.spans()).isEqualTo(spans.size());
   }
 
   /** Ensures malformed spans don't hang the collector */

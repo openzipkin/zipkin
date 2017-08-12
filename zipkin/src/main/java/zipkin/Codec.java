@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,20 +20,14 @@ import zipkin.internal.ThriftCodec;
 /**
  * Methods make an attempt to perform codec operations, failing to null.
  */
-public interface Codec {
+public interface Codec extends SpanDecoder {
 
   JsonCodec JSON = new JsonCodec();
   ThriftCodec THRIFT = new ThriftCodec();
 
-  /** throws {@linkplain IllegalArgumentException} if the span couldn't be decoded */
-  Span readSpan(byte[] bytes);
-
   int sizeInBytes(Span value);
 
   byte[] writeSpan(Span value);
-
-  /** throws {@linkplain IllegalArgumentException} if the spans couldn't be decoded */
-  List<Span> readSpans(byte[] bytes);
 
   byte[] writeSpans(List<Span> value);
 
