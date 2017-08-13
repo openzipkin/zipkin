@@ -13,6 +13,7 @@
  */
 package zipkin.internal;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +26,6 @@ import zipkin.Span;
 import zipkin.internal.Span2.Kind;
 
 import static zipkin.BinaryAnnotation.Type.BOOL;
-import static zipkin.BinaryAnnotation.Type.STRING;
 import static zipkin.Constants.CLIENT_ADDR;
 import static zipkin.Constants.LOCAL_COMPONENT;
 import static zipkin.Constants.SERVER_ADDR;
@@ -187,14 +187,39 @@ public final class Span2Converter {
             sa = b.endpoint;
           } else if (Constants.MESSAGE_ADDR.equals(b.key)) {
             ma = b.endpoint;
+          } else {
+            forEndpoint(source, b.endpoint).putTag(b.key, b.value[0] == 1 ? "true" : "false");
           }
           continue;
         }
+
         Span2.Builder currentSpan = forEndpoint(source, b.endpoint);
-        if (b.type == STRING) {
-          // don't add marker "lc" tags
-          if (Constants.LOCAL_COMPONENT.equals(b.key) && b.value.length == 0) continue;
-          currentSpan.putTag(b.key, new String(b.value, Util.UTF_8));
+        switch (b.type) {
+          case BOOL:
+            break; // already handled
+          case STRING:
+            // don't add marker "lc" tags
+            if (Constants.LOCAL_COMPONENT.equals(b.key) && b.value.length == 0) continue;
+            currentSpan.putTag(b.key, new String(b.value, Util.UTF_8));
+            break;
+          case BYTES:
+            Buffer buffer = new Buffer(Buffer.base64UrlSizeInBytes(b.value));
+            String encoded = new String(buffer.writeBase64Url(b.value).toByteArray(), Util.UTF_8);
+            currentSpan.putTag(b.key, encoded);
+            break;
+          case I16:
+            currentSpan.putTag(b.key, Short.toString(ByteBuffer.wrap(b.value).getShort()));
+            break;
+          case I32:
+            currentSpan.putTag(b.key, Integer.toString(ByteBuffer.wrap(b.value).getInt()));
+            break;
+          case I64:
+            currentSpan.putTag(b.key, Long.toString(ByteBuffer.wrap(b.value).getLong()));
+            break;
+          case DOUBLE:
+            double wrapped = Double.longBitsToDouble(ByteBuffer.wrap(b.value).getLong());
+            currentSpan.putTag(b.key, Double.toString(wrapped));
+            break;
         }
       }
 
