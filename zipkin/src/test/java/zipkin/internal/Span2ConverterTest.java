@@ -13,9 +13,11 @@
  */
 package zipkin.internal;
 
+import java.nio.ByteBuffer;
 import org.junit.Test;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
+import zipkin.BinaryAnnotation.Type;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.Span;
@@ -721,5 +723,42 @@ public class Span2ConverterTest {
 
     assertThat(Span2Converter.fromSpan(shared))
       .containsExactly(first, second);
+  }
+
+  // test converted from stackdriver-zipkin
+  @Test public void convertBinaryAnnotations() {
+    byte[] boolBuffer = ByteBuffer.allocate(1).put((byte) 1).array();
+    byte[] shortBuffer = ByteBuffer.allocate(2).putShort((short) 20).array();
+    byte[] intBuffer = ByteBuffer.allocate(4).putInt(32800).array();
+    byte[] longBuffer = ByteBuffer.allocate(8).putLong(2147483700L).array();
+    byte[] doubleBuffer = ByteBuffer.allocate(8).putDouble(3.1415).array();
+    byte[] bytesBuffer = "any carnal pleasure".getBytes(Util.UTF_8);
+    Span span = Span.builder()
+      .traceId(1)
+      .name("test")
+      .id(2)
+      .addBinaryAnnotation(BinaryAnnotation.create("bool", boolBuffer, Type.BOOL, frontend))
+      .addBinaryAnnotation(BinaryAnnotation.create("short", shortBuffer, Type.I16, frontend))
+      .addBinaryAnnotation(BinaryAnnotation.create("int", intBuffer, Type.I32, frontend))
+      .addBinaryAnnotation(BinaryAnnotation.create("long", longBuffer, Type.I64, frontend))
+      .addBinaryAnnotation(BinaryAnnotation.create("double", doubleBuffer, Type.DOUBLE, frontend))
+      .addBinaryAnnotation(BinaryAnnotation.create("bytes", bytesBuffer, Type.BYTES, frontend))
+      .build();
+
+    Span2 span2 = Span2.builder()
+      .traceId(1)
+      .name("test")
+      .id(2)
+      .localEndpoint(frontend)
+      .putTag("bool", "true")
+      .putTag("short", "20")
+      .putTag("int", "32800")
+      .putTag("long", "2147483700")
+      .putTag("double", "3.1415")
+      .putTag("bytes", "YW55IGNhcm5hbCBwbGVhc3VyZQ==") // from https://en.wikipedia.org/wiki/Base64
+      .build();
+
+    assertThat(Span2Converter.fromSpan(span))
+      .containsExactly(span2);
   }
 }
