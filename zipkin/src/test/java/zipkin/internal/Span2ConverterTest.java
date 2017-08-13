@@ -361,6 +361,37 @@ public class Span2ConverterTest {
       .containsExactly(client, server);
   }
 
+  /**
+   * The old span format had no means of saying it is shared or not. This uses lack of timestamp as
+   * a signal
+   */
+  @Test public void assumesServerWithoutTimestampIsShared() {
+    Span span = Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
+      .id(Util.lowerHexToUnsignedLong("5b4185666d50f68b"))
+      .name("get")
+      .addAnnotation(Annotation.create(1472470996250000L, Constants.SERVER_RECV, backend))
+      .addAnnotation(Annotation.create(1472470996350000L, Constants.SERVER_SEND, backend))
+      .build();
+
+    Span2 span2 = Span2.builder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .parentId("6b221d5bc9e6496c")
+      .id("5b4185666d50f68b")
+      .name("get")
+      .kind(Kind.SERVER)
+      .shared(true)
+      .localEndpoint(backend)
+      .timestamp(1472470996250000L)
+      .duration(100000L)
+      .build();
+
+    assertThat(Span2Converter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
   @Test public void clientAndServer_loopback() {
     Span shared = Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
