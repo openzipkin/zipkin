@@ -131,6 +131,12 @@ public final class Span2Converter {
         }
       }
 
+      // Span v1 format did not have a shared flag. By convention, span.timestamp being absent
+      // implied shared. When we only see the server-side, carry this signal over.
+      if (cs == null && (sr != null && source.timestamp == null)) {
+        forEndpoint(source, sr.endpoint).shared(true);
+      }
+
       // ms and mr are not supposed to be in the same span, but in case they are..
       if (ms != null && mr != null) {
         // special-case loopback: We need to make sure on loopback there are two span2s
