@@ -106,7 +106,7 @@ public class Span2JsonCodecTest {
       .isEqualTo(worstSpanInTheWorld);
   }
 
-  @Test public void niceErrorOnUppercaseTraceId() {
+  @Test public void niceErrorOnUppercase_traceId() {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage(
       "48485A3953BB6124 should be a 1 to 32 character lower-hex string with no prefix");
@@ -120,21 +120,21 @@ public class Span2JsonCodecTest {
     codec.readSpan(json.getBytes(UTF_8));
   }
 
-  @Test public void decentErrorMessageOnEmptyInput_span() throws IOException {
+  @Test public void niceErrorOnEmpty_inputSpan() throws IOException {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Empty input reading Span2");
 
     codec.readSpan(new byte[0]);
   }
 
-  @Test public void decentErrorMessageOnEmptyInput_spans() throws IOException {
+  @Test public void niceErrorOnEmpty_inputSpans() throws IOException {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Empty input reading List<Span2>");
 
     codec.readSpans(new byte[0]);
   }
 
-  @Test public void decentErrorMessageOnMalformedInput_span() throws IOException {
+  @Test public void niceErrorOnMalformed_inputSpan() throws IOException {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Malformed reading Span2 from ");
 
@@ -144,7 +144,7 @@ public class Span2JsonCodecTest {
   /**
    * Particulary, thrift can mistake malformed content as a huge list. Let's not blow up.
    */
-  @Test public void decentErrorMessageOnMalformedInput_spans() throws IOException {
+  @Test public void niceErrorOnMalformed_inputSpans() throws IOException {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Malformed reading List<Span2> from ");
 
@@ -187,78 +187,71 @@ public class Span2JsonCodecTest {
         .traceIdHigh(Util.lowerHexToUnsignedLong("48485a3953bb6124")).build());
   }
 
-  @Test public void ignoreNull_parentId() {
+  @Test public void ignoresNull_topLevelFields() {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-      + "  \"name\": \"get-traces\",\n"
+      + "  \"parentId\": null,\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
-      + "  \"parentId\": null\n"
-      + "}";
-
-    codec.readSpan(json.getBytes(UTF_8));
-  }
-
-  @Test public void ignoreNull_timestamp() {
-    String json = "{\n"
-      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-      + "  \"name\": \"get-traces\",\n"
-      + "  \"id\": \"6b221d5bc9e6496c\",\n"
-      + "  \"timestamp\": null\n"
-      + "}";
-
-    codec.readSpan(json.getBytes(UTF_8));
-  }
-
-  @Test public void ignoreNull_duration() {
-    String json = "{\n"
-      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-      + "  \"name\": \"get-traces\",\n"
-      + "  \"id\": \"6b221d5bc9e6496c\",\n"
-      + "  \"duration\": null\n"
-      + "}";
-
-    codec.readSpan(json.getBytes(UTF_8));
-  }
-
-  @Test public void ignoreNull_debug() {
-    String json = "{\n"
-      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-      + "  \"name\": \"get-traces\",\n"
-      + "  \"id\": \"6b221d5bc9e6496c\",\n"
-      + "  \"debug\": null\n"
-      + "}";
-
-    codec.readSpan(json.getBytes(UTF_8));
-  }
-
-  @Test public void ignoreNull_shared() {
-    String json = "{\n"
-      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-      + "  \"name\": \"get-traces\",\n"
-      + "  \"id\": \"6b221d5bc9e6496c\",\n"
+      + "  \"name\": null,\n"
+      + "  \"timestamp\": null,\n"
+      + "  \"duration\": null,\n"
+      + "  \"localEndpoint\": null,\n"
+      + "  \"remoteEndpoint\": null,\n"
+      + "  \"annotations\": null,\n"
+      + "  \"tags\": null,\n"
+      + "  \"debug\": null,\n"
       + "  \"shared\": null\n"
       + "}";
 
     codec.readSpan(json.getBytes(UTF_8));
   }
 
-  @Test public void ignoreNull_localEndpoint() {
+  @Test public void ignoresNull_endpoint_topLevelFields() {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
-      + "  \"localEndpoint\": null\n"
+      + "  \"localEndpoint\": {\n"
+      + "    \"serviceName\": null,\n"
+      + "    \"ipv4\": \"127.0.0.1\",\n"
+      + "    \"ipv6\": null,\n"
+      + "    \"port\": null\n"
+      + "  }\n"
       + "}";
 
+    assertThat(codec.readSpan(json.getBytes(UTF_8)).localEndpoint())
+      .isEqualTo(Endpoint.create("", 127 << 24 | 1));
+  }
+
+  @Test public void niceErrorOnIncomplete_endpoint() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Empty endpoint at $.localEndpoint reading Span2 from json");
+
+    String json = "{\n"
+      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+      + "  \"name\": \"get-traces\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\",\n"
+      + "  \"localEndpoint\": {\n"
+      + "    \"serviceName\": null,\n"
+      + "    \"ipv4\": null,\n"
+      + "    \"ipv6\": null,\n"
+      + "    \"port\": null\n"
+      + "  }\n"
+      + "}";
     codec.readSpan(json.getBytes(UTF_8));
   }
 
-  @Test public void ignoreNull_remoteEndpoint() {
+  @Test public void niceErrorOnIncomplete_annotation() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Incomplete annotation at $.annotations[0]");
+
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
-      + "  \"remoteEndpoint\": null\n"
+      + "  \"annotations\": [\n"
+      + "    { \"timestamp\": 1472470996199000}\n"
+      + "  ]\n"
       + "}";
 
     codec.readSpan(json.getBytes(UTF_8));
@@ -290,7 +283,7 @@ public class Span2JsonCodecTest {
     codec.readSpan(json.getBytes(UTF_8));
   }
 
-  @Test public void missingValue() {
+  @Test public void niceErrorOnNull_tagValue() {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("No value at $.tags.foo");
 
@@ -301,6 +294,38 @@ public class Span2JsonCodecTest {
       + "  \"tags\": {\n"
       + "    \"foo\": NULL\n"
       + "  }\n"
+      + "}";
+
+    codec.readSpan(json.getBytes(UTF_8));
+  }
+
+  @Test public void niceErrorOnNull_annotationValue() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("$.annotations[0].value");
+
+    String json = "{\n"
+      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+      + "  \"name\": \"get-traces\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\",\n"
+      + "  \"annotations\": [\n"
+      + "    { \"timestamp\": 1472470996199000, \"value\": NULL}\n"
+      + "  ]\n"
+      + "}";
+
+    codec.readSpan(json.getBytes(UTF_8));
+  }
+
+  @Test public void niceErrorOnNull_annotationTimestamp() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("$.annotations[0].timestamp");
+
+    String json = "{\n"
+      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+      + "  \"name\": \"get-traces\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\",\n"
+      + "  \"annotations\": [\n"
+      + "    { \"timestamp\": NULL, \"value\": \"foo\"}\n"
+      + "  ]\n"
       + "}";
 
     codec.readSpan(json.getBytes(UTF_8));
@@ -320,42 +345,12 @@ public class Span2JsonCodecTest {
       .isEqualTo(Endpoint.create("", 127 << 24 | 1));
   }
 
-  @Test public void readSpan_localEndpoint_nullServiceName() {
-    String json = "{\n"
-      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-      + "  \"name\": \"get-traces\",\n"
-      + "  \"id\": \"6b221d5bc9e6496c\",\n"
-      + "  \"localEndpoint\": {\n"
-      + "    \"serviceName\": null,\n"
-      + "    \"ipv4\": \"127.0.0.1\"\n"
-      + "  }\n"
-      + "}";
-
-    assertThat(codec.readSpan(json.getBytes(UTF_8)).localEndpoint())
-      .isEqualTo(Endpoint.create("", 127 << 24 | 1));
-  }
-
   @Test public void readSpan_remoteEndpoint_noServiceName() {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
       + "  \"remoteEndpoint\": {\n"
-      + "    \"ipv4\": \"127.0.0.1\"\n"
-      + "  }\n"
-      + "}";
-
-    assertThat(codec.readSpan(json.getBytes(UTF_8)).remoteEndpoint())
-      .isEqualTo(Endpoint.create("", 127 << 24 | 1));
-  }
-
-  @Test public void readSpan_remoteEndpoint_nullServiceName() {
-    String json = "{\n"
-      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-      + "  \"name\": \"get-traces\",\n"
-      + "  \"id\": \"6b221d5bc9e6496c\",\n"
-      + "  \"remoteEndpoint\": {\n"
-      + "    \"serviceName\": null,\n"
       + "    \"ipv4\": \"127.0.0.1\"\n"
       + "  }\n"
       + "}";
