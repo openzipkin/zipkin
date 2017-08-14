@@ -66,21 +66,29 @@ public final class Span2JsonCodec implements Span2Codec {
         String nextName = reader.nextName();
         if (nextName.equals("traceId")) {
           builder.traceId(reader.nextString());
-        } else if (nextName.equals("parentId") && reader.peek() != JsonToken.NULL) {
-          builder.parentId(reader.nextString());
+          continue;
         } else if (nextName.equals("id")) {
           builder.id(reader.nextString());
+          continue;
+        } else if (reader.peek() == JsonToken.NULL) {
+          reader.skipValue();
+          continue;
+        }
+
+        // read any optional fields
+        if (nextName.equals("parentId")) {
+          builder.parentId(reader.nextString());
         } else if (nextName.equals("kind")) {
           builder.kind(Span2.Kind.valueOf(reader.nextString()));
-        } else if (nextName.equals("name") && reader.peek() != JsonToken.NULL) {
+        } else if (nextName.equals("name")) {
           builder.name(reader.nextString());
-        } else if (nextName.equals("timestamp") && reader.peek() != JsonToken.NULL) {
+        } else if (nextName.equals("timestamp")) {
           builder.timestamp(reader.nextLong());
-        } else if (nextName.equals("duration") && reader.peek() != JsonToken.NULL) {
+        } else if (nextName.equals("duration")) {
           builder.duration(reader.nextLong());
-        } else if (nextName.equals("localEndpoint") && reader.peek() != JsonToken.NULL) {
+        } else if (nextName.equals("localEndpoint")) {
           builder.localEndpoint(ENDPOINT_READER.fromJson(reader));
-        } else if (nextName.equals("remoteEndpoint") && reader.peek() != JsonToken.NULL) {
+        } else if (nextName.equals("remoteEndpoint")) {
           builder.remoteEndpoint(ENDPOINT_READER.fromJson(reader));
         } else if (nextName.equals("annotations")) {
           reader.beginArray();
@@ -98,8 +106,11 @@ public final class Span2JsonCodec implements Span2Codec {
                 reader.skipValue();
               }
             }
+            if (timestamp == null || value == null) {
+              throw new MalformedJsonException("Incomplete annotation at " + reader.getPath());
+            }
             reader.endObject();
-            if (timestamp != null && value != null) builder.addAnnotation(timestamp, value);
+            builder.addAnnotation(timestamp, value);
           }
           reader.endArray();
         } else if (nextName.equals("tags")) {
@@ -112,9 +123,9 @@ public final class Span2JsonCodec implements Span2Codec {
             builder.putTag(key, reader.nextString());
           }
           reader.endObject();
-        } else if (nextName.equals("debug") && reader.peek() != JsonToken.NULL) {
+        } else if (nextName.equals("debug")) {
           if (reader.nextBoolean()) builder.debug(true);
-        } else if (nextName.equals("shared") && reader.peek() != JsonToken.NULL) {
+        } else if (nextName.equals("shared")) {
           if (reader.nextBoolean()) builder.shared(true);
         } else {
           reader.skipValue();
@@ -132,19 +143,28 @@ public final class Span2JsonCodec implements Span2Codec {
   static final JsonReaderAdapter<Endpoint> ENDPOINT_READER = reader -> {
     Endpoint.Builder result = Endpoint.builder().serviceName("");
     reader.beginObject();
+    boolean readField = false;
     while (reader.hasNext()) {
       String nextName = reader.nextName();
-      if (nextName.equals("serviceName") && reader.peek() != JsonToken.NULL) {
+      if (reader.peek() == JsonToken.NULL) {
+        reader.skipValue();
+        continue;
+      }
+      if (nextName.equals("serviceName")) {
         result.serviceName(reader.nextString());
+        readField = true;
       } else if (nextName.equals("ipv4") || nextName.equals("ipv6")) {
         result.parseIp(reader.nextString());
+        readField = true;
       } else if (nextName.equals("port")) {
         result.port(reader.nextInt());
+        readField = true;
       } else {
         reader.skipValue();
       }
     }
     reader.endObject();
+    if (!readField) throw new MalformedJsonException("Empty endpoint at " + reader.getPath());
     return result.build();
   };
 
