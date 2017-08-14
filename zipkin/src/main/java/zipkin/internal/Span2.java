@@ -171,7 +171,7 @@ public abstract class Span2 implements Serializable { // for Spark jobs
   /**
    * Tags a span with context, usually to support query or aggregation.
    *
-   * <p>example, a binary annotation key could be {@link TraceKeys#HTTP_PATH "http.path"}.
+   * <p>For example, a tag key could be {@link TraceKeys#HTTP_PATH "http.path"}.
    */
   public abstract Map<String, String> tags();
 
