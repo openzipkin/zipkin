@@ -84,9 +84,9 @@ public final class Dependencies {
   public int hashCode() {
     int h = 1;
     h *= 1000003;
-    h ^= (startTs >>> 32) ^ startTs;
+    h ^= (int) (h ^ ((startTs >>> 32) ^ startTs));
     h *= 1000003;
-    h ^= (endTs >>> 32) ^ endTs;
+    h ^= (int) (h ^ ((endTs >>> 32) ^ endTs));
     h *= 1000003;
     h ^= links.hashCode();
     return h;

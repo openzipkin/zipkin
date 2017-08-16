@@ -116,7 +116,7 @@ public final class Annotation implements Comparable<Annotation> {
   public int hashCode() {
     int h = 1;
     h *= 1000003;
-    h ^= (timestamp >>> 32) ^ timestamp;
+    h ^= (int) (h ^ ((timestamp >>> 32) ^ timestamp));
     h *= 1000003;
     h ^= value.hashCode();
     h *= 1000003;

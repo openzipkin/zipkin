@@ -203,7 +203,10 @@ public final class Endpoint {
      * @see Endpoint#ipv6
      */
     public Builder ipv6(@Nullable byte[] ipv6) {
-      if (ipv6 == null) return this;
+      if (ipv6 == null) {
+        this.ipv6 = null;
+        return this;
+      }
       checkArgument(ipv6.length == 16, "ipv6 addresses are 16 bytes: " + ipv6.length);
       for (int i = 0; i < 10; i++) { // Embedded IPv4 addresses start with unset 80 bits
         if (ipv6[i] != 0) {

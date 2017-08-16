@@ -51,6 +51,12 @@
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
       <version>${libthrift.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
@@ -73,6 +79,25 @@
 
   <build>
     <plugins>
+      <plugin>
+        <inherited>true</inherited>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <!-- Disable errorprone because JMH generated classes don't add a generated annotation -->
+              <compilerArgs>
+                <arg>-XepDisableAllChecks</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <!-- disable retrolambda as we allow language level 1.8 benchmark classes -->
       <plugin>
         <groupId>net.orfjackal.retrolambda</groupId>
