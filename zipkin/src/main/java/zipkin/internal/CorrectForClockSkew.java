@@ -179,8 +179,13 @@ public final class CorrectForClockSkew {
   }
 
   static boolean ipsMatch(Endpoint skew, Endpoint that) {
-    return (skew.ipv6 != null && Arrays.equals(skew.ipv6, that.ipv6))
-        || (skew.ipv4 != 0 && skew.ipv4 == that.ipv4);
+    if (skew.ipv6 != null && that.ipv6 != null) {
+      if (Arrays.equals(skew.ipv6, that.ipv6)) return true;
+    }
+    if (skew.ipv4 != 0 && that.ipv4 != 0 ) {
+      if (skew.ipv4 == that.ipv4) return true;
+    }
+    return false;
   }
 
   /** Use client/server annotations to determine if there's clock skew. */

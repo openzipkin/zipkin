@@ -13,6 +13,8 @@
  */
 package zipkin;
 
+import java.net.Inet6Address;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -41,9 +43,8 @@ public final class TestObjects {
   public static final Endpoint WEB_ENDPOINT = Endpoint.builder()
       .serviceName("web")
       .ipv4(124 << 24 | 13 << 16 | 90 << 8 | 3)
-      // Cheat so we don't have to catch an exception here
-      .ipv6(sun.net.util.IPAddressUtil.textToNumericFormatV6("2001:db8::c001"))
-      .port((short) 80).build();
+      .ipv6(fromIPv6Literal("2001:db8::c001"))
+      .port(80).build();
   public static final Endpoint APP_ENDPOINT =
       Endpoint.builder().serviceName("app").ipv4(172 << 24 | 17 << 16 | 2).port(8080).build();
   public static final Endpoint DB_ENDPOINT =
@@ -102,5 +103,13 @@ public final class TestObjects {
 
   public static Span span(long traceId) {
     return spanBuilder.traceId(traceId).id(traceId).build();
+  }
+
+  static byte[] fromIPv6Literal(String literal) {
+    try {
+      return Inet6Address.getByName(literal).getAddress();
+    } catch (UnknownHostException e) {
+      throw new AssertionError(e);
+    }
   }
 }

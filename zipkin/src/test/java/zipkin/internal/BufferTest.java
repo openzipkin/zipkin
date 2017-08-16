@@ -15,9 +15,10 @@ package zipkin.internal;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.Inet6Address;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import org.junit.Test;
-import sun.net.util.IPAddressUtil;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.internal.Buffer.asciiSizeInBytes;
@@ -61,7 +62,7 @@ public class BufferTest {
   }
 
   // Test borrowed from guava InetAddressesTest
-  @Test public void ipv6() {
+  @Test public void ipv6() throws UnknownHostException {
     assertThat(writeIpV6("1:2:3:4:5:6:7:8"))
         .isEqualTo("1:2:3:4:5:6:7:8");
     assertThat(writeIpV6("2001:0:0:4:0000:0:0:8"))
@@ -88,8 +89,8 @@ public class BufferTest {
         .isEqualTo("::102:304");
   }
 
-  static String writeIpV6(String address) {
-    byte[] ipv6 = IPAddressUtil.textToNumericFormatV6(address);
+  static String writeIpV6(String address) throws UnknownHostException {
+    byte[] ipv6 = Inet6Address.getByName(address).getAddress();
     byte[] buffered = new Buffer(Buffer.ipv6SizeInBytes(ipv6)).writeIpV6(ipv6).toByteArray();
     return new String(buffered, UTF_8);
   }

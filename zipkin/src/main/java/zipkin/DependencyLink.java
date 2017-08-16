@@ -123,9 +123,9 @@ public final class DependencyLink implements Serializable { // for Spark jobs
     h *= 1000003;
     h ^= child.hashCode();
     h *= 1000003;
-    h ^= (callCount >>> 32) ^ callCount;
+    h ^= (int) (h ^ ((callCount >>> 32) ^ callCount));
     h *= 1000003;
-    h ^= (errorCount >>> 32) ^ errorCount;
+    h ^= (int) (h ^ ((errorCount >>> 32) ^ errorCount));
     return h;
   }
 

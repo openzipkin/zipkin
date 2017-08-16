@@ -10,7 +10,11 @@
     "lint": "node node_modules/eslint/bin/eslint js test",
     "build": "node node_modules/webpack/bin/webpack.js --bail --optimize-minimize --optimize-occurrence-order --optimize-dedupe"
   },
-  "author": "",
+  "author": "https://gitter.im/openzipkin/zipkin",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/username/repository.git"
+  },
   "license": "Apache-2.0",
   "dependencies": {
     "bootstrap-datepicker": "^1.6.0",

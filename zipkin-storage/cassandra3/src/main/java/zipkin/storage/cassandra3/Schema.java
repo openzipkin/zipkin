@@ -159,9 +159,9 @@ final class Schema {
     public int hashCode() {
       int h = 1;
       h *= 1000003;
-      h ^= (high >>> 32) ^ high;
+      h ^= (int) (h ^ ((high >>> 32) ^ high));
       h *= 1000003;
-      h ^= (low >>> 32) ^ low;
+      h ^= (int) (h ^ ((low >>> 32) ^ low));
       return h;
     }
 

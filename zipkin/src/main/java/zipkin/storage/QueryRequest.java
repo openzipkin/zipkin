@@ -349,9 +349,9 @@ public final class QueryRequest {
     h *= 1000003;
     h ^= (maxDuration == null) ? 0 : maxDuration.hashCode();
     h *= 1000003;
-    h ^= (endTs >>> 32) ^ endTs;
+    h ^= (int) (h ^ ((endTs >>> 32) ^ endTs));
     h *= 1000003;
-    h ^= (lookback >>> 32) ^ lookback;
+    h ^= (int) (h ^ ((lookback >>> 32) ^ lookback));
     h *= 1000003;
     h ^= limit;
     return h;

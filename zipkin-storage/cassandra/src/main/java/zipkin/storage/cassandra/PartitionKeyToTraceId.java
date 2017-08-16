@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -49,7 +49,7 @@ final class PartitionKeyToTraceId {
     h *= 1000003;
     h ^= partitionKey.hashCode();
     h *= 1000003;
-    h ^= (traceId >>> 32) ^ traceId;
+    h ^= (int) (h ^ ((traceId >>> 32) ^ traceId));
     return h;
   }
 }

@@ -61,18 +61,9 @@ public class CorrectForClockSkewTest {
   static final long networkLatency = 10L;
   static final long now = System.currentTimeMillis();
 
-  Endpoint ipv6 = Endpoint.builder()
-      .serviceName("web")
-      // Cheat so we don't have to catch an exception here
-      .ipv6(sun.net.util.IPAddressUtil.textToNumericFormatV6("2001:db8::c001"))
-      .build();
-
-  Endpoint ipv4 = Endpoint.builder()
-      .serviceName("web")
-      .ipv4(124 << 24 | 13 << 16 | 90 << 8 | 2)
-      .build();
-
-  Endpoint both = ipv4.toBuilder().ipv6(ipv6.ipv6).build();
+  Endpoint both = TestObjects.WEB_ENDPOINT;
+  Endpoint ipv6 = TestObjects.WEB_ENDPOINT.toBuilder().ipv4(0).build();
+  Endpoint ipv4 = TestObjects.WEB_ENDPOINT.toBuilder().ipv6(null).build();
 
   @Test
   public void ipsMatch_falseWhenNoIp() {
@@ -174,7 +165,7 @@ public class CorrectForClockSkewTest {
   @Test
   public void ipsMatch_falseWhenIpv4Different() {
     Endpoint different = ipv4.toBuilder()
-        .ipv4(124 << 24 | 13 << 16 | 90 << 8 | 3).build();
+        .ipv4(1 << 24 | 2 << 16 | 3 << 8 | 4).build();
     assertFalse(ipsMatch(different, ipv4));
     assertFalse(ipsMatch(ipv4, different));
   }
@@ -182,7 +173,7 @@ public class CorrectForClockSkewTest {
   @Test
   public void ipsMatch_falseWhenIpv6Different() throws UnknownHostException {
     Endpoint different = ipv6.toBuilder()
-        .ipv6(Inet6Address.getByName("2001:db8::c002").getAddress()).build();
+        .ipv6(Inet6Address.getByName("2001:db8::c113").getAddress()).build();
     assertFalse(ipsMatch(different, ipv6));
     assertFalse(ipsMatch(ipv6, different));
   }

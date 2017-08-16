@@ -414,13 +414,13 @@ public final class Span implements Comparable<Span>, Serializable { // for Spark
   public int hashCode() {
     int h = 1;
     h *= 1000003;
-    h ^= (traceIdHigh >>> 32) ^ traceIdHigh;
+    h ^= (int) (h ^ ((traceIdHigh >>> 32) ^ traceIdHigh));
     h *= 1000003;
-    h ^= (traceId >>> 32) ^ traceId;
+    h ^= (int) (h ^ ((traceId >>> 32) ^ traceId));
     h *= 1000003;
     h ^= name.hashCode();
     h *= 1000003;
-    h ^= (id >>> 32) ^ id;
+    h ^= (int) (h ^ ((id >>> 32) ^ id));
     h *= 1000003;
     h ^= (parentId == null) ? 0 : parentId.hashCode();
     h *= 1000003;

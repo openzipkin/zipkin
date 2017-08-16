@@ -323,7 +323,7 @@
       <dependency>
         <groupId>com.google.auto.value</groupId>
         <artifactId>auto-value</artifactId>
-        <version>1.4.1</version>
+        <version>1.5</version>
       </dependency>
 
       <dependency>
@@ -483,6 +483,7 @@
               <configuration>
                 <target>${main.java.version}</target>
                 <fork>true</fork>
+                <quiet>true</quiet>
               </configuration>
             </execution>
           </executions>
