@@ -13,127 +13,130 @@
  */
 package zipkin.collector;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.junit.Before;
 import org.junit.Test;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.storage.Callback;
-import zipkin.storage.InMemoryStorage;
+import zipkin.storage.StorageComponent;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static zipkin.TestObjects.LOTS_OF_SPANS;
-import static zipkin.TestObjects.span;
 import static zipkin.storage.Callback.NOOP;
 
 public class CollectorTest {
-  List<String> messages = new ArrayList<>();
-
-  Collector collector = new Collector.Builder(new Logger("", null) {
-    @Override
-    public void log(Level level, String msg, Throwable thrown) {
-      assertThat(level).isEqualTo(Level.WARNING);
-      messages.add(msg);
-    }
-  }).storage(new InMemoryStorage()).build();
-
+  StorageComponent storage = mock(StorageComponent.class);
+  Collector collector;
   Span span1 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
   Span span2 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1]);
 
+  @Before public void setup() throws Exception {
+    collector = spy(Collector.builder(Collector.class)
+      .storage(storage).build());
+    when(collector.idString(span1)).thenReturn("1"); // to make expectations easier to read
+    doAnswer(invocation -> null).when(collector).warn(any(String.class), any(Throwable.class));
+  }
+
   @Test
   public void acceptSpansCallback_toStringIncludesSpanIds() {
+    when(collector.idString(span2)).thenReturn("2");
+
     assertThat(collector.acceptSpansCallback(asList(span1, span2)))
-      .hasToString("AcceptSpans([" + span1.idString() + ", " + span2.idString() + "])");
+      .hasToString("AcceptSpans([1, 2])");
   }
 
   @Test
   public void acceptSpansCallback_onErrorWithNullMessage() {
     Callback<Void> callback = collector.acceptSpansCallback(asList(span1));
-    callback.onError(new RuntimeException());
 
-    assertThat(messages)
-      .containsExactly("Cannot store spans [" + span1.idString() + "] due to RuntimeException()");
+    RuntimeException exception = new RuntimeException();
+    callback.onError(exception);
+
+    verify(collector).warn("Cannot store spans [1] due to RuntimeException()", exception);
   }
 
   @Test
   public void acceptSpansCallback_onErrorWithMessage() {
     Callback<Void> callback = collector.acceptSpansCallback(asList(span1));
-    callback.onError(new IllegalArgumentException("no beer"));
+    RuntimeException exception = new IllegalArgumentException("no beer");
+    callback.onError(exception);
 
-    assertThat(messages)
-      .containsExactly(
-        "Cannot store spans [" + span1.idString() + "] due to IllegalArgumentException(no beer)");
+    verify(collector)
+      .warn("Cannot store spans [1] due to IllegalArgumentException(no beer)", exception);
   }
 
   @Test
   public void errorAcceptingSpans_onErrorWithNullMessage() {
     String message =
-        collector.errorStoringSpans(asList(span1), new RuntimeException()).getMessage();
+      collector.errorStoringSpans(asList(span1), new RuntimeException()).getMessage();
 
-    assertThat(messages)
-        .containsExactly(message)
-        .containsExactly("Cannot store spans [" + span1.idString() + "] due to RuntimeException()");
+    assertThat(message)
+      .isEqualTo("Cannot store spans [1] due to RuntimeException()");
   }
 
   @Test
   public void errorAcceptingSpans_onErrorWithMessage() {
-    String message =
-        collector.errorStoringSpans(asList(span1), new IllegalArgumentException("no beer"))
-            .getMessage();
+    RuntimeException exception = new IllegalArgumentException("no beer");
+    String message = collector.errorStoringSpans(asList(span1), exception).getMessage();
 
-    assertThat(messages)
-        .containsExactly(message)
-      .containsExactly(
-        "Cannot store spans [" + span1.idString() + "] due to IllegalArgumentException(no beer)");
+    assertThat(message)
+      .isEqualTo("Cannot store spans [1] due to IllegalArgumentException(no beer)");
   }
 
   @Test
   public void errorDecoding_onErrorWithNullMessage() {
     String message = collector.errorReading(new RuntimeException()).getMessage();
 
-    assertThat(messages)
-        .containsExactly(message)
-        .containsExactly("Cannot decode spans due to RuntimeException()");
+    assertThat(message)
+      .isEqualTo("Cannot decode spans due to RuntimeException()");
   }
 
   @Test
   public void errorDecoding_onErrorWithMessage() {
-    String message =
-        collector.errorReading(new IllegalArgumentException("no beer")).getMessage();
+    RuntimeException exception = new IllegalArgumentException("no beer");
+    String message = collector.errorReading(exception).getMessage();
 
-    assertThat(messages)
-        .containsExactly(message)
-        .containsExactly("Cannot decode spans due to IllegalArgumentException(no beer)");
+    assertThat(message)
+      .isEqualTo("Cannot decode spans due to IllegalArgumentException(no beer)");
   }
 
   @Test
   public void errorDecoding_doesntWrapMalformedException() {
-    String message =
-        collector.errorReading(new IllegalArgumentException("Malformed reading spans")).getMessage();
+    RuntimeException exception = new IllegalArgumentException("Malformed reading spans");
 
-    assertThat(messages)
-        .containsExactly(message)
-        .containsExactly("Malformed reading spans");
+    String message = collector.errorReading(exception).getMessage();
+
+    assertThat(message)
+      .isEqualTo("Malformed reading spans");
   }
 
-  @Test
-  public void unsampledSpansArentStored() {
+  @Test public void unsampledSpansArentStored() {
+    when(storage.asyncSpanConsumer()).thenThrow(new AssertionError());
+
     collector = Collector.builder(Collector.class)
-        .sampler(CollectorSampler.create(0f))
-        .storage(new InMemoryStorage()).build();
+      .sampler(CollectorSampler.create(0.0f))
+      .storage(storage).build();
 
-    collector.accept(asList(span(Long.MIN_VALUE)), NOOP);
-
-    assertThat(collector.storage.spanStore().getServiceNames()).isEmpty();
+    collector.accept(asList(span1), NOOP);
   }
 
-  @Test
-  public void debugFlagWins() {
-    collector.accept(asList(span(Long.MIN_VALUE).toBuilder().debug(true).build()), NOOP);
+  @Test public void doesntCallDeprecatedSampleMethod() {
+    CollectorSampler sampler = mock(CollectorSampler.class);
+    when(sampler.isSampled(span1)).thenThrow(new AssertionError());
 
-    assertThat(collector.storage.spanStore().getServiceNames()).containsExactly("service");
+    collector = Collector.builder(Collector.class)
+      .sampler(sampler)
+      .storage(storage).build();
+
+    collector.accept(asList(span1), NOOP);
+
+    verify(sampler).isSampled(span1.traceId, span1.debug);
   }
 }

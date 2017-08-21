@@ -14,16 +14,16 @@
 package zipkin.collector;
 
 import java.util.List;
-import zipkin.storage.AsyncSpanConsumer;
-import zipkin.storage.Callback;
 import zipkin.Codec;
 import zipkin.Span;
+import zipkin.storage.AsyncSpanConsumer;
+import zipkin.storage.Callback;
 
 /**
  * Instrumented applications report spans over a transport such as Kafka. Zipkin collectors receive
- * these messages, {@link Codec#readSpans(byte[]) decoding them into spans}, {@link
- * CollectorSampler#isSampled(Span) apply sampling}, and {@link AsyncSpanConsumer#accept(List,
- * Callback) queue them for storage}.
+ * these messages, {@link Codec#readSpans(byte[]) decoding them into spans},
+ * {@link CollectorSampler# isSampled(long, Boolean) apply sampling}, and
+ * {@link AsyncSpanConsumer#accept(List, Callback) queues them for storage}.
  *
  * <p>Callbacks on this type are invoked by zipkin collectors to improve the visibility of the
  * system. A typical implementation will report metrics to a telemetry system for analysis and
@@ -48,7 +48,7 @@ import zipkin.Span;
  * messages sent from instrumentation.</li>
  * <li>Stored spans <= {@link #incrementSpans(int) Accepted spans} - {@link
  * #incrementSpansDropped(int) Dropped spans}. Alert when this drops below the
- * {@link CollectorSampler#isSampled(Span) collection-tier sample rate}.
+ * {@link CollectorSampler#isSampled(long, Boolean) collection-tier sample rate}.
  * </li>
  * </ul>
  * </pre>
