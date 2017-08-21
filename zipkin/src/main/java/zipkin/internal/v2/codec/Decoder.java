@@ -11,23 +11,29 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.internal;
+package zipkin.internal.v2.codec;
 
 import java.util.List;
+import zipkin.Span;
+import zipkin.internal.JsonCodec;
+import zipkin.internal.Span2;
 
-/** Utilities for working with {@link Span2} */
-public interface Span2Codec {
-  Span2Codec JSON = new Span2JsonCodec();
+/**
+ * @param <S> type of the span, usually {@link Span}
+ */
+public interface Decoder<S> {
+  Decoder<Span2> JSON = new Decoder<Span2>() {
+    @Override public Encoding encoding() {
+      return Encoding.JSON;
+    }
 
-  /** Serialize a span recorded from instrumentation into its binary form. */
-  byte[] writeSpan(Span2 span);
+    @Override public List<Span2> decodeList(byte[] span) {
+      return JsonCodec.readList(new Span2JsonAdapters.Span2Reader(), span);
+    }
+  };
 
-  /** Serialize a list of spans recorded from instrumentation into their binary form. */
-  byte[] writeSpans(List<Span2> spans);
-
-  /** throws {@linkplain IllegalArgumentException} if a span couldn't be decoded */
-  Span2 readSpan(byte[] bytes);
+  Encoding encoding();
 
   /** throws {@linkplain IllegalArgumentException} if the spans couldn't be decoded */
-  List<Span2> readSpans(byte[] bytes);
+  List<S> decodeList(byte[] span);
 }

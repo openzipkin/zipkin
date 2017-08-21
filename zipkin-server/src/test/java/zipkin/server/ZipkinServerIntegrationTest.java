@@ -13,7 +13,6 @@
  */
 package zipkin.server;
 
-import java.util.Collections;
 import okio.Buffer;
 import okio.GzipSink;
 import org.junit.Before;
@@ -33,8 +32,9 @@ import org.springframework.web.context.ConfigurableWebApplicationContext;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.internal.Span2Codec;
 import zipkin.internal.Span2Converter;
+import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.v2.codec.Encoder;
 import zipkin.storage.InMemoryStorage;
 
 import static java.lang.String.format;
@@ -85,11 +85,11 @@ public class ZipkinServerIntegrationTest {
   public void writeSpans_version2() throws Exception {
     Span span = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
 
-    byte[] bytes = Span2Codec.JSON.writeSpans(Collections.singletonList(
-      Span2Converter.fromSpan(span).get(0)
+    byte[] message = MessageEncoder.JSON_BYTES.encode(asList(
+      Encoder.JSON.encode(Span2Converter.fromSpan(span).get(0))
     ));
 
-    performAsync(post("/api/v2/spans").content(bytes))
+    performAsync(post("/api/v2/spans").content(message))
       .andExpect(status().isAccepted());
 
     // sleep as the the storage operation is async

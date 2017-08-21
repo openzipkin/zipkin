@@ -11,24 +11,26 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.internal;
+package zipkin.internal.v2.codec;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.TraceKeys;
+import zipkin.internal.Span2;
+import zipkin.internal.Util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.internal.Util.UTF_8;
 
-public class Span2JsonCodecTest {
-  Span2JsonCodec codec = new Span2JsonCodec();
-
+public class Span2JsonAdaptersTest {
   Endpoint frontend = Endpoint.create("frontend", 127 << 24 | 1);
   Endpoint backend = Endpoint.builder()
     .serviceName("backend")
@@ -55,34 +57,34 @@ public class Span2JsonCodecTest {
   @Rule public ExpectedException thrown = ExpectedException.none();
 
   @Test public void spanRoundTrip() throws IOException {
-    byte[] bytes = codec.writeSpan(span);
-    assertThat(codec.readSpan(bytes))
-      .isEqualTo(span);
+    assertThat(Decoder.JSON.decodeList(encodeList(span)))
+      .containsOnly(span);
   }
 
   @Test public void sizeInBytes() throws IOException {
-    assertThat(Span2JsonCodec.SPAN_WRITER.sizeInBytes(span))
-      .isEqualTo(codec.writeSpan(span).length);
+    assertThat(Span2JsonAdapters.SPAN_WRITER.sizeInBytes(span))
+      .isEqualTo(Encoder.JSON.encode(span).length);
   }
 
   @Test public void spanRoundTrip_64bitTraceId() throws IOException {
     span = span.toBuilder().traceIdHigh(0L).build();
-    byte[] bytes = codec.writeSpan(span);
-    assertThat(codec.readSpan(bytes))
-      .isEqualTo(span);
+
+    assertThat(Decoder.JSON.decodeList(encodeList(span)))
+      .containsOnly(span);
   }
 
   @Test public void spanRoundTrip_shared() throws IOException {
     span = span.toBuilder().shared(true).build();
-    byte[] bytes = codec.writeSpan(span);
-    assertThat(codec.readSpan(bytes))
-      .isEqualTo(span);
+
+    assertThat(Decoder.JSON.decodeList(encodeList(span)))
+      .containsOnly(span);
   }
 
   @Test public void sizeInBytes_64bitTraceId() throws IOException {
     span = span.toBuilder().traceIdHigh(0L).build();
-    assertThat(Span2JsonCodec.SPAN_WRITER.sizeInBytes(span))
-      .isEqualTo(codec.writeSpan(span).length);
+
+    assertThat(Span2JsonAdapters.SPAN_WRITER.sizeInBytes(span))
+      .isEqualTo(Encoder.JSON.encode(span).length);
   }
 
   /**
@@ -101,9 +103,8 @@ public class Span2JsonCodecTest {
       .putTag("\"foo", "Database error: ORA-00942:\u2028 and \u2029 table or view does not exist\n")
       .build();
 
-    byte[] bytes = codec.writeSpan(worstSpanInTheWorld);
-    assertThat(codec.readSpan(bytes))
-      .isEqualTo(worstSpanInTheWorld);
+    assertThat(Decoder.JSON.decodeList(encodeList(worstSpanInTheWorld)))
+      .containsOnly(worstSpanInTheWorld);
   }
 
   @Test public void niceErrorOnUppercase_traceId() {
@@ -111,34 +112,20 @@ public class Span2JsonCodecTest {
     thrown.expectMessage(
       "48485A3953BB6124 should be a 1 to 32 character lower-hex string with no prefix");
 
-    String json = "{\n"
+    String json = "[{\n"
       + "  \"traceId\": \"48485A3953BB6124\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\"\n"
-      + "}";
+      + "}]";
 
-    codec.readSpan(json.getBytes(UTF_8));
-  }
-
-  @Test public void niceErrorOnEmpty_inputSpan() throws IOException {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Empty input reading Span2");
-
-    codec.readSpan(new byte[0]);
+    Decoder.JSON.decodeList(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnEmpty_inputSpans() throws IOException {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Empty input reading List<Span2>");
 
-    codec.readSpans(new byte[0]);
-  }
-
-  @Test public void niceErrorOnMalformed_inputSpan() throws IOException {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Malformed reading Span2 from ");
-
-    codec.readSpan(new byte[] {'h', 'e', 'l', 'l', 'o'});
+    Decoder.JSON.decodeList(new byte[0]);
   }
 
   /**
@@ -148,14 +135,17 @@ public class Span2JsonCodecTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Malformed reading List<Span2> from ");
 
-    codec.readSpans(new byte[] {'h', 'e', 'l', 'l', 'o'});
+    Decoder.JSON.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
   }
 
   @Test public void spansRoundTrip() throws IOException {
     List<Span2> tenClientSpans = Collections.nCopies(10, span);
 
-    byte[] bytes = codec.writeSpans(tenClientSpans);
-    assertThat(codec.readSpans(bytes))
+    byte[] message = MessageEncoder.JSON_BYTES.encode(
+      tenClientSpans.stream().map(Encoder.JSON::encode).collect(Collectors.toList())
+    );
+
+    assertThat(Decoder.JSON.decodeList(message))
       .isEqualTo(tenClientSpans);
   }
 
@@ -166,29 +156,29 @@ public class Span2JsonCodecTest {
       .localEndpoint(frontend)
       .id(1).name("").build();
 
-    assertThat(new String(codec.writeSpan(with128BitTraceId), Util.UTF_8))
+    assertThat(new String(Encoder.JSON.encode(with128BitTraceId), Util.UTF_8))
       .startsWith("{\"traceId\":\"48485a3953bb61246b221d5bc9e6496c\"");
   }
 
   @Test public void readsTraceIdHighFromTraceIdField() {
-    byte[] with128BitTraceId = ("{\n"
+    byte[] with128BitTraceId = ("[{\n"
       + "  \"traceId\": \"48485a3953bb61246b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\"\n"
-      + "}").getBytes(UTF_8);
-    byte[] withLower64bitsTraceId = ("{\n"
+      + "}]").getBytes(UTF_8);
+    byte[] withLower64bitsTraceId = ("[{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\"\n"
-      + "}").getBytes(UTF_8);
+      + "}]").getBytes(UTF_8);
 
-    assertThat(codec.readSpan(with128BitTraceId))
-      .isEqualTo(codec.readSpan(withLower64bitsTraceId).toBuilder()
+    assertThat(Decoder.JSON.decodeList(with128BitTraceId).get(0))
+      .isEqualTo(Decoder.JSON.decodeList(withLower64bitsTraceId).get(0).toBuilder()
         .traceIdHigh(Util.lowerHexToUnsignedLong("48485a3953bb6124")).build());
   }
 
   @Test public void ignoresNull_topLevelFields() {
-    String json = "{\n"
+    String json = "[{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"parentId\": null,\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
@@ -201,13 +191,13 @@ public class Span2JsonCodecTest {
       + "  \"tags\": null,\n"
       + "  \"debug\": null,\n"
       + "  \"shared\": null\n"
-      + "}";
+      + "}]";
 
-    codec.readSpan(json.getBytes(UTF_8));
+    Decoder.JSON.decodeList(json.getBytes(UTF_8));
   }
 
   @Test public void ignoresNull_endpoint_topLevelFields() {
-    String json = "{\n"
+    String json = "[{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
@@ -217,17 +207,17 @@ public class Span2JsonCodecTest {
       + "    \"ipv6\": null,\n"
       + "    \"port\": null\n"
       + "  }\n"
-      + "}";
+      + "}]";
 
-    assertThat(codec.readSpan(json.getBytes(UTF_8)).localEndpoint())
+    assertThat(Decoder.JSON.decodeList(json.getBytes(UTF_8)).get(0).localEndpoint())
       .isEqualTo(Endpoint.create("", 127 << 24 | 1));
   }
 
   @Test public void niceErrorOnIncomplete_endpoint() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Empty endpoint at $.localEndpoint reading Span2 from json");
+    thrown.expectMessage("Empty endpoint at $[0].localEndpoint reading List<Span2> from json");
 
-    String json = "{\n"
+    String json = "[{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
@@ -237,140 +227,147 @@ public class Span2JsonCodecTest {
       + "    \"ipv6\": null,\n"
       + "    \"port\": null\n"
       + "  }\n"
-      + "}";
-    codec.readSpan(json.getBytes(UTF_8));
+      + "}]";
+    Decoder.JSON.decodeList(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnIncomplete_annotation() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Incomplete annotation at $.annotations[0]");
+    thrown.expectMessage("Incomplete annotation at $[0].annotations[0].timestamp");
 
-    String json = "{\n"
+    String json = "[{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
       + "  \"annotations\": [\n"
       + "    { \"timestamp\": 1472470996199000}\n"
       + "  ]\n"
-      + "}";
+      + "}]";
 
-    codec.readSpan(json.getBytes(UTF_8));
+    Decoder.JSON.decodeList(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnNull_traceId() {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Expected a string but was NULL");
 
-    String json = "{\n"
+    String json = "[{\n"
       + "  \"traceId\": null,\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\"\n"
-      + "}";
+      + "}]";
 
-    codec.readSpan(json.getBytes(UTF_8));
+    Decoder.JSON.decodeList(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnNull_id() {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Expected a string but was NULL");
 
-    String json = "{\n"
+    String json = "[{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": null\n"
-      + "}";
+      + "}]";
 
-    codec.readSpan(json.getBytes(UTF_8));
+    Decoder.JSON.decodeList(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnNull_tagValue() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("No value at $.tags.foo");
+    thrown.expectMessage("No value at $[0].tags.foo");
 
-    String json = "{\n"
+    String json = "[{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
       + "  \"tags\": {\n"
       + "    \"foo\": NULL\n"
       + "  }\n"
-      + "}";
+      + "}]";
 
-    codec.readSpan(json.getBytes(UTF_8));
+    Decoder.JSON.decodeList(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnNull_annotationValue() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("$.annotations[0].value");
+    thrown.expectMessage("$[0].annotations[0].value");
 
-    String json = "{\n"
+    String json = "[{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
       + "  \"annotations\": [\n"
       + "    { \"timestamp\": 1472470996199000, \"value\": NULL}\n"
       + "  ]\n"
-      + "}";
+      + "}]";
 
-    codec.readSpan(json.getBytes(UTF_8));
+    Decoder.JSON.decodeList(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnNull_annotationTimestamp() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("$.annotations[0].timestamp");
+    thrown.expectMessage("$[0].annotations[0].timestamp");
 
-    String json = "{\n"
+    String json = "[{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
       + "  \"annotations\": [\n"
       + "    { \"timestamp\": NULL, \"value\": \"foo\"}\n"
       + "  ]\n"
-      + "}";
+      + "}]";
 
-    codec.readSpan(json.getBytes(UTF_8));
+    Decoder.JSON.decodeList(json.getBytes(UTF_8));
   }
 
   @Test public void readSpan_localEndpoint_noServiceName() {
-    String json = "{\n"
+    String json = "[{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
       + "  \"localEndpoint\": {\n"
       + "    \"ipv4\": \"127.0.0.1\"\n"
       + "  }\n"
-      + "}";
+      + "}]";
 
-    assertThat(codec.readSpan(json.getBytes(UTF_8)).localEndpoint())
+    assertThat(Decoder.JSON.decodeList(json.getBytes(UTF_8)).get(0).localEndpoint())
       .isEqualTo(Endpoint.create("", 127 << 24 | 1));
   }
 
   @Test public void readSpan_remoteEndpoint_noServiceName() {
-    String json = "{\n"
+    String json = "[{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
       + "  \"remoteEndpoint\": {\n"
       + "    \"ipv4\": \"127.0.0.1\"\n"
       + "  }\n"
-      + "}";
+      + "}]";
 
-    assertThat(codec.readSpan(json.getBytes(UTF_8)).remoteEndpoint())
+    assertThat(Decoder.JSON.decodeList(json.getBytes(UTF_8)).get(0).remoteEndpoint())
       .isEqualTo(Endpoint.create("", 127 << 24 | 1));
   }
 
   @Test public void spanRoundTrip_noRemoteServiceName() throws IOException {
     span = span.toBuilder().remoteEndpoint(backend.toBuilder().serviceName("").build()).build();
-    byte[] bytes = codec.writeSpan(span);
-    assertThat(codec.readSpan(bytes))
-      .isEqualTo(span);
+
+    assertThat(Decoder.JSON.decodeList(encodeList(span)))
+      .containsOnly(span);
   }
 
   @Test public void doesntWriteEmptyServiceName() throws IOException {
-    String expected = "{\"ipv4\":\"127.0.0.1\"}";
-    Buffer b = new Buffer(expected.length());
-    Span2JsonCodec.ENDPOINT_WRITER.write(Endpoint.create("", 127 << 24 | 1), b);
-    assertThat(new String(b.toByteArray(), UTF_8))
-      .isEqualTo(expected);
+    span = span.toBuilder()
+      .localEndpoint(frontend.toBuilder().serviceName("").build())
+      .remoteEndpoint(null).build();
+
+    assertThat(new String(Encoder.JSON.encode(span), UTF_8))
+      .contains("{\"ipv4\":\"127.0.0.1\"}");
+  }
+
+  static byte[] encodeList(Span2 ... spans) {
+    return MessageEncoder.JSON_BYTES.encode(
+      Arrays.stream(spans).map(Encoder.JSON::encode).collect(Collectors.toList())
+    );
   }
 }

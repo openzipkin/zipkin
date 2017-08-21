@@ -29,9 +29,10 @@ import static zipkin.BinaryAnnotation.Type.BOOL;
 import static zipkin.Constants.CLIENT_ADDR;
 import static zipkin.Constants.LOCAL_COMPONENT;
 import static zipkin.Constants.SERVER_ADDR;
+import static zipkin.internal.Util.writeBase64Url;
 
 /**
- * This converts {@link zipkin.Span} instances to {@link zipkin.internal.Span2} and visa versa.
+ * This converts {@link zipkin.Span} instances to {@link Span2} and visa versa.
  */
 public final class Span2Converter {
 
@@ -209,9 +210,7 @@ public final class Span2Converter {
             currentSpan.putTag(b.key, new String(b.value, Util.UTF_8));
             break;
           case BYTES:
-            Buffer buffer = new Buffer(Buffer.base64UrlSizeInBytes(b.value));
-            String encoded = new String(buffer.writeBase64Url(b.value).toByteArray(), Util.UTF_8);
-            currentSpan.putTag(b.key, encoded);
+            currentSpan.putTag(b.key, writeBase64Url(b.value));
             break;
           case I16:
             currentSpan.putTag(b.key, Short.toString(ByteBuffer.wrap(b.value).getShort()));

@@ -1,4 +1,4 @@
-{
+[{
   "traceId": "86154a4ba6e91385",
   "parentId": "86154a4ba6e91385",
   "id": "4d1e00c0db9010db",
@@ -29,4 +29,4 @@
     "http.path": "/api",
     "clnt/finagle.version": "6.45.0"
   }
-}
+}]

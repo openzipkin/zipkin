@@ -194,7 +194,7 @@ public class BufferTest {
       stringBuffer.append("a");
     }
     String string = stringBuffer.toString();
-    byte[] buffered = new Buffer(Buffer.asciiSizeInBytes(string)).writeAscii(string).toByteArray();
+    byte[] buffered = new Buffer(string.length()).writeAscii(string).toByteArray();
     assertThat(new String(buffered, "US-ASCII")).isEqualTo(string);
   }
 }

@@ -27,13 +27,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import zipkin.Span;
 import zipkin.SpanDecoder;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.Nullable;
-import zipkin.internal.Span2JsonDecoder;
+import zipkin.internal.Span2JsonSpanDecoder;
 import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
 
@@ -48,7 +47,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 public class ZipkinHttpCollector {
   static final ResponseEntity<?> SUCCESS = ResponseEntity.accepted().build();
   static final String APPLICATION_THRIFT = "application/x-thrift";
-  static final SpanDecoder JSON2_DECODER = new Span2JsonDecoder();
+  static final SpanDecoder JSON2_DECODER = new Span2JsonSpanDecoder();
 
   final CollectorMetrics metrics;
   final Collector collector;

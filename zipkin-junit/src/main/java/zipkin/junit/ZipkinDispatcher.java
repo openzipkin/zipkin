@@ -28,7 +28,7 @@ import zipkin.Span;
 import zipkin.SpanDecoder;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
-import zipkin.internal.Span2JsonDecoder;
+import zipkin.internal.Span2JsonSpanDecoder;
 import zipkin.storage.Callback;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
@@ -37,7 +37,7 @@ import zipkin.storage.StorageComponent;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
 
 final class ZipkinDispatcher extends Dispatcher {
-  static final SpanDecoder JSON2_DECODER = new Span2JsonDecoder();
+  static final SpanDecoder JSON2_DECODER = new Span2JsonSpanDecoder();
 
   private final SpanStore store;
   private final Collector consumer;

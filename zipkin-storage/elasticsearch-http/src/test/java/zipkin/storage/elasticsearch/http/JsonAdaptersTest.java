@@ -25,9 +25,9 @@ import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.Span2;
-import zipkin.internal.Span2Codec;
 import zipkin.internal.Span2Converter;
 import zipkin.internal.Util;
+import zipkin.internal.v2.codec.Encoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -137,7 +137,7 @@ public class JsonAdaptersTest {
     Span span = ApplyTimestampAndDuration.apply(TestObjects.LOTS_OF_SPANS[0]);
     Span2 span2 = Span2Converter.fromSpan(span).get(0);
     Buffer bytes = new Buffer();
-    bytes.write(Span2Codec.JSON.writeSpan(span2));
+    bytes.write(Encoder.JSON.encode(span2));
     assertThat(SPAN_ADAPTER.fromJson(bytes))
       .isEqualTo(span);
   }
@@ -162,7 +162,7 @@ public class JsonAdaptersTest {
       .build();
 
     Buffer bytes = new Buffer();
-    bytes.write(Span2Codec.JSON.writeSpan(worstSpanInTheWorld));
+    bytes.write(Encoder.JSON.encode(worstSpanInTheWorld));
     assertThat(SPAN_ADAPTER.fromJson(bytes))
       .isEqualTo(Span2Converter.toSpan(worstSpanInTheWorld));
   }

@@ -16,26 +16,32 @@ package zipkin.internal;
 import org.junit.Test;
 import zipkin.Span;
 import zipkin.SpanDecoder;
+import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.v2.codec.Encoder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.TestObjects.LOTS_OF_SPANS;
 
-public class Span2JsonDecoderTest {
+public class Span2JsonSpanDecoderTest {
   Span span1 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
   Span span2 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1]);
   Span2 span2_1 = Span2Converter.fromSpan(span1).get(0);
   Span2 span2_2 = Span2Converter.fromSpan(span2).get(0);
 
-  SpanDecoder decoder = new Span2JsonDecoder();
+  SpanDecoder decoder = new Span2JsonSpanDecoder();
 
-  @Test public void readSpan() {
-    assertThat(decoder.readSpan(Span2Codec.JSON.writeSpan(span2_1)))
-      .isEqualTo(span1);
+  @Test(expected = UnsupportedOperationException.class) public void readSpan() {
+    decoder.readSpan(Encoder.JSON.encode(span2_1));
   }
 
   @Test public void readSpans() {
-    assertThat(decoder.readSpans(Span2Codec.JSON.writeSpans(asList(span2_1, span2_2))))
+    byte[] message = MessageEncoder.JSON_BYTES.encode(asList(
+      Encoder.JSON.encode(span2_1),
+      Encoder.JSON.encode(span2_2)
+    ));
+
+    assertThat(decoder.readSpans(message))
       .containsExactly(span1, span2);
   }
 }

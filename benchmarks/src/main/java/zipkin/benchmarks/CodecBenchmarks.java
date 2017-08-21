@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.apache.thrift.TDeserializer;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
@@ -42,7 +43,9 @@ import zipkin.Codec;
 import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.internal.Span2;
-import zipkin.internal.Span2Codec;
+import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.v2.codec.Decoder;
+import zipkin.internal.v2.codec.Encoder;
 
 /**
  * This compares the speed of the bundled java codec with the approach used in the scala
@@ -156,29 +159,19 @@ public class CodecBenchmarks {
     return serialize(clientSpanLibThrift);
   }
 
-  static final byte[] span2Json = read("/span2.json");
-  static final Span2 span2 = Span2Codec.JSON.readSpan(span2Json);
-  static final List<Span2> tenClientSpan2s = Collections.nCopies(10, span2);
-  static final byte[] tenClientSpan2sJson = Span2Codec.JSON.writeSpans(tenClientSpan2s);
-
-  @Benchmark
-  public Span2 readClientSpan_json_span2() {
-    return Span2Codec.JSON.readSpan(span2Json);
-  }
+  static final Span2 span2 = Decoder.JSON.decodeList(read("/span2.json")).get(0);
+  static final byte[] tenClientSpan2sJson = MessageEncoder.JSON_BYTES.encode(
+    Collections.nCopies(10, span2).stream().map(Encoder.JSON::encode).collect(Collectors.toList())
+  );
 
   @Benchmark
   public List<Span2> readTenClientSpans_json_span2() {
-    return Span2Codec.JSON.readSpans(tenClientSpan2sJson);
+    return Decoder.JSON.decodeList(tenClientSpan2sJson);
   }
 
   @Benchmark
   public byte[] writeClientSpan_json_span2() {
-    return Span2Codec.JSON.writeSpan(span2);
-  }
-
-  @Benchmark
-  public byte[] writeTenClientSpans_json_span2() {
-    return Span2Codec.JSON.writeSpans(tenClientSpan2s);
+    return Encoder.JSON.encode(span2);
   }
 
   static final byte[] rpcSpanJson = read("/span-rpc.json");
@@ -254,7 +247,7 @@ public class CodecBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
-        .include(".*" + CodecBenchmarks.class.getSimpleName())
+        .include("CodecBenchmarks.readTenClientSpans_json_span2")
         .build();
 
     new Runner(opt).run();

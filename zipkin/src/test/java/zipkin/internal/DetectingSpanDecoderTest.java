@@ -13,16 +13,20 @@
  */
 package zipkin.internal;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.Test;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.SpanDecoder;
+import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.v2.codec.Encoder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.TestObjects.LOTS_OF_SPANS;
 
-public class DetectingDecoderTest {
+public class DetectingSpanDecoderTest {
   Span span1 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
   Span span2 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1]);
   Span2 span2_1 = Span2Converter.fromSpan(span1).get(0);
@@ -35,9 +39,17 @@ public class DetectingDecoderTest {
       .isEqualTo(span1);
   }
 
+  @Test(expected = IllegalArgumentException.class) public void readSpan_json_list() {
+    decoder.readSpan(Codec.JSON.writeSpans(asList(span1, span2)));
+  }
+
   @Test public void readSpans_json() {
     assertThat(decoder.readSpans(Codec.JSON.writeSpans(asList(span1, span2))))
       .containsExactly(span1, span2);
+  }
+
+  @Test(expected = IllegalArgumentException.class) public void readSpans_json_not_list() {
+    decoder.readSpans(Codec.JSON.writeSpan(span1));
   }
 
   @Test public void readSpan_thrift() {
@@ -45,18 +57,34 @@ public class DetectingDecoderTest {
       .isEqualTo(span1);
   }
 
+  @Test(expected = IllegalArgumentException.class) public void readSpan_thrift_list() {
+    decoder.readSpan(Codec.THRIFT.writeSpans(asList(span1, span2)));
+  }
+
   @Test public void readSpans_thrift() {
     assertThat(decoder.readSpans(Codec.THRIFT.writeSpans(asList(span1, span2))))
       .containsExactly(span1, span2);
   }
 
-  @Test public void readSpan_json2() {
-    assertThat(decoder.readSpan(Span2Codec.JSON.writeSpan(span2_1)))
-      .isEqualTo(span1);
+  @Test(expected = IllegalArgumentException.class) public void readSpans_thrift_not_list() {
+    decoder.readSpans(Codec.THRIFT.writeSpan(span1));
+  }
+
+  /** Single-element reads were for legacy non-list encoding. Don't add new code that does this */
+  @Test(expected = UnsupportedOperationException.class) public void readSpan_json2() {
+    decoder.readSpan(Encoder.JSON.encode(span2_1));
+  }
+
+  @Test(expected = IllegalArgumentException.class) public void readSpans_json2_not_list() {
+    decoder.readSpans(Encoder.JSON.encode(span2_1));
   }
 
   @Test public void readSpans_json2() {
-    assertThat(decoder.readSpans(Span2Codec.JSON.writeSpans(asList(span2_1, span2_2))))
+    byte[] message = MessageEncoder.JSON_BYTES.encode(
+      Stream.of(span2_1, span2_2).map(Encoder.JSON::encode).collect(Collectors.toList())
+    );
+
+    assertThat(decoder.readSpans(message))
       .containsExactly(span1, span2);
   }
 
