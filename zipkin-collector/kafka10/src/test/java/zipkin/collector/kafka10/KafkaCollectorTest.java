@@ -38,13 +38,15 @@ import zipkin.Span;
 import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.collector.kafka10.KafkaCollector.Builder;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.internal.Span2Codec;
 import zipkin.internal.Span2Converter;
+import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.v2.codec.Encoder;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.SpanStore;
 import zipkin.storage.StorageComponent;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.TestObjects.LOTS_OF_SPANS;
 import static zipkin.TestObjects.TRACE;
@@ -199,12 +201,12 @@ public class KafkaCollectorTest {
       ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1])
     );
 
-    byte[] bytes = Span2Codec.JSON.writeSpans(Arrays.asList(
-      Span2Converter.fromSpan(spans.get(0)).get(0),
-      Span2Converter.fromSpan(spans.get(1)).get(0)
+    byte[] message = MessageEncoder.JSON_BYTES.encode(asList(
+      Encoder.JSON.encode(Span2Converter.fromSpan(spans.get(0)).get(0)),
+      Encoder.JSON.encode(Span2Converter.fromSpan(spans.get(1)).get(0))
     ));
 
-    produceSpans(bytes, builder.topic);
+    produceSpans(message, builder.topic);
 
     try (KafkaCollector collector = builder.build()) {
       collector.start();
@@ -212,7 +214,7 @@ public class KafkaCollectorTest {
     }
 
     assertThat(kafkaMetrics.messages()).isEqualTo(1);
-    assertThat(kafkaMetrics.bytes()).isEqualTo(bytes.length);
+    assertThat(kafkaMetrics.bytes()).isEqualTo(message.length);
     assertThat(kafkaMetrics.spans()).isEqualTo(spans.size());
   }
 

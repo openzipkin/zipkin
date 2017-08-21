@@ -33,7 +33,6 @@ import zipkin.Span;
 
 import static java.lang.Double.doubleToRawLongBits;
 import static zipkin.internal.Buffer.asciiSizeInBytes;
-import static zipkin.internal.Buffer.base64UrlSizeInBytes;
 import static zipkin.internal.Buffer.ipv6SizeInBytes;
 import static zipkin.internal.Buffer.jsonEscapedSizeInBytes;
 import static zipkin.internal.Buffer.utf8SizeInBytes;
@@ -41,6 +40,7 @@ import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.assertionError;
 import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
+import static zipkin.internal.Util.writeBase64Url;
 
 /**
  * This explicitly constructs instances of model classes via manual parsing for a number of
@@ -83,20 +83,20 @@ public final class JsonCodec implements Codec {
   static final Buffer.Writer<Endpoint> ENDPOINT_WRITER = new Buffer.Writer<Endpoint>() {
     @Override public int sizeInBytes(Endpoint value) {
       int sizeInBytes = 0;
-      sizeInBytes += asciiSizeInBytes("{\"serviceName\":\"");
+      sizeInBytes += "{\"serviceName\":\"".length();
       sizeInBytes += jsonEscapedSizeInBytes(value.serviceName) + 1; // for end quote
       if (value.ipv4 != 0) {
-        sizeInBytes += asciiSizeInBytes(",\"ipv4\":\"");
+        sizeInBytes += ",\"ipv4\":\"".length();
         sizeInBytes += asciiSizeInBytes(value.ipv4 >> 24 & 0xff) + 1; // for dot
         sizeInBytes += asciiSizeInBytes(value.ipv4 >> 16 & 0xff) + 1; // for dot
         sizeInBytes += asciiSizeInBytes(value.ipv4 >> 8 & 0xff) + 1; // for dot
         sizeInBytes += asciiSizeInBytes(value.ipv4 & 0xff) + 1; // for end quote
       }
       if (value.port != null && value.port != 0) {
-        sizeInBytes += asciiSizeInBytes(",\"port\":") + asciiSizeInBytes(value.port & 0xffff);
+        sizeInBytes += ",\"port\":".length() + asciiSizeInBytes(value.port & 0xffff);
       }
       if (value.ipv6 != null) {
-        sizeInBytes += asciiSizeInBytes(",\"ipv6\":\"") + ipv6SizeInBytes(value.ipv6) + 1;
+        sizeInBytes += ",\"ipv6\":\"".length() + ipv6SizeInBytes(value.ipv6) + 1;
       }
       return ++sizeInBytes;// end curly-brace
     }
@@ -143,8 +143,8 @@ public final class JsonCodec implements Codec {
   static final Buffer.Writer<Annotation> ANNOTATION_WRITER = new Buffer.Writer<Annotation>() {
     @Override public int sizeInBytes(Annotation value) {
       int sizeInBytes = 0;
-      sizeInBytes += asciiSizeInBytes("{\"timestamp\":") + asciiSizeInBytes(value.timestamp);
-      sizeInBytes += asciiSizeInBytes(",\"value\":\"") + jsonEscapedSizeInBytes(value.value) + 1;
+      sizeInBytes += "{\"timestamp\":".length() + asciiSizeInBytes(value.timestamp);
+      sizeInBytes += ",\"value\":\"".length() + jsonEscapedSizeInBytes(value.value) + 1;
       if (value.endpoint != null) {
         sizeInBytes += ENDPOINT_HEADER.length() + ENDPOINT_WRITER.sizeInBytes(value.endpoint);
       }
@@ -240,17 +240,17 @@ public final class JsonCodec implements Codec {
   static final Buffer.Writer<BinaryAnnotation> BINARY_ANNOTATION_WRITER = new Buffer.Writer<BinaryAnnotation>() {
     @Override public int sizeInBytes(BinaryAnnotation value) {
       int sizeInBytes = 0;
-      sizeInBytes += asciiSizeInBytes("{\"key\":\"") + jsonEscapedSizeInBytes(value.key);
-      sizeInBytes += asciiSizeInBytes("\",\"value\":");
+      sizeInBytes += "{\"key\":\"".length() + jsonEscapedSizeInBytes(value.key);
+      sizeInBytes += "\",\"value\":".length();
       switch (value.type) {
         case BOOL:
-          sizeInBytes += asciiSizeInBytes(value.value[0] == 1 ? "true" : "false");
+          sizeInBytes += value.value[0] == 1 ? 4 /* true */ : 5 /* false */;
           break;
         case STRING:
           sizeInBytes += jsonEscapedSizeInBytes(value.value) + 2; //for quotes
           break;
         case BYTES:
-          sizeInBytes += base64UrlSizeInBytes(value.value) +2; //for quotes
+          sizeInBytes += (/* base64 */(value.value.length + 2) / 3 * 4) + 2; //for quotes
           break;
         case I16:
           sizeInBytes += asciiSizeInBytes(ByteBuffer.wrap(value.value).getShort());
@@ -265,12 +265,12 @@ public final class JsonCodec implements Codec {
           break;
         case DOUBLE:
           double wrapped = Double.longBitsToDouble(ByteBuffer.wrap(value.value).getLong());
-          sizeInBytes += asciiSizeInBytes(Double.toString(wrapped));
+          sizeInBytes += Double.toString(wrapped).length();
           break;
         default:
       }
       if (value.type != BinaryAnnotation.Type.STRING && value.type != BinaryAnnotation.Type.BOOL) {
-        sizeInBytes += asciiSizeInBytes(",\"type\":\"") + utf8SizeInBytes(value.type.name()) + 1;
+        sizeInBytes += ",\"type\":\"".length() + utf8SizeInBytes(value.type.name()) + 1;
       }
       if (value.endpoint != null) {
         sizeInBytes += ENDPOINT_HEADER.length() + ENDPOINT_WRITER.sizeInBytes(value.endpoint);
@@ -289,7 +289,7 @@ public final class JsonCodec implements Codec {
           b.writeByte('"').writeJsonEscaped(value.value).writeByte('"');
           break;
         case BYTES:
-          b.writeByte('"').writeBase64Url(value.value).writeByte('"');
+          b.writeByte('"').writeAscii(writeBase64Url(value.value)).writeByte('"');
           break;
         case I16:
           b.writeAscii(ByteBuffer.wrap(value.value).getShort());
@@ -379,28 +379,28 @@ public final class JsonCodec implements Codec {
     @Override public int sizeInBytes(Span value) {
       int sizeInBytes = 0;
       if (value.traceIdHigh != 0) sizeInBytes += 16;
-      sizeInBytes += asciiSizeInBytes("{\"traceId\":\"") + 16; // fixed-width hex
-      sizeInBytes += asciiSizeInBytes("\",\"id\":\"") + 16;
-      sizeInBytes += asciiSizeInBytes("\",\"name\":\"") + jsonEscapedSizeInBytes(value.name) + 1;
+      sizeInBytes += "{\"traceId\":\"".length() + 16; // fixed-width hex
+      sizeInBytes += "\",\"id\":\"".length() + 16;
+      sizeInBytes += "\",\"name\":\"".length() + jsonEscapedSizeInBytes(value.name) + 1;
       if (value.parentId != null) {
-        sizeInBytes += asciiSizeInBytes(",\"parentId\":\"") + 16 + 1;
+        sizeInBytes += ",\"parentId\":\"".length() + 16 + 1;
       }
       if (value.timestamp != null) {
-        sizeInBytes += asciiSizeInBytes(",\"timestamp\":") + asciiSizeInBytes(value.timestamp);
+        sizeInBytes += ",\"timestamp\":".length() + asciiSizeInBytes(value.timestamp);
       }
       if (value.duration != null) {
-        sizeInBytes += asciiSizeInBytes(",\"duration\":") + asciiSizeInBytes(value.duration);
+        sizeInBytes += ",\"duration\":".length() + asciiSizeInBytes(value.duration);
       }
       if (!value.annotations.isEmpty()) {
-        sizeInBytes += asciiSizeInBytes(",\"annotations\":");
+        sizeInBytes += ",\"annotations\":".length();
         sizeInBytes += JsonCodec.sizeInBytes(ANNOTATION_WRITER, value.annotations);
       }
       if (!value.binaryAnnotations.isEmpty()) {
-        sizeInBytes += asciiSizeInBytes(",\"binaryAnnotations\":");
+        sizeInBytes += ",\"binaryAnnotations\":".length();
         sizeInBytes += JsonCodec.sizeInBytes(BINARY_ANNOTATION_WRITER, value.binaryAnnotations);
       }
       if (value.debug != null && value.debug) {
-        sizeInBytes += asciiSizeInBytes(",\"debug\":true");
+        sizeInBytes += ",\"debug\":true".length();
       }
       return ++sizeInBytes;// end curly-brace
     }
@@ -562,11 +562,11 @@ public final class JsonCodec implements Codec {
   static final Buffer.Writer<DependencyLink> DEPENDENCY_LINK_WRITER = new Buffer.Writer<DependencyLink>() {
     @Override public int sizeInBytes(DependencyLink value) {
       int sizeInBytes = 0;
-      sizeInBytes += asciiSizeInBytes("{\"parent\":\"") + jsonEscapedSizeInBytes(value.parent);
-      sizeInBytes += asciiSizeInBytes("\",\"child\":\"") + jsonEscapedSizeInBytes(value.child);
-      sizeInBytes += asciiSizeInBytes("\",\"callCount\":") + asciiSizeInBytes(value.callCount);
+      sizeInBytes += "{\"parent\":\"".length() + jsonEscapedSizeInBytes(value.parent);
+      sizeInBytes += "\",\"child\":\"".length() + jsonEscapedSizeInBytes(value.child);
+      sizeInBytes += "\",\"callCount\":".length() + asciiSizeInBytes(value.callCount);
       if (value.errorCount > 0) {
-        sizeInBytes += asciiSizeInBytes(",\"errorCount\":") + asciiSizeInBytes(value.errorCount);
+        sizeInBytes += ",\"errorCount\":".length() + asciiSizeInBytes(value.errorCount);
       }
       return ++sizeInBytes;// end curly-brace
     }
@@ -647,7 +647,7 @@ public final class JsonCodec implements Codec {
     }
   }
 
-  static <T> List<T> readList(JsonReaderAdapter<T> adapter, byte[] bytes) {
+  public static <T> List<T> readList(JsonReaderAdapter<T> adapter, byte[] bytes) {
     checkArgument(bytes.length > 0, "Empty input reading List<%s>", adapter);
     JsonReader reader = jsonReader(bytes);
     List<T> result;
@@ -667,7 +667,7 @@ public final class JsonCodec implements Codec {
   }
 
   /** Inability to encode is a programming bug. */
-  static <T> byte[] write(Buffer.Writer<T> writer, T value) {
+  public static <T> byte[] write(Buffer.Writer<T> writer, T value) {
     Buffer b = new Buffer(writer.sizeInBytes(value));
     try {
       writer.write(value, b);
@@ -722,7 +722,7 @@ public final class JsonCodec implements Codec {
     return result.toByteArray();
   }
 
-  static <T> void writeList(Buffer.Writer<T> writer, List<T> value, Buffer b) {
+  public static <T> void writeList(Buffer.Writer<T> writer, List<T> value, Buffer b) {
     b.writeByte('[');
     for (int i = 0, length = value.size(); i < length; ) {
       writer.write(value.get(i++), b);
@@ -738,7 +738,7 @@ public final class JsonCodec implements Codec {
     throw new IllegalArgumentException(message, e);
   }
 
-  interface JsonReaderAdapter<T> {
+  public interface JsonReaderAdapter<T> {
     T fromJson(JsonReader reader) throws IOException;
   }
 }

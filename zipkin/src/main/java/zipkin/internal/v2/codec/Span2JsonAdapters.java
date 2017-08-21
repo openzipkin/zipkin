@@ -11,48 +11,32 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.internal;
+package zipkin.internal.v2.codec;
 
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.MalformedJsonException;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import zipkin.Annotation;
 import zipkin.Endpoint;
+import zipkin.internal.Buffer;
+import zipkin.internal.JsonCodec;
 import zipkin.internal.JsonCodec.JsonReaderAdapter;
+import zipkin.internal.Span2;
 
 import static zipkin.internal.Buffer.asciiSizeInBytes;
 import static zipkin.internal.Buffer.ipv6SizeInBytes;
 import static zipkin.internal.Buffer.jsonEscapedSizeInBytes;
-import static zipkin.internal.JsonCodec.ANNOTATION_WRITER;
-import static zipkin.internal.JsonCodec.writeList;
 
 /**
  * Internal type supporting codec operations in {@link Span2}. Design rationale is the same as
  * {@link JsonCodec}.
  */
-public final class Span2JsonCodec implements Span2Codec {
+final class Span2JsonAdapters {
 
-  @Override public Span2 readSpan(byte[] bytes) {
-    return JsonCodec.read(new SimpleSpanReader(), bytes);
-  }
-
-  /** Serialize a span recorded from instrumentation into its binary form. */
-  @Override public byte[] writeSpan(Span2 span) {
-    return JsonCodec.write(SPAN_WRITER, span);
-  }
-
-  @Override public List<Span2> readSpans(byte[] bytes) {
-    return JsonCodec.readList(new SimpleSpanReader(), bytes);
-  }
-
-  @Override public byte[] writeSpans(List<Span2> value) {
-    return writeList(SPAN_WRITER, value);
-  }
-
-  static final class SimpleSpanReader implements JsonReaderAdapter<Span2> {
+  static final class Span2Reader implements JsonReaderAdapter<Span2> {
     Span2.Builder builder;
 
     @Override public Span2 fromJson(JsonReader reader) throws IOException {
@@ -172,12 +156,12 @@ public final class Span2JsonCodec implements Span2Codec {
     @Override public int sizeInBytes(Endpoint value) {
       int sizeInBytes = 1; // start curly-brace
       if (!value.serviceName.isEmpty()) {
-        sizeInBytes += asciiSizeInBytes("\"serviceName\":\"");
+        sizeInBytes += "\"serviceName\":\"".length();
         sizeInBytes += jsonEscapedSizeInBytes(value.serviceName) + 1; // for end quote
       }
       if (value.ipv4 != 0) {
         if (sizeInBytes != 1) sizeInBytes++;// comma
-        sizeInBytes += asciiSizeInBytes("\"ipv4\":\"");
+        sizeInBytes += "\"ipv4\":\"".length();
         sizeInBytes += asciiSizeInBytes(value.ipv4 >> 24 & 0xff) + 1; // for dot
         sizeInBytes += asciiSizeInBytes(value.ipv4 >> 16 & 0xff) + 1; // for dot
         sizeInBytes += asciiSizeInBytes(value.ipv4 >> 8 & 0xff) + 1; // for dot
@@ -185,11 +169,11 @@ public final class Span2JsonCodec implements Span2Codec {
       }
       if (value.ipv6 != null) {
         if (sizeInBytes != 1) sizeInBytes++;// comma
-        sizeInBytes += asciiSizeInBytes("\"ipv6\":\"") + ipv6SizeInBytes(value.ipv6) + 1;
+        sizeInBytes += "\"ipv6\":\"".length() + ipv6SizeInBytes(value.ipv6) + 1;
       }
       if (value.port != null && value.port != 0) {
         if (sizeInBytes != 1) sizeInBytes++;// comma
-        sizeInBytes += asciiSizeInBytes("\"port\":") + asciiSizeInBytes(value.port & 0xffff);
+        sizeInBytes += "\"port\":".length() + asciiSizeInBytes(value.port & 0xffff);
       }
       return ++sizeInBytes;// end curly-brace
     }
@@ -228,55 +212,60 @@ public final class Span2JsonCodec implements Span2Codec {
     @Override public int sizeInBytes(Span2 value) {
       int sizeInBytes = 0;
       if (value.traceIdHigh() != 0) sizeInBytes += 16;
-      sizeInBytes += asciiSizeInBytes("{\"traceId\":\"") + 16 + 1;
+      sizeInBytes += "{\"traceId\":\"".length() + 16 + 1;
       if (value.parentId() != null) {
-        sizeInBytes += asciiSizeInBytes(",\"parentId\":\"") + 16 + 1;
+        sizeInBytes += ",\"parentId\":\"".length() + 16 + 1;
       }
-      sizeInBytes += asciiSizeInBytes(",\"id\":\"") + 16 + 1;
+      sizeInBytes += ",\"id\":\"".length() + 16 + 1;
       if (value.kind() != null) {
-        sizeInBytes += asciiSizeInBytes(",\"kind\":\"");
-        sizeInBytes += asciiSizeInBytes(value.kind().toString()) + 1;
+        sizeInBytes += ",\"kind\":\"".length();
+        sizeInBytes += value.kind().toString().length() + 1;
       }
       if (value.name() != null) {
-        sizeInBytes += asciiSizeInBytes(",\"name\":\"");
+        sizeInBytes += ",\"name\":\"".length();
         sizeInBytes += jsonEscapedSizeInBytes(value.name()) + 1;
       }
       if (value.timestamp() != null) {
-        sizeInBytes += asciiSizeInBytes(",\"timestamp\":");
+        sizeInBytes += ",\"timestamp\":".length();
         sizeInBytes += asciiSizeInBytes(value.timestamp());
       }
       if (value.duration() != null) {
-        sizeInBytes += asciiSizeInBytes(",\"duration\":");
+        sizeInBytes += ",\"duration\":".length();
         sizeInBytes += asciiSizeInBytes(value.duration());
       }
       if (value.localEndpoint() != null) {
-        sizeInBytes += asciiSizeInBytes(",\"localEndpoint\":");
+        sizeInBytes += ",\"localEndpoint\":".length();
         sizeInBytes += ENDPOINT_WRITER.sizeInBytes(value.localEndpoint());
       }
       if (value.remoteEndpoint() != null) {
-        sizeInBytes += asciiSizeInBytes(",\"remoteEndpoint\":");
+        sizeInBytes += ",\"remoteEndpoint\":".length();
         sizeInBytes += ENDPOINT_WRITER.sizeInBytes(value.remoteEndpoint());
       }
       if (!value.annotations().isEmpty()) {
-        sizeInBytes += asciiSizeInBytes(",\"annotations\":");
-        sizeInBytes += JsonCodec.sizeInBytes(ANNOTATION_WRITER, value.annotations());
+        sizeInBytes += ",\"annotations\":".length();
+        int length = value.annotations().size();
+        sizeInBytes += 2; // brackets
+        if (length > 1) sizeInBytes += length - 1; // comma to join elements
+        for (int i = 0; i < length; i++) {
+          sizeInBytes += ANNOTATION_WRITER.sizeInBytes(value.annotations().get(i));
+        }
       }
       if (!value.tags().isEmpty()) {
-        sizeInBytes += asciiSizeInBytes(",\"tags\":");
+        sizeInBytes += ",\"tags\":".length();
         sizeInBytes += 2; // curly braces
         int tagCount = value.tags().size();
         if (tagCount > 1) sizeInBytes += tagCount - 1; // comma to join elements
         for (Map.Entry<String, String> entry : value.tags().entrySet()) {
           sizeInBytes += 5; // 4 quotes and a colon
-          sizeInBytes += Buffer.jsonEscapedSizeInBytes(entry.getKey());
-          sizeInBytes += Buffer.jsonEscapedSizeInBytes(entry.getValue());
+          sizeInBytes += jsonEscapedSizeInBytes(entry.getKey());
+          sizeInBytes += jsonEscapedSizeInBytes(entry.getValue());
         }
       }
       if (Boolean.TRUE.equals(value.debug())) {
-        sizeInBytes += asciiSizeInBytes(",\"debug\":true");
+        sizeInBytes += ",\"debug\":true".length();
       }
       if (Boolean.TRUE.equals(value.shared())) {
-        sizeInBytes += asciiSizeInBytes(",\"shared\":true");
+        sizeInBytes += ",\"shared\":true".length();
       }
       return ++sizeInBytes;// end curly-brace
     }
@@ -313,7 +302,7 @@ public final class Span2JsonCodec implements Span2Codec {
       }
       if (!value.annotations().isEmpty()) {
         b.writeAscii(",\"annotations\":");
-        writeList(ANNOTATION_WRITER, value.annotations(), b);
+        JsonCodec.writeList(ANNOTATION_WRITER, value.annotations(), b);
       }
       if (!value.tags().isEmpty()) {
         b.writeAscii(",\"tags\":{");
@@ -337,6 +326,20 @@ public final class Span2JsonCodec implements Span2Codec {
 
     @Override public String toString() {
       return "Span2";
+    }
+  };
+
+  static final Buffer.Writer<Annotation> ANNOTATION_WRITER = new Buffer.Writer<Annotation>() {
+    @Override public int sizeInBytes(Annotation value) {
+      int sizeInBytes = 0;
+      sizeInBytes += "{\"timestamp\":".length() + asciiSizeInBytes(value.timestamp);
+      sizeInBytes += ",\"value\":\"".length() + jsonEscapedSizeInBytes(value.value) + 1;
+      return ++sizeInBytes;// end curly-brace
+    }
+
+    @Override public void write(Annotation value, Buffer b) {
+      b.writeAscii("{\"timestamp\":").writeAscii(value.timestamp);
+      b.writeAscii(",\"value\":\"").writeJsonEscaped(value.value).writeAscii("\"}");
     }
   };
 }

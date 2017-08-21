@@ -29,8 +29,9 @@ import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.internal.CallbackCaptor;
 import zipkin.internal.Span2;
-import zipkin.internal.Span2Codec;
 import zipkin.internal.Span2Converter;
+import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.v2.codec.Decoder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -137,9 +138,12 @@ public class ElasticsearchHttpSpanConsumerTest {
       .timestamp(TODAY * 1000).build();
     Span2 span2 = Span2Converter.fromSpan(span).get(0);
 
-    byte[] document = prefixWithTimestampMillisAndQuery(span2, span.timestamp);
-    assertThat(Span2Codec.JSON.readSpan(document))
-      .isEqualTo(span2); // ignores timestamp_millis field
+    byte[] message = MessageEncoder.JSON_BYTES.encode(asList(
+      prefixWithTimestampMillisAndQuery(span2, span.timestamp)
+    ));
+
+    assertThat(Decoder.JSON.decodeList(message))
+      .containsOnly(span2); // ignores timestamp_millis field
   }
 
   @Test public void doesntWriteSpanId() throws Exception {

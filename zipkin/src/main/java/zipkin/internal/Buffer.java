@@ -13,8 +13,8 @@
  */
 package zipkin.internal;
 
-final class Buffer {
-  interface Writer<T> {
+public final class Buffer {
+  public interface Writer<T> {
     int sizeInBytes(T value);
 
     void write(T value, Buffer buffer);
@@ -27,7 +27,7 @@ final class Buffer {
     buf = new byte[size];
   }
 
-  Buffer writeByte(int v) {
+  public Buffer writeByte(int v) {
     buf[pos++] = (byte) v;
     return this;
   }
@@ -62,10 +62,6 @@ final class Buffer {
     buf[pos++] = (byte) ((v >>> 8L) & 0xff);
     buf[pos++] = (byte) (v & 0xff);
     return this;
-  }
-
-  static int asciiSizeInBytes(String string) {
-    return string.length();
   }
 
   static int utf8SizeInBytes(String string) {
@@ -108,7 +104,7 @@ final class Buffer {
     return this;
   }
 
-  Buffer writeAscii(String v) {
+  public Buffer writeAscii(String v) {
     int length = v.length();
     for (int i = 0; i < length; i++) {
       buf[pos++] = (byte) v.charAt(i);
@@ -177,7 +173,7 @@ final class Buffer {
     return needsJsonEscaping(v) ? jsonEscapedSizeInBytes(new String(v, Util.UTF_8)) : v.length;
   }
 
-  static int jsonEscapedSizeInBytes(String v) {
+  public static int jsonEscapedSizeInBytes(String v) {
     boolean ascii = true;
     int escapingOverhead = 0;
     for (int i = 0, length = v.length(); i < length; i++) {
@@ -191,7 +187,7 @@ final class Buffer {
         if (maybeReplacement != null) escapingOverhead += maybeReplacement.length() - 1;
       }
     }
-    if (ascii) return asciiSizeInBytes(v) + escapingOverhead;
+    if (ascii) return v.length() + escapingOverhead;
     return utf8SizeInBytes(v) + escapingOverhead;
   }
 
@@ -199,7 +195,7 @@ final class Buffer {
     return needsJsonEscaping(v) ? writeJsonEscaped(new String(v, Util.UTF_8)) : write(v);
   }
 
-  Buffer writeJsonEscaped(String v) {
+  public Buffer writeJsonEscaped(String v) {
     return writeUtf8(jsonEscape(v));
   }
 
@@ -247,7 +243,7 @@ final class Buffer {
     return this;
   }
 
-  Buffer writeLowerHex(long v) {
+  public Buffer writeLowerHex(long v) {
     writeHexByte((byte) ((v >>> 56L) & 0xff));
     writeHexByte((byte) ((v >>> 48L) & 0xff));
     writeHexByte((byte) ((v >>> 40L) & 0xff));
@@ -260,7 +256,7 @@ final class Buffer {
   }
 
   // the code to get the size of ipv6 is long and basically the same as encoding it.
-  static int ipv6SizeInBytes(byte[] ipv6) {
+  public static int ipv6SizeInBytes(byte[] ipv6) {
     int result = IPV6_SIZE.get().writeIpV6(ipv6).pos;
     IPV6_SIZE.get().pos = 0;
     return result;
@@ -272,7 +268,7 @@ final class Buffer {
     }
   };
 
-  Buffer writeIpV6(byte[] ipv6) {
+  public Buffer writeIpV6(byte[] ipv6) {
     // Compress the longest string of zeros
     int zeroCompressionIndex = -1;
     int zeroCompressionLength = -1;
@@ -338,7 +334,7 @@ final class Buffer {
    *
    * <p>Adapted from okio.Buffer
    */
-  static int asciiSizeInBytes(long v) {
+  public static int asciiSizeInBytes(long v) {
     if (v == 0) return 1;
     if (v == Long.MIN_VALUE) return 20;
 
@@ -369,7 +365,7 @@ final class Buffer {
     return negative ? width + 1 : width; // conditionally add room for negative sign
   }
 
-  Buffer writeAscii(long v) {
+  public Buffer writeAscii(long v) {
     if (v == 0) return writeByte('0');
     if (v == Long.MIN_VALUE) return writeAscii("-9223372036854775808");
 
@@ -396,47 +392,6 @@ final class Buffer {
   void writeHexByte(byte b) {
     buf[pos++] = HEX_DIGITS[(b >> 4) & 0xf];
     buf[pos++] = HEX_DIGITS[b & 0xf];
-  }
-
-  static final byte[] URL_MAP = new byte[] {
-      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-      'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-      'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4',
-      '5', '6', '7', '8', '9', '-', '_'
-  };
-
-  static int base64UrlSizeInBytes(byte[] in) {
-    return (in.length + 2) / 3 * 4;
-  }
-
-  /**
-   * Adapted from okio.Base64 as JRE 6 doesn't have a base64Url encoder
-   *
-   * <p>Original author: Alexander Y. Kleymenov
-   */
-  Buffer writeBase64Url(byte[] in) {
-    int end = in.length - in.length % 3;
-    for (int i = 0; i < end; i += 3) {
-      buf[pos++] = URL_MAP[(in[i] & 0xff) >> 2];
-      buf[pos++] = URL_MAP[((in[i] & 0x03) << 4) | ((in[i + 1] & 0xff) >> 4)];
-      buf[pos++] = URL_MAP[((in[i + 1] & 0x0f) << 2) | ((in[i + 2] & 0xff) >> 6)];
-      buf[pos++] = URL_MAP[(in[i + 2] & 0x3f)];
-    }
-    switch (in.length % 3) {
-      case 1:
-        buf[pos++] = URL_MAP[(in[end] & 0xff) >> 2];
-        buf[pos++] = URL_MAP[(in[end] & 0x03) << 4];
-        buf[pos++] = '=';
-        buf[pos++] = '=';
-        break;
-      case 2:
-        buf[pos++] = URL_MAP[(in[end] & 0xff) >> 2];
-        buf[pos++] = URL_MAP[((in[end] & 0x03) << 4) | ((in[end + 1] & 0xff) >> 4)];
-        buf[pos++] = URL_MAP[((in[end + 1] & 0x0f) << 2)];
-        buf[pos++] = '=';
-        break;
-    }
-    return this;
   }
 
   byte[] toByteArray() {

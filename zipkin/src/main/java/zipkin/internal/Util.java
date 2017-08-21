@@ -152,6 +152,45 @@ public final class Util {
     return new String(data);
   }
 
+  /**
+   * Adapted from okio.Base64 as JRE 6 doesn't have a base64Url encoder
+   *
+   * <p>Original author: Alexander Y. Kleymenov
+   */
+  static String writeBase64Url(byte[] in) {
+    char[] result = new char[(in.length + 2) / 3 * 4];
+    int end = in.length - in.length % 3;
+    int pos = 0;
+    for (int i = 0; i < end; i += 3) {
+      result[pos++] = URL_MAP[(in[i] & 0xff) >> 2];
+      result[pos++] = URL_MAP[((in[i] & 0x03) << 4) | ((in[i + 1] & 0xff) >> 4)];
+      result[pos++] = URL_MAP[((in[i + 1] & 0x0f) << 2) | ((in[i + 2] & 0xff) >> 6)];
+      result[pos++] = URL_MAP[(in[i + 2] & 0x3f)];
+    }
+    switch (in.length % 3) {
+      case 1:
+        result[pos++] = URL_MAP[(in[end] & 0xff) >> 2];
+        result[pos++] = URL_MAP[(in[end] & 0x03) << 4];
+        result[pos++] = '=';
+        result[pos] = '=';
+        break;
+      case 2:
+        result[pos++] = URL_MAP[(in[end] & 0xff) >> 2];
+        result[pos++] = URL_MAP[((in[end] & 0x03) << 4) | ((in[end + 1] & 0xff) >> 4)];
+        result[pos++] = URL_MAP[((in[end + 1] & 0x0f) << 2)];
+        result[pos] = '=';
+        break;
+    }
+    return new String(result);
+  }
+
+  static final char[] URL_MAP = new char[] {
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
+    'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
+    'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4',
+    '5', '6', '7', '8', '9', '-', '_'
+  };
+
   /** Inspired by {@code okio.Buffer.writeLong} */
   public static void writeHexLong(char[] data, int pos, long v) {
     writeHexByte(data, pos + 0,  (byte) ((v >>> 56L) & 0xff));

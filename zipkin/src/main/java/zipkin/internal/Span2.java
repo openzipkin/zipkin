@@ -14,9 +14,7 @@
 package zipkin.internal;
 
 import com.google.auto.value.AutoValue;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.io.StreamCorruptedException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -29,6 +27,7 @@ import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.TraceKeys;
+import zipkin.internal.v2.codec.Encoder;
 
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkNotNull;
@@ -198,6 +197,27 @@ public abstract class Span2 implements Serializable { // for Spark jobs
     }
     char[] result = new char[16];
     writeHexLong(result, 0, traceId());
+    return new String(result);
+  }
+
+  /** Returns {@code $traceId.$spanId<:$parentId or $spanId} */
+  public String idString() {
+    int resultLength = (3 * 16) + 3; // 3 ids and the constant delimiters
+    if (traceIdHigh() != 0) resultLength += 16;
+    char[] result = new char[resultLength];
+    int pos = 0;
+    if (traceIdHigh() != 0) {
+      writeHexLong(result, pos, traceIdHigh());
+      pos += 16;
+    }
+    writeHexLong(result, pos, traceId());
+    pos += 16;
+    result[pos++] = '.';
+    writeHexLong(result, pos, id());
+    pos += 16;
+    result[pos++] = '<';
+    result[pos++] = ':';
+    writeHexLong(result, pos, parentId() != null ? parentId() : id());
     return new String(result);
   }
 
@@ -433,32 +453,7 @@ public abstract class Span2 implements Serializable { // for Spark jobs
     }
   }
 
-  @Override
-  public String toString() {
-    return new String(Span2Codec.JSON.writeSpan(this), UTF_8);
-  }
-
-  // Since this is an immutable object, and we have json handy, defer to a serialization proxy.
-  final Object writeReplace() throws ObjectStreamException {
-    return new SerializedForm(Span2Codec.JSON.writeSpan(this));
-  }
-
-  static final class SerializedForm implements Serializable {
-    private static final long serialVersionUID = 0L;
-
-    private final byte[] bytes;
-
-    SerializedForm(byte[] bytes) {
-      this.bytes = bytes;
-    }
-
-    Object readResolve() throws ObjectStreamException {
-      try {
-        return Span2Codec.JSON.readSpan(bytes);
-      } catch (IllegalArgumentException e) {
-        e.printStackTrace();
-        throw new StreamCorruptedException(e.getMessage());
-      }
-    }
+  @Override public String toString() {
+    return new String(Encoder.JSON.encode(this), UTF_8);
   }
 }

@@ -26,8 +26,8 @@ import zipkin.Annotation;
 import zipkin.Span;
 import zipkin.internal.Nullable;
 import zipkin.internal.Span2;
-import zipkin.internal.Span2Codec;
 import zipkin.internal.Span2Converter;
+import zipkin.internal.v2.codec.Encoder;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
 
@@ -150,9 +150,9 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
       if (LOG.isLoggable(Level.FINE)) {
         LOG.log(Level.FINE, "Error indexing query for span: " + span, e);
       }
-      return Span2Codec.JSON.writeSpan(span);
+      return Encoder.JSON.encode(span);
     }
-    byte[] document = Span2Codec.JSON.writeSpan(span);
+    byte[] document = Encoder.JSON.encode(span);
     if (query.rangeEquals(0L, ByteString.of(new byte[] {'{', '}'}))) {
       return document;
     }

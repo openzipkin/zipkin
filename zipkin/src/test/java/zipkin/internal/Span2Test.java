@@ -16,7 +16,6 @@ package zipkin.internal;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import okio.Buffer;
-import okio.ByteString;
 import org.junit.Test;
 import zipkin.Annotation;
 
@@ -46,6 +45,34 @@ public class Span2Test {
 
     assertThat(with128BitId.traceIdString())
       .isEqualTo("463ac35c9f6413ad48485a3953bb6124");
+  }
+
+  @Test
+  public void idString_traceIdHigh() {
+    Span2 with128BitId = Span2.builder()
+      .traceId(Util.lowerHexToUnsignedLong("48485a3953bb6124"))
+      .traceIdHigh(Util.lowerHexToUnsignedLong("463ac35c9f6413ad"))
+      .id(1)
+      .name("foo").build();
+
+    assertThat(with128BitId.idString())
+      .isEqualTo("463ac35c9f6413ad48485a3953bb6124.0000000000000001<:0000000000000001");
+  }
+
+  @Test
+  public void idString_withParent() {
+    Span2 withParent = Span2.builder().name("foo").traceId(1).id(3).parentId(2L).build();
+
+    assertThat(withParent.idString())
+      .isEqualTo("0000000000000001.0000000000000003<:0000000000000002");
+  }
+
+  @Test
+  public void idString_noParent() {
+    Span2 noParent = Span2.builder().name("foo").traceId(1).id(1).build();
+
+    assertThat(noParent.idString())
+      .isEqualTo("0000000000000001.0000000000000001<:0000000000000001");
   }
 
   @Test public void spanNamesLowercase() {
@@ -119,19 +146,17 @@ public class Span2Test {
     );
   }
 
+  /** Test serializable as used in spark jobs. Careful to include all non-standard fields */
   @Test public void serialization() throws Exception {
     Buffer buffer = new Buffer();
-    new ObjectOutputStream(buffer.outputStream()).writeObject(base);
+
+    Span2 span = base.toBuilder()
+      .addAnnotation(1L, "foo")
+      .build();
+
+    new ObjectOutputStream(buffer.outputStream()).writeObject(span);
 
     assertThat(new ObjectInputStream(buffer.inputStream()).readObject())
-      .isEqualTo(base);
-  }
-
-  @Test public void serializationUsesJson() throws Exception {
-    Buffer buffer = new Buffer();
-    new ObjectOutputStream(buffer.outputStream()).writeObject(base);
-
-    assertThat(buffer.indexOf(ByteString.encodeUtf8(base.toString())))
-      .isPositive();
+      .isEqualTo(span);
   }
 }

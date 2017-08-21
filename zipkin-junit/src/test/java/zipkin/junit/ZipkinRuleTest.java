@@ -31,8 +31,9 @@ import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.internal.Span2Codec;
 import zipkin.internal.Span2Converter;
+import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.v2.codec.Encoder;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -68,15 +69,15 @@ public class ZipkinRuleTest {
       ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1])
     );
 
-    byte[] bytes = Span2Codec.JSON.writeSpans(Arrays.asList(
-      Span2Converter.fromSpan(spans.get(0)).get(0),
-      Span2Converter.fromSpan(spans.get(1)).get(0)
+    byte[] message = MessageEncoder.JSON_BYTES.encode(asList(
+      Encoder.JSON.encode(Span2Converter.fromSpan(spans.get(0)).get(0)),
+      Encoder.JSON.encode(Span2Converter.fromSpan(spans.get(1)).get(0))
     ));
 
     // write the span to the zipkin using http api v2
     Response response = client.newCall(new Request.Builder()
       .url(zipkin.httpUrl() + "/api/v2/spans")
-      .post(RequestBody.create(MediaType.parse("application/json"), bytes)).build()
+      .post(RequestBody.create(MediaType.parse("application/json"), message)).build()
     ).execute();
     assertThat(response.code()).isEqualTo(202);
 

@@ -13,6 +13,7 @@
  */
 package zipkin;
 
+import java.io.Serializable;
 import zipkin.internal.JsonCodec;
 import zipkin.internal.Nullable;
 
@@ -25,7 +26,8 @@ import static zipkin.internal.Util.equal;
  *
  * <p>Unlike log statements, annotations are often codes: Ex. {@link Constants#SERVER_RECV "sr"}.
  */
-public final class Annotation implements Comparable<Annotation> {
+public final class Annotation implements Comparable<Annotation>, Serializable { // for Spark jobs
+  private static final long serialVersionUID = 0L;
 
   public static Annotation create(long timestamp, String value, @Nullable Endpoint endpoint) {
     return new Annotation(timestamp, value, endpoint);

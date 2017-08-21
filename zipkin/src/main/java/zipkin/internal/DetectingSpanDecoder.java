@@ -29,30 +29,31 @@ import zipkin.SpanDecoder;
 public final class DetectingSpanDecoder implements SpanDecoder {
   /** zipkin v2 will have this tag, and others won't. */
   static final byte[] LOCAL_ENDPOINT_TAG = "\"localEndpoint\"".getBytes(Util.UTF_8);
-  static final SpanDecoder JSON2_DECODER = new Span2JsonDecoder();
+  static final SpanDecoder JSON2_DECODER = new Span2JsonSpanDecoder();
 
   @Override public Span readSpan(byte[] span) {
-    if (span[0] == '{') {
-      return detectJsonFormat(span).readSpan(span);
-    } else if (span[0] <= 16 /* assume TBinary */) {
-      return THRIFT_DECODER.readSpan(span);
-    } else {
-      throw new IllegalArgumentException("Could not detect the span format");
+    SpanDecoder decoder = detectJsonFormat(span);
+    if (span[0] == 12 /* List[ThriftSpan] */ || span[0] == '[') {
+      throw new IllegalArgumentException("Expected json or thrift object, not list encoding");
     }
+    return decoder.readSpan(span);
   }
 
   @Override public List<Span> readSpans(byte[] span) {
-    if (span[0] == '[') {
-      return detectJsonFormat(span).readSpans(span);
-    } else if (span[0] == 12 /* List[ThriftSpan]*/) {
-      return THRIFT_DECODER.readSpans(span);
-    } else {
-      throw new IllegalArgumentException("Could not detect the span format");
+    SpanDecoder decoder = detectJsonFormat(span);
+    if (span[0] != 12 /* List[ThriftSpan] */ && span[0] != '[') {
+      throw new IllegalArgumentException("Expected json or thrift list encoding");
     }
+    return decoder.readSpans(span);
   }
 
-  /* Searches for a substring matching zipkin v2 format. Otherwise, assumes it isn't. */
-  static SpanDecoder detectJsonFormat(byte[] bytes) {
+  /** @throws IllegalArgumentException if the input isn't a json or thrift list or object. */
+  public static SpanDecoder detectJsonFormat(byte[] bytes) {
+    if (bytes[0] <= 16 /* the first byte is the TType, in a range 0-16 */) {
+      return THRIFT_DECODER;
+    } else if (bytes[0] != '[' && bytes[0] != '{') {
+      throw new IllegalArgumentException("Could not detect the span format");
+    }
     bytes:
     for (int i = 0; i < bytes.length - LOCAL_ENDPOINT_TAG.length + 1; i++) {
       for (int j = 0; j < LOCAL_ENDPOINT_TAG.length; j++) {

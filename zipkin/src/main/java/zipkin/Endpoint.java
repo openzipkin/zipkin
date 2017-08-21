@@ -13,6 +13,7 @@
  */
 package zipkin;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -34,7 +35,8 @@ import static zipkin.internal.Util.checkNotNull;
  * exception allows zipkin to display network context of uninstrumented services, or clients such as
  * web browsers.
  */
-public final class Endpoint {
+public final class Endpoint implements Serializable { // for Spark jobs
+  private static final long serialVersionUID = 0L;
 
   /**
    * @deprecated as leads to null pointer exceptions on port. Use {@link #builder()} instead.
