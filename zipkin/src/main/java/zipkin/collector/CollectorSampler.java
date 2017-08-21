@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package zipkin.collector;
 
 import zipkin.Span;
+import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.checkArgument;
 
@@ -50,19 +51,29 @@ public abstract class CollectorSampler {
   protected abstract long boundary();
 
   /**
-   * Returns true if the span should be recorded to storage.
+   * Returns true if spans with this trace ID should be recorded to storage.
    *
    * <p>Zipkin v1 allows storage-layer sampling, which can help prevent spikes in traffic from
-   * overloading the system. {@link Span#debug Debug} spans are always stored.
+   * overloading the system. Debug spans are always stored.
+   *
+   * <p>This uses only the lower 64 bits of the trace ID as instrumentation still send mixed trace
+   * ID width.
+   *
+   * @param traceId the lower 64 bits of the span's trace ID
+   * @param debug when true, always passes sampling
    */
-  public boolean isSampled(Span span) {
-    if (span.debug != null && span.debug) {
-      return true;
-    }
+  public boolean isSampled(long traceId, @Nullable Boolean debug) {
+    if (Boolean.TRUE.equals(debug)) return true;
+
     // The absolute value of Long.MIN_VALUE is larger than a long, so Math.abs returns identity.
     // This converts to MAX_VALUE to avoid always dropping when traceId == Long.MIN_VALUE
-    long t = span.traceId == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(span.traceId);
+    long t = traceId == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(traceId);
     return t <= boundary();
+  }
+
+  /** @deprecated use {@link #isSampled(long, Boolean)} as that works with multiple span formats */
+  @Deprecated public boolean isSampled(Span span) {
+    return isSampled(span.traceId, span.debug);
   }
 
   @Override

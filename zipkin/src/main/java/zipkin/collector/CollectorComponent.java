@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,6 @@ package zipkin.collector;
 
 import java.util.List;
 import zipkin.Component;
-import zipkin.Span;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
@@ -49,8 +48,8 @@ public interface CollectorComponent extends Component {
     Builder metrics(CollectorMetrics metrics);
 
     /**
-     * {@link CollectorSampler#isSampled(Span) samples spans} to reduce load on the storage system.
-     * Defaults to always sample.
+     * {@link CollectorSampler#isSampled(long, Boolean) samples spans} to reduce load on the storage
+     * system. Defaults to always sample.
      */
     Builder sampler(CollectorSampler sampler);
 

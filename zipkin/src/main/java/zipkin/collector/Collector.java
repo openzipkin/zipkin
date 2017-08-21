@@ -34,7 +34,7 @@ import static zipkin.internal.Util.checkNotNull;
  * before storage is attempted. This ensures that calling threads are disconnected from storage
  * threads.
  */
-public final class Collector {
+public class Collector { // not final for mocking
 
   /** Needed to scope this to the correct logging category */
   public static Builder builder(Class<?> loggingClass) {
@@ -44,8 +44,8 @@ public final class Collector {
   public static final class Builder {
     final Logger logger;
     StorageComponent storage = null;
-    CollectorSampler sampler = CollectorSampler.ALWAYS_SAMPLE;
-    CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
+    CollectorSampler sampler = null;
+    CollectorMetrics metrics = null;
 
     Builder(Logger logger) {
       this.logger = logger;
@@ -140,7 +140,7 @@ public final class Collector {
   List<Span> sample(List<Span> input) {
     List<Span> sampled = new ArrayList<>(input.size());
     for (Span s : input) {
-      if (sampler.isSampled(s)) sampled.add(s);
+      if (sampler.isSampled(s.traceId, s.debug)) sampled.add(s);
     }
     int dropped = input.size() - sampled.size();
     if (dropped > 0) metrics.incrementSpansDropped(dropped);
@@ -185,24 +185,31 @@ public final class Collector {
   }
 
   RuntimeException doError(String message, Throwable e) {
-    if (e instanceof RuntimeException && e.getMessage() != null && e.getMessage()
-        .startsWith("Malformed")) {
-      logger.log(WARNING, e.getMessage(), e);
+    String exceptionMessage = e.getMessage() != null ? e.getMessage() : "";
+    if (e instanceof RuntimeException && exceptionMessage.startsWith("Malformed")) {
+      warn(exceptionMessage, e);
       return (RuntimeException) e;
     } else {
-      message = format("%s due to %s(%s)", message, e.getClass().getSimpleName(),
-          e.getMessage() == null ? "" : e.getMessage());
-      logger.log(WARNING, message, e);
+      message = format("%s due to %s(%s)", message, e.getClass().getSimpleName(), exceptionMessage);
+      warn(message, e);
       return new RuntimeException(message, e);
     }
   }
 
-  static StringBuilder appendSpanIds(List<Span> spans, StringBuilder message) {
+  void warn(String message, Throwable e) {
+    logger.log(WARNING, message, e);
+  }
+
+  StringBuilder appendSpanIds(List<Span> spans, StringBuilder message) {
     message.append("[");
     for (Iterator<Span> iterator = spans.iterator(); iterator.hasNext(); ) {
-      message.append(iterator.next().idString());
+      message.append(idString(iterator.next()));
       if (iterator.hasNext()) message.append(", ");
     }
     return message.append("]");
+  }
+
+  String idString(Span span) {
+    return span.idString();
   }
 }

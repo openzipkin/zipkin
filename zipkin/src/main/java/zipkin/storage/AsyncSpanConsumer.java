@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,10 +28,6 @@ import zipkin.collector.CollectorSampler;
 // @FunctionalInterface
 public interface AsyncSpanConsumer {
 
-  /**
-   * Stores a list of spans {@link Codec#readSpans(byte[]) read} from a transport.
-   *
-   * @param spans may be subject to a {@link CollectorSampler#isSampled(Span) sampling policy}.
-   */
+  /** Stores a list of spans {@link Codec#readSpans(byte[]) read} from a transport. */
   void accept(List<Span> spans, Callback<Void> callback);
 }
