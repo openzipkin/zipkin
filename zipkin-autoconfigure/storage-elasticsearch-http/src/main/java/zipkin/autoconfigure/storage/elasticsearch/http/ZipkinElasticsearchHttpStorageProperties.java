@@ -50,6 +50,8 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
   private String password;
   /** When set, controls the volume of HTTP logging of the Elasticsearch Api. Options are BASIC, HEADERS, BODY */
   private HttpLoggingInterceptor.Level httpLogging;
+  /** When true, Redundantly queries indexes made with pre v1.31 collectors. Defaults to true. */
+  private boolean legacyReadsEnabled = true;
 
   public String getPipeline() {
     return pipeline;
@@ -151,6 +153,14 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
     this.httpLogging = httpLogging;
   }
 
+  public boolean isLegacyReadsEnabled() {
+    return legacyReadsEnabled;
+  }
+
+  public void setLegacyReadsEnabled(boolean legacyReadsEnabled) {
+    this.legacyReadsEnabled = legacyReadsEnabled;
+  }
+
   public ElasticsearchHttpStorage.Builder toBuilder(OkHttpClient client) {
     ElasticsearchHttpStorage.Builder builder = ElasticsearchHttpStorage.builder(client);
     if (hosts != null) builder.hosts(hosts);
@@ -160,6 +170,7 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
         .pipeline(pipeline)
         .maxRequests(maxRequests)
         .indexShards(indexShards)
-        .indexReplicas(indexReplicas);
+        .indexReplicas(indexReplicas)
+        .legacyReadsEnabled(legacyReadsEnabled);
   }
 }

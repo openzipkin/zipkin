@@ -196,6 +196,8 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                                        Use when X-Pack security (formerly Shield) is in place.
     * `ES_HTTP_LOGGING`: When set, controls the volume of HTTP logging of the Elasticsearch Api.
                          Options are BASIC, HEADERS, BODY
+    * `ES_LEGACY_READS_ENABLED`: When true, Redundantly queries indexes made with pre v1.31 collectors.
+                                 Defaults to true.
 Example usage:
 
 To connect normally:

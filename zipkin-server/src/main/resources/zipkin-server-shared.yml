@@ -102,6 +102,7 @@ zipkin:
       username: ${ES_USERNAME:}
       password: ${ES_PASSWORD:}
       http-logging: ${ES_HTTP_LOGGING:}
+      legacy-reads-enabled: ${ES_LEGACY_READS_ENABLED:true}
     mysql:
       host: ${MYSQL_HOST:localhost}
       port: ${MYSQL_TCP_PORT:3306}

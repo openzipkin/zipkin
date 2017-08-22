@@ -21,9 +21,19 @@ Here are some examples:
 * http://elasticsearch:9200,http://1.2.3.4:9200
 * http://elasticsearch-1:9200,http://elasticsearch-2:9200
 
+## Format
+Spans are stored in version 2 format, which is the same as the [v2 POST endpoint](http://zipkin.io/zipkin-api/#/default/post_spans)
+with one difference described below. We add a "timestamp_millis" field
+to aid in integration with other tools.
+
+### Timestamps
+Zipkin's timestamps are in epoch microseconds, which is not a supported date type in Elasticsearch.
+In consideration of tools like like Kibana, this component adds "timestamp_millis" when writing
+spans. This is mapped to the Elasticsearch date type, so can be used to any date-based queries.
+
 ## Indexes
 Spans are stored into daily indices, for example spans with a timestamp
-falling on 2016/03/19 will be stored in the index named 'zipkin-2016-03-19'.
+falling on 2016/03/19 will be stored in the index named 'zipkin:span-2016-03-19'.
 There is no support for TTL through this SpanStore. It is recommended
 instead to use [Elastic Curator](https://www.elastic.co/guide/en/elasticsearch/client/curator/current/about.html)
 to remove indices older than the point you are interested in.
@@ -36,19 +46,30 @@ the date separator from '-' to something else.
 control the daily index format.
 
 For example, spans with a timestamp falling on 2016/03/19 end up in the
-index 'zipkin-2016-03-19'. When the date separator is '.', the index
-would be 'zipkin-2016.03.19'.
+index 'zipkin:span-2016-03-19'. When the date separator is '.', the index
+would be 'zipkin:span-2016.03.19'.
 
 ### String Mapping
 The Zipkin api implies aggregation and exact match (keyword) on string
-fields named `traceId` and `name`, as well nested fields named
-`serviceName`, `key` and `value`. Indexing on these fields is limited to
-256 characters eventhough storage is currently unbounded.
+fields named `traceId` and `name` and `serviceName`. Indexing on these
+fields is limited to 256 characters eventhough storage is currently
+unbounded.
 
-### Timestamps
-Zipkin's timestamps are in epoch microseconds, which is not a supported date type in Elasticsearch.
-In consideration of tools like like Kibana, this component adds "timestamp_millis" when writing
-spans. This is mapped to the Elasticsearch date type, so can be used to any date-based queries.
+### Query indexing
+To support the zipkin query api, a special index field named `_q` is
+added to documents, containing annotation values and tag entry pairs.
+Ex: the tag `"error": "500"` results in `"_q":["error", "error=500"]`.
+The values in `q` are limited to 256 characters and searched as keywords.
+
+You can check these manually like so:
+```bash
+$ curl -s localhost:9200/zipkin:span-2017-08-11/_search?q=_q:error=500
+```
+
+The reason for special casing is around dotted name constraints. Tags
+are stored as a dictionary. Some keys include inconsistent number of dots
+(ex "error" and "error.message"). Elasticsearch cannot index these as it
+inteprets them as fields, and dots in fields imply an object path.
 
 ### Trace Identifiers
 Unless `ElasticsearchHttpStorage.Builder.strictTraceId` is set to false,
@@ -82,53 +103,13 @@ your indexes:
 
 ```bash
 # the output below shows which tokens will match on the trace id supplied.
-$ curl -s localhost:9200/test_zipkin_http-2016-10-26/_analyze -d '{
+$ curl -s localhost:9200/zipkin:span-2017-08-22/_analyze -d '{
       "text": "48485a3953bb61246b221d5bc9e6496c",
       "analyzer": "traceId_analyzer"
   }'|jq '.tokens|.[]|.token'
   "48485a3953bb61246b221d5bc9e6496c"
   "6b221d5bc9e6496c"
 ```
-
-### Span and service Names
-Zipkin defines span and service names as lowercase. At write time, any
-mixed case span or service names are downcased. If writing a custom
-collector in a different language, make sure you write span and service
-names in lowercase. Also, if there are any custom query tools, ensure
-inputs are downcased.
-
-Span and service name queries default to look back 24hrs (2 index days).
-This can be controlled by `ElasticsearchHttpStorage.Builder.namesLookback`
-
-#### Index format
-Starting with Zipkin 1.23, service and span names are written to the
-same daily indexes as spans and dependency links as the document type
-"servicespan". This was added for performance reasons as formerly search
-was using relatively expensive nested queries.
-
-The documents themselves represent service and span name pairs. Only one
-document is present per daily index. This is to keep the documents from
-repeating at a multiplier of span count, which also simplifies query.
-This deduplication is enforced at write time by using an ID convention
-of the service and span name. Ex. `id = MyServiceName|MySpanName`
-
-The document is a simple structure, like:
-```json
-{
-  "serviceName": "MyServiceName",
-  "spanName": "MySpanName",
-}
-```
-
-The document does replicate data in the ID, but it is needed as you
-cannot query based on an ID expression.
-
-#### Notes for data written prior to Zipkin 1.23
-Before Zipkin 1.23, service and span names were nested queries against
-the span type. This was an expensive operation, which resulted in high
-latency particularly when the UI loads. When the "servicespan" type is
-missing from an index, or there's no results returned, a fallback nested
-query is invoked.
 
 ## Customizing the ingest pipeline
 

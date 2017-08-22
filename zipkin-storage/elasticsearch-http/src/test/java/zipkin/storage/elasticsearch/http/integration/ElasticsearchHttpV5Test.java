@@ -33,7 +33,7 @@ public class ElasticsearchHttpV5Test {
     }
   }
 
-  public static class SpanConsumerTest extends LegacyElasticsearchHttpSpanConsumerTest {
+  public static class SpanConsumerTest extends ElasticsearchHttpSpanConsumerTest {
     @Override protected ElasticsearchHttpStorage storage() {
       return storage.get();
     }
@@ -56,12 +56,6 @@ public class ElasticsearchHttpV5Test {
   public static class StrictTraceIdFalseTest extends ElasticsearchHttpStrictTraceIdFalseTest {
     @Override protected ElasticsearchHttpStorage.Builder storageBuilder() {
       return ElasticsearchHttpV5Test.storage.computeStorageBuilder();
-    }
-  }
-
-  public static class NamesFallbackTest extends ElasticsearchHttpNamesFallbackTest {
-    @Override protected ElasticsearchHttpStorage storage() {
-      return storage.get();
     }
   }
 }
