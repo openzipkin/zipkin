@@ -32,7 +32,7 @@ public final class DetectingSpanDecoder implements SpanDecoder {
   static final SpanDecoder JSON2_DECODER = new Span2JsonSpanDecoder();
 
   @Override public Span readSpan(byte[] span) {
-    SpanDecoder decoder = detectJsonFormat(span);
+    SpanDecoder decoder = detectFormat(span);
     if (span[0] == 12 /* List[ThriftSpan] */ || span[0] == '[') {
       throw new IllegalArgumentException("Expected json or thrift object, not list encoding");
     }
@@ -40,7 +40,7 @@ public final class DetectingSpanDecoder implements SpanDecoder {
   }
 
   @Override public List<Span> readSpans(byte[] span) {
-    SpanDecoder decoder = detectJsonFormat(span);
+    SpanDecoder decoder = detectFormat(span);
     if (span[0] != 12 /* List[ThriftSpan] */ && span[0] != '[') {
       throw new IllegalArgumentException("Expected json or thrift list encoding");
     }
@@ -48,7 +48,7 @@ public final class DetectingSpanDecoder implements SpanDecoder {
   }
 
   /** @throws IllegalArgumentException if the input isn't a json or thrift list or object. */
-  public static SpanDecoder detectJsonFormat(byte[] bytes) {
+  public static SpanDecoder detectFormat(byte[] bytes) {
     if (bytes[0] <= 16 /* the first byte is the TType, in a range 0-16 */) {
       return THRIFT_DECODER;
     } else if (bytes[0] != '[' && bytes[0] != '{') {

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
-import zipkin.Codec;
+import zipkin.Span;
+import zipkin.SpanDecoder;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 import zipkin.internal.Nullable;
@@ -40,12 +41,14 @@ final class ScribeSpanConsumer implements Scribe {
   @Override
   public ListenableFuture<ResultCode> log(List<LogEntry> messages) {
     metrics.incrementMessages();
-    List<byte[]> thrifts;
+    List<Span> spans;
     try {
-      thrifts = messages.stream()
+      spans = messages.stream()
           .filter(m -> m.category.equals(category))
           .map(m -> m.message.getBytes(StandardCharsets.ISO_8859_1))
           .map(b -> Base64.getMimeDecoder().decode(b)) // finagle-zipkin uses mime encoding
+          .peek(b -> metrics.incrementBytes(b.length))
+          .map(SpanDecoder.THRIFT_DECODER::readSpan)
           .collect(Collectors.toList());
     } catch (RuntimeException e) {
       metrics.incrementMessagesDropped();
@@ -53,7 +56,7 @@ final class ScribeSpanConsumer implements Scribe {
     }
 
     SettableFuture<ResultCode> result = SettableFuture.create();
-    collector.acceptSpans(thrifts, Codec.THRIFT, new Callback<Void>() {
+    collector.accept(spans, new Callback<Void>() {
       @Override public void onSuccess(@Nullable Void value) {
         result.set(ResultCode.OK);
       }

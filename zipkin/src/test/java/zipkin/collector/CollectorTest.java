@@ -16,14 +16,17 @@ package zipkin.collector;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin.Span;
+import zipkin.SpanDecoder;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.storage.Callback;
+import zipkin.internal.DetectingSpanDecoder;
+import zipkin.internal.Span2;
+import zipkin.internal.Span2Converter;
+import zipkin.internal.Util;
+import zipkin.internal.v2.codec.Encoder;
+import zipkin.internal.v2.codec.MessageEncoder;
 import zipkin.storage.StorageComponent;
 
 import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -35,86 +38,12 @@ public class CollectorTest {
   StorageComponent storage = mock(StorageComponent.class);
   Collector collector;
   Span span1 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
-  Span span2 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1]);
+  Span2 span2_1 = Span2Converter.fromSpan(span1).get(0);
 
   @Before public void setup() throws Exception {
     collector = spy(Collector.builder(Collector.class)
       .storage(storage).build());
     when(collector.idString(span1)).thenReturn("1"); // to make expectations easier to read
-    doAnswer(invocation -> null).when(collector).warn(any(String.class), any(Throwable.class));
-  }
-
-  @Test
-  public void acceptSpansCallback_toStringIncludesSpanIds() {
-    when(collector.idString(span2)).thenReturn("2");
-
-    assertThat(collector.acceptSpansCallback(asList(span1, span2)))
-      .hasToString("AcceptSpans([1, 2])");
-  }
-
-  @Test
-  public void acceptSpansCallback_onErrorWithNullMessage() {
-    Callback<Void> callback = collector.acceptSpansCallback(asList(span1));
-
-    RuntimeException exception = new RuntimeException();
-    callback.onError(exception);
-
-    verify(collector).warn("Cannot store spans [1] due to RuntimeException()", exception);
-  }
-
-  @Test
-  public void acceptSpansCallback_onErrorWithMessage() {
-    Callback<Void> callback = collector.acceptSpansCallback(asList(span1));
-    RuntimeException exception = new IllegalArgumentException("no beer");
-    callback.onError(exception);
-
-    verify(collector)
-      .warn("Cannot store spans [1] due to IllegalArgumentException(no beer)", exception);
-  }
-
-  @Test
-  public void errorAcceptingSpans_onErrorWithNullMessage() {
-    String message =
-      collector.errorStoringSpans(asList(span1), new RuntimeException()).getMessage();
-
-    assertThat(message)
-      .isEqualTo("Cannot store spans [1] due to RuntimeException()");
-  }
-
-  @Test
-  public void errorAcceptingSpans_onErrorWithMessage() {
-    RuntimeException exception = new IllegalArgumentException("no beer");
-    String message = collector.errorStoringSpans(asList(span1), exception).getMessage();
-
-    assertThat(message)
-      .isEqualTo("Cannot store spans [1] due to IllegalArgumentException(no beer)");
-  }
-
-  @Test
-  public void errorDecoding_onErrorWithNullMessage() {
-    String message = collector.errorReading(new RuntimeException()).getMessage();
-
-    assertThat(message)
-      .isEqualTo("Cannot decode spans due to RuntimeException()");
-  }
-
-  @Test
-  public void errorDecoding_onErrorWithMessage() {
-    RuntimeException exception = new IllegalArgumentException("no beer");
-    String message = collector.errorReading(exception).getMessage();
-
-    assertThat(message)
-      .isEqualTo("Cannot decode spans due to IllegalArgumentException(no beer)");
-  }
-
-  @Test
-  public void errorDecoding_doesntWrapMalformedException() {
-    RuntimeException exception = new IllegalArgumentException("Malformed reading spans");
-
-    String message = collector.errorReading(exception).getMessage();
-
-    assertThat(message)
-      .isEqualTo("Malformed reading spans");
   }
 
   @Test public void unsampledSpansArentStored() {
@@ -138,5 +67,25 @@ public class CollectorTest {
     collector.accept(asList(span1), NOOP);
 
     verify(sampler).isSampled(span1.traceId, span1.debug);
+  }
+
+  @Test public void errorDetectingFormat() {
+    CollectorMetrics metrics = mock(CollectorMetrics.class);
+
+    collector = Collector.builder(Collector.class)
+      .metrics(metrics)
+      .storage(storage).build();
+
+    collector.acceptSpans("foo".getBytes(Util.UTF_8), new DetectingSpanDecoder(), NOOP);
+
+    verify(metrics).incrementMessagesDropped();
+  }
+
+  @Test public void convertsSpan2Format() {
+    byte[] bytes = MessageEncoder.JSON_BYTES.encode(asList(Encoder.JSON.encode(span2_1)));
+    collector.acceptSpans(bytes, SpanDecoder.DETECTING_DECODER, NOOP);
+
+    verify(collector).acceptSpans(bytes, SpanDecoder.DETECTING_DECODER, NOOP);
+    verify(collector).accept(asList(span1), NOOP);
   }
 }

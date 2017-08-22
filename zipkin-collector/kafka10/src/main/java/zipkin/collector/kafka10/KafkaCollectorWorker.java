@@ -27,11 +27,12 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import zipkin.Span;
+import zipkin.SpanDecoder;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 
 import static zipkin.SpanDecoder.DETECTING_DECODER;
-import static zipkin.SpanDecoder.THRIFT_DECODER;
 import static zipkin.storage.Callback.NOOP;
 
 /** Consumes spans from Kafka messages, ignoring malformed input */
@@ -75,10 +76,17 @@ final class KafkaCollectorWorker implements Runnable {
           if (bytes.length == 0) {
             metrics.incrementMessagesDropped();
           } else {
-            if (bytes[0] == '[' /* json list */ || bytes[0] == 12 /* thrift list */) {
+            // If we received legacy single-span encoding, decode it into a singleton list
+            if (bytes[0] <= 16 && bytes[0] != 12 /* thrift, but not a list */) {
+              metrics.incrementBytes(bytes.length);
+              try {
+                Span span = SpanDecoder.THRIFT_DECODER.readSpan(bytes);
+                collector.accept(Collections.singletonList(span), NOOP);
+              } catch (RuntimeException e) {
+                metrics.incrementMessagesDropped();
+              }
+            } else {
               collector.acceptSpans(bytes, DETECTING_DECODER, NOOP);
-            } else { // assume legacy single-span encoding
-              collector.acceptSpans(Collections.singletonList(bytes), THRIFT_DECODER, NOOP);
             }
           }
         }
