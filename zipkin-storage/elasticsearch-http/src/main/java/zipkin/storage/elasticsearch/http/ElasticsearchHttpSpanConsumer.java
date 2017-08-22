@@ -23,15 +23,12 @@ import java.util.logging.Logger;
 import okio.Buffer;
 import okio.ByteString;
 import zipkin.Annotation;
-import zipkin.Span;
 import zipkin.internal.Nullable;
 import zipkin.internal.Span2;
-import zipkin.internal.Span2Converter;
 import zipkin.internal.v2.codec.Encoder;
-import zipkin.storage.AsyncSpanConsumer;
+import zipkin.internal.v2.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
 
-import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.internal.Util.propagateIfFatal;
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SPAN;
 
@@ -46,13 +43,13 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
     this.indexNameFormatter = es.indexNameFormatter();
   }
 
-  @Override public void accept(List<Span> spans, Callback<Void> callback) {
+  @Override public void accept(List<Span2> spans, Callback<Void> callback) {
     if (spans.isEmpty()) {
       callback.onSuccess(null);
       return;
     }
     try {
-      BulkSpanIndexer indexer = newBulkSpanIndexer(es);
+      BulkSpanIndexer indexer = new BulkSpanIndexer(es);
       indexSpans(indexer, spans);
       indexer.execute(callback);
     } catch (Throwable t) {
@@ -61,29 +58,23 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
     }
   }
 
-  void indexSpans(BulkSpanIndexer indexer, List<Span> spans) throws IOException {
-    for (Span span : spans) {
-      Long timestamp = guessTimestamp(span);
+  void indexSpans(BulkSpanIndexer indexer, List<Span2> spans) throws IOException {
+    for (Span2 span : spans) {
+      Long spanTimestamp = span.timestamp();
       long indexTimestamp = 0L; // which index to store this span into
-      Long spanTimestamp;
-      if (timestamp != null) {
-        indexTimestamp = spanTimestamp = TimeUnit.MICROSECONDS.toMillis(timestamp);
+      if (spanTimestamp != null) {
+        indexTimestamp = spanTimestamp = TimeUnit.MICROSECONDS.toMillis(spanTimestamp);
       } else {
-        spanTimestamp = null;
         // guessTimestamp is made for determining the span's authoritative timestamp. When choosing
         // the index bucket, any annotation is better than using current time.
-        for (int i = 0, length = span.annotations.size(); i < length; i++) {
-          indexTimestamp = span.annotations.get(i).timestamp / 1000;
+        for (int i = 0, length = span.annotations().size(); i < length; i++) {
+          indexTimestamp = span.annotations().get(i).timestamp / 1000;
           break;
         }
         if (indexTimestamp == 0L) indexTimestamp = System.currentTimeMillis();
       }
       indexer.add(indexTimestamp, span, spanTimestamp);
     }
-  }
-
-  BulkSpanIndexer newBulkSpanIndexer(ElasticsearchHttpStorage es) {
-    return new BulkSpanIndexer(es);
   }
 
   static class BulkSpanIndexer {
@@ -95,12 +86,10 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
       this.indexNameFormatter = es.indexNameFormatter();
     }
 
-    void add(long indexTimestamp, Span span, @Nullable Long timestampMillis) {
+    void add(long indexTimestamp, Span2 span, @Nullable Long timestampMillis) {
       String index = indexNameFormatter.formatTypeAndTimestamp(SPAN, indexTimestamp);
-      for (Span2 span2 : Span2Converter.fromSpan(span)) {
-        byte[] document = prefixWithTimestampMillisAndQuery(span2, timestampMillis);
-        indexer.add(index, SPAN, document, null /* Allow ES to choose an ID */);
-      }
+      byte[] document = prefixWithTimestampMillisAndQuery(span, timestampMillis);
+      indexer.add(index, SPAN, document, null /* Allow ES to choose an ID */);
     }
 
     void execute(Callback<Void> callback) throws IOException {

@@ -80,7 +80,7 @@ public class ElasticsearchHttpStorageTest {
     es.enqueue(new MockResponse()); // get dependency template
 
     // check this isn't the legacy consumer
-    assertThat(storage.asyncSpanConsumer())
+    assertThat(storage.asyncSpan2Consumer())
       .isInstanceOf(ElasticsearchHttpSpanConsumer.class);
     // check this isn't the double reading span store
     assertThat(storage.asyncSpanStore())
@@ -101,9 +101,6 @@ public class ElasticsearchHttpStorageTest {
     es.enqueue(new MockResponse()); // get span template
     es.enqueue(new MockResponse()); // get dependency template
 
-    // check this isn't the legacy consumer
-    assertThat(storage.asyncSpanConsumer())
-      .isInstanceOf(ElasticsearchHttpSpanConsumer.class);
     // check that we do double-reads on the legacy and new format
     assertThat(storage.asyncSpanStore())
       .isInstanceOf(LenientDoubleCallbackAsyncSpanStore.class);
@@ -124,9 +121,6 @@ public class ElasticsearchHttpStorageTest {
     es.enqueue(new MockResponse()); // get span template
     es.enqueue(new MockResponse()); // get dependency template
 
-    // check this isn't the legacy consumer
-    assertThat(storage.asyncSpanConsumer())
-      .isInstanceOf(ElasticsearchHttpSpanConsumer.class);
     // check this isn't the double reading span store
     assertThat(storage.asyncSpanStore())
       .isInstanceOf(ElasticsearchHttpSpanStore.class);

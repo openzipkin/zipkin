@@ -27,7 +27,9 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
+import zipkin.internal.AsyncSpan2ConsumerAdapter;
 import zipkin.internal.Nullable;
+import zipkin.internal.Span2Component;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.SpanStore;
@@ -42,8 +44,7 @@ import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.DEPEN
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SPAN;
 
 @AutoValue
-public abstract class ElasticsearchHttpStorage implements StorageComponent {
-
+public abstract class ElasticsearchHttpStorage extends Span2Component implements StorageComponent {
   /**
    * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port
    * format. Note this value is only read once.
@@ -222,6 +223,10 @@ public abstract class ElasticsearchHttpStorage implements StorageComponent {
   }
 
   @Override public AsyncSpanConsumer asyncSpanConsumer() {
+    return AsyncSpan2ConsumerAdapter.create(asyncSpan2Consumer());
+  }
+
+  @Override protected zipkin.internal.v2.storage.AsyncSpanConsumer asyncSpan2Consumer() {
     ensureIndexTemplates();
     return new ElasticsearchHttpSpanConsumer(this);
   }

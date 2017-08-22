@@ -20,14 +20,20 @@ import zipkin.SpanDecoder;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.DetectingSpanDecoder;
 import zipkin.internal.Span2;
+import zipkin.internal.Span2Component;
 import zipkin.internal.Span2Converter;
 import zipkin.internal.Util;
 import zipkin.internal.v2.codec.Encoder;
 import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.v2.storage.AsyncSpanConsumer;
+import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
 
 import static java.util.Arrays.asList;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -87,5 +93,27 @@ public class CollectorTest {
 
     verify(collector).acceptSpans(bytes, SpanDecoder.DETECTING_DECODER, NOOP);
     verify(collector).accept(asList(span1), NOOP);
+  }
+
+  /**
+   * When a version 2 storage component is in use, route directly to it as opposed to
+   * double-conversion.
+   */
+  @Test public void routesToSpan2Collector() {
+    abstract class WithSpan2 extends Span2Component implements StorageComponent {
+      @Override public abstract AsyncSpanConsumer asyncSpan2Consumer();
+    }
+    WithSpan2 storage = mock(WithSpan2.class);
+    AsyncSpanConsumer span2Consumer = mock(AsyncSpanConsumer.class);
+    when(storage.asyncSpan2Consumer()).thenReturn(span2Consumer);
+
+    collector = spy(Collector.builder(Collector.class)
+      .storage(storage).build());
+
+    byte[] bytes = MessageEncoder.JSON_BYTES.encode(asList(Encoder.JSON.encode(span2_1)));
+    collector.acceptSpans(bytes, SpanDecoder.DETECTING_DECODER, NOOP);
+
+    verify(collector, never()).isSampled(any(Span.class)); // skips v1 processing
+    verify(span2Consumer).accept(eq(asList(span2_1)), any(Callback.class)); // goes to v2 instead
   }
 }

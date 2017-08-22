@@ -22,23 +22,17 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import zipkin.Annotation;
-import zipkin.BinaryAnnotation;
-import zipkin.Codec;
-import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.internal.CallbackCaptor;
 import zipkin.internal.Span2;
-import zipkin.internal.Span2Converter;
-import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.Span2.Kind;
 import zipkin.internal.v2.codec.Decoder;
+import zipkin.internal.v2.codec.Encoder;
+import zipkin.internal.v2.codec.MessageEncoder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin.Constants.CLIENT_SEND;
-import static zipkin.Constants.SERVER_RECV;
 import static zipkin.TestObjects.TODAY;
-import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanConsumer.prefixWithTimestampMillisAndQuery;
 
@@ -69,7 +63,7 @@ public class ElasticsearchHttpSpanConsumerTest {
   @Test public void addsTimestamp_millisIntoJson() throws Exception {
     es.enqueue(new MockResponse());
 
-    Span span = Span.builder().traceId(20L).id(20L).name("get")
+    Span2 span = Span2.builder().traceId(20L).id(20L).name("get")
       .timestamp(TODAY * 1000).build();
 
     accept(span);
@@ -79,77 +73,69 @@ public class ElasticsearchHttpSpanConsumerTest {
   }
 
   @Test public void prefixWithTimestampMillisAndQuery_skipsWhenNoData() throws Exception {
-    Span span = Span.builder().traceId(20L).id(22L).name("").parentId(21L).timestamp(0L)
-      .addAnnotation(Annotation.create(0, CLIENT_SEND, TestObjects.WEB_ENDPOINT))
+    Span2 span = Span2.builder().traceId(20L).id(22L).name("").parentId(21L).timestamp(0L)
+      .localEndpoint(TestObjects.WEB_ENDPOINT)
+      .kind(Kind.CLIENT)
       .build();
 
-    byte[] result = prefixWithTimestampMillisAndQuery(
-      Span2Converter.fromSpan(span).get(0),
-      span.timestamp
-    );
+    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestamp());
 
     assertThat(new String(result, UTF_8))
       .startsWith("{\"traceId\":\"");
   }
 
   @Test public void prefixWithTimestampMillisAndQuery_addsTimestampMillis() throws Exception {
-    Span span = Span.builder().traceId(20L).id(22L).name("").parentId(21L).timestamp(1L)
-      .addAnnotation(Annotation.create(1L, CLIENT_SEND, TestObjects.WEB_ENDPOINT))
+    Span2 span = Span2.builder().traceId(20L).id(22L).name("").parentId(21L).timestamp(1L)
+      .localEndpoint(TestObjects.WEB_ENDPOINT)
+      .kind(Kind.CLIENT)
       .build();
 
-    byte[] result = prefixWithTimestampMillisAndQuery(
-      Span2Converter.fromSpan(span).get(0),
-      span.timestamp
-    );
+    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestamp());
 
     assertThat(new String(result, UTF_8))
       .startsWith("{\"timestamp_millis\":1,\"traceId\":");
   }
 
   @Test public void prefixWithTimestampMillisAndQuery_addsAnnotationQuery() throws Exception {
-    Span span = Span.builder().traceId(20L).id(22L).name("").parentId(21L)
-      .addAnnotation(Annotation.create(1L, "\"foo", TestObjects.WEB_ENDPOINT))
+    Span2 span = Span2.builder().traceId(20L).id(22L).name("").parentId(21L)
+      .localEndpoint(TestObjects.WEB_ENDPOINT)
+      .addAnnotation(1L, "\"foo")
       .build();
 
-    byte[] result = prefixWithTimestampMillisAndQuery(
-      Span2Converter.fromSpan(span).get(0),
-      span.timestamp
-    );
+    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestamp());
 
     assertThat(new String(result, UTF_8))
       .startsWith("{\"_q\":[\"\\\"foo\"],\"traceId");
   }
 
   @Test public void prefixWithTimestampMillisAndQuery_addsAnnotationQueryTags() throws Exception {
-    Span span = Span.builder().traceId(20L).id(22L).name("").parentId(21L)
-      .addBinaryAnnotation(BinaryAnnotation.create("\"foo", "\"bar", TestObjects.WEB_ENDPOINT))
+    Span2 span = Span2.builder().traceId(20L).id(22L).name("").parentId(21L)
+      .localEndpoint(TestObjects.WEB_ENDPOINT)
+      .putTag("\"foo", "\"bar")
       .build();
 
-    byte[] result = prefixWithTimestampMillisAndQuery(Span2Converter.fromSpan(span).get(0),
-      span.timestamp
-    );
+    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestamp());
 
     assertThat(new String(result, UTF_8))
       .startsWith("{\"_q\":[\"\\\"foo\",\"\\\"foo=\\\"bar\"],\"traceId");
   }
 
   @Test public void prefixWithTimestampMillisAndQuery_readable() throws Exception {
-    Span span = Span.builder().traceId(20L).id(20L).name("get")
+    Span2 span = Span2.builder().traceId(20L).id(20L).name("get")
       .timestamp(TODAY * 1000).build();
-    Span2 span2 = Span2Converter.fromSpan(span).get(0);
 
     byte[] message = MessageEncoder.JSON_BYTES.encode(asList(
-      prefixWithTimestampMillisAndQuery(span2, span.timestamp)
+      prefixWithTimestampMillisAndQuery(span, span.timestamp())
     ));
 
     assertThat(Decoder.JSON.decodeList(message))
-      .containsOnly(span2); // ignores timestamp_millis field
+      .containsOnly(span); // ignores timestamp_millis field
   }
 
-  @Test public void doesntWriteSpanId() throws Exception {
+  @Test public void doesntWriteDocumentId() throws Exception {
     es.enqueue(new MockResponse());
 
-    accept(TestObjects.LOTS_OF_SPANS[0]);
+    accept(Span2.builder().traceId(1L).id(1L).name("foo").build());
 
     RecordedRequest request = es.takeRequest();
     assertThat(request.getBody().readByteString().utf8())
@@ -159,30 +145,34 @@ public class ElasticsearchHttpSpanConsumerTest {
   @Test public void writesSpanNaturallyWhenNoTimestamp() throws Exception {
     es.enqueue(new MockResponse());
 
-    Span span = Span.builder().traceId(1L).id(1L).name("foo").build();
-    accept(span);
+    Span2 span = Span2.builder().traceId(1L).id(1L).name("foo").build();
+    accept(Span2.builder().traceId(1L).id(1L).name("foo").build());
 
     assertThat(es.takeRequest().getBody().readByteString().utf8())
-      .contains("\n" + new String(Codec.JSON.writeSpan(span), UTF_8) + "\n");
+      .contains("\n" + new String(Encoder.JSON.encode(span), UTF_8) + "\n");
   }
 
-  @Test public void traceIsSearchableBySRServiceName() throws Exception {
+  @Test public void traceIsSearchableByServerServiceName() throws Exception {
     es.enqueue(new MockResponse());
 
-    Span clientSpan = Span.builder().traceId(20L).id(22L).name("").parentId(21L).timestamp(0L)
-      .addAnnotation(Annotation.create(0, CLIENT_SEND, TestObjects.WEB_ENDPOINT))
+    Span2 clientSpan = Span2.builder().traceId(20L).id(22L).name("").parentId(21L)
+      .timestamp(1000L)
+      .kind(Kind.CLIENT)
+      .localEndpoint(TestObjects.WEB_ENDPOINT)
       .build();
 
-    Span serverSpan = Span.builder().traceId(20L).id(22L).name("get").parentId(21L)
-      .addAnnotation(Annotation.create(1000, SERVER_RECV, TestObjects.APP_ENDPOINT))
+    Span2 serverSpan = Span2.builder().traceId(20L).id(22L).name("get").parentId(21L)
+      .timestamp(2000L)
+      .kind(Kind.SERVER)
+      .localEndpoint(TestObjects.APP_ENDPOINT)
       .build();
 
     accept(serverSpan, clientSpan);
 
     // make sure that both timestamps are in the index
     assertThat(es.takeRequest().getBody().readByteString().utf8())
-      .contains("{\"timestamp_millis\":1")
-      .contains("{\"timestamp_millis\":0");
+      .contains("{\"timestamp_millis\":2")
+      .contains("{\"timestamp_millis\":1");
   }
 
   @Test public void addsPipelineId() throws Exception {
@@ -196,7 +186,7 @@ public class ElasticsearchHttpSpanConsumerTest {
 
     es.enqueue(new MockResponse());
 
-    accept(TestObjects.TRACE.get(0));
+    accept(Span2.builder().traceId(1L).id(1L).name("foo").build());
 
     RecordedRequest request = es.takeRequest();
     assertThat(request.getPath())
@@ -206,17 +196,13 @@ public class ElasticsearchHttpSpanConsumerTest {
   @Test public void choosesTypeSpecificIndex() throws Exception {
     es.enqueue(new MockResponse());
 
-    Annotation foo = Annotation.create(
-      TimeUnit.DAYS.toMicros(365), // 1971-01-01
-      "foo",
-      TestObjects.APP_ENDPOINT
-    );
-
-    Span span = Span.builder().traceId(1L).id(2L).parentId(1L).name("s").addAnnotation(foo).build();
+    Span2 span = Span2.builder().traceId(1L).id(2L).parentId(1L).name("s")
+      .localEndpoint(TestObjects.APP_ENDPOINT)
+      .addAnnotation(TimeUnit.DAYS.toMicros(365) /* 1971-01-01 */, "foo")
+      .build();
 
     // sanity check data
-    assertThat(span.timestamp).isNull();
-    assertThat(guessTimestamp(span)).isNull();
+    assertThat(span.timestamp()).isNull();
 
     accept(span);
 
@@ -226,9 +212,9 @@ public class ElasticsearchHttpSpanConsumerTest {
     );
   }
 
-  void accept(Span... spans) throws Exception {
+  void accept(Span2... spans) throws Exception {
     CallbackCaptor<Void> callback = new CallbackCaptor<>();
-    storage.asyncSpanConsumer().accept(asList(spans), callback);
+    storage.asyncSpan2Consumer().accept(asList(spans), callback);
     callback.get();
   }
 }
