@@ -18,7 +18,13 @@ import java.util.List;
 import java.util.logging.Logger;
 import zipkin.Span;
 import zipkin.SpanDecoder;
+import zipkin.internal.Collector2;
 import zipkin.internal.DetectingSpanDecoder;
+import zipkin.internal.Span2;
+import zipkin.internal.Span2Component;
+import zipkin.internal.Span2Converter;
+import zipkin.internal.Span2JsonSpanDecoder;
+import zipkin.internal.v2.codec.Decoder;
 import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
 
@@ -75,11 +81,22 @@ public class Collector extends zipkin.internal.Collector<SpanDecoder, Span> { //
 
   final CollectorSampler sampler;
   final StorageComponent storage;
+  final Collector2 storage2;
 
   Collector(Builder builder) {
     super(builder.logger, builder.metrics);
     this.storage = checkNotNull(builder.storage, "storage");
     this.sampler = builder.sampler == null ? CollectorSampler.ALWAYS_SAMPLE : builder.sampler;
+    if (storage instanceof Span2Component) {
+      storage2 = new Collector2(
+        builder.logger,
+        builder.metrics,
+        builder.sampler,
+        (Span2Component) storage
+      );
+    } else {
+      storage2 = null;
+    }
   }
 
   @Override
@@ -91,7 +108,11 @@ public class Collector extends zipkin.internal.Collector<SpanDecoder, Span> { //
       callback.onError(errorReading(e));
       return;
     }
-    super.acceptSpans(serializedSpans, decoder, callback);
+    if (storage2 != null && decoder instanceof Span2JsonSpanDecoder) {
+      storage2.acceptSpans(serializedSpans, Decoder.JSON, callback);
+    } else {
+      super.acceptSpans(serializedSpans, decoder, callback);
+    }
   }
 
   /**
@@ -112,6 +133,19 @@ public class Collector extends zipkin.internal.Collector<SpanDecoder, Span> { //
       return;
     }
     accept(spans, callback);
+  }
+
+  @Override public void accept(List<Span> spans, Callback<Void> callback) {
+    if (storage2 != null) {
+      int length = spans.size();
+      List<Span2> span2s = new ArrayList<>(length);
+      for (int i = 0; i < length; i++) {
+        span2s.addAll(Span2Converter.fromSpan(spans.get(i)));
+      }
+      storage2.accept(span2s, callback);
+    } else {
+      super.accept(spans, callback);
+    }
   }
 
   @Override protected List<Span> decodeList(SpanDecoder decoder, byte[] serialized) {
