@@ -32,9 +32,9 @@ import org.springframework.web.context.ConfigurableWebApplicationContext;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.internal.Span2Converter;
-import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.V2SpanConverter;
 import zipkin.internal.v2.codec.Encoder;
+import zipkin.internal.v2.codec.MessageEncoder;
 import zipkin.storage.InMemoryStorage;
 
 import static java.lang.String.format;
@@ -86,7 +86,7 @@ public class ZipkinServerIntegrationTest {
     Span span = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
 
     byte[] message = MessageEncoder.JSON_BYTES.encode(asList(
-      Encoder.JSON.encode(Span2Converter.fromSpan(span).get(0))
+      Encoder.JSON.encode(V2SpanConverter.fromSpan(span).get(0))
     ));
 
     performAsync(post("/api/v2/spans").content(message))

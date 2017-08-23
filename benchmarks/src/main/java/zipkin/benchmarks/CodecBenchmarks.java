@@ -41,8 +41,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import zipkin.Codec;
 import zipkin.Endpoint;
-import zipkin.Span;
-import zipkin.internal.Span2;
+import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.MessageEncoder;
 import zipkin.internal.v2.codec.Decoder;
 import zipkin.internal.v2.codec.Encoder;
@@ -66,22 +65,22 @@ public class CodecBenchmarks {
   static final TBinaryProtocol.Factory TBINARY_PROTOCOL_FACTORY = new TBinaryProtocol.Factory();
 
   static final byte[] localSpanJson = read("/span-local.json");
-  static final Span localSpan = Codec.JSON.readSpan(localSpanJson);
+  static final zipkin.Span localSpan = Codec.JSON.readSpan(localSpanJson);
   static final byte[] localSpanThrift = Codec.THRIFT.writeSpan(localSpan);
   static final com.twitter.zipkin.thriftjava.Span localSpanLibThrift = deserialize(localSpanThrift);
 
   @Benchmark
-  public Span readLocalSpan_json_zipkin() {
+  public zipkin.Span readLocalSpan_json_zipkin() {
     return Codec.JSON.readSpan(localSpanJson);
   }
 
   @Benchmark
-  public Span readLocalSpan_thrift_zipkin() {
+  public zipkin.Span readLocalSpan_thrift_zipkin() {
     return Codec.THRIFT.readSpan(localSpanThrift);
   }
 
   @Benchmark
-  public Span readLocalSpan_thrift_libthrift() {
+  public zipkin.Span readLocalSpan_thrift_libthrift() {
     return toZipkinSpan(deserialize(localSpanThrift));
   }
 
@@ -101,36 +100,36 @@ public class CodecBenchmarks {
   }
 
   static final byte[] clientSpanJson = read("/span-client.json");
-  static final Span clientSpan = Codec.JSON.readSpan(clientSpanJson);
+  static final zipkin.Span clientSpan = Codec.JSON.readSpan(clientSpanJson);
   static final byte[] clientSpanThrift = Codec.THRIFT.writeSpan(clientSpan);
   static final com.twitter.zipkin.thriftjava.Span clientSpanLibThrift =
       deserialize(clientSpanThrift);
-  static final List<Span> tenClientSpans = Collections.nCopies(10, clientSpan);
+  static final List<zipkin.Span> tenClientSpans = Collections.nCopies(10, clientSpan);
   static final byte[] tenClientSpansJson = Codec.JSON.writeSpans(tenClientSpans);
   static final byte[] tenClientSpansThrift = Codec.THRIFT.writeSpans(tenClientSpans);
 
   @Benchmark
-  public Span readClientSpan_json_zipkin() {
+  public zipkin.Span readClientSpan_json_zipkin() {
     return Codec.JSON.readSpan(clientSpanJson);
   }
 
   @Benchmark
-  public List<Span> readTenClientSpans_json_zipkin() {
+  public List<zipkin.Span> readTenClientSpans_json_zipkin() {
     return Codec.JSON.readSpans(tenClientSpansJson);
   }
 
   @Benchmark
-  public Span readClientSpan_thrift_zipkin() {
+  public zipkin.Span readClientSpan_thrift_zipkin() {
     return Codec.THRIFT.readSpan(clientSpanThrift);
   }
 
   @Benchmark
-  public List<Span> readTenClientSpans_thrift_zipkin() {
+  public List<zipkin.Span> readTenClientSpans_thrift_zipkin() {
     return Codec.THRIFT.readSpans(tenClientSpansThrift);
   }
 
   @Benchmark
-  public Span readClientSpan_thrift_libthrift() {
+  public zipkin.Span readClientSpan_thrift_libthrift() {
     return toZipkinSpan(deserialize(clientSpanThrift));
   }
 
@@ -159,13 +158,13 @@ public class CodecBenchmarks {
     return serialize(clientSpanLibThrift);
   }
 
-  static final Span2 span2 = Decoder.JSON.decodeList(read("/span2.json")).get(0);
+  static final Span span2 = Decoder.JSON.decodeList(read("/span2.json")).get(0);
   static final byte[] tenClientSpan2sJson = MessageEncoder.JSON_BYTES.encode(
     Collections.nCopies(10, span2).stream().map(Encoder.JSON::encode).collect(Collectors.toList())
   );
 
   @Benchmark
-  public List<Span2> readTenClientSpans_json_span2() {
+  public List<Span> readTenClientSpans_json_span2() {
     return Decoder.JSON.decodeList(tenClientSpan2sJson);
   }
 
@@ -175,22 +174,22 @@ public class CodecBenchmarks {
   }
 
   static final byte[] rpcSpanJson = read("/span-rpc.json");
-  static final Span rpcSpan = Codec.JSON.readSpan(rpcSpanJson);
+  static final zipkin.Span rpcSpan = Codec.JSON.readSpan(rpcSpanJson);
   static final byte[] rpcSpanThrift = Codec.THRIFT.writeSpan(rpcSpan);
   static final com.twitter.zipkin.thriftjava.Span rpcSpanLibThrift = deserialize(rpcSpanThrift);
 
   @Benchmark
-  public Span readRpcSpan_json_zipkin() {
+  public zipkin.Span readRpcSpan_json_zipkin() {
     return Codec.JSON.readSpan(rpcSpanJson);
   }
 
   @Benchmark
-  public Span readRpcSpan_thrift_zipkin() {
+  public zipkin.Span readRpcSpan_thrift_zipkin() {
     return Codec.THRIFT.readSpan(rpcSpanThrift);
   }
 
   @Benchmark
-  public Span readRpcSpan_thrift_libthrift() {
+  public zipkin.Span readRpcSpan_thrift_libthrift() {
     return toZipkinSpan(deserialize(rpcSpanThrift));
   }
 
@@ -210,22 +209,22 @@ public class CodecBenchmarks {
   }
 
   static final byte[] rpcV6SpanJson = read("/span-rpc-ipv6.json");
-  static final Span rpcV6Span = Codec.JSON.readSpan(rpcV6SpanJson);
+  static final zipkin.Span rpcV6Span = Codec.JSON.readSpan(rpcV6SpanJson);
   static final byte[] rpcV6SpanThrift = Codec.THRIFT.writeSpan(rpcV6Span);
   static final com.twitter.zipkin.thriftjava.Span rpcV6SpanLibThrift = deserialize(rpcV6SpanThrift);
 
   @Benchmark
-  public Span readRpcV6Span_json_zipkin() {
+  public zipkin.Span readRpcV6Span_json_zipkin() {
     return Codec.JSON.readSpan(rpcV6SpanJson);
   }
 
   @Benchmark
-  public Span readRpcV6Span_thrift_zipkin() {
+  public zipkin.Span readRpcV6Span_thrift_zipkin() {
     return Codec.THRIFT.readSpan(rpcV6SpanThrift);
   }
 
   @Benchmark
-  public Span readRpcV6Span_thrift_libthrift() {
+  public zipkin.Span readRpcV6Span_thrift_libthrift() {
     return toZipkinSpan(deserialize(rpcV6SpanThrift));
   }
 
@@ -282,8 +281,8 @@ public class CodecBenchmarks {
    * uses immutable collections, etc. When comparing codec, make sure you copy-out as structs like
    * libthrift do no validation, which is cheaper, but not usable in zipkin.
    */
-  private static Span toZipkinSpan(com.twitter.zipkin.thriftjava.Span libthriftSpan) {
-    Span.Builder builder = Span.builder()
+  private static zipkin.Span toZipkinSpan(com.twitter.zipkin.thriftjava.Span libthriftSpan) {
+    zipkin.Span.Builder builder = zipkin.Span.builder()
         .traceId(libthriftSpan.trace_id)
         .id(libthriftSpan.id)
         .parentId(libthriftSpan.isSetParent_id() ? libthriftSpan.parent_id : null)

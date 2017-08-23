@@ -14,20 +14,19 @@
 package zipkin.internal.v2.codec;
 
 import java.util.List;
-import zipkin.Span;
 import zipkin.internal.JsonCodec;
-import zipkin.internal.Span2;
+import zipkin.internal.v2.Span;
 
 /**
- * @param <S> type of the span, usually {@link Span}
+ * @param <S> type of the span, usually {@link zipkin.Span}
  */
 public interface Decoder<S> {
-  Decoder<Span2> JSON = new Decoder<Span2>() {
+  Decoder<Span> JSON = new Decoder<Span>() {
     @Override public Encoding encoding() {
       return Encoding.JSON;
     }
 
-    @Override public List<Span2> decodeList(byte[] span) {
+    @Override public List<Span> decodeList(byte[] span) {
       return JsonCodec.readList(new Span2JsonAdapters.Span2Reader(), span);
     }
   };

@@ -17,20 +17,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.Test;
 import zipkin.Codec;
-import zipkin.Span;
 import zipkin.SpanDecoder;
-import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.Encoder;
+import zipkin.internal.v2.codec.MessageEncoder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.TestObjects.LOTS_OF_SPANS;
 
 public class DetectingSpanDecoderTest {
-  Span span1 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
-  Span span2 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1]);
-  Span2 span2_1 = Span2Converter.fromSpan(span1).get(0);
-  Span2 span2_2 = Span2Converter.fromSpan(span2).get(0);
+  zipkin.Span span1 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
+  zipkin.Span span2 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1]);
+  Span span2_1 = V2SpanConverter.fromSpan(span1).get(0);
+  Span span2_2 = V2SpanConverter.fromSpan(span2).get(0);
 
   SpanDecoder decoder = new DetectingSpanDecoder();
 

@@ -29,7 +29,7 @@ import zipkin.SpanDecoder;
 public final class DetectingSpanDecoder implements SpanDecoder {
   /** zipkin v2 will have this tag, and others won't. */
   static final byte[] LOCAL_ENDPOINT_TAG = "\"localEndpoint\"".getBytes(Util.UTF_8);
-  static final SpanDecoder JSON2_DECODER = new Span2JsonSpanDecoder();
+  static final SpanDecoder JSON2_DECODER = new V2JsonSpanDecoder();
 
   @Override public Span readSpan(byte[] span) {
     SpanDecoder decoder = detectFormat(span);

@@ -36,7 +36,7 @@ public class AnnotationTest {
         "{\"timestamp\":1,\"value\":\"foo\",\"endpoint\":{\"serviceName\":\"app\",\"ipv4\":\"172.17.0.2\",\"port\":8080}}");
   }
 
-  // simple spans will not have endpoint defined eventhough normal ones will
+  // v2 spans will not have endpoint defined eventhough normal ones will
   @Test public void toStringIsJson_withoutEndpoint() {
     assertThat(Annotation.create(1L, "foo", null))
       .hasToString("{\"timestamp\":1,\"value\":\"foo\"}");

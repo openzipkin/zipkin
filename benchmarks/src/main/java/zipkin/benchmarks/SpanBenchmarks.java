@@ -32,9 +32,8 @@ import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
-import zipkin.Span;
 import zipkin.TraceKeys;
-import zipkin.internal.Span2;
+import zipkin.internal.v2.Span;
 import zipkin.internal.Util;
 
 @Measurement(iterations = 5, time = 1)
@@ -50,17 +49,17 @@ public class SpanBenchmarks {
   static final Endpoint app =
       Endpoint.builder().serviceName("app").ipv4(172 << 24 | 17 << 16 | 2).port(8080).build();
 
-  final Span.Builder sharedBuilder;
-  final Span2.Builder shared2Builder;
+  final zipkin.Span.Builder sharedBuilder;
+  final Span.Builder shared2Builder;
 
   public SpanBenchmarks() {
-    sharedBuilder = buildClientOnlySpan(Span.builder()).toBuilder();
+    sharedBuilder = buildClientOnlySpan(zipkin.Span.builder()).toBuilder();
     shared2Builder = buildClientOnlySpan2().toBuilder();
   }
 
   @Benchmark
-  public Span buildLocalSpan() {
-    return Span.builder()
+  public zipkin.Span buildLocalSpan() {
+    return zipkin.Span.builder()
         .traceId(1L)
         .id(1L)
         .name("work")
@@ -80,11 +79,11 @@ public class SpanBenchmarks {
     .build();
 
   @Benchmark
-  public Span buildClientOnlySpan() {
-    return buildClientOnlySpan(Span.builder());
+  public zipkin.Span buildClientOnlySpan() {
+    return buildClientOnlySpan(zipkin.Span.builder());
   }
 
-  static Span buildClientOnlySpan(Span.Builder builder) {
+  static zipkin.Span buildClientOnlySpan(zipkin.Span.Builder builder) {
     return builder
       .traceId(traceId)
       .parentId(traceId)
@@ -103,22 +102,22 @@ public class SpanBenchmarks {
   }
 
   @Benchmark
-  public Span buildClientOnlySpan_clear() {
+  public zipkin.Span buildClientOnlySpan_clear() {
     return buildClientOnlySpan(sharedBuilder.clear());
   }
 
   @Benchmark
-  public Span2 buildClientOnlySpan2() {
-    return buildClientOnlySpan2(Span2.builder());
+  public Span buildClientOnlySpan2() {
+    return buildClientOnlySpan2(Span.builder());
   }
 
-  static Span2 buildClientOnlySpan2(Span2.Builder builder) {
+  static Span buildClientOnlySpan2(Span.Builder builder) {
     return builder
       .traceId(traceId)
       .parentId(traceId)
       .id(spanId)
       .name("get")
-      .kind(Span2.Kind.CLIENT)
+      .kind(Span.Kind.CLIENT)
       .localEndpoint(frontend)
       .remoteEndpoint(backend)
       .timestamp(1472470996199000L)
@@ -131,18 +130,18 @@ public class SpanBenchmarks {
   }
 
   @Benchmark
-  public Span2 buildClientOnlySpan2_clear() {
+  public Span buildClientOnlySpan2_clear() {
     return buildClientOnlySpan2(shared2Builder.clear());
   }
 
   @Benchmark
-  public Span2 buildClientOnlySpan2_clone() {
+  public Span buildClientOnlySpan2_clone() {
     return shared2Builder.clone().build();
   }
 
   @Benchmark
-  public Span buildRpcSpan() {
-    return Span.builder() // web calls app
+  public zipkin.Span buildRpcSpan() {
+    return zipkin.Span.builder() // web calls app
         .traceId(1L)
         .id(2L)
         .parentId(1L)

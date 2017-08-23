@@ -24,13 +24,13 @@ import org.junit.rules.ExpectedException;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.TraceKeys;
-import zipkin.internal.Span2;
+import zipkin.internal.v2.Span;
 import zipkin.internal.Util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.internal.Util.UTF_8;
 
-public class Span2JsonAdaptersTest {
+public class SpanJsonAdaptersTest {
   Endpoint frontend = Endpoint.create("frontend", 127 << 24 | 1);
   Endpoint backend = Endpoint.builder()
     .serviceName("backend")
@@ -38,12 +38,12 @@ public class Span2JsonAdaptersTest {
     .port(9000)
     .build();
 
-  Span2 span = Span2.builder()
+  Span span = Span.builder()
     .traceId("7180c278b62e8f6a216a2aea45d08fc9")
     .parentId("6b221d5bc9e6496c")
     .id("5b4185666d50f68b")
     .name("get")
-    .kind(Span2.Kind.CLIENT)
+    .kind(Span.Kind.CLIENT)
     .localEndpoint(frontend)
     .remoteEndpoint(backend)
     .timestamp(1472470996199000L)
@@ -93,7 +93,7 @@ public class Span2JsonAdaptersTest {
    */
   @Test public void specialCharsInJson() throws IOException {
     // service name is surrounded by control characters
-    Span2 worstSpanInTheWorld = Span2.builder().traceId(1L).id(1L)
+    Span worstSpanInTheWorld = Span.builder().traceId(1L).id(1L)
       // name is terrible
       .name(new String(new char[] {'"', '\\', '\t', '\b', '\n', '\r', '\f'}))
       .localEndpoint(Endpoint.create(new String(new char[] {0, 'a', 1}), 0))
@@ -123,7 +123,7 @@ public class Span2JsonAdaptersTest {
 
   @Test public void niceErrorOnEmpty_inputSpans() throws IOException {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Empty input reading List<Span2>");
+    thrown.expectMessage("Empty input reading List<Span>");
 
     Decoder.JSON.decodeList(new byte[0]);
   }
@@ -133,13 +133,13 @@ public class Span2JsonAdaptersTest {
    */
   @Test public void niceErrorOnMalformed_inputSpans() throws IOException {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Malformed reading List<Span2> from ");
+    thrown.expectMessage("Malformed reading List<Span> from ");
 
     Decoder.JSON.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
   }
 
   @Test public void spansRoundTrip() throws IOException {
-    List<Span2> tenClientSpans = Collections.nCopies(10, span);
+    List<Span> tenClientSpans = Collections.nCopies(10, span);
 
     byte[] message = MessageEncoder.JSON_BYTES.encode(
       tenClientSpans.stream().map(Encoder.JSON::encode).collect(Collectors.toList())
@@ -150,7 +150,7 @@ public class Span2JsonAdaptersTest {
   }
 
   @Test public void writesTraceIdHighIntoTraceIdField() {
-    Span2 with128BitTraceId = Span2.builder()
+    Span with128BitTraceId = Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("48485a3953bb6124"))
       .traceId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
       .localEndpoint(frontend)
@@ -215,7 +215,7 @@ public class Span2JsonAdaptersTest {
 
   @Test public void niceErrorOnIncomplete_endpoint() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Empty endpoint at $[0].localEndpoint reading List<Span2> from json");
+    thrown.expectMessage("Empty endpoint at $[0].localEndpoint reading List<Span> from json");
 
     String json = "[{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
@@ -365,7 +365,7 @@ public class Span2JsonAdaptersTest {
       .contains("{\"ipv4\":\"127.0.0.1\"}");
   }
 
-  static byte[] encodeList(Span2 ... spans) {
+  static byte[] encodeList(Span... spans) {
     return MessageEncoder.JSON_BYTES.encode(
       Arrays.stream(spans).map(Encoder.JSON::encode).collect(Collectors.toList())
     );

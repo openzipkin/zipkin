@@ -21,7 +21,7 @@ import org.junit.Test;
 import zipkin.BinaryAnnotation.Type;
 import zipkin.Constants;
 import zipkin.internal.PeekingIterator;
-import zipkin.internal.Span2;
+import zipkin.internal.v2.Span;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.entry;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
-public class DependencyLinkSpan2IteratorTest {
+public class DependencyLinkV2SpanIteratorTest {
   Long traceIdHigh = null;
   long traceId = 1L;
   Long parentId = null;
@@ -37,22 +37,22 @@ public class DependencyLinkSpan2IteratorTest {
 
   /** You cannot make a dependency link unless you know the the local or peer endpoint. */
   @Test public void whenNoServiceLabelsExist_kindIsUnknown() {
-    DependencyLinkSpan2Iterator iterator = iterator(
+    DependencyLinkV2SpanIterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", -1, null)
     );
 
-    Span2 span = iterator.next();
+    Span span = iterator.next();
     assertThat(span.kind()).isNull();
     assertThat(span.localEndpoint()).isNull();
     assertThat(span.remoteEndpoint()).isNull();
   }
 
   @Test public void whenOnlyAddressLabelsExist_kindIsNull() {
-    DependencyLinkSpan2Iterator iterator = iterator(
+    DependencyLinkV2SpanIterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, "service1"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", Type.BOOL.value, "service2")
     );
-    Span2 span = iterator.next();
+    Span span = iterator.next();
 
     assertThat(span.kind()).isNull();
     assertThat(span.localEndpoint().serviceName).isEqualTo("service1");
@@ -61,10 +61,10 @@ public class DependencyLinkSpan2IteratorTest {
 
   /** The linker is biased towards server spans, or client spans that know the peer localEndpoint(). */
   @Test public void whenServerLabelsAreMissing_kindIsUnknownAndLabelsAreCleared() {
-    DependencyLinkSpan2Iterator iterator = iterator(
+    DependencyLinkV2SpanIterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, "service1")
     );
-    Span2 span = iterator.next();
+    Span span = iterator.next();
 
     assertThat(span.kind()).isNull();
     assertThat(span.localEndpoint()).isNull();
@@ -73,31 +73,31 @@ public class DependencyLinkSpan2IteratorTest {
 
   /** {@link Constants#SERVER_RECV} is only applied when the local span is acting as a server */
   @Test public void whenSrServiceExists_kindIsServer() {
-    DependencyLinkSpan2Iterator iterator = iterator(
+    DependencyLinkV2SpanIterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", -1, "service")
     );
-    Span2 span = iterator.next();
+    Span span = iterator.next();
 
-    assertThat(span.kind()).isEqualTo(Span2.Kind.SERVER);
+    assertThat(span.kind()).isEqualTo(Span.Kind.SERVER);
     assertThat(span.localEndpoint().serviceName).isEqualTo("service");
     assertThat(span.remoteEndpoint()).isNull();
   }
 
   @Test public void errorAnnotationIgnored() {
-    DependencyLinkSpan2Iterator iterator = iterator(
+    DependencyLinkV2SpanIterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "error", -1, "service")
     );
-    Span2 span = iterator.next();
+    Span span = iterator.next();
 
     assertThat(span.tags()).isEmpty();
     assertThat(span.annotations()).isEmpty();
   }
 
   @Test public void errorTagAdded() {
-    DependencyLinkSpan2Iterator iterator = iterator(
+    DependencyLinkV2SpanIterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "error", Type.STRING.value, "foo")
     );
-    Span2 span = iterator.next();
+    Span span = iterator.next();
 
     assertThat(span.tags()).containsOnly(
       entry("error", "")
@@ -109,13 +109,13 @@ public class DependencyLinkSpan2IteratorTest {
    * span
    */
   @Test public void whenSrAndCaServiceExists_caIsThePeer() {
-    DependencyLinkSpan2Iterator iterator = iterator(
+    DependencyLinkV2SpanIterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, "service1"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", -1, "service2")
     );
-    Span2 span = iterator.next();
+    Span span = iterator.next();
 
-    assertThat(span.kind()).isEqualTo(Span2.Kind.SERVER);
+    assertThat(span.kind()).isEqualTo(Span.Kind.SERVER);
     assertThat(span.localEndpoint().serviceName).isEqualTo("service2");
     assertThat(span.remoteEndpoint().serviceName).isEqualTo("service1");
   }
@@ -125,56 +125,56 @@ public class DependencyLinkSpan2IteratorTest {
    * span
    */
   @Test public void whenSrAndCsServiceExists_caIsThePeer() {
-    DependencyLinkSpan2Iterator iterator = iterator(
+    DependencyLinkV2SpanIterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", -1, "service1"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", -1, "service2")
     );
-    Span2 span = iterator.next();
+    Span span = iterator.next();
 
-    assertThat(span.kind()).isEqualTo(Span2.Kind.SERVER);
+    assertThat(span.kind()).isEqualTo(Span.Kind.SERVER);
     assertThat(span.localEndpoint().serviceName).isEqualTo("service2");
     assertThat(span.remoteEndpoint().serviceName).isEqualTo("service1");
   }
 
   /** {@link Constants#CLIENT_ADDR} is more authoritative than {@link Constants#CLIENT_SEND} */
   @Test public void whenCrAndCaServiceExists_caIsThePeer() {
-    DependencyLinkSpan2Iterator iterator = iterator(
+    DependencyLinkV2SpanIterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", -1, "foo"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, "service1"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", -1, "service2")
     );
-    Span2 span = iterator.next();
+    Span span = iterator.next();
 
-    assertThat(span.kind()).isEqualTo(Span2.Kind.SERVER);
+    assertThat(span.kind()).isEqualTo(Span.Kind.SERVER);
     assertThat(span.localEndpoint().serviceName).isEqualTo("service2");
     assertThat(span.remoteEndpoint().serviceName).isEqualTo("service1");
   }
 
   /** Finagle labels two sides of the same socket "ca", Type.BOOL.value, "sa" with the local endpoint name */
   @Test public void specialCasesFinagleLocalSocketLabeling_client() {
-    DependencyLinkSpan2Iterator iterator = iterator(
+    DependencyLinkV2SpanIterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", -1, "service"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, "service"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", Type.BOOL.value, "service")
     );
-    Span2 span = iterator.next();
+    Span span = iterator.next();
 
     // When there's no "sr" annotation, we assume it is a client.
-    assertThat(span.kind()).isEqualTo(Span2.Kind.CLIENT);
+    assertThat(span.kind()).isEqualTo(Span.Kind.CLIENT);
     assertThat(span.localEndpoint()).isNull();
     assertThat(span.remoteEndpoint().serviceName).isEqualTo("service");
   }
 
   @Test public void specialCasesFinagleLocalSocketLabeling_server() {
-    DependencyLinkSpan2Iterator iterator = iterator(
+    DependencyLinkV2SpanIterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, "service"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", Type.BOOL.value, "service"),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", -1, "service")
     );
-    Span2 span = iterator.next();
+    Span span = iterator.next();
 
     // When there is an "sr" annotation, we know it is a server
-    assertThat(span.kind()).isEqualTo(Span2.Kind.SERVER);
+    assertThat(span.kind()).isEqualTo(Span.Kind.SERVER);
     assertThat(span.localEndpoint().serviceName).isEqualTo("service");
     assertThat(span.remoteEndpoint()).isNull();
   }
@@ -184,33 +184,33 @@ public class DependencyLinkSpan2IteratorTest {
    * caller, than a client span lacking its receiver.
    */
   @Test public void csWithoutSaIsServer() {
-    DependencyLinkSpan2Iterator iterator = iterator(
+    DependencyLinkV2SpanIterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", -1, "service1")
     );
-    Span2 span = iterator.next();
+    Span span = iterator.next();
 
-    assertThat(span.kind()).isEqualTo(Span2.Kind.SERVER);
+    assertThat(span.kind()).isEqualTo(Span.Kind.SERVER);
     assertThat(span.localEndpoint().serviceName).isEqualTo("service1");
     assertThat(span.remoteEndpoint()).isNull();
   }
 
   /** Service links to empty string are confusing and offer no value. */
   @Test public void emptyToNull() {
-    DependencyLinkSpan2Iterator iterator = iterator(
+    DependencyLinkV2SpanIterator iterator = iterator(
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "ca", Type.BOOL.value, ""),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "cs", -1, ""),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sa", Type.BOOL.value, ""),
       newRecord().values(traceIdHigh, traceId, parentId, spanId, "sr", -1, "")
     );
-    Span2 span = iterator.next();
+    Span span = iterator.next();
 
     assertThat(span.kind()).isNull();
     assertThat(span.localEndpoint()).isNull();
     assertThat(span.remoteEndpoint()).isNull();
   }
 
-  static DependencyLinkSpan2Iterator iterator(Record... records) {
-    return new DependencyLinkSpan2Iterator(
+  static DependencyLinkV2SpanIterator iterator(Record... records) {
+    return new DependencyLinkV2SpanIterator(
       new PeekingIterator<>(asList(records).iterator()), records[0].get(ZIPKIN_SPANS.TRACE_ID_HIGH),
       records[0].get(ZIPKIN_SPANS.TRACE_ID)
     );

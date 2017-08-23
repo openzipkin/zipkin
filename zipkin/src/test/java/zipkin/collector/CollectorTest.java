@@ -15,19 +15,17 @@ package zipkin.collector;
 
 import org.junit.Before;
 import org.junit.Test;
-import zipkin.Span;
 import zipkin.SpanDecoder;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.DetectingSpanDecoder;
-import zipkin.internal.Span2;
-import zipkin.internal.Span2Component;
-import zipkin.internal.Span2Converter;
 import zipkin.internal.Util;
+import zipkin.internal.V2SpanConverter;
+import zipkin.internal.V2StorageComponent;
+import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.Encoder;
 import zipkin.internal.v2.codec.MessageEncoder;
 import zipkin.internal.v2.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
-import zipkin.storage.StorageComponent;
 
 import static java.util.Arrays.asList;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,10 +39,10 @@ import static zipkin.TestObjects.LOTS_OF_SPANS;
 import static zipkin.storage.Callback.NOOP;
 
 public class CollectorTest {
-  StorageComponent storage = mock(StorageComponent.class);
+  zipkin.storage.StorageComponent storage = mock(zipkin.storage.StorageComponent.class);
   Collector collector;
-  Span span1 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
-  Span2 span2_1 = Span2Converter.fromSpan(span1).get(0);
+  zipkin.Span span1 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
+  Span span2_1 = V2SpanConverter.fromSpan(span1).get(0);
 
   @Before public void setup() throws Exception {
     collector = spy(Collector.builder(Collector.class)
@@ -100,12 +98,12 @@ public class CollectorTest {
    * double-conversion.
    */
   @Test public void routesToSpan2Collector() {
-    abstract class WithSpan2 extends Span2Component implements StorageComponent {
-      @Override public abstract AsyncSpanConsumer asyncSpan2Consumer();
+    abstract class WithSpan2 extends V2StorageComponent implements zipkin.storage.StorageComponent {
+      @Override public abstract zipkin.internal.v2.storage.AsyncSpanConsumer v2AsyncSpanConsumer();
     }
     WithSpan2 storage = mock(WithSpan2.class);
     AsyncSpanConsumer span2Consumer = mock(AsyncSpanConsumer.class);
-    when(storage.asyncSpan2Consumer()).thenReturn(span2Consumer);
+    when(storage.v2AsyncSpanConsumer()).thenReturn(span2Consumer);
 
     collector = spy(Collector.builder(Collector.class)
       .storage(storage).build());
@@ -113,7 +111,7 @@ public class CollectorTest {
     byte[] bytes = MessageEncoder.JSON_BYTES.encode(asList(Encoder.JSON.encode(span2_1)));
     collector.acceptSpans(bytes, SpanDecoder.DETECTING_DECODER, NOOP);
 
-    verify(collector, never()).isSampled(any(Span.class)); // skips v1 processing
+    verify(collector, never()).isSampled(any(zipkin.Span.class)); // skips v1 processing
     verify(span2Consumer).accept(eq(asList(span2_1)), any(Callback.class)); // goes to v2 instead
   }
 }

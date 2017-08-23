@@ -31,7 +31,7 @@ import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.internal.Span2Converter;
+import zipkin.internal.V2SpanConverter;
 import zipkin.internal.v2.codec.MessageEncoder;
 import zipkin.internal.v2.codec.Encoder;
 
@@ -70,8 +70,8 @@ public class ZipkinRuleTest {
     );
 
     byte[] message = MessageEncoder.JSON_BYTES.encode(asList(
-      Encoder.JSON.encode(Span2Converter.fromSpan(spans.get(0)).get(0)),
-      Encoder.JSON.encode(Span2Converter.fromSpan(spans.get(1)).get(0))
+      Encoder.JSON.encode(V2SpanConverter.fromSpan(spans.get(0)).get(0)),
+      Encoder.JSON.encode(V2SpanConverter.fromSpan(spans.get(1)).get(0))
     ));
 
     // write the span to the zipkin using http api v2

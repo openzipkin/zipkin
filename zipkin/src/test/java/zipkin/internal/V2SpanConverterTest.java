@@ -20,14 +20,14 @@ import zipkin.BinaryAnnotation;
 import zipkin.BinaryAnnotation.Type;
 import zipkin.Constants;
 import zipkin.Endpoint;
-import zipkin.Span;
 import zipkin.TraceKeys;
-import zipkin.internal.Span2.Kind;
+import zipkin.internal.v2.Span;
+import zipkin.internal.v2.Span.Kind;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.Constants.LOCAL_COMPONENT;
 
-public class Span2ConverterTest {
+public class V2SpanConverterTest {
   Endpoint frontend = Endpoint.create("frontend", 127 << 24 | 1);
   Endpoint backend = Endpoint.builder()
     .serviceName("backend")
@@ -37,7 +37,7 @@ public class Span2ConverterTest {
   Endpoint kafka = Endpoint.create("kafka", 0);
 
   @Test public void client() {
-    Span2 simpleClient = Span2.builder()
+    Span simpleClient = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -53,7 +53,7 @@ public class Span2ConverterTest {
       .putTag("clnt/finagle.version", "6.45.0")
       .build();
 
-    Span client = Span.builder()
+    zipkin.Span client = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -70,14 +70,14 @@ public class Span2ConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, backend))
       .build();
 
-    assertThat(Span2Converter.toSpan(simpleClient))
+    assertThat(V2SpanConverter.toSpan(simpleClient))
       .isEqualTo(client);
-    assertThat(Span2Converter.fromSpan(client))
+    assertThat(V2SpanConverter.fromSpan(client))
       .containsExactly(simpleClient);
   }
 
   @Test public void client_unfinished() {
-    Span2 simpleClient = Span2.builder()
+    Span simpleClient = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -88,7 +88,7 @@ public class Span2ConverterTest {
       .addAnnotation(1472470996238000L, Constants.WIRE_SEND)
       .build();
 
-    Span client = Span.builder()
+    zipkin.Span client = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -99,14 +99,14 @@ public class Span2ConverterTest {
       .addAnnotation(Annotation.create(1472470996238000L, Constants.WIRE_SEND, frontend))
       .build();
 
-    assertThat(Span2Converter.toSpan(simpleClient))
+    assertThat(V2SpanConverter.toSpan(simpleClient))
       .isEqualTo(client);
-    assertThat(Span2Converter.fromSpan(client))
+    assertThat(V2SpanConverter.fromSpan(client))
       .containsExactly(simpleClient);
   }
 
   @Test public void client_kindInferredFromAnnotation() {
-    Span2 simpleClient = Span2.builder()
+    Span simpleClient = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -117,7 +117,7 @@ public class Span2ConverterTest {
       .addAnnotation(1472470996199000L, Constants.CLIENT_SEND)
       .build();
 
-    Span client = Span.builder()
+    zipkin.Span client = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -129,12 +129,12 @@ public class Span2ConverterTest {
       .addAnnotation(Annotation.create(1472470996238000L, Constants.CLIENT_RECV, frontend))
       .build();
 
-    assertThat(Span2Converter.toSpan(simpleClient))
+    assertThat(V2SpanConverter.toSpan(simpleClient))
       .isEqualTo(client);
   }
 
   @Test public void noAnnotationsExceptAddresses() {
-    Span2 span2 = Span2.builder()
+    Span span2 = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -145,7 +145,7 @@ public class Span2ConverterTest {
       .duration(207000L)
       .build();
 
-    Span span = Span.builder()
+    zipkin.Span span = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -157,14 +157,14 @@ public class Span2ConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, backend))
       .build();
 
-    assertThat(Span2Converter.toSpan(span2))
+    assertThat(V2SpanConverter.toSpan(span2))
       .isEqualTo(span);
-    assertThat(Span2Converter.fromSpan(span))
+    assertThat(V2SpanConverter.fromSpan(span))
       .containsExactly(span2);
   }
 
   @Test public void fromSpan_redundantAddressAnnotations() {
-    Span2 span2 = Span2.builder()
+    Span span2 = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -175,7 +175,7 @@ public class Span2ConverterTest {
       .duration(207000L)
       .build();
 
-    Span span = Span.builder()
+    zipkin.Span span = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -189,12 +189,12 @@ public class Span2ConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, frontend))
       .build();
 
-    assertThat(Span2Converter.fromSpan(span))
+    assertThat(V2SpanConverter.fromSpan(span))
       .containsExactly(span2);
   }
 
   @Test public void server() {
-    Span2 simpleServer = Span2.builder()
+    Span simpleServer = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .id("216a2aea45d08fc9")
       .name("get")
@@ -207,7 +207,7 @@ public class Span2ConverterTest {
       .putTag("clnt/finagle.version", "6.45.0")
       .build();
 
-    Span server = Span.builder()
+    zipkin.Span server = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .id(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
@@ -221,15 +221,15 @@ public class Span2ConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.address(Constants.CLIENT_ADDR, frontend))
       .build();
 
-    assertThat(Span2Converter.toSpan(simpleServer))
+    assertThat(V2SpanConverter.toSpan(simpleServer))
       .isEqualTo(server);
-    assertThat(Span2Converter.fromSpan(server))
+    assertThat(V2SpanConverter.fromSpan(server))
       .containsExactly(simpleServer);
   }
 
   /** Buggy instrumentation can send data with missing endpoints. Make sure we can record it. */
   @Test public void missingEndpoints() {
-    Span2 span2 = Span2.builder()
+    Span span2 = Span.builder()
       .traceId(1L)
       .parentId(1L)
       .id(2L)
@@ -238,7 +238,7 @@ public class Span2ConverterTest {
       .duration(207000L)
       .build();
 
-    Span span = Span.builder()
+    zipkin.Span span = zipkin.Span.builder()
       .traceId(1L)
       .parentId(1L)
       .id(2L)
@@ -246,15 +246,15 @@ public class Span2ConverterTest {
       .timestamp(1472470996199000L).duration(207000L)
       .build();
 
-    assertThat(Span2Converter.toSpan(span2))
+    assertThat(V2SpanConverter.toSpan(span2))
       .isEqualTo(span);
-    assertThat(Span2Converter.fromSpan(span))
+    assertThat(V2SpanConverter.fromSpan(span))
       .containsExactly(span2);
   }
 
   /** No special treatment for invalid core annotations: missing endpoint */
   @Test public void missingEndpoints_coreAnnotation() {
-    Span2 span2 = Span2.builder()
+    Span span2 = Span.builder()
       .traceId(1L)
       .parentId(1L)
       .id(2L)
@@ -263,7 +263,7 @@ public class Span2ConverterTest {
       .addAnnotation(1472470996199000L, "sr")
       .build();
 
-    Span span = Span.builder()
+    zipkin.Span span = zipkin.Span.builder()
       .traceId(1L)
       .parentId(1L)
       .id(2L)
@@ -272,14 +272,14 @@ public class Span2ConverterTest {
       .addAnnotation(Annotation.create(1472470996199000L, "sr", null))
       .build();
 
-    assertThat(Span2Converter.toSpan(span2))
+    assertThat(V2SpanConverter.toSpan(span2))
       .isEqualTo(span);
-    assertThat(Span2Converter.fromSpan(span))
+    assertThat(V2SpanConverter.fromSpan(span))
       .containsExactly(span2);
   }
 
   @Test public void localSpan_emptyComponent() {
-    Span2 simpleLocal = Span2.builder()
+    Span simpleLocal = Span.builder()
       .traceId(1L)
       .parentId(1L)
       .id(2L)
@@ -289,7 +289,7 @@ public class Span2ConverterTest {
       .duration(207000L)
       .build();
 
-    Span local = Span.builder()
+    zipkin.Span local = zipkin.Span.builder()
       .traceId(1L)
       .parentId(1L)
       .id(2L)
@@ -297,14 +297,14 @@ public class Span2ConverterTest {
       .timestamp(1472470996199000L).duration(207000L)
       .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "", frontend)).build();
 
-    assertThat(Span2Converter.toSpan(simpleLocal))
+    assertThat(V2SpanConverter.toSpan(simpleLocal))
       .isEqualTo(local);
-    assertThat(Span2Converter.fromSpan(local))
+    assertThat(V2SpanConverter.fromSpan(local))
       .containsExactly(simpleLocal);
   }
 
   @Test public void clientAndServer() {
-    Span shared = Span.builder()
+    zipkin.Span shared = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -326,14 +326,14 @@ public class Span2ConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, backend))
       .build();
 
-    Span2.Builder builder = Span2.builder()
+    Span.Builder builder = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("get");
 
     // the client side owns timestamp and duration
-    Span2 client = builder.clone()
+    Span client = builder.clone()
       .kind(Kind.CLIENT)
       .localEndpoint(frontend)
       .remoteEndpoint(backend)
@@ -346,7 +346,7 @@ public class Span2ConverterTest {
       .build();
 
     // notice server tags are different than the client, and the client's annotations aren't here
-    Span2 server = builder.clone()
+    Span server = builder.clone()
       .kind(Kind.SERVER)
       .shared(true)
       .localEndpoint(backend)
@@ -357,7 +357,7 @@ public class Span2ConverterTest {
       .putTag("srv/finagle.version", "6.44.0")
       .build();
 
-    assertThat(Span2Converter.fromSpan(shared))
+    assertThat(V2SpanConverter.fromSpan(shared))
       .containsExactly(client, server);
   }
 
@@ -366,7 +366,7 @@ public class Span2ConverterTest {
    * a signal
    */
   @Test public void assumesServerWithoutTimestampIsShared() {
-    Span span = Span.builder()
+    zipkin.Span span = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -376,7 +376,7 @@ public class Span2ConverterTest {
       .addAnnotation(Annotation.create(1472470996350000L, Constants.SERVER_SEND, backend))
       .build();
 
-    Span2 span2 = Span2.builder()
+    Span span2 = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -388,12 +388,12 @@ public class Span2ConverterTest {
       .duration(100000L)
       .build();
 
-    assertThat(Span2Converter.fromSpan(span))
+    assertThat(V2SpanConverter.fromSpan(span))
       .containsExactly(span2);
   }
 
   @Test public void clientAndServer_loopback() {
-    Span shared = Span.builder()
+    zipkin.Span shared = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -407,20 +407,20 @@ public class Span2ConverterTest {
       .addAnnotation(Annotation.create(1472470996406000L, Constants.CLIENT_RECV, frontend))
       .build();
 
-    Span2.Builder builder = Span2.builder()
+    Span.Builder builder = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("get");
 
-    Span2 client = builder.clone()
+    Span client = builder.clone()
       .kind(Kind.CLIENT)
       .localEndpoint(frontend)
       .timestamp(1472470996199000L)
       .duration(207000L)
       .build();
 
-    Span2 server = builder.clone()
+    Span server = builder.clone()
       .kind(Kind.SERVER)
       .shared(true)
       .localEndpoint(frontend)
@@ -428,12 +428,12 @@ public class Span2ConverterTest {
       .duration(100000L)
       .build();
 
-    assertThat(Span2Converter.fromSpan(shared))
+    assertThat(V2SpanConverter.fromSpan(shared))
       .containsExactly(client, server);
   }
 
   @Test public void oneway_loopback() {
-    Span shared = Span.builder()
+    zipkin.Span shared = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -443,31 +443,31 @@ public class Span2ConverterTest {
       .addAnnotation(Annotation.create(1472470996250000L, Constants.SERVER_RECV, frontend))
       .build();
 
-    Span2.Builder builder = Span2.builder()
+    Span.Builder builder = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("get");
 
-    Span2 client = builder.clone()
+    Span client = builder.clone()
       .kind(Kind.CLIENT)
       .localEndpoint(frontend)
       .timestamp(1472470996199000L)
       .build();
 
-    Span2 server = builder.clone()
+    Span server = builder.clone()
       .kind(Kind.SERVER)
       .shared(true)
       .localEndpoint(frontend)
       .timestamp(1472470996250000L)
       .build();
 
-    assertThat(Span2Converter.fromSpan(shared))
+    assertThat(V2SpanConverter.fromSpan(shared))
       .containsExactly(client, server);
   }
 
   @Test public void producer() {
-    Span span = Span.builder()
+    zipkin.Span span = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -476,7 +476,7 @@ public class Span2ConverterTest {
       .addAnnotation(Annotation.create(1472470996199000L, Constants.MESSAGE_SEND, frontend))
       .build();
 
-    Span2 span2 = Span2.builder()
+    Span span2 = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -486,12 +486,12 @@ public class Span2ConverterTest {
       .timestamp(1472470996199000L)
       .build();
 
-    assertThat(Span2Converter.fromSpan(span))
+    assertThat(V2SpanConverter.fromSpan(span))
       .containsExactly(span2);
   }
 
   @Test public void producer_remote() {
-    Span span = Span.builder()
+    zipkin.Span span = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -502,7 +502,7 @@ public class Span2ConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.address(Constants.MESSAGE_ADDR, kafka))
       .build();
 
-    Span2 span2 = Span2.builder()
+    Span span2 = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -513,14 +513,14 @@ public class Span2ConverterTest {
       .remoteEndpoint(kafka)
       .build();
 
-    assertThat(Span2Converter.toSpan(span2))
+    assertThat(V2SpanConverter.toSpan(span2))
       .isEqualTo(span);
-    assertThat(Span2Converter.fromSpan(span))
+    assertThat(V2SpanConverter.fromSpan(span))
       .containsExactly(span2);
   }
 
   @Test public void producer_duration() {
-    Span span = Span.builder()
+    zipkin.Span span = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -532,7 +532,7 @@ public class Span2ConverterTest {
       .addAnnotation(Annotation.create(1472470996250000L, Constants.WIRE_SEND, frontend))
       .build();
 
-    Span2 span2 = Span2.builder()
+    Span span2 = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -543,14 +543,14 @@ public class Span2ConverterTest {
       .duration(51000L)
       .build();
 
-    assertThat(Span2Converter.toSpan(span2))
+    assertThat(V2SpanConverter.toSpan(span2))
       .isEqualTo(span);
-    assertThat(Span2Converter.fromSpan(span))
+    assertThat(V2SpanConverter.fromSpan(span))
       .containsExactly(span2);
   }
 
   @Test public void consumer() {
-    Span span = Span.builder()
+    zipkin.Span span = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -560,7 +560,7 @@ public class Span2ConverterTest {
       .addAnnotation(Annotation.create(1472470996199000L, Constants.MESSAGE_RECV, frontend))
       .build();
 
-    Span2 span2 = Span2.builder()
+    Span span2 = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -570,14 +570,14 @@ public class Span2ConverterTest {
       .timestamp(1472470996199000L)
       .build();
 
-    assertThat(Span2Converter.toSpan(span2))
+    assertThat(V2SpanConverter.toSpan(span2))
       .isEqualTo(span);
-    assertThat(Span2Converter.fromSpan(span))
+    assertThat(V2SpanConverter.fromSpan(span))
       .containsExactly(span2);
   }
 
   @Test public void consumer_remote() {
-    Span span = Span.builder()
+    zipkin.Span span = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -588,7 +588,7 @@ public class Span2ConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.address(Constants.MESSAGE_ADDR, kafka))
       .build();
 
-    Span2 span2 = Span2.builder()
+    Span span2 = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -599,14 +599,14 @@ public class Span2ConverterTest {
       .timestamp(1472470996199000L)
       .build();
 
-    assertThat(Span2Converter.toSpan(span2))
+    assertThat(V2SpanConverter.toSpan(span2))
       .isEqualTo(span);
-    assertThat(Span2Converter.fromSpan(span))
+    assertThat(V2SpanConverter.fromSpan(span))
       .containsExactly(span2);
   }
 
   @Test public void consumer_duration() {
-    Span span = Span.builder()
+    zipkin.Span span = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -618,7 +618,7 @@ public class Span2ConverterTest {
       .addAnnotation(Annotation.create(1472470996250000L, Constants.MESSAGE_RECV, frontend))
       .build();
 
-    Span2 span2 = Span2.builder()
+    Span span2 = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -629,15 +629,15 @@ public class Span2ConverterTest {
       .duration(51000L)
       .build();
 
-    assertThat(Span2Converter.toSpan(span2))
+    assertThat(V2SpanConverter.toSpan(span2))
       .isEqualTo(span);
-    assertThat(Span2Converter.fromSpan(span))
+    assertThat(V2SpanConverter.fromSpan(span))
       .containsExactly(span2);
   }
 
   /** shared span IDs for messaging spans isn't supported, but shouldn't break */
   @Test public void producerAndConsumer() {
-    Span shared = Span.builder()
+    zipkin.Span shared = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -650,13 +650,13 @@ public class Span2ConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.address(Constants.MESSAGE_ADDR, kafka))
       .build();
 
-    Span2.Builder builder = Span2.builder()
+    Span.Builder builder = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("whatev");
 
-    Span2 producer = builder.clone()
+    Span producer = builder.clone()
       .kind(Kind.PRODUCER)
       .localEndpoint(frontend)
       .remoteEndpoint(kafka)
@@ -664,7 +664,7 @@ public class Span2ConverterTest {
       .duration(1472470996238000L - 1472470996199000L)
       .build();
 
-    Span2 consumer = builder.clone()
+    Span consumer = builder.clone()
       .kind(Kind.CONSUMER)
       .shared(true)
       .localEndpoint(backend)
@@ -673,13 +673,13 @@ public class Span2ConverterTest {
       .duration(1472470996406000L - 1472470996403000L)
       .build();
 
-    assertThat(Span2Converter.fromSpan(shared))
+    assertThat(V2SpanConverter.fromSpan(shared))
       .containsExactly(producer, consumer);
   }
 
   /** shared span IDs for messaging spans isn't supported, but shouldn't break */
   @Test public void producerAndConsumer_loopback_shared() {
-    Span shared = Span.builder()
+    zipkin.Span shared = zipkin.Span.builder()
       .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -691,20 +691,20 @@ public class Span2ConverterTest {
       .addAnnotation(Annotation.create(1472470996406000L, Constants.MESSAGE_RECV, frontend))
       .build();
 
-    Span2.Builder builder = Span2.builder()
+    Span.Builder builder = Span.builder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("message");
 
-    Span2 producer = builder.clone()
+    Span producer = builder.clone()
       .kind(Kind.PRODUCER)
       .localEndpoint(frontend)
       .timestamp(1472470996199000L)
       .duration(1472470996238000L - 1472470996199000L)
       .build();
 
-    Span2 consumer = builder.clone()
+    Span consumer = builder.clone()
       .kind(Kind.CONSUMER)
       .shared(true)
       .localEndpoint(frontend)
@@ -712,12 +712,12 @@ public class Span2ConverterTest {
       .duration(1472470996406000L - 1472470996403000L)
       .build();
 
-    assertThat(Span2Converter.fromSpan(shared))
+    assertThat(V2SpanConverter.fromSpan(shared))
       .containsExactly(producer, consumer);
   }
 
   @Test public void dataMissingEndpointGoesOnFirstSpan() {
-    Span shared = Span.builder()
+    zipkin.Span shared = zipkin.Span.builder()
       .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
       .id(Util.lowerHexToUnsignedLong("5b4185666d50f68b"))
       .name("missing")
@@ -731,12 +731,12 @@ public class Span2ConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.create("missing", "", null))
       .build();
 
-    Span2.Builder builder = Span2.builder()
+    Span.Builder builder = Span.builder()
       .traceId("216a2aea45d08fc9")
       .id("5b4185666d50f68b")
       .name("missing");
 
-    Span2 first = builder.clone()
+    Span first = builder.clone()
       .localEndpoint(frontend)
       .addAnnotation(1472470996199000L, "foo")
       .addAnnotation(1472470996238000L, "bar")
@@ -745,14 +745,14 @@ public class Span2ConverterTest {
       .putTag("missing", "")
       .build();
 
-    Span2 second = builder.clone()
+    Span second = builder.clone()
       .localEndpoint(backend)
       .addAnnotation(1472470996250000L, "baz")
       .addAnnotation(1472470996350000L, "qux")
       .putTag("baz", "qux")
       .build();
 
-    assertThat(Span2Converter.fromSpan(shared))
+    assertThat(V2SpanConverter.fromSpan(shared))
       .containsExactly(first, second);
   }
 
@@ -764,7 +764,7 @@ public class Span2ConverterTest {
     byte[] longBuffer = ByteBuffer.allocate(8).putLong(2147483700L).array();
     byte[] doubleBuffer = ByteBuffer.allocate(8).putDouble(3.1415).array();
     byte[] bytesBuffer = "any carnal pleasure".getBytes(Util.UTF_8);
-    Span span = Span.builder()
+    zipkin.Span span = zipkin.Span.builder()
       .traceId(1)
       .name("test")
       .id(2)
@@ -776,7 +776,7 @@ public class Span2ConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.create("bytes", bytesBuffer, Type.BYTES, frontend))
       .build();
 
-    Span2 span2 = Span2.builder()
+    Span span2 = Span.builder()
       .traceId(1)
       .name("test")
       .id(2)
@@ -789,7 +789,7 @@ public class Span2ConverterTest {
       .putTag("bytes", "YW55IGNhcm5hbCBwbGVhc3VyZQ==") // from https://en.wikipedia.org/wiki/Base64
       .build();
 
-    assertThat(Span2Converter.fromSpan(span))
+    assertThat(V2SpanConverter.fromSpan(span))
       .containsExactly(span2);
   }
 }

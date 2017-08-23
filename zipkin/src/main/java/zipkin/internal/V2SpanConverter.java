@@ -22,8 +22,8 @@ import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
-import zipkin.Span;
-import zipkin.internal.Span2.Kind;
+import zipkin.internal.v2.Span;
+import zipkin.internal.v2.Span.Kind;
 
 import static zipkin.BinaryAnnotation.Type.BOOL;
 import static zipkin.Constants.CLIENT_ADDR;
@@ -32,16 +32,16 @@ import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.internal.Util.writeBase64Url;
 
 /**
- * This converts {@link zipkin.Span} instances to {@link Span2} and visa versa.
+ * This converts {@link zipkin.Span} instances to {@link Span} and visa versa.
  */
-public final class Span2Converter {
+public final class V2SpanConverter {
 
   /**
-   * Converts the input, parsing RPC annotations into {@link Span2#kind()}.
+   * Converts the input, parsing RPC annotations into {@link Span#kind()}.
    *
    * @return a span for each unique {@link Annotation#endpoint annotation endpoint} service name.
    */
-  public static List<Span2> fromSpan(Span source) {
+  public static List<Span> fromSpan(zipkin.Span source) {
     Builders builders = new Builders(source);
     // add annotations unless they are "core"
     builders.processAnnotations(source);
@@ -51,18 +51,18 @@ public final class Span2Converter {
   }
 
   static final class Builders {
-    final List<Span2.Builder> spans = new ArrayList<>();
+    final List<Span.Builder> spans = new ArrayList<>();
     Annotation cs = null, sr = null, ss = null, cr = null, ms = null, mr = null, ws = null, wr =
       null;
 
-    Builders(Span source) {
+    Builders(zipkin.Span source) {
       this.spans.add(newBuilder(source));
     }
 
-    void processAnnotations(Span source) {
+    void processAnnotations(zipkin.Span source) {
       for (int i = 0, length = source.annotations.size(); i < length; i++) {
         Annotation a = source.annotations.get(i);
-        Span2.Builder currentSpan = forEndpoint(source, a.endpoint);
+        Span.Builder currentSpan = forEndpoint(source, a.endpoint);
         // core annotations require an endpoint. Don't give special treatment when that's missing
         if (a.value.length() == 2 && a.endpoint != null) {
           if (a.value.equals(Constants.CLIENT_SEND)) {
@@ -100,8 +100,8 @@ public final class Span2Converter {
         maybeTimestampDuration(source, cs, cr);
 
         // special-case loopback: We need to make sure on loopback there are two span2s
-        Span2.Builder client = forEndpoint(source, cs.endpoint);
-        Span2.Builder server;
+        Span.Builder client = forEndpoint(source, cs.endpoint);
+        Span.Builder server;
         if (closeEnough(cs.endpoint, sr.endpoint)) {
           client.kind(Kind.CLIENT);
           // fork a new span for the server side
@@ -119,10 +119,10 @@ public final class Span2Converter {
       } else if (sr != null && ss != null) {
         maybeTimestampDuration(source, sr, ss);
       } else { // otherwise, the span is incomplete. revert special-casing
-        for (Span2.Builder next : spans) {
-          if (Kind.CLIENT.equals(next.kind)) {
+        for (Span.Builder next : spans) {
+          if (Kind.CLIENT.equals(next.kind())) {
             if (cs != null) next.timestamp(cs.timestamp);
-          } else if (Kind.SERVER.equals(next.kind)) {
+          } else if (Kind.SERVER.equals(next.kind())) {
             if (sr != null) next.timestamp(sr.timestamp);
           }
         }
@@ -141,8 +141,8 @@ public final class Span2Converter {
       // ms and mr are not supposed to be in the same span, but in case they are..
       if (ms != null && mr != null) {
         // special-case loopback: We need to make sure on loopback there are two span2s
-        Span2.Builder producer = forEndpoint(source, ms.endpoint);
-        Span2.Builder consumer;
+        Span.Builder producer = forEndpoint(source, ms.endpoint);
+        Span.Builder consumer;
         if (closeEnough(ms.endpoint, mr.endpoint)) {
           producer.kind(Kind.PRODUCER);
           // fork a new span for the consumer side
@@ -173,8 +173,8 @@ public final class Span2Converter {
       }
     }
 
-    void maybeTimestampDuration(Span source, Annotation begin, @Nullable Annotation end) {
-      Span2.Builder span2 = forEndpoint(source, begin.endpoint);
+    void maybeTimestampDuration(zipkin.Span source, Annotation begin, @Nullable Annotation end) {
+      Span.Builder span2 = forEndpoint(source, begin.endpoint);
       if (source.timestamp != null && source.duration != null) {
         span2.timestamp(source.timestamp).duration(source.duration);
       } else {
@@ -183,7 +183,7 @@ public final class Span2Converter {
       }
     }
 
-    void processBinaryAnnotations(Span source) {
+    void processBinaryAnnotations(zipkin.Span source) {
       Endpoint ca = null, sa = null, ma = null;
       for (int i = 0, length = source.binaryAnnotations.size(); i < length; i++) {
         BinaryAnnotation b = source.binaryAnnotations.get(i);
@@ -200,7 +200,7 @@ public final class Span2Converter {
           continue;
         }
 
-        Span2.Builder currentSpan = forEndpoint(source, b.endpoint);
+        Span.Builder currentSpan = forEndpoint(source, b.endpoint);
         switch (b.type) {
           case BOOL:
             break; // already handled
@@ -250,30 +250,31 @@ public final class Span2Converter {
       }
     }
 
-    Span2.Builder forEndpoint(Span source, @Nullable Endpoint e) {
+    Span.Builder forEndpoint(zipkin.Span source, @Nullable Endpoint e) {
       if (e == null) return spans.get(0); // allocate missing endpoint data to first span
       for (int i = 0, length = spans.size(); i < length; i++) {
-        Span2.Builder next = spans.get(i);
-        if (next.localEndpoint == null) {
-          next.localEndpoint = e;
+        Span.Builder next = spans.get(i);
+        Endpoint nextLocalEndpoint = next.localEndpoint();
+        if (nextLocalEndpoint == null) {
+          next.localEndpoint(e);
           return next;
-        } else if (closeEnough(next.localEndpoint, e)) {
+        } else if (closeEnough(nextLocalEndpoint, e)) {
           return next;
         }
       }
       return newSpanBuilder(source, e);
     }
 
-    Span2.Builder newSpanBuilder(Span source, Endpoint e) {
-      Span2.Builder result = newBuilder(source).localEndpoint(e);
+    Span.Builder newSpanBuilder(zipkin.Span source, Endpoint e) {
+      Span.Builder result = newBuilder(source).localEndpoint(e);
       spans.add(result);
       return result;
     }
 
-    List<Span2> build() {
+    List<Span> build() {
       int length = spans.size();
       if (length == 1) return Collections.singletonList(spans.get(0).build());
-      List<Span2> result = new ArrayList<>(length);
+      List<Span> result = new ArrayList<>(length);
       for (int i = 0; i < length; i++) {
         result.add(spans.get(i).build());
       }
@@ -285,8 +286,8 @@ public final class Span2Converter {
     return left.serviceName.equals(right.serviceName);
   }
 
-  static Span2.Builder newBuilder(Span source) {
-    return Span2.builder()
+  static Span.Builder newBuilder(zipkin.Span source) {
+    return Span.builder()
       .traceIdHigh(source.traceIdHigh)
       .traceId(source.traceId)
       .parentId(source.parentId)
@@ -295,9 +296,9 @@ public final class Span2Converter {
       .debug(source.debug);
   }
 
-  /** Converts the input, parsing {@link Span2#kind()} into RPC annotations. */
-  public static Span toSpan(Span2 in) {
-    Span.Builder result = Span.builder()
+  /** Converts the input, parsing {@link Span#kind()} into RPC annotations. */
+  public static zipkin.Span toSpan(Span in) {
+    zipkin.Span.Builder result = zipkin.Span.builder()
       .traceIdHigh(in.traceIdHigh())
       .traceId(in.traceId())
       .parentId(in.parentId())
@@ -392,7 +393,8 @@ public final class Span2Converter {
           remoteEndpointType = Constants.MESSAGE_ADDR;
           if (timestamp != 0L && duration != 0L) {
             wr = Annotation.create(timestamp, Constants.WIRE_RECV, in.localEndpoint());
-            mr = Annotation.create(timestamp + duration, Constants.MESSAGE_RECV, in.localEndpoint());
+            mr =
+              Annotation.create(timestamp + duration, Constants.MESSAGE_RECV, in.localEndpoint());
           } else if (timestamp != 0L) {
             mr = Annotation.create(timestamp, Constants.MESSAGE_RECV, in.localEndpoint());
           }

@@ -16,8 +16,8 @@ package zipkin.storage;
 import java.util.List;
 import zipkin.DependencyLink;
 import zipkin.Endpoint;
-import zipkin.Span;
 import zipkin.internal.Nullable;
+import zipkin.internal.v2.Span;
 
 public interface SpanStore {
 
@@ -31,7 +31,7 @@ public interface SpanStore {
    * <p>If {@link StorageComponent.Builder#strictTraceId(boolean)} is enabled, spans with the
    * same 64-bit trace ID will be grouped together.
    */
-  List<List<Span>> getTraces(QueryRequest request);
+  List<List<zipkin.Span>> getTraces(QueryRequest request);
 
   /**
    * Get the available trace information from the storage system. Spans in trace are sorted by the
@@ -40,13 +40,13 @@ public interface SpanStore {
    * <p>When {@link StorageComponent.Builder#strictTraceId(boolean)} is true, spans with the
    * same {@code traceIdLow} are returned even if the {@code traceIdHigh is different}.
    *
-   * @param traceIdHigh The upper 64-bits of the trace ID. See {@link Span#traceIdHigh}
-   * @param traceIdLow The lower 64-bits of the trace ID. See {@link Span#traceId}
+   * @param traceIdHigh The upper 64-bits of the trace ID. See {@link zipkin.Span#traceIdHigh}
+   * @param traceIdLow The lower 64-bits of the trace ID. See {@link zipkin.Span#traceId}
    * @return a list of spans with the same 128-bit trace ID, or null if not present.
    * @since 1.15
    */
   @Nullable
-  List<Span> getTrace(long traceIdHigh, long traceIdLow);
+  List<zipkin.Span> getTrace(long traceIdHigh, long traceIdLow);
 
   /**
    * Retrieves spans that share a 128-bit trace id, as returned from backend data store queries,
@@ -59,13 +59,13 @@ public interface SpanStore {
    * <p>When {@link StorageComponent.Builder#strictTraceId(boolean)} is true, spans with the
    * same {@code traceIdLow} are returned even if the {@code traceIdHigh is different}.
    *
-   * @param traceIdHigh The upper 64-bits of the trace ID. See {@link Span#traceIdHigh}
-   * @param traceIdLow The lower 64-bits of the trace ID. See {@link Span#traceId}
+   * @param traceIdHigh The upper 64-bits of the trace ID. See {@link zipkin.Span#traceIdHigh}
+   * @param traceIdLow The lower 64-bits of the trace ID. See {@link zipkin.Span#traceId}
    * @return a list of spans with the same 128-bit trace ID, or null if not present.
    * @since 1.15
    */
   @Nullable
-  List<Span> getRawTrace(long traceIdHigh, long traceIdLow);
+  List<zipkin.Span> getRawTrace(long traceIdHigh, long traceIdLow);
 
   /**
    * This calls {@link #getTrace(long, long)} with {@code traceIdHigh} set to zero.
@@ -74,7 +74,7 @@ public interface SpanStore {
    */
   @Deprecated
   @Nullable
-  List<Span> getTrace(long traceId);
+  List<zipkin.Span> getTrace(long traceId);
 
   /**
    * This calls {@link #getRawTrace(long, long)} with {@code traceIdHigh} set to zero.
@@ -83,7 +83,7 @@ public interface SpanStore {
    */
   @Deprecated
   @Nullable
-  List<Span> getRawTrace(long traceId);
+  List<zipkin.Span> getRawTrace(long traceId);
 
   /**
    * Get all the {@link Endpoint#serviceName service names}.
@@ -107,7 +107,7 @@ public interface SpanStore {
    * the original endTs, even when bucketed. Using the daily example, if endTs was 11pm and lookback
    * was 25 hours, the implementation would query against 2 buckets.
    *
-   * <p>Some implementations parse {@link zipkin.internal.DependencyLinkSpan} from storage and call
+   * <p>Some implementations parse {@link Span} from storage and call
    * {@link zipkin.internal.DependencyLinker} to aggregate links. The reason is certain graph logic,
    * such as skipping up the tree is difficult to implement as a storage query.
    *
@@ -115,9 +115,9 @@ public interface SpanStore {
    * {@link StorageComponent.Builder#strictTraceId(boolean)} was set to false. This ensures call
    * counts are not incremented twice due to one hop downgrading from 128 to 64-bit trace IDs.
    *
-   * @param endTs only return links from spans where {@link Span#timestamp} are at or before this
+   * @param endTs only return links from spans where {@link zipkin.Span#timestamp} are at or before this
    * time in epoch milliseconds.
-   * @param lookback only return links from spans where {@link Span#timestamp} are at or after
+   * @param lookback only return links from spans where {@link zipkin.Span#timestamp} are at or after
    * (endTs - lookback) in milliseconds. Defaults to endTs.
    * @return dependency links in an interval contained by (endTs - lookback) or empty if none are
    * found

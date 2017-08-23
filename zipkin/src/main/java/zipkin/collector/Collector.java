@@ -16,14 +16,13 @@ package zipkin.collector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-import zipkin.Span;
 import zipkin.SpanDecoder;
-import zipkin.internal.Collector2;
 import zipkin.internal.DetectingSpanDecoder;
-import zipkin.internal.Span2;
-import zipkin.internal.Span2Component;
-import zipkin.internal.Span2Converter;
-import zipkin.internal.Span2JsonSpanDecoder;
+import zipkin.internal.V2Collector;
+import zipkin.internal.V2JsonSpanDecoder;
+import zipkin.internal.V2SpanConverter;
+import zipkin.internal.V2StorageComponent;
+import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.Decoder;
 import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
@@ -39,7 +38,7 @@ import static zipkin.internal.Util.checkNotNull;
  * before storage is attempted. This ensures that calling threads are disconnected from storage
  * threads.
  */
-public class Collector extends zipkin.internal.Collector<SpanDecoder, Span> { // not final for mock
+public class Collector extends zipkin.internal.Collector<SpanDecoder, zipkin.Span> { // not final for mock
 
   /** Needed to scope this to the correct logging category */
   public static Builder builder(Class<?> loggingClass) {
@@ -81,18 +80,18 @@ public class Collector extends zipkin.internal.Collector<SpanDecoder, Span> { //
 
   final CollectorSampler sampler;
   final StorageComponent storage;
-  final Collector2 storage2;
+  final V2Collector storage2;
 
   Collector(Builder builder) {
     super(builder.logger, builder.metrics);
     this.storage = checkNotNull(builder.storage, "storage");
     this.sampler = builder.sampler == null ? CollectorSampler.ALWAYS_SAMPLE : builder.sampler;
-    if (storage instanceof Span2Component) {
-      storage2 = new Collector2(
+    if (storage instanceof V2StorageComponent) {
+      storage2 = new V2Collector(
         builder.logger,
         builder.metrics,
         builder.sampler,
-        (Span2Component) storage
+        (V2StorageComponent) storage
       );
     } else {
       storage2 = null;
@@ -108,7 +107,7 @@ public class Collector extends zipkin.internal.Collector<SpanDecoder, Span> { //
       callback.onError(errorReading(e));
       return;
     }
-    if (storage2 != null && decoder instanceof Span2JsonSpanDecoder) {
+    if (storage2 != null && decoder instanceof V2JsonSpanDecoder) {
       storage2.acceptSpans(serializedSpans, Decoder.JSON, callback);
     } else {
       super.acceptSpans(serializedSpans, decoder, callback);
@@ -120,7 +119,7 @@ public class Collector extends zipkin.internal.Collector<SpanDecoder, Span> { //
    */
   @Deprecated public void acceptSpans(List<byte[]> serializedSpans, SpanDecoder decoder,
     Callback<Void> callback) {
-    List<Span> spans = new ArrayList<>(serializedSpans.size());
+    List<zipkin.Span> spans = new ArrayList<>(serializedSpans.size());
     try {
       int bytesRead = 0;
       for (byte[] serializedSpan : serializedSpans) {
@@ -135,12 +134,12 @@ public class Collector extends zipkin.internal.Collector<SpanDecoder, Span> { //
     accept(spans, callback);
   }
 
-  @Override public void accept(List<Span> spans, Callback<Void> callback) {
+  @Override public void accept(List<zipkin.Span> spans, Callback<Void> callback) {
     if (storage2 != null) {
       int length = spans.size();
-      List<Span2> span2s = new ArrayList<>(length);
+      List<Span> span2s = new ArrayList<>(length);
       for (int i = 0; i < length; i++) {
-        span2s.addAll(Span2Converter.fromSpan(spans.get(i)));
+        span2s.addAll(V2SpanConverter.fromSpan(spans.get(i)));
       }
       storage2.accept(span2s, callback);
     } else {
@@ -148,19 +147,19 @@ public class Collector extends zipkin.internal.Collector<SpanDecoder, Span> { //
     }
   }
 
-  @Override protected List<Span> decodeList(SpanDecoder decoder, byte[] serialized) {
+  @Override protected List<zipkin.Span> decodeList(SpanDecoder decoder, byte[] serialized) {
     return decoder.readSpans(serialized);
   }
 
-  @Override protected boolean isSampled(Span span) {
+  @Override protected boolean isSampled(zipkin.Span span) {
     return sampler.isSampled(span.traceId, span.debug);
   }
 
-  @Override protected void record(List<Span> sampled, Callback<Void> callback) {
+  @Override protected void record(List<zipkin.Span> sampled, Callback<Void> callback) {
     storage.asyncSpanConsumer().accept(sampled, callback);
   }
 
-  @Override protected String idString(Span span) {
+  @Override protected String idString(zipkin.Span span) {
     return span.idString();
   }
 }

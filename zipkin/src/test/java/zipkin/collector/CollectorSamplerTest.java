@@ -37,7 +37,7 @@ public class CollectorSamplerTest {
     CollectorSampler sampler = CollectorSampler.create(0.1f);
 
     assertThat(sampler.isSampled(Long.MIN_VALUE, null))
-        .isEqualTo(sampler.isSampled(Long.MAX_VALUE, null));
+      .isEqualTo(sampler.isSampled(Long.MAX_VALUE, null));
   }
 
   @Test
@@ -45,7 +45,7 @@ public class CollectorSamplerTest {
     CollectorSampler sampler = CollectorSampler.create(0.0f);
 
     assertThat(sampler.isSampled(Long.MIN_VALUE, true))
-        .isTrue();
+      .isTrue();
   }
 
   @Test
@@ -54,7 +54,7 @@ public class CollectorSamplerTest {
     CollectorSampler sampler = CollectorSampler.create(sampleRate);
 
     assertThat(lotsOfSpans().filter(s -> sampler.isSampled(s.traceId, null)).count())
-        .isCloseTo((long) (LOTS_OF_SPANS.length * sampleRate), withPercentage(3));
+      .isCloseTo((long) (LOTS_OF_SPANS.length * sampleRate), withPercentage(3));
   }
 
   /**
@@ -74,7 +74,7 @@ public class CollectorSamplerTest {
     CollectorSampler sampler = CollectorSampler.create(0.0f);
 
     assertThat(lotsOfSpans().filter(s -> sampler.isSampled(s.traceId, null)))
-        .isEmpty();
+      .isEmpty();
   }
 
   @Test
@@ -82,7 +82,7 @@ public class CollectorSamplerTest {
     CollectorSampler sampler = CollectorSampler.create(1.0f);
 
     assertThat(lotsOfSpans().filter(s -> sampler.isSampled(s.traceId, null)))
-        .hasSize(LOTS_OF_SPANS.length);
+      .hasSize(LOTS_OF_SPANS.length);
   }
 
   @Test

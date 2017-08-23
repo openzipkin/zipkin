@@ -13,22 +13,21 @@
  */
 package zipkin.internal.v2.codec;
 
-import zipkin.Span;
 import zipkin.internal.JsonCodec;
-import zipkin.internal.Span2;
+import zipkin.internal.v2.Span;
 
 import static zipkin.internal.v2.codec.Span2JsonAdapters.SPAN_WRITER;
 
 /**
- * @param <S> type of the span, usually {@link Span}
+ * @param <S> type of the span, usually {@link zipkin.Span}
  */
 public interface Encoder<S> {
-  Encoder<Span2> JSON = new Encoder<Span2>() {
+  Encoder<Span> JSON = new Encoder<Span>() {
     @Override public Encoding encoding() {
       return Encoding.JSON;
     }
 
-    @Override public byte[] encode(Span2 span) {
+    @Override public byte[] encode(Span span) {
       return JsonCodec.write(SPAN_WRITER, span);
     }
   };

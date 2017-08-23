@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.internal;
+package zipkin.internal.v2;
 
 import com.google.auto.value.AutoValue;
 import java.io.Serializable;
@@ -25,8 +25,8 @@ import java.util.TreeMap;
 import zipkin.Annotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
-import zipkin.Span;
 import zipkin.TraceKeys;
+import zipkin.internal.Nullable;
 import zipkin.internal.v2.codec.Encoder;
 
 import static zipkin.internal.Util.UTF_8;
@@ -36,28 +36,26 @@ import static zipkin.internal.Util.sortedList;
 import static zipkin.internal.Util.writeHexLong;
 
 /**
- *
  * A trace is a series of spans (often RPC calls) which form a latency tree.
  *
- * <p>Spans are usually created by instrumentation in RPC clients or servers, but can also
- * represent in-process activity. Annotations in spans are similar to log statements, and are
- * sometimes created directly by application developers to indicate events of interest, such as a
- * cache miss.
+ * <p>Spans are usually created by instrumentation in RPC clients or servers, but can also represent
+ * in-process activity. Annotations in spans are similar to log statements, and are sometimes
+ * created directly by application developers to indicate events of interest, such as a cache miss.
  *
- * <p>The root span is where {@link #parentId} is null; it usually has the longest {@link #duration} in the
- * trace.
+ * <p>The root span is where {@link #parentId} is null; it usually has the longest {@link #duration}
+ * in the trace.
  *
- * <p>Span identifiers are packed into longs, but should be treated opaquely. ID encoding is
- * 16 or 32 character lower-hex, to avoid signed interpretation. * This is a single-host view of a {@link Span}: the primary way tracers record data.
+ * <p>Span identifiers are packed into longs, but should be treated opaquely. ID encoding is 16 or
+ * 32 character lower-hex, to avoid signed interpretation. * This is a single-host view of a {@link
+ * zipkin.Span}: the primary way tracers record data.
  *
- * <h3>Relationship to {@link zipkin.Span}</h3>
- * <p>This type is intended to replace use of {@link zipkin.Span}. Particularly, tracers represent a
- * single-host view of an operation. By making one endpoint implicit for all data, this type does not
- * need to repeat endpoints on each data like {@link zipkin.Span span} does. This results in simpler
- * and smaller data.
+ * <h3>Relationship to {@link zipkin.Span}</h3> <p>This type is intended to replace use of {@link
+ * zipkin.Span}. Particularly, tracers represent a single-host view of an operation. By making one
+ * endpoint implicit for all data, this type does not need to repeat endpoints on each data like
+ * {@link zipkin.Span span} does. This results in simpler and smaller data.
  */
 @AutoValue
-public abstract class Span2 implements Serializable { // for Spark jobs
+public abstract class Span implements Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 
   /** When non-zero, the trace containing this span uses 128-bit trace identifiers. */
@@ -245,9 +243,6 @@ public abstract class Span2 implements Serializable { // for Spark jobs
     Boolean debug;
     Boolean shared;
 
-    Builder() {
-    }
-
     public Builder clear() {
       traceIdHigh = 0L;
       traceId = null;
@@ -289,7 +284,7 @@ public abstract class Span2 implements Serializable { // for Spark jobs
       return result;
     }
 
-    Builder(Span2 source) {
+    Builder(Span source) {
       traceId = source.traceId();
       parentId = source.parentId();
       id = source.id();
@@ -311,6 +306,14 @@ public abstract class Span2 implements Serializable { // for Spark jobs
       shared = source.shared();
     }
 
+    @Nullable public Kind kind() {
+      return kind;
+    }
+
+    @Nullable public Endpoint localEndpoint() {
+      return localEndpoint;
+    }
+
     /**
      * Decodes the trace ID from its lower-hex representation.
      *
@@ -325,13 +328,13 @@ public abstract class Span2 implements Serializable { // for Spark jobs
       return traceId(lowerHexToUnsignedLong(traceId));
     }
 
-    /** @see Span2#traceIdHigh */
+    /** @see Span#traceIdHigh */
     public Builder traceIdHigh(long traceIdHigh) {
       this.traceIdHigh = traceIdHigh;
       return this;
     }
 
-    /** @see Span2#traceId */
+    /** @see Span#traceId */
     public Builder traceId(long traceId) {
       this.traceId = traceId;
       return this;
@@ -347,7 +350,7 @@ public abstract class Span2 implements Serializable { // for Spark jobs
       return this;
     }
 
-    /** @see Span2#parentId */
+    /** @see Span#parentId */
     public Builder parentId(@Nullable Long parentId) {
       this.parentId = parentId;
       return this;
@@ -363,78 +366,78 @@ public abstract class Span2 implements Serializable { // for Spark jobs
       return this;
     }
 
-    /** @see Span2#id */
+    /** @see Span#id */
     public Builder id(long id) {
       this.id = id;
       return this;
     }
 
-    /** @see Span2#kind */
+    /** @see Span#kind */
     public Builder kind(@Nullable Kind kind) {
       this.kind = kind;
       return this;
     }
 
-    /** @see Span2#name */
+    /** @see Span#name */
     public Builder name(@Nullable String name) {
       this.name = name == null || name.isEmpty() ? null : name.toLowerCase(Locale.ROOT);
       return this;
     }
 
-    /** @see Span2#timestamp */
+    /** @see Span#timestamp */
     public Builder timestamp(@Nullable Long timestamp) {
       if (timestamp != null && timestamp == 0L) timestamp = null;
       this.timestamp = timestamp;
       return this;
     }
 
-    /** @see Span2#duration */
+    /** @see Span#duration */
     public Builder duration(@Nullable Long duration) {
       if (duration != null && duration == 0L) duration = null;
       this.duration = duration;
       return this;
     }
 
-    /** @see Span2#localEndpoint */
+    /** @see Span#localEndpoint */
     public Builder localEndpoint(@Nullable Endpoint localEndpoint) {
       this.localEndpoint = localEndpoint;
       return this;
     }
 
-    /** @see Span2#remoteEndpoint */
+    /** @see Span#remoteEndpoint */
     public Builder remoteEndpoint(@Nullable Endpoint remoteEndpoint) {
       this.remoteEndpoint = remoteEndpoint;
       return this;
     }
 
-    /** @see Span2#annotations */
+    /** @see Span#annotations */
     public Builder addAnnotation(long timestamp, String value) {
       if (annotations == null) annotations = new ArrayList<>(2);
       annotations.add(Annotation.create(timestamp, value, null));
       return this;
     }
 
-    /** @see Span2#tags */
+    /** @see Span#tags */
     public Builder putTag(String key, String value) {
       if (tags == null) tags = new TreeMap<>();
       this.tags.put(checkNotNull(key, "key"), checkNotNull(value, "value"));
       return this;
     }
 
-    /** @see Span2#debug */
+    /** @see Span#debug */
     public Builder debug(@Nullable Boolean debug) {
       this.debug = debug;
       return this;
     }
 
-    /** @see Span2#shared */
+    /** @see Span#shared */
     public Builder shared(@Nullable Boolean shared) {
       this.shared = shared;
       return this;
     }
 
-    public Span2 build() {
-      return new AutoValue_Span2(
+    public Span build() {
+      return new AutoValue_Span(
         traceIdHigh,
         traceId,
         parentId,
@@ -450,6 +453,9 @@ public abstract class Span2 implements Serializable { // for Spark jobs
         debug,
         shared
       );
+    }
+
+    Builder() {
     }
   }
 
