@@ -33,10 +33,9 @@ import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
-import zipkin.Span;
 import zipkin.TraceKeys;
-import zipkin.internal.Span2;
-import zipkin.internal.Span2Converter;
+import zipkin.internal.v2.Span;
+import zipkin.internal.V2SpanConverter;
 import zipkin.internal.Util;
 
 @Measurement(iterations = 5, time = 1)
@@ -54,7 +53,7 @@ public class Span2ConverterBenchmarks {
     .port(9000)
     .build();
 
-  Span shared = Span.builder()
+  zipkin.Span shared = zipkin.Span.builder()
     .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
     .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
     .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -76,7 +75,7 @@ public class Span2ConverterBenchmarks {
     .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, backend))
     .build();
 
-  Span server = Span.builder()
+  zipkin.Span server = zipkin.Span.builder()
     .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
     .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
     .parentId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
@@ -89,12 +88,12 @@ public class Span2ConverterBenchmarks {
     .addBinaryAnnotation(BinaryAnnotation.address(Constants.CLIENT_ADDR, frontend))
     .build();
 
-  Span2 server2 = Span2.builder()
+  Span server2 = Span.builder()
     .traceId("7180c278b62e8f6a216a2aea45d08fc9")
     .parentId("6b221d5bc9e6496c")
     .id("5b4185666d50f68b")
     .name("get")
-    .kind(Span2.Kind.SERVER)
+    .kind(Span.Kind.SERVER)
     .shared(true)
     .localEndpoint(backend)
     .remoteEndpoint(frontend)
@@ -104,16 +103,16 @@ public class Span2ConverterBenchmarks {
     .putTag("srv/finagle.version", "6.44.0")
     .build();
 
-  @Benchmark public List<Span2> fromSpan_splitShared() {
-    return Span2Converter.fromSpan(shared);
+  @Benchmark public List<Span> fromSpan_splitShared() {
+    return V2SpanConverter.fromSpan(shared);
   }
 
-  @Benchmark public List<Span2> fromSpan() {
-    return Span2Converter.fromSpan(server);
+  @Benchmark public List<Span> fromSpan() {
+    return V2SpanConverter.fromSpan(server);
   }
 
-  @Benchmark public Span toSpan() {
-    return Span2Converter.toSpan(server2);
+  @Benchmark public zipkin.Span toSpan() {
+    return V2SpanConverter.toSpan(server2);
   }
 
   // Convenience main entry-point

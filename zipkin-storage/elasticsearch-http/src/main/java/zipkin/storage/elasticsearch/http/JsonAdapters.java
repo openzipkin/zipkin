@@ -20,19 +20,18 @@ import java.io.IOException;
 import zipkin.Annotation;
 import zipkin.DependencyLink;
 import zipkin.Endpoint;
-import zipkin.Span;
-import zipkin.internal.Span2;
-import zipkin.internal.Span2Converter;
+import zipkin.internal.v2.Span;
+import zipkin.internal.V2SpanConverter;
 
 /**
  * Read-only json adapters resurrected from before we switched to Java 6 as storage components can
  * be Java 7+
  */
 final class JsonAdapters {
-  static final JsonAdapter<Span> SPAN_ADAPTER = new JsonAdapter<Span>() {
+  static final JsonAdapter<zipkin.Span> SPAN_ADAPTER = new JsonAdapter<zipkin.Span>() {
     @Override
-    public Span fromJson(JsonReader reader) throws IOException {
-      Span2.Builder result = Span2.builder();
+    public zipkin.Span fromJson(JsonReader reader) throws IOException {
+      Span.Builder result = Span.builder();
       reader.beginObject();
       while (reader.hasNext()) {
         String nextName = reader.nextName();
@@ -51,7 +50,7 @@ final class JsonAdapters {
             result.id(reader.nextString());
             break;
           case "kind":
-            result.kind(Span2.Kind.valueOf(reader.nextString()));
+            result.kind(Span.Kind.valueOf(reader.nextString()));
             break;
           case "name":
             result.name(reader.nextString());
@@ -94,11 +93,11 @@ final class JsonAdapters {
         }
       }
       reader.endObject();
-      return Span2Converter.toSpan(result.build());
+      return V2SpanConverter.toSpan(result.build());
     }
 
     @Override
-    public void toJson(JsonWriter writer, Span value) throws IOException {
+    public void toJson(JsonWriter writer, zipkin.Span value) throws IOException {
       throw new UnsupportedOperationException();
     }
   };

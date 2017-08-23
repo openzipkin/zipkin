@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import zipkin.DependencyLink;
-import zipkin.Span;
-import zipkin.internal.Span2.Kind;
+import zipkin.internal.v2.Span;
+import zipkin.internal.v2.Span.Kind;
 
 import static java.util.logging.Level.FINE;
 import static zipkin.Constants.ERROR;
@@ -33,9 +33,9 @@ import static zipkin.Constants.ERROR;
  *
  * <p>This implementation traverses the tree, and only creates links between {@link Kind#SERVER
  * server} spans. One exception is at the bottom of the trace tree. {@link Kind#CLIENT client} spans
- * that record their {@link Span2#remoteEndpoint()} are included, as this accounts for
- * uninstrumented services. Spans with {@link Span2#kind()} unset, but {@link
- * Span2#remoteEndpoint()} set are treated the same as client spans.
+ * that record their {@link Span#remoteEndpoint()} are included, as this accounts for uninstrumented
+ * services. Spans with {@link Span#kind()} unset, but {@link Span#remoteEndpoint()} set are treated
+ * the same as client spans.
  */
 public final class DependencyLinker {
   private final Logger logger;
@@ -53,20 +53,20 @@ public final class DependencyLinker {
   /**
    * @param spans spans where all spans have the same trace id
    */
-  public DependencyLinker putTrace(Collection<Span> spans) {
+  public DependencyLinker putTrace(Collection<zipkin.Span> spans) {
     if (spans.isEmpty()) return this;
 
-    List<Span2> linkSpans = new LinkedList<>();
-    for (Span s : MergeById.apply(spans)) {
-      linkSpans.addAll(Span2Converter.fromSpan(s));
+    List<Span> linkSpans = new LinkedList<>();
+    for (zipkin.Span s : MergeById.apply(spans)) {
+      linkSpans.addAll(V2SpanConverter.fromSpan(s));
     }
     return putTrace(linkSpans.iterator());
   }
 
-  static final Node.MergeFunction<Span2> MERGE_RPC = new MergeRpc();
+  static final Node.MergeFunction<Span> MERGE_RPC = new MergeRpc();
 
-  static final class MergeRpc implements Node.MergeFunction<Span2> {
-    @Override public Span2 merge(Span2 left, Span2 right) {
+  static final class MergeRpc implements Node.MergeFunction<Span> {
+    @Override public Span merge(Span left, Span right) {
       if (left == null) return right;
       if (right == null) return left;
       if (left.kind() == null) {
@@ -75,15 +75,15 @@ public final class DependencyLinker {
       if (right.kind() == null) {
         return copyError(right, left);
       }
-      Span2 server = left.kind() == Kind.SERVER ? left : right;
-      Span2 client = left == server ? right : left;
+      Span server = left.kind() == Kind.SERVER ? left : right;
+      Span client = left == server ? right : left;
       if (server.remoteEndpoint() != null && !"".equals(server.remoteEndpoint().serviceName)) {
         return copyError(client, server);
       }
       return copyError(client, server).toBuilder().remoteEndpoint(client.localEndpoint()).build();
     }
 
-    static Span2 copyError(Span2 maybeError, Span2 result) {
+    static Span copyError(Span maybeError, Span result) {
       if (maybeError.tags().containsKey(ERROR)) {
         return result.toBuilder().putTag(ERROR, maybeError.tags().get(ERROR)).build();
       }
@@ -94,23 +94,23 @@ public final class DependencyLinker {
   /**
    * @param spans spans where all spans have the same trace id
    */
-  public DependencyLinker putTrace(Iterator<Span2> spans) {
+  public DependencyLinker putTrace(Iterator<Span> spans) {
     if (!spans.hasNext()) return this;
 
-    Span2 first = spans.next();
-    Node.TreeBuilder<Span2> builder =
+    Span first = spans.next();
+    Node.TreeBuilder<Span> builder =
       new Node.TreeBuilder<>(logger, MERGE_RPC, first.traceIdString());
     builder.addNode(first.parentId(), first.id(), first);
     while (spans.hasNext()) {
-      Span2 next = spans.next();
+      Span next = spans.next();
       builder.addNode(next.parentId(), next.id(), next);
     }
-    Node<Span2> tree = builder.build();
+    Node<Span> tree = builder.build();
 
     if (logger.isLoggable(FINE)) logger.fine("traversing trace tree, breadth-first");
-    for (Iterator<Node<Span2>> i = tree.traverse(); i.hasNext(); ) {
-      Node<Span2> current = i.next();
-      Span2 currentSpan = current.value();
+    for (Iterator<Node<Span>> i = tree.traverse(); i.hasNext(); ) {
+      Node<Span> current = i.next();
+      Span currentSpan = current.value();
       if (logger.isLoggable(FINE)) {
         logger.fine("processing " + currentSpan);
       }
@@ -175,7 +175,7 @@ public final class DependencyLinker {
         logger.fine("cannot determine parent, looking for first server ancestor");
       }
 
-      Span2 rpcAncestor = findRpcAncestor(current);
+      Span rpcAncestor = findRpcAncestor(current);
       String rpcAncestorName;
       if (rpcAncestor != null && (rpcAncestorName = serviceName(rpcAncestor)) != null) {
         // Some users accidentally put the remote service name on client annotations.
@@ -186,7 +186,7 @@ public final class DependencyLinker {
         }
 
         // Local spans may be between the current node and its remote parent
-        if (parent == null)  parent = rpcAncestorName;
+        if (parent == null) parent = rpcAncestorName;
 
         // When an RPC is split between spans, we skip the child (server side). If our parent is a
         // client, we need to check it for errors.
@@ -206,14 +206,14 @@ public final class DependencyLinker {
     return this;
   }
 
-  Span2 findRpcAncestor(Node<Span2> current) {
-    Node<Span2> ancestor = current.parent();
+  Span findRpcAncestor(Node<Span> current) {
+    Node<Span> ancestor = current.parent();
     while (ancestor != null) {
       if (logger.isLoggable(FINE)) {
         logger.fine("processing ancestor " + ancestor.value());
       }
       if (!ancestor.isSyntheticRootForPartialTree()) {
-        Span2 maybeRemote = ancestor.value();
+        Span maybeRemote = ancestor.value();
         if (maybeRemote.kind() != null) return maybeRemote;
       }
       ancestor = ancestor.parent();
@@ -276,13 +276,13 @@ public final class DependencyLinker {
     return result;
   }
 
-  static String serviceName(Span2 span) {
+  static String serviceName(Span span) {
     return span.localEndpoint() != null && !"".equals(span.localEndpoint().serviceName)
       ? span.localEndpoint().serviceName
       : null;
   }
 
-  static String remoteServiceName(Span2 span) {
+  static String remoteServiceName(Span span) {
     return span.remoteEndpoint() != null && !"".equals(span.remoteEndpoint().serviceName)
       ? span.remoteEndpoint().serviceName
       : null;

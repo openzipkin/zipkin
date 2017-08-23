@@ -39,12 +39,11 @@ import zipkin.BinaryAnnotation;
 import zipkin.BinaryAnnotation.Type;
 import zipkin.DependencyLink;
 import zipkin.Endpoint;
-import zipkin.Span;
 import zipkin.internal.DependencyLinker;
 import zipkin.internal.GroupByTraceId;
 import zipkin.internal.Nullable;
 import zipkin.internal.Pair;
-import zipkin.internal.Span2;
+import zipkin.internal.v2.Span;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
 import zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations;
@@ -142,10 +141,10 @@ final class MySQLSpanStore implements SpanStore {
     return table.and(aTable.ENDPOINT_SERVICE_NAME.eq(serviceName));
   }
 
-  List<List<Span>> getTraces(@Nullable QueryRequest request, @Nullable Long traceIdHigh,
+  List<List<zipkin.Span>> getTraces(@Nullable QueryRequest request, @Nullable Long traceIdHigh,
       @Nullable Long traceIdLow, boolean raw) {
     if (traceIdHigh != null && !strictTraceId) traceIdHigh = null;
-    final Map<Pair<Long>, List<Span>> spansWithoutAnnotations;
+    final Map<Pair<Long>, List<zipkin.Span>> spansWithoutAnnotations;
     final Map<Row3<Long, Long, Long>, List<Record>> dbAnnotations;
     try (Connection conn = datasource.getConnection()) {
       Condition traceIdCondition = request != null
@@ -156,7 +155,7 @@ final class MySQLSpanStore implements SpanStore {
           .select(schema.spanFields)
           .from(ZIPKIN_SPANS).where(traceIdCondition)
           .stream()
-          .map(r -> Span.builder()
+          .map(r -> zipkin.Span.builder()
               .traceIdHigh(maybeGet(r, ZIPKIN_SPANS.TRACE_ID_HIGH, 0L))
               .traceId(r.getValue(ZIPKIN_SPANS.TRACE_ID))
               .name(r.getValue(ZIPKIN_SPANS.NAME))
@@ -167,8 +166,8 @@ final class MySQLSpanStore implements SpanStore {
               .debug(r.getValue(ZIPKIN_SPANS.DEBUG))
               .build())
           .collect(
-              groupingBy((Span s) -> Pair.create(s.traceIdHigh, s.traceId),
-                  LinkedHashMap::new, Collectors.<Span>toList()));
+              groupingBy((zipkin.Span s) -> Pair.create(s.traceIdHigh, s.traceId),
+                  LinkedHashMap::new, Collectors.<zipkin.Span>toList()));
 
       dbAnnotations = context.get(conn)
           .select(schema.annotationFields)
@@ -186,10 +185,10 @@ final class MySQLSpanStore implements SpanStore {
       throw new RuntimeException("Error querying for " + request + ": " + e.getMessage());
     }
 
-    List<Span> allSpans = new ArrayList<>(spansWithoutAnnotations.size());
-    for (List<Span> spans : spansWithoutAnnotations.values()) {
-      for (Span s : spans) {
-        Span.Builder span = s.toBuilder();
+    List<zipkin.Span> allSpans = new ArrayList<>(spansWithoutAnnotations.size());
+    for (List<zipkin.Span> spans : spansWithoutAnnotations.values()) {
+      for (zipkin.Span s : spans) {
+        zipkin.Span.Builder span = s.toBuilder();
         Row3<Long, Long, Long> key = row(s.traceIdHigh, s.traceId, s.id);
 
         if (dbAnnotations.containsKey(key)) {
@@ -225,27 +224,27 @@ final class MySQLSpanStore implements SpanStore {
   }
 
   @Override
-  public List<List<Span>> getTraces(QueryRequest request) {
+  public List<List<zipkin.Span>> getTraces(QueryRequest request) {
     return getTraces(request, null, null, false);
   }
 
   @Override
-  public List<Span> getTrace(long traceId) {
+  public List<zipkin.Span> getTrace(long traceId) {
     return getTrace(0L, traceId);
   }
 
-  @Override public List<Span> getTrace(long traceIdHigh, long traceIdLow) {
-    List<List<Span>> result = getTraces(null, traceIdHigh, traceIdLow, false);
+  @Override public List<zipkin.Span> getTrace(long traceIdHigh, long traceIdLow) {
+    List<List<zipkin.Span>> result = getTraces(null, traceIdHigh, traceIdLow, false);
     return result.isEmpty() ? null : result.get(0);
   }
 
   @Override
-  public List<Span> getRawTrace(long traceId) {
+  public List<zipkin.Span> getRawTrace(long traceId) {
     return getRawTrace(0L, traceId);
   }
 
-  @Override public List<Span> getRawTrace(long traceIdHigh, long traceIdLow) {
-    List<List<Span>> result = getTraces(null, traceIdHigh, traceIdLow, true);
+  @Override public List<zipkin.Span> getRawTrace(long traceIdHigh, long traceIdLow) {
+    List<List<zipkin.Span>> result = getTraces(null, traceIdHigh, traceIdLow, true);
     return result.isEmpty() ? null : result.get(0);
   }
 
@@ -328,8 +327,8 @@ final class MySQLSpanStore implements SpanStore {
         // Grouping so that later code knows when a span or trace is finished.
         .groupBy(schema.dependencyLinkerGroupByFields).fetchLazy();
 
-    Iterator<Iterator<Span2>> traces =
-        new DependencyLinkSpan2Iterator.ByTraceId(cursor.iterator(), schema.hasTraceIdHigh);
+    Iterator<Iterator<Span>> traces =
+        new DependencyLinkV2SpanIterator.ByTraceId(cursor.iterator(), schema.hasTraceIdHigh);
 
     if (!traces.hasNext()) return Collections.emptyList();
 

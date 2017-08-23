@@ -17,40 +17,41 @@ import java.util.List;
 import java.util.logging.Logger;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
+import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.Decoder;
 import zipkin.storage.Callback;
 
 import static zipkin.internal.Util.checkNotNull;
 
-public final class Collector2 extends Collector<Decoder<Span2>, Span2> {
-  final Span2Component storage;
+public final class V2Collector extends Collector<Decoder<Span>, Span> {
+  final V2StorageComponent storage;
   final CollectorSampler sampler;
 
-  public Collector2(Logger logger, @Nullable CollectorMetrics metrics,
-    @Nullable CollectorSampler sampler, Span2Component storage) {
+  public V2Collector(Logger logger, @Nullable CollectorMetrics metrics,
+    @Nullable CollectorSampler sampler, V2StorageComponent storage) {
     super(logger, metrics);
     this.storage = checkNotNull(storage, "storage");
     this.sampler = sampler == null ? CollectorSampler.ALWAYS_SAMPLE : sampler;
   }
 
   @Override
-  public void acceptSpans(byte[] serializedSpans, Decoder<Span2> decoder, Callback<Void> callback) {
+  public void acceptSpans(byte[] serializedSpans, Decoder<Span> decoder, Callback<Void> callback) {
     super.acceptSpans(serializedSpans, decoder, callback);
   }
 
-  @Override protected List<Span2> decodeList(Decoder<Span2> decoder, byte[] serialized) {
+  @Override protected List<Span> decodeList(Decoder<Span> decoder, byte[] serialized) {
     return decoder.decodeList(serialized);
   }
 
-  @Override protected boolean isSampled(Span2 span) {
+  @Override protected boolean isSampled(Span span) {
     return sampler.isSampled(span.traceId(), span.debug());
   }
 
-  @Override protected void record(List<Span2> sampled, Callback<Void> callback) {
-    storage.asyncSpan2Consumer().accept(sampled, callback);
+  @Override protected void record(List<Span> sampled, Callback<Void> callback) {
+    storage.v2AsyncSpanConsumer().accept(sampled, callback);
   }
 
-  @Override protected String idString(Span2 span) {
+  @Override protected String idString(Span span) {
     return span.idString();
   }
 }

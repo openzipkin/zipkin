@@ -21,12 +21,11 @@ import zipkin.BinaryAnnotation;
 import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Endpoint;
-import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.internal.Span2;
-import zipkin.internal.Span2Converter;
 import zipkin.internal.Util;
+import zipkin.internal.V2SpanConverter;
+import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.Encoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -111,7 +110,7 @@ public class JsonAdaptersTest {
       + "  }"
       + "}";
 
-    List<Span2> spans = Span2Converter.fromSpan(JsonAdapters.SPAN_ADAPTER.fromJson(json));
+    List<Span> spans = V2SpanConverter.fromSpan(JsonAdapters.SPAN_ADAPTER.fromJson(json));
     assertThat(spans.get(0).tags())
       .containsExactly(entry("num", "9223372036854775807"));
   }
@@ -127,15 +126,15 @@ public class JsonAdaptersTest {
       + "  }"
       + "}";
 
-    List<Span2> spans = Span2Converter.fromSpan(JsonAdapters.SPAN_ADAPTER.fromJson(json));
+    List<Span> spans = V2SpanConverter.fromSpan(JsonAdapters.SPAN_ADAPTER.fromJson(json));
     assertThat(spans.get(0).tags())
       .containsExactly(entry("num", "1.23456789"));
   }
 
   @Test
   public void span_roundTrip() throws IOException {
-    Span span = ApplyTimestampAndDuration.apply(TestObjects.LOTS_OF_SPANS[0]);
-    Span2 span2 = Span2Converter.fromSpan(span).get(0);
+    zipkin.Span span = ApplyTimestampAndDuration.apply(TestObjects.LOTS_OF_SPANS[0]);
+    Span span2 = V2SpanConverter.fromSpan(span).get(0);
     Buffer bytes = new Buffer();
     bytes.write(Encoder.JSON.encode(span2));
     assertThat(SPAN_ADAPTER.fromJson(bytes))
@@ -150,7 +149,7 @@ public class JsonAdaptersTest {
   public void span_specialCharsInJson() throws IOException {
     // service name is surrounded by control characters
     Endpoint e = Endpoint.create(new String(new char[] {0, 'a', 1}), 0);
-    Span2 worstSpanInTheWorld = Span2.builder().traceId(1L).id(1L)
+    Span worstSpanInTheWorld = Span.builder().traceId(1L).id(1L)
       // name is terrible
       .name(new String(new char[] {'"', '\\', '\t', '\b', '\n', '\r', '\f'}))
       .localEndpoint(e)
@@ -164,7 +163,7 @@ public class JsonAdaptersTest {
     Buffer bytes = new Buffer();
     bytes.write(Encoder.JSON.encode(worstSpanInTheWorld));
     assertThat(SPAN_ADAPTER.fromJson(bytes))
-      .isEqualTo(Span2Converter.toSpan(worstSpanInTheWorld));
+      .isEqualTo(V2SpanConverter.toSpan(worstSpanInTheWorld));
   }
 
   @Test

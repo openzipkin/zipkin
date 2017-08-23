@@ -24,24 +24,24 @@ import zipkin.Endpoint;
 import zipkin.internal.Buffer;
 import zipkin.internal.JsonCodec;
 import zipkin.internal.JsonCodec.JsonReaderAdapter;
-import zipkin.internal.Span2;
+import zipkin.internal.v2.Span;
 
 import static zipkin.internal.Buffer.asciiSizeInBytes;
 import static zipkin.internal.Buffer.ipv6SizeInBytes;
 import static zipkin.internal.Buffer.jsonEscapedSizeInBytes;
 
 /**
- * Internal type supporting codec operations in {@link Span2}. Design rationale is the same as
+ * Internal type supporting codec operations in {@link Span}. Design rationale is the same as
  * {@link JsonCodec}.
  */
 final class Span2JsonAdapters {
 
-  static final class Span2Reader implements JsonReaderAdapter<Span2> {
-    Span2.Builder builder;
+  static final class Span2Reader implements JsonReaderAdapter<Span> {
+    Span.Builder builder;
 
-    @Override public Span2 fromJson(JsonReader reader) throws IOException {
+    @Override public Span fromJson(JsonReader reader) throws IOException {
       if (builder == null) {
-        builder = Span2.builder();
+        builder = Span.builder();
       } else {
         builder.clear();
       }
@@ -63,7 +63,7 @@ final class Span2JsonAdapters {
         if (nextName.equals("parentId")) {
           builder.parentId(reader.nextString());
         } else if (nextName.equals("kind")) {
-          builder.kind(Span2.Kind.valueOf(reader.nextString()));
+          builder.kind(Span.Kind.valueOf(reader.nextString()));
         } else if (nextName.equals("name")) {
           builder.name(reader.nextString());
         } else if (nextName.equals("timestamp")) {
@@ -120,7 +120,7 @@ final class Span2JsonAdapters {
     }
 
     @Override public String toString() {
-      return "Span2";
+      return "Span";
     }
   }
 
@@ -208,8 +208,8 @@ final class Span2JsonAdapters {
     }
   };
 
-  static final Buffer.Writer<Span2> SPAN_WRITER = new Buffer.Writer<Span2>() {
-    @Override public int sizeInBytes(Span2 value) {
+  static final Buffer.Writer<Span> SPAN_WRITER = new Buffer.Writer<Span>() {
+    @Override public int sizeInBytes(Span value) {
       int sizeInBytes = 0;
       if (value.traceIdHigh() != 0) sizeInBytes += 16;
       sizeInBytes += "{\"traceId\":\"".length() + 16 + 1;
@@ -270,7 +270,7 @@ final class Span2JsonAdapters {
       return ++sizeInBytes;// end curly-brace
     }
 
-    @Override public void write(Span2 value, Buffer b) {
+    @Override public void write(Span value, Buffer b) {
       b.writeAscii("{\"traceId\":\"");
       if (value.traceIdHigh() != 0) {
         b.writeLowerHex(value.traceIdHigh());
@@ -325,7 +325,7 @@ final class Span2JsonAdapters {
     }
 
     @Override public String toString() {
-      return "Span2";
+      return "Span";
     }
   };
 

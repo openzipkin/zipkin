@@ -21,7 +21,7 @@ import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.internal.Nullable;
 import zipkin.internal.PeekingIterator;
-import zipkin.internal.Span2;
+import zipkin.internal.v2.Span;
 import zipkin.storage.mysql.internal.generated.tables.ZipkinSpans;
 
 import static zipkin.Constants.CLIENT_ADDR;
@@ -33,18 +33,18 @@ import static zipkin.internal.Util.equal;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 
 /**
- * Lazy converts rows into {@linkplain Span2} objects suitable for dependency links. This takes
+ * Lazy converts rows into {@linkplain Span} objects suitable for dependency links. This takes
  * short-cuts to require less data. For example, it folds shared RPC spans into one, and doesn't
  * include tags, non-core annotations or time units.
  *
  * <p>Out-of-date schemas may be missing the trace_id_high field. When present, this becomes {@link
- * Span2#traceIdHigh()} used as the left-most 16 characters of the traceId in logging
+ * Span#traceIdHigh()} used as the left-most 16 characters of the traceId in logging
  * statements.
  */
-final class DependencyLinkSpan2Iterator implements Iterator<Span2> {
+final class DependencyLinkV2SpanIterator implements Iterator<Span> {
 
   /** Assumes the input records are sorted by trace id, span id */
-  static final class ByTraceId implements Iterator<Iterator<Span2>> {
+  static final class ByTraceId implements Iterator<Iterator<Span>> {
     final PeekingIterator<Record> delegate;
     final boolean hasTraceIdHigh;
 
@@ -60,10 +60,10 @@ final class DependencyLinkSpan2Iterator implements Iterator<Span2> {
       return delegate.hasNext();
     }
 
-    @Override public Iterator<Span2> next() {
+    @Override public Iterator<Span> next() {
       currentTraceIdHi = hasTraceIdHigh ? traceIdHigh(delegate) : null;
       currentTraceIdLo = delegate.peek().getValue(ZipkinSpans.ZIPKIN_SPANS.TRACE_ID);
-      return new DependencyLinkSpan2Iterator(delegate, currentTraceIdHi, currentTraceIdLo);
+      return new DependencyLinkV2SpanIterator(delegate, currentTraceIdHi, currentTraceIdLo);
     }
 
     @Override public void remove() {
@@ -75,7 +75,7 @@ final class DependencyLinkSpan2Iterator implements Iterator<Span2> {
   @Nullable final Long traceIdHi;
   final long traceIdLo;
 
-  DependencyLinkSpan2Iterator(PeekingIterator<Record> delegate, Long traceIdHi, long traceIdLo) {
+  DependencyLinkV2SpanIterator(PeekingIterator<Record> delegate, Long traceIdHi, long traceIdLo) {
     this.delegate = delegate;
     this.traceIdHi = traceIdHi;
     this.traceIdLo = traceIdLo;
@@ -90,7 +90,7 @@ final class DependencyLinkSpan2Iterator implements Iterator<Span2> {
   }
 
   @Override
-  public Span2 next() {
+  public Span next() {
     Record row = delegate.peek();
 
     long spanId = row.getValue(ZipkinSpans.ZIPKIN_SPANS.ID);
@@ -131,7 +131,7 @@ final class DependencyLinkSpan2Iterator implements Iterator<Span2> {
     // Skip the client side, so it isn't mistaken for a loopback request
     if (equal(saService, caService)) caService = null;
 
-    Span2.Builder result = Span2.builder()
+    Span.Builder result = Span.builder()
       .traceIdHigh(traceIdHi != null ? traceIdHi : 0L)
       .traceId(traceIdLo)
       .parentId(row.getValue(ZipkinSpans.ZIPKIN_SPANS.PARENT_ID))
@@ -142,18 +142,18 @@ final class DependencyLinkSpan2Iterator implements Iterator<Span2> {
     }
 
     if (srService != null) {
-      return result.kind(Span2.Kind.SERVER)
+      return result.kind(Span.Kind.SERVER)
         .localEndpoint(ep(srService))
         .remoteEndpoint(ep(caService))
         .build();
     } else if (saService != null) {
       return result
-        .kind(csService != null ? Span2.Kind.CLIENT : null)
+        .kind(csService != null ? Span.Kind.CLIENT : null)
         .localEndpoint(ep(caService))
         .remoteEndpoint(ep(saService))
         .build();
     } else if (csService != null) {
-      return result.kind(Span2.Kind.SERVER)
+      return result.kind(Span.Kind.SERVER)
         .localEndpoint(ep(caService))
         .build();
     }

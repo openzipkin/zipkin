@@ -5,4 +5,7 @@ Export-Package: \
 	zipkin,\
 	zipkin.collector,\
 	zipkin.internal,\
+	zipkin.internal.v2.storage,\
+	zipkin.internal.v2.codec,\
+	zipkin.internal.v2,\
 	zipkin.storage

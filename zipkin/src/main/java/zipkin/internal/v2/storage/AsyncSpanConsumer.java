@@ -14,11 +14,11 @@
 package zipkin.internal.v2.storage;
 
 import java.util.List;
-import zipkin.internal.Span2;
+import zipkin.internal.v2.Span;
 import zipkin.storage.Callback;
 
 // @FunctionalInterface
 public interface AsyncSpanConsumer {
 
-  void accept(List<Span2> spans, Callback<Void> callback);
+  void accept(List<Span> spans, Callback<Void> callback);
 }

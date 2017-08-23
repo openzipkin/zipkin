@@ -24,7 +24,7 @@ import okio.Buffer;
 import okio.ByteString;
 import zipkin.Annotation;
 import zipkin.internal.Nullable;
-import zipkin.internal.Span2;
+import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.Encoder;
 import zipkin.internal.v2.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
@@ -43,7 +43,7 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
     this.indexNameFormatter = es.indexNameFormatter();
   }
 
-  @Override public void accept(List<Span2> spans, Callback<Void> callback) {
+  @Override public void accept(List<Span> spans, Callback<Void> callback) {
     if (spans.isEmpty()) {
       callback.onSuccess(null);
       return;
@@ -58,8 +58,8 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
     }
   }
 
-  void indexSpans(BulkSpanIndexer indexer, List<Span2> spans) throws IOException {
-    for (Span2 span : spans) {
+  void indexSpans(BulkSpanIndexer indexer, List<Span> spans) throws IOException {
+    for (Span span : spans) {
       Long spanTimestamp = span.timestamp();
       long indexTimestamp = 0L; // which index to store this span into
       if (spanTimestamp != null) {
@@ -86,7 +86,7 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
       this.indexNameFormatter = es.indexNameFormatter();
     }
 
-    void add(long indexTimestamp, Span2 span, @Nullable Long timestampMillis) {
+    void add(long indexTimestamp, Span span, @Nullable Long timestampMillis) {
       String index = indexNameFormatter.formatTypeAndTimestamp(SPAN, indexTimestamp);
       byte[] document = prefixWithTimestampMillisAndQuery(span, timestampMillis);
       indexer.add(index, SPAN, document, null /* Allow ES to choose an ID */);
@@ -111,7 +111,7 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
    *
    * <p>Ex {@code curl -s localhost:9200/zipkin:span-2017-08-11/_search?q=_q:error=500}
    */
-  static byte[] prefixWithTimestampMillisAndQuery(Span2 span, @Nullable Long timestampMillis) {
+  static byte[] prefixWithTimestampMillisAndQuery(Span span, @Nullable Long timestampMillis) {
     Buffer query = new Buffer();
     JsonWriter writer = JsonWriter.of(query);
     try {
