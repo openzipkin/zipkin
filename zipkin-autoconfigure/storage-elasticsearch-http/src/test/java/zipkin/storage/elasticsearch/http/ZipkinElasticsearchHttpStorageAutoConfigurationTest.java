@@ -316,7 +316,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
   }
 
   @Test
-  public void providesBasicAuthInterceptor_whenBasicAuthUserNameandPasswordConfigured() {
+  public void providesBasicAuthInterceptor_whenBasicAuthUserNameAndPasswordConfigured() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context,
         "zipkin.storage.type:elasticsearch",
@@ -333,6 +333,35 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
     assertThat(context.getBean(OkHttpClient.class).networkInterceptors())
         .extracting(i -> i.getClass())
         .contains((Class) BasicAuthInterceptor.class);
+  }
+
+  @Test
+  public void legacyReadsEnabled() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:http://host1:9200");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+      ZipkinElasticsearchOkHttpAutoConfiguration.class,
+      ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(es().legacyReadsEnabled()).isTrue();
+  }
+
+  @Test
+  public void legacyReadsEnabled_false() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:http://host1:9200",
+      "zipkin.storage.elasticsearch.legacy-reads-enabled:false");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+      ZipkinElasticsearchOkHttpAutoConfiguration.class,
+      ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(es().legacyReadsEnabled()).isFalse();
   }
 
   ElasticsearchHttpStorage es() {

@@ -41,29 +41,43 @@ public class ElasticsearchHttpStorageTest {
 
   @Test public void memoizesIndexTemplate() throws Exception {
     es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"2.4.0\"}}"));
-    es.enqueue(new MockResponse()); // get legacy template
+    es.enqueue(new MockResponse()); // get span template
+    es.enqueue(new MockResponse()); // get dependency template
     es.enqueue(new MockResponse()); // dependencies request
+    es.enqueue(new MockResponse()); // dependencies legacy request
     es.enqueue(new MockResponse()); // dependencies request
+    es.enqueue(new MockResponse()); // dependencies legacy request
 
     long endTs = storage.indexNameFormatter().parseDate("2016-10-02");
     storage.spanStore().getDependencies(endTs, TimeUnit.DAYS.toMillis(1));
     storage.spanStore().getDependencies(endTs, TimeUnit.DAYS.toMillis(1));
 
     es.takeRequest(); // get version
-    es.takeRequest(); // get legacy template
-    assertThat(es.takeRequest().getPath())
-      .startsWith("/zipkin-2016-10-01,zipkin-2016-10-02/dependencylink/_search");
-    assertThat(es.takeRequest().getPath())
-      .startsWith("/zipkin-2016-10-01,zipkin-2016-10-02/dependencylink/_search");
+    es.takeRequest(); // get span template
+    es.takeRequest(); // get dependency template
+
+    String currentRequest = "/zipkin:dependency-2016-10-01,zipkin:dependency-2016-10-02/_search";
+    String legacyRequest = "/zipkin-2016-10-01,zipkin-2016-10-02/dependencylink/_search";
+    for (int i = 0; i < 2; i++) {
+      // with dual reads, order can be inconsistent.
+      String request1 = es.takeRequest().getPath();
+      String request2 = es.takeRequest().getPath();
+      if (request1.startsWith(currentRequest)) {
+        assertThat(request2)
+          .startsWith(legacyRequest);
+      } else {
+        assertThat(request1)
+          .startsWith(legacyRequest);
+        assertThat(request2)
+          .startsWith(currentRequest);
+      }
+    }
   }
 
   @Test public void ensureIndexTemplates_when6xNoLegacySupport() throws Exception {
     es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"6.0.0\"}}"));
     es.enqueue(new MockResponse()); // get span template
     es.enqueue(new MockResponse()); // get dependency template
-
-    IndexTemplates templates = storage.ensureIndexTemplates();
-    assertThat(templates.legacy()).isNull();
 
     // check this isn't the legacy consumer
     assertThat(storage.asyncSpanConsumer())
@@ -77,19 +91,15 @@ public class ElasticsearchHttpStorageTest {
     es.takeRequest(); // get dependency template
   }
 
-  @Test public void ensureIndexTemplates_when2OptIntoStoreWithMixedReads() throws Exception {
+  @Test public void ensureIndexTemplates_2x() throws Exception {
     storage.close();
     storage = ElasticsearchHttpStorage.builder()
       .hosts(asList(es.url("").toString()))
-      .singleTypeIndexingEnabled(true)
       .build();
 
     es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"2.2.0\"}}"));
     es.enqueue(new MockResponse()); // get span template
     es.enqueue(new MockResponse()); // get dependency template
-
-    IndexTemplates templates = storage.ensureIndexTemplates();
-    assertThat(templates.legacy()).isNotNull(); // legacy template is supported
 
     // check this isn't the legacy consumer
     assertThat(storage.asyncSpanConsumer())
@@ -103,37 +113,27 @@ public class ElasticsearchHttpStorageTest {
     es.takeRequest(); // get dependency template
   }
 
-  /**
-   * Eventhough 5.x supports single-type indexing without any modifications, the feature is opt-in
-   * which means we default to not do mixed reads.
-   */
-  @Test public void ensureIndexTemplates_when5xSingleTypeIndexSupport() throws Exception {
-    checkLegacyComponents(new MockResponse().setBody("{\"version\":{\"number\":\"5.0.0\"}}"));
-  }
+  @Test public void ensureIndexTemplates_2x_legacyReadsDisabled() throws Exception {
+    storage.close();
+    storage = ElasticsearchHttpStorage.builder()
+      .hosts(asList(es.url("").toString()))
+      .legacyReadsEnabled(false)
+      .build();
 
-  /**
-   * Versions in the 2.4+ range are mixed with regards to single-type indexes. For example, only
-   * 2.4+ using -Dmapper.allow_dots_in_name=true works. This disables support by default
-   * accordingly.
-   */
-  @Test public void ensureIndexTemplates_when2xSingleTypeIndexSupport() throws Exception {
-    checkLegacyComponents(new MockResponse().setBody("{\"version\":{\"number\":\"2.4.0\"}}"));
-  }
+    es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"2.2.0\"}}"));
+    es.enqueue(new MockResponse()); // get span template
+    es.enqueue(new MockResponse()); // get dependency template
 
-  void checkLegacyComponents(MockResponse response) throws InterruptedException {
-    es.enqueue(response);
-    es.enqueue(new MockResponse()); // get legacy template
-
-    IndexTemplates templates = storage.ensureIndexTemplates();
-    assertThat(templates.legacy()).isNotNull();
-
+    // check this isn't the legacy consumer
     assertThat(storage.asyncSpanConsumer())
-      .isInstanceOf(LegacyElasticsearchHttpSpanConsumer.class);
+      .isInstanceOf(ElasticsearchHttpSpanConsumer.class);
+    // check this isn't the double reading span store
     assertThat(storage.asyncSpanStore())
-      .isInstanceOf(LegacyElasticsearchHttpSpanStore.class);
+      .isInstanceOf(ElasticsearchHttpSpanStore.class);
 
     es.takeRequest(); // get version
-    es.takeRequest(); // get legacy template
+    es.takeRequest(); // get span template
+    es.takeRequest(); // get dependency template
   }
 
   String healthResponse = "{\n"

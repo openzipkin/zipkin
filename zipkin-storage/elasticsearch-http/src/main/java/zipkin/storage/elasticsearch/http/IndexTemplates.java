@@ -14,7 +14,6 @@
 package zipkin.storage.elasticsearch.http;
 
 import com.google.auto.value.AutoValue;
-import zipkin.internal.Nullable;
 
 @AutoValue
 abstract class IndexTemplates {
@@ -24,17 +23,12 @@ abstract class IndexTemplates {
 
   abstract float version();
 
-  /** null when multi-type indexes are not supported */
-  @Nullable abstract String legacy();
-
   abstract String span();
 
   abstract String dependency();
 
   @AutoValue.Builder interface Builder {
     Builder version(float version);
-
-    Builder legacy(@Nullable String legacy);
 
     Builder span(String span);
 
