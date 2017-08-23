@@ -14,16 +14,15 @@
 package zipkin.collector;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 import zipkin.Span;
 import zipkin.SpanDecoder;
+import zipkin.internal.DetectingSpanDecoder;
 import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
 
-import static java.lang.String.format;
-import static java.util.logging.Level.WARNING;
+import static zipkin.internal.DetectingSpanDecoder.detectFormat;
 import static zipkin.internal.Util.checkNotNull;
 
 /**
@@ -34,7 +33,7 @@ import static zipkin.internal.Util.checkNotNull;
  * before storage is attempted. This ensures that calling threads are disconnected from storage
  * threads.
  */
-public class Collector { // not final for mocking
+public class Collector extends zipkin.internal.Collector<SpanDecoder, Span> { // not final for mock
 
   /** Needed to scope this to the correct logging category */
   public static Builder builder(Class<?> loggingClass) {
@@ -74,31 +73,31 @@ public class Collector { // not final for mocking
     }
   }
 
-  final Logger logger;
-  final StorageComponent storage;
   final CollectorSampler sampler;
-  final CollectorMetrics metrics;
+  final StorageComponent storage;
 
   Collector(Builder builder) {
-    this.logger = checkNotNull(builder.logger, "logger");
+    super(builder.logger, builder.metrics);
     this.storage = checkNotNull(builder.storage, "storage");
     this.sampler = builder.sampler == null ? CollectorSampler.ALWAYS_SAMPLE : builder.sampler;
-    this.metrics = builder.metrics == null ? CollectorMetrics.NOOP_METRICS : builder.metrics;
   }
 
+  @Override
   public void acceptSpans(byte[] serializedSpans, SpanDecoder decoder, Callback<Void> callback) {
-    metrics.incrementBytes(serializedSpans.length);
-    List<Span> spans;
     try {
-      spans = decoder.readSpans(serializedSpans);
+      if (decoder instanceof DetectingSpanDecoder) decoder = detectFormat(serializedSpans);
     } catch (RuntimeException e) {
+      metrics.incrementBytes(serializedSpans.length);
       callback.onError(errorReading(e));
       return;
     }
-    accept(spans, callback);
+    super.acceptSpans(serializedSpans, decoder, callback);
   }
 
-  public void acceptSpans(List<byte[]> serializedSpans, SpanDecoder decoder,
+  /**
+   * @deprecated All transports accept encoded lists of spans. Please update reporters to do so.
+   */
+  @Deprecated public void acceptSpans(List<byte[]> serializedSpans, SpanDecoder decoder,
     Callback<Void> callback) {
     List<Span> spans = new ArrayList<>(serializedSpans.size());
     try {
@@ -115,101 +114,19 @@ public class Collector { // not final for mocking
     accept(spans, callback);
   }
 
-  public void accept(List<Span> spans, Callback<Void> callback) {
-    if (spans.isEmpty()) {
-      callback.onSuccess(null);
-      return;
-    }
-    metrics.incrementSpans(spans.size());
-
-    List<Span> sampled = sample(spans);
-    if (sampled.isEmpty()) {
-      callback.onSuccess(null);
-      return;
-    }
-
-    try {
-      storage.asyncSpanConsumer().accept(sampled, acceptSpansCallback(sampled));
-      callback.onSuccess(null);
-    } catch (RuntimeException e) {
-      callback.onError(errorStoringSpans(sampled, e));
-      return;
-    }
+  @Override protected List<Span> decodeList(SpanDecoder decoder, byte[] serialized) {
+    return decoder.readSpans(serialized);
   }
 
-  List<Span> sample(List<Span> input) {
-    List<Span> sampled = new ArrayList<>(input.size());
-    for (Span s : input) {
-      if (sampler.isSampled(s.traceId, s.debug)) sampled.add(s);
-    }
-    int dropped = input.size() - sampled.size();
-    if (dropped > 0) metrics.incrementSpansDropped(dropped);
-    return sampled;
+  @Override protected boolean isSampled(Span span) {
+    return sampler.isSampled(span.traceId, span.debug);
   }
 
-  Callback<Void> acceptSpansCallback(final List<Span> spans) {
-    return new Callback<Void>() {
-      @Override public void onSuccess(Void value) {
-      }
-
-      @Override public void onError(Throwable t) {
-        errorStoringSpans(spans, t);
-      }
-
-      @Override
-      public String toString() {
-        return appendSpanIds(spans, new StringBuilder("AcceptSpans(")).append(")").toString();
-      }
-    };
+  @Override protected void record(List<Span> sampled, Callback<Void> callback) {
+    storage.asyncSpanConsumer().accept(sampled, callback);
   }
 
-  RuntimeException errorReading(Throwable e) {
-    return errorReading("Cannot decode spans", e);
-  }
-
-  RuntimeException errorReading(String message, Throwable e) {
-    metrics.incrementMessagesDropped();
-    return doError(message, e);
-  }
-
-  /**
-   * When storing spans, an exception can be raised before or after the fact. This adds context of
-   * span ids to give logs more relevance.
-   */
-  RuntimeException errorStoringSpans(List<Span> spans, Throwable e) {
-    metrics.incrementSpansDropped(spans.size());
-    // The exception could be related to a span being huge. Instead of filling logs,
-    // print trace id, span id pairs
-    StringBuilder msg = appendSpanIds(spans, new StringBuilder("Cannot store spans "));
-    return doError(msg.toString(), e);
-  }
-
-  RuntimeException doError(String message, Throwable e) {
-    String exceptionMessage = e.getMessage() != null ? e.getMessage() : "";
-    if (e instanceof RuntimeException && exceptionMessage.startsWith("Malformed")) {
-      warn(exceptionMessage, e);
-      return (RuntimeException) e;
-    } else {
-      message = format("%s due to %s(%s)", message, e.getClass().getSimpleName(), exceptionMessage);
-      warn(message, e);
-      return new RuntimeException(message, e);
-    }
-  }
-
-  void warn(String message, Throwable e) {
-    logger.log(WARNING, message, e);
-  }
-
-  StringBuilder appendSpanIds(List<Span> spans, StringBuilder message) {
-    message.append("[");
-    for (Iterator<Span> iterator = spans.iterator(); iterator.hasNext(); ) {
-      message.append(idString(iterator.next()));
-      if (iterator.hasNext()) message.append(", ");
-    }
-    return message.append("]");
-  }
-
-  String idString(Span span) {
+  @Override protected String idString(Span span) {
     return span.idString();
   }
 }
