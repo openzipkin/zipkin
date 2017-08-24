@@ -39,6 +39,8 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
 
   static final String SPAN = "span";
   static final String DEPENDENCY = "dependency";
+  /** To not produce unnecessarily long queries, we don't look back further than first ES support */
+  static final long EARLIEST_MS = 1456790400000L; // March 2016
 
   final SearchCallFactory search;
   final String[] allSpanIndices;
@@ -55,8 +57,8 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
   }
 
   @Override public void getTraces(QueryRequest request, Callback<List<List<Span>>> callback) {
-    long beginMillis = request.endTs - request.lookback;
     long endMillis = request.endTs;
+    long beginMillis = Math.max(endMillis - request.lookback, EARLIEST_MS);
 
     SearchRequest.Filters filters = new SearchRequest.Filters();
     filters.addRange("timestamp_millis", beginMillis, endMillis);
@@ -92,6 +94,11 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
         .orderBy("timestamp_millis", "desc");
 
     List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
+    if (indices.isEmpty()) {
+      callback.onSuccess(Collections.emptyList());
+      return;
+    }
+
     SearchRequest esRequest = SearchRequest.create(indices)
         .filters(filters).addAggregation(traceIdTimestamp);
 
@@ -170,6 +177,11 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
     long beginMillis = endMillis - namesLookback;
 
     List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
+    if (indices.isEmpty()) {
+      callback.onSuccess(Collections.emptyList());
+      return;
+    }
+
     // Service name queries include both local and remote endpoints. This is different than
     // Span name, as a span name can only be on a local endpoint.
     SearchRequest.Filters filters = new SearchRequest.Filters();
@@ -191,6 +203,10 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
     long beginMillis = endMillis - namesLookback;
 
     List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
+    if (indices.isEmpty()) {
+      callback.onSuccess(Collections.emptyList());
+      return;
+    }
 
     // A span name is only valid on a local endpoint, as a span name is defined locally
     SearchRequest.Filters filters = new SearchRequest.Filters()
@@ -206,10 +222,16 @@ final class ElasticsearchHttpSpanStore implements AsyncSpanStore {
   @Override public void getDependencies(long endTs, @Nullable Long lookback,
       Callback<List<DependencyLink>> callback) {
 
-    long beginMillis = lookback != null ? endTs - lookback : 0;
+    long beginMillis = lookback != null ? Math.max(endTs - lookback, EARLIEST_MS) : EARLIEST_MS;
+
     // We just return all dependencies in the days that fall within endTs and lookback as
     // dependency links themselves don't have timestamps.
     List<String> indices = indexNameFormatter.formatTypeAndRange(DEPENDENCY, beginMillis, endTs);
+    if (indices.isEmpty()) {
+      callback.onSuccess(Collections.emptyList());
+      return;
+    }
+
     search.newCall(SearchRequest.create(indices), BodyConverters.DEPENDENCY_LINKS).submit(callback);
   }
 }

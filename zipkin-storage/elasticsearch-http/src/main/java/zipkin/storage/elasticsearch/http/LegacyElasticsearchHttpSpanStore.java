@@ -37,7 +37,7 @@ import zipkin.storage.elasticsearch.http.internal.client.SearchRequest;
 import zipkin.storage.elasticsearch.http.internal.client.SearchResultConverter;
 
 import static java.util.Arrays.asList;
-
+import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.EARLIEST_MS;
 
 final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
   static final String SPAN = "span";
@@ -63,8 +63,8 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
   }
 
   @Override public void getTraces(QueryRequest request, Callback<List<List<Span>>> callback) {
-    long beginMillis = request.endTs - request.lookback;
     long endMillis = request.endTs;
+    long beginMillis = Math.max(endMillis - request.lookback, EARLIEST_MS);
 
     SearchRequest.Filters filters = new SearchRequest.Filters();
     filters.addRange("timestamp_millis", beginMillis, endMillis);
@@ -120,6 +120,11 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
         .orderBy("timestamp_millis", "desc");
 
     List<String> indices = indexNameFormatter.formatTypeAndRange(null, beginMillis, endMillis);
+    if (indices.isEmpty()) {
+      callback.onSuccess(Collections.emptyList());
+      return;
+    }
+
     SearchRequest esRequest = SearchRequest.create(indices, SPAN)
         .filters(filters).addAggregation(traceIdTimestamp);
 
@@ -198,6 +203,11 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
     long beginMillis =  endMillis - namesLookback;
 
     List<String> indices = indexNameFormatter.formatTypeAndRange(null, beginMillis, endMillis);
+    if (indices.isEmpty()) {
+      callback.onSuccess(Collections.emptyList());
+      return;
+    }
+
     SearchRequest request = SearchRequest.create(indices, SERVICE_SPAN)
         .addAggregation(Aggregation.terms("serviceName", Integer.MAX_VALUE));
 
@@ -231,6 +241,11 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
     long beginMillis =  endMillis - namesLookback;
 
     List<String> indices = indexNameFormatter.formatTypeAndRange(null, beginMillis, endMillis);
+    if (indices.isEmpty()) {
+      callback.onSuccess(Collections.emptyList());
+      return;
+    }
+
     SearchRequest request = SearchRequest.create(indices, SERVICE_SPAN)
         .term("serviceName", serviceName.toLowerCase(Locale.ROOT))
         .addAggregation(Aggregation.terms("spanName", Integer.MAX_VALUE));
@@ -260,11 +275,16 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
 
   @Override public void getDependencies(long endTs, @Nullable Long lookback,
       Callback<List<DependencyLink>> callback) {
+    long beginMillis = lookback != null ? Math.max(endTs - lookback, EARLIEST_MS) : EARLIEST_MS;
 
-    long beginMillis = lookback != null ? endTs - lookback : 0;
     // We just return all dependencies in the days that fall within endTs and lookback as
     // dependency links themselves don't have timestamps.
     List<String> indices = indexNameFormatter.formatTypeAndRange(null, beginMillis, endTs);
+    if (indices.isEmpty()) {
+      callback.onSuccess(Collections.emptyList());
+      return;
+    }
+
     getDependencies(indices, callback);
   }
 
