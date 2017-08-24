@@ -22,11 +22,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import javax.annotation.Nullable;
 import zipkin.Annotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.TraceKeys;
-import zipkin.internal.Nullable;
 import zipkin.internal.v2.codec.Encoder;
 
 import static zipkin.internal.Util.UTF_8;

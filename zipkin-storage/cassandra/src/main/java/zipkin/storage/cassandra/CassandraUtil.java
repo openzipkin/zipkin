@@ -26,6 +26,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nullable;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
@@ -118,7 +119,7 @@ final class CassandraUtil {
   enum KeySet implements Function<Map<Object, ?>, Set<Object>> {
     INSTANCE;
 
-    @Override public Set<Object> apply(Map<Object, ?> input) {
+    @Override public Set<Object> apply(@Nullable Map<Object, ?> input) {
       return input.keySet();
     }
   }
@@ -130,7 +131,7 @@ final class CassandraUtil {
   enum IntersectKeySets implements Function<List<Map<Object, ?>>, Set<Object>> {
     INSTANCE;
 
-    @Override public Set<Object> apply(List<Map<Object, ?>> input) {
+    @Override public Set<Object> apply(@Nullable List<Map<Object, ?>> input) {
       Set<Object> traceIds = Sets.newLinkedHashSet(input.get(0).keySet());
       for (int i = 1; i < input.size(); i++) {
         traceIds.retainAll(input.get(i).keySet());

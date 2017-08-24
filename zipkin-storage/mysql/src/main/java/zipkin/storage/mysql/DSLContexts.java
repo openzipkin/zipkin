@@ -14,13 +14,13 @@
 package zipkin.storage.mysql;
 
 import java.sql.Connection;
+import javax.annotation.Nullable;
 import org.jooq.DSLContext;
 import org.jooq.ExecuteListenerProvider;
 import org.jooq.SQLDialect;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultConfiguration;
-import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.checkNotNull;
 

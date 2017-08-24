@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import zipkin.internal.Nullable;
+import javax.annotation.Nullable;
 import zipkin.storage.StorageComponent;
 
 import static zipkin.internal.Util.UTF_8;

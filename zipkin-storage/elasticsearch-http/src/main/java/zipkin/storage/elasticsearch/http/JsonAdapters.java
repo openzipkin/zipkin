@@ -17,6 +17,8 @@ import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import zipkin.Annotation;
 import zipkin.DependencyLink;
 import zipkin.Endpoint;
@@ -29,7 +31,7 @@ import zipkin.internal.V2SpanConverter;
  */
 final class JsonAdapters {
   static final JsonAdapter<zipkin.Span> SPAN_ADAPTER = new JsonAdapter<zipkin.Span>() {
-    @Override
+    @Override @Nonnull
     public zipkin.Span fromJson(JsonReader reader) throws IOException {
       Span.Builder result = Span.builder();
       reader.beginObject();
@@ -97,13 +99,13 @@ final class JsonAdapters {
     }
 
     @Override
-    public void toJson(JsonWriter writer, zipkin.Span value) throws IOException {
+    public void toJson(JsonWriter writer, @Nullable zipkin.Span value) throws IOException {
       throw new UnsupportedOperationException();
     }
   };
 
   static final JsonAdapter<Annotation> ANNOTATION_ADAPTER = new JsonAdapter<Annotation>() {
-    @Override
+    @Override @Nonnull
     public Annotation fromJson(JsonReader reader) throws IOException {
       Annotation.Builder result = Annotation.builder();
       reader.beginObject();
@@ -127,13 +129,13 @@ final class JsonAdapters {
     }
 
     @Override
-    public void toJson(JsonWriter writer, Annotation value) throws IOException {
+    public void toJson(JsonWriter writer, @Nullable Annotation value) throws IOException {
       throw new UnsupportedOperationException();
     }
   };
 
   static final JsonAdapter<Endpoint> ENDPOINT_ADAPTER = new JsonAdapter<Endpoint>() {
-    @Override
+    @Override @Nonnull
     public Endpoint fromJson(JsonReader reader) throws IOException {
       Endpoint.Builder result = Endpoint.builder().serviceName("");
       reader.beginObject();
@@ -163,13 +165,13 @@ final class JsonAdapters {
     }
 
     @Override
-    public void toJson(JsonWriter writer, Endpoint value) throws IOException {
+    public void toJson(JsonWriter writer, @Nullable Endpoint value) throws IOException {
       throw new UnsupportedOperationException();
     }
   }.nullSafe();
 
   static final JsonAdapter<DependencyLink> DEPENDENCY_LINK_ADAPTER = new JsonAdapter<DependencyLink>() {
-    @Override
+    @Override @Nonnull
     public DependencyLink fromJson(JsonReader reader) throws IOException {
       DependencyLink.Builder result = DependencyLink.builder();
       reader.beginObject();
@@ -196,7 +198,7 @@ final class JsonAdapters {
     }
 
     @Override
-    public void toJson(JsonWriter writer, DependencyLink value) throws IOException {
+    public void toJson(JsonWriter writer, @Nullable DependencyLink value) throws IOException {
       throw new UnsupportedOperationException();
     }
   };

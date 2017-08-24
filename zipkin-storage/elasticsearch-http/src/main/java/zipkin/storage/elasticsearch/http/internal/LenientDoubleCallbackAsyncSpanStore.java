@@ -18,11 +18,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+import javax.annotation.Nullable;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.DependencyLinker;
 import zipkin.internal.MergeById;
-import zipkin.internal.Nullable;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.Callback;
 import zipkin.storage.QueryRequest;
@@ -141,7 +141,8 @@ public final class LenientDoubleCallbackAsyncSpanStore implements AsyncSpanStore
   }
 
   @Override
-  public void getDependencies(long endTs, Long lookback, Callback<List<DependencyLink>> callback) {
+  public void getDependencies(long endTs, @Nullable Long lookback,
+    Callback<List<DependencyLink>> callback) {
     GetDependenciesDoubleCallback doubleCallback = new GetDependenciesDoubleCallback(callback);
     left.getDependencies(endTs, lookback, doubleCallback);
     right.getDependencies(endTs, lookback, doubleCallback);

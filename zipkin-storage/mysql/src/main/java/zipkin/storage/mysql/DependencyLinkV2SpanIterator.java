@@ -14,12 +14,12 @@
 package zipkin.storage.mysql;
 
 import java.util.Iterator;
+import javax.annotation.Nullable;
 import org.jooq.Record;
 import org.jooq.TableField;
 import zipkin.BinaryAnnotation.Type;
 import zipkin.Constants;
 import zipkin.Endpoint;
-import zipkin.internal.Nullable;
 import zipkin.internal.PeekingIterator;
 import zipkin.internal.v2.Span;
 import zipkin.storage.mysql.internal.generated.tables.ZipkinSpans;
@@ -75,7 +75,8 @@ final class DependencyLinkV2SpanIterator implements Iterator<Span> {
   @Nullable final Long traceIdHi;
   final long traceIdLo;
 
-  DependencyLinkV2SpanIterator(PeekingIterator<Record> delegate, Long traceIdHi, long traceIdLo) {
+  DependencyLinkV2SpanIterator(PeekingIterator<Record> delegate, @Nullable Long traceIdHi,
+    long traceIdLo) {
     this.delegate = delegate;
     this.traceIdHi = traceIdHi;
     this.traceIdLo = traceIdLo;

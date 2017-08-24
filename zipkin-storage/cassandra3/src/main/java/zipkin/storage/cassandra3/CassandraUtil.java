@@ -27,6 +27,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import javax.annotation.Nullable;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
@@ -134,14 +135,6 @@ final class CassandraUtil {
     }
   }
 
-  enum KeySet implements Function<Map<Object, ?>, Set<Object>> {
-    INSTANCE;
-
-    @Override public Set<Object> apply(Map<Object, ?> input) {
-      return input.keySet();
-    }
-  }
-
   static Function<List<Map<TraceIdUDT, Long>>, Collection<TraceIdUDT>> intersectKeySets() {
     return (Function) IntersectKeySets.INSTANCE;
   }
@@ -153,7 +146,7 @@ final class CassandraUtil {
   enum IntersectKeySets implements Function<List<Map<Object, ?>>, Collection<Object>> {
     INSTANCE;
 
-    @Override public Collection<Object> apply(List<Map<Object, ?>> input) {
+    @Override public Collection<Object> apply(@Nullable List<Map<Object, ?>> input) {
       Set<Object> traceIds = Sets.newLinkedHashSet(input.get(0).keySet());
       for (int i = 1; i < input.size(); i++) {
         traceIds.retainAll(input.get(i).keySet());
@@ -166,7 +159,7 @@ final class CassandraUtil {
       implements Function<Map<TraceIdUDT, Long>, Collection<TraceIdUDT>> {
     INSTANCE;
 
-    @Override public Collection<TraceIdUDT> apply(Map<TraceIdUDT, Long> map) {
+    @Override public Collection<TraceIdUDT> apply(@Nullable Map<TraceIdUDT, Long> map) {
       // timestamps can collide, so we need to add some random digits on end before using them as keys
       SortedMap<BigInteger, TraceIdUDT> sorted = new TreeMap<>(Collections.reverseOrder());
       for (Map.Entry<TraceIdUDT, Long> e : map.entrySet()) {

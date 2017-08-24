@@ -19,12 +19,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import javax.annotation.Nullable;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.CorrectForClockSkew;
 import zipkin.internal.GroupByTraceId;
 import zipkin.internal.MergeById;
-import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.Callback;
@@ -132,7 +132,7 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
 
     // When we receive span results, we need to group them by trace ID
     Callback<List<Span>> successCallback = new Callback<List<Span>>() {
-      @Override public void onSuccess(List<Span> input) {
+      @Override public void onSuccess(@Nullable List<Span> input) {
         List<List<Span>> traces = GroupByTraceId.apply(input, strictTraceId, true);
 
         // Due to tokenization of the trace ID, our matches are imprecise on Span.traceIdHigh
@@ -212,7 +212,7 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
         .addAggregation(Aggregation.terms("serviceName", Integer.MAX_VALUE));
 
     search.newCall(request, BodyConverters.SORTED_KEYS).submit(new Callback<List<String>>() {
-      @Override public void onSuccess(List<String> value) {
+      @Override public void onSuccess(@Nullable List<String> value) {
         if (!value.isEmpty()) callback.onSuccess(value);
 
         // Special cased code until sites update their collectors. What this does is do a more
@@ -251,7 +251,7 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
         .addAggregation(Aggregation.terms("spanName", Integer.MAX_VALUE));
 
     search.newCall(request, BodyConverters.SORTED_KEYS).submit(new Callback<List<String>>() {
-      @Override public void onSuccess(List<String> value) {
+      @Override public void onSuccess(@Nullable List<String> value) {
         if (!value.isEmpty()) callback.onSuccess(value);
 
         // Special cased code until sites update their collectors. What this does is do a more

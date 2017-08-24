@@ -13,8 +13,8 @@
  */
 package zipkin.collector;
 
+import javax.annotation.Nullable;
 import zipkin.Span;
-import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.checkArgument;
 

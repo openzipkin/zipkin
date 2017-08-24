@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.logging.Logger;
+import javax.annotation.Nullable;
 
 import static java.lang.String.format;
 import static java.util.logging.Level.FINE;
@@ -114,7 +115,7 @@ public final class Node<V> {
   }
 
   static final MergeFunction FIRST_NOT_NULL = new MergeFunction() {
-    @Override public Object merge(Object existing, Object update) {
+    @Override public Object merge(@Nullable Object existing, @Nullable Object update) {
       return existing != null ? existing : update;
     }
   };

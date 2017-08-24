@@ -14,8 +14,8 @@
 package zipkin;
 
 import java.util.Arrays;
+import javax.annotation.Nullable;
 import zipkin.internal.JsonCodec;
-import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 
 import static zipkin.internal.Util.UTF_8;
@@ -132,7 +132,7 @@ public final class BinaryAnnotation implements Comparable<BinaryAnnotation> {
   @Nullable
   public final Endpoint endpoint;
 
-  BinaryAnnotation(String key, byte[] value, Type type, Endpoint endpoint) {
+  BinaryAnnotation(String key, byte[] value, Type type, @Nullable Endpoint endpoint) {
     checkNotNull(key, "key");
     if (value == null) throw new NullPointerException("value of " + key);
     if (type == null) throw new NullPointerException("type of " + key);

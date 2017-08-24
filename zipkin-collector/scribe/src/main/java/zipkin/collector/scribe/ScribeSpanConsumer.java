@@ -20,11 +20,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import zipkin.Span;
 import zipkin.SpanDecoder;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
-import zipkin.internal.Nullable;
 import zipkin.storage.Callback;
 
 final class ScribeSpanConsumer implements Scribe {

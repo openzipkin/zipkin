@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package zipkin.junit;
 
 import java.io.IOException;
 import java.util.List;
+import javax.annotation.Nullable;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -22,7 +23,6 @@ import okhttp3.Response;
 import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Span;
-import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;

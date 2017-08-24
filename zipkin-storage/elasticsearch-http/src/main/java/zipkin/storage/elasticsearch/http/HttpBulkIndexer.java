@@ -17,12 +17,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import javax.annotation.Nullable;
 import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
 import zipkin.internal.JsonCodec;
-import zipkin.internal.Nullable;
 import zipkin.storage.Callback;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
 

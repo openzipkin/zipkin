@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
+import javax.annotation.Nullable;
 import zipkin.collector.CollectorMetrics;
 import zipkin.storage.Callback;
 
@@ -92,7 +93,7 @@ public abstract class Collector<D, S> {
 
   Callback<Void> acceptSpansCallback(final List<S> spans) {
     return new Callback<Void>() {
-      @Override public void onSuccess(Void value) {
+      @Override public void onSuccess(@Nullable Void value) {
       }
 
       @Override public void onError(Throwable t) {

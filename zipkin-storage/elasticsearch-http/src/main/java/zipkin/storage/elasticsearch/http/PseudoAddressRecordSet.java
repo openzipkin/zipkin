@@ -20,9 +20,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import javax.annotation.Nullable;
 import okhttp3.Dns;
 import okhttp3.HttpUrl;
-import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.checkArgument;
 
